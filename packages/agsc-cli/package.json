@@ -1,0 +1,36 @@
+{
+  "name": "agsc-cli",
+  "version": "0.0.1",
+  "description": "`npx agsc-cli` = the AgenticSystemCore CLI (`agsc`), alias for agentic-system-core (Agentic Knowledge Web reference implementation).",
+  "bin": {
+    "agsc": "./bin/agsc.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "agentic-system-core": "0.0.1"
+  },
+  "keywords": [
+    "agentic",
+    "agentic-memory",
+    "knowledge-web",
+    "ontologies",
+    "agsc"
+  ],
+  "author": "Andrei Nicolae Besleaga",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andreibesleaga/agentic-system-core.git",
+    "directory": "packages/agsc"
+  },
+  "homepage": "https://agenticsystemcore.com",
+  "bugs": {
+    "url": "https://github.com/andreibesleaga/agentic-system-core/issues"
+  }
+}
