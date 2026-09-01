@@ -1,0 +1,31 @@
+{
+    "name": "agentic-system-core",
+    "version": "0.0.1",
+    "description": "Reference implementation for the Agentic Knowledge Web.",
+    "main": "index.js",
+    "bin": {
+        "agsc": "./bin/agsc.js"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/andreibesleaga/agentic-system-core.git"
+    },
+    "keywords": [
+        "agentic",
+        "multi-agent",
+        "knowledge-web",
+        "agentic-memory",
+        "distributed-systems",
+        "ontologies",
+        "dynamic-system"
+    ],
+    "author": "Andrei Nicolae Besleaga",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/andreibesleaga/agentic-system-core/issues"
+    },
+    "homepage": "https://agenticsystemcore.com"
+}
