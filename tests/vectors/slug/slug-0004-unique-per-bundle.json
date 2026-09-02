@@ -1,0 +1,10 @@
+{
+  "area": "slug",
+  "description": "Negative: slugs are unique across the whole Bundle regardless of folder, so the same stem in two type folders is a collision.",
+  "expected": { "error": "AGSC-E206" },
+  "id": "slug-0004",
+  "input": { "paths": ["content/concepts/handoff.md", "content/procedures/handoff.md"] },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-01-11"
+}

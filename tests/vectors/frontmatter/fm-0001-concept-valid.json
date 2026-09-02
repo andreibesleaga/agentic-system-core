@@ -1,0 +1,21 @@
+{
+  "area": "frontmatter",
+  "description": "A minimal valid concept: required keys type, title, description, kind and prov are present; scalars are parsed with the YAML failsafe schema and typed from the item schema.",
+  "expected": {
+    "errors": [],
+    "frontmatter": {
+      "description": "A coordinating agent that routes work to specialised workers and collects their results.",
+      "kind": "pattern",
+      "prov": { "operator": "human:andreibesleaga", "origin": "human" },
+      "title": "Supervisor",
+      "type": "concept"
+    }
+  },
+  "id": "fm-0001",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: pattern\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-02-03"
+}

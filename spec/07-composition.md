@@ -1,0 +1,48 @@
+# AGSC-07 — Composition: the closure algebra and the Harness
+
+## 7.1 Inputs
+
+- **AGSC-07-01** A composition takes an ordered selection of item slugs and the resolved graph, and produces a verdict plus a Harness file map. It MUST NOT require a network, a key or a server. [PRD-038 ← R12, D11]
+- **AGSC-07-02** The algorithm MUST be identical in every host. A composition computed in a browser MUST produce bytes identical to the same composition computed by the CLI. [PRD-038, PLAN §6(c)]
+- **AGSC-07-03** A slug not present in the graph is `AGSC-E802`. A selection MUST be de-duplicated preserving first-occurrence order. [PRD-036]
+
+## 7.2 The algebra, in this order
+
+- **AGSC-07-04** **Step 1 — closure.** Compute the transitive closure of `requires` over the selection. Each added item MUST record an explanation path — the chain of `(source, key, target)` steps that pulled it in. [PRD-036 ← R6]
+- **AGSC-07-05** **Step 2 — hiding.** Remove from the result any item that a member of the result `supersedes`. A superseded item MUST NOT be re-added by a later step. [PRD-036, AGSC-03-17]
+- **AGSC-07-06** **Step 3 — mutex.** Evaluate `excludes` over the surviving set. One or more surviving `excludes` pairs make the composition **invalid**; the verdict MUST name every violating pair and the explanation path of each side (`AGSC-E801`). [PRD-036]
+- **AGSC-07-07** **Step 4 — warnings.** Emit a warning for every `contradicts` pair inside the result, and for every `uses` target that is not in the result. Warnings MUST NOT invalidate a composition. [PRD-036]
+- **AGSC-07-08** Steps MUST run exactly once each, in the order 1→4. Closure MUST NOT be re-run after hiding, and mutex MUST NOT be evaluated before closure. [PRD-036]
+- **AGSC-07-09** The verdict object MUST be JCS-canonical with members `added[]`, `conflicts[]`, `warnings[]`, `hidden[]`, `selection[]` and `valid` (boolean). Each `added` entry carries `slug` and `path[]`. [AGSC-04-04]
+- **AGSC-07-10** `related`, `broader`, `narrower`, `derived-from` and `mentions` MUST NOT affect any step. [AGSC-03-18, D43(4)]
+- **AGSC-07-11** The algebra MUST be deterministic and order-independent in outcome: two selections with the same members MUST yield the same verdict, and iteration MUST follow code-point slug order inside each step. [AGSC-04-12]
+
+## 7.3 The Harness
+
+- **AGSC-07-12** A valid composition MUST emit exactly these seven files, and no others, under `dist/harness/<name>/` or as an equivalent in-memory map for download:
+
+| File | Content |
+|---|---|
+| `harness.jsonld` | selection, closure with explanation paths, links, verdict — JCS-canonical |
+| `AGENTS.md` | item summaries and constraints, as context only |
+| `workspace.dsl` | Structurizr: one container per selected Concept, relationships from Links |
+| `diagram.mmd` | Mermaid flowchart of the same relationships, emitted as text |
+| `arc42.md` | arc42 skeleton seeded from the selection |
+| `decisions/0001-<slug>.md` | one MADR record per selected Concept, numbered in selection order |
+| `skills/<slug>/SKILL.md` | one skill file per selected Procedure |
+
+[PRD-037 ← D35, audit/D §3(e), G11]
+
+- **AGSC-07-13** Harness output MUST be byte-identical to the equivalent CLI invocation and MUST be reproducible from the graph plus the selection plus `SOURCE_DATE_EPOCH`. [PRD-037, PRD-038]
+- **AGSC-07-14** `AGENTS.md` and every `SKILL.md` MUST carry the fixed provenance header and MUST fence quoted item prose as ```` ```text agsc-content ````; they MUST embed the Content Use Terms identifier. [NFR-07, PRD-019 ← ADR-001, ADR-007]
+- **AGSC-07-15** A Harness MUST NOT contain scripts, executables, symlinks, an `allowed-tools` key, or any file outside the seven above. [PRD-035 ← N9, Art. XIV]
+- **AGSC-07-16** Harness structure is CC0 to the user; the prose it quotes travels under the Content Use Terms. Both facts MUST be stated in the emitted files. [D39, NFR-10]
+- **AGSC-07-17** An invalid composition MUST NOT emit a Harness. The verdict alone is returned, with exit code 1 from the CLI. [PRD-036, AGSC-09-06]
+- **AGSC-07-18** Additional runtime emitters (GABBE, kaiban, CrewAI, LangGraph, n8n) are out of scope at 1.x; adding one MUST NOT change the seven files. [D35, audit/D §3(e)]
+
+## 7.4 Skill packs
+
+- **AGSC-07-19** One skill pack MUST be emitted per Cluster, plus `/skills/index.json`. Each pack's directory name MUST equal its `name` field and MUST satisfy the slug grammar including the no-`--` rule; `description` MUST be ≤1024 characters. [PRD-032 ← D33, audit/G §1 Agent Skills row]
+- **AGSC-07-20** Each pack MUST declare its licence and MUST be accompanied by a SHA-256 lockfile over its files; an install MUST verify the lockfile and MUST show a diff on update. [PRD-035 ← N9]
+- **AGSC-07-21** Install targets are `.claude/skills`, `.agents/skills` and `.github/skills`; installation MUST be idempotent. [PRD-033 ← G12]
+- **AGSC-07-22** `skills import` MUST map a `SKILL.md` to a `procedure` item, round-tripping without loss of the declared fields. [PRD-034]

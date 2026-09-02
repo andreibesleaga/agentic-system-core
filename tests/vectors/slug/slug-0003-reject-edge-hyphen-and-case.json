@@ -1,0 +1,10 @@
+{
+  "area": "slug",
+  "description": "Negative: leading hyphen, trailing hyphen, uppercase and a dot are all rejected. Each input is a separate failure; the first is reported.",
+  "expected": { "error": "AGSC-E204" },
+  "id": "slug-0003",
+  "input": { "slugs": ["-agent", "agent-", "Agent", "agent.core"] },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-01-10"
+}

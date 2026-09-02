@@ -1,0 +1,30 @@
+{
+  "area": "compose",
+  "description": "The four steps in order: requires closure adds mcp with an explanation path; supersedes hides mcp-v1; excludes is then evaluated over the survivors and invalidates the composition; the absent uses target is only a warning. Evaluating excludes before the closure, or re-running the closure after hiding, gives a different answer — that is why the order is normative.",
+  "expected": {
+    "exit": 1,
+    "harness_emitted": false,
+    "verdict": {
+      "added": [{ "path": [["a2a", "requires", "mcp"]], "slug": "mcp" }],
+      "conflicts": [{ "key": "excludes", "pair": ["legacy-rpc", "mcp"] }],
+      "hidden": ["mcp-v1"],
+      "selection": ["a2a", "legacy-rpc", "mcp"],
+      "valid": false,
+      "warnings": [{ "code": "AGSC-E803", "key": "uses", "source": "a2a", "target": "handoff" }]
+    }
+  },
+  "id": "compose-0001",
+  "input": {
+    "items": [
+      { "requires": ["mcp"], "slug": "a2a", "type": "concept", "uses": ["handoff"] },
+      { "slug": "handoff", "type": "concept" },
+      { "slug": "legacy-rpc", "type": "concept" },
+      { "excludes": ["legacy-rpc"], "slug": "mcp", "supersedes": ["mcp-v1"], "type": "concept" },
+      { "slug": "mcp-v1", "type": "concept" }
+    ],
+    "selection": ["a2a", "mcp-v1", "legacy-rpc"]
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-07-06"
+}

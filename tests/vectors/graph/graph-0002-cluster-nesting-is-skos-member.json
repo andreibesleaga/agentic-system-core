@@ -1,0 +1,27 @@
+{
+  "area": "graph",
+  "description": "The SKOS integrity rule: broader on a cluster file is nesting, exported as parent skos:member child. skos:broader has domain and range skos:Concept and skos:Collection is disjoint with skos:Concept, so emitting skos:broader on a Cluster would entail a contradiction and fail every SKOS validator.",
+  "expected": {
+    "contains": [
+      "<https://example.org/clusters/foundations/> <http://www.w3.org/2004/02/skos/core#member> <https://example.org/clusters/protocols/> .",
+      "<https://example.org/clusters/protocols/> <http://www.w3.org/2004/02/skos/core#member> <https://example.org/concepts/a2a/> ."
+    ],
+    "excludes": [
+      "<https://example.org/clusters/protocols/> <http://www.w3.org/2004/02/skos/core#broader>",
+      "<https://example.org/clusters/protocols/> <http://www.w3.org/2004/02/skos/core#narrower>",
+      "<https://example.org/clusters/protocols/> <http://www.w3.org/2004/02/skos/core#related>"
+    ]
+  },
+  "id": "graph-0002",
+  "input": {
+    "base": "https://example.org",
+    "items": [
+      { "slug": "foundations", "title": "Foundations", "type": "cluster" },
+      { "broader": ["foundations"], "slug": "protocols", "title": "Protocols", "type": "cluster" },
+      { "clusters": ["protocols"], "slug": "a2a", "title": "A2A", "type": "concept" }
+    ]
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-05-19"
+}

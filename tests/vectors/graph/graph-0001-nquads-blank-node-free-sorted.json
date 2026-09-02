@@ -1,0 +1,18 @@
+{
+  "area": "graph",
+  "description": "Canonical N-Quads: every node has an IRI, computed inverses are materialised, lines are sorted by their serialised bytes and each is terminated by a single LF. Because the dataset is blank-node-free, canonicalisation is this sort.",
+  "expected": {
+    "nquads": "<https://example.org/concepts/a2a/> <http://purl.org/dc/terms/requires> <https://example.org/concepts/mcp/> .\n<https://example.org/concepts/a2a/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> .\n<https://example.org/concepts/a2a/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://example.org/> .\n<https://example.org/concepts/a2a/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"A2A\"@en .\n<https://example.org/concepts/mcp/> <http://purl.org/dc/terms/isRequiredBy> <https://example.org/concepts/a2a/> .\n<https://example.org/concepts/mcp/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> .\n<https://example.org/concepts/mcp/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://example.org/> .\n<https://example.org/concepts/mcp/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"MCP\"@en .\n"
+  },
+  "id": "graph-0001",
+  "input": {
+    "base": "https://example.org",
+    "items": [
+      { "lang": "en", "requires": ["mcp"], "slug": "a2a", "title": "A2A", "type": "concept" },
+      { "lang": "en", "slug": "mcp", "title": "MCP", "type": "concept" }
+    ]
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-04-15"
+}

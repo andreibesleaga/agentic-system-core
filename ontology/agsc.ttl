@@ -1,0 +1,268 @@
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# AgenticSystemCore vocabulary — OWL 2 RL-safe (spec/05-graph.md, AGSC-05-22).
+# Classes: 11 (research/16 section 3.3; there is deliberately no asc:Item superclass, AGSC-05-13).
+# Properties: 22. Six of the nine Link keys reuse SKOS, DCTerms and PROV; only uses/excludes/
+# contradicts (plus the computed inverse usedBy and the untyped mentions) are defined here.
+# Stable Turtle profile: fixed prefix order, subjects and predicates sorted by IRI code points.
+
+<https://w3id.org/agentic-system-core/ns>
+    a owl:Ontology ;
+    dcterms:description "Vocabulary for AgenticSystemCore Bundles: six item types plus Bundle, Source, Proposal, Review and Harness, aligned to SKOS, PROV-O and DCTerms." ;
+    dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    dcterms:title "AgenticSystemCore vocabulary" ;
+    rdfs:label "AgenticSystemCore vocabulary" ;
+    owl:versionIRI <https://w3id.org/agentic-system-core/ns/1.0.0> ;
+    owl:versionInfo "1.0.0" .
+
+asc:Bundle
+    a owl:Class ;
+    rdfs:comment "One directory tree of items published together; the concept scheme every Concept is in." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Bundle" ;
+    rdfs:subClassOf skos:ConceptScheme .
+
+asc:Cluster
+    a owl:Class ;
+    rdfs:comment "A navigational grouping of items. Membership is skos:member, authored on the item. Cluster nesting is also skos:member — never skos:broader, which would put a Collection in a semantic relation." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Cluster" ;
+    rdfs:subClassOf skos:Collection .
+
+asc:Concept
+    a owl:Class ;
+    rdfs:comment "A unit of knowledge in a Bundle: a pattern, taxonomy, explainer, principle, decision, spec, task or term, distinguished by asc:kind." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Concept" ;
+    rdfs:subClassOf skos:Concept .
+
+asc:Episode
+    a owl:Class ;
+    rdfs:comment "A recorded occurrence — a session, run or incident — with a start, an actor and an outcome." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Episode" ;
+    rdfs:subClassOf prov:Activity .
+
+asc:Gate
+    a owl:Class ;
+    rdfs:comment "A declared set of checks that a change must pass; its runs are Episodes." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Gate" ;
+    rdfs:subClassOf prov:Plan .
+
+asc:Harness
+    a owl:Class ;
+    rdfs:comment "A generated bundle of files assembled from a validated composition of Concepts; never authored, never stored under content/." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Harness" ;
+    rdfs:subClassOf prov:Plan .
+
+asc:Lesson
+    a owl:Class ;
+    rdfs:comment "Knowledge distilled from one or more Episodes, carrying a severity; a Concept by essence." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Lesson" ;
+    rdfs:subClassOf asc:Concept .
+
+asc:Procedure
+    a owl:Class ;
+    rdfs:comment "An executable-by-a-reader plan: trigger, steps and checks. Exports one-to-one to a skill file." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Procedure" ;
+    rdfs:subClassOf prov:Plan .
+
+asc:Proposal
+    a owl:Class ;
+    rdfs:comment "A proposed change to a Bundle. It has no file: it is a forge pull request, instantiated in exports from the derived git log." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Proposal" ;
+    rdfs:subClassOf prov:Activity .
+
+asc:Review
+    a owl:Class ;
+    rdfs:comment "The human assessment of a Proposal. It has no file: it is instantiated from a verified[] entry, whose actor and instant are its association and end time." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Review" ;
+    rdfs:subClassOf prov:Activity .
+
+asc:Source
+    a owl:Class ;
+    rdfs:comment "An external work cited by an item. It has no file: it is instantiated from a sources[] entry." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Source" ;
+    rdfs:subClassOf prov:Entity .
+
+asc:contradicts
+    a owl:ObjectProperty, owl:SymmetricProperty ;
+    rdfs:comment "Asserts that two Concepts cannot both be true. Selecting both in a composition is a warning, never a failure." ;
+    rdfs:domain asc:Concept ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "contradicts" ;
+    rdfs:range asc:Concept .
+
+asc:excludes
+    a owl:ObjectProperty, owl:SymmetricProperty ;
+    rdfs:comment "Asserts mutual exclusion. Evaluated after the requires closure; a surviving pair invalidates a composition." ;
+    rdfs:domain asc:Concept ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "excludes" ;
+    rdfs:range asc:Concept .
+
+asc:generatedAt
+    a owl:DatatypeProperty ;
+    rdfs:comment "Instant at which an item was generated, with an explicit UTC offset." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "generated at" ;
+    rdfs:range xsd:dateTime .
+
+asc:generatedBy
+    a owl:DatatypeProperty ;
+    rdfs:comment "Actor string that generated an item: human:<id>, process:<id> or <producer>/<version>." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "generated by" ;
+    rdfs:range xsd:string .
+
+asc:grade
+    a owl:DatatypeProperty ;
+    rdfs:comment "Evidence grade of a Source: primary, secondary or tertiary." ;
+    rdfs:domain asc:Source ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "grade" ;
+    rdfs:range xsd:string .
+
+asc:kind
+    a owl:DatatypeProperty ;
+    rdfs:comment "Qualifier on a Concept: pattern, taxonomy, explainer, principle, decision, spec, task or term." ;
+    rdfs:domain asc:Concept ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "kind" ;
+    rdfs:range xsd:string .
+
+asc:level
+    a owl:DatatypeProperty ;
+    rdfs:comment "Gate level: L1 (schema and links) or L2 (adds provenance, determinism and review)." ;
+    rdfs:domain asc:Gate ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "level" ;
+    rdfs:range xsd:string .
+
+asc:mentions
+    a owl:ObjectProperty ;
+    rdfs:comment "Untyped edge produced by an inline Markdown link between items. Not a Link key; it may not appear in frontmatter." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "mentions" .
+
+asc:model
+    a owl:DatatypeProperty ;
+    rdfs:comment "Model identifier recorded when an item's origin is ai-assisted or ai-generated." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "model" ;
+    rdfs:range xsd:string .
+
+asc:operator
+    a owl:DatatypeProperty ;
+    rdfs:comment "Actor accountable for an item: the human or organisation running the agent that produced it." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "operator" ;
+    rdfs:range xsd:string .
+
+asc:origin
+    a owl:DatatypeProperty ;
+    rdfs:comment "How an item came to exist: human, ai-assisted, ai-generated or imported." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "origin" ;
+    rdfs:range xsd:string .
+
+asc:outcome
+    a owl:DatatypeProperty ;
+    rdfs:comment "Result of an Episode: success, partial or failure." ;
+    rdfs:domain asc:Episode ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "outcome" ;
+    rdfs:range xsd:string .
+
+asc:severity
+    a owl:DatatypeProperty ;
+    rdfs:comment "Weight of a Lesson: info, warn or block." ;
+    rdfs:domain asc:Lesson ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "severity" ;
+    rdfs:range xsd:string .
+
+asc:specVersion
+    a owl:DatatypeProperty ;
+    rdfs:comment "Version of the AgenticSystemCore specification a Bundle declares." ;
+    rdfs:domain asc:Bundle ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "spec version" ;
+    rdfs:range xsd:string .
+
+asc:staleAfter
+    a owl:DatatypeProperty ;
+    rdfs:comment "Absolute instant after which an item is stale. Staleness is a comparison, never a decay function." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "stale after" ;
+    rdfs:range xsd:dateTime .
+
+asc:status
+    a owl:DatatypeProperty ;
+    rdfs:comment "Publication state of an item: draft, stable or deprecated." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "status" ;
+    rdfs:range xsd:string .
+
+asc:usedBy
+    a owl:ObjectProperty ;
+    rdfs:comment "Computed inverse of asc:uses; never authored." ;
+    rdfs:domain asc:Concept ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "used by" ;
+    rdfs:range asc:Concept ;
+    owl:inverseOf asc:uses .
+
+asc:uses
+    a owl:ObjectProperty ;
+    rdfs:comment "Soft dependency: the subject draws on the object. A composition warns when a used Concept is absent." ;
+    rdfs:domain asc:Concept ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "uses" ;
+    rdfs:range asc:Concept ;
+    rdfs:subPropertyOf skos:related .
+
+asc:verdict
+    a owl:DatatypeProperty ;
+    rdfs:comment "Outcome recorded by a Review: approved, changes-requested or rejected." ;
+    rdfs:domain asc:Review ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "verdict" ;
+    rdfs:range xsd:string .
+
+asc:verifiedAt
+    a owl:DatatypeProperty ;
+    rdfs:comment "Instant at which a human recorded a Review, with an explicit UTC offset." ;
+    rdfs:domain asc:Review ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "verified at" ;
+    rdfs:range xsd:dateTime .
+
+asc:verifiedBy
+    a owl:DatatypeProperty ;
+    rdfs:comment "Actor string of the human who recorded a Review." ;
+    rdfs:domain asc:Review ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "verified by" ;
+    rdfs:range xsd:string .
+
+asc:verifiedOn
+    a owl:DatatypeProperty ;
+    rdfs:comment "Date on which a Source was last checked to resolve." ;
+    rdfs:domain asc:Source ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "verified on" ;
+    rdfs:range xsd:date .

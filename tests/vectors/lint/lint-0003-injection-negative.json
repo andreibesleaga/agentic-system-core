@@ -1,0 +1,12 @@
+{
+  "area": "lint",
+  "description": "Negative control: ordinary technical prose that describes agent behaviour in the third person, with an https link and a code fence, produces no injection findings. This vector guards against a detector so broad that it deters human contributors.",
+  "expected": { "findings": [] },
+  "id": "lint-0003",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Router\ndescription: A routing concept used as the negative control for the injection scan, describing behaviour rather than commanding it.\nkind: pattern\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nA router inspects a request and forwards it to the worker best able to answer. Implementations are listed at https://example.org/concepts/router/.\n\n```json\n{\"route\":\"worker-a\"}\n```\n"
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-08-14"
+}

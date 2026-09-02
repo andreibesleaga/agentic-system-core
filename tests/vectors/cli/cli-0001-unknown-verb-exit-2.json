@@ -1,0 +1,10 @@
+{
+  "area": "cli",
+  "description": "Negative: the verb set is closed at thirteen names. An unknown verb is a usage error, exit code 2 — distinct from exit 1, which means findings or a failed gate.",
+  "expected": { "error": "AGSC-E001", "exit": 2, "stdout": "" },
+  "id": "cli-0001",
+  "input": { "argv": ["frobnicate", "--json"] },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-09-07"
+}

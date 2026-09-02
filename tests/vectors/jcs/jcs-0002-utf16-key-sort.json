@@ -1,0 +1,10 @@
+{
+  "area": "jcs",
+  "description": "Keys are sorted by UTF-16 code units, not by Unicode code points. U+10000 encodes as the surrogate pair D800 DC00, whose first unit is below U+FF01, so the astral key sorts first — the opposite of a code-point sort. An implementation sorting by code point or by locale fails this vector.",
+  "expected": { "output": "{\"𐀀\":2,\"！\":1}" },
+  "id": "jcs-0002",
+  "input": { "value": { "！": 1, "𐀀": 2 } },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-04-05"
+}

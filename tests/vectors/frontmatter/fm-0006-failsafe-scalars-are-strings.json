@@ -1,0 +1,33 @@
+{
+  "area": "frontmatter",
+  "description": "The failsafe schema keeps every unquoted scalar a string: no, on, ~, 1e3 and 0x1F are not booleans, null, floats or integers. Types come from the item schema, not from YAML resolution. The five trap keys are unknown keys, so they are preserved and warned, never rejected.",
+  "expected": {
+    "errors": [],
+    "frontmatter": {
+      "blob": "0x1F",
+      "description": "A concept whose frontmatter carries the classic YAML type traps, kept as strings by the failsafe reader.",
+      "flag": "no",
+      "kind": "explainer",
+      "prov": { "operator": "human:andreibesleaga", "origin": "human" },
+      "scale": "1e3",
+      "switch": "on",
+      "title": "Norway",
+      "type": "concept",
+      "void": "~"
+    },
+    "warnings": [
+      { "code": "AGSC-E207", "key": "blob" },
+      { "code": "AGSC-E207", "key": "flag" },
+      { "code": "AGSC-E207", "key": "scale" },
+      { "code": "AGSC-E207", "key": "switch" },
+      { "code": "AGSC-E207", "key": "void" }
+    ]
+  },
+  "id": "fm-0006",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Norway\ndescription: A concept whose frontmatter carries the classic YAML type traps, kept as strings by the failsafe reader.\nkind: explainer\nflag: no\nswitch: on\nvoid: ~\nscale: 1e3\nblob: 0x1F\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\nBody.\n"
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-02-03"
+}

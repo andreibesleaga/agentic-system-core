@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agenticsystemcore.com/ns/schema/item.schema.json",
+  "title": "AgenticSystemCore item",
+  "description": "Frontmatter contract for one content item (spec/02-item.md). Keyword subset per research/12 section 2: type, enum, const, pattern, required, properties, additionalProperties, items, minItems, uniqueItems, $defs, local $ref, oneOf. additionalProperties is true everywhere on purpose: unknown keys MUST be preserved and reported by lint as AGSC-E207 warnings, never as errors (AGSC-02-05, OKF tolerance). Count bounds that this subset cannot express (tags 2-5, description 40-200 characters on non-required types) are lint-level warnings, not schema errors. CC0-1.0.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "title", "prov"],
+  "properties": {
+    "type": {
+      "description": "Authoritative item type; MUST match the containing folder (AGSC-01-03).",
+      "enum": ["concept", "episode", "procedure", "lesson", "cluster", "gate"]
+    },
+    "title": {
+      "description": "3-120 characters, any Unicode in NFC (AGSC-02-02 table).",
+      "type": "string",
+      "pattern": "^[\\s\\S]{3,120}$"
+    },
+    "description": {
+      "description": "40-200 characters. Required for concept and cluster (AGSC-02-02 table).",
+      "type": "string",
+      "pattern": "^[\\s\\S]{40,200}$"
+    },
+    "status": { "description": "Default stable.", "enum": ["draft", "stable", "deprecated"] },
+    "release": { "description": "Release switchboard key (AGSC-01-20).", "$ref": "#/$defs/slug" },
+    "tags": {
+      "description": "2-5 values from config tags.allowed; membership is checked by lint (AGSC-01-21).",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" }
+    },
+    "aliases": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "clusters": {
+      "description": "Cluster slugs; the first is primary. Membership is authored here, never on the cluster file (AGSC-02-19).",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/slug" }
+    },
+    "lang": { "description": "Lowercase BCP 47; default en.", "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{2,8})*$" },
+    "date": { "$ref": "#/$defs/date" },
+    "modified": { "$ref": "#/$defs/date" },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "prov": { "$ref": "#/$defs/prov" },
+    "generated": { "$ref": "#/$defs/generated" },
+    "verified": { "type": "array", "items": { "$ref": "#/$defs/verified_entry" } },
+    "stale_after": { "$ref": "#/$defs/instant" },
+    "id": { "description": "If present MUST equal the slug (AGSC-01-11).", "$ref": "#/$defs/slug" },
+    "iri": { "description": "If present MUST equal the computed IRI (AGSC-05-05).", "type": "string", "pattern": "^https://[^\\s]+/$" },
+    "spec_version": { "$ref": "#/$defs/semver" },
+    "related": { "$ref": "#/$defs/link_array" },
+    "broader": { "$ref": "#/$defs/link_array" },
+    "narrower": { "$ref": "#/$defs/link_array" },
+    "uses": { "$ref": "#/$defs/link_array" },
+    "requires": { "$ref": "#/$defs/link_array" },
+    "excludes": { "$ref": "#/$defs/link_array" },
+    "derived-from": { "$ref": "#/$defs/link_array" },
+    "contradicts": { "$ref": "#/$defs/link_array" },
+    "supersedes": { "$ref": "#/$defs/link_array" }
+  },
+  "oneOf": [
+    {
+      "title": "concept",
+      "required": ["type", "description", "kind"],
+      "properties": {
+        "type": { "const": "concept" },
+        "kind": { "enum": ["pattern", "taxonomy", "explainer", "principle", "decision", "spec", "task", "term"] },
+        "evidence": { "enum": ["explicit", "structural", "single-source"] },
+        "maturity": { "enum": ["established", "emerging", "research"] },
+        "mapping": { "enum": ["explicit", "author"] },
+        "signature": { "type": "boolean" },
+        "signature_elements": { "type": "array", "items": { "type": "string" } },
+        "owasp_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^LLM[0-9]{2}:[0-9]{4}$" } },
+        "domains": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "modality": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "deployment": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "implementations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["label", "url"],
+            "properties": { "label": { "type": "string" }, "url": { "type": "string", "pattern": "^https?://" } }
+          }
+        },
+        "diagram": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["file", "alt"],
+          "properties": {
+            "file": { "description": "MUST be <slug>.svg, compiled from content/diagrams/<slug>.diagram (AGSC-02-13).", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.svg$" },
+            "alt": { "type": "string" },
+            "caption": { "type": "string" }
+          }
+        }
+      }
+    },
+    {
+      "title": "episode",
+      "required": ["type", "started", "actor", "outcome"],
+      "properties": {
+        "type": { "const": "episode" },
+        "started": { "$ref": "#/$defs/instant" },
+        "ended": { "$ref": "#/$defs/instant" },
+        "actor": { "$ref": "#/$defs/actor" },
+        "outcome": { "enum": ["success", "partial", "failure"] },
+        "refs": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^https?://" } },
+        "usage": { "$ref": "#/$defs/usage" }
+      }
+    },
+    {
+      "title": "procedure",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "procedure" },
+        "when": { "description": "One-line trigger; becomes the exported SKILL.md description, at most 1024 characters (AGSC-02-15).", "type": "string", "pattern": "^[^\\n]{1,1024}$" },
+        "inputs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    {
+      "title": "lesson",
+      "required": ["type", "severity"],
+      "properties": {
+        "type": { "const": "lesson" },
+        "severity": { "enum": ["info", "warn", "block"] }
+      }
+    },
+    {
+      "title": "cluster",
+      "required": ["type", "description"],
+      "properties": {
+        "type": { "const": "cluster" },
+        "order": { "type": "integer" },
+        "family": { "type": "string" }
+      }
+    },
+    {
+      "title": "gate",
+      "required": ["type", "level", "checks"],
+      "properties": {
+        "type": { "const": "gate" },
+        "level": { "enum": ["L1", "L2"] },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["schema", "links", "provenance", "determinism", "review"] }
+        },
+        "enforce": { "type": "array", "uniqueItems": true, "items": { "const": "status-check" } }
+      }
+    }
+  ],
+  "$defs": {
+    "slug": {
+      "description": "AGSC-01-10: 1-64 characters, lowercase ASCII, single hyphens, no leading or trailing hyphen, no --.",
+      "type": "string",
+      "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$"
+    },
+    "link_target": {
+      "description": "A slug, optionally followed by #anchor (AGSC-03-02).",
+      "type": "string",
+      "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?(?:#[a-z0-9][a-z0-9-]*)?$"
+    },
+    "link_array": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/link_target" } },
+    "date": { "description": "AGSC-02-06.", "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "instant": {
+      "description": "AGSC-02-06: datetime with explicit UTC offset, seconds precision, never a bare date.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "actor": {
+      "description": "AGSC-02-09: human:<id>, process:<id> or <producer>/<version>.",
+      "type": "string",
+      "pattern": "^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._+-]*)$"
+    },
+    "source": {
+      "description": "One inline Source; resource is required (AGSC-02-10).",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["resource"],
+      "properties": {
+        "resource": { "type": "string", "pattern": "^https?://" },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "year": { "type": "string", "pattern": "^[0-9]{4}$" },
+        "verified": { "$ref": "#/$defs/date" },
+        "grade": { "enum": ["primary", "secondary", "tertiary"] }
+      }
+    },
+    "prov": {
+      "description": "AGSC-08-01. commit and reviewer are derived at build and MUST NOT appear here (AGSC-08-02).",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["origin", "operator"],
+      "properties": {
+        "origin": { "enum": ["human", "ai-assisted", "ai-generated", "imported"] },
+        "agent": { "type": "string" },
+        "model": { "type": "string" },
+        "operator": { "$ref": "#/$defs/actor" },
+        "agreement": { "type": "string" }
+      }
+    },
+    "generated": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["by"],
+      "properties": { "by": { "$ref": "#/$defs/actor" }, "at": { "$ref": "#/$defs/instant" } }
+    },
+    "verified_entry": {
+      "description": "The evidence of a Review (AGSC-08-03).",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["by", "at"],
+      "properties": { "by": { "$ref": "#/$defs/actor" }, "at": { "$ref": "#/$defs/instant" } }
+    },
+    "usage": {
+      "description": "Optional token accounting rolled up on the NOW page (AGSC-08-25).",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "model": { "type": "string" },
+        "tokens_in": { "type": "integer" },
+        "tokens_out": { "type": "integer" },
+        "cost_usd": { "type": "number" },
+        "estimate": { "type": "boolean" }
+      }
+    }
+  }
+}

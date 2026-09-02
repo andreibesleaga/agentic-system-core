@@ -1,0 +1,22 @@
+{
+  "area": "frontmatter",
+  "description": "A valid episode: started is an instant with an explicit UTC offset and seconds precision, actor follows the actor convention, outcome is in the enum.",
+  "expected": {
+    "errors": [],
+    "frontmatter": {
+      "actor": "claude-opus-5/1",
+      "outcome": "partial",
+      "prov": { "agent": "claude-opus-5", "model": "claude-opus-5", "operator": "human:andreibesleaga", "origin": "ai-generated" },
+      "started": "2026-01-01T00:00:00Z",
+      "title": "First import run",
+      "type": "episode"
+    }
+  },
+  "id": "fm-0002",
+  "input": {
+    "markdown": "---\ntype: episode\ntitle: First import run\nstarted: \"2026-01-01T00:00:00Z\"\nactor: claude-opus-5/1\noutcome: partial\nprov:\n  origin: ai-generated\n  agent: claude-opus-5\n  model: claude-opus-5\n  operator: human:andreibesleaga\n---\n\n## What happened\n\nImported the corpus.\n"
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-02-14"
+}

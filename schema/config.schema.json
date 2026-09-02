@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agenticsystemcore.com/ns/schema/config.schema.json",
+  "title": "agsc.config.json",
+  "description": "The single configuration file of a Bundle (AGSC-01-17). Unlike item frontmatter, configuration is CLOSED: additionalProperties is false and an unknown top-level key is error AGSC-E004 (AGSC-01-18). There is no second configuration file. CC0-1.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_version", "site", "bundle"],
+  "properties": {
+    "spec_version": { "$ref": "#/$defs/semver" },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "title"],
+      "properties": {
+        "base": {
+          "description": "Absolute https origin without a trailing slash; the IRI base of every item (AGSC-01-19).",
+          "type": "string",
+          "pattern": "^https://[^\\s/]+(?:/[^\\s/]+)*$"
+        },
+        "title": { "type": "string" },
+        "tagline": { "type": "string" },
+        "author": { "type": "string" },
+        "analytics_token": {
+          "description": "Edge analytics token only. No beacon, cookie or third-party script may be emitted (AGSC-06-05).",
+          "type": "string"
+        }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/slug" },
+        "license_prose": { "type": "string" },
+        "license_schema": { "type": "string" }
+      }
+    },
+    "ns": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "description": "Vocabulary hash namespace; the site domain MUST NOT appear here (AGSC-05-02).",
+          "type": "string",
+          "pattern": "^https://w3id\\.org/[^\\s]+#$"
+        },
+        "version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "releases": {
+      "description": "Boolean switchboard; an item with release: <key> publishes only when its key is true (AGSC-01-20).",
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "tags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed"],
+      "properties": {
+        "allowed": {
+          "description": "The closed tag vocabulary; a tag outside it is AGSC-E203 (AGSC-01-21).",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" }
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "out": { "description": "Build output directory; default www (AGSC-01-19).", "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+        "search": { "type": "boolean" },
+        "rdfxml": { "type": "boolean" },
+        "feed": { "type": "boolean" }
+      }
+    },
+    "lint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "injection_patterns": {
+          "description": "Literal alternations only, never user-supplied regular expressions (AGSC-08-14).",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "slug": { "type": "string", "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$" }
+  }
+}

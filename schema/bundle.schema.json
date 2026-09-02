@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agenticsystemcore.com/ns/schema/bundle.schema.json",
+  "title": "AgenticSystemCore bundle root",
+  "description": "Frontmatter of content/index.md, the Bundle root document (AGSC-01-04). It MUST NOT carry a type key: the root is not an item and does not enter the graph as one. additionalProperties is true: unknown keys are preserved and reported as AGSC-E207 warnings (AGSC-02-05). CC0-1.0.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["spec_version", "title", "description", "base"],
+  "properties": {
+    "spec_version": {
+      "description": "SemVer; a reader MUST accept any Bundle whose MAJOR equals its own (AGSC-00-14, AGSC-00-17).",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "okf_version": {
+      "description": "Open Knowledge Format version this Bundle is a superset of; allowed at the bundle root only.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "title": { "type": "string", "pattern": "^[\\s\\S]{3,120}$" },
+    "description": { "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
+    "base": {
+      "description": "Absolute https origin, no trailing slash; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json.",
+      "type": "string",
+      "pattern": "^https://[^\\s/]+(?:/[^\\s/]+)*$"
+    },
+    "lang": { "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{2,8})*$" },
+    "license": {
+      "description": "SPDX or LicenseRef identifier covering the prose of this Bundle (AGSC-06-15).",
+      "type": "string"
+    },
+    "prov": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["origin", "operator"],
+      "properties": {
+        "origin": { "enum": ["human", "ai-assisted", "ai-generated", "imported"] },
+        "agent": { "type": "string" },
+        "model": { "type": "string" },
+        "operator": {
+          "type": "string",
+          "pattern": "^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._+-]*)$"
+        },
+        "agreement": { "type": "string" }
+      }
+    }
+  }
+}

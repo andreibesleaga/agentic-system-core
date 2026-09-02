@@ -1,0 +1,22 @@
+{
+  "area": "frontmatter",
+  "description": "A valid gate: level is L2, checks is a subset of the five check names, enforce is limited to status-check.",
+  "expected": {
+    "errors": [],
+    "frontmatter": {
+      "checks": ["schema", "links", "provenance", "determinism", "review"],
+      "enforce": ["status-check"],
+      "level": "L2",
+      "prov": { "operator": "human:andreibesleaga", "origin": "human" },
+      "title": "Publication gate",
+      "type": "gate"
+    }
+  },
+  "id": "fm-0003",
+  "input": {
+    "markdown": "---\ntype: gate\ntitle: Publication gate\nlevel: L2\nchecks: [schema, links, provenance, determinism, review]\nenforce: [status-check]\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\nEvery change passes these checks.\n"
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-02-18"
+}

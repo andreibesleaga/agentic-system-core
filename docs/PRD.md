@@ -12,6 +12,7 @@
 
 | # | Persona | Job to be done |
 |---|---|---|
+| P0 | Drop-in user | Drop my .md files, get a live linked wiki/memory, zero config |
 | P1 | Human reader (architect/engineer) | Find the right pattern, with evidence |
 | P2 | Human contributor | Fix a page, pass a hard review gate |
 | P3 | Agent reader | Query structured knowledge without scraping |
@@ -123,6 +124,22 @@ Scope: **v1** = audit/D §6 must (M1–M15); **should** = S1–S8; **v1.x** = la
 | PRD-052 | THE SYSTEM SHALL ship a newcomer README section per module and a five-minute quickstart per persona. | One quickstart per persona surface. | D32(6), N7 | v1 |
 
 ---
+
+### 2.9a S01 Amendment 2 (owner-directed, 2026-09-02) — independent validators & document generators
+
+| ID | Requirement | Acceptance | Trace | Scope |
+|---|---|---|---|---|
+| PRD-054 | THE SYSTEM SHALL ship **independent validator scripts** under `tools/` — each a standalone, engine-independent check runnable by anyone (ports, reviewers, IANA/ISE experts) analogous to the I-D toolchain (idnits/xml2rfc): `tools/validate-schemas` (meta-validate `schema/*.json` against 2020-12), `tools/validate-spec` ("specnits": rule-id uniqueness AGSC-xx-nn, MUST/SHOULD grammar, trace-tag presence, error-code closure vs spec/09, cross-reference resolution), `tools/validate-ontology` (Turtle well-formedness + OWL 2 RL-safe axiom allowlist + SKOS pitfalls S19/S32/S37), `tools/validate-vectors` (vector-format schema + every `rule` resolves + JCS order), `tools/validate-wellknown <url|file>` (linkset + integrity-block shape + hash/ledger-head check), `tools/validate-features` (Gherkin parse + @PRD tag ↔ PRD-id closure), `tools/validate-diagrams` (Mermaid parse + trace-id presence + staleness vs source docs) — all Node stdlib, zero deps, exit 0/1, `--json`; plus **generators**: `tools/gen-spec-html` (spec/ → `/specs/` pages) and, at P-RFC, kramdown-rfc → xml2rfc → idnits for the I-D. CI runs every validator on every PR. | Each tool runs standalone on a fresh clone; breaking any invariant fails the matching tool; all green in CI. | R32, R55, D38-final, D47, N7 | **v1** (M13 + one per milestone that creates its target) |
+
+*Craftsmanship bar (owner, 2026-09-02): the system is judged as a work of art — simplest possible usage (P0: three commands) AND simplest implementation, all five modes on one core, every artifact standardizable, and RFC/spec publication-readiness treated as a first-class design criterion (validators above are the proof).*
+
+### 2.9 S01 Amendment 1 (owner-directed, 2026-09-02) — the drop-in zero-config case
+
+| ID | Requirement | Acceptance | Trace | Scope |
+|---|---|---|---|---|
+| PRD-053 | WHEN `init` runs in a directory containing plain Markdown files without frontmatter, THE SYSTEM SHALL **adopt** them: insert minimal valid frontmatter in place (`type: concept`, `kind: explainer`, `title` from the first `#` heading else the filename, `prov: {origin: human, operator}` from config or git identity), preserving every body byte verbatim and never overwriting existing frontmatter — so that a user who just drops `.md` files reaches a fully working online wiki / ontologic memory (site + graph + llms.txt + well-known + MCP-readable exports) in ≤3 commands: `npx agentic-system-core init` → `npx agentic-system-core ci` → publish (`git push` with the generated workflow, or upload `www/`). | Fixture dir of 3 bare `.md` → adopt → `ci` green offline → all Mode-0/1 surfaces emitted; re-run is a no-op; a file WITH frontmatter is untouched. | R24, R56, D32(4), N7 | **v1** (M1/M3) |
+
+*This is the front-door scenario of the product (persona P0 "drop-in user": "I have notes; I want a living, linked, agent-readable wiki with zero configuration"). It precedes every other flow in quickstarts and on the site home.*
 
 ## 3. Non-functional requirements
 
