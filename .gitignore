@@ -37,3 +37,14 @@ coverage/
 .tox/
 .pytest_cache/
 .coverage
+
+# GABBE
+GABBE/
+#.agents
+#.claude
+#.continue
+#.codex
+#.github/skills
+#docs
+#agents
+#AGENTS.md
