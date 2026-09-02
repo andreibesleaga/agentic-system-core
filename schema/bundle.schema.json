@@ -5,7 +5,7 @@
   "description": "Frontmatter of content/index.md, the Bundle root document (AGSC-01-04). It MUST NOT carry a type key: the root is not an item and does not enter the graph as one. additionalProperties is true: unknown keys are preserved and reported as AGSC-E207 warnings (AGSC-02-05). CC0-1.0.",
   "type": "object",
   "additionalProperties": true,
-  "required": ["spec_version", "title", "description", "base"],
+  "required": ["spec_version", "okf_version", "title", "description", "base"],
   "properties": {
     "spec_version": {
       "description": "SemVer; a reader MUST accept any Bundle whose MAJOR equals its own (AGSC-00-14, AGSC-00-17).",
@@ -38,8 +38,9 @@
         "agent": { "type": "string" },
         "model": { "type": "string" },
         "operator": {
+          "description": "AGSC-02-07 as amended by D48(5): human:<id> only.",
           "type": "string",
-          "pattern": "^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._+-]*)$"
+          "pattern": "^human:[a-z0-9][a-z0-9._-]*$"
         },
         "agreement": { "type": "string" }
       }

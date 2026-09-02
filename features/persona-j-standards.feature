@@ -10,16 +10,16 @@ Feature: Standards implementer adopts the discovery format on their own site
   Scenario: Implementer discovers the linkset via the well-known URI
     When the implementer runs 'curl -H "Accept: application/linkset+json" https://agenticsystemcore.com/.well-known/agentic-knowledge'
     Then the response is a RFC 9264 linkset with "anchor" equal to the site base
-    And it links "describedby" to the same well-known file's integrity block
+    And it links "describedby" to "/graph.jsonld"
     And it links relation "https://w3id.org/agentic-system-core/rel#graph" to "/graph.jsonld" and to "/graph.ttl"
-    And it links relation "…rel#ontology" to "/ns/asc.ttl" and "…rel#context" to "/ns/context.jsonld"
+    And it links relation "…rel#ontology" to "/ns/agsc.ttl" and "…rel#context" to "/ns/context.jsonld"
     And it links relation "…rel#now" to "/now.md" and "…rel#skills" to "/skills/index.json"
     And it links "alternate" to "/llms.txt" and "service-doc" to "/specs/"
 
   @PRD-024
   Scenario: Implementer verifies the integrity block
     When the implementer reads the integrity block inside "/.well-known/agentic-knowledge"
-    Then it contains "spec_version", "bundle.id/base/title", "counts", "hashes.graph.nq" (sha256) and "generated_at"
+    Then it contains "spec_version", "bundle.id/base/title", "counts", "hashes.graph_nq" (sha256) and "generated_at"
     And "generated_at" derives from "SOURCE_DATE_EPOCH", never the wall clock
 
   @PRD-050
@@ -37,3 +37,9 @@ Feature: Standards implementer adopts the discovery format on their own site
     When the implementer fetches "/llms.txt"
     Then every published item is reachable from the listed links
     And no authentication or API key is required
+
+  @PRD-054
+  Scenario: Implementer validates the published artifacts with the shipped tools
+    When the implementer runs "node tools/validate-wellknown https://agenticsystemcore.com/.well-known/agentic-knowledge"
+    Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "validate-wellknown"
+    And running it against a linkset carrying an unregistered short name exits 1

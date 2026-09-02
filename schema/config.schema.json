@@ -34,7 +34,8 @@
       "properties": {
         "id": { "$ref": "#/$defs/slug" },
         "license_prose": { "type": "string" },
-        "license_schema": { "type": "string" }
+        "license_schema": { "type": "string" },
+        "operator": { "$ref": "#/$defs/human_actor" }
       }
     },
     "ns": {
@@ -73,9 +74,8 @@
       "additionalProperties": false,
       "properties": {
         "out": { "description": "Build output directory; default www (AGSC-01-19).", "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
-        "search": { "type": "boolean" },
-        "rdfxml": { "type": "boolean" },
-        "feed": { "type": "boolean" }
+        "rdfxml": { "description": "Emit /graph.rdf; default false, the only should-level RDF view (AGSC-05-06, AGSC-06-01).", "type": "boolean" },
+        "feed": { "description": "Emit /feed.xml; default true (AGSC-06-01).", "type": "boolean" }
       }
     },
     "lint": {
@@ -93,6 +93,11 @@
   },
   "$defs": {
     "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
-    "slug": { "type": "string", "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$" }
+    "slug": { "type": "string", "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$" },
+    "human_actor": {
+      "description": "AGSC-01-25: the accountable operator of this Bundle, human:<id> only; the first source of prov.operator at adoption (AGSC-02-90).",
+      "type": "string",
+      "pattern": "^human:[a-z0-9][a-z0-9._-]*$"
+    }
   }
 }

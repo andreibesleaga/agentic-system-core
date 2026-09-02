@@ -8,16 +8,16 @@
 
 ## 9.2 Vector format
 
-- **AGSC-09-04** A vector is one JSON file under `tests/vectors/<area>/` containing one object with members `id`, `area`, `rule`, `level`, `description`, `input`, OPTIONAL `options`, and `expected`. Areas are `frontmatter/`, `slug/`, `links/`, `jcs/`, `graph/`, `lint/`, `cli/`, plus `bundle/`, `prov/`, `ledger/`, `compose/`, `build/`, `discovery/`, `import/`, `export/`, `skills/`. [PLAN §5.3, research/12 §H]
-- **AGSC-09-05** `rule` MUST cite one rule id of this specification. `level` is `required` or `optional`. A **negative** vector's `expected` MUST be exactly `{"error": "AGSC-E<nnn>"}` — an error *code*, never a message. [research/12 §H]
+- **AGSC-09-04** A vector is one JSON file under `tests/vectors/<area>/` containing one object with members `id`, `area`, `rule`, `level`, `description`, `input`, OPTIONAL `options`, and `expected`. Areas are `frontmatter/`, `slug/`, `links/`, `jcs/`, `graph/`, `lint/`, `cli/`, plus `bundle/`, `prov/`, `ledger/`, `compose/`, `build/`, `discovery/`, `adopt/`, `import/`, `export/`, `skills/`. [PLAN §5.3, research/12 §H, V2 §4]
+- **AGSC-09-05** `rule` MUST cite one rule id of this specification. `level` is `required`, `optional` or `withdrawn` (AGSC-00-16); a `withdrawn` vector MUST NOT be counted for or against any conformance claim. A **negative** vector's `expected` MUST be exactly `{"error": "AGSC-E<nnn>"}` — an error *code*, never a message. [research/12 §H, D48(7)]
 - **AGSC-09-06** Vector files MUST be UTF-8, LF-terminated, NFC, I-JSON, with object members in JCS order (§04); they MAY be pretty-printed for review. They MUST be consumable without executing any code from this repository, so that a port in any language can run them directly. [NFR-02 ← D47]
 
 ## 9.3 CLI contract
 
 - **AGSC-09-07** The verb set is exactly thirteen: `init`, `lint`, `build`, `verify`, `ci`, `export`, `import`, `compose`, `propose`, `review`, `refresh`, `skills`, `mcp`. Any other verb MUST exit 2 with `AGSC-E001`. [PRD-001 ← D41, R54]
-- **AGSC-09-08** Exit codes: **0** success; **1** findings, a failed gate or a non-reproducible build; **2** usage error (unknown verb, unknown flag, missing argument, invalid configuration). [PRD-007, PLAN §8]
+- **AGSC-09-08** Exit codes: **0** success; **1** findings, a failed gate or a non-reproducible build; **2** usage error (unknown verb, unknown flag, missing argument, invalid configuration — including a malformed `SOURCE_DATE_EPOCH`, `AGSC-E603`, which is an environment/configuration fault and never a finding). [PRD-007, PLAN §8, D48(7)]
 - **AGSC-09-09** Global flags `--json`, `--quiet`, `--plain`, `--no-input`, `--version` MUST be honoured, as MUST `NO_COLOR` and `AGSC_*` environment variables. Precedence is flags > environment > project configuration > user configuration. [PRD-007 ← R54, R30]
-- **AGSC-09-10** Data goes to stdout; diagnostics go to stderr. Under `--json`, stdout MUST carry exactly one JCS-canonical envelope and stderr MUST carry one JSON object per line, one per finding. [PLAN §8]
+- **AGSC-09-10** Data goes to stdout; diagnostics go to stderr. Under `--json`, stdout MUST carry exactly one JCS-canonical envelope and stderr MUST carry one JSON object per line, one per finding. `findings[]` in the envelope, and the stderr lines, MUST be ordered by `(file, line, col, code)` compared code-point-wise, so that a byte comparison of the output is stable however the lint phases were scheduled. [PLAN §8, D48(3)]
 - **AGSC-09-11** The envelope shape is:
 
 ```json
@@ -38,7 +38,9 @@ A finding is `{ "code": "AGSC-E301", "col": 1, "file": "content/concepts/a.md", 
 
 ## 9.4 Error-code registry
 
-Codes are `AGSC-E<nnn>`; the hundreds digit is the area of PLAN §8 (`0` CLI, `1` PARSE, `2` SCHEMA, `3` LINK, `4` LINT, `5` PROV, `6` DET, `7` LEDGER, `8` COMPOSE, `9` IO).
+Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN §8 (`0` CLI, `1` PARSE, `2` SCHEMA, `3` LINK, `4` LINT, `5` PROV, `6` DET, `7` LEDGER, `8` COMPOSE, `9` IO). No other code format (`AGSC-<AREA>-<nnn>`, `AGSC-DET-nnn`) exists anywhere in this system; prose or a diagram using one is a defect of that document (D48(7)).
+
+**Precedence.** Where two codes could name one fault, the more specific one wins: `AGSC-E203` is reported for every enum and `tags.allowed` violation, `AGSC-E204` for every pattern violation, and `AGSC-E201` only for a schema failure that no 2xx code names. Two conforming engines therefore report the same code for the same input (D48(7)).
 
 | Code | Meaning | Rule |
 |---|---|---|
@@ -55,11 +57,11 @@ Codes are `AGSC-E<nnn>`; the hundreds digit is the area of PLAN §8 (`0` CLI, `1
 | `AGSC-E107` | second YAML document | AGSC-02-01 |
 | `AGSC-E108` | encoding violation (BOM, CRLF, non-NFC, trailing newline) | AGSC-01-14 |
 | `AGSC-E109` | unsupported Markdown construct | AGSC-02-20 |
-| `AGSC-E201` | schema validation failed | AGSC-00-09 |
+| `AGSC-E201` | schema validation failed (only where no 2xx code is more specific) | AGSC-00-09 |
 | `AGSC-E202` | required key missing | AGSC-02-07 |
 | `AGSC-E203` | value outside enum or `tags.allowed` | AGSC-01-21 |
 | `AGSC-E204` | pattern violation (slug, `iri`, instant) | AGSC-01-10 |
-| `AGSC-E205` | `type` does not match folder | AGSC-01-03 |
+| `AGSC-E205` | file-placement violation (`type` does not match folder; deferred language-variant file) | AGSC-01-03, AGSC-01-13 |
 | `AGSC-E206` | slug not unique in Bundle | AGSC-01-11 |
 | `AGSC-E207` | unknown key (warning) | AGSC-02-05 |
 | `AGSC-E301` | link target unresolved | AGSC-03-02 |
@@ -68,27 +70,31 @@ Codes are `AGSC-E<nnn>`; the hundreds digit is the area of PLAN §8 (`0` CLI, `1
 | `AGSC-E304` | unknown link key (warning) | AGSC-03-03 |
 | `AGSC-E305` | orphan item (warning) | AGSC-03-10 |
 | `AGSC-E306` | computed inverse authored | AGSC-03-04 |
+| `AGSC-E307` | cluster nesting deeper than 3 | AGSC-03-22 |
+| `AGSC-E308` | cluster has more than one `broader` | AGSC-03-22 |
 | `AGSC-E401` | agent-directed imperative, blob or non-http scheme | AGSC-08-13 |
 | `AGSC-E402` | hidden text | AGSC-08-13 |
 | `AGSC-E403` | secret detected | AGSC-08-15 |
 | `AGSC-E404` | personal data outside `prov`/`sources[]` | AGSC-08-16 |
 | `AGSC-E405` | clean-room violation | AGSC-08-17 |
-| `AGSC-E406` | expected body section missing (warning) | AGSC-02-21 |
+| `AGSC-E406` | expected body section missing, or `concept`/`cluster` without `description` (warning) | AGSC-02-21 |
 | `AGSC-E407` | executable content in a skill pack | AGSC-07-15 |
 | `AGSC-E501` | `prov` missing | AGSC-08-01 |
 | `AGSC-E502` | `prov.origin` invalid | AGSC-02-07 |
 | `AGSC-E503` | `prov.operator` missing | AGSC-08-01 |
 | `AGSC-E504` | DCO-Plus trailer missing or malformed | AGSC-08-06 |
 | `AGSC-E505` | agent-authored change without matching operator | AGSC-08-07 |
+| `AGSC-E506` | adoption defaulted or normalized a value (warning) | AGSC-02-90 |
 | `AGSC-E601` | JSON artefact not JCS-canonical | AGSC-04-06 |
 | `AGSC-E602` | build not byte-reproducible | AGSC-04-02 |
-| `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed | AGSC-04-09 |
+| `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed (exit 2) | AGSC-04-09 |
 | `AGSC-E604` | emitted text not NFC | AGSC-04-07 |
 | `AGSC-E605` | blank node in an RDF export | AGSC-05-08 |
+| `AGSC-E606` | build instant defaulted to 0, no git history (warning) | AGSC-04-09 |
 | `AGSC-E701` | ledger chain broken | AGSC-08-23 |
 | `AGSC-E702` | ledger rewritten or out of order | AGSC-08-23 |
 | `AGSC-E801` | `excludes` conflict after closure | AGSC-07-06 |
-| `AGSC-E802` | composition target missing | AGSC-07-03 |
+| `AGSC-E802` | composition target unavailable (slug absent from the graph; `requires` target hidden by `supersedes`) | AGSC-07-03, AGSC-07-05a |
 | `AGSC-E803` | `contradicts` or missing `uses` (warning) | AGSC-07-07 |
 | `AGSC-E901` | file not found | AGSC-01-01 |
 | `AGSC-E902` | path escapes the Bundle root | AGSC-01-16 |
@@ -98,6 +104,6 @@ Codes are `AGSC-E<nnn>`; the hundreds digit is the area of PLAN §8 (`0` CLI, `1
 - **AGSC-09-15** Codes are permanent. A retired code MUST NOT be reused; new codes take the next free number in their block. [AGSC-00-16]
 
 ## 9.9 Independent validation tooling (added 2026-09-02, S01 Amendment 2)
-- **AGSC-09-90** A conforming distribution MUST include the `tools/` validators of PRD-054, each runnable standalone (no engine import beyond stdlib), so that every normative artifact (schemas, spec text, ontology, vectors, well-known file, features, diagrams) is checkable by an independent party. [PRD-054]
+- **AGSC-09-90** A conforming distribution MUST include the `tools/` validators of PRD-054, each runnable standalone (no engine import beyond stdlib), so that every normative artifact (schemas, spec text, ontology, vectors, well-known file, features, diagrams) is checkable by an independent party. A validator's `--json` output MUST be the AGSC-09-11 envelope with `verb` set to the tool's own name (`validate-spec`, `validate-schemas`, `validate-ontology`, `validate-vectors`, `validate-wellknown`, `validate-features`, `validate-diagrams`) and `version` set to the `spec_version` it validated against; findings use the same finding object, the same `(file, line, col, code)` ordering (AGSC-09-10) and the same `AGSC-E<nnn>` codes. Seven tools therefore speak one diagnostic language, and no tool invents a shape. [PRD-054 ← V2-25]
 - **AGSC-09-91** `tools/validate-spec` MUST fail on: duplicate rule id; a rule id referenced but undefined; an error code used in spec/01–08 but absent from the §9 registry; a MUST/SHOULD sentence with no rule id; a trace tag naming a nonexistent PRD/D id. [PRD-054, NFR-03]
 - **AGSC-09-92** CI MUST run all validators on every PR; a validator failure blocks merge like any Gate. [PRD-054, PRD-049]

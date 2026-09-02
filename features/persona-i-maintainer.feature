@@ -15,13 +15,15 @@ Feature: Owner-as-operator keeps the site green with zero maintenance
     Then the exit code and artifacts match the local run exactly
 
   @PRD-005
-  Scenario: Every build/ci run appends one verifiable ledger entry
+  Scenario: Every build/ci run derives the whole verifiable ledger
     When "agsc build" or "agsc ci" completes successfully
-    Then exactly one line is appended to "ledger.jsonl" as "{ts, kind: \"build\", ref, actor, prev, hash}"
+    Then "ledger.jsonl" is recomputed from git history into the build output as lines "{ts, kind, ref, actor, prev, hash}"
     And "hash" equals "sha256(prev + canonical(entry))"
+    And no ledger line is ever committed to the content branch
     When the maintainer runs "npx agentic-system-core verify --ledger"
     Then the full chain re-verifies offline
-    And tampering with any one line makes "verify --ledger" fail
+    And the recomputed head equals "integrity.ledger_head" in the well-known file
+    And tampering with any one line, or truncating the tail, makes "verify --ledger" fail
 
   @PRD-044
   Scenario: The weekly refresh cron opens at most one issue, never a commit

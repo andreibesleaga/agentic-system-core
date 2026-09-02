@@ -32,7 +32,7 @@ flowchart TD
   H --> I{"Ruleset: 1 approval + Code Owner + green ci?"}
   I -- no --> H
   I -- yes --> J["Owner merges"]
-  J --> K["deploy.yml: agsc ci then Cloudflare Pages publish www/"]
+  J --> K["site ci.yml (deploy job): agsc ci then Cloudflare Pages publish www/"]
   K --> L["Live in ~2 minutes"]
 ```
 
@@ -43,14 +43,11 @@ flowchart TD
   A["Open /compose/"] --> B["Load graph.jsonld + agsc-core.js"]
   B --> C["Tick Concepts, filter by cluster/tag"]
   C --> D["closure.js runs client-side"]
-  D --> E["requires closure adds items + explanation path"]
-  D --> F["excludes mutex reported"]
-  D --> G["contradicts / missing uses warnings shown"]
-  D --> H["supersedes hides superseded items"]
-  E --> I["Name the Harness"]
-  F --> I
-  G --> I
-  H --> I
+  D --> E["1 requires closure adds items + explanation path"]
+  E --> F["2 supersedes hides superseded items\n(a survivor requiring a hidden item = AGSC-E802)"]
+  F --> G["3 excludes mutex reported over the survivors"]
+  G --> H["4 contradicts / missing uses warnings shown"]
+  H --> I["Name the Harness"]
   I --> J["Generate seven files in memory"]
   J --> K{"Browser zip writer available?"}
   K -- yes --> L["Download harness-<name>.zip"]
@@ -83,10 +80,10 @@ audit/D §3(a)/(b)/(e)/(f); PLAN.md §6(b), §6(c).
 
 ```mermaid
 flowchart LR
-  A["Folder of plain .md notes"] --> B["npx agentic-system-core init\n(adopt: minimal frontmatter,\nbody bytes untouched)"]
+  A["Folder of plain .md notes"] --> B["npx agentic-system-core init\n(adopt: minimal frontmatter, body bytes untouched,\nmoved to content/concepts/<slug>.md, original path in aliases)"]
   B --> C["npx agentic-system-core ci\n(lint warn-only -> build -> verify)"]
   C --> D["www/ static site\n+ graph.jsonld + llms.txt\n+ .well-known/agentic-knowledge"]
   D --> E["git push -> Cloudflare Pages\n= online live wiki"]
   D --> F["npx agentic-system-core mcp\n= agent-readable memory"]
 ```
-Trace: PRD-053, AGSC-02-90..92, R24, R56.
+Trace: PRD-053, AGSC-02-90..93, R24, R56.

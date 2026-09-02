@@ -27,22 +27,23 @@
 ## 3.3 Cycles and integrity
 
 - **AGSC-03-07** `requires` MUST be acyclic. A cycle is error `AGSC-E302` and MUST name every slug on the cycle in discovery order. [audit/D §1.3, PRD-036]
-- **AGSC-03-08** `broader`/`narrower` MUST be acyclic (`AGSC-E303`). A cluster MUST have at most one `broader`, giving a mono-parent tree of depth ≤3 (family › deck › sub-deck). [audit/D §1.3, research/16 §3.5]
+- **AGSC-03-08** `broader`/`narrower` MUST be acyclic (`AGSC-E303`). A cluster MUST have at most one `broader`; the mono-parent tree it forms MUST be at most 3 levels deep (family › deck › sub-deck). Neither bound follows from the other, so both are checked and coded separately by AGSC-03-22. [audit/D §1.3, research/16 §3.5]
 - **AGSC-03-09** `derived-from` and `supersedes` targets MUST exist; a dangling target is `AGSC-E301`, not a warning. [audit/D §1.3]
 - **AGSC-03-10** An item with no inbound Link and no `clusters[]` entry MUST be reported as an orphan warning (`AGSC-E305`). [research/16 §3.4 CQ7]
+- **AGSC-03-22** The cluster tree of AGSC-03-08 MUST be enforced by two lint checks, evaluated over `type: cluster` items after the acyclicity check of `AGSC-E303`: nesting deeper than 3 levels (a cluster whose chain of `broader` ancestors is longer than 2) is error `AGSC-E307` and MUST name the chain root-first; a cluster carrying more than one `broader` value is error `AGSC-E308` and MUST name every parent slug in code-point order. The schema enforces the second bound as `maxItems: 1` on the cluster branch's `broader`. [PRD-002 ← D48(7), AGSC-03-08]
 
 ## 3.4 Inline links and wikilinks
 
 - **AGSC-03-11** Inline Markdown links between items produce untyped graph edges `asc:mentions`. `mentions` is not a Link key and MUST NOT appear in frontmatter. [audit/D §1.3, research/16 §3.3]
 - **AGSC-03-12** Wikilinks `[[target(#anchor)?(|alias)?]]` MAY appear in authored files and MUST be normalized by `lint --fix` to relative Markdown links `[alias](../<type-plural>/<slug>.md#anchor)`. `![[…]]` embeds MUST be converted to images or removed. Dendron's reversed `[[alias|note]]` order MUST NOT be assumed without an explicit import flag. [research/12 §P rule 15]
-- **AGSC-03-13** Heading anchors MUST be computed as: NFC → ASCII lowercase → remove characters outside `[a-z0-9 -]` → spaces to `-` → collapse repeated `-`; duplicates get `-1`, `-2`, … in document order. [research/12 §P rule 17]
+- **AGSC-03-13** Heading anchors MUST be computed as: NFC → ASCII lowercase → remove characters outside `[a-z0-9 -]` → spaces to `-` → collapse repeated `-` → **trim leading and trailing `-`**; an empty result becomes `section-<n>`, `<n>` being the 1-based document order of the heading among the headings whose anchor is empty. A duplicate anchor takes the suffix `-2`, then `-3`, … in document order, re-checking after each suffix and taking the next free one, so a suffixed anchor never collides with a naturally occurring anchor. Every anchor produced by this algorithm therefore matches `^[a-z0-9][a-z0-9-]*$`, the `link_target` grammar of AGSC-03-02. [research/12 §P rule 17, D48(7)]
 
 ## 3.5 Combiner semantics (normative for §07)
 
 - **AGSC-03-14** `requires` is the only key that adds items to a selection (transitive closure). [PRD-036 ← R6]
 - **AGSC-03-15** `excludes` is evaluated **after** the closure. Any surviving pair related by `excludes` invalidates the composition (`AGSC-E801`). [PRD-036]
 - **AGSC-03-16** `contradicts` between two selected items and a `uses` target absent from the selection produce warnings, never failures. [PRD-036]
-- **AGSC-03-17** An item reachable only through `supersedes` from a selected item MUST be hidden from the selection; the superseding item is kept. [PRD-036]
+- **AGSC-03-17** An item that any member of the closed selection `supersedes` MUST be hidden, whether it was selected directly or added by the `requires` closure; the superseding item is kept. Hiding is one set difference over the closed selection — not a reachability test — so it is the same set that AGSC-07-05 removes. [PRD-036 ← D48(2)]
 - **AGSC-03-18** `related`, `broader`, `narrower` and `derived-from` MUST NOT change a composition; they are navigational or provenance edges. [PRD-036, D43(4)]
 
 ## 3.6 Import mapping

@@ -1,0 +1,28 @@
+{
+  "area": "compose",
+  "description": "A hard dependency is never dropped in silence. Step 1 pulls legacy-store in because app requires it; Step 2 hides legacy-store because the selected new-store supersedes it — and app, which survives, still requires it. The composition is invalid with AGSC-E802 naming the superseding item; closure is NOT re-run and new-store is NOT substituted, because the selection is the author's. The hidden item appears in hidden[] and not in added[].",
+  "expected": {
+    "exit": 1,
+    "harness_emitted": false,
+    "verdict": {
+      "added": [],
+      "conflicts": [{ "code": "AGSC-E802", "key": "requires", "pair": ["app", "legacy-store"], "superseding": "new-store" }],
+      "hidden": ["legacy-store"],
+      "selection": ["app", "new-store"],
+      "valid": false,
+      "warnings": []
+    }
+  },
+  "id": "compose-0002",
+  "input": {
+    "items": [
+      { "requires": ["legacy-store"], "slug": "app", "type": "concept" },
+      { "slug": "legacy-store", "type": "concept" },
+      { "slug": "new-store", "supersedes": ["legacy-store"], "type": "concept" }
+    ],
+    "selection": ["new-store", "app"]
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-07-05a"
+}

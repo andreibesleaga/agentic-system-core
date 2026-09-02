@@ -21,10 +21,10 @@ flowchart TD
 
   DIFF{"S13: byte-identical\nacross both builds?"}
   S13 --> DIFF
-  DIFF -- "no" --> FAIL1["exit 1 (AGSC-DET-nnn)"]
+  DIFF -- "no" --> FAIL1["exit 1 (AGSC-E602)"]
   DIFF -- "yes" --> EXPORT["agsc ci: export; attest (CI only)"]
-  EXPORT --> LEDGER["Append ONE ledger.jsonl line\n{ts, kind:'build', ref, actor, prev, hash}\nhash = sha256(prev + canonical(entry))"]
-  LEDGER --> REVERIFY["Re-verify the hash chain\n(agsc verify --ledger)"]
+  EXPORT --> LEDGER["Derive the WHOLE ledger.jsonl from git history\n{ts, kind, ref, actor, prev, hash} per event\nhash = sha256(prev + canonical(entry)) — written into www/,\nnever committed (D48(1))"]
+  LEDGER --> REVERIFY["Re-verify the hash chain and compare the head\nto integrity.ledger_head (agsc verify --ledger)"]
   REVERIFY --> GATE["exit 0; dist/gate.json carries the verdict"]
 
   FAIL1 --> DONE1(("stop"))
@@ -34,7 +34,9 @@ flowchart TD
 Steps 1–13 are `agsc build`'s own pipeline (audit/D §4, "Build pipeline internals"); N8 budget
 enforcement (HTML ≤100 KB/page, `search.json` ≤500 KB, ≤60 s/500 items) is checked inline during
 steps 7–9 and is a lint-style failure, not a numbered step. `agsc ci` wraps `build` with the
-double-build byte-compare (already step 13 internally), then `export`/`attest`, the single ledger
-append, and offline chain re-verification (PLAN.md §6(a) steps 9–12; D44(h)).
+double-build byte-compare (already step 13 internally), then `export`/`attest`, the deterministic
+re-derivation of `ledger.jsonl` into the build output, and offline chain re-verification against the
+published head (PLAN.md §6(a) steps 9–12; D44(h) as amended by D48(1)). Error codes in this system have
+exactly one format, `AGSC-E<nnn>` (spec/09 §9.4).
 
 Trace: PRD-004, PRD-005, PRD-020, NFR-04 · audit/D §4 (13-row table) · PLAN.md §6(a), ADR-006, D44(h).

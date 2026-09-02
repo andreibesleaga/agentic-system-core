@@ -1,12 +1,12 @@
 {
   "area": "compose",
-  "description": "The four steps in order: requires closure adds mcp with an explanation path; supersedes hides mcp-v1; excludes is then evaluated over the survivors and invalidates the composition; the absent uses target is only a warning. Evaluating excludes before the closure, or re-running the closure after hiding, gives a different answer — that is why the order is normative.",
+  "description": "The four steps in the normative order closure, hiding, mutex, warnings (AGSC-07-04 to 07-08): the requires closure adds mcp with an explanation path; supersedes hides the directly selected mcp-v1; excludes is then evaluated over the survivors and invalidates the composition; the absent uses target is only a warning. Evaluating excludes before hiding, evaluating it before the closure, or re-running the closure after hiding, gives a different answer — that is why the order is normative. selection[] is the surviving set in code-point order, so the input order a2a, mcp-v1, legacy-rpc does not reach the verdict.",
   "expected": {
     "exit": 1,
     "harness_emitted": false,
     "verdict": {
       "added": [{ "path": [["a2a", "requires", "mcp"]], "slug": "mcp" }],
-      "conflicts": [{ "key": "excludes", "pair": ["legacy-rpc", "mcp"] }],
+      "conflicts": [{ "code": "AGSC-E801", "key": "excludes", "pair": ["legacy-rpc", "mcp"] }],
       "hidden": ["mcp-v1"],
       "selection": ["a2a", "legacy-rpc", "mcp"],
       "valid": false,

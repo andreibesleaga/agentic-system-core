@@ -8,7 +8,7 @@
 
 ## 4.2 JSON (JCS, RFC 8785)
 
-- **AGSC-04-04** Every emitted JSON artefact — `graph.jsonld`, per-item `.jsonld`, `search.json`, the well-known file, `dist/gate.json`, `ledger.jsonl` entries, vectors — MUST be JCS-canonical and MUST be followed by exactly one LF. [research/12 §P rule 19]
+- **AGSC-04-04** Every emitted JSON artefact — `graph.jsonld`, per-item `.jsonld`, `search.json`, the well-known file, `dist/gate.json`, `ledger.jsonl` entries — MUST be JCS-canonical and MUST be followed by exactly one LF. Vector files are **not** emitted artefacts: they are governed by AGSC-09-06, which requires JCS member *order* but permits pretty-printing. [research/12 §P rule 19, D48(7)]
 - **AGSC-04-05** JCS here means: UTF-8 output; no whitespace between tokens; members sorted by **UTF-16 code units** of the member name; numbers per ECMA-262 §7.1.12.1 (`Number#toString`); input restricted to I-JSON. Locale and Unicode code-point sorting MUST NOT be used: they differ from UTF-16 order for astral-plane keys. [research/12 §P rule 24 as corrected; audit/G §1 RFC 8785 row]
 - **AGSC-04-06** A JSON artefact that is not JCS-canonical is error `AGSC-E601`. [PRD-004]
 
@@ -19,14 +19,14 @@
 
 ## 4.4 Time
 
-- **AGSC-04-09** The build instant MUST come from `SOURCE_DATE_EPOCH` (integer seconds since the Unix epoch), defaulting to the last commit time. A malformed value MUST cause a non-zero exit (`AGSC-E603`); the variable MUST NOT be unset for child processes. [research/12 §3, §P rule 23]
+- **AGSC-04-09** The build instant MUST come from `SOURCE_DATE_EPOCH` (integer seconds since the Unix epoch), defaulting to the last commit time. Where no git history exists — the drop-in flow of PRD-053 runs before `git init` — the default MUST be `0` (`1970-01-01T00:00:00Z`) with warning `AGSC-E606`, so the instant is always defined. A malformed value MUST exit 2 (`AGSC-E603`, the configuration class of AGSC-09-08); the variable MUST NOT be unset for child processes. [research/12 §3, §P rule 23; D48(7)]
 - **AGSC-04-10** Every embedded timestamp MUST be rendered from that instant as `YYYY-MM-DDTHH:MM:SSZ` — UTC, seconds precision, never milliseconds, never a local offset. [research/12 §P rules 7, 23]
-- **AGSC-04-11** Staleness, "last build", NOW counts and feed dates MUST all derive from the same instant. Only the `refresh` verb MAY read a real clock. [PRD-015, PRD-017, G17]
+- **AGSC-04-11** Staleness, "last build", NOW counts and feed dates MUST all derive from the same instant. Only the `refresh` verb MAY read a real clock, and a clock it reads MUST NOT reach any emitted artefact: ledger `ts` values derive from `SOURCE_DATE_EPOCH` alone (AGSC-08-21), so a `refresh` observation can only open an issue. [PRD-015, PRD-017, G17, D48(7)]
 
 ## 4.5 Ordering
 
 - **AGSC-04-12** All ordering MUST be code-point comparison of the sort key. Locale collation, case-insensitive collation and `Intl` comparators MUST NOT be used. [research/12 §P rule 24]
-- **AGSC-04-13** Explicit sort keys: items by slug; links by `(key, target)`; tags by code point; cluster members by `(order, slug)` with absent `order` sorting last; search tokens by code point; sitemap entries by URL; N-Quads lines by their serialized bytes; RDF subjects, then predicates, then objects by IRI or lexical form; JSON object members by AGSC-04-05. [research/12 §3, §P rule 24]
+- **AGSC-04-13** Explicit sort keys: items by slug; links by `(key, target)`; tags by code point; cluster members by `(order, slug)` with absent `order` sorting last; search tokens as JSON member names per AGSC-04-05 (UTF-16 code units), never by code point; sitemap entries by URL; N-Quads lines by their serialized bytes; RDF subjects, then predicates, then objects by IRI or lexical form; JSON object members by AGSC-04-05. [research/12 §3, §P rule 24]
 - **AGSC-04-14** Arrays authored by a human (`tags`, `clusters`, `aliases`, Link arrays) MUST retain author order in the source file and MUST be sorted only in derived artefacts, so that `lint --fix` never reorders meaning-bearing first entries such as the primary cluster. [audit/D §1.2]
 
 ## 4.6 Hashes and the canonical RDF form

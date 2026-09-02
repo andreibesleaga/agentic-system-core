@@ -17,10 +17,23 @@ trailer-block = signoff *( LF assisted )
 signoff       = "Signed-off-by:" SP name SP "<" email ">" SP "(" agreement ")"
 assisted      = "Assisted-by:" SP producer "/" version SP "(operator:" SP actor ")"
 agreement     = "CA-v1"
-actor         = "human:" 1*( ALPHA / DIGIT / "-" / "_" )
+actor         = "human:" idstart *idchar
+idstart       = lcalpha / DIGIT
+idchar        = lcalpha / DIGIT / "." / "_" / "-"
+lcalpha       = %x61-7A                       ; a-z
+name          = nchar *( nchar / SP )         ; MUST NOT end with SP
+nchar         = %x21-3B / %x3D / %x3F-7E      ; visible ASCII except "<" and ">"
+email         = local "@" domain
+local         = 1*( ALPHA / DIGIT / "." / "!" / "#" / "$" / "%" / "&" / "'" /
+                    "*" / "+" / "-" / "/" / "=" / "?" / "^" / "_" / "`" /
+                    "{" / "|" / "}" / "~" )   ; RFC 5322 dot-atom subset
+domain        = label *( "." label )
+label         = ( ALPHA / DIGIT ) [ *( ALPHA / DIGIT / "-" ) ( ALPHA / DIGIT ) ]
+producer      = 1*( ALPHA / DIGIT / "-" / "_" / "." )
+version       = 1*( ALPHA / DIGIT / "." / "-" / "+" )
 ```
 
-A missing or malformed trailer is `AGSC-E504`. [PRD-040 ← D07, D37]
+`name` is disambiguated greedily: the **last** `SP "<"` on the line starts the email, everything before it is the name. `actor` is exactly the `human:<id>` form that AGSC-02-07 requires of `prov.operator`, so a valid trailer exists for every valid item. A missing or malformed trailer is `AGSC-E504`. [PRD-040 ← D07, D37, D48(5)]
 
 - **AGSC-08-07** When `prov.origin` is `ai-assisted` or `ai-generated`, an `Assisted-by:` line naming the operator is REQUIRED in addition to the `Signed-off-by:` line, and the operator MUST match `prov.operator` (`AGSC-E505`). [PRD-040, PLAN §12 T2]
 - **AGSC-08-08** Approval is human-only. An agent MUST NOT be recorded as an approver. [D13, PRD-041]
@@ -44,9 +57,9 @@ A missing or malformed trailer is `AGSC-E504`. [PRD-040 ← D07, D37]
 
 ## 8.5 The ledger
 
-- **AGSC-08-20** `ledger.jsonl` MUST be append-only, one JCS-canonical object per LF-terminated line, written only by `build` and `ci` — never by hand, never by a bot commit. [PRD-005 ← D44(h), Art. XII]
-- **AGSC-08-21** An entry has exactly `actor`, `hash`, `kind`, `prev`, `ref`, `ts`, plus OPTIONAL `usage{model, tokens_in, tokens_out, cost_usd, estimate}`. `kind` ∈ `build|proposal|merge|review|refresh|release`; `ts` derives from `SOURCE_DATE_EPOCH`. [D44(h)]
+- **AGSC-08-20** `ledger.jsonl` is a **derived artefact**, not a stored one: `build` and `ci` MUST recompute the whole file deterministically from the git history of the content branch (one entry per commit, in commit order, `kind` and `actor` read from the commit and its trailers) plus the facts of the run, and MUST write it only into the build output (`build.out`, default `www/`) and the release assets. It is one JCS-canonical object per LF-terminated line, hash-chained by AGSC-08-22, never hand-written, never committed to `content/` and never committed by CI (AGSC-08-02). Two builds of the same history therefore produce the same file — there is no append race, no partial-write recovery and no writer to serialize. [PRD-005 ← D44(h) as amended by D48(1), Art. XII]
+- **AGSC-08-21** An entry has exactly `actor`, `hash`, `kind`, `prev`, `ref`, `ts`, plus OPTIONAL `usage{model, tokens_in, tokens_out, cost_usd, estimate}`. `kind` ∈ `build|proposal|merge|review|refresh|release`; `ref` is the commit or tag the entry derives from; `ts` derives from `SOURCE_DATE_EPOCH` (or, for a per-commit entry, from that commit's committer time) and never from a wall clock (AGSC-04-11). [D44(h), D48(1)]
 - **AGSC-08-22** `hash` MUST be the lowercase hex SHA-256 of `prev` concatenated with the JCS serialization of the entry **excluding** its own `hash`. The first entry's `prev` is the empty string. [D44(h)]
-- **AGSC-08-23** `verify --ledger` MUST recompute the chain offline and fail with `AGSC-E701` at the first mismatching `hash` or `prev`. Rewriting or reordering the file is `AGSC-E702`. [PRD-005]
+- **AGSC-08-23** `verify --ledger` MUST recompute the chain offline — from the local git history for a clone, or over the published file for a downloaded one — and fail with `AGSC-E701` at the first mismatching `hash` or `prev`. It MUST additionally compare the recomputed chain head to `integrity.ledger_head` in the local well-known file (§06); a mismatch is `AGSC-E701` even when every line links correctly, which is what detects a truncated tail. A published file whose lines differ from the recomputation of the same history is `AGSC-E702`. [PRD-005, D48(1)]
 - **AGSC-08-24** The chain head MUST be published in the well-known file's `integrity.ledger_head` (§06) and attested at release. [PRD-024, D44(h)]
 - **AGSC-08-25** Monthly `usage.cost_usd` MUST be rolled up on the NOW page as a visible spend line; launch lanes MUST contain no model call. [NFR-11 ← D14, Art. XV]

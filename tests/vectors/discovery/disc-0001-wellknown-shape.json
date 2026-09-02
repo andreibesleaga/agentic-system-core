@@ -1,6 +1,6 @@
 {
   "area": "discovery",
-  "description": "The single discovery file: exactly two top-level members, the fixed integrity member names, a linkset conforming to RFC 9264, and relation names that are either IANA-registered short names or extension URIs. An unregistered short name such as knowledge or ontology is not permitted by RFC 8288.",
+  "description": "The single discovery file: exactly two top-level members, the fixed integrity member names, a linkset conforming to RFC 9264, and relation names that are either IANA-registered short names or extension URIs. An unregistered short name such as knowledge or ontology is not permitted by RFC 8288. Every extension relation resolves to a route of AGSC-06-01: rel#shapes is not among them at 1.x, because SHACL shapes stay in the development lane (AGSC-05-24) and a relation with no target is a dangling promise.",
   "expected": {
     "integrity_members": ["bundle", "counts", "generated_at", "hashes", "ledger_head", "spec_version"],
     "linkset_entry_members": ["anchor"],
@@ -15,7 +15,6 @@
       "https://w3id.org/agentic-system-core/rel#ledger",
       "https://w3id.org/agentic-system-core/rel#now",
       "https://w3id.org/agentic-system-core/rel#ontology",
-      "https://w3id.org/agentic-system-core/rel#shapes",
       "https://w3id.org/agentic-system-core/rel#skills",
       "license",
       "service-doc"

@@ -1,27 +1,29 @@
 # SPEC — AgenticSystemCore (S03 index)
 
-**`spec_version: "1.0.0-draft.1"`.** This file indexes the normative material; it is not itself normative. The specification is `spec/00`–`spec/09` (213 numbered MUST/SHOULD rules with stable ids `AGSC-<section>-<nn>`), `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` (33 terms) and `tests/vectors/**` (27 vectors). Together they *are* the system: the Node engine is one conforming implementation, and behaviour observable only in it is a defect (NFR-02 ← D47, Art. XI).
+**`spec_version: "1.0.0-draft.1"`.** This file indexes the normative material; it is not itself normative. The specification is `spec/00`–`spec/09` (233 numbered MUST/SHOULD rules with stable ids `AGSC-<section>-<nn>`, including the rules added by D48 and by the V2 sweep), `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` (32 terms: 11 classes + 21 properties, every property emitted by AGSC-05-26…28) and `tests/vectors/**` (37 vectors). Together they *are* the system: the Node engine is one conforming implementation, and behaviour observable only in it is a defect (NFR-02 ← D47, Art. XI).
 
 ## 1. Sections
 
 | Section | Covers | Vector areas |
 |---|---|---|
 | `00-overview` | scope, BCP 14 usage, the twelve terms, conformance classes, SemVer policy | `bundle/` |
-| `01-bundle` | folders, `content/index.md`, slugs, encoding, `agsc.config.json`, import tolerance | `slug/`, `bundle/` |
-| `02-item` | YAML failsafe subset, common keys, per-type keys, body sections | `frontmatter/` |
+| `01-bundle` | folders, `content/index.md`, slugs, encoding, `agsc.config.json`, import tolerance, **export (`--markdown/--okf/--jsonld/--jsonl/--steer`)** | `slug/`, `bundle/`, `import/`, `export/` |
+| `02-item` | YAML failsafe subset, common keys, per-type keys, body sections, **adoption of bare Markdown** | `frontmatter/`, `adopt/` |
 | `03-links` | the nine keys, computed inverses, cycles, wikilinks, combiner semantics | `links/` |
 | `04-canonicalization` | JCS, NFC/LF/UTC seconds, `SOURCE_DATE_EPOCH`, ordering, hashes | `jcs/`, `graph/` |
 | `05-graph` | item IRIs, four RDF views, class mapping, SKOS integrity, OWL 2 RL | `graph/` |
-| `06-surfaces` | route set R36, the one well-known file, `llms.txt`, headers, budgets | `discovery/` |
+| `06-surfaces` | route set R36, the one well-known file, `llms.txt`, the normative tokenizer, headers, budgets | `discovery/`, `build/` |
 | `07-composition` | closure → hide → mutex → warn, the seven Harness files, skill packs | `compose/` |
 | `08-governance` | `prov`, DCO-Plus trailers, Gates, the four N9 lints, the hash-chained ledger | `lint/`, `prov/`, `ledger/` |
-| `09-conformance` | classes, vector format, error-code registry, CLI contract | `cli/` |
+| `09-conformance` | classes, vector format, error-code registry, CLI contract, **independent validators** | `cli/` |
 
 ## 2. Versioning
 
 SemVer 2.0.0. **MAJOR**: a file valid under the previous MAJOR may fail. **MINOR**: new optional keys, enum values or vectors. **PATCH**: clarifications and vectors conforming implementations already pass. Readers accept any Bundle of the same MAJOR, tolerate unknown keys and unknown link keys, and never reject a file for them. Released spec sections, context files and vectors are immutable; ontology terms are deprecated, never deleted (AGSC-00-14…17).
 
 ## 3. Conformance classes
+
+> **Amendment 2026-09-02 (D50/PRD-055):** conformance is claimed by **Level** per `spec/10-implementation-profiles.md` — Level 0 Publisher (static files from any CMS/wiki), 1 Reader, 2 Writer/Exporter, 3 Full engine; the three classes below map to Levels 1–3.
 
 **Reader** — §01–§03 and §05 read-side; passes `frontmatter/`, `slug/`, `links/`. **Writer** — a reader plus §04–§06; passes `jcs/`, `graph/`, `discovery/`. **Full engine** — a writer plus §07–§09; passes every required vector. A claim names the class, the `spec_version` MAJOR.MINOR and the vector set passed (AGSC-00-09…13).
 
@@ -61,11 +63,11 @@ Also conformed to, and proved in the lanes of PLAN §10 rather than here: SemVer
 
 ## 5. Standardization surface
 
-Three artefacts are ours to standardize, and no more. The **Internet-Draft** covers only the *discovery layer*: the `agentic-knowledge` well-known URI (RFC 8615), the vendor media type (RFC 6838), the link relation and our extension relations (RFC 8288), and a linkset profile (RFC 9264) presented as complementary to VoID and RFC 9727. **`spec/00`–`09` plus `tests/vectors/`** are the *format standard* — and, per D47, the definition of the system itself: any language must be able to reimplement AgenticSystemCore from them alone. **`ontology/agsc.ttl` plus the JSON-LD context**, published at `https://w3id.org/agentic-system-core/ns#`, are the *vocabulary standard*. Everything else in §4 is conformance to work other people own.
+Three artefacts are ours to standardize, and no more. The **Internet-Draft** covers only the *discovery layer*: the `agentic-knowledge` well-known URI (RFC 8615), the vendor media type (RFC 6838), the link relation and our extension relations (RFC 8288), and a linkset profile (RFC 9264) presented as complementary to VoID and RFC 9727. **`spec/00`–`09` plus `tests/vectors/`** are the *format standard* — and, per D47, the definition of the system itself: any language must be able to reimplement AgenticSystemCore from them alone. **`ontology/agsc.ttl` plus the JSON-LD context**, published at `https://w3id.org/agentic-system-core/ns#`, are the *vocabulary standard*. Everything else in §4 is conformance to work other people own. The `tools/` validators (PRD-054, AGSC-09-90…92) are the executable proof of §4's own rule that anything without an executable test is a claim, not conformance — which is why they import nothing from `src/`.
 
 ## 6. Spec decisions made here
 
-1. Error codes: PLAN §8's `AGSC-<AREA>-<nnn>` is realised as the compact `AGSC-E<nnn>`, hundreds digit = area block (§9.4).
+1. Error codes: the single format is `AGSC-E<nnn>`, hundreds digit = area block; the registry is `spec/09-conformance.md` §9.4 and no other format (`AGSC-<AREA>-<nnn>`, `AGSC-DET-nnn`) exists anywhere — PLAN §8 and the diagrams were corrected to match (D48(7)).
 2. No `asc:Item` superclass — "Item" is a term of the spec only (OntoClean, research/16 §3.3); the ontology keeps its 11 classes.
 3. The well-known file is one JSON object with exactly two members, `integrity` and `linkset` (D47-note c folds the manifest into it).
 4. Extension relations use the hash form `…/rel#<name>`, matching the `ns#` namespace (audit/D §3j over audit/G's slash form).
@@ -76,20 +78,37 @@ Three artefacts are ours to standardize, and no more. The **Internet-Draft** cov
 9. `lint --fix` normalizations are enumerated and idempotent, and never reorder authored arrays (D43(1)).
 10. Configuration is closed (`additionalProperties: false`); item frontmatter stays open (OKF tolerance). This is the only asymmetry.
 
+*Decisions 11–17 were added 2026-09-02 by D48, resolving the 34 findings of `audit/V1-math-algorithmic-verification.md`.*
+
+11. **The ledger is derived, not appended.** `build`/`ci` recompute `ledger.jsonl` from git history into `www/` and the release assets; nothing is committed by CI, so the no-bot-commit rule (PRD-042) and a persisted ledger no longer contradict, and neither an append race nor a partial write can occur. `verify --ledger` also compares the recomputed head to `integrity.ledger_head`, which is what catches a truncated tail (AGSC-08-20, 08-23; D48(1)).
+12. **One combiner order, everywhere:** closure → `supersedes` hiding → `excludes` mutex → warnings. Hiding is "any item a result member supersedes" (AGSC-07-05 wins over the old reachability wording of AGSC-03-17), a surviving item whose `requires` target was hidden is `AGSC-E802` (AGSC-07-05a, never a silent drop), closure is breadth-first with the first-discovered path recorded, and `selection[]` is the surviving set in code-point order — so the verdict is a function of the selection *set* (D48(2)).
+13. **One ordering per artefact.** JSON member names, `search.json` tokens included, sort by UTF-16 code units (AGSC-04-05); files and N-Quads sort by code point with `/` as the path separator on every platform; `findings[]` sorts by `(file, line, col, code)`. The old "search tokens by code point" wording was the system's only two-order artefact (D48(3)).
+14. **The tokenizer is normative** — NFC → ASCII-lower-case → split outside `[a-z0-9]` and Unicode letters/digits → drop tokens shorter than 2 → no stemming (AGSC-06-23) — because `search.json` must be byte-reproducible across ports (D48(4)).
+15. **`prov.operator` is `human:<id>` only** (D07 accountability), which makes the DCO-Plus `Assisted-by:` trailer always satisfiable and completes its ABNF; adoption takes the operator from `bundle.operator`, else a normalized git `user.email` local part, else `human:unknown` with a warning, and normalizes filenames, titles and slug collisions so that `init` on bare Markdown is a total function (AGSC-01-25, 02-07, 02-90…92, 08-06; D48(5)).
+16. **Reviews and Proposals have IRIs.** A Review is `<item-IRI>#review-<n>` with `asc:verifiedBy`/`asc:verifiedAt` datatype properties instead of `prov:wasAssociatedWith` (an actor string is not an IRI); a Proposal is its forge PR URL; `asc:verifiedOn` is `xsd:dateTime`, since `xsd:date` is outside the OWL 2 datatype map; `harness.jsonld` is declared a JSON document, not an RDF export, so its `@id`-less nodes are not blank nodes (D48(6)).
+17. **The stated invariants are now enforceable.** Cluster depth > 3 is `AGSC-E307` and a second `broader` is `AGSC-E308` (with `maxItems: 1` in the schema); anchors trim hyphens, empty becomes `section-<n>`, duplicates take the next free `-2`, `-3`, …; vectors are pretty-printed under AGSC-09-06 only (AGSC-04-04 no longer lists them) and a superseded vector is republished `withdrawn`; `AGSC-E203` takes precedence over `AGSC-E201`; `AGSC-E603` exits 2; `SOURCE_DATE_EPOCH` defaults to 0 with `AGSC-E606` when there is no git history; `deprecated → stable` is legal with a warning (D48(7)).
+
+*Decisions 18–21 were added 2026-09-02 from the V2 system-of-systems sweep (`audit/V2-system-sweep.md`).*
+
+18. **`AGSC-06-01` is the normative route set** and supersedes PRD-011's R36 list, which is illustrative; the route-snapshot fixture of PRD-011 is generated from AGSC-06-01 (V2-21). Its 1.x additions over R36 — `/tags/<tag>/`, `/changelog/`, `/feed.xml`, `/robots.txt`, `/tdmrep.json`, `/pages/*`, `/episodes/`, `/gates/`, `/procedures/`, `/ledger.jsonl`, `/.well-known/security.txt` — are recorded here rather than left to inference.
+19. **Export is specified** (`spec/01` §1.6, AGSC-01-26…29): Markdown/OKF export is lossless and vault-openable, `--jsonld` is byte-identical to `graph.jsonld`, `--steer` derives only from NOW and Concept/Procedure/Gate/Lesson items, and every prose-carrying export embeds the Content Use Terms — the steer bundles are governed exactly like `llms.txt` (V2-26).
+20. **`graph.ttl` is reproducible from `spec/` alone** (AGSC-05-26…28): every `asc:` property has one named frontmatter source, and a term with no emitting rule does not ship — `asc:verdict` was deleted, since a verdict lives in the forge (V2-10).
+21. **The drop-in path passes its own gate** (V2-01/02): `description` is schema-optional everywhere and lint-required on concept/cluster as `AGSC-E406`; AGSC-02-93 relocates adopted files to `content/concepts/<slug>.md` with the original path in `aliases[]`; `adopt/` vectors prove it.
+
 ## 7. Trace map
 
 | Rules | Requirements | Decisions |
 |---|---|---|
 | `AGSC-00-*` | PRD-010, NFR-02 | D36-final, D41, D47 |
 | `AGSC-01-*` | PRD-006, 018, 021 | D32(4), D41, D47, G02 |
-| `AGSC-02-*` | PRD-002, 013, 017, 042 | D36-final, D41, D43(3), G06, G35 |
+| `AGSC-02-*` | PRD-002, 013, 017, 042, 053 | D36-final, D41, D43(3), D48(5), G06, G35 |
 | `AGSC-03-*` | PRD-002, 036 | D41, D43(4), G04 |
 | `AGSC-04-*` | PRD-004, NFR-04, NFR-05 | D41, Art. XII |
 | `AGSC-05-*` | PRD-022, 027 | D02, D30, D41, D43(5), G13, G22 |
 | `AGSC-06-*` | PRD-011, 014, 019, 020, 024, 025, 046 | D06, D19, D21-final, D39, D40, D47-note(c,d) |
 | `AGSC-07-*` | PRD-032–038 | D33, D35, D39, G11, G12 |
 | `AGSC-08-*` | PRD-005, 031, 039–043, NFR-07 | D07, D08, D13, D14, D40, D44(b,h) |
-| `AGSC-09-*` | PRD-001, 003, 007, 010, 023 | D38-final, D41, G26 |
+| `AGSC-09-*` | PRD-001, 003, 007, 010, 023, 054 | D38-final, D41, G26 |
 
 ---
 

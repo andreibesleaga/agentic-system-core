@@ -6,7 +6,7 @@
 
 - **AGSC-00-01** This specification — `spec/00`…`spec/09`, `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` and `tests/vectors/**` — is the definition of AgenticSystemCore. An implementation MUST NOT rely on behaviour that these files do not pin, and any behaviour observable only in a particular engine is a defect of that engine, not of this specification. [NFR-02 ← D47, Art. XI]
 - **AGSC-00-02** This specification defines a file format, a graph projection, a set of published surfaces, a governance contract and a CLI contract. It does not define a network protocol, a server, a database or a reasoner. [PRD non-goals ← D09, D43]
-- **AGSC-00-03** Where a rule and a `tests/vectors/**` entry disagree, the rule is normative and the vector MUST be corrected. [NFR-02]
+- **AGSC-00-03** Where a rule and a `tests/vectors/**` entry disagree, the rule is normative and the vector MUST be corrected by the procedure of AGSC-00-16 (new versioned file; the wrong file republished as `withdrawn`). [NFR-02, D48(7)]
 
 ## 0.2 Terms
 
@@ -22,11 +22,11 @@
 - **AGSC-00-10** A **writer** MUST implement §04, §05 and §06: canonical JSON, the four RDF views, the route set and the discovery files. A writer MUST pass every `required` vector in `jcs/` and `graph/`, and MUST be a conforming reader. [PRD-004, PRD-022, PRD-024]
 - **AGSC-00-11** A **full engine** MUST additionally implement §07 (composition), §08 (governance) and §09 (CLI contract) and MUST pass every `required` vector in every area. [PRD-036, PRD-042, PRD-001]
 - **AGSC-00-12** An implementation claiming conformance MUST state its class, its `spec_version` and the vector set it passed. It MUST NOT claim a class whose vectors it does not pass. [PRD-010, D38-final]
-- **AGSC-00-13** Optional vectors (`"level": "optional"`) MAY fail without losing conformance; they cover SHOULD-level rules. [research/12 §1]
+- **AGSC-00-13** Optional vectors (`"level": "optional"`) MAY fail without losing conformance; they cover SHOULD-level rules. A `withdrawn` vector (AGSC-00-16) is excluded from every class's required set and MUST NOT be run for a conformance claim. [research/12 §1, D48(7)]
 
 ## 0.4 Versioning
 
 - **AGSC-00-14** `spec_version` is SemVer 2.0.0. MAJOR means a file valid under the previous MAJOR MAY fail validation; MINOR adds optional keys, enum values, link semantics or vectors; PATCH clarifies text or adds vectors that conforming implementations already pass. [research/12 §8]
 - **AGSC-00-15** A reader MUST accept any Bundle whose `spec_version` MAJOR equals its own, MUST tolerate unknown keys and unknown link keys, and MUST NOT reject a file for them. [research/12 §P rules 11, 13; OKF v0.2]
-- **AGSC-00-16** Released spec sections, JSON-LD context files and vector files are immutable; a change creates a new versioned file. Ontology terms are never deleted — they are marked `owl:deprecated true` with `dcterms:isReplacedBy`. [research/12 §P rules 41, 42]
+- **AGSC-00-16** Released spec sections, JSON-LD context files and vector files are immutable; a change creates a new versioned file. A vector that AGSC-00-03 shows to be wrong MUST NOT be edited in place: the corrected case ships as a new versioned vector file and the superseded file is retained with its `level` republished as `withdrawn`; `withdrawn` vectors are excluded from every class's required set. Ontology terms are never deleted — they are marked `owl:deprecated true` with `dcterms:isReplacedBy`. [research/12 §P rules 41, 42; D48(7)]
 - **AGSC-00-17** `spec_version` MUST appear in the Bundle root `content/index.md` and in `agsc.config.json`; it MAY appear per item and, when present, MUST have the same MAJOR. [research/12 §P rule 13]

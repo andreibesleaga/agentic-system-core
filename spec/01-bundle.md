@@ -5,7 +5,7 @@
 - **AGSC-01-01** A Bundle MUST be a directory tree containing `content/` and exactly one `agsc.config.json` at its root. One repository is one Bundle. [audit/D §1.1, D32(4)]
 - **AGSC-01-02** Items MUST live at `content/<type-plural>/<slug>.md` where `<type-plural>` ∈ `concepts`, `episodes`, `procedures`, `lessons`, `clusters`, `gates`. [audit/D §1.1, G02]
 - **AGSC-01-03** The `type` key in frontmatter is authoritative and MUST match the containing folder; a mismatch is an error (`AGSC-E205`). [audit/D §1.1]
-- **AGSC-01-04** `content/index.md` is the Bundle root document. It MUST carry `spec_version`, `okf_version`, `title` and `description`, and it MUST NOT carry `type`; it is not an item and does not enter the graph as an item. [audit/D §1.1, OKF v0.2]
+- **AGSC-01-04** `content/index.md` is the Bundle root document. It MUST carry `spec_version`, `okf_version`, `title`, `description` and `base` (the IRI base of every item, AGSC-05-01; it MUST equal `site.base`), and it MUST NOT carry `type`; it is not an item and does not enter the graph as an item. [audit/D §1.1, OKF v0.2]
 - **AGSC-01-05** `index.md` MAY exist in any folder (OKF reserved). `_index.md` and `README.md` MUST NOT be used as items. [research/12 §P rule 3]
 - **AGSC-01-06** Non-knowledge site pages live in `site/*.md`, outside `content/`. They are rendered but MUST NOT appear in the graph, in `search.json` or in `llms.txt` item lists. [audit/D §1.1, G40]
 - **AGSC-01-07** Diagram sources live at `content/diagrams/<slug>.diagram`. A compiled `.svg` MUST NOT be committed; it is produced into the build output. [audit/D §2.2, D20]
@@ -22,19 +22,27 @@
 ## 1.3 Encoding
 
 - **AGSC-01-14** Every `.md`, `.json`, `.ttl` and `.diagram` file MUST be UTF-8 without BOM, MUST use LF line endings, MUST be NFC-normalized, and MUST end with exactly one LF (`AGSC-E108`). [research/12 §P rule 1, Art. XII]
-- **AGSC-01-15** File discovery order MUST be a code-point sort of the repository-relative path. Locale collation MUST NOT be used. [research/12 §P rule 24]
+- **AGSC-01-15** File discovery order MUST be a code-point sort of the repository-relative path, with `/` as the path separator in the sort key on every platform (a native `\` separator MUST be converted before comparison). Locale collation MUST NOT be used. [research/12 §P rule 24, D48(3)]
 - **AGSC-01-16** An input file larger than 1 MiB MUST be refused with `AGSC-E904`. Archives MUST be refused entirely (`AGSC-E903`), and any path escaping the Bundle root MUST be refused with `AGSC-E902`. [PLAN §11 R7, research/17 §1.9]
 
 ## 1.4 Configuration
 
 - **AGSC-01-17** A Bundle MUST have exactly one configuration file, `agsc.config.json`, validated against `schema/config.schema.json`. A second configuration file MUST NOT be introduced. [PRD-006 ← R44, D32(4)]
-- **AGSC-01-18** Its keys are `spec_version`, `site{base,title,tagline,author,analytics_token}`, `bundle{id,license_prose,license_schema}`, `ns{base,version}`, `releases{}`, `tags{allowed[]}`, `build{out,search,rdfxml,feed}`, `lint{injection_patterns[]}`. Unlike item frontmatter, configuration is closed: an unknown key is `AGSC-E004`. [audit/D §2.3, PRD-006]
+- **AGSC-01-18** Its keys are `spec_version`, `site{base,title,tagline,author,analytics_token}`, `bundle{id,license_prose,license_schema,operator}`, `ns{base,version}`, `releases{}`, `tags{allowed[]}`, `build{out,rdfxml,feed}`, `lint{injection_patterns[]}`. There is no `build.search` toggle: `search.json` is required unconditionally by AGSC-06-16, and a switch that could turn off a MUST would make the two rules unsatisfiable together (V2-06). Unlike item frontmatter, configuration is closed: an unknown key is `AGSC-E004`. [audit/D §2.3, PRD-006]
 - **AGSC-01-19** `build.out` MUST default to `www`. `site.base` MUST be an absolute `https:` origin without a trailing slash and is the IRI base of every item (§05). [D47, D41]
 - **AGSC-01-20** `releases` is a boolean switchboard: an item carrying `release: <key>` is published only when `releases[<key>]` is `true`. An item with no `release` is always published. [PRD-021 ← R8]
 - **AGSC-01-21** `tags.allowed` is the closed tag vocabulary; a tag outside it MUST be reported (`AGSC-E203`). [audit/D §1.2]
+- **AGSC-01-25** `bundle.operator` is OPTIONAL and, when present, MUST be a `human:<id>` actor string (AGSC-02-07). It is the accountable operator of this Bundle and is the first source of `prov.operator` at adoption (AGSC-02-90). No other configuration key supplies an actor. [PRD-053 ← D48(5), D07]
 
 ## 1.5 Import tolerance
 
 - **AGSC-01-22** Import of a foreign OKF v0.2 bundle MUST accept unknown `type` values (mapped to `concept` with a warning), unknown keys, missing optional fields, missing `index.md` and broken links. A broken internal link is a Gate failure for the Bundle's own build but MUST NOT reject an import. [research/12 §P rules 30, 31]
 - **AGSC-01-23** Import MUST be deterministic and idempotent: re-running it over unchanged input MUST produce byte-identical output and MUST NOT create duplicate items. Colliding slugs MUST be suffixed `-2`, `-3`, … in discovery order. [PRD-021]
 - **AGSC-01-24** Import MUST refuse a source record carrying a non-empty `bookRef` field (`AGSC-E405`). [PRD-021 ← W1/W11, Art. XIII]
+
+## 1.6 Export
+
+- **AGSC-01-26** `export --markdown` and `export --okf` MUST emit the lint-normalized Bundle itself — one `.md` file per item, frontmatter first, body bytes unchanged — and MUST be **lossless**: every authored frontmatter key, including unknown keys preserved under AGSC-02-05, MUST appear in the output. The result MUST open as a plain folder of Markdown in any editor or vault tool without a plugin. `--okf` additionally writes `content/index.md` with `okf_version` and the OKF-reserved `log.md`. [PRD-026 ← V2-26]
+- **AGSC-01-27** `export --jsonld` output MUST be byte-identical to the `graph.jsonld` of the same build (AGSC-05-06, AGSC-04-04); `export --jsonl` MUST emit one JCS-canonical JSON object per LF-terminated line, one line per item, items in slug order. Neither MAY invent a member that the graph does not carry. [PRD-026, PRD-022 ← V2-26]
+- **AGSC-01-28** `export --steer` MUST emit `AGENTS.md` and `CLAUDE.md` derived **only** from NOW state and from `concept`, `procedure`, `gate` and `lesson` items — never from an Episode, a Proposal or the git log — so that the same Bundle always yields the same bytes (AGSC-04-01). [PRD-029 ← V2-26]
+- **AGSC-01-29** Every prose-carrying export of AGSC-01-26…28 MUST carry the fixed provenance header of AGSC-06-15, MUST fence quoted item prose as ```` ```text agsc-content ````, and MUST embed the Content Use Terms identifier; a build that omits them MUST fail. Steer bundles are an agent-facing surface and are governed exactly like `llms.txt` (AGSC-06-15) and the Harness files (AGSC-07-14). [NFR-07, PRD-019 ← R39, ADR-001, V2-26]

@@ -1,0 +1,18 @@
+{
+  "area": "frontmatter",
+  "description": "The drop-in path is total and idempotent. A bare file whose name is not a slug is adopted, renamed to content/concepts/<slug>.md, its original stem recorded in aliases with warning AGSC-E506, the title taken from the first ATX heading, and the operator taken from bundle.operator in the configuration — no error is possible. Running init a second time changes nothing, because the file now carries a closed frontmatter block and the body bytes were preserved exactly.",
+  "expected": {
+    "findings": [{ "code": "AGSC-E506", "severity": "warn" }],
+    "idempotent": true,
+    "output": "---\ntype: concept\nkind: explainer\ntitle: My Notes\naliases:\n  - My Notes.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# My Notes\n\nBody stays, byte for byte.\n",
+    "path": "content/concepts/my-notes.md"
+  },
+  "id": "fm-0008",
+  "input": {
+    "config": { "bundle": { "operator": "human:andreibesleaga" } },
+    "files": [{ "markdown": "# My Notes\n\nBody stays, byte for byte.\n", "path": "My Notes.md" }]
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-02-91"
+}

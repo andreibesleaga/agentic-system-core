@@ -7,7 +7,10 @@ Feature: Drop-in user — plain Markdown becomes a live ontologic wiki
   Scenario: Three commands from bare notes to a full local site
     Given a directory containing "ideas.md", "notes/agents.md" and "todo.md" with no YAML frontmatter
     When I run "npx agentic-system-core init"
-    Then every file gains minimal frontmatter (type, kind, title, prov) and every body byte is unchanged
+    Then every file gains minimal frontmatter (type, kind, title, aliases, prov) and every body byte is unchanged
+    And each adopted file is moved to "content/concepts/<slug>.md" with its original path recorded in "aliases" (AGSC-02-93)
+    And "notes/agents.md" is flattened to "content/concepts/agents.md"
+    And every adopted item validates against "schema/item.schema.json" with warnings only (no description is AGSC-E406)
     And files that already had frontmatter are untouched
     When I run "npx agentic-system-core ci"
     Then the build succeeds offline with warnings only

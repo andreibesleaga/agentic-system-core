@@ -8,7 +8,9 @@
 
 # AgenticSystemCore vocabulary — OWL 2 RL-safe (spec/05-graph.md, AGSC-05-22).
 # Classes: 11 (research/16 section 3.3; there is deliberately no asc:Item superclass, AGSC-05-13).
-# Properties: 22. Six of the nine Link keys reuse SKOS, DCTerms and PROV; only uses/excludes/
+# Properties: 21, every one emitted by a rule of spec/05 section 5.6 (AGSC-05-26..28); asc:verdict was
+# deleted pre-1.0.0 because a Review's verdict lives in the forge, not in a file (AGSC-08-03).
+# Six of the nine Link keys reuse SKOS, DCTerms and PROV; only uses/excludes/
 # contradicts (plus the computed inverse usedBy and the untyped mentions) are defined here.
 # Stable Turtle profile: fixed prefix order, subjects and predicates sorted by IRI code points.
 
@@ -86,7 +88,7 @@ asc:Proposal
 
 asc:Review
     a owl:Class ;
-    rdfs:comment "The human assessment of a Proposal. It has no file: it is instantiated from a verified[] entry, whose actor and instant are its association and end time." ;
+    rdfs:comment "The human assessment of a Proposal. It has no file: it is instantiated from a verified[] entry at the IRI <item-IRI>#review-<n>, its actor and instant carried by asc:verifiedBy and asc:verifiedAt (AGSC-05-15)." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "Review" ;
     rdfs:subClassOf prov:Activity .
@@ -100,19 +102,15 @@ asc:Source
 
 asc:contradicts
     a owl:ObjectProperty, owl:SymmetricProperty ;
-    rdfs:comment "Asserts that two Concepts cannot both be true. Selecting both in a composition is a warning, never a failure." ;
-    rdfs:domain asc:Concept ;
+    rdfs:comment "Asserts that two items cannot both be true. Selecting both in a composition is a warning, never a failure. No domain or range is declared: any item type may author this key, and declaring asc:Concept would entail a Concept typing for Procedures, Episodes and Gates (D48, V1-28)." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
-    rdfs:label "contradicts" ;
-    rdfs:range asc:Concept .
+    rdfs:label "contradicts" .
 
 asc:excludes
     a owl:ObjectProperty, owl:SymmetricProperty ;
-    rdfs:comment "Asserts mutual exclusion. Evaluated after the requires closure; a surviving pair invalidates a composition." ;
-    rdfs:domain asc:Concept ;
+    rdfs:comment "Asserts mutual exclusion. Evaluated after the requires closure; a surviving pair invalidates a composition. No domain or range is declared, for the reason given on asc:contradicts." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
-    rdfs:label "excludes" ;
-    rdfs:range asc:Concept .
+    rdfs:label "excludes" .
 
 asc:generatedAt
     a owl:DatatypeProperty ;
@@ -219,29 +217,17 @@ asc:status
 
 asc:usedBy
     a owl:ObjectProperty ;
-    rdfs:comment "Computed inverse of asc:uses; never authored." ;
-    rdfs:domain asc:Concept ;
+    rdfs:comment "Computed inverse of asc:uses; never authored. No domain or range is declared, for the reason given on asc:contradicts." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "used by" ;
-    rdfs:range asc:Concept ;
     owl:inverseOf asc:uses .
 
 asc:uses
     a owl:ObjectProperty ;
-    rdfs:comment "Soft dependency: the subject draws on the object. A composition warns when a used Concept is absent." ;
-    rdfs:domain asc:Concept ;
+    rdfs:comment "Soft dependency: the subject draws on the object. A composition warns when a used item is absent. No domain or range is declared, for the reason given on asc:contradicts." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "uses" ;
-    rdfs:range asc:Concept ;
     rdfs:subPropertyOf skos:related .
-
-asc:verdict
-    a owl:DatatypeProperty ;
-    rdfs:comment "Outcome recorded by a Review: approved, changes-requested or rejected." ;
-    rdfs:domain asc:Review ;
-    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
-    rdfs:label "verdict" ;
-    rdfs:range xsd:string .
 
 asc:verifiedAt
     a owl:DatatypeProperty ;
@@ -261,8 +247,8 @@ asc:verifiedBy
 
 asc:verifiedOn
     a owl:DatatypeProperty ;
-    rdfs:comment "Date on which a Source was last checked to resolve." ;
+    rdfs:comment "Instant at which a Source was last checked to resolve; an authored YYYY-MM-DD date is rendered as that day's midnight UTC instant. xsd:date is not in the OWL 2 datatype map, so xsd:dateTime keeps the ontology inside OWL 2 RL (AGSC-05-14, AGSC-05-22)." ;
     rdfs:domain asc:Source ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "verified on" ;
-    rdfs:range xsd:date .
+    rdfs:range xsd:dateTime .

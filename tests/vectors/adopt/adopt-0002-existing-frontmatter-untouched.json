@@ -1,0 +1,30 @@
+{
+  "area": "adopt",
+  "description": "Adoption is idempotent and never overwrites: a file that already carries a CLOSED frontmatter block is returned byte-for-byte, is not moved, and produces no finding. The guard is the closed block of AGSC-02-01, not merely a first line of ---; the second file here opens with a thematic break and no closing fence, so it is a bare file and is adopted normally.",
+  "expected": {
+    "files": [
+      {
+        "changed": false,
+        "output": "---\ntype: concept\nkind: pattern\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nRoute work to workers.\n",
+        "path": "content/concepts/supervisor.md"
+      },
+      {
+        "changed": true,
+        "output": "---\ntype: concept\nkind: explainer\ntitle: Rules\naliases:\n  - rules.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n---\n\n# Rules\n\nA thematic break is not a frontmatter fence.\n",
+        "path": "content/concepts/rules.md"
+      }
+    ],
+    "idempotent": true
+  },
+  "id": "adopt-0002",
+  "input": {
+    "config": { "bundle": { "operator": "human:andreibesleaga" } },
+    "files": [
+      { "markdown": "---\ntype: concept\nkind: pattern\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nRoute work to workers.\n", "path": "content/concepts/supervisor.md" },
+      { "markdown": "---\n\n# Rules\n\nA thematic break is not a frontmatter fence.\n", "path": "rules.md" }
+    ]
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-02-91"
+}

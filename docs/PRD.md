@@ -141,6 +141,28 @@ Scope: **v1** = audit/D §6 must (M1–M15); **should** = S1–S8; **v1.x** = la
 
 *This is the front-door scenario of the product (persona P0 "drop-in user": "I have notes; I want a living, linked, agent-readable wiki with zero configuration"). It precedes every other flow in quickstarts and on the site home.*
 
+### 2.9b S01 Amendment 3 (V1 verification, 2026-09-02) — restatements, not rewrites
+
+The frozen rows above stand verbatim. Two of them are **restated** here, as D48 directs after the V1 mathematical/algorithmic verification (`discovery-product/audit/V1-math-algorithmic-verification.md`); where a restatement and the frozen row differ in mechanism, the restatement governs the specification and the engine, and the frozen row remains the record of what S01 approved.
+
+| ID | Restatement (D48) | Acceptance | Trace |
+|---|---|---|---|
+| PRD-005 (restated) | WHEN `build`/`ci` completes, THE SYSTEM SHALL **derive** the whole hash-chained `ledger.jsonl` from the git history of the content branch and write it into the build output and the release assets — never appending to a stored file, never committing it from CI — and SHALL publish its head in `integrity.ledger_head`, re-verifiable offline via `verify --ledger`, which recomputes the chain **and** compares the head. | Tampered or truncated file fails; head published and attested; two builds of one history are byte-identical; no CI commit to the content branch. | D44(h), **D48(1)**, PRD-042, V1-05/06/07 |
+| PRD-036 (restated) | WHEN Concepts are composed, THE SYSTEM SHALL apply the four steps in the order `requires` closure → `supersedes` hiding → `excludes` mutex → `uses`/`contradicts` warnings, and WHERE an item that survives hiding `requires` an item the hiding removed, THE SYSTEM SHALL invalidate the composition with **`AGSC-E802`** ("required item superseded — select `<superseding>`") rather than dropping the hard dependency silently or substituting the superseding item. | `compose-0001` (order) and `compose-0002` (E802) pass; verdict is a function of the selection set, `selection[]` sorted, `path[]` breadth-first. | R6, D41, audit/D §1.3, **D48(2)**, V1-01/02/03 |
+
+*The remaining 32 V1 findings are rule-level amendments inside `spec/`, `schema/`, `ontology/`, `tests/vectors/` and the diagrams; they change no requirement row and are indexed by SPEC.md §6 decisions 11–17.*
+
+**PRD-053 — acceptance and scope notes (V2 sweep, same amendment).** The frozen row stands; these two notes make it executable, per `audit/V2-system-sweep.md` V2-01/02/19/24.
+
+- **Acceptance (added).** "In place" means *in the user's repository*, not *in the user's folder layout*: `init` MUST relocate each adopted file to `content/concepts/<slug>.md` (AGSC-02-93), recording its original repository-relative path in `aliases[]`, flattening nested directories and suffixing collisions per AGSC-01-23 — without which `build` discovers nothing under `content/**`. An adopted item MUST validate against `schema/item.schema.json` (`description` is schema-optional; a missing one on a concept or cluster is the warning `AGSC-E406`), so `ci` on a folder of bare notes is green offline with warnings only. `README.md`, `index.md` and `_index.md` are never adopted. Vectors: `adopt/adopt-0001…0003`.
+- **Scope (corrected).** The Scope cell reads "v1 (M1/M3)", but `init` is built in M7. The adoption half — pure frontmatter synthesis plus relocation over the M1 parser, ≈0.3 d — lands in **M1** as `init --adopt`; the scaffold half (`init --host cloudflare`) stays in **M7**. No requirement changes; only where the work sits.
+
+### 2.9b S01 Amendment 4 (owner-directed, 2026-09-02) — implementable anywhere
+
+| ID | Requirement | Acceptance | Trace | Scope |
+|---|---|---|---|---|
+| PRD-055 | THE SYSTEM SHALL be implementable in any language, framework or existing software (CMS, wiki, KB, note tool) from its specs alone: `spec/10-implementation-profiles.md` defines conformance Levels 0–3 (Publisher / Reader / Writer-Exporter / Full engine) with the exact rule subset and vector set per level, and `docs/IMPLEMENTERS-GUIDE.md` gives a ≤10-step path plus a platform mapping table, so that a third party can publish their linked knowledge as a node, export packages/skills/graphs, expose `memory://` aliases over their own KB, and import ours — validated by the shipped `tools/` validators without our engine. | A Level-0 node built from a plain CMS export passes `validate-wellknown` + `validate-vectors` (Level-0 subset) with zero engine code; guide followed end-to-end by a reviewer on a non-Node stack in the M14 dogfood. | D50, D47, R32, R33, PRD-010, PRD-054 | **v1** (spec/10 at S03 close; guide at M14) |
+
 ## 3. Non-functional requirements
 
 | ID | Requirement | Acceptance | Trace |
@@ -188,3 +210,5 @@ No servers, databases, queues or Workers — static Pages + CI only (D47, D09). 
 **S01 GATE: APPROVED by owner 2026-09-02 ("yes for all those, apply defaults") — the 3 items resolve to their defaults: (1) launch DoD = items (1)–(3),(5),(6), benchmarks = v1.0.1 gate ≤30 days post-launch; (2) RDF/XML = should S1; (3) DoD wording as applied. PRD is FROZEN as the S01 baseline; changes now require a Proposal.**
 
 *Generated by: `prov: {origin: ai-generated, agent: claude-opus-5 (draft) + claude-fable-5 (adversarial review), operator: human:andreibesleaga}` · P-S01, 2026-09-02*
+
+**Note to PRD-027 (owner, 2026-09-02):** the `https://` item IRI may always be used instead of `memory://`; both forms denote the same item and every surface accepting one accepts the other (AGSC-05-04a). `memory://` is optional convenience, never required.

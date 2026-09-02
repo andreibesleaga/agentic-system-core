@@ -26,16 +26,23 @@ stateDiagram-v2
   lintVerdict --> humanReview: findings pass (exit 0)
 
   humanReview --> humanReview: owner adds verified: [{by, at}]
+  humanReview --> rejected: owner closes the PR (no merge)
 
   state mergeGate <<choice>>
   humanReview --> mergeGate
   mergeGate --> merged: ruleset satisfied\n(PR + 1 approval + Code Owner + green ci)
   mergeGate --> humanReview: ruleset not yet satisfied
+  mergeGate --> authored: conflict with base — a new patch is needed
 
-  merged --> rebuiltDeployed: merge triggers agsc ci then Pages publish www/\nledger kind:"merge" line appended;\nprov.commit/reviewer derived at build, never written by CI
+  merged --> rebuiltDeployed: merge triggers agsc ci then Pages publish www/\nledger.jsonl re-derived from git history into www/ (kind:"merge" entry);\nprov.commit/reviewer derived at build, never written by CI
 
   rejected --> [*]
   rebuiltDeployed --> [*]
 ```
 
-Trace: PRD-039–043, D07, D27, D40 · audit/D §3(b)/(d) · PLAN.md §6(b), §5.3 (Provenance & Governance).
+A rejected Proposal has no `resubmit` edge on purpose: resubmission is a **new** Proposal, entering at
+`authored`. `mergeGate` covers a base conflict by returning to `authored` (the patch is rebuilt), and
+`humanReview` can end in `rejected` when the owner closes a lint-green PR — the machine is total over
+what actually happens.
+
+Trace: PRD-039–043, D07, D27, D40, D48(1)(7) · audit/D §3(b)/(d) · PLAN.md §6(b), §5.3 (Provenance & Governance).

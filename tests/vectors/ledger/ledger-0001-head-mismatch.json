@@ -1,0 +1,13 @@
+{
+  "area": "ledger",
+  "description": "Negative: truncation is invisible to link checking. The single line present hashes correctly and its prev is the genesis empty string, so a verifier that only walks the chain reports success — yet the published integrity.ledger_head is the hash of a second entry that has been cut away. AGSC-08-23 therefore also requires the recomputed head to equal the published head; the mismatch is AGSC-E701.",
+  "expected": { "error": "AGSC-E701" },
+  "id": "ledger-0001",
+  "input": {
+    "ledger": "{\"actor\":\"human:andreibesleaga\",\"hash\":\"1a38c060ae46ccce6ff3ad83110b8b1054d9e0701da29b3f1972630682dc41a8\",\"kind\":\"build\",\"prev\":\"\",\"ref\":\"c0ffee\",\"ts\":\"2026-01-01T00:00:00Z\"}\n",
+    "wellknown": { "integrity": { "ledger_head": "ff07cbec5ba3de0ea09269a92ce5e258d5267d16197b1a9a1d476a39e58fe5d3" } }
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-08-23"
+}

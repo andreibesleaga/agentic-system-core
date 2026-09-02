@@ -2,11 +2,16 @@
 
 ```mermaid
 stateDiagram-v2
-  [*] --> draft: item authored, prov required
+  [*] --> stable: item authored with no status (default, AGSC-02-23)
+  [*] --> draft: item authored with status: draft
 
-  draft --> stable: status set to stable (default value)
+  draft --> stable: status set to stable
+  stable --> draft: status set back to draft
   stable --> deprecated: status set to deprecated
   draft --> deprecated: status set to deprecated
+
+  deprecated --> stable: un-deprecated (legal; lint warns AGSC-E406)
+  deprecated --> draft: un-deprecated to draft (legal; lint warns AGSC-E406)
 
   deprecated --> [*]: retired, slug never reused
 
@@ -28,7 +33,9 @@ stateDiagram-v2
   end note
 ```
 
-Three `status` values only (`draft | stable | deprecated`, default `stable` per audit/D §1.2); there is
+Three `status` values only (`draft | stable | deprecated`, default `stable` per audit/D §1.2 — an item
+authored without a `status` therefore *starts* stable, and every transition including `deprecated` →
+`stable` is legal, warned but never rejected, per AGSC-02-23 ← D48(7)); there is
 no `archived` or `deleted` state — deletion is out of scope, retirement is `deprecated` + redirect.
 `supersedes`/`superseded-by` is a Link-key edge (audit/D §1.3), orthogonal to `status`, shown as a
 self-loop annotation because it does not change which of the three states an item is in.

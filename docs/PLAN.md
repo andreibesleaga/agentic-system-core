@@ -96,7 +96,7 @@ graph TB
   ENG -->|"reads content/, writes www/ dist/ ledger.jsonl"| SITE
 ```
 
-External interfaces are files and URLs only — there is no API to call. `memory://<bundle>/<slug>` is a documented alias, never resolved (PRD-027, D33).
+External interfaces are files and URLs only — there is no API to call. `memory://<bundle>/<slug>` is a documented alias, never resolved — the `https://` IRI may always be used instead (AGSC-05-04a) (PRD-027, D33).
 
 ---
 
@@ -171,7 +171,7 @@ graph TB
 | governance | `gate.js` | Gate `checks[]` → required CI status check | — | build ci |
 | governance | `proposal.js` `review.js` | patch + PR body to `dist/proposal/`; lint-only verdict | — | propose review |
 | governance | `ledger.js` | hash chain; offline re-verify (D44h) | 12 | build ci verify |
-| composition | `closure.js` | closure, mutex, warnings, hiding, explained paths | — | compose |
+| composition | `closure.js` | closure, hiding, mutex, warnings, explained paths (spec/07 order) | — | compose |
 | composition | `emit-jsonld.js` `emit-agents.js` `emit-structurizr.js` `emit-mermaid.js` `emit-arc42.js` `emit-madr.js` | six of the seven Harness files | — | compose |
 | distribution | `html.js` `templates/*.html` | Markdown→HTML; layout/item/cluster/list/now/compose/404 | 9 | build |
 | distribution | `search.js` | inverted index `search.json` | 8 | build |
@@ -179,10 +179,14 @@ graph TB
 | distribution | `now.js` | `/now/` + `now.md` from stored state only | 11 | build refresh |
 | distribution | `site.js` | route set R36 → `www/` | 1, 9 | build |
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
+| distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
 | distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 5 tools; staleness + link checks | — | init mcp refresh |
 | interchange | `import.js` `okf.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in | — | import |
 | interchange | `export.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
+| *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
+
+`tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
 Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/agsc.js` is the only place adapters are wired.
 
@@ -206,17 +210,18 @@ Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/
 
 ### 5.3 Correspondence rules (ISO 42010 — the traceability spine; a CI script asserts every row)
 
-| Bounded context | `src/` dir | `spec/` section | `tests/vectors/` area | PRD ids |
-|---|---|---|---|---|
-| Knowledge | `src/knowledge/` | `01-bundle`, `02-item`, `03-links`, `05-graph` | `bundle/`, `frontmatter/`, `slug/`, `links/`, `graph/` | 002, 003, 010, 017, 018, 022, 025 |
-| Knowledge (canonical form) | `src/knowledge/jcs.js` | `04-canonicalization` | `jcs/` | 004 (NFR-04) |
-| Provenance & Governance | `src/governance/` | `08-governance` | `lint/`, `prov/`, `ledger/` | 005, 031, 035, 039–043, 047 |
-| Composition | `src/composition/` | `07-composition` | `compose/` | 036, 037, 038 |
-| Distribution | `src/distribution/` | `06-surfaces` | `build/`, `discovery/` | 011, 013–016, 019, 020, 023, 024, 044, 049–051 |
-| Interchange | `src/interchange/` | `01-bundle` (+ `06-surfaces` for `llms.txt`) | `import/`, `export/`, `skills/` | 021, 026, 029, 032–034 |
-| CLI contract & diagnostics | `bin/agsc.js` | `09-conformance` | `cli/` | 001, 006–009, 052 |
+| Bounded context | `src/` dir | `spec/` section | `tests/vectors/` area | Area due | PRD ids |
+|---|---|---|---|---|---|
+| Knowledge | `src/knowledge/` | `01-bundle`, `02-item`, `03-links`, `05-graph` | `bundle/`, `frontmatter/`, `slug/`, `links/`, `graph/` | shipped | 002, 003, 010, 017, 018, 022, 025 |
+| Knowledge (canonical form) | `src/knowledge/jcs.js` | `04-canonicalization` | `jcs/` | shipped | 004 (NFR-04) |
+| Provenance & Governance | `src/governance/` | `08-governance` | `lint/` shipped, `ledger/` seeded, `prov/` | `prov/` M6, `ledger/` M6+M11 | 005, 031, 035, 039–043, 047 |
+| Composition | `src/composition/` | `07-composition` | `compose/` | shipped | 036, 037, 038 |
+| Distribution | `src/distribution/` | `06-surfaces` (+ `02-item` §2.9 for adoption) | `discovery/`, `build/`, `adopt/` | `build/` M4, `adopt/` M1 | 011, 013–016, 019, 020, 023, 024, 044, 049–051, **053** |
+| Interchange | `src/interchange/` | `01-bundle` §1.5 import + §1.6 export (+ `06-surfaces` for `llms.txt`) | `import/`, `export/`, `skills/` | `import/`+`export/` M12, `skills/` M9 | 021, 026, 029, 032–034 |
+| CLI contract & diagnostics | `bin/agsc.js` | `09-conformance` | `cli/` | shipped | 001, 006–009, 052 |
+| *(outside the five contexts)* `tools/` | — (no `src/` dir by design) | `09-conformance` §9.9 | — (the tools are their own check) | M13 + one per milestone | **054** |
 
-Rule: **one context ↔ one `src/` dir ↔ one spec section ↔ one vector area.** A module with no spec section and no vector fails the lint (golden thread, NFR-03).
+Rule: **one context ↔ one `src/` dir ↔ one spec section ↔ one vector area.** A module with no spec section and no vector fails the lint (golden thread, NFR-03). The CI script reads the **Area due** column: an area that has not reached its milestone is not yet expected to exist (`tests/vectors/README.md`, "populated as the milestones that need them land"); `tools/` is exempt by the sentence in §5.1.
 
 ---
 
@@ -226,10 +231,10 @@ Rule: **one context ↔ one `src/` dir ↔ one spec section ↔ one vector area.
 1. Load + schema-validate `agsc.config.json`. 2. Discover `content/**/*.md` + `site/*.md`, code-point sorted. 3. Parse frontmatter → validate → resolve nine Link keys, compute inverses, detect orphans/cycles. 4. Run L1/L2 lints incl. `injection-scan`, `no-secrets`, `no-pii`, `clean-room`; error → exit 1 with file+line. 5. Compile `*.diagram` → SVG. 6. Build SKOS collections + graph; emit `graph.{jsonld,ttl,nq}` (JCS, sorted, blank-node-free) and `pages/<slug>.{md,jsonld}`. 7. Render HTML, `search.json`, `_headers`, `_redirects`, sitemap, `llms.txt`, `/.well-known/agentic-knowledge` (linkset + integrity block incl. **ledger head**), `/now/` + `now.md` — all times from `SOURCE_DATE_EPOCH`. 8. Enforce N8 budgets; over → exit 1. 9. **Build again** into a temp dir; byte compare; diff → exit 1. 10. `export`; `attest` in CI. 11. Append **one** `ledger.jsonl` line `{ts, kind:"build", ref, actor, prev, hash}`; re-verify the chain. 12. Exit 0; `dist/gate.json` carries the verdict.
 
 **(b) Proposal lifecycle (PRD-039–043).**
-1. Author (human, or operator-run agent) edits an item with `prov{origin, operator}`. 2. `lint --fix` normalizes; `propose` writes `dist/proposal/<n>.patch` + PR body (`<!-- agsc:proposal v1 -->`) and prints the `git`/`gh` commands — **no network write** (C5). 3. The human runs them; the PR carries the DCO-Plus `Signed-off-by … (CA-v1)` trailer. 4. `ci.yml` runs `agsc ci` with `contents: read`; fork PRs lint-only until labelled, ≤5 open bot PRs; findings post as annotations. **No LLM (C6).** 5. Owner reviews and adds `verified: [{by, at}]` — that entry *is* the Review. 6. Ruleset requires PR + 1 approval + Code Owner + green `ci`; the owner merges (agents never approve). 7. Merge → deploy → `agsc ci` → Pages publishes `www/`; a `kind:"merge"` ledger line is appended; `prov.commit`/`reviewer` are **derived at build**, never written into files.
+1. Author (human, or operator-run agent) edits an item with `prov{origin, operator}`. 2. `lint --fix` normalizes; `propose` writes `dist/proposal/<n>.patch` + PR body (`<!-- agsc:proposal v1 -->`) and prints the `git`/`gh` commands — **no network write** (C5). 3. The human runs them; the PR carries the DCO-Plus `Signed-off-by … (CA-v1)` trailer. 4. `ci.yml` runs `agsc ci` with `contents: read`; fork PRs lint-only until labelled, ≤5 open bot PRs; findings post as annotations. **No LLM (C6).** 5. Owner reviews and adds `verified: [{by, at}]` — that entry *is* the Review. 6. Ruleset requires PR + 1 approval + Code Owner + green `ci`; the owner merges (agents never approve). 7. Merge → deploy → `agsc ci` → Pages publishes `www/`; the build **re-derives** the whole `ledger.jsonl` from git history (the merge commit becomes a `kind:"merge"` entry) into `www/` — CI never commits it back to the content branch (PRD-042, D48(1)); `prov.commit`/`reviewer` are likewise **derived at build**, never written into files.
 
 **(c) Browser compose → Harness download (PRD-038, 037).**
-1. `/compose/` loads `graph.jsonld` + `www/js/agsc-core.js` — the *same* `src/composition/` modules, no `node:` imports (test-enforced). 2. User ticks Concepts, filtered by Cluster/tag. 3. `closure.js` runs client-side: `requires` closure adds items with an explanation path, `excludes` reports the violating pair, `contradicts`/missing `uses` warn, `supersedes` hides. 4. User names the Harness; the seven files are generated in memory. 5. Download via a STORE-only JS zip writer, per-file download as the documented fallback (G11). 6. Bytes equal `agsc compose <slugs> --out ./harness-x/` — a vector asserts Node ≡ browser. No server, no key, no upload.
+1. `/compose/` loads `graph.jsonld` + `www/js/agsc-core.js` — the *same* `src/composition/` modules, no `node:` imports (test-enforced). 2. User ticks Concepts, filtered by Cluster/tag. 3. `closure.js` runs client-side in the normative order of spec/07 (AGSC-07-04…08): `requires` closure adds items with a breadth-first explanation path → `supersedes` hides every superseded member, and a survivor whose `requires` target was just hidden is `AGSC-E802` → `excludes` over the survivors reports the violating pair (`AGSC-E801`) → `contradicts`/missing `uses` warn. Hiding before mutex is normative: the reverse order reverses verdicts (D48(2)). 4. User names the Harness; the seven files are generated in memory. 5. Download via a STORE-only JS zip writer, per-file download as the documented fallback (G11). 6. Bytes equal `agsc compose <slugs> --out ./harness-x/` — a vector asserts Node ≡ browser. No server, no key, no upload.
 
 ---
 
@@ -237,7 +242,7 @@ Rule: **one context ↔ one `src/` dir ↔ one spec section ↔ one vector area.
 
 | Lane | Workflow | Trigger | Permissions | Secrets | Result |
 |---|---|---|---|---|---|
-| Engine CI | engine `ci.yml` | push, PR | `contents: read` | none | `npm test` (fixed clock, no network), coverage ≥99%, `lint --self`, vectors; OS matrix on tags |
+| Engine CI | engine `ci.yml` | push, PR | `contents: read` | none | `npm test` (fixed clock, no network), coverage ≥99%, `lint --self`, vectors; OS matrix on tags; + every `tools/validate-*` (AGSC-09-92, merge-blocking) |
 | Engine release | engine `release.yml` | tag `v*` pushed **by the owner** | `contents: read`, `id-token: write`, `attestations: write` | none (OIDC) | Node 24 → npm **trusted publishing** of `agentic-system-core` + `agsc-cli` with `actions/attest` provenance (SLSA v1.0 Build L2 wording) |
 | Content CI + deploy | site `ci.yml` | push to `main`, PR | `contents: read`; deploy job elevated only as needed | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (deploy job only; never in fork context) | `npx agsc-cli ci` → publish **`www/`** to **Cloudflare Pages**; `_headers`/`_redirects` come from the build |
 | Refresh | site `refresh.yml` | weekly cron `29 5 * * 0` | `contents: read`, `issues: write` | none | `refresh --auto`: staleness + link HEAD checks → at most **one** issue, never a commit; keeps the 60-day auto-disable clock alive |
@@ -252,7 +257,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 
 - **Determinism.** Normative in `spec/04-canonicalization`: JCS, sorted keys, LF, NFC, UTC seconds, `SOURCE_DATE_EPOCH`, code-point file ordering, no blank nodes (so RDFC-1.0 degenerates to a sort). `verify` is merge-blocking.
 - **Agent-safety (N9) — the four mitigations.** (1) *Trust marking*: every MCP/WebMCP result is `{source, trust:"untrusted", license, type, body}`; skill packs, steer bundles and `llms.txt` carry a fixed provenance header and fence prose as ```` ```text agsc-content ````; own-repo Mode-2 bundles carry only the generated-from-commit line. (2) *Structural lints* (`src/governance/injection.js`): agent-directed imperatives, hidden text (HTML comments, zero-width, U+E0000–E007F, bidi), long base64/hex blobs, non-`http(s)` schemes — `warn` for humans, **`error` when `prov.agent` is set**; wordlists in `lint.injection_patterns[]`, literal alternations only, inputs capped at 1 MiB. (3) *Least agency*: tools take **ids, never paths**; no shell, URL or network tool; tool descriptions are package constants; `propose` writes locally, never pushes. (4) *Inert artefacts*: content-only skills with a sha256 lockfile and diff-on-update. Integrity hashes + attestation prove *tampering*, not injection.
-- **Error handling.** Exit `0` success, `1` findings/failed gate, `2` usage error (PRD-007). Diagnostics = JSON lines on **stderr**, data on stdout; codes `AGSC-<AREA>-<nnn>` (`PARSE|SCHEMA|LINK|LINT|PROV|DET|LEDGER|COMPOSE|IO|CLI`), enumerated in `spec/09-conformance` and pinned by `tests/vectors/cli/`. Parsers raise `AgscParseError` and nothing else (fuzz-asserted).
+- **Error handling.** Exit `0` success, `1` findings/failed gate, `2` usage error incl. a malformed `SOURCE_DATE_EPOCH` (PRD-007, AGSC-09-08). Diagnostics = JSON lines on **stderr** sorted by `(file, line, col, code)`, data on stdout; codes are `AGSC-E<nnn>` — one format only — with the hundreds digit naming the area (`0` CLI, `1` PARSE, `2` SCHEMA, `3` LINK, `4` LINT, `5` PROV, `6` DET, `7` LEDGER, `8` COMPOSE, `9` IO), enumerated in `spec/09-conformance` §9.4 and pinned by `tests/vectors/cli/`. Parsers raise `AgscParseError` and nothing else (fuzz-asserted).
 - **Config.** Exactly one schema-validated `agsc.config.json`; precedence flags > env (`AGSC_*`) > project > user; `NO_COLOR`, `--plain`, `--no-input`, `--version` honoured. Unknown keys error.
 - **Logging.** None at runtime — there is no runtime. Diagnostics go to stderr; the durable record is `ledger.jsonl` + git history + Episode items. No telemetry, cookies, localStorage or beacons (PRD-046).
 - **i18n.** Deferred (G27): `lang` is accepted, `<slug>.<lang>.md` variants are not; UI strings stay in templates so a port can swap them.
@@ -297,7 +302,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 
 **ADR-005 `/ns/` conneg via w3id `.htaccess`.** Conneg is the one thing a static host cannot do; putting it in w3id yields zero project-owned server code, permanent IRIs independent of the domain, and no attack surface we operate. Costs a foreign-repo PR (gating `/ns/` resolution only) and a same-origin table kept in sync. Fallback if w3id refuses: a `run_worker_first` handler — not built at v1. *D02, D41, D47, G13, PRD-050.*
 
-**ADR-006 Append-only hash-chained ledger.** `build`/`ci` append one line per event with `hash = sha256(prev + canonical(entry))`; the head is published in the integrity block and attested per release, so any reader re-verifies the history offline via `verify --ledger`. Never hand-written; a tampered line fails the chain. *D44(h), Art. XII, PRD-005, NFR-11.*
+**ADR-006 Derived hash-chained ledger.** `build`/`ci` **recompute** the whole `ledger.jsonl` from the git history of the content branch — one entry per event, `hash = sha256(prev + canonical(entry))` — and write it into `www/` and the release assets only; the head is published in the integrity block and attested per release, so any reader re-verifies the history offline via `verify --ledger`, which also compares the recomputed head to the published one. Nothing appends and nothing is hand-written, so a bot commit to the content branch is never needed (it is forbidden by PRD-042), concurrent CI runs cannot fork the chain, and a partial write cannot exist; a tampered published file fails against the recomputation. *D44(h) as amended by D48(1), Art. XII, PRD-005, NFR-11.*
 
 **ADR-007 Content Use Terms embedded in every prose export.** The licence stack is fixed (engine Apache-2.0; schema/ontology/IDs CC0; prose ARR + `LicenseRef-AgenticSystemCore-Content-Use-1.0`) and the terms travel *with* the bytes — skill packs, steer bundles, Harnesses, `llms.txt`, MCP results — because excerpts leave our origin by design. CI fails an export that omits them. *D05, D39, R39, NFR-10, Art. XIII, PRD-019.*
 
@@ -310,7 +315,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | NFR | Goal | Lane that proves it |
 |---|---|---|
 | NFR-01 zero deps | Q2 | engine `ci.yml`: `npm ls --prod` empty + `npm audit` |
-| NFR-02 language-independent plane | Q4 | vectors lane (`tests/vectors/**`, no engine-private state) + correspondence-rule CI script |
+| NFR-02 language-independent plane | Q4 | vectors lane (`tests/vectors/**`, no engine-private state) + correspondence-rule CI script + the `tools/` validators (PRD-054, AGSC-09-90…92) |
 | NFR-03 ≥99% coverage | Q1 | coverage lane + golden-thread check (every PRD id → ≥1 test name) |
 | NFR-04 byte-identical builds | Q1 | determinism lane: `agsc verify` (double build + sha256), merge-blocking; OS matrix on tags |
 | NFR-05 deterministic tests | Q1 | `node:test`, fixed clock 2026-01-01T00:00:00Z, + a test that no `Date.now()`/`fetch` is reachable from `src/knowledge/**` |
@@ -336,9 +341,9 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | R5 | **w3id PR latency** — `/ns/` IRIs unresolvable until merged | G13, ADR-005 | IRI fixed in `ontology/agsc.ttl`; PR after M2; launch does not depend on it | Owner |
 | R6 | `injection-scan` **false positives** deter human contributors | research/17 §1.5 | severity split + labelled override + config-owned wordlists; measured on the 153-card corpus pre-launch | M13 |
 | R7 | Zero-dep parsers ⇒ **ReDoS, prototype pollution, traversal, resource bombs** | audit/G §2.7, research/17 §1.9 | index-based state machines not regexes; `Object.create(null)` + `__proto__`/`constructor` rejection; ids-only paths; 1 MiB caps; seeded fuzz lane on tags; **archives refused entirely** | M1, M12 |
-| R8 | **Correspondence-rule drift** — a module with no spec section or vector | audit/G §2.1 | §5.3 machine-checked in `ci`; deferred items named below, not hidden | M13 |
+| R8 | **Correspondence-rule drift** — a module with no spec section or vector | audit/G §2.1 | §5.3 machine-checked in `ci` against its **Area due** column; `tools/validate-spec` closes rule-id and error-code drift mechanically (PRD-054); deferred items named below, not hidden | M13 |
 
-**Accepted debt (named):** ADR-009 unopened; `--json` everywhere v1.x (v1 = `lint`/`ci`); `conform` + `/conformance/` v1.x (G26); typed Mode-2 links v2 (G06); `memory://` resolver v2 (G22); i18n (G27); CA-v1 bot and `signatures.jsonl` manual (G20); LLM review v1.1 (G09); non-GitHub browser Proposal flow undefined (G08); benchmarks = v1.0.1 gate ≤30 days post-launch (S01 default).
+**Accepted debt (named):** ADR-009 unopened; `--json` everywhere v1.x (v1 = `lint`/`ci`); `conform` + `/conformance/` v1.x (G26); typed Mode-2 links v2 (G06); `memory://` resolver v2 (G22); i18n (G27); CA-v1 bot and `signatures.jsonl` manual (G20); LLM review v1.1 (G09); non-GitHub browser Proposal flow undefined (G08); benchmarks = v1.0.1 gate ≤30 days post-launch (S01 default); **WebMCP has no spec rule or vector at 1.x** — its contract is `AGSC-09-13`'s five tools re-exposed through `document.modelContext` (PRD-051, should-S8), promoted to a rule if S8 ships.
 
 ---
 
@@ -401,7 +406,7 @@ workspace "AgenticSystemCore" "Distributed Ontological Agentic Memory engine —
     agent -> browser "Uses page tools" "WebMCP"
     owner -> github "All git writes, merges, tags" "git/HTTPS"
     implementer -> asc "Reimplements from spec/ + tests/vectors/" "files"
-    cli -> bundle "Reads content, appends ledger" "FileSystem port"
+    cli -> bundle "Reads content, derives ledger" "FileSystem port"
     cli -> site "Emits www/" "FileSystem port"
     browser -> site "Loads graph.jsonld; downloads Harness" "HTTPS"
     mcpserver -> site "Reads published exports" "HTTPS (mcp only)"
