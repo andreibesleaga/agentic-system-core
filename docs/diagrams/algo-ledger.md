@@ -5,9 +5,9 @@
 ```mermaid
 flowchart TD
   A["agsc build / agsc ci runs"] --> B["Read the git history of the content branch\n(commits in order; kind and actor from the commit + its trailers)"]
-  B --> C["For each event i, construct\nentry_i = {ts, kind, ref, actor, prev}\nts from the commit / SOURCE_DATE_EPOCH — never a wall clock"]
-  C --> D["canonical(entry_i) = JCS (sorted members, no whitespace)\nprev_0 = \"\" (genesis)"]
-  D --> E["hash_i = sha256(prev_i + canonical(entry_i))\nprev_i+1 = hash_i"]
+  B --> C["One entry per first-parent commit, oldest first:\n{ts: committer time, kind: release|merge|commit,\nactor: Signed-off-by, ref: full sha, mode: auto when\nthe commit carries Channel-Auto} — then ONE trailing\nbuild entry {ts: SOURCE_DATE_EPOCH, ref: content tree hash,\nactor: process:agsc/<version>} (AGSC-08-20a)"]
+  C --> D["canonical(entry_i) = JCS (sorted members, no whitespace)\nprev_0 = 64 zeros"]
+  D --> E["hash_i = sha256(prev_i + canonical(entry_i))\nprev_0 = 64 zeros (genesis); prev_i+1 = hash_i"]
   E --> F["Write the WHOLE ledger.jsonl into build.out (www/)\nand the release assets — never into content/,\nnever committed by CI (AGSC-08-02, AGSC-08-20)"]
   F --> G["Publish the chain head (last hash)\nin /.well-known/agentic-knowledge integrity block"]
   G --> H{"Is this a tagged release?"}

@@ -224,10 +224,9 @@ asc:usedBy
 
 asc:uses
     a owl:ObjectProperty ;
-    rdfs:comment "Soft dependency: the subject draws on the object. A composition warns when a used item is absent. No domain or range is declared, for the reason given on asc:contradicts." ;
+    rdfs:comment "Soft dependency: the subject draws on the object. A composition warns when a used item is absent. No domain, range or super-property is declared: skos:related is a sub-property of skos:semanticRelation, whose domain and range are skos:Concept (S19/S20), so a super-property axiom would re-introduce the unintended Concept typing and the S37 contradiction for Clusters (AGSC-05-26a, V3-06)." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
-    rdfs:label "uses" ;
-    rdfs:subPropertyOf skos:related .
+    rdfs:label "uses" .
 
 asc:verifiedAt
     a owl:DatatypeProperty ;

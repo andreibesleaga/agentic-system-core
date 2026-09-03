@@ -192,7 +192,8 @@
       "additionalProperties": true,
       "required": ["resource"],
       "properties": {
-        "resource": { "type": "string", "pattern": "^https?://" },
+        "id": { "description": "Stable source identifier used to de-duplicate ingested messages (AGSC-01-33).", "type": "string", "pattern": "^[\\s\\S]{1,200}$" },
+        "resource": { "description": "A web URL, or the channel form urn:agsc:channel:<name>:<source_id> for a message with no URL (AGSC-01-33, V3-32).", "type": "string", "pattern": "^(?:https?://|urn:agsc:channel:[a-z0-9-]+:)" },
         "title": { "type": "string" },
         "author": { "type": "string" },
         "year": { "type": "string", "pattern": "^[0-9]{4}$" },
@@ -220,11 +221,11 @@
       "properties": { "by": { "$ref": "#/$defs/actor" }, "at": { "$ref": "#/$defs/instant" } }
     },
     "verified_entry": {
-      "description": "The evidence of a Review (AGSC-08-03).",
+      "description": "The evidence of a Review (AGSC-08-03): a human adds it, so by is human_actor (V3-27).",
       "type": "object",
       "additionalProperties": true,
       "required": ["by", "at"],
-      "properties": { "by": { "$ref": "#/$defs/actor" }, "at": { "$ref": "#/$defs/instant" } }
+      "properties": { "by": { "$ref": "#/$defs/human_actor" }, "at": { "$ref": "#/$defs/instant" } }
     },
     "usage": {
       "description": "Optional token accounting rolled up on the NOW page (AGSC-08-25).",

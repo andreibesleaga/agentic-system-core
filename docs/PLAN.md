@@ -81,7 +81,7 @@ graph TB
 
   HR -->|"HTTPS: /concepts/, /clusters/, /now/, /compose/"| SITE
   HR -->|"fork-and-edit URL → PR"| GH
-  AG -->|"stdio JSON-RPC: search read links compose propose"| ENG
+  AG -->|"stdio JSON-RPC: search read links compose propose ask remember"| ENG
   AG -->|"GET /.well-known/agentic-knowledge, /graph.{jsonld,ttl,nq}, /llms.txt, /skills/index.json, /pages/&lt;slug&gt;.md"| SITE
   AG -->|"WebMCP document.modelContext (should S8)"| SITE
   OW -->|"git push · tag · merge (all git writes)"| GH
@@ -93,7 +93,7 @@ graph TB
   W3 -->|"303 → /ns/agsc.ttl, /ns/context.jsonld"| SITE
   GH -->|"tag v* → trusted publishing + attestations"| NPM
   NPM -->|"npx agsc-cli / npm i -g agentic-system-core"| ENG
-  ENG -->|"reads content/, writes www/ dist/ ledger.jsonl"| SITE
+  ENG -->|"reads content/ + git log, writes www/ (incl. the derived ledger.jsonl) and dist/"| SITE
 ```
 
 External interfaces are files and URLs only — there is no API to call. `memory://<bundle>/<slug>` is a documented alias, never resolved — the `https://` IRI may always be used instead (AGSC-05-04a) (PRD-027, D33).
@@ -134,7 +134,7 @@ graph TB
     WM["WebMCP page tools (should S8)"]
   end
   subgraph MCP["Container: agsc mcp (local stdio server)"]
-    T["5 tools: search read links compose propose"]
+    T["7 tools: search read links compose propose ask remember"]
   end
   subgraph CI["Container: GitHub Actions"]
     CIY["engine ci.yml · release.yml"]
@@ -180,7 +180,7 @@ graph TB
 | distribution | `site.js` | route set R36 → `www/` | 1, 9 | build |
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
 | distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
-| distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 5 tools; staleness + link checks | — | init mcp refresh |
+| distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 7 tools (+ask, +remember, D51-b); staleness + link checks | — | init mcp refresh |
 | interchange | `import.js` `okf.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in | — | import |
 | interchange | `export.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
@@ -201,8 +201,8 @@ Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/
 | `ContentStore` | the Bundle | local git working tree | GitHub API, Obsidian, Solid (v2) |
 | `Renderer` | items → HTML | built-in templates | theme packs |
 | `GraphExport` | items → RDF | JSON-LD/Turtle/N-Quads (RDF/XML = should S1) | SPARQL dump, Wikibase |
-| `ToolTransport` | tools to agents | local stdio MCP, 5 tools | remote MCP Worker (v2) |
-| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 5 tools, degrading to plain JS | — |
+| `ToolTransport` | tools to agents | local stdio MCP, 7 tools (D51-b) | remote MCP Worker (v2) |
+| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools, degrading to plain JS | — |
 | `Reviewer` | Proposal verdict | **lint-only** (no LLM, C6) | LLM reviewer v1.1, provider-capped |
 | `Host` | where `www/` lands | Cloudflare Pages (D47) | GitHub/GitLab Pages, Netlify (v1.x) |
 | `Forge` | PR/CI shim | GitHub (`templates/github/*.yml`, ≤20 lines) | GitLab/Forgejo (v1.x) |
@@ -228,7 +228,7 @@ Rule: **one context ↔ one `src/` dir ↔ one spec section ↔ one vector area.
 ## 6. Runtime view
 
 **(a) `agsc ci` end-to-end (PRD-049, 004, 005).**
-1. Load + schema-validate `agsc.config.json`. 2. Discover `content/**/*.md` + `site/*.md`, code-point sorted. 3. Parse frontmatter → validate → resolve nine Link keys, compute inverses, detect orphans/cycles. 4. Run L1/L2 lints incl. `injection-scan`, `no-secrets`, `no-pii`, `clean-room`; error → exit 1 with file+line. 5. Compile `*.diagram` → SVG. 6. Build SKOS collections + graph; emit `graph.{jsonld,ttl,nq}` (JCS, sorted, blank-node-free) and `pages/<slug>.{md,jsonld}`. 7. Render HTML, `search.json`, `_headers`, `_redirects`, sitemap, `llms.txt`, `/.well-known/agentic-knowledge` (linkset + integrity block incl. **ledger head**), `/now/` + `now.md` — all times from `SOURCE_DATE_EPOCH`. 8. Enforce N8 budgets; over → exit 1. 9. **Build again** into a temp dir; byte compare; diff → exit 1. 10. `export`; `attest` in CI. 11. Append **one** `ledger.jsonl` line `{ts, kind:"build", ref, actor, prev, hash}`; re-verify the chain. 12. Exit 0; `dist/gate.json` carries the verdict.
+1. Load + schema-validate `agsc.config.json`. 2. Discover `content/**/*.md` + `site/*.md`, code-point sorted. 3. Parse frontmatter → validate → resolve nine Link keys, compute inverses, detect orphans/cycles. 4. Run L1/L2 lints incl. `injection-scan`, `no-secrets`, `no-pii`, `clean-room`; error → exit 1 with file+line. 5. Compile `*.diagram` → SVG. 6. Build SKOS collections + graph; emit `graph.{jsonld,ttl,nq}` (JCS, sorted, blank-node-free) and `pages/<slug>.{md,jsonld}`. 7. Render HTML, `search.json`, `_headers`, `_redirects`, sitemap, `llms.txt`, `/.well-known/agentic-knowledge` (linkset + integrity block incl. **ledger head**), `/now/` + `now.md` — all times from `SOURCE_DATE_EPOCH`. 8. Enforce N8 budgets; over → exit 1. 9. **Build again** into a temp dir; byte compare; diff → exit 1. 10. `export`; `attest` in CI. 11. **Derive** the whole `ledger.jsonl` from the git-log file into `www/` (AGSC-08-20a: first-parent chain, one entry per commit, one trailing `build` entry); re-verify the chain and compare its head to the published `integrity.ledger_head`. 12. Exit 0; `dist/gate.json` carries the verdict.
 
 **(b) Proposal lifecycle (PRD-039–043).**
 1. Author (human, or operator-run agent) edits an item with `prov{origin, operator}`. 2. `lint --fix` normalizes; `propose` writes `dist/proposal/<n>.patch` + PR body (`<!-- agsc:proposal v1 -->`) and prints the `git`/`gh` commands — **no network write** (C5). 3. The human runs them; the PR carries the DCO-Plus `Signed-off-by … (CA-v1)` trailer. 4. `ci.yml` runs `agsc ci` with `contents: read`; fork PRs lint-only until labelled, ≤5 open bot PRs; findings post as annotations. **No LLM (C6).** 5. Owner reviews and adds `verified: [{by, at}]` — that entry *is* the Review. 6. Ruleset requires PR + 1 approval + Code Owner + green `ci`; the owner merges (agents never approve). 7. Merge → deploy → `agsc ci` → Pages publishes `www/`; the build **re-derives** the whole `ledger.jsonl` from git history (the merge commit becomes a `kind:"merge"` entry) into `www/` — CI never commits it back to the content branch (PRD-042, D48(1)); `prov.commit`/`reviewer` are likewise **derived at build**, never written into files.
@@ -244,10 +244,11 @@ Rule: **one context ↔ one `src/` dir ↔ one spec section ↔ one vector area.
 |---|---|---|---|---|---|
 | Engine CI | engine `ci.yml` | push, PR | `contents: read` | none | `npm test` (fixed clock, no network), coverage ≥99%, `lint --self`, vectors; OS matrix on tags; + every `tools/validate-*` (AGSC-09-92, merge-blocking) |
 | Engine release | engine `release.yml` | tag `v*` pushed **by the owner** | `contents: read`, `id-token: write`, `attestations: write` | none (OIDC) | Node 24 → npm **trusted publishing** of `agentic-system-core` + `agsc-cli` with `actions/attest` provenance (SLSA v1.0 Build L2 wording) |
+| Auto-channel merge | site `review.yml`, job `auto-merge` | `pull_request` labelled `channel:auto` | `contents: read` (the merge itself is performed by the channel owner's credential, and the ruleset bypass is limited to that actor) | `CHANNEL_TOKEN_<name>` | merges only when every condition of AGSC-08-26 holds — PR author = `channels[].author`, `prov.operator` = `channels[].owner`, `content/**` items only, N9 lints at `error` — and writes the `Channel-Auto: <name>` trailer that the derived ledger reads as `mode: auto` |
 | Content CI + deploy | site `ci.yml` | push to `main`, PR | `contents: read`; deploy job elevated only as needed | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (deploy job only; never in fork context) | `npx agsc-cli ci` → publish **`www/`** to **Cloudflare Pages**; `_headers`/`_redirects` come from the build |
-| Refresh | site `refresh.yml` | weekly cron `29 5 * * 0` | `contents: read`, `issues: write` | none | `refresh --auto`: staleness + link HEAD checks → at most **one** issue, never a commit; keeps the 60-day auto-disable clock alive |
+| Refresh + channel ingest | site `refresh.yml` | weekly cron `29 5 * * 0`; ingest schedule per channel | `contents: read`, `issues: write`; the ingest job runs with no repo write of its own | `CHANNEL_TOKEN_<name>` (ingest job only — the channel owner's fine-grained PAT, contents + pull-requests write, never in fork context) | `refresh --auto`: staleness + link HEAD checks → at most **one** issue, never a commit; keeps the 60-day auto-disable clock alive |
 
-All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cache step (zero deps); secrets only in the jobs that need them (D40 2, 3, 11).
+All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cache step (zero deps); secrets only in the jobs that need them (D40 2, 3, 11). The secret inventory is **four**: the two Cloudflare deploy secrets plus one `CHANNEL_TOKEN_<name>` per registered channel (D40's three plus the channel token added by D52(4)); `GITHUB_TOKEN` never merges an auto PR.
 
 **w3id conneg (C4).** `https://w3id.org/agentic-system-core/ns#Concept` → the w3id repo's `.htaccess` matches `Accept` against a fixed table → `303` to `/ns/agsc.ttl` (`text/turtle`), `/ns/context.jsonld` (`application/ld+json`), `/ns/agsc.rdf` (`application/rdf+xml`), else the `/ns/` HTML index. Targets are always same-origin static files (no open redirect); `/ns/<ver>/` copies are immutable. Until the w3id PR merges the IRI simply does not resolve — that blocks nothing at launch (G13). No project-owned function or Worker exists at v1.
 
@@ -273,7 +274,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | 003 | Static-only, Cloudflare Pages from `www/` | Accepted | D09, D10, D47, D47-note(a) |
 | 004 | One vocabulary, nine Links | Accepted | D36-final, D41, D43(4), G04 |
 | 005 | `/ns/` conneg via w3id `.htaccess` | Accepted | D02, D41, D47, G13 |
-| 006 | Append-only hash-chained ledger | Accepted | D44(h), Art. XII |
+| 006 | Derived hash-chained ledger | Accepted | D44(h), Art. XII |
 | 007 | Content Use Terms embedded in every prose export | Accepted | D39, R39, NFR-10 |
 | 008 | JS + JSDoc with a language-independent capability plane | Accepted | D47, D38-final, NFR-02 |
 | 009 | Five contexts vs four (Emission merge) | Deferred | G §2.5 — reopen only if the boundary rule leaks in P2 |
@@ -335,15 +336,15 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | # | Risk | Source | Mitigation | Owner |
 |---|---|---|---|---|
 | R1 | Hand-written **Markdown subset renderer** — highest risk; 153 bodies must render | audit/D §4.9 | ship the old renderer's feature level + GFM tables; golden-test all 153; unsupported syntax is a lint error, not a rendering surprise | M4 |
-| R2 | **Turtle / RDF-XML / N-Quads** escaping and datatypes subtly wrong | audit/D §4.7 | validate once offline (rapper/Jena), lock with golden fixtures; RDF/XML is should-S1, droppable | M5 |
+| R2 | **Turtle / RDF-XML / N-Quads** escaping and datatypes subtly wrong | audit/D §4.7 | validate once offline (rapper/Jena), lock with golden fixtures; RDF/XML stays in v1.0 per D49, emitted when `build.rdfxml` is true (AGSC-05-06) | M5 |
 | R3 | Browser ≡ CLI composition core with **no bundler**, plus a hand-written zip writer | G10, G11 | one ESM entry copied to `www/js/`; test forbids `node:` imports in `src/composition/`; per-file download fallback | M8 |
-| R4 | **Schedule** ≈22 person-days to 2026-10-10, with a mid-flight owner gate | audit/D §6 | pre-agreed ordered trims; M3 sample first, then batch; shoulds S1–S8 droppable by construction | Owner + orchestrator |
+| R4 | **Schedule** ≈30.2 person-days of must-scope to 2026-10-10 (audit/D §6 = 28.0 + Amendments 1–2 + D50 + D51 − banked credits; V3 §6 recomputation, not the "≈22" of D42), with a mid-flight owner gate | audit/D §6, V3-14/V3-36 | pre-agreed ordered trims; M3 sample first, then batch; shoulds S1–S8 droppable by construction; the date itself is a Round-10 owner decision | Owner + orchestrator |
 | R5 | **w3id PR latency** — `/ns/` IRIs unresolvable until merged | G13, ADR-005 | IRI fixed in `ontology/agsc.ttl`; PR after M2; launch does not depend on it | Owner |
 | R6 | `injection-scan` **false positives** deter human contributors | research/17 §1.5 | severity split + labelled override + config-owned wordlists; measured on the 153-card corpus pre-launch | M13 |
 | R7 | Zero-dep parsers ⇒ **ReDoS, prototype pollution, traversal, resource bombs** | audit/G §2.7, research/17 §1.9 | index-based state machines not regexes; `Object.create(null)` + `__proto__`/`constructor` rejection; ids-only paths; 1 MiB caps; seeded fuzz lane on tags; **archives refused entirely** | M1, M12 |
 | R8 | **Correspondence-rule drift** — a module with no spec section or vector | audit/G §2.1 | §5.3 machine-checked in `ci` against its **Area due** column; `tools/validate-spec` closes rule-id and error-code drift mechanically (PRD-054); deferred items named below, not hidden | M13 |
 
-**Accepted debt (named):** ADR-009 unopened; `--json` everywhere v1.x (v1 = `lint`/`ci`); `conform` + `/conformance/` v1.x (G26); typed Mode-2 links v2 (G06); `memory://` resolver v2 (G22); i18n (G27); CA-v1 bot and `signatures.jsonl` manual (G20); LLM review v1.1 (G09); non-GitHub browser Proposal flow undefined (G08); benchmarks = v1.0.1 gate ≤30 days post-launch (S01 default); **WebMCP has no spec rule or vector at 1.x** — its contract is `AGSC-09-13`'s five tools re-exposed through `document.modelContext` (PRD-051, should-S8), promoted to a rule if S8 ships.
+**Accepted debt (named):** ADR-009 unopened; `--json` everywhere v1.x (v1 = `lint`/`ci`); `conform` + `/conformance/` v1.x (G26); typed Mode-2 links v2 (G06); `memory://` resolver v2 (G22); i18n (G27); CA-v1 bot and `signatures.jsonl` manual (G20); LLM review v1.1 (G09); non-GitHub browser Proposal flow undefined (G08); benchmarks = v1.0.1 gate ≤30 days post-launch (S01 default); **WebMCP has no spec rule or vector at 1.x** — its contract is `AGSC-09-13`'s seven tools re-exposed through `document.modelContext` (PRD-051, should-S8), promoted to a rule if S8 ships.
 
 ---
 
@@ -354,7 +355,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | # | Threat | STRIDE | Asset | L/I | Implemented mitigation | Trace |
 |---|---|---|---|---|---|---|
 | T1 | **Prompt injection via merged content** reaching agents through `llms.txt`, skills, steer bundles, MCP results | T/E (LLM01) | A8, A3 | M/H | ADR-001: trust-marked JSON results, fenced prose, `injection-scan` (error for `prov.agent`), ids-only tools, inert skills, human merge | NFR-07, D40(7,9,10) |
-| T2 | **Malicious Proposal** — silent edits to `schema/`/`ontology`/`type`/`id` | T/E | A1, A9 | M/M | ruleset PR + 1 approval + Code Owner + green `ci`; CODEOWNERS on `schema/**`, `ontology/**`; `prov.operator` must match PR author; forks lint-only until labelled; ≤5 open bot PRs | PRD-040/042/043, D40(4) |
+| T2 | **Malicious Proposal** — silent edits to `schema/`/`ontology`/`type`/`id`, or an ingest PR posing as a channel | T/E | A1, A9 | M/M | ruleset PR + 1 approval + Code Owner + green `ci`; the only ruleset **bypass actor** is the channel owner's `CHANNEL_TOKEN_<name>`, and it can merge only PRs satisfying AGSC-08-26 (author = `channels[].author`, `prov.operator` = `channels[].owner` from config, `content/**` items only, N9 lints at `error`); CODEOWNERS on `schema/**`, `ontology/**`; `prov.operator` must match PR author; forks lint-only until labelled; ≤5 open bot PRs | PRD-040/042/043, D40(4) |
 | T3 | **npm typosquat / lookalike alias** (`agsc` refused; users mistype) | S | A2 | M/M | trusted publishing + `actions/attest` on both packages; canonical names documented; `npm audit signatures` | PRD-048, D28-note, D40(11) |
 | T4 | **CI token theft** via logs or a compromised action | I/E | A4, A3 | M/H | `contents: read` default + per-job elevation; SHA-pinned actions + Dependabot; **never `pull_request_target`**; secrets only in the deploy job; no cache step | D40(3), PRD-050 |
 | T5 | **w3id redirect tampering** — `/ns/` IRIs pointed at an attacker host | T | A6, A3 | L/H | fixed `Accept`→path table, **same-origin targets only**; w3id-maintainer-reviewed PRs; immutable `/ns/<ver>/`; ontology hashes in the integrity block | ADR-005, PRD-024 |
@@ -387,11 +388,11 @@ workspace "AgenticSystemCore" "Distributed Ontological Agentic Memory engine —
         interchange = component "Interchange" "import/export/steer/skills" "src/interchange/"
         ports = component "Ports & Node adapters" "FileSystem, Clock, ProcessRunner, Network[CI-only]" "src/ports/, src/adapters/"
       }
-      mcpserver = container "agsc mcp" "Local stdio JSON-RPC server: search read links compose propose" "Node.js"
+      mcpserver = container "agsc mcp" "Local stdio JSON-RPC server: search read links compose propose ask remember" "Node.js"
       browser = container "Browser bundle" "www/js/agsc-core.js — same composition core, no node: imports; WebMCP page tools" "JavaScript (ESM)"
       site = container "Static site" "www/: pages, graph.*, pages/*.md|.jsonld, search.json, llms.txt, skills/, /ns/, /.well-known/agentic-knowledge, now.md" "Static files"
       pipeline = container "GitHub Actions" "ci.yml, release.yml, refresh.yml — the only backend" "YAML workflows"
-      bundle = container "Bundle" "content/**/*.md + agsc.config.json + ledger.jsonl — the system of record" "Markdown + YAML + git"
+      bundle = container "Bundle" "content/**/*.md + agsc.config.json — the system of record (ledger.jsonl is derived into www/, not stored here)" "Markdown + YAML + git"
     }
 
     github = softwareSystem "GitHub" "Repos, Proposals (PRs), Actions, Releases" "External"
@@ -401,7 +402,7 @@ workspace "AgenticSystemCore" "Distributed Ontological Agentic Memory engine —
 
     reader -> site "Reads pages and machine surfaces" "HTTPS"
     reader -> github "Opens a Proposal (fork-and-edit)" "HTTPS"
-    agent -> mcpserver "Calls five tools" "stdio JSON-RPC"
+    agent -> mcpserver "Calls seven tools" "stdio JSON-RPC"
     agent -> site "Fetches linkset, graph, llms.txt, skills" "HTTPS"
     agent -> browser "Uses page tools" "WebMCP"
     owner -> github "All git writes, merges, tags" "git/HTTPS"
@@ -437,3 +438,7 @@ workspace "AgenticSystemCore" "Distributed Ontological Agentic Memory engine —
 **S02 GATE: APPROVED by owner 2026-09-02 (three defaults stand). PLAN is FROZEN as the S02 baseline; changes now require a Proposal. Owner closed the language question 2026-09-02: **JS + JSDoc stands (ADR-008 FINAL)**.**
 
 *Generated by: `prov: {origin: ai-generated, agent: claude-opus-5, operator: human:andreibesleaga}` · P-S02, 2026-09-02*
+
+**Addendum 2026-09-03 (D51/PRD-056):** ports table gains **`Channel`** (inbound `pull/render` → Proposals; outbound `ask` responder over exports) — v1 adapter = a fixture stub under `channels/stub/`; real adapters (Telegram ingest+ask, Google Keep export, OneNote export, WhatsApp export, mail) are plugins v1.x; a Worker-hosted responder is the D47 "future optional backend". Component: `src/interchange/channels.js` (port + stub) in M12 (≈0.4 d).
+
+**Addendum 2026-09-03 (D51-b):** `src/distribution/mcp.js` exposes seven tools (`+ ask + remember`), resources and one prompt; `ask` shares the responder module with the Channel port (`src/interchange/channels.js` → `answer(question) → {answer, citations[]}`); `remember` reuses `proposal.js`. Sequence (d) "agent remembers": MCP client → remember → item synthesized → Proposal (hitl: patch+body; auto: merged by CI after lint-only) → rebuild → resource visible. +0.3 pd in M10.

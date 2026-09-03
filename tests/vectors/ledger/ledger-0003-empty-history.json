@@ -1,0 +1,13 @@
+{
+  "area": "ledger",
+  "description": "A repository with no history — the P0 drop-in folder before its first commit — still has a defined ledger and a defined head: the trailing build entry alone, whose prev is the 64-zero genesis. Without this rule integrity.ledger_head would be undefined for every freshly adopted Bundle.",
+  "expected": {
+    "head": "ff2a315c268c863f309122f4cf4f2111882ce09b2dab5c16e3cd5818fa130b49",
+    "ledger": "{\"actor\":\"process:agsc/0.1.0\",\"hash\":\"ff2a315c268c863f309122f4cf4f2111882ce09b2dab5c16e3cd5818fa130b49\",\"kind\":\"build\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"4444444444444444444444444444444444444444\",\"ts\":\"2026-01-04T00:00:00Z\"}\n"
+  },
+  "id": "ledger-0003",
+  "input": { "content_tree": "4444444444444444444444444444444444444444", "git_log": [], "version": "0.1.0" },
+  "level": "required",
+  "options": { "source_date_epoch": 1767484800, "spec_version": "1.0.0-draft.1" },
+  "rule": "AGSC-08-20a"
+}

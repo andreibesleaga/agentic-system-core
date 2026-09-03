@@ -14,9 +14,9 @@
       "required": ["base", "title"],
       "properties": {
         "base": {
-          "description": "Absolute https origin without a trailing slash; the IRI base of every item (AGSC-01-19).",
+          "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base (D52(1)).",
           "type": "string",
-          "pattern": "^https://[^\\s/]+(?:/[^\\s/]+)*$"
+          "pattern": "^(?:https://[^\\s/]+(?:/[^\\s/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
         },
         "title": { "type": "string" },
         "tagline": { "type": "string" },
@@ -73,9 +73,26 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "out": { "description": "Build output directory; default www (AGSC-01-19).", "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
-        "rdfxml": { "description": "Emit /graph.rdf; default false, the only should-level RDF view (AGSC-05-06, AGSC-06-01).", "type": "boolean" },
+        "out": { "description": "Build output directory; default www, a trailing slash is accepted and stripped (AGSC-01-19).", "type": "string", "pattern": "^[A-Za-z0-9._-]+/?$" },
+        "rdfxml": { "description": "Emit /graph.rdf; default false. RDF/XML stays inside v1.0 per D49: when true the view MUST be emitted (AGSC-05-06, AGSC-06-01).", "type": "boolean" },
         "feed": { "description": "Emit /feed.xml; default true (AGSC-06-01).", "type": "boolean" }
+      }
+    },
+    "channels": {
+      "description": "Registered ingest channels (AGSC-01-30..33). name is unique; author is the forge identity CI checks the PR author against, owner is the accountable human whose publish choice AGSC-08-26 treats as standing approval (D52(4)).",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "adapter", "author", "owner"],
+        "properties": {
+          "name": { "$ref": "#/$defs/slug" },
+          "adapter": { "$ref": "#/$defs/slug" },
+          "author": { "description": "Forge login of the identity that opens ingest pull requests (AGSC-08-26 c).", "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$" },
+          "owner": { "$ref": "#/$defs/human_actor" },
+          "publish": { "description": "Default hitl; auto merges only under AGSC-08-26.", "enum": ["auto", "hitl"] }
+        }
       }
     },
     "lint": {

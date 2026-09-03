@@ -4,7 +4,7 @@
   "expected": {
     "findings": [{ "code": "AGSC-E506", "severity": "warn" }],
     "idempotent": true,
-    "output": "---\ntype: concept\nkind: explainer\ntitle: My Notes\naliases:\n  - My Notes.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# My Notes\n\nBody stays, byte for byte.\n",
+    "output": "---\ntype: concept\ntitle: My Notes\naliases:\n  - My Notes.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: explainer\n---\n\n# My Notes\n\nBody stays, byte for byte.\n",
     "path": "content/concepts/my-notes.md"
   },
   "id": "fm-0008",

@@ -21,7 +21,7 @@
 
 - **AGSC-04-09** The build instant MUST come from `SOURCE_DATE_EPOCH` (integer seconds since the Unix epoch), defaulting to the last commit time. Where no git history exists — the drop-in flow of PRD-053 runs before `git init` — the default MUST be `0` (`1970-01-01T00:00:00Z`) with warning `AGSC-E606`, so the instant is always defined. A malformed value MUST exit 2 (`AGSC-E603`, the configuration class of AGSC-09-08); the variable MUST NOT be unset for child processes. [research/12 §3, §P rule 23; D48(7)]
 - **AGSC-04-10** Every embedded timestamp MUST be rendered from that instant as `YYYY-MM-DDTHH:MM:SSZ` — UTC, seconds precision, never milliseconds, never a local offset. [research/12 §P rules 7, 23]
-- **AGSC-04-11** Staleness, "last build", NOW counts and feed dates MUST all derive from the same instant. Only the `refresh` verb MAY read a real clock, and a clock it reads MUST NOT reach any emitted artefact: ledger `ts` values derive from `SOURCE_DATE_EPOCH` alone (AGSC-08-21), so a `refresh` observation can only open an issue. [PRD-015, PRD-017, G17, D48(7)]
+- **AGSC-04-11** Staleness, "last build", NOW counts and feed dates MUST all derive from the same instant. Only the `refresh` verb MAY read a real clock, and a clock it reads MUST NOT reach any emitted artefact: ledger `ts` values derive from the committer times of the git-log file (AGSC-08-20a) and from `SOURCE_DATE_EPOCH` for the single trailing `build` entry, never from a wall clock, so a `refresh` observation can only open an issue. [PRD-015, PRD-017, G17, D48(7)]
 
 ## 4.5 Ordering
 
@@ -34,9 +34,9 @@
 - **AGSC-04-15** `graph.nq` — canonical N-Quads, code-point ordered, each quad terminated by a single LF — is the hashed form of the graph. `bundle.hash` MUST be the lowercase hex SHA-256 of its bytes. [research/12 §P rule 21]
 - **AGSC-04-16** Because exports are blank-node-free (§05), RDFC-1.0 canonicalization degenerates to this sort. An implementation MUST scope any conformance claim to "canonical N-Quads equal to RDFC-1.0 output for blank-node-free datasets" and MUST NOT claim full RDFC-1.0. [D41, audit/G §1 RDFC row]
 - **AGSC-04-17** Content hashes elsewhere (per-item Markdown, ontology files, skill packs) MUST be lowercase hex SHA-256 over the canonical bytes. A CIDv1 (`raw`, sha2-256, base32 `b…`) MAY additionally be emitted for `graph.nq`; when emitted it MUST be computed over the same canonical bytes. [research/12 §P rule 25]
-- **AGSC-04-18** `search.json`, `sitemap.xml`, `feed.xml` and the well-known file MUST be reproducible from `content/` plus `SOURCE_DATE_EPOCH` alone. [research/12 §P rule 26]
+- **AGSC-04-18** `search.json`, `sitemap.xml`, `feed.xml` and the well-known file MUST be reproducible from `content/` plus `SOURCE_DATE_EPOCH`, plus — for the well-known file's `integrity.ledger_head` alone — the git-log file of AGSC-08-02/08-20a. No other input exists. [research/12 §P rule 26, V3-05]
 
 ## 4.7 Normalization on write
 
-- **AGSC-04-19** `lint --fix` MUST be idempotent: applying it twice MUST produce the same bytes as applying it once. Its normalizations are limited to line endings, NFC, trailing newline, frontmatter key order (schema order, then unknown keys in code-point order), and wikilink rewriting. [PRD-003, AGSC-03-12]
+- **AGSC-04-19** `lint --fix` MUST be idempotent: applying it twice MUST produce the same bytes as applying it once. Its normalizations are limited to line endings, NFC, trailing newline, frontmatter key order (**schema order** = the top-level `properties` order of `schema/item.schema.json`, then the matching `oneOf` branch's `properties` order, then unknown keys in code-point order — the order AGSC-02-90 emits, so `lint --fix` never rewrites an adopted file), and wikilink rewriting. [PRD-003, AGSC-03-12]
 - **AGSC-04-20** `lint --fix` MUST NOT change prose, reorder authored arrays, or add, remove or infer any key. [D43(1), Art. XIII]

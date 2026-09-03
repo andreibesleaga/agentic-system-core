@@ -1,6 +1,6 @@
 {
   "area": "adopt",
-  "description": "The front-door case of PRD-053: a bare Markdown file with no frontmatter gains exactly five keys — type, kind, title from the first ATX heading, aliases recording where the file came from, and prov with the configured operator — and nothing else. The body is byte-identical after adoption, including its blank lines and its trailing LF; one blank line separates the closing fence from it. The file lands at content/concepts/<slug>.md per AGSC-02-93.",
+  "description": "The front-door case of PRD-053: a bare Markdown file with no frontmatter gains exactly five keys — type, kind, title from the first ATX heading, aliases recording where the file came from, and prov with the configured operator — and nothing else. The body is byte-identical after adoption, including its blank lines and its trailing LF; one blank line separates the closing fence from it. Keys are in the schema order of AGSC-04-19 — top-level properties first, the concept branch's kind last — so lint --fix never rewrites an adopted file. The file lands at content/concepts/<slug>.md per AGSC-02-93.",
   "expected": {
     "body": "# Handoff\n\nAn agent passes control to another agent.\n",
     "frontmatter": {
@@ -10,7 +10,7 @@
       "title": "Handoff",
       "type": "concept"
     },
-    "output": "---\ntype: concept\nkind: explainer\ntitle: Handoff\naliases:\n  - notes/handoff.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Handoff\n\nAn agent passes control to another agent.\n",
+    "output": "---\ntype: concept\ntitle: Handoff\naliases:\n  - notes/handoff.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: explainer\n---\n\n# Handoff\n\nAn agent passes control to another agent.\n",
     "path": "content/concepts/handoff.md"
   },
   "id": "adopt-0001",

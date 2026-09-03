@@ -10,7 +10,7 @@
       },
       {
         "changed": true,
-        "output": "---\ntype: concept\nkind: explainer\ntitle: Rules\naliases:\n  - rules.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n---\n\n# Rules\n\nA thematic break is not a frontmatter fence.\n",
+        "output": "---\ntype: concept\ntitle: Rules\naliases:\n  - rules.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: explainer\n---\n\n---\n\n# Rules\n\nA thematic break is not a frontmatter fence.\n",
         "path": "content/concepts/rules.md"
       }
     ],

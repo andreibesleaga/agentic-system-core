@@ -13,7 +13,7 @@ Feature: Agent reader queries structured knowledge without scraping
   Scenario: Agent starts the local stdio MCP server
     When the operator runs "claude mcp add agsc -- npx -y agentic-system-core mcp --site https://agenticsystemcore.com"
     Then the server starts and speaks JSON-RPC 2.0 over stdio
-    And the server exposes exactly five tools: "search", "read", "links", "compose", "propose"
+    And the server exposes exactly seven tools: "search", "read", "links", "compose", "propose", "ask", "remember"
 
   @PRD-023 @PRD-024
   Scenario: Server caches published exports and refreshes on manifest change
@@ -39,3 +39,15 @@ Feature: Agent reader queries structured knowledge without scraping
     Then every item is reachable via a listed "/pages/<slug>.md" link
     When the agent instead fetches "/graph.ttl"
     Then the response loads into any standard RDF store with zero blank nodes
+
+
+  @PRD-056 @D51-b
+  Scenario: Agent uses the node as memory and knowledge base over MCP
+    Given "npx agentic-system-core mcp" is running over the fixture Bundle
+    When the agent calls tool "ask" with "What pattern handles tool-use retries?"
+    Then the answer cites at least one item IRI from the Bundle
+    And an unanswerable question returns "no answer in this memory"
+    When the agent calls tool "remember" with kind "episode", a title and a body
+    Then a conforming Episode item and a Proposal are produced under the client's channel mode (hitl by default)
+    And nothing is written to the content branch by the server
+    And "resources/list" includes every item, "graph.jsonld" and "llms.txt"

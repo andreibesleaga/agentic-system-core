@@ -1,6 +1,6 @@
 # SPEC — AgenticSystemCore (S03 index)
 
-**`spec_version: "1.0.0-draft.1"`.** This file indexes the normative material; it is not itself normative. The specification is `spec/00`–`spec/09` (233 numbered MUST/SHOULD rules with stable ids `AGSC-<section>-<nn>`, including the rules added by D48 and by the V2 sweep), `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` (32 terms: 11 classes + 21 properties, every property emitted by AGSC-05-26…28) and `tests/vectors/**` (37 vectors). Together they *are* the system: the Node engine is one conforming implementation, and behaviour observable only in it is a defect (NFR-02 ← D47, Art. XI).
+**`spec_version: "1.0.0-draft.1"`.** This file indexes the normative material; it is not itself normative. The specification is `spec/00`–`spec/10` (257 numbered MUST/SHOULD rules with stable ids `AGSC-<section>-<nn>`, including the rules added by D48, the V2 sweep, D50/D51 and the V3 re-verification; `tools/validate-spec` owns this count from M13), `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` (32 terms: 11 classes + 21 properties, every property emitted by AGSC-05-26…28) and `tests/vectors/**` (43 vectors). Together they *are* the system: the Node engine is one conforming implementation, and behaviour observable only in it is a defect (NFR-02 ← D47, Art. XI).
 
 ## 1. Sections
 
@@ -15,7 +15,8 @@
 | `06-surfaces` | route set R36, the one well-known file, `llms.txt`, the normative tokenizer, headers, budgets | `discovery/`, `build/` |
 | `07-composition` | closure → hide → mutex → warn, the seven Harness files, skill packs | `compose/` |
 | `08-governance` | `prov`, DCO-Plus trailers, Gates, the four N9 lints, the hash-chained ledger | `lint/`, `prov/`, `ledger/` |
-| `09-conformance` | classes, vector format, error-code registry, CLI contract, **independent validators** | `cli/` |
+| `09-conformance` | classes, vector format, error-code registry, CLI contract, MCP seven tools, **independent validators** | `cli/` |
+| `10-implementation-profiles` | conformance **Levels 0–3**, foreign knowledge bases, the Implementer's Guide | all, per Level |
 
 ## 2. Versioning
 
@@ -46,13 +47,13 @@ SemVer 2.0.0. **MAJOR**: a file valid under the previous MAJOR may fail. **MINOR
 | OWL 2 RL | Rec 2012 | `ontology/agsc.ttl` profile | conform | profile check at release; RL-only lint | Y |
 | SHACL | Rec 2017 | shapes generated from the schema | conform (dev lane) | pySHACL/dev validator over `graph.ttl` | Y |
 | RFC 8615 well-known | Standards Track | `/.well-known/agentic-knowledge` | **define** | registration template in the I-D; Expert Review | Y |
-| RFC 8288 relations | Standards Track | `…/rel#graph`, `#ontology`, `#context`, `#shapes`, `#now`, `#skills`, `#ledger` | **define** | `discovery/disc-0001` (no unregistered short names) | Y |
+| RFC 8288 relations | Standards Track | `…/rel#graph`, `#ontology`, `#context`, `#now`, `#skills`, `#ledger` (`#shapes` dropped at 1.x with the SHACL dev lane) | **define** | `discovery/disc-0001` (no unregistered short names) | Y |
 | RFC 6838 media types | Standards Track | `application/vnd.agenticsystemcore.agentic-knowledge+json` | **define** | IANA vendor-tree registration; JSON Schema | Y |
 | RFC 9264 linkset | Standards Track | the `linkset` member + our profile URI | conform + profile **define** | `discovery/disc-0001` | Y |
 | llms.txt | convention, spec v2 | `/llms.txt`, `/llms-full.txt` | conform | structural lint: H1, blockquote, resolving links | Y |
 | Agent Skills | agentskills.io | `SKILL.md` packs per Cluster | conform | name grammar (no `--`), `description` ≤1024 | Y |
-| MCP | 2026-07-28, stdio | `agsc mcp`, five tools | conform | Inspector `tools/list`; no stray stdout bytes | Y |
-| WebMCP | W3C CG draft 2026-08-26 | same five tools as page tools | conform | origin-trial browser run; feature-detect fallback | should (S8) |
+| MCP | 2026-07-28, stdio | `agsc mcp`, seven tools (D51-b) | conform | Inspector `tools/list`; no stray stdout bytes | Y |
+| WebMCP | W3C CG draft 2026-08-26 | the same seven tools as page tools | conform | origin-trial browser run; feature-detect fallback | should (S8) |
 | AGENTS.md | agents.md convention | `export --steer`, Harness `AGENTS.md` | conform | byte-stable emit; context-only assertion | Y |
 | robots.txt | RFC 9309 | AI-usage signals with `tdmrep.json` | conform | grammar + size lint | Y |
 | security.txt | RFC 9116 | `Contact` + `Expires` | conform | presence + expiry check | Y |
@@ -95,6 +96,13 @@ Three artefacts are ours to standardize, and no more. The **Internet-Draft** cov
 20. **`graph.ttl` is reproducible from `spec/` alone** (AGSC-05-26…28): every `asc:` property has one named frontmatter source, and a term with no emitting rule does not ship — `asc:verdict` was deleted, since a verdict lives in the forge (V2-10).
 21. **The drop-in path passes its own gate** (V2-01/02): `description` is schema-optional everywhere and lint-required on concept/cluster as `AGSC-E406`; AGSC-02-93 relocates adopted files to `content/concepts/<slug>.md` with the original path in `aliases[]`; `adopt/` vectors prove it.
 
+*Decisions 22–25 were added 2026-09-03 from the V3 re-verification (`audit/V3-postfix-reverification.md`) and D52.*
+
+22. **Adoption reaches a green `ci`** (D52(1)): `config.schema.json` and `bundle.schema.json` accept a trailing slash and the development placeholder `http://localhost[:port]/`; `AGSC-02-94` synthesizes only schema-valid values (`build.out: "www/"`, an index title through the AGSC-02-90 title rule, a ≥40-character description); `adopt-0004` proves `init` → `ci` exits 0 on a bare folder, warnings only.
+23. **The derived ledger is byte-reproducible** (D52(2), `AGSC-08-20a`): the first-parent chain oldest-first from the git-log file, `kind` = `release`/`merge`/`commit` by tag, parent count or `Proposal:` trailer, `actor` from `Signed-off-by`, `ref` the full sha, `ts` the committer time — then exactly **one** trailing `build` entry from `SOURCE_DATE_EPOCH` and the `content/` tree hash, so owner and CI builds of one history agree. Genesis `prev` is 64 zeros; an empty history yields the build entry alone; a shallow clone is `AGSC-E703`, exit 2. Vectors `ledger-0002`/`ledger-0003`.
+24. **Level 0 is attainable** (D52(3), `AGSC-06-08a`): a Level-0 well-known file may carry the `linkset` alone, and any `integrity` block it does carry may omit `ledger_head` and hashes of artefacts it does not publish; Levels ≥2 require the full block. Vector `disc-0002`. The Level *is* the conformance class (AGSC-00-12, AGSC-09-01, AGSC-10-01) — one claim vocabulary.
+25. **The `auto` channel merge is a configured, revocable, single exception** (D52(4)): the duplicate `AGSC-08-25` is renumbered **`AGSC-08-26`**; `AGSC-08-02` and `AGSC-08-08` name the exception; the guard is checked against configuration and forge identity — never self-declared frontmatter — with N9 lints at `error` severity, the owner's `CHANNEL_TOKEN_<name>` in `review.yml`'s `auto-merge` job, and a `Channel-Auto:` trailer feeding the ledger's `mode`.
+
 ## 7. Trace map
 
 | Rules | Requirements | Decisions |
@@ -108,7 +116,8 @@ Three artefacts are ours to standardize, and no more. The **Internet-Draft** cov
 | `AGSC-06-*` | PRD-011, 014, 019, 020, 024, 025, 046 | D06, D19, D21-final, D39, D40, D47-note(c,d) |
 | `AGSC-07-*` | PRD-032–038 | D33, D35, D39, G11, G12 |
 | `AGSC-08-*` | PRD-005, 031, 039–043, NFR-07 | D07, D08, D13, D14, D40, D44(b,h) |
-| `AGSC-09-*` | PRD-001, 003, 007, 010, 023, 054 | D38-final, D41, G26 |
+| `AGSC-09-*` | PRD-001, 003, 007, 010, 023, 054, 056 | D38-final, D41, G26, D51-b |
+| `AGSC-10-*` | PRD-055 | D50, D47, D52(3) |
 
 ---
 

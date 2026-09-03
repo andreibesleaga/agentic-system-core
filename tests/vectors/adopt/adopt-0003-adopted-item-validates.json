@@ -8,7 +8,7 @@
   },
   "id": "adopt-0003",
   "input": {
-    "markdown": "---\ntype: concept\nkind: explainer\ntitle: Handoff\naliases:\n  - notes/handoff.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Handoff\n\nAn agent passes control to another agent.\n"
+    "markdown": "---\ntype: concept\ntitle: Handoff\naliases:\n  - notes/handoff.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: explainer\n---\n\n# Handoff\n\nAn agent passes control to another agent.\n"
   },
   "level": "required",
   "options": { "spec_version": "1.0.0-draft.1" },

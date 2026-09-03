@@ -2,7 +2,7 @@
 
 ## 9.1 Classes and claims
 
-- **AGSC-09-01** The classes are **reader**, **writer** and **full engine**, defined in AGSC-00-09…11. A claim MUST name the class, the `spec_version` MAJOR.MINOR, and the vector set passed. [PRD-010, D38-final]
+- **AGSC-09-01** The classes are **publisher**, **reader**, **writer** and **full engine**, defined in AGSC-00-09…11 and numbered as the Levels 0–3 of AGSC-10-01…06 — one claim vocabulary, two names for the same thing. A claim MUST name the class as its Level, the `spec_version` MAJOR.MINOR, and the vector set passed. [PRD-010, D38-final]
 - **AGSC-09-02** A conformance run MUST execute every `required` vector of the declared areas and MUST report `pass`, `fail` or `skip` per vector id. A `skip` counts as a failure for a required vector. [research/12 §1]
 - **AGSC-09-03** A `conformance-report.json` MAY be published as `{impl, version, spec_version, class, results:[{id, status, got?}], summary}`; the `conform` runner and a public cross-implementation page are out of scope at 1.x. [D38-final, G26]
 
@@ -33,14 +33,16 @@
 A finding is `{ "code": "AGSC-E301", "col": 1, "file": "content/concepts/a.md", "line": 12, "message": "…", "severity": "error", "slug": "a" }`. `status` ∈ `pass|fail`. [PRD-003, PRD-007]
 
 - **AGSC-09-12** `--json` is REQUIRED for `lint` and `ci` at 1.x and SHOULD be available on every verb. [PRD-007, PLAN §11]
-- **AGSC-09-13** `mcp` MUST expose exactly five tools — `search`, `read`, `links`, `compose`, `propose` — over stdio JSON-RPC, MUST NOT write non-protocol bytes to stdout, MAY log to stderr, and SHOULD exit on stdin EOF. [PRD-023 ← D41, audit/G §1 MCP row]
+- **AGSC-09-13** `mcp` MUST expose exactly **seven** tools — `search`, `read`, `links`, `compose`, `propose`, `ask`, `remember` (the last two per AGSC-09-14a/14b; amended 2026-09-03, D51-b) — over stdio JSON-RPC, MUST NOT write non-protocol bytes to stdout, MAY log to stderr, and SHOULD exit on stdin EOF. [PRD-023 ← D41, audit/G §1 MCP row]
 - **AGSC-09-14** `verify` MUST build twice and compare bytes; `verify --ledger` MUST re-verify the hash chain offline. [PRD-004, PRD-005]
+- **AGSC-09-14a** A **Channel responder** (`ask`) answers questions using only the Bundle's published exports (a Level-1 reader over `search.json`/`graph.jsonld`/`pages/*.md`, or the local MCP tools `search read links`). Its result MUST be the AGSC-08-18 envelope — `{source, trust: "untrusted", license, type, body}` — with `body` = the answer and an added `citations[]` of item IRIs; every answer MUST cite ≥1 item IRI, MUST be exactly "no answer in this memory" when nothing matches, and MUST embed the Content Use Terms line. A responder MAY use an LLM only under the spend cap, and one that does MUST record its spend by emitting a `remember(kind: episode)` Proposal carrying `usage` — otherwise its spend never reaches the NOW rollup (AGSC-08-25) and the cap is unenforceable. Responders are plugins; none is required for conformance at any Level. [PRD-056, N9, D39, V3-34]
+- **AGSC-09-14b** The MCP tool set is exactly `search read links compose propose ask remember` (seven; WebMCP MUST mirror it). `remember({kind, title, body, at, outcome?, severity?, sources?})` MUST synthesize a **conforming** item (AGSC-02): `type` from `kind`; slug from the title per the AGSC-02-91 slugifier with `-2`, `-3`, … collisions; `at` (an instant, REQUIRED for `episode`) supplies `started` — a clock is never read (AGSC-04-11); `outcome` defaults to `partial` and `severity` to `info`; a `concept` gets `kind: explainer`; `actor` is the client's declared agent actor string (AGSC-02-09); `prov.operator` = the client's declared human operator, `prov.agent`/`prov.model` = the client's declared identity, and `prov.origin: ai-generated` unless the client asserts `human`. It hands the item to the Proposal path (AGSC-08) under the client's channel `publish` mode (AGSC-01-31, default `hitl`) and MUST NOT write to the content branch. The server MUST also expose every item as an MCP resource (`text/markdown`), `graph.jsonld` and `llms.txt`, and one prompt "answer from this memory with citations". [PRD-023, PRD-056, D51-b, N9, V3-33]
 
 ## 9.4 Error-code registry
 
 Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN §8 (`0` CLI, `1` PARSE, `2` SCHEMA, `3` LINK, `4` LINT, `5` PROV, `6` DET, `7` LEDGER, `8` COMPOSE, `9` IO). No other code format (`AGSC-<AREA>-<nnn>`, `AGSC-DET-nnn`) exists anywhere in this system; prose or a diagram using one is a defect of that document (D48(7)).
 
-**Precedence.** Where two codes could name one fault, the more specific one wins: `AGSC-E203` is reported for every enum and `tags.allowed` violation, `AGSC-E204` for every pattern violation, and `AGSC-E201` only for a schema failure that no 2xx code names. Two conforming engines therefore report the same code for the same input (D48(7)).
+**Precedence.** Where two codes could name one fault, the more specific one wins: `AGSC-E203` is reported for every enum and `tags.allowed` violation, `AGSC-E204` for every pattern violation, and `AGSC-E201` only for a schema failure that no more specific registered code, **in any block**, names — a `maxItems` violation on a cluster's `broader` is `AGSC-E308`, not `AGSC-E201`. Two conforming engines therefore report the same code for the same input (D48(7)).
 
 | Code | Meaning | Rule |
 |---|---|---|
@@ -77,7 +79,7 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E403` | secret detected | AGSC-08-15 |
 | `AGSC-E404` | personal data outside `prov`/`sources[]` | AGSC-08-16 |
 | `AGSC-E405` | clean-room violation | AGSC-08-17 |
-| `AGSC-E406` | expected body section missing, or `concept`/`cluster` without `description` (warning) | AGSC-02-21 |
+| `AGSC-E406` | expected body section missing, `concept`/`cluster` without `description`, or a warned status transition (warning) | AGSC-02-21, AGSC-02-23 |
 | `AGSC-E407` | executable content in a skill pack | AGSC-07-15 |
 | `AGSC-E501` | `prov` missing | AGSC-08-01 |
 | `AGSC-E502` | `prov.origin` invalid | AGSC-02-07 |
@@ -93,6 +95,7 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E606` | build instant defaulted to 0, no git history (warning) | AGSC-04-09 |
 | `AGSC-E701` | ledger chain broken | AGSC-08-23 |
 | `AGSC-E702` | ledger rewritten or out of order | AGSC-08-23 |
+| `AGSC-E703` | git history too shallow to derive the ledger (exit 2) | AGSC-08-20a |
 | `AGSC-E801` | `excludes` conflict after closure | AGSC-07-06 |
 | `AGSC-E802` | composition target unavailable (slug absent from the graph; `requires` target hidden by `supersedes`) | AGSC-07-03, AGSC-07-05a |
 | `AGSC-E803` | `contradicts` or missing `uses` (warning) | AGSC-07-07 |
@@ -104,6 +107,6 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 - **AGSC-09-15** Codes are permanent. A retired code MUST NOT be reused; new codes take the next free number in their block. [AGSC-00-16]
 
 ## 9.9 Independent validation tooling (added 2026-09-02, S01 Amendment 2)
-- **AGSC-09-90** A conforming distribution MUST include the `tools/` validators of PRD-054, each runnable standalone (no engine import beyond stdlib), so that every normative artifact (schemas, spec text, ontology, vectors, well-known file, features, diagrams) is checkable by an independent party. A validator's `--json` output MUST be the AGSC-09-11 envelope with `verb` set to the tool's own name (`validate-spec`, `validate-schemas`, `validate-ontology`, `validate-vectors`, `validate-wellknown`, `validate-features`, `validate-diagrams`) and `version` set to the `spec_version` it validated against; findings use the same finding object, the same `(file, line, col, code)` ordering (AGSC-09-10) and the same `AGSC-E<nnn>` codes. Seven tools therefore speak one diagnostic language, and no tool invents a shape. [PRD-054 ← V2-25]
+- **AGSC-09-90** A conforming distribution MUST include the `tools/` validators of PRD-054, each runnable standalone (no engine import beyond stdlib), so that every normative artifact (schemas, spec text, ontology, vectors, well-known file, features, diagrams) is checkable by an independent party. A validator's `--json` output MUST be the AGSC-09-11 envelope with `verb` set to the tool's own name (`validate-spec`, `validate-schemas`, `validate-ontology`, `validate-vectors`, `validate-wellknown`, `validate-features`, `validate-diagrams`) and `version` set to the tool distribution's own package version (the envelope's `spec_version` member already carries the version validated against, so the two never duplicate); findings use the same finding object, the same `(file, line, col, code)` ordering (AGSC-09-10) and the same `AGSC-E<nnn>` codes. Seven tools therefore speak one diagnostic language, and no tool invents a shape. [PRD-054 ← V2-25]
 - **AGSC-09-91** `tools/validate-spec` MUST fail on: duplicate rule id; a rule id referenced but undefined; an error code used in spec/01–08 but absent from the §9 registry; a MUST/SHOULD sentence with no rule id; a trace tag naming a nonexistent PRD/D id. [PRD-054, NFR-03]
 - **AGSC-09-92** CI MUST run all validators on every PR; a validator failure blocks merge like any Gate. [PRD-054, PRD-049]

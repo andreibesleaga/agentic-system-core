@@ -11,7 +11,7 @@
 | `related` | `related` | yes | `skos:related` | advisory | — |
 | `broader` | `narrower` | no | `skos:broader` | none | no cycles |
 | `narrower` | `broader` | no | `skos:narrower` | none | no cycles |
-| `uses` | `used-by` | no | `asc:uses` (⊑ `skos:related`) | soft: warn if target absent | — |
+| `uses` | `used-by` | no | `asc:uses` (no super-property) | soft: warn if target absent | — |
 | `requires` | `required-by` | no | `dcterms:requires` / `dcterms:isRequiredBy` | hard: closure adds target | no cycles |
 | `excludes` | `excludes` | yes | `asc:excludes` | hard: mutex after closure | — |
 | `derived-from` | `derivation-of` | no | `prov:wasDerivedFrom` | none | target must exist |

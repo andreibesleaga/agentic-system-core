@@ -4,7 +4,7 @@
 
 ## 0.1 Scope
 
-- **AGSC-00-01** This specification — `spec/00`…`spec/09`, `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` and `tests/vectors/**` — is the definition of AgenticSystemCore. An implementation MUST NOT rely on behaviour that these files do not pin, and any behaviour observable only in a particular engine is a defect of that engine, not of this specification. [NFR-02 ← D47, Art. XI]
+- **AGSC-00-01** This specification — `spec/00`…`spec/10`, `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` and `tests/vectors/**` — is the definition of AgenticSystemCore. An implementation MUST NOT rely on behaviour that these files do not pin, and any behaviour observable only in a particular engine is a defect of that engine, not of this specification. [NFR-02 ← D47, Art. XI]
 - **AGSC-00-02** This specification defines a file format, a graph projection, a set of published surfaces, a governance contract and a CLI contract. It does not define a network protocol, a server, a database or a reasoner. [PRD non-goals ← D09, D43]
 - **AGSC-00-03** Where a rule and a `tests/vectors/**` entry disagree, the rule is normative and the vector MUST be corrected by the procedure of AGSC-00-16 (new versioned file; the wrong file republished as `withdrawn`). [NFR-02, D48(7)]
 
@@ -19,9 +19,9 @@
 ## 0.3 Conformance classes
 
 - **AGSC-00-09** A **reader** MUST implement §01–§03 and §05 read-side: locate items, parse the frontmatter subset, validate against `schema/item.schema.json`, resolve the nine Link keys and compute their inverses. A reader MUST pass every `required` vector in the areas `frontmatter/`, `slug/`, `links/`. [PRD-002, PRD-003]
-- **AGSC-00-10** A **writer** MUST implement §04, §05 and §06: canonical JSON, the four RDF views, the route set and the discovery files. A writer MUST pass every `required` vector in `jcs/` and `graph/`, and MUST be a conforming reader. [PRD-004, PRD-022, PRD-024]
+- **AGSC-00-10** A **writer** MUST implement §04, §05 and §06: canonical JSON, the four RDF views, the route set and the discovery files. A writer MUST pass every `required` vector in `jcs/`, `graph/` and `discovery/`, and MUST be a conforming reader. [PRD-004, PRD-022, PRD-024]
 - **AGSC-00-11** A **full engine** MUST additionally implement §07 (composition), §08 (governance) and §09 (CLI contract) and MUST pass every `required` vector in every area. [PRD-036, PRD-042, PRD-001]
-- **AGSC-00-12** An implementation claiming conformance MUST state its class, its `spec_version` and the vector set it passed. It MUST NOT claim a class whose vectors it does not pass. [PRD-010, D38-final]
+- **AGSC-00-12** An implementation claiming conformance MUST state its class — that is, its **Level** of AGSC-10-01…06, the one claim vocabulary (reader = Level 1, writer = Level 2, full engine = Level 3, publisher = Level 0) — its `spec_version` and the vector set it passed. It MUST NOT claim a class whose vectors it does not pass. [PRD-010, D38-final]
 - **AGSC-00-13** Optional vectors (`"level": "optional"`) MAY fail without losing conformance; they cover SHOULD-level rules. A `withdrawn` vector (AGSC-00-16) is excluded from every class's required set and MUST NOT be run for a conformance claim. [research/12 §1, D48(7)]
 
 ## 0.4 Versioning
