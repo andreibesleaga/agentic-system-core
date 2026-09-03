@@ -6,7 +6,7 @@ flowchart TD
     S1["1 Discover: content/**/*.md + site/*.md,\ncode-point sorted (fs port)"]
     S2["2 Parse frontmatter:\nYAML failsafe subset -> {fm, body}"]
     S3["3 Validate: JSON Schema mini-validator\n(type/enum/const/pattern/required/oneOf/$ref)"]
-    S4["4 Resolve links: nine Link keys,\ninverses, orphans, cycles"]
+    S4["4 Resolve links: fourteen Link keys\n(9 core + 5 Mode-2),\ninverses, orphans, cycles"]
     S5["5 Diagrams: content/diagrams/*.diagram -> SVG\n(ported DSL compiler)"]
     S6["6 Ontology/SKOS: clusters ->\nskos:Collection + skos:ConceptScheme; ns/agsc.ttl; shapes"]
     S7["7 Graph exports: graph.jsonld/.nq/.ttl/.rdf (JCS,\nsorted, blank-node-free) + pages/<slug>.md|.jsonld"]

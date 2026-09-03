@@ -224,3 +224,8 @@ No servers, databases, queues or Workers — static Pages + CI only (D47, D09). 
 **Note to PRD-023/PRD-056 (owner, 2026-09-03, D51-b):** the MCP tool set is **seven** — `search read links compose propose ask remember` — plus resources (items, graph, llms.txt) and one prompt; `remember` writes agent memories as Episode/Lesson/Concept Proposals (auto|hitl per client channel config), `ask` answers with mandatory item-IRI citations. WebMCP mirrors the same seven. Acceptance adds: an MCP client stores an Episode via `remember` (hitl → Proposal file; auto → merged after lint-only) and gets a cited answer via `ask` over the fixture Bundle, offline.
 
 **Note to PRD-051 (2026-09-03, D51-b):** "the same five tools" reads as "the same seven tools" (`search read links compose propose ask remember`).
+
+### 2.9d S01 Amendment 6 (owner Round 10, 2026-09-03, D53) — v1.0 scope = everything except servers
+All requirements previously marked `should`, `v1.x`, `v1.1` or "schema-affecting v2" in this PRD are **v1.0** (WebMCP PRD-051 included). Only server/backend components remain v2 (hosted responder/remote MCP Worker, GitHub App, hosted instances, SPARQL endpoint, CRDT sync, Solid/IPFS/ActivityPub adapters, binaries/WASM) — their ports/hooks exist in v1.0. The schema, ontology, protocol and specs are **complete and frozen in v1.0** (forward-compatible; `spec_version 1.0.0`); the ISE draft is written against them. Scope cells reading `v1.x`/`should` above READ AS `v1.0` (this note supersedes them). Calendar re-baselined by the execution plan (D54).
+
+**Note (D53, 2026-09-03):** "nine Links" in frozen rows READS AS "fourteen Links (nine core, which drive composition, + five Mode-2: implements, verifies, covers, blocked-by, decided-by)" per AGSC-03-01 as amended.

@@ -1,10 +1,10 @@
-# AGSC-03 — Links: the nine keys, inverses, combiner semantics
+# AGSC-03 — Links: the fourteen keys, inverses, combiner semantics
 
 ## 3.1 The closed vocabulary
 
-- **AGSC-03-01** Typed Links MUST be frontmatter arrays whose key is one of exactly nine names: `related`, `broader`, `narrower`, `uses`, `requires`, `excludes`, `derived-from`, `contradicts`, `supersedes`. No tenth key exists at `spec_version` 1.x. [PRD-002 ← D41, G04, research/16 §3.3]
+- **AGSC-03-01** Typed Links MUST be frontmatter arrays whose key is one of exactly **fourteen** names — the **nine core** keys `related`, `broader`, `narrower`, `uses`, `requires`, `excludes`, `derived-from`, `contradicts`, `supersedes`, plus the **five Mode-2** keys `implements`, `verifies`, `covers`, `blocked-by`, `decided-by`. Only the core nine carry composition semantics (§3.5, §07); the Mode-2 five are navigational and provenance edges whose combiner semantics is `none`. No fifteenth key exists at `spec_version` 1.x; new keys arrive only through the `links_ext` registry of a future MINOR (docs/SPEC.md §8). [PRD-002 ← D41, G04, research/16 §3.3]
 - **AGSC-03-02** Each value MUST be a slug, optionally `<slug>#<anchor>`. Targets MUST resolve by exact slug — no suffix search, no case folding, no path guessing. An unresolved target is `AGSC-E301`. [research/12 §P rules 10, 16]
-- **AGSC-03-03** An unknown link-shaped key MUST be preserved and reported as a warning (`AGSC-E304`); it MUST NOT be treated as one of the nine. [research/12 §P rule 10]
+- **AGSC-03-03** An unknown link-shaped key MUST be preserved and reported as a warning (`AGSC-E304`); it MUST NOT be treated as one of the fourteen. [research/12 §P rule 10]
 
 | Key (authored) | Inverse (computed) | Symmetric | RDF property | Combiner | Lint |
 |---|---|---|---|---|---|
@@ -17,10 +17,15 @@
 | `derived-from` | `derivation-of` | no | `prov:wasDerivedFrom` | none | target must exist |
 | `contradicts` | `contradicts` | yes | `asc:contradicts` | warn if both selected | — |
 | `supersedes` | `superseded-by` | no | `dcterms:replaces` / `dcterms:isReplacedBy` | superseded item hidden | target must exist |
+| `implements` | `implemented-by` | no | `asc:implements` | none | target must exist |
+| `verifies` | `verified-by` | no | `asc:verifies` | none | target must exist |
+| `covers` | `covered-by` | no | `asc:covers` | none | target must exist |
+| `blocked-by` | `blocks` | no | `asc:blockedBy` | none | target must exist |
+| `decided-by` | `decides` | no | `asc:decidedBy` | none | target must exist |
 
 ## 3.2 Inverses
 
-- **AGSC-03-04** Inverses MUST be computed at build and MUST NOT be authored. A file carrying an inverse name (`narrower` is authored, `used-by`, `required-by`, `derivation-of`, `superseded-by` are not) as a key MUST be reported (`AGSC-E306`). [audit/D §1.3, PRD-002]
+- **AGSC-03-04** Inverses MUST be computed at build and MUST NOT be authored. A file carrying an inverse name (`narrower` is authored; `used-by`, `required-by`, `derivation-of`, `superseded-by`, `implemented-by`, `verified-by`, `covered-by`, `blocks`, `decides` are not) as a key MUST be reported (`AGSC-E306`). [audit/D §1.3, PRD-002]
 - **AGSC-03-05** For symmetric keys (`related`, `excludes`, `contradicts`) the engine MUST materialize the edge in both directions even when only one side authored it. [audit/D §1.3]
 - **AGSC-03-06** `broader` and `narrower` are mutual inverses; asserting both directions between the same pair MUST be idempotent, not duplicated. [audit/D §1.3]
 
@@ -44,10 +49,10 @@
 - **AGSC-03-15** `excludes` is evaluated **after** the closure. Any surviving pair related by `excludes` invalidates the composition (`AGSC-E801`). [PRD-036]
 - **AGSC-03-16** `contradicts` between two selected items and a `uses` target absent from the selection produce warnings, never failures. [PRD-036]
 - **AGSC-03-17** An item that any member of the closed selection `supersedes` MUST be hidden, whether it was selected directly or added by the `requires` closure; the superseding item is kept. Hiding is one set difference over the closed selection — not a reachability test — so it is the same set that AGSC-07-05 removes. [PRD-036 ← D48(2)]
-- **AGSC-03-18** `related`, `broader`, `narrower` and `derived-from` MUST NOT change a composition; they are navigational or provenance edges. [PRD-036, D43(4)]
+- **AGSC-03-18** `related`, `broader`, `narrower`, `derived-from` and the five Mode-2 keys (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`) MUST NOT change a composition; they are navigational or provenance edges. [PRD-036, D43(4), D53]
 
 ## 3.6 Import mapping
 
 - **AGSC-03-19** Foreign link names MUST be mapped on import, not added to the vocabulary: `refines` → `narrower`; `alternative-to`, `conflicts-with` → `excludes`; `composed-of` → `uses`; `mitigates` → `related`; combiner `oneOf` → pairwise `excludes`; `recommends` → `uses`. [audit/D §1.3, G04]
-- **AGSC-03-20** Mode-2 typed links (`implements`, `verifies`, `covers`, `blockedBy`, `decidedBy`) are not defined at 1.x; they MUST be imported as `related` or `derived-from` with a warning. [audit/D §1.3, G06]
+- **AGSC-03-20** The Mode-2 typed links are **defined at 1.0** as keys 10–14 (AGSC-03-01, D53): `implements`, `verifies`, `covers`, `blocked-by`, `decided-by`. Foreign spellings MUST be mapped on import — `blockedBy` → `blocked-by`, `decidedBy` → `decided-by`, `tests` → `verifies`, `traces-to` → `covers` — and their targets MUST exist (`AGSC-E301`); they never affect a composition (AGSC-03-18, AGSC-07-10). [audit/D §1.3, G06 ← D53]
 - **AGSC-03-21** Links are the only stored relations. Embeddings, spreading activation, transclusion and bi-temporal edges MUST NOT be introduced. [D43(4)]

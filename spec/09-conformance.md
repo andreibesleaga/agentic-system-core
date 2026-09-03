@@ -38,6 +38,8 @@ A finding is `{ "code": "AGSC-E301", "col": 1, "file": "content/concepts/a.md", 
 - **AGSC-09-14a** A **Channel responder** (`ask`) answers questions using only the Bundle's published exports (a Level-1 reader over `search.json`/`graph.jsonld`/`pages/*.md`, or the local MCP tools `search read links`). Its result MUST be the AGSC-08-18 envelope — `{source, trust: "untrusted", license, type, body}` — with `body` = the answer and an added `citations[]` of item IRIs; every answer MUST cite ≥1 item IRI, MUST be exactly "no answer in this memory" when nothing matches, and MUST embed the Content Use Terms line. A responder MAY use an LLM only under the spend cap, and one that does MUST record its spend by emitting a `remember(kind: episode)` Proposal carrying `usage` — otherwise its spend never reaches the NOW rollup (AGSC-08-25) and the cap is unenforceable. Responders are plugins; none is required for conformance at any Level. [PRD-056, N9, D39, V3-34]
 - **AGSC-09-14b** The MCP tool set is exactly `search read links compose propose ask remember` (seven; WebMCP MUST mirror it). `remember({kind, title, body, at, outcome?, severity?, sources?})` MUST synthesize a **conforming** item (AGSC-02): `type` from `kind`; slug from the title per the AGSC-02-91 slugifier with `-2`, `-3`, … collisions; `at` (an instant, REQUIRED for `episode`) supplies `started` — a clock is never read (AGSC-04-11); `outcome` defaults to `partial` and `severity` to `info`; a `concept` gets `kind: explainer`; `actor` is the client's declared agent actor string (AGSC-02-09); `prov.operator` = the client's declared human operator, `prov.agent`/`prov.model` = the client's declared identity, and `prov.origin: ai-generated` unless the client asserts `human`. It hands the item to the Proposal path (AGSC-08) under the client's channel `publish` mode (AGSC-01-31, default `hitl`) and MUST NOT write to the content branch. The server MUST also expose every item as an MCP resource (`text/markdown`), `graph.jsonld` and `llms.txt`, and one prompt "answer from this memory with citations". [PRD-023, PRD-056, D51-b, N9, V3-33]
 
+- **AGSC-09-16** **WebMCP.** Where a browser exposes `document.modelContext`, the `/compose/` and item pages MUST register the **same seven tools** as AGSC-09-13 through `document.modelContext.registerTool()`, with identical names, identical argument names and results byte-identical to the local MCP server's for the same input and Bundle — one tool contract, two transports (`cli-0003` compares the two manifests). Registration MUST be feature-detected: with no `document.modelContext` the page MUST work unchanged in plain JavaScript, and no tool may require a network call, a key or a server. [PRD-051 ← D53, D34, AGSC-09-13]
+
 ## 9.4 Error-code registry
 
 Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN §8 (`0` CLI, `1` PARSE, `2` SCHEMA, `3` LINK, `4` LINT, `5` PROV, `6` DET, `7` LEDGER, `8` COMPOSE, `9` IO). No other code format (`AGSC-<AREA>-<nnn>`, `AGSC-DET-nnn`) exists anywhere in this system; prose or a diagram using one is a defect of that document (D48(7)).
@@ -66,6 +68,7 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E205` | file-placement violation (`type` does not match folder; deferred language-variant file) | AGSC-01-03, AGSC-01-13 |
 | `AGSC-E206` | slug not unique in Bundle | AGSC-01-11 |
 | `AGSC-E207` | unknown key (warning) | AGSC-02-05 |
+| `AGSC-E208` | language variant without a primary file | AGSC-01-13 |
 | `AGSC-E301` | link target unresolved | AGSC-03-02 |
 | `AGSC-E302` | cycle in `requires` | AGSC-03-07 |
 | `AGSC-E303` | cycle in `broader`/`narrower` | AGSC-03-08 |
@@ -74,6 +77,7 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E306` | computed inverse authored | AGSC-03-04 |
 | `AGSC-E307` | cluster nesting deeper than 3 | AGSC-03-22 |
 | `AGSC-E308` | cluster has more than one `broader` | AGSC-03-22 |
+| `AGSC-E309` | `memory://` names a foreign bundle — use the `https://` IRI | AGSC-05-04b |
 | `AGSC-E401` | agent-directed imperative, blob or non-http scheme | AGSC-08-13 |
 | `AGSC-E402` | hidden text | AGSC-08-13 |
 | `AGSC-E403` | secret detected | AGSC-08-15 |

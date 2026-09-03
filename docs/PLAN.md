@@ -2,7 +2,7 @@
 
 **Scope.** The architecture that satisfies the FROZEN `docs/PRD.md` (PRD-001…052, NFR-01…13). No requirement is added, changed or dropped here.
 **Authority.** `discovery-product/CONTINUE-FROM-HERE.md` → `04-DECISIONS.md` (D01–D47 + notes) → `14-FINAL-HANDOFF.md` §3 → `audit/D` §1–§6 (adopted verbatim) → `audit/G` §2 → `research/17` §1/§6. Constitution I–XV is law.
-**Vocabulary (final, D36-final/D41).** Concept · Episode · Procedure · Lesson · Link · Cluster · Bundle · Source · Proposal · Review · Gate · Harness. `type ∈ concept|episode|procedure|lesson|cluster|gate`; nine Link keys; 13 verbs.
+**Vocabulary (final, D36-final/D41).** Concept · Episode · Procedure · Lesson · Link · Cluster · Bundle · Source · Proposal · Review · Gate · Harness. `type ∈ concept|episode|procedure|lesson|cluster|gate`; fourteen Link keys (nine core + five Mode-2, D53 — only the core nine drive composition); 13 verbs.
 
 ---
 
@@ -162,7 +162,7 @@ graph TB
 |---|---|---|---|---|
 | knowledge | `yaml.js` `frontmatter.js` `markdown.js` | YAML failsafe subset; `{fm, body}`; CommonMark subset AST | 2, 9 | lint build |
 | knowledge | `schema.js` `validate.js` | JSON Schema 2020-12 mini-validator over `schema/*.json` | 3 | lint build |
-| knowledge | `slug.js` `links.js` | slug grammar; nine Links, inverses, orphans, cycles | 4 | lint build compose |
+| knowledge | `slug.js` `links.js` | slug grammar; fourteen Links (nine core + five Mode-2, D53), inverses, orphans, cycles | 4 | lint build compose |
 | knowledge | `skos.js` `jsonld.js` `turtle.js` `nquads.js` `rdfxml.js` `jcs.js` | nested `skos:Collection`; four RDF views; JCS | 6, 7 | build export |
 | knowledge | `diagrams.js` | ported DSL→SVG compiler (D20) | 5 | build import |
 | governance | `lint.js` | L1/L2 findings with file+line | 3–4 | lint ci |
@@ -228,7 +228,7 @@ Rule: **one context ↔ one `src/` dir ↔ one spec section ↔ one vector area.
 ## 6. Runtime view
 
 **(a) `agsc ci` end-to-end (PRD-049, 004, 005).**
-1. Load + schema-validate `agsc.config.json`. 2. Discover `content/**/*.md` + `site/*.md`, code-point sorted. 3. Parse frontmatter → validate → resolve nine Link keys, compute inverses, detect orphans/cycles. 4. Run L1/L2 lints incl. `injection-scan`, `no-secrets`, `no-pii`, `clean-room`; error → exit 1 with file+line. 5. Compile `*.diagram` → SVG. 6. Build SKOS collections + graph; emit `graph.{jsonld,ttl,nq}` (JCS, sorted, blank-node-free) and `pages/<slug>.{md,jsonld}`. 7. Render HTML, `search.json`, `_headers`, `_redirects`, sitemap, `llms.txt`, `/.well-known/agentic-knowledge` (linkset + integrity block incl. **ledger head**), `/now/` + `now.md` — all times from `SOURCE_DATE_EPOCH`. 8. Enforce N8 budgets; over → exit 1. 9. **Build again** into a temp dir; byte compare; diff → exit 1. 10. `export`; `attest` in CI. 11. **Derive** the whole `ledger.jsonl` from the git-log file into `www/` (AGSC-08-20a: first-parent chain, one entry per commit, one trailing `build` entry); re-verify the chain and compare its head to the published `integrity.ledger_head`. 12. Exit 0; `dist/gate.json` carries the verdict.
+1. Load + schema-validate `agsc.config.json`. 2. Discover `content/**/*.md` + `site/*.md`, code-point sorted. 3. Parse frontmatter → validate → resolve fourteen Link keys, compute inverses, detect orphans/cycles. 4. Run L1/L2 lints incl. `injection-scan`, `no-secrets`, `no-pii`, `clean-room`; error → exit 1 with file+line. 5. Compile `*.diagram` → SVG. 6. Build SKOS collections + graph; emit `graph.{jsonld,ttl,nq}` (JCS, sorted, blank-node-free) and `pages/<slug>.{md,jsonld}`. 7. Render HTML, `search.json`, `_headers`, `_redirects`, sitemap, `llms.txt`, `/.well-known/agentic-knowledge` (linkset + integrity block incl. **ledger head**), `/now/` + `now.md` — all times from `SOURCE_DATE_EPOCH`. 8. Enforce N8 budgets; over → exit 1. 9. **Build again** into a temp dir; byte compare; diff → exit 1. 10. `export`; `attest` in CI. 11. **Derive** the whole `ledger.jsonl` from the git-log file into `www/` (AGSC-08-20a: first-parent chain, one entry per commit, one trailing `build` entry); re-verify the chain and compare its head to the published `integrity.ledger_head`. 12. Exit 0; `dist/gate.json` carries the verdict.
 
 **(b) Proposal lifecycle (PRD-039–043).**
 1. Author (human, or operator-run agent) edits an item with `prov{origin, operator}`. 2. `lint --fix` normalizes; `propose` writes `dist/proposal/<n>.patch` + PR body (`<!-- agsc:proposal v1 -->`) and prints the `git`/`gh` commands — **no network write** (C5). 3. The human runs them; the PR carries the DCO-Plus `Signed-off-by … (CA-v1)` trailer. 4. `ci.yml` runs `agsc ci` with `contents: read`; fork PRs lint-only until labelled, ≤5 open bot PRs; findings post as annotations. **No LLM (C6).** 5. Owner reviews and adds `verified: [{by, at}]` — that entry *is* the Review. 6. Ruleset requires PR + 1 approval + Code Owner + green `ci`; the owner merges (agents never approve). 7. Merge → deploy → `agsc ci` → Pages publishes `www/`; the build **re-derives** the whole `ledger.jsonl` from git history (the merge commit becomes a `kind:"merge"` entry) into `www/` — CI never commits it back to the content branch (PRD-042, D48(1)); `prov.commit`/`reviewer` are likewise **derived at build**, never written into files.
@@ -272,7 +272,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | 001 | Agent-safety by structural defence (N9) | Accepted | D32, D40, N9, OWASP LLM01:2025, Art. XIV |
 | 002 | Zero runtime dependencies | Accepted | D17, D32(3), N1 |
 | 003 | Static-only, Cloudflare Pages from `www/` | Accepted | D09, D10, D47, D47-note(a) |
-| 004 | One vocabulary, nine Links | Accepted | D36-final, D41, D43(4), G04 |
+| 004 | One vocabulary, fourteen Links (nine core + five Mode-2) | Accepted | D36-final, D41, D43(4), G04, D53 |
 | 005 | `/ns/` conneg via w3id `.htaccess` | Accepted | D02, D41, D47, G13 |
 | 006 | Derived hash-chained ledger | Accepted | D44(h), Art. XII |
 | 007 | Content Use Terms embedded in every prose export | Accepted | D39, R39, NFR-10 |
@@ -299,7 +299,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 
 **ADR-003 Static-only, Pages from `www/`.** No servers, databases, queues or Workers at v1; CI is the only backend and every write path ends in a PR — which makes NFR-09, Q5 and most of §12 true by construction. Workers stay a *future optional plugin backend*, never required. *D09, D10, D32(3), D47, D47-note(a), PRD-050.*
 
-**ADR-004 One vocabulary, nine Links.** Six item types with a `kind` qualifier on Concept plus nine authored Link keys with computed inverses serve all five modes; four competing link lists and typed Mode-2 links are mapped or deferred (G04). Adding a type or key costs a schema bump + spec section + vectors — deliberately expensive. *D36-final, D41, D43(4), D32(1), G04, PRD-002.*
+**ADR-004 One vocabulary, fourteen Links.** Six item types with a `kind` qualifier on Concept plus **fourteen** authored Link keys with computed inverses serve all five modes: the nine core keys carry composition semantics, and the five Mode-2 keys (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`), promoted to first-class keys by D53, are navigational — combiner semantics `none`. Four competing foreign link lists are still mapped on import (G04). Adding a type or key costs a schema bump + spec section + vectors — deliberately expensive. *D36-final, D41, D43(4), D32(1), G04, PRD-002.*
 
 **ADR-005 `/ns/` conneg via w3id `.htaccess`.** Conneg is the one thing a static host cannot do; putting it in w3id yields zero project-owned server code, permanent IRIs independent of the domain, and no attack surface we operate. Costs a foreign-repo PR (gating `/ns/` resolution only) and a same-origin table kept in sync. Fallback if w3id refuses: a `run_worker_first` handler — not built at v1. *D02, D41, D47, G13, PRD-050.*
 

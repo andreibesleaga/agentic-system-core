@@ -1,6 +1,6 @@
 # AGSC-00 — Overview, terms, conformance model
 
-`spec_version: "1.0.0-draft.1"`. The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, SHOULD NOT, MAY are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in capitals. Each rule has a stable id `AGSC-<section>-<nn>`; ids are never reused or renumbered. Trailing brackets cite the requirement each rule serves.
+`spec_version: "1.0.0-rc.1"`. The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, SHOULD NOT, MAY are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in capitals. Each rule has a stable id `AGSC-<section>-<nn>`; ids are never reused or renumbered. Trailing brackets cite the requirement each rule serves.
 
 ## 0.1 Scope
 
@@ -18,7 +18,7 @@
 
 ## 0.3 Conformance classes
 
-- **AGSC-00-09** A **reader** MUST implement §01–§03 and §05 read-side: locate items, parse the frontmatter subset, validate against `schema/item.schema.json`, resolve the nine Link keys and compute their inverses. A reader MUST pass every `required` vector in the areas `frontmatter/`, `slug/`, `links/`. [PRD-002, PRD-003]
+- **AGSC-00-09** A **reader** MUST implement §01–§03 and §05 read-side: locate items, parse the frontmatter subset, validate against `schema/item.schema.json`, resolve the fourteen Link keys — nine core + five Mode-2, only the core nine driving composition — and compute their inverses. A reader MUST pass every `required` vector in the areas `frontmatter/`, `slug/`, `links/`. [PRD-002, PRD-003]
 - **AGSC-00-10** A **writer** MUST implement §04, §05 and §06: canonical JSON, the four RDF views, the route set and the discovery files. A writer MUST pass every `required` vector in `jcs/`, `graph/` and `discovery/`, and MUST be a conforming reader. [PRD-004, PRD-022, PRD-024]
 - **AGSC-00-11** A **full engine** MUST additionally implement §07 (composition), §08 (governance) and §09 (CLI contract) and MUST pass every `required` vector in every area. [PRD-036, PRD-042, PRD-001]
 - **AGSC-00-12** An implementation claiming conformance MUST state its class — that is, its **Level** of AGSC-10-01…06, the one claim vocabulary (reader = Level 1, writer = Level 2, full engine = Level 3, publisher = Level 0) — its `spec_version` and the vector set it passed. It MUST NOT claim a class whose vectors it does not pass. [PRD-010, D38-final]

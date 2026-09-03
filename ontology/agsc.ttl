@@ -8,10 +8,12 @@
 
 # AgenticSystemCore vocabulary — OWL 2 RL-safe (spec/05-graph.md, AGSC-05-22).
 # Classes: 11 (research/16 section 3.3; there is deliberately no asc:Item superclass, AGSC-05-13).
-# Properties: 21, every one emitted by a rule of spec/05 section 5.6 (AGSC-05-26..28); asc:verdict was
+# Properties: 31 (21 core + the 10 of the five Mode-2 Link keys and their inverses, D53), every one emitted
+# by a rule of spec/05 section 5.6 (AGSC-05-26..28); asc:verdict was
 # deleted pre-1.0.0 because a Review's verdict lives in the forge, not in a file (AGSC-08-03).
-# Six of the nine Link keys reuse SKOS, DCTerms and PROV; only uses/excludes/
-# contradicts (plus the computed inverse usedBy and the untyped mentions) are defined here.
+# Six of the nine core Link keys reuse SKOS, DCTerms and PROV; uses/excludes/contradicts (plus the
+# computed inverse usedBy and the untyped mentions) and all five Mode-2 keys with their inverses are
+# defined here (fourteen keys in total, AGSC-03-01 as amended by D53).
 # Stable Turtle profile: fixed prefix order, subjects and predicates sorted by IRI code points.
 
 <https://w3id.org/agentic-system-core/ns>
@@ -100,11 +102,53 @@ asc:Source
     rdfs:label "Source" ;
     rdfs:subClassOf prov:Entity .
 
+asc:blockedBy
+    a owl:ObjectProperty ;
+    rdfs:comment "Mode-2 key 13: the subject cannot proceed until the object is resolved. No domain, range or super-property (AGSC-05-26a). Combiner semantics: none." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "blocked by" ;
+    owl:inverseOf asc:blocks .
+
+asc:blocks
+    a owl:ObjectProperty ;
+    rdfs:comment "Computed inverse of asc:blockedBy; never authored." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "blocks" ;
+    owl:inverseOf asc:blockedBy .
+
 asc:contradicts
     a owl:ObjectProperty, owl:SymmetricProperty ;
     rdfs:comment "Asserts that two items cannot both be true. Selecting both in a composition is a warning, never a failure. No domain or range is declared: any item type may author this key, and declaring asc:Concept would entail a Concept typing for Procedures, Episodes and Gates (D48, V1-28)." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "contradicts" .
+
+asc:coveredBy
+    a owl:ObjectProperty ;
+    rdfs:comment "Computed inverse of asc:covers; never authored." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "covered by" ;
+    owl:inverseOf asc:covers .
+
+asc:covers
+    a owl:ObjectProperty ;
+    rdfs:comment "Mode-2 key 12: the subject covers the object (a test, a check or a document covering a requirement). Combiner semantics: none." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "covers" ;
+    owl:inverseOf asc:coveredBy .
+
+asc:decidedBy
+    a owl:ObjectProperty ;
+    rdfs:comment "Mode-2 key 14: the subject was settled by the object, a decision item. Combiner semantics: none." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "decided by" ;
+    owl:inverseOf asc:decides .
+
+asc:decides
+    a owl:ObjectProperty ;
+    rdfs:comment "Computed inverse of asc:decidedBy; never authored." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "decides" ;
+    owl:inverseOf asc:decidedBy .
 
 asc:excludes
     a owl:ObjectProperty, owl:SymmetricProperty ;
@@ -133,6 +177,27 @@ asc:grade
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "grade" ;
     rdfs:range xsd:string .
+
+asc:implementedBy
+    a owl:ObjectProperty ;
+    rdfs:comment "Computed inverse of asc:implements; never authored." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "implemented by" ;
+    owl:inverseOf asc:implements .
+
+asc:implements
+    a owl:ObjectProperty ;
+    rdfs:comment "Mode-2 key 10: the subject realises the object (code or a procedure realising a spec). Combiner semantics: none." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "implements" ;
+    owl:inverseOf asc:implementedBy .
+
+asc:isVerifiedBy
+    a owl:ObjectProperty ;
+    rdfs:comment "Computed inverse of asc:verifies; never authored. Distinct from the datatype property asc:verifiedBy (AGSC-05-15)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "is verified by" ;
+    owl:inverseOf asc:verifies .
 
 asc:kind
     a owl:DatatypeProperty ;
@@ -251,3 +316,10 @@ asc:verifiedOn
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "verified on" ;
     rdfs:range xsd:dateTime .
+
+asc:verifies
+    a owl:ObjectProperty ;
+    rdfs:comment "Mode-2 key 11: the subject checks that the object holds. Its computed inverse is asc:isVerifiedBy (the datatype property asc:verifiedBy carries a Review actor and is unrelated). Combiner semantics: none." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "verifies" ;
+    owl:inverseOf asc:isVerifiedBy .

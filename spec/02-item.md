@@ -26,7 +26,7 @@
 | `sources[]` | recommended | `{resource*, title, author, year, verified, grade?}`, `grade ∈ primary\|secondary\|tertiary` |
 | `prov` | yes | `{origin*, agent?, model?, operator*, agreement?}` |
 | `generated`, `verified[]`, `stale_after` | no | OKF verbatim |
-| nine Link keys | no | §03 |
+| fourteen Link keys (nine core + five Mode-2) | no | §03 |
 | `id`, `iri` | no | if present MUST equal the slug / the computed IRI |
 
 - **AGSC-02-07** `prov.origin` MUST be one of `human`, `ai-assisted`, `ai-generated`, `imported`; `prov.operator` MUST be present and MUST be a `human:<id>` actor string — accountability is always a person, so `process:<id>` and `<producer>/<version>` are NOT accepted here even though AGSC-02-09 admits them elsewhere (this is what makes the `Assisted-by:` trailer of AGSC-08-07 always satisfiable). Absence of `prov` is error `AGSC-E501`. [PRD-042 ← D07, D48(5), G35]

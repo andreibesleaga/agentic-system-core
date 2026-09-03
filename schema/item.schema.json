@@ -54,7 +54,12 @@
     "excludes": { "$ref": "#/$defs/link_array" },
     "derived-from": { "$ref": "#/$defs/link_array" },
     "contradicts": { "$ref": "#/$defs/link_array" },
-    "supersedes": { "$ref": "#/$defs/link_array" }
+    "supersedes": { "$ref": "#/$defs/link_array" },
+    "implements": { "description": "Mode-2 key 10 (AGSC-03-01, D53); inverse implemented-by.", "$ref": "#/$defs/link_array" },
+    "verifies": { "description": "Mode-2 key 11; inverse verified-by.", "$ref": "#/$defs/link_array" },
+    "covers": { "description": "Mode-2 key 12; inverse covered-by.", "$ref": "#/$defs/link_array" },
+    "blocked-by": { "description": "Mode-2 key 13; inverse blocks.", "$ref": "#/$defs/link_array" },
+    "decided-by": { "description": "Mode-2 key 14; inverse decides.", "$ref": "#/$defs/link_array" }
   },
   "oneOf": [
     {

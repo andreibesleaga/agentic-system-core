@@ -77,3 +77,9 @@ A1 → {A2, A3, A6, A7, A10} → A4/A5 → {A8, A9, A11, A12} → A14 → A15. E
 
 
 **Numbers note (2026-09-03, from TASKS-JUDGE.md):** the pd figures above are *supervised* person-days (owner + Claude, incl. gates, reviews, CI wall-clock); pure agent-minutes for the 320 must tasks total 11.19 pd — so pull-ins cost roughly 40 % of the listed pd in agent time, but the calendar impact stays as listed because reviews and gates scale with them.
+
+
+## G. DECIDED (owner Round 10, 2026-09-03 — D53)
+All of §A, §B and §C → **v1.0**, plus the schema-affecting v2 items (D6 typed Mode-2 Links as keys 10–14, D5 `memory://` resolver, federation mutual-conformance test protocol, WebMCP normative rule, i18n variants). **v2 = servers only:** D1 hosted responder/Worker, D2 GitHub App, D9 hosted instances, D10 SPARQL endpoint, D7 CRDT sync, D4 Solid/IPFS/ActivityPub adapters, D8 binaries/WASM. Schema/spec frozen in v1.0 (forward-compatible). Calendar: recalculated in `GABBE/project/TASKS.md` §Totals + `docs/EXECUTION-PLAN.md` (D54); owner confirms the GA date.
+
+**Note (D53):** all "nine Links" mentions → fourteen (nine core + five Mode-2) per spec/03.

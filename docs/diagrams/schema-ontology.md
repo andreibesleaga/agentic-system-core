@@ -20,7 +20,7 @@ flowchart LR
   ClusterT -->|"rdf:type skos:Collection + skos:ConceptScheme"| RDF
   Gate -->|"rdf:type ns:Gate"| RDF
 
-  subgraph LINKS["Nine Link keys -> RDF properties (audit/D S1.3)"]
+  subgraph LINKS["Fourteen Link keys -> RDF properties (audit/D S1.3 + D53)"]
     related
     broader
     narrower
@@ -30,17 +30,27 @@ flowchart LR
     derivedFrom["derived-from"]
     contradicts
     supersedes
+    implements
+    verifies
+    covers
+    blockedBy["blocked-by"]
+    decidedBy["decided-by"]
   end
 
   related -->|"skos:related (symmetric)"| RDF
   broader -->|"skos:broader"| RDF
   narrower -->|"skos:narrower"| RDF
-  uses -->|"asc:uses (subproperty of skos:related)"| RDF
+  uses -->|"asc:uses (no super-property, AGSC-05-26a)"| RDF
   requires -->|"dcterms:requires / dcterms:isRequiredBy"| RDF
   excludes -->|"asc:excludes (symmetric)"| RDF
   derivedFrom -->|"prov:wasDerivedFrom"| RDF
   contradicts -->|"asc:contradicts (symmetric)"| RDF
   supersedes -->|"dcterms:replaces / dcterms:isReplacedBy"| RDF
+  implements -->|"asc:implements / asc:implementedBy"| RDF
+  verifies -->|"asc:verifies / asc:isVerifiedBy"| RDF
+  covers -->|"asc:covers / asc:coveredBy"| RDF
+  blockedBy -->|"asc:blockedBy / asc:blocks"| RDF
+  decidedBy -->|"asc:decidedBy / asc:decides"| RDF
 
   subgraph NESTED["Cluster nested-member rule (addendum 2026-09-01, research/16 audit H)"]
     Parent["parent cluster (type: cluster)"]
@@ -53,10 +63,11 @@ flowchart LR
 Item `type` maps 1:1 to an OWL 2 RL-safe class in `ns/agsc.ttl` (`https://w3id.org/agentic-system-core/ns#`,
 e.g. `ns:Concept` — the exact class named in the walkthrough's `/ns/` example, audit/D §3(j)); `Cluster`
 is additionally a `skos:Collection` plus, at the Bundle root, a `skos:ConceptScheme` (PLAN.md §6(a)
-step 6). All nine authored Link keys map to a fixed property per audit/D §1.3: three vocabularies in
+step 6). All fourteen authored Link keys map to a fixed property per audit/D §1.3 and D53: three vocabularies in
 play — `skos:` (advisory/hierarchy), `dcterms:`/`prov:` (hard semantics: closure, derivation,
-supersession), and the project's own `asc:` terms for `uses`/`excludes`/`contradicts`, which have no
-exact SKOS/DCTERMS/PROV equivalent. The nested-member rule is the one place `broader` on an item does
+supersession), and the project's own `asc:` terms for `uses`/`excludes`/`contradicts` and the five
+Mode-2 keys, which have no exact SKOS/DCTERMS/PROV equivalent. Only the nine core keys carry
+composition semantics; the Mode-2 five are navigational (combiner semantics `none`, AGSC-03-18). The nested-member rule is the one place `broader` on an item does
 **not** become `skos:broader`: when the *subject* item itself has `type: cluster`, its `broader` edge
 exports as `<parent> skos:member <child>` instead, so Clusters form a nested `skos:Collection` tree
 rather than a flat SKOS hierarchy.

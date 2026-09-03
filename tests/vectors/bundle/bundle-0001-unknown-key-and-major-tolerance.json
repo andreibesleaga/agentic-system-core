@@ -11,6 +11,6 @@
     "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent used to prove that unknown keys are tolerated and that MAJOR-compatible files are accepted.\nkind: pattern\nspec_version: \"1.4.2\"\nx_custom: hello\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nRoute work to workers.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.1" },
   "rule": "AGSC-00-15"
 }
