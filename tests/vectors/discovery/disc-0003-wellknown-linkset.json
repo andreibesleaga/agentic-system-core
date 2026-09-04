@@ -15,7 +15,7 @@
       "digest"
     ],
     "media_type": "application/linkset+json",
-    "path": "/.well-known/agentic-knowledge",
+    "path": "/.well-known/knowledge-linkset",
     "profile": "https://w3id.org/agentic-system-core/profile/agentic-knowledge",
     "relations_allowed": [
       "alternate",
@@ -44,9 +44,10 @@
   "id": "disc-0003",
   "input": {
     "base": "https://example.org",
-    "ledger_head": "0000000000000000000000000000000000000000000000000000000000000000"
+    "ledger_head": "bee9ba6593162f59dae28f42ba25fa04ea3fd65ae4f80685fb1c4ede151189ac"
   },
   "level": "required",
+  "note": "path updated 2026-09-04 (D60) from /.well-known/agentic-knowledge to /.well-known/knowledge-linkset; this vector was added today at rc.2 and is unreleased, so editing in place is allowed (never done to disc-0001/0002, which are withdrawn and frozen).",
   "options": {
     "spec_version": "1.0.0-rc.2"
   },

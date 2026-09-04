@@ -10,11 +10,12 @@ Feature: Drop-in user — plain Markdown becomes a live ontologic wiki
     Then every file gains minimal frontmatter (type, kind, title, aliases, prov) and every body byte is unchanged
     And each adopted file is moved to "content/concepts/<slug>.md" with its original path recorded in "aliases" (AGSC-02-93)
     And "notes/agents.md" is flattened to "content/concepts/agents.md"
+    And every relative link or image in an adopted body that no longer resolves is reported as warning "AGSC-E507" naming the original path, the new path and the reference, each referenced local file under the adoption root is copied to "content/assets/<original-relative-path>", and no body byte is rewritten (AGSC-02-95)
     And every adopted item validates against "schema/item.schema.json" with warnings only (no description is AGSC-E408)
     And files that already had frontmatter are untouched
     When I run "npx agentic-system-core ci"
     Then the build succeeds offline with warnings only
-    And "www/" contains the site, "graph.jsonld", "llms.txt" and "/.well-known/agentic-knowledge"
+    And "www/" contains the site, "graph.jsonld", "llms.txt" and "/.well-known/knowledge-linkset"
     And "npx agentic-system-core mcp" serves search/read/links over the same files
 
   Scenario: Publishing the adopted wiki

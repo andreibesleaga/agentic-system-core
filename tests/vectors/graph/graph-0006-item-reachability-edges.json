@@ -1,0 +1,27 @@
+{
+  "area": "graph",
+  "description": "AGSC-05-27's closed object-property list admits exactly two reachability edges beyond the Link keys: asc:source (from sources[], AGSC-05-14) and asc:review (from verified[], AGSC-05-15), added at V5-1 S7-01 so a Source or Review fragment IRI is reachable from its item without string-parsing (AGSC-05-23 forbids relying on entailment). Both edges MUST be present when the item carries both a sources[] entry and a verified[] entry.",
+  "expected": {
+    "contains": [
+      "<https://example.org/concepts/a/> <https://w3id.org/agentic-system-core/ns#source> <https://example.org/concepts/a/#source-1> .",
+      "<https://example.org/concepts/a/> <https://w3id.org/agentic-system-core/ns#review> <https://example.org/concepts/a/#review-1> ."
+    ]
+  },
+  "id": "graph-0006",
+  "input": {
+    "base": "https://example.org",
+    "items": [
+      {
+        "lang": "en",
+        "slug": "a",
+        "sources": [{ "resource": "https://example.org/paper" }],
+        "title": "Reachability",
+        "type": "concept",
+        "verified": [{ "at": "2026-01-01T00:00:00Z", "by": "human:andreibesleaga" }]
+      }
+    ]
+  },
+  "level": "required",
+  "options": { "spec_version": "1.0.0-rc.2" },
+  "rule": "AGSC-05-27"
+}

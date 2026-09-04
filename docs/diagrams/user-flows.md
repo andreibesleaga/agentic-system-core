@@ -1,4 +1,4 @@
-# User flows — the four richest journeys
+# User flows — the five richest journeys
 
 ## 1. Reader find-pattern (P1, Mode 0)
 
@@ -82,7 +82,7 @@ audit/D §3(a)/(b)/(e)/(f); PLAN.md §6(b), §6(c).
 flowchart LR
   A["Folder of plain .md notes"] --> B["npx agentic-system-core init\n(adopt: minimal frontmatter, body bytes untouched,\nmoved to content/concepts/<slug>.md, original path in aliases)"]
   B --> C["npx agentic-system-core ci\n(lint warn-only -> build -> verify)"]
-  C --> D["www/ static site\n+ graph.jsonld + llms.txt\n+ .well-known/agentic-knowledge"]
+  C --> D["www/ static site\n+ graph.jsonld + llms.txt\n+ .well-known/knowledge-linkset"]
   D --> E["git push -> Cloudflare Pages\n= online live wiki"]
   D --> F["npx agentic-system-core mcp\n= agent-readable memory"]
 ```

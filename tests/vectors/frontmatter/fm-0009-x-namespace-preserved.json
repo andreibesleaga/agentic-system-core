@@ -1,0 +1,38 @@
+{
+  "area": "frontmatter",
+  "description": "The x- vendor namespace of SPEC section 8(2) is a reserved extension point, not a typo: a key matching ^x-[a-z0-9]+(-[a-z0-9]+)+$ is preserved verbatim through a lossless export, is never interpreted, and never raises the AGSC-E207 unknown-key warning. Every other unknown key still warns under AGSC-02-05, and a key that fails the general name pattern is still AGSC-E204.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E207",
+        "key": "zzz-unknown",
+        "severity": "warn"
+      }
+    ],
+    "preserved": {
+      "x-acme-priority": "high",
+      "zzz-unknown": "value"
+    },
+    "valid": true
+  },
+  "id": "fm-0009",
+  "input": {
+    "frontmatter": {
+      "description": "An item carrying one reserved vendor extension key and one ordinary unknown key.",
+      "prov": {
+        "operator": "human:andreibesleaga",
+        "origin": "human"
+      },
+      "slug": "vendor-keys",
+      "title": "Vendor keys",
+      "type": "concept",
+      "x-acme-priority": "high",
+      "zzz-unknown": "value"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-02-05a"
+}

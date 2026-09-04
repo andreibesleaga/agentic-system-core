@@ -1,0 +1,39 @@
+{
+  "area": "links",
+  "description": "Negative: a relative body link whose target is inside the Bundle but names no existing item or asset is AGSC-E310, the error that the links value of AGSC-08-11's gate compiles to. Frontmatter Link keys stay AGSC-E301 (AGSC-03-02); an external origin is never resolved at build time and is checked only by refresh (AGSC-04-11); a fragment of an existing item resolves.",
+  "expected": {
+    "error": "AGSC-E310",
+    "resolved": [
+      "agents.md",
+      "agents.md#intent"
+    ],
+    "skipped_external": [
+      "https://example.org/x"
+    ],
+    "unresolved": [
+      "missing.md"
+    ]
+  },
+  "id": "links-0007",
+  "input": {
+    "items": [
+      {
+        "body": "See [agents](agents.md), [gone](missing.md), [outside](https://example.org/x) and [here](agents.md#intent).",
+        "description": "The item whose body carries one resolvable link, one unresolvable link and one external link.",
+        "slug": "start",
+        "type": "concept"
+      },
+      {
+        "body": "## Intent\n\nAn agent passes control to another agent.",
+        "description": "The item the first relative link resolves to, and the owner of the anchor the fourth one names.",
+        "slug": "agents",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-03-11"
+}

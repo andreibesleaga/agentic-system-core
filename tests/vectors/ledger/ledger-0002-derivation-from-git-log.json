@@ -9,9 +9,9 @@
   "input": {
     "content_tree": "4444444444444444444444444444444444444444",
     "git_log": [
-      { "committed_at": "2026-01-01T00:00:00Z", "parents": [], "sha": "1111111111111111111111111111111111111111", "trailers": { "Signed-off-by": "Andrei Besleaga <andreibesleaga@example.org>" } },
-      { "committed_at": "2026-01-02T00:00:00Z", "parents": ["1111111111111111111111111111111111111111", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"], "sha": "2222222222222222222222222222222222222222", "trailers": { "Channel-Auto": "telegram", "Ingested-by": "telegram", "Signed-off-by": "Andrei Besleaga <andreibesleaga@example.org>" } },
-      { "committed_at": "2026-01-03T00:00:00Z", "parents": ["2222222222222222222222222222222222222222"], "sha": "3333333333333333333333333333333333333333", "tag": "v1.0.0", "trailers": { "Signed-off-by": "Andrei Besleaga <andreibesleaga@example.org>" } }
+      { "committed_at": "2026-01-01T00:00:00Z", "parents": [], "sha": "1111111111111111111111111111111111111111", "trailers": { "Signed-off-by": "Andrei Besleaga <andreibesleaga@example.org> (CA-v1)" } },
+      { "committed_at": "2026-01-02T00:00:00Z", "parents": ["1111111111111111111111111111111111111111", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"], "sha": "2222222222222222222222222222222222222222", "trailers": { "Channel-Auto": "telegram", "Ingested-by": "telegram", "Signed-off-by": "Andrei Besleaga <andreibesleaga@example.org> (CA-v1)" } },
+      { "committed_at": "2026-01-03T00:00:00Z", "parents": ["2222222222222222222222222222222222222222"], "sha": "3333333333333333333333333333333333333333", "tag": "v1.0.0", "trailers": { "Signed-off-by": "Andrei Besleaga <andreibesleaga@example.org> (CA-v1)" } }
     ],
     "version": "0.1.0"
   },

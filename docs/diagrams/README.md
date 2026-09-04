@@ -11,7 +11,7 @@ redefine anything; every fact here traces back to those frozen documents.
 | File | Diagram(s) | Notation | Traces | Source-of-truth doc |
 |---|---|---|---|---|
 | `scenario-map.md` | 1 flowchart | flowchart LR | PRD §1, audit/D §3 | `docs/PRD.md`, audit/D-v1-system-walkthrough.md §3 |
-| `user-flows.md` | 4 flowcharts | flowchart TD | PRD-011/013/014/036–038/039–042/050/032–035 | audit/D §3(a,b,e,f), `docs/PLAN.md` §6(b),(c) |
+| `user-flows.md` | 5 flowcharts | flowchart TD | PRD-011/013/014/**053**/036–038/039–042/050/032–035 | audit/D §3(a,b,e,f), `docs/PLAN.md` §6(b),(c) |
 | `state-item-lifecycle.md` | 1 state machine | stateDiagram-v2 | PRD-018, R40 | audit/D §1.1, §1.2, §1.3 |
 | `state-proposal.md` | 1 state machine | stateDiagram-v2 | PRD-039–043 | audit/D §3(b),(d), `docs/PLAN.md` §6(b) |
 | `state-sdlc.md` | 1 state machine | stateDiagram-v2 | — (process, not PRD) | `GABBE/agents/AGENTS.md` §"Loki & Brain", `docs/PRD.md`/`docs/PLAN.md` headers |

@@ -8,8 +8,9 @@
 
 # AgenticSystemCore vocabulary — OWL 2 RL-safe (spec/05-graph.md, AGSC-05-22).
 # Classes: 11 (research/16 section 3.3; there is deliberately no asc:Item superclass, AGSC-05-13).
-# Properties: 31 (21 core + the 10 of the five Mode-2 Link keys and their inverses, D53), every one emitted
-# by a rule of spec/05 section 5.6 (AGSC-05-26..28); asc:verdict was
+# Properties: 33 (21 core + the 10 of the five Mode-2 Link keys and their inverses, D53, plus the
+# 2 item-reachability properties asc:source/asc:review of AGSC-05-14/05-15, V5-1 S7-01), every one
+# emitted by a rule of spec/05 section 5.6 (AGSC-05-26..28); asc:verdict was
 # deleted pre-1.0.0 because a Review's verdict lives in the forge, not in a file (AGSC-08-03).
 # Six of the nine core Link keys reuse SKOS, DCTerms and PROV; uses/excludes/contradicts (plus the
 # computed inverse usedBy and the untyped mentions) and all five Mode-2 keys with their inverses are
@@ -250,6 +251,13 @@ asc:outcome
     rdfs:label "outcome" ;
     rdfs:range xsd:string .
 
+asc:review
+    a owl:ObjectProperty ;
+    rdfs:comment "Connects an item to each asc:Review instantiated from its verified[] entries (AGSC-05-15), so a Review is reachable from its item without string-parsing a fragment IRI. No domain is declared, for the reason given on asc:contradicts (AGSC-05-13: no asc:Item superclass)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "review" ;
+    rdfs:range asc:Review .
+
 asc:severity
     a owl:DatatypeProperty ;
     rdfs:comment "Weight of a Lesson: info, warn or block." ;
@@ -257,6 +265,13 @@ asc:severity
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "severity" ;
     rdfs:range xsd:string .
+
+asc:source
+    a owl:ObjectProperty ;
+    rdfs:comment "Connects an item to each asc:Source instantiated from its sources[] entries (AGSC-05-14), so a Source is reachable from its item without string-parsing a fragment IRI. No domain is declared, for the reason given on asc:contradicts (AGSC-05-13: no asc:Item superclass)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "source" ;
+    rdfs:range asc:Source .
 
 asc:specVersion
     a owl:DatatypeProperty ;
@@ -291,7 +306,8 @@ asc:uses
     a owl:ObjectProperty ;
     rdfs:comment "Soft dependency: the subject draws on the object. A composition warns when a used item is absent. No domain, range or super-property is declared: skos:related is a sub-property of skos:semanticRelation, whose domain and range are skos:Concept (S19/S20), so a super-property axiom would re-introduce the unintended Concept typing and the S37 contradiction for Clusters (AGSC-05-26a, V3-06)." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
-    rdfs:label "uses" .
+    rdfs:label "uses" ;
+    owl:inverseOf asc:usedBy .
 
 asc:verifiedAt
     a owl:DatatypeProperty ;

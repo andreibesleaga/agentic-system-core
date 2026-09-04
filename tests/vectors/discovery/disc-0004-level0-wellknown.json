@@ -12,7 +12,7 @@
     ],
     "level": 0,
     "media_type": "application/linkset+json",
-    "path": "/.well-known/agentic-knowledge",
+    "path": "/.well-known/knowledge-linkset",
     "profile": "https://w3id.org/agentic-system-core/profile/agentic-knowledge",
     "top_level_members": [
       "linkset"
@@ -48,6 +48,7 @@
     }
   },
   "level": "required",
+  "note": "path updated 2026-09-04 (D60) from /.well-known/agentic-knowledge to /.well-known/knowledge-linkset; this vector was added today at rc.2 and is unreleased, so editing in place is allowed (never done to disc-0001/0002, which are withdrawn and frozen).",
   "options": {
     "spec_version": "1.0.0-rc.2"
   },

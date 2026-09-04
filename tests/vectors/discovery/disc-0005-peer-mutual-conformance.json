@@ -12,15 +12,16 @@
     "nodes": [
       {
         "base": "https://a.example/",
-        "peer": "https://b.example/.well-known/agentic-knowledge"
+        "peer": "https://b.example/.well-known/knowledge-linkset"
       },
       {
         "base": "https://b.example/",
-        "peer": "https://a.example/.well-known/agentic-knowledge"
+        "peer": "https://a.example/.well-known/knowledge-linkset"
       }
     ]
   },
   "level": "required",
+  "note": "path updated 2026-09-04 (D60) from /.well-known/agentic-knowledge to /.well-known/knowledge-linkset; this vector was added today at rc.2 and is unreleased, so editing in place is allowed (never done to disc-0001/0002, which are withdrawn and frozen).",
   "options": {
     "spec_version": "1.0.0-rc.2"
   },

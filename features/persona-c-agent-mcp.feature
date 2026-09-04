@@ -18,7 +18,7 @@ Feature: Agent reader queries structured knowledge without scraping
   @PRD-023 @PRD-024
   Scenario: Server caches published exports and refreshes on manifest change
     When the server starts
-    Then it fetches "/.well-known/agentic-knowledge" (the link set), "/graph.jsonld" and "/search.json"
+    Then it fetches "/.well-known/knowledge-linkset" (the link set), "/graph.jsonld" and "/search.json"
     And it stores them under "$XDG_CACHE_HOME/agsc/<host>/"
     And it re-fetches only when a published "digest" target attribute changes
     And no network call happens except inside the "mcp" verb

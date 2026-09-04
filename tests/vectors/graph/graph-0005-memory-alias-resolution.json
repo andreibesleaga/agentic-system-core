@@ -6,7 +6,7 @@
     "foreign_bundle": {
       "error": "AGSC-E309"
     },
-    "resolved": "concepts/agentic-memory"
+    "resolved": "agentic-memory"
   },
   "id": "graph-0005",
   "input": {

@@ -1,0 +1,54 @@
+{
+  "area": "cli",
+  "description": "A tool that cannot fulfil a call returns the AGSC-08-18 envelope with type error and body {code, message}, never a JSON-RPC transport error, and the bytes are identical on the stdio and WebMCP transports (AGSC-09-16). Only the code is asserted; message text is deliberately unspecified so that ports may localise it (AGSC-09-06).",
+  "expected": {
+    "jsonrpc_error": false,
+    "results": [
+      {
+        "body": {
+          "code": "AGSC-E301"
+        },
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "source": "read",
+        "trust": "untrusted",
+        "type": "error"
+      },
+      {
+        "body": {
+          "code": "AGSC-E309"
+        },
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "source": "links",
+        "trust": "untrusted",
+        "type": "error"
+      }
+    ],
+    "transports_byte_identical": true
+  },
+  "id": "cli-0004",
+  "input": {
+    "calls": [
+      {
+        "arguments": {
+          "slug": "no-such-item"
+        },
+        "tool": "read"
+      },
+      {
+        "arguments": {
+          "iri": "memory://other-bundle/concepts/x"
+        },
+        "tool": "links"
+      }
+    ],
+    "transports": [
+      "stdio",
+      "webmcp"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-09-13a"
+}

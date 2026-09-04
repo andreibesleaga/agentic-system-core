@@ -12,7 +12,7 @@ flowchart TD
     S7["7 Graph exports: graph.jsonld/.nq/.ttl/.rdf (JCS,\nsorted, blank-node-free) + pages/<slug>.md|.jsonld"]
     S8["8 Search index: search.json\n(tokenizer + inverted index)"]
     S9["9 HTML render: Markdown subset renderer\n+ templates -> pages"]
-    S10["10 Discovery files: /.well-known/agentic-knowledge,\nllms.txt, sitemap.xml, robots.txt, _headers, _redirects"]
+    S10["10 Discovery files: /.well-known/knowledge-linkset,\nllms.txt, sitemap.xml, robots.txt, _headers, _redirects"]
     S11["11 NOW page: counts, stale list, drafts,\nopen proposals -> now/index.html + now.md"]
     S12["12 Digests: sha256 of graph.nq\n+ every pages/*.md -> digest/agsc-* target attributes"]
     S13["13 Determinism check (ci only):\nbuild twice into temp dirs, byte compare"]

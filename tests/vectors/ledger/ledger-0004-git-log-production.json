@@ -1,0 +1,87 @@
+{
+  "area": "ledger",
+  "description": "The production of the git-log file is pinned, not only its consumption: first-parent chain oldest first; trailers are the LAST contiguous Key: value block with continuation lines unfolded, keys compared ASCII-case-insensitively and the LAST occurrence of a key winning; committed_at is the COMMITTER timestamp in whole UTC seconds; tag is the lexicographically greatest v* tag pointing at the commit. Two conforming ports therefore derive one array, one ledger and one agsc-ledger-head from one history.",
+  "expected": {
+    "git_log": [
+      {
+        "committed_at": "2026-01-01T00:00:00Z",
+        "parents": [],
+        "sha": "1111111111111111111111111111111111111111",
+        "trailers": {
+          "Proposal": "12",
+          "Signed-off-by": "Ada Lovelace <ada@example.org> (CA-v1)"
+        }
+      },
+      {
+        "committed_at": "2026-01-02T00:00:00Z",
+        "parents": [
+          "1111111111111111111111111111111111111111",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "sha": "2222222222222222222222222222222222222222",
+        "trailers": {
+          "Channel-Auto": "telegram continued",
+          "Signed-off-by": "Ada Lovelace <ada@example.org> (CA-v1)"
+        }
+      },
+      {
+        "committed_at": "2026-01-03T00:00:00Z",
+        "parents": [
+          "2222222222222222222222222222222222222222"
+        ],
+        "sha": "3333333333333333333333333333333333333333",
+        "tag": "v1.0.1",
+        "trailers": {
+          "Signed-off-by": "Ada Lovelace <ada@example.org> (CA-v1)"
+        }
+      }
+    ],
+    "side_branch_excluded": true
+  },
+  "id": "ledger-0004",
+  "input": {
+    "commits": [
+      {
+        "author_timestamp": "2026-01-01T09:00:00+02:00",
+        "committer_timestamp": "2026-01-01T00:00:00Z",
+        "message": "Add the first note\n\nProposal: 12\nSigned-off-by: Ada Lovelace <ada@example.org> (CA-v1)\n",
+        "parents": [],
+        "sha": "1111111111111111111111111111111111111111",
+        "tags": []
+      },
+      {
+        "author_timestamp": "2026-01-02T00:00:00Z",
+        "committer_timestamp": "2026-01-02T00:00:00Z",
+        "message": "Merge proposal 13\n\nNot a trailer block, just prose.\n\nsigned-off-by: Someone Else <else@example.org> (CA-v1)\nSigned-off-by: Ada Lovelace <ada@example.org> (CA-v1)\nChannel-Auto: telegram\n  continued\n",
+        "parents": [
+          "1111111111111111111111111111111111111111",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "sha": "2222222222222222222222222222222222222222",
+        "tags": []
+      },
+      {
+        "author_timestamp": "2026-01-03T00:00:00Z",
+        "committer_timestamp": "2026-01-03T00:00:00Z",
+        "message": "Release\n\nSigned-off-by: Ada Lovelace <ada@example.org> (CA-v1)\n",
+        "parents": [
+          "2222222222222222222222222222222222222222"
+        ],
+        "sha": "3333333333333333333333333333333333333333",
+        "tags": [
+          "v1.0.0",
+          "v1.0.1",
+          "not-a-version"
+        ]
+      }
+    ],
+    "side_branch": [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-08-20b"
+}

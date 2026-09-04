@@ -1,5 +1,5 @@
 # Trace: PRD-024, PRD-025, PRD-050 · audit/D §3(j) · PLAN §7 (w3id conneg)
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(j) "Standards implementer discovering via /.well-known/agentic-knowledge"
+# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(j) "Standards implementer discovering via /.well-known/knowledge-linkset"
 @persona-j @mode-1
 Feature: Standards implementer adopts the discovery format on their own site
   As P11 (standards implementer)
@@ -8,7 +8,7 @@ Feature: Standards implementer adopts the discovery format on their own site
 
   @PRD-024
   Scenario: Implementer discovers the linkset via the well-known URI
-    When the implementer runs 'curl -H "Accept: application/linkset+json" https://agenticsystemcore.com/.well-known/agentic-knowledge'
+    When the implementer runs 'curl -H "Accept: application/linkset+json" https://agenticsystemcore.com/.well-known/knowledge-linkset'
     Then the response is served as "application/linkset+json" with profile "https://w3id.org/agentic-system-core/profile/agentic-knowledge" and "linkset" is its sole top-level member
     And it is a RFC 9264 linkset with "anchor" equal to the site base
     And it links "describedby" to "/graph.jsonld"
@@ -19,7 +19,7 @@ Feature: Standards implementer adopts the discovery format on their own site
 
   @PRD-024
   Scenario: Implementer verifies the link-set integrity attributes
-    When the implementer reads the "describedby" link to "/graph.jsonld" inside "/.well-known/agentic-knowledge"
+    When the implementer reads the "describedby" link to "/graph.jsonld" inside "/.well-known/knowledge-linkset"
     Then it carries "agsc-spec-version", "agsc-generated-at", "agsc-counts" and "agsc-bundle-hash", every value an array
     And the "…rel#graph" and "…rel#ledger" links each carry a "digest" of the form "sha-256=:<base64>:"
     And "agsc-generated-at" derives from "SOURCE_DATE_EPOCH", never the wall clock
@@ -42,6 +42,6 @@ Feature: Standards implementer adopts the discovery format on their own site
 
   @PRD-054
   Scenario: Implementer validates the published artifacts with the shipped tools
-    When the implementer runs "node tools/validate-wellknown https://agenticsystemcore.com/.well-known/agentic-knowledge"
+    When the implementer runs "the shipped validate-wellknown tool on https://agenticsystemcore.com/.well-known/knowledge-linkset"
     Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "validate-wellknown"
     And running it against a linkset carrying an unregistered short name exits 1

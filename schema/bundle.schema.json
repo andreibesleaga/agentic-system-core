@@ -24,7 +24,7 @@
       "type": "string",
       "pattern": "^(?:https://[^\\s/]+(?:/[^\\s/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
     },
-    "lang": { "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{2,8})*$" },
+    "lang": { "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$" },
     "license": {
       "description": "SPDX or LicenseRef identifier covering the prose of this Bundle (AGSC-06-15).",
       "type": "string"

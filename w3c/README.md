@@ -6,12 +6,13 @@ Created 2026-09-04.
 ## What this is
 
 The source of the W3C-facing document for this project: the `asc:` vocabulary
-(`../ontology/agsc.ttl` — 11 classes, 31 properties, OWL 2 RL, CC0), its JSON-LD context, the
+(`../ontology/agsc.ttl` — 11 classes, 33 properties (44 terms), OWL 2 RL, CC0), its JSON-LD context, the
 namespace and versioning policy at `https://w3id.org/agentic-system-core/ns#`, and a human-readable
 explanation of the profile identifier `https://w3id.org/agentic-system-core/profile/agentic-knowledge`.
 
-It is deliberately **not** the discovery specification. The `/.well-known/agentic-knowledge`
-resource, its link relation type and its link-set profile are defined normatively by the
+It is deliberately **not** the discovery specification. The `/.well-known/knowledge-linkset`
+resource (D60; the well-known URI, distinct from the `agentic-knowledge` link relation, which is
+unchanged), its link relation type and its link-set profile are defined normatively by the
 Internet-Draft in `../internet-draft/`, and this document cites it rather than restating it.
 
 | File | What it is |

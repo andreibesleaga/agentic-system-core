@@ -12,7 +12,7 @@
       "enum": ["concept", "episode", "procedure", "lesson", "cluster", "gate"]
     },
     "title": {
-      "description": "3-120 characters, any Unicode in NFC (AGSC-02-02 table).",
+      "description": "3-120 characters, any Unicode in NFC (§2.2 common-key table).",
       "type": "string",
       "pattern": "^[\\s\\S]{3,120}$"
     },
@@ -35,7 +35,7 @@
       "uniqueItems": true,
       "items": { "$ref": "#/$defs/slug" }
     },
-    "lang": { "description": "Lowercase BCP 47; default en.", "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{2,8})*$" },
+    "lang": { "description": "Lowercase BCP 47, admitting singleton (extension and private-use) subtags such as x-internal or u-co-phonebk; default en.", "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$" },
     "date": { "$ref": "#/$defs/date" },
     "modified": { "$ref": "#/$defs/date" },
     "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
@@ -67,7 +67,7 @@
       "required": ["type", "kind"],
       "properties": {
         "type": { "const": "concept" },
-        "description": { "description": "40-200 UTF-16 code units (AGSC-02-02 table, AGSC-02-24).", "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
+        "description": { "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).", "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
         "kind": { "enum": ["pattern", "taxonomy", "explainer", "principle", "decision", "spec", "task", "term"] },
         "evidence": { "enum": ["explicit", "structural", "single-source"] },
         "maturity": { "enum": ["established", "emerging", "research"] },
@@ -134,7 +134,7 @@
       "required": ["type"],
       "properties": {
         "type": { "const": "cluster" },
-        "description": { "description": "40-200 UTF-16 code units (AGSC-02-02 table, AGSC-02-24).", "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
+        "description": { "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).", "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
         "broader": {
           "description": "At most one parent cluster: the tree is mono-parent (AGSC-03-08); more than one value is AGSC-E308 (AGSC-03-22).",
           "type": "array",

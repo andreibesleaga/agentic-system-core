@@ -9,7 +9,7 @@ flowchart TD
   C --> D["canonical(entry_i) = JCS (sorted members, no whitespace)\nprev_0 = 64 zeros"]
   D --> E["hash_i = sha256(prev_i + canonical(entry_i))\nprev_0 = 64 zeros (genesis); prev_i+1 = hash_i"]
   E --> F["Write the WHOLE ledger.jsonl into build.out (www/)\nand the release assets — never into content/,\nnever committed by CI (AGSC-08-02, AGSC-08-20)"]
-  F --> G["Publish the chain head (last hash)\nas agsc-ledger-head on the rel#ledger link\nof /.well-known/agentic-knowledge"]
+  F --> G["Publish the chain head (last hash)\nas agsc-ledger-head on the rel#ledger link\nof /.well-known/knowledge-linkset"]
   G --> H{"Is this a tagged release?"}
   H -- yes --> I["Attest the head via actions/attest\n(SLSA v1.0 Build L2 wording)"]
   H -- no --> J["No attestation this run"]
@@ -21,7 +21,7 @@ flowchart TD
 sequenceDiagram
   participant CI as agsc build/ci
   participant Out as www/ledger.jsonl (derived)
-  participant WK as /.well-known/agentic-knowledge
+  participant WK as /.well-known/knowledge-linkset
   participant Rel as tagged release
   participant Reader as offline verifier
 

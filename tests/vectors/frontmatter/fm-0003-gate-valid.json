@@ -1,6 +1,6 @@
 {
   "area": "frontmatter",
-  "description": "A valid gate: level is L2, checks is a subset of the five check names, enforce is limited to status-check.",
+  "description": "A valid gate: level is L2, checks is a subset of the five check names, enforce carries one of the four AGSC-08-12 values.",
   "expected": {
     "errors": [],
     "frontmatter": {
