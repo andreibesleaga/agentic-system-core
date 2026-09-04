@@ -22,7 +22,7 @@ Feature: Owner-as-operator keeps the site green with zero maintenance
     And no ledger line is ever committed to the content branch
     When the maintainer runs "npx agentic-system-core verify --ledger"
     Then the full chain re-verifies offline
-    And the recomputed head equals "integrity.ledger_head" in the well-known file
+    And the recomputed head equals the "agsc-ledger-head" attribute of the "…rel#ledger" link in the well-known file
     And tampering with any one line, or truncating the tail, makes "verify --ledger" fail
 
   @PRD-044

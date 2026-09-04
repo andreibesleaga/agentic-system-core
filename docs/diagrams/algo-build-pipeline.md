@@ -14,7 +14,7 @@ flowchart TD
     S9["9 HTML render: Markdown subset renderer\n+ templates -> pages"]
     S10["10 Discovery files: /.well-known/agentic-knowledge,\nllms.txt, sitemap.xml, robots.txt, _headers, _redirects"]
     S11["11 NOW page: counts, stale list, drafts,\nopen proposals -> now/index.html + now.md"]
-    S12["12 Manifests/hashes: sha256 of graph.nq\n+ every pages/*.md -> integrity block"]
+    S12["12 Digests: sha256 of graph.nq\n+ every pages/*.md -> digest/agsc-* target attributes"]
     S13["13 Determinism check (ci only):\nbuild twice into temp dirs, byte compare"]
     S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13
   end
@@ -24,7 +24,7 @@ flowchart TD
   DIFF -- "no" --> FAIL1["exit 1 (AGSC-E602)"]
   DIFF -- "yes" --> EXPORT["agsc ci: export; attest (CI only)"]
   EXPORT --> LEDGER["Derive the WHOLE ledger.jsonl from git history\n{ts, kind, ref, actor, prev, hash} per event\nhash = sha256(prev + canonical(entry)) — written into www/,\nnever committed (D48(1))"]
-  LEDGER --> REVERIFY["Re-verify the hash chain and compare the head\nto integrity.ledger_head (agsc verify --ledger)"]
+  LEDGER --> REVERIFY["Re-verify the hash chain and compare the head\nto agsc-ledger-head on the rel#ledger link (agsc verify --ledger)"]
   REVERIFY --> GATE["exit 0; dist/gate.json carries the verdict"]
 
   FAIL1 --> DONE1(("stop"))

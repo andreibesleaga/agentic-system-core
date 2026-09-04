@@ -8,6 +8,6 @@
     "markdown": "---\ntype: concept\ntitle: A2A\ndescription: An agent-to-agent protocol concept used to exercise the blank-node prohibition in exports.\nkind: explainer\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n```turtle export\n<https://example.org/concepts/a2a/> <https://w3id.org/agentic-system-core/ns#uses> [ a <https://w3id.org/agentic-system-core/ns#Concept> ] .\n```\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-05-08"
 }

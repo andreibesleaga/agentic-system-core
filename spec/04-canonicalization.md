@@ -34,7 +34,7 @@
 - **AGSC-04-15** `graph.nq` — canonical N-Quads, code-point ordered, each quad terminated by a single LF — is the hashed form of the graph. `bundle.hash` MUST be the lowercase hex SHA-256 of its bytes. [research/12 §P rule 21]
 - **AGSC-04-16** Because exports are blank-node-free (§05), RDFC-1.0 canonicalization degenerates to this sort. An implementation MUST scope any conformance claim to "canonical N-Quads equal to RDFC-1.0 output for blank-node-free datasets" and MUST NOT claim full RDFC-1.0. [D41, audit/G §1 RDFC row]
 - **AGSC-04-17** Content hashes elsewhere (per-item Markdown, ontology files, skill packs) MUST be lowercase hex SHA-256 over the canonical bytes. A CIDv1 (`raw`, sha2-256, base32 `b…`) MAY additionally be emitted for `graph.nq`; when emitted it MUST be computed over the same canonical bytes. [research/12 §P rule 25]
-- **AGSC-04-18** `search.json`, `sitemap.xml`, `feed.xml` and the well-known file MUST be reproducible from `content/` plus `SOURCE_DATE_EPOCH`, plus — for the well-known file's `integrity.ledger_head` alone — the git-log file of AGSC-08-02/08-20a. No other input exists. [research/12 §P rule 26, V3-05]
+- **AGSC-04-18** `search.json`, `sitemap.xml`, `feed.xml` and the well-known file MUST be reproducible from `content/` plus `SOURCE_DATE_EPOCH`, plus — for the well-known file's `agsc-ledger-head` attribute alone — the git-log file of AGSC-08-02/08-20a. No other input exists. [research/12 §P rule 26, V3-05]
 
 ## 4.7 Normalization on write
 

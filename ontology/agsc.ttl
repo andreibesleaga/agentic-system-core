@@ -22,8 +22,8 @@
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     dcterms:title "AgenticSystemCore vocabulary" ;
     rdfs:label "AgenticSystemCore vocabulary" ;
-    owl:versionIRI <https://w3id.org/agentic-system-core/ns/1.0.0> ;
-    owl:versionInfo "1.0.0" .
+    owl:versionIRI <https://w3id.org/agentic-system-core/ns/1.0.0-draft.1> ;
+    owl:versionInfo "1.0.0-draft.1" .
 
 asc:Bundle
     a owl:Class ;

@@ -1,0 +1,21 @@
+{
+  "area": "cli",
+  "description": "Negative: the verb set is closed at sixteen names (AGSC-09-07). An unknown verb is a usage error, exit code 2 — distinct from exit 1, which means findings or a failed gate. The same applies to run and trace while run.enabled is false (AGSC-09-94), which is the default. Supersedes cli-0001.",
+  "expected": {
+    "error": "AGSC-E001",
+    "exit": 2,
+    "stdout": ""
+  },
+  "id": "cli-0005",
+  "input": {
+    "argv": [
+      "frobnicate",
+      "--json"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-09-07"
+}

@@ -1,13 +1,13 @@
 {
   "area": "ledger",
-  "description": "Negative: truncation is invisible to link checking. The single line present hashes correctly and its prev is the 64-zero genesis of AGSC-08-22, so a verifier that only walks the chain reports success — yet the published integrity.ledger_head is the hash of the trailing build entry (AGSC-08-20a) that has been cut away. AGSC-08-23 therefore also requires the recomputed head to equal the published head; the mismatch is AGSC-E701.",
+  "description": "Negative: truncation is invisible to link checking. The single line present hashes correctly and its prev is the 64-zero genesis of AGSC-08-22, so a verifier that only walks the chain reports success — yet the published agsc-ledger-head on the rel#ledger link is the hash of the trailing build entry (AGSC-08-20a) that has been cut away. AGSC-08-23 therefore also requires the recomputed head to equal the published head; the mismatch is AGSC-E701.",
   "expected": { "error": "AGSC-E701" },
   "id": "ledger-0001",
   "input": {
     "ledger": "{\"actor\":\"human:andreibesleaga\",\"hash\":\"32bfef88c9f881ef8b6fc628b6da06db6a3ce929d686b95895edb83cee9f2700\",\"kind\":\"commit\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"1111111111111111111111111111111111111111\",\"ts\":\"2026-01-01T00:00:00Z\"}\n",
-    "wellknown": { "integrity": { "ledger_head": "0aad593fd7c6bc515b145e6212d6b91c2f5269a2556cc35fcf992c2ec98d059b" } }
+    "wellknown": { "linkset": [ { "anchor": "https://example.org/", "https://w3id.org/agentic-system-core/rel#ledger": [ { "agsc-ledger-head": ["0aad593fd7c6bc515b145e6212d6b91c2f5269a2556cc35fcf992c2ec98d059b"], "href": "https://example.org/ledger.jsonl", "type": "application/jsonl" } ] } ] }
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-08-23"
 }

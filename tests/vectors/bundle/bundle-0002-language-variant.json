@@ -1,0 +1,34 @@
+{
+  "area": "bundle",
+  "description": "Language variants are accepted at 1.0 (D53 lifts G27). The unsuffixed file is the primary and owns the slug, the item IRI and the graph node; <slug>.<lang>.md shares that slug, is published at /<type-plural>/<slug>/<lang>/ and is emitted as language-tagged literals, never as a second item. A variant with no primary is AGSC-E208. Without this vector the whole i18n rule pair AGSC-01-13/01-13a ships unproved.",
+  "expected": {
+    "items": 1,
+    "orphan_variant": {
+      "error": "AGSC-E208"
+    },
+    "primary_slug": "agentic-memory",
+    "routes": [
+      "/concepts/agentic-memory/",
+      "/concepts/agentic-memory/fr/"
+    ],
+    "variant_is_separate_item": false
+  },
+  "id": "bundle-0002",
+  "input": {
+    "config": {
+      "i18n": {
+        "default": "en"
+      }
+    },
+    "paths": [
+      "content/concepts/agentic-memory.md",
+      "content/concepts/agentic-memory.fr.md",
+      "content/concepts/orphan.de.md"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-01-13"
+}

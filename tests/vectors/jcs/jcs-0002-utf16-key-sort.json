@@ -5,6 +5,6 @@
   "id": "jcs-0002",
   "input": { "value": { "！": 1, "𐀀": 2 } },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-04-05"
 }

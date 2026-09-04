@@ -9,7 +9,8 @@ Feature: Standards implementer adopts the discovery format on their own site
   @PRD-024
   Scenario: Implementer discovers the linkset via the well-known URI
     When the implementer runs 'curl -H "Accept: application/linkset+json" https://agenticsystemcore.com/.well-known/agentic-knowledge'
-    Then the response is a RFC 9264 linkset with "anchor" equal to the site base
+    Then the response is served as "application/linkset+json" with profile "https://w3id.org/agentic-system-core/profile/agentic-knowledge" and "linkset" is its sole top-level member
+    And it is a RFC 9264 linkset with "anchor" equal to the site base
     And it links "describedby" to "/graph.jsonld"
     And it links relation "https://w3id.org/agentic-system-core/rel#graph" to "/graph.jsonld" and to "/graph.ttl"
     And it links relation "…rel#ontology" to "/ns/agsc.ttl" and "…rel#context" to "/ns/context.jsonld"
@@ -17,10 +18,11 @@ Feature: Standards implementer adopts the discovery format on their own site
     And it links "alternate" to "/llms.txt" and "service-doc" to "/specs/"
 
   @PRD-024
-  Scenario: Implementer verifies the integrity block
-    When the implementer reads the integrity block inside "/.well-known/agentic-knowledge"
-    Then it contains "spec_version", "bundle.id/base/title", "counts", "hashes.graph_nq" (sha256) and "generated_at"
-    And "generated_at" derives from "SOURCE_DATE_EPOCH", never the wall clock
+  Scenario: Implementer verifies the link-set integrity attributes
+    When the implementer reads the "describedby" link to "/graph.jsonld" inside "/.well-known/agentic-knowledge"
+    Then it carries "agsc-spec-version", "agsc-generated-at", "agsc-counts" and "agsc-bundle-hash", every value an array
+    And the "…rel#graph" and "…rel#ledger" links each carry a "digest" of the form "sha-256=:<base64>:"
+    And "agsc-generated-at" derives from "SOURCE_DATE_EPOCH", never the wall clock
 
   @PRD-050
   Scenario: Implementer content-negotiates the vocabulary via w3id

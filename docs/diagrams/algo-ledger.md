@@ -9,7 +9,7 @@ flowchart TD
   C --> D["canonical(entry_i) = JCS (sorted members, no whitespace)\nprev_0 = 64 zeros"]
   D --> E["hash_i = sha256(prev_i + canonical(entry_i))\nprev_0 = 64 zeros (genesis); prev_i+1 = hash_i"]
   E --> F["Write the WHOLE ledger.jsonl into build.out (www/)\nand the release assets — never into content/,\nnever committed by CI (AGSC-08-02, AGSC-08-20)"]
-  F --> G["Publish the chain head (last hash)\nin /.well-known/agentic-knowledge integrity block"]
+  F --> G["Publish the chain head (last hash)\nas agsc-ledger-head on the rel#ledger link\nof /.well-known/agentic-knowledge"]
   G --> H{"Is this a tagged release?"}
   H -- yes --> I["Attest the head via actions/attest\n(SLSA v1.0 Build L2 wording)"]
   H -- no --> J["No attestation this run"]
@@ -27,12 +27,12 @@ sequenceDiagram
 
   CI->>CI: recompute the chain from git history
   CI->>Out: write the whole file (deterministic, no append)
-  CI->>WK: publish chain head in integrity block
+  CI->>WK: publish chain head as agsc-ledger-head on the rel#ledger link
   CI->>Rel: attest head (tag time only)
 
   Reader->>Out: fetch the published ledger.jsonl (or recompute it from a clone)
   Reader->>Reader: replay from genesis:\nhash_i = sha256(hash_i-1 + canonical(entry_i))
-  Reader->>WK: read the local well-known integrity.ledger_head
+  Reader->>WK: read agsc-ledger-head on the rel#ledger link
   Reader->>Reader: compare recomputed head vs published head
   alt chain intact and heads match
     Reader-->>Reader: verify --ledger exits 0
@@ -46,7 +46,7 @@ file from git history plus the facts of the run and write it only into the build
 release assets. Nobody appends, so there is no bot commit (AGSC-08-02), no two-runner append race and
 no partial-write recovery case — two builds of the same history produce the same bytes. Tampering with
 any line breaks every subsequent hash, so `verify --ledger` fails deterministically at the first broken
-link; the head comparison against `integrity.ledger_head` additionally catches a truncated tail, which
+link; the head comparison against `agsc-ledger-head` on the `rel#ledger` link additionally catches a truncated tail, which
 line-linkage alone cannot see. The published head is what an attestation signs at release time; it is
 the only durable claim of "this history has not been altered since publication."
 

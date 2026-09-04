@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Agentic Knowledge Vocabulary and Discovery Profile</title>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" async></script>
+  <script class="remove">
+  // ReSpec configuration. Option names verified against https://respec.org/docs/ (2026-09-04);
+  // ReSpec 37.3.6, script URL verified 2026-09-04.
+  // `var` is required: ReSpec reads this as window.respecConfig; const/let would be invisible.
+  //
+  // STATUS (owner decision 2026-09-04): published INDIVIDUALLY, in W3C format, from the owner's
+  // GitHub — specStatus "unofficial" = ReSpec's status for personal/exploratory drafts (standard
+  // W3C look and boilerplate; explicitly NOT a W3C publication; CC-BY 3.0 by default). No `group`.
+  // Persistent identifiers come from w3id.org (W3C Permanent Identifier CG; open to anyone by PR).
+  // To upgrade later to a Community Group report: set specStatus "CG-DRAFT" and add
+  // `group: "cg/<shortname>"` — nothing else changes. See discovery-product/w3c/PLAN-W3C.md
+  // (outside this repo) for the parked CG path.
+  var respecConfig = {
+    specStatus: "unofficial",
+    // `latestVersion: null` below suppresses the /TR/ link that `shortName` would otherwise
+    //   generate (and which would 404).
+    shortName: "agentic-knowledge-vocab",
+    editors: [{
+      name: "Andrei Nicolae Besleaga",
+      company: "Independent",
+      url: "https://andreibesleaga.com/",
+      // w3cid: add the owner's numeric W3C account id if/when a W3C account exists (optional).
+    }],
+    github: {
+      repoURL: "https://github.com/andreibesleaga/agentic-system-core",
+      branch: "main"
+    },
+    edDraftURI: "https://andreibesleaga.github.io/agentic-system-core/w3c/",
+    latestVersion: null,       // TODO(W-06): the stable Draft-CG-Report URL (for a CG, the group's
+                               //   GitHub Pages URL). null suppresses the link, which is correct
+                               //   until the first report is published.
+    copyrightStart: "2026",
+    // No `license` key: for "unofficial" ReSpec applies CC-BY 3.0 by default (research/21 §2).
+    // The vocabulary/ontology/context themselves are CC0 1.0 (D39) — stated in the document body.
+    localBiblio: {
+      "AGSC-SPEC": {
+        title: "AgenticSystemCore Specification",
+        href: "https://agenticsystemcore.com/specs/",
+        authors: ["Andrei Nicolae Besleaga"],
+        date: "2026",
+        status: "spec_version 1.0.0-rc.2 (frozen)"
+      },
+      "AGSC-WELLKNOWN-ID": {
+        title: "The agentic-knowledge Well-Known URI and Link Set Profile for Publishing Knowledge Artefacts",
+        href: "https://datatracker.ietf.org/doc/draft-besleaga-agentic-knowledge-wellknown/",
+        authors: ["Andrei Nicolae Besleaga"],
+        status: "Internet-Draft",
+        publisher: "IETF"
+        // TODO(W-08): replace with the datatracker URL and date of the posted -00.
+      }
+    }
+  };
+  </script>
+</head>
+<body>
+
+<h1 id="title">Agentic Knowledge Vocabulary and Discovery Profile</h1>
+
+<section id="abstract">
+  <p>
+    This report defines <dfn>agsc</dfn>, an RDF vocabulary for describing published units of
+    knowledge — concepts, recorded episodes, procedures, lessons, clusters and quality gates —
+    together with their provenance, their typed links and the bundle that publishes them. The
+    vocabulary is aligned to <a href="https://www.w3.org/TR/skos-reference/">SKOS</a>,
+    <a href="https://www.w3.org/TR/prov-o/">PROV-O</a> and Dublin Core Terms, stays inside the
+    <a href="https://www.w3.org/TR/owl2-profiles/">OWL&nbsp;2 RL</a> profile, and is published at the
+    persistent namespace <code>https://w3id.org/agentic-system-core/ns#</code> with content
+    negotiation to Turtle, JSON-LD and RDF/XML.
+  </p>
+  <p>
+    The report also documents the <em>discovery profile</em> by which a site advertises the
+    knowledge artefacts described with this vocabulary, and the identifier
+    <code>https://w3id.org/agentic-system-core/profile/agentic-knowledge</code> under which that
+    profile is named. The normative definition of the discovery resource itself is
+    [[AGSC-WELLKNOWN-ID]]; this report does not restate it.
+  </p>
+</section>
+
+<section id="sotd">
+  <!--
+    ReSpec generates the required Community Group boilerplate for specStatus "CG-DRAFT"
+    (src/w3c/templates/cgbg-sotd.js, fetched 2026-09-04):
+      "This specification was published by the <group>. It is not a W3C Standard nor is it on the
+       W3C Standards Track. Please note that under the W3C Community Contributor License Agreement
+       (CLA) there is a limited opt-out and other conditions apply. Learn more about W3C Community
+       and Business Groups."
+    Do NOT hand-write that paragraph; anything added here is APPENDED to it.
+  -->
+  <p>
+    This is an early draft. Section content marked <em>TODO</em> is not yet written; nothing in
+    this document is a stable commitment, and the vocabulary's own normative source remains the
+    Turtle file at <code>https://w3id.org/agentic-system-core/ns</code>.
+  </p>
+</section>
+
+<section id="conformance">
+  <!-- ReSpec inserts the RFC 2119 / RFC 8174 conformance boilerplate here. -->
+  <p>
+    This report describes a vocabulary and a naming convention. Conformance <em>levels</em> for
+    software that publishes, reads or writes bundles described with this vocabulary are defined in
+    section 10 of [[AGSC-SPEC]] (Level&nbsp;0 Publisher, Level&nbsp;1 Reader, Level&nbsp;2
+    Writer/Exporter, Level&nbsp;3 Full engine) and are not redefined here.
+  </p>
+</section>
+
+<section>
+  <h2>Introduction</h2>
+  <p class="TODO">
+    TODO(W-07): motivation in three paragraphs — sites publish knowledge for both people and
+    software agents; the same units need one typed vocabulary so that a reader can tell a recorded
+    episode from a principle and can follow the links between them; and one discovery point so an
+    agent can find the serialisations at all. Keep it factual, name no product as a prerequisite.
+  </p>
+  <section class="informative">
+    <h3>Relationship to other work</h3>
+    <p class="TODO">
+      TODO(W-07): one short subsection per neighbour, each ending in a one-line verdict, covering at
+      minimum: SKOS, PROV-O, DCAT and the Profiles Vocabulary, VoID, the discovery resource of
+      [[AGSC-WELLKNOWN-ID]], and the W3C groups identified in the project's landscape research.
+      No claim of overlap or non-overlap may be written without a citation.
+    </p>
+  </section>
+  <section class="informative">
+    <h3>Relationship to the Internet-Draft</h3>
+    <p>
+      [[AGSC-WELLKNOWN-ID]] is the normative definition of the well-known resource, the link
+      relation type and the link set profile. This report is the vocabulary side of the same
+      system: the terms, the JSON-LD context, the namespace policy, and the human-readable target
+      of the profile identifier. Where the two documents could disagree, [[AGSC-WELLKNOWN-ID]]
+      wins for the discovery resource and this report wins for the vocabulary terms. Neither
+      document restates the other.
+    </p>
+  </section>
+</section>
+
+<section id="namespace">
+  <h2>Namespace, versioning and content negotiation</h2>
+  <p>
+    The namespace IRI of this vocabulary is
+    <code>https://w3id.org/agentic-system-core/ns#</code>; the customary prefix is
+    <code>asc:</code>. Terms use the hash form, so a term IRI is the namespace IRI followed by the
+    term name, for example <code>https://w3id.org/agentic-system-core/ns#Concept</code>.
+  </p>
+  <p>
+    The ontology document carries <code>owl:versionIRI</code>. Each released version is also
+    published at an immutable versioned path, so that the version IRI resolves:
+    <code>https://w3id.org/agentic-system-core/ns/&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;</code>,
+    optionally with a SemVer pre-release suffix.
+  </p>
+  <p>
+    Dereferencing the namespace IRI performs an HTTP <code>303 See Other</code> redirect to a
+    static representation chosen from the <code>Accept</code> header, following the W3C
+    recipes for publishing RDF vocabularies:
+  </p>
+  <table class="simple">
+    <caption>Content negotiation for the namespace IRI</caption>
+    <thead>
+      <tr><th><code>Accept</code></th><th>Representation</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>text/turtle</code></td><td>the ontology in Turtle</td></tr>
+      <tr><td><code>application/ld+json</code></td><td>the JSON-LD context document</td></tr>
+      <tr><td><code>application/rdf+xml</code></td><td>the ontology in RDF/XML</td></tr>
+      <tr><td>anything else</td><td>this human-readable term index</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Terms are never deleted. A withdrawn term is marked <code>owl:deprecated true</code> and, where
+    a successor exists, carries <code>dcterms:isReplacedBy</code>.
+  </p>
+</section>
+
+<section id="vocabulary">
+  <h2>Vocabulary</h2>
+  <p>
+    The vocabulary has 11 classes and 31 properties (15 object properties, 16 datatype
+    properties). It stays inside OWL&nbsp;2 RL. There is deliberately no common superclass for the
+    six authored item types: "item" is a term of the file-format specification, not of the
+    ontology.
+  </p>
+
+  <section id="classes">
+    <h3>Classes</h3>
+    <table class="simple">
+      <thead><tr><th>Term</th><th>Sub-class of</th><th>Definition</th></tr></thead>
+      <tbody>
+        <tr><td><dfn data-dfn-type="dfn">asc:Bundle</dfn></td><td><code>skos:ConceptScheme</code></td><td>One directory tree of items published together; the concept scheme every Concept is in.</td></tr>
+        <tr><td><dfn>asc:Cluster</dfn></td><td><code>skos:Collection</code></td><td>A navigational grouping of items. Membership is <code>skos:member</code>, authored on the item. Cluster nesting is also <code>skos:member</code> — never <code>skos:broader</code>, which would put a Collection in a semantic relation.</td></tr>
+        <tr><td><dfn>asc:Concept</dfn></td><td><code>skos:Concept</code></td><td>A unit of knowledge in a Bundle: a pattern, taxonomy, explainer, principle, decision, spec, task or term, distinguished by <code>asc:kind</code>.</td></tr>
+        <tr><td><dfn>asc:Episode</dfn></td><td><code>prov:Activity</code></td><td>A recorded occurrence — a session, run or incident — with a start, an actor and an outcome.</td></tr>
+        <tr><td><dfn>asc:Gate</dfn></td><td><code>prov:Plan</code></td><td>A declared set of checks that a change must pass; its runs are Episodes.</td></tr>
+        <tr><td><dfn>asc:Harness</dfn></td><td><code>prov:Plan</code></td><td>A generated bundle of files assembled from a validated composition of Concepts; never authored, never stored under the content tree.</td></tr>
+        <tr><td><dfn>asc:Lesson</dfn></td><td><code>asc:Concept</code></td><td>Knowledge distilled from one or more Episodes, carrying a severity; a Concept by essence.</td></tr>
+        <tr><td><dfn>asc:Procedure</dfn></td><td><code>prov:Plan</code></td><td>An executable-by-a-reader plan: trigger, steps and checks. Exports one-to-one to a skill file.</td></tr>
+        <tr><td><dfn>asc:Proposal</dfn></td><td><code>prov:Activity</code></td><td>A proposed change to a Bundle. It has no file: it is a forge pull request, instantiated in exports from the derived git log.</td></tr>
+        <tr><td><dfn>asc:Review</dfn></td><td><code>prov:Activity</code></td><td>The human assessment of a Proposal. It has no file: it is instantiated from a verification entry at the IRI <code>&lt;item-IRI&gt;#review-&lt;n&gt;</code>.</td></tr>
+        <tr><td><dfn>asc:Source</dfn></td><td><code>prov:Entity</code></td><td>An external work cited by an item. It has no file: it is instantiated from a sources entry.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="object-properties">
+    <h3>Object properties</h3>
+    <p>
+      Six of the nine core link keys reuse SKOS, Dublin Core Terms and PROV. The properties below
+      are the ones this vocabulary defines: three core keys, one computed inverse, the untyped
+      mention edge, and the five links used for engineering traceability with their computed
+      inverses. A property marked <em>computed inverse</em> is never authored by hand.
+    </p>
+    <table class="simple">
+      <thead><tr><th>Term</th><th>Inverse of</th><th>Definition</th></tr></thead>
+      <tbody>
+        <tr><td><dfn>asc:uses</dfn></td><td>—</td><td>Soft dependency: the subject draws on the object. A composition warns when a used item is absent. No domain, range or super-property is declared.</td></tr>
+        <tr><td><dfn>asc:usedBy</dfn></td><td><code>asc:uses</code></td><td>Computed inverse of <code>asc:uses</code>; never authored.</td></tr>
+        <tr><td><dfn>asc:excludes</dfn></td><td>—</td><td>Asserts mutual exclusion. Evaluated after the requires closure; a surviving pair invalidates a composition.</td></tr>
+        <tr><td><dfn>asc:contradicts</dfn></td><td>—</td><td>Asserts that two items cannot both be true. Selecting both in a composition is a warning, never a failure.</td></tr>
+        <tr><td><dfn>asc:mentions</dfn></td><td>—</td><td>Untyped edge produced by an inline Markdown link between items. Not a link key; it may not appear in frontmatter.</td></tr>
+        <tr><td><dfn>asc:implements</dfn></td><td>—</td><td>The subject realises the object (code or a procedure realising a spec).</td></tr>
+        <tr><td><dfn>asc:implementedBy</dfn></td><td><code>asc:implements</code></td><td>Computed inverse of <code>asc:implements</code>; never authored.</td></tr>
+        <tr><td><dfn>asc:verifies</dfn></td><td>—</td><td>The subject checks that the object holds.</td></tr>
+        <tr><td><dfn>asc:isVerifiedBy</dfn></td><td><code>asc:verifies</code></td><td>Computed inverse of <code>asc:verifies</code>; never authored. Distinct from the datatype property <code>asc:verifiedBy</code>.</td></tr>
+        <tr><td><dfn>asc:covers</dfn></td><td>—</td><td>The subject covers the object (a test, a check or a document covering a requirement).</td></tr>
+        <tr><td><dfn>asc:coveredBy</dfn></td><td><code>asc:covers</code></td><td>Computed inverse of <code>asc:covers</code>; never authored.</td></tr>
+        <tr><td><dfn>asc:blockedBy</dfn></td><td>—</td><td>The subject cannot proceed until the object is resolved.</td></tr>
+        <tr><td><dfn>asc:blocks</dfn></td><td><code>asc:blockedBy</code></td><td>Computed inverse of <code>asc:blockedBy</code>; never authored.</td></tr>
+        <tr><td><dfn>asc:decidedBy</dfn></td><td>—</td><td>The subject was settled by the object, a decision item.</td></tr>
+        <tr><td><dfn>asc:decides</dfn></td><td><code>asc:decidedBy</code></td><td>Computed inverse of <code>asc:decidedBy</code>; never authored.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="datatype-properties">
+    <h3>Datatype properties</h3>
+    <table class="simple">
+      <thead><tr><th>Term</th><th>Domain</th><th>Range</th><th>Definition</th></tr></thead>
+      <tbody>
+        <tr><td><dfn>asc:kind</dfn></td><td><code>asc:Concept</code></td><td><code>xsd:string</code></td><td>Qualifier on a Concept: pattern, taxonomy, explainer, principle, decision, spec, task or term.</td></tr>
+        <tr><td><dfn>asc:status</dfn></td><td>—</td><td><code>xsd:string</code></td><td>Publication state of an item: draft, stable or deprecated.</td></tr>
+        <tr><td><dfn>asc:staleAfter</dfn></td><td>—</td><td><code>xsd:dateTime</code></td><td>Absolute instant after which an item is stale. Staleness is a comparison, never a decay function.</td></tr>
+        <tr><td><dfn>asc:origin</dfn></td><td>—</td><td><code>xsd:string</code></td><td>How an item came to exist: human, ai-assisted, ai-generated or imported.</td></tr>
+        <tr><td><dfn>asc:operator</dfn></td><td>—</td><td><code>xsd:string</code></td><td>Actor accountable for an item: the human or organisation running the agent that produced it.</td></tr>
+        <tr><td><dfn>asc:model</dfn></td><td>—</td><td><code>xsd:string</code></td><td>Model identifier recorded when an item's origin is ai-assisted or ai-generated.</td></tr>
+        <tr><td><dfn>asc:generatedAt</dfn></td><td>—</td><td><code>xsd:dateTime</code></td><td>Instant at which an item was generated, with an explicit UTC offset.</td></tr>
+        <tr><td><dfn>asc:generatedBy</dfn></td><td>—</td><td><code>xsd:string</code></td><td>Actor string that generated an item.</td></tr>
+        <tr><td><dfn>asc:outcome</dfn></td><td><code>asc:Episode</code></td><td><code>xsd:string</code></td><td>Result of an Episode: success, partial or failure.</td></tr>
+        <tr><td><dfn>asc:severity</dfn></td><td><code>asc:Lesson</code></td><td><code>xsd:string</code></td><td>Weight of a Lesson: info, warn or block.</td></tr>
+        <tr><td><dfn>asc:level</dfn></td><td><code>asc:Gate</code></td><td><code>xsd:string</code></td><td>Gate level: L1 (schema and links) or L2 (adds provenance, determinism and review).</td></tr>
+        <tr><td><dfn>asc:grade</dfn></td><td><code>asc:Source</code></td><td><code>xsd:string</code></td><td>Evidence grade of a Source: primary, secondary or tertiary.</td></tr>
+        <tr><td><dfn>asc:verifiedOn</dfn></td><td><code>asc:Source</code></td><td><code>xsd:dateTime</code></td><td>Instant at which a Source was last checked to resolve.</td></tr>
+        <tr><td><dfn>asc:verifiedBy</dfn></td><td><code>asc:Review</code></td><td><code>xsd:string</code></td><td>Actor string of the human who recorded a Review.</td></tr>
+        <tr><td><dfn>asc:verifiedAt</dfn></td><td><code>asc:Review</code></td><td><code>xsd:dateTime</code></td><td>Instant at which a human recorded a Review, with an explicit UTC offset.</td></tr>
+        <tr><td><dfn>asc:specVersion</dfn></td><td><code>asc:Bundle</code></td><td><code>xsd:string</code></td><td>Version of the specification a Bundle declares.</td></tr>
+      </tbody>
+    </table>
+  </section>
+</section>
+
+<section id="context">
+  <h2>The JSON-LD context</h2>
+  <p class="TODO">
+    TODO(W-07): describe the published JSON-LD 1.1 context — its versioned URL, the use of
+    <code>@version: 1.1</code> and <code>@protected</code>, the term-to-IRI mapping, and the rule
+    that the context is immutable once released. Copy no term definition by hand: generate the
+    table from the published context file so the two cannot drift.
+  </p>
+</section>
+
+<section id="profile" class="informative">
+  <h2>The agentic-knowledge discovery profile</h2>
+  <p>
+    A site that publishes knowledge described with this vocabulary advertises it from one
+    well-known resource whose representation is a link set. That link set is identified as
+    following a named profile, and the profile identifier is
+    <code>https://w3id.org/agentic-system-core/profile/agentic-knowledge</code>. Dereferencing the
+    identifier yields the human-readable published specification of the profile.
+  </p>
+  <p>
+    The normative definition of the resource, its link relation types and its target attributes is
+    [[AGSC-WELLKNOWN-ID]]. This section exists so that a reader arriving from the vocabulary can
+    find the discovery layer, and so that the profile identifier has a stable explanation inside
+    W3C space; it introduces no requirement of its own.
+  </p>
+</section>
+
+<section id="security" class="informative">
+  <h2>Security and privacy considerations</h2>
+  <p class="TODO">
+    TODO(W-07): the vocabulary carries actor strings (<code>asc:operator</code>,
+    <code>asc:generatedBy</code>, <code>asc:verifiedBy</code>) that can identify people, and
+    provenance that can leak internal process. Write: what a publisher should and should not put in
+    those fields; that published prose is untrusted data for an agent consumer, never instructions;
+    and that the vocabulary itself grants no permission of any kind. Cite the relevant sources; do
+    not write "no security issues".
+  </p>
+</section>
+
+<section id="changes" class="appendix informative">
+  <h2>Change history</h2>
+  <p>No published version yet.</p>
+</section>
+
+</body>
+</html>

@@ -13,6 +13,6 @@
     "files": [{ "markdown": "# My Notes\n\nBody stays, byte for byte.\n", "path": "My Notes.md" }]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-91"
 }

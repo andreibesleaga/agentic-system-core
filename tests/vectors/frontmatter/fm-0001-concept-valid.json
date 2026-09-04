@@ -16,6 +16,6 @@
     "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: pattern\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nRoute work to workers.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-03"
 }

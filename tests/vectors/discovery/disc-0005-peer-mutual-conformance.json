@@ -1,0 +1,28 @@
+{
+  "area": "discovery",
+  "description": "Federation is a mutual claim and nothing else: two nodes federate when each lists the other's canonical well-known URL under the .../rel#peer relation, and tools/validate-wellknown --peer checks both directions offline from two local files. This is the only executable proof of the \"smallest protocol\" claim of AGSC-10-12, and the only vector citing a spec/10 rule.",
+  "expected": {
+    "both_resolve": true,
+    "each_names_the_other": true,
+    "mutual": true,
+    "peer_relation": "https://w3id.org/agentic-system-core/rel#peer"
+  },
+  "id": "disc-0005",
+  "input": {
+    "nodes": [
+      {
+        "base": "https://a.example/",
+        "peer": "https://b.example/.well-known/agentic-knowledge"
+      },
+      {
+        "base": "https://b.example/",
+        "peer": "https://a.example/.well-known/agentic-knowledge"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-10-12"
+}

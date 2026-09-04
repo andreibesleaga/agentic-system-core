@@ -10,6 +10,6 @@
     "markdown": "# - Item\n\n# 第一章\n\n## A\n\n## A 2\n\n## A\n\n## ✦\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-03-13"
 }

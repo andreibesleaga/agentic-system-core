@@ -1,0 +1,100 @@
+# # /agentic-system-core/
+#
+# Permanent identifiers for AgenticSystemCore.
+# Vocabulary namespace:  https://w3id.org/agentic-system-core/ns#<Term>
+# Redirect target:       https://agenticsystemcore.com/ns/…   (static files only, no server code)
+#
+# Target table is normative in spec/06-surfaces.md AGSC-06-06:
+#   Accept: text/turtle         -> /ns/agsc.ttl
+#   Accept: application/ld+json -> /ns/context.jsonld
+#   Accept: application/rdf+xml -> /ns/agsc.rdf
+#   otherwise                   -> /ns/            (HTML documentation)
+# Versioned (immutable) copies live under /ns/<major>.<minor>.<patch>/ so that
+# owl:versionIRI resolves (AGSC-06-06, V3-15). The version segment also accepts
+# an optional SemVer pre-release suffix (e.g. 1.0.0-draft.1) — decided: D57 Q5, 2026-09-03
+# (04-DECISIONS.md).
+#
+# ## Contact
+# This space is administered by:
+#
+# Andrei Besleaga
+# abnmaster@gmail.com
+# GitHub username: andreibesleaga
+
+# Let browser-based RDF tooling follow the redirect.
+Header set Access-Control-Allow-Origin *
+
+Options +FollowSymLinks
+# Turn off MultiViews
+Options -MultiViews
+
+# Ensure files are served as the appropriate content type, if not set upstream
+AddType text/turtle .ttl
+AddType application/ld+json .jsonld
+AddType application/rdf+xml .rdf .owl
+AddType application/n-triples .nt
+
+RewriteEngine on
+
+# ---------------------------------------------------------------------------
+# 1. Concrete distribution files: /ns/agsc.ttl, /ns/1.2.3/context.jsonld, …
+#    (must come first, or the term rule below swallows them)
+# ---------------------------------------------------------------------------
+RewriteRule ^ns/(.+\.(ttl|jsonld|json|rdf|owl|nt|html))$ https://agenticsystemcore.com/ns/$1 [R=303,L]
+
+# ---------------------------------------------------------------------------
+# 2. Immutable versioned namespace IRI: /ns/<major>.<minor>.<patch>
+#    Same content negotiation as the current namespace. The version segment
+#    also accepts an optional SemVer pre-release suffix (e.g. 1.0.0-draft.1).
+# ---------------------------------------------------------------------------
+RewriteCond %{HTTP_ACCEPT} text/turtle [OR]
+RewriteCond %{HTTP_ACCEPT} application/x-turtle
+RewriteRule ^ns/([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?)/?$ https://agenticsystemcore.com/ns/$1/agsc.ttl [R=303,L]
+
+RewriteCond %{HTTP_ACCEPT} application/ld\+json [OR]
+RewriteCond %{HTTP_ACCEPT} application/json
+RewriteRule ^ns/([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?)/?$ https://agenticsystemcore.com/ns/$1/context.jsonld [R=303,L]
+
+RewriteCond %{HTTP_ACCEPT} application/rdf\+xml
+RewriteRule ^ns/([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?)/?$ https://agenticsystemcore.com/ns/$1/agsc.rdf [R=303,L]
+
+# Versioned default (browsers) and any deeper versioned path
+RewriteRule ^ns/([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?)(/.*)?$ https://agenticsystemcore.com/ns/$1$2 [R=303,L]
+
+# ---------------------------------------------------------------------------
+# 3. Current namespace IRI: /ns  (also serves /ns#Term — the fragment is never
+#    sent to the server, so hash terms land here)
+# ---------------------------------------------------------------------------
+RewriteCond %{HTTP_ACCEPT} text/turtle [OR]
+RewriteCond %{HTTP_ACCEPT} application/x-turtle
+RewriteRule ^ns/?$ https://agenticsystemcore.com/ns/agsc.ttl [R=303,L]
+
+RewriteCond %{HTTP_ACCEPT} application/ld\+json [OR]
+RewriteCond %{HTTP_ACCEPT} application/json
+RewriteRule ^ns/?$ https://agenticsystemcore.com/ns/context.jsonld [R=303,L]
+
+RewriteCond %{HTTP_ACCEPT} application/rdf\+xml
+RewriteRule ^ns/?$ https://agenticsystemcore.com/ns/agsc.rdf [R=303,L]
+
+# Default (browsers, */*): human-readable documentation
+RewriteRule ^ns/?$ https://agenticsystemcore.com/ns/ [R=303,L]
+
+# ---------------------------------------------------------------------------
+# 4. Slash-form term convenience: /ns/<Term> -> documentation anchor.
+#    [NE] is REQUIRED — without it mod_rewrite escapes '#' to '%23'.
+#    https://httpd.apache.org/docs/current/rewrite/flags.html#flag_ne
+# ---------------------------------------------------------------------------
+RewriteRule ^ns/([A-Za-z][A-Za-z0-9_-]*)/?$ https://agenticsystemcore.com/ns/#$1 [R=303,NE,L]
+
+# ---------------------------------------------------------------------------
+# Profile URI for the agentic-knowledge link set (RFC 9264 §5 / RFC 7284) —
+# decided: D55, 2026-09-03 (04-DECISIONS.md)
+# ---------------------------------------------------------------------------
+RewriteRule ^profile/agentic-knowledge/?$ https://agenticsystemcore.com/specs/agentic-knowledge/ [R=303,L]
+
+# ---------------------------------------------------------------------------
+# 5. Closed table: the project prefix itself, then everything else.
+#    No open proxying — anything unknown lands on the vocabulary index.
+# ---------------------------------------------------------------------------
+RewriteRule ^$ https://agenticsystemcore.com/ [R=303,L]
+RewriteRule ^  https://agenticsystemcore.com/ns/ [R=303,L]

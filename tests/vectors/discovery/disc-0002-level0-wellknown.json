@@ -1,14 +1,8 @@
 {
   "area": "discovery",
-  "description": "A Level-0 publisher — a CMS or wiki export with no engine — publishes the well-known file with the linkset member alone: it has no ledger, so no ledger_head, and no graph.nq, so no hash of one. AGSC-06-08a makes integrity optional at Level 0 and permits an integrity block that omits ledger_head; Levels 2 and 3 still require the full block of AGSC-06-08, which disc-0001 pins. Without this relaxation no CMS export could ever be Level 0, and the D50 promise would fail at its first artifact.",
+  "description": "WITHDRAWN. Superseded by disc-0004. The Level-0 promise this file protected — a CMS or wiki export with no ledger and no graph.nq can still publish a conforming discovery file — is unchanged and is now proved by disc-0004 against the RFC 9264 link set.",
   "expected": {
-    "integrity_required": false,
-    "level": 0,
-    "media_type": "application/vnd.agenticsystemcore.agentic-knowledge+json",
-    "omittable_integrity_members": ["hashes.graph_nq", "ledger_head"],
-    "path": "/.well-known/agentic-knowledge",
-    "top_level_members": ["linkset"],
-    "valid": true
+    "withdrawn": true
   },
   "id": "disc-0002",
   "input": {
@@ -16,15 +10,32 @@
     "wellknown": {
       "linkset": [
         {
-          "alternate": [{ "href": "https://example.org/llms.txt", "type": "text/plain" }],
+          "alternate": [
+            {
+              "href": "https://example.org/llms.txt",
+              "type": "text/plain"
+            }
+          ],
           "anchor": "https://example.org/",
-          "describedby": [{ "href": "https://example.org/graph.jsonld", "type": "application/ld+json" }],
-          "license": [{ "href": "https://example.org/legal/" }]
+          "describedby": [
+            {
+              "href": "https://example.org/graph.jsonld",
+              "type": "application/ld+json"
+            }
+          ],
+          "license": [
+            {
+              "href": "https://example.org/legal/"
+            }
+          ]
         }
       ]
     }
   },
-  "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "level": "withdrawn",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "reason": "Withdrawn at 1.0.0-rc.2 by D55 (V4-A A-09). This vector pinned the pre-D55 Level-0 relaxation: integrity_required false, omittable_integrity_members [\"hashes.graph_nq\",\"ledger_head\"] and the vendor media type. Under D55 there is no structural difference between Levels: Level 0 is the same link set with every digest and agsc-* target attribute omitted. Superseded by disc-0004.",
   "rule": "AGSC-06-08a"
 }

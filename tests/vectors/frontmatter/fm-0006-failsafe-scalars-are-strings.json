@@ -28,6 +28,6 @@
     "markdown": "---\ntype: concept\ntitle: Norway\ndescription: A concept whose frontmatter carries the classic YAML type traps, kept as strings by the failsafe reader.\nkind: explainer\nflag: no\nswitch: on\nvoid: ~\nscale: 1e3\nblob: 0x1F\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\nBody.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-03"
 }

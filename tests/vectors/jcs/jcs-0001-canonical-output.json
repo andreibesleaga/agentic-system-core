@@ -5,6 +5,6 @@
   "id": "jcs-0001",
   "input": { "value": { "b": 1, "n": 1.5, "c": { "z": true, "y": null }, "a": [1, 2] } },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-04-05"
 }

@@ -1,0 +1,54 @@
+{
+  "area": "discovery",
+  "description": "The single discovery file is a conformant RFC 9264 link set: linkset is the sole top-level member, integrity rides on the links as RFC 9530 digest and agsc-* extension target attributes whose values are arrays, bundle facts live only on the anchor's describedby link, and relation names are either IANA-registered short names or .../rel#<name> extension URIs. Supersedes disc-0001, which pinned the pre-D55 two-member shape.",
+  "expected": {
+    "anchor_link_attributes": [
+      "agsc-bundle-hash",
+      "agsc-counts",
+      "agsc-generated-at",
+      "agsc-spec-version",
+      "digest"
+    ],
+    "attribute_values_are_arrays": true,
+    "ledger_link_attributes": [
+      "agsc-ledger-head",
+      "digest"
+    ],
+    "media_type": "application/linkset+json",
+    "path": "/.well-known/agentic-knowledge",
+    "profile": "https://w3id.org/agentic-system-core/profile/agentic-knowledge",
+    "relations_allowed": [
+      "alternate",
+      "author",
+      "describedby",
+      "https://w3id.org/agentic-system-core/rel#context",
+      "https://w3id.org/agentic-system-core/rel#graph",
+      "https://w3id.org/agentic-system-core/rel#ledger",
+      "https://w3id.org/agentic-system-core/rel#now",
+      "https://w3id.org/agentic-system-core/rel#ontology",
+      "https://w3id.org/agentic-system-core/rel#peer",
+      "https://w3id.org/agentic-system-core/rel#skills",
+      "license",
+      "service-doc"
+    ],
+    "relations_forbidden": [
+      "knowledge",
+      "ontology",
+      "graph",
+      "skills"
+    ],
+    "top_level_members": [
+      "linkset"
+    ]
+  },
+  "id": "disc-0003",
+  "input": {
+    "base": "https://example.org",
+    "ledger_head": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-06-08"
+}

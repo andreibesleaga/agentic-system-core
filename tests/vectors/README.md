@@ -8,23 +8,24 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 | Member | Required | Meaning |
 |---|---|---|
-| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, and later `prov`, `import`, `export`, `skills` |
+| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, and later `prov`, `import`, `export`, `skills`, `webmcp`, `run`, `conform` (AGSC-09-04) |
 | `description` | yes | what the case proves, and why it is not obvious |
 | `expected` | yes | the outcome (below) |
 | `id` | yes | stable, unique, never reused: `<area-prefix>-<nnnn>` |
 | `input` | yes | the case input (below) |
-| `level` | yes | `required`, `optional` or `withdrawn`; an optional vector may fail without losing conformance, and a `withdrawn` one (a case superseded by a corrected vector, AGSC-00-16) is never run for a claim |
+| `level` | yes | `required`, `optional` or `withdrawn`; an optional vector may fail without losing conformance, and a `withdrawn` one (a case superseded by a corrected vector, AGSC-00-16) is never run for a claim, carries `reason`, and has `expected` reduced to `{"withdrawn": true}` |
 | `options` | no | run options, always including `spec_version` |
+| `reason` | only when `withdrawn` | why the case was withdrawn and which vector supersedes it (AGSC-09-04) |
 | `rule` | yes | exactly one rule id of the specification, e.g. `AGSC-03-07` |
 
-**Input shapes.** `markdown` — one item file as a string; `items[]` — pre-parsed frontmatter objects (`slug` plus keys under test, and a `body` string where a surface is under test), used where file syntax is not the subject; `slug`/`slugs[]`; `paths[]`; `value` — a JSON value for canonicalisation; `argv[]` (+ optional `bundle`) for CLI cases; `base` — the site base for graph cases; `selection[]` for compose cases; `config` + `files[]` for adoption cases; `ledger` + `wellknown` for ledger verification, `git_log` + `content_tree` + `version` for ledger derivation (AGSC-08-20a), `directory` + `files[]` + `git_user_email` + `verbs[]` for the end-to-end adoption case, `wellknown` for a Level-0 discovery document.
+**Input shapes.** `markdown` — one item file as a string; `items[]` — pre-parsed frontmatter objects (`slug` plus keys under test, and a `body` string where a surface is under test), used where file syntax is not the subject; `slug`/`slugs[]`; `paths[]`; `value` — a JSON value for canonicalisation; `argv[]` (+ optional `bundle`) for CLI cases; `base` — the site base for graph cases; `selection[]` for compose cases; `config` + `files[]` for adoption cases; `ledger` + `wellknown` for ledger verification, `git_log` + `content_tree` + `version` for ledger derivation (AGSC-08-20a), `directory` + `files[]` + `git_user_email` + `verbs[]` for the end-to-end adoption case, `wellknown` for a Level-0 discovery document; `nodes[]` for the two-node federation check (AGSC-10-12); `transports[]` (+ `bundle`) for the two-transport tool-contract check (AGSC-09-16).
 
 **Expected shapes.** A **positive** vector states the result: `frontmatter`, `edges[]`, `anchors[]`, `output`, `body`, `files[]` (each `{changed, output, path}`), `path`, `idempotent`, `nquads`, `search`, `verdict`, `ledger`, `head`, `config`, `index_frontmatter`, `config_valid`/`index_valid`, `level`, `contains[]`/`excludes[]`, `findings[]`, `valid[]`, `stdout`, `exit`, and `errors: []` where relevant. A **negative** vector states exactly one error *code*, never a message: `{"error": "AGSC-E<nnn>"}`, optionally with `line`, `cycle`, `chain`, `parents` or `severity`. Codes are registered in `spec/09-conformance.md` §9.4 and are permanent.
 
 ## Rules the vectors themselves obey
 
 - UTF-8, LF, NFC, I-JSON, members in JCS order (AGSC-09-06), with one deliberate exemption: an `input.value` object under test carries the member order that is *the subject of the case* (`jcs-0001`, `jcs-0002`), since a parser discards order and what the case proves is what the writer emits. They MAY be pretty-printed — AGSC-04-04 governs *emitted* artefacts and no longer lists vectors — while the *values* inside them (for example an `output` string) are byte-exact and MUST NOT be reformatted.
-- A vector cites one rule. A rule with no vector and a module with no rule both fail the correspondence check (PLAN §5.3, NFR-03).
+- A vector cites one rule. A rule with no vector and a module with no rule both fail the correspondence check (PLAN §5.3, NFR-03). A declared area with no vector file is an informational count, not a failure (AGSC-09-90).
 - Vector ids are versioned with the spec; released vectors are immutable (AGSC-00-16). A vector that turns out to contradict its rule is never edited in place: the corrected case ships as a new file and the old one is republished with `"level": "withdrawn"`.
 
 ## Running them from a foreign port
@@ -40,7 +41,7 @@ A conformance claim MUST name the class, the `spec_version` MAJOR.MINOR and the 
 
 ## Present coverage
 
-`frontmatter/` 8 · `links/` 6 · `slug/` 4 · `adopt/` 4 · `graph/` 4 · `lint/` 3 · `ledger/` 3 · `jcs/` 2 · `cli/` 2 · `compose/` 2 · `discovery/` 2 · `build/` 2 · `bundle/` 1 — **43 vectors**. Each of the ten spec sections is cited by at least one of them; the remaining areas listed above are populated as the milestones that need them land.
+`frontmatter/` 8 · `links/` 6 · `graph/` 5 · `discovery/` 5 · `cli/` 5 · `slug/` 4 · `adopt/` 4 · `lint/` 3 · `ledger/` 3 · `jcs/` 2 · `compose/` 2 · `build/` 2 · `bundle/` 2 — **50 files, 47 active vectors**. Three are `withdrawn` at `1.0.0-rc.2` and are never run for a claim: `disc-0001` and `disc-0002` (superseded by `disc-0003`/`disc-0004` when D55 replaced the two-member discovery document with a conformant RFC 9264 link set) and `cli-0001` (superseded by `cli-0005` when AGSC-09-07 grew from thirteen verbs to sixteen). Each of the eleven spec sections is cited by at least one of them; the remaining areas listed above are populated as the milestones that need them land.
 
 ## Porting notes
 

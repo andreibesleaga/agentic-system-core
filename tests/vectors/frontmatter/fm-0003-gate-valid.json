@@ -17,6 +17,6 @@
     "markdown": "---\ntype: gate\ntitle: Publication gate\nlevel: L2\nchecks: [schema, links, provenance, determinism, review]\nenforce: [status-check]\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\nEvery change passes these checks.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-18"
 }

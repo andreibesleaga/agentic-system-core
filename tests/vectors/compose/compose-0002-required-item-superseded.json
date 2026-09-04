@@ -23,6 +23,6 @@
     "selection": ["new-store", "app"]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-07-05a"
 }

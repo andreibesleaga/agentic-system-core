@@ -1,0 +1,25 @@
+{
+  "area": "graph",
+  "description": "memory://<bundle-id>/<slug> is resolved locally, and only for this Bundle's own bundle.id: the alias is accepted wherever a slug argument is accepted and normalized to the slug before any other rule runs. It is never dereferenced over the network and never emitted as an RDF subject (AGSC-05-04). A foreign bundle-id is refused with AGSC-E309 because a node has no registry of other nodes' ids — use the https:// IRI (AGSC-05-04a).",
+  "expected": {
+    "emitted_as_rdf_subject": false,
+    "foreign_bundle": {
+      "error": "AGSC-E309"
+    },
+    "resolved": "concepts/agentic-memory"
+  },
+  "id": "graph-0005",
+  "input": {
+    "base": "https://example.org",
+    "bundle_id": "example",
+    "value": [
+      "memory://example/agentic-memory",
+      "memory://other-node/agentic-memory"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "rule": "AGSC-05-04b"
+}

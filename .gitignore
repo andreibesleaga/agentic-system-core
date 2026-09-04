@@ -40,11 +40,3 @@ coverage/
 
 # GABBE
 GABBE/
-#.agents
-#.claude
-#.continue
-#.codex
-#.github/skills
-#docs
-#agents
-#AGENTS.md

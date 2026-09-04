@@ -7,6 +7,6 @@
     "markdown": "---\ntype: concept\ntitle: Router\ndescription: A routing concept used as the negative control for the injection scan, describing behaviour rather than commanding it.\nkind: pattern\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nA router inspects a request and forwards it to the worker best able to answer. Implementations are listed at https://example.org/concepts/router/.\n\n```json\n{\"route\":\"worker-a\"}\n```\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-08-14"
 }

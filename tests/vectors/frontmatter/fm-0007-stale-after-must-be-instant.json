@@ -7,6 +7,6 @@
     "markdown": "---\ntype: lesson\ntitle: Do not trust unpinned actions\nseverity: block\nstale_after: \"2027-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Lesson\n\nPin actions by digest.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-06"
 }

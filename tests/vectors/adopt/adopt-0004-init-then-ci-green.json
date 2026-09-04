@@ -6,16 +6,16 @@
       "build": { "out": "www/" },
       "bundle": { "id": "my-notes", "operator": "human:andreibesleaga" },
       "site": { "base": "http://localhost/", "title": "My Notes" },
-      "spec_version": "1.0.0-draft.1"
+      "spec_version": "1.0.0-rc.2"
     },
     "config_valid": true,
     "exit": 0,
-    "findings": [{ "code": "AGSC-E406", "severity": "warn" }, { "code": "AGSC-E506", "severity": "warn" }],
+    "findings": [{ "code": "AGSC-E408", "severity": "warn" }, { "code": "AGSC-E506", "severity": "warn" }],
     "index_frontmatter": {
       "base": "http://localhost/",
       "description": "Adopted from 1 Markdown files by agsc init on 2026-01-01.",
       "okf_version": "0.2",
-      "spec_version": "1.0.0-draft.1",
+      "spec_version": "1.0.0-rc.2",
       "title": "My Notes"
     },
     "index_valid": true
@@ -28,6 +28,6 @@
     "verbs": ["init", "ci"]
   },
   "level": "required",
-  "options": { "source_date_epoch": 1767225600, "spec_version": "1.0.0-draft.1" },
+  "options": { "source_date_epoch": 1767225600, "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-94"
 }

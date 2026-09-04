@@ -10,8 +10,8 @@ stateDiagram-v2
   stable --> deprecated: status set to deprecated
   draft --> deprecated: status set to deprecated
 
-  deprecated --> stable: un-deprecated (legal; lint warns AGSC-E406)
-  deprecated --> draft: un-deprecated to draft (legal; lint warns AGSC-E406)
+  deprecated --> stable: un-deprecated (legal; lint warns AGSC-E409)
+  deprecated --> draft: un-deprecated to draft (legal; lint warns AGSC-E409)
 
   deprecated --> [*]: retired, slug never reused
 

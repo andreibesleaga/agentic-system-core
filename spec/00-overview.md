@@ -1,6 +1,6 @@
 # AGSC-00 — Overview, terms, conformance model
 
-`spec_version: "1.0.0-rc.1"`. The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, SHOULD NOT, MAY are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in capitals. Each rule has a stable id `AGSC-<section>-<nn>`; ids are never reused or renumbered. Trailing brackets cite the requirement each rule serves.
+`spec_version: "1.0.0-rc.2"`. The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, SHOULD NOT, MAY are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in capitals. Each rule has a stable id `AGSC-<section>-<nn>`; ids are never reused or renumbered. Trailing brackets cite the requirement each rule serves.
 
 ## 0.1 Scope
 

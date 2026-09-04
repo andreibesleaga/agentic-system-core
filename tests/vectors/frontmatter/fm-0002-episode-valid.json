@@ -17,6 +17,6 @@
     "markdown": "---\ntype: episode\ntitle: First import run\nstarted: \"2026-01-01T00:00:00Z\"\nactor: claude-opus-5/1\noutcome: partial\nprov:\n  origin: ai-generated\n  agent: claude-opus-5\n  model: claude-opus-5\n  operator: human:andreibesleaga\n---\n\n## What happened\n\nImported the corpus.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-14"
 }

@@ -1,10 +1,20 @@
 {
   "area": "cli",
-  "description": "Negative: the verb set is closed at thirteen names. An unknown verb is a usage error, exit code 2 — distinct from exit 1, which means findings or a failed gate.",
-  "expected": { "error": "AGSC-E001", "exit": 2, "stdout": "" },
+  "description": "WITHDRAWN. Superseded by cli-0005, which states the sixteen-verb closure of AGSC-09-07.",
+  "expected": {
+    "withdrawn": true
+  },
   "id": "cli-0001",
-  "input": { "argv": ["frobnicate", "--json"] },
-  "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "input": {
+    "argv": [
+      "frobnicate",
+      "--json"
+    ]
+  },
+  "level": "withdrawn",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "reason": "Withdrawn at 1.0.0-rc.2 (V4-A A-45). Its description pinned the verb set at thirteen names; AGSC-09-07 now closes it at sixteen (adding run, trace and conform). The behaviour under test is unchanged and is republished as cli-0005.",
   "rule": "AGSC-09-07"
 }

@@ -1,9 +1,9 @@
 {
   "area": "adopt",
-  "description": "The drop-in path passes its own gate. The frontmatter an adopted file receives carries no description, no tags and no sources — and it MUST still validate against schema/item.schema.json, because description is optional in every branch (V2-01). The findings are warnings only: AGSC-E406 for the missing description on a concept (AGSC-02-21). If this vector errors, AGSC-02-92 is violated and the three-command promise of PRD-053 is broken.",
+  "description": "The drop-in path passes its own gate. The frontmatter an adopted file receives carries no description, no tags and no sources — and it MUST still validate against schema/item.schema.json, because description is optional in every branch (V2-01). The findings are warnings only: AGSC-E408 for the missing description on a concept (AGSC-02-21). If this vector errors, AGSC-02-92 is violated and the three-command promise of PRD-053 is broken.",
   "expected": {
     "errors": [],
-    "findings": [{ "code": "AGSC-E406", "severity": "warn" }],
+    "findings": [{ "code": "AGSC-E408", "severity": "warn" }],
     "valid": true
   },
   "id": "adopt-0003",
@@ -11,6 +11,6 @@
     "markdown": "---\ntype: concept\ntitle: Handoff\naliases:\n  - notes/handoff.md\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: explainer\n---\n\n# Handoff\n\nAn agent passes control to another agent.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "options": { "spec_version": "1.0.0-rc.2" },
   "rule": "AGSC-02-92"
 }

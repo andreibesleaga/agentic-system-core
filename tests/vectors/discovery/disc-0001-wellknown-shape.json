@@ -1,30 +1,18 @@
 {
   "area": "discovery",
-  "description": "The single discovery file: exactly two top-level members, the fixed integrity member names, a linkset conforming to RFC 9264, and relation names that are either IANA-registered short names or extension URIs. An unregistered short name such as knowledge or ontology is not permitted by RFC 8288. Every extension relation resolves to a route of AGSC-06-01: rel#shapes is not among them at 1.x, because SHACL shapes stay in the development lane (AGSC-05-24) and a relation with no target is a dangling promise.",
+  "description": "WITHDRAWN. Superseded by disc-0003, which pins the RFC 9264-conformant link set. The case this file originally proved — the shape of the single discovery file and its relation-name closure — is preserved in disc-0003; the shape itself was abolished by D55. A withdrawn vector is never run for or against a conformance claim (AGSC-09-05).",
   "expected": {
-    "integrity_members": ["bundle", "counts", "generated_at", "hashes", "ledger_head", "spec_version"],
-    "linkset_entry_members": ["anchor"],
-    "media_type": "application/vnd.agenticsystemcore.agentic-knowledge+json",
-    "path": "/.well-known/agentic-knowledge",
-    "relations_allowed": [
-      "alternate",
-      "author",
-      "describedby",
-      "https://w3id.org/agentic-system-core/rel#context",
-      "https://w3id.org/agentic-system-core/rel#graph",
-      "https://w3id.org/agentic-system-core/rel#ledger",
-      "https://w3id.org/agentic-system-core/rel#now",
-      "https://w3id.org/agentic-system-core/rel#ontology",
-      "https://w3id.org/agentic-system-core/rel#skills",
-      "license",
-      "service-doc"
-    ],
-    "relations_forbidden": ["knowledge", "ontology", "graph", "skills"],
-    "top_level_members": ["integrity", "linkset"]
+    "withdrawn": true
   },
   "id": "disc-0001",
-  "input": { "base": "https://example.org", "ledger_head": "0000000000000000000000000000000000000000000000000000000000000000" },
-  "level": "required",
-  "options": { "spec_version": "1.0.0-draft.1" },
+  "input": {
+    "base": "https://example.org",
+    "ledger_head": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "level": "withdrawn",
+  "options": {
+    "spec_version": "1.0.0-rc.2"
+  },
+  "reason": "Withdrawn at 1.0.0-rc.2 by D55 (V4-A A-08). This vector pinned the pre-D55 discovery document: top_level_members [\"integrity\",\"linkset\"], the fixed integrity member names (bundle, counts, generated_at, hashes, ledger_head, spec_version) and the vendor media type application/vnd.agenticsystemcore.agentic-knowledge+json. RFC 9264 4.2.1 requires linkset to be the sole top-level member and no vendor media type is defined or registered any more. Superseded by disc-0003.",
   "rule": "AGSC-06-08"
 }

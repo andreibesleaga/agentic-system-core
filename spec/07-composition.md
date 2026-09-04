@@ -41,7 +41,7 @@
 - **AGSC-07-15** A Harness MUST NOT contain scripts, executables, symlinks, an `allowed-tools` key, or any file outside the seven above. [PRD-035 ← N9, Art. XIV]
 - **AGSC-07-16** Harness structure is CC0 to the user; the prose it quotes travels under the Content Use Terms. Both facts MUST be stated in the emitted files. [D39, NFR-10]
 - **AGSC-07-17** An invalid composition MUST NOT emit a Harness. The verdict alone is returned, with exit code 1 from the CLI. [PRD-036, AGSC-09-06]
-- **AGSC-07-18** Additional runtime emitters (GABBE, kaiban, CrewAI, LangGraph, n8n) are out of scope at 1.x; adding one MUST NOT change the seven files. [D35, audit/D §3(e)]
+- **AGSC-07-18** Runtime emitters (GABBE, kaiban-distributed, CrewAI, LangGraph, ADK/MS-AF, n8n) are **target renderings of the seven files of AGSC-07-12**, selected by `compose --emit <target>` and written outside `dist/harness/<name>/`; adding one MUST NOT change the seven files, MUST NOT add a file inside the Harness directory, and MUST be a single template plus a registry row. [D35, D53, audit/D §3(e), V4-A A-78]
 
 ## 7.4 Skill packs
 
