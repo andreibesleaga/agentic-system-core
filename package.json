@@ -1,7 +1,7 @@
 {
     "name": "agentic-system-core",
-    "version": "0.0.1",
-    "description": "Reference implementation for the Agentic Knowledge Web.",
+    "version": "0.0.2",
+    "description": "A specification for publishing machine-discoverable knowledge bundles. This 0.0.x release reserves the package name; no runtime is published yet. The specification, JSON Schemas, ontology and conformance test vectors are the deliverable and are developed in the open.",
     "main": "index.js",
     "bin": {
         "agsc": "./bin/agsc.js"
