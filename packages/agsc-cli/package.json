@@ -3,7 +3,7 @@
     "version": "0.0.2",
     "description": "A specification for publishing machine-discoverable knowledge bundles. This 0.0.x release reserves the package name; no runtime is published yet. The specification, JSON Schemas, ontology and conformance test vectors are the deliverable and are developed in the open.",
     "bin": {
-        "agsc": "./bin/agsc.js"
+        "agsc": "bin/agsc.js"
     },
     "files": [
         "bin",
@@ -13,7 +13,7 @@
         "node": ">=22"
     },
     "dependencies": {
-        "agentic-system-core": "0.0.1"
+        "agentic-system-core": "0.0.2"
     },
     "keywords": [
         "agentic",

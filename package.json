@@ -4,7 +4,21 @@
     "description": "A specification for publishing machine-discoverable knowledge bundles. This 0.0.x release reserves the package name; no runtime is published yet. The specification, JSON Schemas, ontology and conformance test vectors are the deliverable and are developed in the open.",
     "main": "index.js",
     "bin": {
-        "agsc": "./bin/agsc.js"
+        "agsc": "bin/agsc.js"
+    },
+    "files": [
+        "bin/",
+        "index.js",
+        "spec/",
+        "schema/",
+        "ontology/",
+        "tests/vectors/",
+        "docs/SPEC.md",
+        "LICENSE",
+        "README.md"
+    ],
+    "engines": {
+        "node": ">=22"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
