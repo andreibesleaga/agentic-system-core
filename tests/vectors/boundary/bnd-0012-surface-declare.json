@@ -1,0 +1,99 @@
+{
+  "area": "boundary",
+  "description": "Every served surface is declared with its id, external version and access class, derived from what is emitted; the WebMCP declaration carries the three annotation flags per tool and the MCP declaration names the extension identifier.",
+  "expected": {
+    "links": [
+      {
+        "agsc-access": [
+          "none"
+        ],
+        "agsc-surface": [
+          "llms-txt"
+        ],
+        "href": "/llms.txt",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      },
+      {
+        "agsc-access": [
+          "none"
+        ],
+        "agsc-surface": [
+          "chunks"
+        ],
+        "href": "/chunks.jsonl",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      },
+      {
+        "agsc-access": [
+          "consent"
+        ],
+        "agsc-surface": [
+          "webmcp"
+        ],
+        "agsc-surface-version": [
+          "2026-09-10"
+        ],
+        "href": "/compose/",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      },
+      {
+        "agsc-access": [
+          "consent"
+        ],
+        "agsc-surface": [
+          "mcp"
+        ],
+        "agsc-surface-version": [
+          "2026-07-28"
+        ],
+        "href": "/specs/mcp/",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      }
+    ],
+    "mcp_extensions": [
+      "com.agenticsystemcore/knowledge"
+    ],
+    "webmcp_annotations": {
+      "ask": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "compose": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "links": {
+        "readOnlyHint": true
+      },
+      "propose": {
+        "consequentialHint": true
+      },
+      "read": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "remember": {
+        "consequentialHint": true
+      },
+      "search": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      }
+    }
+  },
+  "id": "bnd-0012",
+  "input": {
+    "emitted": [
+      "/llms.txt",
+      "/chunks.jsonl",
+      "/compose/"
+    ],
+    "mcp_served": true
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-16"
+}

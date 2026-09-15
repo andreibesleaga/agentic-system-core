@@ -1,0 +1,21 @@
+{
+  "area": "boundary",
+  "description": "A federation parameter above the spec maximum is a configuration error; below the default it is accepted (a publisher may tighten).",
+  "expected": {
+    "code": "AGSC-E209"
+  },
+  "id": "bnd-0017",
+  "input": {
+    "config": {
+      "federation": {
+        "hop_limit": 6
+      }
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-01"
+}

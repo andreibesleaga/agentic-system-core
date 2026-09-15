@@ -1,0 +1,25 @@
+{
+  "area": "boundary",
+  "description": "A fourth redirect hop, or a hop to a non-https URL, refuses the fetch; the declared peer URL is never replaced by the final URL.",
+  "expected": {
+    "declared_peer_unchanged": true,
+    "followed": 3,
+    "result": "AGSC-E905"
+  },
+  "id": "bnd-0005",
+  "input": {
+    "peer": "https://b.example/.well-known/knowledge-linkset",
+    "redirects": [
+      "https://b.example/r1",
+      "https://b.example/r2",
+      "https://b.example/r3",
+      "https://b.example/r4"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-09"
+}

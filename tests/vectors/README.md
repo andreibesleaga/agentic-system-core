@@ -8,7 +8,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 | Member | Required | Meaning |
 |---|---|---|
-| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, and later `prov`, `import`, `export`, `skills`, `webmcp`, `run`, `conform` (AGSC-09-04) |
+| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, `boundary` (rc.3, AGSC-11), and later `prov`, `import`, `export`, `skills`, `webmcp`, `run`, `conform` (AGSC-09-04) |
 | `description` | yes | what the case proves, and why it is not obvious |
 | `expected` | yes | the outcome (below) |
 | `id` | yes | stable, unique, never reused: `<area-prefix>-<nnnn>` |

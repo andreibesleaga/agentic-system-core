@@ -114,6 +114,14 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E902` | path escapes the Bundle root | AGSC-01-16 |
 | `AGSC-E903` | archive refused | AGSC-01-16 |
 | `AGSC-E904` | size cap exceeded | AGSC-01-16 |
+| `AGSC-E209` | boundary configuration invalid (`federation{}`, `chunks{}`, `contribute[]`, `visibility` out of range or malformed) | AGSC-11-01, AGSC-11-14 |
+| `AGSC-E210` | declared surface not implemented, or emitted bytes disagree with its declaration | AGSC-11-16, AGSC-11-19 |
+| `AGSC-E311` | Link key value is an absolute URL (a Link MUST NOT cross Bundles) | AGSC-11-12 |
+| `AGSC-E312` | cross-node reference not normalisable to an IRI (omitted from the graph) | AGSC-11-12 |
+| `AGSC-E411` | Link target is a retired item (warning) | AGSC-11-22 |
+| `AGSC-E905` | peer fetch refused: scheme, address range or redirect hop violates the transport rules | AGSC-11-07, AGSC-11-08, AGSC-11-09 |
+| `AGSC-E906` | federation walk cap exceeded (hop limit, fan-out or request cap); result partial | AGSC-11-10 |
+| `AGSC-E907` | peer unreachable or its discovery document invalid; skipped for this walk | AGSC-11-10 |
 
 - **AGSC-09-15** Codes are permanent. A retired code MUST NOT be reused; new codes take the next free number in their block. [AGSC-00-16]
 

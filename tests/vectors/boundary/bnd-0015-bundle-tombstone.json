@@ -1,0 +1,33 @@
+{
+  "area": "boundary",
+  "description": "A tombstoned node still serves a valid link set carrying the tombstone instant; a peer check reports it resolved-not-mutual, and a walk does not descend into it.",
+  "expected": {
+    "both_resolve": true,
+    "code": null,
+    "mutual": false,
+    "tombstoned": [
+      "https://b.example/"
+    ],
+    "walk_descends_into_b": false
+  },
+  "id": "bnd-0015",
+  "input": {
+    "nodes": [
+      {
+        "base": "https://a.example/",
+        "peer": "https://b.example/.well-known/knowledge-linkset"
+      },
+      {
+        "alternate": "https://c.example/.well-known/knowledge-linkset",
+        "base": "https://b.example/",
+        "tombstone": "2026-12-31T00:00:00Z"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-23"
+}

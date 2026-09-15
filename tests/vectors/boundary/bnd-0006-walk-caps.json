@@ -1,0 +1,49 @@
+{
+  "area": "boundary",
+  "description": "A walk stops at the hop limit, considers only the first fan_out peer links per document, counts every request, and reports a partial result with the cap code.",
+  "expected": {
+    "code": "AGSC-E906",
+    "ignored_by_fan_out": [
+      "d"
+    ],
+    "not_descended_by_hop_limit": [
+      "e",
+      "f"
+    ],
+    "partial": true,
+    "requests": 3,
+    "visited": [
+      "a",
+      "b",
+      "c"
+    ]
+  },
+  "id": "bnd-0006",
+  "input": {
+    "federation": {
+      "fan_out": 2,
+      "hop_limit": 1,
+      "max_requests": 10
+    },
+    "graph": {
+      "a": [
+        "b",
+        "c",
+        "d"
+      ],
+      "b": [
+        "e"
+      ],
+      "c": [
+        "f"
+      ],
+      "d": []
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-10"
+}

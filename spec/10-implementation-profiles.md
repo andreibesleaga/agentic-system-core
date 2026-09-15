@@ -23,3 +23,5 @@ Trace: PRD-055 ← D50; the classes of `docs/SPEC.md` §3 and AGSC-00-09…12 *a
 
 ## 10.4 Federation — mutual conformance (added 2026-09-03, D53)
 - **AGSC-10-12** Two nodes federate by each listing the other in its well-known linkset with relation `peer` (`…/rel#peer`, registered in AGSC-06-10). `tools/validate-wellknown --peer <url|file>` (AGSC-09-93) MUST verify, for both nodes: the link set resolves, every `digest` and every REQUIRED `agsc-*` target attribute validates (Levels ≥2, AGSC-06-08/08a), and each node's `peer` entry names the other's canonical well-known URL. No separate federation validator exists — `--peer` is the whole check, and it MUST accept two local files so the check runs with no network. This mutual check is the Agentic Knowledge Web's smallest protocol; a directory service is a v2 backend component. Vector `disc-0005`. [D53, D44(d), D55, PRD-024, V4-A A-76]
+
+> **rc.3 pointer (2026-09-16):** the federation protocol is specified in full in `spec/11-boundary.md` §11.3 (F1–F9); AGSC-10-12 remains the mutual check it names. A tombstoned peer (AGSC-11-23) is *resolved, not mutual*.

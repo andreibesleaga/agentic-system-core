@@ -1,0 +1,38 @@
+{
+  "area": "boundary",
+  "description": "A declared surface whose target does not resolve fails validation; an emitted surface with no declaration is a warning, never an error.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E210",
+        "href": "/.well-known/agent-card.json",
+        "severity": "error"
+      },
+      {
+        "href": "/chunks.jsonl",
+        "severity": "warning"
+      }
+    ]
+  },
+  "id": "bnd-0013",
+  "input": {
+    "declared": [
+      {
+        "agsc-surface": "a2a-card",
+        "href": "/.well-known/agent-card.json"
+      }
+    ],
+    "emitted_undeclared": [
+      "/chunks.jsonl"
+    ],
+    "resolves": {
+      "/.well-known/agent-card.json": false
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-19"
+}

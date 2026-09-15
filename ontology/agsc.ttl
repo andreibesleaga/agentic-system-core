@@ -339,3 +339,14 @@ asc:verifies
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "verifies" ;
     owl:inverseOf asc:isVerifiedBy .
+
+### rc.3 additions (AGSC-11, 2026-09-16) — terms are added, never removed (AGSC-05-25)
+asc:peerOrigin a owl:ObjectProperty ;
+    rdfs:label "peer origin"@en ;
+    rdfs:comment "The Bundle IRI of the declared peer node under whose site.base a cited resource lives (AGSC-11-12). Emitted beside rdfs:seeAlso; takes part in no composition step."@en ;
+    rdfs:range asc:Bundle .
+
+asc:retiredAt a owl:DatatypeProperty ;
+    rdfs:label "retired at"@en ;
+    rdfs:comment "The instant at which an item entered status retired (AGSC-11-22); an AGSC-04-10 instant rendered as xsd:dateTime."@en ;
+    rdfs:range xsd:dateTime .

@@ -20,7 +20,7 @@
       "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present on those two types the 40-200 UTF-16 code unit bound is enforced by their branches (AGSC-02-24).",
       "type": "string"
     },
-    "status": { "description": "Default stable.", "enum": ["draft", "stable", "deprecated"] },
+    "status": { "description": "Default stable.", "enum": ["draft", "stable", "deprecated", "retired"] },
     "release": { "description": "Release switchboard key (AGSC-01-20).", "$ref": "#/$defs/slug" },
     "tags": {
       "description": "2-5 values from config tags.allowed; membership is checked by lint (AGSC-01-21).",
@@ -68,7 +68,7 @@
       "properties": {
         "type": { "const": "concept" },
         "description": { "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).", "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
-        "kind": { "enum": ["pattern", "taxonomy", "explainer", "principle", "decision", "spec", "task", "term"] },
+        "kind": { "enum": ["pattern", "taxonomy", "explainer", "principle", "decision", "spec", "task", "term", "architecture"] },
         "evidence": { "enum": ["explicit", "structural", "single-source"] },
         "maturity": { "enum": ["established", "emerging", "research"] },
         "mapping": { "enum": ["explicit", "author"] },

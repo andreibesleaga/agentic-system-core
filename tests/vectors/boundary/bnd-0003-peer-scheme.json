@@ -1,0 +1,35 @@
+{
+  "area": "boundary",
+  "description": "A peer URL with a non-https scheme is refused before any connection; plain http is allowed only to loopback under --dev.",
+  "expected": {
+    "results": [
+      {
+        "code": "AGSC-E905",
+        "peer": "http://b.example/.well-known/knowledge-linkset"
+      },
+      {
+        "code": "AGSC-E905",
+        "peer": "file:///etc/passwd"
+      },
+      {
+        "code": null,
+        "peer": "http://127.0.0.1:8080/.well-known/knowledge-linkset"
+      }
+    ]
+  },
+  "id": "bnd-0003",
+  "input": {
+    "dev": true,
+    "peers": [
+      "http://b.example/.well-known/knowledge-linkset",
+      "file:///etc/passwd",
+      "http://127.0.0.1:8080/.well-known/knowledge-linkset"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-07"
+}

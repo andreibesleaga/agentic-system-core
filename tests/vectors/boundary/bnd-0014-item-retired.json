@@ -1,0 +1,41 @@
+{
+  "area": "boundary",
+  "description": "A retired item keeps its page and IRI, leaves the index, chunks, llms.txt and compositions, stays in the graph with asc:retiredAt, and a Link to it is a warning.",
+  "expected": {
+    "compose_selection_of_old": "AGSC-E802",
+    "findings": [
+      {
+        "code": "AGSC-E411",
+        "severity": "warning",
+        "slug": "new"
+      }
+    ],
+    "graph_has": "<https://a.example/concepts/old/> <https://w3id.org/agentic-system-core/ns#retiredAt> \"2026-09-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime>",
+    "in_chunks": false,
+    "in_llms": false,
+    "in_search": false,
+    "page_kept": true
+  },
+  "id": "bnd-0014",
+  "input": {
+    "items": [
+      {
+        "modified": "2026-09-01",
+        "slug": "old",
+        "status": "retired"
+      },
+      {
+        "slug": "new",
+        "uses": [
+          "old"
+        ]
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-22"
+}

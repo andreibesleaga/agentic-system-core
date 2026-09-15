@@ -1,0 +1,52 @@
+{
+  "area": "boundary",
+  "description": "Configured contribute targets appear as rel#contribute links with a one-element mode array; a channel target must be hitl; a propose directed at the node picks the first supported mode.",
+  "expected": {
+    "links": [
+      {
+        "agsc-contribute-mode": [
+          "pr"
+        ],
+        "href": "https://github.com/example/node/compare",
+        "rel": "https://w3id.org/agentic-system-core/rel#contribute"
+      },
+      {
+        "agsc-contribute-mode": [
+          "channel"
+        ],
+        "href": "mailto:propose@a.example",
+        "rel": "https://w3id.org/agentic-system-core/rel#contribute"
+      }
+    ],
+    "propose_uses": "mailto:propose@a.example"
+  },
+  "id": "bnd-0010",
+  "input": {
+    "channels": [
+      {
+        "name": "mail",
+        "publish": "hitl"
+      }
+    ],
+    "client_supports": [
+      "channel"
+    ],
+    "contribute": [
+      {
+        "mode": "pr",
+        "target": "https://github.com/example/node/compare"
+      },
+      {
+        "channel": "mail",
+        "mode": "channel",
+        "target": "mailto:propose@a.example"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-14"
+}

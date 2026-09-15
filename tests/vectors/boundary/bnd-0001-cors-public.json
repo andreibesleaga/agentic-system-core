@@ -1,0 +1,31 @@
+{
+  "area": "boundary",
+  "description": "A public node serves every public artefact with the wildcard read header, exposes Link/ETag/Content-Type, and never sends the credentials header — without it no browser agent can read the node.",
+  "expected": {
+    "forbidden_headers": [
+      "Access-Control-Allow-Credentials"
+    ],
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Link, ETag, Content-Type"
+    }
+  },
+  "id": "bnd-0001",
+  "input": {
+    "paths": [
+      "/.well-known/knowledge-linkset",
+      "/graph.nq",
+      "/llms.txt",
+      "/chunks.jsonl",
+      "/ledger.jsonl",
+      "/search.json"
+    ],
+    "visibility": "public"
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-03"
+}

@@ -5,23 +5,40 @@
   "description": "The single configuration file of a Bundle (AGSC-01-17). Configuration is CLOSED: additionalProperties is false and an unknown top-level key is error AGSC-E004 (AGSC-01-18), except the x-<vendor>-<key> forward-compatibility namespace (docs/SPEC.md §8(2)), admitted by patternProperties and preserved verbatim. There is no second configuration file. CC0-1.0.",
   "type": "object",
   "additionalProperties": false,
-  "patternProperties": { "^x-[a-z0-9]+(-[a-z0-9]+)+$": true },
-  "required": ["spec_version", "site", "bundle"],
+  "patternProperties": {
+    "^x-[a-z0-9]+(-[a-z0-9]+)+$": true
+  },
+  "required": [
+    "spec_version",
+    "site",
+    "bundle"
+  ],
   "properties": {
-    "spec_version": { "$ref": "#/$defs/semver" },
+    "spec_version": {
+      "$ref": "#/$defs/semver"
+    },
     "site": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["base", "title"],
+      "required": [
+        "base",
+        "title"
+      ],
       "properties": {
         "base": {
           "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base (D52(1)).",
           "type": "string",
           "pattern": "^(?:https://[^\\s/]+(?:/[^\\s/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
         },
-        "title": { "type": "string" },
-        "tagline": { "type": "string" },
-        "author": { "type": "string" },
+        "title": {
+          "type": "string"
+        },
+        "tagline": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
         "analytics_token": {
           "description": "Edge analytics token only. No beacon, cookie or third-party script may be emitted (AGSC-06-05).",
           "type": "string"
@@ -31,12 +48,22 @@
     "bundle": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id"],
+      "required": [
+        "id"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/slug" },
-        "license_prose": { "type": "string" },
-        "license_schema": { "type": "string" },
-        "operator": { "$ref": "#/$defs/human_actor" }
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "license_prose": {
+          "type": "string"
+        },
+        "license_schema": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/$defs/human_actor"
+        }
       }
     },
     "ns": {
@@ -48,25 +75,34 @@
           "type": "string",
           "pattern": "^https://w3id\\.org/[^\\s]+#$"
         },
-        "version": { "$ref": "#/$defs/semver" }
+        "version": {
+          "$ref": "#/$defs/semver"
+        }
       }
     },
     "releases": {
       "description": "Boolean switchboard; an item with release: <key> publishes only when its key is true (AGSC-01-20).",
       "type": "object",
-      "additionalProperties": { "type": "boolean" }
+      "additionalProperties": {
+        "type": "boolean"
+      }
     },
     "tags": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["allowed"],
+      "required": [
+        "allowed"
+      ],
       "properties": {
         "allowed": {
           "description": "The closed tag vocabulary; a tag outside it is AGSC-E203 (AGSC-01-21).",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" }
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          }
         }
       }
     },
@@ -74,9 +110,19 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "out": { "description": "Build output directory; default www, a trailing slash is accepted and stripped (AGSC-01-19).", "type": "string", "pattern": "^[A-Za-z0-9._-]+/?$" },
-        "rdfxml": { "description": "Emit /graph.rdf; default false. RDF/XML stays inside v1.0 per D49: when true the view MUST be emitted (AGSC-05-06, AGSC-06-01).", "type": "boolean" },
-        "feed": { "description": "Emit /feed.xml; default true (AGSC-06-01).", "type": "boolean" }
+        "out": {
+          "description": "Build output directory; default www, a trailing slash is accepted and stripped (AGSC-01-19).",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+/?$"
+        },
+        "rdfxml": {
+          "description": "Emit /graph.rdf; default false. RDF/XML stays inside v1.0 per D49: when true the view MUST be emitted (AGSC-05-06, AGSC-06-01).",
+          "type": "boolean"
+        },
+        "feed": {
+          "description": "Emit /feed.xml; default true (AGSC-06-01).",
+          "type": "boolean"
+        }
       }
     },
     "i18n": {
@@ -95,18 +141,28 @@
       "description": "Federation peers (AGSC-10-12): each entry is another node's canonical /.well-known/knowledge-linkset URL, emitted as one .../rel#peer link in the link set (AGSC-06-10).",
       "type": "array",
       "uniqueItems": true,
-      "items": { "type": "string", "format": "uri", "pattern": "^https://[^\\s]+/\\.well-known/knowledge-linkset$" }
+      "items": {
+        "type": "string",
+        "format": "uri",
+        "pattern": "^https://[^\\s]+/\\.well-known/knowledge-linkset$"
+      }
     },
     "run": {
       "additionalProperties": false,
       "description": "Opt-in execution settings for the run and trace verbs (AGSC-09-94). Both verbs exit 2 with AGSC-E001 unless enabled is true.",
       "properties": {
-        "enabled": { "description": "Default false.", "type": "boolean" },
+        "enabled": {
+          "description": "Default false.",
+          "type": "boolean"
+        },
         "allow": {
           "description": "Program names permitted as the first word of a {run} block; anything else is refused.",
           "type": "array",
           "uniqueItems": true,
-          "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" }
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          }
         }
       },
       "type": "object"
@@ -118,27 +174,58 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "patternProperties": { "^x-[a-z0-9]+(-[a-z0-9]+)+$": true },
-        "required": ["name", "adapter", "author", "owner"],
+        "patternProperties": {
+          "^x-[a-z0-9]+(-[a-z0-9]+)+$": true
+        },
+        "required": [
+          "name",
+          "adapter",
+          "author",
+          "owner"
+        ],
         "properties": {
-          "name": { "$ref": "#/$defs/slug" },
-          "adapter": { "$ref": "#/$defs/slug" },
-          "author": { "description": "Forge login of the identity that opens ingest pull requests (AGSC-08-26 c).", "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$" },
-          "owner": { "$ref": "#/$defs/human_actor" },
-          "publish": { "description": "Default hitl; auto merges only under AGSC-08-26.", "enum": ["auto", "hitl"] },
+          "name": {
+            "$ref": "#/$defs/slug"
+          },
+          "adapter": {
+            "$ref": "#/$defs/slug"
+          },
+          "author": {
+            "description": "Forge login of the identity that opens ingest pull requests (AGSC-08-26 c).",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
+          },
+          "owner": {
+            "$ref": "#/$defs/human_actor"
+          },
+          "publish": {
+            "description": "Default hitl; auto merges only under AGSC-08-26.",
+            "enum": [
+              "auto",
+              "hitl"
+            ]
+          },
           "allow": {
             "description": "OPTIONAL sender allow-list: the ingest job rejects a message whose sender is absent from a non-empty list; an absent or empty array accepts every sender (AGSC-01-30, D61(3)).",
             "type": "array",
             "uniqueItems": true,
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "rate": {
             "description": "OPTIONAL ingest rate guard (AGSC-01-30, D61(3)).",
             "type": "object",
             "additionalProperties": false,
-            "required": ["per_hour"],
+            "required": [
+              "per_hour"
+            ],
             "properties": {
-              "per_hour": { "description": "Maximum messages ingested from this channel per hour; the job stops for the hour at the bound and records the skipped messages by sources[].id (AGSC-01-33).", "type": "integer", "minimum": 1 }
+              "per_hour": {
+                "description": "Maximum messages ingested from this channel per hour; the job stops for the hour at the bound and records the skipped messages by sources[].id (AGSC-01-33).",
+                "type": "integer",
+                "minimum": 1
+              }
             }
           }
         }
@@ -152,14 +239,112 @@
           "description": "Literal alternations only, never user-supplied regular expressions (AGSC-08-14).",
           "type": "array",
           "uniqueItems": true,
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         }
       }
+    },
+    "federation": {
+      "type": "object",
+      "description": "AGSC-11-01/11-06 walk parameters; defaults 3/50/500/10000; a publisher may tighten, never exceed the maxima.",
+      "properties": {
+        "hop_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 3
+        },
+        "fan_out": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200,
+          "default": 50
+        },
+        "max_requests": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2000,
+          "default": 500
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 60000,
+          "default": 10000
+        }
+      },
+      "patternProperties": {
+        "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
+      },
+      "additionalProperties": false
+    },
+    "chunks": {
+      "type": "object",
+      "description": "AGSC-11-01; chunk export bound (rules in §06 at rc.3).",
+      "properties": {
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 65536,
+          "default": 4096
+        }
+      },
+      "patternProperties": {
+        "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
+      },
+      "additionalProperties": false
+    },
+    "contribute": {
+      "type": "array",
+      "description": "AGSC-11-14 contribute targets published as rel#contribute links.",
+      "items": {
+        "type": "object",
+        "required": [
+          "mode",
+          "target"
+        ],
+        "properties": {
+          "mode": {
+            "enum": [
+              "pr",
+              "channel",
+              "form"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "pattern": "^(https://[^\\s]+|mailto:[^\\s]+|urn:agsc:channel:[a-z0-9-]+)$"
+          },
+          "channel": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          }
+        },
+        "patternProperties": {
+          "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
+        },
+        "additionalProperties": false
+      }
+    },
+    "visibility": {
+      "enum": [
+        "public",
+        "restricted"
+      ],
+      "default": "public",
+      "description": "AGSC-11-20; unknown values read as restricted (AGSC-11-02)."
     }
   },
   "$defs": {
-    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
-    "slug": { "type": "string", "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$" },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$"
+    },
     "human_actor": {
       "description": "AGSC-01-25: the accountable operator of this Bundle, human:<id> only; the first source of prov.operator at adoption (AGSC-02-90).",
       "type": "string",

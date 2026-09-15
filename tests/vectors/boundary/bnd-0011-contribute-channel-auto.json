@@ -1,0 +1,29 @@
+{
+  "area": "boundary",
+  "description": "A contribute channel whose publish mode is auto is a configuration error: anonymous proposals are review-before-publish only.",
+  "expected": {
+    "code": "AGSC-E209"
+  },
+  "id": "bnd-0011",
+  "input": {
+    "channels": [
+      {
+        "name": "mail",
+        "publish": "auto"
+      }
+    ],
+    "contribute": [
+      {
+        "channel": "mail",
+        "mode": "channel",
+        "target": "urn:agsc:channel:mail"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-14"
+}

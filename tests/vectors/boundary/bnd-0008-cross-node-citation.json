@@ -1,0 +1,33 @@
+{
+  "area": "boundary",
+  "description": "A reference whose URL lies under a declared peer's base is emitted as rdfs:seeAlso plus asc:peerOrigin, with the IDN host normalised to its A-label and existing escapes preserved; closure ignores the edge.",
+  "expected": {
+    "closure_edges_added": 0,
+    "nquads": "<https://a.example/concepts/alpha/> <http://www.w3.org/2000/01/rdf-schema#seeAlso> <https://xn--bcher-kva.example/concepts/kanban%20board/#intent> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#peerOrigin> <https://xn--bcher-kva.example/> <https://a.example/> .\n"
+  },
+  "id": "bnd-0008",
+  "input": {
+    "items": [
+      {
+        "references": [
+          {
+            "url": "https://bücher.example/concepts/kanban%20board/#intent"
+          }
+        ],
+        "slug": "alpha"
+      }
+    ],
+    "peers": [
+      {
+        "base": "https://bücher.example/",
+        "bundle": "https://bücher.example/"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-12"
+}

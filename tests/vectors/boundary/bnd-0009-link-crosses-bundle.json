@@ -1,0 +1,44 @@
+{
+  "area": "boundary",
+  "description": "A Link key whose value is an absolute URL makes the file invalid: Links never cross Bundles at 1.x; the reserved key peer-ref is preserved and reported as unknown.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E311",
+        "severity": "error",
+        "slug": "alpha"
+      },
+      {
+        "code": "AGSC-E304",
+        "severity": "warning",
+        "slug": "gamma"
+      }
+    ],
+    "preserved_keys": [
+      "peer-ref"
+    ]
+  },
+  "id": "bnd-0009",
+  "input": {
+    "items": [
+      {
+        "requires": [
+          "https://b.example/concepts/beta/"
+        ],
+        "slug": "alpha"
+      },
+      {
+        "peer-ref": [
+          "beta"
+        ],
+        "slug": "gamma"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-12"
+}

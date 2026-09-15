@@ -1,0 +1,28 @@
+{
+  "area": "boundary",
+  "description": "A reader meeting an unknown visibility or surface value neither fails nor guesses: it treats the value as the most restrictive member of the list.",
+  "expected": {
+    "access_read_as": "credential",
+    "error": null,
+    "surface_read_as": "not-served",
+    "visibility_read_as": "restricted"
+  },
+  "id": "bnd-0016",
+  "input": {
+    "agsc-access": [
+      "token-3"
+    ],
+    "agsc-surface": [
+      "holo"
+    ],
+    "agsc-visibility": [
+      "ephemeral"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-02"
+}
