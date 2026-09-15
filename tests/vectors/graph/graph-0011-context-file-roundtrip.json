@@ -1,0 +1,52 @@
+{
+  "area": "graph",
+  "description": "The context file is generated from the ontology with protected terms and typed properties, sorted canonically; expanding and re-compacting graph.jsonld with it reproduces the bytes.",
+  "expected": {
+    "context": {
+      "@context": {
+        "@protected": true,
+        "@version": 1.1,
+        "asc": "https://w3id.org/agentic-system-core/ns#",
+        "consumes": null,
+        "hasAttachment": {
+          "@id": "asc:hasAttachment",
+          "@type": "@id"
+        },
+        "produces": {
+          "@id": "asc:produces",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        },
+        "retiredAt": {
+          "@id": "asc:retiredAt",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      }
+    },
+    "roundtrip_byte_identical": true
+  },
+  "id": "graph-0011",
+  "input": {
+    "ontology_terms": [
+      {
+        "kind": "object",
+        "term": "hasAttachment"
+      },
+      {
+        "kind": "datatype",
+        "range": "xsd:string",
+        "term": "produces"
+      },
+      {
+        "kind": "datatype",
+        "range": "xsd:dateTime",
+        "term": "retiredAt"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-32"
+}

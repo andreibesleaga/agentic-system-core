@@ -334,6 +334,22 @@
       ],
       "default": "public",
       "description": "AGSC-11-20; unknown values read as restricted (AGSC-11-02)."
+    },
+    "attachments": {
+      "type": "object",
+      "description": "AGSC-01-34; per-file size bound.",
+      "properties": {
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 10485760,
+          "default": 1048576
+        }
+      },
+      "patternProperties": {
+        "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
+      },
+      "additionalProperties": false
     }
   },
   "$defs": {

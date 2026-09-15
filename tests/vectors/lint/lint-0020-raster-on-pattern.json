@@ -1,0 +1,72 @@
+{
+  "area": "lint",
+  "description": "A PNG attachment on a pattern is an error; an SVG embedding a data:image raster or a script is also an error; an SVG on an explainer is fine and a PNG on an episode is fine.",
+  "expected": {
+    "clean": [
+      "e1"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E412",
+        "severity": "error",
+        "slug": "p1"
+      },
+      {
+        "code": "AGSC-E412",
+        "severity": "error",
+        "slug": "p2"
+      }
+    ]
+  },
+  "id": "lint-0020",
+  "input": {
+    "attachment_bytes": {
+      "a.png": "...",
+      "b.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><image href=\"data:image/png;base64,AAAA\"/></svg>",
+      "c.png": "..."
+    },
+    "items": [
+      {
+        "attachments": [
+          {
+            "alt": "x",
+            "file": "a.png",
+            "media_type": "image/png"
+          }
+        ],
+        "kind": "pattern",
+        "slug": "p1",
+        "type": "concept"
+      },
+      {
+        "attachments": [
+          {
+            "alt": "x",
+            "file": "b.svg",
+            "media_type": "image/svg+xml"
+          }
+        ],
+        "kind": "pattern",
+        "slug": "p2",
+        "type": "concept"
+      },
+      {
+        "attachments": [
+          {
+            "alt": "x",
+            "file": "c.png",
+            "media_type": "image/png"
+          }
+        ],
+        "slug": "e1",
+        "type": "episode"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-02-98"
+}

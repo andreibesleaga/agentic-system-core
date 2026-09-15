@@ -1,0 +1,90 @@
+{
+  "area": "compose",
+  "description": "Step 5 wires consumers to producers over survivors only, sorted by (consumer, port); a consume with no producer is a warning that never invalidates; the verdict members of Steps 1-4 are byte-identical with and without Step 5.",
+  "expected": {
+    "dsl_relationships": [
+      "router -> worker \"produces task\"",
+      "worker -> logger \"produces result\"",
+      "worker -> router \"produces metrics\""
+    ],
+    "valid": true,
+    "verdict_steps_1_to_4_unchanged": true,
+    "warnings_added": [
+      {
+        "code": "AGSC-E804",
+        "consumer": "logger",
+        "port": "audit"
+      }
+    ],
+    "wiring": [
+      {
+        "consumer": "logger",
+        "port": "audit",
+        "producers": []
+      },
+      {
+        "consumer": "logger",
+        "port": "result",
+        "producers": [
+          "worker"
+        ]
+      },
+      {
+        "consumer": "router",
+        "port": "metrics",
+        "producers": [
+          "worker"
+        ]
+      },
+      {
+        "consumer": "worker",
+        "port": "task",
+        "producers": [
+          "router"
+        ]
+      }
+    ]
+  },
+  "id": "compose-0011",
+  "input": {
+    "items": [
+      {
+        "consumes": [
+          "metrics"
+        ],
+        "produces": [
+          "task"
+        ],
+        "slug": "router"
+      },
+      {
+        "consumes": [
+          "task"
+        ],
+        "produces": [
+          "result",
+          "metrics"
+        ],
+        "slug": "worker"
+      },
+      {
+        "consumes": [
+          "result",
+          "audit"
+        ],
+        "slug": "logger"
+      }
+    ],
+    "selection": [
+      "router",
+      "worker",
+      "logger"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-07-23"
+}

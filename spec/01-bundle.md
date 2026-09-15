@@ -73,3 +73,6 @@
 
 
 > **rc.3 amendment (2026-09-16):** `agsc.config.json` gains the OPTIONAL objects `federation{}`, `chunks{}`, `contribute[]` and the key `visibility` (AGSC-11-01), each admitting `x-<vendor>-<key>`; these are the keys added at rc.3.
+
+
+- **AGSC-01-34** (added at rc.3) Attachments live under `content/attachments/<slug>/` and nowhere else; a file there that no item's `attachments[]` names is an orphan warning; an `attachments[]` entry whose file is absent, or whose bytes do not match the SHA-256 recorded at build in the item's JSON-LD (AGSC-05-29), is `AGSC-E413`. `agsc.config.json` gains the OPTIONAL `attachments{max_bytes}` (default 1048576, maximum 10485760, `x-` admitted, AGSC-11-01); a larger file is `AGSC-E904`. [D67 Q64, AGSC-01-16]

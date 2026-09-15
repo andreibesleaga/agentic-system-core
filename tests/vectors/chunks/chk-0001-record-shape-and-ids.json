@@ -1,0 +1,99 @@
+{
+  "area": "chunks",
+  "description": "Chunk ids derive from the item IRI, the heading anchor and the ordinal, so two writers cut identical ids; chunk 0 is the pre-heading text; fenced code stays inside its chunk; every record carries trust untrusted and the terms identifier.",
+  "expected": {
+    "citation_anchor_for_line_1": "#chunk-492be754d0c8c02f",
+    "lines": [
+      {
+        "digest": "05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3",
+        "id": "fab259f68aeb928d4db30fb9f01e78bc85b4818ee79d46d65b3d44f0f5a65596",
+        "iri": "https://a.example/concepts/supervisor/",
+        "item": "supervisor",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "requires": [
+            "worker"
+          ]
+        },
+        "ordinal": 0,
+        "section": "",
+        "subkind": "pattern",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "Intro paragraph.\n",
+        "title": "Supervisor",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "f06d38fc6bf3920390daa6d7057f02efbbde8c993345e2813ae8c9e35f86df94",
+        "id": "492be754d0c8c02f36983693a7e4e1d30ea28c52420de57fab12cc4776b8d009",
+        "iri": "https://a.example/concepts/supervisor/",
+        "item": "supervisor",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "requires": [
+            "worker"
+          ]
+        },
+        "ordinal": 0,
+        "section": "intent",
+        "subkind": "pattern",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "## Intent\n\nCoordinate workers.\n",
+        "title": "Supervisor",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "0050032f1fce0a18a854fb977288802f4635199baf89ce767ca391c02258dfd5",
+        "id": "72403edf9a20f92ff605900def5dedf13849ad67ac38b2582a8c6de68096e051",
+        "iri": "https://a.example/concepts/supervisor/",
+        "item": "supervisor",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "requires": [
+            "worker"
+          ]
+        },
+        "ordinal": 0,
+        "section": "structure",
+        "subkind": "pattern",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "## Structure\n\n```text\ncode stays\n```\n",
+        "title": "Supervisor",
+        "trust": "untrusted",
+        "type": "text"
+      }
+    ]
+  },
+  "id": "chk-0001",
+  "input": {
+    "chunks": {
+      "max_bytes": 4096
+    },
+    "items": [
+      {
+        "body": "Intro paragraph.\n\n## Intent\n\nCoordinate workers.\n\n## Structure\n\n```text\ncode stays\n```\n",
+        "kind": "pattern",
+        "requires": [
+          "worker"
+        ],
+        "slug": "supervisor",
+        "title": "Supervisor",
+        "type": "concept"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-28"
+}

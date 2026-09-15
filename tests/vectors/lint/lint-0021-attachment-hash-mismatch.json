@@ -1,0 +1,59 @@
+{
+  "area": "lint",
+  "description": "An attachment whose file is missing, or whose bytes changed since the recorded hash, is an error; an unreferenced file under the attachments directory is a warning; an oversize file is the size-cap error.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E413",
+        "file": "gone.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E904",
+        "file": "big.svg",
+        "severity": "error"
+      },
+      {
+        "file": "stray.svg",
+        "severity": "warning"
+      }
+    ]
+  },
+  "id": "lint-0021",
+  "input": {
+    "config": {
+      "attachments": {
+        "max_bytes": 1048576
+      }
+    },
+    "files_present": {
+      "content/attachments/live/big.svg": 2000000,
+      "content/attachments/live/stray.svg": 10
+    },
+    "items": [
+      {
+        "attachments": [
+          {
+            "alt": "x",
+            "file": "gone.svg",
+            "media_type": "image/svg+xml"
+          },
+          {
+            "alt": "x",
+            "file": "big.svg",
+            "media_type": "image/svg+xml"
+          }
+        ],
+        "kind": "explainer",
+        "slug": "live",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-01-34"
+}

@@ -5,11 +5,22 @@
   "description": "Frontmatter contract for one content item (spec/02-item.md). Keyword subset per research/12 section 2: type, enum, const, pattern, required, properties, additionalProperties, items, minItems, maxItems, uniqueItems, $defs, local $ref, oneOf. additionalProperties is true everywhere on purpose: unknown keys MUST be preserved and reported by lint as AGSC-E207 warnings, never as errors (AGSC-02-05, OKF tolerance). Count bounds that this subset cannot express (tags 2-5) are lint-level warnings, not schema errors. description is OPTIONAL in every branch so that an adopted file validates (AGSC-02-92, V2-01); a concept or cluster without one is the lint warning AGSC-E408 (AGSC-02-21). When present on a concept or cluster the 40-200 bound is enforced by those branches; elsewhere any length is accepted and lint warns. Every length bound counts UTF-16 code units (AGSC-02-24). CC0-1.0.",
   "type": "object",
   "additionalProperties": true,
-  "required": ["type", "title", "prov"],
+  "required": [
+    "type",
+    "title",
+    "prov"
+  ],
   "properties": {
     "type": {
       "description": "Authoritative item type; MUST match the containing folder (AGSC-01-03).",
-      "enum": ["concept", "episode", "procedure", "lesson", "cluster", "gate"]
+      "enum": [
+        "concept",
+        "episode",
+        "procedure",
+        "lesson",
+        "cluster",
+        "gate"
+      ]
     },
     "title": {
       "description": "3-120 characters, any Unicode in NFC (§2.2 common-key table).",
@@ -20,145 +31,493 @@
       "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present on those two types the 40-200 UTF-16 code unit bound is enforced by their branches (AGSC-02-24).",
       "type": "string"
     },
-    "status": { "description": "Default stable.", "enum": ["draft", "stable", "deprecated", "retired"] },
-    "release": { "description": "Release switchboard key (AGSC-01-20).", "$ref": "#/$defs/slug" },
+    "status": {
+      "description": "Default stable.",
+      "enum": [
+        "draft",
+        "stable",
+        "deprecated",
+        "retired"
+      ]
+    },
+    "release": {
+      "description": "Release switchboard key (AGSC-01-20).",
+      "$ref": "#/$defs/slug"
+    },
     "tags": {
       "description": "2-5 values from config tags.allowed; membership is checked by lint (AGSC-01-21).",
       "type": "array",
       "uniqueItems": true,
-      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" }
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      }
     },
-    "aliases": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "aliases": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
     "clusters": {
       "description": "Cluster slugs; the first is primary. Membership is authored here, never on the cluster file (AGSC-02-19).",
       "type": "array",
       "uniqueItems": true,
-      "items": { "$ref": "#/$defs/slug" }
+      "items": {
+        "$ref": "#/$defs/slug"
+      }
     },
-    "lang": { "description": "Lowercase BCP 47, admitting singleton (extension and private-use) subtags such as x-internal or u-co-phonebk; default en.", "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$" },
-    "date": { "$ref": "#/$defs/date" },
-    "modified": { "$ref": "#/$defs/date" },
-    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
-    "prov": { "$ref": "#/$defs/prov" },
-    "generated": { "$ref": "#/$defs/generated" },
-    "verified": { "type": "array", "items": { "$ref": "#/$defs/verified_entry" } },
-    "stale_after": { "$ref": "#/$defs/instant" },
-    "id": { "description": "If present MUST equal the slug (AGSC-01-11).", "$ref": "#/$defs/slug" },
-    "iri": { "description": "If present MUST equal the computed IRI (AGSC-05-05).", "type": "string", "pattern": "^https://[^\\s]+/$" },
-    "spec_version": { "$ref": "#/$defs/semver" },
-    "related": { "$ref": "#/$defs/link_array" },
-    "broader": { "$ref": "#/$defs/link_array" },
-    "narrower": { "$ref": "#/$defs/link_array" },
-    "uses": { "$ref": "#/$defs/link_array" },
-    "requires": { "$ref": "#/$defs/link_array" },
-    "excludes": { "$ref": "#/$defs/link_array" },
-    "derived-from": { "$ref": "#/$defs/link_array" },
-    "contradicts": { "$ref": "#/$defs/link_array" },
-    "supersedes": { "$ref": "#/$defs/link_array" },
-    "implements": { "description": "Mode-2 key 10 (AGSC-03-01, D53); inverse implemented-by.", "$ref": "#/$defs/link_array" },
-    "verifies": { "description": "Mode-2 key 11; inverse verified-by.", "$ref": "#/$defs/link_array" },
-    "covers": { "description": "Mode-2 key 12; inverse covered-by.", "$ref": "#/$defs/link_array" },
-    "blocked-by": { "description": "Mode-2 key 13; inverse blocks.", "$ref": "#/$defs/link_array" },
-    "decided-by": { "description": "Mode-2 key 14; inverse decides.", "$ref": "#/$defs/link_array" }
+    "lang": {
+      "description": "Lowercase BCP 47, admitting singleton (extension and private-use) subtags such as x-internal or u-co-phonebk; default en.",
+      "type": "string",
+      "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$"
+    },
+    "date": {
+      "$ref": "#/$defs/date"
+    },
+    "modified": {
+      "$ref": "#/$defs/date"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "prov": {
+      "$ref": "#/$defs/prov"
+    },
+    "generated": {
+      "$ref": "#/$defs/generated"
+    },
+    "verified": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/verified_entry"
+      }
+    },
+    "stale_after": {
+      "$ref": "#/$defs/instant"
+    },
+    "id": {
+      "description": "If present MUST equal the slug (AGSC-01-11).",
+      "$ref": "#/$defs/slug"
+    },
+    "iri": {
+      "description": "If present MUST equal the computed IRI (AGSC-05-05).",
+      "type": "string",
+      "pattern": "^https://[^\\s]+/$"
+    },
+    "spec_version": {
+      "$ref": "#/$defs/semver"
+    },
+    "related": {
+      "$ref": "#/$defs/link_array"
+    },
+    "broader": {
+      "$ref": "#/$defs/link_array"
+    },
+    "narrower": {
+      "$ref": "#/$defs/link_array"
+    },
+    "uses": {
+      "$ref": "#/$defs/link_array"
+    },
+    "requires": {
+      "$ref": "#/$defs/link_array"
+    },
+    "excludes": {
+      "$ref": "#/$defs/link_array"
+    },
+    "derived-from": {
+      "$ref": "#/$defs/link_array"
+    },
+    "contradicts": {
+      "$ref": "#/$defs/link_array"
+    },
+    "supersedes": {
+      "$ref": "#/$defs/link_array"
+    },
+    "implements": {
+      "description": "Mode-2 key 10 (AGSC-03-01, D53); inverse implemented-by.",
+      "$ref": "#/$defs/link_array"
+    },
+    "verifies": {
+      "description": "Mode-2 key 11; inverse verified-by.",
+      "$ref": "#/$defs/link_array"
+    },
+    "covers": {
+      "description": "Mode-2 key 12; inverse covered-by.",
+      "$ref": "#/$defs/link_array"
+    },
+    "blocked-by": {
+      "description": "Mode-2 key 13; inverse blocks.",
+      "$ref": "#/$defs/link_array"
+    },
+    "decided-by": {
+      "description": "Mode-2 key 14; inverse decides.",
+      "$ref": "#/$defs/link_array"
+    },
+    "attachments": {
+      "type": "array",
+      "description": "AGSC-02-98 / AGSC-01-34.",
+      "items": {
+        "type": "object",
+        "required": [
+          "file",
+          "media_type",
+          "alt"
+        ],
+        "properties": {
+          "file": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+          },
+          "media_type": {
+            "type": "string",
+            "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$"
+          },
+          "alt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "license": {
+            "type": "string"
+          }
+        },
+        "patternProperties": {
+          "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
+        },
+        "additionalProperties": false
+      }
+    }
   },
   "oneOf": [
     {
       "title": "concept",
-      "required": ["type", "kind"],
+      "required": [
+        "type",
+        "kind"
+      ],
       "properties": {
-        "type": { "const": "concept" },
-        "description": { "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).", "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
-        "kind": { "enum": ["pattern", "taxonomy", "explainer", "principle", "decision", "spec", "task", "term", "architecture"] },
-        "evidence": { "enum": ["explicit", "structural", "single-source"] },
-        "maturity": { "enum": ["established", "emerging", "research"] },
-        "mapping": { "enum": ["explicit", "author"] },
-        "signature": { "type": "boolean" },
-        "signature_elements": { "type": "array", "items": { "type": "string" } },
-        "owasp_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^LLM[0-9]{2}:[0-9]{4}$" } },
-        "domains": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "modality": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "deployment": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "type": {
+          "const": "concept"
+        },
+        "description": {
+          "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).",
+          "type": "string",
+          "pattern": "^[\\s\\S]{40,200}$"
+        },
+        "kind": {
+          "enum": [
+            "pattern",
+            "taxonomy",
+            "explainer",
+            "principle",
+            "decision",
+            "spec",
+            "task",
+            "term",
+            "architecture"
+          ]
+        },
+        "evidence": {
+          "enum": [
+            "explicit",
+            "structural",
+            "single-source"
+          ]
+        },
+        "maturity": {
+          "enum": [
+            "established",
+            "emerging",
+            "research"
+          ]
+        },
+        "mapping": {
+          "enum": [
+            "explicit",
+            "author"
+          ]
+        },
+        "signature": {
+          "type": "boolean"
+        },
+        "signature_elements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "owasp_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^LLM[0-9]{2}:[0-9]{4}$"
+          }
+        },
+        "domains": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "modality": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "deployment": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
         "implementations": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": true,
-            "required": ["label", "url"],
-            "properties": { "label": { "type": "string" }, "url": { "type": "string", "pattern": "^https?://" } }
+            "required": [
+              "label",
+              "url"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https?://"
+              }
+            }
           }
         },
         "diagram": {
           "type": "object",
           "additionalProperties": true,
-          "required": ["file", "alt"],
+          "required": [
+            "file",
+            "alt"
+          ],
           "properties": {
-            "file": { "description": "MUST be <slug>.svg, compiled from content/diagrams/<slug>.diagram (AGSC-02-13).", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.svg$" },
-            "alt": { "type": "string" },
-            "caption": { "type": "string" }
+            "file": {
+              "description": "MUST be <slug>.svg, compiled from content/diagrams/<slug>.diagram (AGSC-02-13).",
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*\\.svg$"
+            },
+            "alt": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            }
           }
+        },
+        "produces": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "description": "AGSC-02-96 port type names; not Link keys."
+        },
+        "consumes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "description": "AGSC-02-96 port type names; not Link keys."
+        },
+        "task_state": {
+          "enum": [
+            "TASK_STATE_UNSPECIFIED",
+            "TASK_STATE_SUBMITTED",
+            "TASK_STATE_WORKING",
+            "TASK_STATE_INPUT_REQUIRED",
+            "TASK_STATE_AUTH_REQUIRED",
+            "TASK_STATE_COMPLETED",
+            "TASK_STATE_FAILED",
+            "TASK_STATE_CANCELED",
+            "TASK_STATE_REJECTED"
+          ],
+          "default": "TASK_STATE_UNSPECIFIED",
+          "description": "AGSC-02-99; kind: task only; unknown values read as UNSPECIFIED (AGSC-11-02)."
+        },
+        "verdict_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "AGSC-02-97; kind: architecture only."
         }
       }
     },
     {
       "title": "episode",
-      "required": ["type", "started", "actor", "outcome"],
+      "required": [
+        "type",
+        "started",
+        "actor",
+        "outcome"
+      ],
       "properties": {
-        "type": { "const": "episode" },
-        "started": { "$ref": "#/$defs/instant" },
-        "ended": { "$ref": "#/$defs/instant" },
-        "actor": { "$ref": "#/$defs/actor" },
-        "outcome": { "enum": ["success", "partial", "failure"] },
-        "refs": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^https?://" } },
-        "usage": { "$ref": "#/$defs/usage" }
+        "type": {
+          "const": "episode"
+        },
+        "started": {
+          "$ref": "#/$defs/instant"
+        },
+        "ended": {
+          "$ref": "#/$defs/instant"
+        },
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "outcome": {
+          "enum": [
+            "success",
+            "partial",
+            "failure"
+          ]
+        },
+        "refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^https?://"
+          }
+        },
+        "usage": {
+          "$ref": "#/$defs/usage"
+        }
       }
     },
     {
       "title": "procedure",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
-        "type": { "const": "procedure" },
-        "when": { "description": "One-line trigger; becomes the exported SKILL.md description, at most 1024 characters (AGSC-02-15).", "type": "string", "pattern": "^[^\\n]{1,1024}$" },
-        "inputs": { "type": "array", "items": { "type": "string" } }
+        "type": {
+          "const": "procedure"
+        },
+        "when": {
+          "description": "One-line trigger; becomes the exported SKILL.md description, at most 1024 characters (AGSC-02-15).",
+          "type": "string",
+          "pattern": "^[^\\n]{1,1024}$"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     {
       "title": "lesson",
-      "required": ["type", "severity"],
+      "required": [
+        "type",
+        "severity"
+      ],
       "properties": {
-        "type": { "const": "lesson" },
-        "severity": { "enum": ["info", "warn", "block"] }
+        "type": {
+          "const": "lesson"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warn",
+            "block"
+          ]
+        }
       }
     },
     {
       "title": "cluster",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
-        "type": { "const": "cluster" },
-        "description": { "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).", "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
+        "type": {
+          "const": "cluster"
+        },
+        "description": {
+          "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).",
+          "type": "string",
+          "pattern": "^[\\s\\S]{40,200}$"
+        },
         "broader": {
           "description": "At most one parent cluster: the tree is mono-parent (AGSC-03-08); more than one value is AGSC-E308 (AGSC-03-22).",
           "type": "array",
           "maxItems": 1,
           "uniqueItems": true,
-          "items": { "$ref": "#/$defs/link_target" }
+          "items": {
+            "$ref": "#/$defs/link_target"
+          }
         },
-        "order": { "type": "integer" },
-        "family": { "type": "string" }
+        "order": {
+          "type": "integer"
+        },
+        "family": {
+          "type": "string"
+        }
       }
     },
     {
       "title": "gate",
-      "required": ["type", "level", "checks"],
+      "required": [
+        "type",
+        "level",
+        "checks"
+      ],
       "properties": {
-        "type": { "const": "gate" },
-        "level": { "enum": ["L1", "L2"] },
+        "type": {
+          "const": "gate"
+        },
+        "level": {
+          "enum": [
+            "L1",
+            "L2"
+          ]
+        },
         "checks": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "enum": ["schema", "links", "provenance", "determinism", "review"] }
+          "items": {
+            "enum": [
+              "schema",
+              "links",
+              "provenance",
+              "determinism",
+              "review"
+            ]
+          }
         },
-        "enforce": { "description": "AGSC-08-12: each value is compiled deterministically and idempotently by a writer.", "type": "array", "uniqueItems": true, "items": { "enum": ["status-check", "hook", "codeowner", "ruleset"] } }
+        "enforce": {
+          "description": "AGSC-08-12: each value is compiled deterministically and idempotently by a writer.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "status-check",
+              "hook",
+              "codeowner",
+              "ruleset"
+            ]
+          }
+        }
       }
     }
   ],
@@ -173,14 +532,27 @@
       "type": "string",
       "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?(?:#[a-z0-9][a-z0-9-]*)?$"
     },
-    "link_array": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/link_target" } },
-    "date": { "description": "AGSC-02-06.", "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "link_array": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/link_target"
+      }
+    },
+    "date": {
+      "description": "AGSC-02-06.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
     "instant": {
       "description": "AGSC-02-06: datetime with explicit UTC offset, seconds precision, never a bare date.",
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
     },
-    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
     "actor": {
       "description": "AGSC-02-09: human:<id>, process:<id> or <producer>/<version>.",
       "type": "string",
@@ -195,53 +567,125 @@
       "description": "One inline Source; resource is required (AGSC-02-10).",
       "type": "object",
       "additionalProperties": true,
-      "required": ["resource"],
+      "required": [
+        "resource"
+      ],
       "properties": {
-        "id": { "description": "Stable source identifier used to de-duplicate ingested messages (AGSC-01-33).", "type": "string", "pattern": "^[\\s\\S]{1,200}$" },
-        "resource": { "description": "A web URL, or the channel form urn:agsc:channel:<name>:<source_id> for a message with no URL (AGSC-01-33, V3-32).", "type": "string", "pattern": "^(?:https?://|urn:agsc:channel:[a-z0-9-]+:)" },
-        "title": { "type": "string" },
-        "author": { "type": "string" },
-        "year": { "type": "string", "pattern": "^[0-9]{4}$" },
-        "verified": { "$ref": "#/$defs/date" },
-        "grade": { "enum": ["primary", "secondary", "tertiary"] }
+        "id": {
+          "description": "Stable source identifier used to de-duplicate ingested messages (AGSC-01-33).",
+          "type": "string",
+          "pattern": "^[\\s\\S]{1,200}$"
+        },
+        "resource": {
+          "description": "A web URL, or the channel form urn:agsc:channel:<name>:<source_id> for a message with no URL (AGSC-01-33, V3-32).",
+          "type": "string",
+          "pattern": "^(?:https?://|urn:agsc:channel:[a-z0-9-]+:)"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "year": {
+          "type": "string",
+          "pattern": "^[0-9]{4}$"
+        },
+        "verified": {
+          "$ref": "#/$defs/date"
+        },
+        "grade": {
+          "enum": [
+            "primary",
+            "secondary",
+            "tertiary"
+          ]
+        }
       }
     },
     "prov": {
       "description": "AGSC-08-01. commit and reviewer are derived at build and MUST NOT appear here (AGSC-08-02).",
       "type": "object",
       "additionalProperties": true,
-      "required": ["origin", "operator"],
+      "required": [
+        "origin",
+        "operator"
+      ],
       "properties": {
-        "origin": { "enum": ["human", "ai-assisted", "ai-generated", "imported"] },
-        "agent": { "type": "string" },
-        "model": { "type": "string" },
-        "operator": { "$ref": "#/$defs/human_actor" },
-        "agreement": { "type": "string" }
+        "origin": {
+          "enum": [
+            "human",
+            "ai-assisted",
+            "ai-generated",
+            "imported"
+          ]
+        },
+        "agent": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/$defs/human_actor"
+        },
+        "agreement": {
+          "type": "string"
+        }
       }
     },
     "generated": {
       "type": "object",
       "additionalProperties": true,
-      "required": ["by"],
-      "properties": { "by": { "$ref": "#/$defs/actor" }, "at": { "$ref": "#/$defs/instant" } }
+      "required": [
+        "by"
+      ],
+      "properties": {
+        "by": {
+          "$ref": "#/$defs/actor"
+        },
+        "at": {
+          "$ref": "#/$defs/instant"
+        }
+      }
     },
     "verified_entry": {
       "description": "The evidence of a Review (AGSC-08-03): a human adds it, so by is human_actor (V3-27).",
       "type": "object",
       "additionalProperties": true,
-      "required": ["by", "at"],
-      "properties": { "by": { "$ref": "#/$defs/human_actor" }, "at": { "$ref": "#/$defs/instant" } }
+      "required": [
+        "by",
+        "at"
+      ],
+      "properties": {
+        "by": {
+          "$ref": "#/$defs/human_actor"
+        },
+        "at": {
+          "$ref": "#/$defs/instant"
+        }
+      }
     },
     "usage": {
       "description": "Optional token accounting rolled up on the NOW page (AGSC-08-25).",
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "model": { "type": "string" },
-        "tokens_in": { "type": "integer" },
-        "tokens_out": { "type": "integer" },
-        "cost_usd": { "type": "number" },
-        "estimate": { "type": "boolean" }
+        "model": {
+          "type": "string"
+        },
+        "tokens_in": {
+          "type": "integer"
+        },
+        "tokens_out": {
+          "type": "integer"
+        },
+        "cost_usd": {
+          "type": "number"
+        },
+        "estimate": {
+          "type": "boolean"
+        }
       }
     }
   }

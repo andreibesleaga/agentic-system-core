@@ -1,0 +1,49 @@
+{
+  "area": "compose",
+  "description": "compose --from reads the selection block of a kind: architecture item and produces the same verdict as the explicit selection; a stale stored verdict digest is a warning.",
+  "expected": {
+    "block_rendered_as_prose": false,
+    "findings": [
+      {
+        "code": "AGSC-E805",
+        "severity": "warning",
+        "slug": "my-arch"
+      }
+    ],
+    "same_verdict_as_explicit": true,
+    "selection_read": [
+      "router",
+      "worker"
+    ]
+  },
+  "id": "compose-0012",
+  "input": {
+    "items": [
+      {
+        "body": "Text.\n\n```yaml agsc-selection\n- router\n- worker\n```\n",
+        "kind": "architecture",
+        "slug": "my-arch",
+        "type": "concept",
+        "verdict_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "produces": [
+          "task"
+        ],
+        "slug": "router"
+      },
+      {
+        "consumes": [
+          "task"
+        ],
+        "slug": "worker"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-07-24"
+}

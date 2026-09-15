@@ -122,6 +122,10 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E905` | peer fetch refused: scheme, address range or redirect hop violates the transport rules | AGSC-11-07, AGSC-11-08, AGSC-11-09 |
 | `AGSC-E906` | federation walk cap exceeded (hop limit, fan-out or request cap); result partial | AGSC-11-10 |
 | `AGSC-E907` | peer unreachable or its discovery document invalid; skipped for this walk | AGSC-11-10 |
+| `AGSC-E412` | raster or unsafe image attachment on a pattern (must be SVG; no embedded raster, no script) | AGSC-02-98 |
+| `AGSC-E413` | attachment file absent or its bytes do not match the recorded SHA-256 | AGSC-01-34 |
+| `AGSC-E804` | port with no producer or no consumer (warning) | AGSC-02-96, AGSC-07-23 |
+| `AGSC-E805` | saved architecture's stored verdict digest is stale (warning) | AGSC-02-97, AGSC-07-24 |
 
 - **AGSC-09-15** Codes are permanent. A retired code MUST NOT be reused; new codes take the next free number in their block. [AGSC-00-16]
 

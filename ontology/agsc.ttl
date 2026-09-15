@@ -350,3 +350,35 @@ asc:retiredAt a owl:DatatypeProperty ;
     rdfs:label "retired at"@en ;
     rdfs:comment "The instant at which an item entered status retired (AGSC-11-22); an AGSC-04-10 instant rendered as xsd:dateTime."@en ;
     rdfs:range xsd:dateTime .
+
+### rc.3 additions (DS-2, 2026-09-16) — attachments, ports, task state
+asc:Attachment a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Attachment"@en ;
+    rdfs:comment "A media file carried by an item under content/attachments/<slug>/ (AGSC-02-98); IRI <item-IRI>#attachment-<n> (AGSC-05-29). Pattern images are SVG only."@en .
+
+asc:hasAttachment a owl:ObjectProperty ;
+    rdfs:label "has attachment"@en ;
+    rdfs:range asc:Attachment ;
+    rdfs:comment "Links an item to one of its attachments (AGSC-05-29)."@en .
+
+asc:sha256 a owl:DatatypeProperty ;
+    rdfs:label "SHA-256"@en ;
+    rdfs:domain asc:Attachment ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Lowercase-hex SHA-256 of the attachment bytes at build (AGSC-05-29)."@en .
+
+asc:produces a owl:DatatypeProperty ;
+    rdfs:label "produces"@en ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A port type name this item produces (AGSC-02-96, AGSC-05-30); matched by exact equality in composition Step 5 (AGSC-07-23)."@en .
+
+asc:consumes a owl:DatatypeProperty ;
+    rdfs:label "consumes"@en ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A port type name this item consumes (AGSC-02-96, AGSC-05-30)."@en .
+
+asc:taskState a owl:DatatypeProperty ;
+    rdfs:label "task state"@en ;
+    rdfs:range xsd:string ;
+    rdfs:comment "One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13)."@en .

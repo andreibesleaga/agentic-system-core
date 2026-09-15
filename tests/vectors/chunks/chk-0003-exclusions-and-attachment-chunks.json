@@ -1,0 +1,70 @@
+{
+  "area": "chunks",
+  "description": "Retired and draft items are excluded; an SVG attachment becomes one chunk carrying its media type and full text; a cluster contributes its description.",
+  "expected": {
+    "attachment_chunk": {
+      "item": "live",
+      "section": "attachment-1",
+      "text": "<svg xmlns=\"http://www.w3.org/2000/svg\"><title>Live</title></svg>",
+      "type": "image/svg+xml"
+    },
+    "cluster_chunk_text": "A deck of patterns for coordination.",
+    "items_absent": [
+      "old",
+      "wip"
+    ],
+    "items_present": [
+      "deck",
+      "live"
+    ]
+  },
+  "id": "chk-0003",
+  "input": {
+    "attachment_bytes": {
+      "live.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><title>Live</title></svg>"
+    },
+    "items": [
+      {
+        "body": "x",
+        "kind": "pattern",
+        "slug": "old",
+        "status": "retired",
+        "type": "concept"
+      },
+      {
+        "body": "y",
+        "kind": "pattern",
+        "slug": "wip",
+        "status": "draft",
+        "type": "concept"
+      },
+      {
+        "attachments": [
+          {
+            "alt": "Live diagram",
+            "file": "live.svg",
+            "media_type": "image/svg+xml"
+          }
+        ],
+        "body": "## Intent\n\nz\n",
+        "kind": "pattern",
+        "slug": "live",
+        "type": "concept"
+      },
+      {
+        "description": "A deck of patterns for coordination.",
+        "slug": "deck",
+        "type": "cluster"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-30"
+}

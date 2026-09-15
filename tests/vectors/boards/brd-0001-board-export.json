@@ -1,0 +1,81 @@
+{
+  "area": "boards",
+  "description": "Tasks are kind: task concepts with a verbatim A2A state; a cluster with tasks is a board; the export is JCS with tasks by slug; a Bundle with no tasks emits nothing under /boards/.",
+  "expected": {
+    "board_oct_tasks": [
+      {
+        "blocked_by": [],
+        "decided_by": [],
+        "iri": "https://a.example/concepts/freeze-rc3/",
+        "modified": "2026-09-16",
+        "slug": "freeze-rc3",
+        "state": "TASK_STATE_UNSPECIFIED",
+        "status": "stable",
+        "title": null
+      },
+      {
+        "blocked_by": [
+          "freeze-rc3"
+        ],
+        "decided_by": [],
+        "iri": "https://a.example/concepts/ship-draft/",
+        "modified": "2026-09-16",
+        "slug": "ship-draft",
+        "state": "TASK_STATE_WORKING",
+        "status": "stable",
+        "title": null
+      }
+    ],
+    "index": {
+      "boards": [
+        {
+          "cluster": "oct",
+          "iri": "https://a.example/clusters/oct/",
+          "tasks": 2
+        }
+      ]
+    },
+    "no_tasks_emits_nothing": true
+  },
+  "id": "brd-0001",
+  "input": {
+    "SOURCE_DATE_EPOCH": 1789000000,
+    "items": [
+      {
+        "blocked-by": [
+          "freeze-rc3"
+        ],
+        "clusters": [
+          "oct"
+        ],
+        "kind": "task",
+        "modified": "2026-09-16",
+        "slug": "ship-draft",
+        "task_state": "TASK_STATE_WORKING",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "oct"
+        ],
+        "kind": "task",
+        "modified": "2026-09-16",
+        "slug": "freeze-rc3",
+        "type": "concept"
+      },
+      {
+        "slug": "oct",
+        "type": "cluster"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-10-13"
+}
