@@ -21,7 +21,7 @@ HTTP route or MCP tool under test; `Then` steps assert on file bytes, JSON shape
 CLI exit code. Steps that name a concrete command (e.g. `npx agentic-system-core lint --fix`) are
 executable as written — no vague "the system behaves correctly" steps appear.
 
-Scope note: PRD §4 non-goals — no `agent-card.json`, no remote MCP; persona (c)/(h) scenarios test the
+Scope note: PRD §4 non-goals as read by D72 and the pre-DS-4 audit (2026-09-16) — `agent-card.json` is not emitted by default and MAY be declared as the `a2a-card` surface beside a `responder` (AGSC-06-34, AGSC-11-21); remote MCP is not *served* at 1.0 but MAY be *declared* as a `responder` surface whose bytes this specification does not pin; persona (c)/(h) scenarios test the
 **local stdio** MCP server only, per D41/G42.
 
 ## Scenario-coverage table (scenario ↔ PRD ids)

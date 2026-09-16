@@ -1,0 +1,42 @@
+{
+  "area": "chunks",
+  "description": "Only an ATX heading of level 2 or 3 outside a fenced code block is a cut point: a \"## \" line inside a fence is content and a setext heading is not a cut; the blank line before a cut belongs to neither chunk.",
+  "expected": {
+    "chunks": [
+      {
+        "ordinal": 0,
+        "section": "",
+        "text": "Intro\n\nSetext\n---\n\n```text\n## not a heading\n```\n"
+      },
+      {
+        "ordinal": 0,
+        "section": "real",
+        "text": "## Real\n\nText.\n"
+      }
+    ]
+  },
+  "id": "chk-0004",
+  "input": {
+    "chunks": {
+      "max_bytes": 4096
+    },
+    "items": [
+      {
+        "body": "Intro\n\nSetext\n---\n\n```text\n## not a heading\n```\n\n## Real\n\nText.\n",
+        "kind": "explainer",
+        "slug": "fence",
+        "title": "Fence",
+        "type": "concept"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-27"
+}

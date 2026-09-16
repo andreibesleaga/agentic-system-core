@@ -1,15 +1,28 @@
 {
   "area": "links",
   "description": "Negative: used-by, required-by, derivation-of and superseded-by are computed names. Authoring one is an error, not an unknown-key warning.",
-  "expected": { "error": "AGSC-E306" },
+  "expected": {
+    "error": "AGSC-E306"
+  },
   "id": "links-0003",
   "input": {
     "items": [
-      { "slug": "a2a", "type": "concept", "used-by": ["handoff"] },
-      { "slug": "handoff", "type": "concept" }
+      {
+        "slug": "a2a",
+        "type": "concept",
+        "used-by": [
+          "handoff"
+        ]
+      },
+      {
+        "slug": "handoff",
+        "type": "concept"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-03-04"
 }

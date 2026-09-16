@@ -1,0 +1,65 @@
+{
+  "area": "lint",
+  "description": "An SVG attachment is text-safe only under the allow-list: no script/foreignObject/a/animate/set/handler/style element, no on* attribute, no DOCTYPE or entity, no data: URI, every href a fragment or a same-directory relative path; each violation is AGSC-E412 and the clean file passes.",
+  "expected": {
+    "clean": [
+      "clean.svg"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E412",
+        "file": "anchor.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "doctype.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "external.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "foreign.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "onload.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "raster.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "style.svg",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "lint-0024",
+  "input": {
+    "svgs": {
+      "anchor.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><a href=\"javascript:alert(1)\"><text>x</text></a></svg>",
+      "clean.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><rect id=\"r\" width=\"10\" height=\"10\"/><use href=\"#r\"/></svg>",
+      "doctype.svg": "<!DOCTYPE svg [<!ENTITY x \"y\">]><svg xmlns=\"http://www.w3.org/2000/svg\"/>",
+      "external.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><image xlink:href=\"https://evil.example/a.png\"/></svg>",
+      "foreign.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><foreignObject><div>x</div></foreignObject></svg>",
+      "onload.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"alert(1)\"/>",
+      "raster.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><image href=\"data:image/png;base64,AAAA\"/></svg>",
+      "style.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><style>rect{fill:url(https://evil.example/x)}</style></svg>"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-02-98"
+}

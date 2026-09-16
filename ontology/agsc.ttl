@@ -7,8 +7,8 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 # AgenticSystemCore vocabulary — OWL 2 RL-safe (spec/05-graph.md, AGSC-05-22).
-# Classes: 11 (research/16 section 3.3; there is deliberately no asc:Item superclass, AGSC-05-13).
-# Properties: 33 (21 core + the 10 of the five Mode-2 Link keys and their inverses, D53, plus the
+# Classes: 12 (rc.3: + asc:Attachment; research/16 section 3.3; there is deliberately no asc:Item superclass, AGSC-05-13).
+# Properties: 40 = 19 object + 21 datatype (rc.3: + hasAttachment, peerOrigin, sha256, produces, consumes, taskState, retiredAt; counts by tools/count-artifacts; 21 core + the 10 of the five Mode-2 Link keys and their inverses, D53, plus the
 # 2 item-reachability properties asc:source/asc:review of AGSC-05-14/05-15, V5-1 S7-01), every one
 # emitted by a rule of spec/05 section 5.6 (AGSC-05-26..28); asc:verdict was
 # deleted pre-1.0.0 because a Review's verdict lives in the forge, not in a file (AGSC-08-03).
@@ -19,12 +19,19 @@
 
 <https://w3id.org/agentic-system-core/ns>
     a owl:Ontology ;
-    dcterms:description "Vocabulary for AgenticSystemCore Bundles: six item types plus Bundle, Source, Proposal, Review and Harness, aligned to SKOS, PROV-O and DCTerms." ;
+    dcterms:description "Vocabulary for AgenticSystemCore Bundles: six item types plus Bundle, Source, Proposal, Review, Harness and (rc.3) Attachment, aligned to SKOS, PROV-O and DCTerms." ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     dcterms:title "AgenticSystemCore vocabulary" ;
     rdfs:label "AgenticSystemCore vocabulary" ;
     owl:versionIRI <https://w3id.org/agentic-system-core/ns/1.0.0-draft.1> ;
     owl:versionInfo "1.0.0-draft.1" .
+
+asc:Attachment
+    a owl:Class ;
+    rdfs:comment "A media file carried by an item under content/attachments/<slug>/ (AGSC-02-98); IRI <item-IRI>#attachment-<n> (AGSC-05-29). Pattern images are SVG only." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "Attachment" ;
+    rdfs:subClassOf prov:Entity .
 
 asc:Bundle
     a owl:Class ;
@@ -42,7 +49,7 @@ asc:Cluster
 
 asc:Concept
     a owl:Class ;
-    rdfs:comment "A unit of knowledge in a Bundle: a pattern, taxonomy, explainer, principle, decision, spec, task or term, distinguished by asc:kind." ;
+    rdfs:comment "A unit of knowledge in a Bundle: a pattern, taxonomy, explainer, principle, decision, spec, task, term or (rc.3) architecture, distinguished by asc:kind." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "Concept" ;
     rdfs:subClassOf skos:Concept .
@@ -117,6 +124,13 @@ asc:blocks
     rdfs:label "blocks" ;
     owl:inverseOf asc:blockedBy .
 
+asc:consumes
+    a owl:DatatypeProperty ;
+    rdfs:comment "A port type name this item consumes (AGSC-02-96, AGSC-05-30)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "consumes" ;
+    rdfs:range xsd:string .
+
 asc:contradicts
     a owl:ObjectProperty, owl:SymmetricProperty ;
     rdfs:comment "Asserts that two items cannot both be true. Selecting both in a composition is a warning, never a failure. No domain or range is declared: any item type may author this key, and declaring asc:Concept would entail a Concept typing for Procedures, Episodes and Gates (D48, V1-28)." ;
@@ -179,6 +193,13 @@ asc:grade
     rdfs:label "grade" ;
     rdfs:range xsd:string .
 
+asc:hasAttachment
+    a owl:ObjectProperty ;
+    rdfs:comment "Links an item to one of its attachments (AGSC-05-29). No domain: items share no superclass (AGSC-05-13)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "has attachment" ;
+    rdfs:range asc:Attachment .
+
 asc:implementedBy
     a owl:ObjectProperty ;
     rdfs:comment "Computed inverse of asc:implements; never authored." ;
@@ -202,7 +223,7 @@ asc:isVerifiedBy
 
 asc:kind
     a owl:DatatypeProperty ;
-    rdfs:comment "Qualifier on a Concept: pattern, taxonomy, explainer, principle, decision, spec, task or term." ;
+    rdfs:comment "Qualifier on a Concept: pattern, taxonomy, explainer, principle, decision, spec, task, term or (rc.3) architecture." ;
     rdfs:domain asc:Concept ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "kind" ;
@@ -251,6 +272,26 @@ asc:outcome
     rdfs:label "outcome" ;
     rdfs:range xsd:string .
 
+asc:peerOrigin
+    a owl:ObjectProperty ;
+    rdfs:comment "The Bundle IRI of the declared peer node under whose base a cited resource lives (AGSC-11-12). Emitted beside rdfs:seeAlso; takes part in no composition step. No range is declared: the object is a foreign node's Bundle IRI about which this node asserts no class (AGSC-05-23)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "peer origin" .
+
+asc:produces
+    a owl:DatatypeProperty ;
+    rdfs:comment "A port type name this item produces (AGSC-02-96, AGSC-05-30); matched by exact equality in composition Step 5 (AGSC-07-23)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "produces" ;
+    rdfs:range xsd:string .
+
+asc:retiredAt
+    a owl:DatatypeProperty ;
+    rdfs:comment "The instant at which an item entered status retired (AGSC-11-22): modified, else date, by the midnight convention of AGSC-05-14, as xsd:dateTime." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "retired at" ;
+    rdfs:range xsd:dateTime .
+
 asc:review
     a owl:ObjectProperty ;
     rdfs:comment "Connects an item to each asc:Review instantiated from its verified[] entries (AGSC-05-15), so a Review is reachable from its item without string-parsing a fragment IRI. No domain is declared, for the reason given on asc:contradicts (AGSC-05-13: no asc:Item superclass)." ;
@@ -264,6 +305,14 @@ asc:severity
     rdfs:domain asc:Lesson ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "severity" ;
+    rdfs:range xsd:string .
+
+asc:sha256
+    a owl:DatatypeProperty ;
+    rdfs:comment "Lowercase-hex SHA-256 of the attachment bytes at build (AGSC-05-29)." ;
+    rdfs:domain asc:Attachment ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "SHA-256" ;
     rdfs:range xsd:string .
 
 asc:source
@@ -290,9 +339,16 @@ asc:staleAfter
 
 asc:status
     a owl:DatatypeProperty ;
-    rdfs:comment "Publication state of an item: draft, stable or deprecated." ;
+    rdfs:comment "Publication state of an item: draft, stable, deprecated or (rc.3) retired (AGSC-11-22)." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "status" ;
+    rdfs:range xsd:string .
+
+asc:taskState
+    a owl:DatatypeProperty ;
+    rdfs:comment "One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "task state" ;
     rdfs:range xsd:string .
 
 asc:usedBy
@@ -339,46 +395,3 @@ asc:verifies
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "verifies" ;
     owl:inverseOf asc:isVerifiedBy .
-
-### rc.3 additions (AGSC-11, 2026-09-16) — terms are added, never removed (AGSC-05-25)
-asc:peerOrigin a owl:ObjectProperty ;
-    rdfs:label "peer origin"@en ;
-    rdfs:comment "The Bundle IRI of the declared peer node under whose site.base a cited resource lives (AGSC-11-12). Emitted beside rdfs:seeAlso; takes part in no composition step."@en ;
-    rdfs:range asc:Bundle .
-
-asc:retiredAt a owl:DatatypeProperty ;
-    rdfs:label "retired at"@en ;
-    rdfs:comment "The instant at which an item entered status retired (AGSC-11-22); an AGSC-04-10 instant rendered as xsd:dateTime."@en ;
-    rdfs:range xsd:dateTime .
-
-### rc.3 additions (DS-2, 2026-09-16) — attachments, ports, task state
-asc:Attachment a owl:Class ;
-    rdfs:subClassOf prov:Entity ;
-    rdfs:label "Attachment"@en ;
-    rdfs:comment "A media file carried by an item under content/attachments/<slug>/ (AGSC-02-98); IRI <item-IRI>#attachment-<n> (AGSC-05-29). Pattern images are SVG only."@en .
-
-asc:hasAttachment a owl:ObjectProperty ;
-    rdfs:label "has attachment"@en ;
-    rdfs:range asc:Attachment ;
-    rdfs:comment "Links an item to one of its attachments (AGSC-05-29)."@en .
-
-asc:sha256 a owl:DatatypeProperty ;
-    rdfs:label "SHA-256"@en ;
-    rdfs:domain asc:Attachment ;
-    rdfs:range xsd:string ;
-    rdfs:comment "Lowercase-hex SHA-256 of the attachment bytes at build (AGSC-05-29)."@en .
-
-asc:produces a owl:DatatypeProperty ;
-    rdfs:label "produces"@en ;
-    rdfs:range xsd:string ;
-    rdfs:comment "A port type name this item produces (AGSC-02-96, AGSC-05-30); matched by exact equality in composition Step 5 (AGSC-07-23)."@en .
-
-asc:consumes a owl:DatatypeProperty ;
-    rdfs:label "consumes"@en ;
-    rdfs:range xsd:string ;
-    rdfs:comment "A port type name this item consumes (AGSC-02-96, AGSC-05-30)."@en .
-
-asc:taskState a owl:DatatypeProperty ;
-    rdfs:label "task state"@en ;
-    rdfs:range xsd:string ;
-    rdfs:comment "One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13)."@en .

@@ -6,8 +6,15 @@
     "ledger": "{\"actor\":\"process:agsc/0.1.0\",\"hash\":\"ff2a315c268c863f309122f4cf4f2111882ce09b2dab5c16e3cd5818fa130b49\",\"kind\":\"build\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"4444444444444444444444444444444444444444\",\"ts\":\"2026-01-04T00:00:00Z\"}\n"
   },
   "id": "ledger-0003",
-  "input": { "content_tree": "4444444444444444444444444444444444444444", "git_log": [], "version": "0.1.0" },
+  "input": {
+    "content_tree": "4444444444444444444444444444444444444444",
+    "git_log": [],
+    "version": "0.1.0"
+  },
   "level": "required",
-  "options": { "source_date_epoch": 1767484800, "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "source_date_epoch": 1767484800,
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-08-20a"
 }

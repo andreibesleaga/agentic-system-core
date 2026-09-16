@@ -1,6 +1,6 @@
 {
   "area": "boundary",
-  "description": "A restricted node keeps its discovery document public, drops the wildcard, and carries exactly one access link; the unauthenticated view is what conformance is asserted against.",
+  "description": "A restricted node keeps its discovery document public, drops the wildcard, and carries exactly one access link; the unauthenticated view is what conformance is asserted against. The discovery document itself still carries the wildcard; every other artefact does not.",
   "expected": {
     "agsc-visibility": [
       "restricted"
@@ -12,6 +12,7 @@
       }
     ],
     "wellknown_public": true,
+    "wellknown_wildcard": true,
     "wildcard_allowed": false
   },
   "id": "bnd-0002",

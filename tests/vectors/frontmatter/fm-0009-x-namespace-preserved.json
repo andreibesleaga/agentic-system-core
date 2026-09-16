@@ -32,7 +32,7 @@
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.2"
+    "spec_version": "1.0.0-rc.3"
   },
   "rule": "AGSC-02-05a"
 }

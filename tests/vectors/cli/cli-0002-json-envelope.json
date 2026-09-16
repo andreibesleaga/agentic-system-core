@@ -3,11 +3,20 @@
   "description": "Under --json, stdout carries exactly one JCS-canonical envelope and nothing else; findings also appear on stderr as one JSON object per line. A clean lint exits 0 with an empty findings array.",
   "expected": {
     "exit": 0,
-    "stdout": "{\"counts\":{\"error\":0,\"warn\":0},\"findings\":[],\"schema\":\"agsc.diagnostics.v1\",\"spec_version\":\"1.0.0-rc.2\",\"status\":\"pass\",\"verb\":\"lint\",\"version\":\"0.1.0\"}\n"
+    "stdout": "{\"counts\":{\"error\":0,\"warn\":0},\"findings\":[],\"schema\":\"agsc.diagnostics.v1\",\"spec_version\":\"1.0.0-rc.3\",\"status\":\"pass\",\"verb\":\"lint\",\"version\":\"0.1.0\"}\n"
   },
   "id": "cli-0002",
-  "input": { "argv": ["lint", "--json"], "bundle": "fixtures/minimal" },
+  "input": {
+    "argv": [
+      "lint",
+      "--json"
+    ],
+    "bundle": "fixtures/minimal"
+  },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2", "version": "0.1.0" },
+  "options": {
+    "spec_version": "1.0.0-rc.3",
+    "version": "0.1.0"
+  },
   "rule": "AGSC-09-11"
 }

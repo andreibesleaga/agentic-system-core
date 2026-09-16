@@ -11,13 +11,24 @@
       {
         "lang": "en",
         "slug": "a",
-        "sources": [{ "author": "Ada Lovelace", "grade": "primary", "resource": "https://example.org/paper", "title": "Notes on the Analytical Engine", "verified": "2026-01-01", "year": "1843" }],
+        "sources": [
+          {
+            "author": "Ada Lovelace",
+            "grade": "primary",
+            "resource": "https://example.org/paper",
+            "title": "Notes on the Analytical Engine",
+            "verified": "2026-01-01",
+            "year": "1843"
+          }
+        ],
         "title": "Source Test",
         "type": "concept"
       }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-05-14"
 }

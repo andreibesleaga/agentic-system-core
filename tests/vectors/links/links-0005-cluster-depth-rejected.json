@@ -2,19 +2,51 @@
   "area": "links",
   "description": "Negative: depth is not a consequence of the mono-parent rule. Each cluster here carries exactly one broader and the graph is acyclic, yet the chain is four levels deep — family, deck, sub-deck and one level too many. AGSC-E307 names the chain root-first.",
   "expected": {
-    "chain": ["c1", "c2", "c3", "c4"],
+    "chain": [
+      "c1",
+      "c2",
+      "c3",
+      "c4"
+    ],
     "error": "AGSC-E307"
   },
   "id": "links-0005",
   "input": {
     "items": [
-      { "description": "Root family of the cluster tree used by this vector.", "slug": "c1", "type": "cluster" },
-      { "broader": ["c1"], "description": "Deck nested under the root family of this tree.", "slug": "c2", "type": "cluster" },
-      { "broader": ["c2"], "description": "Sub-deck nested under the deck of this tree.", "slug": "c3", "type": "cluster" },
-      { "broader": ["c3"], "description": "One level deeper than the specification allows.", "slug": "c4", "type": "cluster" }
+      {
+        "description": "Root family of the cluster tree used by this vector.",
+        "slug": "c1",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "c1"
+        ],
+        "description": "Deck nested under the root family of this tree.",
+        "slug": "c2",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "c2"
+        ],
+        "description": "Sub-deck nested under the deck of this tree.",
+        "slug": "c3",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "c3"
+        ],
+        "description": "One level deeper than the specification allows.",
+        "slug": "c4",
+        "type": "cluster"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-03-22"
 }

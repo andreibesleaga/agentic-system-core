@@ -1,0 +1,53 @@
+{
+  "area": "boundary",
+  "description": "A surface may be declared only when its bytes are pinned and proved: an a2a-card declared without a responder, and a vendor extension surface with no pinning vector, are each AGSC-E210; llms-txt and chunks are declarable because section 06 pins them.",
+  "expected": {
+    "accepted": [
+      "llms-txt",
+      "chunks"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E210",
+        "href": "/.well-known/agent-card.json",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E210",
+        "href": "/holo/",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "bnd-0021",
+  "input": {
+    "declared": [
+      {
+        "agsc-surface": "a2a-card",
+        "href": "/.well-known/agent-card.json"
+      },
+      {
+        "agsc-surface": "x-acme-holo",
+        "href": "/holo/"
+      },
+      {
+        "agsc-surface": "llms-txt",
+        "href": "/llms.txt"
+      },
+      {
+        "agsc-surface": "chunks",
+        "href": "/chunks.jsonl"
+      }
+    ],
+    "pinning_vectors": {
+      "x-acme-holo": []
+    },
+    "responder_declared": false
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-17"
+}

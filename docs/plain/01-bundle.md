@@ -1,0 +1,17 @@
+# 01 — Bundle, in plain language
+
+**The directory.** `content/` holds the items in type folders, `content/attachments/<slug>/` holds media, and `agsc.config.json` is the single configuration file. Nothing else is required.
+
+**Names.** Every item has a slug: lowercase letters, digits and single hyphens, 1–64 characters, unique in the Bundle. The slug is the file name and the last part of the item's web address.
+
+**The configuration file.** It is closed: a key the specification does not name is an error, except vendor keys that start with `x-`. It carries the site base URL, licences, tag lists, release switches, peers, channels and — since rc.3 — the boundary parameters (`federation`, `chunks`, `contribute`, `visibility`, `attachments`), each with a default and a maximum.
+
+**Import.** A folder of bare Markdown can be adopted with one command; unknown frontmatter keys are kept and reported as warnings, never errors.
+
+**Export.** Markdown, JSON-LD and JSONL exports are lossless round trips; the prose exports always carry the Content Use Terms.
+
+**Channels.** Messages from a mailbox or a chat can become proposals, under guards: a sender list, a rate, a cap on open proposals, injection checks.
+
+**Paths.** A relative path never contains `..`, `.` segments, a leading slash, a backslash or a NUL, and always resolves inside the Bundle.
+
+Rules: `spec/01-bundle.md`, `AGSC-01-01` … `AGSC-01-35`.

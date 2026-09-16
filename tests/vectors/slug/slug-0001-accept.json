@@ -1,10 +1,26 @@
 {
   "area": "slug",
   "description": "Accepted slugs: lowercase ASCII and digits, single internal hyphens, 1-64 characters, no leading or trailing hyphen.",
-  "expected": { "valid": [true, true, true, true] },
+  "expected": {
+    "valid": [
+      true,
+      true,
+      true,
+      true
+    ]
+  },
   "id": "slug-0001",
-  "input": { "slugs": ["a", "a2a", "multi-agent-supervisor", "x1-y2-z3"] },
+  "input": {
+    "slugs": [
+      "a",
+      "a2a",
+      "multi-agent-supervisor",
+      "x1-y2-z3"
+    ]
+  },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-01-10"
 }

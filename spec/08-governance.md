@@ -47,7 +47,7 @@ version       = 1*( ALPHA / DIGIT / "." / "-" / "+" )
 
 ## 8.4 The four agent-safety lints
 
-- **AGSC-08-13** **`injection-scan`** MUST detect, over item bodies, item frontmatter values of type string, and every exported prose surface: agent-directed imperatives; hidden text (HTML comments, zero-width characters, U+E0000–U+E007F tags, bidirectional overrides); long base64 or hex blobs; links whose scheme is neither `http` nor `https`. Codes: `AGSC-E401` (imperatives, blobs, schemes), `AGSC-E402` (hidden text). [NFR-07 ← N9, ADR-001]
+- **AGSC-08-13** **`injection-scan`** MUST detect, over item bodies, every string at any depth of item frontmatter (vendor `x-` keys included, AGSC-02-05a), the text of every text-media attachment (AGSC-02-98), and every exported prose surface: agent-directed imperatives; hidden text (HTML comments, zero-width characters, U+E0000–U+E007F tags, bidirectional overrides); long base64 or hex blobs; links whose scheme is neither `http` nor `https`. Codes: `AGSC-E401` (imperatives, blobs, schemes), `AGSC-E402` (hidden text). [NFR-07 ← N9, ADR-001]
 - **AGSC-08-14** Severity MUST be `warn` for human-authored items and `error` when `prov.agent` is set. Patterns come from `lint.injection_patterns[]` as literal alternations — never a user-supplied regular expression — over input capped at 1 MiB. [ADR-001, PLAN §8]
 - **AGSC-08-15** **`no-secrets`** MUST reject credential-shaped strings — private-key blocks, provider token prefixes, `password:`/`api_key:` assignments (`AGSC-E403`). [PRD-046, D40(7)]
 - **AGSC-08-16** **`no-pii`** MUST reject e-mail addresses and telephone numbers outside `prov` and `sources[]` (`AGSC-E404`). [NFR-07, PLAN §12 T8]

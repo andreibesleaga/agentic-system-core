@@ -14,14 +14,25 @@
       {
         "lang": "en",
         "slug": "a",
-        "sources": [{ "resource": "https://example.org/paper" }],
+        "sources": [
+          {
+            "resource": "https://example.org/paper"
+          }
+        ],
         "title": "Reachability",
         "type": "concept",
-        "verified": [{ "at": "2026-01-01T00:00:00Z", "by": "human:andreibesleaga" }]
+        "verified": [
+          {
+            "at": "2026-01-01T00:00:00Z",
+            "by": "human:andreibesleaga"
+          }
+        ]
       }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-05-27"
 }

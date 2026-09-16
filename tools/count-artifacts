@@ -2,8 +2,16 @@
 // PRD-054 generator: derive every published count from the artefacts themselves,
 // so that no document ever states a count by hand. Node stdlib only, zero
 // dependencies, exit 0/1, --json envelope. [AGSC-09-90, D67 group C, SPEC-SYNC-01]
+//
+// Checks (each a finding, exit 1): duplicate rule id · duplicate registry row for one
+// code (AGSC-09-91) · code used but not registered · vector citing an unknown rule ·
+// vector missing a member · duplicate vector id · vector area outside the AGSC-09-04
+// list · spec_version literal disagreeing with spec/00 (AGSC-09-91) in spec/, docs/,
+// w3c/ and every vector's options.spec_version · w3c/index.html <dfn> terms disagreeing
+// with ontology/agsc.ttl · a vector directory ignored by .gitignore.
+// Also reports rules_with_vector / rules_without_vector (informative, never a finding).
 'use strict';
-const fs = require('fs'), path = require('path');
+const fs = require('fs'), path = require('path'), cp = require('child_process');
 const root = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const walk = d => fs.readdirSync(path.join(root, d), { withFileTypes: true })
@@ -13,17 +21,22 @@ const specFiles = fs.readdirSync(path.join(root, 'spec')).filter(f => f.endsWith
 const specText = specFiles.map(f => read(path.join('spec', f))).join('\n');
 const ruleIds = (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/g) || []).map(s => s.slice(2, -2));
 const rules = [...new Set(ruleIds)];
-const registered = [...new Set((read('spec/09-conformance.md').match(/^\| `AGSC-E\d{3}`/gm) || [])
-  .map(s => (s.match(/AGSC-E\d{3}/) || [''])[0]))];
+const conf = read('spec/09-conformance.md');
+const registryRows = (conf.match(/^\| `AGSC-E\d{3}`/gm) || []).map(s => (s.match(/AGSC-E\d{3}/) || [''])[0]);
+const registered = [...new Set(registryRows)];
 const used = [...new Set(specText.match(/AGSC-E\d{3}/g) || [])];
 const vectorFiles = walk('tests/vectors').filter(f => f.endsWith('.json'));
-const vectors = vectorFiles.map(f => JSON.parse(read(f)));
+const vectors = vectorFiles.map(f => ({ ...JSON.parse(read(f)), __file: f }));
 const ttl = read('ontology/agsc.ttl');
 const n = re => (ttl.match(re) || []).length;
+const declared = (read('spec/00-overview.md').match(/1\.0\.0-rc\.\d+/) || ['unknown'])[0];
+const citedRules = new Set(vectors.map(v => v.rule));
 
 const counts = {
-  spec_version: (read('spec/00-overview.md').match(/1\.0\.0-rc\.\d+/) || ['unknown'])[0],
+  spec_version: declared,
   rules: rules.length,
+  rules_with_vector: rules.filter(r => citedRules.has(r)).length,
+  rules_without_vector: rules.filter(r => !citedRules.has(r)).length,
   error_codes_registered: registered.length,
   error_codes_used: used.length,
   vectors_total: vectors.length,
@@ -31,23 +44,54 @@ const counts = {
   vectors_optional: vectors.filter(v => v.level === 'optional').length,
   vectors_withdrawn: vectors.filter(v => v.level === 'withdrawn').length,
   vector_areas: [...new Set(vectors.map(v => v.area))].sort(),
-  ontology_classes: n(/a owl:Class/g),
-  ontology_object_properties: n(/a owl:ObjectProperty/g),
-  ontology_datatype_properties: n(/a owl:DatatypeProperty/g),
+  ontology_classes: n(/^asc:\S+\n    a owl:Class/gm),
+  ontology_object_properties: n(/^asc:\S+\n    a owl:ObjectProperty/gm),
+  ontology_datatype_properties: n(/^asc:\S+\n    a owl:DatatypeProperty/gm),
 };
 counts.ontology_terms = counts.ontology_classes + counts.ontology_object_properties
   + counts.ontology_datatype_properties;
 
 const findings = [];
 for (const id of rules) if (ruleIds.filter(x => x === id).length > 1) findings.push(`duplicate rule id ${id}`);
+for (const c of registered) if (registryRows.filter(x => x === c).length > 1) findings.push(`duplicate registry row for ${c} (AGSC-09-91)`);
 for (const c of used) if (!registered.includes(c)) findings.push(`error code used but not registered: ${c}`);
+// AGSC-09-04 closed area list
+const areaRule = (conf.match(/Areas are ([^\n]*?)and no others/) || ['', ''])[1];
+const allowedAreas = new Set((areaRule.match(/`([a-z]+)\/`/g) || []).map(s => s.slice(1, -2)));
 for (const v of vectors) {
   if (!rules.includes(v.rule)) findings.push(`vector ${v.id} cites unknown rule ${v.rule}`);
   for (const k of ['area', 'description', 'expected', 'id', 'input', 'level', 'rule'])
     if (!(k in v)) findings.push(`vector ${v.id} missing member ${k}`);
+  if (allowedAreas.size && !allowedAreas.has(v.area)) findings.push(`vector ${v.id} area ${v.area} is outside the AGSC-09-04 list`);
+  if (path.basename(v.__file).slice(0, v.id.length) !== v.id) findings.push(`vector file ${v.__file} does not start with its id ${v.id}`);
+  const sv = v.options && v.options.spec_version;
+  if (sv && sv !== declared) findings.push(`vector ${v.id} options.spec_version ${sv} differs from spec/00 ${declared} (AGSC-09-91)`);
 }
 const ids = vectors.map(v => v.id);
 for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
+// spec_version literals in spec/, docs/, w3c/ that name a different rc
+for (const f of [...specFiles.map(f => 'spec/' + f), 'docs/SPEC.md', 'w3c/index.html']) {
+  const txt = read(f);
+  for (const m of txt.matchAll(/spec_version[":\s]*"?\s*(1\.0\.0-rc\.\d+)/g))
+    if (m[1] !== declared) findings.push(`${f}: spec_version literal ${m[1]} differs from spec/00 ${declared} (AGSC-09-91)`);
+}
+// w3c/index.html vocabulary tables vs ontology
+try {
+  const html = read('w3c/index.html');
+  const sect = id => { const i = html.indexOf(`<section id="${id}">`); const j = html.indexOf('</section>', i); return i < 0 ? '' : html.slice(i, j); };
+  const dfns = [...(sect('classes') + sect('object-properties') + sect('datatype-properties')).matchAll(/<dfn[^>]*>(asc:[A-Za-z0-9]+)<\/dfn>/g)].map(m => m[1]);
+  const terms = [...new Set((ttl.match(/^asc:[A-Za-z0-9]+/gm) || []))];
+  for (const t of terms) if (!dfns.includes(t)) findings.push(`w3c/index.html lacks a <dfn> for ${t}`);
+  for (const d of dfns) if (!terms.includes(d)) findings.push(`w3c/index.html defines ${d}, absent from ontology/agsc.ttl`);
+} catch (e) { /* w3c/ is optional in a distribution */ }
+// a vector directory silently ignored by git is a lost vector
+try {
+  const dirs = [...new Set(vectorFiles.map(f => path.dirname(f)))];
+  for (const d of dirs) {
+    const r = cp.spawnSync('git', ['check-ignore', '-q', d + '/'], { cwd: root });
+    if (r.status === 0) findings.push(`vector directory ${d}/ is ignored by .gitignore`);
+  }
+} catch (e) { /* no git: skip */ }
 
 if (process.argv.includes('--json')) {
   console.log(JSON.stringify({ verb: 'count-artifacts', ok: findings.length === 0, counts, findings }, null, 2));

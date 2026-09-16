@@ -1,10 +1,10 @@
 # AGSC-00 — Overview, terms, conformance model
 
-`spec_version: "1.0.0-rc.2"`. The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, SHOULD NOT, MAY are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in capitals. Each rule has a stable id `AGSC-<section>-<nn>`; ids are never reused or renumbered. Trailing brackets cite the requirement each rule serves.
+`spec_version: "1.0.0-rc.3"` (draft of 2026-09-16; frozen at the rc.3 tag). The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, SHOULD NOT, MAY are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in capitals. Each rule has a stable id `AGSC-<section>-<nn>`; ids are never reused or renumbered. Trailing brackets cite the requirement each rule serves.
 
 ## 0.1 Scope
 
-- **AGSC-00-01** This specification — `spec/00`…`spec/10`, `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` and `tests/vectors/**` — is the definition of AgenticSystemCore. An implementation MUST NOT rely on behaviour that these files do not pin, and any behaviour observable only in a particular engine is a defect of that engine, not of this specification. [NFR-02 ← D47, Art. XI]
+- **AGSC-00-01** (amended at rc.3) This specification — `spec/00`…`spec/11`, `schema/{item,bundle,config}.schema.json`, `ontology/agsc.ttl` and `tests/vectors/**`, checked by the `tools/` validators of AGSC-09-90 — is the definition of AgenticSystemCore. An implementation MUST NOT rely on behaviour that these files do not pin, and any behaviour observable only in a particular engine is a defect of that engine, not of this specification. [NFR-02 ← D47, Art. XI]
 - **AGSC-00-02** This specification defines a file format, a graph projection, a set of published surfaces, a governance contract and a CLI contract. It does not define a network protocol, a server, a database or a reasoner. [PRD non-goals ← D09, D43]
 - **AGSC-00-03** Where a rule and a `tests/vectors/**` entry disagree, the rule is normative and the vector MUST be corrected by the procedure of AGSC-00-16 (new versioned file; the wrong file republished as `withdrawn`). [NFR-02, D48(7)]
 

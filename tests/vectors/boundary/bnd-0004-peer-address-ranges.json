@@ -1,6 +1,6 @@
 {
   "area": "boundary",
-  "description": "A host resolving to a private, link-local or mapped-IPv4 address is refused in both address families; a host with one public and one private address is refused.",
+  "description": "A host resolving to a private, link-local or mapped-IPv4 address is refused in both address families; a host with one public and one private address is refused. Documentation ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24) are not globally reachable and are refused like every other IANA special-purpose block.",
   "expected": {
     "results": [
       {
@@ -46,7 +46,7 @@
       },
       {
         "addresses": [
-          "203.0.113.7"
+          "93.184.215.14"
         ],
         "host": "e.example"
       }

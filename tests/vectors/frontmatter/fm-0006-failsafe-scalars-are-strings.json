@@ -8,7 +8,10 @@
       "description": "A concept whose frontmatter carries the classic YAML type traps, kept as strings by the failsafe reader.",
       "flag": "no",
       "kind": "explainer",
-      "prov": { "operator": "human:andreibesleaga", "origin": "human" },
+      "prov": {
+        "operator": "human:andreibesleaga",
+        "origin": "human"
+      },
       "scale": "1e3",
       "switch": "on",
       "title": "Norway",
@@ -16,11 +19,26 @@
       "void": "~"
     },
     "warnings": [
-      { "code": "AGSC-E207", "key": "blob" },
-      { "code": "AGSC-E207", "key": "flag" },
-      { "code": "AGSC-E207", "key": "scale" },
-      { "code": "AGSC-E207", "key": "switch" },
-      { "code": "AGSC-E207", "key": "void" }
+      {
+        "code": "AGSC-E207",
+        "key": "blob"
+      },
+      {
+        "code": "AGSC-E207",
+        "key": "flag"
+      },
+      {
+        "code": "AGSC-E207",
+        "key": "scale"
+      },
+      {
+        "code": "AGSC-E207",
+        "key": "switch"
+      },
+      {
+        "code": "AGSC-E207",
+        "key": "void"
+      }
     ]
   },
   "id": "fm-0006",
@@ -28,6 +46,8 @@
     "markdown": "---\ntype: concept\ntitle: Norway\ndescription: A concept whose frontmatter carries the classic YAML type traps, kept as strings by the failsafe reader.\nkind: explainer\nflag: no\nswitch: on\nvoid: ~\nscale: 1e3\nblob: 0x1F\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\nBody.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-02-03"
 }

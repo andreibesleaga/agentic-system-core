@@ -14,6 +14,7 @@
         "severity": "error"
       },
       {
+        "code": "AGSC-E414",
         "file": "stray.svg",
         "severity": "warning"
       }

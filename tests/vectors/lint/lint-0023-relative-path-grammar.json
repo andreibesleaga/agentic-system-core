@@ -1,0 +1,61 @@
+{
+  "area": "lint",
+  "description": "Every relative path is /-separated with no \".\" or \"..\" segment, no leading slash, no backslash and no NUL, and resolves inside the Bundle root; each violation is AGSC-E902 and the clean paths pass.",
+  "expected": {
+    "clean": [
+      "ok.svg",
+      "dir/ok-2.svg"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E902",
+        "path": "../up.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E902",
+        "path": "./here.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E902",
+        "path": "/abs.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E902",
+        "path": "a\\b.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E902",
+        "path": "nul\u0000.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E902",
+        "path": "deep/../../escape.svg",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "lint-0023",
+  "input": {
+    "paths": [
+      "../up.svg",
+      "./here.svg",
+      "/abs.svg",
+      "a\\b.svg",
+      "nul\u0000.svg",
+      "deep/../../escape.svg",
+      "ok.svg",
+      "dir/ok-2.svg"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-01-35"
+}

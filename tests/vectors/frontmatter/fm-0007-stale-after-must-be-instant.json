@@ -1,12 +1,16 @@
 {
   "area": "frontmatter",
   "description": "Negative: stale_after is an instant with an explicit UTC offset and seconds precision. A bare date is a pattern violation.",
-  "expected": { "error": "AGSC-E204" },
+  "expected": {
+    "error": "AGSC-E204"
+  },
   "id": "fm-0007",
   "input": {
     "markdown": "---\ntype: lesson\ntitle: Do not trust unpinned actions\nseverity: block\nstale_after: \"2027-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Lesson\n\nPin actions by digest.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-02-06"
 }

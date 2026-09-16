@@ -9,6 +9,7 @@
         "severity": "error"
       },
       {
+        "code": "AGSC-E211",
         "href": "/chunks.jsonl",
         "severity": "warning"
       }

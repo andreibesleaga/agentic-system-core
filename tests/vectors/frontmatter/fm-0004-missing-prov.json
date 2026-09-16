@@ -1,12 +1,16 @@
 {
   "area": "frontmatter",
   "description": "Negative: prov is required on every item; its absence is an error, not a warning.",
-  "expected": { "error": "AGSC-E501" },
+  "expected": {
+    "error": "AGSC-E501"
+  },
   "id": "fm-0004",
   "input": {
     "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: pattern\n---\n\n## Intent\n\nRoute work to workers.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-08-01"
 }

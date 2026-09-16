@@ -1,16 +1,43 @@
 {
   "area": "links",
   "description": "Negative: requires must be acyclic, because the composition closure walks it. The cycle is reported with every slug on it, in discovery order.",
-  "expected": { "cycle": ["a2a", "handoff", "mcp"], "error": "AGSC-E302" },
+  "expected": {
+    "cycle": [
+      "a2a",
+      "handoff",
+      "mcp"
+    ],
+    "error": "AGSC-E302"
+  },
   "id": "links-0002",
   "input": {
     "items": [
-      { "requires": ["handoff"], "slug": "a2a", "type": "concept" },
-      { "requires": ["mcp"], "slug": "handoff", "type": "concept" },
-      { "requires": ["a2a"], "slug": "mcp", "type": "concept" }
+      {
+        "requires": [
+          "handoff"
+        ],
+        "slug": "a2a",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "mcp"
+        ],
+        "slug": "handoff",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "a2a"
+        ],
+        "slug": "mcp",
+        "type": "concept"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-03-07"
 }

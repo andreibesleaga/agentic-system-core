@@ -1,0 +1,40 @@
+{
+  "area": "boundary",
+  "description": "Every result derived from a peer (a search hit, a read, a chunk) carries trust: untrusted and origin = the peer Bundle IRI end to end; a local result carries no origin; copying peer prose into an item without a Proposal is refused.",
+  "expected": {
+    "copy_path": "proposal",
+    "direct_copy_refused": true,
+    "results": [
+      {
+        "slug": "alpha",
+        "trust": "untrusted"
+      },
+      {
+        "origin": "https://b.example/",
+        "slug": "beta",
+        "trust": "untrusted"
+      }
+    ]
+  },
+  "id": "bnd-0019",
+  "input": {
+    "attempt_direct_copy": true,
+    "local_hits": [
+      {
+        "slug": "alpha"
+      }
+    ],
+    "peer": "https://b.example/",
+    "peer_hits": [
+      {
+        "slug": "beta"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-11"
+}

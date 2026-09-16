@@ -2,7 +2,14 @@
   "area": "links",
   "description": "Anchor totality and collision confluence. A leading punctuation heading collapses to a leading hyphen and MUST be trimmed, or the anchor it produces could never be the target of a link (link_target requires [a-z0-9] first). A heading with no ASCII letters or digits produces the empty string and becomes section-<n>, numbered over the empty ones in document order. A duplicate takes -2, then re-checks: a-2 already exists naturally, so the duplicate takes the next free suffix a-3.",
   "expected": {
-    "anchors": ["item", "section-1", "a", "a-2", "a-3", "section-2"],
+    "anchors": [
+      "item",
+      "section-1",
+      "a",
+      "a-2",
+      "a-3",
+      "section-2"
+    ],
     "errors": []
   },
   "id": "links-0004",
@@ -10,6 +17,8 @@
     "markdown": "# - Item\n\n# 第一章\n\n## A\n\n## A 2\n\n## A\n\n## ✦\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-03-13"
 }

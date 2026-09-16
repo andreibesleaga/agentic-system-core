@@ -1,28 +1,43 @@
 {
   "area": "boundary",
-  "description": "A reference whose URL lies under a declared peer's base is emitted as rdfs:seeAlso plus asc:peerOrigin, with the IDN host normalised to its A-label and existing escapes preserved; closure ignores the edge.",
+  "description": "A sources[].resource URL under a declared peer's base (derived from the peer's well-known URL, no fetch) is emitted as rdfs:seeAlso plus asc:peerOrigin; IDN hosts take their A-label under UTS #46 non-transitional processing (straße becomes xn--strae-oqa, never strasse), existing escapes are preserved; closure ignores the edge.",
   "expected": {
     "closure_edges_added": 0,
-    "nquads": "<https://a.example/concepts/alpha/> <http://www.w3.org/2000/01/rdf-schema#seeAlso> <https://xn--bcher-kva.example/concepts/kanban%20board/#intent> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#peerOrigin> <https://xn--bcher-kva.example/> <https://a.example/> .\n"
+    "nquads": "<https://a.example/concepts/alpha/> <http://www.w3.org/2000/01/rdf-schema#seeAlso> <https://xn--bcher-kva.example/concepts/kanban%20board/#intent> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#peerOrigin> <https://xn--bcher-kva.example/> <https://a.example/> .\n<https://a.example/concepts/beta/> <http://www.w3.org/2000/01/rdf-schema#seeAlso> <https://xn--strae-oqa.example/concepts/street/> <https://a.example/> .\n<https://a.example/concepts/beta/> <https://w3id.org/agentic-system-core/ns#peerOrigin> <https://xn--strae-oqa.example/> <https://a.example/> .\n",
+    "peer_base_derived_from": [
+      "https://bücher.example/",
+      "https://straße.example/"
+    ]
   },
   "id": "bnd-0008",
   "input": {
     "items": [
       {
-        "references": [
+        "slug": "alpha",
+        "sources": [
           {
-            "url": "https://bücher.example/concepts/kanban%20board/#intent"
+            "id": "kanban",
+            "resource": "https://bücher.example/concepts/kanban%20board/#intent"
           }
-        ],
-        "slug": "alpha"
+        ]
+      },
+      {
+        "slug": "beta",
+        "sources": [
+          {
+            "id": "street",
+            "resource": "https://straße.example/concepts/street/"
+          }
+        ]
       }
     ],
     "peers": [
-      {
-        "base": "https://bücher.example/",
-        "bundle": "https://bücher.example/"
-      }
-    ]
+      "https://bücher.example/.well-known/knowledge-linkset",
+      "https://straße.example/.well-known/knowledge-linkset"
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
   },
   "level": "required",
   "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",

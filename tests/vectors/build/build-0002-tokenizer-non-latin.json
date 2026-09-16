@@ -1,0 +1,61 @@
+{
+  "area": "build",
+  "description": "The tokenizer character classes of AGSC-06-23 pinned exactly where ports diverge. Combining marks are token characters (General_Category M*), so a Devanagari word stays one token instead of splitting at every mark; Nd digits are token characters while No and Nl forms — the superscript two and the Roman numeral eight — are boundaries; ASCII lower-casing maps only U+0041..U+005A, so the Greek capital sigma is kept as authored and never case-folded; tokens shorter than two UTF-16 code units (m, x) are dropped. A port choosing \\p{L}\\p{N} or \\w instead of L*, Nd and M* disagrees with this vector.",
+  "expected": {
+    "search": {
+      "docs": [
+        {
+          "cluster": "terms",
+          "description": "हिन्दी Σigma m² Ⅷ 10 x boundary classes here.",
+          "slug": "a",
+          "title": "Tokens"
+        }
+      ],
+      "terms": {
+        "10": [
+          0
+        ],
+        "boundary": [
+          0
+        ],
+        "classes": [
+          0
+        ],
+        "here": [
+          0
+        ],
+        "tokens": [
+          0
+        ],
+        "Σigma": [
+          0
+        ],
+        "हिन्दी": [
+          0
+        ]
+      }
+    }
+  },
+  "id": "build-0002",
+  "input": {
+    "items": [
+      {
+        "body": "",
+        "clusters": [
+          "terms"
+        ],
+        "description": "हिन्दी Σigma m² Ⅷ 10 x boundary classes here.",
+        "slug": "a",
+        "tags": [],
+        "title": "Tokens",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.3",
+    "unicode_version": "15.1"
+  },
+  "rule": "AGSC-06-23"
+}

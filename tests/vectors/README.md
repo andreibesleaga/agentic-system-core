@@ -1,6 +1,6 @@
 # Conformance vectors
 
-These files, together with `spec/00`–`spec/10`, `schema/*.json` and `ontology/agsc.ttl`, are the definition of AgenticSystemCore. A port in any language MUST be able to reach conformance from this directory alone, without reading a line of the reference engine (NFR-02, AGSC-00-01).
+These files, together with `spec/00`–`spec/11`, `schema/*.json` and `ontology/agsc.ttl`, are the definition of AgenticSystemCore. A port in any language MUST be able to reach conformance from this directory alone, without reading a line of the reference engine (NFR-02, AGSC-00-01).
 
 ## Format
 
@@ -8,7 +8,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 | Member | Required | Meaning |
 |---|---|---|
-| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, `boundary` (rc.3, AGSC-11), `chunks` and `boards` (rc.3), and later `prov`, `import`, `export`, `skills`, `webmcp`, `run`, `conform` (AGSC-09-04) |
+| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, `boundary` (rc.3, AGSC-11), `chunks` and `boards` (rc.3), and later `prov`, `import`, `export`, `skills`, `run`, `conform` (AGSC-09-04; `webmcp` is NOT an area, AGSC-09-16 is proved by `cli/cli-0003`) |
 | `description` | yes | what the case proves, and why it is not obvious |
 | `expected` | yes | the outcome (below) |
 | `id` | yes | stable, unique, never reused: `<area-prefix>-<nnnn>` |
@@ -21,7 +21,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 **Input shapes.** `markdown` — one item file as a string; `items[]` — pre-parsed frontmatter objects (`slug` plus keys under test, and a `body` string where a surface is under test), used where file syntax is not the subject; `slug`/`slugs[]`; `paths[]`; `value` — a JSON value for canonicalisation; `argv[]` (+ optional `bundle`) for CLI cases; `base` — the site base for graph cases; `selection[]` for compose cases; `config` + `files[]` for adoption cases; `ledger` + `wellknown` for ledger verification, `git_log` + `content_tree` + `version` for ledger derivation (AGSC-08-20a), `directory` + `files[]` + `git_user_email` + `verbs[]` for the end-to-end adoption case, `wellknown` for a Level-0 discovery document; `nodes[]` for the two-node federation check (AGSC-10-12); `transports[]` (+ `bundle`) for the two-transport tool-contract check (AGSC-09-16).
 
-**Expected shapes.** A **positive** vector states the result: `frontmatter`, `edges[]`, `anchors[]`, `output`, `body`, `files[]` (each `{changed, output, path}`), `path`, `idempotent`, `nquads`, `search`, `verdict`, `ledger`, `head`, `config`, `index_frontmatter`, `config_valid`/`index_valid`, `level`, `contains[]`/`excludes[]`, `findings[]` (each entry asserts a **subset** of the AGSC-09-11 finding members — at minimum `code`; unasserted members are not compared), `valid[]`, `stdout`, `exit`, and `errors: []` where relevant. `nquads` is the complete canonical N-Quads serialization of the vector's input, not an excerpt. A **negative** vector states exactly one error *code*, never a message: `{"error": "AGSC-E<nnn>"}`, optionally with `line`, `cycle`, `chain`, `parents` or `severity`. Codes are registered in `spec/09-conformance.md` §9.4 and are permanent.
+**Expected shapes.** A **positive** vector states the result: `frontmatter`, `edges[]`, `anchors[]`, `output`, `body`, `files[]` (each `{changed, output, path}`), `path`, `idempotent`, `nquads`, `search`, `verdict`, `ledger`, `head`, `config`, `index_frontmatter`, `config_valid`/`index_valid`, `level`, `contains[]`/`excludes[]`, `findings[]` (each entry asserts a **subset** of the AGSC-09-11 finding members — at minimum `code`; unasserted members are not compared), `valid[]`, `stdout`, `exit`, and `errors: []` where relevant. `nquads` is the complete canonical N-Quads serialization of the vector's input, not an excerpt. A **negative** vector states exactly one error *code*, never a message: `{"error": "AGSC-E<nnn>"}` — or, since rc.3, AGSC-09-11 finding objects under `findings[]`/`results[]` each carrying `code` and `severity` (AGSC-09-05 as amended), optionally with `line`, `cycle`, `chain`, `parents` or `severity`. Codes are registered in `spec/09-conformance.md` §9.4 and are permanent.
 
 ## Rules the vectors themselves obey
 
@@ -31,7 +31,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 ## Running them from a foreign port
 
-1. **Choose a class** — reader, writer or full engine (AGSC-00-09…11). It fixes which areas are in scope: reader = `frontmatter`, `slug`, `links`; writer adds `jcs`, `graph`; full engine adds `lint`, `cli` and the remaining areas.
+1. **Choose a class** — reader, writer or full engine (AGSC-00-09…11). The Level is the single source of the area set (AGSC-10-15): the areas a claim runs are exactly those AGSC-10-02…05 list for its Level, and no other list exists.
 2. **Implement five primitives**: a failsafe-YAML reader, a JCS writer, SHA-256, Unicode NFC, and code-point sorting. Everything else in this specification is expressible on top of them.
 3. **Load each file** in your own test harness — they are plain JSON, so `glob` + parse is enough. Dispatch on `area` and on the `input`/`expected` member names present.
 4. **Compare bytes, not structures**, wherever `expected` carries a string (`output`, `nquads`, `stdout`). Compare RDF by graph isomorphism only where a vector says so; the canonical N-Quads form is compared byte-for-byte.
@@ -42,11 +42,11 @@ A conformance claim MUST name the class, the `spec_version` MAJOR.MINOR and the 
 
 ## Present coverage
 
-`frontmatter/` 9 · `links/` 7 · `graph/` 6 · `discovery/` 5 · `cli/` 5 · `adopt/` 5 · `slug/` 4 · `ledger/` 4 · `lint/` 3 · `jcs/` 2 · `compose/` 2 · `build/` 2 · `bundle/` 2 — **56 files, 53 active vectors**. Three are `withdrawn` at `1.0.0-rc.2` and are never run for a claim: `disc-0001` and `disc-0002` (superseded by `disc-0003`/`disc-0004` when D55 replaced the two-member discovery document with a conformant RFC 9264 link set) and `cli-0001` (superseded by `cli-0005` when AGSC-09-07 grew from thirteen verbs to sixteen). Each of the eleven spec sections is cited by at least one of them; the remaining areas listed above are populated as the milestones that need them land.
+**93 vectors — 89 required, 1 optional, 3 withdrawn** (rc.3 draft, 2026-09-16; per-area counts and the total are derived by `node tools/count-artifacts --json`, never typed by hand). Three are `withdrawn` at `1.0.0-rc.2` and are never run for a claim: `disc-0001` and `disc-0002` (superseded by `disc-0003`/`disc-0004` when D55 replaced the two-member discovery document with a conformant RFC 9264 link set) and `cli-0001` (superseded by `cli-0005` when AGSC-09-07 grew from thirteen verbs to sixteen). Each of the twelve spec sections is cited by at least one of them; the remaining areas listed above are populated as the milestones that need them land.
 
-**Coverage status 2026-09-04:** of the 245 rules of `spec/00`–`10` carrying a BCP 14 keyword, 43 are proved by an active vector (38 after the V5-1 fix pass, plus `adopt-0005`, `links-0007`, `ledger-0004`, `cli-0004` and `fm-0009` added by the D61/V5-3 pass) and 1 more by a `features/` scenario (`AGSC-02-93`); the remaining rules are proved by M13's vector build-out (GABBE `TASKS.md` M13-T22/M13-T23 and the coverage tasks that follow them). `tools/validate-vectors` enforces only the *required* vector set of AGSC-09-90, never a vector-per-rule count.
+**Coverage status:** derived, never typed — `node tools/count-artifacts --json` reports `rules`, `rules_with_vector` and `rules_without_vector` for `spec/00`–`spec/11`; the rc.3 draft of 2026-09-16 after the pre-DS-4 audit has 101 vectors. **Knowingly deferred to DS-5 (each a MUST still awaiting its vector):** AGSC-02-96 (ports lint E804), 02-97 (`agsc-selection` block), 02-99 (`task_state` frontmatter), 04-22 (Unicode version in the claim), 04-24 (cross-implementation set as a whole), 06-26 (`chunks.jsonl` emission bytes), 06-29 (full record shape), 06-31 (chunk sharding above 500 items), 10-14, 10-15, 11-04, 11-06, 11-13, 11-15, 11-18, 11-21; plus three byte-layout cases: `/llms-full.txt` and a multi-cluster item (AGSC-06-13a), and a full `search.json` with an astral-plane token (AGSC-04-05/06-23, D72a A-06). The IDNA case whose transitional and non-transitional forms differ is in `bnd-0008`.
 
 ## Porting notes
 
-- **Slug regex.** The `slug` and `link_target` patterns in `schema/*.json` use the ECMA-262 negative lookahead `(?!.*--)`, which JSON Schema mandates but RE2, Go's `regexp` and Rust's `regex` cannot compile. A port MAY implement the check as *character-class regex* `^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$` **AND** `not contains "--"`; the two are equivalent, and AGSC-01-10 states the no-`--` rule in prose for exactly this reason.
+- **Slug regex.** Since the rc.3 draft (DS-3, 2026-09-16) no pattern in `schema/*.json` uses a lookahead or any construct outside the RE2 / Go `regexp` / Rust `regex` subset. The `slug` grammar is `^[a-z0-9]+(?:-[a-z0-9]+)*$` with `minLength: 1` and `maxLength: 64` counted in Unicode code points (AGSC-01-10, AGSC-02-24): a leading, trailing or doubled hyphen is impossible by construction, so no separate `not contains "--"` check is needed. `slug-0006` proves the grammar; the earlier lookahead form `(?!.*--)` is historical and MUST NOT be reintroduced (V6-B, blocker B4).
 - **Ordering primitives.** JSON member names (search tokens included) sort by UTF-16 code units; file paths and N-Quads sort by code point, with `/` as the path separator on every platform. A port that reuses one comparator for both will diverge on astral-plane input.

@@ -17,8 +17,8 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+$"
     },
-    "title": { "type": "string", "pattern": "^[\\s\\S]{3,120}$" },
-    "description": { "type": "string", "pattern": "^[\\s\\S]{40,200}$" },
+    "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+    "description": { "type": "string", "minLength": 40, "maxLength": 200 },
     "base": {
       "description": "Absolute https origin, trailing slash optional; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json, including the http://localhost[:port]/ development placeholder written by adoption (D52(1)).",
       "type": "string",

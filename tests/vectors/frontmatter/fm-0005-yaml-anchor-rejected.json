@@ -1,12 +1,17 @@
 {
   "area": "frontmatter",
   "description": "Negative: YAML anchors and aliases are outside the permitted subset and are rejected with a line number. Everything else in this file is valid, so the anchor is the only defect.",
-  "expected": { "error": "AGSC-E103", "line": 4 },
+  "expected": {
+    "error": "AGSC-E103",
+    "line": 4
+  },
   "id": "fm-0005",
   "input": {
     "markdown": "---\ntype: concept\ntitle: Supervisor\nx: &a 1\ny: *a\ndescription: A concept file that is valid apart from the YAML anchor and alias on lines four and five.\nkind: explainer\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\nBody.\n"
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-02-02"
 }

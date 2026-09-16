@@ -1,7 +1,8 @@
 {
   "area": "boundary",
-  "description": "A tombstoned node still serves a valid link set carrying the tombstone instant; a peer check reports it resolved-not-mutual, and a walk does not descend into it.",
+  "description": "A tombstoned node still serves a valid link set carrying the tombstone instant; a peer check reports it resolved-not-mutual, and a walk does not descend into it. Node b links back to a, so only the tombstone makes the check resolved-not-mutual; a successor named by alternate is never treated as the same node.",
   "expected": {
+    "alternate_is_same_node": false,
     "both_resolve": true,
     "code": null,
     "mutual": false,
@@ -20,6 +21,7 @@
       {
         "alternate": "https://c.example/.well-known/knowledge-linkset",
         "base": "https://b.example/",
+        "peer": "https://a.example/.well-known/knowledge-linkset",
         "tombstone": "2026-12-31T00:00:00Z"
       }
     ]

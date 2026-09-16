@@ -6,7 +6,7 @@ Created 2026-09-04.
 ## What this is
 
 The source of the W3C-facing document for this project: the `asc:` vocabulary
-(`../ontology/agsc.ttl` — 11 classes, 33 properties (44 terms), OWL 2 RL, CC0), its JSON-LD context, the
+(`../ontology/agsc.ttl` — 12 classes, 40 properties (52 terms; counts derived by `tools/count-artifacts`), OWL 2 RL, CC0), its JSON-LD context, the
 namespace and versioning policy at `https://w3id.org/agentic-system-core/ns#`, and a human-readable
 explanation of the profile identifier `https://w3id.org/agentic-system-core/profile/agentic-knowledge`.
 
@@ -17,17 +17,12 @@ Internet-Draft in `../internet-draft/`, and this document cites it rather than r
 
 | File | What it is |
 |---|---|
-| `index.html` | ReSpec source for the report *Agentic Knowledge Vocabulary and Discovery Profile*, `specStatus: "unofficial"` (CG-DRAFT parked). Real vocabulary tables generated from `../ontology/agsc.ttl`; every unwritten section is marked `TODO`. Also contains the section describing how Turtle, JSON-LD and RDF/XML are served (namespace, `owl:versionIRI`, content negotiation). |
+| `index.html` | ReSpec source for the report *Agentic Knowledge Vocabulary and Discovery Profile*, `specStatus: "unofficial"` (CG-DRAFT parked). Vocabulary tables kept in step with `../ontology/agsc.ttl` (one `<dfn>` per term; the term count is checked against the ontology by `tools/count-artifacts`); every unwritten section is marked `TODO`. Also contains the section describing how Turtle, JSON-LD and RDF/XML are served (namespace, `owl:versionIRI`, content negotiation). |
 
-The track plan, the publication checklist and the research behind them live **outside this
-repository**, in the private umbrella repo:
-
-- `../../discovery-product/w3c/PLAN-W3C.md` — Track W plan: goal, work packages, dates, gates, and
-  the texts the owner sends personally *(outside the repo)*
-- `../../discovery-product/w3c/CHECKLIST.md` — publication checklist (CG-specific items parked)
-  *(outside the repo)*
-- `../../discovery-product/research/21-w3c-publication-landscape.md` — the sourced research every
-  claim above rests on *(outside the repo)*
+The track plan (Track W: goal, work packages, dates, gates), the publication checklist and the
+sourced W3C publication-landscape research of 2026-09-04 that every claim above rests on are kept in
+the project's **private planning record** and are not part of this repository; the public outcome of
+that research is summarised in `../docs/RELATED-WORK.md`.
 
 ## Build and preview
 

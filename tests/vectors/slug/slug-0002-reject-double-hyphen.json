@@ -1,10 +1,16 @@
 {
   "area": "slug",
   "description": "Negative: a doubled hyphen is forbidden. The bare character-class regex would accept it; the no-double-hyphen rule exists so that a slug is always a legal Agent Skills directory name.",
-  "expected": { "error": "AGSC-E204" },
+  "expected": {
+    "error": "AGSC-E204"
+  },
   "id": "slug-0002",
-  "input": { "slug": "multi--agent" },
+  "input": {
+    "slug": "multi--agent"
+  },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-01-10"
 }

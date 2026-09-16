@@ -1,0 +1,21 @@
+{
+  "area": "jcs",
+  "description": "Member names are NFC-normalised BEFORE sorting: a decomposed e + U+0301 becomes U+00E9, which sorts after \"f\" by UTF-16 code unit; sorting the raw name would put it first.",
+  "expected": {
+    "output": "{\"f\":1,\"é\":2}",
+    "wrong_if_sorted_before_nfc": "{\"é\":2,\"f\":1}"
+  },
+  "id": "jcs-0005",
+  "input": {
+    "value": {
+      "é": 2,
+      "f": 1
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-04-21"
+}

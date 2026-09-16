@@ -3,19 +3,36 @@
   "description": "End of the P0 promise: on a bare folder with no config and no index, init synthesizes agsc.config.json and content/index.md whose every value is schema-valid — site.base is the http://localhost/ development placeholder that AGSC-01-19 and config.schema.json admit, build.out is www/, the index title passes the 3-120 bound and its description the 40-200 bound — so the very next command, ci, exits 0 offline. Findings are warnings only, including AGSC-E506 telling the owner to set a real site.base before publishing. If this vector exits non-zero the three-command promise of PRD-053 is broken at step two.",
   "expected": {
     "config": {
-      "build": { "out": "www/" },
-      "bundle": { "id": "my-notes", "operator": "human:andreibesleaga" },
-      "site": { "base": "http://localhost/", "title": "My Notes" },
-      "spec_version": "1.0.0-rc.2"
+      "build": {
+        "out": "www/"
+      },
+      "bundle": {
+        "id": "my-notes",
+        "operator": "human:andreibesleaga"
+      },
+      "site": {
+        "base": "http://localhost/",
+        "title": "My Notes"
+      },
+      "spec_version": "1.0.0-rc.3"
     },
     "config_valid": true,
     "exit": 0,
-    "findings": [{ "code": "AGSC-E408", "severity": "warn" }, { "code": "AGSC-E506", "severity": "warn" }],
+    "findings": [
+      {
+        "code": "AGSC-E408",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      }
+    ],
     "index_frontmatter": {
       "base": "http://localhost/",
       "description": "Adopted from 1 Markdown files by agsc init on 2026-01-01.",
       "okf_version": "0.2",
-      "spec_version": "1.0.0-rc.2",
+      "spec_version": "1.0.0-rc.3",
       "title": "My Notes"
     },
     "index_valid": true
@@ -23,11 +40,22 @@
   "id": "adopt-0004",
   "input": {
     "directory": "My Notes",
-    "files": [{ "markdown": "# Handoff\n\nAn agent passes control to another agent.\n", "path": "notes/handoff.md" }],
+    "files": [
+      {
+        "markdown": "# Handoff\n\nAn agent passes control to another agent.\n",
+        "path": "notes/handoff.md"
+      }
+    ],
     "git_user_email": "andreibesleaga@example.org",
-    "verbs": ["init", "ci"]
+    "verbs": [
+      "init",
+      "ci"
+    ]
   },
   "level": "required",
-  "options": { "source_date_epoch": 1767225600, "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-02-94"
 }

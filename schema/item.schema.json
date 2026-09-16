@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agenticsystemcore.com/ns/schema/item.schema.json",
   "title": "AgenticSystemCore item",
-  "description": "Frontmatter contract for one content item (spec/02-item.md). Keyword subset per research/12 section 2: type, enum, const, pattern, required, properties, additionalProperties, items, minItems, maxItems, uniqueItems, $defs, local $ref, oneOf. additionalProperties is true everywhere on purpose: unknown keys MUST be preserved and reported by lint as AGSC-E207 warnings, never as errors (AGSC-02-05, OKF tolerance). Count bounds that this subset cannot express (tags 2-5) are lint-level warnings, not schema errors. description is OPTIONAL in every branch so that an adopted file validates (AGSC-02-92, V2-01); a concept or cluster without one is the lint warning AGSC-E408 (AGSC-02-21). When present on a concept or cluster the 40-200 bound is enforced by those branches; elsewhere any length is accepted and lint warns. Every length bound counts UTF-16 code units (AGSC-02-24). CC0-1.0.",
+  "description": "Frontmatter contract for one content item (spec/02-item.md). Keyword subset per research/12 section 2: type, enum, const, pattern, required, properties, additionalProperties, items, minItems, maxItems, uniqueItems, $defs, local $ref, oneOf. additionalProperties is true everywhere on purpose: unknown keys MUST be preserved and reported by lint as AGSC-E207 warnings, never as errors (AGSC-02-05, OKF tolerance). Count bounds that this subset cannot express (tags 2-5) are lint-level warnings, not schema errors. description is OPTIONAL in every branch so that an adopted file validates (AGSC-02-92, V2-01); a concept or cluster without one is the lint warning AGSC-E408 (AGSC-02-21). When present on a concept or cluster the 40-200 bound is enforced by those branches; elsewhere any length is accepted and lint warns. Every length bound counts Unicode code points, as JSON Schema 2020-12 defines minLength/maxLength (AGSC-02-24, rc.3); the UTF-16 rule of AGSC-04-05 governs JSON member-name ordering only. CC0-1.0.",
   "type": "object",
   "additionalProperties": true,
   "required": [
@@ -29,7 +29,7 @@
       "maxLength": 120
     },
     "description": {
-      "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present on those two types the 40-200 UTF-16 code unit bound is enforced by their branches (AGSC-02-24).",
+      "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present on those two types the 40-200 code-point bound is enforced by their branches (AGSC-02-24).",
       "type": "string"
     },
     "status": {
@@ -173,7 +173,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "pattern": "^[^/][^\\u0000]*$"
+            "pattern": "^[^/\\\\\\u0000][^\\u0000\\\\]*$"
           },
           "media_type": {
             "type": "string",
@@ -206,7 +206,7 @@
           "const": "concept"
         },
         "description": {
-          "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).",
+          "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24).",
           "type": "string",
           "minLength": 40,
           "maxLength": 200
@@ -313,7 +313,7 @@
             "file": {
               "description": "MUST be <slug>.svg, compiled from content/diagrams/<slug>.diagram (AGSC-02-13).",
               "type": "string",
-              "pattern": "^[a-z0-9][a-z0-9-]*\\.svg$"
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.svg$"
             },
             "alt": {
               "type": "string"
@@ -354,7 +354,7 @@
             "TASK_STATE_REJECTED"
           ],
           "default": "TASK_STATE_UNSPECIFIED",
-          "description": "AGSC-02-99; kind: task only; unknown values read as UNSPECIFIED (AGSC-11-02)."
+          "description": "AGSC-02-99; kind: task only; closed for the node's own frontmatter; the AGSC-11-02 reading (UNSPECIFIED) applies to a foreign board a reader did not author."
         },
         "verdict_digest": {
           "type": "string",
@@ -456,7 +456,7 @@
           "const": "cluster"
         },
         "description": {
-          "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).",
+          "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24).",
           "type": "string",
           "minLength": 40,
           "maxLength": 200
@@ -582,7 +582,8 @@
         "id": {
           "description": "Stable source identifier used to de-duplicate ingested messages (AGSC-01-33).",
           "type": "string",
-          "pattern": "^[\\s\\S]{1,200}$"
+          "minLength": 1,
+          "maxLength": 200
         },
         "resource": {
           "description": "A web URL, or the channel form urn:agsc:channel:<name>:<source_id> for a message with no URL (AGSC-01-33, V3-32).",

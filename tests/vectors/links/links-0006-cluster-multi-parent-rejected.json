@@ -3,17 +3,38 @@
   "description": "Negative: a cluster with two broader values breaks the mono-parent tree. The schema also refuses it through maxItems on the cluster branch, but the reported code is the specific AGSC-E308, not the generic schema failure, per the precedence rule of spec/09 section 9.4. Parents are named in code-point order.",
   "expected": {
     "error": "AGSC-E308",
-    "parents": ["c1", "c2"]
+    "parents": [
+      "c1",
+      "c2"
+    ]
   },
   "id": "links-0006",
   "input": {
     "items": [
-      { "description": "One of the two parents this vector attaches a child to.", "slug": "c1", "type": "cluster" },
-      { "description": "The other parent, which makes the child mono-parent no more.", "slug": "c2", "type": "cluster" },
-      { "broader": ["c2", "c1"], "description": "A child cluster that wrongly claims two parent clusters.", "slug": "c3", "type": "cluster" }
+      {
+        "description": "One of the two parents this vector attaches a child to.",
+        "slug": "c1",
+        "type": "cluster"
+      },
+      {
+        "description": "The other parent, which makes the child mono-parent no more.",
+        "slug": "c2",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "c2",
+          "c1"
+        ],
+        "description": "A child cluster that wrongly claims two parent clusters.",
+        "slug": "c3",
+        "type": "cluster"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-03-22"
 }

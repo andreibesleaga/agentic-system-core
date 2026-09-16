@@ -6,9 +6,24 @@
     "harness_emitted": false,
     "verdict": {
       "added": [],
-      "conflicts": [{ "code": "AGSC-E802", "key": "requires", "pair": ["app", "legacy-store"], "superseding": "new-store" }],
-      "hidden": ["legacy-store"],
-      "selection": ["app", "new-store"],
+      "conflicts": [
+        {
+          "code": "AGSC-E802",
+          "key": "requires",
+          "pair": [
+            "app",
+            "legacy-store"
+          ],
+          "superseding": "new-store"
+        }
+      ],
+      "hidden": [
+        "legacy-store"
+      ],
+      "selection": [
+        "app",
+        "new-store"
+      ],
       "valid": false,
       "warnings": []
     }
@@ -16,13 +31,33 @@
   "id": "compose-0002",
   "input": {
     "items": [
-      { "requires": ["legacy-store"], "slug": "app", "type": "concept" },
-      { "slug": "legacy-store", "type": "concept" },
-      { "slug": "new-store", "supersedes": ["legacy-store"], "type": "concept" }
+      {
+        "requires": [
+          "legacy-store"
+        ],
+        "slug": "app",
+        "type": "concept"
+      },
+      {
+        "slug": "legacy-store",
+        "type": "concept"
+      },
+      {
+        "slug": "new-store",
+        "supersedes": [
+          "legacy-store"
+        ],
+        "type": "concept"
+      }
     ],
-    "selection": ["new-store", "app"]
+    "selection": [
+      "new-store",
+      "app"
+    ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-07-05a"
 }

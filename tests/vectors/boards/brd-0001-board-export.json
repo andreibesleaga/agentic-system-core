@@ -11,7 +11,7 @@
         "slug": "freeze-rc3",
         "state": "TASK_STATE_UNSPECIFIED",
         "status": "stable",
-        "title": null
+        "title": "Freeze rc.3"
       },
       {
         "blocked_by": [
@@ -23,7 +23,7 @@
         "slug": "ship-draft",
         "state": "TASK_STATE_WORKING",
         "status": "stable",
-        "title": null
+        "title": "Ship draft"
       }
     ],
     "index": {
@@ -50,8 +50,13 @@
         ],
         "kind": "task",
         "modified": "2026-09-16",
+        "prov": {
+          "operator": "human:andrei",
+          "origin": "human"
+        },
         "slug": "ship-draft",
         "task_state": "TASK_STATE_WORKING",
+        "title": "Ship draft",
         "type": "concept"
       },
       {
@@ -60,11 +65,21 @@
         ],
         "kind": "task",
         "modified": "2026-09-16",
+        "prov": {
+          "operator": "human:andrei",
+          "origin": "human"
+        },
         "slug": "freeze-rc3",
+        "title": "Freeze rc.3",
         "type": "concept"
       },
       {
+        "prov": {
+          "operator": "human:andrei",
+          "origin": "human"
+        },
         "slug": "oct",
+        "title": "October",
         "type": "cluster"
       }
     ],

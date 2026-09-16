@@ -7,7 +7,7 @@
     ],
     "findings": [
       {
-        "code": "AGSC-E606",
+        "code": "AGSC-E607",
         "path": "content/concepts/bad.md",
         "severity": "error"
       }

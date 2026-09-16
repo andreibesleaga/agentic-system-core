@@ -8,8 +8,8 @@
 
 ## 9.2 Vector format
 
-- **AGSC-09-04** A vector is one JSON file under `tests/vectors/<area>/` containing one object with members `id`, `area`, `rule`, `level`, `description`, `input`, OPTIONAL `options`, OPTIONAL `reason` (REQUIRED when `level` is `withdrawn`: why the case was withdrawn and which vector supersedes it), OPTIONAL `note` (editorial provenance of an unreleased vector; never read by a conformance run), and `expected`. Areas are `frontmatter/`, `slug/`, `links/`, `jcs/`, `graph/`, `lint/`, `cli/`, plus `bundle/`, `prov/`, `ledger/`, `compose/`, `build/`, `discovery/`, `adopt/`, `import/`, `export/`, `skills/`, `adapters/`, `channels/`, `harness/`, `run/`, `conform/` — **twenty-two**, and no others. `webmcp/` is not an area: AGSC-09-16 is proved by `cli/cli-0003`, so a permanently empty declared area would be a false promise (V5-3 S3-36). `adapters/`, `channels/` and `harness/` are declared here so that the milestones that populate them need no `spec_version` change (V5-3 S3-21). [PLAN §5.3, research/12 §H, V2 §4]
-- **AGSC-09-05** `rule` MUST cite one rule id of this specification. `level` is `required`, `optional` or `withdrawn` (AGSC-00-16); a `withdrawn` vector MUST NOT be counted for or against any conformance claim, MUST carry `reason`, and MUST have `expected` reduced to `{"withdrawn": true}` so that a superseded expectation can never be read as normative. A **negative** vector's `expected` MUST carry the member `error` whose value is an `AGSC-E<nnn>` **code**, never a message; it MAY additionally carry `severity`, `exit`, `stdout`, `line`, `cycle`, `chain` or `parents`, and a vector asserting several outcomes MAY nest an `error` member inside a named sub-object (`graph-0005`). [research/12 §H, D48(7)]
+- **AGSC-09-04** A vector is one JSON file under `tests/vectors/<area>/` containing one object with members `id`, `area`, `rule`, `level`, `description`, `input`, OPTIONAL `options`, OPTIONAL `reason` (REQUIRED when `level` is `withdrawn`: why the case was withdrawn and which vector supersedes it), OPTIONAL `note` (editorial provenance of an unreleased vector; never read by a conformance run), and `expected`. Areas are `frontmatter/`, `slug/`, `links/`, `jcs/`, `graph/`, `lint/`, `cli/`, plus `bundle/`, `prov/`, `ledger/`, `compose/`, `build/`, `discovery/`, `adopt/`, `import/`, `export/`, `skills/`, `adapters/`, `channels/`, `harness/`, `run/`, `conform/`, and (rc.3) `boundary/`, `chunks/`, `boards/` — **twenty-five**, and no others. `webmcp/` is not an area: AGSC-09-16 is proved by `cli/cli-0003`, so a permanently empty declared area would be a false promise (V5-3 S3-36). `adapters/`, `channels/` and `harness/` are declared here so that the milestones that populate them need no `spec_version` change (V5-3 S3-21). [PLAN §5.3, research/12 §H, V2 §4]
+- **AGSC-09-05** `rule` MUST cite one rule id of this specification. `level` is `required`, `optional` or `withdrawn` (AGSC-00-16); a `withdrawn` vector MUST NOT be counted for or against any conformance claim, MUST carry `reason`, and MUST have `expected` reduced to `{"withdrawn": true}` so that a superseded expectation can never be read as normative. A **negative** vector's `expected` MUST carry the member `error` whose value is an `AGSC-E<nnn>` **code**, never a message; it MAY additionally carry `severity`, `exit`, `stdout`, `line`, `cycle`, `chain` or `parents`, and a vector asserting several outcomes MAY nest an `error` member inside a named sub-object (`graph-0005`) or, since rc.3, list them as AGSC-09-11 finding objects under `findings[]` or `results[]`, each carrying `code` (the same `AGSC-E<nnn>` value) and `severity`. [research/12 §H, D48(7)]
 - **AGSC-09-06** Vector files MUST be UTF-8, LF-terminated, NFC, I-JSON, with object members in JCS order (§04); they MAY be pretty-printed for review. They MUST be consumable without executing any code from this repository, so that a port in any language can run them directly. [NFR-02 ← D47]
 
 ## 9.3 CLI contract
@@ -24,7 +24,7 @@
 { "counts": { "error": 0, "warn": 0 },
   "findings": [],
   "schema": "agsc.diagnostics.v1",
-  "spec_version": "1.0.0-rc.2",
+  "spec_version": "1.0.0-rc.3",
   "status": "pass",
   "verb": "lint",
   "version": "0.1.0" }
@@ -45,7 +45,7 @@ A finding is `{ "code": "AGSC-E301", "col": 1, "file": "content/concepts/a.md", 
 
 Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN §8 (`0` CLI, `1` PARSE, `2` SCHEMA, `3` LINK, `4` LINT, `5` PROV, `6` DET, `7` LEDGER, `8` COMPOSE, `9` IO). No other code format (`AGSC-<AREA>-<nnn>`, `AGSC-DET-nnn`) exists anywhere in this system; prose or a diagram using one is a defect of that document (D48(7)).
 
-**Precedence.** Where two codes could name one fault, the more specific one wins: `AGSC-E203` is reported for every enum and `tags.allowed` violation, `AGSC-E204` for every pattern violation, and `AGSC-E201` only for a schema failure that no more specific registered code, **in any block**, names — a `maxItems` violation on a cluster's `broader` is `AGSC-E308`, not `AGSC-E201`. Two conforming engines therefore report the same code for the same input (D48(7)).
+**Precedence.** Where two codes could name one fault, the more specific one wins: `AGSC-E203` is reported for every enum and `tags.allowed` violation, `AGSC-E204` for every pattern violation and every `minLength`/`maxLength` violation, and `AGSC-E201` only for a schema failure that no more specific registered code, **in any block**, names — a `maxItems` violation on a cluster's `broader` is `AGSC-E308`, not `AGSC-E201`. Two conforming engines therefore report the same code for the same input (D48(7)).
 
 | Code | Meaning | Rule |
 |---|---|---|
@@ -65,15 +65,15 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E201` | schema validation failed (only where no 2xx code is more specific) | AGSC-00-09 |
 | `AGSC-E202` | required key missing | AGSC-02-07, AGSC-08-01 |
 | `AGSC-E203` | value outside enum or `tags.allowed` | AGSC-01-21 |
-| `AGSC-E204` | pattern violation (slug, `iri`, instant) | AGSC-01-10 |
+| `AGSC-E204` | pattern or length-bound violation (slug, `iri`, instant; `minLength`/`maxLength` in code points) | AGSC-01-10, AGSC-02-24 |
 | `AGSC-E205` | file-placement violation (`type` does not match folder; language-variant suffix disagrees with `lang`, or `lang` is not lowercase BCP 47) | AGSC-01-03, AGSC-01-13 |
 | `AGSC-E206` | slug not unique in Bundle | AGSC-01-11 |
 | `AGSC-E207` | unknown key (warning) | AGSC-02-05 |
 | `AGSC-E208` | language variant without a primary file | AGSC-01-13 |
-| `AGSC-E301` | link target unresolved | AGSC-03-02 |
+| `AGSC-E301` | link target unresolved (also an `agsc-selection` entry naming no item) | AGSC-03-02, AGSC-02-97 |
 | `AGSC-E302` | cycle in `requires` | AGSC-03-07 |
 | `AGSC-E303` | cycle in `broader`/`narrower` | AGSC-03-08 |
-| `AGSC-E304` | unknown link key (warning) | AGSC-03-03 |
+| `AGSC-E304` | unknown link key (warning; includes the reserved `peer-ref`) | AGSC-03-03, AGSC-11-12 |
 | `AGSC-E305` | orphan item (warning) | AGSC-03-10 |
 | `AGSC-E306` | computed inverse authored | AGSC-03-04 |
 | `AGSC-E307` | cluster nesting deeper than 3 | AGSC-03-22 |
@@ -102,7 +102,7 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed (exit 2) | AGSC-04-09 |
 | `AGSC-E604` | emitted text not NFC | AGSC-04-07 |
 | `AGSC-E605` | blank node in an RDF export | AGSC-05-08 |
-| `AGSC-E606` | combining sequence exceeds the normalisation bound | AGSC-04-23 |
+| `AGSC-E607` | combining sequence exceeds the normalisation bound (error) | AGSC-04-23 |
 | `AGSC-E606` | build instant defaulted to 0, no git history (warning) | AGSC-04-09 |
 | `AGSC-E701` | ledger chain broken | AGSC-08-23 |
 | `AGSC-E702` | ledger rewritten or out of order | AGSC-08-23 |
@@ -111,14 +111,15 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E705` | *(unassigned — reserved; never emitted)* | — |
 | `AGSC-E706` | content-branch commit outside the merged-pull-request path, or the ingest identity holding ruleset bypass rights | AGSC-08-26 |
 | `AGSC-E801` | `excludes` conflict after closure | AGSC-07-06 |
-| `AGSC-E802` | composition target unavailable (slug absent from the graph; `requires` target hidden by `supersedes`) | AGSC-07-03, AGSC-07-05a |
+| `AGSC-E802` | composition target unavailable (slug absent from the graph; `requires` target hidden by `supersedes`; a retired item named in a selection) | AGSC-07-03, AGSC-07-05a, AGSC-11-22 |
 | `AGSC-E803` | `contradicts` or missing `uses` (warning) | AGSC-07-07 |
 | `AGSC-E901` | file not found | AGSC-01-01 |
-| `AGSC-E902` | path escapes the Bundle root | AGSC-01-16 |
+| `AGSC-E902` | path escapes the Bundle root, or violates the relative-path grammar | AGSC-01-16, AGSC-01-35 |
 | `AGSC-E903` | archive refused | AGSC-01-16 |
-| `AGSC-E904` | size cap exceeded | AGSC-01-16 |
+| `AGSC-E904` | size cap exceeded (1 MiB, or `attachments{max_bytes}` for an attachment) | AGSC-01-16, AGSC-01-34 |
 | `AGSC-E209` | boundary configuration invalid (`federation{}`, `chunks{}`, `contribute[]`, `visibility` out of range or malformed) | AGSC-11-01, AGSC-11-14 |
 | `AGSC-E210` | declared surface not implemented, or emitted bytes disagree with its declaration | AGSC-11-16, AGSC-11-19 |
+| `AGSC-E211` | emitted surface without a declaration (warning) | AGSC-11-19 |
 | `AGSC-E311` | Link key value is an absolute URL (a Link MUST NOT cross Bundles) | AGSC-11-12 |
 | `AGSC-E312` | cross-node reference not normalisable to an IRI (omitted from the graph) | AGSC-11-12 |
 | `AGSC-E411` | Link target is a retired item (warning) | AGSC-11-22 |
@@ -127,6 +128,7 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E907` | peer unreachable or its discovery document invalid; skipped for this walk | AGSC-11-10 |
 | `AGSC-E412` | raster or unsafe image attachment on a pattern (must be SVG; no embedded raster, no script) | AGSC-02-98 |
 | `AGSC-E413` | attachment file absent or its bytes do not match the recorded SHA-256 | AGSC-01-34 |
+| `AGSC-E414` | orphan file under `content/attachments/` that no item names (warning) | AGSC-01-34 |
 | `AGSC-E804` | port with no producer or no consumer (warning) | AGSC-02-96, AGSC-07-23 |
 | `AGSC-E805` | saved architecture's stored verdict digest is stale (warning) | AGSC-02-97, AGSC-07-24 |
 

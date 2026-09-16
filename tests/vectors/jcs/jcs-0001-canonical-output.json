@@ -1,10 +1,27 @@
 {
   "area": "jcs",
   "description": "JCS canonical form: members sorted, no whitespace between tokens, ECMA-262 number serialisation, nested objects sorted too. The output is followed by exactly one LF when written to a file.",
-  "expected": { "output": "{\"a\":[1,2],\"b\":1,\"c\":{\"y\":null,\"z\":true},\"n\":1.5}" },
+  "expected": {
+    "output": "{\"a\":[1,2],\"b\":1,\"c\":{\"y\":null,\"z\":true},\"n\":1.5}"
+  },
   "id": "jcs-0001",
-  "input": { "value": { "b": 1, "n": 1.5, "c": { "z": true, "y": null }, "a": [1, 2] } },
+  "input": {
+    "value": {
+      "b": 1,
+      "n": 1.5,
+      "c": {
+        "z": true,
+        "y": null
+      },
+      "a": [
+        1,
+        2
+      ]
+    }
+  },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-04-05"
 }

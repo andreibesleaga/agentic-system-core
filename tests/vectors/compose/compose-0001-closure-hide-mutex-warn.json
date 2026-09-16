@@ -5,26 +5,92 @@
     "exit": 1,
     "harness_emitted": false,
     "verdict": {
-      "added": [{ "path": [["a2a", "requires", "mcp"]], "slug": "mcp" }],
-      "conflicts": [{ "code": "AGSC-E801", "key": "excludes", "pair": ["legacy-rpc", "mcp"] }],
-      "hidden": ["mcp-v1"],
-      "selection": ["a2a", "legacy-rpc", "mcp"],
+      "added": [
+        {
+          "path": [
+            [
+              "a2a",
+              "requires",
+              "mcp"
+            ]
+          ],
+          "slug": "mcp"
+        }
+      ],
+      "conflicts": [
+        {
+          "code": "AGSC-E801",
+          "key": "excludes",
+          "pair": [
+            "legacy-rpc",
+            "mcp"
+          ]
+        }
+      ],
+      "hidden": [
+        "mcp-v1"
+      ],
+      "selection": [
+        "a2a",
+        "legacy-rpc",
+        "mcp"
+      ],
       "valid": false,
-      "warnings": [{ "code": "AGSC-E803", "key": "uses", "source": "a2a", "target": "handoff" }]
+      "warnings": [
+        {
+          "code": "AGSC-E803",
+          "key": "uses",
+          "source": "a2a",
+          "target": "handoff"
+        }
+      ]
     }
   },
   "id": "compose-0001",
   "input": {
     "items": [
-      { "requires": ["mcp"], "slug": "a2a", "type": "concept", "uses": ["handoff"] },
-      { "slug": "handoff", "type": "concept" },
-      { "slug": "legacy-rpc", "type": "concept" },
-      { "excludes": ["legacy-rpc"], "slug": "mcp", "supersedes": ["mcp-v1"], "type": "concept" },
-      { "slug": "mcp-v1", "type": "concept" }
+      {
+        "requires": [
+          "mcp"
+        ],
+        "slug": "a2a",
+        "type": "concept",
+        "uses": [
+          "handoff"
+        ]
+      },
+      {
+        "slug": "handoff",
+        "type": "concept"
+      },
+      {
+        "slug": "legacy-rpc",
+        "type": "concept"
+      },
+      {
+        "excludes": [
+          "legacy-rpc"
+        ],
+        "slug": "mcp",
+        "supersedes": [
+          "mcp-v1"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "mcp-v1",
+        "type": "concept"
+      }
     ],
-    "selection": ["a2a", "mcp-v1", "legacy-rpc"]
+    "selection": [
+      "a2a",
+      "mcp-v1",
+      "legacy-rpc"
+    ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-07-06"
 }

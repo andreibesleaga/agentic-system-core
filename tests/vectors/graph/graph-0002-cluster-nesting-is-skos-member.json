@@ -16,12 +16,32 @@
   "input": {
     "base": "https://example.org",
     "items": [
-      { "slug": "foundations", "title": "Foundations", "type": "cluster" },
-      { "broader": ["foundations"], "slug": "protocols", "title": "Protocols", "type": "cluster" },
-      { "clusters": ["protocols"], "slug": "a2a", "title": "A2A", "type": "concept" }
+      {
+        "slug": "foundations",
+        "title": "Foundations",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "foundations"
+        ],
+        "slug": "protocols",
+        "title": "Protocols",
+        "type": "cluster"
+      },
+      {
+        "clusters": [
+          "protocols"
+        ],
+        "slug": "a2a",
+        "title": "A2A",
+        "type": "concept"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-05-19"
 }

@@ -8,11 +8,26 @@
   "input": {
     "base": "https://example.org",
     "items": [
-      { "lang": "en", "requires": ["mcp"], "slug": "a2a", "title": "A2A", "type": "concept" },
-      { "lang": "en", "slug": "mcp", "title": "MCP", "type": "concept" }
+      {
+        "lang": "en",
+        "requires": [
+          "mcp"
+        ],
+        "slug": "a2a",
+        "title": "A2A",
+        "type": "concept"
+      },
+      {
+        "lang": "en",
+        "slug": "mcp",
+        "title": "MCP",
+        "type": "concept"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-04-15"
 }

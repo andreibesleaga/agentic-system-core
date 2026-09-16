@@ -4,9 +4,14 @@
   "expected": {
     "body": "# Handoff\n\nAn agent passes control to another agent.\n",
     "frontmatter": {
-      "aliases": ["notes/handoff.md"],
+      "aliases": [
+        "notes/handoff.md"
+      ],
       "kind": "explainer",
-      "prov": { "operator": "human:andreibesleaga", "origin": "human" },
+      "prov": {
+        "operator": "human:andreibesleaga",
+        "origin": "human"
+      },
       "title": "Handoff",
       "type": "concept"
     },
@@ -15,10 +20,21 @@
   },
   "id": "adopt-0001",
   "input": {
-    "config": { "bundle": { "operator": "human:andreibesleaga" } },
-    "files": [{ "markdown": "# Handoff\n\nAn agent passes control to another agent.\n", "path": "notes/handoff.md" }]
+    "config": {
+      "bundle": {
+        "operator": "human:andreibesleaga"
+      }
+    },
+    "files": [
+      {
+        "markdown": "# Handoff\n\nAn agent passes control to another agent.\n",
+        "path": "notes/handoff.md"
+      }
+    ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-02-90"
 }

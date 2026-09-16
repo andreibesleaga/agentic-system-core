@@ -3,22 +3,59 @@
   "description": "Inverses are computed at build, never authored: requires yields required-by, and the symmetric key related is materialised in both directions. Edges are sorted by (source, key, target).",
   "expected": {
     "edges": [
-      { "computed": false, "key": "related", "source": "a2a", "target": "handoff" },
-      { "computed": false, "key": "requires", "source": "a2a", "target": "mcp" },
-      { "computed": true, "key": "related", "source": "handoff", "target": "a2a" },
-      { "computed": true, "key": "required-by", "source": "mcp", "target": "a2a" }
+      {
+        "computed": false,
+        "key": "related",
+        "source": "a2a",
+        "target": "handoff"
+      },
+      {
+        "computed": false,
+        "key": "requires",
+        "source": "a2a",
+        "target": "mcp"
+      },
+      {
+        "computed": true,
+        "key": "related",
+        "source": "handoff",
+        "target": "a2a"
+      },
+      {
+        "computed": true,
+        "key": "required-by",
+        "source": "mcp",
+        "target": "a2a"
+      }
     ],
     "errors": []
   },
   "id": "links-0001",
   "input": {
     "items": [
-      { "related": ["handoff"], "requires": ["mcp"], "slug": "a2a", "type": "concept" },
-      { "slug": "handoff", "type": "concept" },
-      { "slug": "mcp", "type": "concept" }
+      {
+        "related": [
+          "handoff"
+        ],
+        "requires": [
+          "mcp"
+        ],
+        "slug": "a2a",
+        "type": "concept"
+      },
+      {
+        "slug": "handoff",
+        "type": "concept"
+      },
+      {
+        "slug": "mcp",
+        "type": "concept"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-03-04"
 }

@@ -18,13 +18,25 @@
   },
   "id": "adopt-0002",
   "input": {
-    "config": { "bundle": { "operator": "human:andreibesleaga" } },
+    "config": {
+      "bundle": {
+        "operator": "human:andreibesleaga"
+      }
+    },
     "files": [
-      { "markdown": "---\ntype: concept\nkind: pattern\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nRoute work to workers.\n", "path": "content/concepts/supervisor.md" },
-      { "markdown": "---\n\n# Rules\n\nA thematic break is not a frontmatter fence.\n", "path": "rules.md" }
+      {
+        "markdown": "---\ntype: concept\nkind: pattern\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Intent\n\nRoute work to workers.\n",
+        "path": "content/concepts/supervisor.md"
+      },
+      {
+        "markdown": "---\n\n# Rules\n\nA thematic break is not a frontmatter fence.\n",
+        "path": "rules.md"
+      }
     ]
   },
   "level": "required",
-  "options": { "spec_version": "1.0.0-rc.2" },
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
   "rule": "AGSC-02-91"
 }

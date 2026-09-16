@@ -1,0 +1,132 @@
+{
+  "area": "build",
+  "description": "The tokenizer of AGSC-06-23 is normative, so two ports emit byte-identical search.json. Input is title, description, tags and the body with fenced code removed (const and secret never appear). ASCII lower-casing maps only A-Z: Cafe with an acute accent lower-cases its C and keeps the non-ASCII letter code-point-wise. Hyphens and punctuation are token boundaries (Multi-Agent gives two tokens); tokens shorter than two UTF-16 code units are dropped (a, x); there is no stemming, so agent and agents are distinct tokens. docs[] is ordered by slug, posting lists ascend, and terms member names are in JCS (UTF-16) order.",
+  "expected": {
+    "search": {
+      "docs": [
+        {
+          "cluster": "patterns",
+          "description": "Two or more agents cooperating on one task.",
+          "slug": "a",
+          "title": "Multi-Agent Systems"
+        },
+        {
+          "cluster": "protocols",
+          "description": "One protocol for tool access, nothing more here.",
+          "slug": "b",
+          "title": "MCP"
+        }
+      ],
+      "terms": {
+        "42": [
+          0
+        ],
+        "access": [
+          1
+        ],
+        "agent": [
+          0
+        ],
+        "agents": [
+          0
+        ],
+        "ai": [
+          0
+        ],
+        "au": [
+          0
+        ],
+        "café": [
+          0
+        ],
+        "cooperating": [
+          0
+        ],
+        "for": [
+          1
+        ],
+        "here": [
+          1
+        ],
+        "lait": [
+          0
+        ],
+        "mcp": [
+          1
+        ],
+        "more": [
+          0,
+          1
+        ],
+        "multi": [
+          0
+        ],
+        "nothing": [
+          1
+        ],
+        "ok": [
+          0
+        ],
+        "on": [
+          0
+        ],
+        "one": [
+          0,
+          1
+        ],
+        "or": [
+          0
+        ],
+        "protocol": [
+          1
+        ],
+        "systems": [
+          0
+        ],
+        "task": [
+          0
+        ],
+        "tool": [
+          1
+        ],
+        "two": [
+          0
+        ]
+      }
+    }
+  },
+  "id": "build-0001",
+  "input": {
+    "items": [
+      {
+        "body": "Café au lait — 42 ok (a x).\n\n```js\nconst secret = 1;\n```\n",
+        "clusters": [
+          "patterns"
+        ],
+        "description": "Two or more agents cooperating on one task.",
+        "slug": "a",
+        "tags": [
+          "ai"
+        ],
+        "title": "Multi-Agent Systems",
+        "type": "concept"
+      },
+      {
+        "body": "",
+        "clusters": [
+          "protocols"
+        ],
+        "description": "One protocol for tool access, nothing more here.",
+        "slug": "b",
+        "tags": [],
+        "title": "MCP",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-23"
+}
