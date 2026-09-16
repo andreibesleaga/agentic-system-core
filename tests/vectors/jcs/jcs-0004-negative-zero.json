@@ -1,0 +1,21 @@
+{
+  "area": "jcs",
+  "description": "Negative zero serialises as 0: ECMA-262 Number::toString maps -0 to the string 0, confirmed by RFC 8785 erratum 7920 (verified 2026-09-11). A producer that emits -0 breaks byte-identity against every conforming producer.",
+  "expected": {
+    "output": "{\"a\":0,\"b\":0,\"c\":-0.5}"
+  },
+  "id": "jcs-0004",
+  "input": {
+    "value": {
+      "a": -0.0,
+      "b": 0.0,
+      "c": -0.5
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-04-05"
+}

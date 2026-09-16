@@ -1,5 +1,5 @@
 # Trace: PRD-039, PRD-040, PRD-042, PRD-043 · audit/D §3(d) · PLAN §6(b), C5
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(d) "Agent proposer (Mode 1 write)"
+# Source of truth: the private design register (audit D) §3(d) "Agent proposer (Mode 1 write)"
 @persona-d @mode-1
 Feature: Agent proposer contributes a change humans ratify
   As P4 (agent proposer, operator-signed)

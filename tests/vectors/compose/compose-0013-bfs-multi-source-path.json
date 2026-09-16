@@ -1,0 +1,76 @@
+{
+  "area": "compose",
+  "description": "Closure records the path found by a multi-source breadth-first traversal over the whole de-duplicated selection: d is reachable at depth 2 from a and at depth 1 from b, so it records b's path. A per-item closure union, or a depth-first traversal, records a's longer path and fails this vector.",
+  "expected": {
+    "added": [
+      {
+        "path": [
+          [
+            "a",
+            "requires",
+            "c"
+          ]
+        ],
+        "slug": "c"
+      },
+      {
+        "path": [
+          [
+            "b",
+            "requires",
+            "d"
+          ]
+        ],
+        "slug": "d"
+      }
+    ],
+    "wrong_path_if_depth_first_or_per_item_union": [
+      [
+        "a",
+        "requires",
+        "c"
+      ],
+      [
+        "c",
+        "requires",
+        "d"
+      ]
+    ]
+  },
+  "id": "compose-0013",
+  "input": {
+    "items": [
+      {
+        "requires": [
+          "c"
+        ],
+        "slug": "a"
+      },
+      {
+        "requires": [
+          "d"
+        ],
+        "slug": "b"
+      },
+      {
+        "requires": [
+          "d"
+        ],
+        "slug": "c"
+      },
+      {
+        "slug": "d"
+      }
+    ],
+    "selection": [
+      "a",
+      "b"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-07-04"
+}

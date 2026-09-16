@@ -1,0 +1,38 @@
+{
+  "area": "frontmatter",
+  "description": "Length bounds count Unicode code points, the unit JSON Schema minLength and maxLength define. A 120-code-point title of astral characters is valid; counting UTF-16 code units would make it 240 and wrongly reject it, which is why the schemas use length keywords and never a regular-expression quantifier.",
+  "expected": {
+    "results": [
+      {
+        "code_points": 120,
+        "slug": "a",
+        "valid": true
+      },
+      {
+        "code": "AGSC-E204",
+        "code_points": 121,
+        "slug": "b",
+        "valid": false
+      }
+    ]
+  },
+  "id": "frontmatter-0030",
+  "input": {
+    "items": [
+      {
+        "slug": "a",
+        "title": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      },
+      {
+        "slug": "b",
+        "title": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-02-24"
+}

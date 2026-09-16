@@ -1,5 +1,5 @@
 # Trace: PRD-002, PRD-011, PRD-013, PRD-014, PRD-015, PRD-025 · audit/D §3(a) · PLAN §6(a)
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(a) "Human reader (Mode 0)"
+# Source of truth: the private design register (audit D) §3(a) "Human reader (Mode 0)"
 @persona-a @mode-0
 Feature: Human reader finds a pattern with evidence
   As P1 (human reader: architect/engineer)

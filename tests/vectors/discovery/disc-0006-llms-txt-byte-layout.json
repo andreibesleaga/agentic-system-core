@@ -1,0 +1,52 @@
+{
+  "area": "discovery",
+  "description": "The agent-facing text file has an exact byte layout: provenance comment, H1, blockquote, cluster sections ordered by slug, an Other section for unclustered items, one blank line between blocks and nothing else. An item with no description repeats its title; a draft item appears nowhere. Without this pin two conforming writers emit different bytes and Level 0 is unreachable.",
+  "expected": {
+    "draft_excluded": [
+      "hidden"
+    ],
+    "output": "<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.3\ngenerated_at: 2026-09-16T00:00:00Z\n-->\n\n# Example Node\n\n> A node of the Agentic Knowledge Web.\n\n## Coordination\n\n- [Supervisor](https://a.example/concepts/supervisor/): Routes work to workers.\n\n## Other\n\n- [Loose Note](https://a.example/concepts/loose-note/): Loose Note\n"
+  },
+  "id": "disc-0006",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "description": "A node of the Agentic Knowledge Web.",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "title": "Example Node"
+    },
+    "clusters": [
+      {
+        "slug": "coordination",
+        "title": "Coordination"
+      }
+    ],
+    "generated_at": "2026-09-16T00:00:00Z",
+    "items": [
+      {
+        "clusters": [
+          "coordination"
+        ],
+        "description": "Routes work to workers.",
+        "slug": "supervisor",
+        "title": "Supervisor"
+      },
+      {
+        "slug": "loose-note",
+        "title": "Loose Note"
+      },
+      {
+        "slug": "hidden",
+        "status": "draft",
+        "title": "Hidden"
+      }
+    ],
+    "spec_version": "1.0.0-rc.3"
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-13a"
+}

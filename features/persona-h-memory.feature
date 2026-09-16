@@ -1,5 +1,5 @@
 # Trace: PRD-022, PRD-026, PRD-027 · audit/D §3(h) · PLAN §5.2 ContentStore
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(h) "Agent using an instance as memory (Mode 1) with import/export"
+# Source of truth: the private design register (audit D) §3(h) "Agent using an instance as memory (Mode 1) with import/export"
 @persona-h @mode-1
 Feature: Agent uses a node as external auditable memory
   As P8 (agent-as-memory, Mode 1)

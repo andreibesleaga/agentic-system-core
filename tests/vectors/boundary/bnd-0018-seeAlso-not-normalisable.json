@@ -1,0 +1,44 @@
+{
+  "area": "boundary",
+  "description": "A reference under a declared peer's base that cannot be parsed as an IRI after A-label conversion is omitted from the graph with a lint error; a valid one keeps its existing percent-escapes byte for byte and is never re-encoded.",
+  "expected": {
+    "emitted": [
+      "https://b.example/ok%20path/"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E312",
+        "severity": "error",
+        "url": "https://b.example/bad space/"
+      }
+    ],
+    "reencoded": false
+  },
+  "id": "bnd-0018",
+  "input": {
+    "items": [
+      {
+        "references": [
+          {
+            "url": "https://b.example/ok%20path/"
+          },
+          {
+            "url": "https://b.example/bad space/"
+          }
+        ],
+        "slug": "a"
+      }
+    ],
+    "peers": [
+      {
+        "base": "https://b.example/"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-12"
+}

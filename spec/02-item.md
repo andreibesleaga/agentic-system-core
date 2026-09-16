@@ -56,7 +56,7 @@
 ## 2.5 Status transitions and length units
 
 - **AGSC-02-23** An item with no `status` starts `stable` (the default of the §2.2 common-key table), and every transition between `draft`, `stable` and `deprecated` is legal in both directions — including `deprecated` → `stable` (un-deprecation), which a lint MUST report as a warning (`AGSC-E409`) and MUST NOT reject. `supersedes`/`superseded-by` is orthogonal to `status` and changes neither. [PRD-018 ← D48(7)]
-- **AGSC-02-24** Every length bound in this specification — `title` 3–120, `description` 40–200, `when` ≤1024 — counts **UTF-16 code units**, the unit of the JSON Schema patterns that enforce them; no bound counts code points, grapheme clusters or bytes. [PRD-002 ← D48(7), AGSC-04-05]
+- **AGSC-02-24** (amended at rc.3) Every length bound in this specification — `title` 3–120, `description` 40–200, `when` ≤1024, `alt` ≥1, port names ≤64 — counts **Unicode code points**, which is how JSON Schema 2020-12 defines `minLength`/`maxLength` (the length of a string instance is the number of its characters as defined by RFC 8259) and how every language counts a decoded string. No bound counts UTF-16 code units, grapheme clusters or bytes. The schemas enforce these bounds with `minLength`/`maxLength` and never with a regular-expression quantifier, whose unit depends on whether the engine is in Unicode mode. *This is deliberately different from AGSC-04-05's UTF-16 rule, which governs JSON member-name **ordering** only and comes from RFC 8785; ordering and length are separate questions with separate units.* [PRD-002 ← D48(7), AGSC-04-05, D72 A-06, V6-B portability]
 
 ## 2.9 Adoption of bare Markdown (added 2026-09-02, S01 Amendment 1; rewritten 2026-09-02 per D48(5))
 

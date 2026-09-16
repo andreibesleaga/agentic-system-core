@@ -25,7 +25,8 @@
     "title": {
       "description": "3-120 characters, any Unicode in NFC (§2.2 common-key table).",
       "type": "string",
-      "pattern": "^[\\s\\S]{3,120}$"
+      "minLength": 3,
+      "maxLength": 120
     },
     "description": {
       "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present on those two types the 40-200 UTF-16 code unit bound is enforced by their branches (AGSC-02-24).",
@@ -172,7 +173,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+            "pattern": "^[^/][^\\u0000]*$"
           },
           "media_type": {
             "type": "string",
@@ -207,7 +208,8 @@
         "description": {
           "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).",
           "type": "string",
-          "pattern": "^[\\s\\S]{40,200}$"
+          "minLength": 40,
+          "maxLength": 200
         },
         "kind": {
           "enum": [
@@ -414,7 +416,8 @@
         "when": {
           "description": "One-line trigger; becomes the exported SKILL.md description, at most 1024 characters (AGSC-02-15).",
           "type": "string",
-          "pattern": "^[^\\n]{1,1024}$"
+          "minLength": 1,
+          "maxLength": 1024
         },
         "inputs": {
           "type": "array",
@@ -455,7 +458,8 @@
         "description": {
           "description": "40-200 UTF-16 code units (§2.2 common-key table, AGSC-02-24).",
           "type": "string",
-          "pattern": "^[\\s\\S]{40,200}$"
+          "minLength": 40,
+          "maxLength": 200
         },
         "broader": {
           "description": "At most one parent cluster: the tree is mono-parent (AGSC-03-08); more than one value is AGSC-E308 (AGSC-03-22).",
@@ -525,12 +529,16 @@
     "slug": {
       "description": "AGSC-01-10: 1-64 characters, lowercase ASCII, single hyphens, no leading or trailing hyphen, no --.",
       "type": "string",
-      "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$"
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
     },
     "link_target": {
       "description": "A slug, optionally followed by #anchor (AGSC-03-02).",
       "type": "string",
-      "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?(?:#[a-z0-9][a-z0-9-]*)?$"
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:#[a-z0-9]+(?:-[a-z0-9]+)*)?$",
+      "minLength": 1,
+      "maxLength": 128
     },
     "link_array": {
       "type": "array",

@@ -1,5 +1,5 @@
 # Trace: PRD-039, PRD-040, PRD-041, PRD-042, PRD-050 · audit/D §3(b) · PLAN §6(b)
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(b) "Human contributor proposing an edit (Mode 0)"
+# Source of truth: the private design register (audit D) §3(b) "Human contributor proposing an edit (Mode 0)"
 @persona-b @mode-0
 Feature: Human contributor fixes a page and passes a hard review gate
   As P2 (human contributor)

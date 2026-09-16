@@ -1,0 +1,44 @@
+{
+  "area": "slug",
+  "description": "The slug and anchor patterns compile in every regular-expression engine: no lookahead, no backreference. Double hyphens and leading or trailing hyphens are excluded by the grammar itself, and the 1-64 bound is a length keyword rather than a quantifier, so RE2, Go and Rust accept the pattern unchanged.",
+  "expected": {
+    "engine_features_used": [],
+    "invalid": [
+      "a--b",
+      "-a",
+      "a-",
+      "",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "A",
+      "a_b"
+    ],
+    "lookahead": false,
+    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "valid": [
+      "ok",
+      "a-b-c",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ]
+  },
+  "id": "slug-0006",
+  "input": {
+    "candidates": [
+      "ok",
+      "a-b-c",
+      "a--b",
+      "-a",
+      "a-",
+      "",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "A",
+      "a_b"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-01-35"
+}

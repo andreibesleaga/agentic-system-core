@@ -1,7 +1,7 @@
 # PLAN — AgenticSystemCore v1 architecture (S02 artifact; arc42 + C4 + ISO 42010)
 
 **Scope.** The architecture that satisfies the FROZEN `docs/PRD.md` (PRD-001…052, NFR-01…13). No requirement is added, changed or dropped here.
-**Authority.** `discovery-product/CONTINUE-FROM-HERE.md` → `04-DECISIONS.md` (D01–D61 + notes) → `14-FINAL-HANDOFF.md` §3 → `audit/D` §1–§6 (adopted verbatim) → `audit/G` §2 → `research/17` §1/§6. Constitution I–XV is law.
+**Authority.** The project's private decision register (**D01–D61** and their notes), its final handoff record §3, audit D §1–§6 (adopted verbatim), audit G §2, and research unit 17` §1/§6. Constitution I–XV is law.
 **Vocabulary (final, D36-final/D41).** Concept · Episode · Procedure · Lesson · Link · Cluster · Bundle · Source · Proposal · Review · Gate · Harness. `type ∈ concept|episode|procedure|lesson|cluster|gate`; fourteen Link keys (nine core + five Mode-2, D53 — only the core nine drive composition); 16 verbs (AGSC-09-07: the thirteen plus `run`, `trace`, `conform`, the first two opt-in).
 
 ---

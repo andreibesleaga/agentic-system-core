@@ -1,5 +1,5 @@
 # Trace: PRD-032, PRD-033, PRD-034, PRD-035 · audit/D §3(f) · PLAN §6.a (Interchange)
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(f) "Integrator installing skills (Mode 3)"
+# Source of truth: the private design register (audit D) §3(f) "Integrator installing skills (Mode 3)"
 @persona-f @mode-3
 Feature: Integrator installs this knowledge into my agent
   As P6 (integrator)

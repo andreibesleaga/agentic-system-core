@@ -102,10 +102,13 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed (exit 2) | AGSC-04-09 |
 | `AGSC-E604` | emitted text not NFC | AGSC-04-07 |
 | `AGSC-E605` | blank node in an RDF export | AGSC-05-08 |
+| `AGSC-E606` | combining sequence exceeds the normalisation bound | AGSC-04-23 |
 | `AGSC-E606` | build instant defaulted to 0, no git history (warning) | AGSC-04-09 |
 | `AGSC-E701` | ledger chain broken | AGSC-08-23 |
 | `AGSC-E702` | ledger rewritten or out of order | AGSC-08-23 |
 | `AGSC-E703` | git history too shallow to derive the ledger (exit 2) | AGSC-08-20a |
+| `AGSC-E704` | *(unassigned — reserved; never emitted)* | — |
+| `AGSC-E705` | *(unassigned — reserved; never emitted)* | — |
 | `AGSC-E706` | content-branch commit outside the merged-pull-request path, or the ingest identity holding ruleset bypass rights | AGSC-08-26 |
 | `AGSC-E801` | `excludes` conflict after closure | AGSC-07-06 |
 | `AGSC-E802` | composition target unavailable (slug absent from the graph; `requires` target hidden by `supersedes`) | AGSC-07-03, AGSC-07-05a |

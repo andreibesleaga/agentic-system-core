@@ -1,0 +1,32 @@
+{
+  "area": "graph",
+  "description": "N-Quads escaping is exactly backslash, quote, n, r, t and lowercase u00xx for other C0 characters; every character at or above U+0020 is written as itself in UTF-8, so an astral character is never U-escaped. A plain literal carries an explicit xsd:string in N-Quads and none in Turtle.",
+  "expected": {
+    "forbidden_forms": [
+      "\\U0001F600",
+      "\\u0041"
+    ],
+    "nquads_lang": "\"Label\"@en",
+    "nquads_literal": "\"a\\\"b\\\\c\\td\\ne\\rf\\u0001g😀h\"^^<http://www.w3.org/2001/XMLSchema#string>",
+    "nquads_typed": "\"2026-09-16T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime>",
+    "turtle_literal_has_explicit_xsd_string": false
+  },
+  "id": "graph-0012",
+  "input": {
+    "lang_literal": {
+      "lang": "en",
+      "value": "Label"
+    },
+    "literal": "a\"b\\c\td\ne\rf\u0001g😀h",
+    "typed_literal": {
+      "datatype": "xsd:dateTime",
+      "value": "2026-09-16T00:00:00Z"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-05-32"
+}

@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+// PRD-054 generator: derive every published count from the artefacts themselves,
+// so that no document ever states a count by hand. Node stdlib only, zero
+// dependencies, exit 0/1, --json envelope. [AGSC-09-90, D67 group C, SPEC-SYNC-01]
+'use strict';
+const fs = require('fs'), path = require('path');
+const root = path.resolve(__dirname, '..');
+const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+const walk = d => fs.readdirSync(path.join(root, d), { withFileTypes: true })
+  .flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+
+const specFiles = fs.readdirSync(path.join(root, 'spec')).filter(f => f.endsWith('.md')).sort();
+const specText = specFiles.map(f => read(path.join('spec', f))).join('\n');
+const ruleIds = (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/g) || []).map(s => s.slice(2, -2));
+const rules = [...new Set(ruleIds)];
+const registered = [...new Set((read('spec/09-conformance.md').match(/^\| `AGSC-E\d{3}`/gm) || [])
+  .map(s => (s.match(/AGSC-E\d{3}/) || [''])[0]))];
+const used = [...new Set(specText.match(/AGSC-E\d{3}/g) || [])];
+const vectorFiles = walk('tests/vectors').filter(f => f.endsWith('.json'));
+const vectors = vectorFiles.map(f => JSON.parse(read(f)));
+const ttl = read('ontology/agsc.ttl');
+const n = re => (ttl.match(re) || []).length;
+
+const counts = {
+  spec_version: (read('spec/00-overview.md').match(/1\.0\.0-rc\.\d+/) || ['unknown'])[0],
+  rules: rules.length,
+  error_codes_registered: registered.length,
+  error_codes_used: used.length,
+  vectors_total: vectors.length,
+  vectors_required: vectors.filter(v => v.level === 'required').length,
+  vectors_optional: vectors.filter(v => v.level === 'optional').length,
+  vectors_withdrawn: vectors.filter(v => v.level === 'withdrawn').length,
+  vector_areas: [...new Set(vectors.map(v => v.area))].sort(),
+  ontology_classes: n(/a owl:Class/g),
+  ontology_object_properties: n(/a owl:ObjectProperty/g),
+  ontology_datatype_properties: n(/a owl:DatatypeProperty/g),
+};
+counts.ontology_terms = counts.ontology_classes + counts.ontology_object_properties
+  + counts.ontology_datatype_properties;
+
+const findings = [];
+for (const id of rules) if (ruleIds.filter(x => x === id).length > 1) findings.push(`duplicate rule id ${id}`);
+for (const c of used) if (!registered.includes(c)) findings.push(`error code used but not registered: ${c}`);
+for (const v of vectors) {
+  if (!rules.includes(v.rule)) findings.push(`vector ${v.id} cites unknown rule ${v.rule}`);
+  for (const k of ['area', 'description', 'expected', 'id', 'input', 'level', 'rule'])
+    if (!(k in v)) findings.push(`vector ${v.id} missing member ${k}`);
+}
+const ids = vectors.map(v => v.id);
+for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
+
+if (process.argv.includes('--json')) {
+  console.log(JSON.stringify({ verb: 'count-artifacts', ok: findings.length === 0, counts, findings }, null, 2));
+} else {
+  for (const [k, v] of Object.entries(counts)) console.log(`${k}: ${Array.isArray(v) ? v.join(' ') : v}`);
+  for (const f of findings) console.error(`FINDING ${f}`);
+}
+process.exit(findings.length === 0 ? 0 : 1);

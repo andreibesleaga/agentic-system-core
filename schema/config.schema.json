@@ -359,7 +359,9 @@
     },
     "slug": {
       "type": "string",
-      "pattern": "^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$"
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
     },
     "human_actor": {
       "description": "AGSC-01-25: the accountable operator of this Bundle, human:<id> only; the first source of prov.operator at adoption (AGSC-02-90).",

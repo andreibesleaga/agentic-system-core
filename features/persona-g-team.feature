@@ -1,5 +1,5 @@
 # Trace: PRD-028, PRD-029, PRD-030, PRD-031 · audit/D §3(g) · PLAN §6.a (Mode 2)
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(g) "Team using an instance as live specs (Mode 2) with Claude Code/GABBE"
+# Source of truth: the private design register (audit D) §3(g) "Team using an instance as live specs (Mode 2) with Claude Code/GABBE"
 @persona-g @mode-2
 Feature: Project team keeps its agent-built specs governed
   As P7 (project team, Mode 2)
@@ -35,4 +35,4 @@ Feature: Project team keeps its agent-built specs governed
   Scenario: Team publishes its own specs as an instance of itself (should)
     When "npx agentic-system-core build" runs with "/specs/" enabled
     Then "/specs/" is generated from "spec/00–09"
-    And the confidential source "discovery-product/05-WILEY-LETTER-CHECK.md" is excluded from every export
+    And a file listed in the Bundle's private-source exclusion list is excluded from every export

@@ -1,0 +1,35 @@
+{
+  "area": "lint",
+  "description": "Normalisation buffers a starter-delimited segment, so a starter followed by an unbounded run of combining marks is a memory-exhaustion surface. More than 256 marks after one starter is an error naming the file and offset; exactly 256 is accepted.",
+  "expected": {
+    "clean": [
+      "content/concepts/ok.md"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E606",
+        "path": "content/concepts/bad.md",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "lint-0022",
+  "input": {
+    "files": [
+      {
+        "body": "á́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́",
+        "path": "content/concepts/ok.md"
+      },
+      {
+        "body": "á́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́",
+        "path": "content/concepts/bad.md"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-04-23"
+}

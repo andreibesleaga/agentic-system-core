@@ -2,9 +2,9 @@
 
 **Product.** AgenticSystemCore — *a Distributed Ontological Agentic Memory engine, reference node of the Agentic Knowledge Web* (tagline D37). A Bundle is a folder of Markdown + YAML frontmatter (OKF v0.2 superset), typed by `type` and linked by **fourteen** typed Links (nine core + five Mode-2) — at once wiki, RDF graph and agent memory.
 
-**Goal.** v1 live on `agenticsystemcore.com` by **2026-11-06** (GA; `GABBE/project/TASKS.md` §Calendar — the earlier ~2026-10-10 date now marks *Part I core complete*) with the 153 authored pattern Concepts imported from the retired site, re-summarized and clearer, with correct DSL→SVG diagrams.
+**Goal.** v1 live on `agenticsystemcore.com` by **2026-11-06** (GA; the project calendar in the private planning register — the earlier ~2026-10-10 date now marks *Part I core complete*) with the 153 authored pattern Concepts imported from the retired site, re-summarized and clearer, with correct DSL→SVG diagrams.
 
-**Authority.** `discovery-product/CONTINUE-FROM-HERE.md` → `04-DECISIONS.md` (D01–D61 + notes) → `14-FINAL-HANDOFF.md` → `audit/D` (§1 model, §6 MVP). Constitution I–XV is law; on conflict escalate.
+**Authority.** The project's private decision register (**D01–D61** and their notes), its final handoff record, and audit D (§1 model, §6 MVP). Constitution I–XV is law; on conflict escalate.
 
 ---
 
@@ -143,7 +143,7 @@ Scope: **v1** = audit/D §6 must (M1–M15); **should** = S1–S8; **v1.x** = la
 
 ### 2.9b S01 Amendment 3 (V1 verification, 2026-09-02) — restatements, not rewrites
 
-The frozen rows above stand verbatim. Two of them are **restated** here, as D48 directs after the V1 mathematical/algorithmic verification (`discovery-product/audit/V1-math-algorithmic-verification.md`); where a restatement and the frozen row differ in mechanism, the restatement governs the specification and the engine, and the frozen row remains the record of what S01 approved.
+The frozen rows above stand verbatim. Two of them are **restated** here, as **D48** directs after the V1 mathematical and algorithmic verification; where a restatement and the frozen row differ in mechanism, the restatement governs the specification and the engine, and the frozen row remains the record of what S01 approved.
 
 | ID | Restatement (D48) | Acceptance | Trace |
 |---|---|---|---|

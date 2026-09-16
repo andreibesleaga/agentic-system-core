@@ -1,5 +1,5 @@
 # Trace: PRD-022, PRD-023, PRD-025 · audit/D §3(c) · PLAN §5.2 ToolTransport
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(c) "Agent reader via MCP (Mode 1 read)"
+# Source of truth: the private design register (audit D) §3(c) "Agent reader via MCP (Mode 1 read)"
 @persona-c @mode-1
 Feature: Agent reader queries structured knowledge without scraping
   As P3 (agent reader)

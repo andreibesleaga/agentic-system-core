@@ -43,7 +43,7 @@ same change set — reviewers should treat a diagram left behind as equivalent t
   (e.g. the full ontology mapping), it is split by collapsing repeated targets into one shared node
   with descriptive edge labels rather than cramming.
 - **Content discipline**: every fact is sourced from the frozen inputs for this pack — `docs/PRD.md`,
-  `docs/PLAN.md`, `discovery-product/audit/D-v1-system-walkthrough.md` §1/§3/§4, and
-  `discovery-product/04-DECISIONS.md` D41/D43/D44 — nothing is invented; `state-sdlc.md` additionally
+  `docs/PLAN.md`, the v1 system walkthrough recorded in the project's private design register (audit D, §1/§3/§4), and
+  decisions **D41**, **D43** and **D44** of that register — nothing is invented; `state-sdlc.md` additionally
   cites `GABBE/agents/AGENTS.md` (a mandatory boot document) and says explicitly where detail was
   deliberately left generic because the frozen inputs do not name it.

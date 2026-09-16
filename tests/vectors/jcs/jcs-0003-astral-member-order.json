@@ -1,0 +1,28 @@
+{
+  "area": "jcs",
+  "description": "JSON member names sort by UTF-16 code units, not code points, and the two genuinely differ here: U+FF3A is the lower code point but the higher UTF-16 first unit, so the astral key sorts first. A port that sorts member names by rune emits different bytes for search.json, whose tokens are member names drawn from arbitrary NFC text.",
+  "expected": {
+    "order": [
+      "𐀀",
+      "Ｚ"
+    ],
+    "output": "{\"𐀀\":2,\"Ｚ\":1}",
+    "wrong_order_if_sorted_by_code_point": [
+      "Ｚ",
+      "𐀀"
+    ]
+  },
+  "id": "jcs-0003",
+  "input": {
+    "value": {
+      "Ｚ": 1,
+      "𐀀": 2
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-04-05"
+}

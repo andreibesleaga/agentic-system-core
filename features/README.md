@@ -1,6 +1,6 @@
 # features/ — Gherkin persona scenarios (E2E source, M13/M15)
 
-Eleven `.feature` files, one per persona walkthrough in `discovery-product/audit/D-v1-system-walkthrough.md`
+Eleven `.feature` files, one per persona walkthrough in `the private design register (audit D)`
 §3 (a)–(j). Each file is `Feature:` + 2–4 `Scenario:`/`Scenario Outline:` in strict Given/When/Then,
 tagged `@persona-x` + one or more `@PRD-xxx`. Content is drawn only from the frozen walkthrough steps
 and `docs/PRD.md` acceptance criteria — nothing invented.

@@ -1,5 +1,5 @@
 # Trace: PRD-005, PRD-044, PRD-045, PRD-048, PRD-049 · audit/D §3(i) · PLAN §7
-# Source of truth: discovery-product/audit/D-v1-system-walkthrough.md §3(i) "Maintainer running CI/cron/refresh/review"
+# Source of truth: the private design register (audit D) §3(i) "Maintainer running CI/cron/refresh/review"
 @persona-i @mode-0
 Feature: Owner-as-operator keeps the site green with zero maintenance
   As P9 (owner-as-operator)
