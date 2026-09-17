@@ -9,12 +9,12 @@
     "findings": [
       {
         "code": "AGSC-E210",
-        "href": "/.well-known/agent-card.json",
+        "href": "https://a.example/.well-known/agent-card.json",
         "severity": "error"
       },
       {
         "code": "AGSC-E210",
-        "href": "/holo/",
+        "href": "https://a.example/holo/",
         "severity": "error"
       }
     ]
@@ -24,19 +24,19 @@
     "declared": [
       {
         "agsc-surface": "a2a-card",
-        "href": "/.well-known/agent-card.json"
+        "href": "https://a.example/.well-known/agent-card.json"
       },
       {
         "agsc-surface": "x-acme-holo",
-        "href": "/holo/"
+        "href": "https://a.example/holo/"
       },
       {
         "agsc-surface": "llms-txt",
-        "href": "/llms.txt"
+        "href": "https://a.example/llms.txt"
       },
       {
         "agsc-surface": "chunks",
-        "href": "/chunks.jsonl"
+        "href": "https://a.example/chunks.jsonl"
       }
     ],
     "pinning_vectors": {

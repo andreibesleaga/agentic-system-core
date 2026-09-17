@@ -1,0 +1,62 @@
+{
+  "area": "boundary",
+  "description": "On WebMCP every tool carries the floor as annotation hints — readOnlyHint on search/read/links/compose/ask, consequentialHint on propose/remember, untrustedContentHint on every prose-returning tool — and on MCP the extension id com.agenticsystemcore/knowledge is advertised in the capabilities.extensions member returned by server/discover.",
+  "expected": {
+    "mcp": {
+      "server/discover": {
+        "capabilities": {
+          "extensions": [
+            "com.agenticsystemcore/knowledge"
+          ]
+        }
+      }
+    },
+    "webmcp": {
+      "ask": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "compose": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "links": {
+        "readOnlyHint": true,
+        "untrustedContentHint": false
+      },
+      "propose": {
+        "consequentialHint": true,
+        "readOnlyHint": false
+      },
+      "read": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "remember": {
+        "consequentialHint": true,
+        "readOnlyHint": false
+      },
+      "search": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      }
+    }
+  },
+  "id": "bnd-0027",
+  "input": {
+    "surfaces": [
+      "webmcp",
+      "mcp"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "requires_surface": [
+    "webmcp",
+    "mcp"
+  ],
+  "rule": "AGSC-11-18"
+}

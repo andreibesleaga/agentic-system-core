@@ -1,0 +1,38 @@
+{
+  "area": "boundary",
+  "description": "With no federation object configured the defaults apply — hop_limit 3, fan_out 50, max_requests 500, redirect_limit 3, timeout_ms 10000 — and every declared peer is published as one rel#peer link in document order.",
+  "expected": {
+    "effective": {
+      "fan_out": 50,
+      "hop_limit": 3,
+      "max_requests": 500,
+      "redirect_limit": 3,
+      "timeout_ms": 10000
+    },
+    "peer_links": [
+      {
+        "href": "https://b.example/.well-known/knowledge-linkset",
+        "rel": "https://w3id.org/agentic-system-core/rel#peer"
+      },
+      {
+        "href": "https://c.example/.well-known/knowledge-linkset",
+        "rel": "https://w3id.org/agentic-system-core/rel#peer"
+      }
+    ]
+  },
+  "id": "bnd-0023",
+  "input": {
+    "config": {
+      "peers": [
+        "https://b.example/.well-known/knowledge-linkset",
+        "https://c.example/.well-known/knowledge-linkset"
+      ]
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-06"
+}

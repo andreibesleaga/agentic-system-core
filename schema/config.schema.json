@@ -28,7 +28,7 @@
         "base": {
           "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base (D52(1)).",
           "type": "string",
-          "pattern": "^(?:https://[^\\s/]+(?:/[^\\s/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
+          "pattern": "^(?:https://[^\\x00-\\x20/]+(?:/[^\\x00-\\x20/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
         },
         "title": {
           "type": "string"
@@ -73,7 +73,7 @@
         "base": {
           "description": "Vocabulary hash namespace; the site domain MUST NOT appear here (AGSC-05-02).",
           "type": "string",
-          "pattern": "^https://w3id\\.org/[^\\s]+#$"
+          "pattern": "^https://w3id\\.org/[^\\x00-\\x20]+#$"
         },
         "version": {
           "$ref": "#/$defs/semver"
@@ -113,11 +113,7 @@
         "out": {
           "description": "Build output directory; default www, a trailing slash is accepted and stripped (AGSC-01-19).",
           "type": "string",
-          "pattern": "^[A-Za-z0-9._-]+/?$"
-        },
-        "rdfxml": {
-          "description": "Emit /graph.rdf; default false. RDF/XML stays inside v1.0 per D49: when true the view MUST be emitted (AGSC-05-06, AGSC-06-01).",
-          "type": "boolean"
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*/?$"
         },
         "feed": {
           "description": "Emit /feed.xml; default true (AGSC-06-01).",
@@ -131,7 +127,7 @@
       "properties": {
         "default": {
           "description": "BCP 47 tag of the primary (unsuffixed) files; default en.",
-          "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$",
+          "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$",
           "type": "string"
         }
       },
@@ -144,7 +140,7 @@
       "items": {
         "type": "string",
         "format": "uri",
-        "pattern": "^https://[^\\s]+/\\.well-known/knowledge-linkset$"
+        "pattern": "^https://[^\\x00-\\x20]+/\\.well-known/knowledge-linkset$"
       }
     },
     "run": {
@@ -236,7 +232,7 @@
       "additionalProperties": false,
       "properties": {
         "injection_patterns": {
-          "description": "Literal alternations only, never user-supplied regular expressions (AGSC-08-14).",
+          "description": "Literal alternations only, never user-supplied regular expressions (AGSC-08-13).",
           "type": "array",
           "uniqueItems": true,
           "items": {
@@ -312,9 +308,39 @@
           "target"
         ],
         "oneOf": [
-          { "properties": { "mode": { "const": "pr" }, "target": { "type": "string", "pattern": "^https://[^\\s]+$" } } },
-          { "properties": { "mode": { "const": "form" }, "target": { "type": "string", "pattern": "^https://[^\\s]+$" } } },
-          { "properties": { "mode": { "const": "channel" }, "target": { "type": "string", "pattern": "^(mailto:[^\\s]+|urn:agsc:channel:[a-z0-9-]+)$" } } }
+          {
+            "properties": {
+              "mode": {
+                "const": "pr"
+              },
+              "target": {
+                "type": "string",
+                "pattern": "^https://[^\\x00-\\x20]+$"
+              }
+            }
+          },
+          {
+            "properties": {
+              "mode": {
+                "const": "form"
+              },
+              "target": {
+                "type": "string",
+                "pattern": "^https://[^\\x00-\\x20]+$"
+              }
+            }
+          },
+          {
+            "properties": {
+              "mode": {
+                "const": "channel"
+              },
+              "target": {
+                "type": "string",
+                "pattern": "^(mailto:[^\\x00-\\x20]+|urn:agsc:channel:[a-z0-9-]+)$"
+              }
+            }
+          }
         ],
         "properties": {
           "mode": {
@@ -326,7 +352,7 @@
           },
           "target": {
             "type": "string",
-            "pattern": "^(https://[^\\s]+|mailto:[^\\s]+|urn:agsc:channel:[a-z0-9-]+)$"
+            "pattern": "^(https://[^\\x00-\\x20]+|mailto:[^\\x00-\\x20]+|urn:agsc:channel:[a-z0-9-]+)$"
           },
           "channel": {
             "type": "string",
@@ -362,6 +388,104 @@
         "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
       },
       "additionalProperties": false
+    },
+    "surfaces": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "AGSC-11-16/11-21 declaration-only surfaces (responder, solid, a2a-card): target, external version and access class, which cannot be derived from emitted bytes. Built-in surfaces (llms-txt, chunks, mcp, webmcp) are derived and never listed here.",
+      "items": {
+        "type": "object",
+        "required": [
+          "surface",
+          "target",
+          "version",
+          "access"
+        ],
+        "properties": {
+          "surface": {
+            "oneOf": [
+              {
+                "enum": [
+                  "responder",
+                  "solid",
+                  "a2a-card"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^x-[a-z0-9]+-[a-z0-9-]+$"
+              }
+            ]
+          },
+          "target": {
+            "type": "string",
+            "pattern": "^https://[^\\x00-\\x20]+$"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(mcp:[0-9]{4}-[0-9]{2}-[0-9]{2}|a2a:[0-9]+\\.[0-9]+(\\.[0-9]+)?|[0-9]+\\.[0-9]+(\\.[0-9]+)?)$"
+          },
+          "access": {
+            "enum": [
+              "none",
+              "consent",
+              "credential"
+            ]
+          }
+        },
+        "patternProperties": {
+          "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
+        },
+        "additionalProperties": false
+      }
+    },
+    "related": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "AGSC-06-35 related-system links carried in the discovery document: IANA-registered relations only; ignored by readers that do not understand them; never affect conformance, digests or the walk.",
+      "items": {
+        "type": "object",
+        "required": [
+          "rel",
+          "href",
+          "type"
+        ],
+        "properties": {
+          "rel": {
+            "enum": [
+              "describedby",
+              "alternate",
+              "related",
+              "service-desc",
+              "service-doc",
+              "service-meta",
+              "collection",
+              "item"
+            ]
+          },
+          "href": {
+            "type": "string",
+            "pattern": "^https://[^\\x00-\\x20]+$"
+          },
+          "type": {
+            "type": "string",
+            "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+(?:;.*)?$"
+          },
+          "profile": {
+            "type": "string",
+            "pattern": "^https://[^\\x00-\\x20]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "patternProperties": {
+          "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
+        },
+        "additionalProperties": false
+      }
     }
   },
   "$defs": {

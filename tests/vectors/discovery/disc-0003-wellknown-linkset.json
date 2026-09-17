@@ -20,16 +20,24 @@
     "relations_allowed": [
       "alternate",
       "author",
+      "collection",
       "describedby",
+      "https://w3id.org/agentic-system-core/rel#access",
       "https://w3id.org/agentic-system-core/rel#context",
+      "https://w3id.org/agentic-system-core/rel#contribute",
       "https://w3id.org/agentic-system-core/rel#graph",
       "https://w3id.org/agentic-system-core/rel#ledger",
       "https://w3id.org/agentic-system-core/rel#now",
       "https://w3id.org/agentic-system-core/rel#ontology",
       "https://w3id.org/agentic-system-core/rel#peer",
       "https://w3id.org/agentic-system-core/rel#skills",
+      "https://w3id.org/agentic-system-core/rel#surface",
+      "item",
       "license",
-      "service-doc"
+      "related",
+      "service-desc",
+      "service-doc",
+      "service-meta"
     ],
     "relations_forbidden": [
       "knowledge",

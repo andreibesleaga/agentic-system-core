@@ -1,0 +1,50 @@
+{
+  "area": "compose",
+  "description": "A kind: architecture concept carries exactly one fenced yaml agsc-selection block, extracted by compose --from and never rendered; a slug in it that does not resolve is AGSC-E301; a stale verdict_digest is the warning AGSC-E805.",
+  "expected": {
+    "extracted_selection": [
+      "worker",
+      "ghost"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E301",
+        "severity": "error",
+        "slug": "arch",
+        "target": "ghost"
+      },
+      {
+        "code": "AGSC-E805",
+        "severity": "warn",
+        "slug": "arch"
+      }
+    ],
+    "rendered_as_prose": false
+  },
+  "id": "compose-0014",
+  "input": {
+    "items": [
+      {
+        "body": "Saved.\n\n```yaml agsc-selection\n- worker\n- ghost\n```\n",
+        "kind": "architecture",
+        "slug": "arch",
+        "title": "Arch",
+        "type": "concept",
+        "verdict_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "body": "W.\n",
+        "kind": "pattern",
+        "slug": "worker",
+        "title": "Worker",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-02-97"
+}

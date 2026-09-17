@@ -127,6 +127,7 @@ asc:blocks
 asc:consumes
     a owl:DatatypeProperty ;
     rdfs:comment "A port type name this item consumes (AGSC-02-96, AGSC-05-30)." ;
+    rdfs:domain asc:Concept ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "consumes" ;
     rdfs:range xsd:string .
@@ -281,6 +282,7 @@ asc:peerOrigin
 asc:produces
     a owl:DatatypeProperty ;
     rdfs:comment "A port type name this item produces (AGSC-02-96, AGSC-05-30); matched by exact equality in composition Step 5 (AGSC-07-23)." ;
+    rdfs:domain asc:Concept ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "produces" ;
     rdfs:range xsd:string .
@@ -347,6 +349,7 @@ asc:status
 asc:taskState
     a owl:DatatypeProperty ;
     rdfs:comment "One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13)." ;
+    rdfs:domain asc:Concept ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "task state" ;
     rdfs:range xsd:string .

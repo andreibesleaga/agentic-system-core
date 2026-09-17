@@ -1,0 +1,50 @@
+{
+  "area": "frontmatter",
+  "description": "task_state on a kind: task concept is one of the nine A2A 1.0 values verbatim and defaults to TASK_STATE_UNSPECIFIED; in the node's own frontmatter an unknown value is the enum error AGSC-E203, while the same value met in a foreign board is read as TASK_STATE_UNSPECIFIED (AGSC-11-02).",
+  "expected": {
+    "foreign_read_as": "TASK_STATE_UNSPECIFIED",
+    "results": [
+      {
+        "code": "AGSC-E203",
+        "slug": "bad"
+      },
+      {
+        "slug": "none",
+        "state": "TASK_STATE_UNSPECIFIED"
+      },
+      {
+        "slug": "ok",
+        "state": "TASK_STATE_WORKING"
+      }
+    ]
+  },
+  "id": "frontmatter-0031",
+  "input": {
+    "foreign_board_state": "TASK_STATE_FROZEN",
+    "own_items": [
+      {
+        "kind": "task",
+        "slug": "ok",
+        "task_state": "TASK_STATE_WORKING",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "slug": "none",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "slug": "bad",
+        "task_state": "TASK_STATE_FROZEN",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-02-99"
+}

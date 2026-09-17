@@ -1,0 +1,82 @@
+{
+  "area": "boundary",
+  "description": "related[] entries become links in the one link context using IANA-registered relations only, each with type, ordered by href within a relation; an unregistered short name (ard, llm-context) is AGSC-E209; a reader ignores related-system links it does not understand and they change no digest, no peer check and no walk.",
+  "expected": {
+    "affects": {
+      "bundle_hash": false,
+      "digests": false,
+      "peer_check": false,
+      "walk": false
+    },
+    "invalid_config_error": "AGSC-E209",
+    "links": {
+      "describedby": [
+        {
+          "href": "https://a.example/llms.txt",
+          "type": "text/markdown"
+        }
+      ],
+      "related": [
+        {
+          "href": "https://registry.example/.well-known/ard.json",
+          "title": "ARD manifest",
+          "type": "application/ld+json"
+        }
+      ],
+      "service-desc": [
+        {
+          "href": "https://a.example/.well-known/agent-card.json",
+          "type": "application/a2a+json"
+        },
+        {
+          "href": "https://memory.example/sparql",
+          "type": "application/sparql-results+json"
+        }
+      ]
+    },
+    "unknown_link_ignored": true
+  },
+  "id": "bnd-0029",
+  "input": {
+    "config": {
+      "related": [
+        {
+          "href": "https://a.example/llms.txt",
+          "rel": "describedby",
+          "type": "text/markdown"
+        },
+        {
+          "href": "https://a.example/.well-known/agent-card.json",
+          "rel": "service-desc",
+          "type": "application/a2a+json"
+        },
+        {
+          "href": "https://registry.example/.well-known/ard.json",
+          "rel": "related",
+          "title": "ARD manifest",
+          "type": "application/ld+json"
+        },
+        {
+          "href": "https://memory.example/sparql",
+          "rel": "service-desc",
+          "type": "application/sparql-results+json"
+        }
+      ]
+    },
+    "invalid_config": {
+      "related": [
+        {
+          "href": "https://registry.example/.well-known/ard.json",
+          "rel": "ard",
+          "type": "application/ld+json"
+        }
+      ]
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 (D82, owner request); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-35"
+}

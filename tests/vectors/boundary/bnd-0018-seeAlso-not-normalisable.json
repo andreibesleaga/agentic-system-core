@@ -18,21 +18,21 @@
   "input": {
     "items": [
       {
-        "references": [
+        "slug": "a",
+        "sources": [
           {
-            "url": "https://b.example/ok%20path/"
+            "id": "ref-1",
+            "resource": "https://b.example/ok%20path/"
           },
           {
-            "url": "https://b.example/bad space/"
+            "id": "ref-2",
+            "resource": "https://b.example/bad space/"
           }
-        ],
-        "slug": "a"
+        ]
       }
     ],
     "peers": [
-      {
-        "base": "https://b.example/"
-      }
+      "https://b.example/.well-known/knowledge-linkset"
     ]
   },
   "level": "required",

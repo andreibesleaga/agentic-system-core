@@ -2,7 +2,7 @@
   "area": "boundary",
   "description": "A walk stops at the hop limit, considers only the first fan_out peer links per document, counts every request, and reports a partial result with the cap code.",
   "expected": {
-    "code": "AGSC-E906",
+    "error": "AGSC-E906",
     "ignored_by_fan_out": [
       "d"
     ],

@@ -1,0 +1,57 @@
+{
+  "area": "boundary",
+  "description": "Two nodes export boards with the same cluster slug and the same task slug; a merging client keys tasks by item IRI and boards by Bundle IRI, renames nothing, and expands local blocked_by slugs against the board's own origin.",
+  "expected": {
+    "boards_kept": [
+      "https://a.example/clusters/oct/",
+      "https://b.example/clusters/oct/"
+    ],
+    "expanded_blocked_by": {
+      "https://a.example/concepts/ship/": [
+        "https://a.example/concepts/other/"
+      ]
+    },
+    "renamed": [],
+    "tasks_kept": [
+      "https://a.example/concepts/ship/",
+      "https://b.example/concepts/ship/"
+    ]
+  },
+  "id": "bnd-0025",
+  "input": {
+    "boards": [
+      {
+        "board": "oct",
+        "iri": "https://a.example/clusters/oct/",
+        "tasks": [
+          {
+            "blocked_by": [
+              "other"
+            ],
+            "iri": "https://a.example/concepts/ship/",
+            "slug": "ship",
+            "state": "TASK_STATE_WORKING"
+          }
+        ]
+      },
+      {
+        "board": "oct",
+        "iri": "https://b.example/clusters/oct/",
+        "tasks": [
+          {
+            "blocked_by": [],
+            "iri": "https://b.example/concepts/ship/",
+            "slug": "ship",
+            "state": "TASK_STATE_COMPLETED"
+          }
+        ]
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-15"
+}

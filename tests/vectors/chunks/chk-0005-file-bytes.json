@@ -1,0 +1,43 @@
+{
+  "area": "chunks",
+  "description": "The chunk export is one JCS line per chunk, LF-terminated, ordered by item slug then section then ordinal, no blank lines, one trailing LF; the whole file is byte-pinned so two implementations emit identical bytes.",
+  "expected": {
+    "ends_with_single_lf": true,
+    "line_count": 3,
+    "output": "{\"digest\":\"e11941718f69365cb49291703e72327f1091042b1350ab1bd795a43359794f30\",\"id\":\"f4d6ed732ff9d66db7d36b5179e7095f27c80b044aa9da24aa74011d311a103f\",\"iri\":\"https://a.example/concepts/super/\",\"item\":\"super\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"Intro.\\n\",\"title\":\"Super\",\"trust\":\"untrusted\",\"type\":\"text\"}\n{\"digest\":\"a8910d4a8ff443c0c93a1c7d759f283b2ce3bc54d57976bbca715e8af8252cff\",\"id\":\"d9db203ef6957b4f861ab0fee825cf4872b00b8dbc28be7011c5f6fd05843037\",\"iri\":\"https://a.example/concepts/super/\",\"item\":\"super\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"intent\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"## Intent\\n\\nCoordinate.\\n\",\"title\":\"Super\",\"trust\":\"untrusted\",\"type\":\"text\"}\n{\"digest\":\"3ecf1a531c5d6f23c7e4c3df0eb27a65916507326e92360bd6057b859d518690\",\"id\":\"318233eb42742b66395e02024eab34502f48fbdbdaed0f75737ac77aa7292496\",\"iri\":\"https://a.example/concepts/worker/\",\"item\":\"worker\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"ordinal\":0,\"section\":\"\",\"subkind\":\"explainer\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"Plain body.\\n\",\"title\":\"Worker\",\"trust\":\"untrusted\",\"type\":\"text\"}\n"
+  },
+  "id": "chk-0005",
+  "input": {
+    "chunks": {
+      "max_bytes": 4096
+    },
+    "items": [
+      {
+        "body": "Intro.\n\n## Intent\n\nCoordinate.\n",
+        "kind": "pattern",
+        "requires": [
+          "worker"
+        ],
+        "slug": "super",
+        "title": "Super",
+        "type": "concept"
+      },
+      {
+        "body": "Plain body.\n",
+        "kind": "explainer",
+        "slug": "worker",
+        "title": "Worker",
+        "type": "concept"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-26"
+}

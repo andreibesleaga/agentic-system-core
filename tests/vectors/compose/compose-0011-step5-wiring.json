@@ -12,8 +12,9 @@
     "warnings_added": [
       {
         "code": "AGSC-E804",
-        "consumer": "logger",
-        "port": "audit"
+        "key": "consumes",
+        "source": "logger",
+        "target": "audit"
       }
     ],
     "wiring": [

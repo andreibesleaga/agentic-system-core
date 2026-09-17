@@ -1,0 +1,55 @@
+{
+  "area": "lint",
+  "description": "Over the whole Bundle a consumes name with no producer and a produces name with no consumer are each the warning AGSC-E804; matched names are silent; a port name outside the grammar is the schema pattern error AGSC-E204.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E204",
+        "path": "content/concepts/b.md",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E804",
+        "port": "config",
+        "severity": "warn",
+        "slug": "a"
+      }
+    ],
+    "matched": [
+      "events"
+    ]
+  },
+  "id": "lint-0025",
+  "input": {
+    "items": [
+      {
+        "consumes": [
+          "config"
+        ],
+        "kind": "task",
+        "produces": [
+          "events"
+        ],
+        "slug": "a",
+        "type": "concept"
+      },
+      {
+        "consumes": [
+          "events"
+        ],
+        "kind": "task",
+        "produces": [
+          "Bad Name"
+        ],
+        "slug": "b",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-02-96"
+}

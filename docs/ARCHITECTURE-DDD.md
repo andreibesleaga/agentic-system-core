@@ -36,7 +36,7 @@ A 1.x reader **MUST** ignore unknown members and unknown `x-<vendor>-<key>` keys
 
 - **Determinism scope** — machine artefacts are byte-identical *across* conforming implementations; HTML pages are byte-identical *within* one implementation and are not in the cross-implementation vector set (AGSC-04-24, PRD-060).
 - **The distinguishing property set is Level ≥ 2.** A Level-0 or Level-1 node is a discoverable, digest-checked publication; the properties that no neighbouring system offers together — deterministic graph exports, the chunk export, the plugin contract, federation — begin at Level 2 (AGSC-10-04).
-- **The Harness is keyed by the ordered selection** (AGSC-07-12): the same items in a different order are a different Harness, because Step 5 wiring and the emitters are order-sensitive by rule and the files are byte-pinned.
+- **The Harness is keyed by the sorted selection.** Input order never reaches the verdict (AGSC-07-09; the retired AGSC-07-11 said so), and the seven file kinds are byte-identical for the same member set (AGSC-07-13) — AR2-70 corrected the earlier "ordered selection" wording.
 - **"Registered" is written only after IANA acts.** Until then: "requested", "pending registration", or the extension URI (AGSC-06-07, 06-25, 11-05).
 
 ## Appendix A — Sort orders (non-normative summary of the rules)

@@ -1,0 +1,281 @@
+{
+  "area": "chunks",
+  "description": "Every record carries exactly the fourteen named members (subkind only on concepts, links only when non-empty), a vendor x- member MAY follow (never required), digest is over the UTF-8 bytes of text, and lines within one section are ordered by ordinal ascending NUMERICALLY (10 after 9, never after 1).",
+  "expected": {
+    "lexical_order_is_wrong": "0,1,10,2",
+    "lines": [
+      {
+        "digest": "df6f1710ba19dd8f458e57ba0d16e804e6fee280d1e9454cb6999d9d0eb8854f",
+        "id": "544a62d9070733b1824ae15dea62dc149a644989efe26b3d05beb7a4a5aa0c83",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 0,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "## Body\n\nP1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "1c82004929596c754a209383860a700874098e4c0f927981ff058fa794437bdc",
+        "id": "2a366e1d6ace6a3d07da1ac410742ac39b53bfe76229d12472afa7707c909ac6",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 1,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "9b584e8e6c45709154c9ad1fc7c3b19cff902593f8435bbf71605a00875ca272",
+        "id": "694aa0c2ddc76545c8674cae70d7ce83e726f3b4003619b9861d6f2d415f3f01",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 2,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "167616e0fbe3125118f0906ff2fb4e6db466f4c65def54ce3f0c2ae602a09337",
+        "id": "d10872357d5edc9638dc0608f2af369e6ae0096c6abfdf5bce4fb1c5f9967079",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 3,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "78ad716d443b6bc5ae7d9c209d8842f2f35e00449b5b262ba21b3cdf8a2c3e77",
+        "id": "618070b409aa40e1eaa567f1ee159e472a4dcd0166607018b7b777bb5166d8a4",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 4,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "736d4fa8cbcc1fb5b1af5b3a408322063e7b0618dee2f89372306024a159451b",
+        "id": "4a92028715b75458a8535c293275b8dd9ebbaa5a9b435ee3d26782877fb611ab",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 5,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "341f68b31499dc855d15fd25644e3da337d9aae7aa585544fa9929a05bc28cce",
+        "id": "3f5b5fc8b2c2507437de80e663cd74b8271a46154c93edd34a5e9df40a70fbaa",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 6,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P7 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "34a363ecb30af141f4b09d6d8e62b2968e2b68f2a043f5d4b6cd6ea5c8c4ca17",
+        "id": "e61c91f8ee3db81c281807a3894bbc82a050a6a843797c70dc31bbefd6059f84",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 7,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P8 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "d413253497ed6a830e01aaf822bec278ee4683c7d46068251e6aab391f509653",
+        "id": "f47b7cc72d501a0b1b151404699e3a18923abbe5b6ac6d03a0b7361a4e934fb5",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 8,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P9 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "6b84ebbbef6c0132fa1e1544b0885f1d4d52b87488a5a84bab8c5a52911dbe51",
+        "id": "924146bfd80acff246cd10ef46d28dd698c06bd7bec6607c902fdf6d53a112b2",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 9,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P10 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "a3a57e588fe68f6c604055bb07a5406344b3001e21b49dc331e0f8d34f5efa0a",
+        "id": "49dfc53f250f5260b4edc8821bd7ec556f22230447495f993e971465069e608c",
+        "iri": "https://a.example/concepts/eleven/",
+        "item": "eleven",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "links": {
+          "uses": [
+            "other"
+          ]
+        },
+        "ordinal": 10,
+        "section": "body",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "P11 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "title": "Eleven",
+        "trust": "untrusted",
+        "type": "text"
+      }
+    ],
+    "ordinals": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "vendor_member_permitted": "a writer MAY append x-<vendor>-<key> members (AGSC-02-05a); none is required"
+  },
+  "id": "chk-0006",
+  "input": {
+    "chunks": {
+      "max_bytes": 200
+    },
+    "items": [
+      {
+        "body": "## Body\n\nP1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP7 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP8 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP9 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP10 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\nP11 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+        "kind": "explainer",
+        "slug": "eleven",
+        "title": "Eleven",
+        "type": "concept",
+        "uses": [
+          "other"
+        ]
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-29"
+}

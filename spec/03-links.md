@@ -32,10 +32,10 @@
 ## 3.3 Cycles and integrity
 
 - **AGSC-03-07** `requires` MUST be acyclic. A cycle is error `AGSC-E302` and MUST name every slug on the cycle in discovery order. [audit/D §1.3, PRD-036]
-- **AGSC-03-08** `broader`/`narrower` MUST be acyclic (`AGSC-E303`). A cluster MUST have at most one `broader`; the mono-parent tree it forms MUST be at most 3 levels deep (family › deck › sub-deck). Neither bound follows from the other, so both are checked and coded separately by AGSC-03-22. [audit/D §1.3, research/16 §3.5]
+- **AGSC-03-08** `broader`/`narrower` MUST be acyclic (`AGSC-E303`). A cluster MUST have at most one `broader`; the mono-parent tree it forms MUST be at most 3 levels deep (family › deck › sub-deck). Neither bound follows from the other, so both are checked separately, after the acyclicity check: nesting deeper than 3 levels (a chain of `broader` ancestors longer than 2) is error `AGSC-E307` naming the chain root-first; more than one `broader` value is error `AGSC-E308` naming every parent slug in code-point order, and the schema enforces this second bound as `maxItems: 1` on the cluster branch. *(AGSC-03-22 merged here at rc.3, M4.)* [audit/D §1.3, research/16 §3.5]
 - **AGSC-03-09** `derived-from` and `supersedes` targets MUST exist; a dangling target is `AGSC-E301`, not a warning. [audit/D §1.3]
 - **AGSC-03-10** An item with no inbound Link and no `clusters[]` entry MUST be reported as an orphan warning (`AGSC-E305`). [research/16 §3.4 CQ7]
-- **AGSC-03-22** The cluster tree of AGSC-03-08 MUST be enforced by two lint checks, evaluated over `type: cluster` items after the acyclicity check of `AGSC-E303`: nesting deeper than 3 levels (a cluster whose chain of `broader` ancestors is longer than 2) is error `AGSC-E307` and MUST name the chain root-first; a cluster carrying more than one `broader` value is error `AGSC-E308` and MUST name every parent slug in code-point order. The schema enforces the second bound as `maxItems: 1` on the cluster branch's `broader`. [PRD-002 ← D48(7), AGSC-03-08]
+- **AGSC-03-22** *(retired at rc.3, 2026-09-17, V6-B minimality pass confirmed by D81: one rule stated two bounds, the next attached the codes (M4) — merged into AGSC-03-08; the id is reserved under AGSC-00-16 and never reused.)*
 
 ## 3.4 Inline links and wikilinks
 
@@ -46,9 +46,9 @@
 ## 3.5 Combiner semantics (normative for §07)
 
 - **AGSC-03-14** `requires` is the only key that adds items to a selection (transitive closure). [PRD-036 ← R6]
-- **AGSC-03-15** `excludes` is evaluated **after** the closure. Any surviving pair related by `excludes` invalidates the composition (`AGSC-E801`). [PRD-036]
-- **AGSC-03-16** `contradicts` between two selected items and a `uses` target absent from the selection produce warnings, never failures. [PRD-036]
-- **AGSC-03-17** An item that any member of the closed selection `supersedes` MUST be hidden, whether it was selected directly or added by the `requires` closure; the superseding item is kept. Hiding is one set difference over the closed selection — not a reachability test — so it is the same set that AGSC-07-05 removes. [PRD-036 ← D48(2)]
+- **AGSC-03-15** *(retired at rc.3, 2026-09-17, V6-B minimality pass confirmed by D81: AGSC-07-06 with the order of AGSC-07-08 says it entirely (R3) — merged into AGSC-07-06; the id is reserved under AGSC-00-16 and never reused.)*
+- **AGSC-03-16** *(retired at rc.3, 2026-09-17, V6-B minimality pass confirmed by D81: AGSC-07-07 says it entirely (R4) — merged into AGSC-07-07; the id is reserved under AGSC-00-16 and never reused.)*
+- **AGSC-03-17** *(retired at rc.3, 2026-09-17, V6-B minimality pass confirmed by D81: near-verbatim, and the spec asserted set-identity (R5) — merged into AGSC-07-05; the id is reserved under AGSC-00-16 and never reused.)*
 - **AGSC-03-18** `related`, `broader`, `narrower`, `derived-from` and the five Mode-2 keys (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`) MUST NOT change a composition; they are navigational or provenance edges. [PRD-036, D43(4), D53]
 
 ## 3.6 Import mapping

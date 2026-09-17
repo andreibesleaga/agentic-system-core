@@ -72,7 +72,7 @@
     "lang": {
       "description": "Lowercase BCP 47, admitting singleton (extension and private-use) subtags such as x-internal or u-co-phonebk; default en.",
       "type": "string",
-      "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$"
+      "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
     },
     "date": {
       "$ref": "#/$defs/date"
@@ -108,7 +108,7 @@
     "iri": {
       "description": "If present MUST equal the computed IRI (AGSC-05-05).",
       "type": "string",
-      "pattern": "^https://[^\\s]+/$"
+      "pattern": "^https://[^\\x00-\\x20]+/$"
     },
     "spec_version": {
       "$ref": "#/$defs/semver"
@@ -173,7 +173,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "pattern": "^[^/\\\\\\u0000][^\\u0000\\\\]*$"
+            "pattern": "^[^/\\\\\\x00][^\\x00\\\\]*$"
           },
           "media_type": {
             "type": "string",
@@ -462,7 +462,7 @@
           "maxLength": 200
         },
         "broader": {
-          "description": "At most one parent cluster: the tree is mono-parent (AGSC-03-08); more than one value is AGSC-E308 (AGSC-03-22).",
+          "description": "At most one parent cluster: the tree is mono-parent (AGSC-03-08); more than one value is AGSC-E308 (AGSC-03-08).",
           "type": "array",
           "maxItems": 1,
           "uniqueItems": true,
@@ -482,8 +482,7 @@
       "title": "gate",
       "required": [
         "type",
-        "level",
-        "checks"
+        "level"
       ],
       "properties": {
         "type": {
@@ -588,7 +587,7 @@
         "resource": {
           "description": "A web URL, or the channel form urn:agsc:channel:<name>:<source_id> for a message with no URL (AGSC-01-33, V3-32).",
           "type": "string",
-          "pattern": "^(?:https?://|urn:agsc:channel:[a-z0-9-]+:)"
+          "pattern": "^(?:https?://[^\\x00-\\x20]+|urn:agsc:channel:[a-z0-9-]+:[^\\x00-\\x20]+)$"
         },
         "title": {
           "type": "string"

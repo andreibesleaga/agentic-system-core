@@ -1,10 +1,10 @@
 {
   "area": "boundary",
-  "description": "A Level 2 public node emits on / the Link header with the extension-URI relation and the linkset type; every public artefact carries a quoted ETag equal to its SHA-256 and the wildcard origin; the discovery document, now.md and ledger are no-cache; immutable is emitted nowhere at 1.0.",
+  "description": "A Level 2 public node emits on / the Link header with the registered describedby relation and the linkset type (D82 Q3); every public artefact carries a quoted ETag equal to its SHA-256 and the wildcard origin; the discovery document, now.md and ledger are no-cache; immutable is emitted nowhere at 1.0.",
   "expected": {
     "headers": {
       "/": {
-        "Link": "</.well-known/knowledge-linkset>; rel=\"https://w3id.org/agentic-system-core/rel#agentic-knowledge\"; type=\"application/linkset+json\""
+        "Link": "</.well-known/knowledge-linkset>; rel=\"describedby\"; type=\"application/linkset+json\""
       },
       "/.well-known/knowledge-linkset": {
         "Access-Control-Allow-Origin": "*",

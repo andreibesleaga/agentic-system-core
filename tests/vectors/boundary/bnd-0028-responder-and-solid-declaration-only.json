@@ -1,0 +1,66 @@
+{
+  "area": "boundary",
+  "description": "A responder and a solid surface are declaration-only at 1.0: the validator checks the declaration shape and the agsc-access value, requires agsc-surface-version on both, and requires the static surfaces to be served regardless. A responder names its protocol by the prefix of agsc-surface-version (mcp: or a2a:).",
+  "expected": {
+    "accepted": [
+      "https://a.example/mcp/",
+      "https://pod.example/agsc/"
+    ],
+    "bytes_checked_by_validator": false,
+    "findings": [
+      {
+        "code": "AGSC-E210",
+        "href": "https://a.example/mcp2/",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "bnd-0028",
+  "input": {
+    "declared": [
+      {
+        "agsc-access": [
+          "credential"
+        ],
+        "agsc-surface": [
+          "responder"
+        ],
+        "agsc-surface-version": [
+          "mcp:2026-07-28"
+        ],
+        "href": "https://a.example/mcp/"
+      },
+      {
+        "agsc-access": [
+          "credential"
+        ],
+        "agsc-surface": [
+          "solid"
+        ],
+        "agsc-surface-version": [
+          "0.11.0"
+        ],
+        "href": "https://pod.example/agsc/"
+      },
+      {
+        "agsc-access": [
+          "none"
+        ],
+        "agsc-surface": [
+          "responder"
+        ],
+        "href": "https://a.example/mcp2/"
+      }
+    ],
+    "static_served": [
+      "/llms.txt",
+      "/chunks.jsonl"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-21"
+}

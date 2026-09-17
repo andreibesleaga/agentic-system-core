@@ -1,0 +1,60 @@
+{
+  "area": "conform",
+  "description": "A conformance claim states the Unicode version of the runtime; a divergence that arises only from a different Unicode version on input outside the vector set is documented, not a failure; a divergence on the vector set is a failure.",
+  "expected": {
+    "claim_complete": true,
+    "divergence_verdicts": [
+      {
+        "input": "outside-vector-set",
+        "verdict": "documented"
+      },
+      {
+        "input": "jcs-0005",
+        "verdict": "failure"
+      }
+    ]
+  },
+  "id": "conform-0001",
+  "input": {
+    "claim": {
+      "level": 2,
+      "spec_version": "1.0.0-rc.3",
+      "unicode_version": "16.0.0",
+      "vectors_passed": [
+        "frontmatter",
+        "slug",
+        "bundle",
+        "jcs",
+        "discovery",
+        "links",
+        "lint",
+        "graph",
+        "build",
+        "adopt",
+        "ledger",
+        "import",
+        "export",
+        "skills",
+        "chunks",
+        "boards",
+        "boundary"
+      ]
+    },
+    "divergences": [
+      {
+        "cause": "unicode-version",
+        "input": "outside-vector-set"
+      },
+      {
+        "cause": "unicode-version",
+        "input": "jcs-0005"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-04-22"
+}

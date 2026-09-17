@@ -1,0 +1,57 @@
+{
+  "area": "build",
+  "description": "search.json member names are ordered by UTF-16 code units (AGSC-04-05): the astral letter 𝔸 (U+1D538, surrogates D835 DD38) sorts BEFORE the fullwidth ｚ (U+FF5A) although its code point is higher; a code-point sort would put ｚｚ first and change the bytes. Astral letters are token characters (General_Category Lu) and are kept code-point-wise.",
+  "expected": {
+    "output": "{\"docs\":[{\"description\":\"agent\",\"slug\":\"fw\",\"title\":\"ｚｚ\"},{\"description\":\"agent\",\"slug\":\"math\",\"title\":\"𝔸𝔸\"}],\"terms\":{\"agent\":[0,1],\"𝔸𝔸\":[1],\"ｚｚ\":[0]}}\n",
+    "search": {
+      "docs": [
+        {
+          "description": "agent",
+          "slug": "fw",
+          "title": "ｚｚ"
+        },
+        {
+          "description": "agent",
+          "slug": "math",
+          "title": "𝔸𝔸"
+        }
+      ],
+      "terms": {
+        "agent": [
+          0,
+          1
+        ],
+        "𝔸𝔸": [
+          1
+        ],
+        "ｚｚ": [
+          0
+        ]
+      }
+    },
+    "wrong_if_code_point_sorted": "{\"docs\":[…],\"terms\":{\"agent\":[0,1],\"ｚｚ\":[0],\"𝔸𝔸\":[1]}}"
+  },
+  "id": "build-0003",
+  "input": {
+    "items": [
+      {
+        "body": "",
+        "description": "agent",
+        "slug": "fw",
+        "title": "ｚｚ"
+      },
+      {
+        "body": "",
+        "description": "agent",
+        "slug": "math",
+        "title": "𝔸𝔸"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-16"
+}

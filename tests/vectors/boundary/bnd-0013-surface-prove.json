@@ -5,13 +5,13 @@
     "findings": [
       {
         "code": "AGSC-E210",
-        "href": "/.well-known/agent-card.json",
+        "href": "https://a.example/.well-known/agent-card.json",
         "severity": "error"
       },
       {
         "code": "AGSC-E211",
-        "href": "/chunks.jsonl",
-        "severity": "warning"
+        "href": "https://a.example/chunks.jsonl",
+        "severity": "warn"
       }
     ]
   },
@@ -20,14 +20,14 @@
     "declared": [
       {
         "agsc-surface": "a2a-card",
-        "href": "/.well-known/agent-card.json"
+        "href": "https://a.example/.well-known/agent-card.json"
       }
     ],
     "emitted_undeclared": [
-      "/chunks.jsonl"
+      "https://a.example/chunks.jsonl"
     ],
     "resolves": {
-      "/.well-known/agent-card.json": false
+      "https://a.example/.well-known/agent-card.json": false
     }
   },
   "level": "required",

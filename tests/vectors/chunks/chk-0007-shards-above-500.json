@@ -1,0 +1,35 @@
+{
+  "area": "chunks",
+  "description": "Above 500 items the chunk export is sharded: /chunks-01.jsonl holds the lines of the first 500 items in slug order, /chunks-02.jsonl the rest, no item split across shards, and /chunks.jsonl becomes the JCS manifest {\"lines_total\", \"shards\"}.",
+  "expected": {
+    "first_slug_in_shard_02": "i-0501",
+    "last_slug_in_shard_01": "i-0500",
+    "manifest": "{\"lines_total\":501,\"shards\":[\"/chunks-01.jsonl\",\"/chunks-02.jsonl\"]}\n",
+    "shard_line_counts": {
+      "/chunks-01.jsonl": 500,
+      "/chunks-02.jsonl": 1
+    }
+  },
+  "id": "chk-0007",
+  "input": {
+    "chunks": {
+      "max_bytes": 4096
+    },
+    "item_count": 501,
+    "item_template": {
+      "body": "One line.\n",
+      "kind": "explainer",
+      "type": "concept"
+    },
+    "site": {
+      "base": "https://a.example/"
+    },
+    "slugs_are": "i-0001 … i-0501"
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-06-31"
+}

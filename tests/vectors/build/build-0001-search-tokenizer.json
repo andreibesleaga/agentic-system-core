@@ -1,6 +1,6 @@
 {
   "area": "build",
-  "description": "The tokenizer of AGSC-06-23 is normative, so two ports emit byte-identical search.json. Input is title, description, tags and the body with fenced code removed (const and secret never appear). ASCII lower-casing maps only A-Z: Cafe with an acute accent lower-cases its C and keeps the non-ASCII letter code-point-wise. Hyphens and punctuation are token boundaries (Multi-Agent gives two tokens); tokens shorter than two UTF-16 code units are dropped (a, x); there is no stemming, so agent and agents are distinct tokens. docs[] is ordered by slug, posting lists ascend, and terms member names are in JCS (UTF-16) order.",
+  "description": "The tokenizer of AGSC-06-23 is normative, so two ports emit byte-identical search.json. Input is title, description, tags and the body with fenced code removed (const and secret never appear). ASCII lower-casing maps only A-Z: Cafe with an acute accent lower-cases its C and keeps the non-ASCII letter code-point-wise. Hyphens and punctuation are token boundaries (Multi-Agent gives two tokens); tokens shorter than two Unicode code points are dropped (a, x); there is no stemming, so agent and agents are distinct tokens. docs[] is ordered by slug, posting lists ascend, and terms member names are in JCS (UTF-16) order.",
   "expected": {
     "search": {
       "docs": [

@@ -1,0 +1,29 @@
+{
+  "area": "conform",
+  "description": "The Level is the single source of the vector set: a Level-1 claim runs exactly the areas AGSC-10-02 plus AGSC-10-03 name, and a class sentence listing different areas is never consulted.",
+  "expected": {
+    "areas": [
+      "frontmatter",
+      "slug",
+      "bundle",
+      "jcs",
+      "discovery",
+      "links",
+      "lint"
+    ],
+    "second_list_consulted": false,
+    "source": "AGSC-10-02, AGSC-10-03"
+  },
+  "id": "conform-0003",
+  "input": {
+    "claim": {
+      "level": 1
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-10-15"
+}

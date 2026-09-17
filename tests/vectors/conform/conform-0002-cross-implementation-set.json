@@ -1,0 +1,36 @@
+{
+  "area": "conform",
+  "description": "Cross-implementation byte-identity may be claimed only for the machine artefacts; a claim that lists HTML in that set is rejected and the rest of the claim stands.",
+  "expected": {
+    "accepted": [
+      "graph.jsonld",
+      "graph.nq",
+      "search.json",
+      "chunks.jsonl",
+      "/llms.txt"
+    ],
+    "reason": "HTML is deterministic within one implementation only (AGSC-04-01)",
+    "rejected": [
+      "index.html"
+    ]
+  },
+  "id": "conform-0002",
+  "input": {
+    "claim": {
+      "cross_implementation": [
+        "graph.jsonld",
+        "graph.nq",
+        "search.json",
+        "chunks.jsonl",
+        "/llms.txt",
+        "index.html"
+      ]
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-04-24"
+}

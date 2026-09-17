@@ -6,7 +6,7 @@
     "findings": [
       {
         "code": "AGSC-E411",
-        "severity": "warning",
+        "severity": "warn",
         "slug": "new"
       }
     ],

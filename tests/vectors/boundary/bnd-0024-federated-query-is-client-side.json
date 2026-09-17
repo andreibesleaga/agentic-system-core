@@ -1,0 +1,27 @@
+{
+  "area": "boundary",
+  "description": "A build with peers declared performs zero network fetches; federated query is the client's union over two nodes' dumps; no endpoint that fetches on a caller's behalf exists at any Level.",
+  "expected": {
+    "client_union_quads": 2,
+    "fetches_during_build": 0,
+    "server_side_query_endpoint": false
+  },
+  "id": "bnd-0024",
+  "input": {
+    "config": {
+      "peers": [
+        "https://b.example/.well-known/knowledge-linkset"
+      ]
+    },
+    "dumps": {
+      "https://a.example/graph.nq": "<https://a.example/concepts/x/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"X\"@en <https://a.example/> .\n",
+      "https://b.example/graph.nq": "<https://b.example/concepts/y/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Y\"@en <https://b.example/> .\n"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-13"
+}

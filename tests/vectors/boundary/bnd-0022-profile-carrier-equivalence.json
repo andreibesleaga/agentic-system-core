@@ -1,0 +1,29 @@
+{
+  "area": "boundary",
+  "description": "The discovery document's profile is accepted from the media-type parameter alone or from the Link rel=profile header alone; a consumer that cannot read response headers reaches the same conformance result as one that can.",
+  "expected": {
+    "profile_recognised": [
+      true,
+      true
+    ],
+    "same_result_without_header_access": true
+  },
+  "id": "bnd-0022",
+  "input": {
+    "responses": [
+      {
+        "content-type": "application/linkset+json; profile=\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\""
+      },
+      {
+        "content-type": "application/linkset+json",
+        "link": "<https://w3id.org/agentic-system-core/profile/agentic-knowledge>; rel=\"profile\""
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-11-04"
+}

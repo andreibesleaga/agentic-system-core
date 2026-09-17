@@ -35,6 +35,7 @@ const citedRules = new Set(vectors.map(v => v.rule));
 const counts = {
   spec_version: declared,
   rules: rules.length,
+  rules_reserved: (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\* \*\(retired at rc/g) || []).length,
   rules_with_vector: rules.filter(r => citedRules.has(r)).length,
   rules_without_vector: rules.filter(r => !citedRules.has(r)).length,
   error_codes_registered: registered.length,
@@ -48,6 +49,7 @@ const counts = {
   ontology_object_properties: n(/^asc:\S+\n    a owl:ObjectProperty/gm),
   ontology_datatype_properties: n(/^asc:\S+\n    a owl:DatatypeProperty/gm),
 };
+counts.rules_active = counts.rules - counts.rules_reserved;
 counts.ontology_terms = counts.ontology_classes + counts.ontology_object_properties
   + counts.ontology_datatype_properties;
 

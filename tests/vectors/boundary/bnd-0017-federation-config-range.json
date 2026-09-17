@@ -2,7 +2,7 @@
   "area": "boundary",
   "description": "A federation parameter above the spec maximum is a configuration error; below the default it is accepted (a publisher may tighten).",
   "expected": {
-    "code": "AGSC-E209"
+    "error": "AGSC-E209"
   },
   "id": "bnd-0017",
   "input": {

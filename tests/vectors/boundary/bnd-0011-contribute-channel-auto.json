@@ -2,7 +2,7 @@
   "area": "boundary",
   "description": "A contribute channel whose publish mode is auto is a configuration error: anonymous proposals are review-before-publish only.",
   "expected": {
-    "code": "AGSC-E209"
+    "error": "AGSC-E209"
   },
   "id": "bnd-0011",
   "input": {

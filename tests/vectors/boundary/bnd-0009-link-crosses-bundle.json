@@ -10,7 +10,7 @@
       },
       {
         "code": "AGSC-E304",
-        "severity": "warning",
+        "severity": "warn",
         "slug": "gamma"
       }
     ],

@@ -1,0 +1,33 @@
+{
+  "area": "boundary",
+  "description": "A live board (an Agent2Agent server answering task operations) is version-2 scope: at 1.0 it may only be DECLARED as the responder surface; the static /boards/ export remains the only board a 1.0 reader consumes.",
+  "expected": {
+    "declaration_accepted": true,
+    "reader_consumes": "/boards/index.json",
+    "served_at_1_0": false
+  },
+  "id": "bnd-0026",
+  "input": {
+    "declared": [
+      {
+        "agsc-access": [
+          "credential"
+        ],
+        "agsc-surface": [
+          "responder"
+        ],
+        "agsc-surface-version": [
+          "a2a:1.0"
+        ],
+        "href": "https://a.example/a2a/"
+      }
+    ],
+    "static_boards_present": true
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.3"
+  },
+  "rule": "AGSC-10-14"
+}

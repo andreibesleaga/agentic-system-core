@@ -1,0 +1,36 @@
+AgenticSystemCore Content Use Terms, version 1.0
+SPDX-License-Identifier: LicenseRef-AgenticSystemCore-Content-Use-1.0
+
+1. What this covers. The prose of the items published by this node — the bodies and
+   descriptions of its Markdown items — and the pages, text files, chunk export,
+   skill packs and Harness files that carry that prose. It does not cover the
+   schemas, the ontology, the identifiers or the discovery document, which are
+   released under CC0-1.0, nor the engine software, which is released under
+   Apache-2.0.
+
+2. Rights reserved. The prose is the copyright of its authors as recorded in each
+   item's provenance fields. All rights are reserved except those granted below.
+
+3. What you may do, without asking. Read, browse, search and retrieve the prose,
+   for yourself or through a software agent you operate. Quote it, with attribution
+   to this node's address and the item's address, in any work that adds your own
+   contribution. Index it for search, so that people and agents can find it.
+   Cite a chunk by its identifier and reproduce that chunk together with its
+   provenance, licence and terms members, in the context of answering a question.
+   Compose items into a Harness and use the Harness in your own project.
+
+4. What you may not do. Republish the prose, in whole or in substantial part, as a
+   competing collection. Remove or alter the provenance, licence or terms
+   information that travels with it. Use it to train, fine-tune or evaluate a
+   machine-learning model: text and data mining rights are expressly reserved
+   (Directive (EU) 2019/790, Article 4), as the TDM Reservation Protocol file and
+   the robots signals of this node state machine-readably.
+
+5. Contributions. A proposal you submit through this node's published contribution
+   channels is licensed by you to the node's operator under these same terms, with
+   your authorship recorded in the item's provenance.
+
+6. No warranty. The prose is provided as it is, without warranty of any kind.
+
+7. Changes. A new version of these terms carries a new identifier; items published
+   under an earlier version keep it.

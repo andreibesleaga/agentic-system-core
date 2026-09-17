@@ -6,7 +6,7 @@
     "findings": [
       {
         "code": "AGSC-E805",
-        "severity": "warning",
+        "severity": "warn",
         "slug": "my-arch"
       }
     ],

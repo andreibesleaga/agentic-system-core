@@ -11,7 +11,7 @@ namespace and versioning policy at `https://w3id.org/agentic-system-core/ns#`, a
 explanation of the profile identifier `https://w3id.org/agentic-system-core/profile/agentic-knowledge`.
 
 It is deliberately **not** the discovery specification. The `/.well-known/knowledge-linkset`
-resource (D60; the well-known URI, distinct from the `agentic-knowledge` link relation, which is
+resource (D60; the well-known URI — the discovery link itself is the registered relation `describedby`, D82 — the profile is named `agentic-knowledge`, which is
 unchanged), its link relation type and its link-set profile are defined normatively by the
 Internet-Draft in `../internet-draft/`, and this document cites it rather than restating it.
 

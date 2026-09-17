@@ -23,7 +23,7 @@ Rows T1–T10 (prompt injection through merged content, w3id redirect tampering,
 
 **Why 1.0 stops there.** The standard is static-only (D47): there is no server to hold a key, rotate it or answer a challenge, and a signing key in a public repository is no key. Key distribution is exactly the problem the adjacent protocols solve with infrastructure this standard refuses to require.
 
-**The precedent this design follows.** The Agent2Agent protocol makes signing *optional* on exactly the analogous document. Re-verified by hand on 2026-09-16 against `a2aproject/A2A` `docs/specification.md` at `main` (commit `f63dbb4`, 2026-08-28; the page banner names `1.0.0` as the latest released version), §8.4 "Agent Card Signing" reads:
+**The precedent this design follows.** The Agent2Agent protocol makes signing *optional* on exactly the analogous document. Re-verified by hand on 2026-09-16 against `a2aproject/A2A` `docs/specification.md` at `main` (commit `f63dbb4`, 2026-08-28; the page banner names `1.0.0` as the latest released version; the repository's newest tag is `v1.0.1`, 2026-05-28, whose task-state values match AGSC-02-99), §8.4 "Agent Card Signing" reads:
 
 > "Agent Cards **MAY** be digitally signed using JSON Web Signature (JWS) as defined in RFC 7515 to ensure authenticity and integrity."
 

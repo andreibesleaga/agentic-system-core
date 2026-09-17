@@ -36,5 +36,8 @@
   "options": {
     "spec_version": "1.0.0-rc.3"
   },
+  "requires_surface": [
+    "mcp"
+  ],
   "rule": "AGSC-11-11"
 }

@@ -8,19 +8,9 @@
           "none"
         ],
         "agsc-surface": [
-          "llms-txt"
-        ],
-        "href": "/llms.txt",
-        "rel": "https://w3id.org/agentic-system-core/rel#surface"
-      },
-      {
-        "agsc-access": [
-          "none"
-        ],
-        "agsc-surface": [
           "chunks"
         ],
-        "href": "/chunks.jsonl",
+        "href": "https://a.example/chunks.jsonl",
         "rel": "https://w3id.org/agentic-system-core/rel#surface"
       },
       {
@@ -33,7 +23,17 @@
         "agsc-surface-version": [
           "2026-09-15"
         ],
-        "href": "/compose/",
+        "href": "https://a.example/compose/",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      },
+      {
+        "agsc-access": [
+          "none"
+        ],
+        "agsc-surface": [
+          "llms-txt"
+        ],
+        "href": "https://a.example/llms.txt",
         "rel": "https://w3id.org/agentic-system-core/rel#surface"
       },
       {
@@ -46,7 +46,7 @@
         "agsc-surface-version": [
           "2026-07-28"
         ],
-        "href": "/specs/mcp/",
+        "href": "https://a.example/specs/mcp/",
         "rel": "https://w3id.org/agentic-system-core/rel#surface"
       }
     ],
@@ -95,5 +95,9 @@
   "options": {
     "spec_version": "1.0.0-rc.3"
   },
+  "requires_surface": [
+    "mcp",
+    "webmcp"
+  ],
   "rule": "AGSC-11-16"
 }

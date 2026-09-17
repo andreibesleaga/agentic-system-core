@@ -1,6 +1,6 @@
 {
   "area": "lint",
-  "description": "An SVG attachment is text-safe only under the allow-list: no script/foreignObject/a/animate/set/handler/style element, no on* attribute, no DOCTYPE or entity, no data: URI, every href a fragment or a same-directory relative path; each violation is AGSC-E412 and the clean file passes.",
+  "description": "An SVG attachment is text-safe only under the allow-list: no script/foreignObject/use/a/animate*/set/discard/handler/style element (the DOMPurify svgDisallowed set plus this specification's additions), no on* attribute, no DOCTYPE or entity, no data: URI, every href a fragment or a same-directory relative path; each violation is AGSC-E412 and the clean file passes.",
   "expected": {
     "clean": [
       "clean.svg"
@@ -9,6 +9,11 @@
       {
         "code": "AGSC-E412",
         "file": "anchor.svg",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "animatecolor.svg",
         "severity": "error"
       },
       {
@@ -40,6 +45,11 @@
         "code": "AGSC-E412",
         "file": "style.svg",
         "severity": "error"
+      },
+      {
+        "code": "AGSC-E412",
+        "file": "use.svg",
+        "severity": "error"
       }
     ]
   },
@@ -47,13 +57,15 @@
   "input": {
     "svgs": {
       "anchor.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><a href=\"javascript:alert(1)\"><text>x</text></a></svg>",
-      "clean.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><rect id=\"r\" width=\"10\" height=\"10\"/><use href=\"#r\"/></svg>",
+      "animatecolor.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"1\" height=\"1\"><animateColor attributeName=\"fill\" from=\"red\" to=\"blue\"/></rect></svg>",
+      "clean.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><rect id=\"r\" width=\"10\" height=\"10\"/><circle cx=\"5\" cy=\"5\" r=\"2\"/></svg>",
       "doctype.svg": "<!DOCTYPE svg [<!ENTITY x \"y\">]><svg xmlns=\"http://www.w3.org/2000/svg\"/>",
       "external.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><image xlink:href=\"https://evil.example/a.png\"/></svg>",
       "foreign.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><foreignObject><div>x</div></foreignObject></svg>",
       "onload.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"alert(1)\"/>",
       "raster.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><image href=\"data:image/png;base64,AAAA\"/></svg>",
-      "style.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><style>rect{fill:url(https://evil.example/x)}</style></svg>"
+      "style.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><style>rect{fill:url(https://evil.example/x)}</style></svg>",
+      "use.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect id=\"r\" width=\"1\" height=\"1\"/><use href=\"#r\"/></svg>"
     }
   },
   "level": "required",

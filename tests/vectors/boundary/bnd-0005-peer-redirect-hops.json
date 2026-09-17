@@ -3,8 +3,8 @@
   "description": "A fourth redirect hop, or a hop to a non-https URL, refuses the fetch; the declared peer URL is never replaced by the final URL.",
   "expected": {
     "declared_peer_unchanged": true,
-    "followed": 3,
-    "result": "AGSC-E905"
+    "error": "AGSC-E905",
+    "followed": 3
   },
   "id": "bnd-0005",
   "input": {

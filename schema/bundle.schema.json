@@ -22,9 +22,9 @@
     "base": {
       "description": "Absolute https origin, trailing slash optional; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json, including the http://localhost[:port]/ development placeholder written by adoption (D52(1)).",
       "type": "string",
-      "pattern": "^(?:https://[^\\s/]+(?:/[^\\s/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
+      "pattern": "^(?:https://[^\\x00-\\x20/]+(?:/[^\\x00-\\x20/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
     },
-    "lang": { "type": "string", "pattern": "^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$" },
+    "lang": { "type": "string", "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$" },
     "license": {
       "description": "SPDX or LicenseRef identifier covering the prose of this Bundle (AGSC-06-15).",
       "type": "string"
