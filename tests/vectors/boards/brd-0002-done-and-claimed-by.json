@@ -1,0 +1,63 @@
+{
+  "area": "boards",
+  "description": "At rc.4 the board object carries the derived boolean done — true when every task's state is terminal (TASK_STATE_COMPLETED, TASK_STATE_CANCELED, TASK_STATE_REJECTED, TASK_STATE_FAILED) — and each task an OPTIONAL claimed_by derived from the git-log file, absent when no history is supplied (AGSC-10-13, AGSC-10-17). Two boards: one finished, one not; no git log, so no task carries claimed_by.",
+  "expected": {
+    "board_done_done": true,
+    "board_open_done": false,
+    "claimed_by_present": false
+  },
+  "id": "brd-0002",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/"
+    },
+    "items": [
+      {
+        "clusters": [
+          "done"
+        ],
+        "kind": "task",
+        "slug": "write-spec",
+        "task_state": "TASK_STATE_COMPLETED",
+        "title": "Write spec",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "done"
+        ],
+        "kind": "task",
+        "slug": "review-spec",
+        "task_state": "TASK_STATE_CANCELED",
+        "title": "Review spec",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "open"
+        ],
+        "kind": "task",
+        "slug": "ship",
+        "task_state": "TASK_STATE_WORKING",
+        "title": "Ship",
+        "type": "concept"
+      },
+      {
+        "slug": "done",
+        "title": "Done board",
+        "type": "cluster"
+      },
+      {
+        "slug": "open",
+        "title": "Open board",
+        "type": "cluster"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.4 (D87); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-10-13"
+}

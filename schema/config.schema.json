@@ -486,6 +486,116 @@
         },
         "additionalProperties": false
       }
+    },
+    "agents": {
+      "description": "Agent-lane declarations (AGSC-01-36, rc.4). A lane runs only as refresh --agent <name> or as a declared client of the tool server / page tools, and writes only Proposals through its channel (AGSC-08-28..30). Disabled by default.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "patternProperties": {
+          "^x-[a-z0-9]+(-[a-z0-9]+)+$": true
+        },
+        "required": [
+          "name",
+          "kind",
+          "author",
+          "operator",
+          "tasks",
+          "channel"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "#/$defs/slug"
+          },
+          "kind": {
+            "enum": [
+              "llm",
+              "process"
+            ]
+          },
+          "author": {
+            "description": "Forge login under which the lane's Proposals are opened; must equal channels[].author of the named channel (AGSC-01-36).",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
+          },
+          "operator": {
+            "$ref": "#/$defs/human_actor"
+          },
+          "model": {
+            "description": "Model identifier; REQUIRED when kind is llm (AGSC-01-36).",
+            "type": "string",
+            "minLength": 1
+          },
+          "tasks": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "create",
+                "edit",
+                "update",
+                "review",
+                "summarize",
+                "translate",
+                "refresh",
+                "plan",
+                "claim",
+                "work"
+              ]
+            }
+          },
+          "types": {
+            "description": "Item types the lane may touch; default all three; a procedure, gate or cluster is never admitted (AGSC-08-26 b).",
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "concept",
+                "episode",
+                "lesson"
+              ]
+            }
+          },
+          "channel": {
+            "$ref": "#/$defs/slug"
+          },
+          "schedule": {
+            "description": "Opaque to the format; interpreted by the host's scheduler.",
+            "type": "string",
+            "minLength": 1
+          },
+          "budget_usd_month": {
+            "description": "REQUIRED when kind is llm; the lane stops for the month at the bound (AGSC-08-28 e).",
+            "type": "integer",
+            "minimum": 0
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "llm"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "model",
+                "budget_usd_month"
+              ]
+            }
+          }
+        ]
+      }
     }
   },
   "$defs": {

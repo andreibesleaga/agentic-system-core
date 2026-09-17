@@ -1,0 +1,58 @@
+{
+  "area": "bundle",
+  "description": "An agents[] entry of AGSC-01-36 validates against config.schema.json: kind llm with model and budget_usd_month, tasks and types from the closed enums, channel naming a channels[] entry whose author equals the agent's author. The lane is enabled here; the default is disabled.",
+  "expected": {
+    "accepted": true,
+    "findings": []
+  },
+  "id": "bundle-0003",
+  "input": {
+    "config": {
+      "agents": [
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 5,
+          "channel": "lane",
+          "enabled": true,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "editor",
+          "operator": "human:alice",
+          "tasks": [
+            "edit",
+            "update",
+            "review"
+          ],
+          "types": [
+            "concept",
+            "lesson"
+          ]
+        }
+      ],
+      "bundle": {
+        "id": "example",
+        "operator": "human:alice"
+      },
+      "channels": [
+        {
+          "adapter": "stub",
+          "author": "lane-bot",
+          "name": "lane",
+          "owner": "human:alice",
+          "publish": "auto"
+        }
+      ],
+      "site": {
+        "base": "https://example.org/",
+        "title": "Example"
+      },
+      "spec_version": "1.0.0-rc.4"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.4 (D87); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-01-36"
+}

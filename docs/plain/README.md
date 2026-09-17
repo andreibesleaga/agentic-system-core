@@ -1,6 +1,6 @@
 # The specification in plain language
 
-One short page per section of `spec/`, plus one on the five modes. These pages explain; they never decide. Where a page and a rule disagree, the rule (`spec/NN`, ids `AGSC-NN-nn`) wins. Written 2026-09-16 for the `1.0.0-rc.3` draft.
+One short page per section of `spec/`, plus one on the six modes. These pages explain; they never decide. Where a page and a rule disagree, the rule (`spec/NN`, ids `AGSC-NN-nn`) wins. Written 2026-09-16 for the `1.0.0-rc.3` draft.
 
 | Page | What it explains |
 |---|---|
@@ -16,4 +16,4 @@ One short page per section of `spec/`, plus one on the five modes. These pages e
 | [09 — Conformance](09-conformance.md) | classes, vectors, the CLI, error codes |
 | [10 — Implementation profiles](10-implementation-profiles.md) | Levels 0–3, foreign knowledge bases, peers, project mode |
 | [11 — Boundary](11-boundary.md) | where a node meets a browser, another node, a stranger |
-| [Modes](modes.md) | the five ways people use the same Bundle |
+| [Modes](modes.md) | the six ways people and agents use the same Bundle |

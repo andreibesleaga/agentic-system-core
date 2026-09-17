@@ -24,6 +24,7 @@
 | P9 | Owner-as-operator | Keep the site green with zero maintenance |
 | P10 | Port implementer | Prove my port conforms byte-for-byte |
 | P11 | Standards implementer | Adopt the discovery format on my site |
+| P12 | Self-driving team (Mode 5, rc.4) | Let agents and people plan, claim and finish a project's tasks on one Blackboard until it is done |
 
 ---
 
@@ -247,3 +248,11 @@ All requirements previously marked `should`, `v1.x`, `v1.1` or "schema-affecting
 
 
 **Correction (pre-DS-4 audit, D75, 2026-09-16):** (a) §4's "No remote MCP" reads, like the two D72 re-readings above, as *not served at 1.0; MAY be declared as a `responder` surface* (AGSC-11-21) — the declaration is a hook, its bytes are pinned by the external specification, and a static reader never depends on it. (b) PRD-057's `references[].url` denotes `sources[].resource` — the item model has one citation array (AGSC-02-10), and AGSC-11-12 now says so; the peer base is derived from the declared well-known URL, never fetched. (c) PRD-059's "un-minified with stable ids" is an obligation of the M3 importer and the DSL→SVG compiler, not a conformance rule of the format; AGSC-02-98 pins the safety allow-list, and `lint-0024` proves it. (d) PRD-060's astral-plane evidence (D72a A-06) is `jcs-0003` at the JCS level; the full `search.json` case is `build-0003`, authored 2026-09-17. (e) PRD-062's `ETag` is the quoted digest (RFC 9110), and `Cache-Control: immutable` is reserved until a digest-named route exists (AGSC-11-05).
+
+### 2.9f S01 Amendment 8 (owner-directed, 2026-09-17; D87, R66, R67) — the agent lane and Mode 5, the Blackboard
+| ID | Requirement (EARS) | Acceptance | Trace | Version |
+|---|---|---|---|---|
+| PRD-063 | WHERE an `agents[]` entry is enabled, THE SYSTEM SHALL let a model-driven or programmatic agent create, edit, update, review, summarize, translate, refresh, plan, claim and work on items **non-deterministically**, always as Proposals through the entry's channel, never as a write; with `publish: auto` on that channel the node is self-driving under every guard of AGSC-08-26, the budget and the type set (never a procedure, gate, cluster, configuration, workflow or schema); every run is an Episode with `usage`; `lint`, `build`, `verify` and `ci` stay model-free. | `bundle-0003/0004`, `prov-0001`; a run with the budget reached is `AGSC-E510`; a Proposal outside the declared set is `AGSC-E509`; the grep-asserted model-free lanes of NFR-11 still pass. | R66, D87, AGSC-01-36, AGSC-08-28…30 | v1.0 (rc.4) |
+| PRD-064 | WHERE a Bundle holds boards, declares `contribute[]` and a participation surface, and MAY run agent lanes with `plan`/`claim`/`work`, THE SYSTEM SHALL work as a **Blackboard** — the shared working memory and coordination board of people and agents, local or remote — in which a task is claimed and progressed by Proposals that change `task_state`, the board export carries derived `claimed_by` and `done`, the fast lane (agent lanes, auto merges, refresh, ledger, exports, peer check) never reaches the slow lane (gates, human review, decisions, releases, procedures, configuration), and remote participants propose through contribute targets, channels or a declared responder — nodes never call nodes. | `boards/` vector with `done` and `claimed_by`; a self-driving fixture runs to `done: true` offline with a stub agent; a slow-lane path in an agent Proposal is `AGSC-E509`. | R67, D87, AGSC-10-16…18, ADR-014 | v1.0 (rc.4) |
+
+*Note (D87):* Mode 5 adds no type, key or ontology term; it composes Modes 1–4 with the agent lane and the boards of AGSC-10-13 and is the "System 1 / System 2" reading of a node — a fast lane of automatic work and a slow lane of human decisions — documented in `docs/plain/modes.md`. PRD-063/064 are v1.0 requirements of the rc.4 draft; the engine implements them in DS-8/DS-9 (M6 boards, M10 tool server, M12 channels, M14 refresh).

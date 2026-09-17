@@ -9,6 +9,7 @@
 - **Concept** (with a `kind` qualifier), **Episode**, **Procedure**, **Lesson**, **Cluster**, **Gate** are the six item types. **Link**, **Source**, **Proposal**, **Review**, **Bundle**, **Harness** complete the ubiquitous language; Proposal and Review have no file (they are a forge pull request and its `verified[]` evidence), Source is an inline `sources[]` entry, and a Harness is generated output only. *(AGSC-00-06)*
 - **NOW** is generated context, never an item and never hand-edited. *(AGSC-00-07)*
 - **Card**, **page**, **deck** and **note** are UI or import vocabulary; they MUST NOT appear as a `type`, a schema key or an ontology term. *(AGSC-00-08)*
+- (added at rc.4) **Agent lane** and **Blackboard** complete the language for Mode 5. An **agent lane** is the OPTIONAL, configured capability by which a model-driven or programmatic agent creates, edits, reviews and updates items non-deterministically — always as Proposals, never as writes (AGSC-01-36, AGSC-08-28…30). A **Blackboard** is a Bundle used as the shared working memory and coordination board of people and agents, local or remote (AGSC-10-16…18). Neither adds a `type`, an item key or an ontology term; both are realised entirely with the objects §0.2 already names. *(AGSC-00-19)*
 
 ## 2. The fourteen Link keys (AGSC-03-01)
 
@@ -34,7 +35,7 @@ Core nine carry composition semantics (spec/03 §3.5); the Mode-2 five (`impleme
 | `asc:Source` | Class | Source | ⊑ `prov:Entity` | An external work cited by an item. It has no file: it is instantiated from a sources[] entry. |
 | `asc:blockedBy` | ObjectProperty | blocked by | — → — | Mode-2 key 13: the subject cannot proceed until the object is resolved. No domain, range or super-property (AGSC-05-26a). Combiner semantics: none. |
 | `asc:blocks` | ObjectProperty | blocks | — → — | Computed inverse of asc:blockedBy; never authored. |
-| `asc:consumes` | DatatypeProperty | consumes | — → `xsd:string` | A port type name this item consumes (AGSC-02-96, AGSC-05-30). |
+| `asc:consumes` | DatatypeProperty | consumes | `asc:Concept` → `xsd:string` | A port type name this item consumes (AGSC-02-96, AGSC-05-30). |
 | `asc:contradicts` | ObjectProperty | contradicts | — → — | Asserts that two items cannot both be true. Selecting both in a composition is a warning, never a failure. No domain or range is declared: any item type may author this key, and declaring asc:Concept would entail a Concept typing for Procedures, Episodes and Gates (D48, V1-28). |
 | `asc:coveredBy` | ObjectProperty | covered by | — → — | Computed inverse of asc:covers; never authored. |
 | `asc:covers` | ObjectProperty | covers | — → — | Mode-2 key 12: the subject covers the object (a test, a check or a document covering a requirement). Combiner semantics: none. |
@@ -56,7 +57,7 @@ Core nine carry composition semantics (spec/03 §3.5); the Mode-2 five (`impleme
 | `asc:origin` | DatatypeProperty | origin | — → `xsd:string` | How an item came to exist: human, ai-assisted, ai-generated or imported. |
 | `asc:outcome` | DatatypeProperty | outcome | `asc:Episode` → `xsd:string` | Result of an Episode: success, partial or failure. |
 | `asc:peerOrigin` | ObjectProperty | peer origin | — → — | The Bundle IRI of the declared peer node under whose base a cited resource lives (AGSC-11-12). Emitted beside rdfs:seeAlso; takes part in no composition step. No range is declared: the object is a foreign node's Bundle IRI about which this node asserts no class (AGSC-05-23). |
-| `asc:produces` | DatatypeProperty | produces | — → `xsd:string` | A port type name this item produces (AGSC-02-96, AGSC-05-30); matched by exact equality in composition Step 5 (AGSC-07-23). |
+| `asc:produces` | DatatypeProperty | produces | `asc:Concept` → `xsd:string` | A port type name this item produces (AGSC-02-96, AGSC-05-30); matched by exact equality in composition Step 5 (AGSC-07-23). |
 | `asc:retiredAt` | DatatypeProperty | retired at | — → `xsd:dateTime` | The instant at which an item entered status retired (AGSC-11-22): modified, else date, by the midnight convention of AGSC-05-14, as xsd:dateTime. |
 | `asc:review` | ObjectProperty | review | — → `asc:Review` | Connects an item to each asc:Review instantiated from its verified[] entries (AGSC-05-15), so a Review is reachable from its item without string-parsing a fragment IRI. No domain is declared, for the reason given on asc:contradicts (AGSC-05-13: no asc:Item superclass). |
 | `asc:severity` | DatatypeProperty | severity | `asc:Lesson` → `xsd:string` | Weight of a Lesson: info, warn or block. |
@@ -65,7 +66,7 @@ Core nine carry composition semantics (spec/03 §3.5); the Mode-2 five (`impleme
 | `asc:specVersion` | DatatypeProperty | spec version | `asc:Bundle` → `xsd:string` | Version of the AgenticSystemCore specification a Bundle declares. |
 | `asc:staleAfter` | DatatypeProperty | stale after | — → `xsd:dateTime` | Absolute instant after which an item is stale. Staleness is a comparison, never a decay function. |
 | `asc:status` | DatatypeProperty | status | — → `xsd:string` | Publication state of an item: draft, stable, deprecated or (rc.3) retired (AGSC-11-22). |
-| `asc:taskState` | DatatypeProperty | task state | — → `xsd:string` | One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13). |
+| `asc:taskState` | DatatypeProperty | task state | `asc:Concept` → `xsd:string` | One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13). |
 | `asc:usedBy` | ObjectProperty | used by | — → — | Computed inverse of asc:uses; never authored. No domain or range is declared, for the reason given on asc:contradicts. |
 | `asc:uses` | ObjectProperty | uses | — → — | Soft dependency: the subject draws on the object. A composition warns when a used item is absent. No domain, range or super-property is declared: skos:related is a sub-property of skos:semanticRelation, whose domain and range are skos:Concept (S19/S20), so a super-property axiom would re-introduce the unintended Concept typing and the S37 contradiction for Clusters (AGSC-05-26a, V3-06). |
 | `asc:verifiedAt` | DatatypeProperty | verified at | `asc:Review` → `xsd:dateTime` | Instant at which a human recorded a Review, with an explicit UTC offset. |

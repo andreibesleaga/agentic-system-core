@@ -34,7 +34,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0-rc.3"
+    "spec_version": "1.0.0-rc.4"
   },
   "reason": "Withdrawn at 1.0.0-rc.2 by D55 (V4-A A-09). This vector pinned the pre-D55 Level-0 relaxation: integrity_required false, omittable_integrity_members [\"hashes.graph_nq\",\"ledger_head\"] and the vendor media type. Under D55 there is no structural difference between Levels: Level 0 is the same link set with every digest and agsc-* target attribute omitted. Superseded by disc-0004.",
   "rule": "AGSC-06-08a"

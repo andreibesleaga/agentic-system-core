@@ -1,0 +1,27 @@
+# Workflow — the agent lane and the Blackboard's two lanes (rc.4, AGSC-08-28…30, AGSC-10-16…18)
+
+```mermaid
+flowchart TD
+  subgraph FAST["fast lane — no fresh human decision (System 1)"]
+    A["agents[] entry enabled\n(kind, model, tasks, types, channel, budget)"]
+    R["refresh --agent <name>\nor a declared tool-server / page-tools client"]
+    P["Proposal through the channel\nprov: ai-generated, agent, model, operator\n+ one episode with usage"]
+    G{"AGSC-08-28 c: declared types and tasks?\nAGSC-08-28 e: budget left?"}
+    L["lints at error severity\n(injection, secrets, PII, clean-room)"]
+    M["auto-merge under AGSC-08-26\nChannel-Auto trailer → ledger mode: auto"]
+    B["build: boards/<cluster>.json\nclaimed_by, done (derived)"]
+    A --> R --> P --> G
+    G -- "no" --> X["AGSC-E509 rejected / AGSC-E510 skipped"]
+    G -- "yes" --> L --> M --> B
+    B -- "board not done, task claimable" --> R
+  end
+  subgraph SLOW["slow lane — a person decides (System 2)"]
+    H["gates · human review · decisions · releases\nprocedures · gates · clusters · configuration · workflows · schemas"]
+  end
+  M -. "never reaches" .-> H
+  H -- "publish: auto, once, revocable" --> A
+```
+
+The fast lane runs until the board is done or a task needs a person (`TASK_STATE_INPUT_REQUIRED`, `TASK_STATE_AUTH_REQUIRED`); the slow lane is unreachable from it by construction (AGSC-08-26(b), AGSC-08-28(c), AGSC-10-18). The dashed edge is the only link between the two: the human's one configured, revocable `publish: auto` choice (AGSC-08-29).
+
+Trace: PRD-063, PRD-064 · D87 · spec/08 §8.6, spec/10 §10.6, spec/01 AGSC-01-36.

@@ -14,4 +14,6 @@
 
 **Paths.** A relative path never contains `..`, `.` segments, a leading slash, a backslash or a NUL, and always resolves inside the Bundle.
 
-Rules: `spec/01-bundle.md`, `AGSC-01-01` … `AGSC-01-35`.
+**Agent lanes (rc.4).** The configuration may declare agents: a name, a kind (model or program), the forge identity and the accountable person, the model, what it may do, which item types it may touch, the channel its proposals go through, a schedule and a monthly budget. Disabled unless switched on.
+
+Rules: `spec/01-bundle.md`, `AGSC-01-01` … `AGSC-01-36`.

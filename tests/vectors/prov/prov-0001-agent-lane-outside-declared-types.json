@@ -1,0 +1,80 @@
+{
+  "area": "prov",
+  "description": "An agent-lane Proposal is checked against its agents[] entry before any lint runs (AGSC-08-28 c): the agent 'editor' declares types concept and lesson, so a Proposal from it that changes a procedure is rejected with AGSC-E509, naming the agent and the offending path.",
+  "expected": {
+    "accepted": false,
+    "error": "AGSC-E509",
+    "findings": [
+      {
+        "agent": "editor",
+        "code": "AGSC-E509",
+        "path": "content/procedures/deploy.md",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "prov-0001",
+  "input": {
+    "config": {
+      "agents": [
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 5,
+          "channel": "lane",
+          "enabled": true,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "editor",
+          "operator": "human:alice",
+          "tasks": [
+            "edit",
+            "update",
+            "review"
+          ],
+          "types": [
+            "concept",
+            "lesson"
+          ]
+        }
+      ],
+      "bundle": {
+        "id": "example",
+        "operator": "human:alice"
+      },
+      "channels": [
+        {
+          "adapter": "stub",
+          "author": "lane-bot",
+          "name": "lane",
+          "owner": "human:alice",
+          "publish": "auto"
+        }
+      ],
+      "site": {
+        "base": "https://example.org/",
+        "title": "Example"
+      },
+      "spec_version": "1.0.0-rc.4"
+    },
+    "proposal": {
+      "agent": "editor",
+      "author": "lane-bot",
+      "changes": [
+        {
+          "path": "content/concepts/supervisor.md",
+          "type": "concept"
+        },
+        {
+          "path": "content/procedures/deploy.md",
+          "type": "procedure"
+        }
+      ]
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.4 (D87); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-08-28"
+}

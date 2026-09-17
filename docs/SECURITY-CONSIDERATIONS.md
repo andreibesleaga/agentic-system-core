@@ -15,6 +15,12 @@
 
 Rows T1–T10 (prompt injection through merged content, w3id redirect tampering, repudiation, and the rest) are unchanged in `docs/PLAN.md` §12.
 
+## 1a. Threat rows added at rc.4 (D87)
+
+| # | Threat | STRIDE | Closed by | Residual |
+|---|---|---|---|---|
+| T17 | **Runaway or captured agent lane** — a self-driving node whose agent loops on its own output, is steered by injected prose, or spends without bound | T/D/E (LLM01, LLM08) | AGSC-08-28 (Proposals only; declared types and tasks, `AGSC-E509`; prompt fenced as data; spend recorded; monthly budget, `AGSC-E510`), AGSC-08-29 (every AGSC-08-26 guard; lints at `error`; no procedure, gate or configuration in the lane; `mode: auto` in the ledger), AGSC-08-30 (model-free build), AGSC-10-18 (slow lane unreachable), one configuration key to disable | an agent that produces plausible but wrong prose within the admitted types: caught by staleness, lessons and people reading, never by the format; the honest limit of AGSC-08-19 applies |
+
 ## 2. Digests versus signatures — what 1.0 proves and what it does not
 
 **What the discovery layer proves.** Every artefact link in `/.well-known/knowledge-linkset` carries an RFC 9530 `digest` (SHA-256) and the anchor carries `agsc-bundle-hash` and `agsc-ledger-head` (AGSC-06-08…10). A reader who fetched the discovery document over TLS from the node's origin can therefore verify that every artefact it fetches is the one the publisher described, byte for byte, and that the ledger it reads ends where the publisher said it ends. The **peer check** (AGSC-10-12) proves that two nodes declare each other and that each other's link set validates — mutual conformance, not shared content, and it accepts two local files so it can run offline.

@@ -29,7 +29,7 @@
   "level": "required",
   "note": "2026-09-17: BCP 47 tags compare case-insensitively (AR2-33); emitted tags are lower-cased (AGSC-05-31).",
   "options": {
-    "spec_version": "1.0.0-rc.3"
+    "spec_version": "1.0.0-rc.4"
   },
   "rule": "AGSC-01-13"
 }

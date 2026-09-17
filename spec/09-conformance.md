@@ -24,7 +24,7 @@
 { "counts": { "error": 0, "warn": 0 },
   "findings": [],
   "schema": "agsc.diagnostics.v1",
-  "spec_version": "1.0.0-rc.3",
+  "spec_version": "1.0.0-rc.4",
   "status": "pass",
   "verb": "lint",
   "version": "0.1.0" }
@@ -98,6 +98,8 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E506` | adoption defaulted or normalized a value (warning) | AGSC-02-90 |
 | `AGSC-E508` | Level-0 item inherited `prov` from `bundle.operator` (warning) | AGSC-10-02 |
 | `AGSC-E507` | adopted body reference no longer resolves after relocation (warning) | AGSC-02-95 |
+| `AGSC-E509` | agent-lane Proposal outside the declared `types[]`/`tasks[]`, or from an undeclared or disabled agent (rc.4) | AGSC-08-28 |
+| `AGSC-E510` | agent-lane run skipped: `budget_usd_month` reached (warning, rc.4) | AGSC-08-28 |
 | `AGSC-E601` | JSON artefact not JCS-canonical | AGSC-04-06 |
 | `AGSC-E602` | build not byte-reproducible | AGSC-04-02 |
 | `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed (exit 2) | AGSC-04-09 |

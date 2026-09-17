@@ -1,0 +1,65 @@
+{
+  "area": "bundle",
+  "description": "types[] of an agents[] entry is a closed enum of concept, episode and lesson (AGSC-01-36): a procedure can never be in an agent lane, because its prose reaches skill packs and Harness files (AGSC-08-26 b). The enum violation is AGSC-E203 by the precedence paragraph of spec/09 §9.4.",
+  "expected": {
+    "accepted": false,
+    "error": "AGSC-E203",
+    "findings": [
+      {
+        "code": "AGSC-E203",
+        "path": "agents[0].types[1]",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "bundle-0004",
+  "input": {
+    "config": {
+      "agents": [
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 5,
+          "channel": "lane",
+          "enabled": true,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "editor",
+          "operator": "human:alice",
+          "tasks": [
+            "edit",
+            "update",
+            "review"
+          ],
+          "types": [
+            "concept",
+            "procedure"
+          ]
+        }
+      ],
+      "bundle": {
+        "id": "example",
+        "operator": "human:alice"
+      },
+      "channels": [
+        {
+          "adapter": "stub",
+          "author": "lane-bot",
+          "name": "lane",
+          "owner": "human:alice",
+          "publish": "auto"
+        }
+      ],
+      "site": {
+        "base": "https://example.org/",
+        "title": "Example"
+      },
+      "spec_version": "1.0.0-rc.4"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-17 at rc.4 (D87); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-01-36"
+}
