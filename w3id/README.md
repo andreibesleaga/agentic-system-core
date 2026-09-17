@@ -12,6 +12,7 @@ Permanent identifiers for **AgenticSystemCore** — an ontological agentic memor
 | `https://w3id.org/agentic-system-core/ns/<major>.<minor>.<patch>` | the immutable published copy of that version (`owl:versionIRI`), same negotiation |
 | `https://w3id.org/agentic-system-core/ns/<file>.<ext>` | that distribution file |
 | `https://w3id.org/agentic-system-core/profile/agentic-knowledge` | `https://agenticsystemcore.com/specs/agentic-knowledge/` (D55, decided 2026-09-03) |
+| `https://w3id.org/agentic-system-core/rel#<name>` | `https://agenticsystemcore.com/specs/agentic-knowledge/`, where the client's own `#<name>` selects the relation's row (AGSC-06-01, AGSC-06-10) |
 
 Versioned IRIs may carry a SemVer pre-release suffix (e.g. `1.0.0-draft.1`), matched by the same
 content-negotiation rules as the plain `<major>.<minor>.<patch>` form.
@@ -21,7 +22,7 @@ All redirects are `303 See Other`, per the W3C "Cool URIs for the Semantic Web" 
 
 ## Maintainer
 
-Andrei Besleaga — <abnmaster@gmail.com> — GitHub: `andreibesleaga`
+Andrei Nicolae Besleaga — <andrei.besleaga.nicolae@gmail.com> — GitHub: `andreibesleaga`
 
 ## Post-merge verification
 
@@ -33,6 +34,8 @@ done
 curl -sI -H "Accept: text/turtle" https://w3id.org/agentic-system-core/ns/1.0.0
 curl -sI https://w3id.org/agentic-system-core/ns/agsc.ttl
 curl -sI https://w3id.org/agentic-system-core/ns/Pattern   # Location must contain '#', not '%23'
+curl -sI https://w3id.org/agentic-system-core/profile/agentic-knowledge   # 303 to /specs/agentic-knowledge/
+curl -sI https://w3id.org/agentic-system-core/rel          # 303 to /specs/agentic-knowledge/ (no fragment in Location)
 ```
 
 Locally, the same can be run against Apache with `AllowOverride All` + `a2enmod rewrite headers`

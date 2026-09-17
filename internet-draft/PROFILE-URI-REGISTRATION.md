@@ -1,6 +1,6 @@
 # Profile URI registration — ready to file (RFC 7284, First Come First Served)
 
-*D82 Q23 (2026-09-17): the Profile URI registry (https://www.iana.org/assignments/profile-uris/) is First Come First Served and can be filed today, independently of the Internet-Draft. The owner files it from his own account (the assistant never submits anything). Five fields, exactly as RFC 7284 §4.1 asks.*
+*D82 Q23 (2026-09-17): the Profile URI registry (https://www.iana.org/assignments/profile-uris/) is First Come First Served and can be filed today, independently of the Internet-Draft. The owner files it from their own account (the assistant never submits anything). Five fields, exactly as RFC 7284 §4.1 asks.*
 
 | Field | Value |
 |---|---|

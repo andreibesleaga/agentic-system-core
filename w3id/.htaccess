@@ -17,12 +17,14 @@
 # ## Contact
 # This space is administered by:
 #
-# Andrei Besleaga
-# abnmaster@gmail.com
+# Andrei Nicolae Besleaga
+# andrei.besleaga.nicolae@gmail.com
 # GitHub username: andreibesleaga
 
-# Let browser-based RDF tooling follow the redirect.
-Header set Access-Control-Allow-Origin *
+# Let browser-based RDF tooling follow the redirect. `always` is required: plain `Header set`
+# applies to 2xx responses only, so every 303 below would lack the header and a browser
+# would refuse to follow it cross-origin (verified in Apache 2.4, 2026-09-17, DS-7).
+Header always set Access-Control-Allow-Origin *
 
 Options +FollowSymLinks
 # Turn off MultiViews
@@ -91,6 +93,15 @@ RewriteRule ^ns/([A-Za-z][A-Za-z0-9_-]*)/?$ https://agenticsystemcore.com/ns/#$1
 # decided: D55, 2026-09-03 (04-DECISIONS.md)
 # ---------------------------------------------------------------------------
 RewriteRule ^profile/agentic-knowledge/?$ https://agenticsystemcore.com/specs/agentic-knowledge/ [R=303,L]
+
+# ---------------------------------------------------------------------------
+# Extension link relation URIs https://w3id.org/agentic-system-core/rel#<name>
+# (AGSC-06-10). The fragment never reaches the server and the Location below
+# carries none, so the client keeps #<name> and lands on that relation's row
+# of the profile page, which carries one anchor per relation (AGSC-06-01).
+# Added 2026-09-17 (DS-7): without it /rel fell through to /ns/.
+# ---------------------------------------------------------------------------
+RewriteRule ^rel/?$ https://agenticsystemcore.com/specs/agentic-knowledge/ [R=303,L]
 
 # ---------------------------------------------------------------------------
 # 5. Closed table: the project prefix itself, then everything else.
