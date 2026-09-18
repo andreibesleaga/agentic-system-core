@@ -1,9 +1,11 @@
 # Workflow — migration from the old site (audit/D §1.5, D47 migration gate)
 
+**What this shows.** The one-time migration of the previous site into a Bundle: the import, the field map it applies, the clean-room decisions it forces, and the clean `agsc lint` the result must reach before it is committed.
+
 ```mermaid
 flowchart TD
   A["Old site repo:\nschema/content.schema.json, content/patterns/*.md,\ndecks.json, releases.json"]
-  A --> B["agsc import --from old-site ~/work/OldAgenticSystemPatterns.com"]
+  A --> B["agsc import --from old-site <path-to-old-site-repo>"]
   B --> C["Field map applied (audit/D S1.5):\nid->slug, summary->description,\ndeck/subdeck->clusters[], references[]->sources[],\nstatus:published->stable"]
   C --> D{"bookRef present\nand non-empty?"}
   D -- yes --> E["Importer REFUSES the card (W1/W11)"]

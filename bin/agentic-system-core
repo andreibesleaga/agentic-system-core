@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+// bin/agentic-system-core — wrapper; agsc.js guards its own auto-run behind
+// `require.main === module`, so this wrapper invokes it explicitly.
+const agsc = require('./agsc.js');
+agsc.run().catch((e) => {
+  process.stderr.write(`agsc: internal error: ${e && e.stack ? e.stack : e}\n`);
+  process.exitCode = 1;
+});

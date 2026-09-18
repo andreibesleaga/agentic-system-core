@@ -177,6 +177,14 @@ if start >= 0:
     # nit-free). Keeping it trades idnits-v3 normal-mode
     # MULTIPLE_REFERENCES_SECTION_TITLES (txt) for INVALID_REFERENCES_NAME
     # (xml); neither appears in submission mode, which is the gate.
+    # RETESTED 2026-09-18 (session 27, V8-82/SUBMISSION-NOTES.md §1 item 1's
+    # "tested fix": keep the wrapper when it holds >=2 nested <references>
+    # blocks). Result: the .txt MULTIPLE_REFERENCES_SECTION_TITLES error did
+    # disappear, but the .xml lane then failed normal mode with a NEW error,
+    # INVALID_REFERENCES_NAME ("references section <name> element should be
+    # either Normative or Informative") -- a straight trade, not a net gain,
+    # so the conditional keep was reverted. Submission mode is nit-free
+    # either way; see TOOLING.md "Rejected: conditional references wrapper".
     keep_wrapper = False
     if True:
         inner = re.sub(r'^<references anchor="sec-combined-references">\s*', "", inner)

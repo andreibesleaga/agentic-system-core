@@ -1,5 +1,5 @@
 # Trace: PRD-028, PRD-029, PRD-030, PRD-031 · audit/D §3(g) · PLAN §6.a (Mode 2)
-# Source of truth: the private design register (audit D) §3(g) "Team using an instance as live specs (Mode 2) with Claude Code/GABBE"
+# Source of truth: the private design register (audit D) §3(g) "Team using an instance as live specs (Mode 2) with a coding agent"
 @persona-g @mode-2
 Feature: Project team keeps its agent-built specs governed
   As P7 (project team, Mode 2)
@@ -15,7 +15,7 @@ Feature: Project team keeps its agent-built specs governed
     When the team authors "content/concepts/<slug>.md" with "kind: principle", "kind: decision", "kind: spec" or "kind: task"
     And authors "content/gates/<slug>.md" and "content/episodes/<slug>.md" (session logs)
     Then lint accepts every kind without introducing a new "type"
-    And no typed Mode-2 Link key is required (deferred to v2, G34)
+    And the five Mode-2 Link keys (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`) exist at 1.0 but are never required (AGSC-03-20)
 
   @PRD-029
   Scenario: Team exports steer files for their coding agent
@@ -34,5 +34,5 @@ Feature: Project team keeps its agent-built specs governed
   @PRD-030
   Scenario: Team publishes its own specs as an instance of itself (should)
     When "npx agentic-system-core build" runs with "/specs/" enabled
-    Then "/specs/" is generated from "spec/00–09"
+    Then "/specs/" is generated from "spec/00–11"
     And a file listed in the Bundle's private-source exclusion list is excluded from every export

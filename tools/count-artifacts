@@ -6,9 +6,11 @@
 // Checks (each a finding, exit 1): duplicate rule id · duplicate registry row for one
 // code (AGSC-09-91) · code used but not registered · vector citing an unknown rule ·
 // vector missing a member · duplicate vector id · vector area outside the AGSC-09-04
-// list · spec_version literal disagreeing with spec/00 (AGSC-09-91) in spec/, docs/,
-// w3c/ and every vector's options.spec_version · w3c/index.html <dfn> terms disagreeing
-// with ontology/agsc.ttl · a vector directory ignored by .gitignore.
+// list · spec_version literal disagreeing with spec/00 (AGSC-09-91) in docs/, w3c/ and
+// every vector's options.spec_version · every 1.0.0-rc.N literal in spec/*.md — including
+// inside a JSON-array/quoted example — disagreeing with spec/00 unless the line is a
+// historical note (D93) · w3c/index.html <dfn> terms disagreeing with ontology/agsc.ttl ·
+// a vector directory ignored by .gitignore.
 // Also reports rules_with_vector / rules_without_vector (informative, never a finding).
 'use strict';
 const fs = require('fs'), path = require('path'), cp = require('child_process');
@@ -74,11 +76,33 @@ for (const v of vectors) {
 }
 const ids = vectors.map(v => v.id);
 for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
-// spec_version literals in spec/, docs/, w3c/ that name a different rc
-for (const f of [...specFiles.map(f => 'spec/' + f), 'docs/SPEC.md', 'w3c/index.html']) {
+// spec_version literals in docs/, w3c/ that name a different rc (keyword-anchored form)
+for (const f of ['docs/SPEC.md', 'w3c/index.html']) {
   const txt = read(f);
   for (const m of txt.matchAll(/spec_version[":\s]*"?\s*(1\.0\.0-rc\.\d+)/g))
     if (m[1] !== declared) findings.push(`${f}: spec_version literal ${m[1]} differs from spec/00 ${declared} (AGSC-09-91)`);
+}
+// D93: every 1.0.0-rc.N literal anywhere in spec/*.md — including inside a fenced code
+// block or a quoted/JSON-array string, where the keyword-anchored check above cannot see
+// it (e.g. the hyphenated key "agsc-spec-version": ["1.0.0-rc.3"] never contains the
+// literal substring "spec_version") — must equal the declared version, UNLESS the literal
+// sits on a line that is plainly a historical note: one containing, before the literal,
+// a word such as "at", "since", "amended", "added", "withdrawn", "before", "until" or
+// "from" (an amendment marker, a retirement note, a rc.N-vs-rc.M comparison, etc.).
+// A differing literal on any other line is a live example or status claim that drifted.
+// (?<![\w-])/(?![\w-]) rather than \b so a hyphenated JSON key such as
+// "agsc-generated-at" does not itself read as the prose word "at".
+const historyWord = /(?<![\w-])(at|since|amended|added|withdrawn|before|until|from)(?![\w-])/i;
+for (const f of specFiles.map(f => 'spec/' + f)) {
+  const txt = read(f);
+  const lines = txt.split('\n');
+  lines.forEach((line, i) => {
+    for (const m of line.matchAll(/1\.0\.0-rc\.\d+/g)) {
+      if (m[0] === declared) continue;
+      if (!historyWord.test(line.slice(0, m.index)))
+        findings.push(`${f}:${i + 1}: version literal ${m[0]} differs from spec/00 ${declared} and is not on a historical-note line (AGSC-09-91)`);
+    }
+  });
 }
 // w3c/index.html vocabulary tables vs ontology
 try {

@@ -8,7 +8,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 | Member | Required | Meaning |
 |---|---|---|
-| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, `boundary` (rc.3, AGSC-11), `chunks` and `boards` (rc.3), and later `prov`, `import`, `export`, `skills`, `run`, `conform` (AGSC-09-04; `webmcp` is NOT an area, AGSC-09-16 is proved by `cli/cli-0003`) |
+| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, `boundary` (rc.3, AGSC-11), `chunks` and `boards` (rc.3), `prov` and `conform` (rc.4), and later `import`, `export`, `skills`, `run` (AGSC-09-04; `webmcp` is NOT an area, AGSC-09-16 is proved by `cli/cli-0003`) |
 | `description` | yes | what the case proves, and why it is not obvious |
 | `expected` | yes | the outcome (below) |
 | `id` | yes | stable, unique, never reused: `<area-prefix>-<nnnn>` |
@@ -42,9 +42,9 @@ A conformance claim MUST name the class, the `spec_version` MAJOR.MINOR and the 
 
 ## Present coverage
 
-**120 vectors — 116 required, 1 optional, 3 withdrawn** (rc.3 draft, 2026-09-17; per-area counts and the total are derived by `node tools/count-artifacts --json`, never typed by hand). Three are `withdrawn` at `1.0.0-rc.2` and are never run for a claim: `disc-0001` and `disc-0002` (superseded by `disc-0003`/`disc-0004` when D55 replaced the two-member discovery document with a conformant RFC 9264 link set) and `cli-0001` (superseded by `cli-0005` when AGSC-09-07 grew from thirteen verbs to sixteen). Each of the twelve spec sections is cited by at least one of them; the remaining areas listed above are populated as the milestones that need them land.
+**129 vectors — 125 required, 1 optional, 3 withdrawn** (`1.0.0-rc.4`, 2026-09-18; per-area counts and the total are derived by `node tools/count-artifacts --json`, never typed by hand). Three are `withdrawn` at `1.0.0-rc.2` and are never run for a claim: `disc-0001` and `disc-0002` (superseded by `disc-0003`/`disc-0004` when D55 replaced the two-member discovery document with a conformant RFC 9264 link set) and `cli-0001` (superseded by `cli-0005` when AGSC-09-07 grew from thirteen verbs to sixteen). Each of the twelve spec sections is cited by at least one of them; the remaining areas listed above are populated as the milestones that need them land.
 
-**Coverage status:** derived, never typed — `node tools/count-artifacts --json` reports `rules`, `rules_with_vector` and `rules_without_vector` for `spec/00`–`spec/11`; the rc.3 draft of 2026-09-17 has 120 vectors, every MUST that DS-4 had listed as deferred now has one (DS-5, 2026-09-17), and nothing is deferred. `nquads` expectations follow AGSC-05-31 (plain literals carry `^^xsd:string` in N-Quads); `severity` is `warn`, never `warning` (AGSC-09-11); a vector carrying `requires_surface` is skipped-as-passed by a node that declares none of the named surfaces (AGSC-09-04).
+**Coverage status:** derived, never typed — `node tools/count-artifacts --json` reports `rules`, `rules_with_vector` and `rules_without_vector` for `spec/00`–`spec/11`; the `1.0.0-rc.4` tag of 2026-09-18 has 129 vectors, every MUST that DS-4 had listed as deferred now has one (DS-5, 2026-09-17), and nothing is deferred. `nquads` expectations follow AGSC-05-31 (plain literals carry `^^xsd:string` in N-Quads); `severity` is `warn`, never `warning` (AGSC-09-11); a vector carrying `requires_surface` is skipped-as-passed by a node that declares none of the named surfaces (AGSC-09-04).
 
 ## Porting notes
 

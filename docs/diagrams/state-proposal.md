@@ -1,5 +1,7 @@
 # Proposal lifecycle — state machine
 
+**What this shows.** A proposal's life from an authored edit to a merge or a rejection: what `agsc propose` writes, what the operator runs, what CI checks without a model, and where a human decides. The machine is total over what actually happens, including a lint-green proposal the owner still closes.
+
 ```mermaid
 stateDiagram-v2
   [*] --> authored: human or operator-run agent edits item with prov{origin, operator}

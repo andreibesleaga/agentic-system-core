@@ -1,0 +1,265 @@
+#!/usr/bin/env node
+'use strict';
+// tools/validate-vectors — the conformance-vector validator of AGSC-09-90.
+//
+// INDEPENDENT BY CONSTRUCTION: Node built-ins only, no import from `src/`, no
+// dependency. AGSC-09-90 requires each validator to be runnable standalone so that
+// an outside party can check the normative artefacts without trusting this engine;
+// a validator that imported the engine it validates would prove nothing.
+//
+// Checks (each a Finding; any error exits 1):
+//   AGSC-E202  a required member of AGSC-09-04 is missing
+//   AGSC-E203  `area` outside the closed list of twenty-five (AGSC-09-04);
+//              `level` outside required|optional|withdrawn (AGSC-09-05);
+//              an `AGSC-E<nnn>` code that spec/09 section 9.4 does not register
+//   AGSC-E204  a malformed `id` (`<prefix>-<nnnn>`) or `rule` (`AGSC-nn-nn[a]`)
+//   AGSC-E108  encoding: CRLF, a byte-order mark, no single trailing LF, or non-NFC
+//              text outside the AGSC-09-06 exemption (an input string whose non-NFC
+//              form is the subject of the case)
+//   AGSC-E601  object members not in JCS order (AGSC-09-06), except the
+//              `input.value` subtree, which is the subject of the jcs vectors
+//   AGSC-E201  a `rule` that no spec/*.md defines; a duplicate `id`; a `withdrawn`
+//              vector without `reason` or whose `expected` is not {"withdrawn":true}
+//   AGSC-E207  (warning) a `note` on a vector that is not marked unreleased
+//
+// A declared area with no vector file is an INFORMATIONAL count, never a failure
+// (AGSC-09-90). Usage: validate-vectors [--json] [--quiet] [<dir>]
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const ROOT = path.resolve(__dirname, '..');
+
+/** AGSC-09-04: the closed list of twenty-five areas, and no others. */
+const AREAS = Object.freeze([
+  'frontmatter', 'slug', 'links', 'jcs', 'graph', 'lint', 'cli', 'bundle', 'prov',
+  'ledger', 'compose', 'build', 'discovery', 'adopt', 'import', 'export', 'skills',
+  'adapters', 'channels', 'harness', 'run', 'conform', 'boundary', 'chunks', 'boards',
+]);
+const REQUIRED_MEMBERS = Object.freeze(['area', 'description', 'expected', 'id', 'input', 'level', 'rule']);
+const LEVELS = Object.freeze(['required', 'optional', 'withdrawn']);
+/** AGSC-09-06: the two files whose non-NFC input is the subject of the case. */
+const NFC_EXEMPT = Object.freeze(['jcs-0005', 'lint-0022']);
+
+function fail(message) {
+  process.stderr.write(`validate-vectors: ${message}\n`);
+  process.exit(2);
+}
+
+// ---------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
+// ---------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+function finding(code, file, message, severity = 'error', line = 1) {
+  return { code, col: 1, file, line, message, severity };
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function walk(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory()
+    ? walk(path.join(dir, e.name))
+    : [path.join(dir, e.name)]));
+}
+
+/** Every object in the tree whose member order is not JCS order (AGSC-09-06). */
+function orderFaults(node, pointer, out) {
+  if (Array.isArray(node)) {
+    node.forEach((v, i) => orderFaults(v, `${pointer}/${i}`, out));
+    return;
+  }
+  if (node === null || typeof node !== 'object') return;
+  const names = Object.keys(node);
+  const sorted = names.map((k) => k.normalize('NFC')).slice().sort();
+  if (JSON.stringify(names) !== JSON.stringify(sorted)) out.push(pointer === '' ? '/' : pointer);
+  for (const key of names) {
+    // AGSC-09-06 exemption: `input.value` carries the order that IS the case.
+    if (pointer === '/input' && key === 'value') continue;
+    orderFaults(node[key], `${pointer}/${key}`, out);
+  }
+}
+
+function collectCodes(node, out) {
+  if (typeof node === 'string') {
+    for (const m of node.matchAll(/AGSC-E\d{3}/gu)) out.add(m[0]);
+    return;
+  }
+  if (Array.isArray(node)) {
+    node.forEach((v) => collectCodes(v, out));
+    return;
+  }
+  if (node !== null && typeof node === 'object') {
+    for (const k of Object.keys(node)) {
+      collectCodes(k, out);
+      collectCodes(node[k], out);
+    }
+  }
+}
+
+function main(argv) {
+  const flags = new Set();
+  let dir = path.join(ROOT, 'tests', 'vectors');
+  for (const arg of argv) {
+    if (arg === '--json' || arg === '--quiet' || arg === '--plain') flags.add(arg);
+    else if (arg.startsWith('--')) fail(`unknown flag ${arg} (AGSC-E002)`);
+    else dir = path.resolve(arg);
+  }
+  if (!fs.existsSync(dir)) fail(`no such directory: ${dir} (AGSC-E901)`);
+
+  const specDir = path.join(ROOT, 'spec');
+  const specText = fs.readdirSync(specDir).filter((f) => f.endsWith('.md')).sort()
+    .map((f) => fs.readFileSync(path.join(specDir, f), 'utf8')).join('\n');
+  const ruleIds = new Set((specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/gu) || []).map((s) => s.slice(2, -2)));
+  const conformance = fs.readFileSync(path.join(specDir, '09-conformance.md'), 'utf8');
+  const registered = new Set((conformance.match(/^\| `AGSC-E\d{3}`/gmu) || [])
+    .map((s) => (s.match(/AGSC-E\d{3}/u) || [''])[0]));
+  const declaredSpecVersion = (fs.readFileSync(path.join(specDir, '00-overview.md'), 'utf8')
+    .match(/1\.0\.0-rc\.\d+/u) || ['unknown'])[0];
+
+  const files = walk(dir).filter((f) => f.endsWith('.json')).sort();
+  const findings = [];
+  const seenIds = new Map();
+  const areasPresent = new Set();
+
+  for (const absolute of files) {
+    const file = path.relative(ROOT, absolute).split(path.sep).join('/');
+    const raw = fs.readFileSync(absolute, 'utf8');
+
+    if (raw.charCodeAt(0) === 0xfeff) findings.push(finding('AGSC-E108', file, 'byte-order mark (AGSC-09-06)'));
+    if (raw.includes('\r')) findings.push(finding('AGSC-E108', file, 'CR or CRLF line endings (AGSC-09-06)'));
+    if (!raw.endsWith('\n') || raw.endsWith('\n\n')) {
+      findings.push(finding('AGSC-E108', file, 'the file must end with exactly one LF (AGSC-09-06)'));
+    }
+
+    let vector;
+    try {
+      vector = JSON.parse(raw);
+    } catch (e) {
+      findings.push(finding('AGSC-E201', file, `not valid JSON: ${e.message}`));
+      continue;
+    }
+
+    const id = typeof vector.id === 'string' ? vector.id : '(no id)';
+    if (raw.normalize('NFC') !== raw && !NFC_EXEMPT.includes(id)) {
+      findings.push(finding('AGSC-E108', file,
+        'the file is not NFC and is not one of the AGSC-09-06 exemptions'));
+    }
+
+    for (const member of REQUIRED_MEMBERS) {
+      if (!Object.prototype.hasOwnProperty.call(vector, member)) {
+        findings.push(finding('AGSC-E202', file, `required member "${member}" is missing (AGSC-09-04)`));
+      }
+    }
+    if (typeof vector.id === 'string') {
+      if (!/^[a-z]+-\d{4}$/u.test(vector.id)) {
+        findings.push(finding('AGSC-E204', file, `id "${vector.id}" is not <area-prefix>-<nnnn> (AGSC-09-04)`));
+      }
+      if (seenIds.has(vector.id)) {
+        findings.push(finding('AGSC-E201', file, `duplicate id "${vector.id}", first seen in ${seenIds.get(vector.id)}`));
+      } else seenIds.set(vector.id, file);
+    }
+    if (typeof vector.area === 'string') {
+      areasPresent.add(vector.area);
+      if (!AREAS.includes(vector.area)) {
+        findings.push(finding('AGSC-E203', file, `area "${vector.area}" is outside the closed list of ${AREAS.length} (AGSC-09-04)`));
+      }
+      const folder = file.split('/').slice(-2)[0];
+      if (folder !== vector.area) {
+        findings.push(finding('AGSC-E205', file, `area "${vector.area}" disagrees with the folder "${folder}" (AGSC-09-04)`));
+      }
+    }
+    if (typeof vector.level === 'string' && !LEVELS.includes(vector.level)) {
+      findings.push(finding('AGSC-E203', file, `level "${vector.level}" is not required|optional|withdrawn (AGSC-09-05)`));
+    }
+    if (typeof vector.rule === 'string') {
+      if (!/^AGSC-\d{2}-\d{2,3}[a-z]?$/u.test(vector.rule)) {
+        findings.push(finding('AGSC-E204', file, `rule "${vector.rule}" is not an AGSC-nn-nn id (AGSC-09-05)`));
+      } else if (!ruleIds.has(vector.rule)) {
+        findings.push(finding('AGSC-E201', file, `rule "${vector.rule}" is defined nowhere in spec/ (AGSC-09-05)`));
+      }
+    }
+    if (vector.level === 'withdrawn') {
+      if (typeof vector.reason !== 'string' || vector.reason === '') {
+        findings.push(finding('AGSC-E202', file, 'a withdrawn vector MUST carry `reason` (AGSC-09-05)'));
+      }
+      if (canonicalize(vector.expected) !== '{"withdrawn":true}') {
+        findings.push(finding('AGSC-E201', file,
+          'a withdrawn vector\'s `expected` MUST be reduced to {"withdrawn": true} (AGSC-09-05)'));
+      }
+    }
+    if (vector.options && vector.options.spec_version !== undefined
+        && vector.options.spec_version !== declaredSpecVersion) {
+      findings.push(finding('AGSC-E201', file,
+        `options.spec_version "${vector.options.spec_version}" differs from the spec/00 declaration "${declaredSpecVersion}" (AGSC-09-91)`));
+    }
+
+    const order = [];
+    orderFaults(vector, '', order);
+    for (const pointer of order) {
+      findings.push(finding('AGSC-E601', file, `object members at ${pointer} are not in JCS order (AGSC-09-06)`));
+    }
+
+    const codes = new Set();
+    collectCodes(vector.expected, codes);
+    for (const code of [...codes].sort()) {
+      if (!registered.has(code)) {
+        findings.push(finding('AGSC-E203', file, `error code ${code} is not registered in spec/09 section 9.4 (AGSC-09-15)`));
+      }
+    }
+  }
+
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  const emptyAreas = AREAS.filter((a) => !areasPresent.has(a));
+  const version = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+  const envelope = {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declaredSpecVersion,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'validate-vectors',
+    version,
+  };
+
+  if (flags.has('--json')) {
+    process.stdout.write(`${canonicalize(envelope)}\n`);
+    for (const f of findings) process.stderr.write(`${canonicalize(f)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of findings) {
+      process.stderr.write(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    process.stdout.write(`validate-vectors: ${files.length} vectors, ${counts.error} error, ${counts.warn} warn; `
+      + `declared areas with no vector file (informational, AGSC-09-90): ${emptyAreas.length ? emptyAreas.join(' ') : 'none'}\n`);
+  }
+  process.exit(counts.error === 0 ? 0 : 1);
+}
+
+main(process.argv.slice(2));

@@ -1,5 +1,7 @@
 # Ontology mapping — item types and Links to RDF (audit/D §1.3, addendum)
 
+**What this shows.** How the six item types and the fourteen Link keys map onto RDF classes and properties, including the SKOS treatment that makes nested Clusters a `skos:Collection` tree rather than a flat hierarchy.
+
 ```mermaid
 flowchart LR
   subgraph TYPES["Item types -> RDF classes"]
@@ -11,7 +13,7 @@ flowchart LR
     Gate
   end
 
-  RDF["RDF graph\n(graph.jsonld / graph.ttl / graph.nq / graph.rdf)"]
+  RDF["RDF graph\n(graph.jsonld / graph.ttl / graph.nq)"]
 
   Concept -->|"rdf:type ns:Concept"| RDF
   Episode -->|"rdf:type ns:Episode"| RDF
@@ -52,7 +54,7 @@ flowchart LR
   blockedBy -->|"asc:blockedBy / asc:blocks"| RDF
   decidedBy -->|"asc:decidedBy / asc:decides"| RDF
 
-  subgraph NESTED["Cluster nested-member rule (addendum 2026-09-01, research/16 audit H)"]
+  subgraph NESTED["Cluster nested-member rule (addendum 2026-09-01)"]
     Parent["parent cluster (type: cluster)"]
     Child["child cluster (type: cluster)"]
   end

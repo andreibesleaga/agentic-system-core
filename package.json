@@ -4,10 +4,12 @@
     "description": "A specification for publishing machine-discoverable knowledge bundles. This 0.0.x release reserves the package name; no runtime is published yet. The specification, JSON Schemas, ontology and conformance test vectors are the deliverable and are developed in the open.",
     "main": "index.js",
     "bin": {
-        "agsc": "bin/agsc.js"
+        "agsc": "bin/agsc.js",
+        "agentic-system-core": "bin/agentic-system-core"
     },
     "files": [
         "bin/",
+        "src/",
         "index.js",
         "spec/",
         "schema/",
@@ -18,10 +20,12 @@
         "README.md"
     ],
     "engines": {
-        "node": ">=22"
+        "node": ">=22.12.0"
     },
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "node --test 'tests/**/*.test.js'",
+        "test:coverage": "node --test --experimental-test-coverage 'tests/**/*.test.js'",
+        "audit": "npm audit --audit-level=low"
     },
     "repository": {
         "type": "git",
@@ -41,5 +45,22 @@
     "bugs": {
         "url": "https://github.com/andreibesleaga/agentic-system-core/issues"
     },
-    "homepage": "https://agenticsystemcore.com"
+    "homepage": "https://agenticsystemcore.com",
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "1.30.0",
+        "ajv": "8.20.0",
+        "ajv-formats": "3.0.1",
+        "commander": "15.0.0",
+        "diff": "9.0.0",
+        "dotenv": "18.0.0",
+        "fast-xml-parser": "5.11.1",
+        "json-canonicalize": "3.0.1",
+        "markdown-it": "15.0.2",
+        "n3": "2.7.12",
+        "yaml": "2.9.1"
+    },
+    "devDependencies": {
+        "fast-check": "4.10.1",
+        "jsonld": "9.0.0"
+    }
 }

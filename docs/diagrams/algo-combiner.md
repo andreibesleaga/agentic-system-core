@@ -1,5 +1,7 @@
 # Algorithm — combiner closure (`closure.js`, PLAN §6(c) step 3)
 
+**What this shows.** The five fixed steps the combiner runs over a selection — closure, hiding, exclusion, contradiction and dependency warnings, then port wiring — and the verdict each step can reach. The same code runs in the CLI and in the browser, and a vector asserts the two agree byte for byte.
+
 ```mermaid
 flowchart TD
   A["Input: selected item slugs\n(from /compose/ ticks or CLI: agsc compose <slugs>)\nde-duplicated, first-occurrence order kept for decisions/NNNN"]

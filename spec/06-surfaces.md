@@ -26,7 +26,7 @@ Example — the document served at `/.well-known/knowledge-linkset`:
     {
       "alternate": [ { "digest": ["sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"], "href": "https://example.org/llms.txt", "type": "text/plain" } ],
       "anchor": "https://example.org/",
-      "describedby": [ { "agsc-bundle-hash": ["sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"], "agsc-counts": ["clusters=0","concepts=0","episodes=0","gates=0","lessons=0","procedures=0"], "agsc-generated-at": ["2026-01-01T00:00:00Z"], "agsc-spec-version": ["1.0.0-rc.3"], "digest": ["sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"], "href": "https://example.org/graph.jsonld", "type": "application/ld+json" } ],
+      "describedby": [ { "agsc-bundle-hash": ["sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"], "agsc-counts": ["clusters=0","concepts=0","episodes=0","gates=0","lessons=0","procedures=0"], "agsc-generated-at": ["2026-01-01T00:00:00Z"], "agsc-spec-version": ["1.0.0-rc.4"], "digest": ["sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"], "href": "https://example.org/graph.jsonld", "type": "application/ld+json" } ],
       "https://w3id.org/agentic-system-core/rel#graph": [ { "digest": ["sha-256=:…:"], "href": "https://example.org/graph.ttl", "type": "text/turtle" } ],
       "https://w3id.org/agentic-system-core/rel#ledger": [ { "agsc-ledger-head": ["bee9ba6593162f59dae28f42ba25fa04ea3fd65ae4f80685fb1c4ede151189ac"], "digest": ["sha-256=:…:"], "href": "https://example.org/ledger.jsonl", "type": "application/jsonl" } ],
       "license": [ { "href": "https://example.org/legal/" } ],

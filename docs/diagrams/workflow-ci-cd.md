@@ -36,7 +36,7 @@ flowchart TD
     T4 --> R4
   end
 
-  NOTE["All actions SHA-pinned + Dependabot;\nNEVER pull_request_target;\nno cache step (zero deps);\nsecrets only in the jobs that need them"]
+  NOTE["All actions SHA-pinned + Dependabot;\nNEVER pull_request_target;\nnpm ci with a committed lockfile;\nsecrets only in the jobs that need them"]
   L1 -.-> NOTE
   L2 -.-> NOTE
   L3 -.-> NOTE

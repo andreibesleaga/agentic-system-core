@@ -1,5 +1,7 @@
 # Algorithm — `agsc build` (13 steps) inside `agsc ci`
 
+**What this shows.** The thirteen steps `agsc build` runs inside `agsc ci`, in their fixed order — from discovering Markdown files to writing the published head — and which artefact each step produces. Read it before the pipeline sections of `docs/PLAN.md` §6(a); the rules win over the picture.
+
 ```mermaid
 flowchart TD
   subgraph BUILD["agsc build — 13 steps (audit/D S4)"]
@@ -9,7 +11,7 @@ flowchart TD
     S4["4 Resolve links: fourteen Link keys\n(9 core + 5 Mode-2),\ninverses, orphans, cycles"]
     S5["5 Diagrams: content/diagrams/*.diagram -> SVG\n(ported DSL compiler)"]
     S6["6 Ontology/SKOS: clusters ->\nskos:Collection + skos:ConceptScheme; ns/agsc.ttl; shapes"]
-    S7["7 Graph exports: graph.jsonld/.nq/.ttl/.rdf (JCS,\nsorted, blank-node-free) + pages/<slug>.md|.jsonld"]
+    S7["7 Graph exports: graph.jsonld/.nq/.ttl (JCS,\nsorted, blank-node-free) + pages/<slug>.md|.jsonld"]
     S8["8 Search index: search.json\n(tokenizer + inverted index)"]
     S9["9 HTML render: Markdown subset renderer\n+ templates -> pages"]
     S10["10 Discovery files: /.well-known/knowledge-linkset,\nllms.txt, sitemap.xml, robots.txt, _headers, _redirects"]

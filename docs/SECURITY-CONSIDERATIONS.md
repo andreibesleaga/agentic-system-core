@@ -1,6 +1,11 @@
 # Security considerations
 
-*Informative supplement to `spec/11-boundary.md` §11.8 and `docs/PLAN.md` §12. Written 2026-09-16 for the `1.0.0-rc.3` draft (DS-4). Each row names the rule that closes it; what stays open is said plainly. This text is the source of the Internet-Draft's Security Considerations section.*
+*Informative supplement to `spec/11-boundary.md` §11.8 and `docs/PLAN.md` §12. Written 2026-09-16 for the `1.0.0-rc.3` draft (DS-4); re-verified against `1.0.0-rc.4` on 2026-09-18. Each row names the rule that closes it; what stays open is said plainly. This text is the source of the Internet-Draft's Security Considerations section.*
+
+In one sentence: the discovery layer proves that the artefacts a reader fetched are the ones the
+publisher described, never who the publisher is; the ledger proves that a published history was not
+rewritten, never that what it records is true; and everything an agent lane produces is a proposal a
+person can refuse. The tables below name what the rules defend against, what they do not, and why.
 
 ## 1. Threat rows added at rc.3 (continuing the STRIDE table of PLAN §12, T1–T10)
 

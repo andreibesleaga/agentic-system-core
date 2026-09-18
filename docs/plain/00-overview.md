@@ -10,4 +10,8 @@
 
 **Where requirements live.** Every product requirement that is served by the *shape* of the artefacts rather than one sentence is cited in §0.5, so a validator can check the citation.
 
-Rules: `spec/00-overview.md`, ids `AGSC-00-01` … `AGSC-00-18`.
+**Added at rc.4.** Two terms complete the language for Mode 5 — an *agent lane* (a declared, budgeted
+agent that proposes, never writes) and the *live board* — and one rule names the whole declared scope of
+the specification with the version at which each part becomes normative.
+
+Rules: `spec/00-overview.md`, ids `AGSC-00-01` … `AGSC-00-20`.

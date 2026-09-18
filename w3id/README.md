@@ -44,5 +44,5 @@ Locally, the same can be run against Apache with `AllowOverride All` + `a2enmod 
 ## Status
 
 PR not yet opened — open it only once https://agenticsystemcore.com/ns/ serves the vocabulary files with
-correct media types (see 16-PRERELEASE-PLAN.md P3); w3id states no requirement that the target be live and
+correct media types ; w3id states no requirement that the target be live and
 runs no automated check (2026-09-03), but maintainers review PRs by hand.

@@ -7,7 +7,7 @@ Feature: Agent reader queries structured knowledge without scraping
   So that I can search, read and follow links without page-scraping, with results trust-labelled
 
   Background:
-    Given no remote MCP server and no "agent-card.json" exist at v1 (D41, G42)
+    Given no remote MCP server is served and no "agent-card.json" is emitted at v1 (D41, G42); both MAY be declared as surfaces (AGSC-06-34, AGSC-11-21)
 
   @PRD-023
   Scenario: Agent starts the local stdio MCP server

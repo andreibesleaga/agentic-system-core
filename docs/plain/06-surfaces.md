@@ -10,4 +10,4 @@
 
 **Headers.** No third-party scripts, no beacons; strict security headers; public artefacts readable cross-origin.
 
-Rules: `spec/06-surfaces.md`, `AGSC-06-01` … `AGSC-06-34`.
+Rules: `spec/06-surfaces.md`, `AGSC-06-01` … `AGSC-06-35`.

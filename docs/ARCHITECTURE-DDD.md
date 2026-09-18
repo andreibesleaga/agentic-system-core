@@ -1,6 +1,6 @@
 # Domain-driven architecture — bounded contexts, language, forward compatibility
 
-*Informative. Written 2026-09-16 for the `1.0.0-rc.3` draft (DS-4). It complements `docs/PLAN.md` (arc42, frozen at S02) and never overrides a rule of `spec/`. Where this page and a rule disagree, the rule wins and this page is wrong.*
+*Informative. Written 2026-09-16 for the `1.0.0-rc.3` draft (DS-4); re-verified against `1.0.0-rc.4` on 2026-09-18. It complements `docs/PLAN.md` (arc42, frozen at S02) and never overrides a rule of `spec/`. Where this page and a rule disagree, the rule wins and this page is wrong.*
 
 ## 1. The domain in one sentence
 
@@ -11,7 +11,7 @@ A **Bundle** is a directory of Markdown **items** joined by fourteen typed **Lin
 | Context | Aggregates / entities | Owns | Never touches | Spec home | Vector areas |
 |---|---|---|---|---|---|
 | **Knowledge** | Bundle, Item (six types), Link (14 keys), Cluster, Chunk, Attachment | parsing, validation, linking, ontology emission, index, chunk export | git, network, review | spec/01, 02, 03, 04, 05, 06 §6.5 | `frontmatter`, `slug`, `links`, `lint`, `jcs`, `graph`, `chunks`, `adopt` |
-| **Governance & Provenance** | Proposal, Review, Gate, Ledger, Channel, Agent lane (rc.4) | `prov` fields, DCO-Plus trailers, gates → CI checks, derived ledger, ingest | rendering, composition | spec/08, 01 §1.7 | `ledger`, `prov` |
+| **Governance & Provenance** | Proposal, Review, Gate, Ledger, Channel, Agent lane (rc.4) | `prov` fields, DCO-Plus trailers, gates → CI checks, derived ledger, ingest | rendering, composition | spec/08, 01 §1.7–1.8 | `ledger`, `prov` |
 | **Composition** | Selection, Verdict, Harness, Port wiring, saved Architecture | the five-step pipeline, the seven Harness files, emitters, skill packs | parsing, network | spec/07, 02 §2.10 | `compose`, `harness`, `skills` |
 | **Distribution** (also called Emission) | Page, Route, Discovery document, Surfaces (tools, page tools, agent-facing text, chunks), NOW, Boards | routes, headers, link set, surface declaration, budgets | writes of any kind | spec/06, 09 §9.3, 10 §10.5 | `discovery`, `build`, `cli`, `boards` |
 | **Boundary** | Peer, Visibility, Contribute target, Surface declaration, Responder/Solid hook, Tombstone | cross-origin access, peer-fetch safety, the federation walk (client rules), trust marking, contribute relation, the plugin contract, visibility and dynamic hooks, retirement | content semantics | spec/11 | `boundary` |
@@ -21,7 +21,7 @@ A **Bundle** is a directory of Markdown **items** joined by fourteen typed **Lin
 
 ## 3. Ubiquitous language
 
-The language is the vocabulary of `spec/00` §0.2 (Bundle, Item, the six types, NOW), the fourteen Link keys of AGSC-03-01, the 52 ontology terms of `ontology/agsc.ttl`, and the rc.3 boundary terms (peer, surface, visibility, contribute mode, tombstone). It is **generated, never typed**: `node tools/gen-glossary` writes `docs/GLOSSARY.md` from the ontology's labels and comments plus the closed lists the spec fixes, so the glossary cannot drift from the definition. Words that are UI or import vocabulary — card, page, deck, note — are forbidden as types, keys or terms (AGSC-00-08).
+The language is the vocabulary of `spec/00` §0.2 (Bundle, Item, the six types, NOW), the fourteen Link keys of AGSC-03-01, the 52 ontology terms of `ontology/agsc.ttl`, the rc.3 boundary terms (peer, surface, visibility, contribute mode, tombstone), and the rc.4 terms *agent lane* and *live board* (AGSC-00-19). It is **generated, never typed**: `node tools/gen-glossary` writes `docs/GLOSSARY.md` from the ontology's labels and comments plus the closed lists the spec fixes, so the glossary cannot drift from the definition. Words that are UI or import vocabulary — card, page, deck, note — are forbidden as types, keys or terms (AGSC-00-08).
 
 ## 4. Two statements the model rests on
 
@@ -78,6 +78,6 @@ Symbols: `n` items · `m` authored links · `b` body bytes · `t` distinct token
 | Attachment hashing | 05-29 | O(bytes) | SHA-256 per file |
 | Peer check `--peer` | 10-12 | O(links + digests) | 1 + d GETs each way, or zero offline |
 | Federation walk | 11-10 | ≤ min(`max_requests`, Σ_{i≤h} `fan_out`^i) requests | Θ(p³) at h = 3 without the caps — hence the caps |
-| Static fragments | 06-33 | O(s) build; ≈ |S| + |P| files | optional; measure before promising |
+| Static fragments | 06-33 | O(s) build; ≈ \|S\| + \|P\| files | optional; measure before promising |
 
 The one budget the spec states is ≤ 60 s per 500 items (AGSC-06-21). Every row is linear or `n log n` in its input.

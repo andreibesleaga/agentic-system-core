@@ -10,4 +10,4 @@
 
 **What the combiner reads.** Only the nine core keys carry composition meaning: `requires` pulls items in, `supersedes` hides, `excludes` forbids, `contradicts` warns. The five engineering keys are navigation and provenance only.
 
-Rules: `spec/03-links.md`, `AGSC-03-01` … `AGSC-03-20`.
+Rules: `spec/03-links.md`, `AGSC-03-01` … `AGSC-03-22`.

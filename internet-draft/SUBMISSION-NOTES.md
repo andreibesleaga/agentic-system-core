@@ -71,7 +71,7 @@ PREFER_BCP14_REF and three SECTION_TITLE_HAS_UNEXPECTED_INDENTATION).
    profile URI and the extension relation URIs are real persistent
    identifiers, and the registration requests name them. They cannot be
    `.example`. Unfixable and correct as it stands.
-3. **PREFER_BCP14_REF (Warning, .txt).** kramdown-rfc 1.7.39 builds a
+3. **PREFER_BCP14_REF (Warning, .txt).** kramdown-rfc 1.7.43 builds a
    `BCP14` reference through `https://bib.ietf.org/public/rfc/
    bibxml-rfcsubseries-new/reference.BCP.0014.xml`, which returns 404
    (checked 2026-09-18; the live path is `.../bibxml9/reference.BCP.0014.xml`,
@@ -166,13 +166,13 @@ Independent Stream. The seven items of the ISE checklist are below.
    the agent-discovery mechanisms surveyed in
    draft-jimenez-dawn-discovery-landscape discover actors and endpoints;
    this document discovers a described, integrity-checked set of
-   documents, which none of them does. A running implementation, a
+   documents, which to the author's knowledge none of them does. A running implementation, a
    validator and a set of conformance vectors are recorded in the
    RFC 7942 section.
 
 6. IPR acknowledgement
 
-   The authors acknowledge that the IPR rules of RFCs 4846 and 5744
+   The author acknowledges that the IPR rules of RFCs 4846 and 5744
    apply, and permission is granted to produce derivative works.
 
 7. Suggested reviewers

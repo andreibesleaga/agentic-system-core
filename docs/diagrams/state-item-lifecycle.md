@@ -1,5 +1,7 @@
 # Item lifecycle — status state machine
 
+**What this shows.** The three values an item's `status` can take — draft, stable and deprecated — and every transition between them. `supersedes` is drawn as a self-loop because it is a Link, not a change of state.
+
 ```mermaid
 stateDiagram-v2
   [*] --> stable: item authored with no status (default, AGSC-02-23)
@@ -13,7 +15,11 @@ stateDiagram-v2
   deprecated --> stable: un-deprecated (legal; lint warns AGSC-E409)
   deprecated --> draft: un-deprecated to draft (legal; lint warns AGSC-E409)
 
-  deprecated --> [*]: retired, slug never reused
+  stable --> retired: status set to retired (AGSC-11-22)
+  draft --> retired: status set to retired (AGSC-11-22)
+  deprecated --> retired: status set to retired (AGSC-11-22)
+  retired --> stable: un-retired (legal; warned like un-deprecation)
+  retired --> [*]: slug never reused
 
   stable --> stable: supersedes/superseded-by attached\n(new item supersedes old; old marked superseded-by new)
 
@@ -33,11 +39,13 @@ stateDiagram-v2
   end note
 ```
 
-Three `status` values only (`draft | stable | deprecated`, default `stable` per audit/D §1.2 — an item
+Four `status` values (`draft | stable | deprecated | retired`, default `stable` per audit/D §1.2 — an item
 authored without a `status` therefore *starts* stable, and every transition including `deprecated` →
-`stable` is legal, warned but never rejected, per AGSC-02-23 ← D48(7)); there is
-no `archived` or `deleted` state — deletion is out of scope, retirement is `deprecated` + redirect.
+`stable` is legal, warned but never rejected, per AGSC-02-23 ← D48(7)); `retired` was added at rc.3 by
+AGSC-11-22 — a retired item keeps its page and its canonical IRI, carries a visible retirement notice,
+leaves `search.json`, `/chunks.jsonl`, `/llms.txt`, skill packs and every composition selection, and stays
+in the graph exports with `asc:retiredAt`. There is no `archived` or `deleted` state — deletion is out of scope.
 `supersedes`/`superseded-by` is a Link-key edge (audit/D §1.3), orthogonal to `status`, shown as a
-self-loop annotation because it does not change which of the three states an item is in.
+self-loop annotation because it does not change which of the four states an item is in.
 
 Trace: PRD-018, R40 · audit/D §1.1 (status), §1.2 (status/`release` table), §1.3 (`supersedes` row).

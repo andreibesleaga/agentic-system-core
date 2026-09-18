@@ -1,5 +1,7 @@
 # Scenario map — personas → features → surfaces
 
+**What this shows.** Which persona reaches which feature file, and which published surface each feature exercises. Fan-out marks the personas whose walkthrough crosses more than one surface.
+
 ```mermaid
 flowchart LR
   subgraph PERSONAS["Personas (PRD.md §1)"]
@@ -15,6 +17,7 @@ flowchart LR
     P9["P9 Owner-as-operator"]
     P10["P10 Port implementer"]
     P11["P11 Standards implementer"]
+    P12["P12 Self-driving team (Mode 5)"]
   end
 
   subgraph FEATURES["features/*.feature"]
@@ -29,6 +32,7 @@ flowchart LR
     Fh["persona-h-memory"]
     Fi["persona-i-maintainer"]
     Fj["persona-j-standards"]
+    Fk["persona-k-live-board"]
   end
 
   subgraph SURFACES["Surfaces touched"]
@@ -59,11 +63,13 @@ flowchart LR
   Fi --> PR
   P10 --> FILES
   P11 --> Fj --> SITE
+  P12 --> Fk --> CLI
+  Fk --> SITE
 ```
 
-12 personas from `docs/PRD.md` §1 map to the eleven `features/*.feature` files (audit/D §3 walkthroughs
-(a)–(j)) and on to the four live surfaces plus the files-only surface used by P10 (no (k) walkthrough
-exists; P10's acceptance is `spec/` + `tests/vectors/`, not a runtime scenario). Fan-out on Fb/Fc/Fe/Fg/Fh/Fi
-shows personas that cross more than one surface in their walkthrough.
+13 personas from `docs/PRD.md` §1 map to the twelve `features/*.feature` files and on to the four live
+surfaces plus the files-only surface used by P10 (P10's acceptance is `spec/` + `tests/vectors/`, not a
+runtime scenario). P12 and `persona-k-live-board` were added at rc.4 with Mode 5. Fan-out on
+Fb/Fc/Fe/Fg/Fh/Fi shows personas that cross more than one surface in their walkthrough.
 
 Trace: PRD-001–052 (persona table §1), audit/D §3 (a)–(j), PLAN.md §1.2 stakeholder table.

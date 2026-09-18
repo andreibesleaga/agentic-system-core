@@ -186,6 +186,35 @@ pre-set (to specifically exercise the isolation fix above). The stub's own
 `.xml`/`.txt`/`.html` outputs stay in `<scratch>/stub/`, never in this
 repository.
 
+## Rejected: conditional references wrapper (2026-09-18, session 27)
+
+`SUBMISSION-NOTES.md` §1 item 1 records a "tested fix" for idnits v3
+normal-mode `MULTIPLE_REFERENCES_SECTION_TITLES` (.txt): collapse the
+combined `<references anchor="sec-combined-references">` wrapper in
+`build.sh`'s post-processing step only when it holds fewer than two nested
+`<references>` elements (Normative + Informative), instead of always
+unwrapping it. This was implemented and rebuilt with `./build.sh 00`:
+
+- **Submission mode** (the Datatracker's own upload check, the gate): both
+  `.xml` and `.txt` stayed nit-free — no regression there.
+- **Normal mode**: the `.txt` `MULTIPLE_REFERENCES_SECTION_TITLES` error did
+  disappear, but the `.xml` lane then failed with a *new* error,
+  `INVALID_REFERENCES_NAME` ("The references section `<name>` element
+  should be either Normative or Informative") — because kramdown-rfc/
+  xml2rfc render the kept wrapper's own `<name>References</name>` verbatim,
+  which idnits reads as neither "Normative References" nor "Informative
+  References".
+
+This is a straight trade, not a net gain (one normal-mode error replaced by
+another, on the other artifact), so per the standing rule — keep a fix only
+if normal mode loses an error without gaining one — the conditional keep
+was **reverted**. `build.sh` is back to always unwrapping (as it was before
+this session), with a dated comment at the same spot recording this
+retest so the next attempt does not repeat it. Submission mode is nit-free
+either way; the single `.txt` `MULTIPLE_REFERENCES_SECTION_TITLES` warning
+in normal mode remains informational only (`build.sh` does not gate on it),
+exactly as `SUBMISSION-NOTES.md` already documented.
+
 ## Running it on posting day
 
 From this directory, once the real draft's revision (e.g. `00`, or `01`,

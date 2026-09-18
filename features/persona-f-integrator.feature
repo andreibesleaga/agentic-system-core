@@ -8,7 +8,7 @@ Feature: Integrator installs this knowledge into my agent
 
   Background:
     Given "/skills/index.json" lists one Skill pack per Cluster, 20 packs plus the index
-    And every pack declares its licence "ARR — summaries; see LICENSE-CONTENT"
+    And every pack declares its licence "LicenseRef-AgenticSystemCore-Content-Use-1.0" (see LICENSE-CONTENT)
 
   @PRD-033
   Scenario Outline: Integrator installs packs into one of the three supported trees
