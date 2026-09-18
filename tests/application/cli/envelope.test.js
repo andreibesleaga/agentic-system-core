@@ -28,9 +28,9 @@ test('buildEnvelope: shape, counts and pass/fail derivation', () => {
 });
 
 test('compareFindings orders by (file, line, col, code) code-point-wise', () => {
-  const a = { file: 'a.md', line: 5, col: 1, code: 'AGSC-E100' };
-  const b = { file: 'a.md', line: 2, col: 1, code: 'AGSC-E100' };
-  const c = { file: 'b.md', line: 1, col: 1, code: 'AGSC-E100' };
+  const a = { file: 'a.md', line: 5, col: 1, code: 'AGSC-E101' };
+  const b = { file: 'a.md', line: 2, col: 1, code: 'AGSC-E101' };
+  const c = { file: 'b.md', line: 1, col: 1, code: 'AGSC-E101' };
   const sorted = [a, c, b].sort(compareFindings);
   assert.deepEqual(sorted, [b, a, c]);
 });

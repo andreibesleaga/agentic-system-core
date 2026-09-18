@@ -2,7 +2,8 @@
 // Argv parsing uses `commander@15.0.0` (D94/ADR-019); exit codes and the
 // AGSC-E001/E002/E003 mapping stay ours via exitOverride()+configureOutput().
 //
-// Owner: B (WP-10-B). Node stdlib only, no network, no live clock read (the
+// Owner: B (WP-10-B). Node builtins plus the pinned `commander` (D94); no
+// network and no live clock read (the
 // process environment and SOURCE_DATE_EPOCH are injected via `ctx`, never
 // read from `process.env` directly here, so this module stays testable and
 // deterministic per AGSC-04-11).

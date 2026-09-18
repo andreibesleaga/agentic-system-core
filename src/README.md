@@ -985,6 +985,85 @@ this milestone; each is a question for the owner, not a defect of the code.
 21. `cli-0002` pins `version: "0.1.0"` in its options while `package.json` is at
     `0.0.2`; the handler passes the vector's value, as the vector intends.
 
+**Further items found by the 2026-09-18 documentation and standards review** (same status:
+reported, frozen at the `1.0.0-rc.4` tag, to be taken at 1.0.0)
+
+22. `AGSC-00-20` says a 1.0 tool MUST accept `build.rdfxml`, while `AGSC-01-18` and
+    `AGSC-05-06` call `rdfxml` reserved and `schema/config.schema.json` closes `build`
+    to `out`/`feed` — so the key is `AGSC-E004`, which the same rule's next clause also
+    demands. The engine rejects it with `AGSC-E004`.
+23. The board-export member lists of `AGSC-00-20` and `AGSC-10-12`'s §10.6 companion
+    omit `done`, which the prose of the same rule then requires.
+24. `AGSC-01-26a` requires adapters to be listed in `docs/IMPLEMENTERS-GUIDE.md`; that
+    file does not exist, so the obligation cannot be met as written.
+25. `AGSC-01-34` reads "an `attachments[]` entry whose file is absent, or is `AGSC-E413`
+    at build" — the second limb has no subject. The registry and `AGSC-05-29` show the
+    intended fault is a byte/hash mismatch, which is what the engine raises.
+26. `AGSC-01-36`'s opening member list omits `max_new_items` and `max_claims`, which the
+    same rule then defines and the schema carries, while the rule closes the object.
+27. `AGSC-02-24` says the schemas enforce the bounds it names "never with a
+    regular-expression quantifier" and names port names ≤64 among them — yet that bound is
+    enforced solely by the quantifier `{0,63}` of `AGSC-02-96`.
+28. `AGSC-04-24`'s byte-identity claim names "the seven Harness files" as discharged by
+    expected-byte vectors, but the `harness/` vector area is declared and empty and the
+    compose vectors assert `harness_emitted: false` only. `AGSC-07-12` defines seven file
+    *kinds*, two of them one file per selected item, so "seven files" is never literally
+    seven.
+29. `AGSC-06-01` says a writer MUST emit exactly its route set and that no other route is
+    conditional, while `AGSC-09-03` allows `/conformance/` and `AGSC-06-12` contemplates
+    `/.well-known/void`. Neither path is in either list.
+30. `AGSC-06-16` and `AGSC-06-26` state unconditional MUSTs on the shape of `search.json`
+    and `/chunks.jsonl`; above 500 items `AGSC-06-21` and `AGSC-06-31` turn both into
+    manifests, and neither shape rule carries the carve-out.
+31. `AGSC-06-25` says a writer MAY send the `Link:` response header; `AGSC-11-05` says a
+    Level ≥ 2 writer MUST emit it on `/`. `AGSC-11-04` argues for the MAY reading.
+32. `AGSC-09-13a` does not say that a tool call omitting a REQUIRED argument is
+    `AGSC-E003`; the engine returns that code (§11.7).
+33. `AGSC-09-14a` obliges an LLM responder to record spend by emitting
+    `remember(kind: episode)` carrying `usage`, but `AGSC-09-14b` fixes the signature with
+    no `usage` argument, so `AGSC-08-25`'s cap is unenforceable for responders.
+34. `AGSC-09-90` requires the `tools/` validators to import "no engine import beyond
+    stdlib", which pre-dates the library decision recorded in §3; the validators import
+    nothing from `src/` and that is the durable clause.
+35. `AGSC-09-91` makes `validate-spec` fail on any `spec_version` literal in `docs/` that
+    differs from the `spec/00` declaration; it will fire on deliberately historical
+    release-candidate notes. `tools/count-artifacts` already implements the carve-out —
+    a literal preceded on the same line by *at*, *since*, *amended*, *added*, *withdrawn*,
+    *before*, *until* or *from* is a historical note — and is the reference behaviour.
+36. The §9.4 registry: seven registered codes (`AGSC-E002`, `E003`, `E101`, `E102`,
+    `E407`, `E803`, `E901`) are raised by no rule sentence; five rows do not name every
+    rule that raises the code; `AGSC-E506` carries three distinct meanings under one
+    gloss; and `AGSC-E508` is listed before `AGSC-E507`.
+37. `AGSC-10-12` cites "F1–F9" and §11.3 is headed "Federation — nine parts", but no rule
+    carries an F3 label anywhere in the repository.
+38. `AGSC-10-17` cites `AGSC-02-06` for staleness; `AGSC-02-06` fixes the instant format
+    and `AGSC-02-11` defines staleness.
+39. `AGSC-07-05`'s trace bracket cites itself; `AGSC-07-17` traces exit code 1 to
+    `AGSC-09-06`, which governs vector-file encoding, where `AGSC-09-08` is meant; and
+    `AGSC-09-13a`'s "only `code` is asserted (`AGSC-09-06`)" means `AGSC-09-05`.
+40. Four rules carry no trailing trace bracket — `AGSC-05-26`, `AGSC-07-12`,
+    `AGSC-08-06`, `AGSC-09-11` — which the site build warns about on every run.
+41. Schema-local: `diagram.alt` has no `minLength` although `AGSC-02-24` names "`alt` ≥1"
+    among the bounds the schemas enforce; `config.schema.json` requires `model` for an
+    `llm` lane but never forbids it on a `process` lane, which `AGSC-01-36` does;
+    `surfaces[].surface` admits a trailing and a doubled hyphen where every other `x-`
+    site uses the `AGSC-02-05a` grammar; and the JSON-Schema keyword subset is declared
+    only in a `description` and is nowhere normative.
+42. `spec/02` §2.2 describes `lang` as "lowercase BCP 47"; `AGSC-01-13` in fact compares
+    case-insensitively and lower-cases only on emission, so the permissive schema pattern
+    is right and the table is what misleads.
+43. Three version labels read as current although each names a Unicode version or a date
+    rather than the specification version: `spec/06-surfaces.md` "(16.0.0 at rc.3)" and
+    `spec/11-boundary.md` "(`2026-09-15` at rc.3)" and "— at rc.3: …".
+44. `tests/vectors/boundary/bnd-0005` calls `followRedirects` with no resolution map and
+    expects the redirect to be followed, so the address guard cannot be made
+    unconditional while that vector stands (§11.7, `AGSC-11-08`). It is the one item on
+    this list that keeps a fail-open path open.
+
+Every item above is a question for the owner about a frozen artefact, not a defect of this
+code: a rule, a schema or a vector is changed by a release, and a vector is withdrawn and
+superseded rather than edited in place (`AGSC-00-16`).
+
 ---
 
 ### 11.7 Behaviour corrected on 2026-09-18 (FIX-F27)

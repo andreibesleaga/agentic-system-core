@@ -14,7 +14,6 @@ redefine anything; every fact here traces back to those frozen documents.
 | `user-flows.md` | 5 flowcharts | flowchart TD | PRD-011/013/014/**053**/036–038/039–042/050/032–035 | audit/D §3(a,b,e,f), `docs/PLAN.md` §6(b),(c) |
 | `state-item-lifecycle.md` | 1 state machine | stateDiagram-v2 | PRD-018, R40 | audit/D §1.1, §1.2, §1.3 |
 | `state-proposal.md` | 1 state machine | stateDiagram-v2 | PRD-039–043 | audit/D §3(b),(d), `docs/PLAN.md` §6(b) |
-| `state-sdlc.md` | 1 state machine | stateDiagram-v2 | — (process, not PRD) | the project's private development register (agent boot document, §"Loki & Brain"), `docs/PRD.md`/`docs/PLAN.md` headers |
 | `schema-domain.md` | 1 class diagram | classDiagram | PRD-002/037/042 | audit/D §1.1, §1.2, §1.3 |
 | `schema-ontology.md` | 1 flowchart | flowchart LR | PRD-002/022 | audit/D §1.3, §1.4, addendum |
 | `algo-build-pipeline.md` | 1 flowchart | flowchart TD | PRD-004/005/020, NFR-04 | audit/D §4, `docs/PLAN.md` §6(a) |
@@ -45,6 +44,4 @@ same change set — reviewers should treat a diagram left behind as equivalent t
   with descriptive edge labels rather than cramming.
 - **Content discipline**: every fact is sourced from the frozen inputs for this pack — `docs/PRD.md`,
   `docs/PLAN.md`, the v1 system walkthrough recorded in the project's private design register (audit D, §1/§3/§4), and
-  decisions **D41**, **D43** and **D44** of that register — nothing is invented; `state-sdlc.md` additionally
-  cites the private development register (a mandatory boot document) and says explicitly where detail was
-  deliberately left generic because the frozen inputs do not name it.
+  decisions **D41**, **D43** and **D44** of that register — nothing is invented.
