@@ -68,6 +68,9 @@ for (const v of vectors) {
   if (path.basename(v.__file).slice(0, v.id.length) !== v.id) findings.push(`vector file ${v.__file} does not start with its id ${v.id}`);
   const sv = v.options && v.options.spec_version;
   if (sv && sv !== declared) findings.push(`vector ${v.id} options.spec_version ${sv} differs from spec/00 ${declared} (AGSC-09-91)`);
+  // D93: any version literal anywhere in the vector file (inputs and expected bytes included) must be the declared one.
+  if (v.level !== 'withdrawn') for (const m of fs.readFileSync(v.__file, 'utf8').matchAll(/1\.0\.0-rc\.\d+/g))
+    if (m[0] !== declared) { findings.push(`vector ${v.id} embeds version literal ${m[0]} (expected ${declared}) — re-derive its bytes (D93)`); break; }
 }
 const ids = vectors.map(v => v.id);
 for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
