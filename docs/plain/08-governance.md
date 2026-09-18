@@ -8,6 +8,6 @@
 
 **The ledger.** A hash chain derived from git history — never appended by hand — whose head is pinned in the discovery file. It proves the published history was not altered; it does not prove who the author was.
 
-**The agent lane (rc.4).** A node may declare an agent — a model or a program, with a budget — that creates, edits, reviews and updates items on its own. It never writes: everything it does is a proposal through a channel, every run is recorded as an episode with its cost, it may only touch concepts, episodes and lessons, and it stops for the month at its budget. If the channel's publish choice is `auto`, the node is self-driving; the human's ratification is that one configured choice, and procedures, gates and configuration still wait for a person.
+**The agent lane (rc.4).** A node may declare an agent — a model or a program, with a budget — that creates, edits, reviews and updates items on its own. It never writes: everything it does is a proposal through a channel, every run is recorded as an episode with its cost, it may only touch concepts, episodes and lessons, it creates at most a set number of items per proposal, and it stops for the month at its own budget or at the node's. `refresh --agent <name> --dry-run` shows the proposal it would open without opening it. If the channel's publish choice is `auto`, the node is self-driving; the human's ratification is that one configured choice, and procedures, gates and configuration still wait for a person.
 
 Rules: `spec/08-governance.md`, `AGSC-08-01` … `AGSC-08-30`.

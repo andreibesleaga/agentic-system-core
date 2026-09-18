@@ -21,7 +21,7 @@ redefine anything; every fact here traces back to those frozen documents.
 | `algo-combiner.md` | 1 flowchart | flowchart TD | PRD-036–038 | audit/D §1.3, `docs/PLAN.md` §6(c) |
 | `algo-ledger.md` | 1 flowchart + 1 sequence | flowchart TD + sequenceDiagram | PRD-005, NFR-11 | D44(h), `docs/PLAN.md` §6(a), ADR-006 |
 | `workflow-ci-cd.md` | 1 flowchart + 1 sequence | flowchart TD + sequenceDiagram | PRD-048–051, NFR-04/09 | `docs/PLAN.md` §7, ADR-005 |
-| `workflow-agent-lane.md` | 1 flowchart | flowchart TD | PRD-063, PRD-064 (rc.4) | `spec/08-governance.md` §8.6, `spec/10-implementation-profiles.md` §10.6, `docs/PRD.md` Amendment 8 |
+| `workflow-agent-lane.md` | 1 flowchart | flowchart TD | PRD-063, PRD-064, PRD-065 (rc.4) | `spec/08-governance.md` §8.6, `spec/10-implementation-profiles.md` §10.6, `docs/PRD.md` Amendment 8 |
 | `workflow-migration.md` | 1 flowchart | flowchart TD | PRD-021 | audit/D §1.5, D47 |
 
 ## Standing sync rule

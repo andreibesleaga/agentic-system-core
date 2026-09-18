@@ -39,7 +39,7 @@ Scope note: PRD §4 non-goals as read by D72 and the pre-DS-4 audit (2026-09-16)
 | `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 4 | PRD-022, 026, 027 |
 | `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 5 | PRD-005, 044, 045, 048, 049 |
 | `persona-j-standards.feature` | P11 standards implementer | 1 | 5 | PRD-024, 025, 050, 054 |
-| `persona-k-blackboard.feature` | P12 self-driving team (rc.4) | 5 | 5 | PRD-063, 064 |
+| `persona-k-liveboard.feature` | P12 self-driving team (rc.4) | 8 | 8 | PRD-063, 064, 065 |
 
 Not covered here by design: **P10 port implementer** — audit/D §3 has no (k) walkthrough for it; its
 acceptance runs instead through `tests/vectors/` + `spec/09-conformance` (M13, PLAN §5.3), not a

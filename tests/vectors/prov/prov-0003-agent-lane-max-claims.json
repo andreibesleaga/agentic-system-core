@@ -1,0 +1,137 @@
+{
+  "area": "prov",
+  "description": "The work-in-progress limit: an agent lane holds at most max_claims tasks in TASK_STATE_WORKING (AGSC-10-17; default 1). The worker already holds task-a; its Proposal claiming task-b is rejected with AGSC-E511 before any lint runs. A Proposal that first completes task-a and then claims task-b is accepted.",
+  "expected": {
+    "results": [
+      {
+        "accepted": false,
+        "error": "AGSC-E511",
+        "findings": [
+          {
+            "agent": "worker",
+            "code": "AGSC-E511",
+            "held": 1,
+            "max_claims": 1,
+            "severity": "error"
+          }
+        ],
+        "id": "claim-second"
+      },
+      {
+        "accepted": true,
+        "held_after": 1,
+        "id": "finish-then-claim"
+      }
+    ]
+  },
+  "id": "prov-0003",
+  "input": {
+    "board": {
+      "cluster": "sprint-1",
+      "tasks": [
+        {
+          "claimed_by": "worker",
+          "slug": "task-a",
+          "state": "TASK_STATE_WORKING"
+        },
+        {
+          "slug": "task-b",
+          "state": "TASK_STATE_SUBMITTED"
+        }
+      ]
+    },
+    "config": {
+      "agents": [
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 5,
+          "channel": "lane",
+          "enabled": true,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "worker",
+          "operator": "human:alice",
+          "tasks": [
+            "claim",
+            "work"
+          ],
+          "types": [
+            "concept",
+            "episode",
+            "lesson"
+          ]
+        }
+      ],
+      "bundle": {
+        "id": "example",
+        "operator": "human:alice"
+      },
+      "channels": [
+        {
+          "adapter": "stub",
+          "author": "lane-bot",
+          "name": "lane",
+          "owner": "human:alice",
+          "publish": "auto"
+        }
+      ],
+      "site": {
+        "base": "https://example.org/",
+        "title": "Example"
+      },
+      "spec_version": "1.0.0-rc.4"
+    },
+    "proposals": [
+      {
+        "agent": "worker",
+        "author": "lane-bot",
+        "changes": [
+          {
+            "keys": [
+              "task_state",
+              "modified"
+            ],
+            "op": "edit",
+            "path": "content/concepts/task-b.md",
+            "task_state": "TASK_STATE_WORKING",
+            "type": "concept"
+          }
+        ],
+        "id": "claim-second"
+      },
+      {
+        "agent": "worker",
+        "author": "lane-bot",
+        "changes": [
+          {
+            "keys": [
+              "task_state",
+              "modified"
+            ],
+            "op": "edit",
+            "path": "content/concepts/task-a.md",
+            "task_state": "TASK_STATE_COMPLETED",
+            "type": "concept"
+          },
+          {
+            "keys": [
+              "task_state",
+              "modified"
+            ],
+            "op": "edit",
+            "path": "content/concepts/task-b.md",
+            "task_state": "TASK_STATE_WORKING",
+            "type": "concept"
+          }
+        ],
+        "id": "finish-then-claim"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-18 at rc.4 (D88); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-10-17"
+}

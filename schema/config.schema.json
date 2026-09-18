@@ -487,6 +487,18 @@
         "additionalProperties": false
       }
     },
+    "budget": {
+      "description": "Node-wide monthly cap on model spend of every kind, in USD (AGSC-01-38, rc.4); the enabled agents' budget_usd_month sum must not exceed it (AGSC-E212). Overridable as AGSC_BUDGET_USD_MONTH (AGSC-01-37).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "usd_month": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 10
+        }
+      }
+    },
     "agents": {
       "description": "Agent-lane declarations (AGSC-01-36, rc.4). A lane runs only as refresh --agent <name> or as a declared client of the tool server / page tools, and writes only Proposals through its channel (AGSC-08-28..30). Disabled by default.",
       "type": "array",
@@ -572,6 +584,18 @@
             "description": "REQUIRED when kind is llm; the lane stops for the month at the bound (AGSC-08-28 e).",
             "type": "integer",
             "minimum": 0
+          },
+          "max_new_items": {
+            "description": "Greatest number of items one Proposal of the lane may create (AGSC-08-28 c; AGSC-E511).",
+            "type": "integer",
+            "minimum": 1,
+            "default": 20
+          },
+          "max_claims": {
+            "description": "Greatest number of tasks the lane may hold in TASK_STATE_WORKING at once — the work-in-progress limit (AGSC-10-17; AGSC-E511).",
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
           },
           "enabled": {
             "type": "boolean",

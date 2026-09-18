@@ -1,0 +1,105 @@
+{
+  "area": "bundle",
+  "description": "The sum of budget_usd_month over the enabled agents[] entries must not exceed the node-wide budget.usd_month (AGSC-01-36, AGSC-01-38): two enabled lanes of 6 and 5 USD under the default cap of 10 USD make the configuration invalid with AGSC-E212; the disabled third lane does not count.",
+  "expected": {
+    "accepted": false,
+    "error": "AGSC-E212",
+    "findings": [
+      {
+        "cap_usd_month": 10,
+        "code": "AGSC-E212",
+        "path": "agents",
+        "severity": "error",
+        "sum_usd_month": 11
+      }
+    ]
+  },
+  "id": "bundle-0005",
+  "input": {
+    "config": {
+      "agents": [
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 6,
+          "channel": "lane",
+          "enabled": true,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "editor",
+          "operator": "human:alice",
+          "tasks": [
+            "edit",
+            "update",
+            "review"
+          ],
+          "types": [
+            "concept",
+            "lesson"
+          ]
+        },
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 5,
+          "channel": "lane",
+          "enabled": true,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "planner",
+          "operator": "human:alice",
+          "tasks": [
+            "plan",
+            "claim",
+            "work"
+          ],
+          "types": [
+            "concept",
+            "lesson"
+          ]
+        },
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 9,
+          "channel": "lane",
+          "enabled": false,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "idle",
+          "operator": "human:alice",
+          "tasks": [
+            "edit",
+            "update",
+            "review"
+          ],
+          "types": [
+            "concept",
+            "lesson"
+          ]
+        }
+      ],
+      "bundle": {
+        "id": "example",
+        "operator": "human:alice"
+      },
+      "channels": [
+        {
+          "adapter": "stub",
+          "author": "lane-bot",
+          "name": "lane",
+          "owner": "human:alice",
+          "publish": "auto"
+        }
+      ],
+      "site": {
+        "base": "https://example.org/",
+        "title": "Example"
+      },
+      "spec_version": "1.0.0-rc.4"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-18 at rc.4 (D88); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-01-36"
+}

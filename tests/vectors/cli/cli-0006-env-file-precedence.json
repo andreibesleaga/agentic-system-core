@@ -1,0 +1,52 @@
+{
+  "area": "cli",
+  "description": "The .env file of the Bundle root is read for AGSC_* names only, after the process environment and before the project configuration (AGSC-01-37, AGSC-09-09): the process value 3 beats the file's 7 for the node cap, the file's AGSC_BUILD_OUT beats the configuration, a non-AGSC_ line and a comment are ignored, and ci prints the names in effect, never the values.",
+  "expected": {
+    "ignored": [
+      "OPENAI_API_KEY"
+    ],
+    "overrides_in_effect": [
+      "AGSC_BUDGET_USD_MONTH",
+      "AGSC_BUILD_OUT",
+      "AGSC_MODEL_API_KEY"
+    ],
+    "resolved": {
+      "budget": {
+        "usd_month": 3
+      },
+      "build": {
+        "out": "www-next"
+      }
+    },
+    "stdout_must_not_contain": [
+      "secret-value",
+      "not-read"
+    ]
+  },
+  "id": "cli-0006",
+  "input": {
+    "argv": [
+      "ci",
+      "--json"
+    ],
+    "bundle": "fixtures/minimal",
+    "config": {
+      "budget": {
+        "usd_month": 10
+      },
+      "build": {
+        "out": "www"
+      }
+    },
+    "env_file": "# local overrides\nAGSC_BUDGET_USD_MONTH=7\nAGSC_BUILD_OUT=www-next\nOPENAI_API_KEY=not-read\nAGSC_MODEL_API_KEY=secret-value\n",
+    "environment": {
+      "AGSC_BUDGET_USD_MONTH": "3"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-18 at rc.4 (D88); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-01-37"
+}

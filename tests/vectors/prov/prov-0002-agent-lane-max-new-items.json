@@ -1,0 +1,179 @@
+{
+  "area": "prov",
+  "description": "A Proposal of an agent lane may create at most max_new_items items (AGSC-08-28 c; default 20): the planner's Proposal creates 21 concepts and is rejected with AGSC-E511 before any lint runs, naming the agent, the count and the bound.",
+  "expected": {
+    "accepted": false,
+    "error": "AGSC-E511",
+    "findings": [
+      {
+        "agent": "planner",
+        "code": "AGSC-E511",
+        "created": 21,
+        "max_new_items": 20,
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "prov-0002",
+  "input": {
+    "config": {
+      "agents": [
+        {
+          "author": "lane-bot",
+          "budget_usd_month": 5,
+          "channel": "lane",
+          "enabled": true,
+          "kind": "llm",
+          "model": "example-model-1",
+          "name": "planner",
+          "operator": "human:alice",
+          "tasks": [
+            "plan",
+            "claim",
+            "work"
+          ],
+          "types": [
+            "concept",
+            "episode",
+            "lesson"
+          ]
+        }
+      ],
+      "bundle": {
+        "id": "example",
+        "operator": "human:alice"
+      },
+      "channels": [
+        {
+          "adapter": "stub",
+          "author": "lane-bot",
+          "name": "lane",
+          "owner": "human:alice",
+          "publish": "auto"
+        }
+      ],
+      "site": {
+        "base": "https://example.org/",
+        "title": "Example"
+      },
+      "spec_version": "1.0.0-rc.4"
+    },
+    "proposal": {
+      "agent": "planner",
+      "author": "lane-bot",
+      "changes": [
+        {
+          "op": "create",
+          "path": "content/concepts/task-01.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-02.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-03.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-04.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-05.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-06.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-07.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-08.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-09.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-10.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-11.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-12.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-13.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-14.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-15.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-16.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-17.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-18.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-19.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-20.md",
+          "type": "concept"
+        },
+        {
+          "op": "create",
+          "path": "content/concepts/task-21.md",
+          "type": "concept"
+        }
+      ]
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-18 at rc.4 (D88); unreleased, may be edited in place until the rc.4 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.4"
+  },
+  "rule": "AGSC-08-28"
+}

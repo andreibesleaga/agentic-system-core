@@ -1,9 +1,9 @@
-# Trace: PRD-063, PRD-064 · D87, R66, R67 · spec/08 §8.6, spec/10 §10.6 (rc.4)
+# Trace: PRD-063, PRD-064, PRD-065 · D87, D88, R66, R67, R69–R71 · spec/08 §8.6, spec/10 §10.6, spec/01 AGSC-01-36…38 (rc.4)
 # Source of truth: docs/PRD.md Amendment 8 and the rc.4 rules named on each step
-@persona-k @mode-5 @PRD-063 @PRD-064
-Feature: Self-driving team — agents and people finish a project's tasks on one Blackboard
+@persona-k @mode-5 @PRD-063 @PRD-064 @PRD-065
+Feature: Self-driving team — agents and people finish a project's tasks on one LiveBoard
   As P12 (a self-driving team of agents and people)
-  I want a shared blackboard that agents plan, claim and work on until it is done
+  I want a shared pull board that agents plan, claim and work on until it is done
   So that product and project management runs itself under the guards a person configured once
 
   Background:
@@ -47,3 +47,26 @@ Feature: Self-driving team — agents and people finish a project's tasks on one
     When "npx agentic-system-core ci" runs twice on the merged content
     Then the two builds are byte-identical and no model call is reachable from lint, build, verify or ci (AGSC-08-30)
     And "npx agentic-system-core verify --ledger" shows the lane's merges with mode "auto"
+
+  @PRD-065
+  Scenario: The work-in-progress limit keeps the agent on one task
+    Given "worker" already holds "task-a" in "TASK_STATE_WORKING" and max_claims is 1
+    When "worker" proposes "TASK_STATE_WORKING" for "task-b" without completing "task-a"
+    Then the Proposal is rejected with "AGSC-E511" before any lint runs (AGSC-10-17)
+    When "worker" proposes "TASK_STATE_COMPLETED" for "task-a" and "TASK_STATE_WORKING" for "task-b" in one Proposal
+    Then the Proposal is accepted and the board export shows "task-b" claimed_by "worker"
+
+  @PRD-065
+  Scenario: A planner cannot flood the board
+    Given max_new_items of "worker" is 20
+    When "worker" opens a Proposal that creates 21 task concepts
+    Then the Proposal is rejected with "AGSC-E511" naming the count and the bound (AGSC-08-28 c)
+
+  @PRD-065
+  Scenario: The node-wide cap and the .env file bound every model call
+    Given agsc.config.json has budget.usd_month 10 and a .env file in the Bundle root with "AGSC_BUDGET_USD_MONTH=4"
+    And the episodes of this month across every lane sum to usage cost_usd 4
+    When "npx agentic-system-core refresh --agent worker" runs
+    Then no model is called and the NOW page records the warning "AGSC-E510" (AGSC-01-38, AGSC-08-25)
+    And "npx agentic-system-core ci --json" prints the override name "AGSC_BUDGET_USD_MONTH" and never its value (AGSC-01-37)
+    And a .env file tracked in the content branch is reported as "AGSC-E403"

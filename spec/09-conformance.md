@@ -16,7 +16,7 @@
 
 - **AGSC-09-07** The verb set is exactly **sixteen**: `init`, `lint`, `build`, `verify`, `ci`, `export`, `import`, `compose`, `propose`, `review`, `refresh`, `skills`, `mcp`, `run`, `trace`, `conform`. `run` and `trace` MUST be opt-in and disabled by default (AGSC-01-18 `run.enabled`, default `false`); `conform` executes the vector set of a declared Level (AGSC-10-01) and writes the AGSC-09-03 report. Any other verb MUST exit 2 with `AGSC-E001`. [PRD-001 ← D41, R54, D53, V4-A A-45]
 - **AGSC-09-08** Exit codes: **0** success; **1** findings, a failed gate or a non-reproducible build; **2** usage error (unknown verb, unknown flag, missing argument, invalid configuration — including a malformed `SOURCE_DATE_EPOCH`, `AGSC-E603`, which is an environment/configuration fault and never a finding). [PRD-007, PLAN §8, D48(7)]
-- **AGSC-09-09** Global flags `--json`, `--quiet`, `--plain`, `--no-input`, `--version` MUST be honoured, as MUST `NO_COLOR` and `AGSC_*` environment variables. Precedence is flags > environment > project configuration > user configuration. [PRD-007 ← R54, R30]
+- **AGSC-09-09** Global flags `--json`, `--quiet`, `--plain`, `--no-input`, `--version` MUST be honoured, as MUST `NO_COLOR` and `AGSC_*` environment variables. Precedence is flags > environment > project configuration > user configuration; at rc.4 the environment includes the `.env` file of AGSC-01-37, read after the process environment, and every scalar configuration key has an `AGSC_*` name there. [PRD-007 ← R54, R30, D88]
 - **AGSC-09-10** Data goes to stdout; diagnostics go to stderr. Under `--json`, stdout MUST carry exactly one JCS-canonical envelope and stderr MUST carry one JSON object per line, one per finding. `findings[]` in the envelope, and the stderr lines, MUST be ordered by `(file, line, col, code)` compared code-point-wise, so that a byte comparison of the output is stable however the lint phases were scheduled. [PLAN §8, D48(3)]
 - **AGSC-09-11** The envelope shape is:
 
@@ -99,7 +99,8 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E508` | Level-0 item inherited `prov` from `bundle.operator` (warning) | AGSC-10-02 |
 | `AGSC-E507` | adopted body reference no longer resolves after relocation (warning) | AGSC-02-95 |
 | `AGSC-E509` | agent-lane Proposal outside the declared `types[]`/`tasks[]`, or from an undeclared or disabled agent (rc.4) | AGSC-08-28 |
-| `AGSC-E510` | agent-lane run skipped: `budget_usd_month` reached (warning, rc.4) | AGSC-08-28 |
+| `AGSC-E510` | model call skipped: a monthly budget reached — the lane's `budget_usd_month` or the node's `budget.usd_month` (warning, rc.4) | AGSC-08-28, AGSC-01-38 |
+| `AGSC-E511` | agent-lane Proposal exceeds `max_new_items` (items created) or `max_claims` (tasks held in `TASK_STATE_WORKING`) (rc.4) | AGSC-08-28, AGSC-10-17 |
 | `AGSC-E601` | JSON artefact not JCS-canonical | AGSC-04-06 |
 | `AGSC-E602` | build not byte-reproducible | AGSC-04-02 |
 | `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed (exit 2) | AGSC-04-09 |
@@ -123,6 +124,7 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area of PLAN
 | `AGSC-E209` | boundary or discovery configuration invalid (`federation{}`, `chunks{}`, `contribute[]`, `visibility`, `related[]` out of range or malformed) | AGSC-11-01, AGSC-11-14, AGSC-06-35 |
 | `AGSC-E210` | declared surface not implemented, or emitted bytes disagree with its declaration | AGSC-11-16, AGSC-11-19 |
 | `AGSC-E211` | emitted surface without a declaration (warning) | AGSC-11-19 |
+| `AGSC-E212` | the enabled agents' `budget_usd_month` sum exceeds `budget.usd_month` (rc.4) | AGSC-01-36 |
 | `AGSC-E311` | Link key value is an absolute URL (a Link MUST NOT cross Bundles) | AGSC-11-12 |
 | `AGSC-E312` | cross-node reference not normalisable to an IRI (omitted from the graph) | AGSC-11-12 |
 | `AGSC-E411` | Link target is a retired item (warning) | AGSC-11-22 |
