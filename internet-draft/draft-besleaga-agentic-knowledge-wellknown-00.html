@@ -1,0 +1,3142 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>The 'knowledge-linkset' Well-Known URI for Publishing Knowledge Artefacts</title>
+<meta content="Andrei Nicolae Besleaga" name="author">
+<meta content='
+       This document defines the "knowledge-linkset" well-known URI, at which a
+web origin publishes one link set describing the knowledge artefacts it
+makes available: graph serializations, a JSON-LD context, an
+agent-facing text file, a chunk export, a change ledger, and related
+resources. Each artefact link may carry a SHA-256 digest, expressed with
+the syntax of HTTP digest fields, so that a client can check that a
+retrieved artefact is the one the publisher described. A profile URI
+identifies the conventions the link set follows. The mechanism defines
+no new media type and no new link relation type: a page points at the
+resource with the existing "describedby" relation. This document
+requests one well-known URI registration and cites one profile URI
+registration. 
+    ' name="description">
+<meta content="xml2rfc 3.34.1" name="generator">
+<meta content="Internet-Draft" name="keyword">
+<meta content="Well-Known URI" name="keyword">
+<meta content="Linkset" name="keyword">
+<meta content="Link Set" name="keyword">
+<meta content="Knowledge Graph" name="keyword">
+<meta content="Discovery" name="keyword">
+<meta content="Integrity" name="keyword">
+<meta content="Agents" name="keyword">
+<meta content="draft-besleaga-agentic-knowledge-wellknown-00" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.34.1
+    Python 3.12.3
+    ConfigArgParse 1.7.7
+    google-i18n-address 3.1.1
+    intervaltree 3.2.1
+    Jinja2 3.1.6
+    lxml 6.1.3
+    natsort 8.4.0
+    platformdirs 4.11.10
+    pycountry 26.2.16
+    PyYAML 6.0.3
+    requests 2.34.2
+    wcwidth 0.8.4
+-->
+<link href="draft-besleaga-agentic-knowledge-wellknown-00.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">/*
+
+  NOTE: Changes at the bottom of this file overrides some earlier settings.
+
+  Once the style has stabilized and has been adopted as an official RFC style,
+  this can be consolidated so that style settings occur only in one place, but
+  for now the contents of this file consists first of the initial CSS work as
+  provided to the RFC Formatter (xml2rfc) work, followed by itemized and
+  commented changes found necessary during the development of the v3
+  formatters.
+
+*/
+
+/* fonts */
+@import url('https://static.ietf.org/fonts/noto-sans/import.css'); /* Sans-serif */
+@import url('https://static.ietf.org/fonts/noto-serif/import.css'); /* Serif (print) */
+@import url('https://static.ietf.org/fonts/roboto-mono/import.css'); /* Monospace */
+
+:root {
+  --font-sans: 'Noto Sans', Arial, Helvetica, sans-serif;
+  --font-serif: 'Noto Serif', 'Times', 'Times New Roman', serif;
+  --font-mono: 'Roboto Mono', Courier, 'Courier New', monospace;
+}
+
+@viewport {
+  zoom: 1.0;
+}
+@-ms-viewport {
+  width: extend-to-zoom;
+  zoom: 1.0;
+}
+/* general and mobile first */
+html {
+}
+body {
+  max-width: 90%;
+  margin: 1.5em auto;
+  color: #222;
+  background-color: #fff;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  scroll-behavior: smooth;
+  overflow-wrap: break-word;
+}
+.ears {
+  display: none;
+}
+
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  margin: 1em 0 0.5em;
+  font-weight: bold;
+  line-height: 1.3;
+}
+#title {
+  clear: both;
+  border-bottom: 1px solid #ddd;
+  margin: 0 0 0.5em 0;
+  padding: 1em 0 0.5em;
+}
+.author {
+  padding-bottom: 4px;
+}
+h1 {
+  font-size: 26px;
+  margin: 1em 0;
+}
+h2 {
+  font-size: 22px;
+  margin-top: -20px;  /* provide offset for in-page anchors */
+  padding-top: 33px;
+}
+h3 {
+  font-size: 18px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h4 {
+  font-size: 16px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h5, h6 {
+  font-size: 14px;
+}
+#n-copyright-notice {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1em;
+  margin-bottom: 1em;
+}
+/* general structure */
+p {
+  padding: 0;
+  margin: 0 0 1em 0;
+  text-align: left;
+}
+div, span {
+  position: relative;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+@media print {
+  svg {
+    max-height: 850px;
+    max-width: 660px;
+  }
+}
+svg[font-family~="serif" i], svg [font-family~="serif" i] {
+  font-family: var(--font-serif);
+}
+svg[font-family~="sans-serif" i], svg [font-family~="sans-serif" i] {
+  font-family: var(--font-sans);
+}
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  display: table;
+  border: none;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 1em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.ulBare, li.ulBare {
+  margin-left: 0em !important;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+/* 
+dl.nohang > dt {
+  float: none;
+}
+*/
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+dl.compact > dd, .dlCompact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+
+/* links */
+a {
+  text-decoration: none;
+}
+a[href] {
+  color: #22e; /* Arlen: WCAG 2019 */
+}
+a[href]:hover {
+  background-color: #f2f2f2;
+}
+figcaption a[href],
+a[href].selfRef {
+  color: #222;
+}
+/* XXX probably not this:
+a.selfRef:hover {
+  background-color: transparent;
+  cursor: default;
+} */
+
+/* Figures */
+tt, code, pre {
+  background-color: #f9f9f9;
+  font-family: var(--font-mono);
+}
+pre {
+  border: 1px solid #eee;
+  margin: 0;
+  padding: 1em;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption {
+  font-style: italic;
+  margin: 0 0 1em 0;
+}
+@media screen {
+  pre {
+    overflow-x: auto;
+    max-width: 100%;
+    max-width: calc(100% - 22px);
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 1.2em 2em;
+}
+blockquote {
+  background-color: #f9f9f9;
+  color: #111; /* Arlen: WCAG 2019 */
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  margin: 1em 0;
+}
+blockquote > *:last-child {
+  margin-bottom: 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+.xref {
+  overflow-wrap: normal;
+}
+
+/* tables */
+table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  border: 1px solid #eee;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5em 0.75em;
+}
+th {
+  text-align: left;
+  background-color: #e9e9e9;
+}
+tr:nth-child(2n+1) > td {
+  background-color: #f5f5f5;
+}
+table caption {
+  font-style: italic;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+table p {
+  /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
+     be allowed within tables more generally, it would be far better to select on a class. */
+  margin: 0;
+}
+sub,
+sup {
+ white-space: nowrap;
+}
+
+/* pilcrow */
+a.pilcrow {
+  color: #666; /* Arlen: AHDJ 2019 */
+  text-decoration: none;
+  visibility: hidden;
+  user-select: none;
+  -ms-user-select: none;
+  -o-user-select:none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+@media screen {
+  aside:hover > a.pilcrow,
+  p:hover > a.pilcrow,
+  blockquote:hover > a.pilcrow,
+  div:hover > a.pilcrow,
+  li:hover > a.pilcrow,
+  pre:hover > a.pilcrow {
+    visibility: visible;
+  }
+  a.pilcrow:hover {
+    background-color: transparent;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid #eee;
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: 0.9em;
+}
+#identifiers dt {
+  width: 3em;
+  clear: left;
+}
+#identifiers dd {
+  float: left;
+  margin-bottom: 0;
+}
+/* Fix PDF info block run off issue */
+@media print {
+  #identifiers dd {
+    max-width: 100%;
+  }
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #666; /* Arlen: WCAG 2019 */
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc  {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+nav.toc ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+nav.toc li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.refSubseries {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 600px) {
+  .index ul {
+    -moz-column-count: 2;
+    -moz-column-gap: 20px;
+  }
+  .index ul ul {
+    -moz-column-count: 1;
+    -moz-column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  font-family: var(--font-sans);
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+
+/* temporary notes */
+.rfcEditorRemove::before {
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  padding: 0.2em;
+  content: "The RFC Editor will remove this note";
+  color: #9e2a00; /* Arlen: WCAG 2019 */
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+}
+.rfcEditorRemove {
+  position: relative;
+  padding-top: 1.8em;
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  border-radius: 3px;
+}
+.cref {
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 1023px) {
+  body {
+    padding-top: 2em;
+  }
+  #title {
+    padding: 1em 0;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-top: -18px;  /* provide offset for in-page anchors */
+    padding-top: 38px;
+  }
+  #identifiers dd {
+    max-width: 60%;
+  }
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    background-color: inherit;
+    border-bottom: 1px solid #ccc;
+  }
+  #toc h2 {
+    margin: -1px 0 0 0;
+    padding: 4px 0 4px 6px;
+    padding-right: 1em;
+    min-width: 190px;
+    font-size: 1.1em;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 6px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 1024px) {
+  body {
+    max-width: 724px;
+    margin: 42px auto;
+    padding-left: 1.5em;
+    padding-right: 29em;
+  }
+  #toc {
+    position: fixed;
+    top: 42px;
+    right: 42px;
+    width: 25%;
+    margin: 0;
+    padding: 0 1em;
+    z-index: 1;
+  }
+  #toc h2 {
+    border-top: none;
+    border-bottom: 1px solid #ddd;
+    font-size: 1em;
+    font-weight: normal;
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 0;
+    overflow: auto;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  .breakable pre {
+    break-inside: auto;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+/* This is commented out here, as the string-set: doesn't
+   pass W3C validation currently */
+/*
+.ears thead .left {
+  string-set: ears-top-left content();
+}
+
+.ears thead .center {
+  string-set: ears-top-center content();
+}
+
+.ears thead .right {
+  string-set: ears-top-right content();
+}
+
+.ears tfoot .left {
+  string-set: ears-bottom-left content();
+}
+
+.ears tfoot .center {
+  string-set: ears-bottom-center content();
+}
+
+.ears tfoot .right {
+  string-set: ears-bottom-right content();
+}
+*/
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+  /* The following is commented out here, but set appropriately by in code, as
+     the content depends on the document */
+  /*
+  @top-left {
+    content: 'Internet-Draft';
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-left {
+    content: string(ears-top-left);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-center {
+    content: string(ears-top-center);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-right {
+    content: string(ears-top-right);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @bottom-left {
+    content: string(ears-bottom-left);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-center {
+    content: string(ears-bottom-center);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-right {
+      content: '[Page ' counter(page) ']';
+      vertical-align: top;
+      border-top: solid 1px #ccc;
+  }
+  */
+
+}
+
+/* Changes introduced to fix issues found during implementation */
+/* Make sure links are clickable even if overlapped by following H* */
+a {
+  z-index: 2;
+}
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Leave room in document info to show Internet-Draft on one line */
+#identifiers dt {
+  width: 8em;
+}
+
+/* Don't waste quite as much whitespace between label and value in doc info */
+#identifiers dd {
+  margin-left: 1em;
+}
+
+/* Give floating toc a background color (needed when it's a div inside section */
+#toc {
+  background-color: white;
+}
+
+/* Make the collapsed ToC header render white on gray also when it's a link */
+@media screen and (max-width: 1023px) {
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+}
+
+/* Give the bottom of the ToC some whitespace */
+@media screen and (min-width: 1024px) {
+  #toc {
+    padding: 0 0 1em 1em;
+  }
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* prevent monospace from becoming overly large */
+tt, code, pre {
+  font-size: 95%;
+}
+
+/* Fix the height/width aspect for ascii art*/
+.sourcecode pre,
+.art-text pre {
+  line-height: 1.12;
+}
+
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin-right: 0.5em;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table td.text-left,
+table th.text-left {
+  text-align: left;
+}
+table td.text-center,
+table th.text-center {
+  text-align: center;
+}
+table td.text-right,
+table th.text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 30em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Provide table alignment support.  We can't use the alignX classes above
+   since they do unwanted things with caption and other styling. */
+table.right {
+ margin-left: auto;
+ margin-right: 0;
+}
+table.center {
+ margin-left: auto;
+ margin-right: auto;
+}
+table.left {
+ margin-left: 0;
+ margin-right: auto;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+caption a[href] {
+  color: #222;
+}
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+/* Tweak the invisible space above H* in order not to overlay links in text above */
+ h2 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 31px;
+ }
+ h3 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+ h4 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+/* Float artwork pilcrow to the right */
+@media screen {
+  .artwork a.pilcrow {
+    display: block;
+    line-height: 0.7;
+    margin-top: 0.15em;
+  }
+}
+/* Make pilcrows on dd visible */
+@media screen {
+  dd:hover > a.pilcrow {
+    visibility: visible;
+  }
+}
+/* Make the placement of figcaption match that of a table's caption
+   by removing the figure's added bottom margin */
+.alignLeft.art-text,
+.alignCenter.art-text,
+.alignRight.art-text {
+   margin-bottom: 0;
+}
+.alignLeft,
+.alignCenter,
+.alignRight {
+  margin: 1em 0 0 0;
+}
+/* In print, the pilcrow won't show on hover, so prevent it from taking up space,
+   possibly even requiring a new line */
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+/* Styling for the external metadata */
+div#external-metadata {
+  background-color: #eee;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+  display: none;
+}
+div#internal-metadata {
+  padding: 0.5em;                       /* to match the external-metadata padding */
+}
+/* Styling for title RFC Number */
+h1#rfcnum {
+  clear: both;
+  margin: 0 0 -1em;
+  padding: 1em 0 0 0;
+}
+/* Make .olPercent look the same as <ol><li> */
+dl.olPercent > dd {
+  margin-bottom: 0.25em;
+  min-height: initial;
+}
+/* Give aside some styling to set it apart */
+aside {
+  border-left: 1px solid #ddd;
+  margin: 1em 0 1em 2em;
+  padding: 0.2em 2em;
+}
+aside > dl,
+aside > ol,
+aside > ul,
+aside > table,
+aside > p {
+  margin-bottom: 0.5em;
+}
+/* Additional page break settings */
+@media print {
+  figcaption, table caption {
+    page-break-before: avoid;
+  }
+  table {
+    page-break-inside: avoid;
+  }
+}
+/* Font size adjustments for print */
+@media print {
+  body  { font-size: 10pt;      line-height: normal; max-width: 96%; }
+  h1    { font-size: 1.72em;    padding-top: 1.5em; } /* 1*1.2*1.2*1.2 */
+  h2    { font-size: 1.44em;    padding-top: 1.5em; } /* 1*1.2*1.2 */
+  h3    { font-size: 1.2em;     padding-top: 1.5em; } /* 1*1.2 */
+  h4    { font-size: 1em;       padding-top: 1.5em; }
+  h5, h6 { font-size: 1em;      margin: initial; padding: 0.5em 0 0.3em; }
+}
+/* Sourcecode margin in print, when there's no pilcrow */
+@media print {
+  .artwork,
+  .artwork > pre,
+  .sourcecode {
+    margin-bottom: 1em;
+  }
+}
+/* Avoid narrow tables forcing too narrow table captions, which may render badly */
+table {
+  min-width: 20em;
+}
+/* ol type a */
+ol.type-a { list-style-type: lower-alpha; }
+ol.type-A { list-style-type: upper-alpha; }
+ol.type-i { list-style-type: lower-roman; }
+ol.type-I { list-style-type: upper-roman; }
+/* Apply the print table and row borders in general, on request from the RPC,
+and increase the contrast between border and odd row background slightly */
+table {
+  border: 1px solid #ddd;
+}
+td {
+  border-top: 1px solid #ddd;
+}
+tr {
+  break-inside: avoid;
+}
+tr:nth-child(2n+1) > td {
+  background-color: #f8f8f8;
+}
+/* Use style rules to govern display of the TOC. */
+@media screen and (max-width: 1023px) {
+  #toc nav { display: none; }
+  #toc.active nav { display: block; }
+}
+/* Add support for keepWithNext */
+.keepWithNext {
+  break-after: avoid-page;
+  break-after: avoid-page;
+}
+/* Add support for keepWithPrevious */
+.keepWithPrevious {
+  break-before: avoid-page;
+}
+/* Change the approach to avoiding breaks inside artwork etc. */
+figure, pre, table, .artwork, .sourcecode  {
+  break-before: auto;
+  break-after: auto;
+}
+/* Avoid breaks between <dt> and <dd> */
+dl {
+  break-before: auto;
+  break-inside: auto;
+}
+dt {
+  break-before: auto;
+  break-after: avoid-page;
+}
+dd {
+  break-before: avoid-page;
+  break-after: auto;
+  orphans: 3;
+  widows: 3
+}
+span.break, dd.break {
+  margin-bottom: 0;
+  min-height: 0;
+  break-before: auto;
+  break-inside: auto;
+  break-after: auto;
+}
+/* Undo break-before ToC */
+@media print {
+  #toc {
+    break-before: auto;
+  }
+}
+/* Text in compact lists should not get extra bottom margin space,
+   since that would makes the list not compact */
+ul.compact p, .ulCompact p,
+ol.compact p, .olCompact p {
+ margin: 0;
+}
+/* But the list as a whole needs the extra space at the end */
+section ul.compact,
+section .ulCompact,
+section ol.compact,
+section .olCompact {
+  margin-bottom: 1em;                    /* same as p not within ul.compact etc. */
+}
+/* The tt and code background above interferes with for instance table cell
+   backgrounds.  Changed to something a bit more selective. */
+tt, code {
+  background-color: transparent;
+}
+p tt, p code, li tt, li code, dt tt, dt code {
+  background-color: #f8f8f8;
+}
+/* Tweak the pre margin -- 0px doesn't come out well */
+pre {
+   margin-top: 0.5px;
+}
+/* Tweak the compact list text */
+ul.compact, .ulCompact,
+ol.compact, .olCompact,
+dl.compact, .dlCompact {
+  line-height: normal;
+}
+/* Don't add top margin for nested lists */
+li > ul, li > ol, li > dl,
+dd > ul, dd > ol, dd > dl,
+dl > dd > dl {
+  margin-top: initial;
+}
+/* Elements that should not be rendered on the same line as a <dt> */
+/* This should match the element list in writer.text.TextWriter.render_dl() */
+dd > div.artwork:first-child,
+dd > aside:first-child,
+dd > blockquote:first-child,
+dd > figure:first-child,
+dd > ol:first-child,
+dd > div.sourcecode:first-child,
+dd > table:first-child,
+dd > ul:first-child {
+  clear: left;
+}
+/* fix for weird browser behaviour when <dd/> is empty */
+dt+dd:empty::before{
+  content: "\00a0";
+}
+/* Make paragraph spacing inside <li> smaller than in body text, to fit better within the list */
+li > p {
+  margin-bottom: 0.5em
+}
+/* Don't let p margin spill out from inside list items */
+li > p:last-of-type:only-child {
+  margin-bottom: 0;
+}
+</style>
+<link href="rfc-local.css" rel="stylesheet" type="text/css">
+<script type="application/javascript">async function addMetadata(){try{const e=document.styleSheets[0].cssRules;for(let t=0;t<e.length;t++)if(/#identifiers/.exec(e[t].selectorText)){const a=e[t].cssText.replace("#identifiers","#external-updates");document.styleSheets[0].insertRule(a,document.styleSheets[0].cssRules.length)}}catch(e){console.log(e)}const e=document.getElementById("external-metadata");if(e)try{var t,a="",o=function(e){const t=document.getElementsByTagName("meta");for(let a=0;a<t.length;a++)if(t[a].getAttribute("name")===e)return t[a].getAttribute("content");return""}("rfc.number");if(o){t="https://www.rfc-editor.org/rfc/rfc"+o+".json";try{const e=await fetch(t);a=await e.json()}catch(e){t=document.URL.indexOf("html")>=0?document.URL.replace(/html$/,"json"):document.URL+".json";const o=await fetch(t);a=await o.json()}}if(!a)return;e.style.display="block";const s="",d="https://datatracker.ietf.org/doc",n="https://datatracker.ietf.org/ipr/search",c="https://www.rfc-editor.org/info",l=a.doc_id.toLowerCase(),i=a.doc_id.slice(0,3).toLowerCase(),f=a.doc_id.slice(3).replace(/^0+/,""),u={status:"Status",obsoletes:"Obsoletes",obsoleted_by:"Obsoleted By",updates:"Updates",updated_by:"Updated By",see_also:"See Also",errata_url:"Errata"};let h="<dl style='overflow:hidden' id='external-updates'>";["status","obsoletes","obsoleted_by","updates","updated_by","see_also","errata_url"].forEach(e=>{if("status"==e){a[e]=a[e].toLowerCase();var t=a[e].split(" "),o=t.length,w="",p=1;for(let e=0;e<o;e++)p<o?w=w+r(t[e])+" ":w+=r(t[e]),p++;a[e]=w}else if("obsoletes"==e||"obsoleted_by"==e||"updates"==e||"updated_by"==e){var g,m="",b=1;g=a[e].length;for(let t=0;t<g;t++)a[e][t]&&(a[e][t]=String(a[e][t]).toLowerCase(),m=b<g?m+"<a href='"+s+"/rfc/".concat(a[e][t])+"'>"+a[e][t].slice(3)+"</a>, ":m+"<a href='"+s+"/rfc/".concat(a[e][t])+"'>"+a[e][t].slice(3)+"</a>",b++);a[e]=m}else if("see_also"==e){var y,L="",C=1;y=a[e].length;for(let t=0;t<y;t++)if(a[e][t]){a[e][t]=String(a[e][t]);var _=a[e][t].slice(0,3),v=a[e][t].slice(3).replace(/^0+/,"");L=C<y?"RFC"!=_?L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+_+" "+v+"</a>, ":L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+v+"</a>, ":"RFC"!=_?L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+_+" "+v+"</a>":L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+v+"</a>",C++}a[e]=L}else if("errata_url"==e){var R="";R=a[e]?R+"<a href='"+a[e]+"'>Errata exist</a> | <a href='"+d+"/"+l+"'>Datatracker</a>| <a href='"+n+"/?"+i+"="+f+"&submit="+i+"'>IPR</a> | <a href='"+c+"/"+l+"'>Info page</a>":"<a href='"+d+"/"+l+"'>Datatracker</a> | <a href='"+n+"/?"+i+"="+f+"&submit="+i+"'>IPR</a> | <a href='"+c+"/"+l+"'>Info page</a>",a[e]=R}""!=a[e]?"Errata"==u[e]?h+=`<dt>More info:</dt><dd>${a[e]}</dd>`:h+=`<dt>${u[e]}:</dt><dd>${a[e]}</dd>`:"Errata"==u[e]&&(h+=`<dt>More info:</dt><dd>${a[e]}</dd>`)}),h+="</dl>",e.innerHTML=h}catch(e){console.log(e)}else console.log("Could not locate metadata <div> element");function r(e){return e.charAt(0).toUpperCase()+e.slice(1)}}window.removeEventListener("load",addMetadata),window.addEventListener("load",addMetadata);</script>
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">knowledge-linkset Well-Known URI</td>
+<td class="right">September 2026</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Besleaga</td>
+<td class="center">Expires 22 March 2027</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Independent Submission</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-besleaga-agentic-knowledge-wellknown-00</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2026-09-18" class="published">18 September 2026</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2027-03-22">22 March 2027</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">A. N. Besleaga</div>
+<div class="org">Independent</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">The 'knowledge-linkset' Well-Known URI for Publishing Knowledge Artefacts</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document defines the "knowledge-linkset" well-known URI, at which a
+web origin publishes one link set describing the knowledge artefacts it
+makes available: graph serializations, a JSON-LD context, an
+agent-facing text file, a chunk export, a change ledger, and related
+resources. Each artefact link may carry a SHA-256 digest, expressed with
+the syntax of HTTP digest fields, so that a client can check that a
+retrieved artefact is the one the publisher described. A profile URI
+identifies the conventions the link set follows. The mechanism defines
+no new media type and no new link relation type: a page points at the
+resource with the existing "describedby" relation. This document
+requests one well-known URI registration and cites one profile URI
+registration.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 22 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2026 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-what-this-document-does-not" class="internal xref">What this document does not do</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1" class="keepWithNext"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-conventions-and-terminology" class="internal xref">Conventions and Terminology</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-the-knowledge-linkset-well-" class="internal xref">The 'knowledge-linkset' Well-Known URI</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-media-type-and-profile" class="internal xref">Media type and profile</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-caching" class="internal xref">Caching</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="auto internal xref">3.3</a>.  <a href="#name-cross-origin-access" class="internal xref">Cross-origin access</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-the-link-set" class="internal xref">The Link Set</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-top-level-structure" class="internal xref">Top-level structure</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-relations" class="internal xref">Relations</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="auto internal xref">4.3</a>.  <a href="#name-target-attributes" class="internal xref">Target attributes</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.1">
+                    <p id="section-toc.1-1.4.2.3.2.1.1"><a href="#section-4.3.1" class="auto internal xref">4.3.1</a>.  <a href="#name-the-digest-attribute" class="internal xref">The digest attribute</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.2">
+                    <p id="section-toc.1-1.4.2.3.2.2.1"><a href="#section-4.3.2" class="auto internal xref">4.3.2</a>.  <a href="#name-bundle-fact-attributes" class="internal xref">Bundle-fact attributes</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.3">
+                    <p id="section-toc.1-1.4.2.3.2.3.1"><a href="#section-4.3.3" class="auto internal xref">4.3.3</a>.  <a href="#name-declaration-attributes" class="internal xref">Declaration attributes</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.4">
+                <p id="section-toc.1-1.4.2.4.1"><a href="#section-4.4" class="auto internal xref">4.4</a>.  <a href="#name-the-reduced-form" class="internal xref">The reduced form</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.5">
+                <p id="section-toc.1-1.4.2.5.1"><a href="#section-4.5" class="auto internal xref">4.5</a>.  <a href="#name-related-system-links" class="internal xref">Related-system links</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-discovery-from-a-page" class="internal xref">Discovery from a Page</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-why-describedby-and-why-no-" class="internal xref">Why 'describedby', and why no new relation</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-the-profile-uri" class="internal xref">The Profile URI</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-what-the-profile-fixes" class="internal xref">What the profile fixes</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-carriage-and-resolution" class="internal xref">Carriage and resolution</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-client-behaviour" class="internal xref">Client Behaviour</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-fetch-safety" class="internal xref">Fetch safety</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-following-peers" class="internal xref">Following peers</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-untrusted-content" class="internal xref">Untrusted content</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
+                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-federation-is-client-side" class="internal xref">Federation is client-side</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-relationship-to-other-work" class="internal xref">Relationship to Other Work</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.1">
+                <p id="section-toc.1-1.9.2.1.1"><a href="#section-9.1" class="auto internal xref">9.1</a>.  <a href="#name-what-a-digest-proves" class="internal xref">What a digest proves</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.2">
+                <p id="section-toc.1-1.9.2.2.1"><a href="#section-9.2" class="auto internal xref">9.2</a>.  <a href="#name-fetching" class="internal xref">Fetching</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.3">
+                <p id="section-toc.1-1.9.2.3.1"><a href="#section-9.3" class="auto internal xref">9.3</a>.  <a href="#name-content-is-data" class="internal xref">Content is data</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.4">
+                <p id="section-toc.1-1.9.2.4.1"><a href="#section-9.4" class="auto internal xref">9.4</a>.  <a href="#name-what-is-not-claimed" class="internal xref">What is not claimed</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.5">
+                <p id="section-toc.1-1.9.2.5.1"><a href="#section-9.5" class="auto internal xref">9.5</a>.  <a href="#name-exposure" class="internal xref">Exposure</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.6">
+                <p id="section-toc.1-1.9.2.6.1"><a href="#section-9.6" class="auto internal xref">9.6</a>.  <a href="#name-size" class="internal xref">Size</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.7">
+                <p id="section-toc.1-1.9.2.7.1"><a href="#section-9.7" class="auto internal xref">9.7</a>.  <a href="#name-tombstones" class="internal xref">Tombstones</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-privacy-considerations" class="internal xref">Privacy Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="auto internal xref">11.1</a>.  <a href="#name-well-known-uri-registration" class="internal xref">Well-Known URI Registration</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="auto internal xref">11.2</a>.  <a href="#name-profile-uri" class="internal xref">Profile URI</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#section-12" class="auto internal xref">12</a>. <a href="#name-implementation-status" class="internal xref">Implementation Status</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#section-13" class="auto internal xref">13</a>. <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
+            <p id="section-toc.1-1.14.1"><a href="#section-14" class="auto internal xref">14</a>. <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15">
+            <p id="section-toc.1-1.15.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-a-complete-example" class="internal xref">A Complete Example</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.16">
+            <p id="section-toc.1-1.16.1"><a href="#appendix-B" class="auto internal xref">Appendix B</a>.  <a href="#name-change-log" class="internal xref">Change Log</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.17">
+            <p id="section-toc.1-1.17.1"><a href="#appendix-C" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">Software agents that read the Web need two different things. They need
+to find out <em>who can act</em>: which agent, tool server, or service is
+reachable, under what name, with what capabilities. A survey of that
+field is available in <span>[<a href="#I-D.jimenez-dawn-discovery-landscape" class="cite xref">I-D.jimenez-dawn-discovery-landscape</a>]</span>. They
+also need to find out <em>what is known</em>: which described, versioned,
+checkable artefacts an origin publishes about its own subject matter --
+a graph, a vocabulary, an index, a text rendering, a change ledger.
+The first question has many answers. The second has had no common one:
+an origin that publishes a knowledge base in several serializations has
+had no uniform place to list them, no uniform way to say which
+serialization is which, and no uniform way to let a client check that
+what it fetched is what was published.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">This document defines that place. A web origin serves one resource at
+<code>/.well-known/knowledge-linkset</code> <span>[<a href="#RFC8615" class="cite xref">RFC8615</a>]</span>. The representation is a
+link set <span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>: a JSON document whose sole top-level member,
+<code>linkset</code>, holds link contexts and their typed links. One link context
+is used, anchored at the IRI (<span>[<a href="#RFC3987" class="cite xref">RFC3987</a>]</span>) of the published knowledge
+Bundle. Its
+links name the artefacts, each with a media type, and each optionally
+with a <code>digest</code> target attribute whose value uses the algorithm token
+and syntax of HTTP digest fields <span>[<a href="#RFC9530" class="cite xref">RFC9530</a>]</span>. A profile URI
+<span>[<a href="#RFC7284" class="cite xref">RFC7284</a>]</span>, carried either on the media type <span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span> or in a
+<code>Link</code> header field <span>[<a href="#RFC6906" class="cite xref">RFC6906</a>]</span>, tells a client which conventions the
+document follows.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">The design reuses what already exists and adds nothing to it beyond a
+path and a profile. The document served is an ordinary link set, so a
+generic link set client reads it without knowing this specification.
+The relation used to point at it from a page is <code>describedby</code>, which is
+already registered. The integrity attribute reuses an existing digest
+algorithm token and an existing structured-field value syntax
+<span>[<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>. No media type is defined (<span>[<a href="#RFC6838" class="cite xref">RFC6838</a>]</span>), no URI scheme is defined, and
+no registry is created. The precedent for this shape -- a well-known URI
+whose representation is a link set identified by a profile URI -- is
+<code>api-catalog</code> <span>[<a href="#RFC9727" class="cite xref">RFC9727</a>]</span>, which applies it to a different object, an
+origin's APIs.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-4">The canonical, normative definition of the artefacts themselves, of the
+Bundle that contains them, and of the byte-level forms their digests
+cover, is the AgenticSystemCore Specification <span>[<a href="#AGSC-SPEC" class="cite xref">AGSC-SPEC</a>]</span>. This
+document specifies the discovery resource: its location, its media
+type, its structure, the conventions its profile URI names, and the
+behaviour expected of a client that reads it. Everything a publisher
+needs in order to serve a conformant discovery document, and everything
+a client needs in order to read one, is stated here.<a href="#section-1-4" class="pilcrow">¶</a></p>
+<div id="what-this-document-does-not-do">
+<section id="section-1.1">
+        <h3 id="name-what-this-document-does-not">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-what-this-document-does-not" class="section-name selfRef">What this document does not do</a>
+        </h3>
+<p id="section-1.1-1">This document defines no agent identity and no authentication of
+fetchers; it defines no protocol, session, or transport between agents;
+it defines no naming or resolution layer for agents; it defines no
+expression of preferences about how content may be used; it defines no
+read or write interface to an agent's memory; and it does not define
+the formats of the artefacts it points at. Publishing a discovery
+document grants no rights and no permissions of any kind, and asserts
+no property of the artefacts other than that the origin published them.
+<a href="#relationship-to-other-work" class="auto internal xref">Section 8</a> names the work that addresses each of
+these topics.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="conventions-and-terminology">
+<section id="section-2">
+      <h2 id="name-conventions-and-terminology">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-conventions-and-terminology" class="section-name selfRef">Conventions and Terminology</a>
+      </h2>
+<p id="section-2-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
+"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">Where a line in an example is too long to be shown whole, it is folded
+with a trailing "\" as <span>[<a href="#RFC8792" class="cite xref">RFC8792</a>]</span> describes, and the example carries
+the note that specification requires.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-2-3">
+        <dt id="section-2-3.1">Bundle:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-3.2">
+          <p id="section-2-3.2.1">The set of items and generated artefacts that one origin publishes
+under one anchor. The Bundle IRI is the origin's base URL with a
+trailing solidus.<a href="#section-2-3.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-3.3">artefact:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-3.4">
+          <p id="section-2-3.4.1">One retrievable representation that belongs to a Bundle: a graph
+serialization, a JSON-LD context, a vocabulary file, a text rendering,
+a chunk export, a search index, a change ledger, an attachment.<a href="#section-2-3.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-3.5">discovery document:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-3.6">
+          <p id="section-2-3.6.1">The link set served at the well-known URI defined by this document.<a href="#section-2-3.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-3.7">profile:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-3.8">
+          <p id="section-2-3.8.1">A profile in the sense of <span>[<a href="#RFC6906" class="cite xref">RFC6906</a>]</span>: additional semantics that a
+document follows without changing the semantics of its media type for
+a client that ignores the profile. The profile URI of this document's
+discovery document is given in <a href="#the-profile-uri" class="auto internal xref">Section 6</a>.<a href="#section-2-3.8.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-3.9">node:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-3.10">
+          <p id="section-2-3.10.1">An origin that serves a discovery document conforming to this
+document.<a href="#section-2-3.10.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-3.11">peer:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-3.12">
+          <p id="section-2-3.12.1">A node that another node names in its discovery document with the
+<code>peer</code> extension relation of <a href="#relations" class="auto internal xref">Section 4.2</a>.<a href="#section-2-3.12.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="the-well-known-uri">
+<section id="section-3">
+      <h2 id="name-the-knowledge-linkset-well-">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-the-knowledge-linkset-well-" class="section-name selfRef">The 'knowledge-linkset' Well-Known URI</a>
+      </h2>
+<p id="section-3-1">A node <span class="bcp14">MUST</span> serve its discovery document at the path
+<code>/.well-known/knowledge-linkset</code> of its origin, over HTTPS. A node <span class="bcp14">MUST</span>
+serve exactly one such document; it <span class="bcp14">MUST NOT</span> split the description of
+one Bundle across several discovery resources, and it <span class="bcp14">MUST NOT</span> serve a
+second, differently named manifest of the same artefacts. A copy of the
+document <span class="bcp14">MAY</span> be distributed by other means, for example inside a
+release archive, and a node <span class="bcp14">MAY</span> additionally serve the same bytes at a
+path of its own choosing.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<div id="media-type-and-profile">
+<section id="section-3.1">
+        <h3 id="name-media-type-and-profile">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-media-type-and-profile" class="section-name selfRef">Media type and profile</a>
+        </h3>
+<p id="section-3.1-1">The representation <span class="bcp14">MUST</span> be a JSON link set, media type
+<code>application/linkset+json</code> <span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>. The profile URI of
+<a href="#the-profile-uri" class="auto internal xref">Section 6</a> <span class="bcp14">MUST</span> be carried in at least one of two ways:<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1-2.1">
+            <p id="section-3.1-2.1.1">as the <code>profile</code> parameter of the media type (<span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>,
+Section 5), which is the form a node uses by default:<a href="#section-3.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<span id="name-the-profile-carried-on-the-"></span><figure id="figure-1">
+          <div class="lang-http-message sourcecode" id="section-3.1-3.1">
+<pre>
+NOTE: '\' line wrapping per RFC 8792
+
+Content-Type: application/linkset+json; profile="https://w3id.\
+org/agentic-system-core/profile/agentic-knowledge"
+</pre>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-the-profile-carried-on-the-" class="selfRef">The profile carried on the media type</a>
+          </figcaption></figure>
+<ul class="normal">
+<li class="normal" id="section-3.1-4.1">
+            <p id="section-3.1-4.1.1">or, where the hosting platform cannot attach a parameter to
+<code>Content-Type</code>, as a response header field (<span>[<a href="#RFC6906" class="cite xref">RFC6906</a>]</span>):<a href="#section-3.1-4.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<span id="name-the-profile-carried-in-a-li"></span><figure id="figure-2">
+          <div class="lang-http-message sourcecode" id="section-3.1-5.1">
+<pre>
+NOTE: '\' line wrapping per RFC 8792
+
+Link: &lt;https://w3id.org/agentic-system-core/profile/agentic-\
+knowledge&gt;; rel="profile"
+</pre>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-the-profile-carried-in-a-li" class="selfRef">The profile carried in a Link header field</a>
+          </figcaption></figure>
+<p id="section-3.1-6">A client <span class="bcp14">MUST</span> accept either form, and a client's conformance <span class="bcp14">MUST NOT</span>
+differ according to whether it can read response header fields. A
+client that can read only the media type, which is the case for a
+browser-resident client reading a cross-origin response, therefore
+never loses information.<a href="#section-3.1-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="caching">
+<section id="section-3.2">
+        <h3 id="name-caching">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-caching" class="section-name selfRef">Caching</a>
+        </h3>
+<p id="section-3.2-1">A node <span class="bcp14">MUST</span> send an <code>ETag</code> on the discovery document. When the entity
+tag is derived from the bytes served, it is the lowercase hexadecimal
+SHA-256 of those bytes enclosed in double quotes (<span>[<a href="#RFC9110" class="cite xref">RFC9110</a>]</span>,
+Section 8.8.3). A node <span class="bcp14">MUST</span> send <code>Cache-Control: no-cache</code> on the
+discovery document, so that a client revalidates before reuse
+(<span>[<a href="#RFC9111" class="cite xref">RFC9111</a>]</span>, Section 5.2.2.4); the document names the current state of
+a Bundle and is expected to change whenever the Bundle is rebuilt.
+A client <span class="bcp14">SHOULD</span> make conditional requests (<span>[<a href="#RFC9110" class="cite xref">RFC9110</a>]</span>, Section 13).<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="cross-origin-access">
+<section id="section-3.3">
+        <h3 id="name-cross-origin-access">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-cross-origin-access" class="section-name selfRef">Cross-origin access</a>
+        </h3>
+<p id="section-3.3-1">The discovery document, and every artefact it names that the node
+serves publicly, <span class="bcp14">MUST</span> be served with <code>Access-Control-Allow-Origin: *</code>
+and <code>Access-Control-Expose-Headers: Link, ETag, Content-Type</code>, and <span class="bcp14">MUST NOT</span> be served with <code>Access-Control-Allow-Credentials</code>. A node <span class="bcp14">MUST NOT</span>
+require any request header field outside the CORS-safelisted set in
+order to obtain the discovery document or any public artefact, so that
+a client running in a browser can read them with a simple request.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">A node whose content is gated <span class="bcp14">MUST</span> still serve the discovery document
+publicly and with the wildcard above; the discovery document carries no
+content. Such a node declares itself with the <code>agsc-visibility</code>
+attribute of <a href="#declaration-attributes" class="auto internal xref">Section 4.3.3</a> and names, with the <code>access</code>
+extension relation of <a href="#relations" class="auto internal xref">Section 4.2</a>, where a reader obtains
+credentials. "Gated" means that the node's content is not public, never
+that the node is invisible.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="the-link-set">
+<section id="section-4">
+      <h2 id="name-the-link-set">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-the-link-set" class="section-name selfRef">The Link Set</a>
+      </h2>
+<div id="top-level-structure">
+<section id="section-4.1">
+        <h3 id="name-top-level-structure">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-top-level-structure" class="section-name selfRef">Top-level structure</a>
+        </h3>
+<p id="section-4.1-1">The document is a JSON object (<span>[<a href="#RFC8259" class="cite xref">RFC8259</a>]</span>) whose sole top-level member
+is <code>linkset</code> (<span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>, Section 4.2.1). No other top-level member
+may be present. A node that produces canonical bytes serializes the
+document with JSON Canonicalization Scheme <span>[<a href="#RFC8785" class="cite xref">RFC8785</a>]</span>; a node that
+does not <span class="bcp14">MUST</span> at least produce I-JSON. The canonical form matters
+because a digest of the discovery document itself, taken by a third
+party, is stable only if the bytes are.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">The <code>linkset</code> array holds exactly one link context object. Its <code>anchor</code>
+is the Bundle IRI: the origin's base URL with a trailing solidus, for
+example <code>https://example.org/</code>. A client <span class="bcp14">MUST</span> ignore an additional link
+context object it does not understand.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.1-3">Within a link context object, the remaining members are relation names,
+each holding an array of link objects (<span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>, Section 4.2). Every
+link object <span class="bcp14">MUST</span> carry <code>href</code>, and every <code>href</code> <span class="bcp14">MUST</span> be an absolute URI
+reference (<span>[<a href="#RFC3986" class="cite xref">RFC3986</a>]</span>). Within one relation's array, link objects are
+ordered by <code>href</code> in code point order, so that two builds of the same
+Bundle produce the same bytes.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="relations">
+<section id="section-4.2">
+        <h3 id="name-relations">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-relations" class="section-name selfRef">Relations</a>
+        </h3>
+<p id="section-4.2-1">A relation name <span class="bcp14">MUST</span> be either a registered short name from the "Link
+Relation Types" registry or an extension relation expressed as a URI
+(<span>[<a href="#RFC8288" class="cite xref">RFC8288</a>]</span>, Section 2.1.2). An unregistered short name <span class="bcp14">MUST NOT</span> be
+used.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2-2">The registered short names used are <code>describedby</code>, <code>alternate</code>,
+<code>license</code>, <code>service-doc</code>, and <code>author</code>. A node that also publishes
+related-system links (<a href="#related-system-links" class="auto internal xref">Section 4.5</a>) may in addition use
+<code>related</code>, <code>service-desc</code>, <code>service-meta</code>, <code>collection</code>, and <code>item</code>.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<p id="section-4.2-3">The extension relations form a closed set. Each is the URI
+<code>https://w3id.org/agentic-system-core/rel#&lt;name&gt;</code> with <code>&lt;name&gt;</code> taken
+from the following list, and each such URI dereferences, through
+w3id.org, to the section of the published specification that documents
+it (<a href="#the-profile-uri" class="auto internal xref">Section 6</a>).<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+<span id="name-the-closed-set-of-extension"></span><table class="center" id="table-1">
+          <caption>
+<a href="#table-1" class="selfRef">Table 1</a>:
+<a href="#name-the-closed-set-of-extension" class="selfRef">The closed set of extension relations</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Extension relation name</th>
+              <th class="text-left" rowspan="1" colspan="1">Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>graph</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">a further serialization of the Bundle's graph</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>ontology</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">the vocabulary the graph uses</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>context</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">the JSON-LD context of the graph</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>now</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">the generated state page of the Bundle</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>skills</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">the index of exported procedure packages</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>ledger</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">the derived change ledger of the Bundle</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>peer</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">another node's discovery document</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>surface</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">an agent-facing surface this node serves</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>contribute</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">an endpoint that accepts contributions</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>access</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">a page that says how to obtain credentials</td>
+            </tr>
+          </tbody>
+        </table>
+<p id="section-4.2-5">A client <span class="bcp14">MUST</span> ignore a relation name it does not recognize. A node <span class="bcp14">MUST NOT</span> invent a further extension relation under the same base: the set
+above is closed, and a new member is added only by a new version of the
+specification that defines it.<a href="#section-4.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="target-attributes">
+<section id="section-4.3">
+        <h3 id="name-target-attributes">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-target-attributes" class="section-name selfRef">Target attributes</a>
+        </h3>
+<p id="section-4.3-1">A link object <span class="bcp14">MAY</span> carry the target attributes <code>type</code>, <code>title</code>,
+<code>hreflang</code>, and <code>profile</code> (<span>[<a href="#RFC8288" class="cite xref">RFC8288</a>]</span>, Section 3.4; <span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>,
+Section 4.2.4). <code>type</code> is an advisory hint: a client <span class="bcp14">MUST NOT</span> depend on
+it, and <span class="bcp14">MUST</span> use the media type of the response it actually receives.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.3-2">Every extension target attribute value is an array of strings, even
+when one value is carried (<span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>, Section 4.2.4.3). A client <span class="bcp14">MUST</span>
+ignore an extension target attribute it does not recognize.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
+<div id="the-digest-attribute">
+<section id="section-4.3.1">
+          <h4 id="name-the-digest-attribute">
+<a href="#section-4.3.1" class="section-number selfRef">4.3.1. </a><a href="#name-the-digest-attribute" class="section-name selfRef">The digest attribute</a>
+          </h4>
+<p id="section-4.3.1-1">A link object <span class="bcp14">MAY</span> carry the target attribute <code>digest</code>. Its value is an
+array holding one string. That string is the serialization of a
+Dictionary (<span>[<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>, Section 3.2) with a single member whose key is
+the algorithm name <code>sha-256</code> from the "Hash Algorithms for HTTP Digest
+Fields" registry (<span>[<a href="#RFC9530" class="cite xref">RFC9530</a>]</span>, Section 6.1) and whose value is a Byte
+Sequence (<span>[<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>, Section 3.3.5) serialized as specified in
+<span>[<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>, Section 4.1, that is, base64 between colons:<a href="#section-4.3.1-1" class="pilcrow">¶</a></p>
+<div class="lang-json sourcecode" id="section-4.3.1-2">
+<pre>
+"digest": [
+  "sha-256=:JeigkAtOPS9f9BzKym+X6J2O4awt53GEua1AhIAiLfE=:"
+]
+</pre><a href="#section-4.3.1-2" class="pilcrow">¶</a>
+</div>
+<p id="section-4.3.1-3">The digest is taken over the canonical bytes of the target: the bytes
+the publisher generated and serves, before any content coding applied
+by the transfer. A client that has retrieved the target compares the
+digest against the decoded representation data. The attribute name is
+deliberately not prefixed, so that a generic link set client that
+already understands digest fields can read it.<a href="#section-4.3.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="bundle-fact-attributes">
+<section id="section-4.3.2">
+          <h4 id="name-bundle-fact-attributes">
+<a href="#section-4.3.2" class="section-number selfRef">4.3.2. </a><a href="#name-bundle-fact-attributes" class="section-name selfRef">Bundle-fact attributes</a>
+          </h4>
+<p id="section-4.3.2-1">Facts about the Bundle as a whole ride on one link and one link only:
+the <code>describedby</code> link of the anchor whose target is the Bundle's
+JSON-LD graph. They are:<a href="#section-4.3.2-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-4.3.2-2">
+            <dt id="section-4.3.2-2.1">
+<code>agsc-spec-version</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.2-2.2">
+              <p id="section-4.3.2-2.2.1">one value, the version of <span>[<a href="#AGSC-SPEC" class="cite xref">AGSC-SPEC</a>]</span> the node publishes against.<a href="#section-4.3.2-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.2-2.3">
+<code>agsc-generated-at</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.2-2.4">
+              <p id="section-4.3.2-2.4.1">one value, the instant the artefacts were generated, as
+<code>YYYY-MM-DDTHH:MM:SSZ</code> -- UTC, second precision, no offset. A node
+that supports reproducible builds derives it from the build's source
+date rather than from the wall clock.<a href="#section-4.3.2-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.2-2.5">
+<code>agsc-counts</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.2-2.6">
+              <p id="section-4.3.2-2.6.1">one string per item type, of the form <code>&lt;type-plural&gt;=&lt;n&gt;</code>, in code
+point order of the type name, counted over the published set.<a href="#section-4.3.2-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.2-2.7">
+<code>agsc-bundle-hash</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.2-2.8">
+              <p id="section-4.3.2-2.8.1">one value, the hash of the Bundle in the syntax of
+<a href="#the-digest-attribute" class="auto internal xref">Section 4.3.1</a>.<a href="#section-4.3.2-2.8.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+</dl>
+<p id="section-4.3.2-3">One further attribute rides on the <code>ledger</code> extension relation's link
+and nowhere else:<a href="#section-4.3.2-3" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-4.3.2-4">
+            <dt id="section-4.3.2-4.1">
+<code>agsc-ledger-head</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.2-4.2">
+              <p id="section-4.3.2-4.2.1">one value, the lowercase hexadecimal SHA-256 of the last entry of the
+derived change ledger. A client that keeps the head it saw on an
+earlier retrieval can detect a ledger that no longer extends the one
+it read.<a href="#section-4.3.2-4.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+</dl>
+<p id="section-4.3.2-5">A client <span class="bcp14">MUST NOT</span> read a bundle-fact attribute from any other link.<a href="#section-4.3.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="declaration-attributes">
+<section id="section-4.3.3">
+          <h4 id="name-declaration-attributes">
+<a href="#section-4.3.3" class="section-number selfRef">4.3.3. </a><a href="#name-declaration-attributes" class="section-name selfRef">Declaration attributes</a>
+          </h4>
+<p id="section-4.3.3-1">Three further groups of extension target attributes declare what a node
+is, rather than what it published. They are present at every level of
+completeness.<a href="#section-4.3.3-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-4.3.3-2">
+            <dt id="section-4.3.3-2.1">
+<code>agsc-surface</code> and <code>agsc-surface-version</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.3-2.2">
+              <p id="section-4.3.3-2.2.1">on a <code>surface</code> link, one value each: the kind of agent-facing surface
+the node serves, and, where the surface is defined by an external
+specification, the revision of that specification the node targets.<a href="#section-4.3.3-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.3-2.3">
+<code>agsc-access</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.3-2.4">
+              <p id="section-4.3.3-2.4.1">on a <code>surface</code> link, one value: <code>none</code>, <code>consent</code>, or <code>credential</code>.<a href="#section-4.3.3-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.3-2.5">
+<code>agsc-visibility</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.3-2.6">
+              <p id="section-4.3.3-2.6.1">on the anchor's <code>describedby</code> link, the single value <code>restricted</code>,
+emitted only by a node whose content is gated. A node whose content
+is public carries no such attribute.<a href="#section-4.3.3-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.3-2.7">
+<code>agsc-contribute-mode</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.3-2.8">
+              <p id="section-4.3.3-2.8.1">on a <code>contribute</code> link, one value naming how contributions are
+accepted.<a href="#section-4.3.3-2.8.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.3-2.9">
+<code>agsc-tombstone</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.3-2.10">
+              <p id="section-4.3.3-2.10.1">on the anchor's <code>describedby</code> link, one instant in the form of
+<code>agsc-generated-at</code>, present only on a node that has stopped
+publishing (<a href="#tombstones" class="auto internal xref">Section 9.7</a>).<a href="#section-4.3.3-2.10.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+</dl>
+<p id="section-4.3.3-3">A client that meets a value it does not know in any of these attributes
+<span class="bcp14">MUST NOT</span> fail. It <span class="bcp14">MUST</span> treat the unknown value as the most restrictive
+member of that attribute's list.<a href="#section-4.3.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="the-reduced-form">
+<section id="section-4.4">
+        <h3 id="name-the-reduced-form">
+<a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-the-reduced-form" class="section-name selfRef">The reduced form</a>
+        </h3>
+<p id="section-4.4-1">A publisher without a build engine -- a content management system or a
+wiki that exports static files -- publishes the same link set with
+every <code>digest</code> attribute and every bundle-fact attribute omitted. Such
+a publisher has no ledger, no build instant, and no bundle hash, and
+this document does not ask for one. The declaration attributes of
+<a href="#declaration-attributes" class="auto internal xref">Section 4.3.3</a> are unaffected.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2">There is no structural difference between the two forms: <code>linkset</code> is
+the sole top-level member in both, the anchor is the Bundle IRI in
+both, and the relation set is the same. A client <span class="bcp14">MUST</span> treat a link
+without a <code>digest</code> attribute as <em>unverified</em>, never as <em>invalid</em>.<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="related-system-links">
+<section id="section-4.5">
+        <h3 id="name-related-system-links">
+<a href="#section-4.5" class="section-number selfRef">4.5. </a><a href="#name-related-system-links" class="section-name selfRef">Related-system links</a>
+        </h3>
+<p id="section-4.5-1">A node <span class="bcp14">MAY</span> carry, in the same link context, links to other discovery
+documents and to related systems: an agent-facing text file, a dataset
+description, a catalogue entry, an agent card, a tool server's
+description, a query endpoint. Such links use registered short names
+only, chosen by meaning: <code>describedby</code> when the target describes this
+node, <code>alternate</code> when the target is the same knowledge in another
+representation, <code>related</code> for a related resource, <code>service-desc</code>,
+<code>service-doc</code>, and <code>service-meta</code> for an interface, and <code>collection</code>
+and <code>item</code> for containment. Each <span class="bcp14">MUST</span> carry <code>type</code> and <span class="bcp14">MAY</span> carry
+<code>profile</code> and <code>title</code>.<a href="#section-4.5-1" class="pilcrow">¶</a></p>
+<p id="section-4.5-2">A client <span class="bcp14">MUST</span> ignore a related-system link it does not understand. No
+related-system link affects any digest, and none is followed by the
+walk of <a href="#following-peers" class="auto internal xref">Section 7.2</a>, which follows <code>peer</code> links only.<a href="#section-4.5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="discovery-from-a-page">
+<section id="section-5">
+      <h2 id="name-discovery-from-a-page">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-discovery-from-a-page" class="section-name selfRef">Discovery from a Page</a>
+      </h2>
+<p id="section-5-1">A node <span class="bcp14">SHOULD</span> place, in the <code>head</code> element of every HTML page it
+generates:<a href="#section-5-1" class="pilcrow">¶</a></p>
+<div class="lang-html sourcecode" id="section-5-2">
+<pre>
+&lt;link rel="describedby"
+      href="/.well-known/knowledge-linkset"
+      type="application/linkset+json"&gt;
+</pre><a href="#section-5-2" class="pilcrow">¶</a>
+</div>
+<p id="section-5-3">and <span class="bcp14">SHOULD</span> send, at least on the origin's root route, the equivalent
+response header field:<a href="#section-5-3" class="pilcrow">¶</a></p>
+<div class="lang-http-message sourcecode" id="section-5-4">
+<pre>
+Link: &lt;/.well-known/knowledge-linkset&gt;; rel="describedby";
+  type="application/linkset+json"
+</pre><a href="#section-5-4" class="pilcrow">¶</a>
+</div>
+<div id="why-describedby">
+<section id="section-5.1">
+        <h3 id="name-why-describedby-and-why-no-">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-why-describedby-and-why-no-" class="section-name selfRef">Why 'describedby', and why no new relation</a>
+        </h3>
+<p id="section-5.1-1"><code>describedby</code> is registered in the "Link Relation Types" registry by
+the POWDER Description Resources Recommendation <span>[<a href="#POWDER-DR" class="cite xref">POWDER-DR</a>]</span>, whose
+Section 4.1.4 and Appendix D define it; <span>[<a href="#RFC6892" class="cite xref">RFC6892</a>]</span> registers its
+inverse, <code>describes</code>. Its registered meaning -- the target is a
+description of the context -- is exactly the meaning of this link. What
+<em>kind</em> of description the target is, is said by the target's media type
+and by its profile URI, not by a new relation name. A new relation
+would add a name for a distinction the media type already draws, and
+would leave every existing <code>describedby</code>-aware client unable to use it.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-2">A page may carry several <code>describedby</code> links, because other
+conventions, <span>[<a href="#LLMSTXT" class="cite xref">LLMSTXT</a>]</span> among them, use the same relation for their
+own description resources. A client selects this one by
+<code>type="application/linkset+json"</code>, and, having fetched it, confirms the
+profile (<a href="#media-type-and-profile" class="auto internal xref">Section 3.1</a>). Where several candidates remain,
+a client <span class="bcp14">SHOULD</span> fetch the one whose <code>href</code> resolves to
+<code>/.well-known/knowledge-linkset</code> on the origin.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.1-3">This document therefore requests no link relation registration.<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="the-profile-uri">
+<section id="section-6">
+      <h2 id="name-the-profile-uri">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-the-profile-uri" class="section-name selfRef">The Profile URI</a>
+      </h2>
+<p id="section-6-1">The profile URI of the discovery document is<a href="#section-6-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-6-2">
+<pre>
+https://w3id.org/agentic-system-core/profile/agentic-knowledge
+</pre><a href="#section-6-2" class="pilcrow">¶</a>
+</div>
+<div id="what-the-profile-fixes">
+<section id="section-6.1">
+        <h3 id="name-what-the-profile-fixes">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-what-the-profile-fixes" class="section-name selfRef">What the profile fixes</a>
+        </h3>
+<p id="section-6.1-1">A client that ignores the profile reads the document as a link set and
+nothing is lost (<span>[<a href="#RFC6906" class="cite xref">RFC6906</a>]</span>, Section 3). A client that recognizes it
+may rely on the following, all of which are specified in this document:<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-6.1-2.1">
+            <p id="section-6.1-2.1.1"><code>linkset</code> is the sole top-level member, and the array holds one link
+context whose <code>anchor</code> is the Bundle IRI
+(<a href="#top-level-structure" class="auto internal xref">Section 4.1</a>);<a href="#section-6.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.2">
+            <p id="section-6.1-2.2.1">the relation set is the closed set of <a href="#relations" class="auto internal xref">Section 4.2</a>;<a href="#section-6.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.3">
+            <p id="section-6.1-2.3.1"><code>digest</code>, where present, is a single-member Dictionary keyed
+<code>sha-256</code> over the canonical bytes of the target
+(<a href="#the-digest-attribute" class="auto internal xref">Section 4.3.1</a>);<a href="#section-6.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.4">
+            <p id="section-6.1-2.4.1">bundle facts ride on the anchor's <code>describedby</code> link to the graph,
+and the ledger head on the <code>ledger</code> link, and nowhere else
+(<a href="#bundle-fact-attributes" class="auto internal xref">Section 4.3.2</a>);<a href="#section-6.1-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.5">
+            <p id="section-6.1-2.5.1">every extension target attribute value is an array of strings
+(<a href="#target-attributes" class="auto internal xref">Section 4.3</a>).<a href="#section-6.1-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-6.1-3">The profile constrains no other document and changes the semantics of
+<code>application/linkset+json</code> for no client.<a href="#section-6.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="carriage-and-resolution">
+<section id="section-6.2">
+        <h3 id="name-carriage-and-resolution">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-carriage-and-resolution" class="section-name selfRef">Carriage and resolution</a>
+        </h3>
+<p id="section-6.2-1">The profile URI is carried as specified in <a href="#media-type-and-profile" class="auto internal xref">Section 3.1</a>:
+on the media type, or in a <code>Link</code> header field, or both.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">The profile URI, and every extension relation URI of <a href="#relations" class="auto internal xref">Section 4.2</a>,
+resolves through w3id.org, a persistent-identifier service, with an
+HTTP 303 redirect (<span>[<a href="#RFC9110" class="cite xref">RFC9110</a>]</span>, Section 15.4.4) to a published
+specification page. That page carries one fragment identifier for the
+list of relations and one per relation name, so that every extension
+relation URI dereferences to its own documentation, as <span>[<a href="#RFC8288" class="cite xref">RFC8288</a>]</span>,
+Section 2.1.2, expects of an extension relation.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-3">Registration of the profile URI is requested independently of this
+document; see <a href="#iana-profile-uri" class="auto internal xref">Section 11.2</a>.<a href="#section-6.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="client-behaviour">
+<section id="section-7">
+      <h2 id="name-client-behaviour">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-client-behaviour" class="section-name selfRef">Client Behaviour</a>
+      </h2>
+<p id="section-7-1">A client of this document is any program that fetches a discovery
+document: a crawler, an agent runtime, a validator, a browser script.
+This section states what such a client is required to do. A client that
+only fetches one document from an origin it was given needs
+<a href="#untrusted-content" class="auto internal xref">Section 7.3</a> and <a href="#fetch-safety" class="auto internal xref">Section 7.1</a>; a client that follows
+<code>peer</code> links needs all of it.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<div id="fetch-safety">
+<section id="section-7.1">
+        <h3 id="name-fetch-safety">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-fetch-safety" class="section-name selfRef">Fetch safety</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="section-7.1-1.1">
+            <p id="section-7.1-1.1.1">A client <span class="bcp14">MUST</span> fetch a discovery document with an absolute URL whose
+scheme is <code>https</code>. <code>http</code> is permitted only to a loopback address and
+only when the client has been explicitly placed in a development
+mode. Any other scheme, and any relative reference, <span class="bcp14">MUST</span> be refused.<a href="#section-7.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-1.2">
+            <p id="section-7.1-1.2.1">Before connecting, a client <span class="bcp14">MUST</span> resolve the host and <span class="bcp14">MUST</span> refuse any
+resolved address that is not globally reachable according to the IANA
+IPv4 Special-Purpose Address Registry <span>[<a href="#IANA-IPV4-SPECIAL" class="cite xref">IANA-IPV4-SPECIAL</a>]</span> or, for an
+IPv6 address, according to the IANA IPv6 Special-Purpose Address
+Registry <span>[<a href="#IANA-IPV6-SPECIAL" class="cite xref">IANA-IPV6-SPECIAL</a>]</span>. A client <span class="bcp14">MUST</span> equally
+refuse any IPv6 address that embeds an IPv4 address -- IPv4-mapped,
+IPv4-compatible, NAT64, Teredo, and 6to4 addresses -- classifying the
+embedded IPv4 address instead, and any multicast address. A host that
+resolves to several addresses <span class="bcp14">MUST</span> be refused if any one of them is
+refused.<a href="#section-7.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-1.3">
+            <p id="section-7.1-1.3.1">A client <span class="bcp14">MUST</span> classify addresses with a tested library or with the
+platform's own classification, and <span class="bcp14">MUST NOT</span> parse address literals by
+hand.<a href="#section-7.1-1.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-1.4">
+            <p id="section-7.1-1.4.1">A client <span class="bcp14">MUST</span> connect to one of the addresses it classified, <span class="bcp14">MUST NOT</span>
+re-resolve the host between classification and connection, and <span class="bcp14">MUST</span>
+re-verify the remote address of the established connection against
+the same rules, closing the connection on a mismatch. This is the
+guard against DNS rebinding.<a href="#section-7.1-1.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-1.5">
+            <p id="section-7.1-1.5.1">A client <span class="bcp14">MUST</span> bound the number of redirects it follows, <span class="bcp14">MUST</span> re-apply
+the two rules above to every hop, and <span class="bcp14">MUST NOT</span> follow a redirect to a
+non-<code>https</code> URL other than the development loopback case. The final
+URL of a redirected fetch is not substituted for the URL that was
+declared.<a href="#section-7.1-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-1.6">
+            <p id="section-7.1-1.6.1">A client <span class="bcp14">MUST</span> bound the size of a discovery document it will read.
+One mebibyte is a sufficient bound for the documents this document
+describes; a client <span class="bcp14">MUST</span> treat a larger response as unreadable rather
+than buffering it.<a href="#section-7.1-1.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-1.7">
+            <p id="section-7.1-1.7.1">A client <span class="bcp14">SHOULD</span> bound the time it waits for a response.<a href="#section-7.1-1.7.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="following-peers">
+<section id="section-7.2">
+        <h3 id="name-following-peers">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-following-peers" class="section-name selfRef">Following peers</a>
+        </h3>
+<p id="section-7.2-1">A node names peers with the <code>peer</code> extension relation; the target is
+the peer's discovery document URL. Two nodes are peers of each other
+when each names the other; nothing else establishes the relation, and
+nothing about it is negotiated.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<p id="section-7.2-2">A client that walks from a starting node <span class="bcp14">MUST</span>:<a href="#section-7.2-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.2-3.1">
+            <p id="section-7.2-3.1.1">bound the depth of the walk, the starting node being depth zero;<a href="#section-7.2-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.2-3.2">
+            <p id="section-7.2-3.2.1">consider at most a fixed number of <code>peer</code> links per discovery
+document, in document order, ignoring the rest;<a href="#section-7.2-3.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.2-3.3">
+            <p id="section-7.2-3.3.1">issue at most a fixed number of requests per walk, counting every
+request including redirects;<a href="#section-7.2-3.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.2-3.4">
+            <p id="section-7.2-3.4.1">keep a visited set keyed by the canonical well-known URL, and never
+fetch a member of it twice, which is the guard against cycles across
+origins;<a href="#section-7.2-3.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.2-3.5">
+            <p id="section-7.2-3.5.1">treat a peer whose fetch times out, returns a non-2xx status, exceeds
+the size bound, or yields a document that is not a conformant
+discovery document as unreachable: record it, skip it, and never
+retry it within the walk.<a href="#section-7.2-3.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-7.2-4">A client that stops because a bound was reached, or that ignored links
+beyond its per-document bound, <span class="bcp14">MUST</span> report the result as partial, with
+the set of nodes it did visit. A client that completes without touching
+any bound <span class="bcp14">MUST</span> report the result as complete. The number of requests a
+walk can make is bounded by the smaller of the request bound and the
+sum, over the permitted depths, of the per-document bound raised to the
+power of the depth.<a href="#section-7.2-4" class="pilcrow">¶</a></p>
+<p id="section-7.2-5">Suggested defaults, which a deployment may lower and which this
+document does not require a client to exceed: depth three, fifty <code>peer</code>
+links per document, five hundred requests per walk, ten seconds per
+request, three redirects per fetch.<a href="#section-7.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="untrusted-content">
+<section id="section-7.3">
+        <h3 id="name-untrusted-content">
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-untrusted-content" class="section-name selfRef">Untrusted content</a>
+        </h3>
+<p id="section-7.3-1">Everything a client obtains from a node other than the one it is acting
+for is untrusted data. A client <span class="bcp14">MUST</span> carry that fact with the data: a
+search hit, a retrieved item, a chunk, or a quotation derived from
+another node <span class="bcp14">MUST</span> be labelled untrusted and <span class="bcp14">MUST</span> name the origin it
+came from, through every interface the client offers and every export
+it produces. A client <span class="bcp14">MUST NOT</span> merge another node's prose into its own
+published artefacts other than through a reviewed proposal that records
+the other node's IRI as the source.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="federation-is-client-side">
+<section id="section-7.4">
+        <h3 id="name-federation-is-client-side">
+<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-federation-is-client-side" class="section-name selfRef">Federation is client-side</a>
+        </h3>
+<p id="section-7.4-1">The walk of <a href="#following-peers" class="auto internal xref">Section 7.2</a> is performed by the client. A node's
+query surface is the set of artefacts it publishes. A node <span class="bcp14">MUST NOT</span>
+fetch another node while building its own artefacts, and <span class="bcp14">MUST NOT</span>
+expose an endpoint that fetches another node on a caller's behalf.
+There is therefore no server-to-server call anywhere in this design,
+and no node can be made into an open relay by naming it as a peer.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="relationship-to-other-work">
+<section id="section-8">
+      <h2 id="name-relationship-to-other-work">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-relationship-to-other-work" class="section-name selfRef">Relationship to Other Work</a>
+      </h2>
+<p id="section-8-1">This section records what neighbouring work does. It is informative.
+Every statement is of the form "that work addresses X"; none is a
+comparison.<a href="#section-8-1" class="pilcrow">¶</a></p>
+<p id="section-8-2"><code>api-catalog</code> <span>[<a href="#RFC9727" class="cite xref">RFC9727</a>]</span> registers a well-known URI whose
+representation is a link set identified by a profile URI, listing an
+origin's APIs. It is the precedent for the shape used here, applied to
+a different object.<a href="#section-8-2" class="pilcrow">¶</a></p>
+<p id="section-8-3"><code>llms.txt</code> <span>[<a href="#LLMSTXT" class="cite xref">LLMSTXT</a>]</span> is a community convention for a Markdown file at
+<code>/llms.txt</code> that presents an origin's content for consumption by
+language models. Version 2, modified 10 August 2026, recommends
+<code>rel="describedby"</code> for pointing at the file and <code>rel="alternate"</code> with
+<code>type="text/markdown"</code> for pointing at a page's Markdown rendering. A
+node may name such a file with the <code>alternate</code> relation.<a href="#section-8-3" class="pilcrow">¶</a></p>
+<p id="section-8-4"><span>[<a href="#I-D.arsentev-llm-context-discovery" class="cite xref">I-D.arsentev-llm-context-discovery</a>]</span> defines discovery of a
+publisher-curated context file, typically <code>/llms.txt</code>, through a
+well-known URI, a link relation, and a <code>robots.txt</code> record, and sets
+size bounds on the index and detail resources. It discovers one text
+file.<a href="#section-8-4" class="pilcrow">¶</a></p>
+<p id="section-8-5"><span>[<a href="#I-D.serra-mcp-discovery-uri" class="cite xref">I-D.serra-mcp-discovery-uri</a>]</span> defines an <code>mcp</code> URI scheme and the
+discovery of Model Context Protocol servers through a well-known path
+and DNS TXT records.<a href="#section-8-5" class="pilcrow">¶</a></p>
+<p id="section-8-6"><span>[<a href="#MCP" class="cite xref">MCP</a>]</span> defines a protocol between a client and a tool server, and
+carries proposals for server cards that describe a server. A node may
+declare a Model Context Protocol server as one of its surfaces
+(<a href="#declaration-attributes" class="auto internal xref">Section 4.3.3</a>).<a href="#section-8-6" class="pilcrow">¶</a></p>
+<p id="section-8-7"><span>[<a href="#A2A" class="cite xref">A2A</a>]</span> defines an agent card, served at a well-known path, that
+describes an agent's capabilities and interfaces. A node may declare an
+agent card as one of its surfaces.<a href="#section-8-7" class="pilcrow">¶</a></p>
+<p id="section-8-8">The proposed <code>dawn</code> working group <span>[<a href="#DAWN-CHARTER" class="cite xref">DAWN-CHARTER</a>]</span> addresses the
+discovery of agents by name. The survey
+<span>[<a href="#I-D.jimenez-dawn-discovery-landscape" class="cite xref">I-D.jimenez-dawn-discovery-landscape</a>]</span> catalogues the mechanisms in
+that space.<a href="#section-8-8" class="pilcrow">¶</a></p>
+<p id="section-8-9">The <code>agentproto</code> BOF request <span>[<a href="#AGENTPROTO-BOF" class="cite xref">AGENTPROTO-BOF</a>]</span> addresses long-lived
+sessions between agents and the resources they use.<a href="#section-8-9" class="pilcrow">¶</a></p>
+<p id="section-8-10">The <code>aipref</code> working group defines a vocabulary for expressing
+preferences about AI usage of content <span>[<a href="#I-D.ietf-aipref-vocab" class="cite xref">I-D.ietf-aipref-vocab</a>]</span> and the
+means of attaching such preferences to content in HTTP
+<span>[<a href="#I-D.ietf-aipref-attach" class="cite xref">I-D.ietf-aipref-attach</a>]</span>. This document defines no preference
+expression; a publisher attaches preferences by those means, and by
+<code>robots.txt</code> <span>[<a href="#RFC9309" class="cite xref">RFC9309</a>]</span>, to the artefacts a discovery document names.<a href="#section-8-10" class="pilcrow">¶</a></p>
+<p id="section-8-11">The <code>webbotauth</code> working group defines HTTP message signatures for
+automated traffic <span>[<a href="#I-D.ietf-webbotauth-httpsig-protocol" class="cite xref">I-D.ietf-webbotauth-httpsig-protocol</a>]</span>, which
+identify the client making a request.<a href="#section-8-11" class="pilcrow">¶</a></p>
+<p id="section-8-12">The Open Knowledge Format <span>[<a href="#OKF" class="cite xref">OKF</a>]</span> defines a content model of Markdown
+files with front matter and an index file. It calls its unit a
+"Knowledge Bundle"; the Bundle of this document is a different object
+and the two names are not interchangeable.<a href="#section-8-12" class="pilcrow">¶</a></p>
+<p id="section-8-13">VoID <span>[<a href="#VOID" class="cite xref">VOID</a>]</span> defines a vocabulary for describing RDF datasets and is
+associated with the registered well-known URI <code>void</code>. DCAT
+<span>[<a href="#DCAT3" class="cite xref">DCAT3</a>]</span> defines a vocabulary for describing catalogues and datasets.
+A publisher that also publishes such a description names it with a
+further <code>describedby</code> link (<a href="#related-system-links" class="auto internal xref">Section 4.5</a>).<a href="#section-8-13" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-9">
+      <h2 id="name-security-considerations">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<div id="what-a-digest-proves">
+<section id="section-9.1">
+        <h3 id="name-what-a-digest-proves">
+<a href="#section-9.1" class="section-number selfRef">9.1. </a><a href="#name-what-a-digest-proves" class="section-name selfRef">What a digest proves</a>
+        </h3>
+<p id="section-9.1-1">A <code>digest</code> attribute binds an artefact to the discovery document. It
+lets a client detect that the artefact it retrieved is not the one the
+publisher described: a truncated file, a cache that served an older
+copy, a mirror that altered the bytes, a transfer that corrupted them.<a href="#section-9.1-1" class="pilcrow">¶</a></p>
+<p id="section-9.1-2">A <code>digest</code> attribute does not bind the discovery document to an author.
+An attacker who controls the origin controls the discovery document and
+the artefacts together, and can make them agree. A client obtains the
+identity of the publisher from the TLS certificate and the DNS name of
+the origin, and from nothing in the document. A publisher who needs a
+client to verify authorship independently of the origin signs the
+responses -- <span>[<a href="#RFC9421" class="cite xref">RFC9421</a>]</span> defines one way -- or publishes a detached
+signature; this document defines neither.<a href="#section-9.1-2" class="pilcrow">¶</a></p>
+<p id="section-9.1-3">A client that keeps the <code>agsc-ledger-head</code> value it saw on an earlier
+retrieval, and that later reads a head that does not extend the earlier
+one, has observed a rollback or a replacement of the ledger, and <span class="bcp14">SHOULD</span>
+treat it as such rather than as an ordinary update.<a href="#section-9.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="fetching-security">
+<section id="section-9.2">
+        <h3 id="name-fetching">
+<a href="#section-9.2" class="section-number selfRef">9.2. </a><a href="#name-fetching" class="section-name selfRef">Fetching</a>
+        </h3>
+<p id="section-9.2-1">A discovery document is a list of URLs supplied by a third party, and a
+client that follows them is a request forwarder. <a href="#fetch-safety" class="auto internal xref">Section 7.1</a> is
+therefore normative and not advisory: the scheme restriction, the
+address refusals, the rule against re-resolving between classification
+and connection, the re-verification of the established connection, the
+redirect bounds, and the size bound together keep a client from being
+used to reach a network the attacker cannot reach, to probe an internal
+address space, or to be held open. A client that omits them can be
+directed, by any origin it reads, at any address its network can reach.<a href="#section-9.2-1" class="pilcrow">¶</a></p>
+<p id="section-9.2-2">Because no node ever fetches another node (<a href="#federation-is-client-side" class="auto internal xref">Section 7.4</a>),
+a node cannot be turned into a request forwarder by being named as a
+peer. The risk is entirely on the client side, where the bounds apply.<a href="#section-9.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="content-is-data">
+<section id="section-9.3">
+        <h3 id="name-content-is-data">
+<a href="#section-9.3" class="section-number selfRef">9.3. </a><a href="#name-content-is-data" class="section-name selfRef">Content is data</a>
+        </h3>
+<p id="section-9.3-1">The artefacts a discovery document names are documents, and the prose
+in them is data. A client that passes retrieved prose to a language
+model, a shell, a query engine, or any other interpreter <span class="bcp14">MUST</span> treat it
+as data: never executed, never interpolated into a path, a URL, or a
+command string, never resolved as an identifier, and never read as an
+instruction to the client. Prose retrieved from another node carries
+the untrusted label of <a href="#untrusted-content" class="auto internal xref">Section 7.3</a> to every place it is used.<a href="#section-9.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="what-is-not-claimed">
+<section id="section-9.4">
+        <h3 id="name-what-is-not-claimed">
+<a href="#section-9.4" class="section-number selfRef">9.4. </a><a href="#name-what-is-not-claimed" class="section-name selfRef">What is not claimed</a>
+        </h3>
+<p id="section-9.4-1">The mechanisms of this document prove neither safety nor the absence of
+a novel attack carried in the content of an artefact. A digest proves
+only that an artefact is what was published. An implementation <span class="bcp14">MUST NOT</span>
+claim more.<a href="#section-9.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="exposure">
+<section id="section-9.5">
+        <h3 id="name-exposure">
+<a href="#section-9.5" class="section-number selfRef">9.5. </a><a href="#name-exposure" class="section-name selfRef">Exposure</a>
+        </h3>
+<p id="section-9.5-1">A discovery document is public. A publisher <span class="bcp14">MUST NOT</span> name in it any
+resource that is not intended to be public, and <span class="bcp14">MUST NOT</span> let the set of
+links reveal the existence of resources it does not serve publicly. A
+node whose content is gated serves the discovery document publicly all
+the same (<a href="#cross-origin-access" class="auto internal xref">Section 3.3</a>), which is a deliberate disclosure
+that the node exists.<a href="#section-9.5-1" class="pilcrow">¶</a></p>
+<p id="section-9.5-2">The path <code>/.well-known/</code> on an origin <span class="bcp14">MUST</span> be under the publisher's
+control. On static hosting this means that the file is produced by the
+publisher's build and upload path and by nothing else.<a href="#section-9.5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="size">
+<section id="section-9.6">
+        <h3 id="name-size">
+<a href="#section-9.6" class="section-number selfRef">9.6. </a><a href="#name-size" class="section-name selfRef">Size</a>
+        </h3>
+<p id="section-9.6-1">A client <span class="bcp14">MUST</span> bound the size of a discovery document it reads
+(<a href="#fetch-safety" class="auto internal xref">Section 7.1</a>) and the number of requests a walk may make
+(<a href="#following-peers" class="auto internal xref">Section 7.2</a>). A publisher <span class="bcp14">SHOULD</span> keep a discovery document
+small: it describes a Bundle's artefacts, not its items.<a href="#section-9.6-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="tombstones">
+<section id="section-9.7">
+        <h3 id="name-tombstones">
+<a href="#section-9.7" class="section-number selfRef">9.7. </a><a href="#name-tombstones" class="section-name selfRef">Tombstones</a>
+        </h3>
+<p id="section-9.7-1">A node that stops publishing <span class="bcp14">SHOULD</span> keep serving a valid discovery
+document whose anchor's <code>describedby</code> link carries the
+<code>agsc-tombstone</code> attribute of <a href="#declaration-attributes" class="auto internal xref">Section 4.3.3</a>, <span class="bcp14">MAY</span> carry an
+<code>alternate</code> link to a successor node's discovery document, and <span class="bcp14">MAY</span> omit
+every other artefact link.<a href="#section-9.7-1" class="pilcrow">¶</a></p>
+<p id="section-9.7-2">A client <span class="bcp14">MUST NOT</span> treat a successor named that way as the same node. It
+<span class="bcp14">MUST</span> establish the peer relation with the successor afresh, and
+everything it derives from the successor carries the successor's own
+Bundle IRI as its origin (<a href="#untrusted-content" class="auto internal xref">Section 7.3</a>). A walk
+(<a href="#following-peers" class="auto internal xref">Section 7.2</a>) does not descend into a tombstoned node.<a href="#section-9.7-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="privacy-considerations">
+<section id="section-10">
+      <h2 id="name-privacy-considerations">
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-privacy-considerations" class="section-name selfRef">Privacy Considerations</a>
+      </h2>
+<p id="section-10-1">A discovery document is a static description of an origin's own
+published artefacts. Serving it collects nothing, sets no cookie,
+carries no identifier of a reader, and requires no request header field
+beyond those a simple cross-origin request already carries
+(<a href="#cross-origin-access" class="auto internal xref">Section 3.3</a>). A client's retrieval appears in the
+publisher's server logs like any other request for a static file.<a href="#section-10-1" class="pilcrow">¶</a></p>
+<p id="section-10-2">The document may name an <code>author</code> link, and the artefacts it points at
+may contain personal data. What appears there is chosen by the
+publisher, and this document requires no personal data anywhere in the
+discovery document. A publisher <span class="bcp14">SHOULD</span> use a role rather than a
+personal contact where one will do.<a href="#section-10-2" class="pilcrow">¶</a></p>
+<p id="section-10-3">A client <span class="bcp14">SHOULD NOT</span> send identifying header fields beyond those
+<span>[<a href="#RFC9110" class="cite xref">RFC9110</a>]</span> makes ordinary when fetching a discovery document, and a
+client walking peers <span class="bcp14">SHOULD NOT</span> disclose to one node which other nodes
+it has visited.<a href="#section-10-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-11">
+      <h2 id="name-iana-considerations">
+<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-11-1">This document requests one registration in an existing registry and
+cites one further registration requested separately. It creates no
+registry, requests no media type, requests no URI scheme, and requests
+no link relation type. No allocation described here requires IETF
+Review or Standards Action.<a href="#section-11-1" class="pilcrow">¶</a></p>
+<div id="iana-well-known-uri">
+<section id="section-11.1">
+        <h3 id="name-well-known-uri-registration">
+<a href="#section-11.1" class="section-number selfRef">11.1. </a><a href="#name-well-known-uri-registration" class="section-name selfRef">Well-Known URI Registration</a>
+        </h3>
+<p id="section-11.1-1">IANA is requested to register the following entry in the "Well-Known
+URIs" registry, per <span>[<a href="#RFC8615" class="cite xref">RFC8615</a>]</span>, Section 3.1:<a href="#section-11.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-11.1-2.1">
+            <p id="section-11.1-2.1.1"><strong>URI suffix</strong>: knowledge-linkset<a href="#section-11.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.1-2.2">
+            <p id="section-11.1-2.2.1"><strong>Change controller</strong>: Andrei Nicolae Besleaga
+(andrei.besleaga.nicolae@gmail.com)<a href="#section-11.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.1-2.3">
+            <p id="section-11.1-2.3.1"><strong>Specification document(s)</strong>: This document.<a href="#section-11.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.1-2.4">
+            <p id="section-11.1-2.4.1"><strong>Status</strong>: provisional<a href="#section-11.1-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.1-2.5">
+            <p id="section-11.1-2.5.1"><strong>Related information</strong>: Used with the "https" URI scheme. The
+resource is an <code>application/linkset+json</code> document <span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span>
+carrying the profile URI
+<code>https://w3id.org/agentic-system-core/profile/agentic-knowledge</code>,
+whose registration is described in <a href="#iana-profile-uri" class="auto internal xref">Section 11.2</a>.<a href="#section-11.1-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-11.1-3">The suffix names the class of resource served -- a link set of the
+knowledge artefacts an origin publishes -- rather than a subject area,
+in keeping with the precision <span>[<a href="#RFC8615" class="cite xref">RFC8615</a>]</span>, Section 3, expects of a
+registered name. Provisional status is requested because this is an
+Independent Submission; the designated experts may promote the entry to
+permanent once the resource is found to be in wide use (<span>[<a href="#RFC8615" class="cite xref">RFC8615</a>]</span>,
+Section 3.1).<a href="#section-11.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-profile-uri">
+<section id="section-11.2">
+        <h3 id="name-profile-uri">
+<a href="#section-11.2" class="section-number selfRef">11.2. </a><a href="#name-profile-uri" class="section-name selfRef">Profile URI</a>
+        </h3>
+<p id="section-11.2-1">Registration of the following profile URI in the "Profile URIs"
+registry (<span>[<a href="#RFC7284" class="cite xref">RFC7284</a>]</span>, Section 4) is to be requested separately from
+this document; that registry's policy is First Come First Served. The
+fields are given here so that this document, which specifies the
+profile, records them:<a href="#section-11.2-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-11.2-2.1">
+            <p id="section-11.2-2.1.1"><strong>Profile URI</strong>:
+<code>https://w3id.org/agentic-system-core/profile/agentic-knowledge</code><a href="#section-11.2-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.2-2.2">
+            <p id="section-11.2-2.2.1"><strong>Common Name</strong>: AgenticSystemCore knowledge link set profile<a href="#section-11.2-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.2-2.3">
+            <p id="section-11.2-2.3.1"><strong>Description</strong>: Identifies an <code>application/linkset+json</code> document
+<span>[<a href="#RFC9264" class="cite xref">RFC9264</a>]</span> that describes a published knowledge Bundle: one link
+context whose anchor is the Bundle IRI, links to the Bundle's
+artefacts -- graph serializations, a JSON-LD context, a vocabulary, a
+chunk export, an agent-facing text file, a change ledger -- each
+optionally carrying a <code>digest</code> target attribute in the syntax of
+<span>[<a href="#RFC9530" class="cite xref">RFC9530</a>]</span>, and the bundle-fact and declaration target attributes
+this document defines. Served at <code>/.well-known/knowledge-linkset</code>;
+linked from pages with <code>rel="describedby"</code> and
+<code>type="application/linkset+json"</code>.<a href="#section-11.2-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.2-2.4">
+            <p id="section-11.2-2.4.1"><strong>Reference</strong>: This document; and <span>[<a href="#AGSC-SPEC" class="cite xref">AGSC-SPEC</a>]</span>, which defines the
+artefacts and their canonical bytes.<a href="#section-11.2-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-11.2-2.5">
+            <p id="section-11.2-2.5.1"><strong>Notes</strong>: The profile does not change the semantics of
+<code>application/linkset+json</code> for a client that ignores it (<span>[<a href="#RFC6906" class="cite xref">RFC6906</a>]</span>,
+Section 3); it adds integrity, bundle-fact, and declaration target
+attributes that a client <span class="bcp14">MAY</span> use. Change controller: Andrei Nicolae
+Besleaga, Independent, andrei.besleaga.nicolae@gmail.com.<a href="#section-11.2-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="implementation-status">
+<section id="section-12">
+      <h2 id="name-implementation-status">
+<a href="#section-12" class="section-number selfRef">12. </a><a href="#name-implementation-status" class="section-name selfRef">Implementation Status</a>
+      </h2>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-12-1.1">
+          <p id="section-12-1.1.1">[Note to the RFC Editor: please remove this section before
+publication.]<a href="#section-12-1.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-12-2">This section records the status of known implementations of the
+protocol defined by this specification at the time of posting of
+this Internet-Draft, and is based on a proposal described in
+<span>[<a href="#RFC7942" class="cite xref">RFC7942</a>]</span>.  The description of implementations in this section is
+intended to assist the IETF in its decision processes in
+progressing drafts to RFCs.  Please note that the listing of any
+individual implementation here does not imply endorsement by the
+IETF.  Furthermore, no effort has been spent to verify the
+information presented here that was supplied by IETF contributors.
+This is not intended as, and must not be construed to be, a
+catalog of available implementations or their features.  Readers
+are advised to note that other implementations may exist.<a href="#section-12-2" class="pilcrow">¶</a></p>
+<p id="section-12-3">According to <span>[<a href="#RFC7942" class="cite xref">RFC7942</a>]</span>, "this will allow reviewers and working
+groups to assign due consideration to documents that have the
+benefit of running code, which may serve as evidence of valuable
+experimentation and feedback that have made the implemented
+protocols more mature.  It is up to the individual working groups
+to use this information as they see fit".<a href="#section-12-3" class="pilcrow">¶</a></p>
+<p id="section-12-4">The implementations recorded here are those of the author, at the time
+of writing.<a href="#section-12-4" class="pilcrow">¶</a></p>
+<p id="section-12-5"><strong>Reference node.</strong><a href="#section-12-5" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-12-6.1">
+          <p id="section-12-6.1.1">Organization: the author (Independent).<a href="#section-12-6.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-6.2">
+          <p id="section-12-6.2.1">Name and description: the node at <code>https://agenticsystemcore.com/</code>,
+a static site that serves a discovery document at
+<code>/.well-known/knowledge-linkset</code>, the artefacts it names, and the
+published specification that the profile URI and the extension
+relation URIs resolve to.<a href="#section-12-6.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-6.3">
+          <p id="section-12-6.3.1">Level of maturity: production deployment of a specification that is
+at release-candidate status.<a href="#section-12-6.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-6.4">
+          <p id="section-12-6.4.1">Coverage: <a href="#the-well-known-uri" class="auto internal xref">Section 3</a>, <a href="#the-link-set" class="auto internal xref">Section 4</a>,
+<a href="#discovery-from-a-page" class="auto internal xref">Section 5</a>, and <a href="#the-profile-uri" class="auto internal xref">Section 6</a>, in the reduced
+form of <a href="#the-reduced-form" class="auto internal xref">Section 4.4</a>.<a href="#section-12-6.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-6.5">
+          <p id="section-12-6.5.1">Version compatibility: <span>[<a href="#AGSC-SPEC" class="cite xref">AGSC-SPEC</a>]</span>.<a href="#section-12-6.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-6.6">
+          <p id="section-12-6.6.1">Licensing: the site's own terms; see the node.<a href="#section-12-6.6.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-6.7">
+          <p id="section-12-6.7.1">Contact: the author.<a href="#section-12-6.7.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-12-7"><strong>Validator.</strong><a href="#section-12-7" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-12-8.1">
+          <p id="section-12-8.1.1">Organization: the author (Independent).<a href="#section-12-8.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-8.2">
+          <p id="section-12-8.2.1">Name and description: <code>validate-wellknown</code>, a command-line validator
+that takes a URL or a local file and checks that the response media
+type is <code>application/linkset+json</code> or that a <code>Link</code> header field
+names the profile URI; that <code>linkset</code> is the sole top-level member;
+that every relation name is a registered short name or a member of
+the closed extension set; that every extension target attribute value
+is an array of strings; that the reduced form's omissions are
+accepted where the reduced form is claimed and that the digests and
+bundle facts are present and recomputable otherwise. A <code>--peer</code> flag
+performs the mutual test of <a href="#following-peers" class="auto internal xref">Section 7.2</a> and accepts two local
+files, so that the test runs with no network access.<a href="#section-12-8.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-8.3">
+          <p id="section-12-8.3.1">Level of maturity: production.<a href="#section-12-8.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-8.4">
+          <p id="section-12-8.4.1">Coverage: <a href="#the-well-known-uri" class="auto internal xref">Section 3</a>, <a href="#the-link-set" class="auto internal xref">Section 4</a>, and the mutual
+peer test of <a href="#following-peers" class="auto internal xref">Section 7.2</a>.<a href="#section-12-8.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-8.5">
+          <p id="section-12-8.5.1">Licensing: Apache-2.0.<a href="#section-12-8.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-8.6">
+          <p id="section-12-8.6.1">Contact: the author.<a href="#section-12-8.6.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-12-9"><strong>Conformance vectors.</strong><a href="#section-12-9" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-12-10.1">
+          <p id="section-12-10.1.1">Organization: the author (Independent).<a href="#section-12-10.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-10.2">
+          <p id="section-12-10.2.1">Name and description: a set of JSON test vectors for the discovery
+layer, each naming the rule it proves: the conformant link set shape
+and its target attributes, the reduced form, and the mutual peer
+test. They are fixtures rather than an implementation, and any
+independent implementation can be run against them.<a href="#section-12-10.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-10.3">
+          <p id="section-12-10.3.1">Level of maturity: production.<a href="#section-12-10.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-10.4">
+          <p id="section-12-10.4.1">Coverage: <a href="#the-link-set" class="auto internal xref">Section 4</a>, <a href="#the-reduced-form" class="auto internal xref">Section 4.4</a>,
+<a href="#following-peers" class="auto internal xref">Section 7.2</a>.<a href="#section-12-10.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-10.5">
+          <p id="section-12-10.5.1">Licensing: Apache-2.0.<a href="#section-12-10.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-12-10.6">
+          <p id="section-12-10.6.1">Contact: the author.<a href="#section-12-10.6.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+</section>
+</div>
+<div id="sec-normative-references">
+<section id="section-13">
+      <h2 id="name-normative-references">
+<a href="#section-13" class="section-number selfRef">13. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      </h2>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc2119">https://www.rfc-editor.org/info/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC3986">[RFC3986]</dt>
+      <dd>
+<span class="refAuthor">Berners-Lee, T.</span>, <span class="refAuthor">Fielding, R.</span>, and <span class="refAuthor">L. Masinter</span>, <span class="refTitle">"Uniform Resource Identifier (URI): Generic Syntax"</span>, <span class="seriesInfo">STD 66</span>, <span class="seriesInfo">RFC 3986</span>, <span class="seriesInfo">DOI 10.17487/RFC3986</span>, <time datetime="2005-01" class="refDate">January 2005</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc3986">https://www.rfc-editor.org/info/rfc3986</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC7284">[RFC7284]</dt>
+      <dd>
+<span class="refAuthor">Lanthaler, M.</span>, <span class="refTitle">"The Profile URI Registry"</span>, <span class="seriesInfo">RFC 7284</span>, <span class="seriesInfo">DOI 10.17487/RFC7284</span>, <time datetime="2014-06" class="refDate">June 2014</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc7284">https://www.rfc-editor.org/info/rfc7284</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6906">[RFC6906]</dt>
+      <dd>
+<span class="refAuthor">Wilde, E.</span>, <span class="refTitle">"The 'profile' Link Relation Type"</span>, <span class="seriesInfo">RFC 6906</span>, <span class="seriesInfo">DOI 10.17487/RFC6906</span>, <time datetime="2013-03" class="refDate">March 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc6906">https://www.rfc-editor.org/info/rfc6906</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+      <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8174">https://www.rfc-editor.org/info/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8288">[RFC8288]</dt>
+      <dd>
+<span class="refAuthor">Nottingham, M.</span>, <span class="refTitle">"Web Linking"</span>, <span class="seriesInfo">RFC 8288</span>, <span class="seriesInfo">DOI 10.17487/RFC8288</span>, <time datetime="2017-10" class="refDate">October 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8288">https://www.rfc-editor.org/info/rfc8288</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8615">[RFC8615]</dt>
+      <dd>
+<span class="refAuthor">Nottingham, M.</span>, <span class="refTitle">"Well-Known Uniform Resource Identifiers (URIs)"</span>, <span class="seriesInfo">RFC 8615</span>, <span class="seriesInfo">DOI 10.17487/RFC8615</span>, <time datetime="2019-05" class="refDate">May 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8615">https://www.rfc-editor.org/info/rfc8615</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8785">[RFC8785]</dt>
+      <dd>
+<span class="refAuthor">Rundgren, A.</span>, <span class="refAuthor">Jordan, B.</span>, and <span class="refAuthor">S. Erdtman</span>, <span class="refTitle">"JSON Canonicalization Scheme (JCS)"</span>, <span class="seriesInfo">RFC 8785</span>, <span class="seriesInfo">DOI 10.17487/RFC8785</span>, <time datetime="2020-06" class="refDate">June 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8785">https://www.rfc-editor.org/info/rfc8785</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9110">[RFC9110]</dt>
+      <dd>
+<span class="refAuthor">Fielding, R., Ed.</span>, <span class="refAuthor">Nottingham, M., Ed.</span>, and <span class="refAuthor">J. Reschke, Ed.</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="seriesInfo">STD 97</span>, <span class="seriesInfo">RFC 9110</span>, <span class="seriesInfo">DOI 10.17487/RFC9110</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9110">https://www.rfc-editor.org/info/rfc9110</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9264">[RFC9264]</dt>
+      <dd>
+<span class="refAuthor">Wilde, E.</span> and <span class="refAuthor">H. Van de Sompel</span>, <span class="refTitle">"Linkset: Media Types and a Link Relation Type for Link Sets"</span>, <span class="seriesInfo">RFC 9264</span>, <span class="seriesInfo">DOI 10.17487/RFC9264</span>, <time datetime="2022-07" class="refDate">July 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9264">https://www.rfc-editor.org/info/rfc9264</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9530">[RFC9530]</dt>
+      <dd>
+<span class="refAuthor">Polli, R.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Digest Fields"</span>, <span class="seriesInfo">RFC 9530</span>, <span class="seriesInfo">DOI 10.17487/RFC9530</span>, <time datetime="2024-02" class="refDate">February 2024</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9530">https://www.rfc-editor.org/info/rfc9530</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9651">[RFC9651]</dt>
+      <dd>
+<span class="refAuthor">Nottingham, M.</span> and <span class="refAuthor">P. Kamp</span>, <span class="refTitle">"Structured Field Values for HTTP"</span>, <span class="seriesInfo">RFC 9651</span>, <span class="seriesInfo">DOI 10.17487/RFC9651</span>, <time datetime="2024-09" class="refDate">September 2024</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9651">https://www.rfc-editor.org/info/rfc9651</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="POWDER-DR">[POWDER-DR]</dt>
+    <dd>
+<span class="refAuthor">Archer, P.</span>, <span class="refAuthor">Smith, K.</span>, and <span class="refAuthor">A. Perego</span>, <span class="refTitle">"Protocol for Web Description Resources (POWDER): Description Resources"</span>, <span class="seriesInfo">W3C Recommendation</span>, <time datetime="2009-09-01" class="refDate">1 September 2009</time>, <span>&lt;<a href="https://www.w3.org/TR/2009/REC-powder-dr-20090901/">https://www.w3.org/TR/2009/REC-powder-dr-20090901/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="sec-informative-references">
+<section id="section-14">
+      <h2 id="name-informative-references">
+<a href="#section-14" class="section-number selfRef">14. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+      </h2>
+<dl class="references">
+<dt id="RFC3987">[RFC3987]</dt>
+      <dd>
+<span class="refAuthor">Duerst, M.</span> and <span class="refAuthor">M. Suignard</span>, <span class="refTitle">"Internationalized Resource Identifiers (IRIs)"</span>, <span class="seriesInfo">RFC 3987</span>, <span class="seriesInfo">DOI 10.17487/RFC3987</span>, <time datetime="2005-01" class="refDate">January 2005</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc3987">https://www.rfc-editor.org/info/rfc3987</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6838">[RFC6838]</dt>
+      <dd>
+<span class="refAuthor">Freed, N.</span>, <span class="refAuthor">Klensin, J.</span>, and <span class="refAuthor">T. Hansen</span>, <span class="refTitle">"Media Type Specifications and Registration Procedures"</span>, <span class="seriesInfo">BCP 13</span>, <span class="seriesInfo">RFC 6838</span>, <span class="seriesInfo">DOI 10.17487/RFC6838</span>, <time datetime="2013-01" class="refDate">January 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc6838">https://www.rfc-editor.org/info/rfc6838</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6892">[RFC6892]</dt>
+      <dd>
+<span class="refAuthor">Wilde, E.</span>, <span class="refTitle">"The 'describes' Link Relation Type"</span>, <span class="seriesInfo">RFC 6892</span>, <span class="seriesInfo">DOI 10.17487/RFC6892</span>, <time datetime="2013-03" class="refDate">March 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc6892">https://www.rfc-editor.org/info/rfc6892</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8259">[RFC8259]</dt>
+      <dd>
+<span class="refAuthor">Bray, T., Ed.</span>, <span class="refTitle">"The JavaScript Object Notation (JSON) Data Interchange Format"</span>, <span class="seriesInfo">STD 90</span>, <span class="seriesInfo">RFC 8259</span>, <span class="seriesInfo">DOI 10.17487/RFC8259</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8259">https://www.rfc-editor.org/info/rfc8259</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8792">[RFC8792]</dt>
+      <dd>
+<span class="refAuthor">Watsen, K.</span>, <span class="refAuthor">Auerswald, E.</span>, <span class="refAuthor">Farrel, A.</span>, and <span class="refAuthor">Q. Wu</span>, <span class="refTitle">"Handling Long Lines in Content of Internet-Drafts and RFCs"</span>, <span class="seriesInfo">RFC 8792</span>, <span class="seriesInfo">DOI 10.17487/RFC8792</span>, <time datetime="2020-06" class="refDate">June 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8792">https://www.rfc-editor.org/info/rfc8792</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9111">[RFC9111]</dt>
+      <dd>
+<span class="refAuthor">Fielding, R., Ed.</span>, <span class="refAuthor">Nottingham, M., Ed.</span>, and <span class="refAuthor">J. Reschke, Ed.</span>, <span class="refTitle">"HTTP Caching"</span>, <span class="seriesInfo">STD 98</span>, <span class="seriesInfo">RFC 9111</span>, <span class="seriesInfo">DOI 10.17487/RFC9111</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9111">https://www.rfc-editor.org/info/rfc9111</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9309">[RFC9309]</dt>
+      <dd>
+<span class="refAuthor">Koster, M.</span>, <span class="refAuthor">Illyes, G.</span>, <span class="refAuthor">Zeller, H.</span>, and <span class="refAuthor">L. Sassman</span>, <span class="refTitle">"Robots Exclusion Protocol"</span>, <span class="seriesInfo">RFC 9309</span>, <span class="seriesInfo">DOI 10.17487/RFC9309</span>, <time datetime="2022-09" class="refDate">September 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9309">https://www.rfc-editor.org/info/rfc9309</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9421">[RFC9421]</dt>
+      <dd>
+<span class="refAuthor">Backman, A., Ed.</span>, <span class="refAuthor">Richer, J., Ed.</span>, and <span class="refAuthor">M. Sporny</span>, <span class="refTitle">"HTTP Message Signatures"</span>, <span class="seriesInfo">RFC 9421</span>, <span class="seriesInfo">DOI 10.17487/RFC9421</span>, <time datetime="2024-02" class="refDate">February 2024</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9421">https://www.rfc-editor.org/info/rfc9421</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9727">[RFC9727]</dt>
+      <dd>
+<span class="refAuthor">Smith, K.</span>, <span class="refTitle">"api-catalog: A Well-Known URI and Link Relation to Help Discovery of APIs"</span>, <span class="seriesInfo">RFC 9727</span>, <span class="seriesInfo">DOI 10.17487/RFC9727</span>, <time datetime="2025-06" class="refDate">June 2025</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc9727">https://www.rfc-editor.org/info/rfc9727</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.jimenez-dawn-discovery-landscape">[I-D.jimenez-dawn-discovery-landscape]</dt>
+      <dd>
+<span class="refAuthor">Jimenez, J.</span>, <span class="refAuthor">Feng, J.</span>, <span class="refAuthor">Arkko, J.</span>, <span class="refAuthor">Kuehlewind, M.</span>, and <span class="refAuthor">R. Kandoi</span>, <span class="refTitle">"A Survey of AI Agent Discovery Mechanisms"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-jimenez-dawn-discovery-landscape-00</span>, <time datetime="2026-07-03" class="refDate">3 July 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-jimenez-dawn-discovery-landscape-00">https://datatracker.ietf.org/doc/html/draft-jimenez-dawn-discovery-landscape-00</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.arsentev-llm-context-discovery">[I-D.arsentev-llm-context-discovery]</dt>
+      <dd>
+<span class="refAuthor">Arsentev, E.</span>, <span class="refTitle">"Discovery and Retrieval of Publisher-Curated Context Files for Large Language Model Consumers"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-arsentev-llm-context-discovery-00</span>, <time datetime="2026-09-11" class="refDate">11 September 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-arsentev-llm-context-discovery-00">https://datatracker.ietf.org/doc/html/draft-arsentev-llm-context-discovery-00</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.serra-mcp-discovery-uri">[I-D.serra-mcp-discovery-uri]</dt>
+      <dd>
+<span class="refAuthor">serra, M.</span>, <span class="refTitle">"The "mcp" URI Scheme and MCP Server Discovery Mechanism"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-serra-mcp-discovery-uri-04</span>, <time datetime="2026-03-26" class="refDate">26 March 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-serra-mcp-discovery-uri-04">https://datatracker.ietf.org/doc/html/draft-serra-mcp-discovery-uri-04</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-aipref-vocab">[I-D.ietf-aipref-vocab]</dt>
+      <dd>
+<span class="refAuthor">Keller, P.</span> and <span class="refAuthor">M. Thomson</span>, <span class="refTitle">"A Vocabulary For Expressing AI Usage Preferences"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-aipref-vocab-08</span>, <time datetime="2026-09-13" class="refDate">13 September 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-aipref-vocab-08">https://datatracker.ietf.org/doc/html/draft-ietf-aipref-vocab-08</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-aipref-attach">[I-D.ietf-aipref-attach]</dt>
+      <dd>
+<span class="refAuthor">Illyes, G.</span> and <span class="refAuthor">M. Thomson</span>, <span class="refTitle">"Associating AI Usage Preferences with Content in HTTP"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-aipref-attach-05</span>, <time datetime="2026-08-18" class="refDate">18 August 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-aipref-attach-05">https://datatracker.ietf.org/doc/html/draft-ietf-aipref-attach-05</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-webbotauth-httpsig-protocol">[I-D.ietf-webbotauth-httpsig-protocol]</dt>
+      <dd>
+<span class="refAuthor">Meunier, T.</span> and <span class="refAuthor">S. Major</span>, <span class="refTitle">"HTTP Message Signatures for automated traffic"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-webbotauth-httpsig-protocol-00</span>, <time datetime="2026-09-01" class="refDate">1 September 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-webbotauth-httpsig-protocol-00">https://datatracker.ietf.org/doc/html/draft-ietf-webbotauth-httpsig-protocol-00</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="DAWN-CHARTER">[DAWN-CHARTER]</dt>
+      <dd>
+<span class="refAuthor">IETF</span>, <span class="refTitle">"Discovery of Agents With Names (dawn) -- proposed working group charter"</span>, <time datetime="2026-09-11" class="refDate">11 September 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/charter-ietf-dawn/">https://datatracker.ietf.org/doc/charter-ietf-dawn/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="AGENTPROTO-BOF">[AGENTPROTO-BOF]</dt>
+      <dd>
+<span class="refAuthor">IETF</span>, <span class="refTitle">"Agent Communication Protocols (agentproto) -- BOF request"</span>, <time datetime="2026-09-04" class="refDate">4 September 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/bofreq-steele-agentproto/">https://datatracker.ietf.org/doc/bofreq-steele-agentproto/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="MCP">[MCP]</dt>
+      <dd>
+<span class="refAuthor">Agentic AI Foundation</span>, <span class="refTitle">"Model Context Protocol Specification, revision 2026-07-28"</span>, <time datetime="2026-07-28" class="refDate">28 July 2026</time>, <span>&lt;<a href="https://modelcontextprotocol.io/specification/2026-07-28">https://modelcontextprotocol.io/specification/2026-07-28</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="A2A">[A2A]</dt>
+      <dd>
+<span class="refAuthor">Agentic AI Foundation</span>, <span class="refTitle">"Agent2Agent (A2A) Protocol Specification, version 1.0"</span>, <time datetime="2026-05-28" class="refDate">28 May 2026</time>, <span>&lt;<a href="https://a2a-protocol.org/latest/specification/">https://a2a-protocol.org/latest/specification/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="LLMSTXT">[LLMSTXT]</dt>
+      <dd>
+<span class="refAuthor">Howard, J.</span>, <span class="refTitle">"The /llms.txt file, version 2"</span>, <time datetime="2026-08-10" class="refDate">10 August 2026</time>, <span>&lt;<a href="https://llmstxt.org/">https://llmstxt.org/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="OKF">[OKF]</dt>
+      <dd>
+<span class="refAuthor">Google Cloud</span>, <span class="refTitle">"Open Knowledge Format, version 0.2"</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://github.com/GoogleCloudPlatform/open-knowledge-format">https://github.com/GoogleCloudPlatform/open-knowledge-format</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="VOID">[VOID]</dt>
+      <dd>
+<span class="refAuthor">W3C Semantic Web Interest Group</span>, <span class="refTitle">"Describing Linked Datasets with the VoID Vocabulary"</span>, <span class="seriesInfo">W3C Interest Group Note</span>, <time datetime="2011-03-03" class="refDate">3 March 2011</time>, <span>&lt;<a href="https://www.w3.org/TR/void/">https://www.w3.org/TR/void/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="DCAT3">[DCAT3]</dt>
+      <dd>
+<span class="refAuthor">W3C Dataset Exchange Working Group</span>, <span class="refTitle">"Data Catalog Vocabulary (DCAT) -- Version 3"</span>, <span class="seriesInfo">W3C Recommendation</span>, <time datetime="2024-08-22" class="refDate">22 August 2024</time>, <span>&lt;<a href="https://www.w3.org/TR/vocab-dcat-3/">https://www.w3.org/TR/vocab-dcat-3/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="IANA-IPV4-SPECIAL">[IANA-IPV4-SPECIAL]</dt>
+      <dd>
+<span class="refAuthor">IANA</span>, <span class="refTitle">"IANA IPv4 Special-Purpose Address Registry"</span>, <span>n.d.</span>, <span>&lt;<a href="https://www.iana.org/assignments/iana-ipv4-special-registry/">https://www.iana.org/assignments/iana-ipv4-special-registry/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="IANA-IPV6-SPECIAL">[IANA-IPV6-SPECIAL]</dt>
+      <dd>
+<span class="refAuthor">IANA</span>, <span class="refTitle">"IANA IPv6 Special-Purpose Address Registry"</span>, <span>n.d.</span>, <span>&lt;<a href="https://www.iana.org/assignments/iana-ipv6-special-registry/">https://www.iana.org/assignments/iana-ipv6-special-registry/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="AGSC-SPEC">[AGSC-SPEC]</dt>
+      <dd>
+<span class="refAuthor">Besleaga, A. N.</span>, <span class="refTitle">"AgenticSystemCore Specification, version 1.0.0-rc.4 (release candidate)"</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://agenticsystemcore.com/specs/">https://agenticsystemcore.com/specs/</a>&gt;</span>. <span class="annotation">TODO-DOI: insert the Zenodo DOI of the cited release here before posting.</span>
+      </dd>
+<dd class="break"></dd>
+<dt id="RFC7942">[RFC7942]</dt>
+    <dd>
+<span class="refAuthor">Sheffer, Y.</span> and <span class="refAuthor">A. Farrel</span>, <span class="refTitle">"Improving Awareness of Running Code: The Implementation Status Section"</span>, <span class="seriesInfo">BCP 205</span>, <span class="seriesInfo">RFC 7942</span>, <span class="seriesInfo">DOI 10.17487/RFC7942</span>, <time datetime="2016-07" class="refDate">July 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc7942">https://www.rfc-editor.org/info/rfc7942</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="a-complete-example">
+<section id="appendix-A">
+      <h2 id="name-a-complete-example">
+<a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-a-complete-example" class="section-name selfRef">A Complete Example</a>
+      </h2>
+<p id="appendix-A-1">The document below is a complete discovery document for a node at
+<code>https://example.org/</code>, in the full form of <a href="#the-link-set" class="auto internal xref">Section 4</a>. It is
+shown pretty-printed; a node that produces canonical bytes
+<span>[<a href="#RFC8785" class="cite xref">RFC8785</a>]</span> serves the equivalent document with no insignificant
+whitespace.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<span id="name-a-complete-discovery-docume"></span><figure id="figure-3">
+        <div class="breakable lang-json sourcecode" id="appendix-A-2.1">
+<pre>
+NOTE: '\' line wrapping per RFC 8792
+
+{
+  "linkset": [
+    {
+      "anchor": "https://example.org/",
+      "alternate": [
+        {
+          "href": "https://example.org/llms-full.txt",
+          "type": "text/plain",
+          "digest": [
+            "sha-256=:Nfm1AxNikrZAb82mhnWgjpi3i8rGJa9K64wnI0ZiJY0=:"
+          ]
+        },
+        {
+          "href": "https://example.org/llms.txt",
+          "type": "text/plain",
+          "digest": [
+            "sha-256=:QjxPZtSHNKLvYtiXXCOwnjJn+fYmfqkRYmash8n7+O0=:"
+          ]
+        }
+      ],
+      "author": [
+        {
+          "href": "https://example.org/about/",
+          "type": "text/html"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "https://example.org/graph.jsonld",
+          "type": "application/ld+json",
+          "agsc-bundle-hash": [
+            "sha-256=:UdwS29SBU+9+G3d/Fp3KtLtY292AjFswry0+mLI8te4=:"
+          ],
+          "agsc-counts": [
+            "clusters=6",
+            "concepts=142",
+            "episodes=17",
+            "gates=4",
+            "lessons=39",
+            "procedures=28"
+          ],
+          "agsc-generated-at": [
+            "2026-10-09T08:15:00Z"
+          ],
+          "agsc-spec-version": [
+            "1.0.0"
+          ],
+          "digest": [
+            "sha-256=:JeigkAtOPS9f9BzKym+X6J2O4awt53GEua1AhIAiLfE=:"
+          ]
+        }
+      ],
+      "license": [
+        {
+          "href": "https://example.org/legal/",
+          "type": "text/html"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://example.org/specs/",
+          "type": "text/html"
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#context": [
+        {
+          "href": "https://example.org/ns/context.jsonld",
+          "type": "application/ld+json",
+          "digest": [
+            "sha-256=:Dv8ogyqhEZ0jxdWQj0FkVfpXbuTnyfvWEFNwtbRTSEA=:"
+          ]
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#graph": [
+        {
+          "href": "https://example.org/graph.nq",
+          "type": "application/n-quads",
+          "digest": [
+            "sha-256=:/WQyaCbIwaeGFFMAFw/eMonm8tK+F7amphaKNT4BpB0=:"
+          ]
+        },
+        {
+          "href": "https://example.org/graph.ttl",
+          "type": "text/turtle",
+          "digest": [
+            "sha-256=:SylBDgXPkysmlRZkx+BvHSxVTbm3ZWGzFXskHf+kH80=:"
+          ]
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#ledger": [
+        {
+          "href": "https://example.org/ledger.jsonl",
+          "type": "application/jsonl",
+          "agsc-ledger-head": [
+            "6acd55d78bf24c2b7866c0e46a3bb88a4b7259cea9ca0bfa6263\
+81068b0d56ed"
+          ],
+          "digest": [
+            "sha-256=:mIn5HVeWxmn0Ecmh5Qwkc3doL+0fdO+Z7HieEDozhz0=:"
+          ]
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#now": [
+        {
+          "href": "https://example.org/now.md",
+          "type": "text/markdown",
+          "digest": [
+            "sha-256=:cJvRMVgkkW5Usdn/z0q1iNxyBErb59kLWRv83qvpx8A=:"
+          ]
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#ontology": [
+        {
+          "href": "https://example.org/ns/agsc.ttl",
+          "type": "text/turtle",
+          "digest": [
+            "sha-256=:kjVLSaNilITtebImxe9J+ukr7UOdmTG+NAtppRjsrH8=:"
+          ]
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#peer": [
+        {
+          "href": "https://b.example/.well-known/knowledge-linkset",
+          "type": "application/linkset+json"
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#skills": [
+        {
+          "href": "https://example.org/skills/index.json",
+          "type": "application/json",
+          "digest": [
+            "sha-256=:NnyPQz+rxvP/Zl9ja4+0xRSCpb7gdArcAVXlAG5IoU0=:"
+          ]
+        }
+      ],
+      "https://w3id.org/agentic-system-core/rel#surface": [
+        {
+          "href": "https://example.org/chunks.jsonl",
+          "type": "application/jsonl",
+          "agsc-access": [
+            "none"
+          ],
+          "agsc-surface": [
+            "chunks"
+          ],
+          "digest": [
+            "sha-256=:vAlDuXGRaRPyTeeRfLAFWa7acFyOL3Y7o+vbywRofDk=:"
+          ]
+        },
+        {
+          "href": "https://example.org/llms.txt",
+          "type": "text/plain",
+          "agsc-access": [
+            "none"
+          ],
+          "agsc-surface": [
+            "llms-txt"
+          ]
+        }
+      ]
+    }
+  ]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<a href="#name-a-complete-discovery-docume" class="selfRef">A complete discovery document</a>
+        </figcaption></figure>
+<p id="appendix-A-3">The same node, publishing without a build engine, serves the reduced
+form of <a href="#the-reduced-form" class="auto internal xref">Section 4.4</a>: the same link set with every <code>digest</code>
+attribute and every bundle-fact attribute removed, and with no <code>ledger</code>
+link.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
+<span id="name-the-same-document-in-the-re"></span><figure id="figure-4">
+        <div class="lang-json sourcecode" id="appendix-A-4.1">
+<pre>
+{
+  "linkset": [
+    {
+      "anchor": "https://example.org/",
+      "alternate": [
+        {
+          "href": "https://example.org/llms.txt",
+          "type": "text/plain"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "https://example.org/graph.jsonld",
+          "type": "application/ld+json"
+        }
+      ],
+      "license": [
+        {
+          "href": "https://example.org/legal/"
+        }
+      ]
+    }
+  ]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
+<a href="#name-the-same-document-in-the-re" class="selfRef">The same document in the reduced form</a>
+        </figcaption></figure>
+</section>
+</div>
+<div id="change-log">
+<section id="appendix-B">
+      <h2 id="name-change-log">
+<a href="#appendix-B" class="section-number selfRef">Appendix B. </a><a href="#name-change-log" class="section-name selfRef">Change Log</a>
+      </h2>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="appendix-B-1.1">
+          <p id="appendix-B-1.1.1">[Note to the RFC Editor: please remove this appendix before
+publication.]<a href="#appendix-B-1.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="appendix-B-2">This is the initial version, -00. Later revisions record their changes
+here.<a href="#appendix-B-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-C">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Andrei Nicolae Besleaga</span></div>
+<div dir="auto" class="left"><span class="org">Independent</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:andrei.besleaga.nicolae@gmail.com" class="email">andrei.besleaga.nicolae@gmail.com</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
