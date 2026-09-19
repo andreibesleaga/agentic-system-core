@@ -3,8 +3,8 @@
   "description": "An item in two clusters appears once, under its PRIMARY (first-listed) cluster; /llms.txt opens with the H1 and then the provenance comment (a profile of llms.txt v2); /llms-full.txt repeats /llms.txt through the section blocks and then, per item in the same order, one three-part block: the H2 title, the agsc:item comment, and the body fenced as text agsc-content, blocks separated by exactly one blank line.",
   "expected": {
     "both_appears_once_under": "beta",
-    "llms_full_txt": "# Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.4\ngenerated_at: 2026-09-17T00:00:00Z\n-->\n\n> Two clusters, one item in both.\n\n## Alpha\n\n- [Only](https://a.example/concepts/only/): Only\n\n## Beta\n\n- [Both](https://a.example/concepts/both/): In beta first.\n\n## Only\n<!-- agsc:item https://a.example/concepts/only/ -->\n```text agsc-content\nBody of only.\n```\n\n## Both\n<!-- agsc:item https://a.example/concepts/both/ -->\n```text agsc-content\nBody of both.\n```\n",
-    "llms_txt": "# Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.4\ngenerated_at: 2026-09-17T00:00:00Z\n-->\n\n> Two clusters, one item in both.\n\n## Alpha\n\n- [Only](https://a.example/concepts/only/): Only\n\n## Beta\n\n- [Both](https://a.example/concepts/both/): In beta first.\n"
+    "llms_full_txt": "# Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.5\ngenerated_at: 2026-09-17T00:00:00Z\n-->\n\n> Two clusters, one item in both.\n\n## Alpha\n\n- [Only](https://a.example/concepts/only/): Only\n\n## Beta\n\n- [Both](https://a.example/concepts/both/): In beta first.\n\n## Only\n<!-- agsc:item https://a.example/concepts/only/ -->\n```text agsc-content\nBody of only.\n```\n\n## Both\n<!-- agsc:item https://a.example/concepts/both/ -->\n```text agsc-content\nBody of both.\n```\n",
+    "llms_txt": "# Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.5\ngenerated_at: 2026-09-17T00:00:00Z\n-->\n\n> Two clusters, one item in both.\n\n## Alpha\n\n- [Only](https://a.example/concepts/only/): Only\n\n## Beta\n\n- [Both](https://a.example/concepts/both/): In beta first.\n"
   },
   "id": "disc-0007",
   "input": {
@@ -45,12 +45,12 @@
         "title": "Only"
       }
     ],
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "level": "required",
   "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag; expected bytes re-derived for rc.4 on 2026-09-18 (D93: the rc.4 tag carried rc.3 in the expected provenance line)",
   "options": {
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "rule": "AGSC-06-13a"
 }

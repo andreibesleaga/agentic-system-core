@@ -15,8 +15,32 @@
 - **AGSC-05-06** A writer MUST emit `graph.jsonld`, `graph.nq`, `graph.ttl` and per-item `pages/<slug>.{jsonld,md}`; `graph.rdf` (RDF/XML) is NOT emitted at 1.x and `build.rdfxml` is RESERVED (D82 Q21, AR2-67: one blank-node-free graph needs no fourth syntax). All views express the same triples. [PRD-022 ← D30, D41, D49, V3-22]
 - **AGSC-05-07** `pages/<slug>.md` MUST be a byte-identical copy of the lint-normalized source file. [research/12 §P rule 22]
 - **AGSC-05-08** The RDF dataset MUST be **blank-node-free**: every node has an IRI. Blank nodes in an export are error `AGSC-E605`. [research/12 §P rule 20, D41]
-- **AGSC-05-09** `graph.jsonld` MUST reference the versioned context URL, declare `"@version": 1.1`, mark every term `@protected`, and sort nodes by `@id` and properties per AGSC-04-05. Released context files are immutable; new terms require a new file. [research/12 §P rules 20, 41]
-- **AGSC-05-10** `graph.ttl` MUST follow the stable-Turtle profile: fixed prefix list in fixed order; subjects, then predicates, then objects sorted by IRI code points; one triple per line grouped with `;`; explicit datatypes except `xsd:string` and language-tagged literals; `a` for `rdf:type`. Both MUST be isomorphic to `graph.nq`. [research/12 §3, §P rule 21]
+- **AGSC-05-09** (amended at rc.5, R-16) `graph.jsonld` MUST carry as its `@context` the **specification's persistent versioned context URL** — `https://w3id.org/agentic-system-core/ns/<ontology-version>/context.jsonld`, `<ontology-version>` being the `owl:versionIRI` version of AGSC-05-25 (`1.0.0-draft.1` until `spec_version` reaches `1.0.0`) — declare `"@version": 1.1`, mark every term `@protected`, and sort nodes by `@id` and properties per AGSC-04-05. The URL is a constant of this specification, resolvable by every reader at every Level, so a **Level-0** `graph.jsonld` is expandable without the node serving a context of its own; a Level ≥ 2 writer additionally serves a byte-identical copy at `/ns/context.jsonld` and at `/ns/<ontology-version>/context.jsonld` (AGSC-06-32, AGSC-06-06) and MAY name either of those instead. *(Before rc.5 the rule said only "the versioned context URL", and a Level-0 document — which AGSC-06-32 forbids to emit `/ns/context.jsonld` — therefore had no context to name and was lossy when expanded.)* Released context files are immutable; new terms require a new file. [research/12 §P rules 20, 41]
+- **AGSC-05-10** (amended at rc.5, V9A-01 — the profile was named and not written down, while AGSC-04-24 claims **cross-implementation** byte-identity for this file) `graph.ttl` MUST follow the stable-Turtle profile, every byte of which is fixed here:
+
+  (a) **The `@prefix` block** is exactly, in this order, one line each and nothing else:
+
+  ```
+  @prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+  @prefix dcterms: <http://purl.org/dc/terms/> .
+  @prefix prov: <http://www.w3.org/ns/prov#> .
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix schema: <https://schema.org/> .
+  @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+  ```
+
+  written `@prefix <pfx>: <IRI> .` with exactly one space after each token, the prefixes in code-point order of the prefix name. A prefix whose vocabulary the graph does not use **is still emitted**, so the block is a constant of this specification; `owl:` and `rdf:` are never declared (no triple this specification emits needs either — `rdf:type` is written `a`).
+
+  (b) **Layout.** Exactly one blank line separates the prefix block from the first subject block, and each subject block from the next. The file ends with exactly one LF (AGSC-04-07) and carries no other blank line, no comment, no `@base` and no `PREFIX`/`BASE` (SPARQL-style) directive.
+
+  (c) **Order.** Subject blocks are ordered by subject IRI code points; within a block, predicates by predicate IRI code points — the **IRI**, never its prefixed name, so `skos:prefLabel` (`http://…`) precedes `asc:status` (`https://…`); within a predicate, objects by the code points of their written Turtle form.
+
+  (d) **Serialisation.** A subject block is `<subject-form> <clause>` for the first predicate, then one further line per predicate, each indented by exactly four spaces; clauses are separated by ` ;` followed by a single LF, and the block ends with ` .`. Several objects of one predicate are written on that predicate's clause, separated by ` , `. `a` is written for `rdf:type`; every other predicate and every IRI whose namespace is in (a) and whose local part is a legal `PN_LOCAL` is written as a prefixed name, and every other IRI between `<` and `>`.
+
+  (e) **Literals.** Explicit datatypes except `xsd:string` and language-tagged literals, per AGSC-05-31; lexical forms and escaping per AGSC-05-32.
+
+  `graph.ttl` MUST be isomorphic to `graph.nq`. Vector `graph-0015` pins a complete file. [research/12 §3, §P rule 21, V9A-01]
 - **AGSC-05-11** Emission is one-way. An implementation MUST NOT claim to be a JSON-LD processor, an RDF parser or a SHACL engine on the strength of these outputs. [audit/G §1 JSON-LD row]
 
 ## 5.3 Class and property mapping
@@ -44,13 +68,15 @@
 
 ## 5.6 Frontmatter → property mapping
 
-- **AGSC-05-26** Every `asc:` datatype property MUST be emitted from exactly the frontmatter key named here, on exactly the subject named here, with exactly this datatype — so that `graph.ttl`, `graph.nq` and the per-item JSON-LD are reproducible from `spec/` plus the Bundle alone (AGSC-00-01, NFR-02). A key absent from an item emits no triple, and no property is ever inferred or invented — including `status`: the default `stable` of AGSC-02-23 is a reading default, and `asc:status` is emitted only when `status` is authored (V6 VB-12 repair A, V7-03), so an adopted file adds no triple it did not write. `prov.agent` and `prov.agreement` are deliberately not exported: `agent` is a build-time severity and merge-guard discriminator (AGSC-08-13, AGSC-08-26(d)) rather than a published fact, and `agreement` is a contribution-agreement identifier carried by the DCO-Plus trailer (AGSC-08-06). Adding `asc:agent` would require a property no §5.3/§5.6 rule emits, which AGSC-05-28 forbids.
+- **AGSC-05-26** (amended at rc.5, V8-91/R-06 and V9A-02: four rows added — the two `dcterms` instants AGSC-05-31(c) already pointed at, and the two schema.org licence properties AGSC-01-27 and AGSC-06-18 require of the JSON-LD views; both sets were emitted literals that no rule pinned, which defeated AGSC-04-24's byte-identity for `graph.nq` and `graph.ttl`) Every datatype property this specification emits — every `asc:` property, and the DCTerms and schema.org literal properties named in the table — MUST be emitted from exactly the frontmatter or configuration key named here, on exactly the subject named here, with exactly this datatype — so that `graph.ttl`, `graph.nq` and the per-item JSON-LD are reproducible from `spec/` plus the Bundle alone (AGSC-00-01, NFR-02). A key absent from an item emits no triple, and no property is ever inferred or invented — including `status`: the default `stable` of AGSC-02-23 is a reading default, and `asc:status` is emitted only when `status` is authored (V6 VB-12 repair A, V7-03), so an adopted file adds no triple it did not write. `prov.agent` and `prov.agreement` are deliberately not exported: `agent` is a build-time severity and merge-guard discriminator (AGSC-08-13, AGSC-08-26(d)) rather than a published fact, and `agreement` is a contribution-agreement identifier carried by the DCO-Plus trailer (AGSC-08-06). Adding `asc:agent` would require a property no §5.3/§5.6 rule emits, which AGSC-05-28 forbids. `schema:license` and `schema:usageInfo` are the two properties this specification emits from configuration rather than from an item key: both are constants of the build, both are literals (a `LicenseRef-` or SPDX identifier is text, not an IRI), and both appear on the Bundle node and on every item node so that `pages/<slug>.jsonld` and the `export --jsonl` line of AGSC-01-27 carry the licence without a second fetch. [research/16 §3.3, audit/D §1.1, D48(6), V7-25, V8-91, V9A-02]
 
 | Frontmatter key | Subject | Property | Datatype / form |
 |---|---|---|---|
 | `status` (default `stable`, AGSC-02-23) | the item | `asc:status` | `xsd:string` |
 | `kind` (concept only) | the item | `asc:kind` | `xsd:string` |
 | `stale_after` | the item | `asc:staleAfter` | `xsd:dateTime` |
+| `date` (added at rc.5) | the item | `dcterms:created` | `xsd:dateTime` (midnight of that date, AGSC-04-10) |
+| `modified` (added at rc.5) | the item | `dcterms:modified` | `xsd:dateTime` (midnight of that date, AGSC-04-10) |
 | `prov.origin` | the item | `asc:origin` | `xsd:string` |
 | `prov.operator` | the item | `asc:operator` | `xsd:string` (`human:<id>`, AGSC-02-07) |
 | `prov.model` | the item | `asc:model` | `xsd:string` |
@@ -60,6 +86,8 @@
 | `generated.by` | the item | `asc:generatedBy` | `xsd:string` |
 | `generated.at` | the item | `asc:generatedAt` | `xsd:dateTime` |
 | `spec_version` of `agsc.config.json` | the Bundle (AGSC-05-03) | `asc:specVersion` | `xsd:string` |
+| `bundle.license_prose` of `agsc.config.json` (added at rc.5) | the Bundle **and** every item | `schema:license` | `xsd:string` |
+| the Content Use Terms identifier of AGSC-06-18 (added at rc.5) | the Bundle **and** every item | `schema:usageInfo` | `xsd:string` |
 | `sources[].grade` | the Source (AGSC-05-14) | `asc:grade` | `xsd:string` |
 | `sources[].verified` | the Source | `asc:verifiedOn` | `xsd:dateTime` (midnight of that date) |
 | `verified[].by` | the Review (AGSC-05-15) | `asc:verifiedBy` | `xsd:string` |
@@ -77,5 +105,5 @@
 
 ## 5.8 Literal datatypes and N-Quads escaping (added at rc.3, 2026-09-16 — V6-B B2; the two pins that make `--peer` meaningful)
 
-- **AGSC-05-31** **Literal form.** Every literal this specification emits takes exactly one of three forms and no other: (a) a **language-tagged** literal, used only for `skos:prefLabel`, `skos:altLabel` and `skos:definition`, whose tag is the item's `lang` (default `en`, AGSC-01-13) lower-cased, and which MUST NOT also carry a datatype; (b) a **typed** literal carrying the datatype named for that property in the AGSC-05-26 table or in AGSC-05-30; (c) a **plain** literal, which is `xsd:string` — every property whose AGSC-05-26/05-30 datatype is `xsd:string` takes this form and never form (b); every DCTerms, PROV and schema.org literal this specification emits takes form (c) except `dcterms:created`/`dcterms:modified`, which carry the datatype the AGSC-05-26 table names for `date`/`modified` (V7-25) — and MUST be written **without** an explicit `^^xsd:string` in Turtle and **with** `^^<http://www.w3.org/2001/XMLSchema#string>` in N-Quads, per the RDF 1.1 rule that a plain literal is an `xsd:string`. A producer MUST NOT invent a datatype, MUST NOT emit `rdf:langString` explicitly, and MUST NOT emit an empty language tag. Booleans are `xsd:boolean` `true`/`false`; integers are `xsd:integer` with no leading `+`, no leading zeros and no exponent; instants are `xsd:dateTime` rendered by AGSC-04-10. [V6-B B2, AGSC-10-12]
+- **AGSC-05-31** **Literal form.** Every literal this specification emits takes exactly one of three forms and no other: (a) a **language-tagged** literal, used only for `skos:prefLabel`, `skos:altLabel` and `skos:definition`, whose tag is the item's `lang` (default `en`, AGSC-01-13) lower-cased, and which MUST NOT also carry a datatype; (b) a **typed** literal carrying the datatype named for that property in the AGSC-05-26 table or in AGSC-05-30; (c) a **plain** literal, which is `xsd:string` — every property whose AGSC-05-26/05-30 datatype is `xsd:string` takes this form and never form (b); every DCTerms, PROV and schema.org literal this specification emits takes form (c) — `schema:license` and `schema:usageInfo` among them (AGSC-05-26 as amended at rc.5, V9A-02) — except `dcterms:created`/`dcterms:modified`, which take form (b) with the `xsd:dateTime` the AGSC-05-26 table now names for `date`/`modified` (V7-25, V8-91) — and MUST be written **without** an explicit `^^xsd:string` in Turtle and **with** `^^<http://www.w3.org/2001/XMLSchema#string>` in N-Quads, per the RDF 1.1 rule that a plain literal is an `xsd:string`. A producer MUST NOT invent a datatype, MUST NOT emit `rdf:langString` explicitly, and MUST NOT emit an empty language tag. Booleans are `xsd:boolean` `true`/`false`; integers are `xsd:integer` with no leading `+`, no leading zeros and no exponent; instants are `xsd:dateTime` rendered by AGSC-04-10. [V6-B B2, AGSC-10-12]
 - **AGSC-05-32** **N-Quads escaping.** In `graph.nq` a literal's lexical form is written with exactly these escapes and no others: `\\` for U+005C, `\"` for U+0022, `\n` for U+000A, `\r` for U+000D, `\t` for U+0009, and `\u00XX` (four lowercase hex digits) for every other character below U+0020. Every character at or above U+0020, other than `"` and `\`, is written **as itself in UTF-8** — `\uXXXX` and `\UXXXXXXXX` MUST NOT be used for characters a producer could write directly, so that two producers emit the same bytes. IRIs are written between `<` and `>` with the same control-character escaping and no percent-re-encoding (AGSC-11-12). Lines end with ` .` and a single LF and are sorted by their serialized bytes (AGSC-04-13). `graph.ttl` uses the same lexical forms inside its own syntax. Vector `graph-0012`. [V6-B B2, D72 A-18]

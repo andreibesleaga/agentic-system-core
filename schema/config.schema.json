@@ -26,9 +26,9 @@
       ],
       "properties": {
         "base": {
-          "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base (D52(1)).",
+          "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base (D52(1)). No query, no fragment, and no path segment that is . or .. (rc.5, V9A-14).",
           "type": "string",
-          "pattern": "^(?:https://[^\\x00-\\x20/]+(?:/[^\\x00-\\x20/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
+          "pattern": "^(?:https://[^\\x00-\\x20/?#]+(?:/[^\\x00-\\x20/?#]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
         },
         "title": {
           "type": "string"
@@ -107,17 +107,15 @@
       }
     },
     "build": {
+      "description": "rdfxml and feed are RESERVED names of 1.1 and are rejected here with AGSC-E004 (AGSC-00-20, AGSC-01-18; feed reserved at rc.5, R-15 — no 1.0 rule pins the bytes of /feed.xml).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "out": {
-          "description": "Build output directory; default www, a trailing slash is accepted and stripped (AGSC-01-19).",
+          "description": "Build output directory; a relative path under the grammar of AGSC-01-35, one or more /-separated segments, a trailing slash accepted and stripped (AGSC-01-19; multi-segment admitted at rc.5, V9A-12).",
           "type": "string",
-          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*/?$"
-        },
-        "feed": {
-          "description": "Emit /feed.xml; default true (AGSC-06-01).",
-          "type": "boolean"
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*/?$",
+          "default": "www"
         }
       }
     },
@@ -128,7 +126,8 @@
         "default": {
           "description": "BCP 47 tag of the primary (unsuffixed) files; default en.",
           "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$",
-          "type": "string"
+          "type": "string",
+          "default": "en"
         }
       },
       "type": "object"
@@ -140,7 +139,7 @@
       "items": {
         "type": "string",
         "format": "uri",
-        "pattern": "^https://[^\\x00-\\x20]+/\\.well-known/knowledge-linkset$"
+        "pattern": "^https://[^\\x00-\\x20/?#]+(?:/[^\\x00-\\x20/?#]+)*/\\.well-known/knowledge-linkset$"
       }
     },
     "run": {
@@ -149,7 +148,8 @@
       "properties": {
         "enabled": {
           "description": "Default false.",
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "allow": {
           "description": "Program names permitted as the first word of a {run} block; anything else is refused.",
@@ -189,7 +189,7 @@
           "author": {
             "description": "Forge login of the identity that opens ingest pull requests (AGSC-08-26 c).",
             "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
           },
           "owner": {
             "$ref": "#/$defs/human_actor"
@@ -274,6 +274,13 @@
           "minimum": 100,
           "maximum": 60000,
           "default": 10000
+        },
+        "max_bytes": {
+          "description": "AGSC-11-10(f), rc.5: the cap on any cross-origin artefact other than a discovery document, measured on the decoded stream; AGSC-E907 at the bound.",
+          "type": "integer",
+          "minimum": 65536,
+          "maximum": 268435456,
+          "default": 33554432
         }
       },
       "patternProperties": {
@@ -413,7 +420,7 @@
               },
               {
                 "type": "string",
-                "pattern": "^x-[a-z0-9]+-[a-z0-9-]+$"
+                "pattern": "^x-[a-z0-9]+(-[a-z0-9]+)+$"
               }
             ]
           },
@@ -433,6 +440,28 @@
             ]
           }
         },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "surface": {
+                  "const": "responder"
+                }
+              },
+              "required": [
+                "surface"
+              ]
+            },
+            "then": {
+              "properties": {
+                "version": {
+                  "description": "AGSC-11-21, rc.5 (V9A-15): a responder names its protocol, mcp:<revision> or a2a:<version>; a bare SemVer is not a protocol name.",
+                  "pattern": "^(mcp:[0-9]{4}-[0-9]{2}-[0-9]{2}|a2a:[0-9]+\\.[0-9]+(\\.[0-9]+)?)$"
+                }
+              }
+            }
+          }
+        ],
         "patternProperties": {
           "^x-[a-z0-9]+(-[a-z0-9]+)+$": {}
         },
@@ -530,7 +559,7 @@
           "author": {
             "description": "Forge login under which the lane's Proposals are opened; must equal channels[].author of the named channel (AGSC-01-36).",
             "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
           },
           "operator": {
             "$ref": "#/$defs/human_actor"
@@ -609,13 +638,44 @@
                 "kind": {
                   "const": "llm"
                 }
-              }
+              },
+              "required": [
+                "kind"
+              ]
             },
             "then": {
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "budget_usd_month": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
               "required": [
                 "model",
                 "budget_usd_month"
               ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "process"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "description": "AGSC-01-36: model is REQUIRED when kind is llm and ABSENT otherwise (V8-112, rc.5).",
+              "properties": {
+                "model": false
+              }
             }
           }
         ]

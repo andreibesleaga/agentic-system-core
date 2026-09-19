@@ -5,7 +5,7 @@
     "draft_excluded": [
       "hidden"
     ],
-    "output": "# Example Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.4\ngenerated_at: 2026-09-16T00:00:00Z\n-->\n\n> A node of the Agentic Knowledge Web.\n\n## Coordination\n\n- [Supervisor](https://a.example/concepts/supervisor/): Routes work to workers.\n\n## Other\n\n- [Loose Note](https://a.example/concepts/loose-note/): Loose Note\n"
+    "output": "# Example Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.5\ngenerated_at: 2026-09-16T00:00:00Z\n-->\n\n> A node of the Agentic Knowledge Web.\n\n## Coordination\n\n- [Supervisor](https://a.example/concepts/supervisor/): Routes work to workers.\n\n## Other\n\n- [Loose Note](https://a.example/concepts/loose-note/): Loose Note\n"
   },
   "id": "disc-0006",
   "input": {
@@ -41,12 +41,12 @@
         "title": "Hidden"
       }
     ],
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "level": "required",
   "note": "added 2026-09-16 at rc.3 (DS-3); unreleased, may be edited in place until the rc.3 tag; expected bytes re-derived for rc.4 on 2026-09-18 (D93: the rc.4 tag carried rc.3 in the expected provenance line)",
   "options": {
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "rule": "AGSC-06-13a"
 }

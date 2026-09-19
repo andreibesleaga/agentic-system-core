@@ -10,7 +10,7 @@
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "rule": "AGSC-08-01"
 }

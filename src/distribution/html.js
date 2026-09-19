@@ -33,10 +33,17 @@ function escapeHtml(value) {
  * identifier is a constant, independent of `bundle.license_prose`, which names the
  * licence of the prose itself and may differ.
  */
-function termsLine(licenseProse) {
+function termsLine(licenseProse, options = {}) {
   const license = licenseProse == null ? TERMS : licenseProse;
+  // V9D-A6: every page used to link `/legal/` whether or not the build produced
+  // it. The identifier is always named; the LINK is emitted only when the route
+  // exists, so no build ships a dangling internal link (AGSC-06-18).
+  const legal = options.legal === undefined ? true : Boolean(options.legal);
+  const terms = legal
+    ? `<a href="/legal/">${escapeHtml(TERMS)}</a>`
+    : `<span>${escapeHtml(TERMS)}</span>`;
   return `<p class="terms">Prose licence: <span>${escapeHtml(license)}</span>. `
-    + `Content Use Terms: <a href="/legal/">${escapeHtml(TERMS)}</a>.</p>`;
+    + `Content Use Terms: ${terms}.</p>`;
 }
 
 /**
@@ -77,7 +84,7 @@ function shell(page) {
     `<h1>${escapeHtml(page.title)}</h1>`,
     page.body,
     '</main>',
-    `<footer>${termsLine(page.licenseProse)}</footer>`,
+    `<footer>${termsLine(page.licenseProse, { legal: page.legal })}</footer>`,
     '</body>',
     '</html>',
     '',
@@ -149,6 +156,97 @@ const HONEST_LIMIT = 'These lints prove neither safety nor the absence of novel 
   + 'hashes and attestations prove only that an artefact is what was published. '
   + 'An implementation MUST NOT claim more.';
 
+/**
+ * `/compose/` — the combiner, in the browser (AGSC-06-01, AGSC-07-01). The page
+ * carries the FORM and nothing else: the algebra, the controller and the WebMCP
+ * registration are three same-origin scripts, because AGSC-06-17's own
+ * `script-src 'self'` policy admits no inline script.
+ *
+ * @param {object} page `{assets}` — the script file names, in load order.
+ * @param {object} options the shared page options.
+ */
+function composePage({ assets }, options = {}) {
+  const scripts = assets.map((name) => `<script src="${escapeHtml(name)}"></script>`).join('\n');
+  return shell({
+    ...options,
+    title: 'Compose',
+    description: 'Select items and compute a Harness in this page — no server, no key, no upload.',
+    body: [
+      '<p>Tick the items you want. The closure algebra of AGSC-07 runs <em>in this page</em>:',
+      'no request leaves this origin, no key is needed and nothing is uploaded. The seven',
+      'Harness files are offered one download per file.</p>',
+      '<h2>Items</h2>',
+      '<ul id="items"><li>Loading the published graph…</li></ul>',
+      '<h2>Verdict</h2>',
+      '<p id="validity">Nothing selected.</p>',
+      '<pre id="verdict"></pre>',
+      '<h3>Why an item was added</h3>',
+      '<ul id="explanations"></ul>',
+      '<h3>Conflicts</h3>',
+      '<ul id="conflicts"></ul>',
+      '<h2>Harness</h2>',
+      '<p><button id="download" type="button" disabled>Build the Harness</button></p>',
+      '<ul id="files"></ul>',
+      scripts,
+    ].join('\n'),
+  });
+}
+
+/**
+ * `/boards/<cluster>/` — the HUMAN board beside the JSON export of AGSC-10-13.
+ * Columns are the task states of AGSC-02-99, the work-in-progress limit of
+ * AGSC-10-17 is shown, and each card names its `claimed_by` where the git history
+ * supplied one. It derives nothing the JSON export does not already carry.
+ *
+ * @param {object} page `{board, columns, wip}`.
+ */
+function boardPage({ board, columns, wip }, options = {}) {
+  const parts = [`<p>${escapeHtml(board.done ? 'This board is done: every task is in a terminal state (AGSC-10-13).' : 'This board is open.')}</p>`];
+  parts.push(`<p>Work-in-progress limit: ${wip == null ? 'none declared' : escapeHtml(String(wip))} `
+    + `task${wip === 1 ? '' : 's'} in <code>TASK_STATE_WORKING</code> per agent lane (AGSC-10-17). `
+    + `Machine view: <a href="/boards/${escapeHtml(board.slug)}.json">JSON</a>.</p>`);
+  for (const column of columns) {
+    parts.push(`<section><h2>${escapeHtml(column.state)} <span>(${column.tasks.length})</span></h2>`);
+    parts.push(column.tasks.length === 0
+      ? '<p>No task in this state.</p>'
+      : `<ul>${column.tasks.map((task) => `<li><a href="${escapeHtml(task.iri)}">${escapeHtml(task.title)}</a>`
+        + `${task.claimed_by === undefined ? '' : ` — claimed by <span>${escapeHtml(task.claimed_by)}</span>`}`
+        + `${task.blocked_by.length === 0 ? '' : ` — blocked by ${task.blocked_by.map((s) => `<code>${escapeHtml(s)}</code>`).join(', ')}`}`
+        + '</li>').join('')}</ul>`);
+    parts.push('</section>');
+  }
+  return shell({
+    ...options,
+    title: `Board: ${board.board}`,
+    description: `Every task of the ${board.board} cluster, by state.`,
+    body: parts.join('\n'),
+  });
+}
+
+/**
+ * `/legal/` — the Content Use Terms TEXT (AGSC-06-18: "The Content Use Terms text
+ * is published at `/legal/` … and a distribution without it is incomplete"). The
+ * bytes come from the Bundle's `LICENSE-CONTENT` file and from nowhere else: this
+ * page renders them and adds no term of its own, because the wording is an owner
+ * decision outside the specification.
+ */
+function legalPage({ terms, licenseProse, rendered }, options = {}) {
+  return shell({
+    ...options,
+    title: 'Content Use Terms',
+    description: 'The terms every export of this node carries, and the licence of its prose.',
+    body: [
+      `<p>The Content Use Terms identifier is <code>${escapeHtml(terms)}</code>. `
+        + `The licence of the prose itself is <code>${escapeHtml(licenseProse)}</code>; `
+        + 'the two are different facts and may differ (AGSC-06-18).</p>',
+      '<h2>The terms</h2>',
+      rendered,
+      '<p>The text above is this distribution\'s <code>LICENSE-CONTENT</code> file, '
+        + 'rendered unchanged (AGSC-01-26, AGSC-06-18).</p>',
+    ].join('\n'),
+  });
+}
+
 function aboutPage({ verbs, personas }, options = {}) {
   const quickstart = personas.map((p) => `<section><h2>${escapeHtml(p.id)} — ${escapeHtml(p.title)}</h2><ol>${p.steps.slice(0, 10).map((s) => `<li><code>${escapeHtml(s)}</code></li>`).join('')}</ol></section>`).join('\n');
   const verbList = `<p>Verbs: ${verbs.map((v) => `<code>${escapeHtml(v)}</code>`).join(', ')}.</p>`;
@@ -162,5 +260,6 @@ function aboutPage({ verbs, personas }, options = {}) {
 
 module.exports = {
   shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage,
+  boardPage, composePage, legalPage,
   escapeHtml, termsLine, HONEST_LIMIT,
 };

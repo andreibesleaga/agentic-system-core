@@ -46,13 +46,13 @@
         "base": "https://example.org/",
         "title": "Example"
       },
-      "spec_version": "1.0.0-rc.4"
+      "spec_version": "1.0.0-rc.5"
     }
   },
   "level": "required",
   "note": "added 2026-09-17 at rc.4 (D87); unreleased, may be edited in place until the rc.4 tag",
   "options": {
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "rule": "AGSC-01-36"
 }

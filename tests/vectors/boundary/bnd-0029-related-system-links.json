@@ -76,7 +76,7 @@
   "level": "required",
   "note": "added 2026-09-17 (D82, owner request); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "rule": "AGSC-06-35"
 }

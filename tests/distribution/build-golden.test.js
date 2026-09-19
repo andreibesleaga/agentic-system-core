@@ -225,7 +225,11 @@ test('AGSC-06-19: item and index pages embed Schema.org JSON-LD', () => {
   // Every item page and every index page carries one — none is silently missing.
   for (const route of built.files.keys()) {
     if (!route.endsWith('index.html')) continue;
-    if (['/about/index.html', '/now/index.html', '/search/index.html'].includes(route)) continue;
+    // AGSC-06-19 names ITEM and INDEX pages. `/compose/` is a tool surface and
+    // `/legal/` is the Content Use Terms text; neither is an item and neither is an
+    // index, so neither carries a `TechArticle`, a `DefinedTerm` or a `Dataset`.
+    if (['/about/index.html', '/compose/index.html', '/legal/index.html',
+      '/now/index.html', '/search/index.html'].includes(route)) continue;
     assert.ok(blocks.has(route), `${route} carries no AGSC-06-19 JSON-LD`);
   }
   assert.ok(![...built.skipped || []].some((s) => /06-19/u.test(String(s))),

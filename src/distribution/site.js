@@ -36,6 +36,9 @@ const search = require('./search.js');
 const headers = require('./headers.js');
 const now = require('./now.js');
 const html = require('./html.js');
+const composePage = require('./compose-page.js');
+const webmcp = require('./webmcp.js');
+const browserBundle = require('../composition/browser.js');
 
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = chunks;
 
@@ -114,9 +117,18 @@ function sitemap(base, routes, instant) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
 }
 
-/** AGSC-06-18, dialect 1: the AI-usage signals of `robots.txt` (RFC 9309). */
-function robots(base) {
-  return `User-agent: *\n# Content Signals Policy: the same policy as /.well-known/tdmrep.json and /legal/\n`
+/**
+ * AGSC-06-18, dialect 1: the AI-usage signals of `robots.txt` (RFC 9309). The
+ * comment names `/legal/` only when the build emits it (V9D-A6): a file that points
+ * at a route the same build does not produce is a dangling link whichever dialect
+ * carries it.
+ */
+function robots(base, options = {}) {
+  const legal = options.legal === undefined ? true : Boolean(options.legal);
+  const policy = legal
+    ? 'the same policy as /.well-known/tdmrep.json and /legal/'
+    : 'the same policy as /.well-known/tdmrep.json';
+  return `User-agent: *\n# Content Signals Policy: ${policy}\n`
     + `Content-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: /\n\nSitemap: ${discovery.href(base, '/sitemap.xml')}\n`;
 }
 
@@ -125,14 +137,175 @@ function tdmrep(base) {
   return [{ location: `${String(base).replace(/\/+$/u, '')}/`, 'tdm-reservation': 1 }];
 }
 
-/** RFC 9116: the one security file that is a route (AGSC-06-01, PRD-047). */
-function securityTxt(base, expires) {
-  return `Policy: ${discovery.href(base, '/legal/')}\nExpires: ${expires}\nPreferred-Languages: en\n`;
+/**
+ * RFC 9116: the one security file that is a route (AGSC-06-01, PRD-047). `Policy`
+ * is OPTIONAL in RFC 9116, so it is emitted only when `/legal/` exists — a `Policy`
+ * naming a 404 is worse than no `Policy` at all (V9D-A6).
+ */
+function securityTxt(base, expires, options = {}) {
+  const legal = options.legal === undefined ? true : Boolean(options.legal);
+  const policy = legal ? `Policy: ${discovery.href(base, '/legal/')}\n` : '';
+  return `${policy}Expires: ${expires}\nPreferred-Languages: en\n`;
 }
 
 /** AGSC-06-02: the two machine views of an item. */
 function pageMarkdown(item) {
   return textBytes(item.body == null ? '' : item.body);
+}
+
+/**
+ * AGSC-01-26 / AGSC-06-18: the Bundle's own `LICENSE-CONTENT`, the bytes `/legal/`
+ * publishes. Read through the injected port — the file is in the Bundle root, which
+ * is exactly what the port is rooted at — and `null` when there is none, because
+ * its wording is an owner decision outside this specification and a writer may
+ * never invent it.
+ */
+function readLicenseContent(ports) {
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return null;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists('LICENSE-CONTENT')) return null;
+    const text = String(fs.readFile('LICENSE-CONTENT', 'utf8'));
+    return text.trim() === '' ? null : text;
+  } catch (e) {
+    // Absent, unreadable or outside the root: all three mean "no terms text here".
+    return null;
+  }
+}
+
+/**
+ * AGSC-06-21, the half no writer measured (V9D-A1): "Budgets are normative and MUST
+ * fail the build when exceeded: ≤100 KB per HTML page; ≤1 KB of `search.json` per
+ * published item and ≤500 KB absolute at or below 500 items; ≤60 s build per 500
+ * items … Exceeding a budget that no sharding rule relieves MUST fail the build."
+ *
+ * All four are MEASURED here. The rule says a breach MUST FAIL the build, and
+ * `spec/09-conformance.md` §9.4 registers NO code for a budget breach — so the
+ * measurement is reported under `AGSC-E904`, the size-cap code, whose registry row
+ * names AGSC-01-16 and AGSC-01-34 and not this rule. That is a compromise and it is
+ * stated as one: inventing `AGSC-E6nn` would breach AGSC-09-15, and dropping the
+ * measurement would leave a second silent MUST after F27-08. The missing
+ * registration is on the specification items list.
+ *
+ * `KB` is read as 1000 bytes: the rule writes `KB`, not `KiB`, and AGSC-01-16
+ * spells `1 MiB` explicitly where it means the binary prefix — so the two rules
+ * distinguish them deliberately.
+ *
+ * The three BYTE budgets are measured here, where the bytes are. The fourth is a
+ * DURATION, and a duration is a wall-clock measure: measuring it inside `build`
+ * would make a finding depend on how busy the machine is, which is exactly the
+ * flaky test this project forbids and would break `verify`'s byte comparison. It is
+ * therefore `timeBudget()`, which the CLI calls with the elapsed time it measured.
+ *
+ * @param {Map<string,string>} files the emitted map.
+ * @param {number} publishedCount the published item count.
+ * @returns {Array<object>} Findings; empty means every byte budget is met.
+ */
+const BUDGET_HTML_BYTES = 100000;
+const BUDGET_SEARCH_PER_ITEM_BYTES = 1000;
+const BUDGET_SEARCH_TOTAL_BYTES = 500000;
+const BUDGET_MS_PER_500_ITEMS = 60000;
+
+function budgets(files, publishedCount) {
+  const out = [];
+  const bytesOf = (text) => Buffer.byteLength(String(text), 'utf8');
+  for (const route of [...files.keys()].sort(compareCodePoint)) {
+    if (!route.endsWith('.html')) continue;
+    const size = bytesOf(files.get(route));
+    if (size > BUDGET_HTML_BYTES) {
+      out.push(finding('AGSC-E904',
+        `${route} is ${size} bytes; AGSC-06-21 budgets 100 KB per HTML page, and no sharding rule relieves a page`,
+        { file: route }));
+    }
+  }
+  // The index: per-item and, at or below 500 items, absolute. Above 500 items the
+  // absolute bound is relieved by the sharding rule of AGSC-06-21, which
+  // `distribution/search.js` applies; the per-item bound never is.
+  let searchBytes = 0;
+  for (const route of files.keys()) {
+    if (/^\/search(?:-[0-9]+)?\.json$/u.test(route)) searchBytes += bytesOf(files.get(route));
+  }
+  if (publishedCount > 0 && searchBytes > publishedCount * BUDGET_SEARCH_PER_ITEM_BYTES) {
+    out.push(finding('AGSC-E904',
+      `search.json is ${searchBytes} bytes over ${publishedCount} published items; `
+      + 'AGSC-06-21 budgets 1 KB per published item',
+      { file: '/search.json' }));
+  }
+  if (publishedCount <= 500 && searchBytes > BUDGET_SEARCH_TOTAL_BYTES) {
+    out.push(finding('AGSC-E904',
+      `search.json is ${searchBytes} bytes; AGSC-06-21 budgets 500 KB absolute at or below 500 items`,
+      { file: '/search.json' }));
+  }
+  return out;
+}
+
+/**
+ * AGSC-06-21's fourth budget: "≤60 s build per 500 items". The allowance scales with
+ * the Bundle, so the budget is per-scale and a 5,000-item Bundle conforms.
+ *
+ * @param {number} elapsedMs the wall-clock duration the CALLER measured.
+ * @param {number} publishedCount
+ * @returns {Array<object>} Findings.
+ */
+function timeBudget(elapsedMs, publishedCount) {
+  if (elapsedMs == null || !Number.isFinite(Number(elapsedMs))) return [];
+  const allowed = Math.max(1, Math.ceil(Number(publishedCount) / 500)) * BUDGET_MS_PER_500_ITEMS;
+  if (Number(elapsedMs) <= allowed) return [];
+  return [finding('AGSC-E904',
+    `the build took ${Math.round(Number(elapsedMs))} ms for ${publishedCount} published items; `
+    + `AGSC-06-21 budgets ${allowed} ms (60 s per 500 items)`,
+    { file: 'agsc.config.json' })];
+}
+
+/**
+ * Every site-absolute link the emitted HTML, `robots.txt` and `security.txt` carry,
+ * with the route each one resolves to. A build that links a route it does not emit
+ * ships a dangling internal link — the defect V9D-A6 found on `/legal/` — so this
+ * is a function the suite asserts over, not a promise in a comment.
+ *
+ * @param {Map<string,string>} files
+ * @returns {Array<{from:string, href:string, route:string}>}
+ */
+function internalLinks(files) {
+  const out = [];
+  const add = (from, href) => {
+    const clean = String(href).split('#')[0].split('?')[0];
+    if (clean === '' || !clean.startsWith('/')) return;
+    out.push({ from, href: String(href), route: clean });
+  };
+  for (const route of [...files.keys()].sort(compareCodePoint)) {
+    const text = String(files.get(route));
+    if (route.endsWith('.html')) {
+      const attribute = /(?:href|src)="([^"]*)"/gu;
+      let m = attribute.exec(text);
+      while (m !== null) {
+        add(route, m[1]);
+        m = attribute.exec(text);
+      }
+    }
+    if (route === '/robots.txt' || route === '/.well-known/security.txt') {
+      const absolute = /https?:\/\/[^\s]+/gu;
+      let m = absolute.exec(text);
+      while (m !== null) {
+        // The two text dialects carry ABSOLUTE URLs; the path is what must resolve.
+        const path = m[0].replace(/^https?:\/\/[^/]*/u, '');
+        add(route, path === '' ? '/' : path);
+        m = absolute.exec(text);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The emitted route a site-absolute path is served from: `/x/` is `/x/index.html`,
+ * `/x.json` is itself. `null` when the build emits nothing for it.
+ */
+function resolvesTo(files, route) {
+  if (files.has(route)) return route;
+  const asIndex = route.endsWith('/') ? `${route}index.html` : `${route}/index.html`;
+  if (files.has(asIndex)) return asIndex;
+  return null;
 }
 
 /**
@@ -162,13 +335,13 @@ function paginate(route, entries, perPage = search.ITEMS_PER_SHARD) {
  * (WP-10-G, 2026-09-18).
  */
 const UNPRODUCED_ROUTES = Object.freeze([
-  ['/compose/', 'no module renders the saved-composition page yet (AGSC-02-97, AGSC-07-24)'],
   ['/skills/, /skills/index.json, /skills/<cluster>/SKILL.md',
-    'the seven Harness files of AGSC-07-12 are not written at this milestone (WP-11)'],
+    'the PUBLISHED skill packs of AGSC-07-19 are a different artefact from a Harness\'s'
+    + ' per-Procedure SKILL.md (spec/07 §7.4) and belong to the skills package (WP-12)'],
   ['/specs/, /specs/agentic-knowledge/, /specs/mcp/',
     'the published specification pages are the site repository\'s, not the engine\'s (AGSC-06-01)'],
-  ['/about/, /legal/, /changelog/',
-    'these three pages are authored, not derived; no rule pins their bytes (AGSC-06-01)'],
+  ['/about/, /changelog/',
+    'these two pages are authored, not derived; no rule pins their bytes (AGSC-06-01)'],
   ['/feed.xml', 'no rule pins the feed bytes; `build.feed` has nothing to switch on yet (AGSC-06-01)'],
   ['/attachments/<slug>/<file>',
     'the served bytes are the hashed bytes of AGSC-05-29 and reach `build` through no port (AGSC-02-98)'],
@@ -263,7 +436,14 @@ function build(bundle, ports, options = {}) {
   }
 
   // ------------------------------------------------------------ NOW (AGSC-06-22)
-  const nowState = now.state(items, config, { instant, allItems });
+  // AGSC-10-17 needs the derived `claimed_by` and AGSC-08-28(d) the auto-merge
+  // count, so NOW reads the same two derived inputs the boards and the ledger do.
+  const nowState = now.state(items, config, {
+    allItems,
+    claimedBy: boardsModule.claimants(options.gitLog),
+    instant,
+    ledger: files.get('/ledger.jsonl'),
+  });
   const nowMd = now.nowMarkdown(nowState);
   if (full) put('/now.md', nowMd);
 
@@ -316,9 +496,24 @@ function build(bundle, ports, options = {}) {
   }
 
   // ------------------------------------------------------------ licence dialects
-  put('/robots.txt', robots(base));
+  // AGSC-06-18 / V9D-A6: `/legal/` is derived from the Bundle's own `LICENSE-CONTENT`
+  // — "The Content Use Terms text is published at /legal/ … and a distribution
+  // without it is incomplete". A Bundle that ships no such file gets no `/legal/`
+  // route AND no link to one, in any of the three dialects, so that no build ever
+  // emits a dangling internal link.
+  const licenseContent = options.licenseContent === undefined
+    ? readLicenseContent(ports)
+    : options.licenseContent;
+  const renderer = options.render === undefined ? markdown.render : options.render;
+  const hasLegal = full && typeof renderer === 'function' && licenseContent !== null;
+  if (full && licenseContent === null) {
+    skipped.push('/legal/ (no LICENSE-CONTENT file in the Bundle root; AGSC-01-26, AGSC-06-18 —'
+      + ' the Content Use Terms link is omitted from every page and from both text dialects'
+      + ' rather than left dangling)');
+  }
+  put('/robots.txt', robots(base, { legal: hasLegal }));
   put('/.well-known/tdmrep.json', jsonBytes(tdmrep(base)));
-  put('/.well-known/security.txt', securityTxt(base, instant));
+  put('/.well-known/security.txt', securityTxt(base, instant, { legal: hasLegal }));
 
   // ------------------------------------------------------------ discovery document
   const digests = {};
@@ -354,9 +549,11 @@ function build(bundle, ports, options = {}) {
   ));
 
   // ------------------------------------------------------------ HTML pages (C)
-  const render = options.render === undefined ? markdown.render : options.render;
+  const render = renderer;
   if (full && typeof render === 'function') {
-    const pageOptions = { render, licenseProse, nav: [['/', 'Home'], ['/search/', 'Search']] };
+    const pageOptions = {
+      legal: hasLegal, licenseProse, nav: [['/', 'Home'], ['/search/', 'Search'], ['/compose/', 'Compose']], render,
+    };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
     /** One index route, paginated per AGSC-06-21 above 500 entries. */
     const putIndex = (route, title, description, entries) => {
@@ -407,6 +604,50 @@ function build(bundle, ports, options = {}) {
     putIndex('/search/', 'Search', 'The index of this node is /search.json.', items.map(entryOf));
     put('/now/index.html', html.nowPage(nowMd, pageOptions));
     put('/404.html', html.notFoundPage(pageOptions));
+
+    // AGSC-06-18: the Content Use Terms text, from `LICENSE-CONTENT` and nowhere else.
+    if (hasLegal) {
+      put('/legal/index.html', html.legalPage({
+        licenseProse, rendered: render(textBytes(licenseContent)).html, terms: TERMS,
+      }, pageOptions));
+    }
+
+    // AGSC-06-01 `/compose/` + AGSC-07-01/07-13: the combiner in the browser. The
+    // three scripts are same-origin assets of this one route, because AGSC-06-17's
+    // `script-src 'self'` admits no inline script.
+    put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, pageOptions));
+    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ specVersion })));
+    put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
+    put('/compose/webmcp.js', textBytes(webmcp.script()));
+
+    // AGSC-10-13 + PUB-3 Q18: the HUMAN board page beside the JSON export.
+    // Columns are the nine task states of AGSC-02-99, in their declared order, so
+    // a board reads left to right the way the state machine runs.
+    const wip = Math.min(...[...(Array.isArray(config.agents) ? config.agents : [])]
+      .map((a) => (a.max_claims == null ? boardsModule.DEFAULT_MAX_CLAIMS : Number(a.max_claims)))
+      .concat([Number.POSITIVE_INFINITY]));
+    for (const one of board.boards) {
+      const columns = boardsModule.TASK_STATES
+        .map((state) => ({ state, tasks: one.board.tasks.filter((t) => t.state === state) }))
+        .filter((column) => column.tasks.length > 0);
+      // AGSC-06-19: a board page is an INDEX page — it lists the tasks of one
+      // cluster — so it carries the `Dataset` of the three types the rule names.
+      put(`/boards/${one.slug}/index.html`, html.boardPage({
+        board: { ...one.board, slug: one.slug },
+        columns,
+        wip: Number.isFinite(wip) ? wip : null,
+      }, {
+        ...pageOptions,
+        canonical: discovery.href(base, `/boards/${one.slug}/`),
+        jsonld: schemaOrg({
+          '@context': SCHEMA_ORG,
+          '@type': 'Dataset',
+          description: `Every task of the ${one.board.board} cluster, by state.`,
+          name: `Board: ${one.board.board}`,
+          url: discovery.href(base, `/boards/${one.slug}/`),
+        }),
+      }));
+    }
   } else {
     skipped.push(full
       ? 'every HTML route (the Markdown renderer was switched off)'
@@ -418,6 +659,22 @@ function build(bundle, ports, options = {}) {
 
   // AGSC-04-01: one deterministic order, independent of insertion order.
   const ordered = new Map([...files.keys()].sort(compareCodePoint).map((k) => [k, files.get(k)]));
+
+  // AGSC-06-21: the three byte budgets, MEASURED (V9D-A1). A breach MUST fail the
+  // build, so these are `error` findings and `ci` exits 1 on them.
+  findings.push(...budgets(ordered, items.length));
+
+  // Every site-absolute link the build emits MUST resolve to a route the build
+  // emits. This is the defect V9D-A6 found on `/legal/`, closed here as a check
+  // rather than a habit: a link to nothing is a defect of THIS build, not of the
+  // reader who follows it.
+  for (const link of internalLinks(ordered)) {
+    if (resolvesTo(ordered, link.route) !== null) continue;
+    findings.push(finding('AGSC-E901',
+      `${link.from} links ${link.href}, and this build emits no route for it (AGSC-06-01)`,
+      { file: link.from }));
+  }
+
   return { files: ordered, findings, skipped, state: nowState, ledgerHead };
 }
 
@@ -466,5 +723,8 @@ function verify(bundle, ports, options = {}) {
 module.exports = {
   build, write, verify, routeOf, sitemap, robots, tdmrep, securityTxt,
   publishedItems, jsonBytes, textBytes, paginate,
+  budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
+  BUDGET_HTML_BYTES, BUDGET_MS_PER_500_ITEMS,
+  BUDGET_SEARCH_PER_ITEM_BYTES, BUDGET_SEARCH_TOTAL_BYTES,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

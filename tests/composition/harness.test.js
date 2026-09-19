@@ -187,8 +187,15 @@ test('AGSC-07-15: the inertness check catches what it is for', () => {
     ['skills/x/run.sh', '#!/bin/sh\n'],
     ['AGENTS.md', 'fine\n'],
   ]);
-  const codes = harness.executableViolations(files).map((f) => f.code);
-  assert.deepStrictEqual(codes, ['AGSC-E407', 'AGSC-E407']);
+  const found = harness.executableViolations(files);
+  assert.deepStrictEqual(found.map((f) => f.code), ['AGSC-E407', 'AGSC-E407', 'AGSC-E407', 'AGSC-E407']);
+  const messages = found.map((f) => f.message).join(' | ');
+  assert.match(messages, /allowed-tools key/u);
+  assert.match(messages, /shebang line/u);
+  assert.match(messages, /executable file extension/u);
+  assert.match(messages, /file kind AGSC-07-12 does not name/u);
+  // The one legitimate file raises nothing.
+  assert.ok(!messages.includes('AGENTS.md'));
 });
 
 // ------------------------------------------------------------------ AGSC-07-16 / AGSC-01-29

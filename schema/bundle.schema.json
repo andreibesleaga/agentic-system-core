@@ -6,6 +6,7 @@
   "type": "object",
   "additionalProperties": true,
   "required": ["spec_version", "okf_version", "title", "description", "base"],
+  "not": { "required": ["type"] },
   "properties": {
     "spec_version": {
       "description": "SemVer; a reader MUST accept any Bundle whose MAJOR equals its own (AGSC-00-14, AGSC-00-17).",
@@ -20,9 +21,9 @@
     "title": { "type": "string", "minLength": 3, "maxLength": 120 },
     "description": { "type": "string", "minLength": 40, "maxLength": 200 },
     "base": {
-      "description": "Absolute https origin, trailing slash optional; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json, including the http://localhost[:port]/ development placeholder written by adoption (D52(1)).",
+      "description": "Absolute https origin, trailing slash optional; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json, including the http://localhost[:port]/ development placeholder written by adoption (D52(1)). No query, no fragment, and no path segment that is . or .. (AGSC-01-19, rc.5, V9A-14).",
       "type": "string",
-      "pattern": "^(?:https://[^\\x00-\\x20/]+(?:/[^\\x00-\\x20/]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
+      "pattern": "^(?:https://[^\\x00-\\x20/?#]+(?:/[^\\x00-\\x20/?#]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
     },
     "lang": { "type": "string", "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$" },
     "license": {

@@ -9,7 +9,7 @@
 - **AGSC-01-05** `index.md` MAY exist in any folder (OKF reserved). `_index.md` and `README.md` MUST NOT be used as items. [research/12 §P rule 3]
 - **AGSC-01-06** Non-knowledge site pages live in `site/*.md`, outside `content/`. They are rendered but MUST NOT appear in the graph, in `search.json` or in `llms.txt` item lists. [audit/D §1.1, G40]
 - **AGSC-01-07** Diagram sources live at `content/diagrams/<slug>.diagram`. A compiled `.svg` MUST NOT be committed; it is produced into the build output. [audit/D §2.2, D20]
-- **AGSC-01-08** `www/` (build output) and `dist/` (proposals, harnesses, gate verdicts) are generated. An implementation MUST NOT read them as input to a build. [audit/D §2.2, D47]
+- **AGSC-01-08** `www/` (build output) and `dist/` (proposals, harnesses, gate verdicts and, at rc.5, the forge enforcement artefacts of AGSC-08-12) are generated. An implementation MUST NOT read them as input to a build. [audit/D §2.2, D47]
 - **AGSC-01-09** *(retired at rc.3, 2026-09-17, V6-B minimality pass confirmed by D81: entailed by AGSC-07-12 (the only legal location is dist/harness/) with AGSC-01-08 (R19) — merged into AGSC-07-12; the id is reserved under AGSC-00-16 and never reused.)*
 
 ## 1.2 Slugs and identity

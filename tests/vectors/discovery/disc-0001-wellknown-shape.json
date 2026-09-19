@@ -11,7 +11,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0-rc.4"
+    "spec_version": "1.0.0-rc.5"
   },
   "reason": "Withdrawn at 1.0.0-rc.2 by D55 (V4-A A-08). This vector pinned the pre-D55 discovery document: top_level_members [\"integrity\",\"linkset\"], the fixed integrity member names (bundle, counts, generated_at, hashes, ledger_head, spec_version) and the vendor media type application/vnd.agenticsystemcore.agentic-knowledge+json. RFC 9264 4.2.1 requires linkset to be the sole top-level member and no vendor media type is defined or registered any more. Superseded by disc-0003.",
   "rule": "AGSC-06-08"
