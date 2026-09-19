@@ -1,6 +1,8 @@
 # Profile URI registration — ready to file (RFC 7284, First Come First Served)
 
-*D82 Q23 (2026-09-17): the Profile URI registry (https://www.iana.org/assignments/profile-uris/) is First Come First Served and can be filed today, independently of the Internet-Draft. The owner files it from their own account (the assistant never submits anything). Five fields, exactly as RFC 7284 §4.1 asks.*
+*D82 Q23 (2026-09-17): the Profile URI registry (https://www.iana.org/assignments/profile-uris/) is First Come First Served and can be filed today, independently of the Internet-Draft. The owner files it from their own account (the assistant never submits anything). Five fields, exactly as the registration template of RFC 7284 §4 sets them out; the registration process is RFC 7284 §2 and the worked example is §3 (§4.1 is the registry's initial contents, not the template).*
+
+*Re-verified live 2026-09-19: the registry page https://www.iana.org/assignments/profile-uris/ was last updated 2025-06-18 and states "Registration Procedure(s): First Come First Served (Specification Suggested)"; it lists nine entries and none of them is this URI or anything colliding with it. RFC 7284 §4: "The registration procedure for new entries requires a request in the form of the following template and is 'First Come First Served' per [RFC5226]." Neither RFC 7284 nor the registry page names a submission channel — the channel used is the IANA general assignment form (runbook Filing B).*
 
 | Field | Value |
 |---|---|

@@ -299,3 +299,29 @@ test('AGSC-02-97: a block entry naming no item is AGSC-E301 and is dropped from 
   }]);
   assert.deepStrictEqual(plain(from.result.selection), ['worker']);
 });
+
+// V9-D lens (b): a selection fence whose YAML fault carries no registered code
+// falls back to AGSC-E105. Replacing the guard with a disjunction survived the
+// whole suite, because no test reached the fallback.
+test('AGSC-02-97: a selection fence that is not YAML is a registered code, always', () => {
+  const architecture = require('../../src/composition/architecture.js');
+  const read = (body) => architecture.selectionBlock({ slug: 'a', body, frontmatter: { slug: 'a' } });
+
+  // A fault the YAML reader names: its own code travels.
+  const named = read('```yaml agsc-selection\n- a\n- &x b\n```\n');
+  assert.deepStrictEqual(named.findings.map((f) => f.code), ['AGSC-E103']);
+  assert.deepStrictEqual([...named.selection], []);
+
+  // A fault with no code of its own must still be a registered code, never a
+  // thrown string and never an empty `code`.
+  const original = require('../../src/knowledge/yaml.js').parse;
+  require('../../src/knowledge/yaml.js').parse = () => { throw new Error('a fault with no code'); };
+  try {
+    const bare = read('```yaml agsc-selection\n- a\n```\n');
+    assert.deepStrictEqual(bare.findings.map((f) => f.code), ['AGSC-E105']);
+    assert.ok(bare.findings[0].message.includes('a fault with no code'));
+    assert.deepStrictEqual([...bare.selection], []);
+  } finally {
+    require('../../src/knowledge/yaml.js').parse = original;
+  }
+});

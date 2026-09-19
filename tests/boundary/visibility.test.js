@@ -148,3 +148,21 @@ test('AGSC-05-14: retiredAt takes modified, else date, and is omitted when both 
   assert.deepStrictEqual(v.CONTRIBUTE_MODES, ['pr', 'channel', 'form']);
   assert.strictEqual(v.CORS_HEADERS['Access-Control-Allow-Origin'], '*');
 });
+
+// V9-D lens (b): the ETag condition is a conjunction — an artefact AND supplied
+// bytes. Turning it into a disjunction survived the whole suite.
+test('AGSC-11-05: an ETag is emitted only for an artefact whose bytes are supplied', () => {
+  const artefact = '/graph.jsonld';
+  const page = '/concepts/a/';
+  assert.ok(v.isArtefact(artefact), 'the fixture route is an artefact');
+  assert.ok(!v.isArtefact(page), 'the fixture route is not an artefact');
+
+  assert.strictEqual(v.headersFor(artefact, { bytes: 'x' }).ETag, `"${crypto.createHash('sha256').update('x').digest('hex')}"`);
+  assert.strictEqual(v.headersFor(artefact, {}).ETag, undefined, 'no bytes, no ETag');
+  assert.strictEqual(v.headersFor(artefact, { bytes: undefined }).ETag, undefined);
+  assert.strictEqual(v.headersFor(page, { bytes: 'x' }).ETag, undefined, 'a page is not an artefact');
+  assert.strictEqual(v.headersFor(page, {}).ETag, undefined);
+  // the empty string IS bytes, and hashes to the digest of nothing
+  assert.strictEqual(v.headersFor(artefact, { bytes: '' }).ETag,
+    `"${crypto.createHash('sha256').update('').digest('hex')}"`);
+});

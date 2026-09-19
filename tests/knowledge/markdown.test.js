@@ -100,3 +100,64 @@ test('an empty body yields nothing and never throws', () => {
 test('a heading built only of inline code still yields its text', () => {
   assert.deepStrictEqual(markdown.headings('# `agsc lint`\n').map((h) => h.id), ['agsc-lint']);
 });
+
+// ---------------------------------------------------------------------------
+// V9-D lens (b): `assignAnchors` remembers the highest suffix it has consumed per
+// base, so a body of identical headings does not rescan `-2`, `-3`, … from the
+// start every time. The memo may never change an emitted anchor, and these are
+// the cases that would notice if it did.
+
+test('AGSC-03-13: the suffix memo never changes an emitted anchor', () => {
+  // a derived `-2` must step past a LITERAL `-2` heading that came first
+  assert.deepStrictEqual(markdown.assignAnchors(['a', 'a-2', 'a']), ['a', 'a-2', 'a-3']);
+  // and past one that comes later, which the memo must not skip over
+  assert.deepStrictEqual(markdown.assignAnchors(['a', 'a', 'a-3', 'a']), ['a', 'a-2', 'a-3', 'a-4']);
+  assert.deepStrictEqual(markdown.assignAnchors(['a', 'a', 'a', 'b', 'a']), ['a', 'a-2', 'a-3', 'b', 'a-4']);
+  // empty headings are numbered independently of the suffix memo
+  assert.deepStrictEqual(markdown.assignAnchors(['', '!!', '']), ['section-1', 'section-2', 'section-3']);
+});
+
+test('AGSC-03-13: anchors are unique and stable for a large run of repeats', () => {
+  const n = 5000;
+  const anchors = markdown.assignAnchors(Array.from({ length: n }, () => 'same'));
+  assert.strictEqual(new Set(anchors).size, n, 'every anchor is distinct');
+  assert.strictEqual(anchors[0], 'same');
+  assert.strictEqual(anchors[1], 'same-2');
+  assert.strictEqual(anchors[n - 1], `same-${n}`);
+});
+
+test('AGSC-03-13: the memo agrees with an unmemoised search on every generated list', () => {
+  // The reference implementation of the rule, written out longhand: for each
+  // heading take the first candidate not already taken, searching from `-2`.
+  const reference = (texts) => {
+    let empties = 0;
+    const bases = texts.map((t) => {
+      const a = markdown.anchorOf(t);
+      if (a !== '') return a;
+      empties += 1;
+      return `section-${empties}`;
+    });
+    const taken = new Set();
+    return bases.map((base) => {
+      let candidate = base;
+      let n = 1;
+      while (taken.has(candidate)) { n += 1; candidate = `${base}-${n}`; }
+      taken.add(candidate);
+      return candidate;
+    });
+  };
+  // A fixed generator, not a clock or a random seed: the same 4 000 lists every run.
+  let s = 20260919;
+  const rnd = () => {
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+  const words = ['a', 'a-2', 'a-3', 'a-2-2', 'b', 'b-2', 'same', '', '!!', 'x y', 'A B', 'section-1'];
+  for (let trial = 0; trial < 4000; trial += 1) {
+    const k = 1 + Math.floor(rnd() * 12);
+    const texts = Array.from({ length: k }, () => words[Math.floor(rnd() * words.length)]);
+    assert.deepStrictEqual(markdown.assignAnchors(texts), reference(texts), JSON.stringify(texts));
+  }
+});

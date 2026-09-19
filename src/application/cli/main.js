@@ -193,6 +193,33 @@ function writeFindingLine(stderr, f) {
 }
 
 /**
+ * The usage block a person sees when no verb, or no known verb, was given.
+ * It names the AGSC-09-07 verb set and the AGSC-09-09 global flags and nothing
+ * else — this shell has no manual to duplicate and no rule to paraphrase. It is
+ * a DIAGNOSTIC, so it is written to stderr (AGSC-09-10), and it is emitted only
+ * outside `--json`, where one line must be one finding object.
+ */
+function usageText(version) {
+  const flags = ['--json', '--quiet', '--plain', '--no-input', '--version'];
+  return [
+    '',
+    `agsc ${version} — the reference engine of the Agentic System Core format.`,
+    '',
+    'Usage: agsc <verb> [flags]',
+    '',
+    'Verbs (AGSC-09-07):',
+    `  ${VERBS.slice(0, 8).join('  ')}`,
+    `  ${VERBS.slice(8).join('  ')}`,
+    '',
+    `Global flags (AGSC-09-09): ${flags.join('  ')}`,
+    '',
+    'Each verb takes its own flags; an unknown flag is AGSC-E002 and exit 2.',
+    'A Bundle is the directory holding agsc.config.json; run a verb from inside it.',
+    '',
+  ].join('\n');
+}
+
+/**
  * main(argv, ctx) -> Promise<number>
  *
  * ctx: { ports, env, stdout, stderr, root, specVersion, version, userConfig }
@@ -248,8 +275,20 @@ function main(argv, ctx) {
   const verb = args.length > 0 && !args[0].startsWith('-') ? args[0] : null;
 
   if (!verb || !VERBS.includes(verb)) {
-    if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E001', severity: 'error', message: `unknown verb ${JSON.stringify(verb)}` });
-    else writeLine(stderr, `agsc: AGSC-E001 unknown verb ${JSON.stringify(verb)}\n`);
+    // AGSC-09-07: anything that is not one of the sixteen verbs is `AGSC-E001`,
+    // exit 2 — including `--help`, which AGSC-09-09 does not make a global flag.
+    // But the answer must still tell a person what to do (R64): the message names
+    // what was typed (or says that nothing was), and the human stream carries the
+    // verb list. Under `--json` stderr stays exactly ONE finding object per line
+    // (AGSC-09-10), so the usage block is printed only in the human mode.
+    const message = verb === null
+      ? 'no verb given'
+      : `unknown verb ${JSON.stringify(verb)}`;
+    if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E001', severity: 'error', message });
+    else {
+      writeLine(stderr, `agsc: AGSC-E001 ${message}\n`);
+      writeLine(stderr, usageText(version));
+    }
     return 2;
   }
 

@@ -62,13 +62,21 @@ function assignAnchors(texts) {
     return `section-${empties}`;
   });
   const taken = new Set();
+  // `lastTried` remembers, per base, the highest suffix already consumed, so a body
+  // with many identical headings stays linear instead of rescanning `-2`, `-3`, …
+  // from the start every time (measured before this memo: 10 000 identical headings
+  // took 8.3 s; V9-D lens c). `taken` is still consulted, so the emitted anchors are
+  // byte-identical to the unmemoised search — a literal `base-2` heading elsewhere
+  // in the body still pushes the next derived one past it.
+  const lastTried = new Map();
   return first.map((base) => {
-    let candidate = base;
-    let n = 1;
+    let n = lastTried.get(base) || 1;
+    let candidate = n === 1 ? base : `${base}-${n}`;
     while (taken.has(candidate)) {
       n += 1;
       candidate = `${base}-${n}`;
     }
+    lastTried.set(base, n);
     taken.add(candidate);
     return candidate;
   });

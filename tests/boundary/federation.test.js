@@ -144,7 +144,7 @@ test('AGSC-11-12: normalisation takes the A-label and never re-encodes an escape
 
 test('AGSC-11-12: a reference that is not an IRI after A-labelling is AGSC-E312', () => {
   for (const bad of ['https://b.example/bad space/', 'not-a-url', 'https:///x',
-    'https://b.example/a<b', 'https://b.example/a b', 'https://[unclosed/x']) {
+    'https://b.example/a<b', 'https://b.example/a\u0000b', 'https://[unclosed/x']) {
     assert.deepStrictEqual(f.normaliseReference(bad), { error: 'AGSC-E312', url: null }, bad);
   }
   assert.strictEqual(f.normaliseReference(undefined).error, 'AGSC-E312');
@@ -372,4 +372,53 @@ test('AGSC-11-08: a redirect to an unresolved host is refused, not followed', ()
   const good = f.followRedirects(peer, ['https://internal.corp/'], { resolved: { 'internal.corp': ['93.184.215.14'] } });
   assert.strictEqual(good.error, null);
   assert.strictEqual(good.followed, 1);
+});
+
+// ---------------------------------------------------------------------------
+// V9-D lens (c) — hostile inputs at the anti-corruption layer. `walk` is the one
+// function of this context that consumes bytes a stranger chose, so a peer that
+// misbehaves must become a Finding, never an exception and never a hang.
+
+test('AGSC-11-10(e): a fetch that THROWS makes that peer unreachable, not the walk', () => {
+  const start = 'https://a.example/.well-known/knowledge-linkset';
+  const result = f.walk({ start, fetch: () => { throw new Error('ECONNRESET'); } });
+  assert.deepStrictEqual([...result.visited], []);
+  assert.deepStrictEqual(result.skipped.map((s) => s.code), ['AGSC-E907']);
+  assert.strictEqual(result.skipped[0].peer, start);
+
+  // One peer throws, its sibling answers: the walk continues past the fault.
+  const a = 'https://a.example/.well-known/knowledge-linkset';
+  const bad = 'https://bad.example/.well-known/knowledge-linkset';
+  const good = 'https://good.example/.well-known/knowledge-linkset';
+  const mixed = f.walk({
+    start: a,
+    fetch: (key) => {
+      if (key === a) return { ok: true, peers: [bad, good] };
+      if (key === bad) throw new TypeError('fetch failed');
+      return { ok: true, peers: [] };
+    },
+  });
+  assert.deepStrictEqual([...mixed.visited], [a, good]);
+  assert.deepStrictEqual(mixed.skipped.map((s) => s.code), ['AGSC-E907']);
+  assert.strictEqual(mixed.skipped[0].peer, bad);
+});
+
+test('AGSC-11-10(b): a `peers` value that is not an array carries no links', () => {
+  const start = 'https://a.example/.well-known/knowledge-linkset';
+  for (const peers of ['https://b.example/', 42, { 0: 'https://b.example/' }, true]) {
+    const result = f.walk({ start, fetch: () => ({ ok: true, peers }) });
+    assert.deepStrictEqual([...result.visited], [start],
+      `a ${typeof peers} peers member must not be walked: ${JSON.stringify(peers)}`);
+    assert.deepStrictEqual([...result.ignoredByFanOut], []);
+    assert.strictEqual(result.partial, false);
+  }
+});
+
+test('AGSC-11-10(b): a peer list far above `fan_out` is bounded, never a stack overflow', () => {
+  const start = 'https://a.example/.well-known/knowledge-linkset';
+  const peers = Array.from({ length: 200000 }, (_, i) => `https://p${i}.example/`);
+  const result = f.walk({ start, fetch: () => ({ ok: true, peers }), federation: { fan_out: 2, max_requests: 1 } });
+  assert.strictEqual(result.ignoredByFanOut.length, peers.length - 2);
+  assert.strictEqual(result.partial, true);
+  assert.strictEqual(result.error, 'AGSC-E906');
 });

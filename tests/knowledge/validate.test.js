@@ -192,3 +192,29 @@ test('applyTypes follows patternProperties and leaves a vendor key alone', () =>
   assert.deepStrictEqual(validate.applyTypes('7', {}), '7');
   assert.deepStrictEqual(validate.applyTypes(null, { type: 'object' }), null);
 });
+
+// V9-D lens (b): `deref` follows a `$ref` chain, so it needs a bound. Dropping
+// the bound survived the whole suite, because no test drove a chain longer than
+// one hop — and a cyclic `$ref` would then loop for ever inside a pure reader.
+test('AGSC-02-03: a cyclic or very long $ref chain terminates instead of looping', () => {
+  const cyclic = {
+    $defs: { a: { $ref: '#/$defs/b' }, b: { $ref: '#/$defs/a' } },
+    properties: { x: { $ref: '#/$defs/a' } },
+    type: 'object',
+  };
+  // The contract is termination with a value, not a particular value: a reader
+  // that cannot resolve a type leaves the failsafe string alone (AGSC-02-03).
+  const out = validate.applyTypes({ x: '7' }, cyclic, cyclic);
+  assert.deepStrictEqual(out, { x: '7' });
+
+  // A chain longer than the bound resolves to something, and still terminates.
+  const long = { $defs: {}, properties: { n: { $ref: '#/$defs/s0' } }, type: 'object' };
+  for (let i = 0; i < 64; i += 1) long.$defs[`s${i}`] = { $ref: `#/$defs/s${i + 1}` };
+  long.$defs.s64 = { type: 'integer' };
+  const deep = validate.applyTypes({ n: '7' }, long, long);
+  assert.ok(deep.n === '7' || deep.n === 7, JSON.stringify(deep));
+
+  // A chain inside the bound DOES resolve, so the guard is not simply refusing.
+  const short = { $defs: { s0: { $ref: '#/$defs/s1' }, s1: { type: 'integer' } }, properties: { n: { $ref: '#/$defs/s0' } }, type: 'object' };
+  assert.deepStrictEqual(validate.applyTypes({ n: '7' }, short, short), { n: 7 });
+});

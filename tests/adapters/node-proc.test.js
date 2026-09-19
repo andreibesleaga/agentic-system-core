@@ -36,3 +36,28 @@ test('a command that cannot be found is a code, not an exception', () => {
   assert.notStrictEqual(r.code, 0);
   assert.ok(r.stderr.length > 0);
 });
+
+// V9-D lens (b): the scrub copies only the names the parent actually SET. A
+// mutation that inverted the `!== undefined` test survived the whole suite.
+// The child's own runner may add names of its own (`NODE_V8_COVERAGE` under
+// `--experimental-test-coverage`), so the assertions name what MUST and what
+// MUST NOT be there rather than comparing the whole set.
+test('AGSC-08-02: an unset name is not passed to the child, and nothing else is', () => {
+  const runner = createProcessRunner({
+    env: { PATH: '/usr/bin', HOME: '/home/a', SECRET: 'sh', AGSC_MODEL_API_KEY: 'k' },
+  });
+  const seen = runner.run('node', ['-e', 'process.stdout.write(Object.keys(process.env).sort().join(","))']);
+  assert.strictEqual(seen.code, 0, seen.stderr);
+  const names = new Set(seen.stdout.split(',').filter((n) => n !== ''));
+  assert.ok(names.has('PATH'), 'a SET name of the scrub list is passed');
+  assert.ok(names.has('HOME'), 'a SET name of the scrub list is passed');
+  assert.ok(!names.has('LANG'), 'a name the parent never set is not invented');
+  assert.ok(!names.has('LC_ALL'), 'a name the parent never set is not invented');
+  assert.ok(!names.has('SOURCE_DATE_EPOCH'), 'a name the parent never set is not invented');
+  assert.ok(!names.has('SECRET'), 'a name outside the scrub list never reaches the child');
+  assert.ok(!names.has('AGSC_MODEL_API_KEY'), 'a credential never reaches the child');
+  for (const name of names) {
+    assert.ok(SCRUBBED_ENV.includes(name) || name.startsWith('NODE_'),
+      `${name} is neither in the scrub list nor the test runner's own`);
+  }
+});

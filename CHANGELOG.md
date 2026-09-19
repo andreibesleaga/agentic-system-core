@@ -9,6 +9,50 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed — the session-28 deep engine audit (V9-D)
+
+- `src/knowledge/yaml.js` — duplicate keys (`AGSC-E106`, AGSC-02-02) are detected
+  in this module with one key set per mapping instead of by the `yaml` package's
+  `uniqueKeys` option, which compares every new key against every key already in
+  the mapping. AGSC-01-16 admits a 1 MiB frontmatter block, so a single item could
+  hold the build for minutes: 20 000 distinct keys took 6.9 s and now takes 0.6 s;
+  60 000 keys (817 KB, inside the cap) took about 60 s and now takes 1.7 s. The
+  reported code, line, column and message are unchanged (V9D-C1).
+- `src/knowledge/markdown.js` — `assignAnchors` remembers the highest suffix it
+  has consumed per base, so a body of repeated headings no longer rescans `-2`,
+  `-3`, … from the start for each one: 10 000 identical headings took 8.3 s and
+  now takes 0.16 s. The emitted anchors are byte-identical to the unmemoised
+  search, proven against it over 4 000 generated heading lists (AGSC-03-13,
+  V9D-C2).
+- `src/boundary/federation.js` — three hostile-input holes in `walk`, the
+  anti-corruption layer around the only bytes a stranger chooses: an injected
+  fetch that THROWS is now that peer's `AGSC-E907` rather than an exception that
+  escapes the context (AGSC-11-10(e)); a `peers` member that is not an array
+  carries no links instead of being iterated character by character
+  (AGSC-11-10(b)); and the links beyond `fan_out` are recorded with a loop
+  instead of `push(...rest)`, which overflowed the call stack on a peer list a
+  1 MiB discovery document can hold (V9D-C3/C4/C5).
+- `src/application/cli/main.js` — a missing or unknown verb stays `AGSC-E001` and
+  exit 2 (AGSC-09-07, AGSC-09-08), but the message no longer reads
+  `unknown verb null`, and outside `--json` the shell prints the sixteen verbs and
+  the five global flags on stderr, so `agsc` with no arguments answers with a way
+  forward. Under `--json` stderr keeps one finding object per line (AGSC-09-10,
+  V9D-F1).
+- `src/application/cli/verbs/compose.js` — each composition conflict now carries
+  its own rule and a sentence a person can act on. Every conflict used to be
+  printed as "composition conflict on `<key>`: `<a>` / `<b>` (AGSC-07-06)",
+  which cited the wrong rule for three of the four kinds — an absent or retired
+  slug is AGSC-07-03 and a superseded hard dependency is AGSC-07-05a, whose
+  message form ("required item superseded — select `<superseding>`") the engine
+  did not use — and read as though an item were in conflict with itself
+  (V9D-F2).
+
+### Changed — the session-28 deep engine audit (V9-D)
+
+- `src/README.md` §11.2 said the two opt-in verbs print their usage-error finding
+  on stdout; they print it on stderr, where AGSC-09-10 puts every diagnostic.
+  Corrected, and the new usage block documented.
+
 ### Fixed — the eleven defects of the session-27 adversarial read (FIX-F27)
 
 - `src/adapters/node-fs.js` — the symlink realpath containment check runs in the

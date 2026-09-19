@@ -857,11 +857,19 @@ A verb marked **not implemented** returns the AGSC-09-11 envelope with
 will implement. It is never a silent success. The two OPT-IN verbs are the
 exception the specification itself writes: with `run.enabled` false, AGSC-09-94
 says `run` and `trace` "MUST exit 2 with `AGSC-E001`, exactly as an unknown verb",
-so they take the usage-error path of AGSC-09-08 — a single finding line on stdout
-and no envelope — and not the refusal above (F27-06).
+so they take the usage-error path of AGSC-09-08 — a single finding line on
+**stderr**, where AGSC-09-10 puts every diagnostic, and nothing at all on stdout —
+and not the refusal above (F27-06; the stream was named wrongly here until V9-D).
 `tests/application/cli/verbs-sixteen.test.js` holds the set to sixteen and holds
 the refusals honest; `tests/application/cli/verbs-wired.test.js` exercises every
 wired verb end to end over a copy of the fixture.
+
+A verb that is not one of the sixteen — including `--help`, which AGSC-09-09 does
+not make a global flag — is `AGSC-E001` and exit 2, and outside `--json` the shell
+prints the AGSC-09-07 verb set and the AGSC-09-09 global flags on stderr beneath
+the finding, so the first command a person types is answered with a way forward
+rather than the word `null` (V9-D lens f; `main.js#usageText`). Under `--json`
+stderr keeps one finding object per line and the usage block is not printed.
 
 ### 11.3 The modules integration added, moved or unified
 
@@ -1091,3 +1099,60 @@ Two behaviours a caller may notice: a tool call that omits a required argument i
 an error envelope rather than a total-function answer (`ask`, `search`, `compose`,
 `read`, `propose`, `remember`), and item and index pages carry one more `<script
 type="application/ld+json">` block, so their bytes differ from a pre-fix build.
+
+### 11.8 Behaviour corrected on 2026-09-19 (V9-D, the deep engine audit)
+
+| id | what changed, and why | rule |
+|---|---|---|
+| V9D-C1 | `knowledge/yaml.js` finds duplicate keys itself, with one key set per mapping, instead of asking the `yaml` package for `uniqueKeys`. That option compares each new key against every key already in the mapping, and AGSC-01-16 admits a 1 MiB frontmatter block: 60 000 distinct keys (817 KB, inside the cap) took about a minute and now takes 1.7 s. The code, line, column and message are unchanged, including inside a nested mapping and inside a mapping that is a sequence entry. | AGSC-02-02 (`AGSC-E106`), AGSC-01-16 |
+| V9D-C2 | `knowledge/markdown.js#assignAnchors` remembers the highest suffix consumed per base. 10 000 identical headings took 8.3 s and now take 0.16 s; the anchors are byte-identical to the unmemoised search, proven against it over 4 000 generated heading lists, including lists holding a literal `base-2`. | AGSC-03-13 |
+| V9D-C3 | `boundary/federation.js#walk` treats an injected fetch that THROWS as that peer's `AGSC-E907` — unreachable, skipped, never retried — instead of letting a stranger's transport failure escape the anti-corruption layer as an exception the shell would report as an internal fault. | AGSC-11-10(e) |
+| V9D-C4 | the same function ignores a `peers` member that is not an array. A string used to be iterated character by character, so a one-line document walked ten "peers". | AGSC-11-10(b) |
+| V9D-C5 | the links beyond `fan_out` are appended with a loop, not `push(...rest)`: the spread passes one argument per element and overflowed the call stack at about 200 000 peers, a list a 1 MiB discovery document can hold. | AGSC-11-10(b) |
+| V9D-F1 | a missing or unknown verb is still `AGSC-E001` and exit 2 — `--help` is not a global flag of AGSC-09-09 and not a verb of AGSC-09-07 — but the message says `no verb given` rather than `unknown verb null`, and outside `--json` the verb set and the global flags follow it on stderr (`main.js#usageText`). Under `--json` stderr still carries exactly one finding object per line. | AGSC-09-07, AGSC-09-08, AGSC-09-10, R64 |
+| V9D-F2 | `compose` gives each conflict kind its own sentence and its own rule id. All four used to print "composition conflict on `<key>`: `<a>` / `<b>` (AGSC-07-06)": an absent or retired slug is AGSC-07-03, a superseded hard dependency is AGSC-07-05a — which fixes the message form "required item superseded — select `<superseding>`" — and only a surviving `excludes` pair is AGSC-07-06. | AGSC-07-03, AGSC-07-05a, AGSC-07-06, AGSC-07-09 |
+
+**Items this audit adds to §11.6.** Each is a rule obligation the engine does not
+meet, named here rather than left silent; none is worked around.
+
+22. **`AGSC-06-21`'s budgets are not enforced.** The rule states four numeric
+    budgets and says a build MUST fail when one is exceeded that no sharding rule
+    relieves: ≤100 KB per HTML page, ≤1 KB of `search.json` per published item,
+    ≤500 KB of `search.json` absolute at or below 500 items, and ≤60 s of build
+    per 500 items. `distribution/site.js` implements the sharding and pagination
+    half of the rule and measures no size and no duration; the route is not in
+    `skipped`, because the routes themselves are produced. Measured for scale:
+    100 items build in 1.5 s, 1 000 in 7.1 s, 5 000 in 30.4 s and 10 000 in
+    57.9 s, so the time budget is met with room — it is simply not checked.
+23. **`lint --fix` does not exist.** Four rules place obligations on it —
+    AGSC-03-12 (wikilink normalisation), AGSC-04-14 (authored array order),
+    AGSC-04-19 (idempotence and the fixed YAML profile) and AGSC-04-20 (never
+    change prose) — and `agsc lint --fix` is `AGSC-E002`, an unknown flag. An
+    adopted note keeps its `[[wikilinks]]`, which then render as literal text.
+24. **`AGSC-08-12`'s `enforce[]` compilation does not exist.** No module turns
+    `status-check`, `hook`, `codeowner` or `ruleset` into a required check, a
+    pre-commit hook file, `CODEOWNERS` entries or a forge ruleset, and nothing
+    reports drift. A `gate` item validates and its `enforce[]` has no effect.
+25. **`AGSC-01-21`'s tag-count warning does not exist.** The rule says the "2–5
+    count warning of the §2.2 table still applies"; no code is registered for it
+    and none is raised. `schema/item.schema.json` carries no `minItems`/`maxItems`
+    on `tags` either.
+26. **`AGSC-09-14a`'s `ask` envelope is not the shape the rule describes.** The
+    rule asks for the AGSC-08-18 envelope with `body` = the answer and "an added
+    `citations[]`"; the tool returns `body` as an object `{answer, citations,
+    terms}`, so `body` is not "exactly `no answer in this memory`" when nothing
+    matches and `citations[]` is not a member of the envelope. No vector pins the
+    shape, so the code chose one the rule does not describe.
+27. **Every page links to `/legal/`, which the build does not emit.** AGSC-06-18
+    publishes the Content Use Terms text at `/legal/` and calls a distribution
+    without it incomplete; `distribution/html.js` puts that link in every page
+    footer, `robots.txt` and `security.txt` point at it, and AGSC-06-01's
+    `/legal/` route is honestly in `skipped` because no rule pins its bytes. The
+    output is therefore internally inconsistent by construction.
+28. **The build holds the whole site in memory.** `site.build` returns
+    `files: Map<path, bytes>`, which `verify` compares between two builds — so the
+    contract is deliberate — but peak resident memory is 773 MiB at 5 000 items
+    and 1.2 GiB at 10 000 items (30 118 files, 250 MB), and a 10 000-item build
+    fails with a V8 out-of-memory error under a 512 MiB heap cap. AGSC-06-21 says
+    "a 5,000-item Bundle conforms", and it does; ten thousand needs a streaming
+    emit, which changes `site.build`'s published contract.

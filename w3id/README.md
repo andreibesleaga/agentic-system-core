@@ -45,4 +45,13 @@ Locally, the same can be run against Apache with `AllowOverride All` + `a2enmod 
 
 PR not yet opened — open it only once https://agenticsystemcore.com/ns/ serves the vocabulary files with
 correct media types ; w3id states no requirement that the target be live and
-runs no automated check (2026-09-03), but maintainers review PRs by hand.
+runs no automated check, but maintainers review PRs by hand.
+
+Re-read live on 2026-09-19: the `perma-id/w3id.org` README still asks only for a directory under `ids/`
+holding `.htaccess` ("redirection rules, for computer to read and perform") and `README.md` ("more
+identifier info and contact info, for humans to read"), with contact info "in a `README.md` or
+`.htaccess` comment", changes tested "with a local checkout of the site", multiple commits squashed,
+and a descriptive commit message that includes the project name; it states "There is no official
+policy on identifier names", the practice being `https://w3id.org/PROJECT-ID/SUB-ID...`, and it names
+`public-perma-id@w3.org` as the alternative route (give the w3id URL, the target URL and the HTTP
+code). Nothing in it requires the redirect target to be live. Both files here satisfy all of it.

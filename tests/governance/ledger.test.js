@@ -112,3 +112,68 @@ test('a broken prev link is reported before any hash is recomputed (AGSC-08-23)'
   const findings = ledger.verify(text, {});
   assert.deepStrictEqual(findings.map((f) => [f.code, f.line]), [['AGSC-E701', 2]]);
 });
+
+// ---------------------------------------------------------------------------
+// V9-D lens (b) — property tests for the hash chain of AGSC-08-22. `fast-check`
+// drives generated histories; the run is seeded, so the suite stays deterministic
+// (no clock, no network, no unseeded randomness).
+const fc = require('fast-check');
+
+/** A git-log array in the AGSC-08-20a shape. */
+const gitLogArb = fc.array(
+  fc.record({
+    committed_at: fc.integer({ min: 0, max: 1893456000 })
+      .map((s) => `${new Date(s * 1000).toISOString().slice(0, 19)}Z`),
+    parents: fc.array(fc.string({ maxLength: 40, minLength: 40, unit: fc.constantFrom(...'0123456789abcdef') }), { maxLength: 3 }),
+    sha: fc.string({ maxLength: 40, minLength: 40, unit: fc.constantFrom(...'0123456789abcdef') }),
+    tag: fc.option(fc.constantFrom('v1.0.0', 'v0.2.1'), { nil: undefined }),
+    trailers: fc.dictionary(
+      fc.constantFrom('Signed-off-by', 'Proposal', 'Channel-Auto', 'Other'),
+      fc.string({ maxLength: 24 }), { maxKeys: 4 }
+    ),
+  }),
+  { maxLength: 12 }
+);
+const SEED = { numRuns: 300, seed: 20260919, verbose: 0 };
+
+test('AGSC-08-22: the chain links every entry to its predecessor, from GENESIS', () => {
+  fc.assert(fc.property(gitLogArb, fc.integer({ min: 0, max: 1893456000 }), (log, epoch) => {
+    const { entries, head } = ledger.derive(log, 'a'.repeat(40), '0.0.2', { epoch });
+    assert.strictEqual(entries.length, log.length + 1, 'one entry per commit plus one build');
+    assert.strictEqual(entries[0].prev, ledger.GENESIS);
+    for (let i = 0; i < entries.length; i += 1) {
+      assert.strictEqual(entries[i].hash, ledger.hashEntry(entries[i].prev, entries[i]),
+        'every hash is the hash of its own entry under its own prev');
+      if (i > 0) assert.strictEqual(entries[i].prev, entries[i - 1].hash);
+      assert.ok(ledger.KINDS.includes(entries[i].kind), entries[i].kind);
+    }
+    assert.strictEqual(head, entries[entries.length - 1].hash);
+    assert.strictEqual(entries[entries.length - 1].kind, 'build');
+  }), SEED);
+});
+
+test('AGSC-08-20a: derivation is a pure function of its inputs (byte-reproducible)', () => {
+  fc.assert(fc.property(gitLogArb, fc.integer({ min: 0, max: 1893456000 }), (log, epoch) => {
+    const a = ledger.derive(log, 'b'.repeat(40), '0.0.2', { epoch });
+    const b = ledger.derive(log, 'b'.repeat(40), '0.0.2', { epoch });
+    assert.strictEqual(a.ledger, b.ledger);
+    assert.strictEqual(a.head, b.head);
+    // Every line is one JCS-canonical object followed by exactly one LF.
+    const lines = a.ledger.split('\n');
+    assert.strictEqual(lines[lines.length - 1], '', 'the file ends with exactly one LF');
+    for (const line of lines.slice(0, -1)) assert.doesNotThrow(() => JSON.parse(line), line);
+  }), SEED);
+});
+
+test('AGSC-08-22: any change to any entry breaks the chain at that entry', () => {
+  fc.assert(fc.property(gitLogArb.filter((l) => l.length >= 1), fc.nat(), (log, pick) => {
+    const { entries } = ledger.derive(log, 'c'.repeat(40), '0.0.2', { epoch: 0 });
+    const i = pick % entries.length;
+    const tampered = { ...entries[i], actor: `${entries[i].actor}!` };
+    assert.notStrictEqual(ledger.hashEntry(tampered.prev, tampered), entries[i].hash,
+      'a changed member changes the entry hash');
+    // and re-pointing an entry at a different predecessor changes it too
+    const moved = { ...entries[i], prev: ledger.GENESIS.replace(/0$/u, '1') };
+    assert.notStrictEqual(ledger.hashEntry(moved.prev, moved), entries[i].hash);
+  }), SEED);
+});

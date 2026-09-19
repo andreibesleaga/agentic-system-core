@@ -276,16 +276,30 @@ function walk(options) {
     if (requests >= caps.max_requests) { capExceeded = true; break; }
     const { depth, key } = queue.shift();
     requests += 1;
-    const response = fetch(key) || { ok: false, peers: [] };
+    // AGSC-11-10(e): a peer that cannot be read is UNREACHABLE — `AGSC-E907`,
+    // skipped, never retried. A transport that throws (reset, DNS failure, an
+    // adapter's own timeout) is that same fact, and this context is the
+    // anti-corruption layer: a stranger's failure is a Finding here, never an
+    // exception the application layer would have to report as an internal fault.
+    let response;
+    try {
+      response = fetch(key) || { ok: false, peers: [] };
+    } catch {
+      response = { ok: false, peers: [] };
+    }
     if (!response.ok) {
       skipped.push(Object.freeze({ code: 'AGSC-E907', peer: key }));
       continue;
     }
     visited.push(key);
-    const links = response.peers || [];
+    // A `peers` member that is not an array carries no links: iterating a string
+    // would walk it character by character (AGSC-11-10(b) counts LINKS).
+    const links = Array.isArray(response.peers) ? response.peers : [];
     const considered = links.slice(0, caps.fan_out);
     if (links.length > caps.fan_out) {
-      ignoredByFanOut.push(...links.slice(caps.fan_out));
+      // A loop, not `push(...rest)`: the spread passes one argument per element
+      // and overflows the call stack on a list a 1 MiB discovery document can hold.
+      for (let i = caps.fan_out; i < links.length; i += 1) ignoredByFanOut.push(links[i]);
       capExceeded = true;
     }
     for (const target of considered) {

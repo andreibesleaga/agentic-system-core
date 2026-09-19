@@ -82,3 +82,40 @@ test('a construct the library itself rejects maps to AGSC-E105 (AGSC-02-02)', ()
   rejects('a: 1\n  b: 2\n', 'AGSC-E105');
   rejects('a: "unterminated\n', 'AGSC-E105');
 });
+
+// ---------------------------------------------------------------------------
+// V9-D lens (b/c): AGSC-E106 is now found by this module in one pass with a key
+// set per mapping, because the library's `uniqueKeys` option compares every new
+// key against every key already in the mapping and is quadratic in the key count
+// — and AGSC-01-16 admits a 1 MiB frontmatter block. These cases pin the
+// behaviour the change had to preserve exactly.
+
+test('AGSC-E106 is per MAPPING, at the repeated key, at every nesting level', () => {
+  // the repeated key, not the first one, carries the position
+  rejects('a: 1\nb: 2\na: 3\n', 'AGSC-E106', 4);
+  // inside a nested block mapping
+  rejects('a: 1\nnested:\n  x: 1\n  x: 2\n', 'AGSC-E106', 5);
+  // inside a mapping that is a sequence entry
+  rejects('list:\n  - k: 1\n    k: 2\n', 'AGSC-E106', 4);
+  // the SAME key in two SIBLING mappings is not a duplicate
+  assert.deepStrictEqual(yaml.parse('list:\n  - k: 1\n  - k: 2\n'), { list: [{ k: '1' }, { k: '2' }] });
+  assert.deepStrictEqual(yaml.parse('one:\n  k: 1\ntwo:\n  k: 2\n'), { one: { k: '1' }, two: { k: '2' } });
+});
+
+test('AGSC-E106 still loses to an earlier fault of another kind (offset order)', () => {
+  // the anchor comes first in the source, so AGSC-E103 is what the caller sees
+  rejects('a: &x 1\nb: 2\nb: 3\n', 'AGSC-E103');
+  // and the duplicate comes first here
+  rejects('b: 1\nb: 2\nc: &x 3\n', 'AGSC-E106');
+});
+
+test('a mapping with many DISTINCT keys parses and stays within the AGSC-01-16 cap', () => {
+  const n = 20000;
+  const source = Array.from({ length: n }, (_, i) => `k${i}: ${i}`).join('\n');
+  assert.ok(Buffer.byteLength(source) < yaml.MAX_INPUT_BYTES, 'the fixture is inside the cap');
+  const parsed = yaml.parse(source);
+  assert.strictEqual(Object.keys(parsed).length, n);
+  assert.strictEqual(parsed.k19999, '19999');
+  // and one repeat anywhere in that mapping is still found
+  rejects(`${source}\nk0: again\n`, 'AGSC-E106', n + 2);
+});

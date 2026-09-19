@@ -16,6 +16,42 @@ function flatten(items) {
   return (items || []).map((i) => Object.assign({ slug: i.slug, type: i.type }, i.frontmatter));
 }
 
+/**
+ * One sentence per conflict kind, each citing the rule that raises it and saying
+ * what a person can do about it (R64). The four kinds are not one rule:
+ * AGSC-07-03 (a selected slug absent from the graph, or retired), AGSC-07-05a
+ * (a surviving item requires an item Step 2 hid — the rule fixes the message
+ * form "required item superseded — select `<superseding>`"), and AGSC-07-06
+ * (a surviving `excludes` pair). The conflict record itself is the Composition
+ * context's (AGSC-07-09); only its wording is decided here.
+ *
+ * @param {{code: string, key: string, pair?: string[], superseding?: string}} conflict
+ * @returns {string}
+ */
+function conflictMessage(conflict) {
+  const pair = conflict.pair || [];
+  const [a, b] = pair;
+  if (conflict.code === 'AGSC-E801') {
+    return `composition invalid: \`${a}\` and \`${b}\` exclude each other;`
+      + ' drop one of the two from the selection (AGSC-07-06)';
+  }
+  if (conflict.key === 'selection') {
+    return `no item with slug \`${a}\` is in the graph; check the spelling,`
+      + ' or `agsc lint` the Bundle to see which slugs exist (AGSC-07-03)';
+  }
+  if (conflict.key === 'status') {
+    return `\`${a}\` is retired and cannot be selected (AGSC-07-03, AGSC-11-22)`;
+  }
+  if (conflict.key === 'requires' && conflict.superseding !== undefined) {
+    return `required item superseded — select \`${conflict.superseding}\`:`
+      + ` \`${a}\` requires \`${b}\`, which Step 2 hid (AGSC-07-05a)`;
+  }
+  if (conflict.key === 'requires') {
+    return `\`${a}\` requires \`${b}\`, which is not in the graph (AGSC-07-03, AGSC-07-04)`;
+  }
+  return `composition conflict on ${conflict.key}: ${pair.join(' / ')} (AGSC-07-09)`;
+}
+
 function run(ctx) {
   const bundle = helpers.bundleOf(ctx);
   const items = flatten(bundle.items);
@@ -36,11 +72,7 @@ function run(ctx) {
   // is what turns it into a Finding, and every Finding carries a severity.
   findings.push(...(result.warnings || []).map((w) => ({ severity: 'warn', ...w })));
   for (const conflict of result.conflicts || []) {
-    findings.push({
-      code: conflict.code,
-      message: `composition conflict on ${conflict.key}: ${(conflict.pair || []).join(' / ')} (AGSC-07-06)`,
-      severity: 'error',
-    });
+    findings.push({ code: conflict.code, message: conflictMessage(conflict), severity: 'error' });
   }
   helpers.note(ctx, `verdict: ${canonicalize(compose.verdictOf(result))}`);
 

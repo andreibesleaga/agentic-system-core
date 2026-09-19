@@ -59,10 +59,23 @@ function positionOf(lineCounter, offset, lineOffset) {
   return { line: pos.line + lineOffset, col: pos.col };
 }
 
-/** Collect every AGSC-02-02 violation in the document, each with its offset. */
+/**
+ * Collect every AGSC-02-02 violation in the document, each with its offset.
+ *
+ * Duplicate keys (AGSC-E106, AGSC-02-02) are detected HERE, with one `Set` per
+ * mapping, rather than by the library's `uniqueKeys` option: that option compares
+ * each new key against every key already in the mapping, which is quadratic in the
+ * number of keys, and AGSC-01-16 admits a 1 MiB frontmatter block — roughly 80 000
+ * `k: v` lines — so a single hostile item would have held the build for minutes
+ * (measured: 20 000 keys took 6.9 s with `uniqueKeys`, 0.45 s without; V9-D lens c).
+ * The offset and message reproduce the library's exactly, so the reported line,
+ * column and text are unchanged.
+ */
 function collectViolations(doc) {
   const found = [];
   const push = (code, offset, message) => found.push({ code, offset, message });
+  /** One key set per mapping node; `WeakMap` so it dies with the document. */
+  const keysSeen = new WeakMap();
 
   YAML.visit(doc, {
     Alias(_key, node) {
@@ -88,7 +101,7 @@ function collectViolations(doc) {
           'a flow sequence may contain scalars only (AGSC-02-02)');
       }
     },
-    Pair(_key, pair) {
+    Pair(_key, pair, path) {
       const key = pair.key;
       if (YAML.isMap(key) || YAML.isSeq(key)) {
         push('AGSC-E105', key.range ? key.range[0] : 0,
@@ -97,6 +110,20 @@ function collectViolations(doc) {
       if (YAML.isScalar(key) && key.value === '<<') {
         push('AGSC-E104', key.range ? key.range[0] : 0,
           'merge keys are outside the permitted subset (AGSC-02-02)');
+      }
+      // AGSC-02-02 / AGSC-E106: a repeated key in the SAME mapping. The owning
+      // mapping is the last collection on the visit path.
+      if (YAML.isScalar(key)) {
+        const owner = path[path.length - 1];
+        if (YAML.isMap(owner)) {
+          let seen = keysSeen.get(owner);
+          if (!seen) { seen = new Set(); keysSeen.set(owner, seen); }
+          if (seen.has(key.value)) {
+            push('AGSC-E106', key.range ? key.range[0] : 0, 'Map keys must be unique');
+          } else {
+            seen.add(key.value);
+          }
+        }
       }
     },
   });
@@ -125,7 +152,9 @@ function parse(text, options = {}) {
   const lineCounter = new YAML.LineCounter();
   const docs = YAML.parseAllDocuments(source, {
     schema: 'failsafe',
-    uniqueKeys: true,
+    // Duplicate keys are AGSC-E106 and are found in `collectViolations` in linear
+    // time; the library's own check is quadratic in the key count (see there).
+    uniqueKeys: false,
     merge: false,
     lineCounter,
     prettyErrors: false,

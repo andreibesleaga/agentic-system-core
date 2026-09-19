@@ -165,3 +165,51 @@ test('an unregistered fault keeps the internal-error path and an empty stdout', 
   assert.strictEqual(result.stdout, '', 'the internal-error path prints nothing on stdout');
   assert.strictEqual(result.stderr, 'agsc: internal error: lint: not a domain fact\n');
 });
+
+// ---------------------------------------------------------------------------
+// V9-D lens (f) — what a person sees. AGSC-09-07 makes anything that is not one
+// of the sixteen verbs exit 2 with AGSC-E001, and this shell keeps that; what it
+// must NOT do is answer the first command anyone types with the word "null" and
+// no way forward (R64: explain before you decide).
+
+const { VERBS } = require('../../../src/application/cli/main.js');
+
+const usage = (argv) => {
+  const stdout = captureStream();
+  const stderr = captureStream();
+  const exit = main(argv, { env: {}, root: '.', stderr, stdout, version: '0.0.0' });
+  return { exit, stderr: stderr.text(), stdout: stdout.text() };
+};
+
+test('AGSC-09-07: a missing or unknown verb names the sixteen verbs on stderr', () => {
+  for (const argv of [[], ['--help'], ['-h'], ['help'], ['nosuch']]) {
+    const r = usage(argv);
+    assert.strictEqual(r.exit, 2, `${JSON.stringify(argv)} is a usage error (AGSC-09-08)`);
+    assert.strictEqual(r.stdout, '', 'diagnostics never go to stdout (AGSC-09-10)');
+    assert.ok(r.stderr.includes('AGSC-E001'), r.stderr);
+    assert.ok(!/\bnull\b/u.test(r.stderr), `"null" is not a verb a person typed: ${r.stderr}`);
+    for (const verb of VERBS) {
+      assert.ok(r.stderr.includes(verb), `${JSON.stringify(argv)}: the usage text names ${verb}`);
+    }
+  }
+});
+
+test('AGSC-09-10: under --json the same usage error is ONE finding object per line', () => {
+  for (const argv of [['--json'], ['--help', '--json'], ['nosuch', '--json']]) {
+    const r = usage(argv);
+    assert.strictEqual(r.exit, 2);
+    assert.strictEqual(r.stdout, '');
+    const lines = r.stderr.split('\n').filter((l) => l !== '');
+    assert.strictEqual(lines.length, 1, `one line, not a usage block: ${r.stderr}`);
+    const one = JSON.parse(lines[0]);
+    assert.strictEqual(one.code, 'AGSC-E001');
+    assert.strictEqual(one.severity, 'error');
+    assert.ok(typeof one.message === 'string' && one.message !== '');
+    assert.ok(!/\bnull\b/u.test(one.message), one.message);
+  }
+});
+
+test('AGSC-09-07: an unknown verb says what was typed, so a typo is visible', () => {
+  const r = usage(['buidl']);
+  assert.ok(r.stderr.includes('buidl'), r.stderr);
+});
