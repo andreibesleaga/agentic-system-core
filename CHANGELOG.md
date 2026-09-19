@@ -46,6 +46,15 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   message form ("required item superseded — select `<superseding>`") the engine
   did not use — and read as though an item were in conflict with itself
   (V9D-F2).
+- `tests/application/cli/verbs-wired.test.js` and `tests/boundary/federation.test.js`
+  carried five literal U+0000 bytes in their `git ls-files -z` and hostile-IRI
+  fixtures, which made `file(1)` classify them as data and GNU `grep` treat them as
+  binary — so both were invisible to every source sweep, the third occurrence of the
+  defect that hid `src/boundary/federation.js` in session 27. Written as the
+  six-character escape instead, and `tests/arch/text-sources.test.js` added as the
+  guard: no NUL, no BOM and no CR in any source under `src/`, `tests/`, `bin/`,
+  `tools/`, `schema/`, `ontology/` or `spec/`, and the sweep reports how many files
+  it read (V9D-G4).
 
 ### Changed — the session-28 deep engine audit (V9-D)
 

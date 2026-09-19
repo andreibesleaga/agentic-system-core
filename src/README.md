@@ -1112,6 +1112,8 @@ type="application/ld+json">` block, so their bytes differ from a pre-fix build.
 | V9D-F1 | a missing or unknown verb is still `AGSC-E001` and exit 2 — `--help` is not a global flag of AGSC-09-09 and not a verb of AGSC-09-07 — but the message says `no verb given` rather than `unknown verb null`, and outside `--json` the verb set and the global flags follow it on stderr (`main.js#usageText`). Under `--json` stderr still carries exactly one finding object per line. | AGSC-09-07, AGSC-09-08, AGSC-09-10, R64 |
 | V9D-F2 | `compose` gives each conflict kind its own sentence and its own rule id. All four used to print "composition conflict on `<key>`: `<a>` / `<b>` (AGSC-07-06)": an absent or retired slug is AGSC-07-03, a superseded hard dependency is AGSC-07-05a — which fixes the message form "required item superseded — select `<superseding>`" — and only a surviving `excludes` pair is AGSC-07-06. | AGSC-07-03, AGSC-07-05a, AGSC-07-06, AGSC-07-09 |
 
+| V9D-G4 | two test sources carried literal U+0000 bytes in their `git ls-files -z` and hostile-IRI fixtures, so `file(1)` called them data and GNU `grep` treated them as binary and every source sweep skipped them silently — the third occurrence of the defect that hid `boundary/federation.js` in session 27. Written as the six-character escape instead, and `tests/arch/text-sources.test.js` is the guard: no NUL, no BOM and no CR in any source under `src/`, `tests/`, `bin/`, `tools/`, `schema/`, `ontology/` or `spec/`, and the sweep asserts how many files it read. | AGSC-01-14 (the same two byte obligations the engine checks in content) |
+
 **Items this audit adds to §11.6.** Each is a rule obligation the engine does not
 meet, named here rather than left silent; none is worked around.
 
