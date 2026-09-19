@@ -26,8 +26,6 @@ const CORE_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requ
 /** AGSC-07-10: these five never affect any step. */
 const INERT_KEYS = Object.freeze(['related', 'broader', 'narrower', 'derived-from', 'mentions']);
 
-const NUL = String.fromCharCode(0);
-
 /** Code-point comparison — the ordering of AGSC-04-12 (never locale, never UTF-16). */
 function compareCodePoint(a, b) {
   const x = [...String(a)];
@@ -154,6 +152,12 @@ function sortWarnings(warnings) {
  * verdict (`verdictOf` returns that).
  */
 function compose(items, selection) {
+  // Declared inside the function, not at module scope, so that the whole algebra
+  // is a set of SELF-CONTAINED function declarations whose source text can be
+  // re-emitted verbatim as the browser bundle of AGSC-07-13
+  // (`composition/browser.js`): a free module-scope binding would be undefined
+  // there, and two implementations of one algorithm can never be byte-identical.
+  const nul = String.fromCharCode(0);
   const index = indexBySlug(items);
   const seedOrder = dedupe(selection);
   const conflicts = [];
@@ -196,7 +200,7 @@ function compose(items, selection) {
     for (const target of byCodePoint(linkTargets(index.get(slug), 'excludes'))) {
       if (!survivorSet.has(target)) continue;
       const pair = byCodePoint([slug, target]);
-      const key = pair[0] + NUL + pair[1];
+      const key = pair[0] + nul + pair[1];
       if (seenPair.has(key)) continue;
       seenPair.add(key);
       conflicts.push({ code: 'AGSC-E801', key: 'excludes', pair });
@@ -209,7 +213,7 @@ function compose(items, selection) {
     for (const target of byCodePoint(linkTargets(index.get(slug), 'contradicts'))) {
       if (!survivorSet.has(target)) continue;
       const pair = byCodePoint([slug, target]);
-      const key = pair[0] + NUL + pair[1];
+      const key = pair[0] + nul + pair[1];
       if (seenContradiction.has(key)) continue;
       seenContradiction.add(key);
       warnings.push({ code: 'AGSC-E803', key: 'contradicts', source: slug, target });
@@ -276,16 +280,34 @@ function verdictDigest(result) {
   return crypto.createHash('sha256').update(jcs.canonicalize(verdictOf(result)), 'utf8').digest('hex');
 }
 
+/**
+ * The portable algebra, in dependency order: every name here is a top-level
+ * function declaration that refers only to other names in this list, so the list
+ * IS the browser bundle of AGSC-07-13 (`composition/browser.js` emits each one's
+ * own source text). `verdictDigest` is deliberately absent: it hashes, and
+ * hashing is the host's (`node:crypto` here, `crypto.subtle` in a page).
+ */
+const PORTABLE = Object.freeze(['compareCodePoint', 'byCodePoint', 'frontmatterOf',
+  'linkTargets', 'portNames', 'isRetired', 'slugOf', 'indexBySlug', 'dedupe',
+  'closure', 'sortConflicts', 'sortWarnings', 'compose', 'verdictOf']);
+
 module.exports = {
   CORE_KEYS,
   INERT_KEYS,
+  PORTABLE,
   byCodePoint,
+  closure,
   compareCodePoint,
   compose,
   dedupe,
   frontmatterOf,
   indexBySlug,
+  isRetired,
+  linkTargets,
+  portNames,
   slugOf,
+  sortConflicts,
+  sortWarnings,
   verdictDigest,
   verdictOf,
 };

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 260" role="img" aria-labelledby="steganographic-collusion-title steganographic-collusion-desc" font-family="system-ui, sans-serif" font-size="14">
+  <title id="steganographic-collusion-title">Steganographic collusion diagram</title>
+  <desc id="steganographic-collusion-desc">the words pass review · the word-choices carry the message</desc>
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="16" y="100" width="90" height="46" rx="6"/>
+    <rect x="354" y="100" width="90" height="46" rx="6"/>
+    <rect x="150" y="60" width="160" height="40" rx="6"/>
+    <rect x="150" y="150" width="160" height="40" rx="6" class="agsc-accent" stroke-width="2.2"/>
+    <path d="M109.9 110.6 L147.5 101" marker-end="url(#ar2)"/>
+    <path d="M312.5 101 L350.1 110.6" marker-end="url(#ar2)"/>
+    <path d="M109.9 136.6 L154.2 148.9" marker-end="url(#ar2)"/>
+    <path d="M305.8 148.9 L350.1 136.6" marker-end="url(#ar2)"/>
+    <circle cx="230" cy="30" r="12"/>
+    <path d="M230 46 L230 56" marker-end="url(#ar2)"/>
+  </g>
+  <g fill="currentColor" text-anchor="middle">
+    <text x="61" y="127" font-size="12">agent A</text>
+    <text x="399" y="127" font-size="12">agent B</text>
+    <text x="230" y="84" font-size="12">sounds fine to me</text>
+    <text x="230" y="174" font-size="12">hidden payload</text>
+    <text x="230" y="12" font-size="10">monitor</text>
+    <text x="230" y="248" font-size="11">the words pass review · the word-choices carry the message</text>
+  </g>
+</svg>

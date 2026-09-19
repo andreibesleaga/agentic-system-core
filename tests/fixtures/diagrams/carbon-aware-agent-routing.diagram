@@ -1,0 +1,10 @@
+label "Carbon aware agent routing diagram"
+box wl 16 96 92 44 "agent|workloads"
+box sch 148 88 120 60 "carbon-aware|scheduler" acc
+arrow wl sch
+box now 330 42 110 40 "interactive|run now"
+box later 330 168 110 40 "deferrable|clean window"
+arrow sch now
+arrow sch later
+path "M158 216 C 190 176, 220 236, 258 196"
+text 208 244 "grid intensity curve" size=10

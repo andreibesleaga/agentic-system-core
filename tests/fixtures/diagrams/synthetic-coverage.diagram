@@ -1,0 +1,14 @@
+# a synthetic source: every construct the 153 authored sources never use
+canvas 300 180
+label "synthetic coverage diagram"
+region outer 10 20 280 140
+box a 30 60 80 40 "plain|box" dashed
+box b 190 60 80 40 "accented dashed box" acc dashed
+arrow a b
+arrow b a via=230,140;70,140
+line 20 30 280 30
+cross 150 120
+bar 40 160 100 thick
+path "M20 170 L60 170" arrow
+circle c 150 45 12 "c"
+text 150 15 "top label" size=9

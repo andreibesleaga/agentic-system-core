@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 260" role="img" aria-labelledby="context-engineering-title context-engineering-desc" font-family="system-ui, sans-serif" font-size="14">
+  <title id="context-engineering-title">Context engineering admission control diagram</title>
+  <desc id="context-engineering-desc">attention is the scarce resource — every admitted token competes with the rest</desc>
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="16" y="24" width="104" height="34" rx="6"/>
+    <rect x="16" y="108" width="104" height="34" rx="6"/>
+    <rect x="16" y="192" width="104" height="34" rx="6"/>
+    <rect x="176" y="98" width="106" height="54" rx="6" class="agsc-accent" stroke-width="2.2"/>
+    <rect x="336" y="98" width="104" height="54" rx="6"/>
+    <path d="M104.1 59.9 L173.7 96.1" marker-end="url(#ar2)"/>
+    <path d="M124 125 L172 125" marker-end="url(#ar2)"/>
+    <path d="M104.1 190.1 L173.7 153.9" marker-end="url(#ar2)"/>
+    <path d="M286 125 L332 125" marker-end="url(#ar2)"/>
+    <path d="M388 152 L388 168"/>
+  </g>
+  <g fill="currentColor" text-anchor="middle">
+    <text x="68" y="45" font-size="12">history</text>
+    <text x="68" y="129" font-size="12">retrieval</text>
+    <text x="68" y="213" font-size="12">tool results</text>
+    <text x="229" y="121" font-size="12">admission</text>
+    <text x="229" y="137" font-size="12">control</text>
+    <text x="388" y="121" font-size="12">working set</text>
+    <text x="388" y="137" font-size="12">bounded</text>
+    <text x="388" y="176" font-size="11">evict</text>
+    <text x="230" y="248" font-size="11">attention is the scarce resource — every admitted token competes with the rest</text>
+  </g>
+</svg>

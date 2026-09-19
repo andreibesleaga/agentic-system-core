@@ -1,0 +1,12 @@
+label "Agent sandbox isolation diagram"
+region sb 20 40 200 170 "disposable · destroyed after run"
+box run 46 70 148 40 "agent run" acc
+box fs 46 140 148 40 "scoped filesystem"
+box egress 264 60 76 120 "egress|allowlist"
+box allowed 380 52 60 36 "allowed"
+box denied 380 152 60 36 "denied"
+arrow run egress
+arrow egress allowed
+line 340 160 376 170
+cross 360 165
+note "two boundaries matter equally — what can run, and what it can reach"

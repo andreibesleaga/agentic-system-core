@@ -1,0 +1,18 @@
+label "Global workspace as blackboard diagram"
+box m1 22 14 96 34 "perception"
+box m2 128 14 96 34 "memory"
+box m3 234 14 96 34 "planning"
+box m4 340 14 96 34 "action"
+box bn 174 78 112 30 "attention|bottleneck" dashed
+box gw 154 132 152 54 "global|workspace" acc
+arrow m1 bn
+arrow m2 bn
+arrow m3 bn
+arrow m4 bn
+arrow bn gw
+path "M230 186 L230 214" dashed arrow
+line 8 214 452 214 dashed thick
+path "M8 214 L8 31 L20 31" dashed arrow
+path "M452 214 L452 31 L438 31" dashed arrow
+text 340 206 "broadcast to every module" size=11
+note "solid: candidates compete for the bottleneck · dashed: the winner is broadcast"

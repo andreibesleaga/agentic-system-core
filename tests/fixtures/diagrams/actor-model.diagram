@@ -1,0 +1,11 @@
+label "Agents as actors messaging diagram"
+box a1 14 100 122 56 "actor A|private state"
+box a2 169 100 122 56 "actor B|private state"
+box a3 324 100 116 56 "actor C|crashed"
+box sup 310 24 130 38 "supervisor"
+arrow a1 a2 acc
+arrow a2 a3
+arrow sup a3
+cross 340 128
+text 152 92 "by address, not a reference"
+note "no shared memory, no direct calls — every message may be retried"

@@ -34,7 +34,7 @@
 - **AGSC-03-07** `requires` MUST be acyclic. A cycle is error `AGSC-E302` and MUST name every slug on the cycle in discovery order. [audit/D §1.3, PRD-036]
 - **AGSC-03-08** `broader`/`narrower` MUST be acyclic (`AGSC-E303`). A cluster MUST have at most one `broader`; the mono-parent tree it forms MUST be at most 3 levels deep (family › deck › sub-deck). Neither bound follows from the other, so both are checked separately, after the acyclicity check: nesting deeper than 3 levels (a chain of `broader` ancestors longer than 2) is error `AGSC-E307` naming the chain root-first; more than one `broader` value is error `AGSC-E308` naming every parent slug in code-point order, and the schema enforces this second bound as `maxItems: 1` on the cluster branch. *(AGSC-03-22 merged here at rc.3, M4.)* [audit/D §1.3, research/16 §3.5]
 - **AGSC-03-09** `derived-from` and `supersedes` targets MUST exist; a dangling target is `AGSC-E301`, not a warning. [audit/D §1.3]
-- **AGSC-03-10** An item with no inbound Link and no `clusters[]` entry MUST be reported as an orphan warning (`AGSC-E305`). [research/16 §3.4 CQ7]
+- **AGSC-03-10** An item with no inbound Link and no `clusters[]` entry MUST be reported as an orphan warning (`AGSC-E305`). A `clusters[]` entry **is** an inbound reference to the cluster it names, so a cluster that at least one item lists is never an orphan (stated at rc.5, R-03: the rule left it open and both readings were defensible). [research/16 §3.4 CQ7]
 - **AGSC-03-22** *(retired at rc.3, 2026-09-17, V6-B minimality pass confirmed by D81: one rule stated two bounds, the next attached the codes (M4) — merged into AGSC-03-08; the id is reserved under AGSC-00-16 and never reused.)*
 
 ## 3.4 Inline links and wikilinks

@@ -1,0 +1,15 @@
+label "GraphRAG entity graph and community summary diagram"
+box docs 16 100 80 40 "documents"
+circle e1 160 70 16 ""
+circle e2 215 105 16 ""
+circle e3 160 145 16 ""
+circle e4 228 180 16 ""
+line 160 86 207 94
+line 160 129 204 116
+line 222 121 226 164
+box comm 278 60 110 44 "community|summaries" acc
+box pass 278 150 110 44 "entity|neighborhood"
+arrow docs e1
+arrow e2 comm
+arrow e4 pass
+note "global questions use summaries · local ones traverse the graph"

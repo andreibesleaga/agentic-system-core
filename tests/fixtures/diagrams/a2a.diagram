@@ -1,0 +1,10 @@
+label "Agent-to-agent protocol diagram"
+region orgA 16 60 150 140 "org A"
+region orgB 294 60 150 140 "org B"
+box a 40 110 102 42 "agent"
+box b 318 110 102 42 "agent"
+box card 178 100 104 62 "agent card|+ task lifecycle" acc
+arrow a card
+arrow card b
+arrow b card dashed via=330,180;250,180
+note "both sides stay opaque — the card advertises capability, not implementation"

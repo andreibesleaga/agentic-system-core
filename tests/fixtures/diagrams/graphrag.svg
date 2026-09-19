@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 260" role="img" aria-labelledby="graphrag-title graphrag-desc" font-family="system-ui, sans-serif" font-size="14">
+  <title id="graphrag-title">GraphRAG entity graph and community summary diagram</title>
+  <desc id="graphrag-desc">global questions use summaries · local ones traverse the graph</desc>
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="16" y="100" width="80" height="40" rx="6"/>
+    <circle cx="160" cy="70" r="16"/>
+    <circle cx="215" cy="105" r="16"/>
+    <circle cx="160" cy="145" r="16"/>
+    <circle cx="228" cy="180" r="16"/>
+    <path d="M160 86 L207 94"/>
+    <path d="M160 129 L204 116"/>
+    <path d="M222 121 L226 164"/>
+    <rect x="278" y="60" width="110" height="44" rx="6" class="agsc-accent" stroke-width="2.2"/>
+    <rect x="278" y="150" width="110" height="44" rx="6"/>
+    <path d="M99.6 99 L140.4 79.4" marker-end="url(#ar2)"/>
+    <path d="M234.9 101.1 L274.1 93.5" marker-end="url(#ar2)"/>
+    <path d="M248 178.5 L274 176.5" marker-end="url(#ar2)"/>
+  </g>
+  <g fill="currentColor" text-anchor="middle">
+    <text x="56" y="124" font-size="12">documents</text>
+    <text x="333" y="78" font-size="12">community</text>
+    <text x="333" y="94" font-size="12">summaries</text>
+    <text x="333" y="168" font-size="12">entity</text>
+    <text x="333" y="184" font-size="12">neighborhood</text>
+    <text x="230" y="248" font-size="11">global questions use summaries · local ones traverse the graph</text>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+label "Bulkhead isolation diagram"
+box a1 20 40 90 40 "agent A"
+box a2 20 108 90 40 "agent B"
+box a3 20 176 90 40 "tenant C"
+region pools 150 26 130 200 "bounded pool per consumer"
+box p1 165 40 100 40 "pool A|saturated" acc
+box p2 165 108 100 40 "pool B"
+box p3 165 176 100 40 "pool C"
+box svc 330 96 110 64 "shared model|/ tool service"
+arrow a1 p1
+arrow a2 p2
+arrow a3 p3
+arrow p1 svc dashed
+arrow p2 svc
+arrow p3 svc
+cross 300 88
+note "pool A fails fast on its own — B and C never notice"

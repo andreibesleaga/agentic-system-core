@@ -1,0 +1,13 @@
+label "Budget reservation gate diagram"
+box step 16 106 76 42 "step"
+box res 136 96 124 62 "reserve first|75% of ceiling" acc
+box full 330 26 110 36 "full service"
+box deg 330 108 110 36 "degrade"
+box blk 330 190 110 36 "block"
+arrow step res
+arrow res full
+arrow res deg
+arrow res blk
+bar 150 148 96
+bar 150 148 72 thick
+note "check before spending, not after — and degrade before you block"

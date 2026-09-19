@@ -1,0 +1,13 @@
+label "Blackboard shared state diagram"
+box bb 160 96 140 66 "blackboard|shared state" acc
+box s1 20 20 96 34 "specialist"
+box s2 344 20 96 34 "specialist"
+box s3 20 196 96 34 "specialist"
+box s4 344 196 96 34 "specialist"
+box ctl 180 14 100 34 "control policy"
+arrow s1 bb both
+arrow s2 bb both
+arrow s3 bb both
+arrow s4 bb both
+arrow ctl bb
+note "no specialist-to-specialist edges — everything goes through the shared state"

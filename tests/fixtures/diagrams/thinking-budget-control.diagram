@@ -1,0 +1,13 @@
+label "Thinking-budget control diagram"
+box task 18 100 92 44 "task"
+box alloc 140 92 118 60 "budget|allocator" acc
+box low 300 40 140 44 "low effort"
+box high 300 150 140 44 "high effort"
+arrow task alloc
+arrow alloc low
+arrow alloc high
+bar 300 100 40
+bar 300 210 140
+text 300 118 "few reasoning tokens" size=11 left
+text 300 228 "many reasoning tokens" size=11 left
+note "reasoning tokens are billed as output — depth is a cost decision"

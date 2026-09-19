@@ -1,0 +1,11 @@
+label "Dual-process routing diagram"
+box in 16 104 70 44 "input"
+box router 120 96 110 60 "router|(difficulty)" acc
+box fast 300 40 130 44 "fast path|direct answer"
+box slow 300 160 130 44 "slow path|deliberate reasoning"
+arrow in router
+arrow router fast
+arrow router slow
+arrow slow fast dashed via=365,102
+text 420 110 "distil" size=11 right
+note "dashed = slow-path results distilled into the fast path over time"

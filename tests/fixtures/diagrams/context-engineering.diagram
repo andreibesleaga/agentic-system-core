@@ -1,0 +1,13 @@
+label "Context engineering admission control diagram"
+box hist 16 24 104 34 "history"
+box retr 16 108 104 34 "retrieval"
+box tools 16 192 104 34 "tool results"
+box adm 176 98 106 54 "admission|control" acc
+box ws 336 98 104 54 "working set|bounded"
+arrow hist adm
+arrow retr adm
+arrow tools adm
+arrow adm ws
+text 388 176 "evict"
+line 388 152 388 168
+note "attention is the scarce resource — every admitted token competes with the rest"

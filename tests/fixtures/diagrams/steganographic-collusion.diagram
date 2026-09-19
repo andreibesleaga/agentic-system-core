@@ -1,0 +1,13 @@
+label "Steganographic collusion diagram"
+box a 16 100 90 46 "agent A"
+box b 354 100 90 46 "agent B"
+box msg 150 60 160 40 "sounds fine to me"
+box hid 150 150 160 40 "hidden payload" acc
+arrow a msg
+arrow msg b
+arrow a hid
+arrow hid b
+circle mon 230 30 12 ""
+arrow mon msg
+text 230 12 "monitor" size=10
+note "the words pass review · the word-choices carry the message"

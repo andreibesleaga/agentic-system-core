@@ -1,0 +1,13 @@
+label "MAESTRO seven-layer threat model diagram"
+box l7 40 20 260 24 "7 agent ecosystem"
+box l6 40 50 260 24 "6 security and compliance"
+box l5 40 80 260 24 "5 evaluation and observability"
+box l4 40 110 260 24 "4 deployment and infrastructure"
+box l3 40 140 260 24 "3 agent frameworks"
+box l2 40 170 260 24 "2 data operations"
+box l1 40 200 260 24 "1 foundation models"
+box x 330 96 110 56 "cross-layer|threat" acc
+path "M 330 124 L 312 150 L 312 182 L 302 182" arrow
+text 385 172 "e.g. message at L3," size=11
+text 385 186 "exfiltration at L2" size=11
+note "the layers are a checklist; the incidents live in the cross-layer arrow"

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 260" role="img" aria-labelledby="actor-model-title actor-model-desc" font-family="system-ui, sans-serif" font-size="14">
+  <title id="actor-model-title">Agents as actors messaging diagram</title>
+  <desc id="actor-model-desc">no shared memory, no direct calls — every message may be retried</desc>
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="14" y="100" width="122" height="56" rx="6"/>
+    <rect x="169" y="100" width="122" height="56" rx="6"/>
+    <rect x="324" y="100" width="116" height="56" rx="6"/>
+    <rect x="310" y="24" width="130" height="38" rx="6"/>
+    <path d="M140 128 L165 128" marker-end="url(#ar2)" class="agsc-accent" stroke-width="2.2"/>
+    <path d="M295 128 L320 128" marker-end="url(#ar2)"/>
+    <path d="M376.9 66 L379.4 96" marker-end="url(#ar2)"/>
+    <path d="M332 120 L348 136 M348 120 L332 136" stroke-width="2"/>
+  </g>
+  <g fill="currentColor" text-anchor="middle">
+    <text x="75" y="124" font-size="12">actor A</text>
+    <text x="75" y="140" font-size="12">private state</text>
+    <text x="230" y="124" font-size="12">actor B</text>
+    <text x="230" y="140" font-size="12">private state</text>
+    <text x="382" y="124" font-size="12">actor C</text>
+    <text x="382" y="140" font-size="12">crashed</text>
+    <text x="375" y="47" font-size="12">supervisor</text>
+    <text x="152" y="92" font-size="11">by address, not a reference</text>
+    <text x="230" y="248" font-size="11">no shared memory, no direct calls — every message may be retried</text>
+  </g>
+</svg>
