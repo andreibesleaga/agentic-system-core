@@ -244,3 +244,53 @@ test('ordered(): an undefined member is omitted and an unknown key lands last', 
   const out = mapping.ordered({ zebra: '1', kind: 'pattern', type: 'concept', gone: undefined, apple: '2' });
   assert.deepStrictEqual(Object.keys(out), ['type', 'kind', 'apple', 'zebra']);
 });
+
+// ------------------------------------------------------------------ FV29-08
+
+test('AGSC-02-24: neutraliseSingleLine replaces every forbidden code point, and only those', () => {
+  const clean = mapping.neutraliseSingleLine({
+    title: 'A Clean Title',
+    tags: ['one', 'two'],
+    prov: { operator: 'human:a', origin: 'imported' },
+    count: 12,
+    flag: true,
+    nothing: null,
+  });
+  assert.deepStrictEqual(clean.substituted, [], 'a conforming frontmatter must not move');
+  assert.strictEqual(clean.frontmatter.count, 12);
+  assert.strictEqual(clean.frontmatter.flag, true);
+  assert.strictEqual(clean.frontmatter.nothing, null);
+
+  const dirty = mapping.neutraliseSingleLine({
+    title: 'N\u0000UL',
+    description: 'a b',
+    tags: ['ok', 'b\u0085d'],
+    prov: { operator: 'human:\u0007a' },
+  });
+  assert.strictEqual(dirty.frontmatter.title, 'N UL');
+  assert.strictEqual(dirty.frontmatter.description, 'a b');
+  assert.deepStrictEqual(dirty.frontmatter.tags, ['ok', 'b d']);
+  assert.strictEqual(dirty.frontmatter.prov.operator, 'human: a');
+  assert.deepStrictEqual(dirty.substituted.sort(),
+    ['/description', '/prov/operator', '/tags/1', '/title']);
+  // The input's prototype is preserved, both ways.
+  const bare = Object.create(null);
+  bare.title = 'x';
+  assert.strictEqual(Object.getPrototypeOf(mapping.neutraliseSingleLine(bare).frontmatter), null);
+  assert.strictEqual(Object.getPrototypeOf(mapping.neutraliseSingleLine({ title: 'x' }).frontmatter),
+    Object.prototype);
+  assert.deepStrictEqual(mapping.neutraliseSingleLine(null),
+    { frontmatter: {}, substituted: [] });
+});
+
+test('AGSC-02-24: a card carrying a control character is neutralised and REPORTED', () => {
+  const mapped = mapping.mapCard(
+    { slug: 'ctrl', record: { id: 'ctrl', title: 'Bad\u0000Title', summary: 'x'.repeat(60) }, body: '' },
+    { inSet: new Set(), prov: PROV },
+  );
+  assert.strictEqual(mapped.frontmatter.title, 'Bad Title');
+  const reported = mapped.findings.filter((f) => f.code === 'AGSC-E506' && /single-line/u.test(f.message));
+  assert.strictEqual(reported.length, 1, JSON.stringify(mapped.findings.map((f) => f.message)));
+  assert.strictEqual(reported[0].severity, 'warn');
+  assert.match(reported[0].message, /\/title/u);
+});

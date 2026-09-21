@@ -216,6 +216,17 @@ function run(argv, io) {
 
   const rendered = render(root, texts);
   const findings = rendered.findings;
+  // FV29-10: an input that is present but EMPTY is not a clean run. A spec/ that
+  // declares no version and carries no rule anchor renders empty pages, and the
+  // earlier code reported `pass` over them.
+  if (rendered.specVersion === 'unknown') {
+    findings.push(finding('AGSC-E901', 'spec/00-overview.md',
+      'the overview declares no spec_version: the rendered pages would carry none (AGSC-09-91)'));
+  }
+  if (rendered.rules === 0) {
+    findings.push(finding('AGSC-E901', 'spec/',
+      `${texts.size} specification file(s) were read and not one rule anchor was rendered (AGSC-09-91)`));
+  }
 
   if (outDir) {
     const target = path.resolve(outDir);
@@ -244,7 +255,7 @@ function run(argv, io) {
     for (const f of envelope.findings) {
       err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
     }
-    out(`gen-spec-html: ${texts.size} sections, ${rendered.files.size} pages, ${rendered.rules} rule anchors, `
+    out(`gen-spec-html: ${texts.size} input file(s) read, ${texts.size} sections, ${rendered.files.size} pages, ${rendered.rules} rule anchors, `
       + `${envelope.counts.error} error, ${envelope.counts.warn} warn`
       + `${outDir ? `; wrote into ${outDir}` : ''}\n`);
   }

@@ -12,7 +12,7 @@
 const { Command } = require('commander');
 const { load } = require('../config/load.js');
 const { checkBoundaryConfig } = require('../../boundary/visibility.js');
-const { createClock } = require('../../adapters/node-clock.js');
+const { createClock, isMalformedEpoch } = require('../../adapters/node-clock.js');
 
 const VERBS = [
   'init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
@@ -132,13 +132,23 @@ function retiredFlagHint(verb, argv) {
  *                         compiled `.svg` MUST NOT be committed) and AGSC-02-98/R59
  *                         (an SVG attachment with its source beside it): off by
  *                         default, the operator's choice when asked for.
+ *   `--replace`           let the foreign bundle REPLACE an item this node already
+ *                         holds (FV29-07). Without it, any collision with an item on
+ *                         disk writes nothing at all and names every collision; with
+ *                         it, each replacement is reported. Offered by BOTH adapters,
+ *                         because both write into a Bundle that may already hold
+ *                         items. It never widens WHERE a write may land: the Bundle's
+ *                         own port still refuses an absolute path, a path escaping
+ *                         the root and a path that leaves it through a link
+ *                         (AGSC-E902).
  */
 const ADAPTER_FLAGS = {
   import: {
     selector: '--from',
     adapters: {
       'old-site': new Map([['--selection', 'value'], ['--corrections', 'value'],
-        ['--attach-diagrams', 'bool']]),
+        ['--attach-diagrams', 'bool'], ['--replace', 'bool']]),
+      okf: new Map([['--replace', 'bool']]),
     },
   },
   export: { selector: '--to', adapters: {} },
@@ -152,8 +162,6 @@ function adapterFlagsFor(verb, argv) {
   const named = at === -1 ? undefined : argv[at + 1];
   return (named !== undefined && scope.adapters[named]) || new Map();
 }
-
-const SOURCE_DATE_EPOCH_RE = /^[0-9]+$/;
 
 /** commander's own dash-to-camel option-key convention (`dry-run` -> `dryRun`). */
 function toCamel(kebab) {
@@ -411,9 +419,12 @@ function main(argv, ctx) {
   }
 
   // AGSC-09-08: a malformed SOURCE_DATE_EPOCH is AGSC-E603, exit 2, never a finding.
+  // FV29-18: the predicate is the Clock adapter's own, so the pre-flight check here
+  // and the adapter that builds the clock a moment later cannot disagree about which
+  // values are malformed.
   if (Object.prototype.hasOwnProperty.call(env, 'SOURCE_DATE_EPOCH')) {
     const raw = String(env.SOURCE_DATE_EPOCH);
-    if (!SOURCE_DATE_EPOCH_RE.test(raw)) {
+    if (isMalformedEpoch(raw)) {
       if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E603', severity: 'error', message: 'SOURCE_DATE_EPOCH is malformed' });
       else writeLine(stderr, 'agsc: AGSC-E603 SOURCE_DATE_EPOCH is malformed\n');
       return 2;

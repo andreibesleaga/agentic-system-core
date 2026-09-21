@@ -93,7 +93,7 @@ describe('validate-schemas — usage and the envelope', () => {
     const result = capture('validate-schemas', [schemaRoot({ 'schema/bundle.schema.json': '{ not json\n' })]);
     assert.equal(result.code, 1);
     assert.match(result.err, /^error: schema\/bundle\.schema\.json:1:1 AGSC-E201 /mu);
-    assert.match(result.out, /^validate-schemas: 2 schemas, 1 error, 0 warn\n$/u);
+    assert.match(result.out, /^validate-schemas: 2 input file\(s\) read, 2 schemas, 1 error, 0 warn\n$/u);
   });
 
   it('a root with no spec/ reports spec_version unknown', () => {

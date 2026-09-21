@@ -121,13 +121,16 @@ test('AGSC-09-09 (rc.5, ENG1 §3): an adapter\'s own flags are ADAPTER-SCOPED', 
   // eslint-disable-next-line global-require
   const main = require('../../src/application/cli/main.js');
   assert.deepStrictEqual([...main.VERB_FLAGS.import.keys()], ['--from', '--dry-run']);
+  // FV29-07 added `--replace` to both adapters: the documented, explicit way to let
+  // a foreign bundle replace an item this node already holds.
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'old-site']).keys()],
-    ['--selection', '--corrections', '--attach-diagrams']);
+    ['--selection', '--corrections', '--attach-diagrams', '--replace']);
+  assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'okf']).keys()], ['--replace']);
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'notion']).keys()], []);
   assert.deepStrictEqual([...main.adapterFlagsFor('import', []).keys()], []);
   assert.deepStrictEqual([...main.adapterFlagsFor('lint', ['--from', 'old-site']).keys()], []);
   assert.deepStrictEqual([...main.flagsFor('import', ['--from', 'old-site']).keys()],
-    ['--from', '--dry-run', '--selection', '--corrections', '--attach-diagrams']);
+    ['--from', '--dry-run', '--selection', '--corrections', '--attach-diagrams', '--replace']);
 
   for (const argv of [['import', '--selection', SELECTION, FIXTURE, '--quiet'],
     ['import', '--from', 'notion', '--selection', SELECTION, FIXTURE, '--quiet']]) {
@@ -196,7 +199,7 @@ test('the import writes the Bundle, and a SECOND run changes not one byte (AGSC-
   assert.deepStrictEqual(second.envelope.findings, first.envelope.findings);
   // Without `--quiet` the note says so in words, so an operator sees it too.
   const loud = run(IMPORT.filter((a) => a !== '--quiet'), dir);
-  assert.match(loud.stderr, /import: 0 written, \d+ unchanged/u);
+  assert.match(loud.stderr, /import: 0 written, 0 replaced, \d+ unchanged/u);
   assert.match(loud.stderr, /import: items: 10/u);
 });
 
@@ -325,9 +328,20 @@ test('apply(): a byte-identical file is left alone, so `git status` stays honest
   assert.deepStrictEqual(applied.unchanged, ['same.md']);
   assert.deepStrictEqual(applied.written, ['new.md']);
   assert.deepStrictEqual(written, ['new.md']);
-  // A file that cannot be read is written, never skipped on a failed comparison.
+  // FV29-07: a file that exists and cannot be read back is NOT a free overwrite —
+  // the import cannot prove it would destroy nothing, so an authored item under
+  // `content/` is a collision and nothing is written until `--replace` says so.
   const throwing = { exists: () => true, readFile: () => { throw new Error('x'); }, writeFile: (p) => written.push(p) };
-  assert.deepStrictEqual(verb.apply(throwing, [{ path: 'a.md', text: 'x' }]).written, ['a.md']);
+  const refused = verb.apply(throwing, [{ path: 'content/concepts/a.md', text: 'x' }]);
+  assert.deepStrictEqual(refused.written, []);
+  assert.deepStrictEqual(refused.collisions, ['content/concepts/a.md']);
+  assert.strictEqual(refused.refused, true);
+  assert.deepStrictEqual(
+    verb.apply(throwing, [{ path: 'content/concepts/a.md', text: 'x' }], { replace: true }).replaced,
+    ['content/concepts/a.md']);
+  // The Bundle's own scaffolding is the adapter's to seed, and is rewritten as before.
+  assert.deepStrictEqual(verb.apply(throwing, [{ path: 'agsc.config.json', text: 'x' }]).overwritten,
+    ['agsc.config.json']);
 });
 
 test('identity(): every member the plan needs is named, one finding per absence', () => {

@@ -110,7 +110,7 @@ test('AGSC-01-23: importing the same tree twice writes nothing the second time',
   const ctx = ctxFor(target, { argv, verbFlags: { from: 'okf' } });
   importVerb.run(ctx);
   assert.deepStrictEqual(tree(path.join(target, 'content')), first);
-  assert.match(ctx.notes.join(''), /0 written, 3 unchanged/u);
+  assert.match(ctx.notes.join(''), /0 written, 0 replaced, 3 unchanged/u);
 });
 
 test('--dry-run reports the plan and writes nothing (AGSC-01-26a)', () => {

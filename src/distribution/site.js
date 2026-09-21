@@ -373,6 +373,9 @@ function securityFields(text) {
  */
 function securityTxt(base, instant, options = {}) {
   const legal = options.legal === undefined ? true : Boolean(options.legal);
+  // `publishing` is true only for the lane that WRITES the file. The defaulted-instant
+  // fault below is about emitted bytes, and `lint` emits nothing: a Bundle that has
+  // not been committed yet lints clean and is told at `build` (vector `cli-0002`).
   const file = '.well-known/security.txt';
   const authored = options.authored === undefined ? null : options.authored;
   const findings = [];
@@ -411,6 +414,26 @@ function securityTxt(base, instant, options = {}) {
       'the authored .well-known/security.txt states Expires more than once — RFC 9116 section 2.5.5:'
       + ' "This field MUST always be present and MUST NOT appear more than once"',
       { file, line: expiresFields[1].line }));
+  }
+  // FV29-11: the DERIVED branch, with no date source at all. AGSC-04-09 lets the
+  // build instant default to 0 (`agsc init` then `agsc build`, before `git init` and
+  // with no `SOURCE_DATE_EPOCH`), and 364 days after epoch 0 is 1970-12-31: an
+  // already-expired security contact, which RFC 9116 §2.5.5 makes stale by
+  // definition. The authored branch below refuses exactly this value; the derived one
+  // used to publish it with only the generic AGSC-E606 warning about the instant.
+  // Nothing here reads a clock: the test is `now === 0`, so the emitted `Expires`
+  // stays a pure function of the build instant and the build stays byte-reproducible.
+  if (expiresFields.length === 0 && now === 0 && options.publishing === true) {
+    findings.push(finding('AGSC-E204',
+      'the build instant defaulted to 1970-01-01T00:00:00Z, because this build had no'
+      + ' SOURCE_DATE_EPOCH and no git history (AGSC-04-09), so the derived Expires would be'
+      + ' 1970-12-31T00:00:00Z — a security contact that expired decades before it was'
+      + ' published. RFC 9116 section 2.5.5: "It is RECOMMENDED that the value of this field'
+      + ' be less than a year into the future to avoid staleness". Commit this Bundle once,'
+      + ' so the build instant comes from the git history, or set SOURCE_DATE_EPOCH to the'
+      + ' instant you want published; or author an Expires of your own in'
+      + ' .well-known/security.txt',
+      { file }));
   }
   for (const field of expiresFields.slice(0, 1)) {
     const at = ledgerModule.epochFromInstant(field.value);
@@ -572,6 +595,7 @@ function publicationFindings(bundle, ports, options = {}) {
   const security = securityTxt(base, instant, {
     authored: options.securityTxt === undefined ? readSecurityTxt(ports) : options.securityTxt,
     legal: hasLegal,
+    publishing: options.publishing === true,
   });
   const findings = [...security.findings];
   if (hasLegal && privacy === null) {
@@ -1125,7 +1149,8 @@ function build(bundle, ports, options = {}) {
   // the build, and one fault is counted once (AGSC-09-11) — so the build still
   // refuses to emit an invalid file and simply does not repeat the reason.
   const publication = publicationFindings(bundle, ports, {
-    hasLegal, instant, level, licenseContent, privacy: options.privacy, securityTxt: options.securityTxt,
+    hasLegal, instant, level, licenseContent, privacy: options.privacy,
+    publishing: true, securityTxt: options.securityTxt,
   });
   const security = publication.security;
   if (options.publication !== false) findings.push(...publication.findings);

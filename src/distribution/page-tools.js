@@ -428,6 +428,101 @@ function pageBlockScalar(state, parentIndent, header) {
   return joined === '' ? '' : joined + chomp;
 }
 
+/* ------------------------------------------------------------ the search index */
+
+/**
+ * AGSC-06-21: the shard routes a `/search.json` MANIFEST may name.
+ *
+ * `/search-<nn>.json`, this origin, and nothing else. A page fetches the route set of
+ * AGSC-06-01 and never a URL it read out of a document: a manifest that names
+ * `https://evil.example/search-01.json` or `/../secret.json` is not followed, and the
+ * mismatch between what it named and what may be followed makes the index INCOMPLETE
+ * (below), so the tools answer a finding instead of a wrong result.
+ *
+ * @param {object} manifest the parsed `/search.json`.
+ * @returns {Array<string>} the routes, in manifest order, without repetition.
+ */
+function pageShardRoutes(manifest) {
+  const out = [];
+  if (!manifest || !Array.isArray(manifest.shards)) return out;
+  for (let i = 0; i < manifest.shards.length; i += 1) {
+    const route = String(manifest.shards[i]);
+    if (/^\/search-[0-9]{2,}\.json$/.test(route) && out.indexOf(route) === -1) out.push(route);
+  }
+  return out;
+}
+
+/**
+ * The inverted index a page searches, whether the node published one document or a
+ * manifest and its shards (AGSC-06-21, FV29-06).
+ *
+ * At or below 500 items `/search.json` IS the index. Above it, `/search.json` is the
+ * manifest `{docs_total, shards[]}` and each shard is a WHOLE index over its own
+ * slice of the slug order — so its `docs[]` is a contiguous run of the global order
+ * and its posting lists count from zero WITHIN the shard. Merging is therefore a
+ * concatenation of `docs[]` in shard order plus a posting merge in which every
+ * posting of shard *k* is offset by the number of documents the earlier shards
+ * carried. The result is exactly the index an unsharded writer would have emitted for
+ * the same Bundle, which is what makes AGSC-09-16's "results identical to the local
+ * MCP server's" hold above the bound as well as below it.
+ *
+ * `incomplete` is set when a named shard was not served, when the manifest named a
+ * route outside the shape above, or when the merged document count disagrees with
+ * `docs_total`. A page that cannot see the whole index must SAY so: answering an
+ * empty hit list would be a wrong answer, and a silent one.
+ *
+ * @param {object} map route -> text, as the writer emitted it.
+ * @returns {object|null} `{docs, terms, docs_total?, incomplete?, missing?}`
+ */
+function pageIndexOf(map) {
+  const sources = map || {};
+  const parse = (route) => {
+    if (typeof sources[route] !== 'string') return null;
+    try {
+      return JSON.parse(sources[route]);
+    } catch (e) {
+      return null;
+    }
+  };
+  const root = parse('/search.json');
+  if (root === null || typeof root !== 'object') return null;
+  if (!Array.isArray(root.shards)) return root;
+
+  const routes = pageShardRoutes(root);
+  const missing = [];
+  for (let i = 0; i < root.shards.length; i += 1) {
+    const named = String(root.shards[i]);
+    if (routes.indexOf(named) === -1) missing.push(named);
+  }
+  const docs = [];
+  const terms = Object.create(null);
+  for (let i = 0; i < routes.length; i += 1) {
+    const shard = parse(routes[i]);
+    if (shard === null || !Array.isArray(shard.docs)) {
+      missing.push(routes[i]);
+      continue;
+    }
+    const offset = docs.length;
+    for (let d = 0; d < shard.docs.length; d += 1) docs.push(shard.docs[d]);
+    const shardTerms = shard.terms || {};
+    const names = Object.keys(shardTerms);
+    for (let n = 0; n < names.length; n += 1) {
+      const postings = shardTerms[names[n]];
+      if (!Array.isArray(postings)) continue;
+      if (terms[names[n]] === undefined) terms[names[n]] = [];
+      for (let p = 0; p < postings.length; p += 1) terms[names[n]].push(postings[p] + offset);
+    }
+  }
+  const total = typeof root.docs_total === 'number' ? root.docs_total : docs.length;
+  const index = { docs, docs_total: total, terms };
+  if (missing.length > 0 || docs.length !== total) {
+    index.incomplete = true;
+    index.missing = missing.length > 0 ? missing
+      : [`${docs.length} document(s) over ${routes.length} shard(s) against docs_total ${total}`];
+  }
+  return index;
+}
+
 /* ------------------------------------------------------------------ the corpus */
 
 /**
@@ -469,14 +564,10 @@ function pageCorpus(sources, options) {
   // `AGSC-E301` — an AGSC-09-16 divergence between the two transports.
   const bySlug = Object.create(null);
   for (let i = 0; i < items.length; i += 1) bySlug[items[i].slug] = items[i];
-  let index = null;
-  if (typeof map['/search.json'] === 'string') {
-    try {
-      index = JSON.parse(map['/search.json']);
-    } catch (e) {
-      index = null;
-    }
-  }
+  // AGSC-06-21 (FV29-06): `/search.json` is the index at or below 500 items and the
+  // MANIFEST above it. `pageIndexOf` reads both shapes, so the corpus carries one
+  // index whatever the node's size.
+  const index = pageIndexOf(map);
   return { base, bundleId: opts.bundleId, bySlug, index, items };
 }
 
@@ -706,10 +797,22 @@ function pageToolset(corpus, core) {
     for (let i = 0; i < names.length; i += 1) bySlug[names[i]] = supplied[names[i]];
   }
 
+  // AGSC-06-21 (FV29-06): an index the page could not read WHOLE is not an empty
+  // index. Returning no hit over a manifest whose shard was not served is a wrong
+  // answer and a silent one — so the two tools that read the index say what is
+  // missing, with the registered code for a file that is not there.
+  const indexFault = () => {
+    const index = model.index;
+    if (index === null || index === undefined || index.incomplete !== true) return null;
+    const missing = Array.isArray(index.missing) ? index.missing.join(', ') : 'a shard';
+    return `the search index is incomplete: this node published /search.json as the`
+      + ` AGSC-06-21 manifest and ${missing} could not be read from this origin`;
+  };
+
   const hitsFor = (query) => {
     const wanted = pageTokenize(query);
     const index = model.index;
-    if (wanted.length === 0 || index === null || !Array.isArray(index.docs)) return [];
+    if (wanted.length === 0 || index === null || index === undefined || !Array.isArray(index.docs)) return [];
     const terms = index.terms || {};
     const hits = [];
     for (let d = 0; d < index.docs.length; d += 1) {
@@ -740,6 +843,8 @@ function pageToolset(corpus, core) {
 
   const implementations = {
     ask: (args) => {
+      const fault = indexFault();
+      if (fault !== null) return pageErrorEnvelope('ask', 'AGSC-E901', fault);
       const question = typeof args.question === 'string' ? args.question : '';
       const hits = hitsFor(question);
       if (hits.length === 0) {
@@ -867,9 +972,13 @@ function pageToolset(corpus, core) {
       });
     },
 
-    search: (args) => pageEnvelope('search', 'items', {
-      hits: hitsFor(typeof args.query === 'string' ? args.query : ''),
-    }),
+    search: (args) => {
+      const fault = indexFault();
+      if (fault !== null) return pageErrorEnvelope('search', 'AGSC-E901', fault);
+      return pageEnvelope('search', 'items', {
+        hits: hitsFor(typeof args.query === 'string' ? args.query : ''),
+      });
+    },
   };
 
   return {
@@ -961,7 +1070,7 @@ const PORTABLE = Object.freeze(['pageTerms', 'pageNoAnswer', 'pageLinkKeys',
   'pageBaseIri', 'pageItemIri', 'pageNfc', 'pageTokenize', 'pageAnchorOf', 'pageSlugify',
   'pageDedupe', 'pageSplitFrontmatter', 'pageParseFrontmatter', 'pageIndentOf', 'pageNextMeaningful',
   'pageParseMap', 'pageParseValue', 'pageParseSeq', 'pageKeyEnd', 'pageScalar',
-  'pageBlockScalar', 'pageCorpus', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
+  'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
   'pageInlineTargets', 'pageResolveBodyReference', 'pageToolset', 'pageArguments',
   'pageRequiredArguments', 'pageSlugOfIri']);
 
@@ -993,6 +1102,8 @@ const SOURCE = Object.freeze({
   pageKeyEnd,
   pageScalar,
   pageBlockScalar,
+  pageShardRoutes,
+  pageIndexOf,
   pageCorpus,
   pageBaseOf,
   pageEdges,
@@ -1051,8 +1162,17 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
     return Promise.all(API.ROUTES.map(function (route) {
       return get(route).then(function (text) { if (text !== null) sources[route] = text; });
     })).then(function () {
-      var index = null;
-      try { index = JSON.parse(sources['/search.json']); } catch (e) { index = null; }
+      // AGSC-06-21: above 500 items /search.json is the MANIFEST {docs_total,
+      // shards[]} and the index is the shards. The page follows it exactly as the
+      // local tools do, and only to the /search-<nn>.json routes of this origin
+      // (pageShardRoutes) — never to a URL a document named.
+      var manifest = null;
+      try { manifest = JSON.parse(sources['/search.json']); } catch (e) { manifest = null; }
+      return Promise.all(pageShardRoutes(manifest).map(function (route) {
+        return get(route).then(function (text) { if (text !== null) sources[route] = text; });
+      }));
+    }).then(function () {
+      var index = pageIndexOf(sources);
       var docs = (index && index.docs) || [];
       return Promise.all(docs.map(function (doc) {
         return get('/pages/' + encodeURIComponent(doc.slug) + '.md').then(function (text) {
@@ -1100,9 +1220,11 @@ module.exports = {
   pageAnchors,
   pageCorpus,
   pageEdges,
+  pageIndexOf,
   pageInlineTargets,
   pageParseFrontmatter,
   pageSplitFrontmatter,
+  pageShardRoutes,
   pageTokenize,
   pageToolset,
 };

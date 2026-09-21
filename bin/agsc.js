@@ -49,10 +49,17 @@ function buildFileSystemPort(root) {
   };
 }
 
-function buildClockPort(env) {
+function buildClockPort(env, proc) {
   const nodeClock = tryRequire('../src/adapters/node-clock.js');
   if (nodeClock && typeof nodeClock.createClock === 'function') {
-    return nodeClock.createClock({ env });
+    // AGSC-04-09: SOURCE_DATE_EPOCH first; else the last commit time, read through
+    // the ProcessRunner; else 0 with AGSC-E606. The git read is skipped when the
+    // variable is set, so a pinned build never starts a process.
+    const pinned = env.SOURCE_DATE_EPOCH !== undefined && env.SOURCE_DATE_EPOCH !== null && String(env.SOURCE_DATE_EPOCH) !== '';
+    const lastCommitSeconds = pinned || typeof nodeClock.readLastCommitSeconds !== 'function'
+      ? null
+      : nodeClock.readLastCommitSeconds(proc);
+    return nodeClock.createClock({ env, lastCommitSeconds });
   }
   return {
     now() {
@@ -130,11 +137,12 @@ async function run() {
   const root = process.cwd();
   const userConfigDir = resolveUserConfigDir(env, require('os').homedir());
   const userConfig = loadUserConfig(buildFileSystemPort(userConfigDir));
+  const proc = buildProcessRunnerPort(root, env);
 
   const exitCode = await main(argv, {
     ports: buildFileSystemPort(root),
-    clock: buildClockPort(env),
-    proc: buildProcessRunnerPort(root, env),
+    clock: buildClockPort(env, proc),
+    proc,
     network: buildNetworkPort(),
     env,
     stdout: process.stdout,
@@ -162,7 +170,13 @@ if (require.main === module) {
       const diagnostic = { code, severity: 'error', message: String(e.message) };
       const json = process.argv.slice(2).includes('--json');
       const quiet = process.argv.slice(2).includes('--quiet');
-      if (json) process.stdout.write(`${JSON.stringify(diagnostic)}\n`);
+      // FV29-18: under `--json` the diagnostic goes to STDERR, one JSON object per
+      // line, exactly as `application/cli/main.js` writes the same fault. This is a
+      // fatal, pre-verb condition: no verb ran, so there is no AGSC-09-11 envelope,
+      // and stdout under `--json` carries "exactly one JCS-canonical envelope and
+      // nothing else" (vector `cli-0002`). The two fatal paths used to disagree
+      // about the stream.
+      if (json) process.stderr.write(`${JSON.stringify(diagnostic)}\n`);
       else if (!quiet) process.stderr.write(`agsc: ${code} ${diagnostic.message}\n`);
       process.exitCode = Number.isInteger(e.exitCode) ? e.exitCode : 2;
       return;

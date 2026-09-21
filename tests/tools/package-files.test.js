@@ -1,0 +1,55 @@
+'use strict';
+// FV29-15: `SECURITY.md` and `CONTRIBUTING.md` exist in the repository — they close
+// R-03 and part of R-04 of the legal pack — but were absent from `package.json`
+// `files`, so `npm pack` shipped neither and a consumer of the npm package found no
+// security-reporting address and no contribution terms. `CHANGELOG.md` was unshipped
+// for the same reason.
+//
+// AGSC-06-01 calls these repository files rather than routes, so no rule is touched:
+// this test simply pins what the published package must carry, measured through the
+// release tool's own pack list, which is what `npm pack` walks.
+//
+// Deterministic: reads the repository, no clock, no network, no subprocess.
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { describe, it } = require('node:test');
+
+const { REPO, tool } = require('./helpers');
+
+/** Every document an npm consumer must find inside the tarball. */
+const REQUIRED = Object.freeze([
+  'CHANGELOG.md', 'CITATION.cff', 'CONTRIBUTING.md', 'LICENSE', 'LICENSE-CONTENT',
+  'README.md', 'SECURITY.md',
+]);
+
+describe('the published package carries the documents a consumer needs (FV29-15)', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
+  const shipped = tool('release').packList(REPO, manifest);
+
+  it('ships every required document', () => {
+    for (const name of REQUIRED) {
+      assert.ok(fs.existsSync(path.join(REPO, name)), `${name} is missing from the repository`);
+      assert.ok(shipped.includes(name), `${name} is in the repository and not in the pack list`);
+    }
+  });
+
+  it('ships no private path', () => {
+    for (const name of shipped) {
+      assert.ok(!name.startsWith('GABBE/'), `the pack carries the private governance tree: ${name}`);
+      assert.ok(!name.includes('discovery' + '-product'), `the pack carries a private path: ${name}`);
+      assert.ok(!/(^|\/)\.env/u.test(name), `the pack carries an environment file: ${name}`);
+    }
+  });
+
+  it('declares every required document in `files`, so npm and the release tool agree', () => {
+    const declared = new Set(manifest.files || []);
+    for (const name of REQUIRED) {
+      // npm always ships `package.json`, `README.md` and the licence; the rest must
+      // be declared or they silently disappear from the tarball.
+      if (['README.md', 'LICENSE'].includes(name)) continue;
+      assert.ok(declared.has(name), `package.json "files" does not name ${name}`);
+    }
+  });
+});

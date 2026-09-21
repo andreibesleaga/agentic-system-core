@@ -200,9 +200,19 @@ function run(argv, io) {
 
   const rel = (absolute) => path.relative(root, absolute).split(path.sep).join('/');
   const findings = [];
+  let inputsRead = 0;
+  const readInput = (absolute) => { inputsRead += 1; return fs.readFileSync(absolute, 'utf8'); };
   const specFiles = fs.readdirSync(specDir).filter((f) => /^\d{2}-.*\.md$/u.test(f)).sort();
   const texts = new Map();
-  for (const name of specFiles) texts.set(name, fs.readFileSync(path.join(specDir, name), 'utf8'));
+  for (const name of specFiles) texts.set(name, readInput(path.join(specDir, name)));
+  // FV29-10: a checker that answers `pass` over nothing protects nothing, and
+  // AGSC-09-92 makes this tool a merge gate. An input that is present but EMPTY is
+  // the case the earlier code could not see: `spec_version` came back "unknown",
+  // no rule bullet matched, and the run reported a clean pass.
+  if (specFiles.length === 0) {
+    findings.push(finding('AGSC-E901', 'spec/', 1,
+      `no numbered specification file under ${specDir}: there is nothing to validate (AGSC-09-91)`));
+  }
   if (!texts.has('00-overview.md')) {
     findings.push(finding('AGSC-E901', 'spec/00-overview.md', 1,
       'the overview that declares spec_version is missing (AGSC-09-91)'));
@@ -212,6 +222,11 @@ function run(argv, io) {
       'the conformance section that carries the section 9.4 registry is missing (AGSC-09-91)'));
   }
   const declared = ((texts.get('00-overview.md') || '').match(/\d+\.\d+\.\d+-rc\.\d+/u) || ['unknown'])[0];
+  if (declared === 'unknown' && texts.has('00-overview.md')) {
+    findings.push(finding('AGSC-E901', 'spec/00-overview.md', 1,
+      'the overview declares no spec_version, so every version comparison below is vacuous'
+      + ' — the file is empty or is not a specification overview (AGSC-09-91)'));
+  }
 
   // ---- rule definitions ----------------------------------------------------
   const blocks = [];
@@ -225,6 +240,11 @@ function run(argv, io) {
       findings.push(finding('AGSC-E201', block.file, block.line,
         `duplicate rule id ${block.id}, first defined at ${first.file}:${first.line} (AGSC-09-91)`));
     } else defined.set(block.id, block);
+  }
+  if (defined.size === 0 && specFiles.length > 0) {
+    findings.push(finding('AGSC-E901', 'spec/', 1,
+      `${specFiles.length} specification file(s) were read and not one rule bullet was found:`
+      + ' the files are empty or are not this specification (AGSC-09-91)'));
   }
 
   // ---- a rule id `<n>a` that does not immediately follow `<n>` -------------
@@ -340,7 +360,7 @@ function run(argv, io) {
 
   // ---- the trace bracket, and the ids it names -----------------------------
   const prdPath = path.join(root, 'docs', 'PRD.md');
-  const prdText = fs.existsSync(prdPath) ? fs.readFileSync(prdPath, 'utf8') : null;
+  const prdText = fs.existsSync(prdPath) ? readInput(prdPath) : null;
   const prdIds = new Set(prdText ? prdText.match(/(?:PRD|NFR)-\d{2,3}/gu) || [] : []);
   let decisionTags = 0;
   for (const block of blocks) {
@@ -368,13 +388,13 @@ function run(argv, io) {
   const docsDir = path.join(root, 'docs');
   if (fs.existsSync(docsDir)) {
     for (const absolute of walk(docsDir).filter((f) => f.endsWith('.md')).sort()) {
-      textTargets.push([rel(absolute), fs.readFileSync(absolute, 'utf8')]);
+      textTargets.push([rel(absolute), readInput(absolute)]);
     }
   }
   const vectorsDir = path.join(root, 'tests', 'vectors');
   if (fs.existsSync(vectorsDir)) {
     for (const absolute of walk(vectorsDir).filter((f) => f.endsWith('.json')).sort()) {
-      textTargets.push([rel(absolute), fs.readFileSync(absolute, 'utf8')]);
+      textTargets.push([rel(absolute), readInput(absolute)]);
     }
   }
   for (const [file, text] of textTargets) {
@@ -396,7 +416,7 @@ function run(argv, io) {
     for (const f of envelope.findings) {
       err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
     }
-    out(`validate-spec: ${specFiles.length} spec files, ${defined.size} rules, `
+    out(`validate-spec: ${inputsRead} input file(s) read, ${specFiles.length} spec files, ${defined.size} rules, `
       + `${registry.size} registered codes, ${envelope.counts.error} error, ${envelope.counts.warn} warn; `
       + `decision tags (unresolvable from a distribution, informational): ${decisionTags}\n`);
   }

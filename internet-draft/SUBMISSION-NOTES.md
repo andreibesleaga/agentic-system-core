@@ -207,9 +207,10 @@ precedent this draft follows, and a co-editor of the POWDER Description
 Resources Recommendation, which registered the `describedby` relation the
 draft relies on. Two qualifications in one person.
 
-* RFC 9727 Authors' Addresses: "Kevin Smith, Vodafone,
-  kevin.smith@vodafone.com, https://www.vodafone.com" --
-  https://www.rfc-editor.org/rfc/rfc9727.html (checked 2026-09-18).
+* RFC 9727 Authors' Addresses: "Kevin Smith, Vodafone" --
+  https://www.rfc-editor.org/rfc/rfc9727.html (checked 2026-09-18). His
+  e-mail address is in that RFC's Authors' Addresses section and is not
+  copied here (see the note at the end of this section).
 * POWDER-DR editor list: "Kevin Smith, Vodafone Group R & D" --
   https://www.w3.org/TR/2009/REC-powder-dr-20090901/ (checked 2026-09-18).
 * **Affiliation unverified**: no Vodafone organisation page listing him
@@ -218,13 +219,13 @@ draft relies on. Two qualifications in one person.
 
 Alternates for the same role, both RFC 9264 (Linkset) authors, from that
 RFC's Authors' Addresses (https://www.rfc-editor.org/rfc/rfc9264.txt,
-checked 2026-09-18): **Erik Wilde** (Axway, erik.wilde@dret.net --
-**affiliation unverified**; his own site dret.net did not serve a valid
-certificate when checked on 2026-09-18) and **Herbert Van de Sompel**
-(Data Archiving and Networked Services,
-herbert.van.de.sompel@dans.knaw.nl, ORCID 0000-0002-0715-6126 --
-**affiliation unverified**; a search of dans.knaw.nl on 2026-09-18
-returned no staff entry).
+checked 2026-09-18): **Erik Wilde** (Axway -- **affiliation
+unverified**; his own site dret.net did not serve a valid certificate
+when checked on 2026-09-18) and **Herbert Van de Sompel** (Data Archiving
+and Networked Services, ORCID 0000-0002-0715-6126 -- **affiliation
+unverified**; a search of dans.knaw.nl on 2026-09-18 returned no staff
+entry). Their e-mail addresses are in that RFC's Authors' Addresses
+section and are not copied here.
 
 ### 3.2 A W3C JSON-LD or DCAT editor
 
@@ -265,8 +266,13 @@ Section 8 records and whose `describedby` discovery link this draft shares.
   currency of the role rests on the company's own site rather than on a
   personnel listing.
 
-No public e-mail address was collected for any of the three. The owner
-looks one up at the point of writing, or asks through the relevant list.
+**No third party's e-mail address is recorded in this repository.** The
+addresses of the RFC authors above are published in the Authors'
+Addresses sections of RFC 9727 and RFC 9264, which the links in this
+section resolve to; the owner reads one there at the point of writing, or
+asks through the relevant IETF list. Copying other people's contact
+details into a repository that is about to be made public serves no
+purpose that the citation does not already serve (FV29-17, 2026-09-21).
 
 ---
 

@@ -543,6 +543,16 @@ function run(argv, io) {
     return 1;
   }
 
+  // FV29-10: an EMPTY `ontology/agsc.ttl` parses as zero triples, builds an empty
+  // context and round-trips perfectly — a pass over nothing. A vocabulary with no
+  // term is a failure, not a clean generation.
+  const termCount = vocabulary.classes.length + vocabulary.objectProperties.length
+    + vocabulary.datatypeProperties.length;
+  if (termCount === 0) {
+    findings.push(finding('AGSC-E901', 'ontology/agsc.ttl',
+      `${turtle.length} byte(s) were read and not one asc: term was found: there is nothing to generate (AGSC-09-90)`));
+  }
+
   const contextDocument = buildContext(vocabulary);
   const files = new Map([
     ['context.jsonld', `${canonicalize(contextDocument)}\n`],
@@ -612,7 +622,7 @@ function run(argv, io) {
       err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
     }
     const terms = vocabulary.classes.length + vocabulary.objectProperties.length + vocabulary.datatypeProperties.length;
-    out(`gen-ns: ${terms} vocabulary terms, ${Object.keys(contextDocument['@context']).length} context members, `
+    out(`gen-ns: 1 input file(s) read, ${terms} vocabulary terms, ${Object.keys(contextDocument['@context']).length} context members, `
       + `${original.length} triples round-tripped, ${envelope.counts.error} error, ${envelope.counts.warn} warn`
       + `${outDir ? `; wrote ${files.size} files into ${outDir}` : ''}\n`);
   }

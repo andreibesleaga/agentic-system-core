@@ -224,11 +224,15 @@ async function fetchUrl(url) {
 
 // ---------------------------------------------------------------- source abstraction
 const isUrl = s => /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
+/** FV29-10: how many documents this run actually read, printed with the verdict so
+ *  that "nothing is wrong" can be told apart from "nothing was looked at". */
+const READS = { count: 0 };
 async function load(target) {
+  READS.count += 1;
   if (isUrl(target)) {
     const r = await fetchUrl(target);
     return { kind: 'url', name: target, bytes: r.body, headers: r.headers,
-      resolve: async href => (await fetchUrl(href)).body };
+      resolve: async href => { READS.count += 1; return (await fetchUrl(href)).body; } };
   }
   const file = path.resolve(target);
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw new TransportError('AGSC-E901', `file not found: ${target}`);
@@ -245,6 +249,7 @@ async function load(target) {
       const f = path.resolve(siteRoot, '.' + p);
       if (!f.startsWith(siteRoot + path.sep)) throw new TransportError('AGSC-E902', `path escapes the site root: ${href}`);
       if (!fs.existsSync(f)) throw new TransportError('AGSC-E901', `target not found on disk: ${p}`);
+      READS.count += 1;
       return fs.readFileSync(f);
     } };
 }
@@ -365,7 +370,7 @@ async function check(src, level, findings) {
   if (opts.json) process.stdout.write(jcs(env) + '\n');
   else {
     for (const f of env.findings) process.stderr.write(`${f.file}:${f.line}:${f.col} ${f.severity} ${f.code} ${f.message}\n`);
-    process.stdout.write(`validate-wellknown ${env.status} (level ${opts.level}): ${env.counts.error} error(s), ${env.counts.warn} warning(s)\n`);
+    process.stdout.write(`validate-wellknown ${env.status} (level ${opts.level}): ${READS.count} input file(s) read, ${env.counts.error} error(s), ${env.counts.warn} warning(s)\n`);
   }
   process.exit(env.status === 'pass' ? 0 : 1);
 })();

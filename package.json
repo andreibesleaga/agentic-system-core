@@ -19,6 +19,9 @@
         "LICENSE",
         "LICENSE-CONTENT",
         "CITATION.cff",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
         "README.md"
     ],
     "engines": {

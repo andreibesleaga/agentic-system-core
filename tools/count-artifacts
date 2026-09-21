@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 // PRD-054 generator: derive every published count from the artefacts themselves,
 // so that no document ever states a count by hand. Node stdlib only, zero
-// dependencies, exit 0/1, --json envelope. [AGSC-09-90, D67 group C, SPEC-SYNC-01]
+// dependencies, exit 0/1/2, --json envelope. [AGSC-09-90, D67 group C, SPEC-SYNC-01]
+//
+//   count-artifacts [--json] [--help] [<root>]
+//
+// <root> is the distribution root that holds `spec/`, `ontology/` and
+// `tests/vectors/`; it defaults to the directory above this file, so the tool
+// counts ITS OWN distribution from any working directory (FV29-09: until today the
+// vector-file re-read of the D93 check resolved its path against `process.cwd()`,
+// so every invocation from another directory — `--help` included — threw an ENOENT
+// stack trace and exited 1 instead of answering). Exit 0 pass, 1 findings, 2 usage.
 //
 // Checks (each a finding, exit 1): duplicate rule id · duplicate registry row for one
 // code (AGSC-09-91) · code used but not registered · vector citing an unknown rule ·
@@ -11,121 +20,180 @@
 // inside a JSON-array/quoted example — disagreeing with spec/00 unless the line is a
 // historical note (D93) · w3c/index.html <dfn> terms disagreeing with ontology/agsc.ttl ·
 // a vector directory ignored by .gitignore.
-// Also reports rules_with_vector / rules_without_vector (informative, never a finding).
+// Also reports rules_with_vector / rules_without_vector and `inputs_read`, the number
+// of files this run actually opened (informative, never a finding; FV29-10 asks every
+// checker to say how much it read, so that a vacuous pass is visible).
 'use strict';
 const fs = require('fs'), path = require('path'), cp = require('child_process');
-const root = path.resolve(__dirname, '..');
-const read = p => fs.readFileSync(path.join(root, p), 'utf8');
-const walk = d => fs.readdirSync(path.join(root, d), { withFileTypes: true })
-  .flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
 
-const specFiles = fs.readdirSync(path.join(root, 'spec')).filter(f => f.endsWith('.md')).sort();
-const specText = specFiles.map(f => read(path.join('spec', f))).join('\n');
-const ruleIds = (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/g) || []).map(s => s.slice(2, -2));
-const rules = [...new Set(ruleIds)];
-const conf = read('spec/09-conformance.md');
-const registryRows = (conf.match(/^\| `AGSC-E\d{3}`/gm) || []).map(s => (s.match(/AGSC-E\d{3}/) || [''])[0]);
-const registered = [...new Set(registryRows)];
-const used = [...new Set(specText.match(/AGSC-E\d{3}/g) || [])];
-const vectorFiles = walk('tests/vectors').filter(f => f.endsWith('.json'));
-const vectors = vectorFiles.map(f => ({ ...JSON.parse(read(f)), __file: f }));
-const ttl = read('ontology/agsc.ttl');
-const n = re => (ttl.match(re) || []).length;
-const declared = (read('spec/00-overview.md').match(/1\.0\.0-rc\.\d+/) || ['unknown'])[0];
-const citedRules = new Set(vectors.map(v => v.rule));
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const HELP = `count-artifacts [--json] [--help] [<root>]
 
-const counts = {
-  spec_version: declared,
-  rules: rules.length,
-  rules_reserved: (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\* \*\(retired at rc/g) || []).length,
-  rules_with_vector: rules.filter(r => citedRules.has(r)).length,
-  rules_without_vector: rules.filter(r => !citedRules.has(r)).length,
-  error_codes_registered: registered.length,
-  error_codes_used: used.length,
-  vectors_total: vectors.length,
-  vectors_required: vectors.filter(v => v.level === 'required').length,
-  vectors_optional: vectors.filter(v => v.level === 'optional').length,
-  vectors_withdrawn: vectors.filter(v => v.level === 'withdrawn').length,
-  vector_areas: [...new Set(vectors.map(v => v.area))].sort(),
-  ontology_classes: n(/^asc:\S+\n    a owl:Class/gm),
-  ontology_object_properties: n(/^asc:\S+\n    a owl:ObjectProperty/gm),
-  ontology_datatype_properties: n(/^asc:\S+\n    a owl:DatatypeProperty/gm),
-};
-counts.rules_active = counts.rules - counts.rules_reserved;
-counts.ontology_terms = counts.ontology_classes + counts.ontology_object_properties
-  + counts.ontology_datatype_properties;
+  Derives every published count from the artefacts of <root> — the rules of
+  spec/*.md, the section 9.4 error-code registry, the vectors of
+  tests/vectors/**, and the ontology terms of ontology/agsc.ttl — and reports
+  the disagreements AGSC-09-91 names.
 
-const findings = [];
-for (const id of rules) if (ruleIds.filter(x => x === id).length > 1) findings.push(`duplicate rule id ${id}`);
-for (const c of registered) if (registryRows.filter(x => x === c).length > 1) findings.push(`duplicate registry row for ${c} (AGSC-09-91)`);
-for (const c of used) if (!registered.includes(c)) findings.push(`error code used but not registered: ${c}`);
-// AGSC-09-04 closed area list
-const areaRule = (conf.match(/Areas are ([^\n]*?)and no others/) || ['', ''])[1];
-const allowedAreas = new Set((areaRule.match(/`([a-z]+)\/`/g) || []).map(s => s.slice(1, -2)));
-for (const v of vectors) {
-  if (!rules.includes(v.rule)) findings.push(`vector ${v.id} cites unknown rule ${v.rule}`);
-  for (const k of ['area', 'description', 'expected', 'id', 'input', 'level', 'rule'])
-    if (!(k in v)) findings.push(`vector ${v.id} missing member ${k}`);
-  if (allowedAreas.size && !allowedAreas.has(v.area)) findings.push(`vector ${v.id} area ${v.area} is outside the AGSC-09-04 list`);
-  if (path.basename(v.__file).slice(0, v.id.length) !== v.id) findings.push(`vector file ${v.__file} does not start with its id ${v.id}`);
-  const sv = v.options && v.options.spec_version;
-  if (sv && sv !== declared) findings.push(`vector ${v.id} options.spec_version ${sv} differs from spec/00 ${declared} (AGSC-09-91)`);
-  // D93: any version literal anywhere in the vector file (inputs and expected bytes included) must be the declared one.
-  if (v.level !== 'withdrawn') for (const m of fs.readFileSync(v.__file, 'utf8').matchAll(/1\.0\.0-rc\.\d+/g))
-    if (m[0] !== declared) { findings.push(`vector ${v.id} embeds version literal ${m[0]} (expected ${declared}) — re-derive its bytes (D93)`); break; }
-}
-const ids = vectors.map(v => v.id);
-for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
-// spec_version literals in docs/, w3c/ that name a different rc (keyword-anchored form)
-for (const f of ['docs/SPEC.md', 'w3c/index.html']) {
-  const txt = read(f);
-  for (const m of txt.matchAll(/spec_version[":\s]*"?\s*(1\.0\.0-rc\.\d+)/g))
-    if (m[1] !== declared) findings.push(`${f}: spec_version literal ${m[1]} differs from spec/00 ${declared} (AGSC-09-91)`);
-}
-// D93: every 1.0.0-rc.N literal anywhere in spec/*.md — including inside a fenced code
-// block or a quoted/JSON-array string, where the keyword-anchored check above cannot see
-// it (e.g. the hyphenated key "agsc-spec-version": ["1.0.0-rc.3"] never contains the
-// literal substring "spec_version") — must equal the declared version, UNLESS the literal
-// sits on a line that is plainly a historical note: one containing, before the literal,
-// a word such as "at", "since", "amended", "added", "withdrawn", "before", "until" or
-// "from" (an amendment marker, a retirement note, a rc.N-vs-rc.M comparison, etc.).
-// A differing literal on any other line is a live example or status claim that drifted.
-// (?<![\w-])/(?![\w-]) rather than \b so a hyphenated JSON key such as
-// "agsc-generated-at" does not itself read as the prose word "at".
-const historyWord = /(?<![\w-])(at|since|amended|added|withdrawn|before|until|from)(?![\w-])/i;
-for (const f of specFiles.map(f => 'spec/' + f)) {
-  const txt = read(f);
-  const lines = txt.split('\n');
-  lines.forEach((line, i) => {
-    for (const m of line.matchAll(/1\.0\.0-rc\.\d+/g)) {
-      if (m[0] === declared) continue;
-      if (!historyWord.test(line.slice(0, m.index)))
-        findings.push(`${f}:${i + 1}: version literal ${m[0]} differs from spec/00 ${declared} and is not on a historical-note line (AGSC-09-91)`);
-    }
-  });
-}
-// w3c/index.html vocabulary tables vs ontology
-try {
-  const html = read('w3c/index.html');
-  const sect = id => { const i = html.indexOf(`<section id="${id}">`); const j = html.indexOf('</section>', i); return i < 0 ? '' : html.slice(i, j); };
-  const dfns = [...(sect('classes') + sect('object-properties') + sect('datatype-properties')).matchAll(/<dfn[^>]*>(asc:[A-Za-z0-9]+)<\/dfn>/g)].map(m => m[1]);
-  const terms = [...new Set((ttl.match(/^asc:[A-Za-z0-9]+/gm) || []))];
-  for (const t of terms) if (!dfns.includes(t)) findings.push(`w3c/index.html lacks a <dfn> for ${t}`);
-  for (const d of dfns) if (!terms.includes(d)) findings.push(`w3c/index.html defines ${d}, absent from ontology/agsc.ttl`);
-} catch (e) { /* w3c/ is optional in a distribution */ }
-// a vector directory silently ignored by git is a lost vector
-try {
-  const dirs = [...new Set(vectorFiles.map(f => path.dirname(f)))];
-  for (const d of dirs) {
-    const r = cp.spawnSync('git', ['check-ignore', '-q', d + '/'], { cwd: root });
-    if (r.status === 0) findings.push(`vector directory ${d}/ is ignored by .gitignore`);
+  --json    emit the count/finding envelope on stdout
+  --help    this text
+
+  <root> defaults to the distribution this tool ships in.
+  Exit 0 pass, 1 findings, 2 usage.
+`;
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} [io]
+ * @returns {number} exit code: 0 pass, 1 findings, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`count-artifacts: ${message}\n${HELP}`); return 2; };
+
+  let json = false;
+  let root = DEFAULT_ROOT;
+  let sawRoot = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    else if (arg === '--json') json = true;
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
   }
-} catch (e) { /* no git: skip */ }
+  for (const required of ['spec', 'tests/vectors']) {
+    if (!fs.existsSync(path.join(root, required))) {
+      return usage(`no ${required}/ directory under ${root} (AGSC-E901)`);
+    }
+  }
 
-if (process.argv.includes('--json')) {
-  console.log(JSON.stringify({ verb: 'count-artifacts', ok: findings.length === 0, counts, findings }, null, 2));
-} else {
-  for (const [k, v] of Object.entries(counts)) console.log(`${k}: ${Array.isArray(v) ? v.join(' ') : v}`);
-  for (const f of findings) console.error(`FINDING ${f}`);
+  let inputsRead = 0;
+  const read = (p) => { inputsRead += 1; return fs.readFileSync(path.join(root, p), 'utf8'); };
+  const walk = (d) => fs.readdirSync(path.join(root, d), { withFileTypes: true })
+    .flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+
+  const specFiles = fs.readdirSync(path.join(root, 'spec')).filter(f => f.endsWith('.md')).sort();
+  const specTexts = new Map(specFiles.map(f => [f, read(path.join('spec', f))]));
+  const specText = specFiles.map(f => specTexts.get(f)).join('\n');
+  const ruleIds = (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/g) || []).map(s => s.slice(2, -2));
+  const rules = [...new Set(ruleIds)];
+  const conf = specTexts.get('09-conformance.md') || '';
+  const registryRows = (conf.match(/^\| `AGSC-E\d{3}`/gm) || []).map(s => (s.match(/AGSC-E\d{3}/) || [''])[0]);
+  const registered = [...new Set(registryRows)];
+  const used = [...new Set(specText.match(/AGSC-E\d{3}/g) || [])];
+  const vectorFiles = walk('tests/vectors').filter(f => f.endsWith('.json'));
+  const vectorText = new Map(vectorFiles.map(f => [f, read(f)]));
+  const vectors = vectorFiles.map(f => ({ ...JSON.parse(vectorText.get(f)), __file: f }));
+  const ttl = fs.existsSync(path.join(root, 'ontology/agsc.ttl')) ? read('ontology/agsc.ttl') : '';
+  const n = re => (ttl.match(re) || []).length;
+  const overview = specTexts.get('00-overview.md') || '';
+  const declared = (overview.match(/1\.0\.0-rc\.\d+/) || ['unknown'])[0];
+  const citedRules = new Set(vectors.map(v => v.rule));
+
+  const counts = {
+    spec_version: declared,
+    rules: rules.length,
+    rules_reserved: (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\* \*\(retired at rc/g) || []).length,
+    rules_with_vector: rules.filter(r => citedRules.has(r)).length,
+    rules_without_vector: rules.filter(r => !citedRules.has(r)).length,
+    error_codes_registered: registered.length,
+    error_codes_used: used.length,
+    vectors_total: vectors.length,
+    vectors_required: vectors.filter(v => v.level === 'required').length,
+    vectors_optional: vectors.filter(v => v.level === 'optional').length,
+    vectors_withdrawn: vectors.filter(v => v.level === 'withdrawn').length,
+    vector_areas: [...new Set(vectors.map(v => v.area))].sort(),
+    ontology_classes: n(/^asc:\S+\n    a owl:Class/gm),
+    ontology_object_properties: n(/^asc:\S+\n    a owl:ObjectProperty/gm),
+    ontology_datatype_properties: n(/^asc:\S+\n    a owl:DatatypeProperty/gm),
+  };
+  counts.rules_active = counts.rules - counts.rules_reserved;
+  counts.ontology_terms = counts.ontology_classes + counts.ontology_object_properties
+    + counts.ontology_datatype_properties;
+
+  const findings = [];
+  // FV29-10: a destroyed or empty input must never read as a clean count.
+  if (specFiles.length === 0) findings.push('spec/ holds no .md file: there is nothing to count (AGSC-E901)');
+  if (rules.length === 0) findings.push('spec/ declares no rule: the count would be vacuous (AGSC-E901)');
+  if (declared === 'unknown') findings.push('spec/00-overview.md declares no spec_version (AGSC-09-91)');
+  if (vectors.length === 0) findings.push('tests/vectors/ holds no vector: the count would be vacuous (AGSC-E901)');
+  for (const id of rules) if (ruleIds.filter(x => x === id).length > 1) findings.push(`duplicate rule id ${id}`);
+  for (const c of registered) if (registryRows.filter(x => x === c).length > 1) findings.push(`duplicate registry row for ${c} (AGSC-09-91)`);
+  for (const c of used) if (!registered.includes(c)) findings.push(`error code used but not registered: ${c}`);
+  // AGSC-09-04 closed area list
+  const areaRule = (conf.match(/Areas are ([^\n]*?)and no others/) || ['', ''])[1];
+  const allowedAreas = new Set((areaRule.match(/`([a-z]+)\/`/g) || []).map(s => s.slice(1, -2)));
+  for (const v of vectors) {
+    if (!rules.includes(v.rule)) findings.push(`vector ${v.id} cites unknown rule ${v.rule}`);
+    for (const k of ['area', 'description', 'expected', 'id', 'input', 'level', 'rule'])
+      if (!(k in v)) findings.push(`vector ${v.id} missing member ${k}`);
+    if (allowedAreas.size && !allowedAreas.has(v.area)) findings.push(`vector ${v.id} area ${v.area} is outside the AGSC-09-04 list`);
+    if (path.basename(v.__file).slice(0, String(v.id).length) !== v.id) findings.push(`vector file ${v.__file} does not start with its id ${v.id}`);
+    const sv = v.options && v.options.spec_version;
+    if (sv && sv !== declared) findings.push(`vector ${v.id} options.spec_version ${sv} differs from spec/00 ${declared} (AGSC-09-91)`);
+    // D93: any version literal anywhere in the vector file (inputs and expected bytes included) must be the declared one.
+    if (v.level !== 'withdrawn') for (const m of vectorText.get(v.__file).matchAll(/1\.0\.0-rc\.\d+/g))
+      if (m[0] !== declared) { findings.push(`vector ${v.id} embeds version literal ${m[0]} (expected ${declared}) — re-derive its bytes (D93)`); break; }
+  }
+  const ids = vectors.map(v => v.id);
+  for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
+  // spec_version literals in docs/, w3c/ that name a different rc (keyword-anchored form)
+  for (const f of ['docs/SPEC.md', 'w3c/index.html']) {
+    if (!fs.existsSync(path.join(root, f))) continue;
+    const txt = read(f);
+    for (const m of txt.matchAll(/spec_version[":\s]*"?\s*(1\.0\.0-rc\.\d+)/g))
+      if (m[1] !== declared) findings.push(`${f}: spec_version literal ${m[1]} differs from spec/00 ${declared} (AGSC-09-91)`);
+  }
+  // D93: every 1.0.0-rc.N literal anywhere in spec/*.md — including inside a fenced code
+  // block or a quoted/JSON-array string, where the keyword-anchored check above cannot see
+  // it (e.g. the hyphenated key "agsc-spec-version": ["1.0.0-rc.3"] never contains the
+  // literal substring "spec_version") — must equal the declared version, UNLESS the literal
+  // sits on a line that is plainly a historical note: one containing, before the literal,
+  // a word such as "at", "since", "amended", "added", "withdrawn", "before", "until" or
+  // "from" (an amendment marker, a retirement note, a rc.N-vs-rc.M comparison, etc.).
+  // A differing literal on any other line is a live example or status claim that drifted.
+  // (?<![\w-])/(?![\w-]) rather than \b so a hyphenated JSON key such as
+  // "agsc-generated-at" does not itself read as the prose word "at".
+  const historyWord = /(?<![\w-])(at|since|amended|added|withdrawn|before|until|from)(?![\w-])/i;
+  specFiles.forEach((name) => {
+    const f = `spec/${name}`;
+    specTexts.get(name).split('\n').forEach((line, i) => {
+      for (const m of line.matchAll(/1\.0\.0-rc\.\d+/g)) {
+        if (m[0] === declared) continue;
+        if (!historyWord.test(line.slice(0, m.index)))
+          findings.push(`${f}:${i + 1}: version literal ${m[0]} differs from spec/00 ${declared} and is not on a historical-note line (AGSC-09-91)`);
+      }
+    });
+  });
+  // w3c/index.html vocabulary tables vs ontology
+  try {
+    const html = read('w3c/index.html');
+    const sect = id => { const i = html.indexOf(`<section id="${id}">`); const j = html.indexOf('</section>', i); return i < 0 ? '' : html.slice(i, j); };
+    const dfns = [...(sect('classes') + sect('object-properties') + sect('datatype-properties')).matchAll(/<dfn[^>]*>(asc:[A-Za-z0-9]+)<\/dfn>/g)].map(m => m[1]);
+    const terms = [...new Set((ttl.match(/^asc:[A-Za-z0-9]+/gm) || []))];
+    for (const t of terms) if (!dfns.includes(t)) findings.push(`w3c/index.html lacks a <dfn> for ${t}`);
+    for (const d of dfns) if (!terms.includes(d)) findings.push(`w3c/index.html defines ${d}, absent from ontology/agsc.ttl`);
+  } catch (e) { /* w3c/ is optional in a distribution */ }
+  // a vector directory silently ignored by git is a lost vector
+  try {
+    const dirs = [...new Set(vectorFiles.map(f => path.dirname(f)))];
+    for (const d of dirs) {
+      const r = cp.spawnSync('git', ['check-ignore', '-q', d + '/'], { cwd: root });
+      if (r.status === 0) findings.push(`vector directory ${d}/ is ignored by .gitignore`);
+    }
+  } catch (e) { /* no git: skip */ }
+
+  counts.inputs_read = inputsRead;
+  if (json) {
+    out(JSON.stringify({ verb: 'count-artifacts', ok: findings.length === 0, counts, findings }, null, 2) + '\n');
+  } else {
+    for (const [k, v] of Object.entries(counts)) out(`${k}: ${Array.isArray(v) ? v.join(' ') : v}\n`);
+    for (const f of findings) err(`FINDING ${f}\n`);
+  }
+  return findings.length === 0 ? 0 : 1;
 }
-process.exit(findings.length === 0 ? 0 : 1);
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, run };

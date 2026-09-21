@@ -214,7 +214,7 @@ function run(argv, io) {
     if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
     else if (!flags.has('--quiet')) {
       for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
-      out(`validate-ontology: 0 terms, ${bad.counts.error} error, ${bad.counts.warn} warn\n`);
+      out(`validate-ontology: 1 input file(s) read, 0 terms, ${bad.counts.error} error, ${bad.counts.warn} warn\n`);
     }
     return 1;
   }
@@ -346,7 +346,7 @@ function run(argv, io) {
     for (const f of envelope.findings) {
       err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
     }
-    out(`validate-ontology: ${quads.length} triples, ${classes} classes, ${properties} properties, `
+    out(`validate-ontology: 1 input file(s) read, ${quads.length} triples, ${classes} classes, ${properties} properties, `
       + `${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
   }
   return envelope.status === 'pass' ? 0 : 1;

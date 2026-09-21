@@ -40,7 +40,7 @@ describe('gen-spec-html — usage and the envelope', () => {
   it('--quiet says nothing; the human output carries a summary line', () => {
     assert.equal(capture('gen-spec-html', ['--quiet', specRoot()]).out, '');
     assert.match(capture('gen-spec-html', [specRoot()]).out,
-      /^gen-spec-html: 3 sections, 4 pages, 3 rule anchors, 0 error, 0 warn\n$/u);
+      /^gen-spec-html: 3 input file\(s\) read, 3 sections, 4 pages, 3 rule anchors, 0 error, 0 warn\n$/u);
   });
 });
 
@@ -152,6 +152,6 @@ describe('gen-spec-html — the real distribution', () => {
     const result = capture('gen-spec-html', [REPO]);
     assert.equal(result.code, 0);
     assert.equal(result.err, '');
-    assert.match(result.out, /^gen-spec-html: 12 sections, 13 pages, 335 rule anchors, 0 error, 0 warn\n$/u);
+    assert.match(result.out, /^gen-spec-html: 12 input file\(s\) read, 12 sections, 13 pages, 335 rule anchors, 0 error, 0 warn\n$/u);
   });
 });

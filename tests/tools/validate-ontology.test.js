@@ -68,7 +68,7 @@ describe('validate-ontology — usage and the envelope', () => {
   it('--quiet says nothing; the human output carries a summary line', () => {
     assert.equal(capture('validate-ontology', ['--quiet', ontologyRoot(CONCEPT)]).out, '');
     const result = capture('validate-ontology', [ontologyRoot(CONCEPT)]);
-    assert.match(result.out, /^validate-ontology: \d+ triples, 1 classes, 0 properties, 0 error, 0 warn\n$/u);
+    assert.match(result.out, /^validate-ontology: 1 input file\(s\) read, \d+ triples, 1 classes, 0 properties, 0 error, 0 warn\n$/u);
   });
 });
 

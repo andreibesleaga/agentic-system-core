@@ -138,7 +138,12 @@ test('AGSC-08-20a: verify --ledger with no git-log file is AGSC-E703, never a gr
   assert.deepStrictEqual(envelope.findings.map((f) => f.code), ['AGSC-E703']);
 });
 
-test('AGSC-04-09: a build with no SOURCE_DATE_EPOCH warns AGSC-E606 and still emits', () => {
+test('AGSC-04-09: a build with no SOURCE_DATE_EPOCH warns AGSC-E606 and refuses the 1970 contact', () => {
+  // The warning is AGSC-04-09's and is unchanged. What changed at FV29-11 is the one
+  // artefact whose CONTENT is a date: `/.well-known/security.txt` derived
+  // `Expires: 1970-12-31T00:00:00Z` from the defaulted instant and published it, and
+  // RFC 9116 section 2.5.5 makes a past expiry stale by definition. This test used to
+  // assert exit 0 with AGSC-E606 alone, which pinned that defect.
   const dir = workspace();
   const { createFileSystem } = require('../../../src/adapters/node-fs.js');
   const stdout = captureStream();
@@ -146,8 +151,15 @@ test('AGSC-04-09: a build with no SOURCE_DATE_EPOCH warns AGSC-E606 and still em
     env: {}, ports: { fs: createFileSystem(dir) }, root: dir, stderr: captureStream(), stdout, version: '0.0.0',
   });
   const envelope = JSON.parse(stdout.text());
-  assert.strictEqual(exit, 0);
-  assert.deepStrictEqual(envelope.findings.map((f) => f.code), ['AGSC-E606']);
+  assert.deepStrictEqual(envelope.findings.map((f) => f.code).sort(), ['AGSC-E204', 'AGSC-E606']);
+  assert.strictEqual(exit, 1, 'an already-expired security contact must fail the build');
+  // With a date source, the same Bundle builds clean.
+  const clean = captureStream();
+  assert.strictEqual(main(['build', '--json', '--quiet'], {
+    env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: createFileSystem(dir) },
+    root: dir, stderr: captureStream(), stdout: clean, version: '0.0.0',
+  }), 0, clean.text());
+  assert.deepStrictEqual(JSON.parse(clean.text()).findings, []);
 });
 
 // ---------------------------------------------------------------- compose

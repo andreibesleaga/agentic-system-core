@@ -9,6 +9,83 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed — the build instant really comes from the last commit (2026-09-21, session close)
+
+- With no `SOURCE_DATE_EPOCH`, AGSC-04-09 makes the build instant the time of the last commit and only falls to 0 where no git history exists. `createClock` accepted that value and `node-proc.js` named the git read as its one caller, but nothing performed the read, so the real command defaulted to 0 inside every repository. Every gate had run with the variable set, so no test noticed; once the writer refused to derive a `security.txt` expiry from a defaulted instant, a plain `agsc build` in a committed Bundle failed. `src/adapters/node-clock.js#readLastCommitSeconds` now reads `git log -1 --format=%ct` through the ProcessRunner port (no shell, scrubbed environment, skipped when the variable is set, `null` on anything but one clean integer) and `bin/agsc.js` passes it to the clock. Test: `tests/bin/agsc-build-instant-from-git.test.js`.
+
+
+### Fixed — the findings of the independent verification of session 29 (FIX-29, 2026-09-21)
+
+An independent end-of-session verification re-ran every gate and left eleven
+findings reported rather than fixed. Seven of them were engine defects; each was
+closed with a failing test first, and no frozen artefact was touched — `spec/`,
+`schema/`, `ontology/` and `tests/vectors/` are byte-identical to the `1.0.0-rc.5`
+tag.
+
+- **The browser page tools went silent on any node above 500 items.** AGSC-06-21
+  makes `/search.json` the manifest `{docs_total, shards[]}` there, and the page read
+  `index.docs`, which a manifest does not carry — so `search` returned no hit, `ask`
+  returned the fixed no-answer string and `read` answered `AGSC-E301` for an item
+  that exists, all with no diagnostic, while the local MCP server answered correctly.
+  AGSC-09-16 requires the two transports to agree. The page now follows the manifest
+  and merges the shards (postings offset by the running document count), and it
+  follows only `/search-<nn>.json` routes of its own origin. A shard that is not
+  served, a shard that is not an index, or a document count that disagrees with
+  `docs_total` makes the index incomplete, and `search` and `ask` then answer
+  `AGSC-E901` naming what is missing rather than an empty result. Proved on a
+  generated 520-item Bundle, against the EMITTED scripts, in a fake-browser harness.
+- **`import` could overwrite the node's own items, silently.** The taken-slug set was
+  seeded from the incoming set alone. A collision with an authored item now writes
+  **nothing at all** and reports every collision as `AGSC-E206`; `--dry-run` reports
+  the same; and the documented adapter flag `--replace` (AGSC-01-26a) is the only way
+  to ask for replacement, each replacement being reported. Writes still go through the
+  Bundle's own port, so nothing lands outside the Bundle root or through a link
+  (`AGSC-E902`). Both adapters, `old-site` and `okf`. A byte-identical re-import is
+  still a no-op, so AGSC-01-23's idempotence is unchanged.
+- **`import` wrote a Bundle its own `lint` rejected while reporting `pass`.** A
+  foreign single-line value carrying a control character was serialised as the YAML
+  escape `"N\0UL"`, which parses back to U+0000 (`AGSC-E204` under AGSC-02-24). Both
+  adapters now neutralise every authored single-line string with
+  `knowledge/unicode.js#singleLine` and report each substitution as `AGSC-E506`. The
+  neutralisation is the identity on every conforming value, so the `export --okf` →
+  `import --from okf` round trip does not move a byte.
+- **`security.txt` could be published already expired.** With no `SOURCE_DATE_EPOCH`
+  and no git history the build instant is 0 (AGSC-04-09), and the derived
+  `Expires: 1970-12-31T00:00:00Z` was published with only a warning. The build now
+  fails with `AGSC-E204` and a message telling the publisher to commit once or set
+  `SOURCE_DATE_EPOCH`; the route is not emitted. The expiry remains a pure function of
+  the build instant, so builds stay byte-reproducible. `lint` writes nothing and is
+  silent, as vector `cli-0002` requires.
+- **Three of the nine validators reported `pass` on a destroyed specification folder**
+  and two on a directory that does not exist. All nine were audited for vacuous
+  passes; a missing or empty input is now `AGSC-E901` and exit 1, and every one states
+  how many input files it read. `tools/validate-vectors` gained `run(argv, io)` and
+  `--help` like its siblings.
+- **`tools/count-artifacts` crashed from any working directory but one.** It resolves
+  its inputs from its own location, takes an optional `[<root>]`, answers `--help`
+  before reading anything and exits 2 with a usage finding on a wrong root.
+- **The two validators of `SOURCE_DATE_EPOCH` disagreed** (`" 12 "` was accepted by
+  the clock adapter and refused by the CLI, `"007"` the other way round) and the two
+  fatal paths used different streams under `--json`.
+  `adapters/node-clock.js#isMalformedEpoch` is now the one definition, and a fatal
+  diagnostic goes to stderr as one JSON object per line.
+
+### Added
+
+- `SECURITY.md`, `CONTRIBUTING.md` and `CHANGELOG.md` are in `package.json` `files`,
+  so an npm consumer of `agentic-system-core` finds a security-reporting address, the
+  contribution terms and this file. `npm pack --dry-run`: 278 entries, nothing
+  private.
+- `import --replace`, documented on both adapters (AGSC-01-26a).
+
+### Changed
+
+- `internet-draft/SUBMISSION-NOTES.md` no longer carries three third parties' e-mail
+  addresses. The names, affiliations and RFC links stay; the addresses are in the
+  Authors' Addresses sections of RFC 9727 and RFC 9264, which the links resolve to.
+  Other people's contact details do not belong in a repository that is to be made
+  public.
+
 ### Fixed — the two legal-facing surfaces are valid and complete (PUBLIC-STATEMENTS-FIX, 2026-09-21)
 
 Every site this engine built published a `security.txt` that RFC 9116 makes invalid

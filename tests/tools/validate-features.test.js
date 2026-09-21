@@ -70,7 +70,7 @@ describe('validate-features — usage and the envelope', () => {
   it('--quiet says nothing; the human output carries a summary line', () => {
     assert.equal(capture('validate-features', ['--quiet', featureRoot()]).out, '');
     const result = capture('validate-features', [featureRoot()]);
-    assert.match(result.out, /^validate-features: 1 files, 2 scenarios, 1 requirement ids tagged, 0 error, 0 warn; requirement ids no scenario tags \(informational\): 1\n$/u);
+    assert.match(result.out, /^validate-features: 1 input file\(s\) read, 2 scenarios, 1 requirement ids tagged, 0 error, 0 warn; requirement ids no scenario tags \(informational\): 1\n$/u);
   });
 });
 
@@ -232,6 +232,6 @@ describe('validate-features — the real distribution', () => {
     const result = capture('validate-features', [REPO]);
     assert.equal(result.code, 0);
     assert.equal(result.err, '');
-    assert.match(result.out, /^validate-features: 12 files, \d+ scenarios, \d+ requirement ids tagged, 0 error, 0 warn/u);
+    assert.match(result.out, /^validate-features: 12 input file\(s\) read, \d+ scenarios, \d+ requirement ids tagged, 0 error, 0 warn/u);
   });
 });

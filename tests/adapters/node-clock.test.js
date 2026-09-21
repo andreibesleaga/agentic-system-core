@@ -10,7 +10,21 @@ test('SOURCE_DATE_EPOCH is the build instant (AGSC-04-09)', () => {
   assert.strictEqual(c.now(), 1767225600);
   assert.strictEqual(c.iso(), '2026-01-01T00:00:00Z');
   assert.deepStrictEqual(c.findings(), []);
-  assert.strictEqual(createClock({ env: { SOURCE_DATE_EPOCH: ' 42 ' } }).now(), 42);
+  // FV29-18: ONE definition of a well-formed value. This adapter used to TRIM before
+  // testing, while the CLI's pre-flight check tested the raw string, so `" 42 "` was
+  // accepted here and refused a moment later by `application/cli/main.js`. The value
+  // is "an integer number of seconds", so padding is malformed on both paths.
+  assert.throws(() => createClock({ env: { SOURCE_DATE_EPOCH: ' 42 ' } }),
+    (e) => e.code === 'AGSC-E603' && e.exitCode === 2);
+  const { isMalformedEpoch } = require('../../src/adapters/node-clock.js');
+  const main = require('../../src/application/cli/main.js');
+  void main;
+  for (const bad of [' 42 ', '007', '1e3', '-1', '1.5', 'nope', '+5']) {
+    assert.strictEqual(isMalformedEpoch(bad), true, bad);
+  }
+  for (const good of ['0', '42', '1767225600', '', undefined, null]) {
+    assert.strictEqual(isMalformedEpoch(good), false, String(good));
+  }
 });
 
 test('the last commit time is the fallback, then 0 with AGSC-E606', () => {

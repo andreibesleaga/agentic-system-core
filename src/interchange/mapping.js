@@ -39,7 +39,7 @@
 // PURE: no fs, no process, no clock, no network.
 
 const { finding } = require('../knowledge/validate.js');
-const { codePointLength } = require('../knowledge/unicode.js');
+const { codePointLength, isSingleLine, singleLine } = require('../knowledge/unicode.js');
 const slugs = require('../knowledge/slug.js');
 const sourcesModule = require('./sources.js');
 const statusModule = require('./status.js');
@@ -385,10 +385,22 @@ function mapCard(card, options) {
       { ...at, severity: 'warn' }));
   }
 
+  // FV29-08 / AGSC-02-24: the same neutralisation the OKF adapter applies. A card of
+  // a foreign corpus may carry a control character in a title or a tag, and what an
+  // import writes must pass this node's own lint.
+  const clean = neutraliseSingleLine(ordered(frontmatter));
+  if (clean.substituted.length > 0) {
+    findings.push(finding('AGSC-E506',
+      `a control character or line separator in the single-line value(s) ${clean.substituted.join(', ')}`
+      + ' was replaced by a space, because AGSC-02-24 forbids it and the imported file must pass'
+      + ' this node\'s own lint (AGSC-01-22)',
+      { ...at, severity: 'warn' }));
+  }
+
   return {
     slug,
     path,
-    frontmatter: ordered(frontmatter),
+    frontmatter: clean.frontmatter,
     body: links.body,
     excisions: cleaned.excisions,
     dropped: { related: relatedResult.dropped, bodyLinks: links.delinked },
@@ -397,7 +409,54 @@ function mapCard(card, options) {
   };
 }
 
+/**
+ * AGSC-02-24 as amended at rc.5, applied to a FOREIGN frontmatter (FV29-08).
+ *
+ * Every string-typed property `schema/item.schema.json` declares is either a
+ * `single_line` value or carries a pattern that forbids a control character anyway,
+ * so no conforming frontmatter value may hold a C0 control, U+007F, U+0085, U+2028 or
+ * U+2029. A foreign document may hold one, and the writer's serializer emitted it
+ * back as a YAML escape (`title: "N\0UL"`) that parses to the same code point — so
+ * the import created a file the node's own `lint` rejects with `AGSC-E204` while
+ * reporting `status: pass`. An import that writes something its own lint rejects is a
+ * defect, and this is the neutralisation the LINE-ORIENTED WRITERS already apply
+ * (`knowledge/unicode.js#singleLine`), moved to the one place that writes an
+ * imported item.
+ *
+ * One U+0020 per forbidden code point: total, idempotent, and the IDENTITY on every
+ * conforming value, so no byte of a clean round trip moves (AGSC-10-09). The body is
+ * not touched: a body is not a single-line value.
+ *
+ * @param {object} frontmatter the mapped frontmatter; not mutated.
+ * @returns {{frontmatter:object, substituted:Array<string>}} the member paths changed.
+ */
+function neutraliseSingleLine(frontmatter) {
+  const substituted = [];
+  const walk = (value, at) => {
+    if (typeof value === 'string') {
+      if (isSingleLine(value)) return value;
+      substituted.push(at);
+      return singleLine(value);
+    }
+    if (Array.isArray(value)) return value.map((entry, i) => walk(entry, `${at}/${i}`));
+    if (value !== null && typeof value === 'object') {
+      // The input's prototype is preserved: the OKF adapter hands us prototype-free
+      // maps (`Object.create(null)`, the secure-coding rule for parsed input) and the
+      // old-site mapper hands us ordinary objects, and neither may change shape here.
+      const out = Object.create(Object.getPrototypeOf(value));
+      for (const key of Object.keys(value)) out[key] = walk(value[key], `${at}/${key}`);
+      return out;
+    }
+    return value;
+  };
+  const source = frontmatter || {};
+  const out = Object.create(Object.getPrototypeOf(source));
+  for (const key of Object.keys(source)) out[key] = walk(source[key], `/${key}`);
+  return { frontmatter: out, substituted };
+}
+
 module.exports = {
+  neutraliseSingleLine,
   CONCEPT_ORDER,
   DESCRIPTION_MAX,
   DESCRIPTION_MIN,

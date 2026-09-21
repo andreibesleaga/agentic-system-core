@@ -62,6 +62,7 @@ const slugs = require('../knowledge/slug.js');
 const fix = require('../governance/fix.js');
 const { serialize, titleFor } = require('../knowledge/adopt.js');
 const { compareCodePoint, nfc } = require('../knowledge/unicode.js');
+const { neutraliseSingleLine } = require('./mapping.js');
 const { finding } = require('../knowledge/validate.js');
 
 /** The name this adapter answers to on `import --from <name>`. */
@@ -161,7 +162,21 @@ function mapFrontmatter(raw, options) {
       + ' because AGSC-08-01 requires it (AGSC-01-22)',
       { file: options.path, severity: 'warn' }));
   }
-  return { findings, frontmatter: out };
+
+  // FV29-08 / AGSC-02-24: a foreign single-line value may carry a control character
+  // or a line separator, and the serializer wrote it back as a YAML escape that
+  // parses to the same code point — so `import` produced a file its own `lint`
+  // refused, while reporting a pass. Neutralised here, and the substitution is
+  // reported, because AGSC-01-22's tolerance never means a silent change.
+  const clean = neutraliseSingleLine(out);
+  if (clean.substituted.length > 0) {
+    findings.push(finding('AGSC-E506',
+      `${options.path}: a control character or line separator in the single-line value(s)`
+      + ` ${clean.substituted.join(', ')} was replaced by a space, because AGSC-02-24 forbids it`
+      + ' and the imported file must pass this node\'s own lint (AGSC-01-22)',
+      { file: options.path, severity: 'warn' }));
+  }
+  return { findings, frontmatter: clean.frontmatter };
 }
 
 /**

@@ -242,34 +242,152 @@ function identity(config) {
 }
 
 /**
+ * The Bundle files an import may never silently destroy: the ITEMS and the assets
+ * beside them. `agsc.config.json` and `content/index.md` are the Bundle's own
+ * scaffolding, which the `old-site` adapter writes by design (it is what turns an
+ * empty directory into a Bundle); a change to either is reported and not refused.
+ *
+ * @param {string} at a Bundle-relative write path.
+ * @returns {boolean}
+ */
+function isAuthoredItem(at) {
+  const rel = String(at).split('\\').join('/');
+  return rel.startsWith('content/') && rel !== 'content/index.md';
+}
+
+/**
+ * What a plan would do to the tree that is already there, WITHOUT touching it.
+ *
+ * Four outcomes per file, and no fifth: `unchanged` (the file is there and its bytes
+ * are exactly what the import would write — AGSC-01-23's idempotence, seen from the
+ * tree), `collisions` (an AUTHORED ITEM is there and differs, or cannot be read back
+ * for comparison), `overwrites` (a scaffolding file differs) and `fresh` (nothing is
+ * there).
+ *
+ * @param {object} fs the Bundle's FileSystem port.
+ * @param {Array<{path:string, text:string}>} writes
+ * @returns {{collisions:string[], fresh:string[], overwrites:string[], unchanged:string[]}}
+ */
+function survey(fs, writes) {
+  const collisions = [];
+  const fresh = [];
+  const overwrites = [];
+  const unchanged = [];
+  for (const write of writes) {
+    let exists = false;
+    let current = null;
+    try {
+      exists = fs.exists(write.path);
+      if (exists) current = String(fs.readFile(write.path, 'utf8'));
+    } catch (e) {
+      // A path the port refuses (AGSC-E902) or a file it cannot decode is NOT a free
+      // overwrite: the import cannot prove it would destroy nothing.
+      exists = true;
+      current = null;
+    }
+    if (!exists) fresh.push(write.path);
+    else if (current === write.text) unchanged.push(write.path);
+    else if (isAuthoredItem(write.path)) collisions.push(write.path);
+    else overwrites.push(write.path);
+  }
+  return { collisions, fresh, overwrites, unchanged };
+}
+
+/**
  * Apply a plan through the Bundle's own port, writing only what differs.
  *
  * A byte-identical file is NOT rewritten: AGSC-01-23's idempotence is about the
  * tree, and leaving an unchanged file untouched keeps `git status` honest about
  * what an import actually did.
  *
+ * FV29-07: AN IMPORT NEVER OVERWRITES THE NODE'S OWN ITEM. Until today the
+ * taken-slug set was seeded from the INCOMING set alone, so a foreign bundle naming
+ * a slug the operator had authored replaced that file — silently, exit 0, zero
+ * findings, recoverable only from git. AGSC-01-22 makes the import tolerant of the
+ * foreign side; nothing in AGSC-01-22 or AGSC-01-23 licenses destroying what is
+ * already here. So: ANY collision with an authored item means NOTHING is written at
+ * all — not the colliding file and not its innocent neighbours, because a
+ * half-applied import is worse than none — and the caller reports every collision.
+ *
+ * `options.replace` is the `--replace` flag of AGSC-01-26a (an adapter "MAY define
+ * further flags of its own"), and it is the only way to ask for replacement. Even
+ * then the write goes through the BUNDLE'S OWN port, which refuses an absolute path,
+ * a path escaping the root and a path that leaves the root through a link
+ * (`adapters/node-fs.js#safeJoin`/`#checkReal`, AGSC-E902) — so `--replace` widens
+ * what may be overwritten INSIDE the Bundle and nothing else.
+ *
  * @param {object} fs the Bundle's FileSystem port.
  * @param {Array<{path:string, text:string}>} writes
- * @returns {{written:string[], unchanged:string[]}}
+ * @param {{replace?:boolean}} [options]
+ * @returns {{collisions:string[], errors:Array<object>, overwritten:string[],
+ *   refused:boolean, replaced:string[], unchanged:string[], written:string[]}}
  */
-function apply(fs, writes) {
+function apply(fs, writes, options = {}) {
+  const plan = survey(fs, writes);
+  const errors = [];
+  if (plan.collisions.length > 0 && options.replace !== true) {
+    return {
+      collisions: plan.collisions, errors, overwritten: [], refused: true,
+      replaced: [], unchanged: plan.unchanged, written: [],
+    };
+  }
+  const colliding = new Set(plan.collisions);
+  const overwriting = new Set(plan.overwrites);
+  const untouched = new Set(plan.unchanged);
   const written = [];
-  const unchanged = [];
+  const replaced = [];
+  const overwritten = [];
   for (const write of writes) {
-    let current = null;
+    if (untouched.has(write.path)) continue;
     try {
-      if (fs.exists(write.path)) current = String(fs.readFile(write.path, 'utf8'));
+      fs.writeFile(write.path, write.text);
     } catch (e) {
-      current = null;
-    }
-    if (current === write.text) {
-      unchanged.push(write.path);
+      // The port's own refusal, reported rather than thrown: a link out of the
+      // Bundle root is AGSC-E902 and the file stays as it was.
+      errors.push(finding(/^AGSC-E\d{3}$/u.test(String(e && e.code)) ? e.code : 'AGSC-E901',
+        `${write.path} could not be written: ${(e && e.message) || 'unknown error'}`,
+        { file: write.path, line: 1 }));
       continue;
     }
-    fs.writeFile(write.path, write.text);
-    written.push(write.path);
+    if (colliding.has(write.path)) replaced.push(write.path);
+    else if (overwriting.has(write.path)) overwritten.push(write.path);
+    else written.push(write.path);
   }
-  return { unchanged, written };
+  return { collisions: plan.collisions, errors, overwritten, refused: false, replaced, unchanged: plan.unchanged, written };
+}
+
+/**
+ * The findings an applied (or refused) plan produces: one ERROR per collision when
+ * the import refused, one warning per replacement or scaffolding rewrite otherwise.
+ * Nothing an import does to a tree is silent.
+ *
+ * @param {object} applied `apply()`'s result.
+ * @returns {Array<object>}
+ */
+function collisionFindings(applied) {
+  const findings = [...(applied.errors || [])];
+  if (applied.refused) {
+    for (const at of applied.collisions) {
+      findings.push(finding('AGSC-E206',
+        `${at} already exists in this Bundle with different content, and import never overwrites`
+        + ' an item this node already holds (AGSC-01-11, AGSC-01-23). NOTHING was written.'
+        + ' Run the import with --dry-run to see the whole plan, rename or remove the item'
+        + ' here, or re-run with --replace to let the foreign bundle replace it',
+        { file: at, line: 1 }));
+    }
+    return findings;
+  }
+  for (const at of applied.replaced || []) {
+    findings.push(finding('AGSC-E506',
+      `${at} was replaced by the foreign bundle, as --replace asked (AGSC-01-26a)`,
+      { file: at, line: 1, severity: 'warn' }));
+  }
+  // `applied.overwritten` — `agsc.config.json` and `content/index.md` — carries no
+  // finding. Seeding those two is what the `old-site` adapter is FOR (it turns a
+  // directory with an identity into a Bundle), their content is derived from the
+  // configuration already on disk, and a finding here would differ between a first
+  // and a second run over unchanged input, which AGSC-01-23 forbids.
+  return findings;
 }
 
 /**
@@ -313,15 +431,49 @@ function importOkf(ctx, source, identityOptions) {
     operator: identityOptions.operator,
   });
   const all = [...findings, ...planned.findings];
-  if ((ctx.verbFlags || {})['dry-run'] === true) {
-    helpers.note(ctx, `import: --dry-run: ${planned.writes.length} file(s) would be written`);
+  return finish(ctx, all, planned);
+}
+
+/**
+ * The tail every import lane shares: the collision survey, the dry run that reports
+ * exactly what the real run would report, and the totals an operator reads.
+ *
+ * @param {object} ctx
+ * @param {Array<object>} findings the plan's own findings so far.
+ * @param {{totals:object, writes:Array<object>}} planned
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function finish(ctx, findings, planned) {
+  const verbFlags = ctx.verbFlags || {};
+  const replace = verbFlags.replace === true;
+  if (verbFlags['dry-run'] === true) {
+    // AGSC-09-09: `--dry-run` "reports the plan and writes nothing" — so it must
+    // report the same collisions the real run would refuse on, or it is not a
+    // preview of anything.
+    const plan = survey(ctx.ports.fs, planned.writes);
+    const refused = plan.collisions.length > 0 && !replace;
+    const all = [...findings, ...collisionFindings({
+      collisions: plan.collisions, errors: [], refused, replaced: replace ? plan.collisions : [],
+    })];
+    helpers.note(ctx, refused
+      ? `import: --dry-run: ${plan.collisions.length} collision(s); NOTHING would be written`
+      : `import: --dry-run: ${planned.writes.length - plan.unchanged.length} file(s) would be written`
+        + `, ${plan.unchanged.length} unchanged`
+        + `${replace && plan.collisions.length > 0 ? `, ${plan.collisions.length} replaced` : ''}`);
     for (const line of totalsLines(planned.totals)) helpers.note(ctx, line);
-    return { findings: all };
+    return refused ? { findings: all, status: 'fail' } : { findings: all };
   }
-  const applied = apply(ctx.ports.fs, planned.writes);
-  helpers.note(ctx, `import: ${applied.written.length} written, ${applied.unchanged.length} unchanged`);
+  const applied = apply(ctx.ports.fs, planned.writes, { replace });
+  const all = [...findings, ...collisionFindings(applied)];
+  helpers.note(ctx, applied.refused
+    ? `import: ${applied.collisions.length} collision(s); NOTHING was written`
+    : `import: ${applied.written.length} written, ${applied.replaced.length} replaced,`
+      + ` ${applied.unchanged.length} unchanged`);
   for (const line of totalsLines(planned.totals)) helpers.note(ctx, line);
-  return { findings: all };
+  // A refusal is the verb's own verdict and is stated as one. Every other finding is
+  // the plan's, and the envelope's `status` is derived from the counts as usual
+  // (AGSC-09-11), so this function does not re-decide what a mapping finding means.
+  return applied.refused || applied.errors.length > 0 ? { findings: all, status: 'fail' } : { findings: all };
 }
 
 /** The totals line a human reads on stderr; the envelope carries the findings. */
@@ -408,17 +560,7 @@ function run(ctx) {
     specVersion: ctx.specVersion,
   });
 
-  const all = [...read.findings, ...planned.findings];
-  if (verbFlags['dry-run'] === true) {
-    helpers.note(ctx, `import: --dry-run: ${planned.writes.length} file(s) would be written`);
-    for (const line of totalsLines(planned.totals)) helpers.note(ctx, line);
-    return { findings: all };
-  }
-
-  const applied = apply(ctx.ports.fs, planned.writes);
-  helpers.note(ctx, `import: ${applied.written.length} written, ${applied.unchanged.length} unchanged`);
-  for (const line of totalsLines(planned.totals)) helpers.note(ctx, line);
-  return { findings: all };
+  return finish(ctx, [...read.findings, ...planned.findings], planned);
 }
 
 module.exports = {
@@ -429,6 +571,8 @@ module.exports = {
   SELECTION_REQUIRED,
   SOURCE_TREES,
   apply,
+  collisionFindings,
+  finish,
   identity,
   importOkf,
   isoDate,
@@ -438,5 +582,6 @@ module.exports = {
   readOldSite,
   readOutside,
   run,
+  survey,
   totalsLines,
 };

@@ -63,7 +63,8 @@ describe('validate-spec — usage and the envelope', () => {
     const result = capture('validate-spec', [root]);
     assert.equal(result.code, 1);
     assert.match(result.err, /^error: spec\/02-item\.md:3:1 AGSC-E202 /mu);
-    assert.match(result.out, /^validate-spec: 4 spec files, 4 rules, 1 registered codes/u);
+    // FV29-10: the line now opens with how many inputs the run actually read.
+    assert.match(result.out, /^validate-spec: 4 input file\(s\) read, 4 spec files, 4 rules, 1 registered codes/u);
   });
 
   it('a root with no package.json still reports a version', () => {

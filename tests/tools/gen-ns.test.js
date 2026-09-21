@@ -73,7 +73,7 @@ describe('gen-ns — usage and the envelope', () => {
 
   it('--quiet says nothing; the human output carries a summary line', () => {
     assert.equal(capture('gen-ns', ['--quiet', nsRoot()]).out, '');
-    assert.match(capture('gen-ns', [nsRoot()]).out, /^gen-ns: 3 vocabulary terms, \d+ context members, \d+ triples round-tripped, 0 error, 0 warn\n$/u);
+    assert.match(capture('gen-ns', [nsRoot()]).out, /^gen-ns: 1 input file\(s\) read, 3 vocabulary terms, \d+ context members, \d+ triples round-tripped, 0 error, 0 warn\n$/u);
   });
 
   it('Turtle that does not parse is AGSC-E201 and stops the run', () => {
@@ -327,7 +327,7 @@ describe('gen-ns — the real distribution', () => {
   it('derives 52 terms from the shipped ontology and round-trips 278 triples', () => {
     const result = capture('gen-ns', [REPO]);
     assert.equal(result.code, 0);
-    assert.match(result.out, /^gen-ns: 52 vocabulary terms, 85 context members, 278 triples round-tripped, 0 error, 0 warn\n$/u);
+    assert.match(result.out, /^gen-ns: 1 input file\(s\) read, 52 vocabulary terms, 85 context members, 278 triples round-tripped, 0 error, 0 warn\n$/u);
   });
 
   it('the derived context is byte-identical on two runs', () => {

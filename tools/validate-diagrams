@@ -243,6 +243,13 @@ function run(argv, io) {
   const index = fs.existsSync(readmePath) ? indexRows(fs.readFileSync(readmePath, 'utf8')) : new Map();
   const names = fs.readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md').sort();
   const readmeFile = path.relative(root, readmePath).split(path.sep).join('/');
+  // FV29-10: zero files read is not a clean pack, and the directory resolution above
+  // falls back to the argument itself — so a distribution with no `docs/diagrams/`
+  // reported `pass` over an empty list.
+  if (names.length === 0) {
+    findings.push(finding('AGSC-E901', path.relative(root, dir).split(path.sep).join('/') || 'docs/diagrams', 1,
+      `no diagram file under ${dir}: there is nothing to validate (AGSC-09-90)`));
+  }
   for (const listed of [...index.keys()].sort()) {
     if (!names.includes(listed)) {
       findings.push(finding('AGSC-E201', readmeFile, 1, `the index names ${listed}, which is not in this directory`));
@@ -308,7 +315,7 @@ function run(argv, io) {
     for (const f of envelope.findings) {
       err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
     }
-    out(`validate-diagrams: ${names.length} files, ${diagrams} mermaid blocks, `
+    out(`validate-diagrams: ${names.length} input file(s) read, ${diagrams} mermaid blocks, `
       + `${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
   }
   return envelope.status === 'pass' ? 0 : 1;

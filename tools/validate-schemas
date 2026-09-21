@@ -377,7 +377,7 @@ function run(argv, io) {
     for (const f of envelope.findings) {
       err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
     }
-    out(`validate-schemas: ${documents.size} schemas, ${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
+    out(`validate-schemas: ${documents.size} input file(s) read, ${documents.size} schemas, ${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
   }
   return envelope.status === 'pass' ? 0 : 1;
 }

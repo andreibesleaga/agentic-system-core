@@ -279,3 +279,52 @@ test('AGSC-09-11: under ci the publication findings are reported by ONE lane', (
     JSON.stringify(result.findings.map((f) => f.code)));
   assert.strictEqual(result.exit, 1);
 });
+
+// ------------------------------- FV29-11: the drop-in build with no date source
+
+test('AGSC-04-09 + RFC 9116: a defaulted build instant FAILS instead of publishing a 1970 expiry', () => {
+  // `agsc init` then `agsc build`, before `git init` and with no SOURCE_DATE_EPOCH:
+  // AGSC-04-09 lets the instant default to 0 with the warning AGSC-E606. The writer
+  // then derived `Expires: 1970-12-31T00:00:00Z` — a security contact that expired
+  // decades before it was published, which RFC 9116 section 2.5.5 makes stale by
+  // definition. That is the very defect the authored-Expires check closes, surviving
+  // in the DERIVED branch.
+  const dir = workspace();
+  const fs = createFileSystem(dir);
+  const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
+  const clock = createClock({ env: {} });                    // no epoch, no git history
+  assert.strictEqual(clock.now(), 0, 'the fixture of this test is wrong');
+  const { files, findings } = site.build(bundle, { clock, fs },
+    { specVersion: '1.0.0-rc.5', version: '0.0.2' });
+  assert.ok(!files.has('/.well-known/security.txt'),
+    `an expired security contact was published: ${files.get('/.well-known/security.txt')}`);
+  const fault = findings.find((f) => f.file === '.well-known/security.txt' && f.severity !== 'warn');
+  assert.ok(fault, `the build did not fail: ${JSON.stringify(findings.map((f) => f.code))}`);
+  assert.strictEqual(fault.code, 'AGSC-E204');
+  // The message must tell the publisher what to DO, in plain words.
+  assert.match(fault.message, /SOURCE_DATE_EPOCH/u);
+  assert.match(fault.message, /commit/iu);
+});
+
+test('AGSC-04-02: the derived expiry stays a pure function of the build instant', () => {
+  // The fix must not reach for a real clock: two builds at the same instant, in two
+  // time zones, still derive the same byte.
+  const dir = workspace();
+  const run = () => {
+    const fs = createFileSystem(dir);
+    const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
+    const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
+    return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.5', version: '0.0.2' })
+      .files.get('/.well-known/security.txt');
+  };
+  const first = String(run());
+  assert.match(first, new RegExp(`^Expires: ${DERIVED_EXPIRES}$`, 'mu'));
+  assert.strictEqual(String(run()), first);
+  // And a Bundle whose git history supplies the instant is unaffected.
+  const fs = createFileSystem(dir);
+  const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
+  const fromGit = createClock({ env: {}, lastCommitSeconds: Number(EPOCH) });
+  assert.match(String(site.build(bundle, { clock: fromGit, fs },
+    { specVersion: '1.0.0-rc.5', version: '0.0.2' }).files.get('/.well-known/security.txt')),
+  new RegExp(`^Expires: ${DERIVED_EXPIRES}$`, 'mu'));
+});

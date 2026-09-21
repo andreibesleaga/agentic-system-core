@@ -67,7 +67,7 @@ describe('validate-diagrams — usage and the envelope', () => {
   it('--quiet says nothing; the human output carries a summary line', () => {
     assert.equal(capture('validate-diagrams', ['--quiet', diagramRoot()]).out, '');
     assert.match(capture('validate-diagrams', [diagramRoot()]).out,
-      /^validate-diagrams: 1 files, 1 mermaid blocks, 0 error, 0 warn\n$/u);
+      /^validate-diagrams: 1 input file\(s\) read, 1 mermaid blocks, 0 error, 0 warn\n$/u);
   });
 });
 
@@ -218,6 +218,6 @@ describe('validate-diagrams — the real distribution', () => {
     const result = capture('validate-diagrams', [REPO]);
     assert.equal(result.code, 0);
     assert.equal(result.err, '');
-    assert.match(result.out, /^validate-diagrams: 12 files, 18 mermaid blocks, 0 error, 0 warn\n$/u);
+    assert.match(result.out, /^validate-diagrams: 12 input file\(s\) read, 18 mermaid blocks, 0 error, 0 warn\n$/u);
   });
 });
