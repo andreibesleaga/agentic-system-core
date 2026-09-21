@@ -153,7 +153,16 @@ function pageApplyTypes(value, key) {
 
 /** AGSC-09-14b: `kind` to item `type`, exactly `mcp-tools.js#KIND_TO_TYPE`. */
 function pageKindToType() {
-  return { concept: 'concept', episode: 'episode', gate: 'gate', lesson: 'lesson', procedure: 'procedure' };
+  // FV29-01: prototype-free. `kinds[args.kind]` is the guard `remember` uses to fall
+  // back to `concept`; on a plain object literal it answered a function for
+  // `constructor` and the item's `type` became the `Object` constructor.
+  const kinds = Object.create(null);
+  kinds.concept = 'concept';
+  kinds.episode = 'episode';
+  kinds.gate = 'gate';
+  kinds.lesson = 'lesson';
+  kinds.procedure = 'procedure';
+  return kinds;
 }
 
 /* ------------------------------------------------------------------- envelope */
@@ -453,7 +462,12 @@ function pageCorpus(sources, options) {
       type,
     });
   }
-  const bySlug = {};
+  // FV29-01: a PROTOTYPE-FREE index. A plain object literal answers a function for
+  // `constructor`, `toString`, `__proto__` and the rest of `Object.prototype`, so the
+  // `item === undefined` guard of every tool below never fired for those names and a
+  // page answered a SUCCESS envelope where `mcp-tools.js` (a `Map`) answers
+  // `AGSC-E301` — an AGSC-09-16 divergence between the two transports.
+  const bySlug = Object.create(null);
   for (let i = 0; i < items.length; i += 1) bySlug[items[i].slug] = items[i];
   let index = null;
   if (typeof map['/search.json'] === 'string') {
@@ -495,8 +509,10 @@ function pageBaseOf(map) {
  */
 function pageEdges(items) {
   const list = Array.isArray(items) ? items : [];
-  const bySlug = {};
-  const byPath = {};
+  // FV29-01: prototype-free, so a Link target spelled `constructor` resolves to
+  // nothing rather than to a member of `Object.prototype`.
+  const bySlug = Object.create(null);
+  const byPath = Object.create(null);
   for (let i = 0; i < list.length; i += 1) {
     bySlug[list[i].slug] = list[i];
     byPath[list[i].path] = list[i];
@@ -681,7 +697,14 @@ function pageResolveBodyReference(item, raw, byPath) {
 function pageToolset(corpus, core) {
   const model = corpus || { base: '/', bundleId: undefined, bySlug: {}, index: null, items: [] };
   const base = model.base;
-  const bySlug = model.bySlug || {};
+  // FV29-01: re-key into a prototype-free map whatever the caller supplied, so that a
+  // corpus built by hand is as safe as one `pageCorpus` built.
+  const bySlug = Object.create(null);
+  {
+    const supplied = model.bySlug || {};
+    const names = Object.keys(supplied);
+    for (let i = 0; i < names.length; i += 1) bySlug[names[i]] = supplied[names[i]];
+  }
 
   const hitsFor = (query) => {
     const wanted = pageTokenize(query);

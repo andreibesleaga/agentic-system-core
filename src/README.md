@@ -1106,7 +1106,9 @@ this milestone; each is a question for the owner, not a defect of the code.
     `0.0.2`; the handler passes the vector's value, as the vector intends.
 
 **Further items found by the 2026-09-18 documentation and standards review** (same status:
-reported, frozen at the `1.0.0-rc.4` tag, to be taken at 1.0.0)
+reported, recorded against the frozen text and to be taken at 1.0.0; written when
+`1.0.0-rc.4` was the tag, and unchanged by the `1.0.0-rc.5` tag of 2026-09-21 except
+where a numbered item below says so — corrected 2026-09-21, FINAL-VERIFY-29)
 
 22. `AGSC-00-20` says a 1.0 tool MUST accept `build.rdfxml`, while `AGSC-01-18` and
     `AGSC-05-06` call `rdfxml` reserved and `schema/config.schema.json` closes `build`

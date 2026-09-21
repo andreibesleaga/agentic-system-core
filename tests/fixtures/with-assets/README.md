@@ -15,6 +15,6 @@ Fixed clock: `SOURCE_DATE_EPOCH=1767225600` (2026-01-01T00:00:00Z).
 **This Bundle lints clean and does NOT build clean**, on purpose. AGSC-06-01's route
 set carries `/attachments/<slug>/<file>` and no `/assets/**` route, so the asset this
 item references is emitted nowhere and the dangling-link guard reports `AGSC-E901`
-for it (FIX-28 item 56 / FIX28-01 on `GABBE/project/SPEC-ITEMS-FOR-1.0.0.md`: AGSC-03-11
-and AGSC-06-01 are jointly unsatisfiable for any Bundle with an asset, and the fix is
-the owner's). Only `lint` is asserted over it.
+for it: AGSC-03-11 and AGSC-06-01 are jointly unsatisfiable for any Bundle with an
+asset, which is a recorded specification item for 1.0.0. Only `lint` is asserted
+over it.

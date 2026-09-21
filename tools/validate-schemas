@@ -88,6 +88,12 @@ const DATA = Object.freeze(['const', 'default', 'enum', 'examples', 'required'])
 // JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
 // --------------------------------------------------------------------------
 function canonicalize(value) {
+  // FV29-03: `undefined` is what `pointer()` answers for a member a malformed
+  // document does not carry, and every caller below compares the result with an
+  // expected canonical string. Answering the JSON literal `undefined` makes that
+  // comparison fail and produces a FINDING, where `Object.keys(undefined)` threw an
+  // uncaught `TypeError` and a stack trace.
+  if (value === undefined) return 'undefined';
   if (value === null) return 'null';
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'number') return value === 0 ? '0' : String(value);
@@ -154,15 +160,32 @@ function keywordsUsed(schema, at = '', out = new Map()) {
 }
 
 /** Every `pattern` in a schema document, with its pointer and its sibling maxLength. */
-function patterns(schema, at = '', out = []) {
+/**
+ * FV29-03: the walk is depth-bounded. A schema document nested deeper than this made
+ * the recursion throw `RangeError: Maximum call stack size exceeded` — an uncaught
+ * stack trace instead of a finding, which is the one thing a checker must never do.
+ * No schema of this format is anywhere near the bound (the deepest pointer in
+ * `schema/` is under 20), so a document that reaches it is malformed by construction
+ * and the caller reports it.
+ */
+const MAX_DEPTH = 256;
+
+function patterns(schema, at = '', out = [], depth = 0) {
   if (schema === null || typeof schema !== 'object') return out;
-  if (Array.isArray(schema)) { schema.forEach((v, i) => patterns(v, `${at}/${i}`, out)); return out; }
+  if (depth > MAX_DEPTH) {
+    if (!out.tooDeep) { Object.defineProperty(out, 'tooDeep', { value: at, writable: true }); }
+    return out;
+  }
+  if (Array.isArray(schema)) {
+    schema.forEach((v, i) => patterns(v, `${at}/${i}`, out, depth + 1));
+    return out;
+  }
   if (typeof schema.pattern === 'string') {
     out.push({ at, maxLength: schema.maxLength, pattern: schema.pattern });
   }
   for (const key of Object.keys(schema)) {
     if (key === 'pattern' || DATA.includes(key)) continue;
-    patterns(schema[key], `${at}/${key}`, out);
+    patterns(schema[key], `${at}/${key}`, out, depth + 1);
   }
   return out;
 }
@@ -287,7 +310,14 @@ function run(argv, io) {
     // the pattern, never the pattern's quantifier" — so a port-name member whose
     // only bound is the quantifier is the fault, not a grammar quantifier such as
     // the `{2,8}` of a BCP 47 tag, which bounds no length this specification names.
-    for (const p of patterns(document)) {
+    const found = patterns(document);
+    if (found.tooDeep !== undefined) {
+      // FV29-03: say so rather than pass silently on a document this walk could not
+      // read to the bottom.
+      findings.push(finding('AGSC-E201', file,
+        `the document nests deeper than ${MAX_DEPTH} levels at ${found.tooDeep} and was not walked to the bottom; no schema of this format nests that deep`));
+    }
+    for (const p of found) {
       if (!/\/(?:produces|consumes)\/items$/u.test(p.at)) continue;
       if (p.pattern !== PORT_PATTERN) {
         findings.push(finding('AGSC-E204', file,

@@ -150,6 +150,23 @@ async function run() {
 // running the real CLI.
 if (require.main === module) {
   run().catch((e) => {
+    // FV29-04: an error that carries a REGISTERED code is a diagnostic, not an
+    // internal fault. `EpochError` (AGSC-E603, exit 2) is thrown while the ports are
+    // built, before `main()` can catch anything, so a malformed SOURCE_DATE_EPOCH
+    // reached this handler and was printed as a stack trace with exit 1 — the
+    // opposite of AGSC-04-09 and of what `src/adapters/node-clock.js:5` and
+    // `docs/IMPLEMENTERS-GUIDE.md` both state ("AGSC-E603 and exit 2, never a
+    // Finding"). Only the empty string happened to take a path `main()` caught.
+    const code = e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : null;
+    if (code !== null) {
+      const diagnostic = { code, severity: 'error', message: String(e.message) };
+      const json = process.argv.slice(2).includes('--json');
+      const quiet = process.argv.slice(2).includes('--quiet');
+      if (json) process.stdout.write(`${JSON.stringify(diagnostic)}\n`);
+      else if (!quiet) process.stderr.write(`agsc: ${code} ${diagnostic.message}\n`);
+      process.exitCode = Number.isInteger(e.exitCode) ? e.exitCode : 2;
+      return;
+    }
     process.stderr.write(`agsc: internal error: ${e && e.stack ? e.stack : e}\n`);
     process.exitCode = 1;
   });

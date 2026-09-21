@@ -177,7 +177,12 @@ function contributeEditUrl(config, path) {
     .replace(/\.git$/u, '')
     .replace(/\/(?:compare|pulls|pull\/new|issues\/new)$/u, '');
   const host = repository.replace(/^https:\/\//u, '').split('/')[0].toLowerCase();
-  const segment = FORGE_EDIT_SEGMENT[host];
+  // FV29-02: `FORGE_EDIT_SEGMENT` is an object literal, so a host spelled
+  // `constructor` or `__proto__` answered a member of `Object.prototype` and the
+  // emitted href carried "function Object() { [native code] }". Only an own key is a
+  // forge this engine states the edit-view spelling of.
+  const segment = Object.prototype.hasOwnProperty.call(FORGE_EDIT_SEGMENT, host)
+    ? FORGE_EDIT_SEGMENT[host] : undefined;
   if (segment === undefined) return entry.target;
   return `${repository}${segment}${path.split('/').map(encodeURIComponent).join('/')}`;
 }

@@ -297,6 +297,13 @@ test('AGSC-11-14: the edit link is derived from contribute[] and from nothing el
   // A forge whose edit view this engine cannot state is never guessed at: the link is
   // the configured contribution target, unchanged.
   assert.strictEqual(at('https://forge.example/a/b', 'content/concepts/x.md'), 'https://forge.example/a/b');
+  // FV29-02: a host that happens to name a member of `Object.prototype` is not a
+  // forge this engine states the edit view of; the lookup used to answer a FUNCTION
+  // and the href carried "function Object() { [native code] }".
+  for (const host of ['constructor', '__proto__', 'valueOf', 'hasOwnProperty', 'toString']) {
+    assert.strictEqual(at(`https://${host}/a/b`, 'content/concepts/x.md'),
+      `https://${host}/a/b`, `the host ${host} must fall through to the configured target`);
+  }
   // No `pr` channel, no link — and a `channel` entry is not a repository.
   assert.strictEqual(site.contributeEditUrl({}, 'content/concepts/x.md'), null);
   assert.strictEqual(site.contributeEditUrl(
