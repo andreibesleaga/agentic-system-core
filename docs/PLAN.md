@@ -188,6 +188,20 @@ graph TB
 
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
+**The nine command contracts, as shipped** *(added 2026-09-21, ENG-4; the row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `src/README.md` §11.11 carries the same table with the findings each tool returns on this distribution.)*
+
+| Tool | What it checks | Rules | Status |
+|---|---|---|---|
+| `tools/validate-spec` | rule-id uniqueness and resolution, the MUST/SHOULD grammar, trace brackets and their PRD/NFR ids, error-code closure against §9.4, version literals in `spec/`, `docs/` and `tests/vectors/**` | AGSC-09-90, AGSC-09-91 | ships; 20 errors + 2 warnings against the frozen rc.5 text, each recorded as a 1.0.0 item |
+| `tools/validate-schemas` | 2020-12 meta-validation and strict compilation, the AGSC-02-24 keyword subset and bounds, the AGSC-01-10 slug grammar, the six item types | AGSC-09-90, AGSC-02-24 | ships; pass |
+| `tools/validate-ontology` | Turtle well-formedness, the OWL 2 RL-safe set, blank-node freedom, the persistent namespace, `owl:versionIRI`, SKOS S19/S20/S32/S37 | AGSC-09-90, AGSC-05-22 | ships; pass |
+| `tools/validate-vectors` | vector format, rule resolution, JCS order, encoding, empty declared areas as an informational count | AGSC-09-90, AGSC-09-04…06 | ships; pass |
+| `tools/validate-wellknown` | RFC 9264 shape, profile transport, relation names, digests, the `agsc-*` attributes per Level, `--peer` | AGSC-09-93, AGSC-10-12 | ships; pass at `--level 2` |
+| `tools/validate-features` | Gherkin parse, `@PRD` closure against `docs/PRD.md`, agreement with the coverage table of `features/README.md` | AGSC-09-90, PRD-054 | ships; pass |
+| `tools/validate-diagrams` | the Mermaid lexical contract, a trace id per file, staleness against `spec/` and `docs/PRD.md`, the index table | AGSC-09-90, PRD-054 | ships; pass |
+| `tools/gen-spec-html` | renders `spec/` into `/specs/` deterministically with an anchor on every rule; `--check` compares a published tree | AGSC-09-90, PRD-054 | ships; pass |
+| `tools/gen-ns` | derives `/ns/context.jsonld`, `/ns/agsc.rdf` and the `/ns/` index from the ontology, round-trips the RDF/XML; `--check` audits a built `/ns/` | AGSC-09-90, AGSC-06-32 | ships; derivation passes, `--check` fails on the reference builds (the emitted context carries no `asc:` term definitions) |
+
 Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/agsc.js` is the only place adapters are wired.
 
 ### 5.2 Ports and v1 adapters
@@ -495,3 +509,42 @@ Performance recommendations R-01…R-16 and benchmark hypotheses H-01…H-08 (wi
 **ADR-019 reading note — "ESM".** The reference engine is **CommonJS** (D97, closing the standing Q37/Q1): `bin/agsc.js`, `index.js`, `tools/*` and all of `src/` use `require`, and `package.json` declares no `"type": "module"`. Four statements in this file say ESM and are read as follows. ADR-008 ("shipped code is ESM JavaScript with JSDoc types") is amended to *"shipped code is JavaScript with JSDoc types — CommonJS in the Node engine, ESM in the browser bundle"*; its substance, that TypeScript is a dev-lane checker and never a build step, is unchanged. The R3 risk row ("one ESM entry copied to `www/js/`") and the browser-bundle container in §6 ("JavaScript (ESM)") remain **true as written** — the browser bundle is and stays ESM. The `agsc CLI` container literal in §6 is read as *"Node >=22.12, CommonJS, pinned audited dependencies"*. The engine's floor is Node **>=22.12.0** (`package.json` `engines.node`), not the >=22.14 of the older prose.
 
 **The October calendar of the 2026-09-16 addendum, reconciled with R73/D90 (2026-09-18).** The calendar above fixes four dates: the Internet-Draft posted ≤ 9 Oct, site v0 live ≤ 12 Oct, site v0.1 live ≤ 31 Oct, general availability 6 Nov. R73 (owner, 2026-09-18) is **newer and authoritative**: nothing is posted anywhere until the site, the Internet-Draft, the W3C and AAIF contribution material and the registration filings are all ready, and then everything goes out on one launch day, with the papers after it. The two earlier *posting* dates are therefore superseded — "draft ≤ 9 Oct" and "site v0 live ≤ 12 Oct" become "ready by those dates, held for launch day" — while "site v0.1 ≤ 31 Oct" and "GA 6 Nov" stand unchanged as work targets, because they describe when the work is finished rather than when it is published. One external date is hard and is not ours: the IETF Datatracker `-00` cut-off for IETF 127 is **2026-11-02 23:59 UTC**, with submissions closed until **2026-11-14 23:59 PST**, so launch day falls before 2026-11-02 or after 2026-11-14. Both the site and the standard are, as of 2026-09-18, built, gated and held; nothing is published (R73).
+
+## Addendum 2026-09-21 (ENG-5, WP-12) — the release lane exists, and two definition-of-done lines are corrected
+
+Additive, in the style of the addenda above; nothing in the plan's own prose is rewritten.
+
+**The release lane of §7 is now a script and a workflow.** `tools/release` checks, in a
+dry run by default, everything §7's *Engine release* row states: one version in one
+place (the engine and its `agsc-cli` alias, pinned exactly, never a range), the
+changelog section, the `npm pack` contents — no `GABBE/`, no private planning path, no
+test-fixture bloat beyond `tests/vectors/`, which AGSC-09-90 requires a distribution to
+ship — and the provenance step. `.github/workflows/release.yml` is the lane itself: a
+tag `v*` the owner pushes, a three-OS × two-Node gate matrix,
+`actions/attest-build-provenance`, and `npm publish --provenance` over npm trusted
+publishing with no secret in the repository. The script cannot publish: it spawns no
+process and opens no socket, and `--apply` writes only the two version strings and the
+changelog heading. The owner's checklist is printed by the script itself, so it cannot
+drift from the checks.
+
+**`lint --self` in the §5.3 pipeline line and in the definition of done is superseded.**
+`AGSC-09-09` as amended at rc.5 closes the verb-flag set and names `lint --fix` alone,
+and `--self` was a registered flag that no code read; `agsc lint --self` exited 1 in the
+engine root because the engine root is not a Bundle. The flag is therefore removed and
+the invocation is now the `AGSC-E002` usage error the rule requires. **Read every
+"`lint --self` clean" in this file as "the nine independent validators of AGSC-09-90
+exit 0, `node tools/count-artifacts --json` reports `ok` with no finding, and
+`AGSC_AUDIT=1 node --test tests/arch/*.test.js` is green"** — the checks that actually
+hold this distribution together. To lint a *Bundle*, the command is `agsc lint` from
+that Bundle's root. (Specification items 57 / FIX28-02 and ENG5-S11; the same note is
+appended to `docs/PRD.md`.)
+
+**One reporting step in CI, not a failure.** `tools/validate-spec` exits 1 on the frozen
+`1.0.0-rc.5` text for reasons recorded as specification items (ENG4-01…05). Until those
+are applied at 1.0.0, `release.yml` runs it as a **reporting** step and every other
+validator blocks the merge, which is the nearest thing to `AGSC-09-92` that the frozen
+text allows.
+
+**`docs/IMPLEMENTERS-GUIDE.md` exists**, so `AGSC-01-26a`'s obligation to list every
+memory adapter with its claimed key set is discharged; the list itself is in
+`src/interchange/README.md` and the guide points at it.

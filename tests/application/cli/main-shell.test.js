@@ -227,7 +227,9 @@ test('AGSC-09-09 (rc.5, V9D-02): --help prints to stdout and exits 0', () => {
   const lint = usage(['lint', '--help']);
   assert.strictEqual(lint.exit, 0);
   assert.strictEqual(lint.stderr, '');
-  assert.ok(lint.stdout.includes('--fix') && lint.stdout.includes('--self'), lint.stdout);
+  assert.ok(lint.stdout.includes('--fix'), lint.stdout);
+  // ENG-5, rc.5: `--self` is gone — AGSC-09-09 names `--fix` and no other flag on `lint`.
+  assert.ok(!lint.stdout.includes('--self'), lint.stdout);
   assert.ok(!lint.stdout.includes('--ledger'), lint.stdout);
   const compose = usage(['compose', '--help']);
   assert.ok(compose.stdout.includes('--out') && compose.stdout.includes('--emit'), compose.stdout);

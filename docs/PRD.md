@@ -272,3 +272,23 @@ All requirements previously marked `should`, `v1.x`, `v1.1` or "schema-affecting
 *Note (D87):* Mode 5 adds no type, key or ontology term; it composes Modes 1–4 with the agent lane and the boards of AGSC-10-13 and is the "System 1 / System 2" reading of a node — a fast lane of automatic work and a slow lane of human decisions — documented in `docs/plain/modes.md`. PRD-063/064 are v1.0 requirements of the rc.4 draft; the engine implements them in DS-8/DS-9 (M6 boards, M10 tool server, M12 channels, M14 refresh).
 
 *Note (D88, 2026-09-18):* the owner's three directives of session 26 — everything configurable from `.env` with a 10 USD cap over every model use (R69, R70), the whole declared scope in the first standard even where a feature ships at 1.1 or 2.0 (AGSC-00-20, R71), and the rename of Mode 5 from *Blackboard* to *Kanban* (D88) and then to **live board** (D91 and D96, the owner's choice; the blackboard pattern stays the cited lineage and Kanban the cited operating discipline *(wording corrected 2026-09-18 under D96: the note as first written named the mode where it meant the discipline; `docs/RELATED-WORK.md` cites Kanban as the discipline)*) — are PRD-065, AGSC-00-20 and the renamed PRD-064. The rc.4 final items of PUB-3 (Q13 budget sum, Q17 planner cap, Q22 dry run) are in PRD-065 as well.
+
+### 5.1 Note to the definition of done (2026-09-21, ENG-5/WP-12) — `lint --self` is superseded
+
+Additive; §5's own sentence is unchanged. Item (2) of the definition of done reads
+"`verify` proves byte-identical rebuilds, each spec section has ≥1 vector, `lint --self`
+clean, N8/N10 green, coverage ≥99%". `lint --self` was a registered CLI flag that no
+code read, and `AGSC-09-09` as amended at rc.5 closes the verb-flag set and names
+`lint --fix` alone, so the flag is removed and `agsc lint --self` is now the `AGSC-E002`
+usage error the rule requires.
+
+**Read "`lint --self` clean" as: the nine independent validators of `AGSC-09-90`
+(PRD-054) exit 0, `node tools/count-artifacts --json` reports `ok` with no finding, and
+the architecture boundary lane `AGSC_AUDIT=1 node --test tests/arch/*.test.js` is
+green.** One of the nine, `tools/validate-spec`, exits 1 on the frozen `1.0.0-rc.5` text
+for defects recorded as specification items for 1.0.0 (ENG4-01…05), so it is a reporting
+step until those are applied; the other eight block. To lint a *Bundle*, the command is
+`agsc lint` from that Bundle's root.
+
+Specification items 57 / FIX28-02 and ENG5-S11 carry the full record; the same note is
+appended to `docs/PLAN.md`.

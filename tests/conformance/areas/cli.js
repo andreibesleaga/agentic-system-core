@@ -121,6 +121,12 @@ const validate = require('../../../src/knowledge/validate.js');
 const { loadBundle } = require('../../../src/application/bundle.js');
 const { tools } = require('../../../src/distribution/mcp-tools.js');
 const webmcp = require('../../../src/distribution/webmcp.js');
+const site = require('../../../src/distribution/site.js');
+const composePage = require('../../../src/distribution/compose-page.js');
+const { createClock } = require('../../../src/adapters/node-clock.js');
+
+/** 2026-01-01T00:00:00Z — the fixed instant `tests/fixtures/minimal/README.md` names. */
+const FIXTURE_EPOCH = '1767225600';
 
 /** The Bundle both transports serve (`cli-0003` names `fixtures/minimal`). */
 function fixtureToolset(ctx, vector) {
@@ -135,21 +141,86 @@ function fixtureToolset(ctx, vector) {
 }
 
 /**
- * Evaluate the emitted WebMCP script in an isolated `node:vm` context.
- * `withModelContext: false` reproduces a page whose browser exposes no
- * `document.modelContext`. Network globals are traps: if the script ever
- * reached one, the count would rise and the local-only rule would be broken.
+ * The SITE this Bundle publishes — the artefact a visitor's browser actually loads.
+ * Built with a fixed clock, so the handler is deterministic and touches no network.
  */
-function evaluateWebmcp(toolset, options) {
+function fixtureSite(ctx, vector) {
+  const root = path.join((ctx && ctx.root) || '.', 'tests',
+    String((vector.input && vector.input.bundle) || 'fixtures/minimal'));
+  const fs = createFileSystem(root);
+  const schemas = validate.schemas(readSchemas((ctx && ctx.root) || '.'));
+  const bundle = loadBundle(fs, { schemas });
+  const clock = createClock({ env: { SOURCE_DATE_EPOCH: FIXTURE_EPOCH } });
+  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.5', version: '0.0.2' });
+}
+
+/**
+ * Evaluate the EMITTED PAGE in an isolated `node:vm` context.
+ *
+ * Until rc.5 this ran the registration script against the FULL local implementation
+ * handed in as `AGSC_TOOLS`, so the vector proved the emitter and said nothing about
+ * the artefact the site ships — which is how six tools stayed unimplemented on the
+ * built site while this required vector stayed green (research/34 gap 7, ENG3-05).
+ *
+ * It now loads the three scripts the built site actually serves — `agsc-core.js`,
+ * `agsc-page-tools.js` and `webmcp.js` — assembles the page corpus from the build's
+ * OWN published routes, and registers through a minimal fake `document.modelContext`.
+ * `fetch` and every other network global is a trap: if the page ever reached one, the
+ * count would rise and the local-only rule would be broken.
+ *
+ * `withModelContext: false` reproduces a browser that exposes no `document.modelContext`.
+ */
+function evaluateWebmcp(built, options) {
   const opts = options || {};
   const registered = [];
   let networkCalls = 0;
-  const trap = () => { networkCalls += 1; throw new Error('the WebMCP script must perform no network call (AGSC-09-16)'); };
+  const trap = () => {
+    networkCalls += 1;
+    throw new Error('the page tools must perform no network call (AGSC-09-16)');
+  };
+  // `AGSC_TOOLS` is pre-set, so the script's own bootstrap — which would fetch the
+  // published routes — stands down and the corpus is assembled synchronously below
+  // from the build's own bytes. The asynchronous bootstrap is proved, against a fake
+  // `fetch` over the same file map, by `tests/distribution/compose-page-run.test.js`.
   const sandbox = {
-    AGSC_TOOLS: toolset,
-    XMLHttpRequest: trap,
-    fetch: trap,
-    navigator: { sendBeacon: trap },
+    AGSC_TOOLS: null, TextEncoder, XMLHttpRequest: trap, fetch: trap, navigator: { sendBeacon: trap },
+  };
+  if (opts.withModelContext !== false) {
+    sandbox.document = { modelContext: { registerTool: (tool) => registered.push(tool) } };
+  }
+  const context = vm.createContext(sandbox);
+  const sources = {};
+  for (const [route, text] of built.files) sources[route] = String(text);
+  // The algebra and the page tools, exactly as the site serves them.
+  for (const name of ['agsc-core.js', 'agsc-page-tools.js']) {
+    vm.runInContext(sources[`/compose/${name}`], context, { filename: name });
+  }
+  // The corpus is assembled from the published routes synchronously — the sandbox
+  // has no `fetch` but a trap, so nothing can leave this process. The ASYNCHRONOUS
+  // path the browser takes is proved by `tests/distribution/compose-page-run.test.js`.
+  const api = sandbox.AGSC_PAGE_TOOLS;
+  const pageToolset = api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), sandbox.AGSC_CORE);
+  vm.runInContext(sources['/compose/webmcp.js'], context, { filename: 'webmcp.js' });
+  return { networkCalls, pageToolset, registered, sources, state: sandbox.AGSC_WEBMCP };
+}
+
+/**
+ * The registration script alone, over a toolset handed in directly. This is what a
+ * vector whose Bundle is stated INLINE can use (`cli-0007`): there is no published
+ * site to read, so the page corpus cannot be assembled. It proves the transport's
+ * envelope and its identity with the local server's, and it deliberately proves
+ * nothing about the page corpus — `cli-0003` is what proves that.
+ */
+function evaluateRegistration(toolset, options) {
+  const opts = options || {};
+  const registered = [];
+  let networkCalls = 0;
+  const trap = () => {
+    networkCalls += 1;
+    throw new Error('the WebMCP script must perform no network call (AGSC-09-16)');
+  };
+  const sandbox = {
+    AGSC_TOOLS: toolset, TextEncoder, XMLHttpRequest: trap, fetch: trap, navigator: { sendBeacon: trap },
   };
   if (opts.withModelContext !== false) {
     sandbox.document = { modelContext: { registerTool: (tool) => registered.push(tool) } };
@@ -163,8 +234,9 @@ function evaluateWebmcp(toolset, options) {
 function runCli0003(vector, ctx) {
   const toolset = fixtureToolset(ctx, vector);
   const stdioManifest = toolset.manifest();
-  const page = evaluateWebmcp(toolset, {});
-  const bare = evaluateWebmcp(toolset, { withModelContext: false });
+  const built = fixtureSite(ctx, vector);
+  const page = evaluateWebmcp(built, {});
+  const bare = evaluateWebmcp(built, { withModelContext: false });
 
   const names = (m) => m.tools.map((t) => t.name).slice().sort();
   const argumentNames = (m) => Object.fromEntries(m.tools
@@ -233,7 +305,7 @@ function runCli0003(vector, ctx) {
  */
 function runCli0004(vector, ctx) {
   const toolset = fixtureToolset(ctx, vector);
-  const page = evaluateWebmcp(toolset, {});
+  const page = evaluateWebmcp(fixtureSite(ctx, vector), {});
   const problems = [];
   const actual = [];
   let threw = false;
@@ -302,7 +374,7 @@ function runCli0007(vector) {
     })),
   };
   const toolset = tools(bundle, {});
-  const page = evaluateWebmcp(toolset, {});
+  const page = evaluateRegistration(toolset, {});
   const problems = [];
   const results = vector.input.calls.map((call) => {
     const viaStdio = toolset.call(call.tool, call.arguments);

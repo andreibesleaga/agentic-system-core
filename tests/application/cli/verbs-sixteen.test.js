@@ -27,11 +27,18 @@ const SIXTEEN = Object.freeze(['init', 'lint', 'build', 'verify', 'ci', 'export'
 
 /**
  * The verbs that answer "not implemented at this milestone" (AGSC-10-05).
- * `export` left this list when `--jsonld`, `--jsonl` and `--to <adapter>` landed
- * (AGSC-01-26a/01-27); the three flags it still does not implement answer for
- * themselves, which the test below asserts flag by flag.
+ *
+ * The list is EMPTY since 2026-09-21 (ENG-5): `export` left it when `--jsonld`,
+ * `--jsonl` and `--to <adapter>` landed and again when `--markdown`, `--okf` and
+ * `--steer` did; `import` left it with the `old-site` and `okf` adapters; `skills`,
+ * `run` and `trace` left it last. `run` is the one verb that still cannot discharge
+ * every obligation of its rule — AGSC-09-94's "no network" needs an OS sandbox, so
+ * it executes only against a ProcessRunner that declares isolation — but it
+ * implements the gate, the parse, the allow-list, the comparison and the `--dry-run`
+ * the rule pins, so it no longer answers "not implemented"; the test below pins that
+ * refusal in its own right.
  */
-const NOT_IMPLEMENTED = Object.freeze(['skills', 'run', 'trace']);
+const NOT_IMPLEMENTED = Object.freeze([]);
 
 test('the verb set is exactly the sixteen of AGSC-09-07, in the rule order', () => {
   assert.deepStrictEqual(VERBS, [...SIXTEEN]);
@@ -112,6 +119,27 @@ test('a verb that is not implemented says so with the rule id, and never passes'
   }
 });
 
+test('no verb answers "not implemented" any more, and none of the sixteen says it', () => {
+  assert.deepStrictEqual([...NOT_IMPLEMENTED], []);
+  // `refresh` is the one module that still calls the helper, and not for itself: its
+  // LIVE path needs a model and a channel adapter (AGSC-08-28(f)), while `--dry-run`
+  // is wired. Its verb therefore does not belong to the list above.
+  for (const verb of ['export', 'import', 'skills', 'run', 'trace']) {
+    const source = fs.readFileSync(path.join(VERBS_DIR, `${verb}.js`), 'utf8');
+    assert.ok(!source.includes('notImplemented('),
+      `${verb}.js still calls notImplemented()`);
+  }
+});
+
+test('run refuses to EXECUTE without an isolated runner, and says exactly why (AGSC-09-94)', () => {
+  // eslint-disable-next-line global-require, import/no-dynamic-require
+  const verb = require(path.join(VERBS_DIR, 'run.js'));
+  const result = verb.run({ argv: [], verbFlags: {} });
+  assert.strictEqual(result.status, 'fail');
+  assert.strictEqual(result.findings[0].code, 'AGSC-E003');
+  assert.match(result.findings[0].message, /AGSC-09-94/u);
+});
+
 test('export names the flag it needs, and each unimplemented flag answers for itself', () => {
   // eslint-disable-next-line global-require, import/no-dynamic-require
   const verb = require(path.join(VERBS_DIR, 'export.js'));
@@ -122,15 +150,19 @@ test('export names the flag it needs, and each unimplemented flag answers for it
   assert.strictEqual(bare.findings.length, 1);
   assert.strictEqual(bare.findings[0].code, 'AGSC-E003');
   assert.match(bare.findings[0].message, /--to <adapter>/u);
-  // The three flags of AGSC-01-26/01-28 this milestone does not implement each say so.
-  for (const flag of ['markdown', 'okf', 'steer']) {
-    const result = verb.run({ ports: { fs: emptyPort() }, verbFlags: { [flag]: true } });
-    const own = result.findings.filter((f) => f.message.includes(`export --${flag}`));
-    assert.strictEqual(own.length, 1, flag);
-    assert.match(own[0].message, /not implemented at this milestone/u, flag);
-    assert.match(own[0].message, /AGSC-\d\d-\d\d/u, `${flag} cites no rule id`);
-    assert.strictEqual(own[0].severity, 'error', flag);
+  // AGSC-01-28: `--target` names a steer target and means nothing without `--steer`.
+  const stray = verb.run({ ports: { fs: emptyPort() }, verbFlags: { target: 'agents' } });
+  assert.strictEqual(stray.status, 'fail');
+  assert.strictEqual(stray.findings[0].code, 'AGSC-E003');
+  assert.match(stray.findings[0].message, /AGSC-01-28/u);
+  // Every flag of AGSC-01-26…28 is implemented since ENG-5; none answers
+  // "not implemented", and `export --markdown` on an empty Bundle fails only for the
+  // reason the rule gives — there is no LICENSE-CONTENT to carry the terms beside.
+  const markdown = verb.run({ ports: { fs: emptyPort() }, verbFlags: { markdown: true } });
+  for (const one of markdown.findings) {
+    assert.ok(!/not implemented/u.test(one.message), one.message);
   }
+  assert.ok(markdown.findings.some((f) => f.code === 'AGSC-E901'));
 });
 
 /** A FileSystem port over an empty Bundle: every verb answers, none succeeds by luck. */

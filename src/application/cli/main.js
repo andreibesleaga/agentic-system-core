@@ -53,7 +53,16 @@ const VERB_FLAGS = {
   // AGSC-09-09 (rc.5, V9D-01): `lint --fix` applies exactly the normalisations
   // AGSC-04-19 admits — line endings, NFC, trailing newline, frontmatter key order
   // and the wikilink rewriting of AGSC-03-12 — and nothing else (AGSC-04-14/04-20).
-  lint: new Map([['--self', 'bool'], ['--fix', 'bool']]),
+  // `--self` was registered here and read by NO code, and AGSC-09-09 closes the
+  // verb-flag set: "a flag outside this list and outside the verb flags below is
+  // `AGSC-E002` with exit 2", and the rule's list names `lint --fix` alone. Keeping
+  // a flag the rule does not define, which the engine then ignored, is the exact
+  // failure V9D-01 recorded in the other direction. It is therefore gone, and
+  // `agsc lint --self` is now the usage error the rule requires — with the hint of
+  // `RETIRED_FLAGS` below, so that an operator following `docs/PLAN.md`'s older
+  // definition-of-done line is told what replaced it (specification item
+  // 57 / FIX28-02; ENG-5, rc.5).
+  lint: new Map([['--fix', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
     ['--jsonl', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value']
@@ -77,6 +86,31 @@ const VERB_FLAGS = {
   build: new Map([['--level', 'value']]),
   ci: new Map([['--level', 'value']])
 };
+
+/**
+ * A flag this CLI once registered and AGSC-09-09 does not define. It is a usage
+ * error like any other unknown flag; the hint exists so that an operator who read
+ * an older document is told what to run instead, rather than being left with
+ * "unknown option".
+ */
+const RETIRED_FLAGS = Object.freeze({
+  lint: {
+    '--self': 'AGSC-09-09 defines `--fix` and no other flag on `lint`, and `--self` was read by'
+      + ' no code. To check this DISTRIBUTION rather than a Bundle, run the nine independent'
+      + ' validators of AGSC-09-90: `for t in tools/validate-*; do node $t --json || exit 1; done`,'
+      + ' plus `node tools/count-artifacts --json`. To lint a BUNDLE, run `agsc lint` from its root.',
+  },
+});
+
+/** The hint for a retired flag present in this invocation, or `null`. */
+function retiredFlagHint(verb, argv) {
+  const table = RETIRED_FLAGS[verb];
+  if (table === undefined) return null;
+  for (const [flag, hint] of Object.entries(table)) {
+    if ((argv || []).includes(flag)) return hint;
+  }
+  return null;
+}
 
 /**
  * AGSC-09-09 as amended at rc.5 (ENG1 §3): "a memory adapter selected by
@@ -419,7 +453,9 @@ function main(argv, ctx) {
   } catch (e) {
     // Map commander's own error taxonomy onto AGSC-09-08's usage-error codes.
     const code = e && e.code === 'commander.optionMissingArgument' ? 'AGSC-E003' : 'AGSC-E002';
-    const message = (e && e.message) || 'usage error';
+    const base = (e && e.message) || 'usage error';
+    const hint = retiredFlagHint(verb, rest);
+    const message = hint === null ? base : `${base} — ${hint}`;
     if (jsonMode) writeFindingLine(stderr, { code, severity: 'error', message });
     else writeLine(stderr, `agsc: ${code} ${message}\n`);
     return 2;
@@ -562,6 +598,6 @@ function main(argv, ctx) {
 }
 
 module.exports = {
-  main, ADAPTER_FLAGS, SPEC_VERSION, VERBS, VERB_FLAGS,
-  adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
+  main, ADAPTER_FLAGS, RETIRED_FLAGS, SPEC_VERSION, VERBS, VERB_FLAGS,
+  adapterFlagsFor, buildEnvelope, compareFindings, flagsFor, retiredFlagHint,
 };

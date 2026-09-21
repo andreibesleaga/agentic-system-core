@@ -64,6 +64,23 @@ function singleLine(s) {
     .replace(/[\x00-\x1F\x7F\x85\u2028\u2029]/gu, ' ');
 }
 
+/**
+ * Writer-side defence for a value interpolated INSIDE an HTML comment: the
+ * provenance header of AGSC-06-15 that every Harness file carries. A `-->` (or
+ * `--!>`) in `bundle.license_prose` would close the comment early and spill the
+ * rest of the header into the document as visible text (specification item
+ * 58 / FIX28-03). One U+0020 between the hyphens and the `>`; the IDENTITY on every
+ * value that does not carry the sequence, so no pinned byte moves.
+ *
+ * Restated here, like `singleLine` above, because of this module's PORTABILITY
+ * CONTRACT; `knowledge/unicode.js#commentSafe` is the same function and
+ * `tests/composition/harness-comment-safe.test.js` compares the two.
+ */
+function commentSafe(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/--!?>/gu, (match) => `-- ${match.slice(2)}`);
+}
+
 /** AGSC-06-18: the Content Use Terms identifier, a constant of the specification. */
 function terms() {
   return 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -231,11 +248,11 @@ function memberOrder(result) {
 /** AGSC-06-15 / AGSC-01-29: the fixed provenance header, as an HTML comment block. */
 function provenanceHeader(options) {
   return ['<!-- agsc:provenance',
-    `bundle: ${singleLine(options.base)}`,
-    `license: ${singleLine(options.licenseProse)}`,
-    `terms: ${singleLine(terms())}`,
-    `spec_version: ${singleLine(options.specVersion)}`,
-    `generated_at: ${singleLine(options.instant)}`,
+    `bundle: ${commentSafe(singleLine(options.base))}`,
+    `license: ${commentSafe(singleLine(options.licenseProse))}`,
+    `terms: ${commentSafe(singleLine(terms()))}`,
+    `spec_version: ${commentSafe(singleLine(options.specVersion))}`,
+    `generated_at: ${commentSafe(singleLine(options.instant))}`,
     '-->'].join('\n');
 }
 
@@ -659,7 +676,7 @@ function emit(result, options) {
  * The portable surface, in dependency order — the list `composition/browser.js`
  * emits as the browser bundle of AGSC-07-13.
  */
-const PORTABLE = Object.freeze(['singleLine', 'terms', 'structureLicence', 'linkKeys', 'fixedFiles',
+const PORTABLE = Object.freeze(['singleLine', 'commentSafe', 'terms', 'structureLicence', 'linkKeys', 'fixedFiles',
   'harnessName', 'arc42Sections', 'canonicalJson', 'pairs', 'dslRelationships',
   'mermaidEdges', 'isEmitted', 'linksOf', 'members', 'memberOrder', 'provenanceHeader',
   'licenceSentence', 'fenceProse', 'constraintLines', 'harnessJsonld', 'agentsMd',
@@ -672,6 +689,7 @@ module.exports = {
   arc42Md,
   arc42Sections,
   canonicalJson,
+  commentSafe,
   constraintLines,
   decisionRecords,
   diagramMmd,

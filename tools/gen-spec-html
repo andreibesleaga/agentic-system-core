@@ -1,0 +1,257 @@
+#!/usr/bin/env node
+'use strict';
+// tools/gen-spec-html — the specification-page generator of AGSC-09-90 and PRD-054:
+// "spec/ → `/specs/` pages".
+//
+// INDEPENDENT BY CONSTRUCTION: no import from `src/` (AGSC-09-90). Markdown is
+// rendered with `markdown-it`, the library the engine pins, configured exactly as
+// AGSC-02-20's subset requires — `html:false`, `linkify:false`, `typographer:false`
+// — so no authored byte can inject markup and no rendering depends on a locale.
+//
+//   gen-spec-html [--json] [--quiet] [--help] [--out <dir>] [--check <dir>] [<root>]
+//
+// With neither --out nor --check the tool renders every page in memory and reports
+// what it would write. --out writes `<dir>/index.html` and `<dir>/<section>/index.html`
+// for each `spec/<nn>-<section>.md`. --check compares an existing directory byte for
+// byte and reports drift, which is how a published `/specs/` tree is kept honest.
+//
+// Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock, no network, LF, sorted
+// output; the same inputs give the same bytes on every machine (AGSC-04-01).
+//
+// Findings:
+//   AGSC-E109  a Markdown construct outside the subset these pages may carry: raw
+//              HTML in a spec file (AGSC-02-20)
+//   AGSC-E201  a rule id appearing twice in one page, so its anchor is ambiguous
+//   AGSC-E602  a page on disk differs from this rendering (AGSC-04-02)
+//   AGSC-E901  spec/ or a checked page is missing
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const HELP = `gen-spec-html [--json] [--quiet] [--help] [--out <dir>] [--check <dir>] [<root>]
+
+  Renders spec/*.md into the /specs/ pages of PRD-054, one directory per section
+  plus an index, deterministically and with an anchor on every rule id.
+
+  --out <dir>    write the rendered pages into <dir>
+  --check <dir>  compare an existing tree with this rendering, byte for byte
+  --json         emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet        emit nothing; the exit code is the result
+  --help         this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+const RULE_ANCHOR = /<strong>(AGSC-\d{2}-\d{2,3}[a-z]?)<\/strong>/gu;
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs for its envelope.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, message, severity = 'error', line = 1) {
+  return { code, col: 1, file, line, message, severity };
+}
+
+const escape = (s) => s.replace(/&/gu, '&amp;').replace(/</gu, '&lt;')
+  .replace(/>/gu, '&gt;').replace(/"/gu, '&quot;');
+
+/** The section name of `spec/<nn>-<section>.md`. */
+function sectionOf(name) {
+  const match = /^(\d{2})-(.+)\.md$/u.exec(name);
+  return match ? { number: match[1], slug: match[2] } : null;
+}
+
+/** One page, wrapped in the same deterministic shell as every other. */
+function page(title, specVersion, body, navigation) {
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<title>${escape(title)}</title>`,
+    `<meta name="agsc-spec-version" content="${escape(specVersion)}">`,
+    '</head>',
+    '<body>',
+    '<nav>',
+    navigation,
+    '</nav>',
+    '<main>',
+    body.replace(/\n+$/u, ''),
+    '</main>',
+    '</body>',
+    '</html>',
+    '',
+  ].join('\n');
+}
+
+/**
+ * Render every specification page.
+ * @returns {{files: Map<string,string>, findings: Array, rules: number}}
+ */
+function render(root, texts) {
+  const findings = [];
+  const MarkdownIt = require('markdown-it');
+  const markdown = new MarkdownIt({ html: false, linkify: false, typographer: false });
+  const specVersion = ((texts.get('00-overview.md') || '')
+    .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+
+  const sections = [...texts.keys()].sort().map((name) => ({ name, ...sectionOf(name) }));
+  const navigation = ['<ul>', ...sections.map((s) => `<li><a href="/specs/${escape(s.slug)}/">${escape(s.number)} ${escape(s.slug)}</a></li>`), '</ul>'].join('\n');
+
+  const files = new Map();
+  let rules = 0;
+  for (const section of sections) {
+    const file = `spec/${section.name}`;
+    const text = texts.get(section.name);
+    if (/^\s*<[a-zA-Z!/]/mu.test(text)) {
+      findings.push(finding('AGSC-E109', file, 'raw HTML in a specification file (AGSC-02-20)'));
+    }
+    const heading = (text.match(/^#\s+(.*)$/mu) || [null, section.slug])[1];
+    let body = markdown.render(text);
+    const seen = new Set();
+    body = body.replace(RULE_ANCHOR, (whole, id) => {
+      if (seen.has(id)) {
+        findings.push(finding('AGSC-E201', file, `rule id ${id} appears twice on this page; its anchor would be ambiguous`));
+        return whole;
+      }
+      seen.add(id);
+      return `<strong id="${id}"><a href="#${id}">${id}</a></strong>`;
+    });
+    rules += seen.size;
+    files.set(`${section.slug}/index.html`, page(heading, specVersion, body, navigation));
+  }
+  const index = [
+    `<h1>AgenticSystemCore ${escape(specVersion)}</h1>`,
+    '<ol>',
+    ...sections.map((s) => `<li><a href="/specs/${escape(s.slug)}/">${escape(s.number)} — ${escape(s.slug)}</a></li>`),
+    '</ol>',
+  ].join('\n');
+  files.set('index.html', page(`AgenticSystemCore ${specVersion}`, specVersion, index, navigation));
+  return { files, findings, rules, specVersion };
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'gen-spec-html',
+    version,
+  };
+}
+
+function packageVersion(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
+  catch { return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} io
+ * @returns {number} exit code: 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`gen-spec-html: ${message}\n${HELP}`); return 2; };
+
+  const flags = new Set();
+  let root = DEFAULT_ROOT;
+  let sawRoot = false;
+  let outDir = null;
+  let checkDir = null;
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    else if (arg === '--out') { outDir = argv[++i]; if (!outDir) return usage('--out needs a directory (AGSC-E003)'); }
+    else if (arg === '--check') { checkDir = argv[++i]; if (!checkDir) return usage('--check needs a directory (AGSC-E003)'); }
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
+  }
+  const specDir = path.join(root, 'spec');
+  if (!fs.existsSync(specDir)) return usage(`no spec/ directory under ${root} (AGSC-E901)`);
+
+  const texts = new Map();
+  for (const name of fs.readdirSync(specDir).filter((f) => /^\d{2}-.*\.md$/u.test(f)).sort()) {
+    texts.set(name, fs.readFileSync(path.join(specDir, name), 'utf8'));
+  }
+  if (texts.size === 0) return usage(`no spec/<nn>-<name>.md files under ${specDir} (AGSC-E901)`);
+
+  const rendered = render(root, texts);
+  const findings = rendered.findings;
+
+  if (outDir) {
+    const target = path.resolve(outDir);
+    for (const name of [...rendered.files.keys()].sort(compareCodePoint)) {
+      const where = path.join(target, name);
+      fs.mkdirSync(path.dirname(where), { recursive: true });
+      fs.writeFileSync(where, rendered.files.get(name));
+    }
+  }
+  if (checkDir) {
+    const target = path.resolve(checkDir);
+    for (const name of [...rendered.files.keys()].sort(compareCodePoint)) {
+      const where = path.join(target, name);
+      if (!fs.existsSync(where)) {
+        findings.push(finding('AGSC-E901', `specs/${name}`, 'the page is absent from the tree being checked'));
+      } else if (fs.readFileSync(where, 'utf8') !== rendered.files.get(name)) {
+        findings.push(finding('AGSC-E602', `specs/${name}`, 'the page on disk differs from this rendering (AGSC-04-02)'));
+      }
+    }
+  }
+
+  const envelope = envelopeOf(findings, rendered.specVersion, packageVersion(root));
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) {
+      err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    out(`gen-spec-html: ${texts.size} sections, ${rendered.files.size} pages, ${rendered.rules} rule anchors, `
+      + `${envelope.counts.error} error, ${envelope.counts.warn} warn`
+      + `${outDir ? `; wrote into ${outDir}` : ''}\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, canonicalize, compareCodePoint, page, render, run, sectionOf };

@@ -2,10 +2,19 @@
 /**
  * src/application/cli/verbs/export.js — `export` (AGSC-09-07, AGSC-09-09).
  *
- * Three of the six flags of AGSC-01-26…28 are implemented here; the other three
- * say so and exit 1 rather than emit something a caller could mistake for a
- * lossless export.
+ * All six flags of AGSC-01-26…28 are implemented here, plus `--to <adapter>`
+ * (AGSC-01-26a).
  *
+ *   `--markdown` AGSC-01-26: the lint-normalized Bundle itself, one `.md` file per
+ *   `--okf`      published item, lossless over every authored frontmatter key;
+ *                `--okf` adds `content/index.md`'s `okf_version` and the
+ *                OKF-reserved `content/log.md`. The rules of both are
+ *                `interchange/export-bundle.js`'s.
+ *   `--steer`    AGSC-01-28: the eleven-target closed registry, derived only from
+ *                NOW state and from `concept`, `procedure`, `gate` and `lesson`
+ *                items. The rules are `interchange/steer.js`'s; the NOW state is
+ *                computed here, because the Interchange context may not require
+ *                the Distribution context that owns it.
  *   `--jsonld`  AGSC-01-27: "byte-identical to the `graph.jsonld` of the same
  *               build". Byte-identity is obtained by CONSTRUCTION — the bytes are
  *               the ones `distribution/site.js#build` just produced, taken out of
@@ -26,14 +35,26 @@
  * output is a product of `export` and never of `build`. The SHA-256 of every written
  * file is printed on stderr (AGSC-09-10), so an operator can pin what they copied.
  *
- * Owner: ENG-2 (WP-10/s28). The byte-preserving folder exports of AGSC-01-26 and the
- * steer bundles of AGSC-01-28 remain the Interchange package's (WP-12).
+ * EVERY FORM HAS AN EXPORT ROOT. AGSC-01-26 names one ("the export root carries a
+ * `LICENSE-CONTENT` file"), and the paths the rules pin — `content/<type-plural>/…`,
+ * `content/index.md`, `content/log.md`, `AGENTS.md`, `.cursor/rules/agsc.mdc` — are
+ * relative to it. This verb's export roots are `dist/export/markdown/`,
+ * `dist/export/okf/`, `dist/export/steer/` and `dist/export/<adapter>/`. A steer
+ * bundle is therefore NEVER written over the `AGENTS.md` of the repository the
+ * command was run in: the operator copies it where they want it, which is also the
+ * only behaviour that keeps `export` free of a destructive side effect.
+ *
+ * Owner: ENG-2 (WP-10/s28); `--markdown`, `--okf` and `--steer` added by ENG-5 (WP-12).
  */
 
 const site = require('../../../distribution/site.js');
+const now = require('../../../distribution/now.js');
+const exportBundle = require('../../../interchange/export-bundle.js');
+const steer = require('../../../interchange/steer.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
+const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
 
 /** AGSC-01-08: the generated directory this verb writes into, never `build.out`. */
@@ -152,9 +173,128 @@ function adapterExport(ctx, bundle, name) {
   return { findings: [...(produced.findings || [])], written };
 }
 
+/**
+ * The authored bytes of every item, through the FileSystem port. `lint --fix`'s
+ * normalisation — which AGSC-01-26 calls "the lint-normalized Bundle" — compares
+ * against what is ON DISK and never against a re-serialisation of what it parsed,
+ * so the bytes must come from the port and not from the loaded Bundle.
+ *
+ * @param {object} ctx
+ * @param {object} bundle
+ * @returns {Map<string,string>}
+ */
+function sourcesOf(ctx, bundle) {
+  const fs = ctx.ports && ctx.ports.fs;
+  const sources = new Map();
+  for (const item of (bundle && bundle.items) || []) {
+    try {
+      sources.set(String(item.path), String(fs.readFile(String(item.path), 'utf8')));
+    } catch (e) {
+      // A file the loader saw and the port cannot re-read is the loader's finding.
+    }
+  }
+  return sources;
+}
+
+/** The bytes of one optional file at the Bundle root, or `null` when it is absent. */
+function readOptional(ctx, path) {
+  const fs = ctx.ports && ctx.ports.fs;
+  try {
+    if (!fs.exists(path)) return null;
+    return String(fs.readFile(path, 'utf8'));
+  } catch (e) {
+    return null;
+  }
+}
+
+/** The Bundle's own `LICENSE-CONTENT`, or `null` when its root carries none. */
+function licenseContentOf(ctx) {
+  return readOptional(ctx, exportBundle.LICENSE_FILE);
+}
+
+/**
+ * AGSC-01-26: `--markdown` and `--okf`, into `dist/export/<form>/`.
+ *
+ * @returns {{findings:Array<object>, written:Array<string>}}
+ */
+function bundleExport(ctx, bundle, form) {
+  const planned = exportBundle.plan(bundle, {
+    indexSource: readOptional(ctx, exportBundle.INDEX_FILE) || '',
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    licenseContent: licenseContentOf(ctx),
+    licenseProse: (bundle.config && bundle.config.bundle || {}).license_prose,
+    okf: form === 'okf',
+    sources: sourcesOf(ctx, bundle),
+  });
+  const written = planned.files.map((file) => writeExport(ctx, `${form}/${file.path}`, file.text));
+  helpers.note(ctx, `export --${form}: ${written.length} files under ${EXPORT_DIR}/${form}/`
+    + ` (AGSC-01-26; the export root carries ${exportBundle.LICENSE_FILE})`);
+  if (planned.withheld.length > 0) {
+    helpers.note(ctx, `export --${form}: ${planned.withheld.length} unpublished item`
+      + `${planned.withheld.length === 1 ? '' : 's'} withheld (draft, retired or release-gated,`
+      + ` AGSC-06-30): ${planned.withheld.join(', ')}`);
+  }
+  return { findings: planned.findings, written };
+}
+
+/**
+ * AGSC-01-28: `--steer [--target <name>…]`, into `dist/export/steer/`.
+ *
+ * The NOW state is computed HERE, from `distribution/now.js`, and handed to the
+ * Interchange module as a value: Interchange may not require Distribution, and the
+ * application layer is the one layer that wires across contexts.
+ *
+ * @returns {{findings:Array<object>, written:Array<string>}}
+ */
+function steerExport(ctx, bundle, targets) {
+  const config = bundle.config || {};
+  const instant = instantOf(ctx);
+  const items = site.publishedItems(bundle.items, config.releases);
+  const allItems = (bundle.items || []).map((item) => (item && item.frontmatter
+    ? { ...item.frontmatter, body: item.body, path: item.path, slug: item.slug, type: item.type }
+    : item));
+  const nowState = now.state(items, config, { allItems, instant });
+  const planned = steer.plan(bundle, {
+    generatedAt: instant,
+    nowState,
+    specVersion: ctx.specVersion,
+    targets,
+  });
+  if (planned.findings.some((f) => f.severity === 'error')) {
+    return { findings: planned.findings, written: [] };
+  }
+  const written = planned.files.map((file) => writeExport(ctx, `steer/${file.path}`, file.text));
+  helpers.note(ctx, `export --steer: ${written.length} target`
+    + `${written.length === 1 ? '' : 's'} (${planned.files.map((f) => f.target).join(', ')}),`
+    + ` identical bytes at each path (AGSC-01-28)`);
+  for (const lane of planned.lanes) helpers.note(ctx, `steer lane: ${lane}`);
+  return { findings: planned.findings, written };
+}
+
+/**
+ * AGSC-01-28's `--target <name>…`. The rule's ellipsis admits several names and
+ * AGSC-09-09 types the flag as one value, so a comma-separated list is accepted and
+ * a repeated flag takes the last occurrence, which is how every other value flag of
+ * this CLI behaves.
+ */
+function targetsOf(flags) {
+  if (flags.target === undefined) return undefined;
+  return String(flags.target).split(',').map((name) => name.trim()).filter((name) => name !== '');
+}
+
 function run(ctx) {
   const flags = ctx.verbFlags || {};
   const chosen = ['markdown', 'okf', 'jsonld', 'jsonl', 'steer'].filter((f) => flags[f] === true);
+  if (flags.target !== undefined && flags.steer !== true) {
+    return {
+      status: 'fail',
+      findings: [{
+        code: 'AGSC-E003', severity: 'error',
+        message: '--target names a steer target and has no meaning without --steer (AGSC-01-28,'
+          + ' AGSC-09-09)',
+      }],
+    };
+  }
   if (chosen.length === 0 && flags.to === undefined) {
     return {
       status: 'fail',
@@ -166,16 +306,10 @@ function run(ctx) {
     };
   }
   const findings = [];
-  for (const flag of chosen) {
-    if (flag === 'jsonld' || flag === 'jsonl') continue;
-    findings.push({
-      code: 'AGSC-E001', severity: 'error',
-      message: `export --${flag} is named by AGSC-01-26/01-28 but is not implemented at this`
-        + ' milestone: the byte-preserving folder exports and the steer bundles belong to the'
-        + ' Interchange package — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
-    });
-  }
   const bundle = helpers.bundleOf(ctx);
+  if (flags.markdown === true) findings.push(...bundleExport(ctx, bundle, 'markdown').findings);
+  if (flags.okf === true) findings.push(...bundleExport(ctx, bundle, 'okf').findings);
+  if (flags.steer === true) findings.push(...steerExport(ctx, bundle, targetsOf(flags)).findings);
   if (flags.jsonld === true || flags.jsonl === true) {
     findings.push(...graphExports(ctx, bundle, flags).findings);
   }
@@ -184,5 +318,19 @@ function run(ctx) {
 }
 
 module.exports = {
-  EXPORT_DIR, adapterExport, adapterOf, graphExports, graphFiles, instantOf, name: 'export', run, writeExport,
+  EXPORT_DIR,
+  adapterExport,
+  adapterOf,
+  bundleExport,
+  graphExports,
+  graphFiles,
+  instantOf,
+  licenseContentOf,
+  name: 'export',
+  readOptional,
+  run,
+  sourcesOf,
+  steerExport,
+  targetsOf,
+  writeExport,
 };

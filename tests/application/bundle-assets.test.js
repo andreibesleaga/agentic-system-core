@@ -53,9 +53,17 @@ test('the asset branch of AGSC-03-11 resolves once the set is supplied', () => {
   assert.deepStrictEqual(without.errors.map((f) => f.code), ['AGSC-E310', 'AGSC-E310'],
     'without the asset set the branch is unreachable — this is the defect itself');
   const withAssets = links.resolve(items, { assets: bundle.assets, config: bundle.config });
-  assert.deepStrictEqual(withAssets.errors, []);
   assert.deepStrictEqual(withAssets.resolved.sort(),
     ['../assets/img/nested.svg', '../assets/logo.svg']);
+  // ENG-5, rc.5: the branch resolves, and AGSC-06-01 publishes the target at NO
+  // route, so the reference works in the repository and 404s on the built site.
+  // The engine cannot emit a route without a rule change (item 56 / FIX28-01), so
+  // it warns under the same registered code and says exactly why.
+  assert.deepStrictEqual(withAssets.errors.map((f) => [f.code, f.severity]),
+    [['AGSC-E310', 'warn'], ['AGSC-E310', 'warn']]);
+  for (const one of withAssets.errors) {
+    assert.match(one.message, /publishes at no route/u);
+  }
 });
 
 test('the lint VERB passes on the fixture: it supplies the set (FV28-03)', () => {
@@ -70,7 +78,12 @@ test('the lint VERB passes on the fixture: it supplies the set (FV28-03)', () =>
     stdout,
   });
   const envelope = JSON.parse(stdout.text());
-  assert.deepStrictEqual(envelope.findings, [], stdout.text());
+  // Two warnings and no error: the two asset references resolve (FV28-03) and are
+  // published at no route (ENG-5; item 56 / FIX28-01). `status` stays `pass` and
+  // the exit code stays 0, because a warning is not a failed gate (AGSC-09-08).
+  assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.severity]),
+    [['AGSC-E310', 'warn'], ['AGSC-E310', 'warn']], stdout.text());
+  assert.deepStrictEqual(envelope.counts, { error: 0, warn: 2 });
   assert.strictEqual(envelope.status, 'pass');
   assert.strictEqual(exit, 0);
 });

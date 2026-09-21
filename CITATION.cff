@@ -1,0 +1,32 @@
+# Citation File Format 1.2.0 — https://citation-file-format.github.io
+# How to cite this work. Read by GitHub, Zenodo and reference managers.
+#
+# TO BE FILLED BY THE OWNER at the 1.0.0 release, and not before:
+#   doi:           the Zenodo DOI of the deposit, e.g. 10.5281/zenodo.0000000
+#   version:       1.0.0
+#   date-released: the release date, YYYY-MM-DD
+# Each is left out rather than guessed: nothing is released yet, and a citation
+# that names a DOI which does not resolve is worse than one that names none.
+cff-version: 1.2.0
+message: If you use this software or specification, please cite it as below.
+title: "AgenticSystemCore: a format for publishing machine-discoverable knowledge"
+abstract: >-
+  A specification and reference implementation for publishing knowledge as
+  Markdown bundles that compile to a static site, an RDF graph, agent skills and
+  machine-readable discovery documents, so that both people and software agents
+  can find, read and cite the same material with its provenance intact.
+type: software
+authors:
+  - family-names: Besleaga
+    given-names: Andrei Nicolae
+    orcid: https://orcid.org/0009-0001-3464-5283
+license: Apache-2.0
+repository-code: https://github.com/andreibesleaga/agentic-system-core
+url: https://agenticsystemcore.com
+keywords:
+  - knowledge representation
+  - agentic systems
+  - provenance
+  - linked data
+  - static site
+  - specification

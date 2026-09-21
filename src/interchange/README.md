@@ -30,3 +30,36 @@ finding that names the rule they will implement. They never report a silent
 success, and no conformance Level is claimed before 1.0.0 (AGSC-10-05).
 
 Created at integration, 2026-09-18 (WP-10-G).
+
+---
+
+## Updated 2026-09-21 (ENG-5, WP-12) — the context is no longer empty
+
+Everything §"What belongs here" lists is implemented. The paragraph "Why it is
+empty" above is the record of 2026-09-18 and is kept as written.
+
+| module | rule | what it owns |
+|---|---|---|
+| `export-bundle.js` | AGSC-01-26, AGSC-01-29 | `export --markdown` and `export --okf`: the lint-normalized Bundle itself, one `.md` per published item, lossless over every authored key; `content/index.md` with `license`, `content/log.md` under `--okf`, `LICENSE-CONTENT` at the export root |
+| `steer.js` | AGSC-01-28, AGSC-01-29 | `export --steer`: the eleven-target closed registry, the closed source set, the `Channel-Auto:` withholding |
+| `okf.js` | AGSC-01-22, AGSC-01-23 | `import --from okf`: the foreign OKF v0.2 reader |
+| `trace.js` | AGSC-09-94, AGSC-02-14 | `trace <file.json>`: a captured agent-run record to an Episode, purely |
+| `import.js` + `oldsite.js`, `mapping.js`, `sources.js`, `status.js`, `clusters.js`, `cleanroom-rewrite.js`, `selection.js` | AGSC-01-22, AGSC-03-19 | `import --from old-site` (ENG-1) |
+| `adapters/llm-context.js` | AGSC-01-26a, D98 | `export --to llm-context` |
+
+### The adapters this distribution ships, with their claimed key sets
+
+`AGSC-01-26a` requires every memory adapter to be "listed with its claimed key set in
+the distribution's implementer documentation". `docs/IMPLEMENTERS-GUIDE.md` §6 points
+here, and here is the list.
+
+| adapter | direction | selected by | keys it claims |
+|---|---|---|---|
+| `llm-context` | export | `export --to llm-context` | `digest`, `id`, `item`, `kind`, `links`, `ordinal`, `section`, `text`, `title`, `type` — the chunk record of AGSC-06-29, minus the members `llms-ctx.txt` states in its own header that it drops |
+| `okf` | import | `import --from okf` | every frontmatter key the foreign document carries. Two are rewritten and each records what it did: a `type` outside AGSC-00-04's six becomes `concept` and is kept as `x-okf-type`; an absent `prov` is synthesized as `{origin: imported, operator: <bundle.operator>}`. Nothing else is dropped, renamed or interpreted |
+| `old-site` | import | `import --from old-site` | see `mapping.js`: every foreign key is mapped, renamed, folded, moved into the `x-oldsite-*` namespace of AGSC-02-05a, or dropped with a reason |
+
+An adapter is discovered by directory convention and never by a configuration key
+(AGSC-01-26a, D61(3)); `export --to <name>` resolves `adapters/<name>.js` after
+matching `<name>` against the slug grammar of AGSC-01-10, so no caller-supplied string
+can traverse a path.

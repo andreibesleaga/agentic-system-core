@@ -91,7 +91,7 @@ test('render() rewrites a body href through the injected resolver', () => {
 test('the minimal fixture emits no dangling link (FV28-04, end to end)', () => {
   const { bundle, ports, options } = load();
   const built = site.build(bundle, ports, options);
-  const dangling = site.internalLinks(built.files)
+  const dangling = site.internalLinks(built.files, { base: 'https://minimal.example' })
     .filter((l) => site.resolvesTo(built.files, l.route) === null);
   assert.deepStrictEqual(dangling.map((l) => `${l.from} -> ${l.href}`), []);
   assert.deepStrictEqual(built.findings.filter((f) => f.code === 'AGSC-E901'), []);

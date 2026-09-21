@@ -32,11 +32,22 @@
 const path = require('node:path');
 
 const { finding } = require('../../../knowledge/validate.js');
+const { readSchemas } = require('../../../adapters/node-fs.js');
 const interchange = require('../../../interchange/import.js');
+const okf = require('../../../interchange/okf.js');
 const helpers = require('./_helpers.js');
 
 /** The foreign formats this node reads. AGSC-01-22 names the verb, not a list. */
-const FORMATS = Object.freeze([interchange.FORMAT]);
+const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT]);
+
+/**
+ * `--selection` belongs to the `old-site` adapter and not to the verb: AGSC-01-26a
+ * lets an adapter define flags of its own, and which records are imported from a
+ * 153-card corpus is a decision a human writes down (project rule 9). An OKF bundle
+ * carries no such decision — AGSC-01-22 says its whole content is accepted — so the
+ * flag is required for `old-site` alone.
+ */
+const SELECTION_REQUIRED = Object.freeze([interchange.FORMAT]);
 
 /** Where the old-site format keeps each kind of record. */
 const CARDS_DIR = 'content/patterns';
@@ -261,6 +272,58 @@ function apply(fs, writes) {
   return { unchanged, written };
 }
 
+/**
+ * `import --from okf <dir>` (AGSC-01-22). The rules are `interchange/okf.js`'s;
+ * this function walks the foreign tree through its own read-only port and applies
+ * the plan through the Bundle's port, exactly as the `old-site` lane does.
+ *
+ * The walk is the whole tree, because OKF fixes no directory structure ("producers
+ * organize concepts however makes sense", OKF v0.2 §3). A file that cannot be
+ * decoded as text is named and skipped, never fatal (AGSC-01-22).
+ *
+ * @param {object} ctx
+ * @param {string} source the foreign directory.
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importOkf(ctx, source, identityOptions) {
+  const fs = openRoot(ctx, source);
+  const findings = [];
+  const files = [];
+  const paths = typeof fs.walk === 'function' ? fs.walk('.') : [];
+  for (const file of paths) {
+    if (!String(file).endsWith('.md')) continue;
+    try {
+      files.push({ path: String(file), text: String(fs.readFile(String(file), 'utf8')) });
+    } catch (e) {
+      findings.push(finding('AGSC-E901',
+        `"${file}" could not be read as text and was skipped (AGSC-01-22)`,
+        { file: String(file), line: 1, severity: 'warn' }));
+    }
+  }
+  if (files.length === 0) {
+    findings.push(finding('AGSC-E901',
+      `the source directory holds no Markdown document (AGSC-01-22)`,
+      { file: String(source), line: 1 }));
+    return { findings, status: 'fail' };
+  }
+
+  const planned = okf.plan(files, {
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+  });
+  const all = [...findings, ...planned.findings];
+  if ((ctx.verbFlags || {})['dry-run'] === true) {
+    helpers.note(ctx, `import: --dry-run: ${planned.writes.length} file(s) would be written`);
+    for (const line of totalsLines(planned.totals)) helpers.note(ctx, line);
+    return { findings: all };
+  }
+  const applied = apply(ctx.ports.fs, planned.writes);
+  helpers.note(ctx, `import: ${applied.written.length} written, ${applied.unchanged.length} unchanged`);
+  for (const line of totalsLines(planned.totals)) helpers.note(ctx, line);
+  return { findings: all };
+}
+
 /** The totals line a human reads on stderr; the envelope carries the findings. */
 function totalsLines(totals) {
   return Object.keys(totals).sort().map((key) => `import: ${key}: ${totals[key]}`);
@@ -282,7 +345,7 @@ function run(ctx) {
       `--from ${JSON.stringify(String(from))} is not a format this node reads;`
       + ` the set is ${FORMATS.join(', ')} (AGSC-01-22)`, { file: '', line: 1 }));
   }
-  if (selectionPath === undefined) {
+  if (selectionPath === undefined && SELECTION_REQUIRED.includes(from)) {
     findings.push(finding('AGSC-E003',
       'import needs --selection <file.tsv>: which records are imported, and with which status,'
       + ' is content and never a list inside the engine (AGSC-01-22)', { file: '', line: 1 }));
@@ -296,6 +359,8 @@ function run(ctx) {
 
   const identified = identity(ctx.config);
   if (identified.findings.length > 0) return { findings: identified.findings, status: 'fail' };
+
+  if (from === okf.FORMAT) return importOkf(ctx, source, identified.options);
 
   let selectionText;
   try {
@@ -361,9 +426,11 @@ module.exports = {
   DECKS_FILE,
   DIAGRAM_DIR,
   FORMATS,
+  SELECTION_REQUIRED,
   SOURCE_TREES,
   apply,
   identity,
+  importOkf,
   isoDate,
   name: 'import',
   openRoot,

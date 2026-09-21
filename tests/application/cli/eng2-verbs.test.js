@@ -376,14 +376,21 @@ test('AGSC-01-27: export --jsonl is one JCS line per item, in slug order', () =>
   }
 });
 
-test('the three unimplemented export flags each answer for themselves, and none writes', () => {
-  for (const flag of ['markdown', 'okf', 'steer']) {
+test('the three remaining export flags are implemented and each writes its own root (ENG-5)', () => {
+  // This test replaced the one that pinned `--markdown`, `--okf` and `--steer` as
+  // "not implemented at this milestone"; they are implemented since 2026-09-21
+  // (AGSC-01-26, AGSC-01-28) and `tests/interchange/` holds their own suites.
+  for (const [flag, expected] of [['markdown', 'dist/export/markdown/content/index.md'],
+    ['okf', 'dist/export/okf/content/log.md'],
+    ['steer', 'dist/export/steer/AGENTS.md']]) {
     const dir = workspace();
     const result = exportVerb.run(ctxFor(dir, { verbFlags: { [flag]: true } }));
-    const own = result.findings.filter((f) => f.message.includes(`export --${flag}`));
-    assert.strictEqual(own.length, 1, flag);
-    assert.match(own[0].message, /not implemented at this milestone/u, flag);
-    assert.ok(!exists(dir, 'dist'), `${flag} wrote something`);
+    for (const one of result.findings) {
+      assert.ok(!/not implemented/u.test(one.message), `${flag}: ${one.message}`);
+    }
+    assert.ok(exists(dir, expected), `${flag} did not write ${expected}`);
+    // Outside `build.out`: the route set AGSC-06-01 closes is untouched.
+    assert.ok(!exists(dir, 'www'), `${flag} wrote into build.out`);
   }
 });
 

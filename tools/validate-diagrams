@@ -1,0 +1,320 @@
+#!/usr/bin/env node
+'use strict';
+// tools/validate-diagrams — the visual-spec validator of AGSC-09-90 and PRD-054:
+// "Mermaid parse + trace-id presence + staleness vs source docs".
+//
+// INDEPENDENT BY CONSTRUCTION: Node built-ins only, no import from `src/`
+// (AGSC-09-90). Mermaid is a browser renderer and no maintained parser is pinned by
+// this distribution, and `docs/diagrams/README.md` records that these diagrams are
+// "never rendered in CI (D20: Mermaid emitted as text only; no rendering dependency
+// and no rendering step in CI)". What this tool checks is therefore the lexical
+// contract that pack states about itself: a declared diagram type, balanced
+// delimiters, no reserved bare node id, and — the part that actually rots — every
+// trace id resolving to a rule of `spec/` or a requirement of `docs/PRD.md`.
+//
+//   validate-diagrams [--json] [--quiet] [--help] [<root>|<dir>]
+//
+// Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock, no network, findings
+// sorted by (file, line, col, code) per AGSC-09-10.
+//
+// Checks (each a Finding; any error exits 1):
+//   AGSC-E108  encoding: a byte-order mark, a CR, no single trailing LF, or non-NFC
+//              text (AGSC-01-14)
+//   AGSC-E109  a fenced block that never closes, or a `mermaid` block whose first
+//              line declares no diagram type this pack uses
+//   AGSC-E201  unbalanced `[]`, `()`, `{}` or `"` inside a diagram; a reserved word
+//              used as a bare node id, which the pack's own conventions forbid; a
+//              trace id naming a rule `spec/` does not define or a requirement
+//              `docs/PRD.md` does not define — the staleness the standing sync rule
+//              of `docs/diagrams/README.md` calls a gate failure; an index row
+//              naming a file that is absent, or a file the index does not name; a
+//              declared diagram count that disagrees with the file
+//   AGSC-E202  a diagram file that cites no trace id at all
+//   AGSC-E901  the diagrams directory is missing
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const HELP = `validate-diagrams [--json] [--quiet] [--help] [<root>|<dir>]
+
+  Checks every Mermaid block under docs/diagrams/, the index table of its
+  README.md, and every trace id the pack cites, against spec/ and docs/PRD.md.
+
+  --json    emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet   emit nothing; the exit code is the result
+  --help    this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+/** The notations docs/diagrams/README.md declares this pack uses. */
+const DIAGRAM_TYPES = Object.freeze(['classDiagram', 'erDiagram', 'flowchart', 'gantt', 'graph',
+  'journey', 'mindmap', 'pie', 'requirementDiagram', 'sequenceDiagram', 'stateDiagram',
+  'stateDiagram-v2', 'timeline']);
+/** "no reserved-word bare node ids (`end`, `class`, `state`, `graph` are never used
+ *  as identifiers)" — docs/diagrams/README.md, Conventions. */
+const RESERVED_IDS = Object.freeze(['class', 'end', 'graph', 'state']);
+const RULE_ID = /AGSC-\d{2}-\d{2,3}[a-z]?/gu;
+const REQUIREMENT_ID = /(?:PRD|NFR)-\d{2,3}/gu;
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, line, message, severity = 'error') {
+  return { code, col: 1, file, line, message, severity };
+}
+
+/**
+ * The fenced blocks of a Markdown file: `{ info, line, lines }`, plus the line of
+ * a fence that never closed.
+ */
+function fencedBlocks(text) {
+  const blocks = [];
+  let open = null;
+  let unterminated = null;
+  text.split('\n').forEach((line, index) => {
+    const fence = /^\s*(```|~~~)\s*([A-Za-z0-9_-]*)\s*$/u.exec(line);
+    if (!fence) { if (open) open.lines.push(line); return; }
+    if (open && fence[1] === open.fence && fence[2] === '') { blocks.push(open); open = null; return; }
+    if (open) { open.lines.push(line); return; }
+    open = { fence: fence[1], info: fence[2], line: index + 1, lines: [] };
+  });
+  if (open) { unterminated = open.line; blocks.push(open); }
+  return { blocks, unterminated };
+}
+
+/** Lexical faults of one Mermaid block. */
+function checkMermaid(block, file, findings) {
+  const body = block.lines;
+  const first = body.find((l) => l.trim() !== '');
+  if (first === undefined) {
+    findings.push(finding('AGSC-E109', file, block.line, 'an empty mermaid block'));
+    return;
+  }
+  const declared = first.trim().split(/\s+/u)[0];
+  if (!DIAGRAM_TYPES.includes(declared)) {
+    findings.push(finding('AGSC-E109', file, block.line,
+      `the block opens with ${JSON.stringify(declared)}, which is not one of the notations this pack declares`));
+  }
+  // Delimiters balance over the BLOCK, not over a line: `class X {` … `}` of a
+  // class diagram and `state X {` … `}` of a state diagram legitimately span lines.
+  const tally = { '(': 0, '[': 0, '{': 0 };
+  body.forEach((line, offset) => {
+    const n = block.line + offset + 1;
+    if ((line.match(/"/gu) || []).length % 2 !== 0) {
+      findings.push(finding('AGSC-E201', file, n, 'an odd number of double quotes on one line'));
+    }
+    const outside = line.replace(/"[^"]*"/gu, '""');
+    for (const [open, close] of [['[', ']'], ['(', ')'], ['{', '}']]) {
+      tally[open] += (outside.split(open).length - 1) - (outside.split(close).length - 1);
+    }
+    for (const reserved of RESERVED_IDS) {
+      const bare = new RegExp(`(^|[\\s>|-])${reserved}([\\s([{]|$)`, 'u');
+      if (declared.startsWith('state') && reserved === 'state') continue;   // `state X {` is the notation
+      if (declared.startsWith('classDiagram') && reserved === 'class') continue;
+      if ((declared.startsWith('flowchart') || declared === 'graph') && bare.test(outside)
+          && !/^\s*(subgraph|end)\s*$/u.test(line.trim())) {
+        findings.push(finding('AGSC-E201', file, n,
+          `"${reserved}" is a Mermaid reserved word and this pack never uses it as a bare node id`));
+      }
+    }
+  });
+  for (const [open, close] of [['[', ']'], ['(', ')'], ['{', '}']]) {
+    if (tally[open] !== 0) {
+      findings.push(finding('AGSC-E201', file, block.line,
+        `the block leaves ${Math.abs(tally[open])} unmatched "${tally[open] > 0 ? open : close}" outside quotes`));
+    }
+  }
+}
+
+/** The index rows of docs/diagrams/README.md: file -> { diagrams, traces }. */
+function indexRows(text) {
+  const rows = new Map();
+  for (const line of text.split('\n')) {
+    const row = /^\|\s*`([^`]+\.md)`\s*\|([^|]*)\|([^|]*)\|([^|]*)\|/u.exec(line);
+    if (!row) continue;
+    let diagrams = 0;
+    for (const m of row[2].matchAll(/(\d+)\s+[a-z]/giu)) diagrams += Number(m[1]);
+    rows.set(row[1], { diagrams, traces: row[4] });
+  }
+  return rows;
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'validate-diagrams',
+    version,
+  };
+}
+
+function specVersion(root) {
+  try {
+    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
+      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+  } catch { return 'unknown'; }
+}
+
+function packageVersion(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
+  catch { return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} io
+ * @returns {number} exit code: 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`validate-diagrams: ${message}\n${HELP}`); return 2; };
+
+  const flags = new Set();
+  let target = DEFAULT_ROOT;
+  let sawTarget = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawTarget) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { target = path.resolve(arg); sawTarget = true; }
+  }
+  const dir = fs.existsSync(path.join(target, 'docs', 'diagrams'))
+    ? path.join(target, 'docs', 'diagrams')
+    : target;
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    return usage(`no diagrams directory at ${dir} (AGSC-E901)`);
+  }
+  const root = path.basename(dir) === 'diagrams' ? path.resolve(dir, '..', '..') : dir;
+
+  const findings = [];
+  // The two source-of-truth sets the standing sync rule names.
+  const specDir = path.join(root, 'spec');
+  const ruleIds = new Set();
+  if (fs.existsSync(specDir)) {
+    for (const name of fs.readdirSync(specDir).filter((f) => f.endsWith('.md')).sort()) {
+      const text = fs.readFileSync(path.join(specDir, name), 'utf8');
+      for (const m of text.matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*/gu)) ruleIds.add(m[1]);
+    }
+  }
+  const prdPath = path.join(root, 'docs', 'PRD.md');
+  const prdText = fs.existsSync(prdPath) ? fs.readFileSync(prdPath, 'utf8') : null;
+  const prdIds = new Set(prdText ? prdText.match(REQUIREMENT_ID) || [] : []);
+
+  const readmePath = path.join(dir, 'README.md');
+  const index = fs.existsSync(readmePath) ? indexRows(fs.readFileSync(readmePath, 'utf8')) : new Map();
+  const names = fs.readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md').sort();
+  const readmeFile = path.relative(root, readmePath).split(path.sep).join('/');
+  for (const listed of [...index.keys()].sort()) {
+    if (!names.includes(listed)) {
+      findings.push(finding('AGSC-E201', readmeFile, 1, `the index names ${listed}, which is not in this directory`));
+    }
+  }
+
+  let diagrams = 0;
+  for (const name of names) {
+    const file = path.relative(root, path.join(dir, name)).split(path.sep).join('/');
+    const raw = fs.readFileSync(path.join(dir, name), 'utf8');
+    if (raw.charCodeAt(0) === 0xfeff) findings.push(finding('AGSC-E108', file, 1, 'byte-order mark (AGSC-01-14)'));
+    if (raw.includes('\r')) findings.push(finding('AGSC-E108', file, 1, 'CR or CRLF line endings (AGSC-01-14)'));
+    if (!raw.endsWith('\n') || raw.endsWith('\n\n')) {
+      findings.push(finding('AGSC-E108', file, 1, 'the file must end with exactly one LF (AGSC-01-14)'));
+    }
+    if (raw.normalize('NFC') !== raw) findings.push(finding('AGSC-E108', file, 1, 'the file is not NFC (AGSC-01-14)'));
+
+    if (index.size && !index.has(name)) {
+      findings.push(finding('AGSC-E201', readmeFile, 1, `${name} is in this directory and the index does not name it`));
+    }
+    const { blocks, unterminated } = fencedBlocks(raw);
+    if (unterminated !== null) {
+      findings.push(finding('AGSC-E109', file, unterminated, 'a fenced block that never closes'));
+    }
+    const mermaid = blocks.filter((b) => b.info === 'mermaid');
+    diagrams += mermaid.length;
+    if (mermaid.length === 0) {
+      findings.push(finding('AGSC-E109', file, 1, 'the file carries no mermaid block'));
+    }
+    for (const block of mermaid) checkMermaid(block, file, findings);
+    const declaredCount = index.get(name);
+    if (declaredCount && declaredCount.diagrams && declaredCount.diagrams !== mermaid.length) {
+      findings.push(finding('AGSC-E201', readmeFile, 1,
+        `the index declares ${declaredCount.diagrams} diagram(s) for ${name} and the file carries ${mermaid.length}`));
+    }
+
+    // ---- trace ids, and their resolution against the sources of truth ----
+    const rules = new Set(raw.match(RULE_ID) || []);
+    const requirements = new Set(raw.match(REQUIREMENT_ID) || []);
+    if (rules.size === 0 && requirements.size === 0) {
+      findings.push(finding('AGSC-E202', file, 1, 'the file cites no trace id'));
+    }
+    if (ruleIds.size) {
+      for (const id of [...rules].sort()) {
+        if (!ruleIds.has(id)) {
+          findings.push(finding('AGSC-E201', file, 1, `cites rule ${id}, which spec/ does not define`));
+        }
+      }
+    }
+    if (prdText) {
+      for (const id of [...requirements].sort()) {
+        if (!prdIds.has(id)) {
+          findings.push(finding('AGSC-E201', file, 1, `cites ${id}, which docs/PRD.md does not define`));
+        }
+      }
+    }
+  }
+
+  const envelope = envelopeOf(findings, specVersion(root), packageVersion(root));
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) {
+      err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    out(`validate-diagrams: ${names.length} files, ${diagrams} mermaid blocks, `
+      + `${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, canonicalize, checkMermaid, compareCodePoint, fencedBlocks, indexRows, run };

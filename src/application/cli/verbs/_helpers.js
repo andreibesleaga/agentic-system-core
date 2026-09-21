@@ -9,8 +9,9 @@
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 
-const { readSchemas } = require('../../../adapters/node-fs.js');
+const { readOntology, readSchemas } = require('../../../adapters/node-fs.js');
 const validate = require('../../../knowledge/validate.js');
+const turtle = require('../../../knowledge/turtle.js');
 const { loadBundle } = require('../../bundle.js');
 
 /**
@@ -24,11 +25,36 @@ const ENGINE_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const NUL = String.fromCharCode(0);
 
 let compiledSchemas = null;
+let vocabulary = null;
 
 /** The three compiled schemas, read once through the adapter (AGSC-00-09). */
 function schemas() {
   if (compiledSchemas === null) compiledSchemas = validate.schemas(readSchemas(ENGINE_ROOT));
   return compiledSchemas;
+}
+
+/**
+ * The vocabulary, read once through the adapter exactly as the schemas are
+ * (AGSC-06-32, AGSC-05-09, AGSC-05-25). `ontology/` ships in the package (the
+ * `files` member of `package.json`), so it is present wherever `schema/` is.
+ *
+ * WHY IT IS HERE: `distribution/site.js` generates `/ns/context.jsonld` from these
+ * terms and compacts every JSON-LD view against it, but Distribution never reads a
+ * file and `knowledge/` never reads one either — so the application layer is the
+ * only place that can hand the vocabulary to the build. Until 2026-09-21 no caller
+ * did, and every built context carried 0 of the 52 `asc:` term definitions.
+ *
+ * @returns {{terms: Array<object>, version: string|null}}
+ */
+function ontology() {
+  if (vocabulary === null) {
+    const text = readOntology(ENGINE_ROOT);
+    vocabulary = Object.freeze({
+      terms: Object.freeze(turtle.ontologyTerms(text)),
+      version: turtle.ontologyVersion(text),
+    });
+  }
+  return vocabulary;
 }
 
 /** The loaded Bundle of AGSC-01-01…01-04, from the verb's port bag. */
@@ -44,13 +70,16 @@ function sha256(bytes) {
 /**
  * The emission options every build-shaped verb passes to `distribution/`.
  * `--level` selects the emission Level of AGSC-10-02/10-04; the default is 2,
- * the Level this engine emits when nothing says otherwise.
+ * the Level this engine emits when nothing says otherwise. `ontologyTerms` and
+ * `ontologyVersion` carry the vocabulary into the build (AGSC-06-32, AGSC-05-09).
  */
 function buildOptions(ctx, extra) {
   const raw = ctx.verbFlags && ctx.verbFlags.level;
   const level = raw === undefined ? undefined : Number(raw);
   return {
     level: Number.isInteger(level) ? level : undefined,
+    ontologyTerms: ontology().terms,
+    ontologyVersion: ontology().version,
     specVersion: ctx.specVersion,
     version: ctx.version,
     ...(extra || {}),
@@ -150,6 +179,7 @@ module.exports = {
   bundleOf,
   buildOptions,
   notImplemented,
+  ontology,
   schemas,
   sha256,
   trackedPaths,

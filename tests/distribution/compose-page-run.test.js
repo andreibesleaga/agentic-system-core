@@ -28,6 +28,13 @@ const site = require('../../src/distribution/site.js');
 const harness = require('../../src/composition/harness.js');
 const { compose, verdictOf } = require('../../src/composition/compose.js');
 const mcpTools = require('../../src/distribution/mcp-tools.js');
+const composePage = require('../../src/distribution/compose-page.js');
+const pageTools = require('../../src/distribution/page-tools.js');
+
+/** Wait for the page-tool corpus to load; afterwards `AGSC_TOOLS` is synchronous. */
+async function pageToolsReady(context) {
+  await vm.runInContext('globalThis.AGSC_PAGE_TOOLS.ready', context);
+}
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
@@ -114,7 +121,10 @@ function openPage({ files, modelContext }) {
     setTimeout,
   };
   const context = vm.createContext(sandbox);
-  for (const asset of ['/compose/agsc-core.js', '/compose/agsc-compose.js', '/compose/webmcp.js']) {
+  // Every asset the emitted `/compose/` page loads, in the page's own load order —
+  // including `agsc-page-tools.js`, which is what implements the seven tools.
+  for (const name of composePage.ASSETS) {
+    const asset = `/compose/${name}`;
     vm.runInContext(files.get(asset), context, { filename: asset });
   }
   return { context, document, registered, sandbox };
@@ -151,8 +161,11 @@ test('AGSC-07-13: the seven files the PAGE builds are byte-identical to the CLI\
   const here = compose(core.itemsFromGraph(JSON.parse(files.get('/graph.jsonld'))), selection);
   const digest = createHash('sha256').update(harness.selectionDigestInput(here), 'utf8').digest('hex');
   const items = core.itemsFromGraph(JSON.parse(files.get('/graph.jsonld'))).map((item) => {
-    const body = files.get(`/pages/${item.slug}.md`);
-    return body === undefined ? item : { ...item, body };
+    // AGSC-05-07: the published Markdown view is the lint-normalized SOURCE FILE, so
+    // the frontmatter block comes off before the body reaches the Harness emitter.
+    const published = files.get(`/pages/${item.slug}.md`);
+    return published === undefined
+      ? item : { ...item, body: pageTools.pageSplitFrontmatter(published).body };
   });
   const there = harness.emit(here, {
     base: 'https://minimal.example/',
@@ -205,10 +218,11 @@ test('AGSC-07-24: /compose/?from=<slug> takes the selection from the saved archi
 });
 
 test('AGSC-09-16: with document.modelContext the seven tools are registered, with the stdio manifest', async () => {
-  const { files } = builtFixture();
+  const { bundle, files } = builtFixture();
   const page = openPage({ files, modelContext: true });
   const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
   await state.start();
+  await pageToolsReady(page.context);
   const webmcp = vm.runInContext('globalThis.AGSC_WEBMCP', page.context);
   assert.strictEqual(webmcp.registered, 7);
   assert.deepStrictEqual(page.registered.map((t) => t.name).sort(),
@@ -217,22 +231,33 @@ test('AGSC-09-16: with document.modelContext the seven tools are registered, wit
     assert.strictEqual(typeof tool.execute, 'function', tool.name);
     assert.ok(tool.inputSchema !== undefined, `${tool.name} registered no inputSchema`);
   }
-  // AGSC-09-16: `compose` on this transport answers with the shared implementation.
+  // AGSC-09-16: ALL SEVEN answer, and every answer is the local server's answer for
+  // the same input and Bundle — the whole point of the rule, asserted against the
+  // artefact the site ships rather than against the emitter (ENG3-02).
+  const local = mcpTools.tools(bundle, {});
   const selection = state.items.filter((i) => i.type !== 'cluster').map((i) => i.slug).slice(0, 2);
-  const envelope = page.registered.find((t) => t.name === 'compose').execute({ selection });
-  assert.strictEqual(envelope.trust, 'untrusted');
-  assert.strictEqual(envelope.type, 'verdict');
+  const calls = [
+    ['search', { query: 'supervisor' }],
+    ['read', { slug: 'handoff' }],
+    ['links', { slug: 'supervisor' }],
+    ['compose', { selection }],
+    ['ask', { question: 'handoff' }],
+    ['propose', { slug: 'handoff' }],
+    ['remember', { at: INSTANT, body: 'A note.', kind: 'episode', title: 'A Recorded Run' }],
+    ['read', { slug: 'no-such-item' }],
+  ];
   assert.ok(selection.length > 0, 'the page recovered no selectable item');
-  assert.deepStrictEqual(plain(envelope.body), plain(verdictOf(compose(plain(state.items), selection))));
-  // AGSC-09-13a: the six tools with no page implementation answer the error envelope
-  // with a registered code, never something mistakable for a result.
-  for (const name of ['ask', 'links', 'propose', 'read', 'remember', 'search']) {
-    const answer = page.registered.find((t) => t.name === name).execute({});
-    assert.strictEqual(answer.type, 'error', name);
+  for (const [name, args] of calls) {
+    const answer = page.registered.find((t) => t.name === name).execute(args);
     assert.strictEqual(answer.trust, 'untrusted', name);
-    assert.match(answer.body.code, /^AGSC-E\d{3}$/u, name);
+    assert.deepStrictEqual(plain(answer), plain(local.call(name, args)),
+      `${name} differs between the page tools and the local server`);
   }
-  // AGSC-09-16: `propose` and `remember` are counted as local-only on this transport.
+  // AGSC-08-18: `compose` is still the shared algebra's verdict.
+  const verdict = page.registered.find((t) => t.name === 'compose').execute({ selection });
+  assert.deepStrictEqual(plain(verdict.body), plain(verdictOf(compose(plain(state.items), selection))));
+  // AGSC-09-16: `propose` and `remember` are counted as local-only on this transport,
+  // and neither wrote anything: the vm holds no writable surface at all.
   assert.strictEqual(webmcp.localOnlyCalls, 2);
 });
 
@@ -241,6 +266,7 @@ test('AGSC-09-16: without document.modelContext the page works unchanged and reg
   const page = openPage({ files, modelContext: false });
   const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
   await state.start();
+  await pageToolsReady(page.context);
   const webmcp = vm.runInContext('globalThis.AGSC_WEBMCP', page.context);
   assert.strictEqual(webmcp.registered, 0);
   assert.deepStrictEqual(page.registered, []);

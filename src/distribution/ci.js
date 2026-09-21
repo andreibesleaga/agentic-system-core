@@ -52,12 +52,16 @@ function ci(bundle, ports, options = {}) {
   }
 
   // ---- build
-  const built = site.build(bundle, ports, options);
+  // When a lint lane ran, it already reported the publication checks of PRD-019 and
+  // RFC 9116; the build still refuses to emit an invalid security contact, it simply
+  // does not repeat the reason (AGSC-09-11: one fault is counted once).
+  const buildOptions = typeof lint === 'function' ? { ...options, publication: false } : options;
+  const built = site.build(bundle, ports, buildOptions);
   findings.push(...built.findings);
   lanes.push('build');
 
   // ---- verify (AGSC-04-02: build twice, compare bytes)
-  const second = site.build(bundle, ports, options);
+  const second = site.build(bundle, ports, buildOptions);
   for (const key of built.files.keys()) {
     if (built.files.get(key) !== second.files.get(key)) {
       findings.push({

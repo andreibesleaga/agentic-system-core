@@ -148,4 +148,19 @@ function readSchemas(engineRoot = path.resolve(__dirname, '..', '..')) {
   };
 }
 
-module.exports = { createFileSystem, readSchemas, safeJoin, checkReal, FsError, MAX_INPUT_BYTES, ARCHIVE_EXTENSIONS };
+/**
+ * Load the vocabulary document. `knowledge/` never reads files, so this is the one
+ * place `ontology/agsc.ttl` enters the system — and the context file of AGSC-06-32
+ * and the persistent context URL of AGSC-05-09 are both derived from it, never
+ * typed. The Bundle-rooted FileSystem port cannot reach it: like `schema/`, the
+ * vocabulary is the ENGINE's and lives outside any Bundle (AGSC-E902).
+ * @param {string} [engineRoot] the directory that holds `ontology/`.
+ * @returns {string} the Turtle text of `ontology/agsc.ttl`.
+ */
+function readOntology(engineRoot = path.resolve(__dirname, '..', '..')) {
+  return fs.readFileSync(path.join(engineRoot, 'ontology', 'agsc.ttl'), 'utf8');
+}
+
+module.exports = {
+  createFileSystem, readOntology, readSchemas, safeJoin, checkReal, FsError, MAX_INPUT_BYTES, ARCHIVE_EXTENSIONS,
+};

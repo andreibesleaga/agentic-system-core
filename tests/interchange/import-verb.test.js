@@ -45,6 +45,12 @@ function workspace(extra = {}) {
     spec_version: '1.0.0-rc.4',
     ...extra,
   }, null, 2)}\n`);
+  // RFC 9116 §2.5.3: a Bundle that publishes a site states a security contact, and
+  // since the public-statements package the build refuses to emit an invalid
+  // `security.txt` rather than one with no `Contact:` field.
+  fs.mkdirSync(path.join(dir, '.well-known'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.well-known', 'security.txt'),
+    'Contact: https://security.example.net/report\nPreferred-Languages: en\n');
   return dir;
 }
 
@@ -86,20 +92,25 @@ test('AGSC-09-08: a missing --from, --selection or directory is AGSC-E003, exit 
   const dir = workspace();
   const bare = run(['import', '--json', '--quiet'], dir);
   assert.strictEqual(bare.exit, 1);
+  // Two, not three, since ENG-5: `--selection` belongs to the `old-site` ADAPTER
+  // (AGSC-01-26a) and is required only when that adapter is the one named, so a bare
+  // `import` is missing `--from` and the source directory and nothing else.
   assert.deepStrictEqual(bare.envelope.findings.map((f) => f.code),
-    ['AGSC-E003', 'AGSC-E003', 'AGSC-E003']);
+    ['AGSC-E003', 'AGSC-E003']);
   for (const f of bare.envelope.findings) assert.match(f.message, /AGSC-01-22/u);
-  assert.strictEqual(tree(dir).size, 1, 'a refused invocation writes nothing');
+  assert.strictEqual(tree(dir).size, 2, 'a refused invocation writes nothing');
 });
 
 test('AGSC-09-08: a --from value outside the set is AGSC-E002 and names the set', () => {
-  // `--selection` is the old-site ADAPTER's flag and is not in scope under `notion`
-  // (see the next test), so the invocation also lacks its required argument.
   const result = run(['import', '--from', 'notion', FIXTURE, '--json', '--quiet'], workspace());
   assert.strictEqual(result.exit, 1);
-  assert.deepStrictEqual(result.envelope.findings.map((f) => f.code), ['AGSC-E002', 'AGSC-E003']);
+  assert.deepStrictEqual(result.envelope.findings.map((f) => f.code), ['AGSC-E002']);
   assert.match(result.envelope.findings[0].message, /old-site/u);
-  assert.deepStrictEqual([...verb.FORMATS], ['old-site']);
+  assert.match(result.envelope.findings[0].message, /okf/u);
+  // ENG-5 added the `okf` reader of AGSC-01-22; `--selection` stays the `old-site`
+  // adapter's own flag and is required for that adapter alone.
+  assert.deepStrictEqual([...verb.FORMATS], ['okf', 'old-site']);
+  assert.deepStrictEqual([...verb.SELECTION_REQUIRED], ['old-site']);
 });
 
 test('AGSC-09-09 (rc.5, ENG1 §3): an adapter\'s own flags are ADAPTER-SCOPED', () => {
@@ -146,7 +157,8 @@ test('a source directory holding no record of the format is AGSC-E901, and nothi
   assert.strictEqual(result.exit, 1);
   assert.ok(result.envelope.findings.some((f) => f.code === 'AGSC-E901'
     && /holds no "content\/patterns\/\*\.md" record/u.test(f.message)));
-  assert.strictEqual(tree(dir).size, 1);
+  // The two files `workspace()` authors: the configuration and the security contact.
+  assert.strictEqual(tree(dir).size, 2);
 });
 
 test('AGSC-01-17: a Bundle whose configuration lacks an identity is AGSC-E003, not a guess', () => {
@@ -163,7 +175,8 @@ test('AGSC-01-17: a Bundle whose configuration lacks an identity is AGSC-E003, n
 test('--dry-run reports the plan and writes not one file', () => {
   const dir = workspace();
   const result = run([...IMPORT, '--dry-run'], dir);
-  assert.strictEqual(tree(dir).size, 1);
+  // The two files `workspace()` authors: the configuration and the security contact.
+  assert.strictEqual(tree(dir).size, 2);
   assert.ok(result.envelope.findings.length > 0, 'the plan\'s findings are still reported');
 });
 

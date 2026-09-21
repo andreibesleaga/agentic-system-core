@@ -98,7 +98,36 @@ function contentFolderOf(filePath) {
 
 /** Serialize a frontmatter object to the AGSC-04-19 block, fences included. */
 function serialize(frontmatterObject) {
-  return `---\n${YAML.stringify(frontmatterObject, YAML_PROFILE)}---\n`;
+  return `---\n${YAML.stringify(failsafeScalars(frontmatterObject), YAML_PROFILE)}---\n`;
+}
+
+/**
+ * AGSC-02-03/02-04: the failsafe schema has no number and no boolean, so a typed
+ * scalar is EMITTED in the written form AGSC-02-04 pins and is read back as a string
+ * that `knowledge/validate.js#applyTypes` re-types from `schema/item.schema.json`.
+ *
+ * Without this pass `YAML.stringify(…, {schema:'failsafe'})` THROWS
+ * "Tag not resolved for Number value" on a loaded item that carries a typed scalar —
+ * `cluster.order`, `concept.signature`, `episode.usage.tokens_in`, `cost_usd`,
+ * `estimate` — so `propose` on such an item threw a programming fault instead of
+ * returning a Finding, and `pages/<slug>.md` could not be emitted at all (ENG3-03).
+ * The emitted bytes are unchanged for every frontmatter whose scalars are already
+ * strings, which is every frontmatter adoption itself synthesizes.
+ */
+function failsafeScalars(value) {
+  if (Array.isArray(value)) return value.map(failsafeScalars);
+  if (value !== null && typeof value === 'object') {
+    // A node the `yaml` library itself produced (a `Scalar` carrying a style, which
+    // `governance/fix.js` passes through to preserve an authored quoting) is handed
+    // on UNTOUCHED: walking it would turn the node into a plain map of its fields.
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== Object.prototype && proto !== null) return value;
+    const out = {};
+    for (const key of Object.keys(value)) out[key] = failsafeScalars(value[key]);
+    return out;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return value;
 }
 
 /**

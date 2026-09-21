@@ -97,10 +97,20 @@ test('AGSC-09-16: the page tool surface answers for all seven tools and for no e
   assert.deepStrictEqual(composePage.toolNames().sort(),
     ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
   const controller = composePage.controller({});
-  // The six with no page implementation are named in the emitted script, so the page
-  // answers the AGSC-09-13a error envelope rather than something mistakable for a result.
-  const listed = JSON.parse(/var UNIMPLEMENTED = (\[[^\]]*\]);/u.exec(controller)[1]);
-  assert.deepStrictEqual(listed.sort(), ['ask', 'links', 'propose', 'read', 'remember', 'search']);
+  // Since rc.5 the controller installs NO tool object: `agsc-page-tools.js` does, and
+  // it implements all seven. The controller carried a stub that answered `compose`
+  // and returned "has no page implementation yet" for the other six (ENG3-02).
+  assert.ok(!controller.includes('has no page implementation yet'),
+    'the controller still ships the six-tool stub');
+  assert.ok(!/globalThis\.AGSC_TOOLS\s*=/u.test(controller),
+    'the controller installs a second tool object beside the shared implementation');
+  // The item pages load the same three shared files the /compose/ route serves.
+  assert.deepStrictEqual([...composePage.PAGE_TOOL_SCRIPTS],
+    ['/compose/agsc-core.js', '/compose/agsc-page-tools.js', '/compose/webmcp.js']);
+  for (const src of composePage.PAGE_TOOL_SCRIPTS) {
+    assert.ok(composePage.ASSETS.includes(src.slice('/compose/'.length)),
+      `${src} is not an asset the /compose/ route emits`);
+  }
 });
 
 // ---------------------------------------------------------------- /legal/
@@ -110,7 +120,9 @@ test('AGSC-06-18 / V9D-A6: /legal/ is emitted from LICENSE-CONTENT and linked fr
   assert.ok(files.has('/legal/index.html'), '/legal/ was not emitted');
   assert.ok(!skipped.some((s) => s.startsWith('/legal/')), '/legal/ is both emitted and skipped');
   const legal = files.get('/legal/index.html');
-  assert.match(legal, /<h1>Content Use Terms<\/h1>/u);
+  // The page is PRD-019's "Legal and privacy" since the public-statements package;
+  // its four obligations and their inputs are asserted in public-statements.test.js.
+  assert.match(legal, /<h1>Legal and privacy<\/h1>/u);
   assert.match(legal, /Use this content as follows/u);
   assert.match(legal, /LicenseRef-AgenticSystemCore-Content-Use-1\.0/u);
   for (const [route, text] of files) {
@@ -118,7 +130,7 @@ test('AGSC-06-18 / V9D-A6: /legal/ is emitted from LICENSE-CONTENT and linked fr
     assert.match(text, /<a href="\/legal\/">/u, `${route} does not link the terms`);
   }
   assert.match(files.get('/robots.txt'), /\/legal\//u);
-  assert.match(files.get('/.well-known/security.txt'), /^Policy: https:\/\/minimal\.example\/legal\//u);
+  assert.match(files.get('/.well-known/security.txt'), /^Policy: https:\/\/minimal\.example\/legal\/$/mu);
 });
 
 test('AGSC-06-18 / V9D-A6: with no LICENSE-CONTENT the route is skipped AND no link is emitted', () => {
@@ -164,7 +176,9 @@ test('V9D-A6, closed: every site-absolute link the build emits resolves to an em
     const { files, findings } = build(workspace(extra));
     const dangling = findings.filter((f) => f.code === 'AGSC-E901');
     assert.deepStrictEqual(dangling, [], `dangling links: ${JSON.stringify(dangling)}`);
-    const links = site.internalLinks(files);
+    // The base is what makes an absolute URL in the two text dialects OURS: since
+    // rc.5 `security.txt` carries a `Contact:` at another origin (RFC 9116 §2.5.3).
+    const links = site.internalLinks(files, { base: 'https://minimal.example' });
     assert.ok(links.length > 0, 'the link sweep found nothing, so it proves nothing');
     for (const link of links) {
       assert.notStrictEqual(site.resolvesTo(files, link.route), null,

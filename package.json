@@ -17,6 +17,8 @@
         "tests/vectors/",
         "docs/SPEC.md",
         "LICENSE",
+        "LICENSE-CONTENT",
+        "CITATION.cff",
         "README.md"
     ],
     "engines": {

@@ -22,6 +22,11 @@ function createProcessRunner(options = {}) {
   for (const name of SCRUBBED_ENV) if (parentEnv[name] !== undefined) env[name] = parentEnv[name];
 
   return {
+    // AGSC-09-94 (ENG-5, rc.5): this adapter does NOT isolate a child from the
+    // network — `execFileSync` cannot — so it never claims to. `agsc run` reads
+    // this and refuses to execute rather than run a step under a guarantee the
+    // engine cannot make. See `src/ports/process-runner.js`.
+    isolated: false,
     run(cmd, args = [], runOptions = {}) {
       if (typeof cmd !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(cmd)) {
         return { code: 2, stdout: '', stderr: `refused program name: ${cmd}` };

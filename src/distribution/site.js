@@ -24,6 +24,7 @@ const { canonicalize } = require('../knowledge/jcs.js');
 const { nfc, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const chunks = require('../knowledge/chunks.js');
+const adopt = require('../knowledge/adopt.js');
 const linksModule = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
 const jsonldView = require('../knowledge/jsonld.js');
@@ -39,7 +40,10 @@ const now = require('./now.js');
 const html = require('./html.js');
 const composePage = require('./compose-page.js');
 const webmcp = require('./webmcp.js');
+const pageTools = require('./page-tools.js');
+const surfaces = require('../boundary/surfaces.js');
 const browserBundle = require('../composition/browser.js');
+const skills = require('../composition/skills.js');
 
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = chunks;
 
@@ -102,6 +106,91 @@ function flatten(item) {
 function publishedItems(items, releases) {
   return (items || []).map(flatten).filter((item) => chunks.isPublished(item, releases));
 }
+
+/**
+ * AGSC-11-16 / AGSC-11-19: the surfaces this build DECLARES, derived from what the
+ * writer actually emits, through the Boundary context's `declare()` and through no
+ * second list.
+ *
+ * Until rc.5 this build assembled the declaration by hand from two emitted files
+ * (`/llms.txt`, `/chunks.jsonl`) plus `config.surfaces[]`, while
+ * `boundary/surfaces.js` — the module that knows every built-in surface, its route,
+ * its access class and its version — was called only by tests. The site therefore
+ * EMITTED the page-tool surface at `/compose/` and never DECLARED it, which is
+ * exactly the condition AGSC-11-19 tells the validator to warn about (AGSC-E211).
+ * One path now, so a surface cannot be served and forgotten (ENG3-04).
+ *
+ * `webmcpVersion` is an OPTION, not a configuration key: `config.schema.json` closes
+ * `surfaces[]` against the built-in surfaces, so a node states the WebMCP Draft
+ * Community Group Report date it targets in code. The default is
+ * `surfaces.WEBMCP_SURFACE_VERSION`; AGSC-11-16 as amended at rc.5 conforms any
+ * `YYYY-MM-DD` date and pins none.
+ *
+ * @param {{base:string, config:object, emitted:Array<string>, mcpServed?:boolean,
+ *   webmcpVersion?:string}} options
+ * @returns {Array<object>} `{surface, target, version, access}`, discovery's shape.
+ */
+function declaredSurfaces(options) {
+  const config = options.config || {};
+  const declared = surfaces.declare({
+    base: `${String(options.base).replace(/\/+$/u, '')}/`,
+    emitted: options.emitted || [],
+    mcpServed: options.mcpServed === true,
+    surfaces: Array.isArray(config.surfaces) ? config.surfaces : [],
+    webmcpVersion: options.webmcpVersion,
+  });
+  return declared.map((link) => {
+    const entry = { surface: link['agsc-surface'][0], target: link.href };
+    if (link['agsc-surface-version'] !== undefined) [entry.version] = link['agsc-surface-version'];
+    if (link['agsc-access'] !== undefined) [entry.access] = link['agsc-access'];
+    return entry;
+  });
+}
+
+/**
+ * AGSC-11-14 + research/34 option 3: the forge address at which a visitor edits ONE
+ * item's source file.
+ *
+ * The configured member is `contribute[]` — the only repository member the frozen
+ * `config.schema.json` has — and only an entry whose `mode` is `pr`, because that is
+ * the mode whose target is a forge `https:` URL. Nothing is invented: where the host
+ * is one whose edit-view spelling this function states, the link is that view of the
+ * item's own `content/<type-plural>/<slug>.md`; where it is not, the link is the
+ * configured contribution target itself, unchanged. `HEAD` names the repository's
+ * default branch without this engine having to know its name.
+ *
+ * A link OUT to a forge is not a route (AGSC-06-01 governs what this writer emits),
+ * carries no script, submits no form and reaches no third-party origin at load time
+ * (AGSC-06-05, AGSC-06-17) — it is an ordinary anchor a person may follow.
+ *
+ * @param {object} config `agsc.config.json`
+ * @param {string} path the item's Bundle-relative source path.
+ * @returns {string|null} the href, or `null` when no `pr` channel is configured.
+ */
+function contributeEditUrl(config, path) {
+  const entries = Array.isArray(config && config.contribute) ? config.contribute : [];
+  const entry = entries.find((c) => c && c.mode === 'pr' && typeof c.target === 'string'
+    && /^https:\/\//u.test(c.target));
+  if (entry === undefined) return null;
+  const repository = String(entry.target)
+    .replace(/\/+$/u, '')
+    .replace(/\.git$/u, '')
+    .replace(/\/(?:compare|pulls|pull\/new|issues\/new)$/u, '');
+  const host = repository.replace(/^https:\/\//u, '').split('/')[0].toLowerCase();
+  const segment = FORGE_EDIT_SEGMENT[host];
+  if (segment === undefined) return entry.target;
+  return `${repository}${segment}${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+/**
+ * The edit-view spelling of the forges whose shape this engine states. A host absent
+ * from this map is never guessed at: the contribution target is linked instead.
+ */
+const FORGE_EDIT_SEGMENT = Object.freeze({
+  'codeberg.org': '/_edit/HEAD/',
+  'github.com': '/edit/HEAD/',
+  'gitlab.com': '/-/edit/HEAD/',
+});
 
 /** AGSC-05-01: `<site.base>/<type-plural>/<slug>/`. */
 function routeOf(item) {
@@ -195,21 +284,195 @@ function tdmrep(base) {
   return [{ location: `${String(base).replace(/\/+$/u, '')}/`, 'tdm-reservation': 1 }];
 }
 
+/** RFC 9116 §2.5.5's recommendation, in seconds: "less than a year into the future". */
+const YEAR_SECONDS = 365 * 24 * 60 * 60;
+/** What the writer derives when the authored file states no `Expires` (one day inside the year). */
+const EXPIRES_AHEAD_SECONDS = 364 * 24 * 60 * 60;
+
 /**
- * RFC 9116: the one security file that is a route (AGSC-06-01, PRD-047). `Policy`
- * is OPTIONAL in RFC 9116, so it is emitted only when `/legal/` exists — a `Policy`
- * naming a 404 is worse than no `Policy` at all (V9D-A6).
+ * The authored `.well-known/security.txt` of the Bundle root, read through the
+ * injected port exactly as `LICENSE-CONTENT` is (AGSC-06-18 as amended at rc.5).
+ *
+ * RFC 9116 §2.5.3 makes `Contact` mandatory — "This field MUST always be present in
+ * a 'security.txt' file" — and a contact is a fact about the PUBLISHER that no
+ * writer can derive from a Bundle: it is an address, a page or a mailbox that must
+ * be watched by a person. `agsc.config.json` has no member for it (the configuration
+ * is closed, AGSC-01-18), so the authored file is the input, and its absence is a
+ * build failure rather than an invalid published file. The missing configuration
+ * member is recorded as a specification item for 1.0.0.
+ *
+ * @param {object} ports `{fs}`
+ * @returns {string|null} the authored bytes, or `null` when there are none.
  */
-function securityTxt(base, expires, options = {}) {
-  const legal = options.legal === undefined ? true : Boolean(options.legal);
-  // RFC 9116 is line-oriented in the same way (AGSC-02-24, rc.5, FV28-01).
-  const policy = legal ? `Policy: ${singleLine(discovery.href(base, '/legal/'))}\n` : '';
-  return `${policy}Expires: ${singleLine(expires)}\nPreferred-Languages: en\n`;
+function readSecurityTxt(ports) {
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return null;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists('.well-known/security.txt')) return null;
+    const text = String(fs.readFile('.well-known/security.txt', 'utf8'));
+    return text.trim() === '' ? null : text;
+  } catch (e) {
+    return null;
+  }
 }
 
-/** AGSC-06-02: the two machine views of an item. */
-function pageMarkdown(item) {
-  return textBytes(item.body == null ? '' : item.body);
+/**
+ * RFC 9116 §2.2: a field line is `name: value`; blank lines and lines beginning
+ * with `#` are ignored. Anything else is not a field and is reported rather than
+ * published.
+ *
+ * @param {string} text
+ * @returns {{fields:Array<{name:string, value:string, line:number}>, bad:Array<{line:number, text:string}>}}
+ */
+function securityFields(text) {
+  const fields = [];
+  const bad = [];
+  String(text).split('\n').forEach((raw, index) => {
+    const line = raw.replace(/\r$/u, '');
+    if (line.trim() === '' || line.trimStart().startsWith('#')) return;
+    const at = line.indexOf(':');
+    if (at <= 0) {
+      bad.push({ line: index + 1, text: line });
+      return;
+    }
+    fields.push({ line: index + 1, name: line.slice(0, at).trim().toLowerCase(), value: line.slice(at + 1).trim() });
+  });
+  return { bad, fields };
+}
+
+/**
+ * RFC 9116: the one security file that is a route (AGSC-06-01, PRD-047).
+ *
+ * Until rc.5 this function emitted `Expires` = the BUILD INSTANT and no `Contact`
+ * at all, so every engine-built site published a file that RFC 9116 makes invalid
+ * twice over: §2.5.3 "This field MUST always be present in a 'security.txt' file"
+ * (Contact) and §2.5.5 "This field MUST always be present and MUST NOT appear more
+ * than once" together with "It is RECOMMENDED that the value of this field be less
+ * than a year into the future to avoid staleness" (Expires — which a build instant
+ * never satisfies, being in the past the moment it is written). A published security
+ * contact that does not work is worse than none, so the writer now derives what it
+ * can, requires what it cannot derive, and emits nothing it knows to be invalid.
+ *
+ * What is authored: every field of the Bundle root's `.well-known/security.txt`,
+ * published verbatim and in the authored order. What is derived, and only when the
+ * authored file does not state it: `Expires` (364 days after the build instant, so
+ * it is inside §2.5.5's year and can never go stale between two builds), `Canonical`
+ * (§2.5.2) and `Policy` (§2.5.7, only when `/legal/` is emitted — a `Policy` naming
+ * a 404 is worse than no `Policy` at all, V9D-A6).
+ *
+ * @param {string} base the site base (AGSC-01-19).
+ * @param {string} instant the build instant (AGSC-04-10).
+ * @param {object} [options] `{authored, legal}`.
+ * @returns {{text:(string|null), findings:Array<object>}} `text` is `null` when
+ *   nothing valid can be emitted; every reason is a finding.
+ */
+function securityTxt(base, instant, options = {}) {
+  const legal = options.legal === undefined ? true : Boolean(options.legal);
+  const file = '.well-known/security.txt';
+  const authored = options.authored === undefined ? null : options.authored;
+  const findings = [];
+  if (authored === null) {
+    // §9.4 registers no code for "a published artefact is invalid against the
+    // standard it claims"; the closest registered row is used and the missing
+    // registration is on the specification items list. `AGSC-E901` is "file not
+    // found" (AGSC-01-01) and the missing file is exactly the fault.
+    findings.push(finding('AGSC-E901',
+      'no .well-known/security.txt in the Bundle root, so the published one would carry no Contact:'
+      + ' field — RFC 9116 section 2.5.3 says "This field MUST always be present in a \'security.txt\''
+      + ' file". Nothing is emitted for /.well-known/security.txt (AGSC-06-01, PRD-047)',
+      { file }));
+    return { findings, text: null };
+  }
+
+  const { bad, fields } = securityFields(authored);
+  for (const line of bad) {
+    findings.push(finding('AGSC-E204',
+      `${file}:${line.line} is not an RFC 9116 field line ("name: value"), a blank line or a comment`,
+      { file, line: line.line }));
+  }
+  const contacts = fields.filter((f) => f.name === 'contact' && f.value !== '');
+  if (contacts.length === 0) {
+    // "required key missing" — the words of AGSC-E202, applied to a required FIELD.
+    findings.push(finding('AGSC-E202',
+      'the authored .well-known/security.txt states no Contact: field — RFC 9116 section 2.5.3:'
+      + ' "This field MUST always be present in a \'security.txt\' file"',
+      { file }));
+  }
+
+  const expiresFields = fields.filter((f) => f.name === 'expires');
+  const now = ledgerModule.epochFromInstant(instant);
+  if (expiresFields.length > 1) {
+    findings.push(finding('AGSC-E204',
+      'the authored .well-known/security.txt states Expires more than once — RFC 9116 section 2.5.5:'
+      + ' "This field MUST always be present and MUST NOT appear more than once"',
+      { file, line: expiresFields[1].line }));
+  }
+  for (const field of expiresFields.slice(0, 1)) {
+    const at = ledgerModule.epochFromInstant(field.value);
+    if (at === null) {
+      findings.push(finding('AGSC-E204',
+        `the authored Expires value "${field.value}" is not an instant of the form`
+        + ' YYYY-MM-DDTHH:MM:SSZ (AGSC-04-10, RFC 9116 section 2.5.5)',
+        { file, line: field.line }));
+    } else if (now !== null && at <= now) {
+      findings.push(finding('AGSC-E204',
+        `the authored Expires value "${field.value}" is not after the build instant ${instant}:`
+        + ' the file would be published stale. RFC 9116 section 2.5.5: "It is RECOMMENDED that the'
+        + ' value of this field be less than a year into the future to avoid staleness"',
+        { file, line: field.line }));
+    } else if (now !== null && at - now > YEAR_SECONDS) {
+      findings.push(finding('AGSC-E204',
+        `the authored Expires value "${field.value}" is more than a year after the build instant —`
+        + ' RFC 9116 section 2.5.5: "It is RECOMMENDED that the value of this field be less than a'
+        + ' year into the future to avoid staleness"',
+        { file, line: field.line, severity: 'warn' }));
+    }
+  }
+
+  if (findings.some((f) => f.severity !== 'warn')) return { findings, text: null };
+
+  // RFC 9116 is line-oriented (AGSC-02-24, rc.5, FV28-01): every value the writer
+  // interpolates is neutralised, because a writer may receive a file it did not
+  // validate.
+  const lines = fields.map((f) => `${capitalise(f.name)}: ${singleLine(f.value)}`);
+  const stated = new Set(fields.map((f) => f.name));
+  if (!stated.has('expires') && now !== null) {
+    lines.push(`Expires: ${ledgerModule.instantFromEpoch(now + EXPIRES_AHEAD_SECONDS)}`);
+  }
+  if (!stated.has('canonical')) {
+    lines.push(`Canonical: ${singleLine(discovery.href(base, '/.well-known/security.txt'))}`);
+  }
+  if (!stated.has('policy') && legal) {
+    lines.push(`Policy: ${singleLine(discovery.href(base, '/legal/'))}`);
+  }
+  return { findings, text: `${lines.join('\n')}\n` };
+}
+
+/** RFC 9116 field names are case-insensitive; the file reads better in the registry's case. */
+function capitalise(name) {
+  return String(name).split('-').map((part) => (part === '' ? part : part[0].toUpperCase() + part.slice(1))).join('-');
+}
+
+/**
+ * AGSC-06-02 + AGSC-05-07: the Markdown machine view of an item.
+ *
+ * AGSC-05-07 is one sentence — "`pages/<slug>.md` MUST be a byte-identical copy of
+ * the lint-normalized source file" — and until rc.5 this function emitted the BODY
+ * alone, so the published view carried neither the item's type nor its title nor its
+ * provenance, and the MUST was silently unmet (ENG3-01). The lint-normalized source
+ * file is the AGSC-04-19 frontmatter block of `knowledge/adopt.js#serialize` followed
+ * by the body, which is also what makes AGSC-09-16 satisfiable at all: a page tool
+ * can only return the item a local `read` returns if the frontmatter is published.
+ *
+ * `source` is the LOADED item, which still carries its frontmatter object with the
+ * authored key order; `item` is the flattened record every other surface reads. A
+ * record with no frontmatter (the flat items the vectors carry) keeps the old bytes.
+ */
+function pageMarkdown(item, source) {
+  const frontmatter = source == null ? null : source.frontmatter;
+  const body = item.body == null ? '' : item.body;
+  if (frontmatter == null || typeof frontmatter !== 'object') return textBytes(body);
+  return textBytes(`${adopt.serialize(frontmatter)}${body}`);
 }
 
 /**
@@ -230,6 +493,99 @@ function readLicenseContent(ports) {
     // Absent, unreadable or outside the root: all three mean "no terms text here".
     return null;
   }
+}
+
+/**
+ * PRD-019: `/legal/` carries the content-use terms, a PRIVACY NOTICE, the operator
+ * and a retention statement. AGSC-06-18 as amended at rc.5 derives the first of the
+ * four from `LICENSE-CONTENT`; the other three are facts about the PUBLISHER, which
+ * no writer can derive from a Bundle and none of which the closed configuration of
+ * AGSC-01-18 carries. The privacy notice and the retention statement it contains are
+ * therefore authored, in the Bundle root's `PRIVACY.md`, read exactly as
+ * `LICENSE-CONTENT` is; the operator line is derived from `site.author` and
+ * `bundle.operator`, which the configuration does carry.
+ *
+ * A Bundle with no `PRIVACY.md` gets a `/legal/` page WITHOUT a privacy section and
+ * a warning naming what is missing — never an invented notice, because a privacy
+ * notice that is not the publisher's own words is worse than none.
+ */
+function readPrivacyNotice(ports) {
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return null;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists('PRIVACY.md')) return null;
+    const text = String(fs.readFile('PRIVACY.md', 'utf8'));
+    return text.trim() === '' ? null : text;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * PRD-019's operator identification, from the configuration and nowhere else:
+ * `site.author` is the accountable person's name (AGSC-01-18) and `bundle.operator`
+ * the `human:<id>` every item's provenance already publishes (AGSC-01-25). `null`
+ * when the Bundle names neither, which is a warning, not an invention.
+ */
+function operatorLine(config) {
+  const author = config && config.site && typeof config.site.author === 'string' ? config.site.author.trim() : '';
+  const operator = config && config.bundle && typeof config.bundle.operator === 'string' ? config.bundle.operator.trim() : '';
+  if (author === '' && operator === '') return null;
+  if (author === '') return operator;
+  return operator === '' ? author : `${author} (${operator})`;
+}
+
+/**
+ * Everything the two legal-facing surfaces need from the PUBLISHER rather than from
+ * the content — RFC 9116's security contact and PRD-019's privacy notice, operator
+ * and retention statement — resolved and checked in ONE place, so that `lint` and
+ * `build` can never disagree about them.
+ *
+ * `lint` calls it to fail early; `build` calls it to decide what it may emit. Under
+ * `ci` the lint lane runs first and the build is told not to repeat the findings
+ * (`options.publication === false`), because one fault is counted once (AGSC-09-11).
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @param {object} ports `{fs, clock}`.
+ * @param {object} [options] `{instant, level, hasLegal, licenseContent, privacy, securityTxt}`.
+ * @returns {{findings:Array<object>, hasLegal:boolean, licenseContent:(string|null),
+ *   operator:(string|null), privacy:(string|null), security:{text:(string|null), findings:Array<object>}}}
+ */
+function publicationFindings(bundle, ports, options = {}) {
+  const config = (bundle && bundle.config) || {};
+  const base = String((config.site && config.site.base) || '').replace(/\/+$/u, '');
+  const level = options.level == null ? 2 : Number(options.level);
+  const clock = ports && ports.clock;
+  const instant = options.instant !== undefined ? options.instant
+    : clock && clock.iso !== undefined ? clock.iso()
+      : clock && typeof clock.now === 'function' ? ledgerModule.instantFromEpoch(clock.now())
+        : ledgerModule.instantFromEpoch(0);
+  const licenseContent = options.licenseContent === undefined ? readLicenseContent(ports) : options.licenseContent;
+  const privacy = options.privacy === undefined ? readPrivacyNotice(ports) : options.privacy;
+  const operator = operatorLine(config);
+  const hasLegal = options.hasLegal === undefined ? level >= 2 && licenseContent !== null : Boolean(options.hasLegal);
+  const security = securityTxt(base, instant, {
+    authored: options.securityTxt === undefined ? readSecurityTxt(ports) : options.securityTxt,
+    legal: hasLegal,
+  });
+  const findings = [...security.findings];
+  if (hasLegal && privacy === null) {
+    // §9.4 registers no code for "a required section of a published page has no
+    // input"; `AGSC-E406` ("expected body section missing", a warning) is the
+    // closest registered row and the missing registration is on the specification
+    // items list.
+    findings.push(finding('AGSC-E406',
+      'no PRIVACY.md in the Bundle root, so /legal/ carries the Content Use Terms without a privacy'
+      + ' notice or a retention statement (PRD-019). A writer never invents one',
+      { file: 'PRIVACY.md', severity: 'warn' }));
+  }
+  if (hasLegal && operator === null) {
+    findings.push(finding('AGSC-E406',
+      'neither site.author nor bundle.operator is configured, so /legal/ can identify no operator'
+      + ' of this node (PRD-019, AGSC-01-18, AGSC-01-25)',
+      { file: 'agsc.config.json', severity: 'warn' }));
+  }
+  return { findings, hasLegal, licenseContent, operator, privacy, security };
 }
 
 /**
@@ -421,10 +777,19 @@ function resolveRelative(baseDir, relative) {
  * produces. External targets (a scheme, a protocol-relative `//`), fragment-only
  * and query-only targets are not internal links and are not collected.
  *
+ * An absolute URL in one of the two text dialects is an INTERNAL link only when it
+ * is under this node's own base: since rc.5 `security.txt` carries a `Contact:`
+ * field, which is by definition somewhere else (RFC 9116 section 2.5.3 — "a web page
+ * with contact information"), and reading it as a route of this build would report
+ * every valid security contact as a dangling link. Without a `base` the function
+ * keeps its earlier behaviour, which is what its own unit test states.
+ *
  * @param {Map<string,string>} files
+ * @param {object} [options] `{base}` — this node's base (AGSC-01-19), no trailing slash.
  * @returns {Array<{from:string, href:string, route:(string|null)}>}
  */
-function internalLinks(files) {
+function internalLinks(files, options = {}) {
+  const base = typeof options.base === 'string' && options.base !== '' ? options.base.replace(/\/+$/u, '') : null;
   const out = [];
   const add = (from, href) => {
     const raw = String(href);
@@ -452,9 +817,12 @@ function internalLinks(files) {
       const absolute = /https?:\/\/[^\s]+/gu;
       let m = absolute.exec(text);
       while (m !== null) {
-        // The two text dialects carry ABSOLUTE URLs; the path is what must resolve.
-        const path = m[0].replace(/^https?:\/\/[^/]*/u, '');
-        add(route, path === '' ? '/' : path);
+        // The two text dialects carry ABSOLUTE URLs; the path of one under this
+        // node's own base is what must resolve. Another origin is somebody else's.
+        if (base === null || m[0] === base || m[0].startsWith(`${base}/`)) {
+          const path = m[0].replace(/^https?:\/\/[^/]*/u, '');
+          add(route, path === '' ? '/' : path);
+        }
         m = absolute.exec(text);
       }
     }
@@ -501,9 +869,6 @@ function paginate(route, entries, perPage = search.ITEMS_PER_SHARD) {
  * (WP-10-G, 2026-09-18).
  */
 const UNPRODUCED_ROUTES = Object.freeze([
-  ['/skills/, /skills/index.json, /skills/<cluster>/SKILL.md',
-    'the PUBLISHED skill packs of AGSC-07-19 are a different artefact from a Harness\'s'
-    + ' per-Procedure SKILL.md (spec/07 §7.4) and belong to the skills package (WP-12)'],
   ['/specs/, /specs/agentic-knowledge/, /specs/mcp/',
     'the published specification pages are the site repository\'s, not the engine\'s (AGSC-06-01)'],
   ['/about/, /changelog/',
@@ -516,6 +881,34 @@ const UNPRODUCED_ROUTES = Object.freeze([
     'OPTIONAL at 1.x; `knowledge/nquads.js#shard` produces them and no rule requires the route (AGSC-06-33)'],
   ['/<type-plural>/<slug>/<lang>/', 'no language variant exists in this Bundle (AGSC-01-13)'],
 ]);
+
+/**
+ * AGSC-07-19/07-20: the published skill packs of this Bundle, one per Cluster,
+ * plus the `index.json` that is also their lockfile.
+ *
+ * It is a named export so that `agsc skills` and `agsc build` produce the SAME
+ * bytes from the same call — a pack a reader downloads from `/skills/` and a pack
+ * an operator writes into `dist/skills/` must not be able to differ.
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @param {{generatedAt:string, specVersion:string, sha256?:Function}} options
+ * @param {object} [config] the resolved configuration; `bundle.config` by default.
+ * @returns {{files:Array<object>, findings:Array<object>, index:object}}
+ */
+function skillPacks(bundle, options, config) {
+  const resolved = config === undefined ? (bundle.config || {}) : config;
+  const site = resolved.site || {};
+  const base = String(site.base || '').replace(/\/+$/u, '');
+  return skills.packs(publishedItems(bundle.items, resolved.releases), {
+    base: `${base}/`,
+    generatedAt: String(options.generatedAt),
+    license: (resolved.bundle && resolved.bundle.license_prose) || TERMS,
+    sha256: options.sha256 === undefined
+      ? (bytes) => createHash('sha256').update(String(bytes), 'utf8').digest('hex')
+      : options.sha256,
+    specVersion: String(options.specVersion),
+  });
+}
 
 /**
  * Build a Bundle into a deterministic file map.
@@ -581,6 +974,15 @@ function build(bundle, ports, options = {}) {
   }).records;
   if (full) for (const file of chunks.files(chunkRecords, canonicalize).files) put(file.path, file.text);
 
+  // ------------------------------------------------------------ skill packs (AGSC-07-19)
+  // The PUBLISHED packs of spec/07 §7.4, one per Cluster, plus the index that is
+  // also the lockfile of AGSC-07-20. A Level-0 publisher emits none: AGSC-10-04
+  // puts the `skills` vector area at Level 2.
+  const packs = !full ? { files: [], findings: [], index: { packs: [] } }
+    : skillPacks(bundle, { generatedAt: instant, specVersion }, config);
+  findings.push(...packs.findings);
+  for (const file of packs.files) put(`/skills/${file.path}`, file.text);
+
   // ------------------------------------------------------------ boards (AGSC-10-13)
   const board = boardsModule.boards(full ? allItems : [], { base: `${base}/`, generatedAt: instant, gitLog: options.gitLog });
   if (board.index !== null) {
@@ -616,7 +1018,7 @@ function build(bundle, ports, options = {}) {
 
   // ------------------------------------------------------------ RDF views (D)
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
-  const graphView = {
+  const graphBase = {
     base: `${base}/`,
     lang: (config.i18n || {}).default,
     bundle: {
@@ -627,12 +1029,34 @@ function build(bundle, ports, options = {}) {
     attachmentBytes: options.attachmentBytes,
     sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
     ontologyTerms: options.ontologyTerms,
-    // AGSC-06-32: a JSON-LD view names `/ns/context.jsonld` as its `@context`
-    // ONLY at Level >= 2, where this build actually emits that file; a Level-0
-    // emission would otherwise point at a URL it does not serve (WP-10-G).
-    ...(full && graph !== null && typeof graph.context === 'function'
-      ? { contextUrl: discovery.href(base, '/ns/context.jsonld') }
-      : {}),
+  };
+  // AGSC-06-32 (NS-02): the context is generated ONCE per build and is then both
+  // the bytes of `/ns/context.jsonld` and the compaction table every JSON-LD view
+  // uses — so the file a node serves and the documents it serves can never
+  // disagree, which is exactly what the round-trip clause of AGSC-06-32 asks. The
+  // generated object was previously written to disk and never handed to the
+  // emitter, so `graph.jsonld` wrote every vocabulary IRI out in full and the
+  // round trip failed on a node's own output.
+  const contextObject = graph !== null && typeof graph.context === 'function'
+    ? graph.context(graphBase)
+    : null;
+  // AGSC-05-09 as amended at rc.5 (NS-03): `graph.jsonld` names a context at EVERY
+  // Level. A Level ≥ 2 writer serves a byte-identical copy at `/ns/context.jsonld`
+  // and MAY name that; a Level-0 or Level-1 writer, which AGSC-06-32 forbids to
+  // emit a context file, names the specification's persistent versioned URL, which
+  // "is a constant of this specification, resolvable by every reader at every
+  // Level". Before rc.5 the rule was read as permitting no `@context` below Level 2,
+  // and a conforming processor then silently discarded every compacted member.
+  const ontologyVersion = options.ontologyVersion;
+  let contextUrl;
+  if (contextObject !== null) {
+    if (full) contextUrl = discovery.href(base, '/ns/context.jsonld');
+    else if (ontologyVersion) contextUrl = jsonldView.persistentContextUrl(ontologyVersion);
+  }
+  const graphView = {
+    ...graphBase,
+    ...(contextObject === null ? {} : { context: contextObject }),
+    ...(contextUrl === undefined ? {} : { contextUrl }),
   };
   if (graph !== null) {
     const view = graphView;
@@ -641,12 +1065,17 @@ function build(bundle, ports, options = {}) {
     if (typeof graph.jsonld === 'function') put('/graph.jsonld', jsonBytes(graph.jsonld(items, view)));
     if (full && typeof graph.nquads === 'function') put('/graph.nq', textBytes(graph.nquads(items, view)));
     if (full && typeof graph.turtle === 'function') put('/graph.ttl', textBytes(graph.turtle(items, view)));
-    if (full && typeof graph.context === 'function') put('/ns/context.jsonld', jsonBytes(graph.context(view)));
+    if (full && contextObject !== null) put('/ns/context.jsonld', jsonBytes(contextObject));
   } else {
     skipped.push('/graph.jsonld, /graph.nq, /graph.ttl, /ns/context.jsonld (the RDF views were switched off)');
   }
-  if (full && graph !== null && typeof graph.context !== 'function') {
+  if (full && graph !== null && contextObject === null) {
     skipped.push('/ns/context.jsonld (no context generator was supplied; AGSC-06-32)');
+  }
+  if (!full && graph !== null && typeof graph.jsonld === 'function' && contextUrl === undefined) {
+    skipped.push('the `@context` of /graph.jsonld (no ontology version was supplied, so the'
+      + ' persistent versioned context URL of AGSC-05-09 cannot be named; a reader expanding'
+      + ' this document drops every member whose key is a term or a compact IRI)');
   }
 
   // ------------------------------------------------------------ per-item views
@@ -654,7 +1083,11 @@ function build(bundle, ports, options = {}) {
   // `/pages/<slug>.jsonld`; the second is the same JSON-LD the graph carries,
   // restricted to that one item (WP-10-G wired it, AGSC-06-01).
   if (full) {
-    for (const item of items) put(`/pages/${item.slug}.md`, pageMarkdown(item));
+    // AGSC-05-07: the published Markdown view is the lint-normalized SOURCE FILE, so
+    // the loaded item — the only record that still carries the frontmatter object in
+    // its authored key order — is looked up beside the flattened one.
+    const loadedBySlug = new Map((bundle.items || []).map((i) => [i.slug, i]));
+    for (const item of items) put(`/pages/${item.slug}.md`, pageMarkdown(item, loadedBySlug.get(item.slug)));
     if (graph !== null && typeof graph.jsonld === 'function') {
       for (const item of items) put(`/pages/${item.slug}.jsonld`, jsonBytes(graph.jsonld([item], graphView)));
     } else {
@@ -680,7 +1113,23 @@ function build(bundle, ports, options = {}) {
   }
   put('/robots.txt', robots(base, { legal: hasLegal }));
   put('/.well-known/tdmrep.json', jsonBytes(tdmrep(base)));
-  put('/.well-known/security.txt', securityTxt(base, instant, { legal: hasLegal }));
+
+  // RFC 9116 + PRD-019: everything the two legal-facing surfaces need from the
+  // publisher, resolved once. `options.publication === false` means another lane of
+  // THIS run has already reported these findings — `ci` runs the lint lane before
+  // the build, and one fault is counted once (AGSC-09-11) — so the build still
+  // refuses to emit an invalid file and simply does not repeat the reason.
+  const publication = publicationFindings(bundle, ports, {
+    hasLegal, instant, level, licenseContent, privacy: options.privacy, securityTxt: options.securityTxt,
+  });
+  const security = publication.security;
+  if (options.publication !== false) findings.push(...publication.findings);
+  if (security.text === null) {
+    skipped.push('/.well-known/security.txt (no valid RFC 9116 contact: see the findings against'
+      + ' .well-known/security.txt; an invalid published security contact is worse than none)');
+  } else {
+    put('/.well-known/security.txt', security.text);
+  }
 
   // ------------------------------------------------------------ discovery document
   const digests = {};
@@ -696,11 +1145,11 @@ function build(bundle, ports, options = {}) {
     // AGSC-11-16: the declaration is DERIVED from what the writer actually emits;
     // only the declaration-only surfaces come from configuration.
     routes: [...files.keys()],
-    surfaces: [
-      ...(files.has('/llms.txt') ? [{ surface: 'llms-txt', target: discovery.href(base, '/llms.txt') }] : []),
-      ...(files.has('/chunks.jsonl') ? [{ surface: 'chunks', target: discovery.href(base, '/chunks.jsonl') }] : []),
-      ...(Array.isArray(config.surfaces) ? config.surfaces : []),
-    ],
+    surfaces: declaredSurfaces({
+      base,
+      config,
+      emitted: [...files.keys(), ...(full && typeof renderer === 'function' ? ['/compose/'] : [])],
+    }),
   });
   findings.push(...discovery.check(wellknown, { level }));
   put(discovery.WELLKNOWN_PATH, jsonBytes(wellknown));
@@ -772,6 +1221,13 @@ function build(bundle, ports, options = {}) {
         render: (body) => render(body, { href: bodyHrefResolver(item, publishedByPath) }),
         canonical,
         jsonld,
+        // AGSC-09-16: "the `/compose/` page AND THE ITEM PAGES". The three scripts
+        // are the same shared files the `/compose/` route already serves — a
+        // reference, never a copy, so the 100 KB page budget of AGSC-06-21 pays for
+        // three `<script src>` elements and nothing more.
+        pageToolScripts: composePage.PAGE_TOOL_SCRIPTS,
+        // AGSC-11-14 + research/34 option 3: the plain "Propose an edit" anchor.
+        editUrl: contributeEditUrl(config, pathOf(item)),
         ...(diagramSource === null ? {} : { diagramSource }),
       }));
     }
@@ -798,11 +1254,32 @@ function build(bundle, ports, options = {}) {
     put('/now/index.html', html.nowPage(nowMd, pageOptions));
     put('/404.html', html.notFoundPage(pageOptions));
 
-    // AGSC-06-18: the Content Use Terms text, from `LICENSE-CONTENT` and nowhere else.
+    // AGSC-06-18: the Content Use Terms text, from `LICENSE-CONTENT` and nowhere
+    // else — and, since this package, PRD-019's other three obligations beside it:
+    // the privacy notice (authored, `PRIVACY.md`), the operator (configured) and the
+    // retention statement the authored notice carries. Each missing input omits its
+    // section and warns; none is ever invented.
     if (hasLegal) {
       put('/legal/index.html', html.legalPage({
-        licenseProse, rendered: render(textBytes(licenseContent)).html, terms: TERMS,
+        licenseProse,
+        operator: publication.operator,
+        privacy: publication.privacy === null ? null : render(textBytes(publication.privacy)).html,
+        rendered: render(textBytes(licenseContent)).html,
+        terms: TERMS,
       }, pageOptions));
+    }
+
+    // AGSC-06-01 `/skills/`: the human index of the packs emitted above. The packs
+    // themselves are Markdown and JSON, which is why this page is the only HTML the
+    // `/skills/**` route family carries.
+    if (packs.index.packs.length > 0) {
+      putIndex('/skills/', 'Skill packs',
+        'One pack per Cluster, each a single SKILL.md of text (AGSC-07-19).',
+        packs.index.packs.map((pack) => ({
+          description: pack.description,
+          href: `/skills/${pack.name}/SKILL.md`,
+          title: pack.name,
+        })));
     }
 
     // AGSC-06-01 `/compose/` + AGSC-07-01/07-13: the combiner in the browser. The
@@ -810,6 +1287,9 @@ function build(bundle, ports, options = {}) {
     // `script-src 'self'` admits no inline script.
     put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, pageOptions));
     put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ specVersion })));
+    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({
+      bundleId: (config.bundle || {}).id, specVersion,
+    })));
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
 
@@ -869,7 +1349,7 @@ function build(bundle, ports, options = {}) {
   // emits. This is the defect V9D-A6 found on `/legal/`, closed here as a check
   // rather than a habit: a link to nothing is a defect of THIS build, not of the
   // reader who follows it.
-  for (const link of internalLinks(ordered)) {
+  for (const link of internalLinks(ordered, { base })) {
     if (resolvesTo(ordered, link.route) !== null) continue;
     findings.push(finding('AGSC-E901',
       `${link.from} links ${link.href}, and this build emits no route for it (AGSC-06-01)`,
@@ -933,7 +1413,9 @@ function verify(bundle, ports, options = {}) {
 module.exports = {
   build, write, verify, routeOf, sitemap, robots, tdmrep, securityTxt,
   publishedItems, jsonBytes, textBytes, paginate, readAttachment, readDiagramSource,
+  declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
   budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
+  readSecurityTxt, readPrivacyNotice, securityFields, operatorLine, publicationFindings,
   baseDirOf, resolveRelative, bodyHrefResolver,
   BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,

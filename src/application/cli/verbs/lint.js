@@ -17,6 +17,7 @@ const slug = require('../../../knowledge/slug.js');
 const govLint = require('../../../governance/lint.js');
 const govFix = require('../../../governance/fix.js');
 const { checkAgents } = require('../../../governance/agents.js');
+const site = require('../../../distribution/site.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
 
@@ -77,6 +78,15 @@ function lane(ctx, bundle) {
   lanes.push(tracked === null
     ? 'governance (without the tracked-file check of AGSC-01-37: no ProcessRunner port)'
     : 'governance');
+
+  // RFC 9116 + PRD-019: the two legal-facing surfaces need a security contact, a
+  // privacy notice and an operator that only the publisher can supply. They are
+  // checked HERE as well as at the build, so that a publisher learns from `lint`
+  // — before anything is written — that the build will refuse to publish an
+  // invalid security contact. `distribution/ci.js` tells the build not to repeat
+  // them, so one fault is still counted once (AGSC-09-11).
+  findings.push(...site.publicationFindings(bundle, ctx.ports).findings);
+  lanes.push('publication');
 
   return { findings: validate.sortFindings(findings), lanes };
 }

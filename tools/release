@@ -1,0 +1,501 @@
+#!/usr/bin/env node
+'use strict';
+// tools/release — the release lane of `docs/PLAN.md` §7, as a script.
+//
+// A documented, DRY-RUNNABLE path from a green tree to a published package. It
+// NEVER publishes: `npm publish` appears nowhere in this file, the tool's default
+// mode is a dry run, and even `--apply` only rewrites two version strings and one
+// changelog heading in the working tree. Publishing is done by the release
+// workflow, on a tag the OWNER pushes, over npm trusted publishing (OIDC), and by
+// nothing else.
+//
+//   tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
+//
+// Exit 0 pass, 1 a check failed, 2 usage. Deterministic: no clock, no network.
+//
+// WHAT IT CHECKS, IN ORDER
+//   1. VERSION IN ONE PLACE. `package.json#version` is the one version of this
+//      distribution. `packages/agsc-cli` is an alias whose own `version` and whose
+//      `dependencies["agentic-system-core"]` must equal it exactly (never a range:
+//      an alias that floats is an alias that can resolve to a different engine).
+//      `--version <x.y.z>` checks the proposed version against semver and against
+//      the current one (it must be strictly greater); `--apply` writes it into both
+//      files and adds the changelog heading.
+//   2. THE CHANGELOG SECTION. `CHANGELOG.md` must carry `## [Unreleased]` with
+//      content under it, and the release must have — or, under `--apply`, gain — a
+//      `## [<version>] - <date>` heading. The date is taken from `SOURCE_DATE_EPOCH`
+//      and never from a wall clock (AGSC-04-09, AGSC-04-11), so two runs of this
+//      script on the same tree produce the same bytes.
+//   3. THE `npm pack` CONTENTS. Computed from `package.json#files`, WITHOUT running
+//      npm: every path that would ship is checked against three prohibitions — it is
+//      not under a directory this repository's own `.gitignore` excludes (which is
+//      where `GABBE/`, the governance kit, is declared), it is not a shipped file
+//      that NAMES such a directory, and it is not test-fixture bloat (nothing under
+//      `tests/` but `tests/vectors/`, which AGSC-09-90 requires a distribution to
+//      ship so a port can run the vector set).
+//
+//      The list of excluded directories is READ FROM `.gitignore` rather than
+//      written here, so that the repository states once what is not part of it and
+//      this check cannot drift from that statement — and so that no private path is
+//      spelled out in a file of a public repository.
+//   4. THE PROVENANCE STEP. `.github/workflows/release.yml` must exist and must
+//      declare `id-token: write` and `attestations: write`, must call
+//      `actions/attest-build-provenance`, and must NOT carry an `NPM_TOKEN` secret:
+//      `docs/PLAN.md` §7 says the release lane holds no secret and publishes over
+//      OIDC trusted publishing.
+//   5. THE OWNER'S CHECKLIST. Printed last, as the exact commands to run in order.
+//      Every git command in it is the OWNER's; this tool runs none.
+//
+// This tool is NOT one of the nine command contracts of AGSC-09-90 — it validates
+// no normative artefact — so it is deliberately named `release` and not
+// `validate-*`, and the `for t in tools/validate-*` gate does not pick it up. It
+// speaks the same AGSC-09-11 envelope so that one reader reads every tool.
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const ALIAS_DIR = path.join('packages', 'agsc-cli');
+const HELP = `tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
+
+  The release lane of docs/PLAN.md §7, as a check. Nothing is ever published by
+  this script: its default mode is a dry run and --apply writes only the version
+  strings and the changelog heading.
+
+  --version <x.y.z>  the release being prepared (semver, strictly greater than the
+                     current package.json version)
+  --apply            write the version bump and the changelog heading (no git)
+  --json             emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet            emit nothing; the exit code is the result
+  --help             this text
+
+  Exit 0 pass, 1 a check failed, 2 usage.
+`;
+
+/**
+ * Directories that are tooling or build output rather than content. A shipped file
+ * MAY name one of these (`node_modules/` appears in installation instructions); the
+ * others read from `.gitignore` are the repository's own private and governance
+ * directories, and a shipped file must not name one.
+ */
+const TOOLING_IGNORES = Object.freeze(['.idea/', '.pytest_cache/', '.tox/', '.venv/',
+  '.vscode/', '__pycache__/', 'build/', 'coverage/', 'dist/', 'env/', 'node_modules/',
+  'venv/']);
+
+/**
+ * The directories this repository excludes from itself, read from `.gitignore`: a
+ * line that names a directory (ends in `/`), is not a negation and carries no glob.
+ * Nothing under one of them may ship, whatever `package.json#files` says.
+ */
+function neverShipped(root) {
+  let text = '';
+  try { text = fs.readFileSync(path.join(root, '.gitignore'), 'utf8'); } catch { return ['node_modules/']; }
+  const out = new Set(['node_modules/']);
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (line === '' || line.startsWith('#') || line.startsWith('!')) continue;
+    if (!line.endsWith('/') || /[*?\[\]]/u.test(line)) continue;
+    out.add(line.replace(/^\/+/u, ''));
+  }
+  return [...out].sort(compareCodePoint);
+}
+
+/** The one directory under `tests/` a distribution ships (AGSC-09-90, AGSC-09-04). */
+const SHIPPED_TEST_DIR = 'tests/vectors/';
+
+const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$/u;
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, line, message, severity = 'error') {
+  return { code, col: 1, file, line, message, severity };
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'release',
+    version,
+  };
+}
+
+function specVersion(root) {
+  try {
+    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
+      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+  } catch { return 'unknown'; }
+}
+
+function readJson(at) {
+  try { return JSON.parse(fs.readFileSync(at, 'utf8')); } catch { return null; }
+}
+
+/**
+ * AGSC-04-09: the date comes from `SOURCE_DATE_EPOCH`, never from a wall clock.
+ *
+ * The conversion is done by arithmetic rather than by the platform's date object,
+ * for the same reason `tests/tools/standalone.test.js` forbids one in a tool: a
+ * tool that can construct a date can read the clock, and the ban is checkable by
+ * reading the source. This is the civil-from-days algorithm, exact for every day
+ * the Gregorian calendar covers.
+ */
+function releaseDate(env) {
+  const raw = env.SOURCE_DATE_EPOCH;
+  if (raw === undefined || !/^[0-9]+$/u.test(String(raw))) return null;
+  const days = Math.floor(Number(raw) / 86400) + 719468;
+  const era = Math.floor(days / 146097);
+  const doe = days - era * 146097;
+  const yoe = Math.floor((doe - Math.floor(doe / 1460) + Math.floor(doe / 36524)
+    - Math.floor(doe / 146096)) / 365);
+  const doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100));
+  const mp = Math.floor((5 * doy + 2) / 153);
+  const day = doy - Math.floor((153 * mp + 2) / 5) + 1;
+  const month = mp < 10 ? mp + 3 : mp - 9;
+  const year = yoe + era * 400 + (month <= 2 ? 1 : 0);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+/** `a` is strictly greater than `b`, by semver precedence over the three numbers. */
+function isGreater(a, b) {
+  const parse = (v) => String(v).split('-')[0].split('.').map(Number);
+  const [am, an, ap] = parse(a);
+  const [bm, bn, bp] = parse(b);
+  if (am !== bm) return am > bm;
+  if (an !== bn) return an > bn;
+  if (ap !== bp) return ap > bp;
+  // Same numbers: a release is greater than its own pre-release, and nothing else.
+  return String(b).includes('-') && !String(a).includes('-');
+}
+
+// --------------------------------------------------------------------------
+// 3. The `npm pack` contents, computed rather than run.
+// --------------------------------------------------------------------------
+
+/** Every path under `dir`, repository-relative, in code-point order. */
+function walk(root, dir) {
+  const out = [];
+  const at = path.join(root, dir);
+  if (!fs.existsSync(at)) return out;
+  if (!fs.statSync(at).isDirectory()) return [dir];
+  for (const entry of fs.readdirSync(at, { withFileTypes: true })) {
+    const rel = `${dir.replace(/\/+$/u, '')}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...walk(root, rel));
+    else out.push(rel);
+  }
+  return out.sort(compareCodePoint);
+}
+
+/**
+ * The file list `npm pack` would produce from `package.json#files`, plus the
+ * files npm always includes. It is computed from the manifest so that the check
+ * runs offline and in a sandbox; `npm pack --dry-run` is the owner's own
+ * confirmation and is step 4 of the checklist.
+ */
+function packList(root, manifest) {
+  const always = ['package.json', 'README.md', 'LICENSE'];
+  const declared = Array.isArray(manifest.files) ? manifest.files : [];
+  const out = new Set();
+  for (const entry of [...always, ...declared]) {
+    for (const file of walk(root, entry)) out.add(file.replace(/^\/+/u, ''));
+  }
+  return [...out].sort(compareCodePoint);
+}
+
+/** Every excluded directory the normative text of `spec/` itself names. */
+function specMentions(root) {
+  const out = new Set();
+  const dir = path.join(root, 'spec');
+  let text = '';
+  try {
+    for (const name of fs.readdirSync(dir).sort()) text += fs.readFileSync(path.join(dir, name), 'utf8');
+  } catch { return out; }
+  for (const excluded of neverShipped(root)) if (text.includes(excluded)) out.add(excluded);
+  return out;
+}
+
+/** The three prohibitions of the contents check. */
+function packFindings(root, files) {
+  const findings = [];
+  const excluded = neverShipped(root);
+  // A directory the SPECIFICATION itself names is a legitimate thing for a shipped
+  // file to mention: AGSC-01-28's steer registry writes one of these paths as a
+  // target, and the engine's own registry has to write it too. The normative text is
+  // the authority on which paths are legitimate, so it is read rather than guessed.
+  const named = specMentions(root);
+  const privateDirs = excluded
+    .filter((d) => !TOOLING_IGNORES.includes(d) && !named.has(d));
+  for (const file of files) {
+    for (const forbidden of excluded) {
+      if (file.startsWith(forbidden)) {
+        findings.push(finding('AGSC-E405', file, 1,
+          `${file} would ship and must not: .gitignore excludes ${forbidden} from this`
+          + ' repository, so it is never part of the package'));
+      }
+    }
+    if (file.startsWith('tests/') && !file.startsWith(SHIPPED_TEST_DIR)) {
+      findings.push(finding('AGSC-E904', file, 1,
+        `${file} would ship: the only test path a distribution ships is ${SHIPPED_TEST_DIR}`
+        + ' (AGSC-09-90), and everything else under tests/ is bloat in a published tarball'));
+    }
+    // A shipped file that NAMES a private path leaks it even when the path itself
+    // is not shipped (project rule 12; BOOT rule: never cite either from a public file).
+    if (!file.endsWith('.md') && !file.endsWith('.js') && !file.endsWith('.json')) continue;
+    let text = '';
+    try { text = fs.readFileSync(path.join(root, file), 'utf8'); } catch { continue; }
+    for (const secret of privateDirs) {
+      if (!text.includes(secret)) continue;
+      findings.push(finding('AGSC-E405', file, 1,
+        `${file} would ship and names ${secret}, a directory this repository excludes from`
+        + ' itself; a published file must not depend on one', 'warn'));
+    }
+  }
+  return findings;
+}
+
+// --------------------------------------------------------------------------
+// 4. The provenance step.
+// --------------------------------------------------------------------------
+const WORKFLOW = '.github/workflows/release.yml';
+
+function workflowFindings(root) {
+  const at = path.join(root, WORKFLOW);
+  if (!fs.existsSync(at)) {
+    return [finding('AGSC-E901', WORKFLOW, 1,
+      `${WORKFLOW} is absent; docs/PLAN.md §7 makes it the release lane`)];
+  }
+  // Comment lines are stripped before the prohibitions are checked: a workflow that
+  // EXPLAINS why it holds no NPM_TOKEN is not a workflow that reads one.
+  const text = fs.readFileSync(at, 'utf8').split('\n')
+    .filter((line) => !/^\s*#/u.test(line)).join('\n');
+  const findings = [];
+  const need = [['id-token: write', 'OIDC trusted publishing needs it'],
+    ['attestations: write', 'the attestation step needs it'],
+    ['actions/attest-build-provenance', 'docs/PLAN.md §7 requires provenance at release']];
+  for (const [needle, why] of need) {
+    if (!fs.readFileSync(at, 'utf8').includes(needle)) {
+      findings.push(finding('AGSC-E202', WORKFLOW, 1, `${WORKFLOW} does not carry "${needle}": ${why}`));
+    }
+  }
+  if (/NPM_TOKEN|NODE_AUTH_TOKEN/u.test(text)) {
+    findings.push(finding('AGSC-E403', WORKFLOW, 1,
+      `${WORKFLOW} names NPM_TOKEN; docs/PLAN.md §7 says the release lane holds no secret`
+      + ' and publishes over OIDC trusted publishing'));
+  }
+  if (/npm publish/u.test(text) && !/--provenance/u.test(text)) {
+    findings.push(finding('AGSC-E202', WORKFLOW, 1,
+      `${WORKFLOW} publishes without --provenance`));
+  }
+  return findings;
+}
+
+// --------------------------------------------------------------------------
+// 2. The changelog.
+// --------------------------------------------------------------------------
+function changelogFindings(text, version) {
+  const findings = [];
+  if (!/^## \[Unreleased\]/mu.test(text)) {
+    findings.push(finding('AGSC-E202', 'CHANGELOG.md', 1,
+      'CHANGELOG.md carries no "## [Unreleased]" heading'));
+    return findings;
+  }
+  const body = text.split(/^## \[Unreleased\]/mu)[1].split(/^## /mu)[0];
+  if (body.trim() === '') {
+    findings.push(finding('AGSC-E202', 'CHANGELOG.md', 1,
+      'the [Unreleased] section is empty; a release with no changelog entry is not a release'));
+  }
+  if (version !== null && !new RegExp(`^## \\[${version.replace(/\./gu, '\\.')}\\]`, 'mu').test(text)) {
+    findings.push(finding('AGSC-E202', 'CHANGELOG.md', 1,
+      `CHANGELOG.md carries no "## [${version}]" heading; run with --apply to add it`, 'warn'));
+  }
+  return findings;
+}
+
+/** The changelog with the release heading inserted under [Unreleased]. */
+function applyChangelog(text, version, date) {
+  const heading = `## [${version}] - ${date}`;
+  if (text.includes(`\n${heading}`)) return text;
+  return text.replace(/^## \[Unreleased\]\n/mu, `## [Unreleased]\n\n${heading}\n`);
+}
+
+// --------------------------------------------------------------------------
+// 5. The owner's checklist.
+// --------------------------------------------------------------------------
+function checklist(version) {
+  const v = version === null ? '<x.y.z>' : version;
+  return [
+    'The owner runs these, in this order. This script runs none of them.',
+    '',
+    ` 1. npm ci                                          # the lockfile, exactly`,
+    ` 2. npm test                                        # 0 fail, twice, identical`,
+    ` 3. npm run test:coverage                           # src/ at or above 99.9 %`,
+    ` 4. npm audit --audit-level=low                     # 0 vulnerabilities`,
+    ` 5. node tools/count-artifacts --json               # ok, findings []`,
+    ` 6. for t in tools/validate-*; do node $t --json || echo "REPORT: $t"; done`,
+    ` 7. AGSC_AUDIT=1 node --test tests/arch/*.test.js   # the boundary lane`,
+    ` 8. node tools/release --version ${v}            # this script, dry run`,
+    ` 9. node tools/release --version ${v} --apply    # writes the two versions`,
+    `10. npm pack --dry-run                              # confirm the contents`,
+    `11. git add -A && git commit -m "release: ${v}"`,
+    `12. git tag -s v${v} -m "AgenticSystemCore ${v}"`,
+    `13. git push origin main && git push origin v${v}`,
+    `    # the tag starts ${WORKFLOW}, which publishes both packages over npm`,
+    `    # trusted publishing (OIDC, no secret) and attaches build provenance.`,
+    `14. npm view agentic-system-core@${v}               # confirm, after the run`,
+    `15. Capture the release page and the npm page in the Wayback Machine.`,
+  ];
+}
+
+// --------------------------------------------------------------------------
+
+function run(argv, io = {}) {
+  const out = io.out || ((text) => process.stdout.write(text));
+  const err = io.err || ((text) => process.stderr.write(text));
+  const env = io.env || process.env;
+  const flags = new Set(argv.filter((a) => a.startsWith('--') && !a.includes('=')));
+  if (flags.has('--help')) { out(HELP); return 0; }
+
+  const positional = [];
+  let version = null;
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--version') { version = argv[i + 1]; i += 1; continue; }
+    if (arg.startsWith('--version=')) { version = arg.slice('--version='.length); continue; }
+    if (arg.startsWith('--')) continue;
+    positional.push(arg);
+  }
+  if (positional.length > 1) { err(HELP); return 2; }
+  if (version !== null && !SEMVER.test(String(version))) {
+    err(`release: "${version}" is not a semantic version\n`);
+    return 2;
+  }
+  const root = positional.length === 1 ? path.resolve(positional[0]) : DEFAULT_ROOT;
+
+  const manifest = readJson(path.join(root, 'package.json'));
+  if (manifest === null) { err(`release: ${root}/package.json is unreadable\n`); return 2; }
+  const alias = readJson(path.join(root, ALIAS_DIR, 'package.json'));
+  const findings = [];
+
+  // 1. one version, in one place.
+  if (alias === null) {
+    findings.push(finding('AGSC-E901', `${ALIAS_DIR}/package.json`, 1,
+      'the alias package is absent; docs/PLAN.md §7 publishes it beside the engine'));
+  } else {
+    if (alias.version !== manifest.version) {
+      findings.push(finding('AGSC-E202', `${ALIAS_DIR}/package.json`, 1,
+        `the alias is at ${alias.version} and the engine at ${manifest.version}; one version, in one place`));
+    }
+    const pinned = (alias.dependencies || {})['agentic-system-core'];
+    if (pinned !== manifest.version) {
+      findings.push(finding('AGSC-E202', `${ALIAS_DIR}/package.json`, 1,
+        `the alias depends on "${pinned}" and the engine is ${manifest.version}; an alias`
+        + ' pins the exact version it aliases, never a range'));
+    }
+  }
+  if (version !== null && !isGreater(version, manifest.version)) {
+    findings.push(finding('AGSC-E202', 'package.json', 1,
+      `${version} is not greater than the current version ${manifest.version}`));
+  }
+
+  // 2. the changelog.
+  let changelog = '';
+  try { changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8'); } catch {
+    findings.push(finding('AGSC-E901', 'CHANGELOG.md', 1, 'CHANGELOG.md is absent'));
+  }
+  if (changelog !== '') findings.push(...changelogFindings(changelog, version));
+
+  // 3. the package contents.
+  const files = packList(root, manifest);
+  findings.push(...packFindings(root, files));
+
+  // 4. the provenance step.
+  findings.push(...workflowFindings(root));
+
+  // --apply: the two version strings and the changelog heading, and nothing else.
+  const written = [];
+  if (flags.has('--apply')) {
+    const date = releaseDate(env);
+    if (version === null) {
+      findings.push(finding('AGSC-E003', 'package.json', 1, '--apply needs --version <x.y.z>'));
+    } else if (date === null) {
+      findings.push(finding('AGSC-E603', 'CHANGELOG.md', 1,
+        'SOURCE_DATE_EPOCH is unset or malformed, and the changelog date is never read from a'
+        + ' wall clock (AGSC-04-09, AGSC-04-11)'));
+    } else if (findings.every((f) => f.severity === 'warn')) {
+      const bumped = { ...manifest, version };
+      fs.writeFileSync(path.join(root, 'package.json'), `${JSON.stringify(bumped, null, 4)}\n`);
+      written.push('package.json');
+      if (alias !== null) {
+        const aliasBumped = {
+          ...alias, dependencies: { ...alias.dependencies, 'agentic-system-core': version }, version,
+        };
+        fs.writeFileSync(path.join(root, ALIAS_DIR, 'package.json'), `${JSON.stringify(aliasBumped, null, 4)}\n`);
+        written.push(`${ALIAS_DIR}/package.json`);
+      }
+      const updated = applyChangelog(changelog, version, date);
+      if (updated !== changelog) {
+        fs.writeFileSync(path.join(root, 'CHANGELOG.md'), updated);
+        written.push('CHANGELOG.md');
+      }
+    }
+  }
+
+  const envelope = envelopeOf(findings, specVersion(root), manifest.version);
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) err(`${f.severity}: ${f.file}:${f.line} ${f.code} ${f.message}\n`);
+    out(`release: ${files.length} files would ship, ${envelope.counts.error} error,`
+      + ` ${envelope.counts.warn} warn; mode: ${flags.has('--apply') ? 'APPLY' : 'dry run'}`
+      + `${written.length === 0 ? '' : ` (wrote ${written.join(', ')})`}\n`);
+    out(`release: nothing was published, and this script never publishes.\n\n`);
+    for (const line of checklist(version)) out(`${line}\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = {
+  ALIAS_DIR, HELP, SHIPPED_TEST_DIR, TOOLING_IGNORES, WORKFLOW,
+  applyChangelog, canonicalize, changelogFindings, checklist, isGreater, neverShipped,
+  packFindings, packList, releaseDate, run, specMentions, walk, workflowFindings,
+};

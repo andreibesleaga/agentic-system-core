@@ -11,7 +11,7 @@
 //
 // Pure function of its input; `site.js` writes the bytes. Vectors disc-0006, disc-0007.
 
-const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
+const { commentSafe, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = require('../knowledge/chunks.js');
 
 /** AGSC-01-18: the default of `bundle.license_prose`. */
@@ -48,11 +48,11 @@ function provenance({ base, license, terms, specVersion, generatedAt }) {
   // `pattern`, for the Bundle that never passed validation.
   return [
     '<!-- agsc:provenance',
-    `bundle: ${singleLine(base)}`,
-    `license: ${singleLine(license)}`,
-    `terms: ${singleLine(terms)}`,
-    `spec_version: ${singleLine(specVersion)}`,
-    `generated_at: ${singleLine(generatedAt)}`,
+    `bundle: ${commentSafe(singleLine(base))}`,
+    `license: ${commentSafe(singleLine(license))}`,
+    `terms: ${commentSafe(singleLine(terms))}`,
+    `spec_version: ${commentSafe(singleLine(specVersion))}`,
+    `generated_at: ${commentSafe(singleLine(generatedAt))}`,
     '-->',
   ].join('\n');
 }

@@ -1,0 +1,2 @@
+Contact: https://example.org/security-contact
+Preferred-Languages: en

@@ -1,0 +1,629 @@
+#!/usr/bin/env node
+'use strict';
+// tools/gen-ns — the namespace generator of AGSC-09-90 and PRD-054: "deterministic
+// `context.jsonld` + `agsc.rdf` + `/ns/` index from `ontology/agsc.ttl`, sorted per
+// AGSC-05-10 and round-tripped against the Turtle".
+//
+// INDEPENDENT BY CONSTRUCTION: no import from `src/` (AGSC-09-90). It reads the
+// vocabulary with `n3` and re-reads its own RDF/XML with `fast-xml-parser` — the two
+// libraries the engine pins for those formats — and derives every term definition
+// from `ontology/agsc.ttl` and from the two machine-readable tables the rules carry
+// (the Link-key table of §03 and the frontmatter table of AGSC-05-26), never from
+// the engine. A context the engine happens to emit but AGSC-06-32 does not admit is
+// exactly the drift this tool exists to catch.
+//
+//   gen-ns [--json] [--quiet] [--help] [--out <dir>] [--check <dir>] [<root>]
+//
+// With neither --out nor --check the tool derives the three files and reports what
+// it would write. --out writes them (plus a copy of `agsc.ttl`, the `text/turtle`
+// branch of AGSC-06-06). --check compares an existing `/ns/` directory: first
+// against the obligations of AGSC-06-32, which are normative, then byte for byte
+// against this derivation, which is not — a byte difference is reported so that a
+// reviewer sees it, an obligation failure is the error.
+//
+// Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock, no network, sorted output,
+// LF, findings ordered per AGSC-09-10.
+//
+// Findings:
+//   AGSC-E201  the derivation cannot be completed, or `/ns/context.jsonld` is not a
+//              single `@context` object
+//   AGSC-E202  an obligation of AGSC-06-32 the on-disk context does not meet: a
+//              missing `asc:` term definition, a missing prefix, an object property
+//              without `"@type": "@id"`, a datatype property without its range, a
+//              term mapped to null, `@version`/`@protected` absent
+//   AGSC-E601  the on-disk context is not JCS-canonical with one trailing LF
+//              (AGSC-04-06, AGSC-06-32 "sorted per AGSC-04-05")
+//   AGSC-E602  the derived bytes and the bytes on disk differ (AGSC-04-02)
+//   AGSC-E605  the generated RDF/XML does not round-trip to the Turtle's triples
+//   AGSC-E901  an input or a checked file is missing
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const HELP = `gen-ns [--json] [--quiet] [--help] [--out <dir>] [--check <dir>] [<root>]
+
+  Derives /ns/context.jsonld, /ns/agsc.rdf and the /ns/ HTML index from
+  ontology/agsc.ttl (AGSC-06-32, AGSC-06-06, PRD-054) and round-trips the RDF/XML
+  against the Turtle.
+
+  --out <dir>    write the derived files into <dir>
+  --check <dir>  check an existing /ns/ directory against AGSC-06-32 and the bytes
+  --json         emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet        emit nothing; the exit code is the result
+  --help         this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+const NS = 'https://w3id.org/agentic-system-core/ns#';
+const ONTOLOGY_IRI = 'https://w3id.org/agentic-system-core/ns';
+const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
+const OWL = 'http://www.w3.org/2002/07/owl#';
+const XSD = 'http://www.w3.org/2001/XMLSchema#';
+/** AGSC-06-32: the prefixes the context defines beside `asc`. */
+const PREFIXES = Object.freeze({
+  asc: NS,
+  dcterms: 'http://purl.org/dc/terms/',
+  prov: 'http://www.w3.org/ns/prov#',
+  rdfs: RDFS,
+  schema: 'https://schema.org/',
+  skos: 'http://www.w3.org/2004/02/skos/core#',
+  xsd: XSD,
+});
+/**
+ * The external properties a rule of §05, §06 or §11 emits, each with the rule that
+ * names it. Object properties take `"@type": "@id"`; a dated literal takes its
+ * datatype; a plain literal takes none (AGSC-06-32).
+ */
+const EXTERNAL = Object.freeze([
+  ['rdfs:seeAlso', '@id', 'AGSC-06-32'],
+  ['skos:prefLabel', null, 'AGSC-05-17'],
+  ['skos:altLabel', null, 'AGSC-05-17'],
+  ['skos:definition', null, 'AGSC-05-27'],
+  ['skos:inScheme', '@id', 'AGSC-05-17'],
+  ['skos:member', '@id', 'AGSC-05-18'],
+  ['skos:broader', '@id', 'AGSC-05-20'],
+  ['skos:narrower', '@id', 'AGSC-05-20'],
+  ['skos:related', '@id', 'AGSC-05-16'],
+  ['dcterms:requires', '@id', 'AGSC-05-16'],
+  ['dcterms:isRequiredBy', '@id', 'AGSC-05-16'],
+  ['dcterms:replaces', '@id', 'AGSC-05-16'],
+  ['dcterms:isReplacedBy', '@id', 'AGSC-05-16'],
+  ['prov:wasDerivedFrom', '@id', 'AGSC-05-16'],
+  ['dcterms:created', `${XSD}dateTime`, 'AGSC-05-26'],
+  ['dcterms:modified', `${XSD}dateTime`, 'AGSC-05-26'],
+  ['schema:license', null, 'AGSC-05-26'],
+  ['schema:usageInfo', null, 'AGSC-06-18'],
+  ['dcterms:source', null, 'AGSC-05-14'],
+  ['dcterms:title', null, 'AGSC-05-14'],
+  ['dcterms:creator', null, 'AGSC-05-14'],
+  ['dcterms:date', null, 'AGSC-05-14'],
+  ['dcterms:format', null, 'AGSC-05-29'],
+  ['dcterms:license', null, 'AGSC-05-29'],
+]);
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785): NFC member names, UTF-16 order — AGSC-04-05, AGSC-04-06.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return Number.isInteger(value) ? String(value) : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, message, severity = 'error', line = 1) {
+  return { code, col: 1, file, line, message, severity };
+}
+
+const xmlEscape = (s) => s.replace(/&/gu, '&amp;').replace(/</gu, '&lt;')
+  .replace(/>/gu, '&gt;').replace(/"/gu, '&quot;');
+const htmlEscape = xmlEscape;
+
+/** The short term name for an external property, prefixed only when it collides. */
+function externalTermNames(list) {
+  const locals = new Map();
+  for (const [curie] of list) {
+    const local = curie.split(':')[1];
+    locals.set(local, (locals.get(local) || 0) + 1);
+  }
+  const names = new Map();
+  for (const [curie] of list) {
+    const local = curie.split(':')[1];
+    names.set(curie, locals.get(local) > 1 ? curie : local);
+  }
+  return names;
+}
+
+/**
+ * Read the vocabulary. Returns classes, object properties, datatype properties and
+ * the raw triples, all sorted by IRI code point (AGSC-05-10).
+ */
+function readOntology(turtle) {
+  const { Parser } = require('n3');
+  const quads = new Parser({ format: 'text/turtle' }).parse(turtle);
+  const types = new Map();
+  const ranges = new Map();
+  const labels = new Map();
+  const comments = new Map();
+  for (const quad of quads) {
+    const s = quad.subject.value;
+    const p = quad.predicate.value;
+    if (p === `${RDF}type`) {
+      if (!types.has(s)) types.set(s, new Set());
+      types.get(s).add(quad.object.value);
+    } else if (p === `${RDFS}range`) ranges.set(s, quad.object.value);
+    else if (p === `${RDFS}label`) labels.set(s, quad.object.value);
+    else if (p === `${RDFS}comment`) comments.set(s, quad.object.value);
+  }
+  const of = (type) => [...types.keys()]
+    .filter((s) => types.get(s).has(type) && s.startsWith(NS))
+    .sort(compareCodePoint);
+  return {
+    classes: of(`${OWL}Class`),
+    comments,
+    datatypeProperties: of(`${OWL}DatatypeProperty`),
+    labels,
+    objectProperties: of(`${OWL}ObjectProperty`),
+    quads,
+    ranges,
+  };
+}
+
+/** AGSC-06-32: the JSON-LD context, derived from the vocabulary and the rules. */
+function buildContext(vocabulary) {
+  const context = { '@protected': true, '@version': 1.1 };
+  for (const [prefix, iri] of Object.entries(PREFIXES)) context[prefix] = iri;
+  const names = externalTermNames(EXTERNAL);
+  for (const [curie, type] of EXTERNAL) {
+    const definition = { '@id': curie };
+    if (type) definition['@type'] = type;
+    context[names.get(curie)] = definition;
+  }
+  const curieOf = (iri) => `asc:${iri.slice(NS.length)}`;
+  for (const iri of vocabulary.classes) {
+    context[curieOf(iri)] = { '@id': curieOf(iri) };
+  }
+  for (const iri of vocabulary.objectProperties) {
+    context[curieOf(iri)] = { '@id': curieOf(iri), '@type': '@id' };
+  }
+  for (const iri of vocabulary.datatypeProperties) {
+    const definition = { '@id': curieOf(iri) };
+    const range = vocabulary.ranges.get(iri);
+    if (range) definition['@type'] = range;
+    context[curieOf(iri)] = definition;
+  }
+  return { '@context': context };
+}
+
+/** A deterministic, blank-node-free RDF/XML serialization of the vocabulary. */
+function buildRdfXml(vocabulary) {
+  const bySubject = new Map();
+  for (const quad of vocabulary.quads) {
+    const s = quad.subject.value;
+    if (!bySubject.has(s)) bySubject.set(s, []);
+    bySubject.get(s).push(quad);
+  }
+  const prefixOf = (iri) => {
+    for (const [prefix, base] of Object.entries(PREFIXES)) {
+      if (iri.startsWith(base) && /^[A-Za-z_][\w.-]*$/u.test(iri.slice(base.length))) {
+        return [prefix, iri.slice(base.length)];
+      }
+    }
+    for (const [prefix, base] of [['rdf', RDF], ['owl', OWL]]) {
+      if (iri.startsWith(base)) return [prefix, iri.slice(base.length)];
+    }
+    return null;
+  };
+  const lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<rdf:RDF'];
+  const declared = { ...PREFIXES, owl: OWL, rdf: RDF };
+  for (const prefix of Object.keys(declared).sort()) {
+    lines.push(`    xmlns:${prefix}="${xmlEscape(declared[prefix])}"`);
+  }
+  lines[lines.length - 1] += '>';
+  for (const subject of [...bySubject.keys()].sort(compareCodePoint)) {
+    lines.push(`  <rdf:Description rdf:about="${xmlEscape(subject)}">`);
+    const quads = bySubject.get(subject).slice().sort((a, b) => compareCodePoint(a.predicate.value, b.predicate.value)
+      || compareCodePoint(a.object.value, b.object.value));
+    for (const quad of quads) {
+      const name = prefixOf(quad.predicate.value);
+      if (!name) throw new Error(`no prefix for predicate <${quad.predicate.value}>`);
+      const element = `${name[0]}:${name[1]}`;
+      if (quad.object.termType === 'NamedNode') {
+        lines.push(`    <${element} rdf:resource="${xmlEscape(quad.object.value)}"/>`);
+      } else {
+        const attributes = [];
+        if (quad.object.language) attributes.push(` xml:lang="${xmlEscape(quad.object.language)}"`);
+        else if (quad.object.datatype && quad.object.datatype.value !== `${XSD}string`) {
+          attributes.push(` rdf:datatype="${xmlEscape(quad.object.datatype.value)}"`);
+        }
+        lines.push(`    <${element}${attributes.join('')}>${xmlEscape(quad.object.value)}</${element}>`);
+      }
+    }
+    lines.push('  </rdf:Description>');
+  }
+  lines.push('</rdf:RDF>', '');
+  return lines.join('\n');
+}
+
+/** Re-read the generated RDF/XML and recover its triples (the round trip). */
+function readRdfXml(xml) {
+  const { XMLParser } = require('fast-xml-parser');
+  const parser = new XMLParser({
+    attributeNamePrefix: '@', ignoreAttributes: false, parseTagValue: false, trimValues: false,
+  });
+  const document = parser.parse(xml);
+  const root = document['rdf:RDF'];
+  const namespaces = {};
+  for (const key of Object.keys(root)) {
+    if (key.startsWith('@xmlns:')) namespaces[key.slice('@xmlns:'.length)] = root[key];
+  }
+  const descriptions = [].concat(root['rdf:Description'] || []);
+  const triples = [];
+  for (const description of descriptions) {
+    const subject = description['@rdf:about'];
+    for (const key of Object.keys(description)) {
+      if (key.startsWith('@') || key === '#text' || !key.includes(':')) continue;
+      for (const value of [].concat(description[key])) {
+        const [prefix, local] = key.split(':');
+        const predicate = `${namespaces[prefix] || ''}${local}`;
+        if (value !== null && typeof value === 'object' && value['@rdf:resource'] !== undefined) {
+          triples.push(`<${subject}> <${predicate}> <${value['@rdf:resource']}> .`);
+        } else {
+          const text = value !== null && typeof value === 'object' ? String(value['#text'] ?? '') : String(value);
+          const language = value !== null && typeof value === 'object' ? value['@xml:lang'] : undefined;
+          const datatype = value !== null && typeof value === 'object' ? value['@rdf:datatype'] : undefined;
+          const suffix = language ? `@${language}` : (datatype ? `^^<${datatype}>` : '');
+          triples.push(`<${subject}> <${predicate}> ${JSON.stringify(text)}${suffix} .`);
+        }
+      }
+    }
+  }
+  return triples.sort(compareCodePoint);
+}
+
+/** The same triple list, straight from the Turtle, for comparison. */
+function turtleTriples(vocabulary) {
+  return vocabulary.quads.map((quad) => {
+    if (quad.object.termType === 'NamedNode') {
+      return `<${quad.subject.value}> <${quad.predicate.value}> <${quad.object.value}> .`;
+    }
+    const suffix = quad.object.language
+      ? `@${quad.object.language}`
+      : (quad.object.datatype && quad.object.datatype.value !== `${XSD}string`
+        ? `^^<${quad.object.datatype.value}>` : '');
+    return `<${quad.subject.value}> <${quad.predicate.value}> ${JSON.stringify(quad.object.value)}${suffix} .`;
+  }).sort(compareCodePoint);
+}
+
+/** The `/ns/` HTML index: the `else` branch of the AGSC-06-06 negotiation table. */
+function buildIndex(vocabulary) {
+  const rows = [];
+  const section = (heading, iris) => {
+    rows.push(`  <h2>${htmlEscape(heading)}</h2>`, '  <dl>');
+    for (const iri of iris) {
+      const local = iri.slice(NS.length);
+      rows.push(`    <dt id="${htmlEscape(local)}"><code>asc:${htmlEscape(local)}</code> — ${htmlEscape(vocabulary.labels.get(iri) || local)}</dt>`);
+      rows.push(`    <dd>${htmlEscape(vocabulary.comments.get(iri) || '')}</dd>`);
+    }
+    rows.push('  </dl>');
+  };
+  section('Classes', vocabulary.classes);
+  section('Object properties', vocabulary.objectProperties);
+  section('Datatype properties', vocabulary.datatypeProperties);
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '  <meta charset="utf-8">',
+    '  <title>AgenticSystemCore vocabulary</title>',
+    `  <link rel="alternate" type="text/turtle" href="agsc.ttl">`,
+    `  <link rel="alternate" type="application/ld+json" href="context.jsonld">`,
+    `  <link rel="alternate" type="application/rdf+xml" href="agsc.rdf">`,
+    '</head>',
+    '<body>',
+    '  <h1>AgenticSystemCore vocabulary</h1>',
+    `  <p>Namespace <code>${htmlEscape(NS)}</code> (AGSC-05-02).</p>`,
+    ...rows,
+    '</body>',
+    '</html>',
+    '',
+  ].join('\n');
+}
+
+/** A compact IRI resolved against the prefixes AGSC-06-32 defines; anything else unchanged. */
+function expandCompact(value) {
+  if (typeof value !== 'string') return value;
+  const colon = value.indexOf(':');
+  if (colon === -1) return value;
+  const prefix = value.slice(0, colon);
+  const local = value.slice(colon + 1);
+  return PREFIXES[prefix] && !local.startsWith('/') ? `${PREFIXES[prefix]}${local}` : value;
+}
+
+/**
+ * The `@id` → term-definition index of a context (NS-06).
+ *
+ * AGSC-06-32 pins the MAPPING of a term and never its NAME, so a check that looks a
+ * term up by key name only accepts the one naming convention the checker happens to
+ * use. It did, and it therefore reported "52 of the vocabulary's terms carry no term
+ * definition" against both conformant implementations — the hand-written site and
+ * the engine, which name an `asc:` term by its bare local name — while this tool
+ * names it `asc:<Term>`. Under AGSC-09-92 ("a validator failure blocks merge") that
+ * would have blocked merges on correct output. Resolving by `@id` compares what the
+ * rule actually pins, and the naming disagreement is recorded as a specification
+ * item (NS-04) rather than enforced here.
+ */
+function contextById(context) {
+  const index = new Map();
+  for (const [name, definition] of Object.entries(context)) {
+    if (name.startsWith('@')) continue;
+    if (definition === null || typeof definition !== 'object' || Array.isArray(definition)) continue;
+    if (typeof definition['@id'] !== 'string') continue;
+    const iri = expandCompact(definition['@id']);
+    if (!index.has(iri)) index.set(iri, []);
+    index.get(iri).push({ definition, name });
+  }
+  return index;
+}
+
+/** A term definition with every IRI expanded, so two spellings of one mapping compare equal. */
+function normalizeDefinition(definition) {
+  const out = {};
+  for (const [member, value] of Object.entries(definition)) {
+    out[member] = member === '@type' && value === '@id' ? '@id' : expandCompact(value);
+  }
+  return out;
+}
+
+/** AGSC-06-32, checked against a context that is already on disk. */
+function checkContext(document, derived, file, findings) {
+  if (document === null || typeof document !== 'object' || Array.isArray(document)
+      || Object.keys(document).length !== 1 || document['@context'] === undefined) {
+    findings.push(finding('AGSC-E201', file, 'the document is not a single `@context` object (AGSC-06-32)'));
+    return;
+  }
+  const context = document['@context'];
+  if (context === null || typeof context !== 'object' || Array.isArray(context)) {
+    findings.push(finding('AGSC-E201', file, '`@context` is not an object (AGSC-06-32)'));
+    return;
+  }
+  if (context['@version'] !== 1.1) {
+    findings.push(finding('AGSC-E202', file, '`@version` is not 1.1 (AGSC-06-32)'));
+  }
+  if (context['@protected'] !== true) {
+    findings.push(finding('AGSC-E202', file, '`@protected` is not true (AGSC-06-32)'));
+  }
+  for (const prefix of Object.keys(PREFIXES).sort()) {
+    if (context[prefix] !== PREFIXES[prefix]) {
+      findings.push(finding('AGSC-E202', file,
+        `the prefix "${prefix}" is ${JSON.stringify(context[prefix])} and AGSC-06-32 defines it as ${JSON.stringify(PREFIXES[prefix])}`));
+    }
+  }
+  for (const term of Object.keys(context)) {
+    if (context[term] === null) {
+      findings.push(finding('AGSC-E202', file, `the term "${term}" is mapped to null, which AGSC-06-32 forbids`));
+    }
+  }
+  // "every `asc:` term becomes a term definition whose `@id` is its IRI" — looked up
+  // by `@id`, which is what the rule pins, never by the key the writer chose (NS-06).
+  const onDisk = contextById(context);
+  const wanted = derived['@context'];
+  const missing = [];
+  for (const term of Object.keys(wanted).filter((t) => t.startsWith('asc:')).sort(compareCodePoint)) {
+    const found = onDisk.get(expandCompact(term));
+    if (found === undefined) { missing.push(term); continue; }
+    const actual = normalizeDefinition(found[0].definition);
+    const expected = normalizeDefinition(wanted[term]);
+    if (canonicalize(actual) !== canonicalize(expected)) {
+      findings.push(finding('AGSC-E202', file,
+        `the term definition of "${term}" is ${canonicalize(found[0].definition)} and AGSC-06-32 derives ${canonicalize(wanted[term])} from ontology/agsc.ttl`));
+    }
+  }
+  if (missing.length) {
+    findings.push(finding('AGSC-E202', file,
+      `${missing.length} of the vocabulary's terms carry no term definition, beginning with ${missing.slice(0, 5).join(', ')}: AGSC-06-32 requires one for every \`asc:\` term`));
+  }
+  for (const [curie, type] of EXTERNAL) {
+    const found = onDisk.get(expandCompact(curie));
+    if (found === undefined) {
+      findings.push(finding('AGSC-E202', file,
+        `no term definition for ${curie}, which ${EXTERNAL.find((e) => e[0] === curie)[2]} emits (AGSC-06-32)`));
+      continue;
+    }
+    const { definition, name } = found[0];
+    const actualType = definition['@type'] === '@id' ? '@id' : expandCompact(definition['@type']);
+    // `null` in the table means a plain or language-tagged literal (AGSC-05-31 forms
+    // a and c), which takes NO `@type`. The check used to run only when the table
+    // named a type, so a plain literal wrongly declared `"@type": "@id"` — which
+    // turns the value into an IRI reference and changes the triple — passed.
+    if (actualType !== (type || undefined)) {
+      findings.push(finding('AGSC-E202', file,
+        `the term "${name}" carries @type ${JSON.stringify(definition['@type'])} and ${curie} takes ${JSON.stringify(type)} (AGSC-06-32)`));
+    }
+  }
+  // Two names for one IRI leave compaction a choice, so the round trip of
+  // AGSC-06-32 is no longer a function of the document: report it.
+  for (const [iri, entries] of [...onDisk].sort((a, b) => compareCodePoint(a[0], b[0]))) {
+    if (entries.length < 2) continue;
+    findings.push(finding('AGSC-E202', file,
+      `${entries.length} term definitions map to ${iri} (${entries.map((e) => e.name).join(', ')}):`
+      + ' compaction has a choice, so the AGSC-06-32 round trip is not determined'));
+  }
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'gen-ns',
+    version,
+  };
+}
+
+function specVersion(root) {
+  try {
+    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
+      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+  } catch { return 'unknown'; }
+}
+
+function packageVersion(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
+  catch { return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} io
+ * @returns {number} exit code: 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`gen-ns: ${message}\n${HELP}`); return 2; };
+
+  const flags = new Set();
+  let root = DEFAULT_ROOT;
+  let sawRoot = false;
+  let outDir = null;
+  let checkDir = null;
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    else if (arg === '--out') { outDir = argv[++i]; if (!outDir) return usage('--out needs a directory (AGSC-E003)'); }
+    else if (arg === '--check') { checkDir = argv[++i]; if (!checkDir) return usage('--check needs a directory (AGSC-E003)'); }
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
+  }
+  const turtlePath = path.join(root, 'ontology', 'agsc.ttl');
+  if (!fs.existsSync(turtlePath)) return usage(`no ontology at ${turtlePath} (AGSC-E901)`);
+
+  const findings = [];
+  const turtle = fs.readFileSync(turtlePath, 'utf8');
+  let vocabulary;
+  try { vocabulary = readOntology(turtle); }
+  catch (e) {
+    findings.push(finding('AGSC-E201', 'ontology/agsc.ttl', `not well-formed Turtle: ${e.message}`));
+    const bad = envelopeOf(findings, specVersion(root), packageVersion(root));
+    if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
+    else if (!flags.has('--quiet')) for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    return 1;
+  }
+
+  const contextDocument = buildContext(vocabulary);
+  const files = new Map([
+    ['context.jsonld', `${canonicalize(contextDocument)}\n`],
+    ['agsc.rdf', buildRdfXml(vocabulary)],
+    ['index.html', buildIndex(vocabulary)],
+    ['agsc.ttl', turtle],
+  ]);
+
+  // ---- the round trip PRD-054 asks for --------------------------------------
+  const recovered = readRdfXml(files.get('agsc.rdf'));
+  const original = turtleTriples(vocabulary);
+  if (canonicalize(recovered) !== canonicalize(original)) {
+    const lost = original.filter((t) => !recovered.includes(t));
+    const gained = recovered.filter((t) => !original.includes(t));
+    findings.push(finding('AGSC-E605', 'ns/agsc.rdf',
+      `the generated RDF/XML does not round-trip: ${lost.length} triple(s) lost, ${gained.length} gained; first difference ${JSON.stringify((lost[0] || gained[0] || '').slice(0, 160))}`));
+  }
+
+  if (outDir) {
+    const target = path.resolve(outDir);
+    fs.mkdirSync(target, { recursive: true });
+    for (const [name, bytes] of [...files].sort((a, b) => compareCodePoint(a[0], b[0]))) {
+      fs.writeFileSync(path.join(target, name), bytes);
+    }
+  }
+
+  if (checkDir) {
+    const target = path.resolve(checkDir);
+    const contextFile = 'ns/context.jsonld';
+    const contextPath = path.join(target, 'context.jsonld');
+    if (!fs.existsSync(contextPath)) {
+      findings.push(finding('AGSC-E901', contextFile, `no context at ${contextPath} (AGSC-06-32)`));
+    } else {
+      const raw = fs.readFileSync(contextPath, 'utf8');
+      let document = null;
+      try { document = JSON.parse(raw); }
+      catch (e) { findings.push(finding('AGSC-E201', contextFile, `not valid JSON: ${e.message}`)); }
+      if (document !== null) {
+        if (raw !== `${canonicalize(document)}\n`) {
+          findings.push(finding('AGSC-E601', contextFile,
+            'the file is not JCS-canonical with exactly one trailing LF (AGSC-04-06, AGSC-06-32)'));
+        }
+        checkContext(document, contextDocument, contextFile, findings);
+        if (raw !== files.get('context.jsonld')) {
+          findings.push(finding('AGSC-E602', contextFile,
+            'the bytes on disk differ from this derivation of AGSC-06-32 (reported for review; only the obligations above are normative)', 'warn'));
+        }
+      }
+    }
+    for (const name of ['agsc.rdf', 'agsc.ttl']) {
+      const where = path.join(target, name);
+      if (!fs.existsSync(where)) {
+        findings.push(finding('AGSC-E901', `ns/${name}`,
+          `the ${name === 'agsc.ttl' ? 'text/turtle' : 'application/rdf+xml'} branch of the AGSC-06-06 negotiation table has no target here; AGSC-06-01 puts "/ns/ and its vocabulary files" in the route set a writer emits`, 'warn'));
+      } else if (fs.readFileSync(where, 'utf8') !== files.get(name)) {
+        findings.push(finding('AGSC-E602', `ns/${name}`,
+          'the bytes on disk differ from this derivation (reported for review)', 'warn'));
+      }
+    }
+  }
+
+  const envelope = envelopeOf(findings, specVersion(root), packageVersion(root));
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) {
+      err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    const terms = vocabulary.classes.length + vocabulary.objectProperties.length + vocabulary.datatypeProperties.length;
+    out(`gen-ns: ${terms} vocabulary terms, ${Object.keys(contextDocument['@context']).length} context members, `
+      + `${original.length} triples round-tripped, ${envelope.counts.error} error, ${envelope.counts.warn} warn`
+      + `${outDir ? `; wrote ${files.size} files into ${outDir}` : ''}\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = {
+  EXTERNAL, HELP, PREFIXES, buildContext, buildIndex, buildRdfXml, canonicalize,
+  checkContext, compareCodePoint, contextById, expandCompact, externalTermNames, normalizeDefinition,
+  readOntology, readRdfXml, run, turtleTriples,
+};

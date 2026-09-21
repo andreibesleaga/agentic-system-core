@@ -139,6 +139,22 @@ function ontologyTerms(turtleText) {
     .sort((a, b) => compareCodePoint(a.term, b.term));
 }
 
+/**
+ * The version of `ontology/agsc.ttl`, read from its `owl:versionIRI` (AGSC-05-25) —
+ * the last path segment of that IRI, `1.0.0-draft.1` until `spec_version` reaches
+ * `1.0.0`. It is what AGSC-05-09 calls `<ontology-version>` in the specification's
+ * persistent context URL, so no module has to write the version down.
+ * @returns {string|null} the version, or `null` when the document declares none.
+ */
+function ontologyVersion(turtleText) {
+  const OWL = 'http://www.w3.org/2002/07/owl#';
+  for (const q of parse(turtleText)) {
+    if (q.predicate.value !== `${OWL}versionIRI` || q.object.termType !== 'NamedNode') continue;
+    return q.object.value.slice(q.object.value.lastIndexOf('/') + 1);
+  }
+  return null;
+}
+
 /** One fenced-code line: up to three spaces, the ticks, the info string (CommonMark 0.31.2). */
 const FENCE = /^( {0,3})(`{3,}|~{3,})(.*)$/u;
 
@@ -225,5 +241,6 @@ module.exports = {
   toTurtle,
   parse,
   ontologyTerms,
+  ontologyVersion,
   checkExportBlocks,
 };

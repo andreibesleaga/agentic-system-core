@@ -1,0 +1,375 @@
+#!/usr/bin/env node
+'use strict';
+// tools/validate-features — the scenario validator of AGSC-09-90 and PRD-054:
+// "Gherkin parse + @PRD tag ↔ PRD-id closure".
+//
+// INDEPENDENT BY CONSTRUCTION: Node built-ins only, no import from `src/`
+// (AGSC-09-90). The Gherkin dialect parsed here is the one `features/README.md`
+// declares the pack uses — Feature, Background, Scenario, Scenario Outline,
+// Examples, Given/When/Then/And/But, tags, doc strings and data tables — and no
+// more, so a file that reaches for a construct the pack does not use is reported
+// rather than silently accepted.
+//
+//   validate-features [--json] [--quiet] [--help] [<root>|<dir>]
+//
+// Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock, no network, findings
+// sorted by (file, line, col, code) per AGSC-09-10.
+//
+// Checks (each a Finding; any error exits 1):
+//   AGSC-E108  encoding: a byte-order mark, a CR, no single trailing LF, or non-NFC
+//              text (AGSC-01-14)
+//   AGSC-E201  no `Feature:`, or more than one; a step outside every Scenario and
+//              Background; an `Examples:` outside a Scenario Outline; a table row
+//              whose column count differs from its header's; an unterminated doc
+//              string; a `<placeholder>` no Examples header declares; a tag naming
+//              a PRD or NFR id `docs/PRD.md` does not define (the closure PRD-054
+//              requires)
+//   AGSC-E202  a Feature with no Scenario; a Scenario with no step; a Scenario
+//              Outline with no `Examples:`
+//   AGSC-E207  (warning) the coverage table of `features/README.md` and a file's own
+//              tags disagree
+//   AGSC-E901  the features directory is missing
+//
+// PRD ids that no scenario tags are an informational count, never a failure: the
+// pack covers the persona walkthroughs, not every requirement.
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const HELP = `validate-features [--json] [--quiet] [--help] [<root>|<dir>]
+
+  Parses every features/*.feature file and closes its @PRD tags against the
+  requirement ids of docs/PRD.md (PRD-054).
+
+  --json    emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet   emit nothing; the exit code is the result
+  --help    this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+const STEP = /^\s*(Given|When|Then|And|But|\*)\s+\S/u;
+const TAG_LINE = /^\s*@\S/u;
+const ID_TAG = /@((?:PRD|NFR)-\d{2,3})/gu;
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, line, message, severity = 'error') {
+  return { code, col: 1, file, line, message, severity };
+}
+
+/**
+ * Parse one .feature file in the pack's dialect.
+ * @returns {{features:number, scenarios:Array, tags:Set<string>, findings:Array}}
+ */
+function parseFeature(text, file) {
+  const findings = [];
+  const lines = text.split('\n');
+  const tags = new Set();
+  const scenarios = [];
+  let features = 0;
+  let current = null;            // the open Scenario / Scenario Outline / Background
+  let docString = null;          // the fence that opened an unterminated doc string
+  let pendingTags = [];
+  let headerColumns = null;      // the column count of the table currently open
+  let examplesHeader = null;     // the Examples header names of the open Outline
+
+  const closeScenario = () => {
+    if (!current) return;
+    if (current.steps === 0) {
+      findings.push(finding('AGSC-E202', file, current.line,
+        `${current.keyword} "${current.name}" carries no step`));
+    }
+    if (current.outline && !current.examples) {
+      findings.push(finding('AGSC-E202', file, current.line,
+        `Scenario Outline "${current.name}" carries no Examples:`));
+    }
+    if (current.keyword !== 'Background') scenarios.push(current);
+    current = null;
+  };
+
+  lines.forEach((raw, index) => {
+    const line = raw.replace(/\t/gu, '  ');
+    const n = index + 1;
+    const trimmed = line.trim();
+
+    if (docString !== null) {
+      if (trimmed === docString) docString = null;
+      return;
+    }
+    if (/^("""|```)$/u.test(trimmed)) { docString = trimmed; return; }
+    if (trimmed === '' || trimmed.startsWith('#')) { headerColumns = null; return; }
+
+    if (TAG_LINE.test(line)) {
+      headerColumns = null;
+      pendingTags = trimmed.split(/\s+/u).filter((t) => t.startsWith('@'));
+      for (const tag of pendingTags) tags.add(tag);
+      return;
+    }
+    const keyword = /^(Feature|Background|Rule|Scenario Outline|Scenario Template|Scenario|Example|Examples|Scenarios):\s*(.*)$/u.exec(trimmed);
+    if (keyword) {
+      headerColumns = null;
+      const name = keyword[2];
+      if (keyword[1] === 'Feature') {
+        closeScenario();
+        features += 1;
+        if (features > 1) findings.push(finding('AGSC-E201', file, n, 'a second Feature: in one file'));
+        pendingTags = [];
+        return;
+      }
+      if (keyword[1] === 'Rule') {
+        // A Rule groups scenarios; it is not one, and it carries no steps.
+        closeScenario();
+        pendingTags = [];
+        return;
+      }
+      if (keyword[1] === 'Examples' || keyword[1] === 'Scenarios') {
+        if (!current || !current.outline) {
+          findings.push(finding('AGSC-E201', file, n, 'Examples: outside a Scenario Outline'));
+        } else current.examples = true;
+        examplesHeader = null;
+        pendingTags = [];
+        return;
+      }
+      closeScenario();
+      if (features === 0) findings.push(finding('AGSC-E201', file, n, `${keyword[1]}: before any Feature:`));
+      current = {
+        examples: false,
+        keyword: keyword[1],
+        line: n,
+        name,
+        outline: keyword[1] === 'Scenario Outline' || keyword[1] === 'Scenario Template',
+        placeholders: new Set(),
+        steps: 0,
+        tags: pendingTags.slice(),
+      };
+      examplesHeader = null;
+      pendingTags = [];
+      return;
+    }
+    if (trimmed.startsWith('|')) {
+      if (!/\|\s*$/u.test(trimmed)) {
+        findings.push(finding('AGSC-E201', file, n, 'a table row does not close with "|"'));
+        return;
+      }
+      const columns = trimmed.split('|').slice(1, -1).length;
+      if (headerColumns === null) {
+        headerColumns = columns;
+        if (current && current.outline && current.examples && examplesHeader === null) {
+          examplesHeader = new Set(trimmed.split('|').slice(1, -1).map((c) => c.trim()));
+          for (const placeholder of current.placeholders) {
+            if (!examplesHeader.has(placeholder)) {
+              findings.push(finding('AGSC-E201', file, n,
+                `the Examples header declares no column <${placeholder}>, which a step of "${current.name}" uses`));
+            }
+          }
+        }
+      } else if (columns !== headerColumns) {
+        findings.push(finding('AGSC-E201', file, n,
+          `the row has ${columns} columns and its header has ${headerColumns}`));
+      }
+      return;
+    }
+    headerColumns = null;
+    if (STEP.test(line)) {
+      if (!current) {
+        findings.push(finding('AGSC-E201', file, n, 'a step outside every Scenario and Background'));
+        return;
+      }
+      current.steps += 1;
+      for (const m of trimmed.matchAll(/<([^<>]+)>/gu)) current.placeholders.add(m[1].trim());
+      return;
+    }
+    // Free description text under Feature: or a Scenario: is legal Gherkin.
+  });
+
+  if (docString !== null) findings.push(finding('AGSC-E201', file, lines.length, 'an unterminated doc string'));
+  closeScenario();
+  if (features === 0) findings.push(finding('AGSC-E201', file, 1, 'the file declares no Feature:'));
+  else if (scenarios.length === 0) findings.push(finding('AGSC-E202', file, 1, 'the Feature carries no Scenario'));
+  return { features, findings, scenarios, tags };
+}
+
+/**
+ * The `File -> PRD ids covered` rows of features/README.md, if it is there. The
+ * table writes runs in the abbreviated form the pack uses — `PRD-002, 011, 013` —
+ * so a bare number continues the prefix that opened the run; a parenthetical aside
+ * is prose about another file and is not this file's coverage.
+ */
+function readmeCoverage(text) {
+  const table = new Map();
+  for (const line of text.split('\n')) {
+    const row = /^\|\s*`([^`]+\.feature)`\s*\|(.*)\|\s*$/u.exec(line);
+    if (!row) continue;
+    const cells = row[2].split('|');
+    const cell = (cells[cells.length - 1] || '').replace(/\([^()]*\)/gu, '').replace(/\*/gu, '');
+    const ids = new Set();
+    let prefix = null;
+    for (const token of cell.split(/[,\s]+/u)) {
+      const full = /^((?:PRD|NFR))-(\d{2,3})$/u.exec(token);
+      if (full) { prefix = full[1]; ids.add(`${full[1]}-${full[2]}`); continue; }
+      const bare = /^(\d{2,3})$/u.exec(token);
+      if (bare && prefix) ids.add(`${prefix}-${bare[1]}`);
+    }
+    if (ids.size) table.set(row[1], ids);
+  }
+  return table;
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'validate-features',
+    version,
+  };
+}
+
+function specVersion(root) {
+  try {
+    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
+      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+  } catch { return 'unknown'; }
+}
+
+function packageVersion(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
+  catch { return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} io
+ * @returns {number} exit code: 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`validate-features: ${message}\n${HELP}`); return 2; };
+
+  const flags = new Set();
+  let target = DEFAULT_ROOT;
+  let sawTarget = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawTarget) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { target = path.resolve(arg); sawTarget = true; }
+  }
+  const direct = fs.existsSync(path.join(target, 'features'))
+    ? path.join(target, 'features')
+    : target;
+  if (!fs.existsSync(direct) || !fs.statSync(direct).isDirectory()) {
+    return usage(`no features directory at ${direct} (AGSC-E901)`);
+  }
+  const root = path.basename(direct) === 'features' ? path.dirname(direct) : direct;
+
+  const findings = [];
+  const prdPath = path.join(root, 'docs', 'PRD.md');
+  const prdText = fs.existsSync(prdPath) ? fs.readFileSync(prdPath, 'utf8') : null;
+  const prdIds = new Set(prdText ? prdText.match(/(?:PRD|NFR)-\d{2,3}/gu) || [] : []);
+  const readmePath = path.join(direct, 'README.md');
+  const coverage = fs.existsSync(readmePath)
+    ? readmeCoverage(fs.readFileSync(readmePath, 'utf8'))
+    : new Map();
+
+  const names = fs.readdirSync(direct).filter((f) => f.endsWith('.feature')).sort();
+  let scenarios = 0;
+  const covered = new Set();
+  for (const name of names) {
+    const file = path.relative(root, path.join(direct, name)).split(path.sep).join('/');
+    const raw = fs.readFileSync(path.join(direct, name), 'utf8');
+    if (raw.charCodeAt(0) === 0xfeff) findings.push(finding('AGSC-E108', file, 1, 'byte-order mark (AGSC-01-14)'));
+    if (raw.includes('\r')) findings.push(finding('AGSC-E108', file, 1, 'CR or CRLF line endings (AGSC-01-14)'));
+    if (!raw.endsWith('\n') || raw.endsWith('\n\n')) {
+      findings.push(finding('AGSC-E108', file, 1, 'the file must end with exactly one LF (AGSC-01-14)'));
+    }
+    if (raw.normalize('NFC') !== raw) findings.push(finding('AGSC-E108', file, 1, 'the file is not NFC (AGSC-01-14)'));
+
+    const parsed = parseFeature(raw, file);
+    findings.push(...parsed.findings);
+    scenarios += parsed.scenarios.length;
+
+    const ids = new Set();
+    for (const m of raw.matchAll(ID_TAG)) ids.add(m[1]);
+    for (const id of [...ids].sort()) {
+      covered.add(id);
+      if (prdText && !prdIds.has(id)) {
+        findings.push(finding('AGSC-E201', file, 1,
+          `tag @${id} names a requirement docs/PRD.md does not define (PRD-054 closure)`));
+      }
+    }
+    const declaredIds = coverage.get(name);
+    if (declaredIds) {
+      for (const id of [...declaredIds].sort()) {
+        if (!ids.has(id)) {
+          findings.push(finding('AGSC-E207', file, 1,
+            `features/README.md lists ${id} for this file and no scenario tags it`, 'warn'));
+        }
+      }
+      for (const id of [...ids].sort()) {
+        if (!declaredIds.has(id)) {
+          findings.push(finding('AGSC-E207', file, 1,
+            `this file tags ${id} and the coverage table of features/README.md does not list it`, 'warn'));
+        }
+      }
+    }
+  }
+
+  const uncovered = prdText ? [...prdIds].filter((id) => !covered.has(id)).length : 0;
+  const envelope = envelopeOf(findings, specVersion(root), packageVersion(root));
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) {
+      err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    out(`validate-features: ${names.length} files, ${scenarios} scenarios, ${covered.size} requirement ids tagged, `
+      + `${envelope.counts.error} error, ${envelope.counts.warn} warn; `
+      + `requirement ids no scenario tags (informational): ${uncovered}\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, canonicalize, compareCodePoint, parseFeature, readmeCoverage, run };

@@ -9,6 +9,273 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed — the two legal-facing surfaces are valid and complete (PUBLIC-STATEMENTS-FIX, 2026-09-21)
+
+Every site this engine built published a `security.txt` that RFC 9116 makes invalid
+twice over, and a `/legal/` page carrying one of the four things PRD-019 requires of
+it. Both are inputs only a publisher can supply, so the engine now requires them,
+derives what it may, and emits nothing it knows to be invalid.
+
+- **`/.well-known/security.txt` carried no `Contact:` field and an `Expires:` set to
+  the build instant** — RFC 9116 §2.5.3 ("This field MUST always be present in a
+  'security.txt' file") and §2.5.5 ("This field MUST always be present and MUST NOT
+  appear more than once"; "It is RECOMMENDED that the value of this field be less
+  than a year into the future"), which a build instant never satisfies, being in the
+  past the moment it is written. The Bundle root's `.well-known/security.txt` is now
+  the authored input, read through the FileSystem port exactly as `LICENSE-CONTENT`
+  is; its fields are published verbatim, and the writer derives `Expires` (364 days
+  after the build instant), `Canonical` and `Policy` only where the authored file
+  states none. A missing file is `AGSC-E901`, a missing `Contact` is `AGSC-E202`, and
+  an expiry already past at build time is `AGSC-E204` — each fails `lint` and `build`,
+  and the route is then not emitted at all. §9.4 registers no code of its own for
+  "a published artefact is invalid against the standard it claims"; the closest rows
+  are used and the registration is on the specification items list.
+- **`/legal/` carried the Content Use Terms alone**, while PRD-019 asks it for the
+  terms, a privacy notice, the operator and a retention statement. The notice (which
+  carries the retention statement) is now the Bundle root's authored `PRIVACY.md` and
+  the operator line comes from `site.author` and `bundle.operator`. A missing input
+  omits its section and warns (`AGSC-E406`); no writer ever invents a privacy notice.
+- **A `Contact:` at another origin was read as a dangling internal link.**
+  `site.js#internalLinks` now takes the node's own base and treats an absolute URL in
+  `robots.txt` or `security.txt` as internal only when it is under that base.
+- `distribution/ci.js` tells the build not to repeat the publication findings the
+  lint lane has already reported, so one fault is still counted once (AGSC-09-11).
+- The npm tarball now ships `LICENSE-CONTENT`: AGSC-06-18 says "a distribution
+  without it is incomplete", and the `files` list omitted it.
+- Repository hygiene, required by PRD-047 and absent until now: `CONTRIBUTING.md`,
+  `SECURITY.md` and `CITATION.cff` (validated against the CFF 1.2.0 schema; DOI,
+  version and release date deliberately left for the owner to fill at 1.0.0). No
+  `NOTICE` file: the repository carries no third-party attribution notice, and
+  Apache-2.0 §4(d) obliges propagation only where the Work includes one.
+
+### Fixed — the vocabulary now reaches the build, and `graph.jsonld` is compact at every Level (NS-FIX, 2026-09-21)
+
+Three wiring defects between `ontology/agsc.ttl` and a real `agsc build`. The context
+generator `knowledge/jsonld.js#context` was correct throughout — the required vector
+`graph-0011` and `tests/knowledge/jsonld-roundtrip.test.js` prove it — and nothing
+exercised the path from the vocabulary file to an emitted site, which is where all
+three lived. No frozen artefact was touched and no released vector broke.
+
+- **`/ns/context.jsonld` carried 0 of the 52 `asc:` term definitions** (`AGSC-06-32`).
+  `buildOptions` never supplied the vocabulary, so every built context held only the
+  seven prefixes and the 24 external definitions. `adapters/node-fs.js#readOntology`
+  now reads it and `application/cli/verbs/_helpers.js#ontology()` memoises it exactly
+  as the three compiled schemas are memoised; the built context carries all 85 members.
+- **`graph.jsonld` wrote every vocabulary IRI in full**, so `AGSC-06-32`'s round-trip
+  clause did not hold on a node's own output. `distribution/site.js` now generates ONE
+  context object per build and uses it both as the bytes of `/ns/context.jsonld` and as
+  the compaction table of every JSON-LD view, so the file a node serves and the
+  documents it serves cannot disagree. Expand → re-compact of a built pair is now
+  byte-identical, asserted offline against the pinned `jsonld` devDependency for
+  `/graph.jsonld` and for every `/pages/<slug>.jsonld`.
+- **A Level-0 `graph.jsonld` named no context at all**, contrary to `AGSC-05-09` as
+  amended at rc.5, and a conforming processor then dropped every member whose key was a
+  term or a compact IRI — 19 of 36 triples surviving on the reference fixture. The
+  context reference is now present at every Level: the specification's persistent
+  versioned URL below Level 2, the node's own byte-identical copy at Level ≥ 2. The URL
+  is derived, never typed — `knowledge/turtle.js#ontologyVersion` reads the
+  `owl:versionIRI` version of `AGSC-05-25` and `knowledge/jsonld.js#persistentContextUrl`
+  builds it from the namespace. A build given no vocabulary names the missing `@context`
+  in `skipped` instead of emitting a lossy document in silence.
+- **`tools/gen-ns --check` reported conformant output as wrong.** It resolved the 52
+  vocabulary terms **by key name**, and `AGSC-06-32` pins a term's mapping and never its
+  name — so it failed on the specification's own site and on a correctly fixed engine,
+  which under `AGSC-09-92` would have blocked merges on correct output. It resolves by
+  `@id` now, and catches two faults it used to miss: a plain-literal property declared
+  `"@type": "@id"`, and two term names mapping to one IRI.
+
+Bytes that move: `/graph.jsonld`, every `/pages/<slug>.jsonld`, `/ns/context.jsonld`
+and three digest members of `/.well-known/knowledge-linkset`. Bytes that do not:
+`graph.nq`, `graph.ttl`, `search.json`, `chunks.jsonl`, `/llms.txt`, `/llms-full.txt`,
+`ledger.jsonl` and every HTML page — asserted, not assumed. The engine's context file
+and the one the specification's own site publishes are now byte-identical, from two
+implementations that share no code.
+
+### Added — the last three export forms, the three refusing commands, the release lane and the implementers' guide (ENG-5, 2026-09-21)
+
+Every verb of `AGSC-09-07` now does something, and `tests/application/cli/verbs-sixteen.test.js`
+holds the "not implemented at this milestone" list at **empty**.
+
+- **`export --markdown` and `export --okf`** (`AGSC-01-26`) — the lint-normalized Bundle
+  itself, one `.md` file per published item, lossless over every authored frontmatter key
+  including the unknown ones `AGSC-02-05` preserves, with `content/index.md` carrying
+  `license` and the export root carrying `LICENSE-CONTENT` (`AGSC-01-29`). `--okf` adds
+  `content/index.md`'s `okf_version` and the OKF-reserved `content/log.md`. The
+  normalisation is `lint --fix`'s and is not re-derived, so "the lint-normalized Bundle"
+  has one definition; `src/interchange/export-bundle.js`.
+- **`export --steer [--target <name>[,<name>…]]`** (`AGSC-01-28`) — the closed registry of
+  eleven targets, derived only from NOW state and from `concept`, `procedure`, `gate` and
+  `lesson` items, never from an Episode, a Proposal or the git log. Identical bytes at every
+  target path, the `AGSC-01-29` provenance header and fenced prose, and the `Channel-Auto:`
+  withholding derived from the `AGSC-08-20b` git-log file; `src/interchange/steer.js`.
+- **`import --from okf`** (`AGSC-01-22`) — the foreign OKF v0.2 reader, so that
+  `AGSC-10-09`'s "the reference engine imports it losslessly" is a claim a test can make:
+  `export --okf` → `import --from okf` reproduces every item byte for byte
+  (`tests/interchange/okf-roundtrip.test.js`). Unknown types become `concept` and are kept
+  as `x-okf-type`, unknown keys are preserved, a missing `index.md` and a broken link are
+  tolerated, and a frontmatter block outside the failsafe subset is imported rather than
+  refused. `--selection` becomes the `old-site` adapter's own flag (`AGSC-01-26a`).
+- **`skills`** (spec/07 §7.4) — one published pack per Cluster plus `/skills/index.json`,
+  which is also the SHA-256 lockfile of `AGSC-07-20`; `skills install [<target>]` over the
+  three targets of `AGSC-07-21`, verifying the lockfile first and showing a diff on update;
+  `skills import <file>` mapping a `SKILL.md` back to a `procedure` item (`AGSC-07-22`).
+  `build` emits the same bytes at `/skills/`, `/skills/index.json` and
+  `/skills/<cluster>/SKILL.md`, so those routes left `site.js#UNPRODUCED_ROUTES`.
+- **`run <slug>`** (`AGSC-09-94`) — the configuration gate, the `procedure`-only restriction
+  of `AGSC-02-22`, the `{run}`/`{expect}` extraction and pairing, the `run.allow[]`
+  allow-list, the refusal of any line only a shell could honour, `--dry-run`'s resolved
+  command list, execution through the ProcessRunner port outside the Bundle, and the
+  comparison. **It executes only against a runner that declares network isolation**; the
+  adapter this distribution ships does not, and says so — see *Not implemented, and why*.
+- **`trace <file.json>`** (`AGSC-09-94`) — a pure mapping of a captured agent-run record to
+  an Episode through the `AGSC-01-22`/`AGSC-02-14` import path, with `usage` copied member by
+  member, every unplaced key preserved under `x-trace-`, and no clock read (`AGSC-04-11`).
+- **`tools/release`** — the release lane of `docs/PLAN.md` §7 as a dry-runnable script: one
+  version in one place (the engine and its `agsc-cli` alias), the changelog section, the
+  `npm pack` contents (no `GABBE/`, no private path, no test-fixture bloat), the provenance
+  step, and the checklist the owner runs. It cannot publish: it spawns no process and opens
+  no socket, and `--apply` writes only two version strings and one changelog heading.
+- **`.github/workflows/release.yml`** — the tag-triggered lane: a three-OS, two-Node gate
+  matrix, then `actions/attest-build-provenance` and `npm publish --provenance` over npm
+  trusted publishing. No secret, SHA-pinned actions, never `pull_request_target`.
+- **`docs/IMPLEMENTERS-GUIDE.md`** — how to write a second implementation from `spec/` and
+  `tests/vectors/` alone: reading order, the byte-level pitfalls, how to run the vector set
+  and the nine validators against your own output, what is implementation-defined, and how
+  to claim a Level. It discharges `AGSC-01-26a`'s obligation to list every adapter with its
+  claimed key set.
+
+### Fixed — three items the last fix package recorded (ENG-5, 2026-09-21)
+
+- **A body reference to `content/assets/**` now warns** instead of passing silently.
+  `AGSC-03-11` resolves it and `AGSC-06-01` publishes it at no route, so the link works in
+  the repository and 404s on the built site; the warning uses the already-registered
+  `AGSC-E310` and names the reason. The route itself is a specification item.
+- **`lint --self` is gone.** `AGSC-09-09` closes the verb-flag set and names `lint --fix`
+  alone, and `--self` was read by no code, so `agsc lint --self` is now the `AGSC-E002` usage
+  error the rule requires — with a hint naming the nine validators of `AGSC-09-90` and
+  `agsc lint` for a Bundle.
+- **A `-->` inside `bundle.license_prose` can no longer close the `AGSC-06-13a` provenance
+  comment early.** `knowledge/unicode.js#commentSafe` puts one U+0020 between the hyphens
+  and the `>`, and is the identity on every value that does not carry the sequence — so no
+  byte that `disc-0006` pins moves. Applied by every writer of that header: `llms.js`,
+  `harness.js`, `skills.js`, `steer.js` and the `llm-context` adapter.
+
+### Not implemented, and why (ENG-5, 2026-09-21)
+
+`AGSC-09-94` requires a `run` step to execute "with no network". A Node process cannot deny
+a child process the network from inside itself; that needs an OS sandbox on the host. The
+ProcessRunner port therefore carries a declaration, `isolated`, the adapter this
+distribution ships sets it to `false`, and `agsc run` refuses to execute rather than run a
+step under a guarantee the engine cannot make. Everything else the rule pins is implemented
+and tested, `run --dry-run` works in full, and no conformance Level requires the verb.
+
+
+### Added — the seven remaining independent validators (ENG-4, 2026-09-21)
+
+`AGSC-09-90` and `PRD-054` oblige the reference distribution to ship nine `tools/`
+command contracts. Two were shipped (`validate-vectors`, `validate-wellknown`); this
+package adds the other seven, each **runnable standalone with no import from `src/`**,
+each answering `--json` with the `AGSC-09-11` envelope (`verb` = the tool name),
+`--quiet` and `--help`, each emitting only codes registered in §9.4 and exiting
+0 pass / 1 fail / 2 usage, each deterministic — no clock, no network, sorted output, LF.
+
+- **`tools/validate-spec`** — the "specnits" of `AGSC-09-91`: duplicate and
+  unresolved rule ids, the `<n>a` ordering, the MUST/SHOULD grammar, a trace bracket
+  on every rule and the PRD/NFR ids it names, error-code closure against the §9.4
+  registry, and version literals across `spec/`, `docs/` and `tests/vectors/**` — with
+  both carve-outs the rule states at rc.5 (the historical-note word list, the trace
+  bracket that follows a table or a fenced block).
+- **`tools/validate-schemas`** — meta-validates `schema/*.json` against JSON Schema
+  2020-12 with the pinned Ajv, compiles each in strict mode, and holds them to the
+  closed keyword subset and the length bounds of `AGSC-02-24`, the slug grammar of
+  `AGSC-01-10` and the six item types of `AGSC-00-04`.
+- **`tools/validate-ontology`** — parses `ontology/agsc.ttl` with the pinned `n3` and
+  checks the OWL 2 RL-safe axiom set (`AGSC-05-22`), blank-node freedom
+  (`AGSC-05-08`), the persistent hash namespace (`AGSC-05-02`), the absence of
+  `asc:Item` (`AGSC-05-13`), `owl:versionIRI` and deprecation (`AGSC-05-25`),
+  `AGSC-05-26a`, and the SKOS integrity conditions S19, S20, S32 and S37.
+- **`tools/validate-features`** — parses the Gherkin dialect `features/README.md`
+  declares and closes every `@PRD`/`@NFR` tag against `docs/PRD.md`; a disagreement
+  with the pack's own coverage table is a warning.
+- **`tools/validate-diagrams`** — the Mermaid lexical contract of
+  `docs/diagrams/README.md`, a trace id on every file, and the staleness the standing
+  sync rule calls a gate failure: every rule id resolved against `spec/`, every
+  requirement id against `docs/PRD.md`, and the index table against the directory.
+- **`tools/gen-spec-html`** — renders `spec/` into the `/specs/` pages with the pinned
+  `markdown-it` (`html:false`), deterministically, with a self-linking anchor on each
+  of the 335 rule ids; `--check <dir>` compares a published tree byte for byte.
+- **`tools/gen-ns`** — derives `/ns/context.jsonld`, `/ns/agsc.rdf` and the `/ns/`
+  index from `ontology/agsc.ttl` (`AGSC-06-32`, `AGSC-06-06`), round-trips the
+  generated RDF/XML back to the Turtle's triples with the pinned `fast-xml-parser`,
+  and `--check <dir>` audits a built `/ns/` against `AGSC-06-32`.
+
+`tests/tools/` holds one suite per tool plus `standalone.test.js`, the arrow check
+that fails on any `require` from `tools/` reaching into `src/` or outside the engine's
+pinned libraries. Every new tool is at 100 % line coverage by its own tests.
+
+### Reported, not fixed — two defects `gen-ns` found in the emitted namespace
+
+- `/ns/context.jsonld` carries the `asc` prefix and the 24 external term definitions
+  but **none of the 52 `asc:` term definitions** `AGSC-06-32` requires
+  (`src/knowledge/jsonld.js#context`).
+- Because of that, `graph.jsonld` writes vocabulary IRIs in full rather than compacted,
+  so the same rule's round-trip clause does not hold: re-compacting the reference
+  build's graph against its own context yields `asc:Bundle` and `asc:specVersion`.
+
+### Added — the seven tools work IN A PAGE (ENG-3, 2026-09-21)
+
+- **`src/distribution/page-tools.js`** implements all seven tools of AGSC-09-13 in the
+  browser, against the node's own published routes: `/search.json` for the prebuilt
+  index, `/pages/<slug>.md` for each item, and `/.well-known/knowledge-linkset` for the
+  node's own base. Until now the emitted `/compose/` page registered seven tools and
+  answered one — the other six returned "no page implementation yet". ONE
+  implementation serves both hosts: the module emits the SOURCE TEXT of the functions
+  Node runs, exactly as `composition/browser.js` does for the algebra (AGSC-07-13),
+  and `tests/arch/page-tools-portable.test.js` enforces the contract.
+- **Item pages carry the page tools**, which AGSC-09-16 has always required ("the
+  `/compose/` page and the item pages"). They reference the three shared files the
+  `/compose/` route already serves — `agsc-core.js`, `agsc-page-tools.js` and
+  `webmcp.js` — so a page pays three `<script src>` elements against the 100 KB budget
+  of AGSC-06-21 and nothing is inlined. Registration stays feature-detected: a browser
+  with no `document.modelContext` gets the same page, unchanged, and no console error.
+- **`propose` and `remember` in a page write nothing at all** — not over a network and
+  not to a file. They return the Proposal payload and stop (AGSC-08-04, AGSC-09-14b),
+  and they carry WebMCP's `consequentialHint`; the five reading tools carry
+  `readOnlyHint`, and every tool whose answer carries prose carries
+  `untrustedContentHint` (AGSC-11-18).
+- **A "Propose an edit" link on every item page** when the Bundle configures a
+  `contribute[]` entry of mode `pr` (AGSC-11-14). It is a plain `<a>` with
+  `rel="noopener"` and an accessible name, pointing at the forge's edit view of that
+  item's own source file — no form (AGSC-06-17's policy sets `form-action 'none'`), no
+  script, no third-party request. A forge whose edit-view spelling this engine does not
+  state is never guessed at: the link is the configured contribution target itself.
+
+### Fixed — four silently unmet MUSTs behind the page tools (ENG-3, 2026-09-21)
+
+- **AGSC-05-07**: `/pages/<slug>.md` is now "a byte-identical copy of the
+  lint-normalized source file" — the frontmatter block and the body. It used to be the
+  body alone, so the published Markdown view carried neither the item's type nor its
+  title nor its provenance, and a page tool could not return what a local `read`
+  returns. **Breaking for a consumer of that route**: a reader that expects a bare body
+  must strip the leading `---` block; `/compose/` does.
+- **`knowledge/adopt.js#serialize`** no longer throws on an item carrying a typed
+  scalar (`cluster.order`, `concept.signature`, `episode.usage.tokens_in`, `cost_usd`,
+  `estimate`): the failsafe schema has no number and no boolean, so a typed scalar is
+  emitted in the written form AGSC-02-04 pins and read back with the types
+  `schema/item.schema.json` declares. `propose` on such an item threw a programming
+  fault instead of returning a Finding, and the Markdown view could not be emitted.
+- **AGSC-11-16/11-19**: `distribution/site.js` derives its surface declaration through
+  `boundary/surfaces.js#declare()` instead of hand-building it from two emitted files,
+  so the `webmcp` surface a site emits at `/compose/` is declared in the discovery
+  document. It was emitted and never declared — the exact condition AGSC-11-19 tells
+  the validator to warn about (`AGSC-E211`).
+- **The proof runs the artefact.** The conformance handler for `cli-0003` (and
+  `cli-0004`) ran the emitted registration script against the FULL local
+  implementation, so the vector proved the emitter and said nothing about what the site
+  ships. It now builds the reference Bundle's site, loads the three emitted scripts
+  into a minimal fake `document.modelContext` harness, assembles the page corpus from
+  the build's own published bytes, and compares every answer with the local server's.
+
 ### Changed — the engine conforms to the DRAFT `1.0.0-rc.5` (RC5-B, 2026-09-21)
 
 - The spec version the engine states has ONE home:

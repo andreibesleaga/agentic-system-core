@@ -123,8 +123,39 @@ function singleLine(s) {
   return String(s == null ? '' : s).replace(SINGLE_LINE_FORBIDDEN, ' ');
 }
 
+/**
+ * The two byte sequences that CLOSE an HTML comment, per the HTML Standard's
+ * "comment end state" and "comment end bang state": `-->` and `--!>`.
+ */
+const COMMENT_END = /--!?>/gu;
+
+/**
+ * Writer-side defence for a value interpolated INSIDE an HTML comment.
+ *
+ * AGSC-06-13a puts `bundle.license_prose` on a line of the `<!-- agsc:provenance`
+ * block of `/llms.txt` and `/llms-full.txt`, and the same header is copied into
+ * every agent-facing digest (AGSC-01-29): a steer bundle, a skill pack, a Harness
+ * file, the `llm-context` adapter's skim view. A `-->` inside that value CLOSES the
+ * comment early, so the rest of the provenance block — the terms, the spec version,
+ * the build instant — leaves the comment and becomes visible document text a reader
+ * or a model treats as content. Recorded as specification item 58 / FIX28-03.
+ *
+ * This is the defence the engine can apply without moving a byte any vector pins:
+ * one U+0020 inserted between the two hyphens and the `>`, which is the IDENTITY on
+ * every value that does not carry the sequence — so `disc-0006`'s bytes, and every
+ * conforming Bundle's, are untouched. It is total and idempotent.
+ *
+ * @param {*} s
+ * @returns {string}
+ */
+function commentSafe(s) {
+  COMMENT_END.lastIndex = 0;
+  return String(s == null ? '' : s).replace(COMMENT_END, (match) => `-- ${match.slice(2)}`);
+}
+
 module.exports = {
   nfc,
+  commentSafe,
   codePointLength,
   compareCodePoint,
   compareUtf16,

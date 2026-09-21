@@ -1,0 +1,358 @@
+#!/usr/bin/env node
+'use strict';
+// tools/validate-ontology — the vocabulary validator of AGSC-09-90 and PRD-054:
+// "Turtle well-formedness + OWL 2 RL-safe axiom allowlist + SKOS pitfalls S19/S32/S37".
+//
+// INDEPENDENT BY CONSTRUCTION: no import from `src/` (AGSC-09-90). It parses Turtle
+// with `n3`, the library the engine pins for RDF; everything else is stdlib.
+//
+//   validate-ontology [--json] [--quiet] [--help] [<root>|<file.ttl>]
+//
+// The argument is the distribution root that holds `ontology/agsc.ttl`, or that file
+// itself; it defaults to the directory above this file. Exit 0 pass, 1 fail, 2 usage.
+// Deterministic: no clock, no network, findings sorted per AGSC-09-10.
+//
+// Checks (each a Finding; any error exits 1):
+//   AGSC-E108  encoding: a byte-order mark, a CR, no single trailing LF, or non-NFC
+//              text (AGSC-01-14)
+//   AGSC-E201  the file is not well-formed Turtle; a SKOS integrity condition the
+//              specification relies on is violated — S19/S20 (the domain and range
+//              of `skos:semanticRelation` are `skos:Concept`, AGSC-05-20,
+//              AGSC-05-26a), S32 (the range of `skos:member` is the union of
+//              `skos:Concept` and `skos:Collection`, AGSC-05-18/05-19) or S37
+//              (`skos:Collection` is disjoint with `skos:Concept` and
+//              `skos:ConceptScheme`, AGSC-05-19); `asc:uses`, `asc:excludes` or
+//              `asc:contradicts` carrying a super-property, a domain or a range
+//              (AGSC-05-26a)
+//   AGSC-E202  the ontology declares no `owl:versionIRI` (AGSC-05-25); a term marked
+//              `owl:deprecated` with no `dcterms:isReplacedBy` (AGSC-05-25)
+//   AGSC-E203  a predicate or a declared type outside the OWL 2 RL-safe set
+//              (AGSC-05-22); an `asc:Item` class, which AGSC-05-13 forbids
+//   AGSC-E204  a vocabulary IRI outside the persistent hash namespace of AGSC-05-02
+//   AGSC-E605  a blank node, which AGSC-05-08 forbids in this dataset
+//   AGSC-E901  the ontology file is missing
+//
+// The OWL 2 RL-safe set is stated positively: this vocabulary is blank-node-free
+// (AGSC-05-08), so it can carry no class expression at all, and every construct that
+// would take OWL 2 DL beyond RL — a restriction, a union, an intersection, a
+// complement, an enumeration, a cardinality — needs one. What remains to police is
+// the flat axiom vocabulary below, plus the two property characteristics OWL 2 RL
+// excludes (`owl:ReflexiveProperty`, and `owl:disjointUnionOf` on a class).
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const HELP = `validate-ontology [--json] [--quiet] [--help] [<root>|<file.ttl>]
+
+  Parses ontology/agsc.ttl and checks it against AGSC-05-02 (the persistent hash
+  namespace), AGSC-05-08 (blank-node-free), AGSC-05-13 (no asc:Item), AGSC-05-22
+  (OWL 2 RL), AGSC-05-25 (versionIRI and deprecation) and AGSC-05-26a, together
+  with the SKOS integrity conditions S19, S20, S32 and S37 those rules rely on.
+
+  --json    emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet   emit nothing; the exit code is the result
+  --help    this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+const NS = 'https://w3id.org/agentic-system-core/ns#';
+const ONTOLOGY_IRI = 'https://w3id.org/agentic-system-core/ns';
+const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
+const OWL = 'http://www.w3.org/2002/07/owl#';
+const SKOS = 'http://www.w3.org/2004/02/skos/core#';
+const DCTERMS = 'http://purl.org/dc/terms/';
+
+/** AGSC-05-22: the flat axiom and annotation vocabulary an RL-safe, blank-node-free
+ *  vocabulary may use. Anything else is reported rather than silently accepted. */
+const ALLOWED_PREDICATES = Object.freeze(new Set([
+  `${RDF}type`,
+  `${RDFS}comment`, `${RDFS}domain`, `${RDFS}isDefinedBy`, `${RDFS}label`, `${RDFS}range`,
+  `${RDFS}seeAlso`, `${RDFS}subClassOf`, `${RDFS}subPropertyOf`,
+  `${OWL}deprecated`, `${OWL}disjointWith`, `${OWL}equivalentClass`, `${OWL}equivalentProperty`,
+  `${OWL}imports`, `${OWL}inverseOf`, `${OWL}propertyDisjointWith`, `${OWL}versionIRI`,
+  `${OWL}versionInfo`,
+  `${DCTERMS}created`, `${DCTERMS}description`, `${DCTERMS}isReplacedBy`, `${DCTERMS}license`,
+  `${DCTERMS}modified`, `${DCTERMS}title`,
+]));
+/** The `rdf:type` objects OWL 2 RL admits for a term of a flat vocabulary. */
+const ALLOWED_TYPES = Object.freeze(new Set([
+  `${OWL}AnnotationProperty`, `${OWL}AsymmetricProperty`, `${OWL}Class`, `${OWL}DatatypeProperty`,
+  `${OWL}FunctionalProperty`, `${OWL}InverseFunctionalProperty`, `${OWL}IrreflexiveProperty`,
+  `${OWL}ObjectProperty`, `${OWL}Ontology`, `${OWL}SymmetricProperty`, `${OWL}TransitiveProperty`,
+]));
+/** SKOS Reference S19/S20: every one of these has domain and range `skos:Concept`. */
+const SEMANTIC_RELATIONS = Object.freeze(new Set([
+  `${SKOS}broadMatch`, `${SKOS}broader`, `${SKOS}broaderTransitive`, `${SKOS}closeMatch`,
+  `${SKOS}exactMatch`, `${SKOS}mappingRelation`, `${SKOS}narrowMatch`, `${SKOS}narrower`,
+  `${SKOS}narrowerTransitive`, `${SKOS}related`, `${SKOS}relatedMatch`, `${SKOS}semanticRelation`,
+]));
+/** AGSC-05-26a: the three properties that carry no super-property, domain or range. */
+const UNTYPED_PROPERTIES = Object.freeze(new Set([`${NS}contradicts`, `${NS}excludes`, `${NS}uses`]));
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, message, severity = 'error', line = 1) {
+  return { code, col: 1, file, line, message, severity };
+}
+
+/** Every class reachable upward from `start` through `rdfs:subClassOf`. */
+function ancestors(start, superClassOf) {
+  const seen = new Set();
+  const stack = [start];
+  while (stack.length) {
+    const current = stack.pop();
+    for (const parent of superClassOf.get(current) || []) {
+      if (seen.has(parent)) continue;
+      seen.add(parent);
+      stack.push(parent);
+    }
+  }
+  return seen;
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'validate-ontology',
+    version,
+  };
+}
+
+function specVersion(root) {
+  try {
+    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
+      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+  } catch { return 'unknown'; }
+}
+
+function packageVersion(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
+  catch { return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} io
+ * @returns {number} exit code: 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`validate-ontology: ${message}\n${HELP}`); return 2; };
+
+  const flags = new Set();
+  let target = DEFAULT_ROOT;
+  let sawTarget = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawTarget) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { target = path.resolve(arg); sawTarget = true; }
+  }
+  const isFile = fs.existsSync(target) && fs.statSync(target).isFile();
+  const root = isFile ? path.resolve(path.dirname(target), '..') : target;
+  const absolute = isFile ? target : path.join(target, 'ontology', 'agsc.ttl');
+  if (!fs.existsSync(absolute)) return usage(`no ontology at ${absolute} (AGSC-E901)`);
+  const file = path.relative(root, absolute).split(path.sep).join('/');
+
+  const findings = [];
+  const raw = fs.readFileSync(absolute, 'utf8');
+  if (raw.charCodeAt(0) === 0xfeff) findings.push(finding('AGSC-E108', file, 'byte-order mark (AGSC-01-14)'));
+  if (raw.includes('\r')) findings.push(finding('AGSC-E108', file, 'CR or CRLF line endings (AGSC-01-14)'));
+  if (!raw.endsWith('\n') || raw.endsWith('\n\n')) {
+    findings.push(finding('AGSC-E108', file, 'the file must end with exactly one LF (AGSC-01-14)'));
+  }
+  if (raw.normalize('NFC') !== raw) findings.push(finding('AGSC-E108', file, 'the file is not NFC (AGSC-01-14)'));
+
+  const { Parser } = require('n3');
+  let quads;
+  try { quads = new Parser({ format: 'text/turtle' }).parse(raw); }
+  catch (e) {
+    findings.push(finding('AGSC-E201', file, `not well-formed Turtle: ${e.message}`));
+    const bad = envelopeOf(findings, specVersion(root), packageVersion(root));
+    if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
+    else if (!flags.has('--quiet')) {
+      for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+      out(`validate-ontology: 0 terms, ${bad.counts.error} error, ${bad.counts.warn} warn\n`);
+    }
+    return 1;
+  }
+
+  // ---- index ---------------------------------------------------------------
+  const types = new Map();          // subject -> Set of rdf:type objects
+  const superClassOf = new Map();   // class -> Set of rdfs:subClassOf objects
+  const superPropertyOf = new Map();
+  const domainOf = new Map();
+  const rangeOf = new Map();
+  const deprecated = new Set();
+  const replaced = new Set();
+  const subjects = new Set();
+  let versionIri = null;
+  const add = (map, key, value) => { if (!map.has(key)) map.set(key, new Set()); map.get(key).add(value); };
+
+  for (const quad of quads) {
+    for (const term of [quad.subject, quad.predicate, quad.object]) {
+      if (term.termType === 'BlankNode') {
+        findings.push(finding('AGSC-E605', file, `blank node _:${term.value}: the dataset is blank-node-free (AGSC-05-08)`));
+      }
+    }
+    const s = quad.subject.value;
+    const p = quad.predicate.value;
+    const o = quad.object.value;
+    subjects.add(s);
+    if (!ALLOWED_PREDICATES.has(p)) {
+      findings.push(finding('AGSC-E203', file,
+        `predicate <${p}> on <${s}> is outside the OWL 2 RL-safe vocabulary this ontology may use (AGSC-05-22)`));
+    }
+    if (p === `${RDF}type`) {
+      add(types, s, o);
+      if (!ALLOWED_TYPES.has(o)) {
+        findings.push(finding('AGSC-E203', file,
+          `<${s}> is declared a <${o}>, which is outside OWL 2 RL for a blank-node-free vocabulary (AGSC-05-22)`));
+      }
+    } else if (p === `${RDFS}subClassOf`) add(superClassOf, s, o);
+    else if (p === `${RDFS}subPropertyOf`) add(superPropertyOf, s, o);
+    else if (p === `${RDFS}domain`) add(domainOf, s, o);
+    else if (p === `${RDFS}range`) add(rangeOf, s, o);
+    else if (p === `${OWL}versionIRI`) versionIri = o;
+    else if (p === `${OWL}deprecated` && o === 'true') deprecated.add(s);
+    else if (p === `${DCTERMS}isReplacedBy`) replaced.add(s);
+  }
+
+  // ---- AGSC-05-02: the persistent hash namespace --------------------------
+  const terms = [...subjects].filter((s) => s !== ONTOLOGY_IRI).sort(compareCodePoint);
+  for (const term of terms) {
+    if (!term.startsWith(NS)) {
+      findings.push(finding('AGSC-E204', file,
+        `<${term}> is described here and is not in the persistent namespace ${NS} (AGSC-05-02)`));
+    }
+  }
+
+  // ---- AGSC-05-13: there is no common superclass --------------------------
+  if (subjects.has(`${NS}Item`)) {
+    findings.push(finding('AGSC-E203', file, 'asc:Item MUST NOT be emitted: there is no common superclass for items (AGSC-05-13)'));
+  }
+
+  // ---- AGSC-05-25: version and deprecation --------------------------------
+  if (!versionIri) {
+    findings.push(finding('AGSC-E202', file, 'the ontology declares no owl:versionIRI (AGSC-05-25)'));
+  }
+  for (const term of [...deprecated].sort(compareCodePoint)) {
+    if (!replaced.has(term)) {
+      findings.push(finding('AGSC-E202', file,
+        `<${term}> is owl:deprecated and carries no dcterms:isReplacedBy (AGSC-05-25)`));
+    }
+  }
+
+  // ---- AGSC-05-26a: three properties carry no axioms at all ---------------
+  for (const term of [...UNTYPED_PROPERTIES].sort(compareCodePoint)) {
+    for (const [label, map] of [['rdfs:subPropertyOf', superPropertyOf], ['rdfs:domain', domainOf], ['rdfs:range', rangeOf]]) {
+      if (map.has(term)) {
+        findings.push(finding('AGSC-E201', file,
+          `<${term}> carries ${label}; AGSC-05-26a forbids it, because skos:related is a sub-property of skos:semanticRelation (S19/S20) and the entailment re-creates the S37 contradiction`));
+      }
+    }
+  }
+
+  // ---- SKOS S19/S20, S32, S37 ---------------------------------------------
+  const isConcept = (cls) => cls === `${SKOS}Concept` || ancestors(cls, superClassOf).has(`${SKOS}Concept`);
+  const isCollection = (cls) => cls === `${SKOS}Collection` || ancestors(cls, superClassOf).has(`${SKOS}Collection`);
+  const isScheme = (cls) => cls === `${SKOS}ConceptScheme` || ancestors(cls, superClassOf).has(`${SKOS}ConceptScheme`);
+
+  for (const [property, supers] of [...superPropertyOf].sort((a, b) => compareCodePoint(a[0], b[0]))) {
+    const semantic = [...supers].some((s) => SEMANTIC_RELATIONS.has(s));
+    const member = [...supers].some((s) => s === `${SKOS}member`);
+    if (semantic) {
+      for (const [label, map] of [['domain', domainOf], ['range', rangeOf]]) {
+        for (const cls of [...(map.get(property) || [])].sort(compareCodePoint)) {
+          if (!isConcept(cls)) {
+            findings.push(finding('AGSC-E201', file,
+              `<${property}> is a sub-property of a SKOS semantic relation and declares the ${label} <${cls}>, which is not a skos:Concept (SKOS S19/S20, AGSC-05-20)`));
+          }
+        }
+      }
+    }
+    if (member) {
+      for (const cls of [...(rangeOf.get(property) || [])].sort(compareCodePoint)) {
+        if (!isConcept(cls) && !isCollection(cls)) {
+          findings.push(finding('AGSC-E201', file,
+            `<${property}> is a sub-property of skos:member and declares the range <${cls}>, outside the union of skos:Concept and skos:Collection (SKOS S32, AGSC-05-18)`));
+        }
+      }
+    }
+  }
+  for (const cls of [...(types.keys())].filter((s) => (types.get(s) || new Set()).has(`${OWL}Class`)).sort(compareCodePoint)) {
+    if (isCollection(cls) && isConcept(cls)) {
+      findings.push(finding('AGSC-E201', file,
+        `<${cls}> is a sub-class of both skos:Collection and skos:Concept, which are disjoint (SKOS S37, AGSC-05-19)`));
+    }
+    if (isCollection(cls) && isScheme(cls)) {
+      findings.push(finding('AGSC-E201', file,
+        `<${cls}> is a sub-class of both skos:Collection and skos:ConceptScheme, which are disjoint (SKOS S37, AGSC-05-19)`));
+    }
+  }
+
+  const classes = terms.filter((t) => (types.get(t) || new Set()).has(`${OWL}Class`)).length;
+  const properties = terms.filter((t) => {
+    const set = types.get(t) || new Set();
+    return set.has(`${OWL}ObjectProperty`) || set.has(`${OWL}DatatypeProperty`);
+  }).length;
+
+  const envelope = envelopeOf(findings, specVersion(root), packageVersion(root));
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) {
+      err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    out(`validate-ontology: ${quads.length} triples, ${classes} classes, ${properties} properties, `
+      + `${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, ancestors, canonicalize, compareCodePoint, run };

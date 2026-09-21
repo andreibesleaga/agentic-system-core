@@ -34,7 +34,7 @@
 
 const { encode } = require('@toon-format/toon');
 const chunks = require('../../knowledge/chunks.js');
-const { singleLine } = require('../../knowledge/unicode.js');
+const { commentSafe, singleLine } = require('../../knowledge/unicode.js');
 
 /** The seven uniform members of the index, in AGSC-06-29's own member order. */
 const INDEX_COLUMNS = Object.freeze(['id', 'item', 'kind', 'section', 'ordinal', 'title', 'digest']);
@@ -128,11 +128,11 @@ function llmsCtxTxt(records, options) {
   // additive adapter. The chunk BODY was already safe: `fenceProse` widens the fence.
   const lines = [`# ${singleLine(options.title)} — skim context`, '',
     '<!-- agsc:provenance',
-    `bundle: ${singleLine(options.base)}`,
-    `license: ${singleLine(options.license)}`,
-    `terms: ${singleLine(options.terms)}`,
-    `spec_version: ${singleLine(options.specVersion)}`,
-    `generated_at: ${singleLine(options.generatedAt)}`,
+    `bundle: ${commentSafe(singleLine(options.base))}`,
+    `license: ${commentSafe(singleLine(options.license))}`,
+    `terms: ${commentSafe(singleLine(options.terms))}`,
+    `spec_version: ${commentSafe(singleLine(options.specVersion))}`,
+    `generated_at: ${commentSafe(singleLine(options.generatedAt))}`,
     '-->', '',
     '> This file is a SKIM view, not a provenance-complete export. It drops every',
     '> chunk\'s `digest`, `trust`, `license`, `iri` and `links`, so nothing here may',

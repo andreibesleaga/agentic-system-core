@@ -1,0 +1,358 @@
+#!/usr/bin/env node
+'use strict';
+// tools/validate-schemas — the JSON-Schema validator of AGSC-09-90 and PRD-054:
+// "meta-validate `schema/*.json` against 2020-12".
+//
+// INDEPENDENT BY CONSTRUCTION: no import from `src/` (AGSC-09-90). It uses the two
+// libraries the engine pins for JSON Schema — `ajv` (the 2020-12 dialect) and
+// `ajv-formats` — which AGSC-09-90 admits since rc.5; everything else is stdlib.
+//
+//   validate-schemas [--json] [--quiet] [--help] [<root>]
+//
+// <root> is the distribution root that holds `schema/`; it defaults to the
+// directory above this file. Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock,
+// no network, findings sorted by (file, line, col, code) per AGSC-09-10.
+//
+// Checks (each a Finding; any error exits 1):
+//   AGSC-E108  encoding: a byte-order mark, a CR, no single trailing LF, or non-NFC
+//              text (AGSC-01-14)
+//   AGSC-E201  the file is not JSON, fails the 2020-12 meta-schema, or does not
+//              compile in the strict mode the specification's keyword subset makes
+//              possible (AGSC-00-09)
+//   AGSC-E202  a length bound AGSC-02-24 names that the schema does not carry
+//   AGSC-E203  `$schema` is not the 2020-12 dialect; a JSON-Schema keyword outside
+//              the closed subset AGSC-02-24 fixes; `type` outside the six item
+//              types of AGSC-00-04
+//   AGSC-E204  `$id` absent or disagreeing with the file name; the slug grammar not
+//              AGSC-01-10's; a port-name member whose only length bound is its
+//              pattern quantifier, which AGSC-02-24 says is never the normative one
+//   AGSC-E901  schema/ or one of the three schemas is missing
+//
+// The keyword subset, the bounds, the slug grammar and the item types are read from
+// the rules, never from the engine: a schema the engine happens to accept but the
+// specification does not admit is exactly the drift this tool exists to catch.
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const HELP = `validate-schemas [--json] [--quiet] [--help] [<root>]
+
+  Meta-validates schema/*.json against JSON Schema 2020-12 and against the
+  obligations the specification places on them: the closed keyword subset of
+  AGSC-02-24, its length bounds, the slug grammar of AGSC-01-10 and the six item
+  types of AGSC-00-04.
+
+  --json    emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet   emit nothing; the exit code is the result
+  --help    this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+const DIALECT = 'https://json-schema.org/draft/2020-12/schema';
+/** AGSC-02-24: the closed keyword subset of the item-facing schemas, and no other. */
+const SUBSET = Object.freeze(['$defs', '$id', '$ref', '$schema', 'additionalProperties',
+  'const', 'description', 'enum', 'items', 'maxItems', 'maxLength', 'minItems', 'minLength',
+  'not', 'oneOf', 'pattern', 'patternProperties', 'properties', 'required', 'title', 'type',
+  'uniqueItems', 'default']);
+/** AGSC-02-24: what `schema/config.schema.json` MAY use beyond the subset. */
+const CONFIG_EXTRA = Object.freeze(['allOf', 'format', 'if', 'maximum', 'minimum', 'then']);
+/** The six item types of AGSC-00-04 / AGSC-02-05, in the order the rule names them. */
+const ITEM_TYPES = Object.freeze(['concept', 'episode', 'procedure', 'lesson', 'cluster', 'gate']);
+/** AGSC-01-10: the slug grammar, and its bound in code points. */
+const SLUG_PATTERN = '^[a-z0-9]+(?:-[a-z0-9]+)*$';
+const SLUG_MAX = 64;
+/** AGSC-02-96 + AGSC-02-24: the port-name grammar and the bound that is normative. */
+const PORT_PATTERN = '^[a-z][a-z0-9-]{0,63}$';
+const PORT_MAX = 64;
+/** AGSC-02-24: the length bounds, by the member they bound. */
+const BOUNDS = Object.freeze([
+  { member: 'title', where: '/properties/title', minLength: 3, maxLength: 120 },
+  { member: 'when', where: '/oneOf/2/properties/when', maxLength: 1024 },
+  { member: 'alt', where: '/properties/attachments/items/properties/alt', minLength: 1 },
+  { member: 'alt', where: '/oneOf/0/properties/diagram/properties/alt', minLength: 1 },
+]);
+const SCHEMAS = Object.freeze(['bundle.schema.json', 'config.schema.json', 'item.schema.json']);
+/** Keywords whose VALUE is a map of name -> schema, not a schema. */
+const MAP_OF_SCHEMAS = Object.freeze(['$defs', 'properties', 'patternProperties']);
+/** Keywords whose value is an array of schemas. */
+const LIST_OF_SCHEMAS = Object.freeze(['allOf', 'anyOf', 'oneOf', 'prefixItems']);
+/** Keywords whose value is a schema. */
+const ONE_SCHEMA = Object.freeze(['additionalProperties', 'contains', 'else', 'if', 'items',
+  'not', 'propertyNames', 'then']);
+/** Keywords whose value is data, never a schema: never descended into. */
+const DATA = Object.freeze(['const', 'default', 'enum', 'examples', 'required']);
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, message, severity = 'error', line = 1) {
+  return { code, col: 1, file, line, message, severity };
+}
+
+/** The value at a JSON Pointer, or undefined. */
+function pointer(root, jsonPointer) {
+  let node = root;
+  for (const token of jsonPointer.split('/').slice(1)) {
+    if (node === null || typeof node !== 'object') return undefined;
+    node = node[token.replace(/~1/gu, '/').replace(/~0/gu, '~')];
+  }
+  return node;
+}
+
+/**
+ * Every keyword used in a schema document, with the pointer where it was seen.
+ * Walks schema positions only: a member name under `properties` is a name, not a
+ * keyword, and the value of `enum`, `const` or `default` is data.
+ */
+function keywordsUsed(schema, at = '', out = new Map()) {
+  if (schema === null || typeof schema !== 'object' || Array.isArray(schema)) return out;
+  for (const key of Object.keys(schema)) {
+    if (!out.has(key)) out.set(key, at === '' ? '/' : at);
+    const value = schema[key];
+    if (DATA.includes(key)) continue;
+    if (MAP_OF_SCHEMAS.includes(key)) {
+      if (value && typeof value === 'object') {
+        for (const name of Object.keys(value)) keywordsUsed(value[name], `${at}/${key}/${name}`, out);
+      }
+      continue;
+    }
+    if (LIST_OF_SCHEMAS.includes(key)) {
+      if (Array.isArray(value)) value.forEach((v, i) => keywordsUsed(v, `${at}/${key}/${i}`, out));
+      continue;
+    }
+    if (ONE_SCHEMA.includes(key)) { keywordsUsed(value, `${at}/${key}`, out); continue; }
+  }
+  return out;
+}
+
+/** Every `pattern` in a schema document, with its pointer and its sibling maxLength. */
+function patterns(schema, at = '', out = []) {
+  if (schema === null || typeof schema !== 'object') return out;
+  if (Array.isArray(schema)) { schema.forEach((v, i) => patterns(v, `${at}/${i}`, out)); return out; }
+  if (typeof schema.pattern === 'string') {
+    out.push({ at, maxLength: schema.maxLength, pattern: schema.pattern });
+  }
+  for (const key of Object.keys(schema)) {
+    if (key === 'pattern' || DATA.includes(key)) continue;
+    patterns(schema[key], `${at}/${key}`, out);
+  }
+  return out;
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'validate-schemas',
+    version,
+  };
+}
+
+function specVersion(root) {
+  try {
+    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
+      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+  } catch { return 'unknown'; }
+}
+
+function packageVersion(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
+  catch { return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} io
+ * @returns {number} exit code: 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`validate-schemas: ${message}\n${HELP}`); return 2; };
+
+  const flags = new Set();
+  let root = DEFAULT_ROOT;
+  let sawRoot = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
+  }
+  const schemaDir = path.join(root, 'schema');
+  if (!fs.existsSync(schemaDir)) return usage(`no schema/ directory under ${root} (AGSC-E901)`);
+
+  const Ajv2020 = require('ajv/dist/2020');
+  const addFormats = require('ajv-formats');
+  const findings = [];
+  const documents = new Map();
+
+  for (const name of SCHEMAS) {
+    const file = `schema/${name}`;
+    const absolute = path.join(schemaDir, name);
+    if (!fs.existsSync(absolute)) {
+      findings.push(finding('AGSC-E901', file, 'the specification names this schema and it is absent (AGSC-00-09)'));
+      continue;
+    }
+    const raw = fs.readFileSync(absolute, 'utf8');
+    if (raw.charCodeAt(0) === 0xfeff) findings.push(finding('AGSC-E108', file, 'byte-order mark (AGSC-01-14)'));
+    if (raw.includes('\r')) findings.push(finding('AGSC-E108', file, 'CR or CRLF line endings (AGSC-01-14)'));
+    if (!raw.endsWith('\n') || raw.endsWith('\n\n')) {
+      findings.push(finding('AGSC-E108', file, 'the file must end with exactly one LF (AGSC-01-14)'));
+    }
+    if (raw.normalize('NFC') !== raw) findings.push(finding('AGSC-E108', file, 'the file is not NFC (AGSC-01-14)'));
+
+    let document;
+    try { document = JSON.parse(raw); }
+    catch (e) { findings.push(finding('AGSC-E201', file, `not valid JSON: ${e.message}`)); continue; }
+    documents.set(name, document);
+
+    if (document.$schema !== DIALECT) {
+      findings.push(finding('AGSC-E203', file,
+        `$schema is ${JSON.stringify(document.$schema)}; the schemas are JSON Schema 2020-12 (${DIALECT}) (AGSC-02-24)`));
+    }
+    if (typeof document.$id !== 'string') {
+      findings.push(finding('AGSC-E204', file, '$id is absent; every schema is identified by an absolute IRI (AGSC-00-09)'));
+    } else if (!document.$id.endsWith(`/${name}`)) {
+      findings.push(finding('AGSC-E204', file, `$id ${document.$id} does not end in /${name}`));
+    }
+
+    // ---- meta-validation and strict compilation ---------------------------
+    const ajv = new Ajv2020({
+      allErrors: true, strict: true, strictRequired: false, unicodeRegExp: true, validateFormats: true,
+    });
+    addFormats(ajv);
+    try {
+      if (!ajv.validateSchema(document)) {
+        for (const e of (ajv.errors || []).slice(0, 20)) {
+          findings.push(finding('AGSC-E201', file,
+            `fails the 2020-12 meta-schema at ${e.instancePath || '/'}: ${e.message}`));
+        }
+      }
+    } catch (e) {
+      findings.push(finding('AGSC-E201', file, `cannot be meta-validated: ${e.message}`));
+    }
+    try { ajv.compile(document); }
+    catch (e) { findings.push(finding('AGSC-E201', file, `does not compile in strict mode: ${e.message}`)); }
+
+    // ---- AGSC-02-24: the closed keyword subset ----------------------------
+    const allowed = new Set(name === 'config.schema.json' ? [...SUBSET, ...CONFIG_EXTRA] : SUBSET);
+    for (const [keyword, where] of [...keywordsUsed(document)].sort()) {
+      if (!allowed.has(keyword)) {
+        findings.push(finding('AGSC-E203', file,
+          `keyword "${keyword}" at ${where} is outside the subset AGSC-02-24 fixes for this schema`));
+      }
+    }
+
+    // ---- AGSC-02-24 / AGSC-02-96: the port-name bound is the maxLength ----
+    // "the normative bound there is the `maxLength: 64` the schema carries beside
+    // the pattern, never the pattern's quantifier" — so a port-name member whose
+    // only bound is the quantifier is the fault, not a grammar quantifier such as
+    // the `{2,8}` of a BCP 47 tag, which bounds no length this specification names.
+    for (const p of patterns(document)) {
+      if (!/\/(?:produces|consumes)\/items$/u.test(p.at)) continue;
+      if (p.pattern !== PORT_PATTERN) {
+        findings.push(finding('AGSC-E204', file,
+          `the port-name pattern at ${p.at} is ${JSON.stringify(p.pattern)}; AGSC-02-96 fixes it at ${JSON.stringify(PORT_PATTERN)}`));
+      }
+      if (p.maxLength !== PORT_MAX) {
+        findings.push(finding('AGSC-E204', file,
+          `the port-name member at ${p.at} declares maxLength ${JSON.stringify(p.maxLength)}; AGSC-02-24 makes the maxLength beside the pattern the normative bound, at ${PORT_MAX}`));
+      }
+    }
+  }
+
+  // ---- obligations that name one schema -----------------------------------
+  const item = documents.get('item.schema.json');
+  if (item) {
+    const file = 'schema/item.schema.json';
+    const types = pointer(item, '/properties/type/enum');
+    if (canonicalize(types) !== canonicalize(ITEM_TYPES)) {
+      findings.push(finding('AGSC-E203', file,
+        `the type enum is ${canonicalize(types)}; AGSC-00-04 closes it to ${canonicalize(ITEM_TYPES)}`));
+    }
+    for (const bound of BOUNDS) {
+      const node = pointer(item, bound.where);
+      if (node === undefined) {
+        findings.push(finding('AGSC-E202', file,
+          `AGSC-02-24 bounds \`${bound.member}\` and ${bound.where} does not exist`));
+        continue;
+      }
+      for (const keyword of ['minLength', 'maxLength']) {
+        if (bound[keyword] === undefined) continue;
+        if (node[keyword] !== bound[keyword]) {
+          findings.push(finding('AGSC-E202', file,
+            `${bound.where} declares ${keyword} ${JSON.stringify(node[keyword])}; AGSC-02-24 fixes it at ${bound[keyword]}`));
+        }
+      }
+    }
+  }
+  for (const name of ['item.schema.json', 'config.schema.json']) {
+    const document = documents.get(name);
+    if (!document) continue;
+    const slug = pointer(document, '/$defs/slug');
+    if (slug === undefined) continue;
+    if (slug.pattern !== SLUG_PATTERN) {
+      findings.push(finding('AGSC-E204', `schema/${name}`,
+        `$defs/slug carries ${JSON.stringify(slug.pattern)}; AGSC-01-10 fixes the grammar at ${JSON.stringify(SLUG_PATTERN)}`));
+    }
+    if (slug.maxLength !== SLUG_MAX) {
+      findings.push(finding('AGSC-E204', `schema/${name}`,
+        `$defs/slug declares maxLength ${JSON.stringify(slug.maxLength)}; AGSC-01-10 bounds a slug at ${SLUG_MAX} code points`));
+    }
+  }
+
+  const envelope = envelopeOf(findings, specVersion(root), packageVersion(root));
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) {
+      err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    out(`validate-schemas: ${documents.size} schemas, ${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, canonicalize, compareCodePoint, keywordsUsed, patterns, pointer, run };

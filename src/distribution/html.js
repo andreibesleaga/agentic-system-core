@@ -77,6 +77,12 @@ function shell(page) {
     // Serialised by the caller with JCS so the bytes are reproducible (AGSC-04-04).
     head.push(`<script type="application/ld+json">${page.jsonld}</script>`);
   }
+  // AGSC-09-16: the page tools of an item page. `defer` keeps the parse
+  // uninterrupted; the scripts are same-origin files of this node (AGSC-06-17's
+  // `script-src 'self'`), never inline and never third-party (AGSC-06-05).
+  for (const src of (page.pageToolScripts || [])) {
+    head.push(`<script src="${escapeHtml(src)}" defer></script>`);
+  }
   head.push('</head>', '<body>');
   const nav = (page.nav || []).map(([href, label]) => `<a href="${escapeHtml(href)}">${escapeHtml(label)}</a>`).join(' ');
   return [
@@ -184,6 +190,18 @@ function itemPage(item, options = {}) {
     parts.push(`<figure><img src="/attachments/${escapeHtml(item.slug)}/${escapeHtml(attachment.file)}" alt="${escapeHtml(attachment.alt)}"><figcaption>${escapeHtml(attachment.alt)}</figcaption></figure>`);
   }
   parts.push(`<p class="views">Machine views: <a href="/pages/${escapeHtml(item.slug)}.md">Markdown</a> · <a href="/pages/${escapeHtml(item.slug)}.jsonld">JSON-LD</a></p>`);
+  // AGSC-11-14 / AGSC-08-04: a PLAIN anchor to the forge's edit view of this item's
+  // source file. It is not a form (AGSC-06-17 sets `form-action 'none'`), it carries
+  // no script, and it saves nothing: what it opens is the forge's own editor, and
+  // what that produces is a Proposal a human merges (AGSC-08-03, AGSC-08-08). The
+  // accessible name says which item, because "Propose an edit" alone is ambiguous in
+  // a list of links.
+  if (typeof options.editUrl === 'string' && options.editUrl !== '') {
+    const name = item.title == null ? item.slug : item.title;
+    parts.push(`<p class="contribute"><a href="${escapeHtml(options.editUrl)}" rel="noopener"`
+      + ` aria-label="Propose an edit to ${escapeHtml(name)}">Propose an edit</a>`
+      + ' — your change is proposed, and a person reviews and merges it.</p>');
+  }
   return shell({
     ...options,
     url: options.url,
@@ -301,20 +319,36 @@ function boardPage({ board, columns, wip }, options = {}) {
  * page renders them and adds no term of its own, because the wording is an owner
  * decision outside the specification.
  */
-function legalPage({ terms, licenseProse, rendered }, options = {}) {
+/**
+ * `/legal/` (AGSC-06-18, PRD-019). Four things belong on this page: the content-use
+ * terms, a privacy notice, the identification of the operator and a retention
+ * statement. The terms are the distribution's `LICENSE-CONTENT`, the privacy notice
+ * (which carries the retention statement) is the Bundle's authored `PRIVACY.md` and
+ * the operator comes from the configuration — so every word on this page is the
+ * publisher's own. A section whose input is absent is OMITTED, never invented, and
+ * the build warns (`site.js`).
+ */
+function legalPage({ terms, licenseProse, rendered, privacy, operator }, options = {}) {
+  const sections = [
+    `<p>The Content Use Terms identifier is <code>${escapeHtml(terms)}</code>. `
+      + `The licence of the prose itself is <code>${escapeHtml(licenseProse)}</code>; `
+      + 'the two are different facts and may differ (AGSC-06-18).</p>',
+    '<h2 id="terms">The terms</h2>',
+    rendered,
+    '<p>The text above is this distribution\'s <code>LICENSE-CONTENT</code> file, '
+      + 'rendered unchanged (AGSC-01-26, AGSC-06-18).</p>',
+  ];
+  if (privacy != null && String(privacy) !== '') {
+    sections.push('<h2 id="privacy">Privacy</h2>', String(privacy));
+  }
+  if (operator != null && String(operator) !== '') {
+    sections.push(`<h2 id="operator">Operator</h2>\n<p>This node is published by ${escapeHtml(String(operator))}.</p>`);
+  }
   return shell({
     ...options,
-    title: 'Content Use Terms',
-    description: 'The terms every export of this node carries, and the licence of its prose.',
-    body: [
-      `<p>The Content Use Terms identifier is <code>${escapeHtml(terms)}</code>. `
-        + `The licence of the prose itself is <code>${escapeHtml(licenseProse)}</code>; `
-        + 'the two are different facts and may differ (AGSC-06-18).</p>',
-      '<h2>The terms</h2>',
-      rendered,
-      '<p>The text above is this distribution\'s <code>LICENSE-CONTENT</code> file, '
-        + 'rendered unchanged (AGSC-01-26, AGSC-06-18).</p>',
-    ].join('\n'),
+    title: 'Legal and privacy',
+    description: 'The terms every export of this node carries, the licence of its prose, the privacy notice and who operates this node.',
+    body: sections.join('\n'),
   });
 }
 

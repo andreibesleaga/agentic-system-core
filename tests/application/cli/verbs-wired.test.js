@@ -114,8 +114,16 @@ test('AGSC-10-02: build --level 0 writes the Level-0 artefacts and no generated 
   run(['build', '--level', '0', '--json'], dir);
   assert.ok(fs.existsSync(path.join(dir, 'www', 'graph.jsonld')));
   assert.ok(!fs.existsSync(path.join(dir, 'www', 'index.html')));
-  // AGSC-06-32: no /ns/context.jsonld is emitted, so none is named as @context.
-  assert.ok(!('@context' in JSON.parse(fs.readFileSync(path.join(dir, 'www', 'graph.jsonld'), 'utf8'))));
+  // AGSC-06-32: no /ns/context.jsonld is emitted at Level 0.
+  assert.ok(!fs.existsSync(path.join(dir, 'www', 'ns', 'context.jsonld')));
+  // CHANGED 2026-09-21 (NS-03): this assertion used to read `!('@context' in …)`,
+  // on the pre-rc.5 reading that a document may name no context when the node
+  // serves none. AGSC-05-09 as amended at rc.5 overturned it — "The URL is a
+  // constant of this specification, resolvable by every reader at every Level, so
+  // a Level-0 graph.jsonld is expandable without the node serving a context of its
+  // own" — and the old behaviour lost half the triples in a conforming processor.
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'www', 'graph.jsonld'), 'utf8'))['@context'],
+    'https://w3id.org/agentic-system-core/ns/1.0.0-draft.1/context.jsonld');
 });
 
 test('AGSC-04-02: verify builds twice and compares bytes', () => {

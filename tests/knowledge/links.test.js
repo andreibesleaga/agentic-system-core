@@ -194,9 +194,14 @@ test('AGSC-01-35 as amended at rc.5 (R-01): a `..` body reference that stays ins
   // FINAL-VERIFY-28 found the amendment applied to the specification and not here.
   const asset = links.resolve([{ slug: 'a', type: 'concept', body: '![x](../assets/d.png)\n' }],
     { assets: ['content/assets/d.png'] });
-  const pathCodes = (r) => r.errors.map((f) => f.code).filter((c) => c === 'AGSC-E902' || c === 'AGSC-E310');
-  assert.deepStrictEqual(pathCodes(asset), [], 'a `..` reference to an existing asset is not a finding');
+  const pathCodes = (r) => r.errors.filter((f) => f.severity !== 'warn')
+    .map((f) => f.code).filter((c) => c === 'AGSC-E902' || c === 'AGSC-E310');
+  assert.deepStrictEqual(pathCodes(asset), [], 'a `..` reference to an existing asset is not an error');
   assert.deepStrictEqual(asset.resolved, ['../assets/d.png']);
+  // ENG-5, rc.5: it IS a warning, because AGSC-06-01 emits no route for an asset
+  // (item 56 / FIX28-01) — the link works in the repository and 404s on the site.
+  assert.deepStrictEqual(asset.errors.filter((f) => f.code === 'AGSC-E310')
+    .map((f) => [f.code, f.severity]), [['AGSC-E310', 'warn']]);
 
   // A `..` reference to a sibling ITEM resolves in both spellings (R-04).
   const items = [

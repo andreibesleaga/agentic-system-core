@@ -130,6 +130,23 @@ function allExternalProperties() {
   return EXTERNAL_PROPERTIES.map(([compact]) => compact);
 }
 
+/**
+ * AGSC-05-09 as amended at rc.5: the specification's **persistent versioned context
+ * URL**, `https://w3id.org/agentic-system-core/ns/<ontology-version>/context.jsonld`.
+ * It is a constant of the specification, resolvable by every reader at every Level,
+ * so a Level-0 `graph.jsonld` — which AGSC-06-32 forbids to serve a context of its
+ * own — still names one and loses no triple when a processor expands it.
+ *
+ * Both halves are derived, never typed: the namespace is `nquads.js`'s `NS` without
+ * its `#`, and the version is the `owl:versionIRI` version of AGSC-05-25, which
+ * `turtle.js#ontologyVersion` reads out of `ontology/agsc.ttl`.
+ *
+ * @param {string} ontologyVersion e.g. `1.0.0-draft.1`
+ */
+function persistentContextUrl(ontologyVersion) {
+  return `${NS.slice(0, -1)}/${ontologyVersion}/context.jsonld`;
+}
+
 // ---------------------------------------------------------------- memory:// (AGSC-05-04b)
 
 const MEMORY = /^memory:\/\/(?<bundle>[^/]+)\/(?<slug>.+)$/u;
@@ -252,6 +269,7 @@ module.exports = {
   termIndex,
   context,
   allExternalProperties,
+  persistentContextUrl,
   resolveMemory,
   toJsonLd,
 };
