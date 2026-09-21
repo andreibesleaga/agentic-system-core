@@ -183,6 +183,18 @@ test('a field value can never forge a line (AGSC-02-24)', () => {
   assert.match(text, new RegExp(`^Expires: ${DERIVED_EXPIRES}$`, 'mu'));
 });
 
+test('readPrivacyNotice is total: absent, blank, unreadable and no port at all', () => {
+  assert.strictEqual(site.readPrivacyNotice(undefined), null);
+  assert.strictEqual(site.readPrivacyNotice({ fs: {} }), null);
+  assert.strictEqual(site.readPrivacyNotice({ fs: { exists: () => false, readFile: () => 'x' } }), null);
+  assert.strictEqual(site.readPrivacyNotice({ fs: { exists: () => true, readFile: () => '\n \n' } }), null);
+  assert.strictEqual(site.readPrivacyNotice({
+    fs: { exists: () => true, readFile: () => { throw new Error('outside the root'); } },
+  }), null);
+  assert.strictEqual(site.readPrivacyNotice({ fs: { exists: () => true, readFile: () => 'No cookies.' } }),
+    'No cookies.');
+});
+
 test('readSecurityTxt is total: absent, blank, unreadable and no port at all', () => {
   assert.strictEqual(site.readSecurityTxt(undefined), null);
   assert.strictEqual(site.readSecurityTxt({ fs: {} }), null);
