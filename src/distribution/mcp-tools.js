@@ -85,8 +85,21 @@ function tokenize(text) {
 }
 
 /** The tokenizer input of AGSC-06-23: title, description, tags, body without fences. */
+/**
+ * AGSC-06-23 pins the tokenizer input: "`title`, `description`, every `tags` value
+ * and the body with fenced code blocks removed". `search.tokenizerInput` reads those
+ * from a FLAT item, while a loaded Bundle carries them under `frontmatter` — so
+ * until rc.5 this tool tokenized the body alone and silently matched neither a title
+ * nor a description nor a tag. That is the same defect the `/compose/` combiner
+ * carried (ENG2-D1): one shape read as another. Flattened here, so the `search` and
+ * `ask` tools and `search.json` index exactly the same text and a hit means the same
+ * thing on every surface. Found by vector `cli-0007`.
+ */
 function documentText(item) {
-  return search.tokenizerInput(item);
+  const flat = item && item.frontmatter != null
+    ? { ...item.frontmatter, body: item.body, slug: item.slug, type: item.type }
+    : item;
+  return search.tokenizerInput(flat);
 }
 
 /**
@@ -95,7 +108,7 @@ function documentText(item) {
  * the graph exports report.
  */
 function edgesFor(bundle, item) {
-  const resolved = links.resolve(bundle.items, { config: bundle.config });
+  const resolved = links.resolve(bundle.items, { assets: bundle.assets, config: bundle.config });
   return (resolved.edges || []).filter((e) => e.source === item.slug);
 }
 
@@ -201,20 +214,34 @@ function tools(bundle, options) {
     }));
   };
 
+  /**
+   * AGSC-09-14a as amended at rc.5 (V9D-07), vector `cli-0007`. The AGSC-08-18
+   * envelope with EXACTLY ONE added top-level member, `citations[]`: six members and
+   * no more. `body` is the answer TEXT, never an object — before rc.5 this engine
+   * returned `{answer, citations, terms}` inside `body`, which was the second of the
+   * two readings the rule then admitted and the one that makes the fixed no-answer
+   * string unreachable. The Content Use Terms line lives INSIDE `body`, except in the
+   * no-answer case, where the rule fixes `body` to exactly `no answer in this memory`.
+   */
+  function answerEnvelope(body, citations) {
+    return Object.freeze({
+      body,
+      citations: Object.freeze(citations),
+      license: CONTENT_USE_TERMS,
+      source: 'ask',
+      trust: 'untrusted',
+      type: 'answer',
+    });
+  }
+
   implementations.ask = (args) => {
     const question = typeof args.question === 'string' ? args.question : '';
     const hits = implementations.search({ query: question }).body.hits;
-    if (hits.length === 0) {
-      return envelope('ask', 'answer', Object.freeze({
-        answer: NO_ANSWER, citations: Object.freeze([]), terms: CONTENT_USE_TERMS,
-      }));
-    }
+    if (hits.length === 0) return answerEnvelope(NO_ANSWER, []);
     const cited = hits.slice(0, 3);
-    return envelope('ask', 'answer', Object.freeze({
-      answer: cited.map((h) => describe(byslug.get(h.slug))).join(' '),
-      citations: Object.freeze(cited.map((h) => h.iri)),
-      terms: CONTENT_USE_TERMS,
-    }));
+    const answer = cited.map((h) => describe(byslug.get(h.slug))).join(' ');
+    return answerEnvelope(`${answer} Content Use Terms: ${CONTENT_USE_TERMS}.`,
+      cited.map((h) => h.iri));
   };
 
   implementations.remember = (args) => {

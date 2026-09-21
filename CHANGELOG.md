@@ -9,6 +9,205 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed — the engine conforms to the DRAFT `1.0.0-rc.5` (RC5-B, 2026-09-21)
+
+- The spec version the engine states has ONE home:
+  `src/application/cli/main.js#SPEC_VERSION`, now `1.0.0-rc.5`. Every envelope,
+  report, `llms.txt` provenance header and `/compose/` page takes it from there.
+- **`agsc --help` and `agsc <verb> --help`** print the verb set and the flag list to
+  stdout and exit 0 (AGSC-09-09 as amended, V9D-02); with a verb, that verb's flags.
+  Under `--json` the same facts come back as one canonical JSON object. Until rc.5
+  `--help` was `AGSC-E001` and `<verb> --help` was `AGSC-E002`.
+- **BREAKING for a tool client: the `ask` envelope is flat.**
+  `{body, citations, license, source, trust, type}` — the AGSC-08-18 envelope with
+  exactly one added top-level member — where `body` is the answer TEXT with the
+  Content Use Terms line in it, and exactly `no answer in this memory` when nothing
+  matches. It used to nest `{answer, citations, terms}` inside `body`
+  (AGSC-09-14a as amended, V9D-07; vector `cli-0007`). Both transports change
+  together, so AGSC-09-16 still holds.
+- **BREAKING for an MCP client: the `extensions` capability is a MAP**,
+  `{"com.agenticsystemcore/knowledge": {"linkset": "<base>/.well-known/knowledge-linkset"}}`,
+  as MCP defines it and as AGSC-11-18 now pins it (SITE1-01, vectors `bnd-0035` and
+  `bnd-0036`). It used to be the bare identifier list, and `bnd-0027` — the one vector
+  that stated it that way — is withdrawn for it under AGSC-00-16, superseded by
+  `bnd-0036` (RC5-C). The conformance handler no longer projects the map to its key
+  set for any vector.
+- **`schema:license` and `schema:usageInfo` are `xsd:string` literals on the Bundle
+  AND on every item**, and the Content Use Terms identifier is the constant of
+  AGSC-06-18 rather than a configured IRI. All four RDF views move together
+  (AGSC-05-26 as amended, V9A-02; vectors `graph-0015`…`graph-0018`).
+- **AGSC-06-21's index budget is one number measured per index DOCUMENT** —
+  1 MB (decimal) for `/search.json` and for each `/search-<nn>.json` shard. The
+  per-published-item and 500 KB absolute bounds are gone: they were jointly
+  unsatisfiable with AGSC-06-23 for any Bundle of more than roughly 200-word items,
+  and summing a manifest and its shards measured eleven documents as one (ENG1-01).
+- **The compiled diagram is inline in its item's page**, in a `<figure>` whose
+  accessible name is `diagram.alt`, at no route of its own, and inside AGSC-02-98's
+  allow-list (AGSC-01-07/AGSC-02-13 as amended, ENG1-02). Pages that carried alt text
+  and no picture now carry the picture.
+- **`/attachments/<slug>/<file>` is emitted**, with the authored bytes AGSC-05-29
+  hashed (AGSC-06-01, AR2-23). Every page linking an attachment used to raise
+  `AGSC-E901` for a route the build did not produce.
+- **The AGSC-11-08 address guard is unconditional on every redirect hop**, closing
+  the last fail-open path in the transport rules and the one blocker for 1.0.0
+  (`bnd-0005` withdrawn → `bnd-0030`).
+- `lint --fix` reports a code per NORMALISATION — `AGSC-E108` for the encoding third,
+  `AGSC-E506` for the rest (AGSC-04-19 as amended, ENG2-03). An adapter's own flags
+  (`--selection`, `--corrections`, `--attach-diagrams`) are adapter-scoped and are
+  `AGSC-E002` under any adapter that does not define them (ENG2-01/ENG1 §3).
+- Fixed: the `search` and `ask` tools tokenized the body alone, matching neither a
+  title, a description nor a tag on a loaded Bundle (AGSC-06-23); an item whose
+  primary cluster was not listed appeared in no `/llms.txt` section at all
+  (AGSC-06-14); a malformed `Assisted-by:` line was silently dropped instead of
+  making the trailer block `AGSC-E504` (AGSC-08-06).
+- `tests/conformance/pending.json` is EMPTY: the vector set runs
+  `136 pass, 0 fail, 14 skip (14 withdrawn, 0 pending) of 150` (FIX-28, which added
+  `fm-0010`; it was `135 pass … of 149` at RC5-C, and `135 pass … 13 withdrawn … of
+  148` before `bnd-0027` was withdrawn and `bnd-0036` added).
+
+### Security — authored single-line strings cannot inject structure (FIX-28 / FV28-01, 2026-09-21)
+
+- **An item `title`, `description`, `alt`, `caption`, reference title or any other
+  AUTHORED SINGLE-LINE string may no longer carry a C0 control, `U+007F`, `U+0085`,
+  `U+2028` or `U+2029`** (AGSC-02-24 as amended at rc.5). Until now
+  `title: "Handoff\n\n## Injected Section\n\n- [Fake](https://evil.example/): pwned"`
+  was schema-valid, passed `lint` 0/0 and `build` 0/0, and put a FORGED `## ` heading
+  and a forged link entry into `/llms.txt`, and the same block OUTSIDE the
+  ```` ```text agsc-content ```` fence of `/llms-full.txt` — breaking that file's own
+  AGSC-01-29 promise that item prose is quoted data. Reachable wherever metadata is
+  not the operator's keystrokes: an imported Bundle (AGSC-01-22), a channel
+  contribution (AGSC-01-30…33), an agent-lane Proposal (AGSC-08-28).
+  - **Validation**: `schema/{item,bundle,config}.schema.json` carry the bound as a
+    `pattern` on each such member (`#/$defs/single_line` in the item and configuration
+    schemas), so the fault is `AGSC-E204` — the code §9.4's precedence paragraph
+    already assigns to every pattern violation. No code was minted. The Bundle root's
+    `description` is deliberately exempt: AGSC-06-13a(3) emits it with newlines
+    replaced by one space. New vector `fm-0010`.
+  - **Neutralisation**: every writer of a line-oriented surface — `/llms.txt`,
+    `/llms-full.txt`, `/now.md`, `robots.txt`, `/.well-known/security.txt`,
+    `_headers`, `_redirects`, the seven Harness files including `SKILL.md`, and the
+    additive `llms-ctx.txt` — now passes what it interpolates through
+    `knowledge/unicode.js#singleLine` (one `U+0020` per forbidden code point). It is
+    the identity on every conforming string, so no emitted byte of a conforming
+    Bundle moved. This also closes FV28-05, which was the same hole in
+    `interchange/adapters/llm-context.js`.
+
+### Changed — the Content Use Terms text is PINNED (FIX-28 / V9A-24, owner answer to Q-RC5-1)
+
+- `AGSC-06-18` as amended at rc.5 now says which text the identifier
+  `LicenseRef-AgenticSystemCore-Content-Use-1.0` names: the `LICENSE-CONTENT` file whose
+  SHA-256 is `b2e8da62e6a41886296d2d2358fb4642cc7418e806eb4a29ada12b588ac32857` (2,133 bytes).
+  A distribution shipping different text MUST use a different identifier. Until now the
+  wording was "an owner decision outside this specification", so the identifier named no
+  fixed text and two nodes could carry it over different terms.
+- `tests/arch/license-content-pin.test.js` reads the hex and the byte count out of the RULE
+  and hashes the file, so the pin fails the suite rather than rotting silently; a second
+  test pins the identifier's one spelling across `chunks.js`, `harness.js` and `mcp-tools.js`.
+  All three distributions (engine, patterns node, first node) already carry byte-identical
+  text, so no emitted byte moved.
+
+### Fixed — AGSC-03-11's asset branch, and the dangling-link guard (FIX-28 / FV28-03, FV28-04)
+
+- **`loadBundle` lists `content/assets/**` into `bundle.assets`** and every caller of
+  `links.resolve` passes it, so AGSC-03-11's "an existing asset under
+  `content/assets/`" is reachable at last: before this, every body image reference to
+  a real asset was `AGSC-E310`, because no caller supplied the set the resolver reads.
+  `walk` is declared on the FileSystem port, which three application modules already
+  required of every implementation. New fixture `tests/fixtures/with-assets/`.
+- **The dangling-link guard resolves RELATIVE hrefs** against the page's own route
+  (`site.js#internalLinks`), and **the writer maps a body reference that resolves to a
+  published item onto that item's route** (`site.js#bodyHrefResolver`, through the new
+  `href` option of `knowledge/markdown.js#render`). The two are one fix: a body
+  reference is authored in the Bundle's geometry and served in the route geometry, and
+  no authored spelling resolves in both — so the writer had been emitting links to
+  nothing and the guard had been blind to exactly that class. Measured on the patterns
+  node before the fix: 65 distinct relative targets, 186 occurrences on 52 of 124
+  pages, none resolving to an emitted route.
+- **`import --from old-site` rewrites an in-set body link to AGSC-03-12's normal form**
+  `../concepts/<slug>.md`, and **de-links a link to a card that is not PUBLISHED** —
+  not merely not selected. A draft has no route (AGSC-06-30), so a published page
+  linking one ships a 404. The published set is decided in a pure pre-pass over the
+  selection (`statusOverrideFor`) so that the body rewriting and the status decision
+  cannot disagree.
+- `/feed.xml`'s build skip message no longer invites `build.feed`, which R-15
+  withdrew at rc.5 and which a 1.0 tool rejects with `AGSC-E004` (FV28-11).
+
+### Added — the Harness, the `/compose/` and board pages, `/legal/`, the three silent gaps and the `llm-context` adapter (ENG-2, s28)
+
+- `agsc compose <slugs…>` now WRITES the seven Harness files of AGSC-07-12 into
+  `dist/harness/<name>/`, `<name>` being the first sixteen hex characters of the
+  selection digest, so a Harness is addressed by its member set;
+  `--out <dir>` overrides the directory and changes no emitted byte (AGSC-07-13).
+  `harness_emitted` is true only when every file kind the rule names for that member
+  set is present and nothing AGSC-07-15 forbids is.
+- `src/governance/fix.js` and `agsc lint --fix` — AGSC-04-19's five normalisations and
+  no others (line endings, NFC, trailing newline, frontmatter key order in schema
+  order, and AGSC-03-12's wikilink rewriting), idempotent, through the one YAML writer
+  (`knowledge/adopt.js#serialize`). Under `--json` it is a dry run that reports what
+  would change and writes nothing. Four rules obliged this flag and none defined it
+  until rc.5 (V9D-01).
+- `src/distribution/forge.js` and the `ci` `forge` lane — AGSC-08-12's `enforce[]`
+  compilation into `dist/forge/`, deterministic and idempotent, with drift reported as
+  `AGSC-E707` and never overwritten. `governance/lint.js#checkEnforce` reports a value
+  that cannot be compiled with the same code.
+- `agsc export --jsonld`, `--jsonl` and `--to <adapter>` (AGSC-01-26a, AGSC-01-27),
+  written under `dist/export/` with each file's SHA-256 printed. The first memory
+  adapter is `llm-context` (D98): `chunks-index.toon` in TOON tabular form and
+  `llms-ctx.txt`, a skim view that says in its own header that it is not
+  provenance-complete. Both live OUTSIDE `build.out` and are declared with a
+  `related[]` link, `rel: "alternate"` (AGSC-06-35).
+- AGSC-06-21's four numeric budgets are MEASURED: three byte budgets in `site.build`
+  and the duration in `site.timeBudget`, which the caller supplies so that no finding
+  depends on how busy the machine is. §9.4 registers no code for a budget breach, so
+  the closest registered row (`AGSC-E904`) is used and the missing registration is on
+  the specification items list.
+- `/legal/` is emitted from the Bundle's own `LICENSE-CONTENT` (AGSC-06-18), and every
+  site-absolute link a build emits must resolve to a route the same build emits —
+  `AGSC-E901` when one does not (`site.internalLinks`, `site.resolvesTo`).
+
+### Fixed — ENG-2
+
+- `verbs/compose.js#flatten` carries the item body. Without it `compose --from <slug>`
+  could never find AGSC-02-97's `yaml agsc-selection` fence, and a Harness `SKILL.md`
+  was emitted with no prose while the `/compose/` page emitted the real one — an
+  AGSC-07-13 byte-identity break.
+- `composition/browser.js#itemsFromGraph` reads the graph a Level-2 build actually
+  publishes (full IRIs for `asc:` terms, bare terms for the SKOS ones) and no longer
+  reads a member of a required module, which threw
+  `compose.compareCodePoint is not a function` in every page. `tests/arch/
+  composition-portable.test.js` now refuses both shapes.
+- The `/compose/` controller takes the build instant from the discovery document's
+  `agsc-generated-at` (AGSC-06-08), never from a wall clock.
+- `agsc compose` no longer prints a blank diagnostic line for a verdict warning: each
+  of AGSC-07-07's and AGSC-07-23's warnings has its own sentence (R64).
+- `site.build` moves its entries into the ordered map instead of copying them, and
+  `site.verify` retains only digests: peak resident memory at 10 000 items falls from
+  1 225 MiB to 1 082 MiB. The supported scale is unchanged.
+
+
+### Added — `import --from old-site` and the diagram compiler (WP-12, M3)
+
+- `src/knowledge/diagrams.js` — the deterministic `.diagram` → SVG compiler
+  (AGSC-01-07, AGSC-02-13, AGSC-02-98): `compile(dslText) -> {svg, findings}`, a
+  pure total function with no clock and no randomness, whose output is inside the
+  AGSC-02-98 allow-list by construction, carries `<title>`/`<desc>` beside
+  `role="img"` (AGSC-06-20) and no colour of its own, so it reads in both colour
+  schemes. `check()` is the staleness comparison of AGSC-04-02 and `altFrom()`
+  derives the accessible name AGSC-02-13 requires.
+- `src/interchange/` — the old-site reader (`oldsite.js`), the field mapping
+  (`mapping.js`), the citation mapping (`sources.js`), the status/release/tag
+  rules (`status.js`), the deck → cluster derivation (`clusters.js`), the
+  mechanical clean-room rewrite (`cleanroom-rewrite.js`), the selection-file
+  parser (`selection.js`) and the plan itself (`import.js`). The plan is a pure
+  function of its inputs: deterministic, idempotent and total (AGSC-01-22/01-23).
+- `agsc import --from old-site --selection <tsv> [--corrections <json>]
+  [--attach-diagrams] [--dry-run] <dir>` — the verb that wires them. Which records
+  are imported, with which status, and every per-record correction are DATA the
+  operator supplies; the engine carries no list of its own. A byte-identical file
+  is not rewritten, so a second run changes nothing.
+- `tests/fixtures/old-site-10/` — a synthetic corpus in the foreign format,
+  exercising every branch of the mapping table.
+
 ### Fixed — the session-28 deep engine audit (V9-D)
 
 - `src/knowledge/yaml.js` — duplicate keys (`AGSC-E106`, AGSC-02-02) are detected

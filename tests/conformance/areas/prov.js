@@ -21,7 +21,7 @@ function runCheckProposalVector(vector) {
 
 // --- appended by C (WP-10-C), 2026-09-18: prov-0003 only; nothing above changed ---
 
-const { checkClaims } = require('../../../src/governance/prov.js');
+const { checkClaims, checkTrailers } = require('../../../src/governance/prov.js');
 
 /**
  * prov-0003 — AGSC-10-17: the work-in-progress limit of an agent lane. Each
@@ -56,10 +56,49 @@ function runClaimVector(vector) {
   return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
 }
 
+// --- appended by RC5-B, 2026-09-21: prov-0004 (rc.5) ---
+
+/**
+ * prov-0004 — AGSC-08-06, the DCO-Plus ABNF, which no vector cited before rc.5
+ * (V9A-26). Six trailer blocks read straight off the grammar. `valid` means the
+ * block matches `trailer-block = signoff *( LF assisted )` with no finding of its
+ * own; a `prov` context is deliberately not supplied, because AGSC-08-07's
+ * `AGSC-E505` is a different rule and this vector pins the GRAMMAR.
+ */
+function runTrailerGrammarVector(vector) {
+  const problems = [];
+  for (const want of vector.expected.results || []) {
+    const trailer = (vector.input.trailers || []).find((t) => t.name === want.name);
+    if (trailer === undefined) {
+      problems.push(`no trailer named ${want.name}`);
+      continue;
+    }
+    const result = checkTrailers(trailer.block, {});
+    const valid = result.findings.length === 0;
+    if (want.valid !== undefined && valid !== want.valid) {
+      problems.push(`${want.name}: valid ${valid} != ${want.valid} (${JSON.stringify(result.findings.map((f) => f.code))})`);
+    }
+    if (want.code !== undefined && !result.findings.some((f) => f.code === want.code)) {
+      problems.push(`${want.name}: no finding with code ${want.code}`);
+    }
+    if (want.valid === true && result.signoff === null) {
+      problems.push(`${want.name}: the signoff was not parsed`);
+    }
+  }
+  // The greedy rule the ABNF's comment fixes: the LAST `SP "<"` starts the email,
+  // so a name that itself carries `<`-free angle-like text is still read whole.
+  const greedy = checkTrailers('Signed-off-by: A B <c@d.example> (CA-v1)', {});
+  if (greedy.signoff === null || greedy.signoff.name !== 'A B') {
+    problems.push(`the greedy name rule is not implemented: ${JSON.stringify(greedy.signoff)}`);
+  }
+  return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
+}
+
 const HANDLERS = {
   'prov-0001': runCheckProposalVector,
   'prov-0002': runCheckProposalVector,
-  'prov-0003': runClaimVector
+  'prov-0003': runClaimVector,
+  'prov-0004': runTrailerGrammarVector
 };
 
 module.exports.run = function run(vector, ctx) {

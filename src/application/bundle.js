@@ -23,6 +23,9 @@ const frontmatter = require('../knowledge/frontmatter.js');
 const validate = require('../knowledge/validate.js');
 const yaml = require('../knowledge/yaml.js');
 
+/** AGSC-03-11 / AGSC-02-95: where a Bundle's non-item files live. */
+const ASSETS_DIR = 'content/assets';
+
 /** AGSC-01-03: the type folders, in the plural form the route set uses. */
 const TYPE_FOLDERS = Object.freeze({
   clusters: 'cluster',
@@ -64,6 +67,20 @@ function loadBundle(ports, options) {
   }
   items.sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
 
+  // AGSC-03-11 (wired at rc.5, FV28-03): "a relative Markdown link or image whose
+  // target is inside the Bundle MUST resolve to an existing item, AN EXISTING ASSET
+  // UNDER `content/assets/`, or an existing anchor". `knowledge/links.js#resolve`
+  // reads that set from `options.assets` and no caller supplied it, so the asset
+  // branch was unreachable and every body image reference to a real file was
+  // `AGSC-E310`. The set is part of the AGGREGATE — it is loaded with the Bundle,
+  // once, and passed to every resolver — and it is NAMES only: nothing is read, so
+  // an asset costs one directory entry and never its bytes. The port's `walk` is
+  // recursive because AGSC-02-95 copies adopted references to
+  // `content/assets/<original-relative-path>`, which is a tree; the port refuses a
+  // path that leaves the root through a link (AGSC-01-16/01-35), so the walk cannot
+  // follow a symlink out of the Bundle.
+  const assets = fs.exists(ASSETS_DIR) ? fs.walk(ASSETS_DIR) : [];
+
   let index = null;
   if (fs.exists('content/index.md')) {
     const split = frontmatter.split(String(fs.readFile('content/index.md', 'utf8')), { file: 'content/index.md' });
@@ -86,6 +103,7 @@ function loadBundle(ports, options) {
   }
 
   return Object.freeze({
+    assets: Object.freeze(assets),
     byslug: new Map(items.map((i) => [i.slug, i])),
     config,
     findings: Object.freeze(findings),
@@ -120,4 +138,4 @@ function readJson(ports, path, findings) {
   }
 }
 
-module.exports = { TYPE_FOLDERS, fileSystemOf, loadBundle };
+module.exports = { ASSETS_DIR, TYPE_FOLDERS, fileSystemOf, loadBundle };

@@ -1,28 +1,18 @@
 {
   "area": "build",
-  "description": "Subject and predicate fragments are the byte-sorted N-Quads lines sharing the term, named by the first 16 hex of the IRI hash; no object fragments; the index counts distinct terms; a writer emitting no fragments emits no index.",
+  "description": "WITHDRAWN. Superseded by build-0011. Subject and predicate fragments are the byte-sorted N-Quads lines sharing the term, named by the first 16 hex of the IRI hash; no object fragments; the index counts distinct terms; a writer emitting no fragments emits no index.",
   "expected": {
-    "index": {
-      "predicates": 1,
-      "subjects": 2
-    },
-    "object_files": [],
-    "predicate_files": [
-      "p/841f92a1f63b1bac.nq"
-    ],
-    "subject_files": [
-      "s/098c1a9f71408651.nq",
-      "s/6f1ba47e10c664e3.nq"
-    ]
+    "withdrawn": true
   },
   "id": "build-0010",
   "input": {
     "nquads": "<https://a.example/concepts/a/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"A\"@en <https://a.example/> .\n<https://a.example/concepts/b/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"B\"@en <https://a.example/> .\n"
   },
-  "level": "optional",
+  "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.5"
   },
+  "reason": "Withdrawn at 1.0.0-rc.5 (`src/README.md` §11.6(8) R-08; D100). AGSC-06-33 states `/graph/fragments/index.json` as `{subjects, predicates, generated_at}` with `subjects` and `predicates` **arrays of file paths in code-point order**; this file expects integer counts. AGSC-00-03 makes the rule normative and the vector the defect. Superseded by build-0011.",
   "rule": "AGSC-06-33"
 }

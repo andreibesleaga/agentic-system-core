@@ -83,7 +83,9 @@ test('a Level-0 emission omits every artefact AGSC-10-02 does not ask for', () =
 test('ci runs lint, build and verify and exits 0 on the fixture (AGSC-09-08)', () => {
   const { bundle, ports, options } = load();
   const result = ci.ci(bundle, ports, options);
-  assert.deepStrictEqual(result.lanes.map((l) => l.split(' ')[0]), ['lint', 'build', 'verify']);
+  // AGSC-08-12 added the `forge` lane after `verify`; a Bundle whose gate items
+  // enforce nothing compiles nothing and the lane says so.
+  assert.deepStrictEqual(result.lanes.map((l) => l.split(' ')[0]), ['lint', 'build', 'verify', 'forge']);
   assert.strictEqual(result.counts.error, 0,
     `errors: ${JSON.stringify(result.findings.filter((f) => f.severity !== 'warn'))}`);
   assert.strictEqual(result.exit, 0);

@@ -1,22 +1,8 @@
 {
   "area": "graph",
-  "description": "The three literal forms and no other: a language-tagged prefLabel (no datatype), a typed xsd:dateTime retiredAt, and a plain xsd:string status written bare in Turtle and with an explicit ^^xsd:string in N-Quads; asc:status appears only because status is authored.",
+  "description": "WITHDRAWN. Superseded by graph-0018. The three literal forms and no other: a language-tagged prefLabel (no datatype), a typed xsd:dateTime retiredAt, and a plain xsd:string status written bare in Turtle and with an explicit ^^xsd:string in N-Quads; asc:status appears only because status is authored.",
   "expected": {
-    "forbidden": [
-      "\"Lit\"@en^^",
-      "\"retired\"^^xsd:string in Turtle",
-      "an asc:status triple when status is not authored"
-    ],
-    "nquads_lines": [
-      "<https://a.example/concepts/lit/> <https://w3id.org/agentic-system-core/ns#retiredAt> \"2026-09-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> <https://a.example/> .",
-      "<https://a.example/concepts/lit/> <https://w3id.org/agentic-system-core/ns#status> \"retired\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .",
-      "<https://a.example/concepts/lit/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Lit\"@en <https://a.example/> ."
-    ],
-    "turtle_lines": [
-      "<https://a.example/concepts/lit/> asc:retiredAt \"2026-09-01T00:00:00Z\"^^xsd:dateTime ;",
-      "    asc:status \"retired\" ;",
-      "    skos:prefLabel \"Lit\"@en ;"
-    ]
+    "withdrawn": true
   },
   "id": "graph-0014",
   "input": {
@@ -39,10 +25,11 @@
       "base": "https://a.example/"
     }
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "added 2026-09-17 at rc.3 (DS-5, V7-46); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.5"
   },
+  "reason": "Withdrawn at 1.0.0-rc.5 (`src/README.md` §11.6(5) R-05, PUB-6 Q55b; D100). Two defects: the `turtle_lines` are clause fragments that cannot be matched whole-line (Q55b), and they are ordered by **prefixed name** where AGSC-05-10(c) orders predicates by **predicate IRI code points** — under the rule `dcterms:modified` precedes `a`, because `http://purl.org/...` precedes `http://www.w3.org/...`. AGSC-00-03 makes the rule normative and this file the defect. The literal-form case is preserved in graph-0018 with a whole-file `turtle` expectation in IRI order.",
   "rule": "AGSC-05-31"
 }

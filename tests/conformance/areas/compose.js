@@ -3,9 +3,11 @@
 // Owner: F (WP-10-F). Rules: AGSC-07-04..08, AGSC-07-09, AGSC-07-17,
 // AGSC-07-23, AGSC-07-24, AGSC-02-97.
 
+const crypto = require('node:crypto');
+
 const { compose, verdictOf } = require('../../../src/composition/compose.js');
 const { composeFrom, selectionBlock, selectionFences } = require('../../../src/composition/architecture.js');
-const { dslRelationships, isEmitted } = require('../../../src/composition/harness.js');
+const { dslRelationships, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 
 /** AGSC-07-17: an invalid composition returns the verdict alone, exit 1. */
@@ -122,6 +124,34 @@ function runCompose0013(vector) {
   ]);
 }
 
+/**
+ * compose-0015 — AGSC-07-12 as amended at rc.5 (ENG2-05): the Harness directory name.
+ *
+ * `<name>` is the first sixteen lowercase-hex characters of the SELECTION DIGEST, the
+ * SHA-256 of the JCS form of `verdict.selection[]`. The digest is derived in the
+ * portable algebra so that the CLI and the `/compose/` page agree (AGSC-07-13); the
+ * HASH itself is the host's, which here is `node:crypto` — the page uses
+ * `crypto.subtle` over the same bytes.
+ *
+ * Note what the vector pins deliberately: the input selection is `["b", "a"]` and the
+ * verdict's is `["a", "b"]`, so the authored order never reaches the digest.
+ */
+function runCompose0015(vector) {
+  const result = compose(vector.input.items, vector.input.selection);
+  const selection = plain(verdictOf(result).selection);
+  const input = selectionDigestInput(result);
+  const digest = crypto.createHash('sha256').update(input, 'utf8').digest('hex');
+  return checks([
+    ['selection', deepEqual(vector.expected.selection, selection), JSON.stringify(selection)],
+    ['selection_digest', digest === vector.expected.selection_digest, `${digest} over ${JSON.stringify(input)}`],
+    ['harness_dir', harnessName(digest) === vector.expected.harness_dir, harnessName(digest)],
+    // The name is a function of the digest ALONE: a different selection is a
+    // different directory, and nothing else may reach it (AGSC-07-12, AGSC-07-13).
+    ['the name is the digest prefix', vector.expected.harness_dir === vector.expected.selection_digest.slice(0, 16),
+      'the vector states a name that is not the digest prefix'],
+  ]);
+}
+
 const HANDLERS = {
   'compose-0001': runVerdictVector,
   'compose-0002': runVerdictVector,
@@ -129,6 +159,7 @@ const HANDLERS = {
   'compose-0012': runCompose0012,
   'compose-0013': runCompose0013,
   'compose-0014': runCompose0014,
+  'compose-0015': runCompose0015,
 };
 
 module.exports.run = function run(vector) {

@@ -1,0 +1,71 @@
+{
+  "area": "boundary",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. Supersedes bnd-0005 and closes the one blocker for 1.0.0. bnd-0005 called followRedirects with no resolution map, so the AGSC-11-08 address guard could only be satisfied conditionally and a fail-open branch had to survive in the transport rules. Here every hop carries a resolution, so the guard is unconditional. Two cases. (1) hop-cap: four hops on a host resolving to a globally reachable address — three are followed, the fourth exceeds federation.redirect_limit and the fetch is refused with AGSC-E905 (AGSC-11-09). (2) refused-address-hop: the FIRST hop leaves for a host resolving to 127.0.0.1, a loopback address AGSC-11-08 refuses in both families — the fetch is refused with AGSC-E905 before any hop is followed, so followed is 0 and the cap is never reached. In both cases the declared peer URL is never replaced by the final URL.",
+  "expected": {
+    "address_guard_unconditional": true,
+    "cases": [
+      {
+        "declared_peer_unchanged": true,
+        "error": "AGSC-E905",
+        "followed": 3,
+        "name": "hop-cap"
+      },
+      {
+        "declared_peer_unchanged": true,
+        "error": "AGSC-E905",
+        "followed": 0,
+        "name": "refused-address-hop"
+      }
+    ]
+  },
+  "id": "bnd-0030",
+  "input": {
+    "cases": [
+      {
+        "name": "hop-cap",
+        "peer": "https://b.example/.well-known/knowledge-linkset",
+        "redirects": [
+          "https://b.example/r1",
+          "https://b.example/r2",
+          "https://b.example/r3",
+          "https://b.example/r4"
+        ],
+        "resolved": [
+          {
+            "addresses": [
+              "93.184.215.14"
+            ],
+            "host": "b.example"
+          }
+        ]
+      },
+      {
+        "name": "refused-address-hop",
+        "peer": "https://b.example/.well-known/knowledge-linkset",
+        "redirects": [
+          "https://c.example/r1"
+        ],
+        "resolved": [
+          {
+            "addresses": [
+              "93.184.215.14"
+            ],
+            "host": "b.example"
+          },
+          {
+            "addresses": [
+              "127.0.0.1"
+            ],
+            "host": "c.example"
+          }
+        ]
+      }
+    ],
+    "dev": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-11-09"
+}

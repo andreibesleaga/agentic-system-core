@@ -6,6 +6,7 @@
 // never run (AGSC-00-16).
 
 const discovery = require('../../../src/distribution/discovery.js');
+const site = require('../../../src/distribution/site.js');
 const llms = require('../../../src/distribution/llms.js');
 const { checks, deepEqual } = require('./_assert.js');
 
@@ -129,12 +130,113 @@ function llmsCase(vector) {
   return checks(list);
 }
 
+/**
+ * disc-0008 (rc.5, V9A-26) — AGSC-06-14: every published item is reachable from
+ * `/llms.txt`, directly or through a LISTED cluster section.
+ *
+ * Reachability is read off the emitted index itself: an item is reachable when its
+ * IRI appears under a section heading. The case no earlier vector covered is an item
+ * whose primary cluster is not listed — it belongs under `Other` beside the
+ * unclustered item, and a writer that places it nowhere fails this MUST.
+ */
+function reachabilityCase(vector) {
+  const input = vector.input;
+  const listed = new Set(input.listed_clusters || []);
+  const bundle = {
+    ...input.bundle,
+    clusters: (input.clusters || []).filter((c) => listed.has(String(c.slug))),
+    items: input.items,
+  };
+  const options = { generatedAt: '2026-01-01T00:00:00Z', specVersion: (vector.options || {}).spec_version };
+  const text = llms.llmsTxt(bundle, options);
+  const full = llms.llmsFullTxt(bundle, options);
+  const list = [];
+
+  // The sections the index carries, in order, and what each one lists.
+  const sections = [];
+  const sectionOf = new Map();
+  let current = null;
+  for (const line of text.split('\n')) {
+    const heading = /^## (.+)$/u.exec(line);
+    if (heading !== null) { current = heading[1]; sections.push(current); continue; }
+    const entry = /^- \[[^\]]*\]\(([^)]+)\)/u.exec(line);
+    if (entry !== null && current !== null) sectionOf.set(entry[1], current);
+  }
+  list.push(['sections', deepEqual(vector.expected.sections, sections), JSON.stringify(sections)]);
+  const reachable = {};
+  for (const [iri, section] of [...sectionOf.entries()].sort()) reachable[iri] = section;
+  list.push(['reachable', deepEqual(vector.expected.reachable, reachable), JSON.stringify(reachable)]);
+
+  const published = (input.items || []).filter(llms.isPublished);
+  const unreachable = published.map((it) => llms.iriOf(bundle.base, it)).filter((iri) => !sectionOf.has(iri));
+  list.push(['unreachable', deepEqual(vector.expected.unreachable, unreachable), JSON.stringify(unreachable)]);
+  for (const iri of vector.expected.not_published || []) {
+    // AGSC-02-23: a draft is not published, so it is neither reachable nor a fault.
+    list.push([`not_published ${iri}`, !text.includes(iri) && !full.includes(iri), 'a draft reached the index']);
+  }
+  if (vector.expected.llms_full_reachability_identical === true) {
+    const fullSections = new Map();
+    let heading = null;
+    for (const line of full.split('\n')) {
+      const h = /^## (.+)$/u.exec(line);
+      const entry = /^- \[[^\]]*\]\(([^)]+)\)/u.exec(line);
+      if (h !== null && entry === null && !line.startsWith('- ')) heading = h[1];
+      if (entry !== null && heading !== null) fullSections.set(entry[1], heading);
+    }
+    list.push(['llms_full_reachability_identical',
+      deepEqual([...sectionOf.entries()].sort(), [...fullSections.entries()].sort()),
+      JSON.stringify([...fullSections.entries()])]);
+  }
+  return checks(list);
+}
+
+/**
+ * disc-0009 (rc.5, V9A-26) — AGSC-06-19: `sitemap.xml` completeness, URL order and
+ * one `lastmod` equal to the BUILD INSTANT for every entry.
+ *
+ * The XML serialisation is deliberately not asserted (`xml_bytes_asserted: false`):
+ * no rule pins it. `jsonld_types_closed_set` asserts only that the rule's closed set
+ * of schema.org types is what the writer may emit, not which page takes which.
+ */
+function sitemapCase(vector) {
+  const base = String(vector.input.site.base).replace(/\/+$/u, '');
+  const xml = site.sitemap(base, vector.input.published_routes, vector.input.build_instant);
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/gu)].map((m) => m[1]);
+  const lastmods = [...xml.matchAll(/<lastmod>([^<]+)<\/lastmod>/gu)].map((m) => m[1]);
+  const list = [
+    ['urls', deepEqual(vector.expected.urls, urls), JSON.stringify(urls)],
+    ['every route once', urls.length === vector.input.published_routes.length, JSON.stringify(urls)],
+    ['lastmod', lastmods.every((v) => v === vector.expected.lastmod), JSON.stringify(lastmods)],
+    ['one lastmod for every entry', lastmods.length === urls.length, JSON.stringify(lastmods)],
+    ['xml_bytes_asserted', vector.expected.xml_bytes_asserted === false,
+      'no rule pins the XML serialisation of AGSC-06-19'],
+  ];
+  if (vector.expected.lastmod_is_build_instant === true) {
+    // AGSC-04-02/04-09: a per-item date would make the file depend on content dates
+    // and break the double build; a second build at another instant moves every
+    // entry together and nothing else.
+    const other = site.sitemap(base, vector.input.published_routes, '2027-02-03T00:00:00Z');
+    const moved = [...other.matchAll(/<lastmod>([^<]+)<\/lastmod>/gu)].map((m) => m[1]);
+    list.push(['lastmod_is_build_instant', moved.every((v) => v === '2027-02-03T00:00:00Z'),
+      JSON.stringify(moved)]);
+    list.push(['the same instant reproduces the same bytes',
+      site.sitemap(base, vector.input.published_routes, vector.input.build_instant) === xml, '']);
+  }
+  for (const type of vector.expected.jsonld_types_closed_set || []) {
+    list.push([`jsonld type ${type}`, ['Dataset', 'DefinedTerm', 'TechArticle'].includes(type),
+      'AGSC-06-19 names exactly Dataset, DefinedTerm and TechArticle']);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'disc-0003': linksetCase,
   'disc-0004': level0Case,
   'disc-0005': peerCase,
   'disc-0006': llmsCase,
   'disc-0007': llmsCase,
+  'disc-0008': reachabilityCase,
+  'disc-0009': sitemapCase,
 };
 
 module.exports.run = (vector) => {

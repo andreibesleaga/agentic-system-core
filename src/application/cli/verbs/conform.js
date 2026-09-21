@@ -59,18 +59,29 @@ function run(ctx) {
   helpers.note(ctx, conformance.summaryLine(tally, list.length));
   helpers.note(ctx, `wrote: ${to}`);
 
-  // AGSC-09-02: a `skip` counts as a failure for a required vector — but a
-  // WITHDRAWN vector is counted for nothing at all (AGSC-00-16, AGSC-09-05), so
-  // it raises no finding. AGSC-10-05: no Level is claimed before 1.0.0 — the
-  // report is the record of a run, never a claim.
-  const findings = results
+  return { findings: findingsFor(results) };
+}
+
+/**
+ * AGSC-09-02: a `skip` counts as a failure for a required vector — but a WITHDRAWN
+ * vector is counted for nothing at all (AGSC-00-16, AGSC-09-05), so it raises no
+ * finding. AGSC-10-05: no Level is claimed before 1.0.0 — the report is the record
+ * of a run, never a claim.
+ *
+ * A pure function of the run's results, so the mapping can be asserted without a
+ * distribution that is missing a handler.
+ *
+ * @param {Array<{id:string, rule:string, status:string, detail?:string, withdrawn?:boolean}>} results
+ * @returns {Array<object>} Findings.
+ */
+function findingsFor(results) {
+  return (results || [])
     .filter((r) => r.status !== 'pass' && r.withdrawn !== true)
     .map((r) => ({
       code: 'AGSC-E001',
       message: `vector ${r.id} (${r.rule}) ${r.status}: ${r.detail === undefined ? '' : r.detail}`,
       severity: 'error',
     }));
-  return { findings };
 }
 
-module.exports = { AREAS_DIR, handlerFor, name: 'conform', run };
+module.exports = { AREAS_DIR, findingsFor, handlerFor, name: 'conform', run };

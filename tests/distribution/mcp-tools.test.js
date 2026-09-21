@@ -76,7 +76,11 @@ test('AGSC-08-18: every result carries source, trust, license, type and body', (
   const toolset = tools(fixture(), {});
   for (const name of manifest().tools.map((t) => t.name)) {
     const result = toolset.call(name, { question: 'x', query: 'x', selection: [], slug: 'handoff', title: 'T' });
-    assert.deepStrictEqual(Object.keys(result), ['body', 'license', 'source', 'trust', 'type']);
+    // AGSC-09-14a as amended at rc.5 (V9D-07, cli-0007): `ask` — and only `ask` —
+    // adds EXACTLY ONE top-level member, `citations[]`, to the AGSC-08-18 envelope.
+    assert.deepStrictEqual(Object.keys(result),
+      name === 'ask' ? ['body', 'citations', 'license', 'source', 'trust', 'type']
+        : ['body', 'license', 'source', 'trust', 'type']);
     assert.strictEqual(result.trust, 'untrusted');
     assert.strictEqual(result.license, CONTENT_USE_TERMS);
     assert.strictEqual(result.source, name);
@@ -140,17 +144,21 @@ test('AGSC-09-14a: ask cites at least one IRI, or says exactly so', () => {
   const toolset = tools(fixture(), {});
   const answer = toolset.call('ask', { question: 'supervisor' });
   assert.strictEqual(answer.type, 'answer');
-  assert.ok(answer.body.citations.length >= 1);
-  assert.ok(answer.body.citations.every((c) => c.startsWith('https://minimal.example/')));
-  assert.strictEqual(answer.body.terms, CONTENT_USE_TERMS);
+  // rc.5: `citations[]` is a TOP-LEVEL member and `body` is the answer TEXT, with
+  // the Content Use Terms line embedded in it (AGSC-09-14a, cli-0007).
+  assert.strictEqual(typeof answer.body, 'string');
+  assert.ok(answer.citations.length >= 1);
+  assert.ok(answer.citations.every((c) => c.startsWith('https://minimal.example/')));
+  assert.ok(answer.body.includes(CONTENT_USE_TERMS));
+  assert.strictEqual(answer.license, CONTENT_USE_TERMS);
   const nothing = toolset.call('ask', { question: 'zzzzzzz' });
-  assert.strictEqual(nothing.body.answer, NO_ANSWER);
-  assert.deepStrictEqual(plain(nothing.body.citations), []);
+  assert.strictEqual(nothing.body, NO_ANSWER, 'the no-answer body is exactly the fixed string');
+  assert.deepStrictEqual(plain(nothing.citations), []);
   // F27-10: `question` and `query` are published as required arguments.
   assert.strictEqual(toolset.call('ask', {}).body.code, 'AGSC-E003');
   assert.strictEqual(toolset.call('search', {}).body.code, 'AGSC-E003');
   // An EMPTY string is supplied, not missing, and keeps the total-function answer.
-  assert.strictEqual(toolset.call('ask', { question: '' }).body.answer, NO_ANSWER);
+  assert.strictEqual(toolset.call('ask', { question: '' }).body, NO_ANSWER);
   assert.deepStrictEqual(plain(toolset.call('search', { query: '' }).body.hits), []);
 });
 
@@ -290,4 +298,28 @@ test('AGSC-01-16: a text argument above the 1 MiB cap is AGSC-E904', () => {
   assert.strictEqual(toolset.call('search', { query: astral }).body.code, 'AGSC-E904');
   // Exactly at the cap is admitted.
   assert.notStrictEqual(toolset.call('search', { query: 'a'.repeat(1024 * 1024) }).body.code, 'AGSC-E904');
+});
+
+test('AGSC-06-23: the search tool tokenizes title, description and tags, not the body alone', () => {
+  // The defect cli-0007 found: a loaded Bundle carries title/description under
+  // `frontmatter`, and `search.tokenizerInput` reads a FLAT item, so until rc.5 the
+  // tool matched neither. A hit must mean the same thing here and in `search.json`.
+  const bundle = {
+    config: { site: { base: 'https://a.example/' } },
+    items: [{
+      body: 'An unrelated sentence.',
+      frontmatter: { description: 'Routes work to workers.', tags: ['dispatch'], title: 'Supervisor', type: 'concept' },
+      slug: 'supervisor',
+      type: 'concept',
+    }],
+  };
+  const toolset = tools(bundle, {});
+  for (const query of ['supervisor', 'routes', 'workers', 'dispatch', 'unrelated']) {
+    assert.strictEqual(toolset.call('search', { query }).body.hits.length, 1, query);
+  }
+  assert.strictEqual(toolset.call('search', { query: 'nowherenear' }).body.hits.length, 0);
+  // And `ask` cites the item it found, with the terms line in the answer text.
+  const answer = toolset.call('ask', { question: 'who routes work?' });
+  assert.deepStrictEqual(plain(answer.citations), ['https://a.example/concepts/supervisor/']);
+  assert.ok(answer.body.includes(CONTENT_USE_TERMS));
 });

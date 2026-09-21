@@ -1,0 +1,58 @@
+{
+  "area": "boundary",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. Supersedes bnd-0025, whose expanded_blocked_by depended on \"the board's own origin\" (AGSC-11-15) without stating it, leaving the reader to infer it from each board's iri (Q55d). Each board now carries its origin explicitly. Same case: two nodes export boards with the same cluster slug and the same task slug; a merging client keys tasks by item IRI and boards by Bundle IRI, renames nothing, and expands the local blocked_by slugs of AGSC-10-13 against the board's own origin and never against the merging client's.",
+  "expected": {
+    "boards_kept": [
+      "https://a.example/clusters/oct/",
+      "https://b.example/clusters/oct/"
+    ],
+    "expanded_blocked_by": {
+      "https://a.example/concepts/ship/": [
+        "https://a.example/concepts/other/"
+      ]
+    },
+    "renamed": [],
+    "tasks_kept": [
+      "https://a.example/concepts/ship/",
+      "https://b.example/concepts/ship/"
+    ]
+  },
+  "id": "bnd-0034",
+  "input": {
+    "boards": [
+      {
+        "board": "oct",
+        "iri": "https://a.example/clusters/oct/",
+        "origin": "https://a.example/",
+        "tasks": [
+          {
+            "blocked_by": [
+              "other"
+            ],
+            "iri": "https://a.example/concepts/ship/",
+            "slug": "ship",
+            "state": "TASK_STATE_WORKING"
+          }
+        ]
+      },
+      {
+        "board": "oct",
+        "iri": "https://b.example/clusters/oct/",
+        "origin": "https://b.example/",
+        "tasks": [
+          {
+            "blocked_by": [],
+            "iri": "https://b.example/concepts/ship/",
+            "slug": "ship",
+            "state": "TASK_STATE_COMPLETED"
+          }
+        ]
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-11-15"
+}

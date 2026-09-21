@@ -56,10 +56,14 @@ test('allDefaults includes every schema-declared default (mechanical: only keys 
   assert.equal(defaults.get('budget.usd_month'), 10);
   assert.equal(defaults.get('visibility'), 'public');
   assert.equal(defaults.get('chunks.max_bytes'), 4096);
-  // build.out/build.feed/i18n.default/run.enabled have a prose default
-  // (AGSC-01-19, AGSC-09-94) but schema/config.schema.json does not encode
-  // it as a JSON-Schema "default" keyword, so the mechanical derivation
-  // (never hand-typed, per the work-package prompt) correctly omits them;
-  // reported as a schema gap in the WP-10-B report, not fixed here.
-  assert.equal(defaults.has('build.out'), false);
+  // rc.5 (R-18): the three prose defaults of AGSC-01-19 and AGSC-09-94 are now
+  // encoded as JSON-Schema `default` keywords in schema/config.schema.json, so
+  // the mechanical derivation finds them without a special case. `build.feed`
+  // is withdrawn at rc.5 (R-15) and is a name reserved to 1.1, so it has no
+  // default and no path at all.
+  assert.equal(defaults.get('build.out'), 'www');
+  assert.equal(defaults.get('i18n.default'), 'en');
+  assert.equal(defaults.get('run.enabled'), false);
+  assert.equal(defaults.has('build.feed'), false);
+  assert.equal(env.envNameFor('build.feed'), null);
 });

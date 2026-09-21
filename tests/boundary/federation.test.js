@@ -71,17 +71,36 @@ test('AGSC-11-08: the closed special-purpose list, in both families and through 
 test('AGSC-11-09: at most redirect_limit hops, every hop re-checked, the peer unchanged', () => {
   const peer = 'https://b.example/.well-known/knowledge-linkset';
   const four = ['https://b.example/r1', 'https://b.example/r2', 'https://b.example/r3', 'https://b.example/r4'];
-  const capped = f.followRedirects(peer, four, {});
+  // rc.5 (bnd-0030): AGSC-11-08 is unconditional, so every hop carries a resolution.
+  const ok = { resolved: { 'b.example': ['93.184.215.14'] } };
+  const capped = f.followRedirects(peer, four, ok);
   assert.deepStrictEqual({ error: capped.error, followed: capped.followed }, { error: 'AGSC-E905', followed: 3 });
   assert.strictEqual(capped.declaredPeer, peer);
-  const two = f.followRedirects(peer, four.slice(0, 2), {});
+  const two = f.followRedirects(peer, four.slice(0, 2), ok);
   assert.deepStrictEqual({ error: two.error, final: two.final, followed: two.followed },
     { error: null, final: 'https://b.example/r2', followed: 2 });
   // A hop to a non-https URL, or to a refused address, fails the fetch.
-  assert.strictEqual(f.followRedirects(peer, ['http://b.example/r1'], {}).error, 'AGSC-E905');
+  assert.strictEqual(f.followRedirects(peer, ['http://b.example/r1'], ok).error, 'AGSC-E905');
   assert.strictEqual(f.followRedirects(peer, ['https://c.example/r1'],
     { resolved: { 'c.example': ['10.0.0.1'] } }).error, 'AGSC-E905');
   assert.strictEqual(f.followRedirects(peer, [], {}).followed, 0);
+});
+
+// bnd-0030 — the blocker. The address guard of AGSC-11-08 runs on EVERY hop, with no
+// branch that can be taken to skip it. A caller that models no resolution at all is
+// refused at the first hop, because it has classified no address to connect to.
+test('AGSC-11-08/11-09: the address guard is unconditional — no resolution is a refusal', () => {
+  const peer = 'https://b.example/.well-known/knowledge-linkset';
+  for (const options of [{}, { dev: false }, { resolved: {} }, { resolved: null }]) {
+    const result = f.followRedirects(peer, ['https://b.example/r1'], options);
+    assert.strictEqual(result.error, 'AGSC-E905', JSON.stringify(options));
+    assert.strictEqual(result.followed, 0, JSON.stringify(options));
+    assert.strictEqual(result.final, peer, 'the declared peer is never replaced');
+  }
+  // An IP literal resolves to itself, so it needs no map — and is judged by the list.
+  assert.strictEqual(f.followRedirects(peer, ['https://93.184.215.14/r1'], {}).error, null);
+  assert.strictEqual(f.followRedirects(peer, ['https://127.0.0.1/r1'], {}).error, 'AGSC-E905');
+  assert.strictEqual(f.followRedirects(peer, ['https://127.0.0.1/r1'], { dev: true }).error, null);
 });
 
 function graphFetch(graph, unreachable) {

@@ -1,0 +1,15 @@
+slug	title	class	old_status	decision	reason
+alpha-one	Alpha One	W	published	CHOOSE	well known
+beta-one	Beta One	B+W	draft	CHOOSE	held back by the clean-room class
+no-kind	No Kind	W	published	CHOOSE	well known
+odd-status	Odd Status	W	published	CHOOSE	well known
+cites-a-book	Cites A Book	O	published	CHOOSE	owner original
+no-summary	No Summary	X	published	CHOOSE	deck coverage
+wrong-id	Wrong Id	W	published	CHOOSE	well known
+bad-sources	Bad Sources	W	published	CHOOSE	well known
+no-deck	No Deck	W	published	CHOOSE	well known
+foreign-keys	Foreign Keys	B+W	published	CHOOSE	held back by the clean-room class
+unterminated	Unterminated	X	draft	DEFER	not readable
+not-chosen	Not Chosen	W	published	DEFER	next batch
+excluded-one	Excluded One	B	published	EXCLUDE	book only
+ghost	Ghost	W	published	CHOOSE	names no record in the corpus

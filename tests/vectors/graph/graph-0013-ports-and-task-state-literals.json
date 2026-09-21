@@ -1,20 +1,8 @@
 {
   "area": "graph",
-  "description": "produces[], consumes[] and task_state are emitted as asc:produces, asc:consumes and asc:taskState; every xsd:string property takes the plain form: no ^^xsd:string in Turtle, explicit in N-Quads (AGSC-05-31 form c), never form b.",
+  "description": "WITHDRAWN. Superseded by graph-0017. produces[], consumes[] and task_state are emitted as asc:produces, asc:consumes and asc:taskState; every xsd:string property takes the plain form: no ^^xsd:string in Turtle, explicit in N-Quads (AGSC-05-31 form c), never form b.",
   "expected": {
-    "nquads_lines": [
-      "<https://a.example/concepts/router/> <https://w3id.org/agentic-system-core/ns#consumes> \"config\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .",
-      "<https://a.example/concepts/router/> <https://w3id.org/agentic-system-core/ns#produces> \"events\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .",
-      "<https://a.example/concepts/router/> <https://w3id.org/agentic-system-core/ns#produces> \"metrics\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .",
-      "<https://a.example/concepts/router/> <https://w3id.org/agentic-system-core/ns#taskState> \"TASK_STATE_WORKING\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> ."
-    ],
-    "turtle_lines": [
-      "<https://a.example/concepts/router/> asc:consumes \"config\" ;",
-      "    asc:produces \"events\" , \"metrics\" ;",
-      "    asc:taskState \"TASK_STATE_WORKING\" ;"
-    ],
-    "turtle_never_contains": "^^xsd:string",
-    "verdict_digest_exported": false
+    "withdrawn": true
   },
   "id": "graph-0013",
   "input": {
@@ -42,10 +30,11 @@
       "base": "https://a.example/"
     }
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.5"
   },
+  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55b; D100). Its `turtle_lines` are clause fragments carrying a trailing ` ;` and an indent, so they can only be compared as clauses inside a file the vector never states — an accepted reading, not a literal match, while AGSC-05-10 as amended at rc.5 fixes every byte of `graph.ttl`. The ports-and-task-state case it proves is preserved in graph-0017 as a whole-file `turtle` expectation.",
   "rule": "AGSC-05-30"
 }

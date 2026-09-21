@@ -34,7 +34,7 @@ flowchart TD
 ```
 
 Steps 1–13 are `agsc build`'s own pipeline (audit/D §4, "Build pipeline internals"); N8 budget
-enforcement (HTML ≤100 KB/page, `search.json` ≤500 KB, ≤60 s/500 items) is checked inline during
+enforcement (HTML ≤100 KB/page, ≤1 MB per index document, ≤60 s/500 items) is checked inline during
 steps 7–9 and is a lint-style failure, not a numbered step. `agsc ci` wraps `build` with the
 double-build byte-compare (already step 13 internally), then `export`/`attest`, the deterministic
 re-derivation of `ledger.jsonl` into the build output, and offline chain re-verification against the

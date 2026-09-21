@@ -1,0 +1,44 @@
+{
+  "area": "graph",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. Supersedes graph-0014 and closes R-05. Same case — the three literal forms and no other: a language-tagged skos:prefLabel with no datatype (form a), a typed xsd:dateTime (form b), and plain xsd:string literals written bare in Turtle and with an explicit ^^<...#string> in N-Quads (form c) — with two corrections. First, the expectation is the whole file, not clause fragments. Second, the predicates are in AGSC-05-10(c) order, which is the order of the predicate IRI and NOT of the prefixed name: dcterms:modified (http://purl.org/dc/terms/modified) sorts BEFORE rdf:type (http://www.w3.org/1999/...), so the block opens on dcterms:modified and 'a' appears on the second clause — the defect R-05 recorded, now the pinned behaviour. dcterms:modified itself is the AGSC-05-26 row added at rc.5 under V8-91/R-06: a date-only source value is rendered at midnight UTC by AGSC-04-10, giving 2026-09-01T00:00:00Z, which is the second of the two literals that were emitted and unpinned before rc.5.",
+  "expected": {
+    "forbidden": [
+      "\"Lit\"@en^^",
+      "\"retired\"^^xsd:string in Turtle",
+      "an asc:status triple when status is not authored",
+      "predicates ordered by prefixed name"
+    ],
+    "nquads": "<https://a.example/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Bundle> <https://a.example/> .\n<https://a.example/> <https://schema.org/license> \"LicenseRef-AgenticSystemCore-Content-Use-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/> <https://schema.org/usageInfo> \"LicenseRef-AgenticSystemCore-Content-Use-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/> <https://w3id.org/agentic-system-core/ns#specVersion> \"1.0.0-rc.5\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/lit/> <http://purl.org/dc/terms/modified> \"2026-09-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> <https://a.example/> .\n<https://a.example/concepts/lit/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> <https://a.example/> .\n<https://a.example/concepts/lit/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://a.example/> <https://a.example/> .\n<https://a.example/concepts/lit/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Lit\"@en <https://a.example/> .\n<https://a.example/concepts/lit/> <https://schema.org/license> \"LicenseRef-AgenticSystemCore-Content-Use-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/lit/> <https://schema.org/usageInfo> \"LicenseRef-AgenticSystemCore-Content-Use-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/lit/> <https://w3id.org/agentic-system-core/ns#kind> \"term\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/lit/> <https://w3id.org/agentic-system-core/ns#operator> \"human:andrei\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/lit/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/lit/> <https://w3id.org/agentic-system-core/ns#retiredAt> \"2026-09-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> <https://a.example/> .\n<https://a.example/concepts/lit/> <https://w3id.org/agentic-system-core/ns#status> \"retired\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n",
+    "turtle": "@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix dcterms: <http://purl.org/dc/terms/> .\n@prefix prov: <http://www.w3.org/ns/prov#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix schema: <https://schema.org/> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n<https://a.example/> a asc:Bundle ;\n    schema:license \"LicenseRef-AgenticSystemCore-Content-Use-1.0\" ;\n    schema:usageInfo \"LicenseRef-AgenticSystemCore-Content-Use-1.0\" ;\n    asc:specVersion \"1.0.0-rc.5\" .\n\n<https://a.example/concepts/lit/> dcterms:modified \"2026-09-01T00:00:00Z\"^^xsd:dateTime ;\n    a asc:Concept ;\n    skos:inScheme <https://a.example/> ;\n    skos:prefLabel \"Lit\"@en ;\n    schema:license \"LicenseRef-AgenticSystemCore-Content-Use-1.0\" ;\n    schema:usageInfo \"LicenseRef-AgenticSystemCore-Content-Use-1.0\" ;\n    asc:kind \"term\" ;\n    asc:operator \"human:andrei\" ;\n    asc:origin \"human\" ;\n    asc:retiredAt \"2026-09-01T00:00:00Z\"^^xsd:dateTime ;\n    asc:status \"retired\" .\n"
+  },
+  "id": "graph-0018",
+  "input": {
+    "bundle": {
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0-rc.5"
+    },
+    "items": [
+      {
+        "kind": "term",
+        "lang": "en",
+        "modified": "2026-09-01",
+        "prov": {
+          "operator": "human:andrei",
+          "origin": "human"
+        },
+        "slug": "lit",
+        "status": "retired",
+        "title": "Lit",
+        "type": "concept"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-05-31"
+}

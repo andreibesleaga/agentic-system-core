@@ -24,12 +24,14 @@
     },
     "title": {
       "description": "3-120 characters, any Unicode in NFC (§2.2 common-key table).",
+      "$ref": "#/$defs/single_line",
       "type": "string",
       "minLength": 3,
       "maxLength": 120
     },
     "description": {
       "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present on those two types the 40-200 code-point bound is enforced by their branches (AGSC-02-24).",
+      "$ref": "#/$defs/single_line",
       "type": "string"
     },
     "status": {
@@ -58,6 +60,7 @@
       "type": "array",
       "uniqueItems": true,
       "items": {
+        "$ref": "#/$defs/single_line",
         "type": "string"
       }
     },
@@ -180,10 +183,12 @@
             "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$"
           },
           "alt": {
+            "$ref": "#/$defs/single_line",
             "type": "string",
             "minLength": 1
           },
           "license": {
+            "$ref": "#/$defs/single_line",
             "type": "string"
           }
         },
@@ -207,6 +212,7 @@
         },
         "description": {
           "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24).",
+          "$ref": "#/$defs/single_line",
           "type": "string",
           "minLength": 40,
           "maxLength": 200
@@ -250,6 +256,7 @@
         "signature_elements": {
           "type": "array",
           "items": {
+            "$ref": "#/$defs/single_line",
             "type": "string"
           }
         },
@@ -265,6 +272,7 @@
           "type": "array",
           "uniqueItems": true,
           "items": {
+            "$ref": "#/$defs/single_line",
             "type": "string"
           }
         },
@@ -272,6 +280,7 @@
           "type": "array",
           "uniqueItems": true,
           "items": {
+            "$ref": "#/$defs/single_line",
             "type": "string"
           }
         },
@@ -279,6 +288,7 @@
           "type": "array",
           "uniqueItems": true,
           "items": {
+            "$ref": "#/$defs/single_line",
             "type": "string"
           }
         },
@@ -293,6 +303,7 @@
             ],
             "properties": {
               "label": {
+                "$ref": "#/$defs/single_line",
                 "type": "string"
               },
               "url": {
@@ -311,15 +322,17 @@
           ],
           "properties": {
             "file": {
-              "description": "MUST be <slug>.svg, compiled from content/diagrams/<slug>.diagram (AGSC-02-13).",
+              "description": "MUST be <slug>.svg, compiled from content/diagrams/<slug>.diagram (AGSC-02-13). It is a file name, not a route: the compiled SVG is inlined in the item's page (AGSC-01-07, AGSC-02-13 as amended at rc.5).",
               "type": "string",
               "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.svg$"
             },
             "alt": {
+              "$ref": "#/$defs/single_line",
               "type": "string",
               "minLength": 1
             },
             "caption": {
+              "$ref": "#/$defs/single_line",
               "type": "string"
             }
           }
@@ -420,6 +433,7 @@
         },
         "when": {
           "description": "One-line trigger; becomes the exported SKILL.md description, at most 1024 characters (AGSC-02-15).",
+          "$ref": "#/$defs/single_line",
           "type": "string",
           "minLength": 1,
           "maxLength": 1024
@@ -427,6 +441,7 @@
         "inputs": {
           "type": "array",
           "items": {
+            "$ref": "#/$defs/single_line",
             "type": "string"
           }
         }
@@ -462,6 +477,7 @@
         },
         "description": {
           "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24).",
+          "$ref": "#/$defs/single_line",
           "type": "string",
           "minLength": 40,
           "maxLength": 200
@@ -479,6 +495,7 @@
           "type": "integer"
         },
         "family": {
+          "$ref": "#/$defs/single_line",
           "type": "string"
         }
       }
@@ -565,6 +582,11 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
     },
+    "single_line": {
+      "description": "AGSC-02-24 as amended at rc.5 (FV28-01): an AUTHORED SINGLE-LINE string. It MUST NOT carry a C0 control (U+0000-U+001F), U+007F, U+0085, U+2028 or U+2029, because a writer puts it on a LINE of a line-oriented text surface (/llms.txt, /llms-full.txt, /now.md, the Harness files, llms-ctx.txt, robots.txt, _headers, _redirects, /.well-known/security.txt) where a line break creates a new line, a forged heading or a forged header. A violation is AGSC-E204 (spec/09 section 9.4 precedence: every pattern violation takes that code). The class is a negated character class with no lookahead, no back-reference and no quantifier-based bound, so it is the ECMA-262 dialect JSON Schema 2020-12 names and transliterates mechanically to the \\x{...} escapes of RE2, Go and Rust. A writer additionally NEUTRALISES these code points when it interpolates such a string (knowledge/unicode.js#singleLine), so a Bundle that never passed validation still cannot inject structure.",
+      "type": "string",
+      "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$"
+    },
     "actor": {
       "description": "AGSC-02-09: human:<id>, process:<id> or <producer>/<version>.",
       "type": "string",
@@ -585,6 +607,7 @@
       "properties": {
         "id": {
           "description": "Stable source identifier used to de-duplicate ingested messages (AGSC-01-33).",
+          "$ref": "#/$defs/single_line",
           "type": "string",
           "minLength": 1,
           "maxLength": 200
@@ -595,9 +618,11 @@
           "pattern": "^(?:https?://[^\\x00-\\x20]+|urn:agsc:channel:[a-z0-9-]+:[^\\x00-\\x20]+)$"
         },
         "title": {
+          "$ref": "#/$defs/single_line",
           "type": "string"
         },
         "author": {
+          "$ref": "#/$defs/single_line",
           "type": "string"
         },
         "year": {
@@ -634,15 +659,18 @@
           ]
         },
         "agent": {
+          "$ref": "#/$defs/single_line",
           "type": "string"
         },
         "model": {
+          "$ref": "#/$defs/single_line",
           "type": "string"
         },
         "operator": {
           "$ref": "#/$defs/human_actor"
         },
         "agreement": {
+          "$ref": "#/$defs/single_line",
           "type": "string"
         }
       }
@@ -685,6 +713,7 @@
       "additionalProperties": true,
       "properties": {
         "model": {
+          "$ref": "#/$defs/single_line",
           "type": "string"
         },
         "tokens_in": {

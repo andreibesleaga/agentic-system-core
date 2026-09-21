@@ -104,12 +104,10 @@ function build(decks, options = {}) {
       skipped.push(slug);
       continue;
     }
+    // `slug.slugify` is TOTAL — it answers with a valid slug for any input, down
+    // to the `note` fallback — so there is no "this id reaches no slug" branch to
+    // guard here (AGSC-01-10).
     const path = `content/clusters/${slug}.md`;
-    if (!slugs.isValid(slug)) {
-      findings.push(finding('AGSC-E204',
-        `deck id "${id}" does not reach a valid slug (AGSC-01-10)`, { file: path, slug, line: 1 }));
-      continue;
-    }
     const described = describe(deck, { file: path, slug });
     findings.push(...described.findings);
 
@@ -120,9 +118,12 @@ function build(decks, options = {}) {
       date: options.date,
       prov: options.prov,
     };
-    if (Number.isInteger(deck.order)) frontmatter.order = deck.order;
+    // AGSC-02-03: the emitted YAML is the failsafe subset — every scalar a
+    // string — and `knowledge/validate.js#applyTypes` restores the schema's
+    // `integer` on the way back in (AGSC-02-04 pins the written form).
+    if (Number.isInteger(deck.order)) frontmatter.order = String(deck.order);
     else if (typeof deck.order === 'string' && /^[0-9]+$/u.test(deck.order)) {
-      frontmatter.order = Number(deck.order);
+      frontmatter.order = deck.order;
     }
     if (typeof deck.family === 'string' && deck.family !== '') frontmatter.family = deck.family;
 

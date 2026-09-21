@@ -14,6 +14,7 @@
 
 const { sortFindings } = require('../knowledge/validate.js');
 const site = require('./site.js');
+const forge = require('./forge.js');
 
 /** A finding of severity `error` is what fails a gate (AGSC-09-08, AGSC-09-11). */
 function countOf(findings) {
@@ -71,6 +72,19 @@ function ci(bundle, ports, options = {}) {
   }
   lanes.push('verify');
 
+  // ---- forge (AGSC-08-12): compile `enforce[]` ONCE per run, into `dist/forge/`.
+  // A Bundle whose gate items enforce nothing compiles nothing and the lane says so,
+  // rather than creating an empty generated directory.
+  const items = (bundle.items || []).map((item) => (item && item.frontmatter
+    ? { ...item.frontmatter, slug: item.slug, type: item.type }
+    : item));
+  const compiled = forge.write(items, bundle.config || {}, ports);
+  findings.push(...compiled.findings);
+  lanes.push(compiled.files.size === 0
+    ? 'forge (no gate item declares enforce[]; AGSC-08-12)'
+    : `forge (${compiled.files.size} artefact${compiled.files.size === 1 ? '' : 's'}, `
+      + `${compiled.written.length} written, ${compiled.drift.length} drifted)`);
+
   const sorted = sortFindings(findings);
   const counts = countOf(sorted);
   return {
@@ -78,6 +92,7 @@ function ci(bundle, ports, options = {}) {
     counts,
     findings: sorted,
     files: built.files,
+    forge: compiled,
     skipped: built.skipped,
     lanes,
   };

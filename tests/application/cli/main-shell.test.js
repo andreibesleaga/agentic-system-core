@@ -182,7 +182,9 @@ const usage = (argv) => {
 };
 
 test('AGSC-09-07: a missing or unknown verb names the sixteen verbs on stderr', () => {
-  for (const argv of [[], ['--help'], ['-h'], ['help'], ['nosuch']]) {
+  // rc.5 (V9D-02): `--help` is a global flag with its own exit 0 — see the test
+  // below. `-h` and `help` are named by no rule and stay usage errors.
+  for (const argv of [[], ['-h'], ['help'], ['nosuch']]) {
     const r = usage(argv);
     assert.strictEqual(r.exit, 2, `${JSON.stringify(argv)} is a usage error (AGSC-09-08)`);
     assert.strictEqual(r.stdout, '', 'diagnostics never go to stdout (AGSC-09-10)');
@@ -195,7 +197,7 @@ test('AGSC-09-07: a missing or unknown verb names the sixteen verbs on stderr', 
 });
 
 test('AGSC-09-10: under --json the same usage error is ONE finding object per line', () => {
-  for (const argv of [['--json'], ['--help', '--json'], ['nosuch', '--json']]) {
+  for (const argv of [['--json'], ['-h', '--json'], ['nosuch', '--json']]) {
     const r = usage(argv);
     assert.strictEqual(r.exit, 2);
     assert.strictEqual(r.stdout, '');
@@ -207,6 +209,43 @@ test('AGSC-09-10: under --json the same usage error is ONE finding object per li
     assert.ok(typeof one.message === 'string' && one.message !== '');
     assert.ok(!/\bnull\b/u.test(one.message), one.message);
   }
+});
+
+test('AGSC-09-09 (rc.5, V9D-02): --help prints to stdout and exits 0', () => {
+  // "MUST print the verb set of AGSC-09-07 and this flag list to stdout and exit 0;
+  // with a verb, it MUST print that verb's flags." It is the one flag that is not a
+  // diagnostic, so unlike the usage block it does NOT go to stderr.
+  const bare = usage(['--help']);
+  assert.strictEqual(bare.exit, 0);
+  assert.strictEqual(bare.stderr, '', '--help is not a diagnostic (AGSC-09-09)');
+  for (const verb of VERBS) assert.ok(bare.stdout.includes(verb), `--help names ${verb}`);
+  for (const flag of ['--json', '--quiet', '--plain', '--no-input', '--help', '--version']) {
+    assert.ok(bare.stdout.includes(flag), `--help names ${flag}`);
+  }
+
+  // With a verb, that verb's flags — and not another verb's.
+  const lint = usage(['lint', '--help']);
+  assert.strictEqual(lint.exit, 0);
+  assert.strictEqual(lint.stderr, '');
+  assert.ok(lint.stdout.includes('--fix') && lint.stdout.includes('--self'), lint.stdout);
+  assert.ok(!lint.stdout.includes('--ledger'), lint.stdout);
+  const compose = usage(['compose', '--help']);
+  assert.ok(compose.stdout.includes('--out') && compose.stdout.includes('--emit'), compose.stdout);
+
+  // Under --json it takes the shape --version already takes: one canonical JSON
+  // object on stdout, never a usage block in a machine-readable pipeline.
+  const asJson = usage(['--help', '--json']);
+  assert.strictEqual(asJson.exit, 0);
+  assert.strictEqual(asJson.stderr, '');
+  const document = JSON.parse(asJson.stdout);
+  assert.deepStrictEqual(document.verbs, [...VERBS]);
+  assert.strictEqual(asJson.stdout, `${JSON.stringify(document, Object.keys(document).sort())}\n`,
+    'the --json form is canonical');
+  const verbJson = JSON.parse(usage(['verify', '--help', '--json']).stdout);
+  assert.deepStrictEqual(verbJson, { flags: ['--ledger'], global_flags: document.global_flags, verb: 'verify', version: '0.0.0' });
+
+  // --version still wins: it is handled first and answers a different question.
+  assert.strictEqual(usage(['--help', '--version']).stdout, 'agsc 0.0.0\n');
 });
 
 test('AGSC-09-07: an unknown verb says what was typed, so a typo is visible', () => {

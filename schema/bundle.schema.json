@@ -18,8 +18,19 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+$"
     },
-    "title": { "type": "string", "minLength": 3, "maxLength": 120 },
-    "description": { "type": "string", "minLength": 40, "maxLength": 200 },
+    "title": {
+      "description": "AGSC-02-24 as amended at rc.5 (FV28-01): an authored SINGLE-LINE string — no C0 control, no U+007F, U+0085, U+2028 or U+2029 — because AGSC-06-13a block (1) puts it on the `# ` line of /llms.txt and /llms-full.txt. A violation is AGSC-E204.",
+      "type": "string",
+      "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$",
+      "minLength": 3,
+      "maxLength": 120
+    },
+    "description": {
+      "description": "NOT single-line-bounded, deliberately: AGSC-06-13a block (3) emits this value with 'newlines in the source replaced by a single space', so a multi-line Bundle description is conforming and the writer collapses it (FV28-01).",
+      "type": "string",
+      "minLength": 40,
+      "maxLength": 200
+    },
     "base": {
       "description": "Absolute https origin, trailing slash optional; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json, including the http://localhost[:port]/ development placeholder written by adoption (D52(1)). No query, no fragment, and no path segment that is . or .. (AGSC-01-19, rc.5, V9A-14).",
       "type": "string",
@@ -27,8 +38,9 @@
     },
     "lang": { "type": "string", "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$" },
     "license": {
-      "description": "SPDX or LicenseRef identifier covering the prose of this Bundle (AGSC-06-15).",
-      "type": "string"
+      "description": "SPDX or LicenseRef identifier covering the prose of this Bundle (AGSC-06-15). Single-line: it is the `license:` line of the AGSC-06-13a provenance header (AGSC-02-24, rc.5, FV28-01).",
+      "type": "string",
+      "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$"
     },
     "prov": {
       "type": "object",

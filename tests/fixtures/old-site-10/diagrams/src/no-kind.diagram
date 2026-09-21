@@ -1,0 +1,5 @@
+canvas 400 200
+label "no-kind diagram"
+box a 20 40 140 50 "first"
+box b 240 40 140 50 "second" acc
+arrow a b

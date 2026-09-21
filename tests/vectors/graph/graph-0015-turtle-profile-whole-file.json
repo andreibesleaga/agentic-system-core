@@ -1,0 +1,36 @@
+{
+  "area": "graph",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. The whole of graph.ttl for a two-node dataset, byte for byte — the file AGSC-04-24 names in the CROSS-IMPLEMENTATION byte-identity set and that no vector pinned before rc.5 (V9A-01, the second blocker for 1.0.0). Derivation, clause by clause of AGSC-05-10: (a) the prefix block is the constant seven lines in the fixed order asc, dcterms, prov, rdfs, schema, skos, xsd, each written '@prefix <pfx>: <IRI> .' with one space after each token — prov:, rdfs: and xsd: are emitted although this dataset uses none of them, which is exactly what makes the block a constant; owl: and rdf: are never declared. (b) one blank line after the block and between subject blocks, one trailing LF, nothing else. (c) subjects by IRI code points, so the Bundle IRI https://a.example/ precedes the item IRI of which it is a prefix; predicates by predicate IRI code points, so rdf:type (http://...) precedes schema:license and schema:usageInfo (https://schema.org/...), which precede asc:specVersion (https://w3id.org/...). (d) first clause on the subject line, every further clause indented by exactly four spaces, clauses separated by ' ;' + LF, block closed by ' .', 'a' written for rdf:type, prefixed names wherever the namespace is in (a) and the local part is a legal PN_LOCAL. (e) every literal here is plain, so none carries ^^xsd:string in Turtle (AGSC-05-31 form c), and the label is language-tagged with the item's lang. The item's schema:license and schema:usageInfo are the two AGSC-05-26 rows added at rc.5 (V9A-02): the licence identifier of bundle.license_prose (CC0-1.0 here, deliberately NOT the Content Use Terms identifier, so the two members cannot be confused) and the constant Content Use Terms identifier of AGSC-06-18, both on the Bundle AND on every item, both plain literals.",
+  "expected": {
+    "nquads": "<https://a.example/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Bundle> <https://a.example/> .\n<https://a.example/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/> <https://schema.org/usageInfo> \"LicenseRef-AgenticSystemCore-Content-Use-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/> <https://w3id.org/agentic-system-core/ns#specVersion> \"1.0.0-rc.5\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> <https://a.example/> .\n<https://a.example/concepts/alpha/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://a.example/> <https://a.example/> .\n<https://a.example/concepts/alpha/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Alpha\"@en <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://schema.org/usageInfo> \"LicenseRef-AgenticSystemCore-Content-Use-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#kind> \"term\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#operator> \"human:andrei\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n",
+    "prefix_block_is_constant": true,
+    "turtle": "@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix dcterms: <http://purl.org/dc/terms/> .\n@prefix prov: <http://www.w3.org/ns/prov#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix schema: <https://schema.org/> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n<https://a.example/> a asc:Bundle ;\n    schema:license \"CC0-1.0\" ;\n    schema:usageInfo \"LicenseRef-AgenticSystemCore-Content-Use-1.0\" ;\n    asc:specVersion \"1.0.0-rc.5\" .\n\n<https://a.example/concepts/alpha/> a asc:Concept ;\n    skos:inScheme <https://a.example/> ;\n    skos:prefLabel \"Alpha\"@en ;\n    schema:license \"CC0-1.0\" ;\n    schema:usageInfo \"LicenseRef-AgenticSystemCore-Content-Use-1.0\" ;\n    asc:kind \"term\" ;\n    asc:operator \"human:andrei\" ;\n    asc:origin \"human\" .\n"
+  },
+  "id": "graph-0015",
+  "input": {
+    "bundle": {
+      "license_prose": "CC0-1.0",
+      "spec_version": "1.0.0-rc.5"
+    },
+    "items": [
+      {
+        "kind": "term",
+        "prov": {
+          "operator": "human:andrei",
+          "origin": "human"
+        },
+        "slug": "alpha",
+        "title": "Alpha",
+        "type": "concept"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-05-10"
+}

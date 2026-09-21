@@ -21,9 +21,19 @@
 //   allErrors        §9.4 precedence needs every candidate fault, not the first
 //   strict           an unsupported or misspelled keyword throws AT COMPILE TIME,
 //                    so a schema can never grow a keyword this engine ignores
-//   strictRequired   OFF: schema/config.schema.json's `if/then` requires `model`
-//                    from a sibling subschema, which is legal 2020-12 but trips the
-//                    strict-required heuristic (reported to the owner, not fixed)
+//   strictRequired   OFF. At rc.4 the cause was schema/config.schema.json's
+//                    `if/then` requiring `model` from a sibling subschema; R-18
+//                    restructured those branches at rc.5 and that cause is gone
+//                    (verified: config.schema.json and item.schema.json both
+//                    compile with `strictRequired: true`). It stays off for a
+//                    second, permanent reason — schema/bundle.schema.json carries
+//                    `"not": {"required": ["type"]}` (AGSC-01-04 as amended at
+//                    rc.5, V9A-13) and `type` is deliberately absent from that
+//                    schema's `properties`, since the Bundle root is not an item.
+//                    Ajv's heuristic reads that as "required property not
+//                    defined" and refuses to compile. The construct is legal
+//                    2020-12 and is exactly what the rule states, so the
+//                    heuristic is the thing that is wrong.
 //   unicodeRegExp    `pattern` compiles with the `u` flag (AGSC-01-10)
 //   validateFormats  the schemas declare `format: "uri"` (config.peers[])
 //

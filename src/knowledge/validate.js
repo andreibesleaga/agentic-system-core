@@ -280,6 +280,14 @@ function index(frontmatter, options = {}) {
     return [finding('AGSC-E201', 'frontmatter is not a mapping', { file })];
   }
   for (const e of s.bundle(frontmatter).errors) {
+    // rc.5 (V9A-13): bundle.schema.json's one `not` is `{"required": ["type"]}`.
+    // AGSC-01-04 as amended names AGSC-E205 for a `type` key on the Bundle root
+    // — a file-placement violation, because the root is not an item — and the
+    // §9.4 precedence paragraph reserves AGSC-E201 for a schema failure that no
+    // more specific registered code names. The dedicated check below raises that
+    // one finding, with the key's own line, so the schema failure adds nothing.
+    if (e.keyword === 'not' && e.schemaPath === '#/not'
+      && Object.prototype.hasOwnProperty.call(frontmatter, 'type')) continue;
     findings.push(finding(codeFor(e, 'index'), `${e.path || '/'}: ${e.message}`,
       { file, line: lineOf(keyLines, e.path) }));
   }

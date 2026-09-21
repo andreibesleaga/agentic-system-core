@@ -1,85 +1,8 @@
 {
   "area": "boundary",
-  "description": "Every served surface is declared with its id, external version and access class, derived from what is emitted; the WebMCP declaration carries the three annotation flags per tool and the MCP declaration names the extension identifier.",
+  "description": "WITHDRAWN. Superseded by bnd-0031. Every served surface is declared with its id, external version and access class, derived from what is emitted; the WebMCP declaration carries the three annotation flags per tool and the MCP declaration names the extension identifier.",
   "expected": {
-    "links": [
-      {
-        "agsc-access": [
-          "none"
-        ],
-        "agsc-surface": [
-          "chunks"
-        ],
-        "href": "https://a.example/chunks.jsonl",
-        "rel": "https://w3id.org/agentic-system-core/rel#surface"
-      },
-      {
-        "agsc-access": [
-          "consent"
-        ],
-        "agsc-surface": [
-          "webmcp"
-        ],
-        "agsc-surface-version": [
-          "2026-09-15"
-        ],
-        "href": "https://a.example/compose/",
-        "rel": "https://w3id.org/agentic-system-core/rel#surface"
-      },
-      {
-        "agsc-access": [
-          "none"
-        ],
-        "agsc-surface": [
-          "llms-txt"
-        ],
-        "href": "https://a.example/llms.txt",
-        "rel": "https://w3id.org/agentic-system-core/rel#surface"
-      },
-      {
-        "agsc-access": [
-          "consent"
-        ],
-        "agsc-surface": [
-          "mcp"
-        ],
-        "agsc-surface-version": [
-          "2026-07-28"
-        ],
-        "href": "https://a.example/specs/mcp/",
-        "rel": "https://w3id.org/agentic-system-core/rel#surface"
-      }
-    ],
-    "mcp_extensions": [
-      "com.agenticsystemcore/knowledge"
-    ],
-    "webmcp_annotations": {
-      "ask": {
-        "readOnlyHint": true,
-        "untrustedContentHint": true
-      },
-      "compose": {
-        "readOnlyHint": true,
-        "untrustedContentHint": true
-      },
-      "links": {
-        "readOnlyHint": true
-      },
-      "propose": {
-        "consequentialHint": true
-      },
-      "read": {
-        "readOnlyHint": true,
-        "untrustedContentHint": true
-      },
-      "remember": {
-        "consequentialHint": true
-      },
-      "search": {
-        "readOnlyHint": true,
-        "untrustedContentHint": true
-      }
-    }
+    "withdrawn": true
   },
   "id": "bnd-0012",
   "input": {
@@ -90,11 +13,12 @@
     ],
     "mcp_served": true
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.5"
   },
+  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55d and V9A-10; D100). Two defects: the vector asserts absolute `https://a.example/...` targets while its `input` states no base (Q55d), and it pins `agsc-surface-version: [\"2026-09-15\"]` for `webmcp` — the publication date of a **living** W3C Draft Community Group Report, which read \"17 September 2026\" on 2026-09-19 and moves again on every CG publish, so a node targeting the current draft failed a required vector. AGSC-11-16 as amended at rc.5 conforms **any** `YYYY-MM-DD`. Superseded by bnd-0031.",
   "requires_surface": [
     "mcp",
     "webmcp"

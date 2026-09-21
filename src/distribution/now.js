@@ -13,7 +13,7 @@
 // Pure function of its input: the build instant arrives through the Clock port and
 // reaches this module as a string.
 
-const { compareCodePoint } = require('../knowledge/unicode.js');
+const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const { capMeter } = require('../governance/agents.js');
 const { COUNTED_TYPES } = require('./discovery.js');
@@ -215,28 +215,32 @@ function state(items, config, options = {}) {
  * @returns {string}
  */
 function nowMarkdown(nowState) {
-  const lines = ['# Now', '', `Built at ${nowState.last_build}.`, ''];
+  // AGSC-02-24 (rc.5, FV28-01): `/now.md` is line-oriented and several of the values
+  // below are authored — a lane `name`, a `claimed_by` actor, a task slug read from a
+  // board a reader did not author (AGSC-11-02). Each is neutralised where it is
+  // interpolated; the neutralisation is the identity on every conforming value.
+  const lines = ['# Now', '', `Built at ${singleLine(nowState.last_build)}.`, ''];
   lines.push('## Counts', '');
   for (const plural of Object.keys(nowState.counts).sort(compareCodePoint)) {
-    lines.push(`- ${plural}: ${nowState.counts[plural]}`);
+    lines.push(`- ${singleLine(plural)}: ${nowState.counts[plural]}`);
   }
   lines.push('');
   if (nowState.stale !== undefined) {
-    lines.push('## Stale items', '', ...nowState.stale.map((s) => `- ${s}`), '');
+    lines.push('## Stale items', '', ...nowState.stale.map((s) => `- ${singleLine(s)}`), '');
   }
   if (nowState.open_lessons !== undefined) {
-    lines.push('## Open lessons', '', ...nowState.open_lessons.map((s) => `- ${s}`), '');
+    lines.push('## Open lessons', '', ...nowState.open_lessons.map((s) => `- ${singleLine(s)}`), '');
   }
   if (nowState.waiting_for_a_person !== undefined) {
     lines.push('## Waiting for a person', '',
       'No agent lane will pick these up: both states are slow-lane states (AGSC-10-17).', '',
-      ...nowState.waiting_for_a_person.map((t) => `- ${t.slug} — ${t.state}`
-        + `${t.claimed_by === undefined ? '' : ` (claimed by ${t.claimed_by})`}`),
+      ...nowState.waiting_for_a_person.map((t) => `- ${singleLine(t.slug)} — ${singleLine(t.state)}`
+        + `${t.claimed_by === undefined ? '' : ` (claimed by ${singleLine(t.claimed_by)})`}`),
       '');
   }
   if (nowState.spend !== undefined) {
     lines.push('## Monthly spend', '',
-      `- month: ${nowState.spend.month}`,
+      `- month: ${singleLine(nowState.spend.month)}`,
       `- spent: ${nowState.spend.spent_usd} USD`,
       `- cap: ${nowState.spend.cap_usd} USD`,
       '');
@@ -245,7 +249,7 @@ function nowMarkdown(nowState) {
     lines.push('## Agent lanes', '',
       '| lane | enabled | runs | merges | spent USD | cap USD |',
       '|---|---|---|---|---|---|',
-      ...nowState.agents.map((a) => `| ${a.name} | ${a.enabled ? 'yes' : 'no'} | ${a.runs} `
+      ...nowState.agents.map((a) => `| ${singleLine(a.name)} | ${a.enabled ? 'yes' : 'no'} | ${a.runs} `
         + `| ${a.merges} | ${a.spent_usd} | ${a.cap_usd === undefined ? '—' : a.cap_usd} |`),
       '');
   }

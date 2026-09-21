@@ -200,7 +200,11 @@ NFR-01 above is superseded as of 2026-09-18. THE SYSTEM SHALL use maintained, pe
 
 1. **PRD-054's "all Node stdlib, zero deps"** (§2, the independent validator scripts) is superseded on the same terms as NFR-01: the `tools/` validators stay engine-independent — no import from `src/` — but may use the same pinned, audited libraries as the engine (`spec/09-conformance.md` AGSC-09-90 is to be reworded at the next release candidate, recorded as a 1.0.0 item).
 2. **NFR-01's own row in §3** ("zero runtime dependencies (`node:` builtins, Node ≥22.14)") is the superseded text; the engine's floor is **Node ≥22.12.0** (D97 Q39 — the version at which `require()` of `commander@15` works; Node 22 is Maintenance LTS to 2027-04-30) and its dependency set is the eleven runtime and two development libraries pinned in `package.json` and recorded in the engine's `src/README.md`.
-3. **The §5 success-metric line "provenance coverage 100%"** is read as *"every published item carries `prov`"*, which is what AGSC-08-01 requires and what the `prov` lint enforces. The literal figure is a metric target, not a claim about the system, and no public page states it as one.
+3. **The §5 success-metric line on provenance coverage** is read as *"every published item carries `prov`"*, which is what AGSC-08-01 requires and what the `prov` lint enforces. It was first written as a percentage figure; that figure was a metric target, not a claim about the system. *Correction, 2026-09-21:* the requirements page of the site embeds this document whole, so the figure did reach a public page; the §5 line and this note now carry the reading itself instead of the figure.
+
+### 3.2 S01 Amendment 10 (2026-09-21; ENG1-01, rc.5) — NFR-06's index figure superseded
+
+NFR-06's `search.json` figure above is superseded as of 2026-09-21; its other three clauses (HTML ≤100 KB/page, build ≤60 s for 500 items, no external page requests) stand as written. WHEN `ci` runs, THE SYSTEM SHALL enforce **≤1 MB per index document** — `/search.json` at or below 500 items, each `/search-<nn>.json` shard above it — in place of "`search.json` ≤500 KB at 500 items". Reason: AGSC-06-23 puts every item's body into the index, so the index costs what the prose costs; the rc.4 pair of figures (≤1 KB per published item **and** ≤500 KB absolute) was measured at 1,226 B/item on a real 120-item Bundle of ordinary prose and was therefore unsatisfiable, with the second clause unreachable below 408 items. Acceptance is unchanged: the budget check fails the build, now explicitly with `AGSC-E904`. Trace: `spec/06-surfaces.md` AGSC-06-21 as amended at rc.5, N8.
 
 ## 4. Non-goals (v1)
 
@@ -210,7 +214,7 @@ No servers, databases, queues or Workers — static Pages + CI only (D47, D09). 
 
 ## 5. Metrics & definition of done
 
-**Metrics (measurable only, 12 months):** visitors/month; npm downloads; `/skills/` fetches (zone analytics); Proposals merged; provenance coverage 100%; median Proposal→decision <7 days; zero broken references; spend ≤$10/month; JOSS and RFC milestones. MCP hits are local — not a KPI.
+**Metrics (measurable only, 12 months):** visitors/month; npm downloads; `/skills/` fetches (zone analytics); Proposals merged; provenance coverage — every published item carries `prov`; median Proposal→decision <7 days; zero broken references; spend ≤$10/month; JOSS and RFC milestones. MCP hits are local — not a KPI.
 
 **Definition of done (14-FH §5, compressed):** (1) persona walkthroughs (a)–(j) of audit/D §3 exist as end-to-end tests (fixed clock, no network, recorded fixtures) green on three OSes at the tag; (2) `verify` proves byte-identical rebuilds, each spec section has ≥1 vector, `lint --self` clean, N8/N10 green, coverage ≥99%; (3) site live with `/ns/` conneg, well-known linkset, llms.txt, graph exports, skills, `/compose/`, `/now/`, `/legal/`, `_headers`, smoke tests as Episodes; (4) benchmark kit run on real data, results and datasheet on Zenodo, linked from `/about/`; (5) docs complete — module READMEs, quickstarts, PRD/PLAN/SPEC + `spec/`, CHANGELOG, CITATION.cff, adversarial findings answered, UNVERIFIED items dropped; (6) publications started — Zenodo DOI, IEEE Intelligent Systems, I-D -00 before 2026-11-02.
 

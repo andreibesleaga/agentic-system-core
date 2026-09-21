@@ -8,10 +8,14 @@
 // a whole Bundle is clean (an item stating only the keys under test necessarily
 // warns elsewhere — AGSC-09-04's `items[]` convention).
 
+const fs = require('node:fs');
+const path = require('node:path');
+
 const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
 const linksModule = require('../../../src/knowledge/links.js');
 const lint = require('../../../src/governance/lint.js');
+const fix = require('../../../src/governance/fix.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
 
 const INJECTION_CODES = ['AGSC-E401', 'AGSC-E402'];
@@ -118,8 +122,46 @@ function runPorts(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * lint-0026 — AGSC-04-19 as amended at rc.5 (V9D-01/ENG2-03): the YAML profile
+ * `lint --fix` emits, applied twice.
+ *
+ * `governance/fix.js` is pure and takes the raw `schema/item.schema.json` object,
+ * which fixes the key order; it is read from the ENGINE root the runner supplies,
+ * never from `process.cwd()` (AGSC-04-03). The vector states one file's bytes, so
+ * the `typeOfSlug` map of AGSC-03-12 is empty: there is no second item to link to.
+ */
+function runFix(vector, ctx) {
+  const root = (ctx && ctx.root) || '.';
+  const itemSchema = JSON.parse(fs.readFileSync(path.join(root, 'schema', 'item.schema.json'), 'utf8'));
+  const item = { path: vector.input.file, slug: 'router', type: 'concept' };
+  const once = fix.fixItem(item, { itemSchema, source: vector.input.bytes, typeOfSlug: new Map() });
+  const twice = fix.fixItem(item, { itemSchema, source: once.after, typeOfSlug: new Map() });
+  const list = [];
+  list.push(['output', once.after === vector.expected.output, `got ${JSON.stringify(once.after)}`]);
+  if (vector.expected.twice !== undefined) {
+    list.push(['twice', twice.after === vector.expected.twice, `got ${JSON.stringify(twice.after)}`]);
+  }
+  if (vector.expected.idempotent === true) {
+    list.push(['idempotent', twice.changed === false && twice.after === once.after,
+      `a second --fix changed the file: ${JSON.stringify(twice.changes)}`]);
+  }
+  // AGSC-04-19 as amended at rc.5 (ENG2-03): the encoding third reports AGSC-E108,
+  // every other normalisation AGSC-E506, and both are warnings — so `--fix` never
+  // moves an exit code by itself.
+  const codes = new Set(once.findings.map((f) => f.code));
+  for (const code of codes) {
+    list.push([`code ${code}`, code === 'AGSC-E108' || code === 'AGSC-E506',
+      'lint --fix reports only AGSC-E108 and AGSC-E506 (AGSC-04-19)']);
+  }
+  list.push(['severity', once.findings.every((f) => f.severity === 'warn'),
+    JSON.stringify(once.findings)]);
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
   const { input } = vector;
+  if (typeof input.bytes === 'string' && typeof input.file === 'string') return runFix(vector, ctx);
   if (typeof input.markdown === 'string') return runInjection(vector, ctx);
   if (input.svgs !== undefined) return runSvg(vector);
   if (Array.isArray(input.paths)) return runPaths(vector);

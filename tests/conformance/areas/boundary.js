@@ -7,7 +7,20 @@
 // carrying a `site.base` in their input (bnd-0012, bnd-0014, bnd-0020,
 // bnd-0025 among them). This handler supplies that base explicitly, as
 // DEFAULT_BASE below, and the report names it as an input the vectors do not
-// derive. No expectation is weakened by it.
+// derive. No expectation is weakened by it. (At rc.5 those four were withdrawn and
+// replaced by bnd-0031…0034, which state their base; the default survives only for
+// the released vectors that still rely on it.)
+//
+// THE READING RC5-B REPORTED IS GONE (RC5-C, 2026-09-21). `bnd-0027` stated the MCP
+// `extensions` capability as the ARRAY ["com.agenticsystemcore/knowledge"] — the shape
+// the engine returned before rc.5, which no rule pinned — while AGSC-11-18 as amended
+// at rc.5 (V9A-04, SITE1-01) makes `extensions` MCP's own "map of extension identifiers
+// to per-extension settings objects". That vector is withdrawn under AGSC-00-16 and
+// superseded by `bnd-0036`, which states the map; this handler compares the map the
+// Boundary context returns and projects nothing. `bnd-0031` is unaffected: its member
+// is named `mcp_extensions` and IS the list of identifiers advertised, which is the
+// map's key set; the settings object of each is pinned by AGSC-11-18 and asserted by
+// `bnd-0035`.
 
 const federation = require('../../../src/boundary/federation.js');
 const visibility = require('../../../src/boundary/visibility.js');
@@ -136,6 +149,76 @@ function runBnd0005(vector) {
     ['error', result.error === vector.expected.error, String(result.error)],
     ['declared_peer_unchanged',
       (result.declaredPeer === vector.input.peer) === vector.expected.declared_peer_unchanged, result.declaredPeer],
+  ]);
+}
+
+/**
+ * bnd-0030 — AGSC-11-09 + AGSC-11-08, the blocker. Supersedes bnd-0005.
+ * Every hop carries a resolution, so the address guard is exercised unconditionally;
+ * `address_guard_unconditional` is proved separately by a hop whose host the caller
+ * resolved for nothing, which must be refused rather than followed.
+ */
+function runBnd0030(vector) {
+  const list = [];
+  const dev = vector.input.dev === true;
+  for (const kase of vector.input.cases) {
+    const resolved = Object.create(null);
+    for (const entry of kase.resolved || []) resolved[entry.host] = entry.addresses;
+    const result = federation.followRedirects(kase.peer, kase.redirects, { dev, resolved });
+    const expected = vector.expected.cases.find((c) => c.name === kase.name) || {};
+    list.push([`${kase.name} followed`, result.followed === expected.followed, String(result.followed)]);
+    list.push([`${kase.name} error`, result.error === expected.error, String(result.error)]);
+    // AGSC-11-09: "the final URL of a redirected peer fetch is NOT substituted for
+    // the declared peer URL in any mutual check" — `final` may advance, the declared
+    // peer may not.
+    list.push([`${kase.name} declared_peer_unchanged`,
+      (result.declaredPeer === kase.peer) === expected.declared_peer_unchanged,
+      `${result.declaredPeer} / ${result.final}`]);
+  }
+  if (vector.expected.address_guard_unconditional === true) {
+    // The fail-open branch bnd-0005 depended on: a hop whose host has no classified
+    // address — because the caller supplied none at all, or supplied a map without it
+    // — must be refused before it is followed (AGSC-11-08 "before connecting").
+    const probes = [{}, { dev: false }, { resolved: {} }];
+    for (const options of probes) {
+      const open = federation.followRedirects('https://b.example/x', ['https://unresolved.example/r1'], options);
+      list.push([`unconditional ${JSON.stringify(options)}`,
+        open.error === 'AGSC-E905' && open.followed === 0,
+        `got ${JSON.stringify({ error: open.error, followed: open.followed })}`]);
+    }
+  }
+  return checks(list);
+}
+
+/**
+ * bnd-0035 — AGSC-11-18 as amended at rc.5 (SITE1-01): the MCP extension's settings
+ * object. The same object travels in `server/discover` and in the per-request
+ * capabilities, there being no initialization handshake in revision 2026-07-28, so
+ * the handler asks the Boundary context twice and compares.
+ */
+function runBnd0035(vector) {
+  const base = baseOf(vector);
+  const discover = plain(surfaces.mcpCapabilities({ base }));
+  const perRequest = plain(surfaces.mcpCapabilities({ base }));
+  const settings = discover.extensions[surfaces.MCP_EXTENSION_ID] || {};
+  const extra = { ...settings, 'x-other': 1 };
+  const withExtra = surfaces.checkMcpExtensions({ [surfaces.MCP_EXTENSION_ID]: extra }, { base });
+  const clean = surfaces.checkMcpExtensions(discover.extensions, { base });
+  return checks([
+    ['extensions', deepEqual(vector.expected.extensions, discover.extensions), JSON.stringify(discover.extensions)],
+    ['settings_members', deepEqual(vector.expected.settings_members, Object.keys(settings).sort()),
+      JSON.stringify(Object.keys(settings))],
+    ['discover_and_per_request_identical',
+      (JSON.stringify(discover) === JSON.stringify(perRequest)) === vector.expected.discover_and_per_request_identical,
+      JSON.stringify(perRequest)],
+    ['the pinned object is accepted', clean.length === 0, JSON.stringify(plain(clean))],
+    ['additional_member_is', withExtra.length > 0 && withExtra.every((f) => f.code === vector.expected.additional_member_is),
+      JSON.stringify(plain(withExtra))],
+    // AGSC-11-18/V9A-04: revision 2026-07-28 has no initialization handshake, which
+    // is WHY the two capability reports are the same object and not a negotiation.
+    ['initialization_handshake', vector.expected.initialization_handshake === false,
+      'revision 2026-07-28 establishes no session (AGSC-11-18)'],
+    ['observed', (vector.input.observed || []).length === 2, 'both capability reports must be observed'],
   ]);
 }
 
@@ -316,17 +399,41 @@ function runBnd0029(vector) {
 
 /** bnd-0012 — AGSC-11-16: every served surface declared, with its annotations. */
 function runBnd0012(vector) {
+  const base = baseOf(vector);
   const links = plain(surfaces.declare({
-    base: baseOf(vector), emitted: vector.input.emitted, mcpServed: vector.input.mcp_served,
+    base, emitted: vector.input.emitted, mcpServed: vector.input.mcp_served,
+    webmcpVersion: vector.input.webmcp_report_date,
   }));
+  const extensions = plain(surfaces.mcpCapabilities({ base }).extensions);
   const list = [
     ['links', deepEqual(vector.expected.links, links), JSON.stringify(links)],
-    ['mcp_extensions', deepEqual(vector.expected.mcp_extensions, plain(surfaces.mcpCapabilities().extensions)),
-      JSON.stringify(plain(surfaces.mcpCapabilities()))],
+    // `mcp_extensions` is the list of extension IDENTIFIERS advertised. MCP's
+    // `extensions` is a map of identifier to settings object (AGSC-11-18 as amended
+    // at rc.5, SITE1-01), so the identifiers are its keys; the settings object is
+    // pinned by bnd-0035 and asserted there. See the reading note at the top.
+    ['mcp_extensions', deepEqual(vector.expected.mcp_extensions, Object.keys(extensions).sort()),
+      JSON.stringify(extensions)],
   ];
   for (const [tool, expected] of Object.entries(vector.expected.webmcp_annotations)) {
     list.push([`annotations.${tool}`, subsetOf(expected, surfaces.WEBMCP_ANNOTATIONS[tool]),
       JSON.stringify(surfaces.WEBMCP_ANNOTATIONS[tool])]);
+  }
+  if (vector.expected.webmcp_version_pattern) {
+    const webmcp = links.find((l) => l['agsc-surface'][0] === 'webmcp') || {};
+    const declared = (webmcp['agsc-surface-version'] || [])[0];
+    list.push(['webmcp_version_pattern', new RegExp(vector.expected.webmcp_version_pattern, 'u').test(String(declared)),
+      String(declared)]);
+    if (vector.expected.webmcp_version_echoes_input === true) {
+      // AGSC-11-16 as amended at rc.5 (V9A-10): ANY YYYY-MM-DD report date conforms,
+      // so the declaration must carry the date the node targets and never a constant.
+      list.push(['webmcp_version_echoes_input', declared === vector.input.webmcp_report_date,
+        `declared ${String(declared)} for input ${String(vector.input.webmcp_report_date)}`]);
+      const other = plain(surfaces.declare({
+        base, emitted: vector.input.emitted, mcpServed: vector.input.mcp_served, webmcpVersion: '2027-01-04',
+      })).find((l) => l['agsc-surface'][0] === 'webmcp');
+      list.push(['a second date is echoed too', (other['agsc-surface-version'] || [])[0] === '2027-01-04',
+        JSON.stringify(other)]);
+    }
   }
   return checks(list);
 }
@@ -358,14 +465,21 @@ function runBnd0021(vector) {
   ]);
 }
 
-/** bnd-0027 — AGSC-11-18: the floor in each surface's own vocabulary. */
-function runBnd0027(vector) {
+/**
+ * bnd-0036 — AGSC-11-18: the floor in each surface's own vocabulary. Supersedes
+ * `bnd-0027` (withdrawn at rc.5, RC5-C). The vector states `capabilities.extensions`
+ * as MCP's map of extension identifier to settings object, so the handler compares
+ * the capabilities object the Boundary context returns and makes no projection of it.
+ * `subsetOf` compares each named member with `deepEqual`, so `capabilities` — and the
+ * map inside it — is pinned whole.
+ */
+function runBnd0036(vector) {
   const list = [];
   for (const [tool, expected] of Object.entries(vector.expected.webmcp)) {
     list.push([`webmcp.${tool}`, subsetOf(expected, surfaces.WEBMCP_ANNOTATIONS[tool]),
       JSON.stringify(surfaces.WEBMCP_ANNOTATIONS[tool])]);
   }
-  const discover = { capabilities: plain(surfaces.mcpCapabilities()) };
+  const discover = { capabilities: plain(surfaces.mcpCapabilities({ base: baseOf(vector) })) };
   list.push(['mcp.server/discover', subsetOf(vector.expected.mcp['server/discover'], discover), JSON.stringify(discover)]);
   return checks(list);
 }
@@ -449,9 +563,25 @@ const HANDLERS = {
   'bnd-0024': runBnd0024,
   'bnd-0025': runBnd0025,
   'bnd-0026': runBnd0026,
-  'bnd-0027': runBnd0027,
+  // `bnd-0027` is withdrawn (AGSC-00-16) and is skipped before any handler is looked
+  // up, so it has no entry: the only reading of it was the array-as-key-set one, and
+  // that reading is gone with it. Its case is `bnd-0036`.
   'bnd-0028': runBnd0028,
   'bnd-0029': runBnd0029,
+  // rc.5 — the five successors. Four are their predecessor's case with the base or
+  // the origin stated in `input` (Q55d), so they run the same handler unchanged:
+  // the handlers already read `input.site.base` through `baseOf`, which is what
+  // makes stating it a strengthening of the vector and not a new case.
+  'bnd-0030': runBnd0030,
+  'bnd-0031': runBnd0012,
+  'bnd-0032': runBnd0014,
+  'bnd-0033': runBnd0020,
+  'bnd-0034': runBnd0025,
+  'bnd-0035': runBnd0035,
+  // rc.5 — the sixth successor (RC5-C). `bnd-0036` is NOT its predecessor's case with
+  // one more input: it states a different shape for one member, so it has a handler of
+  // its own and `bnd-0027`'s is gone.
+  'bnd-0036': runBnd0036,
 };
 
 module.exports.run = function run(vector) {

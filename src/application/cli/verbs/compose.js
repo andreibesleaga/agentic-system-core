@@ -9,11 +9,20 @@ const compose = require('../../../composition/compose.js');
 const architecture = require('../../../composition/architecture.js');
 const harness = require('../../../composition/harness.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
+const { instantFromEpoch } = require('../../../governance/ledger.js');
 const helpers = require('./_helpers.js');
 
-/** The flat item record the Composition context reads (slug, type, frontmatter). */
+/**
+ * The flat item record the Composition context reads (slug, type, frontmatter) — and
+ * the BODY, which two rules need and which this function used to drop: AGSC-02-97's
+ * `yaml agsc-selection` fence lives in the body, so `compose --from` found no
+ * selection at all without it, and AGSC-07-12's `skills/<slug>/SKILL.md` quotes the
+ * Procedure's own prose, so the CLI emitted an empty skill file while the page — which
+ * fetches `/pages/<slug>.md` — emitted the real one, breaking AGSC-07-13's
+ * byte-identity in the one place it is hardest to notice.
+ */
 function flatten(items) {
-  return (items || []).map((i) => Object.assign({ slug: i.slug, type: i.type }, i.frontmatter));
+  return (items || []).map((i) => Object.assign({ body: i.body, slug: i.slug, type: i.type }, i.frontmatter));
 }
 
 /**
@@ -52,6 +61,89 @@ function conflictMessage(conflict) {
   return `composition conflict on ${conflict.key}: ${pair.join(' / ')} (AGSC-07-09)`;
 }
 
+/**
+ * One sentence per Composition WARNING kind (R64, F27-11). The verdict's
+ * `warnings[]` entries are domain records — `{code, key, source, target}` — and
+ * carried no `message`, so `agsc compose` printed a blank diagnostic line
+ * (`warn: AGSC-E803 `) for the commonest outcome there is. The two kinds are
+ * AGSC-07-07's `AGSC-E803` (a Link key that does not close, `uses` above all) and
+ * AGSC-07-23's `AGSC-E804` (a `consumes[]` port with no producer among the
+ * survivors); neither invalidates the composition, and both are worth a sentence.
+ *
+ * @param {{code:string, key:string, source?:string, target?:string}} warning
+ * @returns {string}
+ */
+function warningMessage(warning) {
+  const source = warning.source === undefined ? '' : warning.source;
+  const target = warning.target === undefined ? '' : warning.target;
+  if (warning.code === 'AGSC-E804') {
+    return `\`${source}\` consumes the port \`${target}\`, and no selected item produces it;`
+      + ' the composition is still valid (AGSC-07-23)';
+  }
+  if (warning.code === 'AGSC-E803') {
+    return `\`${source}\` names \`${target}\` under \`${warning.key}\`, which does not close a`
+      + ' selection — only `requires` does, so it was not added (AGSC-07-05, AGSC-07-07)';
+  }
+  return `composition warning on ${warning.key}: ${source} → ${target} (${warning.code})`;
+}
+
+/**
+ * AGSC-07-12 / AGSC-07-13 / AGSC-07-17: write the seven Harness files.
+ *
+ * The bytes are `composition/harness.js#emit`'s and are computed from the verdict,
+ * the items, the build instant and the selection digest alone — never from where
+ * they are written, which is what lets the `/compose/` page produce the same bytes
+ * with no filesystem at all. The digest is hashed HERE, because the Composition
+ * context is pure and `node:crypto` is the host's (AGSC-05-29).
+ *
+ * The location is AGSC-07-12's `dist/harness/<name>/`, `<name>` being the selection
+ * key of `harness.harnessName`; `--out <dir>` overrides it. `dist/` is a generated
+ * directory (AGSC-01-08) and is never read back as build input.
+ *
+ * @param {object} ctx the verb context.
+ * @param {object} bundle the loaded Bundle.
+ * @param {object} result the verdict.
+ * @param {Array<object>} items the flattened items.
+ * @returns {{emitted:boolean, dir:(string|null), files:Array<string>,
+ *   findings:Array<object>, missing:Array<string>}}
+ */
+function emitHarness(ctx, bundle, result, items) {
+  const findings = [];
+  // AGSC-07-17: "An invalid composition MUST NOT emit a Harness."
+  if (!harness.isEmitted(result)) {
+    return { dir: null, emitted: false, files: [], findings, missing: ['every file: the composition is invalid (AGSC-07-17)'] };
+  }
+  const config = bundle.config || {};
+  const site = config.site || {};
+  const clock = ctx.ports && ctx.ports.clock;
+  const instant = clock && typeof clock.iso === 'function'
+    ? clock.iso()
+    : instantFromEpoch(clock ? clock.now() : 0);
+  const selectionDigest = helpers.sha256(harness.selectionDigestInput(result));
+  const name = harness.harnessName(selectionDigest);
+  const emission = harness.emit(result, {
+    base: `${String(site.base || '').replace(/\/+$/u, '')}/`,
+    instant,
+    items,
+    licenseProse: (config.bundle && config.bundle.license_prose) || harness.terms(),
+    name,
+    selectionDigest,
+    specVersion: ctx.specVersion,
+  });
+  for (const violation of emission.violations) findings.push({ ...violation, severity: 'error' });
+  const raw = ctx.verbFlags && ctx.verbFlags.out;
+  const dir = `${String(raw === undefined || raw === '' ? `dist/harness/${name}` : raw).replace(/\/+$/u, '')}/`;
+  const written = [];
+  for (const [path, text] of emission.files) {
+    const at = `${dir}${path}`;
+    const slash = at.lastIndexOf('/');
+    if (slash !== -1) ctx.ports.fs.mkdirp(at.slice(0, slash));
+    ctx.ports.fs.writeFile(at, text);
+    written.push(at);
+  }
+  return { dir, emitted: emission.emitted, files: written, findings, missing: [...emission.missing] };
+}
+
 function run(ctx) {
   const bundle = helpers.bundleOf(ctx);
   const items = flatten(bundle.items);
@@ -70,30 +162,34 @@ function run(ctx) {
   if (result === null || result === undefined) return { findings };
   // AGSC-09-11: a Composition warning is a domain record; the application layer
   // is what turns it into a Finding, and every Finding carries a severity.
-  findings.push(...(result.warnings || []).map((w) => ({ severity: 'warn', ...w })));
+  findings.push(...(result.warnings || []).map((w) => ({ severity: 'warn', message: warningMessage(w), ...w })));
   for (const conflict of result.conflicts || []) {
     findings.push({ code: conflict.code, message: conflictMessage(conflict), severity: 'error' });
   }
   helpers.note(ctx, `verdict: ${canonicalize(compose.verdictOf(result))}`);
 
-  // AGSC-07-12: the seven Harness files are NOT written at this milestone (see
-  // `composition/harness.js`); `--emit` renders none of the AGSC-07-18 targets
-  // either, because a target rendering IS a rendering of those seven files.
-  // The verdict is honest about it rather than silently emitting nothing.
+  // AGSC-07-12/07-17: the seven Harness files, written for a valid composition and
+  // for no other. `harness_emitted` is true only when every file kind the rule names
+  // for this member set is present and nothing AGSC-07-15 forbids is.
+  const emission = emitHarness(ctx, bundle, result, items);
+  findings.push(...emission.findings);
+  helpers.note(ctx, `harness_emitted: ${emission.emitted}`);
+  if (emission.dir !== null) helpers.note(ctx, `harness: ${emission.dir} (${emission.files.length} files)`);
+  for (const missing of emission.missing) helpers.note(ctx, `harness missing: ${missing}`);
+
+  // AGSC-07-18: a target rendering IS a rendering of those seven files, and this
+  // milestone ships no target template and no registry row. Honest, never silent.
   const emit = ctx.verbFlags && ctx.verbFlags.emit;
-  if (emit !== undefined || harness.isEmitted(result)) {
-    helpers.note(ctx, 'harness_emitted: false');
-  }
   if (emit !== undefined) {
     findings.push({
       code: 'AGSC-E001',
       message: `compose --emit ${emit} is named by AGSC-07-18 but is not implemented at this milestone:`
-        + ' the seven Harness files of AGSC-07-12 are not written yet, and every --emit target is a'
-        + ' rendering of them — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
+        + ' a target rendering is a single template plus a registry row, and this distribution ships'
+        + ' neither — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
       severity: 'error',
     });
   }
   return { findings };
 }
 
-module.exports = { name: 'compose', flatten, run };
+module.exports = { name: 'compose', conflictMessage, emitHarness, flatten, run, warningMessage };

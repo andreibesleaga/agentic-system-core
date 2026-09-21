@@ -1,0 +1,47 @@
+{
+  "area": "boundary",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. Supersedes bnd-0014, which asserted https://a.example/... IRIs while stating no site.base, so the AGSC-05-01 item IRI could not be derived from the vector alone (Q55d). Same case: a retired item keeps its page and its IRI, leaves search.json, the chunk set, llms.txt and every composition, stays in the graph with asc:retiredAt, a selection naming it is AGSC-E802, and a Link to it is the warning AGSC-E411 on the linking item.",
+  "expected": {
+    "compose_selection_of_old": "AGSC-E802",
+    "findings": [
+      {
+        "code": "AGSC-E411",
+        "severity": "warn",
+        "slug": "new"
+      }
+    ],
+    "graph_has": "<https://a.example/concepts/old/> <https://w3id.org/agentic-system-core/ns#retiredAt> \"2026-09-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime>",
+    "in_chunks": false,
+    "in_llms": false,
+    "in_search": false,
+    "page_kept": true
+  },
+  "id": "bnd-0032",
+  "input": {
+    "items": [
+      {
+        "modified": "2026-09-01",
+        "slug": "old",
+        "status": "retired",
+        "title": "Old",
+        "type": "concept"
+      },
+      {
+        "slug": "new",
+        "title": "New",
+        "type": "concept",
+        "uses": [
+          "old"
+        ]
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-11-22"
+}

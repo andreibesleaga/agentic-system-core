@@ -1,0 +1,66 @@
+{
+  "area": "boundary",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-C); the reference engine already produces them, so this vector is not listed in tests/conformance/pending.json. Supersedes bnd-0027 and states in the vector what bnd-0027 left to a reading. AGSC-11-18 INHERIT: a surface never restates the security floor, it inherits it, and where the external surface has a vocabulary for the floor the node MUST use it. Derivation of the webmcp half from AGSC-11-18, unchanged from bnd-0027: `readOnlyHint: true` on the five reading tools search, read, links, compose and ask; `consequentialHint: true` on the two human-gated writing tools propose and remember, which are therefore NOT readOnly, so `readOnlyHint: false` on both; `untrustedContentHint: true` on every tool whose result carries prose (AGSC-08-18), which is every tool except `links`, whose result is typed link keys and slugs only, so `untrustedContentHint: false` there. Those two negative values are the half of the floor a positive-only expectation cannot prove, and no other vector states them. Derivation of the mcp half: the node MUST advertise the extension identifier `com.agenticsystemcore/knowledge` in the `extensions` map of the capabilities it reports under revision 2026-07-28, in its `server/discover` result, so the expectation is the map member keyed by that identifier, inside `capabilities`, inside the `server/discover` result. Its value is the settings object AGSC-11-18 pins: exactly one member, `linkset`, the absolute https URL of this node's /.well-known/knowledge-linkset (AGSC-06-07), which for the stated `site.base` `https://a.example/` is `https://a.example/.well-known/knowledge-linkset`; `site.base` is stated in input so the expectation is derivable from this file alone (Q55d's treatment). The shape is MCP's own. Model Context Protocol, \"Versioning and Compatibility\" for revision 2026-07-28, read 2026-09-21: \"Extensions are advertised in the `extensions` field of capabilities, which is a map of extension identifiers to per-extension settings objects.\" (SEP-2133 is the extensions framework that introduced it; identifiers follow the `_meta` key naming rules, with a mandatory vendor prefix, and `com.agenticsystemcore` is a reversed domain name the author controls.) bnd-0027 stated that field as the identifier ARRAY [\"com.agenticsystemcore/knowledge\"] — the shape the reference engine returned before rc.5, which no rule pinned — and was withdrawn for it (RC5-B Q-RC5B-1, SPEC-ITEMS item 30 / RC5B-01). This vector does not duplicate bnd-0035: bnd-0035 pins the CONTENTS of the settings object (its member list, its identity between `server/discover` and the per-request capabilities, and AGSC-E210 for an additional member); this one proves where the map is carried in the `server/discover` result and the whole floor in both surfaces' vocabularies.",
+  "expected": {
+    "mcp": {
+      "server/discover": {
+        "capabilities": {
+          "extensions": {
+            "com.agenticsystemcore/knowledge": {
+              "linkset": "https://a.example/.well-known/knowledge-linkset"
+            }
+          }
+        }
+      }
+    },
+    "webmcp": {
+      "ask": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "compose": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "links": {
+        "readOnlyHint": true,
+        "untrustedContentHint": false
+      },
+      "propose": {
+        "consequentialHint": true,
+        "readOnlyHint": false
+      },
+      "read": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "remember": {
+        "consequentialHint": true,
+        "readOnlyHint": false
+      },
+      "search": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      }
+    }
+  },
+  "id": "bnd-0036",
+  "input": {
+    "site": {
+      "base": "https://a.example/"
+    },
+    "surfaces": [
+      "webmcp",
+      "mcp"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "requires_surface": [
+    "webmcp",
+    "mcp"
+  ],
+  "rule": "AGSC-11-18"
+}

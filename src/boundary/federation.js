@@ -230,15 +230,19 @@ function followRedirects(peer, redirects, options) {
     if (followed >= limit) { error = 'AGSC-E905'; break; }
     const schemeFault = checkScheme(hop, opts);
     if (schemeFault !== null) { error = schemeFault; break; }
-    // F27-05: `checkAddresses` now fails closed, so it is consulted exactly when a
-    // resolution map is in play. A hop whose host is absent from a supplied map is
-    // refused (the probed fail-open); a caller that models no resolution at all —
-    // bnd-0005 — still exercises the AGSC-11-09 hop cap. See the report's Q45 note.
+    // AGSC-11-08 is UNCONDITIONAL: "Before connecting, the fetcher MUST resolve the
+    // host with the platform resolver and MUST refuse ... any resolved address in
+    // [the list]". `checkAddresses` fails closed, so a host this caller has not
+    // resolved — whether it is absent from a supplied map or the caller supplied no
+    // map at all — has no classified address to connect to and is refused.
+    //
+    // Until rc.5 the guard ran only when `opts.resolved` was an object, which left a
+    // fail-open branch in the transport rules; `bnd-0005` depended on it and was
+    // withdrawn for that reason (the one blocker for 1.0.0). `bnd-0030` replaces it
+    // and carries a resolution for every hop. This is the last fail-open path in §11.
     const resolved = resolvedFor(opts, hostOf(hop));
-    if (resolved !== null) {
-      const addressFault = checkAddresses(resolved, opts);
-      if (addressFault !== null) { error = addressFault; break; }
-    }
+    const addressFault = checkAddresses(resolved === null ? [] : resolved, opts);
+    if (addressFault !== null) { error = addressFault; break; }
     followed += 1;
     final = String(hop);
   }

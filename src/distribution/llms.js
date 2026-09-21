@@ -11,7 +11,7 @@
 //
 // Pure function of its input; `site.js` writes the bytes. Vectors disc-0006, disc-0007.
 
-const { compareCodePoint } = require('../knowledge/unicode.js');
+const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = require('../knowledge/chunks.js');
 
 /** AGSC-01-18: the default of `bundle.license_prose`. */
@@ -42,13 +42,17 @@ function primaryCluster(item) {
  * their strings coincide.
  */
 function provenance({ base, license, terms, specVersion, generatedAt }) {
+  // AGSC-02-24 (rc.5, FV28-01): the header is SEVEN lines and a value may not add
+  // one. `license` is authored (`bundle.license_prose`) and `base` reaches here from
+  // configuration, so both are neutralised — defence in depth behind the schema
+  // `pattern`, for the Bundle that never passed validation.
   return [
     '<!-- agsc:provenance',
-    `bundle: ${base}`,
-    `license: ${license}`,
-    `terms: ${terms}`,
-    `spec_version: ${specVersion}`,
-    `generated_at: ${generatedAt}`,
+    `bundle: ${singleLine(base)}`,
+    `license: ${singleLine(license)}`,
+    `terms: ${singleLine(terms)}`,
+    `spec_version: ${singleLine(specVersion)}`,
+    `generated_at: ${singleLine(generatedAt)}`,
     '-->',
   ].join('\n');
 }
@@ -56,7 +60,10 @@ function provenance({ base, license, terms, specVersion, generatedAt }) {
 /**
  * The section blocks of AGSC-06-13a(4) and the item order `/llms-full.txt` repeats.
  * Sections are ordered by cluster slug; a cluster with no primary member emits no
- * section (V7-08); items with no cluster go in a final section titled `Other`.
+ * section (V7-08); every published item no LISTED section carries goes in a final
+ * section titled `Other` — an item with no `clusters[]`, and (since rc.5, vector
+ * `disc-0008`) an item whose primary cluster is not among `bundle.clusters[]`.
+ * A `cluster` item is never a listed ENTRY: it IS a section (`isPublished` above).
  */
 function sectionBlocks(bundle) {
   const base = bundle.base;
@@ -64,17 +71,28 @@ function sectionBlocks(bundle) {
   const clusters = [...(bundle.clusters || [])]
     .sort((a, b) => compareCodePoint(String(a.slug), String(b.slug)));
   const bySlug = (a, b) => compareCodePoint(String(a.slug), String(b.slug));
-  const line = (it) => `- [${it.title}](${iriOf(base, it)}): ${it.description == null || it.description === '' ? it.title : it.description}`;
+  // AGSC-06-13a(4): ONE line per item. Title and description are authored, so both
+  // are neutralised here (AGSC-02-24, rc.5, FV28-01): a line break in either forged
+  // a `## ` heading and a second link entry into this file.
+  const line = (it) => `- [${singleLine(it.title)}](${iriOf(base, it)}): `
+    + `${singleLine(it.description == null || it.description === '' ? it.title : it.description)}`;
 
   const blocks = [];
   const order = [];
   for (const cluster of clusters) {
     const members = items.filter((it) => primaryCluster(it) === String(cluster.slug)).sort(bySlug);
     if (members.length === 0) continue;
-    blocks.push(`## ${cluster.title}\n\n${members.map(line).join('\n')}`);
+    blocks.push(`## ${singleLine(cluster.title)}\n\n${members.map(line).join('\n')}`);
     order.push(...members);
   }
-  const loose = items.filter((it) => primaryCluster(it) === null).sort(bySlug);
+  // AGSC-06-14: "every published item MUST be reachable from /llms.txt, directly or
+  // through a listed cluster section". `Other` therefore carries every published item
+  // no LISTED section carries — an item with no `clusters[]`, and an item whose
+  // primary cluster is not among `bundle.clusters[]`. Until rc.5 only the first of
+  // the two reached it, so an item clustered under an unlisted slug appeared in no
+  // section at all and the discovery surface silently lost it (vector `disc-0008`).
+  const placed = new Set(order);
+  const loose = items.filter((it) => !placed.has(it)).sort(bySlug);
   if (loose.length > 0) {
     blocks.push(`## Other\n\n${loose.map(line).join('\n')}`);
     order.push(...loose);
@@ -110,10 +128,14 @@ function settle(bundle, options) {
 function llmsTxt(bundle, options = {}) {
   const b = settle(bundle, options);
   const head = [
-    `# ${b.title}`,
+    `# ${singleLine(b.title)}`,
     provenance(b),
     // Block (3): the description on a SINGLE line, newlines replaced by one space.
-    `> ${b.description.replace(/\s*\n\s*/gu, ' ')}`,
+    // The Bundle root's `description` is the one authored string AGSC-02-24 exempts
+    // from the single-line bound, exactly because this block collapses it; the
+    // neutraliser then removes the remaining separators the collapse does not see
+    // (U+0085, U+2028, U+2029 and the other C0 controls) — FV28-01.
+    `> ${singleLine(b.description.replace(/\s*\n\s*/gu, ' '))}`,
   ];
   const { blocks } = sectionBlocks(b);
   return `${[...head, ...blocks].join('\n\n')}\n`;
@@ -134,7 +156,7 @@ function llmsFullTxt(bundle, options = {}) {
   const { order } = sectionBlocks(b);
   const bodies = order.map((it) => {
     const body = String(it.body == null ? '' : it.body).replace(/\n*$/u, '\n');
-    return `\n## ${it.title}\n<!-- agsc:item ${iriOf(b.base, it)} -->\n\`\`\`text agsc-content\n${body}\`\`\`\n`;
+    return `\n## ${singleLine(it.title)}\n<!-- agsc:item ${singleLine(iriOf(b.base, it))} -->\n\`\`\`text agsc-content\n${body}\`\`\`\n`;
   });
   return llmsTxt(bundle, options) + bodies.join('');
 }

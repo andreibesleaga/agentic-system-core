@@ -168,7 +168,11 @@ function resolveInside(fromDir, relative) {
   return out.join('/');
 }
 
-/** AGSC-01-35: no `.`/`..` segment, no leading `/`, no `\`, no NUL, stays inside. */
+/**
+ * AGSC-01-35, the KEYED form: no `.`/`..` segment, no leading `/`, no `\`, no NUL,
+ * stays inside. This is the test for a relative path a Bundle carries as the VALUE
+ * OF A KEY — `attachments[].file`, `diagram.file`, `build.out`.
+ */
 function pathGrammarError(relative, fromDir) {
   if (typeof relative !== 'string' || relative === '') return 'empty';
   if (relative.startsWith('/')) return 'leading slash';
@@ -177,6 +181,32 @@ function pathGrammarError(relative, fromDir) {
   const segments = relative.split('/');
   if (segments.some((s) => s === '.' || s === '..')) return 'dot segment';
   if (segments.some((s) => s === '')) return 'empty segment';
+  if (fromDir !== undefined && resolveInside(fromDir, relative) === null) return 'escapes the Bundle root';
+  return null;
+}
+
+/**
+ * AGSC-01-35 as amended at rc.5 (R-01), the BODY form. An inline Markdown link or
+ * image target in a body "is held to the same rule **except that it MAY contain
+ * `..` segments**, because an item under `content/<type-plural>/` cannot otherwise
+ * reach `content/assets/` at all (AGSC-02-95, AGSC-03-11): it MUST not begin with
+ * `/`, MUST NOT contain a `\` or a `U+0000`, and the path it resolves to —
+ * relative to the file that carries it — MUST lie inside the Bundle root … for a
+ * body reference the escape test wins over the segment test."
+ *
+ * So the segment test is disapplied here and the escape test is the operative one.
+ * A body target that escapes is `AGSC-E902`; one that stays inside and resolves to
+ * nothing is `AGSC-E310` (AGSC-03-11 as amended at rc.5), never `AGSC-E902`.
+ *
+ * Added 2026-09-21 (FINAL-VERIFY-28): the rc.5 amendment had been applied to the
+ * specification and not to this module, so `![logo](../assets/logo.png)` — the one
+ * case the amendment exists to permit — was reported `AGSC-E902 (dot segment)`.
+ */
+function bodyPathError(relative, fromDir) {
+  if (typeof relative !== 'string' || relative === '') return 'empty';
+  if (relative.startsWith('/')) return 'leading slash';
+  if (relative.includes('\\')) return 'backslash';
+  if (relative.includes(NUL)) return 'NUL';
   if (fromDir !== undefined && resolveInside(fromDir, relative) === null) return 'escapes the Bundle root';
   return null;
 }
@@ -394,7 +424,7 @@ function resolve(items, options = {}) {
         }
         continue;
       }
-      const grammar = pathGrammarError(relative, dirOf(v.path));
+      const grammar = bodyPathError(relative, dirOf(v.path));
       if (grammar !== null) {
         findings.push(finding('AGSC-E902',
           `body reference "${raw}" violates the relative-path grammar (${grammar}) (AGSC-01-35)`,
@@ -450,6 +480,17 @@ function resolve(items, options = {}) {
   };
 }
 
+/**
+ * AGSC-03-11: "a link to an external origin is never resolved at build time". The
+ * test is the scheme (or a protocol-relative `//`), and it is exported at rc.5
+ * (FV28-04) so that the writer's route mapping applies exactly the same test the
+ * resolver does — one definition of "external", not two.
+ */
+function isExternalTarget(raw) {
+  const s = String(raw == null ? '' : raw);
+  return SCHEME.test(s) || s.startsWith('//');
+}
+
 module.exports = {
   CORE_KEYS,
   MODE2_KEYS,
@@ -461,8 +502,10 @@ module.exports = {
   MAX_CLUSTER_ANCESTORS,
   SLUG_PATTERN,
   anchors,
+  bodyPathError,
   dirOf,
   findCycle,
+  isExternalTarget,
   pathGrammarError,
   resolve,
   resolveInside,

@@ -36,7 +36,28 @@ test('AGSC-11-18: readOnlyHint on the five reads, consequentialHint on the two w
   // `links` returns edges, not prose, so it carries no untrustedContentHint.
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.links.untrustedContentHint, false);
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.read.untrustedContentHint, true);
-  assert.deepStrictEqual(plain(s.mcpCapabilities()), { extensions: ['com.agenticsystemcore/knowledge'] });
+  // AGSC-11-18 as amended at rc.5 (SITE1-01, bnd-0035, bnd-0036): `extensions` is MCP's map of
+  // extension identifier to settings object, and this node's settings object carries
+  // exactly `linkset` — the absolute URL of its discovery document (AGSC-06-07).
+  assert.deepStrictEqual(plain(s.mcpCapabilities({ base: 'https://a.example/' })), {
+    extensions: { 'com.agenticsystemcore/knowledge': { linkset: 'https://a.example/.well-known/knowledge-linkset' } },
+  });
+  assert.deepStrictEqual(plain(s.checkMcpExtensions(
+    s.mcpCapabilities({ base: 'https://a.example/' }).extensions, { base: 'https://a.example/' })), []);
+  // MUST emit that member and MUST emit no other; anything else is AGSC-E210.
+  const cases = [
+    {},
+    { 'com.agenticsystemcore/knowledge': {} },
+    { 'com.agenticsystemcore/knowledge': { linkset: 'https://a.example/.well-known/knowledge-linkset', more: 1 } },
+    { 'com.agenticsystemcore/knowledge': { linkset: 'https://other.example/.well-known/knowledge-linkset' } },
+    ['com.agenticsystemcore/knowledge'],
+    null,
+  ];
+  for (const extensions of cases) {
+    const findings = s.checkMcpExtensions(extensions, { base: 'https://a.example/' });
+    assert.ok(findings.length > 0, JSON.stringify(extensions));
+    assert.ok(findings.every((f) => f.code === 'AGSC-E210'), JSON.stringify(plain(findings)));
+  }
 });
 
 test('AGSC-11-16: a surface is declared only when it is served, ordered by href', () => {

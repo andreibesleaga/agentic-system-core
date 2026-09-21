@@ -196,9 +196,12 @@ function controller(options) {
     return loadBodies(procedures).then(function () {
       return sha256Hex(CORE.selectionDigestInput(result));
     }).then(function (digest) {
+      // AGSC-07-13: the name reaches the emitted bytes, so BOTH hosts derive it
+      // from the selection digest with the algebra's own \`harnessName\` — the CLI
+      // writes the same files into \`dist/harness/<name>/\` (AGSC-07-12).
       var out = CORE.emit(result, {
         base: state.base, instant: state.instant, items: itemsWithBodies(),
-        licenseProse: LICENSE_PROSE, name: 'harness', selectionDigest: digest,
+        licenseProse: LICENSE_PROSE, name: CORE.harnessName(digest), selectionDigest: digest,
         specVersion: SPEC_VERSION
       });
       var list = el('files');
@@ -247,11 +250,39 @@ function controller(options) {
     }
   }
 
+  /**
+   * AGSC-06-08: the build instant, from the discovery document's
+   * \`agsc-generated-at\` on the \`describedby\` link. AGSC-07-13 makes the Harness
+   * reproducible from "the graph plus the selection plus SOURCE_DATE_EPOCH", and this
+   * is where a published node states that epoch — \`graph.jsonld\` does not carry it.
+   * A document the page cannot read yields the empty string, never a wall clock
+   * (AGSC-04-11): a page that guessed an instant would emit bytes the CLI cannot.
+   */
+  function instantOf(linkset) {
+    var sets = (linkset && linkset.linkset) || [];
+    for (var i = 0; i < sets.length; i += 1) {
+      var described = (sets[i] && sets[i].describedby) || [];
+      for (var j = 0; j < described.length; j += 1) {
+        var values = described[j] && described[j]['agsc-generated-at'];
+        if (values && values.length > 0) return String(values[0]);
+      }
+    }
+    return '';
+  }
+  state.instantOf = instantOf;
+
   function start() {
     state.base = location.origin + '/';
-    return fetch('/graph.jsonld').then(function (r) { return r.json(); }).then(function (graph) {
+    return fetch('/.well-known/knowledge-linkset').then(function (r) {
+      return r.ok ? r.json() : null;
+    }).catch(function () {
+      return null;
+    }).then(function (linkset) {
+      state.instant = instantOf(linkset);
+      return fetch('/graph.jsonld');
+    }).then(function (r) { return r.json(); }).then(function (graph) {
       state.items = CORE.itemsFromGraph(graph);
-      state.instant = String(graph['dcterms:modified'] || '');
+      if (state.instant === '') state.instant = String(graph['dcterms:modified'] || '');
       paint();
       var from = selectionFromQuery();
       if (from !== null && from !== '') {

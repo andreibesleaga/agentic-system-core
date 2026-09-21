@@ -88,34 +88,57 @@ function ordered(frontmatter) {
  * Rewrite the old body's internal links (M3-T07, AGSC-03-11, AGSC-01-35).
  *
  * `/patterns/<slug>/` begins with a slash, which AGSC-01-35 refuses outright
- * (`AGSC-E902`), so every one of them must go. A target INSIDE the imported set
- * becomes the bare slug — the form AGSC-03-11 resolves and the form the published
- * route of AGSC-06-01 serves. A target OUTSIDE the set is DE-LINKED: the link
- * text stays, the link goes. It is never rewritten to an absolute URL, because
- * AGSC-11-12 makes cross-node reference a citation in `sources[]` and nothing
- * else.
+ * (`AGSC-E902`), so every one of them must go.
+ *
+ * A target that is in the imported set AND PUBLISHED becomes
+ * `../concepts/<slug>.md`, which is the normal form of AGSC-03-12 — "wikilinks …
+ * MUST be normalized by `lint --fix` to relative Markdown links
+ * `[alias](../<type-plural>/<slug>.md#anchor)`" — and the form AGSC-03-11 resolves
+ * from `content/concepts/`. Anything else is DE-LINKED: the link text stays, the
+ * link goes. It is never rewritten to an absolute URL, because AGSC-11-12 makes
+ * cross-node reference a citation in `sources[]` and nothing else.
+ *
+ * "Anything else" gained a second member at rc.5 (FV28-04): a card that IS in the
+ * selection but is HELD BACK. A draft item is published on no surface (AGSC-06-30)
+ * and has no route (AGSC-06-01), so a published page linking one ships a link that
+ * 404s — which is exactly what the patterns node shipped, 36 times. A selected card
+ * is therefore not a link target unless it is also published, and every de-linked
+ * target is recorded in the import status report so the operator sees the list.
+ *
+ * Until rc.5 the rewritten form was the BARE SLUG. That form resolves in the Bundle
+ * (AGSC-03-11 as amended, R-04) but renders on the page as `<a href="<slug>">`,
+ * which a browser resolves against the page's own route — `/concepts/a/<slug>` —
+ * and which no build emits. The normal form is not enough on its own either: the
+ * writer maps a resolved body reference onto the item's route
+ * (`distribution/site.js#bodyHrefResolver`), because the Bundle geometry and the
+ * route geometry are different. The two changes are one fix.
  *
  * @param {string} body
  * @param {Set<string>} inSet the imported slugs.
- * @param {{file?:string, slug?:string}} [options]
+ * @param {{file?:string, slug?:string, publishedSet?:Set<string>}} [options]
+ *   `publishedSet` is the subset of `inSet` that will be published; when it is
+ *   absent every selected slug counts as published (a caller that holds nothing
+ *   back).
  * @returns {{body:string, rewritten:string[], delinked:string[], findings:Array<object>}}
  */
 function rewriteBodyLinks(body, inSet, options = {}) {
   const rewritten = [];
   const delinked = [];
+  const published = options.publishedSet === undefined ? inSet : options.publishedSet;
   const text = String(body === undefined ? '' : body);
   const out = text.replace(/\[([^\]]*)\]\(\/patterns\/([a-z0-9][a-z0-9-]*)\/\)/gu,
     (whole, label, target) => {
-      if (inSet.has(target)) {
+      if (inSet.has(target) && published.has(target)) {
         rewritten.push(target);
-        return `[${label}](${target})`;
+        return `[${label}](../concepts/${target}.md)`;
       }
       delinked.push(target);
       return label;
     });
   const findings = delinked.length === 0 ? [] : [finding('AGSC-E301',
-    `${delinked.length} body reference(s) leave the imported set and were de-linked, not rewritten as URLs`
-    + ` (AGSC-03-02, AGSC-11-12): ${[...new Set(delinked)].sort().join(', ')}`,
+    `${delinked.length} body reference(s) leave the PUBLISHED imported set and were de-linked,`
+    + ` not rewritten as URLs (AGSC-03-02, AGSC-11-12, AGSC-06-30):`
+    + ` ${[...new Set(delinked)].sort().join(', ')}`,
     { file: options.file, slug: options.slug, line: 1, severity: 'warn' })];
   return { body: out, rewritten, delinked, findings };
 }
@@ -166,6 +189,9 @@ function filterLinks(values, inSet, options = {}) {
  * @param {Set<string>} options.inSet the imported slugs, for link filtering.
  * @param {object} options.prov `{origin, operator}` (AGSC-08-01).
  * @param {string} [options.statusOverride] the caller's `status` decision.
+ * @param {Set<string>} [options.publishedSet] the subset of `inSet` that is published;
+ *   a body link to a selected-but-held-back card is de-linked (FV28-04).
+ * @param {string} [options.title] the caller's `title` correction, if any.
  * @param {string} [options.license] the attachment licence default.
  * @param {Array<object>} [options.addSources] entries appended to `sources[]`.
  * @param {string[]} [options.promoteSources] resource URLs to move to the front.
@@ -186,12 +212,17 @@ function mapCard(card, options) {
   findings.push(...cleaned.findings);
 
   // ------------------------------------------------------------- body rewrites
-  const links = rewriteBodyLinks(cleaned.body, options.inSet, { file: path, slug });
+  const links = rewriteBodyLinks(cleaned.body, options.inSet,
+    { file: path, publishedSet: options.publishedSet, slug });
   findings.push(...links.findings);
 
   // ------------------------------------------------------------------- scalars
   const frontmatter = { type: 'concept' };
-  const title = typeof get('title') === 'string' ? get('title').trim() : '';
+  // A caller may CORRECT the title (a coined name re-sourced to a public one);
+  // it is data the caller supplies, never a rename this module decides.
+  const corrected = typeof options.title === 'string' ? options.title.trim() : '';
+  const title = corrected !== '' ? corrected
+    : (typeof get('title') === 'string' ? get('title').trim() : '');
   if (title === '') findings.push(finding('AGSC-E202', 'title is missing (AGSC-02-07)', at));
   else frontmatter.title = title;
 
@@ -216,13 +247,19 @@ function mapCard(card, options) {
   if (release !== '') {
     frontmatter.release = release;
     releaseKeys.push(release);
-  } else if (mappedTags.releases.length > 0) {
+  }
+  if (release === '' && mappedTags.releases.length > 0) {
     // AGSC-01-20 admits ONE `release` key per item; the first `batch-*` tag is
     // the switch and the rest are reported, never silently merged.
     frontmatter.release = mappedTags.releases[0];
     releaseKeys.push(mappedTags.releases[0]);
   }
-  for (const extra of mappedTags.releases) releaseKeys.push(extra);
+  // Every switch the card names reaches the switchboard, whether or not it became
+  // THIS item's one `release` key — a key absent from `releases` leaves its items
+  // published, so silence here would publish a batch nobody turned on.
+  for (const extra of mappedTags.releases) {
+    if (!releaseKeys.includes(extra)) releaseKeys.push(extra);
+  }
   if (mappedTags.tags.length > 0) frontmatter.tags = mappedTags.tags;
 
   const aliases = (Array.isArray(get('aliases')) ? get('aliases') : [])
@@ -295,7 +332,11 @@ function mapCard(card, options) {
     ? signatureElements.map((s) => String(s)).filter((s) => s !== '')
     : (typeof signatureElements === 'string' && signatureElements !== '' ? [signatureElements] : []);
   if (elements.length > 0) {
-    frontmatter.signature = true;
+    // AGSC-02-03: the emitted YAML is the FAILSAFE subset, where every scalar is
+    // a string; `signature` is typed `boolean` by the schema and is restored by
+    // `knowledge/validate.js#applyTypes` on the way back in. Writing a JavaScript
+    // boolean here would make the emitter throw, not the file wrong.
+    frontmatter.signature = 'true';
     frontmatter.signature_elements = elements;
   }
 
@@ -331,7 +372,11 @@ function mapCard(card, options) {
   for (const key of Object.keys(record)) {
     if (KNOWN_OLD_KEYS.includes(key)) continue;
     unaccounted.push(key);
-    frontmatter[`${VENDOR_PREFIX}${key.replace(/[^a-z0-9]+/gu, '-').replace(/^-+|-+$/gu, '').toLowerCase()}`]
+    // AGSC-02-05a's grammar is `x-<vendor>-<key>` in lowercase, so the foreign
+    // name is LOWERCASED FIRST: folding case after the substitution would turn
+    // every capital into a hyphen and lose the letter (`inventedKey` became
+    // `invented-ey`).
+    frontmatter[`${VENDOR_PREFIX}${key.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-+|-+$/gu, '')}`]
       = record[key];
   }
   if (unaccounted.length > 0) {

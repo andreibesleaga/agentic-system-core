@@ -22,14 +22,25 @@ function runConform0001(vector) {
   ]);
 }
 
-/** conform-0002 — byte-identity across implementations is for machine artefacts only. */
+/**
+ * conform-0002 (withdrawn at rc.5) and conform-0004 — byte-identity across
+ * implementations is for machine artefacts only. `conform-0004` is the same case in
+ * one route spelling: every entry in the AGSC-06-01 form, with its leading slash
+ * (V9A-27). `route_form` is the vector's statement of that, and the handler checks it
+ * against the claim it was given rather than trusting the label.
+ */
 function runConform0002(vector) {
-  const result = plain(crossImplementationClaim(vector.input.claim.cross_implementation));
-  return checks([
+  const claimed = vector.input.claim.cross_implementation;
+  const result = plain(crossImplementationClaim(claimed));
+  const list = [
     ['accepted', deepEqual(vector.expected.accepted, result.accepted), JSON.stringify(result.accepted)],
     ['rejected', deepEqual(vector.expected.rejected, result.rejected), JSON.stringify(result.rejected)],
     ['reason', result.reason === vector.expected.reason, result.reason],
-  ]);
+  ];
+  if (typeof vector.expected.route_form === 'string' && vector.expected.route_form.includes('leading slash')) {
+    list.push(['route_form', claimed.every((r) => String(r).startsWith('/')), JSON.stringify(claimed)]);
+  }
+  return checks(list);
 }
 
 /**
@@ -57,6 +68,7 @@ const HANDLERS = {
   'conform-0001': runConform0001,
   'conform-0002': runConform0002,
   'conform-0003': runConform0003,
+  'conform-0004': runConform0002,
 };
 
 module.exports.run = function run(vector) {

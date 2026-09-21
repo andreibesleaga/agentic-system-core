@@ -25,8 +25,13 @@ const VERBS_DIR = path.join(ROOT, 'src', 'application', 'cli', 'verbs');
 const SIXTEEN = Object.freeze(['init', 'lint', 'build', 'verify', 'ci', 'export', 'import',
   'compose', 'propose', 'review', 'refresh', 'skills', 'mcp', 'run', 'trace', 'conform']);
 
-/** The verbs that answer "not implemented at this milestone" (AGSC-10-05). */
-const NOT_IMPLEMENTED = Object.freeze(['export', 'import', 'skills', 'run', 'trace']);
+/**
+ * The verbs that answer "not implemented at this milestone" (AGSC-10-05).
+ * `export` left this list when `--jsonld`, `--jsonl` and `--to <adapter>` landed
+ * (AGSC-01-26a/01-27); the three flags it still does not implement answer for
+ * themselves, which the test below asserts flag by flag.
+ */
+const NOT_IMPLEMENTED = Object.freeze(['skills', 'run', 'trace']);
 
 test('the verb set is exactly the sixteen of AGSC-09-07, in the rule order', () => {
   assert.deepStrictEqual(VERBS, [...SIXTEEN]);
@@ -104,6 +109,27 @@ test('a verb that is not implemented says so with the rule id, and never passes'
     assert.match(result.findings[0].message, /AGSC-\d\d-\d\d/u, `${verb} cites no rule id`);
     assert.match(result.findings[0].message, /not implemented at this milestone/u, verb);
     assert.strictEqual(result.findings[0].severity, 'error', verb);
+  }
+});
+
+test('export names the flag it needs, and each unimplemented flag answers for itself', () => {
+  // eslint-disable-next-line global-require, import/no-dynamic-require
+  const verb = require(path.join(VERBS_DIR, 'export.js'));
+  // AGSC-09-09: `export` with no flag is a missing required argument, not a silent
+  // success and not "not implemented" — nothing was asked of it yet.
+  const bare = verb.run({});
+  assert.strictEqual(bare.status, 'fail');
+  assert.strictEqual(bare.findings.length, 1);
+  assert.strictEqual(bare.findings[0].code, 'AGSC-E003');
+  assert.match(bare.findings[0].message, /--to <adapter>/u);
+  // The three flags of AGSC-01-26/01-28 this milestone does not implement each say so.
+  for (const flag of ['markdown', 'okf', 'steer']) {
+    const result = verb.run({ ports: { fs: emptyPort() }, verbFlags: { [flag]: true } });
+    const own = result.findings.filter((f) => f.message.includes(`export --${flag}`));
+    assert.strictEqual(own.length, 1, flag);
+    assert.match(own[0].message, /not implemented at this milestone/u, flag);
+    assert.match(own[0].message, /AGSC-\d\d-\d\d/u, `${flag} cites no rule id`);
+    assert.strictEqual(own[0].severity, 'error', flag);
   }
 });
 

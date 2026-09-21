@@ -1,0 +1,36 @@
+{
+  "area": "conform",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. Supersedes conform-0002, which mixed two route spellings inside one byte-compared expectation. Same case — cross-implementation byte-identity may be claimed only for the machine artefacts, a claim listing HTML in that set is rejected and the rest of the claim stands (AGSC-04-24; HTML is deterministic within one implementation only, AGSC-04-01) — with every route written once and only in the AGSC-06-01 route form, leading slash included, so no port has to guess whether the slash is significant. Order is the claim's own order, preserved.",
+  "expected": {
+    "accepted": [
+      "/graph.jsonld",
+      "/graph.nq",
+      "/search.json",
+      "/chunks.jsonl",
+      "/llms.txt"
+    ],
+    "reason": "HTML is deterministic within one implementation only (AGSC-04-01)",
+    "rejected": [
+      "/index.html"
+    ],
+    "route_form": "AGSC-06-01, leading slash on every entry"
+  },
+  "id": "conform-0004",
+  "input": {
+    "claim": {
+      "cross_implementation": [
+        "/graph.jsonld",
+        "/graph.nq",
+        "/search.json",
+        "/chunks.jsonl",
+        "/llms.txt",
+        "/index.html"
+      ]
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-04-24"
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "alpha",
+    "name": "Alpha Deck",
+    "tagline": "The first deck, holding the shapes every later deck builds on.",
+    "order": 1,
+    "family": "Core"
+  },
+  {
+    "id": "beta",
+    "name": "Beta Deck",
+    "tagline": "The second deck, whose records are the ones a reader reaches for after the first.",
+    "order": 2,
+    "family": "Core"
+  },
+  {
+    "id": "empty-deck",
+    "name": "Empty Deck",
+    "tagline": "A deck no chosen record names, so no cluster is derived from it.",
+    "order": 3
+  }
+]

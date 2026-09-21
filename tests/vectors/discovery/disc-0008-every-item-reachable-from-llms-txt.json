@@ -1,0 +1,72 @@
+{
+  "area": "discovery",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. AGSC-06-14 — 'Every published item MUST be reachable from /llms.txt, directly or through a listed cluster section' — is a MUST over the discovery surface that no vector cited before rc.5 (V9A-26). Derivation from the rule plus the layout of AGSC-06-13a that disc-0006 already pins: an item carrying `clusters[]` is reachable through the section of its FIRST (primary) cluster when that cluster is listed; an item carrying no cluster, and an item whose primary cluster is not listed, are reachable only through the `Other` section, so a writer that lists neither fails this rule. `sable` is clustered under an unlisted cluster and must therefore appear under `Other` beside the unclustered `loose-note`, which is the case no earlier vector covered. A `draft` item is not published (AGSC-02-23) and is neither reachable nor a fault. /llms-full.txt carries the same index plus item bodies, so the two reachability sets are identical.",
+  "expected": {
+    "llms_full_reachability_identical": true,
+    "not_published": [
+      "https://a.example/concepts/hidden/"
+    ],
+    "reachable": {
+      "https://a.example/concepts/loose-note/": "Other",
+      "https://a.example/concepts/sable/": "Other",
+      "https://a.example/concepts/supervisor/": "Coordination"
+    },
+    "sections": [
+      "Coordination",
+      "Other"
+    ],
+    "unreachable": []
+  },
+  "id": "disc-0008",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "description": "A node of the Agentic Knowledge Web.",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "title": "Example Node"
+    },
+    "clusters": [
+      {
+        "slug": "coordination",
+        "title": "Coordination"
+      }
+    ],
+    "items": [
+      {
+        "clusters": [
+          "coordination"
+        ],
+        "slug": "supervisor",
+        "title": "Supervisor",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "unlisted"
+        ],
+        "slug": "sable",
+        "title": "Sable",
+        "type": "concept"
+      },
+      {
+        "slug": "loose-note",
+        "title": "Loose Note",
+        "type": "concept"
+      },
+      {
+        "slug": "hidden",
+        "status": "draft",
+        "title": "Hidden",
+        "type": "concept"
+      }
+    ],
+    "listed_clusters": [
+      "coordination"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-06-14"
+}

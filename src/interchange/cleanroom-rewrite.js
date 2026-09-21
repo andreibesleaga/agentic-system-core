@@ -44,6 +44,16 @@ const TRAILERS = Object.freeze(['"', "'", ')', ']', '”', '’']);
 
 const isSpace = (ch) => ch === ' ' || ch === '\n' || ch === '\t';
 
+/**
+ * Space that does NOT end a block. An excision must never cross a line break:
+ * the span it removes ends at the end of the line, so a following blank line and
+ * the heading after it stay where the author put them. (A removal that ate the
+ * newlines pulled the next `## heading` onto the previous paragraph's line and
+ * made the card fail `AGSC-02-21` — the sections lint — for a sentence that was
+ * three paragraphs away.)
+ */
+const isInlineSpace = (ch) => ch === ' ' || ch === '\t';
+
 /** The word immediately before `index`, used against ABBREVIATIONS. */
 function wordBefore(text, index) {
   let start = index;
@@ -86,7 +96,7 @@ function sentenceSpan(text, index) {
     if (!endsSentence(text, i)) continue;
     let j = i + 1;
     while (j < text.length && TRAILERS.includes(text[j])) j += 1;
-    while (j < text.length && isSpace(text[j])) j += 1;
+    while (j < text.length && isInlineSpace(text[j])) j += 1;
     end = j;
     break;
   }
@@ -138,6 +148,10 @@ function seam(left, right) {
   const first = right[0];
   if (last === ' ' && first === ' ') return `${left}${right.slice(1)}`;
   if (last === ' ' && '.,;:!?'.includes(first)) return `${left.slice(0, -1)}${right}`;
+  // A cut at the end of a line leaves the space that separated it from the
+  // removed sentence. Two trailing spaces are a hard line break in Markdown, so
+  // the space the cut exposed is removed with it.
+  if (last === ' ' && first === '\n') return `${left.replace(/[ \t]+$/u, '')}${right}`;
   return `${left}${right}`;
 }
 

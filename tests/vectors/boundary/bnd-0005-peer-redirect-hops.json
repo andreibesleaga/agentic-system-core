@@ -1,10 +1,8 @@
 {
   "area": "boundary",
-  "description": "A fourth redirect hop, or a hop to a non-https URL, refuses the fetch; the declared peer URL is never replaced by the final URL.",
+  "description": "WITHDRAWN. Superseded by bnd-0030. A fourth redirect hop, or a hop to a non-https URL, refuses the fetch; the declared peer URL is never replaced by the final URL.",
   "expected": {
-    "declared_peer_unchanged": true,
-    "error": "AGSC-E905",
-    "followed": 3
+    "withdrawn": true
   },
   "id": "bnd-0005",
   "input": {
@@ -16,10 +14,11 @@
       "https://b.example/r4"
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.5"
   },
+  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 FIX-F27 table, F27-05; D100 — the one blocker for 1.0.0 on the frozen-artefact list). This file calls `followRedirects(peer, four_hops, { dev: false })` with no `resolved` map, so a conforming engine can only satisfy it by consulting the AGSC-11-08 address guard **when a resolution map is supplied** — that is, by leaving a fail-open branch in the transport rules. A required vector must not depend on a guard failing open. Superseded by bnd-0030, which carries a resolution for every hop and additionally proves that a hop resolving into a refused range stops the walk before the hop cap.",
   "rule": "AGSC-11-09"
 }

@@ -46,3 +46,53 @@ test('isWellFormed rejects a lone surrogate', () => {
   assert.strictEqual(u.isWellFormed('\udc00'), false);
   assert.strictEqual(u.isWellFormed('𐀀'), true);
 });
+
+// ---------------------------------------------------------------------------
+// AGSC-02-24 as amended at rc.5 (FV28-01): authored single-line strings.
+// ---------------------------------------------------------------------------
+
+test('SINGLE_LINE_FORBIDDEN names exactly the five classes the rule names', () => {
+  const forbidden = ['\u0000', '\u0009', '\u000a', '\u000d', '\u001f', '\u007f',
+    '\u0085', '\u2028', '\u2029'];
+  for (const ch of forbidden) {
+    assert.strictEqual(u.isSingleLine(`a${ch}b`), false,
+      `U+${ch.codePointAt(0).toString(16).padStart(4, '0')} must be forbidden`);
+  }
+  // The neighbours of every boundary stay legal: nothing is over-caught.
+  for (const ch of ['\u0020', '\u007e', '\u0080', '\u0084', '\u0086', '\u00a0',
+    '\u2027', '\u202a', '\ufeff', '\u{1F600}']) {
+    assert.strictEqual(u.isSingleLine(`a${ch}b`), true,
+      `U+${ch.codePointAt(0).toString(16)} must stay legal`);
+  }
+  assert.strictEqual(u.isSingleLine(''), true);
+});
+
+test('singleLine replaces each forbidden code point with one U+0020', () => {
+  assert.strictEqual(u.singleLine('Handoff\n\n## Injected'), 'Handoff  ## Injected');
+  assert.strictEqual(u.singleLine('a\r\nb'), 'a  b');
+  assert.strictEqual(u.singleLine('a\u2028b\u0085c'), 'a b c');
+  // A conforming string is returned byte for byte: no build output moves.
+  assert.strictEqual(u.singleLine('Supervisor — a plain title'), 'Supervisor — a plain title');
+  assert.strictEqual(u.singleLine(''), '');
+  assert.strictEqual(u.singleLine(null), '');
+  assert.strictEqual(u.singleLine(undefined), '');
+  assert.strictEqual(u.singleLine(7), '7');
+});
+
+test('singleLine is idempotent and its output always passes isSingleLine', () => {
+  const hostile = '\u0000a\u0085b\u2029c\r\nd\u007f';
+  const once = u.singleLine(hostile);
+  assert.strictEqual(u.singleLine(once), once);
+  assert.strictEqual(u.isSingleLine(once), true);
+});
+
+test('the schema pattern and the helper agree on the forbidden set (FV28-01)', () => {
+  const item = require('../../schema/item.schema.json');
+  const pattern = item.$defs.single_line.pattern;
+  const fromSchema = new RegExp(pattern, 'u');
+  for (let cp = 0; cp <= 0x2100; cp += 1) {
+    const ch = String.fromCodePoint(cp);
+    assert.strictEqual(fromSchema.test(ch), u.isSingleLine(ch),
+      `schema and helper disagree at U+${cp.toString(16).padStart(4, '0')}`);
+  }
+});

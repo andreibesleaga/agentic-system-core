@@ -113,9 +113,24 @@ function setDotted(target, segments, value) {
  *   with LF endings, NFC and exactly one trailing LF (AGSC-01-14 — the old site
  *   leaves 42 of its 153 diagram sources without one).
  */
+/**
+ * The slug a card path yields: its file stem, `/` being the separator everywhere.
+ * Exported so that a caller can address a card BEFORE reading it (the per-record
+ * corrections are keyed by slug and are applied to the record's own bytes).
+ *
+ * @param {string} filePath
+ * @returns {{path:string, slug:string}}
+ */
+function slugOf(filePath) {
+  const normalised = String(filePath).split('\\').join('/');
+  return {
+    path: normalised,
+    slug: normalised.slice(normalised.lastIndexOf('/') + 1).replace(/\.md$/u, ''),
+  };
+}
+
 function readCard(file) {
-  const path = String(file.path).split('\\').join('/');
-  const slug = path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/u, '');
+  const { path, slug } = slugOf(file.path);
   const findings = [];
   const text = String(file.markdown === undefined ? '' : file.markdown);
 
@@ -177,4 +192,13 @@ function normaliseSource(text) {
   return `${body.replace(/\n+$/u, '')}\n`;
 }
 
-module.exports = { MAX_BYTES, normaliseSource, parseFlowSequence, parseScalar, parseValue, readCard, setDotted };
+module.exports = {
+  MAX_BYTES,
+  normaliseSource,
+  parseFlowSequence,
+  parseScalar,
+  parseValue,
+  readCard,
+  setDotted,
+  slugOf,
+};

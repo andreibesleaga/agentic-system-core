@@ -279,9 +279,71 @@ function subsetDeep(expected, actual) {
   return Object.keys(expected).every((k) => subsetDeep(expected[k], actual[k]));
 }
 
+/**
+ * cli-0007 — AGSC-09-14a as amended at rc.5 (V9D-07): the `ask` envelope.
+ *
+ * The Bundle is stated INLINE by the vector (a base, a licence and one item), not
+ * taken from a fixture, so the citation IRIs are derivable from the vector alone.
+ * The two transports are compared as well, because AGSC-09-16 makes the envelope
+ * byte-identical across them and this is a published tool contract.
+ */
+function runCli0007(vector) {
+  const inputBundle = vector.input.bundle || {};
+  const bundle = {
+    config: {
+      bundle: { license_prose: inputBundle.license_prose },
+      site: { base: inputBundle.base },
+    },
+    items: (vector.input.items || []).map((item) => ({
+      body: item.body === undefined ? '' : item.body,
+      frontmatter: { description: item.description, title: item.title, type: item.type },
+      slug: item.slug,
+      type: item.type,
+    })),
+  };
+  const toolset = tools(bundle, {});
+  const page = evaluateWebmcp(toolset, {});
+  const problems = [];
+  const results = vector.input.calls.map((call) => {
+    const viaStdio = toolset.call(call.tool, call.arguments);
+    if (JSON.stringify(viaStdio) !== JSON.stringify(page.state.invoke(call.tool, call.arguments))) {
+      problems.push(`${call.tool}: the two transports differ (AGSC-09-16)`);
+    }
+    return viaStdio;
+  });
+
+  for (let i = 0; i < results.length; i += 1) {
+    const result = results[i];
+    const expected = vector.expected.results[i] || {};
+    const members = Object.keys(result).sort();
+    if (!deepEqual(vector.expected.envelope_members, members)) {
+      problems.push(`result ${i}: members ${JSON.stringify(members)} != ${JSON.stringify(vector.expected.envelope_members)}`);
+    }
+    if (vector.expected.citations_is_top_level_member === true && !Array.isArray(result.citations)) {
+      problems.push(`result ${i}: citations[] is not a top-level array`);
+    }
+    if (vector.expected.body_is_text === true && typeof result.body !== 'string') {
+      problems.push(`result ${i}: body is ${typeof result.body}, not the answer text`);
+    }
+    const { body_contains: contains, ...rest } = expected;
+    if (contains !== undefined && !String(result.body).includes(contains)) {
+      problems.push(`result ${i}: body does not embed ${JSON.stringify(contains)}`);
+    }
+    if (!subsetDeep(rest, result)) {
+      problems.push(`result ${i}: ${JSON.stringify(result)} does not carry ${JSON.stringify(rest)}`);
+    }
+    // "Every answer MUST cite ≥1 item IRI" — except the fixed no-answer case, which
+    // the vector itself states with an empty `citations[]`.
+    const noAnswer = expected.body !== undefined && Array.isArray(expected.citations) && expected.citations.length === 0;
+    if (!noAnswer && result.citations.length < 1) problems.push(`result ${i}: no item IRI cited`);
+  }
+  return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
+}
+
 Object.assign(HANDLERS, {
   'cli-0003': runCli0003,
-  'cli-0004': runCli0004
+  'cli-0004': runCli0004,
+  'cli-0007': runCli0007
 });
 
 module.exports.run = function run(vector, ctx) {

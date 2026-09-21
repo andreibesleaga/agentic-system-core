@@ -408,6 +408,37 @@ function checkFences(item) {
 }
 
 /** AGSC-02-23: every transition is legal; a warned one is AGSC-E409. */
+/**
+ * AGSC-08-12: the four `enforce[]` values, each with a compilation target. The list
+ * lives in the Governance context because the rule is AGSC-08's; `distribution/forge.js`
+ * reads it and maps each value to its file, so the closed set is stated once.
+ */
+const ENFORCE_VALUES = Object.freeze(['codeowner', 'hook', 'ruleset', 'status-check']);
+
+/**
+ * AGSC-08-12, second obligation: "`lint` MUST report an `enforce[]` value it cannot
+ * compile as `AGSC-E707` as well." The schema's enum already refuses an unknown value
+ * with `AGSC-E203`, so this fires for a value that is admitted and that no compiler
+ * in this distribution answers to — the case that would otherwise be silent.
+ *
+ * @param {Array<object>} items the loaded items.
+ * @returns {Array<object>} Findings.
+ */
+function checkEnforce(items) {
+  const out = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const v = links.view(item);
+    if (v.fm.type !== 'gate' && item.type !== 'gate') continue;
+    for (const value of asArray(v.fm.enforce)) {
+      if (typeof value !== 'string' || ENFORCE_VALUES.includes(value)) continue;
+      out.push(finding('AGSC-E707',
+        `enforce[] value "${value}" cannot be compiled by this distribution (AGSC-08-12)`,
+        { file: v.path, slug: v.slug }));
+    }
+  }
+  return out;
+}
+
 const WARNED_TRANSITIONS = Object.freeze([['deprecated', 'stable'], ['retired', 'draft'],
   ['retired', 'stable'], ['retired', 'deprecated']]);
 
@@ -479,6 +510,7 @@ function lint(bundle = {}, options = {}) {
 
   findings.push(...checkAttachments(items, { ...options, config }).findings);
   findings.push(...checkPorts(items).findings);
+  findings.push(...checkEnforce(items));
   findings.push(...secrets.checkTracked(options.trackedPaths || bundle.trackedPaths));
   findings.push(...cleanroom.check({ paths: options.paths || [], emitters: options.emitters || [] }));
 
@@ -501,6 +533,7 @@ function lint(bundle = {}, options = {}) {
 module.exports = {
   ATTACHMENT_MAX_BYTES_DEFAULT,
   ATTACHMENT_ROOT,
+  ENFORCE_VALUES,
   PORT_NAME,
   SECTIONS,
   SVG_DISALLOWED,
@@ -510,6 +543,7 @@ module.exports = {
   checkCombiningBound,
   checkFences,
   checkPaths,
+  checkEnforce,
   checkPorts,
   checkSections,
   checkSvg,

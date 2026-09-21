@@ -32,7 +32,7 @@ test('every file is UTF-8, LF, NFC, with exactly one trailing LF (AGSC-01-14)', 
 
 test('the configuration validates (AGSC-01-17, AGSC-01-18)', () => {
   assert.deepStrictEqual(validate.config(config, { schemas: S }), []);
-  assert.strictEqual(config.spec_version, '1.0.0-rc.4');
+  assert.strictEqual(config.spec_version, '1.0.0-rc.5');
 });
 
 test('the Bundle root validates and its base equals site.base (AGSC-01-04)', () => {

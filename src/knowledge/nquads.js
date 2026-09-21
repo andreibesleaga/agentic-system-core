@@ -232,6 +232,39 @@ const DATATYPE_PROPERTIES = Object.freeze([
  */
 const NEVER_EXPORTED = Object.freeze(['verdict_digest', 'prov.agent', 'prov.agreement']);
 
+/**
+ * AGSC-06-18: the **Content Use Terms identifier** is a constant of the
+ * specification — "it names the terms every export carries, INDEPENDENTLY of
+ * `bundle.license_prose`". AGSC-05-26 as amended at rc.5 (V9A-02) makes it the
+ * object of `schema:usageInfo` on the Bundle node AND on every item node, as an
+ * `xsd:string` literal (AGSC-05-31 form (c)), so that `pages/<slug>.jsonld` and the
+ * `export --jsonl` line of AGSC-01-27 carry the licence without a second fetch.
+ * Before rc.5 the engine took it from `options.bundle.usage_info` and wrote it as an
+ * IRI, on the Bundle alone; both were defects (vector `graph-0015`).
+ */
+const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
+
+/**
+ * The two AGSC-05-26 rows that come from CONFIGURATION rather than from an item key:
+ * `schema:license` (the value of `bundle.license_prose`) and `schema:usageInfo` (the
+ * constant above). Both are emitted on the subject given, as plain literals.
+ *
+ * They are emitted only when the caller supplies `options.bundle` — the record of the
+ * build's configuration. With no configuration there is no `license_prose` to name and
+ * no build whose terms could be stated, which is why every released vector that
+ * serialises a bare item list (`graph-0001`, `graph-0002`, `graph-0004`, `graph-0006`)
+ * expects neither triple and is unchanged by this rule.
+ */
+function licenceQuads(bundle, subject, graph) {
+  const out = [];
+  if (!bundle) return out;
+  if (bundle.license_prose !== undefined) {
+    out.push(quad(iri(subject), iri(`${SCHEMA}license`), literal(String(bundle.license_prose)), graph));
+  }
+  out.push(quad(iri(subject), iri(`${SCHEMA}usageInfo`), literal(CONTENT_USE_TERMS), graph));
+  return out;
+}
+
 // ---------------------------------------------------------------- small helpers
 
 function readPath(object, dotted) {
@@ -367,11 +400,11 @@ function datatypeQuads(item, subject, graph) {
 /**
  * `date`/`modified` → `dcterms:created`/`dcterms:modified` (AGSC-05-27).
  *
- * AGSC-05-31 says these two carry "the datatype the AGSC-05-26 table names for
- * date/modified"; that table has no row for either key, so the datatype is taken to
- * be `xsd:dateTime` under the midnight convention of AGSC-05-14 — the only datatype
- * AGSC-05-22 leaves for a date, and the one `asc:verifiedOn`, `asc:retiredAt` and
- * `asc:staleAfter` already use. Reported to the owner as a specification gap.
+ * At rc.5 (V8-91/R-06) the AGSC-05-26 table gained the two rows the gap this comment
+ * used to report was about: `date` → `dcterms:created` and `modified` →
+ * `dcterms:modified`, both `xsd:dateTime` at midnight of that date (AGSC-04-10), and
+ * AGSC-05-31 form (b) names them as the one DCTerms exception to form (c). The
+ * engine's reading is now the rule's own text; vector `graph-0018`.
  */
 function dateQuads(item, subject, graph) {
   const out = [];
@@ -414,7 +447,7 @@ function linkQuads(item, subject, index, graph) {
  *   `base`            the site base (AGSC-05-01)
  *   `graph`           the graph name; defaults to the Bundle IRI, `null` puts every
  *                     quad in the default graph
- *   `bundle`          `{ id, spec_version, license_prose, usage_info }` — when given,
+ *   `bundle`          `{ id, spec_version, license_prose }` — when given,
  *                     the Bundle node of AGSC-05-03/05-26 is emitted
  *   `lang`            `i18n.default` (AGSC-01-13), the fallback language tag
  *   `attachmentBytes` `{ '<slug>/<file>' | '<file>': bytes }` or a lookup function
@@ -439,12 +472,7 @@ function dataset(items, options = {}) {
     if (options.bundle.spec_version !== undefined) {
       out.push(quad(node, iri(`${NS}specVersion`), literal(options.bundle.spec_version), graph));
     }
-    if (options.bundle.license_prose !== undefined) {
-      out.push(quad(node, iri(`${SCHEMA}license`), literal(options.bundle.license_prose), graph));
-    }
-    if (options.bundle.usage_info !== undefined) {
-      out.push(quad(node, iri(`${SCHEMA}usageInfo`), iri(options.bundle.usage_info), graph));
-    }
+    out.push(...licenceQuads(options.bundle, base, graph));
   }
 
   for (const item of list) {
@@ -456,6 +484,7 @@ function dataset(items, options = {}) {
     for (const label of skos.labels(item, { lang })) {
       out.push(quad(iri(subject), iri(label.property), literal(label.value, { lang: label.lang }), graph));
     }
+    out.push(...licenceQuads(options.bundle, subject, graph));
     out.push(...datatypeQuads(item, subject, graph));
     out.push(...dateQuads(item, subject, graph));
     out.push(...linkQuads(item, subject, index, graph));
@@ -560,6 +589,7 @@ module.exports = {
   LINK_PROPERTIES,
   DATATYPE_PROPERTIES,
   NEVER_EXPORTED,
+  CONTENT_USE_TERMS,
   iri,
   literal,
   quad,

@@ -37,8 +37,12 @@ const LEVEL_AREAS = Object.freeze({
 
 /** AGSC-04-24: the artefacts for which byte-identity ACROSS implementations holds. */
 const CROSS_IMPLEMENTATION = Object.freeze([
-  'graph.jsonld', 'graph.ttl', 'graph.nq', 'search.json', 'chunks.jsonl', 'ledger.jsonl',
+  '/graph.jsonld', '/graph.ttl', '/graph.nq', '/search.json', '/chunks.jsonl', '/ledger.jsonl',
   '/llms.txt', '/llms-full.txt', '/.well-known/knowledge-linkset',
+  // The seven Harness FILE KINDS of AGSC-07-12. They are not routes (a Harness is a
+  // directory the operator is given, never a served surface), so they carry no
+  // leading slash — and AGSC-04-24 as amended at rc.5 (V8-101) says their obligation
+  // is discharged only when `tests/vectors/harness/` is populated, which it is not.
   'harness.jsonld', 'AGENTS.md', 'workspace.dsl', 'diagram.mmd', 'arc42.md',
 ]);
 
@@ -108,15 +112,21 @@ function divergenceVerdicts(divergences, options) {
  * AGSC-04-24: byte-identity across implementations is claimable only for the
  * machine artefacts. A claim listing generated HTML has that entry rejected
  * and the rest of the claim stands.
+ *
+ * A claimed ROUTE is recognised in the AGSC-06-01 form, with its leading slash
+ * (`conform-0004`); the bare form the engine's own list used until rc.5 is still
+ * accepted, because a claim is a document a stranger wrote and AGSC-00-15 makes a
+ * reader tolerant of a spelling its own emitter would not choose.
  */
 function crossImplementationClaim(claimed) {
   const list = Array.isArray(claimed) ? claimed : [];
   const accepted = [];
   const rejected = [];
+  const routes = new Set(CROSS_IMPLEMENTATION.flatMap((r) => [r, r.replace(/^\//u, '')]));
   for (const artefact of list) {
     const name = String(artefact);
     const isHtml = /\.html?$/u.test(name);
-    const known = CROSS_IMPLEMENTATION.includes(name)
+    const known = routes.has(name)
       || /^\/?search-\d{2}\.json$/u.test(name)
       || /^\/?chunks-\d{2}\.jsonl$/u.test(name)
       || /^\/?boards\//u.test(name)

@@ -11,6 +11,7 @@
 const crypto = require('node:crypto');
 const nq = require('../../../src/knowledge/nquads.js');
 const search = require('../../../src/distribution/search.js');
+const headers = require('../../../src/distribution/headers.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual } = require('./_assert.js');
 
@@ -91,8 +92,100 @@ function searchCase(vector) {
   return checks(list);
 }
 
+/**
+ * build-0011 (rc.5, R-08) — AGSC-06-33's fragment index as ARRAYS.
+ *
+ * `build-0010` stated `index.subjects`/`index.predicates` as COUNTS while the rule
+ * states them as arrays of file paths in code-point order; it was withdrawn and this
+ * one states the arrays, so the reading `build-0010` needed is gone. `generated_at`
+ * comes from the vector, never from a clock (AGSC-04-09/04-11).
+ */
+function fragmentIndexCase(vector) {
+  const { files, index } = nq.shard(vector.input.nquads,
+    { sha256, generatedAt: vector.input.generated_at });
+  const expected = vector.expected.index;
+  const list = [
+    ['index', deepEqual(expected, JSON.parse(JSON.stringify(index))), canonicalize(index)],
+    ['index is JCS-canonical', canonicalize(index) === canonicalize(JSON.parse(canonicalize(index))),
+      canonicalize(index)],
+  ];
+  // The arrays ARE the emitted file paths, and they are in code-point order.
+  const paths = (prefix) => files.map((f) => f.path).filter((p) => p.startsWith(`${prefix}/`));
+  list.push(['subjects are the emitted files', deepEqual(index.subjects, paths('s')), JSON.stringify(paths('s'))]);
+  list.push(['predicates are the emitted files', deepEqual(index.predicates, paths('p')), JSON.stringify(paths('p'))]);
+  for (const key of ['subjects', 'predicates']) {
+    const sorted = [...index[key]].sort();
+    list.push([`${key} in code-point order`, deepEqual(index[key], sorted), JSON.stringify(index[key])]);
+  }
+  if (vector.expected.object_files) {
+    list.push(['object_files', deepEqual(vector.expected.object_files, paths('o')), JSON.stringify(paths('o'))]);
+  }
+  return checks(list);
+}
+
+/**
+ * build-0012 (rc.5, V9A-26/V9A-08) — AGSC-06-17's served header set and redirect.
+ *
+ * The vector asserts the HEADER SET and the REDIRECT and deliberately asserts no
+ * `_headers`/`_redirects` bytes (`file_bytes_asserted: false`): AGSC-06-01 as amended
+ * makes the file format a deployment-profile detail. So this handler reads the sets
+ * the WRITER produces (`headers.headerSets`), not the Cloudflare file.
+ *
+ * ONE READING: AGSC-06-17 obliges "a `default-src 'none'` policy with
+ * `script-src 'self'`", not a whole policy string, and the vector states the shortest
+ * text that satisfies it. The engine's policy carries six further directives, each
+ * narrower than the default, so the assertion is that every directive the vector
+ * names is present — never that the policy is exactly those two.
+ */
+function servedHeadersCase(vector) {
+  const list = [];
+  const sets = headers.headerSets({});
+  const forRoute = (route) => {
+    const out = {};
+    for (const set of sets) {
+      if (set.route !== route) continue;
+      for (const [name, value] of set.headers) out[name] = value;
+    }
+    return out;
+  };
+  for (const [route, expected] of Object.entries(vector.expected.headers)) {
+    const actual = forRoute(route);
+    for (const [name, value] of Object.entries(expected)) {
+      const got = actual[name];
+      const ok = name === 'Content-Security-Policy'
+        ? String(value).split(';').map((d) => d.trim()).filter(Boolean).every((d) => String(got).includes(d))
+        : got === value;
+      list.push([`${route} ${name}`, ok, `got ${JSON.stringify(got)}`]);
+    }
+  }
+  if (vector.expected.header_fallback_admitted) {
+    // AGSC-06-07/AGSC-11-04: the profile travels primarily on the media type and
+    // secondarily as an RFC 6906 Link header; a consumer MUST accept either, so the
+    // writer emits both.
+    // The vector states the whole header line, name and all.
+    const wellknown = forRoute('/.well-known/knowledge-linkset');
+    list.push(['header_fallback_admitted',
+      `Link: ${wellknown.Link}` === vector.expected.header_fallback_admitted,
+      `got ${JSON.stringify(`Link: ${wellknown.Link}`)}`]);
+  }
+  const redirects = headers.redirectsFile()
+    .split('\n').filter((l) => l !== '' && !l.startsWith('#'))
+    .map((l) => l.split(' '))
+    .map(([from, to, status]) => ({ from, status: Number(status), to }));
+  for (const want of vector.expected.redirects || []) {
+    list.push([`redirect ${want.from}`, redirects.some((r) => deepEqual(want, r)), JSON.stringify(redirects)]);
+  }
+  list.push(['file_bytes_asserted', vector.expected.file_bytes_asserted === false,
+    'AGSC-06-01 as amended at rc.5 makes the file format a deployment-profile detail']);
+  list.push(['deployment_profile', vector.input.deployment_profile === 'cloudflare-pages',
+    'this writer emits the Cloudflare Pages profile and states it in its claim (AGSC-09-01)']);
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
   if (vector.id === 'build-0010') return fragmentsCase(vector);
+  if (vector.id === 'build-0011') return fragmentIndexCase(vector);
+  if (vector.id === 'build-0012') return servedHeadersCase(vector);
 
   // ---------------------------------------------------------------- EXTENSION POINT
   // Owner E: the build-0001…build-0003 cases (search tokenizer, AGSC-06-16/06-23).

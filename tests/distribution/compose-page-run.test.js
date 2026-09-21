@@ -1,0 +1,340 @@
+'use strict';
+// tests/distribution/compose-page-run.test.js — the `/compose/` page, RUN.
+//
+// The three scripts a Level-2 build emits are loaded into a fresh `node:vm` context
+// that holds the language, a minimal DOM, a `fetch` over the SAME build's own file map
+// and Web Crypto — and nothing else: no `require`, no `process`, no real network. That
+// is the only way to assert what AGSC-07-01 and AGSC-07-13 actually claim — "It MUST
+// NOT require a network, a key or a server" and "Harness output computed in a browser
+// MUST be byte-identical to the equivalent CLI invocation" — rather than to promise it.
+//
+// The page is exercised BOTH with and without `document.modelContext`, because
+// AGSC-09-16 makes the registration feature-detected and the page has to work unchanged
+// when the browser offers none.
+
+const test = require('node:test');
+const assert = require('node:assert');
+const vm = require('node:vm');
+const nodeFs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { createHash, webcrypto } = require('node:crypto');
+
+const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
+const { createClock } = require('../../src/adapters/node-clock.js');
+const validate = require('../../src/knowledge/validate.js');
+const { loadBundle } = require('../../src/application/bundle.js');
+const site = require('../../src/distribution/site.js');
+const harness = require('../../src/composition/harness.js');
+const { compose, verdictOf } = require('../../src/composition/compose.js');
+const mcpTools = require('../../src/distribution/mcp-tools.js');
+
+const ROOT = path.resolve(__dirname, '..', '..');
+const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
+const EPOCH = '1767225600';
+const INSTANT = '2026-01-01T00:00:00Z';
+
+/**
+ * A value flattened out of the vm realm. `deepStrictEqual` compares prototypes, and a
+ * cross-realm array has a different `Array.prototype`, so a structural comparison has
+ * to be made on plain values — which is also exactly how the page's own output would
+ * reach a consumer.
+ */
+function plain(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+const temporaries = [];
+test.after(() => {
+  for (const dir of temporaries) nodeFs.rmSync(dir, { force: true, recursive: true });
+});
+
+function builtFixture() {
+  const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'agsc-page-'));
+  temporaries.push(dir);
+  nodeFs.cpSync(FIXTURE, dir, { recursive: true });
+  const fs = createFileSystem(dir);
+  const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
+  const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
+  return { bundle, ...site.build(bundle, ports, { specVersion: '1.0.0-rc.5', version: '0.0.2' }) };
+}
+
+/** The smallest DOM the controller touches: ids, text, children and one listener. */
+function fakeDocument(withModelContext) {
+  const nodes = new Map();
+  const make = (id) => {
+    const node = {
+      children: [],
+      disabled: false,
+      id,
+      listeners: [],
+      addEventListener(type, handler) { node.listeners.push([type, handler]); },
+      appendChild(child) { node.children.push(child); return child; },
+      set textContent(value) { node.text = String(value); node.children.length = 0; },
+      get textContent() { return node.text === undefined ? '' : node.text; },
+    };
+    return node;
+  };
+  for (const id of ['items', 'validity', 'verdict', 'explanations', 'conflicts', 'download', 'files']) {
+    nodes.set(id, make(id));
+  }
+  const registered = [];
+  const document = {
+    createElement: (tag) => Object.assign(make(''), { tag }),
+    getElementById: (id) => (nodes.has(id) ? nodes.get(id) : null),
+    nodes,
+  };
+  if (withModelContext) {
+    document.modelContext = { registerTool: (tool) => registered.push(tool) };
+  }
+  return { document, registered };
+}
+
+/**
+ * Load the three emitted scripts into one throwaway context. `fetch` is served from
+ * the build's own file map, so the page reads exactly the published routes and nothing
+ * can reach a real network: an unknown path answers `ok: false`.
+ */
+function openPage({ files, modelContext }) {
+  const { document, registered } = fakeDocument(modelContext);
+  const sandbox = {
+    crypto: webcrypto,
+    document,
+    location: { origin: 'https://minimal.example', search: '' },
+    TextEncoder,
+    URL: { createObjectURL: (blob) => `blob:${blob.parts.length}` },
+    Blob: class { constructor(parts, options) { this.parts = parts; this.options = options; } },
+    fetch: (url) => {
+      const route = String(url);
+      const body = files.get(route);
+      if (body === undefined) return Promise.resolve({ ok: false, json: () => Promise.reject(new Error('404')), text: () => Promise.resolve('') });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(body)), text: () => Promise.resolve(body) });
+    },
+    Promise,
+    setTimeout,
+  };
+  const context = vm.createContext(sandbox);
+  for (const asset of ['/compose/agsc-core.js', '/compose/agsc-compose.js', '/compose/webmcp.js']) {
+    vm.runInContext(files.get(asset), context, { filename: asset });
+  }
+  return { context, document, registered, sandbox };
+}
+
+test('AGSC-07-01: the page loads and composes with no network, no key and no server', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  // Nothing a page could use to reach outside this origin or to hold a key.
+  for (const name of ['require', 'process', 'XMLHttpRequest', 'WebSocket', 'localStorage', 'EventSource']) {
+    assert.strictEqual(vm.runInContext(`typeof ${name}`, page.context), 'undefined', `${name} is reachable`);
+  }
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.ok(state.items.length >= 3, `the page recovered ${state.items.length} items from the graph`);
+  assert.strictEqual(state.instant, INSTANT, 'the page took no instant from the graph');
+  // The checkbox list was painted from the graph, clusters excluded.
+  assert.ok(page.document.nodes.get('items').children.length >= 2);
+});
+
+test('AGSC-07-13: the seven files the PAGE builds are byte-identical to the CLI\'s', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  const selection = state.items.filter((i) => i.type !== 'cluster').map((i) => i.slug).slice(0, 2);
+  state.selection = [...selection];
+  state.render();
+  const emitted = await state.emitHarness();
+  assert.ok(emitted !== null, 'the page emitted no Harness for a valid composition');
+
+  // The CLI side, from the same published graph and the same instant.
+  const core = vm.runInContext('globalThis.AGSC_CORE', page.context);
+  const here = compose(core.itemsFromGraph(JSON.parse(files.get('/graph.jsonld'))), selection);
+  const digest = createHash('sha256').update(harness.selectionDigestInput(here), 'utf8').digest('hex');
+  const items = core.itemsFromGraph(JSON.parse(files.get('/graph.jsonld'))).map((item) => {
+    const body = files.get(`/pages/${item.slug}.md`);
+    return body === undefined ? item : { ...item, body };
+  });
+  const there = harness.emit(here, {
+    base: 'https://minimal.example/',
+    instant: INSTANT,
+    items,
+    licenseProse: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
+    name: harness.harnessName(digest),
+    selectionDigest: digest,
+    specVersion: '1.0.0-rc.5',
+  });
+  assert.deepStrictEqual([...emitted.files.keys()], [...there.files.keys()]);
+  for (const [at, text] of there.files) {
+    assert.strictEqual(emitted.files.get(at), text, `${at} differs between the page and the CLI`);
+  }
+  assert.strictEqual(emitted.emitted, there.emitted);
+  // D49: one download link per file, no archive writer anywhere in the page.
+  assert.strictEqual(page.document.nodes.get('files').children.length, emitted.files.size);
+  assert.ok(!files.get('/compose/agsc-compose.js').includes('zip'));
+});
+
+test('AGSC-07-17: an invalid composition emits nothing, and the page says so', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  state.selection = ['no-such-slug'];
+  state.render();
+  assert.match(page.document.nodes.get('validity').textContent, /invalid — no Harness is emitted/u);
+  assert.strictEqual(page.document.nodes.get('download').disabled, true);
+  assert.strictEqual(await state.emitHarness(), null);
+});
+
+test('AGSC-07-24: /compose/?from=<slug> takes the selection from the saved architecture', async () => {
+  const { files } = builtFixture();
+  const withArchitecture = new Map(files);
+  withArchitecture.set('/pages/saved.md',
+    'Body.\n\n```yaml agsc-selection\n- supervisor\n- handoff\n```\n');
+  const page = openPage({ files: withArchitecture });
+  page.sandbox.location.search = '?from=saved';
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.deepStrictEqual([...state.selection], ['supervisor', 'handoff']);
+  // A `from` naming a page the build does not emit leaves the selection empty rather
+  // than throwing: the page is a reader of published routes, not their author.
+  const empty = openPage({ files });
+  empty.sandbox.location.search = '?from=nothing-here';
+  const other = vm.runInContext('globalThis.AGSC_COMPOSE', empty.context);
+  await other.start();
+  assert.deepStrictEqual([...other.selection], []);
+});
+
+test('AGSC-09-16: with document.modelContext the seven tools are registered, with the stdio manifest', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files, modelContext: true });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  const webmcp = vm.runInContext('globalThis.AGSC_WEBMCP', page.context);
+  assert.strictEqual(webmcp.registered, 7);
+  assert.deepStrictEqual(page.registered.map((t) => t.name).sort(),
+    mcpTools.manifest().tools.map((t) => t.name).sort());
+  for (const tool of page.registered) {
+    assert.strictEqual(typeof tool.execute, 'function', tool.name);
+    assert.ok(tool.inputSchema !== undefined, `${tool.name} registered no inputSchema`);
+  }
+  // AGSC-09-16: `compose` on this transport answers with the shared implementation.
+  const selection = state.items.filter((i) => i.type !== 'cluster').map((i) => i.slug).slice(0, 2);
+  const envelope = page.registered.find((t) => t.name === 'compose').execute({ selection });
+  assert.strictEqual(envelope.trust, 'untrusted');
+  assert.strictEqual(envelope.type, 'verdict');
+  assert.ok(selection.length > 0, 'the page recovered no selectable item');
+  assert.deepStrictEqual(plain(envelope.body), plain(verdictOf(compose(plain(state.items), selection))));
+  // AGSC-09-13a: the six tools with no page implementation answer the error envelope
+  // with a registered code, never something mistakable for a result.
+  for (const name of ['ask', 'links', 'propose', 'read', 'remember', 'search']) {
+    const answer = page.registered.find((t) => t.name === name).execute({});
+    assert.strictEqual(answer.type, 'error', name);
+    assert.strictEqual(answer.trust, 'untrusted', name);
+    assert.match(answer.body.code, /^AGSC-E\d{3}$/u, name);
+  }
+  // AGSC-09-16: `propose` and `remember` are counted as local-only on this transport.
+  assert.strictEqual(webmcp.localOnlyCalls, 2);
+});
+
+test('AGSC-09-16: without document.modelContext the page works unchanged and registers nothing', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files, modelContext: false });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  const webmcp = vm.runInContext('globalThis.AGSC_WEBMCP', page.context);
+  assert.strictEqual(webmcp.registered, 0);
+  assert.deepStrictEqual(page.registered, []);
+  // The tool surface is still reachable in plain JavaScript, which is what makes the
+  // page work for a browser that offers no WebMCP at all.
+  const tools = vm.runInContext('globalThis.AGSC_TOOLS', page.context);
+  const selection = state.items.filter((i) => i.type !== 'cluster').map((i) => i.slug).slice(0, 1);
+  assert.ok(selection.length > 0, 'the page recovered no selectable item');
+  assert.deepStrictEqual(plain(tools.call('compose', { selection }).body),
+    plain(verdictOf(compose(plain(state.items), selection))));
+  assert.strictEqual(tools.call('nosuchtool', {}).body.code, 'AGSC-E001');
+  // And the Harness still builds.
+  state.selection = [...selection];
+  state.render();
+  assert.ok((await state.emitHarness()).files.size >= 5);
+});
+
+test('AGSC-06-08: the build instant comes from the discovery document, never from a clock', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.strictEqual(state.instant, INSTANT);
+  assert.strictEqual(state.instantOf(JSON.parse(files.get('/.well-known/knowledge-linkset'))), INSTANT);
+  // Every shape a document that carries no instant can take yields the empty string,
+  // so the page never invents one (AGSC-04-11).
+  for (const shape of [null, undefined, {}, { linkset: null }, { linkset: [null] },
+    { linkset: [{ describedby: [] }] }, { linkset: [{ describedby: [{}] }] },
+    { linkset: [{ describedby: [{ 'agsc-generated-at': [] }] }] }]) {
+    assert.strictEqual(state.instantOf(shape), '', JSON.stringify(shape));
+  }
+  // With no discovery document at all the page still loads the graph and composes.
+  const without = new Map(files);
+  without.delete('/.well-known/knowledge-linkset');
+  const second = openPage({ files: without });
+  const other = vm.runInContext('globalThis.AGSC_COMPOSE', second.context);
+  await other.start();
+  assert.strictEqual(other.instant, '');
+  assert.ok(other.items.length >= 3, 'the page stopped because the discovery document was absent');
+});
+
+test('the page survives a graph it cannot read, and says so instead of throwing', async () => {
+  const { files } = builtFixture();
+  const broken = new Map(files);
+  broken.delete('/graph.jsonld');
+  const page = openPage({ files: broken });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.match(page.document.nodes.get('validity').textContent, /could not be read/u);
+  assert.deepStrictEqual([...state.items], []);
+});
+
+test('the download button is wired once, and clicking it emits the Harness', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const button = page.document.nodes.get('download');
+  assert.strictEqual(button.listeners.length, 1);
+  assert.strictEqual(button.listeners[0][0], 'click');
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  state.selection = state.items.filter((i) => i.type !== 'cluster').map((i) => i.slug).slice(0, 1);
+  state.render();
+  await button.listeners[0][1]();
+  await state.emitHarness();
+  assert.ok(page.document.nodes.get('files').children.length > 0, 'no download link was offered');
+});
+
+test('a checkbox toggle adds and removes exactly one slug', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  const list = page.document.nodes.get('items');
+  const box = list.children[0].children[0];
+  const [, onChange] = box.listeners[0];
+  onChange({ target: { checked: true, value: box.value } });
+  assert.deepStrictEqual([...state.selection], [box.value]);
+  onChange({ target: { checked: true, value: box.value } });
+  assert.deepStrictEqual([...state.selection], [box.value], 'a second tick added the slug twice');
+  onChange({ target: { checked: false, value: box.value } });
+  assert.deepStrictEqual([...state.selection], []);
+  onChange({ target: { checked: false, value: box.value } });
+  assert.deepStrictEqual([...state.selection], []);
+});
+
+test('the closure explanations and the conflict list are rendered from the verdict', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  state.selection = ['no-such-slug'];
+  state.render();
+  const conflicts = page.document.nodes.get('conflicts').children;
+  assert.ok(conflicts.length >= 1, 'a conflict was not rendered');
+  assert.match(conflicts[0].textContent, /AGSC-E\d{3} on selection/u);
+  assert.match(page.document.nodes.get('verdict').textContent, /"valid":false/u);
+});

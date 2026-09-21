@@ -1,0 +1,40 @@
+{
+  "area": "build",
+  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. AGSC-06-17 is a MUST over served bytes that no vector cited before rc.5 (V9A-26). It obliges three Content-Type / policy facts and one redirect, and AGSC-06-01 as amended at rc.5 (V9A-08) makes the normative content THE HEADER SET AND THE REDIRECT, never the file format: _headers and _redirects are the Cloudflare Pages deployment profile's rendering of them, and a writer on another host emits the equivalent configuration and names its profile in the conformance claim. This vector therefore asserts the header set and the redirect and deliberately asserts NO file bytes — pinning _headers bytes would invent a grammar no rule states and would re-create the defect V9A-08 closed. The profile parameter on the linkset media type is the RFC 7284 profile URI of AGSC-06-07, whose header fallback (RFC 6906 Link rel=profile) is the admitted alternative where the media-type parameter cannot be set.",
+  "expected": {
+    "file_bytes_asserted": false,
+    "header_fallback_admitted": "Link: <https://w3id.org/agentic-system-core/profile/agentic-knowledge>; rel=\"profile\"",
+    "headers": {
+      "/*": {
+        "Content-Security-Policy": "default-src 'none'; script-src 'self'"
+      },
+      "/.well-known/knowledge-linkset": {
+        "Content-Type": "application/linkset+json; profile=\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\""
+      },
+      "/pages/*.md": {
+        "Content-Type": "text/markdown; charset=utf-8; variant=GFM"
+      }
+    },
+    "redirects": [
+      {
+        "from": "/.well-known/agentic-knowledge",
+        "status": 301,
+        "to": "/.well-known/knowledge-linkset"
+      }
+    ]
+  },
+  "id": "build-0012",
+  "input": {
+    "deployment_profile": "cloudflare-pages",
+    "routes": [
+      "/pages/alpha.md",
+      "/.well-known/knowledge-linkset",
+      "/index.html"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.5"
+  },
+  "rule": "AGSC-06-17"
+}

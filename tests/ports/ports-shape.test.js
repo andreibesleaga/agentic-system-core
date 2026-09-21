@@ -12,7 +12,7 @@ const path = require('node:path');
 const PORTS = path.resolve(__dirname, '..', '..', 'src', 'ports');
 
 const MEMBERS = Object.freeze({
-  filesystem: ['readFile', 'writeFile', 'readdir', 'stat', 'exists', 'mkdirp', 'remove'],
+  filesystem: ['readFile', 'writeFile', 'readdir', 'stat', 'exists', 'mkdirp', 'remove', 'walk'],
   clock: ['now', 'iso', 'findings'],
   'process-runner': ['run'],
   network: ['fetch'],

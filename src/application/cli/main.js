@@ -19,6 +19,17 @@ const VERBS = [
   'propose', 'review', 'refresh', 'skills', 'mcp', 'run', 'trace', 'conform'
 ];
 
+/**
+ * The ONE place the engine states which version of the specification it
+ * implements (AGSC-09-11's `spec_version` member; AGSC-00-14). Everything else
+ * — every envelope, every report, `llms.txt`'s provenance header, the
+ * `/compose/` page — takes it from here through `ctx.specVersion`, so a release
+ * bump is one edit. A test harness may still pin a per-vector value
+ * (`options.spec_version`), which is what keeps a released vector reproducible
+ * across an rc bump (AGSC-00-16).
+ */
+const SPEC_VERSION = '1.0.0-rc.5';
+
 // The five global flags of AGSC-09-09; every verb parser gets these.
 const GLOBAL_FLAGS = [
   ['--json', 'bool'],
@@ -39,12 +50,18 @@ const STREAMING_VERBS = new Set(['mcp']);
 
 // verb-specific flags beyond the five global ones (AGSC-09-09): name -> 'bool'|'value'.
 const VERB_FLAGS = {
-  lint: new Map([['--self', 'bool']]),
+  // AGSC-09-09 (rc.5, V9D-01): `lint --fix` applies exactly the normalisations
+  // AGSC-04-19 admits — line endings, NFC, trailing newline, frontmatter key order
+  // and the wikilink rewriting of AGSC-03-12 — and nothing else (AGSC-04-14/04-20).
+  lint: new Map([['--self', 'bool'], ['--fix', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
     ['--jsonl', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value']
   ]),
-  import: new Map([['--from', 'value']]),
+  // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
+  // and writes nothing (AGSC-09-09 as amended at rc.5, ENG2-01). The flags of the
+  // ADAPTER itself are not here — see ADAPTER_FLAGS.
+  import: new Map([['--from', 'value'], ['--dry-run', 'bool']]),
   refresh: new Map([['--agent', 'value'], ['--dry-run', 'bool'], ['--task', 'value']]),
   run: new Map([['--dry-run', 'bool']]),
   conform: new Map([['--level', 'value'], ['--to', 'value']]),
@@ -52,10 +69,55 @@ const VERB_FLAGS = {
   // with the published discovery document.
   verify: new Map([['--ledger', 'bool']]),
   // AGSC-07-24 (`--from`, the saved composition) and AGSC-07-18 (`--emit`).
-  compose: new Map([['--from', 'value'], ['--emit', 'value']]),
+  // `--out` names the directory the seven Harness files are written to; with no
+  // flag the location is AGSC-07-12's own `dist/harness/<name>/`, so a conforming
+  // invocation needs no flag. AGSC-09-09's verb-flag list does not yet name it —
+  // the proposed wording is on the specification items list (ENG2-01).
+  compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value']]),
   build: new Map([['--level', 'value']]),
   ci: new Map([['--level', 'value']])
 };
+
+/**
+ * AGSC-09-09 as amended at rc.5 (ENG1 §3): "a memory adapter selected by
+ * `export --to <adapter>` or `import --from <adapter>` MAY define further flags of
+ * its own (AGSC-01-26a): they belong to that adapter's documented contract and not
+ * to this specification, they MUST NOT change the meaning of a flag named above, and
+ * an engine that does not ship the adapter rejects them with `AGSC-E002`."
+ *
+ * So they are ADAPTER-SCOPED, not a global allow-list on the verb: `--selection` is
+ * legal only while the `old-site` adapter is the one named, and `AGSC-E002` under
+ * any other adapter or none. The map is keyed by verb, then by the adapter named in
+ * that verb's selector flag.
+ *
+ *   `--selection <tsv>`   which records are imported and with which `status` — the
+ *                         engine carries no list of its own (project rule 9).
+ *   `--corrections <json>` the per-card decisions a human made (a re-sourced
+ *                         citation, a renamed title, a card held back), as DATA.
+ *   `--attach-diagrams`   the other reading of the pull between AGSC-01-07 (a
+ *                         compiled `.svg` MUST NOT be committed) and AGSC-02-98/R59
+ *                         (an SVG attachment with its source beside it): off by
+ *                         default, the operator's choice when asked for.
+ */
+const ADAPTER_FLAGS = {
+  import: {
+    selector: '--from',
+    adapters: {
+      'old-site': new Map([['--selection', 'value'], ['--corrections', 'value'],
+        ['--attach-diagrams', 'bool']]),
+    },
+  },
+  export: { selector: '--to', adapters: {} },
+};
+
+/** The flags the adapter named in `argv` adds to `verb`, or an empty map. */
+function adapterFlagsFor(verb, argv) {
+  const scope = ADAPTER_FLAGS[verb];
+  if (scope === undefined) return new Map();
+  const at = argv.indexOf(scope.selector);
+  const named = at === -1 ? undefined : argv[at + 1];
+  return (named !== undefined && scope.adapters[named]) || new Map();
+}
 
 const SOURCE_DATE_EPOCH_RE = /^[0-9]+$/;
 
@@ -74,17 +136,22 @@ function toCamel(kebab) {
  * (AGSC-09-09 does not name a help flag); an unrecognised `--foo` therefore
  * still falls through to `commander.unknownOption`, mapped to AGSC-E002.
  */
-function buildVerbParser(verb) {
+function buildVerbParser(verb, argv) {
   const cmd = new Command();
   cmd.exitOverride();
   cmd.configureOutput({ writeOut: () => {}, writeErr: () => {}, outputError: () => {} });
   cmd.helpOption(false);
   cmd.allowExcessArguments(true); // positional args (e.g. `trace <file.json>`) are the verb's business, not ours
   for (const [flag] of GLOBAL_FLAGS) cmd.option(flag);
-  for (const [flag, kind] of (VERB_FLAGS[verb] || new Map())) {
+  for (const [flag, kind] of flagsFor(verb, argv || [])) {
     cmd.option(kind === 'bool' ? flag : `${flag} <value>`);
   }
   return cmd;
+}
+
+/** This verb's own flags plus the flags of the adapter this invocation names. */
+function flagsFor(verb, argv) {
+  return new Map([...(VERB_FLAGS[verb] || new Map()), ...adapterFlagsFor(verb, argv)]);
 }
 
 /**
@@ -199,8 +266,9 @@ function writeFindingLine(stderr, f) {
  * a DIAGNOSTIC, so it is written to stderr (AGSC-09-10), and it is emitted only
  * outside `--json`, where one line must be one finding object.
  */
+const GLOBAL_FLAG_NAMES = Object.freeze(['--json', '--quiet', '--plain', '--no-input', '--help', '--version']);
+
 function usageText(version) {
-  const flags = ['--json', '--quiet', '--plain', '--no-input', '--version'];
   return [
     '',
     `agsc ${version} — the reference engine of the Agentic System Core format.`,
@@ -211,10 +279,40 @@ function usageText(version) {
     `  ${VERBS.slice(0, 8).join('  ')}`,
     `  ${VERBS.slice(8).join('  ')}`,
     '',
-    `Global flags (AGSC-09-09): ${flags.join('  ')}`,
+    `Global flags (AGSC-09-09): ${GLOBAL_FLAG_NAMES.join('  ')}`,
     '',
     'Each verb takes its own flags; an unknown flag is AGSC-E002 and exit 2.',
     'A Bundle is the directory holding agsc.config.json; run a verb from inside it.',
+    '',
+  ].join('\n');
+}
+
+/** The same facts as `helpText`, as data, for the `--json` form. */
+function helpDocument(version, verb) {
+  const document = { global_flags: [...GLOBAL_FLAG_NAMES], version };
+  if (verb === undefined) document.verbs = [...VERBS];
+  else { document.verb = verb; document.flags = [...(VERB_FLAGS[verb] || new Map()).keys()]; }
+  return document;
+}
+
+/**
+ * `agsc --help` and `agsc <verb> --help` (AGSC-09-09 as amended at rc.5, V9D-02).
+ *
+ * "MUST print the verb set of AGSC-09-07 and this flag list to stdout and exit 0;
+ * with a verb, it MUST print that verb's flags." It is the one flag that is NOT a
+ * diagnostic, so unlike `usageText` it goes to STDOUT (AGSC-09-10), and it is a flag
+ * rather than a verb so that AGSC-09-07's sixteen verbs stay sixteen. Before rc.5
+ * `agsc --help` was `AGSC-E001` and `agsc lint --help` was `AGSC-E002`.
+ */
+function helpText(version, verb) {
+  if (verb === undefined) return usageText(version);
+  const own = [...(VERB_FLAGS[verb] || new Map()).keys()];
+  return [
+    '',
+    `agsc ${version} — agsc ${verb} [flags]`,
+    '',
+    `Flags of ${verb} (AGSC-09-09): ${own.length === 0 ? '(none)' : own.join('  ')}`,
+    `Global flags (AGSC-09-09): ${GLOBAL_FLAG_NAMES.join('  ')}`,
     '',
   ].join('\n');
 }
@@ -228,7 +326,8 @@ function usageText(version) {
  *   are honoured (AGSC-09-09); never read from `process.env` directly here.
  * - root: the Bundle root (default '.').
  * - specVersion/version: OPTIONAL overrides for the envelope's corresponding
- *   members; default to '1.0.0-rc.4' and package.json's version. A test
+ *   members; default to SPEC_VERSION ('1.0.0-rc.5') and package.json's
+ *   version. A test
  *   harness pins these per-vector (e.g. cli-0002's options.version) so the
  *   envelope stays reproducible independent of the engine's own release.
  * - userConfig: OPTIONAL pre-loaded user configuration object — the lowest
@@ -244,7 +343,7 @@ function main(argv, ctx) {
   const stderr = opts.stderr || process.stderr;
   const env = opts.env || {};
   const root = opts.root || '.';
-  const specVersion = opts.specVersion || '1.0.0-rc.4';
+  const specVersion = opts.specVersion || SPEC_VERSION;
   const version = opts.version || readPackageVersion();
 
   const args = Array.isArray(argv) ? argv.slice() : [];
@@ -254,6 +353,26 @@ function main(argv, ctx) {
   if (args.includes('--version')) {
     if (jsonMode) writeLine(stdout, JSON.stringify({ version }) + '\n');
     else writeLine(stdout, `agsc ${version}\n`);
+    return 0;
+  }
+
+  // --help (AGSC-09-09, rc.5/V9D-02) short-circuits too: it is not a diagnostic, so
+  // it prints to STDOUT and exits 0, with the named verb's flags when one is given.
+  //
+  // Under `--json` it takes the shape `--version` already takes: one canonical JSON
+  // object on stdout rather than prose. AGSC-09-09 says only "print … to stdout and
+  // exit 0", and AGSC-09-10's "exactly one JCS-canonical envelope" governs a verb's
+  // DIAGNOSTICS, which `--help` explicitly is not ("the one flag that is not a
+  // diagnostic"). Printing a usage block into a `--json` pipeline would be the one
+  // reading that serves nobody. Recorded as a reading in the RC5-B report.
+  if (args.includes('--help')) {
+    const named = args.find((a) => VERBS.includes(a));
+    if (jsonMode) {
+      const document = helpDocument(version, named);
+      writeLine(stdout, `${serializeEnvelope(document) || JSON.stringify(document)}\n`);
+    } else {
+      writeLine(stdout, helpText(version, named));
+    }
     return 0;
   }
 
@@ -293,7 +412,7 @@ function main(argv, ctx) {
   }
 
   const rest = args.slice(1);
-  const parser = buildVerbParser(verb);
+  const parser = buildVerbParser(verb, rest);
   let parsed;
   try {
     parsed = parser.parse(rest, { from: 'user' });
@@ -314,7 +433,7 @@ function main(argv, ctx) {
     noInput: commanderOpts.input === false // commander's `--no-input` negation convention
   };
   const verbFlags = {};
-  for (const [flag, kind] of (VERB_FLAGS[verb] || new Map())) {
+  for (const [flag, kind] of flagsFor(verb, rest)) {
     const key = flag.slice(2);
     const value = commanderOpts[toCamel(key)];
     if (value !== undefined) verbFlags[key] = kind === 'bool' ? value === true : value;
@@ -442,4 +561,7 @@ function main(argv, ctx) {
   return envelope.status === 'pass' ? 0 : 1;
 }
 
-module.exports = { main, VERBS, buildEnvelope, compareFindings };
+module.exports = {
+  main, ADAPTER_FLAGS, SPEC_VERSION, VERBS, VERB_FLAGS,
+  adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
+};

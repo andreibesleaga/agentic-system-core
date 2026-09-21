@@ -73,6 +73,22 @@ informative:
   I-D.ietf-aipref-vocab:
   I-D.ietf-aipref-attach:
   I-D.ietf-webbotauth-httpsig-protocol:
+  I-D.aiendpoint-ai-discovery:
+    title: "The AI Discovery Endpoint: A Structured Mechanism for AI Agent Service Discovery and Capability Exposure"
+    author:
+      - org: AIEndpoint
+    seriesinfo:
+      Internet-Draft: draft-aiendpoint-ai-discovery-01
+    target: https://datatracker.ietf.org/doc/html/draft-aiendpoint-ai-discovery-01
+    date: 2026-07-28
+  I-D.car-ai-txt-wellknown:
+    title: "AI.TXT: A Declaration File for AI Usage Preferences, Licensing, and Policy"
+    author:
+      - name: Kayla Cardillo
+    seriesinfo:
+      Internet-Draft: draft-car-ai-txt-wellknown-00
+    target: https://datatracker.ietf.org/doc/html/draft-car-ai-txt-wellknown-00
+    date: 2026-06-12
   DAWN-CHARTER:
     title: "Discovery of Agents With Names (dawn) -- proposed working group charter"
     author:
@@ -136,7 +152,7 @@ informative:
       - org: IANA
     target: https://www.iana.org/assignments/iana-ipv6-special-registry/
   AGSC-SPEC:
-    title: "AgenticSystemCore Specification, version 1.0.0-rc.4 (release candidate)"
+    title: "AgenticSystemCore Specification, version 1.0.0-rc.5 (release candidate)"
     author:
       - ins: A. N. Besleaga
         name: Andrei Nicolae Besleaga
@@ -156,8 +172,8 @@ retrieved artefact is the one the publisher described. A profile URI
 identifies the conventions the link set follows. The mechanism defines
 no new media type and no new link relation type: a page points at the
 resource with the existing "describedby" relation. This document
-requests one well-known URI registration and cites one profile URI
-registration.
+requests one well-known URI registration and records the fields of one
+profile URI registration that is to be requested separately.
 
 --- middle
 
@@ -777,6 +793,15 @@ associated with the registered well-known URI `void`. DCAT
 A publisher that also publishes such a description names it with a
 further `describedby` link ({{related-system-links}}).
 
+Two further Internet-Drafts request well-known URI suffixes for
+AI-related discovery: {{I-D.aiendpoint-ai-discovery}} requests `ai`
+(with `ai-discovery` as an alternative) for a description of a service's
+capabilities, and {{I-D.car-ai-txt-wellknown}} requests `ai.txt` and
+`ai.json` for declarations of AI usage preferences and licensing. Both
+describe an endpoint or a policy. The suffix requested here names the
+class of resource served -- a link set of published knowledge artefacts
+-- and deliberately does not begin with `ai` or `agent`.
+
 # Security Considerations {#security-considerations}
 
 ## What a digest proves {#what-a-digest-proves}
@@ -890,7 +915,8 @@ it has visited.
 # IANA Considerations {#iana-considerations}
 
 This document requests one registration in an existing registry and
-cites one further registration requested separately. It creates no
+records the fields of one further registration that is to be requested
+separately. It creates no
 registry, requests no media type, requests no URI scheme, and requests
 no link relation type. No allocation described here requires IETF
 Review or Standards Action.
@@ -966,8 +992,9 @@ of writing.
   `/.well-known/knowledge-linkset`, the artefacts it names, and the
   published specification that the profile URI and the extension
   relation URIs resolve to.
-* Level of maturity: production deployment of a specification that is
-  at release-candidate status.
+* Level of maturity: working implementation of a specification that is
+  at release-candidate status; not yet publicly released. It will be
+  published with the reference engine.
 * Coverage: {{the-well-known-uri}}, {{the-link-set}},
   {{discovery-from-a-page}}, and {{the-profile-uri}}, in the reduced
   form of {{the-reduced-form}}.
@@ -989,7 +1016,8 @@ of writing.
   bundle facts are present and recomputable otherwise. A `--peer` flag
   performs the mutual test of {{following-peers}} and accepts two local
   files, so that the test runs with no network access.
-* Level of maturity: production.
+* Level of maturity: working implementation; not yet publicly
+  released. It will be published with the reference engine.
 * Coverage: {{the-well-known-uri}}, {{the-link-set}}, and the mutual
   peer test of {{following-peers}}.
 * Licensing: Apache-2.0.
@@ -1003,7 +1031,9 @@ of writing.
   and its target attributes, the reduced form, and the mutual peer
   test. They are fixtures rather than an implementation, and any
   independent implementation can be run against them.
-* Level of maturity: production.
+* Level of maturity: working implementation; the vectors are fixtures
+  and are not yet publicly released. They will be published with the
+  reference engine.
 * Coverage: {{the-link-set}}, {{the-reduced-form}},
   {{following-peers}}.
 * Licensing: Apache-2.0.
@@ -1067,7 +1097,7 @@ NOTE: '\' line wrapping per RFC 8792
             "2026-10-09T08:15:00Z"
           ],
           "agsc-spec-version": [
-            "1.0.0"
+            "1.0.0-rc.5"
           ],
           "digest": [
             "sha-256=:JeigkAtOPS9f9BzKym+X6J2O4awt53GEua1AhIAiLfE=:"

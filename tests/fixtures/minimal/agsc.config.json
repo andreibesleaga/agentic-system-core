@@ -6,7 +6,6 @@
     "operator": "human:andreibesleaga"
   },
   "build": {
-    "feed": true,
     "out": "www"
   },
   "site": {
@@ -14,7 +13,7 @@
     "tagline": "The smallest Bundle that conforms.",
     "title": "Minimal Bundle"
   },
-  "spec_version": "1.0.0-rc.4",
+  "spec_version": "1.0.0-rc.5",
   "tags": {
     "allowed": [
       "agents",

@@ -1,18 +1,8 @@
 {
   "area": "conform",
-  "description": "Cross-implementation byte-identity may be claimed only for the machine artefacts; a claim that lists HTML in that set is rejected and the rest of the claim stands.",
+  "description": "WITHDRAWN. Superseded by conform-0004. Cross-implementation byte-identity may be claimed only for the machine artefacts; a claim that lists HTML in that set is rejected and the rest of the claim stands.",
   "expected": {
-    "accepted": [
-      "graph.jsonld",
-      "graph.nq",
-      "search.json",
-      "chunks.jsonl",
-      "/llms.txt"
-    ],
-    "reason": "HTML is deterministic within one implementation only (AGSC-04-01)",
-    "rejected": [
-      "index.html"
-    ]
+    "withdrawn": true
   },
   "id": "conform-0002",
   "input": {
@@ -27,10 +17,11 @@
       ]
     }
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.5"
   },
+  "reason": "Withdrawn at 1.0.0-rc.5 (V9A-27; D100). Its `accepted` array mixes two route spellings inside one byte-compared expectation — `graph.jsonld`, `graph.nq`, `search.json` and `chunks.jsonl` without a leading slash beside `/llms.txt` with one — so a port cannot tell whether the slash is significant. Superseded by conform-0004, which uses the AGSC-06-01 route form throughout.",
   "rule": "AGSC-04-24"
 }

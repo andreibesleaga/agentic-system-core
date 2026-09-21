@@ -100,9 +100,14 @@ function altFor(kind, title, alt) {
  * @param {string} input.selection the selection TSV's bytes.
  * @param {string[]} [input.paths] every path the import was pointed at, for the
  *   AGSC-08-17 exclusion check.
- * @param {object} [input.recitations] slug -> `{promote:[url], add:[reference]}`,
- *   the source-integrity corrections, supplied as DATA so that no card list
- *   lives in the engine.
+ * @param {object} [input.corrections] slug -> `{title?, status?, promote?:[url],
+ *   add?:[reference]}` — the per-card corrections a human decided (a re-sourced
+ *   citation, a renamed title, a card held back), supplied as DATA so that no
+ *   card list lives in the engine. Every member is optional and every one is
+ *   reported in `applied` so that the import states what a human changed.
+ * @param {object} [input.statusByClass] selection `class` -> AGSC-02-23 `status`:
+ *   the editorial state a whole class is imported at, stated once. The
+ *   clean-room `draftClasses` guard is applied first and is never overridden.
  * @param {object} options
  * @param {string} options.operator the AGSC-08-01 actor (`human:<id>`).
  * @param {string} options.date the AGSC-02-06 date of the import.
@@ -119,16 +124,60 @@ function altFor(kind, title, alt) {
  *            findings:Array<object>, dropped:object, excisions:Array<object>,
  *            items:Array<object>}}
  */
+/**
+ * The caller's `status` decision for one selection row, as a pure function of the
+ * three inputs that can hold a record BACK — and of nothing else, so that the
+ * pre-pass that builds the published set and the mapping loop cannot disagree
+ * (FV28-04).
+ *
+ * `draft` wins over all three, because every one of them is a reason to hold a
+ * record back and none is a licence to release one:
+ *   * the clean-room class of AGSC-08-17 (`draftClasses`) — always applied;
+ *   * a per-record correction a human made (an unverifiable citation, say);
+ *   * the caller's class-to-status table, which is how a corpus whose own `status`
+ *     values are a different editorial state is re-stated once instead of record by
+ *     record.
+ * With none of them the result is `undefined` and the record keeps the status the
+ * corpus gave it (`interchange/status.js`).
+ *
+ * @param {{slug:string, class?:string}} row one selection row.
+ * @param {object} corrections the `--corrections` map, by slug.
+ * @param {{draftClasses:string[], statusByClass:object}} tables
+ * @returns {string|undefined}
+ */
+function statusOverrideFor(row, corrections, tables) {
+  const slug = row.slug;
+  const classValue = row.class === undefined ? '' : row.class;
+  const correct = Object.prototype.hasOwnProperty.call(corrections, slug)
+    ? (corrections[slug] || {}) : {};
+  if (tables.draftClasses.includes(classValue) || correct.status === 'draft') return 'draft';
+  if (correct.status !== undefined) return correct.status;
+  return Object.prototype.hasOwnProperty.call(tables.statusByClass, classValue)
+    ? tables.statusByClass[classValue] : undefined;
+}
+
 function plan(input, options) {
   const findings = [];
   const draftClasses = options.draftClasses === undefined ? DRAFT_CLASSES : options.draftClasses;
   const licenseProse = options.licenseProse === undefined
     ? 'LicenseRef-AgenticSystemCore-Content-Use-1.0' : options.licenseProse;
   const prov = Object.freeze({ origin: 'imported', operator: options.operator });
-  const recitations = input.recitations || Object.create(null);
+  const corrections = input.corrections || Object.create(null);
+  const statusByClass = input.statusByClass || Object.create(null);
+  const correctionsApplied = [];
 
-  // AGSC-08-17: the three excluded files never enter, whatever the selection says.
-  findings.push(...cleanroom.check({ paths: input.paths || [] }));
+  // AGSC-08-17: the three excluded files never enter, whatever the selection
+  // says. That one of them EXISTS in the corpus being read is not a defect of
+  // this Bundle — the corpus is not the Bundle — so it is stated as a warning,
+  // with the evidence that it was seen and not copied. The rule itself is
+  // checked against the PLAN, below, where a violation would be real.
+  for (const path of [...new Set(input.paths || [])].sort(byCodePoint)) {
+    const name = path.slice(path.lastIndexOf('/') + 1);
+    if (!EXCLUDED_FILES.includes(name)) continue;
+    findings.push(finding('AGSC-E405',
+      `"${path}" is present in the source corpus and was NOT copied (AGSC-08-17)`,
+      { file: path, line: 1, severity: 'warn' }));
+  }
 
   // ------------------------------------------------------------ the selection
   const parsedSelection = selectionModule.parse(input.selection, { file: options.selectionFile });
@@ -136,7 +185,28 @@ function plan(input, options) {
 
   const byOldSlug = new Map();
   for (const file of input.cards || []) {
-    const card = oldsite.readCard(file);
+    // A `rewrite` correction is applied to the record's own BYTES, before it is
+    // read: one exact-string substitution per pair, so that a citation's title
+    // and the sentence that uses it are corrected by one mechanism and the whole
+    // Bundle stays reproducible from the corpus plus this file. A pair whose
+    // `from` is not present is a STALE correction and is reported, never ignored.
+    const { slug: oldSlug } = oldsite.slugOf(file.path);
+    const pairs = Object.prototype.hasOwnProperty.call(corrections, oldSlug)
+      ? ((corrections[oldSlug] || {}).rewrite || []) : [];
+    let markdown = String(file.markdown === undefined ? '' : file.markdown);
+    for (const pair of pairs) {
+      const from = String((pair || [])[0]);
+      const to = String((pair || [])[1]);
+      if (!markdown.includes(from)) {
+        findings.push(finding('AGSC-E901',
+          `the rewrite correction ${JSON.stringify(from)} matches nothing in "${file.path}" (AGSC-01-22)`,
+          { file: String(file.path), line: 1, slug: oldSlug }));
+        continue;
+      }
+      markdown = markdown.split(from).join(to);
+      correctionsApplied.push({ member: 'rewrite', slug: oldSlug });
+    }
+    const card = oldsite.readCard({ ...file, markdown });
     findings.push(...card.findings);
     byOldSlug.set(card.slug, card);
   }
@@ -153,6 +223,10 @@ function plan(input, options) {
       continue;
     }
     const slug = slugs.dedupe(slugs.isValid(row.slug) ? row.slug : slugs.slugify(row.slug), taken);
+    // `slug.dedupe` does not mutate the set it is given, so the set is grown HERE.
+    // Without this, two rows whose slugs collide would both take the same path and
+    // the second file would silently overwrite the first.
+    taken.add(slug);
     if (slug !== row.slug) {
       findings.push(finding('AGSC-E206',
         `slug "${row.slug}" collided and became "${slug}" in discovery order (AGSC-01-23)`,
@@ -161,6 +235,23 @@ function plan(input, options) {
     chosen.push({ row, card, slug });
   }
   const inSet = new Set(chosen.map((c) => c.slug));
+
+  // FV28-04: the PUBLISHED subset, decided BEFORE any body is rewritten.
+  // A body link may only point at a card that will have a route (AGSC-06-01), and a
+  // held-back card has none (AGSC-06-30) — so the status decision of every chosen
+  // record has to be known before the first record's body is mapped. It is the same
+  // decision the loop below applies, lifted into a pure pass over `chosen`, so the
+  // two cannot disagree: `statusFor` is called once here and once there with the
+  // same inputs and `status.js` is pure.
+  const statusOf = new Map(chosen.map(({ row, card, slug }) => [slug,
+    statusModule.status(card.record === undefined ? undefined : card.record.status, {
+      file: `content/concepts/${slug}.md`,
+      override: statusOverrideFor(row, corrections, { draftClasses, statusByClass }),
+      slug,
+    }).status]));
+  const publishedSet = new Set([...statusOf.entries()]
+    .filter(([, value]) => value !== 'draft' && value !== 'retired')
+    .map(([slug]) => slug));
 
   // ----------------------------------------------------------------- the items
   const writes = [];
@@ -175,9 +266,12 @@ function plan(input, options) {
   let attachmentCount = 0;
 
   for (const { row, card, slug } of chosen) {
-    const classValue = row.class === undefined ? '' : row.class;
-    const statusOverride = draftClasses.includes(classValue) ? 'draft' : undefined;
-    const recite = Object.prototype.hasOwnProperty.call(recitations, slug) ? recitations[slug] : {};
+    const correct = Object.prototype.hasOwnProperty.call(corrections, slug)
+      ? (corrections[slug] || {}) : {};
+    const statusOverride = statusOverrideFor(row, corrections, { draftClasses, statusByClass });
+    for (const key of ['title', 'status', 'promote', 'add']) {
+      if (correct[key] !== undefined) correctionsApplied.push({ member: key, slug });
+    }
 
     // The diagram first: its `alt` is the fallback the mapper needs, and the
     // compiled bytes are what AGSC-02-98 checks.
@@ -201,9 +295,11 @@ function plan(input, options) {
     const mapped = mapping.mapCard({ ...card, slug }, {
       inSet,
       prov,
+      publishedSet,
       statusOverride,
-      addSources: recite.add,
-      promoteSources: recite.promote,
+      addSources: correct.add,
+      promoteSources: correct.promote,
+      title: correct.title,
       diagramAlt: source === null ? undefined : diagrams.altFrom(source, { slug }),
     });
     findings.push(...mapped.findings);
@@ -218,17 +314,29 @@ function plan(input, options) {
     // named in `attachments[]` so that neither is an orphan (AGSC-E414) and both
     // are served at `/attachments/<slug>/<file>` (AGSC-06-01).
     if (compiled !== null && compiled.svg !== null) {
-      const alt = (mapped.frontmatter.diagram && mapped.frontmatter.diagram.alt)
-        || diagrams.altFrom(source, { slug });
-      mapped.frontmatter.attachments = [
-        { file: `${slug}.svg`, media_type: SVG_MEDIA_TYPE, alt: altFor('svg', mapped.frontmatter.title, alt) },
-        { file: `${slug}.diagram`, media_type: DSL_MEDIA_TYPE, alt: altFor('dsl', mapped.frontmatter.title, alt) },
-      ];
+      // AGSC-01-07 is explicit: the DSL source is committed at
+      // `content/diagrams/<slug>.diagram` and **a compiled `.svg` MUST NOT be
+      // committed** — it is produced into the build output. So the default
+      // import writes the SOURCE ONLY, and `diagram.file` (AGSC-02-13) names the
+      // SVG the emitter is to produce from it.
       writes.push({ path: `content/diagrams/${slug}.diagram`, text: source });
-      writes.push({ path: `content/attachments/${slug}/${slug}.svg`, text: compiled.svg });
-      writes.push({ path: `content/attachments/${slug}/${slug}.diagram`, text: source });
       diagramCount += 1;
-      attachmentCount += 2;
+      // AGSC-02-98 admits the same picture as an ATTACHMENT, with its DSL source
+      // beside it (R59) — a Bundle that must carry the rendered bytes in the
+      // repository, for a reader who never runs the build. The two rules pull in
+      // opposite directions, so the choice is the operator's and not this
+      // module's: `attachDiagrams` is off unless a caller asks for it.
+      if (options.attachDiagrams === true) {
+        const alt = (mapped.frontmatter.diagram && mapped.frontmatter.diagram.alt)
+          || diagrams.altFrom(source, { slug });
+        mapped.frontmatter.attachments = [
+          { file: `${slug}.svg`, media_type: SVG_MEDIA_TYPE, alt: altFor('svg', mapped.frontmatter.title, alt) },
+          { file: `${slug}.diagram`, media_type: DSL_MEDIA_TYPE, alt: altFor('dsl', mapped.frontmatter.title, alt) },
+        ];
+        writes.push({ path: `content/attachments/${slug}/${slug}.svg`, text: compiled.svg });
+        writes.push({ path: `content/attachments/${slug}/${slug}.diagram`, text: source });
+        attachmentCount += 2;
+      }
     } else if (mapped.frontmatter.diagram !== undefined) {
       // No picture, so no `diagram` key: AGSC-02-13 makes `diagram.file` the
       // compiled SVG, and naming one that does not exist would be a false claim.
@@ -237,7 +345,10 @@ function plan(input, options) {
 
     const frontmatter = mapping.ordered(mapped.frontmatter);
     writes.push({ path: mapped.path, text: itemFile(frontmatter, mapped.body) });
-    items.push({ slug, path: mapped.path, frontmatter, body: mapped.body, class: classValue });
+    items.push({
+      slug, path: mapped.path, frontmatter, body: mapped.body,
+      class: row.class === undefined ? '' : row.class,
+    });
   }
 
   // -------------------------------------------------------------- the clusters
@@ -260,7 +371,10 @@ function plan(input, options) {
       license_schema: options.licenseSchema === undefined ? 'CC0-1.0' : options.licenseSchema,
       operator: options.operator,
     },
-    build: { feed: true, out: 'www' },
+    // AGSC-01-18: `build.feed` is a RESERVED name of 1.1 and is `AGSC-E004` here,
+    // because no 1.0 rule pins the bytes of `/feed.xml`. `out` is the whole of
+    // `build` an importer may write.
+    build: { out: 'www' },
     site: { base: options.base, title: options.title },
     spec_version: options.specVersion,
     tags: { allowed: [...allTags].sort(byCodePoint) },
@@ -291,7 +405,12 @@ function plan(input, options) {
 
   writes.sort((a, b) => byCodePoint(a.path, b.path));
 
+  // AGSC-08-17 against the plan: if this import ever proposed to write one of the
+  // excluded files, that is an error about the Bundle it is building.
+  findings.push(...cleanroom.check({ paths: writes.map((w) => w.path) }));
+
   return {
+    corrections: correctionsApplied,
     dropped: { bodyLinks: droppedBodyLinks, related: droppedRelated },
     excisions,
     findings: sortFindings(findings),
@@ -301,6 +420,7 @@ function plan(input, options) {
       cards_read: byOldSlug.size,
       chosen: chosen.length,
       clusters: built.clusters.length,
+      corrections: correctionsApplied.length,
       deferred: parsedSelection.rows.filter((r) => r.decision === 'DEFER').length,
       diagrams: diagramCount,
       draft: items.length - published,
@@ -314,6 +434,7 @@ function plan(input, options) {
       stable: published,
       tags_allowed: config.tags.allowed.length,
     },
+    writes,
   };
 }
 

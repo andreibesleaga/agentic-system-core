@@ -1,0 +1,23 @@
+{
+  "bundle": {
+    "id": "with-assets",
+    "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+    "license_schema": "CC0-1.0",
+    "operator": "human:andreibesleaga"
+  },
+  "build": {
+    "out": "www"
+  },
+  "site": {
+    "base": "https://assets.example/",
+    "tagline": "A Bundle with an asset on disk.",
+    "title": "Bundle with assets"
+  },
+  "spec_version": "1.0.0-rc.5",
+  "tags": {
+    "allowed": [
+      "agents",
+      "patterns"
+    ]
+  }
+}

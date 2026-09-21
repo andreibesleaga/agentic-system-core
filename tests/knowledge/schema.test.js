@@ -15,12 +15,45 @@ test('all three shipped schemas compile', () => {
   }
 });
 
+// `title` is compiled as part of the WHOLE item schema since rc.5 (FV28-01): it now
+// carries `$ref: "#/$defs/single_line"`, and a `$ref` resolves against the document
+// that defines it, never against a subschema lifted out of it.
+const itemWith = (overrides) => ({
+  type: 'concept', kind: 'explainer', title: 'Supervisor',
+  prov: { origin: 'human', operator: 'human:a' }, ...overrides,
+});
+
 test('lengths are counted in code points (AGSC-02-24, frontmatter-0030)', () => {
-  const v = schema.compile(raw.item.properties.title);
-  assert.strictEqual(v('😀'.repeat(120)).valid, true);
-  const over = v('😀'.repeat(121));
+  const v = schema.compile(raw.item);
+  assert.strictEqual(v(itemWith({ title: '😀'.repeat(120) })).valid, true);
+  const over = v(itemWith({ title: '😀'.repeat(121) }));
   assert.strictEqual(over.valid, false);
-  assert.strictEqual(over.errors[0].keyword, 'maxLength');
+  assert.deepStrictEqual(over.errors.map((e) => [e.path, e.keyword]), [['/title', 'maxLength']]);
+});
+
+test('an authored single-line string carries no line break (AGSC-02-24, FV28-01)', () => {
+  const v = schema.compile(raw.item);
+  const hostile = 'Handoff\n\n## Injected Section\n\n- [Fake](https://evil.example/): pwned';
+  const bad = v(itemWith({ title: hostile }));
+  assert.strictEqual(bad.valid, false);
+  assert.deepStrictEqual(bad.errors.map((e) => [e.path, e.keyword]), [['/title', 'pattern']]);
+  // Every one of the five classes, and only those five.
+  for (const ch of ['\u0000', '\t', '\n', '\r', '\u001f', '\u007f', '\u0085', '\u2028', '\u2029']) {
+    assert.strictEqual(v(itemWith({ title: `Hand${ch}off` })).valid, false, JSON.stringify(ch));
+  }
+  for (const ch of ['\u0020', '\u00a0', '\u2027', '\u202a', '\ufeff', '\u{1F600}', '\u2014']) {
+    assert.strictEqual(v(itemWith({ title: `Hand${ch}off` })).valid, true, JSON.stringify(ch));
+  }
+  // The same class on the other authored members a writer puts on a line.
+  assert.strictEqual(v(itemWith({
+    description: `A concept description long enough to pass the forty code-point bound\u2028forged`,
+  })).valid, false);
+  assert.strictEqual(v(itemWith({
+    diagram: { file: 'supervisor.svg', alt: 'a\nb' },
+  })).valid, false);
+  assert.strictEqual(v(itemWith({
+    sources: [{ resource: 'https://example.org/x', title: 'a\nb' }],
+  })).valid, false);
 });
 
 test('oneOf reports the discriminated branch, not every branch', () => {

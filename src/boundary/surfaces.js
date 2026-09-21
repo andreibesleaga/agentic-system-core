@@ -32,10 +32,23 @@ const MCP_PROTOCOL_VERSION = '2025-11-25';
 const MCP_PROTOCOL_MIN_VERSION = '2025-03-26';
 /** AGSC-11-16: the external MCP revision the `mcp` SURFACE declares. */
 const MCP_SURFACE_VERSION = '2026-07-28';
-/** AGSC-11-16: the WebMCP Draft Community Group Report date. */
+/**
+ * AGSC-11-16: the WebMCP Draft Community Group Report date this node targets by
+ * default. As amended at rc.5 (V9A-10) the rule pins NO particular date — "any such
+ * date is conforming" — because the report is a living document. This constant is
+ * therefore a default, not a pin: `declare({webmcpVersion})` echoes whatever date the
+ * node targets, and `bnd-0031` asserts the echo and the `YYYY-MM-DD` shape, never a
+ * value.
+ */
 const WEBMCP_SURFACE_VERSION = '2026-09-15';
+/** AGSC-11-16: the shape every `agsc-surface-version` of `webmcp` takes. */
+const WEBMCP_VERSION_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u;
 /** AGSC-11-18 / MCP SEP-2133: the extension identifier this node advertises. */
 const MCP_EXTENSION_ID = 'com.agenticsystemcore/knowledge';
+/** AGSC-11-18, rc.5 (SITE1-01): the ONE member of this extension's settings object. */
+const MCP_EXTENSION_SETTINGS_MEMBERS = Object.freeze(['linkset']);
+/** AGSC-06-07: the discovery document's route, which is that member's value. */
+const WELLKNOWN_ROUTE = '/.well-known/knowledge-linkset';
 
 /** AGSC-06-10: the extension relation URIs of the boundary chapter. */
 const REL = Object.freeze({
@@ -108,22 +121,35 @@ function absolute(base, route) {
 }
 
 /**
- * declare({ base, emitted, mcpServed, surfaces }) -> link objects
+ * declare({ base, emitted, mcpServed, surfaces, webmcpVersion }) -> link objects
  * AGSC-11-16. One `rel#surface` link per surface actually served, ordered by
  * `href` within the relation (AGSC-06-10). `emitted[]` names the routes the
  * writer emitted; `mcpServed` says whether the local tool server is served;
  * `surfaces[]` is the configuration for the three declaration-only surfaces.
+ *
+ * `webmcpVersion` is the `YYYY-MM-DD` Draft Community Group Report date this node
+ * targets. It is an INPUT, not a constant: AGSC-11-16 as amended at rc.5 (V9A-10)
+ * conforms any such date, and before rc.5 the engine hard-coded `2026-09-15` here
+ * while the live draft already read a later date — a node targeting the current
+ * report failed the (then required) vector `bnd-0012`. Vector `bnd-0031` asserts
+ * only that the declared value echoes the input and matches the shape.
+ * A value that is not a `YYYY-MM-DD` date is not declared: the default — itself a
+ * conforming date — stands, because AGSC-11-16 admits no other form and this
+ * specification registers no code for a malformed one.
  */
 function declare(options) {
   const opts = options || {};
   const base = opts.base || '/';
   const emitted = new Set(opts.emitted || []);
+  const webmcpVersion = WEBMCP_VERSION_RE.test(String(opts.webmcpVersion || ''))
+    ? String(opts.webmcpVersion) : WEBMCP_SURFACE_VERSION;
   const links = [];
   for (const [name, spec] of Object.entries(BUILT_IN)) {
     const served = name === 'mcp' ? Boolean(opts.mcpServed) : (spec.emitted !== null && emitted.has(spec.emitted));
     if (!served) continue;
     const link = { 'agsc-access': [spec.access], 'agsc-surface': [name], href: absolute(base, spec.route), rel: REL.surface };
-    if (spec.version !== null) link['agsc-surface-version'] = [spec.version];
+    const version = name === 'webmcp' ? webmcpVersion : spec.version;
+    if (version !== null) link['agsc-surface-version'] = [version];
     links.push(Object.freeze(sortMembers(link)));
   }
   for (const entry of opts.surfaces || []) {
@@ -222,9 +248,69 @@ function acceptedHrefs(declared, findings) {
   return Object.freeze(accepted(declared, findings).map((d) => d.href));
 }
 
-/** AGSC-11-18, the MCP half: what `server/discover` advertises in its capabilities. */
-function mcpCapabilities() {
-  return Object.freeze({ extensions: Object.freeze([MCP_EXTENSION_ID]) });
+/**
+ * AGSC-11-18, the MCP half: what `server/discover` advertises in its capabilities,
+ * and what the per-request capabilities carry. The two are THE SAME OBJECT — revision
+ * `2026-07-28` has no initialization handshake, so there is no moment at which they
+ * could differ (V9A-04).
+ *
+ * `extensions` is a MAP of extension identifier to that extension's settings object,
+ * as MCP defines it. At rc.5 (SITE1-01) AGSC-11-18 pins this node's settings object:
+ * exactly one member, `linkset`, the absolute `https` URL of `/.well-known/
+ * knowledge-linkset` (AGSC-06-07), and no other. Vector `bnd-0035`.
+ *
+ * Before rc.5 this function returned the bare identifier LIST, which no rule pinned.
+ * `bnd-0027` stated that list as its expectation and was withdrawn for it at rc.5
+ * (AGSC-00-16, RC5-C); its case is `bnd-0036`, which states the map, so nothing reads
+ * this return value as a key set any more. `bnd-0031`'s `mcp_extensions` member is the
+ * list of identifiers advertised and is the map's key set by definition.
+ *
+ * @param {{base?:string}} options  the node's `site.base`
+ */
+function mcpCapabilities(options) {
+  const base = (options || {}).base || '/';
+  return Object.freeze({
+    extensions: Object.freeze({
+      [MCP_EXTENSION_ID]: Object.freeze({ linkset: absolute(base, WELLKNOWN_ROUTE) }),
+    }),
+  });
+}
+
+/**
+ * checkMcpExtensions(extensions, { base }) -> Finding[]
+ * AGSC-11-18 as amended at rc.5: "a node MUST emit that member and MUST emit no
+ * other". A missing, wrong or additional member is `AGSC-E210` from
+ * `validate-wellknown` — the same code AGSC-11-16/11-19 already give a declaration a
+ * node cannot back. Vector `bnd-0035`.
+ */
+function checkMcpExtensions(extensions, options) {
+  const base = (options || {}).base || '/';
+  const findings = [];
+  const map = extensions && typeof extensions === 'object' && !Array.isArray(extensions) ? extensions : null;
+  const reject = (why) => findings.push(finding('AGSC-E210', 'error',
+    { message: `the MCP extensions map is refused: ${why} (AGSC-11-18)`, reason: why }));
+  if (map === null) {
+    reject('extensions must be a map of extension identifier to settings object');
+    return Object.freeze(findings);
+  }
+  const settings = map[MCP_EXTENSION_ID];
+  if (settings === undefined || settings === null || typeof settings !== 'object' || Array.isArray(settings)) {
+    reject(`${MCP_EXTENSION_ID} must carry a settings object`);
+    return Object.freeze(findings);
+  }
+  for (const member of Object.keys(settings)) {
+    if (!MCP_EXTENSION_SETTINGS_MEMBERS.includes(member)) {
+      reject(`${JSON.stringify(member)} is not a member of this extension's settings object`);
+    }
+  }
+  for (const member of MCP_EXTENSION_SETTINGS_MEMBERS) {
+    if (!Object.prototype.hasOwnProperty.call(settings, member)) reject(`${member} is REQUIRED`);
+  }
+  const expected = absolute(base, WELLKNOWN_ROUTE);
+  if (Object.prototype.hasOwnProperty.call(settings, 'linkset') && settings.linkset !== expected) {
+    reject(`linkset must be ${expected}, not ${JSON.stringify(settings.linkset)}`);
+  }
+  return Object.freeze(findings);
 }
 
 module.exports = {
@@ -232,6 +318,7 @@ module.exports = {
   BUILT_IN,
   DECLARATION_ONLY,
   MCP_EXTENSION_ID,
+  MCP_EXTENSION_SETTINGS_MEMBERS,
   MCP_PROTOCOL_MIN_VERSION,
   MCP_PROTOCOL_VERSION,
   MCP_SURFACE_VERSION,
@@ -244,9 +331,12 @@ module.exports = {
   VERSION_REQUIRED,
   WEBMCP_ANNOTATIONS,
   WEBMCP_SURFACE_VERSION,
+  WEBMCP_VERSION_RE,
+  WELLKNOWN_ROUTE,
   accepted,
   acceptedHrefs,
   acceptedSurfaces,
+  checkMcpExtensions,
   declare,
   mcpCapabilities,
   validate,

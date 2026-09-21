@@ -51,7 +51,10 @@ const EXTERNAL_PROPERTIES = Object.freeze([
   ['prov:wasDerivedFrom', '@id'], // AGSC-05-16
   ['rdfs:seeAlso', '@id'], // AGSC-11-12
   ['schema:license', null], // AGSC-06-18
-  ['schema:usageInfo', '@id'], // AGSC-06-18
+  // AGSC-05-31 form (c) as amended at rc.5 (V9A-02): `schema:license` and
+  // `schema:usageInfo` are `xsd:string` literals, never IRIs. Before rc.5 this row
+  // read `'@id'`, which compacted the Content Use Terms identifier as a relative IRI.
+  ['schema:usageInfo', null], // AGSC-06-18, AGSC-05-26
   ['skos:altLabel', null], // AGSC-05-17
   ['skos:broader', '@id'], // AGSC-05-20
   ['skos:definition', null], // AGSC-05-27

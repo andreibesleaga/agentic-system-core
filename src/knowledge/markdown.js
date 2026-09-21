@@ -135,7 +135,7 @@ function scan(body) {
  * @param {string} body
  * @returns {{html:string, headings:Array, anchors:string[], fences:Array, links:Array}}
  */
-function render(body) {
+function render(body, options = {}) {
   const scanned = scan(body);
   // AGSC-03-13 anchors are ours, so the heading tag carries the id we computed.
   let heading = 0;
@@ -143,6 +143,30 @@ function render(body) {
     if (token.type !== 'heading_open') continue;
     token.attrSet('id', scanned.anchors[heading]);
     heading += 1;
+  }
+  // AGSC-03-11 + AGSC-06-01 (added at rc.5, FV28-04): the OPTIONAL href resolver.
+  // A body reference is authored in the BUNDLE's geometry
+  // (`content/concepts/a.md` → `content/concepts/b.md`, AGSC-03-12's normal form)
+  // and the page is served in the ROUTE geometry (`/concepts/a/` → `/concepts/b/`),
+  // and the two are different — so no authored spelling resolves in both and the
+  // writer that emits the page has to map one onto the other. The MAPPING is the
+  // caller's, because a route set is Distribution's (AGSC-06-01) and this module is
+  // Knowledge; this function only applies it. A resolver that answers `null` leaves
+  // the target exactly as authored: a writer never invents a link.
+  const resolveHref = typeof options.href === 'function' ? options.href : null;
+  if (resolveHref !== null) {
+    const rewriteAll = (tokens) => {
+      for (const token of tokens) {
+        if (token.children) rewriteAll(token.children);
+        const attribute = token.type === 'link_open' ? 'href' : (token.type === 'image' ? 'src' : null);
+        if (attribute === null) continue;
+        const current = token.attrGet(attribute);
+        if (current === null) continue;
+        const next = resolveHref(current);
+        if (typeof next === 'string' && next !== '') token.attrSet(attribute, next);
+      }
+    };
+    rewriteAll(scanned.tokens);
   }
   const html = md.renderer.render(scanned.tokens, md.options, {});
   return {

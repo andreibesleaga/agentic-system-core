@@ -62,6 +62,67 @@ function isWellFormed(s) {
   return s.isWellFormed();
 }
 
+// ---------------------------------------------------------------------------
+// AGSC-02-24 as amended at rc.5 (FV28-01): AUTHORED SINGLE-LINE STRINGS.
+//
+// A `title`, a `description`, a `tags[]` value, a `diagram.alt`, an
+// `attachments[].alt`, a `sources[].title` — every authored string a writer puts
+// on a LINE of a line-oriented text surface (`/llms.txt`, `/llms-full.txt`,
+// `/now.md`, the Harness files, `llms-ctx.txt`, `robots.txt`, `_headers`,
+// `_redirects`, `/.well-known/security.txt`) — MUST NOT carry a C0 control
+// (U+0000–U+001F), U+007F, U+0085, U+2028 or U+2029. A line break inside such a
+// value creates a NEW line in those dialects: a forged `## ` heading, a forged
+// link entry, a forged response header. AGSC-01-29 fences the item BODY as data;
+// it never fenced the title the layout puts on a line of its own.
+//
+// TWO layers, and this module is the character set both of them read:
+//   1. VALIDATION — `schema/item.schema.json#/$defs/single_line` carries the same
+//      class as a `pattern`, so the fault is `AGSC-E204` at lint (§9.4's
+//      precedence paragraph gives every pattern violation that code). The suite
+//      asserts, code point by code point, that the schema and this module agree.
+//   2. NEUTRALISATION — every writer of a line-oriented surface calls
+//      `singleLine()` on what it interpolates, so a Bundle that reached the
+//      writer WITHOUT passing validation (an imported Bundle AGSC-01-22, a
+//      channel contribution AGSC-01-30…33, an agent-lane Proposal AGSC-08-28)
+//      still cannot inject structure. Neutralisation is one U+0020 per forbidden
+//      code point — deterministic, idempotent, and a no-op on every conforming
+//      string, so no emitted byte of a conforming Bundle moves.
+//
+// The class uses only character escapes and a negated class: no lookahead, no
+// back-reference, no quantifier-based bound (AGSC-01-35, AGSC-02-24), so it is
+// the ECMA-262 dialect JSON Schema 2020-12 names and transliterates mechanically
+// to the `\x{…}` escapes of RE2, Go and Rust.
+
+/**
+ * The forbidden set, written ONCE, as regular-expression escapes. The anchored
+ * `pattern` the schemas carry and the global matcher the neutraliser uses are both
+ * built from it, so the two layers cannot drift.
+ */
+const SINGLE_LINE_CLASS = '\\x00-\\x1F\\x7F\\x85\\u2028\\u2029';
+
+/** The negated character class, ANCHORED — the exact `pattern` the schemas carry. */
+const SINGLE_LINE_PATTERN = `^[^${SINGLE_LINE_CLASS}]*$`;
+
+/** The same class, unanchored and global, for the neutraliser. */
+const SINGLE_LINE_FORBIDDEN = new RegExp(`[${SINGLE_LINE_CLASS}]`, 'gu');
+
+/** AGSC-02-24 (rc.5, FV28-01): true when `s` carries no forbidden code point. */
+function isSingleLine(s) {
+  SINGLE_LINE_FORBIDDEN.lastIndex = 0;
+  return !SINGLE_LINE_FORBIDDEN.test(String(s == null ? '' : s));
+}
+
+/**
+ * AGSC-02-24 (rc.5, FV28-01): the writer-side neutralisation — one U+0020 per
+ * forbidden code point. Total, idempotent, and the identity on every conforming
+ * string. `null` and `undefined` become the empty string, because a writer that
+ * has nothing to interpolate emits nothing, never the word "null".
+ */
+function singleLine(s) {
+  SINGLE_LINE_FORBIDDEN.lastIndex = 0;
+  return String(s == null ? '' : s).replace(SINGLE_LINE_FORBIDDEN, ' ');
+}
+
 module.exports = {
   nfc,
   codePointLength,
@@ -69,5 +130,8 @@ module.exports = {
   compareUtf16,
   checkCombining,
   isWellFormed,
+  isSingleLine,
+  singleLine,
+  SINGLE_LINE_PATTERN,
   COMBINING_BOUND: 256,
 };

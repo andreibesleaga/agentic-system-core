@@ -196,6 +196,17 @@ function profileRecognisedWithoutHeaders(response) {
 }
 
 /**
+ * `federation.max_bytes` — AGSC-11-10(f), added at rc.5. Its bounds are the ones
+ * `schema/config.schema.json` declares (`minimum` 65536, `maximum` 268435456,
+ * `default` 33554432). It is NOT in `federation.FEDERATION_PARAMS`, because that
+ * table is the WALK parameter set whose exact five members vector `bnd-0023`
+ * asserts as the effective defaults; `max_bytes` caps an artefact's size and is
+ * not one of them. It is range-checked here so that a Bundle carrying the
+ * schema's own default is not reported as naming an unknown parameter.
+ */
+const FEDERATION_MAX_BYTES = Object.freeze({ default: 33554432, max: 268435456, min: 65536 });
+
+/**
  * checkBoundaryConfig(config) -> Finding[]
  * AGSC-11-01: every numeric or enumerated parameter of the boundary chapter
  * lies between the schema minimum and the stated maximum; out of range or
@@ -211,7 +222,7 @@ function checkBoundaryConfig(config) {
     } else {
       for (const [key, value] of Object.entries(federationConfig)) {
         if (/^x-[a-z0-9]+-/u.test(key)) continue;
-        const range = federation.FEDERATION_PARAMS[key];
+        const range = key === 'max_bytes' ? FEDERATION_MAX_BYTES : federation.FEDERATION_PARAMS[key];
         if (range === undefined) {
           findings.push(finding('AGSC-E209', 'error', {
             key: `federation.${key}`,
@@ -299,6 +310,7 @@ module.exports = {
   CONTRIBUTE_MODES,
   CORS_HEADERS,
   DESCRIBEDBY_LINK_HEADER,
+  FEDERATION_MAX_BYTES,
   FORBIDDEN_HEADERS,
   LINK_KEYS,
   NO_CACHE_ROUTES,

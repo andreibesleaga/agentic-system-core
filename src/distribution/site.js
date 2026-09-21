@@ -21,9 +21,10 @@
 
 const { createHash } = require('node:crypto');
 const { canonicalize } = require('../knowledge/jcs.js');
-const { nfc, compareCodePoint } = require('../knowledge/unicode.js');
+const { nfc, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const chunks = require('../knowledge/chunks.js');
+const linksModule = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
 const jsonldView = require('../knowledge/jsonld.js');
 const nquadsView = require('../knowledge/nquads.js');
@@ -108,6 +109,59 @@ function routeOf(item) {
   return `/${plural}/${item.slug}/`;
 }
 
+/** The Bundle-relative path of an item, derived when the record carries none. */
+function pathOf(item) {
+  if (typeof item.path === 'string' && item.path !== '') return item.path;
+  return `content/${TYPE_PLURAL[item.type] || TYPE_PLURAL.concept}/${item.slug}.md`;
+}
+
+/**
+ * AGSC-03-11 + AGSC-06-01 (added at rc.5, FV28-04): map ONE item's body references
+ * onto the routes this build emits.
+ *
+ * A body reference is authored in the BUNDLE's geometry — `content/concepts/a.md`
+ * reaches `content/concepts/b.md` as `b`, `b.md` or `../concepts/b.md`, which is the
+ * normal form AGSC-03-12 normalises a wikilink to — and the page is served in the
+ * ROUTE geometry, where `/concepts/a/` reaches `/concepts/b/` as `../b/`. The two
+ * geometries are different, so NO authored spelling resolves in both, and a writer
+ * that copied the authored target into the page emitted a link to nothing. That is
+ * FV28-04: `agsc lint` passed (AGSC-03-11 was satisfied), and the page 404ed.
+ *
+ * The mapping is total and conservative:
+ *   * an external target (AGSC-03-11: "never resolved at build time"), a
+ *     fragment-only target and a query-only target are returned unchanged;
+ *   * a target that resolves to a PUBLISHED item becomes that item's route plus the
+ *     fragment it carried;
+ *   * anything else — an asset under `content/assets/` (AGSC-06-01 emits no route
+ *     for one), a draft or release-gated item (AGSC-06-30), a target that resolves
+ *     to nothing — is returned unchanged, and the dangling-link guard below reports
+ *     it as `AGSC-E901`. A writer never invents a route.
+ *
+ * @param {object} item the flattened item whose body is being rendered.
+ * @param {Map<string,object>} byPath every PUBLISHED item, by Bundle-relative path.
+ * @returns {(target:string)=>(string|null)} `null` means "leave it alone".
+ */
+function bodyHrefResolver(item, byPath) {
+  const fromDir = linksModule.dirOf(pathOf(item));
+  return (target) => {
+    const raw = String(target);
+    if (raw === '' || raw.startsWith('#') || raw.startsWith('?')) return null;
+    if (linksModule.isExternalTarget(raw)) return null;
+    if (raw.startsWith('/')) return null;
+    const hash = raw.indexOf('#');
+    const relative = hash < 0 ? raw : raw.slice(0, hash);
+    const fragment = hash < 0 ? '' : raw.slice(hash);
+    if (relative === '') return null;
+    if (linksModule.bodyPathError(relative, fromDir) !== null) return null;
+    const resolved = linksModule.resolveInside(fromDir, relative);
+    // AGSC-03-11 as amended at rc.5 (R-04): `<slug>` and `<slug>.md` name the same
+    // item, and the extension-less form is what wikilink normalisation produces.
+    const target1 = byPath.get(resolved) || byPath.get(`${resolved}.md`);
+    if (target1 === undefined) return null;
+    return `${routeOf(target1)}${fragment}`;
+  };
+}
+
 /**
  * AGSC-06-19: `sitemap.xml` lists every published route with `lastmod` from the
  * build instant, ordered by URL.
@@ -128,8 +182,12 @@ function robots(base, options = {}) {
   const policy = legal
     ? 'the same policy as /.well-known/tdmrep.json and /legal/'
     : 'the same policy as /.well-known/tdmrep.json';
+  // AGSC-02-24 (rc.5, FV28-01): RFC 9309 is line-oriented — a line break in `base`
+  // would forge a directive. `base` is pattern-bounded by AGSC-01-19; the writer
+  // neutralises anyway, because a writer may receive a configuration it did not
+  // validate.
   return `User-agent: *\n# Content Signals Policy: ${policy}\n`
-    + `Content-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: /\n\nSitemap: ${discovery.href(base, '/sitemap.xml')}\n`;
+    + `Content-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: /\n\nSitemap: ${singleLine(discovery.href(base, '/sitemap.xml'))}\n`;
 }
 
 /** AGSC-06-18, dialect 2: the TDM reservation, at its well-known location only. */
@@ -144,8 +202,9 @@ function tdmrep(base) {
  */
 function securityTxt(base, expires, options = {}) {
   const legal = options.legal === undefined ? true : Boolean(options.legal);
-  const policy = legal ? `Policy: ${discovery.href(base, '/legal/')}\n` : '';
-  return `${policy}Expires: ${expires}\nPreferred-Languages: en\n`;
+  // RFC 9116 is line-oriented in the same way (AGSC-02-24, rc.5, FV28-01).
+  const policy = legal ? `Policy: ${singleLine(discovery.href(base, '/legal/'))}\n` : '';
+  return `${policy}Expires: ${singleLine(expires)}\nPreferred-Languages: en\n`;
 }
 
 /** AGSC-06-02: the two machine views of an item. */
@@ -174,12 +233,63 @@ function readLicenseContent(ports) {
 }
 
 /**
- * AGSC-06-21, the half no writer measured (V9D-A1): "Budgets are normative and MUST
- * fail the build when exceeded: ≤100 KB per HTML page; ≤1 KB of `search.json` per
- * published item and ≤500 KB absolute at or below 500 items; ≤60 s build per 500
- * items … Exceeding a budget that no sharding rule relieves MUST fail the build."
+ * AGSC-01-07 / AGSC-02-13: the `.diagram` SOURCE of one item, read through the
+ * FileSystem port. The compiler and the allow-list live in `html.js#diagramFigure`,
+ * which is a pure template and owns no port; this function is the port read and
+ * nothing else. A missing or unreadable source yields `null`, and `html.js` then
+ * emits no figure — the page keeps its prose. The compiled `.svg` is NEVER written
+ * to a route (AGSC-06-01's route set carries none).
+ */
+/**
+ * AGSC-06-01 / AGSC-02-98 / AGSC-01-34: the bytes of `/attachments/<slug>/<file>`.
  *
- * All four are MEASURED here. The rule says a breach MUST FAIL the build, and
+ * Settled at rc.5 (work-order item 28). The route is in AGSC-06-01's route set and
+ * AR2-23 makes the served bytes "the hashed bytes of AGSC-05-29" — the authored file
+ * at `content/attachments/<slug>/<file>` — so the writer MUST produce it. Until now
+ * `site.js` listed it as unproduced with the reason "reaches `build` through no
+ * port", which was never true: `build` holds the FileSystem port, and the same file
+ * is already read through it by `verbs/_helpers.js#attachmentFacts` for the
+ * injection scan. The consequence was an `AGSC-E901` on every page carrying an
+ * attachment, because `html.js` links each one as an `<img src="/attachments/…">` —
+ * the eight ENG-1 saw under `--attach-diagrams`.
+ *
+ * The file is read as a Buffer, not as text: an attachment may be any media type
+ * AGSC-02-98 admits, and re-encoding one through a string would change its bytes and
+ * break the AGSC-01-34 digest comparison.
+ */
+function readAttachment(ports, slug, file) {
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return null;
+  const path = `content/attachments/${slug}/${file}`;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists(path)) return null;
+    return fs.readFile(path);
+  } catch (e) {
+    // Absent, unreadable or outside the root. AGSC-01-34 reports the absence as
+    // AGSC-E413 from the lint lane; this function invents no bytes.
+    return null;
+  }
+}
+
+function readDiagramSource(ports, slug) {
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return null;
+  const path = `content/diagrams/${slug}.diagram`;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists(path)) return null;
+    return String(fs.readFile(path, 'utf8'));
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * AGSC-06-21, the half no writer measured (V9D-A1): "Budgets are normative and MUST
+ * fail the build when exceeded: ≤100 KB per HTML page; ≤1 MB per index document;
+ * ≤60 s build per 500 items … Exceeding a budget that no sharding rule relieves MUST
+ * fail the build." (Three budgets since rc.5, ENG1-01; four until then.)
+ *
+ * All three byte/scale budgets are MEASURED here. The rule says a breach MUST FAIL the build, and
  * `spec/09-conformance.md` §9.4 registers NO code for a budget breach — so the
  * measurement is reported under `AGSC-E904`, the size-cap code, whose registry row
  * names AGSC-01-16 and AGSC-01-34 and not this rule. That is a compromise and it is
@@ -202,9 +312,25 @@ function readLicenseContent(ports) {
  * @returns {Array<object>} Findings; empty means every byte budget is met.
  */
 const BUDGET_HTML_BYTES = 100000;
-const BUDGET_SEARCH_PER_ITEM_BYTES = 1000;
-const BUDGET_SEARCH_TOTAL_BYTES = 500000;
+/**
+ * AGSC-06-21 as amended at rc.5 (ENG1-01): ONE index budget, ≤1 MB — 1,000,000
+ * decimal UTF-8 bytes — measured **per index document**, which is `/search.json` at
+ * or below 500 items and EACH `/search-<nn>.json` shard above it.
+ *
+ * It replaces `BUDGET_SEARCH_PER_ITEM_BYTES` (1 KB per published item) and
+ * `BUDGET_SEARCH_TOTAL_BYTES` (500 KB absolute), which were wrong twice over: the
+ * per-item figure and AGSC-06-23's "the body with fenced code blocks removed" were
+ * jointly unsatisfiable for any Bundle of more than roughly 200-word items, and
+ * their conjunction made the absolute clause unreachable at any count at or below
+ * 407 items. Summing a manifest and ten shards into one number was the third error:
+ * a manifest plus ten shards is eleven documents, each of which a reader downloads
+ * on its own.
+ */
+const BUDGET_INDEX_DOC_BYTES = 1000000;
 const BUDGET_MS_PER_500_ITEMS = 60000;
+
+/** AGSC-06-21: the routes the index budget measures, one document at a time. */
+const INDEX_DOCUMENT_ROUTE = /^\/search(?:-[0-9]+)?\.json$/u;
 
 function budgets(files, publishedCount) {
   const out = [];
@@ -218,23 +344,17 @@ function budgets(files, publishedCount) {
         { file: route }));
     }
   }
-  // The index: per-item and, at or below 500 items, absolute. Above 500 items the
-  // absolute bound is relieved by the sharding rule of AGSC-06-21, which
-  // `distribution/search.js` applies; the per-item bound never is.
-  let searchBytes = 0;
-  for (const route of files.keys()) {
-    if (/^\/search(?:-[0-9]+)?\.json$/u.test(route)) searchBytes += bytesOf(files.get(route));
-  }
-  if (publishedCount > 0 && searchBytes > publishedCount * BUDGET_SEARCH_PER_ITEM_BYTES) {
-    out.push(finding('AGSC-E904',
-      `search.json is ${searchBytes} bytes over ${publishedCount} published items; `
-      + 'AGSC-06-21 budgets 1 KB per published item',
-      { file: '/search.json' }));
-  }
-  if (publishedCount <= 500 && searchBytes > BUDGET_SEARCH_TOTAL_BYTES) {
-    out.push(finding('AGSC-E904',
-      `search.json is ${searchBytes} bytes; AGSC-06-21 budgets 500 KB absolute at or below 500 items`,
-      { file: '/search.json' }));
+  // One finding per index DOCUMENT that exceeds the bound, in code-point route order,
+  // so a build that ships eleven documents reports the ones that are too large and
+  // names each. `publishedCount` no longer takes part: the bound is on the artefact.
+  for (const route of [...files.keys()].sort(compareCodePoint)) {
+    if (!INDEX_DOCUMENT_ROUTE.test(route)) continue;
+    const size = bytesOf(files.get(route));
+    if (size > BUDGET_INDEX_DOC_BYTES) {
+      out.push(finding('AGSC-E904',
+        `${route} is ${size} bytes; AGSC-06-21 budgets 1 MB per index document`,
+        { file: route }));
+    }
   }
   return out;
 }
@@ -258,20 +378,65 @@ function timeBudget(elapsedMs, publishedCount) {
 }
 
 /**
- * Every site-absolute link the emitted HTML, `robots.txt` and `security.txt` carry,
- * with the route each one resolves to. A build that links a route it does not emit
- * ships a dangling internal link — the defect V9D-A6 found on `/legal/` — so this
- * is a function the suite asserts over, not a promise in a comment.
+ * The DIRECTORY a relative href on `route` is resolved against — what a browser
+ * uses as the base URL. `/a/b/index.html` is served at `/a/b/`, so its base is
+ * `/a/b/`; `/pages/x.md` is served at itself, so its base is `/pages/`.
+ */
+function baseDirOf(route) {
+  const r = String(route);
+  const withoutIndex = r.endsWith('/index.html') ? r.slice(0, -'index.html'.length) : r;
+  return withoutIndex.endsWith('/') ? withoutIndex : withoutIndex.slice(0, withoutIndex.lastIndexOf('/') + 1);
+}
+
+/**
+ * Resolve a relative site path against a base directory, `/`-separated, with `.`
+ * and `..` applied. `null` when it climbs above the site root — which is itself a
+ * link to nothing, and is reported as one.
+ */
+function resolveRelative(baseDir, relative) {
+  const out = baseDir.split('/').filter((s) => s !== '');
+  for (const segment of String(relative).split('/')) {
+    if (segment === '' || segment === '.') continue;
+    if (segment === '..') {
+      if (out.length === 0) return null;
+      out.pop();
+      continue;
+    }
+    out.push(segment);
+  }
+  const trailing = String(relative).endsWith('/') || String(relative) === '' ? '/' : '';
+  return `/${out.join('/')}${trailing}`;
+}
+
+/**
+ * Every internal link the emitted HTML, `robots.txt` and `security.txt` carry, with
+ * the route each one resolves to. A build that links a route it does not emit ships
+ * a dangling internal link — the defect V9D-A6 found on `/legal/` — so this is a
+ * function the suite asserts over, not a promise in a comment.
+ *
+ * RELATIVE hrefs are resolved against the page's own route since rc.5 (FV28-04).
+ * Before that this function read site-absolute hrefs only, and the patterns node
+ * shipped 186 relative links over 65 targets on 52 pages, not one of which resolved
+ * to an emitted route: the guard was blind to exactly the class of link an import
+ * produces. External targets (a scheme, a protocol-relative `//`), fragment-only
+ * and query-only targets are not internal links and are not collected.
  *
  * @param {Map<string,string>} files
- * @returns {Array<{from:string, href:string, route:string}>}
+ * @returns {Array<{from:string, href:string, route:(string|null)}>}
  */
 function internalLinks(files) {
   const out = [];
   const add = (from, href) => {
-    const clean = String(href).split('#')[0].split('?')[0];
-    if (clean === '' || !clean.startsWith('/')) return;
-    out.push({ from, href: String(href), route: clean });
+    const raw = String(href);
+    if (raw === '' || raw.startsWith('#') || raw.startsWith('?')) return;
+    if (linksModule.isExternalTarget(raw)) return;
+    const clean = raw.split('#')[0].split('?')[0];
+    if (clean === '') return;
+    out.push({
+      from,
+      href: raw,
+      route: clean.startsWith('/') ? clean : resolveRelative(baseDirOf(from), clean),
+    });
   };
   for (const route of [...files.keys()].sort(compareCodePoint)) {
     const text = String(files.get(route));
@@ -302,6 +467,7 @@ function internalLinks(files) {
  * `/x.json` is itself. `null` when the build emits nothing for it.
  */
 function resolvesTo(files, route) {
+  if (route === null || route === undefined) return null;
   if (files.has(route)) return route;
   const asIndex = route.endsWith('/') ? `${route}index.html` : `${route}/index.html`;
   if (files.has(asIndex)) return asIndex;
@@ -342,9 +508,10 @@ const UNPRODUCED_ROUTES = Object.freeze([
     'the published specification pages are the site repository\'s, not the engine\'s (AGSC-06-01)'],
   ['/about/, /changelog/',
     'these two pages are authored, not derived; no rule pins their bytes (AGSC-06-01)'],
-  ['/feed.xml', 'no rule pins the feed bytes; `build.feed` has nothing to switch on yet (AGSC-06-01)'],
-  ['/attachments/<slug>/<file>',
-    'the served bytes are the hashed bytes of AGSC-05-29 and reach `build` through no port (AGSC-02-98)'],
+  ['/feed.xml',
+    'reserved to 1.1 (AGSC-00-20): no 1.0 rule pins a feed\'s bytes, so the route cannot be'
+    + ' derived, and `build.feed` is a RESERVED configuration name a 1.0 tool rejects with'
+    + ' AGSC-E004 (AGSC-06-01, R-15 at rc.5) — it is not a switch an operator may set'],
   ['/graph/fragments/**',
     'OPTIONAL at 1.x; `knowledge/nquads.js#shard` produces them and no rule requires the route (AGSC-06-33)'],
   ['/<type-plural>/<slug>/<lang>/', 'no language variant exists in this Bundle (AGSC-01-13)'],
@@ -555,6 +722,10 @@ function build(bundle, ports, options = {}) {
       legal: hasLegal, licenseProse, nav: [['/', 'Home'], ['/search/', 'Search'], ['/compose/', 'Compose']], render,
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
+    // FV28-04: only a PUBLISHED item has a route (AGSC-06-30), so only a published
+    // item is a rewriting target; a body link to a draft keeps its authored spelling
+    // and is reported by the dangling-link guard.
+    const publishedByPath = new Map(items.map((i) => [pathOf(i), i]));
     /** One index route, paginated per AGSC-06-21 above 500 entries. */
     const putIndex = (route, title, description, entries) => {
       for (const page of paginate(route, entries)) {
@@ -580,7 +751,29 @@ function build(bundle, ports, options = {}) {
           '@context': SCHEMA_ORG, '@type': 'TechArticle',
           description: item.description == null ? '' : item.description, headline: name, url: canonical,
         });
-      put(`${routeOf(item)}index.html`, html.itemPage(item, { ...pageOptions, canonical, jsonld }));
+      // AGSC-02-13 as amended at rc.5: the compiled diagram is inlined in this page
+      // and emitted at no route. The source is read here, where the port is; the
+      // compile, the AGSC-02-98 allow-list and the `<figure>` are `html.js`'s.
+      const diagramSource = item.diagram == null ? null : readDiagramSource(ports, item.slug);
+      if (diagramSource !== null) {
+        findings.push(...html.diagramFigure(item, diagramSource).findings);
+      }
+      // AGSC-06-01: every attachment the item names is a route of its own, carrying
+      // the authored bytes AGSC-05-29 hashed.
+      for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
+        if (!attachment || typeof attachment.file !== 'string') continue;
+        const bytes = readAttachment(ports, item.slug, attachment.file);
+        if (bytes !== null) put(`/attachments/${item.slug}/${attachment.file}`, bytes);
+      }
+      // FV28-04: the body's references are rendered as the ROUTES this build emits,
+      // never as the authored Bundle paths, which resolve to nothing on the site.
+      put(`${routeOf(item)}index.html`, html.itemPage(item, {
+        ...pageOptions,
+        render: (body) => render(body, { href: bodyHrefResolver(item, publishedByPath) }),
+        canonical,
+        jsonld,
+        ...(diagramSource === null ? {} : { diagramSource }),
+      }));
     }
     // AGSC-06-01: `/` is the Bundle's own index route.
     putIndex('/', site.title == null ? indexFrontmatter.title : site.title,
@@ -657,8 +850,16 @@ function build(bundle, ports, options = {}) {
   // ------------------------------------------------------------ AGSC-06-01 routes with no producer
   if (full) for (const [route, why] of UNPRODUCED_ROUTES) skipped.push(`${route} (${why})`);
 
-  // AGSC-04-01: one deterministic order, independent of insertion order.
-  const ordered = new Map([...files.keys()].sort(compareCodePoint).map((k) => [k, files.get(k)]));
+  // AGSC-04-01: one deterministic order, independent of insertion order. The entries
+  // are MOVED rather than copied — `new Map([...files].sort())` holds the whole site
+  // twice at the moment the build peaks, which at 10 000 items is the difference V9D-H1
+  // measured (peak RSS 1 225 MiB). Nothing writes to `files` past this point.
+  const orderedKeys = [...files.keys()].sort(compareCodePoint);
+  const ordered = new Map();
+  for (const key of orderedKeys) {
+    ordered.set(key, files.get(key));
+    files.delete(key);
+  }
 
   // AGSC-06-21: the three byte budgets, MEASURED (V9D-A1). A breach MUST fail the
   // build, so these are `error` findings and `ci` exits 1 on them.
@@ -708,12 +909,21 @@ function write(files, ports) {
  * @returns {Array<object>} Findings; empty means the build is reproducible.
  */
 function verify(bundle, ports, options = {}) {
-  const first = build(bundle, ports, options).files;
+  // Only the DIGEST of the first build is retained, not its bytes: comparing two whole
+  // site maps held at once doubles the peak of the largest structure in the process
+  // (V9D-H1), and a SHA-256 mismatch is the same fact as a byte mismatch. The digest is
+  // computed here, in the host — the Distribution context writes but never hashes on
+  // its own account (AGSC-05-29).
+  const digest = (text) => createHash('sha256').update(String(text), 'utf8').digest('hex');
+  const first = new Map();
+  for (const [route, text] of build(bundle, ports, options).files) first.set(route, digest(text));
   const second = build(bundle, ports, options).files;
   const out = [];
   const keys = new Set([...first.keys(), ...second.keys()]);
   for (const key of [...keys].sort(compareCodePoint)) {
-    if (first.get(key) !== second.get(key)) {
+    const here = first.get(key);
+    const there = second.has(key) ? digest(second.get(key)) : undefined;
+    if (here !== there) {
       out.push(finding('AGSC-E602', `two builds of one Bundle differ at ${key} (AGSC-04-02)`, { file: key }));
     }
   }
@@ -722,9 +932,9 @@ function verify(bundle, ports, options = {}) {
 
 module.exports = {
   build, write, verify, routeOf, sitemap, robots, tdmrep, securityTxt,
-  publishedItems, jsonBytes, textBytes, paginate,
+  publishedItems, jsonBytes, textBytes, paginate, readAttachment, readDiagramSource,
   budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
-  BUDGET_HTML_BYTES, BUDGET_MS_PER_500_ITEMS,
-  BUDGET_SEARCH_PER_ITEM_BYTES, BUDGET_SEARCH_TOTAL_BYTES,
+  baseDirOf, resolveRelative, bodyHrefResolver,
+  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

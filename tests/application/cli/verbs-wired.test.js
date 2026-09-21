@@ -152,8 +152,11 @@ test('AGSC-07-04…09: compose closes a selection and reports the verdict', () =
   // pulled in and AGSC-07-07's AGSC-E803 warning names the gap — as a WARNING.
   assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.severity]), [['AGSC-E803', 'warn']]);
   assert.match(stderr, /verdict: \{"added":\[\],"conflicts":\[\],"hidden":\[\],"selection":\["supervisor"\],"valid":true/u);
-  // AGSC-07-12: the seven Harness files are not written, and the verdict says so.
-  assert.match(stderr, /harness_emitted: false/u);
+  // AGSC-07-12/07-13: the Harness IS written now, into `dist/harness/<name>/`, `<name>`
+  // being the selection key of `harness.harnessName` — and the note names the directory
+  // and the file count so no invocation is a silent success.
+  assert.match(stderr, /harness_emitted: true/u);
+  assert.match(stderr, /harness: dist\/harness\/[0-9a-f]{16}\/ \([0-9]+ files\)/u);
 });
 
 test('AGSC-07-03: a selection naming no item is AGSC-E802', () => {
@@ -169,11 +172,14 @@ test('AGSC-07-24: compose --from reads the saved composition, and reports when t
   assert.ok(Array.isArray(envelope.findings));
 });
 
-test('AGSC-07-18: compose --emit says the Harness targets are not written', () => {
+test('AGSC-07-18: compose --emit says the target renderings are not written', () => {
   const { envelope, exit, stderr } = run(['compose', 'supervisor', '--emit', 'gabbe', '--json'], workspace());
   assert.strictEqual(exit, 1);
-  assert.match(envelope.findings[0].message, /AGSC-07-18/u);
-  assert.match(stderr, /harness_emitted: false/u);
+  assert.ok(envelope.findings.some((f) => /AGSC-07-18/u.test(f.message)),
+    `no finding cites AGSC-07-18: ${JSON.stringify(envelope.findings)}`);
+  // AGSC-07-12: the seven files themselves ARE written now, so the note says true —
+  // what `--emit` adds is a target RENDERING of them, and that is what is absent.
+  assert.match(stderr, /harness_emitted: true/u);
 });
 
 // ---------------------------------------------------------------- propose / review / refresh
@@ -320,6 +326,32 @@ test('a distribution with no area handlers reports skip, never a silent pass', (
   // eslint-disable-next-line global-require
   const conformVerb = require('../../../src/application/cli/verbs/conform.js');
   assert.strictEqual(conformVerb.handlerFor('no-such-area'), null);
+});
+
+test('AGSC-09-02: a vector that does not pass is AGSC-E001, and a withdrawn one is silent', () => {
+  // eslint-disable-next-line global-require
+  const conformVerb = require('../../../src/application/cli/verbs/conform.js');
+  const results = [
+    { id: 'disc-0006', rule: 'AGSC-06-13a', status: 'pass' },
+    { id: 'disc-0008', rule: 'AGSC-06-14', status: 'fail', detail: 'sections: got ["Coordination"]' },
+    { id: 'lint-0026', rule: 'AGSC-04-19', status: 'skip', detail: 'no handler for lint-0026' },
+    { id: 'bnd-0005', rule: 'AGSC-11-09', status: 'skip', withdrawn: true, detail: 'withdrawn' },
+    { id: 'cli-0007', rule: 'AGSC-09-14a', status: 'fail' },
+  ];
+  const findings = conformVerb.findingsFor(results);
+  assert.deepStrictEqual(findings.map((f) => f.code), ['AGSC-E001', 'AGSC-E001', 'AGSC-E001']);
+  assert.ok(findings.every((f) => f.severity === 'error'));
+  assert.strictEqual(findings[0].message,
+    'vector disc-0008 (AGSC-06-14) fail: sections: got ["Coordination"]');
+  assert.strictEqual(findings[1].message, 'vector lint-0026 (AGSC-04-19) skip: no handler for lint-0026');
+  // A missing `detail` never prints `undefined`, and a WITHDRAWN vector is silent.
+  assert.strictEqual(findings[2].message, 'vector cli-0007 (AGSC-09-14a) fail: ');
+  assert.ok(!findings.some((f) => f.message.includes('bnd-0005')), 'a withdrawn vector was counted');
+  assert.deepStrictEqual(conformVerb.findingsFor(), []);
+
+  // And the real run over the fixture at Level 0 reports nothing.
+  const dir = workspace();
+  assert.deepStrictEqual(run(['conform', '--level', '0', '--json'], dir).envelope.findings, []);
 });
 
 // ---------------------------------------------------------------- helpers
@@ -510,4 +542,21 @@ test('AGSC-07-03/05a: a retired slug and a superseded hard dependency say what t
   assert.ok(r3, JSON.stringify(dangling.envelope.findings));
   assert.ok(r3.message.includes('absent') && r3.message.includes('not in the graph'), r3.message);
   assert.ok(!r3.message.includes('superseded'), r3.message);
+});
+
+test('AGSC-02-90: a .md file the port cannot decode is recorded as binary, never guessed', () => {
+  // eslint-disable-next-line global-require
+  const initVerb = require('../../../src/application/cli/verbs/init.js');
+  const port = {
+    readFile: (file) => {
+      if (file === 'broken.md') throw new Error('not decodable as UTF-8');
+      return `# ${file}\n`;
+    },
+    walk: () => ['note.md', 'broken.md', 'logo.png', '.git/config', 'node_modules/x/y.md'],
+  };
+  assert.deepStrictEqual(initVerb.filesUnder(port), [
+    { markdown: '# note.md\n', path: 'note.md' },
+    { binary: true, markdown: null, path: 'broken.md' },
+    { markdown: null, path: 'logo.png' },
+  ]);
 });

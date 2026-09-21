@@ -21,7 +21,7 @@
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 const { CallToolRequestSchema, ListToolsRequestSchema } = require('@modelcontextprotocol/sdk/types.js');
-const { MCP_EXTENSION_ID, MCP_PROTOCOL_VERSION } = require('../boundary/surfaces.js');
+const { MCP_PROTOCOL_VERSION, mcpCapabilities } = require('../boundary/surfaces.js');
 const { tools } = require('./mcp-tools.js');
 
 const SERVER_NAME = 'agentic-system-core';
@@ -36,9 +36,15 @@ const SERVER_NAME = 'agentic-system-core';
 function createServer(bundle, options) {
   const opts = options || {};
   const toolset = tools(bundle, opts);
+  // AGSC-11-18 as amended at rc.5 (SITE1-01): `extensions` is MCP's map of extension
+  // identifier to settings object, and this node's settings object carries exactly
+  // `linkset`. The Boundary context owns both the identifier and the object
+  // (`surfaces.mcpCapabilities`); the transport only carries what it is given, so
+  // `server/discover` and the per-request capabilities cannot drift apart.
+  const base = ((bundle && bundle.config && bundle.config.site) || {}).base;
   const server = new Server(
     { name: SERVER_NAME, version: opts.version || '0.0.0' },
-    { capabilities: { extensions: [MCP_EXTENSION_ID], tools: {} } },
+    { capabilities: { ...mcpCapabilities({ base }), tools: {} } },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => toolset.manifest());

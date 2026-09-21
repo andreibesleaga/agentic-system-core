@@ -31,40 +31,95 @@ const compose = require('./compose.js');
 const harness = require('./harness.js');
 
 /**
+ * Destructured deliberately. A page-support function may reference only names the
+ * bundle itself emits, and `compareCodePoint` is one of `compose.PORTABLE`; writing
+ * `compose.compareCodePoint(…)` instead would emit a function that reads a
+ * `compose` object no page holds — the defect `tests/arch/composition-portable.test.js`
+ * now checks for over PAGE_SUPPORT as well as over the two algebras.
+ */
+const { compareCodePoint } = compose;
+
+/**
  * AGSC-05-16 and the §3.1 table, read backwards: the RDF property a Link key is
  * exported as, so that a page can recover the authored keys from the published
  * `graph.jsonld` and needs no second surface. Every entry is a row of that table;
  * the two port keys are AGSC-05-30's datatype properties.
+ *
+ * The keys are LOCAL NAMES, not compact IRIs, because one graph document may spell
+ * the same property three ways and a reader has to answer to all three: a full IRI
+ * (`https://w3id.org/agentic-system-core/ns#uses` — what `graph.jsonld` actually
+ * carries for an `asc:` term, since its `@context` is the remote
+ * `/ns/context.jsonld` and nothing local expands it), a compact IRI (`asc:uses`,
+ * after a consumer has applied that context) and a bare term (`prefLabel`, which the
+ * context maps directly). `localOf` reduces all three to one name.
+ *
+ * The INVERSE properties of AGSC-05-17 (`asc:usedBy` and its siblings) are
+ * deliberately absent: they are derived, and an authored key is what the algebra
+ * reads (AGSC-03-02).
  */
 function graphPredicates() {
   return {
-    'asc:blockedBy': 'blocked-by',
-    'asc:contradicts': 'contradicts',
-    'asc:covers': 'covers',
-    'asc:decidedBy': 'decided-by',
-    'asc:excludes': 'excludes',
-    'asc:implements': 'implements',
-    'asc:uses': 'uses',
-    'asc:verifies': 'verifies',
-    'dcterms:replaces': 'supersedes',
-    'dcterms:requires': 'requires',
-    'prov:wasDerivedFrom': 'derived-from',
-    'skos:broader': 'broader',
-    'skos:narrower': 'narrower',
-    'skos:related': 'related',
+    blockedBy: 'blocked-by',
+    broader: 'broader',
+    contradicts: 'contradicts',
+    covers: 'covers',
+    decidedBy: 'decided-by',
+    excludes: 'excludes',
+    implements: 'implements',
+    narrower: 'narrower',
+    related: 'related',
+    replaces: 'supersedes',
+    requires: 'requires',
+    uses: 'uses',
+    verifies: 'verifies',
+    wasDerivedFrom: 'derived-from',
   };
 }
 
 /** AGSC-05-12/05-13: the `asc:` class of a node, read back as the item `type`. */
 function graphTypes() {
   return {
-    'asc:Cluster': 'cluster',
-    'asc:Concept': 'concept',
-    'asc:Episode': 'episode',
-    'asc:Gate': 'gate',
-    'asc:Lesson': 'lesson',
-    'asc:Procedure': 'procedure',
+    Cluster: 'cluster',
+    Concept: 'concept',
+    Episode: 'episode',
+    Gate: 'gate',
+    Lesson: 'lesson',
+    Procedure: 'procedure',
   };
+}
+
+/**
+ * The local name of a JSON-LD term: what follows the last `#`, `/` or `:`. A JSON-LD
+ * keyword (`@id`, `@type`) is returned unchanged, because a keyword is not a term.
+ *
+ * This is the one place the three spellings of a property meet, so a change of
+ * `@context` — which AGSC-05-06 permits and AGSC-06-32 points at a served file —
+ * cannot stop the page reading the graph.
+ */
+function localOf(name) {
+  const raw = String(name == null ? '' : name);
+  if (raw.charAt(0) === '@') return raw;
+  let cut = -1;
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw.charAt(i);
+    if (ch === '#' || ch === '/' || ch === ':') cut = i;
+  }
+  return cut === -1 ? raw : raw.slice(cut + 1);
+}
+
+/**
+ * Every value a node carries under a property whose LOCAL NAME is `local`, whatever
+ * that node spells the property as. Several spellings of one property in one node
+ * contribute together, in the node's own key order, so nothing is silently dropped.
+ */
+function nodeValues(node, local) {
+  const out = [];
+  if (node === null || typeof node !== 'object') return out;
+  for (const key of Object.keys(node)) {
+    if (localOf(key) !== local) continue;
+    for (const value of graphValues(node, key)) out.push(value);
+  }
+  return out;
 }
 
 /** The slug of an item IRI: the last non-empty path segment of `…/<plural>/<slug>/`. */
@@ -109,41 +164,44 @@ function itemsFromGraph(graph) {
   const out = [];
   for (const node of Array.isArray(nodes) ? nodes : []) {
     if (node === null || typeof node !== 'object') continue;
-    const classes = graphValues(node, '@type');
+    const classes = nodeValues(node, '@type');
     let type = '';
-    for (const name of classes) if (types[name] !== undefined) type = types[name];
+    for (const name of classes) {
+      const local = types[localOf(name)];
+      if (local !== undefined) type = local;
+    }
     if (type === '') continue;
     const item = {
-      description: graphValues(node, 'skos:definition')[0],
+      description: nodeValues(node, 'definition')[0],
       iri: node['@id'],
       slug: slugOfIri(node['@id']),
-      title: graphValues(node, 'skos:prefLabel')[0],
+      title: nodeValues(node, 'prefLabel')[0],
       type,
     };
     if (item.slug === '') continue;
-    for (const property of Object.keys(predicates)) {
-      const targets = graphValues(node, property).map(slugOfIri).filter((s) => s !== '');
-      if (targets.length > 0) item[predicates[property]] = targets;
+    for (const local of Object.keys(predicates)) {
+      const targets = nodeValues(node, local).map(slugOfIri).filter((s) => s !== '');
+      if (targets.length > 0) item[predicates[local]] = targets;
     }
     for (const port of ['consumes', 'produces']) {
-      const names = graphValues(node, `asc:${port}`).filter((v) => typeof v === 'string');
+      const names = nodeValues(node, port).filter((v) => typeof v === 'string');
       if (names.length > 0) item[port] = names;
     }
     // A cluster's members are `skos:member` on the CLUSTER, so the facet the page
     // filters by is recovered from the cluster node, not from the item.
-    const memberSlugs = graphValues(node, 'skos:member').map(slugOfIri).filter((s) => s !== '');
+    const memberSlugs = nodeValues(node, 'member').map(slugOfIri).filter((s) => s !== '');
     if (memberSlugs.length > 0) item.members = memberSlugs;
     out.push(item);
   }
-  return out.sort((a, b) => compose.compareCodePoint(a.slug, b.slug));
+  return out.sort((a, b) => compareCodePoint(a.slug, b.slug));
 }
 
 /** The page-support functions the bundle carries beside the algebra. */
-const PAGE_SUPPORT = Object.freeze(['graphPredicates', 'graphTypes', 'slugOfIri',
-  'graphValues', 'itemsFromGraph']);
+const PAGE_SUPPORT = Object.freeze(['graphPredicates', 'graphTypes', 'localOf', 'slugOfIri',
+  'graphValues', 'nodeValues', 'itemsFromGraph']);
 
 const SUPPORT = Object.freeze({
-  graphPredicates, graphTypes, slugOfIri, graphValues, itemsFromGraph,
+  graphPredicates, graphTypes, localOf, slugOfIri, graphValues, nodeValues, itemsFromGraph,
 });
 
 /** Every name the bundle installs on `globalThis.AGSC_CORE`, in emission order. */
@@ -182,5 +240,7 @@ module.exports = {
   graphTypes,
   graphValues,
   itemsFromGraph,
+  localOf,
+  nodeValues,
   slugOfIri,
 };

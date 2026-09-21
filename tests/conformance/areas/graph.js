@@ -180,6 +180,83 @@ function attachmentCase(vector) {
   return checks(list);
 }
 
+/**
+ * graph-0015/0016/0017/0018 (rc.5) — the WHOLE file, byte for byte.
+ *
+ * These four replace the four withdrawn vectors that stated clauses in isolation
+ * (the second reading at the top of this file). A whole file needs no reading at
+ * all: `expected.nquads` and `expected.turtle` are compared as bytes, which is what
+ * AGSC-04-24 names for `graph.nq` and `graph.ttl` in the cross-implementation set.
+ * The discriminator is `expected.turtle` being a whole document (it opens with the
+ * `@prefix` block), which no released vector carries.
+ */
+function wholeFileCase(vector) {
+  const options = optionsFor(vector.input);
+  const list = [];
+  const nquads = nq.toNQuads(vector.input.items, options);
+  const text = turtle.toTurtle(vector.input.items, options);
+  list.push(['nquads', nquads === vector.expected.nquads, `got\n${nquads}`]);
+  list.push(['turtle', text === vector.expected.turtle, `got\n${text}`]);
+
+  if (vector.expected.prefix_block_is_constant === true) {
+    // AGSC-05-10(a): the seven lines are emitted whether the dataset uses the
+    // namespace or not, so the block of THIS dataset must equal the block of a
+    // dataset that uses nothing at all — and `owl:`/`rdf:` are never declared.
+    const constant = turtle.prefixBlock();
+    const emitted = text.split('\n\n')[0];
+    list.push(['prefix block', emitted === constant, `got ${JSON.stringify(emitted)}`]);
+    list.push(['seven lines', constant.split('\n').filter(Boolean).length === 7, constant]);
+    list.push(['no owl:/rdf: prefix', !/^@prefix (owl|rdf):/mu.test(constant), constant]);
+  }
+  if (vector.expected.blank_nodes !== undefined) {
+    const count = nq.countBlankNodes(nquads);
+    list.push(['blank_nodes', count === vector.expected.blank_nodes, `got ${count}`]);
+  }
+  if (vector.expected.turtle_never_contains) {
+    list.push(['turtle_never_contains', !text.includes(vector.expected.turtle_never_contains), `present in\n${text}`]);
+  }
+  if (vector.expected.verdict_digest_exported === false) {
+    const digests = vector.input.items.map((item) => item.verdict_digest).filter(Boolean);
+    list.push(['verdict_digest', !/verdict/iu.test(nquads) && !digests.some((d) => nquads.includes(d)),
+      `a verdict reached the export:\n${nquads}`]);
+  }
+  for (const forbidden of vector.expected.forbidden || []) list.push(forbiddenCheck(forbidden, vector, options, nquads, text));
+  return checks(list);
+}
+
+/**
+ * One entry of `expected.forbidden`. Each is a prose statement of a form the rules
+ * exclude; an entry this handler does not recognise FAILS rather than passing
+ * silently, so a new clause in a future vector cannot be met by doing nothing.
+ */
+function forbiddenCheck(forbidden, vector, options, nquads, text) {
+  if (forbidden === '"Lit"@en^^' || forbidden.endsWith('@en^^')) {
+    return ['no datatype on a language-tagged literal', !nquads.includes('@en^^') && !text.includes('@en^^'), nquads];
+  }
+  if (forbidden.includes('^^xsd:string in Turtle')) {
+    return ['no ^^xsd:string in Turtle', !text.includes('^^xsd:string'), text];
+  }
+  if (forbidden.includes('status is not authored')) {
+    const stripped = vector.input.items.map(({ status, ...rest }) => rest);
+    const without = nq.toNQuads(stripped, options);
+    return ['no asc:status when status is not authored', !without.includes(`${nq.NS}status`), without];
+  }
+  if (forbidden.includes('ordered by prefixed name')) {
+    // AGSC-05-10(c): predicates sort by predicate IRI code points. The vectors were
+    // chosen so the two orders differ, which is the whole point of `graph-0018`:
+    // `dcterms:modified` (http://purl.org/…) precedes `rdf:type` under IRI order and
+    // follows every `asc:` clause under prefixed-name order.
+    const clauseNames = clauses(text)
+      .map((clause) => clause.split(/\s/u)[0])
+      .filter((name) => name !== '');
+    const byPrefixedName = [...clauseNames].sort();
+    return ['predicates are not ordered by prefixed name',
+      clauseNames.join('|') !== byPrefixedName.join('|'),
+      `the emitted order ${clauseNames.join(' ')} is also the prefixed-name order`];
+  }
+  return [`forbidden ${forbidden}`, false, 'this handler does not implement that clause'];
+}
+
 /** graph-0001/0002/0004/0006/0013/0014 — the dataset of a set of items. */
 function itemsCase(vector) {
   const options = optionsFor(vector.input);
@@ -235,6 +312,8 @@ module.exports.run = (vector, ctx) => {
   if (input.literal !== undefined) return literalFormsCase(vector);
   if (Array.isArray(input.ontology_terms)) return contextCase(vector, ctx);
   if (typeof input.markdown === 'string') return exportBlockCase(vector);
+  const expected = vector.expected || {};
+  if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
   if (input.attachment_bytes !== undefined) return attachmentCase(vector);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };

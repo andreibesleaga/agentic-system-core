@@ -1,21 +1,8 @@
 {
   "area": "boundary",
-  "description": "Two nodes export boards with the same cluster slug and the same task slug; a merging client keys tasks by item IRI and boards by Bundle IRI, renames nothing, and expands local blocked_by slugs against the board's own origin.",
+  "description": "WITHDRAWN. Superseded by bnd-0034. Two nodes export boards with the same cluster slug and the same task slug; a merging client keys tasks by item IRI and boards by Bundle IRI, renames nothing, and expands local blocked_by slugs against the board's own origin.",
   "expected": {
-    "boards_kept": [
-      "https://a.example/clusters/oct/",
-      "https://b.example/clusters/oct/"
-    ],
-    "expanded_blocked_by": {
-      "https://a.example/concepts/ship/": [
-        "https://a.example/concepts/other/"
-      ]
-    },
-    "renamed": [],
-    "tasks_kept": [
-      "https://a.example/concepts/ship/",
-      "https://b.example/concepts/ship/"
-    ]
+    "withdrawn": true
   },
   "id": "bnd-0025",
   "input": {
@@ -48,10 +35,11 @@
       }
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.5"
   },
+  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55d; D100). `expanded_blocked_by` depends on \"the board's own origin\" (AGSC-11-15), which the vector leaves to be inferred from each board's `iri` rather than stating it. Superseded by bnd-0034, which states each board's origin in `input`.",
   "rule": "AGSC-11-15"
 }

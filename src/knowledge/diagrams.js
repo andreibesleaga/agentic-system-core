@@ -189,9 +189,14 @@ function geometryKey(poly) {
  * bytes and a partial emission is not reproducible from the source.
  *
  * @param {string} dslText the `.diagram` source, LF-separated (AGSC-01-14).
- * @param {{file?:string, slug?:string, label?:string}} [options] `file` and
- *   `slug` are carried onto every Finding; `label` is the accessible name used
- *   when the source has no `label` statement (default `"<slug> diagram"`).
+ * @param {{file?:string, slug?:string, label?:string, accessibleName?:string}} [options]
+ *   `file` and `slug` are carried onto every Finding; `label` is the accessible name
+ *   used when the source has no `label` statement (default `"<slug> diagram"`);
+ *   `accessibleName`, when given, IS the accessible name and a `label` statement in
+ *   the source cannot override it — AGSC-02-13 as amended at rc.5 makes the inlined
+ *   element's accessible name `diagram.alt` (AGSC-06-20), which is authored in the
+ *   item's frontmatter and not in the picture. The returned `label` is still the
+ *   source's own, so `altFrom()` and `check()` are unaffected.
  * @returns {{svg:(string|null), findings:Array<object>, label:string, note:(string|null)}}
  */
 function compile(dslText, options = {}) {
@@ -381,10 +386,9 @@ function compile(dslText, options = {}) {
           }
           points.push({ x, y });
         }
-        if (malformed || points.length === 0) {
-          if (!malformed) fail('via= carries no waypoint', line);
-          continue;
-        }
+        // `"a;b".split(';')` never yields an empty list, so a `via=` with no
+        // usable pair is always a bad-number fault already reported by `num`.
+        if (malformed) continue;
         const p1 = clip(from, centreFrom, points[0]);
         const p2 = clip(to, centreTo, points[points.length - 1]);
         d = `M${fixed(p1.x)} ${fixed(p1.y)} `
@@ -520,7 +524,14 @@ function compile(dslText, options = {}) {
   }
 
   if (findings.length > 0) return { svg: null, findings, label, note };
-  return { svg: render({ width, height, label, note, draw, texts, slug }), findings, label, note };
+  const accessibleName = options.accessibleName === undefined || String(options.accessibleName) === ''
+    ? label : String(options.accessibleName);
+  return {
+    svg: render({ width, height, label: accessibleName, note, draw, texts, slug }),
+    findings,
+    label,
+    note,
+  };
 }
 
 /**

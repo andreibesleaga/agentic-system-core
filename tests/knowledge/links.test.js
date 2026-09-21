@@ -186,19 +186,46 @@ test('AGSC-03-11: an asset resolves when it exists and the path is grammatical',
   assert.ok(without.errors.some((f) => f.code === 'AGSC-E310'));
 });
 
-test('AGSC-01-35: a `..` segment in a body reference is AGSC-E902, not a resolution', () => {
-  // Reported to the coordinator: under a literal AGSC-01-35 an item under
-  // content/<type-plural>/ cannot reference content/assets/ at all, since every
-  // route to it needs `..`. The engine follows the rule; the rule is the defect.
-  const result = links.resolve([{ slug: 'a', type: 'concept', body: '![x](../assets/d.png)\n' }],
+test('AGSC-01-35 as amended at rc.5 (R-01): a `..` body reference that stays inside RESOLVES', () => {
+  // rc.4 read the segment test literally, so an item under content/<type-plural>/
+  // could not reference content/assets/ at all — every route to it needs `..`.
+  // AGSC-01-35 as amended at rc.5 excepts a body target from the segment test and
+  // makes the ESCAPE test the operative one; AGSC-03-11 as amended says the same.
+  // FINAL-VERIFY-28 found the amendment applied to the specification and not here.
+  const asset = links.resolve([{ slug: 'a', type: 'concept', body: '![x](../assets/d.png)\n' }],
     { assets: ['content/assets/d.png'] });
-  assert.ok(result.errors.some((f) => f.code === 'AGSC-E902'));
-  assert.deepStrictEqual(result.resolved, []);
+  const pathCodes = (r) => r.errors.map((f) => f.code).filter((c) => c === 'AGSC-E902' || c === 'AGSC-E310');
+  assert.deepStrictEqual(pathCodes(asset), [], 'a `..` reference to an existing asset is not a finding');
+  assert.deepStrictEqual(asset.resolved, ['../assets/d.png']);
+
+  // A `..` reference to a sibling ITEM resolves in both spellings (R-04).
+  const items = [
+    { slug: 'a', type: 'concept', body: '[b](../concepts/b.md) and [b again](../concepts/b)\n' },
+    { slug: 'b', type: 'concept', body: '# B\n' },
+  ];
+  const sibling = links.resolve(items);
+  assert.deepStrictEqual(pathCodes(sibling), []);
+  assert.deepStrictEqual(sibling.resolved, ['../concepts/b.md', '../concepts/b']);
+
+  // Inside the root but nothing there is still AGSC-E310, never AGSC-E902.
+  const missing = links.resolve([{ slug: 'a', type: 'concept', body: '[x](../assets/nope.png)\n' }]);
+  assert.deepStrictEqual(pathCodes(missing), ['AGSC-E310']);
+
+  // The KEYED form of AGSC-01-35 is unchanged: a keyed value keeps the segment test.
+  assert.strictEqual(links.pathGrammarError('../assets/d.png', 'content/concepts'), 'dot segment');
+  assert.strictEqual(links.bodyPathError('../assets/d.png', 'content/concepts'), null);
 });
 
 test('AGSC-01-35: a body reference that escapes the root is AGSC-E902', () => {
   const result = links.resolve([{ slug: 'a', type: 'concept', body: '[x](../../../etc/passwd)\n' }]);
   assert.ok(errorsOf(result).includes('AGSC-E902'));
+  assert.ok(result.errors.some((f) => f.message.includes('escapes the Bundle root')),
+    'the reason names the escape, which is the test AGSC-01-35 applies to a body target');
+  assert.strictEqual(links.bodyPathError('../../../etc/passwd', 'content/concepts'),
+    'escapes the Bundle root');
+  assert.strictEqual(links.bodyPathError('/abs.png', 'content/concepts'), 'leading slash');
+  assert.strictEqual(links.bodyPathError('a\\b.png', 'content/concepts'), 'backslash');
+  assert.strictEqual(links.bodyPathError(`n${String.fromCharCode(0)}.png`, 'content/concepts'), 'NUL');
 });
 
 test('AGSC-01-35: the path grammar, case by case', () => {

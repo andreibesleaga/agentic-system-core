@@ -66,7 +66,9 @@ test('AGSC-09-13: initialize, tools/list and tools/call over real stdio frames',
   assert.strictEqual(frames.length, 3, out);
 
   // AGSC-11-18: the extension identifier is advertised in the capabilities.
-  assert.deepStrictEqual(frames[0].result.capabilities.extensions, ['com.agenticsystemcore/knowledge']);
+  // rc.5 (SITE1-01): the map of identifier to settings object, `linkset` and no more.
+  assert.deepStrictEqual(frames[0].result.capabilities.extensions,
+    { 'com.agenticsystemcore/knowledge': { linkset: 'https://minimal.example/.well-known/knowledge-linkset' } });
   assert.strictEqual(frames[0].result.protocolVersion, '2025-11-25');
 
   // AGSC-09-13: exactly seven tools, the same seven the browser registers.

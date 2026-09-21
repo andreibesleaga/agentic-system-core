@@ -179,10 +179,34 @@ test('the Bundle node is emitted only when the Bundle is given (AGSC-05-03/05-26
   const withBundle = nq.toNQuads([], {
     base: 'https://e.org',
     graph: null,
-    bundle: { spec_version: '1.0.0-rc.4', license_prose: 'LicenseRef-X', usage_info: 'https://e.org/legal/' },
+    bundle: { spec_version: '1.0.0-rc.4', license_prose: 'LicenseRef-X' },
   });
   assert.ok(withBundle.includes('#specVersion> "1.0.0-rc.4"'));
-  assert.ok(withBundle.includes('<https://schema.org/usageInfo> <https://e.org/legal/>'));
+  // AGSC-05-26 as amended at rc.5 (V9A-02): both schema.org properties are
+  // `xsd:string` literals (AGSC-05-31 form c), and `schema:usageInfo` carries the
+  // CONSTANT Content Use Terms identifier of AGSC-06-18, never a caller-supplied IRI.
+  assert.ok(withBundle.includes('<https://schema.org/license> "LicenseRef-X"^^<http://www.w3.org/2001/XMLSchema#string>'));
+  assert.ok(withBundle.includes(`<https://schema.org/usageInfo> "${nq.CONTENT_USE_TERMS}"^^<http://www.w3.org/2001/XMLSchema#string>`));
+  assert.ok(!withBundle.includes('<https://schema.org/usageInfo> <'), 'usageInfo was emitted as an IRI');
+});
+
+test('the two configuration licence rows are on the Bundle AND on every item (AGSC-05-26, rc.5)', () => {
+  const items = [{ type: 'concept', slug: 'a', title: 'A' }];
+  const options = { base: 'https://e.org', graph: null, bundle: { license_prose: 'CC0-1.0' } };
+  const text = nq.toNQuads(items, options);
+  for (const subject of ['<https://e.org/>', '<https://e.org/concepts/a/>']) {
+    assert.ok(text.includes(`${subject} <https://schema.org/license> "CC0-1.0"^^<${nq.XSD_STRING}>`), subject);
+    assert.ok(text.includes(`${subject} <https://schema.org/usageInfo> "${nq.CONTENT_USE_TERMS}"^^<${nq.XSD_STRING}>`), subject);
+  }
+  // With no configuration there is no licence to name: a bare item list is unchanged,
+  // which is what keeps graph-0001/0002/0004/0006 byte-identical across rc.5.
+  const bare = nq.toNQuads(items, { base: 'https://e.org', graph: null });
+  assert.ok(!bare.includes('schema.org'));
+  // `license_prose` absent, configuration present: the constant still holds, the
+  // licence has no source and emits nothing (AGSC-05-26 "a key absent emits no triple").
+  const noLicence = nq.toNQuads(items, { base: 'https://e.org', graph: null, bundle: { id: 'e' } });
+  assert.ok(!noLicence.includes('<https://schema.org/license>'));
+  assert.strictEqual(noLicence.split('\n').filter((l) => l.includes('usageInfo')).length, 2);
 });
 
 test('the dataset is blank-node-free (AGSC-05-08)', () => {

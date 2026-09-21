@@ -16,6 +16,8 @@
 // Pure function of its input.
 
 const { TERMS } = require('../knowledge/chunks.js');
+const diagrams = require('../knowledge/diagrams.js');
+const lint = require('../governance/lint.js');
 const { WELLKNOWN_PATH, MEDIA_TYPE } = require('./discovery.js');
 
 /** The five characters that must never reach markup unescaped. */
@@ -92,11 +94,75 @@ function shell(page) {
 }
 
 /**
+ * AGSC-02-13 as amended at rc.5 (ENG1-02): the compiled diagram, INLINE in the item's
+ * page and at no route of its own.
+ *
+ * The `.diagram` source is passed in rather than read here — this module is a
+ * template and owns no port; `site.js` reads `content/diagrams/<slug>.diagram`
+ * through the FileSystem port (AGSC-01-07) and hands the bytes over.
+ *
+ * Four obligations, in order:
+ *   - the accessible name is `diagram.alt` (AGSC-06-20), passed through to the
+ *     compiler rather than re-derived, so a `label` statement in the source cannot
+ *     silently replace the authored alt text;
+ *   - `diagram.caption`, where present, is the visible `<figcaption>` and never a
+ *     substitute for `alt`;
+ *   - the compiled bytes go through AGSC-02-98's allow-list before they are inlined,
+ *     and a violation is `AGSC-E412` with NO element emitted — the page never carries
+ *     markup the allow-list refused;
+ *   - no `.svg` route is produced, so AGSC-06-01's route set is unchanged, and the
+ *     bytes count towards the 100 KB page budget because `budgets()` measures the
+ *     emitted HTML.
+ *
+ * The allow-list is INJECTABLE for the same reason the Markdown renderer is: it is
+ * one implementation of one rule, and a port in another language substitutes its
+ * own. It is also the only way to exercise this guard, because ENG-1 proved as a
+ * property over 300 generated sources that the compiler's output is always inside
+ * the list — the guard is defence in depth against a future compiler change, and a
+ * defence nothing can reach is a defence nobody can trust.
+ *
+ * @param {object} item a flat item carrying `diagram: {file, alt, caption?}`.
+ * @param {string} source the `.diagram` bytes.
+ * @param {{svgViolations?:Function}} [options]
+ * @returns {{html:string, findings:Array<object>}}
+ */
+function diagramFigure(item, source, options = {}) {
+  const diagram = item && item.diagram;
+  if (diagram == null || typeof diagram !== 'object' || typeof source !== 'string') {
+    return { html: '', findings: [] };
+  }
+  const slug = String(item.slug);
+  const file = `content/diagrams/${slug}.diagram`;
+  const compiled = diagrams.compile(source, { accessibleName: diagram.alt, file, slug });
+  if (compiled.svg === null) return { html: '', findings: compiled.findings };
+
+  const check = options.svgViolations === undefined ? lint.svgViolations : options.svgViolations;
+  const reasons = check(compiled.svg);
+  if (reasons.length > 0) {
+    return {
+      html: '',
+      findings: [{
+        code: 'AGSC-E412',
+        col: 1,
+        file,
+        line: 1,
+        message: `the compiled diagram is outside the AGSC-02-98 allow-list: ${reasons.join(', ')} (AGSC-02-13)`,
+        severity: 'error',
+        slug,
+      }],
+    };
+  }
+  const caption = diagram.caption == null || diagram.caption === ''
+    ? '' : `<figcaption>${escapeHtml(diagram.caption)}</figcaption>`;
+  return { findings: compiled.findings, html: `<figure>${compiled.svg.replace(/\n$/u, '')}${caption}</figure>` };
+}
+
+/**
  * An item page. AGSC-06-02: it links its own `/pages/<slug>.md` and `.jsonld`.
  * AGSC-11-22: a retired item keeps its page, which carries a visible notice.
  *
  * @param {object} item
- * @param {object} options `{render, licenseProse, jsonld, canonical}`.
+ * @param {object} options `{render, licenseProse, jsonld, canonical, diagramSource}`.
  * @returns {string}
  */
 function itemPage(item, options = {}) {
@@ -109,6 +175,11 @@ function itemPage(item, options = {}) {
     parts.push('<p class="deprecated" role="note">This item is deprecated.</p>');
   }
   parts.push(rendered.html);
+  // AGSC-02-13: the compiled diagram, inline, before the attachments.
+  if (typeof options.diagramSource === 'string') {
+    const figure = diagramFigure(item, options.diagramSource, options);
+    if (figure.html !== '') parts.push(figure.html);
+  }
   for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
     parts.push(`<figure><img src="/attachments/${escapeHtml(item.slug)}/${escapeHtml(attachment.file)}" alt="${escapeHtml(attachment.alt)}"><figcaption>${escapeHtml(attachment.alt)}</figcaption></figure>`);
   }
@@ -259,7 +330,7 @@ function aboutPage({ verbs, personas }, options = {}) {
 }
 
 module.exports = {
-  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage,
+  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, diagramFigure,
   boardPage, composePage, legalPage,
   escapeHtml, termsLine, HONEST_LIMIT,
 };

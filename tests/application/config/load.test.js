@@ -117,15 +117,19 @@ test('load() runs without the boundary check at all (it is injected, never impor
 });
 
 test('AGSC-01-37: an AGSC_* value of the wrong type is AGSC-E204, and is never applied', () => {
-  const boolean = load({ argvFlags: {}, env: { AGSC_BUILD_FEED: 'yes' } });
+  // rc.5 (R-15): `build.feed` is withdrawn and reserved to 1.1, so the boolean
+  // case is carried by `run.enabled` (AGSC-09-94, schema default `false`).
+  const boolean = load({ argvFlags: {}, env: { AGSC_RUN_ENABLED: 'yes' } });
   assert.deepEqual(boolean.findings.map((f) => f.code), ['AGSC-E204']);
-  assert.equal(boolean.config.build.feed, true, 'a malformed override reached the configuration');
+  assert.equal(boolean.config.run.enabled, false, 'a malformed override reached the configuration');
+  assert.equal(boolean.sources['run.enabled'], 'default', 'a malformed override was recorded as a source');
 
   const integer = load({ argvFlags: {}, env: { AGSC_FEDERATION_HOP_LIMIT: 'two' } });
   assert.deepEqual(integer.findings.map((f) => f.code), ['AGSC-E204']);
 
   // The admitted forms of each type do apply.
-  assert.equal(load({ argvFlags: {}, env: { AGSC_BUILD_FEED: 'false' } }).config.build.feed, false);
+  assert.equal(load({ argvFlags: {}, env: { AGSC_RUN_ENABLED: 'false' } }).config.run.enabled, false);
+  assert.equal(load({ argvFlags: {}, env: { AGSC_RUN_ENABLED: 'true' } }).config.run.enabled, true);
   assert.equal(load({ argvFlags: {}, env: { AGSC_FEDERATION_HOP_LIMIT: '2' } }).config.federation.hop_limit, 2);
 });
 

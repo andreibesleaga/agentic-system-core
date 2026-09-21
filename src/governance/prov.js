@@ -49,6 +49,7 @@ const SIGNOFF_PREFIX = 'Signed-off-by: ';
 const AGREEMENT = 'CA-v1';
 const EMAIL_TAIL = /^([A-Za-z0-9.!#$%&'*+\-/=?^_`{|}~]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*)> \(([A-Za-z0-9-]+)\)$/u;
 const ASSISTED = /^Assisted-by: ([A-Za-z0-9._-]+)\/([A-Za-z0-9.+-]+) \(operator: (human:[a-z0-9][a-z0-9._-]*)\)$/u;
+const ASSISTED_PREFIX = 'Assisted-by: ';
 const NAME_CHAR = /^[\x21-\x3B\x3D\x3F-\x7E](?:[\x21-\x3B\x3D\x3F-\x7E ]*[\x21-\x3B\x3D\x3F-\x7E])?$/u;
 const TRAILER_LINE = /^[A-Za-z][A-Za-z0-9-]*: /u;
 const ACTOR = /^human:[a-z0-9][a-z0-9._-]*$/u;
@@ -152,12 +153,24 @@ function checkTrailers(message, context = {}) {
   const block = trailerBlock(message);
   const signoffLines = block.filter((l) => l.startsWith(SIGNOFF_PREFIX));
   const signoff = signoffLines.length === 1 ? parseSignoff(signoffLines[0]) : null;
-  const assisted = block.map(parseAssisted).filter(Boolean);
+  const assistedLines = block.filter((l) => l.startsWith(ASSISTED_PREFIX));
+  const assisted = assistedLines.map(parseAssisted).filter(Boolean);
   const findings = [];
 
   if (signoff === null) {
     findings.push(finding('AGSC-E504',
       'the DCO-Plus trailer block is missing or malformed (AGSC-08-06)', at));
+  }
+  // AGSC-08-06: `trailer-block = signoff *( LF assisted )`. A line that announces
+  // itself as `Assisted-by:` and does not match `assisted` makes the BLOCK malformed
+  // — an `actor` that is not `human:<id>` (AGSC-08-08 is why the grammar admits no
+  // other form) or an `idchar` outside `lcalpha / DIGIT / "." / "_" / "-"`, for
+  // instance. Until rc.5 such a line was silently dropped, so a trailer naming an
+  // agent as its operator passed. Vector `prov-0004`.
+  for (const line of assistedLines) {
+    if (parseAssisted(line) !== null) continue;
+    findings.push(finding('AGSC-E504',
+      `the Assisted-by line does not match the AGSC-08-06 grammar: ${JSON.stringify(line)}`, at));
   }
   const prov = context.prov || {};
   if (AI_ORIGINS.includes(prov.origin)) {

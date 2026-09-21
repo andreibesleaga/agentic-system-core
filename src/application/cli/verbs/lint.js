@@ -15,7 +15,9 @@ const validate = require('../../../knowledge/validate.js');
 const links = require('../../../knowledge/links.js');
 const slug = require('../../../knowledge/slug.js');
 const govLint = require('../../../governance/lint.js');
+const govFix = require('../../../governance/fix.js');
 const { checkAgents } = require('../../../governance/agents.js');
+const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
 
 /**
@@ -55,7 +57,12 @@ function lane(ctx, bundle) {
   lanes.push('placement');
 
   // AGSC-03: the Link graph, its inverses, its cycles and its body references.
-  findings.push(...links.resolve(bundle.items || [], { config: bundle.config }).errors);
+  // AGSC-03-11's asset branch needs the set `loadBundle` listed (FV28-03): without
+  // it every body image reference to a real file under `content/assets/` is
+  // `AGSC-E310`, which is the one case the branch exists to admit.
+  findings.push(...links.resolve(bundle.items || [], {
+    assets: bundle.assets, config: bundle.config,
+  }).errors);
   lanes.push('links');
 
   // AGSC-08-13…17 and the structural lints. Every file fact is injected.
@@ -74,11 +81,78 @@ function lane(ctx, bundle) {
   return { findings: validate.sortFindings(findings), lanes };
 }
 
+/**
+ * `lint --fix` (AGSC-09-09 at rc.5; AGSC-03-12, AGSC-04-14, AGSC-04-19, AGSC-04-20).
+ *
+ * The normalisations themselves are `governance/fix.js`'s, computed as data; this
+ * function is only the port wiring — it reads each item's authored bytes through the
+ * FileSystem port and writes back the files whose bytes would change.
+ *
+ * **Under `--json` it is a DRY RUN.** A machine-readable invocation reports what
+ * WOULD change and writes nothing, because `--json` is the shape a pipeline consumes
+ * (AGSC-09-12) and a reporting call that silently rewrites the working tree is the
+ * worst kind of surprise. Without `--json` the files are written and each one is
+ * named on stderr (AGSC-09-10).
+ *
+ * The codes: §9.4 registers none for "this file is not normalised". The closest
+ * registered rows are used and the missing registration is on the specification
+ * items list — `AGSC-E108` ("encoding violation (BOM, CRLF, non-NFC, trailing
+ * newline)", AGSC-01-14) where the change is exactly that, and `AGSC-E506`
+ * ("normalized a value", a warning) where the frontmatter order or a wikilink moves.
+ * Both are warnings, so `--fix` never changes an exit code by itself.
+ *
+ * @param {object} ctx the verb context.
+ * @param {object} bundle the loaded Bundle.
+ * @returns {{findings:Array<object>, written:Array<string>}}
+ */
+function fix(ctx, bundle) {
+  const fs = ctx.ports && ctx.ports.fs;
+  const dryRun = Boolean(ctx.flags && ctx.flags.json);
+  const sources = new Map();
+  for (const item of bundle.items || []) {
+    try {
+      sources.set(String(item.path), String(fs.readFile(String(item.path), 'utf8')));
+    } catch (e) {
+      // A file the loader saw and the port cannot re-read is the loader's finding,
+      // not this lane's; `--fix` simply has nothing to normalise for it.
+    }
+  }
+  const planned = govFix.plan(bundle, {
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    sources,
+  });
+  const findings = [...planned.findings];
+  const written = [];
+  for (const file of planned.files) {
+    if (!file.changed) continue;
+    // AGSC-04-19 as amended at rc.5 (ENG2-03) assigns a code PER NORMALISATION:
+    // AGSC-E108 for the encoding third, AGSC-E506 for every other one. A file that
+    // needed both is therefore two findings, each under the code its rule names.
+    for (const change of file.changes) {
+      findings.push(validate.finding(change === govFix.ENCODING_CHANGE ? 'AGSC-E108' : 'AGSC-E506',
+        `${dryRun ? 'lint --fix would normalise' : 'lint --fix normalised'} ${file.path}: `
+        + `${change} (AGSC-04-19)`,
+        { file: file.path, severity: 'warn' }));
+    }
+    if (dryRun) continue;
+    fs.writeFile(file.path, file.after);
+    written.push(file.path);
+    helpers.note(ctx, `fixed: ${file.path}`);
+  }
+  helpers.note(ctx, dryRun
+    ? `lane: fix (dry run under --json; ${planned.changed.length} file${planned.changed.length === 1 ? '' : 's'} would change)`
+    : `lane: fix (${written.length} file${written.length === 1 ? '' : 's'} written)`);
+  return { findings, written };
+}
+
 function run(ctx) {
   const bundle = helpers.bundleOf(ctx);
   const result = lane(ctx, bundle);
   for (const name of result.lanes) helpers.note(ctx, `lane: ${name}`);
-  return { findings: validate.sortFindings([...(bundle.findings || []), ...result.findings]) };
+  const extra = ctx.verbFlags && ctx.verbFlags.fix === true ? fix(ctx, bundle).findings : [];
+  return {
+    findings: validate.sortFindings([...(bundle.findings || []), ...result.findings, ...extra]),
+  };
 }
 
-module.exports = { name: 'lint', lane, run };
+module.exports = { name: 'lint', fix, lane, run };

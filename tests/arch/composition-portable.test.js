@@ -94,6 +94,63 @@ test('no portable function closes over a module-scope binding', () => {
   }
 });
 
+test('no portable function reads a MEMBER of a required module (the hole that let one through)', () => {
+  // The check above filters a module-scope binding out of `bound` when its own name is
+  // one the bundle emits — and `compose` is both the name of a required module in
+  // `browser.js` AND one of `compose.PORTABLE`'s function names. So
+  // `itemsFromGraph` could read `compose.compareCodePoint(…)` and be emitted into a
+  // page that has the function `compose` but no OBJECT `compose`: `itemsFromGraph`
+  // threw `compose.compareCodePoint is not a function` on every real page, and no
+  // test noticed. A member read on a required module is never portable, whatever the
+  // module is called.
+  let scanned = 0;
+  for (const [file, module] of [['compose.js', compose], ['harness.js', harness],
+    ['browser.js', browser]]) {
+    const text = fs.readFileSync(path.join(SRC, file), 'utf8');
+    // Only a require bound to a plain identifier can be read as an OBJECT; a
+    // destructured require binds the functions themselves, which the bundle emits.
+    const required = [...text.matchAll(/^const ([A-Za-z_$][A-Za-z0-9_$]*) = require\(/gmu)].map((m) => m[1]);
+    scanned += required.length;
+    const portable = module.PORTABLE || module.PAGE_SUPPORT;
+    for (const name of portable) {
+      const source = String(module[name] || browser[name]);
+      for (const binding of required) {
+        const member = new RegExp(`(?<![A-Za-z0-9_$.])${binding}\\.[A-Za-z_$]`, 'u');
+        assert.ok(!member.test(source),
+          `${file}#${name} reads a member of the required module "${binding}"; a page holds no such object (AGSC-07-13)`);
+      }
+    }
+  }
+  assert.ok(scanned >= 2, `only ${scanned} module-object requires were found; the scan is broken`);
+});
+
+test('every page-support function runs in the bundle, over a REAL graph shape', () => {
+  // The "evaluates in a context that holds only the language" test below exercises the
+  // two algebras; nothing exercised `itemsFromGraph`, which is why the defect above
+  // survived. A node spelled the three ways one graph document may spell it.
+  const context = vm.createContext({});
+  vm.runInContext(browser.bundle(), context, { filename: 'agsc-core.js' });
+  const core = vm.runInContext('globalThis.AGSC_CORE', context);
+  const graph = {
+    '@graph': [
+      {
+        '@id': 'https://x.example/concepts/a/',
+        '@type': 'https://w3id.org/agentic-system-core/ns#Concept',
+        prefLabel: { '@value': 'A', '@language': 'en' },
+        'https://w3id.org/agentic-system-core/ns#uses': { '@id': 'https://x.example/procedures/p/' },
+      },
+      { '@id': 'https://x.example/procedures/p/', '@type': 'asc:Procedure', 'skos:prefLabel': 'P' },
+    ],
+  };
+  // `deepStrictEqual` compares prototypes, and the bundle answers with arrays of the
+  // vm realm, so the comparison is made on plain values.
+  const items = JSON.parse(JSON.stringify(core.itemsFromGraph(graph)));
+  assert.deepStrictEqual(items.map((i) => i.slug), ['a', 'p']);
+  assert.deepStrictEqual(items[0].uses, ['p']);
+  assert.strictEqual(core.localOf('https://w3id.org/agentic-system-core/ns#uses'), 'uses');
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(core.nodeValues({ 'a:x': 1, 'b/x': 2 }, 'x'))), [1, 2]);
+});
+
 test('the emitted bundle evaluates and answers in a context that holds only the language', () => {
   const context = vm.createContext({});
   vm.runInContext(browser.bundle(), context, { filename: 'agsc-core.js' });
