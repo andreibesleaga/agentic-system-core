@@ -8,12 +8,19 @@
 // AGSC-02-20's subset requires — `html:false`, `linkify:false`, `typographer:false`
 // — so no authored byte can inject markup and no rendering depends on a locale.
 //
-//   gen-spec-html [--json] [--quiet] [--help] [--out <dir>] [--check <dir>] [<root>]
+//   gen-spec-html [--json] [--quiet] [--help] [--out <dir>] [--check <dir> [--text]] [<root>]
 //
 // With neither --out nor --check the tool renders every page in memory and reports
 // what it would write. --out writes `<dir>/index.html` and `<dir>/<section>/index.html`
 // for each `spec/<nn>-<section>.md`. --check compares an existing directory byte for
 // byte and reports drift, which is how a published `/specs/` tree is kept honest.
+// A chapter page is looked for at `/specs/<name>/` and, failing that, at the
+// numbered form `/specs/<nn>-<name>/` a publisher may use instead (AGSC-06-01 names
+// `/specs/` and pins no chapter route). `--check <dir> --text` is for a publisher
+// that renders the same chapters in its own page design: instead of the bytes it
+// compares what the pages SAY — the plain text of every rule, found by its anchor,
+// and the number of table rows on each chapter — so a changed, dropped or added
+// word in a rule is drift and a different page shell is not (SITE4-04, ENG-9).
 //
 // Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock, no network, LF, sorted
 // output; the same inputs give the same bytes on every machine (AGSC-04-01).
@@ -29,13 +36,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
-const HELP = `gen-spec-html [--json] [--quiet] [--help] [--out <dir>] [--check <dir>] [<root>]
+const HELP = `gen-spec-html [--json] [--quiet] [--help] [--out <dir>] [--check <dir> [--text]] [<root>]
 
   Renders spec/*.md into the /specs/ pages of PRD-054, one directory per section
   plus an index, deterministically and with an anchor on every rule id.
 
   --out <dir>    write the rendered pages into <dir>
-  --check <dir>  compare an existing tree with this rendering, byte for byte
+  --check <dir>  compare an existing tree with this rendering, byte for byte;
+                 a chapter may sit at <dir>/<name>/ or at <dir>/<nn>-<name>/
+  --text         with --check: compare the text of every rule and the table rows,
+                 not the page bytes (a publisher's own page design)
   --json         emit the AGSC-09-11 diagnostics envelope on stdout
   --quiet        emit nothing; the exit code is the result
   --help         this text
@@ -154,7 +164,104 @@ function render(root, texts) {
     '</ol>',
   ].join('\n');
   files.set('index.html', page(`AgenticSystemCore ${specVersion}`, specVersion, index, navigation));
-  return { files, findings, rules, specVersion };
+  return { files, findings, rules, sections, specVersion };
+}
+
+// --------------------------------------------------------------------------
+// --text: what a page SAYS, independent of the markup around it.
+// --------------------------------------------------------------------------
+
+const ENTITIES = Object.freeze({ amp: '&', apos: "'", gt: '>', lt: '<', nbsp: ' ', quot: '"' });
+
+/**
+ * The item numbers an ordered list shows, written out as text (`<li>` → `<li>2. `),
+ * so a page that shows `1.` `2.` as literal text and one that shows them through an
+ * `<ol>` compare equal — the reader sees the same numbers on both.
+ */
+function numberOrderedItems(fragment) {
+  const stack = [];
+  return String(fragment).replace(/<(\/?)(ol|ul|li)\b([^>]*)>/giu, (tag, close, name, attrs) => {
+    const lower = name.toLowerCase();
+    if (lower === 'li') {
+      if (close !== '' || stack.length === 0 || stack[stack.length - 1] === null) return tag;
+      stack[stack.length - 1] += 1;
+      return `${tag}${stack[stack.length - 1]}. `;
+    }
+    if (close !== '') { stack.pop(); return tag; }
+    const start = /\bstart="(\d+)"/u.exec(attrs);
+    stack.push(lower === 'ol' ? (start ? Number(start[1]) - 1 : 0) : null);
+    return tag;
+  });
+}
+
+/** The visible text of an HTML fragment: tags dropped, entities decoded, spaces collapsed. */
+function plainText(fragment) {
+  return numberOrderedItems(fragment)
+    .replace(/<[^>]*>/gu, ' ')
+    .replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-z]+);/gu, (all, name) => {
+      if (name[0] === '#') {
+        const cp = name[1] === 'x' ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
+        return Number.isFinite(cp) && cp <= 0x10ffff ? String.fromCodePoint(cp) : all;
+      }
+      return ENTITIES[name] === undefined ? all : ENTITIES[name];
+    })
+    .replace(/\s+/gu, ' ')
+    .replace(/ ([.,;:)\]])/gu, '$1')
+    .replace(/([(\[]) /gu, '$1')
+    .trim();
+}
+
+/**
+ * The text of the list item that carries `id="<rule>"` — on this tool's pages the id
+ * sits on the `<strong>` inside the `<li>`, on a publisher's page it may sit on the
+ * `<li>` itself. Nested lists inside the item are part of it. `null` when the page
+ * carries no such anchor.
+ */
+function ruleText(html, id) {
+  const at = html.indexOf(`id="${id}"`);
+  if (at === -1) return null;
+  const start = html.lastIndexOf('<li', at);
+  if (start === -1) return null;
+  const tag = /<(\/?)li\b[^>]*>/giu;
+  tag.lastIndex = start;
+  let depth = 0;
+  for (let m = tag.exec(html); m !== null; m = tag.exec(html)) {
+    depth += m[1] === '/' ? -1 : 1;
+    if (depth === 0) return plainText(html.slice(start, m.index));
+  }
+  return plainText(html.slice(start));
+}
+
+/** The number of table rows a page carries. */
+function tableRows(html) {
+  return (String(html).match(/<tr[\s>]/gu) || []).length;
+}
+
+/** The rule ids this tool anchored on one of its own pages, in page order. */
+function anchoredRules(html) {
+  return [...String(html).matchAll(/<strong id="(AGSC-\d{2}-\d{2,3}[a-z]?)">/gu)].map((m) => m[1]);
+}
+
+/**
+ * --text for one chapter: every rule this rendering anchors must be anchored on the
+ * checked page with the same words, and the table-row count must be equal.
+ * @returns {Array<string>} the differences, one message each.
+ */
+function textDrift(mine, theirs) {
+  const out = [];
+  for (const id of anchoredRules(mine)) {
+    const expected = ruleText(mine, id);
+    const found = ruleText(theirs, id);
+    if (found === null) out.push(`rule ${id} has no anchor on this page`);
+    // Words are compared, not the spaces a renderer puts around an inline tag
+    // (`<code>x</code>'s` against `<code>x</code> 's`): a spacing difference is
+    // markup, a changed, dropped or added character is wording.
+    else if (found.replace(/\s+/gu, '') !== expected.replace(/\s+/gu, '')) out.push(`the text of rule ${id} differs from spec/ (${JSON.stringify(found.slice(0, 80))}…)`);
+  }
+  const rows = tableRows(mine);
+  const theirRows = tableRows(theirs);
+  if (rows !== theirRows) out.push(`the page carries ${theirRows} table row(s) and spec/ renders ${rows}`);
+  return out;
 }
 
 function envelopeOf(findings, declared, version) {
@@ -198,13 +305,14 @@ function run(argv, io) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
-    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    if (arg === '--json' || arg === '--quiet' || arg === '--text') flags.add(arg);
     else if (arg === '--out') { outDir = argv[++i]; if (!outDir) return usage('--out needs a directory (AGSC-E003)'); }
     else if (arg === '--check') { checkDir = argv[++i]; if (!checkDir) return usage('--check needs a directory (AGSC-E003)'); }
     else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
     else { root = path.resolve(arg); sawRoot = true; }
   }
+  if (flags.has('--text') && !checkDir) return usage('--text compares a tree and needs --check <dir> (AGSC-E003)');
   const specDir = path.join(root, 'spec');
   // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
@@ -257,12 +365,24 @@ function run(argv, io) {
   }
   if (checkDir) {
     const target = path.resolve(checkDir);
+    const numbered = new Map(rendered.sections.map((s) => [`${s.slug}/index.html`, `${s.number}-${s.slug}/index.html`]));
     for (const name of [...rendered.files.keys()].sort(compareCodePoint)) {
-      const where = path.join(target, name);
-      if (!fs.existsSync(where)) {
+      // SITE4-04: the named route first, then the numbered one a publisher may use.
+      const alternative = numbered.get(name);
+      const found = [name, alternative].filter(Boolean).find((n) => fs.existsSync(path.join(target, n)));
+      if (found === undefined) {
         findings.push(finding('AGSC-E901', `specs/${name}`, 'the page is absent from the tree being checked'));
-      } else if (fs.readFileSync(where, 'utf8') !== rendered.files.get(name)) {
-        findings.push(finding('AGSC-E602', `specs/${name}`, 'the page on disk differs from this rendering (AGSC-04-02)'));
+        continue;
+      }
+      const theirs = fs.readFileSync(path.join(target, found), 'utf8');
+      if (!flags.has('--text')) {
+        if (theirs !== rendered.files.get(name)) {
+          findings.push(finding('AGSC-E602', `specs/${found}`, 'the page on disk differs from this rendering (AGSC-04-02)'));
+        }
+      } else if (name !== 'index.html') {
+        for (const message of textDrift(rendered.files.get(name), theirs)) {
+          findings.push(finding('AGSC-E602', `specs/${found}`, message));
+        }
       }
     }
   }
@@ -276,7 +396,8 @@ function run(argv, io) {
     }
     out(`gen-spec-html: ${texts.size} input file(s) read, ${texts.size} sections, ${rendered.files.size} pages, ${rendered.rules} rule anchors, `
       + `${envelope.counts.error} error, ${envelope.counts.warn} warn`
-      + `${outDir ? `; wrote into ${outDir}` : ''}\n`);
+      + `${outDir ? `; wrote into ${outDir}` : ''}`
+      + `${checkDir ? `; checked ${checkDir} ${flags.has('--text') ? 'compared by rule text and table rows' : 'byte for byte'}` : ''}\n`);
   }
   return envelope.status === 'pass' ? 0 : 1;
 }
@@ -284,4 +405,7 @@ function run(argv, io) {
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { HELP, canonicalize, compareCodePoint, page, render, run, sectionOf };
+module.exports = {
+  HELP, anchoredRules, canonicalize, compareCodePoint, numberOrderedItems, page, plainText, render, ruleText, run, sectionOf,
+  tableRows, textDrift,
+};

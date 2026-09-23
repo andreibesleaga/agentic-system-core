@@ -1,0 +1,37 @@
+{
+ "about": "The page-tool / MCP parity call list (docs/MEASUREMENTS.md, AGSC-09-16 as amended at rc.6: equal as values, never byte-identical across the browser boundary). `calls` run once per Bundle; each `per_item` template runs once for every item, with $slug replaced. The list covers every tool of AGSC-09-13, every domain-error path the tests already know (unknown tool, missing argument, unknown slug, foreign memory IRI, the 1 MiB argument cap of AGSC-01-16) and the two local-only writers.",
+ "calls": [
+  ["search", { "query": "agent" }],
+  ["search", { "query": "memory graph" }],
+  ["search", { "query": "pattern" }],
+  ["search", { "query": "nothing at all here" }],
+  ["search", { "query": "" }],
+  ["search", {}],
+  ["search", { "query": { "repeat": { "text": "x", "count": 1048577 } } }],
+  ["ask", { "question": "what is a handoff" }],
+  ["ask", { "question": "how do agents share memory" }],
+  ["ask", { "question": "zzqqxx" }],
+  ["ask", {}],
+  ["compose", { "selection": [] }],
+  ["compose", { "selection": ["no-such-item"] }],
+  ["compose", {}],
+  ["remember", { "at": "2026-01-01T00:00:00Z", "body": "A note.", "kind": "episode", "title": "A Recorded Run" }],
+  ["remember", { "body": "x", "kind": "concept", "sources": [{ "id": "s1", "resource": "nonsense" }], "title": "Handoff" }],
+  ["remember", { "body": "A lesson.", "kind": "lesson", "title": "A Lesson Learned Here" }],
+  ["remember", {}],
+  ["read", { "slug": "no-such-item" }],
+  ["read", {}],
+  ["links", { "iri": "memory://other-bundle/concepts/x" }],
+  ["links", {}],
+  ["propose", { "slug": "no-such-item" }],
+  ["nosuchtool", {}],
+  ["READ", {}]
+ ],
+ "per_item": [
+  ["read", { "slug": "$slug" }],
+  ["links", { "slug": "$slug" }],
+  ["propose", { "slug": "$slug" }],
+  ["compose", { "selection": ["$slug"] }]
+ ],
+ "version": "parity-calls-v1"
+}

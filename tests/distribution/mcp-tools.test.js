@@ -182,6 +182,12 @@ test('AGSC-09-14b: remember synthesizes a conforming item from a fixed instant',
   assert.strictEqual(result.body.frontmatter.outcome, 'partial');
   assert.strictEqual(result.body.frontmatter.severity, 'info');
   assert.strictEqual(result.body.frontmatter.prov.origin, 'ai-generated');
+  // MCP1-03 (ENG-9): a remembered LESSON carries the `severity` its schema branch
+  // requires, defaulted to `info` as AGSC-09-14b says, so it is conforming as returned.
+  const lesson = toolset.call('remember', { body: 'x', kind: 'lesson', operator: 'human:someone', title: 'A Lesson Learned' });
+  assert.strictEqual(lesson.body.frontmatter.severity, 'info');
+  assert.strictEqual(toolset.call('remember', { body: 'x', kind: 'lesson', severity: 'block', title: 'A Lesson Learned' })
+    .body.frontmatter.severity, 'block');
   // A concept gets `kind: explainer`; an unknown kind falls back to a concept.
   assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', title: 'T' }).body.frontmatter.kind, 'explainer');
   assert.strictEqual(toolset.call('remember', { body: '', kind: 'nonsense', title: 'T' }).body.frontmatter.type, 'concept');

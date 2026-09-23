@@ -117,7 +117,7 @@ test('AGSC-09-08: a --from value outside the set is AGSC-E002 and names the set'
   assert.match(result.envelope.findings[0].message, /okf/u);
   // ENG-5 added the `okf` reader of AGSC-01-22; `--selection` stays the `old-site`
   // adapter's own flag and is required for that adapter alone.
-  assert.deepStrictEqual([...verb.FORMATS], ['okf', 'old-site']);
+  assert.deepStrictEqual([...verb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills']); // cogx: CONN-1; gabbe: ENG-9; skills: CONN-2
   assert.deepStrictEqual([...verb.SELECTION_REQUIRED], ['old-site']);
 });
 

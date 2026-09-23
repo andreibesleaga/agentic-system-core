@@ -11,6 +11,7 @@ const { createHash } = require('node:crypto');
 
 const { readOntology, readSchemas } = require('../../../adapters/node-fs.js');
 const validate = require('../../../knowledge/validate.js');
+const links = require('../../../knowledge/links.js');
 const ledger = require('../../../governance/ledger.js');
 const contentVersion = require('../../../knowledge/content-version.js');
 const turtle = require('../../../knowledge/turtle.js');
@@ -106,27 +107,51 @@ function buildOptions(ctx, extra) {
 /**
  * AGSC-01-34 / AGSC-08-13: the bytes of every text-media attachment an item
  * names, so that the lint lane scans what will enter the chunk export, and
- * `{path: present}` so the absence checks can run. Read through the port; a
- * file that is absent is simply absent, and `governance/lint.js` reports it.
+ * `{path: byteLength}` for every attachment that is present, so the absence
+ * (AGSC-E413) and cap (AGSC-E904) checks of `governance/lint.js` can run — that
+ * function reads BYTE LENGTHS, and until ENG-9 this map carried booleans, so neither
+ * check could ever fire through the CLI. A file the FileSystem port REFUSES — over
+ * the input cap, an archive, reached through a link out of the root (AGSC-01-16,
+ * AGSC-01-35) — is recorded in `fileErrors` with the port's own registered code
+ * (BENCH1b-05), never reported as absent. A name outside the path grammar is not
+ * read at all: `governance/lint.js` reports it as AGSC-E902.
  */
 function attachmentFacts(ctx, bundle) {
   const fs = ctx.ports && ctx.ports.fs;
   const attachmentBytes = Object.create(null);
   const filesPresent = Object.create(null);
-  if (!fs || typeof fs.exists !== 'function') return { attachmentBytes, filesPresent };
+  const fileErrors = Object.create(null);
+  if (!fs || typeof fs.exists !== 'function') return { attachmentBytes, fileErrors, filesPresent };
+  const refused = (e) => (e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code)
+    ? { code: e.code, message: String(e.message) } : null);
   for (const item of bundle.items || []) {
     const list = (item.frontmatter && item.frontmatter.attachments) || [];
     for (const attachment of Array.isArray(list) ? list : []) {
       if (!attachment || typeof attachment.file !== 'string') continue;
-      const at = `content/attachments/${item.slug}/${attachment.file}`;
+      const dir = `content/attachments/${item.slug}`;
+      if (links.pathGrammarError(attachment.file, dir) !== null) continue;
+      const at = `${dir}/${attachment.file}`;
       let exists = false;
       try {
         exists = fs.exists(at);
+        // `exists` answers false for a path the port refuses; a refusal is not an
+        // absence, so the refusal is asked for explicitly.
+        if (!exists && typeof fs.stat === 'function') fs.stat(at);
       } catch (e) {
+        const why = refused(e);
+        if (why !== null) fileErrors[at] = why;
         exists = false;
       }
-      filesPresent[at] = exists;
       if (!exists) continue;
+      let bytes;
+      try {
+        bytes = fs.readFile(at, null);
+      } catch (e) {
+        const why = refused(e);
+        if (why !== null) fileErrors[at] = why;
+        continue;
+      }
+      filesPresent[at] = bytes.length;
       try {
         attachmentBytes[at] = String(fs.readFile(at, 'utf8'));
       } catch (e) {
@@ -135,7 +160,7 @@ function attachmentFacts(ctx, bundle) {
       }
     }
   }
-  return { attachmentBytes, filesPresent };
+  return { attachmentBytes, fileErrors, filesPresent, presenceChecked: true };
 }
 
 /**

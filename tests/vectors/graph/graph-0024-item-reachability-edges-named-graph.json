@@ -1,0 +1,41 @@
+{
+  "area": "graph",
+  "description": "AGSC-05-27's closed object-property list admits exactly two reachability edges beyond the Link keys: asc:source (from sources[], AGSC-05-14) and asc:review (from verified[], AGSC-05-15), added at V5-1 S7-01 so a Source or Review fragment IRI is reachable from its item without string-parsing (AGSC-05-23 forbids relying on entailment). Both edges MUST be present when the item carries both a sources[] entry and a verified[] entry. The graph term: every line is a quad whose fourth term is the Bundle IRI `<https://example.org/>` (AGSC-04-15 as amended at rc.6, PY2-01), so each line of graph-0006 is restated here with ` <https://example.org/>` inserted before its terminating ` .`; nothing else moves, and because the same suffix is added to every line the byte order of the lines is unchanged.",
+  "expected": {
+    "contains": [
+      "<https://example.org/concepts/a/> <https://w3id.org/agentic-system-core/ns#source> <https://example.org/concepts/a/#source-1> <https://example.org/> .",
+      "<https://example.org/concepts/a/> <https://w3id.org/agentic-system-core/ns#review> <https://example.org/concepts/a/#review-1> <https://example.org/> ."
+    ]
+  },
+  "id": "graph-0024",
+  "input": {
+    "items": [
+      {
+        "lang": "en",
+        "slug": "a",
+        "sources": [
+          {
+            "resource": "https://example.org/paper"
+          }
+        ],
+        "title": "Reachability",
+        "type": "concept",
+        "verified": [
+          {
+            "at": "2026-01-01T00:00:00Z",
+            "by": "human:andreibesleaga"
+          }
+        ]
+      }
+    ],
+    "site": {
+      "base": "https://example.org/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-23 at rc.6 (EXT-2b, PY2-01); derived by hand from AGSC-04-15 as amended and AGSC-05-03, superseding graph-0006",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-05-27"
+}

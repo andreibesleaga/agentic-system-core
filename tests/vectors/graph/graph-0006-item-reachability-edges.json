@@ -1,11 +1,8 @@
 {
   "area": "graph",
-  "description": "AGSC-05-27's closed object-property list admits exactly two reachability edges beyond the Link keys: asc:source (from sources[], AGSC-05-14) and asc:review (from verified[], AGSC-05-15), added at V5-1 S7-01 so a Source or Review fragment IRI is reachable from its item without string-parsing (AGSC-05-23 forbids relying on entailment). Both edges MUST be present when the item carries both a sources[] entry and a verified[] entry.",
+  "description": "WITHDRAWN. Superseded by graph-0024. AGSC-05-27's closed object-property list admits exactly two reachability edges beyond the Link keys: asc:source (from sources[], AGSC-05-14) and asc:review (from verified[], AGSC-05-15), added at V5-1 S7-01 so a Source or Review fragment IRI is reachable from its item without string-parsing (AGSC-05-23 forbids relying on entailment). Both edges MUST be present when the item carries both a sources[] entry and a verified[] entry.",
   "expected": {
-    "contains": [
-      "<https://example.org/concepts/a/> <https://w3id.org/agentic-system-core/ns#source> <https://example.org/concepts/a/#source-1> .",
-      "<https://example.org/concepts/a/> <https://w3id.org/agentic-system-core/ns#review> <https://example.org/concepts/a/#review-1> ."
-    ]
+    "withdrawn": true
   },
   "id": "graph-0006",
   "input": {
@@ -30,9 +27,10 @@
       }
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },
+  "reason": "AGSC-04-15 was amended at rc.6 (PY2-01) to pin the graph term of every line of graph.nq as the Bundle IRI; this case states its lines as triples in the default graph, which that rule now excludes. The corrected case ships as graph-0024 (AGSC-00-16: a released vector is never edited in place).",
   "rule": "AGSC-05-27"
 }

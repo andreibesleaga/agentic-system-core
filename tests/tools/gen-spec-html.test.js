@@ -134,6 +134,97 @@ describe('gen-spec-html — --check', () => {
   });
 });
 
+/**
+ * A publisher's own rendering of the same chapters (SITE4-04, ENG-9): the numbered
+ * route form `/specs/<nn>-<name>/`, its own page shell, its own markup around each
+ * rule — and the same words and the same table rows.
+ */
+function publisherTree(root, edit = (s) => s) {
+  const { files } = render(root, new Map(fs.readdirSync(path.join(root, 'spec')).sort()
+    .map((n) => [n, fs.readFileSync(path.join(root, 'spec', n), 'utf8')])));
+  const dir = path.join(tmpdir(), 'www', 'specs');
+  for (const [name, text] of files) {
+    const section = name === 'index.html' ? null : name.split('/')[0];
+    const numbered = section === null ? null
+      : fs.readdirSync(path.join(root, 'spec')).find((n) => sectionOf(n) && sectionOf(n).slug === section).slice(0, -3);
+    const where = path.join(dir, numbered === null ? 'index.html' : `${numbered}/index.html`);
+    fs.mkdirSync(path.dirname(where), { recursive: true });
+    // Another shell and another rule markup: a class on the item, a span around the
+    // trace, the id on the <li> instead of the <strong>, a styled table wrapper.
+    const restyled = text
+      .replace('<main>', '<header>A site</header>\n<main class="wide">')
+      .replace(/<li><strong id="(AGSC-[^"]+)"><a href="#[^"]+">([^<]+)<\/a><\/strong>/gu,
+        '<li id="$1" class="rule-item"><a class="rule" href="#$1"><strong>$2</strong></a>')
+      .replace(/<table>/gu, '<div class="table-wrap"><table>').replace(/<\/table>/gu, '</table></div>')
+      .replace(/href="\/specs\/([a-z-]+)\/"/gu, (all, s) => {
+        const n = fs.readdirSync(path.join(root, 'spec')).find((f) => sectionOf(f) && sectionOf(f).slug === s);
+        return n ? `href="/specs/${n.slice(0, -3)}/"` : all;
+      });
+    fs.writeFileSync(where, edit(restyled, name));
+  }
+  return dir;
+}
+
+describe('gen-spec-html — --check against a publisher\'s own pages (SITE4-04)', () => {
+  it('byte mode finds the numbered route form, and reports the shell difference as AGSC-E602', () => {
+    const root = specRoot();
+    const { code, json } = envelope('gen-spec-html', ['--check', publisherTree(root), root]);
+    assert.equal(code, 1);
+    assert.ok(!json.findings.some((f) => f.code === 'AGSC-E901'), JSON.stringify(json.findings));
+    assert.ok(json.findings.every((f) => f.code === 'AGSC-E602'));
+  });
+
+  it('--text passes when every rule says the same words and every table has the same rows', () => {
+    const root = specRoot();
+    const { code, json } = envelope('gen-spec-html', ['--text', '--check', publisherTree(root), root]);
+    assert.deepEqual(json.findings, []);
+    assert.equal(code, 0);
+    assert.match(capture('gen-spec-html', ['--text', '--check', publisherTree(root), root]).out,
+      /compared by rule text/u);
+  });
+
+  it('--text reports a changed rule, a missing rule anchor and a missing table row', () => {
+    const root = specRoot();
+    const tree = publisherTree(root, (s, name) => (name.startsWith('conformance/')
+      ? s.replace('An engine MUST report', 'An engine SHOULD report').replace(/<tr>\n<td><code>AGSC-E201[\s\S]*?<\/tr>\n/u, '')
+      : s.replace('id="AGSC-00-01"', 'id="elsewhere"')));
+    const { code, json } = envelope('gen-spec-html', ['--text', '--check', tree, root]);
+    assert.equal(code, 1);
+    const messages = json.findings.map((f) => `${f.code} ${f.file} ${f.message}`).join('\n');
+    assert.match(messages, /AGSC-E602 specs\/09-conformance\/index\.html .*AGSC-09-01/u);
+    assert.match(messages, /AGSC-E602 specs\/09-conformance\/index\.html .*table row/u);
+    assert.match(messages, /AGSC-E602 specs\/00-overview\/index\.html .*AGSC-00-01/u);
+  });
+
+  it('--text still needs every chapter page, in either route form, and the index', () => {
+    const root = specRoot();
+    const tree = publisherTree(root);
+    fs.rmSync(path.join(tree, '09-conformance'), { recursive: true });
+    fs.rmSync(path.join(tree, 'index.html'));
+    const { json } = envelope('gen-spec-html', ['--text', '--check', tree, root]);
+    assert.deepEqual(json.findings.map((f) => [f.code, f.file]).sort(),
+      [['AGSC-E901', 'specs/conformance/index.html'], ['AGSC-E901', 'specs/index.html']]);
+  });
+
+  it('the text helpers: ordered-list numbers, entities, nesting, absence', () => {
+    const { numberOrderedItems, plainText, ruleText, tableRows } = tool('gen-spec-html');
+    assert.equal(numberOrderedItems('<ol start="3"><li>a</li><li>b<ul><li>c</li></ul></li></ol>'),
+      '<ol start="3"><li>3. a</li><li>4. b<ul><li>c</li></ul></li></ol>');
+    assert.equal(plainText('a&amp;b &lt;x&gt; &#65;&#x42; &unknown; ( y ) .'), 'a&b <x> AB &unknown; (y).');
+    assert.equal(plainText('&#x110000;'), '&#x110000;');
+    const html = '<ul><li id="R">one<ul><li>two</li></ul> three</li><li>four</li></ul>';
+    assert.equal(ruleText(html, 'R'), 'one two three');
+    assert.equal(ruleText(html, 'S'), null);
+    assert.equal(ruleText('<p id="R">x</p>', 'R'), null);
+    assert.equal(ruleText('<li id="R">unclosed', 'R'), 'unclosed');
+    assert.equal(tableRows('<tr><td>1</td></tr><tr class="x">'), 2);
+  });
+
+  it('--text without --check is a usage error', () => {
+    assert.equal(capture('gen-spec-html', ['--text', specRoot()]).code, 2);
+  });
+});
+
 describe('gen-spec-html — the helpers it exports', () => {
   it('sectionOf splits <nn>-<name>.md and refuses anything else', () => {
     assert.deepEqual(sectionOf('09-conformance.md'), { number: '09', slug: 'conformance' });

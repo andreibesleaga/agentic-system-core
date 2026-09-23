@@ -64,6 +64,8 @@ const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
 const OWL = 'http://www.w3.org/2002/07/owl#';
 const SKOS = 'http://www.w3.org/2004/02/skos/core#';
 const DCTERMS = 'http://purl.org/dc/terms/';
+const VANN = 'http://purl.org/vocab/vann/';
+const VOAF = 'http://purl.org/vocommons/voaf#';
 
 /** AGSC-05-22: the flat axiom and annotation vocabulary an RL-safe, blank-node-free
  *  vocabulary may use. Anything else is reported rather than silently accepted. */
@@ -76,12 +78,16 @@ const ALLOWED_PREDICATES = Object.freeze(new Set([
   `${OWL}versionInfo`,
   `${DCTERMS}created`, `${DCTERMS}description`, `${DCTERMS}isReplacedBy`, `${DCTERMS}license`,
   `${DCTERMS}modified`, `${DCTERMS}title`,
+  // AGSC-05-25 as amended at rc.6 (EXT-2): the ontology node's registry metadata.
+  `${DCTERMS}creator`, `${DCTERMS}issued`, `${DCTERMS}publisher`,
+  `${VANN}preferredNamespacePrefix`, `${VANN}preferredNamespaceUri`,
 ]));
 /** The `rdf:type` objects OWL 2 RL admits for a term of a flat vocabulary. */
 const ALLOWED_TYPES = Object.freeze(new Set([
   `${OWL}AnnotationProperty`, `${OWL}AsymmetricProperty`, `${OWL}Class`, `${OWL}DatatypeProperty`,
   `${OWL}FunctionalProperty`, `${OWL}InverseFunctionalProperty`, `${OWL}IrreflexiveProperty`,
   `${OWL}ObjectProperty`, `${OWL}Ontology`, `${OWL}SymmetricProperty`, `${OWL}TransitiveProperty`,
+  `${VOAF}Vocabulary`, // AGSC-05-25 as amended at rc.6 (EXT-2): the ontology node only
 ]));
 /** SKOS Reference S19/S20: every one of these has domain and range `skos:Concept`. */
 const SEMANTIC_RELATIONS = Object.freeze(new Set([

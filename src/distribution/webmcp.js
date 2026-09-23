@@ -36,6 +36,7 @@ function script(options) {
   const opts = options || {};
   const list = opts.manifest || manifest();
   return `'use strict';
+// SPDX-License-Identifier: Apache-2.0 (the engine's code; the prose it carries keeps its own terms)
 // AgenticSystemCore WebMCP registration (AGSC-09-16). Generated; do not edit.
 // One tool contract, two transports: the manifest below is the stdio server's
 // manifest, and every handler dispatches to the same pure implementation.

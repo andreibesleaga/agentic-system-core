@@ -46,6 +46,7 @@ empty" above is the record of 2026-09-18 and is kept as written.
 | `trace.js` | AGSC-09-94, AGSC-02-14 | `trace <file.json>`: a captured agent-run record to an Episode, purely |
 | `import.js` + `oldsite.js`, `mapping.js`, `sources.js`, `status.js`, `clusters.js`, `cleanroom-rewrite.js`, `selection.js` | AGSC-01-22, AGSC-03-19 | `import --from old-site` (ENG-1) |
 | `adapters/llm-context.js` | AGSC-01-26a, D98 | `export --to llm-context` |
+| `own-record.js` | AGSC-01-22, AGSC-06-30 | when an import may trust an own-record line (`agsc-item`, COGX `metadata.agsc`): its origin is this node's `site.base` or a declared peer, and its versions agree with the file's provenance header (CONN2-03) |
 
 ### The adapters this distribution ships, with their claimed key sets
 
@@ -63,3 +64,25 @@ An adapter is discovered by directory convention and never by a configuration ke
 (AGSC-01-26a, D61(3)); `export --to <name>` resolves `adapters/<name>.js` after
 matching `<name>` against the slug grammar of AGSC-01-10, so no caller-supplied string
 can traverse a path.
+
+### Added 2026-09-23 (CONN-1) — the `cogx` adapter
+
+| adapter | direction | selected by | keys it claims |
+|---|---|---|---|
+| `cogx` | export and import | `export --to cogx`, `import --from cogx` (flags of its own: `--replace`, `--allow-newer`) | **export:** every authored frontmatter key and the body of every published item, carried whole in the primary record's `metadata.agsc` (a raw node carries it inline). **import:** our own archive — the same; a foreign archive — `name`, `entity_type`, `description`, `aliases` (entity), `content`, `categories` (memory), `label`, `value` (memory block), `subject_ref`, `predicate`, `object_ref` (fact), `external_id`, `external_system`, `created_at`. Every other member of a foreign record is kept verbatim as one JCS string in `x-cogx-rest`; foreign episodes, documents and raw nodes are reported and skipped |
+
+### Added 2026-09-23 (ENG-9, D117) — the `gabbe` adapter
+
+| adapter | direction | selected by | keys it claims |
+|---|---|---|---|
+| `gabbe` | export and import | `export --to gabbe`, `import --from gabbe <kit-dir>` (flags of its own: `--replace`, `--allow-newer`, `--source-version <v>`) | **export:** every authored frontmatter key and the body of every published item, carried whole in the item's `<!-- agsc-item <base64 of the JCS record> -->` line (procedure → `agents/skills/agsc/<slug>.skill.md`, gate → `agents/guides/agsc/<slug>.md`, concept and cluster → `agents/memory/semantic/agsc/<slug>.md`, episode → `agents/memory/episodic/agsc/<slug>.md`, lesson → an entry of `agents/memory/CONTINUITY.md`), plus `agents/guides/agsc/steering.md` (the `--steer` text). **import:** our own records — the same, plus `prov.source_version`; a foreign kit — a skill's `name`, `description`, `triggers`, `tags`, `context_cost` and body; a CONTINUITY entry's heading, `Failed approach`, `Why it failed`, `Resolution`, `Date`, `Status`; an AUDIT_LOG row's `Timestamp`, `Actor`, `Type`, `Description`, `Outcome`, `References`; a decision-log entry's `Date`, `Timestamp`, `Actor`, `Action Type`, `Subject`, `Rationale`, `Outcome`, `References`; a dated PROJECT_STATE line. Unmapped members are kept in `x-gabbe-*` keys (`x-gabbe-rest` holds a skill's other frontmatter as one JCS string). An AUDIT_LOG bullet entry, an entry with no readable outcome, a snapshot with none and the resume pointer are reported and skipped — an episode's outcome and start instant are never invented |
+
+### Added 2026-09-23 (CONN-2, R119) — the `skills` adapter
+
+The module table of 2026-09-21 above names `adapters/llm-context.js` only; the
+adapters added since are `adapters/cogx.js` (CONN-1), `adapters/gabbe.js` (ENG-9)
+and `adapters/skills.js` (this entry).
+
+| adapter | direction | selected by | keys it claims |
+|---|---|---|---|
+| `skills` | export and import | `export --to skills --layout <l>`, `import --from skills [--layout <l>] [--list] <clone>` (flags of its own: `--layout`, `--list`, `--replace`, `--allow-newer`, `--source-version <v>`); layouts `agentskills`, `claude-plugin`, `marketplace`, `cursor`, `windsurf` | **export:** every authored frontmatter key and the body of every published item of every pack (the cluster and its members), carried whole in one `agsc-item` line each. **import:** our own records — the same, plus `prov.source_version`; a foreign skill — `name`, `description`, `license`, `metadata.version` and the body; a foreign rule — `description`, `globs`, `alwaysApply`, `trigger` and the body; a plugin manifest's `name`, `version`, `license`, `skills`; a marketplace's `plugins[].source` (relative only), `skills`, `version`, `license` and `metadata.version`. Every other frontmatter member is kept verbatim as one JCS string in `x-skills-rest`. Dropped and reported per file, never imported: `allowed-tools`, `scripts/` and executable files, a plugin's `hooks/`, `.mcp.json`, `.lsp.json`, `bin/`, `scripts/`; not mapped and reported: a plugin's `commands/`, `agents/`, `output-styles/`, a skill's other supporting files |

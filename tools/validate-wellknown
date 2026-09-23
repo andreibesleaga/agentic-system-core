@@ -35,11 +35,11 @@ const SPEC_VERSION = (() => {
 const WELLKNOWN_SUFFIX = 'knowledge-linkset'; // single point of substitution, AGSC-06-07 (D82 Q4)
 const PROFILE = 'https://w3id.org/agentic-system-core/profile/agentic-knowledge';
 const REL = 'https://w3id.org/agentic-system-core/rel#';
-const REGISTERED = new Set(['alternate', 'author', 'collection', 'describedby', 'item', 'license',
-  'related', 'service-desc', 'service-doc', 'service-meta']); // AGSC-06-10 + AGSC-06-35
-const RELATED_ONLY = new Set(['related', 'service-desc', 'service-meta', 'collection', 'item']);
+const REGISTERED = new Set(['alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
+  'related', 'service-desc', 'service-doc', 'service-meta']); // AGSC-06-10 + AGSC-06-35 (cite-as: rc.6, EXT2-03)
+const RELATED_ONLY = new Set(['related', 'service-desc', 'service-meta', 'collection', 'item', 'cite-as']);
 const EXTENSIONS = new Set(['graph', 'ontology', 'context', 'now', 'skills', 'ledger', 'peer',
-  'surface', 'contribute', 'access']);
+  'surface', 'contribute', 'access', 'signature']); // signature: rc.6, EXT2-07
 const RFC8288_STRING_ATTRS = new Set(['type', 'title', 'media']); // RFC 9264 §4.2.4.2
 const LEVEL2_ATTRS = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-generated-at', 'agsc-spec-version'];
 // AGSC-11-20: the four a `restricted` node MUST omit although it is Level ≥ 2 —
@@ -352,7 +352,10 @@ async function check(src, level, findings) {
         else if (!Array.isArray(v) || !v.length || !v.every(s => typeof s === 'string')) F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a non-empty array of strings (AGSC-06-10)`);
       }
       const sameOrigin = h.origin === anchor.origin;
-      const artefact = sameOrigin && !h.pathname.endsWith('/') && rel !== 'license' && rel !== 'service-doc' && ext !== 'surface' && ext !== 'peer';
+      const artefact = sameOrigin && !h.pathname.endsWith('/') && rel !== 'license' && rel !== 'service-doc' && ext !== 'surface' && ext !== 'peer'
+        // AGSC-06-08 as amended at rc.6 (EXT2-07): the optional signature link "affects no
+        // digest, no claim and no walk", so its target is never an artefact that needs one.
+        && ext !== 'signature';
       if (t.digest !== undefined) {
         if (!Array.isArray(t.digest) || t.digest.length !== 1 || !/^sha-256=:[A-Za-z0-9+/]{43}=:$/.test(t.digest[0])) F('AGSC-E204', `relation ${rel}: digest must be one "sha-256=:<base64>:" string (AGSC-06-08, RFC 9530, RFC 9651)`);
         else if (level >= 2 || src.kind === 'file') {

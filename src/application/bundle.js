@@ -58,7 +58,13 @@ function loadBundle(ports, options) {
     for (const entry of fs.readdir(dir)) {
       if (!entry.endsWith('.md')) continue;
       const path = `${dir}/${entry}`;
-      const item = frontmatter.parseItem(String(fs.readFile(path, 'utf8')), {
+      // The port refuses a file with the code the rule names — not UTF-8 (E108,
+      // AGSC-01-14), over the cap (E904), a link out of the root (E902) — and that
+      // refusal is a Finding about this one file, never an internal error that hides
+      // the rest of the Bundle (BENCH1b-03/05, ENG-9).
+      const text = readRefusable(fs, path, findings);
+      if (text === null) continue;
+      const item = frontmatter.parseItem(text, {
         config, path, schemas: opts.schemas,
       });
       items.push(item);
@@ -82,8 +88,9 @@ function loadBundle(ports, options) {
   const assets = fs.exists(ASSETS_DIR) ? fs.walk(ASSETS_DIR) : [];
 
   let index = null;
-  if (fs.exists('content/index.md')) {
-    const split = frontmatter.split(String(fs.readFile('content/index.md', 'utf8')), { file: 'content/index.md' });
+  const indexText = fs.exists('content/index.md') ? readRefusable(fs, 'content/index.md', findings) : null;
+  if (indexText !== null) {
+    const split = frontmatter.split(indexText, { file: 'content/index.md' });
     let parsed = {};
     try {
       parsed = yaml.parse(split.yamlText || '');
@@ -119,6 +126,27 @@ function fileSystemOf(ports) {
   return bag.fs === undefined ? bag : bag.fs;
 }
 
+/** A port refusal carries a registered code; anything else is not ours to name. */
+function refusalCode(e) {
+  return e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : null;
+}
+
+/**
+ * The text of one Bundle file, or `null` with the port's own refusal recorded as a
+ * Finding. An error that carries no registered code is a programming fault and is
+ * re-thrown (WP-10 contract: a thrown error is a fault, a Finding is a domain fact).
+ */
+function readRefusable(fs, path, findings) {
+  try {
+    return String(fs.readFile(path, 'utf8'));
+  } catch (e) {
+    const code = refusalCode(e);
+    if (code === null) throw e;
+    findings.push(Object.freeze({ code, file: path, message: String(e.message), severity: 'error' }));
+    return null;
+  }
+}
+
 function readJson(ports, path, findings) {
   if (!ports.exists(path)) {
     findings.push(Object.freeze({
@@ -129,6 +157,13 @@ function readJson(ports, path, findings) {
   try {
     return JSON.parse(String(ports.readFile(path, 'utf8')));
   } catch (e) {
+    // BENCH1b-05: an oversized or undecodable configuration is the port's refusal
+    // (AGSC-E904, AGSC-E108), not a JSON syntax error.
+    const code = refusalCode(e);
+    if (code !== null) {
+      findings.push(Object.freeze({ code, file: path, message: String(e.message), severity: 'error' }));
+      return {};
+    }
     findings.push(Object.freeze({
       code: 'AGSC-E201', file: path,
       message: `${path} is not valid JSON: ${(e && e.message) || 'parse error'} (AGSC-01-12)`,

@@ -12,6 +12,10 @@
 // graph-0012 N-Quads escaping and the datatypes               AGSC-05-32
 // graph-0013 ports and task state                             AGSC-05-30
 // graph-0014 the three literal forms                          AGSC-05-31
+// graph-0021…0025 the same cases as 0001/0002/0004/0006/0020, restated as quads
+//                  named by the Bundle IRI                     AGSC-04-15 (rc.6, PY2-01)
+//
+// (0001, 0002, 0004, 0006, 0010, 0013, 0014 and 0020 are withdrawn and never run.)
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
@@ -50,16 +54,15 @@ const { checks } = require('./_assert.js');
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
 /**
- * The emission options a vector's input asks for. A vector carrying `input.site.base`
- * is an rc.3 case whose expectations name the Bundle IRI as the graph name; a vector
- * carrying the older `input.base` states triples in the default graph. Both shapes
- * are in the released set and both are honoured.
+ * The emission options a vector's input asks for. Every line of `graph.nq` is a quad
+ * named by the Bundle IRI (AGSC-04-15 as amended at rc.6, PY2-01), so the graph term
+ * is never chosen by the vector's shape: the five released cases that stated triples
+ * in the default graph under the older `input.base` shape are withdrawn and are never
+ * run (graph-0001/0002/0004/0006/0020, superseded by graph-0021…graph-0025).
  */
 function optionsFor(input) {
-  const named = input.site && input.site.base;
   return {
-    base: named || input.base,
-    graph: named ? undefined : null,
+    base: (input.site && input.site.base) || input.base,
     ...(input.bundle ? { bundle: input.bundle } : {}),
     ...(input.attachment_bytes ? { attachmentBytes: input.attachment_bytes } : {}),
     sha256,
@@ -94,7 +97,7 @@ function memoryCase(vector) {
   if (vector.expected.emitted_as_rdf_subject === false) {
     // The alias has no path into the dataset: every subject is built by `itemIri`.
     const items = [{ type: 'concept', slug: own.slug, title: 'Alias', lang: 'en' }];
-    const text = nq.toNQuads(items, { base: vector.input.base, graph: null });
+    const text = nq.toNQuads(items, { base: vector.input.base });
     list.push(['never a subject', !text.includes('memory://'), text]);
   }
   return checks(list);
@@ -152,7 +155,7 @@ function termNamesCase(vector) {
 }
 
 /**
- * graph-0020 — AGSC-05-27 as amended at rc.6 (ENG3-S3): the `asc:mentions` edge of
+ * graph-0025 (superseding graph-0020) — AGSC-05-27 as amended at rc.6 (ENG3-S3): the `asc:mentions` edge of
  * an inline body link. Only the mentions lines are asserted
  * (`whole_file_asserted: false`); the rest of the serialisation is pinned by
  * graph-0015…graph-0018.
@@ -176,7 +179,7 @@ function mentionsCase(vector) {
   if (vector.expected.inverse_materialised === false) {
     // AGSC-03-04 lists the computed inverses and `mentions` is not among them.
     list.push(['inverse_materialised',
-      !nquads.includes(`<${input.base}/concepts/beta/> <${nq.NS}mentions>`),
+      !nquads.includes(`<${nq.bundleIri(options.base)}concepts/beta/> <${nq.NS}mentions>`),
       'a computed inverse reached the export']);
   }
   return checks(list);
@@ -317,7 +320,7 @@ function forbiddenCheck(forbidden, vector, options, nquads, text) {
   return [`forbidden ${forbidden}`, false, 'this handler does not implement that clause'];
 }
 
-/** graph-0001/0002/0004/0006/0013/0014 — the dataset of a set of items. */
+/** graph-0021/0022/0023/0024 — the dataset of a set of items. */
 function itemsCase(vector) {
   const options = optionsFor(vector.input);
   const nquads = nq.toNQuads(vector.input.items, options);
@@ -369,7 +372,7 @@ function itemsCase(vector) {
 module.exports.run = (vector, ctx) => {
   const input = vector.input || {};
   if (vector.id === 'graph-0019') return termNamesCase(vector);
-  if (vector.id === 'graph-0020') return mentionsCase(vector);
+  if (vector.id === 'graph-0025') return mentionsCase(vector);
   if (Array.isArray(input.value) && input.bundle_id !== undefined) return memoryCase(vector);
   if (input.literal !== undefined) return literalFormsCase(vector);
   if (Array.isArray(input.ontology_terms)) return contextCase(vector, ctx);

@@ -259,6 +259,9 @@ function tools(bundle, options) {
       frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
       frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
     }
+    // MCP1-03 (ENG-9): AGSC-09-14b's `severity` default reaches a lesson too, whose
+    // schema branch REQUIRES the key — without it the item was not conforming.
+    if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
     if (typeof args.actor === 'string') frontmatter.actor = args.actor;
     frontmatter.prov = {
       agent: args.agent,

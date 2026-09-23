@@ -506,7 +506,8 @@
               "service-doc",
               "service-meta",
               "collection",
-              "item"
+              "item",
+              "cite-as"
             ]
           },
           "href": {

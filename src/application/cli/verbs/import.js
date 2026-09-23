@@ -32,13 +32,17 @@
 const path = require('node:path');
 
 const { finding } = require('../../../knowledge/validate.js');
-const { readSchemas } = require('../../../adapters/node-fs.js');
+const { compareCodePoint } = require('../../../knowledge/unicode.js');
+const { ARCHIVE_EXTENSIONS, readSchemas } = require('../../../adapters/node-fs.js');
 const interchange = require('../../../interchange/import.js');
 const okf = require('../../../interchange/okf.js');
+const cogx = require('../../../interchange/adapters/cogx.js');
+const gabbe = require('../../../interchange/adapters/gabbe.js');
+const skills = require('../../../interchange/adapters/skills.js');
 const helpers = require('./_helpers.js');
 
 /** The foreign formats this node reads. AGSC-01-22 names the verb, not a list. */
-const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT]);
+const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT]);
 
 /**
  * `--selection` belongs to the `old-site` adapter and not to the verb: AGSC-01-26a
@@ -412,6 +416,28 @@ function collisionFindings(applied) {
 }
 
 /**
+ * The finding for a foreign file that could not be read. The FileSystem port refuses
+ * with the code AGSC-01-16 names — over the input cap (AGSC-E904), an archive
+ * (AGSC-E903), a link out of the source root (AGSC-E902), not UTF-8 (AGSC-E108) —
+ * and that refusal is an ERROR: an import that silently dropped an oversized record
+ * would report success over a partial corpus (BENCH1b-05, ENG-9). Anything else is
+ * a file this lane could not decode, skipped with a warning (AGSC-01-22).
+ *
+ * @param {Error} e
+ * @param {string} file
+ * @returns {object}
+ */
+function unreadable(e, file) {
+  const code = e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : null;
+  if (code !== null) {
+    return finding(code, `"${file}" was refused: ${e.message}; nothing was written (AGSC-01-16)`,
+      { file, line: 1 });
+  }
+  return finding('AGSC-E901', `"${file}" could not be read as text and was skipped (AGSC-01-22)`,
+    { file, line: 1, severity: 'warn' });
+}
+
+/**
  * `import --from okf <dir>` (AGSC-01-22). The rules are `interchange/okf.js`'s;
  * this function walks the foreign tree through its own read-only port and applies
  * the plan through the Bundle's port, exactly as the `old-site` lane does.
@@ -435,11 +461,10 @@ function importOkf(ctx, source, identityOptions) {
     try {
       files.push({ path: String(file), text: String(fs.readFile(String(file), 'utf8')) });
     } catch (e) {
-      findings.push(finding('AGSC-E901',
-        `"${file}" could not be read as text and was skipped (AGSC-01-22)`,
-        { file: String(file), line: 1, severity: 'warn' }));
+      findings.push(unreadable(e, String(file)));
     }
   }
+  if (files.length === 0 && findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
   if (files.length === 0) {
     findings.push(finding('AGSC-E901',
       `the source directory holds no Markdown document (AGSC-01-22)`,
@@ -470,6 +495,250 @@ function importOkf(ctx, source, identityOptions) {
   });
   const all = [...findings, ...planned.findings];
   return finish(ctx, all, planned);
+}
+
+/**
+ * `import --from cogx <archive-dir>` (AGSC-01-26a; CONN-1). The rules are
+ * `interchange/adapters/cogx.js`'s; this function reads the archive's fixed file
+ * names through their own read-only port and hands the plan to the shared tail, so
+ * `--dry-run`, the collision survey and `--replace` behave exactly as in the `okf`
+ * lane (AGSC-01-23).
+ *
+ * `permissions.json` is checked for PRESENCE ONLY: its bytes are credentials
+ * (COGX's own description), so they are never read into this process.
+ *
+ * @param {object} ctx
+ * @param {string} source the archive directory.
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importCogx(ctx, source, identityOptions) {
+  const fs = openRoot(ctx, source);
+  const files = Object.create(null);
+  const findings = [];
+  for (const name of cogx.ARCHIVE_FILES) {
+    try {
+      if (!fs.exists(name)) continue;
+      files[name] = String(fs.readFile(name, 'utf8'));
+    } catch (e) {
+      findings.push(unreadable(e, name));
+    }
+  }
+  if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
+  let secret = false;
+  try {
+    secret = fs.exists(cogx.PERMISSIONS_FILE) === true;
+  } catch (e) {
+    secret = true; // a file the port cannot even stat is not proven absent
+  }
+  if (secret) files[cogx.PERMISSIONS_FILE] = '';
+  if (Object.keys(files).length === 0) {
+    return {
+      findings: [...findings, finding('AGSC-E901',
+        `${JSON.stringify(String(source))} holds no COGX archive file (${cogx.ARCHIVE_FILES.join(', ')})`
+        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const planned = cogx.plan(files, {
+    allowNewer: (ctx.verbFlags || {})['allow-newer'] === true,
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+    ...trustOptions(identityOptions),
+    toolSpecVersion: ctx.specVersion,
+  });
+  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
+  return finish(ctx, [...findings, ...planned.findings], planned);
+}
+
+/**
+ * `import --from gabbe <kit-dir>` (AGSC-01-26a; D117, ENG-9). The rules are
+ * `interchange/adapters/gabbe.js`'s; this function reads the kit's `agents/` tree —
+ * only the files the adapter names (skills, the memory files, the decision logs and
+ * its own exported guides) — through a read-only port rooted at the kit, and hands
+ * the plan to the shared tail, so `--dry-run`, the collision survey and `--replace`
+ * behave exactly as in every other lane (AGSC-01-23).
+ *
+ * `--source-version <v>` states the kit's content version, which a GABBE kit does
+ * not publish itself (AGSC-01-22 records it as `prov.source_version` on every
+ * foreign item); it must match the content-version grammar of AGSC-04-25.
+ *
+ * @param {object} ctx
+ * @param {string} source the kit directory (the one holding `agents/`).
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importGabbe(ctx, source, identityOptions) {
+  const verbFlags = ctx.verbFlags || {};
+  const stated = verbFlags['source-version'];
+  const bad = sourceVersionRefusal(stated);
+  if (bad !== null) return { findings: [bad], status: 'fail' };
+  const fs = openRoot(ctx, source);
+  const findings = [];
+  const files = Object.create(null);
+  const paths = typeof fs.walk === 'function' && fs.exists('agents') ? fs.walk('agents') : [];
+  for (const file of paths.filter(gabbe.isKitFile)) {
+    try {
+      files[file] = String(fs.readFile(file, 'utf8'));
+    } catch (e) {
+      findings.push(unreadable(e, String(file)));
+    }
+  }
+  if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
+  if (Object.keys(files).length === 0) {
+    return {
+      findings: [...findings, finding('AGSC-E901',
+        `${JSON.stringify(String(source))} holds no GABBE kit file (agents/skills/**/*.skill.md,`
+        + ' agents/memory/*.md, agents/memory/episodic/**) (AGSC-01-22)', { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const planned = gabbe.plan(files, {
+    allowNewer: verbFlags['allow-newer'] === true,
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+    ...trustOptions(identityOptions),
+    sourceVersion: stated === undefined ? undefined : String(stated),
+    toolSpecVersion: ctx.specVersion,
+  });
+  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
+  return finish(ctx, [...findings, ...planned.findings], planned);
+}
+
+/**
+ * The origins whose own-record lines an import may trust (CONN2-03): this node's
+ * `site.base` and its declared `peers[]`.
+ *
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{origin:string, peers:string[]}}
+ */
+function trustOptions(identityOptions) {
+  return { origin: identityOptions.base, peers: identityOptions.peers || [] };
+}
+
+/** Directories of a local clone that hold no skill and are never walked. */
+const CLONE_SKIP = Object.freeze(['.git', 'node_modules']);
+
+/**
+ * Every file of a local clone, clone-relative, in code-point order — `.git/` and
+ * `node_modules/` excluded, so a checkout's object store is not listed for nothing.
+ *
+ * @param {object} fs a FileSystem port rooted at the clone.
+ * @returns {string[]}
+ */
+function cloneFiles(fs) {
+  const out = [];
+  for (const name of fs.readdir('.')) {
+    if (CLONE_SKIP.includes(name)) continue;
+    let directory = false;
+    try {
+      directory = fs.stat(name).isDirectory();
+    } catch (e) {
+      directory = false; // a dangling link: listed, and refused if it is ever read
+    }
+    if (directory) out.push(...fs.walk(name));
+    else out.push(name);
+  }
+  return out.sort(compareCodePoint);
+}
+
+/**
+ * `import --from skills [--layout <l>] [--list] <clone>` (AGSC-01-26a; CONN-2, R119).
+ * The rules are `interchange/adapters/skills.js`'s; this function lists the local
+ * clone, reads only the files the adapter names (skills, rules, manifests, licences,
+ * the README) through a read-only port rooted at the clone, and hands the plan to the
+ * shared tail, so `--dry-run`, the collision survey and `--replace` behave as in every
+ * other lane (AGSC-01-23). `--list` prints the catalogue and writes nothing. Nothing
+ * is ever fetched: a remote source is named and left alone.
+ *
+ * @param {object} ctx
+ * @param {string} source the local clone.
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importSkills(ctx, source, identityOptions) {
+  const verbFlags = ctx.verbFlags || {};
+  const stated = verbFlags['source-version'];
+  const bad = sourceVersionRefusal(stated);
+  if (bad !== null) return { findings: [bad], status: 'fail' };
+  const layout = verbFlags.layout === undefined ? undefined : String(verbFlags.layout);
+  if (layout !== undefined && !skills.LAYOUTS.includes(layout)) {
+    return {
+      findings: [finding('AGSC-E003', `--layout ${JSON.stringify(layout)} is not a layout of the skills adapter;`
+        + ` the set is ${skills.LAYOUTS.join(', ')} (AGSC-01-26a)`, { file: '', line: 1 })],
+      status: 'fail',
+    };
+  }
+  const fs = openRoot(ctx, source);
+  const findings = [];
+  let paths = [];
+  try {
+    paths = cloneFiles(fs);
+  } catch (e) {
+    return {
+      findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
+        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const files = Object.create(null);
+  for (const file of paths.filter(skills.isRelevant)) {
+    try {
+      files[file] = String(fs.readFile(file, 'utf8'));
+    } catch (e) {
+      findings.push(unreadable(e, String(file)));
+    }
+  }
+  if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
+  const options = {
+    allowNewer: verbFlags['allow-newer'] === true,
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+    ...trustOptions(identityOptions),
+    sourceVersion: stated === undefined ? undefined : String(stated),
+    toolSpecVersion: ctx.specVersion,
+  };
+  if (verbFlags.list === true) {
+    const listed = skills.catalogue({ files, paths }, options);
+    for (const line of listed.lines) helpers.note(ctx, line);
+    if (listed.entries.length === 0 && listed.links === 0) {
+      return {
+        findings: [...findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds no skill, no rule and`
+          + ' no link list this adapter reads (AGSC-01-22)', { file: String(source), line: 1 })],
+        status: 'fail',
+      };
+    }
+    return { findings };
+  }
+  const detected = skills.detect(paths);
+  const chosen = layout === undefined ? detected[0] : layout;
+  if (chosen === undefined) {
+    return {
+      findings: [...findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds no skill or rule in any`
+        + ` layout this adapter reads (${skills.LAYOUTS.join(', ')}); run with --list to see what it holds`
+        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  helpers.note(ctx, `import: skills layout ${chosen}${layout === undefined ? ' (detected)' : ''}`
+    + `${detected.length > 1 ? `; also found: ${detected.filter((l) => l !== chosen).join(', ')}` : ''}`);
+  const planned = skills.plan({ files, paths }, { ...options, layout: chosen });
+  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
+  return finish(ctx, [...findings, ...planned.findings], planned);
+}
+
+/**
+ * `--source-version <v>` of the adapters that take it (gabbe, skills): a content
+ * version per AGSC-04-25, or the finding that refuses it.
+ *
+ * @param {string|undefined} stated
+ * @returns {object|null}
+ */
+function sourceVersionRefusal(stated) {
+  if (stated === undefined || /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u.test(String(stated))) return null;
+  return finding('AGSC-E204',
+    `--source-version ${JSON.stringify(String(stated))} is not a content version: 1-64 characters from`
+    + ' [A-Za-z0-9._+-], beginning with a letter or digit (AGSC-04-25)', { file: '', line: 1 });
 }
 
 /**
@@ -547,10 +816,25 @@ function run(ctx) {
   }
   if (findings.length > 0) return { findings, status: 'fail' };
 
+  // AGSC-01-16 (BENCH1b-04, ENG-9): an archive is refused, never unpacked — and
+  // never handed to a directory walk, where it died with an internal ENOTDIR.
+  if (ARCHIVE_EXTENSIONS.includes(path.extname(String(source)).toLowerCase())) {
+    return {
+      findings: [finding('AGSC-E903',
+        `${JSON.stringify(String(source))} is an archive; import reads a directory and never unpacks one.`
+        + ' Unpack it yourself, look at what it holds, and import the directory (AGSC-01-16)',
+        { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+
   const identified = identity(ctx.config);
   if (identified.findings.length > 0) return { findings: identified.findings, status: 'fail' };
 
   if (from === okf.FORMAT) return importOkf(ctx, source, identified.options);
+  if (from === cogx.FORMAT) return importCogx(ctx, source, identified.options);
+  if (from === gabbe.FORMAT) return importGabbe(ctx, source, identified.options);
+  if (from === skills.FORMAT) return importSkills(ctx, source, identified.options);
 
   let selectionText;
   try {
@@ -609,12 +893,17 @@ module.exports = {
   FORMATS,
   SELECTION_REQUIRED,
   SOURCE_TREES,
+  CLONE_SKIP,
   apply,
   bundleConfig,
+  cloneFiles,
   collisionFindings,
   finish,
   identity,
+  importCogx,
+  importGabbe,
   importOkf,
+  importSkills,
   isoDate,
   name: 'import',
   openRoot,
@@ -622,6 +911,8 @@ module.exports = {
   readOldSite,
   readOutside,
   run,
+  sourceVersionRefusal,
   survey,
   totalsLines,
+  unreadable,
 };

@@ -220,12 +220,35 @@ function run(argv, io) {
   const dir = fs.existsSync(path.join(target, 'docs', 'diagrams'))
     ? path.join(target, 'docs', 'diagrams')
     : target;
-  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
-    return usage(`no diagrams directory at ${dir} (AGSC-E901)`);
-  }
   const root = path.basename(dir) === 'diagrams' ? path.resolve(dir, '..', '..') : dir;
+  // A refusal before any file is judged: the AGSC-09-11 envelope with one AGSC-E901
+  // and exit 1, as every other checker reports "nothing to validate" (FIX29-S4). A
+  // directory that does not exist is not a usage error — the invocation was well
+  // formed (ENG9-05, CONN-2).
+  const refuse = (message) => {
+    const refused = envelopeOf([finding('AGSC-E901', path.basename(dir) || dir, 1, message)],
+      specVersion(root), packageVersion(root));
+    if (flags.has('--json')) {
+      out(`${canonicalize(refused)}\n`);
+    } else if (!flags.has('--quiet')) {
+      for (const f of refused.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+      out('validate-diagrams: 0 input file(s) read, 0 mermaid blocks, 1 error, 0 warn\n');
+    }
+    return 1;
+  };
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    return refuse(`no diagrams directory at ${dir}: there is nothing to validate (AGSC-09-90)`);
+  }
 
   const findings = [];
+  // SITE4-05 (ENG-9): the contract's input is a diagram PACK — a directory with its
+  // `README.md` index (the index table this tool checks). A directory with neither
+  // that name nor that index — a published site, whose `/now.md` is no diagram — is
+  // refused with AGSC-E901 before a single file of it is judged (AGSC-09-90).
+  if (path.basename(dir) !== 'diagrams' && !fs.existsSync(path.join(dir, 'README.md'))) {
+    return refuse(`${dir} is not a diagram pack: it is not a diagrams/ directory and carries no README.md`
+      + ' index, so none of its files was judged (AGSC-09-90)');
+  }
   // The two source-of-truth sets the standing sync rule names.
   const specDir = path.join(root, 'spec');
   const ruleIds = new Set();

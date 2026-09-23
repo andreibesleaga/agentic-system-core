@@ -16,6 +16,7 @@
 // Pure function of its input.
 
 const { TERMS } = require('../knowledge/chunks.js');
+const { singleLine } = require('../knowledge/unicode.js');
 const { ASSISTANCE } = require('../knowledge/provenance-header.js');
 const diagrams = require('../knowledge/diagrams.js');
 const lint = require('../governance/lint.js');
@@ -33,8 +34,15 @@ function escapeHtml(value) {
 
 /**
  * The footer's one-line AI-assistance statement (AGSC-06-15's fact, in the words a
- * reader of a page needs) and the one-sentence disclaimer set. Both are constants:
- * a publisher states nothing here and a writer invents nothing.
+ * reader of a page needs) and the owner's one-sentence disclaimer.
+ *
+ * LEG2-02 (ENG-9): neither is stamped on every node any more. This engine is a
+ * general tool, and a constant sentence can be false for somebody else's node. The
+ * AI sentence is emitted only when a published item records `prov.origin`
+ * `ai-assisted` or `ai-generated` (`termsLine`'s `aiAssisted`, derived by the build);
+ * the disclaimer is the publisher's own `DISCLAIMER.md` (`termsLine`'s `disclaimer`).
+ * `NO_CLAIM_SENTENCE` stays exported as the text this project's own nodes put in
+ * their `DISCLAIMER.md`; no writer emits it on its own.
  */
 const ASSISTANCE_SENTENCE = 'Written with AI assistance, reviewed and published by a person.';
 const NO_CLAIM_SENTENCE = 'Independent work, published as it is, with no warranty and no'
@@ -46,6 +54,14 @@ const NO_CLAIM_SENTENCE = 'Independent work, published as it is, with no warrant
  * identifier is a constant, independent of `bundle.license_prose`, which names the
  * licence of the prose itself and may differ.
  */
+/**
+ * Did the publisher adopt the Content Use Terms as the licence of the prose? An
+ * absent `bundle.license_prose` defaults to them (AGSC-01-18).
+ */
+function adoptsTerms(licenseProse) {
+  return licenseProse == null || String(licenseProse) === TERMS;
+}
+
 function termsLine(licenseProse, options = {}) {
   const license = licenseProse == null ? TERMS : licenseProse;
   // V9D-A6: every page used to link `/legal/` whether or not the build produced
@@ -68,15 +84,28 @@ function termsLine(licenseProse, options = {}) {
   // from a clock, so the footer stays byte-reproducible. With no author configured,
   // no copyright line is emitted at all: a copyright notice naming nobody says
   // nothing, and inventing a holder would be worse.
+  //
+  // LEG2-02 (ENG-9): "All rights reserved" is true only where the publisher adopted
+  // the Content Use Terms for the prose; under any other licence (CC BY 4.0, CC0, …)
+  // the licence itself says what a reader may do, and a reservation beside it would
+  // restrict the licensed rights (CC BY 4.0 §2(a)(5)(B)). So the line names the
+  // licence instead.
   const author = options.author == null ? '' : String(options.author).trim();
   const year = options.year == null ? '' : String(options.year).trim();
   if (author !== '' && year !== '') {
     const seeLegal = legal ? ' See <a href="/legal/">/legal/</a>.' : '';
-    lines.push(`<p class="copyright">&#169; ${escapeHtml(year)} ${escapeHtml(author)}. `
-      + `All rights reserved. You may cite and link.${seeLegal}</p>`);
+    const rights = adoptsTerms(licenseProse)
+      ? 'All rights reserved. You may cite and link.'
+      : `The prose is licensed under ${escapeHtml(license)}.`;
+    lines.push(`<p class="copyright">&#169; ${escapeHtml(year)} ${escapeHtml(author)}. ${rights}${seeLegal}</p>`);
   }
-  lines.push(`<p class="notice">${escapeHtml(ASSISTANCE_SENTENCE)} ${escapeHtml(NO_CLAIM_SENTENCE)}`
-    + `${legal ? ' <a href="/legal/">Full terms</a>.' : ''}</p>`);
+  const notice = [
+    options.aiAssisted === true ? escapeHtml(ASSISTANCE_SENTENCE) : '',
+    options.disclaimer == null ? '' : escapeHtml(singleLine(String(options.disclaimer)).trim()),
+  ].filter((part) => part !== '');
+  if (notice.length > 0) {
+    lines.push(`<p class="notice">${notice.join(' ')}${legal ? ' <a href="/legal/">Full terms</a>.' : ''}</p>`);
+  }
   return lines.join('\n');
 }
 
@@ -125,7 +154,9 @@ function shell(page) {
     `<h1>${escapeHtml(page.title)}</h1>`,
     page.body,
     '</main>',
-    `<footer>${termsLine(page.licenseProse, { author: page.author, legal: page.legal, year: page.year })}</footer>`,
+    `<footer>${termsLine(page.licenseProse, {
+      aiAssisted: page.aiAssisted, author: page.author, disclaimer: page.disclaimer, legal: page.legal, year: page.year,
+    })}</footer>`,
     '</body>',
     '</html>',
     '',
@@ -361,7 +392,7 @@ function boardPage({ board, columns, wip }, options = {}) {
  * publisher's own. A section whose input is absent is OMITTED, never invented, and
  * the build warns (`site.js`).
  */
-function legalPage({ terms, licenseProse, rendered, privacy, operator }, options = {}) {
+function legalPage({ terms, licenseProse, rendered, privacy, operator, disclaimer }, options = {}) {
   const sections = [
     `<p>The Content Use Terms identifier is <code>${escapeHtml(terms)}</code>. `
       + `The licence of the prose itself is <code>${escapeHtml(licenseProse)}</code>; `
@@ -371,6 +402,11 @@ function legalPage({ terms, licenseProse, rendered, privacy, operator }, options
     '<p>The text above is this distribution\'s <code>LICENSE-CONTENT</code> file, '
       + 'rendered unchanged (AGSC-01-26, AGSC-06-18).</p>',
   ];
+  // LEG2-02 (ENG-9): the publisher's own disclaimer, from `DISCLAIMER.md`, as its own
+  // section between the terms and the privacy notice — never a constant.
+  if (disclaimer != null && String(disclaimer.html) !== '') {
+    sections.push(`<h2 id="disclaimer">${escapeHtml(disclaimer.heading)}</h2>`, String(disclaimer.html));
+  }
   if (privacy != null && String(privacy) !== '') {
     sections.push('<h2 id="privacy">Privacy</h2>', String(privacy));
   }
@@ -382,11 +418,15 @@ function legalPage({ terms, licenseProse, rendered, privacy, operator }, options
   // carries". So the section quotes that constant rather than restating it — the two
   // cannot drift — and adds only what a person reading a page needs in order to
   // understand what the constant means.
-  sections.push('<h2 id="ai-assistance">How this text was written</h2>',
-    `<p>${escapeHtml(ASSISTANCE_SENTENCE)} A person decides what is written and why, an`
-    + ' assistant drafts and checks it under their direction, and a person reads, edits and'
-    + ' approves every sentence before it is published and answers for it.</p>',
-    '<p>Every item on this node records how its text was made — written by a person, written'
+  // LEG2-02 (ENG-9): the practice paragraph describes how AI-ASSISTED text is made
+  // here, so it is stated only where a published item records AI assistance.
+  sections.push('<h2 id="ai-assistance">How this text was written</h2>');
+  if (options.aiAssisted === true) {
+    sections.push(`<p>${escapeHtml(ASSISTANCE_SENTENCE)} A person decides what is written and why, an`
+      + ' assistant drafts and checks it under their direction, and a person reads, edits and'
+      + ' approves every sentence before it is published and answers for it.</p>');
+  }
+  sections.push('<p>Every item on this node records how its text was made — written by a person, written'
     + ' with AI assistance, generated by a model, or imported from elsewhere — and names the'
     + ' person accountable for it. You can read that record on the item\'s own page and in the'
     + ' machine-readable views. Each accepted contribution carries the same record in its'
@@ -441,5 +481,5 @@ function changelogPage(rows, options = {}) {
 module.exports = {
   shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
   boardPage, composePage, legalPage,
-  escapeHtml, termsLine, ASSISTANCE_SENTENCE, NO_CLAIM_SENTENCE, HONEST_LIMIT,
+  adoptsTerms, escapeHtml, termsLine, ASSISTANCE_SENTENCE, NO_CLAIM_SENTENCE, HONEST_LIMIT,
 };

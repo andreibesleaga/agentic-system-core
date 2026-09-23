@@ -164,9 +164,24 @@ function adapterExport(ctx, bundle, name) {
       written: [],
     };
   }
+  // AGSC-04-25 / AGSC-06-15: the content version every adapter's provenance header
+  // states, derived once here from the same inputs the build uses (CONN-1).
+  // ENG-9: an adapter that writes steering text (the `gabbe` adapter's
+  // `steering.md`) needs what `--steer` needs — the NOW state, computed HERE because
+  // Interchange may not require Distribution. Adapters that ignore it are unaffected.
+  const instant = instantOf(ctx);
+  // CONN-2: an adapter may declare flags of its own (AGSC-09-09's adapter exception,
+  // e.g. the skills adapter's `--layout`), and an adapter that re-lays the published
+  // skill packs out (`NEEDS_SKILL_PACKS`) is handed exactly the packs `agsc skills`
+  // emits — computed HERE, because Interchange may not require Composition.
   const produced = found.module.run(bundle, {
-    instant: instantOf(ctx),
+    bundleVersion: helpers.bundleVersionOf(ctx, helpers.gitLog(ctx)).version,
+    flags: ctx.verbFlags || {},
+    instant,
+    nowState: nowStateOf(bundle, instant),
     sha256: helpers.sha256,
+    // eslint-disable-next-line global-require
+    ...(found.module.NEEDS_SKILL_PACKS === true ? { skillPacks: require('./skills.js').packsOf(ctx, bundle) } : {}),
     specVersion: ctx.specVersion,
   });
   const written = [];
@@ -254,14 +269,19 @@ function bundleExport(ctx, bundle, form) {
  *
  * @returns {{findings:Array<object>, written:Array<string>}}
  */
-function steerExport(ctx, bundle, targets) {
-  const config = bundle.config || {};
-  const instant = instantOf(ctx);
-  const items = site.publishedItems(bundle.items, config.releases);
-  const allItems = (bundle.items || []).map((item) => (item && item.frontmatter
+/** The NOW state of AGSC-06-22, as `--steer` and the steering-writing adapters read it. */
+function nowStateOf(bundle, instant) {
+  const config = (bundle && bundle.config) || {};
+  const items = site.publishedItems((bundle && bundle.items) || [], config.releases);
+  const allItems = ((bundle && bundle.items) || []).map((item) => (item && item.frontmatter
     ? { ...item.frontmatter, body: item.body, path: item.path, slug: item.slug, type: item.type }
     : item));
-  const nowState = now.state(items, config, { allItems, instant });
+  return now.state(items, config, { allItems, instant });
+}
+
+function steerExport(ctx, bundle, targets) {
+  const instant = instantOf(ctx);
+  const nowState = nowStateOf(bundle, instant);
   // AGSC-06-15: every steer target carries the provenance header, so it carries
   // the content version (AGSC-01-29 routes them all through one writer).
   const derived = helpers.bundleVersionOf(ctx, helpers.gitLog(ctx));
@@ -388,6 +408,7 @@ module.exports = {
   instantOf,
   licenseContentOf,
   name: 'export',
+  nowStateOf,
   readOptional,
   run,
   sourcesOf,

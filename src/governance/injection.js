@@ -73,8 +73,9 @@ const VARIATION = /(.?)([\uFE00-\uFE0F]|[\u{E0100}-\u{E01EF}])/gu;
 const PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
 
 /** A blob long enough that no human wrote it for a human (AGSC-08-13). */
-const BASE64_BLOB = /[A-Za-z0-9+/]{128,}={0,2}/u;
-const HEX_BLOB = /[0-9a-fA-F]{128,}/u;
+// AGSC-08-13 (rc.5, R-09): a RUN of 256 or more; `=` belongs to the base64 class (BENCH1b-01).
+const BASE64_BLOB = /[A-Za-z0-9+/=]{256,}/u;
+const HEX_BLOB = /[0-9a-fA-F]{256,}/u;
 
 /** Markdown link and image targets, and CommonMark autolinks. */
 const MD_TARGET = /\]\(([^()\s]*)/gu;

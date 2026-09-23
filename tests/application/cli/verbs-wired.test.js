@@ -417,7 +417,11 @@ test('the helpers read attachments through the port and hash through node:crypto
   };
   const facts = helpers.attachmentFacts(ctx, bundle);
   assert.strictEqual(facts.attachmentBytes['content/attachments/supervisor/note.txt'], 'attached text\n');
-  assert.strictEqual(facts.filesPresent['content/attachments/handoff/absent.txt'], false);
+  // ENG-9: the map carries BYTE LENGTHS (what `governance/lint.js` reads); an
+  // absent file is simply not in it, which is how AGSC-E413 is found.
+  assert.strictEqual(facts.filesPresent['content/attachments/supervisor/note.txt'], 14);
+  assert.strictEqual(facts.filesPresent['content/attachments/handoff/absent.txt'], undefined);
+  assert.strictEqual(facts.presenceChecked, true);
   const none = helpers.attachmentFacts({ ports: {} }, bundle);
   assert.deepStrictEqual([Object.keys(none.attachmentBytes), Object.keys(none.filesPresent)], [[], []]);
 

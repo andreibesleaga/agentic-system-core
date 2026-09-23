@@ -455,6 +455,8 @@ function linkQuads(item, subject, index, graph) {
  *                     Knowledge context hashes but never reads
  *   `mentions`        `[{source, target}]` — the inline-link edges of AGSC-03-11,
  *                     already resolved to slugs by the Links module
+ *   `citations`       `[{source, see_also, peer}]` — the AGSC-11-12 peer citations,
+ *                     already normalised by `boundary/federation.js#peerCitations`
  * @returns {object[]} quads
  */
 function dataset(items, options = {}) {
@@ -505,6 +507,19 @@ function dataset(items, options = {}) {
     const source = resolveTarget(edge.source, index);
     const target = resolveTarget(edge.target, index);
     if (source && target) out.push(quad(iri(source.iri), iri(`${NS}mentions`), iri(target.iri), graph));
+  }
+
+  // AGSC-11-12 (F6) — a citation of a declared peer's page is `rdfs:seeAlso` plus
+  // `asc:peerOrigin` on the citing item. Which `sources[].resource` values lie under
+  // a peer base, and their normalised IRIs, are the Boundary context's decision
+  // (`boundary/federation.js#peerCitations`), so the pairs are INJECTED exactly as
+  // `mentions` is; this writer only places them. A pair whose citing item is not in
+  // this dataset (another item's per-page view) contributes nothing.
+  for (const citation of asArray(options.citations)) {
+    const source = resolveTarget(citation.source, index);
+    if (!source || typeof citation.see_also !== 'string' || typeof citation.peer !== 'string') continue;
+    out.push(quad(iri(source.iri), iri(`${RDFS}seeAlso`), iri(citation.see_also), graph));
+    out.push(quad(iri(source.iri), iri(`${NS}peerOrigin`), iri(citation.peer), graph));
   }
   return out;
 }

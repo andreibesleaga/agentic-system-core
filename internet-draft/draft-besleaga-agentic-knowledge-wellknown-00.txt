@@ -4,8 +4,8 @@
 
 Independent Submission                                    A. N. Besleaga
 Internet-Draft                                               Independent
-Intended status: Informational                         22 September 2026
-Expires: 26 March 2027
+Intended status: Informational                         23 September 2026
+Expires: 27 March 2027
 
 
     The 'knowledge-linkset' Well-Known URI for Publishing Knowledge
@@ -43,7 +43,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 26 March 2027.
+   This Internet-Draft will expire on 27 March 2027.
 
 Copyright Notice
 
@@ -53,7 +53,7 @@ Copyright Notice
 
 
 
-Besleaga                  Expires 26 March 2027                 [Page 1]
+Besleaga                  Expires 27 March 2027                 [Page 1]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -76,7 +76,7 @@ Table of Contents
    4.  The Link Set  . . . . . . . . . . . . . . . . . . . . . . . .   6
      4.1.  Top-level structure . . . . . . . . . . . . . . . . . . .   6
      4.2.  Relations . . . . . . . . . . . . . . . . . . . . . . . .   7
-     4.3.  Target attributes . . . . . . . . . . . . . . . . . . . .   8
+     4.3.  Target attributes . . . . . . . . . . . . . . . . . . . .   9
        4.3.1.  The digest attribute  . . . . . . . . . . . . . . . .   9
        4.3.2.  Bundle-fact attributes  . . . . . . . . . . . . . . .   9
        4.3.3.  Declaration attributes  . . . . . . . . . . . . . . .  10
@@ -92,7 +92,7 @@ Table of Contents
      7.2.  Following peers . . . . . . . . . . . . . . . . . . . . .  14
      7.3.  Untrusted content . . . . . . . . . . . . . . . . . . . .  15
      7.4.  Federation is client-side . . . . . . . . . . . . . . . .  15
-   8.  Relationship to Other Work  . . . . . . . . . . . . . . . . .  16
+   8.  Relationship to Other Work  . . . . . . . . . . . . . . . . .  15
    9.  Security Considerations . . . . . . . . . . . . . . . . . . .  17
      9.1.  What a digest proves  . . . . . . . . . . . . . . . . . .  17
      9.2.  Fetching  . . . . . . . . . . . . . . . . . . . . . . . .  18
@@ -109,7 +109,7 @@ Table of Contents
 
 
 
-Besleaga                  Expires 26 March 2027                 [Page 2]
+Besleaga                  Expires 27 March 2027                 [Page 2]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -165,7 +165,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                 [Page 3]
+Besleaga                  Expires 27 March 2027                 [Page 3]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -221,7 +221,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                 [Page 4]
+Besleaga                  Expires 27 March 2027                 [Page 4]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -277,7 +277,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                 [Page 5]
+Besleaga                  Expires 27 March 2027                 [Page 5]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -333,7 +333,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                 [Page 6]
+Besleaga                  Expires 27 March 2027                 [Page 6]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -355,7 +355,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    The registered short names used are describedby, alternate, license,
    service-doc, and author.  A node that also publishes related-system
    links (Section 4.5) may in addition use related, service-desc,
-   service-meta, collection, and item.
+   service-meta, collection, item, and cite-as ([RFC8574]).
 
    The extension relations form a closed set.  Each is the URI
    https://w3id.org/agentic-system-core/rel#<name> with <name> taken
@@ -389,44 +389,47 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                 [Page 7]
+Besleaga                  Expires 27 March 2027                 [Page 7]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
-           +=========================+=========================+
-           | Extension relation name | Target                  |
-           +=========================+=========================+
-           | graph                   | a further serialization |
-           |                         | of the Bundle's graph   |
-           +-------------------------+-------------------------+
-           | ontology                | the vocabulary the      |
-           |                         | graph uses              |
-           +-------------------------+-------------------------+
-           | context                 | the JSON-LD context of  |
-           |                         | the graph               |
-           +-------------------------+-------------------------+
-           | now                     | the generated state     |
-           |                         | page of the Bundle      |
-           +-------------------------+-------------------------+
-           | skills                  | the index of exported   |
-           |                         | procedure packages      |
-           +-------------------------+-------------------------+
-           | ledger                  | the derived change      |
-           |                         | ledger of the Bundle    |
-           +-------------------------+-------------------------+
-           | peer                    | another node's          |
-           |                         | discovery document      |
-           +-------------------------+-------------------------+
-           | surface                 | an agent-facing surface |
-           |                         | this node serves        |
-           +-------------------------+-------------------------+
-           | contribute              | an endpoint that        |
-           |                         | accepts contributions   |
-           +-------------------------+-------------------------+
-           | access                  | a page that says how to |
-           |                         | obtain credentials      |
-           +-------------------------+-------------------------+
+          +=========================+===========================+
+          | Extension relation name | Target                    |
+          +=========================+===========================+
+          | graph                   | a further serialization   |
+          |                         | of the Bundle's graph     |
+          +-------------------------+---------------------------+
+          | ontology                | the vocabulary the graph  |
+          |                         | uses                      |
+          +-------------------------+---------------------------+
+          | context                 | the JSON-LD context of    |
+          |                         | the graph                 |
+          +-------------------------+---------------------------+
+          | now                     | the generated state page  |
+          |                         | of the Bundle             |
+          +-------------------------+---------------------------+
+          | skills                  | the index of exported     |
+          |                         | procedure packages        |
+          +-------------------------+---------------------------+
+          | ledger                  | the derived change ledger |
+          |                         | of the Bundle             |
+          +-------------------------+---------------------------+
+          | peer                    | another node's discovery  |
+          |                         | document                  |
+          +-------------------------+---------------------------+
+          | surface                 | an agent-facing surface   |
+          |                         | this node serves          |
+          +-------------------------+---------------------------+
+          | contribute              | an endpoint that accepts  |
+          |                         | contributions             |
+          +-------------------------+---------------------------+
+          | access                  | a page that says how to   |
+          |                         | obtain credentials        |
+          +-------------------------+---------------------------+
+          | signature               | a detached signature over |
+          |                         | the discovery document    |
+          +-------------------------+---------------------------+
 
                Table 1: The closed set of extension relations
 
@@ -435,20 +438,24 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    set above is closed, and a new member is added only by a new version
    of the specification that defines it.
 
+
+
+
+
+
+
+
+Besleaga                  Expires 27 March 2027                 [Page 8]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
 4.3.  Target attributes
 
    A link object MAY carry the target attributes type, title, hreflang,
    and profile ([RFC8288], Section 3.4; [RFC9264], Section 4.2.4). type
    is an advisory hint: a client MUST NOT depend on it, and MUST use the
    media type of the response it actually receives.
-
-
-
-
-Besleaga                  Expires 26 March 2027                 [Page 8]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
 
    Every extension target attribute value is an array of strings, even
    when one value is carried ([RFC9264], Section 4.2.4.3).  A client
@@ -490,6 +497,15 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
       the build's source date rather than from the wall clock.
 
    agsc-counts:  one string per item type, of the form <type-
+
+
+
+
+Besleaga                  Expires 27 March 2027                 [Page 9]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
       plural>=<n>, in code point order of the type name, counted over
       the published set.
 
@@ -497,15 +513,6 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
       Section 4.3.1.
 
    agsc-bundle-version:  one value, the publisher's content version for
-
-
-
-
-Besleaga                  Expires 26 March 2027                 [Page 9]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
       the state the artefacts were generated from: a short name a person
       can read and cite, where the hash says only whether two retrievals
       carry the same content.  It is derived by the publisher and is
@@ -547,20 +554,17 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
       form of agsc-generated-at, present only on a node that has stopped
       publishing (Section 9.7).
 
-   A client that meets a value it does not know in any of these
-   attributes MUST NOT fail.  It MUST treat the unknown value as the
-   most restrictive member of that attribute's list.
 
 
 
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 10]
+Besleaga                  Expires 27 March 2027                [Page 10]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
+
+   A client that meets a value it does not know in any of these
+   attributes MUST NOT fail.  It MUST treat the unknown value as the
+   most restrictive member of that attribute's list.
 
 4.4.  The reduced form
 
@@ -585,9 +589,11 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    short names only, chosen by meaning: describedby when the target
    describes this node, alternate when the target is the same knowledge
    in another representation, related for a related resource, service-
-   desc, service-doc, and service-meta for an interface, and collection
-   and item for containment.  Each MUST carry type and MAY carry profile
-   and title.
+   desc, service-doc, and service-meta for an interface, collection and
+   item for containment, and cite-as ([RFC8574]) for the identifier a
+   reader should cite in preference to the node, such as a persistent
+   identifier's landing page.  Each MUST carry type and MAY carry
+   profile and title.
 
    A client MUST ignore a related-system link it does not understand.
    No related-system link affects any digest, and none is followed by
@@ -605,18 +611,15 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    and SHOULD send, at least on the origin's root route, the equivalent
    response header field:
 
-   Link: </.well-known/knowledge-linkset>; rel="describedby";
-     type="application/linkset+json"
 
 
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 11]
+Besleaga                  Expires 27 March 2027                [Page 11]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
+
+   Link: </.well-known/knowledge-linkset>; rel="describedby";
+     type="application/linkset+json"
 
 5.1.  Why 'describedby', and why no new relation
 
@@ -662,17 +665,18 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    *  digest, where present, is a single-member Dictionary keyed sha-256
       over the canonical bytes of the target (Section 4.3.1);
 
-   *  bundle facts ride on the anchor's describedby link to the graph,
-      and the ledger head on the ledger link, and nowhere else
-      (Section 4.3.2);
 
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 12]
+Besleaga                  Expires 27 March 2027                [Page 12]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
+
+   *  bundle facts ride on the anchor's describedby link to the graph,
+      and the ledger head on the ledger link, and nowhere else
+      (Section 4.3.2);
 
    *  every extension target attribute value is an array of strings
       (Section 4.3).
@@ -713,28 +717,19 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
       development mode.  Any other scheme, and any relative reference,
       MUST be refused.
 
-
-
-
-
-
-
-
-
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 13]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
    *  Before connecting, a client MUST resolve the host and MUST refuse
       any resolved address that is not globally reachable according to
       the IANA IPv4 Special-Purpose Address Registry [IANA-IPV4-SPECIAL]
       or, for an IPv6 address, according to the IANA IPv6 Special-
       Purpose Address Registry [IANA-IPV6-SPECIAL].  A client MUST
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 13]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
       equally refuse any IPv6 address that embeds an IPv4 address --
       IPv4-mapped, IPv4-compatible, NAT64, Teredo, and 6to4 addresses --
       classifying the embedded IPv4 address instead, and any multicast
@@ -778,16 +773,18 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    *  consider at most a fixed number of peer links per discovery
       document, in document order, ignoring the rest;
 
+   *  issue at most a fixed number of requests per walk, counting every
+      request including redirects;
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 14]
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 14]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
-
-   *  issue at most a fixed number of requests per walk, counting every
-      request including redirects;
 
    *  keep a visited set keyed by the canonical well-known URL, and
       never fetch a member of it twice, which is the guard against
@@ -831,22 +828,19 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    therefore no server-to-server call anywhere in this design, and no
    node can be made into an open relay by naming it as a peer.
 
-
-
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 15]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
 8.  Relationship to Other Work
 
    This section records what neighbouring work does.  It is informative.
    Every statement is of the form "that work addresses X"; none is a
    comparison.
+
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 15]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
 
    api-catalog [RFC9727] registers a well-known URI whose representation
    is a link set identified by a profile URI, listing an origin's APIs.
@@ -890,17 +884,19 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    The aipref working group defines a vocabulary for expressing
    preferences about AI usage of content [I-D.ietf-aipref-vocab] and the
    means of attaching such preferences to content in HTTP
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 16]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
    [I-D.ietf-aipref-attach].  This document defines no preference
    expression; a publisher attaches preferences by those means, and by
    robots.txt [RFC9309], to the artefacts a discovery document names.
+
+
+
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 16]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
 
    The webbotauth working group defines HTTP message signatures for
    automated traffic [I-D.ietf-webbotauth-httpsig-protocol], which
@@ -943,13 +939,17 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    the DNS name of the origin, and from nothing in the document.  A
    publisher who needs a client to verify authorship independently of
    the origin signs the responses -- [RFC9421] defines one way -- or
-   publishes a detached signature; this document defines neither.
+   publishes a detached signature and names it with the signature
+   extension relation (Section 4.2).  This document defines no signature
+   format: a client MUST ignore that link if it does not understand the
+   target, and the link affects no digest and no walk.
 
 
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 17]
+
+Besleaga                  Expires 27 March 2027                [Page 17]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1005,7 +1005,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 18]
+Besleaga                  Expires 27 March 2027                [Page 18]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1061,7 +1061,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 19]
+Besleaga                  Expires 27 March 2027                [Page 19]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1081,7 +1081,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
    *  *URI suffix*: knowledge-linkset
 
-   *  *Change controller*: Andrei Nicolae Besleaga
+   *  *Change controller*: Andrei N.  Besleaga
       (andrei.besleaga.nicolae@gmail.com)
 
    *  *Specification document(s)*: This document.
@@ -1117,7 +1117,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 20]
+Besleaga                  Expires 27 March 2027                [Page 20]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1139,8 +1139,8 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    *  *Notes*: The profile does not change the semantics of application/
       linkset+json for a client that ignores it ([RFC6906], Section 3);
       it adds integrity, bundle-fact, and declaration target attributes
-      that a client MAY use.  Change controller: Andrei Nicolae
-      Besleaga, Independent, andrei.besleaga.nicolae@gmail.com.
+      that a client MAY use.  Change controller: Andrei N.  Besleaga,
+      Independent, andrei.besleaga.nicolae@gmail.com.
 
 12.  Implementation Status
 
@@ -1173,7 +1173,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 21]
+Besleaga                  Expires 27 March 2027                [Page 21]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1229,7 +1229,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 22]
+Besleaga                  Expires 27 March 2027                [Page 22]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1285,7 +1285,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 23]
+Besleaga                  Expires 27 March 2027                [Page 23]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1341,7 +1341,7 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
 
 
-Besleaga                  Expires 26 March 2027                [Page 24]
+Besleaga                  Expires 27 March 2027                [Page 24]
 
 Internet-Draft      knowledge-linkset Well-Known URI      September 2026
 
@@ -1350,6 +1350,11 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
               Interchange Format", STD 90, RFC 8259,
               DOI 10.17487/RFC8259, December 2017,
               <https://www.rfc-editor.org/info/rfc8259>.
+
+   [RFC8574]  Van de Sompel, H., Nelson, M., Bilder, G., Kunze, J., and
+              S. Warner, "cite-as: A Link Relation to Convey a Preferred
+              URI for Referencing", RFC 8574, DOI 10.17487/RFC8574,
+              April 2019, <https://www.rfc-editor.org/info/rfc8574>.
 
    [RFC8792]  Watsen, K., Auerswald, E., Farrel, A., and Q. Wu,
               "Handling Long Lines in Content of Internet-Drafts and
@@ -1383,6 +1388,20 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
               <https://datatracker.ietf.org/doc/html/draft-jimenez-dawn-
               discovery-landscape-00>.
 
+
+
+
+
+
+
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 25]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
    [I-D.arsentev-llm-context-discovery]
               Arsentev, E., "Discovery and Retrieval of Publisher-
               Curated Context Files for Large Language Model Consumers",
@@ -1394,14 +1413,6 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
    [I-D.serra-mcp-discovery-uri]
               serra, M., "The "mcp" URI Scheme and MCP Server Discovery
               Mechanism", Work in Progress, Internet-Draft, draft-serra-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 25]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
               mcp-discovery-uri-04, 26 March 2026,
               <https://datatracker.ietf.org/doc/html/draft-serra-mcp-
               discovery-uri-04>.
@@ -1435,6 +1446,18 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
               <https://datatracker.ietf.org/doc/html/draft-aiendpoint-
               ai-discovery-01>.
 
+
+
+
+
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 26]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
    [I-D.car-ai-txt-wellknown]
               Cardillo, K., "AI.TXT: A Declaration File for AI Usage
               Preferences, Licensing, and Policy", Work in Progress,
@@ -1446,17 +1469,6 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
               IETF, "Discovery of Agents With Names (dawn) -- proposed
               working group charter", 11 September 2026,
               <https://datatracker.ietf.org/doc/charter-ietf-dawn/>.
-
-
-
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 26]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
 
    [AGENTPROTO-BOF]
               IETF, "Agent Communication Protocols (agentproto) -- BOF
@@ -1493,6 +1505,15 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
               <https://www.iana.org/assignments/iana-ipv4-special-
               registry/>.
 
+
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 27]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
    [IANA-IPV6-SPECIAL]
               IANA, "IANA IPv6 Special-Purpose Address Registry", n.d.,
               <https://www.iana.org/assignments/iana-ipv6-special-
@@ -1503,16 +1524,6 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
               1.0.0-rc.6 (release candidate)", 2026,
               <https://agenticsystemcore.com/specs/>.  TODO-DOI: insert
               the Zenodo DOI of the cited release here before posting.
-
-
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 27]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
 
    [RFC7942]  Sheffer, Y. and A. Farrel, "Improving Awareness of Running
               Code: The Implementation Status Section", BCP 205,
@@ -1551,6 +1562,14 @@ Appendix A.  A Complete Example
          "author": [
            {
              "href": "https://example.org/about/",
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 28]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
              "type": "text/html"
            }
          ],
@@ -1562,14 +1581,6 @@ Appendix A.  A Complete Example
                "sha-256=:UdwS29SBU+9+G3d/Fp3KtLtY292AjFswry0+mLI8te4=:"
              ],
              "agsc-bundle-version": [
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 28]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
                "v1.4.0"
              ],
              "agsc-counts": [
@@ -1607,6 +1618,14 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
            {
              "href": "https://example.org/ns/context.jsonld",
              "type": "application/ld+json",
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 29]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
              "digest": [
                "sha-256=:Dv8ogyqhEZ0jxdWQj0FkVfpXbuTnyfvWEFNwtbRTSEA=:"
              ]
@@ -1618,14 +1637,6 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
              "type": "application/n-quads",
              "digest": [
                "sha-256=:/WQyaCbIwaeGFFMAFw/eMonm8tK+F7amphaKNT4BpB0=:"
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 29]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
              ]
            },
            {
@@ -1663,6 +1674,14 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
              "href": "https://example.org/ns/agsc.ttl",
              "type": "text/turtle",
              "digest": [
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 30]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
                "sha-256=:kjVLSaNilITtebImxe9J+ukr7UOdmTG+NAtppRjsrH8=:"
              ]
            }
@@ -1674,14 +1693,6 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
            }
          ],
          "https://w3id.org/agentic-system-core/rel#skills": [
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 30]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
-
            {
              "href": "https://example.org/skills/index.json",
              "type": "application/json",
@@ -1719,24 +1730,19 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
      ]
    }
 
+
+
+
+Besleaga                  Expires 27 March 2027                [Page 31]
+
+Internet-Draft      knowledge-linkset Well-Known URI      September 2026
+
+
                   Figure 3: A complete discovery document
 
    The same node, publishing without a build engine, serves the reduced
    form of Section 4.4: the same link set with every digest attribute
    and every bundle-fact attribute removed, and with no ledger link.
-
-
-
-
-
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 31]
-
-Internet-Draft      knowledge-linkset Well-Known URI      September 2026
-
 
    {
      "linkset": [
@@ -1775,7 +1781,7 @@ Appendix B.  Change Log
 
 Author's Address
 
-   Andrei Nicolae Besleaga
+   Andrei N. Besleaga
    Independent
    Email: andrei.besleaga.nicolae@gmail.com
 
@@ -1783,10 +1789,4 @@ Author's Address
 
 
 
-
-
-
-
-
-
-Besleaga                  Expires 26 March 2027                [Page 32]
+Besleaga                  Expires 27 March 2027                [Page 32]

@@ -347,10 +347,10 @@ describe('gen-ns — --check against a tree on disk', () => {
 });
 
 describe('gen-ns — the real distribution', () => {
-  it('derives 52 terms from the shipped ontology and round-trips 278 triples', () => {
+  it('derives 52 terms from the shipped ontology and round-trips 285 triples', () => {
     const result = capture('gen-ns', [REPO]);
     assert.equal(result.code, 0);
-    assert.match(result.out, /^gen-ns: 1 input file\(s\) read, 52 vocabulary terms, 85 context members, 278 triples round-tripped, 0 error, 0 warn\n$/u);
+    assert.match(result.out, /^gen-ns: 1 input file\(s\) read, 52 vocabulary terms, 85 context members, 285 triples round-tripped, 0 error, 0 warn\n$/u);
   });
 
   it('the derived context is byte-identical on two runs', () => {

@@ -1,0 +1,7 @@
+
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   The full text is at http://www.apache.org/licenses/LICENSE-2.0 — this fixture
+   carries only the opening lines a licence reader recognises.

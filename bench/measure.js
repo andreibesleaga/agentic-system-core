@@ -46,7 +46,7 @@ const NODE = process.execPath;
 const AGSC = path.join(REPO, 'bin', 'agsc.js');
 const EPOCH = '1767225600';   // 2026-01-01T00:00:00Z — the project's fixed clock
 
-const LAYERS = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'retrieval', 'parity', 'tokens', 'package']);
+const LAYERS = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'retrieval', 'parity', 'tokens', 'a11y', 'package']);
 
 const HELP = `measure --layer <name> --scratch <dir> [--json]
 measure --assemble --scratch <dir> --out <file>
@@ -58,6 +58,11 @@ measure --assemble --scratch <dir> --out <file>
   --scratch <dir>  working directory OUTSIDE this repository (required)
   --assemble       merge every partial found in <dir> into --out
   --out <file>     where --assemble writes (default docs/measurements.json)
+  --nodes <list>   name=dir,… — Bundles (parity) or build outputs (tokens,
+                   a11y, retrieval); the record carries the names only
+  --exports <list> name=dir,… — each node's llm-context export (tokens)
+  --sizes <list>   item counts for perf (default 100,500,501,1000,5000,10000)
+  --runs <n>       runs per size for perf (default 3)
   --json           print the partial on stdout as well
 
   SOURCE_DATE_EPOCH must be set; the script reads no wall clock.
@@ -298,45 +303,122 @@ function layerDeterminism(scratch) {
 
 // ---------------------------------------------------------------- Layer C ----
 
-function layerSecurity() {
+function layerSecurity(scratch) {
   const corpus = JSON.parse(fs.readFileSync(path.join(__dirname, 'corpus', 'security-floor.json'), 'utf8'));
-  const injection = require(path.join(REPO, 'src', 'governance', 'injection.js'));
-  const secrets = require(path.join(REPO, 'src', 'governance', 'secrets.js'));
-  const pii = require(path.join(REPO, 'src', 'governance', 'pii.js'));
-  const cleanroom = require(path.join(REPO, 'src', 'governance', 'cleanroom.js'));
-
-  const detectors = { cleanroom, injection, pii, secrets };
-  const perDetector = Object.create(null);
-  const perClass = Object.create(null);
-
-  for (const c of corpus.cases) {
-    const check = detectors[c.detector];
-    const findings = check.check({ body: c.text, frontmatter: c.frontmatter || {}, path: c.path || 'content/concepts/case.md', slug: 'case' });
-    const detected = Array.isArray(findings) && findings.length > 0;
-    const row = { detected, expected: c.expected };
-    perDetector[c.detector] = perDetector[c.detector] || [];
-    perDetector[c.detector].push(row);
-    perClass[c.class] = perClass[c.class] || [];
-    perClass[c.class].push({ ...row, codes: (findings || []).map((f) => f.code) });
-  }
-
-  const scored = Object.create(null);
-  for (const name of Object.keys(perDetector).sort()) scored[name] = metrics.detectorScore(perDetector[name]);
-  const classes = Object.create(null);
-  for (const name of Object.keys(perClass).sort()) {
-    classes[name] = {
-      ...metrics.detectorScore(perClass[name]),
-      codes: [...new Set(perClass[name].flatMap((r) => r.codes))].sort(),
-    };
-  }
-
+  const result = require('./security.js').score(corpus, { scratch });
   return {
-    by_class: classes,
-    by_detector: scored,
-    command: 'node bench/measure.js --layer security',
+    by_class: result.by_class,
+    by_kind: result.by_kind,
+    cases: result.cases.map((c) => ({
+      class: c.class, codes: c.codes, expect: c.expect, id: c.id, kind: c.kind, outcome: c.outcome, required: c.required,
+    })),
+    command: 'node bench/measure.js --layer security --scratch <dir>',
     corpus: { cases: corpus.cases.length, file: 'bench/corpus/security-floor.json', version: corpus.version },
     limit: 'AGSC-08-19: these lints prove neither safety nor the absence of novel injection. An implementation MUST NOT claim more.',
+    totals: result.totals,
   };
+}
+
+/** `name=dir,name=dir` → [[name, dir]]; the names, never the paths, reach the record. */
+function namedDirs(spec) {
+  return String(spec || '').split(',').filter(Boolean).map((pair) => {
+    const at = pair.indexOf('=');
+    return [pair.slice(0, at), pair.slice(at + 1)];
+  });
+}
+
+async function layerParity(nodes) {
+  const spec = JSON.parse(fs.readFileSync(path.join(__dirname, 'corpus', 'parity-calls.json'), 'utf8'));
+  const parity = require('./parity.js');
+  const per = Object.create(null);
+  const totals = { calls: 0, equal: 0, transport_equal: 0, unpublished_answered_e301: 0, unpublished_calls: 0 };
+  for (const [name, dir] of nodes) {
+    per[name] = await parity.run(dir, spec);
+    for (const k of Object.keys(totals)) totals[k] += per[name][k];
+  }
+  return {
+    call_list: { file: 'bench/corpus/parity-calls.json', fixed: spec.calls.length, per_item: spec.per_item.length, version: spec.version },
+    command: 'node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…',
+    nodes: per,
+    note: 'Compared as values after a JSON round trip, which is what AGSC-09-16 claims at rc.6; never byte-identical across the browser boundary.',
+    totals,
+  };
+}
+
+function layerTokens(nodes, exports) {
+  const tokens = require('./tokens.js');
+  let o200k;
+  let cl100k;
+  let version;
+  try {
+    o200k = require('gpt-tokenizer/encoding/o200k_base');
+    cl100k = require('gpt-tokenizer/encoding/cl100k_base');
+    version = require('gpt-tokenizer/package.json').version;
+  } catch {
+    return { command: 'node bench/measure.js --layer tokens', status: 'not run', reason: 'gpt-tokenizer is not resolvable; install it outside the repository and set NODE_PATH' };
+  }
+  const encoders = {
+    cl100k_base: (t) => cl100k.encode(t, { allowedSpecial: 'all' }).length,
+    o200k_base: (t) => o200k.encode(t, { allowedSpecial: 'all' }).length,
+  };
+  const exportOf = new Map(exports);
+  const per = Object.create(null);
+  for (const [name, www] of nodes) per[name] = tokens.count(www, exportOf.get(name) || null, encoders);
+  return {
+    command: 'NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,… --exports <name>=<dir>,…',
+    no_claude_count: 'Anthropic publishes no offline tokenizer; no Claude token count is reported, because it would be a guess.',
+    nodes: per,
+    tokenizer: { library: 'gpt-tokenizer', licence: 'MIT', version, vocabularies: ['cl100k_base', 'o200k_base'] },
+  };
+}
+
+async function layerA11y(nodes) {
+  const a11y = require('./a11y.js');
+  let versions;
+  try {
+    versions = { axe_core: require('axe-core/package.json').version, playwright_core: require('playwright-core/package.json').version };
+  } catch {
+    return { command: 'node bench/measure.js --layer a11y', status: 'not run', reason: 'playwright-core and axe-core are not resolvable (NODE_PATH)' };
+  }
+  if (!process.env.CHROME_EXE) return { command: 'node bench/measure.js --layer a11y', status: 'not run', reason: 'CHROME_EXE is not set' };
+  const per = Object.create(null);
+  for (const [name, www] of nodes) {
+    const run = await a11y.runBrowser({ chrome: process.env.CHROME_EXE, www });
+    const byType = a11y.tallyByType(run.results);
+    per[name] = {
+      by_type: byType,
+      checks: run.results.length,
+      pages: run.pages,
+      third_party_requests: run.third_party,
+      violations: Object.values(byType).reduce((acc, t) => acc + t.violations, 0),
+      weights: a11y.pageWeights(www),
+    };
+  }
+  return {
+    ceiling: 'axe-core finds on average 57 % of WCAG issues automatically; zero violations is a floor, never a conformance claim.',
+    command: 'NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,…',
+    nodes: per,
+    schemes: ['light', 'dark'],
+    tags: a11y.AXE_TAGS,
+    versions,
+  };
+}
+
+function layerRetrieval(nodes) {
+  const per = Object.create(null);
+  for (const [name, www] of nodes) {
+    const r = timed(NODE, [path.join(REPO, 'tools', 'bench'), '--node', www, '--origin-node', name, '--json'], { cwd: REPO });
+    const envelope = JSON.parse(r.out);
+    // The record names the node, never the path it was built into on this machine.
+    per[name] = { ...envelope, node: `<${name} build output>`, set: 'bench/queries/bench-v1' };
+  }
+  return { command: 'node tools/bench --node <built node> --origin-node <name> --json', nodes: per };
+}
+
+function layerPackage() {
+  const r = timed('npm', ['pack', '--dry-run', '--json'], { cwd: REPO });
+  const pack = JSON.parse(r.out)[0];
+  return { command: 'npm pack --dry-run --json', files: pack.entryCount, packed_bytes: pack.size, unpacked_bytes: pack.unpackedSize };
 }
 
 // ---------------------------------------------------------------- Layer D ----
@@ -354,6 +436,7 @@ function layerPerf(scratch, sizes, runsPerSize) {
     let indexBytes = null;
     let chunkBytes = null;
     let shards = 0;
+    let html = null;
     for (let run = 0; run < runsPerSize; run += 1) {
       const outDir = path.join(bundleDir, 'www');
       fs.rmSync(outDir, { force: true, recursive: true });
@@ -369,7 +452,11 @@ function layerPerf(scratch, sizes, runsPerSize) {
         for (const f of fs.readdirSync(outDir)) {
           if (/^search-\d+\.json$/u.test(f)) indexBytes = Math.max(indexBytes || 0, fs.statSync(path.join(outDir, f)).size);
         }
-        chunkBytes = fs.existsSync(path.join(outDir, 'chunks.jsonl')) ? fs.statSync(path.join(outDir, 'chunks.jsonl')).size : null;
+        // BENCH1-02: every chunk file, the shards included, summed.
+        chunkBytes = fs.readdirSync(outDir).filter((f) => /^chunks(?:-\d+)?\.jsonl$/u.test(f))
+          .reduce((acc, f) => acc + fs.statSync(path.join(outDir, f)).size, 0) || null;
+        // BENCH1-01: the page budget of AGSC-06-21 is over `*.html` only.
+        html = require('./a11y.js').pageWeights(outDir);
       }
     }
     rows.push({
@@ -377,6 +464,11 @@ function layerPerf(scratch, sizes, runsPerSize) {
       chunks_bytes: chunkBytes,
       chunks_bytes_per_item: chunkBytes === null ? null : Math.round(chunkBytes / items),
       files: tree.files,
+      html_pages: html.pages,
+      html_largest_bytes: html.largest ? html.largest.bytes : null,
+      html_largest_path: html.largest ? html.largest.path : null,
+      html_median_bytes: html.median_bytes,
+      html_over_budget: html.over_budget.length,
       index_bytes_largest: indexBytes,
       index_shards: shards,
       items,
@@ -403,25 +495,6 @@ function layerPerf(scratch, sizes, runsPerSize) {
     },
     rows,
     runs_per_size: runsPerSize,
-  };
-}
-
-// ---------------------------------------------------------------- Layer F ----
-
-function layerParity() {
-  const loader = require(path.join(REPO, 'src', 'distribution', 'mcp-tools.js'));
-  const pageTools = require(path.join(REPO, 'src', 'distribution', 'webmcp.js'));
-  const manifestNames = (m) => (Array.isArray(m) ? m : (m.tools || [])).map((t) => t.name).sort();
-
-  // The comparison the rule actually makes (AGSC-09-16 as amended at rc.6): the
-  // same call on both transports is equal AS VALUES, not byte-identical.
-  const calls = JSON.parse(fs.readFileSync(path.join(__dirname, 'corpus', 'parity-calls.json'), 'utf8'));
-  return {
-    command: 'node bench/measure.js --layer parity',
-    note: 'The measured comparison is the one AGSC-09-16 makes at rc.6: equal as values across the browser boundary, never byte-identical.',
-    planned_calls: calls.calls.length,
-    tools_page: manifestNames(pageTools.MANIFEST || []),
-    tools_server: manifestNames(loader.MANIFEST || []),
   };
 }
 
@@ -454,6 +527,8 @@ function run(argv, io) {
   let doAssemble = false;
   let sizes = [100, 500, 501, 1000, 5000, 10000];
   let runsPerSize = 3;
+  let nodes = [];
+  let exportDirs = [];
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
@@ -462,6 +537,8 @@ function run(argv, io) {
     else if (arg === '--out') { i += 1; target = argv[i]; }
     else if (arg === '--sizes') { i += 1; sizes = String(argv[i]).split(',').map(Number); }
     else if (arg === '--runs') { i += 1; runsPerSize = Number(argv[i]); }
+    else if (arg === '--nodes') { i += 1; nodes = namedDirs(argv[i]); }
+    else if (arg === '--exports') { i += 1; exportDirs = namedDirs(argv[i]); }
     else if (arg === '--assemble') doAssemble = true;
     else if (arg === '--json') json = true;
     else return usage(`unknown argument ${arg}`);
@@ -477,21 +554,24 @@ function run(argv, io) {
   }
   if (!LAYERS.includes(layer)) return usage(`--layer must be one of: ${LAYERS.join(' ')}`);
 
-  let partial = null;
-  if (layer === 'conformance') partial = layerConformance();
-  else if (layer === 'determinism') partial = layerDeterminism(scratch);
-  else if (layer === 'security') partial = layerSecurity();
-  else if (layer === 'perf') partial = layerPerf(scratch, sizes, runsPerSize);
-  else if (layer === 'parity') partial = layerParity();
-  else return usage(`layer ${layer} is produced by its own command; see docs/MEASUREMENTS.md`);
-
-  fs.writeFileSync(partialPath(scratch, layer), `${JSON.stringify(partial, null, 2)}\n`);
-  if (json) out(`${JSON.stringify(partial, null, 2)}\n`);
-  else out(`measure: ${layer} written to ${partialPath(scratch, layer)}\n`);
-  return 0;
+  const finish = (partial) => {
+    fs.writeFileSync(partialPath(scratch, layer), `${JSON.stringify(partial, null, 2)}\n`);
+    if (json) out(`${JSON.stringify(partial, null, 2)}\n`);
+    else out(`measure: ${layer} written to ${partialPath(scratch, layer)}\n`);
+    return 0;
+  };
+  if (layer === 'conformance') return finish(layerConformance());
+  if (layer === 'determinism') return finish(layerDeterminism(scratch));
+  if (layer === 'security') return finish(layerSecurity(scratch));
+  if (layer === 'perf') return finish(layerPerf(scratch, sizes, runsPerSize));
+  if (layer === 'tokens') return finish(layerTokens(nodes, exportDirs));
+  if (layer === 'retrieval') return finish(layerRetrieval(nodes));
+  if (layer === 'package') return finish(layerPackage());
+  if (layer === 'parity') return layerParity(nodes).then(finish);
+  return layerA11y(nodes).then(finish);
 }
 
-if (require.main === module) process.exit(run(process.argv.slice(2)));
+if (require.main === module) Promise.resolve(run(process.argv.slice(2))).then((code) => process.exit(code));
 
 module.exports = { HELP, LAYERS, run };
 

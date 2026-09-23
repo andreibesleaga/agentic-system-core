@@ -1,0 +1,70 @@
+# AgenticSystemCore — composite GitHub Action (CONN-1).
+#
+# Runs `agsc ci` (lint -> build -> verify, AGSC-09-07/09-08) on a Bundle repository
+# with the engine AT THE SAME COMMIT AS THIS ACTION: the ref in `uses:` pins the
+# engine version, so pin it to a release tag or, better, to its full commit SHA.
+#
+#   permissions:
+#     contents: read            # the only permission this action needs
+#   steps:
+#     - uses: actions/checkout@<sha>
+#       with: { fetch-depth: 0 }  # the ledger and the content version read history
+#     - uses: andreibesleaga/agentic-system-core@<tag-or-sha>
+#
+# Least privilege: the action reads the checked-out repository, installs the
+# engine's pinned runtime dependencies (`npm ci --omit=dev --ignore-scripts`, from
+# the lockfile beside this file) and writes only the build output inside the
+# workspace. It uses no token, no secret and no network beyond that install.
+# Format: https://docs.github.com/en/actions/reference/workflows-and-actions/metadata-syntax
+name: AgenticSystemCore ci
+description: Lint, build and verify an AgenticSystemCore Bundle with the engine pinned to this action's ref (agsc ci).
+author: Andrei N. Besleaga
+branding:
+  icon: check-circle
+  color: blue
+inputs:
+  working-directory:
+    description: The Bundle root (the directory holding agsc.config.json), relative to the workspace.
+    required: false
+    default: '.'
+  node-version:
+    description: The Node.js version to run the engine on (the engine needs 22.12 or later).
+    required: false
+    default: '22'
+  args:
+    description: Extra flags for agsc ci, for example --json or --level 1. Passed through an environment variable, never interpolated into the script.
+    required: false
+    default: ''
+outputs:
+  exit-code:
+    description: The exit code of agsc ci (0 pass, 1 findings, 2 usage — AGSC-09-08).
+    value: ${{ steps.ci.outputs.exit-code }}
+  engine-version:
+    description: The engine version this ref pins (package.json "version").
+    value: ${{ steps.engine.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+    - id: engine
+      name: Install the pinned engine
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH"
+        npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+        echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+    - id: ci
+      name: agsc ci
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        AGSC_ACTION_ARGS: ${{ inputs.args }}
+      run: |
+        set +e
+        # shellcheck disable=SC2086 # the flags are split on purpose
+        node "$GITHUB_ACTION_PATH/bin/agsc.js" ci $AGSC_ACTION_ARGS
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        exit "$code"

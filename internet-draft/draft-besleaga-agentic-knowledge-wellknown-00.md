@@ -18,7 +18,7 @@ keyword:
 
 author:
   - ins: A. N. Besleaga
-    name: Andrei Nicolae Besleaga
+    name: Andrei N. Besleaga
     organization: Independent
     email: andrei.besleaga.nicolae@gmail.com
 
@@ -51,6 +51,7 @@ informative:
   RFC6838:
   RFC6892:
   RFC8259:
+  RFC8574:
   RFC8792:
   RFC9111:
   RFC9309:
@@ -155,7 +156,7 @@ informative:
     title: "AgenticSystemCore Specification, version 1.0.0-rc.6 (release candidate)"
     author:
       - ins: A. N. Besleaga
-        name: Andrei Nicolae Besleaga
+        name: Andrei N. Besleaga
     target: https://agenticsystemcore.com/specs/
     date: 2026
     ann: "TODO-DOI: insert the Zenodo DOI of the cited release here before posting."
@@ -382,7 +383,8 @@ used.
 The registered short names used are `describedby`, `alternate`,
 `license`, `service-doc`, and `author`. A node that also publishes
 related-system links ({{related-system-links}}) may in addition use
-`related`, `service-desc`, `service-meta`, `collection`, and `item`.
+`related`, `service-desc`, `service-meta`, `collection`, `item`, and
+`cite-as` ({{RFC8574}}).
 
 The extension relations form a closed set. Each is the URI
 `https://w3id.org/agentic-system-core/rel#<name>` with `<name>` taken
@@ -402,6 +404,7 @@ it ({{the-profile-uri}}).
 | `surface` | an agent-facing surface this node serves |
 | `contribute` | an endpoint that accepts contributions |
 | `access` | a page that says how to obtain credentials |
+| `signature` | a detached signature over the discovery document |
 {: title="The closed set of extension relations"}
 
 A client MUST ignore a relation name it does not recognize. A node MUST
@@ -539,9 +542,11 @@ description, a query endpoint. Such links use registered short names
 only, chosen by meaning: `describedby` when the target describes this
 node, `alternate` when the target is the same knowledge in another
 representation, `related` for a related resource, `service-desc`,
-`service-doc`, and `service-meta` for an interface, and `collection`
-and `item` for containment. Each MUST carry `type` and MAY carry
-`profile` and `title`.
+`service-doc`, and `service-meta` for an interface, `collection`
+and `item` for containment, and `cite-as` ({{RFC8574}}) for the
+identifier a reader should cite in preference to the node, such as a
+persistent identifier's landing page. Each MUST carry `type` and MAY
+carry `profile` and `title`.
 
 A client MUST ignore a related-system link it does not understand. No
 related-system link affects any digest, and none is followed by the
@@ -825,7 +830,10 @@ identity of the publisher from the TLS certificate and the DNS name of
 the origin, and from nothing in the document. A publisher who needs a
 client to verify authorship independently of the origin signs the
 responses -- {{RFC9421}} defines one way -- or publishes a detached
-signature; this document defines neither.
+signature and names it with the `signature` extension relation
+({{relations}}). This document defines no signature format: a client
+MUST ignore that link if it does not understand the target, and the
+link affects no digest and no walk.
 
 A client that keeps the `agsc-ledger-head` value it saw on an earlier
 retrieval, and that later reads a head that does not extend the earlier
@@ -934,7 +942,7 @@ IANA is requested to register the following entry in the "Well-Known
 URIs" registry, per {{RFC8615}}, Section 3.1:
 
 * **URI suffix**: knowledge-linkset
-* **Change controller**: Andrei Nicolae Besleaga
+* **Change controller**: Andrei N. Besleaga
   (andrei.besleaga.nicolae@gmail.com)
 * **Specification document(s)**: This document.
 * **Status**: provisional
@@ -978,7 +986,7 @@ profile, records them:
 * **Notes**: The profile does not change the semantics of
   `application/linkset+json` for a client that ignores it ({{RFC6906}},
   Section 3); it adds integrity, bundle-fact, and declaration target
-  attributes that a client MAY use. Change controller: Andrei Nicolae
+  attributes that a client MAY use. Change controller: Andrei N.
   Besleaga, Independent, andrei.besleaga.nicolae@gmail.com.
 
 # Implementation Status {#implementation-status}

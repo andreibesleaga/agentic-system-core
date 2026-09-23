@@ -100,6 +100,14 @@ clause (e) that belongs to this project. `spec/08-governance.md` (AGSC-08-06) na
 the file and pins its SHA-256, so a distribution that ships different text has to
 name it with a different token: what you sign under `CA-v1` stays under `CA-v1`.
 
+**An optional assignment (Part 3 of the file).** If you want the maintainer to hold
+the copyright in a contribution, you may assign it, and you get back at once a
+licence to use your contribution for anything. This happens only if you say so, for
+that one contribution, in a signed and dated statement — a comment in your pull
+request under your name is enough. Your sign-off alone never assigns anything. You
+keep the right to be named as the author in every case. If you do nothing, clause
+(e) applies and you keep your copyright.
+
 What the licences already say: the engine is Apache-2.0 (whose section 5 already
 carries an inbound grant on the same terms), the schemas, ontology, identifiers and
 discovery document are CC0-1.0, and the prose is under the Content Use Terms in

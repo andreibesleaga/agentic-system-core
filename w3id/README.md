@@ -22,7 +22,7 @@ All redirects are `303 See Other`, per the W3C "Cool URIs for the Semantic Web" 
 
 ## Maintainer
 
-Andrei Nicolae Besleaga — <andrei.besleaga.nicolae@gmail.com> — GitHub: `andreibesleaga`
+Andrei N. Besleaga — <andrei.besleaga.nicolae@gmail.com> — GitHub: `andreibesleaga`
 
 ## Post-merge verification
 

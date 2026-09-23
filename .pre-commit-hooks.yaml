@@ -1,0 +1,17 @@
+# AgenticSystemCore — pre-commit hooks (CONN-1). Format: https://pre-commit.com/
+#
+#   repos:
+#     - repo: https://github.com/andreibesleaga/agentic-system-core
+#       rev: <tag-or-sha>          # pins the engine version
+#       hooks:
+#         - id: agsc-lint
+#
+# `agsc lint` reads the whole Bundle (links are checked across items), so the hook
+# takes no file names and runs whenever an item or the configuration changed.
+- id: agsc-lint
+  name: agsc lint
+  description: Lint an AgenticSystemCore Bundle (frontmatter, Links, provenance and the safety lints) before each commit.
+  entry: agsc lint
+  language: node
+  pass_filenames: false
+  files: ^(content/|agsc\.config\.json$)

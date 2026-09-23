@@ -33,6 +33,7 @@ const nquadsView = require('../knowledge/nquads.js');
 const turtleView = require('../knowledge/turtle.js');
 const ledgerModule = require('../governance/ledger.js');
 const boardsModule = require('../governance/boards.js');
+const governanceLint = require('../governance/lint.js');
 const discovery = require('./discovery.js');
 const llms = require('./llms.js');
 const search = require('./search.js');
@@ -43,6 +44,7 @@ const composePage = require('./compose-page.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
 const surfaces = require('../boundary/surfaces.js');
+const federation = require('../boundary/federation.js');
 const browserBundle = require('../composition/browser.js');
 const skills = require('../composition/skills.js');
 
@@ -61,6 +63,42 @@ const DEFAULT_GRAPH = Object.freeze({
   turtle: (items, options) => turtleView.toTurtle(items, options),
   context: (options) => jsonldView.context(options.ontologyTerms || [], jsonldView.allExternalProperties()),
 });
+
+/**
+ * AGSC-11-12: the peer citations of the published items, as `{source, see_also,
+ * peer}` pairs for `knowledge/nquads.js#dataset`, plus one AGSC-E312 error per
+ * reference that lies under a declared peer's base and is no IRI. With no peer
+ * declared nothing is computed, so no other build changes by one byte.
+ *
+ * @param {Array<object>} items the flattened, published items.
+ * @param {string} bundleIri the Bundle IRI (with its trailing `/`).
+ * @param {Array<string>|undefined} peers `peers[]` of the configuration.
+ * @param {Array<object>} findings the build's findings, appended to.
+ * @returns {Array<{source:string, see_also:string, peer:string}>}
+ */
+function peerCitationsOf(items, bundleIri, peers, findings) {
+  if (!Array.isArray(peers) || peers.length === 0) return [];
+  const result = federation.peerCitations(items, { base: bundleIri, peers });
+  const bySlug = new Map(items.map((item) => [String(item.slug), item]));
+  const raw = result.bases.map((b) => String(b));
+  for (const fault of result.findings) {
+    // `peerCitations` judges every resource; AGSC-11-12's AGSC-E312 is about a
+    // reference UNDER A PEER BASE, so a malformed reference to another host is
+    // left to the lint that owns `sources[]` (AGSC-02-10).
+    if (!raw.some((b) => String(fault.url).startsWith(b))) continue;
+    const item = bySlug.get(String(fault.slug));
+    findings.push(finding(fault.code, String(fault.message),
+      { file: item && item.path ? String(item.path) : '', line: 1, severity: 'error', slug: fault.slug }));
+  }
+  const pairs = [];
+  for (let n = 0; n + 1 < result.quads.length; n += 2) {
+    const seeAlso = result.quads[n];
+    const origin = result.quads[n + 1];
+    const slug = String(seeAlso.subject).replace(/\/$/u, '').split('/').pop();
+    pairs.push({ peer: origin.object, see_also: seeAlso.object, source: slug });
+  }
+  return pairs;
+}
 
 /** AGSC-04-04 / AGSC-04-07: JSON artefacts are JCS-canonical with one trailing LF. */
 function jsonBytes(value) {
@@ -300,12 +338,19 @@ function robots(base, options = {}) {
   const policy = legal
     ? 'the same policy as /.well-known/tdmrep.json and /legal/'
     : 'the same policy as /.well-known/tdmrep.json';
-  const signal = 'Content-Signal: search=yes, ai-input=yes, ai-train=no';
+  // LEG2-02 (ENG-9): the training reservation is the Content Use Terms' own. A node
+  // whose prose carries another licence publishes no `ai-train=no` and no per-crawler
+  // `Disallow` — the licence says what may be done (CC BY 4.0 §2(a)(5)(B) forbids a
+  // restriction beside it), and no rule obliges a node to reserve.
+  const reserve = options.reserve === undefined ? true : Boolean(options.reserve);
+  const signal = reserve
+    ? 'Content-Signal: search=yes, ai-input=yes, ai-train=no'
+    : 'Content-Signal: search=yes, ai-input=yes';
   // AGSC-02-24 (rc.5, FV28-01): RFC 9309 is line-oriented — a line break in a token
   // or in `base` would forge a directive. Both are pattern-bounded (AGSC-01-18,
   // AGSC-01-19); the writer neutralises anyway, because a writer may receive a
   // configuration it did not validate.
-  const groups = tdmCrawlerTokens(options.tdmCrawlers)
+  const groups = (reserve ? tdmCrawlerTokens(options.tdmCrawlers) : [])
     .map((token) => `User-agent: ${singleLine(token)}\n${signal}\nDisallow: /\n\n`)
     .join('');
   return `${groups}User-agent: *\n# Content Signals Policy: ${policy}\n`
@@ -318,9 +363,37 @@ function tdmCrawlerTokens(value) {
   return value.map((token) => String(token == null ? '' : token)).filter((token) => token !== '');
 }
 
-/** AGSC-06-18, dialect 2: the TDM reservation, at its well-known location only. */
-function tdmrep(base) {
-  return [{ location: `${String(base).replace(/\/+$/u, '')}/`, 'tdm-reservation': 1 }];
+/**
+ * AGSC-06-18, dialect 2: the TDM reservation, at its well-known location only. `1`
+ * only where the prose is under the Content Use Terms, which reserve it; `0`
+ * otherwise (LEG2-02, ENG-9).
+ */
+function tdmrep(base, reserve = true) {
+  return [{ location: `${String(base).replace(/\/+$/u, '')}/`, 'tdm-reservation': reserve ? 1 : 0 }];
+}
+
+/**
+ * The publisher's own disclaimer, from `DISCLAIMER.md` at the Bundle root (LEG2-02,
+ * ENG-9): its first heading names the `/legal/` section, its first paragraph is the
+ * footer's notice, the rest renders into `/legal/`. `null` when the Bundle has none —
+ * the engine states no disclaimer of its own on anybody's node.
+ */
+function readDisclaimer(ports) {
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return null;
+  let text;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists('DISCLAIMER.md')) return null;
+    text = String(fs.readFile('DISCLAIMER.md', 'utf8')).replace(/\r\n?/gu, '\n');
+  } catch (e) {
+    return null;
+  }
+  const heading = /^#\s+(.+)$/mu.exec(text);
+  const body = heading === null ? text : text.replace(heading[0], '');
+  const first = body.split(/\n\s*\n/u).map((block) => block.trim())
+    .find((block) => block !== '' && !block.startsWith('#'));
+  if (first === undefined) return null;
+  return { body, first, heading: heading === null ? 'Disclaimer' : heading[1].trim() };
 }
 
 /** RFC 9116 §2.5.5's recommendation, in seconds: "less than a year into the future". */
@@ -652,7 +725,7 @@ function publicationFindings(bundle, ports, options = {}) {
   // this fault "at build", and `lint` emits neither robots.txt nor the reservation,
   // so a Bundle still lints clean and is told at `build` — the same division the
   // defaulted-build-instant fault of AGSC-06-36 makes above.
-  if (options.publishing === true
+  if (options.publishing === true && html.adoptsTerms((config.bundle || {}).license_prose)
       && tdmCrawlerTokens((config.site || {}).tdm_crawlers).length === 0) {
     findings.push(finding('AGSC-E202',
       'this node publishes a TDM reservation (/.well-known/tdmrep.json, tdm-reservation: 1) and'
@@ -698,6 +771,59 @@ function publicationFindings(bundle, ports, options = {}) {
  * AGSC-02-98 admits, and re-encoding one through a string would change its bytes and
  * break the AGSC-01-34 digest comparison.
  */
+/**
+ * BENCH1b-02/05 (ENG-9): one attachment, judged BEFORE it becomes a route. `build`
+ * alone used to publish what `ci` refuses — an SVG carrying a script, a
+ * `../../../` path written into the page — and to swallow the FileSystem port's
+ * refusal (over the cap, an archive, a link out of the root), after which the
+ * missing route surfaced as an unrelated AGSC-E901. A node published by `build`
+ * must not be weaker than one published by `ci`, so the checks of the lint lane
+ * that decide whether bytes may be SERVED run here too: the path grammar of
+ * AGSC-01-35 (AGSC-E902), the port's own refusal code (AGSC-01-16: E902/E903/E904),
+ * and the AGSC-02-98 SVG allow-list (AGSC-E412).
+ *
+ * @returns {{bytes:(Buffer|null), finding:(object|null), refused:boolean}}
+ */
+function judgeAttachment(ports, item, attachment) {
+  const file = String(attachment.file);
+  const dir = `content/attachments/${item.slug}`;
+  const at = { file: `${dir}/${file}`, line: 1, slug: item.slug };
+  const grammar = linksModule.pathGrammarError(file, dir);
+  if (grammar !== null) {
+    return {
+      bytes: null, refused: true,
+      finding: finding('AGSC-E902', `attachment path "${file}" violates the grammar (${grammar}); nothing is`
+        + ' served and the page does not link it (AGSC-01-35)', at),
+    };
+  }
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return { bytes: null, finding: null, refused: false };
+  let bytes;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists(at.file)) {
+      if (typeof fs.stat === 'function') fs.stat(at.file); // a refusal is not an absence
+      return { bytes: null, finding: null, refused: false };
+    }
+    bytes = fs.readFile(at.file, null);
+  } catch (e) {
+    const code = e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : null;
+    // Absent: AGSC-E413 is the lint lane's (AGSC-01-34); this function invents no bytes.
+    if (code === null) return { bytes: null, finding: null, refused: false };
+    return { bytes: null, finding: finding(code, `attachment "${file}" was refused: ${e.message}`, at), refused: true };
+  }
+  if (String(attachment.media_type) === 'image/svg+xml') {
+    const reasons = governanceLint.svgViolations(Buffer.from(bytes).toString('utf8'));
+    if (reasons.length > 0) {
+      return {
+        bytes: null, refused: true,
+        finding: finding('AGSC-E412', `SVG attachment "${file}" is outside the allow-list: ${reasons.join(', ')};`
+          + ' it is not served (AGSC-02-98)', at),
+      };
+    }
+  }
+  return { bytes, finding: null, refused: false };
+}
+
 function readAttachment(ports, slug, file) {
   const fs = ports && ports.fs;
   if (!fs || typeof fs.readFile !== 'function') return null;
@@ -1061,6 +1187,8 @@ function build(bundle, ports, options = {}) {
   const instant = ports.clock.iso === undefined ? ledgerModule.instantFromEpoch(ports.clock.now()) : ports.clock.iso();
   const files = new Map();
   const findings = [...(bundle.findings || [])];
+  /** Attachment routes judged unservable (ENG-9); their page links are not a second fault. */
+  const refusedAttachments = new Set();
   // AGSC-04-25: ONE content version per build, stamped in nine places. The
   // application layer derives it (so that a verb which never builds a site can
   // stamp the same value); a direct caller that passed none gets the same pure
@@ -1166,8 +1294,16 @@ function build(bundle, ports, options = {}) {
     .edges
     .filter((edge) => edge.key === 'mentions' && edge.source !== edge.target)
     .map((edge) => ({ source: edge.source, target: edge.target }));
+  // AGSC-11-12 (F6, ENG-9): a `sources[].resource` under a declared peer's base is
+  // `rdfs:seeAlso` + `asc:peerOrigin` in every graph view. The Boundary context owns
+  // the peer-base derivation and the IRI normalisation (`federation.peerCitations`);
+  // this build hands the result to the one dataset writer, as it does `mentions`.
+  // A reference under a peer base that cannot be normalised is AGSC-E312 and is
+  // omitted; a reference to any other host stays a plain `dcterms:source` literal.
+  const citations = peerCitationsOf(items, `${base}/`, config.peers, findings);
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
   const graphBase = {
+    citations,
     mentions,
     base: `${base}/`,
     lang: (config.i18n || {}).default,
@@ -1286,8 +1422,9 @@ function build(bundle, ports, options = {}) {
       + ' the Content Use Terms link is omitted from every page and from both text dialects'
       + ' rather than left dangling)');
   }
-  put('/robots.txt', robots(base, { legal: hasLegal, tdmCrawlers: (config.site || {}).tdm_crawlers }));
-  put('/.well-known/tdmrep.json', jsonBytes(tdmrep(base)));
+  const reserve = html.adoptsTerms((config.bundle || {}).license_prose);
+  put('/robots.txt', robots(base, { legal: hasLegal, reserve, tdmCrawlers: (config.site || {}).tdm_crawlers }));
+  put('/.well-known/tdmrep.json', jsonBytes(tdmrep(base, reserve)));
 
   // RFC 9116 + PRD-019: everything the two legal-facing surfaces need from the
   // publisher, resolved once. `options.publication === false` means another lane of
@@ -1371,7 +1508,13 @@ function build(bundle, ports, options = {}) {
   // ------------------------------------------------------------ HTML pages (C)
   const render = renderer;
   if (full && typeof render === 'function') {
+    const disclaimer = readDisclaimer(ports);
     const pageOptions = {
+      // LEG2-02 (ENG-9): the footer's AI sentence is a derived fact, not a constant —
+      // stated only where a published item records AI assistance — and its disclaimer
+      // is the publisher's own `DISCLAIMER.md`, or nothing.
+      aiAssisted: items.some((i) => i && i.prov && ['ai-assisted', 'ai-generated'].includes(String(i.prov.origin))),
+      disclaimer: disclaimer === null ? null : disclaimer.first,
       // The footer's copyright line (rc.6, owner legal pack B-04). The name is the
       // publisher's own `site.author` and the year is the year of the BUILD INSTANT,
       // which AGSC-04-09 derives from the last commit or from `SOURCE_DATE_EPOCH` —
@@ -1425,8 +1568,17 @@ function build(bundle, ports, options = {}) {
       // the authored bytes AGSC-05-29 hashed.
       for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
         if (!attachment || typeof attachment.file !== 'string') continue;
-        const bytes = readAttachment(ports, item.slug, attachment.file);
-        if (bytes !== null) put(`/attachments/${item.slug}/${attachment.file}`, bytes);
+        const judged = judgeAttachment(ports, item, attachment);
+        if (judged.refused) {
+          refusedAttachments.add(`/attachments/${item.slug}/${attachment.file}`);
+          // When a lint lane ran (`ci`), it already reported the fault: one fault is
+          // counted once (AGSC-09-11), and the bytes are withheld either way.
+          if (options.publication !== false && judged.finding !== null) findings.push(judged.finding);
+          continue;
+        }
+        if (judged.bytes !== null && judged.bytes !== undefined) {
+          put(`/attachments/${item.slug}/${attachment.file}`, judged.bytes);
+        }
       }
       // FV28-04: the body's references are rendered as the ROUTES this build emits,
       // never as the authored Bundle paths, which resolve to nothing on the site.
@@ -1486,6 +1638,8 @@ function build(bundle, ports, options = {}) {
     // section and warns; none is ever invented.
     if (hasLegal) {
       put('/legal/index.html', html.legalPage({
+        disclaimer: disclaimer === null ? null
+          : { heading: disclaimer.heading, html: render(textBytes(disclaimer.body)).html },
         licenseProse,
         operator: publication.operator,
         privacy: publication.privacy === null ? null : render(textBytes(publication.privacy)).html,
@@ -1576,6 +1730,9 @@ function build(bundle, ports, options = {}) {
   // reader who follows it.
   for (const link of internalLinks(ordered, { base })) {
     if (resolvesTo(ordered, link.route) !== null) continue;
+    // A refused attachment is already reported under its own code (ENG-9); the link
+    // to it is the same fault, not a second one.
+    if (refusedAttachments.has(link.href)) continue;
     findings.push(finding('AGSC-E901',
       `${link.from} links ${link.href}, and this build emits no route for it (AGSC-06-01)`,
       { file: link.from }));
@@ -1640,7 +1797,7 @@ module.exports = {
   publishedItems, jsonBytes, textBytes, paginate, readAttachment, readDiagramSource,
   declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
   budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
-  readSecurityTxt, readPrivacyNotice, securityFields, operatorLine, publicationFindings,
+  readDisclaimer, readSecurityTxt, readPrivacyNotice, securityFields, operatorLine, publicationFindings,
   baseDirOf, resolveRelative, bodyHrefResolver,
   BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,

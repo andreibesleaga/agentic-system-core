@@ -115,14 +115,11 @@ test('persona-d: an assistant reads the memory, is handed prepared text, and wri
     assert.strictEqual(remembered.body.frontmatter.prov.origin, 'ai-generated');
     assert.strictEqual(remembered.body.frontmatter.prov.operator, 'human:andreibesleaga');
     assert.strictEqual(remembered.body.frontmatter.actor, 'agent:persona-d');
-    // MCP1-03, recorded rather than fixed (the page transport carries the same
-    // code under AGSC-09-16 and is not this package's to change): AGSC-09-14b
-    // says `remember` MUST synthesize a CONFORMING item and that `severity`
-    // defaults to `info`, but this engine applies that default to an `episode`
-    // only — so a remembered `lesson` comes back without the key its own schema
-    // branch requires, and the person has to add it. If this assertion ever
-    // fails, the defect was fixed and the item can be closed.
-    assert.strictEqual(remembered.body.frontmatter.severity, undefined);
+    // MCP1-03, fixed by ENG-9 on both transports: AGSC-09-14b says `remember`
+    // MUST synthesize a CONFORMING item and that `severity` defaults to `info`;
+    // the default used to reach an `episode` only, so a remembered `lesson` came
+    // back without the key its own schema branch requires.
+    assert.strictEqual(remembered.body.frontmatter.severity, 'info');
 
     // 2b. `propose` — the payload for an existing item, and no write.
     proposed = envelopeOf(await client.callTool({ arguments: { slug: 'handoff' }, name: 'propose' }));

@@ -11,6 +11,55 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Skills repositories and rule packs, both ways** (`src/interchange/adapters/skills.js`;
+  `agsc export --to skills --layout <layout>`, `agsc import --from skills <clone>`).
+  Five layouts: the Agent Skills format (`skills/<name>/SKILL.md` — Anthropic's
+  `anthropics/skills`, the "garden" collections, Codex, `gh skill`), a Claude Code
+  plugin, a Claude Code plugin marketplace, Cursor rules and Windsurf rules. A node's
+  published packs are written in any of them, content only, with the provenance block
+  and the content version, and come back item for item. A foreign skill becomes a
+  procedure and a rule an explainer concept; scripts, `allowed-tools`, hooks and MCP
+  server definitions are dropped and reported file by file, never imported; a skill
+  with no recognised open licence is imported as a draft and so never published.
+  `--list` shows what a local clone offers (and counts a link list's entries) without
+  writing or fetching anything. `--dry-run`, the collision refusal, `--replace`,
+  `--allow-newer` and `--source-version` behave as in every import. Documented in
+  `docs/CONNECTORS.md` (route 6).
+
+- **The GABBE agent kit, both ways** (`src/interchange/adapters/gabbe.js`;
+  `agsc export --to gabbe`, `agsc import --from gabbe <kit>`). A node's published items
+  become a GABBE kit's own files — procedures as skills, gates as guides, concepts and
+  clusters as semantic memory, episodes as decision logs, lessons as `CONTINUITY.md`
+  entries, plus the steering text as a guide — each carrying a lossless `agsc-item`
+  line, so a folder exported from a node comes back byte for byte (plus
+  `prov.source_version`). A kit's own skills, failure-memory entries, audit rows,
+  decision logs and dated state lines are imported as procedures, lessons, decisions
+  and episodes; whatever cannot be mapped without inventing an outcome or a time is
+  reported and skipped. `--dry-run`, the collision refusal, `--replace`,
+  `--allow-newer` and a new `--source-version` behave as in every import. Documented
+  in `docs/CONNECTORS.md` (route 5).
+
+- **`ontology/alignments.ttl`** — an informative, CC0 file of SKOS mapping statements
+  from the vocabulary to AgentO and DCAT, each target read at its source and quoted in
+  the file's header. No build reads it and it adds no term.
+
+- **The measurements report is complete for every layer one machine can run**
+  (`bench/security.js`, `bench/parity.js`, `bench/tokens.js`, `bench/a11y.js`,
+  `bench/corpus/`, `tests/bench/kit.test.js`; `docs/MEASUREMENTS.md`,
+  `docs/measurements.json`, `docs/BENCHMARKS.md` updated). The security floor is now
+  scored against a seeded corpus of 104 cases run through the real code paths — lint
+  and `ci`, `import`, `tools/validate-wellknown`, the federation walk, the skill checks
+  — with 85 of 85 named faults stopped and 13 of 13 valid controls clean after the
+  fixes listed under "Fixed" below (the first run stopped 83 of 85 and kept 11 of 13
+  clean; its two misses and two false positives are stated in the report). Page-tool / MCP parity is measured call by
+  call against the real `agsc mcp` process (207 of 207 equal as values over three
+  Bundles). Accessibility is counted per page type with axe-core in both colour
+  schemes (0 violations over 143 pages), tokens are counted per item with a named
+  offline tokenizer (no Claude figure), the build curve reaches 10,000 items with
+  three runs, and the ≤ 100 KB page budget is swept over HTML pages only. The two
+  memory datasets' licences were read on their cards and quoted. `bench/measure.js`
+  gains the `security`, `parity`, `retrieval`, `tokens`, `a11y` and `package` layers.
+
 - **The measurements report and the benchmark kit** (`docs/MEASUREMENTS.md`,
   `docs/BENCHMARKS.md`, `docs/measurements.json`, `bench/`, `tools/bench`,
   `tests/bench/`). Until now this project had a large green test suite and not one
@@ -123,7 +172,105 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   local-time accessors. `fflate@0.8.3` is pinned as a devDependency and is the
   independent third-party reader that unpacks and checks what the tests build.
 
+- **The COGX memory adapter, both ways** (`export --to cogx`, `import --from cogx`;
+  `src/interchange/adapters/cogx.js`, CONN-1). COGX 0.1 is the archive format Cognee's
+  importers translate Mem0, LangMem, Letta/MemGPT and Zep/Graphiti memories into, so
+  one archive written by this engine reaches all of them with no network. The export
+  writes `manifest.json` plus one JSON-lines file per record kind, to the reference
+  writer's own file names and shape: one entity, episode, memory, memory block or raw
+  node per published item, one document per chunk and one fact per authored Link.
+  Every record carries the item IRI, licence, Content Use Terms and trust mark;
+  drafts never leave; `permissions.json` is never written. The import rebuilds our
+  own archive item for item and reads a foreign archive by kind, keeping every member
+  it does not map in `x-cogx-rest`; foreign episodes, documents and raw nodes are
+  reported and skipped; an archive carrying `permissions.json` (credentials) is
+  refused with `AGSC-E403`. `--dry-run`, the collision refusal and `--replace` behave
+  as in the `okf` import.
+- **A composite GitHub Action and a pre-commit hook at the repository root**
+  (`action.yml`, `.pre-commit-hooks.yaml`, CONN-1). The action runs `agsc ci` with the
+  engine at the action's own ref, so the ref pins the engine version; it needs only
+  `contents: read`, uses no token or secret, pins the setup action to a commit and
+  passes inputs through environment variables. The hook `agsc-lint` runs `agsc lint`
+  when an item or the configuration changed. Both are parsed by tests.
+- **Connector examples and two guides** (`examples/connectors/`, `docs/CONNECTORS.md`,
+  `docs/USE-CASES.md`, CONN-1). Runnable examples for Claude Code, Codex and Cursor
+  and a record reshaper for LangGraph, AutoGen and Mem0, all executed by the suite;
+  illustrative framework files that no test runs, each marked so. `CONNECTORS.md`
+  names the four routes and what each tool reads (including the Windsurf fallback
+  path and Aider's manual `--read`); `USE-CASES.md` gives seventeen scenarios with
+  their commands, and `tests/acceptance/use-cases/` runs the offline ones through the
+  real command line.
+
+### Fixed
+
+- **Security: a forged own-record line no longer passes as this node's own** (CONN2-03;
+  `src/interchange/own-record.js`, used by the `skills`, `gabbe` and `cogx` import lanes).
+  A hidden `<!-- agsc-item … -->` line (or a COGX record's `metadata.agsc`) is trusted
+  only when it names this node's `site.base` or a declared `peers[]` entry and its
+  content version (and fingerprint, when present) agree with the file's provenance
+  header. Any other line is reported by file and line and ignored: the file is read as
+  foreign, its claimed provenance and status are dropped, `x-…-source` is recorded, and
+  with no recognised open licence the item arrives as a draft (never published). Own
+  and peer round trips stay byte-identical.
+
+- **`tools/validate-diagrams` on a directory that does not exist** now reports
+  `AGSC-E901` with exit 1 and the diagnostics envelope, like the other checkers; it
+  exited 2, as if the command had been mistyped.
+
+- **Peer citations reach the graph**: a source under a declared peer's base is now
+  `rdfs:seeAlso` + `asc:peerOrigin` in all four graph views (AGSC-11-12); the function
+  existed and nothing called it. A reference under a peer base that is no IRI is
+  `AGSC-E312`.
+- **`cite-as` and the signature link are accepted** by the discovery checker, the
+  federation reader and `tools/validate-wellknown` (AGSC-06-10, AGSC-06-35).
+- **A lesson made by the `remember` tool is conforming**: it carries `severity: info`
+  by default, on the MCP server and in the page script (AGSC-09-14b).
+- **`tools/gen-spec-html --check`** finds the numbered chapter routes
+  `/specs/<nn>-<name>/`, and `--check <dir> --text` compares a publisher's own pages by
+  what they say (every rule's words, every table's rows) rather than by their bytes.
+- **`tools/validate-vectors` and `tools/validate-diagrams` refuse a directory that is
+  not their input** with `AGSC-E901` instead of judging unrelated files.
+- **`agsc build` alone refuses an unsafe attachment** — an SVG with a script, a path
+  that leaves its folder, a file over the cap, an archive, a link out of the Bundle —
+  as `agsc ci` does, and every one is reported under the code its rule names
+  (`AGSC-E412`, `E902`, `E903`, `E904`) instead of a missing-route `AGSC-E901`. The
+  lint lane now reports an absent attachment and the attachment cap at all.
+- **A file that is not UTF-8 is `AGSC-E108`** instead of being read with replacement
+  characters; an oversized `agsc.config.json` is `AGSC-E904`; `import` of an archive
+  is `AGSC-E903` instead of an internal error; an oversized import file is `AGSC-E904`.
+- **The encoded-text threshold of the injection lint is 256 characters**, as AGSC-08-13
+  fixes it (it was 128, so two long-but-legal runs were flagged). The security-floor
+  score (`bench/security.js`) is now 85 of 85 named faults stopped, 13 of 13 valid
+  controls clean, none under another code.
+- **`agsc export --steer` states the node's content version** in its provenance block;
+  it stated the build-instant fallback.
+- **A node's legal texts follow its own licence and content**, not this project's:
+  "All rights reserved" appears only when the prose is under the Content Use Terms
+  (otherwise the footer names the prose licence); the machine-readable training
+  reservation (`/.well-known/tdmrep.json`, the robots `ai-train=no` signal and the
+  per-crawler `Disallow` groups) is published only then too, so a CC BY 4.0 node no
+  longer restricts what its licence grants; the AI-assistance sentence appears only
+  when an item records AI assistance; and the disclaimer comes from the node's own
+  `DISCLAIMER.md` (rendered as its own section of `/legal/`) or is absent. Nodes that
+  want the previous footer sentence add a `DISCLAIMER.md` carrying it. The terms
+  identifier and the provenance header's assistance line are still emitted everywhere,
+  because the current rules require them; the proposed rule change is recorded.
+
 ### Changed
+
+- **The contributor agreement gains an optional assignment** (`CONTRIBUTOR-AGREEMENT`
+  Part 3, clause (f); `spec/08-governance.md` AGSC-08-06 re-pinned; 2026-09-23). A
+  contributor who wants the maintainer to hold the copyright in one contribution may
+  assign it, in a separate signed and dated statement that names the contribution, and
+  gets a licence back at once; where the law that applies to them allows no assignment,
+  an exclusive licence and then a promise not to assert take its place, and moral
+  rights are never touched. A sign-off alone never makes the clause apply, so the
+  trailer grammar is unchanged. Parts 1 and 2 are byte-for-byte what they were; the
+  file's SHA-256 moved from `9a91081f…b014a0b` (3413 bytes) to `e46c717f…6cbbf`
+  (6813 bytes), and the token stays `CA-v1` because no distribution has shipped the
+  earlier text. `tests/arch/license-content-pin.test.js` now also proves that Part 1 is
+  the Developer Certificate of Origin 1.1 verbatim and that clause (f) says it is
+  optional; `CONTRIBUTING.md` explains the choice in plain words.
 
 - **The `codex` steer target now writes `AGENTS.override.md`**, not
   `.codex/instructions.md` (AGSC-01-28 as corrected at rc.6, EXT2-01/CONN1-01). Codex
@@ -157,6 +304,26 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   carrying one of the four is `AGSC-E210`.
 - **`/now.md` is written after the graph views**, because the line AGSC-06-22 pins
   carries the fingerprint of `graph.nq`.
+- **`graph.nq` has one form, and the conformance runner no longer chooses between two**
+  (EXT-2b, PY2-01, 2026-09-23). The draft now states that every line of `graph.nq` is
+  a quad named by the Bundle IRI (AGSC-04-15), which is what the engine's build has
+  always written, so no published fingerprint changes. The `graph` area handler used
+  to pick the default graph for vectors in the older `input.base` shape and the named
+  graph for `input.site.base`; it now always names the graph, the five released
+  vectors that stated triples are withdrawn, and `graph-0021`…`graph-0025` restate
+  them as quads. `tools/validate-ontology` admits the ontology node's registry
+  metadata (`voaf:Vocabulary`, `vann:preferredNamespacePrefix`/`Uri`,
+  `dcterms:creator`/`publisher`/`issued`), and `tools/gen-ns` declares the `vann:`
+  namespace in the RDF/XML it writes, so the vocabulary file can carry what LOV-style
+  registries index (AGSC-05-25) without either tool turning red. The engine's
+  discovery writer and `tools/validate-wellknown` do not yet admit the new optional
+  relation names `cite-as` and `…/rel#signature`; nothing this project builds emits
+  either.
+
+- **`export --to <adapter>` hands every adapter the content version** (CONN-1): the
+  provenance header an adapter writes now states the node's real `bundle_version`
+  instead of the build-instant fallback. The `llm-context` skim view is the one
+  existing adapter this reaches.
 
 ## [1.0.0-rc.6] — the engine follows the draft `1.0.0-rc.6` (2026-09-22)
 

@@ -299,6 +299,7 @@ function plan(bundle, options) {
 
   const text = steerText(admitted, {
     base,
+    bundleVersion: opts.bundleVersion,
     generatedAt: String(opts.generatedAt),
     license,
     nowState: opts.nowState,

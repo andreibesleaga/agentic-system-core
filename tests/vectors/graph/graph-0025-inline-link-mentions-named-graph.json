@@ -1,0 +1,39 @@
+{
+  "area": "graph",
+  "description": "AGSC-03-11, AGSC-05-16 and AGSC-05-27 all map an inline Markdown link between two items of the Bundle to an untyped `asc:mentions` edge, and no vector cited it until rc.6 (ENG3-S3); the reference engine emitted none, which AGSC-00-03 makes a defect of the engine and not of the rules. Derivation: `alpha`'s body carries two inline links to `beta` and one to a heading of its own page. Two references between one pair of items produce ONE triple \u2014 the edge is between items, not between occurrences \u2014 the self-reference produces none, and the edge has no computed inverse (AGSC-03-04 lists the inverses and `mentions` is not among them). Only the mentions lines are asserted here: the rest of the serialisation is pinned by graph-0015 to graph-0018, and this file deliberately does not claim to be a complete N-Quads document (the fault graph-0010 was withdrawn for). The graph term: every line is a quad whose fourth term is the Bundle IRI `<https://a.example/>` (AGSC-04-15 as amended at rc.6, PY2-01), so each line of graph-0020 is restated here with ` <https://a.example/>` inserted before its terminating ` .`; nothing else moves, and because the same suffix is added to every line the byte order of the lines is unchanged.",
+  "expected": {
+    "inverse_materialised": false,
+    "mentions_lines": [
+      "<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#mentions> <https://a.example/concepts/beta/> <https://a.example/> .\n"
+    ],
+    "whole_file_asserted": false
+  },
+  "id": "graph-0025",
+  "input": {
+    "items": [
+      {
+        "body": "See [Beta](../concepts/beta/) and again [Beta](../concepts/beta/), and this page's [own section](#s).",
+        "lang": "en",
+        "slug": "alpha",
+        "title": "Alpha",
+        "type": "concept"
+      },
+      {
+        "body": "Nothing here.",
+        "lang": "en",
+        "slug": "beta",
+        "title": "Beta",
+        "type": "concept"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-23 at rc.6 (EXT-2b, PY2-01); derived by hand from AGSC-04-15 as amended and AGSC-05-03, superseding graph-0020",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-05-27"
+}

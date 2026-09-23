@@ -170,9 +170,21 @@ const ADAPTER_FLAGS = {
       // for AGSC-01-22's tolerance limit: without it a source declaring a MAJOR or
       // MINOR this tool does not implement is refused before anything is written.
       okf: new Map([['--replace', 'bool'], ['--allow-newer', 'bool']]),
+      // The COGX adapter (CONN-1) offers the same two: `--replace` for AGSC-01-23,
+      // `--allow-newer` for an archive of a newer COGX MAJOR or a newer spec_version.
+      cogx: new Map([['--replace', 'bool'], ['--allow-newer', 'bool']]),
+      // The GABBE adapter (ENG-9, D117) adds `--source-version <v>`: a kit publishes
+      // no content version of its own, and AGSC-01-22 records one on every item.
+      gabbe: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value']]),
+      // The skills adapter (CONN-2, R119) adds `--layout <name>` (which foreign layout
+      // to read; detected when absent) and `--list` (the catalogue of a local clone:
+      // what each layout would import, and nothing is written or fetched).
+      skills: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value'],
+        ['--layout', 'value'], ['--list', 'bool']]),
     },
   },
-  export: { selector: '--to', adapters: {} },
+  // `export --to skills --layout <name>` (CONN-2): the foreign layout to write.
+  export: { selector: '--to', adapters: { skills: new Map([['--layout', 'value']]) } },
 };
 
 /** The flags the adapter named in `argv` adds to `verb`, or an empty map. */

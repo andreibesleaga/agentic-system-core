@@ -226,7 +226,7 @@ test('an empty source directory is AGSC-E901 and writes nothing', () => {
 });
 
 test('AGSC-01-26a: --selection is the old-site adapter flag, not a verb requirement', () => {
-  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site']);
+  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills']); // cogx: CONN-1; gabbe: ENG-9; skills: CONN-2
   assert.deepStrictEqual([...importVerb.SELECTION_REQUIRED], ['old-site']);
 });
 

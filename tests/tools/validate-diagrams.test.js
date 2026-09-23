@@ -50,10 +50,17 @@ describe('validate-diagrams — usage and the envelope', () => {
     assert.equal(capture('validate-diagrams', [diagramRoot(), diagramRoot()]).code, 2);
   });
 
-  it('a directory that is not a diagrams pack exits 2', () => {
+  // CONN-2 (ENG9-05): a directory that does not exist is nothing to validate, which
+  // every other checker reports as AGSC-E901 with exit 1 (FIX29-S4) — not a usage
+  // error, since the invocation itself was well formed.
+  it('a directory that does not exist is AGSC-E901 with exit 1, as in every other checker', () => {
     const result = capture('validate-diagrams', [path.join(tmpdir(), 'absent')]);
-    assert.equal(result.code, 2);
+    assert.equal(result.code, 1);
     assert.match(result.err, /no diagrams directory/u);
+    const { code, json } = envelope('validate-diagrams', [path.join(tmpdir(), 'absent')]);
+    assert.equal(code, 1);
+    assert.deepEqual(json.findings.map((f) => f.code), ['AGSC-E901']);
+    assert.equal(json.status, 'fail');
   });
 
   it('the envelope has the AGSC-09-11 shape, and the pack may be named directly', () => {

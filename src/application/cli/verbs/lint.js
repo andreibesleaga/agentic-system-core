@@ -71,7 +71,9 @@ function lane(ctx, bundle) {
   const tracked = helpers.trackedPaths(ctx);
   findings.push(...govLint.lint(bundle, {
     attachmentBytes: facts.attachmentBytes,
+    fileErrors: facts.fileErrors,
     filesPresent: facts.filesPresent,
+    presenceChecked: facts.presenceChecked === true,
     sha256: helpers.sha256,
     trackedPaths: tracked === null ? undefined : tracked,
   }));

@@ -4,6 +4,8 @@
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix voaf: <http://purl.org/vocommons/voaf#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 # AgenticSystemCore vocabulary — OWL 2 RL-safe (spec/05-graph.md, AGSC-05-22).
@@ -16,12 +18,22 @@
 # computed inverse usedBy and the untyped mentions) and all five Mode-2 keys with their inverses are
 # defined here (fourteen keys in total, AGSC-03-01 as amended by D53).
 # Stable Turtle profile: fixed prefix order, subjects and predicates sorted by IRI code points.
+# Ontology-node metadata (rc.6, AGSC-05-25): voaf:Vocabulary, vann:preferredNamespacePrefix/Uri and the
+# dcterms creator, publisher, issued and modified that vocabulary registries index. issued = the date of the
+# first tagged release carrying this vocabulary (1.0.0-rc.3); modified = the date of the release that ships
+# this file, set when the release is prepared and never read from a clock.
 
 <https://w3id.org/agentic-system-core/ns>
-    a owl:Ontology ;
+    a voaf:Vocabulary, owl:Ontology ;
+    dcterms:creator <https://orcid.org/0009-0001-3464-5283> ;
     dcterms:description "Vocabulary for AgenticSystemCore Bundles: six item types plus Bundle, Source, Proposal, Review, Harness and (rc.3) Attachment, aligned to SKOS, PROV-O and DCTerms." ;
+    dcterms:issued "2026-09-17"^^xsd:date ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    dcterms:modified "2026-09-23"^^xsd:date ;
+    dcterms:publisher <https://orcid.org/0009-0001-3464-5283> ;
     dcterms:title "AgenticSystemCore vocabulary" ;
+    vann:preferredNamespacePrefix "asc" ;
+    vann:preferredNamespaceUri <https://w3id.org/agentic-system-core/ns#> ;
     rdfs:label "AgenticSystemCore vocabulary" ;
     owl:versionIRI <https://w3id.org/agentic-system-core/ns/1.0.0-draft.1> ;
     owl:versionInfo "1.0.0-draft.1" .

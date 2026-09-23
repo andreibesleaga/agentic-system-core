@@ -218,6 +218,8 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   const remembered = page.call('remember', { body: 'x', kind: 'lesson', title: 'A Lesson Learned Here' });
   assert.strictEqual(remembered.type, 'proposal');
   assert.match(remembered.body.path, /^content\/lessons\//u);
+  // MCP1-03 (ENG-9): the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
+  assert.strictEqual(remembered.body.frontmatter.severity, 'info');
   // AGSC-11-18, the WebMCP vocabulary: the hints on the writing tools.
   assert.strictEqual(surfaces.WEBMCP_ANNOTATIONS.propose.consequentialHint, true);
   assert.strictEqual(surfaces.WEBMCP_ANNOTATIONS.remember.consequentialHint, true);

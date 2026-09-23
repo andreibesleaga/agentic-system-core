@@ -1,0 +1,9 @@
+---
+description: TypeScript conventions for this repository, applied to every source file.
+globs: *.ts
+alwaysApply: false
+---
+
+# TypeScript conventions
+
+Prefer type aliases for unions. Never use any.

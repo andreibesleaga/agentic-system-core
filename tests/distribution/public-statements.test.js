@@ -277,7 +277,9 @@ test('AGSC-06-18 (rc.6): /legal/ carries the assistance statement, in the same w
 });
 
 test('B-04 (rc.6): the page footer carries the copyright line, from configuration', () => {
-  const withAuthor = html.termsLine('CC-BY-4.0', { author: 'Ada Lovelace', legal: true, year: '2026' });
+  const withAuthor = html.termsLine('CC-BY-4.0', {
+    aiAssisted: true, author: 'Ada Lovelace', disclaimer: html.NO_CLAIM_SENTENCE, legal: true, year: '2026',
+  });
   assert.match(withAuthor, /class="copyright">&#169; 2026 Ada Lovelace\./u);
   assert.match(withAuthor, /class="notice">Written with AI assistance/u);
   assert.match(withAuthor, /no warranty and no liability/u);
@@ -285,7 +287,9 @@ test('B-04 (rc.6): the page footer carries the copyright line, from configuratio
   // stamping one owner's name into somebody else's pages.
   const anonymous = html.termsLine('CC-BY-4.0', { legal: true });
   assert.ok(!anonymous.includes('copyright'), anonymous);
-  assert.match(anonymous, /class="notice"/u, 'the disclaimer is a constant and always shows');
+  // CHANGED by ENG-9 (LEG2-02): the notice is no longer a constant. With no AI item
+  // and no authored DISCLAIMER.md there is nothing true to say, and nothing is said.
+  assert.doesNotMatch(anonymous, /class="notice"/u);
   // The /legal/ link is emitted only where that route exists (V9D-A6).
   assert.ok(!html.termsLine('CC-BY-4.0', { author: 'A', legal: false, year: '2026' }).includes('href="/legal/"'));
 });

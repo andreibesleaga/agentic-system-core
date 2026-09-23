@@ -30,16 +30,16 @@ const REL = 'https://w3id.org/agentic-system-core/rel#';
 /** AGSC-06-10: the extension relation names, and no others. */
 const EXTENSION_RELATIONS = Object.freeze([
   'access', 'context', 'contribute', 'graph', 'ledger', 'now',
-  'ontology', 'peer', 'skills', 'surface',
-]);
+  'ontology', 'peer', 'signature', 'skills', 'surface',
+]); // `signature`: AGSC-06-08/06-10 as amended at rc.6 (EXT2-07) — optional, affects nothing
 /** AGSC-06-10 + AGSC-06-35: the IANA-registered short names this profile uses. */
 const REGISTERED_RELATIONS = Object.freeze([
-  'alternate', 'author', 'collection', 'describedby', 'item', 'license',
+  'alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
   'related', 'service-desc', 'service-doc', 'service-meta',
-]);
+]); // `cite-as` (RFC 8574): AGSC-06-10/06-35 as amended at rc.6 (EXT2-03)
 /** AGSC-06-35: the short names a `related[]` entry may carry. */
 const RELATED_RELATIONS = Object.freeze([
-  'alternate', 'collection', 'describedby', 'item', 'related',
+  'alternate', 'cite-as', 'collection', 'describedby', 'item', 'related',
   'service-desc', 'service-doc', 'service-meta',
 ]);
 /** Every relation name that may appear, for the validator of `check()`. */

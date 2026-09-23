@@ -5,7 +5,7 @@
 <meta content="Common,Latin" name="scripts">
 <meta content="initial-scale=1.0" name="viewport">
 <title>The 'knowledge-linkset' Well-Known URI for Publishing Knowledge Artefacts</title>
-<meta content="Andrei Nicolae Besleaga" name="author">
+<meta content="Andrei N. Besleaga" name="author">
 <meta content='
        This document defines the "knowledge-linkset" well-known URI, at which a
 web origin publishes one link set describing the knowledge artefacts it
@@ -1245,7 +1245,7 @@ li > p:last-of-type:only-child {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Besleaga</td>
-<td class="center">Expires 26 March 2027</td>
+<td class="center">Expires 27 March 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1258,12 +1258,12 @@ li > p:last-of-type:only-child {
 <dd class="internet-draft">draft-besleaga-agentic-knowledge-wellknown-00</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-09-22" class="published">22 September 2026</time>
+<time datetime="2026-09-23" class="published">23 September 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-03-26">26 March 2027</time></dd>
+<dd class="expires"><time datetime="2027-03-27">27 March 2027</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1308,7 +1308,7 @@ profile URI registration that is to be requested separately.<a href="#section-ab
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 26 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 27 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1755,7 +1755,8 @@ used.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
 <p id="section-4.2-2">The registered short names used are <code>describedby</code>, <code>alternate</code>,
 <code>license</code>, <code>service-doc</code>, and <code>author</code>. A node that also publishes
 related-system links (<a href="#related-system-links" class="auto internal xref">Section 4.5</a>) may in addition use
-<code>related</code>, <code>service-desc</code>, <code>service-meta</code>, <code>collection</code>, and <code>item</code>.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<code>related</code>, <code>service-desc</code>, <code>service-meta</code>, <code>collection</code>, <code>item</code>, and
+<code>cite-as</code> (<span>[<a href="#RFC8574" class="cite xref">RFC8574</a>]</span>).<a href="#section-4.2-2" class="pilcrow">¶</a></p>
 <p id="section-4.2-3">The extension relations form a closed set. Each is the URI
 <code>https://w3id.org/agentic-system-core/rel#&lt;name&gt;</code> with <code>&lt;name&gt;</code> taken
 from the following list, and each such URI dereferences, through
@@ -1832,6 +1833,12 @@ it (<a href="#the-profile-uri" class="auto internal xref">Section 6</a>).<a href
                 <code>access</code>
 </td>
               <td class="text-left" rowspan="1" colspan="1">a page that says how to obtain credentials</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>signature</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">a detached signature over the discovery document</td>
             </tr>
           </tbody>
         </table>
@@ -2027,9 +2034,11 @@ description, a query endpoint. Such links use registered short names
 only, chosen by meaning: <code>describedby</code> when the target describes this
 node, <code>alternate</code> when the target is the same knowledge in another
 representation, <code>related</code> for a related resource, <code>service-desc</code>,
-<code>service-doc</code>, and <code>service-meta</code> for an interface, and <code>collection</code>
-and <code>item</code> for containment. Each <span class="bcp14">MUST</span> carry <code>type</code> and <span class="bcp14">MAY</span> carry
-<code>profile</code> and <code>title</code>.<a href="#section-4.5-1" class="pilcrow">¶</a></p>
+<code>service-doc</code>, and <code>service-meta</code> for an interface, <code>collection</code>
+and <code>item</code> for containment, and <code>cite-as</code> (<span>[<a href="#RFC8574" class="cite xref">RFC8574</a>]</span>) for the
+identifier a reader should cite in preference to the node, such as a
+persistent identifier's landing page. Each <span class="bcp14">MUST</span> carry <code>type</code> and <span class="bcp14">MAY</span>
+carry <code>profile</code> and <code>title</code>.<a href="#section-4.5-1" class="pilcrow">¶</a></p>
 <p id="section-4.5-2">A client <span class="bcp14">MUST</span> ignore a related-system link it does not understand. No
 related-system link affects any digest, and none is followed by the
 walk of <a href="#following-peers" class="auto internal xref">Section 7.2</a>, which follows <code>peer</code> links only.<a href="#section-4.5-2" class="pilcrow">¶</a></p>
@@ -2383,7 +2392,10 @@ identity of the publisher from the TLS certificate and the DNS name of
 the origin, and from nothing in the document. A publisher who needs a
 client to verify authorship independently of the origin signs the
 responses -- <span>[<a href="#RFC9421" class="cite xref">RFC9421</a>]</span> defines one way -- or publishes a detached
-signature; this document defines neither.<a href="#section-9.1-2" class="pilcrow">¶</a></p>
+signature and names it with the <code>signature</code> extension relation
+(<a href="#relations" class="auto internal xref">Section 4.2</a>). This document defines no signature format: a client
+<span class="bcp14">MUST</span> ignore that link if it does not understand the target, and the
+link affects no digest and no walk.<a href="#section-9.1-2" class="pilcrow">¶</a></p>
 <p id="section-9.1-3">A client that keeps the <code>agsc-ledger-head</code> value it saw on an earlier
 retrieval, and that later reads a head that does not extend the earlier
 one, has observed a rollback or a replacement of the ledger, and <span class="bcp14">SHOULD</span>
@@ -2525,7 +2537,7 @@ URIs" registry, per <span>[<a href="#RFC8615" class="cite xref">RFC8615</a>]</sp
             <p id="section-11.1-2.1.1"><strong>URI suffix</strong>: knowledge-linkset<a href="#section-11.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-11.1-2.2">
-            <p id="section-11.1-2.2.1"><strong>Change controller</strong>: Andrei Nicolae Besleaga
+            <p id="section-11.1-2.2.1"><strong>Change controller</strong>: Andrei N. Besleaga
 (andrei.besleaga.nicolae@gmail.com)<a href="#section-11.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-11.1-2.3">
@@ -2589,7 +2601,7 @@ artefacts and their canonical bytes.<a href="#section-11.2-2.4.1" class="pilcrow
             <p id="section-11.2-2.5.1"><strong>Notes</strong>: The profile does not change the semantics of
 <code>application/linkset+json</code> for a client that ignores it (<span>[<a href="#RFC6906" class="cite xref">RFC6906</a>]</span>,
 Section 3); it adds integrity, bundle-fact, and declaration target
-attributes that a client <span class="bcp14">MAY</span> use. Change controller: Andrei Nicolae
+attributes that a client <span class="bcp14">MAY</span> use. Change controller: Andrei N.
 Besleaga, Independent, andrei.besleaga.nicolae@gmail.com.<a href="#section-11.2-2.5.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
@@ -2805,6 +2817,10 @@ reference engine.<a href="#section-12-10.3.1" class="pilcrow">¶</a></p>
 <dt id="RFC8259">[RFC8259]</dt>
       <dd>
 <span class="refAuthor">Bray, T., Ed.</span>, <span class="refTitle">"The JavaScript Object Notation (JSON) Data Interchange Format"</span>, <span class="seriesInfo">STD 90</span>, <span class="seriesInfo">RFC 8259</span>, <span class="seriesInfo">DOI 10.17487/RFC8259</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8259">https://www.rfc-editor.org/info/rfc8259</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8574">[RFC8574]</dt>
+      <dd>
+<span class="refAuthor">Van de Sompel, H.</span>, <span class="refAuthor">Nelson, M.</span>, <span class="refAuthor">Bilder, G.</span>, <span class="refAuthor">Kunze, J.</span>, and <span class="refAuthor">S. Warner</span>, <span class="refTitle">"cite-as: A Link Relation to Convey a Preferred URI for Referencing"</span>, <span class="seriesInfo">RFC 8574</span>, <span class="seriesInfo">DOI 10.17487/RFC8574</span>, <time datetime="2019-04" class="refDate">April 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8574">https://www.rfc-editor.org/info/rfc8574</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8792">[RFC8792]</dt>
       <dd>
@@ -3155,7 +3171,7 @@ here.<a href="#appendix-B-2" class="pilcrow">¶</a></p>
 <a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
       </h2>
 <address class="vcard">
-        <div dir="auto" class="left"><span class="fn nameRole">Andrei Nicolae Besleaga</span></div>
+        <div dir="auto" class="left"><span class="fn nameRole">Andrei N. Besleaga</span></div>
 <div dir="auto" class="left"><span class="org">Independent</span></div>
 <div class="email">
 <span>Email:</span>

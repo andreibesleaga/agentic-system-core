@@ -250,10 +250,11 @@ function checkSvg(files, options = {}) {
  * AGSC-01-34 and AGSC-02-98 over a Bundle's attachments.
  *
  * @param {Array<object>} items
- * @param {{attachmentBytes?:object, filesPresent?:object, config?:object,
+ * @param {{attachmentBytes?:object, fileErrors?:object, filesPresent?:object, config?:object,
  *          sha256?:function}} [options] `attachmentBytes` maps an attachment's
  *   file name (or its Bundle-relative path) to its text; `filesPresent` maps a
- *   Bundle-relative path to its byte length; `sha256` hashes bytes when the
+ *   Bundle-relative path to its byte length; `fileErrors` maps one to the
+ *   `{code, message}` the FileSystem port refused it with; `sha256` hashes bytes when the
  *   caller can (this module never imports a hash).
  * @returns {{findings:Array<object>, clean:string[]}}
  */
@@ -264,7 +265,11 @@ function checkAttachments(items, options = {}) {
     && typeof options.config.attachments.max_bytes === 'number')
     ? options.config.attachments.max_bytes
     : ATTACHMENT_MAX_BYTES_DEFAULT;
-  const hasPresence = Object.keys(present).length > 0;
+  const refused = options.fileErrors || {};
+  // `presenceChecked`: the caller looked at the disk, so an attachment missing from
+  // `filesPresent` IS absent (AGSC-E413) even when no attachment at all is present.
+  const hasPresence = options.presenceChecked === true
+    || Object.keys(present).length > 0 || Object.keys(refused).length > 0;
   const findings = [];
   const clean = [];
   const named = new Set();
@@ -307,7 +312,13 @@ function checkAttachments(items, options = {}) {
 
       if (hasPresence) {
         const size = present[path];
-        if (size === undefined) {
+        if (refused[path] !== undefined) {
+          // The FileSystem port refused the file with the code AGSC-01-16/01-35 name
+          // (BENCH1b-05): over the cap (E904), an archive (E903), a link out (E902).
+          findings.push(finding(String(refused[path].code),
+            `attachment "${file}" was refused: ${String(refused[path].message)}`, base));
+          dirty = true;
+        } else if (size === undefined) {
           findings.push(finding('AGSC-E413',
             `attachment "${file}" is absent from ${ATTACHMENT_ROOT}${v.slug}/ (AGSC-01-34)`, base));
           dirty = true;

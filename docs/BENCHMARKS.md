@@ -11,6 +11,13 @@ This document describes the benchmark kit under `bench/` and the standalone runn
 SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance  --scratch /tmp/bench
 SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer determinism  --scratch /tmp/bench
 SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch /tmp/bench --sizes 100,500,501,1000,5000 --runs 3
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security     --scratch /tmp/bench
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer parity       --scratch /tmp/bench --nodes <name>=<bundle dir>,…
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer retrieval    --scratch /tmp/bench --nodes <name>=<built output>,…
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer package      --scratch /tmp/bench
+# these two need libraries installed OUTSIDE the repository (npm i --no-save in a scratch dir)
+SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --scratch /tmp/bench --nodes <name>=<built output>,… --exports <name>=<llm-context dir>,…
+SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules CHROME_EXE=<chromium> node bench/measure.js --layer a11y --scratch /tmp/bench --nodes <name>=<built output>,…
 SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --assemble --scratch /tmp/bench --out docs/measurements.json
 
 # the retrieval runner, against a node you have built
@@ -64,9 +71,9 @@ Most memory benchmarks score a *conversational* memory that writes itself during
 
 | benchmark | what it measures | verdict | licence position |
 |---|---|---|---|
-| **LongMemEval** (500 instances; information extraction, multi-session reasoning, knowledge updates, temporal reasoning, abstention; judge model required) | long-term recall, update, abstention | **Adopt the Oracle subset, two abilities only: knowledge updates and abstention.** Those are exactly what `supersedes`, `status: deprecated` and the `ask` tool's mandatory "no answer in this memory" are for. The multi-session and temporal abilities score a conversation this system does not have. | code MIT; the **dataset card's terms must be read and quoted before any use** — not yet verified |
+| **LongMemEval** (500 instances; information extraction, multi-session reasoning, knowledge updates, temporal reasoning, abstention; judge model required) | long-term recall, update, abstention | **Adopt the Oracle subset, two abilities only: knowledge updates and abstention.** Those are exactly what `supersedes`, `status: deprecated` and the `ask` tool's mandatory "no answer in this memory" are for. The multi-session and temporal abilities score a conversation this system does not have. | code MIT; **dataset card read 2026-09-23**: the card of `xiaowu0162/longmemeval` declares `license: mit` and says "⚠️ This dataset is deprecated. It is replaced by `longmemeval-cleaned`"; the replacement card (`xiaowu0162/longmemeval-cleaned`) also declares `license: mit`. Use the cleaned set, and cite the card and the date. |
 | **BEAM** (inside a production memory suite; 100 conversations per size bucket from 100K to 10M tokens, over 2,000 questions) | production-scale conversational memory | **Reference point only, never a target.** A ten-million-token conversation is not a Bundle. Cite it to say what the field measures and why this object differs. Reporting a score on it would be benchmark theatre. | suite Apache-2.0; a judge model is required |
-| **MemoryAgentBench** (accurate retrieval, test-time learning, long-range understanding, conflict resolution) | four named competencies | **Adopt the conflict-resolution rows only.** `contradicts` warnings, `excludes` mutual exclusion and `supersedes` hiding are conflict resolution made explicit and checkable — the one place a governed static memory should be *better* than a learned one. | **dataset licence unverified; must be read before use** |
+| **MemoryAgentBench** (accurate retrieval, test-time learning, long-range understanding, conflict resolution) | four named competencies | **Adopt the conflict-resolution rows only.** `contradicts` warnings, `excludes` mutual exclusion and `supersedes` hiding are conflict resolution made explicit and checkable — the one place a governed static memory should be *better* than a learned one. | **dataset card read 2026-09-23**: `ai-hyz/MemoryAgentBench` declares `license: mit`, and the card states no further terms. The card's tag covers the packaged set; the rows it was built from came from earlier datasets, whose own terms are to be checked row family by row family before any row is published beside a score. |
 | **LoCoMo** | multi-session dialogue recall | **Rejected, and it stays rejected** | non-commercial licence |
 | self-evolving and streaming memory benchmarks | a memory that rewrites itself | **Not applicable.** This memory rewrites only through a reviewed proposal. Saying so in the paper is better than silence. | — |
 | **τ-bench** | tool-use reliability over repeats | **Adopt the protocol, not the tasks**: pass^k at k = 3 over this system's own seven tools | — |
@@ -74,7 +81,7 @@ Most memory benchmarks score a *conversational* memory that writes itself during
 
 **The one capability the field measures that this system can measure and has not:** knowledge update as an observable event. The mechanism is `supersedes` plus `status`; the study is thirty scripted edit episodes — supersede, contradict-then-resolve, retract, stale-then-reverify — with update accuracy, abstention accuracy and citation rate reported **separately**. That is the most defensible external comparison available here, because both the mechanism and the metric are ours to state precisely. It is designed and unbuilt.
 
-**No dataset is downloaded, and no benchmark is run, until its licence has been read on the source page and quoted in the kit's licence record.** Two of the adopted datasets are unverified today and are named as unverified above.
+**No dataset is downloaded, and no benchmark is run, until its licence has been read on the source page and quoted in the kit's licence record.** The two adopted datasets had their cards read on 2026-09-23 (the quotes are in the table above, from `https://huggingface.co/datasets/xiaowu0162/longmemeval`, `https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned` and `https://huggingface.co/datasets/ai-hyz/MemoryAgentBench`, read as the raw `README.md` of each). Nothing was downloaded.
 
 ## Tools the kit uses or plans to use
 
@@ -86,6 +93,8 @@ Most memory benchmarks score a *conversational* memory that writes itself during
 | **axe-core** | accessibility violations per template | MPL-2.0 |
 | **Lighthouse** | accessibility, best-practices and SEO per template — **never the performance category** | Apache-2.0 |
 | Python `zipfile` | an independent reader for the archive profile | PSF |
+| **gpt-tokenizer** 2.9.0 | token counts per item, `o200k_base` and `cl100k_base`, offline, installed outside the repository | MIT (read from the installed package's `package.json`). The version named in the research record, 2.9.1, does not exist on the registry (`npm view gpt-tokenizer@2.9.1` → E404); 2.9.0 is the nearest published release and is the one used |
+| **playwright-core** 1.62.1 + a headless Chromium | the browser that runs axe-core, installed outside the repository | Apache-2.0 |
 
 Every licence in this table is quoted from the source page in the project's dated research record; a licence that could not be read live is marked unverified above rather than assumed.
 

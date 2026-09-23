@@ -944,6 +944,8 @@ function pageToolset(corpus, core) {
         frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
         frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
       }
+      // MCP1-03 (ENG-9): the lesson branch requires `severity` (AGSC-09-14b default).
+      if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
       if (typeof args.actor === 'string') frontmatter.actor = args.actor;
       frontmatter.prov = {
         agent: args.agent,
@@ -1134,6 +1136,7 @@ function bundle(options) {
   const opts = options || {};
   const bundleId = opts.bundleId === undefined || opts.bundleId === null ? '' : String(opts.bundleId);
   const parts = ['\'use strict\';',
+    '// SPDX-License-Identifier: Apache-2.0 (the engine\'s code; the prose it carries keeps its own terms)',
     '// AgenticSystemCore page tools (AGSC-09-13, AGSC-09-16). GENERATED — every',
     '// function below is the SOURCE TEXT of the function Node runs, so the local',
     '// tools and the page tools cannot drift. No network beyond this origin, no key,',

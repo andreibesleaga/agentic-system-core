@@ -20,7 +20,7 @@
 
 ## 7.3 The Harness
 
-- **AGSC-07-12** A valid composition MUST emit exactly these seven file kinds, and no others (two of them one file per selected item — AR2-71), under `dist/harness/<name>/` — never under `content/` (formerly AGSC-01-09) — or as an equivalent in-memory map for download:
+- **AGSC-07-12** A valid composition MUST emit exactly these seven file kinds, and no others (two of them one file per selected item — AR2-71), under `dist/harness/<name>/` — never under `content/` (formerly AGSC-01-09) — or as an equivalent in-memory map for download, as the table below lists. [PRD-037 ← D35, audit/D §3(e), G11]
 
 | File | Content |
 |---|---|
@@ -31,8 +31,6 @@
 | `arc42.md` | arc42 skeleton seeded from the selection |
 | `decisions/0001-<slug>.md` | one MADR record per selected Concept, numbered in selection order |
 | `skills/<slug>/SKILL.md` | one skill file per selected Procedure |
-
-[PRD-037 ← D35, audit/D §3(e), G11]
 
 `decisions/NNNN-<slug>.md` is numbered in the de-duplicated first-occurrence input order of AGSC-07-03 restricted to the survivors — the one place where input order is still meaningful; the verdict itself is order-free (AGSC-07-09). `harness.jsonld` is a JSON document in JCS form, **not** an RDF export: AGSC-05-08 and `AGSC-E605` do not apply to its nested `selection`/`closure`/`links`/`verdict` objects, which carry no `@id`. [D48(6)]
 

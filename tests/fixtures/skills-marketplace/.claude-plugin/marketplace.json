@@ -1,0 +1,28 @@
+{
+  "name": "fixture-skills",
+  "owner": {
+    "name": "Fixture maintainers"
+  },
+  "metadata": {
+    "description": "Fixture skills",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "data-skills",
+      "description": "Data helpers",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/csv-helper"
+      ]
+    },
+    {
+      "name": "remote-skills",
+      "source": {
+        "source": "github",
+        "repo": "example/remote-skills"
+      }
+    }
+  ]
+}

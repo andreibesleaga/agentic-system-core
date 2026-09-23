@@ -219,3 +219,14 @@ test('flatten() leaves an already-flat record alone', () => {
   assert.deepStrictEqual(steer.flatten({ slug: 'a', type: 'concept' }), { slug: 'a', type: 'concept' });
   assert.strictEqual(steer.hasHumanVerification({}), false);
 });
+
+// ENG-9 (found while building the GABBE adapter): `plan` accepted `bundleVersion`
+// and dropped it, so every steer target stated the build-instant fallback
+// `0.0.0+<instant>` even when the Bundle has a real content version (AGSC-04-25,
+// AGSC-06-15: every provenance header carries THE content version).
+test('AGSC-04-25: the steer header states the content version it was handed', () => {
+  const planned = require('../../src/interchange/steer.js').plan(
+    { config: { site: { base: 'https://x.example/', title: 'X' } }, items: [] },
+    { bundleVersion: 'v9.9.9', generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.6' });
+  assert.ok(planned.files[0].text.split('\n').includes('bundle_version: v9.9.9'));
+});

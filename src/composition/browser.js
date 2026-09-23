@@ -229,6 +229,7 @@ function exportedNames() {
 function bundle(options) {
   const opts = options || {};
   const parts = ['\'use strict\';',
+    '// SPDX-License-Identifier: Apache-2.0 (the engine\'s code; the prose it carries keeps its own terms)',
     '// AgenticSystemCore composition algebra (AGSC-07-01, AGSC-07-13). GENERATED —',
     '// every function below is the SOURCE TEXT of the function the CLI runs, so the',
     '// two hosts cannot drift. No network, no key, no server.',

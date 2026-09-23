@@ -12,6 +12,9 @@ const { compareCodePoint } = require('../shared/ordering.js');
 const MAX_INPUT_BYTES = 1024 * 1024; // AGSC-01-16
 const ARCHIVE_EXTENSIONS = Object.freeze(['.zip', '.tar', '.gz', '.tgz', '.bz2', '.xz', '.7z', '.rar']);
 
+/** A strict decoder: invalid UTF-8 throws instead of becoming U+FFFD (AGSC-01-14). */
+const UTF8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+
 class FsError extends Error {
   /** @param {string} code a code REGISTERED in spec/09 §9.4, so the CLI can
    * turn this throw into a Finding rather than an internal error (F27-07).
@@ -90,7 +93,16 @@ function createFileSystem(root, options = {}) {
       if (size > maxBytes) {
         throw new FsError('AGSC-E904', `${p} is ${size} bytes, above the ${maxBytes}-byte cap (AGSC-01-16)`, String(p));
       }
-      return encoding === null ? fs.readFileSync(target) : fs.readFileSync(target, encoding);
+      if (encoding === null) return fs.readFileSync(target);
+      if (String(encoding).toLowerCase().replace('-', '') !== 'utf8') return fs.readFileSync(target, encoding);
+      // AGSC-01-14 (BENCH1b-03, ENG-9): text is UTF-8, and a file that is not is
+      // AGSC-E108 — never silently decoded with U+FFFD. The byte-order mark is KEPT
+      // (`ignoreBOM`), so the lint that reports a BOM still sees it.
+      try {
+        return UTF8.decode(fs.readFileSync(target));
+      } catch (e) {
+        throw new FsError('AGSC-E108', `${p} is not valid UTF-8 (AGSC-01-14)`, String(p));
+      }
     },
     writeFile(p, data) {
       const target = abs(p);

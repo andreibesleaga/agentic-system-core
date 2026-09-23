@@ -25,6 +25,7 @@
     "examples/",
         "LICENSE",
         "LICENSE-CONTENT",
+        "NOTICE",
         "CONTRIBUTOR-AGREEMENT",
         "CITATION.cff",
         "CHANGELOG.md",
@@ -53,7 +54,7 @@
         "ontologies",
         "dynamic-system"
     ],
-    "author": "Andrei Nicolae Besleaga",
+    "author": "Andrei N. Besleaga",
     "license": "Apache-2.0",
     "bugs": {
         "url": "https://github.com/andreibesleaga/agentic-system-core/issues"

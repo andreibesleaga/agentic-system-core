@@ -1,8 +1,8 @@
 {
   "area": "graph",
-  "description": "Canonical N-Quads: every node has an IRI, computed inverses are materialised, lines are sorted by their serialised bytes and each is terminated by a single LF. Because the dataset is blank-node-free, canonicalisation is this sort.",
+  "description": "WITHDRAWN. Superseded by graph-0021. Canonical N-Quads: every node has an IRI, computed inverses are materialised, lines are sorted by their serialised bytes and each is terminated by a single LF. Because the dataset is blank-node-free, canonicalisation is this sort.",
   "expected": {
-    "nquads": "<https://example.org/concepts/a2a/> <http://purl.org/dc/terms/requires> <https://example.org/concepts/mcp/> .\n<https://example.org/concepts/a2a/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> .\n<https://example.org/concepts/a2a/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://example.org/> .\n<https://example.org/concepts/a2a/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"A2A\"@en .\n<https://example.org/concepts/mcp/> <http://purl.org/dc/terms/isRequiredBy> <https://example.org/concepts/a2a/> .\n<https://example.org/concepts/mcp/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> .\n<https://example.org/concepts/mcp/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://example.org/> .\n<https://example.org/concepts/mcp/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"MCP\"@en .\n"
+    "withdrawn": true
   },
   "id": "graph-0001",
   "input": {
@@ -25,9 +25,10 @@
       }
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },
+  "reason": "AGSC-04-15 was amended at rc.6 (PY2-01) to pin the graph term of every line of graph.nq as the Bundle IRI; this case states its lines as triples in the default graph, which that rule now excludes. The corrected case ships as graph-0021 (AGSC-00-16: a released vector is never edited in place).",
   "rule": "AGSC-04-15"
 }

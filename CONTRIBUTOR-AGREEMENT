@@ -62,6 +62,61 @@ By making a contribution to this project, I certify that:
     provenance fields, and I accept that my name, the address I contribute under and
     this sign-off are published permanently, including in any derived change ledger.
 
+--- Part 3: an optional assignment, only if I choose it ---
+
+Signing off with `CA-v1` does not make this part apply, and a sign-off does not
+certify it. It applies to a contribution only when I elect it for that contribution
+as (f)(1) says. Where it applies, it takes the place of the sentence of (e) that
+says I keep the copyright in my contribution; everything else in (e) still applies.
+Where it does not apply, (e) alone applies, as before.
+
+(f) Assignment, if I elect it.
+
+    (1) How I elect. I elect this clause by a written statement, signed with my
+        name and dated, that names clause (f) of `CA-v1`, identifies the
+        contribution (for example by its commit or its pull request) and says
+        that I assign it. A statement made in the pull request that carries the
+        contribution, under my name, is such a statement. An election covers only
+        the contribution it identifies, never anything I create later.
+
+    (2) What I assign. I assign to the operator, free of charge, worldwide and
+        for the whole term of protection, the economic rights in that
+        contribution: to reproduce it; to distribute it; to adapt, translate and
+        otherwise modify it; to combine it with other works; to communicate it to
+        the public and make it available online; and to license others to do any
+        of these; by any means and in any form known when I elect.
+
+    (3) Licence back. The operator at once grants me a worldwide, royalty-free,
+        non-exclusive, perpetual and irrevocable licence to use that contribution
+        in every way (2) names, for any purpose, including the right to license
+        others. This licence binds anyone who later acquires the rights.
+
+    (4) Where an assignment has no effect. Where the law that applies to me does
+        not allow the assignment in (2), or does not give it full effect, I grant
+        the operator instead an exclusive licence of the same scope, with the
+        right to grant sub-licences, subject to the same licence back as (3).
+        Where that too has no effect, I agree not to assert my economic rights in
+        that contribution against the operator, or against anyone who receives it
+        from the operator under the licences named in the notes below.
+
+    (5) What I keep. This clause concerns economic rights only. My moral rights,
+        among them the right to be named as the author and to object to a
+        distortion that harms my honour or reputation, stay mine where the law
+        does not let them be transferred or waived, and this clause does not try
+        to take them. My authorship stays recorded in the item's provenance
+        fields and in the repository's history. A right that the law gives me and
+        that no contract may exclude is not affected by this clause.
+
+    (6) What the operator promises. The operator keeps every contribution
+        assigned under this clause available to the public under terms no
+        narrower than those under which this node or repository first published
+        it, and may in addition license it under other terms.
+
+    (7) Who the operator is. In this file, "the operator" is the person or
+        organisation that publishes the node, or maintains the repository, to
+        which the contribution is made, as that node or repository names its
+        operator. The word has this meaning in (e) as well.
+
 --- Notes, not part of the agreement ---
 
 The outbound licences are unchanged by this agreement: the engine software is under

@@ -62,6 +62,29 @@ test('CONTRIBUTOR-AGREEMENT matches the hash AGSC-08-06 pins (rc.6, D105)', () =
     + 'contribution already signed under CA-v1 under CA-v1.');
 });
 
+test('CONTRIBUTOR-AGREEMENT Part 1 is the DCO 1.1 verbatim, and clause (f) stays optional (rc.6, LEGAL-2)', () => {
+  // The whole file is pinned by the rule (above). This test pins the one part the
+  // project may never change on its own: the Developer Certificate of Origin 1.1,
+  // whose notice reads "changing it is not allowed". The digest below is of the text
+  // published at https://developercertificate.org/ (compared byte for byte on
+  // 2026-09-23), from its title line to its last line, with one final newline. If
+  // this fails, Part 1 was edited: restore it, and put any new wording in a new Part.
+  const text = fs.readFileSync(path.join(ROOT, 'CONTRIBUTOR-AGREEMENT'), 'utf8');
+  const start = text.indexOf('Developer Certificate of Origin\nVersion 1.1');
+  const end = text.indexOf('--- Part 2');
+  assert.ok(start > 0 && end > start, 'Part 1 must hold the DCO 1.1 and precede Part 2');
+  const dco = `${text.slice(start, end).replace(/\n+$/u, '')}\n`;
+  assert.strictEqual(createHash('sha256').update(dco, 'utf8').digest('hex'),
+    'f7ac75b443f4ca16b503241344b41aeff9503b0c30bedc2b119551d83cb0fa90',
+    'Part 1 is no longer the Developer Certificate of Origin 1.1 verbatim');
+  // The optional assignment must say that a sign-off alone does not make it apply;
+  // otherwise every `(CA-v1)` trailer would become an assignment nobody chose.
+  assert.match(text, /--- Part 3: an optional assignment, only if I choose it ---/u);
+  assert.match(text, /Signing off with `CA-v1` does not make this part apply/u);
+  assert.ok(text.indexOf('--- Part 3') < text.indexOf('--- Notes'),
+    'Part 3 belongs to the agreement, so it sits before the notes');
+});
+
 test('AGSC-08-06 ships the agreement, and CONTRIBUTING.md points at it', () => {
   // "A contributor MUST be able to read that file before signing off, so a
   // distribution MUST ship it."

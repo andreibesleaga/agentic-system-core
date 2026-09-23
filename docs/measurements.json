@@ -9,7 +9,7 @@
       "rule_coverage": {
         "active": 328,
         "any_check": 269,
-        "named_by_checker": 73,
+        "named_by_checker": 74,
         "named_by_feature": 14,
         "named_by_test": 261,
         "no_check": 59,
@@ -212,8 +212,8 @@
         },
         "graph": {
           "optional": 0,
-          "required": 17,
-          "total": 17,
+          "required": 22,
+          "total": 22,
           "withdrawn": 0
         },
         "import": {
@@ -263,15 +263,15 @@
         "fail": 0,
         "pass": 149,
         "pending": 0,
-        "skip": 20,
-        "total": 169,
-        "withdrawn": 20
+        "skip": 25,
+        "total": 174,
+        "withdrawn": 25
       },
       "vectors": {
         "optional": 1,
         "required": 148,
-        "total": 169,
-        "withdrawn": 20
+        "total": 174,
+        "withdrawn": 25
       }
     },
     "determinism": {
@@ -300,13 +300,1665 @@
         "ok": true
       }
     },
+    "security": {
+      "by_class": {
+        "archive": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 2,
+          "controls": 0,
+          "faults": 2,
+          "handled": 2,
+          "score": "2/2",
+          "neutralised": 1,
+          "refused-other": 1,
+          "controls_clean": null
+        },
+        "beyond-the-rule": {
+          "beyond_rule": 4,
+          "beyond_rule_caught": 0,
+          "cases": 4,
+          "controls": 0,
+          "faults": 0,
+          "handled": 0,
+          "score": null,
+          "controls_clean": null
+        },
+        "build-without-lint": {
+          "beyond_rule": 2,
+          "beyond_rule_caught": 0,
+          "cases": 2,
+          "controls": 0,
+          "faults": 0,
+          "handled": 0,
+          "score": null,
+          "controls_clean": null
+        },
+        "clean-room": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 3,
+          "controls": 0,
+          "faults": 3,
+          "handled": 3,
+          "score": "3/3",
+          "refused": 2,
+          "neutralised": 1,
+          "controls_clean": null
+        },
+        "control": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 6,
+          "controls": 6,
+          "faults": 0,
+          "handled": 0,
+          "score": null,
+          "clean": 6,
+          "controls_clean": "6/6"
+        },
+        "encoded-run": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 5,
+          "controls": 2,
+          "faults": 3,
+          "handled": 3,
+          "score": "3/3",
+          "detected": 3,
+          "false-positive": 2,
+          "controls_clean": "0/2"
+        },
+        "encoding": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 7,
+          "controls": 0,
+          "faults": 7,
+          "handled": 6,
+          "score": "6/7",
+          "refused": 6,
+          "missed": 1,
+          "controls_clean": null
+        },
+        "hidden-text": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 6,
+          "controls": 0,
+          "faults": 6,
+          "handled": 6,
+          "score": "6/6",
+          "detected": 6,
+          "controls_clean": null
+        },
+        "hostile-discovery": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 17,
+          "controls": 1,
+          "faults": 16,
+          "handled": 16,
+          "score": "16/16",
+          "refused": 16,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "hostile-import": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 7,
+          "controls": 1,
+          "faults": 6,
+          "handled": 5,
+          "score": "5/6",
+          "missed": 1,
+          "neutralised": 2,
+          "refused": 1,
+          "detected": 1,
+          "refused-other": 1,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "hostile-skill": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 7,
+          "controls": 1,
+          "faults": 6,
+          "handled": 6,
+          "score": "6/6",
+          "refused": 6,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "hostile-yaml": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 3,
+          "controls": 0,
+          "faults": 3,
+          "handled": 3,
+          "score": "3/3",
+          "refused": 3,
+          "controls_clean": null
+        },
+        "imperative": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 8,
+          "controls": 0,
+          "faults": 8,
+          "handled": 8,
+          "score": "8/8",
+          "detected": 7,
+          "refused": 1,
+          "controls_clean": null
+        },
+        "oversized": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 4,
+          "controls": 0,
+          "faults": 4,
+          "handled": 4,
+          "score": "4/4",
+          "refused": 2,
+          "refused-other": 2,
+          "controls_clean": null
+        },
+        "pii": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 3,
+          "controls": 1,
+          "faults": 2,
+          "handled": 2,
+          "score": "2/2",
+          "refused": 2,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "scheme": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 4,
+          "controls": 0,
+          "faults": 4,
+          "handled": 4,
+          "score": "4/4",
+          "detected": 4,
+          "controls_clean": null
+        },
+        "secret": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 5,
+          "controls": 1,
+          "faults": 4,
+          "handled": 4,
+          "score": "4/4",
+          "refused": 4,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "traversal": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 8,
+          "controls": 0,
+          "faults": 8,
+          "handled": 8,
+          "score": "8/8",
+          "refused": 7,
+          "refused-other": 1,
+          "controls_clean": null
+        },
+        "unsafe-svg": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 3,
+          "controls": 0,
+          "faults": 3,
+          "handled": 3,
+          "score": "3/3",
+          "refused": 3,
+          "controls_clean": null
+        }
+      },
+      "by_kind": {
+        "bundle": {
+          "beyond_rule": 6,
+          "beyond_rule_caught": 0,
+          "cases": 74,
+          "controls": 10,
+          "faults": 58,
+          "handled": 57,
+          "score": "57/58",
+          "detected": 20,
+          "refused": 31,
+          "false-positive": 2,
+          "clean": 8,
+          "neutralised": 2,
+          "refused-other": 4,
+          "missed": 1,
+          "controls_clean": "8/10"
+        },
+        "federation": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 9,
+          "controls": 1,
+          "faults": 8,
+          "handled": 8,
+          "score": "8/8",
+          "refused": 8,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "import": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 7,
+          "controls": 1,
+          "faults": 6,
+          "handled": 5,
+          "score": "5/6",
+          "missed": 1,
+          "neutralised": 2,
+          "refused": 1,
+          "detected": 1,
+          "refused-other": 1,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "redirect": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 2,
+          "controls": 0,
+          "faults": 2,
+          "handled": 2,
+          "score": "2/2",
+          "refused": 2,
+          "controls_clean": null
+        },
+        "skill": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 6,
+          "controls": 1,
+          "faults": 5,
+          "handled": 5,
+          "score": "5/5",
+          "refused": 5,
+          "clean": 1,
+          "controls_clean": "1/1"
+        },
+        "wellknown": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 6,
+          "controls": 0,
+          "faults": 6,
+          "handled": 6,
+          "score": "6/6",
+          "refused": 6,
+          "controls_clean": null
+        }
+      },
+      "cases": [
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-title",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-description",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-body",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-body-uppercase",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-vendor-key",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-agent-authored",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-text-attachment",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "imperative",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-configured-pattern",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "hidden-text",
+          "codes": [
+            "AGSC-E402"
+          ],
+          "expect": [
+            "AGSC-E402"
+          ],
+          "id": "hid-zero-width",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "hidden-text",
+          "codes": [
+            "AGSC-E402"
+          ],
+          "expect": [
+            "AGSC-E402"
+          ],
+          "id": "hid-tag-chars",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "hidden-text",
+          "codes": [
+            "AGSC-E402"
+          ],
+          "expect": [
+            "AGSC-E402"
+          ],
+          "id": "hid-bidi",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "hidden-text",
+          "codes": [
+            "AGSC-E402"
+          ],
+          "expect": [
+            "AGSC-E402"
+          ],
+          "id": "hid-html-comment",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "hidden-text",
+          "codes": [
+            "AGSC-E402"
+          ],
+          "expect": [
+            "AGSC-E402"
+          ],
+          "id": "hid-variation-selector",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "hidden-text",
+          "codes": [
+            "AGSC-E402"
+          ],
+          "expect": [
+            "AGSC-E402"
+          ],
+          "id": "hid-variation-supplement",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "encoded-run",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "blob-base64-256",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "encoded-run",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "blob-hex-256",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "encoded-run",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "blob-in-fence",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "encoded-run",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [],
+          "id": "ctl-base64-255",
+          "kind": "bundle",
+          "outcome": "false-positive",
+          "required": true
+        },
+        {
+          "class": "encoded-run",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [],
+          "id": "ctl-base64-200",
+          "kind": "bundle",
+          "outcome": "false-positive",
+          "required": true
+        },
+        {
+          "class": "scheme",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "scheme-javascript",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "scheme",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "scheme-data-image",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "scheme",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "scheme-file-autolink",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "scheme",
+          "codes": [
+            "AGSC-E401"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "scheme-vbscript",
+          "kind": "bundle",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "secret",
+          "codes": [
+            "AGSC-E403"
+          ],
+          "expect": [
+            "AGSC-E403"
+          ],
+          "id": "sec-aws",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "secret",
+          "codes": [
+            "AGSC-E403"
+          ],
+          "expect": [
+            "AGSC-E403"
+          ],
+          "id": "sec-github",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "secret",
+          "codes": [
+            "AGSC-E403"
+          ],
+          "expect": [
+            "AGSC-E403"
+          ],
+          "id": "sec-private-key",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "secret",
+          "codes": [
+            "AGSC-E403"
+          ],
+          "expect": [
+            "AGSC-E403"
+          ],
+          "id": "sec-assignment",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "secret",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-placeholder",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "pii",
+          "codes": [
+            "AGSC-E404"
+          ],
+          "expect": [
+            "AGSC-E404"
+          ],
+          "id": "pii-email",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "pii",
+          "codes": [
+            "AGSC-E404"
+          ],
+          "expect": [
+            "AGSC-E404"
+          ],
+          "id": "pii-phone",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "pii",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-version-numbers",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "clean-room",
+          "codes": [
+            "AGSC-E204",
+            "AGSC-E405"
+          ],
+          "expect": [
+            "AGSC-E405"
+          ],
+          "id": "cr-key",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "clean-room",
+          "codes": [
+            "AGSC-E405"
+          ],
+          "expect": [
+            "AGSC-E405"
+          ],
+          "id": "cr-phrase",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "clean-room",
+          "codes": [],
+          "expect": [
+            "AGSC-E405"
+          ],
+          "id": "cr-excluded-file",
+          "kind": "bundle",
+          "outcome": "neutralised",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E902"
+          ],
+          "expect": [
+            "AGSC-E902"
+          ],
+          "id": "trav-attachment-parent",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E204",
+            "AGSC-E901",
+            "AGSC-E902"
+          ],
+          "expect": [
+            "AGSC-E902",
+            "AGSC-E204"
+          ],
+          "id": "trav-attachment-absolute",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E204",
+            "AGSC-E901",
+            "AGSC-E902"
+          ],
+          "expect": [
+            "AGSC-E902",
+            "AGSC-E204"
+          ],
+          "id": "trav-attachment-backslash",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E901",
+            "AGSC-E902"
+          ],
+          "expect": [
+            "AGSC-E902",
+            "AGSC-E310"
+          ],
+          "id": "trav-body-link-parent",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E901",
+            "AGSC-E902"
+          ],
+          "expect": [
+            "AGSC-E902",
+            "AGSC-E310"
+          ],
+          "id": "trav-body-image-absolute",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E902"
+          ],
+          "expect": [
+            "AGSC-E902"
+          ],
+          "id": "trav-symlink-item",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E901"
+          ],
+          "expect": [
+            "AGSC-E902"
+          ],
+          "id": "trav-symlink-attachments-dir",
+          "kind": "bundle",
+          "outcome": "refused-other",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E204",
+            "AGSC-E902"
+          ],
+          "expect": [
+            "AGSC-E902",
+            "AGSC-E204",
+            "AGSC-E201"
+          ],
+          "id": "trav-build-out",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "encoding",
+          "codes": [
+            "AGSC-E108"
+          ],
+          "expect": [
+            "AGSC-E108"
+          ],
+          "id": "enc-bom",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "encoding",
+          "codes": [
+            "AGSC-E108"
+          ],
+          "expect": [
+            "AGSC-E108"
+          ],
+          "id": "enc-crlf",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "encoding",
+          "codes": [
+            "AGSC-E108"
+          ],
+          "expect": [
+            "AGSC-E108",
+            "AGSC-E204"
+          ],
+          "id": "enc-bare-cr",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "beyond-the-rule",
+          "codes": [],
+          "expect": [
+            "AGSC-E108",
+            "AGSC-E204"
+          ],
+          "id": "enc-nul-body",
+          "kind": "bundle",
+          "outcome": "missed",
+          "required": false
+        },
+        {
+          "class": "encoding",
+          "codes": [
+            "AGSC-E204"
+          ],
+          "expect": [
+            "AGSC-E204"
+          ],
+          "id": "enc-nul-title",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "encoding",
+          "codes": [
+            "AGSC-E204"
+          ],
+          "expect": [
+            "AGSC-E204"
+          ],
+          "id": "enc-line-separator-title",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "encoding",
+          "codes": [
+            "AGSC-E108"
+          ],
+          "expect": [
+            "AGSC-E108"
+          ],
+          "id": "enc-non-nfc",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "encoding",
+          "codes": [],
+          "expect": [
+            "AGSC-E108"
+          ],
+          "id": "enc-invalid-utf8",
+          "kind": "bundle",
+          "outcome": "missed",
+          "required": true
+        },
+        {
+          "class": "oversized",
+          "codes": [
+            "AGSC-E904"
+          ],
+          "expect": [
+            "AGSC-E904"
+          ],
+          "id": "big-item",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "oversized",
+          "codes": [
+            "AGSC-E201",
+            "AGSC-E202"
+          ],
+          "expect": [
+            "AGSC-E904"
+          ],
+          "id": "big-config",
+          "kind": "bundle",
+          "outcome": "refused-other",
+          "required": true
+        },
+        {
+          "class": "oversized",
+          "codes": [
+            "AGSC-E901"
+          ],
+          "expect": [
+            "AGSC-E904"
+          ],
+          "id": "big-attachment",
+          "kind": "bundle",
+          "outcome": "refused-other",
+          "required": true
+        },
+        {
+          "class": "oversized",
+          "codes": [
+            "AGSC-E108"
+          ],
+          "expect": [
+            "AGSC-E607",
+            "AGSC-E108"
+          ],
+          "id": "big-combining-run",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "archive",
+          "codes": [],
+          "expect": [
+            "AGSC-E903"
+          ],
+          "id": "arc-zip-in-content",
+          "kind": "bundle",
+          "outcome": "neutralised",
+          "required": true
+        },
+        {
+          "class": "archive",
+          "codes": [
+            "AGSC-E901"
+          ],
+          "expect": [
+            "AGSC-E903"
+          ],
+          "id": "arc-tgz-attachment",
+          "kind": "bundle",
+          "outcome": "refused-other",
+          "required": true
+        },
+        {
+          "class": "hostile-yaml",
+          "codes": [
+            "AGSC-E103",
+            "AGSC-E205",
+            "AGSC-E305"
+          ],
+          "expect": [
+            "AGSC-E103",
+            "AGSC-E105"
+          ],
+          "id": "yaml-alias-bomb",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-yaml",
+          "codes": [
+            "AGSC-E104",
+            "AGSC-E205",
+            "AGSC-E305"
+          ],
+          "expect": [
+            "AGSC-E104"
+          ],
+          "id": "yaml-tag",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-yaml",
+          "codes": [
+            "AGSC-E106",
+            "AGSC-E205",
+            "AGSC-E305"
+          ],
+          "expect": [
+            "AGSC-E106"
+          ],
+          "id": "yaml-duplicate-key",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "unsafe-svg",
+          "codes": [
+            "AGSC-E412"
+          ],
+          "expect": [
+            "AGSC-E412"
+          ],
+          "id": "svg-script",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "unsafe-svg",
+          "codes": [
+            "AGSC-E412"
+          ],
+          "expect": [
+            "AGSC-E412"
+          ],
+          "id": "svg-raster-uri",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "unsafe-svg",
+          "codes": [
+            "AGSC-E412"
+          ],
+          "expect": [
+            "AGSC-E412"
+          ],
+          "id": "svg-doctype",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-skill",
+          "codes": [
+            "AGSC-E204"
+          ],
+          "expect": [
+            "AGSC-E204"
+          ],
+          "id": "skill-forged-by-title",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-skill",
+          "codes": [
+            "AGSC-E407"
+          ],
+          "expect": [
+            "AGSC-E407"
+          ],
+          "id": "skill-pack-script",
+          "kind": "skill",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-skill",
+          "codes": [
+            "AGSC-E407"
+          ],
+          "expect": [
+            "AGSC-E407"
+          ],
+          "id": "skill-pack-allowed-tools",
+          "kind": "skill",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-skill",
+          "codes": [
+            "AGSC-E407"
+          ],
+          "expect": [
+            "AGSC-E407"
+          ],
+          "id": "skill-harness-shebang",
+          "kind": "skill",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-skill",
+          "codes": [
+            "AGSC-E407"
+          ],
+          "expect": [
+            "AGSC-E407"
+          ],
+          "id": "skill-harness-escape",
+          "kind": "skill",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-skill",
+          "codes": [
+            "AGSC-E407"
+          ],
+          "expect": [
+            "AGSC-E407"
+          ],
+          "id": "skill-harness-executable",
+          "kind": "skill",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-skill",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-skill-pack",
+          "kind": "skill",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E201"
+          ],
+          "expect": [
+            "AGSC-E201"
+          ],
+          "id": "disc-not-json",
+          "kind": "wellknown",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E904"
+          ],
+          "expect": [
+            "AGSC-E904"
+          ],
+          "id": "disc-oversized",
+          "kind": "wellknown",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E201"
+          ],
+          "expect": [
+            "AGSC-E201"
+          ],
+          "id": "disc-deep-nesting",
+          "kind": "wellknown",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E201"
+          ],
+          "expect": [
+            "AGSC-E201"
+          ],
+          "id": "disc-script-anchor",
+          "kind": "wellknown",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E209"
+          ],
+          "expect": [
+            "AGSC-E209"
+          ],
+          "id": "disc-unknown-relation",
+          "kind": "wellknown",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E201"
+          ],
+          "expect": [
+            "AGSC-E201"
+          ],
+          "id": "disc-extra-members",
+          "kind": "wellknown",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "walk-file-scheme",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "walk-metadata-ip",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "walk-loopback-https",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "walk-private-range",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "walk-ipv6-loopback",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "walk-dns-to-private",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "walk-unresolved-host",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E906",
+            "AGSC-E907"
+          ],
+          "expect": [
+            "AGSC-E906"
+          ],
+          "id": "walk-fan-out-flood",
+          "kind": "federation",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "redirect-to-loopback",
+          "kind": "redirect",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [
+            "AGSC-E905"
+          ],
+          "expect": [
+            "AGSC-E905"
+          ],
+          "id": "redirect-chain",
+          "kind": "redirect",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-discovery",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-walk-public",
+          "kind": "federation",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [],
+          "expect": [
+            "AGSC-E903"
+          ],
+          "id": "imp-archive",
+          "kind": "import",
+          "outcome": "missed",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
+            "AGSC-E506",
+            "AGSC-E901"
+          ],
+          "expect": [
+            "AGSC-E902"
+          ],
+          "id": "imp-symlink-out",
+          "kind": "import",
+          "outcome": "neutralised",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
+            "AGSC-E202",
+            "AGSC-E305",
+            "AGSC-E401",
+            "AGSC-E506"
+          ],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "imp-injection",
+          "kind": "import",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
+            "AGSC-E506"
+          ],
+          "expect": [
+            "AGSC-E204",
+            "AGSC-E506"
+          ],
+          "id": "imp-nul-title",
+          "kind": "import",
+          "outcome": "detected",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
+            "AGSC-E901"
+          ],
+          "expect": [
+            "AGSC-E904"
+          ],
+          "id": "imp-oversized",
+          "kind": "import",
+          "outcome": "refused-other",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
+            "AGSC-E506"
+          ],
+          "expect": [
+            "AGSC-E405"
+          ],
+          "id": "imp-excluded-file",
+          "kind": "import",
+          "outcome": "neutralised",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
+            "AGSC-E506"
+          ],
+          "expect": [],
+          "id": "ctl-import-clean",
+          "kind": "import",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "control",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-clean-item",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "control",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-clean-item-lint",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "control",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-https-link",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "control",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-emoji-sequence",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "control",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-ignore-word",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "control",
+          "codes": [],
+          "expect": [],
+          "id": "ctl-svg-clean",
+          "kind": "bundle",
+          "outcome": "clean",
+          "required": true
+        },
+        {
+          "class": "build-without-lint",
+          "codes": [],
+          "expect": [
+            "AGSC-E412"
+          ],
+          "id": "build-only-svg-script",
+          "kind": "bundle",
+          "outcome": "missed",
+          "required": false
+        },
+        {
+          "class": "build-without-lint",
+          "codes": [],
+          "expect": [
+            "AGSC-E902"
+          ],
+          "id": "build-only-attachment-parent",
+          "kind": "bundle",
+          "outcome": "missed",
+          "required": false
+        },
+        {
+          "class": "beyond-the-rule",
+          "codes": [],
+          "expect": [
+            "AGSC-E401",
+            "AGSC-E402"
+          ],
+          "id": "beyond-fullwidth",
+          "kind": "bundle",
+          "outcome": "missed",
+          "required": false
+        },
+        {
+          "class": "beyond-the-rule",
+          "codes": [],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "beyond-paraphrase",
+          "kind": "bundle",
+          "outcome": "missed",
+          "required": false
+        },
+        {
+          "class": "beyond-the-rule",
+          "codes": [],
+          "expect": [
+            "AGSC-E401"
+          ],
+          "id": "beyond-split-lines",
+          "kind": "bundle",
+          "outcome": "missed",
+          "required": false
+        }
+      ],
+      "command": "node bench/measure.js --layer security --scratch <dir>",
+      "corpus": {
+        "cases": 104,
+        "file": "bench/corpus/security-floor.json",
+        "version": "security-floor-v1"
+      },
+      "limit": "AGSC-08-19: these lints prove neither safety nor the absence of novel injection. An implementation MUST NOT claim more.",
+      "totals": {
+        "beyond_rule": 6,
+        "beyond_rule_caught": 0,
+        "cases": 104,
+        "controls": 13,
+        "faults": 85,
+        "handled": 83,
+        "score": "83/85",
+        "detected": 21,
+        "refused": 53,
+        "false-positive": 2,
+        "clean": 11,
+        "neutralised": 4,
+        "refused-other": 5,
+        "missed": 2,
+        "controls_clean": "11/13"
+      }
+    },
     "perf": {
       "budgets": {
         "build_seconds_per_500_items": 60,
         "index_bytes": 1048576,
         "page_bytes": 102400
       },
-      "command": "node bench/measure.js --layer perf   # sizes 100 500 501 1000 5000, 3 runs each, median",
+      "command": "node bench/measure.js --layer perf   # sizes 100 500 501 1000 5000 10000, 3 runs each, median",
       "machine": {
         "arch": "x64",
         "cpus": 16,
@@ -321,119 +1973,173 @@
           "chunks_bytes": 647461,
           "chunks_bytes_per_item": 6475,
           "files": 336,
+          "html_pages": 111,
+          "html_largest_bytes": 16829,
+          "html_largest_path": "index.html",
+          "html_median_bytes": 5145,
+          "html_over_budget": 0,
           "index_bytes_largest": 31853,
           "index_shards": 0,
           "items": 100,
           "largest_page_bytes": 647461,
           "largest_page_path": "chunks.jsonl",
-          "ms_median": 1711,
+          "ms_median": 1804,
           "ms_runs": [
-            1711,
-            1711,
-            1650
+            1804,
+            1823,
+            1712
           ],
           "output_bytes": 2976546,
-          "rss_kb_median": 122348,
+          "rss_kb_median": 122492,
           "rss_kb_runs": [
-            122168,
-            122540,
-            122348
+            123308,
+            121620,
+            122492
           ]
         },
         {
           "bytes_per_item_index": 352,
-          "chunks_bytes": 112,
-          "chunks_bytes_per_item": 0,
+          "chunks_bytes": 3249673,
+          "chunks_bytes_per_item": 6499,
           "files": 1542,
+          "html_pages": 513,
+          "html_largest_bytes": 79176,
+          "html_largest_path": "index.html",
+          "html_median_bytes": 5156,
+          "html_over_budget": 0,
           "index_bytes_largest": 175986,
           "index_shards": 2,
           "items": 500,
           "largest_page_bytes": 3243064,
           "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 5732,
+          "ms_median": 5041,
           "ms_runs": [
-            5732,
-            4827,
-            9141
+            5122,
+            4953,
+            5041
           ],
           "output_bytes": 14441607,
-          "rss_kb_median": 284356,
+          "rss_kb_median": 279748,
           "rss_kb_runs": [
-            284356,
-            279940,
-            285272
+            279748,
+            282976,
+            272164
           ]
         },
         {
           "bytes_per_item_index": 351,
-          "chunks_bytes": 112,
-          "chunks_bytes_per_item": 0,
+          "chunks_bytes": 3256181,
+          "chunks_bytes_per_item": 6499,
           "files": 1548,
+          "html_pages": 517,
+          "html_largest_bytes": 79173,
+          "html_largest_path": "index.html",
+          "html_median_bytes": 5156,
+          "html_over_budget": 0,
           "index_bytes_largest": 175984,
           "index_shards": 2,
           "items": 501,
           "largest_page_bytes": 3243096,
           "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 4884,
+          "ms_median": 5026,
           "ms_runs": [
-            10767,
-            4812,
-            4884
+            5284,
+            4907,
+            5026
           ],
           "output_bytes": 14473608,
-          "rss_kb_median": 284676,
+          "rss_kb_median": 283084,
           "rss_kb_runs": [
-            293336,
-            284676,
-            284524
+            283232,
+            269704,
+            283084
           ]
         },
         {
           "bytes_per_item_index": 176,
-          "chunks_bytes": 131,
-          "chunks_bytes_per_item": 0,
+          "chunks_bytes": 6502350,
+          "chunks_bytes_per_item": 6502,
           "files": 3049,
+          "html_pages": 1018,
+          "html_largest_bytes": 79335,
+          "html_largest_path": "page-2/index.html",
+          "html_median_bytes": 5156,
+          "html_over_budget": 0,
           "index_bytes_largest": 176303,
           "index_shards": 3,
           "items": 1000,
           "largest_page_bytes": 3524296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 9872,
+          "ms_median": 8659,
           "ms_runs": [
-            9872,
-            16606,
-            8519
+            8829,
+            8659,
+            8290
           ],
           "output_bytes": 28771171,
-          "rss_kb_median": 360820,
+          "rss_kb_median": 381396,
           "rss_kb_runs": [
-            382204,
-            360820,
-            321756
+            381396,
+            383040,
+            334732
           ]
         },
         {
           "bytes_per_item_index": 36,
-          "chunks_bytes": 284,
-          "chunks_bytes_per_item": 0,
+          "chunks_bytes": 32655503,
+          "chunks_bytes_per_item": 6531,
           "files": 15105,
+          "html_pages": 5058,
+          "html_largest_bytes": 80340,
+          "html_largest_path": "page-5/index.html",
+          "html_median_bytes": 5167,
+          "html_over_budget": 0,
           "index_bytes_largest": 177854,
           "index_shards": 11,
           "items": 5000,
           "largest_page_bytes": 17650296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 34602,
+          "ms_median": 37061,
           "ms_runs": [
-            44516,
-            34602,
-            28134
+            37936,
+            37061,
+            36104
           ],
           "output_bytes": 143866561,
-          "rss_kb_median": 982064,
+          "rss_kb_median": 956720,
           "rss_kb_runs": [
-            983244,
-            975868,
-            982064
+            980964,
+            956720,
+            947676
+          ]
+        },
+        {
+          "bytes_per_item_index": 18,
+          "chunks_bytes": 65346976,
+          "chunks_bytes_per_item": 6535,
+          "files": 30175,
+          "html_pages": 10108,
+          "html_largest_bytes": 80350,
+          "html_largest_path": "page-13/index.html",
+          "html_median_bytes": 5167,
+          "html_over_budget": 0,
+          "index_bytes_largest": 177863,
+          "index_shards": 21,
+          "items": 10000,
+          "largest_page_bytes": 35307804,
+          "largest_page_path": "llms-full.txt",
+          "ms_median": 75001,
+          "ms_runs": [
+            72405,
+            75001,
+            87179
+          ],
+          "output_bytes": 287736049,
+          "rss_kb_median": 1712812,
+          "rss_kb_runs": [
+            1712812,
+            1701192,
+            1719988
           ]
         }
       ],
@@ -449,11 +2155,11 @@
           },
           "findings": [],
           "k": 10,
-          "node": "/home/andrei/work/AgenticSystemCore/AgenticSystemCore-Patterns/www",
+          "node": "<patterns build output>",
           "origin_node": "patterns",
           "queries": 12,
           "schema": "agsc.bench.v1",
-          "set": "/home/andrei/work/AgenticSystemCore/agentic-system-core/bench/queries/bench-v1",
+          "set": "bench/queries/bench-v1",
           "status": "pass",
           "surfaces": {
             "chunks": {
@@ -493,11 +2199,11 @@
           },
           "findings": [],
           "k": 10,
-          "node": "/home/andrei/work/AgenticSystemCore/AgenticSystemCore.com/www-next",
+          "node": "<main build output>",
           "origin_node": "main",
           "queries": 8,
           "schema": "agsc.bench.v1",
-          "set": "/home/andrei/work/AgenticSystemCore/agentic-system-core/bench/queries/bench-v1",
+          "set": "bench/queries/bench-v1",
           "status": "pass",
           "surfaces": {
             "chunks": {
@@ -530,11 +2236,978 @@
           },
           "verb": "bench"
         }
+      }
+    },
+    "parity": {
+      "call_list": {
+        "file": "bench/corpus/parity-calls.json",
+        "fixed": 25,
+        "per_item": 4,
+        "version": "parity-calls-v1"
       },
-      "note": "Observed under this configuration on this date: a 20-intent hand-written set, three model-free surfaces, no judge model. research/39 section 6 item 3 governs how these may be described."
+      "command": "node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…",
+      "nodes": {
+        "minimal": {
+          "answer_types": {
+            "items": 5,
+            "error": 12,
+            "answer": 3,
+            "verdict": 5,
+            "proposal": 6,
+            "item": 3,
+            "links": 3
+          },
+          "calls": 37,
+          "differing": [],
+          "equal": 37,
+          "items": 3,
+          "items_published": 3,
+          "per_tool": {
+            "search": {
+              "calls": 7,
+              "equal": 7
+            },
+            "ask": {
+              "calls": 4,
+              "equal": 4
+            },
+            "compose": {
+              "calls": 6,
+              "equal": 6
+            },
+            "remember": {
+              "calls": 4,
+              "equal": 4
+            },
+            "read": {
+              "calls": 5,
+              "equal": 5
+            },
+            "links": {
+              "calls": 5,
+              "equal": 5
+            },
+            "propose": {
+              "calls": 4,
+              "equal": 4
+            },
+            "nosuchtool": {
+              "calls": 1,
+              "equal": 1
+            },
+            "READ": {
+              "calls": 1,
+              "equal": 1
+            }
+          },
+          "stdio_exit": 0,
+          "stdio_stderr_bytes": 0,
+          "transport_equal": 37,
+          "unpublished_calls": 0,
+          "unpublished_answered_e301": 0
+        },
+        "patterns": {
+          "answer_types": {
+            "items": 5,
+            "error": 12,
+            "answer": 3,
+            "verdict": 17,
+            "proposal": 18,
+            "item": 15,
+            "links": 15
+          },
+          "calls": 85,
+          "differing": [],
+          "equal": 85,
+          "items": 173,
+          "items_published": 15,
+          "per_tool": {
+            "search": {
+              "calls": 7,
+              "equal": 7
+            },
+            "ask": {
+              "calls": 4,
+              "equal": 4
+            },
+            "compose": {
+              "calls": 18,
+              "equal": 18
+            },
+            "remember": {
+              "calls": 4,
+              "equal": 4
+            },
+            "read": {
+              "calls": 17,
+              "equal": 17
+            },
+            "links": {
+              "calls": 17,
+              "equal": 17
+            },
+            "propose": {
+              "calls": 16,
+              "equal": 16
+            },
+            "nosuchtool": {
+              "calls": 1,
+              "equal": 1
+            },
+            "READ": {
+              "calls": 1,
+              "equal": 1
+            }
+          },
+          "stdio_exit": 0,
+          "stdio_stderr_bytes": 0,
+          "transport_equal": 85,
+          "unpublished_calls": 474,
+          "unpublished_answered_e301": 474
+        },
+        "main": {
+          "answer_types": {
+            "items": 5,
+            "error": 12,
+            "answer": 3,
+            "verdict": 17,
+            "proposal": 18,
+            "item": 15,
+            "links": 15
+          },
+          "calls": 85,
+          "differing": [],
+          "equal": 85,
+          "items": 15,
+          "items_published": 15,
+          "per_tool": {
+            "search": {
+              "calls": 7,
+              "equal": 7
+            },
+            "ask": {
+              "calls": 4,
+              "equal": 4
+            },
+            "compose": {
+              "calls": 18,
+              "equal": 18
+            },
+            "remember": {
+              "calls": 4,
+              "equal": 4
+            },
+            "read": {
+              "calls": 17,
+              "equal": 17
+            },
+            "links": {
+              "calls": 17,
+              "equal": 17
+            },
+            "propose": {
+              "calls": 16,
+              "equal": 16
+            },
+            "nosuchtool": {
+              "calls": 1,
+              "equal": 1
+            },
+            "READ": {
+              "calls": 1,
+              "equal": 1
+            }
+          },
+          "stdio_exit": 0,
+          "stdio_stderr_bytes": 0,
+          "transport_equal": 85,
+          "unpublished_calls": 0,
+          "unpublished_answered_e301": 0
+        }
+      },
+      "note": "Compared as values after a JSON round trip, which is what AGSC-09-16 claims at rc.6; never byte-identical across the browser boundary.",
+      "totals": {
+        "calls": 207,
+        "equal": 207,
+        "transport_equal": 207,
+        "unpublished_answered_e301": 474,
+        "unpublished_calls": 474
+      }
+    },
+    "tokens": {
+      "command": "NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,… --exports <name>=<dir>,…",
+      "no_claude_count": "Anthropic publishes no offline tokenizer; no Claude token count is reported, because it would be a guess.",
+      "nodes": {
+        "minimal": {
+          "chunk_files": [
+            "chunks.jsonl"
+          ],
+          "vocabularies": {
+            "cl100k_base": {
+              "chunks_line": {
+                "items": 3,
+                "max": 1017,
+                "median": 958,
+                "min": 180,
+                "total": 2155
+              },
+              "chunks_text": {
+                "items": 3,
+                "max": 115,
+                "median": 103,
+                "min": 19,
+                "total": 237
+              },
+              "llms_line": {
+                "items": 2,
+                "max": 37,
+                "median": 33.5,
+                "min": 30,
+                "total": 67
+              },
+              "llms_file": 230,
+              "ctx_section": {
+                "items": 3,
+                "max": 353,
+                "median": 350,
+                "min": 70,
+                "total": 773
+              },
+              "ctx_file": 1017,
+              "index_row": {
+                "items": 3,
+                "max": 178,
+                "median": 174,
+                "min": 35,
+                "total": 387
+              },
+              "index_file": 415
+            },
+            "o200k_base": {
+              "chunks_line": {
+                "items": 3,
+                "max": 1004,
+                "median": 945,
+                "min": 177,
+                "total": 2126
+              },
+              "chunks_text": {
+                "items": 3,
+                "max": 115,
+                "median": 102,
+                "min": 18,
+                "total": 235
+              },
+              "llms_line": {
+                "items": 2,
+                "max": 35,
+                "median": 32,
+                "min": 29,
+                "total": 64
+              },
+              "llms_file": 223,
+              "ctx_section": {
+                "items": 3,
+                "max": 354,
+                "median": 349,
+                "min": 69,
+                "total": 772
+              },
+              "ctx_file": 1012,
+              "index_row": {
+                "items": 3,
+                "max": 175,
+                "median": 165,
+                "min": 35,
+                "total": 375
+              },
+              "index_file": 403
+            }
+          }
+        },
+        "patterns": {
+          "chunk_files": [
+            "chunks.jsonl"
+          ],
+          "vocabularies": {
+            "cl100k_base": {
+              "chunks_line": {
+                "items": 15,
+                "max": 1575,
+                "median": 1368,
+                "min": 177,
+                "total": 14983
+              },
+              "chunks_text": {
+                "items": 15,
+                "max": 453,
+                "median": 390,
+                "min": 12,
+                "total": 4179
+              },
+              "llms_line": {
+                "items": 10,
+                "max": 49,
+                "median": 44.5,
+                "min": 38,
+                "total": 443
+              },
+              "llms_file": 633,
+              "ctx_section": {
+                "items": 15,
+                "max": 727,
+                "median": 638,
+                "min": 61,
+                "total": 6913
+              },
+              "ctx_file": 7164,
+              "index_row": {
+                "items": 15,
+                "max": 197,
+                "median": 165,
+                "min": 31,
+                "total": 1929
+              },
+              "index_file": 1999
+            },
+            "o200k_base": {
+              "chunks_line": {
+                "items": 15,
+                "max": 1560,
+                "median": 1359,
+                "min": 174,
+                "total": 14880
+              },
+              "chunks_text": {
+                "items": 15,
+                "max": 446,
+                "median": 390,
+                "min": 12,
+                "total": 4163
+              },
+              "llms_line": {
+                "items": 10,
+                "max": 49,
+                "median": 44,
+                "min": 38,
+                "total": 442
+              },
+              "llms_file": 627,
+              "ctx_section": {
+                "items": 15,
+                "max": 721,
+                "median": 641,
+                "min": 61,
+                "total": 6907
+              },
+              "ctx_file": 7154,
+              "index_row": {
+                "items": 15,
+                "max": 199,
+                "median": 167,
+                "min": 31,
+                "total": 1934
+              },
+              "index_file": 2004
+            }
+          }
+        },
+        "main": {
+          "chunk_files": [
+            "chunks.jsonl"
+          ],
+          "vocabularies": {
+            "cl100k_base": {
+              "chunks_line": {
+                "items": 15,
+                "max": 1033,
+                "median": 266,
+                "min": 179,
+                "total": 4745
+              },
+              "chunks_text": {
+                "items": 15,
+                "max": 475,
+                "median": 94,
+                "min": 20,
+                "total": 1829
+              },
+              "llms_line": {
+                "items": 13,
+                "max": 50,
+                "median": 40,
+                "min": 35,
+                "total": 531
+              },
+              "llms_file": 706,
+              "ctx_section": {
+                "items": 15,
+                "max": 644,
+                "median": 139,
+                "min": 66,
+                "total": 2639
+              },
+              "ctx_file": 2888,
+              "index_row": {
+                "items": 15,
+                "max": 126,
+                "median": 30,
+                "min": 26,
+                "total": 541
+              },
+              "index_file": 575
+            },
+            "o200k_base": {
+              "chunks_line": {
+                "items": 15,
+                "max": 1029,
+                "median": 263,
+                "min": 176,
+                "total": 4711
+              },
+              "chunks_text": {
+                "items": 15,
+                "max": 474,
+                "median": 93,
+                "min": 20,
+                "total": 1825
+              },
+              "llms_line": {
+                "items": 13,
+                "max": 51,
+                "median": 40,
+                "min": 35,
+                "total": 532
+              },
+              "llms_file": 703,
+              "ctx_section": {
+                "items": 15,
+                "max": 643,
+                "median": 140,
+                "min": 66,
+                "total": 2636
+              },
+              "ctx_file": 2881,
+              "index_row": {
+                "items": 15,
+                "max": 126,
+                "median": 30,
+                "min": 26,
+                "total": 543
+              },
+              "index_file": 577
+            }
+          }
+        }
+      },
+      "tokenizer": {
+        "library": "gpt-tokenizer",
+        "licence": "MIT",
+        "version": "2.9.0",
+        "vocabularies": [
+          "cl100k_base",
+          "o200k_base"
+        ]
+      }
+    },
+    "a11y": {
+      "ceiling": "axe-core finds on average 57 % of WCAG issues automatically; zero violations is a floor, never a conformance claim.",
+      "command": "NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,…",
+      "nodes": {
+        "minimal": {
+          "by_type": {
+            "clusters index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "clusters page": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "compose index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts page": {
+              "checks": 4,
+              "nodes": 0,
+              "pages": 2,
+              "rules": [],
+              "violations": 0
+            },
+            "home": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "now index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "search index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "skills index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "tags page": {
+              "checks": 4,
+              "nodes": 0,
+              "pages": 2,
+              "rules": [],
+              "violations": 0
+            }
+          },
+          "checks": 24,
+          "pages": 12,
+          "third_party_requests": 0,
+          "violations": 0,
+          "weights": {
+            "budget_bytes": 100000,
+            "largest": {
+              "bytes": 2345,
+              "path": "concepts/supervisor/index.html"
+            },
+            "median_bytes": 1466,
+            "over_budget": [],
+            "pages": 13,
+            "total_bytes": 21285
+          }
+        },
+        "patterns": {
+          "by_type": {
+            "clusters index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "clusters page": {
+              "checks": 10,
+              "nodes": 0,
+              "pages": 5,
+              "rules": [],
+              "violations": 0
+            },
+            "compose index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts page": {
+              "checks": 20,
+              "nodes": 0,
+              "pages": 10,
+              "rules": [],
+              "violations": 0
+            },
+            "home": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "legal index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "now index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "search index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "skills index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "tags page": {
+              "checks": 38,
+              "nodes": 0,
+              "pages": 19,
+              "rules": [],
+              "violations": 0
+            }
+          },
+          "checks": 84,
+          "pages": 42,
+          "third_party_requests": 0,
+          "violations": 0,
+          "weights": {
+            "budget_bytes": 100000,
+            "largest": {
+              "bytes": 10736,
+              "path": "legal/index.html"
+            },
+            "median_bytes": 1930,
+            "over_budget": [],
+            "pages": 43,
+            "total_bytes": 139036
+          }
+        },
+        "main-engine": {
+          "by_type": {
+            "clusters index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "clusters page": {
+              "checks": 4,
+              "nodes": 0,
+              "pages": 2,
+              "rules": [],
+              "violations": 0
+            },
+            "compose index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts page": {
+              "checks": 24,
+              "nodes": 0,
+              "pages": 12,
+              "rules": [],
+              "violations": 0
+            },
+            "home": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "legal index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "now index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "procedures index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "procedures page": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "search index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "skills index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "tags page": {
+              "checks": 8,
+              "nodes": 0,
+              "pages": 4,
+              "rules": [],
+              "violations": 0
+            }
+          },
+          "checks": 56,
+          "pages": 28,
+          "third_party_requests": 0,
+          "violations": 0,
+          "weights": {
+            "budget_bytes": 100000,
+            "largest": {
+              "bytes": 6234,
+              "path": "legal/index.html"
+            },
+            "median_bytes": 2581,
+            "over_budget": [],
+            "pages": 29,
+            "total_bytes": 78704
+          }
+        },
+        "main-site": {
+          "by_type": {
+            "about index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "clusters index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "clusters page": {
+              "checks": 4,
+              "nodes": 0,
+              "pages": 2,
+              "rules": [],
+              "violations": 0
+            },
+            "compose index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "concepts page": {
+              "checks": 24,
+              "nodes": 0,
+              "pages": 12,
+              "rules": [],
+              "violations": 0
+            },
+            "docs index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "docs page": {
+              "checks": 24,
+              "nodes": 0,
+              "pages": 12,
+              "rules": [],
+              "violations": 0
+            },
+            "exports index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "home": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "legal index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "now index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "ns index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "ns page": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "procedures index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "procedures page": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "search index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "skills index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "specs index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "specs page": {
+              "checks": 28,
+              "nodes": 0,
+              "pages": 14,
+              "rules": [],
+              "violations": 0
+            },
+            "tags index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "tags page": {
+              "checks": 8,
+              "nodes": 0,
+              "pages": 4,
+              "rules": [],
+              "violations": 0
+            }
+          },
+          "checks": 122,
+          "pages": 61,
+          "third_party_requests": 0,
+          "violations": 0,
+          "weights": {
+            "budget_bytes": 100000,
+            "largest": {
+              "bytes": 95681,
+              "path": "specs/06-surfaces/index.html"
+            },
+            "median_bytes": 9056,
+            "over_budget": [],
+            "pages": 62,
+            "total_bytes": 1381042
+          }
+        }
+      },
+      "schemes": [
+        "light",
+        "dark"
+      ],
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag21a",
+        "wcag21aa",
+        "wcag22aa",
+        "best-practice"
+      ],
+      "versions": {
+        "axe_core": "4.13.0",
+        "playwright_core": "1.62.1"
+      }
+    },
+    "package": {
+      "command": "npm pack --dry-run --json",
+      "files": 385,
+      "packed_bytes": 868964,
+      "unpacked_bytes": 2938867
     }
   },
   "schema": "agsc.measurements.v1",
-  "measured_for": "2026-09-23",
+  "measured_for": "2026-01-01",
   "spec_version": "1.0.0-rc.6"
 }

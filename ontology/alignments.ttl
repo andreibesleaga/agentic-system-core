@@ -1,0 +1,91 @@
+# AgenticSystemCore vocabulary — alignments to neighbouring vocabularies (INFORMATIVE).
+#
+# SPDX-License-Identifier: CC0-1.0
+# To the extent possible under law, the authors have waived all copyright and related
+# or neighbouring rights to this file (https://creativecommons.org/publicdomain/zero/1.0/).
+#
+# What this file is. A small set of SKOS mapping statements from terms of
+# ontology/agsc.ttl to terms of other vocabularies, so that a reader who knows one of
+# them can find its nearest counterpart here. It is NOT part of the vocabulary: no rule
+# of spec/ emits it, no build writes it to any route (AGSC-06-01's route set is closed),
+# and ontology/agsc.ttl does not import it. AGSC-05-28 forbids the vocabulary to ship a
+# property no rule emits, which is why these statements live beside it and not in it
+# (owner decision D117: alignments live outside the core file). It adds no term:
+# every subject below is one of the 52 terms of ontology/agsc.ttl, which
+# tests/ontology/alignments.test.js checks.
+#
+# Why SKOS mapping properties and no owl:equivalentClass. Equivalence would assert that
+# every instance of one class is an instance of the other; nothing read for this file
+# supports that for any pair, so the weaker, documented SKOS relations are used:
+# closeMatch ("sufficiently similar that they can be used interchangeably in some
+# information retrieval applications"), narrowMatch/broadMatch (the target is narrower
+# or broader) and relatedMatch (associated). A reasoner that loads this file together
+# with SKOS will type both ends of each statement as skos:Concept (the mapping
+# properties are sub-properties of skos:semanticRelation, whose domain and range are
+# skos:Concept); that entailment is the second reason this file is kept out of the
+# OWL 2 RL vocabulary (AGSC-05-22, AGSC-05-26a).
+#
+# Every target namespace and term was read at its source on 2026-09-23:
+#
+#   agento: <http://www.w3id.org/agentic-ai/onto#> — AgentO, the Agentic AI Ontology
+#     (Kurniawan et al., TU Wien; ontology licence CC BY 4.0 as the file states).
+#     Source: https://raw.githubusercontent.com/agentic-patterns/agentic-ai-onto/main/ontology.ttl
+#     Quotes: "@prefix : <http://www.w3id.org/agentic-ai/onto#> ." and
+#     "<http://www.w3id.org/agentic-ai/onto> rdf:type owl:Ontology" with
+#     owl:versionInfo "1.1". Class comments quoted from that file:
+#       KnowledgeBase   "A structured collection of information that an agent can reference."
+#       Memory          "A knowledge structure that stores and retrieves past information,
+#                        experiences, or states to support learning and decision-making."
+#       WorkflowPattern "A reusable and structured template that defines a sequence or logic
+#                        of tasks and interactions within an agentic workflow."
+#       Constraint      "A rule or condition derived from the knowledge base that restricts or
+#                        guides agent behavior or decision-making."
+#       hasSubPattern   "Indicates a sub-pattern that is part of a larger workflow pattern."
+#     Note: the namespace is written with "http://www." exactly as the file declares it;
+#     this file does not depend on that host resolving.
+#
+#   dcat: <http://www.w3.org/ns/dcat#> — W3C Data Catalog Vocabulary (DCAT) Version 3.
+#     Source: https://www.w3.org/TR/vocab-dcat-3/
+#     Quote (Class: Dataset): "Definition: A collection of data, published or curated by
+#     a single agent, and available for access or download in one or more representations."
+#
+#   skos: <http://www.w3.org/2004/02/skos/core#> — SKOS Reference (W3C Recommendation).
+#     Source: https://www.w3.org/TR/skos-reference/
+#     Quote: "skos:closeMatch is used to link two concepts that are sufficiently similar
+#     that they can be used interchangeably in some information retrieval applications."
+#
+# The agent-memory vocabularies publish no term an alignment could point at yet: the
+# W3C AI Agent Memory Interoperability Community Group has adopted a charter and
+# published no report, and COGX is a file format with no RDF vocabulary. PROV-O is
+# already aligned by rdfs:subClassOf inside ontology/agsc.ttl (Episode, Proposal and Review under prov:Activity; Gate, Procedure and Harness under
+# prov:Plan; Source and Attachment under prov:Entity), so it is not restated here.
+
+@prefix agento: <http://www.w3id.org/agentic-ai/onto#> .
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+# A Bundle is a published, curated collection of knowledge an agent can reference.
+asc:Bundle
+    skos:closeMatch agento:KnowledgeBase, dcat:Dataset ;
+    skos:relatedMatch agento:Memory .
+
+# A Concept of kind "pattern" is a workflow pattern; Concept itself is broader.
+asc:Concept
+    skos:narrowMatch agento:WorkflowPattern .
+
+# A Gate is a declared set of checks a change must pass.
+asc:Gate
+    skos:relatedMatch agento:Constraint .
+
+# A Lesson is knowledge distilled from past Episodes.
+asc:Lesson
+    skos:relatedMatch agento:Memory .
+
+# A Procedure is a reusable plan: trigger, steps and checks.
+asc:Procedure
+    skos:closeMatch agento:WorkflowPattern .
+
+# asc:uses — the subject draws on the object; AgentO composes patterns with hasSubPattern.
+asc:uses
+    skos:relatedMatch agento:hasSubPattern .

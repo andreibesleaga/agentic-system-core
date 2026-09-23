@@ -62,6 +62,9 @@ const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
 const OWL = 'http://www.w3.org/2002/07/owl#';
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
+/** Two annotation predicates on the ontology node (AGSC-05-25 as amended at rc.6, EXT-2):
+ *  an RDF/XML namespace only, never a context prefix. */
+const VANN = 'http://purl.org/vocab/vann/';
 /** AGSC-06-32: the prefixes the context defines beside `asc`. */
 const PREFIXES = Object.freeze({
   asc: NS,
@@ -248,13 +251,13 @@ function buildRdfXml(vocabulary) {
         return [prefix, iri.slice(base.length)];
       }
     }
-    for (const [prefix, base] of [['rdf', RDF], ['owl', OWL]]) {
+    for (const [prefix, base] of [['rdf', RDF], ['owl', OWL], ['vann', VANN]]) {
       if (iri.startsWith(base)) return [prefix, iri.slice(base.length)];
     }
     return null;
   };
   const lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<rdf:RDF'];
-  const declared = { ...PREFIXES, owl: OWL, rdf: RDF };
+  const declared = { ...PREFIXES, owl: OWL, rdf: RDF, vann: VANN };
   for (const prefix of Object.keys(declared).sort()) {
     lines.push(`    xmlns:${prefix}="${xmlEscape(declared[prefix])}"`);
   }

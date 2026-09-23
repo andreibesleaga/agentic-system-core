@@ -179,7 +179,7 @@ the rule that fixes it.
    pair of items, whatever the number of references between them; none for a
    self-reference; no computed inverse. This moves `graph.nq`, `graph.ttl`,
    `graph.jsonld`, the per-item `.jsonld` and therefore the bundle hash of every
-   node that has an inline body link. Vector `graph-0020`.
+   node that has an inline body link. Vector `graph-0025` (its predecessor `graph-0020` was withdrawn at rc.6 when `graph.nq` was pinned to the named-graph form).
 5. **`/ns/context.jsonld` names each term one way.** AGSC-06-32 as amended pins the
    term NAMES, not only the mapping: an `asc:` term is named by its local name,
    always; an external property by its local name, or by its compact IRI where that
@@ -355,8 +355,8 @@ make you non-conforming.
 Adapters are the one place where you must document rather than choose silently:
 AGSC-01-26a requires a memory adapter to be "listed with its claimed key set in the
 distribution's implementer documentation". This distribution's adapters are
-`llm-context` (export) and `okf` (import), and `src/interchange/README.md` lists what
-each one claims.
+`llm-context` (export), `okf` and `old-site` (import), and `cogx`, `gabbe` and
+`skills` (both ways), and `src/interchange/README.md` lists what each one claims.
 
 **Where you may extend, and where you may not.** `spec/00-overview.md` §0.6,
 AGSC-00-24, closes the extension points at **eight kinds** — memory adapter, channel

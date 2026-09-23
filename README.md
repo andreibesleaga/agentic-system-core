@@ -34,12 +34,53 @@ not implemented yet.
 The engine's arrangement is one implementation choice, not part of the format.
 Where this engine and the specification disagree, the specification wins.
 
+## Connecting agents and repositories — added 2026-09-23
+
+`docs/CONNECTORS.md` says, route by route, how an agent or a framework uses a
+published Bundle — steering files, skill packs, the MCP server, and the COGX
+memory archive (`agsc export --to cogx` / `agsc import --from cogx`), which Cognee's
+importers carry on to Mem0, Letta, LangMem and Zep. `examples/connectors/` holds the
+working examples, and `docs/USE-CASES.md` walks through sixteen concrete scenarios
+with their commands.
+
+**Check a Bundle on every push (GitHub Actions).** `action.yml` at the root of this
+repository is a composite action that runs `agsc ci` with the engine at the same
+commit as the action, so the ref you write pins the engine version. Pin it to a
+release tag or a full commit SHA, give the job read access only, and fetch the
+history the ledger reads:
+
+```yaml
+permissions:
+  contents: read
+jobs:
+  agsc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@<commit-sha>
+        with:
+          fetch-depth: 0
+      - uses: andreibesleaga/agentic-system-core@<tag-or-commit-sha>
+```
+
+**Lint before every commit (pre-commit).** `.pre-commit-hooks.yaml` offers one hook,
+`agsc-lint`, which runs `agsc lint` over the whole Bundle whenever an item or the
+configuration changed:
+
+```yaml
+repos:
+  - repo: https://github.com/andreibesleaga/agentic-system-core
+    rev: <tag-or-commit-sha>
+    hooks:
+      - id: agsc-lint
+```
+
 ## How this is made
 
-This work is written and maintained by Andrei Nicolae Besleaga with the help of AI
+This work is written and maintained by Andrei N. Besleaga with the help of AI
 assistants. A person decides what is written, an assistant drafts and checks it, and a
 person reads, edits and approves everything that is published and answers for it. Every
 published item records how its text was made and names the person accountable for it.
+Written with AI assistance, reviewed and published by a person.
 
 ## What this does not claim
 
@@ -48,8 +89,9 @@ kind and no liability for anything that follows from using it. Nothing in it is 
 professional advice. No standards body, foundation, company or institution named in this
 repository has reviewed, approved or is connected with this work, and it is not a document
 of the IETF, of the W3C or of any other body. Other product and organisation names are the
-marks of their owners and are used only to say what is being talked about. AgenticSystemCore
-is an unregistered mark of Andrei Nicolae Besleaga.
+marks of their owners and are used only to say what is being talked about. AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to their owners.
+Every right not expressly granted by the licences is reserved, and nothing here promises
+that the work or its addresses will stay available.
 
 ## Licences
 
@@ -63,5 +105,5 @@ is an unregistered mark of Andrei Nicolae Besleaga.
 Contributions are signed off under the agreement in `CONTRIBUTOR-AGREEMENT`, which the
 token `CA-v1` names; `CONTRIBUTING.md` says what that means in plain words.
 
-© 2026 Andrei Nicolae Besleaga. Code: Apache-2.0. Schemas, ontology, identifiers and the
+© 2026 Andrei N. Besleaga. Code: Apache-2.0. Schemas, ontology, identifiers and the
 discovery document: CC0-1.0. Prose: the Content Use Terms in `LICENSE-CONTENT`.
