@@ -58,6 +58,7 @@ function sourcesOf(items) {
 
 function planOf(items, options = {}) {
   return exportBundle.plan(bundleOf(items, options.config), {
+    bundleVersion: options.bundleVersion,
     indexSource: options.indexSource === undefined ? INDEX : options.indexSource,
     itemSchema: ITEM_SCHEMA,
     licenseContent: options.licenseContent === undefined ? 'TERMS TEXT\n' : options.licenseContent,
@@ -148,6 +149,40 @@ test('AGSC-01-26: a missing `license` is APPENDED as one line, quoted, and repor
   assert.match(text, /okf_version: "0\.2"/u);
   assert.match(text, /The root document body\./u);
   assert.deepStrictEqual(plan.findings.map((f) => f.code), ['AGSC-E506']);
+});
+
+test('AGSC-01-26 (rc.6, D113): bundle_version is the ONE derived key of the export', () => {
+  // A caller that hands in no content version writes none: the value is derived by
+  // the BUILD (AGSC-04-25) and this module only formats it.
+  assert.ok(!/bundle_version/u.test(at(planOf([]), 'content/index.md')));
+
+  // Handed one, it is appended as one line and is NOT reported: adding a derived
+  // key is not a normalisation of something the author wrote.
+  const added = planOf([], { bundleVersion: 'v1.4.0' });
+  assert.match(at(added, 'content/index.md'), /\nbundle_version: "v1\.4\.0"\n---\n/u);
+  assert.deepStrictEqual(added.findings.map((f) => f.code), ['AGSC-E506'],
+    'only the appended `license` is reported');
+
+  // A document that already carries the SAME value is left alone, byte for byte.
+  const withSame = INDEX.replace('base: https://example.org/\n',
+    'base: https://example.org/\nlicense: CC-BY-4.0\nbundle_version: "v1.4.0"\n');
+  const same = planOf([], { bundleVersion: 'v1.4.0', indexSource: withSame });
+  assert.strictEqual(at(same, 'content/index.md'), withSame);
+  assert.deepStrictEqual(same.findings.filter((f) => f.file === 'content/index.md'), []);
+
+  // A document carrying a DIFFERENT value has it replaced, and that IS reported:
+  // a byte the export was asked to preserve moved.
+  const stale = INDEX.replace('base: https://example.org/\n',
+    'base: https://example.org/\nlicense: CC-BY-4.0\nbundle_version: "v0.9.0"\n');
+  const replaced = planOf([], { bundleVersion: 'v1.4.0', indexSource: stale });
+  const text = at(replaced, 'content/index.md');
+  assert.ok(!text.includes('v0.9.0'), text);
+  assert.match(text, /\nbundle_version: "v1\.4\.0"\n---\n/u);
+  assert.match(text, /okf_version: "0\.2"/u, 'nothing else moved');
+  const one = replaced.findings.find((f) => /bundle_version was replaced/u.test(f.message));
+  assert.ok(one !== undefined, JSON.stringify(replaced.findings));
+  assert.strictEqual(one.code, 'AGSC-E506');
+  assert.strictEqual(one.severity, 'warn');
 });
 
 test('AGSC-01-26: --okf appends okf_version when the root document has none', () => {

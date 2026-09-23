@@ -39,8 +39,14 @@ const FORMAT = 'old-site';
  * party to is imported as `draft`, and a draft reaches no published surface
  * (AGSC-06-30). It is cleared by a human, deck by deck. The selection file's
  * `class` column is what names the class.
+ *
+ * Both overlapping classes are held: `B+W` (the substance is public AND also in
+ * the third-party work) and `B` (the substance is in that work and nowhere else),
+ * which is the stronger case of the same rule. `B` was previously kept out of the
+ * Bundle altogether; holding it back as a draft keeps the catalogue complete on
+ * disk while the guard — a draft is emitted on no public surface — is unchanged.
  */
-const DRAFT_CLASSES = Object.freeze(['B+W']);
+const DRAFT_CLASSES = Object.freeze(['B', 'B+W']);
 
 /** AGSC-02-98: the two attachment files every imported diagram produces. */
 const SVG_MEDIA_TYPE = 'image/svg+xml';
@@ -59,6 +65,19 @@ const byCodePoint = (a, b) => {
   }
   return left.length - right.length;
 };
+
+/**
+ * A deep copy of plain JSON data, so that `plan()` stays pure over an input the
+ * caller keeps using (`structuredClone` is not available on every runtime this
+ * engine targets, and the input here is JSON by construction).
+ *
+ * @param {*} value
+ * @returns {*} `{}` for anything that is not a plain object.
+ */
+function clone(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return {};
+  return JSON.parse(JSON.stringify(value));
+}
 
 /** JSON the way the Bundle's own fixtures are written: sorted keys, two spaces. */
 function jsonBytes(value) {
@@ -105,6 +124,10 @@ function altFor(kind, title, alt) {
  *   citation, a renamed title, a card held back), supplied as DATA so that no
  *   card list lives in the engine. Every member is optional and every one is
  *   reported in `applied` so that the import states what a human changed.
+ * @param {object} [input.config] the Bundle's CURRENT `agsc.config.json`, parsed.
+ *   Every member this import does not compute is carried through unchanged, so a
+ *   re-import never deletes a contribution channel, an author or a vendor
+ *   extension the operator authored. Absent means an empty object (a fresh seed).
  * @param {object} [input.statusByClass] selection `class` -> AGSC-02-23 `status`:
  *   the editorial state a whole class is imported at, stated once. The
  *   clean-room `draftClasses` guard is applied first and is never overridden.
@@ -363,27 +386,44 @@ function plan(input, options) {
   }
 
   // ------------------------------------------------- the Bundle's own two files
+  // The configuration this import WRITES is the one already on disk, with the
+  // members this import computes replaced and nothing else touched. Seeding the
+  // file is what the `old-site` adapter is for, but a Bundle that already exists
+  // carries members no import can derive — a contribution channel, an author, a
+  // lint budget, a vendor `x-` extension — and rewriting the file from a template
+  // silently DELETED them. What is computed here is written; the rest is kept.
   const releases = statusModule.switchboard(releaseKeys);
-  const config = {
-    bundle: {
-      id: options.bundleId,
-      license_prose: licenseProse,
-      license_schema: options.licenseSchema === undefined ? 'CC0-1.0' : options.licenseSchema,
-      operator: options.operator,
-    },
-    // AGSC-01-18: `build.feed` is a RESERVED name of 1.1 and is `AGSC-E004` here,
-    // because no 1.0 rule pins the bytes of `/feed.xml`. `out` is the whole of
-    // `build` an importer may write.
-    build: { out: 'www' },
-    site: { base: options.base, title: options.title },
-    spec_version: options.specVersion,
-    tags: { allowed: [...allTags].sort(byCodePoint) },
+  const existing = clone(input.config);
+  const config = { ...existing };
+  config.bundle = {
+    ...(existing.bundle === undefined ? {} : existing.bundle),
+    id: options.bundleId,
+    license_prose: licenseProse,
+    license_schema: options.licenseSchema === undefined ? 'CC0-1.0' : options.licenseSchema,
+    operator: options.operator,
+  };
+  // AGSC-01-18: `build.feed` is a RESERVED name of 1.1 and is `AGSC-E004` here,
+  // because no 1.0 rule pins the bytes of `/feed.xml`. `out` is the whole of
+  // `build` an importer may write — an operator's own `out` is kept, every other
+  // member of `build` goes.
+  const existingOut = existing.build === undefined ? undefined : existing.build.out;
+  config.build = { out: typeof existingOut === 'string' && existingOut !== '' ? existingOut : 'www' };
+  config.site = {
+    ...(existing.site === undefined ? {} : existing.site),
+    base: options.base,
+    title: options.title,
+  };
+  config.spec_version = options.specVersion;
+  config.tags = {
+    ...(existing.tags === undefined ? {} : existing.tags),
+    allowed: [...allTags].sort(byCodePoint),
   };
   if (options.tagline !== undefined) config.site.tagline = options.tagline;
   if (Object.keys(releases).length > 0) config.releases = releases;
+  else delete config.releases;
   if (Array.isArray(options.peers) && options.peers.length > 0) {
     config.peers = [...options.peers].sort(byCodePoint);
-  }
+  } else delete config.peers;
   writes.push({ path: 'agsc.config.json', text: jsonBytes(config) });
 
   const published = items.filter((i) => i.frontmatter.status !== 'draft').length;
@@ -458,6 +498,7 @@ module.exports = {
   SVG_MEDIA_TYPE,
   altFor,
   byCodePoint,
+  clone,
   indexBody,
   itemFile,
   jsonBytes,

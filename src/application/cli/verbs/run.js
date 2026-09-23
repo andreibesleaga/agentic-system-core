@@ -10,13 +10,13 @@
  *
  * Everything AGSC-09-94 pins as a decision is implemented and tested: the
  * configuration gate, the restriction to `procedure` items (AGSC-02-22), the
- * extraction and pairing of the `{run}` and `{expect}` blocks, the `run.allow[]`
+ * extraction and pairing of the `run` and `expect` blocks, the `run.allow[]`
  * program allow-list, the refusal of any line only a shell could honour, the
  * `--dry-run` that "MUST print the resolved command list and execute nothing", the
  * execution itself through the ProcessRunner port — no shell, a scrubbed
  * environment, a timeout, a working directory OUTSIDE the Bundle so that nothing a
  * step writes can land inside it — and the comparison of each captured result with
- * its `{expect}` block.
+ * its `expect` block.
  *
  * ONE OBLIGATION OF THE RULE CANNOT BE DISCHARGED BY THIS PACKAGE: "it MUST run
  * with **no network**". A Node process cannot deny a child process the network from
@@ -87,10 +87,10 @@ function execute(runner, step, options) {
     }
   }
   if (step.expected === null) return { captured, findings, ok: true };
-  // §9.4 registers no code for "the captured result differs from the expect block".
-  // AGSC-E602 is the registered row for "the emitted bytes did not reproduce the
-  // recorded bytes" (AGSC-04-02), which is the same fault in the same area digit;
-  // the missing registration is the specification item ENG5-S8.
+  // AGSC-09-94 as amended at rc.6 (ENG5-S8): "a captured result that differs from
+  // its `expect` block is `AGSC-E602`, a recorded result that the run did not
+  // reproduce". The registry row names the rule, so this is no longer a borrowed
+  // code.
   if (!runblocks.matches(captured, step.expected)) {
     findings.push(finding('AGSC-E602',
       `${options.slug}: step ${step.ordinal} did not reproduce its expect block (AGSC-09-94)`,

@@ -6,16 +6,17 @@
  *
  * AGSC-02-22: "`run` and `expect` are the only executable info strings; they are
  * permitted on `procedure` items only and have effect only under the opt-in `run`
- * verb of AGSC-09-94." AGSC-09-94: "`run <slug>` executes the fenced blocks of a
- * Procedure whose info string is `{run}` and compares each captured result with the
- * immediately following `{expect}` block."
+ * verb of AGSC-09-94." AGSC-09-94 as corrected at rc.6 (ENG5-S7): "`run <slug>`
+ * executes the fenced blocks of a Procedure whose info string is `run` … (the two
+ * info strings are spelled as AGSC-02-22 spells them)".
  *
- * TWO SPELLINGS ARE ACCEPTED, and the reason is recorded as a specification item
- * (ENG5-S7): AGSC-09-94 writes the info string as `{run}` and AGSC-02-22 writes it
- * as `run`, so a Bundle author cannot tell from the specification whether the fence
- * reads ```` ```run ```` or ```` ```{run} ````. This reader accepts either and
- * reports which spelling it saw, so that whichever the rule settles on, no authored
- * Bundle silently stops executing.
+ * ONE SPELLING. Until rc.6 the two rules disagreed — AGSC-09-94 wrote `{run}` and
+ * `{expect}`, AGSC-02-22 wrote `run` and `expect` — so a Bundle author could not
+ * tell which fence is runnable, and this reader accepted both rather than guess.
+ * The rule that owns the item won, and the braced form is now an ordinary
+ * rendering hint that nothing executes: a second implementation, reading only the
+ * rules, would execute `run` alone, and a fence this engine ran and another did not
+ * would be a divergence in the one place where it is least acceptable.
  *
  * NO SHELL, SO NO SHELL GRAMMAR. AGSC-09-94 requires execution "with no network, no
  * shell interpolation, a scrubbed environment and a timeout". A line is therefore
@@ -30,9 +31,9 @@
 
 const { finding } = require('./validate.js');
 
-/** The two executable info strings, in both spellings the rules use. */
-const RUN_INFO = Object.freeze(['run', '{run}']);
-const EXPECT_INFO = Object.freeze(['expect', '{expect}']);
+/** The two executable info strings (AGSC-02-22's spelling, and the only one). */
+const RUN_INFO = Object.freeze(['run']);
+const EXPECT_INFO = Object.freeze(['expect']);
 
 /** A character no shell-free executor can honour, with the name a person reads. */
 const SHELL_CHARACTERS = Object.freeze({
@@ -91,7 +92,7 @@ function fences(body) {
 }
 
 /**
- * One `{run}` line as a program and its arguments, or a refusal.
+ * One `run` line as a program and its arguments, or a refusal.
  *
  * @param {string} line
  * @returns {{args:Array<string>, program:string, refusal:(string|null)}}
@@ -113,7 +114,7 @@ function command(line) {
 }
 
 /**
- * The `{run}` steps of one Procedure, each with the `{expect}` block that
+ * The `run` steps of one Procedure, each with the `expect` block that
  * immediately follows it (AGSC-09-94) and the allow-list verdict (`run.allow[]`).
  *
  * @param {object} item the item, flattened `{body, slug, type, path}`.
@@ -147,11 +148,10 @@ function steps(item, options = {}) {
           { file, line: block.line, severity: 'error' }));
         continue;
       }
-      // AGSC-09-94: "Execution MUST be refused unless the command's program name is
-      // listed in `run.allow[]`." §9.4 registers no code for that refusal; the
-      // closest registered row is AGSC-E203, "value outside enum or `tags.allowed`",
-      // whose rule (AGSC-01-21) is the same shape of closed operator list. The
-      // missing registration is the specification item ENG5-S8.
+      // AGSC-09-94 as amended at rc.6 (ENG5-S8): "A command whose program name is
+      // not listed is `AGSC-E203` — `run.allow[]` is a closed operator list of
+      // exactly the shape that code names". The registry row names the rule, so
+      // this is no longer a borrowed code.
       const allowed = allow.includes(parsed.program);
       if (!allowed) {
         findings.push(finding('AGSC-E203',
@@ -173,7 +173,7 @@ function steps(item, options = {}) {
 }
 
 /**
- * AGSC-09-94's comparison: the captured result against the `{expect}` block.
+ * AGSC-09-94's comparison: the captured result against the `expect` block.
  * Both sides are compared after AGSC-04-19's trailing-newline normalisation, so a
  * missing final newline in an authored fence is not a failure.
  *

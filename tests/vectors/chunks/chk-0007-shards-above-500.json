@@ -1,14 +1,8 @@
 {
   "area": "chunks",
-  "description": "Above 500 items the chunk export is sharded: /chunks-01.jsonl holds the lines of the first 500 items in slug order, /chunks-02.jsonl the rest, no item split across shards, and /chunks.jsonl becomes the JCS manifest {\"lines_total\", \"shards\"}.",
+  "description": "WITHDRAWN. Superseded by chk-0008. Above 500 items the chunk export is sharded: /chunks-01.jsonl holds the lines of the first 500 items in slug order, /chunks-02.jsonl the rest, no item split across shards, and /chunks.jsonl becomes the JCS manifest {\"lines_total\", \"shards\"}.",
   "expected": {
-    "first_slug_in_shard_02": "i-0501",
-    "last_slug_in_shard_01": "i-0500",
-    "manifest": "{\"lines_total\":501,\"shards\":[\"/chunks-01.jsonl\",\"/chunks-02.jsonl\"]}\n",
-    "shard_line_counts": {
-      "/chunks-01.jsonl": 500,
-      "/chunks-02.jsonl": 1
-    }
+    "withdrawn": true
   },
   "id": "chk-0007",
   "input": {
@@ -26,10 +20,11 @@
     },
     "slugs_are": "i-0001 … i-0501"
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
+  "reason": "Withdrawn at 1.0.0-rc.6 (RC6-C; item ENG8-02 of the specification-items list, raised by ENG-8). This vector pins the shard manifest bytes as `{\"lines_total\":501,\"shards\":[…]}`. AGSC-06-31 as amended at rc.6 under owner decision D113 states the manifest as `{\"bundle_version\": <string>, \"lines_total\": <integer>, \"shards\": […]}` — the content version of AGSC-04-25 is the one member added to it, and JCS sorts it first. The manifest this vector pins is therefore the manifest of no conforming build, and the only reading under which both the rule and this vector could stand is one the rule does not admit: that the member is absent when the caller derived no version. Superseded by chk-0008, whose input carries a content version and whose manifest states it.",
   "rule": "AGSC-06-31"
 }

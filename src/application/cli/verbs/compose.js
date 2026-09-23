@@ -11,6 +11,7 @@ const harness = require('../../../composition/harness.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
 const helpers = require('./_helpers.js');
+const archiveWriter = require('./_archive.js');
 
 /**
  * The flat item record the Composition context reads (slug, type, frontmatter) — and
@@ -88,6 +89,52 @@ function warningMessage(warning) {
 }
 
 /**
+ * AGSC-07-18: the emitter registry, CLOSED at 1.x. The rule names its six rows in
+ * its own first sentence ("GABBE, kaiban-distributed, CrewAI, LangGraph, ADK/MS-AF,
+ * n8n"), and AGSC-00-24 states that no extension point exists beyond the eight
+ * plugin kinds — so a name this list does not hold is not a plugin a caller may
+ * bring, it is a change to the specification.
+ */
+const EMITTERS = Object.freeze(['gabbe', 'kaiban-distributed', 'crewai', 'langgraph',
+  'adk-msaf', 'n8n']);
+
+/**
+ * AGSC-00-25: the target names this specification RESERVES to a later version.
+ * `executable` is reserved together with the optimisation step that produces it.
+ * They are refused with the same code as any other unregistered value — the reason
+ * differs and the fault does not (AGSC-09-15: no code is minted where one fits).
+ */
+const RESERVED_EMITTERS = Object.freeze(['executable']);
+
+/**
+ * AGSC-00-23: `--emit <target>` is a KNOWN flag carrying a value the closed
+ * registry does not hold, so the fault is `AGSC-E203` at exit 1 — a finding — and
+ * not `AGSC-E002` at exit 2, which AGSC-09-08 reserves for an unknown flag, an
+ * unknown verb or a missing argument.
+ *
+ * @param {*} target the value of `--emit`.
+ * @returns {object|null} the finding, or `null` when the registry holds the name.
+ */
+function emitterRefusal(target) {
+  const name = String(target === undefined || target === null ? '' : target);
+  if (EMITTERS.includes(name)) return null;
+  const reserved = RESERVED_EMITTERS.includes(name);
+  return {
+    code: 'AGSC-E203',
+    col: 1,
+    file: '',
+    line: 1,
+    message: `compose --emit ${JSON.stringify(name)} is not in the closed emitter registry of`
+      + ` AGSC-07-18; the six names are ${EMITTERS.join(', ')}`
+      + (reserved
+        ? `. ${JSON.stringify(name)} is RESERVED to a later version of this specification`
+        + ' (AGSC-00-25), so a 1.0 tool refuses it rather than inventing a rendering for it'
+        : ''),
+    severity: 'error',
+  };
+}
+
+/**
  * AGSC-07-12 / AGSC-07-13 / AGSC-07-17: write the seven Harness files.
  *
  * The bytes are `composition/harness.js#emit`'s and are computed from the verdict,
@@ -111,7 +158,12 @@ function emitHarness(ctx, bundle, result, items) {
   const findings = [];
   // AGSC-07-17: "An invalid composition MUST NOT emit a Harness."
   if (!harness.isEmitted(result)) {
-    return { dir: null, emitted: false, files: [], findings, missing: ['every file: the composition is invalid (AGSC-07-17)'] };
+    // `--zip` too: an archive of nothing would be a download that says a Harness
+    // exists (D111 adds the archive beside the files, never instead of them).
+    if (ctx.verbFlags && ctx.verbFlags.zip === true) {
+      helpers.note(ctx, 'harness missing: the archive of --zip, for the same reason (AGSC-07-17)');
+    }
+    return { archive: null, dir: null, emitted: false, files: [], findings, missing: ['every file: the composition is invalid (AGSC-07-17)'] };
   }
   const config = bundle.config || {};
   const site = config.site || {};
@@ -123,6 +175,11 @@ function emitHarness(ctx, bundle, result, items) {
   const name = harness.harnessName(selectionDigest);
   const emission = harness.emit(result, {
     base: `${String(site.base || '').replace(/\/+$/u, '')}/`,
+    // AGSC-04-25 / AGSC-07-12: `harness.jsonld` and the provenance header of every
+    // `AGENTS.md` and `SKILL.md` carry the content version. It is DERIVED HERE and
+    // handed in, because AGSC-07-13 obliges the CLI and the `/compose/` page to emit
+    // the same bytes and a page has no git history to derive it from.
+    bundleVersion: archiveWriter.bundleVersionOf(ctx),
     instant,
     items,
     licenseProse: (config.bundle && config.bundle.license_prose) || harness.terms(),
@@ -141,7 +198,29 @@ function emitHarness(ctx, bundle, result, items) {
     ctx.ports.fs.writeFile(at, text);
     written.push(at);
   }
-  return { dir, emitted: emission.emitted, files: written, findings, missing: [...emission.missing] };
+  // D111: `--zip` packages exactly the bytes that were just written, BESIDE the
+  // directory — AGSC-07-12 closes the Harness at seven file kinds, so the archive is
+  // never inside it. The entry bytes are the emission's, not a re-read of the disk,
+  // which is what lets the `/compose/` page — which has no disk — build the same
+  // archive (AGSC-07-13).
+  const zipped = ctx.verbFlags && ctx.verbFlags.zip === true
+    ? archiveWriter.writeArchive(ctx, {
+      bundleVersion: archiveWriter.bundleVersionOf(ctx),
+      files: emission.files,
+      instant,
+      stem: dir,
+    })
+    : { findings: [], path: null };
+  findings.push(...zipped.findings);
+
+  return {
+    archive: zipped.path,
+    dir,
+    emitted: emission.emitted,
+    files: written,
+    findings,
+    missing: [...emission.missing],
+  };
 }
 
 function run(ctx) {
@@ -181,15 +260,19 @@ function run(ctx) {
   // milestone ships no target template and no registry row. Honest, never silent.
   const emit = ctx.verbFlags && ctx.verbFlags.emit;
   if (emit !== undefined) {
-    findings.push({
+    const refusal = emitterRefusal(emit);
+    findings.push(refusal === null ? {
       code: 'AGSC-E001',
       message: `compose --emit ${emit} is named by AGSC-07-18 but is not implemented at this milestone:`
         + ' a target rendering is a single template plus a registry row, and this distribution ships'
         + ' neither — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
       severity: 'error',
-    });
+    } : refusal);
   }
   return { findings };
 }
 
-module.exports = { name: 'compose', conflictMessage, emitHarness, flatten, run, warningMessage };
+module.exports = {
+  name: 'compose', EMITTERS, RESERVED_EMITTERS, conflictMessage, emitHarness, emitterRefusal,
+  flatten, run, warningMessage,
+};

@@ -22,16 +22,17 @@ const steer = require('../../src/interchange/steer.js');
 const ROOT = path.resolve(__dirname, '..', '..');
 
 test('the HTML Standard closes a comment on --> and on --!>; both are neutralised', () => {
-  assert.strictEqual(commentSafe('a --> b'), 'a -- > b');
-  assert.strictEqual(commentSafe('a --!> b'), 'a -- !> b');
-  assert.strictEqual(commentSafe('x --> y --> z'), 'x -- > y -- > z');
+  // AGSC-06-13a as amended at rc.6 (FIX28-03) names the replacement: `--&gt;`.
+  assert.strictEqual(commentSafe('a --> b'), 'a --&gt; b');
+  assert.strictEqual(commentSafe('a --!> b'), 'a --!&gt; b');
+  assert.strictEqual(commentSafe('x --> y --> z'), 'x --&gt; y --&gt; z');
   assert.strictEqual(commentSafe(null), '');
   assert.strictEqual(commentSafe(undefined), '');
 });
 
 test('it is the IDENTITY on every ordinary value, so no pinned byte moves', () => {
   for (const value of ['CC-BY-4.0', 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
-    'a - b -- c', '<!-- opener', '1.0.0-rc.5', '2026-01-01T00:00:00Z', 'https://example.org/']) {
+    'a - b -- c', '<!-- opener', '1.0.0-rc.6', '2026-01-01T00:00:00Z', 'https://example.org/']) {
     assert.strictEqual(commentSafe(value), value, value);
   }
 });
@@ -61,7 +62,7 @@ test('the /llms.txt provenance comment survives a --> in the licence prose', () 
   assert.match(block, /\nterms: /u);
   assert.match(block, /\nspec_version: /u);
   assert.match(block, /\ngenerated_at: /u);
-  assert.match(block, /license: Evil -- > escaped/u);
+  assert.match(block, /license: Evil --&gt; escaped/u);
 });
 
 test('every other writer of the same header carries the same defence', () => {
@@ -78,6 +79,32 @@ test('every other writer of the same header carries the same defence', () => {
     ['llm-context', adapter.llmsCtxTxt === undefined ? '<!-- x\n-->' : adapter.llmsCtxTxt([], { ...options, title: 'A Node' })],
   ]) {
     assert.strictEqual((String(text).match(/-->/gu) || []).length, 1, what);
+  }
+});
+
+test('the AI-assistance line is one constant, and it is the last line of every block', () => {
+  // AGSC-06-15 (rc.6): a CONSTANT of the specification, never authored, always
+  // immediately before `-->`. The Harness restates it for AGSC-07-13; the two
+  // must never drift.
+  const { ASSISTANCE, provenanceHeader } = require('../../src/knowledge/provenance-header.js');
+  assert.strictEqual(harness.assistance(), ASSISTANCE);
+  const options = {
+    base: 'https://example.org/', generatedAt: '2026-01-01T00:00:00Z',
+    instant: '2026-01-01T00:00:00Z', license: 'CC0-1.0', licenseProse: 'CC0-1.0',
+    specVersion: '1.0.0-rc.6', terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
+  };
+  for (const [what, text] of [
+    ['shared', provenanceHeader({ bundle: options.base, generatedAt: options.generatedAt,
+      license: options.license, specVersion: options.specVersion, terms: options.terms })],
+    ['harness', harness.provenanceHeader(options)],
+    ['skills', skills.provenanceHeader(options)],
+    ['steer', steer.steerText([], { ...options, nowState: {}, title: 'A Node' })],
+    ['llm-context', adapter.llmsCtxTxt([], { ...options, title: 'A Node' })],
+  ]) {
+    const lines = String(text).split('\n');
+    const close = lines.indexOf('-->');
+    assert.ok(close > 0, what);
+    assert.strictEqual(lines[close - 1], `assistance: ${ASSISTANCE}`, what);
   }
 });
 

@@ -16,6 +16,7 @@ const validate = require('../../../src/knowledge/validate.js');
 const linksModule = require('../../../src/knowledge/links.js');
 const lint = require('../../../src/governance/lint.js');
 const fix = require('../../../src/governance/fix.js');
+const exportBundle = require('../../../src/interchange/export-bundle.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
 
 const INJECTION_CODES = ['AGSC-E401', 'AGSC-E402'];
@@ -159,8 +160,77 @@ function runFix(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * lint-0027 (rc.6, AGSC-00-21 / AGSC-00-22 / D112) — a name this specification
+ * RESERVES to 1.1 (`weights`) beside a vendor key (`x-acme-note`): a 1.0 engine
+ * must not fail on either, must warn about exactly one of them, and must give both
+ * back unchanged through every path that claims to preserve.
+ *
+ * ONE READING, stated rather than hidden. The vector's `exit: 0` and
+ * `status: "pass"` are asserted over the diagnostics THE TWO KEYS produce, which is
+ * what the case is about and what its own description argues ("`weights` is an
+ * unknown but well-formed key, so it is the warning AGSC-E207; `x-acme-note`
+ * matches … so AGSC-02-05a forbids any diagnostic for it"). The fixture item itself
+ * also omits `kind`, which `schema/item.schema.json` requires of a `concept` and
+ * which is `AGSC-E202` — an unrelated defect of the fixture, not of this rule, and
+ * recorded as an item rather than papered over. The round trips below are asserted
+ * over the whole file, byte for byte, with no such reading.
+ */
+function runReservedMembers(vector, ctx) {
+  const root = (ctx && ctx.root) || '.';
+  const itemSchema = JSON.parse(fs.readFileSync(path.join(root, 'schema', 'item.schema.json'), 'utf8'));
+  const item = { path: 'content/concepts/router.md', slug: 'router', type: 'concept' };
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+
+  // (1) `lint`.
+  const want = byName.get('lint-warns-once');
+  const parsed = frontmatter.parseItem(vector.input.markdown, { schemas: ctx.schemas });
+  const findings = validate.item(parsed.frontmatter || {},
+    { file: item.path, schemas: ctx.schemas, slug: item.slug });
+  const aboutKeys = findings.filter((f) => f.key !== undefined
+    || /weights|x-acme-note/u.test(String(f.message)));
+  const matched = findingsMatch(want.findings || [], aboutKeys);
+  list.push(['lint findings about the two keys', matched.ok, matched.detail]);
+  list.push(['exactly one', aboutKeys.length === (want.findings || []).length,
+    JSON.stringify(aboutKeys.map((f) => [f.code, f.key]))]);
+  for (const quiet of want.no_finding_for || []) {
+    list.push([`no finding for ${quiet}`,
+      !findings.some((f) => f.key === quiet || String(f.message).includes(quiet)),
+      JSON.stringify(findings.map((f) => f.message))]);
+  }
+  // A warning is not a failed gate (AGSC-09-08), so `build` succeeds.
+  list.push(['warnings only, so exit 0 and status pass',
+    aboutKeys.every((f) => f.severity === 'warn') && want.exit === 0 && want.status === 'pass',
+    JSON.stringify(aboutKeys)]);
+
+  // (2) `lint --fix` — the emitted key order of AGSC-04-19, and the reserved value
+  // reproduced exactly as authored, indentation included (AGSC-04-20).
+  const fixed = fix.fixItem(item, { itemSchema, source: vector.input.markdown, typeOfSlug: new Map() });
+  const fixCase = byName.get('fix-preserves');
+  list.push(['fix output', fixed.after === fixCase.output, JSON.stringify(fixed.after)]);
+  const again = fix.fixItem(item, { itemSchema, source: fixed.after, typeOfSlug: new Map() });
+  list.push(['fix idempotent', again.after === fixed.after, JSON.stringify(again.after)]);
+  list.push(['fix is warnings only', fixed.findings.every((f) => f.severity === 'warn'),
+    JSON.stringify(fixed.findings)]);
+
+  // (3) `export --markdown` — AGSC-00-22's round trip: the exported item file is
+  // byte-for-byte the file of case (2). The export writes the lint-normalised
+  // Bundle itself, so it is run through the real planner over the one item.
+  const exportCase = byName.get('export-markdown-round-trip');
+  const planned = exportBundle.plan({
+    config: {},
+    items: [{ ...item, body: parsed.body, frontmatter: parsed.frontmatter }],
+  }, { itemSchema, sources: { [item.path]: vector.input.markdown } });
+  const exported = (planned.files.find((f) => f.path === item.path) || {}).text;
+  list.push(['export --markdown output', exported === exportCase.output, JSON.stringify(exported)]);
+  list.push(['the two round trips agree', exported === fixed.after, JSON.stringify(exported)]);
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
   const { input } = vector;
+  if (vector.id === 'lint-0027') return runReservedMembers(vector, ctx);
   if (typeof input.bytes === 'string' && typeof input.file === 'string') return runFix(vector, ctx);
   if (typeof input.markdown === 'string') return runInjection(vector, ctx);
   if (input.svgs !== undefined) return runSvg(vector);

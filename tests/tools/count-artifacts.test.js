@@ -15,6 +15,24 @@ const { describe, it } = require('node:test');
 
 const { REPO, capture, envelope, tmpdir, writeTree } = require('./helpers');
 
+/** Every rule id defined in the shipped `spec/`, counted without the tool. */
+function ruleIdsInSpec() {
+  const dir = path.join(REPO, 'spec');
+  const ids = new Set();
+  for (const name of fs.readdirSync(dir).filter((f) => f.endsWith('.md'))) {
+    for (const m of fs.readFileSync(path.join(dir, name), 'utf8')
+      .matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*/gu)) ids.add(m[1]);
+  }
+  return ids;
+}
+
+/** Every vector file shipped, counted without the tool. */
+function vectorFileCount() {
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true })
+    .flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+  return walk(path.join(REPO, 'tests', 'vectors')).filter((f) => f.endsWith('.json')).length;
+}
+
 describe('tools/count-artifacts — invocation (FV29-09)', () => {
   it('counts the distribution from ANY working directory', () => {
     const here = process.cwd();
@@ -24,8 +42,15 @@ describe('tools/count-artifacts — invocation (FV29-09)', () => {
       assert.equal(result.code, 0, result.err);
       assert.equal(result.json.ok, true);
       assert.deepEqual(result.json.findings, []);
-      assert.equal(result.json.counts.rules, 335);
-      assert.equal(result.json.counts.vectors_total, 150);
+      // DERIVED, not pinned (2026-09-22). A literal here is a second copy of the
+      // counter that rots the moment a rule or a vector is added, and this file's
+      // subject is the INVOCATION — that the tool answers the same from anywhere.
+      // What is checked instead is that the tool agrees with the tree it read,
+      // counted independently: a rule is a bold rule id in `spec/*.md`, a vector is
+      // a `.json` file under `tests/vectors/`.
+      assert.equal(result.json.counts.rules, ruleIdsInSpec().size);
+      assert.equal(result.json.counts.vectors_total, vectorFileCount());
+      assert.ok(result.json.counts.rules > 300, 'the independent count read nothing');
       // The same answer the gate list gets from the repository root.
       process.chdir(REPO);
       assert.deepEqual(envelope('count-artifacts', []).json, result.json);

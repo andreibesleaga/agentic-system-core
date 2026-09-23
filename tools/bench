@@ -1,0 +1,262 @@
+#!/usr/bin/env node
+// The retrieval half of the benchmark kit (research/39 Layer F; docs/BENCHMARKS.md).
+// Runs a labelled query set against a BUILT node's published surfaces and reports
+// recall and precision at k. Standalone by the rule that governs every tool here
+// (AGSC-09-90): it imports nothing from `src/`, so what it measures is what a
+// consumer of the published files gets, not what the engine believes it emitted.
+//
+//   bench [--json] [--node <dir>] [--set <dir>] [--k <n>] [--surface <list>]
+//         [--out <file>] [--origin-node <name>] [--dry-run] [--help]
+//
+// Surfaces, each isolated, each model-free:
+//   search  the published /search.json inverted index (and its shards)
+//   chunks  /chunks.jsonl (and its shards) scored per chunk, aggregated per item
+//   llms    /llms.txt, the plain-text index
+// `ask` is NOT scored here: AGSC-09-14a makes it the first three `search` hits
+// with citations, so its ranking is the `search` ranking truncated at three, and
+// scoring it separately would report the same number twice.
+//
+// The tokenizer below is this tool's OWN, deliberately independent of the
+// engine's, for the same reason the nine checkers re-implement what they check.
+// Exit 0 ran, 1 the run could not be scored, 2 usage.
+'use strict';
+const fs = require('fs'), path = require('path');
+
+const DEFAULT_SET = path.resolve(__dirname, '..', 'bench', 'queries', 'bench-v1');
+const HELP = `bench [--json] [--node <dir>] [--set <dir>] [--k <n>] [--surface <list>] [--out <file>] [--dry-run] [--help]
+
+  Scores a labelled query set against a built node's published surfaces and
+  reports recall and precision at k. No model, no network, no key.
+
+  --node <dir>     the built output of a node (the directory holding search.json)
+  --set <dir>      a query set in BEIR layout: queries.jsonl + qrels/test.tsv
+                   (default: the committed set in bench/queries/bench-v1)
+  --k <n>          cut-off for the @k measures (default 10)
+  --surface <list> comma-separated: search,chunks,llms (default: all three)
+  --out <file>     write the results JSON here as well as reporting it
+  --origin-node <name>
+                   score only the queries whose metadata.node is <name>; a set
+                   drawn from several nodes measures nothing if every query is
+                   asked of every node, because no node holds the other's items
+  --dry-run        load and validate the query set and the node, score nothing
+  --json           emit the envelope on stdout
+  --help           this text
+
+  Exit 0 ran, 1 nothing could be scored, 2 usage.
+`;
+
+const SURFACES = ['chunks', 'llms', 'search'];
+
+/** This tool's own tokenizer: NFC, lower case, runs of letters and digits. */
+function tokenize(text) {
+  return String(text == null ? '' : text).normalize('NFC').toLowerCase()
+    .split(/[^\p{Letter}\p{Number}]+/u).filter((t) => t.length > 1);
+}
+
+/** Read a JSON Lines file into records; a blank line is skipped, never guessed at. */
+function readJsonl(file) {
+  return fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l));
+}
+
+/** The query set: `{ queries: [{id, text}], qrels: Map<queryId, Set<itemId>> }`. */
+function loadSet(dir) {
+  const queries = readJsonl(path.join(dir, 'queries.jsonl')).map((q) => ({ id: q._id, meta: q.metadata || {}, text: q.text }));
+  const qrels = new Map();
+  const tsv = fs.readFileSync(path.join(dir, 'qrels', 'test.tsv'), 'utf8').split('\n');
+  for (const line of tsv.slice(1)) {
+    if (line.trim() === '') continue;
+    const [queryId, corpusId, score] = line.split('\t');
+    if (Number(score) <= 0) continue;
+    if (!qrels.has(queryId)) qrels.set(queryId, new Set());
+    qrels.get(queryId).add(corpusId);
+  }
+  return { qrels, queries };
+}
+
+/** Every file of a sharded surface: `search.json` plus `search-01.json`, and so on. */
+function shards(nodeDir, stem, extension) {
+  const names = fs.readdirSync(nodeDir).filter((f) => f === `${stem}.${extension}`
+    || new RegExp(`^${stem}-\\d+\\.${extension}$`, 'u').test(f)).sort();
+  return names.map((f) => path.join(nodeDir, f));
+}
+
+/** search.json: `{docs:[{slug,…}], terms:{token: [...postings]}}`, possibly sharded. */
+function rankSearch(nodeDir, tokens) {
+  const score = new Map();
+  let seen = 0;
+  for (const file of shards(nodeDir, 'search', 'json')) {
+    const index = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const docs = Array.isArray(index.docs) ? index.docs : [];
+    seen += docs.length;
+    const slugOf = (posting) => (typeof posting === 'number' ? (docs[posting] || {}).slug : posting);
+    for (const token of tokens) {
+      const postings = (index.terms || {})[token];
+      if (!postings) continue;
+      for (const posting of Array.isArray(postings) ? postings : [postings]) {
+        const slug = slugOf(posting);
+        if (slug) score.set(slug, (score.get(slug) || 0) + 1);
+      }
+    }
+  }
+  return { documents: seen, ranked: [...score.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map((e) => e[0]) };
+}
+
+/** chunks.jsonl: score each chunk's `terms`/`text`, keep the best chunk per item. */
+function rankChunks(nodeDir, tokens) {
+  const best = new Map();
+  let seen = 0;
+  for (const file of shards(nodeDir, 'chunks', 'jsonl')) {
+    for (const chunk of readJsonl(file)) {
+      seen += 1;
+      const text = [chunk.terms, chunk.text, chunk.title, chunk.section].filter(Boolean).join(' ');
+      const bag = new Set(tokenize(text));
+      const hit = tokens.filter((t) => bag.has(t)).length;
+      if (hit === 0) continue;
+      const item = chunk.item || chunk.id;
+      if (!best.has(item) || best.get(item) < hit) best.set(item, hit);
+    }
+  }
+  return { documents: seen, ranked: [...best.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map((e) => e[0]) };
+}
+
+/** llms.txt: one link per line; the slug is the last path segment of the target. */
+function rankLlms(nodeDir, tokens) {
+  const file = path.join(nodeDir, 'llms.txt');
+  if (!fs.existsSync(file)) return { documents: 0, ranked: [] };
+  const score = new Map();
+  let seen = 0;
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    const link = /\[([^\]]+)\]\(([^)]+)\)(.*)$/u.exec(line);
+    if (!link) continue;
+    seen += 1;
+    const segments = link[2].split('/').filter((s) => s !== '');
+    const slug = segments[segments.length - 1];
+    const bag = new Set(tokenize(`${link[1]} ${link[3]}`));
+    const hit = tokens.filter((t) => bag.has(t)).length;
+    if (hit > 0) score.set(slug, Math.max(score.get(slug) || 0, hit));
+  }
+  return { documents: seen, ranked: [...score.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map((e) => e[0]) };
+}
+
+const RANKERS = { chunks: rankChunks, llms: rankLlms, search: rankSearch };
+
+/** Precision, recall, reciprocal rank and binary nDCG at `k` for one ranking. */
+function score(ranked, gold, k) {
+  const head = ranked.slice(0, k);
+  const found = head.filter((id) => gold.has(id)).length;
+  let rr = 0;
+  for (let i = 0; i < ranked.length; i += 1) if (gold.has(ranked[i])) { rr = 1 / (i + 1); break; }
+  let dcg = 0;
+  for (let i = 0; i < head.length; i += 1) if (gold.has(head[i])) dcg += 1 / Math.log2(i + 2);
+  let ideal = 0;
+  for (let i = 0; i < Math.min(k, gold.size); i += 1) ideal += 1 / Math.log2(i + 2);
+  return {
+    ndcg: ideal === 0 ? 0 : dcg / ideal,
+    p1: head.length === 0 ? 0 : (gold.has(head[0]) ? 1 : 0),
+    precision: k === 0 ? 0 : found / k,
+    recall: gold.size === 0 ? 0 : found / gold.size,
+    rr,
+  };
+}
+
+/** The mean of every member, rounded so two runs of the same data agree byte for byte. */
+function mean(rows) {
+  const out = {};
+  if (rows.length === 0) return out;
+  for (const key of Object.keys(rows[0]).sort()) {
+    out[key] = Math.round((rows.reduce((a, r) => a + r[key], 0) / rows.length) * 10000) / 10000;
+  }
+  return out;
+}
+
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`bench: ${message}\n${HELP}`); return 2; };
+
+  let nodeDir = null, setDir = DEFAULT_SET, k = 10, surfaces = SURFACES, target = null, json = false, dry = false, origin = null;
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    else if (arg === '--json') json = true;
+    else if (arg === '--dry-run') dry = true;
+    else if (arg === '--node') { i += 1; nodeDir = argv[i]; }
+    else if (arg === '--set') { i += 1; setDir = argv[i]; }
+    else if (arg === '--out') { i += 1; target = argv[i]; }
+    else if (arg === '--k') { i += 1; k = Number(argv[i]); }
+    else if (arg === '--origin-node') { i += 1; origin = argv[i]; }
+    else if (arg === '--surface') { i += 1; surfaces = String(argv[i]).split(',').map((s) => s.trim()); }
+    else return usage(`unknown argument ${arg} (AGSC-E002)`);
+  }
+  if (!Number.isInteger(k) || k < 1) return usage('--k must be a positive integer');
+  for (const s of surfaces) if (!SURFACES.includes(s)) return usage(`unknown surface ${s}; known: ${SURFACES.join(' ')}`);
+  if (!fs.existsSync(path.join(setDir, 'queries.jsonl'))) return usage(`no queries.jsonl in ${setDir}`);
+  if (nodeDir === null && !dry) return usage('--node <dir> is required (the built output of a node)');
+  if (nodeDir !== null && !fs.existsSync(path.join(nodeDir, 'search.json'))) {
+    return usage(`${nodeDir} holds no search.json, so it is not a built node`);
+  }
+
+  const set = loadSet(setDir);
+  if (origin !== null) set.queries = set.queries.filter((q) => q.meta.node === origin);
+  const unlabelled = set.queries.filter((q) => !set.qrels.has(q.id)).map((q) => q.id);
+  const findings = unlabelled.map((id) => ({
+    code: 'AGSC-E901', col: 1, file: path.join(setDir, 'qrels', 'test.tsv'), line: 1,
+    message: `query ${id} has no gold label, so it can neither pass nor fail`, severity: 'warn',
+  }));
+
+  const envelope = {
+    counts: { error: 0, warn: findings.length },
+    findings,
+    k,
+    node: nodeDir,
+    origin_node: origin,
+    queries: set.queries.length,
+    schema: 'agsc.bench.v1',
+    set: setDir,
+    status: 'pass',
+    surfaces: {},
+    verb: 'bench',
+  };
+
+  if (dry) {
+    envelope.status = 'dry-run';
+    if (json) out(`${JSON.stringify(envelope, null, 2)}\n`);
+    else out(`bench: dry run — ${set.queries.length} queries, ${set.qrels.size} labelled, surfaces ${surfaces.join(' ')}, k=${k}\n`);
+    return 0;
+  }
+
+  let scored = 0;
+  for (const surface of surfaces.slice().sort()) {
+    const rows = [];
+    let documents = 0;
+    for (const query of set.queries) {
+      const gold = set.qrels.get(query.id);
+      if (!gold) continue;
+      const result = RANKERS[surface](nodeDir, tokenize(query.text));
+      documents = result.documents;
+      rows.push(score(result.ranked, gold, k));
+    }
+    scored += rows.length;
+    envelope.surfaces[surface] = { documents, queries_scored: rows.length, ...mean(rows) };
+  }
+  if (scored === 0) {
+    envelope.status = 'fail';
+    envelope.counts.error = 1;
+    envelope.findings.push({ code: 'AGSC-E901', col: 1, file: setDir, line: 1, message: 'no query carried a gold label: nothing was measured', severity: 'error' });
+  }
+  if (target !== null) fs.writeFileSync(target, `${JSON.stringify(envelope, null, 2)}\n`);
+  if (json) out(`${JSON.stringify(envelope, null, 2)}\n`);
+  else {
+    for (const surface of Object.keys(envelope.surfaces).sort()) {
+      const s = envelope.surfaces[surface];
+      out(`${surface}: recall@${k} ${s.recall}  precision@${k} ${s.precision}  nDCG@${k} ${s.ndcg}  P@1 ${s.p1}  MRR ${s.rr}  (${s.queries_scored} queries, ${s.documents} documents)\n`);
+    }
+    for (const f of envelope.findings) err(`FINDING ${f.code} ${f.message}\n`);
+  }
+  return envelope.status === 'fail' ? 1 : 0;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, SURFACES, loadSet, mean, rankChunks, rankLlms, rankSearch, run, score, tokenize };

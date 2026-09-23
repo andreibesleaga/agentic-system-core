@@ -71,11 +71,22 @@ describe('the nine checkers never pass vacuously (FV29-10, AGSC-09-90)', () => {
     }
   });
 
-  it('an ABSENT input directory is a usage error or a finding, never a pass', () => {
+  it('an ABSENT input is AGSC-E901 in the envelope, exit 1 — not a usage error', () => {
+    // TIGHTENED at rc.6 (FIX29-S4). AGSC-09-90 now says a validator MUST FAIL "with
+    // `AGSC-E901`" over absent inputs, and AGSC-09-08 reserves exit 2 for an unknown
+    // verb, an unknown flag or a missing argument. Five of the nine used to print a
+    // usage block and exit 2, so the code was in prose a caller reading the envelope
+    // never saw.
     const dir = tmpdir();
     for (const name of ROOTED) {
-      const result = capture(name, ['--json', ...argvFor(name, dir)]);
-      assert.notEqual(result.code, 0, `${name} passed on a root that holds nothing`);
+      const result = envelope(name, argvFor(name, dir));
+      assert.equal(result.code, 1, `${name} did not FAIL on a root that holds nothing`);
+      assert.equal(result.json.status, 'fail', name);
+      assert.ok(result.json.findings.some((f) => f.code === 'AGSC-E901'),
+        `${name} failed without AGSC-E901: ${JSON.stringify(result.json.findings)}`);
+      // …and the summary says zero were read, so "nothing is wrong" cannot be
+      // mistaken for "nothing was looked at".
+      assert.match(capture(name, argvFor(name, dir)).out, /\b0 input file\(s\) read/u, name);
     }
   });
 

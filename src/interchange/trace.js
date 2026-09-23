@@ -17,14 +17,20 @@
  *     estimate}`, which is what makes a run reach the monthly rollup of AGSC-08-25
  *     and the cap of AGSC-01-38. It is copied member by member and never invented.
  *
- * THE INPUT SHAPE IS NOT PINNED BY ANY RULE (recorded as ENG5-S9). "An
- * already-captured agent-run record" names no format and no vector fixes one, so
- * this reader accepts the members the Episode branch of `schema/item.schema.json`
- * needs, under the names an agent-run record usually carries, and falls back where
- * it can: `started` ← `started` | `at` | `start`; `ended` ← `ended` | `end`;
- * `actor` ← `actor` | `agent`; `outcome` ← `outcome` | `status`; the body ←
- * `body` | `summary` | `output`. Nothing else is guessed, and every member it
- * could not place is preserved.
+ * THE INPUT SHAPE IS PINNED SINCE rc.6 (ENG5-S9). AGSC-09-94: "A trace record is a
+ * JSON object carrying at least `started` (an instant, AGSC-02-06), and OPTIONALLY
+ * `ended`, `actor` (AGSC-02-09), `title`, `outcome` (AGSC-02-07's enum), `body` and
+ * `usage` (AGSC-02-14); every other member is preserved under the `x-<vendor>-<key>`
+ * namespace of AGSC-02-05a."
+ *
+ * So this reader places those seven members under those seven names and NOTHING
+ * ELSE. Until rc.6 no rule said what a record looks like, so it also accepted the
+ * names an agent-run record usually carries — `at`, `start`, `end`, `agent`,
+ * `status`, `summary`, `output`, `name` — and a record written for this engine
+ * would not have imported into another, which is the interoperability AGSC-01-22
+ * exists to provide. A member under one of those older names is now preserved,
+ * not dropped: it reappears as `x-trace-<key>`, where a person can see it and
+ * rename it.
  *
  * NO CLOCK. AGSC-04-11: a trace whose record carries no `started` cannot be turned
  * into a conforming Episode (the schema REQUIRES it) and is reported rather than
@@ -41,15 +47,18 @@ const { finding } = require('../knowledge/validate.js');
 /** AGSC-02-14: the five members of `usage`, and no sixth. */
 const USAGE_MEMBERS = Object.freeze(['cost_usd', 'estimate', 'model', 'tokens_in', 'tokens_out']);
 
-/** The Episode members this mapping places, under every name it accepts. */
+/**
+ * The Episode members this mapping places, and the one name AGSC-09-94 gives each.
+ * The value is a list for the reader's sake: it is the set of names that map to
+ * that member, and since rc.6 every set has exactly one element.
+ */
 const ALIASES = Object.freeze({
-  actor: ['actor', 'agent'],
-  body: ['body', 'summary', 'output'],
-  ended: ['ended', 'end'],
-  outcome: ['outcome', 'status'],
-  severity: ['severity'],
-  started: ['started', 'at', 'start'],
-  title: ['title', 'name'],
+  actor: ['actor'],
+  body: ['body'],
+  ended: ['ended'],
+  outcome: ['outcome'],
+  started: ['started'],
+  title: ['title'],
 });
 
 /** AGSC-02-07: the Episode outcomes, and the one a foreign value becomes. */
@@ -94,7 +103,7 @@ function toEpisode(record, options = {}) {
   const started = pick(record, 'started');
   if (started === undefined) {
     findings.push(finding('AGSC-E202',
-      'the trace carries no `started` (nor `at`, nor `start`), and an Episode REQUIRES an'
+      'the trace carries no `started`, and an Episode REQUIRES an'
       + ' instant; AGSC-04-11 forbids reading a clock to supply one (AGSC-09-94, AGSC-02-06)',
       { file, severity: 'error' }));
     return { body: '', findings, frontmatter: null, path: null, slug: null };

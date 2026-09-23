@@ -35,6 +35,7 @@
 const { encode } = require('@toon-format/toon');
 const chunks = require('../../knowledge/chunks.js');
 const { commentSafe, singleLine } = require('../../knowledge/unicode.js');
+const { provenanceLines } = require('../../knowledge/provenance-header.js');
 
 /** The seven uniform members of the index, in AGSC-06-29's own member order. */
 const INDEX_COLUMNS = Object.freeze(['id', 'item', 'kind', 'section', 'ordinal', 'title', 'digest']);
@@ -127,13 +128,14 @@ function llmsCtxTxt(records, options) {
   // the provenance comment early — the same family as the /llms.txt hole, in the
   // additive adapter. The chunk BODY was already safe: `fenceProse` widens the fence.
   const lines = [`# ${singleLine(options.title)} — skim context`, '',
-    '<!-- agsc:provenance',
-    `bundle: ${commentSafe(singleLine(options.base))}`,
-    `license: ${commentSafe(singleLine(options.license))}`,
-    `terms: ${commentSafe(singleLine(options.terms))}`,
-    `spec_version: ${commentSafe(singleLine(options.specVersion))}`,
-    `generated_at: ${commentSafe(singleLine(options.generatedAt))}`,
-    '-->', '',
+    ...provenanceLines({
+      bundle: options.base,
+      bundleVersion: options.bundleVersion,
+      generatedAt: options.generatedAt,
+      license: options.license,
+      specVersion: options.specVersion,
+      terms: options.terms,
+    }), '',
     '> This file is a SKIM view, not a provenance-complete export. It drops every',
     '> chunk\'s `digest`, `trust`, `license`, `iri` and `links`, so nothing here may',
     '> be cited on its own: `/chunks.jsonl` (AGSC-06-26) carries the citable records',

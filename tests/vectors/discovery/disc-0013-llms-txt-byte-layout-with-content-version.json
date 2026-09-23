@@ -1,0 +1,53 @@
+{
+  "area": "discovery",
+  "description": "The agent-facing text file has an exact byte layout: H1 (first, as llms.txt v2 requires), provenance comment, blockquote, cluster sections ordered by slug, an Other section for unclustered items, one blank line between blocks and nothing else. An item with no description repeats its title; a draft item appears nowhere. Without this pin two conforming writers emit different bytes and Level 0 is unreachable. The provenance header carries the AI-assistance statement of AGSC-06-15 as its last line, a constant of the specification and never authored; no value interpolated into the block may carry `-->` (AGSC-06-13a as amended at rc.6). Expected bytes re-derived by hand from the rule text: block (2) is the same comment with one further `name: value` line inserted before the closing `-->`, and nothing else in the file moves. Re-derived again at rc.6 for D113: the header block gains the line `bundle_version: <content version>` between `spec_version:` and `generated_at:` (AGSC-06-13a, AGSC-04-25). The value here is the branch-1 form of AGSC-04-25 — the tag on the built commit, `v1.4.0` — and nothing else in either file moves: one further `name: value` line inside the comment, in the position the rule fixes.",
+  "expected": {
+    "draft_excluded": [
+      "hidden"
+    ],
+    "output": "# Example Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.6\nbundle_version: v1.4.0\ngenerated_at: 2026-09-16T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n\n> A node of the Agentic Knowledge Web.\n\n## Coordination\n\n- [Supervisor](https://a.example/concepts/supervisor/): Routes work to workers.\n\n## Other\n\n- [Loose Note](https://a.example/concepts/loose-note/): Loose Note\n"
+  },
+  "id": "disc-0013",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "description": "A node of the Agentic Knowledge Web.",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "title": "Example Node"
+    },
+    "bundle_version": "v1.4.0",
+    "clusters": [
+      {
+        "slug": "coordination",
+        "title": "Coordination"
+      }
+    ],
+    "generated_at": "2026-09-16T00:00:00Z",
+    "items": [
+      {
+        "clusters": [
+          "coordination"
+        ],
+        "description": "Routes work to workers.",
+        "slug": "supervisor",
+        "title": "Supervisor"
+      },
+      {
+        "slug": "loose-note",
+        "title": "Loose Note"
+      },
+      {
+        "slug": "hidden",
+        "status": "draft",
+        "title": "Hidden"
+      }
+    ],
+    "spec_version": "1.0.0-rc.6"
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (EXT-1); derived by hand from AGSC-06-13a, AGSC-06-15 and AGSC-04-25, superseding disc-0010",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-13a"
+}

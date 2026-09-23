@@ -210,8 +210,14 @@ test('declaredOrder is the top-level order then the matching branch, never anoth
 });
 
 test('subSchema follows a local $ref and an items wrapper, and refuses anything else', () => {
+  // What is under test is that the `$ref` is FOLLOWED, not which members `prov`
+  // happens to have this release — so the expectation is the schema's own list,
+  // read from the definition the ref names. (2026-09-22: it was a literal, and it
+  // rotted the moment `prov` gained a member.)
   assert.deepStrictEqual(Object.keys(fix.subSchema(ITEM_SCHEMA, { $ref: '#/$defs/prov' }).properties),
-    ['origin', 'agent', 'model', 'operator', 'agreement']);
+    Object.keys(ITEM_SCHEMA.$defs.prov.properties));
+  assert.ok(Object.keys(ITEM_SCHEMA.$defs.prov.properties).includes('origin'),
+    'the ref resolved to something that is not prov');
   assert.deepStrictEqual(Object.keys(fix.subSchema(ITEM_SCHEMA, ITEM_SCHEMA.properties.sources).properties),
     ['id', 'resource', 'title', 'author', 'year', 'verified', 'grade']);
   assert.strictEqual(fix.subSchema(ITEM_SCHEMA, { $ref: 'https://example/x' }), null);

@@ -260,6 +260,56 @@ test('the legal page adds no term, no notice and no operator of its own', () => 
   assert.ok(!page.includes('id="operator"'));
 });
 
+// --------------------------------------- rc.6: the AI-assistance statement (D105)
+
+test('AGSC-06-18 (rc.6): /legal/ carries the assistance statement, in the same words', () => {
+  const { ASSISTANCE } = require('../../src/knowledge/provenance-header.js');
+  const page = html.legalPage({
+    licenseProse: 'CC-BY-4.0', operator: null, privacy: null, rendered: '<p>Body.</p>', terms: 'LicenseRef-X',
+  }, { licenseProse: 'CC-BY-4.0', render: (t) => ({ html: t }) });
+  assert.ok(page.includes('id="ai-assistance"'), 'the /legal/ page states nothing about AI assistance');
+  // "in the same words the provenance header of every agent-facing export carries":
+  // the page QUOTES the constant, so the two cannot drift.
+  assert.ok(page.includes(html.escapeHtml(ASSISTANCE)), page);
+  // It needs no authored input, so it is never absent and never invented.
+  assert.ok(html.legalPage({ licenseProse: null, operator: 'A Person', privacy: '<p>P</p>', rendered: '<p>B</p>', terms: 'X' },
+    { render: (t) => ({ html: t }) }).includes('id="ai-assistance"'));
+});
+
+test('B-04 (rc.6): the page footer carries the copyright line, from configuration', () => {
+  const withAuthor = html.termsLine('CC-BY-4.0', { author: 'Ada Lovelace', legal: true, year: '2026' });
+  assert.match(withAuthor, /class="copyright">&#169; 2026 Ada Lovelace\./u);
+  assert.match(withAuthor, /class="notice">Written with AI assistance/u);
+  assert.match(withAuthor, /no warranty and no liability/u);
+  // The engine is a general tool: with no `site.author` it names NOBODY rather than
+  // stamping one owner's name into somebody else's pages.
+  const anonymous = html.termsLine('CC-BY-4.0', { legal: true });
+  assert.ok(!anonymous.includes('copyright'), anonymous);
+  assert.match(anonymous, /class="notice"/u, 'the disclaimer is a constant and always shows');
+  // The /legal/ link is emitted only where that route exists (V9D-A6).
+  assert.ok(!html.termsLine('CC-BY-4.0', { author: 'A', legal: false, year: '2026' }).includes('href="/legal/"'));
+});
+
+test('B-04 (rc.6): the year is the BUILD INSTANT\'s year, never a clock', () => {
+  const configured = JSON.stringify({
+    ...JSON.parse(nodeFs.readFileSync(path.join(FIXTURE, 'agsc.config.json'), 'utf8')),
+    site: {
+      ...JSON.parse(nodeFs.readFileSync(path.join(FIXTURE, 'agsc.config.json'), 'utf8')).site,
+      author: 'Ada Lovelace',
+    },
+  }, null, 2);
+  const build = (epoch) => {
+    const dir = workspace({ 'agsc.config.json': configured });
+    const fs = createFileSystem(dir);
+    const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
+    const clock = createClock({ env: { SOURCE_DATE_EPOCH: epoch } });
+    return String(site.build(bundle, { clock, fs },
+      { specVersion: '1.0.0-rc.6', version: '0.0.2' }).files.get('/index.html'));
+  };
+  assert.match(build(EPOCH), /&#169; 2026 /u);
+  assert.match(build('1104537600'), /&#169; 2005 /u);   // 2005-01-01T00:00:00Z
+});
+
 // ------------------------------------------------- one fault is counted once
 
 test('AGSC-09-11: under ci the publication findings are reported by ONE lane', () => {

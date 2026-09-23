@@ -1,0 +1,20 @@
+{"_id":"q001","metadata":{"origin":"hand-written","node":"patterns"},"text":"how do I stop an agent from doing something irreversible without a person approving it"}
+{"_id":"q002","metadata":{"origin":"hand-written","node":"patterns"},"text":"text from a web page told my agent to ignore its instructions, what defends against that"}
+{"_id":"q003","metadata":{"origin":"hand-written","node":"patterns"},"text":"one model writes and another one grades it until the work is good enough"}
+{"_id":"q004","metadata":{"origin":"hand-written","node":"patterns"},"text":"send each request to whichever specialist handles that kind of request"}
+{"_id":"q005","metadata":{"origin":"hand-written","node":"patterns"},"text":"a coordinating agent that splits the goal and hands parts to workers"}
+{"_id":"q006","metadata":{"origin":"hand-written","node":"patterns"},"text":"interleave thinking with calling tools in the same context"}
+{"_id":"q007","metadata":{"origin":"hand-written","node":"patterns"},"text":"the agent criticises its own answer before returning it"}
+{"_id":"q008","metadata":{"origin":"hand-written","node":"patterns"},"text":"what kinds of memory does an agent need and where should each kind live"}
+{"_id":"q009","metadata":{"origin":"hand-written","node":"patterns"},"text":"break a goal into steps before starting instead of deciding as you go"}
+{"_id":"q010","metadata":{"origin":"hand-written","node":"patterns"},"text":"how should I design the set of tools an agent is allowed to call"}
+{"_id":"q011","metadata":{"origin":"hand-written","node":"patterns"},"text":"shapes of collaboration between several agents, hierarchies and swarms"}
+{"_id":"q012","metadata":{"origin":"hand-written","node":"patterns"},"text":"threat model, privilege and isolation for agent systems"}
+{"_id":"q013","metadata":{"origin":"hand-written","node":"main"},"text":"what is a Bundle in this format"}
+{"_id":"q014","metadata":{"origin":"hand-written","node":"main"},"text":"how do I publish a level 0 node"}
+{"_id":"q015","metadata":{"origin":"hand-written","node":"main"},"text":"what does a gate do in the governance model"}
+{"_id":"q016","metadata":{"origin":"hand-written","node":"main"},"text":"how is a runnable architecture bundle described"}
+{"_id":"q017","metadata":{"origin":"hand-written","node":"main"},"text":"what records something that happened, with an outcome and a severity"}
+{"_id":"q018","metadata":{"origin":"hand-written","node":"main"},"text":"what are the typed relations between items called"}
+{"_id":"q019","metadata":{"origin":"hand-written","node":"main"},"text":"where does the vocabulary of the ontology live"}
+{"_id":"q020","metadata":{"origin":"hand-written","node":"main"},"text":"what page shows the current spend and the cap"}

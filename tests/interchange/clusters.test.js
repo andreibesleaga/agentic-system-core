@@ -124,13 +124,19 @@ test('AGSC-01-10: slugify is total, so even a punctuation-only deck id reaches a
   assert.deepStrictEqual(built.findings, []);
 });
 
-test('the body states the derived member count and nothing else', () => {
+test('the body carries the tagline and no member COUNT', () => {
+  // A count of the items that were IMPORTED is not the number a reader sees: a
+  // cluster page lists the PUBLISHED members, and everything held back as a draft
+  // is on no page at all (AGSC-06-30). A Bundle whose catalogue is mostly held
+  // back therefore showed "14 imported items name this cluster" above five links.
+  // The sentence now says what the page does, and counts nothing.
   const one = build([{ id: 'a', name: 'A Deck', tagline: 'A tagline long enough to stand on its own beyond that bound.' }],
     [{ slug: 'x', deck: 'a' }]);
-  assert.match(one.clusters[0].body, /1 imported item names this cluster\./u);
   const two = build([{ id: 'a', name: 'A Deck', tagline: 'A tagline long enough to stand on its own beyond that bound.' }],
     [{ slug: 'x', deck: 'a' }, { slug: 'y', deck: 'a' }]);
-  assert.match(two.clusters[0].body, /2 imported items name this cluster\./u);
+  assert.strictEqual(one.clusters[0].body, two.clusters[0].body);
+  assert.doesNotMatch(one.clusters[0].body, /[0-9]/u);
+  assert.match(one.clusters[0].body, /listed here once it is published/u);
 });
 
 test('ordered(): an unexpected key lands after the pinned ones, in code-point order', () => {

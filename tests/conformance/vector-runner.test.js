@@ -12,7 +12,9 @@
 //                                  (AGSC-00-16, AGSC-09-05).
 //   * id in pending.json        -> skip with its reason, until the owning package
 //                                  lands its handler; the integration package
-//                                  empties that file (and it is empty).
+//                                  empties that file. It may hold ONLY ids whose
+//                                  reason names the package still writing their
+//                                  rules; anything else parked there fails below.
 //   * `requires_surface`        -> the reference node declares ["mcp","webmcp"], so
 //                                  those vectors MUST run (AGSC-09-04, V7-23).
 //   * a required vector with no handler -> fail.
@@ -58,6 +60,10 @@ test('conformance vectors', async (t) => {
   const ctx = {
     root: ROOT,
     schemas: validate.schemas(readSchemas(ROOT)),
+    // The RAW `schema/item.schema.json`, for the handlers whose module writes
+    // lint-normalized bytes (`governance/fix.js#declaredOrder` reads the schema
+    // itself, not the compiled validator).
+    itemSchema: readSchemas(ROOT).item,
     specVersion: specVersion(),
     surfaces: conformance.DECLARED_SURFACES,
   };
@@ -79,5 +85,18 @@ test('conformance vectors', async (t) => {
 
   assert.strictEqual(tally.fail, 0, `failing vectors:\n${failures.join('\n')}`);
   assert.strictEqual(tally.pass + tally.fail + tally.skip, vectors.length, 'every vector is accounted for');
-  assert.strictEqual(tally.pending, 0, 'tests/conformance/pending.json must be empty at integration');
+  // `pending.json` must be EMPTY at integration — a vector parked with a reason is
+  // still a vector nothing runs. It holds exactly one exception while a package is
+  // in flight: the ids of the package that is writing the rules those vectors cite.
+  // Anything else parked there fails here, so nobody can leave a vector unrun
+  // quietly, and the package that lands ENG-8 removes this list and the exception
+  // with it. (rc.6, 2026-09-22: RC6-B's own eight were closed and removed; EXT-1
+  // then added eight of its own for the compatibility and versioning rules.)
+  const parked = [...pending].sort();
+  const foreign = parked.filter((id) => !/\bENG-8\b/u.test(String(reason[id] || '')));
+  assert.deepStrictEqual(foreign, [],
+    `tests/conformance/pending.json may hold only vectors awaiting ENG-8; these name no package: ${foreign.join(', ')}`);
+  if (parked.length > 0) {
+    process.stdout.write(`conformance: ${parked.length} vector(s) pending on ENG-8: ${parked.join(', ')}\n`);
+  }
 });

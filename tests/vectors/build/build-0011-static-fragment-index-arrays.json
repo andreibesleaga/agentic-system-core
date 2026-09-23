@@ -21,7 +21,7 @@
   },
   "level": "optional",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
   "rule": "AGSC-06-33"
 }

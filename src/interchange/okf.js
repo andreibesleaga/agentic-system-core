@@ -163,6 +163,23 @@ function mapFrontmatter(raw, options) {
       { file: options.path, severity: 'warn' }));
   }
 
+  // AGSC-01-22's RECORD (rc.6, D113): every item an import writes names the exact
+  // state it was taken from. Both members are written by `import` alone and each is
+  // omitted when the source publishes neither — never invented, never carried over
+  // from an earlier import of a different source.
+  if (out.prov !== null && typeof out.prov === 'object' && !Array.isArray(out.prov)) {
+    const record = { ...out.prov };
+    delete record.source_hash;
+    delete record.source_version;
+    if (options.sourceVersion != null && String(options.sourceVersion) !== '') {
+      record.source_version = String(options.sourceVersion);
+    }
+    if (options.sourceHash != null && String(options.sourceHash) !== '') {
+      record.source_hash = String(options.sourceHash);
+    }
+    out.prov = record;
+  }
+
   // FV29-08 / AGSC-02-24: a foreign single-line value may carry a control character
   // or a line separator, and the serializer wrote it back as a YAML escape that
   // parses to the same code point — so `import` produced a file its own `lint`
@@ -179,6 +196,69 @@ function mapFrontmatter(raw, options) {
   return { findings, frontmatter: clean.frontmatter };
 }
 
+// ------------------------------------------- AGSC-01-22 as amended at rc.6 (D113)
+
+/**
+ * The three facts a source Bundle publishes about itself, read from its
+ * bundle-root `index.md` — the only `index.md` OKF permits frontmatter in, and the
+ * document `export --markdown`/`--okf` writes `spec_version` and `bundle_version`
+ * into (AGSC-01-26). A source that publishes none of them yields three `null`s and
+ * nothing is invented: a value nobody published cannot be recorded as if somebody
+ * had.
+ *
+ * @param {Array<{path:string, text:string}>} files the foreign tree.
+ * @returns {{specVersion:string|null, bundleVersion:string|null, bundleHash:string|null}}
+ */
+function sourceFacts(files) {
+  const none = { bundleHash: null, bundleVersion: null, specVersion: null };
+  const roots = (Array.isArray(files) ? files : [])
+    .filter((file) => /(^|\/)index\.md$/u.test(String(file.path)))
+    .sort((a, b) => String(a.path).split('/').length - String(b.path).split('/').length);
+  if (roots.length === 0) return none;
+  const read = readDocument(roots[0].text);
+  const fm = read.frontmatter || {};
+  const pick = (key) => (fm[key] === undefined || String(fm[key]) === '' ? null : String(fm[key]));
+  return { bundleHash: pick('bundle_hash'), bundleVersion: pick('bundle_version'), specVersion: pick('spec_version') };
+}
+
+/** The MAJOR and MINOR of a SemVer-shaped version string, or `null`. */
+function majorMinor(version) {
+  const m = /^(\d+)\.(\d+)\./u.exec(String(version == null ? '' : version));
+  return m === null ? null : { major: Number(m[1]), minor: Number(m[2]) };
+}
+
+/**
+ * AGSC-01-22's LIMIT: a source whose declared `spec_version` has a MAJOR or a
+ * MINOR this tool does not implement is refused with `AGSC-E004`, before any file
+ * is written, unless the caller passed the adapter's own `--allow-newer`.
+ *
+ * "Does not implement" is read exactly as AGSC-00-15 defines compatibility: the
+ * same MAJOR, and a MINOR no greater than the tool's. A source that declares
+ * nothing, or declares something this reader cannot parse as SemVer, is NOT
+ * refused — AGSC-01-22's tolerance covers a missing optional field, and refusing
+ * for the absence of a declaration would refuse every OKF bundle in the world.
+ *
+ * @param {string|null} sourceVersion the source's declared `spec_version`.
+ * @param {{toolSpecVersion:string, allowNewer?:boolean}} options
+ * @returns {object|null} the finding, or `null` when the import may proceed.
+ */
+function versionRefusal(sourceVersion, options) {
+  const opts = options || {};
+  if (opts.allowNewer === true) return null;
+  const source = majorMinor(sourceVersion);
+  const tool = majorMinor(opts.toolSpecVersion);
+  if (source === null || tool === null) return null;
+  if (source.major === tool.major && source.minor <= tool.minor) return null;
+  return finding('AGSC-E004',
+    `the source declares spec_version ${JSON.stringify(String(sourceVersion))}, whose `
+    + `${source.major === tool.major ? 'MINOR' : 'MAJOR'} this tool does not implement `
+    + `(it implements ${JSON.stringify(String(opts.toolSpecVersion))}); nothing was written. `
+    + 'Reading a newer version is safe for the constructs AGSC-00-21 lists and a guess for '
+    + 'everything else, so the choice is the operator\'s: pass --allow-newer to take it '
+    + '(AGSC-01-22, AGSC-00-20)',
+    { file: 'content/index.md', severity: 'error' });
+}
+
 /**
  * The import plan: what would be written, in code-point path order.
  *
@@ -188,6 +268,10 @@ function mapFrontmatter(raw, options) {
  * @param {object} options.itemSchema the raw `schema/item.schema.json` object, so the
  *   written bytes are the lint-normalized ones (AGSC-04-19) and a second import of
  *   the same tree is a no-op (AGSC-01-23).
+ * @param {string|null} [options.sourceVersion] the source's content version, written
+ *   onto every item as `prov.source_version` (AGSC-01-22, AGSC-08-01).
+ * @param {string|null} [options.sourceHash] the source's bundle hash, written onto
+ *   every item as `prov.source_hash`.
  * @returns {{findings:Array<object>, totals:object, writes:Array<{path:string, text:string}>}}
  */
 function plan(files, options) {
@@ -224,6 +308,8 @@ function plan(files, options) {
       operator: opts.operator === undefined ? 'human:unknown' : opts.operator,
       path,
       slug,
+      sourceHash: opts.sourceHash,
+      sourceVersion: opts.sourceVersion,
       stem: base,
     });
     findings.push(...mapped.findings);
@@ -243,5 +329,5 @@ function plan(files, options) {
 
 module.exports = {
   FORMAT, RESERVED, TYPE_KEEP_KEY, TYPE_PLURAL,
-  isReserved, mapFrontmatter, plan, readDocument,
+  isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, versionRefusal,
 };

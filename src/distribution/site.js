@@ -24,6 +24,7 @@ const { canonicalize } = require('../knowledge/jcs.js');
 const { nfc, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const chunks = require('../knowledge/chunks.js');
+const contentVersion = require('../knowledge/content-version.js');
 const adopt = require('../knowledge/adopt.js');
 const linksModule = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
@@ -233,9 +234,11 @@ function pathOf(item) {
  *
  * @param {object} item the flattened item whose body is being rendered.
  * @param {Map<string,object>} byPath every PUBLISHED item, by Bundle-relative path.
+ * @param {Set<string>} [assets] the Bundle-relative paths this build emits under
+ *   `/assets/` (AGSC-06-01, rc.6).
  * @returns {(target:string)=>(string|null)} `null` means "leave it alone".
  */
-function bodyHrefResolver(item, byPath) {
+function bodyHrefResolver(item, byPath, assets) {
   const fromDir = linksModule.dirOf(pathOf(item));
   return (target) => {
     const raw = String(target);
@@ -251,7 +254,14 @@ function bodyHrefResolver(item, byPath) {
     // AGSC-03-11 as amended at rc.5 (R-04): `<slug>` and `<slug>.md` name the same
     // item, and the extension-less form is what wikilink normalisation produces.
     const target1 = byPath.get(resolved) || byPath.get(`${resolved}.md`);
-    if (target1 === undefined) return null;
+    if (target1 === undefined) {
+      // AGSC-06-01 as amended at rc.6 (FIX28-01): a reference into `content/assets/`
+      // is published at `/assets/<path>`, `<path>` relative to that directory. The
+      // route is emitted only for a file this build actually read, so a reference to
+      // an asset that does not exist is still left alone and reported AGSC-E310.
+      const assetRoute = assets && assets.has(resolved) ? assetRouteOf(resolved) : null;
+      return assetRoute === null ? null : `${assetRoute}${fragment}`;
+    }
     return `${routeOf(target1)}${fragment}`;
   };
 }
@@ -270,18 +280,42 @@ function sitemap(base, routes, instant) {
  * comment names `/legal/` only when the build emits it (V9D-A6): a file that points
  * at a route the same build does not produce is a dangling link whichever dialect
  * carries it.
+ *
+ * `options.tdmCrawlers` is `site.tdm_crawlers[]` (AGSC-01-18): the publisher's own
+ * list of the product tokens whose operators state that they collect content in
+ * order to train a model. Since rc.6 (PSF-01) AGSC-06-18 requires ONE
+ * `User-agent`/`Disallow: /` group per token, in the order the configuration states
+ * them and BEFORE the `User-agent: *` group, and forbids a `Disallow` for any token
+ * the list does not name — so a fetch made on a person's behalf and a search
+ * crawler stay invited by the default group. Until rc.6 no member existed and the
+ * `Disallow` conjunct of this rule was vacuously true for every Bundle that could
+ * exist; the build-time fault for an empty list under a published reservation is in
+ * `publicationFindings`.
+ *
+ * The `Content-Signal` line is repeated in every group on purpose: a crawler reads
+ * only the group that matches its own name and never the default group as well.
  */
 function robots(base, options = {}) {
   const legal = options.legal === undefined ? true : Boolean(options.legal);
   const policy = legal
     ? 'the same policy as /.well-known/tdmrep.json and /legal/'
     : 'the same policy as /.well-known/tdmrep.json';
-  // AGSC-02-24 (rc.5, FV28-01): RFC 9309 is line-oriented — a line break in `base`
-  // would forge a directive. `base` is pattern-bounded by AGSC-01-19; the writer
-  // neutralises anyway, because a writer may receive a configuration it did not
-  // validate.
-  return `User-agent: *\n# Content Signals Policy: ${policy}\n`
-    + `Content-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: /\n\nSitemap: ${singleLine(discovery.href(base, '/sitemap.xml'))}\n`;
+  const signal = 'Content-Signal: search=yes, ai-input=yes, ai-train=no';
+  // AGSC-02-24 (rc.5, FV28-01): RFC 9309 is line-oriented — a line break in a token
+  // or in `base` would forge a directive. Both are pattern-bounded (AGSC-01-18,
+  // AGSC-01-19); the writer neutralises anyway, because a writer may receive a
+  // configuration it did not validate.
+  const groups = tdmCrawlerTokens(options.tdmCrawlers)
+    .map((token) => `User-agent: ${singleLine(token)}\n${signal}\nDisallow: /\n\n`)
+    .join('');
+  return `${groups}User-agent: *\n# Content Signals Policy: ${policy}\n`
+    + `${signal}\nAllow: /\n\nSitemap: ${singleLine(discovery.href(base, '/sitemap.xml'))}\n`;
+}
+
+/** `site.tdm_crawlers[]`, as a list of non-empty strings, in configuration order. */
+function tdmCrawlerTokens(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((token) => String(token == null ? '' : token)).filter((token) => token !== '');
 }
 
 /** AGSC-06-18, dialect 2: the TDM reservation, at its well-known location only. */
@@ -608,6 +642,28 @@ function publicationFindings(bundle, ports, options = {}) {
       + ' notice or a retention statement (PRD-019). A writer never invents one',
       { file: 'PRIVACY.md', severity: 'warn' }));
   }
+  // AGSC-06-18 as amended at rc.6 (PSF-01): the TDM reservation this writer always
+  // publishes (`tdmrep`, `tdm-reservation: 1`) must be carried by the robots dialect
+  // too, and it cannot be unless the publisher names at least one product token.
+  // The Content Use Terms text the rule pins by hash tells the reader that the
+  // reservation is stated by the reservation file AND the robots signals of this
+  // node, so an empty list makes the node's own prose false.
+  // `publishing` is true only for the lane that WRITES the files. AGSC-06-18 states
+  // this fault "at build", and `lint` emits neither robots.txt nor the reservation,
+  // so a Bundle still lints clean and is told at `build` — the same division the
+  // defaulted-build-instant fault of AGSC-06-36 makes above.
+  if (options.publishing === true
+      && tdmCrawlerTokens((config.site || {}).tdm_crawlers).length === 0) {
+    findings.push(finding('AGSC-E202',
+      'this node publishes a TDM reservation (/.well-known/tdmrep.json, tdm-reservation: 1) and'
+      + ' site.tdm_crawlers[] names no crawler, so robots.txt carries no reservation at all and'
+      + ' the Content Use Terms of /legal/ say something untrue (AGSC-06-18, rc.6). One licence'
+      + ' policy is expressed in three dialects and only what is comparable is compared: name in'
+      + ' site.tdm_crawlers[] the RFC 9309 product tokens whose operators state that they collect'
+      + ' content to train a model, and leave every other token unnamed so a fetch made for a'
+      + ' person and a search crawler stay invited',
+      { file: 'agsc.config.json' }));
+  }
   if (hasLegal && operator === null) {
     findings.push(finding('AGSC-E406',
       'neither site.author nor bundle.operator is configured, so /legal/ can identify no operator'
@@ -654,6 +710,36 @@ function readAttachment(ports, slug, file) {
     // AGSC-E413 from the lint lane; this function invents no bytes.
     return null;
   }
+}
+
+/**
+ * AGSC-06-01 as amended at rc.6 (FIX28-01): the bytes of `/assets/<path>`.
+ *
+ * AGSC-03-11 admits a body image or link whose target is a file under
+ * `content/assets/`, and AGSC-02-95 creates such files during adoption byte for
+ * byte — while the route set carried no route for one, so the two rules were
+ * jointly unsatisfiable and every Bundle that used the branch published a reference
+ * that 404s. The served bytes are the authored file's bytes, so the file is read as
+ * a Buffer: an asset may be any media type, and re-encoding one through a string
+ * would change it.
+ */
+function readAsset(ports, assetPath) {
+  const fs = ports && ports.fs;
+  if (!fs || typeof fs.readFile !== 'function') return null;
+  try {
+    if (typeof fs.exists === 'function' && !fs.exists(assetPath)) return null;
+    return fs.readFile(assetPath, null);
+  } catch (e) {
+    return null;
+  }
+}
+
+/** `content/assets/img/a.svg` → `/assets/img/a.svg`; anything else → `null`. */
+function assetRouteOf(assetPath) {
+  const prefix = 'content/assets/';
+  const value = String(assetPath == null ? '' : assetPath);
+  return value.startsWith(prefix) && value.length > prefix.length
+    ? `/assets/${value.slice(prefix.length)}` : null;
 }
 
 function readDiagramSource(ports, slug) {
@@ -900,8 +986,10 @@ function paginate(route, entries, perPage = search.ITEMS_PER_SHARD) {
 const UNPRODUCED_ROUTES = Object.freeze([
   ['/specs/, /specs/agentic-knowledge/, /specs/mcp/',
     'the published specification pages are the site repository\'s, not the engine\'s (AGSC-06-01)'],
-  ['/about/, /changelog/',
-    'these two pages are authored, not derived; no rule pins their bytes (AGSC-06-01)'],
+  ['/about/',
+    'this page is authored, not derived; no rule pins its bytes (AGSC-06-01).'
+    + ' `/changelog/` left this list at rc.6: AGSC-04-25 pins its versions list, which'
+    + ' the build derives from the git-log file whenever it has one'],
   ['/feed.xml',
     'reserved to 1.1 (AGSC-00-20): no 1.0 rule pins a feed\'s bytes, so the route cannot be'
     + ' derived, and `build.feed` is a RESERVED configuration name a 1.0 tool rejects with'
@@ -930,6 +1018,7 @@ function skillPacks(bundle, options, config) {
   const base = String(site.base || '').replace(/\/+$/u, '');
   return skills.packs(publishedItems(bundle.items, resolved.releases), {
     base: `${base}/`,
+    bundleVersion: options.bundleVersion,
     generatedAt: String(options.generatedAt),
     license: (resolved.bundle && resolved.bundle.license_prose) || TERMS,
     sha256: options.sha256 === undefined
@@ -951,6 +1040,11 @@ function skillPacks(bundle, options, config) {
  * @param {(body:string)=>{html:string, headings:Array<object>}} [options.render] C's renderer.
  * @param {{jsonld:Function, nquads:Function, turtle:Function}} [options.graph] D's views.
  * @param {Array<object>} [options.gitLog] the AGSC-08-20b git-log file.
+ * @param {string} [options.bundleVersion] the AGSC-04-25 content version, derived
+ *   once by the application layer; absent means "derive it here from `gitLog` and
+ *   the build instant", which is what a direct caller (a test, a library user) gets.
+ * @param {Array<object>} [options.bundleVersionFindings] the findings of that
+ *   derivation when the caller did it — an `AGSC-E506` for an unusable git tag.
  * @param {string} [options.contentTree] the git tree hash of `content/`.
  * @returns {{files:Map<string,string>, findings:Array<object>, skipped:Array<string>}}
  */
@@ -967,6 +1061,15 @@ function build(bundle, ports, options = {}) {
   const instant = ports.clock.iso === undefined ? ledgerModule.instantFromEpoch(ports.clock.now()) : ports.clock.iso();
   const files = new Map();
   const findings = [...(bundle.findings || [])];
+  // AGSC-04-25: ONE content version per build, stamped in nine places. The
+  // application layer derives it (so that a verb which never builds a site can
+  // stamp the same value); a direct caller that passed none gets the same pure
+  // derivation here, from the same two inputs, so the two can never disagree.
+  const derivedVersion = options.bundleVersion === undefined
+    ? contentVersion.bundleVersion({ buildInstant: instant, gitLog: options.gitLog })
+    : { findings: options.bundleVersionFindings || [], version: String(options.bundleVersion) };
+  const bundleVersion = derivedVersion.version;
+  findings.push(...derivedVersion.findings);
   const skipped = [];
   const put = (route, text) => files.set(route, text);
 
@@ -983,7 +1086,7 @@ function build(bundle, ports, options = {}) {
     clusters: items.filter((i) => i.type === 'cluster').map((c) => ({ slug: c.slug, title: c.title })),
     items,
   };
-  const llmsOptions = { generatedAt: instant, specVersion, terms: TERMS };
+  const llmsOptions = { bundleVersion, generatedAt: instant, specVersion, terms: TERMS };
   put('/llms.txt', llms.llmsTxt(llmsBundle, llmsOptions));
   put('/llms-full.txt', llms.llmsFullTxt(llmsBundle, llmsOptions));
 
@@ -1001,14 +1104,19 @@ function build(bundle, ports, options = {}) {
     attachmentBytes: options.attachmentBytes,
     releases: config.releases,
   }).records;
-  if (full) for (const file of chunks.files(chunkRecords, canonicalize).files) put(file.path, file.text);
+  if (full) {
+    // AGSC-06-31: the shard manifest carries the content version (D113).
+    const chunkFiles = chunks.files(chunkRecords, canonicalize,
+      { bundleVersion, generatedAt: instant });
+    for (const file of chunkFiles.files) put(file.path, file.text);
+  }
 
   // ------------------------------------------------------------ skill packs (AGSC-07-19)
   // The PUBLISHED packs of spec/07 §7.4, one per Cluster, plus the index that is
   // also the lockfile of AGSC-07-20. A Level-0 publisher emits none: AGSC-10-04
   // puts the `skills` vector area at Level 2.
   const packs = !full ? { files: [], findings: [], index: { packs: [] } }
-    : skillPacks(bundle, { generatedAt: instant, specVersion }, config);
+    : skillPacks(bundle, { bundleVersion, generatedAt: instant, specVersion }, config);
   findings.push(...packs.findings);
   for (const file of packs.files) put(`/skills/${file.path}`, file.text);
 
@@ -1042,12 +1150,25 @@ function build(bundle, ports, options = {}) {
     instant,
     ledger: files.get('/ledger.jsonl'),
   });
-  const nowMd = now.nowMarkdown(nowState);
-  if (full) put('/now.md', nowMd);
 
   // ------------------------------------------------------------ RDF views (D)
+  // AGSC-05-27 as amended at rc.6 (ENG3-S3), with AGSC-03-11 and AGSC-05-16: an
+  // inline Markdown link between two items of the Bundle is ONE `asc:mentions`
+  // triple from the referring item to the referenced one, whatever the number of
+  // references between them, with no computed inverse. Resolving a body's links is
+  // the Links module's work, so the pairs are taken from `links.resolve` and
+  // injected — `nquads.js` has carried the injection point since rc.2 and nothing
+  // filled it, which is why three rules mapped the edge and no engine emitted it.
+  // The edges are derived over the PUBLISHED projection (AGSC-06-30), so a
+  // reference to an item the node does not publish contributes no triple, and a
+  // self-reference — an anchor into the item's own page — contributes none either.
+  const mentions = linksModule.resolve(items)
+    .edges
+    .filter((edge) => edge.key === 'mentions' && edge.source !== edge.target)
+    .map((edge) => ({ source: edge.source, target: edge.target }));
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
   const graphBase = {
+    mentions,
     base: `${base}/`,
     lang: (config.i18n || {}).default,
     bundle: {
@@ -1094,13 +1215,38 @@ function build(bundle, ports, options = {}) {
     if (typeof graph.jsonld === 'function') put('/graph.jsonld', jsonBytes(graph.jsonld(items, view)));
     if (full && typeof graph.nquads === 'function') put('/graph.nq', textBytes(graph.nquads(items, view)));
     if (full && typeof graph.turtle === 'function') put('/graph.ttl', textBytes(graph.turtle(items, view)));
-    if (full && contextObject !== null) put('/ns/context.jsonld', jsonBytes(contextObject));
+    if (full && contextObject !== null) {
+      put('/ns/context.jsonld', jsonBytes(contextObject));
+      // AGSC-06-01 as amended at rc.6 (NS-05) + AGSC-05-09 as amended at rc.5: a
+      // Level ≥ 2 writer serves the VERSIONED copy beside the unversioned one,
+      // byte-identical to it, so the persistent URL a Level-0 document names
+      // resolves to the same bytes this node serves. The two context copies are the
+      // only `/ns/` routes a content node emits: the vocabulary documents
+      // (`/ns/agsc.ttl`, `/ns/agsc.rdf`, the `/ns/` index) belong to the namespace
+      // document site (AGSC-06-06), which is what the w3id negotiation resolves to.
+      if (ontologyVersion) put(`/ns/${ontologyVersion}/context.jsonld`, jsonBytes(contextObject));
+      else {
+        skipped.push('/ns/<ontology-version>/context.jsonld (no ontology version was supplied,'
+          + ' so the versioned copy AGSC-05-09 requires cannot be named; AGSC-06-01)');
+      }
+    }
   } else {
     skipped.push('/graph.jsonld, /graph.nq, /graph.ttl, /ns/context.jsonld (the RDF views were switched off)');
   }
   if (full && graph !== null && contextObject === null) {
     skipped.push('/ns/context.jsonld (no context generator was supplied; AGSC-06-32)');
   }
+  // ------------------------------------------------------------ NOW (AGSC-06-22)
+  // Written HERE and not beside its state, because the pinned line of AGSC-06-22
+  // carries the fingerprint of AGSC-04-15 — the SHA-256 of `graph.nq` — which does
+  // not exist until the views above have been emitted. A Level-0 emission has no
+  // `graph.nq` and no `/now.md`, so nothing is stated that was not derived.
+  const fingerprint = files.has('/graph.nq')
+    ? createHash('sha256').update(files.get('/graph.nq'), 'utf8').digest('hex')
+    : '';
+  const nowMd = now.nowMarkdown(nowState, { bundleVersion, fingerprint, specVersion });
+  if (full) put('/now.md', nowMd);
+
   if (!full && graph !== null && typeof graph.jsonld === 'function' && contextUrl === undefined) {
     skipped.push('the `@context` of /graph.jsonld (no ontology version was supplied, so the'
       + ' persistent versioned context URL of AGSC-05-09 cannot be named; a reader expanding'
@@ -1140,7 +1286,7 @@ function build(bundle, ports, options = {}) {
       + ' the Content Use Terms link is omitted from every page and from both text dialects'
       + ' rather than left dangling)');
   }
-  put('/robots.txt', robots(base, { legal: hasLegal }));
+  put('/robots.txt', robots(base, { legal: hasLegal, tdmCrawlers: (config.site || {}).tdm_crawlers }));
   put('/.well-known/tdmrep.json', jsonBytes(tdmrep(base)));
 
   // RFC 9116 + PRD-019: everything the two legal-facing surfaces need from the
@@ -1167,6 +1313,7 @@ function build(bundle, ports, options = {}) {
   const wellknown = discovery.linkset(config, {
     level,
     ledgerHead,
+    bundleVersion,
     digests,
     counts: discovery.countsOf(items),
     generatedAt: instant,
@@ -1184,6 +1331,33 @@ function build(bundle, ports, options = {}) {
   findings.push(...discovery.check(wellknown, { level }));
   put(discovery.WELLKNOWN_PATH, jsonBytes(wellknown));
 
+  // ------------------------------------------------------- assets (AGSC-06-01, rc.6)
+  // "`/assets/<path>` for every file under `content/assets/` that a PUBLISHED item's
+  // body references". The reference set is the resolver's, not a directory listing:
+  // an asset no published body names is not published, exactly as an unreferenced
+  // attachment is not.
+  const publishedAssets = new Set();
+  if (bundle && bundle.assets) {
+    const available = new Set([...bundle.assets].map(String));
+    for (const item of items) {
+      const fromDir = linksModule.dirOf(pathOf(item));
+      for (const raw of markdown.links(item.body == null ? '' : item.body)) {
+        const value = String(raw.target);
+        if (value === '' || value.startsWith('#') || value.startsWith('/')) continue;
+        if (linksModule.isExternalTarget(value)) continue;
+        const relative = value.split('#')[0].split('?')[0];
+        if (relative === '' || linksModule.bodyPathError(relative, fromDir) !== null) continue;
+        const resolved = linksModule.resolveInside(fromDir, relative);
+        if (available.has(resolved)) publishedAssets.add(resolved);
+      }
+    }
+  }
+  for (const assetPath of [...publishedAssets].sort(compareCodePoint)) {
+    const bytes = readAsset(ports, assetPath);
+    if (bytes === null) { publishedAssets.delete(assetPath); continue; }
+    put(assetRouteOf(assetPath), bytes);
+  }
+
   // ------------------------------------------------------------ sitemap and headers
   const routes = ['/', ...items.map(routeOf)];
   put('/sitemap.xml', sitemap(base, routes, instant));
@@ -1198,7 +1372,17 @@ function build(bundle, ports, options = {}) {
   const render = renderer;
   if (full && typeof render === 'function') {
     const pageOptions = {
-      legal: hasLegal, licenseProse, nav: [['/', 'Home'], ['/search/', 'Search'], ['/compose/', 'Compose']], render,
+      // The footer's copyright line (rc.6, owner legal pack B-04). The name is the
+      // publisher's own `site.author` and the year is the year of the BUILD INSTANT,
+      // which AGSC-04-09 derives from the last commit or from `SOURCE_DATE_EPOCH` —
+      // so no clock is read and the footer stays byte-reproducible. With no author
+      // configured, `html.js` emits no copyright line at all.
+      author: (config.site || {}).author,
+      legal: hasLegal,
+      licenseProse,
+      nav: [['/', 'Home'], ['/search/', 'Search'], ['/compose/', 'Compose']],
+      render,
+      year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
     // FV28-04: only a PUBLISHED item has a route (AGSC-06-30), so only a published
@@ -1248,7 +1432,7 @@ function build(bundle, ports, options = {}) {
       // never as the authored Bundle paths, which resolve to nothing on the site.
       put(`${routeOf(item)}index.html`, html.itemPage(item, {
         ...pageOptions,
-        render: (body) => render(body, { href: bodyHrefResolver(item, publishedByPath) }),
+        render: (body) => render(body, { href: bodyHrefResolver(item, publishedByPath, publishedAssets) }),
         canonical,
         jsonld,
         // AGSC-09-16: "the `/compose/` page AND THE ITEM PAGES". The three scripts
@@ -1283,6 +1467,17 @@ function build(bundle, ports, options = {}) {
     putIndex('/search/', 'Search', 'The index of this node is /search.json.', items.map(entryOf));
     put('/now/index.html', html.nowPage(nowMd, pageOptions));
     put('/404.html', html.notFoundPage(pageOptions));
+    // AGSC-04-25: `/changelog/` carries the versions list, derived from the git-log
+    // file — the ledger cannot supply it, because a 1.0 entry carries `kind: release`
+    // and the commit reference but not the tag's name (AGSC-08-21). With no git-log
+    // file the page is not derived at all, and `skipped` says so.
+    if (Array.isArray(options.gitLog)) {
+      put('/changelog/index.html',
+        html.changelogPage(contentVersion.versionRows(options.gitLog), pageOptions));
+    } else {
+      skipped.push('/changelog/ (no git-log file was supplied, so the versions list of'
+        + ' AGSC-04-25 cannot be derived; the rest of the page is authored, AGSC-06-01)');
+    }
 
     // AGSC-06-18: the Content Use Terms text, from `LICENSE-CONTENT` and nowhere
     // else — and, since this package, PRD-019's other three obligations beside it:
@@ -1441,7 +1636,7 @@ function verify(bundle, ports, options = {}) {
 }
 
 module.exports = {
-  build, write, verify, routeOf, sitemap, robots, tdmrep, securityTxt,
+  build, write, verify, routeOf, sitemap, robots, tdmCrawlerTokens, tdmrep, securityTxt,
   publishedItems, jsonBytes, textBytes, paginate, readAttachment, readDiagramSource,
   declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
   budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,

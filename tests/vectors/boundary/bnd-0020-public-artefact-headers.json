@@ -14,8 +14,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55d; D100). The vector asserts the header set of a node whose `site.base` it never states, so a port cannot tell which origin the `/` Link header and the route keys belong to. Superseded by bnd-0033, which states the base.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (PUB-6 Q55d; D100). The vector asserts the header set of a node whose `site.base` it never states, so a port cannot tell which origin the `/` Link header and the route keys belong to. Superseded by bnd-0033, which states the base.",
   "rule": "AGSC-11-05"
 }

@@ -32,6 +32,59 @@ The language is the vocabulary of `spec/00` §0.2 (Bundle, Item, the six types, 
 
 A 1.x reader **MUST** ignore unknown members and unknown `x-<vendor>-<key>` keys (preserving them verbatim in lossless exports, AGSC-02-05/02-05a), **MUST** tolerate the reserved enum values the spec names when reading documents it did not author (AGSC-00-15, AGSC-11-02), and **MUST NOT** fail on a file whose `spec_version` MINOR is higher than its own (AGSC-00-14). A node's *own* configuration and frontmatter are validated closed, because a publisher must not emit a value its declared version does not define (AGSC-11-02 as amended). MAJOR is the only breaking boundary. Every parameter that is not a wire-format invariant lives in `agsc.config.json` with a spec default and a stated maximum (AGSC-11-01, R60).
 
+## 5a. The plugin points (added at rc.6 — D112, AGSC-00-24)
+
+Everything this format admits as a replaceable part is one of **eight kinds**, and no
+other extension point exists at 1.x. The value of saying so in the architecture is
+that it names, for each kind, **which context owns the seam** — so a reader can see
+that a plugin attaches at a context boundary and never inside a context's own rules.
+
+```
+                          ┌─────────────────────────────────────────┐
+  foreign formats  ──────▶│ INTERCHANGE   memory adapter  ①         │◀────── export --to
+  (in AND out)            │               (AGSC-01-26a)             │        import --from
+                          └─────────────────────────────────────────┘
+                          ┌─────────────────────────────────────────┐
+  a Proposal      ───────▶│ GOVERNANCE    channel adapter ②         │        channels[].adapter
+                          │               forge shim      ③         │        a gate's enforce[]
+                          └─────────────────────────────────────────┘
+                          ┌─────────────────────────────────────────┐
+  the seven files ───────▶│ COMPOSITION   composition emitter ④     │        compose --emit
+                          │               (writes OUTSIDE the       │
+                          │                Harness directory)       │
+                          └─────────────────────────────────────────┘
+                          ┌─────────────────────────────────────────┐
+  the published   ───────▶│ DISTRIBUTION  surface          ⑤        │        surfaces[] / derived
+  projection              │               page tool        ⑥        │        registerTool()
+                          │               deployment profile ⑦      │        the writer's target
+                          └─────────────────────────────────────────┘
+                          ┌─────────────────────────────────────────┐
+  the distribution ──────▶│ (outside the contexts) checker ⑧        │        one of the nine
+  itself                  │               AGSC-09-90…92             │        tools/validate-*
+                          └─────────────────────────────────────────┘
+```
+
+Three obligations bind all eight (AGSC-00-24): **(i)** a plugin reaches the network
+only where its row grants it, and no row grants it during `build`, `lint`, `verify`
+or `ci` (AGSC-04-03, AGSC-08-30) — exactly one kind, the channel adapter, may ever
+reach it, and only in the CI lane; **(ii)** it writes only the outputs its row names,
+never inside `content/`, never outside the Bundle root and never through a link
+(AGSC-08-02, AGSC-01-16, AGSC-01-35); **(iii)** it never changes the canonical bytes
+of a 1.0 surface (AGSC-04-24, AGSC-06-01).
+
+Why the seams sit where they do: every one of the eight is a place where the engine
+already crosses a boundary — a foreign format entering or leaving Interchange, a
+Proposal leaving Governance, a rendering of the Harness leaving Composition, a route
+leaving Distribution, a normative artefact being checked from outside. **No kind
+attaches inside a context**, because a replaceable part that could change a
+context's own rules would make the rules unreplaceable.
+
+The engine's registries, the capability check every plugin passes at load and eight
+minimal worked samples are `src/application/plugins.js`, `docs/PLUGINS.md` and
+`examples/plugins/`. The registries live in the APPLICATION layer and not in any
+context, for the same reason the adapters do: resolving a module is host wiring, and
+no bounded context may resolve a module (`tests/arch/context-boundaries.test.js`).
+
 ## 6. Four wordings fixed here so that no document drifts
 
 - **Determinism scope** — machine artefacts are byte-identical *across* conforming implementations; HTML pages are byte-identical *within* one implementation and are not in the cross-implementation vector set (AGSC-04-24, PRD-060).

@@ -33,8 +33,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55a; D100). The `nquads` member is defined by `tests/vectors/README.md` as \"the complete canonical N-Quads serialization of the vector's input\", but this file's serialization carries only the seven attachment and hasAttachment lines: the item's own obligatory `rdf:type`, `skos:inScheme`, `skos:prefLabel` and `asc:kind` lines (AGSC-05-12, AGSC-05-17, AGSC-05-26) and the Bundle node of AGSC-05-03/05-26 are absent, so a port comparing the whole file against the rule fails while a port comparing a subset passes. The attachment case it proves is preserved and completed in graph-0016.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (PUB-6 Q55a; D100). The `nquads` member is defined by `tests/vectors/README.md` as \"the complete canonical N-Quads serialization of the vector's input\", but this file's serialization carries only the seven attachment and hasAttachment lines: the item's own obligatory `rdf:type`, `skos:inScheme`, `skos:prefLabel` and `asc:kind` lines (AGSC-05-12, AGSC-05-17, AGSC-05-26) and the Bundle node of AGSC-05-03/05-26 are absent, so a port comparing the whole file against the rule fails while a port comparing a subset passes. The attachment case it proves is preserved and completed in graph-0016.",
   "rule": "AGSC-05-29"
 }

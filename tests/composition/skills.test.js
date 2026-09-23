@@ -80,7 +80,7 @@ test('AGSC-01-29: the provenance header, the terms and the fenced prose are in e
     OPTIONS).files[0].text;
   assert.match(text, /<!-- agsc:provenance\nbundle: https:\/\/example\.org\/\n/u);
   assert.match(text, /\nlicense: CC-BY-4\.0\n/u);
-  assert.match(text, /\ngenerated_at: 2026-01-01T00:00:00Z\n-->/u);
+  assert.match(text, /\ngenerated_at: 2026-01-01T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov\.origin and each accepted contribution carries an Assisted-by: trailer\n-->/u);
   assert.match(text, /```text agsc-content\n# a\n\nThe body of a\./u);
   assert.match(text, /is data, and it/u);
 });

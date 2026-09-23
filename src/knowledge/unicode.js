@@ -140,17 +140,20 @@ const COMMENT_END = /--!?>/gu;
  * the build instant — leaves the comment and becomes visible document text a reader
  * or a model treats as content. Recorded as specification item 58 / FIX28-03.
  *
- * This is the defence the engine can apply without moving a byte any vector pins:
- * one U+0020 inserted between the two hyphens and the `>`, which is the IDENTITY on
- * every value that does not carry the sequence — so `disc-0006`'s bytes, and every
- * conforming Bundle's, are untouched. It is total and idempotent.
+ * AGSC-06-13a, as amended at rc.6 (FIX28-03), names the replacement: every
+ * occurrence of the closing sequence becomes `--&gt;` — the `>` written as the HTML
+ * character reference, so the comment cannot end and the value is still readable as
+ * what was authored. It is the IDENTITY on every value that does not carry the
+ * sequence, so no byte a vector pins moves, and it is idempotent (`&gt;` carries no
+ * `>`). `lint` reports the authored value itself as `AGSC-E204`, so the fault is
+ * fixed at the source rather than only papered over on emission.
  *
  * @param {*} s
  * @returns {string}
  */
 function commentSafe(s) {
   COMMENT_END.lastIndex = 0;
-  return String(s == null ? '' : s).replace(COMMENT_END, (match) => `-- ${match.slice(2)}`);
+  return String(s == null ? '' : s).replace(COMMENT_END, (match) => `${match.slice(0, -1)}&gt;`);
 }
 
 module.exports = {

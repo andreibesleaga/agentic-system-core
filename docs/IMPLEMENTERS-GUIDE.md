@@ -42,7 +42,14 @@ the mistakes everything else is built on.
 Read these in this order. Each one assumes the ones before it.
 
 1. **`spec/00-overview.md`** — the model, the six item types, the version rules
-   (AGSC-00-04, AGSC-00-09…11, AGSC-00-14…16, AGSC-00-20). Twenty minutes.
+   (AGSC-00-04, AGSC-00-09…11, AGSC-00-14…16, AGSC-00-20), and **§0.6**, added at
+   rc.6, which is the one place that states what a reader and a writer must do
+   across versions: what to ignore and preserve (AGSC-00-21), what must survive a
+   round trip (AGSC-00-22), what you may not emit for a version you do not claim
+   (AGSC-00-23), the closed list of eight plugin kinds (AGSC-00-24) and the names
+   reserved to 1.1 (AGSC-00-25). Read §0.6 before you write a reader: it is the
+   difference between refusing a document you could have read and running with half
+   of it silently dropped. Twenty-five minutes.
 2. **`tests/vectors/README.md`** — the vector file format. Read it before you read
    any vector; the members and their meanings are pinned in AGSC-09-04/05/06.
 3. **`spec/01-bundle.md` and `spec/02-item.md`** — the file layout, the closed
@@ -147,6 +154,46 @@ from outside. `/llms.txt`, `/now.md`, `robots.txt`, `_headers` and every `SKILL.
 are line-oriented: a newline inside an interpolated title forges a new line there.
 Vector `fm-0010`.
 
+**Six byte-level facts changed at `1.0.0-rc.6`.** A port written against rc.5 emits
+different bytes for the same Bundle after each of these, so each is named here with
+the rule that fixes it.
+
+1. **The provenance header gains a line.** AGSC-06-15 adds `assistance:` as the last
+   line of the AGSC-06-13a block, immediately before `-->`. It is a CONSTANT of the
+   specification, never authored and never configured, and it is carried by every
+   file that carries that header — `/llms.txt`, `/llms-full.txt`, a skill pack, a
+   steer bundle, a Harness file, the `llm-context` skim view. Vectors `disc-0010`
+   and `disc-0011` are the successors of the withdrawn `disc-0006`/`disc-0007` and
+   differ from them by exactly this line.
+2. **`-->` inside an interpolated value becomes `--&gt;`.** AGSC-06-13a names the
+   replacement; a writer that neutralised it some other way emits different bytes for
+   the same authored value, and the authored value itself is `AGSC-E204` at lint.
+3. **`robots.txt` gains one group per named crawler.** AGSC-06-18 as amended: one
+   `User-agent: <token>` + `Disallow: /` per product token of `site.tdm_crawlers[]`,
+   in configuration order, **before** the `User-agent: *` group, and no `Disallow`
+   for any other token. A node publishing `tdm-reservation: 1` — every node at 1.x
+   — with an empty or absent list fails its build with `AGSC-E202`. No rule pins the
+   whole file's bytes, and vector `disc-0012` asserts the groups rather than the
+   bytes.
+4. **An inline body link emits a triple.** AGSC-05-27: one `asc:mentions` per ordered
+   pair of items, whatever the number of references between them; none for a
+   self-reference; no computed inverse. This moves `graph.nq`, `graph.ttl`,
+   `graph.jsonld`, the per-item `.jsonld` and therefore the bundle hash of every
+   node that has an inline body link. Vector `graph-0020`.
+5. **`/ns/context.jsonld` names each term one way.** AGSC-06-32 as amended pins the
+   term NAMES, not only the mapping: an `asc:` term is named by its local name,
+   always; an external property by its local name, or by its compact IRI where that
+   local name is also an `asc:` term name or is shared by two external properties.
+   The file is a constant of the specification and a node's copy must equal it byte
+   for byte. A Level ≥ 2 writer serves the versioned copy at
+   `/ns/<ontology-version>/context.jsonld` as well, byte-identical. Vector
+   `graph-0019`.
+6. **`/assets/<path>` is a route.** AGSC-06-01 as amended: every file under
+   `content/assets/` that a PUBLISHED item's body references is emitted at that path
+   relative to `content/assets/`, with the authored file's bytes, and the body's
+   reference is rendered as that route. Before rc.6 there was no such route and the
+   reference 404d on the built site.
+
 **Sort orders are stated per artefact, and they are not all the same.** Findings sort
 by `(file, line, col, code)`, code-point (AGSC-09-10). Canonical N-Quads lines sort
 code-point (AGSC-04-15, AGSC-05-31/32). JSON member names sort UTF-16 (AGSC-04-05).
@@ -177,6 +224,67 @@ compare bytes, and any difference is `AGSC-E602` (AGSC-09-14).
 digit is the area (§9.4). Where two codes could name one fault, the more specific one
 wins, and §9.4's **Precedence** paragraph states exactly which. Two conforming
 implementations report the same code for the same input, and that is checkable.
+
+---
+
+## 4a. Deriving and stamping the content version (Level 2 and above)
+
+Added at rc.6 under D113. **AGSC-04-25** (`spec/04-canonicalization.md` §4.9) gives a
+Bundle one short, human-readable name for the state a build published, `bundle_version`.
+It is **derived at build, never authored, never stored and never incremented** — a
+static build keeps no state between runs, so a counter of its own could not be
+reproduced — and its two inputs are ones your build already has: the git-log file of
+AGSC-08-20b and the build instant of AGSC-04-09.
+
+**Derive it once per invocation**, in one function, and hand the string to everything
+that stamps it. The first branch that applies wins, where *the built commit* is the
+last element of the git-log file:
+
+1. the `tag` of the built commit, when it carries one;
+2. otherwise `<tag>+<n>.g<hash>` — the newest earlier tagged element, the number of
+   elements after it up to and including the built commit, and the first **twelve**
+   lowercase-hexadecimal characters of the built commit's `sha`. Twelve is fixed by
+   the rule: git's own abbreviation length depends on the clone, so `git describe`
+   would make two clones of one repository derive two different versions;
+3. otherwise `0.0.0+<n>.g<hash>` when no element carries a tag;
+4. otherwise `0.0.0+<instant>`, the build instant written `YYYYMMDDThhmmssZ` —
+   AGSC-04-10's form with its separators removed, because `:` is outside the grammar.
+
+The grammar is `^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$`. A git tag outside it is not a
+content version: treat the commit as untagged **for this rule alone**, fall to the
+next branch, and report `AGSC-E506` naming the tag. The ledger is unaffected and
+still takes `kind: release` from that same tag (AGSC-08-20a).
+
+**Stamp it in exactly these nine places**, and nowhere else:
+
+| where | how |
+|---|---|
+| `/.well-known/knowledge-linkset` | the attribute `agsc-bundle-version`, one value, on the anchor's `describedby` link beside `agsc-bundle-hash` (AGSC-06-08); omitted at Level 0 (AGSC-06-08a) and on a `restricted` node (AGSC-11-20) |
+| `/now/` and `/now.md` | the pinned line `content version …, built at …, fingerprint …, specification …` (AGSC-06-22) |
+| every agent-facing digest | the `bundle_version:` line of the provenance header, between `spec_version:` and `generated_at:` (AGSC-06-13a, AGSC-06-15) — which carries it into `/llms.txt`, `/llms-full.txt`, the language-model context export, every `export --steer` target and every `AGENTS.md`/`SKILL.md` a Harness emits, for free (AGSC-01-29) |
+| `/chunks.jsonl` | the `bundle_version` member of the shard manifest, where sharding produced one (AGSC-06-31) |
+| `/skills/index.json` | the `bundle_version` member of the index object (AGSC-07-19) |
+| a Harness | the `bundle_version` member of `harness.jsonld` (AGSC-07-12); the seven file kinds stay seven |
+| `export --markdown` / `--okf` | the `bundle_version` key of `content/index.md`, beside `spec_version` (AGSC-01-26) — the one derived key of an otherwise byte-preserving export |
+| `export --jsonld` / `--jsonl` | **nowhere**: both are byte-identical to the graph of the same build and may not invent a member the graph does not carry (AGSC-01-27) |
+| `/changelog/` | a versions list, one row per git-log element carrying a `tag`, oldest first: the tag, that element's `committed_at` date and its `sha`. It comes from the git-log file and **not** from `ledger.jsonl`, because a 1.0 ledger entry carries `kind: release` and the commit reference but not the tag's name (AGSC-08-21) |
+
+Two things to get right. **A browser host cannot derive it**: a page has no git
+history, so AGSC-07-13's byte-identity between a CLI Harness and a page Harness holds
+only if the page is *given* the value, exactly as it is given the build instant. And
+the content version is **not an input to any digest**: `bundle.hash` is the hash of
+`graph.nq` (AGSC-04-15) and nothing here adds to it, so re-tagging unchanged content
+changes the published version and not the fingerprint. That is the property that
+makes the two worth publishing together.
+
+An `import` records where each written item came from: `prov.source_version` is the
+source's content version and `prov.source_hash` its bundle hash, each **omitted when
+the source publishes neither** — never invented (AGSC-01-22, AGSC-08-01).
+
+Vectors: `build-0014` (all four branches, the unusable tag and the NOW line),
+`disc-0013`/`disc-0014` (the header line in the two agent-facing files),
+`disc-0015` (the discovery attribute at three visibilities) and `imp-0002` (the
+import record and the newer-source refusal).
 
 ---
 
@@ -213,7 +321,7 @@ node tools/gen-ns --check <your-out>/ns
 so it is the cheapest end-to-end proof that your emission is internally consistent.
 
 **One honest note about this distribution's own run.** `validate-spec` currently
-exits 1 on the frozen 1.0.0-rc.5 text: it finds defects that are recorded as
+exited 1 on 2026-09-21 against the 1.0.0-rc.5 text: it found defects that are recorded as
 specification items for 1.0.0, not defects of any implementation. Treat it as a
 reporting step until those items are applied. Every other validator exits 0.
 
@@ -250,6 +358,17 @@ distribution's implementer documentation". This distribution's adapters are
 `llm-context` (export) and `okf` (import), and `src/interchange/README.md` lists what
 each one claims.
 
+**Where you may extend, and where you may not.** `spec/00-overview.md` §0.6,
+AGSC-00-24, closes the extension points at **eight kinds** — memory adapter, channel
+adapter, forge shim, deployment profile, surface, page tool, composition emitter,
+checker — and states the three obligations that bind all of them: a plugin reaches
+the network only where its row grants it and no row grants it during `build`,
+`lint`, `verify` or `ci`; it writes only the outputs its row names; and it never
+changes the canonical bytes of a 1.0 surface. A capability that is none of the eight
+is a change to the specification, not a plugin. Read §0.6 before you design an
+extension point of your own; this distribution's side of it — the registries, the
+capability check and eight worked samples — is `docs/PLUGINS.md`.
+
 ---
 
 ## 7. Claiming a Level
@@ -273,7 +392,7 @@ standards body or a registry that has not acted on it.
 
 **What the reference distribution claims today: nothing.** AGSC-10-05 says the
 reference implementation "will claim Level 3 at its 1.0.0 release; no claim exists
-before a green run of the Level-3 set". At `1.0.0-rc.5` the vector set runs
+before a green run of the Level-3 set". At `1.0.0-rc.6` the vector set runs
 136 pass / 0 fail / 14 skip (all 14 withdrawn) of 150, and that is a run, not a
 claim.
 

@@ -210,16 +210,37 @@ function state(items, config, options = {}) {
 }
 
 /**
- * `/now.md` — the same state as Markdown, one section per present member.
- * @param {object} nowState from `state()`.
+ * AGSC-06-22 as amended at rc.6 (D113): the one pinned line of `/now/` and
+ * `/now.md` — the four values of AGSC-04-25, AGSC-04-09, AGSC-04-15 and
+ * AGSC-00-17, in that order and with those separators, as one line and its own
+ * paragraph. Everything else on the page is implementation-defined.
+ *
+ * The fingerprint is `bundle.hash`: the lowercase-hex SHA-256 of `graph.nq`
+ * (AGSC-04-15). This module never hashes — the caller passes the value, exactly
+ * as it passes the instant — so `/now.md` is written AFTER the graph views.
+ *
+ * @param {{bundleVersion:string, instant:string, fingerprint:string, specVersion:string}} facts
  * @returns {string}
  */
-function nowMarkdown(nowState) {
+function buildLine(facts) {
+  const f = facts || {};
+  return `content version ${singleLine(f.bundleVersion)}, built at ${singleLine(f.instant)}, `
+    + `fingerprint ${singleLine(f.fingerprint)}, specification ${singleLine(f.specVersion)}`;
+}
+
+/**
+ * `/now.md` — the same state as Markdown, one section per present member.
+ * @param {object} nowState from `state()`.
+ * @param {object} [facts] the AGSC-06-22 pinned line's other three values.
+ * @returns {string}
+ */
+function nowMarkdown(nowState, facts) {
   // AGSC-02-24 (rc.5, FV28-01): `/now.md` is line-oriented and several of the values
   // below are authored — a lane `name`, a `claimed_by` actor, a task slug read from a
   // board a reader did not author (AGSC-11-02). Each is neutralised where it is
   // interpolated; the neutralisation is the identity on every conforming value.
-  const lines = ['# Now', '', `Built at ${singleLine(nowState.last_build)}.`, ''];
+  const lines = ['# Now', '',
+    buildLine({ ...(facts || {}), instant: nowState.last_build }), ''];
   lines.push('## Counts', '');
   for (const plural of Object.keys(nowState.counts).sort(compareCodePoint)) {
     lines.push(`- ${singleLine(plural)}: ${nowState.counts[plural]}`);
@@ -257,6 +278,6 @@ function nowMarkdown(nowState) {
 }
 
 module.exports = {
-  state, spend, counts, staleItems, nowMarkdown, monthOf, isEpisode,
+  state, spend, counts, staleItems, nowMarkdown, buildLine, monthOf, isEpisode,
   perAgent, waitingForAPerson, WAITING_STATES,
 };

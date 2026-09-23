@@ -201,14 +201,41 @@ runtime, and is loadable from CommonJS.
 | `format` keyword | `ajv-formats` | 3.0.1 | MIT |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT |
 | property tests (dev) | `fast-check` | 4.10.1 | MIT |
+| ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT |
 
 What this package still writes by hand, and why: the AGSC-02-02 **allow-list** on top
 of the YAML parser (no library knows which constructs this specification forbids or
 which code each one carries); the `oneOf` **discrimination** on top of Ajv (§9.4's
 precedence rule is unsatisfiable without it); NFC-**before**-canonicalisation
 (AGSC-04-21 — RFC 8785 deliberately leaves normalization to the caller); the slug
-grammar and slugifier (AGSC-01-10, AGSC-02-91); and the emitted-YAML profile
-selection of AGSC-04-19. `tools/validate-vectors` is independent by construction —
+grammar and slugifier (AGSC-01-10, AGSC-02-91); the emitted-YAML profile
+selection of AGSC-04-19; and the **ZIP container** of `composition/archive.js`
+(see below).
+
+**Why the archive is written here and `fflate` only reads it.** The `--zip` output
+of D111 has to satisfy three things at once, and no published library satisfies
+all three. (a) AGSC-07-13 requires the browser and the CLI to produce the same
+bytes, and this package holds that by running ONE implementation in both hosts —
+`composition/browser.js` emits the source text of the functions the CLI runs, and
+`tests/arch/composition-portable.test.js` fails any portable function that calls
+`require`, so a library cannot be inside that mechanism. (b) A ZIP entry's
+timestamp lives in the MS-DOS fields of APPNOTE.TXT §4.4.6, which are LOCAL time
+and carry no zone: `fflate@0.8.3` (`lib/node.cjs:1925`) and `client-zip@2.5.1`
+(`index.js`, function `w`) fill them with `Date#getFullYear`/`getHours`/…, so the
+same input gives different bytes under `TZ=UTC` and `TZ=Pacific/Kiritimati` —
+measured here, not assumed — and AGSC-04-02 forbids that. (`jszip@3.10.2` is the one
+that uses the UTC accessors, and fails elsewhere: four runtime dependencies, the
+dual `MIT OR GPL-3.0-or-later` licence, a 96 KB browser build, and a Unicode-path
+EXTRA FIELD written into every entry whose name is UTF-8, which D111's
+byte-reproducible archive does not want.) (c) The page host is the language alone:
+`TextEncoder` is absent from the context that proves (a), and `fflate`'s browser
+build (`umd/index.js`, 33,044 bytes, minified, no licence banner) reaches for
+`Worker`, `Blob` and `URL.createObjectURL`, which a `script-src 'self'` page
+(AGSC-06-17) should not be shipped. So the container — STORE only, no compression, no optional field — is
+written here in about 120 lines, and `fflate` is pinned as the independent
+THIRD-PARTY READER that unpacks every archive the tests build and compares it,
+entry for entry, with the input. A library that verifies the writer is worth more
+than a library that is the writer and cannot be proved portable. `tools/validate-vectors` is independent by construction —
 Node built-ins only, no import from `src/` — because a validator that imported the
 engine it validates would prove nothing (AGSC-09-90).
 
@@ -710,11 +737,13 @@ Bundle loader `distribution/bundle.js`, which integration moved to
 | `composition/architecture.js` | Composition | AGSC-02-97, AGSC-07-24 — the saved composition: the `yaml agsc-selection` block, `compose --from`, the stale `verdict_digest` warning |
 | `composition/harness.js` | Composition | AGSC-07-17 and the two AGSC-07-23 renderings; the seven files of AGSC-07-12 are NOT here (see its header) |
 | `composition/conform.js` | Composition | AGSC-09-01…09-03, AGSC-04-22, AGSC-04-24, AGSC-10-15 — the claim, the Level's area set, the divergence verdicts, the report |
+| `composition/archive.js` | Composition | D111 / owner rule R100 — the `.zip` PACKAGING of a multi-file result (the Harness of AGSC-07-12, the skill packs of AGSC-07-19, an export root of AGSC-01-26…28). PORTABLE: it is in the bundle of AGSC-07-13, so the `/compose/` page's "download all" link and `--zip` build the same bytes. STORE only, entries in code-point path order, the AGSC-04-09 build instant in UTC, nothing optional written. Never a file OF a Harness (AGSC-07-12 closes that set) and never a build INPUT (AGSC-01-16, `AGSC-E903`) |
 | `boundary/surfaces.js` | Boundary | AGSC-11-16…11-19, AGSC-11-21, AGSC-10-14 — declaration, pinning, the floor in each surface's vocabulary, and the ONE place a foreign protocol version is named |
 | `boundary/visibility.js` | Boundary | AGSC-11-01…11-05, AGSC-11-20, AGSC-11-22 — parameters, reserved values, CORS, ETag/`no-cache`, the profile carriers, retirement |
 | `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones |
 | `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the seven tools and the one envelope |
-| `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 over stdio JSON-RPC, AGSC-11-18's MCP half |
+| `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 over stdio JSON-RPC, AGSC-11-18's MCP half; the wiring of AGSC-09-14b's resources and prompt |
+| `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering (MCP-1, D114) |
 | `distribution/webmcp.js` | Distribution | AGSC-09-16 — the browser registration script, feature-detected, write tools local-only |
 | `distribution/page-tools.js` | Distribution | AGSC-09-16's browser half — the SAME seven tools over the published routes, emitted as source text per AGSC-07-13; see §11.12 |
 | `distribution/bundle.js` | Distribution | the loaded-Bundle record; INTERIM — **moved to `application/bundle.js` at integration**, see §11.3 |
@@ -759,7 +788,10 @@ mergeBoards(boards); peerResults({localHits, peerHits, peer})
 tools(bundle, {config}) -> { call(name, args) -> envelope, manifest() }
 manifest(); tokenize(text); envelope(source, type, body); errorEnvelope(source, code, message)
 // distribution/mcp-stdio.js
-createServer(bundle, options) -> { server, toolset };  serve(ctx) -> Promise<void>
+createServer(bundle, options) -> { resources, server, toolset };  serve(ctx) -> Promise<void>
+// distribution/mcp-resources.js — AGSC-09-14b beside the seven tools (MCP-1)
+catalogue(bundle, {artifacts, config}) -> { list(), read(uri), prompts(), prompt(name, args) }
+memoryUri(bundleId, name); promptText(question); PROMPT_NAME; PROMPT_TITLE; ARTEFACTS
 // distribution/webmcp.js
 script({manifest}) -> the page script;  LOCAL_ONLY_TOOLS
 // distribution/page-tools.js — the page half of AGSC-09-16 (§11.12)
@@ -909,13 +941,13 @@ detail; the two rule defects the analysis found are §11.6's.
 | `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired |
 | `verify` | AGSC-04-02, AGSC-08-23 | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify` | wired |
 | `ci` | AGSC-09-08 | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected | wired |
-| `export` | AGSC-01-26…29, AGSC-01-26a | `verbs/export.js` → `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) — see §11.13.1 *(updated 2026-09-21, ENG-5)* |
+| `export` | AGSC-01-26…29, AGSC-01-26a | `verbs/export.js` → `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) — see §11.13.1 *(updated 2026-09-21, ENG-5)*; `--zip` writes one archive beside each multi-file export root *(D111, ENG-7, 2026-09-22)* |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf}.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`) and for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22; `--dry-run` on both *(updated 2026-09-21, ENG-5)* |
-| `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12 | `verbs/compose.js` → `composition/{compose,architecture,harness}.js` | wired, and it WRITES the seven Harness files of AGSC-07-12 into `--out`; `--emit <target>` alone is refused (AGSC-07-18 ships no target template and no registry row) |
+| `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12 | `verbs/compose.js` → `composition/{compose,architecture,harness}.js` | wired, and it WRITES the seven Harness files of AGSC-07-12 into `--out`; `--zip` writes them as one archive BESIDE that directory *(D111, ENG-7, 2026-09-22)*; `--emit <target>` alone is refused (AGSC-07-18 ships no target template and no registry row) |
 | `propose` | AGSC-08-04, AGSC-08-05 | `verbs/propose.js` → `knowledge/adopt.js`, `diff@9.0.0` | wired |
 | `review` | AGSC-08-27 | `verbs/review.js` → the lint lane | wired, **lint-only**; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `verbs/refresh.js` → `governance/agents.js#checkProposal` | `--dry-run` wired; the live path needs a model and a channel adapter |
-| `skills` | AGSC-07-19…22, AGSC-07-15 | `verbs/skills.js` → `composition/skills.js`; `distribution/site.js#skillPacks` emits the same bytes at `/skills/**` | wired — the packs into `dist/skills/`, `skills install [<target>]`, `skills import <file>` — see §11.13.2 *(updated 2026-09-21, ENG-5)* |
+| `skills` | AGSC-07-19…22, AGSC-07-15 | `verbs/skills.js` → `composition/skills.js`; `distribution/site.js#skillPacks` emits the same bytes at `/skills/**` | wired — the packs into `dist/skills/`, `skills install [<target>]`, `skills import <file>` — see §11.13.2 *(updated 2026-09-21, ENG-5)*; `--zip` writes the packs and their lockfile as one archive beside `dist/skills/` *(D111, ENG-7, 2026-09-22)* |
 | `mcp` | AGSC-09-13 | `verbs/mcp.js` → `distribution/mcp-stdio.js` → `mcp-tools.js` | wired; **streaming** — see 11.4 |
 | `run` | AGSC-09-94, AGSC-02-22 | `verbs/run.js` → `knowledge/runblocks.js`, the ProcessRunner port | wired — gate, parse, allow-list, `--dry-run`, comparison; it EXECUTES only against a runner that declares network isolation, which the shipped adapter does not — see §11.13.4 *(updated 2026-09-21, ENG-5)* |
 | `trace` | AGSC-09-94, AGSC-02-14 | `verbs/trace.js` → `interchange/trace.js` | wired — a captured agent-run record to an Episode, purely; opt-in *(updated 2026-09-21, ENG-5)* |
@@ -1792,3 +1824,89 @@ FV29-14); and `internet-draft/SUBMISSION-NOTES.md` no longer carries three third
 parties' e-mail addresses (FV29-17) — the names, affiliations and RFC links stay, and
 the addresses are where they have always been, in the Authors' Addresses sections of
 RFC 9727 and RFC 9264.
+
+---
+
+### 11.11 `1.0.0-rc.6` — the engine follows the draft (RC6-B, 2026-09-22)
+
+**Summary.** `RC6-A` applied 31 items to the frozen artefacts: one new rule, 23
+amended in place, one new configuration key, two vectors withdrawn and eight added.
+This section is what the engine changed to follow them. Where a vector and the engine
+disagreed, AGSC-00-03 made the rule normative and the engine the defect; all eight of
+RC6-A's ids are now passing handlers and were removed from
+`tests/conformance/pending.json`.
+
+**One source of truth for the spec version, still.**
+`application/cli/main.js#SPEC_VERSION` is `'1.0.0-rc.6'`. The ENGINE version is a
+different number and lives in `package.json` — `1.0.0-rc.6` at this release
+candidate, because the owner publishes the two equal on launch day (D107), and still
+read from two different places.
+
+| id | what changed, and why | rule |
+|---|---|---|
+| RC6B-01 | **`/assets/<path>` is emitted.** Every file under `content/assets/` a PUBLISHED body references is a route of its own, bytes unchanged, and `bodyHrefResolver` renders the reference as that route. The rule admitting such a reference and the route set that carried none were jointly unsatisfiable; the engine could only warn, and the warning is gone with its cause. An asset no published body names is emitted at no route, exactly as an unreferenced attachment is. | AGSC-06-01, AGSC-03-11 |
+| RC6B-02 | **`/ns/<ontology-version>/context.jsonld`** is served beside `/ns/context.jsonld` at Level ≥ 2, byte-identical to it. | AGSC-06-01, AGSC-05-09 |
+| RC6B-03 | **The AI-assistance line.** `knowledge/provenance-header.js` is the one place the AGSC-06-15 block is built; `distribution/llms.js`, `composition/skills.js`, `interchange/steer.js` and the `llm-context` adapter take it from there, and `composition/harness.js` restates it for its AGSC-07-13 portability contract with a test comparing the two. `/legal/` carries the same constant, quoted rather than restated. | AGSC-06-15, AGSC-06-13a, AGSC-06-18 |
+| RC6B-04 | **`commentSafe` writes `--&gt;`**, the replacement the rule now names, in `knowledge/unicode.js` and in the Harness's portable copy. | AGSC-06-13a |
+| RC6B-05 | **`site.tdm_crawlers[]` drives `robots.txt`**: one `User-agent`/`Disallow: /` group per token, in configuration order, before the default group, and no `Disallow` for any other token. A node publishing a reservation with an empty list is `AGSC-E202` **at build** — the lane that writes the file; `lint` emits nothing and stays silent, which is what vector `cli-0002` requires. | AGSC-06-18 |
+| RC6B-06 | **`asc:mentions` is emitted.** `site.build` derives the pairs from `links.resolve` over the PUBLISHED projection and injects them into the point `nquads.js` has carried since rc.2 and nothing filled. One triple per ordered pair whatever the number of references, none for a self-reference, no computed inverse. **It moves `graph.nq`, `graph.ttl`, `graph.jsonld`, the per-item `.jsonld` and the bundle hash of every node with an inline body link.** | AGSC-05-27, AGSC-03-11, AGSC-05-16 |
+| RC6B-07 | **One derivation of a context term's name.** `knowledge/jsonld.js#termName` was the conforming one; `tools/gen-ns` followed it, and its `--check` lane now resolves a term by its `@id` instead of by the key — which is what would have made the check pass over nothing once the keys changed. `jsonld.js#contextFrom` is the same derivation over explicit rows, which is what `graph-0019` exercises. | AGSC-06-32 |
+| RC6B-08 | **`run` and `expect` are the only executable fences**; the braced spellings are rendering hints again. A fence this engine ran and another did not would be a divergence in the worst possible place. | AGSC-02-22, AGSC-09-94 |
+| RC6B-09 | **A trace record carries the members the rule names.** The older names this engine also accepted are preserved under `x-trace-<key>` rather than placed, so a record written here imports elsewhere. | AGSC-09-94 |
+| RC6B-10 | **A repeated value flag is `AGSC-E002`.** `--target agents --target claude` silently exported `claude` alone. | AGSC-09-09, AGSC-01-28 |
+| RC6B-11 | **The nine checkers fail over an absent input** — exit 1, the envelope, `AGSC-E901`. Five printed a usage block and exited 2. Each states how many input files it read. | AGSC-09-90 |
+| RC6B-12 | **The historical-note carve-out is one definition** in `tools/validate-spec` and `tools/count-artifacts`: the word list gains *for, against, written, re-verified* and a `YYYY-MM-DD` date test. | AGSC-09-91 |
+| RC6B-13 | **The page footer carries a copyright line and a one-sentence disclaimer.** Neither the name nor the year is hard-coded: the name is `site.author` and the year is the year of the build instant, so the footer is byte-reproducible and this engine never stamps one owner's name into somebody else's pages. No author configured, no copyright line. | AGSC-06-18, owner legal pack B-04 |
+| RC6B-14 | **`tools/` ships in the npm package**, with `features/` and `docs/diagrams/`, the inputs two of the nine read; `CONTRIBUTOR-AGREEMENT` ships and is pinned by an architecture test as `LICENSE-CONTENT` is; the alias `agsc-cli` now CALLS the engine instead of only loading it. | AGSC-09-90, AGSC-08-06, D107 |
+
+**Conformance statement, measured on 2026-09-22.** This engine implements
+`1.0.0-rc.6` and claims **no conformance Level**: AGSC-10-05 admits a claim only
+after a green run of the Level's vector set at 1.0.0, and nothing is tagged 1.0.0.
+What is measured is this: `tools/count-artifacts` reports 342 rules (331 active + 11
+reserved), 90 registered error codes all used, 166 vectors (147 required + 1 optional
++ 18 withdrawn) over 19 populated areas, and 52 ontology terms, with no finding; the
+conformance runner passes every live vector and skips the withdrawn ones; and the
+eight ids still in `tests/conformance/pending.json` are a parallel package's
+(ENG-8's), not this one's. Unicode is pinned at 16.0.0 (AGSC-06-23) and the
+deployment profile is Cloudflare Pages (AGSC-06-17), which is what a claim would have
+to state.
+
+## ENG-7 — the archive of a multi-file result (D111, owner rule R100, 2026-09-22)
+
+| id | what changed | rules |
+|---|---|---|
+| ENG7-A | **`composition/archive.js`** is a new PURE, PORTABLE module: the STORE-profile ZIP container of APPNOTE.TXT, its entries in code-point path order, its timestamps the AGSC-04-09 build instant in UTC, nothing optional written. It is emitted into the page bundle of AGSC-07-13 beside the two algebras, so the `/compose/` page's "download all" link and `agsc compose --zip` cannot produce different bytes — proved by evaluating the bundle in a context that holds the language and nothing else and comparing the two archives byte for byte. | AGSC-07-13, AGSC-04-02, AGSC-04-09 |
+| ENG7-B | **`compose --zip`, `skills --zip`, `export --zip`** write one archive BESIDE the directory they package — `dist/harness/<name>-<version>.zip`, `dist/skills-<version>.zip`, `dist/export/<root>-<version>.zip` — and never inside it, because AGSC-07-12 closes the Harness at seven file kinds "and no others". The SHA-256 of each is printed on stderr (AGSC-09-10). An invalid composition emits no Harness and therefore no archive (AGSC-07-17); `skills --zip` beside `install`/`import`, and `export --zip` with nothing but the two single-file graph exports, are `AGSC-E003`. | AGSC-07-12, AGSC-07-17, AGSC-09-10, D111 |
+| ENG7-C | **The archive name carries the content version** of AGSC-04-25, through `knowledge/content-version.js#orFromInstant` and the one derivation `verbs/_helpers.js#buildOptions` makes per invocation; a value outside that rule's grammar becomes `unversioned` rather than a wrong name. | AGSC-04-25, D113 |
+| ENG7-D | **`fflate@0.8.3` is pinned as a devDependency** and is the independent third-party READER of every archive the tests build; the encoding and the checksum are measured against `TextEncoder`/`Buffer` and `node:zlib#crc32`; reproducibility is measured by building the same Harness twice under `TZ=UTC LC_ALL=C` and `TZ=Pacific/Kiritimati LC_ALL=tr_TR.UTF-8`. `npm audit --audit-level=low`: 0 vulnerabilities. | AGSC-04-02, D94 |
+| ENG7-E | **AGSC-09-09's closed verb-flag list does not name `--zip`.** It is registered in `VERB_FLAGS` exactly as `compose --out` was before it, and the proposed wording is recorded for 1.0.0 as item ENG7-01 on the specification items list. No error code was minted: the archive's own refusals take the registered `AGSC-E903` ("archive refused") and `AGSC-E902`. | AGSC-09-09, AGSC-01-16, AGSC-09-15 |
+
+## ENG-8 — the content version, the plugin contract and forward compatibility (D112, D113, 2026-09-22)
+
+| id | what changed | rules |
+|---|---|---|
+| ENG8-A | **One derivation of the content version, in one place.** `knowledge/content-version.js#bundleVersion({gitLog, buildInstant})` is a pure function of the two inputs a build already has: four branches, the twelve-character abbreviation (git's own depends on the clone), the grammar test and the `AGSC-E506` warning for a tag that cannot be a content version. Every writer is HANDED the string — `verbs/_helpers.js#buildOptions` derives it once per invocation — because AGSC-07-13 obliges the `/compose/` page to emit the same bytes as the command line and a page has no git history. It lives in the Knowledge context and not beside the ledger derivation because chapter 04 is Knowledge's and because `composition/` may require `knowledge/` and may not require `governance/`. | AGSC-04-25, AGSC-07-13 |
+| ENG8-B | **The git-log file of AGSC-08-20b is now actually read.** `verbs/_helpers.js#gitLog` produces it in ONE process through the ProcessRunner port — committer time in whole seconds, never a rendered local time — and hands it to `governance/ledger.js#produce`, which is the rule's implementation. With no runner, no git, no repository or nothing parseable it is `undefined` and the content version takes branch 4, which is exactly AGSC-04-09's drop-in case. Until this package nothing in the engine produced that file, so the ledger derivation had no input in any real run. | AGSC-08-20b, AGSC-04-09 |
+| ENG8-C | **Nine stamping points, and two deliberate absences.** `agsc-bundle-version` on the anchor's `describedby` link; the AGSC-06-22 line on `/now/` and `/now.md`; the `bundle_version:` line of the provenance header (one change in `knowledge/provenance-header.js` reaches `/llms.txt`, `/llms-full.txt`, the skim view, every steer target and every Harness digest, through AGSC-01-29); the `/chunks.jsonl` shard manifest; `/skills/index.json`; `harness.jsonld`; the root document of a Markdown or OKF export; the `/changelog/` versions list. **Nowhere** in `export --jsonld`/`--jsonl`, which AGSC-01-27 makes byte-identical to the graph, and asserted absent by a test so a later change cannot add it by accident. | AGSC-06-08, AGSC-06-13a, AGSC-06-22, AGSC-06-31, AGSC-07-12, AGSC-07-19, AGSC-01-26, AGSC-01-27 |
+| ENG8-D | **`/now.md` moved after the graph views**, because the line AGSC-06-22 pins carries the fingerprint of `graph.nq` (AGSC-04-15) and a page cannot state a hash of bytes that do not exist yet. Nothing else about the page changed; the first paragraph is now the pinned line rather than a "Built at …" sentence that said one quarter of the same thing. | AGSC-06-22, AGSC-04-15 |
+| ENG8-E | **A `restricted` node now omits what AGSC-11-20 says it must.** The rule has obliged a gated node to withhold `agsc-counts`, `agsc-bundle-hash`, `agsc-bundle-version` and `agsc-ledger-head` since rc.5 (V9A-22 fixed the rule); the writer emitted them anyway and `check()` did not look. Both now do the rule, and a restricted document carrying one of the four is `AGSC-E210`. | AGSC-11-20, AGSC-09-93 |
+| ENG8-F | **`import` has one limit and one record.** `interchange/okf.js#sourceFacts` reads the source's own bundle-root `index.md`; `#versionRefusal` refuses a MAJOR or MINOR this tool does not implement with `AGSC-E004` **before any file is planned**, so `--dry-run` reports the same thing by construction; the adapter's own `--allow-newer` takes the risk on the operator's word. Every written item carries `prov.source_version` and `prov.source_hash`, each omitted when the source publishes neither. | AGSC-01-22, AGSC-08-01, AGSC-01-26a |
+| ENG8-G | **A value outside a CLOSED operator list is `AGSC-E203` at exit 1**, not `AGSC-E002` at exit 2: the flag is known and only its value is not, and AGSC-09-08 reserves exit 2 for an unknown verb, an unknown flag, a missing argument or invalid configuration. `export --steer --target` changed code; `compose --emit` gained the closed registry AGSC-07-18 states, so the reserved name `executable` is refused by name. | AGSC-00-23, AGSC-07-18, AGSC-01-28, AGSC-09-08 |
+| ENG8-H | **Invalid configuration exits 2 wherever it is raised**, by code and not by call site: `main.js#USAGE_CLASS_CODES` holds `AGSC-E004` alone. And the diagnostic names the key — `routing: must NOT have additional properties — that name is RESERVED to a later version …` — because a JSON Pointer names the CONTAINER of an `additionalProperties` error and the operator was left to guess which of their keys was wrong, which AGSC-00-25 makes matter. | AGSC-09-08, AGSC-01-18, AGSC-00-25 |
+| ENG8-I | **The plugin contract**: `application/plugins.js` holds one registry per kind of AGSC-00-24, each carrying its row as DATA (selector, may read, may emit, may never, owning rules), and the capability check every plugin passes at load. Three guarantees, each with its own test: nothing is auto-loaded from the network (a specifier carrying a protocol is `AGSC-E905` and the resolver is never reached); a mismatch is `AGSC-E004` and the plugin is simply not registered, and nothing throws; the contract is additive within 1.x and the kind list never grows, because it is the specification's. `docs/PLUGINS.md` is its prose and `examples/plugins/` its eight worked samples. | AGSC-00-24, AGSC-04-03, AGSC-08-30 |
+| ENG8-J | **The samples are proof, not decoration.** `tests/arch/plugin-contract.test.js` checks every file in `examples/plugins/` against its row: it registers into its own registry and into no other; it reaches no network and spawns no process, checked in its source text AND at run time through the real module loader (each sample requires nothing at all, which is the strongest form a CommonJS module has); every path it names is Bundle-relative and outside `content/`; and building the fixture with all eight loaded and called gives the same bytes, file for file, as building it with none. | AGSC-00-24, AGSC-04-24 |
+| ENG8-K | **Forward and backward compatibility, end to end.** `tests/application/compatibility.test.js` drives the real CLI over a real Bundle carrying the reserved 1.1 key `weights` beside a vendor key: `lint` warns once with `AGSC-E207` and says nothing about `x-acme-note`, `build` succeeds, and both members come back byte for byte through `lint --fix`, `export --markdown` and `import --from okf`. Backward: an older `spec_version` of the same MAJOR is read normally; a newer MINOR under `import` is refused before anything is written, under `--dry-run` too, and `--allow-newer` opens it. | AGSC-00-21, AGSC-00-22, AGSC-00-15, AGSC-01-22 |
+
+**The eight vectors EXT-1 parked are eight passing handlers**, and
+`tests/conformance/pending.json` is empty again: `build-0014`, `bundle-0006`,
+`cli-0009`, `disc-0013`, `disc-0014`, `disc-0015`, `imp-0002`, `lint-0027`.
+
+**Two readings are stated in the handlers rather than hidden, and both are recorded
+as items for 1.0.0.** `cli-0009`'s control case states `exit: 0` and `findings: []`
+for `compose --emit gabbe`, which is what a distribution that SHIPS that emitter
+answers; this one ships none and answers the honest `AGSC-E001` of AGSC-09-94, so the
+control is asserted as what the case is about — the registry accepted the name and
+raised nothing. `lint-0027`'s fixture item omits the `kind` that
+`schema/item.schema.json` requires of a `concept`, so its `exit: 0` / `status: pass`
+is asserted over the diagnostics the two KEYS produce; the round trips it pins are
+asserted over the whole file with no such reading.

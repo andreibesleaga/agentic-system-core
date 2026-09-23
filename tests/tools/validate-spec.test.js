@@ -32,10 +32,14 @@ describe('validate-spec — usage and the envelope', () => {
     assert.match(result.err, /unexpected argument/u);
   });
 
-  it('a root with no spec/ exits 2', () => {
+  it('a root with no spec/ FAILS with AGSC-E901, exit 1', () => {
+    // CHANGED at rc.6 (FIX29-S4): AGSC-09-90 now says a validator MUST FAIL "with
+    // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
+    // error. An absent input is exit 1, the envelope and the code.
     const result = capture('validate-spec', [tmpdir()]);
-    assert.equal(result.code, 2);
-    assert.match(result.err, /no spec\/ directory/u);
+    assert.equal(result.code, 1);
+    assert.match(result.err, /AGSC-E901 no spec\/ directory/u);
+    assert.match(result.out, /0 input file\(s\) read/u);
   });
 
   it('--json writes the AGSC-09-11 envelope and nothing else', () => {
@@ -239,7 +243,7 @@ describe('validate-spec — the helpers it exports', () => {
 describe('validate-spec — the real distribution', () => {
   it('runs on the shipped spec/ and reports only known, recorded items', () => {
     const { code, json } = envelope('validate-spec', [REPO]);
-    assert.equal(json.spec_version, '1.0.0-rc.5');
+    assert.equal(json.spec_version, '1.0.0-rc.6');
     assert.equal(json.version, JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8')).version);
     assert.equal(code, json.counts.error === 0 ? 0 : 1);
     // Every finding is a registered code and carries a real file:line.

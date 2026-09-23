@@ -98,7 +98,7 @@
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
   "requires_surface": [
     "mcp",

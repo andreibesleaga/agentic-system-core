@@ -151,7 +151,14 @@ function run(argv, io) {
     else if (arg.startsWith('--')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else dir = path.resolve(arg);
   }
-  if (!fs.existsSync(dir)) return usage(`no such directory: ${dir} (AGSC-E901)`);
+  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit 1
+  // and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
+  // reserves for an unknown verb, an unknown flag or a missing argument, and which a
+  // caller reading the envelope cannot see at all. The directory is reported as
+  // absent here; an empty one is reported by the `files.length === 0` branch below,
+  // and both are the same fault to a reader: nothing was looked at.
+  const absentDir = !fs.existsSync(dir);
 
   const specDir = path.join(ROOT, 'spec');
   const specText = fs.readdirSync(specDir).filter((f) => f.endsWith('.md')).sort()
@@ -163,12 +170,14 @@ function run(argv, io) {
   const declaredSpecVersion = (fs.readFileSync(path.join(specDir, '00-overview.md'), 'utf8')
     .match(/1\.0\.0-rc\.\d+/u) || ['unknown'])[0];
 
-  const files = walk(dir).filter((f) => f.endsWith('.json')).sort();
+  const files = absentDir ? [] : walk(dir).filter((f) => f.endsWith('.json')).sort();
   const findings = [];
   // FV29-10: zero vectors read is a failure, not a clean run.
   if (files.length === 0) {
     findings.push(finding('AGSC-E901', path.relative(ROOT, dir).split(path.sep).join('/') || 'tests/vectors',
-      `no vector file under ${dir}: there is nothing to validate (AGSC-09-90)`));
+      absentDir
+        ? `no such directory: ${dir}: there is nothing to validate (AGSC-09-90)`
+        : `no vector file under ${dir}: there is nothing to validate (AGSC-09-90)`));
   }
   if (ruleIds.size === 0) {
     findings.push(finding('AGSC-E901', 'spec/',

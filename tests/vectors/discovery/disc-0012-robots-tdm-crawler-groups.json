@@ -1,0 +1,68 @@
+{
+  "area": "discovery",
+  "description": "The robots dialect of AGSC-06-18 gets its input at rc.6 (PSF-01): one User-agent group with `Disallow: /` per product token of site.tdm_crawlers[], in the order the configuration states them, before the `User-agent: *` group, and no `Disallow` for any token the list does not name — so a fetch made on a person's behalf and a search crawler stay invited. Derivation: the groups are a function of the configured list alone; the whole file's bytes are NOT asserted, because no rule pins them (the same reading as build-0012 under AGSC-06-01 as amended at rc.5). Second case: a node that publishes tdm-reservation 1 with an empty list is AGSC-E202 at build, because the Content Use Terms text AGSC-06-18 pins by hash tells the reader that the robots signals carry the reservation.",
+  "expected": {
+    "cases": [
+      {
+        "file_bytes_asserted": false,
+        "findings": [],
+        "groups": [
+          {
+            "disallow": [
+              "/"
+            ],
+            "user_agent": "GPTBot"
+          },
+          {
+            "disallow": [
+              "/"
+            ],
+            "user_agent": "CCBot"
+          },
+          {
+            "allow": [
+              "/"
+            ],
+            "disallow": [],
+            "user_agent": "*"
+          }
+        ],
+        "name": "named-tokens"
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E202",
+            "severity": "error"
+          }
+        ],
+        "name": "empty-list-with-reservation"
+      }
+    ]
+  },
+  "id": "disc-0012",
+  "input": {
+    "base": "https://a.example/",
+    "cases": [
+      {
+        "name": "named-tokens",
+        "tdm_crawlers": [
+          "GPTBot",
+          "CCBot"
+        ],
+        "tdm_reservation": 1
+      },
+      {
+        "name": "empty-list-with-reservation",
+        "tdm_crawlers": [],
+        "tdm_reservation": 1
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (RC6-A); expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-18"
+}

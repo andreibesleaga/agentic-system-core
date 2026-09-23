@@ -110,7 +110,31 @@ test('the clean-room class holds a record back as `draft`, and the class is the 
   const open = plan({}, { draftClasses: [] });
   assert.deepStrictEqual(open.items.filter((i) => i.frontmatter.status === 'draft').map((i) => i.slug),
     ['beta-one', 'odd-status']);
-  assert.deepStrictEqual([...interchange.DRAFT_CLASSES], ['B+W']);
+  assert.deepStrictEqual([...interchange.DRAFT_CLASSES], ['B', 'B+W']);
+});
+
+test('the clean-room class holds a BOOK-ONLY record back too, whatever the caller says', () => {
+  // D106 replaced "the four book-only cards never enter the node" with "imported,
+  // held as draft": a record whose substance is WHOLLY in the third-party work is
+  // the strongest case the guard exists for, so `B` joins `B+W` in the class rule.
+  // The guard is applied first and is never overridden — not by the caller's
+  // class-to-status table, and not by a per-record correction.
+  const selection = corpus().selection.replace('cites-a-book\tCites A Book\tO\t',
+    'cites-a-book\tCites A Book\tB\t');
+  const held = plan({
+    corrections: { 'cites-a-book': { status: 'stable' } },
+    selection,
+    statusByClass: { B: 'stable', O: 'stable', W: 'stable', X: 'stable' },
+  });
+  const item = held.items.find((i) => i.slug === 'cites-a-book');
+  assert.strictEqual(item.frontmatter.status, 'draft');
+  // …and with no draft class at all the same record publishes, so the holding back
+  // is the class rule's doing and not an accident of the record.
+  const open = plan({
+    selection,
+    statusByClass: { B: 'stable', O: 'stable', W: 'stable', X: 'stable' },
+  }, { draftClasses: [] });
+  assert.strictEqual(open.items.find((i) => i.slug === 'cites-a-book').frontmatter.status, 'stable');
 });
 
 test('AGSC-01-22: a chosen slug the corpus does not hold is AGSC-E901, and the rest imports', () => {
@@ -176,6 +200,35 @@ test('the configuration the import writes carries only what the rules let it', (
   assert.strictEqual(config.spec_version, '1.0.0-rc.4');
   // With no peer declared, no `peers` member is written at all.
   assert.strictEqual(JSON.parse(plan().writes.find((w) => w.path === 'agsc.config.json').text).peers, undefined);
+});
+
+test('the import keeps every configuration member it does not itself compute', () => {
+  // The `old-site` adapter SEEDS the two scaffolding files, which is what turns a
+  // directory into a Bundle — but a Bundle that already exists carries members this
+  // import knows nothing about, and re-seeding used to DELETE them: the patterns
+  // node lost its `contribute[]` channel and its `site.author` on every re-import,
+  // silently and with no finding. What the import computes it writes; everything
+  // else in the file stays exactly as it was.
+  const existing = {
+    build: { feed: true, out: 'dist' },
+    contribute: [{ mode: 'pr', target: 'https://github.com/example/node' }],
+    lint: { max_warnings: 3 },
+    site: { author: 'A Person', base: 'https://stale.example/', title: 'Stale' },
+    'x-vendor-key': { kept: true },
+  };
+  const planned = plan({ config: existing }, { tagline: 'A tagline.' });
+  const config = JSON.parse(planned.writes.find((w) => w.path === 'agsc.config.json').text);
+  assert.deepStrictEqual(config.contribute, existing.contribute);
+  assert.deepStrictEqual(config.lint, { max_warnings: 3 });
+  assert.deepStrictEqual(config['x-vendor-key'], { kept: true });
+  assert.strictEqual(config.site.author, 'A Person');
+  // …and what it DOES compute still wins, including the reserved `build.feed` going.
+  assert.strictEqual(config.site.base, 'https://example.org/');
+  assert.strictEqual(config.site.title, 'Fixture Node');
+  assert.deepStrictEqual(config.build, { out: 'dist' }, 'the operator\'s own out stays; feed goes');
+  assert.strictEqual(config.spec_version, '1.0.0-rc.4');
+  // The input is not mutated: `plan()` is pure.
+  assert.deepStrictEqual(existing.site, { author: 'A Person', base: 'https://stale.example/', title: 'Stale' });
 });
 
 test('the index states the counts it can derive and imposes no reading order', () => {

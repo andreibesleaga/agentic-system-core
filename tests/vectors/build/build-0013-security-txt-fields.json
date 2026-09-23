@@ -1,0 +1,106 @@
+{
+  "area": "build",
+  "description": "AGSC-06-36 (added at rc.6, PSF-02, FIX29-S3) is the first rule to say what /.well-known/security.txt carries. Derivation, clause by clause: the authored fields are published verbatim, in the authored order, one `Name: value` line each with the field name in the RFC 9116 registry's case, blank lines and `#` comments dropped; `Expires` is derived only where the authored file states none, as the build instant plus 364 days (2026-01-01T00:00:00Z + 364 d = 2026-12-31T00:00:00Z, inside RFC 9116 section 2.5.5's year); `Canonical` is derived as the absolute URL of this route; `Policy` is derived as the absolute URL of /legal/ and only where that route is emitted. Nothing is emitted where the authored file is absent (AGSC-E901), where it states no Contact: (AGSC-E202, section 2.5.3 \"This field MUST always be present\"), where an authored Expires is not after the build instant (AGSC-E204), or where the build instant is the AGSC-04-09 default of 0, whose derived Expires would be 1970-12-31T00:00:00Z — a contact that expired decades before it was published. No clock is read: every derived value is a function of the build instant, so the file stays byte-reproducible.",
+  "expected": {
+    "cases": [
+      {
+        "findings": [],
+        "name": "derived",
+        "text": "Contact: mailto:security@a.example\nPreferred-Languages: en\nExpires: 2026-12-31T00:00:00Z\nCanonical: https://a.example/.well-known/security.txt\nPolicy: https://a.example/legal/\n"
+      },
+      {
+        "findings": [],
+        "name": "authored-expires-kept",
+        "text": "Contact: https://a.example/security/\nExpires: 2026-06-01T00:00:00Z\nCanonical: https://a.example/.well-known/security.txt\n"
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E901",
+            "severity": "error"
+          }
+        ],
+        "name": "absent",
+        "text": null
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E202",
+            "severity": "error"
+          }
+        ],
+        "name": "no-contact",
+        "text": null
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "severity": "error"
+          }
+        ],
+        "name": "stale-authored-expires",
+        "text": null
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "severity": "error"
+          }
+        ],
+        "name": "defaulted-build-instant",
+        "text": null
+      }
+    ]
+  },
+  "id": "build-0013",
+  "input": {
+    "base": "https://a.example/",
+    "cases": [
+      {
+        "authored": "# security contact of this node\ncontact: mailto:security@a.example\nPreferred-Languages: en\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": true,
+        "name": "derived"
+      },
+      {
+        "authored": "Contact: https://a.example/security/\nExpires: 2026-06-01T00:00:00Z\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": false,
+        "name": "authored-expires-kept"
+      },
+      {
+        "authored": null,
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": true,
+        "name": "absent"
+      },
+      {
+        "authored": "Encryption: https://a.example/pgp.txt\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": true,
+        "name": "no-contact"
+      },
+      {
+        "authored": "Contact: mailto:security@a.example\nExpires: 2025-01-01T00:00:00Z\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": true,
+        "name": "stale-authored-expires"
+      },
+      {
+        "authored": "Contact: mailto:security@a.example\n",
+        "instant": "1970-01-01T00:00:00Z",
+        "legal": true,
+        "name": "defaulted-build-instant"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (RC6-A); expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-36"
+}

@@ -73,7 +73,7 @@ function load() {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.5', version: '0.0.2' } };
+  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.6', version: '0.0.2' } };
 }
 
 /** Put the payload where validation would have caught it, after validation ran. */
@@ -142,11 +142,14 @@ test('LAYER 2: /llms.txt keeps exactly the block grammar of AGSC-06-13a', () => 
   // The fixture has one cluster; poisoning its title must not create a second H2.
   assert.strictEqual(headings.length, 1, `forged H2: ${JSON.stringify(headings)}`);
   assert.strictEqual(text.split('\n').filter((l) => l.startsWith('# ')).length, 1);
-  // The provenance header of AGSC-06-13a(2) is exactly six lines between its markers.
+  // The provenance header of AGSC-06-13a(2) is exactly eight lines between its
+  // markers — six until rc.6, which added the constant `assistance:` line and then
+  // the derived `bundle_version:` line (D113, AGSC-04-25). Both are values NO
+  // author supplies, which is why the count is still a forgery test.
   const open = text.indexOf('<!-- agsc:provenance\n');
   const close = text.indexOf('\n-->', open);
   assert.ok(open >= 0 && close > open);
-  assert.strictEqual(text.slice(open, close).split('\n').length, 6,
+  assert.strictEqual(text.slice(open, close).split('\n').length, 8,
     'a payload in site.title or license_prose forged a provenance line');
 });
 
@@ -180,9 +183,10 @@ test('LAYER 2: the llms-ctx.txt adapter is immune too (FV28-05)', () => {
   for (const forged of FORGERIES) assert.ok(!text.includes(forged), JSON.stringify(forged));
   assert.strictEqual(text.split('\n').filter((l) => l.startsWith('## ')).length, 1);
   assert.strictEqual(text.split('\n').filter((l) => l.startsWith('# ')).length, 1);
-  // The provenance block keeps its six lines: no authored value adds one.
+  // The provenance block keeps its eight lines: no authored value adds one
+  // (seven until rc.6 added the derived `bundle_version:` line, D113).
   const open = text.indexOf('<!-- agsc:provenance\n');
-  assert.strictEqual(text.slice(open, text.indexOf('\n-->', open)).split('\n').length, 6);
+  assert.strictEqual(text.slice(open, text.indexOf('\n-->', open)).split('\n').length, 8);
 });
 
 test('LAYER 2: the Harness digests are immune (AGSC-07-12, AGSC-01-29)', () => {

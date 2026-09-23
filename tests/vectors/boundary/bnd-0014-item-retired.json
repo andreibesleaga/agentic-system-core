@@ -23,8 +23,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55d; D100). The expectation names `https://a.example/concepts/old/` while the `input` states no `site.base`, so the IRI of AGSC-05-01 cannot be derived from the vector alone. Superseded by bnd-0032, which states the base.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (PUB-6 Q55d; D100). The expectation names `https://a.example/concepts/old/` while the `input` states no `site.base`, so the IRI of AGSC-05-01 cannot be derived from the vector alone. Superseded by bnd-0032, which states the base.",
   "rule": "AGSC-11-22"
 }

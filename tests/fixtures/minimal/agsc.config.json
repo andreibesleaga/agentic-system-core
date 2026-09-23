@@ -10,6 +10,14 @@
   },
   "site": {
     "base": "https://minimal.example/",
+    "tdm_crawlers": [
+      "Applebot-Extended",
+      "CCBot",
+      "ClaudeBot",
+      "GPTBot",
+      "Google-Extended",
+      "meta-externalagent"
+    ],
     "tagline": "The smallest Bundle that conforms.",
     "title": "Minimal Bundle"
   },

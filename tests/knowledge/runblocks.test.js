@@ -24,14 +24,21 @@ test('CommonMark 0.31.2 §4.5: fences are found with their info string and their
     [['', 3]]);
 });
 
-test('AGSC-02-22: both spellings of the info string are read (the rules disagree)', () => {
-  assert.deepStrictEqual([...runblocks.RUN_INFO], ['run', '{run}']);
-  assert.deepStrictEqual([...runblocks.EXPECT_INFO], ['expect', '{expect}']);
+test('AGSC-02-22: ONE spelling of the info string, and the braced form runs nothing', () => {
+  // CHANGED at rc.6 (ENG5-S7): AGSC-09-94 used to write `{run}`/`{expect}` while
+  // AGSC-02-22, the rule that owns the item, writes `run`/`expect`. The reader
+  // accepted both rather than guess. The rules now agree, and a fence this engine
+  // ran while another did not would be a divergence in the worst possible place.
+  assert.deepStrictEqual([...runblocks.RUN_INFO], ['run']);
+  assert.deepStrictEqual([...runblocks.EXPECT_INFO], ['expect']);
   const braces = runblocks.steps(procedure('```{run}\necho a\n```\n\n```{expect}\na\n```\n'),
     { allow: ['echo'] });
-  assert.strictEqual(braces.steps.length, 1);
-  assert.strictEqual(braces.steps[0].info, '{run}');
-  assert.strictEqual(braces.steps[0].expected, 'a\n');
+  assert.deepStrictEqual(braces.steps, []);
+  const plain = runblocks.steps(procedure('```run\necho a\n```\n\n```expect\na\n```\n'),
+    { allow: ['echo'] });
+  assert.strictEqual(plain.steps.length, 1);
+  assert.strictEqual(plain.steps[0].info, 'run');
+  assert.strictEqual(plain.steps[0].expected, 'a\n');
 });
 
 test('AGSC-02-22: the info strings are permitted on a procedure only', () => {

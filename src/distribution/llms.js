@@ -12,6 +12,7 @@
 // Pure function of its input; `site.js` writes the bytes. Vectors disc-0006, disc-0007.
 
 const { commentSafe, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
+const { provenanceHeader } = require('../knowledge/provenance-header.js');
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = require('../knowledge/chunks.js');
 
 /** AGSC-01-18: the default of `bundle.license_prose`. */
@@ -41,20 +42,13 @@ function primaryCluster(item) {
  * every export carries (AGSC-06-18) — two members with two meanings even when
  * their strings coincide.
  */
-function provenance({ base, license, terms, specVersion, generatedAt }) {
-  // AGSC-02-24 (rc.5, FV28-01): the header is SEVEN lines and a value may not add
+function provenance({ base, license, terms, specVersion, bundleVersion, generatedAt }) {
+  // AGSC-02-24 (rc.5, FV28-01): the header is a fixed number of lines — SEVEN
+  // until rc.6, EIGHT since AGSC-06-15 added `assistance:` — and a value may not add
   // one. `license` is authored (`bundle.license_prose`) and `base` reaches here from
   // configuration, so both are neutralised — defence in depth behind the schema
   // `pattern`, for the Bundle that never passed validation.
-  return [
-    '<!-- agsc:provenance',
-    `bundle: ${commentSafe(singleLine(base))}`,
-    `license: ${commentSafe(singleLine(license))}`,
-    `terms: ${commentSafe(singleLine(terms))}`,
-    `spec_version: ${commentSafe(singleLine(specVersion))}`,
-    `generated_at: ${commentSafe(singleLine(generatedAt))}`,
-    '-->',
-  ].join('\n');
+  return provenanceHeader({ bundle: base, bundleVersion, generatedAt, license, specVersion, terms });
 }
 
 /**
@@ -112,6 +106,7 @@ function settle(bundle, options) {
     license: bundle.license_prose == null ? DEFAULT_LICENSE : bundle.license_prose,
     terms: options.terms == null ? TERMS : options.terms,
     specVersion: options.specVersion,
+    bundleVersion: options.bundleVersion,
     generatedAt: options.generatedAt,
     clusters: bundle.clusters || [],
     items: bundle.items || [],
@@ -122,7 +117,7 @@ function settle(bundle, options) {
  * `/llms.txt` (AGSC-06-13a blocks 1–4), UTF-8, LF, one trailing LF.
  *
  * @param {object} bundle `{base, title, description, license_prose, clusters[], items[]}`.
- * @param {{generatedAt:string, specVersion:string, terms?:string}} options
+ * @param {{generatedAt:string, specVersion:string, bundleVersion?:string, terms?:string}} options
  * @returns {string}
  */
 function llmsTxt(bundle, options = {}) {
@@ -148,7 +143,7 @@ function llmsTxt(bundle, options = {}) {
  * (AGSC-06-15, N9).
  *
  * @param {object} bundle
- * @param {{generatedAt:string, specVersion:string, terms?:string}} options
+ * @param {{generatedAt:string, specVersion:string, bundleVersion?:string, terms?:string}} options
  * @returns {string}
  */
 function llmsFullTxt(bundle, options = {}) {

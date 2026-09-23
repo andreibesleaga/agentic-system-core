@@ -45,6 +45,17 @@
         "analytics_token": {
           "description": "Edge analytics token only. No beacon, cookie or third-party script may be emitted (AGSC-06-05).",
           "type": "string"
+        },
+        "tdm_crawlers": {
+          "description": "RFC 9309 product tokens of the crawlers whose operators state that they collect content in order to train a machine-learning model. The writer emits one User-agent/Disallow: / group per token (AGSC-06-18, rc.6); a node publishing a TDM reservation with an empty list is AGSC-E202 at build. The list is the publisher's and is never a constant of this specification.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z_-]+$"
+          },
+          "uniqueItems": true
         }
       }
     },

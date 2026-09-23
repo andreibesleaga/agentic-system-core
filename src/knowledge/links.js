@@ -449,23 +449,12 @@ function resolve(items, options = {}) {
         resolved.push(raw);
         // AGSC-03-11: an inline link between items is the untyped `asc:mentions`.
         if (targetItem !== undefined) add(v.slug, 'mentions', targetItem.slug, true);
-        // The asset branch resolves INSIDE the Bundle and is published at NO route:
-        // AGSC-06-01 closes the route set and carries `/attachments/<slug>/<file>`
-        // and nothing under `/assets/`, so a reader who follows this reference on
-        // the built site gets a 404 while `lint` is green. AGSC-03-11 and AGSC-02-95
-        // (which CREATES such files during adoption) are therefore jointly
-        // unsatisfiable for any Bundle with an asset. The route is a specification
-        // item — 56 / FIX28-01 on the private list, recommending `/assets/<path>` —
-        // and until it is decided this is the most the engine can do without a rule
-        // change: the same registered code as the unresolvable case, as a WARNING,
-        // naming the reason (ENG-5, rc.5).
-        if (targetItem === undefined && assets.has(targetPath)) {
-          findings.push(finding('AGSC-E310',
-            `body reference "${raw}" resolves to the asset ${targetPath}, which AGSC-06-01`
-            + ' publishes at no route — the link works in the repository and 404s on the built'
-            + ' site (AGSC-03-11, AGSC-02-95)',
-            { file: v.path, slug: v.slug, line: ref.line, severity: 'warn' }));
-        }
+        // The asset branch resolves INSIDE the Bundle and, since rc.6, is PUBLISHED:
+        // AGSC-06-01 as amended (FIX28-01) carries `/assets/<path>` for every file
+        // under `content/assets/` a published body references, so the reference that
+        // works in the repository works on the built site too. Until rc.6 the route
+        // set carried none, and this branch reported the resolved asset as a warning
+        // under AGSC-E310 because the link 404d while `lint` stayed green.
         continue;
       }
       unresolved.push(raw);

@@ -24,6 +24,7 @@ const vm = require('node:vm');
 const compose = require('../../src/composition/compose.js');
 const harness = require('../../src/composition/harness.js');
 const browser = require('../../src/composition/browser.js');
+const archive = require('../../src/composition/archive.js');
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -53,7 +54,8 @@ function moduleScopeNames(file) {
 }
 
 test('every portable name is a function whose own source text is emitted', () => {
-  for (const [label, module] of [['compose.js', compose], ['harness.js', harness]]) {
+  for (const [label, module] of [['compose.js', compose], ['harness.js', harness],
+    ['archive.js', archive]]) {
     assert.ok(Array.isArray(module.PORTABLE), `${label} declares no PORTABLE list`);
     for (const name of module.PORTABLE) {
       assert.strictEqual(typeof module[name], 'function', `${label}#${name} is not an exported function`);
@@ -70,7 +72,7 @@ test('no portable function closes over a module-scope binding', () => {
   // module-scope `const` is emitted with a free variable that is `undefined` in the
   // page — a Harness with `undefined` in it, silently, not a crash.
   for (const [file, module] of [['compose.js', compose], ['harness.js', harness],
-    ['browser.js', browser]]) {
+    ['archive.js', archive], ['browser.js', browser]]) {
     // A module-scope binding is harmless when it is itself one of the names the
     // bundle emits — `harness.js` destructures `compareCodePoint` from
     // `compose.js`, and the bundle carries that function's own declaration.
@@ -105,7 +107,7 @@ test('no portable function reads a MEMBER of a required module (the hole that le
   // module is called.
   let scanned = 0;
   for (const [file, module] of [['compose.js', compose], ['harness.js', harness],
-    ['browser.js', browser]]) {
+    ['archive.js', archive], ['browser.js', browser]]) {
     const text = fs.readFileSync(path.join(SRC, file), 'utf8');
     // Only a require bound to a plain identifier can be read as an OBJECT; a
     // destructured require binds the functions themselves, which the bundle emits.

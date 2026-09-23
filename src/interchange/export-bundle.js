@@ -81,8 +81,8 @@ const INDEX_FILE = 'content/index.md';
 const LOG_FILE = 'content/log.md';
 
 /** `schema/bundle.schema.json`'s declared key order, for the re-emitted index. */
-const INDEX_KEY_ORDER = Object.freeze(['spec_version', 'okf_version', 'title',
-  'description', 'base', 'lang', 'license', 'prov']);
+const INDEX_KEY_ORDER = Object.freeze(['spec_version', 'bundle_version', 'okf_version',
+  'title', 'description', 'base', 'lang', 'license', 'prov']);
 
 /**
  * AGSC-06-30 over a LOADED item (`{frontmatter}`), not a flattened one.
@@ -116,7 +116,7 @@ function published(item, releases) {
  * result "a plain folder of Markdown" a reader can open (AGSC-01-04, AGSC-01-26).
  *
  * @param {string} source the authored bytes of `content/index.md`, `''` when absent.
- * @param {object} options `{okf, licenseProse}`.
+ * @param {object} options `{okf, licenseProse, bundleVersion, generatedAt}`.
  * @returns {{text:string, findings:Array<object>}}
  */
 function indexFile(source, options) {
@@ -150,6 +150,27 @@ function indexFile(source, options) {
   }
   if (options.okf === true && parsed.okf_version === undefined) {
     append('okf_version', '0.2', 'AGSC-01-26 requires --okf to write it');
+  }
+  // AGSC-01-26 as amended at rc.6 (D113): `bundle_version` is the ONE derived key of
+  // an otherwise byte-preserving export, so it is WRITTEN, not preserved. Adding it
+  // is not a normalisation and is not reported; overwriting a different value that
+  // was in the authored document is, because a byte the export was asked to
+  // preserve did move. A caller that hands in no content version writes none: the
+  // value is DERIVED BY THE BUILD (AGSC-04-25) and this module formats it.
+  const derived = options.bundleVersion == null ? '' : String(options.bundleVersion);
+  if (derived === '') {
+    // nothing to state
+  } else if (parsed.bundle_version === undefined) {
+    block = block === '' ? `bundle_version: "${derived}"` : `${block}\nbundle_version: "${derived}"`;
+  } else if (String(parsed.bundle_version) !== derived) {
+    block = block.split('\n')
+      .filter((line) => !/^bundle_version\s*:/u.test(line))
+      .concat(`bundle_version: "${derived}"`)
+      .join('\n');
+    findings.push(finding('AGSC-E506',
+      `${INDEX_FILE}: bundle_version was replaced with the derived content version`
+      + ` "${derived}" — AGSC-01-26 makes it the one derived key of this export`,
+      { file: INDEX_FILE, severity: 'warn' }));
   }
 
   return { findings, text: fix.normaliseText(`---\n${block}\n---\n${body}`) };
@@ -185,6 +206,8 @@ function logFile(items) {
  * @param {Map<string,string>|object} options.sources path → the item's authored bytes.
  * @param {string} options.licenseProse `bundle.license_prose` (AGSC-01-18).
  * @param {string} [options.indexSource] the authored bytes of `content/index.md`.
+ * @param {string} [options.bundleVersion] the AGSC-04-25 content version (AGSC-01-26).
+ * @param {string} [options.generatedAt] the build instant, for the branch-4 fallback.
  * @param {string|null} [options.licenseContent] the bytes of the Bundle's own
  *   `LICENSE-CONTENT`; `null` when the Bundle root carries none.
  * @returns {{files:Array<{path:string, text:string}>, findings:Array<object>,
@@ -217,6 +240,8 @@ function plan(bundle, options) {
   }
 
   const index = indexFile(opts.indexSource === undefined ? '' : opts.indexSource, {
+    bundleVersion: opts.bundleVersion,
+    generatedAt: opts.generatedAt,
     licenseProse: opts.licenseProse === undefined
       ? chunks.TERMS : String(opts.licenseProse),
     okf: opts.okf === true,

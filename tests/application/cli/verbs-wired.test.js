@@ -325,14 +325,40 @@ test('init resolves the operator from git when a runner is wired, and copes with
 
 // ---------------------------------------------------------------- conform
 
+
+/**
+ * The ids `tests/conformance/pending.json` parks — vectors whose RULES a parallel
+ * package is still writing, so no engine has a handler for them yet. The `conform`
+ * VERB has no pending list on purpose: it reports what this engine can and cannot
+ * answer, which is the honest thing for a conformance claim to do. A TEST asserting
+ * that a run is clean must therefore subtract exactly the ids the project itself
+ * records as awaiting an engine, or it asserts something the project knows is false.
+ */
+function pendingIds() {
+  const at = path.join(ROOT, 'tests', 'conformance', 'pending.json');
+  if (!fs.existsSync(at)) return new Set();
+  return new Set(JSON.parse(fs.readFileSync(at, 'utf8')).pending || []);
+}
+
+/** A finding of a `conform` run that is not about a parked vector. */
+function unparked(findings) {
+  const parked = pendingIds();
+  return findings.filter((f) => ![...parked].some((id) => String(f.message).includes(`vector ${id} `)));
+}
+
 test('AGSC-09-03: conform writes the report and its class is the Level name', () => {
   const dir = workspace();
-  const { exit } = run(['conform', '--level', '0', '--json'], dir);
-  assert.strictEqual(exit, 0);
+  const { envelope, exit } = run(['conform', '--level', '0', '--json'], dir);
+  assert.deepStrictEqual(unparked(envelope.findings), [],
+    'conform reported a vector that is not parked in tests/conformance/pending.json');
+  assert.strictEqual(exit, pendingIds().size === 0 ? 0 : 1);
   const report = JSON.parse(fs.readFileSync(path.join(dir, 'dist', 'conformance-report.json'), 'utf8'));
   assert.deepStrictEqual(Object.keys(report), ['class', 'impl', 'results', 'spec_version', 'summary', 'version']);
   assert.strictEqual(report.class, 'publisher');
-  assert.ok(report.summary.pass > 0 && report.summary.fail === 0);
+  assert.ok(report.summary.pass > 0);
+  assert.strictEqual(report.summary.fail, report.results
+    .filter((r) => r.status === 'fail' && pendingIds().has(r.id)).length,
+  'a vector failed that is not parked in tests/conformance/pending.json');
 });
 
 test('conform --to writes where it is told, and a bad --level is AGSC-E003', () => {
@@ -369,9 +395,9 @@ test('AGSC-09-02: a vector that does not pass is AGSC-E001, and a withdrawn one 
   assert.ok(!findings.some((f) => f.message.includes('bnd-0005')), 'a withdrawn vector was counted');
   assert.deepStrictEqual(conformVerb.findingsFor(), []);
 
-  // And the real run over the fixture at Level 0 reports nothing.
+  // And the real run over the fixture at Level 0 reports nothing of its own.
   const dir = workspace();
-  assert.deepStrictEqual(run(['conform', '--level', '0', '--json'], dir).envelope.findings, []);
+  assert.deepStrictEqual(unparked(run(['conform', '--level', '0', '--json'], dir).envelope.findings), []);
 });
 
 // ---------------------------------------------------------------- helpers
@@ -579,4 +605,18 @@ test('AGSC-02-90: a .md file the port cannot decode is recorded as binary, never
     { binary: true, markdown: null, path: 'broken.md' },
     { markdown: null, path: 'logo.png' },
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// MCP-1 (D114): `mcp` builds the site IN MEMORY so that AGSC-09-14b's resources
+// are the published bytes. A build that throws must never stop the tool server.
+// ---------------------------------------------------------------------------
+
+test('mcp: a build that fails leaves the tool server running with no resources', () => {
+  // eslint-disable-next-line global-require
+  const mcpVerb = require('../../../src/application/cli/verbs/mcp.js');
+  const broken = { ports: { clock: null, fs: null } };
+  const artifacts = mcpVerb.artifactsOf(broken, { config: {}, items: [] });
+  assert.ok(artifacts instanceof Map);
+  assert.strictEqual(artifacts.size, 0);
 });

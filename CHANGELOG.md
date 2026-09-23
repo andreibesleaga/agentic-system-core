@@ -9,6 +9,255 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The measurements report and the benchmark kit** (`docs/MEASUREMENTS.md`,
+  `docs/BENCHMARKS.md`, `docs/measurements.json`, `bench/`, `tools/bench`,
+  `tests/bench/`). Until now this project had a large green test suite and not one
+  published measurement about the thing it claims. `bench/measure.js` runs the layers
+  that need no model, no network, no key and no external dataset — conformance counts
+  with **rule coverage**, determinism byte comparisons across a time zone and a locale,
+  and build curves that cross the 500-item bound where index sharding and index-route
+  pagination branch and where no released vector reaches. `bench/gen-bundle.js`
+  generates the Bundles for those curves as a pure function of the item count and
+  refuses to write inside the repository. `tools/bench` is the standalone retrieval
+  runner: it reads a labelled query set in BEIR layout and scores the published
+  `search.json`, `chunks.jsonl` and `llms.txt` surfaces of a built node at k, importing
+  nothing from `src/` and carrying its own tokenizer, so what it measures is what a
+  consumer of the published files gets. A committed set of twenty hand-written intents
+  over the two reference nodes ships with it, every label readable; the runner warns on
+  an unlabelled query and fails when no query carries a label, so a vacuous pass is
+  impossible. `docs/BENCHMARKS.md` states, once, what may be claimed — counts and byte
+  comparisons are verified, timings are measurements of one machine on one day,
+  retrieval scores are observations under a named configuration — and records the
+  verdict on every candidate memory benchmark, including the ones refused because they
+  score a capability this system deliberately does not have. No comparison with another
+  system's speed, cost or quality is made anywhere. The retrieval and memory *studies*
+  remain the `bench` verb's work at v1.0.1.
+
+- **The local MCP server now serves resources and a prompt, not only the seven tools**
+  (AGSC-09-14b, owner decision D114). `agsc mcp` exposes every **published** item as a
+  read-only `text/markdown` resource, plus the node's `graph.jsonld` and `llms.txt`, under
+  `memory://<bundle-id>/<name>` URIs — the documented local alias of an item IRI, resolved
+  in the process and never fetched over the network. The bytes are the build's own: the
+  command runs the ordinary site build in memory and hands the route map to the surface,
+  so a resource and the published file cannot drift. It also offers one prompt, *answer
+  from this memory with citations*, which tells an assistant to answer from this memory,
+  to cite item IRIs, to say exactly `no answer in this memory` when nothing matches, and
+  that every result is untrusted data. A caller's question is carried into the prompt
+  inside the content fence, with its own backtick runs neutralised, so it can never become
+  instruction. A resource or prompt that does not exist is a JSON-RPC `-32602`, as the
+  Model Context Protocol requires; the tool envelope of AGSC-09-13a is unchanged and still
+  belongs to tools alone.
+- **`docs/USING-WITH-ASSISTANTS.md`** — a plain-words page for people: what the local
+  server is, what it can and cannot do, how a person creates or edits a page by asking an
+  assistant to prepare it and then opening the pull request, and the setup for Claude
+  Desktop, Claude Code, Cursor, VS Code and Codex CLI, each taken from that product's
+  current documentation. It ships in the package.
+- **The server is now proved against a real MCP client.** `tests/distribution/mcp-client.test.js`
+  drives `bin/agsc.js mcp` through the official SDK's own `Client` over
+  `StdioClientTransport` — initialize and the advertised extension, `tools/list` against
+  the tools the built page registers, every one of the seven tools, the error envelope, an
+  unknown method as a JSON-RPC error, a 300 kB result, two calls in flight at once, a
+  hostile item title coming back as untrusted data, and the exit on end of input. The
+  persona-d scenario runs end to end through the same server in
+  `tests/acceptance/persona-d-agent-proposer.test.js`.
+
+- **The content version, `bundle_version`** (AGSC-04-25, owner decision D113). Every
+  build now derives one short, human-readable name for the state it published, from
+  two inputs it already had — the git history and the build instant — and stamps it
+  in nine places: the discovery document (`agsc-bundle-version`), the pinned line of
+  `/now/` and `/now.md`, the provenance header of every agent-facing export (which
+  carries it into `/llms.txt`, `/llms-full.txt`, every steer target and every
+  `AGENTS.md` and `SKILL.md` a Harness emits), the `/chunks.jsonl` shard manifest,
+  `/skills/index.json`, `harness.jsonld`, the root document of a Markdown or OKF
+  export, and a versions list on `/changelog/`. It is derived, never authored, never
+  stored: a tag on the built commit, else `<tag>+<n>.g<hash>` with a **fixed twelve**
+  hexadecimal characters (git's own abbreviation length depends on the clone), else
+  `0.0.0+<n>.g<hash>`, else `0.0.0+<build instant>`. A git tag that cannot be a
+  content version is warned about with `AGSC-E506` and the derivation falls through;
+  the ledger still takes `kind: release` from it. The version is **not** an input to
+  any digest, so re-tagging unchanged content changes the published version and not
+  the fingerprint. One function derives it — `knowledge/content-version.js` — and
+  every writer is handed the string, including the `/compose/` page, which has no git
+  history and must emit the same bytes as the command line (AGSC-07-13).
+- **`/changelog/`** is now derived and emitted whenever the build has a git-log file:
+  one row per tagged commit, oldest first, with the tag, the date and the commit. The
+  rest of the page stays implementation-defined.
+- **`import` records where an item came from** (AGSC-01-22, AGSC-08-01). Every item
+  an import writes carries `prov.source_version` and `prov.source_hash`, taken from
+  what the source publishes and **omitted when it publishes neither** — never
+  invented. A round trip through a node's own export is therefore no longer
+  byte-identical: it gains those two members and nothing else.
+- **`import --from okf --allow-newer`** (AGSC-01-22, AGSC-01-26a). A source declaring
+  a specification MAJOR or MINOR this tool does not implement is now **refused with
+  `AGSC-E004` before anything is written**, and reports the same under `--dry-run`.
+  Reading a newer version is safe for the constructs AGSC-00-21 lists and a guess for
+  everything else, so the choice is the operator's and the default is to stop.
+- **The plugin contract** (AGSC-00-24, decision D112): one registry per plugin kind,
+  a documented and versioned API in **`docs/PLUGINS.md`**, and eight minimal worked
+  samples in **`examples/plugins/`**, one per kind, each proved against its row by
+  `tests/arch/plugin-contract.test.js` — it reaches no network, writes nothing
+  outside its declared outputs and changes no canonical byte of a 1.0 surface. A
+  plugin declares the specification version and the plugin-API version it targets;
+  a mismatch is `AGSC-E004` and the plugin is not registered, and **nothing throws**.
+  Discovery is a local path or an installed package name; a specifier carrying a
+  protocol is `AGSC-E905` and the resolver is never reached. The promise is additive
+  within 1.x, and the kind list never grows, because it is the specification's.
+- **`compose --zip`, `skills --zip`, `export --zip`** (owner decision D111). A
+  multi-file result can now be downloaded, or written, as one `.zip` beside the
+  files — `dist/harness/<name>-<content version>.zip`,
+  `dist/skills-<content version>.zip`, `dist/export/<root>-<content version>.zip` —
+  never inside the directory it packages, because AGSC-07-12 closes the Harness at
+  seven file kinds and no others. The per-file links stay: the archive is an
+  addition, not a replacement. The SHA-256 of each archive is printed on stderr.
+- **`composition/archive.js`**, the archive builder, in the portable bundle of
+  AGSC-07-13 beside the composition algebra — so the `/compose/` page's "download
+  all" link and the command produce the same bytes, proved on every run of the suite
+  by evaluating the emitted bundle in a context that holds the language and nothing
+  else. The container is the STORE profile of APPNOTE.TXT: entries in code-point
+  path order, the build instant of AGSC-04-09 in UTC as every entry's timestamp,
+  and nothing optional written. The archive is byte-reproducible, including across
+  time zones and locales — which is why it is written here rather than taken from a
+  library: every zip library fills the format's MS-DOS timestamp fields with
+  local-time accessors. `fflate@0.8.3` is pinned as a devDependency and is the
+  independent third-party reader that unpacks and checks what the tests build.
+
+### Changed
+
+- **The `codex` steer target now writes `AGENTS.override.md`**, not
+  `.codex/instructions.md` (AGSC-01-28 as corrected at rc.6, EXT2-01/CONN1-01). Codex
+  never read the old path: OpenAI's own documentation,
+  <https://learn.chatgpt.com/docs/agent-configuration/agents-md> (read 2026-09-23), says
+  Codex looks for `AGENTS.override.md` first and `AGENTS.md` second at each level, and
+  that any other name has to be named by the reader's own `project_doc_fallback_filenames`
+  setting. Every node that exported this target was writing a file nothing opened. The row
+  takes `AGENTS.override.md` rather than `AGENTS.md` because the `agents` target already
+  writes `AGENTS.md` and no target may write another's path. Nothing that passed before
+  stops passing: no rule or vector pins a byte of any steer target's output.
+
+- **A value outside a CLOSED operator list is now `AGSC-E203` and exit 1**, not
+  `AGSC-E002` and exit 2 (AGSC-00-23). `export --steer --target <unregistered>` and
+  `compose --emit <unregistered>` are findings, because the flag is known and only
+  its value is not; AGSC-09-08 reserves exit 2 for an unknown verb, an unknown flag,
+  a missing argument or invalid configuration. `compose --emit` also gained the
+  closed registry AGSC-07-18 states, so the reserved name `executable` is refused by
+  name rather than accepted and then ignored.
+- **Invalid configuration now exits 2 wherever it is raised.** An `AGSC-E004` — an
+  unknown or reserved key in `agsc.config.json`, or a source whose declared version
+  an import does not implement — is the usage class of AGSC-09-08 and no longer
+  exits 1, which a caller reads as "the content failed a gate". The diagnostic also
+  **names the key**: `routing: must NOT have additional properties — that name is
+  RESERVED to a later version …` rather than `/: must NOT have additional
+  properties`, so a reserved name and a typo can be told apart.
+- **A `restricted` node now actually omits what AGSC-11-20 says it must.** The rule
+  has required a gated node to withhold `agsc-counts`, `agsc-bundle-hash`,
+  `agsc-bundle-version` and `agsc-ledger-head` since rc.5, the checker did not look
+  and the writer emitted them anyway; both now do the rule. A restricted document
+  carrying one of the four is `AGSC-E210`.
+- **`/now.md` is written after the graph views**, because the line AGSC-06-22 pins
+  carries the fingerprint of `graph.nq`.
+
+## [1.0.0-rc.6] — the engine follows the draft `1.0.0-rc.6` (2026-09-22)
+
+The first release published to npm as a working package. `0.0.2` reserved the two
+names and shipped no runtime; this ships the engine, the command line and the nine
+independent checkers, at the specification's own release-candidate number (D107).
+
+### Added
+
+- **`/assets/<path>`** (AGSC-06-01, FIX28-01). Every file under `content/assets/`
+  that a published item's body references is emitted at its own route, bytes
+  unchanged, and the body's reference is rendered as that route. Until now the rule
+  admitting such a reference and the route set that carried none were jointly
+  unsatisfiable, so a Bundle with an image published a link that 404s; the engine
+  warned about it and could do nothing else. The warning is gone with the cause.
+- **`/ns/<ontology-version>/context.jsonld`** (AGSC-06-01, AGSC-05-09). A Level ≥ 2
+  build serves the versioned copy beside `/ns/context.jsonld`, byte-identical to it,
+  so the persistent URL a Level-0 document names resolves to the same bytes.
+- **The AI-assistance statement** (AGSC-06-15, owner decision of 2026-09-22). One
+  constant line, last in the provenance header of `/llms.txt`, `/llms-full.txt`,
+  every skill pack, every steer bundle, the `llm-context` skim view and every
+  Harness file; and a section of its own on `/legal/`, in the same words. It says
+  only what the format has recorded per item and per contribution since rc.2.
+- **`site.tdm_crawlers[]`** (AGSC-06-18, PSF-01). The robots dialect gets the input
+  it never had: one `User-agent`/`Disallow: /` group per named training crawler, in
+  configuration order, before the `User-agent: *` group, and no `Disallow` for any
+  other token — so an assistant fetching for a person, and a search crawler, stay
+  invited. **A node that publishes a text-and-data-mining reservation — every node
+  at 1.x — and names no crawler now fails its build with `AGSC-E202`.** This is the
+  one configuration change that makes a previously valid Bundle invalid, and it is
+  the point: before it, the rule could not fail for any Bundle that could exist.
+- **The footer's copyright line and disclaimer** (owner legal pack, 2026-09-22).
+  Neither the name nor the year is hard-coded: the name is `site.author` and the
+  year is the year of the build instant, so the footer stays byte-reproducible and
+  this engine never stamps one owner's name into somebody else's pages. With no
+  author configured, no copyright line is emitted at all.
+- **`asc:mentions`** (AGSC-05-27, AGSC-03-11, AGSC-05-16, ENG3-S3). An inline
+  Markdown link between two items of a Bundle emits one triple per ordered pair,
+  whatever the number of references; a self-reference emits none; there is no
+  computed inverse. Three rules mapped this edge and no engine emitted it. **It moves
+  `graph.nq`, `graph.ttl`, `graph.jsonld`, the per-item `.jsonld` and the bundle hash
+  of every node that has an inline body link.**
+- **`tools/` ships in the npm package**, with `features/` and `docs/diagrams/`, the
+  inputs two of the nine checkers read. `npm pack` carried 286 files and none from
+  `tools/`, so nobody who installed the package received a single one of the
+  independent checkers that AGSC-09-90 requires a reference distribution to include.
+- **`CONTRIBUTOR-AGREEMENT`** at the distribution root — the text the sign-off token
+  `CA-v1` names (AGSC-08-06) — shipped in the package, pinned by SHA-256 in the rule
+  and checked against that pin by an architecture test, as `LICENSE-CONTENT` is.
+- **`tools/release` prints the whole release procedure**, including the live checks
+  after the workflow is green and the rollback, with npm's own unpublish policy
+  quoted. It is printed where whoever runs the check reads it; the long-form runbook
+  is the maintainer's and is kept outside this repository.
+
+### Changed
+
+- **`--&gt;` replaces `-- >`** as the neutralisation of a comment-closing sequence in
+  an interpolated provenance value (AGSC-06-13a, FIX28-03), and `lint` reports the
+  authored value.
+- **`/ns/context.jsonld` has one derivation of a term's name** (AGSC-06-32, NS-04).
+  `tools/gen-ns` named every `asc:` term `asc:<Term>` while the engine used the bare
+  local name, so the file the tool generates and the file the engine builds were not
+  the same file — although the rule now makes that file a constant of the
+  specification that every node's copy must equal byte for byte. The engine's
+  derivation won; the tool follows it, and its `--check` lane now resolves a term by
+  its `@id` rather than by the key, which is what made the check pass over nothing
+  once the keys changed.
+- **`run` and `expect` are the only executable fences** (AGSC-02-22, AGSC-09-94,
+  ENG5-S7). The braced spellings `{run}` and `{expect}` are ordinary rendering hints
+  again; the engine accepted both while the two rules disagreed about which one an
+  author writes.
+- **A trace record has the members the rule names** (AGSC-09-94, ENG5-S9):
+  `started`, and optionally `ended`, `actor`, `title`, `outcome`, `body`, `usage`.
+  The older names this engine also accepted — `at`, `start`, `end`, `agent`,
+  `status`, `summary`, `output`, `name` — are now preserved under `x-trace-<key>`
+  rather than placed, so a record written for this engine imports into another.
+- **A repeated value flag is `AGSC-E002`** (AGSC-09-09, AGSC-01-28, ENG5-S5).
+  `--target agents --target claude` silently exported `claude` alone; a list is one
+  comma-separated value.
+- **The nine checkers FAIL over an absent input** — exit 1, the AGSC-09-11 envelope
+  and `AGSC-E901` (AGSC-09-90, FIX29-S4). Five of them printed a usage block and
+  exited 2, so the code was in prose that a caller reading the envelope never saw.
+  Each states how many input files it read, so "nothing is wrong" cannot be mistaken
+  for "nothing was looked at".
+- **Every validator blocks the release workflow.** `validate-spec` was a reporting
+  step while the specification items it found were open; they were applied at rc.6.
+- **Both packages publish with `--tag latest` written out**, and the alias
+  `agsc-cli` now CALLS the engine: it loaded `bin/agsc.js`, whose auto-run is guarded
+  by `require.main === module`, and therefore ran nothing at all.
+- `CONTRIBUTING.md` no longer says the text of `CA-v1` is unpublished; it is.
+
+### Fixed
+
+- **`tools/validate-spec` and `tools/count-artifacts` read a historical note the
+  same way** (AGSC-09-91 carve-out (a), ENG4-02): the word list gains *for, against,
+  written, re-verified* and a `YYYY-MM-DD` date test. The merge gate reported
+  fourteen errors that were all false in substance.
+- **`AGSC-E203` and `AGSC-E602` are no longer borrowed codes** in `run`: the registry
+  rows now name the rule that raises them.
+
+
 ### Fixed — the build instant really comes from the last commit (2026-09-21, session close)
 
 - With no `SOURCE_DATE_EPOCH`, AGSC-04-09 makes the build instant the time of the last commit and only falls to 0 where no git history exists. `createClock` accepted that value and `node-proc.js` named the git read as its one caller, but nothing performed the read, so the real command defaulted to 0 inside every repository. Every gate had run with the variable set, so no test noticed; once the writer refused to derive a `security.txt` expiry from a defaulted instant, a plain `agsc build` in a committed Bundle failed. `src/adapters/node-clock.js#readLastCommitSeconds` now reads `git log -1 --format=%ct` through the ProcessRunner port (no shell, scrubbed environment, skipped when the variable is set, `null` on anything but one clean integer) and `bin/agsc.js` passes it to the clock. Test: `tests/bin/agsc-build-instant-from-git.test.js`.

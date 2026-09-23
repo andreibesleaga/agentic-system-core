@@ -373,7 +373,17 @@ function files(list, canonicalize, options = {}) {
     path: `/chunks-${String(n + 1).padStart(2, '0')}.jsonl`,
     text: serialize(bucket, canonicalize),
   }));
-  const manifest = { lines_total: list.length, shards: out.map((f) => f.path) };
+  // AGSC-06-31 as amended at rc.6 (D113): `bundle_version` is the only member
+  // added to the manifest, and JCS sorts it first. It is the content version the
+  // BUILD derived (AGSC-04-25) and is handed in; a caller that has none — a
+  // library caller sharding a record list outside a build — states none, because
+  // a derived build fact cannot be invented by the module that formats it.
+  const version = options.bundleVersion == null ? '' : String(options.bundleVersion);
+  const manifest = {
+    ...(version === '' ? {} : { bundle_version: version }),
+    lines_total: list.length,
+    shards: out.map((f) => f.path),
+  };
   return {
     files: [{ path: '/chunks.jsonl', text: `${canonicalize(manifest)}\n` }, ...out],
     manifest,

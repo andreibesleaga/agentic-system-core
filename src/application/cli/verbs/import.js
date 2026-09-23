@@ -207,6 +207,27 @@ function readOldSite(fs) {
 }
 
 /**
+ * The Bundle's OWN `agsc.config.json`, as the bytes on disk parse — not the
+ * resolved configuration.
+ *
+ * The resolved one (`ctx.config`) has the AGSC-09-09 precedence applied and may
+ * carry values a user file or the environment supplied; writing those back into
+ * the repository would move settings the operator never put there. The file the
+ * import rewrites is the file it must read.
+ *
+ * @param {object} ctx
+ * @returns {object} `{}` when there is no readable configuration file.
+ */
+function bundleConfig(ctx) {
+  try {
+    const parsed = JSON.parse(String(ctx.ports.fs.readFile('agsc.config.json', 'utf8')));
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+/**
  * The Bundle identity the plan needs, taken from the target Bundle's own
  * `agsc.config.json` (already resolved by `application/config/load.js` with the
  * AGSC-09-09 precedence applied). `import` fills a Bundle; it does not invent
@@ -426,9 +447,26 @@ function importOkf(ctx, source, identityOptions) {
     return { findings, status: 'fail' };
   }
 
+  // AGSC-01-22 as amended at rc.6 (D113): tolerance has one LIMIT and one RECORD.
+  // The limit is checked BEFORE the plan is built, so that a refusal writes nothing
+  // and reports the same thing under `--dry-run` — the plan is data, and refusing
+  // after building it would still be correct but would make the two paths differ.
+  const facts = okf.sourceFacts(files);
+  const refusal = okf.versionRefusal(facts.specVersion, {
+    allowNewer: (ctx.verbFlags || {})['allow-newer'] === true,
+    toolSpecVersion: ctx.specVersion,
+  });
+  if (refusal !== null) {
+    // AGSC-09-08 puts invalid configuration in the usage class: `main.js` maps
+    // the AGSC-E004 the refusal carries onto exit 2, wherever it is raised.
+    return { findings: [...findings, refusal], status: 'fail' };
+  }
+
   const planned = okf.plan(files, {
     itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
     operator: identityOptions.operator,
+    sourceHash: facts.bundleHash,
+    sourceVersion: facts.bundleVersion,
   });
   const all = [...findings, ...planned.findings];
   return finish(ctx, all, planned);
@@ -546,6 +584,7 @@ function run(ctx) {
 
   const planned = interchange.plan({
     cards: read.cards,
+    config: bundleConfig(ctx),
     decks: read.decks,
     diagramSources: read.diagramSources,
     corrections: decisions.records,
@@ -571,6 +610,7 @@ module.exports = {
   SELECTION_REQUIRED,
   SOURCE_TREES,
   apply,
+  bundleConfig,
   collisionFindings,
   finish,
   identity,

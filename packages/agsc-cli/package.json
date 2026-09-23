@@ -1,7 +1,7 @@
 {
     "name": "agsc-cli",
-    "version": "0.0.2",
-    "description": "A specification for publishing machine-discoverable knowledge bundles. This 0.0.x release reserves the package name; no runtime is published yet. The specification, JSON Schemas, ontology and conformance test vectors are the deliverable and are developed in the open.",
+    "version": "1.0.0-rc.6",
+    "description": "`agsc` \u2014 the short command name for the AgenticSystemCore engine. This package is an alias: it installs `agentic-system-core` at the exact same version and forwards every verb to it.",
     "bin": {
         "agsc": "bin/agsc.js"
     },
@@ -10,10 +10,10 @@
         "README.md"
     ],
     "engines": {
-        "node": ">=22"
+        "node": ">=22.12.0"
     },
     "dependencies": {
-        "agentic-system-core": "0.0.2"
+        "agentic-system-core": "1.0.0-rc.6"
     },
     "keywords": [
         "agentic",

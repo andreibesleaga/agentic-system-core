@@ -2,7 +2,10 @@
 // Conformance area `chunks` (owner: WP-10-E) — AGSC-06-26…31.
 // chk-0001 record shape and ids, chk-0002 the size bound, chk-0003 exclusions and
 // attachment chunks, chk-0004 the fence rule, chk-0005 the file bytes, chk-0006 the
-// numeric ordinal order, chk-0007 the shards and the manifest.
+// numeric ordinal order, chk-0008 the shards and the manifest — superseding
+// chk-0007, which pinned the manifest without the `bundle_version` member that
+// AGSC-06-31 as amended at rc.6 (D113) puts first in it; chk-0007 is withdrawn
+// and never runs (AGSC-00-16).
 
 const chunks = require('../../../src/knowledge/chunks.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
@@ -94,7 +97,12 @@ module.exports.run = (vector) => {
     }
   }
   if (expected.manifest !== undefined) {
-    const emitted = chunks.files(list, canonicalize);
+    // AGSC-06-31 as amended at rc.6 (D113): the manifest's first member is the
+    // content version of AGSC-04-25, which the BUILD derives and hands in. The
+    // vector's input carries it, because a module that formats a manifest cannot
+    // invent a build fact — which is exactly what chk-0007 could not state and
+    // chk-0008 does.
+    const emitted = chunks.files(list, canonicalize, { bundleVersion: vector.input.bundle_version });
     const manifest = emitted.files.find((f) => f.path === '/chunks.jsonl');
     result.push(['manifest bytes', manifest.text === expected.manifest, JSON.stringify(manifest.text)]);
     for (const [path, count] of Object.entries(expected.shard_line_counts)) {

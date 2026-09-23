@@ -30,7 +30,7 @@ const PREAMBLE = [
 function ontologyRoot(body, extra = {}) {
   return writeTree(tmpdir(), {
     'ontology/agsc.ttl': `${PREAMBLE}${body}`,
-    'spec/00-overview.md': '`spec_version: "1.0.0-rc.5"`\n',
+    'spec/00-overview.md': '`spec_version: "1.0.0-rc.6"`\n',
     ...extra,
   });
 }
@@ -50,10 +50,14 @@ describe('validate-ontology — usage and the envelope', () => {
     assert.equal(capture('validate-ontology', [ontologyRoot(CONCEPT), ontologyRoot(CONCEPT)]).code, 2);
   });
 
-  it('a root with no ontology exits 2', () => {
+  it('a root with no ontology FAILS with AGSC-E901, exit 1', () => {
+    // CHANGED at rc.6 (FIX29-S4): AGSC-09-90 now says a validator MUST FAIL "with
+    // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
+    // error. An absent input is exit 1, the envelope and the code.
     const result = capture('validate-ontology', [tmpdir()]);
-    assert.equal(result.code, 2);
-    assert.match(result.err, /no ontology at/u);
+    assert.equal(result.code, 1);
+    assert.match(result.err, /AGSC-E901 no ontology at/u);
+    assert.match(result.out, /0 input file\(s\) read/u);
   });
 
   it('the envelope has the AGSC-09-11 shape and the file may be named directly', () => {
@@ -61,7 +65,7 @@ describe('validate-ontology — usage and the envelope', () => {
     const { code, json } = envelope('validate-ontology', [path.join(root, 'ontology', 'agsc.ttl')]);
     assert.equal(code, 0);
     assert.equal(json.verb, 'validate-ontology');
-    assert.equal(json.spec_version, '1.0.0-rc.5');
+    assert.equal(json.spec_version, '1.0.0-rc.6');
     assert.deepEqual(json.findings, []);
   });
 

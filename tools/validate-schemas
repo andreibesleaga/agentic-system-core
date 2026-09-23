@@ -241,7 +241,22 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const schemaDir = path.join(root, 'schema');
-  if (!fs.existsSync(schemaDir)) return usage(`no schema/ directory under ${root} (AGSC-E901)`);
+  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
+  // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
+  // reserves for an unknown verb, an unknown flag or a missing argument, and which
+  // a caller reading the envelope cannot see at all.
+  if (!fs.existsSync(schemaDir)) {
+    const bad = envelopeOf([finding('AGSC-E901', 'schema/',
+      `no schema/ directory under ${root}: there is nothing to validate (AGSC-00-09)`)],
+    specVersion(root), packageVersion(root));
+    if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
+    else if (!flags.has('--quiet')) {
+      for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+      out(`validate-schemas: 0 input file(s) read, 0 schemas, ${bad.counts.error} error, ${bad.counts.warn} warn\n`);
+    }
+    return 1;
+  }
 
   const Ajv2020 = require('ajv/dist/2020');
   const addFormats = require('ajv-formats');

@@ -285,10 +285,37 @@ usage error the rule requires.
 **Read "`lint --self` clean" as: the nine independent validators of `AGSC-09-90`
 (PRD-054) exit 0, `node tools/count-artifacts --json` reports `ok` with no finding, and
 the architecture boundary lane `AGSC_AUDIT=1 node --test tests/arch/*.test.js` is
-green.** One of the nine, `tools/validate-spec`, exits 1 on the frozen `1.0.0-rc.5` text
-for defects recorded as specification items for 1.0.0 (ENG4-01…05), so it is a reporting
-step until those are applied; the other eight block. To lint a *Bundle*, the command is
+green.** One of the nine, `tools/validate-spec`, exited 1 on 2026-09-21 against the `1.0.0-rc.5` text
+for defects recorded as specification items for 1.0.0 (ENG4-01…05), so it was a reporting
+step until those were applied; they are applied in the `1.0.0-rc.6` draft and the tool blocks
+like the other eight once its historical-note word list follows AGSC-09-91 as amended at rc.6. To lint a *Bundle*, the command is
 `agsc lint` from that Bundle's root.
 
 Specification items 57 / FIX28-02 and ENG5-S11 carry the full record; the same note is
 appended to `docs/PLAN.md`.
+
+---
+
+## Appended 2026-09-22 — the compatibility section and the content version (D112, D113)
+
+Two capabilities are added to the `1.0.0-rc.6` draft after the pass recorded above, and neither
+adds a requirement id: both are discharged by requirements this document already carries.
+
+**A compatibility and plugin section** (`spec/00` §0.6, AGSC-00-21…25). It states in one place what
+a tool does with a construct this specification does not define, what survives a round trip through
+`lint --fix`, `export --markdown`, an adapter and an import, what a tool may never originate, the
+closed list of eight plugin kinds with what each may read, may emit and may never do, and three
+names reserved to 1.1 — `weights` (weighted Links), `routing` (model-routing declarations) and
+`executable` (an executable Harness with its optimisation step). It serves PRD-002 (the format a
+reader must accept), PRD-026 (lossless export and import) and PRD-055 (Levels and platform
+adoption), and it mints no error code: every fault it names takes a code the registry already holds.
+
+**A content version** (`spec/04` §4.9, AGSC-04-25), `bundle_version`: one short, human-readable name
+for the state a build published or a consumer saved, derived from the git history and the build
+instant, never authored and never counted by the engine. It serves PRD-008 (version and changelog
+agreement) and PRD-024 (the discovery document's bundle facts), and it is what a citation, an
+imported item and a reader of `/now/` needed and could not get from the bundle hash, which says only
+whether two retrievals carry the same bytes and never what the publisher calls them. `import` now
+records `prov.source_version` and `prov.source_hash` on every item it writes (PRD-042, provenance on
+every item) and refuses a source whose `spec_version` it does not implement unless the adapter's own
+`--allow-newer` flag is passed.

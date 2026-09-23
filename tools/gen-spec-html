@@ -206,13 +206,32 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const specDir = path.join(root, 'spec');
-  if (!fs.existsSync(specDir)) return usage(`no spec/ directory under ${root} (AGSC-E901)`);
+  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
+  // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
+  // reserves for an unknown verb, an unknown flag or a missing argument, and which
+  // a caller reading the envelope cannot see at all.
+  const absent = (message) => {
+    const bad = envelopeOf([finding('AGSC-E901', 'spec/', message)], 'unknown', packageVersion(root));
+    if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
+    else if (!flags.has('--quiet')) {
+      for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+      out(`gen-spec-html: 0 input file(s) read, 0 sections, 0 pages, 0 rule anchors, `
+        + `${bad.counts.error} error, ${bad.counts.warn} warn\n`);
+    }
+    return 1;
+  };
+  if (!fs.existsSync(specDir)) {
+    return absent(`no spec/ directory under ${root}: there is nothing to render (AGSC-09-91)`);
+  }
 
   const texts = new Map();
   for (const name of fs.readdirSync(specDir).filter((f) => /^\d{2}-.*\.md$/u.test(f)).sort()) {
     texts.set(name, fs.readFileSync(path.join(specDir, name), 'utf8'));
   }
-  if (texts.size === 0) return usage(`no spec/<nn>-<name>.md files under ${specDir} (AGSC-E901)`);
+  if (texts.size === 0) {
+    return absent(`no spec/<nn>-<name>.md files under ${specDir}: there is nothing to render (AGSC-09-91)`);
+  }
 
   const rendered = render(root, texts);
   const findings = rendered.findings;

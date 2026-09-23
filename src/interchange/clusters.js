@@ -129,8 +129,12 @@ function build(decks, options = {}) {
 
     // AGSC-05-20: a Collection carries no semantic relation. The body is prose
     // only — one heading and the tagline — so nothing here becomes a Link.
+    // The sentence carries NO COUNT. The number of items that were imported into a
+    // cluster is not the number a reader sees on its page: a draft is emitted on no
+    // surface (AGSC-06-30), so a Bundle that holds most of its catalogue back showed
+    // a count far above the links below it. What the page does is what it says.
     const body = `\n# ${frontmatter.title}\n\n${described.description}\n\n`
-      + `${holders.length} imported ${holders.length === 1 ? 'item names' : 'items name'} this cluster.\n`;
+      + 'Every item that names this cluster is listed here once it is published.\n';
 
     clusters.push({ slug, path, frontmatter: ordered(frontmatter), body });
   }

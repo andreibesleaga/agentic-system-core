@@ -1,0 +1,378 @@
+#!/usr/bin/env node
+'use strict';
+// tools/publish-set — set which items of a Bundle are published, from one list.
+//
+// This is the on/off switch a node needs when its catalogue is complete on disk
+// and only part of it is meant to be visible: a first launch publishes ten cards
+// of a hundred and fifty-three, and the other hundred and forty-three are held
+// back until a person has read each one against its sources.
+//
+//   publish-set [--json] [--quiet] [--check] [--help] [<bundle-root>]
+//
+// It reads `<bundle-root>/publish-set.json` — a list of slugs, and nothing else —
+// and writes `status:` on every item of `content/`:
+//
+//   * an item whose slug is on the list gets `status: stable`;
+//   * every other item gets `status: draft` (AGSC-02-23's vocabulary);
+//   * a CLUSTER is DERIVED, never listed: it is `stable` when at least one
+//     published item names it in `clusters[]`, and `draft` otherwise — a cluster
+//     with no published member would otherwise publish a page that lists nothing,
+//     and a draft is emitted on no surface at all (AGSC-06-30, AGSC-06-13a).
+//
+// It is a CONTENT operation and not a validator: it adds none of the nine command
+// contracts of AGSC-09-90, no rule, no code and no vector. It is independent of
+// the engine by the same construction those nine are — Node built-ins only, no
+// import from `src/` — so a Bundle can be switched without the engine present.
+//
+// IDEMPOTENT: a file already carrying the right value is not rewritten, so a
+// second run reports no change and `git status` stays honest about what happened.
+// DETERMINISTIC: no clock, no network, no randomness; findings sorted by
+// (file, line, col, code) per AGSC-09-10.
+//
+// Exit 0 pass, 1 fail, 2 usage.
+//
+// Findings:
+//   AGSC-E206  the list names a slug this Bundle holds no item for; or, under
+//              --check, an item whose `status` disagrees with the list
+//   AGSC-E506  (warning) a file this run changed, one per file — nothing it does
+//              to a tree is silent
+//   AGSC-E901  the list is empty: a switch that publishes nothing is far more
+//              likely a mistake than an intention, and a tool that passes on
+//              nothing protects nothing (FV29-10)
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const LIST_FILE = 'publish-set.json';
+const CONTENT_DIR = 'content';
+/** `content/index.md` is the Bundle root item, not a catalogue entry. */
+const ROOT_ITEM = 'content/index.md';
+/** AGSC-04-19 schema order: `status` follows these, whichever of them is present. */
+const BEFORE_STATUS = Object.freeze(['type', 'title', 'description']);
+
+const HELP = `publish-set [--json] [--quiet] [--check] [--help] [<bundle-root>]
+
+  Publishes exactly the slugs named in <bundle-root>/publish-set.json and holds
+  every other item of content/ back as a draft. A cluster is derived: published
+  when a published item names it, held back when none does.
+
+  --check   write nothing; report a disagreement between the tree and the list
+            as an error, so a pipeline can gate on it
+  --json    emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet   emit nothing; the exit code is the result
+  --help    this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+// --------------------------------------------------------------------------
+// JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
+// --------------------------------------------------------------------------
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return value === 0 ? '0' : String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
+function compareCodePoint(a, b) {
+  const ia = a[Symbol.iterator]();
+  const ib = b[Symbol.iterator]();
+  for (;;) {
+    const x = ia.next();
+    const y = ib.next();
+    if (x.done && y.done) return 0;
+    if (x.done) return -1;
+    if (y.done) return 1;
+    const cx = x.value.codePointAt(0);
+    const cy = y.value.codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+}
+
+function finding(code, file, line, message, severity = 'error') {
+  return { code, col: 1, file, line, message, severity };
+}
+
+/**
+ * The frontmatter block of an item file, as lines plus the index of the line each
+ * top-level key starts on.
+ *
+ * Deliberately NOT a YAML parser: this tool changes one scalar member and reads
+ * one sequence, and a parser that re-serialised the document would rewrite bytes
+ * no one asked it to touch (AGSC-04-19's emitted profile is exact).
+ *
+ * @param {string} text the whole file.
+ * @returns {{lines:string[], end:number, keys:Map<string,{start:number,end:number}>}|null}
+ *   `null` when the file carries no frontmatter block.
+ */
+function frontmatter(text) {
+  const lines = text.split('\n');
+  if (lines[0] !== '---') return null;
+  let end = -1;
+  for (let i = 1; i < lines.length; i += 1) {
+    if (lines[i] === '---') { end = i; break; }
+  }
+  if (end < 0) return null;
+  const keys = new Map();
+  let current = null;
+  for (let i = 1; i < end; i += 1) {
+    const match = /^([A-Za-z_][A-Za-z0-9_-]*):/u.exec(lines[i]);
+    if (match === null) {
+      if (current !== null) current.end = i;
+      continue;
+    }
+    current = { end: i, start: i };
+    keys.set(match[1], current);
+  }
+  return { end, keys, lines };
+}
+
+/** The values of a block sequence member (`key:` then `  - value` lines). */
+function sequence(parsed, name) {
+  const at = parsed.keys.get(name);
+  if (at === undefined) return [];
+  const out = [];
+  for (let i = at.start; i <= at.end; i += 1) {
+    const match = /^\s+-\s+(.*\S)\s*$/u.exec(parsed.lines[i]);
+    if (match !== null) out.push(match[1]);
+  }
+  return out;
+}
+
+/** One top-level scalar member's value, or `null`. */
+function scalar(parsed, name) {
+  const at = parsed.keys.get(name);
+  if (at === undefined) return null;
+  const match = /^[A-Za-z_][A-Za-z0-9_-]*:\s*(.*\S)?\s*$/u.exec(parsed.lines[at.start]);
+  return match === null || match[1] === undefined ? null : match[1];
+}
+
+/**
+ * The same file with `status: <value>` — the member replaced where it exists, and
+ * inserted in AGSC-04-19's schema position where it does not.
+ *
+ * @param {string} text
+ * @param {string} value
+ * @returns {string}
+ */
+function withStatus(text, value) {
+  const parsed = frontmatter(text);
+  if (parsed === null) return text;
+  const lines = [...parsed.lines];
+  const at = parsed.keys.get('status');
+  if (at !== undefined) {
+    lines[at.start] = `status: ${value}`;
+    return lines.join('\n');
+  }
+  let after = 0;
+  for (const name of BEFORE_STATUS) {
+    const key = parsed.keys.get(name);
+    if (key !== undefined && key.end >= after) after = key.end;
+  }
+  lines.splice(after + 1, 0, `status: ${value}`);
+  return lines.join('\n');
+}
+
+/** Every `content/**\/*.md` of the Bundle but the root item, in code-point order. */
+function itemFiles(root) {
+  const out = [];
+  const walk = (dir) => {
+    let names;
+    try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of names.sort((a, b) => compareCodePoint(a.name, b.name))) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.md')) {
+        const rel = path.relative(root, full).split(path.sep).join('/');
+        if (rel !== ROOT_ITEM) out.push(rel);
+      }
+    }
+  };
+  walk(path.join(root, CONTENT_DIR));
+  return out.sort(compareCodePoint);
+}
+
+/** The slugs the list names: `{slugs:[…]}`, or a bare array. Notes (`_…`) ignored. */
+function readList(text) {
+  const parsed = JSON.parse(text);
+  const raw = Array.isArray(parsed) ? parsed : (parsed || {}).slugs;
+  if (!Array.isArray(raw)) throw new Error('publish-set.json must be {"slugs": [...]} or a JSON array of slugs');
+  return raw.filter((s) => typeof s === 'string' && s !== '' && !s.startsWith('_'));
+}
+
+/**
+ * What every item file's `status` should be, and what it is.
+ *
+ * @param {string} root
+ * @param {Set<string>} published the listed slugs.
+ * @returns {{plan:Array<object>, findings:Array<object>, seen:Set<string>}}
+ */
+function decide(root, published) {
+  const files = itemFiles(root);
+  const findings = [];
+  const records = [];
+  for (const file of files) {
+    const text = fs.readFileSync(path.join(root, file), 'utf8');
+    const parsed = frontmatter(text);
+    const slug = file.slice(file.lastIndexOf('/') + 1, -'.md'.length);
+    records.push({
+      clusters: parsed === null ? [] : sequence(parsed, 'clusters'),
+      current: parsed === null ? null : scalar(parsed, 'status'),
+      file,
+      slug,
+      text,
+      type: parsed === null ? '' : scalar(parsed, 'type'),
+    });
+  }
+  const live = new Set();
+  for (const record of records) {
+    if (record.type === 'cluster') continue;
+    if (!published.has(record.slug)) continue;
+    for (const name of record.clusters) live.add(name);
+  }
+  const plan = records.map((record) => {
+    const wanted = record.type === 'cluster'
+      ? (live.has(record.slug) ? 'stable' : 'draft')
+      : (published.has(record.slug) ? 'stable' : 'draft');
+    // The field is made EXPLICIT on every item, including a file that carries none.
+    // AGSC-02-23 does say an item with no `status` is stable, so leaving it out would
+    // be correct — but then the switch would be invisible in the tree, a reader could
+    // not tell a deliberate publication from an omission, and switching the node off
+    // would have to ADD a line where switching it on removed one. An explicit value
+    // everywhere makes the state of the catalogue greppable and the switch a pure
+    // change of value.
+    return { ...record, changed: record.current !== wanted, wanted };
+  });
+  const slugs = new Set(records.filter((r) => r.type !== 'cluster').map((r) => r.slug));
+  for (const slug of [...published].sort(compareCodePoint)) {
+    if (slugs.has(slug)) continue;
+    findings.push(finding('AGSC-E206', LIST_FILE, 1,
+      `the list names "${slug}" and this Bundle holds no item with that slug; nothing was written`));
+  }
+  return { findings, plan };
+}
+
+function envelopeOf(findings, declared, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: declared,
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'publish-set',
+    version,
+  };
+}
+
+function specVersion(root) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, 'agsc.config.json'), 'utf8')).spec_version
+      || 'unknown';
+  } catch { return 'unknown'; }
+}
+
+function packageVersion() {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version; }
+  catch { return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} io
+ * @returns {number} exit code: 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`publish-set: ${message}\n${HELP}`); return 2; };
+
+  const flags = new Set();
+  let root = process.cwd();
+  let sawRoot = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json' || arg === '--quiet' || arg === '--check') flags.add(arg);
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
+  }
+
+  const listPath = path.join(root, LIST_FILE);
+  if (!fs.existsSync(listPath)) return usage(`no ${LIST_FILE} at ${root} (AGSC-E901)`);
+  let listed;
+  try { listed = readList(fs.readFileSync(listPath, 'utf8')); }
+  catch (e) { return usage(`${LIST_FILE} could not be read: ${(e && e.message) || 'unknown error'} (AGSC-E003)`); }
+  if (!fs.existsSync(path.join(root, CONTENT_DIR))) {
+    return usage(`no ${CONTENT_DIR}/ at ${root}: this is not a Bundle (AGSC-E901)`);
+  }
+
+  const published = new Set(listed);
+  const decided = decide(root, published);
+  const findings = [...decided.findings];
+  // FV29-10: a run over no item file, or a list that publishes nothing, is not a
+  // pass. Both are reported, and neither writes.
+  if (decided.plan.length === 0) {
+    return usage(`no item file under ${CONTENT_DIR}/: there is nothing to switch (AGSC-E901)`);
+  }
+  if (published.size === 0) {
+    findings.push(finding('AGSC-E901', LIST_FILE, 1,
+      'the list names no slug, so this run would publish nothing at all;'
+      + ' remove the file to leave the Bundle alone, or name the slugs to publish'));
+  }
+
+  const pending = decided.plan.filter((p) => p.changed);
+  const check = flags.has('--check');
+  let written = 0;
+  if (check) {
+    for (const item of pending) {
+      findings.push(finding('AGSC-E206', item.file, 1,
+        `status is ${item.current === null ? '(absent, therefore stable)' : item.current}`
+        + ` and ${LIST_FILE} makes it ${item.wanted}`));
+    }
+  } else if (findings.filter((f) => f.severity === 'error').length === 0) {
+    // An error means the list and the Bundle disagree about what exists. Writing a
+    // PART of such a plan would leave the catalogue in a state no file describes,
+    // so nothing is written at all — the same rule `import` follows on a collision.
+    for (const item of pending) {
+      fs.writeFileSync(path.join(root, item.file), withStatus(item.text, item.wanted));
+      written += 1;
+      findings.push(finding('AGSC-E506', item.file, 1,
+        `status ${item.current === null ? '(absent)' : item.current} -> ${item.wanted}`, 'warn'));
+    }
+  }
+
+  const stable = decided.plan.filter((p) => p.type !== 'cluster' && p.wanted === 'stable').length;
+  const drafts = decided.plan.filter((p) => p.type !== 'cluster' && p.wanted === 'draft').length;
+  const clusters = decided.plan.filter((p) => p.type === 'cluster' && p.wanted === 'stable').length;
+  const envelope = envelopeOf(findings, specVersion(root), packageVersion());
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) {
+      err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    }
+    out(`publish-set: ${decided.plan.length} input file(s) read, ${stable} published, ${drafts} held back, `
+      + `${clusters} cluster(s) published, ${check ? `${pending.length} would change` : `${written} changed`}, `
+      + `${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = {
+  BEFORE_STATUS, HELP, LIST_FILE, canonicalize, compareCodePoint, decide, frontmatter,
+  itemFiles, readList, run, scalar, sequence, withStatus,
+};

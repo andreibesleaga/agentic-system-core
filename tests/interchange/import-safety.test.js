@@ -157,15 +157,30 @@ test('AGSC-01-23: re-importing an UNCHANGED tree is still idempotent and still p
   assert.strictEqual(read(target, 'content/concepts/brand-new.md'), bytes);
 });
 
-test('AGSC-10-09: the export → import round trip still holds, because it writes the same bytes', () => {
+test('AGSC-10-09 + AGSC-01-22: the round trip adds the source record and nothing else', () => {
+  // Until rc.6 an export re-imported into its own Bundle wrote byte-identical files
+  // and was therefore not a collision. D113 added the RECORD — `prov.source_version`
+  // and `prov.source_hash`, written by `import` alone — so the re-import now writes
+  // one line the item did not have, and RC6-B's rule that an import never writes
+  // over an existing item applies: it is refused, by name, until the operator says
+  // `--replace`. Both halves are asserted here, because the losslessness AGSC-10-09
+  // asks for is that nothing is LOST, not that nothing is added.
   const source = workspace();
   exportVerb.run(ctxFor(source, { verbFlags: { okf: true } }));
   const target = temp('agsc-safety-rt-');
   nodeFs.cpSync(FIXTURE, target, { recursive: true });
   const argv = [path.join(source, 'dist/export/okf')];
-  const result = importVerb.run(ctxFor(target, { argv, verbFlags: { from: 'okf' } }));
-  assert.notStrictEqual(result.status, 'fail', JSON.stringify(codes(result)));
-  assert.deepStrictEqual(codes(result).filter((c) => c === 'AGSC-E206'), []);
+
+  const refused = importVerb.run(ctxFor(target, { argv, verbFlags: { from: 'okf' } }));
+  assert.strictEqual(refused.status, 'fail');
+  assert.ok(codes(refused).filter((c) => c === 'AGSC-E206').length > 0);
+
+  const before = read(target, 'content/concepts/supervisor.md');
+  const result = importVerb.run(ctxFor(target, { argv, verbFlags: { from: 'okf', replace: true } }));
+  assert.deepStrictEqual(result.findings.filter((f) => f.severity !== 'warn').map((f) => f.code), []);
+  const after = read(target, 'content/concepts/supervisor.md');
+  assert.match(after, / {2}source_version: 0\.0\.0\+\d{8}T\d{6}Z\n/u);
+  assert.strictEqual(after.replace(/^ {2}source_(version|hash): .+\n/gmu, ''), before);
 });
 
 // -------------------------------------------- FV29-07: the old-site adapter

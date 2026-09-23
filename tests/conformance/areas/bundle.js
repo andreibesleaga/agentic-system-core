@@ -89,7 +89,54 @@ function runAgentsConfigVector(vector) {
   return checks(list);
 }
 
+/**
+ * bundle-0006 (rc.6, AGSC-00-25/D112) — the asymmetry AGSC-00-21 names: content
+ * tolerates the unknown, configuration does not.
+ *
+ * `agsc.config.json` is the one CLOSED surface of this format (AGSC-01-18), so a
+ * reserved name is rejected there exactly as a typo is, and `AGSC-09-08` puts
+ * invalid configuration in the exit-2 usage class. The exit code is asserted
+ * through `application/cli/main.js`'s own mapping and not restated here, so the
+ * vector proves the CLI and not this file.
+ *
+ * `path` in the vector is the location in an operator's spelling (`routing`,
+ * `agents[0].routing`); the engine carries it at the head of the finding's
+ * message and, for an unknown key, in the finding's `key` member.
+ */
+function reservedConfigCase(vector, ctx) {
+  // eslint-disable-next-line global-require
+  const main = require('../../../src/application/cli/main.js');
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    const findings = validate.config(input.config, { checkAgents, schemas: ctx.schemas });
+    const errors = findings.filter((f) => f.severity === 'error');
+    const accepted = errors.length === 0;
+    list.push([`${input.name} accepted`, accepted === want.accepted, JSON.stringify(findings)]);
+    const m = findingsMatch((want.findings || []).map((f) => ({ code: f.code, severity: f.severity })), findings);
+    list.push([`${input.name} findings`, m.ok, m.detail]);
+    for (const one of want.findings || []) {
+      if (one.path === undefined) continue;
+      list.push([`${input.name} names ${one.path}`,
+        findings.some((f) => String(f.message).startsWith(`${one.path}: `)),
+        JSON.stringify(findings.map((f) => f.message))]);
+    }
+    // AGSC-09-08's exit class, read from the CLI's own table rather than asserted
+    // twice: `AGSC-E004` is the code that makes an invocation exit 2.
+    const exit = accepted ? 0 : (errors.some((f) => main.USAGE_CLASS_CODES.has(f.code)) ? 2 : 1);
+    list.push([`${input.name} exit`, exit === want.exit, `got ${exit}`]);
+    if (want.preserved !== undefined) {
+      const kept = {};
+      for (const key of Object.keys(want.preserved)) kept[key] = input.config[key];
+      list.push([`${input.name} preserved`, deepEqual(kept, want.preserved), JSON.stringify(kept)]);
+    }
+  }
+  return checks(list);
+}
+
 const B_HANDLERS = {
+  'bundle-0006': reservedConfigCase,
   'bundle-0002': runBundle0002,
   'bundle-0003': runAgentsConfigVector,
   'bundle-0004': runAgentsConfigVector,

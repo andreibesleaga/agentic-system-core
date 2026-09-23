@@ -1,0 +1,55 @@
+{
+  "area": "discovery",
+  "description": "WITHDRAWN. Superseded by disc-0014. An item in two clusters appears once, under its PRIMARY (first-listed) cluster; /llms.txt opens with the H1 and then the provenance comment (a profile of llms.txt v2); /llms-full.txt repeats /llms.txt through the section blocks and then, per item in the same order, one three-part block: the H2 title, the agsc:item comment, and the body fenced as text agsc-content, blocks separated by exactly one blank line. The provenance header of both files carries the AI-assistance statement of AGSC-06-15 as its last line, a constant of the specification and never authored (AGSC-06-13a as amended at rc.6). Expected bytes re-derived by hand: one further `name: value` line before the closing `-->` of each header, and nothing else moves.",
+  "expected": {
+    "withdrawn": true
+  },
+  "id": "disc-0011",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "description": "Two clusters, one item in both.",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "title": "Node"
+    },
+    "clusters": [
+      {
+        "slug": "alpha",
+        "title": "Alpha"
+      },
+      {
+        "slug": "beta",
+        "title": "Beta"
+      }
+    ],
+    "generated_at": "2026-09-17T00:00:00Z",
+    "items": [
+      {
+        "body": "Body of both.\n",
+        "clusters": [
+          "beta",
+          "alpha"
+        ],
+        "description": "In beta first.",
+        "slug": "both",
+        "title": "Both"
+      },
+      {
+        "body": "Body of only.\n",
+        "clusters": [
+          "alpha"
+        ],
+        "slug": "only",
+        "title": "Only"
+      }
+    ],
+    "spec_version": "1.0.0-rc.6"
+  },
+  "level": "withdrawn",
+  "note": "added 2026-09-22 at rc.6 (RC6-A); derived by hand from AGSC-06-13a and AGSC-06-15, superseding disc-0007",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "reason": "AGSC-06-13a gained the `bundle_version:` line of AGSC-04-25 at rc.6 (D113), so the bytes this case pinned can no longer be right. The corrected case ships as disc-0014 (AGSC-00-16: a released vector is never edited in place).",
+  "rule": "AGSC-06-13a"
+}

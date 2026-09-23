@@ -69,8 +69,9 @@ function singleLine(s) {
  * provenance header of AGSC-06-15 that every Harness file carries. A `-->` (or
  * `--!>`) in `bundle.license_prose` would close the comment early and spill the
  * rest of the header into the document as visible text (specification item
- * 58 / FIX28-03). One U+0020 between the hyphens and the `>`; the IDENTITY on every
- * value that does not carry the sequence, so no pinned byte moves.
+ * 58 / FIX28-03). AGSC-06-13a as amended at rc.6 names the replacement: the closing
+ * `>` becomes the character reference `&gt;`. It is the IDENTITY on every value that
+ * does not carry the sequence, so no pinned byte moves.
  *
  * Restated here, like `singleLine` above, because of this module's PORTABILITY
  * CONTRACT; `knowledge/unicode.js#commentSafe` is the same function and
@@ -78,7 +79,40 @@ function singleLine(s) {
  */
 function commentSafe(s) {
   return String(s === null || s === undefined ? '' : s)
-    .replace(/--!?>/gu, (match) => `-- ${match.slice(2)}`);
+    .replace(/--!?>/gu, (match) => `${match.slice(0, -1)}&gt;`);
+}
+
+/**
+ * AGSC-06-15: the AI-assistance statement, a constant of the specification, added at
+ * rc.6. Restated here for the same PORTABILITY CONTRACT as `commentSafe` above;
+ * `knowledge/provenance-header.js#ASSISTANCE` is the same string and
+ * `tests/knowledge/comment-safe.test.js` compares the two.
+ */
+function assistance() {
+  return 'content may be AI-assisted; each item states its origin in '
+    + 'prov.origin and each accepted contribution carries an Assisted-by: trailer';
+}
+
+/**
+ * AGSC-04-25 (rc.6, D113): the content version a Harness file states. The value is
+ * DERIVED BY THE CALLER and handed in as `options.bundleVersion` — AGSC-07-13
+ * obliges the two hosts to emit the same bytes, and a page has no git history, so
+ * the page is given the value exactly as it is given the build instant and the
+ * selection digest. A caller that hands none gets AGSC-04-25's branch 4 from the
+ * instant this file already carries, so the line is never empty and never outside
+ * the grammar.
+ *
+ * Restated here, like `commentSafe` and `assistance` above, because of this
+ * module's PORTABILITY CONTRACT; `knowledge/content-version.js#orFromInstant` is
+ * the same function and `tests/knowledge/comment-safe.test.js` compares the two.
+ */
+function contentVersion(given, instant) {
+  var text = given === null || given === undefined ? '' : String(given);
+  if (/^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u.test(text)) return text;
+  var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/u
+    .exec(String(instant === null || instant === undefined ? '' : instant));
+  if (m === null) return '0.0.0+19700101T000000Z';
+  return '0.0.0+' + m[1] + m[2] + m[3] + 'T' + m[4] + m[5] + m[6] + 'Z';
 }
 
 /** AGSC-06-18: the Content Use Terms identifier, a constant of the specification. */
@@ -252,7 +286,9 @@ function provenanceHeader(options) {
     `license: ${commentSafe(singleLine(options.licenseProse))}`,
     `terms: ${commentSafe(singleLine(terms()))}`,
     `spec_version: ${commentSafe(singleLine(options.specVersion))}`,
+    `bundle_version: ${contentVersion(options.bundleVersion, options.instant)}`,
     `generated_at: ${commentSafe(singleLine(options.instant))}`,
+    `assistance: ${assistance()}`,
     '-->'].join('\n');
 }
 
@@ -302,6 +338,7 @@ function harnessJsonld(result, options) {
     if (Object.keys(member.links).length > 0) links[member.slug] = member.links;
   }
   return `${canonicalJson({
+    bundle_version: contentVersion(options.bundleVersion, options.instant),
     closure: ((result && result.added) || []).map((entry) => ({ path: entry.path, slug: entry.slug })),
     generated_at: options.instant,
     license: {
@@ -676,7 +713,7 @@ function emit(result, options) {
  * The portable surface, in dependency order — the list `composition/browser.js`
  * emits as the browser bundle of AGSC-07-13.
  */
-const PORTABLE = Object.freeze(['singleLine', 'commentSafe', 'terms', 'structureLicence', 'linkKeys', 'fixedFiles',
+const PORTABLE = Object.freeze(['singleLine', 'commentSafe', 'assistance', 'contentVersion', 'terms', 'structureLicence', 'linkKeys', 'fixedFiles',
   'harnessName', 'arc42Sections', 'canonicalJson', 'pairs', 'dslRelationships',
   'mermaidEdges', 'isEmitted', 'linksOf', 'members', 'memberOrder', 'provenanceHeader',
   'licenceSentence', 'fenceProse', 'constraintLines', 'harnessJsonld', 'agentsMd',
@@ -689,8 +726,10 @@ module.exports = {
   arc42Md,
   arc42Sections,
   canonicalJson,
+  assistance,
   commentSafe,
   constraintLines,
+  contentVersion,
   decisionRecords,
   diagramMmd,
   dslIdentifier,

@@ -63,7 +63,7 @@ function builtFixture() {
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
-  return { bundle, ...site.build(bundle, ports, { specVersion: '1.0.0-rc.5', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, ports, { specVersion: '1.0.0-rc.6', version: '0.0.2' }) };
 }
 
 /** The smallest DOM the controller touches: ids, text, children and one listener. */
@@ -174,7 +174,7 @@ test('AGSC-07-13: the seven files the PAGE builds are byte-identical to the CLI\
     licenseProse: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
     name: harness.harnessName(digest),
     selectionDigest: digest,
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
   });
   assert.deepStrictEqual([...emitted.files.keys()], [...there.files.keys()]);
   for (const [at, text] of there.files) {

@@ -1,0 +1,73 @@
+{
+  "area": "cli",
+  "description": "AGSC-00-23 as added at rc.6 (D112): a tool originates only what its declared version specifies, and where the construct is a value of a closed operator list the fault is AGSC-E203 — the code that already names a value outside a closed operator list — not a minted one (AGSC-09-15). Derivation, case by case. (1) `compose --emit executable`: `executable` is the target name AGSC-00-25 reserves to 1.1 for an executable Harness and its optimisation step, and the emitter registry of AGSC-07-18 is closed at 1.x, so the value is refused with AGSC-E203. It is a finding and not a usage error: AGSC-09-08 reserves exit 2 for an unknown verb, an unknown flag, a missing argument or invalid configuration, and `--emit` is a known flag carrying a value the registry does not hold, so the exit code is 1. (2) `export --steer --target wombat`: the eleven target paths of AGSC-01-28 are equally closed and an unregistered name takes the same code and the same exit. (3) A registered target is the control: `compose --emit gabbe` is accepted and reports nothing, which is what makes the two refusals above a statement about the registry rather than about the flag.",
+  "expected": {
+    "cases": [
+      {
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E203",
+            "severity": "error"
+          }
+        ],
+        "name": "emit-reserved-executable"
+      },
+      {
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E203",
+            "severity": "error"
+          }
+        ],
+        "name": "steer-unregistered-target"
+      },
+      {
+        "exit": 0,
+        "findings": [],
+        "name": "emit-registered-target"
+      }
+    ]
+  },
+  "id": "cli-0009",
+  "input": {
+    "cases": [
+      {
+        "argv": [
+          "compose",
+          "--from",
+          "router",
+          "--emit",
+          "executable"
+        ],
+        "name": "emit-reserved-executable"
+      },
+      {
+        "argv": [
+          "export",
+          "--steer",
+          "--target",
+          "wombat"
+        ],
+        "name": "steer-unregistered-target"
+      },
+      {
+        "argv": [
+          "compose",
+          "--from",
+          "router",
+          "--emit",
+          "gabbe"
+        ],
+        "name": "emit-registered-target"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (EXT-1); expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-00-23"
+}

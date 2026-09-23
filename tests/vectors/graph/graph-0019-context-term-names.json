@@ -1,0 +1,97 @@
+{
+  "area": "graph",
+  "description": "AGSC-06-32 as amended at rc.6 (NS-04) pins the term NAMES the context uses, which are the member names of graph.jsonld and therefore part of the byte-identity AGSC-04-24 claims across implementations. Derivation: an `asc:` term is named by its local name, always; an external property is named by its local name, or by its compact IRI where that local name is also an `asc:` term name (`source` here) or is shared by two external properties (`license` here). The prefix block is the constant set of AGSC-06-32 — asc plus dcterms, prov, rdfs, schema, skos and xsd — emitted whether used or not, as graph-0011 already shows. Each external property's `@type` is stated in the input, because it is the emitting rule that fixes it and this case tests the naming alone.",
+  "expected": {
+    "context": {
+      "@context": {
+        "@protected": true,
+        "@version": 1.1,
+        "asc": "https://w3id.org/agentic-system-core/ns#",
+        "dcterms": "http://purl.org/dc/terms/",
+        "dcterms:license": {
+          "@id": "dcterms:license",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        },
+        "dcterms:source": {
+          "@id": "dcterms:source",
+          "@type": "@id"
+        },
+        "kind": {
+          "@id": "asc:kind",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        },
+        "prefLabel": {
+          "@id": "skos:prefLabel"
+        },
+        "prov": "http://www.w3.org/ns/prov#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "schema": "https://schema.org/",
+        "schema:license": {
+          "@id": "schema:license",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        },
+        "seeAlso": {
+          "@id": "rdfs:seeAlso",
+          "@type": "@id"
+        },
+        "skos": "http://www.w3.org/2004/02/skos/core#",
+        "source": {
+          "@id": "asc:source",
+          "@type": "@id"
+        },
+        "xsd": "http://www.w3.org/2001/XMLSchema#"
+      }
+    },
+    "term_names": {
+      "asc:kind": "kind",
+      "asc:source": "source",
+      "dcterms:license": "dcterms:license",
+      "dcterms:source": "dcterms:source",
+      "rdfs:seeAlso": "seeAlso",
+      "schema:license": "schema:license",
+      "skos:prefLabel": "prefLabel"
+    }
+  },
+  "id": "graph-0019",
+  "input": {
+    "external_properties": [
+      {
+        "property": "dcterms:source",
+        "type": "@id"
+      },
+      {
+        "property": "dcterms:license",
+        "type": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      {
+        "property": "rdfs:seeAlso",
+        "type": "@id"
+      },
+      {
+        "property": "schema:license",
+        "type": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      {
+        "property": "skos:prefLabel",
+        "type": null
+      }
+    ],
+    "ontology_terms": [
+      {
+        "kind": "object",
+        "term": "source"
+      },
+      {
+        "kind": "datatype",
+        "range": "xsd:string",
+        "term": "kind"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (RC6-A); expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-32"
+}

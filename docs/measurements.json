@@ -1,0 +1,540 @@
+{
+  "layers": {
+    "conformance": {
+      "command": "node bench/measure.js --layer conformance",
+      "error_codes": {
+        "registered": 90,
+        "used": 90
+      },
+      "rule_coverage": {
+        "active": 328,
+        "any_check": 269,
+        "named_by_checker": 73,
+        "named_by_feature": 14,
+        "named_by_test": 261,
+        "no_check": 59,
+        "uncovered": [
+          "AGSC-00-02",
+          "AGSC-00-03",
+          "AGSC-00-05",
+          "AGSC-00-06",
+          "AGSC-00-07",
+          "AGSC-00-08",
+          "AGSC-00-10",
+          "AGSC-00-11",
+          "AGSC-00-12",
+          "AGSC-00-13",
+          "AGSC-00-14",
+          "AGSC-00-17",
+          "AGSC-00-18",
+          "AGSC-00-19",
+          "AGSC-00-20",
+          "AGSC-01-06",
+          "AGSC-01-09",
+          "AGSC-01-13a",
+          "AGSC-01-31",
+          "AGSC-01-32",
+          "AGSC-02-11",
+          "AGSC-02-15",
+          "AGSC-02-16",
+          "AGSC-03-09",
+          "AGSC-03-14",
+          "AGSC-03-18",
+          "AGSC-03-19",
+          "AGSC-03-21",
+          "AGSC-04-08",
+          "AGSC-04-16",
+          "AGSC-04-17",
+          "AGSC-04-18",
+          "AGSC-05-04",
+          "AGSC-05-04a",
+          "AGSC-05-05",
+          "AGSC-05-15",
+          "AGSC-05-21",
+          "AGSC-05-23",
+          "AGSC-05-24",
+          "AGSC-06-03",
+          "AGSC-06-09",
+          "AGSC-06-12",
+          "AGSC-06-13",
+          "AGSC-07-11",
+          "AGSC-07-14",
+          "AGSC-08-03",
+          "AGSC-08-08",
+          "AGSC-08-10",
+          "AGSC-08-11",
+          "AGSC-08-20",
+          "AGSC-08-24",
+          "AGSC-08-29",
+          "AGSC-09-14",
+          "AGSC-10-01",
+          "AGSC-10-04",
+          "AGSC-10-07",
+          "AGSC-10-08",
+          "AGSC-10-10",
+          "AGSC-10-11"
+        ],
+        "with_vector": 115,
+        "without_vector": 213
+      },
+      "rule_coverage_by_chapter": {
+        "active": {
+          "10": 18,
+          "11": 22,
+          "00": 24,
+          "01": 38,
+          "02": 32,
+          "03": 17,
+          "04": 25,
+          "05": 34,
+          "06": 38,
+          "07": 25,
+          "08": 31,
+          "09": 24
+        },
+        "uncovered": {
+          "10": 6,
+          "00": 15,
+          "01": 5,
+          "02": 3,
+          "03": 5,
+          "04": 4,
+          "05": 7,
+          "06": 4,
+          "07": 2,
+          "08": 7,
+          "09": 1
+        }
+      },
+      "rules": {
+        "active": 332,
+        "reserved": 11,
+        "total": 343
+      },
+      "validators": {
+        "validate-spec": {
+          "exit": 0,
+          "findings": 0,
+          "inputs_read": null
+        },
+        "validate-schemas": {
+          "exit": 0,
+          "findings": 0,
+          "inputs_read": null
+        },
+        "validate-ontology": {
+          "exit": 0,
+          "findings": 0,
+          "inputs_read": null
+        },
+        "validate-vectors": {
+          "exit": 0,
+          "findings": 0,
+          "inputs_read": null
+        },
+        "validate-features": {
+          "exit": 0,
+          "findings": 0,
+          "inputs_read": null
+        },
+        "validate-diagrams": {
+          "exit": 0,
+          "findings": 0,
+          "inputs_read": null
+        }
+      },
+      "vector_areas": {
+        "adopt": {
+          "optional": 0,
+          "required": 5,
+          "total": 5,
+          "withdrawn": 0
+        },
+        "boards": {
+          "optional": 0,
+          "required": 2,
+          "total": 2,
+          "withdrawn": 0
+        },
+        "boundary": {
+          "optional": 0,
+          "required": 36,
+          "total": 36,
+          "withdrawn": 0
+        },
+        "build": {
+          "optional": 0,
+          "required": 8,
+          "total": 8,
+          "withdrawn": 0
+        },
+        "bundle": {
+          "optional": 0,
+          "required": 6,
+          "total": 6,
+          "withdrawn": 0
+        },
+        "chunks": {
+          "optional": 0,
+          "required": 8,
+          "total": 8,
+          "withdrawn": 0
+        },
+        "cli": {
+          "optional": 0,
+          "required": 9,
+          "total": 9,
+          "withdrawn": 0
+        },
+        "compose": {
+          "optional": 0,
+          "required": 8,
+          "total": 8,
+          "withdrawn": 0
+        },
+        "conform": {
+          "optional": 0,
+          "required": 4,
+          "total": 4,
+          "withdrawn": 0
+        },
+        "discovery": {
+          "optional": 0,
+          "required": 16,
+          "total": 16,
+          "withdrawn": 0
+        },
+        "frontmatter": {
+          "optional": 0,
+          "required": 12,
+          "total": 12,
+          "withdrawn": 0
+        },
+        "graph": {
+          "optional": 0,
+          "required": 17,
+          "total": 17,
+          "withdrawn": 0
+        },
+        "import": {
+          "optional": 0,
+          "required": 2,
+          "total": 2,
+          "withdrawn": 0
+        },
+        "jcs": {
+          "optional": 0,
+          "required": 5,
+          "total": 5,
+          "withdrawn": 0
+        },
+        "ledger": {
+          "optional": 0,
+          "required": 4,
+          "total": 4,
+          "withdrawn": 0
+        },
+        "links": {
+          "optional": 0,
+          "required": 7,
+          "total": 7,
+          "withdrawn": 0
+        },
+        "lint": {
+          "optional": 0,
+          "required": 11,
+          "total": 11,
+          "withdrawn": 0
+        },
+        "prov": {
+          "optional": 0,
+          "required": 4,
+          "total": 4,
+          "withdrawn": 0
+        },
+        "slug": {
+          "optional": 0,
+          "required": 5,
+          "total": 5,
+          "withdrawn": 0
+        }
+      },
+      "vector_run": {
+        "fail": 0,
+        "pass": 149,
+        "pending": 0,
+        "skip": 20,
+        "total": 169,
+        "withdrawn": 20
+      },
+      "vectors": {
+        "optional": 1,
+        "required": 148,
+        "total": 169,
+        "withdrawn": 20
+      }
+    },
+    "determinism": {
+      "command": "node bench/measure.js --layer determinism",
+      "double_build": {
+        "compared": 49,
+        "different": [],
+        "only_left": [],
+        "only_right": []
+      },
+      "files_compared": 42,
+      "os_matrix": {
+        "note": "A second operating system cannot be measured on this machine; the CI matrix is the only place it can be run.",
+        "ran_here": [
+          "Linux 6.6.114.1-microsoft-standard-WSL2 x64"
+        ]
+      },
+      "tz_locale": {
+        "compared": 49,
+        "different": [],
+        "only_left": [],
+        "only_right": []
+      },
+      "verify_verb": {
+        "exit": 0,
+        "ok": true
+      }
+    },
+    "perf": {
+      "budgets": {
+        "build_seconds_per_500_items": 60,
+        "index_bytes": 1048576,
+        "page_bytes": 102400
+      },
+      "command": "node bench/measure.js --layer perf   # sizes 100 500 501 1000 5000, 3 runs each, median",
+      "machine": {
+        "arch": "x64",
+        "cpus": 16,
+        "model": "AMD Ryzen 7 5800H with Radeon Graphics",
+        "node": "v24.18.0",
+        "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
+        "total_mem_bytes": 33560793088
+      },
+      "rows": [
+        {
+          "bytes_per_item_index": 319,
+          "chunks_bytes": 647461,
+          "chunks_bytes_per_item": 6475,
+          "files": 336,
+          "index_bytes_largest": 31853,
+          "index_shards": 0,
+          "items": 100,
+          "largest_page_bytes": 647461,
+          "largest_page_path": "chunks.jsonl",
+          "ms_median": 1711,
+          "ms_runs": [
+            1711,
+            1711,
+            1650
+          ],
+          "output_bytes": 2976546,
+          "rss_kb_median": 122348,
+          "rss_kb_runs": [
+            122168,
+            122540,
+            122348
+          ]
+        },
+        {
+          "bytes_per_item_index": 352,
+          "chunks_bytes": 112,
+          "chunks_bytes_per_item": 0,
+          "files": 1542,
+          "index_bytes_largest": 175986,
+          "index_shards": 2,
+          "items": 500,
+          "largest_page_bytes": 3243064,
+          "largest_page_path": "chunks-01.jsonl",
+          "ms_median": 5732,
+          "ms_runs": [
+            5732,
+            4827,
+            9141
+          ],
+          "output_bytes": 14441607,
+          "rss_kb_median": 284356,
+          "rss_kb_runs": [
+            284356,
+            279940,
+            285272
+          ]
+        },
+        {
+          "bytes_per_item_index": 351,
+          "chunks_bytes": 112,
+          "chunks_bytes_per_item": 0,
+          "files": 1548,
+          "index_bytes_largest": 175984,
+          "index_shards": 2,
+          "items": 501,
+          "largest_page_bytes": 3243096,
+          "largest_page_path": "chunks-01.jsonl",
+          "ms_median": 4884,
+          "ms_runs": [
+            10767,
+            4812,
+            4884
+          ],
+          "output_bytes": 14473608,
+          "rss_kb_median": 284676,
+          "rss_kb_runs": [
+            293336,
+            284676,
+            284524
+          ]
+        },
+        {
+          "bytes_per_item_index": 176,
+          "chunks_bytes": 131,
+          "chunks_bytes_per_item": 0,
+          "files": 3049,
+          "index_bytes_largest": 176303,
+          "index_shards": 3,
+          "items": 1000,
+          "largest_page_bytes": 3524296,
+          "largest_page_path": "llms-full.txt",
+          "ms_median": 9872,
+          "ms_runs": [
+            9872,
+            16606,
+            8519
+          ],
+          "output_bytes": 28771171,
+          "rss_kb_median": 360820,
+          "rss_kb_runs": [
+            382204,
+            360820,
+            321756
+          ]
+        },
+        {
+          "bytes_per_item_index": 36,
+          "chunks_bytes": 284,
+          "chunks_bytes_per_item": 0,
+          "files": 15105,
+          "index_bytes_largest": 177854,
+          "index_shards": 11,
+          "items": 5000,
+          "largest_page_bytes": 17650296,
+          "largest_page_path": "llms-full.txt",
+          "ms_median": 34602,
+          "ms_runs": [
+            44516,
+            34602,
+            28134
+          ],
+          "output_bytes": 143866561,
+          "rss_kb_median": 982064,
+          "rss_kb_runs": [
+            983244,
+            975868,
+            982064
+          ]
+        }
+      ],
+      "runs_per_size": 3
+    },
+    "retrieval": {
+      "command": "node tools/bench --node <built node> --origin-node <name> --json",
+      "nodes": {
+        "patterns": {
+          "counts": {
+            "error": 0,
+            "warn": 0
+          },
+          "findings": [],
+          "k": 10,
+          "node": "/home/andrei/work/AgenticSystemCore/AgenticSystemCore-Patterns/www",
+          "origin_node": "patterns",
+          "queries": 12,
+          "schema": "agsc.bench.v1",
+          "set": "/home/andrei/work/AgenticSystemCore/agentic-system-core/bench/queries/bench-v1",
+          "status": "pass",
+          "surfaces": {
+            "chunks": {
+              "documents": 54,
+              "queries_scored": 12,
+              "ndcg": 0.891,
+              "p1": 0.75,
+              "precision": 0.1,
+              "recall": 1,
+              "rr": 0.8542
+            },
+            "llms": {
+              "documents": 10,
+              "queries_scored": 12,
+              "ndcg": 0.7302,
+              "p1": 0.5833,
+              "precision": 0.0833,
+              "recall": 0.8333,
+              "rr": 0.6944
+            },
+            "search": {
+              "documents": 15,
+              "queries_scored": 12,
+              "ndcg": 0.8457,
+              "p1": 0.6667,
+              "precision": 0.1,
+              "recall": 1,
+              "rr": 0.7944
+            }
+          },
+          "verb": "bench"
+        },
+        "main": {
+          "counts": {
+            "error": 0,
+            "warn": 0
+          },
+          "findings": [],
+          "k": 10,
+          "node": "/home/andrei/work/AgenticSystemCore/AgenticSystemCore.com/www-next",
+          "origin_node": "main",
+          "queries": 8,
+          "schema": "agsc.bench.v1",
+          "set": "/home/andrei/work/AgenticSystemCore/agentic-system-core/bench/queries/bench-v1",
+          "status": "pass",
+          "surfaces": {
+            "chunks": {
+              "documents": 17,
+              "queries_scored": 8,
+              "ndcg": 0.7049,
+              "p1": 0.375,
+              "precision": 0.1,
+              "recall": 1,
+              "rr": 0.6094
+            },
+            "llms": {
+              "documents": 13,
+              "queries_scored": 8,
+              "ndcg": 0.6647,
+              "p1": 0.5,
+              "precision": 0.0875,
+              "recall": 0.875,
+              "rr": 0.5979
+            },
+            "search": {
+              "documents": 15,
+              "queries_scored": 8,
+              "ndcg": 0.6939,
+              "p1": 0.5,
+              "precision": 0.0875,
+              "recall": 0.875,
+              "rr": 0.6464
+            }
+          },
+          "verb": "bench"
+        }
+      },
+      "note": "Observed under this configuration on this date: a 20-intent hand-written set, three model-free surfaces, no judge model. research/39 section 6 item 3 governs how these may be described."
+    }
+  },
+  "schema": "agsc.measurements.v1",
+  "measured_for": "2026-09-23",
+  "spec_version": "1.0.0-rc.6"
+}

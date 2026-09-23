@@ -45,15 +45,11 @@ jobs:
       - name: the independent validators of AGSC-09-90
         shell: bash
         run: |
-          # `validate-spec` is a REPORTING step until the specification items it
-          # finds are applied at 1.0.0 (ENG4-01…05); every other validator blocks.
-          for t in tools/validate-*; do
-            if [ "$t" = "tools/validate-spec" ]; then
-              node "$t" --json || echo "REPORT: $t exits 1 on the frozen text (ENG4-01…05)"
-            else
-              node "$t" --json
-            fi
-          done
+          # Every validator BLOCKS. `validate-spec` was a reporting step while the
+          # specification items it found were still open (ENG4-01…05); they were
+          # applied at rc.6 and it exits 0 on the shipped text, so the carve-out is
+          # gone — a gate that reports and does not block protects nothing.
+          for t in tools/validate-*; do node "$t" --json; done
       - name: the release lane's own checks
         run: node tools/release --json
       - name: the architecture boundary lane
@@ -95,8 +91,19 @@ jobs:
         with:
           subject-path: '*.tgz'
 
+      # `--tag latest` is stated rather than left to the default, deliberately.
+      # npm's own documentation (docs.npmjs.com/cli/v11/commands/npm-dist-tag, read
+      # 2026-09-22) says "Publishing a package sets the `latest` tag to the published
+      # version unless the `--tag` option is used", and adds "Typically, projects only
+      # use the `latest` tag for stable release versions, and use other tags for
+      # unstable versions such as prereleases". So a pre-release DOES take `latest`
+      # by default, and the convention says it usually should not. D107 decides the
+      # opposite for this release, and for a reason: the only prior versions of both
+      # names are the 0.0.2 name reservations, so `npm install agentic-system-core`
+      # has to give the working engine rather than a stub. Writing the flag makes
+      # that a decision a reader can see, instead of a default nobody chose.
       - name: publish the engine
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag latest
 
       - name: publish the alias
-        run: npm publish --provenance --access public ./packages/agsc-cli
+        run: npm publish --provenance --access public --tag latest ./packages/agsc-cli

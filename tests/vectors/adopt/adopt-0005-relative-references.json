@@ -51,7 +51,7 @@
   "level": "required",
   "options": {
     "source_date_epoch": 1767225600,
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
   "rule": "AGSC-02-95"
 }

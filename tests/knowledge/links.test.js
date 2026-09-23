@@ -198,10 +198,11 @@ test('AGSC-01-35 as amended at rc.5 (R-01): a `..` body reference that stays ins
     .map((f) => f.code).filter((c) => c === 'AGSC-E902' || c === 'AGSC-E310');
   assert.deepStrictEqual(pathCodes(asset), [], 'a `..` reference to an existing asset is not an error');
   assert.deepStrictEqual(asset.resolved, ['../assets/d.png']);
-  // ENG-5, rc.5: it IS a warning, because AGSC-06-01 emits no route for an asset
-  // (item 56 / FIX28-01) — the link works in the repository and 404s on the site.
-  assert.deepStrictEqual(asset.errors.filter((f) => f.code === 'AGSC-E310')
-    .map((f) => [f.code, f.severity]), [['AGSC-E310', 'warn']]);
+  // CHANGED at rc.6 (FIX28-01): AGSC-06-01 now emits `/assets/<path>` for every
+  // file under `content/assets/` a published body references, so the reference that
+  // works in the repository works on the site too, and the warning that said
+  // otherwise is gone. At rc.5 it was a warning for exactly that reason.
+  assert.deepStrictEqual(asset.errors.filter((f) => f.code === 'AGSC-E310'), []);
 
   // A `..` reference to a sibling ITEM resolves in both spellings (R-04).
   const items = [

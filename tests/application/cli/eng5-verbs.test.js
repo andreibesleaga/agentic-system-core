@@ -81,7 +81,7 @@ function ctxFor(dir, options = {}) {
     },
     root: dir,
     runCwd: options.runCwd,
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     stderr: { write: (text) => lines.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},
@@ -100,9 +100,18 @@ test('AGSC-01-26: export --markdown writes the content tree byte for byte under 
   const result = exportVerb.run(ctx);
   assert.deepStrictEqual(result.findings.filter((f) => f.severity !== 'warn'), []);
   for (const at of ['content/concepts/handoff.md', 'content/concepts/supervisor.md',
-    'content/clusters/agent-patterns.md', 'content/index.md']) {
+    'content/clusters/agent-patterns.md']) {
     assert.strictEqual(read(dir, `dist/export/markdown/${at}`), read(dir, at), at);
   }
+  // AGSC-01-26 as amended at rc.6 (D113): `content/index.md` is the ONE file of a
+  // byte-preserving export that gains a derived key — the content version of
+  // AGSC-04-25 — so it is the authored document plus exactly that one line.
+  const exportedIndex = read(dir, 'dist/export/markdown/content/index.md');
+  const version = /\nbundle_version: "([^"]+)"\n/u.exec(exportedIndex);
+  assert.ok(version !== null, exportedIndex);
+  assert.match(version[1], /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u);
+  assert.strictEqual(exportedIndex.replace(`bundle_version: "${version[1]}"\n`, ''),
+    read(dir, 'content/index.md'));
   assert.strictEqual(read(dir, 'dist/export/markdown/LICENSE-CONTENT'), read(dir, 'LICENSE-CONTENT'));
   assert.ok(!exists(dir, 'www'), 'export wrote into build.out');
   assert.match(ctx.notes.join(''), /export --markdown: 5 files under dist\/export\/markdown\//u);
@@ -159,7 +168,9 @@ test('AGSC-01-28: --target takes a comma-separated list and refuses a name outsi
 
   const bad = workspace();
   const refused = exportVerb.run(ctxFor(bad, { verbFlags: { steer: true, target: 'notepad' } }));
-  assert.strictEqual(refused.findings[0].code, 'AGSC-E002');
+  // rc.6, AGSC-00-23 (D112): a value outside a CLOSED operator list is AGSC-E203
+  // and a finding at exit 1; AGSC-E002 and exit 2 are for an unknown FLAG.
+  assert.strictEqual(refused.findings[0].code, 'AGSC-E203');
   assert.ok(!exists(bad, 'dist'), 'a refused target wrote something');
 });
 
@@ -193,7 +204,7 @@ test('the pack `build` publishes and the pack `skills` writes are the same bytes
         .schemas(require('../../../src/adapters/node-fs.js').readSchemas(ROOT)),
     }),
     { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: createFileSystem(dir) },
-    { specVersion: '1.0.0-rc.5', version: '0.0.2' },
+    { specVersion: '1.0.0-rc.6', version: '0.0.2' },
   );
   assert.strictEqual(built.files.get('/skills/agent-patterns/SKILL.md'),
     read(dir, 'dist/skills/agent-patterns/SKILL.md'));
@@ -357,11 +368,16 @@ test('settings() and resolvedLine() read the configuration and print the refusal
 
 // ------------------------------------------------------------------ trace
 
+// AGSC-09-94 as amended at rc.6 (ENG5-S9) names the members of a trace record:
+// `started`, and optionally `ended`, `actor`, `title`, `outcome`, `body`, `usage`.
+// Everything else — including the older names this engine used to accept — is
+// preserved under `x-<vendor>-<key>`.
 const TRACE = JSON.stringify({
-  agent: 'process:refresh',
-  at: '2026-01-01T00:00:00Z',
-  status: 'done',
-  summary: 'It ran.',
+  actor: 'process:refresh',
+  agent: 'process:ignored',
+  body: 'It ran.',
+  outcome: 'done',
+  started: '2026-01-01T00:00:00Z',
   title: 'Nightly refresh',
   usage: { cost_usd: 0.01, estimate: false, model: 'x', tokens_in: 10, tokens_out: 5 },
   weird_key: 'kept',
@@ -380,6 +396,9 @@ test('AGSC-09-94: trace maps a captured record to an Episode and executes no pro
   assert.match(written, /cost_usd: 0\.01/u);
   assert.match(written, /x-trace-weird-key: kept/u);
   assert.match(written, /x-trace-outcome: done/u);
+  // A member under one of the names this engine used to accept is PRESERVED, not
+  // silently placed: `agent` is not AGSC-09-94's name for the actor.
+  assert.match(written, /x-trace-agent: process:ignored/u);
   assert.match(written, /It ran\./u);
   assert.match(ctx.notes.join(''), /no process was executed/u);
 });
@@ -445,7 +464,7 @@ test('an installed pack the port cannot read is overwritten rather than compared
 
 test('AGSC-09-94: trace keeps a valid outcome and refuses a record that is not an object', () => {
   const dir = workspace({
-    'good.json': JSON.stringify({ at: '2026-01-01T00:00:00Z', outcome: 'success', title: 'Good run' }),
+    'good.json': JSON.stringify({ outcome: 'success', started: '2026-01-01T00:00:00Z', title: 'Good run' }),
     'array.json': '[]',
   });
   const good = traceVerb.run(ctxFor(dir, { argv: ['good.json'] }));

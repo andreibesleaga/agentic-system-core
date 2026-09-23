@@ -195,7 +195,10 @@ test('AGSC-06-21: above 500 items /search.json IS the manifest and the shards ca
   assert.strictEqual(docs, ITEMS);
   // The other size-triggered shapes: the chunk export and the paginated index routes.
   const chunks = JSON.parse(String(files.get('/chunks.jsonl')));
-  assert.deepStrictEqual(Object.keys(chunks).sort(), ['lines_total', 'shards']);
+  // AGSC-06-31 as amended at rc.6 (D113): the shard manifest carries the content
+  // version of AGSC-04-25 beside its two members, and JCS sorts it first.
+  assert.deepStrictEqual(Object.keys(chunks).sort(), ['bundle_version', 'lines_total', 'shards']);
+  assert.match(chunks.bundle_version, /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u);
   assert.deepStrictEqual(chunks.shards, ['/chunks-01.jsonl', '/chunks-02.jsonl']);
   assert.ok(files.has('/concepts/page-2/index.html'), 'the /concepts/ index route was not paginated');
   assert.ok(files.has('/page-2/index.html'), 'the root index route was not paginated');

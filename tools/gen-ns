@@ -141,8 +141,21 @@ const xmlEscape = (s) => s.replace(/&/gu, '&amp;').replace(/</gu, '&lt;')
   .replace(/>/gu, '&gt;').replace(/"/gu, '&quot;');
 const htmlEscape = xmlEscape;
 
-/** The short term name for an external property, prefixed only when it collides. */
-function externalTermNames(list) {
+/**
+ * AGSC-06-32 as amended at rc.6 (NS-04): ONE derivation of a term's name, shared
+ * with `src/knowledge/jsonld.js#termName`, which is the conforming one. An `asc:`
+ * term is named by its LOCAL name, always. An external property is named by its
+ * local name, or by its compact IRI where that local name is also an `asc:` term
+ * name or is shared by two external properties. Until rc.6 this tool named every
+ * `asc:` term `asc:<Term>` and ignored the collision with an `asc:` term entirely,
+ * so the file it generates and the file the engine builds were not the same file —
+ * although AGSC-06-32 now makes `/ns/context.jsonld` a constant of the
+ * specification that every node's copy must equal byte for byte.
+ *
+ * @param {Array<Array<*>>} list the external rows, `[curie, type, rule]`
+ * @param {Set<string>} ascNames the local names of the `asc:` terms
+ */
+function externalTermNames(list, ascNames) {
   const locals = new Map();
   for (const [curie] of list) {
     const local = curie.split(':')[1];
@@ -151,7 +164,8 @@ function externalTermNames(list) {
   const names = new Map();
   for (const [curie] of list) {
     const local = curie.split(':')[1];
-    names.set(curie, locals.get(local) > 1 ? curie : local);
+    const ambiguous = (ascNames && ascNames.has(local)) || locals.get(local) > 1;
+    names.set(curie, ambiguous ? curie : local);
   }
   return names;
 }
@@ -195,24 +209,27 @@ function readOntology(turtle) {
 function buildContext(vocabulary) {
   const context = { '@protected': true, '@version': 1.1 };
   for (const [prefix, iri] of Object.entries(PREFIXES)) context[prefix] = iri;
-  const names = externalTermNames(EXTERNAL);
+  const localOf = (iri) => iri.slice(NS.length);
+  const curieOf = (iri) => `asc:${localOf(iri)}`;
+  const ascNames = new Set([...vocabulary.classes, ...vocabulary.objectProperties,
+    ...vocabulary.datatypeProperties].map(localOf));
+  const names = externalTermNames(EXTERNAL, ascNames);
   for (const [curie, type] of EXTERNAL) {
     const definition = { '@id': curie };
     if (type) definition['@type'] = type;
     context[names.get(curie)] = definition;
   }
-  const curieOf = (iri) => `asc:${iri.slice(NS.length)}`;
   for (const iri of vocabulary.classes) {
-    context[curieOf(iri)] = { '@id': curieOf(iri) };
+    context[localOf(iri)] = { '@id': curieOf(iri) };
   }
   for (const iri of vocabulary.objectProperties) {
-    context[curieOf(iri)] = { '@id': curieOf(iri), '@type': '@id' };
+    context[localOf(iri)] = { '@id': curieOf(iri), '@type': '@id' };
   }
   for (const iri of vocabulary.datatypeProperties) {
     const definition = { '@id': curieOf(iri) };
     const range = vocabulary.ranges.get(iri);
     if (range) definition['@type'] = range;
-    context[curieOf(iri)] = definition;
+    context[localOf(iri)] = definition;
   }
   return { '@context': context };
 }
@@ -431,14 +448,24 @@ function checkContext(document, derived, file, findings) {
   const onDisk = contextById(context);
   const wanted = derived['@context'];
   const missing = [];
-  for (const term of Object.keys(wanted).filter((t) => t.startsWith('asc:')).sort(compareCodePoint)) {
-    const found = onDisk.get(expandCompact(term));
-    if (found === undefined) { missing.push(term); continue; }
+  // The derived vocabulary terms, identified by the `asc:` IRI their definition
+  // names — NOT by the key, which since rc.6 (NS-04) is the term's LOCAL name here
+  // and may be the compact IRI in a conforming file written the other way (NS-06).
+  // Keying on `asc:` prefixes of the KEY made this loop check nothing at all once
+  // the derivation stopped producing such keys.
+  const ascTerms = Object.entries(wanted)
+    .filter(([, definition]) => definition !== null && typeof definition === 'object'
+      && typeof definition['@id'] === 'string' && definition['@id'].startsWith('asc:'))
+    .map(([name, definition]) => ({ compact: definition['@id'], name }))
+    .sort((a, b) => compareCodePoint(a.compact, b.compact));
+  for (const term of ascTerms) {
+    const found = onDisk.get(expandCompact(term.compact));
+    if (found === undefined) { missing.push(term.compact); continue; }
     const actual = normalizeDefinition(found[0].definition);
-    const expected = normalizeDefinition(wanted[term]);
+    const expected = normalizeDefinition(wanted[term.name]);
     if (canonicalize(actual) !== canonicalize(expected)) {
       findings.push(finding('AGSC-E202', file,
-        `the term definition of "${term}" is ${canonicalize(found[0].definition)} and AGSC-06-32 derives ${canonicalize(wanted[term])} from ontology/agsc.ttl`));
+        `the term definition of "${term.compact}" is ${canonicalize(found[0].definition)} and AGSC-06-32 derives ${canonicalize(wanted[term.name])} from ontology/agsc.ttl`));
     }
   }
   if (missing.length) {
@@ -529,7 +556,23 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const turtlePath = path.join(root, 'ontology', 'agsc.ttl');
-  if (!fs.existsSync(turtlePath)) return usage(`no ontology at ${turtlePath} (AGSC-E901)`);
+  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
+  // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
+  // reserves for an unknown verb, an unknown flag or a missing argument, and which
+  // a caller reading the envelope cannot see at all.
+  if (!fs.existsSync(turtlePath)) {
+    const bad = envelopeOf([finding('AGSC-E901', 'ontology/agsc.ttl',
+      `no ontology at ${turtlePath}: there is nothing to derive from (AGSC-06-32)`)],
+    specVersion(root), packageVersion(root));
+    if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
+    else if (!flags.has('--quiet')) {
+      for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+      out(`gen-ns: 0 input file(s) read, 0 vocabulary terms, 0 context members, `
+        + `${bad.counts.error} error, ${bad.counts.warn} warn\n`);
+    }
+    return 1;
+  }
 
   const findings = [];
   const turtle = fs.readFileSync(turtlePath, 'utf8');

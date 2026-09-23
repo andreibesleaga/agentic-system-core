@@ -20,22 +20,39 @@
 
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
-const { CallToolRequestSchema, ListToolsRequestSchema } = require('@modelcontextprotocol/sdk/types.js');
+const {
+  CallToolRequestSchema,
+  ErrorCode,
+  GetPromptRequestSchema,
+  ListPromptsRequestSchema,
+  ListResourcesRequestSchema,
+  ListToolsRequestSchema,
+  McpError,
+  ReadResourceRequestSchema,
+} = require('@modelcontextprotocol/sdk/types.js');
 const { MCP_PROTOCOL_VERSION, mcpCapabilities } = require('../boundary/surfaces.js');
+const { catalogue } = require('./mcp-resources.js');
 const { tools } = require('./mcp-tools.js');
 
 const SERVER_NAME = 'agentic-system-core';
 
 /**
- * createServer(bundle, options) -> { server, toolset }
+ * createServer(bundle, options) -> { server, toolset, resources }
  * The wiring alone: one `tools/list` handler returning the shared manifest and
  * one `tools/call` handler returning the shared envelope. The envelope is
  * carried as the single `structuredContent` member plus its JSON text, so a
  * client that reads either sees the same bytes.
+ *
+ * Beside the seven tools it wires AGSC-09-14b's other two MCP primitives — the
+ * items, `graph.jsonld` and `llms.txt` as read-only resources, and the one
+ * prompt — from `distribution/mcp-resources.js`. `options.artifacts` is the
+ * route map of a build, supplied by the application layer; without one the
+ * resource list is empty and no byte is invented.
  */
 function createServer(bundle, options) {
   const opts = options || {};
   const toolset = tools(bundle, opts);
+  const resources = catalogue(bundle, opts);
   // AGSC-11-18 as amended at rc.5 (SITE1-01): `extensions` is MCP's map of extension
   // identifier to settings object, and this node's settings object carries exactly
   // `linkset`. The Boundary context owns both the identifier and the object
@@ -44,7 +61,14 @@ function createServer(bundle, options) {
   const base = ((bundle && bundle.config && bundle.config.site) || {}).base;
   const server = new Server(
     { name: SERVER_NAME, version: opts.version || '0.0.0' },
-    { capabilities: { ...mcpCapabilities({ base }), tools: {} } },
+    // AGSC-09-14b: a server that serves resources and prompts MUST say so —
+    // "Servers that support resources MUST declare the `resources` capability",
+    // "Servers that support prompts MUST declare the `prompts` capability"
+    // (MCP, Resources and Prompts, revision 2026-07-28, read 2026-09-22).
+    // Neither `listChanged` nor `subscribe` is declared: a Bundle is loaded once
+    // and this server never mutates it, so it would promise a notification it
+    // could never have cause to send.
+    { capabilities: { ...mcpCapabilities({ base }), prompts: {}, resources: {}, tools: {} } },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => toolset.manifest());
@@ -60,7 +84,35 @@ function createServer(bundle, options) {
     };
   });
 
-  return { server, toolset };
+  // AGSC-09-14b's resources and prompt. A MISS here is a PROTOCOL fault, not a
+  // domain fault, so AGSC-09-13a's envelope does not apply and MCP's own rule
+  // does: "If the requested resource does not exist, servers MUST return a
+  // JSON-RPC error with code `-32602` (Invalid Params)" (MCP, Resources,
+  // revision 2026-07-28, read 2026-09-22), and for prompts "Invalid prompt
+  // name: `-32602`; Missing required arguments: `-32602`" (MCP, Prompts, same
+  // revision, same day). The envelope stays what a TOOL returns.
+  server.setRequestHandler(ListResourcesRequestSchema, async () => resources.list());
+
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const found = resources.read(request.params.uri);
+    if (found === null) {
+      throw new McpError(ErrorCode.InvalidParams, 'Resource not found', { uri: request.params.uri });
+    }
+    return found;
+  });
+
+  server.setRequestHandler(ListPromptsRequestSchema, async () => resources.prompts());
+
+  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    const found = resources.prompt(request.params.name, request.params.arguments || {});
+    if (found === null) {
+      throw new McpError(ErrorCode.InvalidParams, 'Unknown prompt, or the required argument "question" is missing',
+        { name: request.params.name });
+    }
+    return found;
+  });
+
+  return { resources, server, toolset };
 }
 
 /**
@@ -86,7 +138,11 @@ function serve(ctx) {
   if (bundle === undefined || bundle === null) {
     throw new TypeError('mcp-stdio.serve: ctx.bundle is required (application/bundle.js#loadBundle loads it)');
   }
-  const { server } = createServer(bundle, { config: context.config, version: context.version });
+  const { server } = createServer(bundle, {
+    artifacts: context.artifacts,
+    config: context.config,
+    version: context.version,
+  });
   const stdin = context.stdin || process.stdin;
   const transport = new StdioServerTransport(stdin, context.stdout || process.stdout);
   stdin.on('end', () => {

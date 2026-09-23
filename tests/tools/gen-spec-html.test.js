@@ -21,12 +21,18 @@ describe('gen-spec-html — usage and the envelope', () => {
     assert.equal(capture('gen-spec-html', ['--check']).code, 2);
   });
 
-  it('a root with no spec/ exits 2, and an empty spec/ too', () => {
-    assert.equal(capture('gen-spec-html', [tmpdir()]).code, 2);
+  it('a root with no spec/ FAILS with AGSC-E901, and an empty spec/ too', () => {
+    // CHANGED at rc.6 (FIX29-S4): AGSC-09-90 now says a validator MUST FAIL "with
+    // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
+    // error. An absent input is exit 1, the envelope and the code.
+    assert.deepEqual(envelope('gen-spec-html', [tmpdir()]).json.findings.map((f) => f.code),
+      ['AGSC-E901']);
+    assert.equal(capture('gen-spec-html', [tmpdir()]).code, 1);
     const empty = writeTree(tmpdir(), { 'spec/README.md': 'not a section\n' });
     const result = capture('gen-spec-html', [empty]);
-    assert.equal(result.code, 2);
+    assert.equal(result.code, 1);
     assert.match(result.err, /no spec\/<nn>-<name>\.md files/u);
+    assert.match(result.out, /0 input file\(s\) read/u);
   });
 
   it('the envelope has the AGSC-09-11 shape', () => {
@@ -148,10 +154,17 @@ describe('gen-spec-html — the helpers it exports', () => {
 });
 
 describe('gen-spec-html — the real distribution', () => {
-  it('renders the twelve shipped sections with an anchor on all 335 rules', () => {
+  it('renders the twelve shipped sections with an anchor on every rule', () => {
     const result = capture('gen-spec-html', [REPO]);
     assert.equal(result.code, 0);
     assert.equal(result.err, '');
-    assert.match(result.out, /^gen-spec-html: 12 input file\(s\) read, 12 sections, 13 pages, 335 rule anchors, 0 error, 0 warn\n$/u);
+    // DERIVED, not pinned (2026-09-22): the number of rules is the counter's to
+    // state, and a literal here is a second copy of it that rots on the next rule.
+    // The invariant is that this generator renders an anchor for EVERY rule
+    // `tools/count-artifacts` finds — one rule, one anchor, none lost.
+    const rules = JSON.parse(capture('count-artifacts', ['--json', REPO]).out).counts.rules;
+    assert.ok(rules > 300, 'the counter read nothing');
+    assert.match(result.out, new RegExp(`^gen-spec-html: 12 input file\\(s\\) read, 12 sections,`
+      + ` 13 pages, ${rules} rule anchors, 0 error, 0 warn\\n$`, 'u'), result.out);
   });
 });

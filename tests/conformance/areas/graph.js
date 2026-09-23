@@ -43,6 +43,7 @@ const nq = require('../../../src/knowledge/nquads.js');
 const turtle = require('../../../src/knowledge/turtle.js');
 const jsonldView = require('../../../src/knowledge/jsonld.js');
 const jcs = require('../../../src/knowledge/jcs.js');
+const linksModule = require('../../../src/knowledge/links.js');
 const fixture = require('../../knowledge/_graph-fixture.js');
 const { checks } = require('./_assert.js');
 
@@ -122,6 +123,65 @@ function literalFormsCase(vector) {
 }
 
 /** graph-0011 — the context file (AGSC-06-32) and the expand / re-compact round trip. */
+/**
+ * graph-0019 — AGSC-06-32 as amended at rc.6 (NS-04): the term NAMES.
+ *
+ * The vector states the external rows itself, with the `@type` each takes, because
+ * the type is fixed by the rule that emits the property and this case tests the
+ * naming alone. `contextFrom` is the engine's own derivation over explicit rows —
+ * the same code path `context` runs.
+ */
+function termNamesCase(vector) {
+  const rows = (vector.input.external_properties || [])
+    .map((entry) => [entry.property, entry.type]);
+  const got = jsonldView.contextFrom(vector.input.ontology_terms, rows);
+  const list = [['context', jcs.canonicalize(got) === jcs.canonicalize(vector.expected.context),
+    `got ${jcs.canonicalize(got)}`]];
+  const names = {};
+  for (const [name, definition] of Object.entries(got['@context'])) {
+    if (definition !== null && typeof definition === 'object' && definition['@id'] !== undefined) {
+      names[definition['@id']] = name;
+    }
+  }
+  list.push(['term_names', jcs.canonicalize(names) === jcs.canonicalize(vector.expected.term_names),
+    `got ${jcs.canonicalize(names)}`]);
+  // `tools/gen-ns` derives the same file from `ontology/agsc.ttl`; AGSC-06-32 makes
+  // /ns/context.jsonld a constant of the specification, so the two derivations of a
+  // term's name must be the same derivation.
+  return checks(list);
+}
+
+/**
+ * graph-0020 — AGSC-05-27 as amended at rc.6 (ENG3-S3): the `asc:mentions` edge of
+ * an inline body link. Only the mentions lines are asserted
+ * (`whole_file_asserted: false`); the rest of the serialisation is pinned by
+ * graph-0015…graph-0018.
+ */
+function mentionsCase(vector) {
+  const input = vector.input;
+  const items = (input.items || []).map((item) => ({ ...item, path: `content/concepts/${item.slug}.md` }));
+  const edges = linksModule.resolve(items).edges
+    .filter((edge) => edge.key === 'mentions' && edge.source !== edge.target)
+    .map((edge) => ({ source: edge.source, target: edge.target }));
+  const options = { ...optionsFor(input), lang: 'en', mentions: edges };
+  const nquads = nq.toNQuads(items, options);
+  const lines = nquads.split('\n').filter((line) => line.includes(`${nq.NS}mentions`))
+    .map((line) => `${line}\n`);
+  const list = [
+    ['mentions_lines', jcs.canonicalize(lines) === jcs.canonicalize(vector.expected.mentions_lines),
+      `got ${JSON.stringify(lines)}`],
+    ['whole_file_asserted', vector.expected.whole_file_asserted === false,
+      'no rule pins the whole document here'],
+  ];
+  if (vector.expected.inverse_materialised === false) {
+    // AGSC-03-04 lists the computed inverses and `mentions` is not among them.
+    list.push(['inverse_materialised',
+      !nquads.includes(`<${input.base}/concepts/beta/> <${nq.NS}mentions>`),
+      'a computed inverse reached the export']);
+  }
+  return checks(list);
+}
+
 function contextCase(vector, ctx) {
   const list = [];
   const got = jsonldView.context(vector.input.ontology_terms, vector.input.external_properties_used);
@@ -308,6 +368,8 @@ function itemsCase(vector) {
 
 module.exports.run = (vector, ctx) => {
   const input = vector.input || {};
+  if (vector.id === 'graph-0019') return termNamesCase(vector);
+  if (vector.id === 'graph-0020') return mentionsCase(vector);
   if (Array.isArray(input.value) && input.bundle_id !== undefined) return memoryCase(vector);
   if (input.literal !== undefined) return literalFormsCase(vector);
   if (Array.isArray(input.ontology_terms)) return contextCase(vector, ctx);

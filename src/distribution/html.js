@@ -16,6 +16,7 @@
 // Pure function of its input.
 
 const { TERMS } = require('../knowledge/chunks.js');
+const { ASSISTANCE } = require('../knowledge/provenance-header.js');
 const diagrams = require('../knowledge/diagrams.js');
 const lint = require('../governance/lint.js');
 const { WELLKNOWN_PATH, MEDIA_TYPE } = require('./discovery.js');
@@ -31,6 +32,16 @@ function escapeHtml(value) {
 }
 
 /**
+ * The footer's one-line AI-assistance statement (AGSC-06-15's fact, in the words a
+ * reader of a page needs) and the one-sentence disclaimer set. Both are constants:
+ * a publisher states nothing here and a writer invents nothing.
+ */
+const ASSISTANCE_SENTENCE = 'Written with AI assistance, reviewed and published by a person.';
+const NO_CLAIM_SENTENCE = 'Independent work, published as it is, with no warranty and no'
+  + ' liability; not advice; no organisation named here is connected with it; other names'
+  + ' are their owners\' marks.';
+
+/**
  * AGSC-06-18: the Content Use Terms line, on every prose-carrying page. The
  * identifier is a constant, independent of `bundle.license_prose`, which names the
  * licence of the prose itself and may differ.
@@ -44,8 +55,29 @@ function termsLine(licenseProse, options = {}) {
   const terms = legal
     ? `<a href="/legal/">${escapeHtml(TERMS)}</a>`
     : `<span>${escapeHtml(TERMS)}</span>`;
-  return `<p class="terms">Prose licence: <span>${escapeHtml(license)}</span>. `
-    + `Content Use Terms: ${terms}.</p>`;
+  const lines = [`<p class="terms">Prose licence: <span>${escapeHtml(license)}</span>. `
+    + `Content Use Terms: ${terms}.</p>`];
+  // The copyright line and the one-sentence notice, added at rc.6 on the owner's
+  // legal pack of 2026-09-22 (items B-04, M-12, M-13).
+  //
+  // NEITHER THE NAME NOR THE YEAR IS HARD-CODED. This engine is a general tool that
+  // other people run on their own content; it must not stamp one owner's name into
+  // their pages. The name is `site.author`, the same field the `/legal/` operator
+  // line already uses, and the year is the year of the BUILD INSTANT, which
+  // AGSC-04-09 derives from the last commit or from `SOURCE_DATE_EPOCH` — never
+  // from a clock, so the footer stays byte-reproducible. With no author configured,
+  // no copyright line is emitted at all: a copyright notice naming nobody says
+  // nothing, and inventing a holder would be worse.
+  const author = options.author == null ? '' : String(options.author).trim();
+  const year = options.year == null ? '' : String(options.year).trim();
+  if (author !== '' && year !== '') {
+    const seeLegal = legal ? ' See <a href="/legal/">/legal/</a>.' : '';
+    lines.push(`<p class="copyright">&#169; ${escapeHtml(year)} ${escapeHtml(author)}. `
+      + `All rights reserved. You may cite and link.${seeLegal}</p>`);
+  }
+  lines.push(`<p class="notice">${escapeHtml(ASSISTANCE_SENTENCE)} ${escapeHtml(NO_CLAIM_SENTENCE)}`
+    + `${legal ? ' <a href="/legal/">Full terms</a>.' : ''}</p>`);
+  return lines.join('\n');
 }
 
 /**
@@ -53,7 +85,8 @@ function termsLine(licenseProse, options = {}) {
  * AA obligations of AGSC-06-20; the `describedby` link is AGSC-06-25; nothing is
  * loaded from another origin (AGSC-06-05).
  *
- * @param {object} page `{url, title, description, lang, body, jsonld, licenseProse, nav}`.
+ * @param {object} page `{url, title, description, lang, body, jsonld, licenseProse, nav,
+ *   author, year}` — `author` and `year` are the footer's copyright line (rc.6).
  * @returns {string}
  */
 function shell(page) {
@@ -92,7 +125,7 @@ function shell(page) {
     `<h1>${escapeHtml(page.title)}</h1>`,
     page.body,
     '</main>',
-    `<footer>${termsLine(page.licenseProse, { legal: page.legal })}</footer>`,
+    `<footer>${termsLine(page.licenseProse, { author: page.author, legal: page.legal, year: page.year })}</footer>`,
     '</body>',
     '</html>',
     '',
@@ -344,6 +377,22 @@ function legalPage({ terms, licenseProse, rendered, privacy, operator }, options
   if (operator != null && String(operator) !== '') {
     sections.push(`<h2 id="operator">Operator</h2>\n<p>This node is published by ${escapeHtml(String(operator))}.</p>`);
   }
+  // AGSC-06-18 as amended at rc.6: `/legal/` carries "the AI-assistance statement of
+  // AGSC-06-15, IN THE SAME WORDS the provenance header of every agent-facing export
+  // carries". So the section quotes that constant rather than restating it — the two
+  // cannot drift — and adds only what a person reading a page needs in order to
+  // understand what the constant means.
+  sections.push('<h2 id="ai-assistance">How this text was written</h2>',
+    `<p>${escapeHtml(ASSISTANCE_SENTENCE)} A person decides what is written and why, an`
+    + ' assistant drafts and checks it under their direction, and a person reads, edits and'
+    + ' approves every sentence before it is published and answers for it.</p>',
+    '<p>Every item on this node records how its text was made — written by a person, written'
+    + ' with AI assistance, generated by a model, or imported from elsewhere — and names the'
+    + ' person accountable for it. You can read that record on the item\'s own page and in the'
+    + ' machine-readable views. Each accepted contribution carries the same record in its'
+    + ' sign-off.</p>',
+    '<p>This is the statement every agent-facing export of this node carries, in its own'
+    + ` words: <code>${escapeHtml(ASSISTANCE)}</code></p>`);
   return shell({
     ...options,
     title: 'Legal and privacy',
@@ -363,8 +412,34 @@ function aboutPage({ verbs, personas }, options = {}) {
   });
 }
 
+/**
+ * AGSC-04-25: `/changelog/`'s versions list — one row per element of the git-log
+ * file that carries a usable `tag`, oldest first, with the tag, that element's
+ * `committed_at` date and its `sha`. The list is what the rule pins; the rest of
+ * the page stays implementation-defined (AGSC-06-01).
+ *
+ * @param {Array<{tag:string, date:string, sha:string}>} rows from
+ *   `knowledge/content-version.js#versionRows`.
+ */
+function changelogPage(rows, options = {}) {
+  const list = Array.isArray(rows) ? rows : [];
+  const body = list.length === 0
+    ? '<p>This node has published no tagged version yet.</p>'
+    : `<table><thead><tr><th>version</th><th>date</th><th>commit</th></tr></thead><tbody>${
+      list.map((row) => `<tr><td><code>${escapeHtml(row.tag)}</code></td>`
+        + `<td>${escapeHtml(row.date)}</td>`
+        + `<td><code>${escapeHtml(row.sha)}</code></td></tr>`).join('')
+    }</tbody></table>`;
+  return shell({
+    ...options,
+    title: 'Changelog',
+    description: 'Every content version this node has published, oldest first.',
+    body: `<h2>Versions</h2>\n${body}`,
+  });
+}
+
 module.exports = {
-  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, diagramFigure,
+  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
   boardPage, composePage, legalPage,
-  escapeHtml, termsLine, HONEST_LIMIT,
+  escapeHtml, termsLine, ASSISTANCE_SENTENCE, NO_CLAIM_SENTENCE, HONEST_LIMIT,
 };

@@ -113,18 +113,36 @@ test('a built /ns/context.jsonld defines all 52 asc: terms and the 24 external o
     canonicalize(jsonldView.context(TERMS, jsonldView.allExternalProperties())));
 });
 
+test('a Level 2 build serves the VERSIONED copy too, byte for byte (AGSC-05-09, AGSC-06-01)', () => {
+  // Added at rc.6 (NS-05): AGSC-05-09 has required the versioned copy since rc.5 —
+  // it is the persistent URL a Level-0 `graph.jsonld` names — while AGSC-06-01's
+  // route set did not carry it, so the two rules could not both be satisfied.
+  const { files } = build();
+  const routes = [...files.keys()].filter((route) => route.startsWith('/ns/'));
+  assert.deepStrictEqual(routes.sort(),
+    ['/ns/1.0.0-draft.1/context.jsonld', '/ns/context.jsonld']);
+  assert.strictEqual(String(files.get('/ns/1.0.0-draft.1/context.jsonld')),
+    String(files.get('/ns/context.jsonld')));
+  // The versioned route is the path half of the persistent URL AGSC-05-09 names.
+  assert.ok(jsonldView.persistentContextUrl('1.0.0-draft.1')
+    .endsWith('/ns/1.0.0-draft.1/context.jsonld'));
+});
+
 // ------------------------------------------------------------------ NS-02
 
 test('the built graph.jsonld is compact: no vocabulary IRI is written out (NS-02)', () => {
   const { files } = build();
   for (const [route, bytes] of files) {
-    if (!route.endsWith('.jsonld') || route === '/ns/context.jsonld') continue;
+    // The two context copies are the context itself (AGSC-06-01 as amended at rc.6:
+    // `/ns/context.jsonld` and `/ns/<ontology-version>/context.jsonld`, which are
+    // byte-identical), and a context is where the vocabulary IRIs belong.
+    if (!route.endsWith('.jsonld') || /^\/ns\/(?:[^/]+\/)?context\.jsonld$/u.test(route)) continue;
     assert.ok(!String(bytes).includes(NS_HASH),
       `${route} writes a vocabulary IRI unabbreviated although the context defines a term for it`);
   }
   const document = JSON.parse(files.get('/graph.jsonld'));
   assert.strictEqual(document['@graph'][0]['@type'], 'Bundle');
-  assert.strictEqual(document['@graph'][0].specVersion, '1.0.0-rc.5');
+  assert.strictEqual(document['@graph'][0].specVersion, '1.0.0-rc.5');  // the build's own option
 });
 
 test('expand then re-compact reproduces graph.jsonld byte for byte (AGSC-06-32)', async () => {

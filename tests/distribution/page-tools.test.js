@@ -39,7 +39,7 @@ function built() {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.5', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' }) };
 }
 
 /** The emitted script, run as a page runs it, over the build's own published bytes. */

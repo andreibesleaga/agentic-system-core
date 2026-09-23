@@ -56,6 +56,7 @@ const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
+const archiveWriter = require('./_archive.js');
 
 /** AGSC-01-08: the generated directory this verb writes into, never `build.out`. */
 const EXPORT_DIR = 'dist/export';
@@ -154,10 +155,12 @@ function adapterExport(ctx, bundle, name) {
   const found = adapterOf(name);
   if (found.module === null || typeof found.module.run !== 'function') {
     return {
+      files: [],
       findings: [{
         code: 'AGSC-E001', severity: 'error',
         message: `export --to ${name}: ${found.reason === null ? 'the adapter exports no run() entry point' : found.reason}`,
       }],
+      root: null,
       written: [],
     };
   }
@@ -170,7 +173,7 @@ function adapterExport(ctx, bundle, name) {
   for (const file of produced.files) written.push(writeExport(ctx, `${name}/${file.path}`, file.text));
   helpers.note(ctx, `adapter: ${name} (${written.length} files, outside build.out — declare them with a`
     + ' related[] link, rel "alternate" (AGSC-06-35))');
-  return { findings: [...(produced.findings || [])], written };
+  return { files: produced.files, findings: [...(produced.findings || [])], root: name, written };
 }
 
 /**
@@ -218,7 +221,12 @@ function licenseContentOf(ctx) {
  * @returns {{findings:Array<object>, written:Array<string>}}
  */
 function bundleExport(ctx, bundle, form) {
+  // AGSC-01-26 / AGSC-04-25: the content version is derived once, here, from the
+  // same two inputs the build uses, and written into the export's root document.
+  const derived = helpers.bundleVersionOf(ctx, helpers.gitLog(ctx));
   const planned = exportBundle.plan(bundle, {
+    bundleVersion: derived.version,
+    generatedAt: instantOf(ctx),
     indexSource: readOptional(ctx, exportBundle.INDEX_FILE) || '',
     itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
     licenseContent: licenseContentOf(ctx),
@@ -234,7 +242,7 @@ function bundleExport(ctx, bundle, form) {
       + `${planned.withheld.length === 1 ? '' : 's'} withheld (draft, retired or release-gated,`
       + ` AGSC-06-30): ${planned.withheld.join(', ')}`);
   }
-  return { findings: planned.findings, written };
+  return { files: planned.files, findings: [...derived.findings, ...planned.findings], root: form, written };
 }
 
 /**
@@ -254,21 +262,25 @@ function steerExport(ctx, bundle, targets) {
     ? { ...item.frontmatter, body: item.body, path: item.path, slug: item.slug, type: item.type }
     : item));
   const nowState = now.state(items, config, { allItems, instant });
+  // AGSC-06-15: every steer target carries the provenance header, so it carries
+  // the content version (AGSC-01-29 routes them all through one writer).
+  const derived = helpers.bundleVersionOf(ctx, helpers.gitLog(ctx));
   const planned = steer.plan(bundle, {
+    bundleVersion: derived.version,
     generatedAt: instant,
     nowState,
     specVersion: ctx.specVersion,
     targets,
   });
   if (planned.findings.some((f) => f.severity === 'error')) {
-    return { findings: planned.findings, written: [] };
+    return { files: [], findings: planned.findings, root: null, written: [] };
   }
   const written = planned.files.map((file) => writeExport(ctx, `steer/${file.path}`, file.text));
   helpers.note(ctx, `export --steer: ${written.length} target`
     + `${written.length === 1 ? '' : 's'} (${planned.files.map((f) => f.target).join(', ')}),`
     + ` identical bytes at each path (AGSC-01-28)`);
   for (const lane of planned.lanes) helpers.note(ctx, `steer lane: ${lane}`);
-  return { findings: planned.findings, written };
+  return { files: planned.files, findings: [...derived.findings, ...planned.findings], root: 'steer', written };
 }
 
 /**
@@ -280,6 +292,33 @@ function steerExport(ctx, bundle, targets) {
 function targetsOf(flags) {
   if (flags.target === undefined) return undefined;
   return String(flags.target).split(',').map((name) => name.trim()).filter((name) => name !== '');
+}
+
+/**
+ * D111: one archive per multi-file export ROOT this invocation produced, written
+ * beside the root — `dist/export/markdown-<version>.zip` beside
+ * `dist/export/markdown/`. The entry bytes are the plan's, not a re-read of the
+ * disk, so the archive is the same builder and the same bytes as the Harness
+ * archive and the `/compose/` page's "download all" link (AGSC-07-13).
+ *
+ * @param {object} ctx
+ * @param {Array<{files:Array<object>, root:string}>} roots
+ * @returns {Array<object>} findings
+ */
+function zipRoots(ctx, roots) {
+  const findings = [];
+  const version = archiveWriter.bundleVersionOf(ctx);
+  const instant = instantOf(ctx);
+  for (const produced of roots) {
+    const zipped = archiveWriter.writeArchive(ctx, {
+      bundleVersion: version,
+      files: produced.files,
+      instant,
+      stem: `${EXPORT_DIR}/${produced.root}`,
+    });
+    findings.push(...zipped.findings);
+  }
+  return findings;
 }
 
 function run(ctx) {
@@ -295,6 +334,21 @@ function run(ctx) {
       }],
     };
   }
+  // D111: `--zip` packages an export ROOT, and `--jsonld`/`--jsonl` are each a
+  // single file at `dist/export/` rather than a root of their own (AGSC-01-27), so
+  // an invocation that asks for nothing but those two has no set to archive.
+  if (flags.zip === true && !['markdown', 'okf', 'steer'].some((f) => flags[f] === true)
+    && flags.to === undefined) {
+    return {
+      status: 'fail',
+      findings: [{
+        code: 'AGSC-E003', severity: 'error',
+        message: '--zip archives an export root and has no meaning without --markdown, --okf,'
+          + ' --steer or --to <adapter>; --jsonld and --jsonl each write one file'
+          + ' (AGSC-01-26…27, D111)',
+      }],
+    };
+  }
   if (chosen.length === 0 && flags.to === undefined) {
     return {
       status: 'fail',
@@ -307,13 +361,20 @@ function run(ctx) {
   }
   const findings = [];
   const bundle = helpers.bundleOf(ctx);
-  if (flags.markdown === true) findings.push(...bundleExport(ctx, bundle, 'markdown').findings);
-  if (flags.okf === true) findings.push(...bundleExport(ctx, bundle, 'okf').findings);
-  if (flags.steer === true) findings.push(...steerExport(ctx, bundle, targetsOf(flags)).findings);
+  const roots = [];
+  const collect = (produced) => {
+    findings.push(...produced.findings);
+    if (produced.root !== null && produced.root !== undefined) roots.push(produced);
+    return produced;
+  };
+  if (flags.markdown === true) collect(bundleExport(ctx, bundle, 'markdown'));
+  if (flags.okf === true) collect(bundleExport(ctx, bundle, 'okf'));
+  if (flags.steer === true) collect(steerExport(ctx, bundle, targetsOf(flags)));
   if (flags.jsonld === true || flags.jsonl === true) {
     findings.push(...graphExports(ctx, bundle, flags).findings);
   }
-  if (flags.to !== undefined) findings.push(...adapterExport(ctx, bundle, String(flags.to)).findings);
+  if (flags.to !== undefined) collect(adapterExport(ctx, bundle, String(flags.to)));
+  if (flags.zip === true) findings.push(...zipRoots(ctx, roots));
   return { findings };
 }
 
@@ -333,4 +394,5 @@ module.exports = {
   steerExport,
   targetsOf,
   writeExport,
+  zipRoots,
 };

@@ -1,0 +1,160 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-08 as amended at rc.6 (D113): `agsc-bundle-version` is a bundle fact, so it rides on the anchor's `describedby` link and nowhere else, carries exactly one value, and follows the same Level and visibility rules as the facts already beside it. Derivation, case by case. (1) At Level 2 it is present with one value, the content version of AGSC-04-25; the member order of the link object is the JSON member-name order of AGSC-04-05, which puts `agsc-bundle-version` immediately after `agsc-bundle-hash` (`h` before `v`) and before `agsc-counts`. (2) At Level 0 it is omitted with every other `agsc-*` bundle fact and every `digest`: AGSC-06-08a says a publisher with no build engine has no ledger, no build instant and no bundle hash, and it has no git history either, so it has no content version to state. (3) On a node whose `agsc-visibility` is `restricted` it is omitted although the node is Level 2: AGSC-11-20 as amended at rc.6 adds it to the attributes such a node must not publish, because its untagged forms carry the commit count and the commit hash of the content branch, which is the commit activity that rule already calls a content fact. A validator that finds it on a restricted node reports AGSC-E210 (AGSC-09-93), exactly as for the three attributes beside it.",
+  "expected": {
+    "cases": [
+      {
+        "bundle_version": "v1.4.0",
+        "describedby_attribute_order": [
+          "agsc-bundle-hash",
+          "agsc-bundle-version",
+          "agsc-counts",
+          "agsc-generated-at",
+          "agsc-spec-version",
+          "digest"
+        ],
+        "name": "level-2-present",
+        "valid": true
+      },
+      {
+        "attributes_omitted": [
+          "agsc-bundle-hash",
+          "agsc-bundle-version",
+          "agsc-counts",
+          "agsc-generated-at",
+          "agsc-ledger-head",
+          "agsc-spec-version",
+          "digest"
+        ],
+        "name": "level-0-omitted",
+        "valid": true
+      },
+      {
+        "attributes_omitted": [
+          "agsc-bundle-hash",
+          "agsc-bundle-version",
+          "agsc-counts",
+          "agsc-ledger-head"
+        ],
+        "name": "restricted-omitted",
+        "presence_would_be": {
+          "code": "AGSC-E210",
+          "severity": "error"
+        },
+        "valid": true
+      }
+    ]
+  },
+  "id": "disc-0015",
+  "input": {
+    "cases": [
+      {
+        "base": "https://example.org",
+        "level": 2,
+        "name": "level-2-present",
+        "wellknown": {
+          "linkset": [
+            {
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.4.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-09-16T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0-rc.6"
+                  ],
+                  "digest": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "base": "https://example.org",
+        "level": 0,
+        "name": "level-0-omitted",
+        "wellknown": {
+          "linkset": [
+            {
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "base": "https://example.org",
+        "level": 2,
+        "name": "restricted-omitted",
+        "wellknown": {
+          "linkset": [
+            {
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-generated-at": [
+                    "2026-09-16T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0-rc.6"
+                  ],
+                  "agsc-visibility": [
+                    "restricted"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (EXT-1); expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-08"
+}

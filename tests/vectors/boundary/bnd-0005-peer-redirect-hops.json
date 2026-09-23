@@ -17,8 +17,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 FIX-F27 table, F27-05; D100 — the one blocker for 1.0.0 on the frozen-artefact list). This file calls `followRedirects(peer, four_hops, { dev: false })` with no `resolved` map, so a conforming engine can only satisfy it by consulting the AGSC-11-08 address guard **when a resolution map is supplied** — that is, by leaving a fail-open branch in the transport rules. A required vector must not depend on a guard failing open. Superseded by bnd-0030, which carries a resolution for every hop and additionally proves that a hop resolving into a refused range stops the walk before the hop cap.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (PUB-6 FIX-F27 table, F27-05; D100 — the one blocker for 1.0.0 on the frozen-artefact list). This file calls `followRedirects(peer, four_hops, { dev: false })` with no `resolved` map, so a conforming engine can only satisfy it by consulting the AGSC-11-08 address guard **when a resolution map is supplied** — that is, by leaving a fail-open branch in the transport rules. A required vector must not depend on a guard failing open. Superseded by bnd-0030, which carries a resolution for every hop and additionally proves that a hop resolving into a refused range stops the walk before the hop cap.",
   "rule": "AGSC-11-09"
 }

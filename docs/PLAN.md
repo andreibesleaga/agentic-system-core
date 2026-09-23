@@ -480,7 +480,7 @@ Performance recommendations R-01…R-16 and benchmark hypotheses H-01…H-08 (wi
 **ADR-015 Visibility and dynamic hooks specified now, built later (D79).** `visibility` public/restricted with the discovery document always readable; `responder`/`solid` declaration-only. *Confirmation:* `bnd-0002`, `bnd-0016`.
 **ADR-016 Ports wired verdict-neutrally in Step 5 (D80).** `produces`/`consumes` on items, matched by exact name after the four verdict steps, warnings only. *Confirmation:* `compose-0011`, `compose-0012`, `graph-0013`.
 
-**October calendar (D71 Q68; moves M3 and the core of M1–M6 and M8 into October).** Standard: DS-5 re-freeze `1.0.0-rc.3` + V7 + ADV-R2 → DS-6 Internet-Draft `-00` (owner posts ≤ **9 Oct**) → DS-7 site v0 as a Level-0 node of its own standard (live ≤ **12 Oct**, w3id PR, Wayback capture). Software, 13–31 Oct (DS-8/DS-9): **M1** reader + lint + adopt · **M2** schemas/ontology/context/validators · **M3** `import --from old-site` (153 concepts, 110 clusters, DSL→SVG with source beside SVG — R59) · **M4** renderer, search, `build` · **M5** graph exports · **M6** discovery files, `llms.txt`, headers, NOW, ledger · **M8-core** combiner + seven Harness files + `/compose/` — so that site v0.1 with all published patterns, architectures, the combiner and the chunk export is live ≤ **31 Oct** (drafts cleared deck by deck by the owner, security first). Sacrifice order if capacity binds: query fragments → project export → attachments. November (DS-10): M7 release/deploy, M9 skills, validators and the tool server as declared surfaces, governance lanes, GA 6 Nov, then contributions to the two W3C CGs and the two AAIF WGs, then papers. Capacity note: 39.5 person-days of work against 20 working days to 12 Oct is met only because the standard (not the software) is the October deliverable and the content site follows on 31 Oct.
+**October calendar (recorded 2026-09-16; D71 Q68; moves M3 and the core of M1–M6 and M8 into October).** Standard: DS-5 re-freeze `1.0.0-rc.3` + V7 + ADV-R2 → DS-6 Internet-Draft `-00` (owner posts ≤ **9 Oct**) → DS-7 site v0 as a Level-0 node of its own standard (live ≤ **12 Oct**, w3id PR, Wayback capture). Software, 13–31 Oct (DS-8/DS-9): **M1** reader + lint + adopt · **M2** schemas/ontology/context/validators · **M3** `import --from old-site` (153 concepts, 110 clusters, DSL→SVG with source beside SVG — R59) · **M4** renderer, search, `build` · **M5** graph exports · **M6** discovery files, `llms.txt`, headers, NOW, ledger · **M8-core** combiner + seven Harness files + `/compose/` — so that site v0.1 with all published patterns, architectures, the combiner and the chunk export is live ≤ **31 Oct** (drafts cleared deck by deck by the owner, security first). Sacrifice order if capacity binds: query fragments → project export → attachments. November (DS-10): M7 release/deploy, M9 skills, validators and the tool server as declared surfaces, governance lanes, GA 6 Nov, then contributions to the two W3C CGs and the two AAIF WGs, then papers. Capacity note: 39.5 person-days of work against 20 working days to 12 Oct is met only because the standard (not the software) is the October deliverable and the content site follows on 31 Oct.
 
 ## Addendum 2026-09-18 (D88) — declared scope by version (AGSC-00-20) and two decision records (ADR-017, ADR-018; numbered after the ADR-016 of 2026-09-16)
 
@@ -539,12 +539,38 @@ hold this distribution together. To lint a *Bundle*, the command is `agsc lint` 
 that Bundle's root. (Specification items 57 / FIX28-02 and ENG5-S11; the same note is
 appended to `docs/PRD.md`.)
 
-**One reporting step in CI, not a failure.** `tools/validate-spec` exits 1 on the frozen
-`1.0.0-rc.5` text for reasons recorded as specification items (ENG4-01…05). Until those
-are applied at 1.0.0, `release.yml` runs it as a **reporting** step and every other
-validator blocks the merge, which is the nearest thing to `AGSC-09-92` that the frozen
-text allows.
+**One reporting step in CI, not a failure.** `tools/validate-spec` exited 1 on 2026-09-21
+against the `1.0.0-rc.5` text for reasons recorded as specification items (ENG4-01…05).
+Until those were applied, `release.yml` ran it as a **reporting** step while every other
+validator blocked the merge, which was the nearest thing to `AGSC-09-92` that the frozen
+text allowed. The items are applied in the `1.0.0-rc.6` draft (2026-09-22), and the step
+becomes blocking once the tool's historical-note word list follows AGSC-09-91 as amended
+there.
 
 **`docs/IMPLEMENTERS-GUIDE.md` exists**, so `AGSC-01-26a`'s obligation to list every
 memory adapter with its claimed key set is discharged; the list itself is in
 `src/interchange/README.md` and the guide points at it.
+
+---
+
+## Appended 2026-09-22 — the compatibility section and the content version (D112, D113)
+
+Added to the `1.0.0-rc.6` draft after the pass recorded above, in `spec/` and `schema/` only:
+
+- **`spec/00` §0.6 (AGSC-00-21…25)** — compatibility across versions, the closed list of eight
+  plugin kinds with their contracts, and the three names reserved to 1.1 (`weights`, `routing`,
+  `executable`). `AGSC-00-20`'s 1.1 list carries the same three.
+- **`spec/04` §4.9 (AGSC-04-25)** — the content version `bundle_version`, derived from the git-log
+  file of AGSC-08-20b and the build instant of AGSC-04-09, stamped in nine named places and
+  recorded by `import` as `prov.source_version`/`prov.source_hash`.
+
+Sixteen rules are amended in place for the two; none is retired, none renumbered, and no error code
+is minted. `schema/bundle.schema.json` gains `bundle_version`; `schema/item.schema.json` gains
+`prov.source_version` and `prov.source_hash`. Two vectors are withdrawn and superseded
+(`disc-0010` → `disc-0013`, `disc-0011` → `disc-0014`) and six are added; all eight new ids are in
+`tests/conformance/pending.json` with the reason `rc.6: awaiting engine (ENG-8)`, which is the
+package that makes the reference engine satisfy them.
+
+Until that package lands, the reference engine emits no `agsc-bundle-version`, no
+`bundle_version:` header line and no content version anywhere, so the six new vectors and the two
+successors fail by design and the two withdrawn ones are not run.

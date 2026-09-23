@@ -152,7 +152,7 @@ informative:
       - org: IANA
     target: https://www.iana.org/assignments/iana-ipv6-special-registry/
   AGSC-SPEC:
-    title: "AgenticSystemCore Specification, version 1.0.0-rc.5 (release candidate)"
+    title: "AgenticSystemCore Specification, version 1.0.0-rc.6 (release candidate)"
     author:
       - ins: A. N. Besleaga
         name: Andrei Nicolae Besleaga
@@ -466,6 +466,13 @@ JSON-LD graph. They are:
 : one value, the hash of the Bundle in the syntax of
   {{the-digest-attribute}}.
 
+`agsc-bundle-version`:
+: one value, the publisher's content version for the state the
+  artefacts were generated from: a short name a person can read and
+  cite, where the hash says only whether two retrievals carry the same
+  content. It is derived by the publisher and is opaque to a client,
+  which MUST NOT order two values or infer a sequence from them.
+
 One further attribute rides on the `ledger` extension relation's link
 and nowhere else:
 
@@ -514,8 +521,8 @@ member of that attribute's list.
 A publisher without a build engine -- a content management system or a
 wiki that exports static files -- publishes the same link set with
 every `digest` attribute and every bundle-fact attribute omitted. Such
-a publisher has no ledger, no build instant, and no bundle hash, and
-this document does not ask for one. The declaration attributes of
+a publisher has no ledger, no build instant, no bundle hash and no
+content version, and this document does not ask for any of them. The declaration attributes of
 {{declaration-attributes}} are unaffected.
 
 There is no structural difference between the two forms: `linkset` is
@@ -1085,6 +1092,9 @@ NOTE: '\' line wrapping per RFC 8792
           "agsc-bundle-hash": [
             "sha-256=:UdwS29SBU+9+G3d/Fp3KtLtY292AjFswry0+mLI8te4=:"
           ],
+          "agsc-bundle-version": [
+            "v1.4.0"
+          ],
           "agsc-counts": [
             "clusters=6",
             "concepts=142",
@@ -1097,7 +1107,7 @@ NOTE: '\' line wrapping per RFC 8792
             "2026-10-09T08:15:00Z"
           ],
           "agsc-spec-version": [
-            "1.0.0-rc.5"
+            "1.0.0-rc.6"
           ],
           "digest": [
             "sha-256=:JeigkAtOPS9f9BzKym+X6J2O4awt53GEua1AhIAiLfE=:"

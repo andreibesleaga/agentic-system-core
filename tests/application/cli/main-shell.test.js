@@ -120,7 +120,9 @@ test('AGSC-09-09: --version answers in both modes and reads no Bundle', async ()
   // With no version supplied at all, the shell reads its own package.json.
   const stdout = captureStream();
   main(['--version'], { env: {}, stdout });
-  assert.match(stdout.text(), /^agsc \d+\.\d+\.\d+\n$/u);
+  // The package version is a SemVer string, and at a release candidate it carries a
+  // pre-release part (`1.0.0-rc.6`) — which is what D107 publishes to npm.
+  assert.match(stdout.text(), /^agsc \d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\n$/u);
 });
 
 test('AGSC-04-09: a malformed SOURCE_DATE_EPOCH is AGSC-E603 and exit 2 in both modes', async () => {
@@ -254,3 +256,37 @@ test('AGSC-09-07: an unknown verb says what was typed, so a typo is visible', ()
   const r = usage(['buidl']);
   assert.ok(r.stderr.includes('buidl'), r.stderr);
 });
+
+test('AGSC-09-09 (rc.6): a value flag given twice is AGSC-E002, in both modes', async () => {
+  // AGSC-01-28 says it in as many words of `--target`: "one comma-separated list of
+  // registry names, never a repeated flag". Commander keeps the LAST occurrence of
+  // a repeated value flag, so `--target agents --target claude` used to export
+  // `claude` alone and say nothing — a silent loss of what the operator asked for.
+  const plain = await shell(['export', '--steer', '--target', 'agents', '--target', 'claude']);
+  assert.strictEqual(plain.exit, 2);
+  assert.match(plain.stderr, /^agsc: AGSC-E002 --target is given more than once/u);
+  assert.match(plain.stderr, /--target a,b/u, 'the message must show the form that works');
+  assert.strictEqual(plain.stdout, '');
+
+  // `--flag=value` is the same flag by another spelling.
+  const equals = await shell(['export', '--steer', '--target=agents', '--target=claude']);
+  assert.strictEqual(equals.exit, 2);
+
+  // Under --json the diagnostic is one JSON object per line on stderr: no verb ran,
+  // so there is no AGSC-09-11 envelope, and stdout carries nothing.
+  const json = await shell(['export', '--steer', '--target', 'a', '--target', 'b', '--json']);
+  assert.strictEqual(json.exit, 2);
+  assert.strictEqual(json.stdout, '');
+  assert.deepStrictEqual(JSON.parse(json.stderr), {
+    code: 'AGSC-E002',
+    severity: 'error',
+    message: JSON.parse(json.stderr).message,
+  });
+  assert.match(JSON.parse(json.stderr).message, /every flag takes one value/u);
+
+  // ONE occurrence is not a repetition, and a repeated BOOLEAN flag is not either:
+  // a boolean carries no value to lose.
+  assert.strictEqual((await shell(['export', '--steer', '--target', 'agents,claude'])).exit, 0);
+  assert.notStrictEqual((await shell(['lint', '--json', '--json'])).exit, 2);
+});
+

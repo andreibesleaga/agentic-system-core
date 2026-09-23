@@ -41,7 +41,14 @@ const RELATED_ONLY = new Set(['related', 'service-desc', 'service-meta', 'collec
 const EXTENSIONS = new Set(['graph', 'ontology', 'context', 'now', 'skills', 'ledger', 'peer',
   'surface', 'contribute', 'access']);
 const RFC8288_STRING_ATTRS = new Set(['type', 'title', 'media']); // RFC 9264 §4.2.4.2
-const LEVEL2_ATTRS = ['agsc-bundle-hash', 'agsc-counts', 'agsc-generated-at', 'agsc-spec-version'];
+const LEVEL2_ATTRS = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-generated-at', 'agsc-spec-version'];
+// AGSC-11-20: the four a `restricted` node MUST omit although it is Level ≥ 2 —
+// per-type population, the fingerprint, the content version (whose untagged forms
+// carry the commit count and the commit hash of the content branch) and the ledger
+// head are all content facts. Presence is AGSC-E210 (AGSC-09-93).
+const RESTRICTED_OMITTED = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-ledger-head'];
+// AGSC-04-25's grammar: one line, ASCII, safe unescaped in a link-set attribute.
+const VERSION_GRAMMAR = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/;
 const SURFACES = new Set(['llms-txt', 'chunks', 'mcp', 'webmcp', 'a2a-card', 'solid', 'responder']);
 const SURFACE_NEEDS_VERSION = new Set(['mcp', 'webmcp', 'a2a-card', 'solid', 'responder']);
 const ACCESS = new Set(['none', 'consent', 'credential']);
@@ -297,6 +304,35 @@ async function check(src, level, findings) {
   const sorted = [...KEYS.get(ctx)].sort();
   if (JSON.stringify(KEYS.get(ctx)) !== JSON.stringify(sorted)) F('AGSC-E201', 'link context members are not ordered as JSON member names (AGSC-06-08, AGSC-04-05)');
   const result = { anchor: ctx.anchor, peers: [], ctx };
+  // AGSC-11-20: a gated node's own declaration decides which attributes are
+  // REQUIRED and which are FORBIDDEN, so it is read once, before the links.
+  const describedby = Array.isArray(ctx.describedby) ? ctx.describedby : [];
+  const anchorLink = describedby.find(t => t && typeof t.href === 'string' && /\/graph\.jsonld$/.test(t.href)) || {};
+  const gated = Array.isArray(anchorLink['agsc-visibility'])
+    && anchorLink['agsc-visibility'].map(String).includes('restricted');
+  if (gated) {
+    for (const a of RESTRICTED_OMITTED) {
+      if (anchorLink[a] !== undefined) F('AGSC-E210', `a restricted node must omit "${a}": per-type population, the fingerprint, the content version and the ledger head are content facts (AGSC-11-20)`);
+    }
+    if (Array.isArray(ctx[REL + 'ledger']) && ctx[REL + 'ledger'].length) F('AGSC-E210', 'a restricted node publishes no rel#ledger link (AGSC-11-20)');
+  }
+  // AGSC-00-23 / AGSC-E210: a node may not publish bytes carrying a member of a
+  // version its own `agsc-spec-version` does not define. Checked for the members
+  // this specification knows how to look for — today, the content version, which
+  // arrived at 1.0 and whose value must match AGSC-04-25's grammar.
+  const declared = Array.isArray(anchorLink['agsc-spec-version']) ? String(anchorLink['agsc-spec-version'][0]) : null;
+  const declaredMajor = declared === null ? null : (/^(\d+)\./.exec(declared) || [null, null])[1];
+  if (Array.isArray(anchorLink['agsc-bundle-version'])) {
+    const value = anchorLink['agsc-bundle-version'];
+    if (value.length !== 1) F('AGSC-E210', 'agsc-bundle-version carries exactly one value (AGSC-06-08, AGSC-04-25)');
+    else if (!VERSION_GRAMMAR.test(String(value[0]))) F('AGSC-E204', `agsc-bundle-version ${JSON.stringify(String(value[0]))} is outside the grammar of AGSC-04-25`);
+    // The attribute is defined from specification MAJOR 1 (AGSC-04-25, added at
+    // rc.6 under D113), so a node publishing it while declaring another MAJOR is
+    // publishing bytes its own declaration does not define.
+    if (declaredMajor !== null && declaredMajor !== '1') {
+      F('AGSC-E210', `the node publishes agsc-bundle-version while declaring agsc-spec-version ${JSON.stringify(declared)}, which does not define it (AGSC-00-23, AGSC-04-25)`);
+    }
+  }
   for (const rel of names) {
     const ext = rel.startsWith(REL) ? rel.slice(REL.length) : null;
     if (!(REGISTERED.has(rel) || (ext !== null && EXTENSIONS.has(ext)))) F('AGSC-E209', `relation ${JSON.stringify(rel)} is neither a registered name of AGSC-06-10/06-35 nor a …/rel#<name> extension URI`);
@@ -326,8 +362,10 @@ async function check(src, level, findings) {
           } catch (e) { F(e.code || 'AGSC-E907', `relation ${rel}: ${e.message}`); }
         }
       } else if (level >= 2 && artefact) F('AGSC-E202', `relation ${rel}: artefact link ${t.href} carries no digest (required at Level ≥ 2, AGSC-06-08a)`);
-      if (level >= 2 && rel === 'describedby' && /\/graph\.jsonld$/.test(h.pathname)) for (const a of LEVEL2_ATTRS) if (t[a] === undefined) F('AGSC-E202', `describedby ${t.href}: ${a} is required at Level ≥ 2 (AGSC-06-08)`);
-      if (level >= 2 && ext === 'ledger' && t['agsc-ledger-head'] === undefined) F('AGSC-E202', 'rel#ledger: agsc-ledger-head is required at Level ≥ 2 (AGSC-06-08)');
+      // AGSC-06-08a requires every `agsc-*` attribute at Level ≥ 2 — EXCEPT the four
+      // AGSC-11-20 forbids a gated node to publish, which are checked above instead.
+      if (level >= 2 && rel === 'describedby' && /\/graph\.jsonld$/.test(h.pathname)) for (const a of LEVEL2_ATTRS) if (t[a] === undefined && !(gated && RESTRICTED_OMITTED.includes(a))) F('AGSC-E202', `describedby ${t.href}: ${a} is required at Level ≥ 2 (AGSC-06-08)`);
+      if (level >= 2 && !gated && ext === 'ledger' && t['agsc-ledger-head'] === undefined) F('AGSC-E202', 'rel#ledger: agsc-ledger-head is required at Level ≥ 2 (AGSC-06-08)');
       if (RELATED_ONLY.has(rel) && typeof t.type !== 'string') F('AGSC-E209', `related-system link ${rel} ${t.href} must carry type (AGSC-06-35)`);
       if (ext === 'peer') result.peers.push(t.href);
       if (ext === 'surface') {

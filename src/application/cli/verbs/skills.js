@@ -13,8 +13,11 @@
  * are emitted by `build` from the same module, so the two never differ.
  *
  * `install` and `import` are POSITIONAL arguments, not flags: AGSC-09-09 closes the
- * flag set of every verb and names none for `skills`, so a flag would be
- * `AGSC-E002`.
+ * flag set of every verb and named none for `skills`, so a flag would be
+ * `AGSC-E002`. The one exception is `--zip` (owner decision D111, ENG-7), which
+ * writes the emitted packs as a single archive beside `dist/skills/`; AGSC-09-09's
+ * list does not yet name it and the proposed wording is on the specification items
+ * list (ENG7-01).
  *
  * Owner: ENG-5 (WP-12).
  */
@@ -27,6 +30,7 @@ const { readSchemas } = require('../../../adapters/node-fs.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
 const { finding } = require('../../../knowledge/validate.js');
 const helpers = require('./_helpers.js');
+const archiveWriter = require('./_archive.js');
 
 /** AGSC-01-08: the generated directory the verb writes into, never `build.out`. */
 const SKILLS_DIR = 'dist/skills';
@@ -49,6 +53,10 @@ function instantOf(ctx) {
 function packsOf(ctx, bundle) {
   const config = bundle.config || {};
   return site.skillPacks(bundle, {
+    // AGSC-07-19 / AGSC-04-25: `/skills/index.json` carries the content version, and
+    // `build` emits the same object from the same call — so the value is derived by
+    // the same helper in both lanes or the two would differ by one member.
+    bundleVersion: archiveWriter.bundleVersionOf(ctx),
     generatedAt: instantOf(ctx),
     sha256: helpers.sha256,
     specVersion: ctx.specVersion,
@@ -69,6 +77,18 @@ function emit(ctx, bundle) {
   helpers.note(ctx, `skills: ${produced.index.packs.length} pack`
     + `${produced.index.packs.length === 1 ? '' : 's'} under ${SKILLS_DIR}/`
     + ' (one per Cluster, AGSC-07-19; index.json is the lockfile of AGSC-07-20)');
+  // D111: the packs and their lockfile belong together, so `--zip` writes them as
+  // one archive beside the directory — the same builder, and the same bytes, as the
+  // Harness archive and the page's "download all" link (AGSC-07-13).
+  if (ctx.verbFlags && ctx.verbFlags.zip === true) {
+    const zipped = archiveWriter.writeArchive(ctx, {
+      bundleVersion: archiveWriter.bundleVersionOf(ctx),
+      files: produced.files,
+      instant: instantOf(ctx),
+      stem: SKILLS_DIR,
+    });
+    return [...produced.findings, ...zipped.findings];
+  }
   return produced.findings;
 }
 
@@ -142,6 +162,17 @@ function importPack(ctx, bundle, file) {
 
 function run(ctx) {
   const argv = ctx.argv || [];
+  // `--zip` archives what `skills` EMITS; `install` writes into a target tree and
+  // `import` reads one file, and neither produces a set to package (D111).
+  if (argv[0] !== undefined && ctx.verbFlags && ctx.verbFlags.zip === true) {
+    return {
+      status: 'fail',
+      findings: [finding('AGSC-E003',
+        `--zip archives the packs \`skills\` emits under ${SKILLS_DIR}/ and has no meaning with`
+        + ` "${argv[0]}"; run \`agsc skills --zip\` on its own (D111)`,
+        { file: '', severity: 'error' })],
+    };
+  }
   const bundle = helpers.bundleOf(ctx);
   if (argv[0] === 'install') return { findings: installPacks(ctx, bundle, argv[1]) };
   if (argv[0] === 'import') return { findings: importPack(ctx, bundle, argv[1]) };

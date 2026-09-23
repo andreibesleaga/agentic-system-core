@@ -1,7 +1,7 @@
 {
     "name": "agentic-system-core",
-    "version": "0.0.2",
-    "description": "A specification for publishing machine-discoverable knowledge bundles. This 0.0.x release reserves the package name; no runtime is published yet. The specification, JSON Schemas, ontology and conformance test vectors are the deliverable and are developed in the open.",
+    "version": "1.0.0-rc.6",
+    "description": "The reference engine and command line of AgenticSystemCore: publish a Markdown knowledge Bundle as a static node of the Agentic Knowledge Web — a wiki, an RDF graph, agent memory, skills, MCP and WebMCP tools and a discovery document. Ships the specification, the JSON Schemas, the ontology, the conformance vectors and the nine independent checkers.",
     "main": "index.js",
     "bin": {
         "agsc": "bin/agsc.js",
@@ -10,14 +10,22 @@
     "files": [
         "bin/",
         "src/",
+        "tools/",
+        "bench/",
         "index.js",
         "spec/",
         "schema/",
         "ontology/",
         "tests/vectors/",
+        "features/",
+        "docs/diagrams/",
         "docs/SPEC.md",
+    "docs/PLUGINS.md",
+    "docs/USING-WITH-ASSISTANTS.md",
+    "examples/",
         "LICENSE",
         "LICENSE-CONTENT",
+        "CONTRIBUTOR-AGREEMENT",
         "CITATION.cff",
         "CHANGELOG.md",
         "CONTRIBUTING.md",
@@ -67,6 +75,7 @@
     },
     "devDependencies": {
         "fast-check": "4.10.1",
+        "fflate": "0.8.3",
         "jsonld": "9.0.0"
     }
 }

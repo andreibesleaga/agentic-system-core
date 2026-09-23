@@ -102,6 +102,24 @@ function termName(compact, ascNames, externalLocals) {
  * @param {string[]} externalProperties  compact names, e.g. `['rdfs:seeAlso']`
  */
 function context(ontologyTerms, externalProperties = []) {
+  const wanted = new Set(externalProperties || []);
+  return contextFrom(ontologyTerms, EXTERNAL_PROPERTIES.filter(([compact]) => wanted.has(compact)));
+}
+
+/**
+ * The same derivation over EXPLICIT external rows `[compact, type]`, rather than
+ * over the names of the closed table above.
+ *
+ * AGSC-06-32 as amended at rc.6 (NS-04) pins the term NAMES, not the types: which
+ * `@type` an external property takes is fixed by the rule that emits it, and the
+ * table above is this engine's record of those rules. Vector `graph-0019` therefore
+ * states the rows itself and tests the naming alone, which is what this entry point
+ * is for — the naming code it exercises is the same code `context` runs.
+ *
+ * @param {{term: string, kind: 'class'|'object'|'datatype', range?: string}[]} ontologyTerms
+ * @param {Array<Array<*>>} rows `[compact, type]` pairs, `'@id'` | datatype IRI | null
+ */
+function contextFrom(ontologyTerms, rows) {
   const definitions = { '@protected': true, '@version': 1.1, ...PREFIXES };
   const ascNames = new Set((ontologyTerms || []).map((entry) => entry.term));
   for (const entry of ontologyTerms || []) {
@@ -110,14 +128,12 @@ function context(ontologyTerms, externalProperties = []) {
     if (entry.kind === 'datatype' && entry.range) definition['@type'] = expandCompact(entry.range);
     definitions[entry.term] = definition;
   }
-  const wanted = new Set(externalProperties || []);
-  const rows = EXTERNAL_PROPERTIES.filter(([compact]) => wanted.has(compact));
   const locals = new Map();
-  for (const [compact] of rows) {
+  for (const [compact] of rows || []) {
     const local = compact.slice(compact.indexOf(':') + 1);
     locals.set(local, (locals.get(local) || 0) + 1);
   }
-  for (const [compact, type] of rows) {
+  for (const [compact, type] of rows || []) {
     const definition = { '@id': compact };
     if (type) definition['@type'] = type === '@id' ? '@id' : expandCompact(type);
     definitions[termName(compact, ascNames, locals)] = definition;
@@ -268,6 +284,7 @@ module.exports = {
   termName,
   termIndex,
   context,
+  contextFrom,
   allExternalProperties,
   persistentContextUrl,
   resolveMemory,

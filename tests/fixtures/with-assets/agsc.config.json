@@ -10,6 +10,14 @@
   },
   "site": {
     "base": "https://assets.example/",
+    "tdm_crawlers": [
+      "Applebot-Extended",
+      "CCBot",
+      "ClaudeBot",
+      "GPTBot",
+      "Google-Extended",
+      "meta-externalagent"
+    ],
     "tagline": "A Bundle with an asset on disk.",
     "title": "Bundle with assets"
   },

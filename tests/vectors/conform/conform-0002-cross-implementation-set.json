@@ -20,8 +20,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-17 at rc.3 (DS-5, deferred-vector pass); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (V9A-27; D100). Its `accepted` array mixes two route spellings inside one byte-compared expectation — `graph.jsonld`, `graph.nq`, `search.json` and `chunks.jsonl` without a leading slash beside `/llms.txt` with one — so a port cannot tell whether the slash is significant. Superseded by conform-0004, which uses the AGSC-06-01 route form throughout.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (V9A-27; D100). Its `accepted` array mixes two route spellings inside one byte-compared expectation — `graph.jsonld`, `graph.nq`, `search.json` and `chunks.jsonl` without a leading slash beside `/llms.txt` with one — so a port cannot tell whether the slash is significant. Superseded by conform-0004, which uses the AGSC-06-01 route form throughout.",
   "rule": "AGSC-04-24"
 }

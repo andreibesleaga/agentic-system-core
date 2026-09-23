@@ -11,8 +11,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-2); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (`src/README.md` §11.6(8) R-08; D100). AGSC-06-33 states `/graph/fragments/index.json` as `{subjects, predicates, generated_at}` with `subjects` and `predicates` **arrays of file paths in code-point order**; this file expects integer counts. AGSC-00-03 makes the rule normative and the vector the defect. Superseded by build-0011.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (`src/README.md` §11.6(8) R-08; D100). AGSC-06-33 states `/graph/fragments/index.json` as `{subjects, predicates, generated_at}` with `subjects` and `predicates` **arrays of file paths in code-point order**; this file expects integer counts. AGSC-00-03 makes the rule normative and the vector the defect. Superseded by build-0011.",
   "rule": "AGSC-06-33"
 }

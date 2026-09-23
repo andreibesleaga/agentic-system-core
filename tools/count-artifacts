@@ -149,18 +149,23 @@ function run(argv, io) {
   // it (e.g. the hyphenated key "agsc-spec-version": ["1.0.0-rc.3"] never contains the
   // literal substring "spec_version") — must equal the declared version, UNLESS the literal
   // sits on a line that is plainly a historical note: one containing, before the literal,
-  // a word such as "at", "since", "amended", "added", "withdrawn", "before", "until" or
-  // "from" (an amendment marker, a retirement note, a rc.N-vs-rc.M comparison, etc.).
+  // a word such as "at", "since", "amended", "added", "withdrawn", "before", "until",
+  // "from", "for", "against", "written" or "re-verified" (an amendment marker, a
+  // retirement note, a rc.N-vs-rc.M comparison, etc.), OR a full YYYY-MM-DD date.
   // A differing literal on any other line is a live example or status claim that drifted.
   // (?<![\w-])/(?![\w-]) rather than \b so a hyphenated JSON key such as
   // "agsc-generated-at" does not itself read as the prose word "at".
-  const historyWord = /(?<![\w-])(at|since|amended|added|withdrawn|before|until|from)(?![\w-])/i;
+  // The last four words and the date test were added at rc.6 (ENG4-02); AGSC-09-91 names
+  // this tool as the reference behaviour, so `tools/validate-spec` carries the same two.
+  const historyWord = /(?<![\w-])(re-verified|at|since|amended|added|withdrawn|before|until|from|for|against|written)(?![\w-])/i;
+  const historyDate = /\d{4}-\d{2}-\d{2}/;
   specFiles.forEach((name) => {
     const f = `spec/${name}`;
     specTexts.get(name).split('\n').forEach((line, i) => {
       for (const m of line.matchAll(/1\.0\.0-rc\.\d+/g)) {
         if (m[0] === declared) continue;
-        if (!historyWord.test(line.slice(0, m.index)))
+        const before = line.slice(0, m.index);
+        if (!historyWord.test(before) && !historyDate.test(before))
           findings.push(`${f}:${i + 1}: version literal ${m[0]} differs from spec/00 ${declared} and is not on a historical-note line (AGSC-09-91)`);
       }
     });

@@ -50,6 +50,7 @@
 
 const { commentSafe, compareCodePoint, singleLine, nfc } = require('../knowledge/unicode.js');
 const { canonicalize } = require('../knowledge/jcs.js');
+const { provenanceHeader: provenanceBlock } = require('../knowledge/provenance-header.js');
 const { finding } = require('../knowledge/validate.js');
 const slugs = require('../knowledge/slug.js');
 
@@ -82,13 +83,14 @@ function fenceProse(text) {
 
 /** The AGSC-06-15 provenance header, in the AGSC-06-13a byte layout. */
 function provenanceHeader(options) {
-  return ['<!-- agsc:provenance',
-    `bundle: ${commentSafe(singleLine(options.base))}`,
-    `license: ${commentSafe(singleLine(options.license))}`,
-    `terms: ${commentSafe(singleLine(TERMS))}`,
-    `spec_version: ${commentSafe(singleLine(options.specVersion))}`,
-    `generated_at: ${commentSafe(singleLine(options.generatedAt))}`,
-    '-->'].join('\n');
+  return provenanceBlock({
+    bundle: options.base,
+    bundleVersion: options.bundleVersion,
+    generatedAt: options.generatedAt,
+    license: options.license,
+    specVersion: options.specVersion,
+    terms: TERMS,
+  });
 }
 
 /** AGSC-07-19: the description, bounded and single-line. */
@@ -207,7 +209,11 @@ function packs(items, options) {
     });
   }
 
+  // AGSC-07-19 as amended at rc.6 (D113): `bundle_version` is the content version
+  // of AGSC-04-25, beside the pack entries. JCS sorts it first.
+  const version = options.bundleVersion == null ? '' : String(options.bundleVersion);
   const index = {
+    ...(version === '' ? {} : { bundle_version: version }),
     license: String(options.license),
     packs: manifest,
     spec_version: String(options.specVersion),

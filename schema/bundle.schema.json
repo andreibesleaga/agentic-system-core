@@ -13,6 +13,11 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
     },
+    "bundle_version": {
+      "description": "The content version of the Bundle state this document was written for (AGSC-04-25, rc.6, D113). Derived at build and never authored; it appears in the Bundle root document only of an `export --markdown`/`--okf` output (AGSC-01-26).",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+    },
     "okf_version": {
       "description": "Open Knowledge Format version this Bundle is a superset of; allowed at the bundle root only.",
       "type": "string",

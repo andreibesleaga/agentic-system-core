@@ -28,7 +28,7 @@ const VERBS = [
  * (`options.spec_version`), which is what keeps a released vector reproducible
  * across an rc bump (AGSC-00-16).
  */
-const SPEC_VERSION = '1.0.0-rc.5';
+const SPEC_VERSION = '1.0.0-rc.6';
 
 // The five global flags of AGSC-09-09; every verb parser gets these.
 const GLOBAL_FLAGS = [
@@ -65,7 +65,8 @@ const VERB_FLAGS = {
   lint: new Map([['--fix', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
-    ['--jsonl', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value']
+    ['--jsonl', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
+    ['--zip', 'bool']
   ]),
   // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
   // and writes nothing (AGSC-09-09 as amended at rc.5, ENG2-01). The flags of the
@@ -82,7 +83,15 @@ const VERB_FLAGS = {
   // flag the location is AGSC-07-12's own `dist/harness/<name>/`, so a conforming
   // invocation needs no flag. AGSC-09-09's verb-flag list does not yet name it —
   // the proposed wording is on the specification items list (ENG2-01).
-  compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value']]),
+  // `--zip` (owner decision D111, ENG-7) writes ONE archive beside a multi-file
+  // result — the Harness directory, `dist/skills/`, an export root — so that the
+  // `/compose/` page's "download all" link and the command produce the same bytes
+  // (AGSC-07-13). Like `compose --out` above it, AGSC-09-09's verb-flag list does
+  // not yet name it: the proposed wording is on the specification items list
+  // (ENG7-01), and the archive is never a file OF the Harness, which AGSC-07-12
+  // closes at seven kinds — it is written beside the directory and never inside it.
+  compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool']]),
+  skills: new Map([['--zip', 'bool']]),
   build: new Map([['--level', 'value']]),
   ci: new Map([['--level', 'value']])
 };
@@ -142,13 +151,25 @@ function retiredFlagHint(verb, argv) {
  *                         the root and a path that leaves it through a link
  *                         (AGSC-E902).
  */
+/**
+ * AGSC-09-08's usage class, by code: `AGSC-E004` is "invalid configuration",
+ * which that rule puts in the exit-2 class beside an unknown verb, an unknown
+ * flag and a missing argument. Nothing else is added here: a finding about the
+ * CONTENT is exit 1, however severe.
+ */
+const USAGE_CLASS_CODES = new Set(['AGSC-E004']);
+
 const ADAPTER_FLAGS = {
   import: {
     selector: '--from',
     adapters: {
       'old-site': new Map([['--selection', 'value'], ['--corrections', 'value'],
         ['--attach-diagrams', 'bool'], ['--replace', 'bool']]),
-      okf: new Map([['--replace', 'bool']]),
+      // `--allow-newer` is the OKF adapter's own flag (AGSC-01-26a, AGSC-09-09:
+      // "a memory adapter … MAY define further flags of its own"), added at rc.6
+      // for AGSC-01-22's tolerance limit: without it a source declaring a MAJOR or
+      // MINOR this tool does not implement is refused before anything is written.
+      okf: new Map([['--replace', 'bool'], ['--allow-newer', 'bool']]),
     },
   },
   export: { selector: '--to', adapters: {} },
@@ -189,6 +210,26 @@ function buildVerbParser(verb, argv) {
     cmd.option(kind === 'bool' ? flag : `${flag} <value>`);
   }
   return cmd;
+}
+
+/**
+ * The first value-taking flag of this verb that `argv` states more than once, or
+ * `null`. Only the `--flag value` form is counted; `--flag=value` is counted too,
+ * because it is the same flag by another spelling.
+ */
+function repeatedValueFlag(verb, argv) {
+  const seen = new Map();
+  for (const [flag, kind] of flagsFor(verb, argv || [])) {
+    if (kind !== 'value') continue;
+    const count = (argv || []).filter((token) => token === flag
+      || String(token).startsWith(`${flag}=`)).length;
+    if (count > 1) seen.set(flag, count);
+  }
+  for (const token of argv || []) {
+    const flag = String(token).split('=')[0];
+    if (seen.has(flag)) return flag;
+  }
+  return null;
 }
 
 /** This verb's own flags plus the flags of the adapter this invocation names. */
@@ -368,7 +409,7 @@ function helpText(version, verb) {
  *   are honoured (AGSC-09-09); never read from `process.env` directly here.
  * - root: the Bundle root (default '.').
  * - specVersion/version: OPTIONAL overrides for the envelope's corresponding
- *   members; default to SPEC_VERSION ('1.0.0-rc.5') and package.json's
+ *   members; default to SPEC_VERSION ('1.0.0-rc.6') and package.json's
  *   version. A test
  *   harness pins these per-vector (e.g. cli-0002's options.version) so the
  *   envelope stays reproducible independent of the engine's own release.
@@ -457,6 +498,21 @@ function main(argv, ctx) {
   }
 
   const rest = args.slice(1);
+  // AGSC-09-09 types every verb flag as taking ONE value, and AGSC-01-28 says so of
+  // `--target` in as many words: "one comma-separated list of registry names, never
+  // a repeated flag" (stated at rc.6, ENG5-S5). Commander silently keeps the LAST
+  // occurrence of a repeated value flag, so `--target agents --target claude` used
+  // to export `claude` alone and say nothing — a silent loss of what the operator
+  // asked for. The repetition is a usage error, and AGSC-09-08 makes it exit 2.
+  const repeated = repeatedValueFlag(verb, rest);
+  if (repeated !== null) {
+    const message = `${repeated} is given more than once; every flag takes one value`
+      + ' (AGSC-09-09), and a list is written as one comma-separated value'
+      + ` (e.g. ${repeated} a,b)`;
+    if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E002', severity: 'error', message });
+    else writeLine(stderr, `agsc: AGSC-E002 ${message}\n`);
+    return 2;
+  }
   const parser = buildVerbParser(verb, rest);
   let parsed;
   try {
@@ -605,10 +661,23 @@ function main(argv, ctx) {
     for (const f of envelope.findings) writeLine(stderr, `${f.severity}: ${f.code} ${f.message || ''}\n`);
   }
 
+  // AGSC-09-08: the exit code names the CLASS of the fault, not its severity.
+  // "2 for an unknown verb, an unknown flag, a missing argument or invalid
+  // configuration" — so an error whose code says the configuration is invalid
+  // exits 2 wherever it is raised, and every other error exits 1. Before rc.6 a
+  // Bundle whose `agsc.config.json` carried a key this version does not define
+  // exited 1, which a caller reads as "the content failed a gate" rather than
+  // "this tool cannot run against this configuration at all" — and AGSC-00-21's
+  // whole point is that configuration is the one surface where a newer version
+  // must fail loudly (AGSC-00-23, AGSC-00-25, AGSC-01-22).
+  if (envelope.status !== 'pass'
+    && envelope.findings.some((f) => f.severity === 'error' && USAGE_CLASS_CODES.has(f.code))) {
+    return 2;
+  }
   return envelope.status === 'pass' ? 0 : 1;
 }
 
 module.exports = {
-  main, ADAPTER_FLAGS, RETIRED_FLAGS, SPEC_VERSION, VERBS, VERB_FLAGS,
+  main, ADAPTER_FLAGS, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS,
   adapterFlagsFor, buildEnvelope, compareFindings, flagsFor, retiredFlagHint,
 };

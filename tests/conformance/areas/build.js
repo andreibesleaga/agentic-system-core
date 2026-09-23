@@ -13,7 +13,12 @@ const nq = require('../../../src/knowledge/nquads.js');
 const search = require('../../../src/distribution/search.js');
 const headers = require('../../../src/distribution/headers.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
-const { checks, deepEqual } = require('./_assert.js');
+const site = require('../../../src/distribution/site.js');
+const now = require('../../../src/distribution/now.js');
+const ledger = require('../../../src/governance/ledger.js');
+const contentVersion = require('../../../src/knowledge/content-version.js');
+const { createClock } = require('../../../src/adapters/node-clock.js');
+const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -182,8 +187,112 @@ function servedHeadersCase(vector) {
   return checks(list);
 }
 
+/**
+ * build-0013 — AGSC-06-36 (added at rc.6, PSF-02 + FIX29-S3): the whole content of
+ * `/.well-known/security.txt`.
+ *
+ * Six cases, each a `securityTxt` call over one authored file and one build instant.
+ * `text: null` in the vector means NO ROUTE is emitted, which is what the module
+ * returns beside its findings; a case that states findings asserts CODES only
+ * (AGSC-09-06), never a message.
+ */
+function securityTxtCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    if (want === undefined) {
+      list.push([input.name, false, 'the vector states no expected case of this name']);
+      continue;
+    }
+    const got = site.securityTxt(vector.input.base, input.instant, {
+      authored: input.authored,
+      legal: input.legal,
+      publishing: true,
+    });
+    list.push([`${input.name} text`, got.text === want.text, JSON.stringify(got.text)]);
+    const matched = findingsMatch(want.findings || [], got.findings);
+    list.push([`${input.name} findings`, matched.ok, matched.detail]);
+    if ((want.findings || []).length === 0) {
+      list.push([`${input.name} clean`, got.findings.every((f) => f.severity === 'warn'),
+        JSON.stringify(got.findings)]);
+    }
+  }
+  return checks(list);
+}
+
+/**
+ * build-0014 (rc.6, AGSC-04-25 / D113) — the content version, case by case.
+ *
+ * Five derivation cases plus the composition of the NOW line. Nothing here reads
+ * git, a clock or a file: the git-log file and the build instant arrive as data,
+ * which is exactly the property the rule is written to give ("two engines given
+ * one repository derive one string").
+ *
+ * The `no-git-history` case expects `AGSC-E606` beside the version. That finding is
+ * the CLOCK's, not the derivation's — AGSC-04-09 raises it when the build instant
+ * defaults to 0 — so it is taken from the real adapter with an empty environment
+ * rather than restated, and the two facts of the case are proved by the two modules
+ * that own them.
+ */
+function contentVersionCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    if (want === undefined) {
+      list.push([input.name, false, 'the vector states no expected case of this name']);
+      continue;
+    }
+    if (input.name === 'now-line') {
+      const line = now.buildLine({
+        bundleVersion: input.bundle_version,
+        fingerprint: input.bundle_hash,
+        instant: input.generated_at,
+        specVersion: input.spec_version,
+      });
+      for (const text of want.contains || []) {
+        list.push([`${input.name} contains`, line.includes(text), JSON.stringify(line)]);
+      }
+      // It is a line and its own paragraph in the emitted page (AGSC-06-22).
+      const page = now.nowMarkdown({ counts: {}, last_build: input.generated_at }, {
+        bundleVersion: input.bundle_version,
+        fingerprint: input.bundle_hash,
+        specVersion: input.spec_version,
+      });
+      list.push([`${input.name} is its own paragraph`, page.includes(`\n\n${line}\n\n`),
+        JSON.stringify(page)]);
+      continue;
+    }
+    const instant = ledger.instantFromEpoch(input.source_date_epoch);
+    const got = contentVersion.bundleVersion({ buildInstant: instant, gitLog: input.git_log });
+    list.push([`${input.name} bundle_version`, got.version === want.bundle_version,
+      `got ${JSON.stringify(got.version)}`]);
+    list.push([`${input.name} grammar`, contentVersion.GRAMMAR.test(got.version), got.version]);
+    // The clock's own finding, for the case that has no git history at all.
+    const clock = createClock({ env: {} });
+    const findings = input.git_log.length === 0
+      ? [...clock.findings(), ...got.findings] : got.findings;
+    const matched = findingsMatch(want.findings || [], findings);
+    list.push([`${input.name} findings`, matched.ok, matched.detail]);
+    list.push([`${input.name} no other finding`, findings.length === (want.findings || []).length,
+      JSON.stringify(findings.map((f) => f.code))]);
+    if (want.ledger_kind_of_built_commit !== undefined) {
+      // The tag AGSC-04-25 could not use is still the tag AGSC-08-20a releases on.
+      const derived = ledger.derive(input.git_log, 'f'.repeat(40), '1.0.0-rc.6',
+        { epoch: input.source_date_epoch });
+      const built = derived.entries[input.git_log.length - 1];
+      list.push([`${input.name} ledger kind`, built.kind === want.ledger_kind_of_built_commit,
+        `got ${built.kind}`]);
+    }
+  }
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
+  if (vector.id === 'build-0014') return contentVersionCase(vector);
   if (vector.id === 'build-0010') return fragmentsCase(vector);
+  if (vector.id === 'build-0013') return securityTxtCase(vector);
   if (vector.id === 'build-0011') return fragmentIndexCase(vector);
   if (vector.id === 'build-0012') return servedHeadersCase(vector);
 

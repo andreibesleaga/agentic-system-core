@@ -41,7 +41,15 @@ function workspace(extra = {}) {
   temporaries.push(dir);
   fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify({
     bundle: { id: 'fixture-node', operator: 'human:tester' },
-    site: { base: 'https://example.org/', title: 'Fixture Node' },
+    // AGSC-06-18 as amended at rc.6 (PSF-01): a node that publishes a TDM
+    // reservation — which every 1.x node does — names at least one crawler token,
+    // or its build is AGSC-E202. The list is the publisher's own; these are the six
+    // whose operators' own documentation says they collect content for training.
+    site: {
+      base: 'https://example.org/',
+      tdm_crawlers: ['Applebot-Extended', 'CCBot', 'ClaudeBot', 'GPTBot', 'Google-Extended', 'meta-externalagent'],
+      title: 'Fixture Node',
+    },
     spec_version: '1.0.0-rc.4',
     ...extra,
   }, null, 2)}\n`);
@@ -125,7 +133,10 @@ test('AGSC-09-09 (rc.5, ENG1 §3): an adapter\'s own flags are ADAPTER-SCOPED', 
   // a foreign bundle replace an item this node already holds.
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'old-site']).keys()],
     ['--selection', '--corrections', '--attach-diagrams', '--replace']);
-  assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'okf']).keys()], ['--replace']);
+  // rc.6 (D113): `--allow-newer` is the OKF adapter's own flag for AGSC-01-22's
+  // tolerance limit, and is a usage error under any other adapter or none.
+  assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'okf']).keys()],
+    ['--replace', '--allow-newer']);
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'notion']).keys()], []);
   assert.deepStrictEqual([...main.adapterFlagsFor('import', []).keys()], []);
   assert.deepStrictEqual([...main.adapterFlagsFor('lint', ['--from', 'old-site']).keys()], []);
@@ -400,3 +411,41 @@ test('the corrections file is DATA, and `_`-prefixed members are comments', () =
     assert.throws(() => parse(text), /must be a JSON object/u, text);
   }
 });
+
+test('a re-import keeps the Bundle\'s own configuration members (contribute, author)', () => {
+  const dir = workspace({
+    contribute: [{ mode: 'pr', target: 'https://github.com/example/node' }],
+    site: { author: 'A Person', base: 'https://example.org/', title: 'Fixture Node' },
+  });
+  // The fixture corpus carries deliberate defects, so the run's own exit code is 1;
+  // what this test is about is the file it wrote.
+  run(['import', '--from', 'old-site', '--selection', SELECTION, FIXTURE], dir);
+  const config = JSON.parse(fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8'));
+  assert.deepStrictEqual(config.contribute, [{ mode: 'pr', target: 'https://github.com/example/node' }]);
+  assert.strictEqual(config.site.author, 'A Person');
+  // …and a second run over unchanged input still writes nothing (AGSC-01-23).
+  const second = run(['import', '--from', 'old-site', '--selection', SELECTION, FIXTURE], dir);
+  assert.match(second.stderr, /import: 0 written/u);
+});
+
+test('the Bundle configuration is read from the FILE, and an unreadable one is {}', () => {
+  // PAT1-01: the import used to rebuild `agsc.config.json` from a template and
+  // silently delete every member it cannot derive. It now starts from the file on
+  // disk — the FILE, not `ctx.config`, whose AGSC-09-09 precedence may carry values
+  // a user file or the environment supplied, which writing back would put settings
+  // into the repository that the operator never put there.
+  const ctx = (file) => ({ ports: { fs: { readFile: () => {
+    if (file === null) throw new Error('no such file');
+    return file;
+  } } } });
+  assert.deepStrictEqual(verb.bundleConfig(ctx('{"site":{"author":"A Person"}}')),
+    { site: { author: 'A Person' } });
+  // Nothing readable, nothing parseable and nothing that is an object each give an
+  // empty configuration rather than a throw: the import then adds what it computes
+  // and takes nothing away that was never there.
+  assert.deepStrictEqual(verb.bundleConfig(ctx(null)), {});
+  assert.deepStrictEqual(verb.bundleConfig(ctx('{ not json')), {});
+  assert.deepStrictEqual(verb.bundleConfig(ctx('[1,2]')), {});
+  assert.deepStrictEqual(verb.bundleConfig(ctx('null')), {});
+});
+

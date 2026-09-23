@@ -1,0 +1,36 @@
+{
+  "area": "chunks",
+  "description": "Supersedes chk-0007, which pinned the manifest without the content version and was falsified by the rc.6 amendment. Above 500 items the chunk export is sharded: `/chunks-01.jsonl` holds the lines of the first 500 items in slug order, `/chunks-02.jsonl` the rest, no item is split across shards, and `/chunks.jsonl` becomes the JCS-canonical manifest of AGSC-06-31. Derived by hand from the rule text, not from a run of any engine. The manifest has three members and no others: `bundle_version`, the content version of AGSC-04-25 the build derived, added at rc.6 under owner decision D113; `lines_total`, the number of chunk lines across every shard; and `shards`, the shard paths in shard order. JCS (AGSC-04-05) orders member names code point by code point, so `bundle_version` comes first (`b` before `l` before `s`), and JCS emits no space and no line break; AGSC-06-26's one trailing LF terminates the file. The input is 501 items of one line each, so `lines_total` is 501 and the split at 500 items puts item `i-0501` alone in the second shard: 500 lines in `/chunks-01.jsonl`, 1 in `/chunks-02.jsonl`. A chunk LINE is unchanged by this amendment, its member set being closed by AGSC-06-29.",
+  "expected": {
+    "first_slug_in_shard_02": "i-0501",
+    "last_slug_in_shard_01": "i-0500",
+    "manifest": "{\"bundle_version\":\"v1.4.0\",\"lines_total\":501,\"shards\":[\"/chunks-01.jsonl\",\"/chunks-02.jsonl\"]}\n",
+    "shard_line_counts": {
+      "/chunks-01.jsonl": 500,
+      "/chunks-02.jsonl": 1
+    }
+  },
+  "id": "chk-0008",
+  "input": {
+    "bundle_version": "v1.4.0",
+    "chunks": {
+      "max_bytes": 4096
+    },
+    "item_count": 501,
+    "item_template": {
+      "body": "One line.\n",
+      "kind": "explainer",
+      "type": "concept"
+    },
+    "site": {
+      "base": "https://a.example/"
+    },
+    "slugs_are": "i-0001 … i-0501"
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (RC6-C) as the successor of chk-0007; expected values derived by hand from the rule text; unreleased, may be edited in place until the rc.6 tag",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-31"
+}

@@ -16,9 +16,9 @@
   "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (DS-1); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55d and V9A-10; D100). Two defects: the vector asserts absolute `https://a.example/...` targets while its `input` states no base (Q55d), and it pins `agsc-surface-version: [\"2026-09-15\"]` for `webmcp` — the publication date of a **living** W3C Draft Community Group Report, which read \"17 September 2026\" on 2026-09-19 and moves again on every CG publish, so a node targeting the current draft failed a required vector. AGSC-11-16 as amended at rc.5 conforms **any** `YYYY-MM-DD`. Superseded by bnd-0031.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (PUB-6 Q55d and V9A-10; D100). Two defects: the vector asserts absolute `https://a.example/...` targets while its `input` states no base (Q55d), and it pins `agsc-surface-version: [\"2026-09-15\"]` for `webmcp` — the publication date of a **living** W3C Draft Community Group Report, which read \"17 September 2026\" on 2026-09-19 and moves again on every CG publish, so a node targeting the current draft failed a required vector. AGSC-11-16 as amended at rc.5 conforms **any** `YYYY-MM-DD`. Superseded by bnd-0031.",
   "requires_surface": [
     "mcp",
     "webmcp"

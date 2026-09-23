@@ -39,7 +39,7 @@ profile URI registration that is to be requested separately.
     Jinja2 3.1.6
     lxml 6.1.3
     natsort 8.4.0
-    platformdirs 4.11.11
+    platformdirs 4.11.12
     pycountry 26.2.16
     PyYAML 6.0.3
     requests 2.34.2
@@ -1245,7 +1245,7 @@ li > p:last-of-type:only-child {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Besleaga</td>
-<td class="center">Expires 25 March 2027</td>
+<td class="center">Expires 26 March 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1258,12 +1258,12 @@ li > p:last-of-type:only-child {
 <dd class="internet-draft">draft-besleaga-agentic-knowledge-wellknown-00</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-09-21" class="published">21 September 2026</time>
+<time datetime="2026-09-22" class="published">22 September 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-03-25">25 March 2027</time></dd>
+<dd class="expires"><time datetime="2027-03-26">26 March 2027</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1308,7 +1308,7 @@ profile URI registration that is to be requested separately.<a href="#section-ab
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 25 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 26 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1916,6 +1916,16 @@ point order of the type name, counted over the published set.<a href="#section-4
               <p id="section-4.3.2-2.8.1">one value, the hash of the Bundle in the syntax of
 <a href="#the-digest-attribute" class="auto internal xref">Section 4.3.1</a>.<a href="#section-4.3.2-2.8.1" class="pilcrow">¶</a></p>
 </dd>
+            <dd class="break"></dd>
+<dt id="section-4.3.2-2.9">
+<code>agsc-bundle-version</code>:</dt>
+            <dd style="margin-left: 1.5em" id="section-4.3.2-2.10">
+              <p id="section-4.3.2-2.10.1">one value, the publisher's content version for the state the
+artefacts were generated from: a short name a person can read and
+cite, where the hash says only whether two retrievals carry the same
+content. It is derived by the publisher and is opaque to a client,
+which <span class="bcp14">MUST NOT</span> order two values or infer a sequence from them.<a href="#section-4.3.2-2.10.1" class="pilcrow">¶</a></p>
+</dd>
           <dd class="break"></dd>
 </dl>
 <p id="section-4.3.2-3">One further attribute rides on the <code>ledger</code> extension relation's link
@@ -1996,8 +2006,8 @@ member of that attribute's list.<a href="#section-4.3.3-3" class="pilcrow">¶</a
 <p id="section-4.4-1">A publisher without a build engine -- a content management system or a
 wiki that exports static files -- publishes the same link set with
 every <code>digest</code> attribute and every bundle-fact attribute omitted. Such
-a publisher has no ledger, no build instant, and no bundle hash, and
-this document does not ask for one. The declaration attributes of
+a publisher has no ledger, no build instant, no bundle hash and no
+content version, and this document does not ask for any of them. The declaration attributes of
 <a href="#declaration-attributes" class="auto internal xref">Section 4.3.3</a> are unaffected.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
 <p id="section-4.4-2">There is no structural difference between the two forms: <code>linkset</code> is
 the sole top-level member in both, the anchor is the Bundle IRI in
@@ -2890,7 +2900,7 @@ reference engine.<a href="#section-12-10.3.1" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="AGSC-SPEC">[AGSC-SPEC]</dt>
       <dd>
-<span class="refAuthor">Besleaga, A. N.</span>, <span class="refTitle">"AgenticSystemCore Specification, version 1.0.0-rc.5 (release candidate)"</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://agenticsystemcore.com/specs/">https://agenticsystemcore.com/specs/</a>&gt;</span>. <span class="annotation">TODO-DOI: insert the Zenodo DOI of the cited release here before posting.</span>
+<span class="refAuthor">Besleaga, A. N.</span>, <span class="refTitle">"AgenticSystemCore Specification, version 1.0.0-rc.6 (release candidate)"</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://agenticsystemcore.com/specs/">https://agenticsystemcore.com/specs/</a>&gt;</span>. <span class="annotation">TODO-DOI: insert the Zenodo DOI of the cited release here before posting.</span>
       </dd>
 <dd class="break"></dd>
 <dt id="RFC7942">[RFC7942]</dt>
@@ -2948,6 +2958,9 @@ NOTE: '\' line wrapping per RFC 8792
           "agsc-bundle-hash": [
             "sha-256=:UdwS29SBU+9+G3d/Fp3KtLtY292AjFswry0+mLI8te4=:"
           ],
+          "agsc-bundle-version": [
+            "v1.4.0"
+          ],
           "agsc-counts": [
             "clusters=6",
             "concepts=142",
@@ -2960,7 +2973,7 @@ NOTE: '\' line wrapping per RFC 8792
             "2026-10-09T08:15:00Z"
           ],
           "agsc-spec-version": [
-            "1.0.0-rc.5"
+            "1.0.0-rc.6"
           ],
           "digest": [
             "sha-256=:JeigkAtOPS9f9BzKym+X6J2O4awt53GEua1AhIAiLfE=:"

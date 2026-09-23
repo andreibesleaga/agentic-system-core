@@ -47,16 +47,34 @@ const ALLOWED_RELATIONS = Object.freeze([
   ...REGISTERED_RELATIONS, ...EXTENSION_RELATIONS.map((n) => `${REL}${n}`),
 ]);
 
-/** AGSC-06-08: the bundle-level facts, carried on the anchor's `describedby` link. */
+/**
+ * AGSC-06-08: the bundle-level facts, carried on the anchor's `describedby` link.
+ * `agsc-bundle-version` (AGSC-04-25, added at rc.6 under D113) sits between
+ * `agsc-bundle-hash` and `agsc-counts` in the JCS member order of AGSC-04-05,
+ * which is where a reader of the emitted bytes will find it.
+ */
 const ANCHOR_ATTRIBUTES = Object.freeze([
-  'agsc-bundle-hash', 'agsc-counts', 'agsc-generated-at', 'agsc-spec-version', 'digest',
+  'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-generated-at',
+  'agsc-spec-version', 'digest',
 ]);
 /** AGSC-06-08 / AGSC-06-11: the attributes of the `rel#ledger` link. */
 const LEDGER_ATTRIBUTES = Object.freeze(['agsc-ledger-head', 'digest']);
 /** AGSC-06-08a: the attributes a Level-0 document omits, every one of them. */
 const LEVEL0_OMITTED = Object.freeze([
-  'agsc-bundle-hash', 'agsc-counts', 'agsc-generated-at', 'agsc-ledger-head',
-  'agsc-spec-version', 'digest',
+  'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-generated-at',
+  'agsc-ledger-head', 'agsc-spec-version', 'digest',
+]);
+/**
+ * AGSC-11-20: the four attributes a `restricted` node MUST omit although it is
+ * Level ≥ 2 — per-type population, the fingerprint, the content version (whose
+ * untagged forms carry the commit count and the commit hash of the content
+ * branch) and the ledger head are all content facts, and an integrity attribute
+ * over a gated artefact is a confirmation-of-content oracle. It MUST still carry
+ * `agsc-spec-version` and `agsc-generated-at`, which say only that the node
+ * exists and is current. Presence is `AGSC-E210` (AGSC-09-93).
+ */
+const RESTRICTED_OMITTED = Object.freeze([
+  'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-ledger-head',
 ]);
 /** RFC 8288 §3.4 / RFC 9264 §4.2.4: the members that are NOT target attributes. */
 const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title*', 'type']);
@@ -141,6 +159,7 @@ function byHref(list) {
  * @param {string} [options.generatedAt] the AGSC-04-10 build instant.
  * @param {string} [options.specVersion]
  * @param {string} [options.bundleHash] the AGSC-04 bundle hash, RFC 9530 syntax.
+ * @param {string} [options.bundleVersion] the AGSC-04-25 content version.
  * @param {Array<object>} [options.surfaces] `{surface, target, version, access}`.
  * @param {Iterable<string>} [options.routes] the routes the build actually emitted.
  *   A relation link is emitted for a route this node HAS, at every Level — AGSC-06-08a
@@ -169,10 +188,15 @@ function linkset(config, options = {}) {
   };
 
   // AGSC-06-08: bundle facts ride on the anchor's `describedby` link and NOWHERE else.
+  // AGSC-11-20: a `restricted` node publishes neither the content facts nor the
+  // content version, at any Level. Until rc.6 this was stated by the rule, checked
+  // by nothing and emitted anyway (V9A-22 fixed the rule, not the writer).
+  const gated = visibility === 'restricted';
   const describedby = {
     digest: digest('/graph.jsonld'),
-    'agsc-bundle-hash': full ? options.bundleHash : undefined,
-    'agsc-counts': full ? options.counts : undefined,
+    'agsc-bundle-hash': full && !gated ? options.bundleHash : undefined,
+    'agsc-bundle-version': full && !gated ? options.bundleVersion : undefined,
+    'agsc-counts': full && !gated ? options.counts : undefined,
     'agsc-generated-at': full ? options.generatedAt : undefined,
     'agsc-spec-version': full ? options.specVersion : undefined,
   };
@@ -203,7 +227,7 @@ function linkset(config, options = {}) {
     put(`${REL}skills`, [link(href(base, '/skills/index.json'), 'application/json', { digest: digest('/skills/index.json') })]);
   }
   // AGSC-06-11: a Level-0 node publishes no `rel#ledger` link and therefore no head.
-  if (full && options.ledgerHead != null) {
+  if (full && !gated && options.ledgerHead != null) {
     put(`${REL}ledger`, [link(href(base, '/ledger.jsonl'), 'application/jsonl', {
       digest: digest('/ledger.jsonl'), 'agsc-ledger-head': options.ledgerHead,
     })]);
@@ -310,9 +334,26 @@ function check(doc, options = {}) {
     if (level >= 2) {
       const describedby = (context.describedby || [])[0];
       const present = describedby === undefined ? [] : attributesOf(describedby);
+      // AGSC-11-20: on a gated node the four content attributes are FORBIDDEN, not
+      // required — the same document is valid with them absent and invalid with
+      // them present, which is why the required set is read through the document's
+      // own `agsc-visibility` and never from a caller's option.
+      const gatedDoc = present.includes('agsc-visibility')
+        && [].concat(describedby['agsc-visibility']).map(String).includes('restricted');
       for (const name of ANCHOR_ATTRIBUTES) {
+        if (gatedDoc && RESTRICTED_OMITTED.includes(name)) continue;
         if (!present.includes(name)) {
           fail('AGSC-E209', `the anchor's describedby link must carry "${name}" at Level ≥ 2 (AGSC-06-08a)`);
+        }
+      }
+      if (gatedDoc) {
+        for (const name of RESTRICTED_OMITTED) {
+          if (present.includes(name)) {
+            fail('AGSC-E210', `a restricted node must omit "${name}": per-type population, the fingerprint, the content version and the ledger head are content facts (AGSC-11-20)`);
+          }
+        }
+        if ((context[`${REL}ledger`] || []).length > 0) {
+          fail('AGSC-E210', 'a restricted node publishes no rel#ledger link (AGSC-11-20)');
         }
       }
       const ledger = (context[`${REL}ledger`] || [])[0];
@@ -402,6 +443,7 @@ module.exports = {
   ANCHOR_ATTRIBUTES,
   LEDGER_ATTRIBUTES,
   LEVEL0_OMITTED,
+  RESTRICTED_OMITTED,
   COUNTED_TYPES,
   BUILTIN_SURFACE_ACCESS,
 };

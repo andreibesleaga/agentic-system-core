@@ -59,8 +59,15 @@ describe('gen-ns — usage and the envelope', () => {
     assert.equal(capture('gen-ns', ['--check']).code, 2);
   });
 
-  it('a root with no ontology exits 2', () => {
-    assert.equal(capture('gen-ns', [tmpdir()]).code, 2);
+  it('a root with no ontology FAILS with AGSC-E901, exit 1', () => {
+    // CHANGED at rc.6 (FIX29-S4): AGSC-09-90 now says a validator MUST FAIL "with
+    // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
+    // error. An absent input is exit 1, the envelope and the code.
+    const { code, json } = envelope('gen-ns', [tmpdir()]);
+    assert.equal(code, 1);
+    assert.equal(json.status, 'fail');
+    assert.deepEqual(json.findings.map((f) => f.code), ['AGSC-E901']);
+    assert.match(capture('gen-ns', [tmpdir()]).out, /0 input file\(s\) read/u);
   });
 
   it('the envelope has the AGSC-09-11 shape', () => {
@@ -88,17 +95,23 @@ describe('gen-ns — usage and the envelope', () => {
 describe('gen-ns — the derivation AGSC-06-32 fixes', () => {
   const vocabulary = () => readOntology(TTL);
 
-  it('every asc: term becomes a term definition, typed by its kind', () => {
+  it('every asc: term becomes a term definition NAMED BY ITS LOCAL NAME, typed by its kind', () => {
+    // CHANGED 2026-09-22 (NS-04, rc.6): AGSC-06-32 now pins the term NAMES as well
+    // as the mapping — an `asc:` term is named by its local name, always — and
+    // `src/knowledge/jsonld.js#termName`, which already did that, is the conforming
+    // one. This tool named every `asc:` term `asc:<Term>`, so the file it generates
+    // and the file the engine builds were two different files.
     const context = buildContext(vocabulary())['@context'];
-    assert.deepEqual(context['asc:Concept'], { '@id': 'asc:Concept' });
-    assert.deepEqual(context['asc:uses'], { '@id': 'asc:uses', '@type': '@id' });
-    assert.deepEqual(context['asc:status'],
+    assert.deepEqual(context.Concept, { '@id': 'asc:Concept' });
+    assert.deepEqual(context.uses, { '@id': 'asc:uses', '@type': '@id' });
+    assert.deepEqual(context.status,
       { '@id': 'asc:status', '@type': 'http://www.w3.org/2001/XMLSchema#string' });
+    assert.equal(context['asc:Concept'], undefined);
   });
 
   it('a datatype property with no declared range carries no @type', () => {
     const context = buildContext(readOntology(TTL.replace('    rdfs:range xsd:string .', '    rdfs:label "again" .')))['@context'];
-    assert.deepEqual(context['asc:status'], { '@id': 'asc:status' });
+    assert.deepEqual(context.status, { '@id': 'asc:status' });
   });
 
   it('the seven prefixes, @version and @protected are set', () => {
@@ -220,7 +233,7 @@ describe('gen-ns — --check against a tree on disk', () => {
     assert.match(messages, /the prefix "skos" is undefined/u);
     assert.match(messages, /"prefLabel" is mapped to null/u);
     assert.match(messages, /term definition of "asc:uses" is/u);
-    assert.match(messages, /carry no term definition, beginning with asc:Concept/u);
+    assert.match(messages, /carry no term definition, beginning with/u);
     assert.match(messages, /no term definition for skos:broader/u);
     // CHANGED 2026-09-21 (NS-06): the check resolves a term by `@id` now, so a term
     // NAMED `prefLabel` but mapped to null is "no term definition for
@@ -248,12 +261,21 @@ describe('gen-ns — --check against a tree on disk', () => {
   // definition" — a validator that blocks merges (AGSC-09-92) failing on correct
   // output. These four cases hold the check name-independent.
 
-  /** The same context under the OTHER naming convention: bare local names. */
-  function underLocalNames(context) {
+  /**
+   * The same context under the OTHER naming convention: the compact IRI.
+   *
+   * Since rc.6 (NS-04) the generator's own output names every `asc:` term by its
+   * local name, so this helper now converts the other way — the point of the four
+   * NS-06 cases is that the CHECK is name-independent, whichever convention the
+   * file it reads was written under.
+   */
+  function underCompactNames(context) {
     const renamed = {};
     for (const [name, definition] of Object.entries(context)) {
-      const local = name.startsWith('asc:') ? name.slice(4) : name;
-      renamed[local] = definition;
+      const compact = definition !== null && typeof definition === 'object'
+        && typeof definition['@id'] === 'string' && definition['@id'].startsWith('asc:')
+        ? definition['@id'] : name;
+      renamed[compact] = definition;
     }
     return { '@context': renamed };
   }
@@ -264,21 +286,22 @@ describe('gen-ns — --check against a tree on disk', () => {
     return envelope('gen-ns', ['--check', dir, root]);
   }
 
-  it('a context that names every asc: term by its bare local name passes (NS-06)', () => {
-    const { code, json } = checkOf(underLocalNames(buildContext(readOntology(TTL))['@context']));
+  it('a context that names every asc: term by its compact IRI passes (NS-06)', () => {
+    const { code, json } = checkOf(underCompactNames(buildContext(readOntology(TTL))['@context']));
     assert.deepEqual(json.findings.filter((f) => f.severity === 'error'), []);
     assert.equal(code, 0);
   });
 
   it('a compact @id and an expanded @id are the same mapping (NS-06)', () => {
     const context = buildContext(readOntology(TTL))['@context'];
+    delete context.uses;
     context['asc:uses'] = { '@id': `${PREFIXES.asc}uses`, '@type': '@id' };
     context.prefLabel = { '@id': 'http://www.w3.org/2004/02/skos/core#prefLabel' };
     assert.deepEqual(checkOf({ '@context': context }).json.findings.filter((f) => f.severity === 'error'), []);
   });
 
   it('the half-empty context — prefixes and externals, no asc: term — still fails', () => {
-    const context = buildContext(readOntology(TTL))['@context'];
+    const context = underCompactNames(buildContext(readOntology(TTL))['@context'])['@context'];
     for (const name of Object.keys(context)) if (name.startsWith('asc:')) delete context[name];
     const { code, json } = checkOf({ '@context': context });
     assert.equal(code, 1);
@@ -298,7 +321,7 @@ describe('gen-ns — --check against a tree on disk', () => {
 
   it('two names for one IRI leave compaction a choice and are AGSC-E202', () => {
     const context = buildContext(readOntology(TTL))['@context'];
-    context.Concept = { '@id': 'asc:Concept' };
+    context['asc:Concept'] = { '@id': 'asc:Concept' };
     assert.match(checkOf({ '@context': context }).json.findings.map((f) => f.message).join('\n'),
       /2 term definitions map to https:\/\/w3id\.org\/agentic-system-core\/ns#Concept \(Concept, asc:Concept\)/u);
   });

@@ -50,7 +50,7 @@ test('AGSC-01-28: the registry is the eleven rows of the rule, and only those', 
     aider: 'CONVENTIONS.md',
     claude: 'CLAUDE.md',
     cline: '.clinerules/agsc.md',
-    codex: '.codex/instructions.md',
+    codex: 'AGENTS.override.md',
     copilot: '.github/copilot-instructions.md',
     cursor: '.cursor/rules/agsc.mdc',
     gabbe: 'GABBE/agents/AGENTS.md',
@@ -67,11 +67,15 @@ test('AGSC-01-28: the default is agents,claude, and every target carries the sam
   assert.strictEqual(plan.files[0].text, plan.files[1].text);
 });
 
-test('AGSC-01-28: a target outside the registry is AGSC-E002 and names the eleven', () => {
+test('AGSC-01-28: a target outside the registry is AGSC-E203 and names the eleven', () => {
+  // rc.6, AGSC-00-23 (D112): a value outside a closed operator list is AGSC-E203.
+  // It was AGSC-E002 until then, which AGSC-09-08 reserves for an unknown FLAG and
+  // which would have made this an exit-2 usage error rather than a finding.
   const plan = planOf([], { targets: ['agents', 'notepad'] });
   assert.deepStrictEqual(plan.files.map((f) => f.target), ['agents']);
-  const one = plan.findings.find((f) => f.code === 'AGSC-E002');
+  const one = plan.findings.find((f) => f.code === 'AGSC-E203');
   assert.match(one.message, /windsurf/u);
+  assert.strictEqual(plan.findings.some((f) => f.code === 'AGSC-E002'), false);
 });
 
 test('a repeated target is emitted once', () => {
@@ -112,7 +116,7 @@ test('AGSC-01-29: the provenance header, the terms and the fenced prose are all 
   assert.match(text, /\nlicense: CC-BY-4\.0\n/u);
   assert.match(text, new RegExp(`\nterms: ${chunks.TERMS.replace(/[.]/gu, '\\.')}\n`, 'u'));
   assert.match(text, /\nspec_version: 1\.0\.0-rc\.5\n/u);
-  assert.match(text, /\ngenerated_at: 2026-01-01T00:00:00Z\n-->\n/u);
+  assert.match(text, /\ngenerated_at: 2026-01-01T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov\.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n/u);
   assert.match(text, /```text agsc-content\n/u);
   assert.ok(text.endsWith('\n'));
 });

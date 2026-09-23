@@ -642,7 +642,7 @@
       }
     },
     "prov": {
-      "description": "AGSC-08-01. commit and reviewer are derived at build and MUST NOT appear here (AGSC-08-02).",
+      "description": "AGSC-08-01. commit and reviewer are derived at build and MUST NOT appear here (AGSC-08-02). source_version and source_hash are written by import alone (AGSC-01-22, rc.6, D113).",
       "type": "object",
       "additionalProperties": true,
       "required": [
@@ -672,6 +672,16 @@
         "agreement": {
           "$ref": "#/$defs/single_line",
           "type": "string"
+        },
+        "source_version": {
+          "description": "Written by `import` alone (AGSC-01-22, AGSC-04-25, rc.6, D113): the content version of the Bundle this item was taken from. Never authored, and never derived for an item that was not imported.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+        },
+        "source_hash": {
+          "description": "Written by `import` alone (AGSC-01-22, AGSC-04-15, rc.6, D113): the bundle hash of the Bundle this item was taken from, lowercase hexadecimal SHA-256.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         }
       }
     },

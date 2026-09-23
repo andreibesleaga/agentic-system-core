@@ -186,6 +186,14 @@ function applyTypes(value, schema, root) {
   return coerceScalar(value, declared);
 }
 
+/**
+ * AGSC-00-25: the configuration names this specification RESERVES to a later
+ * version. They are rejected by NOT being in `schema/config.schema.json` — the way
+ * a closed schema reserves a name — and are named here only so that the diagnostic
+ * can say WHY, which is the difference between a typo and a 1.1 configuration.
+ */
+const RESERVED_CONFIG_NAMES = Object.freeze(['routing', 'rdfxml', 'feed']);
+
 /** §9.4 precedence. `ctx` is `item`, `index` or `config`. */
 function codeFor(error, ctx) {
   const { keyword, path, params } = error;
@@ -201,6 +209,29 @@ function codeFor(error, ctx) {
   if (keyword === 'format') return 'AGSC-E204';
   if (keyword === 'additionalProperties' && ctx === 'config') return 'AGSC-E004';
   return 'AGSC-E201';
+}
+
+/**
+ * Where a configuration error IS, in the spelling an operator uses to find it:
+ * `routing`, `agents[0].routing`. A JSON Pointer names the CONTAINER of an
+ * `additionalProperties` error and not the offending key, so "/: must NOT have
+ * additional properties" left the reader to guess which of their keys was wrong —
+ * and AGSC-00-25 makes that guess matter, because one of the names a 1.0 tool
+ * rejects here is a name reserved to 1.1.
+ *
+ * @param {{path:string, keyword:string, params:object}} error
+ * @returns {string}
+ */
+function locationOf(error) {
+  const dotted = String(error.path || '')
+    .split('/').filter((seg) => seg !== '')
+    .map((seg) => (/^\d+$/u.test(seg) ? `[${seg}]` : `.${seg}`))
+    .join('')
+    .replace(/^\./u, '');
+  const extra = error.keyword === 'additionalProperties'
+    ? String((error.params || {}).additionalProperty || '') : '';
+  if (extra === '') return dotted === '' ? '/' : dotted;
+  return dotted === '' ? extra : `${dotted}.${extra}`;
 }
 
 function lineOf(keyLines, path) {
@@ -320,7 +351,18 @@ function config(configObject, options = {}) {
     return [finding('AGSC-E004', 'agsc.config.json is not a JSON object', { file })];
   }
   for (const e of s.config(configObject).errors) {
-    findings.push(finding(codeFor(e, 'config'), `${e.path || '/'}: ${e.message}`, { file }));
+    // AGSC-01-18 / AGSC-00-25: `agsc.config.json` is the one CLOSED surface of this
+    // format, so an unknown key is a refusal and not a preserved unknown — and the
+    // refusal names the key, because a reserved name (`routing`) and a typo are
+    // both AGSC-E004 and the operator must be able to tell which they wrote.
+    const where = locationOf(e);
+    const reserved = e.keyword === 'additionalProperties'
+      && RESERVED_CONFIG_NAMES.includes(String((e.params || {}).additionalProperty || ''));
+    findings.push(finding(codeFor(e, 'config'),
+      `${where}: ${e.message}${reserved ? ' — that name is RESERVED to a later version of this'
+        + ' specification and a 1.0 tool rejects it rather than running with it ignored'
+        + ' (AGSC-00-25, AGSC-00-21)' : ''}`,
+      { file, key: e.keyword === 'additionalProperties' ? String((e.params || {}).additionalProperty || '') : undefined }));
   }
   const { checkAgents } = options;
   if (typeof checkAgents === 'function' && Array.isArray(configObject.agents)) {

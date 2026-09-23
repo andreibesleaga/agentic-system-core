@@ -16,7 +16,12 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
 
+const nodeFs = require('node:fs');
+const site = require('../../src/distribution/site.js');
 const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
+
+/** 2026-01-01T00:00:00Z — the fixed instant every test in this repository uses. */
+const FIXED_CLOCK = { iso: () => '2026-01-01T00:00:00Z', now: () => 1767225600 };
 const validate = require('../../src/knowledge/validate.js');
 const links = require('../../src/knowledge/links.js');
 const { loadBundle } = require('../../src/application/bundle.js');
@@ -55,15 +60,39 @@ test('the asset branch of AGSC-03-11 resolves once the set is supplied', () => {
   const withAssets = links.resolve(items, { assets: bundle.assets, config: bundle.config });
   assert.deepStrictEqual(withAssets.resolved.sort(),
     ['../assets/img/nested.svg', '../assets/logo.svg']);
-  // ENG-5, rc.5: the branch resolves, and AGSC-06-01 publishes the target at NO
-  // route, so the reference works in the repository and 404s on the built site.
-  // The engine cannot emit a route without a rule change (item 56 / FIX28-01), so
-  // it warns under the same registered code and says exactly why.
-  assert.deepStrictEqual(withAssets.errors.map((f) => [f.code, f.severity]),
-    [['AGSC-E310', 'warn'], ['AGSC-E310', 'warn']]);
-  for (const one of withAssets.errors) {
-    assert.match(one.message, /publishes at no route/u);
+  // CHANGED at rc.6 (FIX28-01): AGSC-06-01 now carries `/assets/<path>`, so the
+  // resolved reference is not a fault of any severity. Until rc.6 it warned under
+  // AGSC-E310, because the link worked in the repository and 404d on the site.
+  assert.deepStrictEqual(withAssets.errors.map((f) => [f.code, f.severity]), []);
+});
+
+test('AGSC-06-01 (rc.6): a referenced asset is emitted at /assets/<path>, bytes unchanged', () => {
+  const { bundle, fs } = load(FIXTURE);
+  const { files } = site.build(bundle, { clock: FIXED_CLOCK, fs },
+    { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+  for (const asset of ['logo.svg', 'img/nested.svg']) {
+    const route = `/assets/${asset}`;
+    assert.ok(files.has(route), `${route} was not emitted`);
+    assert.strictEqual(Buffer.from(files.get(route)).toString('utf8'),
+      nodeFs.readFileSync(path.join(FIXTURE, 'content', 'assets', asset), 'utf8'),
+      `${route} does not carry the authored bytes`);
   }
+  // The body's reference is rendered as the ROUTE, not as the authored path.
+  const page = String(files.get('/concepts/diagrammed/index.html'));
+  assert.match(page, /"\/assets\/logo\.svg"/u);
+  assert.ok(!page.includes('../assets/logo.svg'), 'the authored path reached the page');
+});
+
+test('AGSC-06-01 (rc.6): an asset no published body references is published at no route', () => {
+  const { bundle, fs } = load(FIXTURE);
+  const stripped = {
+    ...bundle,
+    items: bundle.items.map((item) => ({ ...item, body: String(item.body).split('\n')
+      .filter((line) => !line.includes('assets/')).join('\n') })),
+  };
+  const { files } = site.build(stripped, { clock: FIXED_CLOCK, fs },
+    { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+  assert.deepStrictEqual([...files.keys()].filter((r) => r.startsWith('/assets/')), []);
 });
 
 test('the lint VERB passes on the fixture: it supplies the set (FV28-03)', () => {
@@ -78,12 +107,11 @@ test('the lint VERB passes on the fixture: it supplies the set (FV28-03)', () =>
     stdout,
   });
   const envelope = JSON.parse(stdout.text());
-  // Two warnings and no error: the two asset references resolve (FV28-03) and are
-  // published at no route (ENG-5; item 56 / FIX28-01). `status` stays `pass` and
-  // the exit code stays 0, because a warning is not a failed gate (AGSC-09-08).
-  assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.severity]),
-    [['AGSC-E310', 'warn'], ['AGSC-E310', 'warn']], stdout.text());
-  assert.deepStrictEqual(envelope.counts, { error: 0, warn: 2 });
+  // CHANGED at rc.6 (FIX28-01): nothing at all. The two asset references resolve
+  // (FV28-03) AND are published at `/assets/<path>`, so the warning that said the
+  // link 404s on the built site is no longer true and is gone.
+  assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.severity]), [], stdout.text());
+  assert.deepStrictEqual(envelope.counts, { error: 0, warn: 0 });
   assert.strictEqual(envelope.status, 'pass');
   assert.strictEqual(exit, 0);
 });
@@ -98,3 +126,22 @@ test('a reference to an asset that is NOT on disk is still AGSC-E310', () => {
   assert.deepStrictEqual(result.errors.filter((f) => f.severity === 'error').map((f) => f.code),
     ['AGSC-E310']);
 });
+
+test('an asset the port refuses to read is published at no route, and nothing throws', () => {
+  // A writer never invents bytes. If the port refuses the file — a link out of the
+  // Bundle root, a permission, a disappearance between the walk and the read — the
+  // route is simply not emitted, exactly as an unreadable attachment is not.
+  const { bundle, fs: real } = load(FIXTURE);
+  const refusing = {
+    ...real,
+    readFile: (at, encoding) => {
+      if (String(at).startsWith('content/assets/')) throw new Error('refused');
+      return real.readFile(at, encoding);
+    },
+  };
+  const { files, findings } = site.build(bundle, { clock: FIXED_CLOCK, fs: refusing },
+    { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+  assert.deepStrictEqual([...files.keys()].filter((r) => r.startsWith('/assets/')), []);
+  assert.ok(Array.isArray(findings), 'the build must complete rather than throw');
+});
+

@@ -1,0 +1,50 @@
+{
+  "area": "discovery",
+  "description": "WITHDRAWN. Superseded by disc-0013. The agent-facing text file has an exact byte layout: H1 (first, as llms.txt v2 requires), provenance comment, blockquote, cluster sections ordered by slug, an Other section for unclustered items, one blank line between blocks and nothing else. An item with no description repeats its title; a draft item appears nowhere. Without this pin two conforming writers emit different bytes and Level 0 is unreachable. The provenance header carries the AI-assistance statement of AGSC-06-15 as its last line, a constant of the specification and never authored; no value interpolated into the block may carry `-->` (AGSC-06-13a as amended at rc.6). Expected bytes re-derived by hand from the rule text: block (2) is the same comment with one further `name: value` line inserted before the closing `-->`, and nothing else in the file moves.",
+  "expected": {
+    "withdrawn": true
+  },
+  "id": "disc-0010",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "description": "A node of the Agentic Knowledge Web.",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "title": "Example Node"
+    },
+    "clusters": [
+      {
+        "slug": "coordination",
+        "title": "Coordination"
+      }
+    ],
+    "generated_at": "2026-09-16T00:00:00Z",
+    "items": [
+      {
+        "clusters": [
+          "coordination"
+        ],
+        "description": "Routes work to workers.",
+        "slug": "supervisor",
+        "title": "Supervisor"
+      },
+      {
+        "slug": "loose-note",
+        "title": "Loose Note"
+      },
+      {
+        "slug": "hidden",
+        "status": "draft",
+        "title": "Hidden"
+      }
+    ],
+    "spec_version": "1.0.0-rc.6"
+  },
+  "level": "withdrawn",
+  "note": "added 2026-09-22 at rc.6 (RC6-A); derived by hand from AGSC-06-13a and AGSC-06-15, superseding disc-0006",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "reason": "AGSC-06-13a gained the `bundle_version:` line of AGSC-04-25 at rc.6 (D113), so the bytes this case pinned can no longer be right. The corrected case ships as disc-0013 (AGSC-00-16: a released vector is never edited in place).",
+  "rule": "AGSC-06-13a"
+}

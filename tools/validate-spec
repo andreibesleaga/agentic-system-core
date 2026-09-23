@@ -58,8 +58,15 @@ const HELP = `validate-spec [--json] [--quiet] [--help] [<root>]
 
 /** RFC 2119/BCP 14 key words, in capitals only (AGSC-00-01). */
 const NORMATIVE = /(?<![\w-])(MUST NOT|MUST|SHOULD NOT|SHOULD|SHALL NOT|SHALL|REQUIRED|RECOMMENDED)(?![\w-])/u;
-/** AGSC-09-91 carve-out (a): the words that mark a line as a record of the past. */
-const HISTORY_WORD = /(?<![\w-])(at|since|amended|added|withdrawn|before|until|from)(?![\w-])/iu;
+/**
+ * AGSC-09-91 carve-out (a): the words that mark a line as a record of the past.
+ * The last four (`for`, `against`, `written`, `re-verified`) and the companion date
+ * test below were added at rc.6 (ENG4-02); `tools/count-artifacts` carries the same
+ * two constants and is the reference behaviour the rule names.
+ */
+const HISTORY_WORD = /(?<![\w-])(re-verified|at|since|amended|added|withdrawn|before|until|from|for|against|written)(?![\w-])/iu;
+/** AGSC-09-91 carve-out (a): a full `YYYY-MM-DD` date also marks a record of the past. */
+const HISTORY_DATE = /\d{4}-\d{2}-\d{2}/u;
 const RULE_ID_G = /AGSC-\d{2}-\d{2,3}[a-z]?/gu;
 const RULE_ID = /AGSC-\d{2}-\d{2,3}[a-z]?/u;
 const RULE_BULLET = /^- \*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*/u;
@@ -196,7 +203,24 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const specDir = path.join(root, 'spec');
-  if (!fs.existsSync(specDir)) return usage(`no spec/ directory under ${root} (AGSC-E901)`);
+  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
+  // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
+  // reserves for an unknown verb, an unknown flag or a missing argument, and which
+  // a caller reading the envelope cannot see at all.
+  const absent = (file, message) => {
+    const bad = envelopeOf([finding('AGSC-E901', file, 1, message)], 'unknown', packageVersion(root));
+    if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
+    else if (!flags.has('--quiet')) {
+      for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+      out(`validate-spec: 0 input file(s) read, 0 spec files, 0 rules, 0 registered codes, `
+        + `${bad.counts.error} error, ${bad.counts.warn} warn\n`);
+    }
+    return 1;
+  };
+  if (!fs.existsSync(specDir)) {
+    return absent('spec/', `no spec/ directory under ${root}: there is nothing to validate (AGSC-09-91)`);
+  }
 
   const rel = (absolute) => path.relative(root, absolute).split(path.sep).join('/');
   const findings = [];
@@ -401,7 +425,10 @@ function run(argv, io) {
     text.split('\n').forEach((line, index) => {
       for (const match of line.matchAll(VERSION_LITERAL)) {
         if (match[0] === declared) continue;
-        if (HISTORY_WORD.test(line.slice(0, match.index))) continue;   // carve-out (a)
+        {
+          const before = line.slice(0, match.index);
+          if (HISTORY_WORD.test(before) || HISTORY_DATE.test(before)) continue;   // carve-out (a)
+        }
         findings.push(finding('AGSC-E201', file, index + 1,
           `version literal ${match[0]} differs from the spec/00 declaration ${declared} and is not on a historical-note line (AGSC-09-91)`));
       }

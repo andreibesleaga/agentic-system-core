@@ -21,8 +21,9 @@
 //      `--version <x.y.z>` checks the proposed version against semver and against
 //      the current one (it must be strictly greater); `--apply` writes it into both
 //      files and adds the changelog heading.
-//   2. THE CHANGELOG SECTION. `CHANGELOG.md` must carry `## [Unreleased]` with
-//      content under it, and the release must have — or, under `--apply`, gain — a
+//   2. THE CHANGELOG SECTION. `CHANGELOG.md` must carry `## [Unreleased]`, and
+//      either something under it or a section already naming the version in
+//      `package.json`; the release must have — or, under `--apply`, gain — a
 //      `## [<version>] - <date>` heading. The date is taken from `SOURCE_DATE_EPOCH`
 //      and never from a wall clock (AGSC-04-09, AGSC-04-11), so two runs of this
 //      script on the same tree produce the same bytes.
@@ -43,6 +44,13 @@
 //      `actions/attest-build-provenance`, and must NOT carry an `NPM_TOKEN` secret:
 //      `docs/PLAN.md` §7 says the release lane holds no secret and publishes over
 //      OIDC trusted publishing.
+//   4b. THE PyPI SIBLING (D107, rc.6). npm and PyPI are published at ONE version on
+//      launch day, so the sibling repository `../agentic-system-core-python` must
+//      state the PEP 440 spelling of this version (`1.0.0-rc.6` -> `1.0.0rc6`). It
+//      is a DRY RUN: nothing is built, nothing is uploaded, no network is touched,
+//      and the only file read outside this repository is that one `pyproject.toml`.
+//      A sibling that is simply not checked out is a WARNING naming what was not
+//      checked — it is another repository, and its absence blocks nothing here.
 //   5. THE OWNER'S CHECKLIST. Printed last, as the exact commands to run in order.
 //      Every git command in it is the OWNER's; this tool runs none.
 //
@@ -56,6 +64,8 @@ const path = require('node:path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
 const ALIAS_DIR = path.join('packages', 'agsc-cli');
+/** The sibling repository D107 publishes to PyPI at the same version. */
+const PYTHON_DIR = 'agentic-system-core-python';
 const HELP = `tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
 
   The release lane of docs/PLAN.md §7, as a check. Nothing is ever published by
@@ -327,9 +337,83 @@ function workflowFindings(root) {
 }
 
 // --------------------------------------------------------------------------
+// 4b. The PyPI sibling (D107, rc.6).
+// --------------------------------------------------------------------------
+
+/**
+ * The PEP 440 spelling of a SemVer version.
+ *
+ * The two version grammars are not the same and both packages are published at one
+ * version (D107), so the mapping is stated once, here. SemVer's `1.0.0-rc.6` is
+ * PEP 440's `1.0.0rc6`: PEP 440 §"Pre-releases" admits `rcN` as a pre-release
+ * segment and writes it with no separator and no dot before the number. A version
+ * with no pre-release part maps to itself.
+ *
+ * @param {string} semver
+ * @returns {string|null} `null` when the pre-release part is not one this mapping knows.
+ */
+function pep440(semver) {
+  const m = /^(\d+\.\d+\.\d+)(?:-(alpha|beta|rc)\.(\d+))?$/u.exec(String(semver));
+  if (m === null) return null;
+  if (m[2] === undefined) return m[1];
+  const segment = { alpha: 'a', beta: 'b', rc: 'rc' }[m[2]];
+  return `${m[1]}${segment}${m[3]}`;
+}
+
+/**
+ * The PyPI half of D107, as a DRY RUN that calls nothing outside this repository's
+ * parent directory and reaches no network: the sibling `agentic-system-core-python`
+ * must state the PEP 440 spelling of the engine's version, or the two packages the
+ * owner publishes on the same day carry two different numbers.
+ *
+ * The sibling is a SEPARATE repository and may simply not be checked out — that is
+ * not a fault of this one, so its absence is a `warn` that says what was not
+ * checked, never an error that blocks a release of the npm packages.
+ *
+ * @param {string} root
+ * @param {string} version the version being released (`package.json#version`).
+ * @returns {Array<object>}
+ */
+function pypiFindings(root, version) {
+  const at = path.join(path.dirname(root), PYTHON_DIR);
+  const file = `../${PYTHON_DIR}/pyproject.toml`;
+  const want = pep440(version);
+  if (want === null) {
+    return [finding('AGSC-E202', 'package.json', 1,
+      `"${version}" has no PEP 440 spelling this tool knows, so the PyPI package's version`
+      + ' cannot be checked against it')];
+  }
+  if (!fs.existsSync(at)) {
+    return [finding('AGSC-E901', file, 1,
+      `${PYTHON_DIR} is not checked out beside this repository, so the PyPI package's version`
+      + ` was NOT checked. It must read version = "${want}" before the owner tags either`
+      + ' package (D107)', 'warn')];
+  }
+  const toml = path.join(at, 'pyproject.toml');
+  if (!fs.existsSync(toml)) {
+    return [finding('AGSC-E901', file, 1,
+      `${PYTHON_DIR} carries no pyproject.toml, so it cannot be published at all (D107)`)];
+  }
+  const text = fs.readFileSync(toml, 'utf8');
+  // `version = "…"` at the start of a line: the project table's own key, never a
+  // dependency's pin, which is always indented or inside a list.
+  const stated = /^version\s*=\s*"([^"]+)"/mu.exec(text);
+  if (stated === null) {
+    return [finding('AGSC-E202', file, 1,
+      'pyproject.toml states no top-level version (D107)')];
+  }
+  if (stated[1] !== want) {
+    return [finding('AGSC-E202', file, 1,
+      `the PyPI package states version "${stated[1]}" and the engine is ${version}, whose`
+      + ` PEP 440 spelling is "${want}"; D107 publishes both at one version`)];
+  }
+  return [];
+}
+
+// --------------------------------------------------------------------------
 // 2. The changelog.
 // --------------------------------------------------------------------------
-function changelogFindings(text, version) {
+function changelogFindings(text, version, current) {
   const findings = [];
   if (!/^## \[Unreleased\]/mu.test(text)) {
     findings.push(finding('AGSC-E202', 'CHANGELOG.md', 1,
@@ -337,9 +421,18 @@ function changelogFindings(text, version) {
     return findings;
   }
   const body = text.split(/^## \[Unreleased\]/mu)[1].split(/^## /mu)[0];
-  if (body.trim() === '') {
+  // An EMPTY `[Unreleased]` is a fault only while the version about to be released
+  // has no section of its own. Once it has one — because the entries were moved
+  // under it, which is what `--apply` does and what a maintainer may do by hand —
+  // an empty `[Unreleased]` is the correct state of a just-released tree, and
+  // demanding an entry there would demand an entry for a release that has not
+  // happened. What is never acceptable is a version with no section anywhere.
+  const heading = (v) => new RegExp(`^## \\[${String(v).replace(/\./gu, '\\.')}\\]`, 'mu');
+  const released = current != null && heading(current).test(text);
+  if (body.trim() === '' && !released) {
     findings.push(finding('AGSC-E202', 'CHANGELOG.md', 1,
-      'the [Unreleased] section is empty; a release with no changelog entry is not a release'));
+      'the [Unreleased] section is empty and no section names the version in package.json;'
+      + ' a release with no changelog entry is not a release'));
   }
   if (version !== null && !new RegExp(`^## \\[${version.replace(/\./gu, '\\.')}\\]`, 'mu').test(text)) {
     findings.push(finding('AGSC-E202', 'CHANGELOG.md', 1,
@@ -368,7 +461,7 @@ function checklist(version) {
     ` 3. npm run test:coverage                           # src/ at or above 99.9 %`,
     ` 4. npm audit --audit-level=low                     # 0 vulnerabilities`,
     ` 5. node tools/count-artifacts --json               # ok, findings []`,
-    ` 6. for t in tools/validate-*; do node $t --json || echo "REPORT: $t"; done`,
+    ` 6. for t in tools/validate-*; do node $t --json; done   # every one blocks`,
     ` 7. AGSC_AUDIT=1 node --test tests/arch/*.test.js   # the boundary lane`,
     ` 8. node tools/release --version ${v}            # this script, dry run`,
     ` 9. node tools/release --version ${v} --apply    # writes the two versions`,
@@ -377,9 +470,25 @@ function checklist(version) {
     `12. git tag -s v${v} -m "AgenticSystemCore ${v}"`,
     `13. git push origin main && git push origin v${v}`,
     `    # the tag starts ${WORKFLOW}, which publishes both packages over npm`,
-    `    # trusted publishing (OIDC, no secret) and attaches build provenance.`,
-    `14. npm view agentic-system-core@${v}               # confirm, after the run`,
-    `15. Capture the release page and the npm page in the Wayback Machine.`,
+    `    # TRUSTED PUBLISHING (OIDC, no secret in this repository), sets the`,
+    `    # dist-tag \`latest\` explicitly and attaches build provenance. Turning a`,
+    `    # trusted publisher on for a package name is a one-time step on npmjs.com:`,
+    `    # Settings -> Publishing access -> GitHub Actions, this repository,`,
+    `    # workflow release.yml, environment "release". Do it for BOTH names.`,
+    `14. npm view agentic-system-core version            # confirm, after the run`,
+    `15. In a fresh temporary directory: npm install agentic-system-core@${v}`,
+    `    and npx agsc-cli --version                      # the live smoke test`,
+    `16. The PyPI half of D107, in ../${PYTHON_DIR}: its own tag, its own`,
+    `    trusted-publishing workflow, then pip install in a fresh venv.`,
+    `17. Capture the release page and both package pages in the Wayback Machine.`,
+    '',
+    'ROLLBACK. npm\'s unpublish policy (docs.npmjs.com/policies/unpublish, read',
+    '2026-09-22) allows unpublishing "anytime within the first 72 hours after',
+    'publishing" only while nothing in the registry depends on the package; after',
+    'that it says "we recommend deprecating the package". So:',
+    `    npm deprecate agentic-system-core@${v} "<why, and what to use instead>"`,
+    `    npm deprecate agsc-cli@${v} "<the same sentence>"`,
+    'and publish the fix as a new version. Never unpublish after 72 hours.',
   ];
 }
 
@@ -439,7 +548,7 @@ function run(argv, io = {}) {
   try { changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8'); } catch {
     findings.push(finding('AGSC-E901', 'CHANGELOG.md', 1, 'CHANGELOG.md is absent'));
   }
-  if (changelog !== '') findings.push(...changelogFindings(changelog, version));
+  if (changelog !== '') findings.push(...changelogFindings(changelog, version, manifest.version));
 
   // 3. the package contents.
   const files = packList(root, manifest);
@@ -447,6 +556,11 @@ function run(argv, io = {}) {
 
   // 4. the provenance step.
   findings.push(...workflowFindings(root));
+
+  // 4b. the PyPI sibling (D107). A dry run: nothing is built, nothing is uploaded,
+  // no network is touched, and the only file read outside this repository is the
+  // sibling's `pyproject.toml`.
+  findings.push(...pypiFindings(root, version === null ? manifest.version : version));
 
   // --apply: the two version strings and the changelog heading, and nothing else.
   const written = [];
@@ -495,7 +609,8 @@ function run(argv, io = {}) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  ALIAS_DIR, HELP, SHIPPED_TEST_DIR, TOOLING_IGNORES, WORKFLOW,
+  ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_DIR, TOOLING_IGNORES, WORKFLOW,
   applyChangelog, canonicalize, changelogFindings, checklist, isGreater, neverShipped,
-  packFindings, packList, releaseDate, run, specMentions, walk, workflowFindings,
+  packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
+  workflowFindings,
 };

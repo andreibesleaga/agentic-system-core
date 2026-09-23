@@ -11,6 +11,8 @@ const { createHash } = require('node:crypto');
 
 const { readOntology, readSchemas } = require('../../../adapters/node-fs.js');
 const validate = require('../../../knowledge/validate.js');
+const ledger = require('../../../governance/ledger.js');
+const contentVersion = require('../../../knowledge/content-version.js');
 const turtle = require('../../../knowledge/turtle.js');
 const { loadBundle } = require('../../bundle.js');
 
@@ -23,6 +25,16 @@ const ENGINE_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 
 /** The separator `git ls-files -z` writes between paths. */
 const NUL = String.fromCharCode(0);
+/** The two separators the git-log read uses: ASCII RS between records, US between fields. */
+const RS = String.fromCharCode(30);
+const US = String.fromCharCode(31);
+/**
+ * AGSC-08-20b's own field set, asked for in one process and with no shell:
+ * the commit, its parents, the COMMITTER time in whole seconds (never a rendered
+ * local time, which would depend on the host's zone), the ref decorations the tag
+ * names are read from, and the whole message the trailers are parsed out of.
+ */
+const GIT_LOG_FORMAT = `--format=%H${US}%P${US}%ct${US}%D${US}%B${RS}`;
 
 let compiledSchemas = null;
 let vocabulary = null;
@@ -76,7 +88,12 @@ function sha256(bytes) {
 function buildOptions(ctx, extra) {
   const raw = ctx.verbFlags && ctx.verbFlags.level;
   const level = raw === undefined ? undefined : Number(raw);
+  const log = gitLog(ctx);
+  const derived = bundleVersionOf(ctx, log);
   return {
+    bundleVersion: derived.version,
+    bundleVersionFindings: derived.findings,
+    gitLog: log,
     level: Number.isInteger(level) ? level : undefined,
     ontologyTerms: ontology().terms,
     ontologyVersion: ontology().version,
@@ -119,6 +136,71 @@ function attachmentFacts(ctx, bundle) {
     }
   }
   return { attachmentBytes, filesPresent };
+}
+
+/**
+ * AGSC-08-20b: the git-log file — the first-parent chain of the content branch,
+ * oldest first — read through the ProcessRunner port in ONE process and handed to
+ * `governance/ledger.js#produce`, which is the rule's implementation. It is the
+ * input of the derived ledger (AGSC-08-20a) and of the content version
+ * (AGSC-04-25), so it is read once per invocation and passed down as data.
+ *
+ * `undefined` when there is no runner, no git, no repository, no commit or
+ * anything the reader cannot parse — never a guess, never a partial chain. The
+ * content version then takes AGSC-04-25's branch 4, which is exactly the drop-in
+ * case AGSC-04-09 already names.
+ *
+ * @param {object} ctx the verb context.
+ * @returns {Array<object>|undefined}
+ */
+function gitLog(ctx) {
+  const proc = ctx.ports && ctx.ports.proc;
+  if (!proc || typeof proc.run !== 'function') return undefined;
+  let result;
+  try {
+    result = proc.run('git', ['log', '--first-parent', '--reverse', GIT_LOG_FORMAT, 'HEAD']);
+  } catch (e) {
+    return undefined;
+  }
+  if (!result || result.code !== 0 || typeof result.stdout !== 'string') return undefined;
+  const commits = [];
+  for (const record of result.stdout.split(RS)) {
+    const text = record.replace(/^\n+/u, '');
+    if (text === '') continue;
+    const [sha, parents, seconds, decorations, message] = text.split(US);
+    if (!/^[0-9a-f]{40,64}$/u.test(String(sha)) || !/^[0-9]+$/u.test(String(seconds))) return undefined;
+    commits.push({
+      committer_timestamp: ledger.instantFromEpoch(Number(seconds)),
+      message: message === undefined ? '' : message,
+      parents: String(parents) === '' ? [] : String(parents).split(' '),
+      sha: String(sha),
+      // `%D` is `HEAD -> main, tag: v1.4.0, origin/main`; `produce` keeps the
+      // greatest `v*` of whatever it is given (AGSC-08-20b).
+      tags: String(decorations === undefined ? '' : decorations).split(',')
+        .map((one) => one.trim())
+        .filter((one) => one.startsWith('tag: '))
+        .map((one) => one.slice(5)),
+    });
+  }
+  return ledger.produce(commits);
+}
+
+/**
+ * AGSC-04-25: the content version of this invocation, derived once from the two
+ * inputs the build already has. The findings (an `AGSC-E506` for a git tag that
+ * cannot be a content version) are returned beside it, because a warning about a
+ * derived build fact belongs to the verbs that emit.
+ *
+ * @param {object} ctx the verb context.
+ * @param {Array<object>|undefined} log the git-log file of `gitLog(ctx)`.
+ * @returns {{version:string, findings:Array<object>}}
+ */
+function bundleVersionOf(ctx, log) {
+  const clock = ctx.ports && ctx.ports.clock;
+  const instant = clock === undefined || clock === null ? ''
+    : (typeof clock.iso === 'function' ? clock.iso() : ledger.instantFromEpoch(clock.now()));
+  const { version, findings } = contentVersion.bundleVersion({ buildInstant: instant, gitLog: log });
+  return { findings, version };
 }
 
 /**
@@ -177,7 +259,9 @@ module.exports = {
   note,
   attachmentFacts,
   bundleOf,
+  bundleVersionOf,
   buildOptions,
+  gitLog,
   notImplemented,
   ontology,
   schemas,

@@ -193,7 +193,22 @@ function run(argv, io) {
   const isFile = fs.existsSync(target) && fs.statSync(target).isFile();
   const root = isFile ? path.resolve(path.dirname(target), '..') : target;
   const absolute = isFile ? target : path.join(target, 'ontology', 'agsc.ttl');
-  if (!fs.existsSync(absolute)) return usage(`no ontology at ${absolute} (AGSC-E901)`);
+  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
+  // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
+  // reserves for an unknown verb, an unknown flag or a missing argument, and which
+  // a caller reading the envelope cannot see at all.
+  if (!fs.existsSync(absolute)) {
+    const bad = envelopeOf([finding('AGSC-E901', 'ontology/agsc.ttl',
+      `no ontology at ${absolute}: there is nothing to validate (AGSC-05-25)`)],
+    specVersion(root), packageVersion(root));
+    if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
+    else if (!flags.has('--quiet')) {
+      for (const f of bad.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+      out(`validate-ontology: 0 input file(s) read, 0 terms, ${bad.counts.error} error, ${bad.counts.warn} warn\n`);
+    }
+    return 1;
+  }
   const file = path.relative(root, absolute).split(path.sep).join('/');
 
   const findings = [];

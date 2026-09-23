@@ -28,8 +28,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-17 at rc.3 (DS-5, V7-46); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (`src/README.md` §11.6(5) R-05, PUB-6 Q55b; D100). Two defects: the `turtle_lines` are clause fragments that cannot be matched whole-line (Q55b), and they are ordered by **prefixed name** where AGSC-05-10(c) orders predicates by **predicate IRI code points** — under the rule `dcterms:modified` precedes `a`, because `http://purl.org/...` precedes `http://www.w3.org/...`. AGSC-00-03 makes the rule normative and this file the defect. The literal-form case is preserved in graph-0018 with a whole-file `turtle` expectation in IRI order.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (`src/README.md` §11.6(5) R-05, PUB-6 Q55b; D100). Two defects: the `turtle_lines` are clause fragments that cannot be matched whole-line (Q55b), and they are ordered by **prefixed name** where AGSC-05-10(c) orders predicates by **predicate IRI code points** — under the rule `dcterms:modified` precedes `a`, because `http://purl.org/...` precedes `http://www.w3.org/...`. AGSC-00-03 makes the rule normative and this file the defect. The literal-form case is preserved in graph-0018 with a whole-file `turtle` expectation in IRI order.",
   "rule": "AGSC-05-31"
 }

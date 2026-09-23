@@ -88,13 +88,17 @@ whose operator does not match is `AGSC-E505`):
 Assisted-by: claude/opus-4 (operator: human:ada)
 ```
 
-**The text that `CA-v1` names is not published yet.** The rule requires the token;
-no document defines what signing it means. Until the maintainer publishes that text,
-**do not assume your sign-off transfers anything beyond what the licences in this
-repository already say**, and say so in your pull request if that matters to you.
-The maintainer is having the instrument drafted and will publish it, or replace the
-token, before `1.0.0`. This paragraph will be replaced by the answer; it is not a
-contributor agreement and it is not legal advice.
+**What `CA-v1` means.** The token names the file `CONTRIBUTOR-AGREEMENT` at the root
+of this repository. Read it before your first commit. In short: you certify that you
+may submit the work, you keep your copyright and may use your contribution anywhere
+else, you allow the maintainer to publish and maintain it here, and you accept that
+your name, the address you commit under and your sign-off are published permanently.
+
+The file is the project's own text, written by the project and read by no lawyer. It
+is the Developer Certificate of Origin 1.1 reproduced unchanged, plus one further
+clause (e) that belongs to this project. `spec/08-governance.md` (AGSC-08-06) names
+the file and pins its SHA-256, so a distribution that ships different text has to
+name it with a different token: what you sign under `CA-v1` stays under `CA-v1`.
 
 What the licences already say: the engine is Apache-2.0 (whose section 5 already
 carries an inbound grant on the same terms), the schemas, ontology, identifiers and
@@ -121,6 +125,13 @@ item carries a provenance record that says whether its prose is `human`,
 `ai-assisted`, `ai-generated` or `imported` and names the human accountable for it
 (`spec/02-item.md`, AGSC-02-07). Fill it in honestly; nothing else in the system
 works if that field is decorative.
+
+## Releases
+
+Releases are tagged `vX.Y.Z` and published by the tag-triggered workflow in
+`.github/workflows/release.yml`; nothing is published from a laptop. The procedure
+around it is kept by the maintainer outside this repository, and `node tools/release`
+prints the checklist it checks against.
 
 ## Conduct
 

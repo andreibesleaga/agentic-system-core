@@ -288,3 +288,138 @@ describe('the real distribution passes its own release lane', () => {
     assert.equal(code, 0);
   });
 });
+
+// ------------------------------------------------- D107: the PyPI half (rc.6)
+
+describe('tools/release — the PyPI sibling (D107)', () => {
+  it('maps a SemVer version onto the PEP 440 spelling, and says when it cannot', () => {
+    // The two grammars differ and both packages are published at one version, so
+    // the mapping is stated once, in the tool.
+    assert.equal(release.pep440('1.0.0-rc.6'), '1.0.0rc6');
+    assert.equal(release.pep440('1.0.0'), '1.0.0');
+    assert.equal(release.pep440('2.3.4-alpha.1'), '2.3.4a1');
+    assert.equal(release.pep440('2.3.4-beta.12'), '2.3.4b12');
+    assert.equal(release.pep440('1.0.0-nightly.1'), null);
+    assert.equal(release.pep440('not a version'), null);
+  });
+
+  it('the sibling must state that spelling, and a mismatch is AGSC-E202', () => {
+    const parent = tmpdir();
+    const root = path.join(parent, 'engine');
+    fs.mkdirSync(path.join(parent, release.PYTHON_DIR), { recursive: true });
+    fs.mkdirSync(root, { recursive: true });
+    const write = (version) => fs.writeFileSync(
+      path.join(parent, release.PYTHON_DIR, 'pyproject.toml'),
+      `[project]\nname = "agentic-system-core"\nversion = "${version}"\n`,
+    );
+
+    write('1.0.0rc6');
+    assert.deepEqual(release.pypiFindings(root, '1.0.0-rc.6'), []);
+
+    write('0.0.2');
+    const drifted = release.pypiFindings(root, '1.0.0-rc.6');
+    assert.equal(drifted.length, 1);
+    assert.equal(drifted[0].code, 'AGSC-E202');
+    assert.match(drifted[0].message, /states version "0\.0\.2" and the engine is 1\.0\.0-rc\.6/u);
+  });
+
+  it('a sibling that is not checked out WARNS, and blocks nothing', () => {
+    // It is another repository. Its absence says what was not checked; it is not a
+    // fault of this one, and it must not stop this one's release.
+    const found = release.pypiFindings(path.join(tmpdir(), 'engine'), '1.0.0-rc.6');
+    assert.equal(found.length, 1);
+    assert.equal(found[0].code, 'AGSC-E901');
+    assert.equal(found[0].severity, 'warn');
+    assert.match(found[0].message, /1\.0\.0rc6/u, 'the warning must say what the version has to be');
+  });
+
+  it('it reads nothing but that one file, and never the network', () => {
+    const source = fs.readFileSync(path.join(REPO, 'tools', 'release'), 'utf8');
+    for (const forbidden of ['child_process', 'node:child_process', 'fetch(', 'https.request', 'npm publish ']) {
+      assert.ok(!source.includes(forbidden), `tools/release must not carry ${forbidden}`);
+    }
+  });
+});
+
+// --------------------------------------------- the release lane, as it now stands
+
+describe('the release workflow (D107, rc.6)', () => {
+  const workflow = () => fs.readFileSync(path.join(REPO, '.github', 'workflows', 'release.yml'), 'utf8');
+  /** The workflow without its comments: what RUNS, not what it explains. */
+  const steps = () => workflow().split('\n').filter((l) => !/^\s*#/u.test(l)).join('\n');
+
+  it('sets the dist-tag explicitly on both publishes', () => {
+    // npm's docs (docs.npmjs.com/cli/v11/commands/npm-dist-tag, read 2026-09-22):
+    // "Publishing a package sets the `latest` tag to the published version unless
+    // the `--tag` option is used" — and the convention is that a pre-release does
+    // NOT take `latest`. D107 decides otherwise for this release, so the flag is
+    // written out rather than left to a default nobody chose.
+    const publishes = steps().split('\n').filter((l) => l.includes('npm publish'));
+    assert.equal(publishes.length, 2, 'the engine and the alias, and nothing else');
+    for (const line of publishes) {
+      assert.match(line, /--provenance/u, line);
+      assert.match(line, /--access public/u, line);
+      assert.match(line, /--tag latest/u, line);
+    }
+  });
+
+  it('every validator blocks the release: none of the nine only reports', () => {
+    // `validate-spec` was a reporting step while the specification items it found
+    // were open (ENG4-01…05). They were applied at rc.6 and it exits 0, so the
+    // carve-out is gone: a gate that reports and does not block protects nothing.
+    const text = workflow();
+    assert.ok(!/REPORT: /u.test(text), 'a validator is still allowed to fail without blocking');
+    assert.match(text, /for t in tools\/validate-\*; do node "\$t" --json; done/u);
+  });
+
+  it('holds no npm token and runs on a tag alone', () => {
+    // Over the STEPS, not the comments: a workflow that explains why it never uses
+    // `pull_request_target` is not a workflow that uses it.
+    const text = steps();
+    assert.ok(!/NPM_TOKEN|NODE_AUTH_TOKEN/u.test(text));
+    assert.ok(!text.includes('pull_request_target'));
+    assert.match(text, /on:\n  push:\n    tags:\n      - 'v\*'/u);
+  });
+
+  it('the tool PRINTS the whole procedure; no repository file holds it', () => {
+    // Owner rule R104 (2026-09-22): a procedure written for the maintainer is not a
+    // file of a public repository. So the release procedure is printed by the tool
+    // that checks the release, where whoever runs it will actually read it, and the
+    // long-form runbook is kept outside the repository. Nothing here may point at a
+    // repository file that a reader would then not find.
+    const printed = release.checklist('1.2.3').join('\n');
+    assert.match(printed, /git tag -s v1\.2\.3/u, 'the tag command');
+    assert.match(printed, /npm view agentic-system-core version/u, 'the live check');
+    assert.match(printed, /npm install agentic-system-core@1\.2\.3/u, 'the fresh-install smoke test');
+    assert.match(printed, /npm deprecate/u, 'the rollback');
+    assert.match(printed.replace(/\s+/gu, ' '), /within the first 72 hours after publishing/u,
+      'the unpublish policy, quoted rather than paraphrased');
+    assert.match(printed, /trusted publish/iu, 'how it publishes');
+    assert.ok(!fs.existsSync(path.join(REPO, 'RELEASE.md')),
+      'a release runbook must not live in the public repository (R104)');
+  });
+});
+
+describe('the changelog gate, as amended at rc.6', () => {
+  it('an empty [Unreleased] is a fault only while the version has no section', () => {
+    const text = (unreleased, extra = '') => `# Changelog\n\n## [Unreleased]\n${unreleased}\n${extra}`;
+    // Nothing anywhere: a release with no entry is not a release.
+    assert.deepEqual(release.changelogFindings(text(''), null, '1.0.0-rc.6')
+      .map((f) => f.code), ['AGSC-E202']);
+    // Something under [Unreleased]: the state before `--apply`.
+    assert.deepEqual(release.changelogFindings(text('\n- a change\n'), null, '1.0.0-rc.6'), []);
+    // Nothing under [Unreleased], but the released version has its own section:
+    // the correct state of a just-released tree.
+    assert.deepEqual(
+      release.changelogFindings(text('', '## [1.0.0-rc.6] - 2026-09-22\n\n- shipped\n'), null, '1.0.0-rc.6'),
+      [],
+    );
+  });
+
+  it('the shipped CHANGELOG names the version in package.json', () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
+    const changelog = fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8');
+    assert.ok(changelog.includes(`## [${manifest.version}]`),
+      `CHANGELOG.md carries no section for ${manifest.version}`);
+  });
+});

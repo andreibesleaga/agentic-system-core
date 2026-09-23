@@ -1,0 +1,74 @@
+AgenticSystemCore Contributor Agreement, version CA-v1
+
+This is the agreement that the token `CA-v1` names in the sign-off trailer every
+accepted contribution to this project carries (AGSC-08-06):
+
+    Signed-off-by: Your Name <you@example.org> (CA-v1)
+
+and, where the contribution was made with the help of a model (AGSC-08-07):
+
+    Assisted-by: <producer>/<version> (operator: human:<id>)
+
+It is the Developer Certificate of Origin 1.1, unchanged, and one further clause of
+this project's own. The DCO is reproduced verbatim as its own document, as its terms
+require; clause (e) below sits beside it and is not a modification of it. Certifying
+`CA-v1` certifies (a) to (d) of the DCO and (e) of this file.
+
+--- Part 1: the Developer Certificate of Origin 1.1, verbatim ---
+
+Developer Certificate of Origin
+Version 1.1
+
+Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
+
+Everyone is permitted to copy and distribute verbatim copies of this
+license document, but changing it is not allowed.
+
+
+Developer's Certificate of Origin 1.1
+
+By making a contribution to this project, I certify that:
+
+(a) The contribution was created in whole or in part by me and I
+    have the right to submit it under the open source license
+    indicated in the file; or
+
+(b) The contribution is based upon previous work that, to the best
+    of my knowledge, is covered under an appropriate open source
+    license and I have the right under that license to submit that
+    work with modifications, whether created in whole or in part
+    by me, under the same open source license (unless I am
+    permitted to submit under a different license), as indicated
+    in the file; or
+
+(c) The contribution was provided directly to me by some other
+    person who certified (a), (b) or (c) and I have not modified
+    it.
+
+(d) I understand and agree that this project and the contribution
+    are public and that a record of the contribution (including all
+    personal information I submit with it, including my sign-off) is
+    maintained indefinitely and may be redistributed consistent with
+    this project or the open source license(s) involved.
+
+--- Part 2: the grant this project needs ---
+
+(e) I grant the operator of this node a worldwide, royalty-free, non-exclusive,
+    irrevocable licence to reproduce, publish, edit, adapt, translate, combine and
+    distribute my contribution as part of this collection and of every export and
+    surface this node produces, and to publish it under a later version of the
+    AgenticSystemCore Content Use Terms. I keep the copyright in my contribution and
+    may use it elsewhere for any purpose. My authorship is recorded in the item's
+    provenance fields, and I accept that my name, the address I contribute under and
+    this sign-off are published permanently, including in any derived change ledger.
+
+--- Notes, not part of the agreement ---
+
+The outbound licences are unchanged by this agreement: the engine software is under
+Apache-2.0, the schemas, the ontology, the identifiers and the discovery document
+are under CC0-1.0, and the published prose is under the Content Use Terms
+(`LICENSE-CONTENT`), whose clause 5 this agreement supplies the operator grant for.
+
+This file's bytes are pinned by SHA-256 in AGSC-08-06. A distribution that ships
+different text MUST name it with a different agreement token, because the token
+names terms and not a file name.

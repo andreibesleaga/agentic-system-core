@@ -1,0 +1,37 @@
+{
+  "area": "graph",
+  "description": "AGSC-03-11, AGSC-05-16 and AGSC-05-27 all map an inline Markdown link between two items of the Bundle to an untyped `asc:mentions` edge, and no vector cited it until rc.6 (ENG3-S3); the reference engine emitted none, which AGSC-00-03 makes a defect of the engine and not of the rules. Derivation: `alpha`'s body carries two inline links to `beta` and one to a heading of its own page. Two references between one pair of items produce ONE triple — the edge is between items, not between occurrences — the self-reference produces none, and the edge has no computed inverse (AGSC-03-04 lists the inverses and `mentions` is not among them). Only the mentions lines are asserted here: the rest of the serialisation is pinned by graph-0015 to graph-0018, and this file deliberately does not claim to be a complete N-Quads document (the fault graph-0010 was withdrawn for).",
+  "expected": {
+    "inverse_materialised": false,
+    "mentions_lines": [
+      "<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#mentions> <https://a.example/concepts/beta/> .\n"
+    ],
+    "whole_file_asserted": false
+  },
+  "id": "graph-0020",
+  "input": {
+    "base": "https://a.example",
+    "items": [
+      {
+        "body": "See [Beta](../concepts/beta/) and again [Beta](../concepts/beta/), and this page's [own section](#s).",
+        "lang": "en",
+        "slug": "alpha",
+        "title": "Alpha",
+        "type": "concept"
+      },
+      {
+        "body": "Nothing here.",
+        "lang": "en",
+        "slug": "beta",
+        "title": "Beta",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-22 at rc.6 (RC6-A); expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-05-27"
+}

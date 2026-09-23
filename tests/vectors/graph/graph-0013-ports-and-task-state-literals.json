@@ -33,8 +33,8 @@
   "level": "withdrawn",
   "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
   "options": {
-    "spec_version": "1.0.0-rc.5"
+    "spec_version": "1.0.0-rc.6"
   },
-  "reason": "Withdrawn at 1.0.0-rc.5 (PUB-6 Q55b; D100). Its `turtle_lines` are clause fragments carrying a trailing ` ;` and an indent, so they can only be compared as clauses inside a file the vector never states — an accepted reading, not a literal match, while AGSC-05-10 as amended at rc.5 fixes every byte of `graph.ttl`. The ports-and-task-state case it proves is preserved in graph-0017 as a whole-file `turtle` expectation.",
+  "reason": "Withdrawn at 1.0.0-rc.6 (PUB-6 Q55b; D100). Its `turtle_lines` are clause fragments carrying a trailing ` ;` and an indent, so they can only be compared as clauses inside a file the vector never states — an accepted reading, not a literal match, while AGSC-05-10 as amended at rc.5 fixes every byte of `graph.ttl`. The ports-and-task-state case it proves is preserved in graph-0017 as a whole-file `turtle` expectation.",
   "rule": "AGSC-05-30"
 }

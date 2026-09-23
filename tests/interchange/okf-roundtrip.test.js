@@ -92,9 +92,22 @@ test('AGSC-10-09: export --okf then import --from okf reproduces every item byte
 
   const before = tree(path.join(source, 'content'));
   const after = tree(path.join(target, 'content'));
+  // AGSC-01-22 as amended at rc.6 (D113): tolerance has one LIMIT and one RECORD.
+  // The record is `prov.source_version`/`prov.source_hash`, written by `import`
+  // alone onto every item it writes, so that an imported item names the exact state
+  // it was taken from. That is the one difference the round trip may show, and it is
+  // an ADDITION: nothing the author wrote is changed or lost, which is what
+  // AGSC-10-09's "imports losslessly" asks. The source here is an `export --okf` of
+  // a Bundle with no git history, so its content version is AGSC-04-25's branch 4
+  // and it publishes no bundle hash, hence no `source_hash`.
+  const recorded = /^ {2}source_(version|hash): .+\n/gmu;
   for (const [at, text] of before) {
     if (at === 'index.md') continue; // the root document is not an item (AGSC-01-04)
-    assert.strictEqual(after.get(at), text, `${at} did not survive the round trip`);
+    const written = String(after.get(at));
+    assert.match(written, / {2}source_version: 0\.0\.0\+\d{8}T\d{6}Z\n/u,
+      `${at} carries no prov.source_version (AGSC-01-22)`);
+    assert.strictEqual(written.replace(recorded, ''), text,
+      `${at} did not survive the round trip`);
   }
   assert.deepStrictEqual([...after.keys()].sort(), [...before.keys()].filter((k) => k !== 'index.md').sort());
 });
