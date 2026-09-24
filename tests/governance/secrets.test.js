@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-08-15 (`no-secrets`) and AGSC-01-37 (a tracked `.env`). Owner: C (WP-10-C).
+// AGSC-08-15 (`no-secrets`) and AGSC-01-37 (a tracked `.env`).
 // Every fixture below is a SHAPE, never a live credential.
 
 const test = require('node:test');

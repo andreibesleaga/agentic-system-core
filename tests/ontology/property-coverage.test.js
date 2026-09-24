@@ -31,7 +31,7 @@ function emittedPredicates() {
     `${nq.NS}retiredAt`, `${nq.NS}source`, `${nq.NS}review`, `${nq.NS}hasAttachment`,
     `${nq.NS}sha256`, `${nq.NS}grade`, `${nq.NS}verifiedOn`, `${nq.NS}verifiedBy`,
     `${nq.NS}verifiedAt`, `${nq.NS}specVersion`, `${nq.NS}mentions`,
-    // AGSC-11-12: placed by `dataset`'s `citations` option since ENG-9.
+    // AGSC-11-12: placed by `dataset`'s `citations` option since.
     `${nq.NS}peerOrigin`,
   ]);
 }
@@ -65,7 +65,7 @@ test('every asc: property the ontology ships is emitted by some rule (AGSC-05-28
     .filter((entry) => entry.kind !== 'class')
     .map((entry) => `${nq.NS}${entry.term}`)
     .filter((iri) => !emitted.has(iri));
-  // AGSC-11-12's `asc:peerOrigin` was the one exception until ENG-9 wired the
+  // AGSC-11-12's `asc:peerOrigin` was the one exception until wired the
   // Boundary context's peer citations into the dataset writer; now none remains.
   assert.deepStrictEqual(unemitted, []);
 });

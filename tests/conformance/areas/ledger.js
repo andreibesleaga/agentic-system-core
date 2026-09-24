@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `ledger` (owner: WP-10-E) — AGSC-08-20a, AGSC-08-20b, AGSC-08-23.
+// Conformance area `ledger` (owner:) — AGSC-08-20a, AGSC-08-20b, AGSC-08-23.
 // ledger-0001 the truncated tail (the published head is not the recomputed one),
 // ledger-0002 the derivation, ledger-0003 the empty history, ledger-0004 the
 // production of the git-log file.

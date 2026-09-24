@@ -161,7 +161,7 @@ test('AGSC-02-98: the compiled bytes pass the allow-list before they are inlined
 });
 
 test('AGSC-02-13: a compiled diagram the allow-list refuses is AGSC-E412 and no element', () => {
-  // The compiler's output is always inside AGSC-02-98's list (ENG-1 proved it as a
+  // The compiler's output is always inside AGSC-02-98's list (a test proved it as a
   // property over 300 generated sources), so the guard is reached only by injecting
   // a refusing allow-list — which is what makes it a defence that has been tested.
   const refuse = () => ['a <script> element', 'an on* attribute'];

@@ -14,7 +14,7 @@ class EpochError extends Error {
 
 /**
  * AGSC-04-09: the ONE definition of a well-formed `SOURCE_DATE_EPOCH`, exported so
- * that the CLI's own pre-flight check and this adapter cannot disagree (FV29-18).
+ * that the CLI's own pre-flight check and this adapter cannot disagree.
  *
  * Until today there were two: this module trimmed the value before testing it, while
  * `application/cli/main.js` tested `^[0-9]+$` against the raw string — so `" 12 "`

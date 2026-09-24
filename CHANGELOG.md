@@ -11,6 +11,28 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A live board to and from project and product management tools**
+  (`src/interchange/adapters/board.js`; `agsc export --to board --format <tool>`,
+  `agsc import --from board --format <tool> <dir>`). Ten formats: GitHub issues and
+  projects (JSON), GitLab issues (JSON, CSV), Jira (CSV), Trello (board JSON), Linear
+  (CSV), Asana (CSV), Notion (database CSV), the Obsidian Kanban plugin, plain Markdown
+  task lists and Todo.txt. A node's published tasks, with the decisions and specs filed
+  on the same board, are written one file per board and come back exactly; a tool's
+  export becomes draft tasks on a draft board, its states mapped to the nine task
+  states through one documented table, and everything the table does not name kept in
+  `x-board-*` keys. A peer's published `/boards/<cluster>.json` imports as read-only
+  draft tasks (`--format agsc-board`). Files only: no API client, no keys. Documented
+  in `docs/CONNECTORS.md` (route 7) and `docs/USE-CASES.md`.
+
+- **Agents work a live board through the seven tools**: `propose` with `task_state`
+  (and `at`) returns a prepared board move — the patch that sets the task's state and
+  nothing else — and `remember` with `kind: "task"` (and `cluster`) opens a task, with
+  `about` comments on one; the same payload on the local server and in the page. When
+  the caller names one of the node's agent lanes, the local server runs the lane's
+  gates on the prepared Proposal (`max_claims`, `max_new_items`, declared tasks and
+  types, and a claim of a task someone else already holds). Nothing is ever written,
+  merged or sent by a tool.
+
 - **Skills repositories and rule packs, both ways** (`src/interchange/adapters/skills.js`;
   `agsc export --to skills --layout <layout>`, `agsc import --from skills <clone>`).
   Five layouts: the Agent Skills format (`skills/<name>/SKILL.md` — Anthropic's
@@ -85,7 +107,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   remain the `bench` verb's work at v1.0.1.
 
 - **The local MCP server now serves resources and a prompt, not only the seven tools**
-  (AGSC-09-14b, owner decision D114). `agsc mcp` exposes every **published** item as a
+  (AGSC-09-14b). `agsc mcp` exposes every **published** item as a
   read-only `text/markdown` resource, plus the node's `graph.jsonld` and `llms.txt`, under
   `memory://<bundle-id>/<name>` URIs — the documented local alias of an item IRI, resolved
   in the process and never fetched over the network. The bytes are the build's own: the
@@ -112,7 +134,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   persona-d scenario runs end to end through the same server in
   `tests/acceptance/persona-d-agent-proposer.test.js`.
 
-- **The content version, `bundle_version`** (AGSC-04-25, owner decision D113). Every
+- **The content version, `bundle_version`** (AGSC-04-25). Every
   build now derives one short, human-readable name for the state it published, from
   two inputs it already had — the git history and the build instant — and stamps it
   in nine places: the discovery document (`agsc-bundle-version`), the pinned line of
@@ -143,7 +165,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `AGSC-E004` before anything is written**, and reports the same under `--dry-run`.
   Reading a newer version is safe for the constructs AGSC-00-21 lists and a guess for
   everything else, so the choice is the operator's and the default is to stop.
-- **The plugin contract** (AGSC-00-24, decision D112): one registry per plugin kind,
+- **The plugin contract** (AGSC-00-24, decision): one registry per plugin kind,
   a documented and versioned API in **`docs/PLUGINS.md`**, and eight minimal worked
   samples in **`examples/plugins/`**, one per kind, each proved against its row by
   `tests/arch/plugin-contract.test.js` — it reaches no network, writes nothing
@@ -153,7 +175,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Discovery is a local path or an installed package name; a specifier carrying a
   protocol is `AGSC-E905` and the resolver is never reached. The promise is additive
   within 1.x, and the kind list never grows, because it is the specification's.
-- **`compose --zip`, `skills --zip`, `export --zip`** (owner decision D111). A
+- **`compose --zip`, `skills --zip`, `export --zip`**. A
   multi-file result can now be downloaded, or written, as one `.zip` beside the
   files — `dist/harness/<name>-<content version>.zip`,
   `dist/skills-<content version>.zip`, `dist/export/<root>-<content version>.zip` —
@@ -173,7 +195,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   independent third-party reader that unpacks and checks what the tests build.
 
 - **The COGX memory adapter, both ways** (`export --to cogx`, `import --from cogx`;
-  `src/interchange/adapters/cogx.js`, CONN-1). COGX 0.1 is the archive format Cognee's
+  `src/interchange/adapters/cogx.js`). COGX 0.1 is the archive format Cognee's
   importers translate Mem0, LangMem, Letta/MemGPT and Zep/Graphiti memories into, so
   one archive written by this engine reaches all of them with no network. The export
   writes `manifest.json` plus one JSON-lines file per record kind, to the reference
@@ -187,13 +209,13 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   refused with `AGSC-E403`. `--dry-run`, the collision refusal and `--replace` behave
   as in the `okf` import.
 - **A composite GitHub Action and a pre-commit hook at the repository root**
-  (`action.yml`, `.pre-commit-hooks.yaml`, CONN-1). The action runs `agsc ci` with the
+  (`action.yml`, `.pre-commit-hooks.yaml`). The action runs `agsc ci` with the
   engine at the action's own ref, so the ref pins the engine version; it needs only
   `contents: read`, uses no token or secret, pins the setup action to a commit and
   passes inputs through environment variables. The hook `agsc-lint` runs `agsc lint`
   when an item or the configuration changed. Both are parsed by tests.
 - **Connector examples and two guides** (`examples/connectors/`, `docs/CONNECTORS.md`,
-  `docs/USE-CASES.md`, CONN-1). Runnable examples for Claude Code, Codex and Cursor
+  `docs/USE-CASES.md`). Runnable examples for Claude Code, Codex and Cursor
   and a record reshaper for LangGraph, AutoGen and Mem0, all executed by the suite;
   illustrative framework files that no test runs, each marked so. `CONNECTORS.md`
   names the four routes and what each tool reads (including the Windsurf fallback
@@ -203,7 +225,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- **Security: a forged own-record line no longer passes as this node's own** (CONN2-03;
+- **Security: a forged own-record line no longer passes as this node's own**
   `src/interchange/own-record.js`, used by the `skills`, `gabbe` and `cogx` import lanes).
   A hidden `<!-- agsc-item … -->` line (or a COGX record's `metadata.agsc`) is trusted
   only when it names this node's `site.base` or a declared `peers[]` entry and its
@@ -273,7 +295,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   optional; `CONTRIBUTING.md` explains the choice in plain words.
 
 - **The `codex` steer target now writes `AGENTS.override.md`**, not
-  `.codex/instructions.md` (AGSC-01-28 as corrected at rc.6, EXT2-01/CONN1-01). Codex
+  `.codex/instructions.md` (AGSC-01-28 as corrected at rc.6, /). Codex
   never read the old path: OpenAI's own documentation,
   <https://learn.chatgpt.com/docs/agent-configuration/agents-md> (read 2026-09-23), says
   Codex looks for `AGENTS.override.md` first and `AGENTS.md` second at each level, and
@@ -305,7 +327,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`/now.md` is written after the graph views**, because the line AGSC-06-22 pins
   carries the fingerprint of `graph.nq`.
 - **`graph.nq` has one form, and the conformance runner no longer chooses between two**
-  (EXT-2b, PY2-01, 2026-09-23). The draft now states that every line of `graph.nq` is
+  (EXT-2b, 2026-09-23). The draft now states that every line of `graph.nq` is
   a quad named by the Bundle IRI (AGSC-04-15), which is what the engine's build has
   always written, so no published fingerprint changes. The `graph` area handler used
   to pick the default graph for vectors in the older `input.base` shape and the named
@@ -320,7 +342,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   relation names `cite-as` and `…/rel#signature`; nothing this project builds emits
   either.
 
-- **`export --to <adapter>` hands every adapter the content version** (CONN-1): the
+- **`export --to <adapter>` hands every adapter the content version**: the
   provenance header an adapter writes now states the node's real `bundle_version`
   instead of the build-instant fallback. The `llm-context` skim view is the one
   existing adapter this reaches.
@@ -329,11 +351,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 The first release published to npm as a working package. `0.0.2` reserved the two
 names and shipped no runtime; this ships the engine, the command line and the nine
-independent checkers, at the specification's own release-candidate number (D107).
+independent checkers, at the specification's own release-candidate number.
 
 ### Added
 
-- **`/assets/<path>`** (AGSC-06-01, FIX28-01). Every file under `content/assets/`
+- **`/assets/<path>`** (AGSC-06-01). Every file under `content/assets/`
   that a published item's body references is emitted at its own route, bytes
   unchanged, and the body's reference is rendered as that route. Until now the rule
   admitting such a reference and the route set that carried none were jointly
@@ -342,7 +364,7 @@ independent checkers, at the specification's own release-candidate number (D107)
 - **`/ns/<ontology-version>/context.jsonld`** (AGSC-06-01, AGSC-05-09). A Level ≥ 2
   build serves the versioned copy beside `/ns/context.jsonld`, byte-identical to it,
   so the persistent URL a Level-0 document names resolves to the same bytes.
-- **The AI-assistance statement** (AGSC-06-15, owner decision of 2026-09-22). One
+- **The AI-assistance statement** (AGSC-06-15, of 2026-09-22). One
   constant line, last in the provenance header of `/llms.txt`, `/llms-full.txt`,
   every skill pack, every steer bundle, the `llm-context` skim view and every
   Harness file; and a section of its own on `/legal/`, in the same words. It says
@@ -360,7 +382,7 @@ independent checkers, at the specification's own release-candidate number (D107)
   year is the year of the build instant, so the footer stays byte-reproducible and
   this engine never stamps one owner's name into somebody else's pages. With no
   author configured, no copyright line is emitted at all.
-- **`asc:mentions`** (AGSC-05-27, AGSC-03-11, AGSC-05-16, ENG3-S3). An inline
+- **`asc:mentions`** (AGSC-05-27, AGSC-03-11, AGSC-05-16). An inline
   Markdown link between two items of a Bundle emits one triple per ordered pair,
   whatever the number of references; a self-reference emits none; there is no
   computed inverse. Three rules mapped this edge and no engine emitted it. **It moves
@@ -381,7 +403,7 @@ independent checkers, at the specification's own release-candidate number (D107)
 ### Changed
 
 - **`--&gt;` replaces `-- >`** as the neutralisation of a comment-closing sequence in
-  an interpolated provenance value (AGSC-06-13a, FIX28-03), and `lint` reports the
+  an interpolated provenance value (AGSC-06-13a), and `lint` reports the
   authored value.
 - **`/ns/context.jsonld` has one derivation of a term's name** (AGSC-06-32, NS-04).
   `tools/gen-ns` named every `asc:` term `asc:<Term>` while the engine used the bare
@@ -391,20 +413,20 @@ independent checkers, at the specification's own release-candidate number (D107)
   derivation won; the tool follows it, and its `--check` lane now resolves a term by
   its `@id` rather than by the key, which is what made the check pass over nothing
   once the keys changed.
-- **`run` and `expect` are the only executable fences** (AGSC-02-22, AGSC-09-94,
-  ENG5-S7). The braced spellings `{run}` and `{expect}` are ordinary rendering hints
+- **`run` and `expect` are the only executable fences** (AGSC-02-22, AGSC-09-94).
+  The braced spellings `{run}` and `{expect}` are ordinary rendering hints
   again; the engine accepted both while the two rules disagreed about which one an
   author writes.
-- **A trace record has the members the rule names** (AGSC-09-94, ENG5-S9):
+- **A trace record has the members the rule names** (AGSC-09-94):
   `started`, and optionally `ended`, `actor`, `title`, `outcome`, `body`, `usage`.
   The older names this engine also accepted — `at`, `start`, `end`, `agent`,
   `status`, `summary`, `output`, `name` — are now preserved under `x-trace-<key>`
   rather than placed, so a record written for this engine imports into another.
-- **A repeated value flag is `AGSC-E002`** (AGSC-09-09, AGSC-01-28, ENG5-S5).
+- **A repeated value flag is `AGSC-E002`** (AGSC-09-09, AGSC-01-28).
   `--target agents --target claude` silently exported `claude` alone; a list is one
   comma-separated value.
 - **The nine checkers FAIL over an absent input** — exit 1, the AGSC-09-11 envelope
-  and `AGSC-E901` (AGSC-09-90, FIX29-S4). Five of them printed a usage block and
+  and `AGSC-E901` (AGSC-09-90). Five of them printed a usage block and
   exited 2, so the code was in prose that a caller reading the envelope never saw.
   Each states how many input files it read, so "nothing is wrong" cannot be mistaken
   for "nothing was looked at".
@@ -418,7 +440,7 @@ independent checkers, at the specification's own release-candidate number (D107)
 ### Fixed
 
 - **`tools/validate-spec` and `tools/count-artifacts` read a historical note the
-  same way** (AGSC-09-91 carve-out (a), ENG4-02): the word list gains *for, against,
+  same way** (AGSC-09-91 carve-out (a)): the word list gains *for, against,
   written, re-verified* and a `YYYY-MM-DD` date test. The merge gate reported
   fourteen errors that were all false in substance.
 - **`AGSC-E203` and `AGSC-E602` are no longer borrowed codes** in `run`: the registry
@@ -430,7 +452,7 @@ independent checkers, at the specification's own release-candidate number (D107)
 - With no `SOURCE_DATE_EPOCH`, AGSC-04-09 makes the build instant the time of the last commit and only falls to 0 where no git history exists. `createClock` accepted that value and `node-proc.js` named the git read as its one caller, but nothing performed the read, so the real command defaulted to 0 inside every repository. Every gate had run with the variable set, so no test noticed; once the writer refused to derive a `security.txt` expiry from a defaulted instant, a plain `agsc build` in a committed Bundle failed. `src/adapters/node-clock.js#readLastCommitSeconds` now reads `git log -1 --format=%ct` through the ProcessRunner port (no shell, scrubbed environment, skipped when the variable is set, `null` on anything but one clean integer) and `bin/agsc.js` passes it to the clock. Test: `tests/bin/agsc-build-instant-from-git.test.js`.
 
 
-### Fixed — the findings of the independent verification of session 29 (FIX-29, 2026-09-21)
+### Fixed — the findings of the independent verification of
 
 An independent end-of-session verification re-ran every gate and left eleven
 findings reported rather than fixed. Seven of them were engine defects; each was
@@ -537,7 +559,7 @@ derives what it may, and emits nothing it knows to be invalid.
   without it is incomplete", and the `files` list omitted it.
 - Repository hygiene, required by PRD-047 and absent until now: `CONTRIBUTING.md`,
   `SECURITY.md` and `CITATION.cff` (validated against the CFF 1.2.0 schema; DOI,
-  version and release date deliberately left for the owner to fill at 1.0.0). No
+  version and release date deliberately left to be filled at 1.0.0). No
   `NOTICE` file: the repository carries no third-party attribution notice, and
   Apache-2.0 §4(d) obliges propagation only where the Work includes one.
 
@@ -584,7 +606,7 @@ and three digest members of `/.well-known/knowledge-linkset`. Bytes that do not:
 and the one the specification's own site publishes are now byte-identical, from two
 implementations that share no code.
 
-### Added — the last three export forms, the three refusing commands, the release lane and the implementers' guide (ENG-5, 2026-09-21)
+### Added — the last three export forms, the three refusing commands, the release lane and the implementers' guide
 
 Every verb of `AGSC-09-07` now does something, and `tests/application/cli/verbs-sixteen.test.js`
 holds the "not implemented at this milestone" list at **empty**.
@@ -626,7 +648,7 @@ holds the "not implemented at this milestone" list at **empty**.
 - **`tools/release`** — the release lane of `docs/PLAN.md` §7 as a dry-runnable script: one
   version in one place (the engine and its `agsc-cli` alias), the changelog section, the
   `npm pack` contents (no `GABBE/`, no private path, no test-fixture bloat), the provenance
-  step, and the checklist the owner runs. It cannot publish: it spawns no process and opens
+  step, and the checklist the maintainer runs. It cannot publish: it spawns no process and opens
   no socket, and `--apply` writes only two version strings and one changelog heading.
 - **`.github/workflows/release.yml`** — the tag-triggered lane: a three-OS, two-Node gate
   matrix, then `actions/attest-build-provenance` and `npm publish --provenance` over npm
@@ -637,7 +659,7 @@ holds the "not implemented at this milestone" list at **empty**.
   to claim a Level. It discharges `AGSC-01-26a`'s obligation to list every adapter with its
   claimed key set.
 
-### Fixed — three items the last fix package recorded (ENG-5, 2026-09-21)
+### Fixed — three items the last fix package recorded
 
 - **A body reference to `content/assets/**` now warns** instead of passing silently.
   `AGSC-03-11` resolves it and `AGSC-06-01` publishes it at no route, so the link works in
@@ -653,7 +675,7 @@ holds the "not implemented at this milestone" list at **empty**.
   byte that `disc-0006` pins moves. Applied by every writer of that header: `llms.js`,
   `harness.js`, `skills.js`, `steer.js` and the `llm-context` adapter.
 
-### Not implemented, and why (ENG-5, 2026-09-21)
+### Not implemented, and why
 
 `AGSC-09-94` requires a `run` step to execute "with no network". A Node process cannot deny
 a child process the network from inside itself; that needs an OS sandbox on the host. The
@@ -663,7 +685,7 @@ step under a guarantee the engine cannot make. Everything else the rule pins is 
 and tested, `run --dry-run` works in full, and no conformance Level requires the verb.
 
 
-### Added — the seven remaining independent validators (ENG-4, 2026-09-21)
+### Added — the seven remaining independent validators
 
 `AGSC-09-90` and `PRD-054` oblige the reference distribution to ship nine `tools/`
 command contracts. Two were shipped (`validate-vectors`, `validate-wellknown`); this
@@ -715,7 +737,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   so the same rule's round-trip clause does not hold: re-compacting the reference
   build's graph against its own context yields `asc:Bundle` and `asc:specVersion`.
 
-### Added — the seven tools work IN A PAGE (ENG-3, 2026-09-21)
+### Added — the seven tools work IN A PAGE
 
 - **`src/distribution/page-tools.js`** implements all seven tools of AGSC-09-13 in the
   browser, against the node's own published routes: `/search.json` for the prebuilt
@@ -743,7 +765,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   script, no third-party request. A forge whose edit-view spelling this engine does not
   state is never guessed at: the link is the configured contribution target itself.
 
-### Fixed — four silently unmet MUSTs behind the page tools (ENG-3, 2026-09-21)
+### Fixed — four silently unmet MUSTs behind the page tools
 
 - **AGSC-05-07**: `/pages/<slug>.md` is now "a byte-identical copy of the
   lint-normalized source file" — the frontmatter block and the body. It used to be the
@@ -769,7 +791,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   into a minimal fake `document.modelContext` harness, assembles the page corpus from
   the build's own published bytes, and compares every answer with the local server's.
 
-### Changed — the engine conforms to the DRAFT `1.0.0-rc.5` (RC5-B, 2026-09-21)
+### Changed — the engine conforms to the DRAFT `1.0.0-rc.5`
 
 - The spec version the engine states has ONE home:
   `src/application/cli/main.js#SPEC_VERSION`, now `1.0.0-rc.5`. Every envelope,
@@ -787,10 +809,10 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   together, so AGSC-09-16 still holds.
 - **BREAKING for an MCP client: the `extensions` capability is a MAP**,
   `{"com.agenticsystemcore/knowledge": {"linkset": "<base>/.well-known/knowledge-linkset"}}`,
-  as MCP defines it and as AGSC-11-18 now pins it (SITE1-01, vectors `bnd-0035` and
+  as MCP defines it and as AGSC-11-18 now pins it (vectors `bnd-0035` and
   `bnd-0036`). It used to be the bare identifier list, and `bnd-0027` — the one vector
   that stated it that way — is withdrawn for it under AGSC-00-16, superseded by
-  `bnd-0036` (RC5-C). The conformance handler no longer projects the map to its key
+  `bnd-0036`. The conformance handler no longer projects the map to its key
   set for any vector.
 - **`schema:license` and `schema:usageInfo` are `xsd:string` literals on the Bundle
   AND on every item**, and the Content Use Terms identifier is the constant of
@@ -800,10 +822,10 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   1 MB (decimal) for `/search.json` and for each `/search-<nn>.json` shard. The
   per-published-item and 500 KB absolute bounds are gone: they were jointly
   unsatisfiable with AGSC-06-23 for any Bundle of more than roughly 200-word items,
-  and summing a manifest and its shards measured eleven documents as one (ENG1-01).
+  and summing a manifest and its shards measured eleven documents as one.
 - **The compiled diagram is inline in its item's page**, in a `<figure>` whose
   accessible name is `diagram.alt`, at no route of its own, and inside AGSC-02-98's
-  allow-list (AGSC-01-07/AGSC-02-13 as amended, ENG1-02). Pages that carried alt text
+  allow-list (AGSC-01-07/AGSC-02-13 as amended). Pages that carried alt text
   and no picture now carry the picture.
 - **`/attachments/<slug>/<file>` is emitted**, with the authored bytes AGSC-05-29
   hashed (AGSC-06-01, AR2-23). Every page linking an attachment used to raise
@@ -812,20 +834,20 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   the last fail-open path in the transport rules and the one blocker for 1.0.0
   (`bnd-0005` withdrawn → `bnd-0030`).
 - `lint --fix` reports a code per NORMALISATION — `AGSC-E108` for the encoding third,
-  `AGSC-E506` for the rest (AGSC-04-19 as amended, ENG2-03). An adapter's own flags
+  `AGSC-E506` for the rest (AGSC-04-19 as amended). An adapter's own flags
   (`--selection`, `--corrections`, `--attach-diagrams`) are adapter-scoped and are
-  `AGSC-E002` under any adapter that does not define them (ENG2-01/ENG1 §3).
+  `AGSC-E002` under any adapter that does not define them (/ENG1 §3).
 - Fixed: the `search` and `ask` tools tokenized the body alone, matching neither a
   title, a description nor a tag on a loaded Bundle (AGSC-06-23); an item whose
   primary cluster was not listed appeared in no `/llms.txt` section at all
   (AGSC-06-14); a malformed `Assisted-by:` line was silently dropped instead of
   making the trailer block `AGSC-E504` (AGSC-08-06).
 - `tests/conformance/pending.json` is EMPTY: the vector set runs
-  `136 pass, 0 fail, 14 skip (14 withdrawn, 0 pending) of 150` (FIX-28, which added
-  `fm-0010`; it was `135 pass … of 149` at RC5-C, and `135 pass … 13 withdrawn … of
+  `136 pass, 0 fail, 14 skip (14 withdrawn, 0 pending) of 150` (which added
+  `fm-0010`; it was `135 pass … of 149`, and `135 pass … 13 withdrawn … of
   148` before `bnd-0027` was withdrawn and `bnd-0036` added).
 
-### Security — authored single-line strings cannot inject structure (FIX-28 / FV28-01, 2026-09-21)
+### Security — authored single-line strings cannot inject structure
 
 - **An item `title`, `description`, `alt`, `caption`, reference title or any other
   AUTHORED SINGLE-LINE string may no longer carry a C0 control, `U+007F`, `U+0085`,
@@ -849,16 +871,16 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
     additive `llms-ctx.txt` — now passes what it interpolates through
     `knowledge/unicode.js#singleLine` (one `U+0020` per forbidden code point). It is
     the identity on every conforming string, so no emitted byte of a conforming
-    Bundle moved. This also closes FV28-05, which was the same hole in
+    Bundle moved. This also closes, which was the same hole in
     `interchange/adapters/llm-context.js`.
 
-### Changed — the Content Use Terms text is PINNED (FIX-28 / V9A-24, owner answer to Q-RC5-1)
+### Changed — the Content Use Terms text is PINNED
 
 - `AGSC-06-18` as amended at rc.5 now says which text the identifier
   `LicenseRef-AgenticSystemCore-Content-Use-1.0` names: the `LICENSE-CONTENT` file whose
   SHA-256 is `b2e8da62e6a41886296d2d2358fb4642cc7418e806eb4a29ada12b588ac32857` (2,133 bytes).
   A distribution shipping different text MUST use a different identifier. Until now the
-  wording was "an owner decision outside this specification", so the identifier named no
+  wording was "an outside this specification", so the identifier named no
   fixed text and two nodes could carry it over different terms.
 - `tests/arch/license-content-pin.test.js` reads the hex and the byte count out of the RULE
   and hashes the file, so the pin fails the suite rather than rotting silently; a second
@@ -866,7 +888,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   All three distributions (engine, patterns node, first node) already carry byte-identical
   text, so no emitted byte moved.
 
-### Fixed — AGSC-03-11's asset branch, and the dangling-link guard (FIX-28 / FV28-03, FV28-04)
+### Fixed — AGSC-03-11's asset branch, and the dangling-link guard
 
 - **`loadBundle` lists `content/assets/**` into `bundle.assets`** and every caller of
   `links.resolve` passes it, so AGSC-03-11's "an existing asset under
@@ -890,9 +912,9 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   selection (`statusOverrideFor`) so that the body rewriting and the status decision
   cannot disagree.
 - `/feed.xml`'s build skip message no longer invites `build.feed`, which R-15
-  withdrew at rc.5 and which a 1.0 tool rejects with `AGSC-E004` (FV28-11).
+  withdrew at rc.5 and which a 1.0 tool rejects with `AGSC-E004`.
 
-### Added — the Harness, the `/compose/` and board pages, `/legal/`, the three silent gaps and the `llm-context` adapter (ENG-2, s28)
+### Added — the Harness, the `/compose/` and board pages, `/legal/`, the three silent gaps and the `llm-context` adapter (s28)
 
 - `agsc compose <slugs…>` now WRITES the seven Harness files of AGSC-07-12 into
   `dist/harness/<name>/`, `<name>` being the first sixteen hex characters of the
@@ -925,7 +947,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   site-absolute link a build emits must resolve to a route the same build emits —
   `AGSC-E901` when one does not (`site.internalLinks`, `site.resolvesTo`).
 
-### Fixed — ENG-2
+### Fixed
 
 - `verbs/compose.js#flatten` carries the item body. Without it `compose --from <slug>`
   could never find AGSC-02-97's `yaml agsc-selection` fence, and a Harness `SKILL.md`
@@ -945,7 +967,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   1 225 MiB to 1 082 MiB. The supported scale is unchanged.
 
 
-### Added — `import --from old-site` and the diagram compiler (WP-12, M3)
+### Added — `import --from old-site` and the diagram compiler (M3)
 
 - `src/knowledge/diagrams.js` — the deterministic `.diagram` → SVG compiler
   (AGSC-01-07, AGSC-02-13, AGSC-02-98): `compile(dslText) -> {svg, findings}`, a
@@ -968,7 +990,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
 - `tests/fixtures/old-site-10/` — a synthetic corpus in the foreign format,
   exercising every branch of the mapping table.
 
-### Fixed — the session-28 deep engine audit (V9-D)
+### Fixed — the session-28 deep engine audit
 
 - `src/knowledge/yaml.js` — duplicate keys (`AGSC-E106`, AGSC-02-02) are detected
   in this module with one key set per mapping instead of by the `yaml` package's
@@ -1009,13 +1031,13 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   carried five literal U+0000 bytes in their `git ls-files -z` and hostile-IRI
   fixtures, which made `file(1)` classify them as data and GNU `grep` treat them as
   binary — so both were invisible to every source sweep, the third occurrence of the
-  defect that hid `src/boundary/federation.js` in session 27. Written as the
+  defect that hid `src/boundary/federation.js` in. Written as the
   six-character escape instead, and `tests/arch/text-sources.test.js` added as the
   guard: no NUL, no BOM and no CR in any source under `src/`, `tests/`, `bin/`,
   `tools/`, `schema/`, `ontology/` or `spec/`, and the sweep reports how many files
   it read (V9D-G4).
 
-### Changed — the session-28 deep engine audit (V9-D)
+### Changed — the session-28 deep engine audit
 
 - `src/README.md` §11.2 said the two opt-in verbs print their usage-error finding
   on stdout; they print it on stderr, where AGSC-09-10 puts every diagnostic.
@@ -1064,7 +1086,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   if any module raises a Finding with an empty message (F27-11).
 
 
-### Added — integration: the sixteen verbs, wired (WP-10-G)
+### Added — integration: the sixteen verbs, wired
 
 - `src/application/cli/verbs/*.js` — every verb of AGSC-09-07 answers: `init`,
   `lint`, `build`, `verify`, `ci`, `compose`, `propose`, `review`, `refresh`,
@@ -1076,7 +1098,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   settled on the port-bag convention `loadBundle(ports, {schemas})`.
 - `src/application/conformance.js` — AGSC-09-02/04/05 and AGSC-10-15 in one
   place, called by both `agsc conform` and `tests/conformance/vector-runner.test.js`.
-- `src/interchange/README.md` — the reserved Interchange context (WP-12).
+- `src/interchange/README.md` — the reserved Interchange context.
 - `src/distribution/site.js` — AGSC-06-21 pagination above 500 entries, the `/`,
   `/tags/<tag>/` and `/search/` index routes, `/pages/<slug>.jsonld`
   (AGSC-06-02), and `UNPRODUCED_ROUTES`, which names every AGSC-06-01 route that
@@ -1086,7 +1108,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
 - `diff@9.0.0` (BSD-3-Clause, no dependencies) — the unified diff `propose`
   writes for AGSC-08-04.
 
-### Changed — integration (WP-10-G)
+### Changed — integration
 
 - `src/distribution/headers.js` now CALLS `src/boundary/visibility.js` for
   AGSC-11-03 and AGSC-11-05 instead of restating them; byte equality is a test.
@@ -1111,7 +1133,7 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
   form that works on Node 22 and Node 24.
 - `tests/conformance/pending.json` is empty.
 
-### Added — composition, the node boundary and the two tool transports (WP-10-F)
+### Added — composition, the node boundary and the two tool transports
 
 - `src/composition/compose.js` — the five steps of AGSC-07-04…07-08 in the
   normative order, the AGSC-07-09 verdict with every ordering by code point, the
@@ -1279,5 +1301,5 @@ pinned libraries. Every new tool is at 100 % line coverage by its own tests.
 
 - Runtime dependencies are now permitted, pinned exactly: `yaml@2.9.1`,
   `ajv@8.20.0`, `ajv-formats@3.0.1`, `json-canonicalize@3.0.1`, and
-  `fast-check@4.10.1` as a development dependency (owner directive 2026-09-18,
+  `fast-check@4.10.1` as a development dependency (decided 2026-09-18,
   superseding the earlier zero-dependency rule).

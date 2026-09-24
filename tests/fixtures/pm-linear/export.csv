@@ -1,0 +1,3 @@
+ID,Team,Title,Description,Status,Estimate,Priority,Project ID,Project,Creator,Assignee,Labels,Cycle Number,Created,Updated,Completed,Canceled,Due Date,Parent issue
+LIN-1,Engineering,Index the tasks,Build the index.,In Progress,3,High,p1,Search,hank,hank@example.com,"search, spec",4,2026-05-01T10:00:00.000Z,2026-05-02T10:00:00.000Z,,,2026-05-10,
+LIN-2,Engineering,Retire the old index,,Canceled,,Low,p1,Search,hank,,,,2026-05-01T11:00:00.000Z,2026-05-03T11:00:00.000Z,,2026-05-03T11:00:00.000Z,,LIN-1

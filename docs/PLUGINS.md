@@ -1,7 +1,7 @@
 # Writing a plugin for this engine
 
 **Status:** the engine's own contract, version **1.0.0** of the plugin API, for
-specification version `1.0.0-rc.6`. Added at rc.6 under decision D112.
+specification version `1.0.0-rc.6`. Added at rc.6 under decision.
 
 This document is for someone who wants to add a capability to a node without
 forking the engine. It says what you may add, what your code may and may not do,

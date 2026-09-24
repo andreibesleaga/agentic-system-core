@@ -17,7 +17,7 @@
  *     estimate}`, which is what makes a run reach the monthly rollup of AGSC-08-25
  *     and the cap of AGSC-01-38. It is copied member by member and never invented.
  *
- * THE INPUT SHAPE IS PINNED SINCE rc.6 (ENG5-S9). AGSC-09-94: "A trace record is a
+ * THE INPUT SHAPE IS PINNED SINCE rc.6. AGSC-09-94: "A trace record is a
  * JSON object carrying at least `started` (an instant, AGSC-02-06), and OPTIONALLY
  * `ended`, `actor` (AGSC-02-09), `title`, `outcome` (AGSC-02-07's enum), `body` and
  * `usage` (AGSC-02-14); every other member is preserved under the `x-<vendor>-<key>`
@@ -37,7 +37,7 @@
  * dated from a wall clock.
  *
  * Rules: AGSC-09-94, AGSC-01-22, AGSC-02-14, AGSC-02-09, AGSC-04-11, AGSC-02-91.
- * Owner: ENG-5 (WP-12).
+ *
  */
 
 const slugs = require('../knowledge/slug.js');

@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "PVTI_1",
+      "title": "Review the mapping",
+      "status": "In Review",
+      "labels": ["docs"],
+      "assignees": ["bob"],
+      "content": { "type": "Issue", "number": 5, "title": "Review the mapping", "body": "Check every state.", "url": "https://github.example/acme/app/issues/5" }
+    },
+    {
+      "id": "PVTI_2",
+      "title": "Draft note",
+      "status": "Parked",
+      "content": { "type": "DraftIssue", "title": "Draft note", "body": "" }
+    }
+  ],
+  "totalCount": 2
+}

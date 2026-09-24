@@ -1,0 +1,4 @@
+(A) 2026-09-01 Call the printer +Office @phone due:2026-09-05
+x 2026-09-03 2026-09-01 Order paper +Office
+Water the plants +Office +Home @chores rec:1w state:waiting
+x 2026-09-02 Tidy the desk

@@ -8,7 +8,7 @@
 //
 // It also records which verbs are WIRED and which answer honestly that they are
 // not implemented at this milestone, so that a verb can never quietly become a
-// silent success (WP-10-G, 2026-09-18).
+// silent success.
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -28,7 +28,7 @@ const SIXTEEN = Object.freeze(['init', 'lint', 'build', 'verify', 'ci', 'export'
 /**
  * The verbs that answer "not implemented at this milestone" (AGSC-10-05).
  *
- * The list is EMPTY since 2026-09-21 (ENG-5): `export` left it when `--jsonld`,
+ * The list is EMPTY since 2026-09-21: `export` left it when `--jsonld`,
  * `--jsonl` and `--to <adapter>` landed and again when `--markdown`, `--okf` and
  * `--steer` did; `import` left it with the `old-site` and `okf` adapters; `skills`,
  * `run` and `trace` left it last. `run` is the one verb that still cannot discharge
@@ -155,7 +155,7 @@ test('export names the flag it needs, and each unimplemented flag answers for it
   assert.strictEqual(stray.status, 'fail');
   assert.strictEqual(stray.findings[0].code, 'AGSC-E003');
   assert.match(stray.findings[0].message, /AGSC-01-28/u);
-  // Every flag of AGSC-01-26…28 is implemented since ENG-5; none answers
+  // Every flag of AGSC-01-26…28 is implemented since; none answers
   // "not implemented", and `export --markdown` on an empty Bundle fails only for the
   // reason the rule gives — there is no LICENSE-CONTENT to carry the terms beside.
   const markdown = verb.run({ ports: { fs: emptyPort() }, verbFlags: { markdown: true } });

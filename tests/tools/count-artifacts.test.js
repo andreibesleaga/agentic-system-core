@@ -1,5 +1,5 @@
 'use strict';
-// FV29-09: `tools/count-artifacts` is the counter every report in this project
+// `tools/count-artifacts` is the counter every report in this project
 // depends on, and it was the one tool that resolved its inputs against
 // `process.cwd()` instead of against its own location. From any other directory —
 // including with `--help` — it threw a nine-frame `ENOENT` stack trace and exited 1,
@@ -33,7 +33,7 @@ function vectorFileCount() {
   return walk(path.join(REPO, 'tests', 'vectors')).filter((f) => f.endsWith('.json')).length;
 }
 
-describe('tools/count-artifacts — invocation (FV29-09)', () => {
+describe('tools/count-artifacts — invocation', () => {
   it('counts the distribution from ANY working directory', () => {
     const here = process.cwd();
     try {

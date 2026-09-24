@@ -1,6 +1,6 @@
 'use strict';
 /**
- * CONTEXT Interchange — memory adapter `skills` (AGSC-01-26a; R119, CONN-2): the
+ * CONTEXT Interchange — memory adapter `skills` (AGSC-01-26a): the
  * well-known skills repositories and rule packs, both ways.
  *
  *   agsc export --to skills --layout <layout>
@@ -59,13 +59,13 @@
  * per item of the pack (the cluster and its members), so a return import rebuilds
  * them exactly — the same own-record line the `gabbe` adapter writes. On import a line
  * is trusted only when it names this node's `site.base` or a declared peer and its
- * versions agree with the file's provenance header (`interchange/own-record.js`,
- * CONN2-03); a file with no trusted line is read as a foreign file, licence check
+ * versions agree with the file's provenance header (`interchange/own-record.js`);
+ * a file with no trusted line is read as a foreign file, licence check
  * included, and each untrusted line is reported.
  *
  * PURE: no fs, no clock, no network — the verb reads the files and hands them in.
  * Requirements: AGSC-01-22, AGSC-01-23, AGSC-01-26a, AGSC-01-29, AGSC-06-30,
- * AGSC-07-15, AGSC-07-19; PRD-021, PRD-026, PRD-032…034. Owner: CONN-2 (session 31).
+ * AGSC-07-15, AGSC-07-19; PRD-021, PRD-026, PRD-032…034.
  */
 
 const slugs = require('../../knowledge/slug.js');
@@ -656,7 +656,7 @@ function plan(input, options) {
   // member that belongs to two clusters is carried by two packs; the identical
   // second copy is the same item and is not written twice.
   // A line is trusted only from this node or a declared peer, with consistent
-  // versions (CONN2-03); a file with no trusted line is read as a foreign file, with
+  // versions; a file with no trusted line is read as a foreign file, with
   // every own-record line taken out, so the licence rule applies to it.
   const own = [];
   const ownFiles = new Set();
@@ -681,7 +681,7 @@ function plan(input, options) {
       if (why !== null) {
         totals.records_untrusted += 1;
         findings.push(finding('AGSC-E506', `${path}:${line}: the agsc-item line is not trusted: ${why}. Its`
-          + ' provenance and status were ignored and the file is read as a foreign file (CONN2-03)',
+          + ' provenance and status were ignored and the file is read as a foreign file',
         { file: path, line, severity: 'warn' }));
         continue;
       }

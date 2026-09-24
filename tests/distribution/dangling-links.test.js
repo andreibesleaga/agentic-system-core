@@ -1,5 +1,5 @@
 'use strict';
-// FV28-04 — the dangling-link guard, and the reason it had nothing to catch.
+// the dangling-link guard, and the reason it had nothing to catch.
 //
 // `site.js#internalLinks` collected SITE-ABSOLUTE hrefs only, so the promise that
 // "no build emits a link to a route it does not produce" held for absolute links
@@ -44,7 +44,7 @@ function load(root = FIXTURE) {
 
 // -------------------------------------------------------------------- (a) guard
 
-test('internalLinks resolves a RELATIVE href against the page route (FV28-04)', () => {
+test('internalLinks resolves a RELATIVE href against the page route', () => {
   const files = new Map([
     ['/concepts/a/index.html', '<a href="b">x</a><a href="../c/">y</a><img src="../../assets/d.png">'],
     ['/concepts/b/index.html', '<a href="/concepts/a/">z</a>'],
@@ -88,7 +88,7 @@ test('render() rewrites a body href through the injected resolver', () => {
   assert.ok(rewritten.includes('src="../assets/x.png"'), rewritten);
 });
 
-test('the minimal fixture emits no dangling link (FV28-04, end to end)', () => {
+test('the minimal fixture emits no dangling link (end to end)', () => {
   const { bundle, ports, options } = load();
   const built = site.build(bundle, ports, options);
   const dangling = site.internalLinks(built.files, { base: 'https://minimal.example' })

@@ -32,7 +32,7 @@ The language is the vocabulary of `spec/00` §0.2 (Bundle, Item, the six types, 
 
 A 1.x reader **MUST** ignore unknown members and unknown `x-<vendor>-<key>` keys (preserving them verbatim in lossless exports, AGSC-02-05/02-05a), **MUST** tolerate the reserved enum values the spec names when reading documents it did not author (AGSC-00-15, AGSC-11-02), and **MUST NOT** fail on a file whose `spec_version` MINOR is higher than its own (AGSC-00-14). A node's *own* configuration and frontmatter are validated closed, because a publisher must not emit a value its declared version does not define (AGSC-11-02 as amended). MAJOR is the only breaking boundary. Every parameter that is not a wire-format invariant lives in `agsc.config.json` with a spec default and a stated maximum (AGSC-11-01, R60).
 
-## 5a. The plugin points (added at rc.6 — D112, AGSC-00-24)
+## 5a. The plugin points (added at rc.6 —, AGSC-00-24)
 
 Everything this format admits as a replaceable part is one of **eight kinds**, and no
 other extension point exists at 1.x. The value of saying so in the architecture is

@@ -20,7 +20,7 @@
 // that renders the same chapters in its own page design: instead of the bytes it
 // compares what the pages SAY — the plain text of every rule, found by its anchor,
 // and the number of table rows on each chapter — so a changed, dropped or added
-// word in a rule is drift and a different page shell is not (SITE4-04, ENG-9).
+// word in a rule is drift and a different page shell is not.
 //
 // Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock, no network, LF, sorted
 // output; the same inputs give the same bytes on every machine (AGSC-04-01).
@@ -314,7 +314,7 @@ function run(argv, io) {
   }
   if (flags.has('--text') && !checkDir) return usage('--text compares a tree and needs --check <dir> (AGSC-E003)');
   const specDir = path.join(root, 'spec');
-  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which
@@ -343,7 +343,7 @@ function run(argv, io) {
 
   const rendered = render(root, texts);
   const findings = rendered.findings;
-  // FV29-10: an input that is present but EMPTY is not a clean run. A spec/ that
+  // an input that is present but EMPTY is not a clean run. A spec/ that
   // declares no version and carries no rule anchor renders empty pages, and the
   // earlier code reported `pass` over them.
   if (rendered.specVersion === 'unknown') {
@@ -367,7 +367,7 @@ function run(argv, io) {
     const target = path.resolve(checkDir);
     const numbered = new Map(rendered.sections.map((s) => [`${s.slug}/index.html`, `${s.number}-${s.slug}/index.html`]));
     for (const name of [...rendered.files.keys()].sort(compareCodePoint)) {
-      // SITE4-04: the named route first, then the numbered one a publisher may use.
+      // the named route first, then the numbered one a publisher may use.
       const alternative = numbered.get(name);
       const found = [name, alternative].filter(Boolean).find((n) => fs.existsSync(path.join(target, n)));
       if (found === undefined) {

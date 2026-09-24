@@ -1,6 +1,6 @@
 'use strict';
 // AGSC-02-20 (CommonMark 0.31.2 + GFM tables), AGSC-02-22 (info strings),
-// AGSC-03-13 (heading anchors). Owner: C (WP-10-C).
+// AGSC-03-13 (heading anchors).
 //
 // No clock, no network, no randomness: `render` is a function of its string.
 
@@ -102,7 +102,7 @@ test('a heading built only of inline code still yields its text', () => {
 });
 
 // ---------------------------------------------------------------------------
-// V9-D lens (b): `assignAnchors` remembers the highest suffix it has consumed per
+// lens (b): `assignAnchors` remembers the highest suffix it has consumed per
 // base, so a body of identical headings does not rescan `-2`, `-3`, … from the
 // start every time. The memo may never change an emitted anchor, and these are
 // the cases that would notice if it did.

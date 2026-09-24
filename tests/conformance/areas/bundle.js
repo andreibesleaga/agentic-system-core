@@ -2,7 +2,7 @@
 // Conformance area `bundle`. bundle-0001 (MAJOR tolerance and unknown-key
 // preservation, AGSC-00-15) — owner A. bundle-0002 (language variants,
 // AGSC-01-13) and bundle-0003..0005 (the agent lane, AGSC-01-36/38) — owner
-// B (WP-10-B, the configuration/CLI package); dispatched here by vector.id
+// B (the configuration/CLI package); dispatched here by vector.id
 // since their input shape (`paths[]`/`config` alone, no `markdown`) differs
 // from bundle-0001's.
 
@@ -14,7 +14,7 @@ const { checkAgents } = require('../../../src/governance/agents.js');
 /**
  * groupLanguageVariants(paths, config) — AGSC-01-13/01-13a: the unsuffixed
  * file is the primary and owns the slug; `<slug>.<lang>.md` shares it. No
- * module in the WP-10 contract names this function (bundle loading/routing
+ * module in the contract names this function (bundle loading/routing
  * is not yet assigned to any agent's API surface); implemented here,
  * self-contained, since bundle-0002 is B's vector to prove.
  */
@@ -90,7 +90,7 @@ function runAgentsConfigVector(vector) {
 }
 
 /**
- * bundle-0006 (rc.6, AGSC-00-25/D112) — the asymmetry AGSC-00-21 names: content
+ * bundle-0006 (rc.6, AGSC-00-25/) — the asymmetry AGSC-00-21 names: content
  * tolerates the unknown, configuration does not.
  *
  * `agsc.config.json` is the one CLOSED surface of this format (AGSC-01-18), so a

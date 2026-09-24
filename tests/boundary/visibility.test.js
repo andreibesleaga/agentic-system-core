@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the visibility half of the Boundary context (WP-10-F).
+// Unit tests for the visibility half of the Boundary context.
 // AGSC-11-01..11-05, AGSC-11-20, AGSC-11-22.
 
 const test = require('node:test');
@@ -48,7 +48,7 @@ test('AGSC-11-20: restricted drops the wildcard everywhere but the discovery doc
     { href: 'https://a.example/access/', rel: 'https://w3id.org/agentic-system-core/rel#access' },
   ]);
   assert.strictEqual(links.wildcardAllowed, false);
-  // V7-06: a public node carries no agsc-visibility attribute and no access link.
+  // a public node carries no agsc-visibility attribute and no access link.
   const publicNode = v.visibilityLinks({});
   assert.deepStrictEqual(plain(publicNode.attributes), {});
   assert.deepStrictEqual(plain(publicNode.links), []);
@@ -149,7 +149,7 @@ test('AGSC-05-14: retiredAt takes modified, else date, and is omitted when both 
   assert.strictEqual(v.CORS_HEADERS['Access-Control-Allow-Origin'], '*');
 });
 
-// V9-D lens (b): the ETag condition is a conjunction — an artefact AND supplied
+// lens (b): the ETag condition is a conjunction — an artefact AND supplied
 // bytes. Turning it into a disjunction survived the whole suite.
 test('AGSC-11-05: an ETag is emitted only for an artefact whose bytes are supplied', () => {
   const artefact = '/graph.jsonld';

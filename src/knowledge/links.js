@@ -1,7 +1,7 @@
 'use strict';
 // src/knowledge/links.js — CONTEXT Knowledge, aggregate Bundle (the Link graph).
 // Implements AGSC-03-01…03-13 and the relative-path grammar AGSC-01-35 where a
-// body reference carries it. Owner: C (WP-10-C).
+// body reference carries it.
 //
 // PURE: no fs, no process, no clock, no network. Items come in already parsed;
 // what leaves is a record — edges, findings, and the diagnostic shapes the vectors
@@ -384,7 +384,7 @@ function resolve(items, options = {}) {
   // it belongs to a cluster, and the cluster is not an orphan because members
   // name it. Counting only the member direction made every top-level cluster a
   // permanent AGSC-E305, which AGSC-03-10 does not say and AGSC-01-12's
-  // membership key contradicts (WP-10-G, 2026-09-18).
+  // membership key contradicts.
   const inbound = new Set(edges.map((e) => e.target));
   for (const v of views) for (const c of asArray(v.fm.clusters)) inbound.add(String(c));
   for (const v of views) {
@@ -438,7 +438,7 @@ function resolve(items, options = {}) {
       // extension-less, so `[Supervisor](supervisor)` is the form that works
       // for a reader and `supervisor.md` is the form that works in the
       // repository. Both designate the same item, so both resolve here
-      // (WP-10-G, 2026-09-18).
+      //
       const targetItem = byPath.get(targetPath) === undefined
         ? byPath.get(`${targetPath}.md`)
         : byPath.get(targetPath);
@@ -450,7 +450,7 @@ function resolve(items, options = {}) {
         // AGSC-03-11: an inline link between items is the untyped `asc:mentions`.
         if (targetItem !== undefined) add(v.slug, 'mentions', targetItem.slug, true);
         // The asset branch resolves INSIDE the Bundle and, since rc.6, is PUBLISHED:
-        // AGSC-06-01 as amended (FIX28-01) carries `/assets/<path>` for every file
+        // AGSC-06-01 as amended carries `/assets/<path>` for every file
         // under `content/assets/` a published body references, so the reference that
         // works in the repository works on the built site too. Until rc.6 the route
         // set carried none, and this branch reported the resolved asset as a warning
@@ -489,7 +489,7 @@ function resolve(items, options = {}) {
 /**
  * AGSC-03-11: "a link to an external origin is never resolved at build time". The
  * test is the scheme (or a protocol-relative `//`), and it is exported at rc.5
- * (FV28-04) so that the writer's route mapping applies exactly the same test the
+ * so that the writer's route mapping applies exactly the same test the
  * resolver does — one definition of "external", not two.
  */
 function isExternalTarget(raw) {

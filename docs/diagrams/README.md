@@ -25,7 +25,7 @@ redefine anything; every fact here traces back to those frozen documents.
 
 ## Standing sync rule
 
-**A stale diagram is a gate failure** (owner directive, 2026-09-02, recorded in the
+**A stale diagram is a gate failure** (decided 2026-09-02, recorded in the
 project's private audit log). Any change to `docs/PRD.md`, `docs/PLAN.md`, the item schema
 (`schema/*.json`), the Link vocabulary, the build pipeline, the combiner semantics, the ledger format,
 the CI/CD lanes, or the migration procedure MUST update the corresponding file(s) in this index in the

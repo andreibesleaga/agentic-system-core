@@ -1,5 +1,5 @@
 'use strict';
-// LEG2-02 / L2-01 (the legal review of 2026-09-23; ENG-9): the engine is a general
+// / L2-01 (the legal review of 2026-09-23): the engine is a general
 // tool, and it stamped ONE owner's legal position on every node it built — "All
 // rights reserved", "Written with AI assistance", "Independent work … no organisation
 // named here is connected with it" — and a no-model-training reservation beside a
@@ -17,7 +17,7 @@
 //   * the AI-assistance sentence of the footer — only when a published item records
 //     `prov.origin` `ai-assisted` or `ai-generated` (derived, no new key).
 //   * the "independent work" disclaimer — only from an authored `DISCLAIMER.md`.
-//   RULE-FORCED, kept, and recorded as the open specification item LEG2-02: AGSC-06-18
+// RULE-FORCED, kept, and recorded as the open specification item: AGSC-06-18
 //   "Every prose-carrying export MUST embed the Content Use Terms … (a CC-BY-4.0
 //   Bundle still ships under the Content Use Terms)", so the footer's terms line, the
 //   JSON-LD `schema:usageInfo` and the export headers still name the terms; and the
@@ -69,12 +69,12 @@ function build({ license, crawlers, aiItem = false, disclaimer = null }) {
   return { built, text };
 }
 
-const footerOf = (page) => page.slice(page.indexOf('<footer>'), page.indexOf('</footer>'));
+const footerOf = (page) => page.slice(page.indexOf('<footer'), page.indexOf('</footer>'));
 
 test('Content Use Terms Bundle: all rights reserved, the reservation in both machine dialects', () => {
   const { text } = build({ license: TERMS });
   const footer = footerOf(text('/concepts/handoff/index.html'));
-  assert.match(footer, /&#169; 2026 Ada Lovelace\. All rights reserved\. You may cite and link\./u);
+  assert.match(footer, /&#169; 2026 Ada Lovelace\. Prose: <a href="\/legal\/" rel="license" data-spdx="LicenseRef-AgenticSystemCore-Content-Use-1\.0">Content Use Terms 1\.0<\/a>, all rights reserved, citing and linking allowed\./u);
   assert.deepStrictEqual(JSON.parse(text('/.well-known/tdmrep.json')), [{ location: 'https://minimal.example/', 'tdm-reservation': 1 }]);
   assert.match(text('/robots.txt'), /^User-agent: GPTBot\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nDisallow: \/$/mu);
 });
@@ -84,22 +84,22 @@ test('CC BY 4.0 Bundle: no "all rights reserved", no reservation, no ai-train=no
   const page = text('/concepts/handoff/index.html');
   const footer = footerOf(page);
   assert.doesNotMatch(footer, /All rights reserved/u);
-  assert.match(footer, /&#169; 2026 Ada Lovelace\. The prose is licensed under CC-BY-4\.0\./u);
+  assert.match(footer, /&#169; 2026 Ada Lovelace\. Prose: <span>CC-BY-4\.0<\/span>\./u);
   assert.deepStrictEqual(JSON.parse(text('/.well-known/tdmrep.json')), [{ location: 'https://minimal.example/', 'tdm-reservation': 0 }]);
   const robots = text('/robots.txt');
   assert.doesNotMatch(robots, /ai-train=no/u);
   assert.doesNotMatch(robots, /Disallow: \//u);
   // An empty crawler list is a fault only for a node that publishes a reservation.
   assert.ok(!built.findings.some((f) => f.code === 'AGSC-E202'), JSON.stringify(built.findings));
-  // RULE-FORCED (AGSC-06-18, LEG2-02 open): the terms line still names the terms.
-  assert.match(footer, new RegExp(`Content Use Terms: <a href="/legal/">${TERMS}</a>`, 'u'));
+  // RULE-FORCED (AGSC-06-18, still an open item): the terms line still names the terms.
+  assert.match(footer, new RegExp(`Content Use Terms: <a href="/legal/" rel="license" data-spdx="${TERMS}">Content Use Terms 1\\.0</a>`, 'u'));
 });
 
 test('the AI-assistance sentence appears only when a published item records AI assistance', () => {
   const human = footerOf(build({ license: TERMS }).text('/concepts/handoff/index.html'));
   assert.doesNotMatch(human, /Written with AI assistance/u);
   const assisted = footerOf(build({ aiItem: true, license: TERMS }).text('/concepts/handoff/index.html'));
-  assert.match(assisted, /class="notice">Written with AI assistance, reviewed and published by a person\./u);
+  assert.match(assisted, /AI-assisted, human-reviewed\./u);
 });
 
 test('the disclaimer is the publisher\'s own DISCLAIMER.md, never a constant', () => {
@@ -111,7 +111,11 @@ test('the disclaimer is the publisher\'s own DISCLAIMER.md, never a constant', (
     license: TERMS,
   });
   const footer = footerOf(own.text('/concepts/handoff/index.html'));
-  assert.match(footer, /class="notice">Independent work, with no warranty\. <a href="\/legal\/">Full terms<\/a>/u);
+  // One paragraph (owner, 2026-09-23): the legal link continues the text, no second <p>.
+  assert.match(footer, /Independent work, with no warranty\. <a href="\/legal\/">Legal &amp; privacy<\/a><\/p>/u);
+  assert.strictEqual((footer.match(/<p[ >]/gu) || []).length, 1);
+  // One legal link in the footer (owner, 2026-09-23): no "Full terms" / "See /legal/" repeats.
+  assert.doesNotMatch(footer, /Full terms|See <a href="\/legal\/">/u);
   const legal = own.text('/legal/index.html');
   assert.match(legal, /<h2 id="disclaimer">What this work does not claim<\/h2>/u);
   assert.match(legal, /A second paragraph\./u);
@@ -127,11 +131,11 @@ test('the /legal/ page quotes AGSC-06-15\'s constant always, and the practice pa
 
 test('termsLine: the pieces, one by one', () => {
   const plain = html.termsLine('CC0-1.0', { author: 'A', legal: false, year: '2026' });
-  assert.match(plain, /&#169; 2026 A\. The prose is licensed under CC0-1\.0\.<\/p>/u);
-  assert.doesNotMatch(plain, /class="notice"/u);
-  assert.match(html.termsLine(null, { author: 'A', legal: true, year: '2026' }), /All rights reserved/u);
+  assert.match(plain, /&#169; 2026 A\. Prose: <span>CC0-1\.0<\/span>\./u);
+  assert.doesNotMatch(plain, /class="links"/u);
+  assert.match(html.termsLine(null, { author: 'A', legal: true, year: '2026' }), /all rights reserved/u);
   assert.match(html.termsLine(TERMS, { aiAssisted: true, disclaimer: 'D.', legal: false }),
-    /<p class="notice">Written with AI assistance, reviewed and published by a person\. D\.<\/p>/u);
+    /AI-assisted, human-reviewed\. D\.<\/p>/u);
 });
 
 test('readDisclaimer: absent, unreadable, heading-only and heading-less files', () => {

@@ -21,6 +21,7 @@ const { ASSISTANCE } = require('../knowledge/provenance-header.js');
 const diagrams = require('../knowledge/diagrams.js');
 const lint = require('../governance/lint.js');
 const { WELLKNOWN_PATH, MEDIA_TYPE } = require('./discovery.js');
+const theme = require('./theme.js');
 
 /** The five characters that must never reach markup unescaped. */
 function escapeHtml(value) {
@@ -36,7 +37,7 @@ function escapeHtml(value) {
  * The footer's one-line AI-assistance statement (AGSC-06-15's fact, in the words a
  * reader of a page needs) and the owner's one-sentence disclaimer.
  *
- * LEG2-02 (ENG-9): neither is stamped on every node any more. This engine is a
+ * neither is stamped on every node any more. This engine is a
  * general tool, and a constant sentence can be false for somebody else's node. The
  * AI sentence is emitted only when a published item records `prov.origin`
  * `ai-assisted` or `ai-generated` (`termsLine`'s `aiAssisted`, derived by the build);
@@ -45,6 +46,8 @@ function escapeHtml(value) {
  * their `DISCLAIMER.md`; no writer emits it on its own.
  */
 const ASSISTANCE_SENTENCE = 'Written with AI assistance, reviewed and published by a person.';
+/** The footer's short form of the same fact (owner, 2026-09-23). */
+const FOOTER_AI_NOTE = 'AI-assisted, human-reviewed.';
 const NO_CLAIM_SENTENCE = 'Independent work, published as it is, with no warranty and no'
   + ' liability; not advice; no organisation named here is connected with it; other names'
   + ' are their owners\' marks.';
@@ -68,45 +71,31 @@ function termsLine(licenseProse, options = {}) {
   // it. The identifier is always named; the LINK is emitted only when the route
   // exists, so no build ships a dangling internal link (AGSC-06-18).
   const legal = options.legal === undefined ? true : Boolean(options.legal);
+  // The human name is shown; the identifier stays machine-readable in the same element
+  // (`data-spdx`), so every page still carries it (AGSC-06-18).
+  const termsName = 'Content Use Terms 1.0';
   const terms = legal
-    ? `<a href="/legal/">${escapeHtml(TERMS)}</a>`
-    : `<span>${escapeHtml(TERMS)}</span>`;
-  const lines = [`<p class="terms">Prose licence: <span>${escapeHtml(license)}</span>. `
-    + `Content Use Terms: ${terms}.</p>`];
-  // The copyright line and the one-sentence notice, added at rc.6 on the owner's
-  // legal pack of 2026-09-22 (items B-04, M-12, M-13).
-  //
-  // NEITHER THE NAME NOR THE YEAR IS HARD-CODED. This engine is a general tool that
-  // other people run on their own content; it must not stamp one owner's name into
-  // their pages. The name is `site.author`, the same field the `/legal/` operator
-  // line already uses, and the year is the year of the BUILD INSTANT, which
-  // AGSC-04-09 derives from the last commit or from `SOURCE_DATE_EPOCH` — never
-  // from a clock, so the footer stays byte-reproducible. With no author configured,
-  // no copyright line is emitted at all: a copyright notice naming nobody says
-  // nothing, and inventing a holder would be worse.
-  //
-  // LEG2-02 (ENG-9): "All rights reserved" is true only where the publisher adopted
-  // the Content Use Terms for the prose; under any other licence (CC BY 4.0, CC0, …)
-  // the licence itself says what a reader may do, and a reservation beside it would
-  // restrict the licensed rights (CC BY 4.0 §2(a)(5)(B)). So the line names the
-  // licence instead.
+    ? `<a href="/legal/" rel="license" data-spdx="${escapeHtml(TERMS)}">${escapeHtml(termsName)}</a>`
+    : `<span data-spdx="${escapeHtml(TERMS)}">${escapeHtml(termsName)}</span>`;
+  // Compact footer (owner, 2026-09-23): one paragraph, short sentences, nothing dropped —
+  // copyright, prose licence with the Content Use Terms named, the AI note, the
+  // publisher's disclaimer, then the single legal link.
   const author = options.author == null ? '' : String(options.author).trim();
   const year = options.year == null ? '' : String(options.year).trim();
-  if (author !== '' && year !== '') {
-    const seeLegal = legal ? ' See <a href="/legal/">/legal/</a>.' : '';
-    const rights = adoptsTerms(licenseProse)
-      ? 'All rights reserved. You may cite and link.'
-      : `The prose is licensed under ${escapeHtml(license)}.`;
-    lines.push(`<p class="copyright">&#169; ${escapeHtml(year)} ${escapeHtml(author)}. ${rights}${seeLegal}</p>`);
-  }
-  const notice = [
-    options.aiAssisted === true ? escapeHtml(ASSISTANCE_SENTENCE) : '',
+  // NEITHER THE NAME NOR THE YEAR IS HARD-CODED: `site.author` and the build-instant
+  // year (AGSC-04-09); no author → no copyright sentence. "All rights reserved" only
+  // under the Content Use Terms; another licence is named instead.
+  const copyright = author !== '' && year !== '' ? `&#169; ${escapeHtml(year)} ${escapeHtml(author)}. ` : '';
+  const rights = adoptsTerms(licenseProse)
+    ? `Prose: ${terms}, all rights reserved, citing and linking allowed.`
+    : `Prose: <span>${escapeHtml(license)}</span>. Content Use Terms: ${terms}.`;
+  const text = [
+    `${copyright}${rights}`,
+    options.aiAssisted === true ? escapeHtml(FOOTER_AI_NOTE) : '',
     options.disclaimer == null ? '' : escapeHtml(singleLine(String(options.disclaimer)).trim()),
-  ].filter((part) => part !== '');
-  if (notice.length > 0) {
-    lines.push(`<p class="notice">${notice.join(' ')}${legal ? ' <a href="/legal/">Full terms</a>.' : ''}</p>`);
-  }
-  return lines.join('\n');
+  ].filter((part) => part !== '').join(' ');
+  // One paragraph, no break (owner, 2026-09-23): the legal link continues the text.
+  return `<p class="terms">${text}${legal ? ' <a href="/legal/">Legal &amp; privacy</a>' : ''}</p>`;
 }
 
 /**
@@ -118,6 +107,18 @@ function termsLine(licenseProse, options = {}) {
  *   author, year}` — `author` and `year` are the footer's copyright line (rc.6).
  * @returns {string}
  */
+/**
+ * AGSC-06-20: one `<h1>` per page. The shell writes the title as the `<h1>`; a body
+ * whose rendered Markdown opens with its own `# Title` equal to that title would add
+ * a second, so that one heading is dropped. Any other body heading is kept.
+ */
+function withoutRepeatedTitle(body, title) {
+  const text = String(body == null ? '' : body);
+  const match = /^\s*<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>\s*/u.exec(text);
+  if (match === null || match[1].trim() !== escapeHtml(title).trim()) return text;
+  return text.slice(match[0].length);
+}
+
 function shell(page) {
   const head = [
     '<!doctype html>',
@@ -145,16 +146,32 @@ function shell(page) {
   for (const src of (page.pageToolScripts || [])) {
     head.push(`<script src="${escapeHtml(src)}" defer></script>`);
   }
+  // The default theme (theme.js) — one same-origin stylesheet and one small
+  // same-origin script that applies the visitor's stored theme before first paint.
+  head.push(`<link rel="stylesheet" href="${theme.STYLESHEET_ROUTE}">`);
+  head.push(`<script src="${theme.SCRIPT_ROUTE}"></script>`);
   head.push('</head>', '<body>');
-  const nav = (page.nav || []).map(([href, label]) => `<a href="${escapeHtml(href)}">${escapeHtml(label)}</a>`).join(' ');
+  // The header of AgenticSystemCore.com: skip link, brand linking home, the navigation
+  // list, and the theme switcher (shown by the script; without it the system theme rules).
+  const entries = (page.nav || []).filter(([href]) => !(page.siteTitle != null && href === '/'));
+  const brand = page.siteTitle == null ? '' : `<a class="brand" href="/">${escapeHtml(page.siteTitle)}</a>`;
+  const list = entries.length === 0 ? ''
+    : `<ul>\n${entries.map(([href, label]) => `<li><a href="${escapeHtml(href)}"${page.route === href ? ' aria-current="page"' : ''}>${escapeHtml(label)}</a></li>`).join('\n')}\n</ul>`;
+  const header = brand === '' && list === '' ? ''
+    : ['<header class="site">', '<nav aria-label="Site">', brand, list, theme.SWITCHER, '</nav>', '</header>']
+      .filter((l) => l !== '').join('\n');
   return [
     ...head,
-    nav === '' ? '' : `<nav aria-label="Main">${nav}</nav>`,
-    '<main>',
+    '<a class="skip" href="#main">Skip to content</a>',
+    header,
+    '<main id="main">',
     `<h1>${escapeHtml(page.title)}</h1>`,
-    page.body,
+    // The Summary block of AgenticSystemCore.com: the page's own description, if any.
+    page.description == null || String(page.description).trim() === '' ? ''
+      : `<p class="summary"><strong>Summary</strong>${escapeHtml(page.description)}</p>`,
+    withoutRepeatedTitle(page.body, page.title),
     '</main>',
-    `<footer>${termsLine(page.licenseProse, {
+    `<footer class="site">${termsLine(page.licenseProse, {
       aiAssisted: page.aiAssisted, author: page.author, disclaimer: page.disclaimer, legal: page.legal, year: page.year,
     })}</footer>`,
     '</body>',
@@ -164,7 +181,7 @@ function shell(page) {
 }
 
 /**
- * AGSC-02-13 as amended at rc.5 (ENG1-02): the compiled diagram, INLINE in the item's
+ * AGSC-02-13 as amended at rc.5: the compiled diagram, INLINE in the item's
  * page and at no route of its own.
  *
  * The `.diagram` source is passed in rather than read here — this module is a
@@ -186,7 +203,7 @@ function shell(page) {
  *
  * The allow-list is INJECTABLE for the same reason the Markdown renderer is: it is
  * one implementation of one rule, and a port in another language substitutes its
- * own. It is also the only way to exercise this guard, because ENG-1 proved as a
+ * own. It is also the only way to exercise this guard, because proved as a
  * property over 300 generated sources that the compiler's output is always inside
  * the list — the guard is defence in depth against a future compiler change, and a
  * defence nothing can reach is a defence nobody can trust.
@@ -235,16 +252,53 @@ function diagramFigure(item, source, options = {}) {
  * @param {object} options `{render, licenseProse, jsonld, canonical, diagramSource}`.
  * @returns {string}
  */
+/** How each `prov.origin` reads to a person (the metadata list's Provenance row). */
+const ORIGIN_TEXT = Object.freeze({
+  human: 'Written by a person',
+  'ai-assisted': 'Written with AI assistance and reviewed by the operator',
+  'ai-generated': 'Generated by a model and published by the operator',
+  imported: 'Imported from another source',
+});
+
+/**
+ * The metadata list of an item page, as AgenticSystemCore.com shows it: type (and
+ * kind), the clusters it names (linked when published), its IRI, its provenance.
+ * A row whose input is absent is omitted.
+ */
+function itemMeta(item, options) {
+  const rows = [`<dt>Type</dt><dd>${escapeHtml(item.type)}${item.kind ? ` · kind <code>${escapeHtml(item.kind)}</code>` : ''}</dd>`];
+  const clusters = Array.isArray(options.clusters) ? options.clusters : [];
+  if (clusters.length > 0) {
+    rows.push(`<dt>Cluster</dt><dd>${clusters.map((c) => (c.href
+      ? `<a href="${escapeHtml(c.href)}">${escapeHtml(c.title)}</a>` : escapeHtml(c.title))).join(', ')}</dd>`);
+  }
+  if (options.canonical != null) rows.push(`<dt>IRI</dt><dd><code>${escapeHtml(options.canonical)}</code></dd>`);
+  const prov = item.prov || {};
+  if (prov.origin != null && ORIGIN_TEXT[prov.origin]) {
+    rows.push(`<dt>Provenance</dt><dd>${escapeHtml(ORIGIN_TEXT[prov.origin])} (origin <code>${escapeHtml(prov.origin)}</code>`
+      + `${prov.operator ? `, operator <code>${escapeHtml(prov.operator)}</code>` : ''})</dd>`);
+  }
+  return `<dl class="meta">\n${rows.join('\n')}\n</dl>`;
+}
+
 function itemPage(item, options = {}) {
   const rendered = options.render(item.body == null ? '' : item.body);
-  const parts = [];
+  const parts = [itemMeta(item, options)];
   if (item.status === 'retired') {
     parts.push('<p class="retired" role="note">This item is retired. Its address stays valid and its identifier never changes (AGSC-11-22).</p>');
   }
   if (item.status === 'deprecated') {
     parts.push('<p class="deprecated" role="note">This item is deprecated.</p>');
   }
-  parts.push(rendered.html);
+  parts.push(withoutRepeatedTitle(rendered.html, item.title == null ? item.slug : item.title));
+  // A cluster page lists its published members (the caller passes only published
+  // items, so a draft never appears), each linked, with its description.
+  if (Array.isArray(options.members)) {
+    parts.push('<h2 id="members">Members</h2>');
+    parts.push(options.members.length === 0
+      ? '<p>No published item names this cluster yet.</p>'
+      : `<ul class="members">${options.members.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`);
+  }
   // AGSC-02-13: the compiled diagram, inline, before the attachments.
   if (typeof options.diagramSource === 'string') {
     const figure = diagramFigure(item, options.diagramSource, options);
@@ -280,7 +334,7 @@ function itemPage(item, options = {}) {
 function indexPage({ title, description, entries }, options = {}) {
   const list = entries.length === 0
     ? '<p>Nothing here yet.</p>'
-    : `<ul>${entries.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`;
+    : `<ul>${entries.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${Number.isInteger(e.count) ? ` (${e.count} ${e.count === 1 ? 'item' : 'items'})` : ''}${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`;
   return shell({ ...options, title, description, body: list });
 }
 
@@ -327,12 +381,14 @@ function composePage({ assets }, options = {}) {
     body: [
       '<p>Tick the items you want. The closure algebra of AGSC-07 runs <em>in this page</em>:',
       'no request leaves this origin, no key is needed and nothing is uploaded. The seven',
-      'Harness files are offered one download per file.</p>',
+      'Harness files are offered one download per file, or all together as one .zip.</p>',
       '<h2>Items</h2>',
       '<ul id="items"><li>Loading the published graph…</li></ul>',
       '<h2>Verdict</h2>',
       '<p id="validity">Nothing selected.</p>',
-      '<pre id="verdict"></pre>',
+      // Focusable: the stylesheet lets a long verdict scroll sideways, and a scrollable
+      // region must be reachable by keyboard (WCAG 2.1.1, AGSC-06-20).
+      '<pre id="verdict" tabindex="0"></pre>',
       '<h3>Why an item was added</h3>',
       '<ul id="explanations"></ul>',
       '<h3>Conflicts</h3>',
@@ -340,6 +396,7 @@ function composePage({ assets }, options = {}) {
       '<h2>Harness</h2>',
       '<p><button id="download" type="button" disabled>Build the Harness</button></p>',
       '<ul id="files"></ul>',
+      '<p id="archive" aria-live="polite"></p>',
       scripts,
     ].join('\n'),
   });
@@ -402,7 +459,7 @@ function legalPage({ terms, licenseProse, rendered, privacy, operator, disclaime
     '<p>The text above is this distribution\'s <code>LICENSE-CONTENT</code> file, '
       + 'rendered unchanged (AGSC-01-26, AGSC-06-18).</p>',
   ];
-  // LEG2-02 (ENG-9): the publisher's own disclaimer, from `DISCLAIMER.md`, as its own
+  // the publisher's own disclaimer, from `DISCLAIMER.md`, as its own
   // section between the terms and the privacy notice — never a constant.
   if (disclaimer != null && String(disclaimer.html) !== '') {
     sections.push(`<h2 id="disclaimer">${escapeHtml(disclaimer.heading)}</h2>`, String(disclaimer.html));
@@ -418,7 +475,7 @@ function legalPage({ terms, licenseProse, rendered, privacy, operator, disclaime
   // carries". So the section quotes that constant rather than restating it — the two
   // cannot drift — and adds only what a person reading a page needs in order to
   // understand what the constant means.
-  // LEG2-02 (ENG-9): the practice paragraph describes how AI-ASSISTED text is made
+  // the practice paragraph describes how AI-ASSISTED text is made
   // here, so it is stated only where a published item records AI assistance.
   sections.push('<h2 id="ai-assistance">How this text was written</h2>');
   if (options.aiAssisted === true) {

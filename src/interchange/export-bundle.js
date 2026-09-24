@@ -19,7 +19,7 @@
  * defined by exactly one module — `governance/fix.js`, the `lint --fix` of
  * AGSC-04-19 — so this export calls it. A second normaliser would be a second
  * definition of the same bytes, and the two would drift. The consequence the
- * ENG-2 report asked to be read carefully is therefore settled by construction:
+ * report asked to be read carefully is therefore settled by construction:
  * `export --markdown` on a Bundle that `lint --fix` has already normalised is a
  * byte-identical copy of its `content/` tree, and on a Bundle that has not been
  * normalised it emits the bytes `lint --fix` would have written. "Body bytes
@@ -38,7 +38,7 @@
  * AGSC-11-22, AGSC-01-20). Every other export of this engine already emits that
  * set and nothing else, and an export is a copy that leaves the node. AGSC-01-26
  * says "the Bundle itself" and names no exclusion, so the reading is recorded as
- * a specification item (ENG5-S1) rather than assumed to be the rule's intent.
+ * a specification item rather than assumed to be the rule's intent.
  *
  * `log.md` LOCATION. AGSC-01-26 names the file and not its directory. OKF v0.2
  * §9 says "A `log.md` file MAY appear at any level of the hierarchy to record the
@@ -46,7 +46,7 @@
  * only place OKF permits frontmatter — at the bundle root; AGSC-01-04 makes
  * `content/index.md` this format's Bundle root document, so the OKF bundle root of
  * an AGSC export is its `content/` directory and `log.md` is written beside the
- * index it belongs to. Recorded as ENG5-S2. (OKF v0.2 read 2026-09-21 from
+ * index it belongs to. Recorded as. (OKF v0.2 read 2026-09-21 from
  * <https://raw.githubusercontent.com/GoogleCloudPlatform/open-knowledge-format/main/SPEC.md>.)
  *
  * OKF's OWN `log.md` GRAMMAR IS NOT THIS ONE. OKF §9 states "The format is a flat
@@ -54,14 +54,14 @@
  * `YYYY-MM-DD` form", while AGSC-01-26 pins one line `- <slug>: <date>` per item in
  * slug order. The specification is the truth here (a determinism requirement: the
  * AGSC form is a pure function of the item set), and the divergence from the format
- * the flag is named after is recorded as ENG5-S3.
+ * the flag is named after is recorded as.
  *
  * PURE: no fs, no clock, no network. The caller supplies the authored bytes, the
  * `LICENSE-CONTENT` text and the compiled item schema.
  *
  * Rules: AGSC-01-26, AGSC-01-29, AGSC-04-19, AGSC-06-30, AGSC-01-04, AGSC-01-20.
- * Requirements: PRD-026 ← V2-26, V3-04, V3-26.
- * Owner: ENG-5 (WP-12).
+ * Requirements: PRD-026 ←.
+ *
  */
 
 const fix = require('../governance/fix.js');
@@ -151,7 +151,7 @@ function indexFile(source, options) {
   if (options.okf === true && parsed.okf_version === undefined) {
     append('okf_version', '0.2', 'AGSC-01-26 requires --okf to write it');
   }
-  // AGSC-01-26 as amended at rc.6 (D113): `bundle_version` is the ONE derived key of
+  // AGSC-01-26 as amended at rc.6: `bundle_version` is the ONE derived key of
   // an otherwise byte-preserving export, so it is WRITTEN, not preserved. Adding it
   // is not a normalisation and is not reported; overwriting a different value that
   // was in the authored document is, because a byte the export was asked to

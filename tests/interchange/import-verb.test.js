@@ -100,7 +100,7 @@ test('AGSC-09-08: a missing --from, --selection or directory is AGSC-E003, exit 
   const dir = workspace();
   const bare = run(['import', '--json', '--quiet'], dir);
   assert.strictEqual(bare.exit, 1);
-  // Two, not three, since ENG-5: `--selection` belongs to the `old-site` ADAPTER
+  // Two, not three, since: `--selection` belongs to the `old-site` ADAPTER
   // (AGSC-01-26a) and is required only when that adapter is the one named, so a bare
   // `import` is missing `--from` and the source directory and nothing else.
   assert.deepStrictEqual(bare.envelope.findings.map((f) => f.code),
@@ -115,9 +115,9 @@ test('AGSC-09-08: a --from value outside the set is AGSC-E002 and names the set'
   assert.deepStrictEqual(result.envelope.findings.map((f) => f.code), ['AGSC-E002']);
   assert.match(result.envelope.findings[0].message, /old-site/u);
   assert.match(result.envelope.findings[0].message, /okf/u);
-  // ENG-5 added the `okf` reader of AGSC-01-22; `--selection` stays the `old-site`
+  // The `okf` reader of AGSC-01-22 was added later; `--selection` stays the `old-site`
   // adapter's own flag and is required for that adapter alone.
-  assert.deepStrictEqual([...verb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills']); // cogx: CONN-1; gabbe: ENG-9; skills: CONN-2
+  assert.deepStrictEqual([...verb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board']);
   assert.deepStrictEqual([...verb.SELECTION_REQUIRED], ['old-site']);
 });
 
@@ -129,11 +129,11 @@ test('AGSC-09-09 (rc.5, ENG1 §3): an adapter\'s own flags are ADAPTER-SCOPED', 
   // eslint-disable-next-line global-require
   const main = require('../../src/application/cli/main.js');
   assert.deepStrictEqual([...main.VERB_FLAGS.import.keys()], ['--from', '--dry-run']);
-  // FV29-07 added `--replace` to both adapters: the documented, explicit way to let
+  // added `--replace` to both adapters: the documented, explicit way to let
   // a foreign bundle replace an item this node already holds.
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'old-site']).keys()],
     ['--selection', '--corrections', '--attach-diagrams', '--replace']);
-  // rc.6 (D113): `--allow-newer` is the OKF adapter's own flag for AGSC-01-22's
+  // rc.6: `--allow-newer` is the OKF adapter's own flag for AGSC-01-22's
   // tolerance limit, and is a usage error under any other adapter or none.
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'okf']).keys()],
     ['--replace', '--allow-newer']);
@@ -339,7 +339,7 @@ test('apply(): a byte-identical file is left alone, so `git status` stays honest
   assert.deepStrictEqual(applied.unchanged, ['same.md']);
   assert.deepStrictEqual(applied.written, ['new.md']);
   assert.deepStrictEqual(written, ['new.md']);
-  // FV29-07: a file that exists and cannot be read back is NOT a free overwrite —
+  // a file that exists and cannot be read back is NOT a free overwrite
   // the import cannot prove it would destroy nothing, so an authored item under
   // `content/` is a collision and nothing is written until `--replace` says so.
   const throwing = { exists: () => true, readFile: () => { throw new Error('x'); }, writeFile: (p) => written.push(p) };

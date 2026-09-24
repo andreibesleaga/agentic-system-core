@@ -50,8 +50,8 @@ describe('validate-diagrams — usage and the envelope', () => {
     assert.equal(capture('validate-diagrams', [diagramRoot(), diagramRoot()]).code, 2);
   });
 
-  // CONN-2 (ENG9-05): a directory that does not exist is nothing to validate, which
-  // every other checker reports as AGSC-E901 with exit 1 (FIX29-S4) — not a usage
+  // a directory that does not exist is nothing to validate, which
+  // every other checker reports as AGSC-E901 with exit 1 — not a usage
   // error, since the invocation itself was well formed.
   it('a directory that does not exist is AGSC-E901 with exit 1, as in every other checker', () => {
     const result = capture('validate-diagrams', [path.join(tmpdir(), 'absent')]);

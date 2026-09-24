@@ -68,7 +68,7 @@ test('AGSC-01-28: the default is agents,claude, and every target carries the sam
 });
 
 test('AGSC-01-28: a target outside the registry is AGSC-E203 and names the eleven', () => {
-  // rc.6, AGSC-00-23 (D112): a value outside a closed operator list is AGSC-E203.
+  // rc.6, AGSC-00-23: a value outside a closed operator list is AGSC-E203.
   // It was AGSC-E002 until then, which AGSC-09-08 reserves for an unknown FLAG and
   // which would have made this an exit-2 usage error rather than a finding.
   const plan = planOf([], { targets: ['agents', 'notepad'] });
@@ -220,7 +220,7 @@ test('flatten() leaves an already-flat record alone', () => {
   assert.strictEqual(steer.hasHumanVerification({}), false);
 });
 
-// ENG-9 (found while building the GABBE adapter): `plan` accepted `bundleVersion`
+// (found while building the GABBE adapter): `plan` accepted `bundleVersion`
 // and dropped it, so every steer target stated the build-instant fallback
 // `0.0.0+<instant>` even when the Bundle has a real content version (AGSC-04-25,
 // AGSC-06-15: every provenance header carries THE content version).

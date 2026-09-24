@@ -151,7 +151,7 @@ test('AGSC-01-26: a missing `license` is APPENDED as one line, quoted, and repor
   assert.deepStrictEqual(plan.findings.map((f) => f.code), ['AGSC-E506']);
 });
 
-test('AGSC-01-26 (rc.6, D113): bundle_version is the ONE derived key of the export', () => {
+test('AGSC-01-26: bundle_version is the ONE derived key of the export', () => {
   // A caller that hands in no content version writes none: the value is derived by
   // the BUILD (AGSC-04-25) and this module only formats it.
   assert.ok(!/bundle_version/u.test(at(planOf([]), 'content/index.md')));

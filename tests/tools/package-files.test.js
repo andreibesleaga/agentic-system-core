@@ -1,5 +1,5 @@
 'use strict';
-// FV29-15: `SECURITY.md` and `CONTRIBUTING.md` exist in the repository — they close
+// `SECURITY.md` and `CONTRIBUTING.md` exist in the repository — they close
 // R-03 and part of R-04 of the legal pack — but were absent from `package.json`
 // `files`, so `npm pack` shipped neither and a consumer of the npm package found no
 // security-reporting address and no contribution terms. `CHANGELOG.md` was unshipped
@@ -24,7 +24,7 @@ const REQUIRED = Object.freeze([
   'README.md', 'SECURITY.md',
 ]);
 
-describe('the published package carries the documents a consumer needs (FV29-15)', () => {
+describe('the published package carries the documents a consumer needs', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
   const shipped = tool('release').packList(REPO, manifest);
 

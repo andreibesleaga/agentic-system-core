@@ -50,7 +50,7 @@ const FEDERATION_PARAMS = Object.freeze({
 const CONTRIBUTE_MODES = Object.freeze(['pr', 'channel', 'form']);
 /** AGSC-06-35: the IANA-registered relations a related-system link may use. */
 const RELATED_RELATIONS = Object.freeze(['describedby', 'alternate', 'related',
-  'service-desc', 'service-doc', 'service-meta', 'collection', 'item', 'cite-as']); // cite-as: rc.6, EXT2-03
+  'service-desc', 'service-doc', 'service-meta', 'collection', 'item', 'cite-as']); // cite-as: rc.6,
 
 /** AGSC-03-01: the fourteen Link keys. */
 const LINK_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',

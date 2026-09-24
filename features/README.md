@@ -54,4 +54,4 @@ that every v1-scope PRD id with a persona-facing acceptance criterion is tagged 
 scenario (golden thread, NFR-03, Article I "no requirement without a test").
 
 Standing rule: this README and the twelve `.feature` files are kept in sync with `docs/PRD.md`; a stale
-mapping is a gate failure at M13 (owner directive, 2026-09-02).
+mapping is a gate failure at M13 (decided 2026-09-02).

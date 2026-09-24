@@ -1,6 +1,6 @@
 'use strict';
 // tests/conformance/areas/compose.js — area handler for `compose` vectors.
-// Owner: F (WP-10-F). Rules: AGSC-07-04..08, AGSC-07-09, AGSC-07-13a, AGSC-07-17,
+// Rules: AGSC-07-04..08, AGSC-07-09, AGSC-07-13a, AGSC-07-17,
 // AGSC-07-23, AGSC-07-24, AGSC-02-97.
 
 const crypto = require('node:crypto');
@@ -126,7 +126,7 @@ function runCompose0013(vector) {
 }
 
 /**
- * compose-0015 — AGSC-07-12 as amended at rc.5 (ENG2-05): the Harness directory name.
+ * compose-0015 — AGSC-07-12 as amended at rc.5: the Harness directory name.
  *
  * `<name>` is the first sixteen lowercase-hex characters of the SELECTION DIGEST, the
  * SHA-256 of the JCS form of `verdict.selection[]`. The digest is derived in the
@@ -154,7 +154,7 @@ function runCompose0015(vector) {
 }
 
 /**
- * compose-0016 — AGSC-07-13a, added at rc.6 (ENG7-03): the bytes of the archive
+ * compose-0016 — AGSC-07-13a, added at rc.6: the bytes of the archive
  * `--zip` writes (AGSC-09-09) and the name it writes them under (AGSC-04-25's
  * tenth stamping place).
  *

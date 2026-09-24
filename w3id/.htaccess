@@ -10,7 +10,7 @@
 #   Accept: application/rdf+xml -> /ns/agsc.rdf
 #   otherwise                   -> /ns/            (HTML documentation)
 # Versioned (immutable) copies live under /ns/<major>.<minor>.<patch>/ so that
-# owl:versionIRI resolves (AGSC-06-06, V3-15). The version segment also accepts
+# owl:versionIRI resolves (AGSC-06-06). The version segment also accepts
 # an optional SemVer pre-release suffix (e.g. 1.0.0-draft.1) — decided: D57 Q5, 2026-09-03
 # (04-DECISIONS.md).
 #

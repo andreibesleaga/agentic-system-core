@@ -39,7 +39,7 @@ test('retired and draft items appear in neither file, and a cluster has no link 
 
 test('a cluster with no primary member emits no section; loose items go to Other', () => {
   const text = llms.llmsTxt(BUNDLE, OPTIONS);
-  assert.ok(!text.includes('## Empty'), 'an empty cluster emitted a section (V7-08)');
+  assert.ok(!text.includes('## Empty'), 'an empty cluster emitted a section');
   assert.ok(text.includes('## Other\n\n- [Loose](https://a.example/concepts/loose/): Loose\n'));
 });
 

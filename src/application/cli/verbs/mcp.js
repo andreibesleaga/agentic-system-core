@@ -6,7 +6,7 @@
 //
 // The application layer loads the Bundle and hands it to the Surface; the
 // Surface reads no file (the context map). Owner: B (shell); wired at
-// integration (WP-10-G).
+// integration.
 //
 // AGSC-09-14b also obliges the server to expose every item, `graph.jsonld` and
 // `llms.txt` as MCP RESOURCES. Their bytes must be the ones the node publishes,

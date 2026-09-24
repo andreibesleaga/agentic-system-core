@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the seven tools (WP-10-F).
+// Unit tests for the seven tools.
 // AGSC-08-18, AGSC-09-13, AGSC-09-13a, AGSC-09-14a, AGSC-09-14b.
 // The Bundle is the fixture, read through the FileSystem port; no clock, no
 // network, no randomness is reachable from any tool.
@@ -182,7 +182,7 @@ test('AGSC-09-14b: remember synthesizes a conforming item from a fixed instant',
   assert.strictEqual(result.body.frontmatter.outcome, 'partial');
   assert.strictEqual(result.body.frontmatter.severity, 'info');
   assert.strictEqual(result.body.frontmatter.prov.origin, 'ai-generated');
-  // MCP1-03 (ENG-9): a remembered LESSON carries the `severity` its schema branch
+  // a remembered LESSON carries the `severity` its schema branch
   // requires, defaulted to `info` as AGSC-09-14b says, so it is conforming as returned.
   const lesson = toolset.call('remember', { body: 'x', kind: 'lesson', operator: 'human:someone', title: 'A Lesson Learned' });
   assert.strictEqual(lesson.body.frontmatter.severity, 'info');

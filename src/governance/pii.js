@@ -1,7 +1,7 @@
 'use strict';
 // src/governance/pii.js — CONTEXT Governance & Provenance.
 // The `no-pii` lint of AGSC-08-16: e-mail addresses and telephone numbers
-// outside `prov` and `sources[]` are AGSC-E404. Owner: C (WP-10-C).
+// outside `prov` and `sources[]` are AGSC-E404.
 // PURE: no fs, no process, no clock, no network.
 //
 // `prov` and `sources[]` are exempt by the rule, not by heuristics: the caller

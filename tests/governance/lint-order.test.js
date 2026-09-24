@@ -1,7 +1,7 @@
 'use strict';
 // governance/lint.js — the aggregate: AGSC-09-10 ordering, the structural lints of
 // AGSC-01-34/01-35/02-21/02-22/02-23/02-96/02-98/04-23, and the composition of the
-// four N9 lints. Owner: C (WP-10-C).
+// four N9 lints.
 //
 // Determinism: every file fact is injected, so the same records always lint to the
 // same Findings, in the same order.

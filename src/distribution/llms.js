@@ -43,7 +43,7 @@ function primaryCluster(item) {
  * their strings coincide.
  */
 function provenance({ base, license, terms, specVersion, bundleVersion, generatedAt }) {
-  // AGSC-02-24 (rc.5, FV28-01): the header is a fixed number of lines — SEVEN
+  // AGSC-02-24: the header is a fixed number of lines — SEVEN
   // until rc.6, EIGHT since AGSC-06-15 added `assistance:` — and a value may not add
   // one. `license` is authored (`bundle.license_prose`) and `base` reaches here from
   // configuration, so both are neutralised — defence in depth behind the schema
@@ -54,7 +54,7 @@ function provenance({ base, license, terms, specVersion, bundleVersion, generate
 /**
  * The section blocks of AGSC-06-13a(4) and the item order `/llms-full.txt` repeats.
  * Sections are ordered by cluster slug; a cluster with no primary member emits no
- * section (V7-08); every published item no LISTED section carries goes in a final
+ * section; every published item no LISTED section carries goes in a final
  * section titled `Other` — an item with no `clusters[]`, and (since rc.5, vector
  * `disc-0008`) an item whose primary cluster is not among `bundle.clusters[]`.
  * A `cluster` item is never a listed ENTRY: it IS a section (`isPublished` above).
@@ -66,7 +66,7 @@ function sectionBlocks(bundle) {
     .sort((a, b) => compareCodePoint(String(a.slug), String(b.slug)));
   const bySlug = (a, b) => compareCodePoint(String(a.slug), String(b.slug));
   // AGSC-06-13a(4): ONE line per item. Title and description are authored, so both
-  // are neutralised here (AGSC-02-24, rc.5, FV28-01): a line break in either forged
+  // are neutralised here (AGSC-02-24, rc.5): a line break in either forged
   // a `## ` heading and a second link entry into this file.
   const line = (it) => `- [${singleLine(it.title)}](${iriOf(base, it)}): `
     + `${singleLine(it.description == null || it.description === '' ? it.title : it.description)}`;
@@ -129,7 +129,7 @@ function llmsTxt(bundle, options = {}) {
     // The Bundle root's `description` is the one authored string AGSC-02-24 exempts
     // from the single-line bound, exactly because this block collapses it; the
     // neutraliser then removes the remaining separators the collapse does not see
-    // (U+0085, U+2028, U+2029 and the other C0 controls) — FV28-01.
+    // (U+0085, U+2028, U+2029 and the other C0 controls) —.
     `> ${singleLine(b.description.replace(/\s*\n\s*/gu, ' '))}`,
   ];
   const { blocks } = sectionBlocks(b);

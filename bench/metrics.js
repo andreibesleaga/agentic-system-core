@@ -163,7 +163,7 @@ function detectorScore(cases) {
  * `namedByTest` and `namedByChecker` are PROXIES — a rule id written in a test
  * or a checker header says the file means to verify that rule, not that a
  * machine assertion exists for it. `docs/MEASUREMENTS.md` must say so wherever
- * the number appears; the authoritative matrix is TEST-1's `tools/rule-coverage`.
+ * the number appears; the authoritative matrix is's `tools/rule-coverage`.
  * @param {{active:string[], withVector:string[], namedByTest:string[], namedByChecker:string[], namedByFeature:string[]}} sets
  */
 function ruleCoverage(sets) {

@@ -114,7 +114,7 @@ test('a broken prev link is reported before any hash is recomputed (AGSC-08-23)'
 });
 
 // ---------------------------------------------------------------------------
-// V9-D lens (b) — property tests for the hash chain of AGSC-08-22. `fast-check`
+// lens (b) — property tests for the hash chain of AGSC-08-22. `fast-check`
 // drives generated histories; the run is seeded, so the suite stays deterministic
 // (no clock, no network, no unseeded randomness).
 const fc = require('fast-check');

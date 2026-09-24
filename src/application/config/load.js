@@ -1,6 +1,6 @@
 // src/application/config/load.js — AGSC-09-09 / AGSC-01-37: configuration precedence.
 //
-// Owner: B (WP-10-B). Precedence, highest first: flags > process environment >
+// Precedence, highest first: flags > process environment >
 // .env file > project configuration (agsc.config.json) > user configuration >
 // schema defaults.
 'use strict';
@@ -133,7 +133,7 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
  *   `related[]`, reported as `AGSC-E209`. It is INJECTED, not imported:
  *   AGSC-11-01 belongs to the Boundary context
  *   (`boundary/visibility.js#checkBoundaryConfig`) and this module must be
- *   able to run without it (WP-10-G, 2026-09-18 — `chunks.max_bytes` is
+ * able to run without it (2026-09-18 — `chunks.max_bytes` is
  *   never clamped by the emitter, it is refused here).
  *
  * `sources[path]` is one of 'flag'|'env'|'dotenv'|'project'|'user'|'default'.
@@ -151,7 +151,7 @@ function load(options) {
   // 1. schema defaults (lowest precedence). config.schema.json is frozen at
   // the current tag and does not carry a literal JSON-Schema `default` for
   // four keys the spec prose nonetheless defaults (reported as a schema
-  // defect, fixed at the next release candidate — WP-10-B report). Applied
+  // defect, fixed at the next release candidate — report). Applied
   // here, explicitly, so the engine behaves per the spec today regardless
   // of the schema gap:
   //   - AGSC-01-19: `build.out` MUST default to "www".
@@ -186,7 +186,7 @@ function load(options) {
   // repository-relative, an escaping path is AGSC-E902), so a real
   // per-user configuration file (if one is ever specified) needs its own,
   // unrestricted access; only the pre-loaded object form is supported here
-  // (open question in the WP-10-B report).
+  //
   const userConfig = opts.userConfig;
   if (userConfig) mergeLayer(config, sources, userConfig, 'user', []);
 

@@ -67,7 +67,7 @@ function positionOf(lineCounter, offset, lineOffset) {
  * each new key against every key already in the mapping, which is quadratic in the
  * number of keys, and AGSC-01-16 admits a 1 MiB frontmatter block — roughly 80 000
  * `k: v` lines — so a single hostile item would have held the build for minutes
- * (measured: 20 000 keys took 6.9 s with `uniqueKeys`, 0.45 s without; V9-D lens c).
+ * (measured: 20 000 keys took 6.9 s with `uniqueKeys`, 0.45 s without; lens c).
  * The offset and message reproduce the library's exactly, so the reported line,
  * column and text are unchanged.
  */

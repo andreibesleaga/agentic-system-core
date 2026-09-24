@@ -260,7 +260,7 @@ test('the legal page adds no term, no notice and no operator of its own', () => 
   assert.ok(!page.includes('id="operator"'));
 });
 
-// --------------------------------------- rc.6: the AI-assistance statement (D105)
+// --------------------------------------- rc.6: the AI-assistance statement
 
 test('AGSC-06-18 (rc.6): /legal/ carries the assistance statement, in the same words', () => {
   const { ASSISTANCE } = require('../../src/knowledge/provenance-header.js');
@@ -280,16 +280,16 @@ test('B-04 (rc.6): the page footer carries the copyright line, from configuratio
   const withAuthor = html.termsLine('CC-BY-4.0', {
     aiAssisted: true, author: 'Ada Lovelace', disclaimer: html.NO_CLAIM_SENTENCE, legal: true, year: '2026',
   });
-  assert.match(withAuthor, /class="copyright">&#169; 2026 Ada Lovelace\./u);
-  assert.match(withAuthor, /class="notice">Written with AI assistance/u);
+  assert.match(withAuthor, /class="terms">&#169; 2026 Ada Lovelace\./u);
+  assert.match(withAuthor, /class="terms">.*AI-assisted, human-reviewed\./u);
   assert.match(withAuthor, /no warranty and no liability/u);
   // The engine is a general tool: with no `site.author` it names NOBODY rather than
   // stamping one owner's name into somebody else's pages.
   const anonymous = html.termsLine('CC-BY-4.0', { legal: true });
   assert.ok(!anonymous.includes('copyright'), anonymous);
-  // CHANGED by ENG-9 (LEG2-02): the notice is no longer a constant. With no AI item
+  // CHANGED: the notice is no longer a constant. With no AI item
   // and no authored DISCLAIMER.md there is nothing true to say, and nothing is said.
-  assert.doesNotMatch(anonymous, /class="notice"/u);
+  assert.doesNotMatch(anonymous, /AI-assisted|AI assistance|no warranty/u);
   // The /legal/ link is emitted only where that route exists (V9D-A6).
   assert.ok(!html.termsLine('CC-BY-4.0', { author: 'A', legal: false, year: '2026' }).includes('href="/legal/"'));
 });
@@ -334,7 +334,7 @@ test('AGSC-09-11: under ci the publication findings are reported by ONE lane', (
   assert.strictEqual(result.exit, 1);
 });
 
-// ------------------------------- FV29-11: the drop-in build with no date source
+// -------------------------------: the drop-in build with no date source
 
 test('AGSC-04-09 + RFC 9116: a defaulted build instant FAILS instead of publishing a 1970 expiry', () => {
   // `agsc init` then `agsc build`, before `git init` and with no SOURCE_DATE_EPOCH:

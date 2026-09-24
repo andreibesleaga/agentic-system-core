@@ -121,7 +121,7 @@ test('AGSC-09-09: --version answers in both modes and reads no Bundle', async ()
   const stdout = captureStream();
   main(['--version'], { env: {}, stdout });
   // The package version is a SemVer string, and at a release candidate it carries a
-  // pre-release part (`1.0.0-rc.6`) — which is what D107 publishes to npm.
+  // pre-release part (`1.0.0-rc.6`) — which is what publishes to npm.
   assert.match(stdout.text(), /^agsc \d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\n$/u);
 });
 
@@ -169,7 +169,7 @@ test('an unregistered fault keeps the internal-error path and an empty stdout', 
 });
 
 // ---------------------------------------------------------------------------
-// V9-D lens (f) — what a person sees. AGSC-09-07 makes anything that is not one
+// lens (f) — what a person sees. AGSC-09-07 makes anything that is not one
 // of the sixteen verbs exit 2 with AGSC-E001, and this shell keeps that; what it
 // must NOT do is answer the first command anyone types with the word "null" and
 // no way forward (R64: explain before you decide).
@@ -230,7 +230,7 @@ test('AGSC-09-09 (rc.5, V9D-02): --help prints to stdout and exits 0', () => {
   assert.strictEqual(lint.exit, 0);
   assert.strictEqual(lint.stderr, '');
   assert.ok(lint.stdout.includes('--fix'), lint.stdout);
-  // ENG-5, rc.5: `--self` is gone — AGSC-09-09 names `--fix` and no other flag on `lint`.
+  // rc.5: `--self` is gone — AGSC-09-09 names `--fix` and no other flag on `lint`.
   assert.ok(!lint.stdout.includes('--self'), lint.stdout);
   assert.ok(!lint.stdout.includes('--ledger'), lint.stdout);
   const compose = usage(['compose', '--help']);

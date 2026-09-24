@@ -193,7 +193,7 @@ test('applyTypes follows patternProperties and leaves a vendor key alone', () =>
   assert.deepStrictEqual(validate.applyTypes(null, { type: 'object' }), null);
 });
 
-// V9-D lens (b): `deref` follows a `$ref` chain, so it needs a bound. Dropping
+// lens (b): `deref` follows a `$ref` chain, so it needs a bound. Dropping
 // the bound survived the whole suite, because no test drove a chain longer than
 // one hop — and a cyclic `$ref` would then loop for ever inside a pure reader.
 test('AGSC-02-03: a cyclic or very long $ref chain terminates instead of looping', () => {

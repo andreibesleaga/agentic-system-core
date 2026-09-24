@@ -1,7 +1,7 @@
 'use strict';
 // src/governance/secrets.js — CONTEXT Governance & Provenance.
 // The `no-secrets` lint of AGSC-08-15, plus the tracked-`.env` case of
-// AGSC-01-37. Owner: C (WP-10-C). PURE: no fs, no process, no clock, no network.
+// AGSC-01-37. PURE: no fs, no process, no clock, no network.
 //
 // Code: AGSC-E403 for every hit. A credential-shaped string is an error, never a
 // warning: the cost of a false negative is a leaked key, the cost of a false

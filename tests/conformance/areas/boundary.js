@@ -1,6 +1,6 @@
 'use strict';
 // tests/conformance/areas/boundary.js — area handler for `boundary` vectors
-// (`bnd-nnnn`). Owner: F (WP-10-F). Rules: spec/11-boundary.md in full, plus
+// (`bnd-nnnn`). Rules: spec/11-boundary.md in full, plus
 // AGSC-10-12, AGSC-10-14 and AGSC-06-35.
 //
 // Several vectors state an expectation in terms of `a.example` without
@@ -11,10 +11,10 @@
 // replaced by bnd-0031…0034, which state their base; the default survives only for
 // the released vectors that still rely on it.)
 //
-// THE READING RC5-B REPORTED IS GONE (RC5-C, 2026-09-21). `bnd-0027` stated the MCP
+// THE READING REPORTED IS GONE. `bnd-0027` stated the MCP
 // `extensions` capability as the ARRAY ["com.agenticsystemcore/knowledge"] — the shape
 // the engine returned before rc.5, which no rule pinned — while AGSC-11-18 as amended
-// at rc.5 (V9A-04, SITE1-01) makes `extensions` MCP's own "map of extension identifiers
+// at rc.5 (V9A-04) makes `extensions` MCP's own "map of extension identifiers
 // to per-extension settings objects". That vector is withdrawn under AGSC-00-16 and
 // superseded by `bnd-0036`, which states the map; this handler compares the map the
 // Boundary context returns and projects nothing. `bnd-0031` is unaffected: its member
@@ -191,7 +191,7 @@ function runBnd0030(vector) {
 }
 
 /**
- * bnd-0035 — AGSC-11-18 as amended at rc.5 (SITE1-01): the MCP extension's settings
+ * bnd-0035 — AGSC-11-18 as amended at rc.5: the MCP extension's settings
  * object. The same object travels in `server/discover` and in the per-request
  * capabilities, there being no initialization handshake in revision 2026-07-28, so
  * the handler asks the Boundary context twice and compares.
@@ -409,7 +409,7 @@ function runBnd0012(vector) {
     ['links', deepEqual(vector.expected.links, links), JSON.stringify(links)],
     // `mcp_extensions` is the list of extension IDENTIFIERS advertised. MCP's
     // `extensions` is a map of identifier to settings object (AGSC-11-18 as amended
-    // at rc.5, SITE1-01), so the identifiers are its keys; the settings object is
+    // at rc.5), so the identifiers are its keys; the settings object is
     // pinned by bnd-0035 and asserted there. See the reading note at the top.
     ['mcp_extensions', deepEqual(vector.expected.mcp_extensions, Object.keys(extensions).sort()),
       JSON.stringify(extensions)],
@@ -467,7 +467,7 @@ function runBnd0021(vector) {
 
 /**
  * bnd-0036 — AGSC-11-18: the floor in each surface's own vocabulary. Supersedes
- * `bnd-0027` (withdrawn at rc.5, RC5-C). The vector states `capabilities.extensions`
+ * `bnd-0027` (withdrawn at rc.5). The vector states `capabilities.extensions`
  * as MCP's map of extension identifier to settings object, so the handler compares
  * the capabilities object the Boundary context returns and makes no projection of it.
  * `subsetOf` compares each named member with `deepEqual`, so `capabilities` — and the
@@ -578,7 +578,7 @@ const HANDLERS = {
   'bnd-0033': runBnd0020,
   'bnd-0034': runBnd0025,
   'bnd-0035': runBnd0035,
-  // rc.5 — the sixth successor (RC5-C). `bnd-0036` is NOT its predecessor's case with
+  // rc.5 — the sixth successor. `bnd-0036` is NOT its predecessor's case with
   // one more input: it states a different shape for one member, so it has a handler of
   // its own and `bnd-0027`'s is gone.
   'bnd-0036': runBnd0036,

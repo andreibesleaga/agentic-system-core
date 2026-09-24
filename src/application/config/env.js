@@ -1,7 +1,7 @@
 // src/application/config/env.js — AGSC-01-37: the .env file and the AGSC_*
 // environment mapping.
 //
-// Owner: B (WP-10-B). Not under src/knowledge/ or src/governance/, so fs
+// Not under src/knowledge/ or src/governance/, so fs
 // access here is fine — this module reads schema/config.schema.json once to
 // derive its name table mechanically (never hand-typed, per the work-package
 // prompt). Raw `.env` syntax is parsed by `dotenv@18.0.0` (`.parse()` only —
@@ -155,7 +155,7 @@ function envNameFor(configPath) {
  * configuration key — "no Bundle file, configuration key or PR content may
  * enable it". It is therefore recognised here and mapped to no path, so that
  * setting it is not reported as an unknown configuration key (AGSC-E004).
- * Added at integration (WP-10-G, 2026-09-18).
+ * Added at integration.
  */
 const ENVIRONMENT_ONLY_NAMES = Object.freeze(['AGSC_FEATURE_LLM_REVIEW']);
 

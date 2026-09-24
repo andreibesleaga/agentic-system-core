@@ -1,5 +1,5 @@
 'use strict';
-// Architecture checks owned by WP-10-F: the arrows and invariants of the
+// Architecture checks owned: the arrows and invariants of the
 // Composition, Boundary and tool-Surface modules. `tests/arch/_scan.js` reads
 // source text and never executes a module, so a side effect cannot hide a
 // violation.

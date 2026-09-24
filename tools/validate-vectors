@@ -24,7 +24,7 @@
 //
 // A declared area with no vector file is an INFORMATIONAL count, never a failure
 // (AGSC-09-90). An EMPTY vector set, on the other hand, is a failure: a checker that
-// reports `pass` over zero files protects nothing (FV29-10).
+// reports `pass` over zero files protects nothing.
 //
 //   validate-vectors [--json] [--quiet] [--plain] [--help] [<dir>]
 //
@@ -151,7 +151,7 @@ function run(argv, io) {
     else if (arg.startsWith('--')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else dir = path.resolve(arg);
   }
-  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit 1
   // and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which a
@@ -171,7 +171,7 @@ function run(argv, io) {
     .match(/1\.0\.0-rc\.\d+/u) || ['unknown'])[0];
 
   const json = absentDir ? [] : walk(dir).filter((f) => f.endsWith('.json')).sort();
-  // SITE4-05 (ENG-9): a vector tree is `<area>/<prefix>-<nnnn>[-<words>].json`
+  // a vector tree is `<area>/<prefix>-<nnnn>[-<words>].json`
   // (AGSC-09-04). When NOT ONE file of the directory has that shape, the directory is
   // not a vector tree — a published site, say, whose `/skills/index.json` sits in a
   // folder that happens to share an area's name — and judging its files as vectors
@@ -187,7 +187,7 @@ function run(argv, io) {
   const vectorTree = json.some(isVectorPath);
   const files = vectorTree ? json : [];
   const findings = [];
-  // FV29-10: zero vectors read is a failure, not a clean run.
+  // zero vectors read is a failure, not a clean run.
   if (!absentDir && json.length > 0 && !vectorTree) {
     findings.push(finding('AGSC-E901', path.relative(ROOT, dir).split(path.sep).join('/') || 'tests/vectors',
       `${dir} is not a vector directory: none of its ${json.length} JSON file(s) is an`

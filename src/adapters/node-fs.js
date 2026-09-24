@@ -95,7 +95,7 @@ function createFileSystem(root, options = {}) {
       }
       if (encoding === null) return fs.readFileSync(target);
       if (String(encoding).toLowerCase().replace('-', '') !== 'utf8') return fs.readFileSync(target, encoding);
-      // AGSC-01-14 (BENCH1b-03, ENG-9): text is UTF-8, and a file that is not is
+      // AGSC-01-14: text is UTF-8, and a file that is not is
       // AGSC-E108 — never silently decoded with U+FFFD. The byte-order mark is KEPT
       // (`ignoreBOM`), so the lint that reports a BOM still sees it.
       try {

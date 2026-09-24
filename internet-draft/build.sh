@@ -63,7 +63,7 @@
 
 set -euo pipefail
 
-SCRATCH_DEFAULT="/tmp/claude-1000/-home-andrei-work/bdd762f0-439c-4558-b2b8-714f1210078f/scratchpad/idtools"
+SCRATCH_DEFAULT="${IDTOOLS:-${TMPDIR:-/tmp}/idtools}"
 KDRFC="${KDRFC:-$SCRATCH_DEFAULT/gems/bin/kramdown-rfc}"
 XML2RFC="${XML2RFC:-$SCRATCH_DEFAULT/venv/bin/xml2rfc}"
 IDNITS="${IDNITS:-$SCRATCH_DEFAULT/npm/node_modules/.bin/idnits}"
@@ -177,7 +177,7 @@ if start >= 0:
     # nit-free). Keeping it trades idnits-v3 normal-mode
     # MULTIPLE_REFERENCES_SECTION_TITLES (txt) for INVALID_REFERENCES_NAME
     # (xml); neither appears in submission mode, which is the gate.
-    # RETESTED 2026-09-18 (session 27, V8-82, maintainer notes §1 item 1's
+    # RETESTED 2026-09-18 (maintainer notes §1 item 1's
     # "tested fix": keep the wrapper when it holds >=2 nested <references>
     # blocks). Result: the .txt MULTIPLE_REFERENCES_SECTION_TITLES error did
     # disappear, but the .xml lane then failed normal mode with a NEW error,

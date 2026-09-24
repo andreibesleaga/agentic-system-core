@@ -98,7 +98,7 @@ function ordered(frontmatter) {
  * link goes. It is never rewritten to an absolute URL, because AGSC-11-12 makes
  * cross-node reference a citation in `sources[]` and nothing else.
  *
- * "Anything else" gained a second member at rc.5 (FV28-04): a card that IS in the
+ * "Anything else" gained a second member at rc.5: a card that IS in the
  * selection but is HELD BACK. A draft item is published on no surface (AGSC-06-30)
  * and has no route (AGSC-06-01), so a published page linking one ships a link that
  * 404s — which is exactly what the patterns node shipped, 36 times. A selected card
@@ -190,7 +190,7 @@ function filterLinks(values, inSet, options = {}) {
  * @param {object} options.prov `{origin, operator}` (AGSC-08-01).
  * @param {string} [options.statusOverride] the caller's `status` decision.
  * @param {Set<string>} [options.publishedSet] the subset of `inSet` that is published;
- *   a body link to a selected-but-held-back card is de-linked (FV28-04).
+ * a body link to a selected-but-held-back card is de-linked.
  * @param {string} [options.title] the caller's `title` correction, if any.
  * @param {string} [options.license] the attachment licence default.
  * @param {Array<object>} [options.addSources] entries appended to `sources[]`.
@@ -385,7 +385,7 @@ function mapCard(card, options) {
       { ...at, severity: 'warn' }));
   }
 
-  // FV29-08 / AGSC-02-24: the same neutralisation the OKF adapter applies. A card of
+  // / AGSC-02-24: the same neutralisation the OKF adapter applies. A card of
   // a foreign corpus may carry a control character in a title or a tag, and what an
   // import writes must pass this node's own lint.
   const clean = neutraliseSingleLine(ordered(frontmatter));
@@ -410,7 +410,7 @@ function mapCard(card, options) {
 }
 
 /**
- * AGSC-02-24 as amended at rc.5, applied to a FOREIGN frontmatter (FV29-08).
+ * AGSC-02-24 as amended at rc.5, applied to a FOREIGN frontmatter.
  *
  * Every string-typed property `schema/item.schema.json` declares is either a
  * `single_line` value or carries a pattern that forbids a control character anyway,

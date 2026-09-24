@@ -1,7 +1,7 @@
 'use strict';
 /**
  * CONTEXT Interchange — memory adapter `gabbe` (AGSC-01-26a names "the Basic Memory
- * and GABBE-memory both-ways adapters of D39/D53"; owner decision D117, R118).
+ * and GABBE-memory both-ways adapters of D39/D53").
  *
  * `export --to gabbe` writes a knowledge node into the folder layout of a GABBE
  * agent kit, and `import --from gabbe <kit-dir>` reads a kit's memory and skills
@@ -49,7 +49,7 @@
  * IMPORT. A record carrying a TRUSTED `agsc-item` line is OUR OWN and comes back item
  * for item, with `prov.source_version` (AGSC-01-22). Trusted means the line names this
  * node's `site.base` or a declared peer and its versions agree with the file's
- * provenance header (`interchange/own-record.js`, CONN2-03); an untrusted line is
+ * provenance header (`interchange/own-record.js`); an untrusted line is
  * reported and ignored, and what carries it is read as foreign and kept as a draft,
  * because a kit states no licence. Everything else is a FOREIGN kit,
  * mapped by file: a skill → a `procedure`; a CONTINUITY entry → a `lesson`
@@ -65,7 +65,7 @@
  *
  * PURE: no fs, no clock, no network — the verb reads the files and hands them in.
  * Requirements: AGSC-01-22, AGSC-01-23, AGSC-01-26a, AGSC-01-29, AGSC-06-30,
- * AGSC-07-15; PRD-021, PRD-026. Owner: ENG-9 (session 31).
+ * AGSC-07-15; PRD-021, PRD-026.
  */
 
 const chunks = require('../../knowledge/chunks.js');
@@ -624,7 +624,7 @@ function foreignRecords(path, text, kind) {
 }
 
 /**
- * What an untrusted own-record line taints (CONN2-03): the whole file, or — in
+ * What an untrusted own-record line taints: the whole file, or — in
  * CONTINUITY, which mixes the kit's entries with ours — only the entry that carries
  * it. The lines themselves are blanked (line numbers kept), so the foreign reading
  * neither carries them nor mistakes the entry for one of ours.
@@ -673,7 +673,7 @@ function plan(files, options) {
 
   // Pass 1: our own records, so their slugs are kept exactly (AGSC-01-23). A line
   // is trusted only from this node or a declared peer, with consistent versions
-  // (CONN2-03); an untrusted line is ignored and what carries it is read as foreign.
+  // an untrusted line is ignored and what carries it is read as foreign.
   const own = [];
   const origins = ownRecord.trustedOrigins(opts);
   const untrusted = new Map();
@@ -694,7 +694,7 @@ function plan(files, options) {
       if (why !== null) {
         totals.records_untrusted += 1;
         findings.push(finding('AGSC-E506', `${path}:${line}: the agsc-item line is not trusted: ${why}. Its`
-          + ' provenance and status were ignored and what carries it is read as foreign (CONN2-03)',
+          + ' provenance and status were ignored and what carries it is read as foreign',
         { file: path, line, severity: 'warn' }));
         untrusted.set(path, [...(untrusted.get(path) || []), line]);
         continue;

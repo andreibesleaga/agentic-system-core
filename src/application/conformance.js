@@ -88,7 +88,7 @@ function runAll(list, options) {
   return { results, tally };
 }
 
-/** The one summary line every runner prints (WP-10-CONTRACT, test discipline). */
+/** The one summary line every runner prints (-CONTRACT, test discipline). */
 function summaryLine(tally, total) {
   return `vectors: ${tally.pass} pass, ${tally.fail} fail, ${tally.skip} skip `
     + `(${tally.withdrawn} withdrawn, ${tally.pending} pending) of ${total}`;

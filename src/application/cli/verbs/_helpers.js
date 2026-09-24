@@ -2,7 +2,7 @@
 // src/application/cli/verbs/_helpers.js — the shared wiring of the sixteen
 // verbs of AGSC-09-07. APPLICATION LAYER: it orchestrates across contexts and
 // owns no domain rule; every rule it reaches for lives in the context that
-// states it. Owner: B; rewired at integration (WP-10-G, 2026-09-18) when the
+// states it. Owner: B; rewired at integration when the
 // interim `AGSC-PENDING` marker and the `tryRequire` probes were removed —
 // every module they probed for now exists.
 
@@ -109,11 +109,11 @@ function buildOptions(ctx, extra) {
  * names, so that the lint lane scans what will enter the chunk export, and
  * `{path: byteLength}` for every attachment that is present, so the absence
  * (AGSC-E413) and cap (AGSC-E904) checks of `governance/lint.js` can run — that
- * function reads BYTE LENGTHS, and until ENG-9 this map carried booleans, so neither
+ * function reads BYTE LENGTHS, and until this map carried booleans, so neither
  * check could ever fire through the CLI. A file the FileSystem port REFUSES — over
  * the input cap, an archive, reached through a link out of the root (AGSC-01-16,
  * AGSC-01-35) — is recorded in `fileErrors` with the port's own registered code
- * (BENCH1b-05), never reported as absent. A name outside the path grammar is not
+ * never reported as absent. A name outside the path grammar is not
  * read at all: `governance/lint.js` reports it as AGSC-E902.
  */
 function attachmentFacts(ctx, bundle) {

@@ -6,7 +6,7 @@
 // NEVER publishes: `npm publish` appears nowhere in this file, the tool's default
 // mode is a dry run, and even `--apply` only rewrites two version strings and one
 // changelog heading in the working tree. Publishing is done by the release
-// workflow, on a tag the OWNER pushes, over npm trusted publishing (OIDC), and by
+// workflow, on a tag the MAINTAINER pushes, over npm trusted publishing (OIDC), and by
 // nothing else.
 //
 //   tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
@@ -44,15 +44,19 @@
 //      `actions/attest-build-provenance`, and must NOT carry an `NPM_TOKEN` secret:
 //      `docs/PLAN.md` §7 says the release lane holds no secret and publishes over
 //      OIDC trusted publishing.
-//   4b. THE PyPI SIBLING (D107, rc.6). npm and PyPI are published at ONE version on
+// 4b. THE PyPI SIBLING. npm and PyPI are published at ONE version on
 //      launch day, so the sibling repository `../agentic-system-core-python` must
 //      state the PEP 440 spelling of this version (`1.0.0-rc.6` -> `1.0.0rc6`). It
 //      is a DRY RUN: nothing is built, nothing is uploaded, no network is touched,
 //      and the only file read outside this repository is that one `pyproject.toml`.
 //      A sibling that is simply not checked out is a WARNING naming what was not
 //      checked — it is another repository, and its absence blocks nothing here.
-//   5. THE OWNER'S CHECKLIST. Printed last, as the exact commands to run in order.
-//      Every git command in it is the OWNER's; this tool runs none.
+// 4c. PUBLIC MEANS CLEAN. `tools/public-hygiene`, beside this file, sweeps the
+//      files that would ship (the list of step 3, in process: no process is started);
+//      every error it reports is a finding here, so a private path, a process note, an e-mail
+//      address or a secret stops the release lane like any other failure.
+//   5. THE MAINTAINER'S CHECKLIST. Printed last, as the exact commands to run in order.
+//      Every git command in it is the maintainer's; this tool runs none.
 //
 // This tool is NOT one of the nine command contracts of AGSC-09-90 — it validates
 // no normative artefact — so it is deliberately named `release` and not
@@ -64,7 +68,7 @@ const path = require('node:path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
 const ALIAS_DIR = path.join('packages', 'agsc-cli');
-/** The sibling repository D107 publishes to PyPI at the same version. */
+/** The sibling repository publishes to PyPI at the same version. */
 const PYTHON_DIR = 'agentic-system-core-python';
 const HELP = `tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
 
@@ -337,14 +341,14 @@ function workflowFindings(root) {
 }
 
 // --------------------------------------------------------------------------
-// 4b. The PyPI sibling (D107, rc.6).
+// 4b. The PyPI sibling.
 // --------------------------------------------------------------------------
 
 /**
  * The PEP 440 spelling of a SemVer version.
  *
  * The two version grammars are not the same and both packages are published at one
- * version (D107), so the mapping is stated once, here. SemVer's `1.0.0-rc.6` is
+ * version, so the mapping is stated once, here. SemVer's `1.0.0-rc.6` is
  * PEP 440's `1.0.0rc6`: PEP 440 §"Pre-releases" admits `rcN` as a pre-release
  * segment and writes it with no separator and no dot before the number. A version
  * with no pre-release part maps to itself.
@@ -361,7 +365,7 @@ function pep440(semver) {
 }
 
 /**
- * The PyPI half of D107, as a DRY RUN that calls nothing outside this repository's
+ * The PyPI half of, as a DRY RUN that calls nothing outside this repository's
  * parent directory and reaches no network: the sibling `agentic-system-core-python`
  * must state the PEP 440 spelling of the engine's version, or the two packages the
  * owner publishes on the same day carry two different numbers.
@@ -374,6 +378,24 @@ function pep440(semver) {
  * @param {string} version the version being released (`package.json#version`).
  * @returns {Array<object>}
  */
+/**
+ * 4c: the hygiene sweep over exactly the files that would ship, in process. The
+ * file list is this tool's own `packList`, so the sweep starts no process and asks
+ * git nothing.
+ * @param {string} root the distribution root.
+ * @param {string[]} files the pack list.
+ * @param {{sweep:Function}} [hygiene] the sweep; `tools/public-hygiene` by default.
+ */
+function hygieneFindings(root, files, hygiene = require('./public-hygiene')) {
+  let result;
+  try { result = hygiene.sweep(root, { fast: true, files }); } catch (e) {
+    return [finding('AGSC-E901', 'tools/public-hygiene', 1,
+      `the public-hygiene sweep did not run (${(e && e.message) || 'unknown error'}); nothing was checked for private text`)];
+  }
+  return result.findings.filter((f) => f.severity === 'error')
+    .map((f) => finding(f.code, f.file, f.line, `public hygiene: ${f.message}`));
+}
+
 function pypiFindings(root, version) {
   const at = path.join(path.dirname(root), PYTHON_DIR);
   const file = `../${PYTHON_DIR}/pyproject.toml`;
@@ -386,13 +408,13 @@ function pypiFindings(root, version) {
   if (!fs.existsSync(at)) {
     return [finding('AGSC-E901', file, 1,
       `${PYTHON_DIR} is not checked out beside this repository, so the PyPI package's version`
-      + ` was NOT checked. It must read version = "${want}" before the owner tags either`
-      + ' package (D107)', 'warn')];
+      + ` was NOT checked. It must read version = "${want}" before either package is tagged`
+      + ' package', 'warn')];
   }
   const toml = path.join(at, 'pyproject.toml');
   if (!fs.existsSync(toml)) {
     return [finding('AGSC-E901', file, 1,
-      `${PYTHON_DIR} carries no pyproject.toml, so it cannot be published at all (D107)`)];
+      `${PYTHON_DIR} carries no pyproject.toml, so it cannot be published at all`)];
   }
   const text = fs.readFileSync(toml, 'utf8');
   // `version = "…"` at the start of a line: the project table's own key, never a
@@ -400,12 +422,12 @@ function pypiFindings(root, version) {
   const stated = /^version\s*=\s*"([^"]+)"/mu.exec(text);
   if (stated === null) {
     return [finding('AGSC-E202', file, 1,
-      'pyproject.toml states no top-level version (D107)')];
+      'pyproject.toml states no top-level version')];
   }
   if (stated[1] !== want) {
     return [finding('AGSC-E202', file, 1,
       `the PyPI package states version "${stated[1]}" and the engine is ${version}, whose`
-      + ` PEP 440 spelling is "${want}"; D107 publishes both at one version`)];
+      + ` PEP 440 spelling is "${want}"; publishes both at one version`)];
   }
   return [];
 }
@@ -454,7 +476,7 @@ function applyChangelog(text, version, date) {
 function checklist(version) {
   const v = version === null ? '<x.y.z>' : version;
   return [
-    'The owner runs these, in this order. This script runs none of them.',
+    'The maintainer runs these, in this order. This script runs none of them.',
     '',
     ` 1. npm ci                                          # the lockfile, exactly`,
     ` 2. npm test                                        # 0 fail, twice, identical`,
@@ -478,7 +500,7 @@ function checklist(version) {
     `14. npm view agentic-system-core version            # confirm, after the run`,
     `15. In a fresh temporary directory: npm install agentic-system-core@${v}`,
     `    and npx agsc-cli --version                      # the live smoke test`,
-    `16. The PyPI half of D107, in ../${PYTHON_DIR}: its own tag, its own`,
+    `16. The PyPI half of, in../${PYTHON_DIR}: its own tag, its own`,
     `    trusted-publishing workflow, then pip install in a fresh venv.`,
     `17. Capture the release page and both package pages in the Wayback Machine.`,
     '',
@@ -557,10 +579,13 @@ function run(argv, io = {}) {
   // 4. the provenance step.
   findings.push(...workflowFindings(root));
 
-  // 4b. the PyPI sibling (D107). A dry run: nothing is built, nothing is uploaded,
+  // 4b. the PyPI sibling. A dry run: nothing is built, nothing is uploaded,
   // no network is touched, and the only file read outside this repository is the
   // sibling's `pyproject.toml`.
   findings.push(...pypiFindings(root, version === null ? manifest.version : version));
+
+  // 4c. public means clean.
+  findings.push(...hygieneFindings(root, files));
 
   // --apply: the two version strings and the changelog heading, and nothing else.
   const written = [];
@@ -610,7 +635,7 @@ if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
   ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_DIR, TOOLING_IGNORES, WORKFLOW,
-  applyChangelog, canonicalize, changelogFindings, checklist, isGreater, neverShipped,
+  applyChangelog, canonicalize, changelogFindings, checklist, hygieneFindings, isGreater, neverShipped,
   packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
   workflowFindings,
 };

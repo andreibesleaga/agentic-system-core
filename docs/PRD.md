@@ -118,7 +118,7 @@ Scope: **v1** = audit/D §6 must (M1–M15); **should** = S1–S8; **v1.x** = la
 
 | ID | Requirement | Acceptance | Trace | Scope |
 |---|---|---|---|---|
-| PRD-048 | WHEN the owner pushes a tag, THE SYSTEM SHALL publish `agentic-system-core` (bin `agsc`) and the `agsc-cli` alias with attestations from one hand-versioned source. | Tag-triggered; CI writes the alias version. | R31, D38-final, D28-note | v1 (PyPI/GHCR/Homebrew/Nix: v1.x; binaries: v2) |
+| PRD-048 | WHEN the maintainer pushes a tag, THE SYSTEM SHALL publish `agentic-system-core` (bin `agsc`) and the `agsc-cli` alias with attestations from one hand-versioned source. | Tag-triggered; CI writes the alias version. | R31, D38-final, D28-note | v1 (PyPI/GHCR/Homebrew/Nix: v1.x; binaries: v2) |
 | PRD-049 | WHEN `ci` runs locally or in CI, THE SYSTEM SHALL execute the identical lint → build → verify → export → attest pipeline behind one command, with a ≤20-line forge shim. | Same exit code, same artifacts. | R35, D41 | v1 (other forges: v1.x) |
 | PRD-050 | WHEN `main` updates, THE SYSTEM SHALL deploy static `www/` to Cloudflare Pages, `/ns/` conneg by w3id `.htaccess`, no server code. | Serves from `www/`; conneg returns TTL/JSON-LD. | D47, D47-note(a), D09 | v1 |
 | PRD-051 | WHERE a browser exposes `document.modelContext`, THE SYSTEM SHALL register the same **seven** tools (`search read links compose propose ask remember`) as page tools, degrading to plain JavaScript; `propose` and `remember` are local-only on that transport (AGSC-09-16). | Tools appear in the origin trial; site usable without; `cli/cli-0003` proves manifest and result parity. | R57, D34, D41, D51-b, D53 | **v1** |
@@ -148,12 +148,12 @@ The frozen rows above stand verbatim. Two of them are **restated** here, as **D4
 
 | ID | Restatement (D48) | Acceptance | Trace |
 |---|---|---|---|
-| PRD-005 (restated) | WHEN `build`/`ci` completes, THE SYSTEM SHALL **derive** the whole hash-chained `ledger.jsonl` from the git history of the content branch and write it into the build output and the release assets — never appending to a stored file, never committing it from CI — and SHALL publish its head as the `agsc-ledger-head` target attribute of the `…/rel#ledger` link in the well-known file (D55), re-verifiable offline via `verify --ledger`, which recomputes the chain **and** compares the head. | Tampered or truncated file fails; head published and attested; two builds of one history are byte-identical; no CI commit to the content branch. | D44(h), **D48(1)**, PRD-042, V1-05/06/07 |
-| PRD-036 (restated) | WHEN Concepts are composed, THE SYSTEM SHALL apply the four steps in the order `requires` closure → `supersedes` hiding → `excludes` mutex → `uses`/`contradicts` warnings, and WHERE an item that survives hiding `requires` an item the hiding removed, THE SYSTEM SHALL invalidate the composition with **`AGSC-E802`** ("required item superseded — select `<superseding>`") rather than dropping the hard dependency silently or substituting the superseding item. | `compose-0001` (order) and `compose-0002` (E802) pass; verdict is a function of the selection set, `selection[]` sorted, `path[]` breadth-first. | R6, D41, audit/D §1.3, **D48(2)**, V1-01/02/03 |
+| PRD-005 (restated) | WHEN `build`/`ci` completes, THE SYSTEM SHALL **derive** the whole hash-chained `ledger.jsonl` from the git history of the content branch and write it into the build output and the release assets — never appending to a stored file, never committing it from CI — and SHALL publish its head as the `agsc-ledger-head` target attribute of the `…/rel#ledger` link in the well-known file (D55), re-verifiable offline via `verify --ledger`, which recomputes the chain **and** compares the head. | Tampered or truncated file fails; head published and attested; two builds of one history are byte-identical; no CI commit to the content branch. | D44(h), **D48(1)**, PRD-042, |
+| PRD-036 (restated) | WHEN Concepts are composed, THE SYSTEM SHALL apply the four steps in the order `requires` closure → `supersedes` hiding → `excludes` mutex → `uses`/`contradicts` warnings, and WHERE an item that survives hiding `requires` an item the hiding removed, THE SYSTEM SHALL invalidate the composition with **`AGSC-E802`** ("required item superseded — select `<superseding>`") rather than dropping the hard dependency silently or substituting the superseding item. | `compose-0001` (order) and `compose-0002` (E802) pass; verdict is a function of the selection set, `selection[]` sorted, `path[]` breadth-first. | R6, D41, audit/D §1.3, **D48(2)**, |
 
 *The remaining 32 V1 findings are rule-level amendments inside `spec/`, `schema/`, `ontology/`, `tests/vectors/` and the diagrams; they change no requirement row and are indexed by SPEC.md §6 decisions 11–17.*
 
-**PRD-053 — acceptance and scope notes (V2 sweep, same amendment).** The frozen row stands; these two notes make it executable, per `audit/V2-system-sweep.md` V2-01/02/19/24.
+**PRD-053 — acceptance and scope notes (V2 sweep, same amendment).** The frozen row stands; these two notes make it executable, per `audit/V2-system-sweep.md`.
 
 - **Acceptance (added).** "In place" means *in the user's repository*, not *in the user's folder layout*: `init` MUST relocate each adopted file to `content/concepts/<slug>.md` (AGSC-02-93), recording its original repository-relative path in `aliases[]`, flattening nested directories and suffixing collisions per AGSC-01-23 — without which `build` discovers nothing under `content/**`. An adopted item MUST validate against `schema/item.schema.json` (`description` is schema-optional; a missing one on a concept or cluster is the warning `AGSC-E408`), so `ci` on a folder of bare notes is green offline with warnings only. `README.md`, `index.md` and `_index.md` are never adopted. Vectors: `adopt/adopt-0001…0003`.
 - **Scope (corrected).** The Scope cell reads "v1 (M1/M3)", but `init` is built in M7. The adoption half — pure frontmatter synthesis plus relocation over the M1 parser, ≈0.3 d — lands in **M1** as `init --adopt`; the scaffold half (`init --host cloudflare`) stays in **M7**. No requirement changes; only where the work sits.
@@ -185,7 +185,7 @@ The frozen rows above stand verbatim. Two of them are **restated** here, as **D4
 | NFR-07 | THE SYSTEM SHALL treat content as untrusted data structurally: JSON results with `source/trust/license`, prose fenced as data, id-only arguments, no shell/URL tools, lint against imperatives, hidden text, secrets and PII. | N9 lint green; ADR-001. | N9, D40, Art. XIV |
 | NFR-08 | THE SYSTEM SHALL generate HTML meeting WCAG 2.2 AA (semantics, contrast, keyboard, alt text). | a11y lint clean. | N10 |
 | NFR-09 | THE SYSTEM SHALL run unattended: idempotent crons, 60-day Actions auto-disable runbook, tested restore-from-zero. | Runbook run pre-launch. | N11 |
-| NFR-10 | THE SYSTEM SHALL keep the licence stack fixed and embedded: engine Apache-2.0, schema/ontology/IDs CC0, prose ARR + Content Use Terms v1. | REUSE + terms green. The W3C-format personal draft (`w3c/index.html`, D59) is published under **CC-BY 4.0**, set explicitly in `respecConfig` rather than taken by ReSpec's default: it restates CC0 vocabulary material and carries no ARR prose (V5-3 S3-31). | D05, D39, D59, Art. XIII |
+| NFR-10 | THE SYSTEM SHALL keep the licence stack fixed and embedded: engine Apache-2.0, schema/ontology/IDs CC0, prose ARR + Content Use Terms v1. | REUSE + terms green. The W3C-format personal draft (`w3c/index.html`, D59) is published under **CC-BY 4.0**, set explicitly in `respecConfig` rather than taken by ReSpec's default: it restates CC0 vocabulary material and carries no ARR prose (S3-31). | D05, D39, D59, Art. XIII |
 | NFR-11 | THE SYSTEM SHALL keep LLM spend ≤$10/month, visible on the NOW page. | Spend line present; the **gating** lanes (`ci`, `review`, and everything reachable from them) contain no model call — grep-asserted, and the build fails if one is reachable (AGSC-08-27). The opt-in, non-gating LLM review lane is permitted and its spend reaches the rollup as an `episode` carrying `usage`. | D14, D44(h), D61(4), Art. XV |
 | NFR-12 | THE SYSTEM SHALL contain no Web4/crypto framing, book or "companion" strings, no whole-corpus PDF/EPUB emitter. | Clean-room lint (W1–W12) green. | R13, D08, Art. XIII |
 | NFR-13 | THE SYSTEM SHALL run offline and cross-platform (paths, CRLF, NFC, reserved names, exit codes, `NO_COLOR`, XDG). | Portability checklist, three OSes. | R30 |
@@ -196,13 +196,13 @@ The frozen rows above stand verbatim. Two of them are **restated** here, as **D4
 
 NFR-01 above is superseded as of 2026-09-18. THE SYSTEM SHALL use maintained, permissively licensed libraries (MIT, BSD, Apache-2.0, ISC) at exact pinned versions for every standard format and protocol it reads or writes (YAML, JSON Schema, JCS, JSON-LD and RDF serialisations, Markdown, `.env`, the Model Context Protocol, XML, command-line arguments), SHALL commit its lockfile and install with `npm ci`, SHALL fail its CI gate on any open `npm audit` advisory, and SHALL hand-write only what the specification pins byte-for-byte and no library produces (canonical orders, the `llms.txt` layout of AGSC-06-13a, the search tokenizer of AGSC-06-23, the conformance vector runner). No library may perform network or clock access at runtime; NFR-02 (a port from the vectors alone) and every determinism requirement are unchanged. Acceptance: `npm ls --prod` lists only exact versions; `npm audit --audit-level=low` exits 0; the reproducibility check of AGSC-09-14 passes. Trace: D94, R76, PLAN ADR-019.
 
-*Amendment 9, note added 2026-09-18 (D97, R81 — V8-66, V8-67, Q54).* Three statements elsewhere in this document pre-date Amendment 9 and D94 and are read through them, the prose above staying as the owner wrote it:
+*Amendment 9, note added 2026-09-18.* Three statements elsewhere in this document pre-date Amendment 9 and D94 and are read through them, the prose above staying as the owner wrote it:
 
 1. **PRD-054's "all Node stdlib, zero deps"** (§2, the independent validator scripts) is superseded on the same terms as NFR-01: the `tools/` validators stay engine-independent — no import from `src/` — but may use the same pinned, audited libraries as the engine (`spec/09-conformance.md` AGSC-09-90 is to be reworded at the next release candidate, recorded as a 1.0.0 item).
 2. **NFR-01's own row in §3** ("zero runtime dependencies (`node:` builtins, Node ≥22.14)") is the superseded text; the engine's floor is **Node ≥22.12.0** (D97 Q39 — the version at which `require()` of `commander@15` works; Node 22 is Maintenance LTS to 2027-04-30) and its dependency set is the eleven runtime and two development libraries pinned in `package.json` and recorded in the engine's `src/README.md`.
 3. **The §5 success-metric line on provenance coverage** is read as *"every published item carries `prov`"*, which is what AGSC-08-01 requires and what the `prov` lint enforces. It was first written as a percentage figure; that figure was a metric target, not a claim about the system. *Correction, 2026-09-21:* the requirements page of the site embeds this document whole, so the figure did reach a public page; the §5 line and this note now carry the reading itself instead of the figure.
 
-### 3.2 S01 Amendment 10 (2026-09-21; ENG1-01, rc.5) — NFR-06's index figure superseded
+### 3.2 S01 Amendment 10 — NFR-06's index figure superseded
 
 NFR-06's `search.json` figure above is superseded as of 2026-09-21; its other three clauses (HTML ≤100 KB/page, build ≤60 s for 500 items, no external page requests) stand as written. WHEN `ci` runs, THE SYSTEM SHALL enforce **≤1 MB per index document** — `/search.json` at or below 500 items, each `/search-<nn>.json` shard above it — in place of "`search.json` ≤500 KB at 500 items". Reason: AGSC-06-23 puts every item's body into the index, so the index costs what the prose costs; the rc.4 pair of figures (≤1 KB per published item **and** ≤500 KB absolute) was measured at 1,226 B/item on a real 120-item Bundle of ordinary prose and was therefore unsatisfiable, with the second clause unreachable below 408 items. Acceptance is unchanged: the budget check fails the build, now explicitly with `AGSC-E904`. Trace: `spec/06-surfaces.md` AGSC-06-21 as amended at rc.5, N8.
 
@@ -220,7 +220,7 @@ No servers, databases, queues or Workers — static Pages + CI only (D47, D09). 
 
 ---
 
-## For the owner (3 items, with recommended defaults)
+## Open questions (3 items, with recommended defaults)
 
 1. **Benchmarks in the launch gate.** DoD (4) requires published benchmarks, but `bench` is a v1.x verb (D41), no M1–M15 milestone covers it, and P-BENCH is post-launch. *Default:* launch DoD = (1)–(3), (5), (6); benchmarks = a v1.0.1 gate within 30 days.
 2. **RDF/XML level.** D30 makes RDF/XML a v1 export; audit/D §6 trims it to should-level S1 for the 22-day budget. *Default:* should — ship if M5 finishes early, else v1.1.
@@ -243,9 +243,9 @@ No servers, databases, queues or Workers — static Pages + CI only (D47, D09). 
 ### 2.9d S01 Amendment 6 (owner Round 10, 2026-09-03, D53) — v1.0 scope = everything except servers
 All requirements previously marked `should`, `v1.x`, `v1.1` or "schema-affecting v2" in this PRD are **v1.0** (WebMCP PRD-051 included). Only server/backend components remain v2 (hosted responder/remote MCP Worker, GitHub App, hosted instances, SPARQL endpoint, CRDT sync, Solid/IPFS/ActivityPub adapters, binaries/WASM) — their ports/hooks exist in v1.0. The schema, ontology, protocol and specs are **complete and frozen in v1.0** (forward-compatible; `spec_version 1.0.0`); the ISE draft is written against them. Scope cells reading `v1.x`/`should` above READ AS `v1.0` (this note supersedes them). Calendar re-baselined by the execution plan (D54).
 
-**Note (D58, 2026-09-04; V5-2 S2-06):** PRD-001's thirteen verbs READ AS the **sixteen** of AGSC-09-07 — `init lint build verify ci export import compose propose review refresh skills mcp run trace conform` — `run` and `trace` being opt-in and disabled by default (AGSC-09-94). The "13 names" acceptance cell reads "16 names".
+**Note (D58, 2026-09-04; S2-06):** PRD-001's thirteen verbs READ AS the **sixteen** of AGSC-09-07 — `init lint build verify ci export import compose propose review refresh skills mcp run trace conform` — `run` and `trace` being opt-in and disabled by default (AGSC-09-94). The "13 names" acceptance cell reads "16 names".
 
-**Note (D53, 2026-09-03; extended V4-A A-27, 2026-09-04):** "nine Links" in frozen rows **and in the product statement** READS AS "fourteen Links (nine core, which drive composition, + five Mode-2: implements, verifies, covers, blocked-by, decided-by)" per AGSC-03-01 as amended.
+**Note (D53, 2026-09-03; extended A-27, 2026-09-04):** "nine Links" in frozen rows **and in the product statement** READS AS "fourteen Links (nine core, which drive composition, + five Mode-2: implements, verifies, covers, blocked-by, decided-by)" per AGSC-03-01 as amended.
 
 ### 2.9e S01 Amendment 7 (owner-directed, 2026-09-14/15; D67, D70, D70a, D72) — federation, contribution, diagrams, determinism scope
 | ID | Requirement (EARS) | Acceptance | Trace | Version |
@@ -271,9 +271,9 @@ All requirements previously marked `should`, `v1.x`, `v1.1` or "schema-affecting
 | PRD-065 | THE SYSTEM SHALL be configurable from the environment and from a `.env` file in the Bundle root — every scalar configuration key under an `AGSC_*` name, named `agents[]`/`channels[]` entries as `AGSC_AGENT_<NAME>_<KEY>`/`AGSC_CHANNEL_<NAME>_<KEY>`, model credentials environment-only — with precedence flags > process environment > `.env` > project configuration > user configuration; AND SHALL cap model spend of every kind at a node-wide `budget.usd_month`, default 10 USD, the enabled agents' budgets summing to no more than it, every model-calling path stopping for the month at the cap; AND SHALL bound an agent lane by `max_new_items` per Proposal (default 20) and `max_claims` tasks in progress (default 1); AND SHALL offer `refresh --agent <name> --dry-run`. | `cli-0006` (precedence, names printed, values never); `bundle-0005` (`AGSC-E212`); `prov-0002`/`prov-0003` (`AGSC-E511`); a tracked `.env` is `AGSC-E403`; `init` writes `.env` to `.gitignore` and `.env.example`. | R69, R70, R71, D88, AGSC-01-37, AGSC-01-38, AGSC-08-25, AGSC-08-28, AGSC-10-17, NFR-11 | v1.0 (rc.4) |
 *Note (D87):* Mode 5 adds no type, key or ontology term; it composes Modes 1–4 with the agent lane and the boards of AGSC-10-13 and is the "System 1 / System 2" reading of a node — a fast lane of automatic work and a slow lane of human decisions — documented in `docs/plain/modes.md`. PRD-063/064 are v1.0 requirements of the rc.4 draft; the engine implements them in DS-8/DS-9 (M6 boards, M10 tool server, M12 channels, M14 refresh).
 
-*Note (D88, 2026-09-18):* the owner's three directives of session 26 — everything configurable from `.env` with a 10 USD cap over every model use (R69, R70), the whole declared scope in the first standard even where a feature ships at 1.1 or 2.0 (AGSC-00-20, R71), and the rename of Mode 5 from *Blackboard* to *Kanban* (D88) and then to **live board** (D91 and D96, the owner's choice; the blackboard pattern stays the cited lineage and Kanban the cited operating discipline *(wording corrected 2026-09-18 under D96: the note as first written named the mode where it meant the discipline; `docs/RELATED-WORK.md` cites Kanban as the discipline)*) — are PRD-065, AGSC-00-20 and the renamed PRD-064. The rc.4 final items of PUB-3 (Q13 budget sum, Q17 planner cap, Q22 dry run) are in PRD-065 as well.
+*Note (D88, 2026-09-18):* the owner's three directives of — everything configurable from `.env` with a 10 USD cap over every model use (R69, R70), the whole declared scope in the first standard even where a feature ships at 1.1 or 2.0 (AGSC-00-20, R71), and the rename of Mode 5 from *Blackboard* to *Kanban* (D88) and then to **live board** (D91 and D96, the owner's choice; the blackboard pattern stays the cited lineage and Kanban the cited operating discipline *(wording corrected 2026-09-18 under D96: the note as first written named the mode where it meant the discipline; `docs/RELATED-WORK.md` cites Kanban as the discipline)*) — are PRD-065, AGSC-00-20 and the renamed PRD-064. The rc.4 final items of (Q13 budget sum, Q17 planner cap, Q22 dry run) are in PRD-065 as well.
 
-### 5.1 Note to the definition of done (2026-09-21, ENG-5/WP-12) — `lint --self` is superseded
+### 5.1 Note to the definition of done — `lint --self` is superseded
 
 Additive; §5's own sentence is unchanged. Item (2) of the definition of done reads
 "`verify` proves byte-identical rebuilds, each spec section has ≥1 vector, `lint --self`
@@ -286,17 +286,17 @@ usage error the rule requires.
 (PRD-054) exit 0, `node tools/count-artifacts --json` reports `ok` with no finding, and
 the architecture boundary lane `AGSC_AUDIT=1 node --test tests/arch/*.test.js` is
 green.** One of the nine, `tools/validate-spec`, exited 1 on 2026-09-21 against the `1.0.0-rc.5` text
-for defects recorded as specification items for 1.0.0 (ENG4-01…05), so it was a reporting
+for defects recorded as specification items for 1.0.0 (…05), so it was a reporting
 step until those were applied; they are applied in the `1.0.0-rc.6` draft and the tool blocks
 like the other eight once its historical-note word list follows AGSC-09-91 as amended at rc.6. To lint a *Bundle*, the command is
 `agsc lint` from that Bundle's root.
 
-Specification items 57 / FIX28-02 and ENG5-S11 carry the full record; the same note is
+Specification items 57 / and carry the full record; the same note is
 appended to `docs/PLAN.md`.
 
 ---
 
-## Appended 2026-09-22 — the compatibility section and the content version (D112, D113)
+## Appended 2026-09-22 — the compatibility section and the content version
 
 Two capabilities are added to the `1.0.0-rc.6` draft after the pass recorded above, and neither
 adds a requirement id: both are discharged by requirements this document already carries.

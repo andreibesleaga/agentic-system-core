@@ -35,7 +35,7 @@
  *     as a green one.
  *
  * WHAT THE RULE LEAVES OPEN is the layout. No rule pins a steer bundle's bytes and
- * no vector asserts them, so this engine states its own and says so (ENG5-S4): the
+ * no vector asserts them, so this engine states its own and says so: the
  * H1, then AGSC-01-29's provenance header in the AGSC-06-15 byte layout, then the
  * one sentence that says the quoted prose is data, then NOW, then an index line per
  * `concept` (title, slug and description — a concept's body is the page an agent
@@ -52,7 +52,7 @@
  *
  * Rules: AGSC-01-28, AGSC-01-29, AGSC-06-15, AGSC-02-24, AGSC-04-01, AGSC-08-20b.
  * Requirements: PRD-029, D35, D53.
- * Owner: ENG-5 (WP-12).
+ *
  */
 
 const chunks = require('../knowledge/chunks.js');
@@ -66,12 +66,12 @@ const TARGETS = Object.freeze({
   aider: 'CONVENTIONS.md',
   claude: 'CLAUDE.md',
   cline: '.clinerules/agsc.md',
-  // AGSC-01-28 as corrected at rc.6 (EXT2-01): the row named `.codex/instructions.md`,
+  // AGSC-01-28 as corrected at rc.6: the row named `.codex/instructions.md`,
   // which Codex does not read. OpenAI's own documentation
   // <https://learn.chatgpt.com/docs/agent-configuration/agents-md> (read 2026-09-23) says
   // Codex looks for `AGENTS.override.md` first and `AGENTS.md` second at each level. The
   // row takes the FIRST of those two, not the second, because the `agents` target already
-  // writes `AGENTS.md` and no target may write another's path (CONN1-01).
+  // writes `AGENTS.md` and no target may write another's path.
   codex: 'AGENTS.override.md',
   copilot: '.github/copilot-instructions.md',
   cursor: '.cursor/rules/agsc.mdc',
@@ -256,7 +256,7 @@ function plan(bundle, options) {
   const targets = [];
   for (const name of requested) {
     if (TARGETS[name] === undefined) {
-      // AGSC-00-23 as added at rc.6 (D112): a value outside a CLOSED operator list
+      // AGSC-00-23 as added at rc.6: a value outside a CLOSED operator list
       // is `AGSC-E203`, the code that already names exactly that fault — not
       // `AGSC-E002`, which AGSC-09-08 reserves for an unknown FLAG. `--target` is a
       // known flag carrying a value the registry does not hold, so this is a

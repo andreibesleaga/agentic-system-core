@@ -1,10 +1,10 @@
 'use strict';
-// tests/interchange/cogx.test.js — the COGX 0.1 memory adapter (AGSC-01-26a; CONN-1,
+// tests/interchange/cogx.test.js — the COGX 0.1 memory adapter (AGSC-01-26a;
 // RES1-04). `export --to cogx` / `import --from cogx`.
 //
 // The format was read from its reference implementation on 2026-09-23
 // (`cognee/modules/migration/cogx.py`, topoteretes/cognee@main); the quotes are in
-// the CONN-1 report §1.1. What is asserted here is what that source fixes: the file
+// the report §1.1. What is asserted here is what that source fixes: the file
 // names, the members a record always carries, `exclude_none`, the BARE raw-node line,
 // the version refusal and the secret `permissions.json`. Then the round trip, through
 // the real verbs over the real filesystem with a fixed clock.
@@ -525,7 +525,7 @@ test('an over-long line, an invalid own record, and a record with no name are ha
   assert.match(planned.writes[1].text, /x-cogx-rest: .*"label":42.*"value":7/u, 'a non-string member was lost');
 });
 
-test('an own archive with a bundle hash records it; a malformed version or hash is not trusted (CONN2-03)', () => {
+test('an own archive with a bundle hash records it; a malformed version or hash is not trusted', () => {
   const opts = { itemSchema: ITEM_SCHEMA, origin: OWN_BASE, toolSpecVersion: SPEC };
   const record = (agsc) => JSON.stringify({ external_id: 'x', kind: 'memory', content: 'c', metadata: { agsc: { body: '\nB.\n', bundle: OWN_BASE, frontmatter: { prov: { origin: 'human', operator: 'human:a', source_version: 'old' }, severity: 'info', title: 'Lesson one', type: 'lesson' }, slug: 'lesson-one', type: 'lesson', ...agsc } } });
   const hashed = cogx.plan({ 'memories.jsonl': record({ bundle_hash: 'a'.repeat(64), bundle_version: '1.2.3' }) }, opts);

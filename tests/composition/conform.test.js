@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the conformance-claim module (WP-10-F).
+// Unit tests for the conformance-claim module.
 // AGSC-09-01, AGSC-09-02, AGSC-09-03, AGSC-04-22, AGSC-04-24, AGSC-10-15.
 
 const test = require('node:test');

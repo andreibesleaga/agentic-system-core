@@ -5,9 +5,10 @@
  * Implements AGSC-06-01's `/compose/` route, AGSC-07-01 ("It MUST NOT require a
  * network, a key or a server"), AGSC-07-13 (the combiner in the page is the CLI's
  * own algebra — `composition/browser.js` emits its source text), D49's **per-file
- * download** (there is no zip writer), AGSC-07-24 (`/compose/?from=<slug>` shows the
- * same composition a saved architecture names) and AGSC-09-16 (the WebMCP tool
- * registration, feature-detected, through `distribution/webmcp.js`).
+ * download** plus a "Download all (.zip)" link from `composition/archive.js`,
+ * AGSC-07-24 (`/compose/?from=<slug>` shows the same composition a saved
+ * architecture names) and AGSC-09-16 (the WebMCP tool registration,
+ * feature-detected, through `distribution/webmcp.js`).
  *
  * Three files are emitted beside the page, because AGSC-06-17's own policy —
  * `default-src 'none'; script-src 'self'; style-src 'self'` — admits no inline
@@ -58,7 +59,7 @@ function toolNames() {
  *   3. runs `compose()` on every change and renders the verdict, the closure
  *      explanations and the conflicts;
  *   4. emits the seven Harness files with `emit()` and offers ONE DOWNLOAD PER
- *      FILE (D49: the zip writer was dropped);
+ *      FILE (D49) and one "Download all (.zip)" link over the same files;
  *   5. installs `globalThis.AGSC_TOOLS` so that the WebMCP registration of
  *      AGSC-09-16 dispatches to the same implementation the stdio server uses for
  *      `compose`, and returns the AGSC-09-13a error envelope, with a registered
@@ -82,7 +83,7 @@ function controller(options) {
   var CORE = globalThis.AGSC_CORE;
   var SPEC_VERSION = ${JSON.stringify(String(opts.specVersion === undefined ? '' : opts.specVersion))};
   var LICENSE_PROSE = ${JSON.stringify(license)};
-  var state ={ base: '', bodies: {}, instant: '', items: [], selection: [], verdict: null };
+  var state ={ base: '', bodies: {}, instant: '', items: [], selection: [], verdict: null, version: '' };
   globalThis.AGSC_COMPOSE = state;
 
   function el(id) { return typeof document === 'undefined' ? null : document.getElementById(id); }
@@ -93,7 +94,7 @@ function controller(options) {
   // installs \`globalThis.AGSC_TOOLS\`. This controller therefore installs NOTHING on
   // that name: until rc.5 it installed a stub that answered \`compose\` and refused the
   // other six, and that stub — not the shared implementation — is what the site
-  // actually shipped (ENG3-02).
+  // actually shipped.
 
   /** The selection a \`/compose/?from=<slug>\` link names (AGSC-07-24). */
   function selectionFromQuery() {
@@ -219,7 +220,36 @@ function controller(options) {
         });
       }
       state.harness = out;
-      return out;
+      return archiveLink(out, digest).then(function () { return out; });
+    });
+  }
+
+  /**
+   * "Download all (.zip)" beside the per-file links — the archive module the
+   * CLI's \`compose --zip\` runs, over the same files and the same instant, so the
+   * bytes cannot differ (AGSC-07-13); named with the content version, SHA-256 shown.
+   */
+  function archiveLink(out, digest) {
+    var holder = el('archive');
+    if (!holder || typeof CORE.archiveBytes !== 'function') return Promise.resolve(null);
+    holder.textContent = '';
+    var zip = CORE.archiveBytes(out.files, { instant: state.instant });
+    if (zip.violations.length > 0) return Promise.resolve(null);
+    state.archive = zip;
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([zip.bytes], { type: 'application/zip' }));
+    link.download = CORE.archiveName(CORE.harnessName(digest), state.version);
+    link.textContent = 'Download all (.zip)';
+    holder.appendChild(link);
+    return crypto.subtle.digest('SHA-256', zip.bytes).then(function (buffer) {
+      var hex = '';
+      var view = new Uint8Array(buffer);
+      for (var i = 0; i < view.length; i += 1) hex += view[i].toString(16).padStart(2, '0');
+      var sum = document.createElement('span');
+      sum.className = 'sha';
+      sum.textContent = ' SHA-256 ' + hex;
+      holder.appendChild(sum);
+      return zip;
     });
   }
 
@@ -259,17 +289,18 @@ function controller(options) {
    * A document the page cannot read yields the empty string, never a wall clock
    * (AGSC-04-11): a page that guessed an instant would emit bytes the CLI cannot.
    */
-  function instantOf(linkset) {
+  function describedValue(linkset, key) {
     var sets = (linkset && linkset.linkset) || [];
     for (var i = 0; i < sets.length; i += 1) {
       var described = (sets[i] && sets[i].describedby) || [];
       for (var j = 0; j < described.length; j += 1) {
-        var values = described[j] && described[j]['agsc-generated-at'];
+        var values = described[j] && described[j][key];
         if (values && values.length > 0) return String(values[0]);
       }
     }
     return '';
   }
+  function instantOf(linkset) { return describedValue(linkset, 'agsc-generated-at'); }
   state.instantOf = instantOf;
 
   function start() {
@@ -280,6 +311,8 @@ function controller(options) {
       return null;
     }).then(function (linkset) {
       state.instant = instantOf(linkset);
+      // The content version names the archive (AGSC-04-25); none → "unversioned".
+      state.version = describedValue(linkset, 'agsc-bundle-version');
       return fetch('/graph.jsonld');
     }).then(function (r) { return r.json(); }).then(function (graph) {
       state.items = CORE.itemsFromGraph(graph);

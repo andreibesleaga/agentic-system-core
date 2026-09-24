@@ -1,6 +1,6 @@
 'use strict';
 // AGSC-11-12: `nquads.dataset`'s `citations` option places the peer-citation pairs
-// the Boundary context computed (ENG-9). It invents none: a pair naming an item the
+// the Boundary context computed. It invents none: a pair naming an item the
 // dataset does not hold, or missing either IRI, contributes nothing.
 
 const test = require('node:test');

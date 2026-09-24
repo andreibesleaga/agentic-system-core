@@ -1,0 +1,48 @@
+[
+  {
+    "number": 1,
+    "title": "Write the importer",
+    "body": "Read the export and write task items.",
+    "state": "open",
+    "state_reason": null,
+    "labels": [{ "name": "enhancement" }],
+    "assignee": { "login": "alice" },
+    "assignees": [{ "login": "alice" }],
+    "milestone": { "title": "Sprint 1", "description": "The first sprint." },
+    "created_at": "2026-01-02T09:00:00Z",
+    "updated_at": "2026-01-03T10:00:00Z",
+    "closed_at": null,
+    "html_url": "https://github.example/acme/app/issues/1",
+    "comments": 2
+  },
+  {
+    "number": 2,
+    "title": "Ship the draft",
+    "body": "",
+    "state": "closed",
+    "state_reason": "completed",
+    "labels": [],
+    "assignees": [],
+    "milestone": { "title": "Sprint 1" },
+    "created_at": "2026-01-01T09:00:00Z",
+    "updated_at": "2026-01-04T09:00:00Z",
+    "closed_at": "2026-01-04T09:00:00Z"
+  },
+  {
+    "number": 3,
+    "title": "Use one intermediate table",
+    "body": "We decided on one table for every tool.",
+    "state": "closed",
+    "state_reason": "not_planned",
+    "labels": ["decision"],
+    "milestone": null,
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z"
+  },
+  {
+    "number": 4,
+    "title": "Fix typo",
+    "state": "open",
+    "pull_request": { "url": "https://github.example/acme/app/pulls/4" }
+  }
+]

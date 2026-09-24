@@ -229,7 +229,7 @@ implementations report the same code for the same input, and that is checkable.
 
 ## 4a. Deriving and stamping the content version (Level 2 and above)
 
-Added at rc.6 under D113. **AGSC-04-25** (`spec/04-canonicalization.md` §4.9) gives a
+Added at rc.6. **AGSC-04-25** (`spec/04-canonicalization.md` §4.9) gives a
 Bundle one short, human-readable name for the state a build published, `bundle_version`.
 It is **derived at build, never authored, never stored and never incremented** — a
 static build keeps no state between runs, so a counter of its own could not be

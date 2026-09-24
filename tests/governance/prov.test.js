@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-08-01…08-09 and AGSC-10-17. Owner: C (WP-10-C).
+// AGSC-08-01…08-09 and AGSC-10-17.
 // No clock, no network: a board, a Proposal and a commit message are records.
 
 const test = require('node:test');

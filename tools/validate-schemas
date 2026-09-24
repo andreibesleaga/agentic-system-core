@@ -88,7 +88,7 @@ const DATA = Object.freeze(['const', 'default', 'enum', 'examples', 'required'])
 // JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
 // --------------------------------------------------------------------------
 function canonicalize(value) {
-  // FV29-03: `undefined` is what `pointer()` answers for a member a malformed
+  // `undefined` is what `pointer()` answers for a member a malformed
   // document does not carry, and every caller below compares the result with an
   // expected canonical string. Answering the JSON literal `undefined` makes that
   // comparison fail and produces a FINDING, where `Object.keys(undefined)` threw an
@@ -161,7 +161,7 @@ function keywordsUsed(schema, at = '', out = new Map()) {
 
 /** Every `pattern` in a schema document, with its pointer and its sibling maxLength. */
 /**
- * FV29-03: the walk is depth-bounded. A schema document nested deeper than this made
+ * the walk is depth-bounded. A schema document nested deeper than this made
  * the recursion throw `RangeError: Maximum call stack size exceeded` — an uncaught
  * stack trace instead of a finding, which is the one thing a checker must never do.
  * No schema of this format is anywhere near the bound (the deepest pointer in
@@ -241,7 +241,7 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const schemaDir = path.join(root, 'schema');
-  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which
@@ -327,7 +327,7 @@ function run(argv, io) {
     // the `{2,8}` of a BCP 47 tag, which bounds no length this specification names.
     const found = patterns(document);
     if (found.tooDeep !== undefined) {
-      // FV29-03: say so rather than pass silently on a document this walk could not
+      // say so rather than pass silently on a document this walk could not
       // read to the bottom.
       findings.push(finding('AGSC-E201', file,
         `the document nests deeper than ${MAX_DEPTH} levels at ${found.tooDeep} and was not walked to the bottom; no schema of this format nests that deep`));

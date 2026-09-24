@@ -1,5 +1,5 @@
 // tests/conformance/areas/cli.js — area handler for `cli` vectors.
-// Owner of cli-0002, cli-0005, cli-0006: B (WP-10-B). cli-0001 is withdrawn
+// Owner of cli-0002, cli-0005, cli-0006: B. cli-0001 is withdrawn
 // (the runner skips it without calling here); cli-0003/cli-0004 are F's —
 // left for F to add a case for, below.
 'use strict';
@@ -110,7 +110,7 @@ const HANDLERS = {
 };
 
 // ---------------------------------------------------------------------------
-// EXTENSION POINT — cli-0003 and cli-0004, owner F (WP-10-F).
+// EXTENSION POINT — cli-0003 and cli-0004, owner F.
 // Appended below B's handlers; nothing above this line is modified.
 // Rules: AGSC-09-16 (one tool contract, two transports) and AGSC-09-13a (the
 // tool error envelope, never a JSON-RPC transport error).
@@ -164,7 +164,7 @@ function fixtureSite(ctx, vector) {
  * Until rc.5 this ran the registration script against the FULL local implementation
  * handed in as `AGSC_TOOLS`, so the vector proved the emitter and said nothing about
  * the artefact the site ships — which is how six tools stayed unimplemented on the
- * built site while this required vector stayed green (research/34 gap 7, ENG3-05).
+ * built site while this required vector stayed green (research/34 gap 7).
  *
  * It now loads the three scripts the built site actually serves — `agsc-core.js`,
  * `agsc-page-tools.js` and `webmcp.js` — assembles the page corpus from the build's
@@ -417,7 +417,7 @@ function runCli0007(vector) {
 }
 
 /**
- * cli-0008 — AGSC-09-16 as amended at rc.6 (ENG3-S1, ENG3-S2).
+ * cli-0008 — AGSC-09-16 as amended at rc.6.
  *
  * The Bundle a page serves is the PUBLISHED projection of AGSC-06-30. The site is
  * built from the vector's inline items with a fixed clock, the page tools are then
@@ -481,7 +481,7 @@ function runCli0008(vector) {
 }
 
 /**
- * cli-0009 (rc.6, AGSC-00-23 / D112) — a value outside a CLOSED operator list is
+ * cli-0009 (rc.6, AGSC-00-23 /) — a value outside a CLOSED operator list is
  * `AGSC-E203` and a FINDING (exit 1), never `AGSC-E002` and a usage error (exit 2),
  * because `--emit` and `--target` are known flags carrying values the registry does
  * not hold (AGSC-09-08).
@@ -576,7 +576,7 @@ Object.assign(HANDLERS, {
 module.exports.run = function run(vector, ctx) {
   const handler = HANDLERS[vector.id];
   if (!handler) {
-    return { status: 'skip', detail: `cli.js (B) does not own ${vector.id} — see WP-10-CONTRACT.md area ownership table` };
+    return { status: 'skip', detail: `cli.js (B) does not own ${vector.id} — see-CONTRACT.md area ownership table` };
   }
   return handler(vector, ctx);
 };

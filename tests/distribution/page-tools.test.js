@@ -1,5 +1,5 @@
 'use strict';
-// tests/distribution/page-tools.test.js — ENG-3.
+// tests/distribution/page-tools.test.js —.
 //
 // AGSC-09-16 asks for ONE tool contract over two transports. This file proves the
 // browser half against the reference Bundle: the page corpus assembled from the
@@ -218,7 +218,7 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   const remembered = page.call('remember', { body: 'x', kind: 'lesson', title: 'A Lesson Learned Here' });
   assert.strictEqual(remembered.type, 'proposal');
   assert.match(remembered.body.path, /^content\/lessons\//u);
-  // MCP1-03 (ENG-9): the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
+  // the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
   assert.strictEqual(remembered.body.frontmatter.severity, 'info');
   // AGSC-11-18, the WebMCP vocabulary: the hints on the writing tools.
   assert.strictEqual(surfaces.WEBMCP_ANNOTATIONS.propose.consequentialHint, true);
@@ -299,7 +299,7 @@ test('AGSC-11-14: the edit link is derived from contribute[] and from nothing el
   // A forge whose edit view this engine cannot state is never guessed at: the link is
   // the configured contribution target, unchanged.
   assert.strictEqual(at('https://forge.example/a/b', 'content/concepts/x.md'), 'https://forge.example/a/b');
-  // FV29-02: a host that happens to name a member of `Object.prototype` is not a
+  // a host that happens to name a member of `Object.prototype` is not a
   // forge this engine states the edit view of; the lookup used to answer a FUNCTION
   // and the href carried "function Object() { [native code] }".
   for (const host of ['constructor', '__proto__', 'valueOf', 'hasOwnProperty', 'toString']) {

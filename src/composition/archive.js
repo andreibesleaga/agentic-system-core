@@ -1,7 +1,7 @@
 'use strict';
 /**
- * CONTEXT Composition — the ARCHIVE of a multi-file result (owner decision D111,
- * owner rule R100; AGSC-07-13's portability contract; AGSC-04-09's build instant).
+ * CONTEXT Composition — the ARCHIVE of a multi-file result
+ * AGSC-07-13's portability contract; AGSC-04-09's build instant).
  *
  * WHAT IT IS. A `.zip` container over a set of files that already exist as bytes —
  * the seven Harness files of AGSC-07-12, the skill packs of AGSC-07-19, one export
@@ -351,7 +351,7 @@ function archiveBytes(files, options) {
 
 /**
  * The archive's own file name: the directory the files were written into, the
- * CONTENT VERSION of the Bundle they came from (AGSC-04-25, owner decision D113 —
+ * CONTENT VERSION of the Bundle they came from (AGSC-04-25,
  * "the Harness archive name carries the content version"), and `.zip`.
  *
  * The version is tested against AGSC-04-25's grammar here rather than trusted,

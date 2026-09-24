@@ -36,10 +36,10 @@ const WELLKNOWN_SUFFIX = 'knowledge-linkset'; // single point of substitution, A
 const PROFILE = 'https://w3id.org/agentic-system-core/profile/agentic-knowledge';
 const REL = 'https://w3id.org/agentic-system-core/rel#';
 const REGISTERED = new Set(['alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
-  'related', 'service-desc', 'service-doc', 'service-meta']); // AGSC-06-10 + AGSC-06-35 (cite-as: rc.6, EXT2-03)
+  'related', 'service-desc', 'service-doc', 'service-meta']); // AGSC-06-10 + AGSC-06-35 (cite-as: rc.6)
 const RELATED_ONLY = new Set(['related', 'service-desc', 'service-meta', 'collection', 'item', 'cite-as']);
 const EXTENSIONS = new Set(['graph', 'ontology', 'context', 'now', 'skills', 'ledger', 'peer',
-  'surface', 'contribute', 'access', 'signature']); // signature: rc.6, EXT2-07
+  'surface', 'contribute', 'access', 'signature']); // signature: rc.6,
 const RFC8288_STRING_ATTRS = new Set(['type', 'title', 'media']); // RFC 9264 §4.2.4.2
 const LEVEL2_ATTRS = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-generated-at', 'agsc-spec-version'];
 // AGSC-11-20: the four a `restricted` node MUST omit although it is Level ≥ 2 —
@@ -231,7 +231,7 @@ async function fetchUrl(url) {
 
 // ---------------------------------------------------------------- source abstraction
 const isUrl = s => /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
-/** FV29-10: how many documents this run actually read, printed with the verdict so
+/**: how many documents this run actually read, printed with the verdict so
  *  that "nothing is wrong" can be told apart from "nothing was looked at". */
 const READS = { count: 0 };
 async function load(target) {
@@ -327,7 +327,7 @@ async function check(src, level, findings) {
     if (value.length !== 1) F('AGSC-E210', 'agsc-bundle-version carries exactly one value (AGSC-06-08, AGSC-04-25)');
     else if (!VERSION_GRAMMAR.test(String(value[0]))) F('AGSC-E204', `agsc-bundle-version ${JSON.stringify(String(value[0]))} is outside the grammar of AGSC-04-25`);
     // The attribute is defined from specification MAJOR 1 (AGSC-04-25, added at
-    // rc.6 under D113), so a node publishing it while declaring another MAJOR is
+    // rc.6), so a node publishing it while declaring another MAJOR is
     // publishing bytes its own declaration does not define.
     if (declaredMajor !== null && declaredMajor !== '1') {
       F('AGSC-E210', `the node publishes agsc-bundle-version while declaring agsc-spec-version ${JSON.stringify(declared)}, which does not define it (AGSC-00-23, AGSC-04-25)`);
@@ -353,7 +353,7 @@ async function check(src, level, findings) {
       }
       const sameOrigin = h.origin === anchor.origin;
       const artefact = sameOrigin && !h.pathname.endsWith('/') && rel !== 'license' && rel !== 'service-doc' && ext !== 'surface' && ext !== 'peer'
-        // AGSC-06-08 as amended at rc.6 (EXT2-07): the optional signature link "affects no
+        // AGSC-06-08 as amended at rc.6: the optional signature link "affects no
         // digest, no claim and no walk", so its target is never an artefact that needs one.
         && ext !== 'signature';
       if (t.digest !== undefined) {

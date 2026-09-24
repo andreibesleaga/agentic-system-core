@@ -36,7 +36,7 @@ Feature: Owner-as-operator keeps the site green with zero maintenance
 
   @PRD-048
   Scenario: Owner cuts a release and the packages publish with attestations
-    When the owner pushes a tag "v1.0.0"
+    When the maintainer pushes a tag "v1.0.0"
     Then "release.yml" runs on Node 24 with "id-token: write" and "attestations: write"
     And "agentic-system-core" (bin "agsc") and the "agsc-cli" alias publish via npm trusted publishing
     And both packages carry "actions/attest" provenance

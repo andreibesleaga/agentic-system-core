@@ -36,7 +36,7 @@ const { NS, PREFIXES } = nq;
  * emits, and the context file is the published surface of that list.
  */
 const EXTERNAL_PROPERTIES = Object.freeze([
-  ['dcterms:created', `${nq.XSD}dateTime`], // AGSC-05-27 (date), AGSC-05-31 (V7-25)
+  ['dcterms:created', `${nq.XSD}dateTime`], // AGSC-05-27 (date), AGSC-05-31
   ['dcterms:creator', null], // AGSC-05-14
   ['dcterms:date', null], // AGSC-05-14
   ['dcterms:format', null], // AGSC-05-29

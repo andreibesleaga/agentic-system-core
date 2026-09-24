@@ -3,7 +3,7 @@
 // declared peer … the graph exports MUST emit `<item-IRI> rdfs:seeAlso
 // <normalised-url>` and `<item-IRI> asc:peerOrigin <peer-Bundle-IRI>`".
 //
-// ENG-9 (CONN1b-02): `boundary/federation.js#peerCitations` built those quads and
+// `boundary/federation.js#peerCitations` built those quads and
 // nothing called it, so a node whose item cited a declared peer's page carried only
 // the `dcterms:source` literal in all four graph views. These tests build a real
 // Bundle through `distribution/site.js#build` and read the four views.

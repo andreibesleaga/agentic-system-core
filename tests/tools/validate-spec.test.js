@@ -33,7 +33,7 @@ describe('validate-spec — usage and the envelope', () => {
   });
 
   it('a root with no spec/ FAILS with AGSC-E901, exit 1', () => {
-    // CHANGED at rc.6 (FIX29-S4): AGSC-09-90 now says a validator MUST FAIL "with
+    // CHANGED at rc.6: AGSC-09-90 now says a validator MUST FAIL "with
     // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
     // error. An absent input is exit 1, the envelope and the code.
     const result = capture('validate-spec', [tmpdir()]);
@@ -67,7 +67,7 @@ describe('validate-spec — usage and the envelope', () => {
     const result = capture('validate-spec', [root]);
     assert.equal(result.code, 1);
     assert.match(result.err, /^error: spec\/02-item\.md:3:1 AGSC-E202 /mu);
-    // FV29-10: the line now opens with how many inputs the run actually read.
+    // the line now opens with how many inputs the run actually read.
     assert.match(result.out, /^validate-spec: 4 input file\(s\) read, 4 spec files, 4 rules, 1 registered codes/u);
   });
 
@@ -194,7 +194,7 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
   });
 
   it('a trace bracket followed by an italic note still counts', () => {
-    assert.equal(traceBracket('text [PRD-002] *(corrected at rc.5, V8-103: it cited itself.)*'), 'PRD-002');
+    assert.equal(traceBracket('text [PRD-002] *(corrected at rc.5,: it cited itself.)*'), 'PRD-002');
     assert.equal(traceBracket('text [PRD-002]'), 'PRD-002');
     assert.equal(traceBracket('no bracket here'), null);
   });

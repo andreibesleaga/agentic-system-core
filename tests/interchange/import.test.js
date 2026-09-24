@@ -95,7 +95,7 @@ test('the totals table is derived, and states the D99-shaped counts', () => {
   assert.strictEqual(totals.excisions, 1);
   assert.strictEqual(totals.files, plan().writes.length);
   assert.strictEqual(totals.dropped_related, 1);
-  // rc.5 (FV28-04): a body link to a card that is SELECTED but HELD BACK is
+  // rc.5: a body link to a card that is SELECTED but HELD BACK is
   // de-linked too, because a draft has no route (AGSC-06-30, AGSC-06-01) and a
   // published page linking one ships a 404. The ten new drops are the links to
   // `beta-one`, which the clean-room class holds back.
@@ -114,7 +114,7 @@ test('the clean-room class holds a record back as `draft`, and the class is the 
 });
 
 test('the clean-room class holds a BOOK-ONLY record back too, whatever the caller says', () => {
-  // D106 replaced "the four book-only cards never enter the node" with "imported,
+  // replaced "the four book-only cards never enter the node" with "imported,
   // held as draft": a record whose substance is WHOLLY in the third-party work is
   // the strongest case the guard exists for, so `B` joins `B+W` in the class rule.
   // The guard is applied first and is never overridden — not by the caller's

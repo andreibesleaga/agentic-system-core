@@ -10,7 +10,7 @@
  * assembles, adding no rule of its own. AGSC-01-15's discovery order is the
  * port's code-point `readdir` order, so the result is deterministic.
  *
- * Lifted here from `distribution/bundle.js` at integration (WP-10-G): a
+ * Lifted here from `distribution/bundle.js` at integration: a
  * Bundle loader orchestrates across contexts and owns no domain rule, which
  * is the application layer's definition, and Distribution reads results — it
  * does not assemble them. The call convention is the port bag the rest of the
@@ -61,7 +61,7 @@ function loadBundle(ports, options) {
       // The port refuses a file with the code the rule names — not UTF-8 (E108,
       // AGSC-01-14), over the cap (E904), a link out of the root (E902) — and that
       // refusal is a Finding about this one file, never an internal error that hides
-      // the rest of the Bundle (BENCH1b-03/05, ENG-9).
+      // the rest of the Bundle.
       const text = readRefusable(fs, path, findings);
       if (text === null) continue;
       const item = frontmatter.parseItem(text, {
@@ -73,7 +73,7 @@ function loadBundle(ports, options) {
   }
   items.sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
 
-  // AGSC-03-11 (wired at rc.5, FV28-03): "a relative Markdown link or image whose
+  // AGSC-03-11 (wired at rc.5): "a relative Markdown link or image whose
   // target is inside the Bundle MUST resolve to an existing item, AN EXISTING ASSET
   // UNDER `content/assets/`, or an existing anchor". `knowledge/links.js#resolve`
   // reads that set from `options.assets` and no caller supplied it, so the asset
@@ -134,7 +134,7 @@ function refusalCode(e) {
 /**
  * The text of one Bundle file, or `null` with the port's own refusal recorded as a
  * Finding. An error that carries no registered code is a programming fault and is
- * re-thrown (WP-10 contract: a thrown error is a fault, a Finding is a domain fact).
+ * re-thrown (contract: a thrown error is a fault, a Finding is a domain fact).
  */
 function readRefusable(fs, path, findings) {
   try {
@@ -157,7 +157,7 @@ function readJson(ports, path, findings) {
   try {
     return JSON.parse(String(ports.readFile(path, 'utf8')));
   } catch (e) {
-    // BENCH1b-05: an oversized or undecodable configuration is the port's refusal
+    // an oversized or undecodable configuration is the port's refusal
     // (AGSC-E904, AGSC-E108), not a JSON syntax error.
     const code = refusalCode(e);
     if (code !== null) {

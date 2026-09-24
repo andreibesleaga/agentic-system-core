@@ -7,7 +7,7 @@
 // a git fact is needed.
 //
 // It is the counterpart of `verbs-sixteen.test.js`, which proves the SET;
-// this one proves that each wired verb does what its rule says (WP-10-G).
+// this one proves that each wired verb does what its rule says.
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -139,7 +139,7 @@ test('AGSC-08-20a: verify --ledger with no git-log file is AGSC-E703, never a gr
 });
 
 test('AGSC-04-09: a build with no SOURCE_DATE_EPOCH warns AGSC-E606 and refuses the 1970 contact', () => {
-  // The warning is AGSC-04-09's and is unchanged. What changed at FV29-11 is the one
+  // The warning is AGSC-04-09's and is unchanged. What changed at is the one
   // artefact whose CONTENT is a date: `/.well-known/security.txt` derived
   // `Expires: 1970-12-31T00:00:00Z` from the defaulted instant and published it, and
   // RFC 9116 section 2.5.5 makes a past expiry stale by definition. This test used to
@@ -417,7 +417,7 @@ test('the helpers read attachments through the port and hash through node:crypto
   };
   const facts = helpers.attachmentFacts(ctx, bundle);
   assert.strictEqual(facts.attachmentBytes['content/attachments/supervisor/note.txt'], 'attached text\n');
-  // ENG-9: the map carries BYTE LENGTHS (what `governance/lint.js` reads); an
+  // the map carries BYTE LENGTHS (what `governance/lint.js` reads); an
   // absent file is simply not in it, which is how AGSC-E413 is found.
   assert.strictEqual(facts.filesPresent['content/attachments/supervisor/note.txt'], 14);
   assert.strictEqual(facts.filesPresent['content/attachments/handoff/absent.txt'], undefined);
@@ -469,7 +469,7 @@ test('init copes with a git identity that answers with nothing at all', () => {
 });
 
 // ---------------------------------------------------------------------------
-// V9-D lens (b) — three branches that no test reached: a mutation of each
+// lens (b) — three branches that no test reached: a mutation of each
 // survived the whole suite.
 
 test('AGSC-02-90: `init` takes the operator from git when a runner is wired', () => {
@@ -516,7 +516,7 @@ test('AGSC-01-37: `ci` prints override NAMES as JSON under --json and as text ot
   assert.ok(!textLines[0].includes('override.example'), 'the VALUE is never printed');
 });
 
-// V9-D lens (a/f): every composition conflict used to be printed as
+// lens (a/f): every composition conflict used to be printed as
 // "composition conflict on <key>: <a> / <b> (AGSC-07-06)". Three of the four
 // conflict kinds are NOT AGSC-07-06 — an absent or retired slug is AGSC-07-03 and
 // a superseded hard dependency is AGSC-07-05a, which even prescribes the message
@@ -553,7 +553,7 @@ test('AGSC-07-03/05a/06: a composition conflict names its own rule and what to d
   assert.ok(clash.message.includes('left') && clash.message.includes('right'), clash.message);
 });
 
-// V9-D lens (a/f), continued: the remaining three conflict kinds, each with the
+// lens (a/f), continued: the remaining three conflict kinds, each with the
 // rule that raises it. A retired selection and a superseded hard dependency were
 // reachable only through the real verb, so they are exercised there.
 test('AGSC-07-03/05a: a retired slug and a superseded hard dependency say what to do', () => {
@@ -612,7 +612,7 @@ test('AGSC-02-90: a .md file the port cannot decode is recorded as binary, never
 });
 
 // ---------------------------------------------------------------------------
-// MCP-1 (D114): `mcp` builds the site IN MEMORY so that AGSC-09-14b's resources
+// `mcp` builds the site IN MEMORY so that AGSC-09-14b's resources
 // are the published bytes. A build that throws must never stop the tool server.
 // ---------------------------------------------------------------------------
 

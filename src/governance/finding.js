@@ -1,6 +1,6 @@
 'use strict';
 // src/governance/finding.js — CONTEXT Governance & Provenance.
-// One place where a Governance Finding is built. Owner: C (WP-10-C).
+// One place where a Governance Finding is built.
 // PURE: no fs, no process, no clock, no network.
 //
 // `knowledge/validate.js#finding` builds the AGSC-09-11 Finding — `code`, `col`,

@@ -2,7 +2,7 @@
 // Argv parsing uses `commander@15.0.0` (D94/ADR-019); exit codes and the
 // AGSC-E001/E002/E003 mapping stay ours via exitOverride()+configureOutput().
 //
-// Owner: B (WP-10-B). Node builtins plus the pinned `commander` (D94); no
+// Node builtins plus the pinned `commander` (D94); no
 // network and no live clock read (the
 // process environment and SOURCE_DATE_EPOCH are injected via `ctx`, never
 // read from `process.env` directly here, so this module stays testable and
@@ -42,7 +42,7 @@ const GLOBAL_FLAGS = [
 /**
  * AGSC-09-13: `mcp` is a STREAMING verb — its stdout carries JSON-RPC frames
  * and nothing else, so the shell prints no diagnostic line and no envelope
- * there for it (WP-10-G; this replaces F's interim stream monkey-patch in
+ * there for it (this replaces F's interim stream monkey-patch in
  * `distribution/mcp-stdio.js`). Diagnostics still go to stderr, which
  * AGSC-09-13 explicitly allows.
  */
@@ -61,7 +61,7 @@ const VERB_FLAGS = {
   // `agsc lint --self` is now the usage error the rule requires — with the hint of
   // `RETIRED_FLAGS` below, so that an operator following `docs/PLAN.md`'s older
   // definition-of-done line is told what replaced it (specification item
-  // 57 / FIX28-02; ENG-5, rc.5).
+  // 57 /; rc.5).
   lint: new Map([['--fix', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
@@ -69,7 +69,7 @@ const VERB_FLAGS = {
     ['--zip', 'bool']
   ]),
   // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
-  // and writes nothing (AGSC-09-09 as amended at rc.5, ENG2-01). The flags of the
+  // and writes nothing (AGSC-09-09 as amended at rc.5). The flags of the
   // ADAPTER itself are not here — see ADAPTER_FLAGS.
   import: new Map([['--from', 'value'], ['--dry-run', 'bool']]),
   refresh: new Map([['--agent', 'value'], ['--dry-run', 'bool'], ['--task', 'value']]),
@@ -82,13 +82,13 @@ const VERB_FLAGS = {
   // `--out` names the directory the seven Harness files are written to; with no
   // flag the location is AGSC-07-12's own `dist/harness/<name>/`, so a conforming
   // invocation needs no flag. AGSC-09-09's verb-flag list does not yet name it —
-  // the proposed wording is on the specification items list (ENG2-01).
-  // `--zip` (owner decision D111, ENG-7) writes ONE archive beside a multi-file
+  // the proposed wording is on the specification items list.
+  // `--zip` writes ONE archive beside a multi-file
   // result — the Harness directory, `dist/skills/`, an export root — so that the
   // `/compose/` page's "download all" link and the command produce the same bytes
   // (AGSC-07-13). Like `compose --out` above it, AGSC-09-09's verb-flag list does
   // not yet name it: the proposed wording is on the specification items list
-  // (ENG7-01), and the archive is never a file OF the Harness, which AGSC-07-12
+  // and the archive is never a file OF the Harness, which AGSC-07-12
   // closes at seven kinds — it is written beside the directory and never inside it.
   compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool']]),
   skills: new Map([['--zip', 'bool']]),
@@ -142,7 +142,7 @@ function retiredFlagHint(verb, argv) {
  *                         (an SVG attachment with its source beside it): off by
  *                         default, the operator's choice when asked for.
  *   `--replace`           let the foreign bundle REPLACE an item this node already
- *                         holds (FV29-07). Without it, any collision with an item on
+ * holds. Without it, any collision with an item on
  *                         disk writes nothing at all and names every collision; with
  *                         it, each replacement is reported. Offered by BOTH adapters,
  *                         because both write into a Bundle that may already hold
@@ -170,21 +170,27 @@ const ADAPTER_FLAGS = {
       // for AGSC-01-22's tolerance limit: without it a source declaring a MAJOR or
       // MINOR this tool does not implement is refused before anything is written.
       okf: new Map([['--replace', 'bool'], ['--allow-newer', 'bool']]),
-      // The COGX adapter (CONN-1) offers the same two: `--replace` for AGSC-01-23,
+      // The COGX adapter offers the same two: `--replace` for AGSC-01-23,
       // `--allow-newer` for an archive of a newer COGX MAJOR or a newer spec_version.
       cogx: new Map([['--replace', 'bool'], ['--allow-newer', 'bool']]),
-      // The GABBE adapter (ENG-9, D117) adds `--source-version <v>`: a kit publishes
+      // The GABBE adapter adds `--source-version <v>`: a kit publishes
       // no content version of its own, and AGSC-01-22 records one on every item.
       gabbe: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value']]),
-      // The skills adapter (CONN-2, R119) adds `--layout <name>` (which foreign layout
+      // The skills adapter adds `--layout <name>` (which foreign layout
       // to read; detected when absent) and `--list` (the catalogue of a local clone:
       // what each layout would import, and nothing is written or fetched).
       skills: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value'],
         ['--layout', 'value'], ['--list', 'bool']]),
+      // The board adapter adds `--format <tool>`: which tracker's export file
+      // the directory holds.
+      board: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value'],
+        ['--format', 'value']]),
     },
   },
-  // `export --to skills --layout <name>` (CONN-2): the foreign layout to write.
-  export: { selector: '--to', adapters: { skills: new Map([['--layout', 'value']]) } },
+  // `export --to skills --layout <name>`: the foreign layout to write.
+  // `export --to board --format <tool>`: the tracker's import file to write.
+  export: { selector: '--to', adapters: { skills: new Map([['--layout', 'value']]),
+    board: new Map([['--format', 'value']]) } },
 };
 
 /** The flags the adapter named in `argv` adds to `verb`, or an empty map. */
@@ -252,7 +258,7 @@ function flagsFor(verb, argv) {
 /**
  * The port bag every verb receives: `{fs, clock, proc, network}`. `bin/agsc.js`
  * builds the four adapters; a test may pass a bare FileSystem port as `ports`,
- * which is wrapped here so one convention reaches the verbs (WP-10-G settled
+ * which is wrapped here so one convention reaches the verbs (integration settled
  * `loadBundle(ports, …)` and `site.build(bundle, ports, …)` on the same bag).
  *
  * The Clock is the one port the shell supplies itself when a caller gives
@@ -329,7 +335,7 @@ function buildEnvelope({ verb, findings, status, specVersion, version }) {
 
 /**
  * The envelope MUST be emitted JCS-canonical (AGSC-09-10/AGSC-04-05). This
- * module never implements its own RFC 8785 writer (WP-10-CONTRACT.md): it
+ * module never implements its own RFC 8785 writer (-CONTRACT.md): it
  * requires A's knowledge/jcs.js and returns null when that module is not
  * yet present, so a caller can fail closed instead of emitting non-canonical
  * bytes.
@@ -459,7 +465,7 @@ function main(argv, ctx) {
   // exit 0", and AGSC-09-10's "exactly one JCS-canonical envelope" governs a verb's
   // DIAGNOSTICS, which `--help` explicitly is not ("the one flag that is not a
   // diagnostic"). Printing a usage block into a `--json` pipeline would be the one
-  // reading that serves nobody. Recorded as a reading in the RC5-B report.
+  // reading that serves nobody. Recorded as a reading in the report.
   if (args.includes('--help')) {
     const named = args.find((a) => VERBS.includes(a));
     if (jsonMode) {
@@ -472,7 +478,7 @@ function main(argv, ctx) {
   }
 
   // AGSC-09-08: a malformed SOURCE_DATE_EPOCH is AGSC-E603, exit 2, never a finding.
-  // FV29-18: the predicate is the Clock adapter's own, so the pre-flight check here
+  // the predicate is the Clock adapter's own, so the pre-flight check here
   // and the adapter that builds the clock a moment later cannot disagree about which
   // values are malformed.
   if (Object.prototype.hasOwnProperty.call(env, 'SOURCE_DATE_EPOCH')) {
@@ -512,7 +518,7 @@ function main(argv, ctx) {
   const rest = args.slice(1);
   // AGSC-09-09 types every verb flag as taking ONE value, and AGSC-01-28 says so of
   // `--target` in as many words: "one comma-separated list of registry names, never
-  // a repeated flag" (stated at rc.6, ENG5-S5). Commander silently keeps the LAST
+  // a repeated flag" (stated at rc.6). Commander silently keeps the LAST
   // occurrence of a repeated value flag, so `--target agents --target claude` used
   // to export `claude` alone and say nothing — a silent loss of what the operator
   // asked for. The repetition is a usage error, and AGSC-09-08 makes it exit 2.

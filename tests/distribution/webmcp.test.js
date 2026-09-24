@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the WebMCP transport (WP-10-F). AGSC-09-16, AGSC-11-18.
+// Unit tests for the WebMCP transport. AGSC-09-16, AGSC-11-18.
 // The emitted script is evaluated in an isolated `node:vm` context, with and
 // without `document.modelContext`, and with every network global trapped.
 

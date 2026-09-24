@@ -7,7 +7,7 @@ references it with `..` segments, which is the only way an item under
 It exists because the asset branch of AGSC-03-11 — "an existing asset under
 `content/assets/`" — was UNREACHABLE until rc.5: `links.resolve` read the asset set
 from `options.assets` and no caller supplied it, so every body image reference to a
-real asset was `AGSC-E310` (FV28-03). The Bundle is separate from
+real asset was `AGSC-E310`. The Bundle is separate from
 `tests/fixtures/minimal` so that the golden build of that fixture keeps its bytes.
 
 Fixed clock: `SOURCE_DATE_EPOCH=1767225600` (2026-01-01T00:00:00Z).

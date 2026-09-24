@@ -4,7 +4,7 @@
 // info strings are rendering hints; `export` is reserved), AGSC-03-13 (heading
 // anchors) and the inline-link inventory AGSC-03-11 resolves.
 //
-// Owner: C (WP-10-C). PURE: no fs, no process, no clock, no network.
+// PURE: no fs, no process, no clock, no network.
 //
 // The renderer is `markdown-it@15.0.2` configured `{html:false, linkify:false,
 // typographer:false}`: raw HTML never passes through, bare URLs are never turned
@@ -65,7 +65,7 @@ function assignAnchors(texts) {
   // `lastTried` remembers, per base, the highest suffix already consumed, so a body
   // with many identical headings stays linear instead of rescanning `-2`, `-3`, …
   // from the start every time (measured before this memo: 10 000 identical headings
-  // took 8.3 s; V9-D lens c). `taken` is still consulted, so the emitted anchors are
+  // took 8.3 s; lens c). `taken` is still consulted, so the emitted anchors are
   // byte-identical to the unmemoised search — a literal `base-2` heading elsewhere
   // in the body still pushes the next derived one past it.
   const lastTried = new Map();
@@ -144,7 +144,7 @@ function render(body, options = {}) {
     token.attrSet('id', scanned.anchors[heading]);
     heading += 1;
   }
-  // AGSC-03-11 + AGSC-06-01 (added at rc.5, FV28-04): the OPTIONAL href resolver.
+  // AGSC-03-11 + AGSC-06-01 (added at rc.5): the OPTIONAL href resolver.
   // A body reference is authored in the BUNDLE's geometry
   // (`content/concepts/a.md` → `content/concepts/b.md`, AGSC-03-12's normal form)
   // and the page is served in the ROUTE geometry (`/concepts/a/` → `/concepts/b/`),

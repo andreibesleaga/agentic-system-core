@@ -1,0 +1,576 @@
+#!/usr/bin/env node
+'use strict';
+// tools/public-hygiene — "public means clean": a sweep of one repository working
+// tree for text that must never be published.
+//
+//   public-hygiene [--json] [--quiet] [--fast] [--allowed] [--help] [<root>]
+//
+// It reads every file a publication of <root> could carry — the tracked files and
+// the untracked files git does not ignore (`git ls-files -co --exclude-standard`),
+// or every file under <root> except `.git/` and `node_modules/` when <root> is not
+// a git working tree — plus, unless `--fast` is given, every file of the built
+// output directories the allow-list names (`built[]`), ignored or not, because a
+// site is published from its build and not from its sources.
+//
+// What it catches, each check a name the allow-list refers to:
+//
+//   private-path     paths of the private records and of a local machine: the
+//                    governance kit's project folder, a `temp/` folder, a home
+//                    directory, an agent scratchpad (AGSC-E405)
+//   private-name     a token whose SHA-256 is on the private-name list — the
+//                    private records folder and the confidential file are matched
+//                    by digest, so this public tool never spells their names
+//                    (AGSC-E405)
+//   process          process vocabulary that marks an internal document: work
+//                    package ids, session numbers, decision ids D100–D199 and
+//                    requirement ids R100–R199, "runbook", "checklist for",
+//                    "you should", "next session", agent and model names (AGSC-E405)
+//   internal-note    an owner decision or an internal note (AGSC-E405)
+//   secret           a credential shape (AGSC-E403); the match is never echoed
+//   email            an e-mail address outside the reserved example domains of
+//                    RFC 2606 / RFC 6761 (AGSC-E404)
+//   personal         personal data beyond the minimum: the author's name in any
+//                    form but "Andrei N. Besleaga", a telephone number, a street
+//                    address (AGSC-E404)
+//   wording          the standing list of forbidden public wording (AGSC-E405)
+//   todo             TODO / FIXME left in a public document (AGSC-E405)
+//   owner-addressed  a document whose first lines address the owner or name it
+//                    a runbook, a checklist or a hand-over (AGSC-E405)
+//   missing-file     a relative link in a Markdown or HTML file whose target is
+//                    not in the swept file set (AGSC-E310)
+//
+// A hit is either TRUE (a finding, severity error) or ALLOWED by an entry of the
+// committed allow-list `<root>/.public-hygiene.json`:
+//
+//   { "built": ["www"],
+//     "skip":  [{ "path": "<glob>", "reason": "<why this file is not swept>" }],
+//     "allow": [{ "check": "<name>", "path": "<glob>", "text": "<substring of the line>",
+//                 "reason": "<why this hit is public by intent>" }] }
+//
+// Every entry carries a reason; an entry without one is an error (AGSC-E202), an
+// unknown check name is an error (AGSC-E203), and an entry that matched nothing in
+// a full run is reported as stale (warning, AGSC-E506), so the list cannot rot.
+//
+// Standalone: Node built-ins only, no import from `src/` (AGSC-09-90's
+// independence), deterministic (no clock, no network; findings sorted by
+// (file, line, col, code) per AGSC-09-10). A run that read no file fails with
+// AGSC-E901 — a pass means something was looked at.
+//
+// Exit 0 pass, 1 fail, 2 usage.
+
+const cp = require('node:child_process');
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const CONFIG_FILE = '.public-hygiene.json';
+
+const HELP = `public-hygiene [--json] [--quiet] [--fast] [--allowed] [--help] [<root>]
+
+  Sweeps the publishable files of <root> (default: the current directory) for
+  private paths and names, process vocabulary, owner decisions and internal
+  notes, secrets, e-mail addresses, personal data, forbidden wording, TODO/FIXME
+  in public documents, documents addressed to the owner, and relative links to
+  files that are not there. Allowed hits are listed, with a reason each, in
+  <root>/${CONFIG_FILE}.
+
+  --fast     sweep the sources only; skip the built output directories
+  --allowed  also print every allowed hit and the reason that allows it
+  --json     emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet    emit nothing; the exit code is the result
+  --help     this text
+
+  Exit 0 pass, 1 fail, 2 usage.
+`;
+
+// --------------------------------------------------------------------------
+// The checks
+// --------------------------------------------------------------------------
+
+/** Check name -> the registry code its findings carry. */
+const CODES = Object.freeze({
+  email: 'AGSC-E404',
+  'internal-note': 'AGSC-E405',
+  'missing-file': 'AGSC-E310',
+  'owner-addressed': 'AGSC-E405',
+  personal: 'AGSC-E404',
+  'private-name': 'AGSC-E405',
+  'private-path': 'AGSC-E405',
+  process: 'AGSC-E405',
+  secret: 'AGSC-E403',
+  todo: 'AGSC-E405',
+  wording: 'AGSC-E405',
+});
+
+/**
+ * Line patterns, as [check, label, RegExp]. Every expression is linear-time (no
+ * nested quantifier, no backreference) and carries the `g` flag for matchAll.
+ */
+const LINE_PATTERNS = Object.freeze([
+  // private paths ---------------------------------------------------------
+  ['private-path', 'governance project folder', /GABBE\/project\b/gu],
+  ['private-path', 'temp/ folder', /(?:^|[\s"'`(=/])temp\/[A-Za-z0-9]/gu],
+  ['private-path', 'home directory', /\/home\/[a-z_][a-z0-9_-]*/gu],
+  ['private-path', 'macOS home directory', /\/Users\/[A-Za-z][A-Za-z0-9_-]*\//gu],
+  ['private-path', 'agent scratchpad', /\/tmp\/claude-|\bscratchpad\b/giu],
+
+  // process vocabulary -----------------------------------------------------
+  ['process', 'work-package id', /\bRC\d+-[A-Z]\b/gu],
+  ['process', 'work-package id',
+    /\b(?:ENG|SITE|FIX|CONN|HOST|CLEAN|TEST|ARCH|UX|OPT|PUB|PY|DOCS|MODES|BENCH|NAME|EXT|WP|MCP)-(?:\d+[A-Z]?|FINAL)\b/gu],
+  ['process', 'audit finding id',
+    /\b(?:ENG|SITE|FIX|FV|CONN|MCP|LEG|BENCH|PY|EXT|PUB|RC|V)\d+[a-z]?-(?:[A-Z]?\d+[a-z]?|[A-Z])\b/gu],
+  ['process', 'session number', /\bsessions? \d{1,3}\b(?! \d)/giu],
+  ['process', 'next session', /\bnext session\b/giu],
+  ['process', 'decision id', /\bD1\d\d\b/gu],
+  ['process', 'requirement id', /\bR1\d\d\b/gu],
+  ['process', 'runbook', /\brun-?books?\b/giu],
+  ['process', 'checklist for', /\bchecklist for\b/giu],
+  ['process', 'you should', /\byou should\b/giu],
+  ['process', 'agent or model name',
+    /\b(?:Claude (?:Opus|Sonnet|Haiku)|(?:Opus|Sonnet|Haiku) \d(?:\.\d)?|Co-Authored-By: Claude|the assistant (?:never|runs|wrote|drafted))\b/giu],
+
+  // owner decisions and internal notes -------------------------------------
+  ['internal-note', 'owner decision',
+    /\bowner(?:'s)? (?:rules?|decisions?|decided|confirmed|orders?|questions?|actions?|approval|approved|call)\b/giu],
+  ['internal-note', 'owner decision', /\bowner-(?:confirmed|locked|decided|approved|side)\b|\bowner (?:directive|answer)s?\b/giu],
+  ['internal-note', 'addressed to the owner', /\b(?:for|to) the owner\b|\bthe owner (?:runs|sends|must|should|signs|commits|pushes|tags)\b/giu],
+  ['internal-note', 'internal note', /\binternal notes?\b|\bnote to self\b|\bdo not publish\b/giu],
+
+  // secrets (shapes after src/governance/secrets.js, AGSC-08-15, and the
+  // providers' published token formats) -----------------------------------
+  ['secret', 'private-key block', /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY(?: BLOCK)?-----/gu],
+  ['secret', 'Anthropic token', /\bsk-ant-[A-Za-z0-9_-]{16,}/gu],
+  ['secret', 'OpenAI-style token', /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}/gu],
+  ['secret', 'GitHub token', /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/gu],
+  ['secret', 'GitHub fine-grained token', /\bgithub_pat_[A-Za-z0-9_]{20,}/gu],
+  ['secret', 'GitLab token', /\bglpat-[A-Za-z0-9_-]{20,}/gu],
+  ['secret', 'Slack token', /\bxox[abprs]-[A-Za-z0-9-]{10,}/gu],
+  ['secret', 'AWS access-key id', /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/gu],
+  ['secret', 'Google API key', /\bAIza[0-9A-Za-z_-]{35}\b/gu],
+  ['secret', 'npm token', /\bnpm_[A-Za-z0-9]{36}\b/gu],
+  ['secret', 'PyPI token', /\bpypi-AgE[A-Za-z0-9_-]{40,}/gu],
+  ['secret', 'Stripe live key', /\b[rs]k_live_[0-9A-Za-z]{20,}/gu],
+  ['secret', 'Groq token', /\bgsk_[A-Za-z0-9]{40,}/gu],
+  ['secret', 'JSON Web Token', /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/gu],
+
+  // e-mail addresses -------------------------------------------------------
+  ['email', 'e-mail address', /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/gu],
+
+  // personal data ----------------------------------------------------------
+  ['personal', 'author name form', /\bAndrei\b(?!\s+N\.\s+Be[sș]leag[aă]\b)/gu],
+  ['personal', 'author name form', /(?<!Andrei\s+N\.\s+)\bBe[sș]leag[aă]\b/gu],
+  ['personal', 'author name form', /\bNicolae\b/gu],
+  ['personal', 'telephone number', /(?:\+|\b00)(?:40|44|49|33|39|34|1)[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3}[\s.-]?\d{3,4}\b/gu],
+  ['personal', 'street address', /\b(?:Strada|Str\.|Bulevardul|Bd\.|Șoseaua|Soseaua)\s+[A-ZĂÂÎȘȚ][a-zăâîșț]+/gu],
+
+  // the standing list of forbidden public wording ---------------------------
+  ['wording', 'publisher name', /\bwiley\b/giu],
+  ['wording', 'book framing', /\bcompanion (?:book|site|repository|code)\b|\bthe book\b/giu],
+  ['wording', 'chapter reference', /\bchapter \d/giu],
+  ['wording', 'Web4 framing', /\bWeb4\b/gu],
+  ['wording', 'standards overclaim', /\bW3C (?:standard|Recommendation) for AgenticSystemCore\b/giu],
+
+  // TODO / FIXME (documents only; see DOC_EXT) -------------------------------
+  ['todo', 'TODO or FIXME', /\b(?:TODO|FIXME)\b/gu],
+]);
+
+/** The e-mail domains RFC 2606 §2–3 and RFC 6761 §6 reserve for documentation. */
+const RESERVED_EMAIL = /@(?:[A-Za-z0-9-]+\.)*(?:example\.(?:com|org|net)|example|test|invalid|localhost)$/iu;
+/** Not an e-mail at all: an SSH remote, a package pin, an image density suffix. */
+const NOT_EMAIL = /^git@|@\d+x\./u;
+
+/**
+ * SHA-256 digests (hex, of the lower-cased token) of the private names this tool
+ * must recognise without spelling: the private records folder, and the
+ * confidential file with and without its extension.
+ */
+const PRIVATE_NAME_DIGESTS = Object.freeze([
+  'bcb18ac8db0caed272cf8c82552764609c2052ac0396da270964045f5bd5c22b',
+  '292f4f141817806686aef4e5a11f828a6a96ed28650e64f99291dda75e3cb8ec',
+  '6fd6019b960a994c240a0daecab8753a8df97195551f6c3c9ca9eb45df87e631',
+]);
+const TOKEN = /[A-Za-z0-9][A-Za-z0-9._-]*[A-Za-z0-9]/gu;
+
+/** Extensions of documents: TODO/FIXME, first-lines and link checks apply here. */
+const DOC_EXT = new Set(['.md', '.markdown', '.txt', '.html', '.htm', '.rst', '.cff']);
+const LINK_EXT = new Set(['.md', '.markdown', '.html', '.htm']);
+/** Never read: binary media and archives. */
+const BINARY_EXT = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.avif', '.bmp',
+  '.woff', '.woff2', '.ttf', '.otf', '.eot', '.pdf', '.zip', '.gz', '.tgz', '.whl', '.br',
+  '.mp4', '.webm', '.mp3', '.wasm']);
+/** How many leading lines the owner-addressed check reads. */
+const HEAD_LINES = 12;
+const OWNER_ADDRESSED = new RegExp([
+  '\\b(?:for|to|by) the owner\\b', '\\bowner (?:actions?|directives?|decisions?)\\b', '\\bnext session\\b',
+  '^#+\\s.*\\b(?:runbook|checklist|hand-?over|to-?do list)\\b', '^(?:dear|hi|hello)\\b',
+].join('|'), 'imu');
+
+// --------------------------------------------------------------------------
+// Deterministic helpers (AGSC-09-10 / JCS sliver, as the other tools)
+// --------------------------------------------------------------------------
+
+function canonicalize(value) {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+  const names = Object.keys(value).sort();
+  return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+function compareCodePoint(a, b) {
+  if (a === b) return 0;
+  const x = [...a];
+  const y = [...b];
+  const n = Math.min(x.length, y.length);
+  for (let i = 0; i < n; i += 1) {
+    const cx = x[i].codePointAt(0);
+    const cy = y[i].codePointAt(0);
+    if (cx !== cy) return cx < cy ? -1 : 1;
+  }
+  return x.length < y.length ? -1 : 1;
+}
+
+function finding(code, file, line, col, message, severity = 'error') {
+  return { code, col, file, line, message, severity };
+}
+
+/** `**` any depth, `*` within one segment, `?` one character; `/` separated. */
+function globToRegExp(glob) {
+  let re = '';
+  for (let i = 0; i < glob.length; i += 1) {
+    const c = glob[i];
+    if (c === '*' && glob[i + 1] === '*') {
+      if (glob[i + 2] === '/') { re += '(?:.*/)?'; i += 2; } else { re += '.*'; i += 1; }
+    } else if (c === '*') re += '[^/]*';
+    else if (c === '?') re += '[^/]';
+    else re += c.replace(/[.+^${}()|[\]\\]/gu, '\\$&');
+  }
+  return new RegExp(`^${re}$`, 'u');
+}
+
+// --------------------------------------------------------------------------
+// The allow-list
+// --------------------------------------------------------------------------
+
+/**
+ * Read and check `.public-hygiene.json`. An absent file is an empty list.
+ * @returns {{built:string[], skip:object[], allow:object[], findings:object[]}}
+ * @throws {Error} when the file is present and is not a JSON object.
+ */
+function readConfig(root) {
+  const where = path.join(root, CONFIG_FILE);
+  const config = { allow: [], built: [], findings: [], skip: [] };
+  if (!fs.existsSync(where)) return config;
+  const parsed = JSON.parse(fs.readFileSync(where, 'utf8'));
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`${CONFIG_FILE} is not a JSON object`);
+  }
+  const text = fs.readFileSync(where, 'utf8').split('\n');
+  const lineOf = (needle) => {
+    const i = text.findIndex((l) => l.includes(needle));
+    return i < 0 ? 1 : i + 1;
+  };
+  if (parsed.built !== undefined) {
+    if (!Array.isArray(parsed.built) || !parsed.built.every((b) => typeof b === 'string' && b !== '')) {
+      config.findings.push(finding('AGSC-E201', CONFIG_FILE, lineOf('"built"'), 1,
+        'built[] must be a list of directory names'));
+    } else config.built = parsed.built.slice();
+  }
+  for (const kind of ['skip', 'allow']) {
+    const list = parsed[kind] === undefined ? [] : parsed[kind];
+    if (!Array.isArray(list)) {
+      config.findings.push(finding('AGSC-E201', CONFIG_FILE, lineOf(`"${kind}"`), 1, `${kind}[] must be a list`));
+      continue;
+    }
+    list.forEach((entry, index) => {
+      const at = `${kind}[${index}]`;
+      const ok = entry !== null && typeof entry === 'object' && typeof entry.path === 'string' && entry.path !== '';
+      const line = ok ? lineOf(JSON.stringify(entry.path)) : 1;
+      if (!ok) {
+        config.findings.push(finding('AGSC-E201', CONFIG_FILE, line, 1, `${at} has no path`));
+        return;
+      }
+      if (typeof entry.reason !== 'string' || entry.reason.trim().length < 10) {
+        config.findings.push(finding('AGSC-E202', CONFIG_FILE, line, 1,
+          `${at} (${entry.path}) carries no reason; every allowance says why it is public by intent`));
+        return;
+      }
+      if (kind === 'allow' && !Object.prototype.hasOwnProperty.call(CODES, entry.check)) {
+        config.findings.push(finding('AGSC-E203', CONFIG_FILE, line, 1,
+          `${at} names the check "${entry.check}", which is not one of ${Object.keys(CODES).join(', ')}`));
+        return;
+      }
+      if (kind === 'allow' && entry.text !== undefined && (typeof entry.text !== 'string' || entry.text === '')) {
+        config.findings.push(finding('AGSC-E201', CONFIG_FILE, line, 1, `${at} has an empty text`));
+        return;
+      }
+      config[kind].push({ ...entry, index, line, re: globToRegExp(entry.path), used: 0 });
+    });
+  }
+  return config;
+}
+
+// --------------------------------------------------------------------------
+// The file set
+// --------------------------------------------------------------------------
+
+function walk(dir, base, out) {
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return out; }
+  for (const e of entries) {
+    if (e.name === '.git' || e.name === 'node_modules') continue;
+    const abs = path.join(dir, e.name);
+    const rel = path.relative(base, abs).split(path.sep).join('/');
+    if (e.isDirectory()) walk(abs, base, out);
+    else if (e.isFile()) out.push(rel);
+  }
+  return out;
+}
+
+/** Tracked + untracked-not-ignored files of a git tree, or a plain walk. */
+function sourceFiles(root) {
+  const probe = cp.spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: root, encoding: 'utf8' });
+  if (probe.status === 0 && path.resolve(probe.stdout.trim()) === fs.realpathSync(root)) {
+    const listed = cp.spawnSync('git', ['ls-files', '-z', '-co', '--exclude-standard'],
+      { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+    return { files: listed.stdout.split('\0').filter((f) => f !== '' && fs.existsSync(path.join(root, f))), mode: 'git' };
+  }
+  return { files: walk(root, root, []), mode: 'walk' };
+}
+
+// --------------------------------------------------------------------------
+// The sweep of one file
+// --------------------------------------------------------------------------
+
+function redact(check, text) {
+  if (check === 'secret') return `${text.slice(0, 4)}…`;
+  return text.length > 60 ? `${text.slice(0, 57)}…` : text;
+}
+
+function privateNameHits(line) {
+  const hits = [];
+  for (const m of line.matchAll(TOKEN)) {
+    const token = m[0].toLowerCase();
+    if (!token.includes('-')) continue;
+    const forms = [token, token.replace(/\.[a-z0-9]+$/u, '')];
+    for (const form of forms) {
+      const digest = crypto.createHash('sha256').update(form).digest('hex');
+      if (PRIVATE_NAME_DIGESTS.includes(digest)) { hits.push({ col: m.index + 1, text: m[0] }); break; }
+    }
+  }
+  return hits;
+}
+
+/** Relative link targets of one line of a Markdown or HTML file. */
+function linkTargets(line) {
+  const out = [];
+  for (const m of line.matchAll(/\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu)) out.push({ col: m.index + 1, target: m[1] });
+  for (const m of line.matchAll(/\b(?:href|src)="([^"]+)"/gu)) out.push({ col: m.index + 1, target: m[1] });
+  return out;
+}
+
+function resolvesIn(target, file, set, dirs, builtRoot) {
+  if (/^[a-z][a-z0-9+.-]*:|^\/\/|^#|[{$<]|&lt;/iu.test(target)) return true;
+  // A bare word is a Bundle slug the engine resolves, not a file path.
+  if (!/[./]/u.test(target.split('#')[0])) return true;
+  let bare = target.split('#')[0].split('?')[0];
+  if (bare === '') return true;
+  try { bare = decodeURIComponent(bare); } catch { /* keep as written */ }
+  let joined;
+  if (bare.startsWith('/')) {
+    if (builtRoot === null) return true;
+    joined = path.posix.normalize(`${builtRoot}${bare}`);
+  } else {
+    joined = path.posix.normalize(path.posix.join(path.posix.dirname(file), bare));
+  }
+  if (joined.startsWith('..')) return true; // outside the repository: not this tool's to judge
+  const stem = joined.replace(/\/$/u, '');
+  return set.has(stem) || dirs.has(stem) || set.has(`${stem}.html`) || set.has(`${stem}/index.html`);
+}
+
+function sweepFile(rel, text, ctx) {
+  const hits = [];
+  const ext = path.posix.extname(rel).toLowerCase();
+  const isDoc = DOC_EXT.has(ext);
+  const lines = text.split('\n');
+  const builtRoot = ctx.built.find((b) => rel.startsWith(`${b}/`)) || null;
+  lines.forEach((line, i) => {
+    const n = i + 1;
+    for (const [check, label, re] of LINE_PATTERNS) {
+      if (check === 'todo' && !isDoc) continue;
+      for (const m of line.matchAll(re)) {
+        let matched = m[0];
+        if (check === 'email') {
+          if (RESERVED_EMAIL.test(matched) || NOT_EMAIL.test(matched)) continue;
+        }
+        if (check === 'private-path') matched = matched.replace(/^[\s"'`(=/]/u, '');
+        hits.push({ check, col: m.index + 1, label, line: n, lineText: line, text: matched });
+      }
+    }
+    for (const h of privateNameHits(line)) {
+      hits.push({ check: 'private-name', col: h.col, label: 'private name', line: n, lineText: line, text: '(a private name)' });
+    }
+    if (LINK_EXT.has(ext)) {
+      for (const l of linkTargets(line)) {
+        if (!resolvesIn(l.target, rel, ctx.set, ctx.dirs, builtRoot)) {
+          hits.push({ check: 'missing-file', col: l.col, label: 'link to a file not in the repository', line: n, lineText: line, text: l.target });
+        }
+      }
+    }
+  });
+  if (isDoc && ext !== '.html' && ext !== '.htm') {
+    const head = lines.slice(0, HEAD_LINES);
+    const i = head.findIndex((l) => OWNER_ADDRESSED.test(l));
+    if (i >= 0) {
+      hits.push({ check: 'owner-addressed', col: 1, label: 'first lines address the owner or name an internal document', line: i + 1, lineText: head[i], text: head[i].trim() });
+    }
+  }
+  return hits;
+}
+
+// --------------------------------------------------------------------------
+// The run
+// --------------------------------------------------------------------------
+
+function isBinary(rel, buf) {
+  if (BINARY_EXT.has(path.posix.extname(rel).toLowerCase())) return true;
+  return buf.subarray(0, 8000).includes(0);
+}
+
+/**
+ * Sweep one root.
+ * @param {string} root absolute path.
+ * @param {{fast?:boolean, files?:string[]}} options
+ * @returns {{findings:object[], allowed:object[], read:number, skipped:number, binary:number, mode:string}}
+ */
+function sweep(root, options = {}) {
+  const config = readConfig(root);
+  const findings = [...config.findings];
+  const allowed = [];
+  // A caller that already knows the file set (the release tool's pack list) passes it,
+  // and then no process is started.
+  const source = Array.isArray(options.files) ? { files: options.files.slice(), mode: 'list' } : sourceFiles(root);
+  const inBuilt = (f) => config.built.some((b) => f.startsWith(`${b}/`));
+  const all = new Set(options.fast ? source.files.filter((f) => !inBuilt(f)) : source.files);
+  const built = options.fast ? [] : config.built.filter((b) => fs.existsSync(path.join(root, b)));
+  for (const b of built) for (const f of walk(path.join(root, b), root, [])) all.add(f);
+  const files = [...all].sort(compareCodePoint);
+  const set = new Set(files);
+  const dirs = new Set();
+  for (const f of files) {
+    const parts = f.split('/');
+    for (let i = 1; i < parts.length; i += 1) dirs.add(parts.slice(0, i).join('/'));
+  }
+  const ctx = { built: config.built, dirs, set };
+  let read = 0;
+  let skipped = 0;
+  let binary = 0;
+  for (const rel of files) {
+    if (rel === CONFIG_FILE) { skipped += 1; continue; }
+    const skip = config.skip.find((s) => s.re.test(rel));
+    if (skip) { skip.used += 1; skipped += 1; continue; }
+    const abs = path.join(root, rel);
+    // A symbolic link or a directory is not a published file's bytes.
+    if (!fs.lstatSync(abs).isFile()) { skipped += 1; continue; }
+    const buf = fs.readFileSync(abs);
+    if (isBinary(rel, buf)) { binary += 1; continue; }
+    read += 1;
+    for (const hit of sweepFile(rel, buf.toString('utf8'), ctx)) {
+      const entry = config.allow.find((a) => a.check === hit.check && a.re.test(rel)
+        && (a.text === undefined || hit.lineText.includes(a.text)));
+      if (entry) {
+        entry.used += 1;
+        allowed.push({ check: hit.check, file: rel, line: hit.line, reason: entry.reason });
+        continue;
+      }
+      findings.push(finding(CODES[hit.check], rel, hit.line, hit.col,
+        `${hit.check}: ${hit.label}: ${redact(hit.check, hit.text)}`));
+    }
+  }
+  if (read === 0) {
+    findings.push(finding('AGSC-E901', '.', 1, 1, 'no text file was read, so nothing was checked'));
+  }
+  if (!options.fast) {
+    for (const entry of [...config.skip, ...config.allow]) {
+      if (entry.used === 0) {
+        findings.push(finding('AGSC-E506', CONFIG_FILE, entry.line, 1,
+          `stale allow-list entry: ${entry.check ? `${entry.check} ` : 'skip '}${entry.path}`
+          + `${entry.text ? ` "${entry.text}"` : ''} matched nothing`, 'warn'));
+      }
+    }
+  }
+  return { allowed, binary, findings, mode: source.mode, read, skipped };
+}
+
+function envelopeOf(findings, version) {
+  findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
+    || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
+  const counts = {
+    error: findings.filter((f) => f.severity === 'error').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+  };
+  return {
+    counts,
+    findings,
+    schema: 'agsc.diagnostics.v1',
+    spec_version: 'n/a',
+    status: counts.error === 0 ? 'pass' : 'fail',
+    verb: 'public-hygiene',
+    version,
+  };
+}
+
+function packageVersion() {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version; } catch { /* c8 ignore next */ return '0.0.0'; }
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out?:(s:string)=>void, err?:(s:string)=>void}} io
+ * @returns {number} 0 pass, 1 fail, 2 usage
+ */
+function run(argv, io = {}) {
+  const out = io.out || ((s) => process.stdout.write(s));
+  const err = io.err || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`public-hygiene: ${message}\n${HELP}`); return 2; };
+  const flags = new Set();
+  let root = process.cwd();
+  let sawRoot = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (['--json', '--quiet', '--fast', '--allowed'].includes(arg)) flags.add(arg);
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
+  }
+  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) return usage(`${root} is not a directory (AGSC-E901)`);
+  let result;
+  try { result = sweep(root, { fast: flags.has('--fast') }); } catch (e) {
+    return usage(`the sweep could not start: ${e.message} (AGSC-E003)`);
+  }
+  const envelope = envelopeOf(result.findings, packageVersion());
+  if (flags.has('--json')) {
+    out(`${canonicalize(envelope)}\n`);
+  } else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    if (flags.has('--allowed')) {
+      for (const a of result.allowed) err(`allowed: ${a.file}:${a.line} ${a.check} — ${a.reason}\n`);
+    }
+    out(`public-hygiene: ${result.read} input file(s) read (${result.mode}${flags.has('--fast') ? ', fast' : ''}),`
+      + ` ${result.skipped} skipped by the allow-list, ${result.binary} binary,`
+      + ` ${result.allowed.length} allowed hit(s), ${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = {
+  CODES, CONFIG_FILE, HELP, LINE_PATTERNS, PRIVATE_NAME_DIGESTS, canonicalize, compareCodePoint,
+  globToRegExp, linkTargets, privateNameHits, readConfig, resolvesIn, run, sourceFiles, sweep,
+  sweepFile, walk,
+};

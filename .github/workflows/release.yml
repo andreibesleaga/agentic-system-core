@@ -46,12 +46,14 @@ jobs:
         shell: bash
         run: |
           # Every validator BLOCKS. `validate-spec` was a reporting step while the
-          # specification items it found were still open (ENG4-01…05); they were
+          # specification items it found were still open (…05); they were
           # applied at rc.6 and it exits 0 on the shipped text, so the carve-out is
           # gone — a gate that reports and does not block protects nothing.
           for t in tools/validate-*; do node "$t" --json; done
       - name: the release lane's own checks
         run: node tools/release --json
+      - name: public means clean (the whole tree, not only what ships)
+        run: node tools/public-hygiene
       - name: the architecture boundary lane
         env:
           AGSC_AUDIT: '1'
@@ -97,7 +99,7 @@ jobs:
       # version unless the `--tag` option is used", and adds "Typically, projects only
       # use the `latest` tag for stable release versions, and use other tags for
       # unstable versions such as prereleases". So a pre-release DOES take `latest`
-      # by default, and the convention says it usually should not. D107 decides the
+      # by default, and the convention says it usually should not. decides the
       # opposite for this release, and for a reason: the only prior versions of both
       # names are the 0.0.2 name reservations, so `npm install agentic-system-core`
       # has to give the working engine rather than a stub. Writing the flag makes

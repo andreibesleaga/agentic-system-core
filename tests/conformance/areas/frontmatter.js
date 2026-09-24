@@ -104,7 +104,7 @@ module.exports.run = (vector, ctx) => {
   }
   // ---------------------------------------------------------------------------
   // EXTENSION POINT — `frontmatter-0030` (AGSC-02-24) and `frontmatter-0031`
-  // (AGSC-02-99) are owned by the links/lint package (C, WP-10-C). Added
+  // (AGSC-02-99) are owned by the links/lint package (C). Added
   // 2026-09-18; nothing above this line was changed.
   // ---------------------------------------------------------------------------
   {

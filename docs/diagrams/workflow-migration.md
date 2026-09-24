@@ -13,7 +13,7 @@ flowchart TD
   G --> C
   D -- no --> F["Card accepted"]
 
-  F --> H["Owner-approved 10-card\nre-summarization sample (D47 migration gate)"]
+  F --> H["Maintainer-approved 10-card\nre-summarization sample (D47 migration gate)"]
   H --> I{"OWNER GATE:\nsample approved?"}
   I -- no --> J["Revise mapping / summaries,\nre-run the 10-card sample"]
   J --> H
@@ -34,7 +34,7 @@ flowchart TD
 
 The `bookRef` refusal is structural, not a lint warning — it is the clean-room boundary (W1/W11): no
 card carrying a book reference can enter the public Bundle at all. The owner gate sits after field
-mapping but before the 153-card batch, per D47 ("migration gate = owner-approved 10-card
+mapping but before the 153-card batch, per D47 ("migration gate = maintainer-approved 10-card
 re-summarization sample"); everything downstream of the gate (batch import, 110 Clusters, diagram
 recompilation) runs unattended and must land on a clean `agsc lint` before the one-time commit.
 

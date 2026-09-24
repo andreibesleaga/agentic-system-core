@@ -5,7 +5,7 @@
 // — and it never overwrites a file that exists (AGSC-02-94).
 // The rules are `distribution/init.js`'s and `knowledge/adopt.js`'s; this
 // module walks the port, plans, and applies. Owner: B (shell); wired at
-// integration (WP-10-G).
+// integration.
 
 const path = require('node:path');
 const init = require('../../../distribution/init.js');

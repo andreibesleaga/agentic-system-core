@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-03-01…03-13 and AGSC-01-35. Owner: C (WP-10-C).
+// AGSC-03-01…03-13 and AGSC-01-35.
 // Deterministic: no clock, no network, no filesystem — items are records.
 
 const test = require('node:test');
@@ -198,7 +198,7 @@ test('AGSC-01-35 as amended at rc.5 (R-01): a `..` body reference that stays ins
     .map((f) => f.code).filter((c) => c === 'AGSC-E902' || c === 'AGSC-E310');
   assert.deepStrictEqual(pathCodes(asset), [], 'a `..` reference to an existing asset is not an error');
   assert.deepStrictEqual(asset.resolved, ['../assets/d.png']);
-  // CHANGED at rc.6 (FIX28-01): AGSC-06-01 now emits `/assets/<path>` for every
+  // CHANGED at rc.6: AGSC-06-01 now emits `/assets/<path>` for every
   // file under `content/assets/` a published body references, so the reference that
   // works in the repository works on the site too, and the warning that said
   // otherwise is gone. At rc.5 it was a warning for exactly that reason.

@@ -1,8 +1,8 @@
 'use strict';
 // tests/connectors/entry-points.test.js — the two consumer entry points at the
-// repository root (CONN-1): the composite GitHub Action `action.yml` and the
+// repository root: the composite GitHub Action `action.yml` and the
 // pre-commit hook file `.pre-commit-hooks.yaml`. Each is PARSED and checked against
-// the format its owner documents (read 2026-09-23, quotes in the CONN-1 report):
+// the format its owner documents (read 2026-09-23, quotes in the report):
 //
 //   GitHub: "the metadata filename must be either `action.yml` or `action.yaml`";
 //   `runs.using` "You must set this value to 'composite'"; a composite action's

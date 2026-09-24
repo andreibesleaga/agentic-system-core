@@ -52,7 +52,7 @@ Viewpoints → views: arc42 §3 = C4 Context; §5 = C4 Container/Component (mode
 | C4 | `/ns/` conneg via **w3id `.htaccess`** — zero project-owned server code | D41, D47 | conneg is a config file in a foreign repo (§7, §12 T5) |
 | C5 | Owner runs **all** git writes and credentialed publishes | D27, Art. XIII | `propose` writes patches and prints commands; CI never commits content |
 | C6 | ≤$10/month LLM spend; the gating lanes stay lint-only | D14, D41, D61(4), NFR-11, Art. XV | **no model call on any *gating* v1 path** — `ci`, `review` and everything reachable from them; the build fails if one is reachable (AGSC-08-27). `Reviewer` ships a lint adapter; the OPTIONAL LLM review lane is disabled by default, never gates a merge or a deploy, and only labels and comments |
-| C7 | Wiley clean room **W1–W12** (invariants held in the confidential source, never in any repo) | D08, Art. XIII, NFR-12 | one `clean-room` lint enforces the public derivations: `bookRef` refused on import (W1/W11); `endorsements.json`/`book.md`/`start-here.json` excluded (W11); no whole-corpus PDF/EPUB emitter ever; no book/"companion" strings; no reading order (R23); dogfood importer allow-lists `00–04, 06–14` (G32) |
+| C7 | Clean room **W1–W12** (invariants held in the confidential source, never in any repo) | D08, Art. XIII, NFR-12 | one `clean-room` lint enforces the public derivations: `bookRef` refused on import (W1/W11); `endorsements.json`/`book.md`/`start-here.json` excluded (W11); no whole-corpus PDF/EPUB emitter ever; no book/"companion" strings; no reading order (R23); dogfood importer allow-lists `00–04, 06–14` (G32) |
 | C8 | Capability plane **language-independent**: files + ontologies define the system | D47, NFR-02, Art. XI | no behaviour may exist that `spec/` + `tests/vectors/` do not pin (§5.3) |
 | C9 | No network, wall clock or fs in the pure core; network only in `refresh`/`mcp` | Art. XII, G17 | ports (§5.2); test-enforced |
 | C10 | Determinism: JCS, sorted keys, LF, NFC, UTC seconds, `SOURCE_DATE_EPOCH` | R32, Art. XII, NFR-04 | `verify` = double build + byte diff, merge-blocking |
@@ -188,7 +188,7 @@ graph TB
 
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
-**The nine command contracts, as shipped** *(added 2026-09-21, ENG-4; the row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `src/README.md` §11.11 carries the same table with the findings each tool returns on this distribution.)*
+**The nine command contracts, as shipped** *(added 2026-09-21; the row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `src/README.md` §11.11 carries the same table with the findings each tool returns on this distribution.)*
 
 | Tool | What it checks | Rules | Status |
 |---|---|---|---|
@@ -213,7 +213,7 @@ Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/
 | `ProcessRunner` | spawn (git-log pre-step, tar) | `node-proc.js`, allow-listed | sandboxed runner (`run`, v1.x) |
 | `Network` **[CI-only]** | HTTP | `node-fetch.js`, permitted in `refresh`/`mcp` **only** — a test fails if reachable from `src/knowledge/**` | — |
 | `ContentStore` | the Bundle | local git working tree | GitHub API, Obsidian, Solid (v2) |
-| `Renderer` | items → HTML | built-in templates | *(internal module boundary rather than a port; "theme packs" serve no v1.0 requirement — V5-3 S3-35)* |
+| `Renderer` | items → HTML | built-in templates | *(internal module boundary rather than a port; "theme packs" serve no v1.0 requirement — S3-35)* |
 | `GraphExport` | items → RDF | JSON-LD/Turtle/N-Quads (RDF/XML = should S1) | SPARQL dump, Wikibase |
 | `ToolTransport` | tools to agents | local stdio MCP, 7 tools (D51-b) | remote MCP Worker (v2) |
 | `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools, degrading to plain JS | — |
@@ -221,7 +221,7 @@ Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/
 | `Host` | where `www/` lands | Cloudflare Pages (D47) | GitHub/GitLab Pages, Netlify (v1.x) |
 | `Forge` | PR/CI shim | GitHub (`templates/github/*.yml`, ≤20 lines) | GitLab/Forgejo (v1.x) |
 | *v2 hooks, no v1 adapter* | `Identity`, `Federation`, `PersonalStore` — named hooks designed against a real interface when the v2 component exists (ADR-003) | none | v2 servers only (D53) |
-| *(withdrawn 2026-09-04, V5-3 S3-35)* | `Analytics` — D19 analytics are zone-side, need no build artefact and emit no beacon; `Search` — AGSC-06-16 MUSTs the prebuilt index unconditionally, and V2-06 already deleted the `build.search` toggle for the same reason | — | — |
+| *(withdrawn 2026-09-04, S3-35)* | `Analytics` — D19 analytics are zone-side, need no build artefact and emit no beacon; `Search` — AGSC-06-16 MUSTs the prebuilt index unconditionally, and already deleted the `build.search` toggle for the same reason | — | — |
 
 ### 5.3 Correspondence rules (ISO 42010 — the traceability spine; a CI script asserts every row)
 
@@ -324,9 +324,9 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 
 **ADR-008 JS + JSDoc, language-independent capability plane.** Shipped code is ESM JavaScript with JSDoc types; TypeScript is a dev-lane checker (`tsc --noEmit`), never a build step, so what is published is what was written. The *definition* is `spec/00–09` + `schema/` + `ontology/agsc.ttl` + `tests/vectors/`: a Python or Rust port must pass on those alone, and behaviour existing only in JS is a defect. *D47, D38-final, NFR-02, NFR-03, Art. XI.*
 
-**ADR-010 Part II scope under D32 (opened 2026-09-04, V4-A A-82).** D53's Part II additions are cheaper than they look because each crosses D32's line differently, and each was resolved to the simplest form the requirement allows rather than a new subsystem: `run`/`trace` keep a spec home (`AGSC-09-94`) with `run` opt-in, sandboxed and disabled by default — the requirement is executable-documentation confidence (C8), and the simpler alternative beaten was leaving it an unspecified feature with no rule and no vector; `conform` is a thin verb over the vector runner and the Level→area map that already exist, not a fifth distribution module — the requirement is a machine-checkable conformance claim (PRD-055/C3), and the simpler alternative beaten was duplicating the runner; the federation check is the `--peer` flag of `tools/validate-wellknown` (AGSC-10-12, AGSC-09-90), never a tenth binary — the requirement is the "smallest protocol" claim (D53-7), and the simpler alternative beaten was a standalone `validate-federation.js`; the six runtime emitters (C5) are template renderings over the seven existing Harness files, never new files inside `dist/harness/<name>/` — the requirement is reach into the agent-runtime ecosystem, and the simpler alternative beaten was one module per target; distribution breadth (C10) ships only the composite GitHub Action and the pre-commit hook, the two surfaces needing no new credential or registry account — the requirement is "installable everywhere a user already is" for the audiences that actually ask, and PyPI-functional/GHCR/Homebrew/Nix (§C10's own "zero known consumers") are deferred to a documented request line rather than built speculatively (V4-A A-75, A-77, A-78, A-80). *D32(1), D32(5), D32(7), D53, V4-A A-75/A-77/A-78/A-80.*
+**ADR-010 Part II scope under D32 (opened 2026-09-04, A-82).** D53's Part II additions are cheaper than they look because each crosses D32's line differently, and each was resolved to the simplest form the requirement allows rather than a new subsystem: `run`/`trace` keep a spec home (`AGSC-09-94`) with `run` opt-in, sandboxed and disabled by default — the requirement is executable-documentation confidence (C8), and the simpler alternative beaten was leaving it an unspecified feature with no rule and no vector; `conform` is a thin verb over the vector runner and the Level→area map that already exist, not a fifth distribution module — the requirement is a machine-checkable conformance claim (PRD-055/C3), and the simpler alternative beaten was duplicating the runner; the federation check is the `--peer` flag of `tools/validate-wellknown` (AGSC-10-12, AGSC-09-90), never a tenth binary — the requirement is the "smallest protocol" claim (D53-7), and the simpler alternative beaten was a standalone `validate-federation.js`; the six runtime emitters (C5) are template renderings over the seven existing Harness files, never new files inside `dist/harness/<name>/` — the requirement is reach into the agent-runtime ecosystem, and the simpler alternative beaten was one module per target; distribution breadth (C10) ships only the composite GitHub Action and the pre-commit hook, the two surfaces needing no new credential or registry account — the requirement is "installable everywhere a user already is" for the audiences that actually ask, and PyPI-functional/GHCR/Homebrew/Nix (§C10's own "zero known consumers") are deferred to a documented request line rather than built speculatively (A-75, A-77, A-78, A-80). *D32(1), D32(5), D32(7), D53, A-75/A-77/A-78/A-80.*
 
-**ADR-011 Link set over vendor manifest (opened 2026-09-04, V4-A A-82).** D55 replaces the pre-rc.2 `{integrity, linkset}` well-known document with a conformant RFC 9264 link set (`linkset` its sole member; integrity rides on the links as RFC 9530 `digest` and `agsc-*` extension target attributes). The requirement served is a machine-checkable, standards-conformant discovery document that a generic link-set client can already parse; the simpler alternative it beat was continuing to define and register a bespoke vendor media type and a two-member JSON shape understood by nothing outside this project. Net effect: one IANA registration fewer (Profile URI, RFC 7284, replaces a media-type registration), zero new URI schemes, and every artefact's integrity travels with the link that names it rather than in a side channel that could drift out of sync. *D32(5), D55, D56, research/18 §7.4, audit/TP TP-01/TP-02, V4-A A-01…A-19.*
+**ADR-011 Link set over vendor manifest (opened 2026-09-04, A-82).** D55 replaces the pre-rc.2 `{integrity, linkset}` well-known document with a conformant RFC 9264 link set (`linkset` its sole member; integrity rides on the links as RFC 9530 `digest` and `agsc-*` extension target attributes). The requirement served is a machine-checkable, standards-conformant discovery document that a generic link-set client can already parse; the simpler alternative it beat was continuing to define and register a bespoke vendor media type and a two-member JSON shape understood by nothing outside this project. Net effect: one IANA registration fewer (Profile URI, RFC 7284, replaces a media-type registration), zero new URI schemes, and every artefact's integrity travels with the link that names it rather than in a side channel that could drift out of sync. *D32(5), D55, D56, research/18 §7.4, audit/TP TP-01/TP-02, A-01…A-19.*
 
 ---
 
@@ -339,7 +339,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | NFR-03 ≥99% coverage | Q1 | coverage lane + golden-thread check (every PRD id → ≥1 test name) |
 | NFR-04 byte-identical builds | Q1 | determinism lane: `agsc verify` (double build + sha256), merge-blocking; OS matrix on tags |
 | NFR-05 deterministic tests | Q1 | `node:test`, fixed clock 2026-01-01T00:00:00Z, + a test that no `Date.now()`/`fetch` is reachable from `src/knowledge/**` |
-| NFR-06 N8 budgets | Q2, Q5 | budget step in `agsc ci` (HTML ≤100 KB/page, ≤1 MB per index document — `/search.json`, or each `/search-<nn>.json` shard above 500 items; rc.5, ENG1-01 — ≤60 s/500 items, no external page requests) |
+| NFR-06 N8 budgets | Q2, Q5 | budget step in `agsc ci` (HTML ≤100 KB/page, ≤1 MB per index document — `/search.json`, or each `/search-<nn>.json` shard above 500 items; rc.5, — ≤60 s/500 items, no external page requests) |
 | NFR-07 agent-safety | Q3 | N9 lint lane + tool-shape tests + skills-inertness test (ADR-001 Confirmation) |
 | NFR-08 WCAG 2.2 AA | Q4 | a11y dev lane (axe-core) over the golden `www/` fixture; alt text asserted |
 | NFR-09 unattended ops | Q5 | `refresh.yml` idempotence test; restore-from-zero drill once pre-launch |
@@ -357,7 +357,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; no cach
 | R1 | Hand-written **Markdown subset renderer** — highest risk; 153 bodies must render | audit/D §4.9 | ship the old renderer's feature level + GFM tables; golden-test all 153; unsupported syntax is a lint error, not a rendering surprise | M4 |
 | R2 | **Turtle / RDF-XML / N-Quads** escaping and datatypes subtly wrong | audit/D §4.7 | validate once offline (rapper/Jena), lock with golden fixtures; RDF/XML stays in v1.0 per D49, emitted when `build.rdfxml` is true (AGSC-05-06) | M5 |
 | R3 | Browser ≡ CLI composition core with **no bundler**, plus a hand-written zip writer | G10, G11 | one ESM entry copied to `www/js/`; test forbids `node:` imports in `src/composition/`; per-file download fallback | M8 |
-| R4 | **Schedule** ≈30.2 person-days of must-scope to 2026-10-10 (audit/D §6 = 28.0 + Amendments 1–2 + D50 + D51 − banked credits; V3 §6 recomputation, not the "≈22" of D42), with a mid-flight owner gate | audit/D §6, V3-14/V3-36 | pre-agreed ordered trims; M3 sample first, then batch; shoulds S1–S8 droppable by construction; the date itself is a Round-10 owner decision | Owner + orchestrator |
+| R4 | **Schedule** ≈30.2 person-days of must-scope to 2026-10-10 (audit/D §6 = 28.0 + Amendments 1–2 + D50 + D51 − banked credits; V3 §6 recomputation, not the "≈22" of D42), with a mid-flight owner gate | audit/D §6,/ | pre-agreed ordered trims; M3 sample first, then batch; shoulds S1–S8 droppable by construction; the date itself is a Round-10 | Owner + orchestrator |
 | R5 | **w3id PR latency** — `/ns/` IRIs unresolvable until merged | G13, ADR-005 | IRI fixed in `ontology/agsc.ttl`; PR after M2; launch does not depend on it | Owner |
 | R6 | `injection-scan` **false positives** deter human contributors | research/17 §1.5 | severity split + labelled override + config-owned wordlists; measured on the 153-card corpus pre-launch | M13 |
 | R7 | Zero-dep parsers ⇒ **ReDoS, prototype pollution, traversal, resource bombs** | audit/G §2.7, research/17 §1.9 | index-based state machines not regexes; `Object.create(null)` + `__proto__`/`constructor` rejection; ids-only paths; 1 MiB caps; seeded fuzz lane on tags; **archives refused entirely** | M1, M12 |
@@ -510,7 +510,7 @@ Performance recommendations R-01…R-16 and benchmark hypotheses H-01…H-08 (wi
 
 **The October calendar of the 2026-09-16 addendum, reconciled with R73/D90 (2026-09-18).** The calendar above fixes four dates: the Internet-Draft posted ≤ 9 Oct, site v0 live ≤ 12 Oct, site v0.1 live ≤ 31 Oct, general availability 6 Nov. R73 (owner, 2026-09-18) is **newer and authoritative**: nothing is posted anywhere until the site, the Internet-Draft, the W3C and AAIF contribution material and the registration filings are all ready, and then everything goes out on one launch day, with the papers after it. The two earlier *posting* dates are therefore superseded — "draft ≤ 9 Oct" and "site v0 live ≤ 12 Oct" become "ready by those dates, held for launch day" — while "site v0.1 ≤ 31 Oct" and "GA 6 Nov" stand unchanged as work targets, because they describe when the work is finished rather than when it is published. One external date is hard and is not ours: the IETF Datatracker `-00` cut-off for IETF 127 is **2026-11-02 23:59 UTC**, with submissions closed until **2026-11-14 23:59 PST**, so launch day falls before 2026-11-02 or after 2026-11-14. Both the site and the standard are, as of 2026-09-18, built, gated and held; nothing is published (R73).
 
-## Addendum 2026-09-21 (ENG-5, WP-12) — the release lane exists, and two definition-of-done lines are corrected
+## Addendum 2026-09-21 — the release lane exists, and two definition-of-done lines are corrected
 
 Additive, in the style of the addenda above; nothing in the plan's own prose is rewritten.
 
@@ -520,7 +520,7 @@ place (the engine and its `agsc-cli` alias, pinned exactly, never a range), the
 changelog section, the `npm pack` contents — no `GABBE/`, no private planning path, no
 test-fixture bloat beyond `tests/vectors/`, which AGSC-09-90 requires a distribution to
 ship — and the provenance step. `.github/workflows/release.yml` is the lane itself: a
-tag `v*` the owner pushes, a three-OS × two-Node gate matrix,
+tag `v*` the maintainer pushes, a three-OS × two-Node gate matrix,
 `actions/attest-build-provenance`, and `npm publish --provenance` over npm trusted
 publishing with no secret in the repository. The script cannot publish: it spawns no
 process and opens no socket, and `--apply` writes only the two version strings and the
@@ -536,11 +536,11 @@ the invocation is now the `AGSC-E002` usage error the rule requires. **Read ever
 exit 0, `node tools/count-artifacts --json` reports `ok` with no finding, and
 `AGSC_AUDIT=1 node --test tests/arch/*.test.js` is green"** — the checks that actually
 hold this distribution together. To lint a *Bundle*, the command is `agsc lint` from
-that Bundle's root. (Specification items 57 / FIX28-02 and ENG5-S11; the same note is
+that Bundle's root. (Specification items 57 /; the same note is
 appended to `docs/PRD.md`.)
 
 **One reporting step in CI, not a failure.** `tools/validate-spec` exited 1 on 2026-09-21
-against the `1.0.0-rc.5` text for reasons recorded as specification items (ENG4-01…05).
+against the `1.0.0-rc.5` text for reasons recorded as specification items (…05).
 Until those were applied, `release.yml` ran it as a **reporting** step while every other
 validator blocked the merge, which was the nearest thing to `AGSC-09-92` that the frozen
 text allowed. The items are applied in the `1.0.0-rc.6` draft (2026-09-22), and the step
@@ -553,7 +553,7 @@ memory adapter with its claimed key set is discharged; the list itself is in
 
 ---
 
-## Appended 2026-09-22 — the compatibility section and the content version (D112, D113)
+## Appended 2026-09-22 — the compatibility section and the content version
 
 Added to the `1.0.0-rc.6` draft after the pass recorded above, in `spec/` and `schema/` only:
 
@@ -568,7 +568,7 @@ Sixteen rules are amended in place for the two; none is retired, none renumbered
 is minted. `schema/bundle.schema.json` gains `bundle_version`; `schema/item.schema.json` gains
 `prov.source_version` and `prov.source_hash`. Two vectors are withdrawn and superseded
 (`disc-0010` → `disc-0013`, `disc-0011` → `disc-0014`) and six are added; all eight new ids are in
-`tests/conformance/pending.json` with the reason `rc.6: awaiting engine (ENG-8)`, which is the
+`tests/conformance/pending.json` with the reason `rc.6: awaiting engine`, which is the
 package that makes the reference engine satisfy them.
 
 Until that package lands, the reference engine emits no `agsc-bundle-version`, no

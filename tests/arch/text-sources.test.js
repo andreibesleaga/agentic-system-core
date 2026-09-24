@@ -5,15 +5,15 @@
 // `grep` treat it as binary, so the file silently disappears from every text sweep
 // — the rule-id citation checker, the private-path grep, the forbidden-wording
 // sweep — with no message at all. That has happened twice on this project: once in
-// `src/boundary/federation.js` (a NUL inside a character class, session 27) and once
+// `src/boundary/federation.js` (a NUL inside a character class) and once
 // in two test files whose `git ls-files -z` fixtures used the separator literally
-// (found by V9-D, session 28). Both were corrected to the `\u0000` escape, which is
+// Both were corrected to the `\u0000` escape, which is
 // the same value to the JavaScript engine and plain text on disk.
 //
 // This test is the guard, so the third occurrence fails a gate instead of hiding a
 // file from an audit. It is a whole-tree, binary-safe read, and it reports the
 // number of files it actually read — a sweep that cannot say how many files it saw
-// cannot claim a clean result (the standing method note of session 27).
+// cannot claim a clean result (the standing method note of).
 
 const test = require('node:test');
 const assert = require('node:assert');

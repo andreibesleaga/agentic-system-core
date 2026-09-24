@@ -1,0 +1,3 @@
+Issue ID,URL,Title,State,Description,Author,Author Username,Assignee,Assignee Username,Confidential,Locked,Due Date,Created At (UTC),Updated At (UTC),Closed At (UTC),Milestone,Weight,Labels
+9,https://gitlab.example/acme/app/-/issues/9,Export as CSV,Open,"Line one
+line two",Dana,dana,Dana,dana,No,No,2026-03-01,2026-02-20 10:00:00,2026-02-21 10:00:00,,Release 3,,"frontend, status::Blocked"

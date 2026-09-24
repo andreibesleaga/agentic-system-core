@@ -222,9 +222,9 @@ function run(argv, io) {
     : target;
   const root = path.basename(dir) === 'diagrams' ? path.resolve(dir, '..', '..') : dir;
   // A refusal before any file is judged: the AGSC-09-11 envelope with one AGSC-E901
-  // and exit 1, as every other checker reports "nothing to validate" (FIX29-S4). A
+  // and exit 1, as every other checker reports "nothing to validate". A
   // directory that does not exist is not a usage error — the invocation was well
-  // formed (ENG9-05, CONN-2).
+  // formed.
   const refuse = (message) => {
     const refused = envelopeOf([finding('AGSC-E901', path.basename(dir) || dir, 1, message)],
       specVersion(root), packageVersion(root));
@@ -241,7 +241,7 @@ function run(argv, io) {
   }
 
   const findings = [];
-  // SITE4-05 (ENG-9): the contract's input is a diagram PACK — a directory with its
+  // the contract's input is a diagram PACK — a directory with its
   // `README.md` index (the index table this tool checks). A directory with neither
   // that name nor that index — a published site, whose `/now.md` is no diagram — is
   // refused with AGSC-E901 before a single file of it is judged (AGSC-09-90).
@@ -266,7 +266,7 @@ function run(argv, io) {
   const index = fs.existsSync(readmePath) ? indexRows(fs.readFileSync(readmePath, 'utf8')) : new Map();
   const names = fs.readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md').sort();
   const readmeFile = path.relative(root, readmePath).split(path.sep).join('/');
-  // FV29-10: zero files read is not a clean pack, and the directory resolution above
+  // zero files read is not a clean pack, and the directory resolution above
   // falls back to the argument itself — so a distribution with no `docs/diagrams/`
   // reported `pass` over an empty list.
   if (names.length === 0) {

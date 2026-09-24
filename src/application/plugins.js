@@ -1,6 +1,6 @@
 'use strict';
 /**
- * src/application/plugins.js — the engine's PLUGIN CONTRACT (D112 §(2)).
+ * src/application/plugins.js — the engine's PLUGIN CONTRACT.
  *
  * AGSC-00-24 closes the extension points of this format at EIGHT kinds and says
  * that "a capability that is none of them is a change to this specification, not a

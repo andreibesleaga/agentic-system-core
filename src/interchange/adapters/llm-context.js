@@ -122,7 +122,7 @@ function fenceProse(text) {
  * @returns {string}
  */
 function llmsCtxTxt(records, options) {
-  // AGSC-02-24 as amended at rc.5 (FV28-01 / FV28-05): every interpolated value is
+  // AGSC-02-24 as amended at rc.5: every interpolated value is
   // neutralised. Before rc.5 a multi-line chunk title injected a fake heading and a
   // fake `>` instruction block OUTSIDE the fence, and a `-->` in `site.title` closed
   // the provenance comment early — the same family as the /llms.txt hole, in the

@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-06-10 and AGSC-06-35 as amended at rc.6 (EXT2-03, EXT2-07; ENG-9, W-2):
+// AGSC-06-10 and AGSC-06-35 as amended at rc.6 (W-2):
 // the IANA-registered `cite-as` (RFC 8574) is admitted for a related-system link,
 // and `https://w3id.org/agentic-system-core/rel#signature` joins the extension
 // relations. The engine held four hard-coded copies of the older lists — the

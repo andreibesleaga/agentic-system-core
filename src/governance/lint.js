@@ -1,6 +1,6 @@
 'use strict';
 // src/governance/lint.js — CONTEXT Governance & Provenance, the lint aggregate.
-// Owner: C (WP-10-C). PURE: no fs, no process, no clock, no network — every file
+// PURE: no fs, no process, no clock, no network — every file
 // fact (which paths git tracks, which attachment files exist and how large they
 // are, an attachment's bytes) is INJECTED by the caller through `options`, so the
 // same Bundle always lints to the same Findings.
@@ -179,7 +179,7 @@ function svgViolations(text) {
   const source = typeof text === 'string' ? text : '';
   const reasons = [];
   // Read textually first: a DOCTYPE, an entity declaration and a processing
-  // instruction are exactly what an XML parser normalises away (V7-38).
+  // instruction are exactly what an XML parser normalises away.
   if (/<!DOCTYPE/iu.test(source)) reasons.push('a DOCTYPE');
   if (/<!ENTITY/iu.test(source)) reasons.push('an entity declaration');
   if (/<\?/u.test(source)) reasons.push('a processing instruction');
@@ -314,7 +314,7 @@ function checkAttachments(items, options = {}) {
         const size = present[path];
         if (refused[path] !== undefined) {
           // The FileSystem port refused the file with the code AGSC-01-16/01-35 name
-          // (BENCH1b-05): over the cap (E904), an archive (E903), a link out (E902).
+          // over the cap (E904), an archive (E903), a link out (E902).
           findings.push(finding(String(refused[path].code),
             `attachment "${file}" was refused: ${String(refused[path].message)}`, base));
           dirty = true;

@@ -44,7 +44,7 @@
  * command was run in: the operator copies it where they want it, which is also the
  * only behaviour that keeps `export` free of a destructive side effect.
  *
- * Owner: ENG-2 (WP-10/s28); `--markdown`, `--okf` and `--steer` added by ENG-5 (WP-12).
+ * Owner: (/s28); `--markdown`, `--okf` and `--steer` added.
  */
 
 const site = require('../../../distribution/site.js');
@@ -165,12 +165,12 @@ function adapterExport(ctx, bundle, name) {
     };
   }
   // AGSC-04-25 / AGSC-06-15: the content version every adapter's provenance header
-  // states, derived once here from the same inputs the build uses (CONN-1).
-  // ENG-9: an adapter that writes steering text (the `gabbe` adapter's
+  // states, derived once here from the same inputs the build uses.
+  // an adapter that writes steering text (the `gabbe` adapter's
   // `steering.md`) needs what `--steer` needs — the NOW state, computed HERE because
   // Interchange may not require Distribution. Adapters that ignore it are unaffected.
   const instant = instantOf(ctx);
-  // CONN-2: an adapter may declare flags of its own (AGSC-09-09's adapter exception,
+  // an adapter may declare flags of its own (AGSC-09-09's adapter exception,
   // e.g. the skills adapter's `--layout`), and an adapter that re-lays the published
   // skill packs out (`NEEDS_SKILL_PACKS`) is handed exactly the packs `agsc skills`
   // emits — computed HERE, because Interchange may not require Composition.
@@ -315,7 +315,7 @@ function targetsOf(flags) {
 }
 
 /**
- * D111: one archive per multi-file export ROOT this invocation produced, written
+ * one archive per multi-file export ROOT this invocation produced, written
  * beside the root — `dist/export/markdown-<version>.zip` beside
  * `dist/export/markdown/`. The entry bytes are the plan's, not a re-read of the
  * disk, so the archive is the same builder and the same bytes as the Harness
@@ -354,7 +354,7 @@ function run(ctx) {
       }],
     };
   }
-  // D111: `--zip` packages an export ROOT, and `--jsonld`/`--jsonl` are each a
+  // `--zip` packages an export ROOT, and `--jsonld`/`--jsonl` are each a
   // single file at `dist/export/` rather than a root of their own (AGSC-01-27), so
   // an invocation that asks for nothing but those two has no set to archive.
   if (flags.zip === true && !['markdown', 'okf', 'steer'].some((f) => flags[f] === true)
@@ -365,7 +365,7 @@ function run(ctx) {
         code: 'AGSC-E003', severity: 'error',
         message: '--zip archives an export root and has no meaning without --markdown, --okf,'
           + ' --steer or --to <adapter>; --jsonld and --jsonl each write one file'
-          + ' (AGSC-01-26…27, D111)',
+          + ' (AGSC-01-26…27)',
       }],
     };
   }

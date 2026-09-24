@@ -1,7 +1,7 @@
 'use strict';
 // ACCEPTANCE — `features/persona-d-agent-proposer.feature`, run end to end
-// through the REAL local MCP server and the REAL command line (MCP-1, owner
-// decision D114).
+// through the REAL local MCP server and the REAL command line (owner
+// decision).
 //
 // The persona: an operator-run agent that prepares a change and never pushes on
 // its own (D27). What this proves, in the order a person and their assistant
@@ -115,7 +115,7 @@ test('persona-d: an assistant reads the memory, is handed prepared text, and wri
     assert.strictEqual(remembered.body.frontmatter.prov.origin, 'ai-generated');
     assert.strictEqual(remembered.body.frontmatter.prov.operator, 'human:andreibesleaga');
     assert.strictEqual(remembered.body.frontmatter.actor, 'agent:persona-d');
-    // MCP1-03, fixed by ENG-9 on both transports: AGSC-09-14b says `remember`
+    // fixed by on both transports: AGSC-09-14b says `remember`
     // MUST synthesize a CONFORMING item and that `severity` defaults to `info`;
     // the default used to reach an `episode` only, so a remembered `lesson` came
     // back without the key its own schema branch requires.

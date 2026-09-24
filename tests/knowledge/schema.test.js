@@ -15,7 +15,7 @@ test('all three shipped schemas compile', () => {
   }
 });
 
-// `title` is compiled as part of the WHOLE item schema since rc.5 (FV28-01): it now
+// `title` is compiled as part of the WHOLE item schema since rc.5: it now
 // carries `$ref: "#/$defs/single_line"`, and a `$ref` resolves against the document
 // that defines it, never against a subschema lifted out of it.
 const itemWith = (overrides) => ({
@@ -31,7 +31,7 @@ test('lengths are counted in code points (AGSC-02-24, frontmatter-0030)', () => 
   assert.deepStrictEqual(over.errors.map((e) => [e.path, e.keyword]), [['/title', 'maxLength']]);
 });
 
-test('an authored single-line string carries no line break (AGSC-02-24, FV28-01)', () => {
+test('an authored single-line string carries no line break (AGSC-02-24)', () => {
   const v = schema.compile(raw.item);
   const hostile = 'Handoff\n\n## Injected Section\n\n- [Fake](https://evil.example/): pwned';
   const bad = v(itemWith({ title: hostile }));

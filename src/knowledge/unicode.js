@@ -63,7 +63,7 @@ function isWellFormed(s) {
 }
 
 // ---------------------------------------------------------------------------
-// AGSC-02-24 as amended at rc.5 (FV28-01): AUTHORED SINGLE-LINE STRINGS.
+// AGSC-02-24 as amended at rc.5: AUTHORED SINGLE-LINE STRINGS.
 //
 // A `title`, a `description`, a `tags[]` value, a `diagram.alt`, an
 // `attachments[].alt`, a `sources[].title` — every authored string a writer puts
@@ -106,14 +106,14 @@ const SINGLE_LINE_PATTERN = `^[^${SINGLE_LINE_CLASS}]*$`;
 /** The same class, unanchored and global, for the neutraliser. */
 const SINGLE_LINE_FORBIDDEN = new RegExp(`[${SINGLE_LINE_CLASS}]`, 'gu');
 
-/** AGSC-02-24 (rc.5, FV28-01): true when `s` carries no forbidden code point. */
+/** AGSC-02-24: true when `s` carries no forbidden code point. */
 function isSingleLine(s) {
   SINGLE_LINE_FORBIDDEN.lastIndex = 0;
   return !SINGLE_LINE_FORBIDDEN.test(String(s == null ? '' : s));
 }
 
 /**
- * AGSC-02-24 (rc.5, FV28-01): the writer-side neutralisation — one U+0020 per
+ * AGSC-02-24: the writer-side neutralisation — one U+0020 per
  * forbidden code point. Total, idempotent, and the identity on every conforming
  * string. `null` and `undefined` become the empty string, because a writer that
  * has nothing to interpolate emits nothing, never the word "null".
@@ -138,9 +138,9 @@ const COMMENT_END = /--!?>/gu;
  * file, the `llm-context` adapter's skim view. A `-->` inside that value CLOSES the
  * comment early, so the rest of the provenance block — the terms, the spec version,
  * the build instant — leaves the comment and becomes visible document text a reader
- * or a model treats as content. Recorded as specification item 58 / FIX28-03.
+ * or a model treats as content. Recorded as specification item 58 /.
  *
- * AGSC-06-13a, as amended at rc.6 (FIX28-03), names the replacement: every
+ * AGSC-06-13a, as amended at rc.6, names the replacement: every
  * occurrence of the closing sequence becomes `--&gt;` — the `>` written as the HTML
  * character reference, so the comment cannot end and the value is still readable as
  * what was authored. It is the IDENTITY on every value that does not carry the

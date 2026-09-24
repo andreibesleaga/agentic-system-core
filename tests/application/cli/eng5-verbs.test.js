@@ -1,5 +1,5 @@
 'use strict';
-// tests/application/cli/eng5-verbs.test.js — the verb paths ENG-5 added:
+// tests/application/cli/eng5-verbs.test.js — the verb paths added:
 // `export --markdown|--okf|--steer` (AGSC-01-26, AGSC-01-28), `skills` with its two
 // sub-commands (spec/07 §7.4), `run` (AGSC-09-94) and `trace` (AGSC-09-94).
 //
@@ -103,7 +103,7 @@ test('AGSC-01-26: export --markdown writes the content tree byte for byte under 
     'content/clusters/agent-patterns.md']) {
     assert.strictEqual(read(dir, `dist/export/markdown/${at}`), read(dir, at), at);
   }
-  // AGSC-01-26 as amended at rc.6 (D113): `content/index.md` is the ONE file of a
+  // AGSC-01-26 as amended at rc.6: `content/index.md` is the ONE file of a
   // byte-preserving export that gains a derived key — the content version of
   // AGSC-04-25 — so it is the authored document plus exactly that one line.
   const exportedIndex = read(dir, 'dist/export/markdown/content/index.md');
@@ -168,7 +168,7 @@ test('AGSC-01-28: --target takes a comma-separated list and refuses a name outsi
 
   const bad = workspace();
   const refused = exportVerb.run(ctxFor(bad, { verbFlags: { steer: true, target: 'notepad' } }));
-  // rc.6, AGSC-00-23 (D112): a value outside a CLOSED operator list is AGSC-E203
+  // rc.6, AGSC-00-23: a value outside a CLOSED operator list is AGSC-E203
   // and a finding at exit 1; AGSC-E002 and exit 2 are for an unknown FLAG.
   assert.strictEqual(refused.findings[0].code, 'AGSC-E203');
   assert.ok(!exists(bad, 'dist'), 'a refused target wrote something');
@@ -368,7 +368,7 @@ test('settings() and resolvedLine() read the configuration and print the refusal
 
 // ------------------------------------------------------------------ trace
 
-// AGSC-09-94 as amended at rc.6 (ENG5-S9) names the members of a trace record:
+// AGSC-09-94 as amended at rc.6 names the members of a trace record:
 // `started`, and optionally `ended`, `actor`, `title`, `outcome`, `body`, `usage`.
 // Everything else — including the older names this engine used to accept — is
 // preserved under `x-<vendor>-<key>`.

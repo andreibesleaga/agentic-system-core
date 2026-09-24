@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-08-16 (`no-pii`). Owner: C (WP-10-C).
+// AGSC-08-16 (`no-pii`).
 // Every address below is in a reserved example domain (RFC 2606).
 
 const test = require('node:test');

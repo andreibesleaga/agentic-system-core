@@ -53,7 +53,7 @@ function createServer(bundle, options) {
   const opts = options || {};
   const toolset = tools(bundle, opts);
   const resources = catalogue(bundle, opts);
-  // AGSC-11-18 as amended at rc.5 (SITE1-01): `extensions` is MCP's map of extension
+  // AGSC-11-18 as amended at rc.5: `extensions` is MCP's map of extension
   // identifier to settings object, and this node's settings object carries exactly
   // `linkset`. The Boundary context owns both the identifier and the object
   // (`surfaces.mcpCapabilities`); the transport only carries what it is given, so
@@ -124,7 +124,7 @@ function createServer(bundle, options) {
  *
  * AGSC-09-13 ("MUST NOT write non-protocol bytes to stdout") is kept by the
  * CLI shell, not by a guard here: `application/cli/main.js` knows `mcp` is a
- * STREAMING verb and prints no diagnostic line for it (WP-10-G; F's interim
+ * STREAMING verb and prints no diagnostic line for it (F's interim
  * `protocolOnlyStdout` monkey-patch of the host stream is deleted).
  */
 function serve(ctx) {
@@ -132,7 +132,7 @@ function serve(ctx) {
   // The Bundle is LOADED BY THE APPLICATION LAYER and injected: Distribution
   // reads the other contexts' results and assembles nothing (the context map
   // of docs/ARCHITECTURE-DDD.md §2; `application/bundle.js` owns the loader
-  // since WP-10-G). A caller that supplies none gets a programming fault, not
+  // since). A caller that supplies none gets a programming fault, not
   // a silent empty Bundle.
   const bundle = context.bundle;
   if (bundle === undefined || bundle === null) {

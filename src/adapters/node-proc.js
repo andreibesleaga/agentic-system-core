@@ -22,7 +22,7 @@ function createProcessRunner(options = {}) {
   for (const name of SCRUBBED_ENV) if (parentEnv[name] !== undefined) env[name] = parentEnv[name];
 
   return {
-    // AGSC-09-94 (ENG-5, rc.5): this adapter does NOT isolate a child from the
+    // AGSC-09-94: this adapter does NOT isolate a child from the
     // network — `execFileSync` cannot — so it never claims to. `agsc run` reads
     // this and refuses to execute rather than run a step under a guarantee the
     // engine cannot make. See `src/ports/process-runner.js`.
@@ -39,7 +39,7 @@ function createProcessRunner(options = {}) {
           // AGSC-09-10: under `--json` stderr carries ONE JSON object per line.
           // A child's own error text is not a Finding of this engine, so it is
           // CAPTURED, never inherited — an inherited `fatal: not a git
-          // repository` would corrupt the diagnostic stream (WP-10-G).
+          // repository` would corrupt the diagnostic stream.
           stdio: ['ignore', 'pipe', 'pipe'],
           timeout: runOptions.timeoutMs || options.timeoutMs || DEFAULT_TIMEOUT_MS,
           maxBuffer: DEFAULT_MAX_BUFFER,

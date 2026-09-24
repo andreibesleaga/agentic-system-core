@@ -1,5 +1,5 @@
 'use strict';
-// MCP-1 (owner decision D114): the local server verified with a REAL MCP CLIENT,
+// the local server verified with a REAL MCP CLIENT,
 // not only with hand-written frames.
 //
 // Everything here drives `bin/agsc.js mcp` through the official SDK's own
@@ -149,7 +149,7 @@ test('AGSC-09-13/09-16: the client is offered exactly seven tools, and the page 
     assert.deepStrictEqual(Object.keys(page[tool.name].inputSchema.properties).sort(),
       Object.keys(tool.inputSchema.properties).sort());
     assert.deepStrictEqual(page[tool.name].inputSchema.required, plain(tool.inputSchema.required));
-    // MCP1-01: only `readOnlyHint` survives to an MCP client. MCP's own
+    // only `readOnlyHint` survives to an MCP client. MCP's own
     // `ToolAnnotations` has `title`, `readOnlyHint`, `destructiveHint`,
     // `idempotentHint` and `openWorldHint` and no more, and the official SDK
     // parses annotations with a zod object that DROPS everything else — so
@@ -482,7 +482,7 @@ test('AGSC-08-18/N9: a hostile item title comes back as untrusted DATA, not as i
     assert.strictEqual(ask.trust, 'untrusted');
     assert.strictEqual(ask.type, 'answer');
 
-    // MCP1-01, measured here rather than assumed: of AGSC-11-18's floor
+    // measured here rather than assumed: of AGSC-11-18's floor
     // vocabulary, an MCP client receives `readOnlyHint` and nothing else. The
     // five reading tools are read-only; the two human-gated writing tools are
     // not. `untrustedContentHint` and `consequentialHint` are WebMCP's words and

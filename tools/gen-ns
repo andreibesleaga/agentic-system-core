@@ -62,7 +62,7 @@ const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
 const OWL = 'http://www.w3.org/2002/07/owl#';
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
-/** Two annotation predicates on the ontology node (AGSC-05-25 as amended at rc.6, EXT-2):
+/** Two annotation predicates on the ontology node (AGSC-05-25 as amended at rc.6):
  *  an RDF/XML namespace only, never a context prefix. */
 const VANN = 'http://purl.org/vocab/vann/';
 /** AGSC-06-32: the prefixes the context defines beside `asc`. */
@@ -559,7 +559,7 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const turtlePath = path.join(root, 'ontology', 'agsc.ttl');
-  // AGSC-09-90 as amended at rc.6 (FIX29-S4): "A validator MUST FAIL, with
+  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which
@@ -589,7 +589,7 @@ function run(argv, io) {
     return 1;
   }
 
-  // FV29-10: an EMPTY `ontology/agsc.ttl` parses as zero triples, builds an empty
+  // an EMPTY `ontology/agsc.ttl` parses as zero triples, builds an empty
   // context and round-trips perfectly — a pass over nothing. A vocabulary with no
   // term is a failure, not a clean generation.
   const termCount = vocabulary.classes.length + vocabulary.objectProperties.length

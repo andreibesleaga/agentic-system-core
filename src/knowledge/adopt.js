@@ -110,7 +110,7 @@ function serialize(frontmatterObject) {
  * "Tag not resolved for Number value" on a loaded item that carries a typed scalar —
  * `cluster.order`, `concept.signature`, `episode.usage.tokens_in`, `cost_usd`,
  * `estimate` — so `propose` on such an item threw a programming fault instead of
- * returning a Finding, and `pages/<slug>.md` could not be emitted at all (ENG3-03).
+ * returning a Finding, and `pages/<slug>.md` could not be emitted at all.
  * The emitted bytes are unchanged for every frontmatter whose scalars are already
  * strings, which is every frontmatter adoption itself synthesizes.
  */

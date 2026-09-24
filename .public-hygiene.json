@@ -1,0 +1,254 @@
+{
+  "_": "Allow-list of tools/public-hygiene for this repository. Every entry says why the hit is public by intent. A new hit is fixed, not added here, unless it is public by intent.",
+  "built": [],
+  "skip": [
+    {
+      "path": "tools/public-hygiene",
+      "reason": "the detector itself: its pattern table and help text name every pattern it looks for"
+    },
+    {
+      "path": "tests/tools/public-hygiene.test.js",
+      "reason": "the detector's seeded fixture: one deliberate violation of every check"
+    }
+  ],
+  "allow": [
+    {
+      "check": "process",
+      "path": "spec/**",
+      "reason": "frozen normative text until 1.0.0; its trace tags (decision, audit and work ids) are the specification's published traceability and change only at 1.0.0"
+    },
+    {
+      "check": "internal-note",
+      "path": "spec/**",
+      "reason": "frozen normative text until 1.0.0; the rationale notes record why a rule reads as it does and change only at 1.0.0"
+    },
+    {
+      "check": "process",
+      "path": "docs/SPEC.md",
+      "reason": "frozen specification index until 1.0.0; its history notes carry the specification's trace tags"
+    },
+    {
+      "check": "internal-note",
+      "path": "docs/SPEC.md",
+      "reason": "frozen specification index until 1.0.0; its history notes record how the rules were decided"
+    },
+    {
+      "check": "process",
+      "path": "schema/**",
+      "reason": "frozen JSON Schemas until 1.0.0; their descriptions carry the rules' trace tags"
+    },
+    {
+      "check": "process",
+      "path": "ontology/**",
+      "reason": "frozen ontology until 1.0.0; its comments carry the rules' trace tags"
+    },
+    {
+      "check": "internal-note",
+      "path": "ontology/**",
+      "reason": "frozen ontology until 1.0.0; a comment records how a term was decided"
+    },
+    {
+      "check": "process",
+      "path": "tests/vectors/**",
+      "reason": "frozen conformance vectors (withdraw and add, never edit); their notes carry the rules' trace tags"
+    },
+    {
+      "check": "internal-note",
+      "path": "tests/vectors/**",
+      "reason": "frozen conformance vectors (withdraw and add, never edit); their notes record how a rule was decided"
+    },
+    {
+      "check": "personal",
+      "path": "tests/vectors/ledger/ledger-0002-derivation-from-git-log.json",
+      "reason": "frozen vector: a git-log sample whose author field is the project's own sign-off; the name form is reduced when the vector is withdrawn and re-added at 1.0.0"
+    },
+    {
+      "check": "personal",
+      "path": "tests/vectors/prov/prov-0004-dco-plus-trailer-grammar.json",
+      "reason": "frozen vector: the DCO trailer grammar is exercised on the project's own sign-off line; reduced when the vector is withdrawn and re-added at 1.0.0"
+    },
+    {
+      "check": "email",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.*",
+      "reason": "the Internet-Draft author block and IANA contact must carry the author's e-mail (RFC 7322 section 4.1.1, RFC 8615 registration template)"
+    },
+    {
+      "check": "personal",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.*",
+      "reason": "RFC-style author surname in the running page header, the author block and the self-citation"
+    },
+    {
+      "check": "todo",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.*",
+      "text": "TODO-DOI",
+      "reason": "the release DOI placeholder of the self-citation, filled at posting time; the draft body is frozen until then"
+    },
+    {
+      "check": "missing-file",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.html",
+      "text": "rfc-local.css",
+      "reason": "xml2rfc's optional local stylesheet hook; the rendered draft works without it"
+    },
+    {
+      "check": "email",
+      "path": "w3id/.htaccess",
+      "text": "andrei.besleaga.nicolae@",
+      "reason": "the w3id maintainer line: w3id.org asks every redirect file to name a maintainer contact"
+    },
+    {
+      "check": "email",
+      "path": "w3id/README.md",
+      "text": "andrei.besleaga.nicolae@",
+      "reason": "the w3id maintainer line, the same contact as the redirect file"
+    },
+    {
+      "check": "email",
+      "path": "w3id/README.md",
+      "text": "public-perma-id@w3.org",
+      "reason": "w3id.org's own published support address, quoted as the alternative route"
+    },
+    {
+      "check": "todo",
+      "path": "w3c/**",
+      "reason": "the W3C report is a skeleton marked as such; ReSpec's TODO markers stand for sections not yet written, and the report is not published until they are"
+    },
+    {
+      "check": "personal",
+      "path": "CITATION.cff",
+      "reason": "the Citation File Format splits the canonical name Andrei N. Besleaga into family-names and given-names"
+    },
+    {
+      "check": "internal-note",
+      "path": ".github/workflows/publish-github-packages.yml",
+      "reason": "GitHub's own terms: a package private to the account owner, renamed to the owner scope"
+    },
+    {
+      "check": "process",
+      "path": "docs/PRD.md",
+      "text": "auto-disable runbook",
+      "reason": "NFR-09 is a product requirement that the node ships a restore runbook; the word names a deliverable, not an internal document"
+    },
+    {
+      "check": "process",
+      "path": "docs/PLAN.md",
+      "text": "docs/runbooks/secrets.md",
+      "reason": "the plan names the secrets-rotation procedure a node operator keeps; a product deliverable, not an internal document"
+    },
+    {
+      "check": "wording",
+      "path": "docs/PRD.md",
+      "text": "NFR-12",
+      "reason": "NFR-12 names the forbidden framings in order to forbid them"
+    },
+    {
+      "check": "process",
+      "path": "CHANGELOG.md",
+      "text": "the long-form runbook",
+      "reason": "states that the long-form procedure is kept outside the repository"
+    },
+    {
+      "check": "process",
+      "path": "tests/tools/release.test.js",
+      "text": "runbook",
+      "reason": "the test that proves no release runbook lives in the public repository"
+    },
+    {
+      "check": "wording",
+      "path": "src/governance/cleanroom.js",
+      "reason": "the clean-room lint's own phrase list (AGSC-08-17): the words it refuses"
+    },
+    {
+      "check": "wording",
+      "path": "src/interchange/selection.js",
+      "text": "book-overlap class",
+      "reason": "names the selection record's B+W class, which exists to exclude overlapping material"
+    },
+    {
+      "check": "secret",
+      "path": "src/governance/secrets.js",
+      "reason": "the no-secrets lint's own shape table (AGSC-08-15)"
+    },
+    {
+      "check": "secret",
+      "path": "tests/governance/secrets.test.js",
+      "reason": "the no-secrets lint's tests: fake credential shapes it must refuse"
+    },
+    {
+      "check": "personal",
+      "path": "tests/governance/pii.test.js",
+      "reason": "the personal-data lint's tests: fictitious numbers it must refuse"
+    },
+    {
+      "check": "wording",
+      "path": "tests/interchange/cleanroom-rewrite.test.js",
+      "reason": "the clean-room rewrite's tests: sentences it must remove"
+    },
+    {
+      "check": "wording",
+      "path": "tests/fixtures/old-site-10/content/patterns/cites-a-book.md",
+      "reason": "a fixture the clean-room rewrite must clean"
+    },
+    {
+      "check": "wording",
+      "path": "tests/arch/package-manifest.test.js",
+      "reason": "the test that proves no private name reaches the npm tarball"
+    },
+    {
+      "check": "private-name",
+      "path": "tests/arch/package-manifest.test.js",
+      "reason": "the test that proves no private name reaches the npm tarball"
+    },
+    {
+      "check": "private-path",
+      "path": "tests/bin/agsc-user-config.test.js",
+      "text": "/home/nobody",
+      "reason": "a fictitious home directory for the user-configuration path rule"
+    },
+    {
+      "check": "private-path",
+      "path": "tests/adapters/node-proc.test.js",
+      "text": "HOME: '/home/a'",
+      "reason": "a fictitious environment for the process adapter"
+    },
+    {
+      "check": "personal",
+      "path": "tests/knowledge/adopt.test.js",
+      "text": "Andrei.N+tag@example.org",
+      "reason": "an example.org address for the operator-from-git rule"
+    },
+    {
+      "check": "process",
+      "path": "tests/interchange/gabbe.test.js",
+      "reason": "a fixture of a foreign agent kit's session log, which the importer maps"
+    },
+    {
+      "check": "internal-note",
+      "path": "tests/interchange/gabbe.test.js",
+      "text": "Waited for the owner",
+      "reason": "a fixture of a foreign agent kit's decision log"
+    },
+    {
+      "check": "process",
+      "path": "tests/interchange/cogx.test.js",
+      "text": "unbook",
+      "reason": "a fixture concept named Runbook in a foreign memory graph"
+    },
+    {
+      "check": "process",
+      "path": "tests/acceptance/use-cases/use-cases.test.js",
+      "text": "unbook",
+      "reason": "a fixture task named 'write the runbook' on a live board"
+    },
+    {
+      "check": "process",
+      "path": "tests/distribution/single-line-injection.test.js",
+      "text": "'runbook'",
+      "reason": "a fixture procedure slug"
+    },
+    {
+      "check": "owner-addressed",
+      "path": "tests/fixtures/skills-claude-plugin/skills/review-checklist/SKILL.md",
+      "reason": "a fixture skill named Review checklist"
+    }
+  ]
+}

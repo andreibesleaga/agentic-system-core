@@ -1,4 +1,4 @@
-# AgenticSystemCore — pre-commit hooks (CONN-1). Format: https://pre-commit.com/
+# AgenticSystemCore — pre-commit hooks. Format: https://pre-commit.com/
 #
 #   repos:
 #     - repo: https://github.com/andreibesleaga/agentic-system-core

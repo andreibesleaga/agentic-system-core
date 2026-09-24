@@ -151,7 +151,7 @@ function altFor(kind, title, alt) {
  * The caller's `status` decision for one selection row, as a pure function of the
  * three inputs that can hold a record BACK — and of nothing else, so that the
  * pre-pass that builds the published set and the mapping loop cannot disagree
- * (FV28-04).
+ *
  *
  * `draft` wins over all three, because every one of them is a reason to hold a
  * record back and none is a licence to release one:
@@ -259,7 +259,7 @@ function plan(input, options) {
   }
   const inSet = new Set(chosen.map((c) => c.slug));
 
-  // FV28-04: the PUBLISHED subset, decided BEFORE any body is rewritten.
+  // the PUBLISHED subset, decided BEFORE any body is rewritten.
   // A body link may only point at a card that will have a route (AGSC-06-01), and a
   // held-back card has none (AGSC-06-30) — so the status decision of every chosen
   // record has to be known before the first record's body is mapped. It is the same

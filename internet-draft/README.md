@@ -1,14 +1,13 @@
 # draft-besleaga-agentic-knowledge-wellknown
 
-ISE (Independent Submission) Internet-Draft requesting, in existing IANA registries, exactly **two** entries (D82 Q3, 2026-09-17 — the link-relation request was dropped in favour of the registered `describedby`): the well-known URI **`knowledge-linkset`** (RFC 8615; naming ladder `knowledge-linkset` → `agenticsystemcore-knowledge` → `agenticsystemcore.com-knowledge-linkset`) and the **Profile URI** `https://w3id.org/agentic-system-core/profile/agentic-knowledge` (RFC 7284). No media type, no new registry, and no URI scheme are registered. The document served at the well-known URI is `application/linkset+json` (RFC 9264 §5 `profile` parameter; RFC 6906 `Link: rel="profile"` fallback), complementary to VoID (`/.well-known/void`) and RFC 9727.
+The Internet-Draft that registers the well-known URI `knowledge-linkset` and the
+profile of the AgenticSystemCore discovery document, as an Independent Submission.
 
-When: -00 after the site is live with a frozen manifest (target Oct 2026), submitted via datatracker before the IETF 127 I-D cut-off **2026-11-02 23:59 UTC** (ISE processing is meeting-independent). How: kramdown-rfc → xml2rfc v3 → `idnits`; ISE checklist (rfc-editor.org/authors/ise/ise-checklist); naming and authoring plan kept in the project's private planning record (decisions D55–D60; authoring plan `PLAN-ID-00`), not in this repository. Also: the author's other Independent-Stream draft, `draft-besleaga-sustainability-wellknown`, is at **-07**, posted 2026-09-17 and expiring **21 March 2027** (Datatracker, checked 2026-09-19); post a `-08` before that date. (This line named `-06` and 2027-01-29 until 2026-09-19; both were stale.)
+| File | What it is |
+|---|---|
+| `draft-besleaga-agentic-knowledge-wellknown-00.md` | the source (kramdown-rfc) |
+| `draft-besleaga-agentic-knowledge-wellknown-00.xml` | RFCXML v3, produced from the source |
+| `draft-besleaga-agentic-knowledge-wellknown-00.txt`, `.html` | the rendered draft, produced by xml2rfc |
+| `build.sh` | rebuilds the XML, text and HTML and runs idnits |
 
-**Owner directive 2026-09-02:** before completing this draft, run a thorough, fresh landscape sweep of existing AI & agentic-AI standards work at IETF/IRTF (aipref, webbotauth, DAWN, agentproto, AI/agent BOFs, proposed IRTF RGs) and adjacent bodies (LF AAIF: MCP/A2A; W3C: WebMCP, AI Agent Memory Interop CG) — compare / include / complement / compete verdict per item, recorded in the project's private research record (landscape sweep 18, 2026-09-03; public outcome: `../docs/RELATED-WORK.md`); the draft MUST carry the resulting "Relationship to other work" section. See 15-EXECUTION-PROMPTS P-RFC.
-
-
-**Owner decisions 2026-09-03 (D55–D57, private decision record), naming finalized 2026-09-04 (D60):** Superseded by D82 Q3 (2026-09-17) — kept for the record: the draft registers exactly three entries in existing registries — well-known URI `knowledge-linkset` (D60; superseding the `agentic-knowledge` well-known-URI request named in the original D55–D57 text), Profile URI `https://w3id.org/agentic-system-core/profile/agentic-knowledge` (RFC 7284) — and NO media type (the vendor type is dropped; the document is `application/linkset+json` with the RFC 9264 `profile` parameter, integrity as extension target attributes with RFC 9530 digests). Naming ladder per D60: `knowledge-linkset` → `agenticsystemcore-knowledge` → `agenticsystemcore.com-knowledge-linkset`. Landscape sweep done (private research record 18; public outcome `../docs/RELATED-WORK.md`). Authoring plan: **`PLAN-ID-00`** in the private planning record. Dates: draft ready ≤ 2026-09-26, owner posts ≤ 2026-10-09 (hard 2026-11-02). Papers are deferred (owner 2026-09-03).
-
-**Rights boundary (D82 Q19, 2026-09-17).** The Internet-Draft is submitted under BCP 78 and the IETF Trust Legal Provisions: the *draft text* — the registration templates, the profile description, the relationship and security sections — carries the IETF Trust's grants, including the right to produce derivative works. That boundary does not reach the Bundle prose published by any node, which stays under the Content Use Terms (`LICENSE-CONTENT`, AGSC-06-18); the draft cites no item prose and needs none.
-
-**Profile URI (D82 Q23).** File it now, independently of the draft: `PROFILE-URI-REGISTRATION.md` in this directory holds the five RFC 7284 fields.
+The draft text is submitted under BCP 78 and the IETF Trust Legal Provisions.

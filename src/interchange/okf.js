@@ -53,7 +53,7 @@
  * take `-2`, `-3`, … in that order; nothing reads a clock or a directory listing.
  *
  * PURE: no fs, no clock, no network. Requirements: PRD-021, PRD-026.
- * Owner: ENG-5 (WP-12).
+ *
  */
 
 const frontmatter = require('../knowledge/frontmatter.js');
@@ -163,7 +163,7 @@ function mapFrontmatter(raw, options) {
       { file: options.path, severity: 'warn' }));
   }
 
-  // AGSC-01-22's RECORD (rc.6, D113): every item an import writes names the exact
+  // AGSC-01-22's RECORD: every item an import writes names the exact
   // state it was taken from. Both members are written by `import` alone and each is
   // omitted when the source publishes neither — never invented, never carried over
   // from an earlier import of a different source.
@@ -180,7 +180,7 @@ function mapFrontmatter(raw, options) {
     out.prov = record;
   }
 
-  // FV29-08 / AGSC-02-24: a foreign single-line value may carry a control character
+  // / AGSC-02-24: a foreign single-line value may carry a control character
   // or a line separator, and the serializer wrote it back as a YAML escape that
   // parses to the same code point — so `import` produced a file its own `lint`
   // refused, while reporting a pass. Neutralised here, and the substitution is
@@ -196,7 +196,7 @@ function mapFrontmatter(raw, options) {
   return { findings, frontmatter: clean.frontmatter };
 }
 
-// ------------------------------------------- AGSC-01-22 as amended at rc.6 (D113)
+// ------------------------------------------- AGSC-01-22 as amended at rc.6
 
 /**
  * The three facts a source Bundle publishes about itself, read from its

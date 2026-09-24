@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the surface half of the Boundary context (WP-10-F).
+// Unit tests for the surface half of the Boundary context.
 // AGSC-11-16..11-19, AGSC-11-21, AGSC-10-14.
 
 const test = require('node:test');
@@ -36,7 +36,7 @@ test('AGSC-11-18: readOnlyHint on the five reads, consequentialHint on the two w
   // `links` returns edges, not prose, so it carries no untrustedContentHint.
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.links.untrustedContentHint, false);
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.read.untrustedContentHint, true);
-  // AGSC-11-18 as amended at rc.5 (SITE1-01, bnd-0035, bnd-0036): `extensions` is MCP's map of
+  // AGSC-11-18 as amended at rc.5 (bnd-0035, bnd-0036): `extensions` is MCP's map of
   // extension identifier to settings object, and this node's settings object carries
   // exactly `linkset` — the absolute URL of its discovery document (AGSC-06-07).
   assert.deepStrictEqual(plain(s.mcpCapabilities({ base: 'https://a.example/' })), {

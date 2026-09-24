@@ -33,7 +33,7 @@
  *     `/skills/<cluster>/SKILL.md` — so a separate lockfile file has no route to be
  *     published at. The digests are therefore carried IN `/skills/index.json`, whose
  *     bytes no rule pins, as a `lock` member per pack; `index.json` is the lockfile
- *     AGSC-07-20 requires, and `install` verifies against it. Recorded as ENG5-S6.
+ * AGSC-07-20 requires, and `install` verifies against it. Recorded as.
  *   * **A pack's layout.** No rule and no vector pins the bytes of a `SKILL.md`, so
  *     this engine states its own: the three frontmatter keys AGSC-07-19/07-20 name,
  *     the cluster title, the provenance header, the sentence that says the quoted
@@ -45,7 +45,7 @@
  *
  * Rules: AGSC-07-19, AGSC-07-20, AGSC-07-21, AGSC-07-22, AGSC-07-15, AGSC-01-29,
  * AGSC-06-15, AGSC-06-30, AGSC-02-24. Requirements: PRD-032…035.
- * Owner: ENG-5 (WP-12).
+ *
  */
 
 const { commentSafe, compareCodePoint, singleLine, nfc } = require('../knowledge/unicode.js');
@@ -209,7 +209,7 @@ function packs(items, options) {
     });
   }
 
-  // AGSC-07-19 as amended at rc.6 (D113): `bundle_version` is the content version
+  // AGSC-07-19 as amended at rc.6: `bundle_version` is the content version
   // of AGSC-04-25, beside the pack entries. JCS sorts it first.
   const version = options.bundleVersion == null ? '' : String(options.bundleVersion);
   const index = {

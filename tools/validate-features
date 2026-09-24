@@ -312,7 +312,7 @@ function run(argv, io) {
     : new Map();
 
   const names = fs.readdirSync(direct).filter((f) => f.endsWith('.feature')).sort();
-  // FV29-10: zero files read is not a clean pack. The directory resolution above
+  // zero files read is not a clean pack. The directory resolution above
   // falls back to the argument itself, so a distribution with no `features/` used to
   // report `pass` over an empty list — a gate that protects nothing.
   if (names.length === 0) {

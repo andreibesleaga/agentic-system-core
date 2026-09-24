@@ -11,7 +11,7 @@
 // depend on.
 //
 // AGSC-08-08: nothing here sets, requires or influences an approval.
-// Owner: B (shell); wired at integration (WP-10-G).
+// Owner: B (shell); wired at integration.
 
 const lintVerb = require('./lint.js');
 const helpers = require('./_helpers.js');

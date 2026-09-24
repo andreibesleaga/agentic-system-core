@@ -1,5 +1,5 @@
 'use strict';
-// tests/knowledge/content-version.test.js — AGSC-04-25 (rc.6, D113).
+// tests/knowledge/content-version.test.js — AGSC-04-25.
 //
 // The vector `build-0014` pins the five derivation cases; this file pins what a
 // vector cannot: the grammar is TOTAL over the derivation (no input produces a

@@ -1,6 +1,6 @@
 'use strict';
 // src/application/cli/verbs/_archive.js — the `--zip` wiring shared by `compose`,
-// `skills` and `export` (owner decision D111, owner rule R100).
+// `skills` and `export`.
 //
 // APPLICATION LAYER. Every byte of the archive is `composition/archive.js`'s, which
 // is pure and is the same source text the `/compose/` page runs (AGSC-07-13); the

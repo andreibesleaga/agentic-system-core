@@ -1,10 +1,10 @@
 'use strict';
-// tests/distribution/surfaces-eng2.test.js — the surfaces added for the ENG-2 package:
+// tests/distribution/surfaces-eng2.test.js — the surfaces added for the package:
 // `/compose/` (AGSC-06-01, AGSC-07-01, AGSC-09-16), the human board page
 // `/boards/<cluster>/` (AGSC-10-13, AGSC-10-17), `/legal/` (AGSC-06-18, V9D-A6),
-// AGSC-06-21's three measured budgets (V9D-A1; four until rc.5, when ENG1-01
+// AGSC-06-21's three measured budgets (V9D-A1; four until rc.5, when
 // replaced the two index bounds with one) and the "every internal link resolves"
-// check that closes the defect V9-D found.
+// check that closes the defect found.
 //
 // Every build here is over a real copy of `tests/fixtures/minimal` in a temporary
 // directory with a fixed clock — no network, no wall clock, nothing left behind.
@@ -69,7 +69,9 @@ test('AGSC-06-01 / AGSC-07-01: /compose/ is emitted with its three same-origin s
   // AGSC-06-17's `script-src 'self'` admits no inline script, so every script has a src.
   assert.strictEqual((page.match(/<script(?![^>]*\bsrc=)/gu) || []).length, 0,
     'the page carries an inline script');
-  assert.strictEqual((page.match(/<script /gu) || []).length, composePage.ASSETS.length);
+  // Plus the default theme's one script, loaded by every page.
+  assert.strictEqual((page.match(/<script /gu) || []).length, composePage.ASSETS.length + 1);
+  assert.ok(page.includes('<script src="/assets/theme.js"></script>'), 'the theme script is not loaded');
   for (const asset of composePage.ASSETS) {
     assert.ok(page.includes(`<script src="${asset}"></script>`), `${asset} is not loaded`);
   }
@@ -99,7 +101,7 @@ test('AGSC-09-16: the page tool surface answers for all seven tools and for no e
   const controller = composePage.controller({});
   // Since rc.5 the controller installs NO tool object: `agsc-page-tools.js` does, and
   // it implements all seven. The controller carried a stub that answered `compose`
-  // and returned "has no page implementation yet" for the other six (ENG3-02).
+  // and returned "has no page implementation yet" for the other six.
   assert.ok(!controller.includes('has no page implementation yet'),
     'the controller still ships the six-tool stub');
   assert.ok(!/globalThis\.AGSC_TOOLS\s*=/u.test(controller),
@@ -227,7 +229,7 @@ test('a build that links a route it does not emit reports AGSC-E901, naming both
 
 test('AGSC-06-21 / V9D-A1: the three budgets are the rule\'s own numbers', () => {
   assert.strictEqual(site.BUDGET_HTML_BYTES, 100000);
-  // rc.5 (ENG1-01): ONE index budget, 1 MB per index DOCUMENT, decimal. The two it
+  // rc.5: ONE index budget, 1 MB per index DOCUMENT, decimal. The two it
   // replaced — 1 KB per published item and 500 KB absolute — are gone, not renamed.
   assert.strictEqual(site.BUDGET_INDEX_DOC_BYTES, 1000000);
   assert.strictEqual(site.BUDGET_SEARCH_PER_ITEM_BYTES, undefined);
@@ -253,7 +255,7 @@ test('AGSC-06-21: an HTML page over 100 KB fails the build, and only HTML is mea
   assert.deepStrictEqual(site.budgets(new Map([['/a/index.html', 'x'.repeat(site.BUDGET_HTML_BYTES)]]), 1), []);
 });
 
-test('AGSC-06-21 (rc.5, ENG1-01): the index budget is 1 MB per DOCUMENT', () => {
+test('AGSC-06-21: the index budget is 1 MB per DOCUMENT', () => {
   // Exactly at the bound is inside it; one byte more is not. Derived with a
   // synthetic file map, never with a megabyte of Markdown.
   const atBound = 'x'.repeat(site.BUDGET_INDEX_DOC_BYTES);

@@ -3,7 +3,7 @@
 // The five steps of AGSC-07-04…07-08 in their normative order and the
 // AGSC-07-09 verdict are `composition/compose.js`'s; `--from <slug>` reads the
 // saved composition of AGSC-02-97/07-24; `--emit <target>` is AGSC-07-18.
-// Owner: B (shell); wired at integration (WP-10-G).
+// Owner: B (shell); wired at integration.
 
 const compose = require('../../../composition/compose.js');
 const architecture = require('../../../composition/architecture.js');
@@ -159,7 +159,7 @@ function emitHarness(ctx, bundle, result, items) {
   // AGSC-07-17: "An invalid composition MUST NOT emit a Harness."
   if (!harness.isEmitted(result)) {
     // `--zip` too: an archive of nothing would be a download that says a Harness
-    // exists (D111 adds the archive beside the files, never instead of them).
+    // exists (adds the archive beside the files, never instead of them).
     if (ctx.verbFlags && ctx.verbFlags.zip === true) {
       helpers.note(ctx, 'harness missing: the archive of --zip, for the same reason (AGSC-07-17)');
     }
@@ -198,7 +198,7 @@ function emitHarness(ctx, bundle, result, items) {
     ctx.ports.fs.writeFile(at, text);
     written.push(at);
   }
-  // D111: `--zip` packages exactly the bytes that were just written, BESIDE the
+  // `--zip` packages exactly the bytes that were just written, BESIDE the
   // directory — AGSC-07-12 closes the Harness at seven file kinds, so the archive is
   // never inside it. The entry bytes are the emission's, not a re-read of the disk,
   // which is what lets the `/compose/` page — which has no disk — build the same

@@ -6,7 +6,7 @@
  *
  * AGSC-02-22: "`run` and `expect` are the only executable info strings; they are
  * permitted on `procedure` items only and have effect only under the opt-in `run`
- * verb of AGSC-09-94." AGSC-09-94 as corrected at rc.6 (ENG5-S7): "`run <slug>`
+ * verb of AGSC-09-94." AGSC-09-94 as corrected at rc.6: "`run <slug>`
  * executes the fenced blocks of a Procedure whose info string is `run` … (the two
  * info strings are spelled as AGSC-02-22 spells them)".
  *
@@ -26,7 +26,7 @@
  * rather than passed through, because passing it through would hand the child a
  * literal `|` that the author meant as a pipe. The refusal names the character.
  *
- * Rules: AGSC-02-22, AGSC-09-94. Owner: ENG-5 (WP-12).
+ * Rules: AGSC-02-22, AGSC-09-94.
  */
 
 const { finding } = require('./validate.js');
@@ -148,7 +148,7 @@ function steps(item, options = {}) {
           { file, line: block.line, severity: 'error' }));
         continue;
       }
-      // AGSC-09-94 as amended at rc.6 (ENG5-S8): "A command whose program name is
+      // AGSC-09-94 as amended at rc.6: "A command whose program name is
       // not listed is `AGSC-E203` — `run.allow[]` is a closed operator list of
       // exactly the shape that code names". The registry row names the rule, so
       // this is no longer a borrowed code.

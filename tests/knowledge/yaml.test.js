@@ -84,7 +84,7 @@ test('a construct the library itself rejects maps to AGSC-E105 (AGSC-02-02)', ()
 });
 
 // ---------------------------------------------------------------------------
-// V9-D lens (b/c): AGSC-E106 is now found by this module in one pass with a key
+// lens (b/c): AGSC-E106 is now found by this module in one pass with a key
 // set per mapping, because the library's `uniqueKeys` option compares every new
 // key against every key already in the mapping and is quadratic in the key count
 // — and AGSC-01-16 admits a 1 MiB frontmatter block. These cases pin the

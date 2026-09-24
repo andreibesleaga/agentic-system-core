@@ -1,6 +1,6 @@
 'use strict';
 
-// FINAL-VERIFY-29 (FV29-01). AGSC-09-16 requires a page tool's answer to be the
+// FINAL-VERIFY-29. AGSC-09-16 requires a page tool's answer to be the
 // local server's answer "for the same input and Bundle". The local server keys its
 // items with a `Map` (`distribution/mcp-tools.js`), which answers `undefined` for a
 // member of `Object.prototype`; the page tools kept the same index in a plain object

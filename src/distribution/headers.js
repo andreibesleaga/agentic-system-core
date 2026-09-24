@@ -7,7 +7,7 @@
 // SHA-256 `ETag` and the three `no-cache` routes) and AGSC-11-20 (a `restricted`
 // node applies the wildcard to the discovery document alone).
 //
-// UNIFIED AT INTEGRATION (WP-10-G, 2026-09-18): AGSC-11-03 and AGSC-11-05 are
+// UNIFIED AT INTEGRATION: AGSC-11-03 and AGSC-11-05 are
 // the BOUNDARY chapter's rules and are implemented once, in
 // `boundary/visibility.js` — the anti-corruption layer that owns them. This
 // module no longer restates them: it imports the CORS pair, the `no-cache`
@@ -27,7 +27,7 @@ const { singleLine } = require('../knowledge/unicode.js');
 const CORS = Object.freeze(Object.entries(visibility.CORS_HEADERS).map((pair) => Object.freeze(pair)));
 
 /**
- * AGSC-11-03: every artefact of AGSC-06-01 other than an HTML page (V7-12). Glob
+ * AGSC-11-03: every artefact of AGSC-06-01 other than an HTML page. Glob
  * patterns are the `_headers` syntax of the static host, matched left to right.
  */
 const PUBLIC_ARTEFACTS = Object.freeze([
@@ -149,7 +149,7 @@ function redirectsFile(renames = []) {
     '# The 0.0.x discovery path (D60, AGSC-06-17).',
     `${WELLKNOWN_ALIAS} ${WELLKNOWN_PATH} 301`,
   ];
-  // AGSC-02-24 (rc.5, FV28-01): `_redirects` is one rule per LINE. `from` and `to`
+  // AGSC-02-24: `_redirects` is one rule per LINE. `from` and `to`
   // are derived from slugs, which AGSC-01-10 already bounds, but the file is a
   // line-oriented surface and a writer neutralises what it puts on a line.
   for (const r of renames) lines.push(`${singleLine(r.from)} ${singleLine(r.to)} ${r.status == null ? 301 : r.status}`);

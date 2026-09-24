@@ -13,14 +13,14 @@
 // graph-0013 ports and task state                             AGSC-05-30
 // graph-0014 the three literal forms                          AGSC-05-31
 // graph-0021…0025 the same cases as 0001/0002/0004/0006/0020, restated as quads
-//                  named by the Bundle IRI                     AGSC-04-15 (rc.6, PY2-01)
+// named by the Bundle IRI AGSC-04-15
 //
 // (0001, 0002, 0004, 0006, 0010, 0013, 0014 and 0020 are withdrawn and never run.)
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
 //
-// TWO READINGS THIS HANDLER MAKES, both reported to the owner:
+// TWO READINGS THIS HANDLER MAKES, both reported to the maintainer:
 //
 //  1. `graph-0010` calls its `nquads` the complete serialization of the vector's
 //     input, but omits the `rdf:type`, `skos:inScheme` and `asc:kind` triples that
@@ -55,7 +55,7 @@ const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex'
 
 /**
  * The emission options a vector's input asks for. Every line of `graph.nq` is a quad
- * named by the Bundle IRI (AGSC-04-15 as amended at rc.6, PY2-01), so the graph term
+ * named by the Bundle IRI (AGSC-04-15 as amended at rc.6), so the graph term
  * is never chosen by the vector's shape: the five released cases that stated triples
  * in the default graph under the older `input.base` shape are withdrawn and are never
  * run (graph-0001/0002/0004/0006/0020, superseded by graph-0021…graph-0025).
@@ -155,7 +155,7 @@ function termNamesCase(vector) {
 }
 
 /**
- * graph-0025 (superseding graph-0020) — AGSC-05-27 as amended at rc.6 (ENG3-S3): the `asc:mentions` edge of
+ * graph-0025 (superseding graph-0020) — AGSC-05-27 as amended at rc.6: the `asc:mentions` edge of
  * an inline body link. Only the mentions lines are asserted
  * (`whole_file_asserted: false`); the rest of the serialisation is pinned by
  * graph-0015…graph-0018.

@@ -3,8 +3,8 @@
 // them — the anti-corruption layer where the boundary chapter lives — and
 // `distribution/headers.js` turns the same data into the bytes of `_headers`
 // (AGSC-06-04, AGSC-06-17). This suite is the proof that the two agree BYTE
-// for byte, so the duplication WP-10-E and WP-10-F both reported cannot come
-// back unnoticed (WP-10-G, 2026-09-18).
+// for byte, so the duplication and both reported cannot come
+// back unnoticed.
 
 const test = require('node:test');
 const assert = require('node:assert');

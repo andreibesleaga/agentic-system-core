@@ -145,7 +145,7 @@ describe('bench/security.js — every kind, end to end on the reference fixture'
       arc: 'refused', build: 'neutralised', harness: 'refused', hop: 'refused', 'hop-ok': 'clean', imp: 'refused', lint: 'detected',
       pack: 'refused', 'pack-ok': 'clean', walk: 'refused', 'walk-ok': 'clean', wk: 'refused',
     });
-    // ENG-9 (BENCH1b-04): an archive given to `import` is now refused with AGSC-E903
+    // an archive given to `import` is now refused with AGSC-E903
     // instead of dying with an internal error, so the small corpus scores 9 of 9.
     assert.equal(result.cases.find((c) => c.id === 'arc').internal_error, false);
     assert.equal(result.totals.score, '9/9');

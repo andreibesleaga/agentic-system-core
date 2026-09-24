@@ -31,12 +31,12 @@ const REL = 'https://w3id.org/agentic-system-core/rel#';
 const EXTENSION_RELATIONS = Object.freeze([
   'access', 'context', 'contribute', 'graph', 'ledger', 'now',
   'ontology', 'peer', 'signature', 'skills', 'surface',
-]); // `signature`: AGSC-06-08/06-10 as amended at rc.6 (EXT2-07) — optional, affects nothing
+]); // `signature`: AGSC-06-08/06-10 as amended at rc.6 — optional, affects nothing
 /** AGSC-06-10 + AGSC-06-35: the IANA-registered short names this profile uses. */
 const REGISTERED_RELATIONS = Object.freeze([
   'alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
   'related', 'service-desc', 'service-doc', 'service-meta',
-]); // `cite-as` (RFC 8574): AGSC-06-10/06-35 as amended at rc.6 (EXT2-03)
+]); // `cite-as` (RFC 8574): AGSC-06-10/06-35 as amended at rc.6
 /** AGSC-06-35: the short names a `related[]` entry may carry. */
 const RELATED_RELATIONS = Object.freeze([
   'alternate', 'cite-as', 'collection', 'describedby', 'item', 'related',
@@ -49,7 +49,7 @@ const ALLOWED_RELATIONS = Object.freeze([
 
 /**
  * AGSC-06-08: the bundle-level facts, carried on the anchor's `describedby` link.
- * `agsc-bundle-version` (AGSC-04-25, added at rc.6 under D113) sits between
+ * `agsc-bundle-version` (AGSC-04-25, added at rc.6) sits between
  * `agsc-bundle-hash` and `agsc-counts` in the JCS member order of AGSC-04-05,
  * which is where a reader of the emitted bytes will find it.
  */
@@ -89,7 +89,7 @@ const COUNTED_TYPES = Object.freeze({
   procedure: 'procedures',
 });
 
-/** AGSC-11-16: the built-in surfaces take fixed access classes (V7-10). */
+/** AGSC-11-16: the built-in surfaces take fixed access classes. */
 const BUILTIN_SURFACE_ACCESS = Object.freeze({
   'llms-txt': 'none', chunks: 'none', webmcp: 'consent', mcp: 'consent',
 });
@@ -200,7 +200,7 @@ function linkset(config, options = {}) {
     'agsc-generated-at': full ? options.generatedAt : undefined,
     'agsc-spec-version': full ? options.specVersion : undefined,
   };
-  // AGSC-11-20: emitted only when the value is `restricted` (V7-06).
+  // AGSC-11-20: emitted only when the value is `restricted`.
   if (visibility === 'restricted') describedby['agsc-visibility'] = 'restricted';
   // AGSC-11-23: a node that stops publishing keeps serving a valid link set.
   if (options.tombstone != null) describedby['agsc-tombstone'] = options.tombstone;

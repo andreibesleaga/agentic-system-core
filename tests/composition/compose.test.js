@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the Composition context (WP-10-F).
+// Unit tests for the Composition context.
 // AGSC-07-03..07-10, AGSC-07-23, AGSC-07-24, AGSC-02-97, AGSC-11-22.
 // Deterministic by construction: the combiner is pure, so no clock and no
 // fixed epoch are needed — there is nothing here for a wall clock to reach.
@@ -300,7 +300,7 @@ test('AGSC-02-97: a block entry naming no item is AGSC-E301 and is dropped from 
   assert.deepStrictEqual(plain(from.result.selection), ['worker']);
 });
 
-// V9-D lens (b): a selection fence whose YAML fault carries no registered code
+// lens (b): a selection fence whose YAML fault carries no registered code
 // falls back to AGSC-E105. Replacing the guard with a disjunction survived the
 // whole suite, because no test reached the fallback.
 test('AGSC-02-97: a selection fence that is not YAML is a registered code, always', () => {

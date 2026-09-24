@@ -92,7 +92,7 @@ test('AGSC-10-09: export --okf then import --from okf reproduces every item byte
 
   const before = tree(path.join(source, 'content'));
   const after = tree(path.join(target, 'content'));
-  // AGSC-01-22 as amended at rc.6 (D113): tolerance has one LIMIT and one RECORD.
+  // AGSC-01-22 as amended at rc.6: tolerance has one LIMIT and one RECORD.
   // The record is `prov.source_version`/`prov.source_hash`, written by `import`
   // alone onto every item it writes, so that an imported item names the exact state
   // it was taken from. That is the one difference the round trip may show, and it is
@@ -226,7 +226,7 @@ test('an empty source directory is AGSC-E901 and writes nothing', () => {
 });
 
 test('AGSC-01-26a: --selection is the old-site adapter flag, not a verb requirement', () => {
-  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills']); // cogx: CONN-1; gabbe: ENG-9; skills: CONN-2
+  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board']);
   assert.deepStrictEqual([...importVerb.SELECTION_REQUIRED], ['old-site']);
 });
 

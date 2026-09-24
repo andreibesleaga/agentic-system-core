@@ -37,7 +37,7 @@ test('a command that cannot be found is a code, not an exception', () => {
   assert.ok(r.stderr.length > 0);
 });
 
-// V9-D lens (b): the scrub copies only the names the parent actually SET. A
+// lens (b): the scrub copies only the names the parent actually SET. A
 // mutation that inverted the `!== undefined` test survived the whole suite.
 // The child's own runner may add names of its own (`NODE_V8_COVERAGE` under
 // `--experimental-test-coverage`), so the assertions name what MUST and what

@@ -68,7 +68,7 @@ test('a prose default yields to a project-config value at the same path', () => 
 });
 
 // ---------------------------------------------------------------------------
-// Added at integration (WP-10-G, 2026-09-18): AGSC-11-01's range check.
+// Added at integration: AGSC-11-01's range check.
 // The rule lives in the Boundary context and is INJECTED here, because
 // Knowledge may not require Boundary and the emitter never clamps a value —
 // `chunks.max_bytes` out of range is a configuration fault, AGSC-E209.

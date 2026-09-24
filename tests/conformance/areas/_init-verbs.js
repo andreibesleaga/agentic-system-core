@@ -1,5 +1,5 @@
 'use strict';
-// The `init` → `ci` cases of area `adopt` (owner: WP-10-E): adopt-0004 and
+// The `init` → `ci` cases of area `adopt` (owner:): adopt-0004 and
 // adopt-0005. Kept beside `areas/adopt.js` rather than inside it, so that A's
 // handler for adopt-0001…0003 is not rewritten (WAVE2-NOTES): `adopt.js` delegates
 // here when a vector carries `input.verbs`.

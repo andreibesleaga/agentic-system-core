@@ -1,6 +1,6 @@
 'use strict';
 // src/governance/prov.js — CONTEXT Governance & Provenance, the Provenance and
-// Gate aggregates. Owner: C (WP-10-C). PURE: no fs, no process, no clock, no
+// Gate aggregates. PURE: no fs, no process, no clock, no
 // network — a git log, a board and a Proposal all arrive as records.
 //
 // Implements AGSC-08-01…08-12 (the provenance contract, the DCO-Plus trailer

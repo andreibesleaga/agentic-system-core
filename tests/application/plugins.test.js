@@ -1,5 +1,5 @@
 'use strict';
-// tests/application/plugins.test.js — the plugin contract of D112 §(2).
+// tests/application/plugins.test.js — the plugin contract of §(2).
 //
 // Three properties, each asserted directly: nothing is loaded from the network, a
 // mismatch is a registered Finding and never a crash, and the contract is additive

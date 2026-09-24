@@ -3,7 +3,7 @@
 // AGSC-04-02: build the Bundle twice and compare the bytes; a difference is
 // `AGSC-E602`. With `--ledger` (AGSC-08-23) the derived chain is verified
 // against the head the discovery document publishes — `AGSC-E701`/`AGSC-E702`.
-// Owner: B (shell); wired at integration (WP-10-G).
+// Owner: B (shell); wired at integration.
 
 const site = require('../../../distribution/site.js');
 const ledger = require('../../../governance/ledger.js');

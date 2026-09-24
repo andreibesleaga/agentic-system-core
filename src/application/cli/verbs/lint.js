@@ -9,7 +9,7 @@
 // N9 lints with the structural lints beside them (`governance/lint.js`,
 // AGSC-08-13…17).
 //
-// Owner: B; the item-level lane was wired at integration (WP-10-G).
+// Owner: B; the item-level lane was wired at integration.
 
 const validate = require('../../../knowledge/validate.js');
 const links = require('../../../knowledge/links.js');
@@ -58,7 +58,7 @@ function lane(ctx, bundle) {
   lanes.push('placement');
 
   // AGSC-03: the Link graph, its inverses, its cycles and its body references.
-  // AGSC-03-11's asset branch needs the set `loadBundle` listed (FV28-03): without
+  // AGSC-03-11's asset branch needs the set `loadBundle` listed: without
   // it every body image reference to a real file under `content/assets/` is
   // `AGSC-E310`, which is the one case the branch exists to admit.
   findings.push(...links.resolve(bundle.items || [], {
@@ -137,7 +137,7 @@ function fix(ctx, bundle) {
   const written = [];
   for (const file of planned.files) {
     if (!file.changed) continue;
-    // AGSC-04-19 as amended at rc.5 (ENG2-03) assigns a code PER NORMALISATION:
+    // AGSC-04-19 as amended at rc.5 assigns a code PER NORMALISATION:
     // AGSC-E108 for the encoding third, AGSC-E506 for every other one. A file that
     // needed both is therefore two findings, each under the code its rule names.
     for (const change of file.changes) {

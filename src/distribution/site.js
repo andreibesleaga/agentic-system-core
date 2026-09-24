@@ -14,8 +14,8 @@
 // Two collaborators may be REPLACED through `options` — `options.render` (the
 // Markdown renderer) and `options.graph` (the RDF views) — because a port in
 // another language substitutes its own; the defaults are this engine's
-// `knowledge/markdown.js` (WP-10-C) and `knowledge/jsonld.js` / `nquads.js` /
-// `turtle.js` (WP-10-D). Passing `null` for either omits the routes it produces and
+// `knowledge/markdown.js` and `knowledge/jsonld.js` / `nquads.js` /
+// `turtle.js`. Passing `null` for either omits the routes it produces and
 // names them in the result's `skipped`, so a caller can never mistake a partial
 // build for a complete one.
 
@@ -40,6 +40,7 @@ const search = require('./search.js');
 const headers = require('./headers.js');
 const now = require('./now.js');
 const html = require('./html.js');
+const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
@@ -157,7 +158,7 @@ function publishedItems(items, releases) {
  * its access class and its version — was called only by tests. The site therefore
  * EMITTED the page-tool surface at `/compose/` and never DECLARED it, which is
  * exactly the condition AGSC-11-19 tells the validator to warn about (AGSC-E211).
- * One path now, so a surface cannot be served and forgotten (ENG3-04).
+ * One path now, so a surface cannot be served and forgotten.
  *
  * `webmcpVersion` is an OPTION, not a configuration key: `config.schema.json` closes
  * `surfaces[]` against the built-in surfaces, so a node states the WebMCP Draft
@@ -216,7 +217,7 @@ function contributeEditUrl(config, path) {
     .replace(/\.git$/u, '')
     .replace(/\/(?:compare|pulls|pull\/new|issues\/new)$/u, '');
   const host = repository.replace(/^https:\/\//u, '').split('/')[0].toLowerCase();
-  // FV29-02: `FORGE_EDIT_SEGMENT` is an object literal, so a host spelled
+  // `FORGE_EDIT_SEGMENT` is an object literal, so a host spelled
   // `constructor` or `__proto__` answered a member of `Object.prototype` and the
   // emitted href carried "function Object() { [native code] }". Only an own key is a
   // forge this engine states the edit-view spelling of.
@@ -249,7 +250,7 @@ function pathOf(item) {
 }
 
 /**
- * AGSC-03-11 + AGSC-06-01 (added at rc.5, FV28-04): map ONE item's body references
+ * AGSC-03-11 + AGSC-06-01 (added at rc.5): map ONE item's body references
  * onto the routes this build emits.
  *
  * A body reference is authored in the BUNDLE's geometry — `content/concepts/a.md`
@@ -258,7 +259,7 @@ function pathOf(item) {
  * ROUTE geometry, where `/concepts/a/` reaches `/concepts/b/` as `../b/`. The two
  * geometries are different, so NO authored spelling resolves in both, and a writer
  * that copied the authored target into the page emitted a link to nothing. That is
- * FV28-04: `agsc lint` passed (AGSC-03-11 was satisfied), and the page 404ed.
+ * `agsc lint` passed (AGSC-03-11 was satisfied), and the page 404ed.
  *
  * The mapping is total and conservative:
  *   * an external target (AGSC-03-11: "never resolved at build time"), a
@@ -293,7 +294,7 @@ function bodyHrefResolver(item, byPath, assets) {
     // item, and the extension-less form is what wikilink normalisation produces.
     const target1 = byPath.get(resolved) || byPath.get(`${resolved}.md`);
     if (target1 === undefined) {
-      // AGSC-06-01 as amended at rc.6 (FIX28-01): a reference into `content/assets/`
+      // AGSC-06-01 as amended at rc.6: a reference into `content/assets/`
       // is published at `/assets/<path>`, `<path>` relative to that directory. The
       // route is emitted only for a file this build actually read, so a reference to
       // an asset that does not exist is still left alone and reported AGSC-E310.
@@ -338,7 +339,7 @@ function robots(base, options = {}) {
   const policy = legal
     ? 'the same policy as /.well-known/tdmrep.json and /legal/'
     : 'the same policy as /.well-known/tdmrep.json';
-  // LEG2-02 (ENG-9): the training reservation is the Content Use Terms' own. A node
+  // the training reservation is the Content Use Terms' own. A node
   // whose prose carries another licence publishes no `ai-train=no` and no per-crawler
   // `Disallow` — the licence says what may be done (CC BY 4.0 §2(a)(5)(B) forbids a
   // restriction beside it), and no rule obliges a node to reserve.
@@ -346,7 +347,7 @@ function robots(base, options = {}) {
   const signal = reserve
     ? 'Content-Signal: search=yes, ai-input=yes, ai-train=no'
     : 'Content-Signal: search=yes, ai-input=yes';
-  // AGSC-02-24 (rc.5, FV28-01): RFC 9309 is line-oriented — a line break in a token
+  // AGSC-02-24: RFC 9309 is line-oriented — a line break in a token
   // or in `base` would forge a directive. Both are pattern-bounded (AGSC-01-18,
   // AGSC-01-19); the writer neutralises anyway, because a writer may receive a
   // configuration it did not validate.
@@ -366,15 +367,15 @@ function tdmCrawlerTokens(value) {
 /**
  * AGSC-06-18, dialect 2: the TDM reservation, at its well-known location only. `1`
  * only where the prose is under the Content Use Terms, which reserve it; `0`
- * otherwise (LEG2-02, ENG-9).
+ * otherwise.
  */
 function tdmrep(base, reserve = true) {
   return [{ location: `${String(base).replace(/\/+$/u, '')}/`, 'tdm-reservation': reserve ? 1 : 0 }];
 }
 
 /**
- * The publisher's own disclaimer, from `DISCLAIMER.md` at the Bundle root (LEG2-02,
- * ENG-9): its first heading names the `/legal/` section, its first paragraph is the
+ * The publisher's own disclaimer, from `DISCLAIMER.md` at the Bundle root:
+ * its first heading names the `/legal/` section, its first paragraph is the
  * footer's notice, the rest renders into `/legal/`. `null` when the Bundle has none —
  * the engine states no disclaimer of its own on anybody's node.
  */
@@ -522,7 +523,7 @@ function securityTxt(base, instant, options = {}) {
       + ' "This field MUST always be present and MUST NOT appear more than once"',
       { file, line: expiresFields[1].line }));
   }
-  // FV29-11: the DERIVED branch, with no date source at all. AGSC-04-09 lets the
+  // the DERIVED branch, with no date source at all. AGSC-04-09 lets the
   // build instant default to 0 (`agsc init` then `agsc build`, before `git init` and
   // with no `SOURCE_DATE_EPOCH`), and 364 days after epoch 0 is 1970-12-31: an
   // already-expired security contact, which RFC 9116 §2.5.5 makes stale by
@@ -566,7 +567,7 @@ function securityTxt(base, instant, options = {}) {
 
   if (findings.some((f) => f.severity !== 'warn')) return { findings, text: null };
 
-  // RFC 9116 is line-oriented (AGSC-02-24, rc.5, FV28-01): every value the writer
+  // RFC 9116 is line-oriented (AGSC-02-24, rc.5): every value the writer
   // interpolates is neutralised, because a writer may receive a file it did not
   // validate.
   const lines = fields.map((f) => `${capitalise(f.name)}: ${singleLine(f.value)}`);
@@ -594,7 +595,7 @@ function capitalise(name) {
  * AGSC-05-07 is one sentence — "`pages/<slug>.md` MUST be a byte-identical copy of
  * the lint-normalized source file" — and until rc.5 this function emitted the BODY
  * alone, so the published view carried neither the item's type nor its title nor its
- * provenance, and the MUST was silently unmet (ENG3-01). The lint-normalized source
+ * provenance, and the MUST was silently unmet. The lint-normalized source
  * file is the AGSC-04-19 frontmatter block of `knowledge/adopt.js#serialize` followed
  * by the body, which is also what makes AGSC-09-16 satisfiable at all: a page tool
  * can only return the item a local `read` returns if the frontmatter is published.
@@ -614,7 +615,7 @@ function pageMarkdown(item, source) {
  * AGSC-01-26 / AGSC-06-18: the Bundle's own `LICENSE-CONTENT`, the bytes `/legal/`
  * publishes. Read through the injected port — the file is in the Bundle root, which
  * is exactly what the port is rooted at — and `null` when there is none, because
- * its wording is an owner decision outside this specification and a writer may
+ * its wording is an outside this specification and a writer may
  * never invent it.
  */
 function readLicenseContent(ports) {
@@ -765,14 +766,14 @@ function publicationFindings(bundle, ports, options = {}) {
  * is already read through it by `verbs/_helpers.js#attachmentFacts` for the
  * injection scan. The consequence was an `AGSC-E901` on every page carrying an
  * attachment, because `html.js` links each one as an `<img src="/attachments/…">` —
- * the eight ENG-1 saw under `--attach-diagrams`.
+ * the eight saw under `--attach-diagrams`.
  *
  * The file is read as a Buffer, not as text: an attachment may be any media type
  * AGSC-02-98 admits, and re-encoding one through a string would change its bytes and
  * break the AGSC-01-34 digest comparison.
  */
 /**
- * BENCH1b-02/05 (ENG-9): one attachment, judged BEFORE it becomes a route. `build`
+ * one attachment, judged BEFORE it becomes a route. `build`
  * alone used to publish what `ci` refuses — an SVG carrying a script, a
  * `../../../` path written into the page — and to swallow the FileSystem port's
  * refusal (over the cap, an archive, a link out of the root), after which the
@@ -839,7 +840,7 @@ function readAttachment(ports, slug, file) {
 }
 
 /**
- * AGSC-06-01 as amended at rc.6 (FIX28-01): the bytes of `/assets/<path>`.
+ * AGSC-06-01 as amended at rc.6: the bytes of `/assets/<path>`.
  *
  * AGSC-03-11 admits a body image or link whose target is a file under
  * `content/assets/`, and AGSC-02-95 creates such files during adoption byte for
@@ -884,7 +885,7 @@ function readDiagramSource(ports, slug) {
  * AGSC-06-21, the half no writer measured (V9D-A1): "Budgets are normative and MUST
  * fail the build when exceeded: ≤100 KB per HTML page; ≤1 MB per index document;
  * ≤60 s build per 500 items … Exceeding a budget that no sharding rule relieves MUST
- * fail the build." (Three budgets since rc.5, ENG1-01; four until then.)
+ * fail the build." (Three budgets since rc.5; four until then.)
  *
  * All three byte/scale budgets are MEASURED here. The rule says a breach MUST FAIL the build, and
  * `spec/09-conformance.md` §9.4 registers NO code for a budget breach — so the
@@ -910,7 +911,7 @@ function readDiagramSource(ports, slug) {
  */
 const BUDGET_HTML_BYTES = 100000;
 /**
- * AGSC-06-21 as amended at rc.5 (ENG1-01): ONE index budget, ≤1 MB — 1,000,000
+ * AGSC-06-21 as amended at rc.5: ONE index budget, ≤1 MB — 1,000,000
  * decimal UTF-8 bytes — measured **per index document**, which is `/search.json` at
  * or below 500 items and EACH `/search-<nn>.json` shard above it.
  *
@@ -1011,7 +1012,7 @@ function resolveRelative(baseDir, relative) {
  * a dangling internal link — the defect V9D-A6 found on `/legal/` — so this is a
  * function the suite asserts over, not a promise in a comment.
  *
- * RELATIVE hrefs are resolved against the page's own route since rc.5 (FV28-04).
+ * RELATIVE hrefs are resolved against the page's own route since rc.5.
  * Before that this function read site-absolute hrefs only, and the patterns node
  * shipped 186 relative links over 65 targets on 52 pages, not one of which resolved
  * to an emitted route: the guard was blind to exactly the class of link an import
@@ -1107,7 +1108,7 @@ function paginate(route, entries, perPage = search.ITEMS_PER_SHARD) {
  * AGSC-06-01 names routes this milestone does not produce. Each one is listed
  * here with the reason, and `build` puts every one of them into `skipped`, so
  * a caller can never mistake an absent route for a complete emission
- * (WP-10-G, 2026-09-18).
+ *
  */
 const UNPRODUCED_ROUTES = Object.freeze([
   ['/specs/, /specs/agentic-knowledge/, /specs/mcp/',
@@ -1187,7 +1188,7 @@ function build(bundle, ports, options = {}) {
   const instant = ports.clock.iso === undefined ? ledgerModule.instantFromEpoch(ports.clock.now()) : ports.clock.iso();
   const files = new Map();
   const findings = [...(bundle.findings || [])];
-  /** Attachment routes judged unservable (ENG-9); their page links are not a second fault. */
+  /** Attachment routes judged unservable; their page links are not a second fault. */
   const refusedAttachments = new Set();
   // AGSC-04-25: ONE content version per build, stamped in nine places. The
   // application layer derives it (so that a verb which never builds a site can
@@ -1233,7 +1234,7 @@ function build(bundle, ports, options = {}) {
     releases: config.releases,
   }).records;
   if (full) {
-    // AGSC-06-31: the shard manifest carries the content version (D113).
+    // AGSC-06-31: the shard manifest carries the content version.
     const chunkFiles = chunks.files(chunkRecords, canonicalize,
       { bundleVersion, generatedAt: instant });
     for (const file of chunkFiles.files) put(file.path, file.text);
@@ -1280,7 +1281,7 @@ function build(bundle, ports, options = {}) {
   });
 
   // ------------------------------------------------------------ RDF views (D)
-  // AGSC-05-27 as amended at rc.6 (ENG3-S3), with AGSC-03-11 and AGSC-05-16: an
+  // AGSC-05-27 as amended at rc.6, with AGSC-03-11 and AGSC-05-16: an
   // inline Markdown link between two items of the Bundle is ONE `asc:mentions`
   // triple from the referring item to the referenced one, whatever the number of
   // references between them, with no computed inverse. Resolving a body's links is
@@ -1294,7 +1295,7 @@ function build(bundle, ports, options = {}) {
     .edges
     .filter((edge) => edge.key === 'mentions' && edge.source !== edge.target)
     .map((edge) => ({ source: edge.source, target: edge.target }));
-  // AGSC-11-12 (F6, ENG-9): a `sources[].resource` under a declared peer's base is
+  // AGSC-11-12 (F6): a `sources[].resource` under a declared peer's base is
   // `rdfs:seeAlso` + `asc:peerOrigin` in every graph view. The Boundary context owns
   // the peer-base derivation and the IRI normalisation (`federation.peerCitations`);
   // this build hands the result to the one dataset writer, as it does `mentions`.
@@ -1392,7 +1393,7 @@ function build(bundle, ports, options = {}) {
   // ------------------------------------------------------------ per-item views
   // AGSC-06-02: an item has TWO machine views, `/pages/<slug>.md` and
   // `/pages/<slug>.jsonld`; the second is the same JSON-LD the graph carries,
-  // restricted to that one item (WP-10-G wired it, AGSC-06-01).
+  // restricted to that one item (wired it, AGSC-06-01).
   if (full) {
     // AGSC-05-07: the published Markdown view is the lint-normalized SOURCE FILE, so
     // the loaded item — the only record that still carries the frontmatter object in
@@ -1510,7 +1511,7 @@ function build(bundle, ports, options = {}) {
   if (full && typeof render === 'function') {
     const disclaimer = readDisclaimer(ports);
     const pageOptions = {
-      // LEG2-02 (ENG-9): the footer's AI sentence is a derived fact, not a constant —
+      // the footer's AI sentence is a derived fact, not a constant
       // stated only where a published item records AI assistance — and its disclaimer
       // is the publisher's own `DISCLAIMER.md`, or nothing.
       aiAssisted: items.some((i) => i && i.prov && ['ai-assisted', 'ai-generated'].includes(String(i.prov.origin))),
@@ -1523,12 +1524,22 @@ function build(bundle, ports, options = {}) {
       author: (config.site || {}).author,
       legal: hasLegal,
       licenseProse,
-      nav: [['/', 'Home'], ['/search/', 'Search'], ['/compose/', 'Compose']],
+      // The header of AgenticSystemCore.com — the brand links home, then one entry
+      // per index route this build emits, then the node's own pages.
+      nav: [['/', 'Home'],
+        ...[...new Set(items.map((i) => TYPE_PLURAL[i.type] || TYPE_PLURAL.concept))].sort(compareCodePoint)
+          .map((plural) => [`/${plural}/`, plural.charAt(0).toUpperCase() + plural.slice(1)]),
+        ...(packs.index.packs.length > 0 ? [['/skills/', 'Skills']] : []),
+        ['/now/', 'Now'], ['/compose/', 'Compose'], ['/search/', 'Search']],
+      siteTitle: site.title == null ? indexFrontmatter.title : site.title,
       render,
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
-    // FV28-04: only a PUBLISHED item has a route (AGSC-06-30), so only a published
+    const membersOf = (cluster) => items
+      .filter((i) => i.type !== 'cluster' && Array.isArray(i.clusters) && i.clusters.map(String).includes(cluster.slug))
+      .map(entryOf);
+    // only a PUBLISHED item has a route (AGSC-06-30), so only a published
     // item is a rewriting target; a body link to a draft keeps its authored spelling
     // and is reported by the dangling-link guard.
     const publishedByPath = new Map(items.map((i) => [pathOf(i), i]));
@@ -1541,7 +1552,7 @@ function build(bundle, ports, options = {}) {
           name: title == null ? '' : title,
           url: discovery.href(base, page.route),
         });
-        put(`${page.route}index.html`, html.indexPage({ description, entries: page.entries, title }, { ...pageOptions, jsonld }));
+        put(`${page.route}index.html`, html.indexPage({ description, entries: page.entries, title }, { ...pageOptions, jsonld, route: page.route }));
       }
     };
 
@@ -1580,7 +1591,7 @@ function build(bundle, ports, options = {}) {
           put(`/attachments/${item.slug}/${attachment.file}`, judged.bytes);
         }
       }
-      // FV28-04: the body's references are rendered as the ROUTES this build emits,
+      // the body's references are rendered as the ROUTES this build emits,
       // never as the authored Bundle paths, which resolve to nothing on the site.
       put(`${routeOf(item)}index.html`, html.itemPage(item, {
         ...pageOptions,
@@ -1594,6 +1605,14 @@ function build(bundle, ports, options = {}) {
         pageToolScripts: composePage.PAGE_TOOL_SCRIPTS,
         // AGSC-11-14 + research/34 option 3: the plain "Propose an edit" anchor.
         editUrl: contributeEditUrl(config, pathOf(item)),
+        // A cluster page lists the published items that name it, in the same order
+        // as every index route (the published set's order).
+        ...(item.type === 'cluster' ? { members: membersOf(item) } : {}),
+        // The metadata list's Cluster row: each named cluster, linked when published.
+        clusters: (Array.isArray(item.clusters) ? item.clusters : []).map((slug) => {
+          const cluster = items.find((i) => i.type === 'cluster' && i.slug === String(slug));
+          return cluster === undefined ? { title: String(slug) } : { href: routeOf(cluster), title: cluster.title == null ? cluster.slug : cluster.title };
+        }),
         ...(diagramSource === null ? {} : { diagramSource }),
       }));
     }
@@ -1602,7 +1621,8 @@ function build(bundle, ports, options = {}) {
       indexFrontmatter.description, items.map(entryOf));
     for (const plural of [...new Set(items.map((i) => TYPE_PLURAL[i.type] || TYPE_PLURAL.concept))].sort(compareCodePoint)) {
       putIndex(`/${plural}/`, plural, `Every ${plural} item of this node.`,
-        items.filter((i) => (TYPE_PLURAL[i.type] || TYPE_PLURAL.concept) === plural).map(entryOf));
+        items.filter((i) => (TYPE_PLURAL[i.type] || TYPE_PLURAL.concept) === plural)
+          .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))));
     }
     // AGSC-06-01: `/tags/<tag>/`, one index route per tag actually used.
     const tags = new Map();
@@ -1617,7 +1637,12 @@ function build(bundle, ports, options = {}) {
     }
     // AGSC-06-01: `/search/` is the page whose data is `/search.json`.
     putIndex('/search/', 'Search', 'The index of this node is /search.json.', items.map(entryOf));
-    put('/now/index.html', html.nowPage(nowMd, pageOptions));
+    put('/now/index.html', html.nowPage(nowMd, { ...pageOptions, route: '/now/' }));
+    // The default theme every page links (theme.js). A Bundle's own authored
+    // `content/assets/site.css` replaces the stylesheet at the same route.
+    const ownStylesheet = readAsset(ports, 'content/assets/site.css');
+    put(theme.STYLESHEET_ROUTE, ownStylesheet === null ? textBytes(theme.stylesheet()) : ownStylesheet);
+    put(theme.SCRIPT_ROUTE, textBytes(theme.script()));
     put('/404.html', html.notFoundPage(pageOptions));
     // AGSC-04-25: `/changelog/` carries the versions list, derived from the git-log
     // file — the ledger cannot supply it, because a 1.0 entry carries `kind: release`
@@ -1664,7 +1689,7 @@ function build(bundle, ports, options = {}) {
     // AGSC-06-01 `/compose/` + AGSC-07-01/07-13: the combiner in the browser. The
     // three scripts are same-origin assets of this one route, because AGSC-06-17's
     // `script-src 'self'` admits no inline script.
-    put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, pageOptions));
+    put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, { ...pageOptions, route: '/compose/' }));
     put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ specVersion })));
     put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({
       bundleId: (config.bundle || {}).id, specVersion,
@@ -1672,7 +1697,7 @@ function build(bundle, ports, options = {}) {
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
 
-    // AGSC-10-13 + PUB-3 Q18: the HUMAN board page beside the JSON export.
+    // AGSC-10-13 + Q18: the HUMAN board page beside the JSON export.
     // Columns are the nine task states of AGSC-02-99, in their declared order, so
     // a board reads left to right the way the state machine runs.
     const wip = Math.min(...[...(Array.isArray(config.agents) ? config.agents : [])]
@@ -1730,7 +1755,7 @@ function build(bundle, ports, options = {}) {
   // reader who follows it.
   for (const link of internalLinks(ordered, { base })) {
     if (resolvesTo(ordered, link.route) !== null) continue;
-    // A refused attachment is already reported under its own code (ENG-9); the link
+    // A refused attachment is already reported under its own code; the link
     // to it is the same fault, not a second one.
     if (refusedAttachments.has(link.href)) continue;
     findings.push(finding('AGSC-E901',

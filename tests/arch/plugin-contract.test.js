@@ -1,5 +1,5 @@
 'use strict';
-// tests/arch/plugin-contract.test.js — D112 §(2): every sample under
+// tests/arch/plugin-contract.test.js — §(2): every sample under
 // `examples/plugins/` is checked against its row of AGSC-00-24, so the samples are
 // proof and not decoration.
 //

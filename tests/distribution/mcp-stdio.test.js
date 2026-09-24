@@ -1,5 +1,5 @@
 'use strict';
-// Integration test for the MCP stdio transport (WP-10-F). AGSC-09-13,
+// Integration test for the MCP stdio transport. AGSC-09-13,
 // AGSC-09-13a, AGSC-11-18.
 //
 // It spawns the real CLI (`bin/agsc.js mcp`) on the fixture Bundle with a
@@ -66,7 +66,7 @@ test('AGSC-09-13: initialize, tools/list and tools/call over real stdio frames',
   assert.strictEqual(frames.length, 3, out);
 
   // AGSC-11-18: the extension identifier is advertised in the capabilities.
-  // rc.5 (SITE1-01): the map of identifier to settings object, `linkset` and no more.
+  // rc.5: the map of identifier to settings object, `linkset` and no more.
   assert.deepStrictEqual(frames[0].result.capabilities.extensions,
     { 'com.agenticsystemcore/knowledge': { linkset: 'https://minimal.example/.well-known/knowledge-linkset' } });
   assert.strictEqual(frames[0].result.protocolVersion, '2025-11-25');
@@ -126,7 +126,7 @@ test('serve writes protocol frames to the stdout it is given, and nothing else (
   stdout.setEncoding('utf8');
   stdout.on('data', (d) => frames.push(d));
   // No stream is monkey-patched any more: `application/cli/main.js` knows `mcp`
-  // is a streaming verb and prints nothing on stdout (WP-10-G).
+  // is a streaming verb and prints nothing on stdout.
   await serve({ bundle, stdin, stdout });
   stdin.write(`${JSON.stringify(INITIALIZE)}\n`);
   await new Promise((resolve) => { stdout.once('data', resolve); });

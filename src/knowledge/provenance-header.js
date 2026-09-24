@@ -8,7 +8,7 @@
 // of the AGSC-07-13 portability contract (its copy is compared against this one by
 // `tests/knowledge/comment-safe.test.js`).
 //
-// The `assistance:` line was added at rc.6 on the owner's decision of 2026-09-22:
+// The `assistance:` line was added at rc.6 on the of 2026-09-22:
 // AGSC-06-15 makes it a CONSTANT of the specification — never authored, never
 // configured, always last in the block, immediately before `-->`.
 
@@ -27,7 +27,7 @@ const ASSISTANCE = 'content may be AI-assisted; each item states its origin in '
  * version and the build instant outside it.
  *
  * `bundle_version` was added between `spec_version` and `generated_at` at rc.6
- * (D113, AGSC-04-25). The rule admits no absence, so a caller that passes none
+ * (AGSC-04-25). The rule admits no absence, so a caller that passes none
  * gets AGSC-04-25's branch 4 derived from the build instant the block already
  * carries — the one honest value a writer with no git history can still state —
  * rather than an empty value outside the grammar.

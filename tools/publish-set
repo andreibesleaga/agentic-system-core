@@ -38,7 +38,7 @@
 //              to a tree is silent
 //   AGSC-E901  the list is empty: a switch that publishes nothing is far more
 //              likely a mistake than an intention, and a tool that passes on
-//              nothing protects nothing (FV29-10)
+// nothing protects nothing
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -320,7 +320,7 @@ function run(argv, io) {
   const published = new Set(listed);
   const decided = decide(root, published);
   const findings = [...decided.findings];
-  // FV29-10: a run over no item file, or a list that publishes nothing, is not a
+  // a run over no item file, or a list that publishes nothing, is not a
   // pass. Both are reported, and neither writes.
   if (decided.plan.length === 0) {
     return usage(`no item file under ${CONTENT_DIR}/: there is nothing to switch (AGSC-E901)`);

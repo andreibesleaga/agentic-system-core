@@ -1,17 +1,17 @@
 'use strict';
-// ENG-9 — five input refusals the security-floor score (BENCH-1b, `bench/security.js`)
+// five input refusals the security-floor score (BENCH-1b, `bench/security.js`)
 // found stopped under the wrong code, or not stopped at all. Driven as an operator
 // drives the engine: the real CLI over a scratch copy of the reference fixture.
 //
-//   BENCH1b-02  `build` alone published an SVG attachment carrying a script and wrote
+// `build` alone published an SVG attachment carrying a script and wrote
 //               a `../../../` attachment path into the page; `ci` refused both. A node
 //               published by `build` must not be weaker than one published by `ci`
 //               (AGSC-02-98, AGSC-01-35; owner default: yes).
-//   BENCH1b-03  a `.md` file that is not valid UTF-8 was decoded with U+FFFD and
+// a `.md` file that is not valid UTF-8 was decoded with U+FFFD and
 //               accepted; AGSC-01-14 requires UTF-8, and the fault is AGSC-E108.
-//   BENCH1b-04  `import --from okf <file>.zip` died with an internal error; AGSC-01-16
+// `import --from okf <file>.zip` died with an internal error; AGSC-01-16
 //               refuses an archive with AGSC-E903.
-//   BENCH1b-05  an attachment over the cap, an archive attachment, an attachment
+// an attachment over the cap, an archive attachment, an attachment
 //               directory that is a link out of the Bundle, an oversized import file and
 //               an oversized `agsc.config.json` were stopped under AGSC-E901/E201 while
 //               the FileSystem port had already raised the code AGSC-01-16/01-35 name
@@ -61,7 +61,7 @@ function attach(dir, entry, bytes) {
   }
 }
 
-test('BENCH1b-02: build alone refuses an SVG attachment carrying a script (AGSC-E412) and writes nothing', () => {
+test(': build alone refuses an SVG attachment carrying a script (AGSC-E412) and writes nothing', () => {
   const dir = workspace();
   attach(dir, { file: 'x.svg', media_type: 'image/svg+xml' },
     '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>\n');
@@ -75,7 +75,7 @@ test('BENCH1b-02: build alone refuses an SVG attachment carrying a script (AGSC-
   assert.strictEqual(ci.envelope.findings.filter((f) => f.code === 'AGSC-E412').length, 1);
 });
 
-test('BENCH1b-02: build alone refuses an attachment path that leaves its directory (AGSC-E902)', () => {
+test(': build alone refuses an attachment path that leaves its directory (AGSC-E902)', () => {
   const dir = workspace();
   attach(dir, { file: '../../../agsc.config.json', media_type: 'application/json' });
   const r = agsc(dir, ['build']);
@@ -85,7 +85,7 @@ test('BENCH1b-02: build alone refuses an attachment path that leaves its directo
   assert.strictEqual(fs.existsSync(path.join(dir, 'www')), false);
 });
 
-test('BENCH1b-05: an attachment over the cap is AGSC-E904 and an archive attachment AGSC-E903, never E901', () => {
+test(': an attachment over the cap is AGSC-E904 and an archive attachment AGSC-E903, never E901', () => {
   const big = workspace();
   attach(big, { file: 'big.txt', media_type: 'text/plain' }, 'b'.repeat(CAP + 1));
   const r1 = agsc(big, ['ci']);
@@ -101,7 +101,7 @@ test('BENCH1b-05: an attachment over the cap is AGSC-E904 and an archive attachm
   assert.ok(!r2.codes.includes('AGSC-E901'), r2.codes.join(','));
 });
 
-test('BENCH1b-05: an attachment directory that links out of the Bundle is AGSC-E902, never E901', () => {
+test(': an attachment directory that links out of the Bundle is AGSC-E902, never E901', () => {
   const dir = workspace();
   const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-outside-'));
   fs.writeFileSync(path.join(outside, 'hosts'), 'secret\n');
@@ -122,7 +122,7 @@ test('the lint verb reports an absent attachment (AGSC-E413) — the presence ma
   assert.ok(r.codes.includes('AGSC-E413'), r.codes.join(','));
 });
 
-test('BENCH1b-03: an item that is not valid UTF-8 is AGSC-E108 (AGSC-01-14)', () => {
+test(': an item that is not valid UTF-8 is AGSC-E108 (AGSC-01-14)', () => {
   const dir = workspace();
   const item = path.join(dir, 'content', 'concepts', 'handoff.md');
   const text = fs.readFileSync(item);
@@ -135,7 +135,7 @@ test('BENCH1b-03: an item that is not valid UTF-8 is AGSC-E108 (AGSC-01-14)', ()
   assert.doesNotMatch(r.err, /internal error/u);
 });
 
-test('BENCH1b-05: an oversized agsc.config.json is AGSC-E904, not a JSON error', () => {
+test(': an oversized agsc.config.json is AGSC-E904, not a JSON error', () => {
   const dir = workspace();
   const at = path.join(dir, 'agsc.config.json');
   fs.writeFileSync(at, `${fs.readFileSync(at, 'utf8').trimEnd()}${' '.repeat(CAP)}\n`);
@@ -145,7 +145,7 @@ test('BENCH1b-05: an oversized agsc.config.json is AGSC-E904, not a JSON error',
   assert.ok(!r.codes.includes('AGSC-E201'), r.codes.join(','));
 });
 
-test('BENCH1b-04: import of an archive is AGSC-E903, and nothing is written', () => {
+test(': import of an archive is AGSC-E903, and nothing is written', () => {
   const dir = workspace();
   const source = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-zip-')), 'bundle.zip');
   fs.writeFileSync(source, Buffer.from('UEsDBHN0dWI=', 'base64'));
@@ -164,7 +164,7 @@ test('BENCH1b-04: import of an archive is AGSC-E903, and nothing is written', ()
   assert.deepStrictEqual(fs.readdirSync(path.join(dir, 'content'), { recursive: true }).sort(), before);
 });
 
-test('BENCH1b-05: an import file over the cap is AGSC-E904, not "could not be read"', () => {
+test(': an import file over the cap is AGSC-E904, not "could not be read"', () => {
   const dir = workspace();
   const source = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-big-'));
   fs.writeFileSync(path.join(source, 'big.md'),

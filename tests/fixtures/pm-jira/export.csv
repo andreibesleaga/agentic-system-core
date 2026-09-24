@@ -1,0 +1,5 @@
+Summary,Issue key,Issue id,Issue Type,Status,Project name,Priority,Assignee,Created,Updated,Due date,Labels,Labels,Description,Inward issue link (Blocks),Sprint
+Set up the board,APP-1,10001,Task,To Do,Apollo,High,erin,02/Jan/26 9:15 AM,03/Jan/26 10:00 AM,15/Jan/26,infra,,"First line
+second line",APP-2,Sprint 4
+Choose the storage,APP-2,10002,Decision,Done,Apollo,Medium,,01/Jan/26 8:00 AM,02/Jan/26 8:00 AM,,,,We keep files.,,
+'=SUM(A1),APP-3,10003,Bug,QA Hold,Apollo,Low,frank,01/Jan/26 8:00 AM,01/Jan/26 8:00 AM,,bug,urgent,A title that looks like a formula.,APP-9,Sprint 4

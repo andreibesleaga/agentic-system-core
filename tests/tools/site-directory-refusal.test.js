@@ -1,5 +1,5 @@
 'use strict';
-// SITE4-05 (ENG-9): pointed at a directory that is not their contract's input — a
+// pointed at a directory that is not their contract's input — a
 // published site — `validate-vectors` judged the site's JSON files as vectors (29
 // missing-member errors about `/.well-known/tdmrep.json` and `/skills/index.json`)
 // and `validate-diagrams` reported `/now.md` as a diagram file with no mermaid block.
@@ -26,7 +26,7 @@ function siteDir() {
   });
 }
 
-describe('checkers refuse a site directory (SITE4-05)', () => {
+describe('checkers refuse a site directory', () => {
   it('validate-vectors: AGSC-E901 and nothing else — no site file is judged as a vector', () => {
     const { code, json } = envelope('validate-vectors', [siteDir()]);
     assert.equal(code, 1);

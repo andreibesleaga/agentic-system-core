@@ -128,7 +128,7 @@ test('switching off the RDF views and the renderer names them in `skipped`', () 
   const built = site.build(bundle, ports, { ...options, graph: null, render: null });
   // Every route this build did not produce is NAMED — the switched-off
   // collaborators AND the AGSC-06-01 routes no module produces yet
-  // (site.UNPRODUCED_ROUTES, WP-10-G). Silence is never a pass.
+  // (site.UNPRODUCED_ROUTES). Silence is never a pass.
   for (const fragment of ['the RDF views were switched off', '/pages/<slug>.jsonld',
     'the Markdown renderer was switched off', '/ledger.jsonl']) {
     assert.ok(built.skipped.some((s) => s.includes(fragment)), `${fragment} is not named in skipped`);

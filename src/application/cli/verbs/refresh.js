@@ -10,7 +10,7 @@
 // network. Without `--dry-run` the verb says it is not implemented.
 //
 // The Proposal carries the lane task as its TOP-LEVEL `task` member
-// (coordinator decision 2026-09-18, WP-10-G), one of the agent's declared
+// (coordinator decision 2026-09-18), one of the agent's declared
 // `tasks[]`; a per-change `change.task` overrides it. That is what makes the
 // AGSC-E509 task check of `checkProposal` fire here.
 // Owner: B; the gate wiring is G's.

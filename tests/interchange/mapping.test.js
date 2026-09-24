@@ -110,7 +110,7 @@ test('AGSC-03-02 / AGSC-11-12: an out-of-set `related` value is DROPPED, never a
 });
 
 test('AGSC-01-35 / AGSC-03-11: a body link is rewritten in-set and DE-LINKED out of set', () => {
-  // rc.5 (FV28-04): the rewritten form is AGSC-03-12's normal form — the form
+  // rc.5: the rewritten form is AGSC-03-12's normal form — the form
   // `lint --fix` normalises a wikilink to — and the target must be PUBLISHED, not
   // merely selected: a draft has no route (AGSC-06-30) and a published page linking
   // one ships a 404 (AGSC-06-01).
@@ -125,7 +125,7 @@ test('AGSC-01-35 / AGSC-03-11: a body link is rewritten in-set and DE-LINKED out
   assert.deepStrictEqual(mapping.rewriteBodyLinks('no links\n', new Set()).findings, []);
 });
 
-test('a body link to a SELECTED but HELD-BACK card is de-linked too (FV28-04)', () => {
+test('a body link to a SELECTED but HELD-BACK card is de-linked too', () => {
   const result = mapping.rewriteBodyLinks(
     'See [held](/patterns/held/) and [live](/patterns/live/).\n',
     new Set(['held', 'live']), { slug: 'x', publishedSet: new Set(['live']) });
@@ -245,7 +245,7 @@ test('ordered(): an undefined member is omitted and an unknown key lands last', 
   assert.deepStrictEqual(Object.keys(out), ['type', 'kind', 'apple', 'zebra']);
 });
 
-// ------------------------------------------------------------------ FV29-08
+// ------------------------------------------------------------------
 
 test('AGSC-02-24: neutraliseSingleLine replaces every forbidden code point, and only those', () => {
   const clean = mapping.neutraliseSingleLine({

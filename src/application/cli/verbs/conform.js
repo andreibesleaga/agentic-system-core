@@ -9,7 +9,7 @@
 // The handlers live beside the vectors in the repository; a distribution that
 // carries the vectors but not the handlers reports `skip` per vector — which
 // AGSC-09-02 counts as a failure for a required vector — never a silent pass.
-// Owner: B (shell); wired at integration (WP-10-G).
+// Owner: B (shell); wired at integration.
 
 const path = require('node:path');
 const conformance = require('../../conformance.js');

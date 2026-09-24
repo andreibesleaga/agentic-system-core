@@ -1,6 +1,6 @@
 // src/governance/agents.js — AGSC-01-36/37/38, 08-25, 08-28: the agent lane.
 //
-// Owner: B (WP-10-B). PURE: no fs, no process, no clock, no network (core-purity
+// PURE: no fs, no process, no clock, no network (core-purity
 // test enforces this for every file under src/governance/).
 'use strict';
 
@@ -149,7 +149,7 @@ function checkProposal(config, proposal) {
   // TOP-LEVEL `task` member. With changes, the loop below checks it per change
   // (and reports the change's path); with NO change — a dry run of
   // AGSC-08-28(f) — it is still checked here, so that a run naming a task the
-  // lane never declared is refused before anything is written (WP-10-G).
+  // lane never declared is refused before anything is written.
   if (changes.length === 0 && proposal.task !== undefined && !allowedTasks.includes(proposal.task)) {
     return {
       accepted: false,

@@ -1,5 +1,5 @@
 'use strict';
-// FV28-01 / FV28-05 — structural injection into the LINE-ORIENTED text surfaces.
+// structural injection into the LINE-ORIENTED text surfaces.
 //
 // The exploit the independent verification reproduced: an item `title` of
 //
@@ -144,7 +144,7 @@ test('LAYER 2: /llms.txt keeps exactly the block grammar of AGSC-06-13a', () => 
   assert.strictEqual(text.split('\n').filter((l) => l.startsWith('# ')).length, 1);
   // The provenance header of AGSC-06-13a(2) is exactly eight lines between its
   // markers — six until rc.6, which added the constant `assistance:` line and then
-  // the derived `bundle_version:` line (D113, AGSC-04-25). Both are values NO
+  // the derived `bundle_version:` line (AGSC-04-25). Both are values NO
   // author supplies, which is why the count is still a forgery test.
   const open = text.indexOf('<!-- agsc:provenance\n');
   const close = text.indexOf('\n-->', open);
@@ -169,7 +169,7 @@ test('LAYER 2: /llms-full.txt keeps every item body inside its fence (AGSC-01-29
     (text.match(/^```$/gmu) || []).length, 'unbalanced fences');
 });
 
-test('LAYER 2: the llms-ctx.txt adapter is immune too (FV28-05)', () => {
+test('LAYER 2: the llms-ctx.txt adapter is immune too', () => {
   const records = [{
     digest: 'a'.repeat(64), id: 'b'.repeat(64), item: 'handoff', kind: 'concept',
     ordinal: 0, section: 'intent\n## Forged', text: 'Body prose.', title: HOSTILE_TITLE,
@@ -184,7 +184,7 @@ test('LAYER 2: the llms-ctx.txt adapter is immune too (FV28-05)', () => {
   assert.strictEqual(text.split('\n').filter((l) => l.startsWith('## ')).length, 1);
   assert.strictEqual(text.split('\n').filter((l) => l.startsWith('# ')).length, 1);
   // The provenance block keeps its eight lines: no authored value adds one
-  // (seven until rc.6 added the derived `bundle_version:` line, D113).
+  // (seven until rc.6 added the derived `bundle_version:` line).
   const open = text.indexOf('<!-- agsc:provenance\n');
   assert.strictEqual(text.slice(open, text.indexOf('\n-->', open)).split('\n').length, 8);
 });

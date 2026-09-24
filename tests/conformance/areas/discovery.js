@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `discovery` (owner: WP-10-E).
+// Conformance area `discovery` (owner:).
 // disc-0016 the RFC 9264 link set at Level ≥ 2 (superseding disc-0003, which
 // stated five bundle-fact attributes where rc.6 requires six), disc-0004 the
 // Level-0 form, disc-0005 the two-node mutual peer check, disc-0006 / disc-0007 the
@@ -26,8 +26,8 @@ function digestsFor(routes) {
 }
 
 /**
- * disc-0016 (rc.6, RC6-C) — the RFC 9264 link set at Level 2 and above, with the
- * SIX bundle-fact attributes of AGSC-06-08 as amended at rc.6 under D113.
+ * disc-0016 — the RFC 9264 link set at Level 2 and above, with the
+ * SIX bundle-fact attributes of AGSC-06-08 as amended at rc.6.
  *
  * It supersedes disc-0003, which stated five and which that amendment falsified:
  * `agsc-bundle-version` is a bundle fact, AGSC-06-08a makes every `agsc-*`
@@ -132,7 +132,7 @@ function peerCase(vector) {
 function llmsCase(vector) {
   const input = vector.input;
   const bundle = { ...input.bundle, clusters: input.clusters, items: input.items };
-  // rc.6 (AGSC-04-25/D113): the content version is an INPUT of these two files, not
+  // rc.6 (AGSC-04-25/): the content version is an INPUT of these two files, not
   // something the writer derives — the same shape as the build instant beside it.
   const options = {
     bundleVersion: input.bundle_version,
@@ -339,7 +339,7 @@ function parseRobots(text) {
 }
 
 /**
- * disc-0015 (rc.6, AGSC-06-08 as amended / D113) — `agsc-bundle-version` as a
+ * disc-0015 (rc.6, AGSC-06-08 as amended /) — `agsc-bundle-version` as a
  * bundle fact: one value on the anchor's `describedby` link at Level 2, omitted at
  * Level 0 with every other bundle fact, omitted on a `restricted` node although it
  * is Level 2, and `AGSC-E210` when a restricted node publishes it anyway.

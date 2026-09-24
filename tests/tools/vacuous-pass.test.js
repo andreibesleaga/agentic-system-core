@@ -1,5 +1,5 @@
 'use strict';
-// FV29-10: a checker that answers `pass` on a destroyed or empty input protects
+// a checker that answers `pass` on a destroyed or empty input protects
 // nothing. AGSC-09-92 makes `validate-spec` a merge gate, and three of the nine
 // command contracts of AGSC-09-90 reported `status: "pass"`, `findings: []`, exit 0
 // on a distribution whose `spec/00-overview.md` and `spec/09-conformance.md` were
@@ -55,7 +55,7 @@ function destroyedRoot() {
   return dir;
 }
 
-describe('the nine checkers never pass vacuously (FV29-10, AGSC-09-90)', () => {
+describe('the nine checkers never pass vacuously (AGSC-09-90)', () => {
   it('a destroyed distribution fails every rooted checker with a finding', () => {
     const dir = destroyedRoot();
     for (const name of ROOTED) {
@@ -72,7 +72,7 @@ describe('the nine checkers never pass vacuously (FV29-10, AGSC-09-90)', () => {
   });
 
   it('an ABSENT input is AGSC-E901 in the envelope, exit 1 — not a usage error', () => {
-    // TIGHTENED at rc.6 (FIX29-S4). AGSC-09-90 now says a validator MUST FAIL "with
+    // TIGHTENED at rc.6. AGSC-09-90 now says a validator MUST FAIL "with
     // `AGSC-E901`" over absent inputs, and AGSC-09-08 reserves exit 2 for an unknown
     // verb, an unknown flag or a missing argument. Five of the nine used to print a
     // usage block and exit 2, so the code was in prose a caller reading the envelope

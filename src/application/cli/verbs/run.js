@@ -36,7 +36,7 @@
  * the one unimplementable guarantee is named rather than quietly dropped, and no
  * command is ever executed under a guarantee this engine cannot make.
  *
- * Owner: ENG-5 (WP-12).
+ *
  */
 
 const os = require('node:os');
@@ -87,7 +87,7 @@ function execute(runner, step, options) {
     }
   }
   if (step.expected === null) return { captured, findings, ok: true };
-  // AGSC-09-94 as amended at rc.6 (ENG5-S8): "a captured result that differs from
+  // AGSC-09-94 as amended at rc.6: "a captured result that differs from
   // its `expect` block is `AGSC-E602`, a recorded result that the run did not
   // reproduce". The registry row names the rule, so this is no longer a borrowed
   // code.

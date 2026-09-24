@@ -153,7 +153,7 @@ function pageApplyTypes(value, key) {
 
 /** AGSC-09-14b: `kind` to item `type`, exactly `mcp-tools.js#KIND_TO_TYPE`. */
 function pageKindToType() {
-  // FV29-01: prototype-free. `kinds[args.kind]` is the guard `remember` uses to fall
+  // prototype-free. `kinds[args.kind]` is the guard `remember` uses to fall
   // back to `concept`; on a plain object literal it answered a function for
   // `constructor` and the item's `type` became the `Object` constructor.
   const kinds = Object.create(null);
@@ -162,6 +162,7 @@ function pageKindToType() {
   kinds.gate = 'gate';
   kinds.lesson = 'lesson';
   kinds.procedure = 'procedure';
+  kinds.task = 'concept';
   return kinds;
 }
 
@@ -454,7 +455,7 @@ function pageShardRoutes(manifest) {
 
 /**
  * The inverted index a page searches, whether the node published one document or a
- * manifest and its shards (AGSC-06-21, FV29-06).
+ * manifest and its shards (AGSC-06-21).
  *
  * At or below 500 items `/search.json` IS the index. Above it, `/search.json` is the
  * manifest `{docs_total, shards[]}` and each shard is a WHOLE index over its own
@@ -557,14 +558,14 @@ function pageCorpus(sources, options) {
       type,
     });
   }
-  // FV29-01: a PROTOTYPE-FREE index. A plain object literal answers a function for
+  // a PROTOTYPE-FREE index. A plain object literal answers a function for
   // `constructor`, `toString`, `__proto__` and the rest of `Object.prototype`, so the
   // `item === undefined` guard of every tool below never fired for those names and a
   // page answered a SUCCESS envelope where `mcp-tools.js` (a `Map`) answers
   // `AGSC-E301` — an AGSC-09-16 divergence between the two transports.
   const bySlug = Object.create(null);
   for (let i = 0; i < items.length; i += 1) bySlug[items[i].slug] = items[i];
-  // AGSC-06-21 (FV29-06): `/search.json` is the index at or below 500 items and the
+  // AGSC-06-21: `/search.json` is the index at or below 500 items and the
   // MANIFEST above it. `pageIndexOf` reads both shapes, so the corpus carries one
   // index whatever the node's size.
   const index = pageIndexOf(map);
@@ -600,7 +601,7 @@ function pageBaseOf(map) {
  */
 function pageEdges(items) {
   const list = Array.isArray(items) ? items : [];
-  // FV29-01: prototype-free, so a Link target spelled `constructor` resolves to
+  // prototype-free, so a Link target spelled `constructor` resolves to
   // nothing rather than to a member of `Object.prototype`.
   const bySlug = Object.create(null);
   const byPath = Object.create(null);
@@ -788,7 +789,7 @@ function pageResolveBodyReference(item, raw, byPath) {
 function pageToolset(corpus, core) {
   const model = corpus || { base: '/', bundleId: undefined, bySlug: {}, index: null, items: [] };
   const base = model.base;
-  // FV29-01: re-key into a prototype-free map whatever the caller supplied, so that a
+  // re-key into a prototype-free map whatever the caller supplied, so that a
   // corpus built by hand is as safe as one `pageCorpus` built.
   const bySlug = Object.create(null);
   {
@@ -797,7 +798,7 @@ function pageToolset(corpus, core) {
     for (let i = 0; i < names.length; i += 1) bySlug[names[i]] = supplied[names[i]];
   }
 
-  // AGSC-06-21 (FV29-06): an index the page could not read WHOLE is not an empty
+  // AGSC-06-21: an index the page could not read WHOLE is not an empty
   // index. Returning no hit over a manifest whose shard was not served is a wrong
   // answer and a silent one — so the two tools that read the index say what is
   // missing, with the registered code for a file that is not there.
@@ -909,6 +910,19 @@ function pageToolset(corpus, core) {
     propose: (args) => {
       const item = bySlug[args.slug];
       if (item === undefined) return pageErrorEnvelope('propose', 'AGSC-E301', 'no item with that slug in this Bundle');
+      if (args.task_state !== undefined) {
+        const moved = pageBoardMove(item.block, item.body, item.frontmatter, item.type, item.slug, args);
+        if (moved.code !== undefined) return pageErrorEnvelope('propose', moved.code, moved.message);
+        return pageEnvelope('propose', 'proposal', {
+          from: moved.from,
+          iri: pageItemIri(base, item.type, item.slug),
+          markdown: moved.markdown,
+          patch: moved.patch,
+          path: moved.path,
+          slug: item.slug,
+          task_state: moved.task_state,
+        });
+      }
       return pageEnvelope('propose', 'proposal', {
         iri: pageItemIri(base, item.type, item.slug),
         markdown: `${item.block}\n${item.body}`,
@@ -938,13 +952,20 @@ function pageToolset(corpus, core) {
       const taken = new Set(Object.keys(bySlug));
       const slug = pageDedupe(pageSlugify(title), taken);
       const frontmatter = { title, type };
-      if (type === 'concept') frontmatter.kind = 'explainer';
+      if (type === 'concept') frontmatter.kind = args.kind === 'task' ? 'task' : 'explainer';
+      // AGSC-10-16: a new task on a board — SUBMITTED, filed in the cluster named.
+      if (args.kind === 'task') {
+        frontmatter.task_state = 'TASK_STATE_SUBMITTED';
+        if (typeof args.cluster === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/u.test(args.cluster)) frontmatter.clusters = [args.cluster];
+      }
+      // A comment on a task (or any item) links to it.
+      if (typeof args.about === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/u.test(args.about)) frontmatter.related = [args.about];
       if (type === 'episode') {
         frontmatter.started = args.at;
         frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
         frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
       }
-      // MCP1-03 (ENG-9): the lesson branch requires `severity` (AGSC-09-14b default).
+      // the lesson branch requires `severity` (AGSC-09-14b default).
       if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
       if (typeof args.actor === 'string') frontmatter.actor = args.actor;
       frontmatter.prov = {
@@ -1010,15 +1031,153 @@ function pageToolset(corpus, core) {
   };
 }
 
+/**
+ * AGSC-02-99: the nine Agent2Agent task states, verbatim — the values a board move
+ * may propose (AGSC-10-17).
+ */
+function pageTaskStates() {
+  return ['TASK_STATE_UNSPECIFIED', 'TASK_STATE_SUBMITTED', 'TASK_STATE_WORKING',
+    'TASK_STATE_INPUT_REQUIRED', 'TASK_STATE_AUTH_REQUIRED', 'TASK_STATE_COMPLETED',
+    'TASK_STATE_FAILED', 'TASK_STATE_CANCELED', 'TASK_STATE_REJECTED'];
+}
+
+/**
+ * One top-level scalar line of a frontmatter block set to `value`: replaced where
+ * the key is, else inserted after the first line whose key is in `after`, else
+ * before the line whose key is `before`. The block is the canonical one
+ * (AGSC-04-19), so a key is one line and the text edit is exact.
+ */
+function pageSetLine(block, key, value, after, before) {
+  const lines = block.split('\n');
+  const line = `${key}: ${value}`;
+  const keyOf = (text) => {
+    const m = /^([A-Za-z_][A-Za-z0-9_-]*):/u.exec(text);
+    return m === null ? null : m[1];
+  };
+  for (let i = 0; i < lines.length; i += 1) {
+    if (keyOf(lines[i]) === key) {
+      lines[i] = line;
+      return lines.join('\n');
+    }
+  }
+  for (let a = 0; a < after.length; a += 1) {
+    for (let i = 0; i < lines.length; i += 1) {
+      if (keyOf(lines[i]) !== after[a]) continue;
+      let end = i + 1;
+      while (end < lines.length && /^(?: |- )/u.test(lines[end])) end += 1;
+      lines.splice(end, 0, line);
+      return lines.join('\n');
+    }
+  }
+  for (let i = 0; i < lines.length; i += 1) {
+    if (keyOf(lines[i]) === before) {
+      lines.splice(i, 0, line);
+      return lines.join('\n');
+    }
+  }
+  const close = lines.lastIndexOf('---');
+  lines.splice(close, 0, line);
+  return lines.join('\n');
+}
+
+/**
+ * AGSC-04-19's temporal quoting, on the text of a frontmatter block: a scalar that
+ * is a date or an instant is written double-quoted, as `lint --fix` writes it
+ * (`governance/fix.js#quoteTemporal`), so a patch prepared from the block applies
+ * to the lint-normalized file in the repository.
+ */
+function pageQuoteTemporal(block) {
+  return block.split('\n').map((line) => line.replace(
+    /^(\s*(?:- )?(?:[A-Za-z_][A-Za-z0-9_-]*: )?)(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}Z)?)$/u,
+    (_, lead, value) => `${lead}"${value}"`,
+  )).join('\n');
+}
+
+/**
+ * A unified diff of two texts that differ only inside the frontmatter block, as
+ * one hunk over the whole block (every unchanged line is context), which
+ * `git apply` accepts. Lines are aligned by a longest-common-subsequence table:
+ * the block is a few dozen lines, so the table is small.
+ */
+function pageUnifiedDiff(path, before, after) {
+  const a = before.split('\n');
+  const b = after.split('\n');
+  const endA = a.indexOf('---', 1);
+  const endB = b.indexOf('---', 1);
+  const x = a.slice(0, endA + 1);
+  const y = b.slice(0, endB + 1);
+  const table = [];
+  for (let i = x.length; i >= 0; i -= 1) {
+    table[i] = [];
+    for (let j = y.length; j >= 0; j -= 1) {
+      if (i === x.length || j === y.length) table[i][j] = 0;
+      else if (x[i] === y[j]) table[i][j] = table[i + 1][j + 1] + 1;
+      else table[i][j] = Math.max(table[i + 1][j], table[i][j + 1]);
+    }
+  }
+  const out = [];
+  let i = 0;
+  let j = 0;
+  while (i < x.length || j < y.length) {
+    if (i < x.length && j < y.length && x[i] === y[j]) {
+      out.push(` ${x[i]}`);
+      i += 1;
+      j += 1;
+    } else if (i < x.length && (j === y.length || table[i + 1][j] >= table[i][j + 1])) {
+      out.push(`-${x[i]}`);
+      i += 1;
+    } else {
+      out.push(`+${y[j]}`);
+      j += 1;
+    }
+  }
+  return [`--- a/${path}`, `+++ b/${path}`, `@@ -1,${x.length} +1,${y.length} @@`, ...out, ''].join('\n');
+}
+
+/**
+ * AGSC-10-17: a board move — claim (`TASK_STATE_WORKING`), progress or finish — as a
+ * PREPARED Proposal: the diff touches `task_state` and, when `at` is given,
+ * `modified`, and nothing else of the task. It is a payload; nothing is written,
+ * sent or merged (AGSC-08-04). `from` is the state the move was prepared against:
+ * a second claim prepared against the same state no longer applies once the first
+ * is merged (the forge conflict of AGSC-10-17).
+ */
+function pageBoardMove(block, body, frontmatter, type, slug, args) {
+  const states = pageTaskStates();
+  if (states.indexOf(args.task_state) === -1) {
+    return { code: 'AGSC-E203', message: `task_state must be one of ${states.join(', ')} (AGSC-02-99)` };
+  }
+  if (type !== 'concept' || frontmatter.kind !== 'task') {
+    return { code: 'AGSC-E207', message: 'only a concept of kind task has a task_state (AGSC-02-99)' };
+  }
+  const current = pageQuoteTemporal(block);
+  let next = pageSetLine(current, 'task_state', args.task_state, ['kind'], 'prov');
+  if (args.at !== undefined) {
+    const day = /^\d{4}-\d{2}-\d{2}/u.exec(String(args.at));
+    if (day === null) return { code: 'AGSC-E204', message: 'at must be a date or an instant (AGSC-02-06)' };
+    next = pageSetLine(next, 'modified', `"${day[0]}"`, ['date'], 'prov');
+  }
+  const path = `content/${pageTypePlural(type)}/${slug}.md`;
+  const before = `${current}${body}`;
+  const after = `${next}${body}`;
+  return {
+    from: frontmatter.task_state === undefined ? 'TASK_STATE_UNSPECIFIED' : String(frontmatter.task_state),
+    markdown: after,
+    patch: pageUnifiedDiff(path, before, after),
+    path,
+    task_state: args.task_state,
+  };
+}
+
 /** AGSC-09-13: the ARGUMENT names, the same list the manifest publishes. */
 function pageArguments() {
   return {
     ask: ['question'],
     compose: ['selection'],
     links: ['iri', 'slug'],
-    propose: ['slug'],
+    propose: ['at', 'slug', 'task_state'],
     read: ['slug'],
-    remember: ['at', 'body', 'kind', 'outcome', 'severity', 'sources', 'title'],
+    remember: ['about', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title'],
     search: ['query'],
   };
 }
@@ -1074,7 +1233,7 @@ const PORTABLE = Object.freeze(['pageTerms', 'pageNoAnswer', 'pageLinkKeys',
   'pageParseMap', 'pageParseValue', 'pageParseSeq', 'pageKeyEnd', 'pageScalar',
   'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
   'pageInlineTargets', 'pageResolveBodyReference', 'pageToolset', 'pageArguments',
-  'pageRequiredArguments', 'pageSlugOfIri']);
+  'pageRequiredArguments', 'pageSlugOfIri', 'pageTaskStates', 'pageQuoteTemporal', 'pageSetLine', 'pageUnifiedDiff', 'pageBoardMove']);
 
 const SOURCE = Object.freeze({
   pageTerms,
@@ -1117,6 +1276,11 @@ const SOURCE = Object.freeze({
   pageArguments,
   pageRequiredArguments,
   pageSlugOfIri,
+  pageTaskStates,
+  pageQuoteTemporal,
+  pageSetLine,
+  pageUnifiedDiff,
+  pageBoardMove,
 });
 
 /**
@@ -1217,6 +1381,9 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
 module.exports = {
   PORTABLE,
   bundle,
+  pageBoardMove,
+  pageTaskStates,
+  pageUnifiedDiff,
   pageApplyTypes,
   pageTypedScalars,
   pageAnchorOf,

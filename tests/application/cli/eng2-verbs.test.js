@@ -1,5 +1,5 @@
 'use strict';
-// tests/application/cli/eng2-verbs.test.js — the verb paths the ENG-2 package added:
+// tests/application/cli/eng2-verbs.test.js — the verb paths the package added:
 // `compose` writing the seven Harness files of AGSC-07-12, `lint --fix` (AGSC-03-12,
 // AGSC-04-14, AGSC-04-19, AGSC-04-20, the flag AGSC-09-09 names at rc.5), and
 // `export --jsonld|--jsonl|--to <adapter>` (AGSC-01-26a, AGSC-01-27, D98).
@@ -256,7 +256,7 @@ test('AGSC-09-09: lint --fix rewrites the files, and lint without it changes not
   assert.match(after, /See \[supervisor\]\(\.\.\/concepts\/supervisor\.md\)\./u);
   assert.match(ctx.notes.join(''), /fixed: content\/concepts\/needs-a-fix\.md/u);
   assert.match(ctx.notes.join(''), /lane: fix \(1 file written\)/u);
-  // AGSC-04-19 as amended at rc.5 (ENG2-03) assigns a code PER NORMALISATION, so a
+  // AGSC-04-19 as amended at rc.5 assigns a code PER NORMALISATION, so a
   // file that needed CRLF→LF, a key reorder AND a wikilink rewrite is three findings:
   // the encoding one under AGSC-E108 (AGSC-01-14) and the other two under AGSC-E506.
   const own = result.findings.filter((f) => /lint --fix normalised/u.test(f.message));
@@ -376,7 +376,7 @@ test('AGSC-01-27: export --jsonl is one JCS line per item, in slug order', () =>
   }
 });
 
-test('the three remaining export flags are implemented and each writes its own root (ENG-5)', () => {
+test('the three remaining export flags are implemented and each writes its own root', () => {
   // This test replaced the one that pinned `--markdown`, `--okf` and `--steer` as
   // "not implemented at this milestone"; they are implemented since 2026-09-21
   // (AGSC-01-26, AGSC-01-28) and `tests/interchange/` holds their own suites.

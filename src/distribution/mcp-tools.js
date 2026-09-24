@@ -37,6 +37,8 @@ const slugs = require('../knowledge/slug.js');
 const adopt = require('../knowledge/adopt.js');
 const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
+const { pageBoardMove } = require('./page-tools.js');
+const boardLanes = require('../governance/board-lanes.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every export carries. */
 const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -46,7 +48,7 @@ const NO_ANSWER = 'no answer in this memory';
 const SOURCE_RESOURCE = /^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u;
 /** AGSC-09-14b: `kind` to item `type`. */
 const KIND_TO_TYPE = Object.freeze({
-  concept: 'concept', episode: 'episode', gate: 'gate', lesson: 'lesson', procedure: 'procedure',
+  concept: 'concept', episode: 'episode', gate: 'gate', lesson: 'lesson', procedure: 'procedure', task: 'concept',
 });
 
 function plural(type) {
@@ -91,7 +93,7 @@ function tokenize(text) {
  * from a FLAT item, while a loaded Bundle carries them under `frontmatter` — so
  * until rc.5 this tool tokenized the body alone and silently matched neither a title
  * nor a description nor a tag. That is the same defect the `/compose/` combiner
- * carried (ENG2-D1): one shape read as another. Flattened here, so the `search` and
+ * carried: one shape read as another. Flattened here, so the `search` and
  * `ask` tools and `search.json` index exactly the same text and a hit means the same
  * thing on every surface. Found by vector `cli-0007`.
  */
@@ -145,6 +147,8 @@ function tools(bundle, options) {
     : new Map((bundle.items || []).map((i) => [i.slug, i]));
 
   const implementations = Object.create(null);
+  const flatItems = () => (bundle.items || [])
+    .map((i) => Object.assign({}, i.frontmatter, { slug: i.slug, type: i.type }));
 
   implementations.search = (args) => {
     const query = typeof args.query === 'string' ? args.query : '';
@@ -203,6 +207,30 @@ function tools(bundle, options) {
   implementations.propose = (args) => {
     const item = byslug.get(args.slug);
     if (!item) return errorEnvelope('propose', 'AGSC-E301', 'no item with that slug in this Bundle');
+    // AGSC-10-17: a board move is the SAME portable function the page runs, so the
+    // two transports return the same prepared Proposal (AGSC-09-16).
+    if (args.task_state !== undefined) {
+      const moved = pageBoardMove(adopt.serialize(item.frontmatter), item.body, item.frontmatter || {},
+        item.type, item.slug, args);
+      if (moved.code !== undefined) return errorEnvelope('propose', moved.code, moved.message);
+      // AGSC-08-28 / AGSC-10-17: a caller that declares one of this node's agent lanes
+      // is held to the lane's gates on the prepared Proposal. Only this transport
+      // knows the lanes (they are configuration, never published), so the page
+      // answers the same payload and the gates run again at review.
+      const refused = boardLanes.moveRefusal(config, flatItems(), {
+        agent: args.agent, path: moved.path, slug: item.slug, task_state: moved.task_state,
+      });
+      if (refused !== null) return errorEnvelope('propose', refused.code, refused.message);
+      return envelope('propose', 'proposal', Object.freeze({
+        from: moved.from,
+        iri: itemIri(base, item),
+        markdown: moved.markdown,
+        patch: moved.patch,
+        path: moved.path,
+        slug: item.slug,
+        task_state: moved.task_state,
+      }));
+    }
     // AGSC-08-04 / AGSC-11-14: the payload is RETURNED; no network write is
     // performed here on either transport. Only the stdio transport's caller
     // may write dist/proposal/<n>.{patch,md}, which is a side effect and not
@@ -252,14 +280,21 @@ function tools(bundle, options) {
     const taken = new Set(byslug.keys());
     const slug = slugs.dedupe(slugs.slugify(title), taken);
     const frontmatter = { title, type };
-    if (type === 'concept') frontmatter.kind = 'explainer';
+    if (type === 'concept') frontmatter.kind = args.kind === 'task' ? 'task' : 'explainer';
+    // AGSC-10-16: a new task on a board — SUBMITTED, filed in the cluster named.
+    if (args.kind === 'task') {
+      frontmatter.task_state = 'TASK_STATE_SUBMITTED';
+      if (typeof args.cluster === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/u.test(args.cluster)) frontmatter.clusters = [args.cluster];
+    }
+    // A comment on a task (or any item) links to it.
+    if (typeof args.about === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/u.test(args.about)) frontmatter.related = [args.about];
     if (type === 'episode') {
       // AGSC-09-14b: `at` supplies `started`; a clock is NEVER read (AGSC-04-11).
       frontmatter.started = args.at;
       frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
       frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
     }
-    // MCP1-03 (ENG-9): AGSC-09-14b's `severity` default reaches a lesson too, whose
+    // AGSC-09-14b's `severity` default reaches a lesson too, whose
     // schema branch REQUIRES the key — without it the item was not conforming.
     if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
     if (typeof args.actor === 'string') frontmatter.actor = args.actor;
@@ -278,6 +313,10 @@ function tools(bundle, options) {
       sources.push(Object.freeze({ id: source.id, resource: source.resource }));
     }
     if (sources.length > 0) frontmatter.sources = Object.freeze(sources);
+    const refused = boardLanes.createRefusal(config, {
+      agent: args.agent, path: `content/${plural(type)}/${slug}.md`, task: args.kind === 'task' ? 'plan' : undefined, type,
+    });
+    if (refused !== null) return errorEnvelope('remember', refused.code, refused.message);
     return envelope('remember', 'proposal', Object.freeze({
       body: typeof args.body === 'string' ? args.body.normalize('NFC') : '',
       findings: Object.freeze(findings),
@@ -339,9 +378,9 @@ const ARGUMENTS = Object.freeze({
   ask: Object.freeze(['question']),
   compose: Object.freeze(['selection']),
   links: Object.freeze(['iri', 'slug']),
-  propose: Object.freeze(['slug']),
+  propose: Object.freeze(['at', 'slug', 'task_state']),
   read: Object.freeze(['slug']),
-  remember: Object.freeze(['at', 'body', 'kind', 'outcome', 'severity', 'sources', 'title']),
+  remember: Object.freeze(['about', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title']),
   search: Object.freeze(['query']),
 });
 
@@ -359,9 +398,9 @@ const DESCRIPTIONS = Object.freeze({
   ask: 'Answer a question from this memory, citing at least one item IRI.',
   compose: 'Run the AGSC-07 closure algebra over a selection of item slugs.',
   links: 'Return the typed Links authored on one item.',
-  propose: 'Return the Proposal payload for one item; performs no network write.',
+  propose: 'Return the Proposal payload for one item — with task_state, a prepared board move (claim, progress, finish) as a patch; performs no write.',
   read: 'Return one item by slug.',
-  remember: 'Synthesize a conforming item and return it as a Proposal payload.',
+  remember: 'Synthesize a conforming item — a new task on a board (kind task, cluster), a comment on one (about) — and return it as a Proposal payload.',
   search: 'Search this memory and return matching items.',
 });
 

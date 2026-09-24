@@ -1,5 +1,5 @@
 'use strict';
-// tests/application/compatibility.test.js — D112 §(3): FORWARD and BACKWARD
+// tests/application/compatibility.test.js — §(3): FORWARD and BACKWARD
 // compatibility, end to end, through the real CLI over a real Bundle.
 //
 // Forward: a 1.1-shaped Bundle — one carrying the names AGSC-00-25 reserves to a

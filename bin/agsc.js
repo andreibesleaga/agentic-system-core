@@ -5,7 +5,7 @@
 // src/ports/*.js JSDoc interfaces — repository-relative FileSystem paths,
 // rooted via createFileSystem(root)) and falls back to small inline
 // Node-stdlib implementations only if an adapter is not yet present, so the
-// CLI keeps working while other WP-10 agents' modules land.
+// CLI keeps working while other agents' modules land.
 'use strict';
 
 const { main } = require('../src/application/cli/main.js');
@@ -158,7 +158,7 @@ async function run() {
 // running the real CLI.
 if (require.main === module) {
   run().catch((e) => {
-    // FV29-04: an error that carries a REGISTERED code is a diagnostic, not an
+    // an error that carries a REGISTERED code is a diagnostic, not an
     // internal fault. `EpochError` (AGSC-E603, exit 2) is thrown while the ports are
     // built, before `main()` can catch anything, so a malformed SOURCE_DATE_EPOCH
     // reached this handler and was printed as a stack trace with exit 1 — the
@@ -170,7 +170,7 @@ if (require.main === module) {
       const diagnostic = { code, severity: 'error', message: String(e.message) };
       const json = process.argv.slice(2).includes('--json');
       const quiet = process.argv.slice(2).includes('--quiet');
-      // FV29-18: under `--json` the diagnostic goes to STDERR, one JSON object per
+      // under `--json` the diagnostic goes to STDERR, one JSON object per
       // line, exactly as `application/cli/main.js` writes the same fault. This is a
       // fatal, pre-verb condition: no verb ran, so there is no AGSC-09-11 envelope,
       // and stdout under `--json` carries "exactly one JCS-canonical envelope and

@@ -12,7 +12,7 @@
  * twice from the same record produces the same file (AGSC-01-23) and the Episode is
  * already lint-normalized (AGSC-04-19).
  *
- * Owner: ENG-5 (WP-12).
+ *
  */
 
 const traceModule = require('../../../interchange/trace.js');

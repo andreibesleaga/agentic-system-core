@@ -22,7 +22,7 @@ describe('gen-spec-html — usage and the envelope', () => {
   });
 
   it('a root with no spec/ FAILS with AGSC-E901, and an empty spec/ too', () => {
-    // CHANGED at rc.6 (FIX29-S4): AGSC-09-90 now says a validator MUST FAIL "with
+    // CHANGED at rc.6: AGSC-09-90 now says a validator MUST FAIL "with
     // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
     // error. An absent input is exit 1, the envelope and the code.
     assert.deepEqual(envelope('gen-spec-html', [tmpdir()]).json.findings.map((f) => f.code),
@@ -135,7 +135,7 @@ describe('gen-spec-html — --check', () => {
 });
 
 /**
- * A publisher's own rendering of the same chapters (SITE4-04, ENG-9): the numbered
+ * A publisher's own rendering of the same chapters: the numbered
  * route form `/specs/<nn>-<name>/`, its own page shell, its own markup around each
  * rule — and the same words and the same table rows.
  */
@@ -165,7 +165,7 @@ function publisherTree(root, edit = (s) => s) {
   return dir;
 }
 
-describe('gen-spec-html — --check against a publisher\'s own pages (SITE4-04)', () => {
+describe('gen-spec-html — --check against a publisher\'s own pages', () => {
   it('byte mode finds the numbered route form, and reports the shell difference as AGSC-E602', () => {
     const root = specRoot();
     const { code, json } = envelope('gen-spec-html', ['--check', publisherTree(root), root]);

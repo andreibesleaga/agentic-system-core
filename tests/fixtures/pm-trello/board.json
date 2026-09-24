@@ -1,0 +1,18 @@
+{
+  "id": "b1",
+  "name": "Roadmap",
+  "desc": "The public roadmap.",
+  "lists": [
+    { "id": "l1", "name": "Doing", "closed": false },
+    { "id": "l2", "name": "Done", "closed": false },
+    { "id": "l3", "name": "Ideas", "closed": false }
+  ],
+  "members": [{ "id": "m1", "username": "gina", "fullName": "Gina G" }],
+  "cards": [
+    { "id": "c1", "shortLink": "AbC1", "name": "Plan the launch", "desc": "Dates first.", "idList": "l1", "idMembers": ["m1"], "labels": [{ "name": "launch", "color": "green" }, { "name": "", "color": "red" }], "due": "2026-04-01T12:00:00.000Z", "dueComplete": false, "closed": false, "dateLastActivity": "2026-03-20T12:00:00.000Z", "pos": 1, "badges": { "comments": 1 }, "cover": { "color": "blue" } },
+    { "id": "c2", "shortLink": "AbC2", "name": "Write the post", "desc": "", "idList": "l2", "idMembers": [], "labels": [], "due": null, "dueComplete": false, "closed": false, "dateLastActivity": "2026-03-21T12:00:00.000Z" },
+    { "id": "c3", "shortLink": "AbC3", "name": "Try a podcast", "desc": "", "idList": "l3", "idMembers": [], "labels": [], "due": null, "dueComplete": true, "closed": true }
+  ],
+  "actions": [{ "id": "a1", "type": "createCard" }],
+  "checklists": []
+}

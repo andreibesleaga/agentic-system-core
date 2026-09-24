@@ -21,7 +21,7 @@ reader has to guess whether a module is missing or was never written.
 Distribution owns this node's OWN surfaces and is output-only; Interchange owns
 FOREIGN formats and is bidirectional. Putting an importer in Distribution would
 erase that boundary, and `tests/arch/context-boundaries.test.js` enforces the
-direction of every arrow, so the work waits for its own package (WP-12) rather
+direction of every arrow, so the work waits for its own package rather
 than landing in the wrong context.
 
 Until it does, the four verbs that need it — `export`, `import`, `trace` and the
@@ -29,11 +29,11 @@ Level-2 half of `skills` — answer with the AGSC-09-11 envelope, exit 1 and one
 finding that names the rule they will implement. They never report a silent
 success, and no conformance Level is claimed before 1.0.0 (AGSC-10-05).
 
-Created at integration, 2026-09-18 (WP-10-G).
+Created at integration, 2026-09-18.
 
 ---
 
-## Updated 2026-09-21 (ENG-5, WP-12) — the context is no longer empty
+## Updated 2026-09-21 — the context is no longer empty
 
 Everything §"What belongs here" lists is implemented. The paragraph "Why it is
 empty" above is the record of 2026-09-18 and is kept as written.
@@ -44,9 +44,9 @@ empty" above is the record of 2026-09-18 and is kept as written.
 | `steer.js` | AGSC-01-28, AGSC-01-29 | `export --steer`: the eleven-target closed registry, the closed source set, the `Channel-Auto:` withholding |
 | `okf.js` | AGSC-01-22, AGSC-01-23 | `import --from okf`: the foreign OKF v0.2 reader |
 | `trace.js` | AGSC-09-94, AGSC-02-14 | `trace <file.json>`: a captured agent-run record to an Episode, purely |
-| `import.js` + `oldsite.js`, `mapping.js`, `sources.js`, `status.js`, `clusters.js`, `cleanroom-rewrite.js`, `selection.js` | AGSC-01-22, AGSC-03-19 | `import --from old-site` (ENG-1) |
+| `import.js` + `oldsite.js`, `mapping.js`, `sources.js`, `status.js`, `clusters.js`, `cleanroom-rewrite.js`, `selection.js` | AGSC-01-22, AGSC-03-19 | `import --from old-site` |
 | `adapters/llm-context.js` | AGSC-01-26a, D98 | `export --to llm-context` |
-| `own-record.js` | AGSC-01-22, AGSC-06-30 | when an import may trust an own-record line (`agsc-item`, COGX `metadata.agsc`): its origin is this node's `site.base` or a declared peer, and its versions agree with the file's provenance header (CONN2-03) |
+| `own-record.js` | AGSC-01-22, AGSC-06-30 | when an import may trust an own-record line (`agsc-item`, COGX `metadata.agsc`): its origin is this node's `site.base` or a declared peer, and its versions agree with the file's provenance header |
 
 ### The adapters this distribution ships, with their claimed key sets
 
@@ -65,22 +65,22 @@ An adapter is discovered by directory convention and never by a configuration ke
 matching `<name>` against the slug grammar of AGSC-01-10, so no caller-supplied string
 can traverse a path.
 
-### Added 2026-09-23 (CONN-1) — the `cogx` adapter
+### Added 2026-09-23 — the `cogx` adapter
 
 | adapter | direction | selected by | keys it claims |
 |---|---|---|---|
 | `cogx` | export and import | `export --to cogx`, `import --from cogx` (flags of its own: `--replace`, `--allow-newer`) | **export:** every authored frontmatter key and the body of every published item, carried whole in the primary record's `metadata.agsc` (a raw node carries it inline). **import:** our own archive — the same; a foreign archive — `name`, `entity_type`, `description`, `aliases` (entity), `content`, `categories` (memory), `label`, `value` (memory block), `subject_ref`, `predicate`, `object_ref` (fact), `external_id`, `external_system`, `created_at`. Every other member of a foreign record is kept verbatim as one JCS string in `x-cogx-rest`; foreign episodes, documents and raw nodes are reported and skipped |
 
-### Added 2026-09-23 (ENG-9, D117) — the `gabbe` adapter
+### Added 2026-09-23 — the `gabbe` adapter
 
 | adapter | direction | selected by | keys it claims |
 |---|---|---|---|
 | `gabbe` | export and import | `export --to gabbe`, `import --from gabbe <kit-dir>` (flags of its own: `--replace`, `--allow-newer`, `--source-version <v>`) | **export:** every authored frontmatter key and the body of every published item, carried whole in the item's `<!-- agsc-item <base64 of the JCS record> -->` line (procedure → `agents/skills/agsc/<slug>.skill.md`, gate → `agents/guides/agsc/<slug>.md`, concept and cluster → `agents/memory/semantic/agsc/<slug>.md`, episode → `agents/memory/episodic/agsc/<slug>.md`, lesson → an entry of `agents/memory/CONTINUITY.md`), plus `agents/guides/agsc/steering.md` (the `--steer` text). **import:** our own records — the same, plus `prov.source_version`; a foreign kit — a skill's `name`, `description`, `triggers`, `tags`, `context_cost` and body; a CONTINUITY entry's heading, `Failed approach`, `Why it failed`, `Resolution`, `Date`, `Status`; an AUDIT_LOG row's `Timestamp`, `Actor`, `Type`, `Description`, `Outcome`, `References`; a decision-log entry's `Date`, `Timestamp`, `Actor`, `Action Type`, `Subject`, `Rationale`, `Outcome`, `References`; a dated PROJECT_STATE line. Unmapped members are kept in `x-gabbe-*` keys (`x-gabbe-rest` holds a skill's other frontmatter as one JCS string). An AUDIT_LOG bullet entry, an entry with no readable outcome, a snapshot with none and the resume pointer are reported and skipped — an episode's outcome and start instant are never invented |
 
-### Added 2026-09-23 (CONN-2, R119) — the `skills` adapter
+### Added 2026-09-23 — the `skills` adapter
 
 The module table of 2026-09-21 above names `adapters/llm-context.js` only; the
-adapters added since are `adapters/cogx.js` (CONN-1), `adapters/gabbe.js` (ENG-9)
+adapters added since are `adapters/cogx.js`, `adapters/gabbe.js`
 and `adapters/skills.js` (this entry).
 
 | adapter | direction | selected by | keys it claims |

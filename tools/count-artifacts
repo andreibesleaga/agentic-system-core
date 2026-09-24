@@ -7,7 +7,7 @@
 //
 // <root> is the distribution root that holds `spec/`, `ontology/` and
 // `tests/vectors/`; it defaults to the directory above this file, so the tool
-// counts ITS OWN distribution from any working directory (FV29-09: until today the
+// counts ITS OWN distribution from any working directory (: until today the
 // vector-file re-read of the D93 check resolved its path against `process.cwd()`,
 // so every invocation from another directory — `--help` included — threw an ENOENT
 // stack trace and exited 1 instead of answering). Exit 0 pass, 1 findings, 2 usage.
@@ -21,7 +21,7 @@
 // historical note (D93) · w3c/index.html <dfn> terms disagreeing with ontology/agsc.ttl ·
 // a vector directory ignored by .gitignore.
 // Also reports rules_with_vector / rules_without_vector and `inputs_read`, the number
-// of files this run actually opened (informative, never a finding; FV29-10 asks every
+// of files this run actually opened (informative, never a finding; asks every
 // checker to say how much it read, so that a vacuous pass is visible).
 'use strict';
 const fs = require('fs'), path = require('path'), cp = require('child_process');
@@ -112,7 +112,7 @@ function run(argv, io) {
     + counts.ontology_datatype_properties;
 
   const findings = [];
-  // FV29-10: a destroyed or empty input must never read as a clean count.
+  // a destroyed or empty input must never read as a clean count.
   if (specFiles.length === 0) findings.push('spec/ holds no .md file: there is nothing to count (AGSC-E901)');
   if (rules.length === 0) findings.push('spec/ declares no rule: the count would be vacuous (AGSC-E901)');
   if (declared === 'unknown') findings.push('spec/00-overview.md declares no spec_version (AGSC-09-91)');
@@ -155,7 +155,7 @@ function run(argv, io) {
   // A differing literal on any other line is a live example or status claim that drifted.
   // (?<![\w-])/(?![\w-]) rather than \b so a hyphenated JSON key such as
   // "agsc-generated-at" does not itself read as the prose word "at".
-  // The last four words and the date test were added at rc.6 (ENG4-02); AGSC-09-91 names
+  // The last four words and the date test were added at rc.6; AGSC-09-91 names
   // this tool as the reference behaviour, so `tools/validate-spec` carries the same two.
   const historyWord = /(?<![\w-])(re-verified|at|since|amended|added|withdrawn|before|until|from|for|against|written)(?![\w-])/i;
   const historyDate = /\d{4}-\d{2}-\d{2}/;

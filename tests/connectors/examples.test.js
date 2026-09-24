@@ -1,7 +1,7 @@
 'use strict';
 // tests/connectors/examples.test.js — every LOCAL-route connector example under
 // examples/connectors/ is executed here, offline, on the engine's own test Bundle,
-// with a fixed build instant (CONN-1). The illustrative framework files are checked
+// with a fixed build instant. The illustrative framework files are checked
 // for what they must never contain, and never executed.
 
 const test = require('node:test');

@@ -10,7 +10,7 @@ test('SOURCE_DATE_EPOCH is the build instant (AGSC-04-09)', () => {
   assert.strictEqual(c.now(), 1767225600);
   assert.strictEqual(c.iso(), '2026-01-01T00:00:00Z');
   assert.deepStrictEqual(c.findings(), []);
-  // FV29-18: ONE definition of a well-formed value. This adapter used to TRIM before
+  // ONE definition of a well-formed value. This adapter used to TRIM before
   // testing, while the CLI's pre-flight check tested the raw string, so `" 42 "` was
   // accepted here and refused a moment later by `application/cli/main.js`. The value
   // is "an integer number of seconds", so padding is malformed on both paths.

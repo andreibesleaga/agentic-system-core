@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-08-13, the `injection-scan` lint. Owner: C (WP-10-C).
+// AGSC-08-13, the `injection-scan` lint.
 // AGSC-08-19 bounds what these tests claim: they prove the enumerated shapes are
 // detected, never that a Bundle is safe.
 
@@ -47,7 +47,7 @@ test('a variation selector is hidden text only outside an emoji sequence', () =>
 
 test('a long base64 or hexadecimal blob is AGSC-E401', () => {
   // AGSC-08-13 as amended at rc.5 (R-09): 256 or more characters in one unbroken run
-  // of `[A-Za-z0-9+/=]` (base64) or `[0-9a-fA-F]` (hex). BENCH1b-01 (ENG-9): the
+  // of `[A-Za-z0-9+/=]` (base64) or `[0-9a-fA-F]` (hex).: the
   // engine flagged from 128, so two conforming engines disagreed on the same input.
   assert.deepStrictEqual(codes(injection.check({ text: 'A'.repeat(256) })), ['AGSC-E401']);
   assert.deepStrictEqual(codes(injection.check({ text: 'ab'.repeat(128) })), ['AGSC-E401']);

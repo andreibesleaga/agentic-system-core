@@ -214,7 +214,7 @@ test('AGSC-01-29: the two agent-facing digests carry the AGSC-06-15 provenance h
   const { out } = emitSecurity();
   for (const path of ['AGENTS.md', 'skills/audit-trail/SKILL.md']) {
     const text = out.files.get(path);
-    // rc.6 (D113, AGSC-04-25): `bundle_version:` sits between `spec_version:` and
+    // rc.6 (AGSC-04-25): `bundle_version:` sits between `spec_version:` and
     // `generated_at:`. The emission passes no content version, so the block states
     // AGSC-04-25's branch 4 derived from the build instant it already carries —
     // never an empty value, because AGSC-06-13a admits no absence.

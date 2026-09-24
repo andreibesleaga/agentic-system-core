@@ -1,7 +1,7 @@
 # Citation File Format 1.2.0 — https://citation-file-format.github.io
 # How to cite this work. Read by GitHub, Zenodo and reference managers.
 #
-# TO BE FILLED BY THE OWNER at the 1.0.0 release, and not before:
+# Filled in at the 1.0.0 release, and not before:
 #   doi:           the Zenodo DOI of the deposit, e.g. 10.5281/zenodo.0000000
 #   version:       1.0.0
 #   date-released: the release date, YYYY-MM-DD

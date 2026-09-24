@@ -81,7 +81,7 @@ function tallyByType(results) {
 /**
  * The HTML-only page-weight sweep: every `*.html` file under `www`, its size, and
  * the ones above the budget. Other files (index shards, chunk shards,
- * `llms-full.txt`) are not pages and are not in this sweep (BENCH1-01).
+ * `llms-full.txt`) are not pages and are not in this sweep.
  * @param {string} www
  * @returns {{budget_bytes:number, largest:{bytes:number, path:string}|null, median_bytes:number|null, over_budget:Array<{bytes:number, path:string}>, pages:number, total_bytes:number}}
  */

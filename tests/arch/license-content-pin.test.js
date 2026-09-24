@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-06-18 as amended at rc.5 (V9A-24, owner answer to Q-RC5-1, 2026-09-21):
+// AGSC-06-18 as amended at rc.5 (2026-09-21):
 //
 //   "The text the identifier names is the file `LICENSE-CONTENT` at the root of this
 //    specification's distribution, whose SHA-256 over its bytes is <hex> (<n> bytes).
@@ -52,7 +52,7 @@ test('LICENSE-CONTENT matches the hash AGSC-06-18 pins (V9A-24)', () => {
     + 'vector that carries the old one.');
 });
 
-test('CONTRIBUTOR-AGREEMENT matches the hash AGSC-08-06 pins (rc.6, D105)', () => {
+test('CONTRIBUTOR-AGREEMENT matches the hash AGSC-08-06 pins', () => {
   // The same pin, for the same reason, over the text the token `CA-v1` names.
   // `agreement = "CA-v1"` is a literal the trailer grammar admits no alternative
   // to, so until rc.6 every contributor certified an agreement nobody could read.

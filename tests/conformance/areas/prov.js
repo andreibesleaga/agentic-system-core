@@ -1,5 +1,5 @@
 // tests/conformance/areas/prov.js — area handler for `prov` vectors.
-// Owner of prov-0001, prov-0002: B (WP-10-B). prov-0003 is C's — left below
+// Owner of prov-0001, prov-0002: B. prov-0003 is C's — left below
 // for C to add a case for.
 'use strict';
 
@@ -19,7 +19,7 @@ function runCheckProposalVector(vector) {
   return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
 }
 
-// --- appended by C (WP-10-C), 2026-09-18: prov-0003 only; nothing above changed ---
+// --- appended by C, 2026-09-18: prov-0003 only; nothing above changed ---
 
 const { checkClaims, checkTrailers } = require('../../../src/governance/prov.js');
 
@@ -56,7 +56,7 @@ function runClaimVector(vector) {
   return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
 }
 
-// --- appended by RC5-B, 2026-09-21: prov-0004 (rc.5) ---
+// --- appended, 2026-09-21: prov-0004 (rc.5) ---
 
 /**
  * prov-0004 — AGSC-08-06, the DCO-Plus ABNF, which no vector cited before rc.5
@@ -104,7 +104,7 @@ const HANDLERS = {
 module.exports.run = function run(vector, ctx) {
   const handler = HANDLERS[vector.id];
   if (!handler) {
-    return { status: 'skip', detail: `prov.js (B) does not own ${vector.id} — see WP-10-CONTRACT.md area ownership table` };
+    return { status: 'skip', detail: `prov.js (B) does not own ${vector.id} — see-CONTRACT.md area ownership table` };
   }
   return handler(vector, ctx);
 };

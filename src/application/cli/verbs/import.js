@@ -39,10 +39,11 @@ const okf = require('../../../interchange/okf.js');
 const cogx = require('../../../interchange/adapters/cogx.js');
 const gabbe = require('../../../interchange/adapters/gabbe.js');
 const skills = require('../../../interchange/adapters/skills.js');
+const board = require('../../../interchange/adapters/board.js');
 const helpers = require('./_helpers.js');
 
 /** The foreign formats this node reads. AGSC-01-22 names the verb, not a list. */
-const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT]);
+const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT, board.FORMAT]);
 
 /**
  * `--selection` belongs to the `old-site` adapter and not to the verb: AGSC-01-26a
@@ -325,7 +326,7 @@ function survey(fs, writes) {
  * tree, and leaving an unchanged file untouched keeps `git status` honest about
  * what an import actually did.
  *
- * FV29-07: AN IMPORT NEVER OVERWRITES THE NODE'S OWN ITEM. Until today the
+ * AN IMPORT NEVER OVERWRITES THE NODE'S OWN ITEM. Until today the
  * taken-slug set was seeded from the INCOMING set alone, so a foreign bundle naming
  * a slug the operator had authored replaced that file — silently, exit 0, zero
  * findings, recoverable only from git. AGSC-01-22 makes the import tolerant of the
@@ -420,7 +421,7 @@ function collisionFindings(applied) {
  * with the code AGSC-01-16 names — over the input cap (AGSC-E904), an archive
  * (AGSC-E903), a link out of the source root (AGSC-E902), not UTF-8 (AGSC-E108) —
  * and that refusal is an ERROR: an import that silently dropped an oversized record
- * would report success over a partial corpus (BENCH1b-05, ENG-9). Anything else is
+ * would report success over a partial corpus. Anything else is
  * a file this lane could not decode, skipped with a warning (AGSC-01-22).
  *
  * @param {Error} e
@@ -472,7 +473,7 @@ function importOkf(ctx, source, identityOptions) {
     return { findings, status: 'fail' };
   }
 
-  // AGSC-01-22 as amended at rc.6 (D113): tolerance has one LIMIT and one RECORD.
+  // AGSC-01-22 as amended at rc.6: tolerance has one LIMIT and one RECORD.
   // The limit is checked BEFORE the plan is built, so that a refusal writes nothing
   // and reports the same thing under `--dry-run` — the plan is data, and refusing
   // after building it would still be correct but would make the two paths differ.
@@ -498,7 +499,7 @@ function importOkf(ctx, source, identityOptions) {
 }
 
 /**
- * `import --from cogx <archive-dir>` (AGSC-01-26a; CONN-1). The rules are
+ * `import --from cogx <archive-dir>` (AGSC-01-26a). The rules are
  * `interchange/adapters/cogx.js`'s; this function reads the archive's fixed file
  * names through their own read-only port and hands the plan to the shared tail, so
  * `--dry-run`, the collision survey and `--replace` behave exactly as in the `okf`
@@ -552,7 +553,7 @@ function importCogx(ctx, source, identityOptions) {
 }
 
 /**
- * `import --from gabbe <kit-dir>` (AGSC-01-26a; D117, ENG-9). The rules are
+ * `import --from gabbe <kit-dir>` (AGSC-01-26a). The rules are
  * `interchange/adapters/gabbe.js`'s; this function reads the kit's `agents/` tree —
  * only the files the adapter names (skills, the memory files, the decision logs and
  * its own exported guides) — through a read-only port rooted at the kit, and hands
@@ -606,7 +607,7 @@ function importGabbe(ctx, source, identityOptions) {
 }
 
 /**
- * The origins whose own-record lines an import may trust (CONN2-03): this node's
+ * The origins whose own-record lines an import may trust: this node's
  * `site.base` and its declared `peers[]`.
  *
  * @param {object} identityOptions the target Bundle's identity.
@@ -643,7 +644,7 @@ function cloneFiles(fs) {
 }
 
 /**
- * `import --from skills [--layout <l>] [--list] <clone>` (AGSC-01-26a; CONN-2, R119).
+ * `import --from skills [--layout <l>] [--list] <clone>` (AGSC-01-26a).
  * The rules are `interchange/adapters/skills.js`'s; this function lists the local
  * clone, reads only the files the adapter names (skills, rules, manifests, licences,
  * the README) through a read-only port rooted at the clone, and hands the plan to the
@@ -724,6 +725,85 @@ function importSkills(ctx, source, identityOptions) {
     + `${detected.length > 1 ? `; also found: ${detected.filter((l) => l !== chosen).join(', ')}` : ''}`);
   const planned = skills.plan({ files, paths }, { ...options, layout: chosen });
   if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
+  return finish(ctx, [...findings, ...planned.findings], planned);
+}
+
+/**
+ * `import --from board --format <f> <dir>` (AGSC-01-26a; the live board of
+ * AGSC-10-13/AGSC-10-16). The rules are `interchange/adapters/board.js`'s; this
+ * function lists the directory, reads only the files `--format` names (`.json`,
+ * `.csv`, `.md` or `.txt`) through a read-only port rooted at it, tells the plan
+ * which clusters the Bundle already holds (a board joins its cluster and never
+ * rewrites it), and hands the plan to the shared tail, so `--dry-run`, the collision
+ * survey and `--replace` behave as in every other lane (AGSC-01-23). Nothing is
+ * fetched: a tracker's export is a file a person or a CI job put there.
+ *
+ * @param {object} ctx
+ * @param {string} source the directory holding the tool's export file(s).
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importBoard(ctx, source, identityOptions) {
+  const verbFlags = ctx.verbFlags || {};
+  const stated = verbFlags['source-version'];
+  const bad = sourceVersionRefusal(stated);
+  if (bad !== null) return { findings: [bad], status: 'fail' };
+  const format = verbFlags.format === undefined ? '' : String(verbFlags.format);
+  if (!board.FORMAT_NAMES.includes(format)) {
+    return {
+      findings: [finding('AGSC-E003', `import --from board needs --format <name>, one of`
+        + ` ${board.FORMAT_NAMES.join(', ')}${format === '' ? '' : ` (${JSON.stringify(format)} is not one)`}`
+        + ' (AGSC-01-26a)', { file: '', line: 1 })],
+      status: 'fail',
+    };
+  }
+  const fs = openRoot(ctx, source);
+  const findings = [];
+  let paths = [];
+  try {
+    paths = cloneFiles(fs);
+  } catch (e) {
+    return {
+      findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
+        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const files = Object.create(null);
+  for (const file of paths.filter((p) => board.isBoardFile(format, p))) {
+    try {
+      files[file] = String(fs.readFile(file, 'utf8'));
+    } catch (e) {
+      findings.push(unreadable(e, String(file)));
+    }
+  }
+  if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
+  if (Object.keys(files).length === 0) {
+    return {
+      findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} holds no ${format} export file`
+        + ` (${board.extensionsOf(format).join(', ')}) (AGSC-01-22)`, { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const own = ctx.ports.fs;
+  const planned = board.plan(files, {
+    allowNewer: verbFlags['allow-newer'] === true,
+    format,
+    hasCluster: (slug) => own.exists(`content/clusters/${slug}.md`),
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+    ...trustOptions(identityOptions),
+    sourceVersion: stated === undefined ? undefined : String(stated),
+    toolSpecVersion: ctx.specVersion,
+  });
+  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
+  if (planned.totals.items === 0) {
+    return {
+      findings: [...findings, ...planned.findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds`
+        + ` no row this adapter could read as a ${format} task (AGSC-01-22)`, { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
   return finish(ctx, [...findings, ...planned.findings], planned);
 }
 
@@ -816,7 +896,7 @@ function run(ctx) {
   }
   if (findings.length > 0) return { findings, status: 'fail' };
 
-  // AGSC-01-16 (BENCH1b-04, ENG-9): an archive is refused, never unpacked — and
+  // AGSC-01-16: an archive is refused, never unpacked and
   // never handed to a directory walk, where it died with an internal ENOTDIR.
   if (ARCHIVE_EXTENSIONS.includes(path.extname(String(source)).toLowerCase())) {
     return {
@@ -835,6 +915,7 @@ function run(ctx) {
   if (from === cogx.FORMAT) return importCogx(ctx, source, identified.options);
   if (from === gabbe.FORMAT) return importGabbe(ctx, source, identified.options);
   if (from === skills.FORMAT) return importSkills(ctx, source, identified.options);
+  if (from === board.FORMAT) return importBoard(ctx, source, identified.options);
 
   let selectionText;
   try {
@@ -891,6 +972,7 @@ module.exports = {
   DECKS_FILE,
   DIAGRAM_DIR,
   FORMATS,
+  importBoard,
   SELECTION_REQUIRED,
   SOURCE_TREES,
   CLONE_SKIP,

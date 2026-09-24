@@ -8,7 +8,7 @@
 
 /**
  * `isolated` is the runner's own declaration that a child it spawns CANNOT reach
- * the network (added at rc.5 by ENG-5 for AGSC-09-94, whose executor "MUST run with
+ * the network (added at rc.5 by for AGSC-09-94, whose executor "MUST run with
  * no network"). A Node process cannot give a child that guarantee from inside
  * itself; only an OS sandbox on the host can, so the guarantee is declared by the
  * adapter the host wires and is never inferred. `agsc run` executes only against a

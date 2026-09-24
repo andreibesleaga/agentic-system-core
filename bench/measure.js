@@ -452,10 +452,10 @@ function layerPerf(scratch, sizes, runsPerSize) {
         for (const f of fs.readdirSync(outDir)) {
           if (/^search-\d+\.json$/u.test(f)) indexBytes = Math.max(indexBytes || 0, fs.statSync(path.join(outDir, f)).size);
         }
-        // BENCH1-02: every chunk file, the shards included, summed.
+        // every chunk file, the shards included, summed.
         chunkBytes = fs.readdirSync(outDir).filter((f) => /^chunks(?:-\d+)?\.jsonl$/u.test(f))
           .reduce((acc, f) => acc + fs.statSync(path.join(outDir, f)).size, 0) || null;
-        // BENCH1-01: the page budget of AGSC-06-21 is over `*.html` only.
+        // the page budget of AGSC-06-21 is over `*.html` only.
         html = require('./a11y.js').pageWeights(outDir);
       }
     }

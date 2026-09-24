@@ -1,6 +1,6 @@
 'use strict';
 // tests/conformance/areas/conform.js — area handler for `conform` vectors.
-// Owner: F (WP-10-F). Rules: AGSC-04-22, AGSC-04-24, AGSC-10-15.
+// Rules: AGSC-04-22, AGSC-04-24, AGSC-10-15.
 
 const {
   areasForLevel, claimCompleteness, crossImplementationClaim, divergenceVerdicts,
@@ -49,7 +49,7 @@ function runConform0002(vector) {
  * AGSC-10-02..05 and AGSC-10-15 fix the MEMBERSHIP of a Level's area set and
  * no rule of the specification fixes an order for it, so the comparison here
  * is set equality; the vector's array order is not derivable from any rule
- * (reported to the owner rather than pinned by an invented convention).
+ * (reported to the maintainer rather than pinned by an invented convention).
  */
 function runConform0003(vector) {
   const areas = plain(areasForLevel(vector.input.claim.level));

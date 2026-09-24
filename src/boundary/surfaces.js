@@ -45,7 +45,7 @@ const WEBMCP_SURFACE_VERSION = '2026-09-15';
 const WEBMCP_VERSION_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u;
 /** AGSC-11-18 / MCP SEP-2133: the extension identifier this node advertises. */
 const MCP_EXTENSION_ID = 'com.agenticsystemcore/knowledge';
-/** AGSC-11-18, rc.5 (SITE1-01): the ONE member of this extension's settings object. */
+/** AGSC-11-18, rc.5: the ONE member of this extension's settings object. */
 const MCP_EXTENSION_SETTINGS_MEMBERS = Object.freeze(['linkset']);
 /** AGSC-06-07: the discovery document's route, which is that member's value. */
 const WELLKNOWN_ROUTE = '/.well-known/knowledge-linkset';
@@ -255,13 +255,13 @@ function acceptedHrefs(declared, findings) {
  * could differ (V9A-04).
  *
  * `extensions` is a MAP of extension identifier to that extension's settings object,
- * as MCP defines it. At rc.5 (SITE1-01) AGSC-11-18 pins this node's settings object:
+ * as MCP defines it. At rc.5 AGSC-11-18 pins this node's settings object:
  * exactly one member, `linkset`, the absolute `https` URL of `/.well-known/
  * knowledge-linkset` (AGSC-06-07), and no other. Vector `bnd-0035`.
  *
  * Before rc.5 this function returned the bare identifier LIST, which no rule pinned.
  * `bnd-0027` stated that list as its expectation and was withdrawn for it at rc.5
- * (AGSC-00-16, RC5-C); its case is `bnd-0036`, which states the map, so nothing reads
+ * (AGSC-00-16); its case is `bnd-0036`, which states the map, so nothing reads
  * this return value as a key set any more. `bnd-0031`'s `mcp_extensions` member is the
  * list of identifiers advertised and is the map's key set by definition.
  *

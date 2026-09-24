@@ -14,12 +14,12 @@
  *
  * `install` and `import` are POSITIONAL arguments, not flags: AGSC-09-09 closes the
  * flag set of every verb and named none for `skills`, so a flag would be
- * `AGSC-E002`. The one exception is `--zip` (owner decision D111, ENG-7), which
+ * `AGSC-E002`. The one exception is `--zip`, which
  * writes the emitted packs as a single archive beside `dist/skills/`; AGSC-09-09's
  * list does not yet name it and the proposed wording is on the specification items
- * list (ENG7-01).
+ * list.
  *
- * Owner: ENG-5 (WP-12).
+ *
  */
 
 const site = require('../../../distribution/site.js');
@@ -77,7 +77,7 @@ function emit(ctx, bundle) {
   helpers.note(ctx, `skills: ${produced.index.packs.length} pack`
     + `${produced.index.packs.length === 1 ? '' : 's'} under ${SKILLS_DIR}/`
     + ' (one per Cluster, AGSC-07-19; index.json is the lockfile of AGSC-07-20)');
-  // D111: the packs and their lockfile belong together, so `--zip` writes them as
+  // the packs and their lockfile belong together, so `--zip` writes them as
   // one archive beside the directory — the same builder, and the same bytes, as the
   // Harness archive and the page's "download all" link (AGSC-07-13).
   if (ctx.verbFlags && ctx.verbFlags.zip === true) {
@@ -163,13 +163,13 @@ function importPack(ctx, bundle, file) {
 function run(ctx) {
   const argv = ctx.argv || [];
   // `--zip` archives what `skills` EMITS; `install` writes into a target tree and
-  // `import` reads one file, and neither produces a set to package (D111).
+  // `import` reads one file, and neither produces a set to package.
   if (argv[0] !== undefined && ctx.verbFlags && ctx.verbFlags.zip === true) {
     return {
       status: 'fail',
       findings: [finding('AGSC-E003',
         `--zip archives the packs \`skills\` emits under ${SKILLS_DIR}/ and has no meaning with`
-        + ` "${argv[0]}"; run \`agsc skills --zip\` on its own (D111)`,
+        + ` "${argv[0]}"; run \`agsc skills --zip\` on its own`,
         { file: '', severity: 'error' })],
     };
   }

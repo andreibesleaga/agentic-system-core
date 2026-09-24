@@ -13,7 +13,7 @@ const { canonicalize } = require('../../src/knowledge/jcs.js');
 const BASE = 'https://a.example/';
 const CONCEPT = (body, extra = {}) => ({ type: 'concept', slug: 'c', title: 'C', body, ...extra });
 
-test('an empty chunk 0 is not emitted (AGSC-06-27, V7-09)', () => {
+test('an empty chunk 0 is not emitted (AGSC-06-27)', () => {
   const list = chunks.records([CONCEPT('## Intent\n\nText.\n')], { base: BASE }).records;
   assert.deepStrictEqual(list.map((r) => r.section), ['intent']);
   assert.deepStrictEqual(chunks.records([CONCEPT('')], { base: BASE }).records, []);

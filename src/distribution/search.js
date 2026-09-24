@@ -6,7 +6,7 @@
 //
 // Distribution READS the other contexts' results and adds nothing to the content:
 // what counts as a fenced code block is `knowledge/markdown.js`'s CommonMark parse
-// (WP-10-C), not a second regular expression, because two definitions of "fenced"
+// not a second regular expression, because two definitions of "fenced"
 // would cut two different token sets from one body.
 //
 // No fs, no clock, no network here either — this module is a pure function of its

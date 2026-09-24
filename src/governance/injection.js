@@ -1,7 +1,7 @@
 'use strict';
 // src/governance/injection.js — CONTEXT Governance & Provenance.
 // The `injection-scan` lint of AGSC-08-13 (N9 agent safety, NFR-07, ADR-001).
-// Owner: C (WP-10-C). PURE: no fs, no process, no clock, no network.
+// PURE: no fs, no process, no clock, no network.
 //
 // Codes: AGSC-E401 (agent-directed imperative, long blob, non-http scheme) and
 // AGSC-E402 (hidden text). Severity is `warn` for a human-authored item and
@@ -73,7 +73,7 @@ const VARIATION = /(.?)([\uFE00-\uFE0F]|[\u{E0100}-\u{E01EF}])/gu;
 const PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
 
 /** A blob long enough that no human wrote it for a human (AGSC-08-13). */
-// AGSC-08-13 (rc.5, R-09): a RUN of 256 or more; `=` belongs to the base64 class (BENCH1b-01).
+// AGSC-08-13 (rc.5, R-09): a RUN of 256 or more; `=` belongs to the base64 class.
 const BASE64_BLOB = /[A-Za-z0-9+/=]{256,}/u;
 const HEX_BLOB = /[0-9a-fA-F]{256,}/u;
 

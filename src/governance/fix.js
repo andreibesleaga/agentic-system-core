@@ -240,7 +240,7 @@ function quoteTemporal(value) {
 
 /**
  * AGSC-04-19's encoding third — the one whose finding is `AGSC-E108` (AGSC-01-14),
- * where every other normalisation of that rule is `AGSC-E506` (ENG2-03).
+ * where every other normalisation of that rule is `AGSC-E506`.
  */
 const ENCODING_CHANGE = 'line endings, NFC and the trailing newline';
 
@@ -309,7 +309,7 @@ function fixItem(item, options) {
       { file: path, severity: 'warn' }));
   }
 
-  // AGSC-04-19 as amended at rc.5 (ENG2-03) reports PER NORMALISATION, not per file:
+  // AGSC-04-19 as amended at rc.5 reports PER NORMALISATION, not per file:
   // "a line-ending, BOM, NFC or trailing-newline normalisation under AGSC-E108 …,
   // every other normalisation of this rule under AGSC-E506". So the encoding third
   // is recorded on its own even when the frontmatter also moved — until rc.5 it was

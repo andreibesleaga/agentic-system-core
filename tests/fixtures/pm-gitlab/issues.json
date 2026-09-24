@@ -1,0 +1,25 @@
+[
+  {
+    "iid": 7,
+    "title": "Map GitLab lists",
+    "description": "Board lists are labels.",
+    "state": "opened",
+    "labels": ["workflow::Doing", "backend"],
+    "assignees": [{ "username": "carol" }],
+    "milestone": { "title": "Release 2" },
+    "created_at": "2026-02-01T10:00:00.000Z",
+    "updated_at": "2026-02-02T10:00:00.000Z",
+    "due_date": "2026-02-10",
+    "weight": 3
+  },
+  {
+    "iid": 8,
+    "title": "Close the loop",
+    "description": null,
+    "state": "closed",
+    "labels": [],
+    "milestone": { "title": "Release 2" },
+    "created_at": "2026-02-01T11:00:00.000Z",
+    "updated_at": "2026-02-03T11:00:00.000Z"
+  }
+]

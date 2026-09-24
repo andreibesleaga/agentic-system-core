@@ -1,9 +1,9 @@
 'use strict';
-// tests/interchange/import-safety.test.js — FV29-07 and FV29-08.
+// tests/interchange/import-safety.test.js —.
 //
 // TWO defects of the import lane, both measured on the real fixtures.
 //
-// FV29-07. `import` seeded its taken-slug set from the INCOMING set only, never from
+// `import` seeded its taken-slug set from the INCOMING set only, never from
 // the Bundle already on disk, so a foreign bundle naming a slug the node had authored
 // itself REPLACED that file — silently, exit 0, zero findings. The operator's own
 // published content was gone, recoverable only from git. AGSC-01-23 asks for a
@@ -15,7 +15,7 @@
 // even then the write goes through the Bundle's own port, which refuses a path
 // outside the root and a path that leaves it through a link (AGSC-E902).
 //
-// FV29-08. An imported single-line string carrying a control character was written
+// An imported single-line string carrying a control character was written
 // out as the YAML escape `"N\0UL"`, which parses back to U+0000 — so the importer
 // created a file its own `lint` rejects with AGSC-E204 while reporting `status: pass`.
 // AGSC-02-24 as amended at rc.5 fixes the class and `knowledge/unicode.js#singleLine`
@@ -94,7 +94,7 @@ function foreign(files) {
 const read = (dir, at) => nodeFs.readFileSync(path.join(dir, at), 'utf8');
 const codes = (result) => result.findings.map((f) => f.code).sort();
 
-// ------------------------------------------------ FV29-07: the OKF adapter
+// ------------------------------------------------: the OKF adapter
 
 test('AGSC-01-23: a foreign OKF item naming an existing slug writes NOTHING and fails', () => {
   const target = workspace();
@@ -159,9 +159,9 @@ test('AGSC-01-23: re-importing an UNCHANGED tree is still idempotent and still p
 
 test('AGSC-10-09 + AGSC-01-22: the round trip adds the source record and nothing else', () => {
   // Until rc.6 an export re-imported into its own Bundle wrote byte-identical files
-  // and was therefore not a collision. D113 added the RECORD — `prov.source_version`
+  // and was therefore not a collision. added the RECORD — `prov.source_version`
   // and `prov.source_hash`, written by `import` alone — so the re-import now writes
-  // one line the item did not have, and RC6-B's rule that an import never writes
+  // one line the item did not have, and's rule that an import never writes
   // over an existing item applies: it is refused, by name, until the operator says
   // `--replace`. Both halves are asserted here, because the losslessness AGSC-10-09
   // asks for is that nothing is LOST, not that nothing is added.
@@ -183,7 +183,7 @@ test('AGSC-10-09 + AGSC-01-22: the round trip adds the source record and nothing
   assert.strictEqual(after.replace(/^ {2}source_(version|hash): .+\n/gmu, ''), before);
 });
 
-// -------------------------------------------- FV29-07: the old-site adapter
+// --------------------------------------------: the old-site adapter
 
 test('AGSC-01-23: the old-site adapter refuses a collision too, and --replace opens it', () => {
   const target = temp('agsc-safety-old-');
@@ -214,7 +214,7 @@ test('AGSC-01-23: the old-site adapter refuses a collision too, and --replace op
     'a replacement was not reported');
 });
 
-// --------------------------------- FV29-07: never outside the root, never a link
+// ---------------------------------: never outside the root, never a link
 
 test('AGSC-01-16/01-35: --replace never writes outside the Bundle root or through a link', () => {
   const target = workspace();
@@ -232,7 +232,7 @@ test('AGSC-01-16/01-35: --replace never writes outside the Bundle root or throug
   assert.ok(result.findings.some((f) => f.code === 'AGSC-E902'), JSON.stringify(codes(result)));
 });
 
-// ------------------------------------------ FV29-08: what the import writes lints
+// ------------------------------------------: what the import writes lints
 
 test('AGSC-02-24: a control character in an imported single-line value is neutralised', () => {
   const target = workspace();

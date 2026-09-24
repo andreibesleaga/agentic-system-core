@@ -1,7 +1,7 @@
 'use strict';
 // src/governance/cleanroom.js — CONTEXT Governance & Provenance.
 // The `clean-room` lint of AGSC-08-17 (NFR-12, clean-room W1–W12, Article XIII).
-// Owner: C (WP-10-C). PURE: no fs, no process, no clock, no network.
+// PURE: no fs, no process, no clock, no network.
 //
 // Code: AGSC-E405.
 //

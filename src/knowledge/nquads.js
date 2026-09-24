@@ -201,7 +201,7 @@ const LINK_PROPERTIES = Object.freeze({
  * The AGSC-05-26 table, extended by AGSC-05-30: frontmatter key (dotted for a nested
  * mapping) → property and datatype, on the item. A key absent from an item emits no
  * triple and nothing is ever inferred — `status` included, whose AGSC-02-23 default
- * is a reading default (AGSC-05-26, V7-03).
+ * is a reading default (AGSC-05-26).
  *
  * `array: true` emits one triple per value. `date: true` renders a `YYYY-MM-DD` by
  * the midnight convention of AGSC-05-14.
@@ -400,7 +400,7 @@ function datatypeQuads(item, subject, graph) {
 /**
  * `date`/`modified` → `dcterms:created`/`dcterms:modified` (AGSC-05-27).
  *
- * At rc.5 (V8-91/R-06) the AGSC-05-26 table gained the two rows the gap this comment
+ * At rc.5 (/R-06) the AGSC-05-26 table gained the two rows the gap this comment
  * used to report was about: `date` → `dcterms:created` and `modified` →
  * `dcterms:modified`, both `xsd:dateTime` at midnight of that date (AGSC-04-10), and
  * AGSC-05-31 form (b) names them as the one DCTerms exception to form (c). The

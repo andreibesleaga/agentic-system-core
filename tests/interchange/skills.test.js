@@ -1,6 +1,6 @@
 'use strict';
-// tests/interchange/skills.test.js — the skills memory adapter both ways (AGSC-01-26a;
-// R119, CONN-2): `export --to skills --layout <l>` and `import --from skills <clone>`
+// tests/interchange/skills.test.js — the skills memory adapter both ways (AGSC-01-26a):
+// `export --to skills --layout <l>` and `import --from skills <clone>`
 // over the five layouts of the well-known skills repositories and rule packs.
 //
 // The fixtures under tests/fixtures/skills-*/ are small SYNTHETIC collections in the

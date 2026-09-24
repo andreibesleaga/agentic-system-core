@@ -15,7 +15,7 @@
 // with no host state, exactly as AGSC-04-03 requires of this context.
 //
 // The CommonMark parse and the AGSC-03-13 anchors are `knowledge/markdown.js`'s
-// (WP-10-C), not a second implementation: one parser decides what a fence is and
+// not a second implementation: one parser decides what a fence is and
 // one algorithm decides what an anchor is, so a chunk's `section` is always the
 // anchor the rendered page carries.
 //
@@ -118,7 +118,7 @@ function sections(body) {
     // with exactly one LF. `split('\n')` on a body ending in LF leaves a final
     // empty element, which this same trim removes.
     while (slice.length > 0 && slice[slice.length - 1].trim() === '') slice.pop();
-    if (slice.length === 0) continue; // an empty chunk 0 is not emitted (V7-09)
+    if (slice.length === 0) continue; // an empty chunk 0 is not emitted
     out.push({ section: i === 0 ? '' : cuts[i - 1].anchor, text: `${slice.join('\n')}\n` });
   }
   return out;
@@ -291,7 +291,7 @@ function records(items, options = {}) {
 
     if (item.type === 'cluster') {
       // AGSC-06-30: a cluster contributes one chunk, its description; a cluster
-      // without one contributes no chunk (V7-09).
+      // without one contributes no chunk.
       if (item.description == null || item.description === '') continue;
       out.push(record({
         ...common, ordinal: 0, section: '', type: 'text', text: item.description,
@@ -373,7 +373,7 @@ function files(list, canonicalize, options = {}) {
     path: `/chunks-${String(n + 1).padStart(2, '0')}.jsonl`,
     text: serialize(bucket, canonicalize),
   }));
-  // AGSC-06-31 as amended at rc.6 (D113): `bundle_version` is the only member
+  // AGSC-06-31 as amended at rc.6: `bundle_version` is the only member
   // added to the manifest, and JCS sorts it first. It is the content version the
   // BUILD derived (AGSC-04-25) and is handed in; a caller that has none — a
   // library caller sharding a record list outside a build — states none, because

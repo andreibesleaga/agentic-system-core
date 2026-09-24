@@ -20,7 +20,7 @@
  * target path and the determinism obligation and says nothing about the CONTENT, so
  * two conforming engines will emit different bytes for the same Bundle. The
  * derivations below are therefore this implementation's, documented here and
- * recorded on the specification items list (ENG2-02) rather than presented as the
+ * recorded on the specification items list rather than presented as the
  * rule's: `pre-commit` runs `agsc lint` and nothing else; `CODEOWNERS` assigns every
  * path to the forge logins of `channels[].owner` (AGSC-01-18), falling back to the
  * identifier of `bundle.operator`; `ruleset.json` carries the same check names under

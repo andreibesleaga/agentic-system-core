@@ -34,7 +34,7 @@
  * `^[a-z0-9]+(?:-[a-z0-9]+)*$` and admits no `.`.
  *
  * PURE: no clock, no network, no process, no file read. Requirements: PRD-023,
- * PRD-056, N9, D114.
+ * PRD-056, N9,.
  */
 
 const { compareCodePoint } = require('../shared/ordering.js');
@@ -50,7 +50,7 @@ const ITEM_MEDIA_TYPE = 'text/markdown';
  * AGSC-09-14b names the prompt by its sentence, not by an identifier; MCP
  * requires `name` to be a unique identifier and offers `title` for the human
  * string, so the sentence is carried verbatim as the title and the description
- * and slugified for the name. Recorded for 1.0 (MCP1-02): no rule pins these
+ * and slugified for the name. Recorded for 1.0: no rule pins these
  * bytes, and AGSC-11-17 asks that every byte a declared surface emits be pinned.
  */
 const PROMPT_NAME = 'answer-from-this-memory-with-citations';

@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `boards` (owner: WP-10-E) — AGSC-10-13, AGSC-10-16…18.
+// Conformance area `boards` (owner:) — AGSC-10-13, AGSC-10-16…18.
 // brd-0001 the two exports and the "no task, no board" rule; brd-0002 the derived
 // `done` and the absence of `claimed_by` when no history is supplied.
 

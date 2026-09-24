@@ -49,7 +49,7 @@ describe('tools/release never publishes (docs/PLAN.md §7)', () => {
   it('the source has no way to run a process or reach the network', () => {
     // It cannot publish because it cannot EXECUTE anything and cannot open a
     // socket: the two strings `npm publish` it does carry are printed instructions
-    // for the owner and a check over the workflow file, neither of which runs.
+    // for the maintainer and a check over the workflow file, neither of which runs.
     assert.ok(!/child_process|execSync|execFile|spawn/u.test(body), 'the script can run a process');
     assert.ok(!/require\(\s*['"](node:)?(https?|dns|net)['"]/u.test(body), 'the script can reach the network');
     assert.ok(!/publishConfig|registry\.npmjs/u.test(body), 'the script configures a registry');
@@ -256,7 +256,7 @@ describe('5. --apply, and the checklist', () => {
     assert.ok(json.findings.some((f) => f.code === 'AGSC-E003'));
   });
 
-  it('the checklist names every gate and leaves every git command to the owner', () => {
+  it('the checklist names every gate and leaves every git command to the maintainer', () => {
     const lines = release.checklist('1.0.0');
     const text = lines.join('\n');
     for (const needle of ['npm ci', 'npm test', 'npm audit', 'tools/count-artifacts',
@@ -264,7 +264,7 @@ describe('5. --apply, and the checklist', () => {
       'Wayback']) {
       assert.match(text, new RegExp(needle.replace(/[*]/gu, '\\*'), 'u'), needle);
     }
-    assert.match(text, /^The owner runs these/u);
+    assert.match(text, /^The maintainer runs these/u);
     const placeholder = release.checklist(null).join('\n');
     assert.match(placeholder, /<x\.y\.z>/u);
   });
@@ -289,9 +289,9 @@ describe('the real distribution passes its own release lane', () => {
   });
 });
 
-// ------------------------------------------------- D107: the PyPI half (rc.6)
+// -------------------------------------------------: the PyPI half (rc.6)
 
-describe('tools/release — the PyPI sibling (D107)', () => {
+describe('tools/release — the PyPI sibling', () => {
   it('maps a SemVer version onto the PEP 440 spelling, and says when it cannot', () => {
     // The two grammars differ and both packages are published at one version, so
     // the mapping is stated once, in the tool.
@@ -343,7 +343,7 @@ describe('tools/release — the PyPI sibling (D107)', () => {
 
 // --------------------------------------------- the release lane, as it now stands
 
-describe('the release workflow (D107, rc.6)', () => {
+describe('the release workflow', () => {
   const workflow = () => fs.readFileSync(path.join(REPO, '.github', 'workflows', 'release.yml'), 'utf8');
   /** The workflow without its comments: what RUNS, not what it explains. */
   const steps = () => workflow().split('\n').filter((l) => !/^\s*#/u.test(l)).join('\n');
@@ -352,7 +352,7 @@ describe('the release workflow (D107, rc.6)', () => {
     // npm's docs (docs.npmjs.com/cli/v11/commands/npm-dist-tag, read 2026-09-22):
     // "Publishing a package sets the `latest` tag to the published version unless
     // the `--tag` option is used" — and the convention is that a pre-release does
-    // NOT take `latest`. D107 decides otherwise for this release, so the flag is
+    // NOT take `latest`. decides otherwise for this release, so the flag is
     // written out rather than left to a default nobody chose.
     const publishes = steps().split('\n').filter((l) => l.includes('npm publish'));
     assert.equal(publishes.length, 2, 'the engine and the alias, and nothing else');
@@ -365,7 +365,7 @@ describe('the release workflow (D107, rc.6)', () => {
 
   it('every validator blocks the release: none of the nine only reports', () => {
     // `validate-spec` was a reporting step while the specification items it found
-    // were open (ENG4-01…05). They were applied at rc.6 and it exits 0, so the
+    // were open (…05). They were applied at rc.6 and it exits 0, so the
     // carve-out is gone: a gate that reports and does not block protects nothing.
     const text = workflow();
     assert.ok(!/REPORT: /u.test(text), 'a validator is still allowed to fail without blocking');
@@ -382,7 +382,7 @@ describe('the release workflow (D107, rc.6)', () => {
   });
 
   it('the tool PRINTS the whole procedure; no repository file holds it', () => {
-    // Owner rule R104 (2026-09-22): a procedure written for the maintainer is not a
+    // A procedure written for the maintainer is not a
     // file of a public repository. So the release procedure is printed by the tool
     // that checks the release, where whoever runs it will actually read it, and the
     // long-form runbook is kept outside the repository. Nothing here may point at a
@@ -396,7 +396,7 @@ describe('the release workflow (D107, rc.6)', () => {
       'the unpublish policy, quoted rather than paraphrased');
     assert.match(printed, /trusted publish/iu, 'how it publishes');
     assert.ok(!fs.existsSync(path.join(REPO, 'RELEASE.md')),
-      'a release runbook must not live in the public repository (R104)');
+      'a release runbook must not live in the public repository');
   });
 });
 
@@ -421,5 +421,30 @@ describe('the changelog gate, as amended at rc.6', () => {
     const changelog = fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8');
     assert.ok(changelog.includes(`## [${manifest.version}]`),
       `CHANGELOG.md carries no section for ${manifest.version}`);
+  });
+});
+
+// ------------------------------------------------ 4c: public means clean
+
+describe('tools/release — the public-hygiene step', () => {
+  const release = require('../../tools/release');
+
+  it('a private e-mail address in a file that would ship stops the release lane', () => {
+    const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'agsc-release-hyg-'));
+    // The address is assembled at run time so this file never carries one.
+    fs.writeFileSync(path.join(dir, 'README.md'), `# Package\n\nWrite to ${['real.person', 'gmail.com'].join('@')}.\n`);
+    const found = release.hygieneFindings(dir, ['README.md']);
+    assert.deepEqual(found.map((f) => [f.code, f.file, f.line]), [['AGSC-E404', 'README.md', 3]]);
+    assert.match(found[0].message, /^public hygiene: email/u);
+    fs.writeFileSync(path.join(dir, 'README.md'), '# Package\n\nNothing private.\n');
+    assert.deepEqual(release.hygieneFindings(dir, ['README.md']), []);
+  });
+
+  it('a sweep that cannot run is a failure, never a silent pass', () => {
+    const found = release.hygieneFindings('/nowhere', [], { sweep: () => { throw new Error('boom'); } });
+    assert.deepEqual(found.map((f) => f.code), ['AGSC-E901']);
+    assert.match(found[0].message, /boom/u);
+    const odd = release.hygieneFindings('/nowhere', [], { sweep: () => { throw null; } }); // eslint-disable-line no-throw-literal
+    assert.match(odd[0].message, /unknown error/u);
   });
 });

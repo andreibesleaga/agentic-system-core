@@ -9,7 +9,7 @@
  *
  * THE FORMAT, AS READ FROM ITS REFERENCE IMPLEMENTATION on 2026-09-23
  * (`cognee/modules/migration/cogx.py` on `topoteretes/cognee@main`; the exact quotes
- * are in the CONN-1 report, §1.1):
+ * are in the report, §1.1):
  *   * "An archive is a directory containing ``manifest.json`` plus one JSONL file per
  *     record kind." The file names are fixed: `documents.jsonl`, `episodes.jsonl`,
  *     `entities.jsonl`, `facts.jsonl`, `memories.jsonl`, `memory_blocks.jsonl`, and
@@ -52,7 +52,7 @@
  * derived records (documents, facts) are skipped because the item already holds them.
  * An `agsc` member counts as ours only when it names this node's `site.base` or a
  * declared peer and its versions agree with the manifest's provenance notes
- * (`interchange/own-record.js`, CONN2-03); any other is reported, and its record is
+ * (`interchange/own-record.js`); any other is reported, and its record is
  * read as foreign and kept as a draft, because a COGX record states no licence.
  * A FOREIGN archive is imported by kind — `entity` → `concept`, `memory` → `lesson`,
  * `memory_block` → `procedure`, `fact` → a typed Link when both ends resolve and the
@@ -69,7 +69,7 @@
  *
  * PURE: no fs, no clock, no network. Requirements: AGSC-01-22, AGSC-01-23,
  * AGSC-01-26a, AGSC-01-29, AGSC-06-30; PRD-021, PRD-026.
- * Owner: CONN-1 (session 31).
+ *
  */
 
 const chunks = require('../../knowledge/chunks.js');
@@ -207,7 +207,7 @@ function lessonText(body) {
 // -------------------------------------------------------------------------- export
 
 /**
- * The PRIMARY record of one published item (§2.1 of the CONN-1 design).
+ * The PRIMARY record of one published item (§2.1 of the design).
  *
  * @param {object} item the flattened item (frontmatter members + body/path/slug/type).
  * @param {object} authored the item's authored frontmatter, exactly as loaded.
@@ -731,7 +731,7 @@ function plan(files, options) {
   const findings = [...parsed.findings];
   totals.lines_rejected = parsed.rejected;
   // An `agsc` member is trusted only from this node or a declared peer, with
-  // consistent versions (CONN2-03); an untrusted one is ignored and its record is
+  // consistent versions; an untrusted one is ignored and its record is
   // read as the foreign record it is.
   const origins = ownRecord.trustedOrigins(opts);
   const header = ownRecord.headerOf(manifestNotes(archive));
@@ -744,7 +744,7 @@ function plan(files, options) {
     if (why !== null) {
       totals.records_untrusted += 1;
       findings.push(finding('AGSC-E506', `${entry.file}:${entry.line}: the record's agsc member is not trusted:`
-        + ` ${why}. Its provenance and status were ignored and the record is read as foreign (CONN2-03)`,
+        + ` ${why}. Its provenance and status were ignored and the record is read as foreign`,
       { file: entry.file, line: entry.line, severity: 'warn' }));
     }
   }

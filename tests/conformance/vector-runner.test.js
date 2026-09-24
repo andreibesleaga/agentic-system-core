@@ -3,7 +3,7 @@
 //
 // The RUN itself is `src/application/conformance.js` — the same module
 // `agsc conform` calls, so the suite and the verb can never disagree about
-// what a vector set is or how a result is classified (WP-10-G). This file is
+// what a vector set is or how a result is classified. This file is
 // the node:test wrapper around it: it loads the vectors and the area handlers
 // from the repository, prints the one summary line, and fails the suite when
 // any non-pending required vector fails.
@@ -16,7 +16,7 @@
 //                                  reason names the package still writing their
 //                                  rules; anything else parked there fails below.
 //   * `requires_surface`        -> the reference node declares ["mcp","webmcp"], so
-//                                  those vectors MUST run (AGSC-09-04, V7-23).
+// those vectors MUST run (AGSC-09-04).
 //   * a required vector with no handler -> fail.
 
 const test = require('node:test');
@@ -89,14 +89,14 @@ test('conformance vectors', async (t) => {
   // still a vector nothing runs. It holds exactly one exception while a package is
   // in flight: the ids of the package that is writing the rules those vectors cite.
   // Anything else parked there fails here, so nobody can leave a vector unrun
-  // quietly, and the package that lands ENG-8 removes this list and the exception
-  // with it. (rc.6, 2026-09-22: RC6-B's own eight were closed and removed; EXT-1
+  // quietly, and the package that lands removes this list and the exception
+  // with it. (rc.6, 2026-09-22:'s own eight were closed and removed;
   // then added eight of its own for the compatibility and versioning rules.)
   const parked = [...pending].sort();
   const foreign = parked.filter((id) => !/\bENG-8\b/u.test(String(reason[id] || '')));
   assert.deepStrictEqual(foreign, [],
-    `tests/conformance/pending.json may hold only vectors awaiting ENG-8; these name no package: ${foreign.join(', ')}`);
+    `tests/conformance/pending.json may hold only vectors awaiting; these name no package: ${foreign.join(', ')}`);
   if (parked.length > 0) {
-    process.stdout.write(`conformance: ${parked.length} vector(s) pending on ENG-8: ${parked.join(', ')}\n`);
+    process.stdout.write(`conformance: ${parked.length} vector(s) pending on: ${parked.join(', ')}\n`);
   }
 });

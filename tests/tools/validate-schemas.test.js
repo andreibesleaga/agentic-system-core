@@ -69,7 +69,7 @@ describe('validate-schemas — usage and the envelope', () => {
   });
 
   it('a root with no schema/ FAILS with AGSC-E901, exit 1', () => {
-    // CHANGED at rc.6 (FIX29-S4): AGSC-09-90 now says a validator MUST FAIL "with
+    // CHANGED at rc.6: AGSC-09-90 now says a validator MUST FAIL "with
     // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
     // error. An absent input is exit 1, the envelope and the code.
     const result = capture('validate-schemas', [tmpdir()]);

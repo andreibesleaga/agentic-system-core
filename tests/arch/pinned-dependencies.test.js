@@ -35,7 +35,7 @@ test('every library src/ requires is declared as a dependency', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Added at integration (WP-10-G, 2026-09-18): the lockfile and the audit gate.
+// Added at integration: the lockfile and the audit gate.
 // ---------------------------------------------------------------------------
 
 test('the lockfile pins every installed package to one exact version', () => {
@@ -50,7 +50,7 @@ test('the lockfile pins every installed package to one exact version', () => {
 });
 
 // `npm audit` queries the advisory service, so it is NOT part of the default
-// suite: tests here are deterministic and reach no network (WP-10-CONTRACT,
+// suite: tests here are deterministic and reach no network (-CONTRACT,
 // test discipline). It is the release gate, run explicitly:
 //
 //   AGSC_AUDIT=1 node --test tests/arch/pinned-dependencies.test.js

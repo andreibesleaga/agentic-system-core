@@ -307,6 +307,123 @@ the specification version), the provenance block, the quoted prose, and one
 nothing. A Windsurf rule over its 12,000-character limit is still written and
 reported: split the cluster, or use another layout.
 
+## Route 7 — a live board to and from project and product management tools
+
+A node's tasks (`kind: task` concepts with a `task_state`, filed in a cluster — the
+live board) travel to and from the trackers people already use, **as files**. There is
+no API client and no key: a person, or a CI job, moves the tool's export file into a
+folder and the tool's import file out of `dist/export/board/`.
+
+```sh
+agsc import --from board --format jira ./from-jira --dry-run   # see the plan
+agsc import --from board --format jira ./from-jira             # write the draft tasks
+agsc export --to board --format trello                          # dist/export/board/trello/<board>.json
+```
+
+`--format` is one of `agsc-board`, `asana`, `github`, `gitlab`, `jira`, `linear`,
+`markdown`, `notion`, `obsidian-kanban`, `todotxt`, `trello`.
+
+**Getting the file out of each tool** (read at each tool's documentation on 2026-09-23
+where a link is given):
+
+| tool | export steps | the file the import reads | what our export writes |
+|---|---|---|---|
+| GitHub | `gh issue list --state all --json number,title,body,state,stateReason,labels,assignees,milestone,createdAt,updatedAt > issues.json`, or `gh api repos/<o>/<r>/issues?state=all`, or `gh project item-list <n> --owner <o> --format json` ([REST issues](https://docs.github.com/en/rest/issues/issues): "GitHub's REST API considers every pull request an issue" — pull requests are skipped and counted) | `*.json` | an array of issue objects (`title`, `body`, `labels`, `assignees`, `milestone`) — the fields of the create-issue call; create them with `gh issue create` or the API (the milestone must exist, by number) |
+| GitLab | **Plan › Work items**, filter **Type = Issue**, **Actions › Export as CSV** (e-mailed) ([CSV export](https://docs.gitlab.com/user/project/issues/csv_export/)); or the REST `GET /projects/:id/issues` JSON | `*.csv`, `*.json` | the REST JSON shape; a non-open state becomes a `status::<state>` scoped label (GitLab boards are label lists) |
+| Jira | issue search › **Export › Export Excel CSV (all fields)** | `*.csv` (both the "Issue" and the newer "Work item" column names) | a CSV for **System › External system import › CSV**: one `Labels` column per label ([CSV import](https://support.atlassian.com/jira-cloud-administration/docs/import-data-from-a-csv-file/): "entering each label in a separate column"), `Inward issue link (Blocks)`; set the wizard's date format to `yyyy-MM-dd` |
+| Trello | board menu › **Print, Export, and Share** › **Export as JSON** ([export](https://support.atlassian.com/trello/docs/exporting-data-from-trello/): "All board members can export a board to raw JSON format"; CSV is Premium only) | `*.json` | a board JSON (lists = states). Trello has no JSON import of its own: use a Power-Up or the API to create the cards |
+| Linear | open a project or view, click its name › **Export issues as CSV…** ([export](https://linear.app/docs/exporting-data)) | `*.csv` | a CSV with Linear's export columns, for Linear's CSV importer or a spreadsheet |
+| Asana | project › **Export/Print › CSV** | `*.csv` | a CSV with Asana's export columns (`Section/Column` = state), for Asana's CSV importer |
+| Notion | database page › **••• › Export › Markdown & CSV** ([export](https://www.notion.com/help/export-your-content): "Full page databases will be exports as a CSV file") | `*.csv` (the 32-character id Notion appends to the file name is dropped) | a CSV (`Name`, `Status`, `Type`, `Assignee`, `Tags`, `Due`, …) for **Merge with CSV** or a new import |
+| Obsidian Kanban | the board **is** the Markdown file in the vault | `*.md` with `kanban-plugin` frontmatter | a board file: one lane per state, `@{date}` due dates, a `**Complete**` lane |
+| Markdown task lists | any `.md` with `- [ ]` / `- [x]` lines | `*.md` (`# Title` = board, `## Heading` = state) | one `.md` per board, one `##` section per state |
+| Todo.txt | the `todo.txt` file ([format](https://github.com/todotxt/todo.txt)) | `*.txt` (`+project` = board, `@context` = label, `due:`, `state:`) | one `.txt` per board, with `state:` for the states Todo.txt cannot say |
+| another node (a peer) | download its `/boards/<cluster>.json` | `*.json` (a board index is named and skipped) | the same board-export shape; its tasks come in as read-only drafts whose `x-board-id` is the peer's task IRI, so a task here can be `blocked-by` the copy |
+
+**How the states map** (one table for every tool; case, spaces, `-` and `_` are
+ignored). Import: Backlog, Icebox, Triage → `UNSPECIFIED`; To Do, Todo, Open, New,
+Ready, Not started, Planned, Reopened → `SUBMITTED`; In Progress, Doing, Started, In
+Review, Review, Testing, Active → `WORKING`; Blocked, Waiting, On hold, Needs info,
+Pending → `INPUT_REQUIRED`; Needs approval, Awaiting approval → `AUTH_REQUIRED`; Done,
+Closed, Resolved, Complete, Shipped, Released, Fixed → `COMPLETED`; Failed →
+`FAILED`; Canceled, Cancelled, Won't do, Won't fix, Duplicate, Not planned (GitHub's
+`not_planned`), Obsolete → `CANCELED`; Rejected, Declined, Invalid → `REJECTED`
+(each `TASK_STATE_…`). A ticked box or a completion date is `COMPLETED`; an open box
+with no heading is `SUBMITTED`. Any other word is read as `TASK_STATE_UNSPECIFIED`
+and reported — never guessed. Export writes Backlog, To Do (Linear: Todo), In
+Progress, Input Required, Auth Required, Done, Failed, Canceled, Rejected — or the
+tool's own word the task came in with, while it still names the same state.
+
+**What an import keeps and what it decides.** Every foreign row becomes a draft
+(`status: draft`): a tracker's export states no licence and may hold private work,
+so nothing it holds is published until a person changes the status. Its board becomes
+a draft cluster, unless your node already has a cluster of that name — then the tasks
+join it and it is not touched. The tool's state word, assignee, due date, labels, id,
+the links it could not resolve and every column the table does not name are kept in
+`x-board-*` keys; blocking links become `blocked-by`. The assignee is not `claimed_by`:
+that is derived from the merge history (who proposed the claim), never written.
+E-mail addresses are cut to the part before the `@`, telephone numbers removed, and
+the count reported (an item may carry neither). Collisions, `--dry-run`, `--replace`,
+`--source-version` and `--allow-newer` work as in every import; a row carrying a
+record from our own export comes back exactly, and one whose record names another
+origin is read as foreign.
+
+**What each tool loses on the way out** (the full item always survives in the
+record our own import reads back):
+
+| tool | lost for a reader of the tool |
+|---|---|
+| GitHub | only open/closed: Backlog, To Do, In Progress, Input and Auth Required all read as open; Failed and Rejected as closed "not planned"; decisions and specs become labels; `created_at` is set by GitHub on creation |
+| GitLab | Canceled, Failed and Rejected all read as closed; other states travel as `status::` labels |
+| Jira | states outside your workflow must be mapped in the import wizard; decisions need a `Decision` issue type or arrive as tasks |
+| Trello | no import of its own; states are list names; no created date |
+| Linear | states must exist in the team's workflow |
+| Asana | states are section names; `blocked-by` travels as task ids of the same file |
+| Notion | the body is one text property; the board is the database |
+| Obsidian Kanban | the body is not written on the card (it stays in the record); no created or updated date |
+| Markdown | as Obsidian Kanban |
+| Todo.txt | the body; states beyond done/not done travel in a `state:` key only Todo.txt add-ons read |
+
+**Moving the files in CI.** A scheduled job can run the tool's CLI, drop the file in a
+folder and import it with `--dry-run` first; the plan then goes to review like any
+proposal. For GitHub, one step does it: `gh issue list --state all --json … > board/issues.json`
+followed by `agsc import --from board --format github board`. Nothing merges by
+itself, and the import never publishes: every foreign row is a draft.
+
+### Working a live board with agents
+
+Agents and assistants work a board through the same seven tools, locally (`agsc mcp`)
+or in the page — no new transport, no server of ours. Every write is a **prepared
+Proposal**: the tool returns it, and a person (or a standing decision) merges it.
+
+| to | call | what comes back |
+|---|---|---|
+| read the board | `/boards/index.json`, `/boards/<cluster>.json`; or `search`, `read` | the tasks, their states, `claimed_by` and `done` |
+| claim a task | `propose({slug, task_state: "TASK_STATE_WORKING", at: "2026-09-23"})` | `{from, iri, markdown, patch, path, slug, task_state}` — the patch sets `task_state` and `modified` and nothing else |
+| move or finish it | `propose({slug, task_state: "TASK_STATE_COMPLETED"})` | the same shape |
+| open a new task | `remember({kind: "task", cluster: "<board>", title, body})` | a `kind: task` concept in `TASK_STATE_SUBMITTED`, filed on that board |
+| comment on a task | `remember({kind: "lesson", about: "<task>", title, body})` | a lesson whose `related` names the task |
+
+Apply the patch (`git apply`, a commit, a pull request to the node's `contribute`
+target); the next build publishes the new state under `/boards/` and moves the
+content version. When the caller declares one of the node's agent lanes (its
+declared identity names an `agents[]` entry), the lane's gates run on the prepared
+Proposal on the local tool server: a lane that is not enabled, or a task or type it
+did not declare, is `AGSC-E509`; more new items than `max_new_items`, more claims
+than `max_claims`, or a claim of a task another participant already holds in
+`TASK_STATE_WORKING` is `AGSC-E511`. The first merged claim wins: a second claim
+prepared against the old state no longer applies, and prepared again it is refused.
+The page cannot see a node's lanes (they are configuration, never published), so a
+page answers the same payload and the gates run at review.
+
+Two nodes work one board when one is a clone of the other, or when a node's `peers[]`
+names the other: each agent prepares against its own copy and the person merges into
+the board's home.
+
+**Never automatic:** no tool writes a file, merges, pushes, opens a pull request or
+sends anything to another node; `claimed_by` is derived from history and never
+written; a claim is not a merge.
+
 ## Which route for which framework
 
 | framework | route | what to do |
@@ -322,6 +439,7 @@ reported: split the cluster, or use another layout.
 | OpenAI Agents SDK | 3, or the chunk corpus | attach `agsc mcp` as an MCP server; sessions hold conversation, not knowledge |
 | GABBE kit (any coding agent it drives) | 5 (+ 1) | `agsc export --to gabbe`, copy the `agsc/` folders, append the CONTINUITY entries |
 | a skills collection, a Claude Code plugin or marketplace, Cursor or Windsurf rules | 6 | clone it, `agsc import --from skills --list <clone>`, then import; `agsc export --to skills --layout <l>` the other way |
+| GitHub, GitLab, Jira, Trello, Linear, Asana, Notion, Obsidian Kanban, Markdown task lists, Todo.txt | 7 | export the board from the tool, `agsc import --from board --format <tool> <dir>`; `agsc export --to board --format <tool>` the other way |
 
 Files marked *illustrative* in `examples/connectors/frameworks/` are not run by any
 test: they need the framework installed. The record shapes they read are produced by

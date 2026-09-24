@@ -1,6 +1,6 @@
 'use strict';
 // tests/distribution/forge.test.js — AGSC-08-12's `enforce[]` compilation, the third
-// of the three silently unmet MUSTs V9-D found (V9D-A3, specification item V9D-06).
+// of the three silently unmet MUSTs found (V9D-A3, specification item V9D-06).
 //
 // Only ONE of the four artefacts has its bytes pinned by the rule — the
 // `status-check` array — so that one is asserted byte for byte against the rule's own

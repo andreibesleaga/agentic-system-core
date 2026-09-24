@@ -188,7 +188,7 @@ function servedHeadersCase(vector) {
 }
 
 /**
- * build-0013 — AGSC-06-36 (added at rc.6, PSF-02 + FIX29-S3): the whole content of
+ * build-0013 — AGSC-06-36 (added at rc.6, PSF-02 +): the whole content of
  * `/.well-known/security.txt`.
  *
  * Six cases, each a `securityTxt` call over one authored file and one build instant.
@@ -222,7 +222,7 @@ function securityTxtCase(vector) {
 }
 
 /**
- * build-0014 (rc.6, AGSC-04-25 / D113) — the content version, case by case.
+ * build-0014 (rc.6, AGSC-04-25 /) — the content version, case by case.
  *
  * Five derivation cases plus the composition of the NOW line. Nothing here reads
  * git, a clock or a file: the git-log file and the build instant arrive as data,

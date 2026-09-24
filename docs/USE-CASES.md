@@ -1,6 +1,6 @@
 # Use cases — what people and agents do with a knowledge node
 
-Seventeen concrete scenarios, in three groups: **one machine, one person**;
+Nineteen concrete scenarios, in three groups: **one machine, one person**;
 **many nodes, no server**; and **many agents on one Bundle**. Each says who is
 involved, where the data goes, which published surfaces it touches, which of the
 node's modes it is, the exact commands, and how it is proven.
@@ -275,3 +275,55 @@ Bundle's own folder.
   whose agent supports in-page tools.
 - **Proven by:** `tests/distribution/page-tools.test.js` (the page tools give the
   same results as the local tools). A real browser agent is not run.
+
+### M7 — A team's board becomes a live board
+
+- **Who:** a team that plans in Jira, GitHub, GitLab, Trello, Linear, Asana, Notion,
+  an Obsidian Kanban board, a Markdown task list or a Todo.txt file, and the agents
+  that will work its tasks.
+- **Data flow:** the tool's export file into the node, the node's board out to the
+  tool's import file; files only, moved by a person or a CI job. The import turns each
+  card or issue into a draft task on a draft board (its state through one table, its
+  assignee, labels, due date, id and unknown columns kept in `x-board-*` keys, its
+  blocking links as `blocked-by`); a person reviews, fixes what the table could not
+  read, and publishes. The board is then published as `/boards/` and worked as in M1;
+  the export writes it back in the tool's format, one file per board, and our own
+  import reads that file back exactly.
+- **Surfaces:** the board files, `/boards/index.json`, the tools.
+- **Mode:** 5.
+- **Commands:** `agsc import --from board --format jira ./from-jira --dry-run`, then
+  without `--dry-run`; change `status: draft` where the work may be public;
+  `agsc build`; `agsc export --to board --format jira` for the way back.
+- **Proven by:** `tests/interchange/board.test.js` (every format: import, export, and
+  the round trip). No tool's own importer is run.
+
+### M8 — Working a live board with agents, on two nodes
+
+- **Who:** one person who merges, agent A working through node A's tool server,
+  agent B working through node B (a second node of the same board — a clone, or any
+  node whose `peers[]` names A).
+- **Data flow:** every step is a **prepared Proposal**, never a write. An agent reads
+  the board (`/boards/index.json`, `/boards/<cluster>.json`, or the `read` and
+  `search` tools); claims or moves a task with `propose({slug, task_state, at?})`,
+  which returns the patch that sets `task_state` (and `modified` when `at` is given)
+  and nothing else; opens a new task with `remember({kind: "task", cluster, title,
+  body})`; and comments with `remember({kind: "lesson", about: <task>, …})`. When the
+  caller names one of the node's agent lanes, the lane's gates run on the prepared
+  Proposal: an undeclared task or type (`AGSC-E509`), `max_new_items` and
+  `max_claims` (`AGSC-E511`), and a claim of a task already in
+  `TASK_STATE_WORKING` under someone else (`AGSC-E511`). The person merges one
+  claim; the other claim's patch no longer applies — the first merged claim wins —
+  and, prepared again against the merged state, it is refused. The build then
+  publishes the new state on the board page and under `/boards/`, and the content
+  version moves.
+- **Surfaces:** `/boards/`, the seven tools (local and in-page), the proposal patch.
+- **Mode:** 5.
+- **Commands:** `agsc mcp` (the agents' tool server); `git apply <patch>` and a
+  commit, or a pull request, by the person; `agsc lint`; `agsc build`.
+- **Never automatic:** no tool writes to the content branch, merges, pushes or opens
+  a pull request; nothing is sent to another node; the in-page tools know no lanes
+  (lanes are configuration, never published), so on a page the gates run at review.
+- **Proven by:** `tests/acceptance/use-cases/use-cases.test.js` (the whole
+  scenario, with two clones of one repository and real `git apply`), and
+  `tests/distribution/board-tools.test.js` (the same payload on both transports; every
+  lane gate).

@@ -1,5 +1,5 @@
 'use strict';
-// tools/publish-set — the on/off switch of the patterns node (D106).
+// tools/publish-set — the on/off switch of the patterns node.
 //
 // One list file in the Bundle names the slugs that are PUBLISHED; the tool sets
 // `status: stable` on those, `status: draft` on every other item, and derives each
@@ -75,7 +75,7 @@ const statusOf = (root, at) => {
   return m === null ? null : m[1];
 };
 
-describe('tools/publish-set (D106)', () => {
+describe('tools/publish-set', () => {
   it('publishes exactly the listed slugs and holds every other item back', () => {
     const root = bundle(['alpha', 'gamma']);
     const { code, json } = envelope('publish-set', [root]);
@@ -137,7 +137,7 @@ describe('tools/publish-set (D106)', () => {
     assert.deepEqual(fs.readFileSync(path.join(root, 'content/concepts/beta.md')), before);
   });
 
-  it('never passes on nothing: no list, an empty list, or no item file (FV29-10)', () => {
+  it('never passes on nothing: no list, an empty list, or no item file', () => {
     const noList = writeTree(tmpdir(), { 'content/concepts/a.md': item('a', 'stable') });
     assert.equal(capture('publish-set', [noList]).code, 2);
 

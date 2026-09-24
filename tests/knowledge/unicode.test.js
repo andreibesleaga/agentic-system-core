@@ -48,7 +48,7 @@ test('isWellFormed rejects a lone surrogate', () => {
 });
 
 // ---------------------------------------------------------------------------
-// AGSC-02-24 as amended at rc.5 (FV28-01): authored single-line strings.
+// AGSC-02-24 as amended at rc.5: authored single-line strings.
 // ---------------------------------------------------------------------------
 
 test('SINGLE_LINE_FORBIDDEN names exactly the five classes the rule names', () => {
@@ -86,7 +86,7 @@ test('singleLine is idempotent and its output always passes isSingleLine', () =>
   assert.strictEqual(u.isSingleLine(once), true);
 });
 
-test('the schema pattern and the helper agree on the forbidden set (FV28-01)', () => {
+test('the schema pattern and the helper agree on the forbidden set', () => {
   const item = require('../../schema/item.schema.json');
   const pattern = item.$defs.single_line.pattern;
   const fromSchema = new RegExp(pattern, 'u');

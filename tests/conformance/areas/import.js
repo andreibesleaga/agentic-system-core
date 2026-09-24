@@ -1,7 +1,7 @@
 'use strict';
 // Conformance area `import` — AGSC-01-23.
 //
-// The area was declared and empty from rc.2 until rc.6, when `imp-0001` (FIX29-S2)
+// The area was declared and empty from rc.2 until rc.6, when `imp-0001`
 // gave it its first vector: what an import does when a planned path is already
 // taken. The three cases are the three outcomes the rule names, and they are run
 // against the engine's own plan/apply pair (`verbs/import.js#survey`, `#apply`,
@@ -107,7 +107,7 @@ function collisionCase(vector) {
 }
 
 /**
- * imp-0002 (rc.6, AGSC-01-22 as amended / D113) — the one LIMIT and the one RECORD
+ * imp-0002 (rc.6, AGSC-01-22 as amended /) — the one LIMIT and the one RECORD
  * of import tolerance.
  *
  * The source is expressed abstractly by the vector (`spec_version`,

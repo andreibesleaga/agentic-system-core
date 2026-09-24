@@ -209,7 +209,7 @@ const SUPPORT = Object.freeze({
  * Every name the bundle installs on `globalThis.AGSC_CORE`, in emission order.
  *
  * `composition/archive.js` joins the two algebras here for the same reason they are
- * here: D111's "download all (.zip)" link must produce the bytes `agsc compose --zip`
+ * here:'s "download all (.zip)" link must produce the bytes `agsc compose --zip`
  * produces, and the only way to hold that is to run one implementation in both hosts
  * (AGSC-07-13). The archive is emitted AFTER the Harness algebra because it packages
  * that algebra's result, and it reads `compareCodePoint`, which `compose.PORTABLE`

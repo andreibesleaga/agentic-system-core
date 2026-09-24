@@ -1,7 +1,7 @@
 'use strict';
 // ACCEPTANCE — the use-case scenarios of docs/USE-CASES.md that run OFFLINE, each
 // through the REAL command line (`bin/agsc.js`) exactly as the document prints the
-// commands (CONN-1; the scenarios are research/38 §5's).
+// commands (the scenarios are research/38 §5's).
 //
 // Deterministic: a fixed build instant, no network, no git identity (HOME and the
 // global git configuration point at empty scratch files), scratch Bundles under
@@ -179,9 +179,86 @@ test('M5 — a selection that becomes a harness, the same bytes twice', () => {
   assert.strictEqual(bad.status, 1);
 });
 
+/** git in a scratch repository, with a fixed identity and a fixed commit instant. */
+function git(cwd, day, ...args) {
+  const at = `2026-01-${day}T00:00:00Z`;
+  const r = spawnSync('git', ['-c', 'user.name=Person', '-c', 'user.email=person@example.org',
+    '-c', 'init.defaultBranch=main', ...args], { cwd, encoding: 'utf8',
+    env: { ...ENV, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at } });
+  return { status: r.status, stderr: r.stderr, stdout: r.stdout };
+}
+
+test('M8 — a person and two agents on two nodes work one live board', () => {
+  const { loadBundle } = require('../../../src/application/bundle.js');
+  const { createFileSystem, readSchemas } = require('../../../src/adapters/node-fs.js');
+  const validate = require('../../../src/knowledge/validate.js');
+  const mcpTools = require('../../../src/distribution/mcp-tools.js');
+  const toolsOf = (dir) => {
+    const loaded = loadBundle(createFileSystem(dir), { schemas: validate.schemas(readSchemas(ROOT)) });
+    return mcpTools.tools(loaded);
+  };
+  const lane = (name) => ({ author: 'board-bot', budget_usd_month: 1, channel: 'main', enabled: true, kind: 'llm', max_claims: 1,
+    model: 'test-model', name, operator: 'human:andreibesleaga', tasks: ['claim', 'work', 'plan'] });
+  // Node A holds the board; its configuration declares the two agents' lanes.
+  const nodeA = bundle((config) => ({ ...config,
+    agents: [lane('agent-a'), lane('agent-b')],
+    channels: [{ adapter: 'github', author: 'board-bot', name: 'main', owner: 'human:andreibesleaga' }] }));
+  const prov = 'prov:\n  origin: human\n  operator: human:andreibesleaga\n';
+  fs.writeFileSync(path.join(nodeA, 'content/concepts/ship-the-release.md'), '---\ntype: concept\ntitle: Ship the release\n'
+    + 'description: The one task of the release board, which two agents both want to take on.\nclusters:\n  - agent-patterns\n'
+    + `date: "2026-01-01"\n${prov}kind: task\ntask_state: TASK_STATE_SUBMITTED\n---\n\nTag it and publish it.\n`);
+  assert.strictEqual(git(nodeA, '01', 'init', '-q').status, 0);
+  git(nodeA, '01', 'add', '-A');
+  assert.strictEqual(git(nodeA, '01', 'commit', '-qm', 'the board').status, 0);
+  assert.strictEqual(agsc(nodeA, 'build').status, 0);
+  const before = { board: read(nodeA, 'www/boards/agent-patterns.json'), llms: read(nodeA, 'www/llms.txt') };
+  assert.match(before.board, /"state":"TASK_STATE_SUBMITTED"/u);
+  // Node B is a second node of the same board: a clone, worked by its own agent.
+  const nodeB = temp('agsc-uc-peer-');
+  assert.strictEqual(git(nodeB, '01', 'clone', '-q', nodeA, '.').status, 0);
+
+  // Agent A (on node A's tool server) and agent B (on node B's) each prepare a claim.
+  const claim = { at: '2026-01-02', slug: 'ship-the-release', task_state: 'TASK_STATE_WORKING' };
+  const fromA = toolsOf(nodeA).call('propose', { ...claim, agent: 'agent-a' });
+  const fromB = toolsOf(nodeB).call('propose', { ...claim, agent: 'agent-b' });
+  assert.strictEqual(fromA.type, 'proposal');
+  assert.strictEqual(fromB.type, 'proposal', 'before any merge, both claims are valid proposals');
+  // Nothing was written by either: a prepared Proposal is a payload.
+  assert.match(read(nodeA, 'content/concepts/ship-the-release.md'), /TASK_STATE_SUBMITTED/u);
+  const patchA = path.join(temp('agsc-uc-pr-'), 'a.patch');
+  const patchB = path.join(temp('agsc-uc-pr-'), 'b.patch');
+  fs.writeFileSync(patchA, fromA.body.patch);
+  fs.writeFileSync(patchB, fromB.body.patch);
+
+  // The person merges agent A's claim first.
+  const applied = git(nodeA, '02', 'apply', patchA);
+  assert.strictEqual(applied.status, 0, applied.stderr);
+  git(nodeA, '02', 'commit', '-qam', 'claim ship-the-release');
+  const linted = agsc(nodeA, 'lint', '--json');
+  assert.strictEqual(linted.status, 0, linted.stdout);
+  // Agent B's claim no longer applies: the first merged claim wins.
+  const late = git(nodeA, '02', 'apply', '--check', patchB);
+  assert.notStrictEqual(late.status, 0, 'the second claim must not apply over the first');
+  // Re-prepared against the merged state, it is refused before it is proposed.
+  assert.strictEqual(git(nodeB, '02', 'pull', '-q').status, 0);
+  const again = toolsOf(nodeB).call('propose', { ...claim, agent: 'agent-b' });
+  assert.strictEqual(again.body.code, 'AGSC-E511');
+  assert.match(again.body.message, /already TASK_STATE_WORKING/u);
+
+  // The board page and /boards/ follow the merge, and the content version moves.
+  assert.strictEqual(agsc(nodeA, 'build').status, 0);
+  const board = JSON.parse(read(nodeA, 'www/boards/agent-patterns.json'));
+  assert.strictEqual(board.tasks.find((t) => t.slug === 'ship-the-release').state, 'TASK_STATE_WORKING');
+  assert.strictEqual(board.done, false);
+  assert.deepStrictEqual(JSON.parse(read(nodeA, 'www/boards/index.json')).boards.map((b) => b.cluster), ['agent-patterns']);
+  const version = (text) => /^bundle_version: (.+)$/mu.exec(text)[1];
+  assert.notStrictEqual(version(read(nodeA, 'www/llms.txt')), version(before.llms));
+  assert.match(version(read(nodeA, 'www/llms.txt')), /^0\.0\.0\+2\./u);
+});
+
 test('docs/USE-CASES.md: every scenario is present, and each says how it is proven', () => {
   const doc = fs.readFileSync(path.join(ROOT, 'docs', 'USE-CASES.md'), 'utf8');
-  const ids = ['L1', 'L2', 'L3', 'L4', 'L5', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6'];
+  const ids = ['L1', 'L2', 'L3', 'L4', 'L5', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8'];
   const here = fs.readFileSync(__filename, 'utf8');
   for (const id of ids) {
     const heading = new RegExp(`^### ${id} — `, 'mu');

@@ -7,7 +7,7 @@
  * `<!-- agsc-item <base64 of the JCS record> -->` line, or a COGX record's
  * `metadata.agsc` member) holding the authored frontmatter and body, so a return
  * import rebuilds the item exactly — its `prov`, its `status`, everything. Anyone can
- * write such a line into a file of their own (CONN2-03). An import therefore trusts a
+ * write such a line into a file of their own. An import therefore trusts a
  * record only when BOTH hold:
  *
  *   1. its origin (`bundle`) is this node's own `site.base` or the base of a declared
@@ -20,7 +20,7 @@
  * Anything else is a claim by a stranger: the adapter ignores the record and reads the
  * file as the foreign file it is. This is a consistency check, not a signature — a
  * forger who copies this node's own origin and header still passes it; a signed
- * record is the full answer (reported in CONN-2's report).
+ * record is the full answer (reported in 's report).
  *
  * PURE: no fs, no clock, no network.
  */

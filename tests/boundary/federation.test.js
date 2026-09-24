@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the federation half of the Boundary context (WP-10-F).
+// Unit tests for the federation half of the Boundary context.
 // AGSC-11-06..11-15, AGSC-11-23, AGSC-10-12, AGSC-06-35.
 // No network: every fetch is injected and driven by the test's own graph.
 
@@ -394,7 +394,7 @@ test('AGSC-11-08: a redirect to an unresolved host is refused, not followed', ()
 });
 
 // ---------------------------------------------------------------------------
-// V9-D lens (c) — hostile inputs at the anti-corruption layer. `walk` is the one
+// lens (c) — hostile inputs at the anti-corruption layer. `walk` is the one
 // function of this context that consumes bytes a stranger chose, so a peer that
 // misbehaves must become a Finding, never an exception and never a hang.
 

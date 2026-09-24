@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-08-17 (`clean-room`). Owner: C (WP-10-C).
+// AGSC-08-17 (`clean-room`).
 
 const test = require('node:test');
 const assert = require('node:assert');

@@ -210,7 +210,7 @@ function state(items, config, options = {}) {
 }
 
 /**
- * AGSC-06-22 as amended at rc.6 (D113): the one pinned line of `/now/` and
+ * AGSC-06-22 as amended at rc.6: the one pinned line of `/now/` and
  * `/now.md` — the four values of AGSC-04-25, AGSC-04-09, AGSC-04-15 and
  * AGSC-00-17, in that order and with those separators, as one line and its own
  * paragraph. Everything else on the page is implementation-defined.
@@ -235,7 +235,7 @@ function buildLine(facts) {
  * @returns {string}
  */
 function nowMarkdown(nowState, facts) {
-  // AGSC-02-24 (rc.5, FV28-01): `/now.md` is line-oriented and several of the values
+  // AGSC-02-24: `/now.md` is line-oriented and several of the values
   // below are authored — a lane `name`, a `claimed_by` actor, a task slug read from a
   // board a reader did not author (AGSC-11-02). Each is neutralised where it is
   // interpolated; the neutralisation is the identity on every conforming value.

@@ -1,5 +1,5 @@
 'use strict';
-// application/bundle.js (ENG-9): a FileSystem-port refusal that carries a registered
+// application/bundle.js: a FileSystem-port refusal that carries a registered
 // code is a Finding about that one file (AGSC-01-14, AGSC-01-16); an error without one
 // is a programming fault and is thrown, never disguised as a domain fact.
 

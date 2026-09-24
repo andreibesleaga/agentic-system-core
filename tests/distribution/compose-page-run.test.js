@@ -26,6 +26,7 @@ const validate = require('../../src/knowledge/validate.js');
 const { loadBundle } = require('../../src/application/bundle.js');
 const site = require('../../src/distribution/site.js');
 const harness = require('../../src/composition/harness.js');
+const archive = require('../../src/composition/archive.js');
 const { compose, verdictOf } = require('../../src/composition/compose.js');
 const mcpTools = require('../../src/distribution/mcp-tools.js');
 const composePage = require('../../src/distribution/compose-page.js');
@@ -82,7 +83,7 @@ function fakeDocument(withModelContext) {
     };
     return node;
   };
-  for (const id of ['items', 'validity', 'verdict', 'explanations', 'conflicts', 'download', 'files']) {
+  for (const id of ['items', 'validity', 'verdict', 'explanations', 'conflicts', 'download', 'files', 'archive']) {
     nodes.set(id, make(id));
   }
   const registered = [];
@@ -181,9 +182,21 @@ test('AGSC-07-13: the seven files the PAGE builds are byte-identical to the CLI\
     assert.strictEqual(emitted.files.get(at), text, `${at} differs between the page and the CLI`);
   }
   assert.strictEqual(emitted.emitted, there.emitted);
-  // D49: one download link per file, no archive writer anywhere in the page.
+  // Per-file links stay: one download link per file.
   assert.strictEqual(page.document.nodes.get('files').children.length, emitted.files.size);
-  assert.ok(!files.get('/compose/agsc-compose.js').includes('zip'));
+  // "Download all (.zip)" beside them — the SAME bytes `agsc compose --zip` writes
+  // (the CLI's `_archive.js` calls this archive module over the CLI's own files and the
+  // same instant), named with the content version, its SHA-256 shown beside it.
+  const cli = archive.archiveBytes(there.files, { instant: INSTANT });
+  assert.deepStrictEqual(cli.violations, []);
+  assert.ok(Buffer.from(state.archive.bytes).equals(Buffer.from(cli.bytes)), 'the page archive differs from the CLI archive');
+  const holder = page.document.nodes.get('archive');
+  const [link, sum] = holder.children;
+  assert.strictEqual(link.textContent, 'Download all (.zip)');
+  const version = JSON.parse(files.get('/.well-known/knowledge-linkset')).linkset[0].describedby
+    .find((l) => l['agsc-bundle-version'])['agsc-bundle-version'][0];
+  assert.strictEqual(link.download, archive.archiveName(harness.harnessName(digest), version));
+  assert.strictEqual(sum.textContent.trim(), `SHA-256 ${createHash('sha256').update(Buffer.from(cli.bytes)).digest('hex')}`);
 });
 
 test('AGSC-07-17: an invalid composition emits nothing, and the page says so', async () => {
@@ -233,7 +246,7 @@ test('AGSC-09-16: with document.modelContext the seven tools are registered, wit
   }
   // AGSC-09-16: ALL SEVEN answer, and every answer is the local server's answer for
   // the same input and Bundle — the whole point of the rule, asserted against the
-  // artefact the site ships rather than against the emitter (ENG3-02).
+  // artefact the site ships rather than against the emitter.
   const local = mcpTools.tools(bundle, {});
   const selection = state.items.filter((i) => i.type !== 'cluster').map((i) => i.slug).slice(0, 2);
   const calls = [

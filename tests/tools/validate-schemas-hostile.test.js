@@ -1,6 +1,6 @@
 'use strict';
 
-// FINAL-VERIFY-29 (FV29-03). AGSC-09-90's checkers exit 0, 1 or 2 and report a
+// FINAL-VERIFY-29. AGSC-09-90's checkers exit 0, 1 or 2 and report a
 // FINDING; a stack trace on stdout is not a diagnostic and blocks nothing usefully
 // in the CI lane AGSC-09-92 mandates. Two inputs made `tools/validate-schemas` throw
 // an uncaught exception:

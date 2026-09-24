@@ -1,5 +1,5 @@
 'use strict';
-// tests/knowledge/comment-safe.test.js — specification item 58 / FIX28-03: a `-->`
+// tests/knowledge/comment-safe.test.js — specification item 58 /: a `-->`
 // inside `bundle.license_prose` closed the AGSC-06-13a provenance comment early, so
 // the rest of the header left the comment and became visible document text.
 //
@@ -22,7 +22,7 @@ const steer = require('../../src/interchange/steer.js');
 const ROOT = path.resolve(__dirname, '..', '..');
 
 test('the HTML Standard closes a comment on --> and on --!>; both are neutralised', () => {
-  // AGSC-06-13a as amended at rc.6 (FIX28-03) names the replacement: `--&gt;`.
+  // AGSC-06-13a as amended at rc.6 names the replacement: `--&gt;`.
   assert.strictEqual(commentSafe('a --> b'), 'a --&gt; b');
   assert.strictEqual(commentSafe('a --!> b'), 'a --!&gt; b');
   assert.strictEqual(commentSafe('x --> y --> z'), 'x --&gt; y --&gt; z');

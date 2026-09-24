@@ -1,7 +1,7 @@
 'use strict';
 // Conformance area `adopt` (owner A for adopt-0001…0003) — AGSC-02-90, AGSC-02-91,
 // AGSC-02-92. adopt-0004 (`init` then `ci`) and adopt-0005 (relative references,
-// AGSC-02-95) are the build pipeline's cases and are handled by WP-10-E.
+// AGSC-02-95) are the build pipeline's cases and are handled.
 
 const adopt = require('../../../src/knowledge/adopt.js');
 const frontmatter = require('../../../src/knowledge/frontmatter.js');
@@ -12,7 +12,7 @@ const { deepEqual, findingsMatch, checks } = require('./_assert.js');
 module.exports.run = (vector, ctx) => {
   const { input, expected } = vector;
 
-  // --- EXTENSION POINT (WP-10-E) -------------------------------------------
+  // --- EXTENSION POINT -------------------------------------------
   // A vector that names verbs runs the `init` → `ci` pipeline of
   // `distribution/init.js`; adopt-0004 and adopt-0005 are the only two.
   if (Array.isArray(input.verbs)) return initVerbs.run(vector, ctx);
