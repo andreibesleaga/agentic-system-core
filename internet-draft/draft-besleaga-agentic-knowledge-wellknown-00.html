@@ -20,7 +20,7 @@ resource with the existing "describedby" relation. This document
 requests one well-known URI registration and records the fields of one
 profile URI registration that is to be requested separately. 
     ' name="description">
-<meta content="xml2rfc 3.34.1" name="generator">
+<meta content="xml2rfc 3.34.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="Well-Known URI" name="keyword">
 <meta content="Linkset" name="keyword">
@@ -31,19 +31,19 @@ profile URI registration that is to be requested separately.
 <meta content="Agents" name="keyword">
 <meta content="draft-besleaga-agentic-knowledge-wellknown-00" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.34.1
+  xml2rfc 3.34.0
     Python 3.12.3
-    ConfigArgParse 1.7.7
+    ConfigArgParse 1.7.5
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
-    lxml 6.1.3
+    lxml 6.1.1
     natsort 8.4.0
-    platformdirs 4.11.12
+    platformdirs 4.11.0
     pycountry 26.2.16
     PyYAML 6.0.3
     requests 2.34.2
-    wcwidth 0.8.4
+    wcwidth 0.8.2
 -->
 <link href="draft-besleaga-agentic-knowledge-wellknown-00.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -368,10 +368,6 @@ table p {
   /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
      be allowed within tables more generally, it would be far better to select on a class. */
   margin: 0;
-}
-sub,
-sup {
- white-space: nowrap;
 }
 
 /* pilcrow */
@@ -1080,9 +1076,6 @@ aside > p {
   figcaption, table caption {
     page-break-before: avoid;
   }
-  table {
-    page-break-inside: avoid;
-  }
 }
 /* Font size adjustments for print */
 @media print {
@@ -1245,7 +1238,7 @@ li > p:last-of-type:only-child {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Besleaga</td>
-<td class="center">Expires 27 March 2027</td>
+<td class="center">Expires 28 March 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1258,12 +1251,12 @@ li > p:last-of-type:only-child {
 <dd class="internet-draft">draft-besleaga-agentic-knowledge-wellknown-00</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-09-23" class="published">23 September 2026</time>
+<time datetime="2026-09-24" class="published">24 September 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-03-27">27 March 2027</time></dd>
+<dd class="expires"><time datetime="2027-03-28">28 March 2027</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1308,7 +1301,7 @@ profile URI registration that is to be requested separately.<a href="#section-ab
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 27 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 28 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1868,7 +1861,7 @@ ignore an extension target attribute it does not recognize.<a href="#section-4.3
 array holding one string. That string is the serialization of a
 Dictionary (<span>[<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>, Section 3.2) with a single member whose key is
 the algorithm name <code>sha-256</code> from the "Hash Algorithms for HTTP Digest
-Fields" registry (<span>[<a href="#RFC9530" class="cite xref">RFC9530</a>]</span>, Section 6.1) and whose value is a Byte
+Fields" registry (<span>[<a href="#RFC9530" class="cite xref">RFC9530</a>]</span>, Section 7.2) and whose value is a Byte
 Sequence (<span>[<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>, Section 3.3.5) serialized as specified in
 <span>[<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>, Section 4.1, that is, base64 between colons:<a href="#section-4.3.1-1" class="pilcrow">¶</a></p>
 <div class="lang-json sourcecode" id="section-4.3.1-2">
@@ -1956,8 +1949,8 @@ it read.<a href="#section-4.3.2-4.2.1" class="pilcrow">¶</a></p>
           <h4 id="name-declaration-attributes">
 <a href="#section-4.3.3" class="section-number selfRef">4.3.3. </a><a href="#name-declaration-attributes" class="section-name selfRef">Declaration attributes</a>
           </h4>
-<p id="section-4.3.3-1">Three further groups of extension target attributes declare what a node
-is, rather than what it published. They are present at every level of
+<p id="section-4.3.3-1">The extension target attributes below declare what a node is, rather
+than what it published. They are present at every level of
 completeness.<a href="#section-4.3.3-1" class="pilcrow">¶</a></p>
 <span class="break"></span><dl class="dlParallel" id="section-4.3.3-2">
             <dt id="section-4.3.3-2.1">
@@ -2457,9 +2450,17 @@ links reveal the existence of resources it does not serve publicly. A
 node whose content is gated serves the discovery document publicly all
 the same (<a href="#cross-origin-access" class="auto internal xref">Section 3.3</a>), which is a deliberate disclosure
 that the node exists.<a href="#section-9.5-1" class="pilcrow">¶</a></p>
-<p id="section-9.5-2">The path <code>/.well-known/</code> on an origin <span class="bcp14">MUST</span> be under the publisher's
+<p id="section-9.5-2">A node whose content is gated <span class="bcp14">MUST</span> omit the <code>agsc-counts</code>,
+<code>agsc-bundle-hash</code> and <code>agsc-bundle-version</code> attributes and the
+<code>ledger</code> link, and <span class="bcp14">MUST</span> omit every <code>digest</code> whose target it does not
+serve without authentication: a digest over a gated artefact lets
+anyone confirm a guess of its content, and the counts and the content
+version disclose activity. It still carries <code>agsc-spec-version</code> and
+<code>agsc-generated-at</code>, which say only that the node exists and is
+current.<a href="#section-9.5-2" class="pilcrow">¶</a></p>
+<p id="section-9.5-3">The path <code>/.well-known/</code> on an origin <span class="bcp14">MUST</span> be under the publisher's
 control. On static hosting this means that the file is produced by the
-publisher's build and upload path and by nothing else.<a href="#section-9.5-2" class="pilcrow">¶</a></p>
+publisher's build and upload path and by nothing else.<a href="#section-9.5-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="size">
@@ -2659,8 +2660,9 @@ published with the reference engine.<a href="#section-12-6.3.1" class="pilcrow">
 </li>
         <li class="normal" id="section-12-6.4">
           <p id="section-12-6.4.1">Coverage: <a href="#the-well-known-uri" class="auto internal xref">Section 3</a>, <a href="#the-link-set" class="auto internal xref">Section 4</a>,
-<a href="#discovery-from-a-page" class="auto internal xref">Section 5</a>, and <a href="#the-profile-uri" class="auto internal xref">Section 6</a>, in the reduced
-form of <a href="#the-reduced-form" class="auto internal xref">Section 4.4</a>.<a href="#section-12-6.4.1" class="pilcrow">¶</a></p>
+<a href="#discovery-from-a-page" class="auto internal xref">Section 5</a>, and <a href="#the-profile-uri" class="auto internal xref">Section 6</a>, in the full form;
+the reduced form of <a href="#the-reduced-form" class="auto internal xref">Section 4.4</a> is exercised by the
+validator's level-0 mode.<a href="#section-12-6.4.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-12-6.5">
           <p id="section-12-6.5.1">Version compatibility: <span>[<a href="#AGSC-SPEC" class="cite xref">AGSC-SPEC</a>]</span>.<a href="#section-12-6.5.1" class="pilcrow">¶</a></p>
@@ -2916,8 +2918,7 @@ reference engine.<a href="#section-12-10.3.1" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="AGSC-SPEC">[AGSC-SPEC]</dt>
       <dd>
-<span class="refAuthor">Besleaga, A. N.</span>, <span class="refTitle">"AgenticSystemCore Specification, version 1.0.0-rc.6 (release candidate)"</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://agenticsystemcore.com/specs/">https://agenticsystemcore.com/specs/</a>&gt;</span>. <span class="annotation">TODO-DOI: insert the Zenodo DOI of the cited release here before posting.</span>
-      </dd>
+<span class="refAuthor">Besleaga, A. N.</span>, <span class="refTitle">"AgenticSystemCore Specification, version 1.0.0-rc.6 (release candidate)"</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://agenticsystemcore.com/specs/">https://agenticsystemcore.com/specs/</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC7942">[RFC7942]</dt>
     <dd>

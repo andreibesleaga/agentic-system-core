@@ -243,7 +243,7 @@ function tools(bundle, options) {
   };
 
   /**
-   * AGSC-09-14a as amended at rc.5 (V9D-07), vector `cli-0007`. The AGSC-08-18
+   * AGSC-09-14a as amended at rc.5, vector `cli-0007`. The AGSC-08-18
    * envelope with EXACTLY ONE added top-level member, `citations[]`: six members and
    * no more. `body` is the answer TEXT, never an object — before rc.5 this engine
    * returned `{answer, citations, terms}` inside `body`, which was the second of the
@@ -275,6 +275,14 @@ function tools(bundle, options) {
   implementations.remember = (args) => {
     const kind = KIND_TO_TYPE[args.kind] === undefined ? 'concept' : args.kind;
     const type = KIND_TO_TYPE[kind];
+    // AGSC-09-14b as amended at rc.6: a Gate's Level is a governance decision a
+    // tool call may not invent, and an episode's schema branch requires `actor`.
+    if (args.kind === 'gate') {
+      return errorEnvelope('remember', 'AGSC-E203', 'remember does not accept kind "gate": a Gate\'s Level is a governance decision (AGSC-09-14b)');
+    }
+    if (type === 'episode' && typeof args.actor !== 'string') {
+      return errorEnvelope('remember', 'AGSC-E003', 'an episode needs the declared actor (AGSC-09-14b)');
+    }
     const title = typeof args.title === 'string' ? args.title : '';
     const findings = [];
     const taken = new Set(byslug.keys());
@@ -292,10 +300,11 @@ function tools(bundle, options) {
       // AGSC-09-14b: `at` supplies `started`; a clock is NEVER read (AGSC-04-11).
       frontmatter.started = args.at;
       frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
-      frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
+      // No `severity` here: the episode branch has no such key, and a defaulted one
+      // was reported by lint as unknown (AGSC-09-14b as corrected 2026-09-24).
     }
-    // AGSC-09-14b's `severity` default reaches a lesson too, whose
-    // schema branch REQUIRES the key — without it the item was not conforming.
+    // AGSC-09-14b's `severity` default reaches the lesson alone, the one kind whose
+    // schema branch carries the key — without it the item was not conforming.
     if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
     if (typeof args.actor === 'string') frontmatter.actor = args.actor;
     frontmatter.prov = {
@@ -336,7 +345,7 @@ function tools(bundle, options) {
       return errorEnvelope(String(name), 'AGSC-E001', 'no such tool');
     }
     const supplied = args && typeof args === 'object' ? args : {};
-    // AGSC-09-13a (F27-10): `inputSchema.required` is PUBLISHED in the manifest, and a
+    // AGSC-09-13a: `inputSchema.required` is PUBLISHED in the manifest, and a
     // published contract that is never enforced is a silent success. `AGSC-E003`
     // ("missing argument", spec/09 §9.4) is the registered code for exactly this.
     const missing = (REQUIRED_ARGUMENTS[name] || []).filter((key) => {
@@ -346,7 +355,7 @@ function tools(bundle, options) {
     if (missing.length > 0) {
       return errorEnvelope(name, 'AGSC-E003', `missing required argument: ${missing.join(', ')}`);
     }
-    // AGSC-01-16 (F27-12): the 1 MiB cap governs every text a tool parses, not only a
+    // AGSC-01-16: the 1 MiB cap governs every text a tool parses, not only a
     // file read through the port. The check runs BEFORE dispatch, so an oversized
     // argument costs one length measurement and never a corpus scan.
     const oversized = ARGUMENTS[name].filter((key) => typeof supplied[key] === 'string'
@@ -355,15 +364,61 @@ function tools(bundle, options) {
       return errorEnvelope(name, 'AGSC-E904',
         `argument above the ${MAX_ARGUMENT_BYTES}-byte cap: ${oversized.join(', ')} (AGSC-01-16)`);
     }
-    return implementations[name](supplied);
+    // AGSC-05-04b: `memory://<bundle-id>/<slug>` is accepted wherever a slug
+    // argument is, and normalized to the slug before any other rule runs; and
+    // AGSC-05-04a: wherever `memory://` is accepted, the item's https IRI is too.
+    const siteBase = String(((bundle.config || {}).site || {}).base || '');
+    const aliased = memoryAliases(supplied, (value) => slugFromIri(bundle, value),
+      (value) => /^https?:\/\//u.test(siteBase) && value.startsWith(siteBase));
+    if (aliased.code !== null) {
+      return errorEnvelope(name, aliased.code, aliased.code === 'AGSC-E309'
+        ? 'memory:// names a foreign bundle — use the https:// IRI'
+        : 'no item with that IRI in this Bundle');
+    }
+    return implementations[name](aliased.args);
   }
 
   return Object.freeze({ call, manifest: () => manifest() });
 }
 
+/** AGSC-05-04b: the tool arguments that name one item by slug, plus `selection[]`. */
+const SLUG_ARGUMENTS = Object.freeze(['about', 'cluster', 'slug']);
+
+/**
+ * AGSC-05-04b: replace every `memory://` alias among the slug arguments by the slug
+ * it names, through `resolve` (`slugFromIri`); AGSC-05-04a: an https item IRI of this
+ * node (`isItemIri`) is accepted the same way. The first alias that names no item of
+ * this Bundle ends the call with its code. Every other value passes unchanged.
+ * @returns {{args:object|null, code:string|null}}
+ */
+function memoryAliases(args, resolve, isItemIri = () => false) {
+  const out = Object.assign({}, args);
+  const one = (value) => {
+    if (typeof value !== 'string' || !(value.startsWith('memory://') || isItemIri(value))) return { code: null, value };
+    const resolved = resolve(value);
+    return { code: resolved.code, value: resolved.slug };
+  };
+  for (const key of SLUG_ARGUMENTS) {
+    if (!Object.prototype.hasOwnProperty.call(out, key)) continue;
+    const r = one(out[key]);
+    if (r.code !== null) return { args: null, code: r.code };
+    out[key] = r.value;
+  }
+  if (Array.isArray(out.selection)) {
+    const selection = [];
+    for (const value of out.selection) {
+      const r = one(value);
+      if (r.code !== null) return { args: null, code: r.code };
+      selection.push(r.value);
+    }
+    out.selection = selection;
+  }
+  return { args: out, code: null };
+}
+
 /**
  * AGSC-01-16's 1 MiB cap, applied to every text argument a tool would parse
- * (F27-12). `TextEncoder` keeps this module runtime-portable — no `Buffer`.
+ * `TextEncoder` keeps this module runtime-portable — no `Buffer`.
  */
 const MAX_ARGUMENT_BYTES = 1024 * 1024;
 const utf8Length = (t) => new TextEncoder().encode(t).length;
@@ -380,7 +435,7 @@ const ARGUMENTS = Object.freeze({
   links: Object.freeze(['iri', 'slug']),
   propose: Object.freeze(['at', 'slug', 'task_state']),
   read: Object.freeze(['slug']),
-  remember: Object.freeze(['about', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title']),
+  remember: Object.freeze(['about', 'actor', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title']),
   search: Object.freeze(['query']),
 });
 

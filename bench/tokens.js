@@ -1,7 +1,7 @@
 'use strict';
 /**
  * bench/tokens.js — token counts per item over the three agent-facing text
- * surfaces (research/39 Layer B; research/33 names the tokenizer).
+ * surfaces (measurement layer B).
  *
  *   llms.txt        the one index line each item has
  *   chunks.jsonl    every chunk record of the item, as the whole JSON line an
@@ -10,7 +10,7 @@
  *                   `llms-ctx.txt` and its rows of `chunks-index.toon`
  *
  * The tokenizer is INJECTED: `encoders` maps a vocabulary name to a function
- * that returns the token count of a string. research/33 pins `gpt-tokenizer`
+ * that returns the token count of a string. The kit pins `gpt-tokenizer`
  * (MIT, offline, the real BPE tables of `o200k_base` and `cl100k_base`); it is
  * not a dependency of this package, so the caller installs it outside the
  * repository and passes its `encode(...).length`. No Claude figure is ever

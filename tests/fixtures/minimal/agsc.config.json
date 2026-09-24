@@ -21,7 +21,7 @@
     "tagline": "The smallest Bundle that conforms.",
     "title": "Minimal Bundle"
   },
-  "spec_version": "1.0.0-rc.5",
+  "spec_version": "1.0.0-rc.6",
   "tags": {
     "allowed": [
       "agents",

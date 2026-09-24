@@ -1,7 +1,8 @@
 'use strict';
 // Not a vector area — the JSON-LD round trip of AGSC-06-32, run as a child process.
 //
-// `jsonld@9.0.0` (the reference JSON-LD processor, a devDependency: nothing under
+// `jsonld@9.0.0` (the reference JSON-LD processor; a dependency of the package so
+// that `agsc conform` runs this area from an installed copy, though nothing under
 // `src/` requires it) is asynchronous, and a conformance area handler is called
 // synchronously by `tests/conformance/vector-runner.test.js`. Rather than weaken the
 // assertion of `graph-0011` to something a synchronous handler can check, the handler

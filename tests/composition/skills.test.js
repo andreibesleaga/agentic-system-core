@@ -69,10 +69,11 @@ test('AGSC-07-19: the description is bounded at 1024 characters and is one line'
 
 test('AGSC-07-20: each pack declares its licence and index.json IS the lockfile', () => {
   const produced = skills.packs([CLUSTER], OPTIONS);
-  assert.match(produced.files[0].text, /\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1\.0\n/u);
+  // AGSC-06-18 as amended at rc.6: a CC BY Bundle's pack names its own licence.
+  assert.match(produced.files[0].text, /\nlicense: CC-BY-4\.0\n/u);
   assert.strictEqual(produced.index.packs[0].lock['SKILL.md'], sha256(produced.files[0].text));
   assert.strictEqual(produced.index.license, 'CC-BY-4.0');
-  assert.strictEqual(produced.index.terms, skills.TERMS);
+  assert.strictEqual(produced.index.terms, 'CC-BY-4.0');
 });
 
 test('AGSC-01-29: the provenance header, the terms and the fenced prose are in every pack', () => {
@@ -163,7 +164,7 @@ test('AGSC-07-22: a SKILL.md maps back to a procedure item, round-tripping its f
   assert.strictEqual(back.path, 'content/procedures/agent-patterns.md');
   assert.strictEqual(back.frontmatter.type, 'procedure');
   assert.strictEqual(back.frontmatter.description, produced.index.packs[0].description);
-  assert.strictEqual(back.frontmatter['x-skill-license'], skills.TERMS);
+  assert.strictEqual(back.frontmatter['x-skill-license'], 'CC-BY-4.0');
   // The quoted prose comes back as prose; this format's data fences are gone.
   assert.ok(!back.body.includes('```text agsc-content'));
   assert.match(back.body, /The steps\./u);

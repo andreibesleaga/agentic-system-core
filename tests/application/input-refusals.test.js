@@ -61,7 +61,7 @@ function attach(dir, entry, bytes) {
   }
 }
 
-test(': build alone refuses an SVG attachment carrying a script (AGSC-E412) and writes nothing', () => {
+test('build alone refuses an SVG attachment carrying a script (AGSC-E412) and writes nothing', () => {
   const dir = workspace();
   attach(dir, { file: 'x.svg', media_type: 'image/svg+xml' },
     '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>\n');
@@ -75,7 +75,7 @@ test(': build alone refuses an SVG attachment carrying a script (AGSC-E412) and 
   assert.strictEqual(ci.envelope.findings.filter((f) => f.code === 'AGSC-E412').length, 1);
 });
 
-test(': build alone refuses an attachment path that leaves its directory (AGSC-E902)', () => {
+test('build alone refuses an attachment path that leaves its directory (AGSC-E902)', () => {
   const dir = workspace();
   attach(dir, { file: '../../../agsc.config.json', media_type: 'application/json' });
   const r = agsc(dir, ['build']);
@@ -85,7 +85,7 @@ test(': build alone refuses an attachment path that leaves its directory (AGSC-E
   assert.strictEqual(fs.existsSync(path.join(dir, 'www')), false);
 });
 
-test(': an attachment over the cap is AGSC-E904 and an archive attachment AGSC-E903, never E901', () => {
+test('an attachment over the cap is AGSC-E904 and an archive attachment AGSC-E903, never E901', () => {
   const big = workspace();
   attach(big, { file: 'big.txt', media_type: 'text/plain' }, 'b'.repeat(CAP + 1));
   const r1 = agsc(big, ['ci']);
@@ -101,7 +101,7 @@ test(': an attachment over the cap is AGSC-E904 and an archive attachment AGSC-E
   assert.ok(!r2.codes.includes('AGSC-E901'), r2.codes.join(','));
 });
 
-test(': an attachment directory that links out of the Bundle is AGSC-E902, never E901', () => {
+test('an attachment directory that links out of the Bundle is AGSC-E902, never E901', () => {
   const dir = workspace();
   const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-outside-'));
   fs.writeFileSync(path.join(outside, 'hosts'), 'secret\n');
@@ -122,7 +122,7 @@ test('the lint verb reports an absent attachment (AGSC-E413) — the presence ma
   assert.ok(r.codes.includes('AGSC-E413'), r.codes.join(','));
 });
 
-test(': an item that is not valid UTF-8 is AGSC-E108 (AGSC-01-14)', () => {
+test('an item that is not valid UTF-8 is AGSC-E108 (AGSC-01-14)', () => {
   const dir = workspace();
   const item = path.join(dir, 'content', 'concepts', 'handoff.md');
   const text = fs.readFileSync(item);
@@ -135,7 +135,7 @@ test(': an item that is not valid UTF-8 is AGSC-E108 (AGSC-01-14)', () => {
   assert.doesNotMatch(r.err, /internal error/u);
 });
 
-test(': an oversized agsc.config.json is AGSC-E904, not a JSON error', () => {
+test('an oversized agsc.config.json is AGSC-E904, not a JSON error', () => {
   const dir = workspace();
   const at = path.join(dir, 'agsc.config.json');
   fs.writeFileSync(at, `${fs.readFileSync(at, 'utf8').trimEnd()}${' '.repeat(CAP)}\n`);
@@ -145,9 +145,11 @@ test(': an oversized agsc.config.json is AGSC-E904, not a JSON error', () => {
   assert.ok(!r.codes.includes('AGSC-E201'), r.codes.join(','));
 });
 
-test(': import of an archive is AGSC-E903, and nothing is written', () => {
+test('import of an archive is AGSC-E903, and nothing is written', (t) => {
   const dir = workspace();
-  const source = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-zip-')), 'bundle.zip');
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-zip-'));
+  t.after(() => fs.rmSync(scratch, { recursive: true, force: true }));
+  const source = path.join(scratch, 'bundle.zip');
   fs.writeFileSync(source, Buffer.from('UEsDBHN0dWI=', 'base64'));
   const before = fs.readdirSync(path.join(dir, 'content'), { recursive: true }).sort();
   for (const from of ['okf', 'cogx', 'gabbe']) {
@@ -156,17 +158,19 @@ test(': import of an archive is AGSC-E903, and nothing is written', () => {
     assert.deepStrictEqual(r.codes, ['AGSC-E903'], `${from}: ${JSON.stringify(r.envelope.findings)}`);
     assert.doesNotMatch(r.err, /internal error/u);
   }
-  // A genuinely unknown adapter is still refused as one (AGSC-E002), before any path
-  // is looked at — the archive check does not hide the usage error.
+  // A genuinely unknown adapter is still refused as one — AGSC-E203, the closed-list
+  // code, since rc.6 (it was the usage code AGSC-E002 before) — before any path is
+  // looked at: the archive check does not hide the refusal.
   const unknown = agsc(dir, ['import', '--from', 'no-such-adapter', source]);
   assert.strictEqual(unknown.exit, 1);
-  assert.deepStrictEqual(unknown.codes, ['AGSC-E002']);
+  assert.deepStrictEqual(unknown.codes, ['AGSC-E203']);
   assert.deepStrictEqual(fs.readdirSync(path.join(dir, 'content'), { recursive: true }).sort(), before);
 });
 
-test(': an import file over the cap is AGSC-E904, not "could not be read"', () => {
+test('an import file over the cap is AGSC-E904, not "could not be read"', (t) => {
   const dir = workspace();
   const source = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-big-'));
+  t.after(() => fs.rmSync(source, { recursive: true, force: true }));
   fs.writeFileSync(path.join(source, 'big.md'),
     `---\ntype: concept\ntitle: Big Item\n---\n\n${'x'.repeat(CAP + 1)}\n`);
   const r = agsc(dir, ['import', '--from', 'okf', source]);

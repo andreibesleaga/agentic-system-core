@@ -1,0 +1,45 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-94 as amended on 2026-09-24: run and trace have no effect unless run.enabled is true, and with it false (the default of AGSC-01-18) both exit 2 with AGSC-E004 — a configuration the tool cannot run against, AGSC-09-08's exit-2 class — and no run block is read. Derivation: the verb is one of the sixteen, so AGSC-E001 (unknown verb) cannot name the fault; the refusal comes from the configuration, which is what AGSC-E004 is registered for. The minimal fixture carries no run block, so run.enabled is false by default. Until this date the rule and one reference engine said AGSC-E001.",
+  "expected": {
+    "cases": [
+      {
+        "error": "AGSC-E004",
+        "exit": 2,
+        "name": "run-disabled",
+        "stdout": ""
+      },
+      {
+        "error": "AGSC-E004",
+        "exit": 2,
+        "name": "trace-disabled",
+        "stdout": ""
+      }
+    ]
+  },
+  "id": "cli-0013",
+  "input": {
+    "cases": [
+      {
+        "argv": [
+          "run",
+          "handoff"
+        ],
+        "name": "run-disabled"
+      },
+      {
+        "argv": [
+          "trace",
+          "record.json"
+        ],
+        "name": "trace-disabled"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-09-94"
+}

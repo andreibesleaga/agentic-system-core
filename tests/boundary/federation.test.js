@@ -57,7 +57,7 @@ test('AGSC-11-08: the closed special-purpose list, in both families and through 
   // A host with one public and one private address is refused.
   assert.strictEqual(f.checkAddresses(['93.184.215.14', '10.0.0.5']), 'AGSC-E905');
   assert.strictEqual(f.checkAddresses(['not-an-address']), 'AGSC-E905');
-  // F27-05: an absent or empty resolution fails CLOSED — AGSC-11-08 refuses addresses
+  // an absent or empty resolution fails CLOSED — AGSC-11-08 refuses addresses
   // before connecting, which an empty list cannot establish.
   assert.strictEqual(f.checkAddresses(undefined), 'AGSC-E905');
   assert.strictEqual(f.checkAddresses([]), 'AGSC-E905');
@@ -333,7 +333,7 @@ test('the serializer prefers the Knowledge context N-Quads writer', () => {
   assert.strictEqual(f.hostOf('not a url'), '');
 });
 
-// F27-04: `walk` never applied AGSC-11-07's scheme rule or AGSC-11-08's address rule
+// `walk` never applied AGSC-11-07's scheme rule or AGSC-11-08's address rule
 // to the peers it dequeued, so a hostile `peers[]` steered the injected fetch at
 // `file://`, loopback, link-local and `gopher://` URLs.
 test('AGSC-11-07 + AGSC-11-08: walk refuses a hostile peer URL before it is fetched', () => {
@@ -379,7 +379,7 @@ test('AGSC-11-10: a walk over bare peer keys is unguarded, and a refused start i
   assert.deepStrictEqual(refused.skipped.map((s) => s.code), ['AGSC-E905']);
 });
 
-// F27-05: a redirect hop whose host has no entry in a supplied resolution map used to
+// a redirect hop whose host has no entry in a supplied resolution map used to
 // pass the AGSC-11-08 guard, which is the normal case since a redirect target is
 // discovered during the fetch.
 test('AGSC-11-08: a redirect to an unresolved host is refused, not followed', () => {

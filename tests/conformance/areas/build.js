@@ -1,10 +1,10 @@
 'use strict';
 // Conformance area `build`.
 //
-// Created by the graph package (owner D) for `build-0010` alone — the optional static
+// Created by the graph package for `build-0010` alone — the optional static
 // query fragments of AGSC-06-33, which are cut from `graph.nq` and therefore belong
 // to the graph modules. Every other `build` vector (`build-0001`…`build-0003`, the
-// search tokenizer) is owner E's and is listed in `tests/conformance/pending.json`,
+// search tokenizer) is not this area's and is listed in `tests/conformance/pending.json`,
 // so the runner never reaches this file for them; the EXTENSION POINT at the bottom
 // is where E appends its cases without touching anything above.
 
@@ -68,7 +68,7 @@ function fragmentsCase(vector) {
 }
 
 /**
- * build-0001…build-0003 (owner E) — the normative tokenizer of AGSC-06-23 and the
+ * build-0001…build-0003 — the normative tokenizer of AGSC-06-23 and the
  * AGSC-06-16 member order. The index is a pure function of the items the vector
  * carries, so no Bundle, no clock and no file system take part.
  */
@@ -129,7 +129,7 @@ function fragmentIndexCase(vector) {
 }
 
 /**
- * build-0012 (rc.5, V9A-26/V9A-08) — AGSC-06-17's served header set and redirect.
+ * build-0012 — AGSC-06-17's served header set and redirect.
  *
  * The vector asserts the HEADER SET and the REDIRECT and deliberately asserts no
  * `_headers`/`_redirects` bytes (`file_bytes_asserted: false`): AGSC-06-01 as amended
@@ -188,7 +188,7 @@ function servedHeadersCase(vector) {
 }
 
 /**
- * build-0013 — AGSC-06-36 (added at rc.6, PSF-02 +): the whole content of
+ * build-0013 — AGSC-06-36 (added at rc.6): the whole content of
  * `/.well-known/security.txt`.
  *
  * Six cases, each a `securityTxt` call over one authored file and one build instant.
@@ -289,7 +289,98 @@ function contentVersionCase(vector) {
   return checks(list);
 }
 
+/** The site a fixture Bundle builds to, at the vector's fixed instant (no clock, no network). */
+function fixtureBuild(vector, ctx, rootOverride) {
+  const path = require('node:path');
+  const { createFileSystem, readSchemas } = require('../../../src/adapters/node-fs.js');
+  const validate = require('../../../src/knowledge/validate.js');
+  const { loadBundle } = require('../../../src/application/bundle.js');
+  const root = rootOverride || path.join((ctx && ctx.root) || '.', 'tests', String(vector.input.bundle || 'fixtures/minimal'));
+  const fs = createFileSystem(root);
+  const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas((ctx && ctx.root) || '.')) });
+  const clock = createClock({ env: { SOURCE_DATE_EPOCH: String((vector.options || {}).source_date_epoch || '1767225600') } });
+  return site.build(bundle, { clock, fs }, { specVersion: (vector.options || {}).spec_version, version: '0.0.2' });
+}
+
+/** build-0015 (AGSC-04-07): every emitted text file ends with exactly one LF and starts with no BOM. */
+function trailingLfCase(vector, ctx) {
+  const built = fixtureBuild(vector, ctx);
+  const list = [];
+  const bad = [];
+  const bom = [];
+  let htmlPages = 0;
+  for (const [route, bytes] of built.files) {
+    if (typeof bytes !== 'string') continue; // a binary artefact is outside AGSC-04-07
+    if (!bytes.endsWith('\n') || bytes.endsWith('\n\n')) bad.push(route);
+    if (bytes.startsWith('\uFEFF')) bom.push(route);
+    if (route.endsWith('.html')) {
+      htmlPages += 1;
+      if (!bytes.endsWith(vector.expected.html_pages_end_with)) bad.push(`${route} (html tail)`);
+    }
+  }
+  list.push(['every text file ends with exactly one LF', bad.length === 0, JSON.stringify(bad)]);
+  list.push(['no byte-order mark', bom.length === 0, JSON.stringify(bom)]);
+  list.push(['html pages exist', htmlPages > 0, `${htmlPages} html pages`]);
+  for (const route of vector.expected.includes_routes || []) {
+    list.push([`emits ${route}`, built.files.has(route), [...built.files.keys()].filter((r) => r.endsWith('.html')).join(' ')]);
+  }
+  return checks(list);
+}
+
+/** build-0016 (AGSC-02-11): staleness is a comparison of two instants, nothing more. */
+function staleCase(vector) {
+  const got = now.staleItems(vector.input.items, vector.input.build_instant);
+  return checks([['stale', deepEqual(got, vector.expected.stale), JSON.stringify(got)]]);
+}
+
+/** A Bundle stated inline in `input.files`, written to a scratch directory (no repository file is needed). */
+function inlineBundle(vector) {
+  const path = require('node:path');
+  const nodeFs = require('node:fs');
+  const os = require('node:os');
+  const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), `agsc-${vector.id}-`));
+  for (const [file, text] of Object.entries(vector.input.files || {})) {
+    nodeFs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    nodeFs.writeFileSync(path.join(root, file), text);
+  }
+  return { root, done: () => nodeFs.rmSync(root, { force: true, recursive: true }) };
+}
+
+/** build-0017 (AGSC-04-02): a Bundle that references assets builds twice to identical bytes. */
+function reproducibleAssetsCase(vector, ctx) {
+  const scratch = inlineBundle(vector);
+  let first;
+  let second;
+  try {
+    first = fixtureBuild({ ...vector, input: { ...vector.input, bundle: null } }, ctx, scratch.root);
+    second = fixtureBuild({ ...vector, input: { ...vector.input, bundle: null } }, ctx, scratch.root);
+  } finally { scratch.done(); }
+  const list = [];
+  const routesA = [...first.files.keys()];
+  const routesB = [...second.files.keys()];
+  let identical = routesA.length === routesB.length;
+  const differing = [];
+  for (const route of routesA) {
+    const a = first.files.get(route);
+    const b = second.files.get(route);
+    const same = typeof a === 'string' ? a === b : Buffer.compare(Buffer.from(a), Buffer.from(b == null ? '' : b)) === 0;
+    if (!same) { identical = false; differing.push(route); }
+  }
+  list.push(['byte identical', identical === vector.expected.byte_identical, JSON.stringify(differing)]);
+  const codes = first.findings.map((f) => f.code);
+  for (const code of vector.expected.codes_absent || []) list.push([`no ${code}`, !codes.includes(code), JSON.stringify(codes)]);
+  if (vector.expected.no_error_finding === true) {
+    list.push(['no error finding', first.findings.every((f) => f.severity !== 'error'),
+      JSON.stringify(first.findings.filter((f) => f.severity === 'error').map((f) => `${f.code} ${f.message}`))]);
+  }
+  for (const route of vector.expected.includes_routes || []) list.push([`emits ${route}`, first.files.has(route), routesA.filter((r) => r.startsWith('/assets/')).join(' ')]);
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
+  if (vector.id === 'build-0015') return trailingLfCase(vector, ctx);
+  if (vector.id === 'build-0016') return staleCase(vector);
+  if (vector.id === 'build-0017') return reproducibleAssetsCase(vector, ctx);
   if (vector.id === 'build-0014') return contentVersionCase(vector);
   if (vector.id === 'build-0010') return fragmentsCase(vector);
   if (vector.id === 'build-0013') return securityTxtCase(vector);

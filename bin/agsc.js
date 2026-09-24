@@ -1,104 +1,41 @@
 #!/usr/bin/env node
-// bin/agsc.js — the real CLI entry point (AGSC-09-07..12). Owner: B.
+// bin/agsc.js — the real CLI entry point (AGSC-09-07..12).
 //
-// Prefers A's real adapters (src/adapters/*.js, which implement the
-// src/ports/*.js JSDoc interfaces — repository-relative FileSystem paths,
-// rooted via createFileSystem(root)) and falls back to small inline
-// Node-stdlib implementations only if an adapter is not yet present, so the
-// CLI keeps working while other agents' modules land.
+// It builds the four ports from the engine's own adapters (src/adapters/*.js, which
+// implement the src/ports/*.js interfaces — repository-relative FileSystem paths,
+// rooted via createFileSystem(root)) and hands them to the command line's `main()`.
 'use strict';
 
 const { main } = require('../src/application/cli/main.js');
-
-function tryRequire(id) {
-  try {
-    return require(id);
-  } catch (e) {
-    return null;
-  }
-}
+const nodeFs = require('../src/adapters/node-fs.js');
+const nodeClock = require('../src/adapters/node-clock.js');
+const nodeProc = require('../src/adapters/node-proc.js');
+const nodeNet = require('../src/adapters/node-network-refusing.js');
 
 function buildFileSystemPort(root) {
-  const nodeFs = tryRequire('../src/adapters/node-fs.js');
-  if (nodeFs && typeof nodeFs.createFileSystem === 'function') {
-    return nodeFs.createFileSystem(root);
-  }
-  // Interim fallback: repository-relative paths resolved against `root`,
-  // matching src/ports/filesystem.js's contract.
-  const fs = require('fs');
-  const path = require('path');
-  const abs = (p) => path.resolve(root, String(p));
-  return {
-    root,
-    readFile: (p, encoding = 'utf8') => (encoding === null ? fs.readFileSync(abs(p)) : fs.readFileSync(abs(p), encoding)),
-    writeFile: (p, data) => {
-      fs.mkdirSync(path.dirname(abs(p)), { recursive: true });
-      fs.writeFileSync(abs(p), data);
-    },
-    readdir: (p) => fs.readdirSync(abs(p)).sort(),
-    stat: (p) => fs.statSync(abs(p)),
-    exists: (p) => {
-      try {
-        return fs.existsSync(abs(p));
-      } catch (e) {
-        return false;
-      }
-    },
-    mkdirp: (p) => fs.mkdirSync(abs(p), { recursive: true }),
-    remove: (p) => fs.rmSync(abs(p), { recursive: true, force: true })
-  };
+  return nodeFs.createFileSystem(root);
 }
 
 function buildClockPort(env, proc) {
-  const nodeClock = tryRequire('../src/adapters/node-clock.js');
-  if (nodeClock && typeof nodeClock.createClock === 'function') {
-    // AGSC-04-09: SOURCE_DATE_EPOCH first; else the last commit time, read through
-    // the ProcessRunner; else 0 with AGSC-E606. The git read is skipped when the
-    // variable is set, so a pinned build never starts a process.
-    const pinned = env.SOURCE_DATE_EPOCH !== undefined && env.SOURCE_DATE_EPOCH !== null && String(env.SOURCE_DATE_EPOCH) !== '';
-    const lastCommitSeconds = pinned || typeof nodeClock.readLastCommitSeconds !== 'function'
-      ? null
-      : nodeClock.readLastCommitSeconds(proc);
-    return nodeClock.createClock({ env, lastCommitSeconds });
-  }
-  return {
-    now() {
-      const raw = env.SOURCE_DATE_EPOCH;
-      if (raw !== undefined && /^[0-9]+$/.test(raw)) return parseInt(raw, 10);
-      return 0; // AGSC-04-09/E606: no git history reachable from this stub, warned elsewhere
-    }
-  };
+  // AGSC-04-09: SOURCE_DATE_EPOCH first; else the last commit time, read through
+  // the ProcessRunner; else 0 with AGSC-E606. The git read is skipped when the
+  // variable is set, so a pinned build never starts a process.
+  const pinned = env.SOURCE_DATE_EPOCH !== undefined && env.SOURCE_DATE_EPOCH !== null && String(env.SOURCE_DATE_EPOCH) !== '';
+  const lastCommitSeconds = pinned ? null : nodeClock.readLastCommitSeconds(proc);
+  return nodeClock.createClock({ env, lastCommitSeconds });
 }
 
 function buildProcessRunnerPort(root, env) {
-  const nodeProc = tryRequire('../src/adapters/node-proc.js');
-  if (nodeProc && typeof nodeProc.createProcessRunner === 'function') {
-    return nodeProc.createProcessRunner({ cwd: root, env });
-  }
-  return {
-    run(cmd, args) {
-      const { spawnSync } = require('child_process');
-      const r = spawnSync(cmd, args, { encoding: 'utf8', cwd: root });
-      return { code: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
-    }
-  };
+  return nodeProc.createProcessRunner({ cwd: root, env });
 }
 
 function buildNetworkPort() {
-  const nodeNet = tryRequire('../src/adapters/node-network-refusing.js');
-  if (nodeNet && typeof nodeNet.createNetwork === 'function') {
-    return nodeNet.createNetwork();
-  }
-  return {
-    async fetch(url) {
-      throw Object.assign(new Error(`network access is refused by this node: ${url} (AGSC-04-03)`), { code: 'AGSC-E905' });
-    }
-  };
+  return nodeNet.createNetwork();
 }
 
 /**
  * resolveUserConfigDir(env, homedir) — AGSC-09-09's "user configuration"
- * layer (coordinator decision, 2026-09-18): `$XDG_CONFIG_HOME/agsc`,
+ * layer (a design choice of 2026-09-18): `$XDG_CONFIG_HOME/agsc`,
  * falling back to `~/.config/agsc`. `homedir` is injected (default
  * `os.homedir()`) so a test never touches the real home directory.
  */
@@ -131,10 +68,34 @@ function loadUserConfig(userConfigPorts) {
   }
 }
 
+/**
+ * AGSC-09-09 as amended at rc.6: `mcp` takes one OPTIONAL positional `<path>`, the
+ * Bundle root it serves, defaulting to the working directory — so an assistant with
+ * no working-directory setting starts it with no shell. Every other verb serves the
+ * working directory. Returns the root, or null when the path is not a directory.
+ */
+function bundleRoot(argv, cwd) {
+  const words = argv.filter((a) => !String(a).startsWith('-'));
+  if (words[0] !== 'mcp' || words[1] === undefined) return cwd;
+  const path = require('path');
+  const fs = require('fs');
+  const root = path.resolve(cwd, String(words[1]));
+  try {
+    return fs.statSync(root).isDirectory() ? root : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function run() {
   const argv = process.argv.slice(2);
   const env = Object.assign({}, process.env);
-  const root = process.cwd();
+  const root = bundleRoot(argv, process.cwd());
+  if (root === null) {
+    process.stderr.write('agsc: AGSC-E003 error: mcp <path>: not a directory (AGSC-09-09)\n');
+    process.exitCode = 2;
+    return;
+  }
   const userConfigDir = resolveUserConfigDir(env, require('os').homedir());
   const userConfig = loadUserConfig(buildFileSystemPort(userConfigDir));
   const proc = buildProcessRunnerPort(root, env);
@@ -186,4 +147,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { resolveUserConfigDir, loadUserConfig, buildFileSystemPort, run };
+module.exports = { bundleRoot, resolveUserConfigDir, loadUserConfig, buildFileSystemPort, run };

@@ -75,7 +75,8 @@ test('AGSC-11-16: a surface is declared only when it is served, ordered by href'
     href: 'https://a.example/chunks.jsonl',
     rel: 'https://w3id.org/agentic-system-core/rel#surface',
   });
-  assert.deepStrictEqual(links[3]['agsc-surface-version'], ['2026-07-28']);
+  // AGSC-11-16 as amended at rc.6: the revision the transport speaks, by default.
+  assert.deepStrictEqual(links[3]['agsc-surface-version'], [s.MCP_PROTOCOL_VERSION]);
   assert.deepStrictEqual(links[1]['agsc-surface-version'], ['2026-09-15']);
   // Nothing emitted, no server: nothing declared.
   assert.deepStrictEqual(plain(s.declare({ base: 'https://a.example/' })), []);

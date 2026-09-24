@@ -44,7 +44,25 @@ const SEEDED = {
     '[outside](../elsewhere.md) [templ](<slug>.md) [enc](docs/%E0%A4%A.md) [q](docs/ok.md?x=1#y)',
     '',
   ].join('\n'),
-  'docs/ok.md': '# Fine\n\nNothing to see: D94 and R58 are old public ids; session storage is a browser API.\n',
+  'docs/ok.md': [
+    '# Fine',
+    '',
+    'Nothing to see: session storage is a browser API; AGSC-06-07 and AGSC-E905 are rule ids and codes;',
+    'RFC 9264 and HTTP 404 are numbers; PRD-005, NFR-10, ADR-019 and the risk R-15 are public ids;',
+    'Cloudflare R2 and D3 are products; 99.9 % coverage; width: 100% is a length; calc(100% - 1em) too.',
+    'U+10000 encodes as D800 DC00 in UTF-16.',
+    '',
+  ].join('\n'),
+  'docs/process.md': [
+    '# Process',
+    '',
+    'Old ids: D60 and D38-final, R64 and R59, V9D-01 and V32B-S1, F27-11, ENG1 §3, NS-FIX and FIX-F27.',
+    'Also CONN3-S3, W3R-05, RC6D-01, NS-04, AR2-23, PSF-01, session-28, (s28) and audit/D.',
+    'The spaced forms too: the private register (audit D) and the lettered finding RC5B-A.',
+    'The change was owner-directed, following the owner\'s three directives; 100 % covered.',
+    '',
+  ].join('\n'),
+  'site.css': 'main { width: 100%; }\n',
   'docs/runbook.md': '# Release runbook\n\nSteps.\n',
   'docs/letter.md': 'Dear reader,\n\nhello.\n',
   'src/code.js': '// TODO in code is not a document finding\nconst k = 1;\n',
@@ -86,7 +104,7 @@ describe('tools/public-hygiene', () => {
     assert.ok(!all.includes(GH) && !all.includes(AWS));
     // The near-misses stay quiet.
     for (const quiet of ['ada@example.org', 'bob@test', 'git@github.com', 'icon@2x', 'docs/ok.md:',
-      'src/code.js', 'supervisor', 'elsewhere', '<slug>', 'D94', 'R58']) {
+      'src/code.js', 'supervisor', 'elsewhere', '<slug>', 'site.css']) {
       assert.ok(!all.includes(quiet), `unexpected hit for ${quiet}`);
     }
     // Two author-name hits (Andrei Besleaga) and Nicolae; the canonical form is not one.
@@ -94,11 +112,25 @@ describe('tools/public-hygiene', () => {
     assert.equal(json.findings.filter((f) => f.message.startsWith('private-name')).length, 2);
   });
 
+  it('catches two-digit decision and requirement ids, audit ids, session labels and owner directions', () => {
+    const root = seeded();
+    const { json } = envelope('public-hygiene', [root]);
+    const hits = json.findings.filter((f) => f.file === 'docs/process.md').map((f) => f.message.split(': ').slice(-1)[0]);
+    for (const id of ['D60', 'D38-final', 'R64', 'R59', 'V9D-01', 'V32B-S1', 'F27-11', 'ENG1', 'NS-FIX', 'FIX-F27',
+      'CONN3-S3', 'W3R-05', 'RC6D-01', 'NS-04', 'AR2-23', 'PSF-01', 'session-28', '(s28)', 'audit/D',
+      'audit D', 'RC5B-A',
+      'owner-directed', "owner's three directives", '100 %']) {
+      assert.ok(hits.includes(id), `expected a hit for ${id}: ${JSON.stringify(hits)}`);
+    }
+    // Rule ids, codes, RFC numbers, HTTP codes, public requirement ids, products and CSS lengths stay quiet.
+    assert.deepEqual(json.findings.filter((f) => f.file === 'docs/ok.md' || f.file === 'site.css'), []);
+  });
+
   it('reads only text: binaries are counted, not read', () => {
     const root = seeded();
     const r = capture('public-hygiene', [root]);
     assert.equal(r.code, 1);
-    assert.match(r.out, /public-hygiene: 5 input file\(s\) read \(walk\), 0 skipped by the allow-list, 2 binary, 0 allowed hit\(s\), \d+ error, 0 warn/u);
+    assert.match(r.out, /public-hygiene: 7 input file\(s\) read \(walk\), 0 skipped by the allow-list, 2 binary, 0 allowed hit\(s\), \d+ error, 0 warn/u);
     assert.match(r.err, /^error: README\.md:\d+:\d+ AGSC-E/mu);
   });
 
@@ -115,7 +147,7 @@ describe('tools/public-hygiene', () => {
     const r = capture('public-hygiene', ['--allowed', root]);
     assert.match(r.err, /allowed: README\.md:5 email — the seeded address is the documented contact/u);
     assert.ok(!/real\.person/u.test(r.err.split('\n').filter((l) => l.startsWith('error')).join('\n')));
-    assert.match(r.out, /4 skipped by the allow-list/u);
+    assert.match(r.out, /5 skipped by the allow-list/u);
     const { json } = envelope('public-hygiene', [root]);
     assert.ok(!checksOf(json).includes('process'));
   });

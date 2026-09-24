@@ -1,0 +1,18 @@
+{
+  "area": "lint",
+  "description": "AGSC-08-13 fixes the blob threshold of the injection scan at 256 characters (since rc.5): a base64 run of exactly 256 characters in item prose is a blob and is AGSC-E401. The author is human (`prov.origin: human`, no `prov.agent`), so the finding is a warning, as lint-0001's description states for the same body from a human author. With lint-0028 (255 characters, no finding) this pins the boundary.",
+  "expected": {
+    "error": "AGSC-E401",
+    "severity": "warn"
+  },
+  "id": "lint-0029",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Router\ndescription: A routing concept used to pin the length at which a base64 run becomes a blob for the injection scan.\nkind: principle\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nThe encoded sample is QUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD and nothing else follows it.\n"
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-08-13"
+}

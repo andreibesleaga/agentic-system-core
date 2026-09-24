@@ -6,12 +6,12 @@
  * is AGSC-E201; every slug in it MUST resolve or AGSC-E301; an optional
  * `verdict_digest`) and AGSC-07-24 (`compose --from <slug>` runs Steps 1 to 5
  * over that selection; a stale stored digest is the warning AGSC-E805).
- * Requirements: D71 Q71, SO-47a, PRD-057.
+ * Requirements: PRD-057.
  *
  * PURE. Findings carry registered codes and are returned, never thrown.
  *
  * Fenced-block extraction is the Knowledge context's
- * (`knowledge/markdown.js#selectionFences`, owner C): one Markdown reader
+ * (`knowledge/markdown.js#selectionFences`): one Markdown reader
  * serves the renderer and this rule, so a block that `compose --from` sees is
  * exactly the block the page does not render. This module never renders and
  * never interprets the block's content — `knowledge/yaml.js` parses that, in
@@ -23,8 +23,6 @@ const yaml = require('../knowledge/yaml.js');
 const {
   compose, frontmatterOf, indexBySlug, slugOf, verdictDigest,
 } = require('./compose.js');
-
-const INFO_STRING = 'yaml agsc-selection';
 
 /** [{ content, info, line }] for every `yaml agsc-selection` fence, document order. */
 function selectionFences(body) {
@@ -134,7 +132,6 @@ function composeFrom(items, slug) {
 }
 
 module.exports = {
-  INFO_STRING,
   composeFrom,
   selectionBlock,
   selectionFences,

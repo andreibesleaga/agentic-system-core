@@ -1,7 +1,8 @@
 # draft-besleaga-agentic-knowledge-wellknown
 
-The Internet-Draft that registers the well-known URI `knowledge-linkset` and the
-profile of the AgenticSystemCore discovery document, as an Independent Submission.
+The Internet-Draft that requests registration of the well-known URI
+`knowledge-linkset` and of the profile URI of the AgenticSystemCore discovery
+document, as an Independent Submission.
 
 | File | What it is |
 |---|---|

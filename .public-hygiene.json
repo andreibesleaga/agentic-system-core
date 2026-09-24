@@ -14,41 +14,6 @@
   "allow": [
     {
       "check": "process",
-      "path": "spec/**",
-      "reason": "frozen normative text until 1.0.0; its trace tags (decision, audit and work ids) are the specification's published traceability and change only at 1.0.0"
-    },
-    {
-      "check": "internal-note",
-      "path": "spec/**",
-      "reason": "frozen normative text until 1.0.0; the rationale notes record why a rule reads as it does and change only at 1.0.0"
-    },
-    {
-      "check": "process",
-      "path": "docs/SPEC.md",
-      "reason": "frozen specification index until 1.0.0; its history notes carry the specification's trace tags"
-    },
-    {
-      "check": "internal-note",
-      "path": "docs/SPEC.md",
-      "reason": "frozen specification index until 1.0.0; its history notes record how the rules were decided"
-    },
-    {
-      "check": "process",
-      "path": "schema/**",
-      "reason": "frozen JSON Schemas until 1.0.0; their descriptions carry the rules' trace tags"
-    },
-    {
-      "check": "process",
-      "path": "ontology/**",
-      "reason": "frozen ontology until 1.0.0; its comments carry the rules' trace tags"
-    },
-    {
-      "check": "internal-note",
-      "path": "ontology/**",
-      "reason": "frozen ontology until 1.0.0; a comment records how a term was decided"
-    },
-    {
-      "check": "process",
       "path": "tests/vectors/**",
       "reason": "frozen conformance vectors (withdraw and add, never edit); their notes carry the rules' trace tags"
     },
@@ -78,34 +43,10 @@
       "reason": "RFC-style author surname in the running page header, the author block and the self-citation"
     },
     {
-      "check": "todo",
-      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.*",
-      "text": "TODO-DOI",
-      "reason": "the release DOI placeholder of the self-citation, filled at posting time; the draft body is frozen until then"
-    },
-    {
       "check": "missing-file",
       "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.html",
       "text": "rfc-local.css",
       "reason": "xml2rfc's optional local stylesheet hook; the rendered draft works without it"
-    },
-    {
-      "check": "email",
-      "path": "w3id/.htaccess",
-      "text": "andrei.besleaga.nicolae@",
-      "reason": "the w3id maintainer line: w3id.org asks every redirect file to name a maintainer contact"
-    },
-    {
-      "check": "email",
-      "path": "w3id/README.md",
-      "text": "andrei.besleaga.nicolae@",
-      "reason": "the w3id maintainer line, the same contact as the redirect file"
-    },
-    {
-      "check": "email",
-      "path": "w3id/README.md",
-      "text": "public-perma-id@w3.org",
-      "reason": "w3id.org's own published support address, quoted as the alternative route"
     },
     {
       "check": "todo",
@@ -116,11 +57,6 @@
       "check": "personal",
       "path": "CITATION.cff",
       "reason": "the Citation File Format splits the canonical name Andrei N. Besleaga into family-names and given-names"
-    },
-    {
-      "check": "internal-note",
-      "path": ".github/workflows/publish-github-packages.yml",
-      "reason": "GitHub's own terms: a package private to the account owner, renamed to the owner scope"
     },
     {
       "check": "process",
@@ -219,7 +155,8 @@
     {
       "check": "process",
       "path": "tests/interchange/gabbe.test.js",
-      "reason": "a fixture of a foreign agent kit's session log, which the importer maps"
+      "reason": "a fixture of a foreign agent kit's session log, which the importer maps (its 'Session n' titles and file names)",
+      "text": "ession"
     },
     {
       "check": "internal-note",

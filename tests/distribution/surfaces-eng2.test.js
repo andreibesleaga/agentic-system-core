@@ -1,8 +1,8 @@
 'use strict';
 // tests/distribution/surfaces-eng2.test.js — the surfaces added for the package:
 // `/compose/` (AGSC-06-01, AGSC-07-01, AGSC-09-16), the human board page
-// `/boards/<cluster>/` (AGSC-10-13, AGSC-10-17), `/legal/` (AGSC-06-18, V9D-A6),
-// AGSC-06-21's three measured budgets (V9D-A1; four until rc.5, when
+// `/boards/<cluster>/` (AGSC-10-13, AGSC-10-17), `/legal/` (AGSC-06-18),
+// AGSC-06-21's three measured budgets (four until rc.5, when
 // replaced the two index bounds with one) and the "every internal link resolves"
 // check that closes the defect found.
 //
@@ -117,7 +117,7 @@ test('AGSC-09-16: the page tool surface answers for all seven tools and for no e
 
 // ---------------------------------------------------------------- /legal/
 
-test('AGSC-06-18 / V9D-A6: /legal/ is emitted from LICENSE-CONTENT and linked from every page', () => {
+test('AGSC-06-18: /legal/ is emitted from LICENSE-CONTENT and linked from every page', () => {
   const { files, skipped } = build(workspace({ 'LICENSE-CONTENT': '# Terms\n\nUse this content as follows.\n' }));
   assert.ok(files.has('/legal/index.html'), '/legal/ was not emitted');
   assert.ok(!skipped.some((s) => s.startsWith('/legal/')), '/legal/ is both emitted and skipped');
@@ -135,7 +135,7 @@ test('AGSC-06-18 / V9D-A6: /legal/ is emitted from LICENSE-CONTENT and linked fr
   assert.match(files.get('/.well-known/security.txt'), /^Policy: https:\/\/minimal\.example\/legal\/$/mu);
 });
 
-test('AGSC-06-18 / V9D-A6: with no LICENSE-CONTENT the route is skipped AND no link is emitted', () => {
+test('AGSC-06-18: with no LICENSE-CONTENT the route is skipped AND no link is emitted', () => {
   const { files, skipped } = build(workspace());
   assert.ok(!files.has('/legal/index.html'));
   assert.ok(skipped.some((s) => s.startsWith('/legal/ (no LICENSE-CONTENT')), skipped.join(' | '));
@@ -173,7 +173,7 @@ test('AGSC-06-18: the legal page renders LICENSE-CONTENT and adds no term of its
 
 // ------------------------------------------------- every internal link resolves
 
-test('V9D-A6, closed: every site-absolute link the build emits resolves to an emitted route', () => {
+test('every site-absolute link the build emits resolves to an emitted route', () => {
   for (const extra of [{}, { 'LICENSE-CONTENT': '# Terms\n\nText.\n' }]) {
     const { files, findings } = build(workspace(extra));
     const dangling = findings.filter((f) => f.code === 'AGSC-E901');
@@ -227,7 +227,7 @@ test('a build that links a route it does not emit reports AGSC-E901, naming both
 
 // ---------------------------------------------------------------- AGSC-06-21 budgets
 
-test('AGSC-06-21 / V9D-A1: the three budgets are the rule\'s own numbers', () => {
+test('AGSC-06-21: the three budgets are the rule\'s own numbers', () => {
   assert.strictEqual(site.BUDGET_HTML_BYTES, 100000);
   // rc.5: ONE index budget, 1 MB per index DOCUMENT, decimal. The two it
   // replaced — 1 KB per published item and 500 KB absolute — are gone, not renamed.
@@ -483,7 +483,7 @@ test('AGSC-04-02: a build carrying every new surface is still byte-reproducible'
 test('a build whose renderer emits a link to nothing reports AGSC-E901 and fails', () => {
   // The dangling-link check, driven end to end: a renderer that puts `/gone/` into
   // every item page makes the build emit a link it does not serve, which is exactly
-  // the defect V9D-A6 found on `/legal/` — now an error, not a habit.
+  // the defect found on `/legal/` — now an error, not a habit.
   const dir = workspace();
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
@@ -530,7 +530,7 @@ test('AGSC-06-01/AGSC-02-98: every attachment an item names is emitted at its ro
   ));
 
   const { files, findings } = build(dir);
-  // The served bytes are the authored bytes — the ones AGSC-05-29 hashed (AR2-23).
+  // The served bytes are the authored bytes — the ones AGSC-05-29 hashed.
   assert.strictEqual(String(files.get('/attachments/supervisor/live.svg')), svg);
   // And the <img> the page carries now resolves, so the build raises no AGSC-E901.
   assert.ok(String(files.get('/concepts/supervisor/index.html')).includes('src="/attachments/supervisor/live.svg"'));

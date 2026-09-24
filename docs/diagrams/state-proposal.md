@@ -47,4 +47,4 @@ A rejected Proposal has no `resubmit` edge on purpose: resubmission is a **new**
 `humanReview` can end in `rejected` when the owner closes a lint-green PR — the machine is total over
 what actually happens.
 
-Trace: PRD-039–043, D07, D27, D40, D48(1)(7) · audit/D §3(b)/(d) · PLAN.md §6(b), §5.3 (Provenance & Governance).
+Trace: PRD-039–043 · PLAN.md §6(b), §5.3 (Provenance & Governance).

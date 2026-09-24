@@ -14,7 +14,7 @@
 // THE READING REPORTED IS GONE. `bnd-0027` stated the MCP
 // `extensions` capability as the ARRAY ["com.agenticsystemcore/knowledge"] — the shape
 // the engine returned before rc.5, which no rule pinned — while AGSC-11-18 as amended
-// at rc.5 (V9A-04) makes `extensions` MCP's own "map of extension identifiers
+// at rc.5 makes `extensions` MCP's own "map of extension identifiers
 // to per-extension settings objects". That vector is withdrawn under AGSC-00-16 and
 // superseded by `bnd-0036`, which states the map; this handler compares the map the
 // Boundary context returns and projects nothing. `bnd-0031` is unaffected: its member
@@ -214,7 +214,7 @@ function runBnd0035(vector) {
     ['the pinned object is accepted', clean.length === 0, JSON.stringify(plain(clean))],
     ['additional_member_is', withExtra.length > 0 && withExtra.every((f) => f.code === vector.expected.additional_member_is),
       JSON.stringify(plain(withExtra))],
-    // AGSC-11-18/V9A-04: revision 2026-07-28 has no initialization handshake, which
+    // AGSC-11-18: revision 2026-07-28 has no initialization handshake, which
     // is WHY the two capability reports are the same object and not a negotiation.
     ['initialization_handshake', vector.expected.initialization_handshake === false,
       'revision 2026-07-28 establishes no session (AGSC-11-18)'],
@@ -403,6 +403,7 @@ function runBnd0012(vector) {
   const links = plain(surfaces.declare({
     base, emitted: vector.input.emitted, mcpServed: vector.input.mcp_served,
     webmcpVersion: vector.input.webmcp_report_date,
+    ...(vector.input.mcp_revision === undefined ? {} : { mcpVersion: vector.input.mcp_revision }),
   }));
   const extensions = plain(surfaces.mcpCapabilities({ base }).extensions);
   const list = [
@@ -424,7 +425,7 @@ function runBnd0012(vector) {
     list.push(['webmcp_version_pattern', new RegExp(vector.expected.webmcp_version_pattern, 'u').test(String(declared)),
       String(declared)]);
     if (vector.expected.webmcp_version_echoes_input === true) {
-      // AGSC-11-16 as amended at rc.5 (V9A-10): ANY YYYY-MM-DD report date conforms,
+      // AGSC-11-16 as amended at rc.5: ANY YYYY-MM-DD report date conforms,
       // so the declaration must carry the date the node targets and never a constant.
       list.push(['webmcp_version_echoes_input', declared === vector.input.webmcp_report_date,
         `declared ${String(declared)} for input ${String(vector.input.webmcp_report_date)}`]);
@@ -433,6 +434,18 @@ function runBnd0012(vector) {
       })).find((l) => l['agsc-surface'][0] === 'webmcp');
       list.push(['a second date is echoed too', (other['agsc-surface-version'] || [])[0] === '2027-01-04',
         JSON.stringify(other)]);
+    }
+  }
+  if (vector.expected.mcp_version_pattern) {
+    // AGSC-11-16 as amended at rc.6: `mcp` declares the revision its transport
+    // speaks — an input, echoed, never a constant (bnd-0037).
+    const mcp = links.find((l) => l['agsc-surface'][0] === 'mcp') || {};
+    const declared = (mcp['agsc-surface-version'] || [])[0];
+    list.push(['mcp_version_pattern', new RegExp(vector.expected.mcp_version_pattern, 'u').test(String(declared)),
+      String(declared)]);
+    if (vector.expected.mcp_version_echoes_input === true) {
+      list.push(['mcp_version_echoes_input', declared === vector.input.mcp_revision,
+        `declared ${String(declared)} for input ${String(vector.input.mcp_revision)}`]);
     }
   }
   return checks(list);
@@ -582,6 +595,9 @@ const HANDLERS = {
   // one more input: it states a different shape for one member, so it has a handler of
   // its own and `bnd-0027`'s is gone.
   'bnd-0036': runBnd0036,
+  // rc.6 — bnd-0031's successor: the same case with the transport revision of the
+  // `mcp` surface stated in input (AGSC-11-16 as amended at rc.6).
+  'bnd-0037': runBnd0012,
 };
 
 module.exports.run = function run(vector) {

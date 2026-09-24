@@ -7,7 +7,7 @@ and `docs/PRD.md` acceptance criteria — nothing invented.
 
 ## How these map to the E2E suite
 
-Per PRD.md §5 definition-of-done item (1): "persona walkthroughs (a)–(j) of audit/D §3 exist as
+Per PRD.md §5 definition-of-done item (1): "persona walkthroughs (a)–(j) exist as
 end-to-end tests (fixed clock, no network, recorded fixtures) green on three OSes at the tag." At M13
 a Gherkin runner (or a hand-written `node:test` harness reading these files) turns every `Scenario`
 into one E2E test case against:
@@ -21,8 +21,8 @@ HTTP route or MCP tool under test; `Then` steps assert on file bytes, JSON shape
 CLI exit code. Steps that name a concrete command (e.g. `npx agentic-system-core lint --fix`) are
 executable as written — no vague "the system behaves correctly" steps appear.
 
-Scope note: PRD §4 non-goals as read by D72 and the pre-DS-4 audit (2026-09-16) — `agent-card.json` is not emitted by default and MAY be declared as the `a2a-card` surface beside a `responder` (AGSC-06-34, AGSC-11-21); remote MCP is not *served* at 1.0 but MAY be *declared* as a `responder` surface whose bytes this specification does not pin; persona (c)/(h) scenarios test the
-**local stdio** MCP server only, per D41/G42.
+Scope note: PRD §4 non-goals as re-read on 2026-09-15 and 2026-09-16 — `agent-card.json` is not emitted by default and MAY be declared as the `a2a-card` surface beside a `responder` (AGSC-06-34, AGSC-11-21); remote MCP is not *served* at 1.0 but MAY be *declared* as a `responder` surface whose bytes this specification does not pin; persona (c)/(h) scenarios test the
+**local stdio** MCP server only.
 
 ## Scenario-coverage table (scenario ↔ PRD ids)
 
@@ -41,7 +41,7 @@ Scope note: PRD §4 non-goals as read by D72 and the pre-DS-4 audit (2026-09-16)
 | `persona-j-standards.feature` | P11 standards implementer | 1 | 5 | PRD-024, 025, 050, 054 |
 | `persona-k-live-board.feature` | P12 self-driving team (rc.4) | 5 | 8 | PRD-063, 064, 065 |
 
-Not covered here by design: **P10 port implementer** — audit/D §3 has no (k) walkthrough for it; its
+Not covered here by design: **P10 port implementer** — the persona walkthroughs have no (k) for it; its
 acceptance runs instead through `tests/vectors/` + `spec/09-conformance` (M13, PLAN §5.3), not a
 persona E2E scenario.
 

@@ -35,6 +35,14 @@ const REFUSED_PHRASES = Object.freeze([
   'table of contents of the book',
 ]);
 
+/**
+ * AGSC-08-17 as amended at rc.6: a reference to a numbered division of a work — the
+ * case-folded `chapter` or `chapters`, whitespace, then decimal digits or a Roman
+ * numeral — is refused as a PATTERN, not as the literal `chapter 1`, which caught
+ * "chapter 1" and "chapter 10"…"chapter 19" and missed every other number.
+ */
+const NUMBERED_DIVISION = /\bchapters?\s+(?:[0-9]+|[ivxlcdm]+)\b/u;
+
 /** AGSC-08-17: a whole-corpus emitter is forbidden outright. */
 const REFUSED_EMITTERS = Object.freeze(['pdf', 'epub', 'mobi']);
 
@@ -79,16 +87,14 @@ function check(input = {}) {
   const text = typeof input.text === 'string' ? input.text : '';
   if (text !== '') {
     const haystack = text.replace(/[A-Z]/gu, (c) => c.toLowerCase());
-    for (const phrase of REFUSED_PHRASES) {
-      if (!haystack.includes(phrase)) continue;
+    if (REFUSED_PHRASES.some((phrase) => haystack.includes(phrase)) || NUMBERED_DIVISION.test(haystack)) {
       findings.push(finding('AGSC-E405',
         'prose carries a framing or reading-order construct the clean room refuses (AGSC-08-17)',
         base));
-      break;
     }
   }
 
   return findings;
 }
 
-module.exports = { EXCLUDED_FILES, REFUSED_KEY, REFUSED_PHRASES, REFUSED_EMITTERS, check };
+module.exports = { EXCLUDED_FILES, NUMBERED_DIVISION, REFUSED_KEY, REFUSED_PHRASES, REFUSED_EMITTERS, check };

@@ -1,5 +1,5 @@
 'use strict';
-// tests/interchange/own-record.test.js —, the forged own-record line.
+// tests/interchange/own-record.test.js — the forged own-record line.
 //
 // Every export of the `skills`, `gabbe` and `cogx` adapters carries, per item, a hidden
 // own-record (an `<!-- agsc-item … -->` line, or a COGX record's `metadata.agsc`) so

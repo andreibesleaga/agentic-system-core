@@ -84,6 +84,24 @@ const RESERVED = Object.freeze(['index.md', 'log.md', '_index.md', 'README.md'])
 /** The key an unmapped foreign `type` is preserved under (AGSC-02-05a). */
 const TYPE_KEEP_KEY = 'x-okf-type';
 
+/**
+ * AGSC-03-19 / AGSC-03-20: foreign link names are MAPPED on import, never added to
+ * the vocabulary. The combiner's `oneOf` (pairwise `excludes`) is a structure over
+ * a selection, not a frontmatter key, and has no entry here.
+ */
+const FOREIGN_LINK_NAMES = Object.freeze({
+  'alternative-to': 'excludes',
+  blockedBy: 'blocked-by',
+  'composed-of': 'uses',
+  'conflicts-with': 'excludes',
+  decidedBy: 'decided-by',
+  mitigates: 'related',
+  recommends: 'uses',
+  refines: 'narrower',
+  tests: 'verifies',
+  'traces-to': 'covers',
+});
+
 /** Is this path one of the format's reserved documents? */
 function isReserved(path) {
   const name = String(path).split('/').pop();
@@ -140,6 +158,21 @@ function mapFrontmatter(raw, options) {
         ? `${options.path}: the document declares no type; it was imported as a concept (AGSC-01-22)`
         : `${options.path}: the foreign type ${JSON.stringify(declared)} is not one of AGSC-00-04's six;`
           + ` it was imported as a concept and kept as ${TYPE_KEEP_KEY} (AGSC-01-22, AGSC-02-05a)`,
+      { file: options.path, severity: 'warn' }));
+  }
+
+  // AGSC-03-19 / AGSC-03-20: each foreign link name becomes its Link key, values
+  // appended to what the key already holds, in order and without repetition.
+  for (const [foreign, key] of Object.entries(FOREIGN_LINK_NAMES)) {
+    if (out[foreign] === undefined) continue;
+    const values = Array.isArray(out[foreign]) ? out[foreign] : [out[foreign]];
+    const merged = Array.isArray(out[key]) ? [...out[key]] : (out[key] === undefined ? [] : [out[key]]);
+    for (const value of values) if (!merged.includes(value)) merged.push(value);
+    out[key] = merged;
+    delete out[foreign];
+    findings.push(finding('AGSC-E506',
+      `${options.path}: the foreign link name ${JSON.stringify(foreign)} was mapped to ${JSON.stringify(key)}`
+      + ' (AGSC-03-19, AGSC-03-20)',
       { file: options.path, severity: 'warn' }));
   }
 
@@ -328,6 +361,7 @@ function plan(files, options) {
 }
 
 module.exports = {
+  FOREIGN_LINK_NAMES,
   FORMAT, RESERVED, TYPE_KEEP_KEY, TYPE_PLURAL,
   isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, versionRefusal,
 };

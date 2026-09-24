@@ -1,5 +1,5 @@
 ---
-spec_version: 1.0.0-rc.5
+spec_version: 1.0.0-rc.6
 okf_version: "0.2"
 title: Minimal Bundle
 description: The smallest Bundle that conforms to AgenticSystemCore, used by the engine's own tests as a fixture.

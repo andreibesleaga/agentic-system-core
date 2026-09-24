@@ -14,7 +14,7 @@
  * AGSC-11-14 (contribution from anyone), AGSC-11-15 (federated boards keyed by
  * IRI), AGSC-11-23 (tombstones), plus AGSC-10-12 (the mutual check) and
  * AGSC-06-35 (related-system links).
- * Requirements: D67 A1/A4/B6/Q63, D71 Q69/Q70, D72 C4/C22/A-18/A-19, PRD-057.
+ * Requirements: PRD-057.
  *
  * NO NETWORK. Every fetch is an INJECTED function: the walk, the redirect
  * check and the mutual check take one, so nothing here can reach a socket and
@@ -34,7 +34,7 @@ const { domainToASCII } = require('node:url');
 const nquads = require('../knowledge/nquads.js');
 const { REL } = require('./surfaces.js');
 
-/** AGSC-06-07: the one discovery suffix, held as a single constant (D82 Q4). */
+/** AGSC-06-07: the one discovery suffix, held as a single constant. */
 const WELLKNOWN_SUFFIX = '.well-known/knowledge-linkset';
 
 /** AGSC-11-06 + AGSC-11-01: default, schema minimum and stated maximum. */
@@ -170,7 +170,7 @@ function checkScheme(url, options) {
  * AGSC-11-08. A host that resolves to several addresses is refused if ANY is
  * in the closed list. Classification is the platform's (`node:net.BlockList`),
  * never a hand-parsed literal. An EMPTY or absent list is a refusal, not a
- * pass (F27-05): AGSC-11-08 refuses addresses *before connecting*, which an
+ * pass: AGSC-11-08 refuses addresses *before connecting*, which an
  * empty list cannot establish, so this function fails closed.
  */
 function checkAddresses(addresses, options) {
@@ -200,7 +200,7 @@ function resolvedFor(options, host) {
 /**
  * peerFault(value, options) -> 'AGSC-E905' | null
  * AGSC-11-07 and AGSC-11-08 applied to one peer value before it is fetched
- * (F27-04). The guard runs ONLY on a value that parses as an absolute URL
+ * The guard runs ONLY on a value that parses as an absolute URL
  * with a scheme: AGSC-11-10 models a walk over opaque peer keys, and a key
  * that is not a URL carries no scheme and no address to judge.
  */
@@ -269,7 +269,7 @@ function walk(options) {
   let requests = 0;
   let capExceeded = false;
   const queue = [];
-  // AGSC-11-07 / AGSC-11-08 (F27-04): a peer value the walk would fetch is judged
+  // AGSC-11-07 / AGSC-11-08: a peer value the walk would fetch is judged
   // before it is enqueued, so a hostile `peers[]` cannot steer the injected fetch
   // at a `file://`, a loopback or a link-local URL.
   const startFault = peerFault(opts.start, opts);
@@ -379,7 +379,7 @@ function normaliseReference(raw) {
 }
 
 /**
- * The Knowledge context's N-Quads writer (`knowledge/nquads.js`, owner D) owns
+ * The Knowledge context's N-Quads writer (`knowledge/nquads.js`) owns
  * the term model, the escaping of AGSC-05-32 and the canonical sort of
  * AGSC-04-15. Boundary builds the AGSC-11-12 peer quads with ITS constructors
  * and serialises through IT, so there is one N-Quads serializer in the engine

@@ -7,8 +7,7 @@
 // The output goes through the BUNDLE's own FileSystem port, prefixed with
 // `build.out`: AGSC-01-19 makes `build.out` a path relative to the Bundle root,
 // and a Bundle-rooted port refuses anything that escapes it (AGSC-E902), so the
-// build can never write outside the Bundle. Owner: B (shell); wired at
-// integration.
+// build can never write outside the Bundle.
 
 const site = require('../../../distribution/site.js');
 const helpers = require('./_helpers.js');

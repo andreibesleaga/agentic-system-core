@@ -204,7 +204,17 @@ if back >= 0:
 
 xml = xml.replace(" ", " ")
 
+# kramdown-rfc appends the gzip-compressed Markdown source as an XML comment
+# ("<!-- ##markdown-source: ... -->"). It is a round-trip convenience for
+# kramdown-rfc alone: xml2rfc ignores it, the .txt and .html never carry it, and
+# its base64 differs at every build (the gzip header carries a timestamp), which
+# made two builds of one input differ by ~500 lines and let a byte run inside it
+# read as a word it is not. Dropped so that the XML is a function of the source.
+xml = re.sub(r"\n?[ \t]*<!-- ##markdown-source:.*?-->[ \t]*\n?", "\n", xml, flags=re.S)
+
 problems = []
+if "##markdown-source:" in xml:
+    problems.append("the ##markdown-source comment remains")
 if re.search(r"<spanx[\s>]|<list[\s>]|<vspace[\s/>]", xml):
     problems.append("RFCXML v2 elements remain")
 if "<?line" in xml:

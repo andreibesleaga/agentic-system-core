@@ -1,0 +1,78 @@
+{
+  "$comment": "Read by tools/rule-coverage. `rules`: rules no machine can check, each with a closed reason and a sentence saying why; an entry for a rule that some check does verify is an error, so the list stays minimal. `gaps`: rules the reference engine does not implement yet; they are never counted as verified, even where a check names them, and each says what is missing.",
+  "rules": {
+    "AGSC-00-02": {
+      "reason": "scope",
+      "why": "It says what the specification defines and what it leaves out; there is no output to test."
+    },
+    "AGSC-00-19": {
+      "reason": "definition",
+      "why": "It defines the terms agent lane and live board; the behaviour they name is checked under AGSC-01-36, AGSC-08-28 and AGSC-10-13…18."
+    },
+    "AGSC-00-20": {
+      "reason": "scope",
+      "why": "It lists which part of the whole scope is normative at which version; the reserved names it implies are checked under AGSC-00-21 and AGSC-01-18."
+    },
+    "AGSC-01-30": {
+      "reason": "adapter",
+      "why": "It binds a channel adapter's pull and render functions and the forge ingest job; the reference distribution ships no channel adapter."
+    },
+    "AGSC-01-32": {
+      "reason": "adapter",
+      "why": "It limits an optional model correction inside a channel adapter; no channel adapter and no model client ship with the reference distribution."
+    },
+    "AGSC-03-21": {
+      "reason": "scope",
+      "why": "It forbids adding embeddings, spreading activation, transclusion or bi-temporal edges to the format; there is nothing emitted to test for an absence of design."
+    },
+    "AGSC-04-16": {
+      "reason": "person",
+      "why": "It fixes the wording of a conformance claim about RDFC-1.0; the canonical N-Quads bytes themselves are checked by the graph vectors."
+    },
+    "AGSC-05-11": {
+      "reason": "person",
+      "why": "It forbids an implementer to claim to be a JSON-LD processor, an RDF parser or a SHACL engine; a claim is a statement by a person."
+    },
+    "AGSC-05-24": {
+      "reason": "deferred",
+      "why": "The SHACL lane is a 1.1 item (AGSC-00-20); at 1.x no shapes are generated and the rule only binds whoever builds that lane."
+    },
+    "AGSC-08-19": {
+      "reason": "person",
+      "why": "It forbids claiming more than the lints and hashes prove; a claim is a statement by a person."
+    },
+    "AGSC-08-26": {
+      "reason": "forge",
+      "why": "The conditions for an auto merge are checked by the forge's CI against the pull-request author, the ruleset and the merge credential, none of which the engine sees."
+    },
+    "AGSC-08-29": {
+      "reason": "definition",
+      "why": "It defines a self-driving node as the conjunction of conditions that AGSC-08-26 and AGSC-08-28 state and the tests of those rules check."
+    },
+    "AGSC-10-07": {
+      "reason": "adapter",
+      "why": "It binds a platform that exposes its own knowledge base as a node; its Level-0 files are checked by validate-wellknown, whoever produced them."
+    },
+    "AGSC-10-16": {
+      "reason": "definition",
+      "why": "It defines a live board by conditions (a)–(d) that AGSC-10-13, AGSC-10-17 and AGSC-11-14/16 state and their tests check."
+    }
+  },
+  "gaps": {
+    "AGSC-01-13": {
+      "why": "Language variants are reserved to 1.1 (AGSC-00-20; the rule as amended 2026-09-24). At 1.0 a <slug>.<lang>.md beside its primary is AGSC-E206 at lint and no /<type-plural>/<slug>/<lang>/ route is built — vector bundle-0007 proves that through the real lint and build — and the 1.1 variant behaviour itself is not implemented."
+    },
+    "AGSC-01-13a": {
+      "why": "Reserved to 1.1 with AGSC-01-13 (2026-09-24): no variant route exists at 1.0, so nothing declares a variant's language or links its primary; the 1.1 behaviour is not implemented."
+    },
+    "AGSC-10-08": {
+      "why": "A node cannot publish its bundle id in content/index.md: bundle.schema.json has no such key and the engine keeps bundle.id in agsc.config.json only."
+    },
+    "AGSC-10-10": {
+      "why": "docs/IMPLEMENTERS-GUIDE.md has no ten-step Level-0 path and no platform mapping table (MediaWiki, WordPress, Docusaurus/MkDocs/Hugo, Notion/Confluence, Obsidian/Logseq, Django/Laravel/Rails) yet; the rule binds the 1.0.0 distribution."
+    },
+    "AGSC-10-11": {
+      "why": "The end-to-end half is met (tests/e2e/level-0-without-engine.test.js validates a Level-0 node written without the engine); the guide half waits for the steps of AGSC-10-10, each of which must name its validator."
+    }
+  }
+}

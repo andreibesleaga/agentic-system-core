@@ -21,6 +21,9 @@
 //   AGSC-E413       attachment absent or hash mismatch  AGSC-01-34
 //   AGSC-E414       orphan attachment file (warn)       AGSC-01-34
 //   AGSC-E415       `export`-tagged fence ignored (warn) AGSC-02-22
+//   AGSC-E109       unsupported Markdown construct (warn) AGSC-02-20 (markdown.js)
+//   AGSC-E416       overlapping labels (warn)           AGSC-05-21
+//   AGSC-E205       a compiled .svg under content/diagrams/ AGSC-01-07
 //   AGSC-E607       combining sequence over the bound   AGSC-04-23
 //   AGSC-E804       port with no producer or consumer (warn) AGSC-02-96
 //   AGSC-E902       relative-path grammar violation     AGSC-01-35
@@ -28,7 +31,7 @@
 //
 // AGSC-E408 (a concept or cluster with no description) is deliberately NOT raised
 // here: it belongs to knowledge/validate.js, and one fault never carries two
-// codes (coordinator decision, 2026-09-18).
+// codes (a design choice of 2026-09-18).
 
 const { XMLParser, XMLValidator } = require('fast-xml-parser');
 
@@ -37,6 +40,8 @@ const { sortFindings } = require('../knowledge/validate.js');
 const { finding } = require('./finding.js');
 const links = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
+const { isPublished } = require('../knowledge/chunks.js');
+const { compareCodePoint } = require('../knowledge/unicode.js');
 
 const injection = require('./injection.js');
 const secrets = require('./secrets.js');
@@ -418,6 +423,62 @@ function checkFences(item) {
       { file: v.path, slug: v.slug, line: f.line, severity: 'warn' }));
 }
 
+/**
+ * AGSC-02-20: each unsupported construct outside a code span or a fenced block is
+ * one AGSC-E109 warning, never a silent rendering difference.
+ */
+function checkConstructs(item) {
+  const v = links.view(item);
+  return markdown.constructs(v.body).map((c) => finding('AGSC-E109',
+    `unsupported Markdown construct, ${c.construct}: ${c.text} (AGSC-02-20)`,
+    { file: v.path, line: c.line, severity: 'warn', slug: v.slug }));
+}
+
+/**
+ * AGSC-05-21: two published items of one `type` whose `title` values are equal after
+ * NFC and case folding are the warning AGSC-E416, reported on the later one (by
+ * path) and naming the earlier.
+ */
+function checkOverlappingLabels(items, config = {}) {
+  const findings = [];
+  const seen = new Map();
+  const releases = config.releases;
+  const views = items.map((item) => links.view(item))
+    .filter((v) => v.fm && typeof v.fm.title === 'string' && isPublished(v.fm, releases))
+    .sort((a, b) => compareCodePoint(String(a.path), String(b.path)));
+  for (const v of views) {
+    const key = `${v.fm.type}\u0000${String(v.fm.title).normalize('NFC').toUpperCase().toLowerCase()}`;
+    const earlier = seen.get(key);
+    if (earlier === undefined) {
+      seen.set(key, v);
+      continue;
+    }
+    findings.push(finding('AGSC-E416',
+      `the title "${v.fm.title}" of ${v.fm.type} "${v.slug}" overlaps the title of "${earlier.slug}" after NFC and case folding (AGSC-05-21)`,
+      { file: v.path, severity: 'warn', slug: v.slug }));
+  }
+  return findings;
+}
+
+/**
+ * AGSC-01-07: a compiled `.svg` MUST NOT be committed under `content/diagrams/`; one
+ * that is there is AGSC-E205, a file-placement violation. `paths` are the files under
+ * that directory (and any tracked path), repository-relative.
+ */
+function checkCompiledSvg(paths) {
+  const seen = new Set();
+  const findings = [];
+  for (const p of paths || []) {
+    const file = String(p);
+    if (!/^content\/diagrams\/.+\.svg$/iu.test(file) || seen.has(file)) continue;
+    seen.add(file);
+    findings.push(finding('AGSC-E205',
+      `${file} is a compiled diagram under content/diagrams/; a .svg is produced into the build, never committed (AGSC-01-07)`,
+      { file }));
+  }
+  return findings;
+}
+
 /** AGSC-02-23: every transition is legal; a warned one is AGSC-E409. */
 /**
  * AGSC-08-12: the four `enforce[]` values, each with a compilation target. The list
@@ -509,6 +570,7 @@ function lint(bundle = {}, options = {}) {
 
     findings.push(...checkSections(item));
     findings.push(...checkFences(item));
+    findings.push(...checkConstructs(item));
 
     const previous = (options.previousStatus || {})[v.slug];
     findings.push(...statusTransition(previous, v.fm.status, at));
@@ -520,6 +582,8 @@ function lint(bundle = {}, options = {}) {
   }
 
   findings.push(...checkAttachments(items, { ...options, config }).findings);
+  findings.push(...checkOverlappingLabels(items, config));
+  findings.push(...checkCompiledSvg([...(options.diagramPaths || []), ...(options.trackedPaths || bundle.trackedPaths || [])]));
   findings.push(...checkPorts(items).findings);
   findings.push(...checkEnforce(items));
   findings.push(...secrets.checkTracked(options.trackedPaths || bundle.trackedPaths));
@@ -552,7 +616,10 @@ module.exports = {
   allStrings,
   checkAttachments,
   checkCombiningBound,
+  checkCompiledSvg,
+  checkConstructs,
   checkFences,
+  checkOverlappingLabels,
   checkPaths,
   checkEnforce,
   checkPorts,

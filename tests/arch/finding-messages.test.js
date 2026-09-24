@@ -1,5 +1,5 @@
 'use strict';
-// F27-11 (AGSC-09-11): `message` is a member of every Finding and an
+// (AGSC-09-11): `message` is a member of every Finding and an
 // empty one helps nobody. Twenty-nine call sites across Boundary, Governance and
 // Composition raised findings through helpers whose `message` defaulted to `''` and
 // never supplied one, so `agsc lint` printed blank diagnostic lines.

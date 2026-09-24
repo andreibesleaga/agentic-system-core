@@ -1,8 +1,7 @@
-# Trace: PRD-005, PRD-044, PRD-045, PRD-048, PRD-049 · audit/D §3(i) · PLAN §7
-# Source of truth: the private design register (audit D) §3(i) "Maintainer running CI/cron/refresh/review"
+# Trace: PRD-005, PRD-044, PRD-045, PRD-048, PRD-049 · PLAN §7
 @persona-i @mode-0
-Feature: Owner-as-operator keeps the site green with zero maintenance
-  As P9 (owner-as-operator)
+Feature: Maintainer-as-operator keeps the site green with zero maintenance
+  As P9 (maintainer-as-operator)
   I want one identical pipeline locally and in CI, plus an unattended weekly refresh
   So that the site stays green with no manual publishing step beyond git writes
 
@@ -26,16 +25,17 @@ Feature: Owner-as-operator keeps the site green with zero maintenance
     And tampering with any one line, or truncating the tail, makes "verify --ledger" fail
 
   @PRD-044
-  Scenario: The weekly refresh cron opens at most one issue, never a commit
+  Scenario: The weekly refresh job reaches no network and never commits
     Given the cron "29 5 * * 0" fires "refresh.yml"
-    When "agsc refresh --auto" runs
-    Then it re-checks staleness ("stale_after" vs the build clock) and external links via HEAD requests
-    And if findings exist, it opens at most one GitHub issue via "gh issue create"
+    When "agsc build" runs over the Bundle
+    Then the NOW page lists every item whose "stale_after" has passed the build clock
+    And no external link is fetched, because the engine's network port refuses every call at 1.0
+    And if stale items exist, the job opens at most one GitHub issue via "gh issue create"
     And it never creates a commit
     And running it again with unchanged findings is idempotent (no duplicate issue)
 
   @PRD-048
-  Scenario: Owner cuts a release and the packages publish with attestations
+  Scenario: The maintainer cuts a release and the packages publish with attestations
     When the maintainer pushes a tag "v1.0.0"
     Then "release.yml" runs on Node 24 with "id-token: write" and "attestations: write"
     And "agentic-system-core" (bin "agsc") and the "agsc-cli" alias publish via npm trusted publishing

@@ -1,0 +1,60 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-09 as stated on 2026-09-24: a positional argument a verb does not define is AGSC-E002 with exit 2, exactly like a flag outside the closed list. Derivation: export defines no positional (its outputs go under dist/export/, AGSC-01-26), build defines none, propose defines exactly one slug and mcp at most one path; every argument beyond that is a usage error of AGSC-09-08's exit-2 class, and nothing is written or printed on stdout. Before this date export --markdown ./out was accepted in silence and wrote to dist/export/markdown/ — the operator named a directory and nothing said it was ignored.",
+  "expected": {
+    "cases": [
+      {
+        "error": "AGSC-E002",
+        "exit": 2,
+        "name": "export-with-a-path",
+        "stdout": ""
+      },
+      {
+        "error": "AGSC-E002",
+        "exit": 2,
+        "name": "build-with-an-argument",
+        "stdout": ""
+      },
+      {
+        "error": "AGSC-E002",
+        "exit": 2,
+        "name": "propose-with-two-slugs",
+        "stdout": ""
+      }
+    ]
+  },
+  "id": "cli-0012",
+  "input": {
+    "cases": [
+      {
+        "argv": [
+          "export",
+          "--markdown",
+          "./out"
+        ],
+        "name": "export-with-a-path"
+      },
+      {
+        "argv": [
+          "build",
+          "extra"
+        ],
+        "name": "build-with-an-argument"
+      },
+      {
+        "argv": [
+          "propose",
+          "alpha",
+          "beta"
+        ],
+        "name": "propose-with-two-slugs"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-09-09"
+}

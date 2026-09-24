@@ -10,7 +10,7 @@
 //
 //   .agsc/CLAUDE.md            the `claude` steer target (AGSC-01-28): NOW state and
 //                              the node's concepts, procedures, gates and lessons.
-//   .agsc/llms-ctx.txt         the `llm-context` skim view (AGSC-01-26a, D98), one
+//   .agsc/llms-ctx.txt         the `llm-context` skim view (AGSC-01-26a), one
 //   .agsc/chunks-index.toon    labelled section per chunk, prose fenced as data.
 //   CLAUDE.md                  ONLY IF ABSENT: one `@.agsc/CLAUDE.md` import line.
 //                              Claude Code expands `@path` imports in a CLAUDE.md

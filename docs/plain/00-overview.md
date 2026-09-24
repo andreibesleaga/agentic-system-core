@@ -14,4 +14,4 @@
 agent that proposes, never writes) and the *live board* — and one rule names the whole declared scope of
 the specification with the version at which each part becomes normative.
 
-Rules: `spec/00-overview.md`, ids `AGSC-00-01` … `AGSC-00-20`.
+Rules: `spec/00-overview.md`, ids `AGSC-00-01` … `AGSC-00-25`.

@@ -26,7 +26,7 @@ function runConform0001(vector) {
  * conform-0002 (withdrawn at rc.5) and conform-0004 — byte-identity across
  * implementations is for machine artefacts only. `conform-0004` is the same case in
  * one route spelling: every entry in the AGSC-06-01 form, with its leading slash
- * (V9A-27). `route_form` is the vector's statement of that, and the handler checks it
+ * `route_form` is the vector's statement of that, and the handler checks it
  * against the claim it was given rather than trusting the label.
  */
 function runConform0002(vector) {

@@ -2,7 +2,7 @@
 // CONTEXT Knowledge — the RDF/XML view of the dataset.
 //
 // Implements AGSC-05-06 (`graph.rdf` is RESERVED and is NOT emitted at 1.x; the
-// `build.rdfxml` switch is reserved with it, D82 Q21), AGSC-05-08 (blank-node-free,
+// `build.rdfxml` switch is reserved with it), AGSC-05-08 (blank-node-free,
 // so every subject is an `rdf:Description rdf:about=…` and no `rdf:nodeID` is ever
 // written), AGSC-05-10's ordering and AGSC-05-31's literal forms.
 //

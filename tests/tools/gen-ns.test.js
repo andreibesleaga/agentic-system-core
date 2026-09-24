@@ -96,7 +96,7 @@ describe('gen-ns — the derivation AGSC-06-32 fixes', () => {
   const vocabulary = () => readOntology(TTL);
 
   it('every asc: term becomes a term definition NAMED BY ITS LOCAL NAME, typed by its kind', () => {
-    // CHANGED 2026-09-22 (NS-04, rc.6): AGSC-06-32 now pins the term NAMES as well
+    // CHANGED 2026-09-22: AGSC-06-32 now pins the term NAMES as well
     // as the mapping — an `asc:` term is named by its local name, always — and
     // `src/knowledge/jsonld.js#termName`, which already did that, is the conforming
     // one. This tool named every `asc:` term `asc:<Term>`, so the file it generates
@@ -235,7 +235,7 @@ describe('gen-ns — --check against a tree on disk', () => {
     assert.match(messages, /term definition of "asc:uses" is/u);
     assert.match(messages, /carry no term definition, beginning with/u);
     assert.match(messages, /no term definition for skos:broader/u);
-    // CHANGED 2026-09-21 (NS-06): the check resolves a term by `@id` now, so a term
+    // CHANGED 2026-09-21: the check resolves a term by `@id` now, so a term
     // NAMED `prefLabel` but mapped to null is "no term definition for
     // skos:prefLabel", not "the term prefLabel does not define @id".
     assert.match(messages, /no term definition for skos:prefLabel/u);
@@ -254,7 +254,7 @@ describe('gen-ns — --check against a tree on disk', () => {
     assert.match(messages, /the term "broader" carries @type/u);
   });
 
-  // ---------------------------------------------------------------- NS-06
+  // ----------------------------------------------------------------
   // AGSC-06-32 pins a term's MAPPING and never its NAME. The check used to look
   // the 52 vocabulary terms up by key name, so it reported the conformant
   // hand-written site and a correct engine build as carrying "52 … no term
@@ -264,9 +264,9 @@ describe('gen-ns — --check against a tree on disk', () => {
   /**
    * The same context under the OTHER naming convention: the compact IRI.
    *
-   * Since rc.6 (NS-04) the generator's own output names every `asc:` term by its
+   * Since rc.6 the generator's own output names every `asc:` term by its
    * local name, so this helper now converts the other way — the point of the four
-   * NS-06 cases is that the CHECK is name-independent, whichever convention the
+   * cases is that the CHECK is name-independent, whichever convention the
    * file it reads was written under.
    */
   function underCompactNames(context) {
@@ -286,13 +286,13 @@ describe('gen-ns — --check against a tree on disk', () => {
     return envelope('gen-ns', ['--check', dir, root]);
   }
 
-  it('a context that names every asc: term by its compact IRI passes (NS-06)', () => {
+  it('a context that names every asc: term by its compact IRI passes', () => {
     const { code, json } = checkOf(underCompactNames(buildContext(readOntology(TTL))['@context']));
     assert.deepEqual(json.findings.filter((f) => f.severity === 'error'), []);
     assert.equal(code, 0);
   });
 
-  it('a compact @id and an expanded @id are the same mapping (NS-06)', () => {
+  it('a compact @id and an expanded @id are the same mapping', () => {
     const context = buildContext(readOntology(TTL))['@context'];
     delete context.uses;
     context['asc:uses'] = { '@id': `${PREFIXES.asc}uses`, '@type': '@id' };

@@ -14,7 +14,7 @@
 //
 // The two comparators themselves live in the shared kernel `src/shared/ordering.js`,
 // because the FileSystem adapter owes AGSC-01-15 the same code-point order and an
-// adapter may not reach into a bounded context (F27-13). They are re-exported here
+// adapter may not reach into a bounded context. They are re-exported here
 // so every existing caller keeps one import and the system keeps ONE ordering.
 
 const { compareCodePoint, compareUtf16 } = require('../shared/ordering.js');
@@ -100,9 +100,6 @@ function isWellFormed(s) {
  */
 const SINGLE_LINE_CLASS = '\\x00-\\x1F\\x7F\\x85\\u2028\\u2029';
 
-/** The negated character class, ANCHORED — the exact `pattern` the schemas carry. */
-const SINGLE_LINE_PATTERN = `^[^${SINGLE_LINE_CLASS}]*$`;
-
 /** The same class, unanchored and global, for the neutraliser. */
 const SINGLE_LINE_FORBIDDEN = new RegExp(`[${SINGLE_LINE_CLASS}]`, 'gu');
 
@@ -166,6 +163,5 @@ module.exports = {
   isWellFormed,
   isSingleLine,
   singleLine,
-  SINGLE_LINE_PATTERN,
   COMBINING_BOUND: 256,
 };

@@ -1,4 +1,4 @@
-// tests/cli/envelope.test.js — AGSC-09-10/09-11. Owner: B.
+// tests/cli/envelope.test.js — AGSC-09-10/09-11.
 'use strict';
 
 const test = require('node:test');

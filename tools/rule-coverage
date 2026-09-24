@@ -1,0 +1,557 @@
+#!/usr/bin/env node
+'use strict';
+// tools/rule-coverage — the rule-coverage matrix: for every active rule of
+// spec/*.md, which machine checks verify it, generated from the repository and
+// enforced by the test suite so that it cannot rot.
+//
+//   rule-coverage [--json] [--write] [--check] [--quiet] [--help] [<root>]
+//
+// STANDALONE: Node built-ins only, no import from `src/`, no clock, no network.
+// Deterministic: every list is sorted by code point; the Markdown output depends
+// only on the files it reads.
+//
+// A rule is VERIFIED when at least one of these cites it:
+//   vector      a live conformance vector (`level` required or optional) whose
+//               `rule` member names it — the vector runner executes every one;
+//   test        a test file under tests/ (`*.test.js`) whose test title
+//               (`test(`, `it(`, `describe(`, `suite(`, `t.test(` with a string
+//               literal first argument) carries the id, or any file under tests/
+//               (a test, or an acceptance step file every definition of which a
+//               running scenario uses) that carries the marker comment
+//               `// verifies AGSC-nn-nn[, AGSC-nn-nn …]` — the marker says the
+//               assertions of that file check the rule;
+//   acceptance  a scenario of features/*.feature that the acceptance runner
+//               (tests/acceptance/features.test.js) executes — i.e. one not listed
+//               in tests/acceptance/pending.json — whose tags, Background or steps
+//               carry the id;
+//   checker     a checker under tools/validate-* whose header comment (the lines
+//               before the first line of code) carries the id.
+// A rule is PROSE-ONLY when tests/rule-coverage.allow.json lists it under
+// `rules` with one of the closed reasons and a sentence saying why no machine can
+// check it; a GAP when the same file lists it under `gaps` — a rule the reference
+// engine does not implement yet, never counted as verified, listed and not
+// failing the run; UNVERIFIED otherwise. Retired (reserved) ids are excluded.
+//
+// Findings (each exits 1): an UNVERIFIED rule (AGSC-E202); an allow-list entry
+// that names an unknown or retired rule, or a marker that does (AGSC-E301); an
+// allow-list reason outside the closed list or without a sentence (AGSC-E203); an
+// allow-list entry for a rule that is in fact verified, so the list stays minimal
+// (AGSC-E201); a pending entry naming no scenario (AGSC-E301); with --check, a
+// docs/RULE-COVERAGE.md that differs from what this run generates (AGSC-E201).
+// A test TITLE naming an unknown or retired id is a warning only (titles also
+// describe history).
+//
+//   --json    the AGSC-09-11 envelope plus the matrix (`rules`, `totals`,
+//             `by_part`) on stdout
+//   --write   write docs/RULE-COVERAGE.md
+//   --check   also fail when docs/RULE-COVERAGE.md is not the generated text
+//   --quiet   print nothing but findings
+//
+// Exit 0 pass, 1 findings, 2 usage.
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const DOC = 'docs/RULE-COVERAGE.md';
+const ALLOW = 'tests/rule-coverage.allow.json';
+const PENDING = 'tests/acceptance/pending.json';
+const RULE = /AGSC-\d{2}-\d{2,3}[a-z]?/g;
+
+/** The closed reasons a rule may be prose-only for; each is explained in the matrix. */
+const REASONS = Object.freeze({
+  definition: 'defines a term, a name or a vocabulary that other rules then check',
+  scope: 'states what the specification covers or leaves out; there is no behaviour to test',
+  pointer: 'points to another rule or document that carries the obligation',
+  person: 'binds a person, an operator or a publisher, not software output',
+  forge: 'is enforced by the forge or the hosting platform, outside the engine',
+  deferred: 'reserves or permits a behaviour for a later version; nothing is emitted at 1.0',
+  adapter: 'binds a model, channel or platform adapter that the reference distribution does not ship',
+});
+
+const HELP = `rule-coverage [--json] [--write] [--check] [--quiet] [--help] [<root>]
+
+  For every active rule of spec/*.md, lists the machine checks that verify it —
+  live conformance vectors, test titles and '// verifies' markers under tests/,
+  executed acceptance scenarios of features/, checker headers under
+  tools/validate-* — and classifies it VERIFIED, PROSE-ONLY (${ALLOW}) or
+  UNVERIFIED.
+
+  --json    emit the AGSC-09-11 envelope plus the matrix on stdout
+  --write   write ${DOC}
+  --check   fail when ${DOC} is not the generated text
+  --quiet   print nothing but findings
+  --help    this text
+
+  <root> defaults to the repository this tool ships in.
+  Exit 0 pass, 1 findings, 2 usage.
+`;
+
+const byCodePoint = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const posix = (p) => p.split(path.sep).join('/');
+
+/**
+ * Walk a directory under root and return root-relative POSIX paths, sorted.
+ * @param {string} root
+ * @param {string} dir
+ * @param {(rel:string)=>boolean} keep
+ * @returns {string[]}
+ */
+function walk(root, dir, keep) {
+  const abs = path.join(root, dir);
+  if (!fs.existsSync(abs)) return [];
+  const out = [];
+  for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+    const rel = posix(path.join(dir, entry.name));
+    if (entry.isDirectory()) {
+      if (entry.name === 'node_modules' || entry.name === 'fixtures') continue;
+      out.push(...walk(root, rel, keep));
+    } else if (keep(rel)) {
+      out.push(rel);
+    }
+  }
+  return out.sort(byCodePoint);
+}
+
+/** Active and retired rule ids of spec/*.md. */
+function readRules(root, read) {
+  const files = fs.readdirSync(path.join(root, 'spec')).filter((f) => f.endsWith('.md')).sort(byCodePoint);
+  const active = [];
+  const retired = new Set();
+  for (const f of files) {
+    const text = read(`spec/${f}`);
+    for (const m of text.matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\(retired at rc)?/g)) {
+      if (m[2]) retired.add(m[1]);
+      else if (!active.includes(m[1])) active.push(m[1]);
+    }
+  }
+  return { active: active.filter((id) => !retired.has(id)).sort(byCodePoint), retired };
+}
+
+/** Rule ids cited by live vectors: id → sorted vector ids. */
+function readVectors(root, read) {
+  const cited = new Map();
+  for (const f of walk(root, 'tests/vectors', (rel) => rel.endsWith('.json'))) {
+    const v = JSON.parse(read(f));
+    if (v.level === 'withdrawn' || typeof v.rule !== 'string') continue;
+    if (!cited.has(v.rule)) cited.set(v.rule, []);
+    cited.get(v.rule).push(v.id);
+  }
+  for (const list of cited.values()) list.sort(byCodePoint);
+  return cited;
+}
+
+/**
+ * Rule ids a test file verifies: those in test titles and in `// verifies` markers.
+ * @param {string} text
+ * @returns {{titles:Set<string>, markers:Set<string>}}
+ */
+function testCitations(text) {
+  const titles = new Set();
+  const markers = new Set();
+  const title = /(?:^|[^\w.$])(?:test|it|describe|suite|t\.test|s\.test)\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
+  for (const m of text.matchAll(title)) for (const id of m[2].match(RULE) || []) titles.add(id);
+  for (const m of text.matchAll(/\/\/\s*verifies\s+(AGSC-[^\n]*)/g)) {
+    for (const id of m[1].match(RULE) || []) markers.add(id);
+  }
+  return { markers, titles };
+}
+
+/**
+ * The scenarios of one feature file with the rule ids each carries. A small line
+ * reader, enough for the dialect `features/README.md` declares; the acceptance
+ * runner parses the same files with the full Gherkin parser.
+ * @param {string} text
+ * @returns {{name:string, line:number, ids:Set<string>}[]}
+ */
+function featureScenarios(text) {
+  const lines = text.split('\n');
+  const scenarios = [];
+  let featureIds = new Set();
+  let backgroundIds = new Set();
+  let pendingTags = new Set();
+  let current = null;
+  let inBackground = false;
+  let sawFeature = false;
+  lines.forEach((raw, i) => {
+    const line = raw.trim();
+    if (line.startsWith('#')) return;
+    if (line.startsWith('@')) {
+      for (const id of line.match(RULE) || []) pendingTags.add(id);
+      return;
+    }
+    const heading = /^(Feature|Background|Scenario Outline|Scenario|Examples):\s*(.*)$/.exec(line);
+    if (heading) {
+      const [, keyword, name] = heading;
+      if (keyword === 'Feature') {
+        sawFeature = true;
+        featureIds = new Set(pendingTags);
+      } else if (keyword === 'Background') {
+        inBackground = true;
+        current = null;
+      } else if (keyword === 'Examples') {
+        return;
+      } else {
+        inBackground = false;
+        current = { ids: new Set([...featureIds, ...pendingTags]), line: i + 1, name };
+        scenarios.push(current);
+      }
+      pendingTags = new Set();
+      return;
+    }
+    if (!sawFeature) return;
+    const ids = line.match(RULE) || [];
+    if (inBackground) for (const id of ids) backgroundIds.add(id);
+    else if (current) for (const id of ids) current.ids.add(id);
+  });
+  for (const s of scenarios) for (const id of backgroundIds) s.ids.add(id);
+  return scenarios;
+}
+
+/** Rule ids in the header comment of a checker: the lines before the first code line. */
+function checkerHeader(text) {
+  const ids = new Set();
+  for (const line of text.split('\n')) {
+    const t = line.trim();
+    if (t === '' || t.startsWith('#!') || t === "'use strict';" || t === '"use strict";') continue;
+    if (!t.startsWith('//')) break;
+    for (const id of t.match(RULE) || []) ids.add(id);
+  }
+  return ids;
+}
+
+/** The part of the specification a rule belongs to: `AGSC-06-21` → `06`. */
+const partOf = (id) => id.slice(5, 7);
+
+/**
+ * Build the matrix.
+ * @param {string} root
+ */
+function measure(root) {
+  let inputsRead = 0;
+  const read = (rel) => { inputsRead += 1; return fs.readFileSync(path.join(root, rel), 'utf8'); };
+  const findings = [];
+  const add = (code, file, line, message, severity = 'error') =>
+    findings.push({ code, col: 1, file, line, message, severity });
+
+  const { active, retired } = readRules(root, read);
+  const activeSet = new Set(active);
+  const vectors = readVectors(root, read);
+
+  const tests = new Map();
+  for (const f of walk(root, 'tests', (rel) => rel.endsWith('.js'))) {
+    const cited = testCitations(read(f));
+    const markers = cited.markers;
+    // Titles count in test files only; a helper or a step file counts by its markers.
+    const titles = f.endsWith('.test.js') ? cited.titles : new Set();
+    for (const id of markers) {
+      if (!activeSet.has(id)) {
+        add('AGSC-E301', f, 1, `a '// verifies' marker names ${id}, which is ${retired.has(id) ? 'retired' : 'not a rule'}`);
+        continue;
+      }
+    }
+    for (const id of titles) {
+      if (!activeSet.has(id)) {
+        add('AGSC-E301', f, 1, `a test title names ${id}, which is ${retired.has(id) ? 'retired' : 'not a rule'}`, 'warn');
+      }
+    }
+    for (const id of new Set([...markers, ...titles])) {
+      if (!activeSet.has(id)) continue;
+      if (!tests.has(id)) tests.set(id, []);
+      tests.get(id).push(f);
+    }
+  }
+
+  let pending = {};
+  if (fs.existsSync(path.join(root, PENDING))) pending = JSON.parse(read(PENDING)).pending || {};
+  const scenarioKeys = new Set();
+  const acceptance = new Map();
+  let scenariosTotal = 0;
+  let scenariosPending = 0;
+  for (const f of walk(root, 'features', (rel) => rel.endsWith('.feature'))) {
+    for (const s of featureScenarios(read(f))) {
+      const key = `${path.basename(f)}#${s.name}`;
+      if (scenarioKeys.has(key)) continue;
+      scenarioKeys.add(key);
+      scenariosTotal += 1;
+      if (Object.prototype.hasOwnProperty.call(pending, key)) { scenariosPending += 1; continue; }
+      for (const id of s.ids) {
+        if (!activeSet.has(id)) continue;
+        if (!acceptance.has(id)) acceptance.set(id, []);
+        acceptance.get(id).push(key);
+      }
+    }
+  }
+  for (const key of Object.keys(pending).sort(byCodePoint)) {
+    if (!scenarioKeys.has(key)) add('AGSC-E301', PENDING, 1, `pending entry "${key}" names no scenario of features/`);
+  }
+
+  const checkers = new Map();
+  for (const f of walk(root, 'tools', (rel) => /^tools\/validate-[a-z]+$/.test(rel))) {
+    for (const id of checkerHeader(read(f))) {
+      if (!activeSet.has(id)) continue;
+      if (!checkers.has(id)) checkers.set(id, []);
+      checkers.get(id).push(f);
+    }
+  }
+
+  let allow = {};
+  let gaps = {};
+  if (fs.existsSync(path.join(root, ALLOW))) {
+    const listed = JSON.parse(read(ALLOW));
+    allow = listed.rules || {};
+    gaps = listed.gaps || {};
+  }
+
+  const rules = active.map((id) => {
+    const entry = {
+      acceptance: acceptance.get(id) || [],
+      checkers: checkers.get(id) || [],
+      part: partOf(id),
+      id,
+      tests: tests.get(id) || [],
+      vectors: vectors.get(id) || [],
+    };
+    const verified = entry.vectors.length + entry.tests.length + entry.acceptance.length + entry.checkers.length > 0;
+    const allowed = Object.prototype.hasOwnProperty.call(allow, id) ? allow[id] : null;
+    const gap = Object.prototype.hasOwnProperty.call(gaps, id) ? gaps[id] : null;
+    if (gap) {
+      // A rule the reference engine does not implement: whatever names it, it is not
+      // verified, and it is listed rather than failing the run.
+      entry.class = 'GAP';
+      entry.why = gap.why;
+      if (allowed) add('AGSC-E201', ALLOW, 1, `${id} is listed both as prose-only and as a gap`);
+    } else if (verified) {
+      entry.class = 'VERIFIED';
+      if (allowed) add('AGSC-E201', ALLOW, 1, `${id} is listed as prose-only but is verified by a machine check; remove the entry`);
+    } else if (allowed) {
+      entry.class = 'PROSE-ONLY';
+      entry.reason = allowed.reason;
+      entry.why = allowed.why;
+    } else {
+      entry.class = 'UNVERIFIED';
+      add('AGSC-E202', `spec/${id.slice(5, 7)}`, 1, `${id} has no machine check and no prose-only reason`);
+    }
+    return entry;
+  });
+  for (const [id, value] of Object.entries(gaps).sort(([a], [b]) => byCodePoint(a, b))) {
+    if (!activeSet.has(id)) add('AGSC-E301', ALLOW, 1, `gap ${id} is ${retired.has(id) ? 'retired' : 'not a rule'}`);
+    if (!value || typeof value.why !== 'string' || value.why.trim().length < 20) {
+      add('AGSC-E203', ALLOW, 1, `gap ${id}: "why" must say what the engine does not do`);
+    }
+  }
+  for (const [id, value] of Object.entries(allow).sort(([a], [b]) => byCodePoint(a, b))) {
+    if (!activeSet.has(id)) add('AGSC-E301', ALLOW, 1, `${id} is ${retired.has(id) ? 'retired' : 'not a rule'}`);
+    if (!value || !Object.prototype.hasOwnProperty.call(REASONS, value.reason)) {
+      add('AGSC-E203', ALLOW, 1, `${id}: reason must be one of ${Object.keys(REASONS).join(', ')}`);
+    }
+    if (!value || typeof value.why !== 'string' || value.why.trim().length < 20) {
+      add('AGSC-E203', ALLOW, 1, `${id}: "why" must say in a sentence why no machine can check the rule`);
+    }
+  }
+
+  const count = (cls, list = rules) => list.filter((r) => r.class === cls).length;
+  const totals = {
+    acceptance_scenarios: scenariosTotal,
+    acceptance_scenarios_pending: scenariosPending,
+    active: rules.length,
+    by_acceptance: rules.filter((r) => r.acceptance.length).length,
+    by_checker: rules.filter((r) => r.checkers.length).length,
+    by_test: rules.filter((r) => r.tests.length).length,
+    by_vector: rules.filter((r) => r.vectors.length).length,
+    gap: count('GAP'),
+    prose_only: count('PROSE-ONLY'),
+    retired: retired.size,
+    unverified: count('UNVERIFIED'),
+    verified: count('VERIFIED'),
+  };
+  const parts = [...new Set(rules.map((r) => r.part))].sort(byCodePoint);
+  const byPart = {};
+  for (const c of parts) {
+    const list = rules.filter((r) => r.part === c);
+    byPart[c] = {
+      active: list.length,
+      gap: count('GAP', list),
+      prose_only: count('PROSE-ONLY', list),
+      unverified: count('UNVERIFIED', list),
+      verified: count('VERIFIED', list),
+    };
+  }
+  findings.sort((a, b) => byCodePoint(a.file, b.file) || a.line - b.line || byCodePoint(a.code, b.code)
+    || byCodePoint(a.message, b.message));
+  return { byPart, findings, inputsRead, rules, totals };
+}
+
+const TITLES = Object.freeze({
+  '00': 'Overview', '01': 'Bundle', '02': 'Item', '03': 'Links', '04': 'Canonicalization',
+  '05': 'Graph', '06': 'Surfaces', '07': 'Composition', '08': 'Governance', '09': 'Conformance',
+  '10': 'Implementation profiles', '11': 'Boundary',
+});
+
+/** A cell listing at most `max` names, then how many more. */
+function cell(list, max = 3) {
+  if (list.length === 0) return '—';
+  const shown = list.slice(0, max).map((x) => `\`${x}\``).join(', ');
+  return list.length > max ? `${shown} +${list.length - max}` : shown;
+}
+
+/** The generated Markdown matrix. */
+function render(result) {
+  const { byPart, rules, totals } = result;
+  const out = [];
+  out.push('# Rule coverage');
+  out.push('');
+  out.push('This page is generated by `node tools/rule-coverage --write`; do not edit it by hand. The test suite runs `tools/rule-coverage --check`, which fails when a rule has no check and no stated reason, or when this page is out of date.');
+  out.push('');
+  out.push('## Summary');
+  out.push('');
+  out.push(`The specification has ${totals.active} active rules (${totals.retired} more ids are retired and reserved). ${totals.verified} are verified by at least one machine check, ${totals.prose_only} are prose-only for a stated reason, ${totals.gap} are gaps — rules the reference engine does not implement yet, listed below with what is missing — and ${totals.unverified} are unverified.`);
+  out.push('');
+  out.push('A rule counts as verified when at least one of these names it: a live conformance vector (its `rule` member), a test under `tests/` (in a test title or in a `// verifies AGSC-nn-nn` marker comment above the assertions), an acceptance scenario of `features/` that the acceptance runner executes, or the header of a checker under `tools/validate-*`. A rule is prose-only when `tests/rule-coverage.allow.json` gives one of the reasons below and a sentence saying why no machine can check it.');
+  out.push('');
+  out.push('| Check | Rules it names |');
+  out.push('|---|---:|');
+  out.push(`| Conformance vector | ${totals.by_vector} |`);
+  out.push(`| Unit, integration or architecture test | ${totals.by_test} |`);
+  out.push(`| Executed acceptance scenario | ${totals.by_acceptance} |`);
+  out.push(`| Checker header | ${totals.by_checker} |`);
+  out.push('');
+  out.push(`Acceptance scenarios: ${totals.acceptance_scenarios} in \`features/\` (a Scenario Outline counts once), of which ${totals.acceptance_scenarios_pending} are pending with a reason in \`tests/acceptance/pending.json\`. The executed scenarios carry no rule id in their text; the rules they check are named by \`// verifies\` markers in their step files, counted as tests.`);
+  out.push('');
+  out.push('## Per part of the specification');
+  out.push('');
+  out.push('| Part | Active | Verified | Prose-only | Gap | Unverified |');
+  out.push('|---|---:|---:|---:|---:|---:|');
+  // Keys such as "10" are integer-like, so object order would put them first.
+  for (const c of Object.keys(byPart).sort(byCodePoint)) {
+    const n = byPart[c];
+    out.push(`| ${c} ${TITLES[c] || ''} | ${n.active} | ${n.verified} | ${n.prose_only} | ${n.gap} | ${n.unverified} |`);
+  }
+  out.push('');
+  out.push('## Prose-only rules');
+  out.push('');
+  out.push('The reasons are a closed list:');
+  out.push('');
+  for (const [k, v] of Object.entries(REASONS)) out.push(`- **${k}** — the rule ${v}.`);
+  out.push('');
+  const prose = rules.filter((r) => r.class === 'PROSE-ONLY');
+  if (prose.length === 0) out.push('None.');
+  else {
+    out.push('| Rule | Reason | Why |');
+    out.push('|---|---|---|');
+    for (const r of prose) out.push(`| ${r.id} | ${r.reason} | ${r.why.replace(/\|/g, '\\|')} |`);
+  }
+  out.push('');
+  out.push('## Gaps');
+  out.push('');
+  const gapRules = rules.filter((r) => r.class === 'GAP');
+  if (gapRules.length === 0) out.push('None.');
+  else {
+    out.push('A gap is a rule the reference engine does not implement yet. It is not counted as verified even where a check names it.');
+    out.push('');
+    out.push('| Rule | What is missing |');
+    out.push('|---|---|');
+    for (const r of gapRules) out.push(`| ${r.id} | ${r.why.replace(/\|/g, '\\|')} |`);
+  }
+  out.push('');
+  const unverified = rules.filter((r) => r.class === 'UNVERIFIED');
+  if (unverified.length) {
+    out.push('## Unverified rules');
+    out.push('');
+    out.push(unverified.map((r) => r.id).join(', '));
+    out.push('');
+  }
+  out.push('## Matrix');
+  out.push('');
+  out.push('Test files are listed by path; at most three names are shown per cell.');
+  out.push('');
+  out.push('| Rule | Class | Vectors | Tests | Acceptance | Checkers |');
+  out.push('|---|---|---|---|---|---|');
+  for (const r of rules) {
+    const files = r.tests.map((f) => f.replace(/^tests\//, ''));
+    const checkers = r.checkers.map((f) => f.replace(/^tools\//, ''));
+    out.push(`| ${r.id} | ${r.class} | ${cell(r.vectors)} | ${cell(files)} | ${cell(r.acceptance)} | ${cell(checkers)} |`);
+  }
+  out.push('');
+  return out.join('\n');
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} [io]
+ * @returns {number}
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`rule-coverage: ${message}\n${HELP}`); return 2; };
+  let json = false;
+  let write = false;
+  let check = false;
+  let quiet = false;
+  let root = DEFAULT_ROOT;
+  let sawRoot = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json') json = true;
+    else if (arg === '--write') write = true;
+    else if (arg === '--check') check = true;
+    else if (arg === '--quiet') quiet = true;
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
+  }
+  for (const required of ['spec', 'tests']) {
+    if (!fs.existsSync(path.join(root, required))) return usage(`no ${required}/ directory under ${root} (AGSC-E901)`);
+  }
+  let result;
+  try {
+    result = measure(root);
+  } catch (e) {
+    err(`rule-coverage: ${e.message} (AGSC-E901)\n`);
+    return 1;
+  }
+  const text = render(result);
+  if (check) {
+    const docPath = path.join(root, DOC);
+    const current = fs.existsSync(docPath) ? fs.readFileSync(docPath, 'utf8') : '';
+    if (current !== text) {
+      result.findings.push({ code: 'AGSC-E201', col: 1, file: DOC, line: 1,
+        message: `${DOC} is not the generated text; run node tools/rule-coverage --write`, severity: 'error' });
+    }
+  }
+  if (write) fs.writeFileSync(path.join(root, DOC), text);
+  const errors = result.findings.filter((f) => f.severity === 'error').length;
+  const warns = result.findings.length - errors;
+  const t = result.totals;
+  if (json) {
+    const specVersion = (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8').match(/1\.0\.0-rc\.\d+|\d+\.\d+\.\d+/) || ['unknown'])[0];
+    out(`${JSON.stringify({
+      by_part: result.byPart,
+      counts: { error: errors, warn: warns },
+      findings: result.findings,
+      inputs_read: result.inputsRead,
+      rules: result.rules,
+      schema: 'agsc.diagnostics.v1',
+      spec_version: specVersion,
+      status: errors ? 'fail' : 'pass',
+      totals: t,
+      verb: 'rule-coverage',
+      version: specVersion,
+    })}\n`);
+  } else {
+    for (const f of result.findings) err(`${f.file}:${f.line}: ${f.severity} ${f.code} ${f.message}\n`);
+    if (!quiet) {
+      out(`rule-coverage: ${result.inputsRead} input file(s) read, ${t.active} active rules: ${t.verified} verified, ${t.prose_only} prose-only, ${t.unverified} unverified; `
+        + `${t.gap} gap; checks naming a rule: vector ${t.by_vector}, test ${t.by_test}, acceptance ${t.by_acceptance}, checker ${t.by_checker}; `
+        + `scenarios ${t.acceptance_scenarios} (${t.acceptance_scenarios_pending} pending); ${errors} error, ${warns} warn\n`);
+    }
+  }
+  return errors ? 1 : 0;
+}
+
+/* c8 ignore next */
+// exitCode, not exit(): a large --json envelope on a pipe must be flushed first.
+if (require.main === module) process.exitCode = run(process.argv.slice(2));
+
+module.exports = { HELP, REASONS, checkerHeader, featureScenarios, measure, render, run, testCitations };

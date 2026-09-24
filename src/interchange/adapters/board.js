@@ -227,7 +227,7 @@ function run(bundle, options) {
   const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
   const header = provenanceLines({
     bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
-    license, specVersion: options.specVersion, terms: chunks.TERMS,
+    license, specVersion: options.specVersion, terms: chunks.termsFor(license),
   });
   const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
 

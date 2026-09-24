@@ -82,6 +82,34 @@ function actorOf(signedOffBy) {
   return operatorFor({}, email).operator;
 }
 
+/**
+ * AGSC-08-20b's extended `author`: the commit's prov-facing actor, `human:<id>` or
+ * `process:<id>` (AGSC-02-09). A `Channel-Auto: <name>` trailer names the lane that
+ * wrote the commit, so the author is `process:<name>`; an `Assisted-by:` trailer
+ * names the accountable operator in its `(operator: <actor>)` part (AGSC-08-06), and
+ * that actor is the author; otherwise the `Signed-off-by` local part, normalised by
+ * AGSC-02-90(2). A commit with none of the three has no author member (`null`),
+ * which the rule allows.
+ * @param {object} trailers the parsed trailer block.
+ * @returns {string|null}
+ */
+function authorOf(trailers) {
+  const lane = trailer(trailers, 'Channel-Auto');
+  if (lane !== undefined) {
+    let id = '';
+    for (const ch of String(lane).trim().toLowerCase()) id += /^[a-z0-9._-]$/u.test(ch) ? ch : '-';
+    id = id.replace(/-+/gu, '-').replace(/^[^a-z0-9]+/u, '').replace(/-+$/u, '');
+    return `process:${id === '' ? 'unknown' : id}`;
+  }
+  const assisted = trailer(trailers, 'Assisted-by');
+  if (assisted !== undefined) {
+    const m = /\(operator:\s*((?:human|process):[^\s)]+)\s*\)/u.exec(String(assisted));
+    if (m !== null) return m[1];
+  }
+  const signed = trailer(trailers, 'Signed-off-by');
+  return signed === undefined ? null : actorOf(signed);
+}
+
 /** Case-insensitive trailer lookup, reported in its authored spelling (AGSC-08-20b). */
 function trailer(trailers, key) {
   const found = Object.keys(trailers || {}).find((k) => k.toLowerCase() === key.toLowerCase());
@@ -266,8 +294,13 @@ function parseTrailers(message) {
  * seconds; `tag` is the lexicographically greatest `v*` tag pointing at the commit,
  * by code point; `parents[]` is git's own order. A side branch never appears.
  *
- * @param {Array<object>} commits `{sha, parents[], committer_timestamp, message, tags[]}`
- *   in first-parent order, oldest first.
+ * The two OPTIONAL members of the extended shape are copied when the reader
+ * supplied them: `files[]` (the paths the commit changed, put in code-point order)
+ * and `author` (see `authorOf`). A commit record without them yields an element
+ * without them, which is the 1.0 base shape.
+ *
+ * @param {Array<object>} commits `{sha, parents[], committer_timestamp, message, tags[],
+ *   files?[], author?}` in first-parent order, oldest first.
  * @returns {Array<object>} the JCS array AGSC-08-20a consumes.
  */
 function produce(commits) {
@@ -282,6 +315,8 @@ function produce(commits) {
     const tags = (Array.isArray(commit.tags) ? commit.tags : [])
       .map(String).filter((t) => t.startsWith('v')).sort(compareCodePoint);
     if (tags.length > 0) entry.tag = tags[tags.length - 1];
+    if (Array.isArray(commit.files)) entry.files = commit.files.map(String).sort(compareCodePoint);
+    if (typeof commit.author === 'string' && commit.author !== '') entry.author = commit.author;
     return entry;
   });
 }
@@ -294,6 +329,7 @@ module.exports = {
   publishedHead,
   hashEntry,
   actorOf,
+  authorOf,
   instantFromEpoch,
   epochFromInstant,
   GENESIS,

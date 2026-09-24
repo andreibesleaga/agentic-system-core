@@ -13,7 +13,7 @@
 // are checked with no network (NFR-13).
 //
 // Error codes. The §9.4 registry names no dedicated code for the shape checks of
-// AGSC-09-93 (DS-7 finding F1, 2026-09-17); until a MINOR assigns them this tool uses
+// AGSC-09-93 (2026-09-17); until a MINOR assigns them this tool uses
 // the most specific registered code under the precedence paragraph: AGSC-E201 for
 // document shape, media type and order; AGSC-E202 for a REQUIRED attribute missing;
 // AGSC-E204 for a malformed digest; AGSC-E209 for a relation outside AGSC-06-10/06-35;
@@ -32,7 +32,7 @@ const SPEC_VERSION = (() => {
   catch { return 'unknown'; }
 })();
 
-const WELLKNOWN_SUFFIX = 'knowledge-linkset'; // single point of substitution, AGSC-06-07 (D82 Q4)
+const WELLKNOWN_SUFFIX = 'knowledge-linkset'; // single point of substitution, AGSC-06-07
 const PROFILE = 'https://w3id.org/agentic-system-core/profile/agentic-knowledge';
 const REL = 'https://w3id.org/agentic-system-core/rel#';
 const REGISTERED = new Set(['alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
@@ -315,6 +315,10 @@ async function check(src, level, findings) {
       if (anchorLink[a] !== undefined) F('AGSC-E210', `a restricted node must omit "${a}": per-type population, the fingerprint, the content version and the ledger head are content facts (AGSC-11-20)`);
     }
     if (Array.isArray(ctx[REL + 'ledger']) && ctx[REL + 'ledger'].length) F('AGSC-E210', 'a restricted node publishes no rel#ledger link (AGSC-11-20)');
+  } else if (level >= 2 && !(Array.isArray(ctx[REL + 'ledger']) && ctx[REL + 'ledger'].length)) {
+    // AGSC-10-04 / AGSC-09-93: the derived ledger is part of Level 2, so a public
+    // node claiming it publishes `/ledger.jsonl` and links it.
+    F('AGSC-E202', 'no rel#ledger link: a Level ≥ 2 node publishes /ledger.jsonl and links it (AGSC-10-04, AGSC-09-93)');
   }
   // AGSC-00-23 / AGSC-E210: a node may not publish bytes carrying a member of a
   // version its own `agsc-spec-version` does not define. Checked for the members

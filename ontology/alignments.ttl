@@ -10,7 +10,7 @@
 # of spec/ emits it, no build writes it to any route (AGSC-06-01's route set is closed),
 # and ontology/agsc.ttl does not import it. AGSC-05-28 forbids the vocabulary to ship a
 # property no rule emits, which is why these statements live beside it and not in it
-# (owner decision D117: alignments live outside the core file). It adds no term:
+# (an informative alignment, published beside the ontology and not in it). It adds no term:
 # every subject below is one of the 52 terms of ontology/agsc.ttl, which
 # tests/ontology/alignments.test.js checks.
 #

@@ -9,7 +9,7 @@
  * the two divergence verdicts) and AGSC-04-24 (the cross-implementation set),
  * with AGSC-10-15 as the single source of a Level's area set (AGSC-10-02 to
  * AGSC-10-05); no second list exists and none is consulted.
- * Requirements: PRD-010, PRD-055, D38-final.
+ * Requirements: PRD-010, PRD-055.
  *
  * PURE.
  */

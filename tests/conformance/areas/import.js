@@ -198,7 +198,32 @@ function sourceRecordCase(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * imp-0003 (AGSC-03-19, AGSC-03-20) — foreign link names are mapped on import, never
+ * added to the vocabulary, through the OKF reader's own `mapFrontmatter`.
+ */
+function foreignLinkCase(vector) {
+  const input = vector.input;
+  const stem = String(input.path).replace(/\.md$/u, '');
+  const { frontmatter, findings } = okf.mapFrontmatter(input.frontmatter,
+    { body: '', operator: 'human:tester', path: input.path, slug: stem, stem });
+  const list = [];
+  for (const [key, value] of Object.entries(vector.expected.frontmatter_has || {})) {
+    list.push([`${key}`, JSON.stringify(frontmatter[key]) === JSON.stringify(value), JSON.stringify(frontmatter[key])]);
+  }
+  for (const key of vector.expected.keys_absent || []) list.push([`${key} absent`, frontmatter[key] === undefined, JSON.stringify(frontmatter[key])]);
+  const m = findingsMatch((vector.expected.findings || []).map((f) => ({ code: f.code, severity: f.severity })), findings);
+  list.push(['findings', m.ok && findings.length === (vector.expected.findings || []).length,
+    `${m.detail} ${JSON.stringify(findings.map((f) => f.code))}`]);
+  if (vector.expected.error_count !== undefined) {
+    const errors = findings.filter((f) => f.severity === 'error');
+    list.push(['error count', errors.length === vector.expected.error_count, JSON.stringify(errors)]);
+  }
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
+  if (vector.id === 'imp-0003') return foreignLinkCase(vector);
   if (vector.id === 'imp-0001') return collisionCase(vector);
   if (vector.id === 'imp-0002') return sourceRecordCase(vector, ctx);
   return { status: 'fail', detail: `${vector.id}: no handler in area import` };

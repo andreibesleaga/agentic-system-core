@@ -1,10 +1,11 @@
 'use strict';
+// verifies AGSC-08-04, AGSC-08-05
 // ACCEPTANCE — `features/persona-d-agent-proposer.feature`, run end to end
 // through the REAL local MCP server and the REAL command line (owner
 // decision).
 //
 // The persona: an operator-run agent that prepares a change and never pushes on
-// its own (D27). What this proves, in the order a person and their assistant
+// its own. What this proves, in the order a person and their assistant
 // actually do it:
 //
 //   1. the assistant finds and reads the memory through the seven tools;

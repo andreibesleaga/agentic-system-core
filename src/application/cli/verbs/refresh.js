@@ -10,10 +10,9 @@
 // network. Without `--dry-run` the verb says it is not implemented.
 //
 // The Proposal carries the lane task as its TOP-LEVEL `task` member
-// (coordinator decision 2026-09-18), one of the agent's declared
+// (a design choice of 2026-09-18), one of the agent's declared
 // `tasks[]`; a per-change `change.task` overrides it. That is what makes the
 // AGSC-E509 task check of `checkProposal` fire here.
-// Owner: B; the gate wiring is G's.
 
 const { checkProposal, findAgentEntry } = require('../../../governance/agents.js');
 const propose = require('./propose.js');

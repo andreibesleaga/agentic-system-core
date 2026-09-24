@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `jcs` (owner A) — AGSC-04-05, AGSC-04-21.
+// Conformance area `jcs` — AGSC-04-05, AGSC-04-21.
 // Vectors jcs-0001…jcs-0005: canonical output, UTF-16 member-name order, astral
 // member order, negative zero, NFC before sort.
 

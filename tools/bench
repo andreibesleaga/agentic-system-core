@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The retrieval half of the benchmark kit (research/39 Layer F; docs/BENCHMARKS.md).
+// The retrieval half of the benchmark kit (docs/BENCHMARKS.md).
 // Runs a labelled query set against a BUILT node's published surfaces and reports
 // recall and precision at k. Standalone by the rule that governs every tool here
 // (AGSC-09-90): it imports nothing from `src/`, so what it measures is what a

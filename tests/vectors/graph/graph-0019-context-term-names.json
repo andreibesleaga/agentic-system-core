@@ -1,6 +1,6 @@
 {
   "area": "graph",
-  "description": "AGSC-06-32 as amended at rc.6 (NS-04) pins the term NAMES the context uses, which are the member names of graph.jsonld and therefore part of the byte-identity AGSC-04-24 claims across implementations. Derivation: an `asc:` term is named by its local name, always; an external property is named by its local name, or by its compact IRI where that local name is also an `asc:` term name (`source` here) or is shared by two external properties (`license` here). The prefix block is the constant set of AGSC-06-32 — asc plus dcterms, prov, rdfs, schema, skos and xsd — emitted whether used or not, as graph-0011 already shows. Each external property's `@type` is stated in the input, because it is the emitting rule that fixes it and this case tests the naming alone.",
+  "description": "AGSC-06-32 as amended at rc.6 pins the term NAMES the context uses, which are the member names of graph.jsonld and therefore part of the byte-identity AGSC-04-24 claims across implementations. Derivation: an `asc:` term is named by its local name, always; an external property is named by its local name, or by its compact IRI where that local name is also an `asc:` term name (`source` here) or is shared by two external properties (`license` here). The prefix block is the constant set of AGSC-06-32 — asc plus dcterms, prov, rdfs, schema, skos and xsd — emitted whether used or not, as graph-0011 already shows. Each external property's `@type` is stated in the input, because it is the emitting rule that fixes it and this case tests the naming alone.",
   "expected": {
     "context": {
       "@context": {
@@ -89,7 +89,7 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-22 at rc.6 (RC6-A); expected values derived by hand from the rule text, not from a run of any engine",
+  "note": "added 2026-09-22 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

@@ -1,4 +1,5 @@
 'use strict';
+// verifies AGSC-00-12, AGSC-10-01
 // Unit tests for the conformance-claim module.
 // AGSC-09-01, AGSC-09-02, AGSC-09-03, AGSC-04-22, AGSC-04-24, AGSC-10-15.
 

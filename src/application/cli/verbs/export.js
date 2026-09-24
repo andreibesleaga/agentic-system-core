@@ -44,7 +44,7 @@
  * command was run in: the operator copies it where they want it, which is also the
  * only behaviour that keeps `export` free of a destructive side effect.
  *
- * Owner: (/s28); `--markdown`, `--okf` and `--steer` added.
+ * `--markdown`, `--okf` and `--steer` are the three export forms added last.
  */
 
 const site = require('../../../distribution/site.js');
@@ -55,6 +55,8 @@ const { canonicalize } = require('../../../knowledge/jcs.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
+const chunks = require('../../../knowledge/chunks.js');
+const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 const archiveWriter = require('./_archive.js');
 
@@ -150,15 +152,63 @@ function graphExports(ctx, bundle, flags) {
   };
 }
 
+/**
+ * AGSC-00-24 / AGSC-01-26a: `export --to <path|package>` — a memory-adapter PLUGIN.
+ * Its `exportFiles(items, context)` hook receives a detached copy of the published
+ * items and answers `{files: [{path, text}], findings?}`; every path is checked
+ * before anything is written, and the files land under `dist/export/<name>/`, the
+ * same place a built-in adapter's go. A plugin that breaks a path rule writes
+ * nothing at all.
+ */
+function pluginExport(ctx, bundle, plugin) {
+  const config = bundle.config || {};
+  const items = (bundle.items || []).map(steer.flatten)
+    .filter((item) => chunks.isPublished(item, config.releases))
+    .sort((a, b) => compareCodePoint(String(a.slug), String(b.slug)));
+  const label = `export --to ${plugin.name}`;
+  const called = loader.call(plugin, 'exportFiles', [loader.detached(items), loader.detached({
+    bundleVersion: helpers.bundleVersionOf(ctx, helpers.gitLog(ctx)).version,
+    instant: instantOf(ctx),
+    specVersion: ctx.specVersion,
+  })], label);
+  if (called.findings.length > 0) return { files: [], findings: called.findings, root: null, written: [] };
+  const findings = loader.pluginFindings(called.value);
+  const files = called.value && Array.isArray(called.value.files) ? called.value.files : [];
+  for (const file of files) {
+    const why = file && typeof file.text === 'string' ? loader.unsafePath(file.path) : 'a file with no text';
+    if (why !== null) {
+      findings.push({ code: 'AGSC-E902', file: '', severity: 'error',
+        message: `${label}: the plugin asked to write ${JSON.stringify(String(file && file.path))}, ${why};`
+          + ' a plugin writes only inside its own export directory (AGSC-00-24), so nothing was written' });
+    }
+  }
+  if (findings.some((f) => f.severity === 'error')) return { files: [], findings, root: null, written: [] };
+  const written = files.map((file) => writeExport(ctx, `${plugin.name}/${file.path}`, file.text));
+  helpers.note(ctx, `adapter: ${plugin.name} (a plugin; ${written.length} files, outside build.out)`);
+  return { files, findings, root: plugin.name, written };
+}
+
 /** AGSC-01-26a: run one memory adapter and write what it produced. */
 function adapterExport(ctx, bundle, name) {
   const found = adapterOf(name);
+  if (found.module === null) {
+    // Not one of the engine's own adapters: a local path or an installed package,
+    // resolved through the memory-adapter registry (AGSC-00-24); a remote one is
+    // AGSC-E905. A bare name that no package answers keeps its old message.
+    const loaded = loader.load('memory-adapter', name, { flag: 'export --to', root: ctx.root, specVersion: ctx.specVersion });
+    if (loaded.plugin !== null) return pluginExport(ctx, bundle, loaded.plugin);
+    if (!loaded.missing) return { files: [], findings: loaded.findings, root: null, written: [] };
+  }
   if (found.module === null || typeof found.module.run !== 'function') {
+    // AGSC-01-26a (as stated 2026-09-24): a name no shipped adapter and no installed
+    // plugin answers is AGSC-E203 — a value outside a closed operator list — and
+    // exit 1, the same code `export --steer --target` gives an unregistered name.
+    // Until then this line said AGSC-E001, the code registered for an unknown verb.
     return {
       files: [],
       findings: [{
-        code: 'AGSC-E001', severity: 'error',
-        message: `export --to ${name}: ${found.reason === null ? 'the adapter exports no run() entry point' : found.reason}`,
+        code: 'AGSC-E203', severity: 'error',
+        message: `export --to ${name}: ${found.reason === null ? 'the adapter exports no run() entry point' : found.reason} (AGSC-01-26a)`,
       }],
       root: null,
       written: [],
@@ -284,10 +334,14 @@ function steerExport(ctx, bundle, targets) {
   const nowState = nowStateOf(bundle, instant);
   // AGSC-06-15: every steer target carries the provenance header, so it carries
   // the content version (AGSC-01-29 routes them all through one writer).
-  const derived = helpers.bundleVersionOf(ctx, helpers.gitLog(ctx));
+  // One read of the git-log file feeds both the content version and AGSC-01-28's
+  // withholding of an item whose latest commit came through the auto lane.
+  const log = helpers.gitLog(ctx);
+  const derived = helpers.bundleVersionOf(ctx, log);
   const planned = steer.plan(bundle, {
     bundleVersion: derived.version,
     generatedAt: instant,
+    gitLog: log,
     nowState,
     specVersion: ctx.specVersion,
     targets,

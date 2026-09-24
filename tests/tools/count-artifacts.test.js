@@ -115,7 +115,10 @@ describe('tools/count-artifacts — invocation', () => {
 
   it('never resolves a vector file against the working directory', () => {
     const text = fs.readFileSync(path.join(REPO, 'tools', 'count-artifacts'), 'utf8');
-    for (const match of text.matchAll(/readFileSync\(([^)]*)\)/gu)) {
+    const matches = [...text.matchAll(/readFileSync\(([^)]*)\)/gu)];
+    // A loop over no match asserts nothing; the tool must read at least one file.
+    assert.ok(matches.length > 0, 'count-artifacts reads no file?');
+    for (const match of matches) {
       assert.ok(/root|abs|join|resolve/u.test(match[1]),
         `count-artifacts reads ${match[1]} without resolving it against the root`);
     }

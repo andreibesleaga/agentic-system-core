@@ -1,7 +1,7 @@
 'use strict';
 // ACCEPTANCE — the use-case scenarios of docs/USE-CASES.md that run OFFLINE, each
 // through the REAL command line (`bin/agsc.js`) exactly as the document prints the
-// commands (the scenarios are research/38 §5's).
+// commands.
 //
 // Deterministic: a fixed build instant, no network, no git identity (HOME and the
 // global git configuration point at empty scratch files), scratch Bundles under
@@ -104,9 +104,22 @@ test('L5 — a folder of notes becomes a node: init, add the security contact, c
   fs.mkdirSync(path.join(dir, '.well-known'));
   fs.writeFileSync(path.join(dir, '.well-known', 'security.txt'),
     'Contact: mailto:security@example.org\nExpires: 2027-01-01T00:00:00Z\n');
+  // The adopted node publishes the Content Use Terms' TDM reservation, and `ci` —
+  // like `build` — refuses a reservation that names no crawler (AGSC-06-18 as
+  // amended at rc.6). `init` therefore writes the reference crawler list and says so
+  // on its way out; the publisher may edit it, and an emptied list is refused.
+  const config = JSON.parse(read(dir, 'agsc.config.json'));
+  assert.ok(Array.isArray(config.site.tdm_crawlers) && config.site.tdm_crawlers.includes('GPTBot'),
+    'init writes the reference crawler list');
+  assert.match(init.stderr, /before you build: agsc\.config\.json names the reference crawler list/u);
   const ci = agsc(dir, 'ci');
   assert.strictEqual(ci.status, 0, ci.stderr);
   assert.match(ci.stdout + ci.stderr, /ci: pass \(0 error/u);
+  config.site.tdm_crawlers = [];
+  fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify(config, null, 2)}\n`);
+  const emptied = agsc(dir, 'ci');
+  assert.strictEqual(emptied.status, 1);
+  assert.match(emptied.stdout + emptied.stderr, /AGSC-E202[^\n]*tdm_crawlers/u);
 });
 
 test('D1 — two nodes that check each other, offline, from two local files', () => {

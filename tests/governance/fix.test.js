@@ -1,6 +1,6 @@
 'use strict';
 // tests/governance/fix.test.js — `lint --fix` (AGSC-03-12, AGSC-04-14, AGSC-04-19,
-// AGSC-04-20; the flag AGSC-09-09 named at rc.5, specification item V9D-01).
+// AGSC-04-20; the flag AGSC-09-09 named at rc.5).
 //
 // The four rules are read as four separate obligations and each one is asserted on
 // its own: what `--fix` MUST normalise, that it is idempotent, that the emitted YAML

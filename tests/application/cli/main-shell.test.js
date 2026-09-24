@@ -133,7 +133,7 @@ test('AGSC-04-09: a malformed SOURCE_DATE_EPOCH is AGSC-E603 and exit 2 in both 
   assert.strictEqual(JSON.parse(json.stderr).code, 'AGSC-E603');
 });
 
-// F27-07: a thrown error carrying a code REGISTERED in spec/09 §9.4 is a domain fact,
+// a thrown error carrying a code REGISTERED in spec/09 §9.4 is a domain fact,
 // not a programming fault. It used to exit 1 with `agsc: internal error:` and an EMPTY
 // stdout under --json — no envelope (AGSC-09-12), no finding line (AGSC-09-10), and the
 // registered code lost. AGSC-E902, AGSC-E903, AGSC-E904 and AGSC-E603 are all registered.
@@ -172,7 +172,7 @@ test('an unregistered fault keeps the internal-error path and an empty stdout', 
 // lens (f) — what a person sees. AGSC-09-07 makes anything that is not one
 // of the sixteen verbs exit 2 with AGSC-E001, and this shell keeps that; what it
 // must NOT do is answer the first command anyone types with the word "null" and
-// no way forward (R64: explain before you decide).
+// no way forward (explain before you decide).
 
 const { VERBS } = require('../../../src/application/cli/main.js');
 
@@ -184,7 +184,7 @@ const usage = (argv) => {
 };
 
 test('AGSC-09-07: a missing or unknown verb names the sixteen verbs on stderr', () => {
-  // rc.5 (V9D-02): `--help` is a global flag with its own exit 0 — see the test
+  // rc.5: `--help` is a global flag with its own exit 0 — see the test
   // below. `-h` and `help` are named by no rule and stay usage errors.
   for (const argv of [[], ['-h'], ['help'], ['nosuch']]) {
     const r = usage(argv);
@@ -213,7 +213,7 @@ test('AGSC-09-10: under --json the same usage error is ONE finding object per li
   }
 });
 
-test('AGSC-09-09 (rc.5, V9D-02): --help prints to stdout and exits 0', () => {
+test('AGSC-09-09: --help prints to stdout and exits 0', () => {
   // "MUST print the verb set of AGSC-09-07 and this flag list to stdout and exit 0;
   // with a verb, it MUST print that verb's flags." It is the one flag that is not a
   // diagnostic, so unlike the usage block it does NOT go to stderr.
@@ -246,7 +246,23 @@ test('AGSC-09-09 (rc.5, V9D-02): --help prints to stdout and exits 0', () => {
   assert.strictEqual(asJson.stdout, `${JSON.stringify(document, Object.keys(document).sort())}\n`,
     'the --json form is canonical');
   const verbJson = JSON.parse(usage(['verify', '--help', '--json']).stdout);
-  assert.deepStrictEqual(verbJson, { flags: ['--ledger'], global_flags: document.global_flags, verb: 'verify', version: '0.0.0' });
+  assert.deepStrictEqual(verbJson, {
+    flags: ['--ledger'], global_flags: document.global_flags, usage: 'agsc verify [--ledger]', verb: 'verify', version: '0.0.0',
+  });
+
+  // The usage line shows the positionals, and an adapter-taking verb lists the flags
+  // each adapter adds, so `import --from board --format github` can be found from help.
+  const imp = usage(['import', '--help']).stdout;
+  assert.match(imp, /agsc import <source-dir> --from <adapter>/u);
+  assert.match(imp, /--from board: .*--format <value>/u);
+  assert.match(imp, /--from old-site: --selection <value>  --corrections <value>/u);
+  assert.match(usage(['propose', '--help']).stdout, /agsc propose <slug>/u);
+  assert.match(usage(['skills', '--help']).stdout, /agsc skills install \[<target>\]/u);
+  assert.match(usage(['compose', '--help']).stdout, /agsc compose <slug> \[<slug>…\]/u);
+  assert.match(usage(['mcp', '--help']).stdout, /agsc mcp \[<path>\]/u);
+  const exportJson = JSON.parse(usage(['export', '--help', '--json']).stdout);
+  assert.deepStrictEqual(exportJson.adapter_flags, { board: ['--format <value>'], skills: ['--layout <value>'] });
+  for (const verb of VERBS) assert.ok(usage([verb, '--help']).stdout.includes(`agsc ${verb}`), verb);
 
   // --version still wins: it is handled first and answers a different question.
   assert.strictEqual(usage(['--help', '--version']).stdout, 'agsc 0.0.0\n');

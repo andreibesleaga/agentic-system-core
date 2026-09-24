@@ -1,6 +1,8 @@
 # The engine release lane of docs/PLAN.md §7.
 #
-#   Trigger    a tag `v*` pushed BY THE OWNER. Nothing here runs on a push to a
+#   Trigger    a tag `v*` pushed by the maintainer (`v1.0.0-rc.6`). The
+#              specification's own tag (`1.0.0-rc.6`, no `v`) sits on the same
+#              commit and triggers nothing. Nothing here runs on a push to a
 #              branch, on a pull request, or on `pull_request_target` (never —
 #              docs/PLAN.md §7).
 #   Secrets    none. Both packages publish over npm TRUSTED PUBLISHING (OIDC), so
@@ -9,10 +11,12 @@
 #              `npm publish --provenance` records the build on the registry.
 #
 # Every action is pinned to a commit SHA with the version beside it, so that a
-# moved tag cannot change what runs (docs/PLAN.md §7, D40 items 2, 3, 11).
+# moved tag cannot change what runs (docs/PLAN.md §7). Each SHA was read from the
+# action's own repository (GitHub API `git/ref/tags/<tag>`) on 2026-09-24; all
+# three run on Node 24.
 #
 # The gates below are the same ones `tools/release` checks locally and the same
-# ones the owner's checklist runs before the tag is pushed.
+# ones the maintainer's checklist runs before the tag is pushed.
 
 name: release
 
@@ -34,10 +38,13 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node: ['22.12.0', '24']
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ matrix.node }}
+          package-manager-cache: false
       - run: npm ci
       - run: npm test
       - run: npm audit --audit-level=low
@@ -46,10 +53,25 @@ jobs:
         shell: bash
         run: |
           # Every validator BLOCKS. `validate-spec` was a reporting step while the
-          # specification items it found were still open (…05); they were
-          # applied at rc.6 and it exits 0 on the shipped text, so the carve-out is
-          # gone — a gate that reports and does not block protects nothing.
-          for t in tools/validate-*; do node "$t" --json; done
+          # specification items it found were still open; they were applied at
+          # rc.6 and it exits 0 on the shipped text, so the carve-out is gone — a
+          # gate that reports and does not block protects nothing.
+          # validate-wellknown checks one built discovery document, so it runs in
+          # the next step against a fixture build instead of with no argument.
+          for t in tools/validate-*; do
+            case "$t" in */validate-wellknown) continue ;; esac
+            node "$t" --json
+          done
+      - name: the discovery document of a fixture build
+        shell: bash
+        env:
+          SOURCE_DATE_EPOCH: '1767225600'
+        run: |
+          # The fixture has no git history, so it publishes no ledger: Level 1.
+          fx="$RUNNER_TEMP/fixture"
+          cp -r tests/fixtures/minimal "$fx"
+          (cd "$fx" && node "$GITHUB_WORKSPACE/bin/agsc.js" build)
+          node tools/validate-wellknown "$fx/www/.well-known/knowledge-linkset" --level 1 --json
       - name: the release lane's own checks
         run: node tools/release --json
       - name: public means clean (the whole tree, not only what ships)
@@ -57,7 +79,7 @@ jobs:
       - name: the architecture boundary lane
         env:
           AGSC_AUDIT: '1'
-        run: node --test tests/arch/*.test.js
+        run: node --test "tests/arch/*.test.js"
 
   publish:
     name: publish (npm trusted publishing)
@@ -69,11 +91,17 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # npm trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0
+      # (docs.npmjs.com/trusted-publishers). Node 24 ships a newer npm, so keep
+      # this job on 24 even though the engine itself supports Node >= 22.12.0.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
       - run: npm ci
 
       - name: the tag and package.json must agree
@@ -89,7 +117,7 @@ jobs:
           npm pack --pack-destination . ./packages/agsc-cli
 
       - name: attest build provenance
-        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: '*.tgz'
 
@@ -99,13 +127,18 @@ jobs:
       # version unless the `--tag` option is used", and adds "Typically, projects only
       # use the `latest` tag for stable release versions, and use other tags for
       # unstable versions such as prereleases". So a pre-release DOES take `latest`
-      # by default, and the convention says it usually should not. decides the
-      # opposite for this release, and for a reason: the only prior versions of both
+      # by default, and the convention says it usually should not. This release
+      # decides the opposite, for a reason: the only prior versions of both
       # names are the 0.0.2 name reservations, so `npm install agentic-system-core`
       # has to give the working engine rather than a stub. Writing the flag makes
       # that a decision a reader can see, instead of a default nobody chose.
-      - name: publish the engine
-        run: npm publish --provenance --access public --tag latest
+      # The tarballs published are the ones attested above — one `npm pack` per
+      # package, then `npm publish <file>` — so the attested bytes and the registry's
+      # bytes are the same file by construction, not two packs of one tree.
+      - name: publish the engine (the attested tarball)
+        shell: bash
+        run: npm publish --provenance --access public --tag latest "./agentic-system-core-${GITHUB_REF_NAME#v}.tgz"
 
-      - name: publish the alias
-        run: npm publish --provenance --access public --tag latest ./packages/agsc-cli
+      - name: publish the alias (the attested tarball)
+        shell: bash
+        run: npm publish --provenance --access public --tag latest "./agsc-cli-${GITHUB_REF_NAME#v}.tgz"

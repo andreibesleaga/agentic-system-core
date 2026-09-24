@@ -1,8 +1,8 @@
 // src/application/cli/main.js — AGSC-09-07..12: argv parsing, global flags, exit codes, envelope.
-// Argv parsing uses `commander@15.0.0` (D94/ADR-019); exit codes and the
+// Argv parsing uses `commander@15.0.0` (ADR-019); exit codes and the
 // AGSC-E001/E002/E003 mapping stay ours via exitOverride()+configureOutput().
 //
-// Node builtins plus the pinned `commander` (D94); no
+// Node builtins plus the pinned `commander`; no
 // network and no live clock read (the
 // process environment and SOURCE_DATE_EPOCH are injected via `ctx`, never
 // read from `process.env` directly here, so this module stays testable and
@@ -13,6 +13,7 @@ const { Command } = require('commander');
 const { load } = require('../config/load.js');
 const { checkBoundaryConfig } = require('../../boundary/visibility.js');
 const { createClock, isMalformedEpoch } = require('../../adapters/node-clock.js');
+const pluginLoader = require('../plugin-loader.js');
 
 const VERBS = [
   'init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
@@ -42,7 +43,7 @@ const GLOBAL_FLAGS = [
 /**
  * AGSC-09-13: `mcp` is a STREAMING verb — its stdout carries JSON-RPC frames
  * and nothing else, so the shell prints no diagnostic line and no envelope
- * there for it (this replaces F's interim stream monkey-patch in
+ * there for it (this replaces an earlier stream monkey-patch in
  * `distribution/mcp-stdio.js`). Diagnostics still go to stderr, which
  * AGSC-09-13 explicitly allows.
  */
@@ -50,14 +51,14 @@ const STREAMING_VERBS = new Set(['mcp']);
 
 // verb-specific flags beyond the five global ones (AGSC-09-09): name -> 'bool'|'value'.
 const VERB_FLAGS = {
-  // AGSC-09-09 (rc.5, V9D-01): `lint --fix` applies exactly the normalisations
+  // AGSC-09-09: `lint --fix` applies exactly the normalisations
   // AGSC-04-19 admits — line endings, NFC, trailing newline, frontmatter key order
   // and the wikilink rewriting of AGSC-03-12 — and nothing else (AGSC-04-14/04-20).
   // `--self` was registered here and read by NO code, and AGSC-09-09 closes the
   // verb-flag set: "a flag outside this list and outside the verb flags below is
   // `AGSC-E002` with exit 2", and the rule's list names `lint --fix` alone. Keeping
   // a flag the rule does not define, which the engine then ignored, is the exact
-  // failure V9D-01 recorded in the other direction. It is therefore gone, and
+  // failure recorded in the other direction. It is therefore gone, and
   // `agsc lint --self` is now the usage error the rule requires — with the hint of
   // `RETIRED_FLAGS` below, so that an operator following `docs/PLAN.md`'s older
   // definition-of-done line is told what replaced it (specification item
@@ -122,7 +123,7 @@ function retiredFlagHint(verb, argv) {
 }
 
 /**
- * AGSC-09-09 as amended at rc.5 (ENG1 §3): "a memory adapter selected by
+ * AGSC-09-09 as amended at rc.5: "a memory adapter selected by
  * `export --to <adapter>` or `import --from <adapter>` MAY define further flags of
  * its own (AGSC-01-26a): they belong to that adapter's documented contract and not
  * to this specification, they MUST NOT change the meaning of a flag named above, and
@@ -138,7 +139,7 @@ function retiredFlagHint(verb, argv) {
  *   `--corrections <json>` the per-card decisions a human made (a re-sourced
  *                         citation, a renamed title, a card held back), as DATA.
  *   `--attach-diagrams`   the other reading of the pull between AGSC-01-07 (a
- *                         compiled `.svg` MUST NOT be committed) and AGSC-02-98/R59
+ *                         compiled `.svg` MUST NOT be committed) and AGSC-02-98
  *                         (an SVG attachment with its source beside it): off by
  *                         default, the operator's choice when asked for.
  *   `--replace`           let the foreign bundle REPLACE an item this node already
@@ -152,12 +153,13 @@ function retiredFlagHint(verb, argv) {
  *                         (AGSC-E902).
  */
 /**
- * AGSC-09-08's usage class, by code: `AGSC-E004` is "invalid configuration",
- * which that rule puts in the exit-2 class beside an unknown verb, an unknown
- * flag and a missing argument. Nothing else is added here: a finding about the
- * CONTENT is exit 1, however severe.
+ * AGSC-09-08's usage class, by code: `AGSC-E004` is "invalid configuration" and
+ * `AGSC-E003` a missing or invalid argument, both of which that rule puts in the
+ * exit-2 class beside an unknown verb and an unknown flag — including when a verb
+ * reports them as a finding (`conform --level 4`, vector cli-0010). Nothing else is
+ * added here: a finding about the CONTENT is exit 1, however severe.
  */
-const USAGE_CLASS_CODES = new Set(['AGSC-E004']);
+const USAGE_CLASS_CODES = new Set(['AGSC-E003', 'AGSC-E004']);
 
 const ADAPTER_FLAGS = {
   import: {
@@ -193,13 +195,25 @@ const ADAPTER_FLAGS = {
     board: new Map([['--format', 'value']]) } },
 };
 
+/**
+ * The flags a memory-adapter PLUGIN named by a path takes (AGSC-00-24): on
+ * `import`, `--replace`, because a plugin's documents go through the same collision
+ * survey as every other lane; on `export`, none. A plugin declares no flags of its
+ * own at plugin API 1.0, and one named by a package name takes none.
+ */
+const PLUGIN_FLAGS = Object.freeze({ import: new Map([['--replace', 'bool']]), export: new Map() });
+
 /** The flags the adapter named in `argv` adds to `verb`, or an empty map. */
 function adapterFlagsFor(verb, argv) {
   const scope = ADAPTER_FLAGS[verb];
   if (scope === undefined) return new Map();
   const at = argv.indexOf(scope.selector);
   const named = at === -1 ? undefined : argv[at + 1];
-  return (named !== undefined && scope.adapters[named]) || new Map();
+  if (named === undefined) return new Map();
+  if (scope.adapters[named]) return scope.adapters[named];
+  // Only a PATH is known to name a plugin before anything is resolved; a bare name
+  // may be an adapter this engine does not ship, whose flags AGSC-09-09 refuses.
+  return pluginLoader.classify(named) === 'path' && PLUGIN_FLAGS[verb] ? PLUGIN_FLAGS[verb] : new Map();
 }
 
 /** commander's own dash-to-camel option-key convention (`dry-run` -> `dryRun`). */
@@ -308,7 +322,7 @@ function compareFindings(a, b) {
  * buildEnvelope — AGSC-09-11's fixed shape.
  */
 /**
- * The shape of an error code REGISTERED in spec/09 §9.4 (F27-07). `tests/application/
+ * The shape of an error code REGISTERED in spec/09 §9.4. `tests/application/
  * cli/main.test.js` checks the three codes the FileSystem adapter throws against the
  * registry itself, so this shape never stands alone as the claim.
  */
@@ -388,16 +402,70 @@ function usageText(version) {
   ].join('\n');
 }
 
+/**
+ * The positional arguments of each verb, as a usage line. AGSC-09-09 closes the
+ * FLAGS; the positionals are what each verb's own rule names (`propose <slug>`,
+ * `trace <file.json>`, `mcp [<path>]`, …), and a person asking for help needs both.
+ */
+const VERB_USAGE = Object.freeze({
+  build: 'agsc build [--level <n>]',
+  ci: 'agsc ci [--level <n>]',
+  compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug>',
+  conform: 'agsc conform [--level <n>] [--to <path>]',
+  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--steer [--target <name>[,<name>…]]|--to <adapter>',
+  import: 'agsc import <source-dir> --from <adapter> [--dry-run]',
+  init: 'agsc init',
+  lint: 'agsc lint [--fix]',
+  mcp: 'agsc mcp [<path>]',
+  propose: 'agsc propose <slug>',
+  refresh: 'agsc refresh [--agent <name>] [--task <slug>] [--dry-run]',
+  review: 'agsc review',
+  run: 'agsc run <slug> [--dry-run]',
+  skills: 'agsc skills | agsc skills install [<target>] | agsc skills import <file>',
+  trace: 'agsc trace <file.json>',
+  verify: 'agsc verify [--ledger]',
+});
+
+/**
+ * AGSC-09-09 (as stated 2026-09-24): a positional argument a verb does not define is
+ * `AGSC-E002` with exit 2, exactly like an unknown flag. The table is the one
+ * `VERB_USAGE` prints: the number of positionals each verb defines, `Infinity`
+ * for `compose <slug> [<slug>…]`. Before this check `export --markdown ./out`
+ * was accepted in silence and wrote to `dist/export/markdown/` — the operator
+ * named a directory and nothing said it was ignored.
+ */
+const POSITIONALS_MAX = Object.freeze({
+  build: 0, ci: 0, compose: Infinity, conform: 0, export: 0, import: 1, init: 0, lint: 0,
+  mcp: 1, propose: 1, refresh: 0, review: 0, run: 1, skills: 2, trace: 1, verify: 0,
+});
+
+/** `{adapter: [flag, …]}` of the adapter flags a verb's selector admits (AGSC-01-26a). */
+function adapterFlagTable(verb) {
+  const scope = ADAPTER_FLAGS[verb];
+  if (scope === undefined) return null;
+  const table = {};
+  for (const name of Object.keys(scope.adapters).sort()) {
+    table[name] = [...scope.adapters[name]].map(([flag, kind]) => (kind === 'value' ? `${flag} <value>` : flag));
+  }
+  return { selector: scope.selector, table };
+}
+
 /** The same facts as `helpText`, as data, for the `--json` form. */
 function helpDocument(version, verb) {
   const document = { global_flags: [...GLOBAL_FLAG_NAMES], version };
   if (verb === undefined) document.verbs = [...VERBS];
-  else { document.verb = verb; document.flags = [...(VERB_FLAGS[verb] || new Map()).keys()]; }
+  else {
+    document.verb = verb;
+    document.flags = [...(VERB_FLAGS[verb] || new Map()).keys()];
+    document.usage = VERB_USAGE[verb];
+    const adapters = adapterFlagTable(verb);
+    if (adapters !== null) document.adapter_flags = adapters.table;
+  }
   return document;
 }
 
 /**
- * `agsc --help` and `agsc <verb> --help` (AGSC-09-09 as amended at rc.5, V9D-02).
+ * `agsc --help` and `agsc <verb> --help` (AGSC-09-09 as amended at rc.5).
  *
  * "MUST print the verb set of AGSC-09-07 and this flag list to stdout and exit 0;
  * with a verb, it MUST print that verb's flags." It is the one flag that is NOT a
@@ -407,15 +475,20 @@ function helpDocument(version, verb) {
  */
 function helpText(version, verb) {
   if (verb === undefined) return usageText(version);
-  const own = [...(VERB_FLAGS[verb] || new Map()).keys()];
-  return [
+  const own = [...(VERB_FLAGS[verb] || new Map())].map(([flag, kind]) => (kind === 'value' ? `${flag} <value>` : flag));
+  const adapters = adapterFlagTable(verb);
+  const lines = [
     '',
-    `agsc ${version} — agsc ${verb} [flags]`,
+    `agsc ${version} — ${VERB_USAGE[verb]}`,
     '',
     `Flags of ${verb} (AGSC-09-09): ${own.length === 0 ? '(none)' : own.join('  ')}`,
-    `Global flags (AGSC-09-09): ${GLOBAL_FLAG_NAMES.join('  ')}`,
-    '',
-  ].join('\n');
+  ];
+  if (adapters !== null) {
+    lines.push(`Adapter flags (AGSC-01-26a), valid only with the adapter named by ${adapters.selector}:`);
+    for (const [name, flags] of Object.entries(adapters.table)) lines.push(`  ${adapters.selector} ${name}: ${flags.join('  ')}`);
+  }
+  lines.push(`Global flags (AGSC-09-09): ${GLOBAL_FLAG_NAMES.join('  ')}`, '');
+  return lines.join('\n');
 }
 
 /**
@@ -457,7 +530,7 @@ function main(argv, ctx) {
     return 0;
   }
 
-  // --help (AGSC-09-09, rc.5/V9D-02) short-circuits too: it is not a diagnostic, so
+  // --help (AGSC-09-09, rc.5) short-circuits too: it is not a diagnostic, so
   // it prints to STDOUT and exits 0, with the named verb's flags when one is given.
   //
   // Under `--json` it takes the shape `--version` already takes: one canonical JSON
@@ -500,7 +573,7 @@ function main(argv, ctx) {
   if (!verb || !VERBS.includes(verb)) {
     // AGSC-09-07: anything that is not one of the sixteen verbs is `AGSC-E001`,
     // exit 2 — including `--help`, which AGSC-09-09 does not make a global flag.
-    // But the answer must still tell a person what to do (R64): the message names
+    // But the answer must still tell a person what to do: the message names
     // what was typed (or says that nothing was), and the human stream carries the
     // verb list. Under `--json` stderr stays exactly ONE finding object per line
     // (AGSC-09-10), so the usage block is printed only in the human mode.
@@ -560,6 +633,16 @@ function main(argv, ctx) {
     if (value !== undefined) verbFlags[key] = kind === 'bool' ? value === true : value;
   }
   const positionals = parsed.args.slice();
+  const positionalsMax = POSITIONALS_MAX[verb] === undefined ? 0 : POSITIONALS_MAX[verb];
+  if (positionals.length > positionalsMax) {
+    const extra = positionals.slice(positionalsMax).map((a) => JSON.stringify(a)).join(', ');
+    const message = positionalsMax === 0
+      ? `${verb} takes no positional argument (AGSC-09-09); ${extra} given — usage: ${VERB_USAGE[verb]}`
+      : `${verb} takes at most ${positionalsMax} positional argument(s) (AGSC-09-09); ${extra} given — usage: ${VERB_USAGE[verb]}`;
+    if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E002', severity: 'error', message });
+    else writeLine(stderr, `agsc: AGSC-E002 ${message}\n`);
+    return 2;
+  }
 
   // Resolve configuration once, for every verb (AGSC-09-09/AGSC-01-37).
   // AGSC-11-01: the boundary chapter's numeric and enumerated parameters are
@@ -570,13 +653,16 @@ function main(argv, ctx) {
     root, ports: ports.fs, env, argvFlags: {}, userConfig: opts.userConfig, checkBoundary: checkBoundaryConfig
   });
 
-  // AGSC-09-94: run/trace are opt-in, disabled unless run.enabled is true;
-  // with it false, both exit 2 with AGSC-E001 exactly like an unknown verb.
+  // AGSC-09-94 (as amended 2026-09-24): run/trace are opt-in, disabled unless
+  // run.enabled is true; with it false, both exit 2 with AGSC-E004 — a
+  // configuration the tool cannot run against (AGSC-09-08's exit-2 class). Until
+  // then the code was AGSC-E001, which is registered for an unknown verb, on a verb
+  // the engine knows.
   if ((verb === 'run' || verb === 'trace')) {
     const enabled = !!(loaded.config && loaded.config.run && loaded.config.run.enabled === true);
     if (!enabled) {
-      if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E001', severity: 'error', message: `${verb} is disabled (run.enabled is false)` });
-      else writeLine(stderr, `agsc: AGSC-E001 ${verb} is disabled (run.enabled is false)\n`);
+      if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E004', severity: 'error', message: `${verb} is disabled (run.enabled is false)` });
+      else writeLine(stderr, `agsc: AGSC-E004 ${verb} is disabled (run.enabled is false)\n`);
       return 2;
     }
   }
@@ -628,7 +714,7 @@ function main(argv, ctx) {
   // .test.js proves it), so a missing one is a packaging fault, not a domain
   // fact, and it keeps the internal-error path.
   //
-  // F27-07: a thrown error is NOT always a programming fault. The FileSystem
+  // a thrown error is NOT always a programming fault. The FileSystem
   // adapter throws `AGSC-E902`/`AGSC-E903`/`AGSC-E904` and the clock throws
   // `AGSC-E603` — codes REGISTERED in spec/09 §9.4, so each is a domain fact
   // and becomes a Finding in the AGSC-09-11 envelope with the AGSC-09-08 exit
@@ -696,6 +782,6 @@ function main(argv, ctx) {
 }
 
 module.exports = {
-  main, ADAPTER_FLAGS, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS,
+  main, ADAPTER_FLAGS, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_USAGE,
   adapterFlagsFor, buildEnvelope, compareFindings, flagsFor, retiredFlagHint,
 };

@@ -1,0 +1,58 @@
+{
+  "area": "cli",
+  "description": "AGSC-05-04b with AGSC-05-04a: the tool server resolves memory://<bundle-id>/<slug> to the item when <bundle-id> equals this Bundle's bundle.id, normalised to the slug before any other rule runs, and wherever the alias is accepted the item's https:// IRI (AGSC-05-01) is accepted too as the same identifier; an alias naming another Bundle is refused with AGSC-E309, because a node has no registry of other nodes' ids. Derivation: the minimal fixture is bundle.id minimal at site.base https://minimal.example/, so memory://minimal/handoff and https://minimal.example/concepts/handoff/ both name the concept handoff and read returns exactly what read {slug: handoff} returns — compared as a value, since AGSC-09-13a pins the envelope and the two calls differ in nothing else; memory://other/handoff names a Bundle this node is not, and the envelope is the error envelope of AGSC-09-13a carrying the code AGSC-E309.",
+  "expected": {
+    "cases": [
+      {
+        "equals_reference": true,
+        "name": "memory-alias"
+      },
+      {
+        "equals_reference": true,
+        "name": "https-iri"
+      },
+      {
+        "body": {
+          "code": "AGSC-E309"
+        },
+        "equals_reference": false,
+        "name": "foreign-bundle",
+        "type": "error"
+      }
+    ]
+  },
+  "id": "cli-0015",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "calls": [
+      {
+        "arguments": {
+          "slug": "memory://minimal/handoff"
+        },
+        "name": "memory-alias"
+      },
+      {
+        "arguments": {
+          "slug": "https://minimal.example/concepts/handoff/"
+        },
+        "name": "https-iri"
+      },
+      {
+        "arguments": {
+          "slug": "memory://other/handoff"
+        },
+        "name": "foreign-bundle"
+      }
+    ],
+    "reference": {
+      "slug": "handoff"
+    },
+    "tool": "read"
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-05-04b"
+}

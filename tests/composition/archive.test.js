@@ -8,7 +8,7 @@
 //   1. the ENCODING and the CHECKSUM are the standard ones — compared with
 //      `Buffer`/`TextEncoder` and with `node:zlib`'s own `crc32`, never asserted;
 //   2. the CONTAINER is a real ZIP — unpacked by `fflate@0.8.3`, the pinned
-//      third-party reader of the D94 library table (`src/README.md`), entry for
+//      third-party reader of the library table (`src/README.md`), entry for
 //      entry and byte for byte;
 //   3. the bytes are REPRODUCIBLE — identical twice, and identical under two very
 //      different `TZ`/`LC_ALL` settings, which is the one property no published zip
@@ -253,7 +253,7 @@ test('AGSC-E903: the two 32-bit bounds of the format are checked, not assumed un
   assert.deepStrictEqual(archive.archiveViolations([{ path: 'no-bytes' }]), []);
 });
 
-test(': a file set the format cannot carry writes no archive at all', () => {
+test('a file set the format cannot carry writes no archive at all', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, {});
   const result = archiveWriter.writeArchive(ctx, {
@@ -279,7 +279,7 @@ test('the content version is read defensively: a context with no ports is not a 
   assert.match(archiveWriter.bundleVersionOf({}), /^0\.0\.0\+\d{8}T\d{6}Z$/u);
 });
 
-test(': the archive name carries the content version, and refuses one outside the grammar', () => {
+test('the archive name carries the content version, and refuses one outside the grammar', () => {
   assert.strictEqual(archive.archiveName('dist/harness/abc/', 'v1.4.0+3.ga1b2c3d4e5f6'),
     'dist/harness/abc-v1.4.0+3.ga1b2c3d4e5f6.zip');
   assert.strictEqual(archive.archiveName('dist/skills', '0.0.0+20260101T000000Z'),
@@ -340,7 +340,7 @@ test('every archive function is in the emitted bundle, in dependency order', () 
 
 // --------------------------------------------------------------- 5. the three verbs
 
-test(': compose --zip writes one archive BESIDE the Harness directory, never inside it', () => {
+test('compose --zip writes one archive BESIDE the Harness directory, never inside it', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { zip: true }, ['supervisor', 'handoff']);
   const result = composeVerb.run(ctx);
@@ -379,7 +379,33 @@ test('AGSC-07-17: an invalid composition emits no Harness, and --zip adds no arc
   assert.match(ctx.notes.join(''), /harness missing: the archive of --zip/u);
 });
 
-test(': skills --zip writes the packs and their lockfile as one archive beside dist/skills/', () => {
+test('compose --from an item with no selection fence is an error, and nothing is written', () => {
+  const dir = workspace();
+  const ctx = ctxFor(dir, { from: 'supervisor', zip: true });
+  const result = composeVerb.run(ctx);
+  assert.ok(result.findings.some((f) => f.severity === 'error'), 'the missing selection is an error');
+  assert.ok(!nodeFs.existsSync(path.join(dir, 'dist')), 'a Harness or an archive was written after an error');
+  assert.match(ctx.notes.join(''), /harness_emitted: false/u);
+  assert.match(ctx.notes.join(''), /harness missing: every file: the run found an error, so nothing was written/u);
+});
+
+test('a Harness whose emission breaks a rule is not written at all', () => {
+  const dir = workspace();
+  const ctx = ctxFor(dir, { zip: true }, ['supervisor', 'handoff']);
+  const original = harness.emit;
+  harness.emit = (...args) => ({ ...original(...args), violations: [{ code: 'AGSC-E801', message: 'forced' }] });
+  let result;
+  try {
+    result = composeVerb.run(ctx);
+  } finally {
+    harness.emit = original;
+  }
+  assert.ok(result.findings.some((f) => f.code === 'AGSC-E801' && f.severity === 'error'));
+  assert.ok(!nodeFs.existsSync(path.join(dir, 'dist')), 'files were written after a violation');
+  assert.match(ctx.notes.join(''), /harness missing: every file: the emission broke a rule/u);
+});
+
+test('skills --zip writes the packs and their lockfile as one archive beside dist/skills/', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { zip: true });
   const result = skillsVerb.run(ctx);
@@ -393,7 +419,7 @@ test(': skills --zip writes the packs and their lockfile as one archive beside d
   }
 });
 
-test(': skills --zip has no meaning beside install or import', () => {
+test('skills --zip has no meaning beside install or import', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { zip: true }, ['install']);
   const result = skillsVerb.run(ctx);
@@ -402,7 +428,7 @@ test(': skills --zip has no meaning beside install or import', () => {
   assert.ok(!nodeFs.existsSync(path.join(dir, '.agents')), 'install ran anyway');
 });
 
-test(': export --zip writes one archive per multi-file export root', () => {
+test('export --zip writes one archive per multi-file export root', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { markdown: true, steer: true, zip: true });
   const result = exportVerb.run(ctx);
@@ -418,7 +444,7 @@ test(': export --zip writes one archive per multi-file export root', () => {
   assert.ok(Object.keys(back).includes('LICENSE-CONTENT'), 'the export root of AGSC-01-26 is packaged');
 });
 
-test(': export --zip has no meaning over the two single-file graph exports', () => {
+test('export --zip has no meaning over the two single-file graph exports', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { jsonld: true, zip: true });
   const result = exportVerb.run(ctx);
@@ -447,4 +473,15 @@ test('AGSC-04-02: two hosts with different TZ and LC_ALL write the same archive 
   }
   assert.strictEqual(digests[0], digests[1],
     'the MS-DOS timestamp fields of the archive followed the host time zone (AGSC-04-02)');
+});
+
+test('emitHarness called directly with an invalid composition writes nothing, archive included', () => {
+  const dir = workspace();
+  const ctx = ctxFor(dir, { zip: true }, []);
+  const invalid = { conflicts: [{ code: 'AGSC-E802' }], selection: [], warnings: [] };
+  const emission = composeVerb.emitHarness(ctx, { config: ctx.config, items: [] }, invalid, []);
+  assert.strictEqual(emission.emitted, false);
+  assert.deepStrictEqual(emission.files, []);
+  assert.match(ctx.notes.join(''), /harness missing: the archive of --zip/u);
+  assert.ok(!nodeFs.existsSync(path.join(dir, 'dist')));
 });

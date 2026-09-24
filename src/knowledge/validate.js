@@ -39,6 +39,10 @@ const KEY_NAME_RE = /^[a-z][a-z0-9_-]*$/u;
 /** AGSC-02-05a: the reserved `x-<vendor>-<key>` extension namespace. */
 const VENDOR_KEY_RE = /^x-[a-z0-9]+(-[a-z0-9]+)+$/u;
 /** AGSC-02-21: the two types lint requires a `description` on. */
+/** AGSC-01-21, §2.2 table: the tag count outside which lint warns (AGSC-E213). */
+const TAGS_MIN = 2;
+const TAGS_MAX = 5;
+
 const DESCRIPTION_REQUIRED_TYPES = Object.freeze(['concept', 'cluster']);
 
 /**
@@ -286,6 +290,24 @@ function item(frontmatter, options = {}) {
       { ...base, severity: 'warn' }));
   }
 
+  // AGSC-01-21 (registered at rc.5): the 2–5 count of the §2.2 table is a WARNING,
+  // with or without a closed vocabulary; the schema carries no bound for it.
+  if (Array.isArray(frontmatter.tags) && (frontmatter.tags.length < TAGS_MIN || frontmatter.tags.length > TAGS_MAX)) {
+    findings.push(finding('AGSC-E213',
+      `tags carries ${frontmatter.tags.length} value${frontmatter.tags.length === 1 ? '' : 's'}; the §2.2 table asks for ${TAGS_MIN} to ${TAGS_MAX} (AGSC-01-21)`,
+      { ...base, line: lineOf(keyLines, '/tags'), severity: 'warn' }));
+  }
+
+  // AGSC-00-17: an item MAY carry `spec_version`; when it does, its MAJOR is the one
+  // the Bundle root fixes (`agsc.config.json`), and another MAJOR is `AGSC-E204`.
+  const own = options.config && options.config.spec_version;
+  if (typeof frontmatter.spec_version === 'string' && typeof own === 'string'
+      && !majorCompatible(frontmatter.spec_version, own)) {
+    findings.push(finding('AGSC-E204',
+      `spec_version "${frontmatter.spec_version}" carries another MAJOR than the Bundle root's "${own}" (AGSC-00-17)`,
+      { ...base, key: 'spec_version', line: lineOf(keyLines, '/spec_version') }));
+  }
+
   // AGSC-01-21: a tag outside the closed vocabulary, when the Bundle declares one.
   const allowed = options.config && options.config.tags && options.config.tags.allowed;
   if (Array.isArray(allowed) && Array.isArray(frontmatter.tags)) {
@@ -311,7 +333,7 @@ function index(frontmatter, options = {}) {
     return [finding('AGSC-E201', 'frontmatter is not a mapping', { file })];
   }
   for (const e of s.bundle(frontmatter).errors) {
-    // rc.5 (V9A-13): bundle.schema.json's one `not` is `{"required": ["type"]}`.
+    // rc.5: bundle.schema.json's one `not` is `{"required": ["type"]}`.
     // AGSC-01-04 as amended names AGSC-E205 for a `type` key on the Bundle root
     // — a file-placement violation, because the root is not an item — and the
     // §9.4 precedence paragraph reserves AGSC-E201 for a schema failure that no
@@ -369,6 +391,23 @@ function config(configObject, options = {}) {
     for (const f of checkAgents(configObject) || []) findings.push({ file, ...f });
   }
   return sortFindings(findings);
+}
+
+/**
+ * AGSC-05-05: an item that carries `iri` MUST carry the computed one,
+ * `<site.base>/<type-plural>/<slug>/` (AGSC-05-01); a mismatch is `AGSC-E204`.
+ * @param {string} filePath `content/<type-plural>/<slug>.md`
+ * @param {object} frontmatter
+ * @param {string} base `site.base`
+ */
+function itemIri(filePath, frontmatter, base) {
+  if (!frontmatter || frontmatter.iri == null || typeof base !== 'string' || base === '') return [];
+  const m = /^content\/([a-z]+)\/([^/.]+)(?:\.[^/]+)?\.md$/u.exec(String(filePath).split('\\').join('/'));
+  if (!m) return [];
+  const expected = `${base.replace(/\/+$/u, '')}/${m[1]}/${m[2]}/`;
+  if (String(frontmatter.iri) === expected) return [];
+  return [finding('AGSC-E204', `iri "${frontmatter.iri}" is not the computed item IRI "${expected}" (AGSC-05-05)`,
+    { file: filePath, slug: m[2] })];
 }
 
 /**
@@ -430,6 +469,7 @@ module.exports = {
   item,
   index,
   config,
+  itemIri,
   placement,
   unknownKeys,
   majorCompatible,

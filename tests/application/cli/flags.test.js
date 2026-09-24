@@ -1,4 +1,4 @@
-// tests/cli/flags.test.js — AGSC-09-07..09. Owner: B.
+// tests/cli/flags.test.js — AGSC-09-07..09.
 'use strict';
 
 const test = require('node:test');
@@ -43,10 +43,21 @@ test('a malformed SOURCE_DATE_EPOCH exits 2 with AGSC-E603, never a finding', as
   assert.match(stderr.text(), /AGSC-E603/);
 });
 
-test('run is disabled by default and refused exactly like an unknown verb', async () => {
+test('run is disabled by default and refused as a configuration the tool cannot run against (AGSC-09-94)', async () => {
   const stdout = captureStream();
   const stderr = captureStream();
   const exitCode = await main(['run', 'some-slug', '--json'], { env: {}, stdout, stderr, root: '.' });
   assert.equal(exitCode, 2);
-  assert.match(stderr.text(), /AGSC-E001/);
+  assert.match(stderr.text(), /AGSC-E004/);
+});
+
+test('AGSC-09-09: a positional argument a verb does not define is AGSC-E002 and exit 2', async () => {
+  for (const argv of [['export', '--markdown', './out'], ['build', 'extra'], ['propose', 'a', 'b'], ['mcp', 'x', 'y']]) {
+    const stdout = captureStream();
+    const stderr = captureStream();
+    const exitCode = await main([...argv, '--json'], { env: {}, stdout, stderr, root: '.' });
+    assert.equal(exitCode, 2, argv.join(' '));
+    assert.equal(stdout.text(), '', argv.join(' '));
+    assert.equal(JSON.parse(stderr.text()).code, 'AGSC-E002', argv.join(' '));
+  }
 });

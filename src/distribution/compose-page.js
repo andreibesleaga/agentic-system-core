@@ -4,7 +4,7 @@
  *
  * Implements AGSC-06-01's `/compose/` route, AGSC-07-01 ("It MUST NOT require a
  * network, a key or a server"), AGSC-07-13 (the combiner in the page is the CLI's
- * own algebra — `composition/browser.js` emits its source text), D49's **per-file
+ * own algebra — `composition/browser.js` emits its source text), and the **per-file
  * download** plus a "Download all (.zip)" link from `composition/archive.js`,
  * AGSC-07-24 (`/compose/?from=<slug>` shows the same composition a saved
  * architecture names) and AGSC-09-16 (the WebMCP tool registration,
@@ -59,7 +59,7 @@ function toolNames() {
  *   3. runs `compose()` on every change and renders the verdict, the closure
  *      explanations and the conflicts;
  *   4. emits the seven Harness files with `emit()` and offers ONE DOWNLOAD PER
- *      FILE (D49) and one "Download all (.zip)" link over the same files;
+ *      FILE and one "Download all (.zip)" link over the same files;
  *   5. installs `globalThis.AGSC_TOOLS` so that the WebMCP registration of
  *      AGSC-09-16 dispatches to the same implementation the stdio server uses for
  *      `compose`, and returns the AGSC-09-13a error envelope, with a registered
@@ -123,6 +123,8 @@ function controller(options) {
     var why = el('explanations');
     if (why) {
       why.textContent = '';
+      why.hidden = result.added.length === 0;
+      if (el('explanations-heading')) el('explanations-heading').hidden = why.hidden;
       for (var i = 0; i < result.added.length; i += 1) {
         var entry = result.added[i];
         var li = document.createElement('li');
@@ -135,6 +137,8 @@ function controller(options) {
     var problems = el('conflicts');
     if (problems) {
       problems.textContent = '';
+      problems.hidden = result.conflicts.length === 0;
+      if (el('conflicts-heading')) el('conflicts-heading').hidden = problems.hidden;
       for (var c = 0; c < result.conflicts.length; c += 1) {
         var conflict = result.conflicts[c];
         var row = document.createElement('li');
@@ -185,7 +189,7 @@ function controller(options) {
     });
   }
 
-  /** D49: per-file download. One link per Harness file, no archive writer. */
+  /** Per-file download. One link per Harness file, no archive writer. */
   function emitHarness() {
     var result = state.verdict || CORE.compose(state.items, state.selection);
     if (!result.valid) return Promise.resolve(null);

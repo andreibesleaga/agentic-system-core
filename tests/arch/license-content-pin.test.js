@@ -45,7 +45,7 @@ function assertPin(name, pin, advice) {
     `${name} no longer hashes to what the rule states. ${advice}`);
 }
 
-test('LICENSE-CONTENT matches the hash AGSC-06-18 pins (V9A-24)', () => {
+test('LICENSE-CONTENT matches the hash AGSC-06-18 pins', () => {
   assertPin('LICENSE-CONTENT', pinned('06-surfaces.md', '**AGSC-06-18**'),
     'Either restore the text, or — if the terms really changed — mint a NEW '
     + 'LicenseRef identifier and update AGSC-06-18, AGSC-01-18\'s default and every '

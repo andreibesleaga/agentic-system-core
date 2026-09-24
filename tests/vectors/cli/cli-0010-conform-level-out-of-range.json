@@ -1,0 +1,23 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-09 as amended at rc.6 names `conform --level <n>`, the Level whose vector set runs (AGSC-10-01), and Levels are 0 to 3 (AGSC-10-02…05). A value outside that range is a usage error: the argument is invalid, so it is AGSC-E003 and exit 2 (AGSC-09-08), distinct from exit 1, which means findings or a failed gate. No vector is run and no report is written.",
+  "expected": {
+    "error": "AGSC-E003",
+    "exit": 2
+  },
+  "id": "cli-0010",
+  "input": {
+    "argv": [
+      "conform",
+      "--level",
+      "4",
+      "--json"
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-09-09"
+}

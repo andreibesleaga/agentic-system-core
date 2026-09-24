@@ -110,7 +110,7 @@ const HANDLERS = {
 };
 
 // ---------------------------------------------------------------------------
-// EXTENSION POINT — cli-0003 and cli-0004, owner F.
+// EXTENSION POINT — cli-0003 and cli-0004.
 // Appended below B's handlers; nothing above this line is modified.
 // Rules: AGSC-09-16 (one tool contract, two transports) and AGSC-09-13a (the
 // tool error envelope, never a JSON-RPC transport error).
@@ -164,7 +164,7 @@ function fixtureSite(ctx, vector) {
  * Until rc.5 this ran the registration script against the FULL local implementation
  * handed in as `AGSC_TOOLS`, so the vector proved the emitter and said nothing about
  * the artefact the site ships — which is how six tools stayed unimplemented on the
- * built site while this required vector stayed green (research/34 gap 7).
+ * built site while this required vector stayed green.
  *
  * It now loads the three scripts the built site actually serves — `agsc-core.js`,
  * `agsc-page-tools.js` and `webmcp.js` — assembles the page corpus from the build's
@@ -255,7 +255,7 @@ function runCli0003(vector, ctx) {
     ['compose', { selection: ['supervisor', 'handoff'] }],
     ['ask', { question: 'handoff' }],
     ['propose', { slug: 'handoff' }],
-    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', kind: 'episode', title: 'A Recorded Run' }],
+    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', actor: 'process:ci', kind: 'episode', title: 'A Recorded Run' }],
     ['read', { slug: 'no-such-item' }],
   ];
   const differing = [];
@@ -356,7 +356,7 @@ function subsetDeep(expected, actual) {
 }
 
 /**
- * cli-0007 — AGSC-09-14a as amended at rc.5 (V9D-07): the `ask` envelope.
+ * cli-0007 — AGSC-09-14a as amended at rc.5: the `ask` envelope.
  *
  * The Bundle is stated INLINE by the vector (a base, a licence and one item), not
  * taken from a fixture, so the citation IRIs are derivable from the vector alone.
@@ -490,14 +490,11 @@ function runCli0008(vector) {
  * minimal fixture that carries the `router` the vector's argv names — the argv is
  * used exactly as the vector states it.
  *
- * ONE READING, stated rather than hidden. The control case (`--emit gabbe`) states
- * `exit: 0` and `findings: []`, which is what a distribution that SHIPS the emitter
- * answers. This one ships none: AGSC-07-18 says an emitter is "a single template
- * plus a registry row", and the verb answers the honest `AGSC-E001` of AGSC-09-94
- * for a capability the node does not offer. So the control is asserted as what the
- * case is about — the REGISTRY accepted the name and raised nothing, which is what
- * makes the two refusals a statement about the registry and not about the flag —
- * and the remaining gap (no emitter ships) is recorded as an item, not hidden here.
+ * The control case (`--emit gabbe`) states what it is about since rc.6: the REGISTRY
+ * accepts the name (`registry_accepts`) and no AGSC-E203 is raised (`codes_absent`).
+ * Whether an emitter ships is the distribution's own claim (AGSC-07-18 makes none
+ * mandatory), so this one's honest AGSC-E001 for a capability it does not offer is
+ * the only other error allowed beside it.
  */
 function runCli0009(vector, ctx) {
   const nodeFs = require('node:fs');
@@ -547,9 +544,10 @@ function runCli0009(vector, ctx) {
       if (compose.emitterRefusal(emit) !== null) {
         problems.push(`${input.name}: the registry refused the registered name ${emit}`);
       }
-      if (codes.includes('AGSC-E203')) {
-        problems.push(`${input.name}: a registered target must not be AGSC-E203`);
+      for (const code of want.codes_absent || []) {
+        if (codes.includes(code)) problems.push(`${input.name}: a registered target must not be ${code}`);
       }
+      if (want.registry_accepts !== true) problems.push(`${input.name}: the case states no registry verdict`);
       const other = findings
         .filter((f) => f.severity === 'error' && f.code !== 'AGSC-E001')
         .map((f) => f.code);
@@ -570,7 +568,194 @@ Object.assign(HANDLERS, {
   'cli-0003': runCli0003,
   'cli-0004': runCli0004,
   'cli-0007': runCli0007,
-  'cli-0008': runCli0008
+  'cli-0008': runCli0008,
+  'cli-0010': runCli0010
+});
+
+/**
+ * cli-0010 (rc.6, AGSC-09-09 with AGSC-09-08) — `conform --level 4` is an invalid
+ * argument: AGSC-E003 and exit 2, whether the verb reports it as a finding or the
+ * shell refuses it first.
+ */
+function runCli0010(vector) {
+  const stdout = captureStream();
+  const stderr = captureStream();
+  const exitCode = main(vector.input.argv, { ports: undefined, env: {}, stdout, stderr, root: '.' });
+  const problems = [];
+  if (exitCode !== vector.expected.exit) problems.push(`exit ${exitCode} != ${vector.expected.exit}`);
+  if (!`${stdout.text()}${stderr.text()}`.includes(vector.expected.error)) {
+    problems.push(`neither stream mentions ${vector.expected.error}`);
+  }
+  return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
+}
+
+/**
+ * A scratch copy of a fixture Bundle, with configuration keys removed when the
+ * vector asks (`input.remove_config_keys`, dotted paths). Used by the cases that
+ * run the whole CLI end to end over a Bundle the fixture is not quite.
+ */
+function scratchCopy(ctx, vector, prefix) {
+  const nodeFs = require('node:fs');
+  const os = require('node:os');
+  const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const fixture = String((vector.input && vector.input.bundle) || 'fixtures/minimal');
+  nodeFs.cpSync(path.join((ctx && ctx.root) || '.', 'tests', fixture), root, { recursive: true });
+  const removals = (vector.input && vector.input.remove_config_keys) || [];
+  if (removals.length > 0) {
+    const file = path.join(root, 'agsc.config.json');
+    const config = JSON.parse(nodeFs.readFileSync(file, 'utf8'));
+    for (const dotted of removals) {
+      const keys = String(dotted).split('.');
+      let at = config;
+      for (const key of keys.slice(0, -1)) at = at == null ? undefined : at[key];
+      if (at != null) delete at[keys[keys.length - 1]];
+    }
+    nodeFs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+  }
+  return { root, done: () => nodeFs.rmSync(root, { force: true, recursive: true }) };
+}
+
+/** One CLI invocation over a scratch root, `--json --quiet`, envelope parsed. */
+function invoke(argv, root, vector) {
+  const stdout = captureStream();
+  const stderr = captureStream();
+  const exit = main([...argv, '--json', '--quiet'], {
+    env: { SOURCE_DATE_EPOCH: FIXTURE_EPOCH },
+    ports: { fs: createFileSystem(root) },
+    root,
+    specVersion: (vector.options || {}).spec_version,
+    stderr,
+    stdout,
+    version: (vector.options || {}).spec_version,
+  });
+  let envelope = {};
+  try { envelope = JSON.parse(stdout.text() || '{}'); } catch (e) { envelope = {}; }
+  return { exit, envelope, stdout: stdout.text(), stderr: stderr.text() };
+}
+
+/**
+ * cli-0011 (AGSC-01-26a as stated 2026-09-24) — an adapter name the distribution
+ * does not ship is AGSC-E203 and exit 1 on `export --to` and `import --from` alike,
+ * never one of AGSC-09-08's exit-2 usage codes.
+ */
+function runCli0011(vector, ctx) {
+  const scratch = scratchCopy(ctx, vector, 'agsc-cli-0011-');
+  const problems = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  try {
+    for (const input of vector.input.cases || []) {
+      const want = byName.get(input.name);
+      const got = invoke(input.argv, scratch.root, vector);
+      const codes = (got.envelope.findings || []).map((f) => f.code);
+      if (got.exit !== want.exit) problems.push(`${input.name}: exit ${got.exit} != ${want.exit} (${got.stderr.trim()})`);
+      for (const one of want.findings || []) {
+        if (!(got.envelope.findings || []).some((f) => f.code === one.code && f.severity === one.severity)) {
+          problems.push(`${input.name}: ${one.code} (${one.severity}) not among ${JSON.stringify(codes)}`);
+        }
+      }
+      for (const code of want.codes_absent || []) {
+        if (codes.includes(code) || got.stderr.includes(code)) problems.push(`${input.name}: ${code} must not be reported`);
+      }
+    }
+  } finally { scratch.done(); }
+  return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
+}
+
+/**
+ * cli-0012 (AGSC-09-09 as stated 2026-09-24) and cli-0013 (AGSC-09-94 as amended
+ * the same day) — a usage refusal: the stated code on stderr, exit 2, nothing on
+ * stdout. cli-0013 runs over the minimal fixture, whose configuration carries no
+ * `run` block, so `run.enabled` is false by default.
+ */
+function runUsageRefusalCases(vector, ctx) {
+  const scratch = scratchCopy(ctx, vector, 'agsc-cli-usage-');
+  const problems = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  try {
+    for (const input of vector.input.cases || []) {
+      const want = byName.get(input.name);
+      const stdout = captureStream();
+      const stderr = captureStream();
+      const exit = main([...input.argv, '--json'], {
+        env: { SOURCE_DATE_EPOCH: FIXTURE_EPOCH },
+        ports: { fs: createFileSystem(scratch.root) },
+        root: scratch.root,
+        specVersion: (vector.options || {}).spec_version,
+        stderr,
+        stdout,
+        version: (vector.options || {}).spec_version,
+      });
+      if (exit !== want.exit) problems.push(`${input.name}: exit ${exit} != ${want.exit}`);
+      if (stdout.text() !== want.stdout) problems.push(`${input.name}: stdout ${JSON.stringify(stdout.text())} != ${JSON.stringify(want.stdout)}`);
+      if (!stderr.text().includes(want.error)) problems.push(`${input.name}: stderr does not mention ${want.error}: ${stderr.text().trim()}`);
+    }
+  } finally { scratch.done(); }
+  return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
+}
+
+/**
+ * cli-0014 (AGSC-09-08 with AGSC-06-18) — the minimal fixture without
+ * `site.tdm_crawlers`: `build` and `ci` both exit 1 with exactly one AGSC-E202 and
+ * no other error.
+ */
+function runCli0014(vector, ctx) {
+  const scratch = scratchCopy(ctx, vector, 'agsc-cli-0014-');
+  const problems = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  try {
+    for (const input of vector.input.cases || []) {
+      const want = byName.get(input.name);
+      const got = invoke(input.argv, scratch.root, vector);
+      const findings = got.envelope.findings || [];
+      const errors = findings.filter((f) => f.severity === 'error');
+      if (got.exit !== want.exit) problems.push(`${input.name}: exit ${got.exit} != ${want.exit}`);
+      for (const one of want.findings || []) {
+        if (!findings.some((f) => f.code === one.code && f.severity === one.severity)) {
+          problems.push(`${input.name}: ${one.code} (${one.severity}) not among ${JSON.stringify(findings.map((f) => f.code))}`);
+        }
+      }
+      if (want.error_count !== undefined && errors.length !== want.error_count) {
+        problems.push(`${input.name}: ${errors.length} error(s) != ${want.error_count}: ${JSON.stringify(errors.map((f) => f.code))}`);
+      }
+    }
+  } finally { scratch.done(); }
+  return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
+}
+
+/**
+ * cli-0015 (AGSC-05-04b with AGSC-05-04a) — `memory://<own-id>/<slug>` and the
+ * item's https IRI resolve to the slug (the envelope equals `read {slug}` as a
+ * value); a foreign bundle id is the AGSC-E309 error envelope.
+ */
+function runCli0015(vector, ctx) {
+  const toolset = fixtureToolset(ctx, vector);
+  const tool = String(vector.input.tool || 'read');
+  const call = (args) => {
+    try { return toolset.call(tool, args); } catch (e) { return { threw: e.message }; }
+  };
+  const reference = call(vector.input.reference);
+  const problems = [];
+  if (reference == null || reference.type === 'error') problems.push(`the reference call failed: ${JSON.stringify(reference)}`);
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.calls || []) {
+    const want = byName.get(input.name);
+    const got = call(input.arguments);
+    const same = JSON.stringify(got) === JSON.stringify(reference);
+    if (same !== want.equals_reference) problems.push(`${input.name}: equals reference ${same} != ${want.equals_reference}`);
+    if (want.type !== undefined && got.type !== want.type) problems.push(`${input.name}: type ${got.type} != ${want.type}`);
+    if (want.body && want.body.code !== undefined && !(got.body && got.body.code === want.body.code)) {
+      problems.push(`${input.name}: body.code ${JSON.stringify(got.body)} != ${want.body.code}`);
+    }
+  }
+  return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
+}
+
+Object.assign(HANDLERS, {
+  'cli-0011': runCli0011,
+  'cli-0012': runUsageRefusalCases,
+  'cli-0013': runUsageRefusalCases,
+  'cli-0014': runCli0014,
+  'cli-0015': runCli0015,
 });
 
 module.exports.run = function run(vector, ctx) {

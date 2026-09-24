@@ -41,5 +41,5 @@ coverage/
 # GABBE
 GABBE/
 
-# Vectors are part of the definition (AGSC-00-01): the generic build/ rule above must not swallow tests/vectors/build/ (pre-DS-4 audit, 2026-09-16)
+# Vectors are part of the definition (AGSC-00-01): the generic build/ rule above must not swallow tests/vectors/build/ (an audit of 2026-09-16)
 !tests/vectors/build/

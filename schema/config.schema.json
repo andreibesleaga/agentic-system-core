@@ -26,7 +26,7 @@
       ],
       "properties": {
         "base": {
-          "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base (D52(1)). No query, no fragment, and no path segment that is . or .. (rc.5, V9A-14).",
+          "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base. No query, no fragment, and no path segment that is . or .. (rc.5).",
           "type": "string",
           "pattern": "^(?:https://[^\\x00-\\x20/?#]+(?:/[^\\x00-\\x20/?#]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
         },
@@ -123,12 +123,12 @@
       }
     },
     "build": {
-      "description": "rdfxml and feed are RESERVED names of 1.1 and are rejected here with AGSC-E004 (AGSC-00-20, AGSC-01-18; feed reserved at rc.5, R-15 — no 1.0 rule pins the bytes of /feed.xml).",
+      "description": "rdfxml and feed are RESERVED names of 1.1 and are rejected here with AGSC-E004 (AGSC-00-20, AGSC-01-18; feed reserved at rc.5 — no 1.0 rule pins the bytes of /feed.xml).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "out": {
-          "description": "Build output directory; a relative path under the grammar of AGSC-01-35, one or more /-separated segments, a trailing slash accepted and stripped (AGSC-01-19; multi-segment admitted at rc.5, V9A-12).",
+          "description": "Build output directory; a relative path under the grammar of AGSC-01-35, one or more /-separated segments, a trailing slash accepted and stripped (AGSC-01-19; multi-segment admitted at rc.5).",
           "type": "string",
           "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*/?$",
           "default": "www"
@@ -180,7 +180,7 @@
       "type": "object"
     },
     "channels": {
-      "description": "Registered ingest channels (AGSC-01-30..33). allow[] and rate{per_hour} are the only keys admitted after the 1.0.0-rc.2 freeze (D61(3)). name is unique; author is the forge identity CI checks the PR author against, owner is the accountable human whose publish choice AGSC-08-26 treats as standing approval (D52(4)).",
+      "description": "Registered ingest channels (AGSC-01-30..33). allow[] and rate{per_hour} are the only keys admitted after the 1.0.0-rc.2 freeze. name is unique; author is the forge identity CI checks the PR author against, owner is the accountable human whose publish choice AGSC-08-26 treats as standing approval.",
       "type": "array",
       "uniqueItems": true,
       "items": {
@@ -218,7 +218,7 @@
             ]
           },
           "allow": {
-            "description": "OPTIONAL sender allow-list: the ingest job rejects a message whose sender is absent from a non-empty list; an absent or empty array accepts every sender (AGSC-01-30, D61(3)).",
+            "description": "OPTIONAL sender allow-list: the ingest job rejects a message whose sender is absent from a non-empty list; an absent or empty array accepts every sender (AGSC-01-30).",
             "type": "array",
             "uniqueItems": true,
             "items": {
@@ -226,7 +226,7 @@
             }
           },
           "rate": {
-            "description": "OPTIONAL ingest rate guard (AGSC-01-30, D61(3)).",
+            "description": "OPTIONAL ingest rate guard (AGSC-01-30).",
             "type": "object",
             "additionalProperties": false,
             "required": [
@@ -471,7 +471,7 @@
             "then": {
               "properties": {
                 "version": {
-                  "description": "AGSC-11-21, rc.5 (V9A-15): a responder names its protocol, mcp:<revision> or a2a:<version>; a bare SemVer is not a protocol name.",
+                  "description": "AGSC-11-21, rc.5: a responder names its protocol, mcp:<revision> or a2a:<version>; a bare SemVer is not a protocol name.",
                   "type": "string",
                   "pattern": "^(mcp:[0-9]{4}-[0-9]{2}-[0-9]{2}|a2a:[0-9]+\\.[0-9]+(\\.[0-9]+)?)$"
                 }
@@ -690,7 +690,7 @@
               ]
             },
             "then": {
-              "description": "AGSC-01-36: model is REQUIRED when kind is llm and ABSENT otherwise (V8-112, rc.5).",
+              "description": "AGSC-01-36: model is REQUIRED when kind is llm and ABSENT otherwise (rc.5).",
               "properties": {
                 "model": false
               }
@@ -712,7 +712,7 @@
       "maxLength": 64
     },
     "single_line": {
-      "description": "AGSC-02-24 as amended at rc.5 (FV28-01): an AUTHORED SINGLE-LINE string. It MUST NOT carry a C0 control (U+0000-U+001F), U+007F, U+0085, U+2028 or U+2029, because a writer puts it on a LINE of a line-oriented text surface (/llms.txt, /llms-full.txt, /now.md, the Harness files, llms-ctx.txt, robots.txt, _headers, _redirects, /.well-known/security.txt) where a line break creates a new line, a forged heading or a forged header. A violation is AGSC-E204 (spec/09 section 9.4 precedence: every pattern violation takes that code). The class is a negated character class with no lookahead, no back-reference and no quantifier-based bound, so it is the ECMA-262 dialect JSON Schema 2020-12 names and transliterates mechanically to the \\x{...} escapes of RE2, Go and Rust. A writer additionally NEUTRALISES these code points when it interpolates such a string (knowledge/unicode.js#singleLine), so a Bundle that never passed validation still cannot inject structure.",
+      "description": "AGSC-02-24 as amended at rc.5: an AUTHORED SINGLE-LINE string. It MUST NOT carry a C0 control (U+0000-U+001F), U+007F, U+0085, U+2028 or U+2029, because a writer puts it on a LINE of a line-oriented text surface (/llms.txt, /llms-full.txt, /now.md, the Harness files, llms-ctx.txt, robots.txt, _headers, _redirects, /.well-known/security.txt) where a line break creates a new line, a forged heading or a forged header. A violation is AGSC-E204 (spec/09 section 9.4 precedence: every pattern violation takes that code). The class is a negated character class with no lookahead, no back-reference and no quantifier-based bound, so it is the ECMA-262 dialect JSON Schema 2020-12 names and transliterates mechanically to the \\x{...} escapes of RE2, Go and Rust. A writer additionally NEUTRALISES these code points when it interpolates such a string (knowledge/unicode.js#singleLine), so a Bundle that never passed validation still cannot inject structure.",
       "type": "string",
       "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$"
     },

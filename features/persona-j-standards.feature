@@ -1,5 +1,4 @@
-# Trace: PRD-024, PRD-025, PRD-050 · audit/D §3(j) · PLAN §7 (w3id conneg)
-# Source of truth: the private design register (audit D) §3(j) "Standards implementer discovering via /.well-known/knowledge-linkset"
+# Trace: PRD-024, PRD-025, PRD-050 · PLAN §7 (w3id conneg)
 @persona-j @mode-1
 Feature: Standards implementer adopts the discovery format on their own site
   As P11 (standards implementer)

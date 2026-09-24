@@ -128,3 +128,15 @@ test('removeOne(): a phrase that is absent is null, and a mid-sentence clause go
   assert.strictEqual(mid.text, 'alpha, and gamma.');
   assert.strictEqual(mid.removed, 'the book says so; ');
 });
+
+test('AGSC-08-17: a chapter cited by any number is removed as a pattern, and the lint then passes', () => {
+  const body = 'Routing matters. The worker waits; chapter 7 has the proof. See Chapters XIV for more.\n\nKeep this.\n';
+  const out = rewrite.rewrite(body);
+  assert.deepStrictEqual(out.excisions.map((e) => e.phrase), ['chapter 7', 'chapters xiv']);
+  assert.strictEqual(out.body, 'Routing matters. The worker waits.\n\nKeep this.\n');
+  assert.deepStrictEqual(out.surviving, []);
+  assert.deepStrictEqual(cleanroom.check({ path: 'content/concepts/a.md', text: out.body }), []);
+  // A pattern the rewrite could not remove is reported, never silently kept.
+  assert.deepStrictEqual(rewrite.numberedDivision('no division here'), null);
+  assert.deepStrictEqual(rewrite.numberedDivision('see Chapter 21'), { index: 4, match: 'Chapter 21' });
+});

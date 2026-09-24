@@ -80,7 +80,7 @@ test('AGSC-01-23: the arrival order of the cards changes nothing', () => {
   assert.deepStrictEqual(reversed.writes, forward.writes);
 });
 
-test('the totals table is derived, and states the D99-shaped counts', () => {
+test('the totals table is derived, and states the import counts', () => {
   const totals = plan().totals;
   assert.strictEqual(totals.cards_read, 11);
   assert.strictEqual(totals.chosen, 10);
@@ -166,7 +166,7 @@ test('AGSC-01-14: a `.diagram` written by the import has LF endings and one fina
   }
 });
 
-test('AGSC-02-98 / R59: `--attach-diagrams` adds the SVG and its source, both with alt', () => {
+test('AGSC-02-98: `--attach-diagrams` adds the SVG and its source, both with alt', () => {
   const planned = plan({}, { attachDiagrams: true });
   const item = planned.items.find((i) => i.slug === 'alpha-one');
   assert.deepStrictEqual(item.frontmatter.attachments.map((a) => [a.file, a.media_type]), [

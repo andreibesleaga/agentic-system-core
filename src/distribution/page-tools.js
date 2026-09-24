@@ -12,7 +12,7 @@
  * AGSC-09-14b (`remember` synthesizes a conforming item and returns it) and
  * AGSC-08-04 / AGSC-11-14 (on this transport `propose` and `remember` PERFORM NO
  * WRITE of any kind — they return the payload and stop).
- * Requirements: PRD-051, PRD-056, D53, N9.
+ * Requirements: PRD-051, PRD-056.
  *
  * WHY THIS MODULE EXISTS. Until rc.5 the emitted page registered seven tools and
  * answered one: `src/distribution/compose-page.js` implemented `compose` and returned
@@ -947,6 +947,14 @@ function pageToolset(corpus, core) {
       const kinds = pageKindToType();
       const kind = kinds[args.kind] === undefined ? 'concept' : args.kind;
       const type = kinds[kind];
+      // AGSC-09-14b as amended at rc.6: a Gate's Level is a governance decision a
+      // tool call may not invent, and an episode's schema branch requires `actor`.
+      if (args.kind === 'gate') {
+        return pageErrorEnvelope('remember', 'AGSC-E203', 'remember does not accept kind "gate": a Gate\'s Level is a governance decision (AGSC-09-14b)');
+      }
+      if (type === 'episode' && typeof args.actor !== 'string') {
+        return pageErrorEnvelope('remember', 'AGSC-E003', 'an episode needs the declared actor (AGSC-09-14b)');
+      }
       const title = typeof args.title === 'string' ? args.title : '';
       const findings = [];
       const taken = new Set(Object.keys(bySlug));
@@ -963,7 +971,7 @@ function pageToolset(corpus, core) {
       if (type === 'episode') {
         frontmatter.started = args.at;
         frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
-        frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
+        // no `severity`: the episode branch has no such key (AGSC-09-14b, 2026-09-24)
       }
       // the lesson branch requires `severity` (AGSC-09-14b default).
       if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
@@ -1026,7 +1034,30 @@ function pageToolset(corpus, core) {
         return pageErrorEnvelope(name, 'AGSC-E904',
           `argument above the ${cap}-byte cap: ${oversized.join(', ')} (AGSC-01-16)`);
       }
-      return implementations[name](supplied);
+      // AGSC-05-04b: a `memory://` alias is accepted wherever a slug argument is and
+      // normalized to the slug before any other rule runs — `mcp-tools.js#memoryAliases`.
+      const normalized = Object.assign({}, supplied);
+      let refused = null;
+      const prefix = pageBaseIri(base);
+      const one = (value) => {
+        if (refused !== null || typeof value !== 'string') return value;
+        // AGSC-05-04a: wherever `memory://` is accepted, this node's https item IRI is too.
+        const iri = /^https?:\/\//u.test(prefix) && value.slice(0, prefix.length) === prefix;
+        if (value.slice(0, 9) !== 'memory://' && !iri) return value;
+        const resolved = pageSlugOfIri(value, base, model.bundleId);
+        if (resolved.code !== null) refused = resolved.code;
+        return resolved.slug;
+      };
+      ['about', 'cluster', 'slug'].forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(normalized, key)) normalized[key] = one(normalized[key]);
+      });
+      if (Array.isArray(normalized.selection)) normalized.selection = normalized.selection.map(one);
+      if (refused !== null) {
+        return pageErrorEnvelope(name, refused, refused === 'AGSC-E309'
+          ? 'memory:// names a foreign bundle — use the https:// IRI'
+          : 'no item with that IRI in this Bundle');
+      }
+      return implementations[name](normalized);
     },
   };
 }
@@ -1177,12 +1208,12 @@ function pageArguments() {
     links: ['iri', 'slug'],
     propose: ['at', 'slug', 'task_state'],
     read: ['slug'],
-    remember: ['about', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title'],
+    remember: ['about', 'actor', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title'],
     search: ['query'],
   };
 }
 
-/** AGSC-09-13a (F27-10): a published `required` that is never enforced is a silent success. */
+/** AGSC-09-13a: a published `required` that is never enforced is a silent success. */
 function pageRequiredArguments() {
   return {
     ask: ['question'],

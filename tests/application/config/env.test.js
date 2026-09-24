@@ -1,4 +1,4 @@
-// tests/config/env.test.js — AGSC-01-37. Owner: B. Fixed clock not needed
+// tests/config/env.test.js — AGSC-01-37. Fixed clock not needed
 // (this module reads no clock); no network.
 'use strict';
 

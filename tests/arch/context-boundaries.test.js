@@ -13,7 +13,7 @@
 //   adapters     -> ports, shared                    (NEVER a bounded context)
 //
 // Plus: no module requires `adapters/` except `application/`, no adapter requires a
-// bounded context (F27-13), and the require graph has no cycle.
+// bounded context, and the require graph has no cycle.
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -33,7 +33,7 @@ const ALLOWED = Object.freeze({
   application: ['knowledge', 'governance', 'composition', 'boundary', 'distribution',
     'interchange', 'application', 'ports', 'adapters', 'shared'],
   ports: [],
-  // F27-13: an adapter is not a context and may not borrow from one. What it shares
+  // an adapter is not a context and may not borrow from one. What it shares
   // with the Knowledge context — the AGSC-04-12 ordering — lives in the shared kernel.
   adapters: ['ports', 'adapters', 'shared'],
 });
@@ -52,7 +52,7 @@ test('every require respects the context map', () => {
   }
 });
 
-// F27-13: the edge `adapters -> knowledge` existed and the table above let it
+// the edge `adapters -> knowledge` existed and the table above let it
 // through. This states the rule on its own so it cannot be widened by accident.
 test('no adapter requires a bounded context', () => {
   for (const file of sources()) {

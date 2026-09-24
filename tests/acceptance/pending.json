@@ -1,0 +1,200 @@
+{
+  "classes": {
+    "browser": "the scenario needs an interactive browser session (typing, clicking, a panel that updates); the page tools themselves are checked by the browser lane of tests/e2e/",
+    "drift": "the scenario text asks for a command, flag, path, argument or output that the current specification does not define or defines differently; the feature text needs updating before the scenario can run as written",
+    "external": "the scenario needs a third-party service or application (the w3id redirect service, an Obsidian install, a Zenodo deposit)",
+    "forge": "the scenario needs a forge or a hosting platform (a pull request, a workflow run, a deploy, an issue, a release)",
+    "gap": "a rule requires the behaviour and the reference engine does not implement it yet",
+    "model": "the scenario runs an agent lane for real, which needs a model adapter and a channel adapter; the reference engine ships neither and implements only refresh --dry-run"
+  },
+  "pending": {
+    "persona-0-dropin.feature#Publishing the adopted wiki": {
+      "class": "forge",
+      "reason": "pushing the repository and Cloudflare Pages serving www/ at a domain happen on the forge and the host, not in the engine."
+    },
+    "persona-0-dropin.feature#Three commands from bare notes to a full local site": {
+      "class": "drift",
+      "reason": "'the build succeeds offline with warnings only' cannot hold under the current rules: ci refuses a node with no authored .well-known/security.txt (AGSC-06-36, AGSC-E901), with the Content Use Terms and no site.tdm_crawlers (AGSC-06-18, AGSC-E202), and every reference AGSC-E507 reports is also an unresolved body reference (AGSC-03-11, AGSC-E310 error); AGSC-02-92 and AGSC-02-95 say the opposite. Recorded as a specification item."
+    },
+    "persona-a-reader.feature#Home page states software-and-registry identity, no narrative": {
+      "class": "drift",
+      "reason": "no rule requires the home page to show an install line, a counts line or links to /graph.jsonld and /llms.txt, and the engine's home page shows none of them; the discovery link is the header of AGSC-06-17."
+    },
+    "persona-a-reader.feature#Reader inspects cluster membership and the NOW page": {
+      "class": "drift",
+      "reason": "no rule groups a cluster page's members by sub-cluster and the engine lists them flat; the NOW half (build time, counts, stale items, open lessons) is covered by the ledger and refresh tests."
+    },
+    "persona-a-reader.feature#Reader opens a Concept page and sees evidence": {
+      "class": "drift",
+      "reason": "the item schema defines the optional keys evidence and maturity, but no rule asks the page to show them as facet chips and the engine shows neither; no rule defines a 'family › deck › subdeck' breadcrumb or typed Links with inverses on the page; diagram sources are content/diagrams/<slug>.diagram, as the scenario says, but the footer offers 'Machine views: Markdown · JSON-LD' and 'Propose an edit', not the quoted words."
+    },
+    "persona-a-reader.feature#Reader searches via the prebuilt client-side index": {
+      "class": "browser",
+      "reason": "typing into the search box and watching the requests the page makes needs a browser; the index itself (/search.json, AGSC-06-16) is checked by the unit tests."
+    },
+    "persona-b-contributor.feature#CI runs a lint-only review, no LLM call": {
+      "class": "drift",
+      "reason": "no rule defines 'lint L1 and L2 findings' or PR annotations, and the engine prints none; the double build and the absence of a model call are checked by the persona-k scenario that runs and by the ci tests."
+    },
+    "persona-b-contributor.feature#Contributor commits with the required trailer and PR marker": {
+      "class": "forge",
+      "reason": "the commit trailer and the pull-request body are written by the contributor on the forge; the marker propose writes is checked by the persona-d acceptance test."
+    },
+    "persona-b-contributor.feature#Contributor opens the fork-and-edit URL from the page footer": {
+      "class": "drift",
+      "reason": "the engine links GitHub's edit view at /edit/HEAD/<path> (the default branch, whatever its name), not /edit/main/<path>; opening the link and GitHub's fork flow need a browser and the forge."
+    },
+    "persona-b-contributor.feature#Maintainer reviews, ratifies and the change deploys": {
+      "class": "forge",
+      "reason": "approval, the branch ruleset, the merge and the Cloudflare deploy happen on the forge and the host."
+    },
+    "persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled": {
+      "class": "drift",
+      "reason": "search takes 'query' (not 'q') and no 'limit'; links takes 'slug' or 'iri' and no 'type' filter (the tool manifest of AGSC-09-13/09-16)."
+    },
+    "persona-c-agent-mcp.feature#Agent starts the local stdio MCP server": {
+      "class": "drift",
+      "reason": "mcp takes an optional Bundle path (AGSC-09-09); there is no --site flag, and 'claude mcp add' is a third-party command. The seven tools are checked by the scenario on memory that runs."
+    },
+    "persona-c-agent-mcp.feature#Agent uses the node as memory and knowledge base over MCP": {
+      "class": "drift",
+      "reason": "'remember with kind episode, a title and a body' is refused at rc.6: an episode needs the declared actor and the instant 'at' (AGSC-09-14b), and a conforming episode also needs prov.operator from the client; the ask half is pinned by vector cli-0007."
+    },
+    "persona-c-agent-mcp.feature#Non-MCP agent reads via llms.txt and RDF instead": {
+      "class": "drift",
+      "reason": "/llms.txt lists each item's page URL (AGSC-06-13), not a /pages/<slug>.md link; the per-item Markdown exists and graph.ttl is checked for blank nodes by the graph vectors."
+    },
+    "persona-c-agent-mcp.feature#Server caches published exports and refreshes on manifest change": {
+      "class": "drift",
+      "reason": "the 1.0 server reads a local Bundle; no rule defines a remote client mode that fetches exports and caches them under $XDG_CACHE_HOME, and the engine has none."
+    },
+    "persona-d-agent-proposer.feature#Agent normalizes and writes a local patch, never pushes": {
+      "class": "drift",
+      "reason": "propose takes a slug and no --title or --rationale flag (AGSC-09-09); the real flow, lint --fix and propose <slug>, is covered by the persona-d acceptance test."
+    },
+    "persona-d-agent-proposer.feature#Fork-originated Proposals stay lint-only until labelled, capped at five": {
+      "class": "forge",
+      "reason": "the open-bot-PR cap and fork secrets are forge workflow behaviour."
+    },
+    "persona-d-agent-proposer.feature#Operator runs the printed commands and the PR carries the trailer": {
+      "class": "forge",
+      "reason": "running the printed git and gh commands opens a pull request on the forge."
+    },
+    "persona-e-architect.feature#Architect names and downloads a seven-file Harness": {
+      "class": "browser",
+      "reason": "naming the Harness and clicking Download needs a browser; the Harness file set is covered by the compose and harness tests."
+    },
+    "persona-e-architect.feature#Browser output is byte-identical to the CLI for the same selection": {
+      "class": "drift",
+      "reason": "the Background names www/js/agsc-core.js, which the engine does not emit (the module is www/compose/agsc-core.js); the byte identity of the browser module and the command line is covered by tests/composition/browser.test.js."
+    },
+    "persona-e-architect.feature#Excludes mutex and warnings surface before download": {
+      "class": "browser",
+      "reason": "the panel's messages need a browser; the closure algebra behind them is covered by the compose vectors."
+    },
+    "persona-e-architect.feature#Selecting Concepts triggers requires-closure with an explanation": {
+      "class": "browser",
+      "reason": "ticking a Concept and reading the panel needs a browser; the compose page loads www/compose/agsc-core.js, not www/js/agsc-core.js as the Background says."
+    },
+    "persona-f-integrator.feature#Each installed pack is a valid agentskills.io SKILL.md": {
+      "class": "drift",
+      "reason": "installed packs are named <cluster>/SKILL.md, not agsc-<cluster>/SKILL.md, and the Background's '20 packs' is a count of one site's clusters."
+    },
+    "persona-f-integrator.feature#Installed packs are content-only and lockfile-verified": {
+      "class": "drift",
+      "reason": "lint reads a Bundle, not an installed skill tree; the content-only and lockfile checks run inside skills install and are covered by tests/composition/skills.test.js."
+    },
+    "persona-f-integrator.feature#Integrator installs packs into one of the three supported trees": {
+      "class": "drift",
+      "reason": "skills install takes a local target directory (AGSC-07-21) and no --into flag, and it installs from the local build, not from a site URL, which would need the network."
+    },
+    "persona-f-integrator.feature#Integrator's improved skill round-trips back as a Procedure": {
+      "class": "drift",
+      "reason": "skills import takes one SKILL.md file, not a directory (AGSC-07-22)."
+    },
+    "persona-g-team.feature#A Gate's checks compile into a required CI status check": {
+      "class": "drift",
+      "reason": "the Background runs 'init my-specs --host none', which init refuses with AGSC-E002; and ci, not build, compiles the checks (AGSC-08-12)."
+    },
+    "persona-g-team.feature#Team authors Mode-2 Concepts without a new item type": {
+      "class": "drift",
+      "reason": "the Background runs 'init my-specs --host none'; init takes no argument and no flag (AGSC-09-09), so the command is refused with AGSC-E002."
+    },
+    "persona-g-team.feature#Team exports steer files for their coding agent": {
+      "class": "drift",
+      "reason": "the Background runs 'init my-specs --host none', which init refuses with AGSC-E002 (AGSC-09-09)."
+    },
+    "persona-g-team.feature#Team publishes its own specs as an instance of itself (should)": {
+      "class": "drift",
+      "reason": "the Background runs 'init my-specs --host none', which init refuses with AGSC-E002; and /specs/ is the namespace site's route, which the engine does not generate (AGSC-06-01)."
+    },
+    "persona-h-memory.feature#Agent exports the Bundle in three lossless forms": {
+      "class": "drift",
+      "reason": "export writes under dist/export/<form>/ and takes no output directory argument (AGSC-01-26…27), so './out' is not where the files land."
+    },
+    "persona-h-memory.feature#Agent imports a foreign OKF bundle idempotently": {
+      "class": "drift",
+      "reason": "import requires --from <adapter> (AGSC-01-22); without it the command is refused with AGSC-E003."
+    },
+    "persona-h-memory.feature#Exported Markdown Bundle opens unchanged as an Obsidian vault": {
+      "class": "external",
+      "reason": "opening a folder as an Obsidian vault needs the Obsidian application."
+    },
+    "persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline": {
+      "class": "gap",
+      "reason": "AGSC-08-10 requires a gate verdict in dist/gate.json and the engine never writes it; the scenario also needs the forge for the ci.yml half."
+    },
+    "persona-i-maintainer.feature#Restore-from-zero reproduces the site from a bare clone": {
+      "class": "external",
+      "reason": "comparing with the last published deploy and the weekly attested snapshot and Zenodo deposit needs the host and Zenodo; the byte-identical rebuild itself is the ci double build."
+    },
+    "persona-i-maintainer.feature#The maintainer cuts a release and the packages publish with attestations": {
+      "class": "forge",
+      "reason": "pushing a tag, trusted publishing and provenance attestations happen on the forge and the registry."
+    },
+    "persona-i-maintainer.feature#The weekly refresh job reaches no network and never commits": {
+      "class": "forge",
+      "reason": "the cron trigger and 'gh issue create' are forge behaviour; the stale-items list of the NOW page is checked by the unit tests."
+    },
+    "persona-j-standards.feature#Implementer content-negotiates the vocabulary via w3id": {
+      "class": "external",
+      "reason": "the 303 redirects are served by the w3id service from its .htaccess, which runs on w3id's host."
+    },
+    "persona-j-standards.feature#Implementer discovers the linkset via the well-known URI": {
+      "class": "drift",
+      "reason": "a content node omits rel#ontology (AGSC-06-10 as stated at rc.6), links rel#graph to /graph.nq and /graph.ttl rather than /graph.jsonld, and publishes /specs/ only on the namespace site."
+    },
+    "persona-k-live-board.feature#A planner cannot flood the board": {
+      "class": "model",
+      "reason": "'worker opens a Proposal that creates 21 task concepts' is a model-driven lane run; the max_new_items cap is covered by the governance tests."
+    },
+    "persona-k-live-board.feature#An agent claims a task by proposing its working state": {
+      "class": "model",
+      "reason": "'refresh --agent worker' without --dry-run opens a real Proposal through a model and a channel, which the reference engine does not ship."
+    },
+    "persona-k-live-board.feature#The agent lane cannot reach the slow lane": {
+      "class": "model",
+      "reason": "'the agent opens a Proposal' is a model-driven lane run; the AGSC-E509 gate itself is covered by tests/governance/agents tests and refresh --dry-run."
+    },
+    "persona-k-live-board.feature#The board reaches done and the agent stops": {
+      "class": "model",
+      "reason": "the second half runs 'refresh --agent worker' without --dry-run, which needs a model adapter."
+    },
+    "persona-k-live-board.feature#The budget stops the lane for the month": {
+      "class": "model",
+      "reason": "'refresh --agent worker' without --dry-run needs a model adapter; the budget meter (AGSC-E510) is covered by the NOW spend tests."
+    },
+    "persona-k-live-board.feature#The build stays deterministic while the lane is non-deterministic": {
+      "class": "drift",
+      "reason": "the Background says agsc.config.json 'declares the surface mcp', but mcp is a derived surface that surfaces[] never lists (config schema, AGSC-11-16) and its target /specs/mcp/ is the namespace site's; the double build and the model-free lanes are covered by the ci tests and tests/arch/."
+    },
+    "persona-k-live-board.feature#The node-wide cap and the .env file bound every model call": {
+      "class": "model",
+      "reason": "'refresh --agent worker' without --dry-run needs a model adapter; the override-name line of ci and AGSC-E403 are covered by the ci and secrets tests."
+    },
+    "persona-k-live-board.feature#The work-in-progress limit keeps the agent on one task": {
+      "class": "model",
+      "reason": "'worker proposes' is a model-driven lane run; the AGSC-E511 claim cap is covered by the governance tests."
+    }
+  }
+}

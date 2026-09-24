@@ -1,4 +1,4 @@
-// tests/config/load.test.js — AGSC-09-09/AGSC-01-37 precedence. Owner: B.
+// tests/config/load.test.js — AGSC-09-09/AGSC-01-37 precedence.
 'use strict';
 
 const test = require('node:test');

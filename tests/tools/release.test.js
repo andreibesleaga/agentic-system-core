@@ -99,6 +99,34 @@ describe('1. one version, in one place', () => {
     assert.ok(json.findings.some((f) => /is not greater than/u.test(f.message)));
   });
 
+  it('the current version is a release of what the tree carries: no finding, no bump steps', () => {
+    const dir = distribution();
+    const { json } = envelope('release', ['--version', '0.0.2', dir]);
+    assert.ok(!json.findings.some((f) => /is not greater than/u.test(f.message)));
+    const printed = capture('release', ['--version', '0.0.2', dir]).out;
+    assert.ok(!/tools\/release --version/u.test(printed), 'no bump step for the current version');
+    assert.match(printed, /already carries 0\.0\.2/u);
+    // --apply of the current version writes nothing.
+    let appliedOut = '';
+    release.run(['--version', '0.0.2', '--apply', dir],
+      { env: { SOURCE_DATE_EPOCH: '1790000000' }, err: () => {}, out: (t) => { appliedOut += t; } });
+    assert.ok(!/wrote/u.test(appliedOut));
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version, '0.0.2');
+    // A bump prints the two bump steps.
+    assert.match(release.checklist('0.0.3', true).join('\n'), /tools\/release --version 0\.0\.3 --apply/u);
+  });
+
+  it('the checklist carries the tag pair, trusted publishing and the deprecation check', () => {
+    const text = release.checklist('1.0.0-rc.7', false).join('\n');
+    assert.match(text, /git tag -s 1\.0\.0-rc\.7 /u);
+    assert.match(text, /git tag -s v1\.0\.0-rc\.7 /u);
+    assert.match(text, /Settings -> Trusted publishing/u);
+    assert.match(text, /npm view agentic-system-core@1\.0\.0-rc\.7 deprecated/u);
+    assert.match(text, /npm deprecate agsc-cli@1\.0\.0-rc\.7 ""/u);
+    assert.match(text, /The PyPI half, in \.\.\/agentic-system-core-python:/u);
+    assert.ok(!/The PyPI half of,/u.test(text));
+  });
+
   it('a version that is not semver is a usage error, exit 2', () => {
     assert.equal(capture('release', ['--version', 'one']).code, 2);
     assert.equal(capture('release', ['--version=1.2']).code, 2);
@@ -152,13 +180,13 @@ describe('3. the npm pack contents', () => {
         version: '0.0.2',
       }, null, 4)}\n`,
       'plans/kit.md': '# kit\n',
-      'tests/fixtures/minimal/big.md': 'x'.repeat(100),
+      'tests/fixtures/other/big.md': 'x'.repeat(100),
       'tests/vectors/a/a.json': '{}\n',
     });
     const { json } = envelope('release', [dir]);
     const messages = json.findings.map((f) => f.message).join('\n');
     assert.match(messages, /\.gitignore excludes plans\/ from this repository/u);
-    assert.match(messages, /the only test path a distribution ships is tests\/vectors\//u);
+    assert.match(messages, /the only test paths a distribution ships are tests\/vectors\//u);
     assert.equal(json.status, 'fail');
   });
 
@@ -365,11 +393,15 @@ describe('the release workflow', () => {
 
   it('every validator blocks the release: none of the nine only reports', () => {
     // `validate-spec` was a reporting step while the specification items it found
-    // were open (…05). They were applied at rc.6 and it exits 0, so the
-    // carve-out is gone: a gate that reports and does not block protects nothing.
+    // were open. They were applied at rc.6 and it exits 0, so the carve-out is
+    // gone: a gate that reports and does not block protects nothing. The one
+    // checker that needs an argument, `validate-wellknown`, runs in its own step
+    // against a fixture build, and that step blocks too.
     const text = workflow();
     assert.ok(!/REPORT: /u.test(text), 'a validator is still allowed to fail without blocking');
-    assert.match(text, /for t in tools\/validate-\*; do node "\$t" --json; done/u);
+    assert.match(text, /for t in tools\/validate-\*; do\n\s+case "\$t" in \*\/validate-wellknown\) continue ;; esac\n\s+node "\$t" --json\n\s+done/u);
+    assert.match(text, /node tools\/validate-wellknown "\$fx\/www\/\.well-known\/knowledge-linkset" --level 1 --json/u);
+    assert.ok(!/continue-on-error|\|\| true/u.test(text), 'no step may swallow a failure');
   });
 
   it('holds no npm token and runs on a tag alone', () => {
@@ -431,13 +463,17 @@ describe('tools/release — the public-hygiene step', () => {
 
   it('a private e-mail address in a file that would ship stops the release lane', () => {
     const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'agsc-release-hyg-'));
-    // The address is assembled at run time so this file never carries one.
-    fs.writeFileSync(path.join(dir, 'README.md'), `# Package\n\nWrite to ${['real.person', 'gmail.com'].join('@')}.\n`);
-    const found = release.hygieneFindings(dir, ['README.md']);
-    assert.deepEqual(found.map((f) => [f.code, f.file, f.line]), [['AGSC-E404', 'README.md', 3]]);
-    assert.match(found[0].message, /^public hygiene: email/u);
-    fs.writeFileSync(path.join(dir, 'README.md'), '# Package\n\nNothing private.\n');
-    assert.deepEqual(release.hygieneFindings(dir, ['README.md']), []);
+    try {
+      // The address is assembled at run time so this file never carries one.
+      fs.writeFileSync(path.join(dir, 'README.md'), `# Package\n\nWrite to ${['real.person', 'gmail.com'].join('@')}.\n`);
+      const found = release.hygieneFindings(dir, ['README.md']);
+      assert.deepEqual(found.map((f) => [f.code, f.file, f.line]), [['AGSC-E404', 'README.md', 3]]);
+      assert.match(found[0].message, /^public hygiene: email/u);
+      fs.writeFileSync(path.join(dir, 'README.md'), '# Package\n\nNothing private.\n');
+      assert.deepEqual(release.hygieneFindings(dir, ['README.md']), []);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('a sweep that cannot run is a failure, never a silent pass', () => {

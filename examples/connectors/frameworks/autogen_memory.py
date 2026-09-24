@@ -9,11 +9,11 @@
 #
 #   node records.js www/chunks.jsonl autogen > node.autogen.jsonl
 #
-# UNVERIFIED: the import path of MemoryContent below was not re-read in this
-# package; take it from the AutoGen page for the version you run.
+# Check the import path of MemoryContent below against the AutoGen documentation
+# for the version you run; it has moved between releases.
 import json
 
-from autogen_core.memory import MemoryContent  # UNVERIFIED path, see above
+from autogen_core.memory import MemoryContent  # check against your AutoGen version
 
 
 async def load(memory, path="node.autogen.jsonl"):

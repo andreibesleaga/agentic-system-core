@@ -1,6 +1,6 @@
 'use strict';
 /**
- * bench/parity.js — page-tool / MCP parity, call by call (research/39 Layer F).
+ * bench/parity.js — page-tool / MCP parity, call by call (measurement layer F).
  *
  * AGSC-09-16 as amended at rc.6 asks for ONE tool contract over two transports
  * whose answers are equal AS VALUES, never byte-identical across the browser

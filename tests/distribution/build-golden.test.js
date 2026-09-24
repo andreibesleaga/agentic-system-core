@@ -6,6 +6,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
@@ -20,8 +22,19 @@ const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 /** 2026-01-01T00:00:00Z — the fixed instant of `tests/fixtures/minimal/README.md`. */
 const EPOCH = '1767225600';
 
-function load() {
-  const fs = createFileSystem(FIXTURE);
+/**
+ * `ci` WRITES (`dist/gate.json`, AGSC-08-10; `dist/forge/`, AGSC-08-12), so a test
+ * that runs it works on a scratch copy of the fixture, never on the repository's own.
+ */
+function scratchFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-golden-'));
+  fs.cpSync(FIXTURE, dir, { recursive: true });
+  process.on('exit', () => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* gone */ } });
+  return dir;
+}
+
+function load({ writable = false } = {}) {
+  const fs = createFileSystem(writable ? scratchFixture() : FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
   return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.4', version: '0.0.2' } };
@@ -81,18 +94,18 @@ test('a Level-0 emission omits every artefact AGSC-10-02 does not ask for', () =
 });
 
 test('ci runs lint, build and verify and exits 0 on the fixture (AGSC-09-08)', () => {
-  const { bundle, ports, options } = load();
+  const { bundle, ports, options } = load({ writable: true });
   const result = ci.ci(bundle, ports, options);
   // AGSC-08-12 added the `forge` lane after `verify`; a Bundle whose gate items
   // enforce nothing compiles nothing and the lane says so.
-  assert.deepStrictEqual(result.lanes.map((l) => l.split(' ')[0]), ['lint', 'build', 'verify', 'forge']);
+  assert.deepStrictEqual(result.lanes.map((l) => l.split(' ')[0]), ['lint', 'build', 'verify', 'forge', 'gate']);
   assert.strictEqual(result.counts.error, 0,
     `errors: ${JSON.stringify(result.findings.filter((f) => f.severity !== 'warn'))}`);
   assert.strictEqual(result.exit, 0);
 });
 
 test('a lint lane may be injected and its findings reach the exit code', () => {
-  const { bundle, ports, options } = load();
+  const { bundle, ports, options } = load({ writable: true });
   const result = ci.ci(bundle, ports, {
     ...options,
     lint: () => [{ code: 'AGSC-E403', col: 1, file: 'x.md', line: 1, message: 'a secret', severity: 'error' }],
@@ -175,7 +188,7 @@ test('a board is emitted only when the Bundle holds a task (AGSC-10-13)', () => 
 });
 
 test('a non-reproducible build is AGSC-E602 (AGSC-04-02)', () => {
-  const { bundle, ports, options } = load();
+  const { bundle, ports, options } = load({ writable: true });
   let call = 0;
   // A renderer that changes between two runs is the fault AGSC-E602 names; it can
   // only be produced deliberately, because everything in the build is a function.
@@ -199,7 +212,7 @@ test('verify() names the differing route, not only the fact (AGSC-04-02)', () =>
     JSON.stringify(findings.map((f) => f.file)));
 });
 
-// F27-08: AGSC-06-19 has two halves and only `sitemap.xml` was implemented. The
+// AGSC-06-19 has two halves and only `sitemap.xml` was implemented. The
 // Schema.org JSON-LD was emitted nowhere, named in no `skipped` entry, and both
 // module headers cited the rule as implemented.
 test('AGSC-06-19: item and index pages embed Schema.org JSON-LD', () => {

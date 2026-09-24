@@ -12,8 +12,8 @@
 // rather than reporting a Proposal that changes nothing.
 //
 // The unified diff is `diff@9.0.0` (jsdiff, BSD-3-Clause, no dependencies, no
-// clock, no network): a patch format is a standard format, and D94 forbids
-// reimplementing one. Owner: B (shell); wired at integration.
+// clock, no network): a patch format is a standard format, and the library rule forbids
+// reimplementing one.
 
 const { createTwoFilesPatch } = require('diff');
 const adopt = require('../../../knowledge/adopt.js');

@@ -20,8 +20,9 @@ const { REPO, tool } = require('./helpers');
 
 /** Every document an npm consumer must find inside the tarball. */
 const REQUIRED = Object.freeze([
-  'CHANGELOG.md', 'CITATION.cff', 'CONTRIBUTING.md', 'LICENSE', 'LICENSE-CONTENT',
-  'README.md', 'SECURITY.md',
+  'CHANGELOG.md', 'CITATION.cff', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'GOVERNANCE.md',
+  'LICENSE', 'LICENSE-CONTENT', 'README.md', 'SECURITY.md', 'TRADEMARK-POLICY.md',
+  'docs/CONFORMANCE-STATEMENTS.md',
 ]);
 
 describe('the published package carries the documents a consumer needs', () => {

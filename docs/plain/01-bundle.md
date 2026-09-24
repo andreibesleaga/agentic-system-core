@@ -8,7 +8,7 @@
 
 **Import.** A folder of bare Markdown can be adopted with one command; unknown frontmatter keys are kept and reported as warnings, never errors.
 
-**Export.** Markdown, JSON-LD and JSONL exports are lossless round trips; the prose exports always carry the Content Use Terms.
+**Export.** Markdown, JSON-LD and JSONL exports are lossless round trips; the prose exports carry the Content Use Terms, or the prose licence the node names in their place.
 
 **Channels.** Messages from a mailbox or a chat can become proposals, under guards: a sender list, a rate, a cap on open proposals, injection checks.
 

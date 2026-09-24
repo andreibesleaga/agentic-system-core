@@ -19,8 +19,9 @@
 //      `dependencies["agentic-system-core"]` must equal it exactly (never a range:
 //      an alias that floats is an alias that can resolve to a different engine).
 //      `--version <x.y.z>` checks the proposed version against semver and against
-//      the current one (it must be strictly greater); `--apply` writes it into both
-//      files and adds the changelog heading.
+//      the current one: greater is a bump, equal is a release of the version the
+//      tree already carries (nothing to write), smaller is refused; `--apply`
+//      writes a bump into both files and adds the changelog heading.
 //   2. THE CHANGELOG SECTION. `CHANGELOG.md` must carry `## [Unreleased]`, and
 //      either something under it or a section already naming the version in
 //      `package.json`; the release must have — or, under `--apply`, gain — a
@@ -32,8 +33,10 @@
 //      not under a directory this repository's own `.gitignore` excludes (which is
 //      where `GABBE/`, the governance kit, is declared), it is not a shipped file
 //      that NAMES such a directory, and it is not test-fixture bloat (nothing under
-//      `tests/` but `tests/vectors/`, which AGSC-09-90 requires a distribution to
-//      ship so a port can run the vector set).
+//      `tests/` but the vectors, which AGSC-09-90 requires a distribution to ship so
+//      a port can run the vector set, and the few files `agsc conform` needs to run
+//      them from an installed copy: the area handlers, the pending list, the graph
+//      fixture and the minimal Bundle three vectors name).
 //
 //      The list of excluded directories is READ FROM `.gitignore` rather than
 //      written here, so that the repository states once what is not part of it and
@@ -76,8 +79,9 @@ const HELP = `tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--
   this script: its default mode is a dry run and --apply writes only the version
   strings and the changelog heading.
 
-  --version <x.y.z>  the release being prepared (semver, strictly greater than the
-                     current package.json version)
+  --version <x.y.z>  the release being prepared (semver; greater than the current
+                     package.json version is a bump, equal means the tree already
+                     carries it and nothing is written)
   --apply            write the version bump and the changelog heading (no git)
   --json             emit the AGSC-09-11 diagnostics envelope on stdout
   --quiet            emit nothing; the exit code is the result
@@ -114,8 +118,14 @@ function neverShipped(root) {
   return [...out].sort(compareCodePoint);
 }
 
-/** The one directory under `tests/` a distribution ships (AGSC-09-90, AGSC-09-04). */
-const SHIPPED_TEST_DIR = 'tests/vectors/';
+/**
+ * The only paths under `tests/` a distribution ships: the vectors (AGSC-09-90,
+ * AGSC-09-04) and what `agsc conform` needs to run them from an installed copy —
+ * the area handlers, the pending list, the graph fixture one handler imports and the
+ * minimal Bundle three vectors name.
+ */
+const SHIPPED_TEST_PATHS = Object.freeze(['tests/vectors/', 'tests/conformance/areas/',
+  'tests/conformance/pending.json', 'tests/knowledge/_graph-fixture.js', 'tests/fixtures/minimal/']);
 
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$/u;
 
@@ -284,10 +294,11 @@ function packFindings(root, files) {
           + ' repository, so it is never part of the package'));
       }
     }
-    if (file.startsWith('tests/') && !file.startsWith(SHIPPED_TEST_DIR)) {
+    if (file.startsWith('tests/') && !SHIPPED_TEST_PATHS.some((p) => file.startsWith(p))) {
       findings.push(finding('AGSC-E904', file, 1,
-        `${file} would ship: the only test path a distribution ships is ${SHIPPED_TEST_DIR}`
-        + ' (AGSC-09-90), and everything else under tests/ is bloat in a published tarball'));
+        `${file} would ship: the only test paths a distribution ships are ${SHIPPED_TEST_PATHS.join(', ')}`
+        + ' (AGSC-09-90 and what `agsc conform` needs), and everything else under tests/ is bloat'
+        + ' in a published tarball'));
     }
     // A shipped file that NAMES a private path leaks it even when the path itself
     // is not shipped (project rule 12; BOOT rule: never cite either from a public file).
@@ -471,38 +482,68 @@ function applyChangelog(text, version, date) {
 }
 
 // --------------------------------------------------------------------------
-// 5. The owner's checklist.
+// 5. The maintainer's checklist.
 // --------------------------------------------------------------------------
-function checklist(version) {
+function checklist(version, bump = true) {
   const v = version === null ? '<x.y.z>' : version;
+  const steps = [
+    'npm ci                                          # the lockfile, exactly',
+    'npm test                                        # 0 fail, twice, identical',
+    'npm run test:coverage                           # src/ at or above 99.9 %',
+    'npm audit --audit-level=low                     # 0 vulnerabilities',
+    'node tools/count-artifacts --json               # ok, findings []',
+    'for t in tools/validate-*; do [ "$t" = tools/validate-wellknown ] || node "$t" --json || break; done',
+    '    # every one blocks; validate-wellknown needs a document, so it runs on the next line',
+    'node tools/validate-wellknown --level 2 <a built node>/.well-known/knowledge-linkset',
+    'AGSC_AUDIT=1 node --test tests/arch/*.test.js   # the boundary lane',
+    ...(bump ? [
+      `node tools/release --version ${v}            # this script, dry run`,
+      `node tools/release --version ${v} --apply    # writes the two versions`,
+    ] : [
+      'node tools/release                              # this script, dry run; the tree',
+      `    # already carries ${v}, so there is no version to write`,
+    ]),
+    'npm pack --dry-run                              # confirm the contents',
+    `git add -A && git commit -m "release: ${v}"`,
+    `git tag -s ${v} -m "AgenticSystemCore ${v}"            # the specification's tag`,
+    `    # (a release that changes the specification; the site build and the archive read it)`,
+    `git tag -s v${v} -m "AgenticSystemCore ${v}"           # the package tag, SAME commit`,
+    `    # check: test "$(git rev-parse ${v}^{commit})" = "$(git rev-parse v${v}^{commit})"`,
+    `git push origin main && git push origin ${v}`,
+    `git push origin v${v}                             # only once the repository is public`,
+    `    # npm makes no build provenance for a private repository. The v tag starts ${WORKFLOW},`,
+    '    # which publishes both packages over npm TRUSTED PUBLISHING (OIDC, no secret',
+    '    # in this repository), sets the dist-tag `latest` explicitly and attaches',
+    '    # build provenance. Turning a trusted publisher on for a package name is a',
+    '    # one-time step on npmjs.com: the package\'s Settings -> Trusted publishing',
+    '    # -> GitHub Actions, this repository, workflow release.yml, environment',
+    '    # "release"; then Settings -> Publishing access -> "Require two-factor',
+    '    # authentication and disallow tokens". Do it for BOTH names.',
+    'npm view agentic-system-core version            # confirm, after the run',
+    `npm view agentic-system-core@${v} deprecated   # expect no output: a new version`,
+    `npm view agsc-cli@${v} deprecated              # is published un-deprecated`,
+    `    # if one prints a message, clear it for that version only:`,
+    `    #   npm deprecate agentic-system-core@${v} ""`,
+    `    #   npm deprecate agsc-cli@${v} ""`,
+    '    # never run npm deprecate <name> "" without a version: it clears the',
+    '    # message of every version, the name reservations included',
+    `In a fresh temporary directory: npm install agentic-system-core@${v}`,
+    '    and npx agsc-cli --version                      # the live smoke test',
+    `The PyPI half, in ../${PYTHON_DIR}: its own tag, its own`,
+    '    trusted-publishing workflow, then pip install --pre in a fresh venv.',
+    'Capture the release page and both package pages in the Wayback Machine.',
+  ];
+  const numbered = [];
+  let n = 0;
+  for (const step of steps) {
+    if (step.startsWith('    ')) { numbered.push(step); continue; }
+    n += 1;
+    numbered.push(`${String(n).padStart(2, ' ')}. ${step}`);
+  }
   return [
     'The maintainer runs these, in this order. This script runs none of them.',
     '',
-    ` 1. npm ci                                          # the lockfile, exactly`,
-    ` 2. npm test                                        # 0 fail, twice, identical`,
-    ` 3. npm run test:coverage                           # src/ at or above 99.9 %`,
-    ` 4. npm audit --audit-level=low                     # 0 vulnerabilities`,
-    ` 5. node tools/count-artifacts --json               # ok, findings []`,
-    ` 6. for t in tools/validate-*; do node $t --json; done   # every one blocks`,
-    ` 7. AGSC_AUDIT=1 node --test tests/arch/*.test.js   # the boundary lane`,
-    ` 8. node tools/release --version ${v}            # this script, dry run`,
-    ` 9. node tools/release --version ${v} --apply    # writes the two versions`,
-    `10. npm pack --dry-run                              # confirm the contents`,
-    `11. git add -A && git commit -m "release: ${v}"`,
-    `12. git tag -s v${v} -m "AgenticSystemCore ${v}"`,
-    `13. git push origin main && git push origin v${v}`,
-    `    # the tag starts ${WORKFLOW}, which publishes both packages over npm`,
-    `    # TRUSTED PUBLISHING (OIDC, no secret in this repository), sets the`,
-    `    # dist-tag \`latest\` explicitly and attaches build provenance. Turning a`,
-    `    # trusted publisher on for a package name is a one-time step on npmjs.com:`,
-    `    # Settings -> Publishing access -> GitHub Actions, this repository,`,
-    `    # workflow release.yml, environment "release". Do it for BOTH names.`,
-    `14. npm view agentic-system-core version            # confirm, after the run`,
-    `15. In a fresh temporary directory: npm install agentic-system-core@${v}`,
-    `    and npx agsc-cli --version                      # the live smoke test`,
-    `16. The PyPI half of, in../${PYTHON_DIR}: its own tag, its own`,
-    `    trusted-publishing workflow, then pip install in a fresh venv.`,
-    `17. Capture the release page and both package pages in the Wayback Machine.`,
+    ...numbered,
     '',
     'ROLLBACK. npm\'s unpublish policy (docs.npmjs.com/policies/unpublish, read',
     '2026-09-22) allows unpublishing "anytime within the first 72 hours after',
@@ -560,7 +601,11 @@ function run(argv, io = {}) {
         + ' pins the exact version it aliases, never a range'));
     }
   }
-  if (version !== null && !isGreater(version, manifest.version)) {
+  // Equal is not a fault: the first release of a version the tree already carries
+  // (the versions were written when the release candidate was drafted) has nothing
+  // to bump, so the checklist leaves out the two bump steps.
+  const bump = version !== null && version !== manifest.version;
+  if (bump && !isGreater(version, manifest.version)) {
     findings.push(finding('AGSC-E202', 'package.json', 1,
       `${version} is not greater than the current version ${manifest.version}`));
   }
@@ -597,7 +642,7 @@ function run(argv, io = {}) {
       findings.push(finding('AGSC-E603', 'CHANGELOG.md', 1,
         'SOURCE_DATE_EPOCH is unset or malformed, and the changelog date is never read from a'
         + ' wall clock (AGSC-04-09, AGSC-04-11)'));
-    } else if (findings.every((f) => f.severity === 'warn')) {
+    } else if (findings.every((f) => f.severity === 'warn') && bump) {
       const bumped = { ...manifest, version };
       fs.writeFileSync(path.join(root, 'package.json'), `${JSON.stringify(bumped, null, 4)}\n`);
       written.push('package.json');
@@ -625,7 +670,7 @@ function run(argv, io = {}) {
       + ` ${envelope.counts.warn} warn; mode: ${flags.has('--apply') ? 'APPLY' : 'dry run'}`
       + `${written.length === 0 ? '' : ` (wrote ${written.join(', ')})`}\n`);
     out(`release: nothing was published, and this script never publishes.\n\n`);
-    for (const line of checklist(version)) out(`${line}\n`);
+    for (const line of checklist(version === null ? manifest.version : version, bump)) out(`${line}\n`);
   }
   return envelope.status === 'pass' ? 0 : 1;
 }
@@ -634,7 +679,7 @@ function run(argv, io = {}) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_DIR, TOOLING_IGNORES, WORKFLOW,
+  ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
   applyChangelog, canonicalize, changelogFindings, checklist, hygieneFindings, isGreater, neverShipped,
   packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
   workflowFindings,

@@ -1,5 +1,4 @@
-# Trace: PRD-022, PRD-026, PRD-027 · audit/D §3(h) · PLAN §5.2 ContentStore
-# Source of truth: the private design register (audit D) §3(h) "Agent using an instance as memory (Mode 1) with import/export"
+# Trace: PRD-022, PRD-026, PRD-027 · PLAN §5.2 ContentStore
 @persona-h @mode-1
 Feature: Agent uses a node as external auditable memory
   As P8 (agent-as-memory, Mode 1)
@@ -22,7 +21,7 @@ Feature: Agent uses a node as external auditable memory
   Scenario: Exported Markdown Bundle opens unchanged as an Obsidian vault
     Given "./out" was produced by "export --markdown"
     When the folder is opened as an Obsidian vault
-    Then no file requires modification to render correctly (R33)
+    Then no file requires modification to render correctly
 
   @PRD-026
   Scenario: Agent imports a foreign OKF bundle idempotently

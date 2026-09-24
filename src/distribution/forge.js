@@ -2,7 +2,7 @@
 /**
  * CONTEXT Distribution (Emission) — Surface: `dist/forge/`.
  *
- * Implements AGSC-08-12 as amended at rc.5 (V9D-06 / V9D-A3, the third of the three
+ * Implements AGSC-08-12 as amended at rc.5 (the third of the three
  * silently unmet MUSTs): "`ci` (AGSC-09-07) is the verb that compiles them, once per
  * run, into `dist/forge/` (a generated directory, AGSC-01-08 — never into
  * `build.out`, whose route set AGSC-06-01 closes, and never into `content/`,

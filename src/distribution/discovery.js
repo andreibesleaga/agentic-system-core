@@ -18,10 +18,10 @@ const { createHash } = require('node:crypto');
 const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 
-/** AGSC-06-07 (D60): the one substitutable constant. */
+/** AGSC-06-07: the one substitutable constant. */
 const WELLKNOWN_SUFFIX = 'knowledge-linkset';
 const WELLKNOWN_PATH = `/.well-known/${WELLKNOWN_SUFFIX}`;
-/** AGSC-06-17 (D60): the alias kept until the last 0.0.x consumer is retired. */
+/** AGSC-06-17: the alias kept until the last 0.0.x consumer is retired. */
 const WELLKNOWN_ALIAS = '/.well-known/agentic-knowledge';
 const MEDIA_TYPE = 'application/linkset+json';
 const PROFILE = 'https://w3id.org/agentic-system-core/profile/agentic-knowledge';
@@ -190,7 +190,7 @@ function linkset(config, options = {}) {
   // AGSC-06-08: bundle facts ride on the anchor's `describedby` link and NOWHERE else.
   // AGSC-11-20: a `restricted` node publishes neither the content facts nor the
   // content version, at any Level. Until rc.6 this was stated by the rule, checked
-  // by nothing and emitted anyway (V9A-22 fixed the rule, not the writer).
+  // by nothing and emitted anyway (the rule was fixed, not the writer).
   const gated = visibility === 'restricted';
   const describedby = {
     digest: digest('/graph.jsonld'),
@@ -279,7 +279,8 @@ function attributesOf(one) {
  * Structural faults are Findings with registered codes, never thrown strings.
  *
  * @param {object} doc
- * @param {{level?:number, file?:string}} [options]
+ * @param {{level?:number, file?:string, requireLedger?:boolean}} [options]
+ *   `requireLedger: false` when the caller knows no ledger could be derived.
  * @returns {Array<object>} Findings; empty means the document conforms.
  */
 function check(doc, options = {}) {
@@ -357,6 +358,14 @@ function check(doc, options = {}) {
         }
       }
       const ledger = (context[`${REL}ledger`] || [])[0];
+      // AGSC-10-04 / AGSC-09-93: the derived ledger is part of Level 2, so a public
+      // node claiming it links `/ledger.jsonl`. A build that was given no git-log
+      // file cannot derive one (AGSC-06-01 makes the route conditional on it) and
+      // says so with `requireLedger: false`; the document it writes is then not a
+      // Level-2 document, which the validator reports.
+      if (ledger === undefined && !gatedDoc && options.requireLedger !== false) {
+        fail('AGSC-E202', 'no rel#ledger link: a Level ≥ 2 node publishes /ledger.jsonl and links it (AGSC-10-04)');
+      }
       if (ledger !== undefined) {
         for (const name of LEDGER_ATTRIBUTES) {
           if (!attributesOf(ledger).includes(name)) {

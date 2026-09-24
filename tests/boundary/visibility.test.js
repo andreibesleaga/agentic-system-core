@@ -113,7 +113,7 @@ test('AGSC-11-22: a retired item keeps its page, leaves the indexes and gains as
     [{ modified: '2026-09-01', slug: 'old', status: 'retired' }, { slug: 'new', uses: ['old'] }],
     { base: 'https://a.example/' },
   );
-  // F27-11 (R64): every Finding carries a message a reader can act on.
+  // every Finding carries a message a reader can act on.
   assert.deepStrictEqual(plain(result.findings), [{
     code: 'AGSC-E411', key: 'uses', message: 'uses names old, which is retired (AGSC-11-22)',
     severity: 'warn', slug: 'new', target: 'old',

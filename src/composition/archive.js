@@ -35,7 +35,7 @@
  * The container itself is the STORE method of APPNOTE.TXT §4.3.6…4.4.5 — no
  * compression, so every byte of the archive is a function of the entry names, the
  * entry bytes and the instant, with no encoder's choices in between. The pinned
- * library `fflate` (see `src/README.md`, D94 table) is the independent THIRD-PARTY
+ * library `fflate` (see the library table in `src/README.md`) is the independent THIRD-PARTY
  * READER that proves these bytes in `tests/composition/archive.test.js`: what this
  * module writes, a maintained library unpacks to exactly the input.
  *

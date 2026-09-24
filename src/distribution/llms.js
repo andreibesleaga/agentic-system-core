@@ -13,7 +13,7 @@
 
 const { commentSafe, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { provenanceHeader } = require('../knowledge/provenance-header.js');
-const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = require('../knowledge/chunks.js');
+const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS, termsFor } = require('../knowledge/chunks.js');
 
 /** AGSC-01-18: the default of `bundle.license_prose`. */
 const DEFAULT_LICENSE = TERMS;
@@ -104,7 +104,7 @@ function settle(bundle, options) {
     title: bundle.title,
     description: bundle.description == null ? '' : String(bundle.description),
     license: bundle.license_prose == null ? DEFAULT_LICENSE : bundle.license_prose,
-    terms: options.terms == null ? TERMS : options.terms,
+    terms: options.terms == null ? termsFor(bundle.license_prose) : options.terms,
     specVersion: options.specVersion,
     bundleVersion: options.bundleVersion,
     generatedAt: options.generatedAt,

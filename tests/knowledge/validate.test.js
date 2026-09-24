@@ -67,10 +67,14 @@ test('AGSC-02-21: a concept or cluster with no description warns AGSC-E408', () 
 });
 
 test('AGSC-01-21: a tag outside the closed vocabulary is AGSC-E203', () => {
-  const config = { tags: { allowed: ['agents'] } };
-  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['agents'] }, { config }), []);
-  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['nope'] }, { config }), ['AGSC-E203']);
-  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['nope'] }), []);
+  const config = { tags: { allowed: ['agents', 'patterns'] } };
+  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['agents', 'patterns'] }, { config }), []);
+  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['agents', 'nope'] }, { config }), ['AGSC-E203']);
+  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['agents', 'nope'] }), []);
+  // The 2–5 count is the warning AGSC-E213, with or without a closed vocabulary.
+  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['agents'] }), ['AGSC-E213']);
+  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['a', 'b', 'c', 'd', 'e', 'f'] }), ['AGSC-E213']);
+  assert.deepStrictEqual(codes({ ...CONCEPT, tags: ['a', 'b', 'c', 'd', 'e'] }), []);
 });
 
 test('AGSC-02-03: the schema\'s declared types are applied to failsafe strings', () => {

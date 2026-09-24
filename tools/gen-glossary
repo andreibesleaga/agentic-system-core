@@ -1,12 +1,43 @@
 #!/usr/bin/env node
-// Generates docs/GLOSSARY.md — the ubiquitous language of the specification — from the
-// definition itself: spec/00 §0.2 terms, the fourteen Link keys of AGSC-03-01, the 52
-// ontology terms (label + comment) of ontology/agsc.ttl, and the closed boundary lists of
-// spec/11. Never typed by hand (docs/ARCHITECTURE-DDD.md §3). Node stdlib only, zero
-// dependencies; exit 0 after writing, exit 1 if a source is missing. [AGSC-09-90, DS-4]
+// tools/gen-glossary — generates docs/GLOSSARY.md, the ubiquitous language of the
+// specification, from the definition itself: spec/00 §0.2 terms, the fourteen Link
+// keys of AGSC-03-01, the ontology terms (label + comment) of ontology/agsc.ttl, and
+// the closed boundary lists of spec/11. Never typed by hand (docs/ARCHITECTURE-DDD.md
+// §3). Node stdlib only, zero dependencies, deterministic.
+//
+//   gen-glossary [--check] [--help]
+//
+// With no flag it writes the file. `--check` writes nothing and exits 1 when the
+// committed file differs from what the sources generate, so a hand edit or a stale
+// copy fails the suite. Exit 0 written or current, 1 stale or a source missing,
+// 2 usage.
 'use strict';
 const fs = require('fs'), path = require('path');
-const root = path.resolve(__dirname, '..');
+
+const HELP = `gen-glossary [--check] [--help]
+
+  Generates docs/GLOSSARY.md from spec/00 §0.2, spec/03 AGSC-03-01, spec/11 and
+  ontology/agsc.ttl.
+
+  --check  write nothing; exit 1 when docs/GLOSSARY.md is not what the sources give
+  --help   this text
+
+  Exit 0 written or current, 1 stale or a source missing, 2 usage.
+`;
+
+/**
+ * A definition as the glossary shows it: the trailing trace bracket and every
+ * inline trace bracket (`[PRD-005]`, `[design]`, `[AGSC-02-99]`) removed, because
+ * the rule id beside each term is the reference a reader follows. A Markdown link
+ * (`[text](url)`) is left alone.
+ */
+function stripTrace(text) {
+  return String(text)
+    .replace(/\s*\[(?:design|(?:[A-Z][A-Za-z]*-)+\d[\w.-]*|RFC \d+[^\]]*)(?:,\s*[^\]]+)*\](?!\()/gu, '')
+    .replace(/\s+$/u, '');
+}
+
+function generate(root) {
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const out = [];
 out.push('# Glossary — the ubiquitous language, generated');
@@ -20,7 +51,7 @@ out.push('');
 const s00 = read('spec/00-overview.md');
 const sec = s00.slice(s00.indexOf('## 0.2 Terms'), s00.indexOf('## 0.3'));
 for (const m of sec.matchAll(/^- \*\*(AGSC-00-\d{2}[a-z]?)\*\* (.*)$/gm)) {
-  const text = m[2].replace(/\s*\[[^\]]*\]\s*$/, '');
+  const text = stripTrace(m[2].replace(/\s*\[[^\]]*\]\s*$/, ''));
   out.push(`- ${text} *(${m[1]})*`);
 }
 out.push('');
@@ -82,5 +113,46 @@ out.push('- **Tombstone** — the state of a node that stopped publishing: a val
 out.push('- **Retired** — an item status that keeps the IRI and page and leaves every export (AGSC-11-22).');
 out.push('- **Plugin contract** — declare · pin · inherit · prove (AGSC-11-16…19).');
 out.push('');
-fs.writeFileSync(path.join(root, 'docs/GLOSSARY.md'), out.join('\n') + '\n');
-console.log(`docs/GLOSSARY.md: ${rows.length} vocabulary terms, ${keys.length} link keys`);
+return { counts: { keys: keys.length, terms: rows.length }, text: out.join('\n') + '\n' };
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out?:Function, err?:Function, root?:string}} [io]
+ * @returns {number}
+ */
+function run(argv, io = {}) {
+  const out = io.out || ((t) => process.stdout.write(t));
+  const err = io.err || ((t) => process.stderr.write(t));
+  const root = io.root || path.resolve(__dirname, '..');
+  let check = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--check') { check = true; continue; }
+    err(`gen-glossary: unknown argument ${arg} (AGSC-E002)\n${HELP}`);
+    return 2;
+  }
+  let generated;
+  try { generated = generate(root); } catch (e) {
+    err(`gen-glossary: a source is missing: ${e.message} (AGSC-E901)\n`);
+    return 1;
+  }
+  const target = path.join(root, 'docs', 'GLOSSARY.md');
+  if (check) {
+    const current = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : null;
+    if (current !== generated.text) {
+      err('gen-glossary: docs/GLOSSARY.md is not what the sources generate; run node tools/gen-glossary (AGSC-E202)\n');
+      return 1;
+    }
+    out(`docs/GLOSSARY.md: current (${generated.counts.terms} vocabulary terms, ${generated.counts.keys} link keys)\n`);
+    return 0;
+  }
+  fs.writeFileSync(target, generated.text);
+  out(`docs/GLOSSARY.md: ${generated.counts.terms} vocabulary terms, ${generated.counts.keys} link keys\n`);
+  return 0;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, generate, run, stripTrace };

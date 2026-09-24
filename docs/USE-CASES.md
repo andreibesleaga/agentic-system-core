@@ -166,8 +166,9 @@ Bundle's own folder.
   IRI, digest, licence and terms, so an answer their system gives can be traced back.
 - **Surfaces:** the chunk export and the items, through the COGX adapter.
 - **Mode:** 1.
-- **Commands:** `agsc export --to cogx`, then their system's COGX import of
-  `dist/export/cogx/`. Back again: `agsc import --from cogx <archive-dir>`.
+- **Commands:** `agsc export --to cogx`, then Cognee's COGX import of
+  `dist/export/cogx/` (the other memory systems are reached through Cognee, which
+  reads this format; they do not read the archive themselves). Back again: `agsc import --from cogx <archive-dir>`.
   See [CONNECTORS.md](CONNECTORS.md), route 4.
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`, and the full format
   and round-trip tests in `tests/interchange/cogx.test.js`. The foreign system's own

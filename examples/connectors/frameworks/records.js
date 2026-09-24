@@ -10,11 +10,10 @@
 // the item IRI, the chunk digest, the licence, the Content Use Terms and the trust
 // mark — in the place the framework keeps free metadata, because every one of these
 // stores accepts "a string plus metadata" and none carries an integrity digest of
-// its own (research/38 §2.5). The trust mark is AGSC-08-18's: chunk text that
+// its own. The trust mark is AGSC-08-18's: chunk text that
 // re-enters a model is UNTRUSTED data.
 //
-// Shapes (the member names each framework documents, research/38 §2.5, read
-// 2026-09-23):
+// Shapes (the member names each framework documents, read 2026-09-23):
 //   langgraph  {namespace, key, value}   `BaseStore.put(namespace, key, value)`;
 //                                         namespace = [node id, item slug]
 //   autogen    {content, mime_type, metadata}   `MemoryContent`

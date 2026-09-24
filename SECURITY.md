@@ -9,8 +9,10 @@ report goes to the maintainer and is not public while it is being handled.
 Please do not open a public issue for a security problem, and please do not post the
 details anywhere public until a fix is released.
 
-If private reporting is unavailable to you, the contact of record is the `Contact:`
-field of this project's published `security.txt`, at
+If private reporting is unavailable to you, use the contact page at
+<https://andreibesleaga.com/contact/> and ask for a private channel; do not put the
+details in the first message. Both routes, in this order, are the `Contact:` lines of
+this project's published `security.txt`, at
 <https://agenticsystemcore.com/.well-known/security.txt> (RFC 9116).
 
 Useful in a report: what you did, what happened, what you expected, the version or

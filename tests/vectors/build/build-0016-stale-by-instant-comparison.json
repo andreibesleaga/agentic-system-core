@@ -1,0 +1,40 @@
+{
+  "area": "build",
+  "description": "AGSC-02-11: an item is stale when stale_after is earlier than the build instant, by comparison only — no decay function, no activation score, no access log. Derivation: both values are AGSC-02-06 instants (YYYY-MM-DDTHH:MM:SSZ), so their code-point order is their time order; with the build instant 2026-03-01T12:00:00Z the item whose stale_after is 2026-03-01T06:00:00Z is stale and the one whose stale_after is 2026-03-01T18:00:00Z is not — a comparison of the date alone would have called both stale or neither; an item with no stale_after is never stale, and an item whose stale_after equals the instant is not stale, since \"earlier than\" is strict. The stale list is sorted by slug in code-point order (AGSC-04-13).",
+  "expected": {
+    "stale": [
+      "morning"
+    ]
+  },
+  "id": "build-0016",
+  "input": {
+    "build_instant": "2026-03-01T12:00:00Z",
+    "items": [
+      {
+        "slug": "morning",
+        "stale_after": "2026-03-01T06:00:00Z",
+        "type": "concept"
+      },
+      {
+        "slug": "evening",
+        "stale_after": "2026-03-01T18:00:00Z",
+        "type": "concept"
+      },
+      {
+        "slug": "noon",
+        "stale_after": "2026-03-01T12:00:00Z",
+        "type": "concept"
+      },
+      {
+        "slug": "timeless",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-02-11"
+}

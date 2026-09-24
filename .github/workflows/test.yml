@@ -1,0 +1,74 @@
+# The test lane: the whole suite on three operating systems and two Node lines,
+# on every push and every pull request.
+#
+#   What runs  `npm ci`, `npm test` (unit, integration, architecture, the
+#              conformance vectors, the acceptance scenarios, the tests of the
+#              standard and the end-to-end tests that need nothing outside the
+#              repository), the rule-coverage matrix in its checking mode, and
+#              every shipped validator — the six that read the distribution, and
+#              validate-wellknown at Level 2 on a build of the minimal fixture.
+#   Secrets    none. Permissions: read the repository, nothing else.
+#   Determinism SOURCE_DATE_EPOCH is set for the fixture build; the suite fixes
+#              its own clocks and never reaches the network.
+#
+# Every action is pinned to a commit SHA with the version beside it; the SHAs are
+# the ones release.yml pins.
+
+name: test
+
+on:
+  push:
+    # Every branch; a release tag is exercised by release.yml's own gates job,
+    # which runs the same suite, so a tag push does not run the matrix twice.
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['22.12.0', '24']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: install
+        run: npm ci
+      - name: suite
+        run: npm test
+      - name: rule coverage (no unverified rule, matrix current)
+        run: node tools/rule-coverage --check
+      - name: validators over the distribution
+        shell: bash
+        run: |
+          for tool in validate-spec validate-schemas validate-ontology validate-vectors validate-features validate-diagrams; do
+            node "tools/$tool" --json > /dev/null
+          done
+      - name: validate-wellknown at Level 2 on a build of the minimal fixture
+        shell: bash
+        env:
+          SOURCE_DATE_EPOCH: '1767225600'
+          GIT_AUTHOR_NAME: Operator
+          GIT_AUTHOR_EMAIL: operator@example.org
+          GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z'
+          GIT_COMMITTER_NAME: Operator
+          GIT_COMMITTER_EMAIL: operator@example.org
+          GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z'
+        run: |
+          work="$RUNNER_TEMP/minimal"
+          cp -R tests/fixtures/minimal "$work"
+          # A Level-2 node publishes its ledger, which derives from a history (AGSC-10-04).
+          (cd "$work" && git init -q -b main && git add -A && git commit -q -m fixture \
+            && node "$GITHUB_WORKSPACE/bin/agsc.js" build)
+          node tools/validate-wellknown "$work/www/.well-known/knowledge-linkset" --level 2

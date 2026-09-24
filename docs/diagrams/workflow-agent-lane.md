@@ -26,4 +26,4 @@ flowchart TD
 
 The fast lane runs until the board is done or a task needs a person (`TASK_STATE_INPUT_REQUIRED`, `TASK_STATE_AUTH_REQUIRED`); the slow lane is unreachable from it by construction (AGSC-08-26(b), AGSC-08-28(c), AGSC-10-18). The dashed edge is the only link between the two: the human's one configured, revocable `publish: auto` choice (AGSC-08-29).
 
-Trace: PRD-063, PRD-064, PRD-065 · D87, D88 · spec/08 §8.6, spec/10 §10.6, spec/01 AGSC-01-36…38.
+Trace: PRD-063, PRD-064, PRD-065 · spec/08 §8.6, spec/10 §10.6, spec/01 AGSC-01-36…38.

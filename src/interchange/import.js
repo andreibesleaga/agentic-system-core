@@ -333,7 +333,7 @@ function plan(input, options) {
     for (const tag of mapped.frontmatter.tags || []) allTags.add(tag);
     if (typeof card.record.deck === 'string') deckOf.push({ slug, deck: card.record.deck });
 
-    // AGSC-02-98 + R59: the picture and the source it is compiled from, both
+    // AGSC-02-98: the picture and the source it is compiled from, both
     // named in `attachments[]` so that neither is an orphan (AGSC-E414) and both
     // are served at `/attachments/<slug>/<file>` (AGSC-06-01).
     if (compiled !== null && compiled.svg !== null) {
@@ -345,7 +345,7 @@ function plan(input, options) {
       writes.push({ path: `content/diagrams/${slug}.diagram`, text: source });
       diagramCount += 1;
       // AGSC-02-98 admits the same picture as an ATTACHMENT, with its DSL source
-      // beside it (R59) — a Bundle that must carry the rendered bytes in the
+      // beside it — a Bundle that must carry the rendered bytes in the
       // repository, for a reader who never runs the build. The two rules pull in
       // opposite directions, so the choice is the operator's and not this
       // module's: `attachDiagrams` is off unless a caller asks for it.

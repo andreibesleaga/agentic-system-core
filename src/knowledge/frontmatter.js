@@ -49,7 +49,12 @@ function split(markdown, options = {}) {
     errors.push(validate.finding('AGSC-E108', 'file uses CR or CRLF line endings (AGSC-01-14)', { file }));
     text = text.replace(/\r\n?/gu, '\n');
   }
-  // AGSC-01-14's other two obligations (F27-09): NFC, and exactly one trailing LF.
+  // AGSC-01-14 as amended at rc.6: no C0 control but TAB and LF anywhere in a `.md`
+  // file, body included (CR is the line-ending fault above, already repaired).
+  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/u.test(text)) {
+    errors.push(validate.finding('AGSC-E108', 'file contains a C0 control character other than TAB and LF (AGSC-01-14)', { file }));
+  }
+  // AGSC-01-14's other two obligations: NFC, and exactly one trailing LF.
   // Neither is repaired in memory — unlike the BOM and CRLF faults above, neither
   // blocks the rest of the diagnosis, and rewriting the body here would change the
   // bytes every downstream emitter is asked to reproduce (AGSC-04-07, AGSC-04-24).

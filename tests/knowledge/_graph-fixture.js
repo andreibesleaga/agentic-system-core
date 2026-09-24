@@ -88,7 +88,7 @@ function options(extra = {}) {
       id: 'example',
       spec_version: '1.0.0-rc.4',
       license_prose: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
-      // rc.5 (V9A-02): `usage_info` is gone — the Content Use Terms identifier is the
+      // rc.5: `usage_info` is gone — the Content Use Terms identifier is the
       // CONSTANT of AGSC-06-18 (nquads.CONTENT_USE_TERMS) and is never configured.
     },
     attachmentBytes: { 'a2a/live.svg': '<svg xmlns="http://www.w3.org/2000/svg"/>' },

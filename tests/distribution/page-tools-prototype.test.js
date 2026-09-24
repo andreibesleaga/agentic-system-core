@@ -72,7 +72,7 @@ test('remember refuses an inherited member as a kind and never names a function 
 test('the real kinds still map, so the fallback is not vacuous', () => {
   const tools = pageTools.pageToolset(corpus(), null);
   const answer = tools.call('remember', {
-    kind: 'episode', title: 'Title Here', body: 'b', at: '2026-01-01T00:00:00Z',
+    actor: 'process:ci', kind: 'episode', title: 'Title Here', body: 'b', at: '2026-01-01T00:00:00Z',
   });
   assert.equal(answer.body.frontmatter.type, 'episode');
   assert.equal(answer.body.path, 'content/episodes/title-here.md');

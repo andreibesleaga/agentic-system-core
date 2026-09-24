@@ -1,4 +1,4 @@
-# Ontology mapping — item types and Links to RDF (audit/D §1.3, addendum)
+# Ontology mapping — item types and Links to RDF
 
 **What this shows.** How the six item types and the fourteen Link keys map onto RDF classes and properties, including the SKOS treatment that makes nested Clusters a `skos:Collection` tree rather than a flat hierarchy.
 
@@ -22,7 +22,7 @@ flowchart LR
   ClusterT -->|"rdf:type skos:Collection + skos:ConceptScheme"| RDF
   Gate -->|"rdf:type ns:Gate"| RDF
 
-  subgraph LINKS["Fourteen Link keys -> RDF properties (audit/D S1.3 + D53)"]
+  subgraph LINKS["Fourteen Link keys -> RDF properties"]
     related
     broader
     narrower
@@ -63,9 +63,9 @@ flowchart LR
 ```
 
 Item `type` maps 1:1 to an OWL 2 RL-safe class in `ns/agsc.ttl` (`https://w3id.org/agentic-system-core/ns#`,
-e.g. `ns:Concept` — the exact class named in the walkthrough's `/ns/` example, audit/D §3(j)); `Cluster`
+e.g. `ns:Concept` — the exact class named in the walkthrough's `/ns/` example); `Cluster`
 is additionally a `skos:Collection` plus, at the Bundle root, a `skos:ConceptScheme` (PLAN.md §6(a)
-step 6). All fourteen authored Link keys map to a fixed property per audit/D §1.3 and D53: three vocabularies in
+step 6). All fourteen authored Link keys map to a fixed property (AGSC-05-26): three vocabularies in
 play — `skos:` (advisory/hierarchy), `dcterms:`/`prov:` (hard semantics: closure, derivation,
 supersession), and the project's own `asc:` terms for `uses`/`excludes`/`contradicts` and the five
 Mode-2 keys, which have no exact SKOS/DCTERMS/PROV equivalent. Only the nine core keys carry
@@ -74,4 +74,4 @@ composition semantics; the Mode-2 five are navigational (combiner semantics `non
 exports as `<parent> skos:member <child>` instead, so Clusters form a nested `skos:Collection` tree
 rather than a flat SKOS hierarchy.
 
-Trace: PRD-002, PRD-022 · audit/D §1.3, §1.4, addendum (2026-09-01) · PLAN.md §5.1 (`skos.js`, `jsonld.js`, `turtle.js`, `nquads.js`, `rdfxml.js`), §6(a) step 6.
+Trace: PRD-002, PRD-022 · addendum (2026-09-01) · PLAN.md §5.1 (`skos.js`, `jsonld.js`, `turtle.js`, `nquads.js`, `rdfxml.js`), §6(a) step 6.

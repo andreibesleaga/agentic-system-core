@@ -235,7 +235,7 @@ const NEVER_EXPORTED = Object.freeze(['verdict_digest', 'prov.agent', 'prov.agre
 /**
  * AGSC-06-18: the **Content Use Terms identifier** is a constant of the
  * specification — "it names the terms every export carries, INDEPENDENTLY of
- * `bundle.license_prose`". AGSC-05-26 as amended at rc.5 (V9A-02) makes it the
+ * `bundle.license_prose`". AGSC-05-26 as amended at rc.5 makes it the
  * object of `schema:usageInfo` on the Bundle node AND on every item node, as an
  * `xsd:string` literal (AGSC-05-31 form (c)), so that `pages/<slug>.jsonld` and the
  * `export --jsonl` line of AGSC-01-27 carry the licence without a second fetch.
@@ -261,7 +261,12 @@ function licenceQuads(bundle, subject, graph) {
   if (bundle.license_prose !== undefined) {
     out.push(quad(iri(subject), iri(`${SCHEMA}license`), literal(String(bundle.license_prose)), graph));
   }
-  out.push(quad(iri(subject), iri(`${SCHEMA}usageInfo`), literal(CONTENT_USE_TERMS), graph));
+  // AGSC-06-18 (rc.6, 2026-09-24): the Content Use Terms only where the publisher
+  // adopts them; otherwise the prose licence stands in their place.
+  const adopted = bundle.license_prose == null || String(bundle.license_prose) === CONTENT_USE_TERMS;
+  const usage = bundle.terms != null ? String(bundle.terms)
+    : (adopted ? CONTENT_USE_TERMS : String(bundle.license_prose));
+  out.push(quad(iri(subject), iri(`${SCHEMA}usageInfo`), literal(usage), graph));
   return out;
 }
 
@@ -400,7 +405,7 @@ function datatypeQuads(item, subject, graph) {
 /**
  * `date`/`modified` → `dcterms:created`/`dcterms:modified` (AGSC-05-27).
  *
- * At rc.5 (/R-06) the AGSC-05-26 table gained the two rows the gap this comment
+ * At rc.5 the AGSC-05-26 table gained the two rows the gap this comment
  * used to report was about: `date` → `dcterms:created` and `modified` →
  * `dcterms:modified`, both `xsd:dateTime` at midnight of that date (AGSC-04-10), and
  * AGSC-05-31 form (b) names them as the one DCTerms exception to form (c). The

@@ -9,7 +9,7 @@
  * identifier `com.agenticsystemcore/knowledge` is advertised in the server's
  * capabilities; AGSC-09-16: the manifest and the results are the same objects
  * the browser transport registers, because both call one implementation.
- * Requirements: PRD-023, D41, D68(2), research/25 R2-D2.
+ * Requirements: PRD-023.
  *
  * The JSON-RPC framing, the initialize handshake and the version negotiation
  * are the official SDK's (`@modelcontextprotocol/sdk@1.30.0`, a real CommonJS
@@ -124,7 +124,7 @@ function createServer(bundle, options) {
  *
  * AGSC-09-13 ("MUST NOT write non-protocol bytes to stdout") is kept by the
  * CLI shell, not by a guard here: `application/cli/main.js` knows `mcp` is a
- * STREAMING verb and prints no diagnostic line for it (F's interim
+ * STREAMING verb and prints no diagnostic line for it (an earlier
  * `protocolOnlyStdout` monkey-patch of the host stream is deleted).
  */
 function serve(ctx) {

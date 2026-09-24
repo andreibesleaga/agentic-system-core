@@ -77,7 +77,7 @@ test('a symlink out of the root is refused too (AGSC-E902)', () => sandbox((dir)
   assert.throws(() => port.readFile('link.md'), (e) => e.code === 'AGSC-E902');
 }));
 
-// F27-01: the realpath containment check used to run only in `readFile`, so a planted
+// the realpath containment check used to run only in `readFile`, so a planted
 // directory symlink let every other method work outside the Bundle root (AGSC-E902,
 // AGSC-01-35, AGSC-01-16). It now lives in the shared `abs()` helper.
 test('a planted directory symlink cannot escape the root in any method (AGSC-E902, AGSC-01-35)', () => sandbox((dir) => {

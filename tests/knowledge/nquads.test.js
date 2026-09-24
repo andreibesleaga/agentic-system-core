@@ -182,11 +182,11 @@ test('the Bundle node is emitted only when the Bundle is given (AGSC-05-03/05-26
     bundle: { spec_version: '1.0.0-rc.4', license_prose: 'LicenseRef-X' },
   });
   assert.ok(withBundle.includes('#specVersion> "1.0.0-rc.4"'));
-  // AGSC-05-26 as amended at rc.5 (V9A-02): both schema.org properties are
-  // `xsd:string` literals (AGSC-05-31 form c), and `schema:usageInfo` carries the
-  // CONSTANT Content Use Terms identifier of AGSC-06-18, never a caller-supplied IRI.
+  // AGSC-05-26: both schema.org properties are `xsd:string` literals (AGSC-05-31
+  // form c), never a caller-supplied IRI; AGSC-06-18 as amended at rc.6 puts the
+  // prose licence in `schema:usageInfo` where the Content Use Terms are not adopted.
   assert.ok(withBundle.includes('<https://schema.org/license> "LicenseRef-X"^^<http://www.w3.org/2001/XMLSchema#string>'));
-  assert.ok(withBundle.includes(`<https://schema.org/usageInfo> "${nq.CONTENT_USE_TERMS}"^^<http://www.w3.org/2001/XMLSchema#string>`));
+  assert.ok(withBundle.includes('<https://schema.org/usageInfo> "LicenseRef-X"^^<http://www.w3.org/2001/XMLSchema#string>'));
   assert.ok(!withBundle.includes('<https://schema.org/usageInfo> <'), 'usageInfo was emitted as an IRI');
 });
 
@@ -196,7 +196,8 @@ test('the two configuration licence rows are on the Bundle AND on every item (AG
   const text = nq.toNQuads(items, options);
   for (const subject of ['<https://e.org/>', '<https://e.org/concepts/a/>']) {
     assert.ok(text.includes(`${subject} <https://schema.org/license> "CC0-1.0"^^<${nq.XSD_STRING}>`), subject);
-    assert.ok(text.includes(`${subject} <https://schema.org/usageInfo> "${nq.CONTENT_USE_TERMS}"^^<${nq.XSD_STRING}>`), subject);
+    // AGSC-06-18 as amended at rc.6: a CC0 Bundle has not adopted the Content Use Terms.
+    assert.ok(text.includes(`${subject} <https://schema.org/usageInfo> "CC0-1.0"^^<${nq.XSD_STRING}>`), subject);
   }
   // With no configuration there is no licence to name: a bare item list is unchanged,
   // which is what keeps graph-0001/0002/0004/0006 byte-identical across rc.5.

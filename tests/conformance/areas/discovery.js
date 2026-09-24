@@ -6,7 +6,7 @@
 // byte layout of /llms.txt and /llms-full.txt, disc-0013 / disc-0014 their rc.6
 // successors (the same two files with the content-version line of the provenance
 // header), disc-0015 the `agsc-bundle-version` attribute at three levels of
-// visibility, disc-0012 the robots groups of AGSC-06-18. disc-0001, disc-0002, disc-0003, disc-0006, disc-0007,
+// visibility, disc-0012 the robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node carries. disc-0001, disc-0002, disc-0003, disc-0006, disc-0007,
 // disc-0010 and disc-0011 are withdrawn and are never run (AGSC-00-16).
 
 const discovery = require('../../../src/distribution/discovery.js');
@@ -162,7 +162,7 @@ function llmsCase(vector) {
 }
 
 /**
- * disc-0008 (rc.5, V9A-26) — AGSC-06-14: every published item is reachable from
+ * disc-0008 — AGSC-06-14: every published item is reachable from
  * `/llms.txt`, directly or through a LISTED cluster section.
  *
  * Reachability is read off the emitted index itself: an item is reachable when its
@@ -222,7 +222,7 @@ function reachabilityCase(vector) {
 }
 
 /**
- * disc-0009 (rc.5, V9A-26) — AGSC-06-19: `sitemap.xml` completeness, URL order and
+ * disc-0009 — AGSC-06-19: `sitemap.xml` completeness, URL order and
  * one `lastmod` equal to the BUILD INSTANT for every entry.
  *
  * The XML serialisation is deliberately not asserted (`xml_bytes_asserted: false`):
@@ -261,7 +261,7 @@ function sitemapCase(vector) {
 }
 
 /**
- * disc-0012 — AGSC-06-18 as amended at rc.6 (PSF-01): the robots groups.
+ * disc-0012 — AGSC-06-18 as amended at rc.6: the robots groups.
  *
  * The file's bytes are NOT asserted (`file_bytes_asserted: false`): no rule pins
  * them, so the vector reads the emitted file back into groups and compares those.
@@ -339,7 +339,7 @@ function parseRobots(text) {
 }
 
 /**
- * disc-0015 (rc.6, AGSC-06-08 as amended /) — `agsc-bundle-version` as a
+ * disc-0015 (rc.6, AGSC-06-08 as amended) — `agsc-bundle-version` as a
  * bundle fact: one value on the anchor's `describedby` link at Level 2, omitted at
  * Level 0 with every other bundle fact, omitted on a `restricted` node although it
  * is Level 2, and `AGSC-E210` when a restricted node publishes it anyway.
@@ -413,10 +413,50 @@ function bundleVersionAttributeCase(vector) {
   return checks(list);
 }
 
+/**
+ * disc-0017 (rc.6, AGSC-09-93 with AGSC-10-04) — a Level-2 document of a public
+ * node carries the `rel#ledger` link; without it the checker reports AGSC-E202, and
+ * a restricted node, which publishes no ledger link (AGSC-11-20), stays valid.
+ * The documents are BUILT by the publisher module, as in disc-0015, and the
+ * verdict is the checker's.
+ */
+function ledgerRequiredCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    if (want === undefined) { list.push([input.name, false, 'the vector states no expected case of this name']); continue; }
+    const restricted = input.visibility === 'restricted';
+    const doc = discovery.linkset(
+      { site: { base: input.base }, ...(restricted ? { visibility: 'restricted', access: `${input.base}/access/` } : {}) },
+      {
+        level: input.level,
+        bundleVersion: 'v1.4.0',
+        bundleHash: discovery.digestOf('bundle'),
+        counts: discovery.countsOf([]),
+        digests: digestsFor(['/graph.jsonld', '/llms.txt', '/graph.nq', '/graph.ttl',
+          '/ns/context.jsonld', '/ns/agsc.ttl', '/now.md', '/skills/index.json', '/ledger.jsonl']),
+        generatedAt: '2026-09-16T00:00:00Z',
+        ledgerHead: input.ledger_head,
+        specVersion: vector.options.spec_version,
+      },
+    );
+    const errors = discovery.check(doc, { level: input.level }).filter((f) => f.severity === 'error');
+    list.push([`${input.name} valid`, (errors.length === 0) === want.valid, JSON.stringify(errors)]);
+    if (want.findings !== undefined) {
+      const matched = findingsMatch(want.findings, errors);
+      list.push([`${input.name} findings`, matched.ok && errors.length === want.findings.length,
+        matched.detail || JSON.stringify(errors)]);
+    }
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'disc-0013': llmsCase,
   'disc-0014': llmsCase,
   'disc-0015': bundleVersionAttributeCase,
+  'disc-0017': ledgerRequiredCase,
   'disc-0003': linksetCase,
   'disc-0016': linksetCase,
   'disc-0004': level0Case,

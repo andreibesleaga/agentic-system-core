@@ -32,7 +32,7 @@ test('an object property is @id and a datatype property carries its expanded ran
   assert.deepStrictEqual(c.Concept, { '@id': 'asc:Concept' });
 });
 
-test('no term is ever mapped to null (AR2-44)', () => {
+test('no term is ever mapped to null', () => {
   const c = fullContext()['@context'];
   assert.ok(Object.values(c).every((definition) => definition !== null));
 });

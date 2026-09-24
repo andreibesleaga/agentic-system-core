@@ -1,4 +1,5 @@
 'use strict';
+// verifies AGSC-08-15
 // AGSC-08-15 (`no-secrets`) and AGSC-01-37 (a tracked `.env`).
 // Every fixture below is a SHAPE, never a live credential.
 

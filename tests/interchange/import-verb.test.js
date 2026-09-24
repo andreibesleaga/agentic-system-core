@@ -41,7 +41,7 @@ function workspace(extra = {}) {
   temporaries.push(dir);
   fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify({
     bundle: { id: 'fixture-node', operator: 'human:tester' },
-    // AGSC-06-18 as amended at rc.6 (PSF-01): a node that publishes a TDM
+    // AGSC-06-18 as amended at rc.6: a node that publishes a TDM
     // reservation — which every 1.x node does — names at least one crawler token,
     // or its build is AGSC-E202. The list is the publisher's own; these are the six
     // whose operators' own documentation says they collect content for training.
@@ -96,10 +96,11 @@ function tree(dir) {
   return out;
 }
 
-test('AGSC-09-08: a missing --from, --selection or directory is AGSC-E003, exit 1', () => {
+test('AGSC-09-08: a missing --from, --selection or directory is AGSC-E003, exit 2', () => {
   const dir = workspace();
   const bare = run(['import', '--json', '--quiet'], dir);
-  assert.strictEqual(bare.exit, 1);
+  // AGSC-09-08: a missing argument is the usage class, exit 2, even as a finding.
+  assert.strictEqual(bare.exit, 2);
   // Two, not three, since: `--selection` belongs to the `old-site` ADAPTER
   // (AGSC-01-26a) and is required only when that adapter is the one named, so a bare
   // `import` is missing `--from` and the source directory and nothing else.
@@ -109,10 +110,10 @@ test('AGSC-09-08: a missing --from, --selection or directory is AGSC-E003, exit 
   assert.strictEqual(tree(dir).size, 2, 'a refused invocation writes nothing');
 });
 
-test('AGSC-09-08: a --from value outside the set is AGSC-E002 and names the set', () => {
+test('AGSC-01-26a: a --from value outside the set is AGSC-E203, exit 1, and names the set', () => {
   const result = run(['import', '--from', 'notion', FIXTURE, '--json', '--quiet'], workspace());
   assert.strictEqual(result.exit, 1);
-  assert.deepStrictEqual(result.envelope.findings.map((f) => f.code), ['AGSC-E002']);
+  assert.deepStrictEqual(result.envelope.findings.map((f) => f.code), ['AGSC-E203']);
   assert.match(result.envelope.findings[0].message, /old-site/u);
   assert.match(result.envelope.findings[0].message, /okf/u);
   // The `okf` reader of AGSC-01-22 was added later; `--selection` stays the `old-site`
@@ -121,7 +122,7 @@ test('AGSC-09-08: a --from value outside the set is AGSC-E002 and names the set'
   assert.deepStrictEqual([...verb.SELECTION_REQUIRED], ['old-site']);
 });
 
-test('AGSC-09-09 (rc.5, ENG1 §3): an adapter\'s own flags are ADAPTER-SCOPED', () => {
+test('AGSC-09-09: an adapter\'s own flags are ADAPTER-SCOPED', () => {
   // "a memory adapter selected by `export --to` / `import --from` MAY define further
   // flags of its own … an engine that does not ship the adapter rejects them with
   // AGSC-E002." So `--selection` is legal under `old-site` and a usage error under
@@ -180,7 +181,8 @@ test('AGSC-01-17: a Bundle whose configuration lacks an identity is AGSC-E003, n
   temporaries.push(dir);
   fs.writeFileSync(path.join(dir, 'agsc.config.json'), '{"spec_version":"1.0.0-rc.4"}\n');
   const result = run(IMPORT, dir);
-  assert.strictEqual(result.exit, 1);
+  // AGSC-09-08: AGSC-E003 is the usage class, exit 2.
+  assert.strictEqual(result.exit, 2);
   const messages = result.envelope.findings.filter((f) => f.code === 'AGSC-E003').map((f) => f.message);
   assert.ok(messages.some((m) => /`bundle\.operator`/u.test(m)), messages.join('; '));
   assert.ok(messages.some((m) => /`site\.title`/u.test(m)), messages.join('; '));
@@ -429,7 +431,7 @@ test('a re-import keeps the Bundle\'s own configuration members (contribute, aut
 });
 
 test('the Bundle configuration is read from the FILE, and an unreadable one is {}', () => {
-  // PAT1-01: the import used to rebuild `agsc.config.json` from a template and
+  // the import used to rebuild `agsc.config.json` from a template and
   // silently delete every member it cannot derive. It now starts from the file on
   // disk — the FILE, not `ctx.config`, whose AGSC-09-09 precedence may carry values
   // a user file or the environment supplied, which writing back would put settings

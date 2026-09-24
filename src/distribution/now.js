@@ -54,10 +54,15 @@ function spend(items, config, options = {}) {
   return { month, episodes: usage.length, ...meter, findings };
 }
 
-/** AGSC-02-06: an item whose `stale_after` has passed, at the build instant. */
+/**
+ * AGSC-02-11: an item is stale when its `stale_after` is EARLIER than the build
+ * instant, by comparison only. Both are AGSC-02-06 instants (`YYYY-MM-DDTHH:MM:SSZ`),
+ * so the code-point order of the two strings is their time order; comparing against
+ * the date alone missed an item that went stale earlier on the build's own day.
+ */
 function staleItems(items, instant) {
   return (items || [])
-    .filter((i) => i.stale_after != null && String(i.stale_after) < String(instant).slice(0, 10))
+    .filter((i) => i.stale_after != null && String(i.stale_after) < String(instant))
     .map((i) => String(i.slug))
     .sort(compareCodePoint);
 }

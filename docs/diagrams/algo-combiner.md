@@ -41,4 +41,4 @@ in fact valid — `tests/vectors/compose/compose-0001` is exactly that case. The
 identically in the CLI (`src/composition/closure.js`) and in the browser (`www/js/agsc-core.js`, no
 `node:` imports) — a vector asserts the two are byte-identical for the same input (PRD-038).
 
-Trace: PRD-036, PRD-037, PRD-038 · D48(2) · audit/D §1.3 (Link "Combiner semantics" column) · PLAN.md §6(c).
+Trace: PRD-036, PRD-037, PRD-038 · PLAN.md §6(c).

@@ -149,3 +149,20 @@ test('an asset the port refuses to read is published at no route, and nothing th
   assert.ok(Array.isArray(findings), 'the build must complete rather than throw');
 });
 
+
+test('AGSC-06-01 (rc.6): an authored theme.js is replaced by the engine script, and the build says so', () => {
+  const dir = nodeFs.mkdtempSync(path.join(require('node:os').tmpdir(), 'agsc-theme-'));
+  try {
+    nodeFs.cpSync(MINIMAL, dir, { recursive: true });
+    nodeFs.mkdirSync(path.join(dir, 'content', 'assets'));
+    nodeFs.writeFileSync(path.join(dir, 'content', 'assets', 'theme.js'), 'alert(1)\n');
+    nodeFs.appendFileSync(path.join(dir, 'content', 'concepts', 'handoff.md'), '\n[script](../assets/theme.js)\n');
+    const { bundle, fs } = load(dir);
+    const { files, findings } = site.build(bundle, { clock: FIXED_CLOCK, fs },
+      { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+    assert.ok(!String(files.get('/assets/theme.js')).includes('alert(1)'), 'the authored script was published');
+    assert.ok(findings.some((f) => f.code === 'AGSC-E506' && f.file === 'content/assets/theme.js'));
+  } finally {
+    nodeFs.rmSync(dir, { force: true, recursive: true });
+  }
+});

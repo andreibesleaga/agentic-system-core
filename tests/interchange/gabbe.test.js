@@ -1,6 +1,6 @@
 'use strict';
-// tests/interchange/gabbe.test.js — the GABBE memory adapter both ways (AGSC-01-26a,
-// which names "the … GABBE-memory both-ways adapters of D39/D53"). `export --to gabbe` / `import --from gabbe`.
+// tests/interchange/gabbe.test.js — the GABBE memory adapter both ways (AGSC-01-26a:
+// the GABBE-memory adapters both ways). `export --to gabbe` / `import --from gabbe`.
 //
 // The kit layout asserted here is the one the GABBE kit's own files state
 // (`docs/SCHEMA.md` "Every skill is a Markdown file with YAML frontmatter",

@@ -9,7 +9,7 @@
  * (Step 5, port wiring), AGSC-07-24 and AGSC-02-97 (`compose --from` over a
  * `kind: architecture` item's `yaml agsc-selection` block), AGSC-11-22 (a
  * retired item named in a selection is AGSC-E802).
- * Requirements: PRD-036, PRD-038, R6, R12.
+ * Requirements: PRD-036, PRD-038.
  *
  * PURE: no file system, no process, no clock, no network, no randomness
  * (tests/arch/core-purity.test.js). Every fault is a Finding or a verdict

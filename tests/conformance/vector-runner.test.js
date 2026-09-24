@@ -1,4 +1,5 @@
 'use strict';
+// verifies AGSC-00-10, AGSC-00-11, AGSC-00-13
 // The conformance runner (AGSC-09-02, AGSC-09-04, AGSC-09-06).
 //
 // The RUN itself is `src/application/conformance.js` — the same module

@@ -6,7 +6,7 @@
 // INDEPENDENT BY CONSTRUCTION: Node built-ins only, no import from `src/`
 // (AGSC-09-90). Mermaid is a browser renderer and no maintained parser is pinned by
 // this distribution, and `docs/diagrams/README.md` records that these diagrams are
-// "never rendered in CI (D20: Mermaid emitted as text only; no rendering dependency
+// "never rendered in CI (Mermaid emitted as text only; no rendering dependency
 // and no rendering step in CI)". What this tool checks is therefore the lexical
 // contract that pack states about itself: a declared diagram type, balanced
 // delimiters, no reserved bare node id, and — the part that actually rots — every

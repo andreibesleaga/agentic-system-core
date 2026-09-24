@@ -41,6 +41,10 @@ function level2(extra) {
         type: 'application/ld+json',
       }],
       license: [{ href: `${BASE}legal/` }],
+      // AGSC-10-04 / AGSC-09-93 (rc.6): a public Level-2 document links the ledger.
+      [`${REL}ledger`]: [{
+        'agsc-ledger-head': ['a'.repeat(64)], digest: [DIGEST], href: `${BASE}ledger.jsonl`, type: 'application/jsonl',
+      }],
       ...extra,
     }],
   };
@@ -52,6 +56,7 @@ function validateWellknown(doc) {
   const at = path.join(dir, '.well-known', 'knowledge-linkset');
   fs.writeFileSync(at, `${canonicalize(doc)}\n`);
   fs.writeFileSync(path.join(dir, 'graph.jsonld'), ''); // the digest above is SHA-256 of zero bytes
+  fs.writeFileSync(path.join(dir, 'ledger.jsonl'), '');
   const run = spawnSync(process.execPath,
     [path.join(REPO, 'tools', 'validate-wellknown'), at, '--level', '2', '--json'], { encoding: 'utf8' });
   fs.rmSync(dir, { force: true, recursive: true });

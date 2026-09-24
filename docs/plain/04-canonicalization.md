@@ -8,4 +8,4 @@
 
 **Why it matters.** Because outputs are deterministic, a digest in the discovery document is a real integrity check, two nodes can compare notes, and a reader can rebuild a site from its source and check that nothing changed.
 
-Rules: `spec/04-canonicalization.md`, `AGSC-04-01` … `AGSC-04-24`.
+Rules: `spec/04-canonicalization.md`, `AGSC-04-01` … `AGSC-04-25`.

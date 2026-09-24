@@ -1,0 +1,71 @@
+{
+  "area": "prov",
+  "description": "AGSC-08-06's DCO-Plus trailer grammar, case for case as prov-0004, which it supersedes, with a fictitious contributor (`Ada Example <ada@example.org>`, operator `human:ada`) and a neutral producer (`example-model/1.0`) in every sample line. Every case is read straight off the ABNF of that rule. (1) A bare signoff conforms: `signoff = \"Signed-off-by:\" SP name SP \"<\" email \">\" SP \"(\" agreement \")\"`, with `agreement = \"CA-v1\"`; `name` admits internal spaces and the email boundary is the LAST `SP \"<\"` on the line. (2) `trailer-block = signoff *( LF assisted )` admits zero or more Assisted-by lines, whose `actor` is exactly the `human:<id>` form AGSC-02-07 requires of prov.operator. (3) A missing `(CA-v1)` is malformed. (4) `name` MUST NOT end with SP. (5) An actor that is not `human:<id>` is malformed. (6) An `idchar` outside `lcalpha / DIGIT / \".\" / \"_\" / \"-\"` — an upper-case letter — is malformed. Every malformed case is AGSC-E504.",
+  "expected": {
+    "results": [
+      {
+        "name": "signoff-only",
+        "valid": true
+      },
+      {
+        "name": "signoff-and-assisted",
+        "valid": true
+      },
+      {
+        "code": "AGSC-E504",
+        "name": "agreement-missing",
+        "valid": false
+      },
+      {
+        "code": "AGSC-E504",
+        "name": "name-ends-with-space",
+        "valid": false
+      },
+      {
+        "code": "AGSC-E504",
+        "name": "actor-not-human",
+        "valid": false
+      },
+      {
+        "code": "AGSC-E504",
+        "name": "actor-uppercase",
+        "valid": false
+      }
+    ]
+  },
+  "id": "prov-0005",
+  "input": {
+    "trailers": [
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)",
+        "name": "signoff-only"
+      },
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)\nAssisted-by: example-model/1.0 (operator: human:ada)",
+        "name": "signoff-and-assisted"
+      },
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org>",
+        "name": "agreement-missing"
+      },
+      {
+        "block": "Signed-off-by: Ada  <ada@example.org> (CA-v1)",
+        "name": "name-ends-with-space"
+      },
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)\nAssisted-by: example-model/1.0 (operator: agent:example)",
+        "name": "actor-not-human"
+      },
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)\nAssisted-by: example-model/1.0 (operator: human:Ada)",
+        "name": "actor-uppercase"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6 as the successor of prov-0004; the sample lines changed, the expected results are prov-0004's, derived by hand from the ABNF",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-08-06"
+}

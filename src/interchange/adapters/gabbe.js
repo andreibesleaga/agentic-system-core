@@ -1,7 +1,7 @@
 'use strict';
 /**
  * CONTEXT Interchange — memory adapter `gabbe` (AGSC-01-26a names "the Basic Memory
- * and GABBE-memory both-ways adapters of D39/D53").
+ * and GABBE-memory both-ways adapters").
  *
  * `export --to gabbe` writes a knowledge node into the folder layout of a GABBE
  * agent kit, and `import --from gabbe <kit-dir>` reads a kit's memory and skills
@@ -265,7 +265,7 @@ function run(bundle, options) {
   const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
   const header = provenanceLines({
     bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
-    license, specVersion: options.specVersion, terms: chunks.TERMS,
+    license, specVersion: options.specVersion, terms: chunks.termsFor(license),
   });
   const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
 

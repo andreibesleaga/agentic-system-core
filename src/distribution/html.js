@@ -53,9 +53,9 @@ const NO_CLAIM_SENTENCE = 'Independent work, published as it is, with no warrant
   + ' are their owners\' marks.';
 
 /**
- * AGSC-06-18: the Content Use Terms line, on every prose-carrying page. The
- * identifier is a constant, independent of `bundle.license_prose`, which names the
- * licence of the prose itself and may differ.
+ * AGSC-06-18: the licence line, on every prose-carrying page. The Content Use Terms
+ * identifier is named where the publisher adopts the terms (`bundle.license_prose`
+ * is that identifier or absent); any other prose licence is named alone.
  */
 /**
  * Did the publisher adopt the Content Use Terms as the licence of the prose? An
@@ -88,7 +88,9 @@ function termsLine(licenseProse, options = {}) {
   const copyright = author !== '' && year !== '' ? `&#169; ${escapeHtml(year)} ${escapeHtml(author)}. ` : '';
   const rights = adoptsTerms(licenseProse)
     ? `Prose: ${terms}, all rights reserved, citing and linking allowed.`
-    : `Prose: <span>${escapeHtml(license)}</span>. Content Use Terms: ${terms}.`;
+    // AGSC-06-18 (rc.6, 2026-09-24): the Content Use Terms accompany the prose only
+    // where the publisher adopts them; another licence is named alone.
+    : `Prose: <span>${escapeHtml(license)}</span>.`;
   const text = [
     `${copyright}${rights}`,
     options.aiAssisted === true ? escapeHtml(FOOTER_AI_NOTE) : '',
@@ -176,8 +178,9 @@ function shell(page) {
     })}</footer>`,
     '</body>',
     '</html>',
-    '',
-  ].filter((l) => l !== '').join('\n');
+    // AGSC-04-07: exactly one trailing LF. An empty line here was removed by the
+    // filter below, so every page used to end without one.
+  ].filter((l) => l !== '').join('\n').concat('\n');
 }
 
 /**
@@ -379,7 +382,7 @@ function composePage({ assets }, options = {}) {
     title: 'Compose',
     description: 'Select items and compute a Harness in this page — no server, no key, no upload.',
     body: [
-      '<p>Tick the items you want. The closure algebra of AGSC-07 runs <em>in this page</em>:',
+      '<p>Tick the items you want. The composition rules of the specification (AGSC-07) run <em>in this page</em>:',
       'no request leaves this origin, no key is needed and nothing is uploaded. The seven',
       'Harness files are offered one download per file, or all together as one .zip.</p>',
       '<h2>Items</h2>',
@@ -389,10 +392,13 @@ function composePage({ assets }, options = {}) {
       // Focusable: the stylesheet lets a long verdict scroll sideways, and a scrollable
       // region must be reachable by keyboard (WCAG 2.1.1, AGSC-06-20).
       '<pre id="verdict" tabindex="0"></pre>',
-      '<h3>Why an item was added</h3>',
-      '<ul id="explanations"></ul>',
-      '<h3>Conflicts</h3>',
-      '<ul id="conflicts"></ul>',
+      // Both lists start hidden: without a selection (or without script) a reader
+      // would otherwise meet two empty headings. The controller reveals each one
+      // when it has something to say.
+      '<h3 id="explanations-heading" hidden>Why an item was added</h3>',
+      '<ul id="explanations" hidden></ul>',
+      '<h3 id="conflicts-heading" hidden>Conflicts</h3>',
+      '<ul id="conflicts" hidden></ul>',
       '<h2>Harness</h2>',
       '<p><button id="download" type="button" disabled>Build the Harness</button></p>',
       '<ul id="files"></ul>',
@@ -450,10 +456,15 @@ function boardPage({ board, columns, wip }, options = {}) {
  * the build warns (`site.js`).
  */
 function legalPage({ terms, licenseProse, rendered, privacy, operator, disclaimer }, options = {}) {
+  // The opening sentence is for the reader, not for the rule's author: one plain
+  // sentence when the prose licence IS the Content Use Terms, two when they differ.
+  const opening = terms === licenseProse
+    ? `<p>The prose of this node is published under the Content Use Terms 1.0 (<code>${escapeHtml(terms)}</code>).</p>`
+    : `<p>The prose of this node is licensed <code>${escapeHtml(licenseProse)}</code>, and every export of it `
+      + `carries the Content Use Terms <code>${escapeHtml(terms)}</code>. `
+      + 'The two are different facts and may differ (AGSC-06-18).</p>';
   const sections = [
-    `<p>The Content Use Terms identifier is <code>${escapeHtml(terms)}</code>. `
-      + `The licence of the prose itself is <code>${escapeHtml(licenseProse)}</code>; `
-      + 'the two are different facts and may differ (AGSC-06-18).</p>',
+    opening,
     '<h2 id="terms">The terms</h2>',
     rendered,
     '<p>The text above is this distribution\'s <code>LICENSE-CONTENT</code> file, '

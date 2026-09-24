@@ -94,7 +94,7 @@ test('firstHeading ignores an empty heading and is linear on a long line', () =>
   assert.strictEqual(fm.firstHeading('#no space\n'), null);
 });
 
-// F27-09: AGSC-01-14 places FOUR obligations on every file — UTF-8 without BOM, LF
+// AGSC-01-14 places FOUR obligations on every file — UTF-8 without BOM, LF
 // endings, NFC, and exactly one trailing LF. Only the first two were checked, so a
 // non-NFC file and a file with a missing or doubled trailing LF passed `lint` silently.
 test('AGSC-01-14: a non-NFC file is AGSC-E108', () => {

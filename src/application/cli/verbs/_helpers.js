@@ -2,9 +2,7 @@
 // src/application/cli/verbs/_helpers.js — the shared wiring of the sixteen
 // verbs of AGSC-09-07. APPLICATION LAYER: it orchestrates across contexts and
 // owns no domain rule; every rule it reaches for lives in the context that
-// states it. Owner: B; rewired at integration when the
-// interim `AGSC-PENDING` marker and the `tryRequire` probes were removed —
-// every module they probed for now exists.
+// states it.
 
 const path = require('node:path');
 const { createHash } = require('node:crypto');
@@ -26,16 +24,31 @@ const ENGINE_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 
 /** The separator `git ls-files -z` writes between paths. */
 const NUL = String.fromCharCode(0);
-/** The two separators the git-log read uses: ASCII RS between records, US between fields. */
+/**
+ * The three separators the git-log read uses: ASCII RS before each record, US
+ * between fields, GS after the message, where git's `--name-only` list begins.
+ */
 const RS = String.fromCharCode(30);
 const US = String.fromCharCode(31);
+const GS = String.fromCharCode(29);
 /**
  * AGSC-08-20b's own field set, asked for in one process and with no shell:
  * the commit, its parents, the COMMITTER time in whole seconds (never a rendered
  * local time, which would depend on the host's zone), the ref decorations the tag
- * names are read from, and the whole message the trailers are parsed out of.
+ * names are read from, and the whole message the trailers are parsed out of —
+ * followed by the paths the commit changed, which `--name-only` prints after it.
  */
-const GIT_LOG_FORMAT = `--format=%H${US}%P${US}%ct${US}%D${US}%B${RS}`;
+const GIT_LOG_FORMAT = `--format=${RS}%H${US}%P${US}%ct${US}%D${US}%B${GS}`;
+/**
+ * The reference production of AGSC-08-20b, extended shape: first-parent, oldest
+ * first, and `--name-only` for `files[]`. `core.quotepath=off` keeps a non-ASCII
+ * path as its UTF-8 bytes instead of a quoted octal escape; `--no-renames` lists a
+ * rename as both of its paths whatever the user's `diff.renames` says; and
+ * `--diff-merges=first-parent` states what `--first-parent` implies for a merge,
+ * so that no configuration can change the list.
+ */
+const GIT_LOG_ARGS = Object.freeze(['-c', 'core.quotepath=off', 'log', '--first-parent', '--reverse',
+  '--no-renames', '--name-only', '--diff-merges=first-parent', GIT_LOG_FORMAT, 'HEAD']);
 
 let compiledSchemas = null;
 let vocabulary = null;
@@ -91,9 +104,11 @@ function buildOptions(ctx, extra) {
   const level = raw === undefined ? undefined : Number(raw);
   const log = gitLog(ctx);
   const derived = bundleVersionOf(ctx, log);
+  const tree = log === undefined ? undefined : contentTree(ctx);
   return {
     bundleVersion: derived.version,
     bundleVersionFindings: derived.findings,
+    ...(tree === undefined ? {} : { contentTree: tree }),
     gitLog: log,
     level: Number.isInteger(level) ? level : undefined,
     ontologyTerms: ontology().terms,
@@ -183,7 +198,7 @@ function gitLog(ctx) {
   if (!proc || typeof proc.run !== 'function') return undefined;
   let result;
   try {
-    result = proc.run('git', ['log', '--first-parent', '--reverse', GIT_LOG_FORMAT, 'HEAD']);
+    result = proc.run('git', GIT_LOG_ARGS.slice());
   } catch (e) {
     return undefined;
   }
@@ -192,11 +207,17 @@ function gitLog(ctx) {
   for (const record of result.stdout.split(RS)) {
     const text = record.replace(/^\n+/u, '');
     if (text === '') continue;
-    const [sha, parents, seconds, decorations, message] = text.split(US);
+    const [sha, parents, seconds, decorations, rest] = text.split(US);
     if (!/^[0-9a-f]{40,64}$/u.test(String(sha)) || !/^[0-9]+$/u.test(String(seconds))) return undefined;
-    commits.push({
+    // The message ends at GS; what follows is the `--name-only` list, one path per
+    // line. A record with no GS (a producer that did not ask for the list) carries
+    // no `files[]`, which AGSC-08-20b allows and a reader reports as not run.
+    const body = rest === undefined ? '' : rest;
+    const cut = body.indexOf(GS);
+    const message = cut === -1 ? body : body.slice(0, cut);
+    const commit = {
       committer_timestamp: ledger.instantFromEpoch(Number(seconds)),
-      message: message === undefined ? '' : message,
+      message,
       parents: String(parents) === '' ? [] : String(parents).split(' '),
       sha: String(sha),
       // `%D` is `HEAD -> main, tag: v1.4.0, origin/main`; `produce` keeps the
@@ -205,9 +226,39 @@ function gitLog(ctx) {
         .map((one) => one.trim())
         .filter((one) => one.startsWith('tag: '))
         .map((one) => one.slice(5)),
-    });
+    };
+    if (cut !== -1) {
+      commit.files = body.slice(cut + 1).split('\n').filter((line) => line !== '');
+    }
+    const author = ledger.authorOf(ledger.parseTrailers(message));
+    if (author !== null) commit.author = author;
+    commits.push(commit);
   }
   return ledger.produce(commits);
+}
+
+/**
+ * AGSC-08-20a: the git tree hash of the Bundle's committed `content/`, the `ref` of
+ * the ledger's trailing build entry. `HEAD:./content` is resolved against the
+ * Bundle root, so a Bundle kept in a subdirectory of its repository names its own
+ * tree. `undefined` when there is no runner, no repository or no committed
+ * `content/`: the build then publishes no ledger and says why.
+ *
+ * @param {object} ctx the verb context.
+ * @returns {string|undefined}
+ */
+function contentTree(ctx) {
+  const proc = ctx.ports && ctx.ports.proc;
+  if (!proc || typeof proc.run !== 'function') return undefined;
+  let result;
+  try {
+    result = proc.run('git', ['rev-parse', '--verify', '--quiet', 'HEAD:./content']);
+  } catch (e) {
+    return undefined;
+  }
+  if (!result || result.code !== 0 || typeof result.stdout !== 'string') return undefined;
+  const tree = result.stdout.trim();
+  return /^[0-9a-f]{40,64}$/u.test(tree) ? tree : undefined;
 }
 
 /**
@@ -286,6 +337,7 @@ module.exports = {
   bundleOf,
   bundleVersionOf,
   buildOptions,
+  contentTree,
   gitLog,
   notImplemented,
   ontology,

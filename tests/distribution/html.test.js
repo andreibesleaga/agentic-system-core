@@ -17,10 +17,12 @@ test('every page carries the describedby link in its head (AGSC-06-25)', () => {
   assert.ok(page.includes(`<link rel="describedby" href="${WELLKNOWN_PATH}" type="application/linkset+json">`));
 });
 
-test('every page carries the Content Use Terms line (AGSC-06-18)', () => {
+test('every page carries the licence line; the Content Use Terms only where adopted (AGSC-06-18)', () => {
   const page = html.itemPage({ slug: 'a', title: 'A', body: '' }, OPTIONS);
-  assert.ok(page.includes('LicenseRef-AgenticSystemCore-Content-Use-1.0'));
-  assert.ok(page.includes('CC-BY-4.0'), 'the prose licence and the terms are two members');
+  assert.ok(page.includes('CC-BY-4.0'), 'the prose licence is named');
+  assert.ok(!page.includes('LicenseRef-AgenticSystemCore-Content-Use-1.0'), 'a CC BY page is not presented under the terms');
+  const adopted = html.itemPage({ slug: 'a', title: 'A', body: '' }, { ...OPTIONS, licenseProse: undefined });
+  assert.ok(adopted.includes('LicenseRef-AgenticSystemCore-Content-Use-1.0'));
 });
 
 test('an item page links its own .md and .jsonld views (AGSC-06-02)', () => {

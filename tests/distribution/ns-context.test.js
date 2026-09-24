@@ -1,5 +1,5 @@
 'use strict';
-// The vocabulary context of a REAL build (NS-01, NS-02, NS-03).
+// The vocabulary context of a REAL build.
 //
 // `tests/knowledge/jsonld-roundtrip.test.js` and the vector `graph-0011` prove the
 // pure generator `knowledge/jsonld.js#context` correct. Nothing proved the WIRING
@@ -83,9 +83,9 @@ async function tripleCount(document, context) {
   return quads.split('\n').filter(Boolean).length;
 }
 
-// ------------------------------------------------------------------ NS-01
+// ------------------------------------------------------------------
 
-test('buildOptions supplies the vocabulary the context is generated from (NS-01)', () => {
+test('buildOptions supplies the vocabulary the context is generated from', () => {
   const options = helpers.buildOptions({ specVersion: '1.0.0-rc.5', version: '0.0.2' });
   assert.strictEqual(options.ontologyTerms.length, 52,
     'the 52 terms of ontology/agsc.ttl never reached a build');
@@ -114,7 +114,7 @@ test('a built /ns/context.jsonld defines all 52 asc: terms and the 24 external o
 });
 
 test('a Level 2 build serves the VERSIONED copy too, byte for byte (AGSC-05-09, AGSC-06-01)', () => {
-  // Added at rc.6 (NS-05): AGSC-05-09 has required the versioned copy since rc.5 —
+  // Added at rc.6: AGSC-05-09 has required the versioned copy since rc.5
   // it is the persistent URL a Level-0 `graph.jsonld` names — while AGSC-06-01's
   // route set did not carry it, so the two rules could not both be satisfied.
   const { files } = build();
@@ -128,9 +128,9 @@ test('a Level 2 build serves the VERSIONED copy too, byte for byte (AGSC-05-09, 
     .endsWith('/ns/1.0.0-draft.1/context.jsonld'));
 });
 
-// ------------------------------------------------------------------ NS-02
+// ------------------------------------------------------------------
 
-test('the built graph.jsonld is compact: no vocabulary IRI is written out (NS-02)', () => {
+test('the built graph.jsonld is compact: no vocabulary IRI is written out', () => {
   const { files } = build();
   for (const [route, bytes] of files) {
     // The two context copies are the context itself (AGSC-06-01 as amended at rc.6:
@@ -179,7 +179,7 @@ test('the N-Quads and Turtle views do not move by one byte (AGSC-05-06)', () => 
   assert.notStrictEqual(withContext.get('/graph.jsonld'), without.get('/graph.jsonld'));
 });
 
-// ------------------------------------------------------------------ NS-03
+// ------------------------------------------------------------------
 
 test('graph.jsonld names a context at EVERY Level (AGSC-05-09 as amended at rc.5)', () => {
   const persistent = 'https://w3id.org/agentic-system-core/ns/1.0.0-draft.1/context.jsonld';
@@ -195,7 +195,7 @@ test('graph.jsonld names a context at EVERY Level (AGSC-05-09 as amended at rc.5
   assert.strictEqual(full['@context'], 'https://minimal.example/ns/context.jsonld');
 });
 
-test('a Level-0 graph.jsonld expands to every triple graph.nq carries (NS-03)', async () => {
+test('a Level-0 graph.jsonld expands to every triple graph.nq carries', async () => {
   const context = JSON.parse(build().files.get('/ns/context.jsonld'));
   const expected = build().files.get('/graph.nq').split('\n').filter(Boolean).length;
   assert.ok(expected > 30, 'the fixture is too small to detect a loss');

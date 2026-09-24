@@ -1,6 +1,6 @@
 {
   "area": "build",
-  "description": "AGSC-06-36 (added at rc.6, PSF-02, FIX29-S3) is the first rule to say what /.well-known/security.txt carries. Derivation, clause by clause: the authored fields are published verbatim, in the authored order, one `Name: value` line each with the field name in the RFC 9116 registry's case, blank lines and `#` comments dropped; `Expires` is derived only where the authored file states none, as the build instant plus 364 days (2026-01-01T00:00:00Z + 364 d = 2026-12-31T00:00:00Z, inside RFC 9116 section 2.5.5's year); `Canonical` is derived as the absolute URL of this route; `Policy` is derived as the absolute URL of /legal/ and only where that route is emitted. Nothing is emitted where the authored file is absent (AGSC-E901), where it states no Contact: (AGSC-E202, section 2.5.3 \"This field MUST always be present\"), where an authored Expires is not after the build instant (AGSC-E204), or where the build instant is the AGSC-04-09 default of 0, whose derived Expires would be 1970-12-31T00:00:00Z — a contact that expired decades before it was published. No clock is read: every derived value is a function of the build instant, so the file stays byte-reproducible.",
+  "description": "AGSC-06-36 (added at rc.6, 2026-09-22) is the first rule to say what /.well-known/security.txt carries. Derivation, clause by clause: the authored fields are published verbatim, in the authored order, one `Name: value` line each with the field name in the RFC 9116 registry's case, blank lines and `#` comments dropped; `Expires` is derived only where the authored file states none, as the build instant plus 364 days (2026-01-01T00:00:00Z + 364 d = 2026-12-31T00:00:00Z, inside RFC 9116 section 2.5.5's year); `Canonical` is derived as the absolute URL of this route; `Policy` is derived as the absolute URL of /legal/ and only where that route is emitted. Nothing is emitted where the authored file is absent (AGSC-E901), where it states no Contact: (AGSC-E202, section 2.5.3 \"This field MUST always be present\"), where an authored Expires is not after the build instant (AGSC-E204), or where the build instant is the AGSC-04-09 default of 0, whose derived Expires would be 1970-12-31T00:00:00Z — a contact that expired decades before it was published. No clock is read: every derived value is a function of the build instant, so the file stays byte-reproducible.",
   "expected": {
     "cases": [
       {
@@ -98,7 +98,7 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-22 at rc.6 (RC6-A); expected values derived by hand from the rule text, not from a run of any engine",
+  "note": "added 2026-09-22 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

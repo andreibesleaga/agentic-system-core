@@ -1,6 +1,6 @@
 'use strict';
 /**
- * CONTEXT Interchange — memory adapter `llm-context` (AGSC-01-26a, D98).
+ * CONTEXT Interchange — memory adapter `llm-context` (AGSC-01-26a).
  *
  * `export --to llm-context` emits two ADDITIVE, DERIVED, NON-NORMATIVE files beside
  * the node — never inside `build.out`, whose route set AGSC-06-01 closes, and never
@@ -29,7 +29,7 @@
  * PURE: no fs, no clock, no network. The caller supplies the items, the instant and
  * the hasher (AGSC-05-29: the Knowledge and Interchange contexts never hash).
  *
- * Requirements: D98, R-1 (`research/33`), PRD-026.
+ * Requirements: PRD-026.
  */
 
 const { encode } = require('@toon-format/toon');
@@ -187,7 +187,7 @@ function run(bundle, options) {
       generatedAt: options.instant,
       license,
       specVersion: options.specVersion,
-      terms: chunks.TERMS,
+      terms: chunks.termsFor(license),
       title: site.title == null ? String((config.bundle || {}).id || 'This node') : String(site.title),
     })],
   ];

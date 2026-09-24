@@ -27,6 +27,16 @@ const DEFAULT_OUT = 'www/';
 const OKF_VERSION = '0.2';
 /** AGSC-02-95: where a referenced local file is copied, byte for byte. */
 const ASSETS_PREFIX = 'content/assets/';
+/**
+ * The six crawler tokens the reference node names in `site.tdm_crawlers[]`. The
+ * default prose licence adopts the Content Use Terms, and a node that publishes a
+ * TDM reservation with an empty list fails its own build (`AGSC-E202`), so `init`
+ * writes the reference list and says so; an operator who wants no reservation edits
+ * one line.
+ */
+const REFERENCE_TDM_CRAWLERS = Object.freeze([
+  'Applebot-Extended', 'CCBot', 'ClaudeBot', 'GPTBot', 'Google-Extended', 'meta-externalagent',
+]);
 
 /**
  * Normalise a repository-relative path, resolving `.` and `..`. Returns null when
@@ -68,23 +78,29 @@ function resolveFrom(dir, reference) {
  * directory name through the AGSC-02-91 slug rule; `bundle.operator` is the
  * resolved actor of AGSC-02-90; `site.title` is the title of `content/index.md`.
  */
-function synthesizeConfig({ directory, title, operator, specVersion }) {
+function synthesizeConfig({ directory, title, operator, specVersion, tdmCrawlers }) {
+  const site = { base: PLACEHOLDER_BASE, title };
+  if (Array.isArray(tdmCrawlers) && tdmCrawlers.length > 0) site.tdm_crawlers = [...tdmCrawlers];
   return {
     build: { out: DEFAULT_OUT },
     bundle: { id: slugify(String(directory)), operator },
-    site: { base: PLACEHOLDER_BASE, title },
+    site,
     spec_version: specVersion,
   };
 }
 
 /**
  * AGSC-02-94(b): the synthesized `content/index.md` frontmatter. The description is
- * ≥ 40 code points by construction, so the AGSC-01-04 bound always holds.
+ * ≥ 40 code points by construction, so the AGSC-01-04 bound always holds. With no
+ * date (the build instant defaulted, `AGSC-E606`) the sentence carries none: a
+ * 1970 date baked into authored content would be a false statement.
  */
 function synthesizeIndex({ title, count, date, specVersion }) {
   return {
     base: PLACEHOLDER_BASE,
-    description: `Adopted from ${count} Markdown files by agsc init on ${date}.`,
+    description: date
+      ? `Adopted from ${count} Markdown files by agsc init on ${date}.`
+      : `Adopted from ${count} Markdown files by agsc init.`,
     okf_version: OKF_VERSION,
     spec_version: specVersion,
     title,
@@ -121,6 +137,10 @@ function credentialFiles() {
  * @param {string} options.directory the adoption root's own directory name.
  * @param {string} options.specVersion
  * @param {number} options.epoch `SOURCE_DATE_EPOCH`, for the index description date.
+ * @param {boolean} [options.instantDefaulted] true when the instant fell to 0
+ *   (`AGSC-E606`): the index description then names no date.
+ * @param {Array<string>} [options.tdmCrawlers] the crawler tokens written to
+ *   `site.tdm_crawlers[]`; none by default.
  * @param {string|null} [options.gitUserEmail]
  * @param {object} [options.existing] `{path: contents}` — files already present, which
  *   AGSC-02-94 never overwrites.
@@ -194,7 +214,11 @@ function plan(files, options = {}) {
   let indexFrontmatter = null;
   if (!has('agsc.config.json')) {
     config = synthesizeConfig({
-      directory: options.directory, title, operator: operator.operator, specVersion: options.specVersion,
+      directory: options.directory,
+      title,
+      operator: operator.operator,
+      specVersion: options.specVersion,
+      tdmCrawlers: options.tdmCrawlers,
     });
     writes.push({ path: 'agsc.config.json', text: `${JSON.stringify(config, null, 2)}\n`, value: config });
     findings.push(finding('AGSC-E506',
@@ -205,7 +229,7 @@ function plan(files, options = {}) {
     indexFrontmatter = synthesizeIndex({
       title,
       count: markdown.length,
-      date: instantFromEpoch(options.epoch).slice(0, 10),
+      date: options.instantDefaulted ? null : instantFromEpoch(options.epoch).slice(0, 10),
       specVersion: options.specVersion,
     });
     writes.push({ path: 'content/index.md', text: indexMarkdown(indexFrontmatter), value: indexFrontmatter });
@@ -226,6 +250,10 @@ function plan(files, options = {}) {
 function run(ports, planned) {
   const fs = ports.fs;
   const written = [];
+  // AGSC-02-95 copies the ORIGINAL bytes; a referenced file may itself be an
+  // adopted Markdown file that the writes below move away, so read every copy
+  // source first (reading it after the move threw ENOENT).
+  const copyBytes = planned.copies.map((copy) => fs.readFile(copy.from, null));
   for (const write of planned.writes) {
     fs.mkdirp(dirnameOf(write.path));
     fs.writeFile(write.path, write.text);
@@ -233,11 +261,11 @@ function run(ports, planned) {
     // AGSC-02-93: the adopted file is MOVED, so the source is removed once written.
     if (write.from != null && write.from !== write.path && fs.exists(write.from)) fs.remove(write.from);
   }
-  for (const copy of planned.copies) {
+  planned.copies.forEach((copy, i) => {
     fs.mkdirp(dirnameOf(copy.to));
-    fs.writeFile(copy.to, fs.readFile(copy.from));
+    fs.writeFile(copy.to, copyBytes[i]);
     written.push(copy.to);
-  }
+  });
   return { written, findings: planned.findings };
 }
 
@@ -255,4 +283,5 @@ module.exports = {
   DEFAULT_OUT,
   OKF_VERSION,
   ASSETS_PREFIX,
+  REFERENCE_TDM_CRAWLERS,
 };

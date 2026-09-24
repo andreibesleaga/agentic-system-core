@@ -116,7 +116,7 @@ test('AGSC-10-02: build --level 0 writes the Level-0 artefacts and no generated 
   assert.ok(!fs.existsSync(path.join(dir, 'www', 'index.html')));
   // AGSC-06-32: no /ns/context.jsonld is emitted at Level 0.
   assert.ok(!fs.existsSync(path.join(dir, 'www', 'ns', 'context.jsonld')));
-  // CHANGED 2026-09-21 (NS-03): this assertion used to read `!('@context' in …)`,
+  // CHANGED 2026-09-21: this assertion used to read `!('@context' in …)`,
   // on the pre-rc.5 reading that a document may name no context when the node
   // serves none. AGSC-05-09 as amended at rc.5 overturned it — "The URL is a
   // constant of this specification, resolvable by every reader at every Level, so
@@ -197,9 +197,8 @@ test('AGSC-07-18: compose --emit says the target renderings are not written', ()
   assert.strictEqual(exit, 1);
   assert.ok(envelope.findings.some((f) => /AGSC-07-18/u.test(f.message)),
     `no finding cites AGSC-07-18: ${JSON.stringify(envelope.findings)}`);
-  // AGSC-07-12: the seven files themselves ARE written now, so the note says true —
-  // what `--emit` adds is a target RENDERING of them, and that is what is absent.
-  assert.match(stderr, /harness_emitted: true/u);
+  // A run with an error finding writes nothing, the seven files included.
+  assert.match(stderr, /harness_emitted: false/u);
 });
 
 // ---------------------------------------------------------------- propose / review / refresh

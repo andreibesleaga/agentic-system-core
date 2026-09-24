@@ -3,7 +3,7 @@
  * CONTEXT Governance & Provenance — use case: `lint --fix`.
  *
  * Implements the four rules that oblige the flag and, until rc.5, were obliged by
- * nothing (V9D-A2, specification item V9D-01):
+ * nothing:
  *   AGSC-03-12  wikilinks `[[target(#anchor)?(|alias)?]]` are normalised to relative
  *               Markdown links `[alias](../<type-plural>/<slug>.md#anchor)`; `![[…]]`
  *               embeds become images or are removed; the reversed Dendron order
@@ -23,7 +23,7 @@
  * function serve the dry run and the write, and what makes idempotence testable
  * without a filesystem.
  *
- * Requirements: PRD-003, R64. Security (`docs/SECURITY-CONSIDERATIONS.md` T3): the
+ * Requirements: PRD-003. Security (`docs/SECURITY-CONSIDERATIONS.md` T3): the
  * rewriter never follows a target outside `content/`, never resolves a scheme and
  * never touches text inside a code fence or a code span, so a rewrite can neither
  * invent a link nor smuggle one into an example.

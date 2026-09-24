@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // PRD-054 generator: derive every published count from the artefacts themselves,
 // so that no document ever states a count by hand. Node stdlib only, zero
-// dependencies, exit 0/1/2, --json envelope. [AGSC-09-90, D67 group C, SPEC-SYNC-01]
+// dependencies, exit 0/1/2, --json envelope. [AGSC-09-90]
 //
 //   count-artifacts [--json] [--help] [<root>]
 //
 // <root> is the distribution root that holds `spec/`, `ontology/` and
 // `tests/vectors/`; it defaults to the directory above this file, so the tool
 // counts ITS OWN distribution from any working directory (: until today the
-// vector-file re-read of the D93 check resolved its path against `process.cwd()`,
+// vector-file re-read of the check resolved its path against `process.cwd()`,
 // so every invocation from another directory — `--help` included — threw an ENOENT
 // stack trace and exited 1 instead of answering). Exit 0 pass, 1 findings, 2 usage.
 //
@@ -18,7 +18,7 @@
 // list · spec_version literal disagreeing with spec/00 (AGSC-09-91) in docs/, w3c/ and
 // every vector's options.spec_version · every 1.0.0-rc.N literal in spec/*.md — including
 // inside a JSON-array/quoted example — disagreeing with spec/00 unless the line is a
-// historical note (D93) · w3c/index.html <dfn> terms disagreeing with ontology/agsc.ttl ·
+// historical note · w3c/index.html <dfn> terms disagreeing with ontology/agsc.ttl ·
 // a vector directory ignored by .gitignore.
 // Also reports rules_with_vector / rules_without_vector and `inputs_read`, the number
 // of files this run actually opened (informative, never a finding; asks every
@@ -131,9 +131,9 @@ function run(argv, io) {
     if (path.basename(v.__file).slice(0, String(v.id).length) !== v.id) findings.push(`vector file ${v.__file} does not start with its id ${v.id}`);
     const sv = v.options && v.options.spec_version;
     if (sv && sv !== declared) findings.push(`vector ${v.id} options.spec_version ${sv} differs from spec/00 ${declared} (AGSC-09-91)`);
-    // D93: any version literal anywhere in the vector file (inputs and expected bytes included) must be the declared one.
+    // any version literal anywhere in the vector file (inputs and expected bytes included) must be the declared one.
     if (v.level !== 'withdrawn') for (const m of vectorText.get(v.__file).matchAll(/1\.0\.0-rc\.\d+/g))
-      if (m[0] !== declared) { findings.push(`vector ${v.id} embeds version literal ${m[0]} (expected ${declared}) — re-derive its bytes (D93)`); break; }
+      if (m[0] !== declared) { findings.push(`vector ${v.id} embeds version literal ${m[0]} (expected ${declared}) — re-derive its bytes`); break; }
   }
   const ids = vectors.map(v => v.id);
   for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
@@ -144,7 +144,7 @@ function run(argv, io) {
     for (const m of txt.matchAll(/spec_version[":\s]*"?\s*(1\.0\.0-rc\.\d+)/g))
       if (m[1] !== declared) findings.push(`${f}: spec_version literal ${m[1]} differs from spec/00 ${declared} (AGSC-09-91)`);
   }
-  // D93: every 1.0.0-rc.N literal anywhere in spec/*.md — including inside a fenced code
+  // every 1.0.0-rc.N literal anywhere in spec/*.md — including inside a fenced code
   // block or a quoted/JSON-array string, where the keyword-anchored check above cannot see
   // it (e.g. the hyphenated key "agsc-spec-version": ["1.0.0-rc.3"] never contains the
   // literal substring "spec_version") — must equal the declared version, UNLESS the literal

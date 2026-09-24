@@ -159,7 +159,6 @@ informative:
         name: Andrei N. Besleaga
     target: https://agenticsystemcore.com/specs/
     date: 2026
-    ann: "TODO-DOI: insert the Zenodo DOI of the cited release here before posting."
 
 --- abstract
 
@@ -429,7 +428,7 @@ A link object MAY carry the target attribute `digest`. Its value is an
 array holding one string. That string is the serialization of a
 Dictionary ({{RFC9651}}, Section 3.2) with a single member whose key is
 the algorithm name `sha-256` from the "Hash Algorithms for HTTP Digest
-Fields" registry ({{RFC9530}}, Section 6.1) and whose value is a Byte
+Fields" registry ({{RFC9530}}, Section 7.2) and whose value is a Byte
 Sequence ({{RFC9651}}, Section 3.3.5) serialized as specified in
 {{RFC9651}}, Section 4.1, that is, base64 between colons:
 
@@ -489,8 +488,8 @@ A client MUST NOT read a bundle-fact attribute from any other link.
 
 ### Declaration attributes {#declaration-attributes}
 
-Three further groups of extension target attributes declare what a node
-is, rather than what it published. They are present at every level of
+The extension target attributes below declare what a node is, rather
+than what it published. They are present at every level of
 completeness.
 
 `agsc-surface` and `agsc-surface-version`:
@@ -882,6 +881,15 @@ node whose content is gated serves the discovery document publicly all
 the same ({{cross-origin-access}}), which is a deliberate disclosure
 that the node exists.
 
+A node whose content is gated MUST omit the `agsc-counts`,
+`agsc-bundle-hash` and `agsc-bundle-version` attributes and the
+`ledger` link, and MUST omit every `digest` whose target it does not
+serve without authentication: a digest over a gated artefact lets
+anyone confirm a guess of its content, and the counts and the content
+version disclose activity. It still carries `agsc-spec-version` and
+`agsc-generated-at`, which say only that the node exists and is
+current.
+
 The path `/.well-known/` on an origin MUST be under the publisher's
 control. On static hosting this means that the file is produced by the
 publisher's build and upload path and by nothing else.
@@ -1011,8 +1019,9 @@ of writing.
   at release-candidate status; not yet publicly released. It will be
   published with the reference engine.
 * Coverage: {{the-well-known-uri}}, {{the-link-set}},
-  {{discovery-from-a-page}}, and {{the-profile-uri}}, in the reduced
-  form of {{the-reduced-form}}.
+  {{discovery-from-a-page}}, and {{the-profile-uri}}, in the full form;
+  the reduced form of {{the-reduced-form}} is exercised by the
+  validator's level-0 mode.
 * Version compatibility: {{AGSC-SPEC}}.
 * Licensing: the site's own terms; see the node.
 * Contact: the author.

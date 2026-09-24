@@ -154,7 +154,7 @@ describe('bench/gen-bundle.js — the synthetic Bundle', () => {
   it('answers --help and rejects a malformed invocation', () => {
     assert.equal(capture(gen, ['--help']).code, 0);
     assert.equal(capture(gen, ['-h']).code, 0);
-    assert.equal(capture(gen, ['--items', '0', '--out', '/tmp/x']).code, 2);
+    assert.equal(capture(gen, ['--items', '0', '--out', path.join(os.tmpdir(), 'x')]).code, 2);
     assert.equal(capture(gen, ['--items', '2']).code, 2);
     assert.equal(capture(gen, ['--nonsense']).code, 2);
   });
@@ -298,4 +298,16 @@ describe('tools/bench — the retrieval runner', () => {
     assert.equal(empty.rr, 0);
     assert.equal(bench.score(['a'], new Set(), 10).ndcg, 0);
   });
+});
+
+it('the bench counts active rules exactly as tools/count-artifacts does', () => {
+  const cp = require('node:child_process');
+  const path = require('node:path');
+  const { specRules } = require('../../bench/measure.js');
+  const root = path.resolve(__dirname, '..', '..');
+  const counted = JSON.parse(cp.execFileSync(process.execPath, [path.join(root, 'tools', 'count-artifacts'), '--json'],
+    { cwd: root, encoding: 'utf8' })).counts;
+  const rules = specRules();
+  assert.strictEqual(rules.all.length, counted.rules);
+  assert.strictEqual(rules.active.length, counted.rules_active);
 });

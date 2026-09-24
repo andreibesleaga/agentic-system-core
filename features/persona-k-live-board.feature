@@ -1,4 +1,4 @@
-# Trace: PRD-063, PRD-064, PRD-065 · D87, D88, R66, R67, R69–R71 · spec/08 §8.6, spec/10 §10.6, spec/01 AGSC-01-36…38 (rc.4)
+# Trace: PRD-063, PRD-064, PRD-065 · spec/08 §8.6, spec/10 §10.6, spec/01 AGSC-01-36…38 (rc.4)
 # Source of truth: docs/PRD.md Amendment 8 and the rc.4 rules named on each step
 @persona-k @mode-5 @PRD-063 @PRD-064 @PRD-065
 Feature: Self-driving team — agents and people finish a project's tasks on one live board

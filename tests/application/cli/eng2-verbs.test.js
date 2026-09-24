@@ -2,7 +2,7 @@
 // tests/application/cli/eng2-verbs.test.js — the verb paths the package added:
 // `compose` writing the seven Harness files of AGSC-07-12, `lint --fix` (AGSC-03-12,
 // AGSC-04-14, AGSC-04-19, AGSC-04-20, the flag AGSC-09-09 names at rc.5), and
-// `export --jsonld|--jsonl|--to <adapter>` (AGSC-01-26a, AGSC-01-27, D98).
+// `export --jsonld|--jsonl|--to <adapter>` (AGSC-01-26a, AGSC-01-27).
 //
 // Each verb is driven through its own module with a real port bag over a real copy of
 // `tests/fixtures/minimal` in a temporary directory and a fixed clock — an integration
@@ -232,8 +232,10 @@ test('AGSC-07-18: --emit still reports that no target rendering is shipped', () 
   const own = result.findings.filter((f) => /AGSC-07-18/u.test(f.message));
   assert.strictEqual(own.length, 1);
   assert.strictEqual(own[0].severity, 'error');
-  // The seven files are written all the same: the rendering is what is missing.
-  assert.match(ctx.notes.join(''), /harness_emitted: true/u);
+  // The target is decided before anything is written, and a run with an error
+  // writes nothing: no Harness is left behind a rendering that cannot be made.
+  assert.match(ctx.notes.join(''), /harness_emitted: false/u);
+  assert.ok(!exists(dir, 'dist'));
 });
 
 // ---------------------------------------------------------------- lint --fix
@@ -394,7 +396,7 @@ test('the three remaining export flags are implemented and each writes its own r
   }
 });
 
-test('D98 / AGSC-01-26a: export --to llm-context writes the two files outside build.out', () => {
+test('AGSC-01-26a: export --to llm-context writes the two files outside build.out', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { verbFlags: { to: 'llm-context' } });
   const result = exportVerb.run(ctx);
@@ -440,7 +442,8 @@ test('an unknown adapter is one honest finding, not a crash and not a silent suc
   const ctx = ctxFor(dir, { verbFlags: { to: 'nope' } });
   const result = exportVerb.run(ctx);
   assert.strictEqual(result.findings.length, 1);
-  assert.strictEqual(result.findings[0].code, 'AGSC-E001');
+  // AGSC-01-26a (2026-09-24): a value outside the closed adapter list, not an unknown verb.
+  assert.strictEqual(result.findings[0].code, 'AGSC-E203');
   assert.match(result.findings[0].message, /no adapter named "nope"/u);
   assert.ok(!exists(dir, 'dist'));
 });
@@ -475,17 +478,17 @@ test('AGSC-01-27: a build with no graph view, and one with no per-item view, eac
 test('a composition conflict of an unexpected kind still reads as a sentence', () => {
   // The four kinds AGSC-07-09 raises are covered through the real verb; this is the
   // fallback, which exists so that a kind added to the algebra later can never print
-  // as `undefined` on a person's terminal (R64).
+  // as `undefined` on a person's terminal.
   assert.strictEqual(composeVerb.conflictMessage({ code: 'AGSC-E809', key: 'ports', pair: ['a', 'b'] }),
     'composition conflict on ports: a / b (AGSC-07-09)');
   assert.strictEqual(composeVerb.conflictMessage({ code: 'AGSC-E809', key: 'ports' }),
     'composition conflict on ports:  (AGSC-07-09)');
 });
 
-test('R64: a composition warning prints a sentence, never a blank diagnostic line', () => {
+test('a composition warning prints a sentence, never a blank diagnostic line', () => {
   // `agsc compose supervisor` printed `warn: AGSC-E803 ` — the commonest outcome there
   // is, with an empty message, because a verdict warning is a domain record and the
-  // application layer never gave it one (F27-11 in the Composition lane).
+  // application layer never gave it one (in the Composition lane).
   assert.match(composeVerb.warningMessage({ code: 'AGSC-E803', key: 'uses', source: 'a', target: 'b' }),
     /`a` names `b` under `uses`.*AGSC-07-05, AGSC-07-07/u);
   assert.match(composeVerb.warningMessage({ code: 'AGSC-E804', key: 'consumes', source: 'a', target: 'p' }),

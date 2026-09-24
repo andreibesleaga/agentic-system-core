@@ -80,7 +80,11 @@ test('AGSC-06-21 / AGSC-06-31: 501 items shard the index and paginate every inde
     assert.ok(files.has(`${route}page-2/index.html`), `${route} was not paginated`);
     assert.ok(!files.has(`${route}page-3/index.html`), `${route} paginated too far`);
   }
-  assert.ok(!files.has('/clusters/index.html'), 'an index route with no entries was emitted');
+  // AGSC-06-02: an empty type folder is left out of the navigation but still resolves,
+  // on one page and no more.
+  assert.ok(files.has('/clusters/index.html'), 'an empty type index does not resolve');
+  assert.ok(!files.has('/clusters/page-2/index.html'), 'an empty type index was paginated');
+  assert.ok(!files.get('/index.html').includes('href="/clusters/"'), 'an empty type folder is in the navigation');
 });
 
 test('the 501-item build is byte-reproducible (AGSC-04-02)', () => {

@@ -1,5 +1,4 @@
-# Trace: PRD-028, PRD-029, PRD-030, PRD-031 · audit/D §3(g) · PLAN §6.a (Mode 2)
-# Source of truth: the private design register (audit D) §3(g) "Team using an instance as live specs (Mode 2) with a coding agent"
+# Trace: PRD-028, PRD-029, PRD-030, PRD-031 · PLAN §6.a (Mode 2)
 @persona-g @mode-2
 Feature: Project team keeps its agent-built specs governed
   As P7 (project team, Mode 2)

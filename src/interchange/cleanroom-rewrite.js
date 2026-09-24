@@ -8,7 +8,8 @@
 // number.
 //
 // It is RULE-DRIVEN, never card-driven: the deny-list is
-// `governance/cleanroom.js#REFUSED_PHRASES`, the same list the lint applies, so
+// `governance/cleanroom.js#REFUSED_PHRASES` plus its `NUMBERED_DIVISION` pattern
+// (a chapter cited by any number or roman numeral), the same list the lint applies, so
 // the engine carries no list of cards and no list of sentences. What it removes,
 // it reports — one record per excision, with the exact removed text, so a human
 // reviewing the import sees every word the machine deleted.
@@ -166,6 +167,29 @@ function seam(left, right) {
 function removeOne(text, phrase) {
   const index = text.toLowerCase().indexOf(phrase);
   if (index < 0) return null;
+  return removeAt(text, index);
+}
+
+/**
+ * The first match of AGSC-08-17's numbered-division pattern — the word for a
+ * book division followed by an arabic or a roman numeral — case-insensitively, or
+ * `null`.
+ * @param {string} text
+ * @returns {{index:number, match:string}|null}
+ */
+function numberedDivision(text) {
+  const m = cleanroom.NUMBERED_DIVISION.exec(text.toLowerCase());
+  return m === null ? null : { index: m.index, match: text.slice(m.index, m.index + m[0].length) };
+}
+
+/**
+ * Remove the smallest span of `text` around `index` — the clause when the sentence
+ * has clauses, the whole sentence otherwise.
+ * @param {string} text
+ * @param {number} index
+ * @returns {{text:string, removed:string}}
+ */
+function removeAt(text, index) {
   const { start, end } = sentenceSpan(text, index);
   const sentence = text.slice(start, end);
   const parts = clauses(sentence);
@@ -214,11 +238,23 @@ function rewrite(body, options = {}) {
       changed = true;
       break;
     }
+    if (!changed) {
+      // The same rule refuses a chapter cited by NUMBER as a pattern, not as a
+      // literal, so the rewrite removes it the way the lint finds it.
+      const numbered = numberedDivision(text);
+      if (numbered !== null) {
+        const result = removeAt(text, numbered.index);
+        text = result.text;
+        excisions.push({ phrase: numbered.match.toLowerCase(), removed: result.removed });
+        changed = true;
+      }
+    }
     if (!changed) break;
   }
 
   const lower = text.toLowerCase();
-  const surviving = phrases.filter((p) => lower.includes(p));
+  const left = numberedDivision(text);
+  const surviving = [...phrases.filter((p) => lower.includes(p)), ...(left === null ? [] : [left.match.toLowerCase()])];
   const findings = surviving.map((phrase) => finding('AGSC-E405',
     `a refused construct survives the mechanical rewrite of "${phrase}"; the card is held back (AGSC-08-17)`,
     { file: options.file, slug: options.slug, line: 1 }));
@@ -232,6 +268,8 @@ module.exports = {
   TERMINATORS,
   clauses,
   endsSentence,
+  numberedDivision,
+  removeAt,
   removeOne,
   rewrite,
   seam,

@@ -1,8 +1,8 @@
 'use strict';
-// tests/interchange/llm-context.test.js — `export --to llm-context` (D98, AGSC-01-26a).
+// tests/interchange/llm-context.test.js — `export --to llm-context` (AGSC-01-26a).
 //
 // The two artefacts are ADDITIVE and non-normative, so what has to be asserted is not
-// a rule's bytes but the four properties D98 and AGSC-01-26a require of them: the TOON
+// a rule's bytes but the four properties and AGSC-01-26a require of them: the TOON
 // tabular form is the uniform-metadata one research 33 measured (never the full record
 // shape), the skim file says plainly that it is not provenance-complete, both carry
 // AGSC-01-29's header and the Content Use Terms, and both are deterministic.
@@ -54,7 +54,7 @@ function run(over) {
   return adapter.run(bundle(over), { instant: INSTANT, sha256, specVersion: '1.0.0-rc.5' });
 }
 
-test('the adapter emits exactly two files, both named by D98, with their SHA-256', () => {
+test('the adapter emits exactly two files, both named, with their SHA-256', () => {
   const out = run();
   assert.deepStrictEqual(out.files.map((f) => f.path), [...adapter.FILES]);
   assert.deepStrictEqual([...adapter.FILES], ['chunks-index.toon', 'llms-ctx.txt']);

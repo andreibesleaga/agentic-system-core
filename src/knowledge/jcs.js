@@ -47,7 +47,7 @@ function normalizeNames(value) {
   // member is installed with `defineProperty`, so this rewrite cannot lose one: a
   // plain `out[name] = …` assignment would SET THE PROTOTYPE for the name
   // `__proto__` instead of creating an own member, silently dropping it from the
-  // canonical bytes (F27-02).
+  // canonical bytes.
   const out = {};
   for (const key of Object.keys(value)) Object.defineProperty(out, nfc(key), { configurable: true, enumerable: true, value: normalizeNames(value[key]), writable: true });
   return out;

@@ -32,7 +32,7 @@ flowchart TD
     T4["Trigger: weekly cron 29 5 * * 0"]
     P4["permissions: contents: read, issues: write"]
     Sec4["secrets: none"]
-    R4["refresh --auto: staleness + link\nHEAD checks -> at most ONE issue,\nnever a commit"]
+    R4["build: NOW lists stale items\n(no network at 1.0) -> at most ONE issue,\nnever a commit"]
     T4 --> R4
   end
 
@@ -66,4 +66,4 @@ The w3id `.htaccess` is the one piece of "conneg logic" in the whole system and 
 repo entirely (ADR-005); every redirect target is a same-origin static file, so there is no open
 redirect to exploit (T5 in PLAN.md §12).
 
-Trace: PRD-048–051, NFR-04, NFR-09 · PLAN.md §7 (lane table), §12 T4/T5/T6 · D40(2,3,11) · ADR-005.
+Trace: PRD-048–051, NFR-04, NFR-09 · PLAN.md §7 (lane table), §12 T4/T5/T6 · ADR-005.

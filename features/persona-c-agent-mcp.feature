@@ -1,5 +1,4 @@
-# Trace: PRD-022, PRD-023, PRD-025 · audit/D §3(c) · PLAN §5.2 ToolTransport
-# Source of truth: the private design register (audit D) §3(c) "Agent reader via MCP (Mode 1 read)"
+# Trace: PRD-022, PRD-023, PRD-025 · PLAN §5.2 ToolTransport
 @persona-c @mode-1
 Feature: Agent reader queries structured knowledge without scraping
   As P3 (agent reader)
@@ -7,7 +6,7 @@ Feature: Agent reader queries structured knowledge without scraping
   So that I can search, read and follow links without page-scraping, with results trust-labelled
 
   Background:
-    Given no remote MCP server is served and no "agent-card.json" is emitted at v1 (D41, G42); both MAY be declared as surfaces (AGSC-06-34, AGSC-11-21)
+    Given no remote MCP server is served and no "agent-card.json" is emitted at v1; both MAY be declared as surfaces (AGSC-06-34, AGSC-11-21)
 
   @PRD-023
   Scenario: Agent starts the local stdio MCP server
@@ -41,7 +40,7 @@ Feature: Agent reader queries structured knowledge without scraping
     Then the response loads into any standard RDF store with zero blank nodes
 
 
-  @PRD-056 @D51-b
+  @PRD-056
   Scenario: Agent uses the node as memory and knowledge base over MCP
     Given "npx agentic-system-core mcp" is running over the fixture Bundle
     When the agent calls tool "ask" with "What pattern handles tool-use retries?"

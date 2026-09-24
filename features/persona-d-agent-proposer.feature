@@ -1,10 +1,9 @@
-# Trace: PRD-039, PRD-040, PRD-042, PRD-043 · audit/D §3(d) · PLAN §6(b), C5
-# Source of truth: the private design register (audit D) §3(d) "Agent proposer (Mode 1 write)"
+# Trace: PRD-039, PRD-040, PRD-042, PRD-043 · PLAN §6(b), C5
 @persona-d @mode-1
 Feature: Agent proposer contributes a change humans ratify
   As P4 (agent proposer, operator-signed)
   I want to prepare a Proposal locally and never push on my own
-  So that a human operator remains the only one who writes to the remote (D27)
+  So that a human operator remains the only one who writes to the remote
 
   Background:
     Given the agent is operator-run and has a "prov.operator" identity "human:<gh-id>"

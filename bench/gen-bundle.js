@@ -1,7 +1,7 @@
 'use strict';
 /**
  * bench/gen-bundle.js — the deterministic synthetic-Bundle generator behind the
- * build curves of `docs/MEASUREMENTS.md` (research/39 Layer D).
+ * build curves of `docs/MEASUREMENTS.md` (measurement layer D).
  *
  * Why it exists. AGSC-06-21 and AGSC-06-31 branch above 500 items — index
  * sharding and index-route pagination — and no released vector crosses that

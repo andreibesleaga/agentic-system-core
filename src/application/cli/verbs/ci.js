@@ -7,7 +7,6 @@
 // The pipeline itself is `distribution/ci.js`; the four N9 lints are a LANE,
 // injected here as `options.lint`, so the pipeline can be run with a stricter
 // or a narrower lint set without changing it.
-// Owner: B (shell); wired at integration.
 
 const pipeline = require('../../../distribution/ci.js');
 const lintVerb = require('./lint.js');

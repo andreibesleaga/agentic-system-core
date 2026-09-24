@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `lint` (owner C) — AGSC-08-13 (the injection scan), AGSC-01-34
+// Conformance area `lint` — AGSC-08-13 (the injection scan), AGSC-01-34
 // and AGSC-02-98 (attachments and the SVG allow-list), AGSC-04-23 (the combining
 // bound), AGSC-01-35 (the relative-path grammar) and AGSC-02-96 (ports).
 //
@@ -124,7 +124,7 @@ function runPorts(vector, ctx) {
 }
 
 /**
- * lint-0026 — AGSC-04-19 as amended at rc.5 (V9D-01/): the YAML profile
+ * lint-0026 — AGSC-04-19 as amended at rc.5: the YAML profile
  * `lint --fix` emits, applied twice.
  *
  * `governance/fix.js` is pure and takes the raw `schema/item.schema.json` object,
@@ -166,15 +166,9 @@ function runFix(vector, ctx) {
  * must not fail on either, must warn about exactly one of them, and must give both
  * back unchanged through every path that claims to preserve.
  *
- * ONE READING, stated rather than hidden. The vector's `exit: 0` and
- * `status: "pass"` are asserted over the diagnostics THE TWO KEYS produce, which is
- * what the case is about and what its own description argues ("`weights` is an
- * unknown but well-formed key, so it is the warning AGSC-E207; `x-acme-note`
- * matches … so AGSC-02-05a forbids any diagnostic for it"). The fixture item itself
- * also omits `kind`, which `schema/item.schema.json` requires of a `concept` and
- * which is `AGSC-E202` — an unrelated defect of the fixture, not of this rule, and
- * recorded as an item rather than papered over. The round trips below are asserted
- * over the whole file, byte for byte, with no such reading.
+ * The fixture states `kind: principle` since rc.6, so the whole item lints with
+ * warnings only and `exit: 0` / `status: "pass"` hold over the whole invocation,
+ * with no reading; the round trips are asserted over the whole file, byte for byte.
  */
 function runReservedMembers(vector, ctx) {
   const root = (ctx && ctx.root) || '.';
@@ -201,8 +195,8 @@ function runReservedMembers(vector, ctx) {
   }
   // A warning is not a failed gate (AGSC-09-08), so `build` succeeds.
   list.push(['warnings only, so exit 0 and status pass',
-    aboutKeys.every((f) => f.severity === 'warn') && want.exit === 0 && want.status === 'pass',
-    JSON.stringify(aboutKeys)]);
+    findings.every((f) => f.severity === 'warn') && want.exit === 0 && want.status === 'pass',
+    JSON.stringify(findings)]);
 
   // (2) `lint --fix` — the emitted key order of AGSC-04-19, and the reserved value
   // reproduced exactly as authored, indentation included (AGSC-04-20).
@@ -228,9 +222,51 @@ function runReservedMembers(vector, ctx) {
   return checks(list);
 }
 
+/** lint-0030 (AGSC-05-05): an authored `iri` must be the computed one, else AGSC-E204. */
+function runIriCases(vector) {
+  const base = ((vector.input.config || {}).site || {}).base;
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const list = [];
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    const findings = validate.itemIri(input.path, input.frontmatter, base);
+    if (want.error !== undefined) {
+      list.push([`${input.name} code`, findings.some((f) => f.code === want.error), JSON.stringify(findings.map((f) => f.code))]);
+    } else {
+      list.push([`${input.name} valid`, findings.length === 0, JSON.stringify(findings.map((f) => f.code))]);
+    }
+  }
+  return checks(list);
+}
+
+/**
+ * lint-0031 (AGSC-01-21): the 2–5 tag count is the warning AGSC-E213 and nothing
+ * else changes. The item is a conforming concept whose only variable is `tags`,
+ * validated through the same `validate.item` the lint lane runs.
+ */
+function runTagCountCases(vector, ctx) {
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const list = [];
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    const fm = {
+      type: 'concept', kind: 'principle', title: 'Router',
+      description: 'A routing concept whose tag count is the only variable of this case, held here for lint-0031.',
+      tags: input.tags, prov: { origin: 'human', operator: 'human:tester' },
+    };
+    const findings = validate.item(fm, { schemas: ctx.schemas, file: 'content/concepts/router.md', slug: 'router' });
+    const m = findingsMatch((want.findings || []).map((f) => ({ code: f.code, severity: f.severity })), findings);
+    list.push([`${input.name} findings`, m.ok && findings.length === (want.findings || []).length,
+      `${m.detail} ${JSON.stringify(findings.map((f) => f.code))}`]);
+  }
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
   const { input } = vector;
   if (vector.id === 'lint-0027') return runReservedMembers(vector, ctx);
+  if (vector.id === 'lint-0030') return runIriCases(vector);
+  if (vector.id === 'lint-0031') return runTagCountCases(vector, ctx);
   if (typeof input.bytes === 'string' && typeof input.file === 'string') return runFix(vector, ctx);
   if (typeof input.markdown === 'string') return runInjection(vector, ctx);
   if (input.svgs !== undefined) return runSvg(vector);

@@ -12,8 +12,9 @@
 // `script-src 'self'`): no inline style, no inline script, no other host, no font file
 // (system fonts). The script only sets `data-theme` on <html> from the visitor's own
 // choice; without it the page follows `prefers-color-scheme`. It stores one key in
-// `localStorage` (a presentation preference, read only by this script, never sent);
-// AGSC-06-05 forbids `localStorage` until the amendment recorded for 1.0.0 is made.
+// `localStorage` (a presentation preference, read only by this script, never sent),
+// the one browser-storage key AGSC-06-05 admits: `agsc-theme`, `light` or `dark`,
+// written only on the visitor's choice and removed when the visitor picks the system theme.
 //
 // Pure: two constants and two getters, no I/O.
 

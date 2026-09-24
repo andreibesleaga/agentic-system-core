@@ -1,6 +1,5 @@
 'use strict';
-// ontology/alignments.ttl — the INFORMATIVE alignment file of (research/37 §3.7,
-// RES1-05). It must (1) parse, (2) state only SKOS mapping relations or OWL
+// ontology/alignments.ttl — the INFORMATIVE alignment file. It must (1) parse, (2) state only SKOS mapping relations or OWL
 // equivalences, (3) have one of the 52 terms of ontology/agsc.ttl as every subject —
 // it adds no term, so the counter stays unchanged — (4) point every object at a
 // well-formed absolute IRI in a namespace its header verified by URL and quote, and

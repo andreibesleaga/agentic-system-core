@@ -6,7 +6,7 @@
  * memoryPorts(files) -> a minimal FileSystem port over an in-memory
  * {path: contents} map, for area handlers whose vector supplies Bundle
  * content inline (`input.config`, `input.env_file`, …) rather than a real
- * fixture directory (tests/fixtures/minimal/ does not exist yet — owner A).
+ * fixture directory (tests/fixtures/minimal/ does not exist yet).
  */
 function memoryPorts(files) {
   const store = Object.assign({}, files);

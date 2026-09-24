@@ -46,10 +46,10 @@
     "spec_version": "1.0.0-rc.6"
   },
   "level": "withdrawn",
-  "note": "added 2026-09-22 at rc.6 (RC6-A); derived by hand from AGSC-06-13a and AGSC-06-15, superseding disc-0007",
+  "note": "added 2026-09-22 at rc.6; derived by hand from AGSC-06-13a and AGSC-06-15, superseding disc-0007",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },
-  "reason": "AGSC-06-13a gained the `bundle_version:` line of AGSC-04-25 at rc.6 (D113), so the bytes this case pinned can no longer be right. The corrected case ships as disc-0014 (AGSC-00-16: a released vector is never edited in place).",
+  "reason": "AGSC-06-13a gained the `bundle_version:` line of AGSC-04-25 at rc.6, so the bytes this case pinned can no longer be right. The corrected case ships as disc-0014 (AGSC-00-16: a released vector is never edited in place).",
   "rule": "AGSC-06-13a"
 }

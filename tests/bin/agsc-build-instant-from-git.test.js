@@ -7,7 +7,7 @@
 // ever performed that read, so the real command fell to 0 inside every git repository.
 // Every gate ran with SOURCE_DATE_EPOCH set, which is why no test noticed; once the
 // writer refused to derive a security.txt expiry from a defaulted instant, a plain
-// `agsc build` in a committed Bundle failed. Found at the session-29 close.
+// `agsc build` in a committed Bundle failed. Found at the close.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');

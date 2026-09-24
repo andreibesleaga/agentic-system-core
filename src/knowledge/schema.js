@@ -28,7 +28,7 @@
 //                    compile with `strictRequired: true`). It stays off for a
 //                    second, permanent reason — schema/bundle.schema.json carries
 //                    `"not": {"required": ["type"]}` (AGSC-01-04 as amended at
-//                    rc.5, V9A-13) and `type` is deliberately absent from that
+//                    rc.5) and `type` is deliberately absent from that
 //                    schema's `properties`, since the Bundle root is not an item.
 //                    Ajv's heuristic reads that as "required property not
 //                    defined" and refuses to compile. The construct is legal

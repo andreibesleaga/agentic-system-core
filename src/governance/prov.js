@@ -6,7 +6,7 @@
 // Implements AGSC-08-01…08-12 (the provenance contract, the DCO-Plus trailer
 // grammar, the Gates) and the claim-and-progress limit of AGSC-10-17, which is
 // the `prov-0003` vector. AGSC-08-28's E509/E510/E511(`max_new_items`) checks
-// live in `governance/agents.js` (owner B) and are CALLED from here, never
+// live in `governance/agents.js` and are CALLED from here, never
 // duplicated.
 //
 // Codes emitted here, and the rule each comes from:

@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TD
-  subgraph BUILD["agsc build — 13 steps (audit/D S4)"]
+  subgraph BUILD["agsc build — 13 steps"]
     S1["1 Discover: content/**/*.md + site/*.md,\ncode-point sorted (fs port)"]
     S2["2 Parse frontmatter:\nYAML failsafe subset -> {fm, body}"]
     S3["3 Validate: JSON Schema mini-validator\n(type/enum/const/pattern/required/oneOf/$ref)"]
@@ -25,7 +25,7 @@ flowchart TD
   S13 --> DIFF
   DIFF -- "no" --> FAIL1["exit 1 (AGSC-E602)"]
   DIFF -- "yes" --> EXPORT["agsc ci: export; attest (CI only)"]
-  EXPORT --> LEDGER["Derive the WHOLE ledger.jsonl from git history\n{ts, kind, ref, actor, prev, hash} per event\nhash = sha256(prev + canonical(entry)) — written into www/,\nnever committed (D48(1))"]
+  EXPORT --> LEDGER["Derive the WHOLE ledger.jsonl from git history\n{ts, kind, ref, actor, prev, hash} per event\nhash = sha256(prev + canonical(entry)) — written into www/,\nnever committed"]
   LEDGER --> REVERIFY["Re-verify the hash chain and compare the head\nto agsc-ledger-head on the rel#ledger link (agsc verify --ledger)"]
   REVERIFY --> GATE["exit 0; dist/gate.json carries the verdict"]
 
@@ -33,12 +33,12 @@ flowchart TD
   GATE --> DONE2(("stop"))
 ```
 
-Steps 1–13 are `agsc build`'s own pipeline (audit/D §4, "Build pipeline internals"); N8 budget
+Steps 1–13 are `agsc build`'s own pipeline; N8 budget
 enforcement (HTML ≤100 KB/page, ≤1 MB per index document, ≤60 s/500 items) is checked inline during
 steps 7–9 and is a lint-style failure, not a numbered step. `agsc ci` wraps `build` with the
 double-build byte-compare (already step 13 internally), then `export`/`attest`, the deterministic
 re-derivation of `ledger.jsonl` into the build output, and offline chain re-verification against the
-published head (PLAN.md §6(a) steps 9–12; D44(h) as amended by D48(1)). Error codes in this system have
+published head (PLAN.md §6(a) steps 9–12; ADR-006). Error codes in this system have
 exactly one format, `AGSC-E<nnn>` (spec/09 §9.4).
 
-Trace: PRD-004, PRD-005, PRD-020, NFR-04 · audit/D §4 (13-row table) · PLAN.md §6(a), ADR-006, D44(h).
+Trace: PRD-004, PRD-005, PRD-020, NFR-04 · PLAN.md §6(a), ADR-006.

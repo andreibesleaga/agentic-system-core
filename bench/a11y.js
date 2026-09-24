@@ -1,6 +1,6 @@
 'use strict';
 /**
- * bench/a11y.js — accessibility counts per page type (research/39 Layer E), and
+ * bench/a11y.js — accessibility counts per page type (measurement layer E), and
  * the HTML-only page-weight sweep against AGSC-06-21's ≤ 100 KB budget.
  *
  * Two halves. The PURE half — which template a route belongs to, the tally of

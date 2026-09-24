@@ -5,13 +5,12 @@
 // environment flag `AGSC_FEATURE_LLM_REVIEW=1`, is non-blocking, and "the
 // launch pipeline — the `ci` and `review` lanes and everything they call — MUST
 // contain no model call". This engine therefore implements `review` as a
-// LINT-ONLY lane (D41): it runs exactly the checks `lint` runs and adds a
+// LINT-ONLY lane: it runs exactly the checks `lint` runs and adds a
 // Proposal-shaped reading of them; no model is reachable from this file, which
 // is what `tests/governance/*` and the grep-asserted proving lane of NFR-11
 // depend on.
 //
 // AGSC-08-08: nothing here sets, requires or influences an approval.
-// Owner: B (shell); wired at integration.
 
 const lintVerb = require('./lint.js');
 const helpers = require('./_helpers.js');

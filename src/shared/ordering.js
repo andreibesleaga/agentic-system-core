@@ -6,7 +6,7 @@
 // Why a shared kernel and not a bounded context: the FileSystem ADAPTER owes
 // AGSC-01-15 a code-point discovery order and the Knowledge context owes AGSC-04-12
 // the same ordering. An adapter that reached into `knowledge/` to borrow the
-// comparator was the one cross-context arrow the map did not declare (F27-13), and
+// comparator was the one cross-context arrow the map did not declare, and
 // a second copy of the comparator would be worse than the arrow: two orderings can
 // drift, one cannot. So the comparator moved DOWN, to a module that depends on
 // nothing and that every context and every adapter may require.

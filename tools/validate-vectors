@@ -19,7 +19,9 @@
 //   AGSC-E601  object members not in JCS order (AGSC-09-06), except the
 //              `input.value` subtree, which is the subject of the jcs vectors
 //   AGSC-E201  a `rule` that no spec/*.md defines; a duplicate `id`; a `withdrawn`
-//              vector without `reason` or whose `expected` is not {"withdrawn":true}
+//              vector without `reason` or whose `expected` is not {"withdrawn":true};
+//              a `superseded_by` on a vector that is not withdrawn, or one that names
+//              no vector of the set (AGSC-09-04)
 //   AGSC-E207  (warning) a `note` on a vector that is not marked unreleased
 //
 // A declared area with no vector file is an INFORMATIONAL count, never a failure
@@ -203,6 +205,8 @@ function run(argv, io) {
       'spec/ declares no rule, so every rule-id resolution below is vacuous (AGSC-09-91)'));
   }
   const seenIds = new Map();
+  /** AGSC-09-04: `superseded_by` links, checked once every id is known. */
+  const supersessions = [];
   const areasPresent = new Set();
 
   for (const absolute of files) {
@@ -262,6 +266,9 @@ function run(argv, io) {
         findings.push(finding('AGSC-E201', file, `rule "${vector.rule}" is defined nowhere in spec/ (AGSC-09-05)`));
       }
     }
+    if (vector.superseded_by !== undefined) {
+      supersessions.push({ file, level: vector.level, target: vector.superseded_by });
+    }
     if (vector.level === 'withdrawn') {
       if (typeof vector.reason !== 'string' || vector.reason === '') {
         findings.push(finding('AGSC-E202', file, 'a withdrawn vector MUST carry `reason` (AGSC-09-05)'));
@@ -289,6 +296,19 @@ function run(argv, io) {
       if (!registered.has(code)) {
         findings.push(finding('AGSC-E203', file, `error code ${code} is not registered in spec/09 section 9.4 (AGSC-09-15)`));
       }
+    }
+  }
+
+  // AGSC-09-04: a machine follows a withdrawal chain by `superseded_by`, so the link
+  // must be well formed, sit on a withdrawn vector, and name a vector that exists.
+  for (const link of supersessions) {
+    if (link.level !== 'withdrawn') {
+      findings.push(finding('AGSC-E201', link.file, 'only a withdrawn vector may carry `superseded_by` (AGSC-09-04)'));
+    }
+    if (typeof link.target !== 'string' || !/^[a-z]+-\d{4}$/u.test(link.target)) {
+      findings.push(finding('AGSC-E204', link.file, `superseded_by "${String(link.target)}" is not a vector id (AGSC-09-04)`));
+    } else if (!seenIds.has(link.target)) {
+      findings.push(finding('AGSC-E201', link.file, `superseded_by "${link.target}" names no vector of this set (AGSC-09-04)`));
     }
   }
 

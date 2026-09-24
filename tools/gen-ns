@@ -145,7 +145,7 @@ const xmlEscape = (s) => s.replace(/&/gu, '&amp;').replace(/</gu, '&lt;')
 const htmlEscape = xmlEscape;
 
 /**
- * AGSC-06-32 as amended at rc.6 (NS-04): ONE derivation of a term's name, shared
+ * AGSC-06-32 as amended at rc.6: ONE derivation of a term's name, shared
  * with `src/knowledge/jsonld.js#termName`, which is the conforming one. An `asc:`
  * term is named by its LOCAL name, always. An external property is named by its
  * local name, or by its compact IRI where that local name is also an `asc:` term
@@ -383,7 +383,7 @@ function expandCompact(value) {
 }
 
 /**
- * The `@id` → term-definition index of a context (NS-06).
+ * The `@id` → term-definition index of a context.
  *
  * AGSC-06-32 pins the MAPPING of a term and never its NAME, so a check that looks a
  * term up by key name only accepts the one naming convention the checker happens to
@@ -393,7 +393,7 @@ function expandCompact(value) {
  * names it `asc:<Term>`. Under AGSC-09-92 ("a validator failure blocks merge") that
  * would have blocked merges on correct output. Resolving by `@id` compares what the
  * rule actually pins, and the naming disagreement is recorded as a specification
- * item (NS-04) rather than enforced here.
+ * item rather than enforced here.
  */
 function contextById(context) {
   const index = new Map();
@@ -447,13 +447,13 @@ function checkContext(document, derived, file, findings) {
     }
   }
   // "every `asc:` term becomes a term definition whose `@id` is its IRI" — looked up
-  // by `@id`, which is what the rule pins, never by the key the writer chose (NS-06).
+  // by `@id`, which is what the rule pins, never by the key the writer chose.
   const onDisk = contextById(context);
   const wanted = derived['@context'];
   const missing = [];
   // The derived vocabulary terms, identified by the `asc:` IRI their definition
-  // names — NOT by the key, which since rc.6 (NS-04) is the term's LOCAL name here
-  // and may be the compact IRI in a conforming file written the other way (NS-06).
+  // names — NOT by the key, which since rc.6 is the term's LOCAL name here
+  // and may be the compact IRI in a conforming file written the other way.
   // Keying on `asc:` prefixes of the KEY made this loop check nothing at all once
   // the derivation stopped producing such keys.
   const ascTerms = Object.entries(wanted)

@@ -114,7 +114,8 @@ test('AGSC-01-29: the provenance header, the terms and the fenced prose are all 
   assert.match(text, /^# A Node — steering for coding agents\n\n<!-- agsc:provenance\n/u);
   assert.match(text, /\nbundle: https:\/\/example\.org\/\n/u);
   assert.match(text, /\nlicense: CC-BY-4\.0\n/u);
-  assert.match(text, new RegExp(`\nterms: ${chunks.TERMS.replace(/[.]/gu, '\\.')}\n`, 'u'));
+  // AGSC-06-18 as amended at rc.6: a CC BY Bundle's `terms` line names its own licence.
+  assert.match(text, /\nterms: CC-BY-4\.0\n/u);
   assert.match(text, /\nspec_version: 1\.0\.0-rc\.5\n/u);
   assert.match(text, /\ngenerated_at: 2026-01-01T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov\.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n/u);
   assert.match(text, /```text agsc-content\n/u);
@@ -184,6 +185,9 @@ test('AGSC-08-20b: a commit with no files[] can neither add to nor clear the wit
 test('the lane says so when no git-log file was supplied, rather than reporting a green one', () => {
   assert.match(planOf([]).lanes[0], /NOT RUN/u);
   assert.match(planOf([], { gitLog: [] }).lanes[0], /^channel-auto \(from/u);
+  // AGSC-08-20b: a git-log file that lists no files[] leaves the withholding unevaluated.
+  assert.match(planOf([], { gitLog: [{ sha: '1', trailers: {} }] }).lanes[0], /NOT RUN — the git-log file lists no files\[\]/u);
+  assert.match(planOf([], { gitLog: [{ files: [], sha: '1', trailers: {} }] }).lanes[0], /^channel-auto \(from/u);
 });
 
 test('AGSC-06-22: the NOW block omits a member the state does not carry', () => {

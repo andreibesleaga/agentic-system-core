@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `links` (owner C) — AGSC-03-02…03-13 and AGSC-01-35 where a
+// Conformance area `links` — AGSC-03-02…03-13 and AGSC-01-35 where a
 // body reference carries a path.
 //
 // The vectors carry two input shapes: `input.items` (flat frontmatter objects,

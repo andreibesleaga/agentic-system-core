@@ -37,7 +37,7 @@ Normal pull request. Before you open it:
 ```bash
 npm install                      # dev dependencies only
 npm test                         # the whole suite, node:test, offline
-npm run test:coverage            # line coverage of src/ must stay at or above 99%
+npm run test:coverage            # line coverage of src/ must stay at or above 99.9 %
 npm run audit                    # npm audit must report 0 vulnerabilities
 node tools/count-artifacts --json   # the rule, code, vector and term counts
 node tools/validate-vectors --json  # every conformance vector is well formed
@@ -94,9 +94,15 @@ may submit the work, you keep your copyright and may use your contribution anywh
 else, you allow the maintainer to publish and maintain it here, and you accept that
 your name, the address you commit under and your sign-off are published permanently.
 
+Two further clauses say what the sign-off means for prose and for tools. By (g), a
+contribution to prose also certifies that you have the right to submit it under the
+Content Use Terms in `LICENSE-CONTENT`, or under the licence the node names for its
+prose instead. By (h), when a software tool helped you write the contribution you say
+so in the `Assisted-by:` line, and you remain the person who answers for it.
+
 The file is the project's own text, written by the project and read by no lawyer. It
-is the Developer Certificate of Origin 1.1 reproduced unchanged, plus one further
-clause (e) that belongs to this project. `spec/08-governance.md` (AGSC-08-06) names
+is the Developer Certificate of Origin 1.1 reproduced unchanged, plus the clauses
+(e), (g) and (h) that belong to this project. `spec/08-governance.md` (AGSC-08-06) names
 the file and pins its SHA-256, so a distribution that ships different text has to
 name it with a different token: what you sign under `CA-v1` stays under `CA-v1`.
 
@@ -136,13 +142,18 @@ works if that field is decorative.
 
 ## Releases
 
-Releases are tagged `vX.Y.Z` and published by the tag-triggered workflow in
-`.github/workflows/release.yml`; nothing is published from a laptop. The procedure
+A release carries two tags on the same commit: the specification's own tag
+(`1.0.0-rc.6`, which names the standard) and the package tag (`v1.0.0-rc.6`), which
+triggers the workflow in `.github/workflows/release.yml` that publishes the npm
+packages; nothing is published from a laptop. The procedure
 around it is kept by the maintainer outside this repository, and `node tools/release`
 prints the checklist it checks against.
 
-## Conduct
+## Conduct, governance and the name
 
-Be decent. Disagree about the work, not about the person. The maintainer will remove
-comments that are abusive and will stop engaging with anyone who makes the project
-unpleasant to work on.
+Be decent. Disagree about the work, not about the person. The
+[code of conduct](CODE_OF_CONDUCT.md) says what that means and how to report a
+problem. [GOVERNANCE.md](GOVERNANCE.md) says who decides and how a change is
+proposed, [TRADEMARK-POLICY.md](TRADEMARK-POLICY.md) says how the project's name may
+be used, and [docs/CONFORMANCE-STATEMENTS.md](docs/CONFORMANCE-STATEMENTS.md) gives
+the exact sentence for saying that an implementation conforms.

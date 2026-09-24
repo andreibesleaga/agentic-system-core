@@ -75,8 +75,10 @@ test('the document loader refuses every URL but the context (AGSC-04-03)', async
   await assert.rejects(() => loader('https://example.org/elsewhere'), /resolve no URL/u);
 });
 
-test('jsonld is a devDependency at the pinned version, and src/ never requires it', () => {
+test('jsonld is a dependency at the pinned version, for the conform run, and src/ never requires it', () => {
+  // The graph area's round trip runs from an installed package under `agsc conform`,
+  // so the processor is a runtime dependency of the package and not of `src/`.
   const pkg = require('../../package.json');
-  assert.strictEqual(pkg.devDependencies.jsonld, '9.0.0');
-  assert.strictEqual(pkg.dependencies.jsonld, undefined);
+  assert.strictEqual(pkg.dependencies.jsonld, '9.0.0');
+  assert.strictEqual(pkg.devDependencies.jsonld, undefined);
 });

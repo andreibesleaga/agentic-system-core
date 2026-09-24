@@ -26,8 +26,9 @@ test('the description becomes one line and the licence is the authored one', () 
   const text = llms.llmsTxt(BUNDLE, OPTIONS);
   assert.ok(text.includes('> One line broken over two.\n'));
   assert.ok(text.includes('license: CC-BY-4.0\n'));
-  // AGSC-06-18: `terms` is the constant, independent of `bundle.license_prose`.
-  assert.ok(text.includes('terms: LicenseRef-AgenticSystemCore-Content-Use-1.0\n'));
+  // AGSC-06-18 as amended at rc.6: the Content Use Terms only where adopted, so a
+  // CC BY Bundle's `terms` line names its own licence.
+  assert.ok(text.includes('terms: CC-BY-4.0\n'));
 });
 
 test('retired and draft items appear in neither file, and a cluster has no link line', () => {

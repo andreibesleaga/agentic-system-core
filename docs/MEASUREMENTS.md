@@ -1,6 +1,6 @@
 # Measurements
 
-**Status: COMPLETE for every layer one machine can run, measured 2026-09-23 against `1.0.0-rc.6` (drafted, untagged).** Nine layers have been run and are reported below with the command that produced each number. Two things remain open, and each says so where it belongs: the same suite and builds on macOS and Windows (a CI matrix, which one machine cannot run), and the authoritative rule-coverage matrix that replaces the proxy rows of §1 (`tools/rule-coverage`, another package's deliverable).
+**Status: COMPLETE for every layer one machine can run, measured 2026-09-23 against `1.0.0-rc.6` (drafted, untagged); the conformance, security and package layers were measured again on 2026-09-24, after the last specification pass of the draft.** Nine layers have been run and are reported below with the command that produced each number. Two things remain open, and each says so where it belongs: the same suite and builds on macOS and Windows (a CI matrix, which one machine cannot run), and the authoritative rule-coverage matrix that replaces the proxy rows of §1 (`tools/rule-coverage`, another package's deliverable).
 
 Every number here is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.
 
@@ -37,24 +37,26 @@ The working tree was shared with other packages' in-flight edits on the day; eve
 ## 1. Conformance — the vectors, and how much of the specification they reach
 
 ```
-node bench/measure.js --layer conformance --scratch <dir>
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch <dir>
 node tools/count-artifacts --json
 ```
 
-**The vector run.** `149 pass, 0 fail, 25 skip (25 withdrawn, 0 pending) of 174`. Of the 174 vectors, 148 are required, 1 is optional and 25 are withdrawn; withdrawn vectors are excluded from the claim, as AGSC-00-13 requires. The 19 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery frontmatter graph import jcs ledger links lint prov slug`.
+**The vector run.** `164 pass, 0 fail, 30 skip (30 withdrawn, 0 pending) of 194`. Of the 194 vectors, 163 are required, 1 is optional and 30 are withdrawn; withdrawn vectors are excluded from the claim, as AGSC-00-13 requires. The 19 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery frontmatter graph import jcs ledger links lint prov slug`.
 
-**Rule coverage.** The specification declares **343 rules** — 332 active, 11 reserved. Counted over the 328 active rules the parser recognises in `spec/*.md`:
+**Rule coverage.** The specification declares **343 rules** — 332 active, 11 reserved. Counted over the 332 active rules, a rule being retired exactly when `tools/count-artifacts` says so:
 
-| | rules | share of 328 |
+| | rules | share of 332 |
 |---|---|---|
-| with at least one conformance vector | **115** | 35 % |
-| with **no** vector | **213** | 65 % |
-| named by at least one test file | 261 | 80 % |
-| named by at least one checker under `tools/` | 74 | 23 % |
+| with at least one conformance vector | **129** | 39 % |
+| with **no** vector | **203** | 61 % |
+| named by at least one test file (a file that contains the id — a proxy; `tools/rule-coverage`, which counts test titles and `// verifies` markers, reports 301) | 319 | 96 % |
+| named by at least one checker under `tools/` | 80 | 24 % |
 | named by at least one acceptance scenario | 14 | 4 % |
-| **named by nothing at all** | **59** | 18 % |
+| **named by nothing at all** | **10** | 3 % |
 
-**Read the last four rows carefully.** "Named by a test" means the rule id appears in a test file. That is a statement of intent, not proof of a machine assertion. Only the first row — a vector that carries the rule id in its `rule` member and is executed by the runner — is verified in the strict sense. **Treat rows 3 to 6 as an upper bound on coverage and row 1 as the lower bound** until `tools/rule-coverage` classifies each rule as verified, prose-only-with-a-reason, or unverified. The 59 rules that nothing names are listed in `docs/measurements.json` under `layers.conformance.rule_coverage.uncovered`, with a per-chapter breakdown beside it.
+*(Corrected 2026-09-24: the earlier table counted 328 active rules, because the runner took any rule whose first words mentioned "reserved" for a reserved one; it now applies the counter's own test.)*
+
+**Read the last four rows carefully.** "Named by a test" means the rule id appears in a test file. That is a statement of intent, not proof of a machine assertion. Only the first row — a vector that carries the rule id in its `rule` member and is executed by the runner — is verified in the strict sense. **Treat rows 3 to 6 as an upper bound on coverage and row 1 as the lower bound** until `tools/rule-coverage` classifies each rule as verified, prose-only-with-a-reason, or unverified. The 55 rules that nothing names are listed in `docs/measurements.json` under `layers.conformance.rule_coverage.uncovered`, with a per-chapter breakdown beside it.
 
 **Error codes.** 90 registered, 90 used.
 
@@ -80,42 +82,38 @@ node bench/measure.js --layer determinism --scratch <dir>
 ## 3. The security floor, scored
 
 ```
-node bench/measure.js --layer security --scratch <dir>      # corpus: bench/corpus/security-floor.json
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security --scratch <dir>      # corpus: bench/corpus/security-floor.json
 ```
 
 A seeded corpus of **104 cases**: **85 faults the rules name**, **13 valid controls** and **6 shapes reported but never scored**. Every case runs through the real code path — a scratch copy of the reference fixture linted or gated (`agsc lint`, `agsc ci`), a hostile foreign corpus handed to `agsc import --from okf`, a hostile discovery document handed to `tools/validate-wellknown`, hostile peer lists walked by the federation walk with an in-memory fetch (no socket is opened), redirect chains through the redirect guard, and forged skill packs and Harness file sets through the AGSC-07-15 checks. Every credential-shaped value in the corpus is fabricated and stored base64-encoded.
 
 An outcome is one of five: **detected** (the rule's code, exit 0), **refused** (the rule's code, non-zero exit), **refused under another code** (stopped, non-zero exit, but with a different registered code from the one the rule names — handled, and still a diagnostic defect), **neutralised** (no finding, but the construct demonstrably reached no output: the scorer searches the output bytes) and **missed** (including any internal error, which is never a verdict).
 
-**Score: 83 of 85 faults stopped.** 21 detected, 53 refused, 5 refused under another code, 4 neutralised, **2 missed**. **Controls: 11 of 13 clean; 2 false positives.**
+**Score: 85 of 85 faults stopped** (measured 2026-09-24). 21 detected, 61 refused, 3 neutralised, none refused under another code and none missed. **Controls: 13 of 13 clean.** This is a statement about these 85 shapes and nothing more (AGSC-08-19).
 
 | class | faults | stopped | how | controls clean |
 |---|---|---|---|---|
 | agent-directed imperatives (title, description, body, upper case, vendor key, agent-authored, text attachment, configured pattern) | 8 | 8 | 7 detected, 1 refused (agent-authored ⇒ error) | — |
 | hidden text (zero-width, tag characters, bidi override, HTML comment, both variation-selector ranges) | 6 | 6 | detected | — |
-| encoded runs at the 256-character threshold (base64, hex, inside a fence) | 3 | 3 | detected | **0 of 2** |
+| encoded runs at the 256-character threshold (base64, hex, inside a fence) | 3 | 3 | detected | 2 of 2 |
 | link schemes (`javascript:`, `data:`, `file:` autolink, `vbscript:`) | 4 | 4 | detected | — |
 | secrets (access-key id, token, private-key block, assignment) | 4 | 4 | refused | 1 of 1 |
 | personal data (e-mail, telephone) | 2 | 2 | refused | 1 of 1 |
 | clean room (`bookRef`, reading-order phrase, excluded file) | 3 | 3 | 2 refused, 1 neutralised | — |
-| path traversal (attachment `..`, absolute, backslash; body link and image escaping; symlinked item; symlinked attachment directory; `build.out` escaping) | 8 | 8 | 7 refused, 1 under another code | — |
-| NUL / BOM / CR and encoding (BOM, CRLF, bare CR, NUL and U+2028 in a title, non-NFC, invalid UTF-8) | 7 | **6** | refused | — |
-| oversized inputs (item over 1 MiB, configuration over 1 MiB, attachment over the cap, a combining run over the normalisation bound) | 4 | 4 | 2 refused, 2 under another code | — |
-| archives (in `content/`, as an attachment) | 2 | 2 | 1 neutralised, 1 under another code | — |
+| path traversal (attachment `..`, absolute, backslash; body link and image escaping; symlinked item; symlinked attachment directory; `build.out` escaping) | 8 | 8 | refused | — |
+| NUL / BOM / CR and encoding (BOM, CRLF, bare CR, NUL and U+2028 in a title, non-NFC, invalid UTF-8) | 7 | 7 | refused | — |
+| oversized inputs (item over 1 MiB, configuration over 1 MiB, attachment over the cap, a combining run over the normalisation bound) | 4 | 4 | refused | — |
+| archives (in `content/`, as an attachment) | 2 | 2 | 1 refused, 1 neutralised | — |
 | hostile YAML (alias bomb, language tag, duplicate key) | 3 | 3 | refused | — |
 | unsafe SVG on a pattern (script, embedded raster, DOCTYPE with an entity) | 3 | 3 | refused | — |
 | a hostile skill (forged by a title, a script, `allowed-tools`, a shebang, a path escaping the Harness, an executable extension) | 6 | 6 | refused | 1 of 1 |
 | a hostile discovery file (not JSON, over 1 MiB, 100,000-deep nesting, script anchor, unknown relation, extra members; peers at `file:`, link-local metadata, loopback, private range, IPv6 loopback, DNS resolving to a private address, an unresolved host, a 60-peer fan-out flood; a redirect to loopback, a four-hop chain) | 16 | 16 | refused; no refused peer ever reached the fetch | 1 of 1 |
-| a hostile foreign corpus on import (an archive, a symlink out of the source, injection, a NUL in a title, a file over 1 MiB, an excluded file) | 6 | **5** | 1 detected, 1 refused, 1 under another code, 2 neutralised | 1 of 1 |
+| a hostile foreign corpus on import (an archive, a symlink out of the source, injection, a NUL in a title, a file over 1 MiB, an excluded file) | 6 | 6 | 1 detected, 4 refused, 1 neutralised | 1 of 1 |
 | valid Bundle controls (clean item under `ci` and `lint`, `https` link, emoji sequence, the word "ignore", a clean SVG) | — | — | — | 6 of 6 |
 
-**The two misses.** (1) A file that is **not valid UTF-8** is accepted by `lint` and `ci` without a finding; AGSC-01-14 requires UTF-8 and names `AGSC-E108`, and the bytes are silently decoded with replacement characters. (2) An **archive handed to `import`** ends in an internal error (`ENOTDIR`) rather than the `AGSC-E903` refusal AGSC-01-16 names; nothing is written, but a crash is not a verdict.
+**What changed since 2026-09-23.** The two misses of the first run are closed: a file that is not valid UTF-8 is now refused with `AGSC-E108` (AGSC-01-14), and an archive handed to `import` is refused with `AGSC-E903` (AGSC-01-16) instead of ending in an internal error. The two false positives are gone: the encoded-run check uses the 256-character threshold AGSC-08-13 fixed at rc.5. The five faults that were stopped under another code now carry the code their rule names.
 
-**The two false positives.** Base64 runs of 200 and of 255 characters are reported as `AGSC-E401`. AGSC-08-13 fixed the threshold at **256** characters at rc.5 so that two engines agree on the same input; the engine still flags runs from 128 characters.
-
-**Refused under another code.** Five faults are stopped, but reported under `AGSC-E901` (a link the build emits no route for) or `AGSC-E201` (configuration not valid JSON) instead of the code the rule names: a symlinked attachment directory (`AGSC-E902`), an attachment over the cap (`AGSC-E904`), an archive as an attachment (`AGSC-E903`), an oversized configuration (`AGSC-E904`), and an oversized foreign file on import (`AGSC-E904`).
-
-**Reported, never scored (6).** Three shapes beyond what AGSC-08-13 enumerates — a full-width-letter imperative, a paraphrased imperative, an imperative split across two lines — are not detected, which is what AGSC-08-19 says to expect. A NUL byte in an item **body** is named by no rule: the HTML replaces it, and `chunks.jsonl` carries it as `\u0000`. And **`agsc build` run on its own, without `lint`**, publishes an SVG attachment carrying a `<script>` element to `/attachments/<slug>/` and writes an attachment path with `..` segments into the page; `agsc ci` (lint, then build, then verify) refuses both. The gate is `ci`; a node published by `build` alone does not have it.
+**Reported, never scored (6).** Three shapes beyond what AGSC-08-13 enumerates — a full-width-letter imperative, a paraphrased imperative, an imperative split across two lines — are not detected, which is what AGSC-08-19 says to expect. The other three are now caught: a NUL byte in an item **body** is refused with `AGSC-E108` (AGSC-01-14 as amended at rc.6 names every C0 control but TAB and LF), and **`agsc build` run on its own, without `lint`**, refuses an SVG attachment carrying a `<script>` element (`AGSC-E412`) and an attachment path with `..` segments (`AGSC-E902`), as AGSC-02-98 now requires of `build` itself.
 
 ---
 
@@ -241,9 +239,11 @@ npm pack --dry-run --json
 
 | | |
 |---|---|
-| files in the tarball | 385 |
-| unpacked | 2.94 MB |
-| packed | 869 KB |
+| files in the tarball | 455 |
+| unpacked | 3.41 MB |
+| packed | 1,026 KB |
+
+*(Measured again on 2026-09-24, after the manifest was cut to what a consumer runs: the nine checkers of AGSC-09-90, the counter and the benchmark tool with its query set ship; the maintainer's tools, the measurement runners and their corpus stay in the repository.)*
 
 ---
 
@@ -253,28 +253,28 @@ npm pack --dry-run --json
 |---|---|
 | Three-OS matrix | the same suite and builds on macOS and Windows at Node 22 and 24 cannot be run from one machine; it is a CI measurement |
 | Authoritative rule coverage | §1's rows 3 to 6 are proxies until `tools/rule-coverage` classifies every rule |
-| COGX import | the engine ships no COGX adapter, so there is nothing to feed a hostile COGX archive to; the OKF adapter was scored instead (§3) |
+| COGX import | the engine ships a COGX adapter, but the security corpus does not yet feed it hostile archives; the OKF adapter is the import lane scored in §3 |
 
 ---
 
-## Table for the paper (numbers only)
+## Summary table (numbers only)
 
-Paste-ready for the Conformance and Measurements section. Every figure is from this document; nothing is rounded up.
+Every figure is from this document; nothing is rounded up.
 
 | quantity | value |
 |---|---|
 | specification version measured | 1.0.0-rc.6 (drafted, untagged) |
 | rules declared / active / reserved | 343 / 332 / 11 |
-| conformance vectors: total / required / optional / withdrawn | 174 / 148 / 1 / 25 |
-| vector run | 149 pass, 0 fail, 25 skipped (all withdrawn) |
+| conformance vectors: total / required / optional / withdrawn | 194 / 163 / 1 / 30 |
+| vector run | 164 pass, 0 fail, 30 skipped (all withdrawn) |
 | populated vector areas | 19 |
-| active rules with ≥ 1 vector | 115 of 328 (35 %) |
-| active rules named by no test, checker, vector or scenario | 59 of 328 (18 %) |
+| active rules with ≥ 1 vector | 129 of 332 (39 %) |
+| active rules named by no test, checker, vector or scenario | 10 of 332 (3 %) |
 | error codes registered / used | 90 / 90 |
 | two clean builds compared | 49 files, 0 differing |
 | builds across time zone and locale compared | 49 files, 0 differing |
-| security floor: seeded faults stopped | 83 of 85 (21 detected, 53 refused, 5 refused under another code, 4 neutralised; 2 missed) |
-| security floor: valid controls clean | 11 of 13 |
+| security floor: seeded faults stopped | 85 of 85 (21 detected, 61 refused, 3 neutralised; none missed) |
+| security floor: valid controls clean | 13 of 13 |
 | security floor: hostile discovery inputs refused | 16 of 16 |
 | page-tool / MCP parity: calls equal as values | 207 of 207, over 3 Bundles |
 | unpublished items hidden from the page tools | 474 of 474 calls |
@@ -286,9 +286,9 @@ Paste-ready for the Conformance and Measurements section. Every figure is from t
 | largest HTML page at 10,000 items | 80.4 KB against a 100 KB budget |
 | axe-core violations, 4 builds, 143 pages, both colour schemes | 0 |
 | tokens per item, pattern node, median (o200k_base) | 44 in llms.txt, 390 of chunk text, 1,359 as served in chunks.jsonl |
-| independent implementations passing the vectors | 1 engine; a second implements 2 of 19 areas |
+| independent implementations passing the vectors | 1 engine; a second (the Python checker distribution) runs 7 of 19 areas, 60 pass and 0 fail of the 77 vectors in them |
 | retrieval smoke run, pattern node, chunks surface | recall@10 1.00, nDCG@10 0.891, P@1 0.750 (12 intents) |
-| npm package | 385 files, 869 KB packed, 2.94 MB unpacked |
+| npm package | 455 files, 1,026 KB packed, 3.41 MB unpacked |
 
 ---
 

@@ -8,7 +8,7 @@ One Bundle, one format, six ways of using it. No mode adds a type or a key; each
 
 **Mode 2 — live specs and SDLC memory.** Concepts of kind principle, decision, spec, task and term, plus gates and episodes, with the five engineering links (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`). Project mode turns tasks and clusters into boards.
 
-**Mode 3 — evolutive skills wiki.** Procedures are skills: they export to `SKILL.md`, install into agent tool trees, and come back as items through import. Lessons distilled from episodes are the error book.
+**Mode 3 — evolutive skills wiki.** Procedures are skills: they export to `SKILL.md`, install into agent tool trees, and come back as items through import. Lessons distilled from episodes are the error record.
 
 **Mode 4 — runnable knowledge.** A composition of concepts yields a harness — seven files an architect or a runtime can execute — and a saved architecture item can be re-run.
 

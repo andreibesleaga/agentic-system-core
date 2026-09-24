@@ -1,0 +1,34 @@
+{
+  "area": "build",
+  "description": "AGSC-04-02: verification is a double build followed by a byte comparison, and any difference is AGSC-E602. Derivation over the Bundle stated inline in input.files (a copy of the reference engine's with-assets fixture, carried here so that a port needs no file of any repository): its one concept references content/assets/logo.svg and content/assets/img/nested.svg; two builds at the same fixed instant emit the same route set with the same bytes at every route — the /assets/<path> routes of AGSC-06-01 included, since the served bytes are the file's own — so the comparison reports no AGSC-E602 and the build carries no error finding. Before rc.6 an asset route was emitted from a read that depended on the working directory, which is the kind of ambient input AGSC-04-03 forbids and this case would expose.",
+  "expected": {
+    "byte_identical": true,
+    "codes_absent": [
+      "AGSC-E602"
+    ],
+    "includes_routes": [
+      "/assets/logo.svg",
+      "/assets/img/nested.svg"
+    ],
+    "no_error_finding": true
+  },
+  "id": "build-0017",
+  "input": {
+    "files": {
+      ".well-known/security.txt": "Contact: https://example.org/security-contact\nPreferred-Languages: en\n",
+      "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"with-assets\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://assets.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"A Bundle with an asset on disk.\",\n    \"title\": \"Bundle with assets\"\n  },\n  \"spec_version\": \"1.0.0-rc.6\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n",
+      "content/assets/img/nested.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 8 8\"><title>A nested square</title><rect width=\"8\" height=\"8\" fill=\"#654321\"/></svg>\n",
+      "content/assets/logo.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 8 8\"><title>A square</title><rect width=\"8\" height=\"8\" fill=\"#123456\"/></svg>\n",
+      "content/clusters/notes.md": "---\ntype: cluster\ntitle: Notes\ndescription: The one cluster of this fixture, so that its single concept is not an orphan under AGSC-03-10.\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Notes\n\nEverything in this fixture.\n",
+      "content/concepts/diagrammed.md": "---\ntype: concept\ntitle: Diagrammed concept\ndescription: A concept whose body references a real asset under content/assets/, which AGSC-03-11 admits as a resolution target.\ntags:\n  - agents\n  - patterns\nclusters:\n  - notes\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: explainer\n---\n\n## Intent\n\nProve that a body reference to a real asset resolves.\n\n## Notes\n\n![A square](../assets/logo.svg)\n\n![A nested square](../assets/img/nested.svg)\n",
+      "content/index.md": "---\nspec_version: 1.0.0-rc.6\nokf_version: \"0.2\"\ntitle: Bundle with assets\ndescription: A Bundle whose item body references a real file under content/assets/, used to prove the AGSC-03-11 asset branch.\nbase: https://assets.example/\nlang: en\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Bundle with assets\n\nOne concept, one asset, one reference between them.\n"
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-04-02"
+}

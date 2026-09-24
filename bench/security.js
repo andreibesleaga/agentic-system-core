@@ -1,6 +1,6 @@
 'use strict';
 /**
- * bench/security.js — the security-floor scorer (research/39 Layer C).
+ * bench/security.js — the security-floor scorer (measurement layer C).
  *
  * It runs every case of a seeded fault corpus (`bench/corpus/security-floor.json`)
  * through the part of the engine that is meant to stop it, and reports, per case,

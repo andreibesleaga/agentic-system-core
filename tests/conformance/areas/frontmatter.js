@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `frontmatter` (owner A for `fm-*`) — AGSC-02-01…06, AGSC-02-14,
+// Conformance area `frontmatter` — AGSC-02-01…06, AGSC-02-14,
 // AGSC-02-18, AGSC-02-05a, AGSC-02-91 and AGSC-08-01.
 //
 // Ids `frontmatter-0030` (length units, AGSC-02-24) and `frontmatter-0031`

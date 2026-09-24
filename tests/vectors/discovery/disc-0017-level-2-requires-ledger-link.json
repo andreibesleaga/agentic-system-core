@@ -1,0 +1,58 @@
+{
+  "area": "discovery",
+  "description": "AGSC-09-93 as amended at rc.6, with AGSC-10-04: the derived ledger is part of Level 2, so a discovery document checked at Level 2 whose node is not restricted MUST carry the `https://w3id.org/agentic-system-core/rel#ledger` link, and a validator reports its absence as AGSC-E202. Derivation, case by case. (1) A public Level-2 document with the ledger link (its `digest` and `agsc-ledger-head` present, AGSC-06-08) is valid. (2) The same document without the ledger link is invalid with exactly one error, AGSC-E202: every other attribute AGSC-06-08a requires is still present, so the missing link is the only fault. (3) A restricted node (AGSC-11-20) publishes no ledger link and no `agsc-ledger-head`, and its document is valid at Level 2 without them, because its unauthenticated view is what it asserts conformance for.",
+  "expected": {
+    "cases": [
+      {
+        "name": "public-with-ledger",
+        "valid": true
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E202",
+            "severity": "error"
+          }
+        ],
+        "name": "public-without-ledger",
+        "valid": false
+      },
+      {
+        "name": "restricted-without-ledger",
+        "valid": true
+      }
+    ]
+  },
+  "id": "disc-0017",
+  "input": {
+    "cases": [
+      {
+        "base": "https://example.org",
+        "ledger_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "level": 2,
+        "name": "public-with-ledger",
+        "visibility": "public"
+      },
+      {
+        "base": "https://example.org",
+        "ledger_head": null,
+        "level": 2,
+        "name": "public-without-ledger",
+        "visibility": "public"
+      },
+      {
+        "base": "https://example.org",
+        "ledger_head": null,
+        "level": 2,
+        "name": "restricted-without-ledger",
+        "visibility": "restricted"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-09-93"
+}

@@ -1,0 +1,64 @@
+{
+  "area": "cli",
+  "description": "AGSC-01-26a as stated on 2026-09-24: a name that no shipped adapter and no installed plugin answers is AGSC-E203 — a value outside a closed operator list — and exit 1, for export --to and import --from alike. Derivation: --to and --from are known flags carrying a value the adapter set does not hold, exactly the case AGSC-00-23 and cli-0009 settle for a compose or steer target, so AGSC-09-08's exit-2 usage codes (AGSC-E001 for a verb, AGSC-E002 for a flag) do not apply; the fault is a finding, exit 1. Before this date one reference engine answered the same fault with three codes (AGSC-E001, AGSC-E002, AGSC-E203). The value nope is chosen so that no adapter of any distribution can carry it by accident.",
+  "expected": {
+    "cases": [
+      {
+        "codes_absent": [
+          "AGSC-E001",
+          "AGSC-E002"
+        ],
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E203",
+            "severity": "error"
+          }
+        ],
+        "name": "export-to-unknown"
+      },
+      {
+        "codes_absent": [
+          "AGSC-E001",
+          "AGSC-E002"
+        ],
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E203",
+            "severity": "error"
+          }
+        ],
+        "name": "import-from-unknown"
+      }
+    ]
+  },
+  "id": "cli-0011",
+  "input": {
+    "cases": [
+      {
+        "argv": [
+          "export",
+          "--to",
+          "nope"
+        ],
+        "name": "export-to-unknown"
+      },
+      {
+        "argv": [
+          "import",
+          "incoming",
+          "--from",
+          "nope"
+        ],
+        "name": "import-from-unknown"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-01-26a"
+}

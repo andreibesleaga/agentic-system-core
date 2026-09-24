@@ -5,8 +5,7 @@
 // diagnostic line and no envelope for it.
 //
 // The application layer loads the Bundle and hands it to the Surface; the
-// Surface reads no file (the context map). Owner: B (shell); wired at
-// integration.
+// Surface reads no file (the context map).
 //
 // AGSC-09-14b also obliges the server to expose every item, `graph.jsonld` and
 // `llms.txt` as MCP RESOURCES. Their bytes must be the ones the node publishes,

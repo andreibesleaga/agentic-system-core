@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `slug` (owner A) — AGSC-01-10 (grammar, 1-64 code points,
+// Conformance area `slug` — AGSC-01-10 (grammar, 1-64 code points,
 // portable pattern) and AGSC-01-11 (unique across the whole Bundle).
 
 const slug = require('../../../src/knowledge/slug.js');

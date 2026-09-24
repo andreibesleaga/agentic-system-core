@@ -19,8 +19,6 @@ const markdown = require('../knowledge/markdown.js');
 
 /** AGSC-06-23 / AGSC-02-24: a token shorter than this many code points is dropped. */
 const MIN_TOKEN_CODE_POINTS = 2;
-/** AGSC-04-22: the Unicode version the vectors were generated against. */
-const UNICODE_VERSION = '16.0.0';
 /** AGSC-06-21: above this many items the index is sharded. */
 const ITEMS_PER_SHARD = 500;
 
@@ -161,6 +159,5 @@ module.exports = {
   files,
   docOf,
   MIN_TOKEN_CODE_POINTS,
-  UNICODE_VERSION,
   ITEMS_PER_SHARD,
 };

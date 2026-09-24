@@ -3,13 +3,13 @@
 // The five steps of AGSC-07-04…07-08 in their normative order and the
 // AGSC-07-09 verdict are `composition/compose.js`'s; `--from <slug>` reads the
 // saved composition of AGSC-02-97/07-24; `--emit <target>` is AGSC-07-18.
-// Owner: B (shell); wired at integration.
 
 const compose = require('../../../composition/compose.js');
 const architecture = require('../../../composition/architecture.js');
 const harness = require('../../../composition/harness.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
+const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 const archiveWriter = require('./_archive.js');
 
@@ -28,7 +28,7 @@ function flatten(items) {
 
 /**
  * One sentence per conflict kind, each citing the rule that raises it and saying
- * what a person can do about it (R64). The four kinds are not one rule:
+ * what a person can do about it. The four kinds are not one rule:
  * AGSC-07-03 (a selected slug absent from the graph, or retired), AGSC-07-05a
  * (a surviving item requires an item Step 2 hid — the rule fixes the message
  * form "required item superseded — select `<superseding>`"), and AGSC-07-06
@@ -63,7 +63,7 @@ function conflictMessage(conflict) {
 }
 
 /**
- * One sentence per Composition WARNING kind (R64, F27-11). The verdict's
+ * One sentence per Composition WARNING kind. The verdict's
  * `warnings[]` entries are domain records — `{code, key, source, target}` — and
  * carried no `message`, so `agsc compose` printed a blank diagnostic line
  * (`warn: AGSC-E803 `) for the commonest outcome there is. The two kinds are
@@ -188,6 +188,11 @@ function emitHarness(ctx, bundle, result, items) {
     specVersion: ctx.specVersion,
   });
   for (const violation of emission.violations) findings.push({ ...violation, severity: 'error' });
+  // A Harness whose own files break a rule is not written at all: files that were
+  // refused are not a Harness, and a partial one on disk would read as a valid one.
+  if (emission.violations.length > 0) {
+    return { archive: null, dir: null, emitted: false, files: [], findings, missing: ['every file: the emission broke a rule (AGSC-07-17)'] };
+  }
   const raw = ctx.verbFlags && ctx.verbFlags.out;
   const dir = `${String(raw === undefined || raw === '' ? `dist/harness/${name}` : raw).replace(/\/+$/u, '')}/`;
   const written = [];
@@ -220,7 +225,73 @@ function emitHarness(ctx, bundle, result, items) {
     files: written,
     findings,
     missing: [...emission.missing],
+    texts: new Map(emission.files),
   };
+}
+
+/**
+ * `compose --emit <target>`: the target this invocation names. A name of the closed
+ * registry of AGSC-07-18 is refused as not implemented (this distribution ships no
+ * template), a reserved or unknown name is `AGSC-E203`, and a local path or an
+ * installed package is a composition-emitter PLUGIN resolved through its registry
+ * (AGSC-00-24) — a remote one is `AGSC-E905`.
+ *
+ * @returns {{plugin:(object|null), findings:Array<object>}}
+ */
+function emitTarget(ctx, emit) {
+  const name = String(emit);
+  if (EMITTERS.includes(name) || RESERVED_EMITTERS.includes(name)) {
+    const refusal = emitterRefusal(emit);
+    return {
+      findings: [refusal === null ? {
+        code: 'AGSC-E001',
+        message: `compose --emit ${emit} is named by AGSC-07-18 but is not implemented at this milestone:`
+          + ' a target rendering is a single template plus a registry row, and this distribution ships'
+          + ' neither — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
+        severity: 'error',
+      } : refusal],
+      plugin: null,
+    };
+  }
+  const shape = loader.classify(name);
+  if (shape === 'remote' || shape === 'path' || shape === 'package') {
+    const loaded = loader.load('composition-emitter', name, { flag: 'compose --emit', root: ctx.root, specVersion: ctx.specVersion });
+    if (loaded.plugin !== null) return { findings: [], plugin: loaded.plugin };
+    if (!loaded.missing) return { findings: loaded.findings, plugin: null };
+  }
+  return { findings: [emitterRefusal(emit)], plugin: null };
+}
+
+/**
+ * Run an admitted composition-emitter plugin over the Harness just written. Its
+ * `emit(harnessFiles, harnessDir)` hook answers one `{path, text}` or a list of
+ * them; each path is Bundle-relative, outside the Harness directory and outside
+ * `content/` (AGSC-07-18, AGSC-00-24(ii)), or nothing of it is written.
+ */
+function runEmitter(ctx, plugin, emission) {
+  const label = `compose --emit ${plugin.name}`;
+  const called = loader.call(plugin, 'emit', [new Map(emission.texts), emission.dir], label);
+  if (called.findings.length > 0) return called.findings;
+  const outputs = Array.isArray(called.value) ? called.value : [called.value];
+  const findings = [];
+  for (const out of outputs) {
+    const at = out && typeof out.text === 'string' ? String(out.path) : null;
+    let why = at === null ? 'an output with no text' : loader.unsafePath(at);
+    if (why === null && at.startsWith(emission.dir)) why = 'a path inside the Harness directory, which AGSC-07-12 closes at seven file kinds';
+    if (why === null && at.startsWith('content/')) why = 'a path inside content/ (AGSC-08-02)';
+    if (why !== null) {
+      findings.push({ code: 'AGSC-E902', message: `${label}: the plugin asked to write ${JSON.stringify(String(out && out.path))}, ${why}; nothing was written`, severity: 'error' });
+    }
+  }
+  if (findings.length > 0) return findings;
+  for (const out of outputs) {
+    const at = String(out.path);
+    const slash = at.lastIndexOf('/');
+    if (slash !== -1) ctx.ports.fs.mkdirp(at.slice(0, slash));
+    ctx.ports.fs.writeFile(at, out.text);
+    helpers.note(ctx, `emit: ${at} (${plugin.name}, a plugin)`);
+  }
+  return [];
 }
 
 function run(ctx) {
@@ -249,30 +320,36 @@ function run(ctx) {
 
   // AGSC-07-12/07-17: the seven Harness files, written for a valid composition and
   // for no other. `harness_emitted` is true only when every file kind the rule names
-  // for this member set is present and nothing AGSC-07-15 forbids is.
-  const emission = emitHarness(ctx, bundle, result, items);
+  // for this member set is present and nothing AGSC-07-15 forbids is. A run that has
+  // already found an error (a `--from` item with no selection fence, a conflict)
+  // writes nothing — no Harness and no archive.
+  // AGSC-07-18: the `--emit` target is decided BEFORE anything is written, so a
+  // target this run cannot render stops the whole run rather than leaving a Harness
+  // behind it.
+  const emit = ctx.verbFlags && ctx.verbFlags.emit;
+  const target = emit === undefined ? { findings: [], plugin: null } : emitTarget(ctx, emit);
+  findings.push(...target.findings);
+  const failed = findings.some((f) => f.severity === 'error');
+  if (failed && ctx.verbFlags && ctx.verbFlags.zip === true) {
+    helpers.note(ctx, 'harness missing: the archive of --zip, for the same reason (AGSC-07-17)');
+  }
+  const emission = failed
+    ? { dir: null, emitted: false, files: [], findings: [], missing: [harness.isEmitted(result)
+      ? 'every file: the run found an error, so nothing was written'
+      : 'every file: the composition is invalid (AGSC-07-17)'] }
+    : emitHarness(ctx, bundle, result, items);
   findings.push(...emission.findings);
   helpers.note(ctx, `harness_emitted: ${emission.emitted}`);
   if (emission.dir !== null) helpers.note(ctx, `harness: ${emission.dir} (${emission.files.length} files)`);
   for (const missing of emission.missing) helpers.note(ctx, `harness missing: ${missing}`);
 
-  // AGSC-07-18: a target rendering IS a rendering of those seven files, and this
-  // milestone ships no target template and no registry row. Honest, never silent.
-  const emit = ctx.verbFlags && ctx.verbFlags.emit;
-  if (emit !== undefined) {
-    const refusal = emitterRefusal(emit);
-    findings.push(refusal === null ? {
-      code: 'AGSC-E001',
-      message: `compose --emit ${emit} is named by AGSC-07-18 but is not implemented at this milestone:`
-        + ' a target rendering is a single template plus a registry row, and this distribution ships'
-        + ' neither — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
-      severity: 'error',
-    } : refusal);
-  }
+  // AGSC-07-18: a target rendering IS a rendering of those seven files, written
+  // outside the Harness directory, and only of a Harness that was emitted.
+  if (target.plugin !== null && emission.emitted) findings.push(...runEmitter(ctx, target.plugin, emission));
   return { findings };
 }
 
 module.exports = {
-  name: 'compose', EMITTERS, RESERVED_EMITTERS, conflictMessage, emitHarness, emitterRefusal,
+  name: 'compose', EMITTERS, RESERVED_EMITTERS, conflictMessage, emitHarness, emitTarget, emitterRefusal,
   flatten, run, warningMessage,
 };

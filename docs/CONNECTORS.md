@@ -1,7 +1,7 @@
 # Connecting agents and frameworks to a knowledge node
 
 This page answers one question: **"I use tool X — how does it get at a node's
-knowledge?"** There are five ways in, and every one of them already exists in the
+knowledge?"** There are seven ways in, and every one of them already exists in the
 engine. Pick by what your tool reads.
 
 | route | what the node gives you | the command | suits |
@@ -11,6 +11,8 @@ engine. Pick by what your tool reads.
 | **3. Live tools** | an MCP server with seven tools and every item as a resource | `agsc mcp` | an assistant that searches and reads while it works |
 | **4. Memory archive** | a COGX archive another memory system imports | `agsc export --to cogx` (and `agsc import --from cogx`) | a framework that keeps its own memory store |
 | **5. Agent kit (GABBE)** | a GABBE kit's own folders — skills, guides, memory files | `agsc export --to gabbe` (and `agsc import --from gabbe <kit>`) | a project run with the GABBE kit |
+| **6. Skills repositories** | skills and rule packs traded with the collections people already share (Agent Skills, Claude Code plugins and marketplaces, Cursor and Windsurf rules), from a local clone | `agsc import --from skills <dir>` and `agsc export --to skills` | a team that already keeps a skills collection |
+| **7. Project tools** | a live board's tasks as the import and export files of a tracker (Jira, Trello and others) | `agsc import --from board --format <tool> <dir>` and `agsc export --to board --format <tool>` | a team that plans in a tracker |
 
 Nothing here needs a network connection or a key on the node's side. The
 [examples](../examples/connectors/README.md) show each route working; the ones for
@@ -102,9 +104,12 @@ flag, so the untrusted mark travels in each result's own `trust` member.
 
 ## Route 4 — the memory archive (COGX)
 
-COGX (the Cognee eXchange format) is the format Cognee translates Mem0, LangMem,
-Letta/MemGPT and Zep/Graphiti memories into. One archive from a node reaches all of
-them through Cognee's own importers.
+COGX (the Cognee eXchange format) is the format Cognee reads and writes, and the
+shape it translates Mem0, LangMem, Letta/MemGPT and Zep/Graphiti memories into when
+they are migrated into Cognee. One archive from a node is read by Cognee; the other
+systems reach Cognee through the same format, not the archive (Cognee's own
+documentation, docs.cognee.ai/examples/migrate-memory-systems, read 2026-09-24:
+migration works into Cognee only).
 
 ```sh
 agsc export --to cogx       # writes dist/export/cogx/
@@ -432,7 +437,7 @@ written; a claim is not a merge.
 | Codex CLI | 1 (+ 3) | `examples/connectors/codex/connect.js` |
 | Cursor | 1 + 3 | `examples/connectors/cursor/connect.js` |
 | GitHub Copilot, Gemini CLI, Kiro, Windsurf, Cline, Aider | 1 | the matching `--target`; mind the Windsurf and Aider notes |
-| Cognee, Mem0, Letta, LangMem, Zep/Graphiti | 4 | `agsc export --to cogx`, then the system's COGX import |
+| Cognee (and, through Cognee, what it imported from Mem0, Letta, LangMem, Zep/Graphiti) | 4 | `agsc export --to cogx`, then `cognee` reads the archive |
 | LangGraph / LangChain | 4, or the chunk corpus | `examples/connectors/frameworks/records.js … langgraph`, then `store.put` |
 | AutoGen | the chunk corpus | `records.js … autogen` gives `MemoryContent`-shaped records |
 | CrewAI | 2 + the chunk corpus | skills for procedures; keep the item IRI in the text, because CrewAI rewrites memories it consolidates |
@@ -454,3 +459,58 @@ test: they need the framework installed. The record shapes they read are produce
   when an item or `agsc.config.json` changed.
 
 The README shows both snippets.
+
+## Where a node can live
+
+**In short:** a Bundle is a set of files and so is its build, so a node can be put
+anywhere that serves a directory over HTTPS — a web host, a laptop, a small device, a
+clone of its repository, IPFS behind a gateway, or a web interface in front of a
+ledger. What the standard asks of the place is fixed; how a host is told is not. The
+`agsc-host` command carries a *hosting profile* for each kind of place, and each
+profile says plainly what that place cannot do.
+
+**What every place must do.** Conformance is claimed for an HTTPS origin: the
+discovery document and the routes of the route set are served there, by the host
+itself or by something in front of it (the informative paragraph "Where a node can
+live" in `spec/10-implementation-profiles.md`). The normative content is the header
+set of AGSC-06-17, AGSC-11-03 and AGSC-11-05 and the redirect of AGSC-06-17 — never a
+file format. `agsc build` writes that content as `_headers` and `_redirects`, the
+files of the reference host; a writer targeting another host emits the equivalent
+configuration for it and names the profile in its conformance claim (AGSC-06-01).
+
+**The profiles.** Each is a plugin of the `deployment-profile` kind (AGSC-00-24): it
+reads the build and writes host configuration beside it, and it never changes a route
+or a served byte. `agsc-host list` prints every profile with its claim and its limits.
+
+| profile | the command | what it writes | what it proves | what it cannot do |
+|---|---|---|---|---|
+| `cloudflare-pages` — the reference | `agsc build` | `_headers`, `_redirects` (already written by the build) | the header and redirect sets exactly as the rules state them | the host allows at most 100 header rules and 2,100 redirects per site |
+| `static-host` — nginx or Apache httpd | `agsc-host emit static-host` | `dist/hosts/static-host/nginx.conf` (to `include` in a `server {}` block) and `www/.htaccess` | the test suite parses both files and checks, route by route, that each sends exactly the reference headers; both were also run against nginx 1.31.3 and Apache httpd 2.4.58, where the discovery checker passed at Level 2 | the server must terminate HTTPS or sit behind something that does; the nginx file is regenerated after every build; Apache needs mod_headers, mod_alias and `AllowOverride All` |
+| `github-pages` | `agsc-host emit github-pages` | `www/.nojekyll`, and `dist/hosts/github-pages/headers.json` for the proxy in front | the header table equals the reference, route by route | GitHub Pages lets a site set no response header and no redirect, and serves the discovery document with a type derived from its (absent) extension: **no Level can be claimed for a bare Pages origin**; a proxy or CDN in front must set what `headers.json` lists |
+| `local` — a laptop, a device, an appliance | `agsc-host serve` | nothing | over loopback, the discovery checker passes the served node at Level 2, and every route carries the reference headers, the built bytes and a SHA-256 entity tag | plain HTTP: fine on `http://localhost`, the development origin the configuration admits; any other origin needs a TLS terminator in front; read-only, one machine, no `Date` header |
+| `git-clone` — the repository itself | `agsc build`, then `agsc-host serve` | nothing | the same as `local`, over a build of the clone; the ledger and content version come from the clone's own history | a forge's raw-file service is not a host: its URLs carry the owner, repository and ref before the path, so RFC 8615's well-known location is never at the top of an origin, and GitHub's raw service answers `text/plain` for every file |
+| `ipfs` — through an HTTP gateway | `agsc-host emit ipfs` | `www/_redirects` in the IPFS web-redirects grammar (the alias, plus `/* /404.html 404`), and `dist/hosts/ipfs/manifest.json` with every file's size and SHA-256 | the redirects file carries the reference redirect; the manifest lets anyone check that a gateway serves the built bytes | a gateway sniffs content types and takes no publisher headers, so the discovery document's media type needs a web interface in front; redirects work only on a subdomain or DNSLink gateway; every build is a new CID |
+| `ledger-anchor` | `agsc-host emit ledger-anchor`, and `agsc-host verify-anchor <anchor.json>` | `dist/hosts/ledger-anchor/anchor.json` (JCS-canonical) and `anchor.sha256` | the anchor holds the Bundle IRI, bundle hash, content version, ledger head, specification version, build instant and the discovery document's digest; `verify-anchor` tells whether a build is the anchored one (`AGSC-E210`, or `AGSC-E701` for the ledger head) | a ledger does not serve the node; recording the anchor (or `ots stamp anchor.json`) is the operator's own step, and nothing here reaches a chain |
+
+**A Solid pod** holding a copy of the Bundle is a surface a node may *declare*
+(AGSC-11-21), declaration-only at 1.0, so there is no host configuration to emit. A
+Solid server answers CORS by echoing the request's `Origin` rather than with the `*`
+AGSC-11-03 names, which is one more reason the pod is a copy and not the node's
+origin.
+
+**Your own profile.** Name a file or an installed package instead of a built-in name:
+`agsc-host emit ./my-host.js`. It passes the same capability check as every plugin; a
+specifier with a protocol is refused with `AGSC-E905` before anything is loaded. The
+hook is `emit(input)`, where `input` holds the header sets, the redirects, every build
+file with its size and SHA-256, and the discovery document's text; it answers
+`{site, server, findings}` — lists of `{path, text}`. `site` files are written into
+the build directory and may not replace a route (`AGSC-E004`); `server` files go under
+`dist/hosts/<name>/` or `--out`; a path that is absolute, climbs with `..` or passes
+through a link is `AGSC-E902`, and a run with an error writes nothing.
+`examples/hosts/header-rules.js` is a complete one in under fifty lines.
+
+**Saying where it lives.** AGSC-06-01 requires a claim to name the deployment
+profile, so add it to the end of the conformance sentence of
+[`CONFORMANCE-STATEMENTS.md`](CONFORMANCE-STATEMENTS.md): "… «passed» of «total»
+passed. Deployment profile: «profile» — «its claim»." Each profile's claim text is
+printed by `agsc-host emit` and `agsc-host list`.

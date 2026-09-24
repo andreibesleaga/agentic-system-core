@@ -2,8 +2,10 @@
 
 Cognee's COGX is "a common shape that all memory imports are translated into before
 they enter Cognee" (docs.cognee.ai/examples/migrate-memory-systems, read
-2026-09-23), with importers from Mem0, LangMem, Letta/MemGPT, Zep/Graphiti and
-another Cognee instance. One archive from a node therefore reaches all of them:
+2026-09-23; re-read 2026-09-24), with importers from Mem0, LangMem, Letta/MemGPT,
+Zep/Graphiti and another Cognee instance — importers INTO Cognee. One archive from
+a node is therefore read by Cognee, and what those systems hold reaches the same
+store through the same format; none of them reads the archive itself:
 
 ```sh
 agsc export --to cogx            # writes dist/export/cogx/ (manifest.json + *.jsonl)

@@ -1,7 +1,7 @@
 'use strict';
 // tests/arch/package-manifest.test.js — what an npm consumer actually receives.
 //
-// PAT1-08: `tools/` was in no `files` entry, so `npm pack` carried 286 files and
+// `tools/` was in no `files` entry, so `npm pack` carried 286 files and
 // NONE of the nine independent checkers of AGSC-09-90 — although that rule says
 // the reference distribution "MUST include … the `tools/` validators of PRD-054,
 // each runnable standalone … so that every normative artifact (schemas, spec text,
@@ -43,6 +43,26 @@ test('AGSC-09-90: the nine checkers ship, and so do the inputs they name', () =>
   }
 });
 
+test('only the nine checkers, the counter and the benchmark tool ship from tools/', () => {
+  // The maintainer tools (rule coverage, hygiene, release, glossary, publish set)
+  // read the test suite, the allow-list or the repository's own tree: run from an
+  // installed package each one fails or misleads, so none of them is in `files[]`.
+  // The eleven that ship each run on inputs the tarball carries.
+  const shipped = ['validate-spec', 'validate-schemas', 'validate-ontology',
+    'validate-vectors', 'validate-wellknown', 'validate-features', 'validate-diagrams',
+    'gen-spec-html', 'gen-ns', 'count-artifacts', 'bench'].map((t) => `tools/${t}`);
+  const listed = (manifest.files || []).filter((f) => f === 'tools/' || f.startsWith('tools/'));
+  assert.deepStrictEqual(listed.sort(), shipped.sort());
+  for (const tool of fs.readdirSync(path.join(ROOT, 'tools'))) {
+    assert.strictEqual(ships(`tools/${tool}`), shipped.includes(`tools/${tool}`),
+      `tools/${tool} ${shipped.includes(`tools/${tool}`) ? 'must' : 'must not'} ship`);
+  }
+  // The benchmark tool reads its committed query set; the measurement runners and
+  // their corpus are the maintainer's and stay in the repository.
+  assert.ok(ships('bench/queries/'));
+  assert.ok(!ships('bench/corpus/') && !ships('bench/measure.js'));
+});
+
 test('AGSC-00-01 + AGSC-08-06: the texts a consumer has to be able to read ship', () => {
   for (const file of ['LICENSE', 'LICENSE-CONTENT', 'CONTRIBUTOR-AGREEMENT',
     'SECURITY.md', 'CONTRIBUTING.md', 'CITATION.cff', 'CHANGELOG.md', 'README.md']) {
@@ -58,7 +78,7 @@ test('no private path can reach the tarball', () => {
   }
 });
 
-test(': the alias is the same version and depends on the engine EXACTLY', () => {
+test('the alias is the same version and depends on the engine EXACTLY', () => {
   assert.strictEqual(alias.name, 'agsc-cli');
   assert.strictEqual(alias.version, manifest.version,
     'the alias and the engine are published together, at one version');
@@ -82,4 +102,33 @@ test('the version is one SemVer string, and the CLI reports that one', () => {
   const spec = fs.readFileSync(path.join(ROOT, 'spec', '00-overview.md'), 'utf8');
   assert.ok(spec.includes(declared[1]),
     `the engine states spec version ${declared[1]} and spec/00-overview.md does not declare it`);
+});
+
+test('the main entry reports the package version and exports the command line', () => {
+  const entry = require(path.join(ROOT, manifest.main));
+  assert.strictEqual(entry.version, manifest.version, 'index.js must report the version package.json declares');
+  assert.strictEqual(entry.specVersion, require(path.join(ROOT, 'src', 'application', 'cli', 'main.js')).SPEC_VERSION);
+  assert.strictEqual(typeof entry.run, 'function');
+  assert.strictEqual(entry.WELLKNOWN_SUFFIX, 'knowledge-linkset');
+  assert.strictEqual(entry.LINK_RELATION, 'agentic-knowledge');
+  assert.strictEqual(entry.PROFILE_URI, 'https://w3id.org/agentic-system-core/profile/agentic-knowledge');
+  assert.deepStrictEqual(Object.keys(entry).sort(),
+    ['LINK_RELATION', 'PROFILE_URI', 'WELLKNOWN_SUFFIX', 'run', 'specVersion', 'version']);
+});
+
+test('the declared licence names both licences the tarball carries', () => {
+  // The engine is Apache-2.0; the schemas, the ontology and the identifiers it ships
+  // are CC0-1.0. The alias package ships only its own launcher and stays Apache-2.0.
+  assert.strictEqual(manifest.license, 'Apache-2.0 AND CC0-1.0');
+  assert.ok(ships('schema/') && ships('ontology/'));
+  assert.strictEqual(alias.license, 'Apache-2.0');
+});
+
+test('the test scripts quote their glob with double quotes, which every shell npm uses reads', () => {
+  // npm runs scripts in cmd.exe on Windows, where a single quote is an ordinary
+  // character; double quotes are quotes there and in /bin/sh alike.
+  for (const name of ['test', 'test:coverage']) {
+    assert.ok(!manifest.scripts[name].includes("'"), `${name} carries a single quote`);
+    assert.match(manifest.scripts[name], /"tests\/\*\*\/\*\.test\.js"/u);
+  }
 });

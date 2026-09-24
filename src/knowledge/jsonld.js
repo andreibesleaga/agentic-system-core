@@ -51,7 +51,7 @@ const EXTERNAL_PROPERTIES = Object.freeze([
   ['prov:wasDerivedFrom', '@id'], // AGSC-05-16
   ['rdfs:seeAlso', '@id'], // AGSC-11-12
   ['schema:license', null], // AGSC-06-18
-  // AGSC-05-31 form (c) as amended at rc.5 (V9A-02): `schema:license` and
+  // AGSC-05-31 form (c) as amended at rc.5: `schema:license` and
   // `schema:usageInfo` are `xsd:string` literals, never IRIs. Before rc.5 this row
   // read `'@id'`, which compacted the Content Use Terms identifier as a relative IRI.
   ['schema:usageInfo', null], // AGSC-06-18, AGSC-05-26
@@ -94,7 +94,7 @@ function termName(compact, ascNames, externalLocals) {
  * its declared range; the prefixes and a typed definition for every external property
  * the rules emit are added; `@version` is 1.1 and `@protected` is true. No term is
  * ever mapped to `null` — a null term definition is a BLOCKED term in JSON-LD 1.1 and
- * could never be used (AR2-44).
+ * could never be used.
  *
  * Member order is not set here: AGSC-04-04 canonicalises the file, and JCS sorts.
  *
@@ -110,7 +110,7 @@ function context(ontologyTerms, externalProperties = []) {
  * The same derivation over EXPLICIT external rows `[compact, type]`, rather than
  * over the names of the closed table above.
  *
- * AGSC-06-32 as amended at rc.6 (NS-04) pins the term NAMES, not the types: which
+ * AGSC-06-32 as amended at rc.6 pins the term NAMES, not the types: which
  * `@type` an external property takes is fixed by the rule that emits it, and the
  * table above is this engine's record of those rules. Vector `graph-0019` therefore
  * states the rows itself and tests the naming alone, which is what this entry point

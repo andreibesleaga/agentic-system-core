@@ -1,4 +1,4 @@
-// tests/governance/agents.test.js — AGSC-01-36/37/38, 08-25, 08-28. Owner: B.
+// tests/governance/agents.test.js — AGSC-01-36/37/38, 08-25, 08-28.
 'use strict';
 
 const test = require('node:test');
@@ -32,7 +32,7 @@ test('bundle-0004: a procedure in types[] is AGSC-E203 at agents[0].types[1]', (
   }]);
   const findings = checkAgents(config);
   assert.equal(findings.length, 1);
-  // F27-11 (R64): a Finding names the fault, never an empty message.
+  // a Finding names the fault, never an empty message.
   assert.deepEqual(findings[0], {
     code: 'AGSC-E203', severity: 'error', path: 'agents[0].types[1]',
     message: 'agents[0].types[1] is "procedure"; AGSC-01-36 allows concept, episode, lesson',
@@ -160,7 +160,7 @@ test('capMeter sums usage.cost_usd against the node cap', () => {
   assert.deepEqual(meter, { spent_usd: 4, cap_usd: 10, ratio: 0.4 });
 });
 
-// F27-11 (AGSC-09-11, R64): the remaining AGSC-01-36 branches, each with the message
+// (AGSC-09-11): the remaining AGSC-01-36 branches, each with the message
 // a reader acts on. These four branches carried no test, which is how they carried
 // no message for so long.
 test('AGSC-01-36: every enum and required-field fault names itself', () => {

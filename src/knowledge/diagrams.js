@@ -22,7 +22,7 @@
 //
 // Rules implemented: AGSC-01-07 (the source's home), AGSC-02-13 (`<slug>.svg`
 // compiled from `content/diagrams/<slug>.diagram`), AGSC-02-98 (the allow-list,
-// R59/PRD-059), AGSC-04-01/04-02 (byte-deterministic — no clock, no randomness,
+// PRD-059), AGSC-04-01/04-02 (byte-deterministic — no clock, no randomness,
 // no locale, fixed decimal rendering), AGSC-06-20 (the accessible names).
 //
 // PURE: no fs, no process, no clock, no network, no cross-context require.

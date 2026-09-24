@@ -1,0 +1,112 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-16 as amended at rc.6: the `mcp` surface declares the revision its transport actually speaks, and revision 2026-07-28 is the target rather than a pin, because the released reference transport speaks 2025-11-25 and a rule may not pin a value no conforming implementation can produce. The case is bnd-0031's with one input added, `mcp_revision`, the revision the node's transport speaks: the declaration ECHOES it and has the protocol's `YYYY-MM-DD` shape, exactly as the WebMCP date has since rc.5. Everything else is bnd-0031's: every served surface declared with its id, external version and access class derived from what is emitted, the built-in access classes fixed (llms-txt and chunks none, webmcp and mcp consent), the three WebMCP annotation hints per tool (AGSC-11-18) and the MCP extension identifier advertised in the extensions map (AGSC-11-18). The expectation member mcp_extensions names the extension IDENTIFIERS the node advertises; the per-identifier settings object is bnd-0035's.",
+  "expected": {
+    "links": [
+      {
+        "agsc-access": [
+          "none"
+        ],
+        "agsc-surface": [
+          "chunks"
+        ],
+        "href": "https://a.example/chunks.jsonl",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      },
+      {
+        "agsc-access": [
+          "consent"
+        ],
+        "agsc-surface": [
+          "webmcp"
+        ],
+        "agsc-surface-version": [
+          "2026-09-17"
+        ],
+        "href": "https://a.example/compose/",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      },
+      {
+        "agsc-access": [
+          "none"
+        ],
+        "agsc-surface": [
+          "llms-txt"
+        ],
+        "href": "https://a.example/llms.txt",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      },
+      {
+        "agsc-access": [
+          "consent"
+        ],
+        "agsc-surface": [
+          "mcp"
+        ],
+        "agsc-surface-version": [
+          "2025-11-25"
+        ],
+        "href": "https://a.example/specs/mcp/",
+        "rel": "https://w3id.org/agentic-system-core/rel#surface"
+      }
+    ],
+    "mcp_extensions": [
+      "com.agenticsystemcore/knowledge"
+    ],
+    "mcp_version_echoes_input": true,
+    "mcp_version_pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+    "webmcp_annotations": {
+      "ask": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "compose": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "links": {
+        "readOnlyHint": true
+      },
+      "propose": {
+        "consequentialHint": true
+      },
+      "read": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "remember": {
+        "consequentialHint": true
+      },
+      "search": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      }
+    },
+    "webmcp_version_echoes_input": true,
+    "webmcp_version_pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+  },
+  "id": "bnd-0037",
+  "input": {
+    "emitted": [
+      "/llms.txt",
+      "/chunks.jsonl",
+      "/compose/"
+    ],
+    "mcp_revision": "2025-11-25",
+    "mcp_served": true,
+    "site": {
+      "base": "https://a.example/"
+    },
+    "webmcp_report_date": "2026-09-17"
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6 as the successor of bnd-0031; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "requires_surface": [
+    "mcp",
+    "webmcp"
+  ],
+  "rule": "AGSC-11-16"
+}

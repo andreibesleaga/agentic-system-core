@@ -1,6 +1,6 @@
 {
   "area": "discovery",
-  "description": "The agent-facing text file has an exact byte layout: H1 (first, as llms.txt v2 requires), provenance comment, blockquote, cluster sections ordered by slug, an Other section for unclustered items, one blank line between blocks and nothing else. An item with no description repeats its title; a draft item appears nowhere. Without this pin two conforming writers emit different bytes and Level 0 is unreachable. The provenance header carries the AI-assistance statement of AGSC-06-15 as its last line, a constant of the specification and never authored; no value interpolated into the block may carry `-->` (AGSC-06-13a as amended at rc.6). Expected bytes re-derived by hand from the rule text: block (2) is the same comment with one further `name: value` line inserted before the closing `-->`, and nothing else in the file moves. Re-derived again at rc.6 for D113: the header block gains the line `bundle_version: <content version>` between `spec_version:` and `generated_at:` (AGSC-06-13a, AGSC-04-25). The value here is the branch-1 form of AGSC-04-25 — the tag on the built commit, `v1.4.0` — and nothing else in either file moves: one further `name: value` line inside the comment, in the position the rule fixes.",
+  "description": "The agent-facing text file has an exact byte layout: H1 (first, as llms.txt v2 requires), provenance comment, blockquote, cluster sections ordered by slug, an Other section for unclustered items, one blank line between blocks and nothing else. An item with no description repeats its title; a draft item appears nowhere. Without this pin two conforming writers emit different bytes and Level 0 is unreachable. The provenance header carries the AI-assistance statement of AGSC-06-15 as its last line, a constant of the specification and never authored; no value interpolated into the block may carry `-->` (AGSC-06-13a as amended at rc.6). Expected bytes re-derived by hand from the rule text: block (2) is the same comment with one further `name: value` line inserted before the closing `-->`, and nothing else in the file moves. Re-derived again at rc.6 for the content version: the header block gains the line `bundle_version: <content version>` between `spec_version:` and `generated_at:` (AGSC-06-13a, AGSC-04-25). The value here is the branch-1 form of AGSC-04-25 — the tag on the built commit, `v1.4.0` — and nothing else in either file moves: one further `name: value` line inside the comment, in the position the rule fixes.",
   "expected": {
     "draft_excluded": [
       "hidden"
@@ -45,7 +45,7 @@
     "spec_version": "1.0.0-rc.6"
   },
   "level": "required",
-  "note": "added 2026-09-22 at rc.6 (EXT-1); derived by hand from AGSC-06-13a, AGSC-06-15 and AGSC-04-25, superseding disc-0010",
+  "note": "added 2026-09-22 at rc.6; derived by hand from AGSC-06-13a, AGSC-06-15 and AGSC-04-25, superseding disc-0010",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

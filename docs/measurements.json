@@ -1,109 +1,56 @@
 {
   "layers": {
     "conformance": {
-      "command": "node bench/measure.js --layer conformance",
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch <dir>",
       "error_codes": {
-        "registered": 90,
-        "used": 90
+        "registered": 91,
+        "used": 91
       },
       "rule_coverage": {
-        "active": 328,
-        "any_check": 269,
-        "named_by_checker": 74,
+        "active": 332,
+        "any_check": 322,
+        "named_by_checker": 80,
         "named_by_feature": 14,
-        "named_by_test": 261,
-        "no_check": 59,
+        "named_by_test": 319,
+        "no_check": 10,
         "uncovered": [
           "AGSC-00-02",
-          "AGSC-00-03",
-          "AGSC-00-05",
-          "AGSC-00-06",
-          "AGSC-00-07",
-          "AGSC-00-08",
-          "AGSC-00-10",
-          "AGSC-00-11",
-          "AGSC-00-12",
-          "AGSC-00-13",
-          "AGSC-00-14",
-          "AGSC-00-17",
-          "AGSC-00-18",
           "AGSC-00-19",
-          "AGSC-00-20",
-          "AGSC-01-06",
-          "AGSC-01-09",
-          "AGSC-01-13a",
-          "AGSC-01-31",
           "AGSC-01-32",
-          "AGSC-02-11",
-          "AGSC-02-15",
-          "AGSC-02-16",
-          "AGSC-03-09",
-          "AGSC-03-14",
-          "AGSC-03-18",
-          "AGSC-03-19",
           "AGSC-03-21",
-          "AGSC-04-08",
           "AGSC-04-16",
-          "AGSC-04-17",
-          "AGSC-04-18",
-          "AGSC-05-04",
-          "AGSC-05-04a",
-          "AGSC-05-05",
-          "AGSC-05-15",
-          "AGSC-05-21",
-          "AGSC-05-23",
           "AGSC-05-24",
-          "AGSC-06-03",
-          "AGSC-06-09",
-          "AGSC-06-12",
-          "AGSC-06-13",
-          "AGSC-07-11",
-          "AGSC-07-14",
-          "AGSC-08-03",
-          "AGSC-08-08",
-          "AGSC-08-10",
-          "AGSC-08-11",
-          "AGSC-08-20",
-          "AGSC-08-24",
           "AGSC-08-29",
-          "AGSC-09-14",
-          "AGSC-10-01",
-          "AGSC-10-04",
           "AGSC-10-07",
           "AGSC-10-08",
-          "AGSC-10-10",
-          "AGSC-10-11"
+          "AGSC-10-10"
         ],
-        "with_vector": 115,
-        "without_vector": 213
+        "with_vector": 129,
+        "without_vector": 203
       },
       "rule_coverage_by_chapter": {
         "active": {
           "10": 18,
-          "11": 22,
-          "00": 24,
+          "11": 23,
+          "00": 25,
           "01": 38,
-          "02": 32,
-          "03": 17,
+          "02": 34,
+          "03": 18,
           "04": 25,
-          "05": 34,
+          "05": 35,
           "06": 38,
-          "07": 25,
+          "07": 23,
           "08": 31,
           "09": 24
         },
         "uncovered": {
-          "10": 6,
-          "00": 15,
-          "01": 5,
-          "02": 3,
-          "03": 5,
-          "04": 4,
-          "05": 7,
-          "06": 4,
-          "07": 2,
-          "08": 7,
-          "09": 1
+          "10": 3,
+          "00": 2,
+          "01": 1,
+          "03": 1,
+          "04": 1,
+          "05": 1,
+          "08": 1
         }
       },
       "rules": {
@@ -158,33 +105,33 @@
         },
         "boundary": {
           "optional": 0,
-          "required": 36,
-          "total": 36,
-          "withdrawn": 0
+          "required": 30,
+          "total": 37,
+          "withdrawn": 7
         },
         "build": {
-          "optional": 0,
-          "required": 8,
-          "total": 8,
-          "withdrawn": 0
+          "optional": 1,
+          "required": 9,
+          "total": 11,
+          "withdrawn": 1
         },
         "bundle": {
           "optional": 0,
           "required": 6,
-          "total": 6,
-          "withdrawn": 0
+          "total": 7,
+          "withdrawn": 1
         },
         "chunks": {
           "optional": 0,
-          "required": 8,
+          "required": 7,
           "total": 8,
-          "withdrawn": 0
+          "withdrawn": 1
         },
         "cli": {
           "optional": 0,
-          "required": 9,
-          "total": 9,
-          "withdrawn": 0
+          "required": 14,
+          "total": 15,
+          "withdrawn": 1
         },
         "compose": {
           "optional": 0,
@@ -194,15 +141,15 @@
         },
         "conform": {
           "optional": 0,
-          "required": 4,
+          "required": 3,
           "total": 4,
-          "withdrawn": 0
+          "withdrawn": 1
         },
         "discovery": {
           "optional": 0,
-          "required": 16,
-          "total": 16,
-          "withdrawn": 0
+          "required": 10,
+          "total": 17,
+          "withdrawn": 7
         },
         "frontmatter": {
           "optional": 0,
@@ -212,14 +159,14 @@
         },
         "graph": {
           "optional": 0,
-          "required": 22,
-          "total": 22,
-          "withdrawn": 0
+          "required": 14,
+          "total": 23,
+          "withdrawn": 9
         },
         "import": {
           "optional": 0,
-          "required": 2,
-          "total": 2,
+          "required": 3,
+          "total": 3,
           "withdrawn": 0
         },
         "jcs": {
@@ -231,8 +178,8 @@
         "ledger": {
           "optional": 0,
           "required": 4,
-          "total": 4,
-          "withdrawn": 0
+          "total": 5,
+          "withdrawn": 1
         },
         "links": {
           "optional": 0,
@@ -242,15 +189,15 @@
         },
         "lint": {
           "optional": 0,
-          "required": 11,
-          "total": 11,
+          "required": 15,
+          "total": 15,
           "withdrawn": 0
         },
         "prov": {
           "optional": 0,
           "required": 4,
-          "total": 4,
-          "withdrawn": 0
+          "total": 5,
+          "withdrawn": 1
         },
         "slug": {
           "optional": 0,
@@ -261,17 +208,17 @@
       },
       "vector_run": {
         "fail": 0,
-        "pass": 149,
+        "pass": 164,
         "pending": 0,
-        "skip": 25,
-        "total": 174,
-        "withdrawn": 25
+        "skip": 30,
+        "total": 194,
+        "withdrawn": 30
       },
       "vectors": {
         "optional": 1,
-        "required": 148,
-        "total": 174,
-        "withdrawn": 25
+        "required": 163,
+        "total": 194,
+        "withdrawn": 30
       }
     },
     "determinism": {
@@ -311,12 +258,12 @@
           "handled": 2,
           "score": "2/2",
           "neutralised": 1,
-          "refused-other": 1,
+          "refused": 1,
           "controls_clean": null
         },
         "beyond-the-rule": {
           "beyond_rule": 4,
-          "beyond_rule_caught": 0,
+          "beyond_rule_caught": 1,
           "cases": 4,
           "controls": 0,
           "faults": 0,
@@ -326,7 +273,7 @@
         },
         "build-without-lint": {
           "beyond_rule": 2,
-          "beyond_rule_caught": 0,
+          "beyond_rule_caught": 2,
           "cases": 2,
           "controls": 0,
           "faults": 0,
@@ -366,8 +313,8 @@
           "handled": 3,
           "score": "3/3",
           "detected": 3,
-          "false-positive": 2,
-          "controls_clean": "0/2"
+          "clean": 2,
+          "controls_clean": "2/2"
         },
         "encoding": {
           "beyond_rule": 0,
@@ -375,10 +322,9 @@
           "cases": 7,
           "controls": 0,
           "faults": 7,
-          "handled": 6,
-          "score": "6/7",
-          "refused": 6,
-          "missed": 1,
+          "handled": 7,
+          "score": "7/7",
+          "refused": 7,
           "controls_clean": null
         },
         "hidden-text": {
@@ -410,13 +356,11 @@
           "cases": 7,
           "controls": 1,
           "faults": 6,
-          "handled": 5,
-          "score": "5/6",
-          "missed": 1,
-          "neutralised": 2,
-          "refused": 1,
+          "handled": 6,
+          "score": "6/6",
+          "refused": 4,
           "detected": 1,
-          "refused-other": 1,
+          "neutralised": 1,
           "clean": 1,
           "controls_clean": "1/1"
         },
@@ -463,8 +407,7 @@
           "faults": 4,
           "handled": 4,
           "score": "4/4",
-          "refused": 2,
-          "refused-other": 2,
+          "refused": 4,
           "controls_clean": null
         },
         "pii": {
@@ -510,8 +453,7 @@
           "faults": 8,
           "handled": 8,
           "score": "8/8",
-          "refused": 7,
-          "refused-other": 1,
+          "refused": 8,
           "controls_clean": null
         },
         "unsafe-svg": {
@@ -529,20 +471,17 @@
       "by_kind": {
         "bundle": {
           "beyond_rule": 6,
-          "beyond_rule_caught": 0,
+          "beyond_rule_caught": 3,
           "cases": 74,
           "controls": 10,
           "faults": 58,
-          "handled": 57,
-          "score": "57/58",
+          "handled": 58,
+          "score": "58/58",
           "detected": 20,
-          "refused": 31,
-          "false-positive": 2,
-          "clean": 8,
+          "refused": 36,
+          "clean": 10,
           "neutralised": 2,
-          "refused-other": 4,
-          "missed": 1,
-          "controls_clean": "8/10"
+          "controls_clean": "10/10"
         },
         "federation": {
           "beyond_rule": 0,
@@ -562,13 +501,11 @@
           "cases": 7,
           "controls": 1,
           "faults": 6,
-          "handled": 5,
-          "score": "5/6",
-          "missed": 1,
-          "neutralised": 2,
-          "refused": 1,
+          "handled": 6,
+          "score": "6/6",
+          "refused": 4,
           "detected": 1,
-          "refused-other": 1,
+          "neutralised": 1,
           "clean": 1,
           "controls_clean": "1/1"
         },
@@ -831,24 +768,20 @@
         },
         {
           "class": "encoded-run",
-          "codes": [
-            "AGSC-E401"
-          ],
+          "codes": [],
           "expect": [],
           "id": "ctl-base64-255",
           "kind": "bundle",
-          "outcome": "false-positive",
+          "outcome": "clean",
           "required": true
         },
         {
           "class": "encoded-run",
-          "codes": [
-            "AGSC-E401"
-          ],
+          "codes": [],
           "expect": [],
           "id": "ctl-base64-200",
           "kind": "bundle",
-          "outcome": "false-positive",
+          "outcome": "clean",
           "required": true
         },
         {
@@ -1040,6 +973,7 @@
         {
           "class": "traversal",
           "codes": [
+            "AGSC-E413",
             "AGSC-E902"
           ],
           "expect": [
@@ -1054,7 +988,7 @@
           "class": "traversal",
           "codes": [
             "AGSC-E204",
-            "AGSC-E901",
+            "AGSC-E413",
             "AGSC-E902"
           ],
           "expect": [
@@ -1070,7 +1004,7 @@
           "class": "traversal",
           "codes": [
             "AGSC-E204",
-            "AGSC-E901",
+            "AGSC-E413",
             "AGSC-E902"
           ],
           "expect": [
@@ -1128,14 +1062,14 @@
         {
           "class": "traversal",
           "codes": [
-            "AGSC-E901"
+            "AGSC-E902"
           ],
           "expect": [
             "AGSC-E902"
           ],
           "id": "trav-symlink-attachments-dir",
           "kind": "bundle",
-          "outcome": "refused-other",
+          "outcome": "refused",
           "required": true
         },
         {
@@ -1196,14 +1130,16 @@
         },
         {
           "class": "beyond-the-rule",
-          "codes": [],
+          "codes": [
+            "AGSC-E108"
+          ],
           "expect": [
             "AGSC-E108",
             "AGSC-E204"
           ],
           "id": "enc-nul-body",
           "kind": "bundle",
-          "outcome": "missed",
+          "outcome": "refused",
           "required": false
         },
         {
@@ -1247,13 +1183,15 @@
         },
         {
           "class": "encoding",
-          "codes": [],
+          "codes": [
+            "AGSC-E108"
+          ],
           "expect": [
             "AGSC-E108"
           ],
           "id": "enc-invalid-utf8",
           "kind": "bundle",
-          "outcome": "missed",
+          "outcome": "refused",
           "required": true
         },
         {
@@ -1272,28 +1210,28 @@
         {
           "class": "oversized",
           "codes": [
-            "AGSC-E201",
-            "AGSC-E202"
+            "AGSC-E202",
+            "AGSC-E904"
           ],
           "expect": [
             "AGSC-E904"
           ],
           "id": "big-config",
           "kind": "bundle",
-          "outcome": "refused-other",
+          "outcome": "refused",
           "required": true
         },
         {
           "class": "oversized",
           "codes": [
-            "AGSC-E901"
+            "AGSC-E904"
           ],
           "expect": [
             "AGSC-E904"
           ],
           "id": "big-attachment",
           "kind": "bundle",
-          "outcome": "refused-other",
+          "outcome": "refused",
           "required": true
         },
         {
@@ -1324,14 +1262,14 @@
         {
           "class": "archive",
           "codes": [
-            "AGSC-E901"
+            "AGSC-E903"
           ],
           "expect": [
             "AGSC-E903"
           ],
           "id": "arc-tgz-attachment",
           "kind": "bundle",
-          "outcome": "refused-other",
+          "outcome": "refused",
           "required": true
         },
         {
@@ -1726,27 +1664,29 @@
         },
         {
           "class": "hostile-import",
-          "codes": [],
+          "codes": [
+            "AGSC-E903"
+          ],
           "expect": [
             "AGSC-E903"
           ],
           "id": "imp-archive",
           "kind": "import",
-          "outcome": "missed",
+          "outcome": "refused",
           "required": true
         },
         {
           "class": "hostile-import",
           "codes": [
             "AGSC-E506",
-            "AGSC-E901"
+            "AGSC-E902"
           ],
           "expect": [
             "AGSC-E902"
           ],
           "id": "imp-symlink-out",
           "kind": "import",
-          "outcome": "neutralised",
+          "outcome": "refused",
           "required": true
         },
         {
@@ -1782,14 +1722,14 @@
         {
           "class": "hostile-import",
           "codes": [
-            "AGSC-E901"
+            "AGSC-E904"
           ],
           "expect": [
             "AGSC-E904"
           ],
           "id": "imp-oversized",
           "kind": "import",
-          "outcome": "refused-other",
+          "outcome": "refused",
           "required": true
         },
         {
@@ -1863,7 +1803,9 @@
         },
         {
           "class": "control",
-          "codes": [],
+          "codes": [
+            "AGSC-E602"
+          ],
           "expect": [],
           "id": "ctl-svg-clean",
           "kind": "bundle",
@@ -1872,24 +1814,28 @@
         },
         {
           "class": "build-without-lint",
-          "codes": [],
+          "codes": [
+            "AGSC-E412"
+          ],
           "expect": [
             "AGSC-E412"
           ],
           "id": "build-only-svg-script",
           "kind": "bundle",
-          "outcome": "missed",
+          "outcome": "refused",
           "required": false
         },
         {
           "class": "build-without-lint",
-          "codes": [],
+          "codes": [
+            "AGSC-E902"
+          ],
           "expect": [
             "AGSC-E902"
           ],
           "id": "build-only-attachment-parent",
           "kind": "bundle",
-          "outcome": "missed",
+          "outcome": "refused",
           "required": false
         },
         {
@@ -1927,7 +1873,7 @@
           "required": false
         }
       ],
-      "command": "node bench/measure.js --layer security --scratch <dir>",
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security --scratch <dir>",
       "corpus": {
         "cases": 104,
         "file": "bench/corpus/security-floor.json",
@@ -1936,20 +1882,17 @@
       "limit": "AGSC-08-19: these lints prove neither safety nor the absence of novel injection. An implementation MUST NOT claim more.",
       "totals": {
         "beyond_rule": 6,
-        "beyond_rule_caught": 0,
+        "beyond_rule_caught": 3,
         "cases": 104,
         "controls": 13,
         "faults": 85,
-        "handled": 83,
-        "score": "83/85",
+        "handled": 85,
+        "score": "85/85",
         "detected": 21,
-        "refused": 53,
-        "false-positive": 2,
-        "clean": 11,
-        "neutralised": 4,
-        "refused-other": 5,
-        "missed": 2,
-        "controls_clean": "11/13"
+        "refused": 61,
+        "clean": 13,
+        "neutralised": 3,
+        "controls_clean": "13/13"
       }
     },
     "perf": {
@@ -2245,7 +2188,7 @@
         "per_item": 4,
         "version": "parity-calls-v1"
       },
-      "command": "node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…",
+      "command": "node bench/measure.js --layer parity --nodes <name>=<bundle dir>,\u2026",
       "nodes": {
         "minimal": {
           "answer_types": {
@@ -2435,7 +2378,7 @@
       }
     },
     "tokens": {
-      "command": "NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,… --exports <name>=<dir>,…",
+      "command": "NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,\u2026 --exports <name>=<dir>,\u2026",
       "no_claude_count": "Anthropic publishes no offline tokenizer; no Claude token count is reported, because it would be a guess.",
       "nodes": {
         "minimal": {
@@ -2712,7 +2655,7 @@
     },
     "a11y": {
       "ceiling": "axe-core finds on average 57 % of WCAG issues automatically; zero violations is a floor, never a conformance claim.",
-      "command": "NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,…",
+      "command": "NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,\u2026",
       "nodes": {
         "minimal": {
           "by_type": {
@@ -3202,9 +3145,9 @@
     },
     "package": {
       "command": "npm pack --dry-run --json",
-      "files": 385,
-      "packed_bytes": 868964,
-      "unpacked_bytes": 2938867
+      "files": 455,
+      "packed_bytes": 1050087,
+      "unpacked_bytes": 3407716
     }
   },
   "schema": "agsc.measurements.v1",

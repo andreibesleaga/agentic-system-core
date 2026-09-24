@@ -1,77 +1,18 @@
 'use strict';
 // Conformance area `bundle`. bundle-0001 (MAJOR tolerance and unknown-key
-// preservation, AGSC-00-15) — owner A. bundle-0002 (language variants,
-// AGSC-01-13) and bundle-0003..0005 (the agent lane, AGSC-01-36/38) — owner
-// B (the configuration/CLI package); dispatched here by vector.id
-// since their input shape (`paths[]`/`config` alone, no `markdown`) differs
-// from bundle-0001's.
+// preservation, AGSC-00-15). bundle-0003..0005 (the agent lane, AGSC-01-36/38) and
+// bundle-0006 — dispatched here by vector.id since their input shape (`config`
+// alone, no `markdown`) differs from bundle-0001's. bundle-0002 is withdrawn (below).
 
 const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
 const { checkAgents } = require('../../../src/governance/agents.js');
 
-/**
- * groupLanguageVariants(paths, config) — AGSC-01-13/01-13a: the unsuffixed
- * file is the primary and owns the slug; `<slug>.<lang>.md` shares it. No
- * module in the contract names this function (bundle loading/routing
- * is not yet assigned to any agent's API surface); implemented here,
- * self-contained, since bundle-0002 is B's vector to prove.
- */
-function groupLanguageVariants(paths, config) {
-  const defaultLang = (config && config.i18n && config.i18n.default) || 'en';
-  const groups = new Map(); // 'dir/slug' -> { dir, typePlural, slug, hasPrimary, variants }
-
-  for (const p of paths) {
-    const lastSlash = p.lastIndexOf('/');
-    const dir = p.slice(0, lastSlash);
-    const file = p.slice(lastSlash + 1);
-    const base = file.endsWith('.md') ? file.slice(0, -3) : file;
-    const typePlural = dir.slice(dir.lastIndexOf('/') + 1);
-    const dotIndex = base.indexOf('.');
-    const slug = dotIndex === -1 ? base : base.slice(0, dotIndex);
-    const lang = dotIndex === -1 ? null : base.slice(dotIndex + 1).toLowerCase();
-    const key = `${dir}/${slug}`;
-    if (!groups.has(key)) groups.set(key, { dir, typePlural, slug, hasPrimary: false, variants: [] });
-    const g = groups.get(key);
-    if (lang === null) g.hasPrimary = true;
-    else if (lang !== defaultLang) g.variants.push(lang);
-  }
-
-  let items = 0;
-  const routes = [];
-  const errors = [];
-  let firstPrimarySlug = null;
-
-  for (const g of groups.values()) {
-    if (g.hasPrimary) {
-      items += 1;
-      if (firstPrimarySlug === null) firstPrimarySlug = g.slug;
-      routes.push(`/${g.typePlural}/${g.slug}/`);
-      for (const lang of g.variants) routes.push(`/${g.typePlural}/${g.slug}/${lang}/`);
-    } else {
-      for (const lang of g.variants) errors.push({ code: 'AGSC-E208', path: `${g.dir}/${g.slug}.${lang}.md` });
-    }
-  }
-
-  return { items, routes, primarySlug: firstPrimarySlug, orphanErrors: errors, variantIsSeparateItem: false };
-}
-
-function runBundle0002(vector) {
-  const result = groupLanguageVariants(vector.input.paths, vector.input.config);
-  const expected = vector.expected;
-  const list = [
-    ['items', result.items === expected.items, `${result.items} != ${expected.items}`],
-    ['primary_slug', result.primarySlug === expected.primary_slug, `${result.primarySlug} != ${expected.primary_slug}`],
-    ['routes', deepEqual(result.routes, expected.routes), JSON.stringify(result.routes)],
-    ['variant_is_separate_item', result.variantIsSeparateItem === expected.variant_is_separate_item, '']
-  ];
-  const wantOrphanCode = expected.orphan_variant && expected.orphan_variant.error;
-  if (wantOrphanCode) {
-    list.push(['orphan_variant', result.orphanErrors.some((e) => e.code === wantOrphanCode), JSON.stringify(result.orphanErrors)]);
-  }
-  return checks(list);
-}
+// bundle-0002 (language variants, AGSC-01-13) was withdrawn on 2026-09-24 with no
+// successor: the pair AGSC-01-13/01-13a is reserved to 1.1 (AGSC-00-20), and the
+// grouping this file used to implement for it proved nothing about an engine.
+// The runner never calls a handler for a withdrawn vector.
 
 function runAgentsConfigVector(vector) {
   const findings = checkAgents(vector.input.config);
@@ -135,9 +76,56 @@ function reservedConfigCase(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * bundle-0007 (AGSC-01-13 as amended 2026-09-24): at 1.0 a `<slug>.<lang>.md` file
+ * beside its primary is a second use of the slug (AGSC-E206) and no variant route is
+ * built. Run over a scratch copy of the fixture with the vector's file added, through
+ * the real `lint` and the real `build`.
+ */
+function variantFileAt10Case(vector, ctx) {
+  const path = require('node:path');
+  const nodeFs = require('node:fs');
+  const os = require('node:os');
+  const { main } = require('../../../src/application/cli/main.js');
+  const { createFileSystem, readSchemas } = require('../../../src/adapters/node-fs.js');
+  const { loadBundle } = require('../../../src/application/bundle.js');
+  const site = require('../../../src/distribution/site.js');
+  const { createClock } = require('../../../src/adapters/node-clock.js');
+  const { captureStream } = require('./_shared.js');
+  const engineRoot = (ctx && ctx.root) || '.';
+  const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'agsc-bundle-0007-'));
+  nodeFs.cpSync(path.join(engineRoot, 'tests', String(vector.input.bundle || 'fixtures/minimal')), root, { recursive: true });
+  for (const [file, text] of Object.entries(vector.input.add_files || {})) {
+    nodeFs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    nodeFs.writeFileSync(path.join(root, file), text);
+  }
+  const list = [];
+  try {
+    const stdout = captureStream();
+    const stderr = captureStream();
+    const exit = main(['lint', '--json', '--quiet'], {
+      env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: createFileSystem(root) }, root,
+      specVersion: (vector.options || {}).spec_version, stderr, stdout, version: (vector.options || {}).spec_version,
+    });
+    let findings = [];
+    try { findings = JSON.parse(stdout.text() || '{}').findings || []; } catch (e) { findings = []; }
+    const want = vector.expected.lint;
+    list.push(['lint exit 1', exit === 1, `exit ${exit}`]);
+    list.push([`lint ${want.error} for ${want.slug}`,
+      findings.some((f) => f.code === want.error && f.slug === want.slug), JSON.stringify(findings.map((f) => [f.code, f.slug]))]);
+    const fs = createFileSystem(root);
+    const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(engineRoot)) });
+    const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+    const built = site.build(bundle, { clock, fs }, { specVersion: (vector.options || {}).spec_version, version: '0.0.2' });
+    for (const route of vector.expected.build.routes_absent || []) list.push([`no ${route}`, !built.files.has(route), route]);
+    for (const route of vector.expected.build.routes_present || []) list.push([`emits ${route}`, built.files.has(route), route]);
+  } finally { nodeFs.rmSync(root, { force: true, recursive: true }); }
+  return checks(list);
+}
+
 const B_HANDLERS = {
+  'bundle-0007': variantFileAt10Case,
   'bundle-0006': reservedConfigCase,
-  'bundle-0002': runBundle0002,
   'bundle-0003': runAgentsConfigVector,
   'bundle-0004': runAgentsConfigVector,
   'bundle-0005': runAgentsConfigVector
@@ -172,4 +160,3 @@ module.exports.run = (vector, ctx) => {
   return checks(list);
 };
 
-module.exports.groupLanguageVariants = groupLanguageVariants;

@@ -8,7 +8,7 @@
  * implementation in both hosts, so this module emits, as the page's script, the
  * OWN SOURCE TEXT of the functions Node executes — `Function.prototype.toString()`
  * returns a function's source text, so nothing is transcribed, nothing is
- * transpiled, and there is no bundler and no build step (D49/M8-T19).
+ * transpiled, and there is no bundler and no build step.
  *
  * That is why `composition/compose.js` and `composition/harness.js` declare their
  * algebra as self-contained top-level functions whose constants are functions:

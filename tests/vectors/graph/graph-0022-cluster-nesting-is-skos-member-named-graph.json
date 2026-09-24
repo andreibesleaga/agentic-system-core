@@ -1,6 +1,6 @@
 {
   "area": "graph",
-  "description": "The SKOS integrity rule: broader on a cluster file is nesting, exported as parent skos:member child. skos:broader has domain and range skos:Concept and skos:Collection is disjoint with skos:Concept, so emitting skos:broader on a Cluster would entail a contradiction and fail every SKOS validator. The graph term: every line is a quad whose fourth term is the Bundle IRI `<https://example.org/>` (AGSC-04-15 as amended at rc.6, PY2-01), so each line of graph-0002 is restated here with ` <https://example.org/>` inserted before its terminating ` .`; nothing else moves, and because the same suffix is added to every line the byte order of the lines is unchanged.",
+  "description": "The SKOS integrity rule: broader on a cluster file is nesting, exported as parent skos:member child. skos:broader has domain and range skos:Concept and skos:Collection is disjoint with skos:Concept, so emitting skos:broader on a Cluster would entail a contradiction and fail every SKOS validator. The graph term: every line is a quad whose fourth term is the Bundle IRI `<https://example.org/>` (AGSC-04-15 as amended at rc.6, 2026-09-23), so each line of graph-0002 is restated here with ` <https://example.org/>` inserted before its terminating ` .`; nothing else moves, and because the same suffix is added to every line the byte order of the lines is unchanged.",
   "expected": {
     "contains": [
       "<https://example.org/clusters/foundations/> <http://www.w3.org/2004/02/skos/core#member> <https://example.org/clusters/protocols/> <https://example.org/> .",
@@ -42,7 +42,7 @@
     }
   },
   "level": "required",
-  "note": "added 2026-09-23 at rc.6 (EXT-2b, PY2-01); derived by hand from AGSC-04-15 as amended and AGSC-05-03, superseding graph-0002",
+  "note": "added 2026-09-23 at rc.6; derived by hand from AGSC-04-15 as amended and AGSC-05-03, superseding graph-0002",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

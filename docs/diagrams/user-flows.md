@@ -28,7 +28,7 @@ flowchart TD
   E --> F["ci.yml: npx agsc ci (lint L1+L2, build x2, diff)"]
   F --> G{"CI status check green?"}
   G -- no --> C
-  G -- yes --> H["Owner reviews, adds verified[] entry"]
+  G -- yes --> H["Maintainer reviews, adds verified[] entry"]
   H --> I{"Ruleset: 1 approval + Code Owner + green ci?"}
   I -- no --> H
   I -- yes --> J["Owner merges"]
@@ -74,7 +74,7 @@ flowchart TD
 ```
 
 Trace: PRD-011/013/014 (flow 1), PRD-039–042/050 (flow 2), PRD-036–038 (flow 3), PRD-032–035 (flow 4);
-audit/D §3(a)/(b)/(e)/(f); PLAN.md §6(b), §6(c).
+PLAN.md §6(b), §6(c).
 
 ## Flow 0 — Drop-in user (PRD-053; the front-door scenario)
 
@@ -86,4 +86,4 @@ flowchart LR
   D --> E["git push -> Cloudflare Pages\n= online live wiki"]
   D --> F["npx agentic-system-core mcp\n= agent-readable memory"]
 ```
-Trace: PRD-053, AGSC-02-90..93, R24, R56.
+Trace: PRD-053, AGSC-02-90..93.

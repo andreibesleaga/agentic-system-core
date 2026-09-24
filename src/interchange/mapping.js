@@ -27,7 +27,7 @@
 // | `diagram.{file,alt,caption}`| `diagram{}`                           | AGSC-02-13 |
 // | `id`                       | `id` (equals the slug, AGSC-01-11)     | AGSC-01-11 |
 // | (absent)                   | `prov{origin: imported, operator}`     | AGSC-08-01 |
-// | (absent)                   | `attachments[]` (the SVG + its source) | AGSC-02-98, R59 |
+// | (absent)                   | `attachments[]` (the SVG + its source) | AGSC-02-98 |
 //
 // `owaspIds` does NOT become `owasp_ids`. The schema pins that key to
 // `^LLM[0-9]{2}:[0-9]{4}$` and the old values are the 2025 OWASP **Agentic**
@@ -69,9 +69,6 @@ const KNOWN_OLD_KEYS = Object.freeze(['id', 'title', 'kind', 'deck', 'subdeck', 
 
 /** The vendor namespace of AGSC-02-05a; `x-<vendor>-<key>`, preserved verbatim. */
 const VENDOR_PREFIX = 'x-oldsite-';
-
-/** The old body's internal link shape: `/patterns/<slug>/`. */
-const OLD_LINK = /\]\(\/patterns\/([a-z0-9][a-z0-9-]*)\/\)/gu;
 
 /** Frontmatter in the AGSC-04-19 key order; unknown keys last, code-point order. */
 function ordered(frontmatter) {
@@ -461,7 +458,6 @@ module.exports = {
   DESCRIPTION_MAX,
   DESCRIPTION_MIN,
   KNOWN_OLD_KEYS,
-  OLD_LINK,
   TOP_ORDER,
   VENDOR_PREFIX,
   filterLinks,

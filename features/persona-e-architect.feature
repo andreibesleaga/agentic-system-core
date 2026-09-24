@@ -1,5 +1,4 @@
-# Trace: PRD-036, PRD-037, PRD-038 · audit/D §3(e) · PLAN §6(c)
-# Source of truth: the private design register (audit D) §3(e) "Architect using the combiner in the browser (Mode 4)"
+# Trace: PRD-036, PRD-037, PRD-038 · PLAN §6(c)
 @persona-e @mode-4
 Feature: Architect turns Concepts into a starting architecture
   As P5 (architect / combiner)

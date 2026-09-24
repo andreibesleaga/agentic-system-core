@@ -9,13 +9,13 @@
  * way), AGSC-11-05 (the `describedby` Link header on `/`, quoted SHA-256
  * ETags, `no-cache`, and no `immutable` anywhere at 1.0), AGSC-11-20
  * (`visibility`) and AGSC-11-22 (retirement and tombstoned items).
- * Requirements: SO-17a/18a/22a, D71 Q74, D72 CS-10/C6/C15, PRD-057, PRD-062.
+ * Requirements: PRD-057, PRD-062.
  *
  * Boundary is NOT a pure context: it computes over bytes it is given and may
  * use `node:crypto`, but it reaches no network and no clock of its own.
  *
  * DUPLICATION, REPORTED: the header sets below overlap what
- * `distribution/headers.js` (owner E) emits into `_headers` (AGSC-06-17).
+ * `distribution/headers.js` emits into `_headers` (AGSC-06-17).
  * `tests/arch/context-boundaries.test.js` forbids Boundary from requiring
  * Distribution, so the rule is implemented here — where AGSC-11-03/11-05 live
  * — and Distribution should call `headerSets` rather than restate it. G owns

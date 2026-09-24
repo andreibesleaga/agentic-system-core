@@ -1,6 +1,6 @@
 'use strict';
 /**
- * bench/measure.js — the pre-GA measurements runner (research/39 Layers A–E).
+ * bench/measure.js — the pre-GA measurements runner (measurement layer A–E).
  *
  * What it is, and what it is not. This script produces `docs/measurements.json`,
  * the generated record that `docs/MEASUREMENTS.md` reads from. It is NOT the
@@ -23,7 +23,7 @@
  * is refused rather than dated from the wall clock. Wall-clock DURATIONS are
  * measured with the monotonic counter (`process.hrtime.bigint`) and with GNU
  * `time -v` for peak resident memory; those are measurements of this machine
- * on this day, and research/39 §6 requires them to be reported with the machine
+ * on this day, and the rules of `docs/MEASUREMENTS.md` require them to be reported with the machine
  * and the run count attached and never as a comparison with another system.
  *
  * Coverage note. This orchestrator spawns real builds that take minutes, so no
@@ -106,7 +106,12 @@ function treeSize(dir) {
   return { bytes, files, largest_bytes: largest, largest_path: largestPath };
 }
 
-/** Every rule id the specification declares, and which of them are reserved. */
+/**
+ * Every rule id the specification declares, and which of them are active. A rule
+ * is retired exactly when its id is followed by `*(retired at rc`, the test
+ * `tools/count-artifacts` applies, so the two can never disagree; the word
+ * "reserved" inside a rule's text says nothing about the rule itself.
+ */
 function specRules() {
   const active = [];
   const all = [];
@@ -114,10 +119,10 @@ function specRules() {
     if (!name.endsWith('.md')) continue;
     const text = fs.readFileSync(path.join(REPO, 'spec', name), 'utf8');
     for (const line of text.split('\n')) {
-      const m = /^-\s+\*\*(AGSC-\d{2}-\d{2}[a-z]?)\*\*/u.exec(line);
+      const m = /^-\s+\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\(retired at rc)?/u.exec(line);
       if (!m) continue;
       all.push(m[1]);
-      if (!/reserved/iu.test(line.slice(0, 200))) active.push(m[1]);
+      if (m[2] === undefined) active.push(m[1]);
     }
   }
   return { active: [...new Set(active)], all: [...new Set(all)] };
@@ -153,7 +158,9 @@ function vectors() {
         area: json.area,
         id: json.id,
         rule: Array.isArray(json.rule) ? json.rule : [json.rule].filter(Boolean),
-        status: json.status || 'required',
+        // A vector states its `level` (`required`, `optional`, `withdrawn`); it has no
+        // `status` member, and reading one called every vector required.
+        status: json.level || 'required',
       });
     }
   };
@@ -203,7 +210,7 @@ function layerConformance() {
   }
 
   return {
-    command: 'node bench/measure.js --layer conformance',
+    command: 'SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch <dir>',
     error_codes: { registered: counts.error_codes_registered, used: counts.error_codes_used },
     rule_coverage: coverage,
     rule_coverage_by_chapter: {
@@ -312,7 +319,7 @@ function layerSecurity(scratch) {
     cases: result.cases.map((c) => ({
       class: c.class, codes: c.codes, expect: c.expect, id: c.id, kind: c.kind, outcome: c.outcome, required: c.required,
     })),
-    command: 'node bench/measure.js --layer security --scratch <dir>',
+    command: 'SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security --scratch <dir>',
     corpus: { cases: corpus.cases.length, file: 'bench/corpus/security-floor.json', version: corpus.version },
     limit: 'AGSC-08-19: these lints prove neither safety nor the absence of novel injection. An implementation MUST NOT claim more.',
     totals: result.totals,
@@ -573,6 +580,6 @@ function run(argv, io) {
 
 if (require.main === module) Promise.resolve(run(process.argv.slice(2))).then((code) => process.exit(code));
 
-module.exports = { HELP, LAYERS, run };
+module.exports = { HELP, LAYERS, run, specRules };
 
 /* c8 ignore stop */

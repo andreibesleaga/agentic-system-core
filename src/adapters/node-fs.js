@@ -6,7 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-// F27-13: the ordering comes from the SHARED KERNEL, never from a bounded context.
+// the ordering comes from the SHARED KERNEL, never from a bounded context.
 const { compareCodePoint } = require('../shared/ordering.js');
 
 const MAX_INPUT_BYTES = 1024 * 1024; // AGSC-01-16
@@ -17,7 +17,7 @@ const UTF8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 
 class FsError extends Error {
   /** @param {string} code a code REGISTERED in spec/09 §9.4, so the CLI can
-   * turn this throw into a Finding rather than an internal error (F27-07).
+   * turn this throw into a Finding rather than an internal error.
    * @param {string} message @param {string} [file] the Bundle-relative path. */
   constructor(code, message, file) {
     super(message);
@@ -58,7 +58,7 @@ function nearestReal(p) {
 /**
  * AGSC-01-16 and AGSC-01-35: a symlink is the second way out of the Bundle root and
  * `path.resolve` cannot see it, so every method that resolves a path re-checks the
- * real path — not only `readFile` (F27-01). A file that does not exist yet is judged
+ * real path — not only `readFile`. A file that does not exist yet is judged
  * by its nearest existing ancestor, so a first `writeFile` still passes while a
  * planted directory symlink does not.
  * @throws {FsError} AGSC-E902 when the real path lies outside the root.

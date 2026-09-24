@@ -2,16 +2,7 @@
   "area": "bundle",
   "description": "Language variants are accepted at 1.0 (D53 lifts G27). The unsuffixed file is the primary and owns the slug, the item IRI and the graph node; <slug>.<lang>.md shares that slug, is published at /<type-plural>/<slug>/<lang>/ and is emitted as language-tagged literals, never as a second item. A variant with no primary is AGSC-E208. Without this vector the whole i18n rule pair AGSC-01-13/01-13a ships unproved.",
   "expected": {
-    "items": 1,
-    "orphan_variant": {
-      "error": "AGSC-E208"
-    },
-    "primary_slug": "agentic-memory",
-    "routes": [
-      "/concepts/agentic-memory/",
-      "/concepts/agentic-memory/fr/"
-    ],
-    "variant_is_separate_item": false
+    "withdrawn": true
   },
   "id": "bundle-0002",
   "input": {
@@ -26,10 +17,12 @@
       "content/concepts/orphan.de.md"
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "note": "2026-09-17: BCP 47 tags compare case-insensitively (AR2-33); emitted tags are lower-cased (AGSC-05-31).",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },
-  "rule": "AGSC-01-13"
+  "reason": "Withdrawn at rc.6 (2026-09-24) and superseded by bundle-0007. Language variants (AGSC-01-13, AGSC-01-13a) are reserved to 1.1 by AGSC-00-20, so this case — a shared slug and a variant route at 1.0 — no longer states the 1.0 behaviour, which bundle-0007 states (a second use of the slug, AGSC-E206, no variant route). The case was never a proof of an engine: its handler grouped the paths itself and no reference implementation served a variant, which is why the rule moved rather than the engine; the 1.1 vectors restate this case.",
+  "rule": "AGSC-01-13",
+  "superseded_by": "bundle-0007"
 }

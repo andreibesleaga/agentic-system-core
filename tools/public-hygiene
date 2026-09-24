@@ -22,17 +22,27 @@
 //                    by digest, so this public tool never spells their names
 //                    (AGSC-E405)
 //   process          process vocabulary that marks an internal document: work
-//                    package ids, session numbers, decision ids D100–D199 and
-//                    requirement ids R100–R199, "runbook", "checklist for",
-//                    "you should", "next session", agent and model names (AGSC-E405)
-//   internal-note    an owner decision or an internal note (AGSC-E405)
+//                    package ids, audit finding ids (`V9D-01`, `F27-11`, `ENG1`,
+//                    `CONN3-S3`, `NS-FIX`), session numbers (`session 28`,
+//                    `session-28`, `(s28)`), decision ids of two or three digits
+//                    (`D60`, `D113`) and requirement ids of two or three digits
+//                    (`R64`, `R126`), a private audit folder (`audit/D`),
+//                    "runbook", "checklist for", "you should", "next session",
+//                    agent and model names (AGSC-E405). Rule ids (`AGSC-nn-nn`),
+//                    error codes, RFC numbers, HTTP status codes and the public
+//                    requirement families (`PRD-`, `NFR-`, `ADR-`, risk `R-nn`) are
+//                    not ids of this kind and never match.
+//   internal-note    an owner decision, an owner-directed change, the owner's
+//                    directives, or an internal note (AGSC-E405)
 //   secret           a credential shape (AGSC-E403); the match is never echoed
 //   email            an e-mail address outside the reserved example domains of
 //                    RFC 2606 / RFC 6761 (AGSC-E404)
 //   personal         personal data beyond the minimum: the author's name in any
 //                    form but "Andrei N. Besleaga", a telephone number, a street
 //                    address (AGSC-E404)
-//   wording          the standing list of forbidden public wording (AGSC-E405)
+//   wording          the standing list of forbidden public wording, "100 %"
+//                    among it (a CSS length is not wording; see WORDING_EXEMPT)
+//                    (AGSC-E405)
 //   todo             TODO / FIXME left in a public document (AGSC-E405)
 //   owner-addressed  a document whose first lines address the owner or name it
 //                    a runbook, a checklist or a hand-over (AGSC-E405)
@@ -119,11 +129,22 @@ const LINE_PATTERNS = Object.freeze([
   ['process', 'work-package id',
     /\b(?:ENG|SITE|FIX|CONN|HOST|CLEAN|TEST|ARCH|UX|OPT|PUB|PY|DOCS|MODES|BENCH|NAME|EXT|WP|MCP)-(?:\d+[A-Z]?|FINAL)\b/gu],
   ['process', 'audit finding id',
-    /\b(?:ENG|SITE|FIX|FV|CONN|MCP|LEG|BENCH|PY|EXT|PUB|RC|V)\d+[a-z]?-(?:[A-Z]?\d+[a-z]?|[A-Z])\b/gu],
+    /\b(?:ENG|SITE|FIX|FV|CONN|MCP|LEG|BENCH|PY|EXT|PUB|RC|V|PAT|UX|CLEAN)\d+[a-z]?-(?:[A-Z]?\d+[a-z]?|[A-Z])\b/gu],
+  ['process', 'audit finding id', /\bV\d{1,2}[A-E]-S?\d+\b/gu],
+  // `RC5B-01` and the lettered form `RC5B-A` alike.
+  ['process', 'audit finding id', /\bRC\d+[A-Z]-(?:\d+|[A-Z])\b/gu],
+  ['process', 'audit finding id', /\bF2\d-\d+\b/gu],
+  ['process', 'audit finding id', /\b(?:DS|NS|TP|W3R|AR\d?)-\d+\b|\bPSF-\d{2}\b/gu],
+  ['process', 'work-package id', /\bENG\d+\b/gu],
+  ['process', 'work-package id', /\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-FIX\b|\bFIX-[A-Z][A-Z0-9]*\b/gu],
   ['process', 'session number', /\bsessions? \d{1,3}\b(?! \d)/giu],
+  ['process', 'session number', /\bsession-\d{1,3}\b|[(/]s\d{2}\)/gu],
   ['process', 'next session', /\bnext session\b/giu],
-  ['process', 'decision id', /\bD1\d\d\b/gu],
-  ['process', 'requirement id', /\bR1\d\d\b/gu],
+  // Two digits, or three starting with 1: a UTF-16 surrogate such as `D800` is not an id.
+  ['process', 'decision id', /\bD(?:\d{2}|1\d\d)(?:-final)?\b/gu],
+  ['process', 'requirement id', /\bR(?:\d{2}|1\d\d)\b/gu],
+  // `audit/D` and the spaced form `audit D` alike.
+  ['process', 'private audit folder', /\baudit[ /][A-Z]\b/gu],
   ['process', 'runbook', /\brun-?books?\b/giu],
   ['process', 'checklist for', /\bchecklist for\b/giu],
   ['process', 'you should', /\byou should\b/giu],
@@ -136,6 +157,7 @@ const LINE_PATTERNS = Object.freeze([
   ['internal-note', 'owner decision', /\bowner-(?:confirmed|locked|decided|approved|side)\b|\bowner (?:directive|answer)s?\b/giu],
   ['internal-note', 'addressed to the owner', /\b(?:for|to) the owner\b|\bthe owner (?:runs|sends|must|should|signs|commits|pushes|tags)\b/giu],
   ['internal-note', 'internal note', /\binternal notes?\b|\bnote to self\b|\bdo not publish\b/giu],
+  ['internal-note', 'owner decision', /\bowner-directed\b|\bowner's [^.]{0,30}\bdirectives?\b/giu],
 
   // secrets (shapes after src/governance/secrets.js, AGSC-08-15, and the
   // providers' published token formats) -----------------------------------
@@ -170,10 +192,19 @@ const LINE_PATTERNS = Object.freeze([
   ['wording', 'chapter reference', /\bchapter \d/giu],
   ['wording', 'Web4 framing', /\bWeb4\b/gu],
   ['wording', 'standards overclaim', /\bW3C (?:standard|Recommendation) for AgenticSystemCore\b/giu],
+  ['wording', 'hundred-per-cent claim', /(?<![\w.])100\s?%/gu],
 
   // TODO / FIXME (documents only; see DOC_EXT) -------------------------------
   ['todo', 'TODO or FIXME', /\b(?:TODO|FIXME)\b/gu],
 ]);
+
+/**
+ * Where "100 %" is a length and not a claim: a stylesheet or an SVG, and on any other
+ * line a CSS declaration (`width: 100%`), a function argument (`calc(100% - 1em)`)
+ * or a style attribute.
+ */
+const WORDING_EXEMPT_EXT = new Set(['.css', '.scss', '.svg']);
+const CSS_LENGTH = /(?::\s*|\(\s*|,\s*|style="[^"]*)100\s?%|100\s?%\s*[;)]/u;
 
 /** The e-mail domains RFC 2606 §2–3 and RFC 6761 §6 reserve for documentation. */
 const RESERVED_EMAIL = /@(?:[A-Za-z0-9-]+\.)*(?:example\.(?:com|org|net)|example|test|invalid|localhost)$/iu;
@@ -401,6 +432,7 @@ function sweepFile(rel, text, ctx) {
     const n = i + 1;
     for (const [check, label, re] of LINE_PATTERNS) {
       if (check === 'todo' && !isDoc) continue;
+      if (label === 'hundred-per-cent claim' && (WORDING_EXEMPT_EXT.has(ext) || CSS_LENGTH.test(line))) continue;
       for (const m of line.matchAll(re)) {
         let matched = m[0];
         if (check === 'email') {

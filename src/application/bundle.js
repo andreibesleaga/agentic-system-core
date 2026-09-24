@@ -6,7 +6,7 @@
  * `content/<type-plural>/<slug>.md` — and returns the Bundle record the
  * module contract defines: `{root, config, index, items, byslug, findings}`.
  * Parsing and validation are the Knowledge context's (`knowledge/frontmatter.js`,
- * `knowledge/validate.js`, owner A); this module only walks the port and
+ * `knowledge/validate.js`); this module only walks the port and
  * assembles, adding no rule of its own. AGSC-01-15's discovery order is the
  * port's code-point `readdir` order, so the result is deterministic.
  *
@@ -98,7 +98,7 @@ function loadBundle(ports, options) {
       findings.push(Object.freeze({
         code: e && e.code ? e.code : 'AGSC-E105',
         file: 'content/index.md',
-        // F27-11 (AGSC-09-11, R64): a Finding names its fault.
+        // (AGSC-09-11): a Finding names its fault.
         message: `the frontmatter of content/index.md is not YAML: ${(e && e.message) || 'parse error'} (AGSC-02-02)`,
         severity: 'error',
       }));
@@ -150,7 +150,7 @@ function readRefusable(fs, path, findings) {
 function readJson(ports, path, findings) {
   if (!ports.exists(path)) {
     findings.push(Object.freeze({
-      code: 'AGSC-E901', file: path, message: `${path} is missing (AGSC-01-12)`, severity: 'error',
+      code: 'AGSC-E901', file: path, message: `${path} is missing (AGSC-01-01)`, severity: 'error',
     }));
     return {};
   }

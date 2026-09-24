@@ -91,8 +91,17 @@ test('CC BY 4.0 Bundle: no "all rights reserved", no reservation, no ai-train=no
   assert.doesNotMatch(robots, /Disallow: \//u);
   // An empty crawler list is a fault only for a node that publishes a reservation.
   assert.ok(!built.findings.some((f) => f.code === 'AGSC-E202'), JSON.stringify(built.findings));
-  // RULE-FORCED (AGSC-06-18, still an open item): the terms line still names the terms.
-  assert.match(footer, new RegExp(`Content Use Terms: <a href="/legal/" rel="license" data-spdx="${TERMS}">Content Use Terms 1\\.0</a>`, 'u'));
+  // AGSC-06-18 as amended at rc.6 (2026-09-24): the Content Use Terms accompany the
+  // prose only where the publisher adopts them, so a CC BY node names its own licence
+  // everywhere the identifier would stand — the footer, the `terms:` line of the
+  // provenance header, every chunk's `terms` member and `schema:usageInfo`.
+  assert.doesNotMatch(footer, /Content Use Terms/u);
+  assert.match(text('/llms.txt'), /\nterms: CC-BY-4\.0\n/u);
+  assert.ok(!text('/llms.txt').includes(TERMS));
+  const chunk = JSON.parse(text('/chunks.jsonl').split('\n')[0]);
+  assert.strictEqual(chunk.terms, 'CC-BY-4.0');
+  assert.match(text('/graph.nq'), /<https:\/\/schema\.org\/usageInfo> "CC-BY-4\.0"/u);
+  assert.ok(!text('/graph.nq').includes(TERMS));
 });
 
 test('the AI-assistance sentence appears only when a published item records AI assistance', () => {

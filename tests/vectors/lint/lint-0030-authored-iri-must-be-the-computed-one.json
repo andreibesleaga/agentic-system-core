@@ -1,0 +1,59 @@
+{
+  "area": "lint",
+  "description": "AGSC-05-05: an item that carries iri MUST carry the computed one, <site.base>/<type-plural>/<slug>/ (AGSC-05-01), and a mismatch is AGSC-E204 — the pattern class of the precedence paragraph, since the value fails the form the rule fixes. Derivation: with site.base https://example.org/ the concept at content/concepts/a.md computes to https://example.org/concepts/a/; https://other.example/concepts/a/ differs in its origin and is reported; the computed value itself passes; an item that carries no iri is outside the rule and passes. The trailing slash is part of the IRI (AGSC-05-01), so a value without it would also mismatch, but that case is not asserted here.",
+  "expected": {
+    "cases": [
+      {
+        "error": "AGSC-E204",
+        "name": "foreign-origin"
+      },
+      {
+        "name": "computed",
+        "valid": true
+      },
+      {
+        "name": "absent",
+        "valid": true
+      }
+    ]
+  },
+  "id": "lint-0030",
+  "input": {
+    "cases": [
+      {
+        "frontmatter": {
+          "iri": "https://other.example/concepts/a/",
+          "type": "concept"
+        },
+        "name": "foreign-origin",
+        "path": "content/concepts/a.md"
+      },
+      {
+        "frontmatter": {
+          "iri": "https://example.org/concepts/a/",
+          "type": "concept"
+        },
+        "name": "computed",
+        "path": "content/concepts/a.md"
+      },
+      {
+        "frontmatter": {
+          "type": "concept"
+        },
+        "name": "absent",
+        "path": "content/concepts/a.md"
+      }
+    ],
+    "config": {
+      "site": {
+        "base": "https://example.org/"
+      }
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-05-05"
+}

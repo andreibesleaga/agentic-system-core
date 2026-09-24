@@ -1,57 +1,30 @@
 # w3id.org/agentic-system-core
 
-Permanent identifiers for **AgenticSystemCore** — an ontological agentic memory for humans and agents.
+Permanent identifiers for **AgenticSystemCore**, a specification for publishing machine-discoverable
+knowledge bundles. The vocabulary, the profile and the link relations it defines are named under
+`https://w3id.org/agentic-system-core/`, so that the names stay stable even if the documentation moves.
 
-| Identifier | Resolves to |
+Every identifier redirects with `303 See Other` to a static file on `https://agenticsystemcore.com/`.
+The vocabulary is served in the format the client asks for in its `Accept` header.
+
+| Identifier | Redirects to |
 |---|---|
-| `https://w3id.org/agentic-system-core/ns#<Term>` | vocabulary term (HTML anchor / RDF, by `Accept`) |
-| `https://w3id.org/agentic-system-core/ns` + `Accept: text/turtle` | `https://agenticsystemcore.com/ns/agsc.ttl` |
-| `https://w3id.org/agentic-system-core/ns` + `Accept: application/ld+json` | `https://agenticsystemcore.com/ns/context.jsonld` |
-| `https://w3id.org/agentic-system-core/ns` + `Accept: application/rdf+xml` | `https://agenticsystemcore.com/ns/agsc.rdf` |
-| `https://w3id.org/agentic-system-core/ns` (browser / anything else) | `https://agenticsystemcore.com/ns/` |
-| `https://w3id.org/agentic-system-core/ns/<major>.<minor>.<patch>` | the immutable published copy of that version (`owl:versionIRI`), same negotiation |
-| `https://w3id.org/agentic-system-core/ns/<file>.<ext>` | that distribution file |
-| `https://w3id.org/agentic-system-core/profile/agentic-knowledge` | `https://agenticsystemcore.com/specs/agentic-knowledge/` (D55, decided 2026-09-03) |
-| `https://w3id.org/agentic-system-core/rel#<name>` | `https://agenticsystemcore.com/specs/agentic-knowledge/`, where the client's own `#<name>` selects the relation's row (AGSC-06-01, AGSC-06-10) |
+| `/ns` with `Accept: text/turtle` | `https://agenticsystemcore.com/ns/agsc.ttl` |
+| `/ns` with `Accept: application/ld+json` | `https://agenticsystemcore.com/ns/context.jsonld` |
+| `/ns` with `Accept: application/rdf+xml` | `https://agenticsystemcore.com/ns/agsc.rdf` |
+| `/ns` from a browser, or any other `Accept` | `https://agenticsystemcore.com/ns/` (HTML documentation) |
+| `/ns#<Term>` | the same as `/ns`; the browser then scrolls to the term |
+| `/ns/<Term>` | `https://agenticsystemcore.com/ns/#<Term>` |
+| `/ns/<version>`, e.g. `/ns/1.0.0-draft.1` | the fixed copy of that version, with the same `Accept` table (`/ns/<version>/agsc.ttl`, `…/context.jsonld`, `…/agsc.rdf`, or `…/`) |
+| `/ns/<file>` and `/ns/<version>/<file>` | that file under `https://agenticsystemcore.com/ns/` |
+| `/profile/agentic-knowledge` | `https://agenticsystemcore.com/specs/agentic-knowledge/` |
+| `/rel#<name>` | `https://agenticsystemcore.com/specs/agentic-knowledge/`; the browser then scrolls to `#<name>` |
+| `/` | `https://agenticsystemcore.com/` |
+| anything else | `https://agenticsystemcore.com/ns/` |
 
-Versioned IRIs may carry a SemVer pre-release suffix (e.g. `1.0.0-draft.1`), matched by the same
-content-negotiation rules as the plain `<major>.<minor>.<patch>` form.
-
-All targets are static files on `agenticsystemcore.com`; there is no server-side code anywhere in the chain.
-All redirects are `303 See Other`, per the W3C "Cool URIs for the Semantic Web" recipe.
+`application/x-turtle` is accepted as Turtle and `application/json` as JSON-LD. A version is
+`<major>.<minor>.<patch>` with an optional pre-release suffix such as `-draft.1`.
 
 ## Maintainer
 
-Andrei N. Besleaga — <andrei.besleaga.nicolae@gmail.com> — GitHub: `andreibesleaga`
-
-## Post-merge verification
-
-```bash
-# after the PR merges — every line must be 303 with the right Location
-for a in "text/turtle" "application/ld+json" "application/rdf+xml" "text/html" "*/*"; do
-  curl -sI -H "Accept: $a" https://w3id.org/agentic-system-core/ns | grep -iE '^(HTTP|location)'
-done
-curl -sI -H "Accept: text/turtle" https://w3id.org/agentic-system-core/ns/1.0.0
-curl -sI https://w3id.org/agentic-system-core/ns/agsc.ttl
-curl -sI https://w3id.org/agentic-system-core/ns/Pattern   # Location must contain '#', not '%23'
-curl -sI https://w3id.org/agentic-system-core/profile/agentic-knowledge   # 303 to /specs/agentic-knowledge/
-curl -sI https://w3id.org/agentic-system-core/rel          # 303 to /specs/agentic-knowledge/ (no fragment in Location)
-```
-
-Locally, the same can be run against Apache with `AllowOverride All` + `a2enmod rewrite headers`
-(the shape of the repo's own disabled Travis job).
-
-## Status
-
-PR not yet opened — open it only once https://agenticsystemcore.com/ns/ serves the vocabulary files with
-correct media types ; w3id states no requirement that the target be live and
-runs no automated check, but maintainers review PRs by hand.
-
-Re-read live on 2026-09-19: the `perma-id/w3id.org` README still asks only for a directory under `ids/`
-holding `.htaccess` ("redirection rules, for computer to read and perform") and `README.md` ("more
-identifier info and contact info, for humans to read"), with contact info "in a `README.md` or
-`.htaccess` comment", changes tested "with a local checkout of the site", multiple commits squashed,
-and a descriptive commit message that includes the project name; it states "There is no official
-policy on identifier names", the practice being `https://w3id.org/PROJECT-ID/SUB-ID...`, and it names
-`public-perma-id@w3.org` as the alternative route (give the w3id URL, the target URL and the HTTP
-code). Nothing in it requires the redirect target to be live. Both files here satisfy all of it.
+Andrei N. Besleaga — GitHub: [@andreibesleaga](https://github.com/andreibesleaga)

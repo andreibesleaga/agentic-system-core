@@ -1,10 +1,9 @@
-# Trace: PRD-002, PRD-011, PRD-013, PRD-014, PRD-015, PRD-025 · audit/D §3(a) · PLAN §6(a)
-# Source of truth: the private design register (audit D) §3(a) "Human reader (Mode 0)"
+# Trace: PRD-002, PRD-011, PRD-013, PRD-014, PRD-015, PRD-025 · PLAN §6(a)
 @persona-a @mode-0
 Feature: Human reader finds a pattern with evidence
   As P1 (human reader: architect/engineer)
   I want to browse and search the static site without JavaScript being required
-  So that I can find the right Concept with evidence, offline-friendly and with no reading order imposed (R23)
+  So that I can find the right Concept with evidence, offline-friendly and with no reading order imposed
 
   Background:
     Given the site "https://agenticsystemcore.com/" is built and deployed from "www/"

@@ -162,7 +162,7 @@ the rule that fixes it.
    line of the AGSC-06-13a block, immediately before `-->`. It is a CONSTANT of the
    specification, never authored and never configured, and it is carried by every
    file that carries that header — `/llms.txt`, `/llms-full.txt`, a skill pack, a
-   steer bundle, a Harness file, the `llm-context` skim view. Vectors `disc-0010`
+   steer bundle, a Harness file, the `llm-context` skim view. Vectors `disc-0013`
    and `disc-0011` are the successors of the withdrawn `disc-0006`/`disc-0007` and
    differ from them by exactly this line.
 2. **`-->` inside an interpolated value becomes `--&gt;`.** AGSC-06-13a names the
@@ -348,6 +348,12 @@ make you non-conforming.
   AGSC-09-13a). Localise freely.
 * **The HTML.** AGSC-06-19 requires the Schema.org JSON-LD and `sitemap.xml`
   ordering; the page markup itself is yours, within the budgets of AGSC-06-21.
+* **Two configuration keys the reference engine accepts and preserves without acting
+  on them.** `site.analytics_token` (AGSC-01-18) is carried for a host's own
+  analytics; the reference engine emits nothing for it. `channels[].rate.per_hour`
+  (AGSC-01-30) binds a channel adapter that is written; the reference engine ships no
+  channel adapter at 1.0, so nothing enforces it there. A second engine may act on
+  both.
 * **Everything a rule marks OPTIONAL or MAY**, including `/graph/fragments/**`
   (AGSC-06-33), memory adapters (AGSC-01-26a) and the two opt-in verbs `run` and
   `trace` (AGSC-09-94), which "may not be required by any conformance Level".
@@ -392,9 +398,10 @@ standards body or a registry that has not acted on it.
 
 **What the reference distribution claims today: nothing.** AGSC-10-05 says the
 reference implementation "will claim Level 3 at its 1.0.0 release; no claim exists
-before a green run of the Level-3 set". At `1.0.0-rc.6` the vector set runs
-136 pass / 0 fail / 14 skip (all 14 withdrawn) of 150, and that is a run, not a
-claim.
+before a green run of the Level-3 set". At `1.0.0-rc.6` the reference engine passes
+every live vector of the set and skips only the withdrawn ones (the counts are the
+conformance runner's own summary line, and `node tools/count-artifacts --json` gives
+the totals), and that is a run, not a claim.
 
 ---
 

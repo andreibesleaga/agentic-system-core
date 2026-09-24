@@ -1,0 +1,25 @@
+{
+  "area": "build",
+  "description": "AGSC-04-07: all emitted text MUST be UTF-8 without BOM, LF-terminated, NFC-normalized, with exactly one trailing LF. Derivation over the minimal fixture at the fixed build instant: every emitted text file — /404.html and every index.html included, and every .md, .json, .jsonld, .jsonl, .txt, .xml, .ttl and .nq — ends with exactly one LF (its last byte is 0x0A and the byte before it is not), and none starts with a byte-order mark; an HTML page therefore ends with </html> followed by one LF. A binary artefact (an attachment or an asset) is outside the rule and is not asserted.",
+  "expected": {
+    "every_text_file_ends_with_exactly_one_lf": true,
+    "html_pages_end_with": "</html>\n",
+    "includes_routes": [
+      "/404.html",
+      "/index.html",
+      "/concepts/handoff/index.html"
+    ],
+    "no_byte_order_mark": true
+  },
+  "id": "build-0015",
+  "input": {
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-04-07"
+}

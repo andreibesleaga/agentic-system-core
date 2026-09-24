@@ -179,6 +179,55 @@ function render(body, options = {}) {
 }
 
 /** AGSC-03-13 over a whole body: the anchors it defines, in document order. */
+/**
+ * AGSC-02-20: the unsupported constructs, each occurrence outside a code span or a
+ * fenced block. The list is the rule's: raw HTML (blocks and inline), footnote
+ * references and definitions, and every GFM extension other than tables — task-list
+ * markers, strikethrough, autolink literals. The renderer runs with `html: false`
+ * and `linkify: false`, so raw HTML and a bare URL reach the token stream as TEXT
+ * (never as markup); strikethrough is the one extension the preset parses, and it
+ * arrives as its own token. Code spans and fences are their own token kinds and are
+ * never scanned.
+ *
+ * @param {string} body
+ * @returns {Array<{construct:string, line:number, text:string}>}
+ */
+function constructs(body) {
+  const tokens = md.parse(String(body), {});
+  const out = [];
+  const push = (construct, line, text) => out.push({ construct, line, text: String(text).slice(0, 80) });
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    if (token.type !== 'inline') continue;
+    const line = lineOf(token, 1);
+    const inListItem = i >= 2 && tokens[i - 1].type === 'paragraph_open' && tokens[i - 2].type === 'list_item_open';
+    const children = token.children || [];
+    const first = children[0];
+    if (inListItem && first && first.type === 'text' && /^\[[ xX]\] /u.test(first.content)) {
+      push('task-list marker', line, first.content);
+    }
+    if (first && first.type === 'text' && /^\[\^[^\]\s]+\]:/u.test(first.content)) {
+      push('footnote definition', line, first.content);
+    }
+    let inLink = 0;
+    for (const child of children) {
+      if (child.type === 'link_open') inLink += 1;
+      if (child.type === 'link_close') inLink -= 1;
+      if (child.type === 's_open') push('strikethrough', line, '~~');
+      if (child.type === 'html_inline' || child.type === 'html_block') push('raw HTML', line, child.content);
+      if (child.type !== 'text') continue;
+      const text = child.content;
+      for (const m of text.matchAll(/<\/?[A-Za-z][^<>]*>|<!--/gu)) push('raw HTML', line, m[0]);
+      for (const m of text.matchAll(/\[\^[^\]\s]+\](?!:)/gu)) push('footnote reference', line, m[0]);
+      // The text of a link (`[t](url)`, or the autolink `<url>`) is authored linking,
+      // not a bare literal.
+      if (inLink > 0) continue;
+      for (const m of text.matchAll(/(?:^|[\s(])((?:https?:\/\/|www\.)[^\s<>()]+)/gu)) push('autolink literal', line, m[1]);
+    }
+  }
+  return out;
+}
+
 function anchors(body) {
   const scanned = scan(body);
   return { anchors: scanned.anchors, headings: scanned.headings, errors: [] };
@@ -205,6 +254,7 @@ function headings(body) {
 }
 
 module.exports = {
+  constructs,
   anchorOf,
   assignAnchors,
   anchors,

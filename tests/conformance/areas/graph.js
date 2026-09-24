@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `graph` (owner D) — AGSC-05 and AGSC-06-32.
+// Conformance area `graph` — AGSC-05 and AGSC-06-32.
 //
 // graph-0001 canonical N-Quads and materialised inverses      AGSC-04-15
 // graph-0002 cluster nesting is skos:member                   AGSC-05-19
@@ -12,6 +12,7 @@
 // graph-0012 N-Quads escaping and the datatypes               AGSC-05-32
 // graph-0013 ports and task state                             AGSC-05-30
 // graph-0014 the three literal forms                          AGSC-05-31
+// graph-0026 the whole-file case of graph-0015 under a prose licence of its own (rc.6);
 // graph-0021…0025 the same cases as 0001/0002/0004/0006/0020, restated as quads
 // named by the Bundle IRI AGSC-04-15
 //
@@ -127,7 +128,7 @@ function literalFormsCase(vector) {
 
 /** graph-0011 — the context file (AGSC-06-32) and the expand / re-compact round trip. */
 /**
- * graph-0019 — AGSC-06-32 as amended at rc.6 (NS-04): the term NAMES.
+ * graph-0019 — AGSC-06-32 as amended at rc.6: the term NAMES.
  *
  * The vector states the external rows itself, with the `@type` each takes, because
  * the type is fixed by the rule that emits the property and this case tests the

@@ -6,7 +6,7 @@
  * without running a build, a browser or a query set.
  *
  * Nothing here reads a file, a clock, the network or a random source.
- * research/39 §6 governs how the outputs may be described: counts and byte
+ * `docs/MEASUREMENTS.md` governs how the outputs may be described: counts and byte
  * comparisons are verified facts; timings are measurements with a machine and a
  * run count attached; ranking scores are observations under a named
  * configuration. This module computes; it never labels.
@@ -15,7 +15,7 @@
 /**
  * The median of a list of numbers. Even-length lists take the mean of the two
  * middle values, which is what "median of three runs" never has to do — three
- * runs is the project's standing sample size (research/09 §4).
+ * runs is the project's standing sample size.
  * @param {number[]} values
  * @returns {number|null} null for an empty list, so a missing measurement is
  *   visible as an absence instead of a zero.
@@ -72,7 +72,7 @@ function reciprocalRank(ranked, relevant) {
 
 /**
  * Normalised discounted cumulative gain at k with binary relevance — the BEIR
- * headline measure (research/39 §3.6). Gains are 1 for a gold id and 0
+ * headline measure. Gains are 1 for a gold id and 0
  * otherwise; the ideal ranking puts every gold id first.
  * @param {string[]} ranked
  * @param {string[]|Set<string>} relevant
@@ -134,7 +134,7 @@ function meanScores(rows) {
 
 /**
  * A detector's confusion matrix against labelled cases, and the three scores
- * research/39 §3.3 asks for. A case is `{expected: boolean, detected: boolean}`.
+ * the security layer asks for. A case is `{expected: boolean, detected: boolean}`.
  * @param {Array<{detected:boolean, expected:boolean}>} cases
  * @returns {{cases:number, f1:number|null, fn:number, fp:number, precision:number|null, recall:number|null, tn:number, tp:number}}
  */
@@ -163,7 +163,7 @@ function detectorScore(cases) {
  * `namedByTest` and `namedByChecker` are PROXIES — a rule id written in a test
  * or a checker header says the file means to verify that rule, not that a
  * machine assertion exists for it. `docs/MEASUREMENTS.md` must say so wherever
- * the number appears; the authoritative matrix is's `tools/rule-coverage`.
+ * the number appears; the authoritative matrix is `tools/rule-coverage`.
  * @param {{active:string[], withVector:string[], namedByTest:string[], namedByChecker:string[], namedByFeature:string[]}} sets
  */
 function ruleCoverage(sets) {

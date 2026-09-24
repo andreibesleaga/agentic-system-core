@@ -14,7 +14,7 @@ flowchart LR
     P6["P6 Integrator"]
     P7["P7 Project team (Mode 2)"]
     P8["P8 Agent-as-memory (Mode 1)"]
-    P9["P9 Owner-as-operator"]
+    P9["P9 Maintainer-as-operator"]
     P10["P10 Port implementer"]
     P11["P11 Standards implementer"]
     P12["P12 Self-driving team (Mode 5)"]
@@ -72,4 +72,4 @@ surfaces plus the files-only surface used by P10 (P10's acceptance is `spec/` + 
 runtime scenario). P12 and `persona-k-live-board` were added at rc.4 with Mode 5. Fan-out on
 Fb/Fc/Fe/Fg/Fh/Fi shows personas that cross more than one surface in their walkthrough.
 
-Trace: PRD-001–052 (persona table §1), audit/D §3 (a)–(j), PLAN.md §1.2 stakeholder table.
+Trace: PRD-001–052 (persona table §1), PLAN.md §1.2 stakeholder table.

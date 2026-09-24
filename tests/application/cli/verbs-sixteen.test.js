@@ -98,12 +98,12 @@ test('AGSC-09-12: --json emits one JCS-canonical envelope on every verb that ans
   }
 });
 
-test('AGSC-09-94: run and trace are refused with AGSC-E001 while run.enabled is false', () => {
+test('AGSC-09-94: run and trace are refused with AGSC-E004 while run.enabled is false', () => {
   for (const verb of ['run', 'trace']) {
     const stderr = captureStream();
     const exit = main([verb, '--json'], { env: {}, ports: { fs: emptyPort() }, root: '.', stderr, stdout: captureStream() });
     assert.strictEqual(exit, 2, verb);
-    assert.strictEqual(JSON.parse(stderr.text()).code, 'AGSC-E001', verb);
+    assert.strictEqual(JSON.parse(stderr.text()).code, 'AGSC-E004', verb);
   }
 });
 

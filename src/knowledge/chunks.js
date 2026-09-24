@@ -27,6 +27,19 @@ const markdown = require('./markdown.js');
 
 /** AGSC-06-18: the Content Use Terms identifier, a constant, never configurable. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
+/**
+ * AGSC-06-18 (rc.6, 2026-09-24): the terms an export carries. A publisher whose
+ * `bundle.license_prose` is the Content Use Terms identifier (or absent, which
+ * defaults to it, AGSC-01-18) has adopted them; any other prose licence takes the
+ * identifier's place, so no export presents the prose under terms narrower than
+ * its own licence.
+ *
+ * @param {string|null|undefined} licenseProse
+ * @returns {string}
+ */
+function termsFor(licenseProse) {
+  return licenseProse == null || String(licenseProse) === TERMS ? TERMS : String(licenseProse);
+}
 /** AGSC-08-18: the value an agent MUST attach when chunk text re-enters a model. */
 const TRUST = 'untrusted';
 /** AGSC-06-27: the default and the maximum of `chunks.max_bytes` (AGSC-11-01). */
@@ -243,7 +256,7 @@ function record(fields) {
     license: fields.license,
     ordinal: fields.ordinal,
     section: fields.section,
-    terms: TERMS,
+    terms: termsFor(fields.license),
     text: fields.text,
     title: fields.title,
     trust: TRUST,
@@ -407,6 +420,7 @@ module.exports = {
   LINK_KEYS,
   TYPE_PLURAL,
   TERMS,
+  termsFor,
   TRUST,
   DEFAULT_MAX_BYTES,
   MAX_MAX_BYTES,

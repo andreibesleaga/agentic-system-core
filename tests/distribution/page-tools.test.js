@@ -168,7 +168,7 @@ test('AGSC-09-16: the page tools answer exactly what the local server answers', 
     ['ask', { question: 'zzqqxx' }],
     ['compose', { selection: ['supervisor'] }],
     ['compose', { selection: [] }],
-    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', kind: 'episode', title: 'A Recorded Run' }],
+    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', actor: 'process:ci', kind: 'episode', title: 'A Recorded Run' }],
     ['remember', { body: 'x', kind: 'concept', sources: [{ id: 's1', resource: 'nonsense' }], title: 'Handoff' }],
     ['read', { slug: 'no-such-item' }],
     ['links', { iri: 'memory://other-bundle/concepts/x' }],
@@ -198,7 +198,7 @@ test('AGSC-09-13: the page implements exactly the seven tools Boundary names', (
     for (const name of ['list', 'write', 'delete', 'compose ', 'READ']) {
       assert.strictEqual(page.call(name, {}).body.code, 'AGSC-E001', `${name} is answered as a tool`);
     }
-    // AGSC-01-16 (F27-12): the 1 MiB cap on every text argument a tool parses.
+    // AGSC-01-16: the 1 MiB cap on every text argument a tool parses.
     const oversized = page.call('search', { query: 'x'.repeat(1024 * 1024 + 1) });
     assert.strictEqual(oversized.body.code, 'AGSC-E904');
   }
@@ -220,6 +220,16 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   assert.match(remembered.body.path, /^content\/lessons\//u);
   // the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
   assert.strictEqual(remembered.body.frontmatter.severity, 'info');
+  // and none on an episode, whose schema branch has no such key (AGSC-09-14b, 2026-09-24).
+  const rememberedEpisode = page.call('remember', { actor: 'agent:x', at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'An Episode Here' });
+  assert.strictEqual(rememberedEpisode.body.frontmatter.severity, undefined);
+  // AGSC-09-14b as amended at rc.6, on this transport too: no Gate, and an episode
+  // names its actor — the argument both manifests publish.
+  assert.strictEqual(page.call('remember', { body: 'x', kind: 'gate', title: 'A Gate Here' }).body.code, 'AGSC-E203');
+  assert.strictEqual(page.call('remember', { at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'A Run' }).body.code, 'AGSC-E003');
+  const episode = page.call('remember', { actor: 'process:ci', at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'A Run' });
+  assert.strictEqual(episode.body.frontmatter.actor, 'process:ci');
+  assert.ok(mcpTools.ARGUMENTS.remember.includes('actor'), 'the MCP manifest does not publish the actor argument');
   // AGSC-11-18, the WebMCP vocabulary: the hints on the writing tools.
   assert.strictEqual(surfaces.WEBMCP_ANNOTATIONS.propose.consequentialHint, true);
   assert.strictEqual(surfaces.WEBMCP_ANNOTATIONS.remember.consequentialHint, true);

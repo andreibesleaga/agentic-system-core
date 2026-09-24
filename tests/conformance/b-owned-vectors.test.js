@@ -1,7 +1,8 @@
 // tests/conformance/b-owned-vectors.test.js — runs this package's owned
-// vectors (cli-0002/0005/0006, bundle-0002..0005, prov-0001/0002) through
-// the area handlers directly, independent of A's vector-runner.test.js
-// (which does not exist yet). Owner: B. Once the real runner lands, this
+// vectors (cli-0002/0005/0006, bundle-0003..0005, prov-0001/0002; bundle-0002 is
+// withdrawn since 2026-09-24 and never run) through
+// the area handlers directly, independent of vector-runner.test.js
+// (which does not exist yet). Once the real runner lands, this
 // file becomes redundant coverage, not a conflict — different file name,
 // same area handlers.
 'use strict';
@@ -21,7 +22,6 @@ const OWNED = [
   ['cli', 'cli-0002', cliArea],
   ['cli', 'cli-0005', cliArea],
   ['cli', 'cli-0006', cliArea],
-  ['bundle', 'bundle-0002', bundleArea],
   ['bundle', 'bundle-0003', bundleArea],
   ['bundle', 'bundle-0004', bundleArea],
   ['bundle', 'bundle-0005', bundleArea],

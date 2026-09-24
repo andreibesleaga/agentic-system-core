@@ -1,0 +1,75 @@
+{
+  "area": "import",
+  "description": "AGSC-03-19 and AGSC-03-20: foreign link names are mapped on import and never added to the vocabulary — refines becomes narrower, conflicts-with becomes excludes, blockedBy becomes blocked-by and tests becomes verifies. Derivation over one OKF document with those four keys: the mapped frontmatter carries the four Link keys with the same targets, none of the four foreign spellings survives, and each mapping is reported once as the AGSC-E506 warning of AGSC-01-22 (a foreign construct carried across with a note), so four such warnings are expected for the links and no error; the document declares a type, a title and prov, so no other AGSC-E506 is raised and the case isolates the mapping.",
+  "expected": {
+    "error_count": 0,
+    "findings": [
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      }
+    ],
+    "frontmatter_has": {
+      "blocked-by": [
+        "c"
+      ],
+      "excludes": [
+        "d"
+      ],
+      "narrower": [
+        "b"
+      ],
+      "verifies": [
+        "e"
+      ]
+    },
+    "keys_absent": [
+      "refines",
+      "blockedBy",
+      "conflicts-with",
+      "tests"
+    ]
+  },
+  "id": "imp-0003",
+  "input": {
+    "frontmatter": {
+      "blockedBy": [
+        "c"
+      ],
+      "conflicts-with": [
+        "d"
+      ],
+      "prov": {
+        "operator": "human:tester",
+        "origin": "imported"
+      },
+      "refines": [
+        "b"
+      ],
+      "tests": [
+        "e"
+      ],
+      "title": "Refined pattern",
+      "type": "concept"
+    },
+    "path": "refines.md"
+  },
+  "level": "required",
+  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-03-19"
+}

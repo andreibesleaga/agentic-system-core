@@ -1,5 +1,5 @@
 'use strict';
-// Conformance area `adopt` (owner A for adopt-0001…0003) — AGSC-02-90, AGSC-02-91,
+// Conformance area `adopt` — AGSC-02-90, AGSC-02-91,
 // AGSC-02-92. adopt-0004 (`init` then `ci`) and adopt-0005 (relative references,
 // AGSC-02-95) are the build pipeline's cases and are handled.
 

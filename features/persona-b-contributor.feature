@@ -1,5 +1,4 @@
-# Trace: PRD-039, PRD-040, PRD-041, PRD-042, PRD-050 · audit/D §3(b) · PLAN §6(b)
-# Source of truth: the private design register (audit D) §3(b) "Human contributor proposing an edit (Mode 0)"
+# Trace: PRD-039, PRD-040, PRD-041, PRD-042, PRD-050 · PLAN §6(b)
 @persona-b @mode-0
 Feature: Human contributor fixes a page and passes a hard review gate
   As P2 (human contributor)
@@ -7,7 +6,7 @@ Feature: Human contributor fixes a page and passes a hard review gate
   So that I can fix a page and see it merged and deployed without needing repo write access
 
   Background:
-    Given the content repo "AgenticSystemCore.com" is public at launch (D41)
+    Given the content repo "AgenticSystemCore.com" is public at launch
     And the item "content/concepts/a2a.md" exists with a valid "prov" block
 
   @PRD-039
@@ -33,10 +32,10 @@ Feature: Human contributor fixes a page and passes a hard review gate
     And no LLM or model API call occurs anywhere in this lane
 
   @PRD-041 @PRD-050
-  Scenario: Owner reviews, ratifies and the change deploys
+  Scenario: Maintainer reviews, ratifies and the change deploys
     Given the required CI status check is green
-    When the owner adds "verified: [{by: human:andreibesleaga, at: \"2026-09-02\"}]" to the changed file
-    And the owner approves and merges the PR under the ruleset "1 approval + Code Owner + green ci"
+    When the maintainer adds "verified: [{by: human:andreibesleaga, at: \"2026-09-02\"}]" to the changed file
+    And the maintainer approves and merges the PR under the ruleset "1 approval + Code Owner + green ci"
     Then the merge triggers "agsc ci" then a Cloudflare Pages deploy of "www/"
     And the change is live within approximately 2 minutes
     And "prov.commit" and "prov.reviewer" are derived at build time, never written into the file by CI

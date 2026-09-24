@@ -1,7 +1,7 @@
 # Writing a plugin for this engine
 
 **Status:** the engine's own contract, version **1.0.0** of the plugin API, for
-specification version `1.0.0-rc.6`. Added at rc.6 under decision.
+specification version `1.0.0-rc.6`. Added at rc.6.
 
 This document is for someone who wants to add a capability to a node without
 forking the engine. It says what you may add, what your code may and may not do,
@@ -25,11 +25,18 @@ are `examples/plugins/`, one per kind, each with tests.
 | `memory-adapter` | reads or writes a foreign corpus | `export --to <name>` / `import --from <name>` | AGSC-01-26a, AGSC-01-22 |
 | `channel-adapter` | carries a Proposal to a review lane | `channels[].adapter` in `agsc.config.json` | AGSC-01-30, AGSC-08-30 |
 | `forge-shim` | renders a Gate as one CI workflow file | a `gate` item's `enforce[]` | AGSC-08-12 |
-| `deployment-profile` | maps the served header sets onto one host's file format | the writer's own target, stated in its conformance claim | AGSC-06-01, AGSC-09-01 |
+| `deployment-profile` | maps the served header sets onto one host's file format | `agsc-host emit <path>`; the built-in profiles by name (`agsc-host list`) | AGSC-06-01, AGSC-09-01 |
 | `surface` | serves the published projection at its own route | derived from what the writer emits, or `surfaces[]` | AGSC-11-16, AGSC-11-02 |
 | `page-tool` | answers a question inside the published page | `registerTool()` in the page | AGSC-09-16 |
 | `composition-emitter` | renders a Harness for one runtime | `compose --emit <target>` | AGSC-07-18 |
 | `checker` | validates one normative artefact, standalone | one of the nine of AGSC-09-90 | AGSC-09-90…92 |
+
+At `1.0.0-rc.6` this engine loads a plugin you write for **three** of the kinds —
+the memory adapter (`export --to <path>` / `import --from <path>`), the composition
+emitter (`compose --emit <path>`) and the deployment profile (`agsc-host emit <path>`).
+The other five have their registry, their sample under `examples/plugins/` and their
+tests, and the selector column names where the specification places them; loading
+one of those five from a Bundle's configuration is a 1.1 engine item.
 
 There is no ninth. If what you want to add is not one of these eight, it is a
 change to the specification and the place for it is a proposal against
@@ -89,21 +96,47 @@ Two plugins of one kind may not share a name: a name selects exactly one.
 
 Discovery has exactly **two shapes, both local**:
 
-* a **path this Bundle names** — `./plugins/my-adapter.js` — resolved against the
-  Bundle root;
-* an **npm package name a person installed** — `@acme/agsc-adapter`.
+* a **path** — `./plugins/my-adapter.js`, `../shared/x.js`, an absolute path —
+  resolved against the Bundle root;
+* an **npm package name a person installed** — `tsv-adapter`, `@acme/agsc-adapter` —
+  looked up from the Bundle root the way Node looks up any package.
 
 A specifier that carries a protocol (`https:`, `file:`, `npm:`, `data:`, …) is
 refused with **`AGSC-E905`** and **the resolver is never reached**. There is no
 fetching, no cache and no fallback: a plugin is a file a person put on this
 machine. A specifier that cannot be resolved, or that throws while loading, is
-`AGSC-E901` — a plugin that is not there is an I/O fact, not a version fault.
+`AGSC-E901` — a plugin that is not there is an I/O fact, not a version fault. A
+bare name that is one of the engine's own adapters or formats selects that one
+first; a bare name no installed package answers is refused exactly as an unknown
+adapter always was.
 
 The engine also never scans a directory for plugins and never reads one out of an
 environment variable. A plugin is named **where its kind's selector says**, in the
 table of §1 and nowhere else. `agsc.config.json` gains no `plugins` key: the
 configuration is closed (AGSC-01-18), and every kind already has a place the
 rules admit.
+
+**What the verbs load.** Three verbs take a plugin on the command line, each
+through the registry of its kind, so every plugin passes the capability check of
+§3 before it runs:
+
+| verb and flag | kind | the hook the engine calls | what is written |
+|---|---|---|---|
+| `export --to <path or package>` | `memory-adapter` | `exportFiles(items, context)` → `{files: [{path, text}], findings?}` | the files, under `dist/export/<name>/` |
+| `import --from <path or package> <dir>` | `memory-adapter` | `importFiles(files, context)` → `{documents: [{path, text}], findings?}` | the documents, mapped exactly as an OKF bundle is (AGSC-01-22), with the same collision survey, `--dry-run` and `--replace` |
+| `compose <slug…> --emit <path or package>` | `composition-emitter` | `emit(harnessFiles, harnessDir)` → one `{path, text}` or a list | beside the Harness directory, never inside it (AGSC-07-18) |
+
+`items` is a frozen copy of the published items; `files` a frozen copy of every
+file of the source directory, read by the engine; `context` carries the
+specification version, and on export the content version and the build instant. A
+plugin never touches the file system: it answers data, and the engine checks every
+path before it writes anything — a path that is absolute, contains `..`, leaves the
+plugin's own directory, lands inside the Harness or inside `content/` is
+`AGSC-E902`, and then nothing of that run is written. A plugin's own findings are
+kept when they carry a registered code. `--replace` is admitted for a plugin named
+by a path; a plugin declares no flags of its own at plugin API 1.0. A deployment
+profile is loaded the same way by `agsc-host emit <path>`. The other five kinds are
+selected where §1 says, and none of them is loaded from the command line at 1.0.
 
 ## 5. The stability promise
 
@@ -141,7 +174,7 @@ proves, for every one of them:
 * building the fixture Bundle with all eight loaded and called produces **the same
   bytes, file for file** as building it with none.
 
-Copy the one whose kind you need; it is under twenty lines.
+Copy the one whose kind you need; the longest is under seventy lines.
 
 ## 7. Reading further
 

@@ -246,7 +246,7 @@ test('AGSC-02-97: the block is read in the failsafe subset, and a mapping is AGS
 });
 
 test('the selection fence is the Knowledge readers, and other fences are not it', () => {
-  // Fence syntax belongs to `knowledge/markdown.js` (owner C); this asserts
+  // Fence syntax belongs to `knowledge/markdown.js`; this asserts
   // only the delegation and the AGSC-02-97 filter it is asked for.
   assert.deepStrictEqual(selectionFences('~~~yaml agsc-selection\n- a\n~~~\n').map((f) => f.info), ['yaml agsc-selection']);
   assert.deepStrictEqual(selectionFences('```text\nx\n```\n'), []);
@@ -268,7 +268,7 @@ test('AGSC-07-24: compose --from equals the explicit selection, and a stale dige
   ];
   const from = composeFrom(items, 'arch');
   assert.deepStrictEqual(plain(verdictOf(from.result)), plain(verdictOf(compose(items, ['router', 'worker']))));
-  // F27-11 (R64): every Finding carries a message a reader can act on.
+  // every Finding carries a message a reader can act on.
   assert.deepStrictEqual(plain(from.findings), [{
     code: 'AGSC-E805',
     message: 'the stored verdict_digest of arch is stale; recompose to refresh it (AGSC-07-24)',

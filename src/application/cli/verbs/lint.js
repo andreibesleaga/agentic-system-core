@@ -8,8 +8,6 @@
 // uniqueness (AGSC-01-03, AGSC-01-11), the Link graph (AGSC-03) and the four
 // N9 lints with the structural lints beside them (`governance/lint.js`,
 // AGSC-08-13…17).
-//
-// Owner: B; the item-level lane was wired at integration.
 
 const validate = require('../../../knowledge/validate.js');
 const links = require('../../../knowledge/links.js');
@@ -50,8 +48,10 @@ function lane(ctx, bundle) {
   lanes.push('root');
 
   // AGSC-01-03 placement and AGSC-01-11 uniqueness.
+  const base = String(((bundle.config || {}).site || {}).base || '');
   for (const item of bundle.items || []) {
     findings.push(...validate.placement(item.path, item.frontmatter || {}));
+    findings.push(...validate.itemIri(item.path, item.frontmatter || {}, base));
   }
   findings.push(...slug.check((bundle.items || []).map((i) => i.slug),
     { files: (bundle.items || []).map((i) => i.path) }));
@@ -69,8 +69,11 @@ function lane(ctx, bundle) {
   // AGSC-08-13…17 and the structural lints. Every file fact is injected.
   const facts = helpers.attachmentFacts(ctx, bundle);
   const tracked = helpers.trackedPaths(ctx);
+  const fsPort = ctx.ports && ctx.ports.fs;
+  const diagramPaths = fsPort && fsPort.exists('content/diagrams') ? fsPort.walk('content/diagrams') : [];
   findings.push(...govLint.lint(bundle, {
     attachmentBytes: facts.attachmentBytes,
+    diagramPaths,
     fileErrors: facts.fileErrors,
     filesPresent: facts.filesPresent,
     presenceChecked: facts.presenceChecked === true,

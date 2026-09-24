@@ -60,7 +60,7 @@ function runClaimVector(vector) {
 
 /**
  * prov-0004 — AGSC-08-06, the DCO-Plus ABNF, which no vector cited before rc.5
- * (V9A-26). Six trailer blocks read straight off the grammar. `valid` means the
+ * Six trailer blocks read straight off the grammar. `valid` means the
  * block matches `trailer-block = signoff *( LF assisted )` with no finding of its
  * own; a `prov` context is deliberately not supplied, because AGSC-08-07's
  * `AGSC-E505` is a different rule and this vector pins the GRAMMAR.
@@ -98,7 +98,9 @@ const HANDLERS = {
   'prov-0001': runCheckProposalVector,
   'prov-0002': runCheckProposalVector,
   'prov-0003': runClaimVector,
-  'prov-0004': runTrailerGrammarVector
+  'prov-0004': runTrailerGrammarVector,
+  // rc.6: prov-0004's case with a fictitious contributor in every sample line.
+  'prov-0005': runTrailerGrammarVector
 };
 
 module.exports.run = function run(vector, ctx) {

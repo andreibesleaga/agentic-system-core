@@ -25,7 +25,7 @@ stateDiagram-v2
 
   note right of deprecated
     On retire: build emits a `_redirects` entry
-    for the old slug (R40). The slug itself is
+    for the old slug. The slug itself is
     NEVER reused by any future item, even after
     the old page is gone from nav.
   end note
@@ -39,13 +39,13 @@ stateDiagram-v2
   end note
 ```
 
-Four `status` values (`draft | stable | deprecated | retired`, default `stable` per audit/D §1.2 — an item
+Four `status` values (`draft | stable | deprecated | retired`, default `stable` — an item
 authored without a `status` therefore *starts* stable, and every transition including `deprecated` →
-`stable` is legal, warned but never rejected, per AGSC-02-23 ← D48(7)); `retired` was added at rc.3 by
+`stable` is legal, warned but never rejected, per AGSC-02-23); `retired` was added at rc.3 by
 AGSC-11-22 — a retired item keeps its page and its canonical IRI, carries a visible retirement notice,
 leaves `search.json`, `/chunks.jsonl`, `/llms.txt`, skill packs and every composition selection, and stays
 in the graph exports with `asc:retiredAt`. There is no `archived` or `deleted` state — deletion is out of scope.
-`supersedes`/`superseded-by` is a Link-key edge (audit/D §1.3), orthogonal to `status`, shown as a
+`supersedes`/`superseded-by` is a Link-key edge, orthogonal to `status`, shown as a
 self-loop annotation because it does not change which of the four states an item is in.
 
-Trace: PRD-018, R40 · audit/D §1.1 (status), §1.2 (status/`release` table), §1.3 (`supersedes` row).
+Trace: PRD-018.

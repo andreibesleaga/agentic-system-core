@@ -1,6 +1,6 @@
 {
   "area": "bundle",
-  "description": "AGSC-00-25 as added at rc.6 (D112). `routing` is the name reserved to 1.1 for model-routing declarations, and `agsc.config.json` is the one closed surface of this format (AGSC-01-18), so the reserved name behaves there exactly as `build.rdfxml` and `build.feed` do and NOT as a reserved name behaves in item frontmatter. Derivation, case by case. (1) `routing` at the top level is an unknown configuration key: AGSC-01-18 makes that AGSC-E004 and AGSC-09-08 makes invalid configuration exit 2, so a 1.1 configuration fails loudly on a 1.0 tool instead of running with its routing silently ignored — which is the whole reason AGSC-00-21 exempts configuration from ignore-and-preserve. (2) The same name inside an `agents[]` entry takes the same code: AGSC-01-36 closes that object too, admitting only `x-<vendor>-<key>` beside its named members. (3) `x-acme-thing` at the top level is the vendor namespace `config.schema.json` admits through `patternProperties` while `additionalProperties` stays false: it is accepted, preserved verbatim, never interpreted, and never reported (AGSC-01-18, AGSC-02-05a). The three cases together are the asymmetry AGSC-00-21 names: content tolerates the unknown, configuration does not.",
+  "description": "AGSC-00-25 as added at rc.6. `routing` is the name reserved to 1.1 for model-routing declarations, and `agsc.config.json` is the one closed surface of this format (AGSC-01-18), so the reserved name behaves there exactly as `build.rdfxml` and `build.feed` do and NOT as a reserved name behaves in item frontmatter. Derivation, case by case. (1) `routing` at the top level is an unknown configuration key: AGSC-01-18 makes that AGSC-E004 and AGSC-09-08 makes invalid configuration exit 2, so a 1.1 configuration fails loudly on a 1.0 tool instead of running with its routing silently ignored — which is the whole reason AGSC-00-21 exempts configuration from ignore-and-preserve. (2) The same name inside an `agents[]` entry takes the same code: AGSC-01-36 closes that object too, admitting only `x-<vendor>-<key>` beside its named members. (3) `x-acme-thing` at the top level is the vendor namespace `config.schema.json` admits through `patternProperties` while `additionalProperties` stays false: it is accepted, preserved verbatim, never interpreted, and never reported (AGSC-01-18, AGSC-02-05a). The three cases together are the asymmetry AGSC-00-21 names: content tolerates the unknown, configuration does not.",
   "expected": {
     "cases": [
       {
@@ -115,7 +115,7 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-22 at rc.6 (EXT-1); expected values derived by hand from the rule text, not from a run of any engine",
+  "note": "added 2026-09-22 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

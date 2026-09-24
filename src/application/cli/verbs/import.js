@@ -25,8 +25,9 @@
 // the same bytes — `tests/interchange/import-verb.test.js` proves it.
 //
 // Codes: AGSC-E003 (a missing or unusable invocation argument — the code
-// AGSC-09-08 assigns to a missing option argument), AGSC-E002 (a `--from` value
-// outside the closed set of formats this node reads), AGSC-E901 (the source
+// AGSC-09-08 assigns to a missing option argument), AGSC-E203 (a `--from` value
+// outside the closed set of formats this node reads — AGSC-01-26a, since
+// 2026-09-24; AGSC-E002 before), AGSC-E901 (the source
 // directory holds none of the records the format declares).
 
 const path = require('node:path');
@@ -40,6 +41,7 @@ const cogx = require('../../../interchange/adapters/cogx.js');
 const gabbe = require('../../../interchange/adapters/gabbe.js');
 const skills = require('../../../interchange/adapters/skills.js');
 const board = require('../../../interchange/adapters/board.js');
+const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 
 /** The foreign formats this node reads. AGSC-01-22 names the verb, not a list. */
@@ -868,6 +870,50 @@ function totalsLines(totals) {
   return Object.keys(totals).sort().map((key) => `import: ${key}: ${totals[key]}`);
 }
 
+/**
+ * `import --from <path|package>` (AGSC-00-24, AGSC-01-26a): a memory-adapter PLUGIN.
+ * The engine reads every file of the source directory through its own read-only
+ * port and hands the plugin a detached copy; the plugin's `importFiles(files,
+ * context)` hook answers `{documents: [{path, text}], findings?}` — Markdown
+ * documents with frontmatter, the shape an OKF bundle has — and the documents go
+ * through the OKF lane's mapping and the shared tail. So a plugin's import gets the
+ * same provenance (`origin: imported`, this Bundle's operator), the same tolerance
+ * and the same collision survey, `--dry-run` and `--replace` as every other lane,
+ * and never writes a file itself.
+ *
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importPlugin(ctx, source, identityOptions, plugin) {
+  const fs = openRoot(ctx, source);
+  const findings = [];
+  const files = [];
+  for (const file of typeof fs.walk === 'function' ? fs.walk('.') : []) {
+    try {
+      files.push({ path: String(file), text: String(fs.readFile(String(file), 'utf8')) });
+    } catch (e) {
+      findings.push(unreadable(e, String(file)));
+    }
+  }
+  const label = `import --from ${plugin.name}`;
+  const called = loader.call(plugin, 'importFiles', [loader.detached(files),
+    loader.detached({ specVersion: ctx.specVersion })], label);
+  if (called.findings.length > 0) return { findings: [...findings, ...called.findings], status: 'fail' };
+  findings.push(...loader.pluginFindings(called.value));
+  const documents = (called.value && Array.isArray(called.value.documents) ? called.value.documents : [])
+    .filter((d) => d && typeof d.text === 'string' && loader.unsafePath(d.path) === null)
+    .map((d) => ({ path: String(d.path), text: d.text }));
+  if (documents.length === 0) {
+    findings.push(finding('AGSC-E901', `${label}: the plugin produced no document from ${JSON.stringify(String(source))}`
+      + ' (AGSC-01-22)', { file: String(source), line: 1 }));
+    return { findings, status: 'fail' };
+  }
+  const planned = okf.plan(documents, {
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+  });
+  return finish(ctx, [...findings, ...planned.findings], planned);
+}
+
 function run(ctx) {
   const verbFlags = ctx.verbFlags || {};
   const from = verbFlags.from;
@@ -875,14 +921,28 @@ function run(ctx) {
   const source = (ctx.argv || [])[0];
   const findings = [];
 
+  // Not one of this node's own formats: a local path or an installed package,
+  // resolved through the memory-adapter registry; a remote one is AGSC-E905. A bare
+  // name no package answers is the closed-set refusal it always was.
+  let plugin = null;
+  if (from !== undefined && !FORMATS.includes(from)) {
+    const loaded = loader.load('memory-adapter', from, { flag: 'import --from', root: ctx.root, specVersion: ctx.specVersion });
+    if (loaded.plugin !== null) plugin = loaded.plugin;
+    else if (!loaded.missing) return { findings: loaded.findings, status: 'fail' };
+  }
+
   if (from === undefined) {
     findings.push(finding('AGSC-E003',
       `import needs --from <format>; this node reads ${FORMATS.join(', ')} (AGSC-01-22)`,
       { file: '', line: 1 }));
-  } else if (!FORMATS.includes(from)) {
-    findings.push(finding('AGSC-E002',
+  } else if (plugin === null && !FORMATS.includes(from)) {
+    // AGSC-01-26a (as stated 2026-09-24): a name no shipped adapter and no installed
+    // plugin answers is AGSC-E203, a value outside a closed operator list, exit 1 —
+    // the one code for this fault on `export --to` and `import --from` alike. Until
+    // then this line said AGSC-E002, the exit-2 code registered for an unknown flag.
+    findings.push(finding('AGSC-E203',
       `--from ${JSON.stringify(String(from))} is not a format this node reads;`
-      + ` the set is ${FORMATS.join(', ')} (AGSC-01-22)`, { file: '', line: 1 }));
+      + ` the set is ${FORMATS.join(', ')} (AGSC-01-22, AGSC-01-26a)`, { file: '', line: 1 }));
   }
   if (selectionPath === undefined && SELECTION_REQUIRED.includes(from)) {
     findings.push(finding('AGSC-E003',
@@ -911,6 +971,7 @@ function run(ctx) {
   const identified = identity(ctx.config);
   if (identified.findings.length > 0) return { findings: identified.findings, status: 'fail' };
 
+  if (plugin !== null) return importPlugin(ctx, source, identified.options, plugin);
   if (from === okf.FORMAT) return importOkf(ctx, source, identified.options);
   if (from === cogx.FORMAT) return importCogx(ctx, source, identified.options);
   if (from === gabbe.FORMAT) return importGabbe(ctx, source, identified.options);

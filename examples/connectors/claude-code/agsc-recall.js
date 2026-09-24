@@ -23,10 +23,31 @@ function words(text) {
   return new Set(String(text).toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 1 && !STOP.has(w)));
 }
 
-/** The `## ` sections of an llms-ctx.txt, in file order. */
+/**
+ * The `## ` sections of an llms-ctx.txt, in file order. A section starts only at a
+ * `## ` line OUTSIDE a code fence: an item's quoted body may carry its own `## `
+ * headings, and splitting there would cut the body out of its fence and hand it to
+ * the model unquoted. A fence opens with three or more backticks and closes with a
+ * line of at least as many backticks and nothing else (CommonMark).
+ */
 function sections(ctx) {
-  const parts = String(ctx).split(/\n(?=## )/u).slice(1);
-  return parts.map((text, order) => ({ order, text: text.replace(/\n+$/u, '') }));
+  const out = [];
+  let current = null;
+  let fence = null;
+  for (const line of String(ctx).split('\n')) {
+    if (fence === null && line.startsWith('## ')) {
+      if (current !== null) out.push(current);
+      current = [line];
+      continue;
+    }
+    if (current !== null) current.push(line);
+    const run = /^(`{3,})(.*)$/u.exec(line);
+    if (run === null) continue;
+    if (fence === null) fence = run[1].length;
+    else if (run[1].length >= fence && run[2].trim() === '') fence = null;
+  }
+  if (current !== null) out.push(current);
+  return out.map((lines, order) => ({ order, text: lines.join('\n').replace(/\n+$/u, '') }));
 }
 
 /** The best sections for a prompt: most shared words first, file order on a tie. */

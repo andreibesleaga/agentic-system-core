@@ -1,6 +1,6 @@
 'use strict';
 /**
- * CONTEXT Interchange — memory adapter `cogx` (AGSC-01-26a; RES1-04, `research/38` §3.3).
+ * CONTEXT Interchange — memory adapter `cogx` (AGSC-01-26a).
  *
  * `export --to cogx` writes a COGX 0.1 archive and `import --from cogx` reads one.
  * COGX (the Cognee eXchange format) is the hub format Cognee's importers translate
@@ -372,7 +372,7 @@ function run(bundle, options) {
     generatedAt: options.instant,
     license,
     specVersion: options.specVersion,
-    terms: chunks.TERMS,
+    terms: chunks.termsFor(license),
   });
   // The content version the header states is the one every record carries, so an
   // importer can record `prov.source_version` (AGSC-01-22) from any single record.
@@ -383,7 +383,7 @@ function run(bundle, options) {
     generated_at: String(options.instant),
     license,
     spec_version: String(options.specVersion),
-    terms: chunks.TERMS,
+    terms: chunks.termsFor(license),
     trust: chunks.TRUST,
   };
 

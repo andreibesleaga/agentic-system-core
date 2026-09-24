@@ -83,6 +83,26 @@ test('sitemap, robots and tdmrep state one policy three ways (AGSC-06-18/06-19)'
   assert.deepStrictEqual(site.tdmrep(BASE), [{ location: `${BASE}/`, 'tdm-reservation': 1 }]);
 });
 
+test('AGSC-06-19: publishedRoutes() is every HTML page of a build and nothing else', () => {
+  const files = new Map([
+    ['/index.html', ''], ['/concepts/index.html', ''], ['/concepts/a/index.html', ''],
+    ['/tags/t/index.html', ''], ['/now/index.html', ''], ['/legal/index.html', ''],
+    ['/404.html', ''], ['/search.json', ''], ['/pages/a.md', ''], ['/sitemap.xml', ''],
+  ]);
+  assert.deepStrictEqual(site.publishedRoutes(files),
+    ['/', '/concepts/', '/concepts/a/', '/legal/', '/now/', '/tags/t/']);
+});
+
+test('AGSC-06-29 / AGSC-05-07: a Link target naming an excluded item is dropped, an emptied key omitted, order kept', () => {
+  const published = new Set(['a', 'b']);
+  const record = { type: 'concept', title: 'x', related: ['held#anchor', 'b'], uses: ['held'], broader: ['a'], tags: ['x'] };
+  assert.deepStrictEqual(site.withoutExcludedLinks(record, published),
+    { type: 'concept', title: 'x', related: ['b'], broader: ['a'], tags: ['x'] });
+  assert.deepStrictEqual(Object.keys(site.withoutExcludedLinks(record, published)),
+    ['type', 'title', 'related', 'broader', 'tags']);
+  assert.deepStrictEqual(record.uses, ['held'], 'the input is not mutated');
+});
+
 test('check() reports every structural fault a malformed document can carry', () => {
   const codes = (doc, level) => discovery.check(doc, { level }).map((f) => f.code);
   assert.deepStrictEqual(codes(null, 2), ['AGSC-E209']);
@@ -94,7 +114,9 @@ test('check() reports every structural fault a malformed document can carry', ()
   // AGSC-06-08a: a Level-0 document that carries a digest is reported.
   assert.deepStrictEqual(codes({ linkset: [{ anchor: 'a', license: [{ href: 'x', digest: ['d'] }] }] }, 0), ['AGSC-E209']);
   // AGSC-06-08a at Level ≥ 2: every required anchor attribute must be present.
-  assert.strictEqual(codes({ linkset: [{ anchor: 'a' }] }, 2).length, discovery.ANCHOR_ATTRIBUTES.length);
+  // AGSC-10-04 (rc.6): and a public Level-2 document without the ledger link is one more fault.
+  assert.strictEqual(codes({ linkset: [{ anchor: 'a' }] }, 2).length, discovery.ANCHOR_ATTRIBUTES.length + 1);
+  assert.strictEqual(codes({ linkset: [{ anchor: 'a' }] }, 2).filter((c) => c === 'AGSC-E202').length, 1);
   // AGSC-06-11: a rel#ledger link missing its attributes at Level ≥ 2.
   const withLedger = { linkset: [{ anchor: 'a', [`${discovery.REL}ledger`]: [{ href: 'x' }] }] };
   assert.strictEqual(codes(withLedger, 2).filter((c) => c === 'AGSC-E209').length,

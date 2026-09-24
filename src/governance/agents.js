@@ -12,7 +12,7 @@ const MAX_NEW_ITEMS_DEFAULT = 20;
 const MAX_CLAIMS_DEFAULT = 1;
 const BUDGET_USD_MONTH_DEFAULT = 10;
 
-// F27-11 (AGSC-09-11, R64): `message` is a member of every Finding, and an empty
+// (AGSC-09-11): `message` is a member of every Finding, and an empty
 // one helps nobody, so the default is never silently blank — every caller here
 // supplies one.
 function finding(code, severity, extra) {

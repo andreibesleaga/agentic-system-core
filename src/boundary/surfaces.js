@@ -12,7 +12,7 @@
  * declaration), AGSC-11-21 (responder and solid are declaration-only at 1.0;
  * a responder names its protocol by the prefix of its version) and
  * AGSC-10-14 (a live board is a responder, never served at 1.0).
- * Requirements: D67 A2/Q61/Q63, PLUGIN-ARCHITECTURE-STUDY 3, PRD-057.
+ * Requirements: PRD-057.
  *
  * THIS MODULE IS THE ONE PLACE THAT NAMES AN EXTERNAL PROTOCOL VERSION.
  * The wire version the stdio transport negotiates, the revision the `mcp`
@@ -30,11 +30,15 @@
 const MCP_PROTOCOL_VERSION = '2025-11-25';
 /** The oldest revision that transport negotiates down to. */
 const MCP_PROTOCOL_MIN_VERSION = '2025-03-26';
-/** AGSC-11-16: the external MCP revision the `mcp` SURFACE declares. */
+/**
+ * AGSC-11-16: the MCP revision the specification targets. As amended at rc.6
+ * (2026-09-24) the `mcp` surface declares the revision its transport actually speaks
+ * — `MCP_PROTOCOL_VERSION` by default — and this target is no longer a pin.
+ */
 const MCP_SURFACE_VERSION = '2026-07-28';
 /**
  * AGSC-11-16: the WebMCP Draft Community Group Report date this node targets by
- * default. As amended at rc.5 (V9A-10) the rule pins NO particular date — "any such
+ * default. As amended at rc.5 the rule pins NO particular date — "any such
  * date is conforming" — because the report is a living document. This constant is
  * therefore a default, not a pin: `declare({webmcpVersion})` echoes whatever date the
  * node targets, and `bnd-0031` asserts the echo and the `YYYY-MM-DD` shape, never a
@@ -84,7 +88,7 @@ const WEBMCP_ANNOTATIONS = Object.freeze({
 const BUILT_IN = Object.freeze({
   chunks: Object.freeze({ access: 'none', emitted: '/chunks.jsonl', route: '/chunks.jsonl', version: null }),
   'llms-txt': Object.freeze({ access: 'none', emitted: '/llms.txt', route: '/llms.txt', version: null }),
-  mcp: Object.freeze({ access: 'consent', emitted: null, route: '/specs/mcp/', version: MCP_SURFACE_VERSION }),
+  mcp: Object.freeze({ access: 'consent', emitted: null, route: '/specs/mcp/', version: MCP_PROTOCOL_VERSION }),
   webmcp: Object.freeze({ access: 'consent', emitted: '/compose/', route: '/compose/', version: WEBMCP_SURFACE_VERSION }),
 });
 
@@ -121,14 +125,14 @@ function absolute(base, route) {
 }
 
 /**
- * declare({ base, emitted, mcpServed, surfaces, webmcpVersion }) -> link objects
+ * declare({ base, emitted, mcpServed, mcpVersion, surfaces, webmcpVersion }) -> link objects
  * AGSC-11-16. One `rel#surface` link per surface actually served, ordered by
  * `href` within the relation (AGSC-06-10). `emitted[]` names the routes the
  * writer emitted; `mcpServed` says whether the local tool server is served;
  * `surfaces[]` is the configuration for the three declaration-only surfaces.
  *
  * `webmcpVersion` is the `YYYY-MM-DD` Draft Community Group Report date this node
- * targets. It is an INPUT, not a constant: AGSC-11-16 as amended at rc.5 (V9A-10)
+ * targets. It is an INPUT, not a constant: AGSC-11-16 as amended at rc.5
  * conforms any such date, and before rc.5 the engine hard-coded `2026-09-15` here
  * while the live draft already read a later date — a node targeting the current
  * report failed the (then required) vector `bnd-0012`. Vector `bnd-0031` asserts
@@ -143,12 +147,17 @@ function declare(options) {
   const emitted = new Set(opts.emitted || []);
   const webmcpVersion = WEBMCP_VERSION_RE.test(String(opts.webmcpVersion || ''))
     ? String(opts.webmcpVersion) : WEBMCP_SURFACE_VERSION;
+  // AGSC-11-16 as amended at rc.6: `mcp` declares the revision its transport
+  // speaks, an input echoed like the WebMCP date, defaulting to the one the
+  // pinned SDK speaks.
+  const mcpVersion = WEBMCP_VERSION_RE.test(String(opts.mcpVersion || ''))
+    ? String(opts.mcpVersion) : MCP_PROTOCOL_VERSION;
   const links = [];
   for (const [name, spec] of Object.entries(BUILT_IN)) {
     const served = name === 'mcp' ? Boolean(opts.mcpServed) : (spec.emitted !== null && emitted.has(spec.emitted));
     if (!served) continue;
     const link = { 'agsc-access': [spec.access], 'agsc-surface': [name], href: absolute(base, spec.route), rel: REL.surface };
-    const version = name === 'webmcp' ? webmcpVersion : spec.version;
+    const version = name === 'webmcp' ? webmcpVersion : (name === 'mcp' ? mcpVersion : spec.version);
     if (version !== null) link['agsc-surface-version'] = [version];
     links.push(Object.freeze(sortMembers(link)));
   }
@@ -252,7 +261,7 @@ function acceptedHrefs(declared, findings) {
  * AGSC-11-18, the MCP half: what `server/discover` advertises in its capabilities,
  * and what the per-request capabilities carry. The two are THE SAME OBJECT — revision
  * `2026-07-28` has no initialization handshake, so there is no moment at which they
- * could differ (V9A-04).
+ * could differ.
  *
  * `extensions` is a MAP of extension identifier to that extension's settings object,
  * as MCP defines it. At rc.5 AGSC-11-18 pins this node's settings object:

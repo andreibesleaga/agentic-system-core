@@ -11,7 +11,7 @@
  * not read or honour `channels[].publish`, and the `auto` mode of AGSC-01-31
  * is unavailable (AGSC-08-04, AGSC-08-26(f)). The annotation hints are the
  * security floor in WebMCP's own vocabulary (AGSC-11-18).
- * Requirements: PRD-051, D53, D34, A-64.
+ * Requirements: PRD-051.
  *
  * The emitted script contains NO tool logic: it registers the manifest of
  * `distribution/mcp-tools.js` and dispatches to the very same `call`

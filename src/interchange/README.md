@@ -45,7 +45,7 @@ empty" above is the record of 2026-09-18 and is kept as written.
 | `okf.js` | AGSC-01-22, AGSC-01-23 | `import --from okf`: the foreign OKF v0.2 reader |
 | `trace.js` | AGSC-09-94, AGSC-02-14 | `trace <file.json>`: a captured agent-run record to an Episode, purely |
 | `import.js` + `oldsite.js`, `mapping.js`, `sources.js`, `status.js`, `clusters.js`, `cleanroom-rewrite.js`, `selection.js` | AGSC-01-22, AGSC-03-19 | `import --from old-site` |
-| `adapters/llm-context.js` | AGSC-01-26a, D98 | `export --to llm-context` |
+| `adapters/llm-context.js` | AGSC-01-26a | `export --to llm-context` |
 | `own-record.js` | AGSC-01-22, AGSC-06-30 | when an import may trust an own-record line (`agsc-item`, COGX `metadata.agsc`): its origin is this node's `site.base` or a declared peer, and its versions agree with the file's provenance header |
 
 ### The adapters this distribution ships, with their claimed key sets
@@ -61,7 +61,7 @@ here, and here is the list.
 | `old-site` | import | `import --from old-site` | see `mapping.js`: every foreign key is mapped, renamed, folded, moved into the `x-oldsite-*` namespace of AGSC-02-05a, or dropped with a reason |
 
 An adapter is discovered by directory convention and never by a configuration key
-(AGSC-01-26a, D61(3)); `export --to <name>` resolves `adapters/<name>.js` after
+(AGSC-01-26a); `export --to <name>` resolves `adapters/<name>.js` after
 matching `<name>` against the slug grammar of AGSC-01-10, so no caller-supplied string
 can traverse a path.
 

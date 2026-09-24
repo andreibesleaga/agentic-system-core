@@ -37,7 +37,7 @@ test('the loader reports a missing or malformed configuration as a Finding', () 
   const empty = { exists: () => false, readdir: () => [], readFile: () => '' };
   assert.deepStrictEqual(plain(loadBundle(empty, {}).findings), [{
     code: 'AGSC-E901', file: 'agsc.config.json',
-    message: 'agsc.config.json is missing (AGSC-01-12)', severity: 'error',
+    message: 'agsc.config.json is missing (AGSC-01-01)', severity: 'error',
   }]);
   const broken = {
     exists: (p) => p === 'agsc.config.json', readdir: () => [], readFile: () => '{ not json',
@@ -76,7 +76,7 @@ test('AGSC-08-18: every result carries source, trust, license, type and body', (
   const toolset = tools(fixture(), {});
   for (const name of manifest().tools.map((t) => t.name)) {
     const result = toolset.call(name, { question: 'x', query: 'x', selection: [], slug: 'handoff', title: 'T' });
-    // AGSC-09-14a as amended at rc.5 (V9D-07, cli-0007): `ask` — and only `ask` —
+    // AGSC-09-14a as amended at rc.5 (cli-0007): `ask` — and only `ask`
     // adds EXACTLY ONE top-level member, `citations[]`, to the AGSC-08-18 envelope.
     assert.deepStrictEqual(Object.keys(result),
       name === 'ask' ? ['body', 'citations', 'license', 'source', 'trust', 'type']
@@ -92,7 +92,7 @@ test('AGSC-09-13a: an unknown tool and an unknown slug are envelopes, never thro
   const toolset = tools(fixture(), {});
   assert.strictEqual(toolset.call('nonesuch', {}).body.code, 'AGSC-E001');
   assert.strictEqual(toolset.call('read', { slug: 'no-such-item' }).body.code, 'AGSC-E301');
-  // F27-10: a call with no `slug` at all is a MISSING ARGUMENT, not an unknown slug.
+  // a call with no `slug` at all is a MISSING ARGUMENT, not an unknown slug.
   assert.strictEqual(toolset.call('read').body.code, 'AGSC-E003');
   assert.strictEqual(toolset.call('links', { slug: 'no-such-item' }).body.code, 'AGSC-E301');
   assert.strictEqual(toolset.call('propose', { slug: 'no-such-item' }).body.code, 'AGSC-E301');
@@ -128,7 +128,7 @@ test('AGSC-09-13: read returns the item, links its authored edges, compose a ver
   const verdict = toolset.call('compose', { selection: ['supervisor', 'handoff'] });
   assert.deepStrictEqual(Object.keys(verdict.body), ['added', 'conflicts', 'hidden', 'selection', 'valid', 'warnings']);
   assert.strictEqual(verdict.body.valid, true);
-  // F27-10: `selection` is published as required, so an absent one is AGSC-E003.
+  // `selection` is published as required, so an absent one is AGSC-E003.
   assert.strictEqual(toolset.call('compose', {}).body.code, 'AGSC-E003');
 });
 
@@ -154,7 +154,7 @@ test('AGSC-09-14a: ask cites at least one IRI, or says exactly so', () => {
   const nothing = toolset.call('ask', { question: 'zzzzzzz' });
   assert.strictEqual(nothing.body, NO_ANSWER, 'the no-answer body is exactly the fixed string');
   assert.deepStrictEqual(plain(nothing.citations), []);
-  // F27-10: `question` and `query` are published as required arguments.
+  // `question` and `query` are published as required arguments.
   assert.strictEqual(toolset.call('ask', {}).body.code, 'AGSC-E003');
   assert.strictEqual(toolset.call('search', {}).body.code, 'AGSC-E003');
   // An EMPTY string is supplied, not missing, and keeps the total-function answer.
@@ -174,13 +174,15 @@ test('AGSC-08-04: propose returns the payload and performs no write', () => {
 test('AGSC-09-14b: remember synthesizes a conforming item from a fixed instant', () => {
   const toolset = tools(fixture(), {});
   const result = toolset.call('remember', {
-    at: '2026-01-01T00:00:00Z', body: 'It ran.', kind: 'episode', title: 'A Recorded Run',
+    at: '2026-01-01T00:00:00Z', body: 'It ran.', actor: 'process:ci', kind: 'episode', title: 'A Recorded Run',
   });
   assert.strictEqual(result.body.slug, 'a-recorded-run');
   assert.strictEqual(result.body.path, 'content/episodes/a-recorded-run.md');
   assert.strictEqual(result.body.frontmatter.started, '2026-01-01T00:00:00Z');
   assert.strictEqual(result.body.frontmatter.outcome, 'partial');
-  assert.strictEqual(result.body.frontmatter.severity, 'info');
+  // AGSC-09-14b as corrected 2026-09-24: the episode branch has no `severity`, so a
+  // defaulted one would be a key lint reports as unknown — none is written.
+  assert.strictEqual(result.body.frontmatter.severity, undefined);
   assert.strictEqual(result.body.frontmatter.prov.origin, 'ai-generated');
   // a remembered LESSON carries the `severity` its schema branch
   // requires, defaulted to `info` as AGSC-09-14b says, so it is conforming as returned.
@@ -229,7 +231,7 @@ test('a Bundle may carry its own byslug Map, and a missing site base still resol
   assert.strictEqual(toolset.call('read', { slug: 'a' }).body.iri, '/concepts/a/');
 });
 
-// F27-03 (D94: never hand-write what a module already provides). `propose` used to
+// (never hand-write what a module already provides). `propose` used to
 // build its Markdown with a local YAML writer that emitted unparseable bytes for an
 // ordinary title. It now uses knowledge/adopt.js#serialize, the one canonical writer
 // (AGSC-04-19, AGSC-09-16's one-contract byte claim).
@@ -257,7 +259,7 @@ test('AGSC-09-16: propose serialises frontmatter through the canonical writer', 
   assert.ok(markdown.endsWith('\n\nBody text.\n'), 'the body follows one blank line');
 });
 
-// F27-10: `REQUIRED_ARGUMENTS` was published in the manifest's `inputSchema.required`
+// `REQUIRED_ARGUMENTS` was published in the manifest's `inputSchema.required`
 // and enforced nowhere, so `remember` with no body and no title returned a SUCCESSFUL
 // Proposal payload with an empty body (AGSC-09-13a, AGSC-E003 "missing argument").
 test('AGSC-09-13a: a call missing a required argument is an error envelope', () => {
@@ -283,7 +285,7 @@ test('AGSC-09-13a: a call missing a required argument is an error envelope', () 
   assert.strictEqual(partial.body.message, 'missing required argument: title');
 });
 
-// F27-12: no size cap on tool text arguments — a 2 MB `search` query or `ask` question
+// no size cap on tool text arguments — a 2 MB `search` query or `ask` question
 // bought work proportional to input × corpus. AGSC-01-16's 1 MiB cap is the bound and
 // AGSC-E904 the registered code; the check runs before dispatch, so nothing is scanned.
 test('AGSC-01-16: a text argument above the 1 MiB cap is AGSC-E904', () => {
