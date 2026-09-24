@@ -55,8 +55,7 @@ function run(argv, io) {
   let root = DEFAULT_ROOT;
   let sawRoot = false;
   for (const arg of argv) {
-    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
-    else if (arg === '--json') json = true;
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; } else if (arg === '--json') json = true;
     else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
     else { root = path.resolve(arg); sawRoot = true; }
@@ -70,42 +69,42 @@ function run(argv, io) {
   let inputsRead = 0;
   const read = (p) => { inputsRead += 1; return fs.readFileSync(path.join(root, p), 'utf8'); };
   const walk = (d) => fs.readdirSync(path.join(root, d), { withFileTypes: true })
-    .flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+    .flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
 
-  const specFiles = fs.readdirSync(path.join(root, 'spec')).filter(f => f.endsWith('.md')).sort();
-  const specTexts = new Map(specFiles.map(f => [f, read(path.join('spec', f))]));
-  const specText = specFiles.map(f => specTexts.get(f)).join('\n');
-  const ruleIds = (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/g) || []).map(s => s.slice(2, -2));
+  const specFiles = fs.readdirSync(path.join(root, 'spec')).filter((f) => f.endsWith('.md')).sort();
+  const specTexts = new Map(specFiles.map((f) => [f, read(path.join('spec', f))]));
+  const specText = specFiles.map((f) => specTexts.get(f)).join('\n');
+  const ruleIds = (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/g) || []).map((s) => s.slice(2, -2));
   const rules = [...new Set(ruleIds)];
   const conf = specTexts.get('09-conformance.md') || '';
-  const registryRows = (conf.match(/^\| `AGSC-E\d{3}`/gm) || []).map(s => (s.match(/AGSC-E\d{3}/) || [''])[0]);
+  const registryRows = (conf.match(/^\| `AGSC-E\d{3}`/gm) || []).map((s) => (s.match(/AGSC-E\d{3}/) || [''])[0]);
   const registered = [...new Set(registryRows)];
   const used = [...new Set(specText.match(/AGSC-E\d{3}/g) || [])];
-  const vectorFiles = walk('tests/vectors').filter(f => f.endsWith('.json'));
-  const vectorText = new Map(vectorFiles.map(f => [f, read(f)]));
-  const vectors = vectorFiles.map(f => ({ ...JSON.parse(vectorText.get(f)), __file: f }));
+  const vectorFiles = walk('tests/vectors').filter((f) => f.endsWith('.json'));
+  const vectorText = new Map(vectorFiles.map((f) => [f, read(f)]));
+  const vectors = vectorFiles.map((f) => ({ ...JSON.parse(vectorText.get(f)), __file: f }));
   const ttl = fs.existsSync(path.join(root, 'ontology/agsc.ttl')) ? read('ontology/agsc.ttl') : '';
-  const n = re => (ttl.match(re) || []).length;
+  const n = (re) => (ttl.match(re) || []).length;
   const overview = specTexts.get('00-overview.md') || '';
   const declared = (overview.match(/1\.0\.0-rc\.\d+/) || ['unknown'])[0];
-  const citedRules = new Set(vectors.map(v => v.rule));
+  const citedRules = new Set(vectors.map((v) => v.rule));
 
   const counts = {
     spec_version: declared,
     rules: rules.length,
     rules_reserved: (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\* \*\(retired at rc/g) || []).length,
-    rules_with_vector: rules.filter(r => citedRules.has(r)).length,
-    rules_without_vector: rules.filter(r => !citedRules.has(r)).length,
+    rules_with_vector: rules.filter((r) => citedRules.has(r)).length,
+    rules_without_vector: rules.filter((r) => !citedRules.has(r)).length,
     error_codes_registered: registered.length,
     error_codes_used: used.length,
     vectors_total: vectors.length,
-    vectors_required: vectors.filter(v => v.level === 'required').length,
-    vectors_optional: vectors.filter(v => v.level === 'optional').length,
-    vectors_withdrawn: vectors.filter(v => v.level === 'withdrawn').length,
-    vector_areas: [...new Set(vectors.map(v => v.area))].sort(),
-    ontology_classes: n(/^asc:\S+\n    a owl:Class/gm),
-    ontology_object_properties: n(/^asc:\S+\n    a owl:ObjectProperty/gm),
-    ontology_datatype_properties: n(/^asc:\S+\n    a owl:DatatypeProperty/gm),
+    vectors_required: vectors.filter((v) => v.level === 'required').length,
+    vectors_optional: vectors.filter((v) => v.level === 'optional').length,
+    vectors_withdrawn: vectors.filter((v) => v.level === 'withdrawn').length,
+    vector_areas: [...new Set(vectors.map((v) => v.area))].sort(),
+    ontology_classes: n(/^asc:\S+\n {4}a owl:Class/gm),
+    ontology_object_properties: n(/^asc:\S+\n {4}a owl:ObjectProperty/gm),
+    ontology_datatype_properties: n(/^asc:\S+\n {4}a owl:DatatypeProperty/gm),
   };
   counts.rules_active = counts.rules - counts.rules_reserved;
   counts.ontology_terms = counts.ontology_classes + counts.ontology_object_properties
@@ -117,12 +116,12 @@ function run(argv, io) {
   if (rules.length === 0) findings.push('spec/ declares no rule: the count would be vacuous (AGSC-E901)');
   if (declared === 'unknown') findings.push('spec/00-overview.md declares no spec_version (AGSC-09-91)');
   if (vectors.length === 0) findings.push('tests/vectors/ holds no vector: the count would be vacuous (AGSC-E901)');
-  for (const id of rules) if (ruleIds.filter(x => x === id).length > 1) findings.push(`duplicate rule id ${id}`);
-  for (const c of registered) if (registryRows.filter(x => x === c).length > 1) findings.push(`duplicate registry row for ${c} (AGSC-09-91)`);
+  for (const id of rules) if (ruleIds.filter((x) => x === id).length > 1) findings.push(`duplicate rule id ${id}`);
+  for (const c of registered) if (registryRows.filter((x) => x === c).length > 1) findings.push(`duplicate registry row for ${c} (AGSC-09-91)`);
   for (const c of used) if (!registered.includes(c)) findings.push(`error code used but not registered: ${c}`);
   // AGSC-09-04 closed area list
   const areaRule = (conf.match(/Areas are ([^\n]*?)and no others/) || ['', ''])[1];
-  const allowedAreas = new Set((areaRule.match(/`([a-z]+)\/`/g) || []).map(s => s.slice(1, -2)));
+  const allowedAreas = new Set((areaRule.match(/`([a-z]+)\/`/g) || []).map((s) => s.slice(1, -2)));
   for (const v of vectors) {
     if (!rules.includes(v.rule)) findings.push(`vector ${v.id} cites unknown rule ${v.rule}`);
     for (const k of ['area', 'description', 'expected', 'id', 'input', 'level', 'rule'])
@@ -135,8 +134,8 @@ function run(argv, io) {
     if (v.level !== 'withdrawn') for (const m of vectorText.get(v.__file).matchAll(/1\.0\.0-rc\.\d+/g))
       if (m[0] !== declared) { findings.push(`vector ${v.id} embeds version literal ${m[0]} (expected ${declared}) — re-derive its bytes`); break; }
   }
-  const ids = vectors.map(v => v.id);
-  for (const id of [...new Set(ids)]) if (ids.filter(x => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
+  const ids = vectors.map((v) => v.id);
+  for (const id of [...new Set(ids)]) if (ids.filter((x) => x === id).length > 1) findings.push(`duplicate vector id ${id}`);
   // spec_version literals in docs/, w3c/ that name a different rc (keyword-anchored form)
   for (const f of ['docs/SPEC.md', 'w3c/index.html']) {
     if (!fs.existsSync(path.join(root, f))) continue;
@@ -173,15 +172,15 @@ function run(argv, io) {
   // w3c/index.html vocabulary tables vs ontology
   try {
     const html = read('w3c/index.html');
-    const sect = id => { const i = html.indexOf(`<section id="${id}">`); const j = html.indexOf('</section>', i); return i < 0 ? '' : html.slice(i, j); };
-    const dfns = [...(sect('classes') + sect('object-properties') + sect('datatype-properties')).matchAll(/<dfn[^>]*>(asc:[A-Za-z0-9]+)<\/dfn>/g)].map(m => m[1]);
+    const sect = (id) => { const i = html.indexOf(`<section id="${id}">`); const j = html.indexOf('</section>', i); return i < 0 ? '' : html.slice(i, j); };
+    const dfns = [...(sect('classes') + sect('object-properties') + sect('datatype-properties')).matchAll(/<dfn[^>]*>(asc:[A-Za-z0-9]+)<\/dfn>/g)].map((m) => m[1]);
     const terms = [...new Set((ttl.match(/^asc:[A-Za-z0-9]+/gm) || []))];
     for (const t of terms) if (!dfns.includes(t)) findings.push(`w3c/index.html lacks a <dfn> for ${t}`);
     for (const d of dfns) if (!terms.includes(d)) findings.push(`w3c/index.html defines ${d}, absent from ontology/agsc.ttl`);
   } catch (e) { /* w3c/ is optional in a distribution */ }
   // a vector directory silently ignored by git is a lost vector
   try {
-    const dirs = [...new Set(vectorFiles.map(f => path.dirname(f)))];
+    const dirs = [...new Set(vectorFiles.map((f) => path.dirname(f)))];
     for (const d of dirs) {
       const r = cp.spawnSync('git', ['check-ignore', '-q', d + '/'], { cwd: root });
       if (r.status === 0) findings.push(`vector directory ${d}/ is ignored by .gitignore`);

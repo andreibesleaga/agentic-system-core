@@ -187,7 +187,9 @@ function itemFiles(root) {
     for (const entry of names.sort((a, b) => compareCodePoint(a.name, b.name))) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith('.md')) {
+      // A README explains a folder to a person and is never an item, so the switch
+      // neither publishes nor holds it back.
+      else if (entry.name.endsWith('.md') && entry.name !== 'README.md') {
         const rel = path.relative(root, full).split(path.sep).join('/');
         if (rel !== ROOT_ITEM) out.push(rel);
       }
@@ -283,8 +285,7 @@ function specVersion(root) {
 }
 
 function packageVersion() {
-  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 }
 
 /**
@@ -311,8 +312,7 @@ function run(argv, io) {
   const listPath = path.join(root, LIST_FILE);
   if (!fs.existsSync(listPath)) return usage(`no ${LIST_FILE} at ${root} (AGSC-E901)`);
   let listed;
-  try { listed = readList(fs.readFileSync(listPath, 'utf8')); }
-  catch (e) { return usage(`${LIST_FILE} could not be read: ${(e && e.message) || 'unknown error'} (AGSC-E003)`); }
+  try { listed = readList(fs.readFileSync(listPath, 'utf8')); } catch (e) { return usage(`${LIST_FILE} could not be read: ${(e && e.message) || 'unknown error'} (AGSC-E003)`); }
   if (!fs.existsSync(path.join(root, CONTENT_DIR))) {
     return usage(`no ${CONTENT_DIR}/ at ${root}: this is not a Bundle (AGSC-E901)`);
   }

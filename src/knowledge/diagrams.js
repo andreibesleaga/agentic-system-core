@@ -158,7 +158,7 @@ function clip(box, from, to) {
   const halfHeight = box.h / 2;
   const scale = Math.min(
     dx !== 0 ? halfWidth / Math.abs(dx) : Infinity,
-    dy !== 0 ? halfHeight / Math.abs(dy) : Infinity
+    dy !== 0 ? halfHeight / Math.abs(dy) : Infinity,
   );
   return { x: from.x + dx * scale, y: from.y + dy * scale };
 }
@@ -193,7 +193,7 @@ function geometryKey(poly) {
  *   `file` and `slug` are carried onto every Finding; `label` is the accessible name
  *   used when the source has no `label` statement (default `"<slug> diagram"`);
  *   `accessibleName`, when given, IS the accessible name and a `label` statement in
- *   the source cannot override it — AGSC-02-13 as amended at rc.5 makes the inlined
+ *   the source cannot override it — AGSC-02-13 makes the inlined
  *   element's accessible name `diagram.alt` (AGSC-06-20), which is authored in the
  *   item's frontmatter and not in the picture. The returned `label` is still the
  *   source's own, so `altFrom()` and `check()` are unaffected.
@@ -608,8 +608,6 @@ function altFrom(dslText, options = {}) {
 module.exports = {
   ACCENT_CLASS,
   ACCENT_STROKE_WIDTH,
-  DEFAULT_HEIGHT,
-  DEFAULT_WIDTH,
   GLYPH,
   MARKER,
   MAX_SOURCE_LENGTH,

@@ -6,11 +6,11 @@
 stateDiagram-v2
   [*] --> authored: human or operator-run agent edits item with prov{origin, operator}
 
-  authored --> proposed: agsc propose writes dist/proposal/<n>.patch + PR body\n(agsc:proposal v1 marker) — no network write
+  authored --> proposed: agsc propose writes dist/proposal/<n>.patch + PR body (agsc:proposal v1 marker) — no network write
 
-  proposed --> prOpen: operator runs the printed git/gh commands\nPR carries Signed-off-by (CA-v1)
+  proposed --> prOpen: operator runs the printed git/gh commands PR carries Signed-off-by (CA-v1)
 
-  prOpen --> lintVerdict: ci.yml runs agsc ci (lint L1+L2, build x2, diff)\ncontents: read, no LLM
+  prOpen --> lintVerdict: ci.yml runs agsc ci (lint L1+L2, build x2, diff) contents: read, no LLM
 
   state forkCheck <<choice>>
   prOpen --> forkCheck
@@ -32,11 +32,11 @@ stateDiagram-v2
 
   state mergeGate <<choice>>
   humanReview --> mergeGate
-  mergeGate --> merged: ruleset satisfied\n(PR + 1 approval + Code Owner + green ci)
+  mergeGate --> merged: ruleset satisfied (PR + 1 approval + Code Owner + green ci)
   mergeGate --> humanReview: ruleset not yet satisfied
   mergeGate --> authored: conflict with base — a new patch is needed
 
-  merged --> rebuiltDeployed: merge triggers agsc ci then Pages publish www/\nledger.jsonl re-derived from git history into www/ (kind:"merge" entry);\nprov.commit/reviewer derived at build, never written by CI
+  merged --> rebuiltDeployed: merge triggers agsc ci then Pages publish www/ ledger.jsonl re-derived from git history into www/ (kind:"merge" entry); prov.commit/reviewer derived at build, never written by CI
 
   rejected --> [*]
   rebuiltDeployed --> [*]

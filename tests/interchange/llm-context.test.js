@@ -211,3 +211,11 @@ test('the pinned TOON encoder reaches no clock, no network and no environment', 
     assert.ok(!source.includes(forbidden), `the encoder reaches ${forbidden}`);
   }
 });
+
+// AGSC-04-25 / AGSC-01-29: the skim view states the content version the export verb
+// derived — the one `/llms.txt` and the skill index of the same state carry — and
+// never the build-instant fallback when a version was handed in.
+test('AGSC-04-25: llms-ctx.txt carries the content version it is given', () => {
+  const produced = adapter.run(bundle(), { bundleVersion: '0.0.0+3.g12fef19ce63a', instant: INSTANT, sha256, specVersion: '1.0.0-rc.6' });
+  assert.match(produced.files[1].text, /bundle_version: 0\.0\.0\+3\.g12fef19ce63a/u);
+});

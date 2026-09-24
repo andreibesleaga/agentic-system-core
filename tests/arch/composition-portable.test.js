@@ -21,13 +21,13 @@ const test = require('node:test');
 const assert = require('node:assert');
 const vm = require('node:vm');
 
+const fs = require('node:fs');
+const path = require('node:path');
 const compose = require('../../src/composition/compose.js');
 const harness = require('../../src/composition/harness.js');
 const browser = require('../../src/composition/browser.js');
 const archive = require('../../src/composition/archive.js');
 
-const fs = require('node:fs');
-const path = require('node:path');
 
 const SRC = path.resolve(__dirname, '..', '..', 'src', 'composition');
 
@@ -178,7 +178,6 @@ test('src/composition requires nothing a browser cannot give it', () => {
   // portable and not in PORTABLE) — the check is that no PORTABLE function reaches
   // it, which the first test proves, and that no module in the context reaches for
   // a host facility a browser has no equivalent of.
-  // eslint-disable-next-line global-require
   const { sources } = require('./_scan.js');
   const FORBIDDEN = ['node:fs', 'fs', 'node:child_process', 'child_process', 'node:os',
     'os', 'node:http', 'http', 'node:https', 'https', 'node:net', 'net', 'node:vm', 'vm'];

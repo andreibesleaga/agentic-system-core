@@ -53,7 +53,7 @@ function createServer(bundle, options) {
   const opts = options || {};
   const toolset = tools(bundle, opts);
   const resources = catalogue(bundle, opts);
-  // AGSC-11-18 as amended at rc.5: `extensions` is MCP's map of extension
+  // AGSC-11-18: `extensions` is MCP's map of extension
   // identifier to settings object, and this node's settings object carries exactly
   // `linkset`. The Boundary context owns both the identifier and the object
   // (`surfaces.mcpCapabilities`); the transport only carries what it is given, so
@@ -143,8 +143,11 @@ function serve(ctx) {
     config: context.config,
     version: context.version,
   });
-  const stdin = context.stdin || process.stdin;
-  const transport = new StdioServerTransport(stdin, context.stdout || process.stdout);
+  const { stdin, stdout } = context;
+  if (!stdin || !stdout) {
+    throw new TypeError('mcp-stdio.serve: ctx.stdin and ctx.stdout are required (the application layer passes the process streams)');
+  }
+  const transport = new StdioServerTransport(stdin, stdout);
   stdin.on('end', () => {
     Promise.resolve(server.close()).catch(() => {});
   });

@@ -77,7 +77,7 @@ function linksetCase(vector) {
     // verdict is asserted straight: a conforming Level-2 document raises nothing.
     ['the document validates', discovery.check(doc, { level: 2 }).length === 0
       && (expected.valid === undefined || expected.valid === true),
-      JSON.stringify(discovery.check(doc, { level: 2 }))],
+    JSON.stringify(discovery.check(doc, { level: 2 }))],
   ]);
 }
 

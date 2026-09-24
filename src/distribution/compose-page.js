@@ -205,8 +205,11 @@ function controller(options) {
       // AGSC-07-13: the name reaches the emitted bytes, so BOTH hosts derive it
       // from the selection digest with the algebra's own \`harnessName\` — the CLI
       // writes the same files into \`dist/harness/<name>/\` (AGSC-07-12).
+      // AGSC-04-25: the content version is the one the discovery document states,
+      // the one the CLI derives from the same history (AGSC-07-13).
       var out = CORE.emit(result, {
-        base: state.base, instant: state.instant, items: itemsWithBodies(),
+        base: state.base, bundleVersion: state.version === '' ? undefined : state.version,
+        instant: state.instant, items: itemsWithBodies(),
         licenseProse: LICENSE_PROSE, name: CORE.harnessName(digest), selectionDigest: digest,
         specVersion: SPEC_VERSION
       });
@@ -307,6 +310,20 @@ function controller(options) {
   function instantOf(linkset) { return describedValue(linkset, 'agsc-generated-at'); }
   state.instantOf = instantOf;
 
+  /**
+   * AGSC-06-08: the node's own base is the discovery document's \`anchor\` — the
+   * \`site.base\` the CLI reads — never the origin the page happens to be served
+   * from (a preview, a local server), which would put a different \`bundle:\` line
+   * into the Harness than \`agsc compose\` writes (AGSC-07-13).
+   */
+  function baseOf(linkset) {
+    var sets = (linkset && linkset.linkset) || [];
+    var anchor = sets.length > 0 && sets[0] && typeof sets[0].anchor === 'string' ? sets[0].anchor : '';
+    if (anchor === '') return location.origin + '/';
+    return anchor.replace(/\\/+$/, '') + '/';
+  }
+  state.baseOf = baseOf;
+
   function start() {
     state.base = location.origin + '/';
     return fetch('/.well-known/knowledge-linkset').then(function (r) {
@@ -314,6 +331,7 @@ function controller(options) {
     }).catch(function () {
       return null;
     }).then(function (linkset) {
+      state.base = baseOf(linkset);
       state.instant = instantOf(linkset);
       // The content version names the archive (AGSC-04-25); none → "unversioned".
       state.version = describedValue(linkset, 'agsc-bundle-version');

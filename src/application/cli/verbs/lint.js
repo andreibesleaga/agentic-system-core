@@ -27,24 +27,35 @@ const helpers = require('./_helpers.js');
  * verb. `lanes` names every lane that ran AND every lane that could not, so a
  * caller never mistakes an unrunnable check for a green one.
  */
-function lane(ctx, bundle) {
+/**
+ * The `config` and `root` lanes alone — AGSC-01-17/18, AGSC-01-36…38 and AGSC-01-04
+ * — which `build` also runs, so that a configuration or a Bundle root that `lint`
+ * rejects is never published by `build` (an `http://` peer written into the
+ * discovery document, a root missing `spec_version`).
+ */
+function configAndRoot(bundle) {
   const findings = [];
-  const lanes = ['parse', 'schema'];
   const schemas = helpers.schemas();
-
   // AGSC-01-17/18 + AGSC-01-36…38: the configuration, closed, with the agent
   // lane INJECTED (Knowledge never requires Governance).
   findings.push(...validate.config(bundle.config || {}, {
     checkAgents, file: 'agsc.config.json', schemas,
   }));
-  lanes.push('config');
-
   // AGSC-01-04: the Bundle root.
   if (bundle.index) {
     findings.push(...validate.index(bundle.index.frontmatter || {}, {
       file: 'content/index.md', schemas,
     }));
   }
+  return findings;
+}
+
+function lane(ctx, bundle) {
+  const findings = [];
+  const lanes = ['parse', 'schema'];
+
+  findings.push(...configAndRoot(bundle));
+  lanes.push('config');
   lanes.push('root');
 
   // AGSC-01-03 placement and AGSC-01-11 uniqueness.
@@ -140,7 +151,7 @@ function fix(ctx, bundle) {
   const written = [];
   for (const file of planned.files) {
     if (!file.changed) continue;
-    // AGSC-04-19 as amended at rc.5 assigns a code PER NORMALISATION:
+    // AGSC-04-19 assigns a code PER NORMALISATION:
     // AGSC-E108 for the encoding third, AGSC-E506 for every other one. A file that
     // needed both is therefore two findings, each under the code its rule names.
     for (const change of file.changes) {
@@ -161,13 +172,17 @@ function fix(ctx, bundle) {
 }
 
 function run(ctx) {
-  const bundle = helpers.bundleOf(ctx);
+  let bundle = helpers.bundleOf(ctx);
+  // AGSC-04-19: `--fix` runs FIRST, and the lanes then judge the repaired files, so a
+  // fault `--fix` repaired (a missing final LF, CRLF, non-NFC text) is reported once,
+  // as the warning of the normalisation, and never also as the error it no longer is.
+  const repaired = ctx.verbFlags && ctx.verbFlags.fix === true ? fix(ctx, bundle) : { findings: [], written: [] };
+  if (repaired.written.length > 0) bundle = helpers.bundleOf(ctx);
   const result = lane(ctx, bundle);
   for (const name of result.lanes) helpers.note(ctx, `lane: ${name}`);
-  const extra = ctx.verbFlags && ctx.verbFlags.fix === true ? fix(ctx, bundle).findings : [];
   return {
-    findings: validate.sortFindings([...(bundle.findings || []), ...result.findings, ...extra]),
+    findings: validate.sortFindings([...(bundle.findings || []), ...result.findings, ...repaired.findings]),
   };
 }
 
-module.exports = { name: 'lint', fix, lane, run };
+module.exports = { name: 'lint', configAndRoot, fix, lane, run };

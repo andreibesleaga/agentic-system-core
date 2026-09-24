@@ -42,9 +42,9 @@ const FORMAT = 'old-site';
  *
  * Both overlapping classes are held: `B+W` (the substance is public AND also in
  * the third-party work) and `B` (the substance is in that work and nowhere else),
- * which is the stronger case of the same rule. `B` was previously kept out of the
- * Bundle altogether; holding it back as a draft keeps the catalogue complete on
- * disk while the guard — a draft is emitted on no public surface — is unchanged.
+ * which is the stronger case of the same rule. `B` is held back as a draft, which
+ * keeps the catalogue complete on disk while the guard — a draft is emitted on no
+ * public surface — still holds.
  */
 const DRAFT_CLASSES = Object.freeze(['B', 'B+W']);
 
@@ -499,7 +499,6 @@ module.exports = {
   altFor,
   byCodePoint,
   clone,
-  indexBody,
   itemFile,
   jsonBytes,
   plan,

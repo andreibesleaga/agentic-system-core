@@ -36,7 +36,6 @@ const SPEC = require('../../src/application/cli/main.js').SPEC_VERSION;
 function samples() {
   return nodeFs.readdirSync(DIR).filter((f) => f.endsWith('.js')).sort().map((file) => ({
     file,
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     plugin: require(path.join(DIR, file)),
     source: nodeFs.readFileSync(path.join(DIR, file), 'utf8'),
   }));
@@ -144,15 +143,10 @@ test('(d) loading every sample changes no canonical byte of a 1.0 surface', () =
   // with all eight registered and called. A plugin of these eight kinds is given
   // its inputs and answers a value; none of them is handed the build, and this is
   // the test that says so in bytes rather than in prose.
-  // eslint-disable-next-line global-require
   const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
-  // eslint-disable-next-line global-require
   const { createClock } = require('../../src/adapters/node-clock.js');
-  // eslint-disable-next-line global-require
   const validate = require('../../src/knowledge/validate.js');
-  // eslint-disable-next-line global-require
   const { loadBundle } = require('../../src/application/bundle.js');
-  // eslint-disable-next-line global-require
   const site = require('../../src/distribution/site.js');
   const buildFixture = () => {
     const fs = createFileSystem(path.join(ROOT, 'tests', 'fixtures', 'minimal'));

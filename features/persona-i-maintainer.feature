@@ -8,10 +8,10 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
   @PRD-049
   Scenario: Local ci and CI ci run the identical pipeline
     When the maintainer runs "npx agentic-system-core ci" locally
-    Then the pipeline runs lint, then build twice with a byte diff, then writes "dist/gate.json"
-    And the exit code is 0 on success, 1 on a failed gate, 2 on a usage error
-    When the same commit runs inside "ci.yml" with "contents: read"
-    Then the exit code and artifacts match the local run exactly
+    Then the pipeline runs lint, then build twice with a byte comparison, then verify, and writes "dist/gate.json" (AGSC-04-02, AGSC-08-10)
+    And the exit code is 0 on success, 1 on a failed gate, 2 on a usage error (AGSC-09-08)
+    When the same commit runs "ci" in a fresh clone, as the shipped GitHub Action does with "contents: read"
+    Then the exit code and "dist/gate.json" match the local run exactly
 
   @PRD-005
   Scenario: Every build/ci run derives the whole verifiable ledger

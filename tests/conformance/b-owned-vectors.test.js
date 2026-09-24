@@ -26,7 +26,7 @@ const OWNED = [
   ['bundle', 'bundle-0004', bundleArea],
   ['bundle', 'bundle-0005', bundleArea],
   ['prov', 'prov-0001', provArea],
-  ['prov', 'prov-0002', provArea]
+  ['prov', 'prov-0002', provArea],
 ];
 
 function vectorFile(area, id) {

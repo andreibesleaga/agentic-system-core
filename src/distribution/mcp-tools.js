@@ -37,7 +37,7 @@ const slugs = require('../knowledge/slug.js');
 const adopt = require('../knowledge/adopt.js');
 const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
-const { pageBoardMove } = require('./page-tools.js');
+const { pageBoardMove, pageClaimants } = require('./page-tools.js');
 const boardLanes = require('../governance/board-lanes.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every export carries. */
@@ -46,6 +46,8 @@ const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 const NO_ANSWER = 'no answer in this memory';
 /** AGSC-02-10: the two schemes a client-supplied `sources[].resource` may use. */
 const SOURCE_RESOURCE = /^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u;
+/** AGSC-02-09: the actor grammar (the `actor` definition of item.schema.json). */
+const ACTOR = /^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u;
 /** AGSC-09-14b: `kind` to item `type`. */
 const KIND_TO_TYPE = Object.freeze({
   concept: 'concept', episode: 'episode', gate: 'gate', lesson: 'lesson', procedure: 'procedure', task: 'concept',
@@ -146,6 +148,14 @@ function tools(bundle, options) {
     ? bundle.byslug
     : new Map((bundle.items || []).map((i) => [i.slug, i]));
 
+  // AGSC-10-13 / AGSC-10-17: the derived `claimed_by` of every task, read from the
+  // board exports of the build this server made — the same routes the page reads,
+  // so a claim is checked against the same holder on both transports.
+  const artifacts = opts.artifacts instanceof Map ? opts.artifacts : new Map();
+  const published = Object.create(null);
+  for (const [route, text] of artifacts) if (route.startsWith('/boards/')) published[route] = String(text);
+  const claimed = new Map(Object.entries(pageClaimants(published)));
+
   const implementations = Object.create(null);
   const flatItems = () => (bundle.items || [])
     .map((i) => Object.assign({}, i.frontmatter, { slug: i.slug, type: i.type }));
@@ -211,14 +221,14 @@ function tools(bundle, options) {
     // two transports return the same prepared Proposal (AGSC-09-16).
     if (args.task_state !== undefined) {
       const moved = pageBoardMove(adopt.serialize(item.frontmatter), item.body, item.frontmatter || {},
-        item.type, item.slug, args);
+        item.type, item.slug, args, claimed.get(item.slug));
       if (moved.code !== undefined) return errorEnvelope('propose', moved.code, moved.message);
       // AGSC-08-28 / AGSC-10-17: a caller that declares one of this node's agent lanes
       // is held to the lane's gates on the prepared Proposal. Only this transport
       // knows the lanes (they are configuration, never published), so the page
       // answers the same payload and the gates run again at review.
       const refused = boardLanes.moveRefusal(config, flatItems(), {
-        agent: args.agent, path: moved.path, slug: item.slug, task_state: moved.task_state,
+        agent: args.agent, claimed, path: moved.path, slug: item.slug, task_state: moved.task_state,
       });
       if (refused !== null) return errorEnvelope('propose', refused.code, refused.message);
       return envelope('propose', 'proposal', Object.freeze({
@@ -237,13 +247,15 @@ function tools(bundle, options) {
     // part of the payload AGSC-09-16 compares.
     return envelope('propose', 'proposal', Object.freeze({
       iri: itemIri(base, item),
-      markdown: `${adopt.serialize(item.frontmatter)}\n${item.body}`,
+      // One blank line between the block and the body — the canonical file's own
+      // bytes, not a second blank line before a body that already opens with one.
+      markdown: `${adopt.serialize(item.frontmatter)}${String(item.body).startsWith('\n') ? '' : '\n'}${item.body}`,
       slug: item.slug,
     }));
   };
 
   /**
-   * AGSC-09-14a as amended at rc.5, vector `cli-0007`. The AGSC-08-18
+   * AGSC-09-14a, vector `cli-0007`. The AGSC-08-18
    * envelope with EXACTLY ONE added top-level member, `citations[]`: six members and
    * no more. `body` is the answer TEXT, never an object — before rc.5 this engine
    * returned `{answer, citations, terms}` inside `body`, which was the second of the
@@ -275,13 +287,22 @@ function tools(bundle, options) {
   implementations.remember = (args) => {
     const kind = KIND_TO_TYPE[args.kind] === undefined ? 'concept' : args.kind;
     const type = KIND_TO_TYPE[kind];
-    // AGSC-09-14b as amended at rc.6: a Gate's Level is a governance decision a
+    // AGSC-09-14b: a Gate's Level is a governance decision a
     // tool call may not invent, and an episode's schema branch requires `actor`.
     if (args.kind === 'gate') {
       return errorEnvelope('remember', 'AGSC-E203', 'remember does not accept kind "gate": a Gate\'s Level is a governance decision (AGSC-09-14b)');
     }
     if (type === 'episode' && typeof args.actor !== 'string') {
       return errorEnvelope('remember', 'AGSC-E003', 'an episode needs the declared actor (AGSC-09-14b)');
+    }
+    // AGSC-09-14b: `at` supplies an episode's schema-required `started`, and a call
+    // that declares none is AGSC-E003; an `actor` outside the grammar of AGSC-02-09
+    // would make the synthesized item non-conforming, so it is refused here.
+    if (type === 'episode' && typeof args.at !== 'string') {
+      return errorEnvelope('remember', 'AGSC-E003', 'an episode needs the instant it started, `at` (AGSC-09-14b)');
+    }
+    if (args.actor !== undefined && !ACTOR.test(String(args.actor))) {
+      return errorEnvelope('remember', 'AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
     }
     const title = typeof args.title === 'string' ? args.title : '';
     const findings = [];
@@ -307,6 +328,11 @@ function tools(bundle, options) {
     // schema branch carries the key — without it the item was not conforming.
     if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
     if (typeof args.actor === 'string') frontmatter.actor = args.actor;
+    // AGSC-09-14b / AGSC-02-14: `usage` is carried onto the episode verbatim, so a
+    // responder or a lane records its spend and AGSC-08-25's rollup counts it.
+    if (type === 'episode' && args.usage !== null && typeof args.usage === 'object' && !Array.isArray(args.usage)) {
+      frontmatter.usage = args.usage;
+    }
     frontmatter.prov = {
       agent: args.agent,
       model: args.model,
@@ -433,11 +459,17 @@ const ARGUMENTS = Object.freeze({
   ask: Object.freeze(['question']),
   compose: Object.freeze(['selection']),
   links: Object.freeze(['iri', 'slug']),
-  propose: Object.freeze(['at', 'slug', 'task_state']),
+  // `agent`, `model`, `operator` and `origin` are the caller's declared identity
+  // (AGSC-09-14b, AGSC-08-28): the server honours them, so the manifest names them.
+  propose: Object.freeze(['agent', 'at', 'slug', 'task_state']),
   read: Object.freeze(['slug']),
-  remember: Object.freeze(['about', 'actor', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title']),
+  remember: Object.freeze(['about', 'actor', 'agent', 'at', 'body', 'cluster', 'kind', 'model', 'operator', 'origin',
+    'outcome', 'severity', 'sources', 'title', 'usage']),
   search: Object.freeze(['query']),
 });
+
+/** The JSON type of every argument that is not a string. */
+const ARGUMENT_TYPES = Object.freeze({ selection: 'array', sources: 'array', usage: 'object' });
 
 const REQUIRED_ARGUMENTS = Object.freeze({
   ask: Object.freeze(['question']),
@@ -465,7 +497,7 @@ function manifest() {
       annotations: WEBMCP_ANNOTATIONS[name],
       description: DESCRIPTIONS[name],
       inputSchema: Object.freeze({
-        properties: Object.freeze(Object.fromEntries(ARGUMENTS[name].map((a) => [a, { type: a === 'selection' || a === 'sources' ? 'array' : 'string' }]))),
+        properties: Object.freeze(Object.fromEntries(ARGUMENTS[name].map((a) => [a, { type: ARGUMENT_TYPES[a] || 'string' }]))),
         required: REQUIRED_ARGUMENTS[name],
         type: 'object',
       }),
@@ -477,7 +509,6 @@ function manifest() {
 module.exports = {
   ARGUMENTS,
   CONTENT_USE_TERMS,
-  DESCRIPTIONS,
   NO_ANSWER,
   REQUIRED_ARGUMENTS,
   envelope,

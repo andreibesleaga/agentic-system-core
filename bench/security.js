@@ -112,7 +112,7 @@ function leaksUnder(root, entries) {
   for (const m of entries || []) {
     const candidates = typeof m.path === 'string' ? [path.join(root, m.path)].filter((f) => fs.existsSync(f)) : filesUnder(root);
     const hit = candidates.find((f) => typeof m.text !== 'string' || fs.readFileSync(f, 'latin1').includes(Buffer.from(m.text, 'utf8').toString('latin1')));
-    if (hit !== undefined) leaked.push(path.relative(root, hit));
+    if (hit !== undefined) leaked.push(path.relative(root, hit).split(path.sep).join('/'));
   }
   return leaked;
 }

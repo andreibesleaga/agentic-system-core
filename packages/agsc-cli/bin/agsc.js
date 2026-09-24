@@ -15,7 +15,6 @@
 
 let agsc;
 try {
-  // eslint-disable-next-line import/no-extraneous-dependencies
   agsc = require('agentic-system-core/bin/agsc.js');
 } catch (e) {
   process.stderr.write('agsc: the engine package `agentic-system-core` is not installed beside'

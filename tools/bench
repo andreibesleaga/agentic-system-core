@@ -177,16 +177,9 @@ function run(argv, io) {
   let nodeDir = null, setDir = DEFAULT_SET, k = 10, surfaces = SURFACES, target = null, json = false, dry = false, origin = null;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
-    else if (arg === '--json') json = true;
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; } else if (arg === '--json') json = true;
     else if (arg === '--dry-run') dry = true;
-    else if (arg === '--node') { i += 1; nodeDir = argv[i]; }
-    else if (arg === '--set') { i += 1; setDir = argv[i]; }
-    else if (arg === '--out') { i += 1; target = argv[i]; }
-    else if (arg === '--k') { i += 1; k = Number(argv[i]); }
-    else if (arg === '--origin-node') { i += 1; origin = argv[i]; }
-    else if (arg === '--surface') { i += 1; surfaces = String(argv[i]).split(',').map((s) => s.trim()); }
-    else return usage(`unknown argument ${arg} (AGSC-E002)`);
+    else if (arg === '--node') { i += 1; nodeDir = argv[i]; } else if (arg === '--set') { i += 1; setDir = argv[i]; } else if (arg === '--out') { i += 1; target = argv[i]; } else if (arg === '--k') { i += 1; k = Number(argv[i]); } else if (arg === '--origin-node') { i += 1; origin = argv[i]; } else if (arg === '--surface') { i += 1; surfaces = String(argv[i]).split(',').map((s) => s.trim()); } else return usage(`unknown argument ${arg} (AGSC-E002)`);
   }
   if (!Number.isInteger(k) || k < 1) return usage('--k must be a positive integer');
   for (const s of surfaces) if (!SURFACES.includes(s)) return usage(`unknown surface ${s}; known: ${SURFACES.join(' ')}`);

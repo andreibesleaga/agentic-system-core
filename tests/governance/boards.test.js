@@ -35,10 +35,24 @@ test('an unknown state in a foreign board reads as UNSPECIFIED (AGSC-11-02)', ()
   assert.strictEqual(boards.stateOf({ task_state: 'TASK_STATE_INVENTED' }), 'TASK_STATE_INVENTED');
 });
 
-test('claimed_by is derived from the git log, absent when none is supplied (AGSC-10-13)', () => {
-  const gitLog = [{ changes: [{ slug: 't', key: 'task_state', agent: 'planner' }] }];
-  const withLog = boards.boards([TASK('t', 'TASK_STATE_WORKING')], { base: BASE, gitLog });
-  assert.strictEqual(withLog.boards[0].board.tasks[0].claimed_by, 'planner');
+// AGSC-10-13 as restated at rc.6: `claimed_by` is the `author` of the last
+// first-parent commit whose `files[]` names the task's file — the shape the git-log
+// reader produces (`files[]` and `author`), never a per-key change list it cannot.
+test('claimed_by is the author of the last commit naming the task file, absent without history (AGSC-10-13)', () => {
+  const gitLog = [
+    { author: 'human:someone', files: ['content/concepts/t.md', 'content/concepts/u.md'] },
+    { author: 'process:planner', files: ['content/concepts/t.md'] },
+    { files: ['content/concepts/u.md'] },
+    { author: 'human:other', files: ['README.md'] },
+  ];
+  const items = [TASK('t', 'TASK_STATE_WORKING'), TASK('u', 'TASK_STATE_SUBMITTED')];
+  const withLog = boards.boards(items, { base: BASE, gitLog });
+  const bySlug = Object.fromEntries(withLog.boards[0].board.tasks.map((task) => [task.slug, task]));
+  assert.strictEqual(bySlug.t.claimed_by, 'process:planner');
+  assert.ok(!('claimed_by' in bySlug.u), 'the last commit naming u has no author');
+  // A Bundle kept in a subdirectory of its repository: git names the file from the root.
+  const nested = boards.claimants([{ author: 'human:a', files: ['site/content/concepts/t.md'] }], items);
+  assert.strictEqual(nested.get('t'), 'human:a');
   const without = boards.boards([TASK('t', 'TASK_STATE_WORKING')], { base: BASE });
   assert.ok(!('claimed_by' in without.boards[0].board.tasks[0]));
 });

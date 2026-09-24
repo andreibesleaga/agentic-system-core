@@ -132,7 +132,7 @@ function absolute(base, route) {
  * `surfaces[]` is the configuration for the three declaration-only surfaces.
  *
  * `webmcpVersion` is the `YYYY-MM-DD` Draft Community Group Report date this node
- * targets. It is an INPUT, not a constant: AGSC-11-16 as amended at rc.5
+ * targets. It is an INPUT, not a constant: AGSC-11-16
  * conforms any such date, and before rc.5 the engine hard-coded `2026-09-15` here
  * while the live draft already read a later date — a node targeting the current
  * report failed the (then required) vector `bnd-0012`. Vector `bnd-0031` asserts
@@ -147,7 +147,7 @@ function declare(options) {
   const emitted = new Set(opts.emitted || []);
   const webmcpVersion = WEBMCP_VERSION_RE.test(String(opts.webmcpVersion || ''))
     ? String(opts.webmcpVersion) : WEBMCP_SURFACE_VERSION;
-  // AGSC-11-16 as amended at rc.6: `mcp` declares the revision its transport
+  // AGSC-11-16: `mcp` declares the revision its transport
   // speaks, an input echoed like the WebMCP date, defaulting to the one the
   // pinned SDK speaks.
   const mcpVersion = WEBMCP_VERSION_RE.test(String(opts.mcpVersion || ''))
@@ -287,7 +287,7 @@ function mcpCapabilities(options) {
 
 /**
  * checkMcpExtensions(extensions, { base }) -> Finding[]
- * AGSC-11-18 as amended at rc.5: "a node MUST emit that member and MUST emit no
+ * AGSC-11-18: "a node MUST emit that member and MUST emit no
  * other". A missing, wrong or additional member is `AGSC-E210` from
  * `validate-wellknown` — the same code AGSC-11-16/11-19 already give a declaration a
  * node cannot back. Vector `bnd-0035`.
@@ -323,11 +323,11 @@ function checkMcpExtensions(extensions, options) {
 }
 
 module.exports = {
+  finding,
   ACCESS_CLASSES,
   BUILT_IN,
   DECLARATION_ONLY,
   MCP_EXTENSION_ID,
-  MCP_EXTENSION_SETTINGS_MEMBERS,
   MCP_PROTOCOL_MIN_VERSION,
   MCP_PROTOCOL_VERSION,
   MCP_SURFACE_VERSION,
@@ -341,7 +341,6 @@ module.exports = {
   WEBMCP_ANNOTATIONS,
   WEBMCP_SURFACE_VERSION,
   WEBMCP_VERSION_RE,
-  WELLKNOWN_ROUTE,
   accepted,
   acceptedHrefs,
   acceptedSurfaces,

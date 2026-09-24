@@ -221,8 +221,16 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   // the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
   assert.strictEqual(remembered.body.frontmatter.severity, 'info');
   // and none on an episode, whose schema branch has no such key (AGSC-09-14b, 2026-09-24).
-  const rememberedEpisode = page.call('remember', { actor: 'agent:x', at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'An Episode Here' });
+  const rememberedEpisode = page.call('remember', { actor: 'process:x', at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'An Episode Here' });
   assert.strictEqual(rememberedEpisode.body.frontmatter.severity, undefined);
+  // AGSC-02-09: an actor outside the grammar would make the item non-conforming.
+  assert.strictEqual(page.call('remember', { actor: 'agent:x', at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'An Episode Here' }).body.code, 'AGSC-E204');
+  // AGSC-09-14b: an episode with no `at` is AGSC-E003; `usage` reaches the episode verbatim.
+  assert.strictEqual(page.call('remember', { actor: 'process:x', body: 'x', kind: 'episode', title: 'No Instant' }).body.code, 'AGSC-E003');
+  const usage = { cost_usd: 0.25, estimate: false, model: 'm', tokens_in: 10, tokens_out: 5 };
+  const spent = page.call('remember', { actor: 'process:x', at: '2026-09-02T10:00:00Z', body: 'x', kind: 'episode', title: 'A Spend', usage });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(spent.body.frontmatter.usage)), usage);
+  assert.ok(mcpTools.ARGUMENTS.remember.includes('usage'), 'the MCP manifest does not publish the usage argument');
   // AGSC-09-14b as amended at rc.6, on this transport too: no Gate, and an episode
   // names its actor — the argument both manifests publish.
   assert.strictEqual(page.call('remember', { body: 'x', kind: 'gate', title: 'A Gate Here' }).body.code, 'AGSC-E203');

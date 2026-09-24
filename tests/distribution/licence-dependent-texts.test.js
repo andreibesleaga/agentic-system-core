@@ -74,7 +74,10 @@ const footerOf = (page) => page.slice(page.indexOf('<footer'), page.indexOf('</f
 test('Content Use Terms Bundle: all rights reserved, the reservation in both machine dialects', () => {
   const { text } = build({ license: TERMS });
   const footer = footerOf(text('/concepts/handoff/index.html'));
-  assert.match(footer, /&#169; 2026 Ada Lovelace\. Prose: <a href="\/legal\/" rel="license" data-spdx="LicenseRef-AgenticSystemCore-Content-Use-1\.0">Content Use Terms 1\.0<\/a>, all rights reserved, citing and linking allowed\./u);
+  // The terms close the footer beside the legal link (owner, 2026-09-24); the
+  // identifier stays machine-readable on that link (AGSC-06-18).
+  assert.match(footer, /&#169; 2026 Ada Lovelace\. All rights reserved, citing and linking allowed\./u);
+  assert.match(footer, /<a href="\/legal\/">Legal &amp; privacy<\/a> · <a href="\/legal\/#terms" rel="license" data-spdx="LicenseRef-AgenticSystemCore-Content-Use-1\.0">Content Use Terms<\/a><\/p>/u);
   assert.deepStrictEqual(JSON.parse(text('/.well-known/tdmrep.json')), [{ location: 'https://minimal.example/', 'tdm-reservation': 1 }]);
   assert.match(text('/robots.txt'), /^User-agent: GPTBot\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nDisallow: \/$/mu);
 });
@@ -121,7 +124,7 @@ test('the disclaimer is the publisher\'s own DISCLAIMER.md, never a constant', (
   });
   const footer = footerOf(own.text('/concepts/handoff/index.html'));
   // One paragraph (owner, 2026-09-23): the legal link continues the text, no second <p>.
-  assert.match(footer, /Independent work, with no warranty\. <a href="\/legal\/">Legal &amp; privacy<\/a><\/p>/u);
+  assert.match(footer, /Independent work, with no warranty\. <a href="\/legal\/">Legal &amp; privacy<\/a> · <a href="\/legal\/#terms" rel="license"[^>]*>Content Use Terms<\/a><\/p>/u);
   assert.strictEqual((footer.match(/<p[ >]/gu) || []).length, 1);
   // One legal link in the footer (owner, 2026-09-23): no "Full terms" / "See /legal/" repeats.
   assert.doesNotMatch(footer, /Full terms|See <a href="\/legal\/">/u);
@@ -142,9 +145,9 @@ test('termsLine: the pieces, one by one', () => {
   const plain = html.termsLine('CC0-1.0', { author: 'A', legal: false, year: '2026' });
   assert.match(plain, /&#169; 2026 A\. Prose: <span>CC0-1\.0<\/span>\./u);
   assert.doesNotMatch(plain, /class="links"/u);
-  assert.match(html.termsLine(null, { author: 'A', legal: true, year: '2026' }), /all rights reserved/u);
+  assert.match(html.termsLine(null, { author: 'A', legal: true, year: '2026' }), /All rights reserved/u);
   assert.match(html.termsLine(TERMS, { aiAssisted: true, disclaimer: 'D.', legal: false }),
-    /AI-assisted, human-reviewed\. D\.<\/p>/u);
+    /AI-assisted, human-reviewed\. D\. <span data-spdx="LicenseRef-AgenticSystemCore-Content-Use-1\.0">Content Use Terms<\/span><\/p>/u);
 });
 
 test('readDisclaimer: absent, unreadable, heading-only and heading-less files', () => {
@@ -158,4 +161,15 @@ test('readDisclaimer: absent, unreadable, heading-only and heading-less files', 
   assert.strictEqual(site.readDisclaimer(port({ 'DISCLAIMER.md': '# Only a heading\n' })), null);
   assert.deepStrictEqual(site.readDisclaimer(port({ 'DISCLAIMER.md': 'No heading here.\r\n' })),
     { body: 'No heading here.\n', first: 'No heading here.', heading: 'Disclaimer' });
+});
+
+test('declared peers close the footer as links a person can follow (AGSC-10-12)', () => {
+  const line = html.termsLine(TERMS, {
+    author: 'A', legal: true, year: '2026',
+    peers: [{ href: 'https://peer.example/', label: 'peer.example' }],
+  });
+  assert.match(line, /Content Use Terms<\/a> · <a href="https:\/\/peer\.example\/">peer\.example<\/a><\/p>$/u);
+  assert.doesNotMatch(html.termsLine(TERMS, { legal: true }), /peer\.example/u);
+  const { text } = build({ license: TERMS });
+  assert.doesNotMatch(footerOf(text('/concepts/handoff/index.html')), /https:\/\//u, 'no peers declared, no peer link');
 });

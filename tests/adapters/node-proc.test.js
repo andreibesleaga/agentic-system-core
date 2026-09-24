@@ -43,8 +43,10 @@ test('a command that cannot be found is a code, not an exception', () => {
 // `--experimental-test-coverage`), so the assertions name what MUST and what
 // MUST NOT be there rather than comparing the whole set.
 test('AGSC-08-02: an unset name is not passed to the child, and nothing else is', () => {
+  // PATH is the directory of the node running this test: a CI runner's node is not
+  // in /usr/bin, and the runner takes a bare program name only, never a path.
   const runner = createProcessRunner({
-    env: { PATH: '/usr/bin', HOME: '/home/a', SECRET: 'sh', AGSC_MODEL_API_KEY: 'k' },
+    env: { PATH: require('node:path').dirname(process.execPath), HOME: '/home/a', SECRET: 'sh', AGSC_MODEL_API_KEY: 'k' },
   });
   const seen = runner.run('node', ['-e', 'process.stdout.write(Object.keys(process.env).sort().join(","))']);
   assert.strictEqual(seen.code, 0, seen.stderr);

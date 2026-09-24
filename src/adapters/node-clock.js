@@ -107,4 +107,4 @@ function readLastCommitSeconds(proc) {
   return Number(text);
 }
 
-module.exports = { createClock, toInstant, EpochError, EPOCH_RE, isMalformedEpoch, readLastCommitSeconds };
+module.exports = { createClock, toInstant, EpochError, isMalformedEpoch, readLastCommitSeconds };

@@ -175,7 +175,7 @@ test('a Contact at another origin is not read as a dangling internal link', () =
 
 test('a field value can never forge a line (AGSC-02-24)', () => {
   const { files } = build(workspace({
-    '.well-known/security.txt': 'Contact: https://example.org/c Expires: 1970-01-01T00:00:00Z\n',
+    '.well-known/security.txt': 'Contact: https://example.org/c\u2028Expires: 1970-01-01T00:00:00Z\n',
   }));
   const text = files.get('/.well-known/security.txt');
   assert.ok(text !== undefined);

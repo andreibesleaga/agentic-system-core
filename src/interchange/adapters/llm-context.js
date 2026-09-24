@@ -34,8 +34,9 @@
 
 const { encode } = require('@toon-format/toon');
 const chunks = require('../../knowledge/chunks.js');
-const { commentSafe, singleLine } = require('../../knowledge/unicode.js');
+const { singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
+const { fenceProse } = require('../../knowledge/markdown.js');
 
 /** The seven uniform members of the index, in AGSC-06-29's own member order. */
 const INDEX_COLUMNS = Object.freeze(['id', 'item', 'kind', 'section', 'ordinal', 'title', 'digest']);
@@ -96,22 +97,6 @@ function chunksIndexToon(records) {
 }
 
 /**
- * AGSC-01-29 / AGSC-06-15: a fence WIDENED past the longest backtick run inside the
- * body, so prose that carries a fence of its own cannot close ours and escape from
- * data into instruction (CommonMark 0.31.2 §4.5: a fenced block ends only at a closing
- * fence at least as long as the opener). The same guard `composition/harness.js`
- * applies to a Harness digest, stated here because the Interchange context may not
- * require the Composition context.
- */
-function fenceProse(text) {
-  const body = String(text == null ? '' : text).replace(/\n*$/u, '');
-  let longest = 0;
-  for (const run of body.match(/`+/gu) || []) if (run.length > longest) longest = run.length;
-  const fence = '`'.repeat(longest < 3 ? 3 : longest + 1);
-  return `${fence}text agsc-content\n${body}\n${fence}`;
-}
-
-/**
  * `llms-ctx.txt`. The header is AGSC-06-15's, followed by the one sentence that
  * keeps this file honest, then one `## ` section per chunk carrying the four
  * identifying members and the body as fenced data (AGSC-01-29).
@@ -122,7 +107,7 @@ function fenceProse(text) {
  * @returns {string}
  */
 function llmsCtxTxt(records, options) {
-  // AGSC-02-24 as amended at rc.5: every interpolated value is
+  // AGSC-02-24: every interpolated value is
   // neutralised. Before rc.5 a multi-line chunk title injected a fake heading and a
   // fake `>` instruction block OUTSIDE the fence, and a `-->` in `site.title` closed
   // the provenance comment early — the same family as the /llms.txt hole, in the
@@ -184,6 +169,8 @@ function run(bundle, options) {
     ['chunks-index.toon', chunksIndexToon(produced.records)],
     ['llms-ctx.txt', llmsCtxTxt(produced.records, {
       base,
+      // AGSC-04-25: the content version the verb derived, the one /llms.txt states.
+      bundleVersion: options.bundleVersion,
       generatedAt: options.instant,
       license,
       specVersion: options.specVersion,

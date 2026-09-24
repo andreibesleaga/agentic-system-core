@@ -49,10 +49,12 @@ test('archives are refused and the size cap is enforced (AGSC-E903, AGSC-E904)',
 test('discovery order is a code-point sort, never the filesystem\'s (AGSC-01-15)', () => sandbox((dir) => {
   const port = createFileSystem(dir);
   port.mkdirp('content/concepts');
-  for (const name of ['b.md', 'A.md', 'a.md', '0.md']) port.writeFile(`content/concepts/${name}`, 'x');
-  assert.deepStrictEqual(port.readdir('content/concepts'), ['0.md', 'A.md', 'a.md', 'b.md']);
+  // No two names differ only by case: macOS and Windows file systems fold case, and
+  // `Z` before `a` is what a code-point sort gives and a natural sort does not.
+  for (const name of ['b.md', 'Z.md', 'a.md', '0.md']) port.writeFile(`content/concepts/${name}`, 'x');
+  assert.deepStrictEqual(port.readdir('content/concepts'), ['0.md', 'Z.md', 'a.md', 'b.md']);
   assert.deepStrictEqual(port.walk('content'),
-    ['content/concepts/0.md', 'content/concepts/A.md', 'content/concepts/a.md', 'content/concepts/b.md']);
+    ['content/concepts/0.md', 'content/concepts/Z.md', 'content/concepts/a.md', 'content/concepts/b.md']);
   assert.deepStrictEqual(port.walk('missing'), []);
 }));
 

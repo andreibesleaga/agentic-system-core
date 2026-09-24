@@ -32,10 +32,10 @@ engine is wrong" to be the usual answer.
 
 ## Proposing a change to the engine
 
-Normal pull request. Before you open it:
+Normal pull request. New to the code? [docs/CODE-ORIENTATION.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CODE-ORIENTATION.md) says where to start for each kind of change *(pointer added 2026-09-24)*. Before you open it:
 
 ```bash
-npm install                      # dev dependencies only
+npm ci                           # the exact pinned libraries of the lockfile
 npm test                         # the whole suite, node:test, offline
 npm run test:coverage            # line coverage of src/ must stay at or above 99.9 %
 npm run audit                    # npm audit must report 0 vulnerabilities

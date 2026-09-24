@@ -10,26 +10,28 @@ Feature: Agent uses a node as external auditable memory
 
   @PRD-026
   Scenario: Agent exports the Bundle in three lossless forms
-    When the agent runs "npx agentic-system-core export --markdown ./out"
-    Then "./out" contains the lint-normalized Bundle with no key lost
-    When the agent runs "npx agentic-system-core export --okf ./out"
-    Then "./out/index.md" carries "okf_version" and a "log.md" is added
-    When the agent runs "npx agentic-system-core export --jsonld ./out"
-    Then the output equals "www/graph.jsonld" byte-for-byte
+    Given the Bundle root carries the Content Use Terms as "LICENSE-CONTENT"
+    When the agent runs "npx agentic-system-core export --markdown"
+    Then "dist/export/markdown/" contains the lint-normalized Bundle with no key lost (AGSC-01-26)
+    When the agent runs "npx agentic-system-core export --okf"
+    Then "dist/export/okf/content/index.md" carries "okf_version" and a "content/log.md" is added
+    When the agent runs "npx agentic-system-core export --jsonld"
+    Then "dist/export/graph.jsonld" equals "www/graph.jsonld" byte-for-byte
 
   @PRD-026
   Scenario: Exported Markdown Bundle opens unchanged as an Obsidian vault
-    Given "./out" was produced by "export --markdown"
+    Given "dist/export/markdown/" was produced by "export --markdown"
     When the folder is opened as an Obsidian vault
     Then no file requires modification to render correctly
 
   @PRD-026
   Scenario: Agent imports a foreign OKF bundle idempotently
-    When the agent runs "npx agentic-system-core import ./some-okf-bundle"
-    Then files are copied under the matching type folder, for example "Attested Computation" maps to "procedure"
-    And an unknown "type" value is imported as "concept" with a warning
+    When the agent runs "npx agentic-system-core import ./some-okf-bundle --from okf"
+    Then each file is written under the folder of its type, a "procedure" under "content/procedures/"
+    And an unknown "type" value is imported as "concept" with the warning "AGSC-E506", the original kept as "x-okf-type" (AGSC-01-22)
     And colliding slugs are deduplicated with a "-2" suffix
-    And "npx agentic-system-core lint" runs clean afterward
+    And a second run writes nothing and reports every item unchanged
+    And "npx agentic-system-core lint" finds no error in the imported items except a concept "kind" the foreign bundle never declared
 
   @PRD-027
   Scenario: memory:// URIs are documented as an alias only, never resolved

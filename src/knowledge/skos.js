@@ -118,7 +118,6 @@ function membership(items, resolve) {
 
 module.exports = {
   CLASSES,
-  CONCEPT_TYPES,
   SEMANTIC_RELATIONS,
   classOf,
   isConceptType,

@@ -53,11 +53,12 @@ const exportBundle = require('../../../interchange/export-bundle.js');
 const steer = require('../../../interchange/steer.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
-const { instantFromEpoch } = require('../../../governance/ledger.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const chunks = require('../../../knowledge/chunks.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
+
+const { instantOf } = helpers;
 const archiveWriter = require('./_archive.js');
 
 /** AGSC-01-08: the generated directory this verb writes into, never `build.out`. */
@@ -78,18 +79,10 @@ function adapterOf(name) {
     return { module: null, reason: `"${id}" is not an adapter name (AGSC-01-10 grammar, AGSC-01-26a)` };
   }
   try {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     return { module: require(`../../../interchange/adapters/${id}.js`), reason: null };
   } catch (e) {
     return { module: null, reason: `no adapter named "${id}" is installed (AGSC-01-26a)` };
   }
-}
-
-/** The build instant, from the Clock port and never from a wall clock (AGSC-04-11). */
-function instantOf(ctx) {
-  const clock = ctx.ports && ctx.ports.clock;
-  if (clock && typeof clock.iso === 'function') return clock.iso();
-  return instantFromEpoch(clock ? clock.now() : 0);
 }
 
 /** Write one file under `dist/export/` and note its SHA-256 (AGSC-09-10). */
@@ -230,10 +223,13 @@ function adapterExport(ctx, bundle, name) {
     instant,
     nowState: nowStateOf(bundle, instant),
     sha256: helpers.sha256,
-    // eslint-disable-next-line global-require
     ...(found.module.NEEDS_SKILL_PACKS === true ? { skillPacks: require('./skills.js').packsOf(ctx, bundle) } : {}),
     specVersion: ctx.specVersion,
   });
+  // AGSC-09-08: a run with an error finding writes nothing.
+  if ((produced.findings || []).some((f) => f.severity === 'error')) {
+    return { files: [], findings: [...produced.findings], root: null, written: [] };
+  }
   const written = [];
   for (const file of produced.files) written.push(writeExport(ctx, `${name}/${file.path}`, file.text));
   helpers.note(ctx, `adapter: ${name} (${written.length} files, outside build.out — declare them with a`
@@ -299,6 +295,12 @@ function bundleExport(ctx, bundle, form) {
     okf: form === 'okf',
     sources: sourcesOf(ctx, bundle),
   });
+  // AGSC-09-08: a run with an error finding writes nothing — a partial export would
+  // read as a complete one.
+  if ([...derived.findings, ...planned.findings].some((f) => f.severity === 'error')) {
+    helpers.note(ctx, `export --${form}: nothing written — the export has an error finding`);
+    return { files: [], findings: [...derived.findings, ...planned.findings], root: null, written: [] };
+  }
   const written = planned.files.map((file) => writeExport(ctx, `${form}/${file.path}`, file.text));
   helpers.note(ctx, `export --${form}: ${written.length} files under ${EXPORT_DIR}/${form}/`
     + ` (AGSC-01-26; the export root carries ${exportBundle.LICENSE_FILE})`);
@@ -453,21 +455,13 @@ function run(ctx) {
 }
 
 module.exports = {
-  EXPORT_DIR,
-  adapterExport,
   adapterOf,
-  bundleExport,
-  graphExports,
   graphFiles,
   instantOf,
   licenseContentOf,
   name: 'export',
-  nowStateOf,
   readOptional,
   run,
   sourcesOf,
-  steerExport,
   targetsOf,
-  writeExport,
-  zipRoots,
 };

@@ -27,7 +27,7 @@ function nfc(s) {
 /** Number of Unicode code points in `s` (AGSC-02-24). */
 function codePointLength(s) {
   let n = 0;
-  for (const _ of s) n += 1; // eslint-disable-line no-unused-vars
+  for (const _ of s) n += 1;
   return n;
 }
 
@@ -41,7 +41,7 @@ const COMBINING = /\p{M}/u;
 function checkCombining(s, max = 256) {
   let run = 0;
   let starter = 0;
-  for (let i = 0; i < s.length; ) {
+  for (let i = 0; i < s.length;) {
     const cp = s.codePointAt(i);
     const ch = String.fromCodePoint(cp);
     const width = cp > 0xffff ? 2 : 1;
@@ -63,7 +63,7 @@ function isWellFormed(s) {
 }
 
 // ---------------------------------------------------------------------------
-// AGSC-02-24 as amended at rc.5: AUTHORED SINGLE-LINE STRINGS.
+// AGSC-02-24: AUTHORED SINGLE-LINE STRINGS.
 //
 // A `title`, a `description`, a `tags[]` value, a `diagram.alt`, an
 // `attachments[].alt`, a `sources[].title` — every authored string a writer puts
@@ -137,7 +137,7 @@ const COMMENT_END = /--!?>/gu;
  * the build instant — leaves the comment and becomes visible document text a reader
  * or a model treats as content. Recorded as specification item 58 /.
  *
- * AGSC-06-13a, as amended at rc.6, names the replacement: every
+ * AGSC-06-13a,, names the replacement: every
  * occurrence of the closing sequence becomes `--&gt;` — the `>` written as the HTML
  * character reference, so the comment cannot end and the value is still readable as
  * what was authored. It is the IDENTITY on every value that does not carry the

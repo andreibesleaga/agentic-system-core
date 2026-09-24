@@ -261,3 +261,27 @@ test('AGSC-01-26a: --selection is still required for the old-site adapter', () =
   assert.strictEqual(result.status, 'fail');
   assert.ok(result.findings.some((f) => f.code === 'AGSC-E003' && /--selection/u.test(f.message)));
 });
+
+// AGSC-01-22 (rc.6): a foreign record whose licence the importer cannot establish as
+// permitting publication is written `status: draft` — never published (AGSC-06-30) —
+// and reported (AGSC-E506). The licence is established by the record's own `license`,
+// the source root's index.md `license`, or a licence file at the source root. And a
+// document mapped to `concept` gets `kind: explainer`, the adoption default of
+// AGSC-02-90, so the imported item passes the node's own lint (AGSC-02-12).
+test('AGSC-01-22: an unestablished licence imports as draft; a mapped concept gets kind explainer', () => {
+  const doc = { path: 'playbooks/dataplex.md', text: '---\ntype: playbook\ntitle: Dataplex\n---\n\n# Dataplex\n' };
+  const none = okf.plan([doc], { itemSchema: ITEM_SCHEMA, operator: 'human:x' });
+  assert.match(none.writes[0].text, /^status: draft$/mu, none.writes[0].text);
+  assert.match(none.writes[0].text, /^kind: explainer$/mu);
+  assert.ok(none.findings.some((f) => f.code === 'AGSC-E506' && /licen[cs]e/u.test(f.message) && /draft/u.test(f.message)));
+
+  const byIndex = okf.plan([doc, { path: 'index.md', text: '---\nokf_version: "0.2"\nlicense: CC-BY-4.0\n---\n' }],
+    { itemSchema: ITEM_SCHEMA, operator: 'human:x' });
+  assert.doesNotMatch(byIndex.writes[0].text, /^status: draft$/mu);
+  const byFile = okf.plan([doc], { itemSchema: ITEM_SCHEMA, licenceFiles: { LICENSE: 'MIT License\n\nPermission is hereby granted, free of charge' }, operator: 'human:x' });
+  assert.doesNotMatch(byFile.writes[0].text, /^status: draft$/mu);
+  const own = okf.plan([{ path: 'a.md', text: '---\ntype: concept\nkind: pattern\ntitle: A thing\nlicense: Proprietary\n---\n\nA.\n' }],
+    { itemSchema: ITEM_SCHEMA, operator: 'human:x' });
+  assert.match(own.writes[0].text, /^status: draft$/mu, 'a licence that is not open is not established');
+  assert.match(own.writes[0].text, /^kind: pattern$/mu, 'an authored kind is kept');
+});

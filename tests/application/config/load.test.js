@@ -22,7 +22,7 @@ test('cli-0006 scenario: flags > env > .env > project, names reported, values ne
     projectConfig: { budget: { usd_month: 10 }, build: { out: 'www' } },
     dotenvText: '# local overrides\nAGSC_BUDGET_USD_MONTH=7\nAGSC_BUILD_OUT=www-next\nOPENAI_API_KEY=not-read\nAGSC_MODEL_API_KEY=secret-value\n',
     env: { AGSC_BUDGET_USD_MONTH: '3' },
-    argvFlags: {}
+    argvFlags: {},
   });
   assert.equal(loaded.config.budget.usd_month, 3); // process env (3) beats .env (7)
   assert.equal(loaded.config.build.out, 'www-next'); // .env beats project
@@ -38,7 +38,7 @@ test('a flag beats everything, including the process environment', () => {
   const loaded = load({
     projectConfig: { budget: { usd_month: 10 } },
     env: { AGSC_BUDGET_USD_MONTH: '3' },
-    argvFlags: { 'budget.usd_month': '1' }
+    argvFlags: { 'budget.usd_month': '1' },
   });
   assert.equal(loaded.config.budget.usd_month, 1);
   assert.equal(loaded.sources['budget.usd_month'], 'flag');

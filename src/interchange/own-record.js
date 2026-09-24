@@ -20,10 +20,31 @@
  * Anything else is a claim by a stranger: the adapter ignores the record and reads the
  * file as the foreign file it is. This is a consistency check, not a signature — a
  * forger who copies this node's own origin and header still passes it; a signed
- * record is the full answer (reported in 's report).
+ * record is the full answer.
  *
  * PURE: no fs, no clock, no network.
  */
+
+const { canonicalize } = require('../knowledge/jcs.js');
+const { isObject } = require('./records.js');
+
+/** The own-record payload of one item, as the base64 of its JCS bytes. */
+function encodeRecord(record) {
+  return Buffer.from(canonicalize(record), 'utf8').toString('base64');
+}
+
+/** The payload of one `agsc-item` line, or `null` when it is not ours. */
+function decodeRecord(b64) {
+  let value;
+  try {
+    value = JSON.parse(Buffer.from(String(b64), 'base64').toString('utf8'));
+  } catch (e) {
+    return null;
+  }
+  if (!isObject(value) || !isObject(value.frontmatter) || typeof value.body !== 'string'
+    || typeof value.slug !== 'string' || typeof value.type !== 'string') return null;
+  return value;
+}
 
 /** AGSC-04-25's content-version grammar, as the adapters already test it. */
 const VERSION = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u;
@@ -122,4 +143,4 @@ function stripLines(text) {
   return String(text).replace(RECORD_LINE, '');
 }
 
-module.exports = { baseOf, distrust, headerOf, stripLines, trustedOrigins };
+module.exports = { baseOf, decodeRecord, distrust, encodeRecord, headerOf, stripLines, trustedOrigins };

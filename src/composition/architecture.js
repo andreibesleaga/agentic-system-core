@@ -64,7 +64,7 @@ function selectionBlock(item) {
       message: `${slug} carries ${blocks.length} \`yaml agsc-selection\` fences; AGSC-02-97 allows exactly one`, slug,
     }));
   }
-  let parsed = [];
+  let parsed;
   try {
     parsed = yaml.parse(blocks[0].content);
   } catch (e) {

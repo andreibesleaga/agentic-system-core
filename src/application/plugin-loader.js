@@ -94,7 +94,6 @@ function load(kind, specifier, options) {
   }
   const registry = plugins.createRegistry(kind, { specVersion: opts.specVersion });
   const loaded = plugins.loadInto(registry, name, {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     resolveModule: () => require(resolved),
   });
   const findings = loaded.findings.map((f) => ({ ...f, file: '' }));
@@ -174,4 +173,4 @@ function detached(value) {
   return freeze(copy);
 }
 
-module.exports = { PACKAGE_NAME, PLUGIN_NAME, call, classify, detached, load, pluginFindings, unsafePath };
+module.exports = { call, classify, detached, load, pluginFindings, unsafePath };

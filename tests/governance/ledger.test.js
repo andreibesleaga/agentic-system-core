@@ -5,6 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fc = require('fast-check');
 const ledger = require('../../src/governance/ledger.js');
 
 const HEAD_OF = (head) => ({
@@ -56,6 +57,29 @@ test('a truncated tail and a rewritten line are both reported (AGSC-08-23)', () 
   const rewritten = text.replace('"kind":"commit"', '"kind":"merge"');
   assert.deepStrictEqual(ledger.verify(rewritten, HEAD_OF(head)).map((f) => f.code), ['AGSC-E701']);
   assert.deepStrictEqual(ledger.verify('not json\n', HEAD_OF(head)).map((f) => f.code), ['AGSC-E702']);
+});
+
+test('compare: a published line the history does not derive is AGSC-E702 at that line (AGSC-08-23)', () => {
+  const log = [{ sha: 'a'.repeat(40), committed_at: '2026-01-01T00:00:00Z', parents: [], trailers: {} }];
+  const derived = ledger.derive(log, 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  assert.deepStrictEqual(ledger.compare(derived.ledger, HEAD_OF(derived.head), derived), []);
+  // Line 1 claims a release where the history holds a commit; the file is re-hashed
+  // so that its own chain still links — only the comparison can see it.
+  const claimed = ledger.derive([{ ...log[0], tag: 'v9.9.9' }], 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  assert.match(claimed.ledger.split('\n')[0], /"kind":"release"/u);
+  const findings = ledger.compare(claimed.ledger, HEAD_OF(claimed.head), derived, { file: 'www/ledger.jsonl' });
+  assert.deepStrictEqual(findings.map((f) => [f.code, f.line, f.file]),
+    [['AGSC-E702', 1, 'www/ledger.jsonl'], ['AGSC-E701', 1, '/ledger.jsonl']]);
+});
+
+test('compare: with no history, a published ledger missing its last line is AGSC-E701 (AGSC-08-23)', () => {
+  const log = [{ sha: 'a'.repeat(40), committed_at: '2026-01-01T00:00:00Z', parents: [], trailers: {} }];
+  const { ledger: text, head } = ledger.derive(log, 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  assert.deepStrictEqual(ledger.compare(text, HEAD_OF(head), null), []);
+  const truncated = `${text.split('\n')[0]}\n`;
+  assert.deepStrictEqual(ledger.compare(truncated, HEAD_OF(head), null).map((f) => f.code), ['AGSC-E701']);
+  // Nothing published and nothing to compare with: no finding, and none invented.
+  assert.deepStrictEqual(ledger.compare(null, null, { ledger: text }), []);
 });
 
 test('the genesis prev is 64 zeros and every hash is 64 lowercase hex (AGSC-08-22)', () => {
@@ -117,7 +141,6 @@ test('a broken prev link is reported before any hash is recomputed (AGSC-08-23)'
 // lens (b) — property tests for the hash chain of AGSC-08-22. `fast-check`
 // drives generated histories; the run is seeded, so the suite stays deterministic
 // (no clock, no network, no unseeded randomness).
-const fc = require('fast-check');
 
 /** A git-log array in the AGSC-08-20a shape. */
 const gitLogArb = fc.array(
@@ -129,10 +152,10 @@ const gitLogArb = fc.array(
     tag: fc.option(fc.constantFrom('v1.0.0', 'v0.2.1'), { nil: undefined }),
     trailers: fc.dictionary(
       fc.constantFrom('Signed-off-by', 'Proposal', 'Channel-Auto', 'Other'),
-      fc.string({ maxLength: 24 }), { maxKeys: 4 }
+      fc.string({ maxLength: 24 }), { maxKeys: 4 },
     ),
   }),
-  { maxLength: 12 }
+  { maxLength: 12 },
 );
 const SEED = { numRuns: 300, seed: 20260919, verbose: 0 };
 

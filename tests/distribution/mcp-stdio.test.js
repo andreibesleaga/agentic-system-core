@@ -116,7 +116,6 @@ test('a protocol fault stays a JSON-RPC error — that is what error results are
 });
 
 test('serve writes protocol frames to the stdout it is given, and nothing else (AGSC-09-13)', async () => {
-  // eslint-disable-next-line global-require
   const { serve } = require('../../src/distribution/mcp-stdio.js');
   const { PassThrough } = require('node:stream');
   const bundle = { config: {}, items: [{ body: '', frontmatter: {}, slug: 'a', type: 'concept' }] };
@@ -136,13 +135,11 @@ test('serve writes protocol frames to the stdout it is given, and nothing else (
 });
 
 test('serve refuses to run without a Bundle: the application layer loads it', () => {
-  // eslint-disable-next-line global-require
   const { serve } = require('../../src/distribution/mcp-stdio.js');
   assert.throws(() => serve({}), /ctx\.bundle is required/u);
 });
 
 test('createServer wires the shared toolset without touching any stream', () => {
-  // eslint-disable-next-line global-require
   const { createServer, SERVER_NAME, MCP_PROTOCOL_VERSION } = require('../../src/distribution/mcp-stdio.js');
   const bundle = { config: {}, items: [{ body: '', frontmatter: {}, slug: 'a', type: 'concept' }] };
   const { server, toolset } = createServer(bundle, { version: '9.9.9' });

@@ -58,6 +58,7 @@
 
 const frontmatter = require('../knowledge/frontmatter.js');
 const yaml = require('../knowledge/yaml.js');
+const licences = require('./licences.js');
 const slugs = require('../knowledge/slug.js');
 const fix = require('../governance/fix.js');
 const { serialize, titleFor } = require('../knowledge/adopt.js');
@@ -188,6 +189,33 @@ function mapFrontmatter(raw, options) {
       { file: options.path, severity: 'warn' }));
   }
 
+  // AGSC-02-12 with AGSC-01-22: a concept carries `kind`; a document MAPPED to
+  // `concept` (its own type unknown or absent) that declares none gets
+  // the adoption default of AGSC-02-90, so the import passes this node's own lint.
+  const mapped = TYPE_PLURAL[declared] === undefined;
+  if (mapped && (out.kind === undefined || out.kind === null || String(out.kind) === '')) {
+    out.kind = 'explainer';
+    findings.push(finding('AGSC-E506',
+      `${options.path}: no kind; it was imported with kind: explainer, the adoption default (AGSC-02-90, AGSC-01-22)`,
+      { file: options.path, severity: 'warn' }));
+  }
+
+  // AGSC-01-22 (rc.6): a record whose licence the importer cannot establish as
+  // permitting publication is written `status: draft`, so it is never published
+  // (AGSC-06-30). The record's own `license` decides when it declares one; else the
+  // source's (its root index.md, its root licence file).
+  const own = out.license === undefined ? null : licences.established(out.license);
+  const allowed = own === null ? options.sourceLicence === true : own;
+  if (!allowed && out.status !== 'draft') {
+    out.status = 'draft';
+    findings.push(finding('AGSC-E506',
+      `${options.path}: its licence could not be established as permitting publication`
+      + `${out.license === undefined ? ' (no license key, and none at the source root)' : ` (${JSON.stringify(String(out.license))})`};`
+      + ' it was imported as status: draft and is never published until a person with the right to publish it'
+      + ' changes the status (AGSC-01-22, AGSC-06-30)',
+      { file: options.path, severity: 'warn' }));
+  }
+
   if (out.prov === undefined) {
     out.prov = { operator: String(options.operator), origin: 'imported' };
     findings.push(finding('AGSC-E506',
@@ -229,7 +257,24 @@ function mapFrontmatter(raw, options) {
   return { findings, frontmatter: clean.frontmatter };
 }
 
-// ------------------------------------------- AGSC-01-22 as amended at rc.6
+// ------------------------------------------- AGSC-01-22
+
+/**
+ * AGSC-01-22: whether the SOURCE states a licence that permits publication — its
+ * root index.md `license`, else a licence file at its root (`LICENSE`, `COPYING`,
+ * `LICENSE-CONTENT`, handed in as `{name: text}`).
+ */
+function sourceLicenceOf(files, licenceFiles) {
+  // The shallowest index.md is the source root's (as `sourceFacts` reads it).
+  const root = (Array.isArray(files) ? files : [])
+    .filter((file) => /(^|\/)index\.md$/u.test(String(file.path).replace(/^\.\//u, '')))
+    .sort((a, b) => String(a.path).split('/').length - String(b.path).split('/').length)[0];
+  if (root !== undefined) {
+    const declared = readDocument(root.text).frontmatter.license;
+    if (declared !== undefined) return licences.established(declared) === true;
+  }
+  return Object.entries(licenceFiles || {}).some(([, text]) => licences.establishedText(String(text)));
+}
 
 /**
  * The three facts a source Bundle publishes about itself, read from its
@@ -317,6 +362,7 @@ function plan(files, options) {
   const writes = [];
   const taken = new Set();
   const totals = { items: 0, unreadable_frontmatter: 0 };
+  const sourceLicence = sourceLicenceOf(files, opts.licenceFiles);
 
   for (const file of documents) {
     const path = String(file.path);
@@ -342,6 +388,7 @@ function plan(files, options) {
       path,
       slug,
       sourceHash: opts.sourceHash,
+      sourceLicence,
       sourceVersion: opts.sourceVersion,
       stem: base,
     });
@@ -362,6 +409,6 @@ function plan(files, options) {
 
 module.exports = {
   FOREIGN_LINK_NAMES,
-  FORMAT, RESERVED, TYPE_KEEP_KEY, TYPE_PLURAL,
+  FORMAT, RESERVED, TYPE_PLURAL,
   isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, versionRefusal,
 };

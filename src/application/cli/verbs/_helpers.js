@@ -146,7 +146,7 @@ function attachmentFacts(ctx, bundle) {
       const dir = `content/attachments/${item.slug}`;
       if (links.pathGrammarError(attachment.file, dir) !== null) continue;
       const at = `${dir}/${attachment.file}`;
-      let exists = false;
+      let exists;
       try {
         exists = fs.exists(at);
         // `exists` answers false for a path the port refuses; a refusal is not an
@@ -321,6 +321,32 @@ function notImplemented(verb, rule, why) {
 }
 
 /**
+ * AGSC-01-01: a verb that reads a Bundle refuses to run where there is none, as
+ * `build` and `lint` do, rather than exiting 0 having done nothing (`skills`,
+ * `skills install` and `mcp` once did). `null` inside a Bundle.
+ *
+ * @param {object} ctx the verb context.
+ * @param {string} verb the verb, for the message.
+ * @returns {object|null} the refusing `AGSC-E901` finding.
+ */
+function outsideBundle(ctx, verb) {
+  const fs = ctx.ports && ctx.ports.fs;
+  let present;
+  try {
+    present = Boolean(fs && typeof fs.exists === 'function' && fs.exists('agsc.config.json'));
+  } catch (e) {
+    present = false;
+  }
+  if (present) return null;
+  return {
+    code: 'AGSC-E901',
+    file: 'agsc.config.json',
+    message: `agsc.config.json is missing: \`agsc ${verb}\` runs inside a Bundle — its root holds agsc.config.json (AGSC-01-01); \`agsc init\` makes one`,
+    severity: 'error',
+  };
+}
+
+/**
  * AGSC-09-09/AGSC-09-10: a diagnostic note on stderr — which lanes ran, which
  * routes were skipped. `--quiet` silences it; it is never data, so it never
  * reaches stdout.
@@ -330,9 +356,18 @@ function note(ctx, text) {
   if (ctx.stderr && typeof ctx.stderr.write === 'function') ctx.stderr.write(`${text}\n`);
 }
 
+/** The build instant as AGSC-04-10 text, from the Clock port (0 when none is wired). */
+function instantOf(ctx) {
+  const clock = ctx.ports && ctx.ports.clock;
+  if (clock && typeof clock.iso === 'function') return clock.iso();
+  return ledger.instantFromEpoch(clock ? clock.now() : 0);
+}
+
 module.exports = {
+  instantOf,
   ENGINE_ROOT,
   note,
+  outsideBundle,
   attachmentFacts,
   bundleOf,
   bundleVersionOf,

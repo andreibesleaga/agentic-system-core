@@ -118,7 +118,7 @@ describe('validate-schemas — the faults', () => {
 
   it('a byte-order mark, a CR, a doubled trailing LF and non-NFC text are AGSC-E108', () => {
     const root = schemaRoot({
-      'schema/bundle.schema.json': `﻿${base('bundle.schema.json', {})}\r\n\n`,
+      'schema/bundle.schema.json': `\uFEFF${base('bundle.schema.json', {})}\r\n\n`,
     });
     const { json } = envelope('validate-schemas', [root]);
     const encoding = json.findings.filter((f) => f.code === 'AGSC-E108');

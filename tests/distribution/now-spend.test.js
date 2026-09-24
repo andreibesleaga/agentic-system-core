@@ -63,3 +63,24 @@ test('/now.md renders every section when the state carries them', () => {
   }
   assert.ok(text.includes('- month: 2026-01'));
 });
+
+// AGSC-08-25 / AGSC-02-14: an episode is dated by `started`, the instant its schema
+// branch requires — `trace`, `remember` and a hand-written episode carry it and
+// usually no `date`. Before, the rollup read `date`, else `modified`, so a month of
+// real episodes reported 0 USD and the cap of AGSC-01-38 could never trip.
+test('AGSC-08-25: an episode belongs to the month of its `started` instant', () => {
+  const items = [
+    { type: 'episode', slug: 'run-1', started: '2026-09-02T10:00:00Z', actor: 'worker', usage: { cost_usd: 0.25 } },
+    { type: 'episode', slug: 'run-2', started: '2026-09-20T10:00:00Z', actor: 'process:worker', usage: { cost_usd: 0.04 } },
+    { type: 'episode', slug: 'run-3', started: '2026-08-31T23:59:59Z', actor: 'worker', usage: { cost_usd: 9 } },
+  ];
+  const rollup = now.spend(items, { budget: { usd_month: 0.29 } }, { month: '2026-09' });
+  assert.strictEqual(rollup.episodes, 2);
+  assert.strictEqual(Math.round(rollup.spent_usd * 100) / 100, 0.29);
+  assert.deepStrictEqual(rollup.findings.map((f) => f.code), ['AGSC-E510'], 'the cap trips on real episodes');
+  const state = now.state(items, { agents: [{ name: 'worker', enabled: true }], budget: { usd_month: 1 } },
+    { instant: '2026-09-24T00:00:00Z', allItems: items });
+  const lane = (state.agents || []).find((l) => l.name === 'worker');
+  assert.ok(lane, JSON.stringify(state));
+  assert.strictEqual(lane.runs, 2);
+});

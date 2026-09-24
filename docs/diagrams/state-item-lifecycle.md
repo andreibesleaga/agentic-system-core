@@ -12,16 +12,16 @@ stateDiagram-v2
   stable --> deprecated: status set to deprecated
   draft --> deprecated: status set to deprecated
 
-  deprecated --> stable: un-deprecated (legal; lint warns AGSC-E409)
-  deprecated --> draft: un-deprecated to draft (legal; lint warns AGSC-E409)
+  deprecated --> stable: un-deprecated (legal — lint warns AGSC-E409)
+  deprecated --> draft: un-deprecated to draft (legal — lint warns AGSC-E409)
 
   stable --> retired: status set to retired (AGSC-11-22)
   draft --> retired: status set to retired (AGSC-11-22)
   deprecated --> retired: status set to retired (AGSC-11-22)
-  retired --> stable: un-retired (legal; warned like un-deprecation)
+  retired --> stable: un-retired (legal — warned like un-deprecation)
   retired --> [*]: slug never reused
 
-  stable --> stable: supersedes/superseded-by attached\n(new item supersedes old; old marked superseded-by new)
+  stable --> stable: supersedes/superseded-by attached (new item supersedes old — old marked superseded-by new)
 
   note right of deprecated
     On retire: build emits a `_redirects` entry

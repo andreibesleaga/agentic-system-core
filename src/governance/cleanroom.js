@@ -36,7 +36,7 @@ const REFUSED_PHRASES = Object.freeze([
 ]);
 
 /**
- * AGSC-08-17 as amended at rc.6: a reference to a numbered division of a work — the
+ * AGSC-08-17: a reference to a numbered division of a work — the
  * case-folded `chapter` or `chapters`, whitespace, then decimal digits or a Roman
  * numeral — is refused as a PATTERN, not as the literal `chapter 1`, which caught
  * "chapter 1" and "chapter 10"…"chapter 19" and missed every other number.
@@ -97,4 +97,4 @@ function check(input = {}) {
   return findings;
 }
 
-module.exports = { EXCLUDED_FILES, NUMBERED_DIVISION, REFUSED_KEY, REFUSED_PHRASES, REFUSED_EMITTERS, check };
+module.exports = { EXCLUDED_FILES, NUMBERED_DIVISION, REFUSED_KEY, REFUSED_PHRASES, check };

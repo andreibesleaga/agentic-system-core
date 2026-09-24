@@ -2,7 +2,7 @@
 /**
  * CONTEXT Distribution (Emission) — Surface: `dist/forge/`.
  *
- * Implements AGSC-08-12 as amended at rc.5 (the third of the three
+ * Implements AGSC-08-12 (the third of the three
  * silently unmet MUSTs): "`ci` (AGSC-09-07) is the verb that compiles them, once per
  * run, into `dist/forge/` (a generated directory, AGSC-01-08 — never into
  * `build.out`, whose route set AGSC-06-01 closes, and never into `content/`,
@@ -23,8 +23,10 @@
  * recorded on the specification items list rather than presented as the
  * rule's: `pre-commit` runs `agsc lint` and nothing else; `CODEOWNERS` assigns every
  * path to the forge logins of `channels[].owner` (AGSC-01-18), falling back to the
- * identifier of `bundle.operator`; `ruleset.json` carries the same check names under
- * one active branch rule.
+ * identifier of `bundle.operator`; `ruleset.json` requires, under one active branch
+ * rule, the single check a CI job reports — the job that runs `agsc ci` (`CI_CHECK`)
+ * — because a ruleset requiring the gate check names one by one names statuses no
+ * job reports, and a forge that imports it blocks every merge.
  *
  * Drift (AGSC-08-12): "Where the repository already carries the corresponding file
  * and its bytes differ, `ci` MUST report the difference as `AGSC-E707` and MUST NOT
@@ -50,6 +52,15 @@ const TARGETS = Object.freeze({
   ruleset: 'ruleset.json',
   'status-check': 'status-checks.json',
 });
+
+/**
+ * The one status check a CI job reports: the job that runs `agsc ci` (the job name
+ * `action.yml` shows). `ruleset.json` requires THIS name — a forge reports a status
+ * per job, and no job reports the gate check names one by one — while
+ * `status-checks.json` keeps its pinned bytes, the gate checks that verdict covers
+ * (`dist/gate.json`, AGSC-08-10).
+ */
+const CI_CHECK = 'agsc ci';
 
 /** AGSC-08-09: `level: L1` covers these two checks. */
 const L1_CHECKS = Object.freeze(['links', 'schema']);
@@ -132,7 +143,7 @@ function compile(items, config) {
       files.set(TARGETS[value], `${canonicalize({
         enforcement: 'active',
         name: 'agsc',
-        rules: { required_status_checks: names },
+        rules: { required_status_checks: [CI_CHECK] },
         target: 'branch',
       })}\n`);
     }
@@ -192,6 +203,6 @@ function write(items, config, ports) {
 }
 
 module.exports = {
-  FORGE_DIR, L1_CHECKS, L2_EXTRA, TARGETS,
+  CI_CHECK, FORGE_DIR, TARGETS,
   checkNames, compile, enforcedValues, owners, write,
 };

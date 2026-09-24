@@ -1,5 +1,7 @@
 # Writing a plugin for this engine
 
+**Who this is for:** a developer adding a capability without changing the engine. **Read after:** [ARCHITECTURE-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-GUIDE.md) §2 (where each kind attaches). *(Header added 2026-09-24.)*
+
 **Status:** the engine's own contract, version **1.0.0** of the plugin API, for
 specification version `1.0.0-rc.6`. Added at rc.6.
 
@@ -125,6 +127,7 @@ through the registry of its kind, so every plugin passes the capability check of
 | `export --to <path or package>` | `memory-adapter` | `exportFiles(items, context)` → `{files: [{path, text}], findings?}` | the files, under `dist/export/<name>/` |
 | `import --from <path or package> <dir>` | `memory-adapter` | `importFiles(files, context)` → `{documents: [{path, text}], findings?}` | the documents, mapped exactly as an OKF bundle is (AGSC-01-22), with the same collision survey, `--dry-run` and `--replace` |
 | `compose <slug…> --emit <path or package>` | `composition-emitter` | `emit(harnessFiles, harnessDir)` → one `{path, text}` or a list | beside the Harness directory, never inside it (AGSC-07-18) |
+| `agsc-host emit <path or package>` | `deployment-profile` | `emit(input)` → `{site, server, findings}` (or the older `headerFile(sets)`) | host files in the build directory (never on a route) and under `dist/hosts/<name>/` or `--out` *(row added 2026-09-24)* |
 
 `items` is a frozen copy of the published items; `files` a frozen copy of every
 file of the source directory, read by the engine; `context` carries the

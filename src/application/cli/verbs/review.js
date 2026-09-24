@@ -39,4 +39,4 @@ function run(ctx) {
   return { findings };
 }
 
-module.exports = { FEATURE_FLAG, name: 'review', run };
+module.exports = { name: 'review', run };

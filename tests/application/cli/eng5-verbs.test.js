@@ -239,14 +239,32 @@ test('AGSC-07-21: an install target outside the three of the rule is AGSC-E003',
 });
 
 test('AGSC-07-22: skills import maps a SKILL.md to a procedure item', () => {
-  const dir = workspace();
-  skillsVerb.run(ctxFor(dir));
-  const result = skillsVerb.run(ctxFor(dir, { argv: ['import', 'dist/skills/agent-patterns/SKILL.md'] }));
-  assert.deepStrictEqual(result.findings, []);
-  const written = read(dir, 'content/procedures/agent-patterns.md');
+  // A pack of this format (AGSC-07-19) carries a whole Cluster; the import splits it
+  // back into its member PROCEDURES, filed in that Cluster, and reports the rest.
+  const PROCEDURE = ['---', 'type: procedure', 'title: Record a handoff',
+    'description: The steps that write a handoff down with its reason, so the audit can close.',
+    'clusters:', '  - agent-patterns', 'prov:', '  origin: human', '  operator: human:someone', '---', '',
+    '## Steps', '', '1. Write the reason down.', ''].join('\n');
+  const source = workspace({ 'content/procedures/record-a-handoff.md': PROCEDURE });
+  skillsVerb.run(ctxFor(source));
+  const dir = workspace({ 'incoming/SKILL.md': read(source, 'dist/skills/agent-patterns/SKILL.md') });
+  const result = skillsVerb.run(ctxFor(dir, { argv: ['import', 'incoming/SKILL.md'] }));
+  assert.ok(result.findings.every((f) => f.code === 'AGSC-E506' && f.severity === 'warn'), JSON.stringify(result.findings));
+  assert.ok(result.findings.length >= 1, 'the concepts of the pack are reported, not imported');
+  assert.ok(!exists(dir, 'content/procedures/agent-patterns.md'), 'the whole pack became one procedure');
+  const written = read(dir, 'content/procedures/record-a-handoff.md');
   assert.match(written, /^---\ntype: procedure\n/u);
   assert.match(written, /origin: imported/u);
+  assert.match(written, /clusters:\n {2}- agent-patterns/u);
+  assert.match(written, /1\. Write the reason down\./u);
   assert.ok(!written.includes('```text agsc-content'));
+  // AGSC-01-23: a second import writes the same bytes; into the source Bundle, whose
+  // own procedure differs, it writes nothing and says why.
+  skillsVerb.run(ctxFor(dir, { argv: ['import', 'incoming/SKILL.md'] }));
+  assert.strictEqual(read(dir, 'content/procedures/record-a-handoff.md'), written);
+  const clash = skillsVerb.run(ctxFor(source, { argv: ['import', 'dist/skills/agent-patterns/SKILL.md'] }));
+  assert.ok(clash.findings.some((f) => f.code === 'AGSC-E206'));
+  assert.strictEqual(read(source, 'content/procedures/record-a-handoff.md'), PROCEDURE);
 
   // The two error paths.
   assert.strictEqual(skillsVerb.run(ctxFor(dir, { argv: ['import'] })).findings[0].code, 'AGSC-E003');
@@ -475,4 +493,33 @@ test('AGSC-09-94: trace keeps a valid outcome and refuses a record that is not a
   assert.strictEqual(array.status, 'fail');
   assert.strictEqual(array.findings[0].code, 'AGSC-E201');
   assert.match(array.findings[0].message, /one JSON object/u);
+});
+
+// The edges of the install and import paths: an unreadable emitted index falls back to
+// the packs of the Bundle as it is now; an emitted pack the port cannot read is listed
+// and missing (AGSC-E901, nothing installed); a present but unreadable item is never
+// written over by an import (AGSC-01-23).
+test('skills install and import: unreadable emitted files and unreadable targets are never trusted', () => {
+  const dir = workspace();
+  nodeFs.mkdirSync(path.join(dir, 'dist', 'skills'), { recursive: true });
+  nodeFs.writeFileSync(path.join(dir, 'dist', 'skills', 'index.json'), '{ not json');
+  const fallback = skillsVerb.run(ctxFor(dir, { argv: ['install'] }));
+  assert.deepStrictEqual(fallback.findings.filter((f) => f.severity === 'error'), []);
+  assert.ok(exists(dir, '.agents/skills/agent-patterns/SKILL.md'));
+
+  skillsVerb.run(ctxFor(dir));
+  nodeFs.rmSync(path.join(dir, 'dist', 'skills', 'agent-patterns', 'SKILL.md'));
+  nodeFs.mkdirSync(path.join(dir, 'dist', 'skills', 'agent-patterns', 'SKILL.md'));
+  const unreadable = skillsVerb.run(ctxFor(dir, { argv: ['install', '.claude/skills'] }));
+  assert.ok(unreadable.findings.some((f) => f.code === 'AGSC-E901'), JSON.stringify(unreadable.findings));
+  assert.ok(!exists(dir, '.claude/skills/agent-patterns/SKILL.md'));
+
+  const PROCEDURE = ['---', 'type: procedure', 'title: Record a handoff', 'clusters:', '  - agent-patterns',
+    'prov:', '  origin: human', '  operator: human:someone', '---', '', '## Steps', '', '1. Write it down.', ''].join('\n');
+  const source = workspace({ 'content/procedures/record-a-handoff.md': PROCEDURE });
+  skillsVerb.run(ctxFor(source));
+  const into = workspace({ 'incoming/SKILL.md': read(source, 'dist/skills/agent-patterns/SKILL.md') });
+  nodeFs.mkdirSync(path.join(into, 'content', 'procedures', 'record-a-handoff.md'), { recursive: true });
+  const clash = skillsVerb.run(ctxFor(into, { argv: ['import', 'incoming/SKILL.md'] }));
+  assert.ok(clash.findings.some((f) => f.code === 'AGSC-E206'), JSON.stringify(clash.findings));
 });

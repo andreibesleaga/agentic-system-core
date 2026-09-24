@@ -6,16 +6,16 @@ Feature: Human reader finds a pattern with evidence
   So that I can find the right Concept with evidence, offline-friendly and with no reading order imposed
 
   Background:
-    Given the site "https://agenticsystemcore.com/" is built and deployed from "www/"
-    And the Bundle contains 66 "status: stable" Concepts rendered at "release: launch"
-    And 87 "status: draft" Concepts remain dark (not linked, not indexed)
+    Given the acceptance Bundle is built into "www/" for the site "https://agenticsystemcore.com/"
+    And an item with "status: draft" stays dark: no page, no link, no index entry (AGSC-06-30)
 
   @PRD-011 @PRD-025
   Scenario: Home page states software-and-registry identity, no narrative
-    When the reader opens "https://agenticsystemcore.com/"
-    Then the page shows the install line "npx agentic-system-core …"
-    And the page shows counts "66 concepts, 20 clusters"
-    And the page links to "/graph.jsonld", "/llms.txt", "/now/", "/compose/", "/skills/"
+    When the reader opens "/"
+    Then the page shows the Bundle's title and the summary of "content/index.md"
+    And its head carries the "describedby" link to "/.well-known/knowledge-linkset" (AGSC-06-25)
+    And the page links to "/clusters/", "/concepts/", "/lessons/", "/skills/", "/now/", "/compose/" and "/search/"
+    And the page introduces the node and links each non-empty index page with its count, listing no item itself
     And the page contains no "start here" link and no imposed reading order
 
   @PRD-014
@@ -29,17 +29,18 @@ Feature: Human reader finds a pattern with evidence
   @PRD-002 @PRD-013
   Scenario: Reader opens a Concept page and sees evidence
     When the reader navigates to "/concepts/a2a/"
-    Then the page shows "title", "description", and facet chips for "evidence" and "maturity"
-    And the page shows an inlined SVG compiled from "content/diagrams/a2a.diagram" with non-empty alt text
-    And the page shows "Sources" entries carrying their "verified" dates
-    And the page shows typed Links with computed inverses, for example "required-by …"
-    And the page shows a cluster breadcrumb "family › deck › subdeck"
-    And the page footer offers "Download: .md · .jsonld · Propose a change"
+    Then the page shows the title, the description as its summary, the type and kind, the cluster "Protocols" and the provenance
+    And the page shows the SVG compiled from "content/diagrams/a2a.diagram" inline, named by "diagram.alt", and no diagram route exists (AGSC-02-13)
+    And the page links its own "/pages/a2a.md" and "/pages/a2a.jsonld" (AGSC-06-02)
+    And the Markdown view carries the "sources" entries with their "verified" dates and the "evidence" and "maturity" facets
+    And the graph carries the typed Link "requires" to "mcp" and its computed inverse on "mcp" (AGSC-03-04)
+    And the page offers "Propose an edit" as a plain link to the forge's edit view of "content/concepts/a2a.md"
 
   @PRD-015
   Scenario: Reader inspects cluster membership and the NOW page
     When the reader navigates to "/clusters/protocols/"
-    Then members are grouped by sub-cluster
+    Then the page lists every published item that names the cluster, each with its description
     When the reader navigates to "/now/"
-    Then the page shows last build time, item counts, stale items and open Lessons
-    And the page was generated purely from stored state, with no hand edits surviving a rebuild
+    Then "/now/" and "/now.md" carry the line "content version …, built at …, fingerprint …, specification …" (AGSC-06-22)
+    And they show the item counts, the stale item "tool-use-retries" and the open Lesson
+    And both were generated purely from stored state, with no hand edit surviving a rebuild

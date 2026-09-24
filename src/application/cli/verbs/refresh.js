@@ -14,7 +14,13 @@
 // `tasks[]`; a per-change `change.task` overrides it. That is what makes the
 // AGSC-E509 task check of `checkProposal` fire here.
 
+const { createTwoFilesPatch } = require('diff');
 const { checkProposal, findAgentEntry } = require('../../../governance/agents.js');
+const fix = require('../../../governance/fix.js');
+const { instantFromEpoch } = require('../../../governance/ledger.js');
+const { serialize } = require('../../../knowledge/adopt.js');
+const slugs = require('../../../knowledge/slug.js');
+const { readSchemas } = require('../../../adapters/node-fs.js');
 const propose = require('./propose.js');
 const helpers = require('./_helpers.js');
 
@@ -25,15 +31,44 @@ function taskOf(entry, requested) {
   return declared.includes('refresh') ? 'refresh' : declared[0];
 }
 
-/** AGSC-02-14: the usage record of a run that called no model. */
-function episodeOf(entry, task) {
+/**
+ * AGSC-08-28(d): the Episode of one run, as a conforming item — `actor` the lane,
+ * in the actor grammar of AGSC-02-09 (`process:<name>`), `started` the run's
+ * instant, `usage` the AGSC-02-14 record of a run that called no model, and the
+ * provenance of (b).
+ */
+function episodeOf(entry, task, { started, operator } = {}) {
+  const usage = { cost_usd: 0, estimate: true, tokens_in: 0, tokens_out: 0 };
+  if (typeof entry.model === 'string' && entry.model !== '') usage.model = entry.model;
+  const prov = { origin: 'ai-generated', agent: entry.name };
+  if (typeof entry.model === 'string' && entry.model !== '') prov.model = entry.model;
+  const who = typeof entry.operator === 'string' && entry.operator !== '' ? entry.operator : operator;
+  if (typeof who === 'string' && who !== '') prov.operator = who;
   return {
-    actor: entry.name,
+    actor: `process:${slugs.slugify(String(entry.name)) || 'agent'}`,
     outcome: 'partial',
+    prov,
+    started,
     task,
+    title: `Dry run of the ${entry.name} lane`,
     type: 'episode',
-    usage: { cost_usd: 0, estimate: true, model: entry.model || null, tokens_in: 0, tokens_out: 0 },
+    usage,
   };
+}
+
+/** The Episode as the bytes of a new item file, through the one writer (AGSC-04-19). */
+function episodeText(episode, number) {
+  const frontmatter = { ...episode };
+  delete frontmatter.task;
+  const itemSchema = readSchemas(helpers.ENGINE_ROOT).item;
+  const ordered = fix.orderKeys(frontmatter, fix.declaredOrder(itemSchema, 'episode'), itemSchema, 'episode', null);
+  const body = [
+    '', '## What happened', '',
+    `Proposal ${number} was a dry run of the lane, task \`${episode.task}\`: the lane and its gates were`,
+    'resolved, no model was called and no network was reached (AGSC-08-28(f)).', '',
+    '## Outcome', '', 'No content change was generated; this Episode records the run and its spend.', '',
+    '## Next', '', 'Run the lane without --dry-run once a model adapter and a channel adapter are configured.', ''];
+  return fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${body.join('\n')}`);
 }
 
 function run(ctx) {
@@ -77,7 +112,8 @@ function run(ctx) {
     '## Rationale',
     '',
     'A dry run of AGSC-08-28(f): no model was called, no network was reached and no',
-    'change was generated. The lane, its task and its gates are what this run proves.',
+    'content change was generated. The lane, its task and its gates are what this run',
+    'proves; the patch adds the Episode that records the run (AGSC-08-28(d)).',
     '',
     '## Affected slugs',
     '',
@@ -85,13 +121,27 @@ function run(ctx) {
     '',
   ].join('\n');
 
+  // AGSC-08-28(d)/(f): the dry-run Proposal INCLUDES the Episode of the run, as a
+  // new item under content/episodes/, so that applying the patch records the run
+  // and its spend where AGSC-08-25's rollup and the NOW page read it.
+  const clock = ctx.ports && ctx.ports.clock;
+  const started = clock && typeof clock.iso === 'function' ? clock.iso() : instantFromEpoch(clock ? clock.now() : 0);
+  const operator = ((ctx.config || {}).bundle || {}).operator;
+  const episode = episodeOf(entry, task, { operator, started });
+  const bundle = helpers.bundleOf(ctx);
+  const slug = slugs.dedupe(`${slugs.slugify(String(entry.name)) || 'agent'}-dry-run-${number}`, new Set(bundle.byslug.keys()));
+  const at = `content/episodes/${slug}.md`;
+  const patch = createTwoFilesPatch('/dev/null', `b/${at}`, '', episodeText(episode, number), '', '');
+
   fs.mkdirp(propose.DIR);
-  fs.writeFile(`${propose.DIR}/${number}.patch`, '# dry run: no content change was generated (no model call was made)\n');
-  fs.writeFile(`${propose.DIR}/${number}.md`, body);
+  fs.writeFile(`${propose.DIR}/${number}.patch`, patch);
+  fs.writeFile(`${propose.DIR}/${number}.md`, body.replace('- (none)\n', `- ${slug} (the Episode of this run)\n`));
   helpers.note(ctx, `wrote: ${propose.DIR}/${number}.patch`);
   helpers.note(ctx, `wrote: ${propose.DIR}/${number}.md`);
+  // AGSC-08-28(f): print the commands a person may run, as `propose` does.
+  for (const line of propose.commandsFor(at, number, { canonical: true, committed: false })) helpers.note(ctx, `run: ${line}`);
 
-  return { episode: episodeOf(entry, task), findings: [], wrote: [`${propose.DIR}/${number}.patch`, `${propose.DIR}/${number}.md`] };
+  return { episode, findings: [], wrote: [`${propose.DIR}/${number}.patch`, `${propose.DIR}/${number}.md`] };
 }
 
-module.exports = { episodeOf, name: 'refresh', run, taskOf };
+module.exports = { name: 'refresh', run };

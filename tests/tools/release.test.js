@@ -310,7 +310,12 @@ describe('5. --apply, and the checklist', () => {
 describe('the real distribution passes its own release lane', () => {
   it('exits 0 with no finding', () => {
     const { code, json } = envelope('release', []);
-    assert.deepEqual(json.findings, [], JSON.stringify(json.findings, null, 1));
+    // A CI checkout has no Python repository beside it: the one finding then allowed
+    // is the warning that says the PyPI version was NOT checked (never an error).
+    const sibling = path.join(__dirname, '..', '..', '..', 'agentic-system-core-python', 'pyproject.toml');
+    const findings = fs.existsSync(sibling) ? json.findings
+      : json.findings.filter((f) => !(f.code === 'AGSC-E901' && f.severity === 'warn' && /not checked out beside/u.test(f.message)));
+    assert.deepEqual(findings, [], JSON.stringify(json.findings, null, 1));
     assert.equal(json.verb, 'release');
     assert.equal(json.schema, 'agsc.diagnostics.v1');
     assert.equal(code, 0);
@@ -410,7 +415,7 @@ describe('the release workflow', () => {
     const text = steps();
     assert.ok(!/NPM_TOKEN|NODE_AUTH_TOKEN/u.test(text));
     assert.ok(!text.includes('pull_request_target'));
-    assert.match(text, /on:\n  push:\n    tags:\n      - 'v\*'/u);
+    assert.match(text, /on:\n {2}push:\n {4}tags:\n {6}- 'v\*'/u);
   });
 
   it('the tool PRINTS the whole procedure; no repository file holds it', () => {
@@ -480,7 +485,7 @@ describe('tools/release — the public-hygiene step', () => {
     const found = release.hygieneFindings('/nowhere', [], { sweep: () => { throw new Error('boom'); } });
     assert.deepEqual(found.map((f) => f.code), ['AGSC-E901']);
     assert.match(found[0].message, /boom/u);
-    const odd = release.hygieneFindings('/nowhere', [], { sweep: () => { throw null; } }); // eslint-disable-line no-throw-literal
+    const odd = release.hygieneFindings('/nowhere', [], { sweep: () => { throw null; } });
     assert.match(odd[0].message, /unknown error/u);
   });
 });

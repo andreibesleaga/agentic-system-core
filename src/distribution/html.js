@@ -67,27 +67,25 @@ function adoptsTerms(licenseProse) {
 
 function termsLine(licenseProse, options = {}) {
   const license = licenseProse == null ? TERMS : licenseProse;
-  // V9D-A6: every page used to link `/legal/` whether or not the build produced
-  // it. The identifier is always named; the LINK is emitted only when the route
-  // exists, so no build ships a dangling internal link (AGSC-06-18).
+  // The LINK to `/legal/` is emitted only when the route exists, so no build ships a
+  // dangling internal link; the identifier is always named (AGSC-06-18).
   const legal = options.legal === undefined ? true : Boolean(options.legal);
+  const adopted = adoptsTerms(licenseProse);
   // The human name is shown; the identifier stays machine-readable in the same element
-  // (`data-spdx`), so every page still carries it (AGSC-06-18).
-  const termsName = 'Content Use Terms 1.0';
+  // (`data-spdx`), so every page still carries it (AGSC-06-18). It closes the footer,
+  // beside the legal link (owner, 2026-09-24), instead of opening the sentence.
+  const termsName = 'Content Use Terms';
   const terms = legal
-    ? `<a href="/legal/" rel="license" data-spdx="${escapeHtml(TERMS)}">${escapeHtml(termsName)}</a>`
+    ? `<a href="/legal/#terms" rel="license" data-spdx="${escapeHtml(TERMS)}">${escapeHtml(termsName)}</a>`
     : `<span data-spdx="${escapeHtml(TERMS)}">${escapeHtml(termsName)}</span>`;
-  // Compact footer (owner, 2026-09-23): one paragraph, short sentences, nothing dropped —
-  // copyright, prose licence with the Content Use Terms named, the AI note, the
-  // publisher's disclaimer, then the single legal link.
   const author = options.author == null ? '' : String(options.author).trim();
   const year = options.year == null ? '' : String(options.year).trim();
   // NEITHER THE NAME NOR THE YEAR IS HARD-CODED: `site.author` and the build-instant
   // year (AGSC-04-09); no author → no copyright sentence. "All rights reserved" only
   // under the Content Use Terms; another licence is named instead.
   const copyright = author !== '' && year !== '' ? `&#169; ${escapeHtml(year)} ${escapeHtml(author)}. ` : '';
-  const rights = adoptsTerms(licenseProse)
-    ? `Prose: ${terms}, all rights reserved, citing and linking allowed.`
+  const rights = adopted
+    ? 'All rights reserved, citing and linking allowed.'
     // AGSC-06-18 (rc.6, 2026-09-24): the Content Use Terms accompany the prose only
     // where the publisher adopts them; another licence is named alone.
     : `Prose: <span>${escapeHtml(license)}</span>.`;
@@ -96,8 +94,14 @@ function termsLine(licenseProse, options = {}) {
     options.aiAssisted === true ? escapeHtml(FOOTER_AI_NOTE) : '',
     options.disclaimer == null ? '' : escapeHtml(singleLine(String(options.disclaimer)).trim()),
   ].filter((part) => part !== '').join(' ');
-  // One paragraph, no break (owner, 2026-09-23): the legal link continues the text.
-  return `<p class="terms">${text}${legal ? ' <a href="/legal/">Legal &amp; privacy</a>' : ''}</p>`;
+  // One paragraph, no break (owner, 2026-09-23): the links continue the text.
+  // The declared peers close the footer: a person can follow them, as an agent follows
+  // the `rel#peer` links of the discovery document (AGSC-10-12).
+  const peers = (Array.isArray(options.peers) ? options.peers : [])
+    .map((p) => `<a href="${escapeHtml(p.href)}">${escapeHtml(p.label)}</a>`);
+  const links = [legal ? '<a href="/legal/">Legal &amp; privacy</a>' : '', adopted ? terms : '', ...peers]
+    .filter((part) => part !== '').join(' · ');
+  return `<p class="terms">${text}${links === '' ? '' : ` ${links}`}</p>`;
 }
 
 /**
@@ -174,17 +178,18 @@ function shell(page) {
     withoutRepeatedTitle(page.body, page.title),
     '</main>',
     `<footer class="site">${termsLine(page.licenseProse, {
-      aiAssisted: page.aiAssisted, author: page.author, disclaimer: page.disclaimer, legal: page.legal, year: page.year,
+      aiAssisted: page.aiAssisted, author: page.author, disclaimer: page.disclaimer, legal: page.legal,
+      peers: page.peers, year: page.year,
     })}</footer>`,
     '</body>',
     '</html>',
-    // AGSC-04-07: exactly one trailing LF. An empty line here was removed by the
-    // filter below, so every page used to end without one.
+    // AGSC-04-07: exactly one trailing LF, added after the filter below (which
+    // drops empty lines, so an empty last line here would be lost).
   ].filter((l) => l !== '').join('\n').concat('\n');
 }
 
 /**
- * AGSC-02-13 as amended at rc.5: the compiled diagram, INLINE in the item's
+ * AGSC-02-13: the compiled diagram, INLINE in the item's
  * page and at no route of its own.
  *
  * The `.diagram` source is passed in rather than read here — this module is a
@@ -275,6 +280,15 @@ function itemMeta(item, options) {
     rows.push(`<dt>Cluster</dt><dd>${clusters.map((c) => (c.href
       ? `<a href="${escapeHtml(c.href)}">${escapeHtml(c.title)}</a>` : escapeHtml(c.title))).join(', ')}</dd>`);
   }
+  // AGSC-02-99: a task shows its state (UNSPECIFIED when none is authored).
+  if (item.type === 'concept' && item.kind === 'task') {
+    rows.push(`<dt>Task state</dt><dd><code>${escapeHtml(item.task_state == null ? 'TASK_STATE_UNSPECIFIED' : item.task_state)}</code></dd>`);
+  }
+  // AGSC-08-09: a gate shows its level and the checks it compiles to.
+  if (item.type === 'gate' && item.level != null) rows.push(`<dt>Level</dt><dd><code>${escapeHtml(item.level)}</code></dd>`);
+  if (item.type === 'gate' && Array.isArray(item.checks) && item.checks.length > 0) {
+    rows.push(`<dt>Checks</dt><dd>${item.checks.map((c) => `<code>${escapeHtml(c)}</code>`).join(', ')}</dd>`);
+  }
   if (options.canonical != null) rows.push(`<dt>IRI</dt><dd><code>${escapeHtml(options.canonical)}</code></dd>`);
   const prov = item.prov || {};
   if (prov.origin != null && ORIGIN_TEXT[prov.origin]) {
@@ -294,6 +308,15 @@ function itemPage(item, options = {}) {
     parts.push('<p class="deprecated" role="note">This item is deprecated.</p>');
   }
   parts.push(withoutRepeatedTitle(rendered.html, item.title == null ? item.slug : item.title));
+  // AGSC-03-01: the typed Links the item authors, each target linked — the caller
+  // passes published targets only, so a held-back item is never named here.
+  const typed = (Array.isArray(options.links) ? options.links : []).filter((l) => l.targets.length > 0);
+  if (typed.length > 0) {
+    parts.push('<h2 id="links">Links</h2>');
+    parts.push(`<ul class="links">${typed.map((l) => `<li><code>${escapeHtml(l.key)}</code>: ${l.targets
+      .map((t) => (t.href ? `<a href="${escapeHtml(t.href)}">${escapeHtml(t.title)}</a>` : escapeHtml(t.title)))
+      .join(', ')}</li>`).join('')}</ul>`);
+  }
   // A cluster page lists its published members (the caller passes only published
   // items, so a draft never appears), each linked, with its description.
   if (Array.isArray(options.members)) {
@@ -309,6 +332,20 @@ function itemPage(item, options = {}) {
   }
   for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
     parts.push(`<figure><img src="/attachments/${escapeHtml(item.slug)}/${escapeHtml(attachment.file)}" alt="${escapeHtml(attachment.alt)}"><figcaption>${escapeHtml(attachment.alt)}</figcaption></figure>`);
+  }
+  // AGSC-02-10: the item's authored sources, shown to the reader as its references —
+  // title linked to the source, then the author and year the item records. Only an
+  // http(s) address becomes a link; anything else is shown as text.
+  const sources = (Array.isArray(item.sources) ? item.sources : [])
+    .filter((src) => src && typeof src.resource === 'string' && src.resource !== '');
+  if (sources.length > 0) {
+    parts.push('<h2 id="references">References</h2>');
+    parts.push(`<ol class="sources">${sources.map((src, k) => {
+      const label = escapeHtml(src.title == null || String(src.title).trim() === '' ? src.resource : src.title);
+      const link = /^https?:\/\//u.test(src.resource) ? `<a href="${escapeHtml(src.resource)}">${label}</a>` : label;
+      const by = [src.author, src.year].filter((v) => v != null && String(v).trim() !== '').map((v) => escapeHtml(v)).join(', ');
+      return `<li id="source-${k + 1}">${link}${by === '' ? '' : ` — ${by}`}</li>`;
+    }).join('')}</ol>`);
   }
   parts.push(`<p class="views">Machine views: <a href="/pages/${escapeHtml(item.slug)}.md">Markdown</a> · <a href="/pages/${escapeHtml(item.slug)}.jsonld">JSON-LD</a></p>`);
   // AGSC-11-14 / AGSC-08-04: a PLAIN anchor to the forge's edit view of this item's
@@ -339,6 +376,21 @@ function indexPage({ title, description, entries }, options = {}) {
     ? '<p>Nothing here yet.</p>'
     : `<ul>${entries.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${Number.isInteger(e.count) ? ` (${e.count} ${e.count === 1 ? 'item' : 'items'})` : ''}${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`;
   return shell({ ...options, title, description, body: list });
+}
+
+/**
+ * `/` — the node's front page: the Bundle's own introduction (the body of
+ * `content/index.md`), then a short "Browse" block that links the index pages with
+ * their counts. It never lists every item: the index pages do that.
+ *
+ * @param {{title:string, description:string, introHtml:string, sections:Array<{href:string,title:string,count:number}>}} page
+ */
+function homePage({ title, description, introHtml, sections }, options = {}) {
+  const browse = sections.length === 0 ? '' : `<h2 id="browse">Browse</h2>\n<ul class="browse">${sections
+    .map((s) => `<li><a href="${escapeHtml(s.href)}">${escapeHtml(s.title)}</a>${Number.isInteger(s.count) ? ` (${s.count})` : ''}</li>`)
+    .join('')}</ul>`;
+  const body = [introHtml || '', browse].filter((part) => part !== '').join('\n');
+  return shell({ ...options, title, description, body: body === '' ? '<p>Nothing here yet.</p>' : body });
 }
 
 /** `/now/` — rendered from the NOW state of `now.js`, never hand-edited (AGSC-06-22). */
@@ -418,8 +470,8 @@ function composePage({ assets }, options = {}) {
  */
 function boardPage({ board, columns, wip }, options = {}) {
   const parts = [`<p>${escapeHtml(board.done ? 'This board is done: every task is in a terminal state (AGSC-10-13).' : 'This board is open.')}</p>`];
-  parts.push(`<p>Work-in-progress limit: ${wip == null ? 'none declared' : escapeHtml(String(wip))} `
-    + `task${wip === 1 ? '' : 's'} in <code>TASK_STATE_WORKING</code> per agent lane (AGSC-10-17). `
+  parts.push(`<p>Work-in-progress limit: ${wip == null ? 'none — this node declares no agent lane (AGSC-10-17)'
+    : `${escapeHtml(String(wip))} task${wip === 1 ? '' : 's'} in <code>TASK_STATE_WORKING</code> per agent lane (AGSC-10-17)`}. `
     + `Machine view: <a href="/boards/${escapeHtml(board.slug)}.json">JSON</a>.</p>`);
   for (const column of columns) {
     parts.push(`<section><h2>${escapeHtml(column.state)} <span>(${column.tasks.length})</span></h2>`);
@@ -481,7 +533,7 @@ function legalPage({ terms, licenseProse, rendered, privacy, operator, disclaime
   if (operator != null && String(operator) !== '') {
     sections.push(`<h2 id="operator">Operator</h2>\n<p>This node is published by ${escapeHtml(String(operator))}.</p>`);
   }
-  // AGSC-06-18 as amended at rc.6: `/legal/` carries "the AI-assistance statement of
+  // AGSC-06-18: `/legal/` carries "the AI-assistance statement of
   // AGSC-06-15, IN THE SAME WORDS the provenance header of every agent-facing export
   // carries". So the section quotes that constant rather than restating it — the two
   // cannot drift — and adds only what a person reading a page needs in order to
@@ -499,7 +551,7 @@ function legalPage({ terms, licenseProse, rendered, privacy, operator, disclaime
     + ' person accountable for it. You can read that record on the item\'s own page and in the'
     + ' machine-readable views. Each accepted contribution carries the same record in its'
     + ' sign-off.</p>',
-    '<p>This is the statement every agent-facing export of this node carries, in its own'
+  '<p>This is the statement every agent-facing export of this node carries, in its own'
     + ` words: <code>${escapeHtml(ASSISTANCE)}</code></p>`);
   return shell({
     ...options,
@@ -547,7 +599,8 @@ function changelogPage(rows, options = {}) {
 }
 
 module.exports = {
+  homePage,
   shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
   boardPage, composePage, legalPage,
-  adoptsTerms, escapeHtml, termsLine, ASSISTANCE_SENTENCE, NO_CLAIM_SENTENCE, HONEST_LIMIT,
+  adoptsTerms, escapeHtml, termsLine, NO_CLAIM_SENTENCE, HONEST_LIMIT,
 };

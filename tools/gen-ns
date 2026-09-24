@@ -57,12 +57,11 @@ const HELP = `gen-ns [--json] [--quiet] [--help] [--out <dir>] [--check <dir>] [
 `;
 
 const NS = 'https://w3id.org/agentic-system-core/ns#';
-const ONTOLOGY_IRI = 'https://w3id.org/agentic-system-core/ns';
 const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
 const OWL = 'http://www.w3.org/2002/07/owl#';
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
-/** Two annotation predicates on the ontology node (AGSC-05-25 as amended at rc.6):
+/** Two annotation predicates on the ontology node (AGSC-05-25):
  *  an RDF/XML namespace only, never a context prefix. */
 const VANN = 'http://purl.org/vocab/vann/';
 /** AGSC-06-32: the prefixes the context defines beside `asc`. */
@@ -145,7 +144,7 @@ const xmlEscape = (s) => s.replace(/&/gu, '&amp;').replace(/</gu, '&lt;')
 const htmlEscape = xmlEscape;
 
 /**
- * AGSC-06-32 as amended at rc.6: ONE derivation of a term's name, shared
+ * AGSC-06-32: ONE derivation of a term's name, shared
  * with `src/knowledge/jsonld.js#termName`, which is the conforming one. An `asc:`
  * term is named by its LOCAL name, always. An external property is named by its
  * local name, or by its compact IRI where that local name is also an `asc:` term
@@ -485,9 +484,9 @@ function checkContext(document, derived, file, findings) {
     const { definition, name } = found[0];
     const actualType = definition['@type'] === '@id' ? '@id' : expandCompact(definition['@type']);
     // `null` in the table means a plain or language-tagged literal (AGSC-05-31 forms
-    // a and c), which takes NO `@type`. The check used to run only when the table
-    // named a type, so a plain literal wrongly declared `"@type": "@id"` — which
-    // turns the value into an IRI reference and changes the triple — passed.
+    // a and c), which takes NO `@type`. The check runs for every row, so a plain
+    // literal wrongly declared `"@type": "@id"` — which turns the value into an IRI
+    // reference and changes the triple — is reported.
     if (actualType !== (type || undefined)) {
       findings.push(finding('AGSC-E202', file,
         `the term "${name}" carries @type ${JSON.stringify(definition['@type'])} and ${curie} takes ${JSON.stringify(type)} (AGSC-06-32)`));
@@ -529,8 +528,7 @@ function specVersion(root) {
 }
 
 function packageVersion(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 }
 
 /**
@@ -552,14 +550,12 @@ function run(argv, io) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
     if (arg === '--json' || arg === '--quiet') flags.add(arg);
-    else if (arg === '--out') { outDir = argv[++i]; if (!outDir) return usage('--out needs a directory (AGSC-E003)'); }
-    else if (arg === '--check') { checkDir = argv[++i]; if (!checkDir) return usage('--check needs a directory (AGSC-E003)'); }
-    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (arg === '--out') { outDir = argv[++i]; if (!outDir) return usage('--out needs a directory (AGSC-E003)'); } else if (arg === '--check') { checkDir = argv[++i]; if (!checkDir) return usage('--check needs a directory (AGSC-E003)'); } else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const turtlePath = path.join(root, 'ontology', 'agsc.ttl');
-  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
+  // AGSC-09-90: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which
@@ -580,8 +576,7 @@ function run(argv, io) {
   const findings = [];
   const turtle = fs.readFileSync(turtlePath, 'utf8');
   let vocabulary;
-  try { vocabulary = readOntology(turtle); }
-  catch (e) {
+  try { vocabulary = readOntology(turtle); } catch (e) {
     findings.push(finding('AGSC-E201', 'ontology/agsc.ttl', `not well-formed Turtle: ${e.message}`));
     const bad = envelopeOf(findings, specVersion(root), packageVersion(root));
     if (flags.has('--json')) out(`${canonicalize(bad)}\n`);
@@ -634,8 +629,7 @@ function run(argv, io) {
     } else {
       const raw = fs.readFileSync(contextPath, 'utf8');
       let document = null;
-      try { document = JSON.parse(raw); }
-      catch (e) { findings.push(finding('AGSC-E201', contextFile, `not valid JSON: ${e.message}`)); }
+      try { document = JSON.parse(raw); } catch (e) { findings.push(finding('AGSC-E201', contextFile, `not valid JSON: ${e.message}`)); }
       if (document !== null) {
         if (raw !== `${canonicalize(document)}\n`) {
           findings.push(finding('AGSC-E601', contextFile,

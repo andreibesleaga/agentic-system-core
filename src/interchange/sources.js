@@ -144,4 +144,4 @@ function referenceList(record) {
   return [];
 }
 
-module.exports = { DATE, MEMBER_ORDER, RESOURCE, YEAR, map, one, ordered, referenceList };
+module.exports = { DATE, RESOURCE, YEAR, map, one, ordered, referenceList };

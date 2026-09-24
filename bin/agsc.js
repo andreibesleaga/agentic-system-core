@@ -69,7 +69,7 @@ function loadUserConfig(userConfigPorts) {
 }
 
 /**
- * AGSC-09-09 as amended at rc.6: `mcp` takes one OPTIONAL positional `<path>`, the
+ * AGSC-09-09: `mcp` takes one OPTIONAL positional `<path>`, the
  * Bundle root it serves, defaulting to the working directory — so an assistant with
  * no working-directory setting starts it with no shell. Every other verb serves the
  * working directory. Returns the root, or null when the path is not a directory.
@@ -88,6 +88,14 @@ function bundleRoot(argv, cwd) {
 }
 
 async function run() {
+  // A reader that closes the pipe early (`agsc --help | head -1`): stop quietly, as a
+  // Unix tool does, instead of printing an EPIPE stack trace.
+  for (const stream of [process.stdout, process.stderr]) {
+    stream.on('error', (e) => {
+      if (e && e.code === 'EPIPE') process.exit(process.exitCode === undefined ? 0 : process.exitCode);
+      throw e;
+    });
+  }
   const argv = process.argv.slice(2);
   const env = Object.assign({}, process.env);
   const root = bundleRoot(argv, process.cwd());
@@ -109,7 +117,7 @@ async function run() {
     stdout: process.stdout,
     stderr: process.stderr,
     root,
-    userConfig
+    userConfig,
   });
   process.exitCode = exitCode;
 }
@@ -135,8 +143,7 @@ if (require.main === module) {
       // line, exactly as `application/cli/main.js` writes the same fault. This is a
       // fatal, pre-verb condition: no verb ran, so there is no AGSC-09-11 envelope,
       // and stdout under `--json` carries "exactly one JCS-canonical envelope and
-      // nothing else" (vector `cli-0002`). The two fatal paths used to disagree
-      // about the stream.
+      // nothing else" (vector `cli-0002`). Both fatal paths use the same stream.
       if (json) process.stderr.write(`${JSON.stringify(diagnostic)}\n`);
       else if (!quiet) process.stderr.write(`agsc: ${code} ${diagnostic.message}\n`);
       process.exitCode = Number.isInteger(e.exitCode) ? e.exitCode : 2;

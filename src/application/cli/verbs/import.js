@@ -34,11 +34,13 @@ const path = require('node:path');
 
 const { finding } = require('../../../knowledge/validate.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
+const slugs = require('../../../knowledge/slug.js');
 const { ARCHIVE_EXTENSIONS, readSchemas } = require('../../../adapters/node-fs.js');
 const interchange = require('../../../interchange/import.js');
 const okf = require('../../../interchange/okf.js');
 const cogx = require('../../../interchange/adapters/cogx.js');
 const gabbe = require('../../../interchange/adapters/gabbe.js');
+const { LICENSE_NAME } = require('../../../interchange/licences.js');
 const skills = require('../../../interchange/adapters/skills.js');
 const board = require('../../../interchange/adapters/board.js');
 const loader = require('../../plugin-loader.js');
@@ -82,7 +84,6 @@ const SOURCE_TREES = Object.freeze(['content', 'diagrams']);
  */
 function openRoot(ctx, dir) {
   if (typeof ctx.openRoot === 'function') return ctx.openRoot(dir);
-  // eslint-disable-next-line global-require
   const { createFileSystem } = require('../../../adapters/node-fs.js');
   return createFileSystem(path.resolve(ctx.root || '.', dir));
 }
@@ -302,7 +303,7 @@ function survey(fs, writes) {
   const overwrites = [];
   const unchanged = [];
   for (const write of writes) {
-    let exists = false;
+    let exists;
     let current = null;
     try {
       exists = fs.exists(write.path);
@@ -459,12 +460,24 @@ function importOkf(ctx, source, identityOptions) {
   const findings = [];
   const files = [];
   const paths = typeof fs.walk === 'function' ? fs.walk('.') : [];
+  // AGSC-01-22: the licence files at the source root, which establish the licence of
+  // every record that declares none of its own.
+  const licenceFiles = Object.create(null);
   for (const file of paths) {
-    if (!String(file).endsWith('.md')) continue;
+    const name = String(file);
+    const bare = name.replace(/^\.\//u, '');
+    if (!bare.includes('/') && LICENSE_NAME.test(bare)) {
+      try {
+        licenceFiles[bare] = String(fs.readFile(name, 'utf8'));
+      } catch (e) {
+        // an unreadable licence file establishes nothing
+      }
+    }
+    if (!name.endsWith('.md')) continue;
     try {
-      files.push({ path: String(file), text: String(fs.readFile(String(file), 'utf8')) });
+      files.push({ path: name, text: String(fs.readFile(name, 'utf8')) });
     } catch (e) {
-      findings.push(unreadable(e, String(file)));
+      findings.push(unreadable(e, name));
     }
   }
   if (files.length === 0 && findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
@@ -475,7 +488,7 @@ function importOkf(ctx, source, identityOptions) {
     return { findings, status: 'fail' };
   }
 
-  // AGSC-01-22 as amended at rc.6: tolerance has one LIMIT and one RECORD.
+  // AGSC-01-22: tolerance has one LIMIT and one RECORD.
   // The limit is checked BEFORE the plan is built, so that a refusal writes nothing
   // and reports the same thing under `--dry-run` — the plan is data, and refusing
   // after building it would still be correct but would make the two paths differ.
@@ -491,6 +504,7 @@ function importOkf(ctx, source, identityOptions) {
   }
 
   const planned = okf.plan(files, {
+    licenceFiles,
     itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
     operator: identityOptions.operator,
     sourceHash: facts.bundleHash,
@@ -528,7 +542,7 @@ function importCogx(ctx, source, identityOptions) {
     }
   }
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
-  let secret = false;
+  let secret;
   try {
     secret = fs.exists(cogx.PERMISSIONS_FILE) === true;
   } catch (e) {
@@ -633,7 +647,7 @@ function cloneFiles(fs) {
   const out = [];
   for (const name of fs.readdir('.')) {
     if (CLONE_SKIP.includes(name)) continue;
-    let directory = false;
+    let directory;
     try {
       directory = fs.stat(name).isDirectory();
     } catch (e) {
@@ -672,9 +686,18 @@ function importSkills(ctx, source, identityOptions) {
       status: 'fail',
     };
   }
+  // `--cluster <slug>`: the Cluster every foreign skill of this import joins.
+  const cluster = verbFlags.cluster === undefined ? undefined : String(verbFlags.cluster);
+  if (cluster !== undefined && !slugs.isValid(cluster)) {
+    return {
+      findings: [finding('AGSC-E204', `--cluster ${JSON.stringify(cluster)} is not a slug (AGSC-01-10)`,
+        { file: '', line: 1 })],
+      status: 'fail',
+    };
+  }
   const fs = openRoot(ctx, source);
   const findings = [];
-  let paths = [];
+  let paths;
   try {
     paths = cloneFiles(fs);
   } catch (e) {
@@ -725,7 +748,7 @@ function importSkills(ctx, source, identityOptions) {
   }
   helpers.note(ctx, `import: skills layout ${chosen}${layout === undefined ? ' (detected)' : ''}`
     + `${detected.length > 1 ? `; also found: ${detected.filter((l) => l !== chosen).join(', ')}` : ''}`);
-  const planned = skills.plan({ files, paths }, { ...options, layout: chosen });
+  const planned = skills.plan({ files, paths }, { ...options, cluster, layout: chosen });
   if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
   return finish(ctx, [...findings, ...planned.findings], planned);
 }
@@ -761,7 +784,7 @@ function importBoard(ctx, source, identityOptions) {
   }
   const fs = openRoot(ctx, source);
   const findings = [];
-  let paths = [];
+  let paths;
   try {
     paths = cloneFiles(fs);
   } catch (e) {
@@ -1029,24 +1052,13 @@ function run(ctx) {
 }
 
 module.exports = {
-  CARDS_DIR,
-  DECKS_FILE,
-  DIAGRAM_DIR,
   FORMATS,
-  importBoard,
   SELECTION_REQUIRED,
-  SOURCE_TREES,
-  CLONE_SKIP,
   apply,
   bundleConfig,
-  cloneFiles,
   collisionFindings,
   finish,
   identity,
-  importCogx,
-  importGabbe,
-  importOkf,
-  importSkills,
   isoDate,
   name: 'import',
   openRoot,
@@ -1054,7 +1066,6 @@ module.exports = {
   readOldSite,
   readOutside,
   run,
-  sourceVersionRefusal,
   survey,
   totalsLines,
   unreadable,

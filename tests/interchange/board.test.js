@@ -14,7 +14,7 @@ const nodeFs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
+const { createFileSystem } = require('../../src/adapters/node-fs.js');
 const { createClock } = require('../../src/adapters/node-clock.js');
 const exportVerb = require('../../src/application/cli/verbs/export.js');
 const importVerb = require('../../src/application/cli/verbs/import.js');
@@ -470,7 +470,10 @@ test('the refusals: no --format, an unknown one, a bad --source-version, no expo
 test('an unreadable file is refused by the verb before anything is planned', () => {
   const into = emptyBundle();
   const source = writeTree(temp('agsc-board-link-'), { 'a.csv': 'Summary\nOne\n' });
-  nodeFs.symlinkSync('/etc/hostname', path.join(source, 'b.csv'));
+  // A link to a real file OUTSIDE the source root (/etc/hostname does not exist on
+  // macOS or Windows): the refusal is about leaving the root, not about the target.
+  const outside = writeTree(temp('agsc-board-outside-'), { 'secret.csv': 'Summary\nLeak\n' });
+  nodeFs.symlinkSync(path.join(outside, 'secret.csv'), path.join(source, 'b.csv'));
   const out = imported(into, source, 'jira');
   assert.strictEqual(out.status, 'fail');
   assert.ok(out.findings.some((f) => f.severity === 'error'));

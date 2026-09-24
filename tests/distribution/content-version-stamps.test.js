@@ -73,7 +73,6 @@ test('AGSC-04-25: ONE value reaches every stamping place', () => {
     new RegExp(`\\ncontent version ${VERSION}, built at 2026-01-01T00:00:00Z, `
       + 'fingerprint [0-9a-f]{64}, specification 1\\.0\\.0-rc\\.6\\n', 'u'));
   // The fingerprint IS the SHA-256 of graph.nq (AGSC-04-15), not some other digest.
-  // eslint-disable-next-line global-require
   const { createHash } = require('node:crypto');
   const fingerprint = createHash('sha256').update(String(files.get('/graph.nq')), 'utf8').digest('hex');
   assert.ok(String(files.get('/now.md')).includes(`fingerprint ${fingerprint},`));
@@ -111,9 +110,7 @@ test('AGSC-06-31: the shard manifest carries it where sharding produced one', ()
   assert.ok(!chunks.startsWith('{"bundle_version"'), 'an unsharded export is the records');
   // The manifest itself is proved over a sharded set in
   // `tests/distribution/pagination.test.js` and `page-tools-shards.test.js`.
-  // eslint-disable-next-line global-require
   const chunksModule = require('../../src/knowledge/chunks.js');
-  // eslint-disable-next-line global-require
   const { canonicalize } = require('../../src/knowledge/jcs.js');
   const records = [];
   for (let i = 0; i < 501; i += 1) {

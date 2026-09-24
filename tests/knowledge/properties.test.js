@@ -20,7 +20,7 @@ const jsonValue = fc.letrec((tie) => ({
     fc.integer({ min: -1e9, max: 1e9 }),
     fc.string(),
     fc.array(tie('value'), { maxLength: 4 }),
-    fc.dictionary(fc.string({ minLength: 1, maxLength: 6 }), tie('value'), { maxKeys: 5 })
+    fc.dictionary(fc.string({ minLength: 1, maxLength: 6 }), tie('value'), { maxKeys: 5 }),
   ),
 })).value;
 

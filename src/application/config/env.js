@@ -1,20 +1,16 @@
 // src/application/config/env.js — AGSC-01-37: the .env file and the AGSC_*
 // environment mapping.
 //
-// Not under src/knowledge/ or src/governance/, so fs
-// access here is fine — this module reads schema/config.schema.json once to
-// derive its name table mechanically (never hand-typed, per the work-package
-// prompt). Raw `.env` syntax is parsed by `dotenv@18.0.0` (`.parse()` only —
+// This module reads schema/config.schema.json once, through the adapter that is
+// the one door the schemas enter by (`adapters/node-fs.js#readSchemas`), to
+// derive its name table mechanically (never hand-typed). Raw `.env` syntax is parsed by `dotenv@18.0.0` (`.parse()` only —
 // never `.config()`, which would touch `process.env` itself); the AGSC_*
 // name filtering, credential exclusion and AGSC-09-09 precedence stay this
 // module's own (ADR-019: hand-write only what a library does not do).
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const dotenv = require('dotenv');
-
-const CONFIG_SCHEMA_PATH = path.join(__dirname, '..', '..', '..', 'schema', 'config.schema.json');
+const { readSchemas } = require('../../adapters/node-fs.js');
 
 // AGSC-08-15 / AGSC-01-37: credentials are environment-only and never configuration keys.
 const CREDENTIAL_NAMES = new Set(['AGSC_MODEL_API_KEY', 'AGSC_MODEL_BASE_URL']);
@@ -57,7 +53,7 @@ function leafType(schema, node) {
 // treatment instead of the generic dotted-path walk (AGSC-01-37).
 const NAMED_ENTRY_ARRAYS = {
   agents: 'AGENT',
-  channels: 'CHANNEL'
+  channels: 'CHANNEL',
 };
 
 let _table = null;
@@ -72,7 +68,7 @@ let _table = null;
  */
 function buildTable() {
   if (_table) return _table;
-  const schema = JSON.parse(fs.readFileSync(CONFIG_SCHEMA_PATH, 'utf8'));
+  const schema = readSchemas().config;
   const nameToPath = new Map(); // AGSC_* name -> {path: 'a.b.c', type}
   const pathToName = new Map(); // 'a.b.c' -> AGSC_* name
   const pathToDefault = new Map(); // 'a.b.c' -> default value (only where the schema declares one)
@@ -190,7 +186,7 @@ function pathForEnvName(name) {
           kind: arrName === 'agents' ? 'agent' : 'channel',
           entryName,
           key: best.key,
-          type: t.entryKeyTypes[arrName][best.key]
+          type: t.entryKeyTypes[arrName][best.key],
         };
       }
       return null;
@@ -228,7 +224,6 @@ function parseDotenv(text) {
 }
 
 module.exports = {
-  ENVIRONMENT_ONLY_NAMES,
   TRACKED_ENV_CODE,
   isCredentialName,
   envNameFor,

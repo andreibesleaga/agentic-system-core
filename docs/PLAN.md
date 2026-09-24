@@ -1,5 +1,7 @@
 # PLAN — AgenticSystemCore v1 architecture (arc42 + C4 + ISO 42010)
 
+**Who this is for:** an architect who wants the architecture decisions and their reasons. **Read after:** [ARCHITECTURE-GUIDE.md](ARCHITECTURE-GUIDE.md) and [PRD.md](PRD.md). *(Header added 2026-09-24.)*
+
 **Scope.** The architecture that satisfies `docs/PRD.md` (PRD-001…065, NFR-01…13). No requirement is added, changed or dropped here.
 **Authority.** The specification (`spec/`, `schema/`, `ontology/`, `tests/vectors/`) defines AgenticSystemCore, and this plan never overrides a rule. Sections 1–13 were frozen as the first architecture baseline on 2026-09-02; later changes are the dated addenda at the end, never rewritten into the sections. The maintainer's working records — review verdicts, calendars and the private decision register the sections were first traced to — are kept outside this repository.
 *Note, 2026-09-24:* the process text this document used to carry — citations of the private decision register, review verdicts, gate approvals, effort estimates and the October calendar — was moved to those records on this date. The sections, the decision records (ADR-001…019) and the technical addenda are kept.
@@ -594,3 +596,7 @@ outside every repository; a reader needs only the rule.
 git-write authority is "the maintainer"; the persona label "Owner-as-operator" above reads as
 "Maintainer-as-operator", which is what the feature file now says.
 
+*Note to the ADR-019 reading note (2026-09-24):* the engine's floor is now Node
+**>=22.13.0** (`package.json` `engines.node`); the `agsc CLI` container reads *"Node >=22.13,
+CommonJS, pinned audited dependencies"*. Node 22.12.0 warned on every `require()` of an ES-module
+library, which the MCP server's clean-stderr contract cannot carry.

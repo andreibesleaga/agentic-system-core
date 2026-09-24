@@ -216,8 +216,7 @@ function specVersion(root) {
 }
 
 function packageVersion(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 }
 
 /**
@@ -241,7 +240,7 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const schemaDir = path.join(root, 'schema');
-  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
+  // AGSC-09-90: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which
@@ -279,8 +278,7 @@ function run(argv, io) {
     if (raw.normalize('NFC') !== raw) findings.push(finding('AGSC-E108', file, 'the file is not NFC (AGSC-01-14)'));
 
     let document;
-    try { document = JSON.parse(raw); }
-    catch (e) { findings.push(finding('AGSC-E201', file, `not valid JSON: ${e.message}`)); continue; }
+    try { document = JSON.parse(raw); } catch (e) { findings.push(finding('AGSC-E201', file, `not valid JSON: ${e.message}`)); continue; }
     documents.set(name, document);
 
     if (document.$schema !== DIALECT) {
@@ -308,8 +306,7 @@ function run(argv, io) {
     } catch (e) {
       findings.push(finding('AGSC-E201', file, `cannot be meta-validated: ${e.message}`));
     }
-    try { ajv.compile(document); }
-    catch (e) { findings.push(finding('AGSC-E201', file, `does not compile in strict mode: ${e.message}`)); }
+    try { ajv.compile(document); } catch (e) { findings.push(finding('AGSC-E201', file, `does not compile in strict mode: ${e.message}`)); }
 
     // ---- AGSC-02-24: the closed keyword subset ----------------------------
     const allowed = new Set(name === 'config.schema.json' ? [...SUBSET, ...CONFIG_EXTRA] : SUBSET);

@@ -232,7 +232,6 @@ function checkExportBlocks(markdown, options = {}) {
 }
 
 module.exports = {
-  PN_LOCAL,
   turtleIri,
   turtleTerm,
   turtlePredicate,

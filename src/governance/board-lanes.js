@@ -14,8 +14,9 @@
 //     participant is refused (`AGSC-E511`): the first merged claim wins
 //     (AGSC-10-17), and a claim prepared against a state that no longer holds would
 //     be the forge conflict that rule describes.
-// A caller that declares no lane is not a lane, and nothing here applies: a person
-// proposing through the tools is reviewed like any other contributor (AGSC-08).
+// A caller that declares no lane is held to the "already held" refusal alone, which
+// AGSC-10-17 states for every participant; otherwise it is reviewed like any other
+// contributor (AGSC-08).
 //
 // "Held by" reads both places the specification lets a claim be recorded: the
 // derived `claimed_by` of the board export (AGSC-10-13, from history) and the
@@ -35,36 +36,43 @@ function laneOf(config, agentName) {
   return entry === null ? null : entry;
 }
 
-/** Who holds a task: the derived `claimed_by`, else the task's `prov.agent`, else `null`. */
-function holderOf(task, claimedBy) {
-  if (claimedBy != null) return String(claimedBy);
-  const agent = task && task.prov && task.prov.agent;
-  return agent == null ? null : String(agent);
-}
-
 /**
  * The gate on a prepared board move of one task.
  *
+ * The "already held" refusal comes FIRST and applies to every caller, lane or not:
+ * AGSC-10-17 makes a claim of a task already held in `TASK_STATE_WORKING` by another
+ * participant `AGSC-E511` whoever proposes it (the portable `pageBoardMove` of both
+ * transports runs the same check). The lane gates follow, for a declared lane only.
+ *
  * @param {object} config `agsc.config.json`.
  * @param {Array<object>} items every item as a flat frontmatter object (`slug`, `type` included).
- * @param {{agent:string, slug:string, task_state:string, path:string, claimed?:Map<string,string>}} move
+ * @param {{agent?:string, operator?:string, slug:string, task_state:string, path:string,
+ *   claimed?:Map<string,string>}} move
  * @returns {object|null} the refusing finding, or `null` when the move may be proposed.
  */
 function moveRefusal(config, items, move) {
-  if (laneOf(config, move.agent) === null) return null;
   const claimed = move.claimed instanceof Map ? move.claimed : new Map();
   const task = (items || []).find((i) => i && String(i.slug) === String(move.slug)) || {};
-  const holder = holderOf(task, claimed.get(String(move.slug)));
+  const holder = boards.holderOf(task, claimed.get(String(move.slug)));
+  const caller = move.agent != null ? move.agent : move.operator;
+  // A holder no history names is still somebody: only the known holder may re-claim.
   if (move.task_state === boards.CLAIMED_STATE && boards.stateOf(task) === boards.CLAIMED_STATE
-    && holder !== String(move.agent)) {
+    && (holder === null || !boards.sameParticipant(holder, caller))) {
     return finding('AGSC-E511', `the task "${move.slug}" is already ${boards.CLAIMED_STATE}`
       + `${holder === null ? '' : ` under ${holder}`}; the first merged claim wins (AGSC-10-17)`,
     { agent: move.agent, slug: move.slug });
   }
+  if (laneOf(config, move.agent) === null) return null;
   const board = {
-    tasks: (items || []).filter(boards.isTask).map((t) => ({
-      claimed_by: holderOf(t, claimed.get(String(t.slug))), slug: String(t.slug), state: boards.stateOf(t),
-    })),
+    tasks: (items || []).filter(boards.isTask).map((t) => {
+      const who = boards.holderOf(t, claimed.get(String(t.slug)));
+      // A lane's commits are authored `process:<name>`; the lane counts them as its own.
+      return {
+        claimed_by: who !== null && boards.sameParticipant(who, move.agent) ? String(move.agent) : who,
+        slug: String(t.slug),
+        state: boards.stateOf(t),
+      };
+    }),
   };
   const checked = prov.checkClaims(config, {
     agent: move.agent,
@@ -90,5 +98,8 @@ function createRefusal(config, created) {
   });
   return checked.accepted ? null : checked.findings[0];
 }
+
+/** Who holds a task — `boards.holderOf`, kept here for the callers that read it from this module. */
+const { holderOf } = boards;
 
 module.exports = { createRefusal, holderOf, laneOf, moveRefusal };

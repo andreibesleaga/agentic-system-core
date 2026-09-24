@@ -73,13 +73,13 @@ test('AGSC-02-92: what adoption synthesizes always validates, warnings only', ()
 test('the emitted YAML is the AGSC-04-19 profile', () => {
   assert.strictEqual(
     adopt.serialize({ type: 'concept', title: 'A: b', aliases: ['x.md'] }),
-    '---\ntype: concept\ntitle: "A: b"\naliases:\n  - x.md\n---\n'
+    '---\ntype: concept\ntitle: "A: b"\naliases:\n  - x.md\n---\n',
   );
 });
 
 test('AGSC-02-95: relative body references are found, absolute ones are not', () => {
   const refs = adopt.relativeReferences(
-    'see [a](../a.md) and ![i](img/p.png "t") and [x](https://e.org) and [y](#frag) and [m](mailto:a@b.c)'
+    'see [a](../a.md) and ![i](img/p.png "t") and [x](https://e.org) and [y](#frag) and [m](mailto:a@b.c)',
   );
   assert.deepStrictEqual(refs, [{ reference: '../a.md', image: false }, { reference: 'img/p.png', image: true }]);
   assert.deepStrictEqual(adopt.relativeReferences('nothing here'), []);

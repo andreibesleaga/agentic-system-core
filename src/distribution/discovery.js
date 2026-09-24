@@ -31,12 +31,12 @@ const REL = 'https://w3id.org/agentic-system-core/rel#';
 const EXTENSION_RELATIONS = Object.freeze([
   'access', 'context', 'contribute', 'graph', 'ledger', 'now',
   'ontology', 'peer', 'signature', 'skills', 'surface',
-]); // `signature`: AGSC-06-08/06-10 as amended at rc.6 — optional, affects nothing
+]); // `signature`: AGSC-06-08/06-10 — optional, affects nothing
 /** AGSC-06-10 + AGSC-06-35: the IANA-registered short names this profile uses. */
 const REGISTERED_RELATIONS = Object.freeze([
   'alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
   'related', 'service-desc', 'service-doc', 'service-meta',
-]); // `cite-as` (RFC 8574): AGSC-06-10/06-35 as amended at rc.6
+]); // `cite-as` (RFC 8574): AGSC-06-10/06-35
 /** AGSC-06-35: the short names a `related[]` entry may carry. */
 const RELATED_RELATIONS = Object.freeze([
   'alternate', 'cite-as', 'collection', 'describedby', 'item', 'related',
@@ -209,8 +209,12 @@ function linkset(config, options = {}) {
   const alternates = [link(href(base, '/llms.txt'), 'text/plain', { digest: digest('/llms.txt') })];
   if (options.successor != null) alternates.push(link(String(options.successor), MEDIA_TYPE));
   put('alternate', alternates);
-  put('license', [link(href(base, '/legal/'), null, {})]);
-  put('service-doc', [link(href(base, '/specs/'), null, {})]);
+  // A link to a route this node does not emit is a 404 every agent follows: the
+  // licence page and the specification pages are linked only when the build wrote
+  // them (the build skips `/legal/` without a LICENSE-CONTENT file, and `/specs/`
+  // is the site repository's, not the engine's — AGSC-06-01).
+  if (has('/legal/') || has('/legal/index.html')) put('license', [link(href(base, '/legal/'), null, {})]);
+  if (has('/specs/') || has('/specs/index.html')) put('service-doc', [link(href(base, '/specs/'), null, {})]);
 
   const graphLinks = [];
   if (has('/graph.nq')) graphLinks.push(link(href(base, '/graph.nq'), 'application/n-quads', { digest: digest('/graph.nq') }));
@@ -451,8 +455,6 @@ module.exports = {
   ALLOWED_RELATIONS,
   ANCHOR_ATTRIBUTES,
   LEDGER_ATTRIBUTES,
-  LEVEL0_OMITTED,
   RESTRICTED_OMITTED,
   COUNTED_TYPES,
-  BUILTIN_SURFACE_ACCESS,
 };

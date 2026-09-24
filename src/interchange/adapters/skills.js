@@ -71,14 +71,18 @@
 const slugs = require('../../knowledge/slug.js');
 const frontmatterModule = require('../../knowledge/frontmatter.js');
 const yaml = require('../../knowledge/yaml.js');
-const fix = require('../../governance/fix.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc, singleLine } = require('../../knowledge/unicode.js');
-const { serialize, titleFor } = require('../../knowledge/adopt.js');
+const { titleFor } = require('../../knowledge/adopt.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
 const okf = require('../okf.js');
+const {
+  LICENSE_NAME, OPEN_LICENSES, RESTRICTIVE, licenceFromText, licenceId,
+} = require('../licences.js');
 const ownRecord = require('../own-record.js');
+const { decodeRecord, encodeRecord } = ownRecord;
+const { isObject, itemText, oneLine, plain, yamlString } = require('../records.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'skills';
@@ -109,9 +113,6 @@ const DESCRIPTION_MAX = 200;
 /** The own-record line. Anchored at a line start, so it cannot hide inside a line. */
 const MARKER = /^<!-- agsc-item ([A-Za-z0-9+/]+={0,2}) -->$/gmu;
 
-/** A licence file, by name. */
-const LICENSE_NAME = /^(?:LICEN[CS]E|COPYING)(?:[.-][A-Za-z0-9]+)?$/u;
-
 /** Files a skill directory may carry that are executable content (AGSC-07-15). */
 const EXECUTABLE_EXT = /\.(?:bash|bat|cjs|cmd|exe|js|mjs|php|pl|ps1|py|rb|sh|ts|zsh)$/iu;
 
@@ -120,42 +121,6 @@ const PLUGIN_EXECUTABLE = Object.freeze(['.lsp.json', '.mcp.json', 'bin/', 'hook
 
 /** Plugin components that are not a skill directory and are not mapped. */
 const PLUGIN_UNMAPPED = Object.freeze(['agents/', 'commands/', 'output-styles/']);
-
-/**
- * The licences this adapter recognises as open (SPDX identifiers; a `-only` or
- * `-or-later` suffix is accepted). A recognised licence is carried, never judged
- * against the node's own licence — the import says so once.
- */
-const OPEN_LICENSES = Object.freeze(['0BSD', 'AGPL-3.0', 'Apache-2.0', 'Artistic-2.0', 'BSD-2-Clause',
-  'BSD-3-Clause', 'BSL-1.0', 'CC-BY-4.0', 'CC-BY-SA-4.0', 'CC0-1.0', 'EPL-2.0', 'GPL-2.0', 'GPL-3.0',
-  'ISC', 'LGPL-2.1', 'LGPL-3.0', 'MIT', 'MIT-0', 'MPL-2.0', 'Unlicense', 'Zlib']);
-
-/** Common spellings that are not SPDX identifiers but name one unambiguously. */
-const LICENSE_ALIASES = Object.freeze({
-  'apache 2.0': 'Apache-2.0', 'apache license 2.0': 'Apache-2.0', 'apache license, version 2.0': 'Apache-2.0',
-  'apache2': 'Apache-2.0', 'cc0': 'CC0-1.0', 'mit license': 'MIT', 'the unlicense': 'Unlicense',
-});
-
-/** The first lines of the recognised licence texts, for a licence FILE. */
-const LICENSE_TEXTS = Object.freeze([
-  [/Apache License[\s\S]{0,80}Version 2\.0/u, 'Apache-2.0'],
-  [/GNU AFFERO GENERAL PUBLIC LICENSE/u, 'AGPL-3.0'],
-  [/GNU LESSER GENERAL PUBLIC LICENSE[\s\S]{0,80}Version 3/u, 'LGPL-3.0'],
-  [/GNU GENERAL PUBLIC LICENSE[\s\S]{0,80}Version 3/u, 'GPL-3.0'],
-  [/GNU GENERAL PUBLIC LICENSE[\s\S]{0,80}Version 2/u, 'GPL-2.0'],
-  [/Mozilla Public License,? [Vv]ersion 2\.0/u, 'MPL-2.0'],
-  [/CC0 1\.0 Universal/u, 'CC0-1.0'],
-  [/Attribution-ShareAlike 4\.0 International/u, 'CC-BY-SA-4.0'],
-  [/Attribution 4\.0 International/u, 'CC-BY-4.0'],
-  [/This is free and unencumbered software released into the public domain/u, 'Unlicense'],
-  [/\bISC License\b/u, 'ISC'],
-  [/\bMIT License\b|Permission is hereby granted, free of charge/u, 'MIT'],
-  [/Redistribution and use in source and binary forms[\s\S]*Neither the name/u, 'BSD-3-Clause'],
-  [/Redistribution and use in source and binary forms/u, 'BSD-2-Clause'],
-]);
-
-/** Words that state a licence is not open, whatever else its sentence names. */
-const RESTRICTIVE = /\b(?:all rights reserved|proprietary|source-available|confidential)\b/iu;
 
 /** The content-version grammar of AGSC-04-25, which `prov.source_version` carries. */
 const VERSION = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u;
@@ -173,24 +138,6 @@ const CLAIMED_KEYS = Object.freeze({
 });
 
 // ------------------------------------------------------------------- shared helpers
-
-/** A plain object with no prototype, so a foreign `__proto__` member is only data. */
-function plain(value) {
-  const out = Object.create(null);
-  if (isObject(value)) for (const key of Object.keys(value)) out[key] = value[key];
-  return out;
-}
-
-function isObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-/** A single-line string, whitespace collapsed, or `null` when empty. */
-function oneLine(value) {
-  if (typeof value !== 'string') return null;
-  const text = nfc(value).replace(/\s+/gu, ' ').trim();
-  return text === '' ? null : text;
-}
 
 function clip(text, max) {
   const points = [...text];
@@ -215,36 +162,6 @@ function relativeDir(value) {
 
 function under(dir, path) {
   return dir === '' ? true : String(path).startsWith(`${dir}/`);
-}
-
-/** The own-record payload of one item, as the base64 of its JCS bytes. */
-function encodeRecord(record) {
-  return Buffer.from(canonicalize(record), 'utf8').toString('base64');
-}
-
-/** The payload of one `agsc-item` line, or `null` when it is not ours. */
-function decodeRecord(b64) {
-  let value;
-  try {
-    value = JSON.parse(Buffer.from(String(b64), 'base64').toString('utf8'));
-  } catch (e) {
-    return null;
-  }
-  if (!isObject(value) || !isObject(value.frontmatter) || typeof value.body !== 'string'
-    || typeof value.slug !== 'string' || typeof value.type !== 'string') return null;
-  return value;
-}
-
-/** A YAML double-quoted scalar: JSON's string form is one (YAML 1.2 §7.3.1). */
-function yamlString(value) {
-  return JSON.stringify(singleLine(nfc(String(value))));
-}
-
-/** The lint-normalized bytes of one item (AGSC-04-19), as every import lane writes them. */
-function itemText(frontmatter, body, itemSchema) {
-  const type = String(frontmatter.type);
-  const ordered = fix.orderKeys(frontmatter, fix.declaredOrder(itemSchema, type), itemSchema, type, null);
-  return fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${nfc(body)}`);
 }
 
 // ------------------------------------------------------------------- frontmatter
@@ -290,23 +207,6 @@ function readFrontmatter(text, path) {
 }
 
 // ------------------------------------------------------------------- licences
-
-/** An SPDX identifier (or a known alias) → the recognised id, or `null`. */
-function licenceId(value) {
-  const text = oneLine(value);
-  if (text === null) return null;
-  const alias = LICENSE_ALIASES[text.toLowerCase()];
-  if (alias !== undefined) return alias;
-  const bare = text.replace(/-(?:only|or-later)$/u, '').replace(/\+$/u, '');
-  return OPEN_LICENSES.find((id) => id.toLowerCase() === bare.toLowerCase()) || null;
-}
-
-/** A licence file's text → the recognised id, or `null`. Only its opening is read. */
-function licenceFromText(text) {
-  const head = String(text).slice(0, 4000);
-  for (const [pattern, id] of LICENSE_TEXTS) if (pattern.test(head)) return id;
-  return null;
-}
 
 /** The licence files directly inside `dir`, in code-point order. */
 function licenceFiles(dir, paths) {
@@ -638,6 +538,7 @@ function mapEntry(entry, input, layout, findings) {
  * @param {string} options.toolSpecVersion this engine's `spec_version`.
  * @param {boolean} [options.allowNewer] the adapter's `--allow-newer` (AGSC-01-22).
  * @param {string} [options.sourceVersion] the adapter's `--source-version`.
+ * @param {string} [options.cluster] the adapter's `--cluster`, the Cluster every foreign item joins.
  * @returns {{entries:Array<object>, findings:Array<object>, refused:boolean,
  *   totals:object, writes:Array<{path:string, text:string}>}}
  */
@@ -751,6 +652,9 @@ function plan(input, options) {
     }
     fm.prov = prov;
     for (const [key, value] of Object.entries(candidate.fm)) fm[key] = value;
+    // `--cluster <slug>` (an adapter flag, AGSC-01-26a): the Cluster every foreign
+    // item joins, so it appears in that Cluster's pack (AGSC-07-19).
+    if (typeof opts.cluster === 'string' && slugs.isValid(opts.cluster)) fm.clusters = [opts.cluster];
     fm['x-skills-layout'] = opts.layout;
     fm['x-skills-source'] = entry.path;
     if (licence.declared !== null) {
@@ -948,9 +852,8 @@ function run(bundle, options) {
 }
 
 module.exports = {
-  CLAIMED_KEYS, DEFAULT_LAYOUT, FORMAT, LAYOUTS, MARKETPLACE_MANIFEST, NEEDS_SKILL_PACKS, OPEN_LICENSES,
-  PLUGIN_MANIFEST, SKILL_FILE, WINDSURF_LIMIT,
+  CLAIMED_KEYS, FORMAT, LAYOUTS, NEEDS_SKILL_PACKS, OPEN_LICENSES,
   catalogue, decodeRecord, detect, encodeRecord, flatFrontmatter, isRelevant, licenceFromText, licenceId,
-  licenceOf, linkEntries, mapEntry, packBody, packLicence, plan, readFrontmatter, relativeDir, run, sources,
+  licenceOf, linkEntries, packBody, packLicence, plan, readFrontmatter, relativeDir, run, sources,
   supportingFiles,
 };

@@ -29,7 +29,7 @@ function agsc(bundleDir, args) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (e) {
-    throw new Error(`agsc ${args.join(' ')} failed (exit ${e.status}):\n${e.stderr || e.message}`);
+    throw new Error(`agsc ${args.join(' ')} failed (exit ${e.status}):\n${e.stderr || e.message}`, { cause: e });
   }
 }
 

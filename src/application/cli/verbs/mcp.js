@@ -34,13 +34,22 @@ function artifactsOf(ctx, bundle) {
 }
 
 function run(ctx) {
+  // AGSC-01-01: outside a Bundle there is no memory to serve; the server refuses
+  // (exit 1, one AGSC-E901 line on stderr) instead of serving an empty one.
+  const outside = helpers.outsideBundle(ctx, 'mcp');
+  if (outside !== null) {
+    const refusal = new Error(outside.message);
+    refusal.code = outside.code;
+    throw refusal;
+  }
   const bundle = helpers.bundleOf(ctx);
   return stdio.serve({
     artifacts: artifactsOf(ctx, bundle),
     bundle,
     config: ctx.config,
-    stdin: ctx.stdin,
-    stdout: ctx.stdout,
+    // The process streams are the host's; the application layer hands them in.
+    stdin: ctx.stdin || process.stdin,
+    stdout: ctx.stdout || process.stdout,
     version: ctx.version,
   });
 }

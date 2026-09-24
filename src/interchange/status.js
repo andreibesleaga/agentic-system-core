@@ -149,12 +149,10 @@ function switchboard(keys) {
 }
 
 module.exports = {
-  RELEASE_TAG_PREFIX,
   STATUS_SYNONYMS,
   STATUS_VALUES,
   TAGS_MAX,
   TAGS_MIN,
-  TAG_NAME,
   status,
   switchboard,
   tags,

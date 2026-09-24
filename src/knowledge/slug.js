@@ -28,7 +28,7 @@ function isValid(slug) {
 function finding(code, message, extra) {
   return Object.assign(
     { code, col: 1, file: '', line: 1, message, severity: 'error' },
-    extra || {}
+    extra || {},
   );
 }
 
@@ -47,7 +47,7 @@ function check(slugs, options = {}) {
         finding('AGSC-E204', `slug "${slug}" does not match ${SLUG_PATTERN} within 1-64 code points`, {
           file,
           slug,
-        })
+        }),
       );
       return;
     }
@@ -56,7 +56,7 @@ function check(slugs, options = {}) {
         finding('AGSC-E206', `slug "${slug}" is already used by ${seen.get(slug) || 'another item'}`, {
           file,
           slug,
-        })
+        }),
       );
       return;
     }
@@ -129,7 +129,6 @@ function pathSlug(filePath) {
 
 module.exports = {
   SLUG_PATTERN,
-  MIN_LENGTH,
   MAX_LENGTH,
   isValid,
   check,

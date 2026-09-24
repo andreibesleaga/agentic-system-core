@@ -17,7 +17,7 @@ const pluginLoader = require('../plugin-loader.js');
 
 const VERBS = [
   'init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
-  'propose', 'review', 'refresh', 'skills', 'mcp', 'run', 'trace', 'conform'
+  'propose', 'review', 'refresh', 'skills', 'mcp', 'run', 'trace', 'conform',
 ];
 
 /**
@@ -36,15 +36,14 @@ const GLOBAL_FLAGS = [
   ['--json', 'bool'],
   ['--quiet', 'bool'],
   ['--plain', 'bool'],
-  ['--no-input', 'bool']
+  ['--no-input', 'bool'],
   // --version is handled before a verb is even looked up (see main()).
 ];
 
 /**
  * AGSC-09-13: `mcp` is a STREAMING verb — its stdout carries JSON-RPC frames
  * and nothing else, so the shell prints no diagnostic line and no envelope
- * there for it (this replaces an earlier stream monkey-patch in
- * `distribution/mcp-stdio.js`). Diagnostics still go to stderr, which
+ * there for it. Diagnostics still go to stderr, which
  * AGSC-09-13 explicitly allows.
  */
 const STREAMING_VERBS = new Set(['mcp']);
@@ -67,10 +66,10 @@ const VERB_FLAGS = {
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
     ['--jsonl', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
-    ['--zip', 'bool']
+    ['--zip', 'bool'],
   ]),
   // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
-  // and writes nothing (AGSC-09-09 as amended at rc.5). The flags of the
+  // and writes nothing (AGSC-09-09). The flags of the
   // ADAPTER itself are not here — see ADAPTER_FLAGS.
   import: new Map([['--from', 'value'], ['--dry-run', 'bool']]),
   refresh: new Map([['--agent', 'value'], ['--dry-run', 'bool'], ['--task', 'value']]),
@@ -94,7 +93,7 @@ const VERB_FLAGS = {
   compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool']]),
   skills: new Map([['--zip', 'bool']]),
   build: new Map([['--level', 'value']]),
-  ci: new Map([['--level', 'value']])
+  ci: new Map([['--level', 'value']]),
 };
 
 /**
@@ -123,7 +122,7 @@ function retiredFlagHint(verb, argv) {
 }
 
 /**
- * AGSC-09-09 as amended at rc.5: "a memory adapter selected by
+ * AGSC-09-09: "a memory adapter selected by
  * `export --to <adapter>` or `import --from <adapter>` MAY define further flags of
  * its own (AGSC-01-26a): they belong to that adapter's documented contract and not
  * to this specification, they MUST NOT change the meaning of a flag named above, and
@@ -180,9 +179,11 @@ const ADAPTER_FLAGS = {
       gabbe: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value']]),
       // The skills adapter adds `--layout <name>` (which foreign layout
       // to read; detected when absent) and `--list` (the catalogue of a local clone:
-      // what each layout would import, and nothing is written or fetched).
+      // what each layout would import, and nothing is written or fetched), and
+      // `--cluster <slug>`, the Cluster every imported skill joins, so it appears in
+      // that Cluster's pack (AGSC-07-19) instead of in none.
       skills: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value'],
-        ['--layout', 'value'], ['--list', 'bool']]),
+        ['--layout', 'value'], ['--list', 'bool'], ['--cluster', 'value']]),
       // The board adapter adds `--format <tool>`: which tracker's export file
       // the directory holds.
       board: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value'],
@@ -290,12 +291,11 @@ function portBag(opts, env) {
     clock: clock === undefined ? createClock({ env }) : clock,
     fs: bag.fs,
     network: bag.network === undefined ? opts.network : bag.network,
-    proc: bag.proc === undefined ? opts.proc : bag.proc
+    proc: bag.proc === undefined ? opts.proc : bag.proc,
   };
 }
 
 function readPackageVersion() {
-  // eslint-disable-next-line global-require
   return require('../../../package.json').version;
 }
 
@@ -343,7 +343,7 @@ function buildEnvelope({ verb, findings, status, specVersion, version }) {
     spec_version: specVersion,
     status: derivedStatus,
     verb,
-    version
+    version,
   };
 }
 
@@ -357,7 +357,6 @@ function buildEnvelope({ verb, findings, status, specVersion, version }) {
 function serializeEnvelope(envelope) {
   let jcs;
   try {
-    // eslint-disable-next-line global-require
     jcs = require('../../knowledge/jcs.js');
   } catch (e) {
     return null;
@@ -465,7 +464,7 @@ function helpDocument(version, verb) {
 }
 
 /**
- * `agsc --help` and `agsc <verb> --help` (AGSC-09-09 as amended at rc.5).
+ * `agsc --help` and `agsc <verb> --help` (AGSC-09-09).
  *
  * "MUST print the verb set of AGSC-09-07 and this flag list to stdout and exit 0;
  * with a verb, it MUST print that verb's flags." It is the one flag that is NOT a
@@ -624,7 +623,7 @@ function main(argv, ctx) {
     json: commanderOpts.json === true,
     quiet: commanderOpts.quiet === true,
     plain: commanderOpts.plain === true,
-    noInput: commanderOpts.input === false // commander's `--no-input` negation convention
+    noInput: commanderOpts.input === false, // commander's `--no-input` negation convention
   };
   const verbFlags = {};
   for (const [flag, kind] of flagsFor(verb, rest)) {
@@ -650,7 +649,7 @@ function main(argv, ctx) {
   // anti-corruption layer that owns AGSC-11-01, and is INJECTED because the
   // Knowledge context may not require Boundary (the context map).
   const loaded = load({
-    root, ports: ports.fs, env, argvFlags: {}, userConfig: opts.userConfig, checkBoundary: checkBoundaryConfig
+    root, ports: ports.fs, env, argvFlags: {}, userConfig: opts.userConfig, checkBoundary: checkBoundaryConfig,
   });
 
   // AGSC-09-94 (as amended 2026-09-24): run/trace are opt-in, disabled unless
@@ -669,7 +668,6 @@ function main(argv, ctx) {
 
   let verbModule;
   try {
-    // eslint-disable-next-line global-require
     verbModule = require(`./verbs/${verb}.js`);
   } catch (e) {
     verbModule = null;
@@ -690,7 +688,7 @@ function main(argv, ctx) {
     stdout,
     stderr,
     specVersion,
-    version
+    version,
   };
 
   // AGSC-09-13: a streaming verb owns stdout. Nothing but its own protocol
@@ -762,7 +760,7 @@ function main(argv, ctx) {
     for (const f of envelope.findings) writeFindingLine(stderr, f);
   } else {
     writeLine(stdout, `${verb}: ${envelope.status} (${envelope.counts.error} error, ${envelope.counts.warn} warn)\n`);
-    for (const f of envelope.findings) writeLine(stderr, `${f.severity}: ${f.code} ${f.message || ''}\n`);
+    for (const f of envelope.findings) writeLine(stderr, `${f.severity}: ${f.code} ${f.message || ''}${plainWhere(f)}\n`);
   }
 
   // AGSC-09-08: the exit code names the CLASS of the fault, not its severity.
@@ -781,7 +779,18 @@ function main(argv, ctx) {
   return envelope.status === 'pass' ? 0 : 1;
 }
 
+/**
+ * AGSC-09-10: where a finding is, on its plain line — ` — <file>[:<line>]` — so a
+ * person reading without `--json` can find the fault. Omitted when the finding names
+ * no file or its message already names it.
+ */
+function plainWhere(f) {
+  const file = typeof f.file === 'string' ? f.file : '';
+  if (file === '' || String(f.message || '').includes(file)) return '';
+  return ` — ${file}${Number.isInteger(f.line) && f.line > 1 ? `:${f.line}` : ''}`;
+}
+
 module.exports = {
-  main, ADAPTER_FLAGS, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_USAGE,
-  adapterFlagsFor, buildEnvelope, compareFindings, flagsFor, retiredFlagHint,
+  main, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_USAGE,
+  adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
 };

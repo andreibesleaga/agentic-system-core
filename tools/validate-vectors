@@ -153,7 +153,7 @@ function run(argv, io) {
     else if (arg.startsWith('--')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else dir = path.resolve(arg);
   }
-  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
+  // AGSC-09-90: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit 1
   // and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which a

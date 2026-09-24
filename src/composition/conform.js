@@ -41,7 +41,7 @@ const CROSS_IMPLEMENTATION = Object.freeze([
   '/llms.txt', '/llms-full.txt', '/.well-known/knowledge-linkset',
   // The seven Harness FILE KINDS of AGSC-07-12. They are not routes (a Harness is a
   // directory the operator is given, never a served surface), so they carry no
-  // leading slash — and AGSC-04-24 as amended at rc.5 says their obligation
+  // leading slash — and AGSC-04-24 says their obligation
   // is discharged only when `tests/vectors/harness/` is populated, which it is not.
   'harness.jsonld', 'AGENTS.md', 'workspace.dsl', 'diagram.mmd', 'arc42.md',
 ]);
@@ -172,9 +172,7 @@ function report(input) {
 module.exports = {
   CROSS_IMPLEMENTATION,
   HTML_REASON,
-  LEVEL_AREAS,
   LEVEL_NAMES,
-  REQUIRED_CLAIM_MEMBERS,
   areasForLevel,
   claimCompleteness,
   crossImplementationClaim,

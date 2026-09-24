@@ -1,6 +1,8 @@
 # Domain-driven architecture — bounded contexts, language, forward compatibility
 
-*Informative. Written 2026-09-16 for the `1.0.0-rc.3` draft; re-verified against `1.0.0-rc.4` on 2026-09-18. It complements `docs/PLAN.md` (arc42, frozen as its first baseline) and never overrides a rule of `spec/`. Where this page and a rule disagree, the rule wins and this page is wrong.*
+**Who this is for:** an architect or a developer who wants the domain model behind the code. **Read after:** [ARCHITECTURE-GUIDE.md](ARCHITECTURE-GUIDE.md) (the pictures) and [src/README.md](../src/README.md) (the module map).
+
+*Informative. Written 2026-09-16 for the `1.0.0-rc.3` draft; re-verified against `1.0.0-rc.4` on 2026-09-18; its context table and context map were checked against the `1.0.0-rc.6` draft on 2026-09-24, when the Interchange row and the map were corrected. It complements `docs/PLAN.md` (arc42, frozen as its first baseline) and never overrides a rule of `spec/`. Where this page and a rule disagree, the rule wins and this page is wrong.*
 
 ## 1. The domain in one sentence
 
@@ -15,9 +17,9 @@ A **Bundle** is a directory of Markdown **items** joined by fourteen typed **Lin
 | **Composition** | Selection, Verdict, Harness, Port wiring, saved Architecture | the five-step pipeline, the seven Harness files, emitters, skill packs | parsing, network | spec/07, 02 §2.10 | `compose`, `harness`, `skills` |
 | **Distribution** (also called Emission) | Page, Route, Discovery document, Surfaces (tools, page tools, agent-facing text, chunks), NOW, Boards | routes, headers, link set, surface declaration, budgets | writes of any kind | spec/06, 09 §9.3, 10 §10.5 | `discovery`, `build`, `cli`, `boards` |
 | **Boundary** | Peer, Visibility, Contribute target, Surface declaration, Responder/Solid hook, Tombstone | cross-origin access, peer-fetch safety, the federation walk (client rules), trust marking, contribute relation, the plugin contract, visibility and dynamic hooks, retirement | content semantics | spec/11 | `boundary` |
-| *Interchange* (supporting) | foreign formats both ways | OKF, JSON-LD, JSONL, steering files, skills import | — | spec/01 §1.5–1.6, 03 §3.6 | `import`, `export` |
+| *Interchange* (supporting) | foreign formats both ways | OKF, JSON-LD, JSONL, steering files, skills import | rendering, composition | spec/01 §1.5–1.6, 03 §3.6 | `import`, `export` |
 
-**Context map.** Knowledge → *conformist* → Distribution (Distribution renders what Knowledge validated and adds nothing to it). Knowledge → *customer/supplier* → Composition (Composition consumes the resolved graph; Knowledge does not know compositions exist). Governance → *published language* (trailers, ledger entries) → Distribution. **Boundary is an anti-corruption layer around every external surface** — MCP, WebMCP, the A2A card, Solid, a peer — so that an external draft moving (the MCP handshake changed between 2025-11-25 and 2026-07-28; WebMCP's report date moved from 10 to 15 September 2026) moves a declared version string and a plugin, never the core. The four-rule plugin contract — **declare · pin · inherit · prove** (AGSC-11-16…19) — is the anti-corruption layer's interface.
+**Context map.** Knowledge → *conformist* → Distribution (Distribution renders what Knowledge validated and adds nothing to it). Knowledge → *customer/supplier* → Composition (Composition consumes the resolved graph; Knowledge does not know compositions exist). Governance → *published language* (trailers, ledger entries) → Distribution, and the same published language → Interchange (provenance, the ledger and agent records reach imports and exports; added 2026-09-24). **Boundary is an anti-corruption layer around every external surface** — MCP, WebMCP, the A2A card, Solid, a peer — so that an external draft moving (the MCP handshake changed between 2025-11-25 and 2026-07-28; WebMCP's report date moved from 10 to 15 September 2026) moves a declared version string and a plugin, never the core. The four-rule plugin contract — **declare · pin · inherit · prove** (AGSC-11-16…19) — is the anti-corruption layer's interface.
 
 ## 3. Ubiquitous language
 

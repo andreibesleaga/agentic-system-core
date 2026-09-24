@@ -152,9 +152,14 @@ function plan(files, options = {}) {
   const existing = options.existing || {};
   const has = (p) => Object.prototype.hasOwnProperty.call(existing, p)
     || files.some((f) => f.path === p);
+  // Never adopted: the build output, the generated `dist/` and the copies
+  // AGSC-02-95 made under content/assets/ — adopting them a second time would
+  // move a generated file or an asset copy over an item (AGSC-02-91, AGSC-01-23).
+  const out = `${String((options.config && options.config.build && options.config.build.out) || DEFAULT_OUT).replace(/\/+$/u, '')}/`;
+  const generated = (p) => p.startsWith(out) || p.startsWith('dist/') || p.startsWith(ASSETS_PREFIX);
   const all = [...(files || [])]
     .sort((a, b) => compareCodePoint(String(a.path), String(b.path)));
-  const markdown = all.filter((f) => f.markdown != null && String(f.path).endsWith('.md'));
+  const markdown = all.filter((f) => f.markdown != null && String(f.path).endsWith('.md') && !generated(String(f.path)));
   const paths = new Set(all.map((f) => String(f.path)));
 
   const adopted = adopt.adopt(markdown, {
@@ -164,6 +169,16 @@ function plan(files, options = {}) {
   const writes = [];
   const copies = [];
   const items = [];
+  // AGSC-02-95: a reference is checked against where the files are AFTER the move —
+  // every adopted note that moves takes its new path and leaves its old one — so two
+  // notes that link to each other and move together still resolve.
+  const after = new Set(paths);
+  for (let i = 0; i < adopted.files.length; i += 1) {
+    const result = adopted.files[i];
+    if (result.skipped || !result.changed || result.path === String(markdown[i].path)) continue;
+    after.delete(String(markdown[i].path));
+    after.add(result.path);
+  }
 
   // `adopt.adopt()` orders by the same code-point path sort `markdown` already
   // carries, so index i of its result is index i of the source (AGSC-01-15).
@@ -192,7 +207,7 @@ function plan(files, options = {}) {
       // A path resolving OUTSIDE the adoption root is left alone and NOT reported.
       if (originalTarget === null) continue;
       const newTarget = resolveFrom(toDir, reference);
-      if (newTarget !== null && paths.has(newTarget)) continue; // still resolves
+      if (newTarget !== null && after.has(newTarget)) continue; // still resolves
       findings.push({
         ...finding('AGSC-E507',
           `the reference "${reference}" of ${source.path} no longer resolves from ${result.path} (AGSC-02-95)`,
@@ -272,16 +287,10 @@ function run(ports, planned) {
 module.exports = {
   plan,
   run,
-  synthesizeConfig,
   synthesizeIndex,
-  indexMarkdown,
-  credentialFiles,
   normalizePath,
   resolveFrom,
-  dirnameOf,
   PLACEHOLDER_BASE,
   DEFAULT_OUT,
-  OKF_VERSION,
-  ASSETS_PREFIX,
   REFERENCE_TDM_CRAWLERS,
 };

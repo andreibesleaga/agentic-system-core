@@ -157,7 +157,5 @@ module.exports = {
   tokenizerInput,
   index,
   files,
-  docOf,
-  MIN_TOKEN_CODE_POINTS,
   ITEMS_PER_SHARD,
 };

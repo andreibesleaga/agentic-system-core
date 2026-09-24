@@ -377,3 +377,71 @@ test('the closure explanations and the conflict list are rendered from the verdi
   assert.match(conflicts[0].textContent, /AGSC-E\d{3} on selection/u);
   assert.match(page.document.nodes.get('verdict').textContent, /"valid":false/u);
 });
+
+// AGSC-07-13 against the REAL command line, not against `harness.emit` called by hand:
+// a Bundle with a git history (so the content version is derived from it), a Concept
+// with a `kind`, and a page served from an origin that is not `site.base` (a local
+// preview). The three fields the page once took from the wrong place — the content
+// version, the `bundle:` base and a member's `kind` — are asserted by name, then every
+// file and the archive byte for byte.
+test('AGSC-07-13: the page Harness equals `agsc compose --zip` — content version, base and kind included', async () => {
+  const kit = require('../e2e/modes/_kit.js');
+  const dir = kit.projectBundle('identity', { base: 'https://proj.example/' });
+  kit.commitAll(dir, 'the first state');
+  kit.write(dir, 'content/concepts/task-login-tests.md',
+    kit.read(dir, 'content/concepts/task-login-tests.md').replace('Test the login form.', 'Test the login form twice.'));
+  kit.commitAll(dir, 'a second commit');
+  const built = kit.agsc(dir, ['build']);
+  assert.strictEqual(built.code, 0, built.stderr);
+  const selection = ['handoff', 'run-the-tests', 'task-login-form'];
+  const cli = kit.agsc(dir, ['compose', ...selection, '--zip']);
+  assert.strictEqual(cli.code, 0, cli.stderr);
+
+  const www = path.join(dir, 'www');
+  const files = new Map();
+  const walk = (at) => {
+    for (const entry of nodeFs.readdirSync(at, { withFileTypes: true })) {
+      const full = path.join(at, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else files.set(`/${path.relative(www, full).split(path.sep).join('/')}`, nodeFs.readFileSync(full, 'utf8'));
+    }
+  };
+  walk(www);
+  const page = openPage({ files });
+  page.sandbox.location.origin = 'http://127.0.0.1:8205';
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  state.selection = [...selection];
+  state.render();
+  const emitted = await state.emitHarness();
+  assert.ok(emitted !== null, 'the page emitted no Harness');
+
+  const harnessRoot = path.join(dir, 'dist', 'harness');
+  const name = nodeFs.readdirSync(harnessRoot).find((n) => nodeFs.statSync(path.join(harnessRoot, n)).isDirectory());
+  const zipName = nodeFs.readdirSync(harnessRoot).find((n) => n.endsWith('.zip'));
+  const cliFiles = new Map();
+  const collect = (at) => {
+    for (const entry of nodeFs.readdirSync(at, { withFileTypes: true })) {
+      const full = path.join(at, entry.name);
+      if (entry.isDirectory()) collect(full);
+      else cliFiles.set(path.relative(path.join(harnessRoot, name), full).split(path.sep).join('/'), nodeFs.readFileSync(full, 'utf8'));
+    }
+  };
+  collect(path.join(harnessRoot, name));
+
+  const agents = emitted.files.get('AGENTS.md');
+  const version = JSON.parse(files.get('/.well-known/knowledge-linkset')).linkset[0].describedby
+    .find((l) => l['agsc-bundle-version'])['agsc-bundle-version'][0];
+  assert.match(version, /^0\.0\.0\+2\.g[0-9a-f]{12}$/u, 'the content version is derived from the two commits');
+  assert.match(agents, new RegExp(`bundle_version: ${version.replace(/[.+]/gu, '\\$&')}`, 'u'), 'content version');
+  assert.match(agents, /bundle: https:\/\/proj\.example\//u, 'the base is site.base, not the serving origin');
+  assert.doesNotMatch(agents, /127\.0\.0\.1/u);
+  assert.match(agents, /- type: concept \(task\)/u, 'a member keeps its kind');
+  assert.match(agents, /- type: concept \(pattern\)/u, 'a member keeps its kind');
+
+  assert.deepStrictEqual([...emitted.files.keys()].sort(), [...cliFiles.keys()].sort());
+  for (const [at, text] of cliFiles) assert.strictEqual(emitted.files.get(at), text, `${at} differs between the page and the CLI`);
+  const cliZip = nodeFs.readFileSync(path.join(harnessRoot, zipName));
+  assert.ok(Buffer.from(state.archive.bytes).equals(cliZip), 'the page archive differs from the CLI archive');
+  assert.strictEqual(page.document.nodes.get('archive').children[0].download, zipName);
+});

@@ -9,6 +9,108 @@ What this repository holds is the specification itself — numbered normative ru
 
 The specification's own site is [AgenticSystemCore.com](https://agenticsystemcore.com).
 
+## In three sentences
+
+A **Bundle** is a folder of Markdown files with a small block of typed fields at the
+top of each; the specification says how that folder becomes a **knowledge node** — a
+static website plus a graph, a search index, text files for agents and a discovery
+document — with the same bytes from any implementation. People and agents read a node
+through ordinary web addresses, change it only by proposals that a person ratifies, and
+compose its items into files a runtime can execute. Nodes find and cite each other with
+no server in between.
+
+## What is different about it
+
+To our knowledge, no other system combines discovery through already-registered web
+mechanisms with an integrity digest on every artefact it names, a typed graph with a
+published ontology, machine artefacts whose bytes are fixed by expected-byte
+conformance vectors, governance in which every change — human or agent — arrives as a
+proposal carrying its provenance and a person ratifies it (directly, or by a standing
+rule a person recorded in the node's configuration), and composition of the same files
+into a runnable harness, with no server required at any point.
+
+This is a claim about the specification's text and its vectors, not a performance
+claim. Other systems have some of these properties; the dated comparison is in
+[docs/RELATED-WORK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RELATED-WORK.md).
+
+| Property | What it means | Where it is stated and proved |
+|---|---|---|
+| Discovery through registered mechanisms | one link set at a well-known address, found through the registered relation `describedby` | [AGSC-06-07](spec/06-surfaces.md), [AGSC-06-25](spec/06-surfaces.md); `tools/validate-wellknown` |
+| A digest on every artefact | each file the discovery document names carries its SHA-256 digest | [AGSC-06-08](spec/06-surfaces.md); the `discovery` vectors |
+| A typed graph with an ontology | fourteen typed links, four RDF views, a published OWL 2 RL vocabulary | [spec/05-graph.md](spec/05-graph.md), [ontology/agsc.ttl](ontology/agsc.ttl) |
+| Bytes fixed by vectors | two implementations given one Bundle emit the same machine files | [AGSC-04-24](spec/04-canonicalization.md); [tests/vectors/](tests/vectors/README.md) |
+| Governance with provenance | every change is a proposal with its provenance; a person ratifies; a ledger is derived from the history | [spec/08-governance.md](spec/08-governance.md) (AGSC-08-08, AGSC-08-20) |
+| Composition into a harness | selected items close over their links and become seven files a runtime can execute | [AGSC-07-12](spec/07-composition.md); `agsc compose` |
+| No server | a file format and static files; no protocol, server, database or reasoner is defined | [AGSC-00-02](spec/00-overview.md) |
+
+Beside that combination, and each available elsewhere on its own: **six modes** of use
+([docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md)); **seven tools on every page** for a
+browser's own agent, identical to the local tool server ([AGSC-09-16](spec/09-conformance.md));
+**eight plugin kinds** with a forward-compatibility promise ([docs/PLUGINS.md](docs/PLUGINS.md),
+[AGSC-00-24](spec/00-overview.md)); a **content version** stamped on every surface
+([AGSC-04-25](spec/04-canonicalization.md)); and **federation** walked by the client,
+never by a node ([AGSC-11-06](spec/11-boundary.md)).
+
+## What it is best for
+
+**For agents**
+
+- **Memory for one agent.** `agsc mcp` in a Bundle gives an assistant seven tools to
+  search, read, follow links and cite items by address; nothing leaves the machine
+  ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l1--the-assistant-that-answers-from-one-folder)).
+- **Shared memory for many agents.** Every agent reads the same published files and
+  writes only by proposals a person ratifies
+  ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md)).
+- **A source of skills.** Procedures become skill packs, with a lockfile of their
+  digests, that install into agent tool folders; skills from other repositories come
+  in as procedures
+  ([Mode 3](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l4--procedures-as-installable-skills)).
+- **Runnable procedures.** A selection of items becomes a harness of seven files a
+  runtime can execute ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m5--a-selection-that-becomes-a-running-system)).
+- **A live board for a team of agents.** Agents claim and finish tasks on shared boards
+  until they are done; decisions stay with people
+  ([Mode 5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m1--the-live-board-one-person-and-three-agents)).
+- **Knowledge across nodes.** A client reads several nodes' graph dumps and joins them
+  locally, every foreign result marked with its origin
+  ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case D4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#d4--one-answer-from-three-corpora)).
+
+**For people**
+
+- **A wiki that corrects itself.** Markdown in, a checked and linked site out, with
+  every change reviewed ([Mode 0](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l5--a-folder-of-notes-becomes-a-node)).
+- **A project's living specifications.** Decisions, specifications, tasks and gates
+  as one governed memory, and steering files that keep a coding agent on course
+  ([Mode 2](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L3](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l3--the-steering-file-that-keeps-a-coding-agent-on-course)).
+- **A pattern catalogue.** Concepts with sources and provenance, readable without
+  JavaScript, composable into a starting architecture
+  ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md)).
+- **A team board.** A board from GitHub, GitLab, Jira, Trello, Linear, Asana, Notion,
+  Obsidian or plain Markdown becomes a live board and goes back again
+  ([Mode 5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M7](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m7--a-teams-board-becomes-a-live-board)).
+
+## Quick start
+
+From a clone of this repository (Node 22.13 or later):
+
+```bash
+npm ci                                   # the exact pinned libraries
+npm test                                 # the whole suite, offline
+REPO=$PWD; cp -r tests/fixtures/minimal /tmp/agsc-try && cd /tmp/agsc-try
+SOURCE_DATE_EPOCH=1767225600 node "$REPO/bin/agsc.js" ci   # lint, build twice, compare, verify: "ci: pass"
+```
+
+On a folder of your own Markdown notes, once the package is installed
+(`npm install agentic-system-core`): run `agsc init` in the folder, add
+`.well-known/security.txt` with a `Contact:` line, and run `agsc ci`. Then read
+[docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md) to connect an assistant.
+
+## Where to start reading
+
+[docs/START-HERE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/START-HERE.md) sends each kind of reader — someone curious,
+a developer, an implementer in another language, an architect, an agent, a standards
+reviewer or a maintainer — down one path. Agents and coding assistants working in this
+repository read [AGENTS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/AGENTS.md) first.
+
 ## Reference engine
 
 The reference implementation of the specification lives in this repository,

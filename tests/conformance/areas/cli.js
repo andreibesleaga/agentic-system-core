@@ -5,6 +5,7 @@
 'use strict';
 
 const path = require('node:path');
+const vm = require('node:vm');
 const { main } = require('../../../src/application/cli/main.js');
 const { load } = require('../../../src/application/config/load.js');
 const { createFileSystem } = require('../../../src/adapters/node-fs.js');
@@ -26,7 +27,7 @@ function runCli0002(vector, ctx) {
     specVersion: (vector.options || {}).spec_version,
     stderr,
     stdout,
-    version: (vector.options || {}).version
+    version: (vector.options || {}).version,
   });
 
   const problems = [];
@@ -106,7 +107,7 @@ function runCli0006(vector) {
 const HANDLERS = {
   'cli-0002': runCli0002,
   'cli-0005': runCli0005,
-  'cli-0006': runCli0006
+  'cli-0006': runCli0006,
 };
 
 // ---------------------------------------------------------------------------
@@ -116,14 +117,12 @@ const HANDLERS = {
 // tool error envelope, never a JSON-RPC transport error).
 // ---------------------------------------------------------------------------
 
-const vm = require('node:vm');
 const { readSchemas } = require('../../../src/adapters/node-fs.js');
 const validate = require('../../../src/knowledge/validate.js');
 const { loadBundle } = require('../../../src/application/bundle.js');
 const { tools } = require('../../../src/distribution/mcp-tools.js');
 const webmcp = require('../../../src/distribution/webmcp.js');
 const site = require('../../../src/distribution/site.js');
-const composePage = require('../../../src/distribution/compose-page.js');
 const { createClock } = require('../../../src/adapters/node-clock.js');
 
 /** 2026-01-01T00:00:00Z — the fixed instant `tests/fixtures/minimal/README.md` names. */
@@ -569,7 +568,7 @@ Object.assign(HANDLERS, {
   'cli-0004': runCli0004,
   'cli-0007': runCli0007,
   'cli-0008': runCli0008,
-  'cli-0010': runCli0010
+  'cli-0010': runCli0010,
 });
 
 /**
@@ -628,7 +627,7 @@ function invoke(argv, root, vector) {
     stdout,
     version: (vector.options || {}).spec_version,
   });
-  let envelope = {};
+  let envelope;
   try { envelope = JSON.parse(stdout.text() || '{}'); } catch (e) { envelope = {}; }
   return { exit, envelope, stdout: stdout.text(), stderr: stderr.text() };
 }

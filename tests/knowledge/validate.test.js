@@ -43,7 +43,7 @@ test('a missing branch key takes AGSC-E202 (AGSC-02-12)', () => {
 test('a cluster with two parents is AGSC-E308, never AGSC-E201 (AGSC-03-08)', () => {
   assert.deepStrictEqual(
     codes({ type: 'cluster', title: 'Cluster', description: 'x'.repeat(50), prov: PROV, broader: ['a', 'b'] }),
-    ['AGSC-E308']
+    ['AGSC-E308'],
   );
 });
 
@@ -79,12 +79,12 @@ test('AGSC-01-21: a tag outside the closed vocabulary is AGSC-E203', () => {
 
 test('AGSC-02-03: the schema\'s declared types are applied to failsafe strings', () => {
   const fm = validate.applyTypes(
-    { type: 'cluster', title: 'C', order: '3', unknown: '1e3' }, S.item.schema
+    { type: 'cluster', title: 'C', order: '3', unknown: '1e3' }, S.item.schema,
   );
   assert.strictEqual(fm.order, 3);
   assert.strictEqual(fm.unknown, '1e3', 'a key the schema does not type keeps its string');
   const ep = validate.applyTypes(
-    { type: 'episode', usage: { tokens_in: '10', cost_usd: '0.5', estimate: 'true' } }, S.item.schema
+    { type: 'episode', usage: { tokens_in: '10', cost_usd: '0.5', estimate: 'true' } }, S.item.schema,
   );
   assert.deepStrictEqual(ep.usage, { tokens_in: 10, cost_usd: 0.5, estimate: true });
   // A string that is not written as AGSC-02-04 requires is left alone so the schema reports it.
@@ -157,7 +157,7 @@ test('findings sort by (file, line, col, code) (AGSC-09-10)', () => {
     validate.sortFindings([f('b', 1, 1, 'AGSC-E201'), f('a', 2, 1, 'AGSC-E201'),
       f('a', 1, 2, 'AGSC-E201'), f('a', 1, 1, 'AGSC-E301'), f('a', 1, 1, 'AGSC-E201')])
       .map((x) => `${x.file}${x.line}${x.col}${x.code}`),
-    ['a11AGSC-E201', 'a11AGSC-E301', 'a12AGSC-E201', 'a21AGSC-E201', 'b11AGSC-E201']
+    ['a11AGSC-E201', 'a11AGSC-E301', 'a12AGSC-E201', 'a21AGSC-E201', 'b11AGSC-E201'],
   );
 });
 

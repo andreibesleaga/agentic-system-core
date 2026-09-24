@@ -5,12 +5,12 @@
 ```mermaid
 flowchart TD
   subgraph BUILD["agsc build — 13 steps"]
-    S1["1 Discover: content/**/*.md + site/*.md,\ncode-point sorted (fs port)"]
+    S1["1 Discover: content/**/*.md,\ncode-point sorted (fs port)"]
     S2["2 Parse frontmatter:\nYAML failsafe subset -> {fm, body}"]
-    S3["3 Validate: JSON Schema mini-validator\n(type/enum/const/pattern/required/oneOf/$ref)"]
+    S3["3 Validate: JSON Schema 2020-12 (Ajv)\n+ oneOf discrimination and code precedence"]
     S4["4 Resolve links: fourteen Link keys\n(9 core + 5 Mode-2),\ninverses, orphans, cycles"]
     S5["5 Diagrams: content/diagrams/*.diagram -> SVG\n(ported DSL compiler)"]
-    S6["6 Ontology/SKOS: clusters ->\nskos:Collection + skos:ConceptScheme; ns/agsc.ttl; shapes"]
+    S6["6 Ontology/SKOS: clusters ->\nskos:Collection + skos:ConceptScheme; ns/agsc.ttl"]
     S7["7 Graph exports: graph.jsonld/.nq/.ttl (JCS,\nsorted, blank-node-free) + pages/<slug>.md|.jsonld"]
     S8["8 Search index: search.json\n(tokenizer + inverted index)"]
     S9["9 HTML render: Markdown subset renderer\n+ templates -> pages"]
@@ -42,3 +42,5 @@ published head (PLAN.md §6(a) steps 9–12; ADR-006). Error codes in this syste
 exactly one format, `AGSC-E<nnn>` (spec/09 §9.4).
 
 Trace: PRD-004, PRD-005, PRD-020, NFR-04 · PLAN.md §6(a), ADR-006.
+
+*Corrected 2026-09-24:* step 1 no longer names `site/*.md` (the engine discovers `content/`), step 3 names the JSON Schema library the engine pins (it read "mini-validator" from the zero-dependency plan, superseded on 2026-09-18), and step 6 no longer names shapes (no SHACL is generated at 1.x, AGSC-05-23).

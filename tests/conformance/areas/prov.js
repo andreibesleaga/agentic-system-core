@@ -100,7 +100,7 @@ const HANDLERS = {
   'prov-0003': runClaimVector,
   'prov-0004': runTrailerGrammarVector,
   // rc.6: prov-0004's case with a fictitious contributor in every sample line.
-  'prov-0005': runTrailerGrammarVector
+  'prov-0005': runTrailerGrammarVector,
 };
 
 module.exports.run = function run(vector, ctx) {

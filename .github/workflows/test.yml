@@ -1,7 +1,8 @@
 # The test lane: the whole suite on three operating systems and two Node lines,
 # on every push and every pull request.
 #
-#   What runs  `npm ci`, `npm test` (unit, integration, architecture, the
+#   What runs  `npm ci`, the linter (`npm run lint`), the dependency rule
+#              (`npm run arch`), `npm test` (unit, integration, architecture, the
 #              conformance vectors, the acceptance scenarios, the tests of the
 #              standard and the end-to-end tests that need nothing outside the
 #              repository), the rule-coverage matrix in its checking mode, and
@@ -35,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: ['22.12.0', '24']
+        node: ['22.13.0', '24']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,6 +46,10 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: install
         run: npm ci
+      - name: lint (zero warnings; style, require order, size budgets)
+        run: npm run lint
+      - name: architecture (the dependency rule, by dependency-cruiser)
+        run: npm run arch
       - name: suite
         run: npm test
       - name: rule coverage (no unverified rule, matrix current)

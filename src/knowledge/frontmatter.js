@@ -49,7 +49,7 @@ function split(markdown, options = {}) {
     errors.push(validate.finding('AGSC-E108', 'file uses CR or CRLF line endings (AGSC-01-14)', { file }));
     text = text.replace(/\r\n?/gu, '\n');
   }
-  // AGSC-01-14 as amended at rc.6: no C0 control but TAB and LF anywhere in a `.md`
+  // AGSC-01-14: no C0 control but TAB and LF anywhere in a `.md`
   // file, body included (CR is the line-ending fault above, already repaired).
   if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/u.test(text)) {
     errors.push(validate.finding('AGSC-E108', 'file contains a C0 control character other than TAB and LF (AGSC-01-14)', { file }));

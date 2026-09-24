@@ -129,6 +129,28 @@ function scan(body) {
   return { tokens, headings, anchors, fences, links };
 }
 
+/** A rule id, a chapter id or an error code: `AGSC-05-10`, `AGSC-05`, `AGSC-E203`. */
+const REFERENCE_LABEL = /^AGSC-(?:E\d{3}|\d{2}(?:-\d{2}[a-z]?)?)$/u;
+
+/**
+ * A link whose whole text is one rule, chapter or error-code id is a reference, and
+ * carries `class="ref"` so the stylesheet shows it small and muted rather than as
+ * body text. Only the class is added: the target and the text are the author's.
+ *
+ * @param {Array} tokens markdown-it block tokens, changed in place.
+ */
+function markReferenceLinks(tokens) {
+  for (const token of tokens) {
+    const children = token.children || [];
+    for (let i = 0; i + 2 < children.length; i += 1) {
+      if (children[i].type !== 'link_open' || children[i + 2].type !== 'link_close') continue;
+      const inner = children[i + 1];
+      if ((inner.type === 'text' || inner.type === 'code_inline')
+        && REFERENCE_LABEL.test(inner.content.trim())) children[i].attrJoin('class', 'ref');
+    }
+  }
+}
+
 /**
  * Render a body to HTML with AGSC-03-13 heading ids.
  *
@@ -168,6 +190,7 @@ function render(body, options = {}) {
     };
     rewriteAll(scanned.tokens);
   }
+  markReferenceLinks(scanned.tokens);
   const html = md.renderer.render(scanned.tokens, md.options, {});
   return {
     html,
@@ -253,7 +276,23 @@ function headings(body) {
   return scan(body).headings;
 }
 
+/**
+ * AGSC-01-29 + CommonMark 0.31.2 §4.5 — quoted prose as data, fence widened past
+ * the longest backtick run inside it so prose carrying a fence cannot close ours.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function fenceProse(text) {
+  const body = String(text == null ? '' : text).replace(/\n*$/u, '');
+  let longest = 0;
+  for (const run of body.match(/`+/gu) || []) if (run.length > longest) longest = run.length;
+  const fence = '`'.repeat(longest < 3 ? 3 : longest + 1);
+  return `${fence}text agsc-content\n${body}\n${fence}`;
+}
+
 module.exports = {
+  fenceProse,
   constructs,
   anchorOf,
   assignAnchors,

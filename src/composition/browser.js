@@ -180,6 +180,10 @@ function itemsFromGraph(graph) {
       type,
     };
     if (item.slug === '') continue;
+    // AGSC-02-10 / AGSC-05-12: a Concept's `kind` (`asc:kind`) reaches the Harness
+    // (`- type: concept (task)`), so the page reads it as the CLI does (AGSC-07-13).
+    const kind = nodeValues(node, 'kind').filter((v) => typeof v === 'string');
+    if (kind.length > 0) item.kind = kind[0];
     for (const local of Object.keys(predicates)) {
       const targets = nodeValues(node, local).map(slugOfIri).filter((s) => s !== '');
       if (targets.length > 0) item[predicates[local]] = targets;

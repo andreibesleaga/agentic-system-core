@@ -1,5 +1,7 @@
 # PRD — AgenticSystemCore v1 requirements (EARS)
 
+**Who this is for:** an architect or reviewer who wants the requirements behind the rules; the requirement ids cited in `spec/` brackets are defined here. **Read after:** [START-HERE.md](START-HERE.md). *(Header added 2026-09-24.)*
+
 **Product.** AgenticSystemCore — *a Distributed Ontological Agentic Memory engine, reference node of the Agentic Knowledge Web*. A Bundle is a folder of Markdown + YAML frontmatter (OKF v0.2 superset), typed by `type` and linked by **fourteen** typed Links (nine core + five Mode-2) — at once wiki, RDF graph and agent memory.
 
 **Goal.** Version 1 live on `agenticsystemcore.com`, with the pattern Concepts of the retired site imported, re-summarized and clearer, and with correct DSL→SVG diagrams.
@@ -354,3 +356,9 @@ exercised by the Python checker distribution, whose test suite runs the shared v
 over seven of the nineteen areas natively and reports the rest as not run by that package
 (AGSC-09-02, AGSC-10-15); a Gherkin scenario for it is a 1.1 item.
 
+**Note to Amendment 9 (2026-09-24): the Node floor is 22.13.0.** The floor stated in §3.1
+("Node ≥22.12.0") is raised to **Node ≥22.13.0**. Node 22.12.0 prints a warning on standard error
+whenever the engine requires one of its ES-module libraries, and a warning there breaks the MCP
+server's clean-stderr contract; 22.13.0 is the first 22.x release that prints it only on request.
+The development gates (the linter) need 22.13.0 as well. `package.json`, the CI matrix and a test
+that keeps the two equal carry the new floor.

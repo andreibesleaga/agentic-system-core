@@ -233,7 +233,7 @@ test('orderKeys never adds, removes or reorders inside an array', () => {
       const ordered = fix.orderKeys(value, ['type', 'title', 'status'], ITEM_SCHEMA, 'concept', null);
       assert.deepStrictEqual(Object.keys(ordered).sort(), Object.keys(value).sort());
       for (const key of Object.keys(value)) assert.strictEqual(ordered[key], value[key]);
-    }
+    },
   ), { numRuns: 200, seed: 20260921 });
   assert.deepStrictEqual(fix.orderKeys(['c', 'a', 'b'], ['x'], ITEM_SCHEMA, 'concept', null), ['c', 'a', 'b']);
   assert.strictEqual(fix.orderKeys('scalar', [], ITEM_SCHEMA, 'concept', null), 'scalar');
@@ -333,7 +333,7 @@ test('the rc.5 vector for the YAML profile passes byte for byte (lint-0026)', ()
   // is the one cross-check that the profile was derived from AGSC-04-19 and not from
   // this implementation.
   const vector = JSON.parse(fs.readFileSync(
-    path.join(ROOT, 'tests', 'vectors', 'lint', 'lint-0026-fix-yaml-profile.json'), 'utf8'
+    path.join(ROOT, 'tests', 'vectors', 'lint', 'lint-0026-fix-yaml-profile.json'), 'utf8',
   ));
   const once = fix.fixItem({ path: vector.input.file, slug: 'router', type: 'concept' },
     { itemSchema: ITEM_SCHEMA, source: vector.input.bytes, typeOfSlug: new Map() });

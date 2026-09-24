@@ -53,6 +53,7 @@ const { canonicalize } = require('../knowledge/jcs.js');
 const { provenanceHeader: provenanceBlock } = require('../knowledge/provenance-header.js');
 const { finding } = require('../knowledge/validate.js');
 const slugs = require('../knowledge/slug.js');
+const { fenceProse } = require('../knowledge/markdown.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -72,18 +73,6 @@ const FORBIDDEN_KEYS = Object.freeze(['allowed-tools']);
 
 /** The one file a pack consists of. */
 const PACK_FILE = 'SKILL.md';
-
-/**
- * AGSC-01-29 + CommonMark 0.31.2 §4.5 — quoted prose as data, fence widened past
- * the longest backtick run inside it so prose carrying a fence cannot close ours.
- */
-function fenceProse(text) {
-  const body = String(text == null ? '' : text).replace(/\n*$/u, '');
-  let longest = 0;
-  for (const run of body.match(/`+/gu) || []) if (run.length > longest) longest = run.length;
-  const fence = '`'.repeat(longest < 3 ? 3 : longest + 1);
-  return `${fence}text agsc-content\n${body}\n${fence}`;
-}
 
 /** The AGSC-06-15 provenance header, in the AGSC-06-13a byte layout. */
 function provenanceHeader(options) {
@@ -213,7 +202,7 @@ function packs(items, options) {
     });
   }
 
-  // AGSC-07-19 as amended at rc.6: `bundle_version` is the content version
+  // AGSC-07-19: `bundle_version` is the content version
   // of AGSC-04-25, beside the pack entries. JCS sorts it first.
   const version = options.bundleVersion == null ? '' : String(options.bundleVersion);
   const index = {
@@ -352,6 +341,69 @@ function importPack(text, options) {
   return { body, findings, frontmatter, path: `content/procedures/${name}.md` };
 }
 
+/** The blockquote line every pack of this format carries (see `packText`). */
+const PACK_MARKER = '> This skill pack is generated from a published knowledge Bundle (AGSC-07-19).';
+
+/**
+ * AGSC-07-22 over a pack THIS format emitted (AGSC-07-19): such a pack wraps every
+ * member of a Cluster, so it is split back into its member procedures, each matched
+ * by the item IRI of its `- item:` line and filed in the Cluster the pack is named
+ * after; every member that is not a procedure is reported (`AGSC-E506`) and not
+ * imported. A file that is not a pack of this format — no provenance header, or no
+ * pack marker — answers `null`, and the caller maps it as one foreign `SKILL.md`.
+ *
+ * @param {string} text the `SKILL.md` bytes.
+ * @param {{operator:string}} options
+ * @returns {{items:Array<{path:string, frontmatter:object, body:string}>, findings:Array<object>}|null}
+ */
+function splitPack(text, options) {
+  const source = String(text == null ? '' : text);
+  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/u.exec(source);
+  if (match === null || !match[2].includes('<!-- agsc:provenance') || !match[2].includes(PACK_MARKER)) return null;
+  const declared = Object.create(null);
+  for (const line of match[1].split('\n')) {
+    const pair = /^([a-z][a-z0-9_-]*):\s*(.*)$/u.exec(line);
+    if (pair !== null) declared[pair[1]] = pair[2].trim();
+  }
+  const cluster = String(declared.name || '');
+  const lines = match[2].split('\n');
+  const items = [];
+  const findings = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const heading = /^## (.*)$/u.exec(lines[i]);
+    const iri = /^- item: (\S+)$/u.exec(lines[i + 2] || '');
+    const type = /^- type: ([a-z]+)$/u.exec(lines[i + 3] || '');
+    if (heading === null || iri === null || type === null || lines[i + 1] !== '') continue;
+    const open = /^(`{3,})text agsc-content$/u.exec(lines[i + 5] || '');
+    if (open === null) continue;
+    let end = i + 6;
+    while (end < lines.length && lines[end] !== open[1]) end += 1;
+    const slug = iri[1].replace(/\/+$/u, '').split('/').pop();
+    const body = `${lines.slice(i + 6, end).join('\n').replace(/\n+$/u, '')}\n`;
+    i = end;
+    if (type[1] !== 'procedure') {
+      findings.push(finding('AGSC-E506', `${iri[1]} is a ${type[1]}, not a procedure; a skill import maps`
+        + ' procedures only, so it was not imported (AGSC-07-22)', { file: PACK_FILE, severity: 'warn' }));
+      continue;
+    }
+    if (!slugs.isValid(slug)) {
+      findings.push(finding('AGSC-E204', `the member IRI ${iri[1]} names no slug (AGSC-01-10)`,
+        { file: PACK_FILE, severity: 'error' }));
+      continue;
+    }
+    const frontmatter = {
+      clusters: slugs.isValid(cluster) ? [cluster] : undefined,
+      prov: { operator: String(options.operator), origin: 'imported' },
+      title: heading[1],
+      type: 'procedure',
+    };
+    if (frontmatter.clusters === undefined) delete frontmatter.clusters;
+    if (declared.license !== undefined) frontmatter['x-skill-license'] = String(declared.license);
+    items.push({ body, frontmatter, path: `content/procedures/${slug}.md` });
+  }
+  return { findings, items };
+}
+
 /** Drop this format's data fences, keeping the prose they quote (AGSC-01-29). */
 function unfence(text) {
   const out = [];
@@ -377,5 +429,5 @@ function unfence(text) {
 module.exports = {
   DESCRIPTION_MAX, FORBIDDEN_KEYS, INSTALL_TARGETS, PACK_FILE, TERMS,
   diffSummary, executableViolations, fenceProse, importPack, install,
-  packDescription, packText, packs, provenanceHeader, unfence,
+  packDescription, packText, packs, provenanceHeader, splitPack, unfence,
 };

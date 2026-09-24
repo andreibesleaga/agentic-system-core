@@ -22,25 +22,20 @@
  *
  */
 
+const { createTwoFilesPatch } = require('diff');
 const site = require('../../../distribution/site.js');
 const skills = require('../../../composition/skills.js');
 const fix = require('../../../governance/fix.js');
 const { serialize } = require('../../../knowledge/adopt.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
-const { instantFromEpoch } = require('../../../governance/ledger.js');
 const { finding } = require('../../../knowledge/validate.js');
 const helpers = require('./_helpers.js');
+
+const { instantOf } = helpers;
 const archiveWriter = require('./_archive.js');
 
 /** AGSC-01-08: the generated directory the verb writes into, never `build.out`. */
 const SKILLS_DIR = 'dist/skills';
-
-/** The build instant, from the Clock port and never from a wall clock (AGSC-04-11). */
-function instantOf(ctx) {
-  const clock = ctx.ports && ctx.ports.clock;
-  if (clock && typeof clock.iso === 'function') return clock.iso();
-  return instantFromEpoch(clock ? clock.now() : 0);
-}
 
 /**
  * Every pack of this Bundle, as data — the same call `distribution/site.js` makes,
@@ -103,12 +98,26 @@ function installPacks(ctx, bundle, requested) {
   const produced = packsOf(ctx, bundle);
   if (produced.findings.some((f) => f.severity === 'error')) return produced.findings;
 
+  // AGSC-07-20: the lockfile an install verifies is the one beside the packs a person
+  // can read — `dist/skills/index.json`, written by `agsc skills` — and the files it
+  // verifies are the ones on disk beside it, so a pack edited after it was emitted
+  // is refused (AGSC-E413). With no emitted packs the install takes the packs this
+  // Bundle yields now, and says so: that lock is computed over the same bytes.
+  const onDisk = emittedPacks(ctx);
+  const index = onDisk === null ? produced.index : onDisk.index;
   const available = new Map();
-  for (const file of produced.files) {
-    if (file.path !== 'index.json') available.set(file.path, file.text);
+  if (onDisk === null) {
+    for (const file of produced.files) {
+      if (file.path !== 'index.json') available.set(file.path, file.text);
+    }
+    helpers.note(ctx, `skills install: no ${SKILLS_DIR}/index.json, so the packs of this Bundle as it is now`
+      + ' were installed (run `agsc skills` first to review them and have the install verify those files)');
+  } else {
+    for (const [at, text] of onDisk.files) available.set(at, text);
+    helpers.note(ctx, `skills install: verifying ${SKILLS_DIR}/ against its index.json lockfile (AGSC-07-20)`);
   }
   const installed = new Map();
-  for (const pack of produced.index.packs) {
+  for (const pack of index.packs) {
     const at = `${target}/${pack.name}/${skills.PACK_FILE}`;
     try {
       if (ctx.ports.fs.exists(at)) installed.set(at, String(ctx.ports.fs.readFile(at, 'utf8')));
@@ -116,9 +125,18 @@ function installPacks(ctx, bundle, requested) {
       // An unreadable installed file is treated as absent and is overwritten.
     }
   }
-  const plan = skills.install(produced.index, available, installed, {
+  const plan = skills.install(index, available, installed, {
     sha256: helpers.sha256, target,
   });
+  if (plan.findings.some((f) => f.severity === 'error')) {
+    helpers.note(ctx, 'skills install: nothing was installed — a pack does not match its lockfile (AGSC-07-20)');
+    return [...produced.findings, ...plan.findings];
+  }
+  // AGSC-07-20: "MUST show a diff on update" — the unified diff of every updated pack.
+  for (const at of plan.updated) {
+    const next = plan.writes.find((w) => w.path === at);
+    helpers.note(ctx, createTwoFilesPatch(`a/${at}`, `b/${at}`, installed.get(at), next.text, '', '').trimEnd());
+  }
   for (const write of plan.writes) {
     const slash = write.path.lastIndexOf('/');
     if (slash !== -1) ctx.ports.fs.mkdirp(write.path.slice(0, slash));
@@ -128,6 +146,34 @@ function installPacks(ctx, bundle, requested) {
   helpers.note(ctx, `skills install: ${plan.writes.length} written, ${plan.unchanged.length} unchanged`
     + ` under ${target} (AGSC-07-21; the lockfile of index.json was verified first)`);
   return [...produced.findings, ...plan.findings];
+}
+
+/**
+ * The packs `agsc skills` wrote under `dist/skills/`: its `index.json` and every
+ * pack file the index names, read from disk. `null` when there is no index.
+ *
+ * @returns {{index:object, files:Map<string,string>}|null}
+ */
+function emittedPacks(ctx) {
+  const fs = ctx.ports.fs;
+  let index;
+  try {
+    if (!fs.exists(`${SKILLS_DIR}/index.json`)) return null;
+    index = JSON.parse(String(fs.readFile(`${SKILLS_DIR}/index.json`, 'utf8')));
+  } catch (e) {
+    return null;
+  }
+  if (!index || !Array.isArray(index.packs)) return null;
+  const files = new Map();
+  for (const pack of index.packs) {
+    const at = `${String(pack && pack.name)}/${skills.PACK_FILE}`;
+    try {
+      if (fs.exists(`${SKILLS_DIR}/${at}`)) files.set(at, String(fs.readFile(`${SKILLS_DIR}/${at}`, 'utf8')));
+    } catch (e) {
+      // absent: `skills.install` reports the pack as listed and missing (AGSC-E901).
+    }
+  }
+  return { files, index };
 }
 
 /** AGSC-07-22: a `SKILL.md` back to a `procedure` item. */
@@ -144,20 +190,52 @@ function importPack(ctx, bundle, file) {
       { file: String(file), severity: 'error' })];
   }
   const operator = ((bundle.config || {}).bundle || {}).operator;
-  const mapped = skills.importPack(text, { operator: operator === undefined ? 'human:unknown' : operator });
-  if (mapped.path === null) return mapped.findings;
+  const identity = { operator: operator === undefined ? 'human:unknown' : operator };
+  // AGSC-07-22 over a pack of this format (AGSC-07-19): split it into its member
+  // procedures; any other SKILL.md is one foreign skill, one procedure.
+  const split = skills.splitPack(text, identity);
+  const mapped = split === null ? skills.importPack(text, identity) : null;
+  if (mapped !== null && mapped.path === null) return mapped.findings;
+  const planned = split === null ? [mapped] : split.items;
+  const findings = split === null ? [...mapped.findings] : [...split.findings];
   // The written bytes go through the ONE writer (`governance/fix.js` over
   // `adopt.js#serialize`), so the imported item is already lint-normalized
   // (AGSC-04-19) and a second import of the same pack writes the same file
   // (AGSC-01-23).
   const itemSchema = readSchemas(helpers.ENGINE_ROOT).item;
-  const ordered = fix.orderKeys(mapped.frontmatter,
-    fix.declaredOrder(itemSchema, 'procedure'), itemSchema, 'procedure', null);
-  const out = fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${mapped.body}`);
-  ctx.ports.fs.mkdirp('content/procedures');
-  ctx.ports.fs.writeFile(mapped.path, out);
-  helpers.note(ctx, `skills import: wrote ${mapped.path} (AGSC-07-22)`);
-  return mapped.findings;
+  let written = 0;
+  for (const one of planned) {
+    const ordered = fix.orderKeys(one.frontmatter,
+      fix.declaredOrder(itemSchema, 'procedure'), itemSchema, 'procedure', null);
+    const out = fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${one.body.startsWith('\n') ? '' : '\n'}${one.body}`);
+    // AGSC-01-23: an import never writes over an item the Bundle already holds.
+    let existing = null;
+    try {
+      if (ctx.ports.fs.exists(one.path)) existing = String(ctx.ports.fs.readFile(one.path, 'utf8'));
+    } catch (e) {
+      // Present and unreadable is still present: never written over.
+      existing = '';
+    }
+    if (existing === out) {
+      helpers.note(ctx, `skills import: ${one.path} unchanged`);
+      continue;
+    }
+    if (existing !== null) {
+      findings.push(finding('AGSC-E206', `${one.path} already exists with other bytes; an import never writes`
+        + ' over an item the Bundle holds (AGSC-01-23) — move it aside or edit it by hand',
+      { file: one.path, severity: 'error' }));
+      continue;
+    }
+    ctx.ports.fs.mkdirp('content/procedures');
+    ctx.ports.fs.writeFile(one.path, out);
+    written += 1;
+    helpers.note(ctx, `skills import: wrote ${one.path} (AGSC-07-22)`);
+  }
+  if (split !== null) {
+    helpers.note(ctx, `skills import: a pack of this format — ${split.items.length} procedure(s),`
+      + ` ${written} written (AGSC-07-19, AGSC-07-22)`);
+  }
+  return findings;
 }
 
 function run(ctx) {
@@ -173,6 +251,8 @@ function run(ctx) {
         { file: '', severity: 'error' })],
     };
   }
+  const outside = helpers.outsideBundle(ctx, argv[0] === undefined ? 'skills' : `skills ${argv[0]}`);
+  if (outside !== null) return { status: 'fail', findings: [outside] };
   const bundle = helpers.bundleOf(ctx);
   if (argv[0] === 'install') return { findings: installPacks(ctx, bundle, argv[1]) };
   if (argv[0] === 'import') return { findings: importPack(ctx, bundle, argv[1]) };
@@ -188,5 +268,5 @@ function run(ctx) {
 }
 
 module.exports = {
-  SKILLS_DIR, emit, importPack, installPacks, instantOf, name: 'skills', packsOf, run,
+  emit, importPack, instantOf, name: 'skills', packsOf, run,
 };

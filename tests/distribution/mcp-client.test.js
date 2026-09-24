@@ -167,15 +167,10 @@ test('AGSC-09-13/09-16: the client is offered exactly seven tools, and the page 
 
 /** The tools the EMITTED page registers through a fake `document.modelContext`. */
 function pageTools() {
-  // eslint-disable-next-line global-require
   const site = require('../../src/distribution/site.js');
-  // eslint-disable-next-line global-require
   const validate = require('../../src/knowledge/validate.js');
-  // eslint-disable-next-line global-require
   const { readSchemas, createFileSystem } = require('../../src/adapters/node-fs.js');
-  // eslint-disable-next-line global-require
   const { createClock } = require('../../src/adapters/node-clock.js');
-  // eslint-disable-next-line global-require
   const { loadBundle } = require('../../src/application/bundle.js');
   const port = createFileSystem(MINIMAL);
   const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });

@@ -61,23 +61,35 @@ function slugList(value) {
 }
 
 /**
- * AGSC-10-13: `claimed_by` — the `prov.agent`, else `prov.operator`, of the last
- * merged change of `task_state`. It is DERIVED from the git-log file at build and
- * is absent when no history is supplied; it is never authored.
+ * AGSC-10-13 (derivation restated at rc.6): `claimed_by` — the `author` of the last
+ * first-parent commit whose `files[]` names the task's file, derived at build from
+ * the extended git-log file of AGSC-08-20b. It is never authored, and absent when no
+ * history is supplied, when no commit names the file, or when the last commit that
+ * does carries no `author`.
  *
- * @param {Array<object>} gitLog entries that may carry `{files:{<path>:{task_state}}}`
- *   or `{changes:[{path, key, agent, operator}]}` — the shape the ProcessRunner port
- *   produces for `git log --name-only` over `content/`.
+ * A file path in the log is relative to the REPOSITORY root; a task's path is
+ * relative to the Bundle root, which may be a directory inside the repository, so a
+ * log path names the task when it equals the task path or ends with `/<task path>`.
+ *
+ * @param {Array<object>} gitLog the git-log file: `[{files?: string[], author?: string}]`, oldest first.
+ * @param {Array<object>} items the Bundle's items, flat (`slug`, `type`, `kind`, `path?`).
  * @returns {Map<string,string>} slug → claimant.
  */
-function claimants(gitLog) {
+function claimants(gitLog, items) {
   const out = new Map();
-  for (const commit of (gitLog || [])) {
-    for (const change of (Array.isArray(commit.changes) ? commit.changes : [])) {
-      if (change.key !== 'task_state' || change.slug == null) continue;
-      const who = change.agent != null ? String(change.agent)
-        : (change.operator != null ? String(change.operator) : null);
-      if (who !== null) out.set(String(change.slug), who);
+  const tasks = (items || []).filter((item) => item && isTask(item));
+  if (!Array.isArray(gitLog) || tasks.length === 0) return out;
+  const pathOf = (task) => (typeof task.path === 'string' && task.path !== ''
+    ? task.path : `content/${TYPE_PLURAL[task.type] || TYPE_PLURAL.concept}/${task.slug}.md`);
+  const byPath = new Map(tasks.map((task) => [pathOf(task), String(task.slug)]));
+  for (const commit of gitLog) {
+    for (const file of (commit && Array.isArray(commit.files) ? commit.files : [])) {
+      const name = String(file);
+      for (const [at, slug] of byPath) {
+        if (name !== at && !name.endsWith(`/${at}`)) continue;
+        if (typeof commit.author === 'string' && commit.author !== '') out.set(slug, commit.author);
+        else out.delete(slug);
+      }
     }
   }
   return out;
@@ -97,7 +109,7 @@ function claimants(gitLog) {
  */
 function boards(items, options = {}) {
   const base = options.base == null ? '' : options.base;
-  const claimedBy = claimants(options.gitLog);
+  const claimedBy = claimants(options.gitLog, items);
   const tasks = (items || []).filter(isTask);
 
   const byCluster = new Map();
@@ -148,28 +160,51 @@ function boards(items, options = {}) {
 }
 
 /**
+ * AGSC-10-17: two names for one participant — a lane's commit is authored
+ * `process:<name>` (AGSC-08-20b's `Channel-Auto` reading) while the lane and the
+ * `prov.agent` it writes are the bare `<name>`.
+ */
+function sameParticipant(a, b) {
+  if (a == null || b == null) return false;
+  const bare = (v) => String(v).replace(/^process:/u, '');
+  return String(a) === String(b) || bare(a) === bare(b);
+}
+
+/**
+ * AGSC-10-17: who holds a task — its derived `claimed_by`, else its `prov.agent`,
+ * else nobody (`null`).
+ */
+function holderOf(task, claimedBy) {
+  if (claimedBy != null) return String(claimedBy);
+  const agent = task && task.prov && task.prov.agent;
+  return agent == null ? null : String(agent);
+}
+
+/**
  * AGSC-10-17: an agent lane MUST NOT hold more than its `max_claims` tasks in
  * `TASK_STATE_WORKING` at once — the work-in-progress limit that makes the board a
- * pull system. Over the limit is `AGSC-E511`.
+ * pull system. Over the limit is `AGSC-E511`. The holder of a task is read as the
+ * rule says: the derived `claimed_by`, else the task's `prov.agent`.
  *
  * @param {Array<object>} items
  * @param {object} config `agsc.config.json`, for `agents[]{name, max_claims}`.
+ * @param {Map<string,string>} [claimed] the derived claimants of `claimants()`.
  * @returns {Array<object>} Findings.
  */
-function wipLimit(items, config) {
+function wipLimit(items, config, claimed) {
   const agents = Array.isArray(config && config.agents) ? config.agents : [];
   if (agents.length === 0) return [];
-  const held = new Map();
+  const derived = claimed instanceof Map ? claimed : new Map();
+  const holders = [];
   for (const item of (items || [])) {
     if (!isTask(item) || stateOf(item) !== CLAIMED_STATE) continue;
-    const who = (item.prov && item.prov.agent) == null ? null : String(item.prov.agent);
-    if (who === null) continue;
-    held.set(who, (held.get(who) || 0) + 1);
+    const who = holderOf(item, derived.get(String(item.slug)));
+    if (who !== null) holders.push(who);
   }
   const out = [];
   for (const agent of agents) {
     const cap = agent.max_claims == null ? DEFAULT_MAX_CLAIMS : Number(agent.max_claims);
-    const count = held.get(String(agent.name)) || 0;
+    const count = holders.filter((who) => sameParticipant(who, agent.name)).length;
     if (count > cap) {
       out.push(finding('AGSC-E511',
         `agent lane "${agent.name}" holds ${count} tasks in ${CLAIMED_STATE}; max_claims is ${cap} (AGSC-10-17)`,
@@ -183,13 +218,13 @@ module.exports = {
   boards,
   wipLimit,
   claimants,
+  holderOf,
+  sameParticipant,
   isTask,
   stateOf,
   iriOf,
   TASK_STATES,
   TERMINAL_STATES,
-  DEFAULT_STATE,
-  DEFAULT_STATUS,
   CLAIMED_STATE,
   DEFAULT_MAX_CLAIMS,
 };

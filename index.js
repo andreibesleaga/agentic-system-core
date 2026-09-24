@@ -12,8 +12,12 @@ const path = require('node:path');
 
 /** The well-known suffix: the discovery document is `/.well-known/knowledge-linkset` (AGSC-06-07). */
 const WELLKNOWN_SUFFIX = 'knowledge-linkset';
-/** The link relation that points at the discovery document (AGSC-06-17). */
-const LINK_RELATION = 'agentic-knowledge';
+/**
+ * The link relation a page uses to point at the discovery document: `describedby`,
+ * with `type="application/linkset+json"` (AGSC-06-25). `agentic-knowledge` is the name
+ * of the profile below, not a relation.
+ */
+const LINK_RELATION = 'describedby';
 /** The Profile URI the discovery document's media type carries (AGSC-06-07). */
 const PROFILE_URI = 'https://w3id.org/agentic-system-core/profile/agentic-knowledge';
 

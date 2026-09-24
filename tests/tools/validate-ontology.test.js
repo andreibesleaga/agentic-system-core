@@ -89,7 +89,7 @@ describe('validate-ontology — the faults', () => {
   it('encoding faults are AGSC-E108', () => {
     const root = ontologyRoot(`${CONCEPT}\n`);
     const file = path.join(root, 'ontology', 'agsc.ttl');
-    fs.writeFileSync(file, `﻿${fs.readFileSync(file, 'utf8').replace(/\n/gu, '\r\n')}\n`);
+    fs.writeFileSync(file, `\uFEFF${fs.readFileSync(file, 'utf8').replace(/\n/gu, '\r\n')}\n`);
     const { json } = envelope('validate-ontology', [root]);
     assert.ok(json.findings.filter((f) => f.code === 'AGSC-E108').length >= 3);
   });
@@ -135,7 +135,7 @@ describe('validate-ontology — the faults', () => {
 
   it('no owl:versionIRI is AGSC-E202', () => {
     const root = writeTree(tmpdir(), {
-      'ontology/agsc.ttl': `${PREAMBLE.replace(/ ;\n    owl:versionIRI[^\n]*\n/u, ' .\n')}${CONCEPT}`,
+      'ontology/agsc.ttl': `${PREAMBLE.replace(/ ;\n {4}owl:versionIRI[^\n]*\n/u, ' .\n')}${CONCEPT}`,
     });
     const { json } = envelope('validate-ontology', [root]);
     assert.ok(json.findings.some((f) => f.code === 'AGSC-E202' && /no owl:versionIRI/u.test(f.message)));

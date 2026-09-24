@@ -32,7 +32,7 @@
 const net = require('node:net');
 const { domainToASCII } = require('node:url');
 const nquads = require('../knowledge/nquads.js');
-const { REL } = require('./surfaces.js');
+const { REL, finding } = require('./surfaces.js');
 
 /** AGSC-06-07: the one discovery suffix, held as a single constant. */
 const WELLKNOWN_SUFFIX = '.well-known/knowledge-linkset';
@@ -100,10 +100,6 @@ const WITHOUT_LOOPBACK = blockList(
   REFUSED_V6.filter((c) => c !== LOOPBACK_V6),
 );
 const LOOPBACK_ONLY = blockList([LOOPBACK_V4], [LOOPBACK_V6]);
-
-function finding(code, severity, extra) {
-  return Object.freeze(Object.assign({ code, message: '', severity }, extra || {}));
-}
 
 /** AGSC-11-06/11-01: the parameters actually in force, defaults where absent. */
 function effectiveFederation(config) {
@@ -665,13 +661,11 @@ function peerResults(options) {
 }
 
 module.exports = {
-  ASC_PEER_ORIGIN,
+  plural,
   CONTRIBUTE_MODES,
   FEDERATION_PARAMS,
   LINK_KEYS,
-  RDFS_SEE_ALSO,
   RELATED_RELATIONS,
-  RESERVED_LINK_KEYS,
   WELLKNOWN_SUFFIX,
   checkAddresses,
   checkContribute,
@@ -688,7 +682,6 @@ module.exports = {
   mutualCheck,
   normaliseReference,
   peerBase,
-  peerFault,
   peerCitations,
   peerLinks,
   peerResults,

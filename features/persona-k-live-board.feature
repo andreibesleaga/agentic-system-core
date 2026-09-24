@@ -8,7 +8,7 @@ Feature: Self-driving team — agents and people finish a project's tasks on one
 
   Background:
     Given a Bundle with a board cluster "sprint-1" holding tasks of kind task with task_state "TASK_STATE_SUBMITTED"
-    And agsc.config.json declares contribute[] and the surface "mcp"
+    And agsc.config.json declares contribute[]
     And a channel "lane" with author "lane-bot", owner "human:alice" and publish "auto"
     And an agents[] entry "worker" of kind "llm" with tasks "plan, claim, work, edit" and types "concept, episode, lesson", channel "lane", budget_usd_month 5, enabled true
 
@@ -44,9 +44,10 @@ Feature: Self-driving team — agents and people finish a project's tasks on one
 
   @PRD-063
   Scenario: The build stays deterministic while the lane is non-deterministic
+    Given the lane's Proposal claiming a task was merged with the trailer "Channel-Auto: lane"
     When "npx agentic-system-core ci" runs twice on the merged content
-    Then the two builds are byte-identical and no model call is reachable from lint, build, verify or ci (AGSC-08-30)
-    And "npx agentic-system-core verify --ledger" shows the lane's merges with mode "auto"
+    Then the two runs give the same verdict, two builds give byte-identical output, and no model or network call is reachable from lint, build, verify or ci (AGSC-08-30)
+    And "npx agentic-system-core verify --ledger" re-verifies the ledger, which records the lane's commit with mode "auto"
 
   @PRD-065
   Scenario: The work-in-progress limit keeps the agent on one task

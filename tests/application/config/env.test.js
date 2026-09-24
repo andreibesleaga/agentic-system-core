@@ -12,7 +12,7 @@ test('parseDotenv keeps only AGSC_* names, later line wins, comments/blank ignor
     '',
     'AGSC_BUDGET_USD_MONTH=7',
     'OPENAI_API_KEY=not-read',
-    'AGSC_BUDGET_USD_MONTH=9'
+    'AGSC_BUDGET_USD_MONTH=9',
   ].join('\n');
   const parsed = env.parseDotenv(text);
   assert.equal(parsed.entries.get('AGSC_BUDGET_USD_MONTH'), '9');

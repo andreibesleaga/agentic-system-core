@@ -385,7 +385,9 @@ test('the three remaining export flags are implemented and each writes its own r
   for (const [flag, expected] of [['markdown', 'dist/export/markdown/content/index.md'],
     ['okf', 'dist/export/okf/content/log.md'],
     ['steer', 'dist/export/steer/AGENTS.md']]) {
-    const dir = workspace();
+    // AGSC-01-26: an export carries the Content Use Terms text beside its prose, and a
+    // run with an error finding writes nothing — so the Bundle ships LICENSE-CONTENT.
+    const dir = workspace({ 'LICENSE-CONTENT': nodeFs.readFileSync(path.join(ROOT, 'LICENSE-CONTENT'), 'utf8') });
     const result = exportVerb.run(ctxFor(dir, { verbFlags: { [flag]: true } }));
     for (const one of result.findings) {
       assert.ok(!/not implemented/u.test(one.message), `${flag}: ${one.message}`);

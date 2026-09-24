@@ -1,5 +1,7 @@
 # How to say your implementation conforms
 
+**Who this is for:** an implementer about to say publicly that an implementation conforms. **Read after:** [IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) §7. *(Header added 2026-09-24.)*
+
 Conformance here means one thing and it is checkable: your implementation
 produces the bytes the conformance vectors expect, for a numbered version of
 the specification and a stated level. Nobody needs permission to run the
@@ -28,6 +30,15 @@ reader than a claim that is technically true:
 > «Your implementation name» «version» conforms to AgenticSystemCore
 > «specification version», Level «n», for the «named» areas. «passed» of
 > «total» vectors passed; the «named» areas are not implemented.
+
+*Added 2026-09-24.* A node's claim also names where it is served, because
+AGSC-06-01 requires a claim to name its deployment profile. End either sentence
+with:
+
+> Deployment profile: «profile» — «its claim».
+
+`agsc-host list` and `agsc-host emit` print each profile's claim text; the profiles
+are described in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md#where-a-node-can-live).
 
 The levels, and the rules and vector areas each one covers, are defined in
 `spec/10-implementation-profiles.md`.

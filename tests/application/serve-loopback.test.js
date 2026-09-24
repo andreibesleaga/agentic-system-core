@@ -108,7 +108,8 @@ test('redirects, directories, refusals and the 404 page, as the reference host a
 });
 
 test('a file the server cannot read is a 500 with no body, and the server keeps running', {
-  skip: typeof process.getuid === 'function' && process.getuid() === 0 ? 'root reads any file' : false,
+  skip: process.platform === 'win32' ? 'Windows has no POSIX mode bits: chmod 000 does not stop a read'
+    : typeof process.getuid === 'function' && process.getuid() === 0 ? 'root reads any file' : false,
 }, async () => {
   const locked = path.join(node.site, 'locked.txt');
   fs.writeFileSync(locked, 'secret');

@@ -6,10 +6,14 @@
 #
 #   permissions:
 #     contents: read            # the only permission this action needs
-#   steps:
-#     - uses: actions/checkout@<sha>
-#       with: { fetch-depth: 0 }  # the ledger and the content version read history
-#     - uses: andreibesleaga/agentic-system-core@<tag-or-sha>
+#   jobs:
+#     agsc:
+#       name: agsc ci           # the one check dist/forge/ruleset.json requires
+#       runs-on: ubuntu-latest
+#       steps:
+#         - uses: actions/checkout@<sha>
+#           with: { fetch-depth: 0 }  # the ledger and the content version read history
+#         - uses: andreibesleaga/agentic-system-core@<tag-or-sha>
 #
 # Least privilege: the action reads the checked-out repository, installs the
 # engine's pinned runtime dependencies (`npm ci --omit=dev --ignore-scripts`, from
@@ -28,7 +32,7 @@ inputs:
     required: false
     default: '.'
   node-version:
-    description: The Node.js version to run the engine on (the engine needs 22.12 or later).
+    description: The Node.js version to run the engine on (the engine needs 22.13 or later).
     required: false
     default: '22'
   args:

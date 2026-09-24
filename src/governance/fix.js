@@ -29,11 +29,11 @@
  * invent a link nor smuggle one into an example.
  */
 
+const YAML = require('yaml');
 const { TYPE_PLURAL } = require('../knowledge/chunks.js');
 const { serialize } = require('../knowledge/adopt.js');
 const { finding } = require('../knowledge/validate.js');
 const { nfc, compareCodePoint } = require('../knowledge/unicode.js');
-const YAML = require('yaml');
 const yaml = require('../knowledge/yaml.js');
 const frontmatter = require('../knowledge/frontmatter.js');
 
@@ -309,7 +309,7 @@ function fixItem(item, options) {
       { file: path, severity: 'warn' }));
   }
 
-  // AGSC-04-19 as amended at rc.5 reports PER NORMALISATION, not per file:
+  // AGSC-04-19 reports PER NORMALISATION, not per file:
   // "a line-ending, BOM, NFC or trailing-newline normalisation under AGSC-E108 …,
   // every other normalisation of this rule under AGSC-E506". So the encoding third
   // is recorded on its own even when the frontmatter also moved — until rc.5 it was
@@ -359,7 +359,6 @@ function plan(bundle, options = {}) {
 
 module.exports = {
   ENCODING_CHANGE,
-  IMAGE_EXTENSIONS,
   codeSpans,
   declaredOrder,
   fixItem,

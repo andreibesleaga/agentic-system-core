@@ -201,7 +201,8 @@ test('AGSC-06-21: above 500 items /search.json IS the manifest and the shards ca
   assert.match(chunks.bundle_version, /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u);
   assert.deepStrictEqual(chunks.shards, ['/chunks-01.jsonl', '/chunks-02.jsonl']);
   assert.ok(files.has('/concepts/page-2/index.html'), 'the /concepts/ index route was not paginated');
-  assert.ok(files.has('/page-2/index.html'), 'the root index route was not paginated');
+  // The front page lists no items (it links the index pages), so it is never paginated.
+  assert.ok(!files.has('/page-2/index.html'), 'the front page was paginated');
   // And every item still has its own page, which is what the page tools read.
   for (const n of [0, 1, 499, 500, 501, ITEMS - 1]) {
     assert.ok(files.has(`/pages/${slugOf(n)}.md`), `no /pages/${slugOf(n)}.md`);

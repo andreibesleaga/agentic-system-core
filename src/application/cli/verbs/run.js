@@ -87,7 +87,7 @@ function execute(runner, step, options) {
     }
   }
   if (step.expected === null) return { captured, findings, ok: true };
-  // AGSC-09-94 as amended at rc.6: "a captured result that differs from
+  // AGSC-09-94: "a captured result that differs from
   // its `expect` block is `AGSC-E602`, a recorded result that the run did not
   // reproduce". The registry row names the rule, so this is no longer a borrowed
   // code.
@@ -174,4 +174,4 @@ function run(ctx) {
   return { findings };
 }
 
-module.exports = { WORKING_DIRECTORY_NOTE, execute, name: 'run', resolvedLine, run, settings };
+module.exports = { execute, name: 'run', resolvedLine, run, settings };

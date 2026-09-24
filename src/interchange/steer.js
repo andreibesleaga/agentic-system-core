@@ -44,7 +44,7 @@
  * steering file exists to carry). Every quoted body is fenced as
  * ```` ```text agsc-content ```` with the fence widened past the longest backtick
  * run inside it, and every interpolated single-line value is neutralised
- * (AGSC-02-24 as amended at rc.5), so no authored string can forge a heading, a
+ * (AGSC-02-24), so no authored string can forge a heading, a
  * list entry or an early `-->`.
  *
  * PURE: no fs, no clock, no network. The instant arrives as a string from the
@@ -59,6 +59,7 @@ const chunks = require('../knowledge/chunks.js');
 const { commentSafe, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { provenanceLines } = require('../knowledge/provenance-header.js');
 const { finding } = require('../knowledge/validate.js');
+const { fenceProse } = require('../knowledge/markdown.js');
 
 /** AGSC-01-28's closed registry: target → the one path it writes. */
 const TARGETS = Object.freeze({
@@ -66,7 +67,7 @@ const TARGETS = Object.freeze({
   aider: 'CONVENTIONS.md',
   claude: 'CLAUDE.md',
   cline: '.clinerules/agsc.md',
-  // AGSC-01-28 as corrected at rc.6: the row named `.codex/instructions.md`,
+  // AGSC-01-28: the row named `.codex/instructions.md`,
   // which Codex does not read. OpenAI's own documentation
   // <https://learn.chatgpt.com/docs/agent-configuration/agents-md> (read 2026-09-23) says
   // Codex looks for `AGENTS.override.md` first and `AGENTS.md` second at each level. The
@@ -89,22 +90,6 @@ const SOURCE_TYPES = Object.freeze(['concept', 'gate', 'lesson', 'procedure']);
 
 /** The three whose body IS the instruction; a concept is indexed, not quoted. */
 const QUOTED_TYPES = Object.freeze(['gate', 'lesson', 'procedure']);
-
-/**
- * AGSC-01-29 + CommonMark 0.31.2 §4.5: quoted prose as data, with the fence
- * widened past the longest backtick run inside it so that prose carrying a fence
- * cannot close ours and escape from data into instruction.
- *
- * @param {string} text
- * @returns {string}
- */
-function fenceProse(text) {
-  const body = String(text == null ? '' : text).replace(/\n*$/u, '');
-  let longest = 0;
-  for (const run of body.match(/`+/gu) || []) if (run.length > longest) longest = run.length;
-  const fence = '`'.repeat(longest < 3 ? 3 : longest + 1);
-  return `${fence}text agsc-content\n${body}\n${fence}`;
-}
 
 /**
  * AGSC-01-28's withholding set, derived from the AGSC-08-20b git-log file.
@@ -323,6 +308,6 @@ function plan(bundle, options) {
 }
 
 module.exports = {
-  DEFAULT_TARGETS, QUOTED_TYPES, SOURCE_TYPES, TARGETS,
+  TARGETS,
   channelAutoPaths, fenceProse, flatten, hasHumanVerification, nowLines, plan, steerText,
 };

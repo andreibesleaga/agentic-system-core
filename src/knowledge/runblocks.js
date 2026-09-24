@@ -6,7 +6,7 @@
  *
  * AGSC-02-22: "`run` and `expect` are the only executable info strings; they are
  * permitted on `procedure` items only and have effect only under the opt-in `run`
- * verb of AGSC-09-94." AGSC-09-94 as corrected at rc.6: "`run <slug>`
+ * verb of AGSC-09-94." AGSC-09-94: "`run <slug>`
  * executes the fenced blocks of a Procedure whose info string is `run` … (the two
  * info strings are spelled as AGSC-02-22 spells them)".
  *
@@ -148,7 +148,7 @@ function steps(item, options = {}) {
           { file, line: block.line, severity: 'error' }));
         continue;
       }
-      // AGSC-09-94 as amended at rc.6: "A command whose program name is
+      // AGSC-09-94: "A command whose program name is
       // not listed is `AGSC-E203` — `run.allow[]` is a closed operator list of
       // exactly the shape that code names". The registry row names the rule, so
       // this is no longer a borrowed code.
@@ -186,4 +186,4 @@ function matches(captured, expected) {
   return trim(captured) === trim(expected);
 }
 
-module.exports = { EXPECT_INFO, RUN_INFO, SHELL_CHARACTERS, command, fences, matches, steps };
+module.exports = { EXPECT_INFO, RUN_INFO, command, fences, matches, steps };

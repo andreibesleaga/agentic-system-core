@@ -4,7 +4,8 @@
 // byte-reproducible derivation from the git-log file), AGSC-08-20b (the production
 // of that file, so two ports derive one ledger from one history), AGSC-08-21 (the
 // members of an entry), AGSC-08-22 (the hash chain) and AGSC-08-23 (`verify
-// --ledger`, including the truncated-tail check against the published head).
+// --ledger`, including the truncated-tail check against the published head, and
+// `compare`, the published file against the recomputation of its history).
 //
 // PURE: no fs, no process, no clock, no network. The git log arrives as data
 // through the ProcessRunner port, read by the application layer; the build instant
@@ -241,6 +242,43 @@ function verify(ledger, wellknown) {
   return out;
 }
 
+/**
+ * AGSC-08-23: compare what a node PUBLISHED with what its history derives.
+ *
+ * With no history (`derived` null), the published file is re-verified on its own:
+ * the chain, and the head the published discovery document states. With a history,
+ * the published ledger must equal the recomputation line for line — the first line
+ * that differs is `AGSC-E702` — and the recomputed head must be the published one
+ * (`AGSC-E701`, which is what detects a truncated tail).
+ *
+ * @param {string|null} published the published `/ledger.jsonl` bytes, or null.
+ * @param {object|null} wellknown the published discovery document, or null.
+ * @param {{ledger:string}|null} derived the result of `derive()` over the history, or null.
+ * @param {{file?:string}} [options] the path findings name for the published file.
+ * @returns {Array<object>} Findings; empty means the published ledger is the derived one.
+ */
+function compare(published, wellknown, derived, options = {}) {
+  if (derived === null || derived === undefined) return verify(published, wellknown);
+  const out = [];
+  if (published !== null && published !== undefined && published !== derived.ledger) {
+    const got = String(published).split('\n');
+    const want = derived.ledger.split('\n');
+    let line = 0;
+    while (line < got.length && line < want.length && got[line] === want[line]) line += 1;
+    out.push({
+      code: 'AGSC-E702',
+      file: options.file === undefined ? '/ledger.jsonl' : options.file,
+      line: line + 1,
+      message: `the published ledger differs from the recomputation of the same history at line ${line + 1} (AGSC-08-23)`,
+      severity: 'error',
+    });
+  }
+  if (wellknown !== null && wellknown !== undefined) {
+    out.push(...verify(derived.ledger, wellknown).filter((f) => /agsc-ledger-head/u.test(f.message)));
+  }
+  return out;
+}
+
 // ------------------------------------------------------- AGSC-08-20b: production
 
 /**
@@ -324,6 +362,7 @@ function produce(commits) {
 module.exports = {
   derive,
   verify,
+  compare,
   produce,
   parseTrailers,
   publishedHead,

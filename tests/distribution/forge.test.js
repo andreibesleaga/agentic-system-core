@@ -113,11 +113,20 @@ test('CODEOWNERS takes channels[].owner, else the bundle.operator identifier, el
   assert.deepStrictEqual(forge.owners(undefined), []);
 });
 
-test('ruleset.json is JCS-canonical and carries the same check names', () => {
-  const text = forge.compile([gate({ enforce: ['ruleset'], level: 'L1' })], {}).get('ruleset.json');
+// AGSC-08-12 leaves the ruleset's content to the implementation; it MUST NOT require
+// a check no job reports, or a forge that imports it blocks every merge. The one check
+// a CI job reports is the job that runs `agsc ci` (action.yml names it), and that
+// verdict covers every gate check of status-checks.json (dist/gate.json).
+test('ruleset.json requires the one check a CI job reports, never the gate check names', () => {
+  const files = forge.compile([gate({ enforce: ['ruleset', 'status-check'], level: 'L2' })], {});
+  const text = files.get('ruleset.json');
   assert.strictEqual(text, '{"enforcement":"active","name":"agsc",'
-    + '"rules":{"required_status_checks":["links","schema"]},"target":"branch"}\n');
-  assert.deepStrictEqual(JSON.parse(text).rules.required_status_checks, ['links', 'schema']);
+    + '"rules":{"required_status_checks":["agsc ci"]},"target":"branch"}\n');
+  assert.deepStrictEqual(JSON.parse(text).rules.required_status_checks, [forge.CI_CHECK]);
+  // status-checks.json keeps its pinned bytes: the gate checks that one job covers.
+  assert.strictEqual(files.get('status-checks.json'), '["determinism","links","provenance","review","schema"]\n');
+  const action = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'action.yml'), 'utf8');
+  assert.ok(action.includes(`name: ${forge.CI_CHECK}`), 'action.yml shows the job name the ruleset requires');
 });
 
 test('AGSC-04-01: compiling twice produces the same bytes, whatever the item order', () => {
@@ -198,7 +207,6 @@ test('enforcedValues is the union over gate items, code-point ordered, and total
 });
 
 test('AGSC-08-12: lint itself reports an enforce[] value it cannot compile', () => {
-  // eslint-disable-next-line global-require
   const govLint = require('../../src/governance/lint.js');
   const gateItem = (enforce) => ({
     body: 'Body.\n',

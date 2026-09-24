@@ -14,7 +14,6 @@ const REPO = path.resolve(__dirname, '..', '..');
 
 /** Load one tool by its file name (the files carry no extension). */
 function tool(name) {
-  // eslint-disable-next-line global-require, import/no-dynamic-require
   return require(path.join(TOOLS, name));
 }
 

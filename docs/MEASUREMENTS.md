@@ -1,5 +1,7 @@
 # Measurements
 
+**Who this is for:** anyone checking what has been measured, on what, and with which command. **Read after:** [BENCHMARKS.md](BENCHMARKS.md) (the method). *(Header added 2026-09-24.)*
+
 **Status: COMPLETE for every layer one machine can run, measured 2026-09-23 against `1.0.0-rc.6` (drafted, untagged); the conformance, security and package layers were measured again on 2026-09-24, after the last specification pass of the draft.** Nine layers have been run and are reported below with the command that produced each number. Two things remain open, and each says so where it belongs: the same suite and builds on macOS and Windows (a CI matrix, which one machine cannot run), and the authoritative rule-coverage matrix that replaces the proxy rows of §1 (`tools/rule-coverage`, another package's deliverable).
 
 Every number here is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.

@@ -416,7 +416,9 @@ function render(result) {
   out.push(`| Executed acceptance scenario | ${totals.by_acceptance} |`);
   out.push(`| Checker header | ${totals.by_checker} |`);
   out.push('');
-  out.push(`Acceptance scenarios: ${totals.acceptance_scenarios} in \`features/\` (a Scenario Outline counts once), of which ${totals.acceptance_scenarios_pending} are pending with a reason in \`tests/acceptance/pending.json\`. The executed scenarios carry no rule id in their text; the rules they check are named by \`// verifies\` markers in their step files, counted as tests.`);
+  out.push(`Acceptance scenarios: ${totals.acceptance_scenarios} in \`features/\` (a Scenario Outline counts once), of which ${totals.acceptance_scenarios_pending} are pending with a reason in \`tests/acceptance/pending.json\`. ${totals.by_acceptance === 0
+    ? 'The executed scenarios carry no rule id in their text; the rules they check are named by `// verifies` markers in their step files, counted as tests.'
+    : `The executed scenarios name ${totals.by_acceptance} rules in their tags or steps; their step files also name the rules they check in \`// verifies\` markers, counted as tests.`}`);
   out.push('');
   out.push('## Per part of the specification');
   out.push('');

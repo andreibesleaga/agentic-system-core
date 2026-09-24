@@ -172,4 +172,4 @@ function ci(bundle, ports, options = {}) {
   };
 }
 
-module.exports = { GATE_FILE, ci, countOf, gateVerdict, sameBytes };
+module.exports = { GATE_FILE, ci, gateVerdict, sameBytes };

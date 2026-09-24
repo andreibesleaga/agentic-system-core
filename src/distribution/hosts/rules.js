@@ -169,7 +169,6 @@ module.exports = {
   matches,
   parseHeaders,
   parseRedirects,
-  patternRegExp,
   redirectFor,
   routeOf,
   routesOf,

@@ -1,5 +1,7 @@
 # Security considerations
 
+**Who this is for:** a security reviewer, an operator or an implementer. **Read after:** [spec/11-boundary.md](../spec/11-boundary.md). *(Header added 2026-09-24.)*
+
 *Informative supplement to `spec/11-boundary.md` §11.8 and `docs/PLAN.md` §12. Written 2026-09-16 for the `1.0.0-rc.3` draft; re-verified against `1.0.0-rc.4` on 2026-09-18. Each row names the rule that closes it; what stays open is said plainly. This text is the source of the Internet-Draft's Security Considerations section.*
 
 In one sentence: the discovery layer proves that the artefacts a reader fetched are the ones the

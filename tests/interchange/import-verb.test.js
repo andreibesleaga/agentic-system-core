@@ -65,7 +65,6 @@ function workspace(extra = {}) {
 function run(argv, dir) {
   const stdout = captureStream();
   const stderr = captureStream();
-  // eslint-disable-next-line global-require
   const { createFileSystem } = require('../../src/adapters/node-fs.js');
   const exit = main(argv, {
     env: { SOURCE_DATE_EPOCH: EPOCH },
@@ -127,7 +126,6 @@ test('AGSC-09-09: an adapter\'s own flags are ADAPTER-SCOPED', () => {
   // flags of its own … an engine that does not ship the adapter rejects them with
   // AGSC-E002." So `--selection` is legal under `old-site` and a usage error under
   // any other adapter or none at all — never a global allow-list on the verb.
-  // eslint-disable-next-line global-require
   const main = require('../../src/application/cli/main.js');
   assert.deepStrictEqual([...main.VERB_FLAGS.import.keys()], ['--from', '--dry-run']);
   // added `--replace` to both adapters: the documented, explicit way to let
@@ -391,7 +389,6 @@ test('totalsLines(): one line per total, in key order', () => {
 });
 
 test('the corrections file is DATA, and `_`-prefixed members are comments', () => {
-  // eslint-disable-next-line global-require
   const parse = require('../../src/application/cli/verbs/import.js').parseCorrections;
   const parsed = parse(JSON.stringify({
     _note: 'why each entry exists — never read by the engine',
@@ -450,4 +447,3 @@ test('the Bundle configuration is read from the FILE, and an unreadable one is {
   assert.deepStrictEqual(verb.bundleConfig(ctx('[1,2]')), {});
   assert.deepStrictEqual(verb.bundleConfig(ctx('null')), {});
 });
-

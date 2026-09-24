@@ -41,4 +41,4 @@ function finding(code, message, extra = {}) {
   return f;
 }
 
-module.exports = { EXTRA_MEMBERS, finding };
+module.exports = { finding };

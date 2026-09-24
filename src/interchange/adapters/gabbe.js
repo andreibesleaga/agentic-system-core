@@ -72,16 +72,17 @@ const chunks = require('../../knowledge/chunks.js');
 const slugs = require('../../knowledge/slug.js');
 const frontmatterModule = require('../../knowledge/frontmatter.js');
 const yaml = require('../../knowledge/yaml.js');
-const fix = require('../../governance/fix.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc, singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
-const { serialize, titleFor } = require('../../knowledge/adopt.js');
+const { titleFor } = require('../../knowledge/adopt.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
 const okf = require('../okf.js');
 const steer = require('../steer.js');
 const ownRecord = require('../own-record.js');
+const { decodeRecord, encodeRecord } = ownRecord;
+const { isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'gabbe';
@@ -130,27 +131,6 @@ const CLAIMED_KEYS = Object.freeze({
 
 // ------------------------------------------------------------------- shared helpers
 
-/** A plain object with no prototype, so a foreign `__proto__` member is only data. */
-function plain(value) {
-  const out = Object.create(null);
-  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-    for (const key of Object.keys(value)) out[key] = value[key];
-  }
-  return out;
-}
-
-function isObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-/** A single-line string of at most `max` code points, or `null`. */
-function oneLine(value, max) {
-  if (typeof value !== 'string') return null;
-  const text = nfc(value).replace(/\s+/gu, ' ').trim();
-  if (text === '') return null;
-  return [...text].length > max ? [...text].slice(0, max).join('') : text;
-}
-
 /** A GABBE template placeholder (`[YYYY-MM-DD]`, `[agent persona / human]`) is no value. */
 function valueOf(text) {
   const t = String(text == null ? '' : text).trim();
@@ -158,46 +138,7 @@ function valueOf(text) {
   return t;
 }
 
-/** The own-record payload of one item, as the base64 of its JCS bytes. */
-function encodeRecord(record) {
-  return Buffer.from(canonicalize(record), 'utf8').toString('base64');
-}
-
-/** The payload of one `agsc-item` line, or `null` when it is not ours. */
-function decodeRecord(b64) {
-  let value;
-  try {
-    value = JSON.parse(Buffer.from(String(b64), 'base64').toString('utf8'));
-  } catch (e) {
-    return null;
-  }
-  if (!isObject(value) || !isObject(value.frontmatter) || typeof value.body !== 'string'
-    || typeof value.slug !== 'string' || typeof value.type !== 'string') return null;
-  return value;
-}
-
-/** The lint-normalized bytes of one item (AGSC-04-19), as every import lane writes them. */
-function itemText(frontmatter, body, itemSchema) {
-  const type = String(frontmatter.type);
-  const ordered = fix.orderKeys(frontmatter, fix.declaredOrder(itemSchema, type), itemSchema, type, null);
-  return fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${nfc(body)}`);
-}
-
 // -------------------------------------------------------------------------- export
-
-/** A YAML double-quoted scalar: JSON's string form is one (YAML 1.2 §7.3.1). */
-function yamlString(value) {
-  return JSON.stringify(singleLine(nfc(String(value))));
-}
-
-/** The first `## Lesson` section of a lesson body, else the whole body, trimmed. */
-function lessonText(body) {
-  const parts = chunks.sections(String(body == null ? '' : body));
-  const lesson = parts.find((part) => /^##\s+lesson\s*$/iu.test(part.text.split('\n')[0]));
-  const text = lesson === undefined ? String(body == null ? '' : body)
-    : lesson.text.split('\n').slice(1).join('\n');
-  return text.trim();
-}
 
 /** One exported file per item type, the GABBE-shaped text around the record line. */
 function itemFile(item, record, header) {
@@ -427,7 +368,7 @@ function foreignRecords(path, text, kind) {
   }
   if (kind === 'skill') {
     const split = frontmatterModule.split(text, { file: path });
-    let fm = null;
+    let fm;
     try {
       fm = split.hasFrontmatter ? yaml.parse(split.yamlText) : null;
     } catch (e) {
@@ -808,7 +749,7 @@ function plan(files, options) {
 }
 
 module.exports = {
-  AUDIT_LOG, CLAIMED_KEYS, CONTINUITY, FORMAT, LAYOUT, PROJECT_STATE, RESUME_POINTER, STEERING,
-  actorOf, cells, decodeRecord, encodeRecord, fieldTable, foreignRecords, instantOf,
+  AUDIT_LOG, CLAIMED_KEYS, CONTINUITY, FORMAT, PROJECT_STATE, RESUME_POINTER,
+  actorOf, cells, decodeRecord, encodeRecord, instantOf,
   isKitFile, kindOf, outcomeOf, plan, run, valueOf, withoutComments,
 };

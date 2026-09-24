@@ -58,7 +58,7 @@ test('a handler that throws is a FAILING vector, not a crashed run', () => {
 
 test('the summary line is the one line every runner prints', () => {
   const { tally } = conformance.runAll(
-    [vector(), vector({ id: 'x-0002', level: 'withdrawn' })], { handlerFor: () => PASSING }
+    [vector(), vector({ id: 'x-0002', level: 'withdrawn' })], { handlerFor: () => PASSING },
   );
   assert.strictEqual(conformance.summaryLine(tally, 2),
     'vectors: 1 pass, 0 fail, 1 skip (1 withdrawn, 0 pending) of 2');
@@ -67,7 +67,7 @@ test('the summary line is the one line every runner prints', () => {
 test('AGSC-09-03: the report carries `got` for everything that did not pass, and only then', () => {
   const { results } = conformance.runAll(
     [vector(), vector({ area: 'jcs', id: 'x-0002' })],
-    { handlerFor: (area) => (area === 'jcs' ? FAILING : PASSING) }
+    { handlerFor: (area) => (area === 'jcs' ? FAILING : PASSING) },
   );
   const document = conformance.report(results, {
     impl: 'agentic-system-core', level: 2, spec_version: '1.0.0-rc.4', version: '0.0.0',

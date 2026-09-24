@@ -188,11 +188,7 @@ function run(argv, io) {
   let id = null;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
-    else if (arg === '--items') { i += 1; items = Number(argv[i]); }
-    else if (arg === '--out') { i += 1; target = argv[i]; }
-    else if (arg === '--id') { i += 1; id = argv[i]; }
-    else return usage(`unknown argument ${arg}`);
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; } else if (arg === '--items') { i += 1; items = Number(argv[i]); } else if (arg === '--out') { i += 1; target = argv[i]; } else if (arg === '--id') { i += 1; id = argv[i]; } else return usage(`unknown argument ${arg}`);
   }
   if (!Number.isInteger(items) || items < 1 || items > 1000000) return usage('--items <n> must be an integer 1..1000000');
   if (typeof target !== 'string' || target === '') return usage('--out <dir> is required');

@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-04-09, AGSC-06-08, AGSC-06-10, AGSC-06-14, AGSC-09-93
+// verifies AGSC-04-09, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93
 // Steps of features/persona-j-standards.feature that run offline. The build
 // output stands in for the published site: what an implementer would fetch from
 // the node is read from `www/`, and the shipped validator is run in its
@@ -154,6 +154,80 @@ module.exports = [
       const r = world.tool('validate-wellknown', [at, '--json']);
       assert.strictEqual(r.exit, 1, r.stdout);
       assert.ok(JSON.parse(r.stdout).findings.some((f) => /made-up-relation/u.test(f.message)), r.stdout);
+    },
+  },
+  {
+    pattern: 'the implementer reads "/.well-known/knowledge-linkset" and the headers "_headers" serves it with',
+    run(world) {
+      world.state.context = builtWithHistory(world);
+      world.state.raw = world.read('www/.well-known/knowledge-linkset');
+      // The Cloudflare-style `_headers` file: a path line, then its indented headers.
+      const blocks = world.read('www/_headers').split(/\n(?=\S)/u);
+      world.state.headers = blocks.filter((b) => b.split('\n')[0].trim() === '/.well-known/knowledge-linkset')
+        .flatMap((b) => b.split('\n').slice(1)).map((l) => l.trim()).filter(Boolean);
+    },
+  },
+  {
+    pattern: 'it is served as "application/linkset+json" with profile "https://w3id.org/agentic-system-core/profile/agentic-knowledge" and "linkset" is its sole top-level member (AGSC-06-17, AGSC-06-08)',
+    run(world) {
+      assert.ok(world.state.headers.includes(
+        'Content-Type: application/linkset+json; profile="https://w3id.org/agentic-system-core/profile/agentic-knowledge"'),
+      world.state.headers.join('\n'));
+      assert.deepStrictEqual(Object.keys(JSON.parse(world.state.raw)), ['linkset']);
+    },
+  },
+  {
+    pattern: 'it is a RFC 9264 linkset with "anchor" equal to the site base',
+    run(world) {
+      const document = JSON.parse(world.state.raw);
+      assert.ok(Array.isArray(document.linkset) && document.linkset.length === 1);
+      assert.strictEqual(world.state.context.anchor, BASE);
+      for (const [relation, targets] of Object.entries(world.state.context)) {
+        if (relation === 'anchor') continue;
+        assert.ok(Array.isArray(targets) && targets.every((t) => typeof t.href === 'string'), relation);
+      }
+    },
+  },
+  {
+    pattern: 'it links "describedby" to "/graph.jsonld"',
+    run(world) {
+      assert.deepStrictEqual(world.state.context.describedby.map((l) => l.href), [`${BASE}graph.jsonld`]);
+    },
+  },
+  {
+    pattern: 'it links relation "https://w3id.org/agentic-system-core/rel#graph" to "/graph.nq" and to "/graph.ttl"',
+    run(world) {
+      assert.deepStrictEqual(world.state.context[`${REL}graph`].map((l) => l.href), [`${BASE}graph.nq`, `${BASE}graph.ttl`]);
+    },
+  },
+  {
+    pattern: 'it links relation "…rel#context" to "/ns/context.jsonld", and carries no "…rel#ontology" link, because a content node does not serve the vocabulary (AGSC-06-10)',
+    run(world) {
+      assert.deepStrictEqual(world.state.context[`${REL}context`].map((l) => l.href), [`${BASE}ns/context.jsonld`]);
+      assert.ok(world.exists('www/ns/context.jsonld'));
+      assert.ok(!(`${REL}ontology` in world.state.context), 'a content node links a vocabulary it does not serve');
+      assert.ok(!world.exists('www/ns/agsc.ttl'));
+    },
+  },
+  {
+    pattern: 'it links relation "…rel#now" to "/now.md" and "…rel#skills" to "/skills/index.json"',
+    run(world) {
+      assert.deepStrictEqual(world.state.context[`${REL}now`].map((l) => l.href), [`${BASE}now.md`]);
+      assert.deepStrictEqual(world.state.context[`${REL}skills`].map((l) => l.href), [`${BASE}skills/index.json`]);
+      assert.ok(world.exists('www/now.md') && world.exists('www/skills/index.json'));
+    },
+  },
+  {
+    pattern: 'it links "alternate" to "/llms.txt", and every target on the node\'s own origin is a file the build emitted',
+    run(world) {
+      assert.deepStrictEqual(world.state.context.alternate.map((l) => l.href), [`${BASE}llms.txt`]);
+      // No dangling promise: `/specs/` and `/legal/` are linked only where emitted.
+      for (const [relation, targets] of Object.entries(world.state.context)) {
+        if (relation === 'anchor') continue;
+        for (const { href } of targets) {
+          if (href.startsWith(BASE)) assert.ok(fs.existsSync(fileOf(world, href)), `${relation} names ${href}, which the build did not emit`);
+        }
+      }
     },
   },
 ];

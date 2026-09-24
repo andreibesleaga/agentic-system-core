@@ -89,7 +89,7 @@ function checkAgents(config) {
       cap_usd_month: capUsdMonth,
       message: `the enabled agents sum to ${sumUsdMonth} USD a month, above the node cap of ${capUsdMonth} (AGSC-01-38)`,
       path: 'agents',
-      sum_usd_month: sumUsdMonth
+      sum_usd_month: sumUsdMonth,
     }));
   }
 
@@ -137,7 +137,7 @@ function checkProposal(config, proposal) {
         agent: agentName,
         message: `no enabled agents[] entry is named "${agentName}" (AGSC-08-28)`,
         path: null,
-      })]
+      })],
     };
   }
 
@@ -158,7 +158,7 @@ function checkProposal(config, proposal) {
         message: `the lane "${agentName}" does not declare the task "${proposal.task}" (AGSC-08-28)`,
         path: null,
         task: proposal.task,
-      })]
+      })],
     };
   }
 
@@ -170,7 +170,7 @@ function checkProposal(config, proposal) {
           agent: agentName,
           message: `the lane "${agentName}" does not declare the item type "${change.type}" (AGSC-08-28)`,
           path: change.path,
-        })]
+        })],
       };
     }
     const task = (change && change.task !== undefined) ? change.task : proposal.task;
@@ -182,7 +182,7 @@ function checkProposal(config, proposal) {
           message: `the lane "${agentName}" does not declare the task "${task}" (AGSC-08-28)`,
           path: change && change.path,
           task,
-        })]
+        })],
       };
     }
   }
@@ -197,7 +197,7 @@ function checkProposal(config, proposal) {
         created,
         max_new_items: maxNewItems,
         message: `the Proposal creates ${created} items, above the lane cap of ${maxNewItems} (AGSC-08-28)`,
-      })]
+      })],
     };
   }
 
@@ -223,11 +223,9 @@ function capMeter(usage, config) {
 }
 
 module.exports = {
-  MAX_NEW_ITEMS_DEFAULT,
   MAX_CLAIMS_DEFAULT,
-  BUDGET_USD_MONTH_DEFAULT,
   checkAgents,
   checkProposal,
   capMeter,
-  findAgentEntry
+  findAgentEntry,
 };

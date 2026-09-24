@@ -266,7 +266,7 @@ function item(frontmatter, options = {}) {
     findings.push(finding(
       codeFor(e, 'item'),
       `${e.path || '/'}: ${e.message}`,
-      { ...base, line: lineOf(keyLines, e.path) }
+      { ...base, line: lineOf(keyLines, e.path) },
     ));
   }
 
@@ -477,8 +477,6 @@ module.exports = {
   finding,
   codeFor,
   TYPE_PLURAL,
-  KEY_NAME_RE,
-  VENDOR_KEY_RE,
   nfc,
   codePointLength,
 };

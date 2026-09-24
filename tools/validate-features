@@ -270,8 +270,7 @@ function specVersion(root) {
 }
 
 function packageVersion(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 }
 
 /**
@@ -313,8 +312,8 @@ function run(argv, io) {
 
   const names = fs.readdirSync(direct).filter((f) => f.endsWith('.feature')).sort();
   // zero files read is not a clean pack. The directory resolution above
-  // falls back to the argument itself, so a distribution with no `features/` used to
-  // report `pass` over an empty list — a gate that protects nothing.
+  // falls back to the argument itself, so a distribution with no `features/` would
+  // otherwise report `pass` over an empty list — a gate that protects nothing.
   if (names.length === 0) {
     findings.push(finding('AGSC-E901', path.relative(root, direct).split(path.sep).join('/') || 'features',
       1, `no .feature file under ${direct}: there is nothing to validate (AGSC-09-90)`));

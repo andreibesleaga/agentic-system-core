@@ -75,7 +75,10 @@ test('AGSC-06-21 / AGSC-06-31: 501 items shard the index and paginate every inde
   assert.deepStrictEqual(chunks.shards, ['/chunks-01.jsonl', '/chunks-02.jsonl']);
 
   // Page 1 is the route itself; the overflow is `/page-2/`, and only that.
-  for (const route of ['/', '/concepts/', '/search/', '/tags/agents/']) {
+  // The front page lists no items (it links the index pages), so it has one page only.
+  assert.ok(files.has('/index.html') && !files.has('/page-2/index.html'), 'the front page was paginated');
+  assert.match(String(files.get('/index.html')), /<h2 id="browse">Browse<\/h2>/u);
+  for (const route of ['/concepts/', '/search/', '/tags/agents/']) {
     assert.ok(files.has(`${route}index.html`), `${route} lost its page 1`);
     assert.ok(files.has(`${route}page-2/index.html`), `${route} was not paginated`);
     assert.ok(!files.has(`${route}page-3/index.html`), `${route} paginated too far`);

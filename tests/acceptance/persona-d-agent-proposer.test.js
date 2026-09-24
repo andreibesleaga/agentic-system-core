@@ -101,7 +101,7 @@ test('persona-d: an assistant reads the memory, is handed prepared text, and wri
     // caller asserts `human`, and no clock is read.
     remembered = envelopeOf(await client.callTool({
       arguments: {
-        actor: 'agent:persona-d',
+        actor: 'process:persona-d',
         agent: 'claude-code/1.0',
         body: 'Two agents lost the reason a handoff happened, so the audit trail broke.',
         kind: 'lesson',
@@ -115,7 +115,7 @@ test('persona-d: an assistant reads the memory, is handed prepared text, and wri
     assert.strictEqual(remembered.body.path, 'content/lessons/record-why-a-handoff-happened.md');
     assert.strictEqual(remembered.body.frontmatter.prov.origin, 'ai-generated');
     assert.strictEqual(remembered.body.frontmatter.prov.operator, 'human:andreibesleaga');
-    assert.strictEqual(remembered.body.frontmatter.actor, 'agent:persona-d');
+    assert.strictEqual(remembered.body.frontmatter.actor, 'process:persona-d');
     // fixed by on both transports: AGSC-09-14b says `remember`
     // MUST synthesize a CONFORMING item and that `severity` defaults to `info`;
     // the default used to reach an `episode` only, so a remembered `lesson` came

@@ -14,14 +14,14 @@ test('buildEnvelope: shape, counts and pass/fail derivation', () => {
     spec_version: '1.0.0-rc.4',
     status: 'pass',
     verb: 'lint',
-    version: '0.1.0'
+    version: '0.1.0',
   });
 
   const fail = buildEnvelope({
     verb: 'lint',
     findings: [{ code: 'AGSC-E301', severity: 'error', file: 'a.md', line: 1, col: 1 }],
     specVersion: '1.0.0-rc.4',
-    version: '0.1.0'
+    version: '0.1.0',
   });
   assert.equal(fail.status, 'fail');
   assert.equal(fail.counts.error, 1);

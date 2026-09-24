@@ -29,7 +29,7 @@ test('a missing, unclosed or multi-document block (AGSC-E101/E102/E107)', () => 
 });
 
 test('AGSC-01-14 encoding faults are reported and then repaired in memory', () => {
-  const bom = fm.split(`﻿${VALID}`);
+  const bom = fm.split(`\uFEFF${VALID}`);
   assert.strictEqual(bom.errors[0].code, 'AGSC-E108');
   assert.strictEqual(bom.hasFrontmatter, true);
   const crlf = fm.split(VALID.replace(/\n/gu, '\r\n'));

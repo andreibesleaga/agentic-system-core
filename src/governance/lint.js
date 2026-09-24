@@ -607,12 +607,9 @@ function lint(bundle = {}, options = {}) {
 
 module.exports = {
   ATTACHMENT_MAX_BYTES_DEFAULT,
-  ATTACHMENT_ROOT,
   ENFORCE_VALUES,
-  PORT_NAME,
   SECTIONS,
   SVG_DISALLOWED,
-  WARNED_TRANSITIONS,
   allStrings,
   checkAttachments,
   checkCombiningBound,

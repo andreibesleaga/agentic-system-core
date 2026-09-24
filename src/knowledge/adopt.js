@@ -214,9 +214,15 @@ function adoptFile(file, options = {}) {
  */
 function adopt(files, options = {}) {
   const ordered = [...files].sort((a, b) => slugs.compareCodePoint(
-    String(a.path).split('\\').join('/'), String(b.path).split('\\').join('/')
+    String(a.path).split('\\').join('/'), String(b.path).split('\\').join('/'),
   ));
-  const taken = new Set();
+  // AGSC-01-23 / AGSC-02-91: a slug an item already holds is taken before any file
+  // is adopted, so an adopted note never lands on (and replaces) an existing item —
+  // `init` run again over an adopted Bundle changes nothing.
+  const taken = new Set(options.taken || []);
+  for (const f of ordered) {
+    if (frontmatter.hasClosedFrontmatter(String(f.markdown))) taken.add(slugs.slugify(slugs.stemOf(String(f.path).split('\\').join('/'))));
+  }
   const results = ordered.map((f) => adoptFile(f, { ...options, taken }));
   return { files: results, findings: results.flatMap((r) => r.findings) };
 }
@@ -248,8 +254,4 @@ module.exports = {
   titleFor,
   serialize,
   relativeReferences,
-  NEVER_ADOPTED,
-  YAML_PROFILE,
-  TITLE_MAX,
-  TITLE_MIN,
 };

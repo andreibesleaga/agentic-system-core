@@ -21,7 +21,7 @@ function memoryPorts(files) {
     mkdirp: () => {},
     remove: (p) => {
       delete store[p];
-    }
+    },
   };
 }
 
@@ -33,7 +33,7 @@ function captureStream() {
     },
     text() {
       return chunks.join('');
-    }
+    },
   };
 }
 

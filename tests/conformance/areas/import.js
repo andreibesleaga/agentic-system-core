@@ -122,7 +122,6 @@ function collisionCase(vector) {
  * writes carries no error at all, which is exit 0.
  */
 function sourceRecordCase(vector, ctx) {
-  // eslint-disable-next-line global-require
   const main = require('../../../src/application/cli/main.js');
   const list = [];
   const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
@@ -205,8 +204,10 @@ function sourceRecordCase(vector, ctx) {
 function foreignLinkCase(vector) {
   const input = vector.input;
   const stem = String(input.path).replace(/\.md$/u, '');
+  // The case isolates the mapping: the source's licence is taken as established, so
+  // the licence record of AGSC-01-22 (a `status: draft` and its warning) is not in play.
   const { frontmatter, findings } = okf.mapFrontmatter(input.frontmatter,
-    { body: '', operator: 'human:tester', path: input.path, slug: stem, stem });
+    { body: '', operator: 'human:tester', path: input.path, slug: stem, sourceLicence: true, stem });
   const list = [];
   for (const [key, value] of Object.entries(vector.expected.frontmatter_has || {})) {
     list.push([`${key}`, JSON.stringify(frontmatter[key]) === JSON.stringify(value), JSON.stringify(frontmatter[key])]);

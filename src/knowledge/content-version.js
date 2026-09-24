@@ -178,7 +178,6 @@ function versionRows(gitLog) {
 module.exports = {
   GRAMMAR,
   HASH_WIDTH,
-  UNTAGGED,
   abbreviate,
   bundleVersion,
   compactInstant,

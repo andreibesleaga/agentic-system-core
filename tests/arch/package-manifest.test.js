@@ -110,7 +110,9 @@ test('the main entry reports the package version and exports the command line', 
   assert.strictEqual(entry.specVersion, require(path.join(ROOT, 'src', 'application', 'cli', 'main.js')).SPEC_VERSION);
   assert.strictEqual(typeof entry.run, 'function');
   assert.strictEqual(entry.WELLKNOWN_SUFFIX, 'knowledge-linkset');
-  assert.strictEqual(entry.LINK_RELATION, 'agentic-knowledge');
+  // AGSC-06-25: a page points at the discovery document with `describedby` (type
+  // application/linkset+json); `agentic-knowledge` names the PROFILE, not a relation.
+  assert.strictEqual(entry.LINK_RELATION, 'describedby');
   assert.strictEqual(entry.PROFILE_URI, 'https://w3id.org/agentic-system-core/profile/agentic-knowledge');
   assert.deepStrictEqual(Object.keys(entry).sort(),
     ['LINK_RELATION', 'PROFILE_URI', 'WELLKNOWN_SUFFIX', 'run', 'specVersion', 'version']);

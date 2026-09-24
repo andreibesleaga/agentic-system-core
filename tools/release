@@ -106,13 +106,13 @@ const TOOLING_IGNORES = Object.freeze(['.idea/', '.pytest_cache/', '.tox/', '.ve
  * Nothing under one of them may ship, whatever `package.json#files` says.
  */
 function neverShipped(root) {
-  let text = '';
+  let text;
   try { text = fs.readFileSync(path.join(root, '.gitignore'), 'utf8'); } catch { return ['node_modules/']; }
   const out = new Set(['node_modules/']);
   for (const raw of text.split('\n')) {
     const line = raw.trim();
     if (line === '' || line.startsWith('#') || line.startsWith('!')) continue;
-    if (!line.endsWith('/') || /[*?\[\]]/u.test(line)) continue;
+    if (!line.endsWith('/') || /[*?[\]]/u.test(line)) continue;
     out.add(line.replace(/^\/+/u, ''));
   }
   return [...out].sort(compareCodePoint);
@@ -303,7 +303,7 @@ function packFindings(root, files) {
     // A shipped file that NAMES a private path leaks it even when the path itself
     // is not shipped (project rule 12; BOOT rule: never cite either from a public file).
     if (!file.endsWith('.md') && !file.endsWith('.js') && !file.endsWith('.json')) continue;
-    let text = '';
+    let text;
     try { text = fs.readFileSync(path.join(root, file), 'utf8'); } catch { continue; }
     for (const secret of privateDirs) {
       if (!text.includes(secret)) continue;

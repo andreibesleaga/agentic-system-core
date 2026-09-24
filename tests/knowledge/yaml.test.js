@@ -20,7 +20,7 @@ const rejects = (text, code, line) => {
 test('every scalar is a string (AGSC-02-03, fm-0006)', () => {
   assert.deepStrictEqual(
     yaml.parse('flag: no\nswitch: on\nvoid: ~\nscale: 1e3\nblob: 0x1F\nd: 2026-01-01\n'),
-    { flag: 'no', switch: 'on', void: '~', scale: '1e3', blob: '0x1F', d: '2026-01-01' }
+    { flag: 'no', switch: 'on', void: '~', scale: '1e3', blob: '0x1F', d: '2026-01-01' },
   );
 });
 

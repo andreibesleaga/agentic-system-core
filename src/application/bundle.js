@@ -173,4 +173,4 @@ function readJson(ports, path, findings) {
   }
 }
 
-module.exports = { ASSETS_DIR, TYPE_FOLDERS, fileSystemOf, loadBundle };
+module.exports = { TYPE_FOLDERS, loadBundle };

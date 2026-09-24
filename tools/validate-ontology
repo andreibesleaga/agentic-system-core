@@ -78,7 +78,7 @@ const ALLOWED_PREDICATES = Object.freeze(new Set([
   `${OWL}versionInfo`,
   `${DCTERMS}created`, `${DCTERMS}description`, `${DCTERMS}isReplacedBy`, `${DCTERMS}license`,
   `${DCTERMS}modified`, `${DCTERMS}title`,
-  // AGSC-05-25 as amended at rc.6: the ontology node's registry metadata.
+  // AGSC-05-25: the ontology node's registry metadata.
   `${DCTERMS}creator`, `${DCTERMS}issued`, `${DCTERMS}publisher`,
   `${VANN}preferredNamespacePrefix`, `${VANN}preferredNamespaceUri`,
 ]));
@@ -87,7 +87,7 @@ const ALLOWED_TYPES = Object.freeze(new Set([
   `${OWL}AnnotationProperty`, `${OWL}AsymmetricProperty`, `${OWL}Class`, `${OWL}DatatypeProperty`,
   `${OWL}FunctionalProperty`, `${OWL}InverseFunctionalProperty`, `${OWL}IrreflexiveProperty`,
   `${OWL}ObjectProperty`, `${OWL}Ontology`, `${OWL}SymmetricProperty`, `${OWL}TransitiveProperty`,
-  `${VOAF}Vocabulary`, // AGSC-05-25 as amended at rc.6: the ontology node only
+  `${VOAF}Vocabulary`, // AGSC-05-25: the ontology node only
 ]));
 /** SKOS Reference S19/S20: every one of these has domain and range `skos:Concept`. */
 const SEMANTIC_RELATIONS = Object.freeze(new Set([
@@ -172,8 +172,7 @@ function specVersion(root) {
 }
 
 function packageVersion(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 }
 
 /**
@@ -199,7 +198,7 @@ function run(argv, io) {
   const isFile = fs.existsSync(target) && fs.statSync(target).isFile();
   const root = isFile ? path.resolve(path.dirname(target), '..') : target;
   const absolute = isFile ? target : path.join(target, 'ontology', 'agsc.ttl');
-  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
+  // AGSC-09-90: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which
@@ -228,8 +227,7 @@ function run(argv, io) {
 
   const { Parser } = require('n3');
   let quads;
-  try { quads = new Parser({ format: 'text/turtle' }).parse(raw); }
-  catch (e) {
+  try { quads = new Parser({ format: 'text/turtle' }).parse(raw); } catch (e) {
     findings.push(finding('AGSC-E201', file, `not well-formed Turtle: ${e.message}`));
     const bad = envelopeOf(findings, specVersion(root), packageVersion(root));
     if (flags.has('--json')) out(`${canonicalize(bad)}\n`);

@@ -636,7 +636,7 @@ const notion = {
     return writeCsv(['Name', 'Status', 'Type', 'Assignee', 'Tags', 'Due', 'Created', 'Last edited time',
       'Description', RECORD_COLUMN], rows.map((r) => [r.title, r.state, r.kind === null ? 'Task'
       : (r.kind === 'decision' ? 'Decision' : 'Spec'), r.assignee, r.labels.join(', '), r.due, r.created, r.updated,
-    r.body, recordCell(r.record)]));
+      r.body, recordCell(r.record)]));
   },
 };
 
@@ -915,6 +915,6 @@ const FORMATS = Object.freeze({
 });
 
 module.exports = {
-  FORMATS, RECORD_COLUMN, cardTokens, csvCell, csvObjects, dateOf, kindOfLabels, listOf, parseCsv, recordFromCell,
+  FORMATS, cardTokens, csvCell, csvObjects, dateOf, kindOfLabels, listOf, parseCsv, recordFromCell,
   stemOf, takeRecord, uncell, withRecord, writeCsv,
 };

@@ -8,7 +8,6 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 const steer = require('../../src/interchange/steer.js');
-const chunks = require('../../src/knowledge/chunks.js');
 
 const NOW = { counts: { concepts: 2, procedures: 1 }, last_build: '2026-01-01T00:00:00Z' };
 

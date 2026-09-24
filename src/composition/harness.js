@@ -46,7 +46,7 @@
 const { byCodePoint, compareCodePoint, frontmatterOf, verdictOf } = require('./compose.js');
 
 /**
- * AGSC-02-24 as amended at rc.5: the writer-side neutralisation of an
+ * AGSC-02-24: the writer-side neutralisation of an
  * AUTHORED SINGLE-LINE string — one U+0020 per C0 control, U+007F, U+0085, U+2028
  * or U+2029. Every Harness file but `harness.jsonld` is line-oriented, and a
  * `SKILL.md` frontmatter line, an `AGENTS.md` `## ` heading or a `workspace.dsl`
@@ -69,7 +69,7 @@ function singleLine(s) {
  * provenance header of AGSC-06-15 that every Harness file carries. A `-->` (or
  * `--!>`) in `bundle.license_prose` would close the comment early and spill the
  * rest of the header into the document as visible text (specification item
- * 58 /). AGSC-06-13a as amended at rc.6 names the replacement: the closing
+ * 58 /). AGSC-06-13a names the replacement: the closing
  * `>` becomes the character reference `&gt;`. It is the IDENTITY on every value that
  * does not carry the sequence, so no pinned byte moves.
  *
@@ -592,7 +592,7 @@ function skillFiles(result, options) {
  * digest is a function of the MEMBER SET and of nothing else — the key under which
  * a Harness is cached, downloaded and compared.
  *
- * AGSC-07-12 as amended at rc.5 DEFINES this digest: the SHA-256 of the
+ * AGSC-07-12 DEFINES this digest: the SHA-256 of the
  * JCS form of the verdict's `selection[]`, and `<name>` in `dist/harness/<name>/` is
  * its first sixteen lowercase-hex characters. A writer MUST derive the name from the
  * digest and from nothing else — never a path, a clock or a host — because the digest

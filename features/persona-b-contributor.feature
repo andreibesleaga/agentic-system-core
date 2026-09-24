@@ -6,14 +6,15 @@ Feature: Human contributor fixes a page and passes a hard review gate
   So that I can fix a page and see it merged and deployed without needing repo write access
 
   Background:
-    Given the content repo "AgenticSystemCore.com" is public at launch
+    Given the Bundle names the contribution target "https://github.com/andreibesleaga/AgenticSystemCore.com" with mode "pr"
     And the item "content/concepts/a2a.md" exists with a valid "prov" block
 
   @PRD-039
   Scenario: Contributor opens the fork-and-edit URL from the page footer
-    When the contributor clicks "Propose a change" on "/concepts/a2a/"
-    Then the browser opens "https://github.com/andreibesleaga/AgenticSystemCore.com/edit/main/content/concepts/a2a.md"
-    And GitHub's own fork-and-edit UI handles the fork, no custom code runs
+    When the contributor reads the "Propose an edit" link on "/concepts/a2a/"
+    Then it points at "https://github.com/andreibesleaga/AgenticSystemCore.com/edit/HEAD/content/concepts/a2a.md", the forge's edit view of the default branch
+    And it is a plain anchor: the page has no form, and nothing it loads comes from another origin
+    And the discovery document names the same target as its "…rel#contribute" link with mode "pr" (AGSC-11-14)
 
   @PRD-040 @PRD-042
   Scenario: Contributor commits with the required trailer and PR marker
@@ -25,11 +26,12 @@ Feature: Human contributor fixes a page and passes a hard review gate
 
   @PRD-041 @PRD-042
   Scenario: CI runs a lint-only review, no LLM call
-    When the PR triggers the "ci.yml" workflow with "contents: read"
-    Then "npx agentic-system-core ci" runs lint L1 and L2 findings
-    And the pipeline builds twice and diffs the two outputs byte-for-byte
-    And findings are posted as PR annotations with file and line
-    And no LLM or model API call occurs anywhere in this lane
+    Given the contributor's change adds a concept with no description
+    When the change runs "npx agentic-system-core ci"
+    Then ci runs lint, build, verify and forge, and "dist/gate.json" records each check with its findings (AGSC-08-10)
+    And two builds of the same change give the same bytes, which ci compares before it passes (AGSC-04-02)
+    And every finding names its file, line and column
+    And no model or network call occurs anywhere in this lane (AGSC-08-30)
 
   @PRD-041 @PRD-050
   Scenario: Maintainer reviews, ratifies and the change deploys

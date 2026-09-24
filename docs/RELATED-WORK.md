@@ -1,5 +1,7 @@
 # Relationship to other work
 
+**Who this is for:** a reviewer or a reader comparing this work with other systems. **Read after:** [README.md](../README.md), "What is different about it". *(Header added 2026-09-24.)*
+
 *Informative. Written 2026-09-16 for the `1.0.0-rc.3` draft; re-verified against `1.0.0-rc.4` on 2026-09-18. Every date is the date the cited document carried when it was checked; every "checked" note is the day it was read. Nothing here claims adoption, review or approval by any body. The IANA Well-Known URIs and Link Relation Types registries were read live on 2026-09-16: `knowledge-linkset` is not registered and is requested by the Internet-Draft; the discovery link uses the registered relation `describedby` (decided 2026-09-17) and no relation is requested.*
 
 ## 1. One sentence

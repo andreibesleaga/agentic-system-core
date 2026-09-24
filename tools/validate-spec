@@ -178,8 +178,7 @@ function envelopeOf(findings, declared, version) {
 }
 
 function packageVersion(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 }
 
 /**
@@ -203,7 +202,7 @@ function run(argv, io) {
     else { root = path.resolve(arg); sawRoot = true; }
   }
   const specDir = path.join(root, 'spec');
-  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
+  // AGSC-09-90: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which

@@ -10,6 +10,16 @@ specification deliberately leaves to you, and how to state which Level you reach
 The specification is the truth. Where this guide and a rule differ, the rule wins.
 Every statement below names the rule it comes from.
 
+**Who this is for:** an implementer in another language, or a publisher turning an
+existing site into a node. **Read after:** [SPEC-ORIENTATION.md](SPEC-ORIENTATION.md).
+**Read next:** [CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md).
+
+**Node is not a prerequisite.** Nothing in this guide requires Node.js or any part of
+this distribution's code. The reference checkers under `tools/` (Node 22.13 or later)
+are a convenience: a conformance claim may instead rest on your own run of
+`tests/vectors/**` in any language, reported as AGSC-09-02 and AGSC-09-03 say
+(AGSC-10-11). Both routes are described in §5a.
+
 ---
 
 ## 1. What you are implementing
@@ -34,6 +44,49 @@ vector areas. You pick one and claim it.
 Start at Level 1. It is the smallest useful thing, it needs no emission, and the
 vector areas it runs (`frontmatter`, `slug`, `links`, `jcs`) are the ones that catch
 the mistakes everything else is built on.
+
+## 1a. A Level-0 node in ten steps, from any stack
+
+*Added 2026-09-24 (AGSC-10-10, AGSC-10-11).* Level 0 is static files that any CMS,
+wiki or static-site generator can export (AGSC-10-02). No engine is needed. Each step
+names what proves it: a rule, the vectors of an area you can run in your own language,
+and the reference checker if you want a ready-made one.
+
+| # | Step | Rule | Proved by |
+|---|---|---|---|
+| 1 | Choose the site base: one absolute `https:` URL. Every item IRI is the base, the type folder and the slug, with a trailing slash | AGSC-05-04 | the `graph` vectors; `validate-wellknown --level 0` checks the anchor |
+| 2 | Give every piece of knowledge a slug: lowercase letters, digits, single hyphens, at most 64 characters, unique | AGSC-01-10 | the `slug` vectors |
+| 3 | Export each piece as `content/<type-plural>/<slug>.md` with a YAML block carrying at least `type` and `title`; `prov` is inherited from the Bundle at Level 0, with a warning | AGSC-02-01, AGSC-10-02 | the `frontmatter` vectors; any JSON Schema 2020-12 validator with `schema/item.schema.json` |
+| 4 | Write `content/index.md` with `spec_version`, `okf_version`, `title`, `description` and `base`, and no `type` | AGSC-01-04 | the `bundle` vectors; `schema/bundle.schema.json` |
+| 5 | Publish `/graph.jsonld`, the JSON-LD view of the items | AGSC-05-09 | any JSON-LD 1.1 processor: it must expand without error |
+| 6 | Publish `/llms.txt` in the fixed byte layout | AGSC-06-13, AGSC-06-13a | vector `disc-0013` (compare bytes) |
+| 7 | Publish `/.well-known/knowledge-linkset`: a link set whose only member is `linkset`, one context anchored at the base, no digests at Level 0 | AGSC-06-07, AGSC-06-08a | vector `disc-0004`; `tools/validate-wellknown <file> --level 0` |
+| 8 | Serve it as `application/linkset+json` with the profile parameter, or with a `Link: …; rel="profile"` header | AGSC-06-07, AGSC-11-04 | `validate-wellknown <url> --level 0` over HTTPS |
+| 9 | Put `<link rel="describedby" href="/.well-known/knowledge-linkset" type="application/linkset+json">` in every page's head, and serve public files with `Access-Control-Allow-Origin: *` | AGSC-06-25, AGSC-11-03 | read the served headers; the Level-0 procedure's checks on the project's site |
+| 10 | Run the Level-0 vector areas (`frontmatter`, `slug`, `bundle`, `discovery`) and publish your claim: Level 0, the `spec_version`, the areas you ran | AGSC-10-01, AGSC-10-02 | your own runner's report (AGSC-09-03); [CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md) |
+
+`tests/e2e/level-0-without-engine.test.js` does exactly this with a few lines of code
+and no engine, and passes the shipped checker.
+
+## 1b. Mapping an existing platform
+
+*Added 2026-09-24 (AGSC-10-10).* How the constructs of common platforms map onto items,
+frontmatter keys, Links and Clusters. It is guidance, not a rule: where a platform
+offers a richer relation, `related` is always a safe default (AGSC-03-19), and a
+link written in the body becomes an untyped *mentions* edge.
+
+| Platform | Page → item | Categories / sections → Cluster | Tags → `tags` | Links in the body | Page metadata → frontmatter |
+|---|---|---|---|---|---|
+| MediaWiki | each article → a `concept` (a how-to page → `procedure`) | a category → a `cluster`; membership written as `clusters[]` on each item | a small set of categories → `tags` (two to five) | `[[internal links]]` → mentions edges; a "see also" section → `related` | last editor and revision → `prov.operator`, `modified` |
+| WordPress | a post or page → a `concept` or `episode` | a category → a `cluster` | post tags → `tags` | links between posts → mentions edges | author → `prov.operator`; published and modified dates → `date`, `modified` |
+| Docusaurus, MkDocs, Hugo | each Markdown file → an item (the files already carry frontmatter) | a sidebar group, section or directory → a `cluster` | the generator's tags or taxonomies → `tags` | relative Markdown links → mentions edges | the existing `title`, `description`; unknown keys kept as `x-<vendor>-` keys (AGSC-02-05a) |
+| Notion, Confluence (export) | an exported page → an item; a database row → an item, a `task` concept when the database is a board | a parent page or a space → a `cluster`; a board database → a board | multi-select properties → `tags` | page mentions → mentions edges; a relation property → `related` or `blocked-by` | created by, last edited → `prov`, `modified`; the `board` adapter reads Notion database CSV exports |
+| Obsidian, Logseq | each note → an item | a folder or a map-of-content note → a `cluster` | `#tags` → `tags` | `[[wikilinks]]` → mentions edges | note properties → frontmatter keys; unknown ones kept as `x-` keys |
+| A Django, Laravel or Rails application | each record a public page shows → an item, written by a small export command | a model's category field → a `cluster` | a tag relation → `tags` | foreign keys that mean "depends on" → `requires`; others → `related` | owner and timestamps → `prov`, `date`, `modified` |
+
+Whatever the platform, the export writes the files of §1a and nothing more. `agsc init`
+adopts a folder of bare Markdown with no mapping at all (AGSC-02-90…93), if you would
+rather start from the files than from the platform.
 
 ---
 
@@ -62,7 +115,7 @@ Read these in this order. Each one assumes the ones before it.
 5. **`spec/04-canonicalization.md`** — the byte rules. §4 below is about this one.
    Run the `jcs` area.
 6. **`spec/09-conformance.md`** — the CLI contract, the error-code registry
-   (§9.4, 90 codes) and the diagnostics envelope (AGSC-09-11). Every finding you
+   (§9.4; 91 codes on 2026-09-24) and the diagnostics envelope (AGSC-09-11). Every finding you
    ever emit uses a code from that table; AGSC-09-15 forbids inventing one.
 7. **`spec/10-implementation-profiles.md`** — the Levels, and AGSC-10-15, which says
    which vector areas each Level runs.
@@ -80,10 +133,10 @@ implementing anything.
 
 ## 3. Running the vector set
 
-The vectors are the acceptance test. There are **150** of them in **18** populated
-areas of the 25 AGSC-09-04 declares (`node tools/count-artifacts --json` derives
-those numbers; never type them). 135 are `required`, 1 is `optional`, 14 are
-`withdrawn`.
+The vectors are the acceptance test. Measured on 2026-09-24 by `node tools/count-artifacts
+--json` against the `1.0.0-rc.6` draft, there are **194** of them in **19** populated
+areas of the 25 AGSC-09-04 declares: 163 are `required`, 1 is `optional`, 30 are
+`withdrawn`. Run the command for today's numbers; never type them.
 
 A vector is one JSON file holding one object: `id`, `area`, `rule`, `level`,
 `description`, `input`, `expected`, and optionally `options`, `reason`, `note` and
@@ -324,6 +377,44 @@ so it is the cheapest end-to-end proof that your emission is internally consiste
 exited 1 on 2026-09-21 against the 1.0.0-rc.5 text: it found defects that are recorded as
 specification items for 1.0.0, not defects of any implementation. Treat it as a
 reporting step until those items are applied. Every other validator exits 0.
+*(Updated 2026-09-24: those items were applied in the `1.0.0-rc.6` draft, and every
+checker, `validate-spec` included, exits 0 on this tree.)*
+
+## 5a. Two routes to a claim
+
+*Added 2026-09-24 (AGSC-10-11).* **Route one — your own runner.** Read the vector files
+with your language's JSON parser (AGSC-09-06), run the areas your Level names, and
+write the report of AGSC-09-03. Nothing from this distribution runs. **Route two — the
+reference checkers.** Run `tools/validate-wellknown` and the other checkers above on
+your output with Node 22.13 or later. Either route supports a claim; a claim says which
+it used (AGSC-09-90). Neither is a certification.
+
+## 5b. Querying across nodes
+
+*Added 2026-09-24 (AGSC-11-13).* A node's query surface is its published dumps, and a
+consumer federates on its own side: download the dumps, load them together, query.
+No node fetches another, and no node answers queries. In `graph.nq` every triple sits
+in a named graph whose name is the node's Bundle IRI, so loading two nodes' files into
+one dataset keeps them apart. This SPARQL 1.1 query counts the Concepts of every node
+loaded, with the node it came from:
+
+```sparql
+PREFIX asc:  <https://w3id.org/agentic-system-core/ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?node (COUNT(?item) AS ?concepts)
+WHERE {
+  GRAPH ?node { ?item a asc:Concept ; skos:prefLabel ?label . }
+}
+GROUP BY ?node
+ORDER BY ?node
+```
+
+Run over the `graph.nq` files of the project's two nodes (the specification's own site
+and the patterns node, built on 2026-09-24) with any SPARQL 1.1 engine — for example
+Python's `rdflib` 7.1.4, `Dataset().parse(file, format="nquads")` once per file — it
+answered one row per node: 12 Concepts on the first and 10 on the second. Every result
+taken from another node is untrusted until you check it, and carries its origin: the
+graph name (AGSC-11-11).
 
 ---
 
@@ -361,8 +452,9 @@ make you non-conforming.
 Adapters are the one place where you must document rather than choose silently:
 AGSC-01-26a requires a memory adapter to be "listed with its claimed key set in the
 distribution's implementer documentation". This distribution's adapters are
-`llm-context` (export), `okf` and `old-site` (import), and `cogx`, `gabbe` and
-`skills` (both ways), and `src/interchange/README.md` lists what each one claims.
+`llm-context` (export), `okf` and `old-site` (import), and `cogx`, `gabbe`,
+`skills` and `board` (both ways), and `src/interchange/README.md` lists what each one
+claims.
 
 **Where you may extend, and where you may not.** `spec/00-overview.md` §0.6,
 AGSC-00-24, closes the extension points at **eight kinds** — memory adapter, channel
@@ -402,6 +494,17 @@ before a green run of the Level-3 set". At `1.0.0-rc.6` the reference engine pas
 every live vector of the set and skips only the withdrawn ones (the counts are the
 conformance runner's own summary line, and `node tools/count-artifacts --json` gives
 the totals), and that is a run, not a claim.
+
+---
+
+## 7a. Where a node can live
+
+*Added 2026-09-24.* A node is a set of files; any place that can put them behind an
+HTTPS origin, with the response headers the rules name, can host it — a web host, a
+local machine, a clone, IPFS behind a gateway, a device, or a ledger-anchored store with
+a web interface in front. A claim names its deployment profile (AGSC-06-01); no rule of
+1.x pins a transport other than HTTP. The profiles, and what each cannot do:
+[CONNECTORS.md](CONNECTORS.md#where-a-node-can-live).
 
 ---
 

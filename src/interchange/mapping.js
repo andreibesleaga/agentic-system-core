@@ -407,7 +407,7 @@ function mapCard(card, options) {
 }
 
 /**
- * AGSC-02-24 as amended at rc.5, applied to a FOREIGN frontmatter.
+ * AGSC-02-24, applied to a FOREIGN frontmatter.
  *
  * Every string-typed property `schema/item.schema.json` declares is either a
  * `single_line` value or carries a pattern that forbids a control character anyway,
@@ -454,12 +454,9 @@ function neutraliseSingleLine(frontmatter) {
 
 module.exports = {
   neutraliseSingleLine,
-  CONCEPT_ORDER,
   DESCRIPTION_MAX,
   DESCRIPTION_MIN,
   KNOWN_OLD_KEYS,
-  TOP_ORDER,
-  VENDOR_PREFIX,
   filterLinks,
   mapCard,
   ordered,

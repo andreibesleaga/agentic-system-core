@@ -29,7 +29,9 @@
 
 const crypto = require('node:crypto');
 const federation = require('./federation.js');
-const { ACCESS_CLASSES, REL, SURFACE_NAMES } = require('./surfaces.js');
+
+const { plural } = federation;
+const { ACCESS_CLASSES, REL, SURFACE_NAMES, finding } = require('./surfaces.js');
 
 /** AGSC-11-20: the closed `visibility` list, most restrictive last. */
 const VISIBILITY_VALUES = Object.freeze(['public', 'restricted']);
@@ -57,10 +59,6 @@ const MIDNIGHT = 'T00:00:00Z';
 /** The `asc:` namespace of AGSC-05. */
 const ASC = 'https://w3id.org/agentic-system-core/ns#';
 const XSD_DATETIME = 'http://www.w3.org/2001/XMLSchema#dateTime';
-
-function finding(code, severity, extra) {
-  return Object.freeze(Object.assign({ code, message: '', severity }, extra || {}));
-}
 
 /**
  * AGSC-11-02: a 1.x reader meeting a value it does not know MUST NOT fail and
@@ -301,16 +299,10 @@ function retiredAt(item) {
   return /^\d{4}-\d{2}-\d{2}$/u.test(value) ? value + MIDNIGHT : value;
 }
 
-function plural(type) {
-  const t = typeof type === 'string' && type !== '' ? type : 'concept';
-  return t === 'cluster' ? 'clusters' : `${t}s`;
-}
-
 module.exports = {
   CONTRIBUTE_MODES,
   CORS_HEADERS,
   DESCRIBEDBY_LINK_HEADER,
-  FEDERATION_MAX_BYTES,
   FORBIDDEN_HEADERS,
   LINK_KEYS,
   NO_CACHE_ROUTES,

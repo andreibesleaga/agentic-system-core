@@ -42,16 +42,17 @@
 
 const chunks = require('../../knowledge/chunks.js');
 const slugs = require('../../knowledge/slug.js');
-const fix = require('../../governance/fix.js');
 const { TASK_STATES, TERMINAL_STATES } = require('../../governance/boards.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc, singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
-const { serialize, titleFor } = require('../../knowledge/adopt.js');
+const { titleFor } = require('../../knowledge/adopt.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
 const okf = require('../okf.js');
 const ownRecord = require('../own-record.js');
+const { encodeRecord } = ownRecord;
+const { isObject, itemText, plain } = require('../records.js');
 const pii = require('../../governance/pii.js');
 const { FORMATS } = require('../board-formats.js');
 
@@ -160,20 +161,6 @@ function wordFor(format, state, kept) {
 
 // ----------------------------------------------------------------------- records
 
-function isObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function plain(value) {
-  const out = Object.create(null);
-  if (isObject(value)) for (const key of Object.keys(value)) out[key] = value[key];
-  return out;
-}
-
-function encodeRecord(record) {
-  return Buffer.from(canonicalize(record), 'utf8').toString('base64');
-}
-
 /** The own-record of one row, or `null` when it does not decode to a task item and its board. */
 function decodeRecord(b64) {
   let value;
@@ -186,13 +173,6 @@ function decodeRecord(b64) {
     && typeof v.slug === 'string' && slugs.isValid(v.slug);
   if (!item(value) || value.type !== 'concept' || (value.board !== undefined && !item(value.board))) return null;
   return value;
-}
-
-/** The lint-normalized bytes of one item (AGSC-04-19), as every import lane writes them. */
-function itemText(frontmatter, body, itemSchema) {
-  const type = String(frontmatter.type);
-  const ordered = fix.orderKeys(frontmatter, fix.declaredOrder(itemSchema, type), itemSchema, type, null);
-  return fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${nfc(body)}`);
 }
 
 // ------------------------------------------------------------------------ export
@@ -577,6 +557,6 @@ function plan(files, options) {
 }
 
 module.exports = {
-  CLOSED_AS, EXPORT_NAMES, FORMAT, FORMAT_NAMES, STATE_NAMES,
+  EXPORT_NAMES, FORMAT, FORMAT_NAMES, STATE_NAMES,
   decodeRecord, encodeRecord, extensionsOf, isBoardFile, plan, run, stateOfWord, taskStateOf, wordFor,
 };

@@ -22,7 +22,6 @@ test('the four ports are declared and export nothing', () => {
   const files = fs.readdirSync(PORTS).sort();
   assert.deepStrictEqual(files, ['clock.js', 'filesystem.js', 'network.js', 'process-runner.js']);
   for (const f of files) {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     assert.deepStrictEqual(require(path.join(PORTS, f)), {}, f);
   }
 });

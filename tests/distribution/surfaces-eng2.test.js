@@ -347,7 +347,7 @@ test('AGSC-10-17: the board page shows the WIP limit it was given, and says so w
   assert.match(withLimit, /Work-in-progress limit: 1 task in/u);
   assert.match(withLimit, /claimed by <span>agent:lane<\/span>/u);
   const without = html.boardPage({ board, columns, wip: null }, options);
-  assert.match(without, /Work-in-progress limit: none declared tasks in/u);
+  assert.match(without, /Work-in-progress limit: none — this node declares no agent lane/u);
   // A done board says so, and a blocked task names what blocks it.
   const done = html.boardPage({
     board: { ...board, done: true },
@@ -505,7 +505,7 @@ test('a graph collaborator with no context generator names the route it cannot p
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
   const partial = site.build(bundle, ports, {
-    graph: { jsonld: (items, options) => ({ '@graph': [] }) },
+    graph: { jsonld: () => ({ '@graph': [] }) },
     specVersion: '1.0.0-rc.5',
     version: '0.0.2',
   });

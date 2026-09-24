@@ -162,4 +162,4 @@ function membership(cards) {
   return map;
 }
 
-module.exports = { DESCRIPTION_MAX, DESCRIPTION_MIN, KEY_ORDER, build, describe, membership, ordered };
+module.exports = { DESCRIPTION_MAX, DESCRIPTION_MIN, build, describe, membership, ordered };

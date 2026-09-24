@@ -80,10 +80,6 @@ const INDEX_FILE = 'content/index.md';
 /** AGSC-01-26: the OKF-reserved log, beside the index it describes. */
 const LOG_FILE = 'content/log.md';
 
-/** `schema/bundle.schema.json`'s declared key order, for the re-emitted index. */
-const INDEX_KEY_ORDER = Object.freeze(['spec_version', 'bundle_version', 'okf_version',
-  'title', 'description', 'base', 'lang', 'license', 'prov']);
-
 /**
  * AGSC-06-30 over a LOADED item (`{frontmatter}`), not a flattened one.
  *
@@ -151,7 +147,7 @@ function indexFile(source, options) {
   if (options.okf === true && parsed.okf_version === undefined) {
     append('okf_version', '0.2', 'AGSC-01-26 requires --okf to write it');
   }
-  // AGSC-01-26 as amended at rc.6: `bundle_version` is the ONE derived key of
+  // AGSC-01-26: `bundle_version` is the ONE derived key of
   // an otherwise byte-preserving export, so it is WRITTEN, not preserved. Adding it
   // is not a normalisation and is not reported; overwriting a different value that
   // was in the authored document is, because a byte the export was asked to
@@ -265,6 +261,6 @@ function plan(bundle, options) {
 }
 
 module.exports = {
-  INDEX_FILE, INDEX_KEY_ORDER, LICENSE_FILE, LOG_FILE,
-  indexFile, logFile, plan, published,
+  INDEX_FILE, LICENSE_FILE,
+  logFile, plan, published,
 };

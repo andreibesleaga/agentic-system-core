@@ -141,7 +141,6 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
 function load(options) {
   const opts = options || {};
   const ports = opts.ports;
-  const root = opts.root;
 
   const config = {};
   const sources = {};
@@ -168,7 +167,7 @@ function load(options) {
     ['build.out', 'www'], // AGSC-01-19
     ['build.feed', true], // spec/06-surfaces.md ("default true")
     ['i18n.default', 'en'], // AGSC-01-18
-    ['run.enabled', false] // AGSC-09-94, AGSC-01-18
+    ['run.enabled', false], // AGSC-09-94, AGSC-01-18
   ];
   for (const [p, v] of env.allDefaults()) {
     setPath(config, p, v);

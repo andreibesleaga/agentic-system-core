@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-06-11, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24
+// verifies AGSC-04-02, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates.
 
@@ -10,7 +10,7 @@ const path = require('node:path');
 
 const { canonicalize } = require('json-canonicalize');
 
-const { linkset } = require('./_world.js');
+const { ROOT, linkset } = require('./_world.js');
 
 const LEDGER_REL = 'https://w3id.org/agentic-system-core/rel#ledger';
 const GENESIS = '0'.repeat(64);
@@ -143,6 +143,66 @@ module.exports = [
         fs.renameSync(path.join(world.dir, '.git-away'), path.join(world.dir, '.git'));
         world.write('www/ledger.jsonl', original);
       }
+    },
+  },
+  {
+    pattern: 'the maintainer runs "npx agentic-system-core ci" locally',
+    run(world) {
+      history(world);
+      world.state.local = world.agsc(['ci'], { offline: true });
+      world.state.localGate = world.read('dist/gate.json');
+    },
+  },
+  {
+    pattern: 'the pipeline runs lint, then build twice with a byte comparison, then verify, and writes "dist/gate.json" (AGSC-04-02, AGSC-08-10)',
+    run(world) {
+      const { local } = world.state;
+      assert.strictEqual(local.exit, 0, local.stdout + local.stderr);
+      assert.match(local.stderr, /^lane: parse$/mu);
+      assert.match(local.stdout + local.stderr, /^ci: pass \(0 error/mu);
+      const gate = JSON.parse(world.state.localGate);
+      assert.deepStrictEqual(gate.checks.map((c) => c.name), ['lint', 'build', 'verify', 'forge']);
+      // A difference between the two builds would be AGSC-E602 in the build check.
+      assert.ok(!gate.checks.some((c) => c.findings.some((f) => f.code === 'AGSC-E602')));
+      assert.strictEqual(gate.status, 'pass');
+    },
+  },
+  {
+    pattern: 'the exit code is 0 on success, 1 on a failed gate, 2 on a usage error (AGSC-09-08)',
+    run(world) {
+      const rel = 'content/concepts/mcp.md';
+      const original = world.read(rel);
+      world.write(rel, original.replace('kind: pattern', 'requires:\n  - no-such-item\nkind: pattern'));
+      const failed = world.agsc(['ci'], { offline: true });
+      assert.strictEqual(failed.exit, 1, failed.stdout + failed.stderr);
+      assert.strictEqual(JSON.parse(world.read('dist/gate.json')).status, 'fail');
+      world.write(rel, original);
+      const usage = world.agsc(['ci', '--no-such-flag'], { offline: true });
+      assert.strictEqual(usage.exit, 2);
+      assert.match(usage.stderr, /AGSC-E002/u);
+      const again = world.agsc(['ci'], { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.strictEqual(world.read('dist/gate.json'), world.state.localGate);
+    },
+  },
+  {
+    pattern: 'the same commit runs "ci" in a fresh clone, as the shipped GitHub Action does with "contents: read"',
+    run(world) {
+      const action = fs.readFileSync(path.join(ROOT, 'action.yml'), 'utf8');
+      assert.match(action, /^#\s+contents: read\b/mu, 'the action no longer asks for contents: read only');
+      assert.match(action, /node "\$GITHUB_ACTION_PATH\/bin\/agsc\.js" ci \$AGSC_ACTION_ARGS/u);
+      const clone = path.join(world.temp('agsc-acc-clone-'), 'bundle');
+      world.git(['clone', '-q', '--no-hardlinks', world.dir, clone]);
+      world.state.remote = world.agsc(['ci'], { cwd: clone, offline: true });
+      world.state.remoteGate = fs.readFileSync(path.join(clone, 'dist', 'gate.json'), 'utf8');
+    },
+  },
+  {
+    pattern: 'the exit code and "dist/gate.json" match the local run exactly',
+    run(world) {
+      assert.strictEqual(world.state.remote.exit, world.state.local.exit, world.state.remote.stderr);
+      assert.strictEqual(world.state.remoteGate, world.state.localGate);
+      assert.deepStrictEqual(world.networkAttempts(), []);
     },
   },
 ];

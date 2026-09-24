@@ -1,5 +1,7 @@
 # Compliance crosswalk (informative)
 
+**Who this is for:** someone who must answer "does this help with framework X?" — a compliance or risk reader. **Read after:** [SECURITY-CONSIDERATIONS.md](SECURITY-CONSIDERATIONS.md). *(Header added 2026-09-24.)*
+
 *Written 2026-09-16 for the `1.0.0-rc.3` draft; re-verified against `1.0.0-rc.4` on 2026-09-18. This is a map from external frameworks to the rules of this specification, for readers who must answer "does this help with X?". It is not legal advice, it creates no obligation, and most rows say "not applicable, and why". Three readings are used: **applies** (the framework imposes something on a publisher or implementer of this format), **helps** (a rule here supplies evidence a framework asks for), **not applicable** (with the reason).*
 
 | Framework | Reading | Where this specification meets it | Note |

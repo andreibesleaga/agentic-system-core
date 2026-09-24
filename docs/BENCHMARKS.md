@@ -1,5 +1,7 @@
 # Benchmarks — the kit, what it can claim, and what it refuses to
 
+**Who this is for:** anyone who wants to know how the numbers in MEASUREMENTS.md are produced and what they can and cannot show. **Read after:** [MEASUREMENTS.md](MEASUREMENTS.md). *(Header added 2026-09-24.)*
+
 This document describes the benchmark kit under `bench/` and the standalone runner `tools/bench`. The measured results live in `docs/MEASUREMENTS.md`; this file is about method.
 
 **Two halves, deliberately separated.** The *measurements* half needs no model, no network, no key and no external dataset: conformance counts, determinism byte comparisons, the security floor, build curves, accessibility. It runs today, and it is what carries this format's own property claims. The *studies* half — retrieval quality, memory competencies, the six modes end to end — needs a corpus, a judge model and a licence check for every dataset, and it is the `bench` verb's work at **v1.0.1**, within thirty days of the 1.0 release. Nothing here moves that date.

@@ -514,7 +514,7 @@ test('a clone\'s .git and node_modules are never walked, and a skill without a u
 
 test('the CLI admits --layout and --list only while the skills adapter is named', () => {
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'skills']).keys()],
-    ['--replace', '--allow-newer', '--source-version', '--layout', '--list']);
+    ['--replace', '--allow-newer', '--source-version', '--layout', '--list', '--cluster']);
   assert.deepStrictEqual([...main.adapterFlagsFor('export', ['--to', 'skills']).keys()], ['--layout']);
   assert.deepStrictEqual([...main.adapterFlagsFor('export', ['--to', 'gabbe']).keys()], []);
   const into = emptyBundle();
@@ -636,4 +636,21 @@ test('manifests that are not JSON objects, custom skill paths and plugin roots i
   assert.strictEqual(planned.totals.foreign_skipped, 1);
   assert.match(planned.writes[0].text, /x-skills-globs:\n {2}- "\*\.ts"\n {2}- "\*\.js"/u);
   assert.match(planned.writes[0].text, /operator: human:unknown/u);
+});
+
+// AGSC-01-26a admits adapter flags. An imported skill that joins no Cluster appears in
+// no pack (AGSC-07-19), so `/skills/` never re-exports it; `--cluster <slug>` files
+// every foreign item of the import in one Cluster, and a value outside the slug
+// grammar is refused before anything is written.
+test('--cluster files every imported skill in one Cluster, and a malformed one is refused', () => {
+  const into = emptyBundle();
+  const result = imported(into, fixture('agentskills'), { cluster: 'agent-patterns' });
+  assert.deepStrictEqual(errors(result.findings), []);
+  assert.deepStrictEqual(fm(read(into, 'content/procedures/pdf-notes.md')).clusters, ['agent-patterns']);
+  const bad = imported(emptyBundle(), fixture('agentskills'), { cluster: 'Not A Slug' });
+  assert.strictEqual(bad.status, 'fail');
+  assert.deepStrictEqual(bad.findings.map((f) => f.code), ['AGSC-E204']);
+  const cli = spawnSync(process.execPath, [BIN, 'import', fixture('agentskills'), '--from', 'skills', '--cluster', 'agent-patterns', '--dry-run'],
+    { cwd: emptyBundle(), encoding: 'utf8', env: { PATH: process.env.PATH, SOURCE_DATE_EPOCH: EPOCH } });
+  assert.notStrictEqual(cli.status, 2, cli.stderr);
 });

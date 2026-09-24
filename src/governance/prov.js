@@ -52,7 +52,6 @@ const ASSISTED = /^Assisted-by: ([A-Za-z0-9._-]+)\/([A-Za-z0-9.+-]+) \(operator:
 const ASSISTED_PREFIX = 'Assisted-by: ';
 const NAME_CHAR = /^[\x21-\x3B\x3D\x3F-\x7E](?:[\x21-\x3B\x3D\x3F-\x7E ]*[\x21-\x3B\x3D\x3F-\x7E])?$/u;
 const TRAILER_LINE = /^[A-Za-z][A-Za-z0-9-]*: /u;
-const ACTOR = /^human:[a-z0-9][a-z0-9._-]*$/u;
 
 const asArray = (v) => (Array.isArray(v) ? v : (v === undefined || v === null ? [] : [v]));
 const slugOfPath = (p) => {
@@ -289,7 +288,6 @@ function checkClaims(config, proposal, board) {
 
 module.exports = {
   AI_ORIGINS,
-  GATE_CHECKS,
   ORIGINS,
   TASK_STATES,
   TERMINAL_TASK_STATES,

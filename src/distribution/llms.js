@@ -11,7 +11,7 @@
 //
 // Pure function of its input; `site.js` writes the bytes. Vectors disc-0006, disc-0007.
 
-const { commentSafe, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
+const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { provenanceHeader } = require('../knowledge/provenance-header.js');
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS, termsFor } = require('../knowledge/chunks.js');
 
@@ -164,5 +164,4 @@ module.exports = {
   primaryCluster,
   isPublished,
   iriOf,
-  DEFAULT_LICENSE,
 };

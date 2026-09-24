@@ -112,4 +112,4 @@ function report(results, options) {
   });
 }
 
-module.exports = { DECLARED_SURFACES, report, runAll, runOne, summaryLine, vectors };
+module.exports = { DECLARED_SURFACES, report, runAll, summaryLine, vectors };

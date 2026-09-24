@@ -22,7 +22,6 @@ const AREAS_DIR = path.join(helpers.ENGINE_ROOT, 'tests', 'conformance', 'areas'
 /** `require` of an area handler, or null when this distribution carries none. */
 function handlerFor(area) {
   try {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     return require(path.join(AREAS_DIR, `${area}.js`));
   } catch (e) {
     return null;
@@ -83,4 +82,4 @@ function findingsFor(results) {
     }));
 }
 
-module.exports = { AREAS_DIR, findingsFor, handlerFor, name: 'conform', run };
+module.exports = { findingsFor, handlerFor, name: 'conform', run };

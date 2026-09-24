@@ -15,10 +15,10 @@
  * It is a command of its own and not a verb of `agsc`, because AGSC-09-07 closes the
  * `agsc` verb set at sixteen and makes any other verb `AGSC-E001`.
  *
- * APPLICATION LAYER: it reads the build directory, writes files, resolves plugins and
- * listens on a socket — the host wiring no bounded context may do. The profiles
- * themselves are data-in, data-out (`distribution/hosts/`). A profile is a plugin of
- * the `deployment-profile` kind (AGSC-00-24): the built-in ones pass the same
+ * APPLICATION LAYER: it reads the build directory, writes files and resolves plugins —
+ * the host wiring no bounded context may do; the socket belongs to the HTTP server
+ * adapter (`src/adapters/node-http-server.js`). The profiles themselves are data-in,
+ * data-out (`distribution/hosts/`). A profile is a plugin of the `deployment-profile` kind (AGSC-00-24): the built-in ones pass the same
  * capability check as one named by a path or an installed package, which is loaded
  * through the plugin loader and never from the network (`AGSC-E905`).
  *
@@ -31,7 +31,6 @@
  */
 
 const fs = require('node:fs');
-const http = require('node:http');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { parseArgs } = require('node:util');
@@ -45,6 +44,9 @@ const anchor = require('../distribution/hosts/ledger-anchor.js');
 const { WELLKNOWN_PATH } = require('../distribution/discovery.js');
 const { canonicalize } = require('../knowledge/jcs.js');
 const { finding } = require('../knowledge/validate.js');
+const httpServer = require('../adapters/node-http-server.js');
+
+const { inside } = httpServer;
 
 const COMMANDS = Object.freeze(['list', 'emit', 'serve', 'verify-anchor']);
 
@@ -98,17 +100,6 @@ function loaded(name, options) {
     flag: 'agsc-host emit', root: options.root, specVersion: options.specVersion,
   });
   return { findings: result.findings, missing: result.missing, profile: result.plugin };
-}
-
-/** Is `full` inside `root` once every link on the way is resolved? */
-function inside(root, full) {
-  try {
-    const real = fs.realpathSync(full);
-    const base = fs.realpathSync(root);
-    return real === base || real.startsWith(base + path.sep);
-  } catch (e) {
-    return false;
-  }
 }
 
 /**
@@ -232,67 +223,19 @@ function defaultSite(cwd) {
   return 'www';
 }
 
-/** A view of the build directory for `local.respond`, read at request time. */
-function siteView(dir) {
-  const full = (rel) => path.join(dir, ...rel.split('/'));
-  const stat = (rel) => {
-    try {
-      const target = full(rel);
-      const st = fs.lstatSync(target);
-      return st.isSymbolicLink() || !inside(dir, target) ? null : st;
-    } catch (e) {
-      return null;
-    }
-  };
-  const read = (rel) => {
-    const st = stat(rel);
-    return st !== null && st.isFile() ? fs.readFileSync(full(rel), 'utf8') : null;
-  };
-  return {
-    isDirectory: (rel) => { const st = stat(rel); return st !== null && st.isDirectory(); },
-    isFile: (rel) => { const st = stat(rel); return st !== null && st.isFile(); },
-    read: (rel) => fs.readFileSync(full(rel)),
-    redirects: rules.parseRedirects(read(rules.REDIRECTS_FILE)).rules,
-    sets: rules.parseHeaders(read(rules.HEADERS_FILE)).sets,
-    sha256: (rel) => sha256(fs.readFileSync(full(rel))),
-  };
-}
-
-/** Answer one HTTP request from the build directory; never throws to the socket. */
-function handle(dir, req, res) {
-  let plan;
-  let body = null;
-  try {
-    const view = siteView(dir);
-    const question = String(req.url || '/').split('?')[0];
-    plan = local.respond({ ifNoneMatch: req.headers['if-none-match'], method: req.method, path: question }, view);
-    if (plan.file !== null) body = view.read(plan.file);
-  } catch (e) {
-    plan = { file: null, headers: [], status: 500 };
-  }
-  res.sendDate = false;
-  for (const [name, value] of plan.headers) res.setHeader(name, value);
-  if (body !== null) res.setHeader('Content-Length', String(body.length));
-  res.writeHead(plan.status);
-  res.end(req.method === 'HEAD' || body === null ? undefined : body);
-}
-
 /**
- * Serve a build directory, read-only. Resolves once listening.
+ * Serve a build directory, read-only, through the HTTP server adapter; what each
+ * request is answered with is the `local` profile's decision. Resolves once listening.
  * @param {{site:string, port?:number, bind?:string}} options
- * @returns {Promise<{server:http.Server, url:string}>}
+ * @returns {Promise<{server:object, url:string}>}
  */
 function serve(options) {
-  const dir = path.resolve(options.site);
-  const server = http.createServer((req, res) => handle(dir, req, res));
-  return new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(options.port === undefined ? 8080 : options.port, options.bind || 'localhost', () => {
-      const address = server.address();
-      const host = address.family === 'IPv6' ? `[${address.address}]` : address.address;
-      resolve({ server, url: `http://${host}:${address.port}/` });
-    });
+  const answer = (question, view) => local.respond(question, {
+    ...view,
+    redirects: rules.parseRedirects(view.readText(rules.REDIRECTS_FILE)).rules,
+    sets: rules.parseHeaders(view.readText(rules.HEADERS_FILE)).sets,
   });
+  return httpServer.listen({ ...options, answer });
 }
 
 // ------------------------------------------------------------------ the command line
@@ -438,4 +381,4 @@ async function main(argv, ctx) {
   return serveCommand(io, json, parsed.values, ctx);
 }
 
-module.exports = { COMMANDS, USAGE, defaultSite, inside, main, readSite, registry, resolveProfile, runProfile, serve, siteView };
+module.exports = { USAGE, defaultSite, inside, main, readSite, registry, serve };

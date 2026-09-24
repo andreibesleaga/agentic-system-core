@@ -235,7 +235,7 @@ const NEVER_EXPORTED = Object.freeze(['verdict_digest', 'prov.agent', 'prov.agre
 /**
  * AGSC-06-18: the **Content Use Terms identifier** is a constant of the
  * specification — "it names the terms every export carries, INDEPENDENTLY of
- * `bundle.license_prose`". AGSC-05-26 as amended at rc.5 makes it the
+ * `bundle.license_prose`". AGSC-05-26 makes it the
  * object of `schema:usageInfo` on the Bundle node AND on every item node, as an
  * `xsd:string` literal (AGSC-05-31 form (c)), so that `pages/<slug>.jsonld` and the
  * `export --jsonl` line of AGSC-01-27 carry the licence without a second fetch.
@@ -620,7 +620,6 @@ module.exports = {
   escapeLiteral,
   escapeIri,
   nquadsTerm,
-  nquadsLine,
   serialize,
   dataset,
   attachmentQuads,

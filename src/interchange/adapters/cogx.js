@@ -74,16 +74,16 @@
 
 const chunks = require('../../knowledge/chunks.js');
 const slugs = require('../../knowledge/slug.js');
-const fix = require('../../governance/fix.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
-const { serialize, titleFor } = require('../../knowledge/adopt.js');
+const { titleFor } = require('../../knowledge/adopt.js');
 const { LINK_PROPERTIES } = require('../../knowledge/nquads.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
 const okf = require('../okf.js');
 const ownRecord = require('../own-record.js');
+const { isObject, itemText, lessonText, oneLine, plain } = require('../records.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'cogx';
@@ -140,20 +140,6 @@ const CLAIMED_KEYS = Object.freeze({
 
 // ------------------------------------------------------------------- shared helpers
 
-/** A plain object with no prototype, so a foreign `__proto__` member is only data. */
-function plain(value) {
-  const out = Object.create(null);
-  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-    for (const key of Object.keys(value)) out[key] = value[key];
-  }
-  return out;
-}
-
-/** Is this a JSON object (not an array, not null)? */
-function isObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
 /**
  * Drop every member whose value is `null` or `undefined`, recursively — the
  * reference's `exclude_none=True`. Arrays keep their positions.
@@ -193,15 +179,6 @@ function typedRecord(kind, fields) {
     ...fields,
     kind,
   });
-}
-
-/** The `## Lesson` section of a lesson body, else the whole body, trimmed. */
-function lessonText(body) {
-  const parts = chunks.sections(String(body == null ? '' : body));
-  const lesson = parts.find((part) => /^##\s+lesson\s*$/iu.test(part.text.split('\n')[0]));
-  const text = lesson === undefined ? String(body == null ? '' : body)
-    : lesson.text.split('\n').slice(1).join('\n');
-  return text.trim();
 }
 
 // -------------------------------------------------------------------------- export
@@ -575,20 +552,12 @@ function restOf(value, claimed) {
   return Object.keys(rest).length === 0 ? null : canonicalize(rest);
 }
 
-/** A single-line string of at most `max` code points, or `null`. */
-function oneLine(value, max) {
-  if (typeof value !== 'string') return null;
-  const text = nfc(value).replace(/\s+/gu, ' ').trim();
-  if (text === '') return null;
-  return [...text].length > max ? [...text].slice(0, max).join('') : text;
-}
-
 /**
  * One FOREIGN typed record as an item, or `null` with the reason it was skipped.
  *
  * @returns {{item:(object|null), skip:(string|null), findings:Array<object>}}
  */
-function foreignItem(entry, options) {
+function foreignItem(entry) {
   const v = entry.value;
   const findings = [];
   const where = `${entry.file}:${entry.line}`;
@@ -697,13 +666,6 @@ function linkKeyOf(predicate) {
   return null;
 }
 
-/** The lint-normalized bytes of one item (AGSC-04-19), exactly as `okf.plan` writes them. */
-function itemText(frontmatter, body, itemSchema) {
-  const type = String(frontmatter.type);
-  const ordered = fix.orderKeys(frontmatter, fix.declaredOrder(itemSchema, type), itemSchema, type, null);
-  return fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${nfc(body)}`);
-}
-
 /**
  * The import plan: what would be written, in code-point path order.
  *
@@ -808,7 +770,7 @@ function plan(files, options) {
       facts.push(entry);
       continue;
     }
-    const mapped = foreignItem(entry, opts);
+    const mapped = foreignItem(entry);
     if (mapped.item === null) {
       totals.foreign_skipped += 1;
       findings.push(finding('AGSC-E506', mapped.skip, { file: entry.file, line: entry.line, severity: 'warn' }));
@@ -882,8 +844,8 @@ function plan(files, options) {
 }
 
 module.exports = {
-  ARCHIVE_FILES, BLOCK_LIMIT, CLAIMED_KEYS, COGX_VERSION, FORMAT, MANIFEST_FILE, MAX_LINE_BYTES,
-  PERMISSIONS_FILE, RAW_NODES_FILE, RECORD_FILES, SOURCE_SYSTEM,
-  archiveRefusal, cogxMajor, foreignItem, lessonText, linkKeyOf, parseRecords, plan, run,
+  ARCHIVE_FILES, CLAIMED_KEYS, COGX_VERSION, FORMAT, MANIFEST_FILE, MAX_LINE_BYTES,
+  PERMISSIONS_FILE, RAW_NODES_FILE, RECORD_FILES,
+  cogxMajor, lessonText, linkKeyOf, plan, run,
   timestampOf, withoutNone,
 };

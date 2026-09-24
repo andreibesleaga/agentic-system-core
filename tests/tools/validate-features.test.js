@@ -79,7 +79,7 @@ describe('validate-features — the faults', () => {
 
   it('encoding faults are AGSC-E108', () => {
     const root = featureRoot();
-    fs.writeFileSync(path.join(root, 'features', 'persona-0.feature'), `﻿${GOOD.replace(/\n/gu, '\r\n')}\n`);
+    fs.writeFileSync(path.join(root, 'features', 'persona-0.feature'), `\uFEFF${GOOD.replace(/\n/gu, '\r\n')}\n`);
     const { json } = envelope('validate-features', [root]);
     assert.ok(json.findings.filter((f) => f.code === 'AGSC-E108').length >= 3);
   });
@@ -232,6 +232,6 @@ describe('validate-features — the real distribution', () => {
     const result = capture('validate-features', [REPO]);
     assert.equal(result.code, 0);
     assert.equal(result.err, '');
-    assert.match(result.out, /^validate-features: 12 input file\(s\) read, \d+ scenarios, \d+ requirement ids tagged, 0 error, 0 warn/u);
+    assert.match(result.out, /^validate-features: 13 input file\(s\) read, \d+ scenarios, \d+ requirement ids tagged, 0 error, 0 warn/u);
   });
 });

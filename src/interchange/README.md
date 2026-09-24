@@ -1,4 +1,45 @@
-# `src/interchange/` — the Interchange context (reserved)
+# `src/interchange/` — Interchange: foreign formats, in and out
+
+**Summary.** This folder is the supporting **Interchange** context: everything that
+reads a format this specification does not own, or writes one for another tool. It
+imports Open Knowledge Format bundles, COGX memory archives, GABBE kits, skills
+repositories, project-board exports and the retired pattern site, and exports
+Markdown, OKF, steering files for coding assistants and the same foreign formats back.
+Every import is deterministic, idempotent and total; nothing it cannot map is dropped
+in silence.
+
+**Read after:** [the module guide](../README.md). **Specification:** `spec/01`
+§1.5–1.6 (import and export), `spec/03` §3.6 (link synonyms). **May depend on:**
+`knowledge/`, `governance/`, `ports/` (types only), `shared/`. **Tests:**
+`tests/interchange/`. The user-facing routes are in `docs/CONNECTORS.md`.
+
+## What each file does
+
+| File | What it does |
+|---|---|
+| `okf.js` | `import --from okf`: the Open Knowledge Format reader |
+| `export-bundle.js` | `export --markdown` and `export --okf`: the Bundle itself, byte-preserving |
+| `steer.js` | `export --steer`: steering files for eleven targets (coding assistants, `AGENTS.md`, GABBE) |
+| `trace.js` | `trace <file.json>`: an agent-run record to an Episode item |
+| `own-record.js` | when an import may trust a line this node wrote itself; the record's base64 codec |
+| `records.js` | the helpers every adapter shares: safe JSON objects, one-line text, the lint-normalized item bytes |
+| `board-formats.js` | eleven project-board file formats, read and written through one table |
+| `import.js`, `oldsite.js`, `mapping.js`, `sources.js`, `status.js`, `clusters.js`, `cleanroom-rewrite.js`, `selection.js` | `import --from old-site`, the retired pattern site's format |
+| `adapters/llm-context.js` | `export --to llm-context`: a compact context file for a model |
+| `adapters/cogx.js` | `export --to cogx` / `import --from cogx`: COGX memory archives |
+| `adapters/gabbe.js` | `export --to gabbe` / `import --from gabbe`: GABBE kits |
+| `adapters/skills.js` | `export --to skills` / `import --from skills`: skills repositories in five layouts |
+| `adapters/board.js` | `export --to board` / `import --from board`: project boards |
+
+The claimed key set of every memory adapter (AGSC-01-26a) is listed below, in the
+record of this folder, under the date each adapter was added; the `board` adapter's
+is the last entry.
+
+## Record of this folder
+
+*Note, 2026-09-24:* the text from here on is this folder's record as it was written,
+kept unchanged; the title it had was "the Interchange context (reserved)", and the
+paragraph "Why it is empty" describes the state of 2026-09-18.
 
 **Summary.** This directory is the supporting **Interchange** bounded context of
 `docs/ARCHITECTURE-DDD.md` §2: foreign formats, in both directions. It is
@@ -86,3 +127,11 @@ and `adapters/skills.js` (this entry).
 | adapter | direction | selected by | keys it claims |
 |---|---|---|---|
 | `skills` | export and import | `export --to skills --layout <l>`, `import --from skills [--layout <l>] [--list] <clone>` (flags of its own: `--layout`, `--list`, `--replace`, `--allow-newer`, `--source-version <v>`); layouts `agentskills`, `claude-plugin`, `marketplace`, `cursor`, `windsurf` | **export:** every authored frontmatter key and the body of every published item of every pack (the cluster and its members), carried whole in one `agsc-item` line each. **import:** our own records — the same, plus `prov.source_version`; a foreign skill — `name`, `description`, `license`, `metadata.version` and the body; a foreign rule — `description`, `globs`, `alwaysApply`, `trigger` and the body; a plugin manifest's `name`, `version`, `license`, `skills`; a marketplace's `plugins[].source` (relative only), `skills`, `version`, `license` and `metadata.version`. Every other frontmatter member is kept verbatim as one JCS string in `x-skills-rest`. Dropped and reported per file, never imported: `allowed-tools`, `scripts/` and executable files, a plugin's `hooks/`, `.mcp.json`, `.lsp.json`, `bin/`, `scripts/`; not mapped and reported: a plugin's `commands/`, `agents/`, `output-styles/`, a skill's other supporting files |
+
+### Added 2026-09-24 — the `board` adapter
+
+The `board` adapter was added on 2026-09-23 without an entry here; this is its entry.
+
+| adapter | direction | selected by | keys it claims |
+|---|---|---|---|
+| `board` | export and import | `export --to board --format <f>`, `import --from board --format <f> <dir>`; formats `asana`, `github`, `gitlab`, `jira`, `linear`, `markdown`, `notion`, `obsidian-kanban`, `todotxt`, `trello` (and `agsc-board`, this node's own) | **export:** the published tasks of each board, one file per board; every row carries the item's authored frontmatter, body, slug and board as one own-record, so a return import rebuilds each item exactly. **import:** our own rows — the same; a foreign row — the title, the body, the tool's state word mapped to one of the nine task states (`task_state`) and kept in `x-board-state`, the assignee in `x-board-assignee`, the dependency as `blocked-by`, a `Decision`/`Spec` type or label as that `kind`; labels, the due date, the tool's id, unresolved link ids and every other column are kept in `x-board-*` keys. Foreign rows are written as `status: draft` until a person publishes them |

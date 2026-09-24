@@ -186,7 +186,7 @@ function pathGrammarError(relative, fromDir) {
 }
 
 /**
- * AGSC-01-35 as amended at rc.5 (R-01), the BODY form. An inline Markdown link or
+ * AGSC-01-35 (R-01), the BODY form. An inline Markdown link or
  * image target in a body "is held to the same rule **except that it MAY contain
  * `..` segments**, because an item under `content/<type-plural>/` cannot otherwise
  * reach `content/assets/` at all (AGSC-02-95, AGSC-03-11): it MUST not begin with
@@ -196,7 +196,7 @@ function pathGrammarError(relative, fromDir) {
  *
  * So the segment test is disapplied here and the escape test is the operative one.
  * A body target that escapes is `AGSC-E902`; one that stays inside and resolves to
- * nothing is `AGSC-E310` (AGSC-03-11 as amended at rc.5), never `AGSC-E902`.
+ * nothing is `AGSC-E310` (AGSC-03-11), never `AGSC-E902`.
  *
  * Added 2026-09-21 (FINAL-VERIFY-28): the rc.5 amendment had been applied to the
  * specification and not to this module, so `![logo](../assets/logo.png)` — the one
@@ -503,9 +503,6 @@ module.exports = {
   LINK_KEYS,
   INVERSE,
   SYMMETRIC,
-  COMPUTED_KEYS,
-  LINK_SHAPED_UNKNOWN,
-  MAX_CLUSTER_ANCESTORS,
   SLUG_PATTERN,
   anchors,
   bodyPathError,

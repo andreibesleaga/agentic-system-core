@@ -24,12 +24,10 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const https = require('https'), http = require('http'), dns = require('dns'), net = require('net');
 
 const TOOL_VERSION = (() => {
-  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 })();
 const SPEC_VERSION = (() => {
-  try { return (fs.readFileSync(path.join(__dirname, '..', 'spec', '00-overview.md'), 'utf8').match(/1\.0\.0-[a-z]+\.\d+|\d+\.\d+\.\d+/) || ['unknown'])[0]; }
-  catch { return 'unknown'; }
+  try { return (fs.readFileSync(path.join(__dirname, '..', 'spec', '00-overview.md'), 'utf8').match(/1\.0\.0-[a-z]+\.\d+|\d+\.\d+\.\d+/) || ['unknown'])[0]; } catch { return 'unknown'; }
 })();
 
 const WELLKNOWN_SUFFIX = 'knowledge-linkset'; // single point of substitution, AGSC-06-07
@@ -70,10 +68,7 @@ const opts = { json: false, dev: false, level: 0, target: null, peer: null };
     const x = a[i];
     if (x === '--json') continue;
     else if (x === '--dev') opts.dev = true;
-    else if (x === '--level') { const v = a[++i]; if (!/^[0-3]$/.test(v || '')) usage('AGSC-E003', '--level needs 0, 1, 2 or 3'); opts.level = Number(v); }
-    else if (x === '--peer') { const v = a[++i]; if (!v) usage('AGSC-E003', '--peer needs a url or file'); opts.peer = v; }
-    else if (x === '-h' || x === '--help') { process.stdout.write(fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 10).map(l => l.replace(/^\/\/ ?/, '')).join('\n') + '\n'); process.exit(0); }
-    else if (x.startsWith('-')) usage('AGSC-E002', `unknown flag ${x}`);
+    else if (x === '--level') { const v = a[++i]; if (!/^[0-3]$/.test(v || '')) usage('AGSC-E003', '--level needs 0, 1, 2 or 3'); opts.level = Number(v); } else if (x === '--peer') { const v = a[++i]; if (!v) usage('AGSC-E003', '--peer needs a url or file'); opts.peer = v; } else if (x === '-h' || x === '--help') { process.stdout.write(fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 10).map((l) => l.replace(/^\/\/ ?/, '')).join('\n') + '\n'); process.exit(0); } else if (x.startsWith('-')) usage('AGSC-E002', `unknown flag ${x}`);
     else if (!opts.target) opts.target = x;
     else usage('AGSC-E002', `unexpected argument ${x}`);
   }
@@ -84,12 +79,12 @@ const opts = { json: false, dev: false, level: 0, target: null, peer: null };
 function jcs(v) {
   if (v === null || typeof v !== 'object') return JSON.stringify(v);
   if (Array.isArray(v)) return '[' + v.map(jcs).join(',') + ']';
-  return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + jcs(v[k])).join(',') + '}';
+  return '{' + Object.keys(v).sort().map((k) => JSON.stringify(k) + ':' + jcs(v[k])).join(',') + '}';
 }
 function envelope(findings) {
   const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
   findings.sort((a, b) => cmp(a.file, b.file) || a.line - b.line || a.col - b.col || cmp(a.code, b.code) || cmp(a.message, b.message));
-  const error = findings.filter(f => f.severity === 'error').length;
+  const error = findings.filter((f) => f.severity === 'error').length;
   return { counts: { error, warn: findings.length - error }, findings, schema: 'agsc.diagnostics.v1',
     spec_version: SPEC_VERSION, status: error ? 'fail' : 'pass', verb: 'validate-wellknown', version: TOOL_VERSION };
 }
@@ -98,7 +93,7 @@ function envelope(findings) {
 const KEYS = new WeakMap(); // object -> member names in document order
 function parseIJson(text) {
   let i = 0;
-  const fail = m => { const e = new Error(m); e.ijson = true; throw e; };
+  const fail = (m) => { const e = new Error(m); e.ijson = true; throw e; };
   const ws = () => { while (i < text.length && ' \t\n\r'.includes(text[i])) i++; };
   const str = () => {
     let out = ''; i++;
@@ -108,8 +103,7 @@ function parseIJson(text) {
       if (c === '"') break;
       if (c === '\\') {
         const e = text[i++];
-        if (e === 'u') { const h = text.slice(i, i + 4); if (!/^[0-9a-fA-F]{4}$/.test(h)) fail('bad \\u escape'); out += String.fromCharCode(parseInt(h, 16)); i += 4; }
-        else if ('"\\/bfnrt'.includes(e)) out += { '"': '"', '\\': '\\', '/': '/', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t' }[e];
+        if (e === 'u') { const h = text.slice(i, i + 4); if (!/^[0-9a-fA-F]{4}$/.test(h)) fail('bad \\u escape'); out += String.fromCharCode(parseInt(h, 16)); i += 4; } else if ('"\\/bfnrt'.includes(e)) out += { '"': '"', '\\': '\\', '/': '/', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t' }[e];
         else fail('bad escape');
       } else if (c < ' ') fail('control character in string');
       else out += c;
@@ -161,12 +155,12 @@ function parseIJson(text) {
 // list would refuse every IPv4 address through the ::ffff:0:0/96 rule.
 const BLOCK4 = new net.BlockList(), BLOCK6 = new net.BlockList();
 [['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['169.254.0.0', 16], ['172.16.0.0', 12],
- ['192.0.0.0', 24], ['192.0.2.0', 24], ['192.88.99.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15],
- ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 4], ['240.0.0.0', 4], ['255.255.255.255', 32]]
+  ['192.0.0.0', 24], ['192.0.2.0', 24], ['192.88.99.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15],
+  ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 4], ['240.0.0.0', 4], ['255.255.255.255', 32]]
   .forEach(([a, p]) => BLOCK4.addSubnet(a, p, 'ipv4'));
 [['::', 128], ['::', 96], ['::ffff:0:0', 96], ['64:ff9b::', 96], ['64:ff9b:1::', 48], ['100::', 64],
- ['100:0:0:1::', 64], ['2001::', 32], ['2001:2::', 48], ['2001:10::', 28], ['2001:db8::', 32],
- ['2002::', 16], ['3fff::', 20], ['5f00::', 16], ['fc00::', 7], ['fe80::', 10], ['fec0::', 10], ['ff00::', 8]]
+  ['100:0:0:1::', 64], ['2001::', 32], ['2001:2::', 48], ['2001:10::', 28], ['2001:db8::', 32],
+  ['2002::', 16], ['3fff::', 20], ['5f00::', 16], ['fc00::', 7], ['fe80::', 10], ['fec0::', 10], ['ff00::', 8]]
   .forEach(([a, p]) => BLOCK6.addSubnet(a, p, 'ipv6'));
 const LOOP4 = new net.BlockList();
 LOOP4.addSubnet('127.0.0.0', 8, 'ipv4');
@@ -192,26 +186,26 @@ function fetchOnce(url) {
     const lookup = (host, o, cb) => dns.lookup(host, { all: true, verbatim: true }, (err, list) => {
       if (err) return cb(err);
       if (!list.length) return cb(new Error('no address'));
-      const bad = list.find(x => refused(x.address, x.family));
+      const bad = list.find((x) => refused(x.address, x.family));
       if (bad) return cb(new TransportError('AGSC-E905', `address refused: ${bad.address}`));
-      if (isHttp && !list.every(x => isLoop(x.address, x.family))) return cb(new TransportError('AGSC-E905', 'http is allowed only to loopback under --dev'));
+      if (isHttp && !list.every((x) => isLoop(x.address, x.family))) return cb(new TransportError('AGSC-E905', 'http is allowed only to loopback under --dev'));
       const pick = list[0];
       if (o && o.all) return cb(null, [pick]);
       cb(null, pick.address, pick.family); // connect to exactly the classified address
     });
     const mod = isHttp ? http : https;
-    const req = mod.request(u, { method: 'GET', lookup, timeout: TIMEOUT_MS, headers: { accept: 'application/linkset+json, application/json;q=0.5' } }, res => {
+    const req = mod.request(u, { method: 'GET', lookup, timeout: TIMEOUT_MS, headers: { accept: 'application/linkset+json, application/json;q=0.5' } }, (res) => {
       const chunks = []; let size = 0;
-      res.on('data', c => { size += c.length; if (size > MAX_BYTES) { res.destroy(); reject(new TransportError('AGSC-E904', 'response exceeds 1 MiB')); } else chunks.push(c); });
+      res.on('data', (c) => { size += c.length; if (size > MAX_BYTES) { res.destroy(); reject(new TransportError('AGSC-E904', 'response exceeds 1 MiB')); } else chunks.push(c); });
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
       res.on('error', reject);
     });
-    req.on('socket', sock => sock.once('connect', () => { // re-verify the connected socket (AGSC-11-08)
+    req.on('socket', (sock) => sock.once('connect', () => { // re-verify the connected socket (AGSC-11-08)
       const remote = sock.remoteAddress;
       if (!remote || refused(remote, net.isIPv6(remote) ? 6 : 4)) req.destroy(new TransportError('AGSC-E905', `socket address refused: ${remote}`));
     }));
     req.on('timeout', () => req.destroy(new TransportError('AGSC-E907', 'timeout')));
-    req.on('error', e => reject(e instanceof TransportError ? e : (e.code === 'AGSC-E905' ? e : new TransportError('AGSC-E907', e.message))));
+    req.on('error', (e) => reject(e instanceof TransportError ? e : (e.code === 'AGSC-E905' ? e : new TransportError('AGSC-E907', e.message))));
     req.end();
   });
 }
@@ -230,7 +224,7 @@ async function fetchUrl(url) {
 }
 
 // ---------------------------------------------------------------- source abstraction
-const isUrl = s => /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
+const isUrl = (s) => /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
 /**: how many documents this run actually read, printed with the verdict so
  *  that "nothing is wrong" can be told apart from "nothing was looked at". */
 const READS = { count: 0 };
@@ -239,7 +233,7 @@ async function load(target) {
   if (isUrl(target)) {
     const r = await fetchUrl(target);
     return { kind: 'url', name: target, bytes: r.body, headers: r.headers,
-      resolve: async href => { READS.count += 1; return (await fetchUrl(href)).body; } };
+      resolve: async (href) => { READS.count += 1; return (await fetchUrl(href)).body; } };
   }
   const file = path.resolve(target);
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw new TransportError('AGSC-E901', `file not found: ${target}`);
@@ -273,7 +267,7 @@ function mediaTypeOk(headers) {
   }
   const byParam = essence === 'application/linkset+json' && (params.profile || '').split(/\s+/).includes(PROFILE);
   const links = [].concat(headers.link || []).join(',');
-  const byLink = links.split(/,(?=\s*<)/).some(l => {
+  const byLink = links.split(/,(?=\s*<)/).some((l) => {
     const m = /^\s*<([^>]*)>(.*)$/.exec(l); if (!m) return false;
     const rel = /;\s*rel\s*=\s*(?:"([^"]*)"|([^;\s]+))/i.exec(m[2]);
     return m[1] === PROFILE && rel && (rel[1] || rel[2]).split(/\s+/).includes('profile');
@@ -298,16 +292,15 @@ async function check(src, level, findings) {
   const ctx = doc.linkset[0];
   if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) { F('AGSC-E201', 'link context is not an object'); return null; }
   let anchor;
-  try { anchor = new URL(ctx.anchor); if (anchor.protocol !== 'https:' && !(opts.dev && anchor.protocol === 'http:')) throw 0; if (!ctx.anchor.endsWith('/')) throw 0; }
-  catch { F('AGSC-E201', `anchor must be the absolute https Bundle IRI ending in "/" (AGSC-05-03); got ${JSON.stringify(ctx.anchor)}`); return null; }
-  const names = KEYS.get(ctx).filter(k => k !== 'anchor');
+  try { anchor = new URL(ctx.anchor); if (anchor.protocol !== 'https:' && !(opts.dev && anchor.protocol === 'http:')) throw 0; if (!ctx.anchor.endsWith('/')) throw 0; } catch { F('AGSC-E201', `anchor must be the absolute https Bundle IRI ending in "/" (AGSC-05-03); got ${JSON.stringify(ctx.anchor)}`); return null; }
+  const names = KEYS.get(ctx).filter((k) => k !== 'anchor');
   const sorted = [...KEYS.get(ctx)].sort();
   if (JSON.stringify(KEYS.get(ctx)) !== JSON.stringify(sorted)) F('AGSC-E201', 'link context members are not ordered as JSON member names (AGSC-06-08, AGSC-04-05)');
   const result = { anchor: ctx.anchor, peers: [], ctx };
   // AGSC-11-20: a gated node's own declaration decides which attributes are
   // REQUIRED and which are FORBIDDEN, so it is read once, before the links.
   const describedby = Array.isArray(ctx.describedby) ? ctx.describedby : [];
-  const anchorLink = describedby.find(t => t && typeof t.href === 'string' && /\/graph\.jsonld$/.test(t.href)) || {};
+  const anchorLink = describedby.find((t) => t && typeof t.href === 'string' && /\/graph\.jsonld$/.test(t.href)) || {};
   const gated = Array.isArray(anchorLink['agsc-visibility'])
     && anchorLink['agsc-visibility'].map(String).includes('restricted');
   if (gated) {
@@ -351,13 +344,11 @@ async function check(src, level, findings) {
       for (const k of KEYS.get(t)) {
         if (k === 'href') continue;
         const v = t[k];
-        if (RFC8288_STRING_ATTRS.has(k)) { if (typeof v !== 'string') F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a string (RFC 9264 §4.2.4.2)`); }
-        else if (k === 'title*') { if (!Array.isArray(v)) F('AGSC-E201', `relation ${rel}: title* must be an array (RFC 9264 §4.2.4.2)`); }
-        else if (!Array.isArray(v) || !v.length || !v.every(s => typeof s === 'string')) F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a non-empty array of strings (AGSC-06-10)`);
+        if (RFC8288_STRING_ATTRS.has(k)) { if (typeof v !== 'string') F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a string (RFC 9264 §4.2.4.2)`); } else if (k === 'title*') { if (!Array.isArray(v)) F('AGSC-E201', `relation ${rel}: title* must be an array (RFC 9264 §4.2.4.2)`); } else if (!Array.isArray(v) || !v.length || !v.every((s) => typeof s === 'string')) F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a non-empty array of strings (AGSC-06-10)`);
       }
       const sameOrigin = h.origin === anchor.origin;
       const artefact = sameOrigin && !h.pathname.endsWith('/') && rel !== 'license' && rel !== 'service-doc' && ext !== 'surface' && ext !== 'peer'
-        // AGSC-06-08 as amended at rc.6: the optional signature link "affects no
+        // AGSC-06-08: the optional signature link "affects no
         // digest, no claim and no walk", so its target is never an artefact that needs one.
         && ext !== 'signature';
       if (t.digest !== undefined) {
@@ -386,8 +377,7 @@ async function check(src, level, findings) {
         if (name && (name === 'llms-txt' || name === 'chunks') && ver !== undefined) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
         if (name === 'llms-txt' && h.pathname !== '/llms.txt' && !h.pathname.endsWith('/llms.txt')) F('AGSC-E210', `rel#surface llms-txt must target /llms.txt (AGSC-11-16)`);
         if (name === 'llms-txt' || name === 'chunks') {
-          try { await src.resolve(t.href, ctx.anchor); }
-          catch (e) { F('AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
+          try { await src.resolve(t.href, ctx.anchor); } catch (e) { F('AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
         }
       }
     }
@@ -399,13 +389,12 @@ async function check(src, level, findings) {
 (async () => {
   const findings = [];
   const run = async (target, level) => {
-    try { const src = await load(target); return { src, r: await check(src, level, findings) }; }
-    catch (e) { findings.push({ code: e.code && /^AGSC-E\d{3}$/.test(e.code) ? e.code : 'AGSC-E907', col: 1, file: target, line: 1, message: e.message, severity: 'error' }); return null; }
+    try { const src = await load(target); return { src, r: await check(src, level, findings) }; } catch (e) { findings.push({ code: e.code && /^AGSC-E\d{3}$/.test(e.code) ? e.code : 'AGSC-E907', col: 1, file: target, line: 1, message: e.message, severity: 'error' }); return null; }
   };
   const a = await run(opts.target, opts.level);
   if (opts.peer) {
     const b = await run(opts.peer, opts.level);
-    const canon = r => new URL(`.well-known/${WELLKNOWN_SUFFIX}`, r.anchor).href;
+    const canon = (r) => new URL(`.well-known/${WELLKNOWN_SUFFIX}`, r.anchor).href;
     if (a && a.r && b && b.r) {
       if (!a.r.peers.includes(canon(b.r))) findings.push({ code: 'AGSC-E907', col: 1, file: opts.target, line: 1, message: `resolved, not mutual: no rel#peer names ${canon(b.r)} (AGSC-10-12)`, severity: 'error' });
       if (!b.r.peers.includes(canon(a.r))) findings.push({ code: 'AGSC-E907', col: 1, file: opts.peer, line: 1, message: `resolved, not mutual: no rel#peer names ${canon(a.r)} (AGSC-10-12)`, severity: 'error' });

@@ -49,11 +49,26 @@ test('pure contexts read no clock, environment or randomness', () => {
   }
 });
 
+test('no bounded context touches the process, the clock or randomness', () => {
+  // Wider than the three pure contexts: Boundary, Interchange and Distribution may
+  // classify addresses (node:net, node:url) but still receive the process streams,
+  // the environment and the build instant from the application layer.
+  const CONTEXTS = [...PURE_CONTEXTS, 'boundary', 'interchange', 'distribution', 'shared'];
+  const PROCESS = /\bprocess\s*\./u;
+  for (const file of sources()) {
+    if (!CONTEXTS.includes(file.dir.split('/')[0])) continue;
+    const code = file.text.replace(/\/\*[\s\S]*?\*\//gu, '').replace(/^\s*\/\/.*$/gmu, '');
+    assert.ok(!PROCESS.test(code), `${file.rel} reads the process; the application layer passes what it needs`);
+    for (const [label, re] of FORBIDDEN_TEXT) {
+      assert.ok(!re.test(code), `${file.rel} uses ${label}; the build instant arrives through the Clock port (AGSC-04-03)`);
+    }
+  }
+});
+
 test('ports declare an interface and nothing else', () => {
   for (const file of sources()) {
     if (file.dir !== 'ports') continue;
     assert.deepStrictEqual(file.requires, [], `${file.rel} must be a JSDoc interface with no require`);
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     assert.deepStrictEqual(require(file.absolute), {}, `${file.rel} must export nothing executable`);
   }
 });

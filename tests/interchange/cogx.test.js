@@ -549,7 +549,6 @@ test('export --to cogx is discovered by directory convention (AGSC-01-26a)', () 
 });
 
 test('the adapter\'s own flags are scoped to it on the command line (AGSC-01-26a, AGSC-09-09)', () => {
-  // eslint-disable-next-line global-require
   const main = require('../../src/application/cli/main.js');
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'cogx']).keys()], ['--replace', '--allow-newer']);
   assert.deepStrictEqual([...main.adapterFlagsFor('export', ['--to', 'cogx']).keys()], []);

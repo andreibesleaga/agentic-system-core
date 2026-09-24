@@ -11,7 +11,7 @@ function baseConfig(agents) {
     site: { base: 'https://example.org/', title: 'Example' },
     spec_version: '1.0.0-rc.4',
     channels: [{ adapter: 'stub', author: 'lane-bot', name: 'lane', owner: 'human:alice', publish: 'auto' }],
-    agents
+    agents,
   };
 }
 
@@ -19,7 +19,7 @@ test('bundle-0003: a valid agent lane is accepted with no findings', () => {
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
     model: 'example-model-1', name: 'editor', operator: 'human:alice',
-    tasks: ['edit', 'update', 'review'], types: ['concept', 'lesson']
+    tasks: ['edit', 'update', 'review'], types: ['concept', 'lesson'],
   }]);
   assert.deepEqual(checkAgents(config), []);
 });
@@ -28,7 +28,7 @@ test('bundle-0004: a procedure in types[] is AGSC-E203 at agents[0].types[1]', (
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
     model: 'example-model-1', name: 'editor', operator: 'human:alice',
-    tasks: ['edit', 'update', 'review'], types: ['concept', 'procedure']
+    tasks: ['edit', 'update', 'review'], types: ['concept', 'procedure'],
   }]);
   const findings = checkAgents(config);
   assert.equal(findings.length, 1);
@@ -43,7 +43,7 @@ test('bundle-0005: enabled budgets summing above the node cap is AGSC-E212', () 
   const config = baseConfig([
     { author: 'lane-bot', budget_usd_month: 6, channel: 'lane', enabled: true, kind: 'llm', model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept'] },
     { author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm', model: 'm', name: 'planner', operator: 'human:alice', tasks: ['plan'], types: ['concept'] },
-    { author: 'lane-bot', budget_usd_month: 9, channel: 'lane', enabled: false, kind: 'llm', model: 'm', name: 'idle', operator: 'human:alice', tasks: ['edit'], types: ['concept'] }
+    { author: 'lane-bot', budget_usd_month: 9, channel: 'lane', enabled: false, kind: 'llm', model: 'm', name: 'idle', operator: 'human:alice', tasks: ['edit'], types: ['concept'] },
   ]);
   const findings = checkAgents(config);
   assert.deepEqual(findings, [{
@@ -55,14 +55,14 @@ test('bundle-0005: enabled budgets summing above the node cap is AGSC-E212', () 
 test('prov-0001: a Proposal touching a type outside types[] is AGSC-E509', () => {
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
-    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept', 'lesson']
+    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept', 'lesson'],
   }]);
   const proposal = {
     agent: 'editor', author: 'lane-bot',
     changes: [
       { path: 'content/concepts/supervisor.md', type: 'concept' },
-      { path: 'content/procedures/deploy.md', type: 'procedure' }
-    ]
+      { path: 'content/procedures/deploy.md', type: 'procedure' },
+    ],
   };
   const result = checkProposal(config, proposal);
   assert.equal(result.accepted, false);
@@ -75,7 +75,7 @@ test('prov-0001: a Proposal touching a type outside types[] is AGSC-E509', () =>
 test('prov-0002: a Proposal creating more than max_new_items is AGSC-E511', () => {
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
-    model: 'm', name: 'planner', operator: 'human:alice', tasks: ['plan', 'claim', 'work'], types: ['concept', 'episode', 'lesson']
+    model: 'm', name: 'planner', operator: 'human:alice', tasks: ['plan', 'claim', 'work'], types: ['concept', 'episode', 'lesson'],
   }]);
   const changes = [];
   for (let i = 1; i <= 21; i++) changes.push({ op: 'create', path: `content/concepts/task-${String(i).padStart(2, '0')}.md`, type: 'concept' });
@@ -90,11 +90,11 @@ test('prov-0002: a Proposal creating more than max_new_items is AGSC-E511', () =
 test('AGSC-08-28(c) tasks[]: a Proposal declaring a task outside tasks[] is AGSC-E509', () => {
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
-    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit', 'update'], types: ['concept']
+    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit', 'update'], types: ['concept'],
   }]);
   const result = checkProposal(config, {
     agent: 'editor', author: 'lane-bot', task: 'translate',
-    changes: [{ path: 'content/concepts/a.md', type: 'concept' }]
+    changes: [{ path: 'content/concepts/a.md', type: 'concept' }],
   });
   assert.equal(result.accepted, false);
   assert.deepEqual(result.findings, [{
@@ -106,11 +106,11 @@ test('AGSC-08-28(c) tasks[]: a Proposal declaring a task outside tasks[] is AGSC
 test('AGSC-08-28(c) tasks[]: a declared task inside tasks[] is accepted', () => {
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
-    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit', 'update'], types: ['concept']
+    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit', 'update'], types: ['concept'],
   }]);
   const result = checkProposal(config, {
     agent: 'editor', author: 'lane-bot', task: 'edit',
-    changes: [{ path: 'content/concepts/a.md', type: 'concept' }]
+    changes: [{ path: 'content/concepts/a.md', type: 'concept' }],
   });
   assert.equal(result.accepted, true);
 });
@@ -118,11 +118,11 @@ test('AGSC-08-28(c) tasks[]: a declared task inside tasks[] is accepted', () => 
 test('AGSC-08-28(c) tasks[]: a per-change `task` overrides the Proposal-level one', () => {
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
-    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept']
+    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept'],
   }]);
   const result = checkProposal(config, {
     agent: 'editor', author: 'lane-bot', task: 'edit',
-    changes: [{ path: 'content/concepts/a.md', type: 'concept', task: 'translate' }]
+    changes: [{ path: 'content/concepts/a.md', type: 'concept', task: 'translate' }],
   });
   assert.equal(result.accepted, false);
   assert.equal(result.findings[0].task, 'translate');
@@ -131,11 +131,11 @@ test('AGSC-08-28(c) tasks[]: a per-change `task` overrides the Proposal-level on
 test('AGSC-08-28(c) tasks[]: no `task` declared anywhere is not checked (prov-0001/0002 stay green)', () => {
   const config = baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
-    model: 'm', name: 'planner', operator: 'human:alice', tasks: ['plan', 'claim', 'work'], types: ['concept']
+    model: 'm', name: 'planner', operator: 'human:alice', tasks: ['plan', 'claim', 'work'], types: ['concept'],
   }]);
   const result = checkProposal(config, {
     agent: 'planner', author: 'lane-bot',
-    changes: [{ op: 'create', path: 'content/concepts/a.md', type: 'concept' }]
+    changes: [{ op: 'create', path: 'content/concepts/a.md', type: 'concept' }],
   });
   assert.equal(result.accepted, true);
 });
@@ -166,7 +166,7 @@ test('capMeter sums usage.cost_usd against the node cap', () => {
 test('AGSC-01-36: every enum and required-field fault names itself', () => {
   const kind = checkAgents(baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'oracle',
-    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept']
+    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept'],
   }]));
   assert.deepEqual(kind.map((f) => f.code), ['AGSC-E203']);
   assert.equal(kind[0].path, 'agents[0].kind');
@@ -174,14 +174,14 @@ test('AGSC-01-36: every enum and required-field fault names itself', () => {
 
   const task = checkAgents(baseConfig([{
     author: 'lane-bot', budget_usd_month: 5, channel: 'lane', enabled: true, kind: 'llm',
-    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit', 'juggle'], types: ['concept']
+    model: 'm', name: 'editor', operator: 'human:alice', tasks: ['edit', 'juggle'], types: ['concept'],
   }]));
   assert.deepEqual(task.map((f) => f.path), ['agents[0].tasks[1]']);
   assert.match(task[0].message, /agents\[0\]\.tasks\[1\] is "juggle"/u);
 
   const llm = checkAgents(baseConfig([{
     author: 'lane-bot', channel: 'lane', enabled: true, kind: 'llm',
-    name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept']
+    name: 'editor', operator: 'human:alice', tasks: ['edit'], types: ['concept'],
   }]));
   assert.deepEqual(llm.map((f) => f.path).sort(),
     ['agents[0].budget_usd_month', 'agents[0].model']);

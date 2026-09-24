@@ -263,7 +263,7 @@ test('AGSC-02-24: neutraliseSingleLine replaces every forbidden code point, and 
 
   const dirty = mapping.neutraliseSingleLine({
     title: 'N\u0000UL',
-    description: 'a b',
+    description: 'a\u2028b',
     tags: ['ok', 'b\u0085d'],
     prov: { operator: 'human:\u0007a' },
   });

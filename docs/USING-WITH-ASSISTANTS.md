@@ -1,5 +1,7 @@
 # Using a knowledge node with an AI assistant
 
+**Who this is for:** someone who wants an AI assistant to use a Bundle. **Read after:** [START-HERE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/START-HERE.md). *(Header added 2026-09-24.)*
+
 **Summary.** A Bundle is a folder of Markdown files that this engine publishes as a
 knowledge node. One command turns that same folder into a **local tool server** your
 assistant can use: `agsc mcp`. The assistant can then search the memory, read an item,
@@ -99,7 +101,7 @@ loop: every change in the memory can be traced to a person who agreed to it.
 
 ## 5. Setting it up
 
-You need **Node.js 22.12 or newer** and a Bundle on disk (clone the repository that holds
+You need **Node.js 22.13 or newer** and a Bundle on disk (clone the repository that holds
 the content, or run `agsc init` in an empty folder). Then point your assistant at it.
 
 `npx -y agsc-cli mcp` fetches the command the first time and runs it; if you would rather

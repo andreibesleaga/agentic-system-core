@@ -38,11 +38,21 @@ function monthOf(value) {
  * @returns {{month:string, spent_usd:number, cap_usd:number, ratio:number,
  *   episodes:number, findings:Array<object>}}
  */
+/**
+ * AGSC-08-25 / AGSC-02-14: the instant an episode belongs to — its `started`, the key
+ * its schema branch requires and `trace` and `remember` write; `date`, else
+ * `modified`, only for an episode that carries no `started`.
+ */
+function episodeInstant(item) {
+  if (item.started != null) return item.started;
+  return item.date == null ? item.modified : item.date;
+}
+
 function spend(items, config, options = {}) {
   const month = String(options.month);
   const usage = (items || [])
     .filter((i) => isEpisode(i) && i.usage != null)
-    .filter((i) => monthOf(i.date == null ? i.modified : i.date) === month)
+    .filter((i) => monthOf(episodeInstant(i)) === month)
     .map((i) => i.usage);
   const meter = capMeter(usage, config);
   const findings = [];
@@ -144,8 +154,9 @@ function perAgent(items, config, options = {}) {
   return lanes.map((lane) => {
     const name = String(lane.name);
     const episodes = (items || []).filter((i) => isEpisode(i) && i.usage != null
-      && String(i.actor) === name
-      && monthOf(i.date == null ? i.modified : i.date) === month);
+      // AGSC-08-28(d) names the lane; AGSC-02-09's grammar writes it `process:<name>`.
+      && (String(i.actor) === name || String(i.actor) === `process:${name}`)
+      && monthOf(episodeInstant(i)) === month);
     let spent = 0;
     for (const episode of episodes) {
       const cost = Number(episode.usage.cost_usd);
@@ -215,7 +226,7 @@ function state(items, config, options = {}) {
 }
 
 /**
- * AGSC-06-22 as amended at rc.6: the one pinned line of `/now/` and
+ * AGSC-06-22: the one pinned line of `/now/` and
  * `/now.md` — the four values of AGSC-04-25, AGSC-04-09, AGSC-04-15 and
  * AGSC-00-17, in that order and with those separators, as one line and its own
  * paragraph. Everything else on the page is implementation-defined.
@@ -283,6 +294,6 @@ function nowMarkdown(nowState, facts) {
 }
 
 module.exports = {
-  state, spend, counts, staleItems, nowMarkdown, buildLine, monthOf, isEpisode,
+  state, spend, counts, staleItems, nowMarkdown, buildLine,
   perAgent, waitingForAPerson, WAITING_STATES,
 };

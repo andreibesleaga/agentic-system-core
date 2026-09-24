@@ -6,6 +6,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const DIAGRAM_SOURCE = require('node:fs')
+  .readFileSync(require('node:path').join(__dirname, '..', 'fixtures', 'diagrams', 'a2a.diagram'), 'utf8');
 const html = require('../../src/distribution/html.js');
 const { WELLKNOWN_PATH } = require('../../src/distribution/discovery.js');
 
@@ -96,8 +98,6 @@ test('every interpolated value is escaped', () => {
 
 // A real `.diagram` fixture, so the producer is exercised against the grammar the
 // compiler's own golden suite pins and not against a source invented here.
-const DIAGRAM_SOURCE = require('node:fs')
-  .readFileSync(require('node:path').join(__dirname, '..', 'fixtures', 'diagrams', 'a2a.diagram'), 'utf8');
 const SOURCE_LABEL = 'Agent-to-agent protocol diagram';
 
 const WITH_DIAGRAM = {
@@ -152,7 +152,6 @@ test('AGSC-02-98/AGSC-E412: a source that will not compile emits no element', ()
 });
 
 test('AGSC-02-98: the compiled bytes pass the allow-list before they are inlined', () => {
-  // eslint-disable-next-line global-require
   const { svgViolations } = require('../../src/governance/lint.js');
   const { html: figure } = html.diagramFigure(WITH_DIAGRAM, DIAGRAM_SOURCE);
   const svg = figure.slice('<figure>'.length, figure.indexOf('<figcaption>'));
@@ -176,4 +175,36 @@ test('AGSC-02-13: a compiled diagram the allow-list refuses is AGSC-E412 and no 
   assert.match(refused.findings[0].message, /AGSC-02-98/u);
   const page = html.itemPage(WITH_DIAGRAM, { ...OPTIONS, diagramSource: DIAGRAM_SOURCE, svgViolations: refuse });
   assert.ok(!page.includes('<figure>'), page);
+});
+
+// A person reads the item page, not the graph: the typed Links an item authors, a
+// task's state and dependencies and a gate's level and checks are shown there, so a
+// `contradicts` pair or a blocked task is visible without an agent (AGSC-03-01,
+// AGSC-02-99, AGSC-08-09).
+test('an item page shows its typed Links, a task its state, a gate its level and checks', () => {
+  const links = [
+    { key: 'contradicts', targets: [{ href: '/concepts/b/', title: 'B' }] },
+    { key: 'blocked-by', targets: [{ href: '/concepts/c/', title: 'C <x>' }] },
+  ];
+  const task = html.itemPage({ slug: 'a', title: 'A', body: '', type: 'concept', kind: 'task', task_state: 'TASK_STATE_WORKING' },
+    { ...OPTIONS, links });
+  assert.match(task, /<dt>Task state<\/dt><dd><code>TASK_STATE_WORKING<\/code><\/dd>/u);
+  assert.match(task, /<h2 id="links">Links<\/h2>/u);
+  assert.match(task, /contradicts[^\n]*<a href="\/concepts\/b\/">B<\/a>/u);
+  assert.match(task, /blocked-by[^\n]*<a href="\/concepts\/c\/">C &lt;x&gt;<\/a>/u);
+  const unset = html.itemPage({ slug: 'a', title: 'A', body: '', type: 'concept', kind: 'task' }, OPTIONS);
+  assert.match(unset, /<dt>Task state<\/dt><dd><code>TASK_STATE_UNSPECIFIED<\/code><\/dd>/u);
+  assert.ok(!unset.includes('id="links"'), 'no Links section without a link');
+  const gate = html.itemPage({ slug: 'g', title: 'G', body: '', type: 'gate', level: 'L2', checks: ['schema', 'review'] }, OPTIONS);
+  assert.match(gate, /<dt>Level<\/dt><dd><code>L2<\/code><\/dd>/u);
+  assert.match(gate, /<dt>Checks<\/dt><dd><code>schema<\/code>, <code>review<\/code><\/dd>/u);
+});
+
+test('a board with no agent lane says so in a plain sentence (AGSC-10-17)', () => {
+  const board = { board: 'B', done: false, slug: 'b', tasks: [] };
+  const none = html.boardPage({ board, columns: [], wip: null }, OPTIONS);
+  assert.match(none, /Work-in-progress limit: none — this node declares no agent lane/u);
+  assert.ok(!none.includes('none declared tasks'));
+  const one = html.boardPage({ board, columns: [], wip: 1 }, OPTIONS);
+  assert.match(one, /Work-in-progress limit: 1 task in <code>TASK_STATE_WORKING<\/code> per agent lane/u);
 });

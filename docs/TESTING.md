@@ -1,5 +1,7 @@
 # Testing
 
+**Who this is for:** a developer or a contributor running or adding tests. **Read after:** [CODE-ORIENTATION.md](CODE-ORIENTATION.md). *(Header added 2026-09-24.)*
+
 ## Summary
 
 Every level of this distribution is tested, from one function to the whole command line on real Bundles, and every rule of the specification is accounted for. `npm test` runs the unit, integration and architecture tests, the conformance vectors, the executed acceptance scenarios, the tests of the standard itself and the end-to-end tests that need nothing outside this repository. Two further end-to-end lanes — the real Bundles and a real browser — are optional because they need files or a program the repository does not carry; each says why when it is skipped.
@@ -23,7 +25,7 @@ A generated matrix, [`docs/RULE-COVERAGE.md`](RULE-COVERAGE.md), lists for every
 
 The runner parses every feature file with the Gherkin reference parser and runs each scenario — each example of a Scenario Outline separately — as one test. Each step must match exactly one step definition. A scenario that cannot run offline, or whose text asks for something the specification does not define, is listed in `tests/acceptance/pending.json` with one of six classes (`browser`, `drift`, `external`, `forge`, `gap`, `model`) and a sentence of reason; it is reported as skipped and counted. The runner itself checks that every pending entry names a scenario, that every scenario that runs has a definition for each step, and that every step definition is used.
 
-Most pending scenarios are `drift`: the persona files were written before the command-line contract was closed and still name flags, paths or outputs the specification now defines differently. Each reason says which.
+The persona files are written to the command line as `agsc <verb> --help` states it, so no scenario is pending as `drift`. What stays pending needs something the reference distribution does not ship: a forge, a model adapter, an outside service or a live browser session — or it waits on a `gap`, a rule the engine does not meet yet, whose steps are already written. A scenario listed under `conditional` in the same file runs wherever what it names is present on the machine (the port implementer's comparison with the Python checker package needs that package's checkout beside the engine and Python 3.9 or newer) and is reported as skipped, with the reason, elsewhere. Every step that runs offline does so under a preload that refuses every network call, so a scenario that passes also proves that its lane reached no network and no model service.
 
 ## The rule-coverage matrix
 

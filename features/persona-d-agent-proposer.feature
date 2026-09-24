@@ -16,11 +16,12 @@ Feature: Agent proposer contributes a change humans ratify
 
   @PRD-039
   Scenario: Agent normalizes and writes a local patch, never pushes
+    Given the agent's edit of "content/concepts/<slug>.md" left keys out of schema order, a wikilink and no trailing LF
     When the agent runs "npx agentic-system-core lint --fix"
-    Then wikilinks, key order and trailing LF are normalized
-    When the agent runs "npx agentic-system-core propose --title \"…\" --rationale \"…\""
-    Then the CLI writes "dist/proposal/0001.patch" and "dist/proposal/0001.md" (the PR body)
-    And the CLI prints, but does not execute, "git switch -c proposal/<slug> && git apply … && gh pr create --body-file …"
+    Then wikilinks, key order and trailing LF are normalized, and a second lint reports no error (AGSC-04-19, AGSC-03-12)
+    When the agent runs "npx agentic-system-core propose <slug>"
+    Then the CLI writes "dist/proposal/1.patch" and "dist/proposal/1.md", the PR body opening with "<!-- agsc:proposal v1 -->" (AGSC-08-05)
+    And the CLI prints, but does not execute, "git apply dist/proposal/1.patch", "git checkout -b proposal/1" and the pull-request step (AGSC-08-04)
     And no network write occurs from the "propose" verb
 
   @PRD-040

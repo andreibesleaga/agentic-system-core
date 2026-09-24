@@ -48,7 +48,7 @@ test('property: no token is shorter than two code points, and none holds a bound
   fc.assert(fc.property(fc.string(), (s) => {
     for (const token of search.tokenize(s)) {
       assert.ok([...token].length >= 2);
-      assert.ok(!/[\s.,;:!?()[\]{}"'\/\\|<>=+*&^%$#@~`-]/u.test(token), `"${token}" holds a boundary character`);
+      assert.ok(!/[\s.,;:!?()[\]{}"'/\\|<>=+*&^%$#@~`-]/u.test(token), `"${token}" holds a boundary character`);
     }
   }), { numRuns: 300, seed: 20260918 });
 });

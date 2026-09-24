@@ -264,12 +264,9 @@ function rewrite(body, options = {}) {
 
 module.exports = {
   ABBREVIATIONS,
-  CLAUSE_SEPARATORS,
-  TERMINATORS,
   clauses,
   endsSentence,
   numberedDivision,
-  removeAt,
   removeOne,
   rewrite,
   seam,

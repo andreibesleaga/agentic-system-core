@@ -42,7 +42,6 @@ const handlerCache = new Map();
 function handlerFor(area) {
   if (!handlerCache.has(area)) {
     const file = path.join(AREAS, `${area}.js`);
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     handlerCache.set(area, fs.existsSync(file) ? require(file) : null);
   }
   return handlerCache.get(area);
@@ -76,7 +75,6 @@ test('conformance vectors', async (t) => {
     .map((r) => `${r.id} (${r.rule}) ${r.detail}`);
 
   for (const result of results) {
-    // eslint-disable-next-line no-await-in-loop
     await t.test(`${result.id} ${result.rule}`, { skip: result.status === 'skip' }, () => {
       assert.strictEqual(result.status, 'pass', result.detail);
     });

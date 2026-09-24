@@ -55,7 +55,7 @@ test('run() moves the source and copies the assets through the port (AGSC-02-93/
   };
   const planned = init.plan(
     [{ path: 'notes/agents.md', markdown: store.get('notes/agents.md') }, { path: 'notes/img/x.png', binary: true }],
-    OPTIONS
+    OPTIONS,
   );
   init.run({ fs }, planned);
   assert.ok(!store.has('notes/agents.md'), 'the adopted source was not moved');
@@ -67,4 +67,51 @@ test('the synthesized index description is ≥ 40 code points by construction (A
   const frontmatter = init.synthesizeIndex({ title: 'T', count: 0, date: '2026-01-01', specVersion: '1.0.0-rc.4' });
   assert.ok([...frontmatter.description].length >= 40, frontmatter.description);
   assert.strictEqual(frontmatter.base, init.PLACEHOLDER_BASE);
+});
+
+// AGSC-02-95: a reference is checked against where the files ARE after the move. Two
+// notes that link to each other and move together into content/concepts/ still
+// resolve, so no warning is reported and the target is not duplicated into assets.
+test('AGSC-02-95: a link between two adopted notes that move together still resolves', () => {
+  const planned = init.plan([
+    { path: 'brewing.md', markdown: '# Brewing\n\nSee [Grind size](grind-size.md).\n' },
+    { path: 'grind-size.md', markdown: '# Grind size\n\nFiner for espresso.\n' },
+    { path: 'photo.png', binary: true },
+    { path: 'with-photo.md', markdown: '# With photo\n\n![A photo](photo.png)\n' },
+  ], OPTIONS);
+  const moved = new Map(planned.writes.filter((w) => w.from).map((w) => [w.from, w.path]));
+  assert.strictEqual(moved.get('brewing.md').replace(/[^/]+$/u, ''), moved.get('grind-size.md').replace(/[^/]+$/u, ''));
+  const warned = planned.findings.filter((f) => f.code === 'AGSC-E507');
+  assert.ok(!warned.some((f) => f.reference === 'grind-size.md'), JSON.stringify(warned));
+  assert.ok(!planned.copies.some((c) => c.from === 'grind-size.md'), 'an adopted note was duplicated into assets');
+  // A reference to a file that does NOT move is still reported and copied.
+  assert.ok(warned.some((f) => f.reference === 'photo.png'));
+  assert.ok(planned.copies.some((c) => c.from === 'photo.png'));
+});
+
+// AGSC-02-91 / AGSC-01-23: `init` run again over an adopted and built Bundle changes
+// nothing. The build output, `dist/` and the copies AGSC-02-95 put under
+// content/assets/ are never adopted, and a slug an item under content/ already holds
+// is taken — so no adopted file can land on (and replace) an existing item.
+test('AGSC-02-91: a second init over an adopted, built Bundle adopts nothing and replaces nothing', () => {
+  const item = (slug) => `---\ntype: concept\ntitle: ${slug}\nprov:\n  origin: human\n  operator: human:a\nkind: explainer\n---\n\n# ${slug}\n`;
+  const planned = init.plan([
+    { path: 'agsc.config.json', markdown: null },
+    { path: 'content/index.md', markdown: '---\ntitle: Mine\n---\n' },
+    { path: 'content/concepts/agents.md', markdown: item('agents') },
+    { path: 'content/concepts/x.md', markdown: item('x') },
+    { path: 'content/assets/sub/x.md', markdown: '# X\n\nx.\n' },
+    { path: 'content/assets/agents.md', markdown: '# Agents\n' },
+    { path: 'www/now.md', markdown: '# NOW\n' },
+    { path: 'dist/proposal/1.md', markdown: '<!-- agsc:proposal v1 -->\n' },
+  ], { ...OPTIONS, config: { build: { out: 'www/' } } });
+  assert.deepStrictEqual(planned.writes.filter((w) => w.from !== undefined), [], JSON.stringify(planned.writes));
+  assert.deepStrictEqual(planned.copies, []);
+  // A new note whose stem an existing item already holds takes the next free slug.
+  const fresh = init.plan([
+    { path: 'content/concepts/agents.md', markdown: item('agents') },
+    { path: 'notes/agents.md', markdown: '# Agents again\n' },
+  ], OPTIONS);
+  const moved = fresh.writes.find((w) => w.from === 'notes/agents.md');
+  assert.strictEqual(moved.path, 'content/concepts/agents-2.md');
 });

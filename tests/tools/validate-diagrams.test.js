@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { describe, it } = require('node:test');
 
-const { REPO, capture, codes, envelope, tmpdir, tool, writeTree } = require('./helpers');
+const { REPO, capture, envelope, tmpdir, tool, writeTree } = require('./helpers');
 
 const { checkMermaid, fencedBlocks, indexRows } = tool('validate-diagrams');
 
@@ -83,7 +83,7 @@ describe('validate-diagrams — the faults', () => {
 
   it('encoding faults are AGSC-E108', () => {
     const root = diagramRoot();
-    fs.writeFileSync(path.join(root, 'docs', 'diagrams', 'algo.md'), `﻿${GOOD.replace(/\n/gu, '\r\n')}\n`);
+    fs.writeFileSync(path.join(root, 'docs', 'diagrams', 'algo.md'), `\uFEFF${GOOD.replace(/\n/gu, '\r\n')}\n`);
     const { json } = envelope('validate-diagrams', [root]);
     assert.ok(json.findings.filter((f) => f.code === 'AGSC-E108').length >= 3);
   });
@@ -215,7 +215,7 @@ describe('validate-diagrams — the helpers it exports', () => {
 
   it('checkMermaid reports on a block handed to it directly', () => {
     const findings = [];
-    checkMermaid({ line: 1, lines: ['flowchart TD', '  A[[' ] }, 'x.md', findings);
+    checkMermaid({ line: 1, lines: ['flowchart TD', '  A[['] }, 'x.md', findings);
     assert.ok(findings.some((f) => /unmatched/u.test(f.message)));
   });
 });
@@ -225,6 +225,14 @@ describe('validate-diagrams — the real distribution', () => {
     const result = capture('validate-diagrams', [REPO]);
     assert.equal(result.code, 0);
     assert.equal(result.err, '');
-    assert.match(result.out, /^validate-diagrams: 12 input file\(s\) read, 18 mermaid blocks, 0 error, 0 warn\n$/u);
+    // The counts are DERIVED from the pack on disk, never pinned: the pack grows as
+    // diagrams are added, and the tool must read every one of them.
+    const pack = path.join(REPO, 'docs', 'diagrams');
+    const files = fs.readdirSync(pack).filter((f) => f.endsWith('.md') && f !== 'README.md');
+    const blocks = files.reduce((n, f) => n + (fs.readFileSync(path.join(pack, f), 'utf8')
+      .match(/^```mermaid\s*$/gmu) || []).length, 0);
+    assert.ok(files.length > 0 && blocks > 0);
+    assert.strictEqual(result.out,
+      `validate-diagrams: ${files.length} input file(s) read, ${blocks} mermaid blocks, 0 error, 0 warn\n`);
   });
 });

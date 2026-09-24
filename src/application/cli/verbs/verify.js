@@ -58,26 +58,11 @@ function run(ctx) {
       });
     } else if (emitted === undefined) {
       // A downloaded node: no history, so the published file itself is re-verified.
-      findings.push(...ledger.verify(localLedger, publishedDocument));
+      findings.push(...ledger.compare(localLedger, publishedDocument, null));
     } else {
       findings.push(...ledger.verify(emitted, JSON.parse(wellknown)));
-      if (localLedger !== null && localLedger !== emitted) {
-        const got = localLedger.split('\n');
-        const want = emitted.split('\n');
-        let line = 0;
-        while (line < got.length && line < want.length && got[line] === want[line]) line += 1;
-        findings.push({
-          code: 'AGSC-E702',
-          file: `${out}/ledger.jsonl`,
-          line: line + 1,
-          message: `the published ledger differs from the recomputation of the same history at line ${line + 1} (AGSC-08-23)`,
-          severity: 'error',
-        });
-      }
-      if (publishedDocument !== null) {
-        findings.push(...ledger.verify(emitted, publishedDocument)
-          .filter((f) => /agsc-ledger-head/u.test(f.message)));
-      }
+      findings.push(...ledger.compare(localLedger, publishedDocument, { ledger: emitted },
+        { file: `${out}/ledger.jsonl` }));
     }
   }
   return { findings: [...clockFindings, ...findings] };

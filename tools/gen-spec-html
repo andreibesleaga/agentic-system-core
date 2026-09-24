@@ -207,7 +207,7 @@ function plainText(fragment) {
     })
     .replace(/\s+/gu, ' ')
     .replace(/ ([.,;:)\]])/gu, '$1')
-    .replace(/([(\[]) /gu, '$1')
+    .replace(/([([]) /gu, '$1')
     .trim();
 }
 
@@ -283,8 +283,7 @@ function envelopeOf(findings, declared, version) {
 }
 
 function packageVersion(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
-  catch { return '0.0.0'; }
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; } catch { return '0.0.0'; }
 }
 
 /**
@@ -306,15 +305,13 @@ function run(argv, io) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
     if (arg === '--json' || arg === '--quiet' || arg === '--text') flags.add(arg);
-    else if (arg === '--out') { outDir = argv[++i]; if (!outDir) return usage('--out needs a directory (AGSC-E003)'); }
-    else if (arg === '--check') { checkDir = argv[++i]; if (!checkDir) return usage('--check needs a directory (AGSC-E003)'); }
-    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (arg === '--out') { outDir = argv[++i]; if (!outDir) return usage('--out needs a directory (AGSC-E003)'); } else if (arg === '--check') { checkDir = argv[++i]; if (!checkDir) return usage('--check needs a directory (AGSC-E003)'); } else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
     else { root = path.resolve(arg); sawRoot = true; }
   }
   if (flags.has('--text') && !checkDir) return usage('--text compares a tree and needs --check <dir> (AGSC-E003)');
   const specDir = path.join(root, 'spec');
-  // AGSC-09-90 as amended at rc.6: "A validator MUST FAIL, with
+  // AGSC-09-90: "A validator MUST FAIL, with
   // `AGSC-E901`, when the inputs its contract names are absent". A failure is exit
   // 1 and the AGSC-09-11 envelope — not exit 2 and a usage block, which AGSC-09-08
   // reserves for an unknown verb, an unknown flag or a missing argument, and which

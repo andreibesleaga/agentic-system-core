@@ -54,7 +54,7 @@ test('property: the pieces partition the text, never overlap, and respect the bo
         }
       }
       assert.ok(cursor >= text.length - 1, 'text was lost past the last piece');
-    }
+    },
   ), { numRuns: 300, seed: 20260918 });
 });
 

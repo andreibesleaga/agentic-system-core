@@ -172,4 +172,4 @@ function toEpisode(record, options = {}) {
   };
 }
 
-module.exports = { ALIASES, KEEP_PREFIX, OUTCOMES, USAGE_MEMBERS, keepKey, pick, toEpisode };
+module.exports = { OUTCOMES, pick, toEpisode };

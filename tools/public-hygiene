@@ -364,7 +364,10 @@ function walk(dir, base, out) {
 /** Tracked + untracked-not-ignored files of a git tree, or a plain walk. */
 function sourceFiles(root) {
   const probe = cp.spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: root, encoding: 'utf8' });
-  if (probe.status === 0 && path.resolve(probe.stdout.trim()) === fs.realpathSync(root)) {
+  // `realpathSync.native` on both sides: on Windows git prints `C:/Users/…` while a
+  // temp path may be an 8.3 short name (`RUNNER~1`); only the native call expands it.
+  const top = probe.status === 0 ? probe.stdout.trim() : '';
+  if (top !== '' && fs.existsSync(top) && fs.realpathSync.native(top) === fs.realpathSync.native(root)) {
     const listed = cp.spawnSync('git', ['ls-files', '-z', '-co', '--exclude-standard'],
       { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
     return { files: listed.stdout.split('\0').filter((f) => f !== '' && fs.existsSync(path.join(root, f))), mode: 'git' };

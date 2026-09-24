@@ -1,5 +1,7 @@
 # Connecting agents and frameworks to a knowledge node
 
+**Who this is for:** someone connecting an agent, a framework or a repository to a node. **Read after:** [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md). *(Header added 2026-09-24.)*
+
 This page answers one question: **"I use tool X — how does it get at a node's
 knowledge?"** There are seven ways in, and every one of them already exists in the
 engine. Pick by what your tool reads.

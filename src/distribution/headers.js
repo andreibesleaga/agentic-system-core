@@ -7,10 +7,9 @@
 // SHA-256 `ETag` and the three `no-cache` routes) and AGSC-11-20 (a `restricted`
 // node applies the wildcard to the discovery document alone).
 //
-// UNIFIED AT INTEGRATION: AGSC-11-03 and AGSC-11-05 are
-// the BOUNDARY chapter's rules and are implemented once, in
-// `boundary/visibility.js` — the anti-corruption layer that owns them. This
-// module no longer restates them: it imports the CORS pair, the `no-cache`
+// AGSC-11-03 and AGSC-11-05 are the BOUNDARY chapter's rules and are implemented
+// once, in `boundary/visibility.js` — the anti-corruption layer that owns them. This
+// module does not restate them: it imports the CORS pair, the `no-cache`
 // route list and the `describedby` Link header from there and turns them into
 // the bytes of `_headers` (AGSC-06-04/06-17), which is all Distribution owns.
 // `tests/arch/headers-unified.test.js` proves BYTE equality between what this
@@ -164,7 +163,5 @@ module.exports = {
   CORS,
   NO_CACHE,
   PUBLIC_ARTEFACTS,
-  CONTENT_TYPES,
   SECURITY_POLICY,
-  SITE_WIDE,
 };

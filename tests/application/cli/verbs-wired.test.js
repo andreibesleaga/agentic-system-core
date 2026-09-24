@@ -235,11 +235,8 @@ test('AGSC-04-19: a Proposal that changes nothing says so instead of claiming a 
 
   // Put the item INTO its canonical form, and the next Proposal is empty and
   // says so — AGSC-E506, a warning, never a silent "done".
-  // eslint-disable-next-line global-require
   const proposeVerb = require('../../../src/application/cli/verbs/propose.js');
-  // eslint-disable-next-line global-require
   const { loadBundle } = require('../../../src/application/bundle.js');
-  // eslint-disable-next-line global-require
   const { createFileSystem } = require('../../../src/adapters/node-fs.js');
   const bundle = loadBundle({ fs: createFileSystem(dir) }, { schemas: helpers.schemas() });
   const item = bundle.byslug.get('supervisor');
@@ -278,7 +275,16 @@ test('AGSC-08-28: refresh --agent --dry-run runs the lane gates and writes the t
   assert.strictEqual(ok.exit, 0, JSON.stringify(ok.envelope && ok.envelope.findings));
   const body = fs.readFileSync(path.join(dir, 'dist', 'proposal', '1.md'), 'utf8');
   assert.match(body, /^task: refresh$/mu, 'the lane task does not ride on the Proposal');
-  assert.match(fs.readFileSync(path.join(dir, 'dist', 'proposal', '1.patch'), 'utf8'), /^# dry run/u);
+  // AGSC-08-28(f): the dry-run Proposal INCLUDES the Episode of (d), as a new item,
+  // and prints the commands a person may run.
+  const patch = fs.readFileSync(path.join(dir, 'dist', 'proposal', '1.patch'), 'utf8');
+  assert.match(patch, /^--- \/dev\/null$/mu);
+  assert.match(patch, /^\+\+\+ b\/content\/episodes\/[a-z0-9-]+\.md$/mu);
+  assert.match(patch, /^\+type: episode$/mu);
+  assert.match(patch, /^\+actor: process:curator$/mu);
+  assert.match(patch, /^\+started: "?2026-01-01T00:00:00Z"?$/mu);
+  assert.match(patch, /^\+ {2}cost_usd: 0$/mu);
+  assert.match(ok.stderr, /run: git apply dist\/proposal\/1\.patch/u);
 
   // AGSC-E509: a task the lane never declared is refused BEFORE anything is written.
   const refused = run(['refresh', '--agent', 'curator', '--task', 'work', '--dry-run', '--json'], dir);
@@ -368,13 +374,11 @@ test('conform --to writes where it is told, and a bad --level is AGSC-E003', () 
 });
 
 test('a distribution with no area handlers reports skip, never a silent pass', () => {
-  // eslint-disable-next-line global-require
   const conformVerb = require('../../../src/application/cli/verbs/conform.js');
   assert.strictEqual(conformVerb.handlerFor('no-such-area'), null);
 });
 
 test('AGSC-09-02: a vector that does not pass is AGSC-E001, and a withdrawn one is silent', () => {
-  // eslint-disable-next-line global-require
   const conformVerb = require('../../../src/application/cli/verbs/conform.js');
   const results = [
     { id: 'disc-0006', rule: 'AGSC-06-13a', status: 'pass' },
@@ -434,7 +438,7 @@ test('the tracked-path lane fails closed on every way git can fail', () => {
   assert.strictEqual(helpers.trackedPaths({ ports: { proc: fakeProc({}) } }), null);
   assert.deepStrictEqual(
     helpers.trackedPaths({ ports: { proc: fakeProc({ 'git ls-files -z': { code: 0, stdout: 'a\u0000b\u0000' } }) } }),
-    ['a', 'b']
+    ['a', 'b'],
   );
 });
 
@@ -594,7 +598,6 @@ test('AGSC-07-03/05a: a retired slug and a superseded hard dependency say what t
 });
 
 test('AGSC-02-90: a .md file the port cannot decode is recorded as binary, never guessed', () => {
-  // eslint-disable-next-line global-require
   const initVerb = require('../../../src/application/cli/verbs/init.js');
   const port = {
     readFile: (file) => {
@@ -616,10 +619,57 @@ test('AGSC-02-90: a .md file the port cannot decode is recorded as binary, never
 // ---------------------------------------------------------------------------
 
 test('mcp: a build that fails leaves the tool server running with no resources', () => {
-  // eslint-disable-next-line global-require
   const mcpVerb = require('../../../src/application/cli/verbs/mcp.js');
   const broken = { ports: { clock: null, fs: null } };
   const artifacts = mcpVerb.artifactsOf(broken, { config: {}, items: [] });
   assert.ok(artifacts instanceof Map);
   assert.strictEqual(artifacts.size, 0);
+});
+
+// AGSC-09-10: the plain diagnostic line names the file a finding is about, as the
+// `--json` envelope does, so a person can find the fault without `--json`.
+test('a plain diagnostic line names the file of its finding', () => {
+  const dir = workspace();
+  const at = path.join(dir, 'content', 'concepts', 'handoff.md');
+  fs.writeFileSync(at, fs.readFileSync(at, 'utf8').replace(/^description: .*$/mu, 'description: Too short.'));
+  const plain = run(['lint'], dir);
+  assert.match(plain.stderr, /^error: AGSC-E204 .*must NOT have fewer than 40 characters.* — content\/concepts\/handoff\.md(:\d+)?$/mu);
+  // A message that already names its file is not given the file twice.
+  const missing = run(['lint'], workspace(false));
+  assert.doesNotMatch(missing.stderr, /agsc\.config\.json is missing.* — agsc\.config\.json/u);
+});
+
+// AGSC-04-19: what `lint --fix` repaired is reported as a WARNING, and the verdict is
+// the verdict of the repaired files — a missing final LF, once added, is not also an
+// error that fails the run.
+test('AGSC-04-19: lint --fix reports a repaired final newline as a warning and exits 0', () => {
+  const dir = workspace();
+  const at = path.join(dir, 'content', 'concepts', 'handoff.md');
+  fs.writeFileSync(at, fs.readFileSync(at, 'utf8').replace(/\n+$/u, ''));
+  const before = run(['lint', '--json'], dir);
+  assert.strictEqual(before.exit, 1, 'an unrepaired file fails lint');
+  const fixed = run(['lint', '--fix'], dir);
+  assert.strictEqual(fixed.exit, 0, fixed.stderr);
+  assert.match(fixed.stderr, /^warn: AGSC-E108 lint --fix normalised content\/concepts\/handoff\.md/mu);
+  assert.doesNotMatch(fixed.stderr, /^error: /mu);
+  assert.ok(fs.readFileSync(at, 'utf8').endsWith('\n'));
+});
+
+// AGSC-09-08: a run with an error finding writes nothing. `export --markdown` over a
+// Bundle with no LICENSE-CONTENT fails (AGSC-01-26) — and must not leave a partial
+// export behind that reads as a complete one.
+test('export --markdown with an error finding writes nothing', () => {
+  const dir = workspace();
+  const failed = run(['export', '--markdown', '--json'], dir);
+  assert.strictEqual(failed.exit, 1);
+  assert.ok(failed.envelope.findings.some((f) => f.code === 'AGSC-E901'));
+  assert.ok(!fs.existsSync(path.join(dir, 'dist', 'export', 'markdown')), 'a failed export wrote files');
+});
+
+test('AGSC-08-04: a runner that throws is no history — propose diffs the working bytes', () => {
+  const dir = workspace();
+  const proc = { run: () => { throw new Error('no git here'); } };
+  const r = run(['propose', 'supervisor'], dir, { proc });
+  assert.strictEqual(r.exit, 0, r.stderr);
+  assert.match(r.stderr, /run: git apply dist\/proposal\/1\.patch/u);
 });

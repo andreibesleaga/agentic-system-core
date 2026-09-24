@@ -16,7 +16,6 @@ test('the foreign protocol versions live in the anti-corruption layer and nowher
   assert.strictEqual(s.WEBMCP_SURFACE_VERSION, '2026-09-15');
   assert.strictEqual(s.MCP_EXTENSION_ID, 'com.agenticsystemcore/knowledge');
   // The wire version the SDK speaks is the version the SDK itself declares.
-  // eslint-disable-next-line global-require
   assert.strictEqual(require('@modelcontextprotocol/sdk/types.js').LATEST_PROTOCOL_VERSION, s.MCP_PROTOCOL_VERSION);
 });
 

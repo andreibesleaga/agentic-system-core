@@ -11,7 +11,7 @@
         "NOTICE"
     ],
     "engines": {
-        "node": ">=22.12.0"
+        "node": ">=22.13.0"
     },
     "dependencies": {
         "agentic-system-core": "1.0.0-rc.6"

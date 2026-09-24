@@ -40,6 +40,7 @@ const search = require('./search.js');
 const headers = require('./headers.js');
 const now = require('./now.js');
 const html = require('./html.js');
+const { frontPage, peerSites } = require('./front-page.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
 const webmcp = require('./webmcp.js');
@@ -163,7 +164,7 @@ function publishedItems(items, releases) {
  * `webmcpVersion` is an OPTION, not a configuration key: `config.schema.json` closes
  * `surfaces[]` against the built-in surfaces, so a node states the WebMCP Draft
  * Community Group Report date it targets in code. The default is
- * `surfaces.WEBMCP_SURFACE_VERSION`; AGSC-11-16 as amended at rc.5 conforms any
+ * `surfaces.WEBMCP_SURFACE_VERSION`; AGSC-11-16 conforms any
  * `YYYY-MM-DD` date and pins none.
  *
  * @param {{base:string, config:object, emitted:Array<string>, mcpServed?:boolean,
@@ -290,11 +291,11 @@ function bodyHrefResolver(item, byPath, assets) {
     if (relative === '') return null;
     if (linksModule.bodyPathError(relative, fromDir) !== null) return null;
     const resolved = linksModule.resolveInside(fromDir, relative);
-    // AGSC-03-11 as amended at rc.5 (R-04): `<slug>` and `<slug>.md` name the same
+    // AGSC-03-11 (R-04): `<slug>` and `<slug>.md` name the same
     // item, and the extension-less form is what wikilink normalisation produces.
     const target1 = byPath.get(resolved) || byPath.get(`${resolved}.md`);
     if (target1 === undefined) {
-      // AGSC-06-01 as amended at rc.6: a reference into `content/assets/`
+      // AGSC-06-01: a reference into `content/assets/`
       // is published at `/assets/<path>`, `<path>` relative to that directory. The
       // route is emitted only for a file this build actually read, so a reference to
       // an asset that does not exist is still left alone and reported AGSC-E310.
@@ -413,6 +414,7 @@ function tdmrep(base, reserve = true) {
   return [{ location: `${String(base).replace(/\/+$/u, '')}/`, 'tdm-reservation': reserve ? 1 : 0 }];
 }
 
+
 /**
  * The publisher's own disclaimer, from `DISCLAIMER.md` at the Bundle root:
  * its first heading names the `/legal/` section, its first paragraph is the
@@ -444,7 +446,7 @@ const EXPIRES_AHEAD_SECONDS = 364 * 24 * 60 * 60;
 
 /**
  * The authored `.well-known/security.txt` of the Bundle root, read through the
- * injected port exactly as `LICENSE-CONTENT` is (AGSC-06-18 as amended at rc.5).
+ * injected port exactly as `LICENSE-CONTENT` is (AGSC-06-18).
  *
  * RFC 9116 §2.5.3 makes `Contact` mandatory — "This field MUST always be present in
  * a 'security.txt' file" — and a contact is a fact about the PUBLISHER that no
@@ -567,8 +569,8 @@ function securityTxt(base, instant, options = {}) {
   // build instant default to 0 (`agsc init` then `agsc build`, before `git init` and
   // with no `SOURCE_DATE_EPOCH`), and 364 days after epoch 0 is 1970-12-31: an
   // already-expired security contact, which RFC 9116 §2.5.5 makes stale by
-  // definition. The authored branch below refuses exactly this value; the derived one
-  // used to publish it with only the generic AGSC-E606 warning about the instant.
+  // definition. The authored branch below refuses exactly this value, and so does
+  // the derived one when publishing: the AGSC-E606 warning alone is not enough.
   // Nothing here reads a clock: the test is `now === 0`, so the emitted `Expires`
   // stays a pure function of the build instant and the build stays byte-reproducible.
   if (expiresFields.length === 0 && now === 0 && options.publishing === true) {
@@ -673,7 +675,7 @@ function readLicenseContent(ports) {
 
 /**
  * PRD-019: `/legal/` carries the content-use terms, a PRIVACY NOTICE, the operator
- * and a retention statement. AGSC-06-18 as amended at rc.5 derives the first of the
+ * and a retention statement. AGSC-06-18 derives the first of the
  * four from `LICENSE-CONTENT`; the other three are facts about the PUBLISHER, which
  * no writer can derive from a Bundle and none of which the closed configuration of
  * AGSC-01-18 carries. The privacy notice and the retention statement it contains are
@@ -756,7 +758,7 @@ function publicationFindings(bundle, ports, options = {}) {
       + ' notice or a retention statement (PRD-019). A writer never invents one',
       { file: 'PRIVACY.md', severity: 'warn' }));
   }
-  // AGSC-06-18 as amended at rc.6: the TDM reservation this writer always
+  // AGSC-06-18: the TDM reservation this writer always
   // publishes (`tdmrep`, `tdm-reservation: 1`) must be carried by the robots dialect
   // too, and it cannot be unless the publisher names at least one product token.
   // The Content Use Terms text the rule pins by hash tells the reader that the
@@ -813,11 +815,11 @@ function publicationFindings(bundle, ports, options = {}) {
  * break the AGSC-01-34 digest comparison.
  */
 /**
- * one attachment, judged BEFORE it becomes a route. `build`
- * alone used to publish what `ci` refuses — an SVG carrying a script, a
- * `../../../` path written into the page — and to swallow the FileSystem port's
- * refusal (over the cap, an archive, a link out of the root), after which the
- * missing route surfaced as an unrelated AGSC-E901. A node published by `build`
+ * one attachment, judged BEFORE it becomes a route, so `build` refuses what `ci`
+ * refuses — an SVG carrying a script, a `../../../` path written into the page —
+ * and reports the FileSystem port's refusal (over the cap, an archive, a link out of
+ * the root) itself, instead of letting the missing route surface as an unrelated
+ * AGSC-E901. A node published by `build`
  * must not be weaker than one published by `ci`, so the checks of the lint lane
  * that decide whether bytes may be SERVED run here too: the path grammar of
  * AGSC-01-35 (AGSC-E902), the port's own refusal code (AGSC-01-16: E902/E903/E904),
@@ -880,7 +882,7 @@ function readAttachment(ports, slug, file) {
 }
 
 /**
- * AGSC-06-01 as amended at rc.6: the bytes of `/assets/<path>`.
+ * AGSC-06-01: the bytes of `/assets/<path>`.
  *
  * AGSC-03-11 admits a body image or link whose target is a file under
  * `content/assets/`, and AGSC-02-95 creates such files during adoption byte for
@@ -951,7 +953,7 @@ function readDiagramSource(ports, slug) {
  */
 const BUDGET_HTML_BYTES = 100000;
 /**
- * AGSC-06-21 as amended at rc.5: ONE index budget, ≤1 MB — 1,000,000
+ * AGSC-06-21: ONE index budget, ≤1 MB — 1,000,000
  * decimal UTF-8 bytes — measured **per index document**, which is `/search.json` at
  * or below 500 items and EACH `/search-<nn>.json` shard above it.
  *
@@ -970,7 +972,7 @@ const BUDGET_MS_PER_500_ITEMS = 60000;
 /** AGSC-06-21: the routes the index budget measures, one document at a time. */
 const INDEX_DOCUMENT_ROUTE = /^\/search(?:-[0-9]+)?\.json$/u;
 
-function budgets(files, publishedCount) {
+function budgets(files) {
   const out = [];
   const bytesOf = (text) => Buffer.byteLength(String(text), 'utf8');
   for (const route of [...files.keys()].sort(compareCodePoint)) {
@@ -984,7 +986,7 @@ function budgets(files, publishedCount) {
   }
   // One finding per index DOCUMENT that exceeds the bound, in code-point route order,
   // so a build that ships eleven documents reports the ones that are too large and
-  // names each. `publishedCount` no longer takes part: the bound is on the artefact.
+  // names each. The bound is on the artefact, not on the number of items.
   for (const route of [...files.keys()].sort(compareCodePoint)) {
     if (!INDEX_DOCUMENT_ROUTE.test(route)) continue;
     const size = bytesOf(files.get(route));
@@ -1160,7 +1162,7 @@ const UNPRODUCED_ROUTES = Object.freeze([
   ['/feed.xml',
     'reserved to 1.1 (AGSC-00-20): no 1.0 rule pins a feed\'s bytes, so the route cannot be'
     + ' derived, and `build.feed` is a RESERVED configuration name a 1.0 tool rejects with'
-    + ' AGSC-E004 (AGSC-06-01, R-15 at rc.5) — it is not a switch an operator may set'],
+    + ' AGSC-E004 (AGSC-06-01) — it is not a switch an operator may set'],
   ['/graph/fragments/**',
     'OPTIONAL at 1.x; `knowledge/nquads.js#shard` produces them and no rule requires the route (AGSC-06-33)'],
   ['/<type-plural>/<slug>/<lang>/', 'no language variant exists in this Bundle (AGSC-01-13)'],
@@ -1296,7 +1298,11 @@ function build(bundle, ports, options = {}) {
     put('/boards/index.json', jsonBytes(board.index));
     for (const one of board.boards) put(one.path, jsonBytes(one.board));
   }
-  findings.push(...boardsModule.wipLimit(allItems, config));
+  // AGSC-10-17: the work-in-progress limit counts the HOLDER of each task — the
+  // derived `claimed_by`, else `prov.agent` — so a claim merged from a lane's commit
+  // counts although the claim patch never writes `prov.agent`.
+  const claimedBy = boardsModule.claimants(options.gitLog, allItems);
+  findings.push(...boardsModule.wipLimit(allItems, config, claimedBy));
 
   // ------------------------------------------------------------ ledger (AGSC-08-20)
   let ledgerHead = null;
@@ -1320,13 +1326,13 @@ function build(bundle, ports, options = {}) {
   // count, so NOW reads the same two derived inputs the boards and the ledger do.
   const nowState = now.state(items, config, {
     allItems,
-    claimedBy: boardsModule.claimants(options.gitLog),
+    claimedBy,
     instant,
     ledger: files.get('/ledger.jsonl'),
   });
 
   // ------------------------------------------------------------ RDF views (D)
-  // AGSC-05-27 as amended at rc.6, with AGSC-03-11 and AGSC-05-16: an
+  // AGSC-05-27, with AGSC-03-11 and AGSC-05-16: an
   // inline Markdown link between two items of the Bundle is ONE `asc:mentions`
   // triple from the referring item to the referenced one, whatever the number of
   // references between them, with no computed inverse. Resolving a body's links is
@@ -1366,14 +1372,13 @@ function build(bundle, ports, options = {}) {
   // AGSC-06-32: the context is generated ONCE per build and is then both
   // the bytes of `/ns/context.jsonld` and the compaction table every JSON-LD view
   // uses — so the file a node serves and the documents it serves can never
-  // disagree, which is exactly what the round-trip clause of AGSC-06-32 asks. The
-  // generated object was previously written to disk and never handed to the
-  // emitter, so `graph.jsonld` wrote every vocabulary IRI out in full and the
-  // round trip failed on a node's own output.
+  // disagree, which is exactly what the round-trip clause of AGSC-06-32 asks: the
+  // emitter compacts with the same object the node publishes, so `graph.jsonld`
+  // round-trips on the node's own output.
   const contextObject = graph !== null && typeof graph.context === 'function'
     ? graph.context(graphBase)
     : null;
-  // AGSC-05-09 as amended at rc.5: `graph.jsonld` names a context at EVERY
+  // AGSC-05-09: `graph.jsonld` names a context at EVERY
   // Level. A Level ≥ 2 writer serves a byte-identical copy at `/ns/context.jsonld`
   // and MAY name that; a Level-0 or Level-1 writer, which AGSC-06-32 forbids to
   // emit a context file, names the specification's persistent versioned URL, which
@@ -1400,7 +1405,7 @@ function build(bundle, ports, options = {}) {
     if (full && typeof graph.turtle === 'function') put('/graph.ttl', textBytes(graph.turtle(items, view)));
     if (full && contextObject !== null) {
       put('/ns/context.jsonld', jsonBytes(contextObject));
-      // AGSC-06-01 as amended at rc.6 + AGSC-05-09 as amended at rc.5: a
+      // AGSC-06-01 + AGSC-05-09: a
       // Level ≥ 2 writer serves the VERSIONED copy beside the unversioned one,
       // byte-identical to it, so the persistent URL a Level-0 document names
       // resolves to the same bytes this node serves. The two context copies are the
@@ -1522,7 +1527,8 @@ function build(bundle, ports, options = {}) {
     bundleHash: discovery.digestOf(canonicalize([...files.keys()].sort(compareCodePoint).map((k) => [k, digests[k]]))),
     // AGSC-11-16: the declaration is DERIVED from what the writer actually emits;
     // only the declaration-only surfaces come from configuration.
-    routes: [...files.keys()],
+    // `/legal/` is written further down, from the same `hasLegal` decision.
+    routes: [...files.keys(), ...(hasLegal ? ['/legal/index.html'] : [])],
     surfaces: declaredSurfaces({
       base,
       config,
@@ -1567,7 +1573,7 @@ function build(bundle, ports, options = {}) {
   put('/_redirects', headers.redirectsFile(
     items.flatMap((i) => (Array.isArray(i.aliases) ? i.aliases : [])
       .filter((a) => String(a).startsWith('/'))
-      .map((a) => ({ from: String(a), to: routeOf(i) })))
+      .map((a) => ({ from: String(a), to: routeOf(i) }))),
   ));
 
   // ------------------------------------------------------------ HTML pages (C)
@@ -1587,6 +1593,10 @@ function build(bundle, ports, options = {}) {
       // configured, `html.js` emits no copyright line at all.
       author: (config.site || {}).author,
       legal: hasLegal,
+      // The declared peers (AGSC-10-12) as links a PERSON can follow, beside the
+      // `rel#peer` links the discovery document already carries for agents: each peer
+      // is named by its host and linked at its root (owner, 2026-09-24).
+      peers: peerSites(config.peers),
       licenseProse,
       // The header of AgenticSystemCore.com — the brand links home, then one entry
       // per index route this build emits, then the node's own pages.
@@ -1600,6 +1610,18 @@ function build(bundle, ports, options = {}) {
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
+    // AGSC-03-01: an item's authored Links as `{key, targets:[{href, title}]}`, in
+    // the declared key order; a target the node does not publish is left out
+    // (AGSC-06-30), so no page names a held-back item.
+    const typedLinksOf = (item) => linksModule.LINK_KEYS
+      .filter((key) => Array.isArray(item[key]) && item[key].length > 0)
+      .map((key) => ({
+        key,
+        targets: item[key].map((value) => String(value).split('#')[0])
+          .map((slug) => items.find((i) => i.slug === slug))
+          .filter((target) => target !== undefined)
+          .map((target) => ({ href: routeOf(target), title: target.title == null ? target.slug : String(target.title) })),
+      }));
     const membersOf = (cluster) => items
       .filter((i) => i.type !== 'cluster' && Array.isArray(i.clusters) && i.clusters.map(String).includes(cluster.slug))
       .map(entryOf);
@@ -1632,7 +1654,7 @@ function build(bundle, ports, options = {}) {
           '@context': SCHEMA_ORG, '@type': 'TechArticle',
           description: item.description == null ? '' : item.description, headline: name, url: canonical,
         });
-      // AGSC-02-13 as amended at rc.5: the compiled diagram is inlined in this page
+      // AGSC-02-13: the compiled diagram is inlined in this page
       // and emitted at no route. The source is read here, where the port is; the
       // compile, the AGSC-02-98 allow-list and the `<figure>` are `html.js`'s.
       const diagramSource = item.diagram == null ? null : readDiagramSource(ports, item.slug);
@@ -1678,11 +1700,14 @@ function build(bundle, ports, options = {}) {
           return cluster === undefined ? { title: String(slug) } : { href: routeOf(cluster), title: cluster.title == null ? cluster.slug : cluster.title };
         }),
         ...(diagramSource === null ? {} : { diagramSource }),
+        // AGSC-03-01: the typed Links the item authors, published targets only.
+        links: typedLinksOf(item),
       }));
     }
     // AGSC-06-01: `/` is the Bundle's own index route.
-    putIndex('/', site.title == null ? indexFrontmatter.title : site.title,
-      indexFrontmatter.description, items.map(entryOf));
+    // The front page introduces the node and points at its index pages; the full
+    // lists live on those pages, so the front page stays short (owner, 2026-09-24).
+    put('/index.html', frontPage({ base, bundle, indexFrontmatter, items, pageOptions, render, schemaOrg, site, textBytes }));
     // AGSC-06-02: an EMPTY type folder is omitted from navigation (the header above
     // lists only the plurals that have items) but its index route still resolves, so
     // every one of the six type plurals gets its index page, empty or not.
@@ -1709,7 +1734,7 @@ function build(bundle, ports, options = {}) {
     // `content/assets/site.css` replaces the stylesheet at the same route.
     const ownStylesheet = readAsset(ports, 'content/assets/site.css');
     put(theme.STYLESHEET_ROUTE, ownStylesheet === null ? textBytes(theme.stylesheet()) : ownStylesheet);
-    // Only the stylesheet may be replaced (AGSC-06-01 as amended at rc.6): an authored
+    // Only the stylesheet may be replaced (AGSC-06-01): an authored
     // `content/assets/theme.js` a body referenced is replaced by the engine's own
     // script at the same route, and the build says so rather than doing it silently.
     if (files.has(theme.SCRIPT_ROUTE)) {
@@ -1821,8 +1846,8 @@ function build(bundle, ports, options = {}) {
 
   // AGSC-04-01: one deterministic order, independent of insertion order. The entries
   // are MOVED rather than copied — `new Map([...files].sort())` holds the whole site
-  // twice at the moment the build peaks, which at 10 000 items is the difference V9D-H1
-  // measured (peak RSS 1 225 MiB). Nothing writes to `files` past this point.
+  // twice at the moment the build peaks, which at 10 000 items was measured as the difference
+  // in peak RSS (1 225 MiB). Nothing writes to `files` past this point.
   const orderedKeys = [...files.keys()].sort(compareCodePoint);
   const ordered = new Map();
   for (const key of orderedKeys) {
@@ -1832,7 +1857,7 @@ function build(bundle, ports, options = {}) {
 
   // AGSC-06-21: the three byte budgets, MEASURED. A breach MUST fail the
   // build, so these are `error` findings and `ci` exits 1 on them.
-  findings.push(...budgets(ordered, items.length));
+  findings.push(...budgets(ordered));
 
   // Every site-absolute link the build emits MUST resolve to a route the build
   // emits. This is the defect found on `/legal/`, closed here as a check
@@ -1883,7 +1908,7 @@ function write(files, ports) {
 function verify(bundle, ports, options = {}) {
   // Only the DIGEST of the first build is retained, not its bytes: comparing two whole
   // site maps held at once doubles the peak of the largest structure in the process
-  // (V9D-H1), and a SHA-256 mismatch is the same fact as a byte mismatch. The digest is
+  // and a SHA-256 mismatch is the same fact as a byte mismatch. The digest is
   // computed here, in the host — the Distribution context writes but never hashes on
   // its own account (AGSC-05-29).
   // A byte array (an asset, an attachment) is hashed as bytes: `String()` of one
@@ -1906,12 +1931,12 @@ function verify(bundle, ports, options = {}) {
 }
 
 module.exports = {
-  build, write, verify, routeOf, sitemap, publishedRoutes, withoutExcludedLinks, robots, tdmCrawlerTokens, tdmrep, securityTxt,
-  publishedItems, jsonBytes, textBytes, paginate, readAttachment, readDiagramSource,
+  build, write, verify, routeOf, sitemap, publishedRoutes, withoutExcludedLinks, robots, tdmrep, securityTxt,
+  publishedItems, jsonBytes, paginate, readAttachment, readDiagramSource,
   declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
   budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
-  readDisclaimer, readSecurityTxt, readPrivacyNotice, securityFields, operatorLine, publicationFindings,
-  baseDirOf, resolveRelative, bodyHrefResolver,
+  readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,
+  bodyHrefResolver,
   BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

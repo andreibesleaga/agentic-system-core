@@ -15,9 +15,8 @@ const archiveWriter = require('./_archive.js');
 
 /**
  * The flat item record the Composition context reads (slug, type, frontmatter) — and
- * the BODY, which two rules need and which this function used to drop: AGSC-02-97's
- * `yaml agsc-selection` fence lives in the body, so `compose --from` found no
- * selection at all without it, and AGSC-07-12's `skills/<slug>/SKILL.md` quotes the
+ * the BODY, which two rules need: AGSC-02-97's `yaml agsc-selection` fence lives in
+ * the body, so `compose --from` finds no selection without it, and AGSC-07-12's `skills/<slug>/SKILL.md` quotes the
  * Procedure's own prose, so the CLI emitted an empty skill file while the page — which
  * fetches `/pages/<slug>.md` — emitted the real one, breaking AGSC-07-13's
  * byte-identity in the one place it is hardest to notice.
@@ -350,6 +349,6 @@ function run(ctx) {
 }
 
 module.exports = {
-  name: 'compose', EMITTERS, RESERVED_EMITTERS, conflictMessage, emitHarness, emitTarget, emitterRefusal,
+  name: 'compose', conflictMessage, emitHarness, emitterRefusal,
   flatten, run, warningMessage,
 };

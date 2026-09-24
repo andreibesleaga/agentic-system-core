@@ -42,10 +42,8 @@ function termsFor(licenseProse) {
 }
 /** AGSC-08-18: the value an agent MUST attach when chunk text re-enters a model. */
 const TRUST = 'untrusted';
-/** AGSC-06-27: the default and the maximum of `chunks.max_bytes` (AGSC-11-01). */
+/** AGSC-06-27: the default of `chunks.max_bytes`; the schema bounds it (AGSC-11-01). */
 const DEFAULT_MAX_BYTES = 4096;
-const MAX_MAX_BYTES = 65536;
-const MIN_MAX_BYTES = 256;
 /** AGSC-06-31 / AGSC-06-21: the sharding trigger, counted in ITEMS, not lines. */
 const ITEMS_PER_SHARD = 500;
 
@@ -386,7 +384,7 @@ function files(list, canonicalize, options = {}) {
     path: `/chunks-${String(n + 1).padStart(2, '0')}.jsonl`,
     text: serialize(bucket, canonicalize),
   }));
-  // AGSC-06-31 as amended at rc.6: `bundle_version` is the only member
+  // AGSC-06-31: `bundle_version` is the only member
   // added to the manifest, and JCS sorts it first. It is the content version the
   // BUILD derived (AGSC-04-25) and is handed in; a caller that has none — a
   // library caller sharding a record list outside a build — states none, because
@@ -422,9 +420,6 @@ module.exports = {
   TERMS,
   termsFor,
   TRUST,
-  DEFAULT_MAX_BYTES,
-  MAX_MAX_BYTES,
-  MIN_MAX_BYTES,
   ITEMS_PER_SHARD,
   EXCLUDED_STATUS,
 };

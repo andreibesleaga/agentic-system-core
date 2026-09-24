@@ -199,7 +199,7 @@ function layerConformance() {
   for (const name of ['validate-spec', 'validate-schemas', 'validate-ontology', 'validate-vectors',
     'validate-features', 'validate-diagrams']) {
     const r = timed(NODE, [path.join(REPO, 'tools', name), '--json'], { cwd: REPO });
-    let envelope = null;
+    let envelope;
     try { envelope = JSON.parse(r.out); } catch { envelope = null; }
     validators[name] = {
       exit: r.code,
@@ -538,15 +538,7 @@ function run(argv, io) {
   let exportDirs = [];
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
-    else if (arg === '--layer') { i += 1; layer = argv[i]; }
-    else if (arg === '--scratch') { i += 1; scratch = argv[i]; }
-    else if (arg === '--out') { i += 1; target = argv[i]; }
-    else if (arg === '--sizes') { i += 1; sizes = String(argv[i]).split(',').map(Number); }
-    else if (arg === '--runs') { i += 1; runsPerSize = Number(argv[i]); }
-    else if (arg === '--nodes') { i += 1; nodes = namedDirs(argv[i]); }
-    else if (arg === '--exports') { i += 1; exportDirs = namedDirs(argv[i]); }
-    else if (arg === '--assemble') doAssemble = true;
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; } else if (arg === '--layer') { i += 1; layer = argv[i]; } else if (arg === '--scratch') { i += 1; scratch = argv[i]; } else if (arg === '--out') { i += 1; target = argv[i]; } else if (arg === '--sizes') { i += 1; sizes = String(argv[i]).split(',').map(Number); } else if (arg === '--runs') { i += 1; runsPerSize = Number(argv[i]); } else if (arg === '--nodes') { i += 1; nodes = namedDirs(argv[i]); } else if (arg === '--exports') { i += 1; exportDirs = namedDirs(argv[i]); } else if (arg === '--assemble') doAssemble = true;
     else if (arg === '--json') json = true;
     else return usage(`unknown argument ${arg}`);
   }

@@ -7,14 +7,14 @@ Feature: Standards implementer adopts the discovery format on their own site
 
   @PRD-024
   Scenario: Implementer discovers the linkset via the well-known URI
-    When the implementer runs 'curl -H "Accept: application/linkset+json" https://agenticsystemcore.com/.well-known/knowledge-linkset'
-    Then the response is served as "application/linkset+json" with profile "https://w3id.org/agentic-system-core/profile/agentic-knowledge" and "linkset" is its sole top-level member
+    When the implementer reads "/.well-known/knowledge-linkset" and the headers "_headers" serves it with
+    Then it is served as "application/linkset+json" with profile "https://w3id.org/agentic-system-core/profile/agentic-knowledge" and "linkset" is its sole top-level member (AGSC-06-17, AGSC-06-08)
     And it is a RFC 9264 linkset with "anchor" equal to the site base
     And it links "describedby" to "/graph.jsonld"
-    And it links relation "https://w3id.org/agentic-system-core/rel#graph" to "/graph.jsonld" and to "/graph.ttl"
-    And it links relation "…rel#ontology" to "/ns/agsc.ttl" and "…rel#context" to "/ns/context.jsonld"
+    And it links relation "https://w3id.org/agentic-system-core/rel#graph" to "/graph.nq" and to "/graph.ttl"
+    And it links relation "…rel#context" to "/ns/context.jsonld", and carries no "…rel#ontology" link, because a content node does not serve the vocabulary (AGSC-06-10)
     And it links relation "…rel#now" to "/now.md" and "…rel#skills" to "/skills/index.json"
-    And it links "alternate" to "/llms.txt" and "service-doc" to "/specs/"
+    And it links "alternate" to "/llms.txt", and every target on the node's own origin is a file the build emitted
 
   @PRD-024
   Scenario: Implementer verifies the link-set integrity attributes

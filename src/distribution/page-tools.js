@@ -569,7 +569,35 @@ function pageCorpus(sources, options) {
   // MANIFEST above it. `pageIndexOf` reads both shapes, so the corpus carries one
   // index whatever the node's size.
   const index = pageIndexOf(map);
-  return { base, bundleId: opts.bundleId, bySlug, index, items };
+  return { base, bundleId: opts.bundleId, bySlug, claimed: pageClaimants(map), index, items };
+}
+
+/**
+ * AGSC-10-13: the derived `claimed_by` of every task, read back from the published
+ * board exports (`/boards/<cluster>.json`), so both transports see the same holder:
+ * the page from the routes it fetched, the local server from the build it made.
+ * @param {object} map ROUTE -> text.
+ * @returns {object} a prototype-free map slug -> claimant.
+ */
+function pageClaimants(map) {
+  const out = Object.create(null);
+  const routes = Object.keys(map || {}).sort();
+  for (let i = 0; i < routes.length; i += 1) {
+    const route = routes[i];
+    if (route.slice(0, 8) !== '/boards/' || route.slice(-5) !== '.json' || route === '/boards/index.json') continue;
+    let board = null;
+    try {
+      board = JSON.parse(String(map[route]));
+    } catch (e) {
+      board = null;
+    }
+    const tasks = (board && Array.isArray(board.tasks)) ? board.tasks : [];
+    for (let j = 0; j < tasks.length; j += 1) {
+      const task = tasks[j];
+      if (task && typeof task.slug === 'string' && typeof task.claimed_by === 'string') out[task.slug] = task.claimed_by;
+    }
+  }
+  return out;
 }
 
 /** AGSC-06-08: the node's own base, from the discovery document's anchor. */
@@ -904,14 +932,15 @@ function pageToolset(corpus, core) {
 
     // AGSC-08-04 / AGSC-11-14: the payload is RETURNED. A page performs no write of
     // any kind — no network write, and not even the local patch file the stdio
-    // transport's caller may write. `markdown` is the published source file with the
-    // blank line `mcp-tools.js` puts between the frontmatter block and the body, so
-    // the bytes are the local server's bytes.
+    // transport's caller may write. `markdown` is the published source file with
+    // exactly one blank line between the frontmatter block and the body, as
+    // `mcp-tools.js` writes it, so the bytes are the local server's bytes.
     propose: (args) => {
       const item = bySlug[args.slug];
       if (item === undefined) return pageErrorEnvelope('propose', 'AGSC-E301', 'no item with that slug in this Bundle');
       if (args.task_state !== undefined) {
-        const moved = pageBoardMove(item.block, item.body, item.frontmatter, item.type, item.slug, args);
+        const moved = pageBoardMove(item.block, item.body, item.frontmatter, item.type, item.slug, args,
+          (model.claimed || {})[item.slug]);
         if (moved.code !== undefined) return pageErrorEnvelope('propose', moved.code, moved.message);
         return pageEnvelope('propose', 'proposal', {
           from: moved.from,
@@ -925,7 +954,7 @@ function pageToolset(corpus, core) {
       }
       return pageEnvelope('propose', 'proposal', {
         iri: pageItemIri(base, item.type, item.slug),
-        markdown: `${item.block}\n${item.body}`,
+        markdown: `${item.block}${item.body.charAt(0) === '\n' ? '' : '\n'}${item.body}`,
         slug: item.slug,
       });
     },
@@ -955,6 +984,13 @@ function pageToolset(corpus, core) {
       if (type === 'episode' && typeof args.actor !== 'string') {
         return pageErrorEnvelope('remember', 'AGSC-E003', 'an episode needs the declared actor (AGSC-09-14b)');
       }
+      // AGSC-09-14b: no `at` on an episode is AGSC-E003; an actor outside AGSC-02-09 is refused.
+      if (type === 'episode' && typeof args.at !== 'string') {
+        return pageErrorEnvelope('remember', 'AGSC-E003', 'an episode needs the instant it started, `at` (AGSC-09-14b)');
+      }
+      if (args.actor !== undefined && !/^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u.test(String(args.actor))) {
+        return pageErrorEnvelope('remember', 'AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
+      }
       const title = typeof args.title === 'string' ? args.title : '';
       const findings = [];
       const taken = new Set(Object.keys(bySlug));
@@ -976,6 +1012,10 @@ function pageToolset(corpus, core) {
       // the lesson branch requires `severity` (AGSC-09-14b default).
       if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
       if (typeof args.actor === 'string') frontmatter.actor = args.actor;
+      // AGSC-09-14b / AGSC-02-14: `usage` is carried onto the episode verbatim.
+      if (type === 'episode' && args.usage !== null && typeof args.usage === 'object' && !Array.isArray(args.usage)) {
+        frontmatter.usage = args.usage;
+      }
       frontmatter.prov = {
         agent: args.agent,
         model: args.model,
@@ -1173,13 +1213,30 @@ function pageUnifiedDiff(path, before, after) {
  * a second claim prepared against the same state no longer applies once the first
  * is merged (the forge conflict of AGSC-10-17).
  */
-function pageBoardMove(block, body, frontmatter, type, slug, args) {
+function pageBoardMove(block, body, frontmatter, type, slug, args, claimedBy) {
   const states = pageTaskStates();
   if (states.indexOf(args.task_state) === -1) {
     return { code: 'AGSC-E203', message: `task_state must be one of ${states.join(', ')} (AGSC-02-99)` };
   }
   if (type !== 'concept' || frontmatter.kind !== 'task') {
     return { code: 'AGSC-E207', message: 'only a concept of kind task has a task_state (AGSC-02-99)' };
+  }
+  // AGSC-10-17: a claim of a task already held in TASK_STATE_WORKING by another
+  // participant is AGSC-E511, for EVERY caller — a person, an agent that declares
+  // no lane, a lane. The holder is the derived `claimed_by` of the board export,
+  // else the task's `prov.agent`; a lane's commit author `process:<name>` and the
+  // lane name `<name>` are one participant.
+  if (args.task_state === 'TASK_STATE_WORKING' && frontmatter.task_state === 'TASK_STATE_WORKING') {
+    const prov = frontmatter.prov || {};
+    const holder = claimedBy !== undefined && claimedBy !== null ? String(claimedBy)
+      : (prov.agent === undefined || prov.agent === null ? null : String(prov.agent));
+    const caller = args.agent !== undefined && args.agent !== null ? String(args.agent)
+      : (args.operator !== undefined && args.operator !== null ? String(args.operator) : null);
+    const bare = (v) => v.replace(/^process:/u, '');
+    // A holder no history names is still somebody: only the known holder may re-claim.
+    if (holder === null || caller === null || bare(holder) !== bare(caller)) {
+      return { code: 'AGSC-E511', message: `the task "${slug}" is already TASK_STATE_WORKING${holder === null ? '' : ` under ${holder}`}; the first merged claim wins (AGSC-10-17)` };
+    }
   }
   const current = pageQuoteTemporal(block);
   let next = pageSetLine(current, 'task_state', args.task_state, ['kind'], 'prov');
@@ -1206,9 +1263,10 @@ function pageArguments() {
     ask: ['question'],
     compose: ['selection'],
     links: ['iri', 'slug'],
-    propose: ['at', 'slug', 'task_state'],
+    propose: ['agent', 'at', 'slug', 'task_state'],
     read: ['slug'],
-    remember: ['about', 'actor', 'at', 'body', 'cluster', 'kind', 'outcome', 'severity', 'sources', 'title'],
+    remember: ['about', 'actor', 'agent', 'at', 'body', 'cluster', 'kind', 'model', 'operator', 'origin',
+      'outcome', 'severity', 'sources', 'title', 'usage'],
     search: ['query'],
   };
 }
@@ -1262,7 +1320,7 @@ const PORTABLE = Object.freeze(['pageTerms', 'pageNoAnswer', 'pageLinkKeys',
   'pageBaseIri', 'pageItemIri', 'pageNfc', 'pageTokenize', 'pageAnchorOf', 'pageSlugify',
   'pageDedupe', 'pageSplitFrontmatter', 'pageParseFrontmatter', 'pageIndentOf', 'pageNextMeaningful',
   'pageParseMap', 'pageParseValue', 'pageParseSeq', 'pageKeyEnd', 'pageScalar',
-  'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
+  'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageClaimants', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
   'pageInlineTargets', 'pageResolveBodyReference', 'pageToolset', 'pageArguments',
   'pageRequiredArguments', 'pageSlugOfIri', 'pageTaskStates', 'pageQuoteTemporal', 'pageSetLine', 'pageUnifiedDiff', 'pageBoardMove']);
 
@@ -1297,6 +1355,7 @@ const SOURCE = Object.freeze({
   pageShardRoutes,
   pageIndexOf,
   pageCorpus,
+  pageClaimants,
   pageBaseOf,
   pageEdges,
   pageCompare,
@@ -1377,6 +1436,20 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
           if (text !== null) sources['/pages/' + doc.slug + '.md'] = text;
         });
       }));
+    }).then(function () {
+      // AGSC-10-13: the board exports carry the derived \`claimed_by\` a claim is
+      // checked against (AGSC-10-17). A node with no task has no /boards/ route.
+      return get('/boards/index.json').then(function (text) {
+        var boards = [];
+        try { boards = (JSON.parse(text) || {}).boards || []; } catch (e) { boards = []; }
+        return Promise.all(boards.map(function (entry) {
+          var cluster = entry && typeof entry.cluster === 'string' ? entry.cluster : '';
+          if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(cluster)) return null;
+          return get('/boards/' + cluster + '.json').then(function (board) {
+            if (board !== null) sources['/boards/' + cluster + '.json'] = board;
+          });
+        }));
+      });
     }).then(function () { return pageCorpus(sources, { bundleId: API.BUNDLE_ID }); });
   };
 
@@ -1420,6 +1493,7 @@ module.exports = {
   pageAnchorOf,
   pageAnchors,
   pageCorpus,
+  pageClaimants,
   pageEdges,
   pageIndexOf,
   pageInlineTargets,

@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { describe, it } = require('node:test');
 
-const { REPO, capture, codes, envelope, specRoot, tmpdir, tool, writeTree } = require('./helpers');
+const { REPO, capture, envelope, specRoot, tmpdir, tool, writeTree } = require('./helpers');
 
 const { fencedLines, ruleBlocks, traceBracket } = tool('validate-spec');
 

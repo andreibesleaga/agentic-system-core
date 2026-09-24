@@ -6,8 +6,8 @@ Feature: Architect turns Concepts into a starting architecture
   So that I can compose a working starting architecture from selected Concepts, with no server involved
 
   Background:
-    Given "/compose/" has loaded "/graph.jsonld" and "www/js/agsc-core.js"
-    And "www/js/agsc-core.js" is the identical "src/composition/" module set with no "node:" imports
+    Given "/compose/" loads "/graph.jsonld" and "www/compose/agsc-core.js"
+    And "www/compose/agsc-core.js" is the "src/composition/" module set, bundled, with no "node:" import
 
   @PRD-036
   Scenario: Selecting Concepts triggers requires-closure with an explanation
@@ -43,5 +43,5 @@ Feature: Architect turns Concepts into a starting architecture
   @PRD-038
   Scenario: Browser output is byte-identical to the CLI for the same selection
     When the architect runs "npx agentic-system-core compose a2a mcp supervisor --out ./harness-x/" on the CLI
-    And separately selects the same three Concepts in "/compose/" and downloads the Harness
-    Then the seven files from both paths are byte-identical
+    And separately runs "www/compose/agsc-core.js" as "/compose/" does, over the published "/graph.jsonld", in a context that holds nothing but the language
+    Then the Harness files from both paths are the same files, byte for byte (AGSC-07-13)

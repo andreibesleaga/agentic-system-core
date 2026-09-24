@@ -51,7 +51,7 @@ const EXTERNAL_PROPERTIES = Object.freeze([
   ['prov:wasDerivedFrom', '@id'], // AGSC-05-16
   ['rdfs:seeAlso', '@id'], // AGSC-11-12
   ['schema:license', null], // AGSC-06-18
-  // AGSC-05-31 form (c) as amended at rc.5: `schema:license` and
+  // AGSC-05-31 form (c): `schema:license` and
   // `schema:usageInfo` are `xsd:string` literals, never IRIs. Before rc.5 this row
   // read `'@id'`, which compacted the Content Use Terms identifier as a relative IRI.
   ['schema:usageInfo', null], // AGSC-06-18, AGSC-05-26
@@ -110,7 +110,7 @@ function context(ontologyTerms, externalProperties = []) {
  * The same derivation over EXPLICIT external rows `[compact, type]`, rather than
  * over the names of the closed table above.
  *
- * AGSC-06-32 as amended at rc.6 pins the term NAMES, not the types: which
+ * AGSC-06-32 pins the term NAMES, not the types: which
  * `@type` an external property takes is fixed by the rule that emits it, and the
  * table above is this engine's record of those rules. Vector `graph-0019` therefore
  * states the rows itself and tests the naming alone, which is what this entry point
@@ -147,7 +147,7 @@ function allExternalProperties() {
 }
 
 /**
- * AGSC-05-09 as amended at rc.5: the specification's **persistent versioned context
+ * AGSC-05-09: the specification's **persistent versioned context
  * URL**, `https://w3id.org/agentic-system-core/ns/<ontology-version>/context.jsonld`.
  * It is a constant of the specification, resolvable by every reader at every Level,
  * so a Level-0 `graph.jsonld` — which AGSC-06-32 forbids to serve a context of its
@@ -282,7 +282,6 @@ module.exports = {
   EXTERNAL_PROPERTIES,
   expandCompact,
   termName,
-  termIndex,
   context,
   contextFrom,
   allExternalProperties,

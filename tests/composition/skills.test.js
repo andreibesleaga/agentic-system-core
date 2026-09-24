@@ -158,16 +158,40 @@ test('AGSC-07-21: the three install targets of the rule, and only those', () => 
 });
 
 test('AGSC-07-22: a SKILL.md maps back to a procedure item, round-tripping its fields', () => {
-  const produced = skills.packs([CLUSTER,
-    item('a', 'procedure', { clusters: ['agent-patterns'] }, '# a\n\nThe steps.\n')], OPTIONS);
-  const back = skills.importPack(produced.files[0].text, { operator: 'human:x' });
-  assert.strictEqual(back.path, 'content/procedures/agent-patterns.md');
+  const foreign = ['---', 'name: tidy-notes', 'description: Tidy a folder of notes into one page per topic.',
+    'license: CC-BY-4.0', '---', '', '# Tidy notes', '', '1. Read every note.', ''].join('\n');
+  assert.strictEqual(skills.splitPack(foreign, { operator: 'human:x' }), null, 'a foreign SKILL.md is not a pack of this format');
+  const back = skills.importPack(foreign, { operator: 'human:x' });
+  assert.strictEqual(back.path, 'content/procedures/tidy-notes.md');
   assert.strictEqual(back.frontmatter.type, 'procedure');
-  assert.strictEqual(back.frontmatter.description, produced.index.packs[0].description);
+  assert.strictEqual(back.frontmatter.description, 'Tidy a folder of notes into one page per topic.');
   assert.strictEqual(back.frontmatter['x-skill-license'], 'CC-BY-4.0');
-  // The quoted prose comes back as prose; this format's data fences are gone.
-  assert.ok(!back.body.includes('```text agsc-content'));
-  assert.match(back.body, /The steps\./u);
+  assert.match(back.body, /Read every note\./u);
+});
+
+// AGSC-07-19 packs a whole Cluster — concepts, lessons and procedures — into one
+// SKILL.md, so importing a pack of this format as ONE procedure gave a procedure
+// holding the whole pack, named after the Cluster (and clashing with its slug). A pack
+// this format emitted is recognised by its provenance header and split back into its
+// member procedures, matched by item IRI; every other member is reported (AGSC-E506).
+test('AGSC-07-22: a pack this format emitted splits back into its member procedures', () => {
+  const produced = skills.packs([CLUSTER,
+    item('a', 'procedure', { clusters: ['agent-patterns'] }, '## Steps\n\n1. The steps.\n'),
+    item('b', 'concept', { clusters: ['agent-patterns'] }),
+    item('c', 'procedure', { clusters: ['agent-patterns'], title: 'Close the audit' }, '## Steps\n\n1. Close it.\n\n```sh\necho x\n```\n')], OPTIONS);
+  const split = skills.splitPack(produced.files[0].text, { operator: 'human:x' });
+  assert.ok(split !== null, 'the pack was not recognised');
+  assert.deepStrictEqual(split.items.map((one) => one.path), ['content/procedures/a.md', 'content/procedures/c.md']);
+  const [a, c] = split.items;
+  assert.strictEqual(a.frontmatter.type, 'procedure');
+  assert.strictEqual(a.frontmatter.title, 'a');
+  assert.deepStrictEqual(a.frontmatter.clusters, ['agent-patterns']);
+  assert.deepStrictEqual(a.frontmatter.prov, { operator: 'human:x', origin: 'imported' });
+  assert.strictEqual(a.body, '## Steps\n\n1. The steps.\n');
+  assert.strictEqual(c.frontmatter.title, 'Close the audit');
+  assert.strictEqual(c.body, '## Steps\n\n1. Close it.\n\n```sh\necho x\n```\n', 'a fence inside a member survives');
+  assert.deepStrictEqual(split.findings.map((f) => [f.code, f.severity]), [['AGSC-E506', 'warn']]);
+  assert.match(split.findings[0].message, /concepts\/b\//u);
 });
 
 test('AGSC-07-22: a SKILL.md with no frontmatter, or a name that is not a slug, is refused', () => {
@@ -190,4 +214,12 @@ test('provenanceHeader and fenceProse are the shapes the other writers use', () 
   assert.ok(header.startsWith('<!-- agsc:provenance\n'));
   assert.ok(header.endsWith('\n-->'));
   assert.strictEqual(skills.fenceProse(null), '```text agsc-content\n\n```');
+});
+
+test('AGSC-07-22: a pack member whose IRI names no slug is refused, the rest still split', () => {
+  const produced = skills.packs([CLUSTER, item('a', 'procedure', { clusters: ['agent-patterns'] }, '## Steps\n\n1. A.\n')], OPTIONS);
+  const forged = produced.files[0].text.replace('- item: https://example.org/procedures/a/', '- item: https://example.org/procedures/Not_A_Slug/');
+  const split = skills.splitPack(forged, { operator: 'human:x' });
+  assert.deepStrictEqual(split.items, []);
+  assert.deepStrictEqual(split.findings.map((f) => f.code), ['AGSC-E204']);
 });

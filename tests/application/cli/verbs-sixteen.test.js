@@ -49,7 +49,6 @@ test('every verb resolves to a module that exports run()', () => {
   for (const verb of SIXTEEN) {
     const file = path.join(VERBS_DIR, `${verb}.js`);
     assert.ok(fs.existsSync(file), `${verb} has no module`);
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     const module = require(file);
     assert.strictEqual(typeof module.run, 'function', `${verb}.run is not a function`);
     assert.strictEqual(module.name, verb, `${verb}.js names itself "${module.name}"`);
@@ -109,7 +108,6 @@ test('AGSC-09-94: run and trace are refused with AGSC-E004 while run.enabled is 
 
 test('a verb that is not implemented says so with the rule id, and never passes', () => {
   for (const verb of NOT_IMPLEMENTED) {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     const result = require(path.join(VERBS_DIR, `${verb}.js`)).run({});
     assert.strictEqual(result.status, 'fail', verb);
     assert.strictEqual(result.findings.length, 1, verb);
@@ -132,7 +130,6 @@ test('no verb answers "not implemented" any more, and none of the sixteen says i
 });
 
 test('run refuses to EXECUTE without an isolated runner, and says exactly why (AGSC-09-94)', () => {
-  // eslint-disable-next-line global-require, import/no-dynamic-require
   const verb = require(path.join(VERBS_DIR, 'run.js'));
   const result = verb.run({ argv: [], verbFlags: {} });
   assert.strictEqual(result.status, 'fail');
@@ -141,7 +138,6 @@ test('run refuses to EXECUTE without an isolated runner, and says exactly why (A
 });
 
 test('export names the flag it needs, and each unimplemented flag answers for itself', () => {
-  // eslint-disable-next-line global-require, import/no-dynamic-require
   const verb = require(path.join(VERBS_DIR, 'export.js'));
   // AGSC-09-09: `export` with no flag is a missing required argument, not a silent
   // success and not "not implemented" — nothing was asked of it yet.

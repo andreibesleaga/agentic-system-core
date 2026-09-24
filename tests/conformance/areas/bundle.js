@@ -45,7 +45,6 @@ function runAgentsConfigVector(vector) {
  * message and, for an unknown key, in the finding's `key` member.
  */
 function reservedConfigCase(vector, ctx) {
-  // eslint-disable-next-line global-require
   const main = require('../../../src/application/cli/main.js');
   const list = [];
   const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
@@ -128,7 +127,7 @@ const B_HANDLERS = {
   'bundle-0006': reservedConfigCase,
   'bundle-0003': runAgentsConfigVector,
   'bundle-0004': runAgentsConfigVector,
-  'bundle-0005': runAgentsConfigVector
+  'bundle-0005': runAgentsConfigVector,
 };
 
 module.exports.run = (vector, ctx) => {
@@ -159,4 +158,3 @@ module.exports.run = (vector, ctx) => {
   }
   return checks(list);
 };
-

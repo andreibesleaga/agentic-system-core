@@ -31,7 +31,6 @@ const PORT = {
 
 /** Swap one verb's `run` for the duration of `body`, then put it back. */
 async function withVerb(verb, run, body) {
-  // eslint-disable-next-line global-require, import/no-dynamic-require
   const module = require(path.join(VERBS_DIR, `${verb}.js`));
   const original = module.run;
   module.run = run;
@@ -68,8 +67,9 @@ test('AGSC-09-10: without --json, stdout carries one human line and stderr the f
   assert.strictEqual(result.exit, 1);
   assert.strictEqual(result.stdout, 'lint: fail (1 error, 1 warn)\n');
   // AGSC-09-10: ordered by (file, line, col, code), code-point-wise.
+  // Each plain line names the file its finding is about, as the envelope does.
   assert.strictEqual(result.stderr,
-    'error: AGSC-E301 unresolved\nwarn: AGSC-E305 orphan\n');
+    'error: AGSC-E301 unresolved — content/concepts/a.md\nwarn: AGSC-E305 orphan — content/concepts/a.md\n');
 });
 
 test('AGSC-09-11: a finding with no message still prints, and a pass exits 0', async () => {
@@ -255,7 +255,7 @@ test('AGSC-09-09: --help prints to stdout and exits 0', () => {
   const imp = usage(['import', '--help']).stdout;
   assert.match(imp, /agsc import <source-dir> --from <adapter>/u);
   assert.match(imp, /--from board: .*--format <value>/u);
-  assert.match(imp, /--from old-site: --selection <value>  --corrections <value>/u);
+  assert.match(imp, /--from old-site: --selection <value> {2}--corrections <value>/u);
   assert.match(usage(['propose', '--help']).stdout, /agsc propose <slug>/u);
   assert.match(usage(['skills', '--help']).stdout, /agsc skills install \[<target>\]/u);
   assert.match(usage(['compose', '--help']).stdout, /agsc compose <slug> \[<slug>…\]/u);
@@ -305,4 +305,3 @@ test('AGSC-09-09 (rc.6): a value flag given twice is AGSC-E002, in both modes', 
   assert.strictEqual((await shell(['export', '--steer', '--target', 'agents,claude'])).exit, 0);
   assert.notStrictEqual((await shell(['lint', '--json', '--json'])).exit, 2);
 });
-

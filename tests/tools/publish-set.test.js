@@ -88,6 +88,18 @@ describe('tools/publish-set', () => {
     assert.equal(statusOf(root, 'content/concepts/delta.md'), 'draft');
   });
 
+  it('a folder README is never an item: it is neither published nor held back', () => {
+    const root = bundle(['alpha']);
+    const readme = '# `content/` — the Bundle\n\nWhat this folder holds.\n';
+    fs.writeFileSync(path.join(root, 'content/README.md'), readme);
+    fs.writeFileSync(path.join(root, 'content/concepts/README.md'), readme);
+    const { code, json } = envelope('publish-set', [root]);
+    assert.equal(code, 0, JSON.stringify(json.findings));
+    assert.equal(fs.readFileSync(path.join(root, 'content/README.md'), 'utf8'), readme);
+    assert.equal(fs.readFileSync(path.join(root, 'content/concepts/README.md'), 'utf8'), readme);
+    assert.equal(envelope('publish-set', ['--check', root]).code, 0);
+  });
+
   it('adds the field where the file carries none, in schema order (AGSC-04-19)', () => {
     const root = bundle(['delta']);
     capture('publish-set', [root]);

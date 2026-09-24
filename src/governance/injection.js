@@ -65,6 +65,7 @@ const DEFAULT_INJECTION_PATTERNS = Object.freeze([
 ]);
 
 /** AGSC-08-13 hidden-text classes, each a linear-time character class. */
+// eslint-disable-next-line no-misleading-character-class -- single code points (the joiner among them), any one of which is hidden text
 const ZERO_WIDTH = /[\u200B\u200C\u200D\u2060\uFEFF]/u;
 const BIDI = /[\u202A-\u202E\u2066-\u2069]/u;
 const TAGS = /[\u{E0000}-\u{E007F}]/u;
