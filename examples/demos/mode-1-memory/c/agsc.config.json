@@ -1,0 +1,8 @@
+{
+  "build": { "out": "www" },
+  "bundle": { "id": "c", "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0", "license_schema": "CC0-1.0", "operator": "human:operator" },
+  "peers": ["https://a.example/.well-known/knowledge-linkset"],
+  "site": { "base": "https://c.example/", "tagline": "A demo node of the AgenticSystemCore format.", "tdm_crawlers": ["CCBot", "GPTBot"], "title": "c demo" },
+  "spec_version": "1.0.0-rc.6",
+  "tags": { "allowed": ["agents", "patterns"] }
+}

@@ -241,7 +241,7 @@ test('AGSC-09-13: a real client can call every one of the seven tools and gets t
     assert.match(propose.body.markdown, /^---\n/u);
 
     const remember = envelopeOf(await call('remember', {
-      body: 'The reviewer asked for a second pair of eyes.', kind: 'concept', title: 'Second pair of eyes',
+      body: 'The reviewer asked for a second pair of eyes.', kind: 'concept', operator: 'human:tester', title: 'Second pair of eyes',
     }));
     assert.strictEqual(remember.type, 'proposal');
     assert.strictEqual(remember.body.path, 'content/concepts/second-pair-of-eyes.md');

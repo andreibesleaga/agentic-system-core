@@ -168,8 +168,8 @@ test('AGSC-09-16: the page tools answer exactly what the local server answers', 
     ['ask', { question: 'zzqqxx' }],
     ['compose', { selection: ['supervisor'] }],
     ['compose', { selection: [] }],
-    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', actor: 'process:ci', kind: 'episode', title: 'A Recorded Run' }],
-    ['remember', { body: 'x', kind: 'concept', sources: [{ id: 's1', resource: 'nonsense' }], title: 'Handoff' }],
+    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', actor: 'process:ci', kind: 'episode', operator: 'human:tester', title: 'A Recorded Run' }],
+    ['remember', { body: 'x', kind: 'concept', operator: 'human:tester', sources: [{ id: 's1', resource: 'nonsense' }], title: 'Handoff' }],
     ['read', { slug: 'no-such-item' }],
     ['links', { iri: 'memory://other-bundle/concepts/x' }],
     ['links', { iri: 'https://minimal.example/concepts/handoff/' }],
@@ -218,6 +218,13 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   const remembered = page.call('remember', { body: 'x', kind: 'lesson', title: 'A Lesson Learned Here' });
   assert.strictEqual(remembered.type, 'proposal');
   assert.match(remembered.body.path, /^content\/lessons\//u);
+  // AGSC-09-14b (2026-09-25): the page has no identity to declare, so a call with no
+  // operator comes back with `prov.operator` absent and the warning that says so;
+  // with one declared, no such warning.
+  assert.strictEqual(remembered.body.frontmatter.prov.operator, undefined);
+  assert.deepStrictEqual(remembered.body.findings.map((f) => f.code), ['AGSC-E506']);
+  assert.deepStrictEqual(page.call('remember', { body: 'x', kind: 'lesson', operator: 'human:tester', title: 'A Lesson Learned Here' })
+    .body.findings, []);
   // the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
   assert.strictEqual(remembered.body.frontmatter.severity, 'info');
   // and none on an episode, whose schema branch has no such key (AGSC-09-14b, 2026-09-24).
@@ -477,6 +484,7 @@ test('AGSC-09-14b: remember keeps a well-formed source and drops the rest', () =
     actor: 'human:andrei',
     body: 'A note.',
     kind: 'concept',
+    operator: 'human:andrei',
     origin: 'human',
     sources: [{ id: 's1', resource: 'https://a.example/x' }, { id: 's2', resource: 'nonsense' }],
     title: 'A Remembered Thing',

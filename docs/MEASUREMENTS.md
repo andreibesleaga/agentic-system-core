@@ -2,7 +2,7 @@
 
 **Who this is for:** anyone checking what has been measured, on what, and with which command. **Read after:** [BENCHMARKS.md](BENCHMARKS.md) (the method). *(Header added 2026-09-24.)*
 
-**Status: COMPLETE for every layer one machine can run, measured 2026-09-23 against `1.0.0-rc.6` (drafted, untagged); the conformance, security and package layers were measured again on 2026-09-24, after the last specification pass of the draft.** Nine layers have been run and are reported below with the command that produced each number. Two things remain open, and each says so where it belongs: the same suite and builds on macOS and Windows (a CI matrix, which one machine cannot run), and the authoritative rule-coverage matrix that replaces the proxy rows of §1 (`tools/rule-coverage`, another package's deliverable).
+**Status: COMPLETE for every layer one machine can run, measured 2026-09-23 against `1.0.0-rc.6` (drafted, untagged); the conformance, security and package layers were measured again on 2026-09-24, after the last specification pass of the draft.** Nine layers have been run and are reported below with the command that produced each number. *(2026-09-25: the build curves of §4 were measured again, before and after two changes to the writer, and a cost layer, §11, was added — page weight per visit, MCP cost per call, `verify` memory, cold start, the install, and hosting by the host's published limits.)* Two things remain open, and each says so where it belongs: the same suite and builds on macOS and Windows (a CI matrix, which one machine cannot run), and the authoritative rule-coverage matrix that replaces the proxy rows of §1 (`tools/rule-coverage`, another package's deliverable).
 
 Every number here is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.
 
@@ -43,7 +43,7 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch
 node tools/count-artifacts --json
 ```
 
-**The vector run.** `164 pass, 0 fail, 30 skip (30 withdrawn, 0 pending) of 194`. Of the 194 vectors, 163 are required, 1 is optional and 30 are withdrawn; withdrawn vectors are excluded from the claim, as AGSC-00-13 requires. The 19 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery frontmatter graph import jcs ledger links lint prov slug`.
+**The vector run.** `167 pass, 0 fail, 32 skip (32 withdrawn, 0 pending) of 199`. Of the 199 vectors, 166 are required, 1 is optional and 32 are withdrawn; withdrawn vectors are excluded from the claim, as AGSC-00-13 requires. The 19 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery frontmatter graph import jcs ledger links lint prov slug`.
 
 **Rule coverage.** The specification declares **343 rules** — 332 active, 11 reserved. Counted over the 332 active rules, a rule being retired exactly when `tools/count-artifacts` says so:
 
@@ -123,36 +123,40 @@ An outcome is one of five: **detected** (the rule's code, exit 0), **refused** (
 
 ```
 node bench/gen-bundle.js --items <n> --out <scratch>/n<n>
-node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,501,1000,5000,10000 --runs 3
+node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3
 ```
 
-Generated Bundles, each item a pure function of its number, **three runs per size including 10,000**, median reported. The Bundles are generated outside the repository; the generator refuses to write inside it.
+**Measured 2026-09-25**, twice on the same day and the same machine: once on the tree as the day began ("before") and once after the two changes below ("after"). Generated Bundles, each item a pure function of its number, three runs per size, median reported. The Bundles are generated outside the repository; the generator refuses to write inside it. The output of the two trees is byte-identical (`diff -r` of the 5,000-item build: 0 lines).
 
-| items | build (median of 3) | runs | peak RSS | files | output | largest index shard | index shards | chunks, all shards |
-|---|---|---|---|---|---|---|---|---|
-| 100 | 1.80 s | 1.80 / 1.82 / 1.71 | 120 MiB | 336 | 3.0 MB | 31.9 KB | 0 | 0.65 MB |
-| 500 | 5.04 s | 5.12 / 4.95 / 5.04 | 273 MiB | 1,542 | 14.4 MB | 176.0 KB | 2 | 3.25 MB |
-| 501 | 5.03 s | 5.28 / 4.91 / 5.03 | 276 MiB | 1,548 | 14.5 MB | 176.0 KB | 2 | 3.26 MB |
-| 1,000 | 8.66 s | 8.83 / 8.66 / 8.29 | 372 MiB | 3,049 | 28.8 MB | 176.3 KB | 3 | 6.50 MB |
-| 5,000 | 37.06 s | 37.94 / 37.06 / 36.10 | 934 MiB | 15,105 | 143.9 MB | 177.9 KB | 11 | 32.7 MB |
-| 10,000 | 75.00 s | 72.41 / 75.00 / 87.18 | 1,673 MiB | 30,175 | 287.7 MB | 177.9 KB | 21 | 65.3 MB |
+| items | build before (median of 3) | build after (median of 3) | change | peak RSS before | peak RSS after | files | output | largest index shard | shards | chunks, all shards |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 100 | 1.79 s | **1.62 s** (1.65 / 1.62 / 1.59) | -10 % | 121 MiB | 143 MiB | 343 | 3.1 MB | 31.9 KB | 0 | 0.65 MB |
+| 500 | 4.63 s | **4.18 s** (4.18 / 4.07 / 4.20) | -10 % | 264 MiB | 264 MiB | 1,548 | 15.0 MB | 176.0 KB | 2 | 3.25 MB |
+| 1,000 | 8.23 s | **6.97 s** (6.99 / 6.79 / 6.97) | -15 % | 317 MiB | 311 MiB | 3,054 | 29.7 MB | 176.3 KB | 3 | 6.50 MB |
+| 5,000 | 38.18 s | **30.17 s** (30.17 / 30.34 / 28.90) | -21 % | 955 MiB | 943 MiB | 15,102 | 148.2 MB | 177.9 KB | 11 | 32.66 MB |
+| 10,000 | 79.10 s | **58.52 s** (61.69 / 58.52 / 57.55) | -26 % | 1,666 MiB | 1,678 MiB | 30,162 | 296.3 MB | 177.9 KB | 21 | 65.35 MB |
 
-**Against the normative budgets of AGSC-06-21.** ≤ 60 s of build per 500 items: at 10,000 items that is a 1,200 s allowance and the build takes 75 s. ≤ 1 MB per index document: the largest shard is 178 KB at every size above 500. Both are met with wide margins.
+**What changed between the two columns, and why it is honest.** A CPU profile of the 5,000-item build (`node --cpu-prof`) put 34.5 % of the run in *writing* the output: the FileSystem adapter walked the real path of every file it wrote — three to four path lookups per file, 15,102 files — to keep a planted link from leading a write out of the Bundle root (AGSC-01-16, AGSC-01-35). The adapter now remembers the directories it has proved literal (every component real, none a link) and judges a new entry under one of them by a single `lstat`; a link found there still takes the full check, and `tests/adapters/node-fs.test.js` plants links under trusted directories to prove it. The second change is one line: the item page's typed-link targets were found by scanning every published item per link (5.7 % of the profile); they are one map lookup. Peak memory is unchanged within the run-to-run spread (the 100-item runs vary between 121 and 144 MiB on either tree).
 
-**≤ 100 KB per HTML page — now measured over `*.html` only.**
+**What the first run of the day found.** On the tree as the day began the build *failed* at 1,000 items and above: a cluster page listing 1,000 members in full measured 158,420 bytes, over the 100 KB page budget, and an item page is never paginated (AGSC-06-21). The engine now lists at most 500 members on a cluster page — the bound the rule uses for every index page — and says how many members there are and where the complete membership is (the search index carries `cluster` per document; the graph carries the membership). The "before" column is that tree with this one fix, because without it there is nothing to time above 500 items. Neither reference node has a cluster of more than 500 members, so their bytes did not change.
+
+**Against the normative budgets of AGSC-06-21.** ≤ 60 s of build per 500 items: at 10,000 items that is a 1,200 s allowance and the build takes 58.52 s. ≤ 1 MB per index document: the largest shard is 178 KB at every size above 500. Both are met with wide margins.
+
+**≤ 100 KB per HTML page — measured over `*.html` only.**
 
 | items | HTML pages | largest page | which | median page | over 100 KB |
 |---|---|---|---|---|---|
-| 100 | 111 | 16.8 KB | `index.html` | 5.1 KB | 0 |
-| 500 | 513 | 79.2 KB | `index.html` | 5.2 KB | 0 |
-| 501 | 517 | 79.2 KB | `index.html` | 5.2 KB | 0 |
-| 1,000 | 1,018 | 79.3 KB | a paginated index page | 5.2 KB | 0 |
-| 5,000 | 5,058 | 80.3 KB | a paginated index page | 5.2 KB | 0 |
-| 10,000 | 10,108 | 80.4 KB | a paginated index page | 5.2 KB | 0 |
+| 100 | 115 | 17.8 KB | `search/index.html` | 6.1 KB | 0 |
+| 500 | 516 | 80.3 KB | `clusters/bench-cluster/index.html` | 6.1 KB | 0 |
+| 1,000 | 1,020 | 80.6 KB | `clusters/bench-cluster/index.html` | 6.1 KB | 0 |
+| 5,000 | 5,052 | 81.6 KB | `clusters/bench-cluster/index.html` | 6.2 KB | 0 |
+| 10,000 | 10,092 | 81.6 KB | `clusters/bench-cluster/index.html` | 6.2 KB | 0 |
 
-No HTML page exceeds the budget at any size. The largest page is the index that lists items, and pagination caps it near 80 KB — a 20 % margin. The published sites were swept the same way (§7): the largest page of the main site is **95.7 KB**, a 4 % margin, on a specification chapter page that the site's own generator writes.
+No HTML page exceeds the budget at any size. The largest page is now the cluster page that lists 500 members, at 81.6 KB — an 18 % margin; the paginated index pages sit just under it. The published sites were swept the same way (§7): the largest page of the main site is under the budget after its longest specification chapter was published in two parts.
 
-**What this run found.** The sharding branch fires **at** 500 items, not above it, and the build produces a conforming node at 500, 501, 1,000, 5,000 and 10,000 items. From 1,000 to 10,000 items the build grows 8.7× in time and 4.5× in peak memory for a 10× corpus; nothing measured is super-linear. The third 10,000-item run (87 s) is the slowest of all eighteen and is kept as measured; the median is not affected. An earlier audit's single run (57.9 s, 1,225 MiB) was on an earlier engine and is superseded by this row.
+**Supported scale, stated from these numbers and nothing else.** The reference engine is measured to **10,000 published items** on one machine: 58.52 s of build, 1,678 MiB peak, 296.3 MB of output in 30,162 files, every budget of AGSC-06-21 met. From 1,000 to 10,000 items the build grows 8.4× in time and 5.4× in peak memory for a 10× corpus; nothing measured is super-linear. Above 10,000 items nothing is measured and nothing is claimed. Where such a node can be hosted is §11.
+
+`agsc verify` (two builds in one process, digests kept, AGSC-04-02) on the 5,000-item Bundle: 40.7 s wall, **1,224 MiB** peak — about 280 MiB above one build, the first build's garbage not yet reclaimed while the second runs; on the 500-item Bundle 3.1 s and 296 MiB.
 
 ---
 
@@ -237,15 +241,20 @@ Whole files, `o200k_base`: `llms.txt` 223 / 627 / 703 tokens; `llms-ctx.txt` 1,0
 
 ```
 npm pack --dry-run --json
+npm ls --omit=dev --parseable --all | xargs du -sk      # what a consumer's install holds
 ```
 
-| | |
-|---|---|
-| files in the tarball | 455 |
-| unpacked | 3.41 MB |
-| packed | 1,026 KB |
+| | 2026-09-24 | **2026-09-25** |
+|---|---|---|
+| files in the tarball | 455 | **581** |
+| unpacked | 3.41 MB | **3.65 MB** |
+| packed | 1,026 KB | **1,123 KB** |
 
-*(Measured again on 2026-09-24, after the manifest was cut to what a consumer runs: the nine checkers of AGSC-09-90, the counter and the benchmark tool with its query set ship; the maintainer's tools, the measurement runners and their corpus stay in the repository.)*
+The growth of 2026-09-25 is the day's additions — the runnable demos (`examples/demos/`, 82 files), conformance areas, documents. By folder, the largest shipped parts are `src/distribution` (426 KB, 30 files), `tests/vectors` (409 KB, 200 files, read by `conform`), `src/interchange` (362 KB), `CHANGELOG.md` (235 KB, one file) and `tests/conformance` (228 KB, 25 files). What no verb reads and still ships — `examples/` (95 files, 67 KB), `docs/diagrams/` (22 files, 52 KB, read by the `validate-diagrams` checker over the engine's own tree), the changelog — was shipped on purpose by earlier decisions and is left as it is.
+
+**What an install actually costs** (`npm install --omit=dev`): **135 packages**. The largest by far are the MCP server's: `zod` 8.4 MB, `@modelcontextprotocol/sdk` 6.3 MB, `hono` 3.7 MB, `undici` 1.7 MB — then `ajv` 2.5 MB, `jsonld` 2.1 MB, `markdown-it` 2.0 MB, `fast-xml-parser` 1.4 MB, `yaml` 1.4 MB, `diff` 1.0 MB, `n3` 0.9 MB. The package's own 3.6 MB is a small part of the install, and the lever on the install is the MCP SDK's dependency tree, not this manifest.
+
+**Cold start** (`/usr/bin/time`, five runs, the reference fixture): `agsc --version` 0.18–0.19 s and 65 MB with 117 modules loaded (`node -e ""` alone: 0.05 s, 44 MB); `agsc lint` 0.77–0.81 s and 97 MB with 284 modules. Every verb is required only when it runs; `jsonld` (192 ms to load) and the MCP SDK (291 ms) are loaded only by the verbs that emit RDF or serve MCP, never by `--version`, `lint`, `build` or `verify`. Left as it is.
 
 ---
 
@@ -259,6 +268,55 @@ npm pack --dry-run --json
 
 ---
 
+## 11. Cost — what a visit, an agent session and a month of hosting cost
+
+```
+# page weight: a real headless Chromium (chrome-headless-shell 1228 through playwright-core 1.62.1, both outside the repository) over a loopback server of the built node; every request counted, every other origin blocked
+# MCP: one `agsc mcp` process over stdio, 20 calls per tool, median of the wall time per call and the bytes of each answer
+```
+
+**Requests and bytes per visit** (measured 2026-09-25; "plain" is a browser without `document.modelContext`, "WebMCP" one that exposes it):
+
+| page | before: requests / bytes | **after: requests / bytes** | WebMCP browser, after |
+|---|---|---|---|
+| main site, an item page (`/concepts/concept/`) | 27 / 140.0 KB | **6 / 106.9 KB** | 27 / 141.0 KB |
+| pattern node, an item page (`/concepts/autonomy-ladder/`) | 54 / 263.0 KB | **6 / 109.9 KB** | 54 / 264.0 KB |
+| 5,000-item Bundle, an item page | one request per published item: 5,014 | **6 / 108.0 KB** | the same 5,014-request read |
+| main site, front page | 3 / 28.8 KB | 3 / 28.8 KB | — |
+| pattern node, front page | 3 / 13.6 KB | 3 / 13.6 KB | — |
+
+**What changed.** The page tools of an item page (AGSC-09-16) read their corpus — the discovery document, the index and one Markdown view per published item, plus the boards — at page load, whether or not anyone would call a tool. A person reading one page paid for the whole node: 47 item views on the pattern node, 5,000 on a node of that size. The read now starts at once only where a caller is expected — a browser that exposes `document.modelContext`, and the `/compose/` page — and elsewhere on the first tool call; every call before the corpus is in returns a promise of the envelope, as it always did. No answer changed: the same routes, the same bytes, the same toolset (`tests/distribution/page-tools-lazy.test.js` compares the two paths call by call). The two sites' outputs differ in exactly two files, `/compose/agsc-page-tools.js` and `/compose/agsc-compose.js`.
+
+**The search page.** Main site: 4 requests, 32.0 KB, first result painted 245 ms after typing; the page's own script is 3.6 KB. Pattern node: 5 requests, 80.9 KB, 225 ms, script 9.1 KB. The 5,000-item Bundle: 13 requests (the manifest, 11 shards, the script), 1.52 MB, 355 ms, script 8.6 KB. The index is what a search costs, as AGSC-06-21 shards it; nothing was changed here.
+
+**The MCP server, per call** (the 5,000-item Bundle; the reference fixture in brackets):
+
+| tool | answer bytes | before, ms per call | **after, ms per call** |
+|---|---|---|---|
+| `search` | 1,253,731 (1,057) | 1,527.2 (1.8) | **68.9** (0.9) |
+| `read` | 7,888 (2,231) | 0.65 (0.7) | 0.69 (0.7) |
+| `links` | 1,149 (741) | 1,690.9 (1.8) | **1.5** (0.7) |
+| `compose` | 561 (551) | 6.1 (0.7) | 5.9 (0.7) |
+| `ask` | 1,361 (1,073) | 1,447.4 (1.1) | **9.0** (0.6) |
+| `propose` | 7,868 (2,201) | 0.81 (1.1) | 0.76 (1.0) |
+
+`search` and `ask` tokenized every item on every call and `links` resolved every edge of the node on every call; a served Bundle is loaded once and never changes, so both derivations are now computed on first use and kept. What remains of the `search` call is the answer itself: on that Bundle the query matched every item and the answer is 1.25 MB, because no rule bounds a tool's answer (recorded as a specification item). Starting the server costs one in-memory build — 1.2 s on the reference fixture, 20.7 s and 967 MB on the 5,000-item Bundle — because the resource catalogue serves the built routes; not changed.
+
+**Hosting, by the host's published limits.** Cloudflare Pages is the reference profile. Its limits page (`https://developers.cloudflare.com/pages/platform/limits/`, read 2026-09-25, "Last updated Sep 5, 2026") says: "Cloudflare Pages sites can contain up to 20,000 files on the Free plan." and "Paid plans (such as Pro, Business, and Enterprise plans) can have up to 100,000 files per site."; "The maximum file size for a single Cloudflare Pages site asset is 25 MiB."; "A `_headers` file can have a maximum of 100 header rules."; "A `_redirects` file can have a maximum of 2,000 static redirects and 100 dynamic redirects, for a combined total of 2,100 redirects." Its Functions pricing page (`https://developers.cloudflare.com/pages/functions/pricing/`, read 2026-09-25) says: "On both free and paid plans, requests to static assets are free and unlimited."
+
+| node | files | bytes | Free plan | cost |
+|---|---|---|---|---|
+| main site (`www-next`) | 149 | 2.50 MB | fits | **0 USD / month** |
+| pattern node (`www`) | 227 | 1.49 MB | fits | **0 USD / month** |
+| 5,000-item Bundle | 15,102 (42 header rules, 3 redirects) | 148 MB | fits | 0 USD / month |
+| 10,000-item Bundle | 30,162 | 296 MB | **over the 20,000-file limit** | a paid Pages plan (100,000 files; its price was not read in this run), or another hosting profile of `agsc-host` |
+
+A published node costs three files per item (the page, the Markdown view, the JSON-LD view) plus its index pages, so the Free plan holds a node of about **6,600 items**; a static node serves no function and no request is metered, so bandwidth is not a cost at any size. Both reference nodes are hosted for 0 USD a month, within the ≤ 10 USD a month the project sets itself for hosting.
+
+**An agent session.** Over WebMCP on the main site, the corpus read is 141 KB once per page (above). Reading the node's files directly, an agent takes `/llms.txt` (3.2 KB, 703 tokens in `o200k_base`, §8), `/llms-full.txt` (12.8 KB), `/chunks.jsonl` (18.4 KB, a median of 263 tokens per item as served), `/search.json` (11.6 KB) or `/graph.jsonld` (20.1 KB); the token counts of §8 are unchanged by this day's work (the tokenizer is installed outside the repository and was not available offline for a second run). Over stdio the node costs the host nothing.
+
+---
+
 ## Summary table (numbers only)
 
 Every figure is from this document; nothing is rounded up.
@@ -267,7 +325,7 @@ Every figure is from this document; nothing is rounded up.
 |---|---|
 | specification version measured | 1.0.0-rc.6 (drafted, untagged) |
 | rules declared / active / reserved | 343 / 332 / 11 |
-| conformance vectors: total / required / optional / withdrawn | 194 / 163 / 1 / 30 |
+| conformance vectors: total / required / optional / withdrawn | 199 / 166 / 1 / 32 |
 | vector run | 164 pass, 0 fail, 30 skipped (all withdrawn) |
 | populated vector areas | 19 |
 | active rules with ≥ 1 vector | 129 of 332 (39 %) |
@@ -280,17 +338,21 @@ Every figure is from this document; nothing is rounded up.
 | security floor: hostile discovery inputs refused | 16 of 16 |
 | page-tool / MCP parity: calls equal as values | 207 of 207, over 3 Bundles |
 | unpublished items hidden from the page tools | 474 of 474 calls |
-| build, 500 items (median of 3) | 5.04 s, 273 MiB peak |
-| build, 5,000 items (median of 3) | 37.06 s, 934 MiB peak |
-| build, 10,000 items (median of 3) | 75.00 s, 1,673 MiB peak, 287.7 MB output |
+| build, 500 items (median of 3, 2026-09-25) | 4.18 s (was 4.63 s the same morning), 264 MiB peak |
+| build, 5,000 items (median of 3, 2026-09-25) | 30.17 s (was 38.18 s), 943 MiB peak |
+| build, 10,000 items (median of 3, 2026-09-25) | 58.52 s (was 79.10 s), 1,678 MiB peak, 296.3 MB output in 30,162 files |
 | build budget (AGSC-06-21) | ≤ 60 s per 500 items — met at every size measured |
 | largest index shard at 10,000 items | 178 KB against a 1 MB budget |
-| largest HTML page at 10,000 items | 80.4 KB against a 100 KB budget |
+| largest HTML page at 10,000 items | 81.6 KB against a 100 KB budget (a cluster page listing 500 members) |
+| `verify`, 5,000 items | 40.7 s, 1,224 MiB peak |
+| an item page, one visit (main site / pattern node) | 6 requests, 106.9 KB / 6 requests, 109.9 KB (was 27 / 140.0 KB and 54 / 263.0 KB) |
+| MCP `search`, `links`, `ask` on 5,000 items (median of 20) | 68.9 ms, 1.5 ms, 9.0 ms per call (were 1,527 ms, 1,691 ms, 1,447 ms) |
+| hosting of both reference nodes on Cloudflare Pages | 0 USD / month (149 and 227 files against a 20,000-file Free-plan limit; static requests unlimited) |
 | axe-core violations, 4 builds, 143 pages, both colour schemes | 0 |
 | tokens per item, pattern node, median (o200k_base) | 44 in llms.txt, 390 of chunk text, 1,359 as served in chunks.jsonl |
 | independent implementations passing the vectors | 1 engine; a second (the Python checker distribution) runs 7 of 19 areas, 60 pass and 0 fail of the 77 vectors in them |
 | retrieval smoke run, pattern node, chunks surface | recall@10 1.00, nDCG@10 0.891, P@1 0.750 (12 intents) |
-| npm package | 455 files, 1,026 KB packed, 3.41 MB unpacked |
+| npm package (2026-09-25) | 581 files, 1,123 KB packed, 3.65 MB unpacked; a runtime install holds 135 packages |
 
 ---
 

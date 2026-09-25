@@ -8,6 +8,10 @@
 #              repository), the rule-coverage matrix in its checking mode, and
 #              every shipped validator — the six that read the distribution, and
 #              validate-wellknown at Level 2 on a build of the minimal fixture.
+#              A seventh job, on Ubuntu only, runs `actionlint` over the workflow
+#              files themselves: the release binary of version 1.7.12, fetched from
+#              its GitHub release and refused unless its SHA-256 is the one recorded
+#              below (read from the release's checksums file on 2026-09-25).
 #   Secrets    none. Permissions: read the repository, nothing else.
 #   Determinism SOURCE_DATE_EPOCH is set for the fixture build; the suite fixes
 #              its own clocks and never reaches the network.
@@ -77,3 +81,27 @@ jobs:
           (cd "$work" && git init -q -b main && git add -A && git commit -q -m fixture \
             && node "$GITHUB_WORKSPACE/bin/agsc.js" build)
           node tools/validate-wellknown "$work/www/.well-known/knowledge-linkset" --level 2
+
+  actionlint:
+    name: actionlint (the workflow files)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: fetch actionlint 1.7.12 and verify its checksum before it runs
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz"
+          sha="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/actionlint.tar.gz" "$url"
+          echo "$sha  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -version
+      - name: every workflow file of this repository
+        shell: bash
+        # The shellcheck and pyflakes integrations are off so that the run here is the
+        # same run a maintainer gets from the binary on one machine; turn them on once
+        # their findings have been read.
+        run: '"$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= .github/workflows/*.yml'

@@ -39,10 +39,10 @@ const BOARD = {
 
 const LANES = {
   agents: [
-    { channel: 'main', enabled: true, max_claims: 1, max_new_items: 1, model: 'm', name: 'lane-a', tasks: ['claim', 'work', 'plan'] },
-    { channel: 'main', enabled: true, max_claims: 1, max_new_items: 0, model: 'm', name: 'lane-b', tasks: ['claim', 'work', 'plan'] },
-    { channel: 'main', enabled: false, model: 'm', name: 'lane-off', tasks: ['claim'] },
-    { channel: 'main', enabled: true, model: 'm', name: 'lane-review', tasks: ['review'] },
+    { channel: 'main', enabled: true, max_claims: 1, max_new_items: 1, model: 'm', name: 'lane-a', operator: 'human:andreibesleaga', tasks: ['claim', 'work', 'plan'] },
+    { channel: 'main', enabled: true, max_claims: 1, max_new_items: 0, model: 'm', name: 'lane-b', operator: 'human:andreibesleaga', tasks: ['claim', 'work', 'plan'] },
+    { channel: 'main', enabled: false, model: 'm', name: 'lane-off', operator: 'human:andreibesleaga', tasks: ['claim'] },
+    { channel: 'main', enabled: true, model: 'm', name: 'lane-review', operator: 'human:andreibesleaga', tasks: ['review'] },
   ],
   channels: [{ kind: 'github', name: 'main', target: 'https://github.com/x/y' }],
 };
@@ -104,9 +104,9 @@ test('a board move and a new task are the same prepared Proposal on both transpo
     ['propose', { slug: 'delivery', task_state: 'TASK_STATE_WORKING' }],
     ['propose', { slug: 'build-the-importer', task_state: 'TASK_STATE_WORKING', at: 'soon' }],
     ['propose', { slug: 'build-the-importer' }],
-    ['remember', { body: 'Map the columns.', cluster: 'delivery', kind: 'task', title: 'Map the columns' }],
-    ['remember', { about: 'build-the-importer', body: 'CSV needs quoting.', kind: 'lesson', title: 'Quote the cells' }],
-    ['remember', { about: 'Not A Slug', body: 'x', cluster: '../x', kind: 'task', title: 'Odd arguments' }],
+    ['remember', { body: 'Map the columns.', cluster: 'delivery', kind: 'task', operator: 'human:tester', title: 'Map the columns' }],
+    ['remember', { about: 'build-the-importer', body: 'CSV needs quoting.', kind: 'lesson', operator: 'human:tester', title: 'Quote the cells' }],
+    ['remember', { about: 'Not A Slug', body: 'x', cluster: '../x', kind: 'task', operator: 'human:tester', title: 'Odd arguments' }],
   ];
   for (const [name, args] of calls) {
     assert.deepStrictEqual(plain(page.call(name, args)), plain(local.call(name, args)), `${name} ${JSON.stringify(args)}`);

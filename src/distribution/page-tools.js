@@ -993,6 +993,12 @@ function pageToolset(corpus, core) {
       }
       const title = typeof args.title === 'string' ? args.title : '';
       const findings = [];
+      // AGSC-09-14b (2026-09-25): the page has no identity to declare, so a call
+      // without an operator returns the item with `prov.operator` absent and says
+      // so; the Proposal path refuses it until a person supplies one.
+      if (typeof args.operator !== 'string') {
+        findings.push({ code: 'AGSC-E506', message: 'no operator declared: prov.operator is absent and the Proposal needs one (AGSC-09-14b)', severity: 'warn' });
+      }
       const taken = new Set(Object.keys(bySlug));
       const slug = pageDedupe(pageSlugify(title), taken);
       const frontmatter = { title, type };
@@ -1462,21 +1468,37 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
   // Feature detection is WebMCP's, in webmcp.js; this bootstrap only makes the
   // implementation available. A page without \`fetch\` or without \`document\` keeps
   // working and simply has no page tools (AGSC-09-16).
+  //
+  // WHEN the corpus is read. The corpus is every published item's Markdown view
+  // plus the index, the discovery document and the boards — the whole node, one
+  // same-origin request per item — and a person reading one item page never calls
+  // a tool. So the read starts at once only where a caller is expected: a browser
+  // that exposes \`document.modelContext\` (an agent may call the moment the tools
+  // register) and the \`/compose/\` page (its controller calls \`start\`). Elsewhere
+  // the first \`AGSC_TOOLS.call\` starts it, and every call before the corpus is in
+  // returns a promise of the envelope, exactly as before. No answer changes: the
+  // same routes, the same bytes, the same toolset — read later or not at all.
   API.ready = null;
-  if (typeof document !== 'undefined' && typeof fetch === 'function' && globalThis.AGSC_TOOLS === undefined) {
+  API.start = function () {
+    if (API.ready !== null) return API.ready;
     var pending = API.load(function (route) { return fetch(route); })
       .then(function (corpus) { return pageToolset(corpus, globalThis.AGSC_CORE); });
-    globalThis.AGSC_TOOLS = {
-      call: function (name, args) {
-        return pending.then(function (toolset) { return toolset.call(name, args); });
-      }
-    };
     // Once the corpus is in, the SYNCHRONOUS toolset replaces the promise wrapper, so
     // a tool call costs no round trip and executeTool resolves immediately.
     API.ready = pending.then(function (toolset) {
       globalThis.AGSC_TOOLS = toolset;
       return toolset;
     }).catch(function () { return globalThis.AGSC_TOOLS; });
+    return API.ready;
+  };
+  if (typeof document !== 'undefined' && typeof fetch === 'function' && globalThis.AGSC_TOOLS === undefined) {
+    globalThis.AGSC_TOOLS = {
+      call: function (name, args) {
+        return API.start().then(function (toolset) { return toolset.call(name, args); });
+      }
+    };
+    var context = document.modelContext;
+    if (context && typeof context.registerTool === 'function') API.start();
   }
 }());`);
   return `${parts.join('\n')}\n`;

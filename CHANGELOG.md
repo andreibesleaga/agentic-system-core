@@ -236,6 +236,41 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   their commands, and `tests/acceptance/use-cases/` runs the offline ones through the
   real command line.
 
+- **A real search box on every engine-built node.** `/search/` was an index list with
+  the sentence "The index of this node is /search.json"; it is now a search form over
+  that index, with the list of every published item beneath it — which is still the
+  whole page for a reader without script, so nothing is lost there. The page loads one
+  same-origin classic script, `/search/agsc-search.js` (`src/distribution/search-page.js`;
+  no inline script or style, AGSC-06-17), which fetches `/search.json` and, above 500
+  items, the `/search-<nn>.json` shards it names (AGSC-06-21) — an unreadable shard is
+  reported as `AGSC-E901` and answered with no hit, as the rule requires. The script
+  searches with **the same tokenizer the index was built with**: as the `/compose/`
+  page does for the combiner, it carries the own source text of
+  `src/distribution/search.js#tokenize` and `#query`, and
+  `tests/distribution/search-page.test.js` proves the two hosts byte-identical and
+  runs the page over a build's own bytes. Ranking is one point per distinct query
+  token, then slug — the order the `search` page tool gives, so a person at the box
+  and an assistant calling the tool see the same order. Title, description and link
+  are shown for the first forty hits, the count in a live region; `/search/?q=<words>`
+  opens already searched. `tests/distribution/search-page-browser.test.js` walks the
+  page in a real browser by keyboard alone under the browser lane (`AGSC_BROWSER=1`).
+  The tokenizer is now a self-contained function (no module-scope constant), which
+  changed no token.
+
+- **A requirements matrix, generated and enforced** (`tools/requirements-matrix`,
+  `docs/REQUIREMENTS-MATRIX.md`, `tests/requirements-matrix.allow.json`,
+  `npm run requirements`). For every requirement of `docs/PRD.md` the page lists the
+  rules whose trace bracket (or bold citation) carries it, the checks that verify
+  those rules, and the tests, live vectors, scenarios and documents that name it. A
+  requirement no rule traces to and no test or vector names must have a reason from
+  a closed list, and the suite fails otherwise or when the page is stale.
+- **`docs/ENGINEERING.md`**: the gates in plain words — what each enforces, how to run
+  it, the size limits and why, how to add a module without breaking the dependency
+  rule, and how the repositories are checked by their workflows.
+- **Workflow files are checked**: a job of `.github/workflows/test.yml` runs
+  `actionlint` 1.7.12 (the release binary, its SHA-256 verified before it runs) over
+  every workflow of this repository.
+
 ### Fixed
 
 - **Security: a forged own-record line no longer passes as this node's own**
@@ -675,6 +710,46 @@ behind `AGSC_BROWSER=1`).
   (`chunks.js` bounds the schema already enforces, `export-bundle.js#INDEX_KEY_ORDER`,
   `prov.js#ACTOR`), two unused parameters and 63 stale lint-directive comments. Comments
   that told the history of a change now state the behaviour.
+
+### Changed — the last specification items before the tag (2026-09-25)
+
+- A Bundle whose `agsc.config.json` declares a `spec_version` of another MAJOR is
+  refused by `lint`, `build` and `ci` with `AGSC-E004` and exit 2; a newer MINOR of
+  the engine's own MAJOR is read with the warning `AGSC-E506` (AGSC-00-15). Vector
+  `bundle-0008`.
+- A `README.md` or `_index.md` inside a type folder is never read as an item: the
+  reader skips it with `AGSC-E506`, so a folder note beside the items no longer
+  fails `lint`, `build` and `ci` (AGSC-01-05).
+- The discovery document links `/boards/index.json` as `…/rel#boards` (type and
+  digest) whenever the build emits it; `tools/validate-wellknown` admits the relation
+  (AGSC-06-10, AGSC-10-13).
+- Forge drift (`AGSC-E707`) is measured against a file the repository tracks at the
+  forge's own path (`.github/CODEOWNERS`, `CODEOWNERS`) and never against the
+  previous run's `dist/forge/` output, which is regenerated on every run — a changed
+  `checks[]` no longer fails every later `ci` (AGSC-08-12).
+- `remember` on the local server refuses a call that declares no operator with
+  `AGSC-E003`, unless it declares an enabled lane's `agent`, whose entry supplies
+  `prov.operator`; the page tools return the item with `prov.operator` absent and the
+  warning `AGSC-E506` (AGSC-09-14b).
+- `init` and the `adopt` conformance handler write the same starting crawler list;
+  `adopt-0004` is withdrawn and superseded by `adopt-0006`, `imp-0003` by `imp-0004`
+  (the licence in the input); `ledger-0006` and `ledger-0007` prove the
+  published-versus-derived comparison of AGSC-08-23.
+- `CONTRIBUTOR-AGREEMENT` clause (e) also licenses a contribution as part of any
+  other collection, edition or publication the operator makes from this node's
+  items; the hash and byte count are re-pinned in AGSC-08-06 and the token stays
+  `CA-v1`, no contribution having been accepted under it.
+
+### Changed — performance and cost, measured (2026-09-25)
+
+Every number below is in `docs/MEASUREMENTS.md` (§4, §9, §11) with the command that produced it, measured before and after on the same machine the same day; every emitted byte is unchanged except the two page scripts named.
+
+- **Writing a build is cheaper** (`src/adapters/node-fs.js`). The FileSystem adapter walked the real path of every file it wrote to keep a planted link from leading a write out of the Bundle root; it now remembers the directories it has proved literal and judges a new entry under one of them by a single `lstat`. A link planted under a trusted directory is still refused in every method (`tests/adapters/node-fs.test.js`). With one map lookup replacing a scan per link target on item pages (`src/distribution/site.js`), a 5,000-item build takes 30.2 s instead of 38.2 s and a 10,000-item build 58.5 s instead of 79.1 s (median of 3); peak memory unchanged; the 5,000-item output byte-identical.
+- **An item page no longer downloads the whole node** (`src/distribution/page-tools.js`, `compose-page.js`). The page tools read their corpus — one Markdown view per published item — at page load for every visitor. The read now starts at once only where a caller is expected (a browser exposing `document.modelContext`, the `/compose/` page) and otherwise on the first tool call; the answers are the same on both paths (`tests/distribution/page-tools-lazy.test.js`). An item page of the pattern node costs 6 requests and 110 KB instead of 54 and 263 KB; of the main site 6 and 107 KB instead of 27 and 140 KB.
+- **The MCP server answers `search`, `ask` and `links` without re-deriving the node** (`src/distribution/mcp-tools.js`): the per-item token sets and the resolved edges are computed on first use and kept, since a served Bundle is loaded once. On a 5,000-item Bundle a `search` call takes 69 ms instead of 1,527 ms, `links` 1.5 ms instead of 1,691 ms, `ask` 9 ms instead of 1,447 ms; the answers are unchanged.
+- **A cluster page lists at most 500 members** (`src/distribution/site.js`, `html.js`) and says how many there are and where the complete membership is (`/search.json`, the graph). A cluster of 1,000 members listed in full measured 158 KB — over the 100 KB page budget of AGSC-06-21, which never paginates an item page — so the build of any Bundle with such a cluster failed. Neither reference node has one; their bytes are unchanged (`tests/distribution/cluster-pages.test.js`).
+- `tools/gen-spec-html --check … --text` reads a chapter a publisher serves in parts (`<chapter>/page-2/`, …) as one page, so a chapter split under the page budget is checked for its rule text and table rows as a whole (`tests/tools/gen-spec-html.test.js`).
+- `docs/MEASUREMENTS.md` §11 states what a visit, an agent session and a month of hosting cost, and where a node of a given size can be hosted by the host's published limits (Cloudflare Pages: 20,000 files on the Free plan — about 6,600 items; static requests unlimited; both reference nodes 0 USD a month). Supported scale, stated from the numbers: measured to 10,000 published items.
 
 ## [1.0.0-rc.6] — the engine follows the draft `1.0.0-rc.6` (2026-09-22)
 
@@ -1943,7 +2018,7 @@ meet, named here rather than left silent; none is worked around.
 
 ### 11.10 `1.0.0-rc.5` — the engine follows the specification
 
-**Summary.** `` and `` amended 72 rules in the frozen artefacts,
+**Summary.** Two specification passes amended 72 rules in the frozen artefacts,
 withdrew 10 vectors and added 19. This section is what the engine changed to
 follow them, and the readings it had to make. Where a vector and the engine
 disagreed, AGSC-00-03 made the rule normative and the engine the defect; every
@@ -2447,7 +2522,7 @@ RFC 9727 and RFC 9264.
 
 ### 11.17 `1.0.0-rc.6` — the engine follows the draft
 
-**Summary.** `` applied 31 items to the frozen artefacts: one new rule, 23
+**Summary.** One specification pass applied 31 items to the frozen artefacts: one new rule, 23
 amended in place, one new configuration key, two vectors withdrawn and eight added.
 This section is what the engine changed to follow them. Where a vector and the engine
 disagreed, AGSC-00-03 made the rule normative and the engine the defect; all eight of
@@ -2604,3 +2679,4 @@ asserted over the whole file with no such reading.
 | **`interchange/okf.js#FOREIGN_LINK_NAMES`** — an OKF import maps the foreign link names to Link keys, with an `AGSC-E506` warning per name. | AGSC-03-19, AGSC-03-20 |
 | **`distribution/html.js#page`** ends every page with one line feed. | AGSC-04-07 |
 | **`tools/rule-coverage`** (standalone, built-ins only), `tests/rule-coverage.allow.json`, `tests/acceptance/features.test.js` with `steps/` and `pending.json`, `tests/standard/`, `tests/e2e/`, `.github/workflows/test.yml`. | AGSC-09-02, AGSC-09-92 |
+| **`docs/DEMOS.md`** and **`examples/demos/`** — a runnable demo of every mode and persona scenario, each executed by `tests/docs/demos.test.js` so the quoted output cannot rot (2026-09-25). | AGSC-06-24 |

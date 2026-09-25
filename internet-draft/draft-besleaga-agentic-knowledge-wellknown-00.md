@@ -404,6 +404,7 @@ it ({{the-profile-uri}}).
 | `contribute` | an endpoint that accepts contributions |
 | `access` | a page that says how to obtain credentials |
 | `signature` | a detached signature over the discovery document |
+| `boards` | the index of the Bundle's project boards |
 {: title="The closed set of extension relations"}
 
 A client MUST ignore a relation name it does not recognize. A node MUST

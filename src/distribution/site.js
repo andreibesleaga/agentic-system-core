@@ -43,6 +43,7 @@ const html = require('./html.js');
 const { frontPage, peerSites } = require('./front-page.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
+const searchPage = require('./search-page.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
 const surfaces = require('../boundary/surfaces.js');
@@ -968,6 +969,12 @@ const BUDGET_HTML_BYTES = 100000;
  */
 const BUDGET_INDEX_DOC_BYTES = 1000000;
 const BUDGET_MS_PER_500_ITEMS = 60000;
+/**
+ * How many members a cluster page lists. AGSC-06-21 paginates an INDEX route above 500 entries
+ * and says an item page "is never paginated"; a cluster page is an item page under the same 100 KB
+ * budget (1,000 members in full measured 158 KB), so the list stops at the rule's bound.
+ */
+const CLUSTER_MEMBERS_SHOWN = search.ITEMS_PER_SHARD;
 
 /** AGSC-06-21: the routes the index budget measures, one document at a time. */
 const INDEX_DOCUMENT_ROUTE = /^\/search(?:-[0-9]+)?\.json$/u;
@@ -1217,6 +1224,26 @@ function skillPacks(bundle, options, config) {
  * @param {string} [options.contentTree] the git tree hash of `content/`.
  * @returns {{files:Map<string,string>, findings:Array<object>, skipped:Array<string>}}
  */
+/**
+ * AGSC-03-01: an item's authored Links as `{key, targets:[{href, title}]}`, in the declared key
+ * order, published targets only (AGSC-06-30). The items are indexed by slug once (first wins).
+ * @returns {{publishedBySlug: Map<string, object>, typedLinksOf: function(object): Array<object>}}
+ */
+function typedLinksResolver(items) {
+  const publishedBySlug = new Map();
+  for (const i of items) if (!publishedBySlug.has(i.slug)) publishedBySlug.set(i.slug, i);
+  const typedLinksOf = (item) => linksModule.LINK_KEYS
+    .filter((key) => Array.isArray(item[key]) && item[key].length > 0)
+    .map((key) => ({
+      key,
+      targets: item[key].map((value) => String(value).split('#')[0])
+        .map((slug) => publishedBySlug.get(slug))
+        .filter((target) => target !== undefined)
+        .map((target) => ({ href: routeOf(target), title: target.title == null ? target.slug : String(target.title) })),
+    }));
+  return { publishedBySlug, typedLinksOf };
+}
+
 function build(bundle, ports, options = {}) {
   const config = bundle.config || {};
   const site = config.site || {};
@@ -1610,27 +1637,17 @@ function build(bundle, ports, options = {}) {
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
-    // AGSC-03-01: an item's authored Links as `{key, targets:[{href, title}]}`, in
-    // the declared key order; a target the node does not publish is left out
-    // (AGSC-06-30), so no page names a held-back item.
-    const typedLinksOf = (item) => linksModule.LINK_KEYS
-      .filter((key) => Array.isArray(item[key]) && item[key].length > 0)
-      .map((key) => ({
-        key,
-        targets: item[key].map((value) => String(value).split('#')[0])
-          .map((slug) => items.find((i) => i.slug === slug))
-          .filter((target) => target !== undefined)
-          .map((target) => ({ href: routeOf(target), title: target.title == null ? target.slug : String(target.title) })),
-      }));
+    const { publishedBySlug, typedLinksOf } = typedLinksResolver(items);
     const membersOf = (cluster) => items
       .filter((i) => i.type !== 'cluster' && Array.isArray(i.clusters) && i.clusters.map(String).includes(cluster.slug))
       .map(entryOf);
+    const clusterMembers = (all) => ({ members: all.slice(0, CLUSTER_MEMBERS_SHOWN), membersTotal: all.length });
     // only a PUBLISHED item has a route (AGSC-06-30), so only a published
     // item is a rewriting target; a body link to a draft keeps its authored spelling
     // and is reported by the dangling-link guard.
     const publishedByPath = new Map(items.map((i) => [pathOf(i), i]));
     /** One index route, paginated per AGSC-06-21 above 500 entries. */
-    const putIndex = (route, title, description, entries) => {
+    const putIndex = (route, title, description, entries, render = html.indexPage) => {
       for (const page of paginate(route, entries)) {
         const jsonld = schemaOrg({
           '@context': SCHEMA_ORG, '@type': 'Dataset',
@@ -1638,7 +1655,7 @@ function build(bundle, ports, options = {}) {
           name: title == null ? '' : title,
           url: discovery.href(base, page.route),
         });
-        put(`${page.route}index.html`, html.indexPage({ description, entries: page.entries, title }, { ...pageOptions, jsonld, route: page.route }));
+        put(`${page.route}index.html`, render({ description, entries: page.entries, title }, { ...pageOptions, jsonld, route: page.route }));
       }
     };
 
@@ -1691,13 +1708,12 @@ function build(bundle, ports, options = {}) {
         pageToolScripts: composePage.PAGE_TOOL_SCRIPTS,
         // AGSC-11-14: the plain "Propose an edit" anchor.
         editUrl: contributeEditUrl(config, pathOf(item)),
-        // A cluster page lists the published items that name it, in the same order
-        // as every index route (the published set's order).
-        ...(item.type === 'cluster' ? { members: membersOf(item) } : {}),
+        // A cluster page lists the published items that name it, in the published order, up to the bound above.
+        ...(item.type === 'cluster' ? clusterMembers(membersOf(item)) : {}),
         // The metadata list's Cluster row: each named cluster, linked when published.
         clusters: (Array.isArray(item.clusters) ? item.clusters : []).map((slug) => {
-          const cluster = items.find((i) => i.type === 'cluster' && i.slug === String(slug));
-          return cluster === undefined ? { title: String(slug) } : { href: routeOf(cluster), title: cluster.title == null ? cluster.slug : cluster.title };
+          const cluster = publishedBySlug.get(String(slug));
+          return cluster === undefined || cluster.type !== 'cluster' ? { title: String(slug) } : { href: routeOf(cluster), title: cluster.title == null ? cluster.slug : cluster.title };
         }),
         ...(diagramSource === null ? {} : { diagramSource }),
         // AGSC-03-01: the typed Links the item authors, published targets only.
@@ -1727,8 +1743,9 @@ function build(bundle, ports, options = {}) {
     for (const tag of [...tags.keys()].sort(compareCodePoint)) {
       putIndex(`/tags/${tag}/`, tag, `Every item tagged "${tag}".`, tags.get(tag));
     }
-    // AGSC-06-01: `/search/` is the page whose data is `/search.json`.
-    putIndex('/search/', 'Search', 'The index of this node is /search.json.', items.map(entryOf));
+    // AGSC-06-01: `/search/` is the page whose data is `/search.json` — a search box over that index (its one script carries the writer's own tokenizer, AGSC-06-23) above the list of every published item, which is the page without script (search-page.js).
+    putIndex('/search/', 'Search', searchPage.DESCRIPTION, items.map(entryOf), (page, opts) => html.searchPage({ ...page, script: searchPage.SCRIPT_ROUTE }, opts));
+    put(searchPage.SCRIPT_ROUTE, textBytes(searchPage.script({ plurals: searchPage.pluralsOf(items), specVersion })));
     put('/now/index.html', html.nowPage(nowMd, { ...pageOptions, route: '/now/' }));
     // The default theme every page links (theme.js). A Bundle's own authored
     // `content/assets/site.css` replaces the stylesheet at the same route.
@@ -1937,6 +1954,6 @@ module.exports = {
   budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
   readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,
   bodyHrefResolver,
-  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS,
+  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS, CLUSTER_MEMBERS_SHOWN,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

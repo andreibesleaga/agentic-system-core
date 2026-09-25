@@ -35,6 +35,14 @@ Source: [diagrams/arch-system-overview.md](diagrams/arch-system-overview.md).
   discovery document at `/.well-known/knowledge-linkset` that names every machine file
   with its SHA-256 digest (AGSC-06-07, AGSC-06-08). Every page points at that document
   through the registered relation `describedby` (AGSC-06-25).
+- **Searching it.** The `/search/` page of every engine-built node is a search box
+  over the node's own index: one same-origin script fetches `/search.json` (and its
+  shards above 500 items, AGSC-06-21) and tokenizes the query with the very function
+  that built the index — its source text is shipped, not copied (AGSC-06-23) — so a
+  word that is in the index is found, and a word that is not is not. Hits are ranked
+  by how many distinct query words each item carries, then by slug, the same order
+  the `search` tool gives; nothing leaves the page's origin. Without script the page
+  is the list of every published item.
 - **Readers.** A person reads pages; an agent or crawler starts at the discovery
   document; a browser's own agent calls the seven tools the page registers
   (AGSC-09-16); a local assistant runs `agsc mcp` over the Bundle (AGSC-09-13).

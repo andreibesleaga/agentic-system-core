@@ -105,3 +105,58 @@ test('a planted directory symlink cannot escape the root in any method (AGSC-E90
   port.writeFile('sub/fresh/new.md', 'ok');
   assert.strictEqual(port.readFile('sub/fresh/new.md'), 'ok');
 }));
+
+// The port remembers the directories it has proved literal so that a build of many
+// thousands of files is not a real-path walk per file. The guarantee must not weaken:
+// a link planted under a remembered directory is still refused, in every method.
+test('a link planted under a directory the port already trusts is still refused (AGSC-E902)', () => sandbox((dir) => {
+  const outside = path.join(dir, 'outside');
+  fs.mkdirSync(outside);
+  fs.writeFileSync(path.join(outside, 'secret.md'), 'secret');
+  const inner = path.join(dir, 'bundle');
+  fs.mkdirSync(inner);
+  const port = createFileSystem(inner);
+  const escaped = (e) => e.code === 'AGSC-E902';
+  // The port creates and writes into `www/a` itself: both are now trusted.
+  port.mkdirp('www/a');
+  port.writeFile('www/a/index.html', 'x');
+  port.writeFile('www/a/index.html', 'y'); // a second write into a trusted directory
+  assert.strictEqual(port.readFile('www/a/index.html'), 'y');
+  // Then somebody plants links under the trusted directories.
+  fs.symlinkSync(outside, path.join(inner, 'www', 'a', 'escape'), 'dir');
+  fs.symlinkSync(path.join(outside, 'secret.md'), path.join(inner, 'www', 'a', 'file.md'));
+  fs.symlinkSync(outside, path.join(inner, 'www', 'b'), 'dir');
+  assert.throws(() => port.writeFile('www/a/escape/pwned.txt', 'x'), escaped);
+  assert.throws(() => port.mkdirp('www/a/escape/deeper'), escaped);
+  assert.throws(() => port.writeFile('www/a/file.md', 'x'), escaped);
+  assert.throws(() => port.readFile('www/a/file.md'), escaped);
+  assert.throws(() => port.writeFile('www/b/pwned.txt', 'x'), escaped);
+  assert.throws(() => port.mkdirp('www/b/c'), escaped);
+  assert.strictEqual(port.exists('www/b'), false);
+  assert.strictEqual(fs.readFileSync(path.join(outside, 'secret.md'), 'utf8'), 'secret', 'nothing was written through the link');
+  assert.strictEqual(fs.existsSync(path.join(outside, 'pwned.txt')), false);
+  // A link that stays inside the root is allowed, as before, and never trusted as literal.
+  fs.mkdirSync(path.join(inner, 'real'));
+  fs.symlinkSync(path.join(inner, 'real'), path.join(inner, 'www', 'a', 'inside'), 'dir');
+  port.writeFile('www/a/inside/ok.md', 'ok');
+  assert.strictEqual(fs.readFileSync(path.join(inner, 'real', 'ok.md'), 'utf8'), 'ok');
+  // Removing a trusted directory forgets it: a link planted in its place is refused.
+  port.remove('www/a');
+  fs.symlinkSync(outside, path.join(inner, 'www', 'a'), 'dir');
+  assert.throws(() => port.writeFile('www/a/pwned.txt', 'x'), escaped);
+  assert.strictEqual(fs.existsSync(path.join(outside, 'pwned.txt')), false);
+}));
+
+test('checkReal, the exported form of the guard, takes the root as a path or as its resolved real path', () => sandbox((dir) => {
+  const { checkReal } = require('../../src/adapters/node-fs.js');
+  const outside = path.join(dir, 'outside');
+  fs.mkdirSync(outside);
+  const inner = path.join(dir, 'bundle');
+  fs.mkdirSync(inner);
+  fs.symlinkSync(outside, path.join(inner, 'escape'), 'dir');
+  const inside = path.join(inner, 'new.md');
+  assert.strictEqual(checkReal(inner, inside, 'new.md'), inside);
+  assert.strictEqual(checkReal({ real: fs.realpathSync(inner) }, inside, 'new.md'), inside);
+  assert.throws(() => checkReal(inner, path.join(inner, 'escape', 'x.md'), 'escape/x.md'), (e) => e.code === 'AGSC-E902');
+  assert.throws(() => checkReal({ real: fs.realpathSync(inner) }, path.join(inner, 'escape', 'x.md'), 'escape/x.md'), (e) => e.code === 'AGSC-E902');
+}));

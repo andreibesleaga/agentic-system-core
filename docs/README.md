@@ -40,13 +40,16 @@ kind of reader down one path.
 | [RELATED-WORK.md](RELATED-WORK.md) | how this relates to other systems, with dates |
 | [TESTING.md](TESTING.md) | the test levels and how to run them |
 | [RULE-COVERAGE.md](RULE-COVERAGE.md) | for every rule, the checks that verify it (generated) |
+| [REQUIREMENTS-MATRIX.md](REQUIREMENTS-MATRIX.md) | for every requirement of the PRD, the rules that trace to it and the checks behind them (generated) |
+| [ENGINEERING.md](ENGINEERING.md) | the gates, the size limits, the dependency rule, and how the five repositories are checked |
 | [MEASUREMENTS.md](MEASUREMENTS.md), [BENCHMARKS.md](BENCHMARKS.md) | the measured numbers and the method behind them |
 | [diagrams/](diagrams/README.md) | the diagram pack: Mermaid sources and rendered SVG |
 
-Generated pages (`GLOSSARY.md`, `RULE-COVERAGE.md`, `measurements.json`) are never
+Generated pages (`GLOSSARY.md`, `RULE-COVERAGE.md`, `REQUIREMENTS-MATRIX.md`, `measurements.json`) are never
 edited by hand; the command that writes each is named at its top.
 
 ```bash
 node tools/gen-glossary --check     # the glossary is current
 node tools/rule-coverage --check    # the coverage page is current
+node tools/requirements-matrix --check  # the requirements page is current
 ```

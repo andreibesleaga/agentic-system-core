@@ -1,0 +1,8 @@
+# A hand-made node
+
+> Two items, no engine.
+
+## Items
+
+- [Handoff](https://node.example/pages/handoff.md): The transfer of control and context from one agent to another, recorded for audit.
+- [Supervisor](https://node.example/pages/supervisor.md): A coordinating agent that routes work to specialised workers and collects results.

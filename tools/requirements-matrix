@@ -1,0 +1,459 @@
+#!/usr/bin/env node
+'use strict';
+// tools/requirements-matrix — the requirements matrix: for every requirement of
+// docs/PRD.md (`PRD-nnn`, `NFR-nn`), which rules of the specification trace to it,
+// and which tests, conformance vectors, acceptance scenarios and documents name
+// it — generated from the repository and enforced by the test suite so that a
+// requirement cannot be forgotten.
+//
+//   requirements-matrix [--json] [--write] [--check] [--quiet] [--help] [<root>]
+//
+// STANDALONE: Node built-ins only, no import from `src/`, no clock, no network.
+// Deterministic: every list is sorted by code point; the Markdown output depends
+// only on the files it reads. The rule side of the matrix (which checks verify a
+// rule) is read from tools/rule-coverage, the same reading docs/RULE-COVERAGE.md
+// is generated from, so the two pages cannot disagree.
+//
+// A requirement is defined by a table row of docs/PRD.md whose first cell is its
+// id (`| PRD-001 |`; a restated row, `| PRD-005 (restated) |`, defines nothing new).
+//
+// A requirement is MAPPED when at least one of these names it:
+//   rule        an active rule of spec/*.md whose trace bracket — the last
+//               `[...]` of the rule's block, as tools/validate-spec reads it —
+//               carries the id, or whose text cites the id in bold (`**PRD-009**`,
+//               the form AGSC-00-18 uses for a requirement served by the shape of
+//               the artefacts rather than by one sentence); the rule's own checks
+//               (vectors, tests, scenarios, checkers) then stand behind the
+//               requirement, and the matrix lists them under it;
+//   test        a file under tests/ (`*.js`, fixtures excluded) that carries the
+//               id in a title, a comment or a marker;
+//   vector      a live conformance vector whose text carries the id.
+// Two more sources are LISTED but map nothing on their own, because a mention is
+// not a check: a scenario of features/*.feature (a `@PRD-nnn` tag, a step or the
+// `# Trace:` line) and a document under docs/ or the root README.
+// A requirement is ALLOWED when tests/requirements-matrix.allow.json lists it
+// with one of the closed reasons and a sentence saying why no rule and no check
+// of this repository can stand behind it; UNMAPPED otherwise.
+//
+// Findings (each exits 1): an UNMAPPED requirement (AGSC-E202); an allow-list
+// entry naming an id docs/PRD.md does not define (AGSC-E301); an allow-list reason
+// outside the closed list or without a sentence (AGSC-E203); an allow-list entry
+// for a requirement that is in fact mapped, so the list stays minimal
+// (AGSC-E201); a trace bracket naming an id docs/PRD.md does not define
+// (AGSC-E301; tools/validate-spec reports the same fault against the rule); with
+// --check, a docs/REQUIREMENTS-MATRIX.md that differs from what this run
+// generates (AGSC-E201).
+//
+//   --json    the AGSC-09-11 envelope plus the matrix (`requirements`, `totals`)
+//   --write   write docs/REQUIREMENTS-MATRIX.md
+//   --check   also fail when docs/REQUIREMENTS-MATRIX.md is not the generated text
+//   --quiet   print nothing but findings
+//
+// Exit 0 pass, 1 findings, 2 usage.
+
+const fs = require('node:fs');
+const path = require('node:path');
+const ruleCoverage = require('./rule-coverage');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const DOC = 'docs/REQUIREMENTS-MATRIX.md';
+const ALLOW = 'tests/requirements-matrix.allow.json';
+const PRD = 'docs/PRD.md';
+const ID = /(?:PRD|NFR)-\d{2,3}/g;
+const RULE_BULLET = /^- \*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*/u;
+/** The pages this tool must not read as citations: the source, and the generated pages. */
+const NOT_A_CITATION = new Set([PRD, DOC, 'docs/RULE-COVERAGE.md']);
+
+/** The closed reasons a requirement may stay unmapped for; each is explained in the matrix. */
+const REASONS = Object.freeze({
+  superseded: 'was superseded by a dated note in docs/PRD.md and binds nothing now',
+  deferred: 'is deferred by a dated note in docs/PRD.md to a later version or to the day of launch',
+  host: 'is met by the hosting platform or the forge, outside this repository',
+  practice: 'is a working practice of the maintainers, measured by a command rather than by a rule',
+  site: 'is a behaviour of one published site, not of the format this repository defines',
+});
+
+const HELP = `requirements-matrix [--json] [--write] [--check] [--quiet] [--help] [<root>]
+
+  For every requirement of ${PRD} (PRD-nnn, NFR-nn), lists the rules of spec/
+  that trace to it, the tests, live conformance vectors, acceptance scenarios
+  and documents that name it — and the checks that verify those rules — and
+  classifies it MAPPED, ALLOWED (${ALLOW}) or UNMAPPED.
+
+  --json    emit the AGSC-09-11 envelope plus the matrix on stdout
+  --write   write ${DOC}
+  --check   fail when ${DOC} is not the generated text
+  --quiet   print nothing but findings
+  --help    this text
+
+  <root> defaults to the repository this tool ships in.
+  Exit 0 pass, 1 findings, 2 usage.
+`;
+
+const byCodePoint = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const posix = (p) => p.split(path.sep).join('/');
+const unique = (list) => [...new Set(list)].sort(byCodePoint);
+
+/**
+ * Walk a directory under root and return root-relative POSIX paths, sorted.
+ * @param {string} root
+ * @param {string} dir
+ * @param {(rel:string)=>boolean} keep
+ * @returns {string[]}
+ */
+function walk(root, dir, keep) {
+  const abs = path.join(root, dir);
+  if (!fs.existsSync(abs)) return [];
+  const out = [];
+  for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+    const rel = posix(path.join(dir, entry.name));
+    if (entry.isDirectory()) {
+      if (entry.name === 'node_modules' || entry.name === 'fixtures') continue;
+      out.push(...walk(root, rel, keep));
+    } else if (keep(rel)) {
+      out.push(rel);
+    }
+  }
+  return out.sort(byCodePoint);
+}
+
+/** The ids in a text, unique and sorted. */
+function idsIn(text) {
+  return unique(text.match(ID) || []);
+}
+
+/**
+ * The requirement ids docs/PRD.md defines: the first cell of a table row, in
+ * the order the file states them.
+ * @param {string} text
+ * @returns {string[]}
+ */
+function definedIds(text) {
+  const ids = [];
+  for (const line of text.split('\n')) {
+    const m = /^\|\s*((?:PRD|NFR)-\d{2,3})\s*(\([^)]*\))?\s*\|/u.exec(line);
+    if (m && !m[2] && !ids.includes(m[1])) ids.push(m[1]);
+  }
+  return ids;
+}
+
+/**
+ * Rules and the requirement ids each traces to: the ids of its trace bracket —
+ * the last bracket of the block, exactly as tools/validate-spec reads it — and
+ * the ids its text cites in bold. A block runs from its `- **AGSC-nn-nn**` bullet
+ * to the next bullet or heading.
+ * @param {string} text
+ * @returns {{id:string, line:number, retired:boolean, trace:string[]}[]}
+ */
+function ruleTraces(text) {
+  const blocks = [];
+  let current = null;
+  text.split('\n').forEach((line, index) => {
+    const bullet = RULE_BULLET.exec(line);
+    if (bullet) {
+      current = { id: bullet[1], line: index + 1, lines: [line] };
+      blocks.push(current);
+      return;
+    }
+    if (/^#{1,6} /u.test(line)) { current = null; return; }
+    if (current) current.lines.push(line);
+  });
+  return blocks.map((block) => {
+    const text2 = block.lines.join('\n');
+    const brackets = block.lines.map(traceBracket).filter((b) => b !== null);
+    const tail = brackets.length ? brackets[brackets.length - 1] : '';
+    const bold = (text2.match(/\*\*(?:PRD|NFR)-\d{2,3}\*\*/g) || []).map((m) => m.slice(2, -2));
+    return { id: block.id, line: block.line, retired: /\*\(retired at /u.test(text2), trace: unique([...idsIn(tail), ...bold]) };
+  });
+}
+
+/** The trace bracket of one line, or null (the reading of tools/validate-spec). */
+function traceBracket(line) {
+  const stripped = line.replace(/(\s*\*\([^()]*(?:\([^()]*\)[^()]*)*\)\*)+\s*$/u, '');
+  const match = /\[([^[\]]+)\]\s*$/u.exec(stripped);
+  return match ? match[1] : null;
+}
+
+/**
+ * Build the matrix.
+ * @param {string} root
+ */
+function measure(root) {
+  let inputsRead = 0;
+  const read = (rel) => { inputsRead += 1; return fs.readFileSync(path.join(root, rel), 'utf8'); };
+  const findings = [];
+  const add = (code, file, line, message, severity = 'error') =>
+    findings.push({ code, col: 1, file, line, message, severity });
+
+  const prdText = read(PRD);
+  const defined = definedIds(prdText);
+  const definedSet = new Set(defined);
+
+  // The rule side: which checks verify each rule, read once from tools/rule-coverage.
+  const coverage = ruleCoverage.measure(root);
+  inputsRead += coverage.inputsRead;
+  const ruleById = new Map(coverage.rules.map((r) => [r.id, r]));
+
+  const rules = new Map();
+  for (const f of fs.readdirSync(path.join(root, 'spec')).filter((n) => n.endsWith('.md')).sort(byCodePoint)) {
+    for (const rule of ruleTraces(read(`spec/${f}`))) {
+      if (rule.retired) continue;
+      for (const id of rule.trace) {
+        if (!definedSet.has(id)) {
+          add('AGSC-E301', `spec/${f}`, rule.line, `rule ${rule.id} traces to ${id}, which ${PRD} does not define`);
+          continue;
+        }
+        if (!rules.has(id)) rules.set(id, []);
+        rules.get(id).push(rule.id);
+      }
+    }
+  }
+
+  const named = (dir, keep) => {
+    const map = new Map();
+    for (const f of walk(root, dir, keep)) {
+      for (const id of idsIn(read(f))) {
+        if (!definedSet.has(id)) continue;
+        if (!map.has(id)) map.set(id, []);
+        map.get(id).push(f);
+      }
+    }
+    return map;
+  };
+  const tests = named('tests', (rel) => rel.endsWith('.js'));
+  const vectors = new Map();
+  for (const f of walk(root, 'tests/vectors', (rel) => rel.endsWith('.json'))) {
+    const text = read(f);
+    const v = JSON.parse(text);
+    if (v.level === 'withdrawn') continue;
+    for (const id of idsIn(text)) {
+      if (!definedSet.has(id)) continue;
+      if (!vectors.has(id)) vectors.set(id, []);
+      vectors.get(id).push(v.id);
+    }
+  }
+  const scenarios = named('features', (rel) => rel.endsWith('.feature'));
+  const documents = named('docs', (rel) => rel.endsWith('.md') && !NOT_A_CITATION.has(rel));
+  if (fs.existsSync(path.join(root, 'README.md'))) {
+    for (const id of idsIn(read('README.md'))) {
+      if (!definedSet.has(id)) continue;
+      if (!documents.has(id)) documents.set(id, []);
+      documents.get(id).push('README.md');
+    }
+  }
+
+  let allow = {};
+  if (fs.existsSync(path.join(root, ALLOW))) allow = JSON.parse(read(ALLOW)).requirements || {};
+
+  const requirements = defined.map((id) => {
+    const ruleIds = unique(rules.get(id) || []);
+    const viaRules = ruleIds.map((r) => ruleById.get(r)).filter(Boolean);
+    const entry = {
+      id,
+      kind: id.startsWith('NFR') ? 'non-functional' : 'functional',
+      rules: ruleIds,
+      rule_checks: {
+        acceptance: unique(viaRules.flatMap((r) => r.acceptance)),
+        checkers: unique(viaRules.flatMap((r) => r.checkers)),
+        tests: unique(viaRules.flatMap((r) => r.tests)),
+        vectors: unique(viaRules.flatMap((r) => r.vectors)),
+      },
+      tests: unique(tests.get(id) || []),
+      vectors: unique(vectors.get(id) || []),
+      scenarios: unique(scenarios.get(id) || []),
+      documents: unique(documents.get(id) || []).sort(byCodePoint),
+    };
+    const mapped = entry.rules.length + entry.tests.length + entry.vectors.length > 0;
+    const allowed = Object.prototype.hasOwnProperty.call(allow, id) ? allow[id] : null;
+    if (mapped) {
+      entry.class = 'MAPPED';
+      if (allowed) add('AGSC-E201', ALLOW, 1, `${id} is listed as allowed but a rule, a test or a vector maps it; remove the entry`);
+    } else if (allowed) {
+      entry.class = 'ALLOWED';
+      entry.reason = allowed.reason;
+      entry.why = allowed.why;
+    } else {
+      entry.class = 'UNMAPPED';
+      add('AGSC-E202', PRD, 1, `${id} is traced by no rule and named by no test or vector, and ${ALLOW} gives no reason`);
+    }
+    return entry;
+  });
+  for (const [id, value] of Object.entries(allow).sort(([a], [b]) => byCodePoint(a, b))) {
+    if (!definedSet.has(id)) add('AGSC-E301', ALLOW, 1, `${id} is not a requirement ${PRD} defines`);
+    if (!value || !Object.prototype.hasOwnProperty.call(REASONS, value.reason)) {
+      add('AGSC-E203', ALLOW, 1, `${id}: reason must be one of ${Object.keys(REASONS).join(', ')}`);
+    }
+    if (!value || typeof value.why !== 'string' || value.why.trim().length < 20) {
+      add('AGSC-E203', ALLOW, 1, `${id}: "why" must say in a sentence why no rule and no check stands behind the requirement`);
+    }
+  }
+
+  const count = (cls) => requirements.filter((r) => r.class === cls).length;
+  const totals = {
+    allowed: count('ALLOWED'),
+    by_document: requirements.filter((r) => r.documents.length).length,
+    by_rule: requirements.filter((r) => r.rules.length).length,
+    by_scenario: requirements.filter((r) => r.scenarios.length).length,
+    by_test: requirements.filter((r) => r.tests.length).length,
+    by_vector: requirements.filter((r) => r.vectors.length).length,
+    defined: requirements.length,
+    functional: requirements.filter((r) => r.kind === 'functional').length,
+    mapped: count('MAPPED'),
+    non_functional: requirements.filter((r) => r.kind === 'non-functional').length,
+    rules_tracing: unique(requirements.flatMap((r) => r.rules)).length,
+    unmapped: count('UNMAPPED'),
+  };
+  findings.sort((a, b) => byCodePoint(a.file, b.file) || a.line - b.line || byCodePoint(a.code, b.code)
+    || byCodePoint(a.message, b.message));
+  return { findings, inputsRead, requirements, totals };
+}
+
+/** A cell listing at most `max` names, then how many more. */
+function cell(list, max = 3) {
+  if (list.length === 0) return '—';
+  const shown = list.slice(0, max).map((x) => `\`${x}\``).join(', ');
+  return list.length > max ? `${shown} +${list.length - max}` : shown;
+}
+
+/** The generated Markdown matrix. */
+function render(result) {
+  const { requirements, totals } = result;
+  const out = [];
+  out.push('# Requirements matrix');
+  out.push('');
+  out.push(`This page is generated by \`node tools/requirements-matrix --write\`; do not edit it by hand. The test suite runs \`tools/requirements-matrix --check\`, which fails when a requirement of [PRD.md](PRD.md) is traced by no rule and named by no test or vector without a stated reason, or when this page is out of date.`);
+  out.push('');
+  out.push('## Summary');
+  out.push('');
+  out.push(`[PRD.md](PRD.md) defines ${totals.defined} requirements: ${totals.functional} functional (\`PRD-nnn\`) and ${totals.non_functional} non-functional (\`NFR-nn\`). ${totals.mapped} are mapped — a rule of the specification traces to them, or a test or a live conformance vector names them — ${totals.allowed} stay unmapped for a stated reason, and ${totals.unmapped} are unmapped. ${totals.rules_tracing} active rules carry a requirement id in their trace bracket.`);
+  out.push('');
+  out.push('A rule that traces to a requirement brings its own checks with it: the vectors, tests, executed acceptance scenarios and checkers that verify the rule are listed in [RULE-COVERAGE.md](RULE-COVERAGE.md), and the "Checks behind the rules" column below counts them for each requirement. A scenario or a document that names a requirement is listed but maps nothing on its own, because a mention is not a check.');
+  out.push('');
+  out.push('| Source | Requirements it names |');
+  out.push('|---|---:|');
+  out.push(`| Rule trace bracket | ${totals.by_rule} |`);
+  out.push(`| Test file | ${totals.by_test} |`);
+  out.push(`| Live conformance vector | ${totals.by_vector} |`);
+  out.push(`| Acceptance scenario | ${totals.by_scenario} |`);
+  out.push(`| Document | ${totals.by_document} |`);
+  out.push('');
+  out.push('## Requirements unmapped for a reason');
+  out.push('');
+  out.push('The reasons are a closed list:');
+  out.push('');
+  for (const [k, v] of Object.entries(REASONS)) out.push(`- **${k}** — the requirement ${v}.`);
+  out.push('');
+  const allowed = requirements.filter((r) => r.class === 'ALLOWED');
+  if (allowed.length === 0) out.push('None.');
+  else {
+    out.push('| Requirement | Reason | Why |');
+    out.push('|---|---|---|');
+    for (const r of allowed) out.push(`| ${r.id} | ${r.reason} | ${r.why.replace(/\|/g, '\\|')} |`);
+  }
+  out.push('');
+  const unmapped = requirements.filter((r) => r.class === 'UNMAPPED');
+  if (unmapped.length) {
+    out.push('## Unmapped requirements');
+    out.push('');
+    out.push(unmapped.map((r) => r.id).join(', '));
+    out.push('');
+  }
+  out.push('## Matrix');
+  out.push('');
+  out.push('At most three names are shown per cell; test files and scenario files are listed by path under `tests/` and `features/`. "Checks behind the rules" counts the vectors, tests, executed scenarios and checkers that verify the rules in the Rules cell.');
+  out.push('');
+  out.push('| Requirement | Class | Rules | Checks behind the rules | Tests naming it | Vectors naming it | Scenarios | Documents |');
+  out.push('|---|---|---|---|---|---|---|---|');
+  for (const r of requirements) {
+    const c = r.rule_checks;
+    const behind = r.rules.length === 0 ? '—'
+      : `${c.vectors.length} vectors, ${c.tests.length} tests, ${c.acceptance.length} scenarios, ${c.checkers.length} checkers`;
+    out.push(`| ${r.id} | ${r.class} | ${cell(r.rules)} | ${behind} | ${cell(r.tests.map((f) => f.replace(/^tests\//, '')))} | ${cell(r.vectors)} | ${cell(r.scenarios.map((f) => f.replace(/^features\//, '')))} | ${cell(r.documents)} |`);
+  }
+  out.push('');
+  return out.join('\n');
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} [io]
+ * @returns {number}
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const usage = (message) => { err(`requirements-matrix: ${message}\n${HELP}`); return 2; };
+  let json = false;
+  let write = false;
+  let check = false;
+  let quiet = false;
+  let root = DEFAULT_ROOT;
+  let sawRoot = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--json') json = true;
+    else if (arg === '--write') write = true;
+    else if (arg === '--check') check = true;
+    else if (arg === '--quiet') quiet = true;
+    else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
+    else if (sawRoot) return usage(`unexpected argument ${arg} (AGSC-E002)`);
+    else { root = path.resolve(arg); sawRoot = true; }
+  }
+  for (const required of ['spec', 'tests']) {
+    if (!fs.existsSync(path.join(root, required))) return usage(`no ${required}/ directory under ${root} (AGSC-E901)`);
+  }
+  if (!fs.existsSync(path.join(root, PRD))) return usage(`no ${PRD} under ${root} (AGSC-E901)`);
+  let result;
+  try {
+    result = measure(root);
+  } catch (e) {
+    err(`requirements-matrix: ${e.message} (AGSC-E901)\n`);
+    return 1;
+  }
+  if (result.totals.defined === 0) {
+    result.findings.push({ code: 'AGSC-E901', col: 1, file: PRD, line: 1,
+      message: `${PRD} defines no requirement (no table row whose first cell is a PRD-nnn or NFR-nn id)`, severity: 'error' });
+  }
+  const text = render(result);
+  if (check) {
+    const docPath = path.join(root, DOC);
+    const current = fs.existsSync(docPath) ? fs.readFileSync(docPath, 'utf8') : '';
+    if (current !== text) {
+      result.findings.push({ code: 'AGSC-E201', col: 1, file: DOC, line: 1,
+        message: `${DOC} is not the generated text; run node tools/requirements-matrix --write`, severity: 'error' });
+    }
+  }
+  if (write) fs.writeFileSync(path.join(root, DOC), text);
+  const errors = result.findings.filter((f) => f.severity === 'error').length;
+  const warns = result.findings.length - errors;
+  const t = result.totals;
+  if (json) {
+    const specVersion = (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8').match(/1\.0\.0-rc\.\d+|\d+\.\d+\.\d+/) || ['unknown'])[0];
+    out(`${JSON.stringify({
+      counts: { error: errors, warn: warns },
+      findings: result.findings,
+      inputs_read: result.inputsRead,
+      requirements: result.requirements,
+      schema: 'agsc.diagnostics.v1',
+      spec_version: specVersion,
+      status: errors ? 'fail' : 'pass',
+      totals: t,
+      verb: 'requirements-matrix',
+      version: specVersion,
+    })}\n`);
+  } else {
+    for (const f of result.findings) err(`${f.file}:${f.line}: ${f.severity} ${f.code} ${f.message}\n`);
+    if (!quiet) {
+      out(`requirements-matrix: ${result.inputsRead} input file(s) read, ${t.defined} requirements (${t.functional} PRD, ${t.non_functional} NFR): `
+        + `${t.mapped} mapped, ${t.allowed} allowed with a reason, ${t.unmapped} unmapped; named by: rule ${t.by_rule}, test ${t.by_test}, vector ${t.by_vector}, scenario ${t.by_scenario}, document ${t.by_document}; `
+        + `${t.rules_tracing} rules trace to a requirement; ${errors} error, ${warns} warn\n`);
+    }
+  }
+  return errors ? 1 : 0;
+}
+
+/* c8 ignore next */
+// exitCode, not exit(): a large --json envelope on a pipe must be flushed first.
+if (require.main === module) process.exitCode = run(process.argv.slice(2));
+
+module.exports = { HELP, REASONS, definedIds, measure, render, ruleTraces, run, traceBracket };

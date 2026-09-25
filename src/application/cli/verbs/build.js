@@ -28,7 +28,7 @@ function run(ctx) {
   // never publishes what `lint` rejects there (an `http://` peer into the discovery
   // document, a root missing `spec_version`). The item and attachment checks already
   // run inside the build.
-  const gate = lintVerb.configAndRoot(bundle).filter((f) => !(f.code === 'AGSC-E901' && f.file === 'agsc.config.json'));
+  const gate = lintVerb.configAndRoot(bundle, { ownVersion: ctx.specVersion }).filter((f) => !(f.code === 'AGSC-E901' && f.file === 'agsc.config.json'));
   const built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
   // AGSC-04-09: the Clock reports when the build instant defaulted to 0
   // (AGSC-E606); that is a build fact, so it is reported by the verbs that emit.

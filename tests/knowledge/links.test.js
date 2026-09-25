@@ -191,7 +191,7 @@ test('AGSC-01-35 as amended at rc.5 (R-01): a `..` body reference that stays ins
   // could not reference content/assets/ at all — every route to it needs `..`.
   // AGSC-01-35 as amended at rc.5 excepts a body target from the segment test and
   // makes the ESCAPE test the operative one; AGSC-03-11 as amended says the same.
-  // FINAL-VERIFY-28 found the amendment applied to the specification and not here.
+  // Found 2026-09-21: the amendment had been applied to the specification and not here.
   const asset = links.resolve([{ slug: 'a', type: 'concept', body: '![x](../assets/d.png)\n' }],
     { assets: ['content/assets/d.png'] });
   const pathCodes = (r) => r.errors.filter((f) => f.severity !== 'warn')

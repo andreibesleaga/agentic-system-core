@@ -18,9 +18,11 @@ different about it.
    node of itself: the guide, the six modes and the specification pages, readable
    without JavaScript.
 2. [plain/modes.md](plain/modes.md) — the six ways of using one Bundle, in plain words.
-3. [USE-CASES.md](USE-CASES.md) — nineteen concrete scenarios: who, what goes where,
+3. [DEMOS.md](DEMOS.md) — every mode and every persona as a demo you can run in five
+   minutes from an empty folder, with the lines it prints.
+4. [USE-CASES.md](USE-CASES.md) — nineteen concrete scenarios: who, what goes where,
    which command.
-4. [plain/README.md](plain/README.md) — each chapter of the specification in a few
+5. [plain/README.md](plain/README.md) — each chapter of the specification in a few
    paragraphs.
 
 ## A developer — "I want to run it, read the code or change it"

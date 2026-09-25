@@ -1,7 +1,7 @@
 'use strict';
 // AGSC-02-90…95: adoption is TOTAL and never errors, existing files are never
 // overwritten, body bytes never change, and AGSC-01-37's two credential files are
-// written. adopt-0004 and adopt-0005 pin the two end-to-end cases; this suite pins
+// written. adopt-0006 and adopt-0005 pin the two end-to-end cases; this suite pins
 // what they do not reach.
 
 const test = require('node:test');

@@ -58,8 +58,15 @@ test('AGSC-08-02: an unset name is not passed to the child, and nothing else is'
   assert.ok(!names.has('SOURCE_DATE_EPOCH'), 'a name the parent never set is not invented');
   assert.ok(!names.has('SECRET'), 'a name outside the scrub list never reaches the child');
   assert.ok(!names.has('AGSC_MODEL_API_KEY'), 'a credential never reaches the child');
+  // What the OPERATING SYSTEM adds to every child regardless of the environment it
+  // is given (macOS: __CF_USER_TEXT_ENCODING; Windows: HOMEDRIVE, SYSTEMROOT, …) is
+  // measured, not listed: a child spawned with an EMPTY environment shows exactly
+  // those names, and they are not the runner's doing.
+  const injected = new Set(String(require('node:child_process').spawnSync(process.execPath,
+    ['-e', 'process.stdout.write(Object.keys(process.env).join(","))'], { env: {}, encoding: 'utf8' }).stdout)
+    .split(',').filter((n) => n !== ''));
   for (const name of names) {
-    assert.ok(SCRUBBED_ENV.includes(name) || name.startsWith('NODE_'),
-      `${name} is neither in the scrub list nor the test runner's own`);
+    assert.ok(SCRUBBED_ENV.includes(name) || name.startsWith('NODE_') || injected.has(name),
+      `${name} is neither in the scrub list, the test runner's own, nor injected by the OS`);
   }
 });

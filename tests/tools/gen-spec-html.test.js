@@ -220,6 +220,50 @@ describe('gen-spec-html — --check against a publisher\'s own pages', () => {
     assert.equal(tableRows('<tr><td>1</td></tr><tr class="x">'), 2);
   });
 
+  it('--text reads a chapter published in parts (page-2, page-3 …) as one page; byte mode does not', () => {
+    const root = specRoot({
+      'spec/09-conformance.md': [
+        '# Conformance', '', '## 9.4 Registry', '', '| Code | Fault | Raised by |', '|---|---|---|',
+        '| `AGSC-E201` | schema validation failed | AGSC-01-01 |', '',
+        '- **AGSC-09-01** An engine MUST report `AGSC-E201` for a schema failure. [PRD-054]',
+        '- **AGSC-09-02** An engine MUST exit 1 on an error. [PRD-054]',
+        '- **AGSC-09-03** An engine MUST exit 0 on a pass. [PRD-054]', '',
+      ].join('\n'),
+    });
+    // The publisher splits the conformance chapter: the table and the first rule on
+    // part 1, the other two rules on part 2 and part 3 — the same words, three files.
+    const tree = publisherTree(root, (s, name) => (name.startsWith('conformance/')
+      ? s.replace(/<li id="AGSC-09-02"[\s\S]*?<\/li>\n?<li id="AGSC-09-03"[\s\S]*?<\/li>/u, '')
+      : s));
+    const page = fs.readFileSync(path.join(tree, '09-conformance', 'index.html'), 'utf8');
+    const { files } = render(root, new Map(fs.readdirSync(path.join(root, 'spec')).sort()
+      .map((n) => [n, fs.readFileSync(path.join(root, 'spec', n), 'utf8')])));
+    const mine = files.get('conformance/index.html');
+    const ruleHtml = (id) => mine.slice(mine.indexOf(`<li><strong id="${id}"`), mine.indexOf('</li>', mine.indexOf(`<li><strong id="${id}"`)) + 5)
+      .replace(/<li><strong id="(AGSC-[^"]+)"><a href="#[^"]+">([^<]+)<\/a><\/strong>/u, '<li id="$1"><a href="#$1"><strong>$2</strong></a>');
+    assert.doesNotMatch(page, /AGSC-09-02|AGSC-09-03/u);
+    for (const [part, id] of [['page-2', 'AGSC-09-02'], ['page-3', 'AGSC-09-03']]) {
+      fs.mkdirSync(path.join(tree, '09-conformance', part), { recursive: true });
+      fs.writeFileSync(path.join(tree, '09-conformance', part, 'index.html'),
+        `<!DOCTYPE html>\n<main><ul>${ruleHtml(id)}</ul></main>\n`);
+    }
+    // A stray directory that is not a part is not read.
+    fs.mkdirSync(path.join(tree, '09-conformance', 'notes'), { recursive: true });
+    fs.writeFileSync(path.join(tree, '09-conformance', 'notes', 'index.html'), '<li id="AGSC-09-99">no</li>\n');
+    const text = envelope('gen-spec-html', ['--text', '--check', tree, root]);
+    assert.deepEqual(text.json.findings, []);
+    assert.equal(text.code, 0);
+    // Without the parts, the two rules have no anchor on the page.
+    fs.rmSync(path.join(tree, '09-conformance', 'page-2'), { recursive: true });
+    fs.rmSync(path.join(tree, '09-conformance', 'page-3'), { recursive: true });
+    const missing = envelope('gen-spec-html', ['--text', '--check', tree, root]);
+    assert.equal(missing.code, 1);
+    assert.deepEqual(missing.json.findings.map((f) => f.message).filter((m) => /no anchor/u.test(m)).length, 2);
+    // Byte mode compares the one page and never concatenates parts.
+    const bytes = envelope('gen-spec-html', ['--check', tree, root]);
+    assert.ok(bytes.json.findings.every((f) => f.code === 'AGSC-E602'));
+  });
+
   it('--text without --check is a usage error', () => {
     assert.equal(capture('gen-spec-html', ['--text', specRoot()]).code, 2);
   });

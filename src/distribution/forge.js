@@ -52,6 +52,16 @@ const TARGETS = Object.freeze({
   ruleset: 'ruleset.json',
   'status-check': 'status-checks.json',
 });
+/**
+ * AGSC-08-12 (2026-09-25): where a repository TRACKS a compiled artefact at the
+ * forge's own path. Drift is measured against such a file and never against the
+ * previous run's `dist/forge/` output, which is regenerated on every run. Only the
+ * CODEOWNERS file has conventional in-repository paths; a ruleset, a hook and a
+ * status-check list are read by the forge from elsewhere, so nothing is compared.
+ */
+const TRACKED = Object.freeze({
+  CODEOWNERS: Object.freeze(['.github/CODEOWNERS', 'CODEOWNERS']),
+});
 
 /**
  * The one status check a CI job reports: the job that runs `agsc ci` (the job name
@@ -179,22 +189,27 @@ function write(items, config, ports) {
   if (files.size === 0 || !fs || typeof fs.writeFile !== 'function') {
     return { drift, files, findings, written };
   }
+  const readable = (p) => {
+    try {
+      return typeof fs.exists === 'function' && fs.exists(p) ? String(fs.readFile(p, 'utf8')) : null;
+    } catch (e) {
+      return null; // unreadable is "absent" for this purpose; the write reports itself
+    }
+  };
   for (const [name, text] of files) {
     const at = `${FORGE_DIR}/${name}`;
-    let existing = null;
-    try {
-      if (typeof fs.exists === 'function' && fs.exists(at)) existing = String(fs.readFile(at, 'utf8'));
-    } catch (e) {
-      existing = null; // unreadable is "absent" for this purpose; the write reports itself
+    // A tracked file at the forge's own path that differs from the compiled one is
+    // AGSC-E707 and is never overwritten; the generated copy is still written.
+    for (const tracked of TRACKED[name] || []) {
+      const existing = readable(tracked);
+      if (existing !== null && existing !== text) {
+        drift.push(tracked);
+        findings.push(finding('AGSC-E707',
+          `${tracked} differs from the ${name} this Bundle's enforce[] compiles to (${at}); it was NOT overwritten (AGSC-08-12)`,
+          { file: tracked }));
+      }
     }
-    if (existing !== null && existing !== text) {
-      drift.push(at);
-      findings.push(finding('AGSC-E707',
-        `${at} differs from the artefact this Bundle's enforce[] compiles to; it was NOT overwritten (AGSC-08-12)`,
-        { file: at }));
-      continue;
-    }
-    if (existing === text) continue;
+    if (readable(at) === text) continue;
     if (typeof fs.mkdirp === 'function') fs.mkdirp(FORGE_DIR);
     fs.writeFile(at, text);
     written.push(at);
@@ -203,6 +218,6 @@ function write(items, config, ports) {
 }
 
 module.exports = {
-  CI_CHECK, FORGE_DIR, TARGETS,
+  CI_CHECK, FORGE_DIR, TARGETS, TRACKED,
   checkNames, compile, enforcedValues, owners, write,
 };

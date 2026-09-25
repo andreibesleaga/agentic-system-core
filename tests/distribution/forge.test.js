@@ -160,17 +160,36 @@ test('AGSC-08-12: a second run over its own output writes nothing — idempotenc
   assert.deepStrictEqual(second.findings, []);
 });
 
-test('AGSC-08-12 / AGSC-E707: a hand-edited artefact is reported and NOT overwritten', () => {
-  const port = memoryPort({ 'dist/forge/status-checks.json': '["something a person wrote"]\n' });
+test('AGSC-08-12 (2026-09-25): the previous run\'s dist/forge/ output is regenerated, never reported as drift', () => {
+  // A changed `checks[]` used to fail every later run against the file the previous
+  // run wrote; the generated directory is now rewritten on every run.
+  const port = memoryPort({ 'dist/forge/status-checks.json': '["something an earlier run wrote"]\n' });
   const result = forge.write([gate({ enforce: ['status-check'] })], {}, port);
-  assert.deepStrictEqual(result.written, []);
-  assert.deepStrictEqual(result.drift, ['dist/forge/status-checks.json']);
+  assert.deepStrictEqual(result.written, ['dist/forge/status-checks.json']);
+  assert.deepStrictEqual(result.drift, []);
+  assert.deepStrictEqual(result.findings, []);
+  assert.strictEqual(port.files.get('dist/forge/status-checks.json'), '["determinism","links","provenance","review","schema"]\n');
+});
+
+test('AGSC-08-12 / AGSC-E707: a TRACKED file at the forge\'s own path that differs is reported and NOT overwritten', () => {
+  const config = { bundle: { operator: 'human:ada' } };
+  const port = memoryPort({ '.github/CODEOWNERS': '* @someone-else\n' });
+  const result = forge.write([gate({ enforce: ['codeowner'] })], config, port);
+  assert.deepStrictEqual(forge.TRACKED, { CODEOWNERS: ['.github/CODEOWNERS', 'CODEOWNERS'] });
+  assert.deepStrictEqual(result.drift, ['.github/CODEOWNERS']);
   assert.strictEqual(result.findings.length, 1);
   assert.strictEqual(result.findings[0].code, 'AGSC-E707');
   assert.strictEqual(result.findings[0].severity, 'error');
+  assert.strictEqual(result.findings[0].file, '.github/CODEOWNERS');
   assert.match(result.findings[0].message, /AGSC-08-12/u);
   assert.match(result.findings[0].message, /NOT overwritten/u);
-  assert.strictEqual(port.files.get('dist/forge/status-checks.json'), '["something a person wrote"]\n');
+  // The tracked file keeps its bytes; the generated copy is still written.
+  assert.strictEqual(port.files.get('.github/CODEOWNERS'), '* @someone-else\n');
+  assert.deepStrictEqual(result.written, ['dist/forge/CODEOWNERS']);
+  assert.match(port.files.get('dist/forge/CODEOWNERS'), /@ada/u);
+  // A tracked file equal to the compiled one is no drift.
+  const same = memoryPort({ 'CODEOWNERS': port.files.get('dist/forge/CODEOWNERS') });
+  assert.deepStrictEqual(forge.write([gate({ enforce: ['codeowner'] })], config, same).findings, []);
 });
 
 test('write() is total: no port, no writable port and an unreadable existing file', () => {

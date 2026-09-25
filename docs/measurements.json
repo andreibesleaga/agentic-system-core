@@ -9,8 +9,8 @@
       "rule_coverage": {
         "active": 332,
         "any_check": 322,
-        "named_by_checker": 80,
-        "named_by_feature": 14,
+        "named_by_checker": 82,
+        "named_by_feature": 52,
         "named_by_test": 319,
         "no_check": 10,
         "uncovered": [
@@ -94,8 +94,8 @@
         "adopt": {
           "optional": 0,
           "required": 5,
-          "total": 5,
-          "withdrawn": 0
+          "total": 6,
+          "withdrawn": 1
         },
         "boards": {
           "optional": 0,
@@ -117,8 +117,8 @@
         },
         "bundle": {
           "optional": 0,
-          "required": 6,
-          "total": 7,
+          "required": 7,
+          "total": 8,
           "withdrawn": 1
         },
         "chunks": {
@@ -166,8 +166,8 @@
         "import": {
           "optional": 0,
           "required": 3,
-          "total": 3,
-          "withdrawn": 0
+          "total": 4,
+          "withdrawn": 1
         },
         "jcs": {
           "optional": 0,
@@ -177,8 +177,8 @@
         },
         "ledger": {
           "optional": 0,
-          "required": 4,
-          "total": 5,
+          "required": 6,
+          "total": 7,
           "withdrawn": 1
         },
         "links": {
@@ -208,17 +208,17 @@
       },
       "vector_run": {
         "fail": 0,
-        "pass": 164,
+        "pass": 167,
         "pending": 0,
-        "skip": 30,
-        "total": 194,
-        "withdrawn": 30
+        "skip": 32,
+        "total": 199,
+        "withdrawn": 32
       },
       "vectors": {
         "optional": 1,
-        "required": 163,
-        "total": 194,
-        "withdrawn": 30
+        "required": 166,
+        "total": 199,
+        "withdrawn": 32
       }
     },
     "determinism": {
@@ -1901,192 +1901,245 @@
         "index_bytes": 1048576,
         "page_bytes": 102400
       },
-      "command": "node bench/measure.js --layer perf   # sizes 100 500 501 1000 5000 10000, 3 runs each, median",
+      "command": "node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3   # 2026-09-25, after the write-path change",
       "machine": {
         "arch": "x64",
         "cpus": 16,
         "model": "AMD Ryzen 7 5800H with Radeon Graphics",
         "node": "v24.18.0",
         "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
-        "total_mem_bytes": 33560793088
+        "total_mem_bytes": 33560788992
       },
       "rows": [
         {
           "bytes_per_item_index": 319,
           "chunks_bytes": 647461,
           "chunks_bytes_per_item": 6475,
-          "files": 336,
-          "html_pages": 111,
-          "html_largest_bytes": 16829,
-          "html_largest_path": "index.html",
-          "html_median_bytes": 5145,
+          "files": 343,
+          "html_pages": 115,
+          "html_largest_bytes": 17834,
+          "html_largest_path": "search/index.html",
+          "html_median_bytes": 6132,
           "html_over_budget": 0,
           "index_bytes_largest": 31853,
           "index_shards": 0,
           "items": 100,
           "largest_page_bytes": 647461,
           "largest_page_path": "chunks.jsonl",
-          "ms_median": 1804,
+          "ms_median": 1620,
           "ms_runs": [
-            1804,
-            1823,
-            1712
+            1654,
+            1620,
+            1587
           ],
-          "output_bytes": 2976546,
-          "rss_kb_median": 122492,
+          "output_bytes": 3125302,
+          "rss_kb_median": 146740,
           "rss_kb_runs": [
-            123308,
-            121620,
-            122492
+            124460,
+            147576,
+            146740
           ]
         },
         {
           "bytes_per_item_index": 352,
           "chunks_bytes": 3249673,
           "chunks_bytes_per_item": 6499,
-          "files": 1542,
-          "html_pages": 513,
-          "html_largest_bytes": 79176,
-          "html_largest_path": "index.html",
-          "html_median_bytes": 5156,
+          "files": 1548,
+          "html_pages": 516,
+          "html_largest_bytes": 80292,
+          "html_largest_path": "clusters/bench-cluster/index.html",
+          "html_median_bytes": 6146,
           "html_over_budget": 0,
           "index_bytes_largest": 175986,
           "index_shards": 2,
           "items": 500,
           "largest_page_bytes": 3243064,
           "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 5041,
+          "ms_median": 4177,
           "ms_runs": [
-            5122,
-            4953,
-            5041
+            4177,
+            4073,
+            4201
           ],
-          "output_bytes": 14441607,
-          "rss_kb_median": 279748,
+          "output_bytes": 14986776,
+          "rss_kb_median": 270032,
           "rss_kb_runs": [
-            279748,
-            282976,
-            272164
-          ]
-        },
-        {
-          "bytes_per_item_index": 351,
-          "chunks_bytes": 3256181,
-          "chunks_bytes_per_item": 6499,
-          "files": 1548,
-          "html_pages": 517,
-          "html_largest_bytes": 79173,
-          "html_largest_path": "index.html",
-          "html_median_bytes": 5156,
-          "html_over_budget": 0,
-          "index_bytes_largest": 175984,
-          "index_shards": 2,
-          "items": 501,
-          "largest_page_bytes": 3243096,
-          "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 5026,
-          "ms_runs": [
-            5284,
-            4907,
-            5026
-          ],
-          "output_bytes": 14473608,
-          "rss_kb_median": 283084,
-          "rss_kb_runs": [
-            283232,
-            269704,
-            283084
+            270032,
+            267992,
+            270700
           ]
         },
         {
           "bytes_per_item_index": 176,
           "chunks_bytes": 6502350,
           "chunks_bytes_per_item": 6502,
-          "files": 3049,
-          "html_pages": 1018,
-          "html_largest_bytes": 79335,
-          "html_largest_path": "page-2/index.html",
-          "html_median_bytes": 5156,
+          "files": 3054,
+          "html_pages": 1020,
+          "html_largest_bytes": 80630,
+          "html_largest_path": "clusters/bench-cluster/index.html",
+          "html_median_bytes": 6147,
           "html_over_budget": 0,
           "index_bytes_largest": 176303,
           "index_shards": 3,
           "items": 1000,
           "largest_page_bytes": 3524296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 8659,
+          "ms_median": 6971,
           "ms_runs": [
-            8829,
-            8659,
-            8290
+            6992,
+            6793,
+            6971
           ],
-          "output_bytes": 28771171,
-          "rss_kb_median": 381396,
+          "output_bytes": 29736703,
+          "rss_kb_median": 318688,
           "rss_kb_runs": [
-            381396,
-            383040,
-            334732
+            318688,
+            317808,
+            319800
           ]
         },
         {
           "bytes_per_item_index": 36,
           "chunks_bytes": 32655503,
           "chunks_bytes_per_item": 6531,
-          "files": 15105,
-          "html_pages": 5058,
-          "html_largest_bytes": 80340,
-          "html_largest_path": "page-5/index.html",
-          "html_median_bytes": 5167,
+          "files": 15102,
+          "html_pages": 5052,
+          "html_largest_bytes": 81622,
+          "html_largest_path": "clusters/bench-cluster/index.html",
+          "html_median_bytes": 6161,
           "html_over_budget": 0,
           "index_bytes_largest": 177854,
           "index_shards": 11,
           "items": 5000,
           "largest_page_bytes": 17650296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 37061,
+          "ms_median": 30167,
           "ms_runs": [
-            37936,
-            37061,
-            36104
+            30167,
+            30335,
+            28903
           ],
-          "output_bytes": 143866561,
-          "rss_kb_median": 956720,
+          "output_bytes": 148193168,
+          "rss_kb_median": 965828,
           "rss_kb_runs": [
-            980964,
-            956720,
-            947676
+            967120,
+            965348,
+            965828
           ]
         },
         {
           "bytes_per_item_index": 18,
           "chunks_bytes": 65346976,
           "chunks_bytes_per_item": 6535,
-          "files": 30175,
-          "html_pages": 10108,
-          "html_largest_bytes": 80350,
-          "html_largest_path": "page-13/index.html",
-          "html_median_bytes": 5167,
+          "files": 30162,
+          "html_pages": 10092,
+          "html_largest_bytes": 81626,
+          "html_largest_path": "clusters/bench-cluster/index.html",
+          "html_median_bytes": 6162,
           "html_over_budget": 0,
           "index_bytes_largest": 177863,
           "index_shards": 21,
           "items": 10000,
           "largest_page_bytes": 35307804,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 75001,
+          "ms_median": 58515,
           "ms_runs": [
-            72405,
-            75001,
-            87179
+            61690,
+            58515,
+            57551
           ],
-          "output_bytes": 287736049,
-          "rss_kb_median": 1712812,
+          "output_bytes": 296272824,
+          "rss_kb_median": 1718264,
           "rss_kb_runs": [
-            1712812,
-            1701192,
-            1719988
+            1707660,
+            1718264,
+            1720232
           ]
         }
       ],
-      "runs_per_size": 3
+      "runs_per_size": 3,
+      "measured_on": "2026-09-25",
+      "before_write_path_change": {
+        "command": "node bench/measure.js --layer perf   # sizes 100 500 1000 5000 10000, 3 runs each, median",
+        "measured_on": "2026-09-25",
+        "rows": [
+          {
+            "items": 100,
+            "ms_median": 1795,
+            "ms_runs": [
+              1795,
+              1835,
+              1780
+            ],
+            "rss_kb_median": 123848,
+            "rss_kb_runs": [
+              123424,
+              140444,
+              123848
+            ]
+          },
+          {
+            "items": 500,
+            "ms_median": 4630,
+            "ms_runs": [
+              4630,
+              4889,
+              4621
+            ],
+            "rss_kb_median": 270064,
+            "rss_kb_runs": [
+              270064,
+              271380,
+              269544
+            ]
+          },
+          {
+            "items": 1000,
+            "ms_median": 8233,
+            "ms_runs": [
+              8124,
+              8345,
+              8233
+            ],
+            "rss_kb_median": 324328,
+            "rss_kb_runs": [
+              324328,
+              381152,
+              323784
+            ]
+          },
+          {
+            "items": 5000,
+            "ms_median": 38180,
+            "ms_runs": [
+              39343,
+              38180,
+              37013
+            ],
+            "rss_kb_median": 977756,
+            "rss_kb_runs": [
+              977800,
+              976572,
+              977756
+            ]
+          },
+          {
+            "items": 10000,
+            "ms_median": 79104,
+            "ms_runs": [
+              79104,
+              78954,
+              79625
+            ],
+            "rss_kb_median": 1705684,
+            "rss_kb_runs": [
+              1705592,
+              1718496,
+              1705684
+            ]
+          }
+        ]
+      }
     },
     "retrieval": {
       "command": "node tools/bench --node <built node> --origin-node <name> --json",
@@ -2188,7 +2241,7 @@
         "per_item": 4,
         "version": "parity-calls-v1"
       },
-      "command": "node bench/measure.js --layer parity --nodes <name>=<bundle dir>,\u2026",
+      "command": "node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…",
       "nodes": {
         "minimal": {
           "answer_types": {
@@ -2378,7 +2431,7 @@
       }
     },
     "tokens": {
-      "command": "NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,\u2026 --exports <name>=<dir>,\u2026",
+      "command": "NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,… --exports <name>=<dir>,…",
       "no_claude_count": "Anthropic publishes no offline tokenizer; no Claude token count is reported, because it would be a guess.",
       "nodes": {
         "minimal": {
@@ -2655,7 +2708,7 @@
     },
     "a11y": {
       "ceiling": "axe-core finds on average 57 % of WCAG issues automatically; zero violations is a floor, never a conformance claim.",
-      "command": "NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,\u2026",
+      "command": "NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,…",
       "nodes": {
         "minimal": {
           "by_type": {
@@ -3145,12 +3198,314 @@
     },
     "package": {
       "command": "npm pack --dry-run --json",
-      "files": 455,
-      "packed_bytes": 1050087,
-      "unpacked_bytes": 3407716
+      "files": 581,
+      "packed_bytes": 1123332,
+      "unpacked_bytes": 3648797,
+      "measured_on": "2026-09-25",
+      "runtime_install": {
+        "command": "npm ls --omit=dev --parseable --all | xargs du -sk",
+        "packages": 135,
+        "largest_kb": {
+          "zod": 8364,
+          "@modelcontextprotocol/sdk": 6256,
+          "hono": 3704,
+          "ajv": 2544,
+          "jsonld": 2136,
+          "markdown-it": 1968,
+          "undici": 1668,
+          "fast-xml-parser": 1428,
+          "yaml": 1372,
+          "diff": 1016,
+          "n3": 900
+        }
+      }
+    },
+    "cost": {
+      "command": "scratch scripts over a loopback server (page weight: playwright-core 1.62.1 + chrome-headless-shell 1228; MCP: one `agsc mcp` process over stdio, 20 calls per tool, median); 2026-09-25",
+      "page_weight": {
+        "note": "requests and bytes one visit costs, measured in a real headless Chromium; \"plain\" is a browser without document.modelContext, \"webmcp\" one that exposes it",
+        "main_site": {
+          "item_route": "/concepts/concept/",
+          "before": {
+            "plain": {
+              "requests": 27,
+              "bytes": 139989
+            },
+            "webmcp": {
+              "requests": 27,
+              "bytes": 139989
+            }
+          },
+          "after": {
+            "plain": {
+              "requests": 6,
+              "bytes": 106867
+            },
+            "webmcp": {
+              "requests": 27,
+              "bytes": 140958
+            }
+          },
+          "front_page": {
+            "requests": 3,
+            "bytes": 28765
+          },
+          "search_page": {
+            "requests": 4,
+            "bytes": 31996,
+            "first_result_ms": 245,
+            "script": "assets/search.js",
+            "script_bytes": 3618
+          }
+        },
+        "patterns_node": {
+          "item_route": "/concepts/autonomy-ladder/",
+          "before": {
+            "plain": {
+              "requests": 54,
+              "bytes": 263017
+            },
+            "webmcp": {
+              "requests": 54,
+              "bytes": 263017
+            }
+          },
+          "after": {
+            "plain": {
+              "requests": 6,
+              "bytes": 109864
+            },
+            "webmcp": {
+              "requests": 54,
+              "bytes": 263986
+            }
+          },
+          "front_page": {
+            "requests": 3,
+            "bytes": 13552
+          },
+          "search_page": {
+            "requests": 5,
+            "bytes": 80937,
+            "first_result_ms": 225,
+            "script": "search/agsc-search.js",
+            "script_bytes": 9124
+          }
+        },
+        "bench_5000": {
+          "item_route": "/concepts/bench-item-1/",
+          "after": {
+            "plain": {
+              "requests": 6,
+              "bytes": 108047
+            },
+            "webmcp": {
+              "requests_measured_within_wait": 1715,
+              "bytes_measured_within_wait": 7987314,
+              "requests_the_read_makes": 5014
+            }
+          },
+          "front_page": {
+            "requests": 3,
+            "bytes": 12482
+          },
+          "search_page": {
+            "requests": 13,
+            "bytes": 1523179,
+            "first_result_ms": 355,
+            "script": "search/agsc-search.js",
+            "script_bytes": 8634
+          }
+        }
+      },
+      "mcp_stdio": {
+        "note": "per-call wall time and answer bytes, median of 20; startup = process start to the initialize answer (one in-memory build)",
+        "bench_5000": {
+          "startup_ms": {
+            "before": 23790.6,
+            "after": 20705.8
+          },
+          "server_rss_kb": 966572,
+          "calls": {
+            "search": {
+              "before_ms": 1527.2,
+              "after_ms": 68.93,
+              "bytes": 1253731
+            },
+            "read": {
+              "before_ms": 0.65,
+              "after_ms": 0.69,
+              "bytes": 7888
+            },
+            "links": {
+              "before_ms": 1690.92,
+              "after_ms": 1.52,
+              "bytes": 1149
+            },
+            "compose": {
+              "before_ms": 6.07,
+              "after_ms": 5.85,
+              "bytes": 561
+            },
+            "ask": {
+              "before_ms": 1447.36,
+              "after_ms": 9,
+              "bytes": 1361
+            },
+            "propose": {
+              "before_ms": 0.81,
+              "after_ms": 0.76,
+              "bytes": 7868
+            }
+          }
+        },
+        "reference_fixture": {
+          "startup_ms": {
+            "before": 1147.2,
+            "after": 1177.7
+          },
+          "calls": {
+            "search": {
+              "before_ms": 1.8,
+              "after_ms": 0.85,
+              "bytes": 1057
+            },
+            "read": {
+              "before_ms": 0.7,
+              "after_ms": 0.67,
+              "bytes": 2231
+            },
+            "links": {
+              "before_ms": 1.82,
+              "after_ms": 0.72,
+              "bytes": 741
+            },
+            "compose": {
+              "before_ms": 0.7,
+              "after_ms": 0.73,
+              "bytes": 551
+            },
+            "ask": {
+              "before_ms": 1.11,
+              "after_ms": 0.64,
+              "bytes": 1073
+            },
+            "propose": {
+              "before_ms": 1.1,
+              "after_ms": 1.04,
+              "bytes": 2201
+            }
+          }
+        }
+      },
+      "verify": {
+        "command": "/usr/bin/time -v node bin/agsc.js verify --json",
+        "bench_5000": {
+          "wall_s": 40.66,
+          "rss_kb": 1224052
+        },
+        "bench_500": {
+          "wall_s": 3.07,
+          "rss_kb": 296056
+        }
+      },
+      "cold_start": {
+        "command": "/usr/bin/time -f \"%e s %M KB\" node bin/agsc.js <verb>; modules counted from require.cache at exit",
+        "version": {
+          "wall_s_runs": [
+            0.18,
+            0.18,
+            0.19,
+            0.19,
+            0.19
+          ],
+          "rss_kb": 65292,
+          "modules": 117
+        },
+        "lint_reference_fixture": {
+          "wall_s_runs": [
+            0.78,
+            0.81,
+            0.77,
+            0.77,
+            0.77
+          ],
+          "rss_kb": 97212,
+          "modules": 284
+        },
+        "node_empty": {
+          "wall_s_runs": [
+            0.05,
+            0.04,
+            0.05
+          ],
+          "rss_kb": 44500
+        },
+        "library_load_ms": {
+          "jsonld": 192,
+          "@modelcontextprotocol/sdk/server": 291,
+          "ajv": 61,
+          "n3": 52,
+          "yaml": 52,
+          "commander": 36,
+          "markdown-it": 24
+        }
+      },
+      "hosting": {
+        "source": [
+          {
+            "url": "https://developers.cloudflare.com/pages/platform/limits/",
+            "read": "2026-09-25",
+            "page_says": "Last updated Sep 5, 2026",
+            "quotes": [
+              "Cloudflare Pages sites can contain up to 20,000 files on the Free plan.",
+              "Paid plans (such as Pro, Business, and Enterprise plans) can have up to 100,000 files per site.",
+              "The maximum file size for a single Cloudflare Pages site asset is 25 MiB.",
+              "A `_headers` file can have a maximum of 100 header rules.",
+              "A `_redirects` file can have a maximum of 2,000 static redirects and 100 dynamic redirects, for a combined total of 2,100 redirects."
+            ]
+          },
+          {
+            "url": "https://developers.cloudflare.com/pages/functions/pricing/",
+            "read": "2026-09-25",
+            "quotes": [
+              "On both free and paid plans, requests to static assets are free and unlimited."
+            ]
+          }
+        ],
+        "nodes": {
+          "main_site": {
+            "files": 149,
+            "bytes": 2497082,
+            "fits_free_plan": true,
+            "usd_month": 0
+          },
+          "patterns_node": {
+            "files": 227,
+            "bytes": 1490653,
+            "fits_free_plan": true,
+            "usd_month": 0
+          },
+          "bench_5000": {
+            "files": 15102,
+            "bytes": 148200000,
+            "header_rules": 42,
+            "redirects": 3,
+            "fits_free_plan": true,
+            "usd_month": 0
+          },
+          "bench_10000": {
+            "files": 30162,
+            "bytes": 296300000,
+            "fits_free_plan": false,
+            "needs": "a paid Pages plan (100,000 files; its price was not read in this run) or another hosting profile"
+          }
+        },
+        "free_plan_item_bound_about": 6600
+      }
     }
   },
   "schema": "agsc.measurements.v1",
-  "measured_for": "2026-01-01",
+  "measured_for": "2026-09-25",
   "spec_version": "1.0.0-rc.6"
 }

@@ -247,7 +247,7 @@ test('AGSC-09-16: the EMITTED page tools follow the manifest and answer as the l
     ['links', { iri: `https://sharded.example/concepts/${slugOf(501)}/` }],
     ['propose', { slug: slugOf(501) }],
     ['compose', { selection: [slugOf(500)] }],
-    ['remember', { body: 'x', kind: 'concept', title: 'A Remembered Note' }],
+    ['remember', { body: 'x', kind: 'concept', operator: 'human:tester', title: 'A Remembered Note' }],
   ];
   for (const [name, args] of calls) {
     const expected = JSON.parse(JSON.stringify(local.call(name, args)));

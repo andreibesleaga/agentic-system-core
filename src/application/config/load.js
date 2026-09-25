@@ -156,7 +156,7 @@ function load(options) {
   //   - AGSC-01-19: `build.out` MUST default to "www".
   //   - spec/06-surfaces.md ("/feed.xml is emitted only when build.feed is
   //     true (default true)"): `build.feed` defaults to true — NOTE this
-  //     corrects the coordinator's 2026-09-18 instruction, which stated
+  //     corrects the 2026-09-18 note, which stated
   //     "build.feed false"; the specification text is the authoritative
   //     value per project rule 6 ("the specification is the truth"), and it
   //     is unambiguous here.

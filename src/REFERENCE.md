@@ -373,7 +373,7 @@ Positional arguments (`trace <file.json>`, `run <slug>`) pass through via
 
 ### User configuration (AGSC-09-09, the "user" precedence layer)
 
-Decision (coordinator, 2026-09-18): `bin/agsc.js` reads
+Decision (2026-09-18): `bin/agsc.js` reads
 `$XDG_CONFIG_HOME/agsc/config.json`, falling back to `~/.config/agsc/config.json`,
 through a **second**, separate `createFileSystem` instance rooted at that
 directory — distinct from the Bundle's own FileSystem port, since the two roots
@@ -394,7 +394,7 @@ real home directory.
 `schema/config.schema.json` is frozen at the current tag and carries no literal
 JSON-Schema `default` for four keys the specification prose nonetheless defaults:
 `build.out` ("www", AGSC-01-19), `build.feed` (`true`, spec/06-surfaces.md — *not*
-`false`; an earlier coordinator instruction misstated this value, corrected here
+`false`; an earlier note misstated this value, corrected here
 against the specification text per project rule 6), `i18n.default` ("en",
 AGSC-01-18) and `run.enabled` (`false`, AGSC-09-94). `application/config/load.js`
 applies these four explicitly (`PROSE_DEFAULTS`, cited by rule id) so the engine

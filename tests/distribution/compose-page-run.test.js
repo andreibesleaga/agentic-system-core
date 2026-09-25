@@ -256,7 +256,7 @@ test('AGSC-09-16: with document.modelContext the seven tools are registered, wit
     ['compose', { selection }],
     ['ask', { question: 'handoff' }],
     ['propose', { slug: 'handoff' }],
-    ['remember', { at: INSTANT, body: 'A note.', actor: 'process:ci', kind: 'episode', title: 'A Recorded Run' }],
+    ['remember', { at: INSTANT, body: 'A note.', actor: 'process:ci', kind: 'episode', operator: 'human:tester', title: 'A Recorded Run' }],
     ['read', { slug: 'no-such-item' }],
   ];
   assert.ok(selection.length > 0, 'the page recovered no selectable item');

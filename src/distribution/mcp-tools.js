@@ -111,9 +111,9 @@ function documentText(item) {
  * computed inverses and AGSC-E301, so the `links` tool reports exactly what
  * the graph exports report.
  */
-function edgesFor(bundle, item) {
+function edgesIn(bundle) {
   const resolved = links.resolve(bundle.items, { assets: bundle.assets, config: bundle.config });
-  return (resolved.edges || []).filter((e) => e.source === item.slug);
+  return resolved.edges || [];
 }
 
 /** AGSC-05-04b: a `memory://` alias naming a FOREIGN bundle is AGSC-E309. */
@@ -159,17 +159,34 @@ function tools(bundle, options) {
   const implementations = Object.create(null);
   const flatItems = () => (bundle.items || [])
     .map((i) => Object.assign({}, i.frontmatter, { slug: i.slug, type: i.type }));
+  // The Bundle a server serves is loaded once and never changes while it runs
+  // (mcp-stdio.js), so the two derivations that `search`/`ask` and `links` repeated
+  // over the whole node on every call — one token set per item, the resolved edge
+  // list — are computed on first use and kept. Measured on a 5,000-item node: a
+  // `search` or `links` call cost about 1.5 s each; now the first does, and the rest
+  // cost what the answer costs.
+  let tokenSets = null;
+  const tokenSetsOf = () => {
+    if (tokenSets === null) tokenSets = (bundle.items || []).map((item) => new Set(tokenize(documentText(item))));
+    return tokenSets;
+  };
+  let resolvedEdges = null;
+  const edgesOf = (item) => {
+    if (resolvedEdges === null) resolvedEdges = edgesIn(bundle);
+    return resolvedEdges.filter((e) => e.source === item.slug);
+  };
 
   implementations.search = (args) => {
     const query = typeof args.query === 'string' ? args.query : '';
     const wanted = tokenize(query);
     if (wanted.length === 0) return envelope('search', 'items', Object.freeze({ hits: Object.freeze([]) }));
     const hits = [];
-    for (const item of bundle.items || []) {
-      const tokens = new Set(tokenize(documentText(item)));
+    const sets = tokenSetsOf();
+    (bundle.items || []).forEach((item, at) => {
+      const tokens = sets[at];
       const score = wanted.filter((t) => tokens.has(t)).length;
       if (score > 0) hits.push({ iri: itemIri(base, item), score, slug: item.slug, title: (item.frontmatter || {}).title });
-    }
+    });
     hits.sort((a, b) => b.score - a.score || (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
     return envelope('search', 'items', Object.freeze({ hits: Object.freeze(hits.map(Object.freeze)) }));
   };
@@ -196,7 +213,7 @@ function tools(bundle, options) {
     const item = byslug.get(slug);
     if (!item) return errorEnvelope('links', 'AGSC-E301', 'no item with that slug in this Bundle');
     return envelope('links', 'links', Object.freeze({
-      edges: Object.freeze(edgesFor(bundle, item).map(Object.freeze)), slug: item.slug,
+      edges: Object.freeze(edgesOf(item).map(Object.freeze)), slug: item.slug,
     }));
   };
 
@@ -304,6 +321,17 @@ function tools(bundle, options) {
     if (args.actor !== undefined && !ACTOR.test(String(args.actor))) {
       return errorEnvelope('remember', 'AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
     }
+    // AGSC-09-14b (2026-09-25): an item without an operator is not the conforming
+    // item this tool promises. A declared, enabled lane's entry supplies it
+    // (AGSC-08-28(b)); every other caller of the local server declares one.
+    let operator = typeof args.operator === 'string' ? args.operator : null;
+    if (operator === null) {
+      const lane = boardLanes.laneOf(config, args.agent);
+      if (lane !== null && lane.enabled === true && typeof lane.operator === 'string') operator = lane.operator;
+    }
+    if (operator === null) {
+      return errorEnvelope('remember', 'AGSC-E003', 'remember needs the declared human operator, `operator`, or the `agent` of a declared lane (AGSC-09-14b)');
+    }
     const title = typeof args.title === 'string' ? args.title : '';
     const findings = [];
     const taken = new Set(byslug.keys());
@@ -336,7 +364,7 @@ function tools(bundle, options) {
     frontmatter.prov = {
       agent: args.agent,
       model: args.model,
-      operator: args.operator,
+      operator,
       origin: args.origin === 'human' ? 'human' : 'ai-generated',
     };
     const sources = [];

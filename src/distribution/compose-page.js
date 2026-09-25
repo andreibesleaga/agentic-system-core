@@ -326,6 +326,11 @@ function controller(options) {
 
   function start() {
     state.base = location.origin + '/';
+    // The page tools read the corpus on THIS page at once (AGSC-09-16: the compose
+    // page and the item pages carry the same tools; an item page reads it on the
+    // first call instead, page-tools.js says why).
+    var tools = globalThis.AGSC_PAGE_TOOLS;
+    if (tools && typeof tools.start === 'function') tools.start();
     return fetch('/.well-known/knowledge-linkset').then(function (r) {
       return r.ok ? r.json() : null;
     }).catch(function () {

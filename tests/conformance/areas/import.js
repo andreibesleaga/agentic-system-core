@@ -198,16 +198,17 @@ function sourceRecordCase(vector, ctx) {
 }
 
 /**
- * imp-0003 (AGSC-03-19, AGSC-03-20) — foreign link names are mapped on import, never
- * added to the vocabulary, through the OKF reader's own `mapFrontmatter`.
+ * imp-0004 (AGSC-03-19, AGSC-03-20; superseding imp-0003, which is withdrawn and
+ * never runs) — foreign link names are mapped on import, never added to the
+ * vocabulary, through the OKF reader's own `mapFrontmatter`. The input declares an
+ * established licence, so the licence record of AGSC-01-22 is not in play and the
+ * case is isolated by its input alone.
  */
 function foreignLinkCase(vector) {
   const input = vector.input;
   const stem = String(input.path).replace(/\.md$/u, '');
-  // The case isolates the mapping: the source's licence is taken as established, so
-  // the licence record of AGSC-01-22 (a `status: draft` and its warning) is not in play.
   const { frontmatter, findings } = okf.mapFrontmatter(input.frontmatter,
-    { body: '', operator: 'human:tester', path: input.path, slug: stem, sourceLicence: true, stem });
+    { body: '', operator: 'human:tester', path: input.path, slug: stem, stem });
   const list = [];
   for (const [key, value] of Object.entries(vector.expected.frontmatter_has || {})) {
     list.push([`${key}`, JSON.stringify(frontmatter[key]) === JSON.stringify(value), JSON.stringify(frontmatter[key])]);
@@ -224,7 +225,7 @@ function foreignLinkCase(vector) {
 }
 
 module.exports.run = (vector, ctx) => {
-  if (vector.id === 'imp-0003') return foreignLinkCase(vector);
+  if (vector.id === 'imp-0004' || vector.id === 'imp-0003') return foreignLinkCase(vector);
   if (vector.id === 'imp-0001') return collisionCase(vector);
   if (vector.id === 'imp-0002') return sourceRecordCase(vector, ctx);
   return { status: 'fail', detail: `${vector.id}: no handler in area import` };

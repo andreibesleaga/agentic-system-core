@@ -118,12 +118,12 @@ function bundle(items, id) {
       tdm_crawlers: ['Applebot-Extended', 'CCBot', 'ClaudeBot', 'GPTBot', 'Google-Extended', 'meta-externalagent'],
       title: `Bench Bundle (${items} items)`,
     },
-    spec_version: '1.0.0-rc.5',
+    spec_version: '1.0.0-rc.6',
     tags: { allowed: ['agents', 'patterns'] },
   }, null, 2)}\n`;
   files[path.join('content', 'index.md')] = [
     '---',
-    'spec_version: 1.0.0-rc.5',
+    'spec_version: 1.0.0-rc.6',
     'okf_version: "0.2"',
     `title: Bench Bundle (${items} items)`,
     'description: A generated Bundle used only to measure build cost; no prose here is meant to be read.',

@@ -174,7 +174,7 @@ test('AGSC-08-04: propose returns the payload and performs no write', () => {
 test('AGSC-09-14b: remember synthesizes a conforming item from a fixed instant', () => {
   const toolset = tools(fixture(), {});
   const result = toolset.call('remember', {
-    at: '2026-01-01T00:00:00Z', body: 'It ran.', actor: 'process:ci', kind: 'episode', title: 'A Recorded Run',
+    at: '2026-01-01T00:00:00Z', body: 'It ran.', actor: 'process:ci', kind: 'episode', operator: 'human:someone', title: 'A Recorded Run',
   });
   assert.strictEqual(result.body.slug, 'a-recorded-run');
   assert.strictEqual(result.body.path, 'content/episodes/a-recorded-run.md');
@@ -188,14 +188,34 @@ test('AGSC-09-14b: remember synthesizes a conforming item from a fixed instant',
   // requires, defaulted to `info` as AGSC-09-14b says, so it is conforming as returned.
   const lesson = toolset.call('remember', { body: 'x', kind: 'lesson', operator: 'human:someone', title: 'A Lesson Learned' });
   assert.strictEqual(lesson.body.frontmatter.severity, 'info');
-  assert.strictEqual(toolset.call('remember', { body: 'x', kind: 'lesson', severity: 'block', title: 'A Lesson Learned' })
+  assert.strictEqual(toolset.call('remember', { body: 'x', kind: 'lesson', operator: 'human:someone', severity: 'block', title: 'A Lesson Learned' })
     .body.frontmatter.severity, 'block');
   // A concept gets `kind: explainer`; an unknown kind falls back to a concept.
-  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', title: 'T' }).body.frontmatter.kind, 'explainer');
-  assert.strictEqual(toolset.call('remember', { body: '', kind: 'nonsense', title: 'T' }).body.frontmatter.type, 'concept');
+  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', operator: 'human:someone', title: 'T' }).body.frontmatter.kind, 'explainer');
+  assert.strictEqual(toolset.call('remember', { body: '', kind: 'nonsense', operator: 'human:someone', title: 'T' }).body.frontmatter.type, 'concept');
   // A client asserting `human` keeps that origin.
-  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', origin: 'human', title: 'T' })
+  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', operator: 'human:someone', origin: 'human', title: 'T' })
     .body.frontmatter.prov.origin, 'human');
+});
+
+test('AGSC-09-14b (2026-09-25): the local server refuses remember without an operator, unless a declared lane supplies one', () => {
+  const toolset = tools(fixture(), {});
+  const refused = toolset.call('remember', { body: 'x', kind: 'concept', title: 'No Operator' });
+  assert.strictEqual(refused.type, 'error');
+  assert.strictEqual(refused.body.code, 'AGSC-E003');
+  assert.match(refused.body.message, /operator/u);
+  // A declared, enabled lane's entry supplies `prov.operator` (AGSC-08-28(b)).
+  const config = {
+    ...fixture().config,
+    agents: [{ author: 'bot', channel: 'main', enabled: true, kind: 'llm', max_new_items: 3, model: 'm', name: 'writer', operator: 'human:lane-owner', tasks: ['plan'], types: ['concept'] }],
+    channels: [{ kind: 'github', name: 'main', target: 'https://github.com/x/y' }],
+  };
+  const laned = tools(fixture(), { config }).call('remember', { agent: 'writer', body: 'x', kind: 'concept', title: 'From A Lane' });
+  assert.strictEqual(laned.type, 'proposal', JSON.stringify(laned.body));
+  assert.strictEqual(laned.body.frontmatter.prov.operator, 'human:lane-owner');
+  // A disabled lane supplies nothing.
+  const off = { ...config, agents: [{ ...config.agents[0], enabled: false }] };
+  assert.strictEqual(tools(fixture(), { config: off }).call('remember', { agent: 'writer', body: 'x', kind: 'concept', title: 'From A Lane' }).body.code, 'AGSC-E003');
 });
 
 test('AGSC-09-14b: remember is total — a bad source is DROPPED with AGSC-E506', () => {
@@ -203,6 +223,7 @@ test('AGSC-09-14b: remember is total — a bad source is DROPPED with AGSC-E506'
   const result = toolset.call('remember', {
     body: '',
     kind: 'concept',
+    operator: 'human:someone',
     sources: [{ id: 'a', resource: 'ftp://bad/' }, { id: 'b', resource: 'https://ok.example/x' },
       { id: 'c', resource: 'urn:agsc:channel:mail:abc' }, {}],
     title: 'T',
@@ -216,7 +237,7 @@ test('AGSC-09-14b: remember is total — a bad source is DROPPED with AGSC-E506'
 
 test('AGSC-02-91: a colliding remember slug takes the -2 suffix', () => {
   const toolset = tools(fixture(), {});
-  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', title: 'Handoff' }).body.slug, 'handoff-2');
+  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', operator: 'human:someone', title: 'Handoff' }).body.slug, 'handoff-2');
 });
 
 test('itemIri uses the type plural of the route set', () => {

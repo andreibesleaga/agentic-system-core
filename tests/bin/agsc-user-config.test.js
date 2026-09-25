@@ -1,5 +1,5 @@
 // tests/bin/agsc-user-config.test.js — AGSC-09-09 "user configuration"
-// layer (coordinator decision, 2026-09-18): $XDG_CONFIG_HOME/agsc/config.json,
+// layer (decided 2026-09-18): $XDG_CONFIG_HOME/agsc/config.json,
 // falling back to ~/.config/agsc/config.json, loaded through a second,
 // user-rooted FileSystem adapter. Uses only a real temp directory
 // (node:os.tmpdir()) — never the real home directory.

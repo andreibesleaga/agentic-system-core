@@ -1,0 +1,33 @@
+{
+  "area": "ledger",
+  "description": "AGSC-08-23 for a downloaded file with no history to recompute from: the published ledger of ledger-0005 with its last line (the trailing build entry) removed, beside a discovery document whose agsc-ledger-head is the head ledger-0005 derives. Every remaining line still links, so the chain walk passes; the comparison of the recomputed chain head with the published head fails, which is AGSC-E701 — the truncated tail the rule names. No history is given, so no AGSC-E702 comparison runs.",
+  "expected": {
+    "error": "AGSC-E701"
+  },
+  "id": "ledger-0007",
+  "input": {
+    "published": "{\"actor\":\"human:ada\",\"hash\":\"61fbde95c6e349ffa5ced333a1137d2d26d1467ccebd3da31971c7a52862bd5b\",\"kind\":\"commit\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"1111111111111111111111111111111111111111\",\"ts\":\"2026-01-01T00:00:00Z\"}\n{\"actor\":\"human:ada\",\"hash\":\"0ec056e1a0a6136e9fedfab1d37e4e3c0e60c8828d55bf9b7ceb3e4fa8a468f9\",\"kind\":\"merge\",\"mode\":\"auto\",\"prev\":\"61fbde95c6e349ffa5ced333a1137d2d26d1467ccebd3da31971c7a52862bd5b\",\"ref\":\"2222222222222222222222222222222222222222\",\"ts\":\"2026-01-02T00:00:00Z\"}\n{\"actor\":\"human:ada\",\"hash\":\"3479ca9a23db08b012976f8ea44a88f3796abe35943ca87c9b80ef9167d3572d\",\"kind\":\"release\",\"prev\":\"0ec056e1a0a6136e9fedfab1d37e4e3c0e60c8828d55bf9b7ceb3e4fa8a468f9\",\"ref\":\"3333333333333333333333333333333333333333\",\"ts\":\"2026-01-03T00:00:00Z\"}\n",
+    "wellknown": {
+      "linkset": [
+        {
+          "anchor": "https://example.org/",
+          "https://w3id.org/agentic-system-core/rel#ledger": [
+            {
+              "agsc-ledger-head": [
+                "1567e0229688fcdd3699fc8ac7bcfbe3e96342e50e540de220a18de782e00afd"
+              ],
+              "href": "https://example.org/ledger.jsonl",
+              "type": "application/jsonl"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-25 at rc.6; expected value derived by hand from the rule text (a head that is not the recomputed one is AGSC-E701 even when every line links)",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-08-23"
+}

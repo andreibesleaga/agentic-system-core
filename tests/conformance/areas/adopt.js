@@ -1,6 +1,6 @@
 'use strict';
 // Conformance area `adopt` — AGSC-02-90, AGSC-02-91,
-// AGSC-02-92. adopt-0004 (`init` then `ci`) and adopt-0005 (relative references,
+// AGSC-02-92. adopt-0006 (`init` then `ci`) and adopt-0005 (relative references,
 // AGSC-02-95) are the build pipeline's cases and are handled.
 
 const adopt = require('../../../src/knowledge/adopt.js');
@@ -14,7 +14,7 @@ module.exports.run = (vector, ctx) => {
 
   // --- EXTENSION POINT -------------------------------------------
   // A vector that names verbs runs the `init` → `ci` pipeline of
-  // `distribution/init.js`; adopt-0004 and adopt-0005 are the only two.
+  // `distribution/init.js`; adopt-0006 and adopt-0005 are the only two live ones.
   if (Array.isArray(input.verbs)) return initVerbs.run(vector, ctx);
   // --- end EXTENSION POINT --------------------------------------------------
 

@@ -1,0 +1,71 @@
+{
+  "area": "ledger",
+  "description": "AGSC-08-23: a published ledger whose lines differ from the recomputation of the same history is AGSC-E702, at the first differing line. The history is the one of ledger-0005 (three first-parent commits, the v1.0.0 tag on the third); the published file claims line 1 as kind release where the history holds a plain commit. The published file is internally consistent — every prev links, every hash is the hash of its own line, and the discovery document names the published file's own head — so the chain walk of AGSC-E701 alone cannot see the rewrite; only the comparison against the recomputation can, and it reports AGSC-E702 with line 1. The recomputed head then also differs from the published one, which is AGSC-E701 in the same run; this case asserts the AGSC-E702 and its line.",
+  "expected": {
+    "error": "AGSC-E702",
+    "line": 1
+  },
+  "id": "ledger-0006",
+  "input": {
+    "content_tree": "4444444444444444444444444444444444444444",
+    "git_log": [
+      {
+        "committed_at": "2026-01-01T00:00:00Z",
+        "parents": [],
+        "sha": "1111111111111111111111111111111111111111",
+        "trailers": {
+          "Signed-off-by": "Ada Example <ada@example.org> (CA-v1)"
+        }
+      },
+      {
+        "committed_at": "2026-01-02T00:00:00Z",
+        "parents": [
+          "1111111111111111111111111111111111111111",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "sha": "2222222222222222222222222222222222222222",
+        "trailers": {
+          "Channel-Auto": "telegram",
+          "Ingested-by": "telegram",
+          "Signed-off-by": "Ada Example <ada@example.org> (CA-v1)"
+        }
+      },
+      {
+        "committed_at": "2026-01-03T00:00:00Z",
+        "parents": [
+          "2222222222222222222222222222222222222222"
+        ],
+        "sha": "3333333333333333333333333333333333333333",
+        "tag": "v1.0.0",
+        "trailers": {
+          "Signed-off-by": "Ada Example <ada@example.org> (CA-v1)"
+        }
+      }
+    ],
+    "published": "{\"actor\":\"human:ada\",\"hash\":\"680024e59a975e1841915bf143964bd9b2e83cd2ee17380edb3bf4d726b65210\",\"kind\":\"release\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"1111111111111111111111111111111111111111\",\"ts\":\"2026-01-01T00:00:00Z\"}\n{\"actor\":\"human:ada\",\"hash\":\"85eadfae09c3192c0bd8ab45a5c80abc65567bdbfa3f48a3a31d5b5682bcab47\",\"kind\":\"merge\",\"mode\":\"auto\",\"prev\":\"680024e59a975e1841915bf143964bd9b2e83cd2ee17380edb3bf4d726b65210\",\"ref\":\"2222222222222222222222222222222222222222\",\"ts\":\"2026-01-02T00:00:00Z\"}\n{\"actor\":\"human:ada\",\"hash\":\"2d45c5a27e2124517b9430c9427fc59d3918af37c3bd181cd4d8972f504149be\",\"kind\":\"release\",\"prev\":\"85eadfae09c3192c0bd8ab45a5c80abc65567bdbfa3f48a3a31d5b5682bcab47\",\"ref\":\"3333333333333333333333333333333333333333\",\"ts\":\"2026-01-03T00:00:00Z\"}\n{\"actor\":\"process:agsc/0.1.0\",\"hash\":\"a41f08dde54b3e48c140b6cb27b207310e0ffab25cd586c04b6668438519534e\",\"kind\":\"build\",\"prev\":\"2d45c5a27e2124517b9430c9427fc59d3918af37c3bd181cd4d8972f504149be\",\"ref\":\"4444444444444444444444444444444444444444\",\"ts\":\"2026-01-04T00:00:00Z\"}\n",
+    "version": "0.1.0",
+    "wellknown": {
+      "linkset": [
+        {
+          "anchor": "https://example.org/",
+          "https://w3id.org/agentic-system-core/rel#ledger": [
+            {
+              "agsc-ledger-head": [
+                "a41f08dde54b3e48c140b6cb27b207310e0ffab25cd586c04b6668438519534e"
+              ],
+              "href": "https://example.org/ledger.jsonl",
+              "type": "application/jsonl"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "level": "required",
+  "note": "added 2026-09-25 at rc.6; the expected code and line follow from the rule text (the first line that differs is line 1); the published bytes were written by hand from the ledger-0005 entries with line 1 rewritten and the chain re-hashed under AGSC-08-22",
+  "options": {
+    "source_date_epoch": 1767484800,
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-08-23"
+}

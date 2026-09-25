@@ -41,15 +41,22 @@ function safeJoin(root, relative) {
   return absolute;
 }
 
-/** The real path of `p` if it exists, else of its nearest existing ancestor. */
+/**
+ * The real path of `p` if it exists, else of its nearest existing ancestor — and
+ * whether that existing path is LITERAL, i.e. resolves to itself: no component of
+ * it is a link, so nothing under it can be reached through one that is not also
+ * under it literally.
+ * @returns {{real:string, literal:boolean}}
+ */
 function nearestReal(p) {
   let probe = p;
   for (;;) {
     try {
-      return fs.realpathSync(probe);
+      const real = fs.realpathSync(probe);
+      return { literal: real === probe, real };
     } catch {
       const parent = path.dirname(probe);
-      if (parent === probe) return probe; // nothing on this branch exists
+      if (parent === probe) return { literal: false, real: probe }; // nothing on this branch exists
       probe = parent;
     }
   }
@@ -61,15 +68,22 @@ function nearestReal(p) {
  * real path — not only `readFile`. A file that does not exist yet is judged
  * by its nearest existing ancestor, so a first `writeFile` still passes while a
  * planted directory symlink does not.
+ * @param {string|{real:string}} root the root, or its real path already resolved.
+ * @param {string} absolute the resolved path under it.
+ * @param {string} display the path as the caller wrote it, for the message.
+ * @returns {string} `absolute`.
  * @throws {FsError} AGSC-E902 when the real path lies outside the root.
  */
 function checkReal(root, absolute, display) {
-  const rootReal = nearestReal(path.resolve(root));
-  const real = nearestReal(absolute);
+  const rootReal = typeof root === 'string' ? nearestReal(path.resolve(root)).real : root.real;
+  assertInside(rootReal, nearestReal(absolute).real, display);
+  return absolute;
+}
+
+function assertInside(rootReal, real, display) {
   if (real !== rootReal && !real.startsWith(rootReal + path.sep)) {
     throw new FsError('AGSC-E902', `path escapes the Bundle root through a link: ${display} (AGSC-01-16)`, String(display));
   }
-  return absolute;
 }
 
 /**
@@ -79,7 +93,49 @@ function checkReal(root, absolute, display) {
  */
 function createFileSystem(root, options = {}) {
   const maxBytes = options.maxBytes == null ? MAX_INPUT_BYTES : options.maxBytes;
-  const abs = (p) => checkReal(root, safeJoin(root, p), p);
+  // The root's real path, resolved once: the root is the port's constant.
+  let rootReal = null;
+  const rootRealOf = () => {
+    if (rootReal === null) rootReal = nearestReal(path.resolve(root));
+    return rootReal;
+  };
+  /**
+   * Directories this port has PROVED literal — every component real, none a link —
+   * either by a full real-path check or by creating them itself (a directory `mkdir`
+   * makes is never a link). A path whose parent is in this set needs one `lstat` of
+   * itself instead of the real-path walk: an entry that does not exist yet is judged
+   * by its parent, as before, and an entry that exists and is not a link is, under a
+   * literal parent, literal too. A link found there still takes the full check. This
+   * is what makes a build of many thousands of files cheap to write: the writer
+   * creates one directory per item page and writes one file into it, and the full
+   * check costs three to four path lookups per call where the shortcut costs one.
+   */
+  const literalDirs = new Set();
+  const abs = (p) => {
+    const absolute = safeJoin(root, p);
+    if (literalDirs.has(path.dirname(absolute))) {
+      let entry;
+      try { entry = fs.lstatSync(absolute); } catch { return absolute; } // nothing there yet: judged by its parent
+      if (!entry.isSymbolicLink()) {
+        if (entry.isDirectory()) literalDirs.add(absolute);
+        return absolute;
+      }
+    }
+    const nearest = nearestReal(absolute);
+    assertInside(rootRealOf().real, nearest.real, p);
+    if (nearest.literal) {
+      // The nearest existing path resolved to itself; remember it when it is a
+      // directory (the target when it exists as one, else its nearest existing ancestor).
+      try { if (fs.lstatSync(nearest.real).isDirectory()) literalDirs.add(nearest.real); } catch { /* raced away: nothing cached */ }
+    }
+    return absolute;
+  };
+  /** `mkdir -p` of a checked path, remembering it when its parent is literal. */
+  const makeDir = (absolute) => {
+    if (literalDirs.has(absolute)) return;
+    fs.mkdirSync(absolute, { recursive: true });
+    if (literalDirs.has(path.dirname(absolute))) literalDirs.add(absolute);
+  };
 
   return {
     root,
@@ -106,7 +162,7 @@ function createFileSystem(root, options = {}) {
     },
     writeFile(p, data) {
       const target = abs(p);
-      fs.mkdirSync(path.dirname(target), { recursive: true });
+      makeDir(path.dirname(target));
       fs.writeFileSync(target, data);
     },
     /** AGSC-01-15: entries in code-point order, never the filesystem's order. */
@@ -124,10 +180,15 @@ function createFileSystem(root, options = {}) {
       }
     },
     mkdirp(p) {
-      fs.mkdirSync(abs(p), { recursive: true });
+      makeDir(abs(p));
     },
     remove(p) {
-      fs.rmSync(abs(p), { recursive: true, force: true });
+      const target = abs(p);
+      fs.rmSync(target, { recursive: true, force: true });
+      // What is gone is no longer proved anything.
+      for (const dir of literalDirs) {
+        if (dir === target || dir.startsWith(target + path.sep)) literalDirs.delete(dir);
+      }
     },
     /** Every `.md` under `p`, repository-relative, in AGSC-01-15 discovery order. */
     walk(p) {

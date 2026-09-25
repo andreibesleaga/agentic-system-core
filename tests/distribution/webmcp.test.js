@@ -54,7 +54,7 @@ test('AGSC-09-16: results are byte-identical to the stdio transport for the same
   for (const [name, args] of [['read', { slug: 'handoff' }], ['search', { query: 'supervisor' }],
     ['links', { slug: 'supervisor' }], ['compose', { selection: ['handoff'] }],
     ['ask', { question: 'handoff' }], ['propose', { slug: 'handoff' }],
-    ['remember', { body: 'x', kind: 'concept', title: 'T' }], ['read', { slug: 'ghost' }]]) {
+    ['remember', { body: 'x', kind: 'concept', operator: 'human:tester', title: 'T' }], ['read', { slug: 'ghost' }]]) {
     const viaTool = page.registered.find((t) => t.name === name).execute(args);
     assert.strictEqual(JSON.stringify(viaTool), JSON.stringify(set.call(name, args)), name);
   }

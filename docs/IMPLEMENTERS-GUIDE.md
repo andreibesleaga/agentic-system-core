@@ -134,8 +134,8 @@ implementing anything.
 ## 3. Running the vector set
 
 The vectors are the acceptance test. Measured on 2026-09-24 by `node tools/count-artifacts
---json` against the `1.0.0-rc.6` draft, there are **194** of them in **19** populated
-areas of the 25 AGSC-09-04 declares: 163 are `required`, 1 is `optional`, 30 are
+--json` against the `1.0.0-rc.6` draft, there are **199** of them in **19** populated
+areas of the 25 AGSC-09-04 declares: 166 are `required`, 1 is `optional`, 32 are
 `withdrawn`. Run the command for today's numbers; never type them.
 
 A vector is one JSON file holding one object: `id`, `area`, `rule`, `level`,

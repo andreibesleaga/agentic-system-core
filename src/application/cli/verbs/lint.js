@@ -33,13 +33,14 @@ const helpers = require('./_helpers.js');
  * rejects is never published by `build` (an `http://` peer written into the
  * discovery document, a root missing `spec_version`).
  */
-function configAndRoot(bundle) {
+function configAndRoot(bundle, options = {}) {
   const findings = [];
   const schemas = helpers.schemas();
   // AGSC-01-17/18 + AGSC-01-36…38: the configuration, closed, with the agent
-  // lane INJECTED (Knowledge never requires Governance).
+  // lane INJECTED (Knowledge never requires Governance), and AGSC-00-15: the
+  // version this tool implements, so another MAJOR is refused (`ownVersion`).
   findings.push(...validate.config(bundle.config || {}, {
-    checkAgents, file: 'agsc.config.json', schemas,
+    checkAgents, file: 'agsc.config.json', ownVersion: options.ownVersion, schemas,
   }));
   // AGSC-01-04: the Bundle root.
   if (bundle.index) {
@@ -54,7 +55,7 @@ function lane(ctx, bundle) {
   const findings = [];
   const lanes = ['parse', 'schema'];
 
-  findings.push(...configAndRoot(bundle));
+  findings.push(...configAndRoot(bundle, { ownVersion: ctx.specVersion }));
   lanes.push('config');
   lanes.push('root');
 

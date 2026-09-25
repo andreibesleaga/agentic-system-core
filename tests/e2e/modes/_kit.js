@@ -264,7 +264,10 @@ async function pageTools(www) {
   };
   const context = vm.createContext(sandbox);
   for (const script of PAGE_TOOL_SCRIPTS) vm.runInContext(files.get(script), context, { filename: script });
-  await vm.runInContext('globalThis.AGSC_PAGE_TOOLS.ready', context);
+  // A browser without `document.modelContext` reads the corpus on the first tool
+  // call; the kit starts that read here, so that the routes the page read are
+  // inspectable before the first call and every call after it is synchronous.
+  await vm.runInContext('globalThis.AGSC_PAGE_TOOLS.start()', context);
   return {
     call: async (name, args) => JSON.parse(JSON.stringify(await sandbox.AGSC_TOOLS.call(name, args))),
     fetched,

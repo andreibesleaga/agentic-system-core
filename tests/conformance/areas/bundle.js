@@ -122,7 +122,35 @@ function variantFileAt10Case(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * bundle-0008 (AGSC-00-15 as amended 2026-09-25) — a writer refuses a Bundle whose
+ * `spec_version` MAJOR it does not implement (`AGSC-E004`, exit 2 through the CLI's
+ * own usage class) and warns on a newer MINOR of its own MAJOR (`AGSC-E506`). The
+ * tool's own version is the vector's `options.spec_version`, as everywhere else.
+ */
+function specVersionCase(vector, ctx) {
+  const main = require('../../../src/application/cli/main.js');
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    const findings = validate.config(input.config, {
+      checkAgents, ownVersion: vector.options.spec_version, schemas: ctx.schemas,
+    });
+    const errors = findings.filter((f) => f.severity === 'error');
+    const accepted = errors.length === 0;
+    list.push([`${input.name} accepted`, accepted === want.accepted, JSON.stringify(findings)]);
+    const m = findingsMatch((want.findings || []).map((f) => ({ code: f.code, severity: f.severity })), findings);
+    list.push([`${input.name} findings`, m.ok && findings.length === (want.findings || []).length,
+      `${m.detail} ${JSON.stringify(findings.map((f) => f.code))}`]);
+    const exit = accepted ? 0 : (errors.some((f) => main.USAGE_CLASS_CODES.has(f.code)) ? 2 : 1);
+    list.push([`${input.name} exit`, exit === want.exit, `got ${exit}`]);
+  }
+  return checks(list);
+}
+
 const B_HANDLERS = {
+  'bundle-0008': specVersionCase,
   'bundle-0007': variantFileAt10Case,
   'bundle-0006': reservedConfigCase,
   'bundle-0003': runAgentsConfigVector,

@@ -82,7 +82,7 @@ test('in Chromium: the /compose/ archive equals the CLI archive, and the page to
       ['search', { query: 'login form' }], ['read', { slug: 'task-login-tests' }], ['links', { slug: 'handoff' }],
       ['ask', { question: 'who tests the login form' }], ['compose', { selection: SELECTION }],
       ['propose', { at: '2026-09-14', slug: 'task-login-tests', task_state: 'TASK_STATE_WORKING' }],
-      ['remember', { body: 'Limit attempts per address.', cluster: 'login', kind: 'task', title: 'Add rate limiting' }],
+      ['remember', { body: 'Limit attempts per address.', cluster: 'login', kind: 'task', operator: 'human:operator', title: 'Add rate limiting' }],
     ];
     for (const [name, args] of calls) {
       const fromPage = await itemPage.evaluate(async ([n, a]) => {

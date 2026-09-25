@@ -136,6 +136,7 @@ const LINE_PATTERNS = Object.freeze([
   ['process', 'audit finding id', /\bF2\d-\d+\b/gu],
   ['process', 'audit finding id', /\b(?:DS|NS|TP|W3R|AR\d?)-\d+\b|\bPSF-\d{2}\b/gu],
   ['process', 'work-package id', /\bENG\d+\b/gu],
+  ['process', 'work-package id', /\bFINAL-VERIFY-\d+\b/gu],
   ['process', 'work-package id', /\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-FIX\b|\bFIX-[A-Z][A-Z0-9]*\b/gu],
   ['process', 'session number', /\bsessions? \d{1,3}\b(?! \d)/giu],
   ['process', 'session number', /\bsession-\d{1,3}\b|[(/]s\d{2}\)/gu],

@@ -29,9 +29,9 @@ const REL = 'https://w3id.org/agentic-system-core/rel#';
 
 /** AGSC-06-10: the extension relation names, and no others. */
 const EXTENSION_RELATIONS = Object.freeze([
-  'access', 'context', 'contribute', 'graph', 'ledger', 'now',
+  'access', 'boards', 'context', 'contribute', 'graph', 'ledger', 'now',
   'ontology', 'peer', 'signature', 'skills', 'surface',
-]); // `signature`: AGSC-06-08/06-10 — optional, affects nothing
+]); // `signature`: AGSC-06-08/06-10 — optional, affects nothing; `boards`: AGSC-10-13 (2026-09-25)
 /** AGSC-06-10 + AGSC-06-35: the IANA-registered short names this profile uses. */
 const REGISTERED_RELATIONS = Object.freeze([
   'alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
@@ -229,6 +229,13 @@ function linkset(config, options = {}) {
   if (has('/now.md')) put(`${REL}now`, [link(href(base, '/now.md'), 'text/markdown', { digest: digest('/now.md') })]);
   if (has('/skills/index.json')) {
     put(`${REL}skills`, [link(href(base, '/skills/index.json'), 'application/json', { digest: digest('/skills/index.json') })]);
+  }
+  // AGSC-10-13 (2026-09-25): the board index exists only while a task exists, so the
+  // link is emitted for a route the build actually wrote — read from the emitted
+  // route set, or, when a caller states none, from the digests it supplied.
+  const boardsRoute = '/boards/index.json';
+  if (emitted === null ? digests[boardsRoute] != null : emitted.has(boardsRoute)) {
+    put(`${REL}boards`, [link(href(base, boardsRoute), 'application/json', { digest: digest(boardsRoute) })]);
   }
   // AGSC-06-11: a Level-0 node publishes no `rel#ledger` link and therefore no head.
   if (full && !gated && options.ledgerHead != null) {

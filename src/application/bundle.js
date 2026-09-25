@@ -25,6 +25,8 @@ const yaml = require('../knowledge/yaml.js');
 
 /** AGSC-03-11 / AGSC-02-95: where a Bundle's non-item files live. */
 const ASSETS_DIR = 'content/assets';
+/** AGSC-01-05: the two file names a type folder may hold that are never items. */
+const FOLDER_NOTES = new Set(['readme.md', '_index.md']);
 
 /** AGSC-01-03: the type folders, in the plural form the route set uses. */
 const TYPE_FOLDERS = Object.freeze({
@@ -58,6 +60,18 @@ function loadBundle(ports, options) {
     for (const entry of fs.readdir(dir)) {
       if (!entry.endsWith('.md')) continue;
       const path = `${dir}/${entry}`;
+      // AGSC-01-05 (2026-09-25): a folder `README.md` or `_index.md` is never an
+      // item; a reader skips it and says so, so that a publisher may keep a README
+      // beside the items without `lint`, `build` and `ci` reading it as one.
+      if (FOLDER_NOTES.has(entry.toLowerCase())) {
+        findings.push({
+          code: 'AGSC-E506',
+          file: path,
+          message: `${path} is a folder note, not an item, and was skipped (AGSC-01-05)`,
+          severity: 'warn',
+        });
+        continue;
+      }
       // The port refuses a file with the code the rule names — not UTF-8 (E108,
       // AGSC-01-14), over the cap (E904), a link out of the root (E902) — and that
       // refusal is a Finding about this one file, never an internal error that hides

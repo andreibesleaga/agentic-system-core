@@ -198,7 +198,7 @@ function pathGrammarError(relative, fromDir) {
  * A body target that escapes is `AGSC-E902`; one that stays inside and resolves to
  * nothing is `AGSC-E310` (AGSC-03-11), never `AGSC-E902`.
  *
- * Added 2026-09-21 (FINAL-VERIFY-28): the rc.5 amendment had been applied to the
+ * Added 2026-09-21: the rc.5 amendment had been applied to the
  * specification and not to this module, so `![logo](../assets/logo.png)` — the one
  * case the amendment exists to permit — was reported `AGSC-E902 (dot segment)`.
  */

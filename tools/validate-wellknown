@@ -37,7 +37,7 @@ const REGISTERED = new Set(['alternate', 'author', 'cite-as', 'collection', 'des
   'related', 'service-desc', 'service-doc', 'service-meta']); // AGSC-06-10 + AGSC-06-35 (cite-as: rc.6)
 const RELATED_ONLY = new Set(['related', 'service-desc', 'service-meta', 'collection', 'item', 'cite-as']);
 const EXTENSIONS = new Set(['graph', 'ontology', 'context', 'now', 'skills', 'ledger', 'peer',
-  'surface', 'contribute', 'access', 'signature']); // signature: rc.6,
+  'surface', 'contribute', 'access', 'signature', 'boards']); // signature: rc.6; boards: AGSC-10-13 (2026-09-25),
 const RFC8288_STRING_ATTRS = new Set(['type', 'title', 'media']); // RFC 9264 §4.2.4.2
 const LEVEL2_ATTRS = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-generated-at', 'agsc-spec-version'];
 // AGSC-11-20: the four a `restricted` node MUST omit although it is Level ≥ 2 —

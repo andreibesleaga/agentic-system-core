@@ -68,3 +68,26 @@ test('item pages carry the Summary block and the metadata list of AgenticSystemC
   // Index pages carry their own description as the Summary.
   assert.match(String(files.get('/clusters/index.html')), /<p class="summary"><strong>Summary<\/strong>Every clusters item of this node\.<\/p>/u);
 });
+
+test('a cluster page lists at most 500 members and says where the complete membership is', () => {
+  // A cluster of 1,000 members listed in full measured 158 KB, over the 100 KB page
+  // budget of AGSC-06-21, and an item page is never paginated: the list stops at the
+  // bound every other list uses, and the page names the index and the graph.
+  assert.strictEqual(site.CLUSTER_MEMBERS_SHOWN, 500);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-clusters-big-'));
+  require('../../bench/gen-bundle.js').run(['--items', '501', '--out', dir], { err: () => {}, out: () => {} });
+  const port = createFileSystem(dir);
+  const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
+  const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+  const built = site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.6', version: '0.0.0' });
+  fs.rmSync(dir, { force: true, recursive: true });
+  assert.deepStrictEqual(built.findings.filter((f) => f.severity === 'error'), []);
+  const page = String(built.files.get('/clusters/bench-cluster/index.html'));
+  const list = page.slice(page.indexOf('<ul class="members">'), page.indexOf('</ul>', page.indexOf('<ul class="members">')));
+  assert.strictEqual((list.match(/<li><a href="\/concepts\//gu) || []).length, 500);
+  assert.match(page, /<p class="members-more">The first 500 of 501 members are listed, in the published order; every member names this cluster in <a href="\/search\.json">the search index<\/a> and in <a href="\/graph\.jsonld">the graph<\/a>\.<\/p>/u);
+  assert.ok(Buffer.byteLength(page) <= site.BUDGET_HTML_BYTES, `${Buffer.byteLength(page)} bytes`);
+  assert.match(String(built.files.get('/clusters/index.html')), /\(501 items\)/u);
+  // A small cluster carries no such note.
+  assert.doesNotMatch(String(build().get('/clusters/agent-patterns/index.html')), /members-more/u);
+});

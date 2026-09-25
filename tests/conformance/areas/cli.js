@@ -254,7 +254,9 @@ function runCli0003(vector, ctx) {
     ['compose', { selection: ['supervisor', 'handoff'] }],
     ['ask', { question: 'handoff' }],
     ['propose', { slug: 'handoff' }],
-    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', actor: 'process:ci', kind: 'episode', title: 'A Recorded Run' }],
+    // The operator is declared: without one the local server refuses and the page
+    // tools warn (AGSC-09-14b, 2026-09-25), which is the one input the two differ on.
+    ['remember', { at: '2026-01-01T00:00:00Z', body: 'A note.', actor: 'process:ci', kind: 'episode', operator: 'human:tester', title: 'A Recorded Run' }],
     ['read', { slug: 'no-such-item' }],
   ];
   const differing = [];

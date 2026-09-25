@@ -1,0 +1,1 @@
+{"@context":{"@vocab":"https://w3id.org/agentic-system-core/ns#"},"@graph":[{"@id":"https://node.example/concepts/handoff/","@type":"Concept","prefLabel":"Handoff"},{"@id":"https://node.example/concepts/supervisor/","@type":"Concept","prefLabel":"Supervisor"}]}

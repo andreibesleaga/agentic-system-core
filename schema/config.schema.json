@@ -43,7 +43,7 @@
           "type": "string"
         },
         "analytics_token": {
-          "description": "Edge analytics token only. No beacon, cookie or third-party script may be emitted (AGSC-06-05).",
+          "description": "Edge analytics token only. No beacon, cookie or third-party script may be emitted (AGSC-06-05). Accepted and preserved; the reference engine emits nothing for it (a host's own analytics).",
           "type": "string"
         },
         "tdm_crawlers": {
@@ -234,7 +234,7 @@
             ],
             "properties": {
               "per_hour": {
-                "description": "Maximum messages ingested from this channel per hour; the job stops for the hour at the bound and records the skipped messages by sources[].id (AGSC-01-33).",
+                "description": "Maximum messages ingested from this channel per hour; the job stops for the hour at the bound and records the skipped messages by sources[].id (AGSC-01-33). The reference engine ships no channel adapter at 1.0; the bound binds one that is written.",
                 "type": "integer",
                 "minimum": 1
               }

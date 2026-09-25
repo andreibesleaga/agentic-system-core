@@ -91,7 +91,8 @@ Assisted-by: claude/opus-4 (operator: human:ada)
 **What `CA-v1` means.** The token names the file `CONTRIBUTOR-AGREEMENT` at the root
 of this repository. Read it before your first commit. In short: you certify that you
 may submit the work, you keep your copyright and may use your contribution anywhere
-else, you allow the maintainer to publish and maintain it here, and you accept that
+else, you allow the maintainer to publish and maintain it here and in other collections,
+editions and publications made from this node's items, and you accept that
 your name, the address you commit under and your sign-off are published permanently.
 
 Two further clauses say what the sign-off means for prose and for tools. By (g), a

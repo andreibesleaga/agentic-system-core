@@ -371,7 +371,21 @@ function run(argv, io) {
         findings.push(finding('AGSC-E901', `specs/${name}`, 'the page is absent from the tree being checked'));
         continue;
       }
-      const theirs = fs.readFileSync(path.join(target, found), 'utf8');
+      let theirs = fs.readFileSync(path.join(target, found), 'utf8');
+      if (flags.has('--text')) {
+        // A publisher may serve a chapter in parts — `<chapter>/page-2/index.html`
+        // and on — when one page would exceed the budget of AGSC-06-21; what the
+        // chapter SAYS is the parts together, so the text check reads them as one
+        // page. (Table rows are counted across the parts together, so a box the
+        // publisher repeats on every part must carry no table.)
+        const dir = path.dirname(path.join(target, found));
+        const parts = fs.readdirSync(dir).filter((d) => /^page-\d+$/u.test(d))
+          .sort((a, b) => Number(a.slice(5)) - Number(b.slice(5)));
+        for (const part of parts) {
+          const file = path.join(dir, part, 'index.html');
+          if (fs.existsSync(file)) theirs += fs.readFileSync(file, 'utf8');
+        }
+      }
       if (!flags.has('--text')) {
         if (theirs !== rendered.files.get(name)) {
           findings.push(finding('AGSC-E602', `specs/${found}`, 'the page on disk differs from this rendering (AGSC-04-02)'));

@@ -1,0 +1,89 @@
+{
+  "area": "bundle",
+  "description": "AGSC-00-15 as amended 2026-09-25: a writer accepts any Bundle whose spec_version MAJOR equals its own and MUST refuse, with AGSC-E004 and exit 2 (the usage class of AGSC-09-08), a Bundle whose agsc.config.json declares a MAJOR it does not implement; a newer MINOR of its own MAJOR SHOULD be warned as AGSC-E506 and is otherwise accepted. Derivation, case by case, against a tool that implements the spec_version of this vector's options: (1) spec_version 2.0.0 — MAJOR 2 against MAJOR 1 — is refused, one AGSC-E004 error, exit 2, nothing else about the configuration being at fault. (2) spec_version 1.1.0 — the same MAJOR, a MINOR beyond the tool's — is accepted with one AGSC-E506 warning and exit 0. (3) the tool's own version is accepted with no finding. Every configuration is otherwise minimal and valid, so the version is the only thing that can differ between the cases.",
+  "expected": {
+    "cases": [
+      {
+        "accepted": false,
+        "exit": 2,
+        "findings": [
+          {
+            "code": "AGSC-E004",
+            "severity": "error"
+          }
+        ],
+        "name": "other-major-refused"
+      },
+      {
+        "accepted": true,
+        "exit": 0,
+        "findings": [
+          {
+            "code": "AGSC-E506",
+            "severity": "warn"
+          }
+        ],
+        "name": "newer-minor-warned"
+      },
+      {
+        "accepted": true,
+        "exit": 0,
+        "findings": [],
+        "name": "own-version-accepted"
+      }
+    ]
+  },
+  "id": "bundle-0008",
+  "input": {
+    "cases": [
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "2.0.0"
+        },
+        "name": "other-major-refused"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.1.0"
+        },
+        "name": "newer-minor-warned"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0-rc.6"
+        },
+        "name": "own-version-accepted"
+      }
+    ]
+  },
+  "level": "required",
+  "note": "added 2026-09-25 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-00-15"
+}

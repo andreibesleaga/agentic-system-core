@@ -9,7 +9,7 @@
 // The four N9 lints are `governance/lint.js`, owned by another package of this
 // milestone. They are INJECTED as `options.lint`; when neither an injected lint nor
 // that module is present, `ci` still runs the schema-and-placement obligations that
-// `knowledge/validate.js` owns — the AGSC-02-92 pass that `adopt-0004` asserts —
+// `knowledge/validate.js` owns — the AGSC-02-92 pass that `adopt-0006` asserts —
 // and names the missing lane in its result rather than reporting a false green.
 
 const { sortFindings } = require('../knowledge/validate.js');

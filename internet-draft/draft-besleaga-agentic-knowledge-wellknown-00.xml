@@ -18,7 +18,7 @@
         <email>andrei.besleaga.nicolae@gmail.com</email>
       </address>
     </author>
-    <date year="2026" month="September" day="24"/>
+    <date year="2026" month="September" day="25"/>
     <workgroup>Independent Submission</workgroup>
     <keyword>Internet-Draft</keyword>
     <keyword>Well-Known URI</keyword>
@@ -333,6 +333,11 @@ it (<xref target="the-profile-uri"/>).</t>
               <td align="left">
                 <tt>signature</tt></td>
               <td align="left">a detached signature over the discovery document</td>
+            </tr>
+            <tr>
+              <td align="left">
+                <tt>boards</tt></td>
+              <td align="left">the index of the Bundle's project boards</td>
             </tr>
           </tbody>
         </table>

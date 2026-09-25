@@ -2,7 +2,8 @@
 // CONTEXT Distribution (Emission) — Surface: the prebuilt search index.
 // Implements AGSC-06-16 (the shape, the member order and the omitted members),
 // AGSC-06-23 (the normative tokenizer) and the AGSC-06-21 shard rule for
-// `/search-<nn>.json`.
+// `/search-<nn>.json`; `query` is the ranking the `/search/` page runs over the
+// same index (`search-page.js` ships its source text).
 //
 // Distribution READS the other contexts' results and adds nothing to the content:
 // what counts as a fenced code block is `knowledge/markdown.js`'s CommonMark parse
@@ -14,31 +15,31 @@
 //
 // Vectors: build-0001, build-0002, build-0003.
 
-const { nfc, compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
+const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const markdown = require('../knowledge/markdown.js');
 
-/** AGSC-06-23 / AGSC-02-24: a token shorter than this many code points is dropped. */
-const MIN_TOKEN_CODE_POINTS = 2;
 /** AGSC-06-21: above this many items the index is sharded. */
 const ITEMS_PER_SHARD = 500;
-
-/**
- * AGSC-06-23: every run of characters that are NOT token characters is a boundary.
- * A token character is `[a-z0-9]` or a character whose General_Category is `L*`
- * (any letter), `Nd` (decimal digit) or `M*` (combining mark). `No`/`Nl` forms such
- * as `²` and `Ⅷ` are boundaries — which is why this class is spelled out rather
- * than written `\w` or `\p{L}\p{N}`, both of which disagree with build-0002.
- *
- * The class is a single character alternation, so the split is linear in the input
- * (no backtracking; the ReDoS rule of `coding/secure-coding.skill.md`).
- */
-const NON_TOKEN = /[^a-z0-9\p{L}\p{Nd}\p{M}]+/gu;
 
 /**
  * Tokenize text per AGSC-06-23: NFC, then ASCII lower-casing (only U+0041–U+005A;
  * no locale casing and no case folding of non-ASCII, so `Σ` is kept as authored),
  * then split at every boundary run, then drop tokens shorter than two Unicode code
- * points. No stemming, no stop words, no synonyms, no n-grams.
+ * points (AGSC-02-24). No stemming, no stop words, no synonyms, no n-grams.
+ *
+ * A boundary is every run of characters that are NOT token characters. A token
+ * character is `[a-z0-9]` or a character whose General_Category is `L*` (any
+ * letter), `Nd` (decimal digit) or `M*` (combining mark). `No`/`Nl` forms such as
+ * `²` and `Ⅷ` are boundaries — which is why the class is spelled out rather than
+ * written `\w` or `\p{L}\p{N}`, both of which disagree with build-0002. The class
+ * is a single character alternation, so the split is linear in the input (no
+ * backtracking; the ReDoS rule of `coding/secure-coding.skill.md`).
+ *
+ * SELF-CONTAINED on purpose: the regular expression and the minimum length live in
+ * the function body and nothing here reads a module-scope binding, because the
+ * `/search/` page runs THIS FUNCTION'S OWN SOURCE TEXT (`search-page.js`, the
+ * pattern of `composition/browser.js`) — so the page cannot tokenize a query any
+ * differently from how the writer tokenized the bodies. `PORTABLE` below names it.
  *
  * @param {string} text
  * @param {{unicodeVersion?:string}} [options] advisory: AGSC-04-22 makes the
@@ -46,11 +47,58 @@ const NON_TOKEN = /[^a-z0-9\p{L}\p{Nd}\p{M}]+/gu;
  *   table is used and a claim states its version (AGSC-09-01).
  * @returns {Array<string>} tokens in input order, duplicates included.
  */
-function tokenize(text, options = {}) {
+function tokenize(text, options) {
   void options;
-  const lowered = nfc(String(text)).replace(/[A-Z]/gu, (c) => c.toLowerCase());
-  return lowered.split(NON_TOKEN).filter((t) => [...t].length >= MIN_TOKEN_CODE_POINTS);
+  const lowered = String(text).normalize('NFC').replace(/[A-Z]/gu, (c) => c.toLowerCase());
+  return lowered.split(/[^a-z0-9\p{L}\p{Nd}\p{M}]+/u).filter((t) => [...t].length >= 2);
 }
+
+/**
+ * Search a prebuilt index (AGSC-06-16, or the shards of AGSC-06-21 merged back into
+ * one) for a query: the query is tokenized with `tokenize` — the same function that
+ * produced the postings — and a document scores one point per DISTINCT query token
+ * whose posting list names it. Hits are ordered by score, highest first, then by
+ * slug; `docs[]` is already in slug order (AGSC-06-16), and a slug is ASCII
+ * (AGSC-01-10), so the tie-break is a plain string comparison. A query with no
+ * token, or an index with no `docs[]`, answers no hit.
+ *
+ * Also SELF-CONTAINED (it reads only `tokenize`, which the page carries beside it):
+ * this is the ranking the `/search/` page runs, and it is the ranking of the
+ * `search` page tool — one point per matching token, score then slug — so a person
+ * at the search box and an assistant calling the tool get the same order.
+ *
+ * @param {{docs:Array<object>, terms:object}} index
+ * @param {string} text the query.
+ * @returns {Array<{score:number, slug:string, title:string, description?:string, cluster?:string}>}
+ */
+function query(index, text) {
+  const wanted = [];
+  for (const token of tokenize(text)) if (wanted.indexOf(token) === -1) wanted.push(token);
+  if (wanted.length === 0 || !index || !Array.isArray(index.docs)) return [];
+  const terms = index.terms && typeof index.terms === 'object' ? index.terms : {};
+  const hits = [];
+  for (let d = 0; d < index.docs.length; d += 1) {
+    const doc = index.docs[d] || {};
+    let score = 0;
+    for (let w = 0; w < wanted.length; w += 1) {
+      const postings = Object.prototype.hasOwnProperty.call(terms, wanted[w]) ? terms[wanted[w]] : null;
+      if (Array.isArray(postings) && postings.indexOf(d) !== -1) score += 1;
+    }
+    if (score === 0) continue;
+    const hit = { score, slug: String(doc.slug), title: String(doc.title === undefined ? doc.slug : doc.title) };
+    if (typeof doc.description === 'string' && doc.description !== '') hit.description = doc.description;
+    if (typeof doc.cluster === 'string' && doc.cluster !== '') hit.cluster = doc.cluster;
+    hits.push(hit);
+  }
+  hits.sort((a, b) => b.score - a.score || (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
+  return hits;
+}
+
+/**
+ * The functions the `/search/` page runs as their own source text
+ * (`distribution/search-page.js`); each is self-contained, as the comments above say.
+ */
+const PORTABLE = Object.freeze(['tokenize', 'query']);
 
 /**
  * AGSC-06-23: "the body with fenced code blocks removed". Which lines those are is
@@ -152,7 +200,9 @@ function files(items, options = {}) {
 }
 
 module.exports = {
+  PORTABLE,
   tokenize,
+  query,
   stripFencedCode,
   tokenizerInput,
   index,

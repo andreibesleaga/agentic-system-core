@@ -1,6 +1,6 @@
 'use strict';
 
-// FINAL-VERIFY-29. AGSC-04-09, `src/adapters/node-clock.js:5` and
+// Verified 2026-09-21. AGSC-04-09, `src/adapters/node-clock.js:5` and
 // `docs/IMPLEMENTERS-GUIDE.md` all state the same contract: "a malformed
 // SOURCE_DATE_EPOCH is AGSC-E603 and exit 2, never a Finding". The clock port is
 // built in `bin/agsc.js` BEFORE `main()` is entered, so `EpochError` escaped past

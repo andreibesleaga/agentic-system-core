@@ -322,3 +322,10 @@ recognises, shared by the skills adapter and the OKF reader (AGSC-01-22).
 `governance/boards.js#claimants(gitLog, items)` now takes the items it derives
 `claimed_by` for, and exports `holderOf` and `sameParticipant`; the page tools carry
 `pageClaimants` and read the board exports. The six-mode walk is `tests/e2e/modes/`.
+
+*Note, 2026-09-25, appended:* `distribution/search-page.js` is new — the `/search/`
+page's one script, emitted like the `/compose/` scripts: it carries the own source text
+of `distribution/search.js#tokenize` and `#query` (both now self-contained and named in
+`search.PORTABLE`) and of `page-tools.js#pageShardRoutes` and `#pageIndexOf`, so the
+search box, the page tools and the index builder tokenize one way. `html.js#searchPage`
+is the page; `site.js#putIndex` takes an optional renderer for it.

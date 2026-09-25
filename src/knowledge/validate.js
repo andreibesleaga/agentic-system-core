@@ -386,6 +386,24 @@ function config(configObject, options = {}) {
         + ' (AGSC-00-25, AGSC-00-21)' : ''}`,
       { file, key: e.keyword === 'additionalProperties' ? String((e.params || {}).additionalProperty || '') : undefined }));
   }
+  // AGSC-00-15 (2026-09-25): a Bundle whose `spec_version` has a MAJOR this tool does
+  // not implement is refused (`AGSC-E004`, the exit-2 class of AGSC-09-08); a newer
+  // MINOR of the tool's own MAJOR is read, with a warning. The tool's version is
+  // INJECTED as `options.ownVersion`: this module knows no version of its own.
+  const { ownVersion } = options;
+  if (typeof ownVersion === 'string' && typeof configObject.spec_version === 'string') {
+    const declared = /^(\d+)\.(\d+)\./u.exec(configObject.spec_version);
+    const own = /^(\d+)\.(\d+)\./u.exec(ownVersion);
+    if (declared && own && declared[1] !== own[1]) {
+      findings.push(finding('AGSC-E004',
+        `spec_version: "${configObject.spec_version}" has MAJOR ${declared[1]}; this tool implements ${ownVersion} and reads MAJOR ${own[1]} alone (AGSC-00-15)`,
+        { file, key: 'spec_version' }));
+    } else if (declared && own && Number(declared[2]) > Number(own[2])) {
+      findings.push(finding('AGSC-E506',
+        `spec_version: "${configObject.spec_version}" is a newer MINOR than this tool's ${ownVersion}; the Bundle is read, and a key of that MINOR would be refused as unknown (AGSC-00-15)`,
+        { file, key: 'spec_version', severity: 'warn' }));
+    }
+  }
   const { checkAgents } = options;
   if (typeof checkAgents === 'function' && Array.isArray(configObject.agents)) {
     for (const f of checkAgents(configObject) || []) findings.push({ file, ...f });

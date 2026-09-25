@@ -324,6 +324,13 @@ function itemPage(item, options = {}) {
     parts.push(options.members.length === 0
       ? '<p>No published item names this cluster yet.</p>'
       : `<ul class="members">${options.members.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`);
+    // The list stops at the caller's bound (an item page is never paginated and
+    // stays under the 100 KB budget of AGSC-06-21); the page says so, and where the
+    // complete membership is: every member carries this cluster in `/search.json`
+    // and in the graph.
+    if (Number.isInteger(options.membersTotal) && options.membersTotal > options.members.length) {
+      parts.push(`<p class="members-more">The first ${options.members.length} of ${options.membersTotal} members are listed, in the published order; every member names this cluster in <a href="/search.json">the search index</a> and in <a href="/graph.jsonld">the graph</a>.</p>`);
+    }
   }
   // AGSC-02-13: the compiled diagram, inline, before the attachments.
   if (typeof options.diagramSource === 'string') {
@@ -370,12 +377,48 @@ function itemPage(item, options = {}) {
   });
 }
 
-/** An index page — a type folder, a cluster list or a tag list (AGSC-06-01). */
-function indexPage({ title, description, entries }, options = {}) {
-  const list = entries.length === 0
+/** The entry list every index page carries: title, count where given, description. */
+function entryList(entries) {
+  return entries.length === 0
     ? '<p>Nothing here yet.</p>'
     : `<ul>${entries.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${Number.isInteger(e.count) ? ` (${e.count} ${e.count === 1 ? 'item' : 'items'})` : ''}${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`;
-  return shell({ ...options, title, description, body: list });
+}
+
+/** An index page — a type folder, a cluster list or a tag list (AGSC-06-01). */
+function indexPage({ title, description, entries }, options = {}) {
+  return shell({ ...options, title, description, body: entryList(entries) });
+}
+
+/**
+ * `/search/` — "the page whose data is `/search.json`" (AGSC-06-01): a search box
+ * over the node's own index, and beneath it the list of every published item, which
+ * is the whole page for a reader without script. The form starts `hidden` and the
+ * page's one same-origin script (`search-page.js`) shows it, because a control that
+ * cannot work is not offered: AGSC-06-17's `form-action 'none'` lets no form submit
+ * leave the page, so without script the list is the search. Accessible by
+ * construction: a `<label>` on the box, the result count in a live region, a
+ * landmark on the form, and everything reachable by keyboard. No inline script and
+ * no inline style (AGSC-06-17); the stylesheet already styles `form.search`.
+ *
+ * @param {object} page `{title, description, entries, script}` — `script` the
+ *   absolute route of the page's script, so a paginated `/search/page-<n>/` (AGSC-06-21)
+ *   loads the same file.
+ */
+function searchPage({ title, description, entries, script }, options = {}) {
+  const body = [
+    '<div class="search" role="search"><form class="search" id="search-form" hidden>',
+    '<label for="q">Search this node</label>',
+    '<input id="q" name="q" type="search" autocomplete="off" spellcheck="false">',
+    '<button type="submit">Search</button></form></div>',
+    '<p id="search-status" role="status" aria-live="polite"></p>',
+    '<ol id="results" aria-label="Results"></ol>',
+    '<section id="site-index" aria-labelledby="index-heading">',
+    '<h2 id="index-heading">Every published item</h2>',
+    entryList(entries),
+    '</section>',
+    `<script src="${escapeHtml(script)}"></script>`,
+  ].join('\n');
+  return shell({ ...options, title, description, body });
 }
 
 /**
@@ -601,6 +644,6 @@ function changelogPage(rows, options = {}) {
 module.exports = {
   homePage,
   shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
-  boardPage, composePage, legalPage,
+  boardPage, composePage, legalPage, searchPage,
   adoptsTerms, escapeHtml, termsLine, NO_CLAIM_SENTENCE, HONEST_LIMIT,
 };

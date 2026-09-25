@@ -32,6 +32,7 @@ output with them.
 | Tool | What it is for |
 |---|---|
 | `rule-coverage` | the rule-coverage matrix; `--write` regenerates `docs/RULE-COVERAGE.md`, `--check` fails when it is stale |
+| `requirements-matrix` | the requirements matrix: for every requirement of `docs/PRD.md`, the rules that trace to it and the checks that name it; `--write` regenerates `docs/REQUIREMENTS-MATRIX.md`, `--check` fails when it is stale |
 | `gen-glossary` | writes `docs/GLOSSARY.md` from the specification and the ontology; `--check` |
 | `public-hygiene` | "public means clean": a sweep of a working tree for text that must never be published |
 | `publish-set` | sets which items of a Bundle are published, from one list |
@@ -43,6 +44,7 @@ output with them.
 node tools/count-artifacts --json      # the counts, never typed by hand
 node tools/validate-spec --json        # and the same for the other six validate-* checkers
 node tools/rule-coverage --check       # one summary line; exit 0 when the matrix is current
+node tools/requirements-matrix --check # the same for the requirements matrix
 node tools/gen-glossary --check        # "docs/GLOSSARY.md: current (…)"
 ```
 

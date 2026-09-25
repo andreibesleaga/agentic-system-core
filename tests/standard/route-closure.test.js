@@ -63,8 +63,8 @@ function routeOf(file) {
 const TEMPLATES = templates();
 /** `/boards/**` and the other conditional names of the third paragraph. */
 const CONDITIONAL = [...CONDITIONS.matchAll(/`(\/[^`]*)`/gu)].map((m) => m[1]);
-/** The page assets the second paragraph names as parts of a page, not routes. */
-const PAGE_ASSETS = [/^\/compose\/[a-z-]+\.js$/u, /^\/assets\/site\.css$/u, /^\/assets\/theme\.js$/u];
+/** The page assets the second paragraph names as parts of a page, not routes — and the `/search/` page's own script, its one same-origin asset. */
+const PAGE_ASSETS = [/^\/compose\/[a-z-]+\.js$/u, /^\/search\/[a-z-]+\.js$/u, /^\/assets\/site\.css$/u, /^\/assets\/theme\.js$/u];
 
 test('the rule text yields the route list this test reads (a vacuous parse would prove nothing)', () => {
   assert.ok(NAMESPACE_SITE.includes('/ns/agsc.ttl'), 'the namespace-site sentence was not found');

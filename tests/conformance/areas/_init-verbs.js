@@ -1,6 +1,6 @@
 'use strict';
-// The `init` → `ci` cases of area `adopt` (owner:): adopt-0004 and
-// adopt-0005. Kept beside `areas/adopt.js` rather than inside it, so that A's
+// The `init` → `ci` cases of area `adopt` (owner:): adopt-0006 (superseding
+// adopt-0004, which is withdrawn and never runs) and adopt-0005. Kept beside `areas/adopt.js` rather than inside it, so that A's
 // handler for adopt-0001…0003 is not rewritten (WAVE2-NOTES): `adopt.js` delegates
 // here when a vector carries `input.verbs`.
 //
@@ -35,6 +35,10 @@ module.exports.run = (vector, ctx) => {
     gitUserEmail: input.git_user_email,
     specVersion: vector.options.spec_version,
     epoch: vector.options.source_date_epoch,
+    // AGSC-02-94(a) as amended 2026-09-25: `init` writes its starting crawler list
+    // whenever the synthesized configuration adopts the Content Use Terms, which a
+    // bare folder always does — the same list the verb passes (`verbs/init.js`).
+    tdmCrawlers: init.REFERENCE_TDM_CRAWLERS,
   });
   const ran = validateBundle(planned, ctx);
   const list = [];

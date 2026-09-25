@@ -1,0 +1,11 @@
+{
+  "build": { "out": "www" },
+  "bundle": { "id": "board", "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0", "license_schema": "CC0-1.0", "operator": "human:operator" },
+  "agents": [{ "author": "board-bot", "budget_usd_month": 1, "channel": "main", "enabled": true, "kind": "llm", "max_claims": 1, "model": "test-model", "name": "worker", "operator": "human:operator", "tasks": ["claim", "work", "plan", "refresh"], "types": ["concept", "episode"] }],
+  "budget": { "usd_month": 1 },
+  "channels": [{ "adapter": "github", "author": "board-bot", "name": "main", "owner": "human:operator" }],
+  "contribute": [{ "mode": "pr", "target": "https://github.com/example/board" }],
+  "site": { "base": "https://board.example/", "tagline": "A demo node of the AgenticSystemCore format.", "tdm_crawlers": ["CCBot", "GPTBot"], "title": "board demo" },
+  "spec_version": "1.0.0-rc.6",
+  "tags": { "allowed": ["agents", "patterns"] }
+}
