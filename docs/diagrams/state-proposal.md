@@ -44,7 +44,7 @@ stateDiagram-v2
 
 A rejected Proposal has no `resubmit` edge on purpose: resubmission is a **new** Proposal, entering at
 `authored`. `mergeGate` covers a base conflict by returning to `authored` (the patch is rebuilt), and
-`humanReview` can end in `rejected` when the owner closes a lint-green PR — the machine is total over
+`humanReview` can end in `rejected` when the maintainer closes a lint-green PR — the machine is total over
 what actually happens.
 
 Trace: PRD-039–043 · PLAN.md §6(b), §5.3 (Provenance & Governance).

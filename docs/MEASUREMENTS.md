@@ -60,7 +60,7 @@ node tools/count-artifacts --json
 
 **Read the last four rows carefully.** "Named by a test" means the rule id appears in a test file. That is a statement of intent, not proof of a machine assertion. Only the first row — a vector that carries the rule id in its `rule` member and is executed by the runner — is verified in the strict sense. **Treat rows 3 to 6 as an upper bound on coverage and row 1 as the lower bound** until `tools/rule-coverage` classifies each rule as verified, prose-only-with-a-reason, or unverified. The 55 rules that nothing names are listed in `docs/measurements.json` under `layers.conformance.rule_coverage.uncovered`, with a per-chapter breakdown beside it.
 
-**Error codes.** 90 registered, 90 used.
+**Error codes.** 91 registered, 91 used.
 
 **The independent checkers.** Six of the nine ran, each exiting 0 with a well-formed envelope and no finding: `validate-spec`, `validate-schemas`, `validate-ontology`, `validate-vectors`, `validate-features`, `validate-diagrams`. `validate-wellknown` ran in §3 against sixteen hostile discovery inputs; `gen-spec-html` and `gen-ns` are generators and have no pass/fail to report here.
 
@@ -326,11 +326,11 @@ Every figure is from this document; nothing is rounded up.
 | specification version measured | 1.0.0-rc.6 (drafted, untagged) |
 | rules declared / active / reserved | 343 / 332 / 11 |
 | conformance vectors: total / required / optional / withdrawn | 199 / 166 / 1 / 32 |
-| vector run | 164 pass, 0 fail, 30 skipped (all withdrawn) |
+| vector run | 167 pass, 0 fail, 32 skipped (all withdrawn) |
 | populated vector areas | 19 |
 | active rules with ≥ 1 vector | 129 of 332 (39 %) |
 | active rules named by no test, checker, vector or scenario | 10 of 332 (3 %) |
-| error codes registered / used | 90 / 90 |
+| error codes registered / used | 91 / 91 |
 | two clean builds compared | 49 files, 0 differing |
 | builds across time zone and locale compared | 49 files, 0 differing |
 | security floor: seeded faults stopped | 85 of 85 (21 detected, 61 refused, 3 neutralised; none missed) |

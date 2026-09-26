@@ -250,7 +250,7 @@ function walk(root, dir) {
 /**
  * The file list `npm pack` would produce from `package.json#files`, plus the
  * files npm always includes. It is computed from the manifest so that the check
- * runs offline and in a sandbox; `npm pack --dry-run` is the owner's own
+ * runs offline and in a sandbox; `npm pack --dry-run` is the maintainer's own
  * confirmation and is step 4 of the checklist.
  */
 function packList(root, manifest) {

@@ -13,7 +13,7 @@ flowchart TD
   end
 
   subgraph L2["Engine release - release.yml"]
-    T2["Trigger: tag v* pushed by the owner"]
+    T2["Trigger: tag v* pushed by the maintainer"]
     P2["permissions: contents: read,\nid-token: write, attestations: write"]
     Sec2["secrets: none (OIDC)"]
     R2["Node 24 -> npm trusted publishing:\nagentic-system-core + agsc-cli alias,\nactions/attest provenance"]

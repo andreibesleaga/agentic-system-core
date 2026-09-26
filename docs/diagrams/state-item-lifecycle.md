@@ -35,7 +35,7 @@ stateDiagram-v2
     its computed inverse `superseded-by` (on the
     OLD item) are independent of `status`: an item
     can be superseded while still `stable` until
-    the owner also deprecates it.
+    the maintainer also deprecates it.
   end note
 ```
 

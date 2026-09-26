@@ -19,7 +19,7 @@ Internet-Draft in `../internet-draft/`, and this document cites it rather than r
 |---|---|
 | `index.html` | ReSpec source for the report *Agentic Knowledge Vocabulary and Discovery Profile*, `specStatus: "unofficial"` (CG-DRAFT parked). Vocabulary tables kept in step with `../ontology/agsc.ttl` (one `<dfn>` per term; the term count is checked against the ontology by `tools/count-artifacts`); every unwritten section is marked `TODO`. Also contains the section describing how Turtle, JSON-LD and RDF/XML are served (namespace, `owl:versionIRI`, content negotiation). |
 
-The track plan (Track W: goal, work packages, dates, gates), the publication checklist and the
+The publication plan, the publication checklist and the
 sourced W3C publication-landscape research of 2026-09-04 that every claim above rests on are kept in
 the project's **private planning record** and are not part of this repository; the public outcome of
 that research is summarised in `../docs/RELATED-WORK.md`.

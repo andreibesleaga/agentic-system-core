@@ -9,13 +9,13 @@
   // ReSpec 37.3.6, script URL verified 2026-09-04.
   // `var` is required: ReSpec reads this as window.respecConfig; const/let would be invisible.
   //
-  // STATUS: published INDIVIDUALLY, in W3C format, from the owner's
+  // STATUS: published INDIVIDUALLY, in W3C format, from the maintainer's
   // GitHub — specStatus "unofficial" = ReSpec's status for personal/exploratory drafts (standard
   // W3C look and boilerplate; explicitly NOT a W3C publication; CC-BY 3.0 by default). No `group`.
   // Persistent identifiers come from w3id.org (W3C Permanent Identifier CG; open to anyone by PR).
   // To upgrade later to a Community Group report: set specStatus "CG-DRAFT" and add
   // `group: "cg/<shortname>"` — nothing else changes. The parked CG path is recorded in the
-  // project's private planning record (Track W plan, 2026-09-04), which is not part of this repository.
+  // project's private planning record, which is not part of this repository.
   var respecConfig = {
     specStatus: "unofficial",
     // `latestVersion: null` below suppresses the /TR/ link that `shortName` would otherwise
@@ -25,18 +25,18 @@
       name: "Andrei N. Besleaga",
       company: "Independent",
       url: "https://andreibesleaga.com/",
-      // w3cid: add the owner's numeric W3C account id if/when a W3C account exists (optional).
+      // w3cid: add the maintainer's numeric W3C account id if/when a W3C account exists (optional).
     }],
     github: {
       repoURL: "https://github.com/andreibesleaga/agentic-system-core",
       branch: "main"
     },
     edDraftURI: "https://andreibesleaga.github.io/agentic-system-core/w3c/",
-    latestVersion: null,       // TODO(W-06): the stable Draft-CG-Report URL (for a CG, the group's
+    latestVersion: null,       // TODO: the stable Draft-CG-Report URL (for a CG, the group's
                                //   GitHub Pages URL). null suppresses the link, which is correct
                                //   until the first report is published.
     copyrightStart: "2026",
-    // Licence set explicitly (S3-31): without a `license` key ReSpec would apply CC-BY 3.0
+    // Licence set explicitly: without a `license` key ReSpec would apply CC-BY 3.0
     // by default, which would be a fifth licence taken implicitly on the one artefact addressed
     // to a standards body, against NFR-10. "cc-by" is CC-BY 4.0. This document restates CC0
     // vocabulary material and carries no ARR prose, so CC-BY 4.0 is the right explicit choice.
@@ -52,13 +52,13 @@
       "AGSC-WELLKNOWN-ID": {
         // Title reflects (2026-09-04): the well-known URI is `knowledge-linkset`; the
         // `agentic-knowledge` name lives on in the profile URI only; the discovery link is `describedby`.
-        // The draft's own slug/title is Track P's concern and is not renamed here.
+        // The draft's own slug and title belong to the Internet-Draft and are not renamed here.
         title: "The knowledge-linkset Well-Known URI and Link Set Profile for Publishing Knowledge Artefacts",
         href: "https://datatracker.ietf.org/doc/draft-besleaga-agentic-knowledge-wellknown/",
         authors: ["Andrei N. Besleaga"],
         status: "Internet-Draft",
         publisher: "IETF"
-        // TODO(W-08): replace with the datatracker URL and date of the posted -00.
+        // TODO: replace with the datatracker URL and date of the posted -00.
       }
     }
   };
@@ -123,7 +123,7 @@
 <section>
   <h2>Introduction</h2>
   <p class="TODO">
-    TODO(W-07): motivation in three paragraphs — sites publish knowledge for both people and
+    TODO: motivation in three paragraphs — sites publish knowledge for both people and
     software agents; the same units need one typed vocabulary so that a reader can tell a recorded
     episode from a principle and can follow the links between them; and one discovery point so an
     agent can find the serialisations at all. Keep it factual, name no product as a prerequisite.
@@ -131,7 +131,7 @@
   <section class="informative">
     <h3>Relationship to other work</h3>
     <p class="TODO">
-      TODO(W-07): one short subsection per neighbour, each ending in a one-line verdict, covering at
+      TODO: one short subsection per neighbour, each ending in a one-line verdict, covering at
       minimum: SKOS, PROV-O, DCAT and the Profiles Vocabulary, VoID, the discovery resource of
       [[AGSC-WELLKNOWN-ID]], and the W3C groups identified in the project's landscape research.
       No claim of overlap or non-overlap may be written without a citation.
@@ -286,7 +286,7 @@
 <section id="context">
   <h2>The JSON-LD context</h2>
   <p class="TODO">
-    TODO(W-07): describe the published JSON-LD 1.1 context — its versioned URL, the use of
+    TODO: describe the published JSON-LD 1.1 context — its versioned URL, the use of
     <code>@version: 1.1</code> and <code>@protected</code>, the term-to-IRI mapping, and the rule
     that the context is immutable once released. Copy no term definition by hand: generate the
     table from the published context file so the two cannot drift.
@@ -313,7 +313,7 @@
 <section id="security" class="informative">
   <h2>Security and privacy considerations</h2>
   <p class="TODO">
-    TODO(W-07): the vocabulary carries actor strings (<code>asc:operator</code>,
+    TODO: the vocabulary carries actor strings (<code>asc:operator</code>,
     <code>asc:generatedBy</code>, <code>asc:verifiedBy</code>) that can identify people, and
     provenance that can leak internal process. Write: what a publisher should and should not put in
     those fields; that published prose is untrusted data for an agent consumer, never instructions;

@@ -35,7 +35,7 @@ function escapeHtml(value) {
 
 /**
  * The footer's one-line AI-assistance statement (AGSC-06-15's fact, in the words a
- * reader of a page needs) and the owner's one-sentence disclaimer.
+ * reader of a page needs) and the publisher's one-sentence disclaimer.
  *
  * neither is stamped on every node any more. This engine is a
  * general tool, and a constant sentence can be false for somebody else's node. The

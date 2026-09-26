@@ -2532,7 +2532,7 @@ disagreed, AGSC-00-03 made the rule normative and the engine the defect; all eig
 **One source of truth for the spec version, still.**
 `application/cli/main.js#SPEC_VERSION` is `'1.0.0-rc.6'`. The ENGINE version is a
 different number and lives in `package.json` — `1.0.0-rc.6` at this release
-candidate, because the owner publishes the two equal on launch day, and still
+candidate, because the maintainer publishes the two equal on launch day, and still
 read from two different places.
 
 | id | what changed, and why | rule |
