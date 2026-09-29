@@ -51,7 +51,7 @@ test('forge shim: exactly ONE workflow file, and the Gate\'s level reaches it', 
   assert.deepStrictEqual(shim.workflow({ level: 3 }), {
     path: '.example-forge/agsc.yml',
     text: '# Generated from a gate item by the example-forge shim (AGSC-08-12).\n'
-      + 'steps:\n  - run: npx agsc ci --level 3\n',
+      + 'steps:\n  - run: npx -y agsc-cli ci --level 3\n',
   });
   // No level, and an unusable one, both fall to the Level this engine emits.
   assert.match(shim.workflow({}).text, /--level 2\n$/u);

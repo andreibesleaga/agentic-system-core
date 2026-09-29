@@ -27,7 +27,7 @@ published ontology, machine artefacts whose bytes are fixed by expected-byte
 conformance vectors, governance in which every change — human or agent — arrives as a
 proposal carrying its provenance and a person ratifies it (directly, or by a standing
 rule a person recorded in the node's configuration), and composition of the same files
-into a runnable harness, with no server required at any point.
+into a starting harness, with no server required at any point.
 
 This is a claim about the specification's text and its vectors, not a performance
 claim. Other systems have some of these properties; the dated comparison is in
@@ -36,11 +36,11 @@ claim. Other systems have some of these properties; the dated comparison is in
 | Property | What it means | Where it is stated and proved |
 |---|---|---|
 | Discovery through registered mechanisms | one link set at a well-known address, found through the registered relation `describedby` | [AGSC-06-07](spec/06-surfaces.md), [AGSC-06-25](spec/06-surfaces.md); `tools/validate-wellknown` |
-| A digest on every artefact | each file the discovery document names carries its SHA-256 digest | [AGSC-06-08](spec/06-surfaces.md); the `discovery` vectors |
+| A digest on every artefact | each artefact the discovery document links carries its SHA-256 digest | [AGSC-06-08](spec/06-surfaces.md); the `discovery` vectors |
 | A typed graph with an ontology | fourteen typed links, four RDF views, a published OWL 2 RL vocabulary | [spec/05-graph.md](spec/05-graph.md), [ontology/agsc.ttl](ontology/agsc.ttl) |
 | Bytes fixed by vectors | two implementations given one Bundle emit the same machine files | [AGSC-04-24](spec/04-canonicalization.md); [tests/vectors/](tests/vectors/README.md) |
 | Governance with provenance | every change is a proposal with its provenance; a person ratifies; a ledger is derived from the history | [spec/08-governance.md](spec/08-governance.md) (AGSC-08-08, AGSC-08-20) |
-| Composition into a harness | selected items close over their links and become seven files a runtime can execute | [AGSC-07-12](spec/07-composition.md); `agsc compose` |
+| Composition into a harness | selected items close over their links and become seven files an architect or an agent runtime can start from | [AGSC-07-12](spec/07-composition.md); `agsc compose` |
 | No server | a file format and static files; no protocol, server, database or reasoner is defined | [AGSC-00-02](spec/00-overview.md) |
 
 Beside that combination, and each available elsewhere on its own: **six modes** of use
@@ -66,7 +66,7 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
   in as procedures
   ([Mode 3](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l4--procedures-as-installable-skills)).
 - **Runnable procedures.** A selection of items becomes a harness of seven files a
-  runtime can execute ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m5--a-selection-that-becomes-a-running-system)).
+  runtime can start from ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m5--a-selection-that-becomes-a-running-system)).
 - **A live board for a team of agents.** Agents claim and finish tasks on shared boards
   until they are done; decisions stay with people
   ([Mode 5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m1--the-live-board-one-person-and-three-agents)).
@@ -110,6 +110,30 @@ On a folder of your own Markdown notes, once the package is installed
 a developer, an implementer in another language, an architect, an agent, a standards
 reviewer or a maintainer — down one path. Agents and coding assistants working in this
 repository read [AGENTS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/AGENTS.md) first.
+
+## Documentation map
+
+The official repository is <https://github.com/andreibesleaga/agentic-system-core>; the site is <https://agenticsystemcore.com>.
+
+| Topic | Read |
+|---|---|
+| The specification (the standard itself: 343 numbered rules in twelve chapters) | [spec/](spec/) — start with [spec/00-overview.md](spec/00-overview.md); a plain-language edition is in [docs/plain/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/) |
+| How to read the specification | [docs/SPEC-ORIENTATION.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/SPEC-ORIENTATION.md), [docs/SPEC.md](docs/SPEC.md) |
+| The protocol: discovery document, link set, digests, peers, tool surfaces | [docs/PROTOCOLS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/PROTOCOLS.md), [spec/06-surfaces.md](spec/06-surfaces.md), [spec/11-boundary.md](spec/11-boundary.md) |
+| The Internet-Draft (the well-known link set, Independent Submission) | [internet-draft/](https://github.com/andreibesleaga/agentic-system-core/blob/main/internet-draft/) |
+| Schemas and vocabulary (JSON Schemas, OWL 2 RL ontology, JSON-LD context) | [schema/](schema/), [ontology/](ontology/) |
+| Architecture | [docs/ARCHITECTURE-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-GUIDE.md), [docs/ARCHITECTURE-DDD.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-DDD.md), [docs/diagrams/](docs/diagrams/) |
+| Standards it builds on and related work | [docs/RELATED-WORK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RELATED-WORK.md), [docs/COMPLIANCE-CROSSWALK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/COMPLIANCE-CROSSWALK.md) |
+| Conformance: Levels, vectors, how to state a claim | [spec/09-conformance.md](spec/09-conformance.md), [spec/10-implementation-profiles.md](spec/10-implementation-profiles.md), [tests/vectors/](tests/vectors/), [docs/CONFORMANCE-STATEMENTS.md](docs/CONFORMANCE-STATEMENTS.md) |
+| Implementing it in another language | [docs/IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) |
+| Using it: modes, demos, connectors, assistants | [docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/DEMOS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/DEMOS.md), [docs/CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md), [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md) |
+| Plugins and extension points | [docs/PLUGINS.md](docs/PLUGINS.md) |
+| Security and threat model | [docs/SECURITY-CONSIDERATIONS.md](docs/SECURITY-CONSIDERATIONS.md), [SECURITY.md](SECURITY.md) |
+| Engineering, testing, measurements | [docs/ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md), [docs/TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md), [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md), [docs/BENCHMARKS.md](docs/BENCHMARKS.md) |
+| Requirements and use cases | [docs/PRD.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/PRD.md), [docs/USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md), [docs/REQUIREMENTS-MATRIX.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/REQUIREMENTS-MATRIX.md) |
+| What comes next | [docs/ROADMAP.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ROADMAP.md) |
+| Governance, trademark, contributing, licences | [GOVERNANCE.md](GOVERNANCE.md), [TRADEMARK-POLICY.md](TRADEMARK-POLICY.md), [CONTRIBUTING.md](CONTRIBUTING.md), [NOTICE](NOTICE) |
+| Glossary and the full docs index | [docs/GLOSSARY.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/GLOSSARY.md), [docs/README.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/README.md) |
 
 ## Reference engine
 

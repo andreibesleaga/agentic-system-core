@@ -1290,9 +1290,9 @@ NOTE: '\' line wrapping per RFC 8792
 {: title="A complete discovery document"}
 
 The same node, publishing without a build engine, serves the reduced
-form of {{the-reduced-form}}: the same link set with every `digest`
-attribute and every bundle-fact attribute removed, and with no `ledger`
-link.
+form of {{the-reduced-form}}: a link set of the same structure that
+names only the artefacts such a publisher has, with no `digest`
+attribute, no bundle-fact attribute and no `ledger` link.
 
 ~~~ json
 {

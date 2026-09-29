@@ -482,7 +482,7 @@ standards body or a registry that has not acted on it.
 **What the reference distribution claims today: nothing.** AGSC-10-05 says the
 reference implementation "will claim Level 3 at its 1.0.0 release; no claim exists
 before a green run of the Level-3 set". At `1.0.0-rc.6` the reference engine passes
-every live vector of the set and skips only the withdrawn ones (the counts are the
+every vector of the set and skips none (the counts are the
 conformance runner's own summary line, and `node tools/count-artifacts --json` gives
 the totals), and that is a run, not a claim.
 

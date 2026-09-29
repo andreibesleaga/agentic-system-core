@@ -118,7 +118,7 @@ agsc export --to cogx       # writes dist/export/cogx/
 ```
 
 The archive is a folder: `manifest.json` plus one JSON-lines file per kind of record.
-What we emit:
+What the engine emits:
 
 | from the node | COGX record | file |
 |---|---|---|
@@ -143,7 +143,7 @@ every other import: `--dry-run` shows the plan and writes nothing, an item that
 already exists with different content stops the whole import (nothing is written)
 unless you add `--replace`, and a second import of the same archive changes nothing.
 
-- **Our own archive** comes back item for item, byte for byte, plus one line the
+- **The engine's own archive** comes back item for item, byte for byte, plus one line the
   rules require on every imported item: `prov.source_version`, the content version
   of the node it came from.
 - **A foreign archive** is read by kind: entities become concepts, memories become
@@ -336,7 +336,7 @@ agsc export --to board --format trello                          # dist/export/bo
 **Getting the file out of each tool** (read at each tool's documentation on 2026-09-23
 where a link is given):
 
-| tool | export steps | the file the import reads | what our export writes |
+| tool | export steps | the file the import reads | what the engine's export writes |
 |---|---|---|---|
 | GitHub | `gh issue list --state all --json number,title,body,state,stateReason,labels,assignees,milestone,createdAt,updatedAt > issues.json`, or `gh api repos/<o>/<r>/issues?state=all`, or `gh project item-list <n> --owner <o> --format json` ([REST issues](https://docs.github.com/en/rest/issues/issues): "GitHub's REST API considers every pull request an issue" — pull requests are skipped and counted) | `*.json` | an array of issue objects (`title`, `body`, `labels`, `assignees`, `milestone`) — the fields of the create-issue call; create them with `gh issue create` or the API (the milestone must exist, by number) |
 | GitLab | **Plan › Work items**, filter **Type = Issue**, **Actions › Export as CSV** (e-mailed) ([CSV export](https://docs.gitlab.com/user/project/issues/csv_export/)); or the REST `GET /projects/:id/issues` JSON | `*.csv`, `*.json` | the REST JSON shape; a non-open state becomes a `status::<state>` scoped label (GitLab boards are label lists) |
@@ -375,11 +375,11 @@ that is derived from the merge history (who proposed the claim), never written.
 E-mail addresses are cut to the part before the `@`, telephone numbers removed, and
 the count reported (an item may carry neither). Collisions, `--dry-run`, `--replace`,
 `--source-version` and `--allow-newer` work as in every import; a row carrying a
-record from our own export comes back exactly, and one whose record names another
+record from the engine's own export comes back exactly, and one whose record names another
 origin is read as foreign.
 
 **What each tool loses on the way out** (the full item always survives in the
-record our own import reads back):
+record the engine's own import reads back):
 
 | tool | lost for a reader of the tool |
 |---|---|
@@ -403,7 +403,7 @@ itself, and the import never publishes: every foreign row is a draft.
 ### Working a live board with agents
 
 Agents and assistants work a board through the same seven tools, locally (`agsc mcp`)
-or in the page — no new transport, no server of ours. Every write is a **prepared
+or in the page — no new transport and no hosted server. Every write is a **prepared
 Proposal**: the tool returns it, and a person (or a standing decision) merges it.
 
 | to | call | what comes back |

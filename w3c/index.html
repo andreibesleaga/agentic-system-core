@@ -276,9 +276,9 @@
         <tr><td><dfn>asc:verifiedAt</dfn></td><td><code>asc:Review</code></td><td><code>xsd:dateTime</code></td><td>Instant at which a human recorded a Review, with an explicit UTC offset.</td></tr>
         <tr><td><dfn>asc:specVersion</dfn></td><td><code>asc:Bundle</code></td><td><code>xsd:string</code></td><td>Version of the specification a Bundle declares.</td></tr>
         <tr><td><dfn>asc:sha256</dfn></td><td><code>asc:Attachment</code></td><td><code>xsd:string</code></td><td>Lowercase-hex SHA-256 of the attachment bytes at build (AGSC-05-29).</td></tr>
-        <tr><td><dfn>asc:produces</dfn></td><td>—</td><td><code>xsd:string</code></td><td>A port type name the item produces; matched by exact equality in composition Step 5 (AGSC-02-96, AGSC-05-30, AGSC-07-23).</td></tr>
-        <tr><td><dfn>asc:consumes</dfn></td><td>—</td><td><code>xsd:string</code></td><td>A port type name the item consumes (AGSC-02-96, AGSC-05-30).</td></tr>
-        <tr><td><dfn>asc:taskState</dfn></td><td>—</td><td><code>xsd:string</code></td><td>One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13).</td></tr>
+        <tr><td><dfn>asc:produces</dfn></td><td><code>asc:Concept</code></td><td><code>xsd:string</code></td><td>A port type name the concept produces; matched by exact equality in composition Step 5 (AGSC-02-96, AGSC-05-30, AGSC-07-23).</td></tr>
+        <tr><td><dfn>asc:consumes</dfn></td><td><code>asc:Concept</code></td><td><code>xsd:string</code></td><td>A port type name the concept consumes (AGSC-02-96, AGSC-05-30).</td></tr>
+        <tr><td><dfn>asc:taskState</dfn></td><td><code>asc:Concept</code></td><td><code>xsd:string</code></td><td>One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13).</td></tr>
         <tr><td><dfn>asc:retiredAt</dfn></td><td>—</td><td><code>xsd:dateTime</code></td><td>The instant an item entered status <code>retired</code>: <code>modified</code>, else <code>date</code>, by the midnight convention (AGSC-11-22, AGSC-05-14).</td></tr>
       </tbody>
     </table>

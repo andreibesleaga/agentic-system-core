@@ -25,7 +25,7 @@ flowchart TD
   B --> C["Edit frontmatter / body"]
   C --> D["Commit with Signed-off-by ... (CA-v1)"]
   D --> E["PR body carries agsc:proposal v1 marker"]
-  E --> F["ci.yml: npx agsc ci (lint L1+L2, build x2, diff)"]
+  E --> F["ci.yml: npx -y agsc-cli ci (lint L1+L2, build x2, diff)"]
   F --> G{"CI status check green?"}
   G -- no --> C
   G -- yes --> H["Maintainer reviews, adds verified[] entry"]
@@ -58,7 +58,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A["Run npx agsc skills install https://agenticsystemcore.com"] --> B["Fetch /skills/index.json"]
+  A["Run npx -y agsc-cli skills install https://agenticsystemcore.com"] --> B["Fetch /skills/index.json"]
   B --> C{"--into target"}
   C -- default --> D[".claude/skills/agsc-<cluster>/"]
   C -- agents --> E[".agents/skills/agsc-<cluster>/"]

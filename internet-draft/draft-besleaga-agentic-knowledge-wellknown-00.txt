@@ -1783,9 +1783,9 @@ Internet-Draft      knowledge-linkset Well-Known URI      September 2026
                   Figure 3: A complete discovery document
 
    The same node, publishing without a build engine, serves the reduced
-   form of Section 4.4: the same link set with every digest attribute
-   and every bundle-fact attribute removed, and with no ledger link.
-
+   form of Section 4.4: a link set of the same structure that names only
+   the artefacts such a publisher has, with no digest attribute, no
+   bundle-fact attribute and no ledger link.
 
 
 

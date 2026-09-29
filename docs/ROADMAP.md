@@ -19,7 +19,7 @@ wants to help shape the next version. **Read after:**
 ## What 1.0 does today
 
 - **Typed Links.** An item may point to others with fourteen closed Link keys
-  (AGSC-03-01). Nine carry composition meaning: `requires` pulls items in, `excludes`
+  (AGSC-03-01). Five carry composition meaning: `requires` pulls items in, `excludes`
   forbids a pair, `supersedes` hides an older item, `uses` and `contradicts` give
   warnings. The others (`related`, `broader`, `narrower`, `derived-from` and the five
   project keys) are for navigation and provenance and never change a composition

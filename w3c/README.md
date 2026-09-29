@@ -1,6 +1,6 @@
 # `w3c/` — the W3C-facing specification source
 
-**Status: SKELETON, to be published INDIVIDUALLY in W3C format.** `index.html` uses ReSpec `specStatus: "unofficial"` — the standard W3C document format for personal drafts, explicitly not a W3C publication — hosted from this repository (GitHub Pages / agenticsystemcore.com) with persistent identifiers from w3id.org. No W3C Community Group is needed for that; the CG route is parked and can be enabled later by switching `specStatus` to `"CG-DRAFT"` and adding `group`.
+**Status: SKELETON, to be published INDIVIDUALLY in W3C format.** `index.html` uses ReSpec `specStatus: "unofficial"` — the standard W3C document format for personal drafts, explicitly not a W3C publication — hosted from this repository on GitHub Pages (agenticsystemcore.com links to it and does not mirror it) with persistent identifiers from w3id.org. No W3C Community Group is needed for that; the CG route is parked and can be enabled later by switching `specStatus` to `"CG-DRAFT"` and adding `group`.
 
 ## What this is
 

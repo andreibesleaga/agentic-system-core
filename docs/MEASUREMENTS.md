@@ -77,7 +77,7 @@ node bench/measure.js --layer determinism --scratch <dir>
 | two clean builds, same environment | **49** | **0** |
 | `TZ=UTC LC_ALL=C` against `TZ=Asia/Tokyo LC_ALL=de_DE.UTF-8` | **49** | **0** |
 
-`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package implements two of the nineteen populated areas (`jcs`, `slug`) and none of the seventeen that carry emitted bytes. **Not run:** the same builds on macOS and Windows (CI matrix).
+`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package runs seven of the nineteen populated areas (`build`, `discovery`, `frontmatter`, `graph`, `jcs`, `links`, `slug`; 62 vectors, all passing) and agrees with the engine on the vectors both run, but it does not build a whole node, so byte identity of the emitted files between two engines is not yet measured. **Not run:** the same builds on macOS and Windows (CI matrix).
 
 ---
 

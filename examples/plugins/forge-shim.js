@@ -23,7 +23,7 @@ module.exports = {
     return {
       path: '.example-forge/agsc.yml',
       text: `# Generated from a gate item by the example-forge shim (AGSC-08-12).\n`
-        + `steps:\n  - run: npx agsc ci --level ${level}\n`,
+        + `steps:\n  - run: npx -y agsc-cli ci --level ${level}\n`,
     };
   },
 };
