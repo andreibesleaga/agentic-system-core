@@ -30,7 +30,7 @@
     dcterms:description "Vocabulary for AgenticSystemCore Bundles: six item types plus Bundle, Source, Proposal, Review, Harness and Attachment, aligned to SKOS, PROV-O and DCTerms." ;
     dcterms:issued "2026-09-17"^^xsd:date ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
-    dcterms:modified "2026-09-24"^^xsd:date ;
+    dcterms:modified "2026-09-29"^^xsd:date ;
     dcterms:publisher <https://orcid.org/0009-0001-3464-5283> ;
     dcterms:title "AgenticSystemCore vocabulary" ;
     vann:preferredNamespacePrefix "asc" ;
