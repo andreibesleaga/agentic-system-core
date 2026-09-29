@@ -85,7 +85,7 @@ test('AGSC-09-12: --json emits one JCS-canonical envelope on every verb that ans
     const stdout = captureStream();
     const stderr = captureStream();
     main([verb, '--json', '--quiet'], {
-      env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: emptyPort() }, root: '.', specVersion: '1.0.0-rc.4', stderr, stdout, version: '0.0.0',
+      env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: emptyPort() }, root: '.', specVersion: '1.0.0-rc.6', stderr, stdout, version: '0.0.0',
     });
     const text = stdout.text();
     assert.ok(text.endsWith('\n'), `${verb}: the envelope has no trailing LF`);

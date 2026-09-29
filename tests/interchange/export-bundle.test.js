@@ -15,7 +15,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const ITEM_SCHEMA = readSchemas(ROOT).item;
 
 const INDEX = `---
-spec_version: "1.0.0-rc.5"
+spec_version: "1.0.0-rc.6"
 okf_version: "0.2"
 title: A Bundle
 description: A Bundle whose root document carries every key AGSC-01-04 requires of one.

@@ -35,7 +35,7 @@ const ITEMS = Object.freeze([
 /** A bundle in a context that holds nothing but the language (no require, no fs). */
 function loadBundle() {
   const context = vm.createContext(Object.create(null));
-  vm.runInContext(browser.bundle({ specVersion: '1.0.0-rc.4' }), context, { filename: 'agsc-core.js' });
+  vm.runInContext(browser.bundle({ specVersion: '1.0.0-rc.6' }), context, { filename: 'agsc-core.js' });
   const core = vm.runInContext('globalThis.AGSC_CORE', context);
   assert.ok(core, 'the bundle installed no AGSC_CORE');
   return { context, core };
@@ -49,7 +49,7 @@ function optionsFor(result, items) {
     licenseProse: TERMS,
     name: 'fixture',
     selectionDigest: createHash('sha256').update(harness.selectionDigestInput(result), 'utf8').digest('hex'),
-    specVersion: '1.0.0-rc.4',
+    specVersion: '1.0.0-rc.6',
   };
 }
 
@@ -200,8 +200,8 @@ test('graphValues reads every JSON-LD value shape and invents none', () => {
 });
 
 test('the bundle is deterministic and ends in exactly one LF', () => {
-  const a = browser.bundle({ specVersion: '1.0.0-rc.4' });
-  const b = browser.bundle({ specVersion: '1.0.0-rc.4' });
+  const a = browser.bundle({ specVersion: '1.0.0-rc.6' });
+  const b = browser.bundle({ specVersion: '1.0.0-rc.6' });
   assert.strictEqual(a, b);
   assert.ok(a.endsWith('}());\n'));
   assert.ok(!a.includes('\r'));

@@ -1,5 +1,5 @@
 'use strict';
-// The engine consequences of the last rc.6 amendments, one test per rule:
+// The engine consequences of these rules, one test per rule:
 // AGSC-09-14b (remember refuses a gate and an actor-less episode), AGSC-11-16 (the
 // `mcp` surface declares the revision its transport speaks), AGSC-10-04 with
 // AGSC-09-93 (a public Level-2 document links the ledger), AGSC-06-18 (the Content

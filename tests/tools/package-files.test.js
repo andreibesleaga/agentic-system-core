@@ -1,9 +1,8 @@
 'use strict';
-// `SECURITY.md` and `CONTRIBUTING.md` exist in the repository — they close
-// R-03 and part of R-04 of the legal pack — but were absent from `package.json`
-// `files`, so `npm pack` shipped neither and a consumer of the npm package found no
-// security-reporting address and no contribution terms. `CHANGELOG.md` was unshipped
-// for the same reason.
+// `SECURITY.md`, `CONTRIBUTING.md` and `CHANGELOG.md` exist in the repository and
+// MUST be in `package.json` `files`: without them `npm pack` ships none, and a
+// consumer of the npm package finds no security-reporting address, no contribution
+// terms and no change history.
 //
 // AGSC-06-01 calls these repository files rather than routes, so no rule is touched:
 // this test simply pins what the published package must carry, measured through the

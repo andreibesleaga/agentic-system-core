@@ -1,6 +1,6 @@
 'use strict';
 // tests/governance/fix.test.js — `lint --fix` (AGSC-03-12, AGSC-04-14, AGSC-04-19,
-// AGSC-04-20; the flag AGSC-09-09 named at rc.5).
+// AGSC-04-20; the flag AGSC-09-09 names).
 //
 // The four rules are read as four separate obligations and each one is asserted on
 // its own: what `--fix` MUST normalise, that it is idempotent, that the emitted YAML
@@ -326,7 +326,7 @@ test('AGSC-02-04: a date and an instant stay quoted strings; nothing else is quo
   assert.strictEqual(fix.quoteTemporal('2026-01-01T00:00:00+01:00'), '2026-01-01T00:00:00+01:00');
 });
 
-test('the rc.5 vector for the YAML profile passes byte for byte (lint-0026)', () => {
+test('the vector for the YAML profile passes byte for byte (lint-0026)', () => {
   // `tests/vectors/lint/lint-0026-fix-yaml-profile.json` was authored by hand from the
   // rule text while this module was being written, by a different package, and is in
   // `tests/conformance/pending.json` until the vector runner adopts it. Reading it here

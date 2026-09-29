@@ -18,7 +18,7 @@ const NINE = Object.freeze([
   'validate-wellknown', 'validate-features', 'validate-diagrams',
   'gen-spec-html', 'gen-ns',
 ]);
-/** The libraries a tool MAY use: the engine's own pins (AGSC-09-90 as amended at rc.5). */
+/** The libraries a tool MAY use: the engine's own pins (AGSC-09-90). */
 const PINNED = Object.freeze(['ajv', 'ajv-formats', 'fast-xml-parser', 'json-canonicalize',
   'markdown-it', 'n3', 'yaml']);
 

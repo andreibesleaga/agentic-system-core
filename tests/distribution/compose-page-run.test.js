@@ -83,9 +83,12 @@ function fakeDocument(withModelContext) {
     };
     return node;
   };
-  for (const id of ['items', 'validity', 'verdict', 'explanations', 'conflicts', 'download', 'files', 'archive']) {
+  for (const id of ['items', 'validity', 'verdict', 'explanations', 'conflicts', 'download', 'files', 'archive',
+    'warnings', 'warnings-heading', 'filter', 'filter-form', 'filter-status']) {
     nodes.set(id, make(id));
   }
+  nodes.get('filter').value = '';
+  nodes.get('filter-form').hidden = true;
   const registered = [];
   const document = {
     createElement: (tag) => Object.assign(make(''), { tag }),
@@ -444,4 +447,62 @@ test('AGSC-07-13: the page Harness equals `agsc compose --zip` — content versi
   const cliZip = nodeFs.readFileSync(path.join(harnessRoot, zipName));
   assert.ok(Buffer.from(state.archive.bytes).equals(cliZip), 'the page archive differs from the CLI archive');
   assert.strictEqual(page.document.nodes.get('archive').children[0].download, zipName);
+});
+
+test('with nothing selected the page asks for a selection instead of saying "valid"', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.deepStrictEqual(plain(state.selection), []);
+  assert.strictEqual(page.document.nodes.get('validity').textContent, 'Select one or more items to compose.');
+  assert.strictEqual(page.document.nodes.get('verdict').textContent, '');
+  assert.strictEqual(page.document.nodes.get('download').disabled, true);
+  assert.strictEqual(page.document.nodes.get('warnings').hidden, true);
+  // The markup the build emits starts with the same sentence, so a reader without
+  // script is never told that an empty selection is valid.
+  assert.match(String(files.get('/compose/index.html')), /<p id="validity"[^>]*>Select one or more items to compose\.<\/p>/u);
+});
+
+test('AGSC-07-07: the warnings are shown to the reader, each with its code and a sentence', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  // `supervisor` uses `handoff`; `uses` does not close a selection, so it warns.
+  state.selection = ['supervisor'];
+  state.render();
+  assert.strictEqual(page.document.nodes.get('validity').textContent, 'valid');
+  const list = page.document.nodes.get('warnings');
+  assert.strictEqual(list.hidden, false);
+  assert.strictEqual(page.document.nodes.get('warnings-heading').hidden, false);
+  const lines = list.children.map((li) => li.textContent);
+  assert.deepStrictEqual(lines, ['AGSC-E803: supervisor names handoff under uses, which does not close a selection'
+    + ' (only requires does), so it was not added (AGSC-07-05, AGSC-07-07)']);
+  // One warning per verdict entry, in the verdict's own order.
+  assert.strictEqual(lines.length, state.verdict.warnings.length);
+});
+
+test('the filter box narrows the item list by title or description and never changes the selection', async () => {
+  const { files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.strictEqual(page.document.nodes.get('filter-form').hidden, false, 'the script shows the filter box');
+  const rows = page.document.nodes.get('items').children;
+  const visible = () => rows.filter((li) => !li.hidden).map((li) => li.children[0].value);
+  assert.deepStrictEqual(visible().sort(), ['handoff', 'supervisor']);
+  state.selection = ['handoff'];
+  page.document.nodes.get('filter').value = 'Coordinating';
+  assert.strictEqual(state.applyFilter(), 1);
+  assert.deepStrictEqual(visible(), ['supervisor'], 'a description match');
+  assert.strictEqual(page.document.nodes.get('filter-status').textContent, '1 of 2 items match "coordinating".');
+  assert.deepStrictEqual(plain(state.selection), ['handoff'], 'filtering changed the selection');
+  page.document.nodes.get('filter').value = 'HANDOFF';
+  state.applyFilter();
+  assert.deepStrictEqual(visible(), ['handoff'], 'a case-insensitive title match');
+  page.document.nodes.get('filter').value = '';
+  state.applyFilter();
+  assert.deepStrictEqual(visible().sort(), ['handoff', 'supervisor']);
+  assert.strictEqual(page.document.nodes.get('filter-status').textContent, '');
 });

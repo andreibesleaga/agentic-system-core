@@ -16,7 +16,7 @@
 // and `skos:Collection` is disjoint with `skos:Concept` (S37). Emitting `skos:broader`
 // on a Cluster would therefore entail a contradiction and fail every SKOS validator —
 // which is why AGSC-05-19 exports cluster nesting as a nested Collection instead
-// (vector `graph-0002`).
+// (vector `graph-0022`).
 
 const NS = 'https://w3id.org/agentic-system-core/ns#';
 const SKOS = 'http://www.w3.org/2004/02/skos/core#';

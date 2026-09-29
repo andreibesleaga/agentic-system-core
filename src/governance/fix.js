@@ -2,8 +2,7 @@
 /**
  * CONTEXT Governance & Provenance — use case: `lint --fix`.
  *
- * Implements the four rules that oblige the flag and, until rc.5, were obliged by
- * nothing:
+ * Implements the four rules that oblige the flag:
  *   AGSC-03-12  wikilinks `[[target(#anchor)?(|alias)?]]` are normalised to relative
  *               Markdown links `[alias](../<type-plural>/<slug>.md#anchor)`; `![[…]]`
  *               embeds become images or are removed; the reversed Dendron order
@@ -16,7 +15,7 @@
  *               `knowledge/adopt.js#serialize` and no second writer.
  *   AGSC-04-20  no prose is changed beyond that rewriting, no authored array is
  *               reordered, and no key is added, removed or inferred.
- * and AGSC-09-09 (rc.5), which names `lint --fix` in the verb-flag list.
+ * and AGSC-09-09, which names `lint --fix` in the verb-flag list.
  *
  * PURE. It reads no file and writes none: the caller hands it the items it already
  * loaded and receives the bytes each file WOULD hold. That is what lets the same
@@ -312,9 +311,8 @@ function fixItem(item, options) {
   // AGSC-04-19 reports PER NORMALISATION, not per file:
   // "a line-ending, BOM, NFC or trailing-newline normalisation under AGSC-E108 …,
   // every other normalisation of this rule under AGSC-E506". So the encoding third
-  // is recorded on its own even when the frontmatter also moved — until rc.5 it was
-  // recorded only when it was the file's ONLY change, and a file that needed both
-  // was reported under AGSC-E506 alone.
+  // is recorded on its own even when the frontmatter also moved, and a file that needs
+  // both is never reported under AGSC-E506 alone.
   if (normaliseText(before) !== before) changes.unshift(ENCODING_CHANGE);
   const after = normaliseText(`${block}${rewrite.body}`);
   return { after, before, changed: after !== before, changes, findings, path };

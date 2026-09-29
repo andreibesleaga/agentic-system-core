@@ -1,6 +1,6 @@
 {
   "area": "adopt",
-  "description": "The drop-in path passes its own gate. The frontmatter an adopted file receives carries no description, no tags and no sources — and it MUST still validate against schema/item.schema.json, because description is optional in every branch (V2-01). The findings are warnings only: AGSC-E408 for the missing description on a concept (AGSC-02-21). If this vector errors, AGSC-02-92 is violated and the three-command promise of PRD-053 is broken.",
+  "description": "The drop-in path passes its own gate. The frontmatter an adopted file receives carries no description, no tags and no sources — and it MUST still validate against schema/item.schema.json, because description is optional in every branch. The findings are warnings only: AGSC-E408 for the missing description on a concept (AGSC-02-21). If this vector errors, AGSC-02-92 is violated and the three-command promise of PRD-053 is broken.",
   "expected": {
     "errors": [],
     "findings": [

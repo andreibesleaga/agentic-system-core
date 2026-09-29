@@ -70,7 +70,7 @@ test('AGSC-09-03: the report carries `got` for everything that did not pass, and
     { handlerFor: (area) => (area === 'jcs' ? FAILING : PASSING) },
   );
   const document = conformance.report(results, {
-    impl: 'agentic-system-core', level: 2, spec_version: '1.0.0-rc.4', version: '0.0.0',
+    impl: 'agentic-system-core', level: 2, spec_version: '1.0.0-rc.6', version: '0.0.0',
   });
   assert.strictEqual(document.class, 'writer');
   assert.deepStrictEqual(document.summary, { fail: 1, pass: 1, skip: 0 });

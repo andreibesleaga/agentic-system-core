@@ -18,7 +18,7 @@ Nothing here claims that any body has reviewed, adopted or approved this work. A
 this project defines — the well-known suffix `knowledge-linkset` and the profile
 identifier — has its **registration to be requested** through the Internet-Draft in
 `internet-draft/`; neither is registered today. The primary-document links below were
-opened on 2026-09-24.
+read on 2026-09-24.
 
 ---
 

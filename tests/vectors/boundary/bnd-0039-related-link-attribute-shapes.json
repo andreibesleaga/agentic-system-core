@@ -1,0 +1,48 @@
+{
+  "area": "boundary",
+  "description": "AGSC-06-10 with AGSC-06-35: in the discovery document a related-system link's `type` and `title` are JSON strings (RFC 9264 §4.2.4.1) and its `profile`, an extension target attribute, is an array of strings even with one value (RFC 9264 §4.2.4.3). The case is the document the writer emits, not an intermediate list: `input.config` is the node's configuration, and `expected.related` is the value of the `related` member of the link context, links ordered by `href` (AGSC-06-10).",
+  "expected": {
+    "related": [
+      {
+        "href": "https://registry.example/a.json",
+        "type": "application/json"
+      },
+      {
+        "href": "https://registry.example/b.json",
+        "profile": [
+          "https://profile.example/p"
+        ],
+        "title": "A registry entry",
+        "type": "application/json"
+      }
+    ]
+  },
+  "id": "bnd-0039",
+  "input": {
+    "config": {
+      "related": [
+        {
+          "href": "https://registry.example/b.json",
+          "profile": "https://profile.example/p",
+          "rel": "related",
+          "title": "A registry entry",
+          "type": "application/json"
+        },
+        {
+          "href": "https://registry.example/a.json",
+          "rel": "related",
+          "type": "application/json"
+        }
+      ],
+      "site": {
+        "base": "https://a.example"
+      }
+    },
+    "level": 0
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-10"
+}

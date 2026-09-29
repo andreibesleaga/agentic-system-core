@@ -2,7 +2,7 @@
 
 **Who this is for:** anyone checking what has been measured, on what, and with which command. **Read after:** [BENCHMARKS.md](BENCHMARKS.md) (the method). *(Header added 2026-09-24.)*
 
-**Status: COMPLETE for every layer one machine can run, measured 2026-09-23 against `1.0.0-rc.6` (drafted, untagged); the conformance, security and package layers were measured again on 2026-09-24, after the last specification pass of the draft.** Nine layers have been run and are reported below with the command that produced each number. *(2026-09-25: the build curves of §4 were measured again, before and after two changes to the writer, and a cost layer, §11, was added — page weight per visit, MCP cost per call, `verify` memory, cold start, the install, and hosting by the host's published limits.)* Two things remain open, and each says so where it belongs: the same suite and builds on macOS and Windows (a CI matrix, which one machine cannot run), and the authoritative rule-coverage matrix that replaces the proxy rows of §1 (`tools/rule-coverage`, another package's deliverable).
+**Status: COMPLETE for every layer one machine can run, measured 2026-09-23 against `1.0.0-rc.6`; the conformance, security and package layers were measured again on 2026-09-24, after the last specification pass of the draft.** Nine layers have been run and are reported below with the command that produced each number. *(2026-09-25: the build curves of §4 were measured again, before and after two changes to the writer, and a cost layer, §11, was added — page weight per visit, MCP cost per call, `verify` memory, cold start, the install, and hosting by the host's published limits.)* Two things remain open, and each says so where it belongs: the same suite and builds on macOS and Windows (a CI matrix, which one machine cannot run), and the authoritative rule-coverage matrix that replaces the proxy rows of §1 (`tools/rule-coverage`, another package's deliverable).
 
 Every number here is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.
 
@@ -43,22 +43,22 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch
 node tools/count-artifacts --json
 ```
 
-**The vector run.** `167 pass, 0 fail, 32 skip (32 withdrawn, 0 pending) of 199`. Of the 199 vectors, 166 are required, 1 is optional and 32 are withdrawn; withdrawn vectors are excluded from the claim, as AGSC-00-13 requires. The 19 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery frontmatter graph import jcs ledger links lint prov slug`.
+**The vector run** (measured again 2026-09-29). `171 pass, 0 fail, 0 skip (0 withdrawn, 0 pending) of 171`. Of the 171 vectors, 170 are required and 1 is optional; none is withdrawn — this is the first public set, and a vector withdrawn later is excluded from every claim, as AGSC-00-13 requires. The 19 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery frontmatter graph import jcs ledger links lint prov slug`.
 
-**Rule coverage.** The specification declares **343 rules** — 332 active, 11 reserved. Counted over the 332 active rules, a rule being retired exactly when `tools/count-artifacts` says so:
+**Rule coverage.** The specification declares **343 rules** — 332 active, 11 reserved. Counted over the 332 active rules, a rule being reserved exactly when `tools/count-artifacts` says so:
 
 | | rules | share of 332 |
 |---|---|---|
-| with at least one conformance vector | **129** | 39 % |
-| with **no** vector | **203** | 61 % |
-| named by at least one test file (a file that contains the id — a proxy; `tools/rule-coverage`, which counts test titles and `// verifies` markers, reports 301) | 319 | 96 % |
-| named by at least one checker under `tools/` | 80 | 24 % |
+| with at least one conformance vector | **130** | 39 % |
+| with **no** vector | **202** | 61 % |
+| named by at least one test file (a file that contains the id — a proxy; `tools/rule-coverage`, which counts test titles and `// verifies` markers, reports 302) | 319 | 96 % |
+| named by at least one checker under `tools/` | 84 | 25 % |
 | named by at least one acceptance scenario | 14 | 4 % |
 | **named by nothing at all** | **10** | 3 % |
 
 *(Corrected 2026-09-24: the earlier table counted 328 active rules, because the runner took any rule whose first words mentioned "reserved" for a reserved one; it now applies the counter's own test.)*
 
-**Read the last four rows carefully.** "Named by a test" means the rule id appears in a test file. That is a statement of intent, not proof of a machine assertion. Only the first row — a vector that carries the rule id in its `rule` member and is executed by the runner — is verified in the strict sense. **Treat rows 3 to 6 as an upper bound on coverage and row 1 as the lower bound** until `tools/rule-coverage` classifies each rule as verified, prose-only-with-a-reason, or unverified. The 55 rules that nothing names are listed in `docs/measurements.json` under `layers.conformance.rule_coverage.uncovered`, with a per-chapter breakdown beside it.
+**Read the last four rows carefully.** "Named by a test" means the rule id appears in a test file. That is a statement of intent, not proof of a machine assertion. Only the first row — a vector that carries the rule id in its `rule` member and is executed by the runner — is verified in the strict sense. **Treat rows 3 to 6 as an upper bound on coverage and row 1 as the lower bound** until `tools/rule-coverage` classifies each rule as verified, prose-only-with-a-reason, or unverified. The 10 rules that nothing names are listed in `docs/measurements.json` under `layers.conformance.rule_coverage.uncovered`, with a per-chapter breakdown beside it.
 
 **Error codes.** 91 registered, 91 used.
 
@@ -113,9 +113,9 @@ An outcome is one of five: **detected** (the rule's code, exit 0), **refused** (
 | a hostile foreign corpus on import (an archive, a symlink out of the source, injection, a NUL in a title, a file over 1 MiB, an excluded file) | 6 | 6 | 1 detected, 4 refused, 1 neutralised | 1 of 1 |
 | valid Bundle controls (clean item under `ci` and `lint`, `https` link, emoji sequence, the word "ignore", a clean SVG) | — | — | — | 6 of 6 |
 
-**What changed since 2026-09-23.** The two misses of the first run are closed: a file that is not valid UTF-8 is now refused with `AGSC-E108` (AGSC-01-14), and an archive handed to `import` is refused with `AGSC-E903` (AGSC-01-16) instead of ending in an internal error. The two false positives are gone: the encoded-run check uses the 256-character threshold AGSC-08-13 fixed at rc.5. The five faults that were stopped under another code now carry the code their rule names.
+**What changed since 2026-09-23.** The two misses of the first run are closed: a file that is not valid UTF-8 is now refused with `AGSC-E108` (AGSC-01-14), and an archive handed to `import` is refused with `AGSC-E903` (AGSC-01-16) instead of ending in an internal error. The two false positives are gone: the encoded-run check uses the 256-character threshold of AGSC-08-13. The five faults that were stopped under another code now carry the code their rule names.
 
-**Reported, never scored (6).** Three shapes beyond what AGSC-08-13 enumerates — a full-width-letter imperative, a paraphrased imperative, an imperative split across two lines — are not detected, which is what AGSC-08-19 says to expect. The other three are now caught: a NUL byte in an item **body** is refused with `AGSC-E108` (AGSC-01-14 as amended at rc.6 names every C0 control but TAB and LF), and **`agsc build` run on its own, without `lint`**, refuses an SVG attachment carrying a `<script>` element (`AGSC-E412`) and an attachment path with `..` segments (`AGSC-E902`), as AGSC-02-98 now requires of `build` itself.
+**Reported, never scored (6).** Three shapes beyond what AGSC-08-13 enumerates — a full-width-letter imperative, a paraphrased imperative, an imperative split across two lines — are not detected, which is what AGSC-08-19 says to expect. The other three are now caught: a NUL byte in an item **body** is refused with `AGSC-E108` (AGSC-01-14 names every C0 control but TAB and LF), and **`agsc build` run on its own, without `lint`**, refuses an SVG attachment carrying a `<script>` element (`AGSC-E412`) and an attachment path with `..` segments (`AGSC-E902`), as AGSC-02-98 now requires of `build` itself.
 
 ---
 
@@ -166,7 +166,7 @@ No HTML page exceeds the budget at any size. The largest page is now the cluster
 node bench/measure.js --layer parity --scratch <dir> --nodes minimal=<bundle>,patterns=<bundle>,main=<bundle>
 ```
 
-The call list (`bench/corpus/parity-calls.json`) has 25 fixed calls — every tool of AGSC-09-13, every domain-error path (unknown tool, missing argument, unknown slug, a foreign `memory://` IRI, a 1 MiB + 1 argument), the two local-only writers — and four per-item templates (`read`, `links`, `propose`, `compose`) run once for every published item. Each call is asked of **the real `agsc mcp` process over stdio**, of **the emitted page script** run in a fresh `vm` context over the build's own bytes, of the page-tools module, and of the in-process server, and the answers are compared **as values** after a JSON round trip — the comparison AGSC-09-16 makes at rc.6, never byte-identity across the browser boundary.
+The call list (`bench/corpus/parity-calls.json`) has 25 fixed calls — every tool of AGSC-09-13, every domain-error path (unknown tool, missing argument, unknown slug, a foreign `memory://` IRI, a 1 MiB + 1 argument), the two local-only writers — and four per-item templates (`read`, `links`, `propose`, `compose`) run once for every published item. Each call is asked of **the real `agsc mcp` process over stdio**, of **the emitted page script** run in a fresh `vm` context over the build's own bytes, of the page-tools module, and of the in-process server, and the answers are compared **as values** after a JSON round trip — the comparison AGSC-09-16 makes, never byte-identity across the browser boundary.
 
 | Bundle | items / published | calls | page = server (published projection) | stdio = in-process server | unpublished items hidden from the page (`AGSC-E301`) |
 |---|---|---|---|---|---|
@@ -175,7 +175,7 @@ The call list (`bench/corpus/parity-calls.json`) has 25 fixed calls — every to
 | main node | 15 / 15 | 85 | **85 / 85** | 85 / 85 | — |
 | **total** | | **207** | **207 / 207** | **207 / 207** | **474 / 474** |
 
-On a Bundle that holds drafts, the stdio server sees every item and a page sees only the published projection; AGSC-09-16 (rc.6) makes that projection the comparison, and requires the page to answer `AGSC-E301` for every unpublished item, which it does for `read`, `links` and `propose` on all 158 of the pattern node's unpublished items.
+On a Bundle that holds drafts, the stdio server sees every item and a page sees only the published projection; AGSC-09-16 makes that projection the comparison, and requires the page to answer `AGSC-E301` for every unpublished item, which it does for `read`, `links` and `propose` on all 158 of the pattern node's unpublished items.
 
 ---
 
@@ -323,7 +323,7 @@ Every figure is from this document; nothing is rounded up.
 
 | quantity | value |
 |---|---|
-| specification version measured | 1.0.0-rc.6 (drafted, untagged) |
+| specification version measured | 1.0.0-rc.6 |
 | rules declared / active / reserved | 343 / 332 / 11 |
 | conformance vectors: total / required / optional / withdrawn | 199 / 166 / 1 / 32 |
 | vector run | 167 pass, 0 fail, 32 skipped (all withdrawn) |

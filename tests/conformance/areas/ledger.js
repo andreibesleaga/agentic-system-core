@@ -1,7 +1,7 @@
 'use strict';
-// Conformance area `ledger` (owner:) — AGSC-08-20a, AGSC-08-20b, AGSC-08-23.
+// Conformance area `ledger` — AGSC-08-20a, AGSC-08-20b, AGSC-08-23.
 // ledger-0001 the truncated tail (the published head is not the recomputed one),
-// ledger-0002 the derivation, ledger-0003 the empty history, ledger-0004 the
+// ledger-0003 the empty history, ledger-0004 the
 // production of the git-log file, ledger-0005 the derivation with a fictitious
 // contributor. A vector whose input names `published` compares a published ledger
 // with its history (`ledger.compare`): ledger-0006 (a rewritten line, AGSC-E702 at

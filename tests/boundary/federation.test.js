@@ -71,7 +71,7 @@ test('AGSC-11-08: the closed special-purpose list, in both families and through 
 test('AGSC-11-09: at most redirect_limit hops, every hop re-checked, the peer unchanged', () => {
   const peer = 'https://b.example/.well-known/knowledge-linkset';
   const four = ['https://b.example/r1', 'https://b.example/r2', 'https://b.example/r3', 'https://b.example/r4'];
-  // rc.5 (bnd-0030): AGSC-11-08 is unconditional, so every hop carries a resolution.
+  // bnd-0030: AGSC-11-08 is unconditional, so every hop carries a resolution.
   const ok = { resolved: { 'b.example': ['93.184.215.14'] } };
   const capped = f.followRedirects(peer, four, ok);
   assert.deepStrictEqual({ error: capped.error, followed: capped.followed }, { error: 'AGSC-E905', followed: 3 });
@@ -233,7 +233,9 @@ test('AGSC-06-35: only IANA-registered relations, grouped and ordered by href', 
     ],
   });
   assert.deepStrictEqual(plain(result.links['service-desc']), [
-    { href: 'https://a.example/a', profile: 'https://p.example/', title: 'A', type: 'application/json' },
+    // RFC 9264: `title` and `type` are strings (§4.2.4.1), `profile` is an extension
+    // attribute and therefore an array even with one value (§4.2.4.3, AGSC-06-10).
+    { href: 'https://a.example/a', profile: ['https://p.example/'], title: 'A', type: 'application/json' },
     { href: 'https://z.example/b', type: 'application/json' },
   ]);
   assert.deepStrictEqual(plain(result.affects), {

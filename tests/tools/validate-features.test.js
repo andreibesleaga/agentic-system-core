@@ -40,7 +40,7 @@ function featureRoot(files = {}, extra = {}) {
   return writeTree(tmpdir(), {
     'docs/PRD.md': '| PRD-053 | a requirement | | NFR-01 | another |\n',
     'features/persona-0.feature': GOOD,
-    'spec/00-overview.md': '`spec_version: "1.0.0-rc.5"`\n',
+    'spec/00-overview.md': '`spec_version: "1.0.0-rc.9"`\n',
     ...Object.fromEntries(Object.entries(files).map(([k, v]) => [`features/${k}`, v])),
     ...extra,
   });

@@ -1,8 +1,15 @@
 # draft-besleaga-agentic-knowledge-wellknown
 
 The Internet-Draft that requests registration of the well-known URI
-`knowledge-linkset` and of the profile URI of the AgenticSystemCore discovery
-document, as an Independent Submission.
+`knowledge-linkset` and records the fields of the profile URI of the
+AgenticSystemCore discovery document, whose registration is requested
+separately. It is intended for the Independent Submission stream.
+
+**Status:** built, not yet posted to the IETF Datatracker. Once posted, its page
+is <https://datatracker.ietf.org/doc/draft-besleaga-agentic-knowledge-wellknown/>.
+The draft covers every 1.x version of the specification: the profile URI carries
+no version number, and a later minor version only adds relations and attributes
+that a client already ignores (Section 6.3 of the draft).
 
 | File | What it is |
 |---|---|

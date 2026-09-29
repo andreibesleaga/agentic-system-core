@@ -69,7 +69,7 @@ function build(dir, options = {}) {
   return {
     bundle,
     ports: { clock, fs },
-    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.5', version: '0.0.2', ...options }),
+    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2', ...options }),
   };
 }
 
@@ -260,9 +260,9 @@ test('the legal page adds no term, no notice and no operator of its own', () => 
   assert.ok(!page.includes('id="operator"'));
 });
 
-// --------------------------------------- rc.6: the AI-assistance statement
+// ---------------------------------------------- the AI-assistance statement
 
-test('AGSC-06-18 (rc.6): /legal/ carries the assistance statement, in the same words', () => {
+test('AGSC-06-18: /legal/ carries the assistance statement, in the same words', () => {
   const { ASSISTANCE } = require('../../src/knowledge/provenance-header.js');
   const page = html.legalPage({
     licenseProse: 'CC-BY-4.0', operator: null, privacy: null, rendered: '<p>Body.</p>', terms: 'LicenseRef-X',
@@ -276,7 +276,7 @@ test('AGSC-06-18 (rc.6): /legal/ carries the assistance statement, in the same w
     { render: (t) => ({ html: t }) }).includes('id="ai-assistance"'));
 });
 
-test('B-04 (rc.6): the page footer carries the copyright line, from configuration', () => {
+test('the page footer carries the copyright line, from configuration', () => {
   const withAuthor = html.termsLine('CC-BY-4.0', {
     aiAssisted: true, author: 'Ada Lovelace', disclaimer: html.NO_CLAIM_SENTENCE, legal: true, year: '2026',
   });
@@ -287,14 +287,14 @@ test('B-04 (rc.6): the page footer carries the copyright line, from configuratio
   // stamping one owner's name into somebody else's pages.
   const anonymous = html.termsLine('CC-BY-4.0', { legal: true });
   assert.ok(!anonymous.includes('copyright'), anonymous);
-  // CHANGED: the notice is no longer a constant. With no AI item
+  // The notice is not a constant. With no AI item
   // and no authored DISCLAIMER.md there is nothing true to say, and nothing is said.
   assert.doesNotMatch(anonymous, /AI-assisted|AI assistance|no warranty/u);
-  // The /legal/ link is emitted only where that route exists (V9D-A6).
+  // The /legal/ link is emitted only where that route exists.
   assert.ok(!html.termsLine('CC-BY-4.0', { author: 'A', legal: false, year: '2026' }).includes('href="/legal/"'));
 });
 
-test('B-04 (rc.6): the year is the BUILD INSTANT\'s year, never a clock', () => {
+test('the year is the BUILD INSTANT\'s year, never a clock', () => {
   const configured = JSON.stringify({
     ...JSON.parse(nodeFs.readFileSync(path.join(FIXTURE, 'agsc.config.json'), 'utf8')),
     site: {
@@ -326,7 +326,7 @@ test('AGSC-09-11: under ci the publication findings are reported by ONE lane', (
   const ctx = { ports: { clock, fs } };
   const result = ci.ci(bundle, { clock, fs }, {
     lint: (loaded) => lintLane.lane(ctx, loaded).findings,
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     version: '0.0.2',
   });
   assert.strictEqual(result.findings.filter((f) => f.code === 'AGSC-E901').length, 1,
@@ -349,7 +349,7 @@ test('AGSC-04-09 + RFC 9116: a defaulted build instant FAILS instead of publishi
   const clock = createClock({ env: {} });                    // no epoch, no git history
   assert.strictEqual(clock.now(), 0, 'the fixture of this test is wrong');
   const { files, findings } = site.build(bundle, { clock, fs },
-    { specVersion: '1.0.0-rc.5', version: '0.0.2' });
+    { specVersion: '1.0.0-rc.6', version: '0.0.2' });
   assert.ok(!files.has('/.well-known/security.txt'),
     `an expired security contact was published: ${files.get('/.well-known/security.txt')}`);
   const fault = findings.find((f) => f.file === '.well-known/security.txt' && f.severity !== 'warn');
@@ -368,7 +368,7 @@ test('AGSC-04-02: the derived expiry stays a pure function of the build instant'
     const fs = createFileSystem(dir);
     const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
     const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-    return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.5', version: '0.0.2' })
+    return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' })
       .files.get('/.well-known/security.txt');
   };
   const first = String(run());
@@ -379,6 +379,6 @@ test('AGSC-04-02: the derived expiry stays a pure function of the build instant'
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const fromGit = createClock({ env: {}, lastCommitSeconds: Number(EPOCH) });
   assert.match(String(site.build(bundle, { clock: fromGit, fs },
-    { specVersion: '1.0.0-rc.5', version: '0.0.2' }).files.get('/.well-known/security.txt')),
+    { specVersion: '1.0.0-rc.6', version: '0.0.2' }).files.get('/.well-known/security.txt')),
   new RegExp(`^Expires: ${DERIVED_EXPIRES}$`, 'mu'));
 });

@@ -164,8 +164,8 @@ function checkTrailers(message, context = {}) {
   // itself as `Assisted-by:` and does not match `assisted` makes the BLOCK malformed
   // — an `actor` that is not `human:<id>` (AGSC-08-08 is why the grammar admits no
   // other form) or an `idchar` outside `lcalpha / DIGIT / "." / "_" / "-"`, for
-  // instance. Until rc.5 such a line was silently dropped, so a trailer naming an
-  // agent as its operator passed. Vector `prov-0004`.
+  // instance. Such a line is never silently dropped: a trailer naming an agent as
+  // its operator does not pass. Vector `prov-0005`.
   for (const line of assistedLines) {
     if (parseAssisted(line) !== null) continue;
     findings.push(finding('AGSC-E504',

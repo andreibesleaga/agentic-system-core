@@ -1,5 +1,5 @@
 ---
-spec_version: 1.0.0-rc.5
+spec_version: 1.0.0-rc.6
 okf_version: "0.2"
 title: Bundle with assets
 description: A Bundle whose item body references a real file under content/assets/, used to prove the AGSC-03-11 asset branch.

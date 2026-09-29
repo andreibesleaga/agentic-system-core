@@ -1,6 +1,6 @@
 {
   "area": "lint",
-  "description": "AGSC-01-21 (registered at rc.5): the 2–5 count of the §2.2 table is the warning AGSC-E213, raised for a tags array with fewer than 2 or more than 5 values, with or without a closed vocabulary; the schema carries no minItems/maxItems for it because the bound is a warning and not an error. Derivation: one tag and six tags each warn once; two, three and five tags do not; every tag here is inside tags.allowed, so no AGSC-E203 accompanies the warning and the case isolates the count. The item is otherwise conforming, so no other finding is expected.",
+  "description": "AGSC-01-21: the 2–5 count of the §2.2 table is the warning AGSC-E213, raised for a tags array with fewer than 2 or more than 5 values, with or without a closed vocabulary; the schema carries no minItems/maxItems for it because the bound is a warning and not an error. Derivation: one tag and six tags each warn once; two, three and five tags do not; every tag here is inside tags.allowed, so no AGSC-E203 accompanies the warning and the case isolates the count. The item is otherwise conforming, so no other finding is expected.",
   "expected": {
     "cases": [
       {
@@ -83,7 +83,6 @@
     }
   },
   "level": "required",
-  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

@@ -124,7 +124,7 @@ function runPorts(vector, ctx) {
 }
 
 /**
- * lint-0026 — AGSC-04-19 as amended at rc.5: the YAML profile
+ * lint-0026 — AGSC-04-19: the YAML profile
  * `lint --fix` emits, applied twice.
  *
  * `governance/fix.js` is pure and takes the raw `schema/item.schema.json` object,
@@ -147,7 +147,7 @@ function runFix(vector, ctx) {
     list.push(['idempotent', twice.changed === false && twice.after === once.after,
       `a second --fix changed the file: ${JSON.stringify(twice.changes)}`]);
   }
-  // AGSC-04-19 as amended at rc.5: the encoding third reports AGSC-E108,
+  // AGSC-04-19: the encoding third reports AGSC-E108,
   // every other normalisation AGSC-E506, and both are warnings — so `--fix` never
   // moves an exit code by itself.
   const codes = new Set(once.findings.map((f) => f.code));
@@ -161,12 +161,12 @@ function runFix(vector, ctx) {
 }
 
 /**
- * lint-0027 (rc.6, AGSC-00-21 / AGSC-00-22 /) — a name this specification
+ * lint-0027 (AGSC-00-21 / AGSC-00-22) — a name this specification
  * RESERVES to 1.1 (`weights`) beside a vendor key (`x-acme-note`): a 1.0 engine
  * must not fail on either, must warn about exactly one of them, and must give both
  * back unchanged through every path that claims to preserve.
  *
- * The fixture states `kind: principle` since rc.6, so the whole item lints with
+ * The fixture states `kind: principle`, so the whole item lints with
  * warnings only and `exit: 0` / `status: "pass"` hold over the whole invocation,
  * with no reading; the round trips are asserted over the whole file, byte for byte.
  */

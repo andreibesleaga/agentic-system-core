@@ -1,0 +1,162 @@
+{
+  "area": "discovery",
+  "description": "AGSC-09-93 with AGSC-00-21: a discovery document whose `agsc-spec-version` has the reader's MAJOR and a newer MINOR may use a relation this version does not define; a 1.0 reader ignores it, with the warning AGSC-E506 naming the newer version, and never reports it as AGSC-E209 or AGSC-E202. Another MAJOR has no such tolerance. Derivation, case by case, each document otherwise a complete public Level-2 document (the six bundle facts on the anchor's `describedby` link, the ledger link with its head, and a `digest` on every link, the `rel#brief` link included, so no reader can report a missing digest; digests are not recomputed in this case). (1) `newer-minor`: `agsc-spec-version` is `1.1.0` and the document carries one link under `https://w3id.org/agentic-system-core/rel#brief`, which AGSC-06-10 does not list: the document is valid, with exactly one finding, the warning AGSC-E506. (2) `other-major`: the same document declaring `2.0.0`: the unknown relation is the error AGSC-E209, so the document is invalid, and it is the only finding — a 1.x reader cannot know what a later MAJOR defines, so it judges no attribute of that document against AGSC-00-23 (no AGSC-E210 for `agsc-bundle-version`, which this version defines from MAJOR 1). The reader in both cases is a 1.0 reader.",
+  "expected": {
+    "cases": [
+      {
+        "findings": [
+          {
+            "code": "AGSC-E506",
+            "severity": "warn"
+          }
+        ],
+        "name": "newer-minor",
+        "valid": true
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E209",
+            "severity": "error"
+          }
+        ],
+        "name": "other-major",
+        "valid": false
+      }
+    ]
+  },
+  "id": "disc-0019",
+  "input": {
+    "cases": [
+      {
+        "document": {
+          "linkset": [
+            {
+              "anchor": "https://b.example/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.0.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-09-16T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.1.0"
+                  ],
+                  "digest": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "href": "https://b.example/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#brief": [
+                {
+                  "digest": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "href": "https://b.example/brief.md",
+                  "type": "text/markdown"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ledger": [
+                {
+                  "agsc-ledger-head": [
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                  ],
+                  "digest": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "href": "https://b.example/ledger.jsonl",
+                  "type": "application/jsonl"
+                }
+              ]
+            }
+          ]
+        },
+        "level": 2,
+        "name": "newer-minor",
+        "reader_version": "1.0.0"
+      },
+      {
+        "document": {
+          "linkset": [
+            {
+              "anchor": "https://b.example/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.0.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-09-16T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "2.0.0"
+                  ],
+                  "digest": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "href": "https://b.example/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#brief": [
+                {
+                  "digest": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "href": "https://b.example/brief.md",
+                  "type": "text/markdown"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ledger": [
+                {
+                  "agsc-ledger-head": [
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                  ],
+                  "digest": [
+                    "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
+                  ],
+                  "href": "https://b.example/ledger.jsonl",
+                  "type": "application/jsonl"
+                }
+              ]
+            }
+          ]
+        },
+        "level": 2,
+        "name": "other-major",
+        "reader_version": "1.0.0"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-09-93"
+}

@@ -259,15 +259,14 @@ test('a forged record is not trusted: the row is read as a foreign draft', () =>
   assert.doesNotMatch(forged.body, /agsc-item/u);
 });
 
-test('a record of a newer specification is refused unless --allow-newer', () => {
+test('AGSC-01-22: a record of another MAJOR is refused unless --allow-newer; a newer MINOR imports with a warning', () => {
   const source = workspace();
   exported(source, 'linear');
   const at = path.join(source, 'dist/export/board/linear/delivery.csv');
   const text = nodeFs.readFileSync(at, 'utf8');
   const b64 = /agsc-item:([A-Za-z0-9+/=]+)/u.exec(text)[1];
   const record = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
-  record.spec_version = '1.9.0';
-  nodeFs.writeFileSync(at, text.replace(b64, board.encodeRecord(record)));
+  nodeFs.writeFileSync(at, text.replace(b64, board.encodeRecord({ ...record, spec_version: '2.0.0' })));
   const into = emptyBundle();
   const refused = imported(into, path.dirname(at), 'linear');
   assert.strictEqual(refused.status, 'fail');
@@ -275,6 +274,11 @@ test('a record of a newer specification is refused unless --allow-newer', () => 
   assert.ok(!nodeFs.existsSync(path.join(into, 'content')));
   const taken = imported(into, path.dirname(at), 'linear', { 'allow-newer': true });
   assert.deepStrictEqual(errors(taken.findings), []);
+  nodeFs.writeFileSync(at, text.replace(b64, board.encodeRecord({ ...record, spec_version: '1.9.0' })));
+  const minor = imported(emptyBundle(), path.dirname(at), 'linear');
+  assert.deepStrictEqual(errors(minor.findings), []);
+  const said = minor.findings.filter((f) => f.code === 'AGSC-E506' && f.message.includes('1.9.0'));
+  assert.deepStrictEqual(said.map((f) => f.severity), ['warn']);
 });
 
 // ------------------------------------------------------------------ foreign

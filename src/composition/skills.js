@@ -57,7 +57,7 @@ const { fenceProse } = require('../knowledge/markdown.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
-/** AGSC-06-18 (rc.6): the Content Use Terms only where the prose licence adopts them. */
+/** AGSC-06-18: the Content Use Terms only where the prose licence adopts them. */
 function termsFor(license) {
   return license == null || String(license) === TERMS ? TERMS : String(license);
 }

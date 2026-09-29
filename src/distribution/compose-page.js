@@ -18,11 +18,13 @@
  * "exactly this route set" that would forbid a page's own script is recorded as a
  * specification item rather than resolved here.
  *
- * The page reads only routes AGSC-06-01 already fixes: `/graph.jsonld` for the items
- * (AGSC-05-16 read backwards, `composition/browser.js#itemsFromGraph`),
- * `/search.json` for the cluster and tag facets, and `/pages/<slug>.md`
- * (AGSC-06-02) for the body of a selected Procedure. No third-party origin, no
- * cookie, no `localStorage`, no beacon (AGSC-06-05).
+ * The page reads only routes AGSC-06-01 already fixes: `/.well-known/knowledge-linkset`
+ * for the node's base, build instant and content version (AGSC-06-08), `/graph.jsonld`
+ * for the items (AGSC-05-16 read backwards, `composition/browser.js#itemsFromGraph`),
+ * and `/pages/<slug>.md` (AGSC-06-02) for the body of a selected Procedure. The filter
+ * box above the item list is a plain text match over the titles and descriptions the
+ * page already holds, so it reads nothing further. No third-party origin, no cookie,
+ * no `localStorage`, no beacon (AGSC-06-05).
  *
  * Pure function of its input.
  */
@@ -54,10 +56,13 @@ function toolNames() {
 /**
  * The page controller. It is emitted as a classic script (AGSC-06-17's
  * `script-src 'self'`), and it:
- *   1. fetches `/graph.jsonld` and `/search.json` — same origin, no key;
- *   2. recovers the item records with the algebra's own `itemsFromGraph`;
+ *   1. fetches the discovery document and `/graph.jsonld` — same origin, no key;
+ *   2. recovers the item records with the algebra's own `itemsFromGraph`, paints one
+ *      checkbox per item and shows a filter box over them (a plain text match on
+ *      title and description, shown only once the script runs);
  *   3. runs `compose()` on every change and renders the verdict, the closure
- *      explanations and the conflicts;
+ *      explanations, the conflicts and the warnings (each with its code and a
+ *      sentence), or, with nothing selected, asks the reader to select an item;
  *   4. emits the seven Harness files with `emit()` and offers ONE DOWNLOAD PER
  *      FILE and one "Download all (.zip)" link over the same files;
  *   5. installs `globalThis.AGSC_TOOLS` so that the WebMCP registration of
@@ -83,7 +88,7 @@ function controller(options) {
   var CORE = globalThis.AGSC_CORE;
   var SPEC_VERSION = ${JSON.stringify(String(opts.specVersion === undefined ? '' : opts.specVersion))};
   var LICENSE_PROSE = ${JSON.stringify(license)};
-  var state ={ base: '', bodies: {}, instant: '', items: [], selection: [], verdict: null, version: '' };
+  var state = { base: '', bodies: {}, instant: '', items: [], rows: [], selection: [], verdict: null, version: '' };
   globalThis.AGSC_COMPOSE = state;
 
   function el(id) { return typeof document === 'undefined' ? null : document.getElementById(id); }
@@ -92,9 +97,10 @@ function controller(options) {
   // AGSC-09-16: one tool contract, two transports. All SEVEN tools are implemented
   // by \`agsc-page-tools.js\`, which this page loads before this controller and which
   // installs \`globalThis.AGSC_TOOLS\`. This controller therefore installs NOTHING on
-  // that name: until rc.5 it installed a stub that answered \`compose\` and refused the
-  // other six, and that stub — not the shared implementation — is what the site
-  // actually shipped.
+  // that name, so the page and the stdio server answer from the same implementation.
+
+  /** The prompt shown while no item is selected: an empty selection is not a verdict. */
+  var EMPTY = 'Select one or more items to compose.';
 
   /** The selection a \`/compose/?from=<slug>\` link names (AGSC-07-24). */
   function selectionFromQuery() {
@@ -115,11 +121,46 @@ function controller(options) {
     });
   }
 
+  /**
+   * One sentence per Composition warning (AGSC-07-07's \`AGSC-E803\`, AGSC-07-23's
+   * \`AGSC-E804\`). A warning never invalidates a composition; the reader is told
+   * what it means, not only its code.
+   */
+  function warningText(warning) {
+    var source = warning.source === undefined ? '' : String(warning.source);
+    var target = warning.target === undefined ? '' : String(warning.target);
+    if (warning.code === 'AGSC-E804') {
+      return source + ' consumes the port ' + target + ', and no selected item produces it;'
+        + ' the composition is still valid (AGSC-07-23)';
+    }
+    if (warning.code === 'AGSC-E803') {
+      return source + ' names ' + target + ' under ' + warning.key + ', which does not close a'
+        + ' selection (only requires does), so it was not added (AGSC-07-05, AGSC-07-07)';
+    }
+    return 'a warning on ' + warning.key + ': ' + source + ' to ' + target;
+  }
+  state.warningText = warningText;
+
+  /** Fill one list and its heading from entries, hiding both when there are none. */
+  function fillList(id, entries, line) {
+    var list = el(id);
+    if (!list) return;
+    list.textContent = '';
+    list.hidden = entries.length === 0;
+    if (el(id + '-heading')) el(id + '-heading').hidden = list.hidden;
+    for (var i = 0; i < entries.length; i += 1) {
+      var li = document.createElement('li');
+      li.textContent = line(entries[i]);
+      list.appendChild(li);
+    }
+  }
+
   function render() {
     var result = CORE.compose(state.items, state.selection);
     state.verdict = result;
+    var empty = state.selection.length === 0;
     var verdict = el('verdict');
-    if (verdict) verdict.textContent = CORE.canonicalJson(CORE.verdictOf(result));
+    if (verdict) verdict.textContent = empty ? '' : CORE.canonicalJson(CORE.verdictOf(result));
     var why = el('explanations');
     if (why) {
       why.textContent = '';
@@ -134,21 +175,16 @@ function controller(options) {
         why.appendChild(li);
       }
     }
-    var problems = el('conflicts');
-    if (problems) {
-      problems.textContent = '';
-      problems.hidden = result.conflicts.length === 0;
-      if (el('conflicts-heading')) el('conflicts-heading').hidden = problems.hidden;
-      for (var c = 0; c < result.conflicts.length; c += 1) {
-        var conflict = result.conflicts[c];
-        var row = document.createElement('li');
-        row.textContent = conflict.code + ' on ' + conflict.key + ': ' + conflict.pair.join(' / ');
-        problems.appendChild(row);
-      }
-    }
-    text(el('validity'), result.valid ? 'valid' : 'invalid — no Harness is emitted (AGSC-07-17)');
+    fillList('conflicts', result.conflicts, function (conflict) {
+      return conflict.code + ' on ' + conflict.key + ': ' + conflict.pair.join(' / ');
+    });
+    fillList('warnings', empty ? [] : (result.warnings || []), function (warning) {
+      return warning.code + ': ' + warningText(warning);
+    });
+    if (empty) text(el('validity'), EMPTY);
+    else text(el('validity'), result.valid ? 'valid' : 'invalid — no Harness is emitted (AGSC-07-17)');
     var button = el('download');
-    if (button) button.disabled = !result.valid;
+    if (button) button.disabled = empty || !result.valid;
   }
 
   /**
@@ -260,10 +296,41 @@ function controller(options) {
     });
   }
 
+  /**
+   * The filter box: a plain, case-insensitive text match on each item's title,
+   * description and slug. It hides the rows that do not match and never changes the
+   * selection, so a ticked item stays in the composition while it is filtered out.
+   */
+  function applyFilter() {
+    var box = el('filter');
+    var query = box ? String(box.value || '').trim().toLowerCase() : '';
+    var shown = 0;
+    for (var i = 0; i < state.rows.length; i += 1) {
+      var row = state.rows[i];
+      var match = query === '' || row.text.indexOf(query) !== -1;
+      row.li.hidden = !match;
+      if (match) shown += 1;
+    }
+    text(el('filter-status'), query === '' ? ''
+      : shown + ' of ' + state.rows.length + ' items match "' + query + '".');
+    return shown;
+  }
+  state.applyFilter = applyFilter;
+
+  function showFilter() {
+    var form = el('filter-form');
+    var box = el('filter');
+    if (!form || !box) return;
+    form.addEventListener('submit', function (event) { event.preventDefault(); });
+    box.addEventListener('input', applyFilter);
+    form.hidden = false;
+  }
+
   function paint() {
     var list = el('items');
     if (!list) return;
     list.textContent = '';
+    state.rows = [];
     for (var i = 0; i < state.items.length; i += 1) {
       var item = state.items[i];
       if (item.type === 'cluster') continue;
@@ -285,7 +352,11 @@ function controller(options) {
       li.appendChild(box);
       li.appendChild(label);
       list.appendChild(li);
+      state.rows.push({ li: li, text: [item.title, item.description, item.slug]
+        .filter(function (part) { return typeof part === 'string'; }).join(' ').toLowerCase() });
     }
+    showFilter();
+    applyFilter();
   }
 
   /**

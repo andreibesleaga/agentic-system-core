@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-06-18 as amended at rc.5 (2026-09-21):
+// AGSC-06-18:
 //
 //   "The text the identifier names is the file `LICENSE-CONTENT` at the root of this
 //    specification's distribution, whose SHA-256 over its bytes is <hex> (<n> bytes).
@@ -55,14 +55,14 @@ test('LICENSE-CONTENT matches the hash AGSC-06-18 pins', () => {
 test('CONTRIBUTOR-AGREEMENT matches the hash AGSC-08-06 pins', () => {
   // The same pin, for the same reason, over the text the token `CA-v1` names.
   // `agreement = "CA-v1"` is a literal the trailer grammar admits no alternative
-  // to, so until rc.6 every contributor certified an agreement nobody could read.
+  // to, so without the file every contributor would certify an agreement nobody could read.
   assertPin('CONTRIBUTOR-AGREEMENT', pinned('08-governance.md', 'CONTRIBUTOR-AGREEMENT'),
     'A distribution that ships different text MUST name it with a different token: '
     + 'mint `CA-v2`, update AGSC-08-06\'s grammar and its pin, and leave every '
     + 'contribution already signed under CA-v1 under CA-v1.');
 });
 
-test('CONTRIBUTOR-AGREEMENT Part 1 is the DCO 1.1 verbatim, and clause (f) stays optional (rc.6, LEGAL-2)', () => {
+test('CONTRIBUTOR-AGREEMENT Part 1 is the DCO 1.1 verbatim, and clause (f) stays optional', () => {
   // The whole file is pinned by the rule (above). This test pins the one part the
   // project may never change on its own: the Developer Certificate of Origin 1.1,
   // whose notice reads "changing it is not allowed". The digest below is of the text

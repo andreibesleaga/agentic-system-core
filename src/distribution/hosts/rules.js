@@ -2,7 +2,7 @@
 // CONTEXT Distribution (Emission) — the deployment-profile kind of AGSC-00-24: the
 // semantics every hosting profile translates.
 //
-// AGSC-06-01 (as amended at rc.5) makes the header set of AGSC-06-17, AGSC-11-03 and
+// AGSC-06-01 makes the header set of AGSC-06-17, AGSC-11-03 and
 // AGSC-11-05 and the redirect of AGSC-06-17 the normative content, and the file
 // format the host's. The reference profile is Cloudflare Pages: `agsc build` writes
 // `_headers` and `_redirects` for it (`headers.js`). This module reads those two

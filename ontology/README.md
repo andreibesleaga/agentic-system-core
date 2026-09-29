@@ -16,4 +16,4 @@ node tools/validate-ontology --json   # Turtle, the axiom allow-list, SKOS pitfa
 node tools/count-artifacts --json     # the number of terms, derived from agsc.ttl
 ```
 
-Frozen between release candidates, like `spec/`. Licence: CC0-1.0.
+Published as part of `1.0.0-rc.6`, the first public release candidate; like `spec/`, it changes only in a specification pass, and a term is deprecated rather than deleted. Licence: CC0-1.0.

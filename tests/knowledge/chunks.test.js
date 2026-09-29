@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-06-26…31 beyond chk-0001…chk-0007: the empty chunk 0, the single oversized
+// AGSC-06-26…31 beyond chk-0001…chk-0008: the empty chunk 0, the single oversized
 // paragraph, the attachment `alt` fallback, the `releases` switchboard and the link
 // ordering. (The chunk export is a Knowledge module, so its unit suite lives under
 // tests/knowledge/ per the context rule of the module contract.)

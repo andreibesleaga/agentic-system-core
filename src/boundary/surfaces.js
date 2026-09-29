@@ -31,17 +31,17 @@ const MCP_PROTOCOL_VERSION = '2025-11-25';
 /** The oldest revision that transport negotiates down to. */
 const MCP_PROTOCOL_MIN_VERSION = '2025-03-26';
 /**
- * AGSC-11-16: the MCP revision the specification targets. As amended at rc.6
+ * AGSC-11-16: the MCP revision the specification targets.
  * (2026-09-24) the `mcp` surface declares the revision its transport actually speaks
  * — `MCP_PROTOCOL_VERSION` by default — and this target is no longer a pin.
  */
 const MCP_SURFACE_VERSION = '2026-07-28';
 /**
  * AGSC-11-16: the WebMCP Draft Community Group Report date this node targets by
- * default. As amended at rc.5 the rule pins NO particular date — "any such
+ * default. The rule pins NO particular date — "any such
  * date is conforming" — because the report is a living document. This constant is
  * therefore a default, not a pin: `declare({webmcpVersion})` echoes whatever date the
- * node targets, and `bnd-0031` asserts the echo and the `YYYY-MM-DD` shape, never a
+ * node targets, and `bnd-0037` asserts the echo and the `YYYY-MM-DD` shape, never a
  * value.
  */
 const WEBMCP_SURFACE_VERSION = '2026-09-15';
@@ -49,7 +49,7 @@ const WEBMCP_SURFACE_VERSION = '2026-09-15';
 const WEBMCP_VERSION_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u;
 /** AGSC-11-18 / MCP SEP-2133: the extension identifier this node advertises. */
 const MCP_EXTENSION_ID = 'com.agenticsystemcore/knowledge';
-/** AGSC-11-18, rc.5: the ONE member of this extension's settings object. */
+/** AGSC-11-18: the ONE member of this extension's settings object. */
 const MCP_EXTENSION_SETTINGS_MEMBERS = Object.freeze(['linkset']);
 /** AGSC-06-07: the discovery document's route, which is that member's value. */
 const WELLKNOWN_ROUTE = '/.well-known/knowledge-linkset';
@@ -133,10 +133,8 @@ function absolute(base, route) {
  *
  * `webmcpVersion` is the `YYYY-MM-DD` Draft Community Group Report date this node
  * targets. It is an INPUT, not a constant: AGSC-11-16
- * conforms any such date, and before rc.5 the engine hard-coded `2026-09-15` here
- * while the live draft already read a later date — a node targeting the current
- * report failed the (then required) vector `bnd-0012`. Vector `bnd-0031` asserts
- * only that the declared value echoes the input and matches the shape.
+ * conforms any such date, and a hard-coded date would fail every node that targets
+ * a later report than the one written here. Vector `bnd-0037` asserts only that the declared value echoes the input and matches the shape.
  * A value that is not a `YYYY-MM-DD` date is not declared: the default — itself a
  * conforming date — stands, because AGSC-11-16 admits no other form and this
  * specification registers no code for a malformed one.
@@ -264,15 +262,13 @@ function acceptedHrefs(declared, findings) {
  * could differ.
  *
  * `extensions` is a MAP of extension identifier to that extension's settings object,
- * as MCP defines it. At rc.5 AGSC-11-18 pins this node's settings object:
+ * as MCP defines it. AGSC-11-18 pins this node's settings object:
  * exactly one member, `linkset`, the absolute `https` URL of `/.well-known/
  * knowledge-linkset` (AGSC-06-07), and no other. Vector `bnd-0035`.
  *
- * Before rc.5 this function returned the bare identifier LIST, which no rule pinned.
- * `bnd-0027` stated that list as its expectation and was withdrawn for it at rc.5
- * (AGSC-00-16); its case is `bnd-0036`, which states the map, so nothing reads
- * this return value as a key set any more. `bnd-0031`'s `mcp_extensions` member is the
- * list of identifiers advertised and is the map's key set by definition.
+ * Vector `bnd-0036` states the map, so nothing reads this return value as a bare
+ * identifier list. `bnd-0037`'s `mcp_extensions` member is the list of identifiers
+ * advertised and is the map's key set by definition.
  *
  * @param {{base?:string}} options  the node's `site.base`
  */

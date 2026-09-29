@@ -108,10 +108,10 @@ function chunksIndexToon(records) {
  */
 function llmsCtxTxt(records, options) {
   // AGSC-02-24: every interpolated value is
-  // neutralised. Before rc.5 a multi-line chunk title injected a fake heading and a
-  // fake `>` instruction block OUTSIDE the fence, and a `-->` in `site.title` closed
-  // the provenance comment early — the same family as the /llms.txt hole, in the
-  // additive adapter. The chunk BODY was already safe: `fenceProse` widens the fence.
+  // neutralised. Otherwise a multi-line chunk title would inject a fake heading and a
+  // fake `>` instruction block OUTSIDE the fence, and a `-->` in `site.title` would
+  // close the provenance comment early — the same family as /llms.txt, in the
+  // additive adapter. The chunk BODY is safe on its own: `fenceProse` widens the fence.
   const lines = [`# ${singleLine(options.title)} — skim context`, '',
     ...provenanceLines({
       bundle: options.base,

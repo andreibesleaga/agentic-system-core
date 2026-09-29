@@ -25,9 +25,8 @@ test('CommonMark 0.31.2 §4.5: fences are found with their info string and their
 });
 
 test('AGSC-02-22: ONE spelling of the info string, and the braced form runs nothing', () => {
-  // CHANGED at rc.6: AGSC-09-94 used to write `{run}`/`{expect}` while
-  // AGSC-02-22, the rule that owns the item, writes `run`/`expect`. The reader
-  // accepted both rather than guess. The rules now agree, and a fence this engine
+  // AGSC-09-94 and AGSC-02-22, the rule that owns the item, both write
+  // `run`/`expect`. The reader accepts no second spelling: a fence this engine
   // ran while another did not would be a divergence in the worst possible place.
   assert.deepStrictEqual([...runblocks.RUN_INFO], ['run']);
   assert.deepStrictEqual([...runblocks.EXPECT_INFO], ['expect']);

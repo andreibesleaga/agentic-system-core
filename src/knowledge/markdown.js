@@ -166,7 +166,7 @@ function render(body, options = {}) {
     token.attrSet('id', scanned.anchors[heading]);
     heading += 1;
   }
-  // AGSC-03-11 + AGSC-06-01 (added at rc.5): the OPTIONAL href resolver.
+  // AGSC-03-11 + AGSC-06-01: the OPTIONAL href resolver.
   // A body reference is authored in the BUNDLE's geometry
   // (`content/concepts/a.md` → `content/concepts/b.md`, AGSC-03-12's normal form)
   // and the page is served in the ROUTE geometry (`/concepts/a/` → `/concepts/b/`),

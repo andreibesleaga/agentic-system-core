@@ -1,6 +1,6 @@
 {
   "area": "ledger",
-  "description": "AGSC-08-23: a published ledger whose lines differ from the recomputation of the same history is AGSC-E702, at the first differing line. The history is the one of ledger-0005 (three first-parent commits, the v1.0.0 tag on the third); the published file claims line 1 as kind release where the history holds a plain commit. The published file is internally consistent — every prev links, every hash is the hash of its own line, and the discovery document names the published file's own head — so the chain walk of AGSC-E701 alone cannot see the rewrite; only the comparison against the recomputation can, and it reports AGSC-E702 with line 1. The recomputed head then also differs from the published one, which is AGSC-E701 in the same run; this case asserts the AGSC-E702 and its line.",
+  "description": "AGSC-08-23: a published ledger whose lines differ from the recomputation of the same history is AGSC-E702, at the first differing line. The history is the one of ledger-0005 (three first-parent commits, the v1.0.0 tag on the third); the published file claims line 1 as kind release where the history holds a plain commit. The published file is internally consistent — every prev links, every hash is the hash of its own line, and the discovery document names the published file's own head — so the chain walk of AGSC-E701 alone cannot see the rewrite; only the comparison against the recomputation can, and it reports AGSC-E702 with line 1. The recomputed head then also differs from the published one, which is AGSC-E701 in the same run; this case asserts the AGSC-E702 and its line. The published bytes are the ledger-0005 entries with line 1 rewritten and the chain re-hashed under AGSC-08-22.",
   "expected": {
     "error": "AGSC-E702",
     "line": 1
@@ -62,7 +62,6 @@
     }
   },
   "level": "required",
-  "note": "added 2026-09-25 at rc.6; the expected code and line follow from the rule text (the first line that differs is line 1); the published bytes were written by hand from the ledger-0005 entries with line 1 rewritten and the chain re-hashed under AGSC-08-22",
   "options": {
     "source_date_epoch": 1767484800,
     "spec_version": "1.0.0-rc.6"

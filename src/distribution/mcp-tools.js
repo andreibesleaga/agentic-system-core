@@ -92,10 +92,10 @@ function tokenize(text) {
 /**
  * AGSC-06-23 pins the tokenizer input: "`title`, `description`, every `tags` value
  * and the body with fenced code blocks removed". `search.tokenizerInput` reads those
- * from a FLAT item, while a loaded Bundle carries them under `frontmatter` — so
- * until rc.5 this tool tokenized the body alone and silently matched neither a title
- * nor a description nor a tag. That is the same defect the `/compose/` combiner
- * carried: one shape read as another. Flattened here, so the `search` and
+ * from a FLAT item, while a loaded Bundle carries them under `frontmatter` — so a
+ * tool reading the loaded item directly would tokenize the body alone and silently
+ * match neither a title nor a description nor a tag: one shape read as another.
+ * Flattened here, so the `search` and
  * `ask` tools and `search.json` index exactly the same text and a hit means the same
  * thing on every surface. Found by vector `cli-0007`.
  */
@@ -274,9 +274,8 @@ function tools(bundle, options) {
   /**
    * AGSC-09-14a, vector `cli-0007`. The AGSC-08-18
    * envelope with EXACTLY ONE added top-level member, `citations[]`: six members and
-   * no more. `body` is the answer TEXT, never an object — before rc.5 this engine
-   * returned `{answer, citations, terms}` inside `body`, which was the second of the
-   * two readings the rule then admitted and the one that makes the fixed no-answer
+   * no more. `body` is the answer TEXT, never an object — an
+   * `{answer, citations, terms}` object inside `body` would make the fixed no-answer
    * string unreachable. The Content Use Terms line lives INSIDE `body`, except in the
    * no-answer case, where the rule fixes `body` to exactly `no answer in this memory`.
    */

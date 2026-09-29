@@ -33,7 +33,7 @@ describe('validate-spec — usage and the envelope', () => {
   });
 
   it('a root with no spec/ FAILS with AGSC-E901, exit 1', () => {
-    // CHANGED at rc.6: AGSC-09-90 now says a validator MUST FAIL "with
+    // AGSC-09-90 says a validator MUST FAIL "with
     // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
     // error. An absent input is exit 1, the envelope and the code.
     const result = capture('validate-spec', [tmpdir()]);
@@ -51,7 +51,7 @@ describe('validate-spec — usage and the envelope', () => {
     assert.equal(json.schema, 'agsc.diagnostics.v1');
     assert.equal(json.verb, 'validate-spec');
     assert.equal(json.status, 'pass');
-    assert.equal(json.spec_version, '1.0.0-rc.5');
+    assert.equal(json.spec_version, '1.0.0-rc.9');
     assert.deepEqual(json.counts, { error: 0, warn: 0 });
   });
 
@@ -179,12 +179,13 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
     assert.ok(!json.findings.some((f) => /a normative sentence outside/u.test(f.message)), JSON.stringify(json.findings));
   });
 
-  it('a rule with no trace bracket, and a retired rule that needs none', () => {
+  it('a rule with no trace bracket, and a reserved rule in either marker form that needs none', () => {
     const root = specRoot({
       'spec/02-item.md': [
         '# Item', '',
         '- **AGSC-02-01** A rule with no trace at all.', '',
-        '- **AGSC-02-02** *(retired at rc.3: merged into AGSC-02-01.)*', '',
+        '- **AGSC-02-02** *(reserved: merged into AGSC-02-01; the id is never reused, AGSC-00-16.)*', '',
+        '- **AGSC-02-03** *(retired at rc, 2026-01-01: merged into AGSC-02-01.)*', '',
       ].join('\n'),
     });
     const { json } = envelope('validate-spec', [root]);
@@ -194,7 +195,7 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
   });
 
   it('a trace bracket followed by an italic note still counts', () => {
-    assert.equal(traceBracket('text [PRD-002] *(corrected at rc.5,: it cited itself.)*'), 'PRD-002');
+    assert.equal(traceBracket('text [PRD-002] *(corrected: it cited itself.)*'), 'PRD-002');
     assert.equal(traceBracket('text [PRD-002]'), 'PRD-002');
     assert.equal(traceBracket('no bracket here'), null);
   });
@@ -210,8 +211,8 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
 
   it('a version literal that differs, and the historical-note carve-out that saves one', () => {
     const root = specRoot({
-      'docs/NOTES.md': 'Amended at 1.0.0-rc.3 and still true.\nThe format is 1.0.0-rc.4 today.\n',
-      'tests/vectors/jcs/jcs-0001.json': '{"options":{"spec_version":"1.0.0-rc.2"}}\n',
+      'docs/NOTES.md': 'Amended at 1.0.0-rc.7 and still true.\nThe format is 1.0.0-rc.8 today.\n',
+      'tests/vectors/jcs/jcs-0001.json': '{"options":{"spec_version":"1.0.0-rc.0"}}\n',
     });
     const { json } = envelope('validate-spec', [root]);
     const drift = json.findings.filter((f) => /version literal/u.test(f.message));

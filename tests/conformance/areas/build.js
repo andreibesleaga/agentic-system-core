@@ -1,12 +1,10 @@
 'use strict';
 // Conformance area `build`.
 //
-// Created by the graph package for `build-0010` alone — the optional static
-// query fragments of AGSC-06-33, which are cut from `graph.nq` and therefore belong
-// to the graph modules. Every other `build` vector (`build-0001`…`build-0003`, the
-// search tokenizer) is not this area's and is listed in `tests/conformance/pending.json`,
-// so the runner never reaches this file for them; the EXTENSION POINT at the bottom
-// is where E appends its cases without touching anything above.
+// The static query fragments of AGSC-06-33 (cut from `graph.nq`), the search
+// tokenizer, the served header set and redirect, `security.txt`, the content
+// version, the trailing LF, the stale instant and the reproducible assets. The
+// EXTENSION POINT at the bottom holds the search-tokenizer cases.
 
 const crypto = require('node:crypto');
 const nq = require('../../../src/knowledge/nquads.js');
@@ -21,51 +19,6 @@ const { createClock } = require('../../../src/adapters/node-clock.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
-
-/** The build instant of AGSC-04-09/04-10 — fixed, never a wall clock. */
-const GENERATED_AT = '2026-01-01T00:00:00Z';
-
-/**
- * build-0010 — AGSC-06-33. Subject and predicate fragments only (no object
- * fragments at 1.x), each named by the first 16 hex of the SHA-256 of its IRI.
- *
- * The vector states `index` as the COUNT of distinct terms while AGSC-06-33 states
- * the index as `{subjects, predicates, generated_at}` with arrays of file paths.
- * The rule wins (project rule 6): `shard` emits the arrays, and the count the vector
- * states is compared against their length.
- */
-function fragmentsCase(vector) {
-  const { files, index } = nq.shard(vector.input.nquads, { sha256, generatedAt: GENERATED_AT });
-  const paths = (prefix) => files.map((f) => f.path).filter((p) => p.startsWith(`${prefix}/`));
-  const list = [];
-  const expected = vector.expected;
-  if (expected.subject_files) {
-    list.push(['subject_files', JSON.stringify(paths('s')) === JSON.stringify(expected.subject_files),
-      `got ${JSON.stringify(paths('s'))}`]);
-  }
-  if (expected.predicate_files) {
-    list.push(['predicate_files', JSON.stringify(paths('p')) === JSON.stringify(expected.predicate_files),
-      `got ${JSON.stringify(paths('p'))}`]);
-  }
-  if (expected.object_files) {
-    list.push(['object_files', JSON.stringify(paths('o')) === JSON.stringify(expected.object_files),
-      `got ${JSON.stringify(paths('o'))}`]);
-  }
-  if (expected.index) {
-    list.push(['index.subjects', index.subjects.length === expected.index.subjects,
-      `got ${index.subjects.length}`]);
-    list.push(['index.predicates', index.predicates.length === expected.index.predicates,
-      `got ${index.predicates.length}`]);
-    list.push(['index.generated_at', index.generated_at === GENERATED_AT, `got ${index.generated_at}`]);
-  }
-  // Every fragment file holds exactly that term's lines of graph.nq, in the same order.
-  const lines = String(vector.input.nquads).split('\n').filter(Boolean);
-  for (const file of files) {
-    const own = file.text.split('\n').filter(Boolean);
-    list.push([`${file.path} is a subset of graph.nq`, own.every((line) => lines.includes(line)), file.text]);
-  }
-  return checks(list);
-}
 
 /**
  * build-0001…build-0003 — the normative tokenizer of AGSC-06-23 and the
@@ -98,12 +51,11 @@ function searchCase(vector) {
 }
 
 /**
- * build-0011 (rc.5, R-08) — AGSC-06-33's fragment index as ARRAYS.
+ * build-0011 — AGSC-06-33's fragment index as ARRAYS.
  *
- * `build-0010` stated `index.subjects`/`index.predicates` as COUNTS while the rule
- * states them as arrays of file paths in code-point order; it was withdrawn and this
- * one states the arrays, so the reading `build-0010` needed is gone. `generated_at`
- * comes from the vector, never from a clock (AGSC-04-09/04-11).
+ * The rule states `index.subjects`/`index.predicates` as arrays of file paths in
+ * code-point order, and so does the vector. `generated_at` comes from the vector,
+ * never from a clock (AGSC-04-09/04-11).
  */
 function fragmentIndexCase(vector) {
   const { files, index } = nq.shard(vector.input.nquads,
@@ -132,7 +84,7 @@ function fragmentIndexCase(vector) {
  * build-0012 — AGSC-06-17's served header set and redirect.
  *
  * The vector asserts the HEADER SET and the REDIRECT and deliberately asserts no
- * `_headers`/`_redirects` bytes (`file_bytes_asserted: false`): AGSC-06-01 as amended
+ * `_headers`/`_redirects` bytes (`file_bytes_asserted: false`): AGSC-06-01
  * makes the file format a deployment-profile detail. So this handler reads the sets
  * the WRITER produces (`headers.headerSets`), not the Cloudflare file.
  *
@@ -181,14 +133,14 @@ function servedHeadersCase(vector) {
     list.push([`redirect ${want.from}`, redirects.some((r) => deepEqual(want, r)), JSON.stringify(redirects)]);
   }
   list.push(['file_bytes_asserted', vector.expected.file_bytes_asserted === false,
-    'AGSC-06-01 as amended at rc.5 makes the file format a deployment-profile detail']);
+    'AGSC-06-01 makes the file format a deployment-profile detail']);
   list.push(['deployment_profile', vector.input.deployment_profile === 'cloudflare-pages',
     'this writer emits the Cloudflare Pages profile and states it in its claim (AGSC-09-01)']);
   return checks(list);
 }
 
 /**
- * build-0013 — AGSC-06-36 (added at rc.6): the whole content of
+ * build-0013 — AGSC-06-36: the whole content of
  * `/.well-known/security.txt`.
  *
  * Six cases, each a `securityTxt` call over one authored file and one build instant.
@@ -222,7 +174,7 @@ function securityTxtCase(vector) {
 }
 
 /**
- * build-0014 (rc.6, AGSC-04-25 /) — the content version, case by case.
+ * build-0014 (AGSC-04-25) — the content version, case by case.
  *
  * Five derivation cases plus the composition of the NOW line. Nothing here reads
  * git, a clock or a file: the git-log file and the build instant arrive as data,
@@ -382,13 +334,12 @@ module.exports.run = (vector, ctx) => {
   if (vector.id === 'build-0016') return staleCase(vector);
   if (vector.id === 'build-0017') return reproducibleAssetsCase(vector, ctx);
   if (vector.id === 'build-0014') return contentVersionCase(vector);
-  if (vector.id === 'build-0010') return fragmentsCase(vector);
   if (vector.id === 'build-0013') return securityTxtCase(vector);
   if (vector.id === 'build-0011') return fragmentIndexCase(vector);
   if (vector.id === 'build-0012') return servedHeadersCase(vector);
 
   // ---------------------------------------------------------------- EXTENSION POINT
-  // Owner E: the build-0001…build-0003 cases (search tokenizer, AGSC-06-16/06-23).
+  // The build-0001…build-0003 cases (search tokenizer, AGSC-06-16/06-23).
   if (vector.id === 'build-0001' || vector.id === 'build-0002' || vector.id === 'build-0003') {
     return searchCase(vector);
   }

@@ -1,6 +1,6 @@
 # Benchmarks — the kit, what it can claim, and what it refuses to
 
-**Who this is for:** anyone who wants to know how the numbers in MEASUREMENTS.md are produced and what they can and cannot show. **Read after:** [MEASUREMENTS.md](MEASUREMENTS.md). *(Header added 2026-09-24.)*
+**Who this is for:** anyone who wants to know how the numbers in MEASUREMENTS.md are produced and what they can and cannot show. **Read after:** [MEASUREMENTS.md](MEASUREMENTS.md).
 
 This document describes the benchmark kit under `bench/` and the standalone runner `tools/bench`. The measured results live in `docs/MEASUREMENTS.md`; this file is about method.
 
@@ -56,7 +56,7 @@ Twenty hand-written intents, one gold item each, over the thirty published items
 
 ## The study the kit is built for (v1.0.1)
 
-The retrieval study is the one benchmark contribution this project claims, and only in this form: *to our knowledge no published benchmark measures intent-to-item retrieval across a knowledge node's several agent surfaces — a plain-text index, a prebuilt lexical index, a chunk export, a tool server and a graph dump — so the task set and its labels are released as a contribution in their own right.* No superlative, and no performance claim.
+The retrieval study is the one benchmark contribution this project claims, and only in this form: *to the author's knowledge no published benchmark measures intent-to-item retrieval across a knowledge node's several agent surfaces — a plain-text index, a prebuilt lexical index, a chunk export, a tool server and a graph dump — so the task set and its labels are released as a contribution in their own right.* No superlative, and no performance claim.
 
 Its design, fixed before any number exists:
 

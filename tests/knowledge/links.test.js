@@ -186,25 +186,23 @@ test('AGSC-03-11: an asset resolves when it exists and the path is grammatical',
   assert.ok(without.errors.some((f) => f.code === 'AGSC-E310'));
 });
 
-test('AGSC-01-35 as amended at rc.5 (R-01): a `..` body reference that stays inside RESOLVES', () => {
-  // rc.4 read the segment test literally, so an item under content/<type-plural>/
-  // could not reference content/assets/ at all — every route to it needs `..`.
-  // AGSC-01-35 as amended at rc.5 excepts a body target from the segment test and
-  // makes the ESCAPE test the operative one; AGSC-03-11 as amended says the same.
-  // Found 2026-09-21: the amendment had been applied to the specification and not here.
+test('AGSC-01-35: a `..` body reference that stays inside RESOLVES', () => {
+  // Read literally, the segment test would stop an item under content/<type-plural>/
+  // from referencing content/assets/ at all — every route to it needs `..`.
+  // AGSC-01-35 excepts a body target from the segment test and makes the ESCAPE
+  // test the operative one; AGSC-03-11 says the same.
   const asset = links.resolve([{ slug: 'a', type: 'concept', body: '![x](../assets/d.png)\n' }],
     { assets: ['content/assets/d.png'] });
   const pathCodes = (r) => r.errors.filter((f) => f.severity !== 'warn')
     .map((f) => f.code).filter((c) => c === 'AGSC-E902' || c === 'AGSC-E310');
   assert.deepStrictEqual(pathCodes(asset), [], 'a `..` reference to an existing asset is not an error');
   assert.deepStrictEqual(asset.resolved, ['../assets/d.png']);
-  // CHANGED at rc.6: AGSC-06-01 now emits `/assets/<path>` for every
-  // file under `content/assets/` a published body references, so the reference that
-  // works in the repository works on the site too, and the warning that said
-  // otherwise is gone. At rc.5 it was a warning for exactly that reason.
+  // AGSC-06-01 emits `/assets/<path>` for every file under `content/assets/` a
+  // published body references, so the reference that works in the repository works
+  // on the site too, and no warning says otherwise.
   assert.deepStrictEqual(asset.errors.filter((f) => f.code === 'AGSC-E310'), []);
 
-  // A `..` reference to a sibling ITEM resolves in both spellings (R-04).
+  // A `..` reference to a sibling ITEM resolves in both spellings.
   const items = [
     { slug: 'a', type: 'concept', body: '[b](../concepts/b.md) and [b again](../concepts/b)\n' },
     { slug: 'b', type: 'concept', body: '# B\n' },

@@ -17,8 +17,11 @@
 // the most specific registered code under the precedence paragraph: AGSC-E201 for
 // document shape, media type and order; AGSC-E202 for a REQUIRED attribute missing;
 // AGSC-E204 for a malformed digest; AGSC-E209 for a relation outside AGSC-06-10/06-35;
-// AGSC-E210 for a surface declaration that disagrees with the node; AGSC-E601 for
-// non-canonical bytes at Level ≥ 2; AGSC-E901/E904/E905/E907 for I/O.
+// AGSC-E210 for a declaration that disagrees with the node (a surface, an
+// `agsc-bundle-hash` that is not the digest of `graph.nq`, a restricted node's
+// content facts or gated digests); AGSC-E506 (warning) for a relation or attribute
+// of a newer MINOR, which is ignored (AGSC-00-21); AGSC-E601 for non-canonical
+// bytes at Level ≥ 2; AGSC-E901/E904/E905/E907 for I/O.
 'use strict';
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const https = require('https'), http = require('http'), dns = require('dns'), net = require('net');
@@ -34,11 +37,21 @@ const WELLKNOWN_SUFFIX = 'knowledge-linkset'; // single point of substitution, A
 const PROFILE = 'https://w3id.org/agentic-system-core/profile/agentic-knowledge';
 const REL = 'https://w3id.org/agentic-system-core/rel#';
 const REGISTERED = new Set(['alternate', 'author', 'cite-as', 'collection', 'describedby', 'item', 'license',
-  'related', 'service-desc', 'service-doc', 'service-meta']); // AGSC-06-10 + AGSC-06-35 (cite-as: rc.6)
+  'related', 'service-desc', 'service-doc', 'service-meta']); // AGSC-06-10 + AGSC-06-35
 const RELATED_ONLY = new Set(['related', 'service-desc', 'service-meta', 'collection', 'item', 'cite-as']);
 const EXTENSIONS = new Set(['graph', 'ontology', 'context', 'now', 'skills', 'ledger', 'peer',
-  'surface', 'contribute', 'access', 'signature', 'boards']); // signature: rc.6; boards: AGSC-10-13 (2026-09-25),
-const RFC8288_STRING_ATTRS = new Set(['type', 'title', 'media']); // RFC 9264 §4.2.4.2
+  'surface', 'contribute', 'access', 'signature', 'boards']); // AGSC-06-10; boards: AGSC-10-13
+const RFC8288_STRING_ATTRS = new Set(['type', 'title', 'media']); // RFC 9264 §4.2.4.1
+// AGSC-06-08 and AGSC-11-16 (with AGSC-06-35's `profile` and RFC 9264 §4.2.4.1's
+// `hreflang`): every target attribute this version defines. A document of a newer
+// MINOR may carry others; they are ignored with a warning (AGSC-00-21, AGSC-09-93).
+const KNOWN_ATTRS = new Set(['agsc-access', 'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-contribute-mode',
+  'agsc-counts', 'agsc-generated-at', 'agsc-ledger-head', 'agsc-spec-version', 'agsc-surface',
+  'agsc-surface-version', 'agsc-tombstone', 'agsc-visibility', 'digest', 'hreflang', 'media', 'profile',
+  'title', 'title*', 'type']);
+// AGSC-11-20: the targets a restricted node serves unauthenticated, and so the only
+// ones whose `digest` it may publish (its Level-0 view: `/graph.jsonld`, `/llms.txt`).
+const OPEN_WHEN_RESTRICTED = ['/graph.jsonld', '/llms.txt'];
 const LEVEL2_ATTRS = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-generated-at', 'agsc-spec-version'];
 // AGSC-11-20: the four a `restricted` node MUST omit although it is Level ≥ 2 —
 // per-type population, the fingerprint, the content version (whose untagged forms
@@ -319,20 +332,33 @@ async function check(src, level, findings) {
   // arrived at 1.0 and whose value must match AGSC-04-25's grammar.
   const declared = Array.isArray(anchorLink['agsc-spec-version']) ? String(anchorLink['agsc-spec-version'][0]) : null;
   const declaredMajor = declared === null ? null : (/^(\d+)\./.exec(declared) || [null, null])[1];
+  // AGSC-00-21 / AGSC-09-93: a document of the validator's MAJOR and a newer MINOR
+  // may use a relation or an attribute this version does not define. It is ignored,
+  // with the warning AGSC-E506 naming the newer version, and never reported as
+  // AGSC-E209 or AGSC-E202. Another MAJOR has no such tolerance.
+  const mm = (v) => { const m = /^(\d+)\.(\d+)(?:\.|$)/.exec(String(v)); return m ? [Number(m[1]), Number(m[2])] : null; };
+  const theirs = declared === null ? null : mm(declared);
+  const mine = mm(SPEC_VERSION);
+  const newer = theirs !== null && mine !== null && theirs[0] === mine[0] && theirs[1] > mine[1];
   if (Array.isArray(anchorLink['agsc-bundle-version'])) {
     const value = anchorLink['agsc-bundle-version'];
     if (value.length !== 1) F('AGSC-E210', 'agsc-bundle-version carries exactly one value (AGSC-06-08, AGSC-04-25)');
     else if (!VERSION_GRAMMAR.test(String(value[0]))) F('AGSC-E204', `agsc-bundle-version ${JSON.stringify(String(value[0]))} is outside the grammar of AGSC-04-25`);
-    // The attribute is defined from specification MAJOR 1 (AGSC-04-25, added at
-    // rc.6), so a node publishing it while declaring another MAJOR is
-    // publishing bytes its own declaration does not define.
-    if (declaredMajor !== null && declaredMajor !== '1') {
+    // The attribute is defined from specification MAJOR 1 (AGSC-04-25), so a node
+    // publishing it while declaring an EARLIER MAJOR publishes bytes its own
+    // declaration does not define. A later MAJOR is outside what this checker can
+    // judge: it cannot know what that version defines, so it states no E210 for it
+    // (the document's unknown relations are still AGSC-E209, AGSC-09-93).
+    if (declaredMajor !== null && Number(declaredMajor) < 1) {
       F('AGSC-E210', `the node publishes agsc-bundle-version while declaring agsc-spec-version ${JSON.stringify(declared)}, which does not define it (AGSC-00-23, AGSC-04-25)`);
     }
   }
   for (const rel of names) {
     const ext = rel.startsWith(REL) ? rel.slice(REL.length) : null;
-    if (!(REGISTERED.has(rel) || (ext !== null && EXTENSIONS.has(ext)))) F('AGSC-E209', `relation ${JSON.stringify(rel)} is neither a registered name of AGSC-06-10/06-35 nor a …/rel#<name> extension URI`);
+    if (!(REGISTERED.has(rel) || (ext !== null && EXTENSIONS.has(ext)))) {
+      if (newer) { F('AGSC-E506', `relation ${JSON.stringify(rel)} is not defined by this version; the document declares the newer ${declared}, so it is ignored (AGSC-00-21, AGSC-09-93)`, 'warn'); continue; }
+      F('AGSC-E209', `relation ${JSON.stringify(rel)} is neither a registered name of AGSC-06-10/06-35 nor a …/rel#<name> extension URI`);
+    }
     const arr = ctx[rel];
     if (!Array.isArray(arr) || !arr.length) { F('AGSC-E201', `relation ${rel}: value must be a non-empty array of target objects (RFC 9264 §4.2.2)`); continue; }
     let prev = null;
@@ -344,13 +370,20 @@ async function check(src, level, findings) {
       for (const k of KEYS.get(t)) {
         if (k === 'href') continue;
         const v = t[k];
-        if (RFC8288_STRING_ATTRS.has(k)) { if (typeof v !== 'string') F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a string (RFC 9264 §4.2.4.2)`); } else if (k === 'title*') { if (!Array.isArray(v)) F('AGSC-E201', `relation ${rel}: title* must be an array (RFC 9264 §4.2.4.2)`); } else if (!Array.isArray(v) || !v.length || !v.every((s) => typeof s === 'string')) F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a non-empty array of strings (AGSC-06-10)`);
+        if (newer && !KNOWN_ATTRS.has(k)) { F('AGSC-E506', `relation ${rel}: target attribute ${k} is not defined by this version; the document declares the newer ${declared}, so it is ignored (AGSC-00-21, AGSC-09-93)`, 'warn'); continue; }
+        if (RFC8288_STRING_ATTRS.has(k)) { if (typeof v !== 'string') F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a string (RFC 9264 §4.2.4.1)`); } else if (k === 'title*') { if (!Array.isArray(v)) F('AGSC-E201', `relation ${rel}: title* must be an array (RFC 9264 §4.2.4.2)`); } else if (!Array.isArray(v) || !v.length || !v.every((s) => typeof s === 'string')) F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a non-empty array of strings (AGSC-06-10)`);
       }
       const sameOrigin = h.origin === anchor.origin;
       const artefact = sameOrigin && !h.pathname.endsWith('/') && rel !== 'license' && rel !== 'service-doc' && ext !== 'surface' && ext !== 'peer'
         // AGSC-06-08: the optional signature link "affects no
         // digest, no claim and no walk", so its target is never an artefact that needs one.
         && ext !== 'signature';
+      // AGSC-11-20: a restricted node publishes no digest of a target it gates.
+      if (gated && t.digest !== undefined && !(sameOrigin && OPEN_WHEN_RESTRICTED.some((p) => h.pathname.endsWith(p)))) F('AGSC-E210', `relation ${rel}: a restricted node must omit the digest of ${t.href}, a target it does not serve unauthenticated (AGSC-11-20)`);
+      // AGSC-06-08 / AGSC-04-15: `agsc-bundle-hash` is the SHA-256 of `graph.nq`, so
+      // where both are published it equals the digest of the rel#graph link to it.
+      if (ext === 'graph' && /\/graph\.nq$/.test(h.pathname) && Array.isArray(t.digest) && Array.isArray(anchorLink['agsc-bundle-hash'])
+        && String(anchorLink['agsc-bundle-hash'][0]) !== String(t.digest[0])) F('AGSC-E210', `agsc-bundle-hash ${JSON.stringify(String(anchorLink['agsc-bundle-hash'][0]))} is not the digest of ${t.href}, the bundle hash of AGSC-04-15 (AGSC-06-08)`);
       if (t.digest !== undefined) {
         if (!Array.isArray(t.digest) || t.digest.length !== 1 || !/^sha-256=:[A-Za-z0-9+/]{43}=:$/.test(t.digest[0])) F('AGSC-E204', `relation ${rel}: digest must be one "sha-256=:<base64>:" string (AGSC-06-08, RFC 9530, RFC 9651)`);
         else if (level >= 2 || src.kind === 'file') {
@@ -359,7 +392,7 @@ async function check(src, level, findings) {
             if (bytes) { const d = 'sha-256=:' + crypto.createHash('sha256').update(bytes).digest('base64') + ':'; if (d !== t.digest[0]) F('AGSC-E201', `relation ${rel}: digest does not match the bytes of ${t.href}`); }
           } catch (e) { F(e.code || 'AGSC-E907', `relation ${rel}: ${e.message}`); }
         }
-      } else if (level >= 2 && artefact) F('AGSC-E202', `relation ${rel}: artefact link ${t.href} carries no digest (required at Level ≥ 2, AGSC-06-08a)`);
+      } else if (level >= 2 && artefact && !(gated && !OPEN_WHEN_RESTRICTED.some((p) => h.pathname.endsWith(p)))) F('AGSC-E202', `relation ${rel}: artefact link ${t.href} carries no digest (required at Level ≥ 2, AGSC-06-08a)`);
       // AGSC-06-08a requires every `agsc-*` attribute at Level ≥ 2 — EXCEPT the four
       // AGSC-11-20 forbids a gated node to publish, which are checked above instead.
       if (level >= 2 && rel === 'describedby' && /\/graph\.jsonld$/.test(h.pathname)) for (const a of LEVEL2_ATTRS) if (t[a] === undefined && !(gated && RESTRICTED_OMITTED.includes(a))) F('AGSC-E202', `describedby ${t.href}: ${a} is required at Level ≥ 2 (AGSC-06-08)`);

@@ -12,7 +12,7 @@
 // arrives as an integer through the Clock port. `node:crypto` is a deterministic
 // function of its input, not host state (AGSC-04-03).
 //
-// Vectors: ledger-0001, ledger-0002, ledger-0003, ledger-0004.
+// Vectors: ledger-0001, ledger-0003, ledger-0004, ledger-0005.
 
 const { createHash } = require('node:crypto');
 const { canonicalize } = require('../knowledge/jcs.js');

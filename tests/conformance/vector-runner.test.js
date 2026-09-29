@@ -85,16 +85,10 @@ test('conformance vectors', async (t) => {
   assert.strictEqual(tally.fail, 0, `failing vectors:\n${failures.join('\n')}`);
   assert.strictEqual(tally.pass + tally.fail + tally.skip, vectors.length, 'every vector is accounted for');
   // `pending.json` must be EMPTY at integration — a vector parked with a reason is
-  // still a vector nothing runs. It holds exactly one exception while a package is
-  // in flight: the ids of the package that is writing the rules those vectors cite.
-  // Anything else parked there fails here, so nobody can leave a vector unrun
-  // quietly, and the package that lands removes this list and the exception
-  // with it. (rc.6, 2026-09-22:'s own eight were closed and removed;
-  // then added eight of its own for the compatibility and versioning rules.)
+  // still a vector nothing runs, so nobody can leave a vector unrun quietly.
   const parked = [...pending].sort();
-  const foreign = parked.filter((id) => !/\bENG-8\b/u.test(String(reason[id] || '')));
-  assert.deepStrictEqual(foreign, [],
-    `tests/conformance/pending.json may hold only vectors awaiting; these name no package: ${foreign.join(', ')}`);
+  assert.deepStrictEqual(parked, [],
+    `tests/conformance/pending.json must be empty at integration; parked: ${parked.join(', ')}`);
   if (parked.length > 0) {
     process.stdout.write(`conformance: ${parked.length} vector(s) pending on: ${parked.join(', ')}\n`);
   }

@@ -60,8 +60,8 @@ const HELP = `validate-spec [--json] [--quiet] [--help] [<root>]
 const NORMATIVE = /(?<![\w-])(MUST NOT|MUST|SHOULD NOT|SHOULD|SHALL NOT|SHALL|REQUIRED|RECOMMENDED)(?![\w-])/u;
 /**
  * AGSC-09-91 carve-out (a): the words that mark a line as a record of the past.
- * The last four (`for`, `against`, `written`, `re-verified`) and the companion date
- * test below were added at rc.6; `tools/count-artifacts` carries the same
+ * The words (`for`, `against`, `written`, `re-verified` among them) and the date
+ * test below are the rule's; `tools/count-artifacts` carries the same
  * two constants and is the reference behaviour the rule names.
  */
 const HISTORY_WORD = /(?<![\w-])(re-verified|at|since|amended|added|withdrawn|before|until|from|for|against|written)(?![\w-])/iu;
@@ -388,7 +388,7 @@ function run(argv, io) {
   let decisionTags = 0;
   for (const block of blocks) {
     // A rule retired under AGSC-00-16 keeps its id and carries no trace.
-    if (/\*\(retired at /u.test(block.text)) continue;
+    if (/\*\((?:retired at |reserved:)/u.test(block.text)) continue;
     const trace = block.lines.map(traceBracket).filter((b) => b !== null);
     if (trace.length === 0) {
       findings.push(finding('AGSC-E202', block.file, block.line,

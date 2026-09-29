@@ -16,7 +16,6 @@
     "bundle": "fixtures/minimal"
   },
   "level": "required",
-  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "source_date_epoch": 1767225600,
     "spec_version": "1.0.0-rc.6"

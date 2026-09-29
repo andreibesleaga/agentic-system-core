@@ -241,7 +241,7 @@ function plan(bundle, options) {
   const targets = [];
   for (const name of requested) {
     if (TARGETS[name] === undefined) {
-      // AGSC-00-23 as added at rc.6: a value outside a CLOSED operator list
+      // AGSC-00-23: a value outside a CLOSED operator list
       // is `AGSC-E203`, the code that already names exactly that fault — not
       // `AGSC-E002`, which AGSC-09-08 reserves for an unknown FLAG. `--target` is a
       // known flag carrying a value the registry does not hold, so this is a

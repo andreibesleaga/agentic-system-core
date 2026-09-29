@@ -46,7 +46,7 @@ function synthetic(count) {
 }
 
 const PORTS = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }) };
-const OPTIONS = { specVersion: '1.0.0-rc.4', version: '0.0.2' };
+const OPTIONS = { specVersion: '1.0.0-rc.6', version: '0.0.2' };
 
 test('AGSC-06-21: 500 items need no shard and no page-2', () => {
   const { files } = site.build(synthetic(500), PORTS, OPTIONS);
@@ -68,7 +68,7 @@ test('AGSC-06-21 / AGSC-06-31: 501 items shard the index and paginate every inde
 
   // AGSC-06-31: `/chunks.jsonl` shards on the same trigger, in the same shape.
   const chunks = JSON.parse(files.get('/chunks.jsonl'));
-  // AGSC-06-31 as amended at rc.6: the shard manifest carries the content
+  // AGSC-06-31: the shard manifest carries the content
   // version of AGSC-04-25 beside its two members, and JCS sorts it first.
   assert.deepStrictEqual(Object.keys(chunks).sort(), ['bundle_version', 'lines_total', 'shards']);
   assert.match(chunks.bundle_version, /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u);

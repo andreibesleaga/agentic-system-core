@@ -53,15 +53,11 @@ const VERB_FLAGS = {
   // AGSC-09-09: `lint --fix` applies exactly the normalisations
   // AGSC-04-19 admits — line endings, NFC, trailing newline, frontmatter key order
   // and the wikilink rewriting of AGSC-03-12 — and nothing else (AGSC-04-14/04-20).
-  // `--self` was registered here and read by NO code, and AGSC-09-09 closes the
-  // verb-flag set: "a flag outside this list and outside the verb flags below is
-  // `AGSC-E002` with exit 2", and the rule's list names `lint --fix` alone. Keeping
-  // a flag the rule does not define, which the engine then ignored, is the exact
-  // failure recorded in the other direction. It is therefore gone, and
-  // `agsc lint --self` is now the usage error the rule requires — with the hint of
-  // `RETIRED_FLAGS` below, so that an operator following `docs/PLAN.md`'s older
-  // definition-of-done line is told what replaced it (specification item
-  // 57 /; rc.5).
+  // AGSC-09-09 closes the verb-flag set: "a flag outside this list and outside the
+  // verb flags below is `AGSC-E002` with exit 2", and the rule's list names
+  // `lint --fix` alone. `agsc lint --self` is therefore the usage error the rule
+  // requires — with the hint of `RETIRED_FLAGS` below, so that an operator following
+  // `docs/PLAN.md`'s older definition-of-done line is told what replaced it.
   lint: new Map([['--fix', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
@@ -167,12 +163,13 @@ const ADAPTER_FLAGS = {
       'old-site': new Map([['--selection', 'value'], ['--corrections', 'value'],
         ['--attach-diagrams', 'bool'], ['--replace', 'bool']]),
       // `--allow-newer` is the OKF adapter's own flag (AGSC-01-26a, AGSC-09-09:
-      // "a memory adapter … MAY define further flags of its own"), added at rc.6
-      // for AGSC-01-22's tolerance limit: without it a source declaring a MAJOR or
-      // MINOR this tool does not implement is refused before anything is written.
+      // "a memory adapter … MAY define further flags of its own"), for AGSC-01-22's
+      // tolerance limit: without it a source declaring a MAJOR this tool does not
+      // implement is refused before anything is written (a newer MINOR is imported
+      // with the warning AGSC-E506).
       okf: new Map([['--replace', 'bool'], ['--allow-newer', 'bool']]),
       // The COGX adapter offers the same two: `--replace` for AGSC-01-23,
-      // `--allow-newer` for an archive of a newer COGX MAJOR or a newer spec_version.
+      // `--allow-newer` for an archive of a newer COGX MAJOR or of another spec MAJOR.
       cogx: new Map([['--replace', 'bool'], ['--allow-newer', 'bool']]),
       // The GABBE adapter adds `--source-version <v>`: a kit publishes
       // no content version of its own, and AGSC-01-22 records one on every item.
@@ -469,8 +466,7 @@ function helpDocument(version, verb) {
  * "MUST print the verb set of AGSC-09-07 and this flag list to stdout and exit 0;
  * with a verb, it MUST print that verb's flags." It is the one flag that is NOT a
  * diagnostic, so unlike `usageText` it goes to STDOUT (AGSC-09-10), and it is a flag
- * rather than a verb so that AGSC-09-07's sixteen verbs stay sixteen. Before rc.5
- * `agsc --help` was `AGSC-E001` and `agsc lint --help` was `AGSC-E002`.
+ * rather than a verb so that AGSC-09-07's sixteen verbs stay sixteen.
  */
 function helpText(version, verb) {
   if (verb === undefined) return usageText(version);
@@ -529,7 +525,7 @@ function main(argv, ctx) {
     return 0;
   }
 
-  // --help (AGSC-09-09, rc.5) short-circuits too: it is not a diagnostic, so
+  // --help (AGSC-09-09) short-circuits too: it is not a diagnostic, so
   // it prints to STDOUT and exits 0, with the named verb's flags when one is given.
   //
   // Under `--json` it takes the shape `--version` already takes: one canonical JSON
@@ -590,7 +586,7 @@ function main(argv, ctx) {
   const rest = args.slice(1);
   // AGSC-09-09 types every verb flag as taking ONE value, and AGSC-01-28 says so of
   // `--target` in as many words: "one comma-separated list of registry names, never
-  // a repeated flag" (stated at rc.6). Commander silently keeps the LAST
+  // a repeated flag". Commander silently keeps the LAST
   // occurrence of a repeated value flag, so `--target agents --target claude` used
   // to export `claude` alone and say nothing — a silent loss of what the operator
   // asked for. The repetition is a usage error, and AGSC-09-08 makes it exit 2.
@@ -766,9 +762,9 @@ function main(argv, ctx) {
   // AGSC-09-08: the exit code names the CLASS of the fault, not its severity.
   // "2 for an unknown verb, an unknown flag, a missing argument or invalid
   // configuration" — so an error whose code says the configuration is invalid
-  // exits 2 wherever it is raised, and every other error exits 1. Before rc.6 a
-  // Bundle whose `agsc.config.json` carried a key this version does not define
-  // exited 1, which a caller reads as "the content failed a gate" rather than
+  // exits 2 wherever it is raised, and every other error exits 1. A Bundle whose
+  // `agsc.config.json` carries a key this version does not define must not exit 1,
+  // which a caller reads as "the content failed a gate" rather than
   // "this tool cannot run against this configuration at all" — and AGSC-00-21's
   // whole point is that configuration is the one surface where a newer version
   // must fail loudly (AGSC-00-23, AGSC-00-25, AGSC-01-22).

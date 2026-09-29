@@ -1,8 +1,7 @@
 'use strict';
 // Conformance area `import` — AGSC-01-23.
 //
-// The area was declared and empty from rc.2 until rc.6, when `imp-0001`
-// gave it its first vector: what an import does when a planned path is already
+// `imp-0001` states what an import does when a planned path is already
 // taken. The three cases are the three outcomes the rule names, and they are run
 // against the engine's own plan/apply pair (`verbs/import.js#survey`, `#apply`,
 // `#collisionFindings`) over an in-memory FileSystem port — no temporary
@@ -107,15 +106,16 @@ function collisionCase(vector) {
 }
 
 /**
- * imp-0002 (rc.6, AGSC-01-22 as amended /) — the one LIMIT and the one RECORD
- * of import tolerance.
+ * imp-0002 (AGSC-01-22) — the one LIMIT and the one RECORD of import tolerance:
+ * another MAJOR is refused unless `--allow-newer`, a newer MINOR of the tool's MAJOR
+ * is imported with the warning `AGSC-E506`.
  *
  * The source is expressed abstractly by the vector (`spec_version`,
  * `bundle_version`, `bundle_hash`, `items[]`), so it is rendered here as the OKF
  * bundle a publisher would actually hand over: a bundle-root `index.md` carrying
  * the three declarations, and one Markdown document per item. That keeps the case
- * against the real reader — `interchange/okf.js#sourceFacts`, `#versionRefusal`
- * and `#plan` — rather than against a restatement of the rule.
+ * against the real reader — `interchange/okf.js#sourceFacts`, `#versionRefusal`,
+ * `#versionWarning` and `#plan` — rather than against a restatement of the rule.
  *
  * The exit codes are AGSC-09-08's: the refusal carries `AGSC-E004`, which
  * `application/cli/main.js` maps to exit 2 wherever it is raised, and a plan that
@@ -146,11 +146,7 @@ function sourceRecordCase(vector, ctx) {
       && facts.bundleHash === (source.bundle_hash === undefined ? null : source.bundle_hash),
       JSON.stringify(facts)]);
 
-    const refusal = okf.versionRefusal(facts.specVersion, {
-      allowNewer: input.allow_newer === true,
-      toolSpecVersion: input.tool_spec_version,
-    });
-    const findings = refusal === null ? [] : [refusal];
+    const { refusal, findings } = versionFindings(facts, input);
     const planned = refusal === null
       ? okf.plan(files, {
         itemSchema: ctx.itemSchema,
@@ -181,25 +177,45 @@ function sourceRecordCase(vector, ctx) {
         'the refusal must precede every write']);
     }
 
-    for (const write of planned.writes) {
-      const block = String(write.text).split('---')[1] || '';
-      if (want.prov !== undefined) {
-        for (const [key, value] of Object.entries(want.prov)) {
-          list.push([`${input.name} prov.${key}`, block.includes(`  ${key}: ${value}\n`)
-            || block.includes(`  ${key}: "${value}"\n`), block]);
-        }
-      }
-      for (const absent of want.prov_members_absent || []) {
-        list.push([`${input.name} prov.${absent} absent`, !block.includes(`${absent}:`), block]);
-      }
-    }
+    list.push(...provChecks(input.name, want, planned.writes));
   }
   return checks(list);
 }
 
 /**
- * imp-0004 (AGSC-03-19, AGSC-03-20; superseding imp-0003, which is withdrawn and
- * never runs) — foreign link names are mapped on import, never added to the
+ * AGSC-01-22's version gate for one case: the refusal of another MAJOR (null when
+ * the source is accepted) and, only when it is accepted, the newer-MINOR warning.
+ */
+function versionFindings(facts, input) {
+  const refusal = okf.versionRefusal(facts.specVersion, {
+    allowNewer: input.allow_newer === true,
+    toolSpecVersion: input.tool_spec_version,
+  });
+  const newer = refusal === null
+    ? okf.versionWarning(facts.specVersion, { toolSpecVersion: input.tool_spec_version }) : null;
+  return { refusal, findings: [...(refusal === null ? [] : [refusal]), ...(newer === null ? [] : [newer])] };
+}
+
+/** The `prov` members every planned write must carry, and those it must not. */
+function provChecks(name, want, writes) {
+  const list = [];
+  for (const write of writes) {
+    const block = String(write.text).split('---')[1] || '';
+    if (want.prov !== undefined) {
+      for (const [key, value] of Object.entries(want.prov)) {
+        list.push([`${name} prov.${key}`, block.includes(`  ${key}: ${value}\n`)
+          || block.includes(`  ${key}: "${value}"\n`), block]);
+      }
+    }
+    for (const absent of want.prov_members_absent || []) {
+      list.push([`${name} prov.${absent} absent`, !block.includes(`${absent}:`), block]);
+    }
+  }
+  return list;
+}
+
+/**
+ * imp-0004 (AGSC-03-19, AGSC-03-20) — foreign link names are mapped on import, never added to the
  * vocabulary, through the OKF reader's own `mapFrontmatter`. The input declares an
  * established licence, so the licence record of AGSC-01-22 is not in play and the
  * case is isolated by its input alone.
@@ -225,7 +241,7 @@ function foreignLinkCase(vector) {
 }
 
 module.exports.run = (vector, ctx) => {
-  if (vector.id === 'imp-0004' || vector.id === 'imp-0003') return foreignLinkCase(vector);
+  if (vector.id === 'imp-0004') return foreignLinkCase(vector);
   if (vector.id === 'imp-0001') return collisionCase(vector);
   if (vector.id === 'imp-0002') return sourceRecordCase(vector, ctx);
   return { status: 'fail', detail: `${vector.id}: no handler in area import` };

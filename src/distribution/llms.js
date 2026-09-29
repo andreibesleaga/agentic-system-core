@@ -9,7 +9,7 @@
 // convention's one required element; everything after it is pinned here because the
 // convention fixes no grammar and two conforming writers must emit identical bytes.
 //
-// Pure function of its input; `site.js` writes the bytes. Vectors disc-0006, disc-0007.
+// Pure function of its input; `site.js` writes the bytes. Vectors disc-0013, disc-0014.
 
 const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { provenanceHeader } = require('../knowledge/provenance-header.js');
@@ -43,8 +43,8 @@ function primaryCluster(item) {
  * their strings coincide.
  */
 function provenance({ base, license, terms, specVersion, bundleVersion, generatedAt }) {
-  // AGSC-02-24: the header is a fixed number of lines — SEVEN
-  // until rc.6, EIGHT since AGSC-06-15 added `assistance:` — and a value may not add
+  // AGSC-02-24: the header is a fixed number of lines — with AGSC-06-15's
+  // `assistance:` line among them — and a value may not add
   // one. `license` is authored (`bundle.license_prose`) and `base` reaches here from
   // configuration, so both are neutralised — defence in depth behind the schema
   // `pattern`, for the Bundle that never passed validation.
@@ -55,8 +55,8 @@ function provenance({ base, license, terms, specVersion, bundleVersion, generate
  * The section blocks of AGSC-06-13a(4) and the item order `/llms-full.txt` repeats.
  * Sections are ordered by cluster slug; a cluster with no primary member emits no
  * section; every published item no LISTED section carries goes in a final
- * section titled `Other` — an item with no `clusters[]`, and (since rc.5, vector
- * `disc-0008`) an item whose primary cluster is not among `bundle.clusters[]`.
+ * section titled `Other` — an item with no `clusters[]`, and (vector `disc-0008`)
+ * an item whose primary cluster is not among `bundle.clusters[]`.
  * A `cluster` item is never a listed ENTRY: it IS a section (`isPublished` above).
  */
 function sectionBlocks(bundle) {
@@ -66,7 +66,7 @@ function sectionBlocks(bundle) {
     .sort((a, b) => compareCodePoint(String(a.slug), String(b.slug)));
   const bySlug = (a, b) => compareCodePoint(String(a.slug), String(b.slug));
   // AGSC-06-13a(4): ONE line per item. Title and description are authored, so both
-  // are neutralised here (AGSC-02-24, rc.5): a line break in either forged
+  // are neutralised here (AGSC-02-24): a line break in either would forge
   // a `## ` heading and a second link entry into this file.
   const line = (it) => `- [${singleLine(it.title)}](${iriOf(base, it)}): `
     + `${singleLine(it.description == null || it.description === '' ? it.title : it.description)}`;
@@ -82,9 +82,9 @@ function sectionBlocks(bundle) {
   // AGSC-06-14: "every published item MUST be reachable from /llms.txt, directly or
   // through a listed cluster section". `Other` therefore carries every published item
   // no LISTED section carries — an item with no `clusters[]`, and an item whose
-  // primary cluster is not among `bundle.clusters[]`. Until rc.5 only the first of
-  // the two reached it, so an item clustered under an unlisted slug appeared in no
-  // section at all and the discovery surface silently lost it (vector `disc-0008`).
+  // primary cluster is not among `bundle.clusters[]`. Were only the first of the two
+  // to reach it, an item clustered under an unlisted slug would appear in no section
+  // at all and the discovery surface would silently lose it (vector `disc-0008`).
   const placed = new Set(order);
   const loose = items.filter((it) => !placed.has(it)).sort(bySlug);
   if (loose.length > 0) {

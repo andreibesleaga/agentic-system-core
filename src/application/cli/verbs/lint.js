@@ -109,7 +109,7 @@ function lane(ctx, bundle) {
 }
 
 /**
- * `lint --fix` (AGSC-09-09 at rc.5; AGSC-03-12, AGSC-04-14, AGSC-04-19, AGSC-04-20).
+ * `lint --fix` (AGSC-09-09; AGSC-03-12, AGSC-04-14, AGSC-04-19, AGSC-04-20).
  *
  * The normalisations themselves are `governance/fix.js`'s, computed as data; this
  * function is only the port wiring — it reads each item's authored bytes through the

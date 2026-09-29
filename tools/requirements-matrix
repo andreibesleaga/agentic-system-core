@@ -163,7 +163,7 @@ function ruleTraces(text) {
     const brackets = block.lines.map(traceBracket).filter((b) => b !== null);
     const tail = brackets.length ? brackets[brackets.length - 1] : '';
     const bold = (text2.match(/\*\*(?:PRD|NFR)-\d{2,3}\*\*/g) || []).map((m) => m.slice(2, -2));
-    return { id: block.id, line: block.line, retired: /\*\(retired at /u.test(text2), trace: unique([...idsIn(tail), ...bold]) };
+    return { id: block.id, line: block.line, retired: /\*\((?:retired at |reserved:)/u.test(text2), trace: unique([...idsIn(tail), ...bold]) };
   });
 }
 

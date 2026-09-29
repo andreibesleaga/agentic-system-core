@@ -29,7 +29,7 @@ function distribution(overrides = {}) {
     'packages/agsc-cli/package.json': `${JSON.stringify({
       dependencies: { 'agentic-system-core': '0.0.2' }, name: 'agsc-cli', version: '0.0.2',
     }, null, 4)}\n`,
-    'spec/00-overview.md': 'spec_version 1.0.0-rc.5\n',
+    'spec/00-overview.md': 'spec_version 1.0.0-rc.6\n',
     'src/index.js': 'module.exports = {};\n',
     'tests/vectors/a/a.json': '{}\n',
     '.github/workflows/release.yml': [
@@ -93,8 +93,8 @@ describe('1. one version, in one place', () => {
     assert.equal(release.isGreater('0.0.2', '0.0.2'), false);
     assert.equal(release.isGreater('0.0.1', '0.0.2'), false);
     // A release is greater than its own pre-release, and nothing else is.
-    assert.equal(release.isGreater('1.0.0', '1.0.0-rc.5'), true);
-    assert.equal(release.isGreater('1.0.0-rc.6', '1.0.0-rc.5'), false);
+    assert.equal(release.isGreater('1.0.0', '1.0.0-rc.6'), true);
+    assert.equal(release.isGreater('1.0.0-rc.7', '1.0.0-rc.6'), false);
     const { json } = envelope('release', ['--version', '0.0.1', distribution()]);
     assert.ok(json.findings.some((f) => /is not greater than/u.test(f.message)));
   });
@@ -322,7 +322,7 @@ describe('the real distribution passes its own release lane', () => {
   });
 });
 
-// -------------------------------------------------: the PyPI half (rc.6)
+// -------------------------------------------------: the PyPI half
 
 describe('tools/release — the PyPI sibling', () => {
   it('maps a SemVer version onto the PEP 440 spelling, and says when it cannot', () => {
@@ -397,9 +397,8 @@ describe('the release workflow', () => {
   });
 
   it('every validator blocks the release: none of the nine only reports', () => {
-    // `validate-spec` was a reporting step while the specification items it found
-    // were open. They were applied at rc.6 and it exits 0, so the carve-out is
-    // gone: a gate that reports and does not block protects nothing. The one
+    // `validate-spec` exits 0 over the shipped specification, so there is no
+    // carve-out: a gate that reports and does not block protects nothing. The one
     // checker that needs an argument, `validate-wellknown`, runs in its own step
     // against a fixture build, and that step blocks too.
     const text = workflow();
@@ -437,7 +436,7 @@ describe('the release workflow', () => {
   });
 });
 
-describe('the changelog gate, as amended at rc.6', () => {
+describe('the changelog gate', () => {
   it('an empty [Unreleased] is a fault only while the version has no section', () => {
     const text = (unreleased, extra = '') => `# Changelog\n\n## [Unreleased]\n${unreleased}\n${extra}`;
     // Nothing anywhere: a release with no entry is not a release.

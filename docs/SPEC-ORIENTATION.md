@@ -98,16 +98,16 @@ bracket that traces it:
 
 - **The id** is `AGSC-<chapter>-<number>`, sometimes with a letter (`AGSC-01-26a`) for a
   rule inserted after its neighbour. An id is permanent: it is never reused or
-  renumbered. A retired rule keeps its id with a note "(retired at rc.N …)".
+  renumbered. A reserved rule keeps its id with a note "*(reserved: …; the id is never reused, AGSC-00-16.)*" that says where its requirement lives.
 - **The key words** MUST, MUST NOT, SHOULD, SHOULD NOT and MAY mean what BCP 14 (RFC
   2119, RFC 8174) says, and only in capitals. Every sentence with MUST or SHOULD
   belongs to a rule with an id; `tools/validate-spec` fails otherwise.
 - **The bracket** at the end names why the rule exists: a product requirement
   (`[PRD-055]`, `[NFR-07]`, defined in `docs/PRD.md`) or `[design]` for a rule that
   follows from the design itself.
-- **Amendment notes.** A rule changed after a release candidate carries a dated note in
-  the rule, for example "(amended at rc.5: …)" or "*(stated at rc.6, 2026-09-24: …)*",
-  that says what changed and why. The old wording stays readable in the tagged release.
+- **Amendment notes.** A rule changed by a later version keeps its id and carries a
+  dated amendment note that states the change (AGSC-00-16). The old wording stays
+  readable in the tagged release.
 - **Error codes.** A rule that makes a fault detectable names the code a tool reports;
   every code has one row in the registry that names the rule raising it.
 

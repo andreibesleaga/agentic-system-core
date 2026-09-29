@@ -5,8 +5,8 @@
 #   doi:           the Zenodo DOI of the deposit, e.g. 10.5281/zenodo.0000000
 #   version:       1.0.0
 #   date-released: the release date, YYYY-MM-DD
-# Each is left out rather than guessed: nothing is released yet, and a citation
-# that names a DOI which does not resolve is worse than one that names none.
+# Each is left out rather than guessed until the 1.0.0 release: a citation that
+# names a DOI which does not resolve is worse than one that names none.
 #
 # Written with AI assistance, reviewed and published by a person. (CFF 1.2.0 has no
 # note field and allows no extra key, so this sentence lives in a comment.)

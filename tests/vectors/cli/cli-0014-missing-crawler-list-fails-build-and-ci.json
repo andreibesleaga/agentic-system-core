@@ -1,6 +1,6 @@
 {
   "area": "cli",
-  "description": "AGSC-09-08 with AGSC-06-18: a node that publishes a TDM reservation (the Content Use Terms adopted, tdm-reservation: 1) and names no crawler in site.tdm_crawlers[] expresses one policy in three dialects that disagree, which AGSC-06-18 makes AGSC-E202 (a configured value missing). Derivation: it is a finding about the Bundle, not a usage error, so the exit is 1 (AGSC-09-08), and build and ci report it alike, because ci runs the build. The case is the minimal fixture with site.tdm_crawlers removed from its configuration; exactly one AGSC-E202 is expected because one value is missing, and no other error is expected because the fixture is otherwise conforming. Before rc.6 the reference engine reported it at build alone, so ci passed a node whose robots.txt carried no reservation.",
+  "description": "AGSC-09-08 with AGSC-06-18: a node that publishes a TDM reservation (the Content Use Terms adopted, tdm-reservation: 1) and names no crawler in site.tdm_crawlers[] expresses one policy in three dialects that disagree, which AGSC-06-18 makes AGSC-E202 (a configured value missing). Derivation: it is a finding about the Bundle, not a usage error, so the exit is 1 (AGSC-09-08), and build and ci report it alike, because ci runs the build. The case is the minimal fixture with site.tdm_crawlers removed from its configuration; exactly one AGSC-E202 is expected because one value is missing, and no other error is expected because the fixture is otherwise conforming. An engine that reports it at build alone lets ci pass a node whose robots.txt carries no reservation.",
   "expected": {
     "cases": [
       {
@@ -49,7 +49,6 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

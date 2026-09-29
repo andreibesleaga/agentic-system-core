@@ -1,0 +1,47 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-20: a `restricted` node MUST omit every `digest` whose target it does not serve unauthenticated, and its unauthenticated view is the discovery document, `/llms.txt` and `/graph.jsonld`. Derivation: the node is restricted, at Level 2, and emits every route listed in `input.routes`; the writer is handed a digest for each. The only links that may carry `digest` are the anchor's `describedby` link to `/graph.jsonld` and the `alternate` link to `/llms.txt`; the links to `/graph.nq`, `/graph.ttl`, `/ns/context.jsonld`, `/now.md` and `/skills/index.json` stay (a reader learns that the node has them) but carry no `digest` — the digest of `graph.nq` is the bundle fingerprint the same rule withholds. `agsc-bundle-hash`, `agsc-bundle-version` and `agsc-counts` are absent, the `rel#ledger` link is absent, and `agsc-spec-version`, `agsc-generated-at` and `agsc-visibility` are present.",
+  "expected": {
+    "anchor_attributes": [
+      "agsc-generated-at",
+      "agsc-spec-version",
+      "agsc-visibility",
+      "digest"
+    ],
+    "digest_targets": [
+      "/graph.jsonld",
+      "/llms.txt"
+    ],
+    "ledger_link": false,
+    "links_without_digest": [
+      "/graph.nq",
+      "/graph.ttl",
+      "/now.md",
+      "/ns/context.jsonld",
+      "/skills/index.json"
+    ]
+  },
+  "id": "bnd-0038",
+  "input": {
+    "access": "https://a.example/access/",
+    "base": "https://a.example",
+    "generated_at": "2026-01-01T00:00:00Z",
+    "ledger_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "routes": [
+      "/graph.jsonld",
+      "/graph.nq",
+      "/graph.ttl",
+      "/ledger.jsonl",
+      "/llms.txt",
+      "/now.md",
+      "/ns/context.jsonld",
+      "/skills/index.json"
+    ],
+    "visibility": "restricted"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-11-20"
+}

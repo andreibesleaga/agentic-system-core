@@ -1,6 +1,6 @@
 {
   "area": "boundary",
-  "description": "Expected bytes derived by hand from the rule text at rc.5 (RC5-A); the reference engine does not yet produce them, so this vector is listed in tests/conformance/pending.json until RC5-B. Supersedes bnd-0020, which asserted the header set of a node whose origin it never stated (Q55d). Same case: a Level-2 public node emits on / the Link header with the registered describedby relation and the linkset media type (D82 Q3); every public artefact carries the wildcard origin and a quoted ETag equal to the lowercase-hex SHA-256 of its bytes (AGSC-11-03, RFC 9110 8.8.3 quoting) — sha256('{\"linkset\":[]}\\n') = 2a742605ee3df667c547a583ef27d2b0777ca39af7e6f468783d63366266222c; the discovery document, now.md and the ledger are no-cache; immutable is emitted on no route at 1.0.",
+  "description": "Expected bytes are derived by hand from the rule text. The node's origin is stated in input. A Level-2 public node emits on / the Link header with the registered describedby relation and the linkset media type; every public artefact carries the wildcard origin and a quoted ETag equal to the lowercase-hex SHA-256 of its bytes (AGSC-11-03, RFC 9110 8.8.3 quoting) — sha256('{\"linkset\":[]}\\n') = 2a742605ee3df667c547a583ef27d2b0777ca39af7e6f468783d63366266222c; the discovery document, now.md and the ledger are no-cache; immutable is emitted on no route at 1.0.",
   "expected": {
     "headers": {
       "/": {

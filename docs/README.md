@@ -44,6 +44,7 @@ kind of reader down one path.
 | [ENGINEERING.md](ENGINEERING.md) | the gates, the size limits, the dependency rule, and how the five repositories are checked |
 | [MEASUREMENTS.md](MEASUREMENTS.md), [BENCHMARKS.md](BENCHMARKS.md) | the measured numbers and the method behind them |
 | [diagrams/](diagrams/README.md) | the diagram pack: Mermaid sources and rendered SVG |
+| [ROADMAP.md](ROADMAP.md) | what composition and the graph do today, and what is planned for the next version |
 
 Generated pages (`GLOSSARY.md`, `RULE-COVERAGE.md`, `REQUIREMENTS-MATRIX.md`, `measurements.json`) are never
 edited by hand; the command that writes each is named at its top.

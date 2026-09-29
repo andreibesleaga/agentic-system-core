@@ -1,6 +1,6 @@
 // tests/conformance/areas/prov.js — area handler for `prov` vectors.
-// Owner of prov-0001, prov-0002: B. prov-0003 is C's — left below
-// for C to add a case for.
+// prov-0001 and prov-0002 (the agent lane's proposal check), prov-0003 (claims)
+// and prov-0005 (the DCO-Plus trailer grammar).
 'use strict';
 
 const { checkProposal } = require('../../../src/governance/agents.js');
@@ -56,10 +56,8 @@ function runClaimVector(vector) {
   return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
 }
 
-// --- appended, 2026-09-21: prov-0004 (rc.5) ---
-
 /**
- * prov-0004 — AGSC-08-06, the DCO-Plus ABNF, which no vector cited before rc.5
+ * prov-0005 — AGSC-08-06, the DCO-Plus ABNF.
  * Six trailer blocks read straight off the grammar. `valid` means the
  * block matches `trailer-block = signoff *( LF assisted )` with no finding of its
  * own; a `prov` context is deliberately not supplied, because AGSC-08-07's
@@ -98,8 +96,6 @@ const HANDLERS = {
   'prov-0001': runCheckProposalVector,
   'prov-0002': runCheckProposalVector,
   'prov-0003': runClaimVector,
-  'prov-0004': runTrailerGrammarVector,
-  // rc.6: prov-0004's case with a fictitious contributor in every sample line.
   'prov-0005': runTrailerGrammarVector,
 };
 

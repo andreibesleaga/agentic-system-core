@@ -25,6 +25,10 @@ The vocabulary is served in the format the client asks for in its `Accept` heade
 `application/x-turtle` is accepted as Turtle and `application/json` as JSON-LD. A version is
 `<major>.<minor>.<patch>` with an optional pre-release suffix such as `-draft.1`.
 
+Later versions need no change to these rules: each new vocabulary version is served at
+`/ns/<version>`, a link relation added by a later version is `/rel#<name>` and lands on its own
+anchor of the same page, and the profile URI stays the same.
+
 ## Maintainer
 
 Andrei N. Besleaga — GitHub: [@andreibesleaga](https://github.com/andreibesleaga)

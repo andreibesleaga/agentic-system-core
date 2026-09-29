@@ -76,7 +76,7 @@ test('AGSC-08-18: every result carries source, trust, license, type and body', (
   const toolset = tools(fixture(), {});
   for (const name of manifest().tools.map((t) => t.name)) {
     const result = toolset.call(name, { question: 'x', query: 'x', selection: [], slug: 'handoff', title: 'T' });
-    // AGSC-09-14a as amended at rc.5 (cli-0007): `ask` — and only `ask`
+    // AGSC-09-14a (cli-0007): `ask` — and only `ask`
     // adds EXACTLY ONE top-level member, `citations[]`, to the AGSC-08-18 envelope.
     assert.deepStrictEqual(Object.keys(result),
       name === 'ask' ? ['body', 'citations', 'license', 'source', 'trust', 'type']
@@ -144,7 +144,7 @@ test('AGSC-09-14a: ask cites at least one IRI, or says exactly so', () => {
   const toolset = tools(fixture(), {});
   const answer = toolset.call('ask', { question: 'supervisor' });
   assert.strictEqual(answer.type, 'answer');
-  // rc.5: `citations[]` is a TOP-LEVEL member and `body` is the answer TEXT, with
+  // `citations[]` is a TOP-LEVEL member and `body` is the answer TEXT, with
   // the Content Use Terms line embedded in it (AGSC-09-14a, cli-0007).
   assert.strictEqual(typeof answer.body, 'string');
   assert.ok(answer.citations.length >= 1);
@@ -330,9 +330,9 @@ test('AGSC-01-16: a text argument above the 1 MiB cap is AGSC-E904', () => {
 });
 
 test('AGSC-06-23: the search tool tokenizes title, description and tags, not the body alone', () => {
-  // The defect cli-0007 found: a loaded Bundle carries title/description under
-  // `frontmatter`, and `search.tokenizerInput` reads a FLAT item, so until rc.5 the
-  // tool matched neither. A hit must mean the same thing here and in `search.json`.
+  // The defect cli-0007 guards: a loaded Bundle carries title/description under
+  // `frontmatter`, and `search.tokenizerInput` reads a FLAT item, so a tool that
+  // passed the loaded item through matched neither. A hit must mean the same thing here and in `search.json`.
   const bundle = {
     config: { site: { base: 'https://a.example/' } },
     items: [{

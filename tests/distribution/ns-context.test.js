@@ -12,7 +12,7 @@
 //     external properties, with `@version` 1.1 and `@protected` true;
 //   * AGSC-06-32 — expanding the built `/graph.jsonld` with the built
 //     `/ns/context.jsonld` and re-compacting reproduces it byte for byte;
-//   * AGSC-05-09 as amended at rc.5 — `graph.jsonld` names a context at EVERY
+//   * AGSC-05-09 — `graph.jsonld` names a context at EVERY
 //     Level, so a Level-0 document loses no triple in a standard processor;
 //   * AGSC-05-06 — the N-Quads and Turtle views do not move by one byte.
 //
@@ -47,7 +47,7 @@ function load(extra) {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.5', version: '0.0.2' }, extra);
+  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.6', version: '0.0.2' }, extra);
   return { bundle, ports: { fs, clock }, options };
 }
 
@@ -86,14 +86,14 @@ async function tripleCount(document, context) {
 // ------------------------------------------------------------------
 
 test('buildOptions supplies the vocabulary the context is generated from', () => {
-  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.5', version: '0.0.2' });
+  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.6', version: '0.0.2' });
   assert.strictEqual(options.ontologyTerms.length, 52,
     'the 52 terms of ontology/agsc.ttl never reached a build');
   assert.strictEqual(options.ontologyVersion, '1.0.0-draft.1',
     'the owl:versionIRI version of AGSC-05-25 never reached a build');
   // Read once and memoised, exactly as the three compiled schemas are.
   assert.strictEqual(options.ontologyTerms,
-    helpers.buildOptions({ specVersion: '1.0.0-rc.5', version: '0.0.2' }).ontologyTerms);
+    helpers.buildOptions({ specVersion: '1.0.0-rc.6', version: '0.0.2' }).ontologyTerms);
 });
 
 test('a built /ns/context.jsonld defines all 52 asc: terms and the 24 external ones (AGSC-06-32)', () => {
@@ -114,9 +114,9 @@ test('a built /ns/context.jsonld defines all 52 asc: terms and the 24 external o
 });
 
 test('a Level 2 build serves the VERSIONED copy too, byte for byte (AGSC-05-09, AGSC-06-01)', () => {
-  // Added at rc.6: AGSC-05-09 has required the versioned copy since rc.5
-  // it is the persistent URL a Level-0 `graph.jsonld` names — while AGSC-06-01's
-  // route set did not carry it, so the two rules could not both be satisfied.
+  // AGSC-05-09 requires the versioned copy — it is the persistent URL a Level-0
+  // `graph.jsonld` names — and AGSC-06-01's route set carries it, so the two rules
+  // are satisfied together.
   const { files } = build();
   const routes = [...files.keys()].filter((route) => route.startsWith('/ns/'));
   assert.deepStrictEqual(routes.sort(),
@@ -133,7 +133,7 @@ test('a Level 2 build serves the VERSIONED copy too, byte for byte (AGSC-05-09, 
 test('the built graph.jsonld is compact: no vocabulary IRI is written out', () => {
   const { files } = build();
   for (const [route, bytes] of files) {
-    // The two context copies are the context itself (AGSC-06-01 as amended at rc.6:
+    // The two context copies are the context itself (AGSC-06-01:
     // `/ns/context.jsonld` and `/ns/<ontology-version>/context.jsonld`, which are
     // byte-identical), and a context is where the vocabulary IRIs belong.
     if (!route.endsWith('.jsonld') || /^\/ns\/(?:[^/]+\/)?context\.jsonld$/u.test(route)) continue;
@@ -142,7 +142,7 @@ test('the built graph.jsonld is compact: no vocabulary IRI is written out', () =
   }
   const document = JSON.parse(files.get('/graph.jsonld'));
   assert.strictEqual(document['@graph'][0]['@type'], 'Bundle');
-  assert.strictEqual(document['@graph'][0].specVersion, '1.0.0-rc.5');  // the build's own option
+  assert.strictEqual(document['@graph'][0].specVersion, '1.0.0-rc.6');  // the build's own option
 });
 
 test('expand then re-compact reproduces graph.jsonld byte for byte (AGSC-06-32)', async () => {
@@ -172,7 +172,7 @@ test('the N-Quads and Turtle views do not move by one byte (AGSC-05-06)', () => 
   const withContext = build().files;
   // The same build with the vocabulary withheld — the state before this fix.
   const { bundle, ports } = load();
-  const without = site.build(bundle, ports, { specVersion: '1.0.0-rc.5', version: '0.0.2' }).files;
+  const without = site.build(bundle, ports, { specVersion: '1.0.0-rc.6', version: '0.0.2' }).files;
   assert.strictEqual(withContext.get('/graph.nq'), without.get('/graph.nq'));
   assert.strictEqual(withContext.get('/graph.ttl'), without.get('/graph.ttl'));
   // …and the JSON-LD view of the same triples DOES move: that is the fix.
@@ -181,7 +181,7 @@ test('the N-Quads and Turtle views do not move by one byte (AGSC-05-06)', () => 
 
 // ------------------------------------------------------------------
 
-test('graph.jsonld names a context at EVERY Level (AGSC-05-09 as amended at rc.5)', () => {
+test('graph.jsonld names a context at EVERY Level (AGSC-05-09)', () => {
   const persistent = 'https://w3id.org/agentic-system-core/ns/1.0.0-draft.1/context.jsonld';
   for (const level of [0, 1]) {
     const document = JSON.parse(build({ level }).files.get('/graph.jsonld'));
@@ -214,7 +214,7 @@ test('the persistent context URL is derived from the vocabulary, never typed (AG
 
 test('a build given no vocabulary names what it could not emit, never silence', () => {
   const { bundle, ports } = load();
-  const built = site.build(bundle, ports, { level: 0, specVersion: '1.0.0-rc.5', version: '0.0.2' });
+  const built = site.build(bundle, ports, { level: 0, specVersion: '1.0.0-rc.6', version: '0.0.2' });
   assert.ok(!('@context' in JSON.parse(built.files.get('/graph.jsonld'))));
   assert.ok(built.skipped.some((s) => s.includes('AGSC-05-09')),
     'a graph.jsonld with no context must be named in skipped');

@@ -2,9 +2,8 @@
 // tests/distribution/surfaces-eng2.test.js — the surfaces added for the package:
 // `/compose/` (AGSC-06-01, AGSC-07-01, AGSC-09-16), the human board page
 // `/boards/<cluster>/` (AGSC-10-13, AGSC-10-17), `/legal/` (AGSC-06-18),
-// AGSC-06-21's three measured budgets (four until rc.5, when
-// replaced the two index bounds with one) and the "every internal link resolves"
-// check that closes the defect found.
+// AGSC-06-21's three measured budgets and the "every internal link resolves"
+// check.
 //
 // Every build here is over a real copy of `tests/fixtures/minimal` in a temporary
 // directory with a fixed clock — no network, no wall clock, nothing left behind.
@@ -53,7 +52,7 @@ function build(dir, options = {}) {
   return {
     bundle,
     ports: { clock, fs },
-    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.5', version: '0.0.2', ...options }),
+    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2', ...options }),
   };
 }
 
@@ -99,9 +98,9 @@ test('AGSC-09-16: the page tool surface answers for all seven tools and for no e
   assert.deepStrictEqual(composePage.toolNames().sort(),
     ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
   const controller = composePage.controller({});
-  // Since rc.5 the controller installs NO tool object: `agsc-page-tools.js` does, and
-  // it implements all seven. The controller carried a stub that answered `compose`
-  // and returned "has no page implementation yet" for the other six.
+  // The controller installs NO tool object: `agsc-page-tools.js` does, and it
+  // implements all seven. No stub that answers `compose` and returns "has no page
+  // implementation yet" for the other six may come back.
   assert.ok(!controller.includes('has no page implementation yet'),
     'the controller still ships the six-tool stub');
   assert.ok(!/globalThis\.AGSC_TOOLS\s*=/u.test(controller),
@@ -178,8 +177,8 @@ test('every site-absolute link the build emits resolves to an emitted route', ()
     const { files, findings } = build(workspace(extra));
     const dangling = findings.filter((f) => f.code === 'AGSC-E901');
     assert.deepStrictEqual(dangling, [], `dangling links: ${JSON.stringify(dangling)}`);
-    // The base is what makes an absolute URL in the two text dialects OURS: since
-    // rc.5 `security.txt` carries a `Contact:` at another origin (RFC 9116 §2.5.3).
+    // The base is what makes an absolute URL in the two text dialects OURS:
+    // `security.txt` carries a `Contact:` at another origin (RFC 9116 §2.5.3).
     const links = site.internalLinks(files, { base: 'https://minimal.example' });
     assert.ok(links.length > 0, 'the link sweep found nothing, so it proves nothing');
     for (const link of links) {
@@ -229,8 +228,8 @@ test('a build that links a route it does not emit reports AGSC-E901, naming both
 
 test('AGSC-06-21: the three budgets are the rule\'s own numbers', () => {
   assert.strictEqual(site.BUDGET_HTML_BYTES, 100000);
-  // rc.5: ONE index budget, 1 MB per index DOCUMENT, decimal. The two it
-  // replaced — 1 KB per published item and 500 KB absolute — are gone, not renamed.
+  // ONE index budget, 1 MB per index DOCUMENT, decimal. There is no per-item or
+  // absolute search budget, under any name.
   assert.strictEqual(site.BUDGET_INDEX_DOC_BYTES, 1000000);
   assert.strictEqual(site.BUDGET_SEARCH_PER_ITEM_BYTES, undefined);
   assert.strictEqual(site.BUDGET_SEARCH_TOTAL_BYTES, undefined);
@@ -472,7 +471,7 @@ test('AGSC-04-02: a build carrying every new surface is still byte-reproducible'
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
-  const options = { specVersion: '1.0.0-rc.5', version: '0.0.2' };
+  const options = { specVersion: '1.0.0-rc.6', version: '0.0.2' };
   assert.deepStrictEqual(site.verify(bundle, ports, options), []);
   const first = site.build(bundle, ports, options);
   assert.ok(first.files.has('/legal/index.html') && first.files.has('/boards/work/index.html'));
@@ -490,7 +489,7 @@ test('a build whose renderer emits a link to nothing reports AGSC-E901 and fails
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
   const built = site.build(bundle, ports, {
     render: () => ({ anchors: [], headings: [], html: '<p><a href="/gone/">nowhere</a></p>' }),
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     version: '0.0.2',
   });
   const dangling = built.findings.filter((f) => f.code === 'AGSC-E901');
@@ -506,7 +505,7 @@ test('a graph collaborator with no context generator names the route it cannot p
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
   const partial = site.build(bundle, ports, {
     graph: { jsonld: () => ({ '@graph': [] }) },
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     version: '0.0.2',
   });
   assert.ok(partial.skipped.some((s) => s.startsWith('/ns/context.jsonld (no context generator')),

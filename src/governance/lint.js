@@ -6,7 +6,7 @@
 // same Bundle always lints to the same Findings.
 //
 // It composes the four N9 lints of AGSC-08-13…08-17 — each its own module
-// exporting `check(input) -> Finding[]` — with the structural lints the rc.3/rc.4
+// exporting `check(input) -> Finding[]` — with the structural lints the conformance
 // vectors add, and returns one list sorted per AGSC-09-10 (file, line, col, code,
 // compared code-point-wise).
 //

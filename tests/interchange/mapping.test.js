@@ -110,7 +110,7 @@ test('AGSC-03-02 / AGSC-11-12: an out-of-set `related` value is DROPPED, never a
 });
 
 test('AGSC-01-35 / AGSC-03-11: a body link is rewritten in-set and DE-LINKED out of set', () => {
-  // rc.5: the rewritten form is AGSC-03-12's normal form — the form
+  // The rewritten form is AGSC-03-12's normal form — the form
   // `lint --fix` normalises a wikilink to — and the target must be PUBLISHED, not
   // merely selected: a draft has no route (AGSC-06-30) and a published page linking
   // one ships a 404 (AGSC-06-01).

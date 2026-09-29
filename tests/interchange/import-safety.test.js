@@ -18,7 +18,7 @@
 // An imported single-line string carrying a control character was written
 // out as the YAML escape `"N\0UL"`, which parses back to U+0000 — so the importer
 // created a file its own `lint` rejects with AGSC-E204 while reporting `status: pass`.
-// AGSC-02-24 as amended at rc.5 fixes the class and `knowledge/unicode.js#singleLine`
+// AGSC-02-24 fixes the class and `knowledge/unicode.js#singleLine`
 // is the neutralisation every other writer already applies.
 //
 // Both adapters are covered: `old-site` and `okf`.
@@ -73,7 +73,7 @@ function ctxFor(dir, options = {}) {
     openRoot: (at) => createFileSystem(path.resolve(dir, at)),
     ports: { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     stderr: { write: (text) => notes.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},
@@ -190,7 +190,7 @@ test('AGSC-01-23: the old-site adapter refuses a collision too, and --replace op
   nodeFs.writeFileSync(path.join(target, 'agsc.config.json'), `${JSON.stringify({
     bundle: { id: 'fixture-node', operator: 'human:tester' },
     site: { base: 'https://example.org/', title: 'Fixture Node' },
-    spec_version: '1.0.0-rc.5',
+    spec_version: '1.0.0-rc.6',
   }, null, 2)}\n`);
   const argv = [OLD_SITE];
   const flags = { corrections: undefined, from: 'old-site', selection: path.join(OLD_SITE, 'selection.tsv') };

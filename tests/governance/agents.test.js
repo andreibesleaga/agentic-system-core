@@ -9,7 +9,7 @@ function baseConfig(agents) {
   return {
     bundle: { id: 'example', operator: 'human:alice' },
     site: { base: 'https://example.org/', title: 'Example' },
-    spec_version: '1.0.0-rc.4',
+    spec_version: '1.0.0-rc.6',
     channels: [{ adapter: 'stub', author: 'lane-bot', name: 'lane', owner: 'human:alice', publish: 'auto' }],
     agents,
   };

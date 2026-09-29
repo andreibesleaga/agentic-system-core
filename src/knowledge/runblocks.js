@@ -10,10 +10,8 @@
  * executes the fenced blocks of a Procedure whose info string is `run` … (the two
  * info strings are spelled as AGSC-02-22 spells them)".
  *
- * ONE SPELLING. Until rc.6 the two rules disagreed — AGSC-09-94 wrote `{run}` and
- * `{expect}`, AGSC-02-22 wrote `run` and `expect` — so a Bundle author could not
- * tell which fence is runnable, and this reader accepted both rather than guess.
- * The rule that owns the item won, and the braced form is now an ordinary
+ * ONE SPELLING. The runnable fences are `run` and `expect` (AGSC-02-22, which owns
+ * the item, with AGSC-09-94); the braced form is an ordinary
  * rendering hint that nothing executes: a second implementation, reading only the
  * rules, would execute `run` alone, and a fence this engine ran and another did not
  * would be a divergence in the one place where it is least acceptable.

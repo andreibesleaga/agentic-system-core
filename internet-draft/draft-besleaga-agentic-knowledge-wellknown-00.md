@@ -105,7 +105,7 @@ informative:
   MCP:
     title: "Model Context Protocol Specification, revision 2026-07-28"
     author:
-      - org: Agentic AI Foundation
+      - org: Model Context Protocol, a Series of LF Projects, LLC
     target: https://modelcontextprotocol.io/specification/2026-07-28
     date: 2026-07-28
   A2A:
@@ -126,6 +126,11 @@ informative:
       - org: Google Cloud
     target: https://github.com/GoogleCloudPlatform/open-knowledge-format
     date: 2026
+  AIMEM-CG:
+    title: "AI Agent Memory Interoperability Community Group"
+    author:
+      - org: W3C
+    target: https://www.w3.org/community/ai-agent-memory-interop/
   VOID:
     title: "Describing Linked Datasets with the VoID Vocabulary"
     author:
@@ -409,19 +414,24 @@ it ({{the-profile-uri}}).
 
 A client MUST ignore a relation name it does not recognize. A node MUST
 NOT invent a further extension relation under the same base: the set
-above is closed, and a new member is added only by a new version of the
-specification that defines it.
+above is closed, and a new member is added only by a later version of
+{{AGSC-SPEC}} ({{versions}}).
 
 ## Target attributes {#target-attributes}
 
-A link object MAY carry the target attributes `type`, `title`,
-`hreflang`, and `profile` ({{RFC8288}}, Section 3.4; {{RFC9264}},
-Section 4.2.4). `type` is an advisory hint: a client MUST NOT depend on
-it, and MUST use the media type of the response it actually receives.
+A link object MAY carry the target attributes `type`, `title`, and
+`hreflang` ({{RFC8288}}, Section 3.4.1; {{RFC9264}}, Section 4.2.4.1),
+and the extension target attribute `profile`, whose values are profile
+URIs ({{RFC6906}}). As {{RFC9264}}, Section 4.2.4.1 requires, the
+values of `type` and `title` are strings and the value of `hreflang` is
+an array of strings. `type` is an advisory hint: a client MUST NOT
+depend on it, and MUST use the media type of the response it actually
+receives.
 
-Every extension target attribute value is an array of strings, even
-when one value is carried ({{RFC9264}}, Section 4.2.4.3). A client MUST
-ignore an extension target attribute it does not recognize.
+Every extension target attribute value, `profile` included, is an array
+of strings, even when one value is carried ({{RFC9264}}, Section
+4.2.4.3). A client MUST ignore an extension target attribute it does
+not recognize.
 
 ### The digest attribute {#the-digest-attribute}
 
@@ -466,8 +476,9 @@ JSON-LD graph. They are:
   point order of the type name, counted over the published set.
 
 `agsc-bundle-hash`:
-: one value, the hash of the Bundle in the syntax of
-  {{the-digest-attribute}}.
+: one value, the digest of the Bundle's canonical N-Quads
+  serialization, in the syntax of {{the-digest-attribute}}; it equals
+  the `digest` of the `graph` link to that serialization.
 
 `agsc-bundle-version`:
 : one value, the publisher's content version for the state the
@@ -575,7 +586,7 @@ Link: </.well-known/knowledge-linkset>; rel="describedby";
 
 `describedby` is registered in the "Link Relation Types" registry by
 the POWDER Description Resources Recommendation {{POWDER-DR}}, whose
-Section 4.1.4 and Appendix D define it; {{RFC6892}} registers its
+Appendix D defines it and whose Section 4.1.4 uses it; {{RFC6892}} registers its
 inverse, `describes`. Its registered meaning -- the target is a
 description of the context -- is exactly the meaning of this link. What
 *kind* of description the target is, is said by the target's media type
@@ -610,7 +621,8 @@ may rely on the following, all of which are specified in this document:
 * `linkset` is the sole top-level member, and the array holds one link
   context whose `anchor` is the Bundle IRI
   ({{top-level-structure}});
-* the relation set is the closed set of {{relations}};
+* the relation set is the closed set of {{relations}}, which only a
+  later version of {{AGSC-SPEC}} extends ({{versions}});
 * `digest`, where present, is a single-member Dictionary keyed
   `sha-256` over the canonical bytes of the target
   ({{the-digest-attribute}});
@@ -638,6 +650,29 @@ Section 2.1.2, expects of an extension relation.
 
 Registration of the profile URI is requested independently of this
 document; see {{iana-profile-uri}}.
+
+## Versions {#versions}
+
+The profile URI carries no version number. It names the same profile
+for every version of {{AGSC-SPEC}} that has the same major version
+number, and a discovery document in the full form states the version
+it follows in its `agsc-spec-version` attribute
+({{bundle-fact-attributes}}).
+
+A later minor version of {{AGSC-SPEC}} only adds to what this document
+describes: further members of the closed set of extension relations of
+{{relations}}, under the same base URI and each with its own fragment
+on the specification page of {{carriage-and-resolution}}; further
+extension target attributes with the `agsc-` prefix; further
+related-system relations once they are registered; and further values
+of the declaration attributes. A client written against this document
+ignores an unknown relation name ({{relations}}), an unknown extension
+target attribute ({{target-attributes}}) and a related-system link it
+does not understand ({{related-system-links}}), and treats an unknown
+declaration value as {{declaration-attributes}} requires, so it reads a
+document written against a later minor version without error and
+without change. A change that such a client could not read in that way
+is made only in a new major version of {{AGSC-SPEC}}.
 
 # Client Behaviour {#client-behaviour}
 
@@ -794,6 +829,11 @@ The `webbotauth` working group defines HTTP message signatures for
 automated traffic {{I-D.ietf-webbotauth-httpsig-protocol}}, which
 identify the client making a request.
 
+The W3C AI Agent Memory Interoperability Community Group {{AIMEM-CG}}
+addresses the interoperability of protocols for AI agent memory. The
+artefacts a discovery document names are read-only published files, not
+a memory interface.
+
 The Open Knowledge Format {{OKF}} defines a content model of Markdown
 files with front matter and an index file. It calls its unit a
 "Knowledge Bundle"; the Bundle of this document is a different object
@@ -904,7 +944,7 @@ small: it describes a Bundle's artefacts, not its items.
 
 ## Tombstones {#tombstones}
 
-A node that stops publishing SHOULD keep serving a valid discovery
+A node that stops publishing MUST keep serving a valid discovery
 document whose anchor's `describedby` link carries the
 `agsc-tombstone` attribute of {{declaration-attributes}}, MAY carry an
 `alternate` link to a successor node's discovery document, and MAY omit
@@ -995,8 +1035,11 @@ profile, records them:
 * **Notes**: The profile does not change the semantics of
   `application/linkset+json` for a client that ignores it ({{RFC6906}},
   Section 3); it adds integrity, bundle-fact, and declaration target
-  attributes that a client MAY use. Change controller: Andrei N.
-  Besleaga, Independent, andrei.besleaga.nicolae@gmail.com.
+  attributes that a client MAY use. The same profile URI serves every
+  version of the AgenticSystemCore specification with the same major
+  version number; a document in the full form states the version it
+  follows in its `agsc-spec-version` attribute. Change controller:
+  Andrei N. Besleaga, Independent, andrei.besleaga.nicolae@gmail.com.
 
 # Implementation Status {#implementation-status}
 
@@ -1108,7 +1151,7 @@ NOTE: '\' line wrapping per RFC 8792
           "href": "https://example.org/graph.jsonld",
           "type": "application/ld+json",
           "agsc-bundle-hash": [
-            "sha-256=:UdwS29SBU+9+G3d/Fp3KtLtY292AjFswry0+mLI8te4=:"
+            "sha-256=:/WQyaCbIwaeGFFMAFw/eMonm8tK+F7amphaKNT4BpB0=:"
           ],
           "agsc-bundle-version": [
             "v1.4.0"

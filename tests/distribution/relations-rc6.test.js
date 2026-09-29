@@ -1,5 +1,5 @@
 'use strict';
-// AGSC-06-10 and AGSC-06-35 as amended at rc.6 (W-2):
+// AGSC-06-10 and AGSC-06-35:
 // the IANA-registered `cite-as` (RFC 8574) is admitted for a related-system link,
 // and `https://w3id.org/agentic-system-core/rel#signature` joins the extension
 // relations. The engine held four hard-coded copies of the older lists — the
@@ -41,7 +41,7 @@ function level2(extra) {
         type: 'application/ld+json',
       }],
       license: [{ href: `${BASE}legal/` }],
-      // AGSC-10-04 / AGSC-09-93 (rc.6): a public Level-2 document links the ledger.
+      // AGSC-10-04 / AGSC-09-93: a public Level-2 document links the ledger.
       [`${REL}ledger`]: [{
         'agsc-ledger-head': ['a'.repeat(64)], digest: [DIGEST], href: `${BASE}ledger.jsonl`, type: 'application/jsonl',
       }],

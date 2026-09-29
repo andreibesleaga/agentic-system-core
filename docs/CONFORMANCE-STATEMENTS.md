@@ -1,6 +1,6 @@
 # How to say your implementation conforms
 
-**Who this is for:** an implementer about to say publicly that an implementation conforms. **Read after:** [IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) §7. *(Header added 2026-09-24.)*
+**Who this is for:** an implementer about to say publicly that an implementation conforms. **Read after:** [IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) §7.
 
 Conformance here means one thing and it is checkable: your implementation
 produces the bytes the conformance vectors expect, for a numbered version of
@@ -31,7 +31,7 @@ reader than a claim that is technically true:
 > «specification version», Level «n», for the «named» areas. «passed» of
 > «total» vectors passed; the «named» areas are not implemented.
 
-*Added 2026-09-24.* A node's claim also names where it is served, because
+A node's claim also names where it is served, because
 AGSC-06-01 requires a claim to name its deployment profile. End either sentence
 with:
 

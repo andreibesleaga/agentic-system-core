@@ -19,7 +19,7 @@
 // one algorithm decides what an anchor is, so a chunk's `section` is always the
 // anchor the rendered page carries.
 //
-// Vectors: chk-0001…chk-0007.
+// Vectors: chk-0001…chk-0006, chk-0008.
 
 const { createHash } = require('node:crypto');
 const { compareCodePoint } = require('./unicode.js');
@@ -28,7 +28,7 @@ const markdown = require('./markdown.js');
 /** AGSC-06-18: the Content Use Terms identifier, a constant, never configurable. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 /**
- * AGSC-06-18 (rc.6, 2026-09-24): the terms an export carries. A publisher whose
+ * AGSC-06-18: the terms an export carries. A publisher whose
  * `bundle.license_prose` is the Content Use Terms identifier (or absent, which
  * defaults to it, AGSC-01-18) has adopted them; any other prose licence takes the
  * identifier's place, so no export presents the prose under terms narrower than

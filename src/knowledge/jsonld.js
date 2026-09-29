@@ -52,8 +52,8 @@ const EXTERNAL_PROPERTIES = Object.freeze([
   ['rdfs:seeAlso', '@id'], // AGSC-11-12
   ['schema:license', null], // AGSC-06-18
   // AGSC-05-31 form (c): `schema:license` and
-  // `schema:usageInfo` are `xsd:string` literals, never IRIs. Before rc.5 this row
-  // read `'@id'`, which compacted the Content Use Terms identifier as a relative IRI.
+  // `schema:usageInfo` are `xsd:string` literals, never IRIs: a row reading
+  // `'@id'` would compact the Content Use Terms identifier as a relative IRI.
   ['schema:usageInfo', null], // AGSC-06-18, AGSC-05-26
   ['skos:altLabel', null], // AGSC-05-17
   ['skos:broader', '@id'], // AGSC-05-20
@@ -277,6 +277,27 @@ function toJsonLd(items, options = {}) {
   return document;
 }
 
+/**
+ * AGSC-06-02 with AGSC-05-06: the per-item JSON-LD view is the whole graph's JSON-LD
+ * restricted to one item, so it carries the SAME triples the graph states about that
+ * item — its typed Links and their computed inverses, its `asc:mentions` edges and
+ * its cluster membership included. A view built from the item alone cannot state
+ * them, because a Link's target is resolved against the items in the view. The node
+ * set is the one-item view's (the Bundle node, the item node and the item's own
+ * `#source-n`, `#review-n` and `#attachment-n` nodes); each node's members are taken
+ * from the whole graph, whose Link targets are published items only.
+ *
+ * @param {{'@context'?: string, '@graph': object[]}} whole   the whole graph's document
+ * @param {{'@context'?: string, '@graph': object[]}} single  the one-item document
+ */
+function restrictTo(whole, single) {
+  const byId = new Map((whole['@graph'] || []).map((node) => [node['@id'], node]));
+  return {
+    ...single,
+    '@graph': (single['@graph'] || []).map((node) => byId.get(node['@id']) || node),
+  };
+}
+
 module.exports = {
   NS,
   EXTERNAL_PROPERTIES,
@@ -287,5 +308,6 @@ module.exports = {
   allExternalProperties,
   persistentContextUrl,
   resolveMemory,
+  restrictTo,
   toJsonLd,
 };

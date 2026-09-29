@@ -53,7 +53,7 @@ function ctxFor(dir, options = {}) {
     openRoot: (at) => createFileSystem(path.resolve(dir, at)),
     ports: { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     stderr: { write: (text) => lines.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},
@@ -92,7 +92,7 @@ test('AGSC-10-09: export --okf then import --from okf reproduces every item byte
 
   const before = tree(path.join(source, 'content'));
   const after = tree(path.join(target, 'content'));
-  // AGSC-01-22 as amended at rc.6: tolerance has one LIMIT and one RECORD.
+  // AGSC-01-22: tolerance has one LIMIT and one RECORD.
   // The record is `prov.source_version`/`prov.source_hash`, written by `import`
   // alone onto every item it writes, so that an imported item names the exact state
   // it was taken from. That is the one difference the round trip may show, and it is
@@ -262,7 +262,7 @@ test('AGSC-01-26a: --selection is still required for the old-site adapter', () =
   assert.ok(result.findings.some((f) => f.code === 'AGSC-E003' && /--selection/u.test(f.message)));
 });
 
-// AGSC-01-22 (rc.6): a foreign record whose licence the importer cannot establish as
+// AGSC-01-22: a foreign record whose licence the importer cannot establish as
 // permitting publication is written `status: draft` — never published (AGSC-06-30) —
 // and reported (AGSC-E506). The licence is established by the record's own `license`,
 // the source root's index.md `license`, or a licence file at the source root. And a

@@ -1,5 +1,5 @@
 {
- "about": "The page-tool / MCP parity call list (docs/MEASUREMENTS.md, AGSC-09-16 as amended at rc.6: equal as values, never byte-identical across the browser boundary). `calls` run once per Bundle; each `per_item` template runs once for every item, with $slug replaced. The list covers every tool of AGSC-09-13, every domain-error path the tests already know (unknown tool, missing argument, unknown slug, foreign memory IRI, the 1 MiB argument cap of AGSC-01-16) and the two local-only writers.",
+ "about": "The page-tool / MCP parity call list (docs/MEASUREMENTS.md, AGSC-09-16: equal as values, never byte-identical across the browser boundary). `calls` run once per Bundle; each `per_item` template runs once for every item, with $slug replaced. The list covers every tool of AGSC-09-13, every domain-error path the tests already know (unknown tool, missing argument, unknown slug, foreign memory IRI, the 1 MiB argument cap of AGSC-01-16) and the two local-only writers.",
  "calls": [
   ["search", { "query": "agent" }],
   ["search", { "query": "memory graph" }],

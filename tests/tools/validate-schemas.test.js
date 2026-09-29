@@ -51,7 +51,7 @@ function schemaRoot(overrides = {}) {
       properties: { site: { type: 'object' } },
     })}\n`,
     'schema/item.schema.json': `${base('item.schema.json', item)}\n`,
-    'spec/00-overview.md': '`spec_version: "1.0.0-rc.5"`\n',
+    'spec/00-overview.md': '`spec_version: "1.0.0-rc.9"`\n',
   };
   return writeTree(tmpdir(), { ...files, ...overrides });
 }
@@ -69,7 +69,7 @@ describe('validate-schemas — usage and the envelope', () => {
   });
 
   it('a root with no schema/ FAILS with AGSC-E901, exit 1', () => {
-    // CHANGED at rc.6: AGSC-09-90 now says a validator MUST FAIL "with
+    // AGSC-09-90 says a validator MUST FAIL "with
     // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
     // error. An absent input is exit 1, the envelope and the code.
     const result = capture('validate-schemas', [tmpdir()]);
@@ -83,7 +83,7 @@ describe('validate-schemas — usage and the envelope', () => {
     assert.equal(code, 0);
     assert.equal(json.verb, 'validate-schemas');
     assert.equal(json.schema, 'agsc.diagnostics.v1');
-    assert.equal(json.spec_version, '1.0.0-rc.5');
+    assert.equal(json.spec_version, '1.0.0-rc.9');
     assert.deepEqual(json.counts, { error: 0, warn: 0 });
   });
 

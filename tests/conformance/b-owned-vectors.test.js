@@ -1,10 +1,7 @@
-// tests/conformance/b-owned-vectors.test.js — runs this package's owned
-// vectors (cli-0002/0005/0006, bundle-0003..0005, prov-0001/0002; bundle-0002 is
-// withdrawn since 2026-09-24 and never run) through
-// the area handlers directly, independent of vector-runner.test.js
-// (which does not exist yet). Once the real runner lands, this
-// file becomes redundant coverage, not a conflict — different file name,
-// same area handlers.
+// tests/conformance/b-owned-vectors.test.js — runs cli-0002/0005/0006,
+// bundle-0003..0005 and prov-0001/0002 through the area handlers directly,
+// independent of vector-runner.test.js: redundant coverage of the same area
+// handlers, not a conflict.
 'use strict';
 
 const test = require('node:test');

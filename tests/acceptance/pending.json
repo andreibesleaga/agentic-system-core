@@ -14,7 +14,7 @@
     },
     "persona-0-dropin.feature#Re-running init over an adopted and built Bundle changes nothing": {
       "class": "gap",
-      "reason": "AGSC-02-91 requires a second init to modify nothing, and AGSC-01-23 a taken slug to be suffixed; at rc.6 a second init adopts the Markdown copies the first one put under content/assets/ (content/assets/notes/agents.md replaces the item content/concepts/agents.md, because adopt() starts from no taken slug) and the build output under www/ (www/now.md becomes content/concepts/now.md). Recorded for the engine; the scenario runs as written once init skips build.out, dist/ and content/assets/ and counts the slugs already under content/ as taken."
+      "reason": "AGSC-02-91 requires a second init to modify nothing, and AGSC-01-23 a taken slug to be suffixed; a second init adopts the Markdown copies the first one put under content/assets/ (content/assets/notes/agents.md replaces the item content/concepts/agents.md, because adopt() starts from no taken slug) and the build output under www/ (www/now.md becomes content/concepts/now.md). Recorded for the engine; the scenario runs as written once init skips build.out, dist/ and content/assets/ and counts the slugs already under content/ as taken."
     },
     "persona-a-reader.feature#Reader searches via the prebuilt client-side index": {
       "class": "browser",

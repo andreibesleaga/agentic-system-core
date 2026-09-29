@@ -92,7 +92,7 @@ function run(argv, io) {
   const counts = {
     spec_version: declared,
     rules: rules.length,
-    rules_reserved: (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\* \*\(retired at rc/g) || []).length,
+    rules_reserved: (specText.match(/\*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\* \*\((?:retired at rc|reserved:)/g) || []).length,
     rules_with_vector: rules.filter((r) => citedRules.has(r)).length,
     rules_without_vector: rules.filter((r) => !citedRules.has(r)).length,
     error_codes_registered: registered.length,
@@ -145,7 +145,7 @@ function run(argv, io) {
   }
   // every 1.0.0-rc.N literal anywhere in spec/*.md — including inside a fenced code
   // block or a quoted/JSON-array string, where the keyword-anchored check above cannot see
-  // it (e.g. the hyphenated key "agsc-spec-version": ["1.0.0-rc.3"] never contains the
+  // it (e.g. the hyphenated key "agsc-spec-version": ["1.0.0-rc.N"] never contains the
   // literal substring "spec_version") — must equal the declared version, UNLESS the literal
   // sits on a line that is plainly a historical note: one containing, before the literal,
   // a word such as "at", "since", "amended", "added", "withdrawn", "before", "until",
@@ -154,7 +154,7 @@ function run(argv, io) {
   // A differing literal on any other line is a live example or status claim that drifted.
   // (?<![\w-])/(?![\w-]) rather than \b so a hyphenated JSON key such as
   // "agsc-generated-at" does not itself read as the prose word "at".
-  // The last four words and the date test were added at rc.6; AGSC-09-91 names
+  // The words and the date test are AGSC-09-91's; that rule names
   // this tool as the reference behaviour, so `tools/validate-spec` carries the same two.
   const historyWord = /(?<![\w-])(re-verified|at|since|amended|added|withdrawn|before|until|from|for|against|written)(?![\w-])/i;
   const historyDate = /\d{4}-\d{2}-\d{2}/;

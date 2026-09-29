@@ -89,6 +89,7 @@ test('every golden source and SVG meets AGSC-01-14: no BOM, no CR, one trailing 
 test('no golden SVG carries a colour literal, so both schemes read it', () => {
   for (const slug of SLUGS) {
     const svg = read(`${slug}.svg`);
-    assert.equal(/#[0-9a-fA-F]{3}\b|rgb\(|hsl\(|fill="(?!none|currentColor)/u.test(svg), false, slug);
+    // `url(#a2a-arrow)` names the slug's marker, not a colour: a fragment reference is skipped.
+    assert.equal(/(?<!url\()#[0-9a-fA-F]{3}\b|rgb\(|hsl\(|fill="(?!none|currentColor)/u.test(svg), false, slug);
   }
 });

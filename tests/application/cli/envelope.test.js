@@ -6,12 +6,12 @@ const assert = require('node:assert/strict');
 const { buildEnvelope, compareFindings, main } = require('../../../src/application/cli/main.js');
 
 test('buildEnvelope: shape, counts and pass/fail derivation', () => {
-  const pass = buildEnvelope({ verb: 'lint', findings: [], specVersion: '1.0.0-rc.4', version: '0.1.0' });
+  const pass = buildEnvelope({ verb: 'lint', findings: [], specVersion: '1.0.0-rc.6', version: '0.1.0' });
   assert.deepEqual(pass, {
     counts: { error: 0, warn: 0 },
     findings: [],
     schema: 'agsc.diagnostics.v1',
-    spec_version: '1.0.0-rc.4',
+    spec_version: '1.0.0-rc.6',
     status: 'pass',
     verb: 'lint',
     version: '0.1.0',
@@ -20,7 +20,7 @@ test('buildEnvelope: shape, counts and pass/fail derivation', () => {
   const fail = buildEnvelope({
     verb: 'lint',
     findings: [{ code: 'AGSC-E301', severity: 'error', file: 'a.md', line: 1, col: 1 }],
-    specVersion: '1.0.0-rc.4',
+    specVersion: '1.0.0-rc.6',
     version: '0.1.0',
   });
   assert.equal(fail.status, 'fail');
@@ -36,7 +36,7 @@ test('compareFindings orders by (file, line, col, code) code-point-wise', () => 
 });
 
 test('severity literal is "warn", never "warning" (AGSC-09-11)', () => {
-  const envelope = buildEnvelope({ verb: 'lint', findings: [{ code: 'AGSC-E406', severity: 'warn' }], specVersion: '1.0.0-rc.4', version: '0.1.0' });
+  const envelope = buildEnvelope({ verb: 'lint', findings: [{ code: 'AGSC-E406', severity: 'warn' }], specVersion: '1.0.0-rc.6', version: '0.1.0' });
   assert.equal(envelope.counts.warn, 1);
   assert.equal(envelope.status, 'pass'); // a warn-only run still passes
 });

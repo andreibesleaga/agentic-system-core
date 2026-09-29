@@ -105,8 +105,8 @@ test('L5 — a folder of notes becomes a node: init, add the security contact, c
   fs.writeFileSync(path.join(dir, '.well-known', 'security.txt'),
     'Contact: mailto:security@example.org\nExpires: 2027-01-01T00:00:00Z\n');
   // The adopted node publishes the Content Use Terms' TDM reservation, and `ci` —
-  // like `build` — refuses a reservation that names no crawler (AGSC-06-18 as
-  // amended at rc.6). `init` therefore writes the reference crawler list and says so
+  // like `build` — refuses a reservation that names no crawler (AGSC-06-18).
+  // `init` therefore writes the reference crawler list and says so
   // on its way out; the publisher may edit it, and an emptied list is refused.
   const config = JSON.parse(read(dir, 'agsc.config.json'));
   assert.ok(Array.isArray(config.site.tdm_crawlers) && config.site.tdm_crawlers.includes('GPTBot'),

@@ -3,25 +3,18 @@
 // (`bnd-nnnn`). Rules: spec/11-boundary.md in full, plus
 // AGSC-10-12, AGSC-10-14 and AGSC-06-35.
 //
-// Several vectors state an expectation in terms of `a.example` without
-// carrying a `site.base` in their input (bnd-0012, bnd-0014, bnd-0020,
-// bnd-0025 among them). This handler supplies that base explicitly, as
-// DEFAULT_BASE below, and the report names it as an input the vectors do not
-// derive. No expectation is weakened by it. (At rc.5 those four were withdrawn and
-// replaced by bnd-0031…0034, which state their base; the default survives only for
-// the released vectors that still rely on it.)
+// A vector that carries no `site.base` in its input (bnd-0018, bnd-0024) is run
+// against DEFAULT_BASE below, and the report names it as an input the vector does
+// not derive. No expectation is weakened by it; every other vector states its base.
 //
-// THE READING REPORTED IS GONE. `bnd-0027` stated the MCP
-// `extensions` capability as the ARRAY ["com.agenticsystemcore/knowledge"] — the shape
-// the engine returned before rc.5, which no rule pinned — while AGSC-11-18 as amended
-// at rc.5 makes `extensions` MCP's own "map of extension identifiers
-// to per-extension settings objects". That vector is withdrawn under AGSC-00-16 and
-// superseded by `bnd-0036`, which states the map; this handler compares the map the
-// Boundary context returns and projects nothing. `bnd-0031` is unaffected: its member
-// is named `mcp_extensions` and IS the list of identifiers advertised, which is the
-// map's key set; the settings object of each is pinned by AGSC-11-18 and asserted by
-// `bnd-0035`.
+// AGSC-11-18 makes the MCP `extensions` capability MCP's own "map of extension
+// identifiers to per-extension settings objects". `bnd-0036` states the map, and this
+// handler compares the map the Boundary context returns and projects nothing.
+// `bnd-0037`'s member `mcp_extensions` IS the list of identifiers advertised, which is
+// the map's key set; the settings object of each is pinned by AGSC-11-18 and asserted
+// by `bnd-0035`.
 
+const discovery = require('../../../src/distribution/discovery.js');
 const federation = require('../../../src/boundary/federation.js');
 const visibility = require('../../../src/boundary/visibility.js');
 const surfaces = require('../../../src/boundary/surfaces.js');
@@ -71,8 +64,8 @@ function runBnd0002(vector) {
   ]);
 }
 
-/** bnd-0020 — AGSC-11-05: the Link header, quoted SHA-256 ETags, no-cache, no immutable. */
-function runBnd0020(vector) {
+/** bnd-0033 — AGSC-11-05: the Link header, quoted SHA-256 ETags, no-cache, no immutable. */
+function runBnd0033(vector) {
   const sets = visibility.headerSets({
     artefacts: vector.input.artefacts,
     level: 2,
@@ -141,19 +134,8 @@ function runBnd0004(vector) {
   return checks([['results', deepEqual(vector.expected.results, results), JSON.stringify(results)]]);
 }
 
-/** bnd-0005 — AGSC-11-09: the redirect cap; the declared peer is never replaced. */
-function runBnd0005(vector) {
-  const result = federation.followRedirects(vector.input.peer, vector.input.redirects, { dev: false });
-  return checks([
-    ['followed', result.followed === vector.expected.followed, String(result.followed)],
-    ['error', result.error === vector.expected.error, String(result.error)],
-    ['declared_peer_unchanged',
-      (result.declaredPeer === vector.input.peer) === vector.expected.declared_peer_unchanged, result.declaredPeer],
-  ]);
-}
-
 /**
- * bnd-0030 — AGSC-11-09 + AGSC-11-08, the blocker. Supersedes bnd-0005.
+ * bnd-0030 — AGSC-11-09 + AGSC-11-08: the redirect cap and the address guard.
  * Every hop carries a resolution, so the address guard is exercised unconditionally;
  * `address_guard_unconditional` is proved separately by a hop whose host the caller
  * resolved for nothing, which must be refused rather than followed.
@@ -176,7 +158,7 @@ function runBnd0030(vector) {
       `${result.declaredPeer} / ${result.final}`]);
   }
   if (vector.expected.address_guard_unconditional === true) {
-    // The fail-open branch bnd-0005 depended on: a hop whose host has no classified
+    // The fail-open branch this closes: a hop whose host has no classified
     // address — because the caller supplied none at all, or supplied a map without it
     // — must be refused before it is followed (AGSC-11-08 "before connecting").
     const probes = [{}, { dev: false }, { resolved: {} }];
@@ -191,7 +173,7 @@ function runBnd0030(vector) {
 }
 
 /**
- * bnd-0035 — AGSC-11-18 as amended at rc.5: the MCP extension's settings
+ * bnd-0035 — AGSC-11-18: the MCP extension's settings
  * object. The same object travels in `server/discover` and in the per-request
  * capabilities, there being no initialization handshake in revision 2026-07-28, so
  * the handler asks the Boundary context twice and compares.
@@ -345,8 +327,8 @@ function runBnd0024(vector) {
   ]);
 }
 
-/** bnd-0025 — AGSC-11-15: boards keyed by Bundle IRI, tasks by item IRI, nothing renamed. */
-function runBnd0025(vector) {
+/** bnd-0034 — AGSC-11-15: boards keyed by Bundle IRI, tasks by item IRI, nothing renamed. */
+function runBnd0034(vector) {
   const result = plain(federation.mergeBoards(vector.input.boards));
   return checks([
     ['boards_kept', deepEqual(vector.expected.boards_kept, result.boardsKept), JSON.stringify(result.boardsKept)],
@@ -397,8 +379,8 @@ function runBnd0029(vector) {
 
 /* ------------------------------------------------------------ 11.4 surfaces */
 
-/** bnd-0012 — AGSC-11-16: every served surface declared, with its annotations. */
-function runBnd0012(vector) {
+/** bnd-0037 — AGSC-11-16: every served surface declared, with its annotations. */
+function runBnd0037(vector) {
   const base = baseOf(vector);
   const links = plain(surfaces.declare({
     base, emitted: vector.input.emitted, mcpServed: vector.input.mcp_served,
@@ -409,9 +391,9 @@ function runBnd0012(vector) {
   const list = [
     ['links', deepEqual(vector.expected.links, links), JSON.stringify(links)],
     // `mcp_extensions` is the list of extension IDENTIFIERS advertised. MCP's
-    // `extensions` is a map of identifier to settings object (AGSC-11-18 as amended
-    // at rc.5), so the identifiers are its keys; the settings object is
-    // pinned by bnd-0035 and asserted there. See the reading note at the top.
+    // `extensions` is a map of identifier to settings object (AGSC-11-18), so the
+    // identifiers are its keys; the settings object is pinned by bnd-0035 and
+    // asserted there. See the note at the top.
     ['mcp_extensions', deepEqual(vector.expected.mcp_extensions, Object.keys(extensions).sort()),
       JSON.stringify(extensions)],
   ];
@@ -425,7 +407,7 @@ function runBnd0012(vector) {
     list.push(['webmcp_version_pattern', new RegExp(vector.expected.webmcp_version_pattern, 'u').test(String(declared)),
       String(declared)]);
     if (vector.expected.webmcp_version_echoes_input === true) {
-      // AGSC-11-16 as amended at rc.5: ANY YYYY-MM-DD report date conforms,
+      // AGSC-11-16: ANY YYYY-MM-DD report date conforms,
       // so the declaration must carry the date the node targets and never a constant.
       list.push(['webmcp_version_echoes_input', declared === vector.input.webmcp_report_date,
         `declared ${String(declared)} for input ${String(vector.input.webmcp_report_date)}`]);
@@ -437,7 +419,7 @@ function runBnd0012(vector) {
     }
   }
   if (vector.expected.mcp_version_pattern) {
-    // AGSC-11-16 as amended at rc.6: `mcp` declares the revision its transport
+    // AGSC-11-16: `mcp` declares the revision its transport
     // speaks — an input, echoed, never a constant (bnd-0037).
     const mcp = links.find((l) => l['agsc-surface'][0] === 'mcp') || {};
     const declared = (mcp['agsc-surface-version'] || [])[0];
@@ -479,8 +461,8 @@ function runBnd0021(vector) {
 }
 
 /**
- * bnd-0036 — AGSC-11-18: the floor in each surface's own vocabulary. Supersedes
- * `bnd-0027` (withdrawn at rc.5). The vector states `capabilities.extensions`
+ * bnd-0036 — AGSC-11-18: the floor in each surface's own vocabulary. The vector
+ * states `capabilities.extensions`
  * as MCP's map of extension identifier to settings object, so the handler compares
  * the capabilities object the Boundary context returns and makes no projection of it.
  * `subsetOf` compares each named member with `deepEqual`, so `capabilities` — and the
@@ -529,8 +511,8 @@ function runBnd0026(vector) {
 
 /* ---------------------------------------------------------- 11.7 retirement */
 
-/** bnd-0014 — AGSC-11-22: a retired item keeps its page and leaves every index. */
-function runBnd0014(vector) {
+/** bnd-0032 — AGSC-11-22: a retired item keeps its page and leaves every index. */
+function runBnd0032(vector) {
   const base = baseOf(vector);
   const result = visibility.retirement(vector.input.items, { base });
   const compose = require('../../../src/composition/compose.js');
@@ -549,55 +531,77 @@ function runBnd0014(vector) {
   ]);
 }
 
+/** bnd-0038 — AGSC-11-20: a restricted node publishes a digest only of what it serves unauthenticated. */
+function runBnd0038(vector) {
+  const input = vector.input;
+  const digests = {};
+  for (const route of input.routes) digests[route] = discovery.digestOf(route);
+  const doc = plain(discovery.linkset(
+    { access: input.access, site: { base: input.base }, visibility: input.visibility },
+    { bundleHash: digests['/graph.nq'], bundleVersion: 'v1.0.0', counts: discovery.countsOf([]), digests,
+      generatedAt: input.generated_at, ledgerHead: input.ledger_head, level: 2, routes: input.routes,
+      specVersion: vector.options.spec_version },
+  ));
+  const context = doc.linkset[0];
+  const withDigest = [];
+  const without = [];
+  for (const [relation, links] of Object.entries(context)) {
+    if (relation === 'anchor') continue;
+    for (const one of links) {
+      const route = new URL(one.href).pathname;
+      if (!input.routes.includes(route)) continue;
+      (one.digest === undefined ? without : withDigest).push(route);
+    }
+  }
+  const anchorAttributes = discovery.attributesOf(context.describedby[0]);
+  return checks([
+    ['digest targets', deepEqual(vector.expected.digest_targets, withDigest.sort()), JSON.stringify(withDigest)],
+    ['links without digest', deepEqual(vector.expected.links_without_digest, without.sort()), JSON.stringify(without)],
+    ['anchor attributes', deepEqual(vector.expected.anchor_attributes, anchorAttributes), JSON.stringify(anchorAttributes)],
+    ['ledger link', (context[`${discovery.REL}ledger`] !== undefined) === vector.expected.ledger_link, ''],
+  ]);
+}
+
+/** bnd-0039 — AGSC-06-10 / AGSC-06-35: the related-system links as the discovery document carries them. */
+function runBnd0039(vector) {
+  const doc = plain(discovery.linkset(vector.input.config, { level: vector.input.level }));
+  const related = doc.linkset[0].related;
+  return checks([['related', deepEqual(vector.expected.related, related), JSON.stringify(related)]]);
+}
+
 const HANDLERS = {
   'bnd-0001': runBnd0001,
   'bnd-0002': runBnd0002,
   'bnd-0003': runBnd0003,
   'bnd-0004': runBnd0004,
-  'bnd-0005': runBnd0005,
   'bnd-0006': runBnd0006,
   'bnd-0007': runBnd0007,
   'bnd-0008': runBnd0008,
   'bnd-0009': runBnd0009,
   'bnd-0010': runBnd0010,
   'bnd-0011': runBnd0011,
-  'bnd-0012': runBnd0012,
   'bnd-0013': runBnd0013,
-  'bnd-0014': runBnd0014,
   'bnd-0015': runBnd0015,
   'bnd-0016': runBnd0016,
   'bnd-0017': runBnd0017,
   'bnd-0018': runBnd0018,
   'bnd-0019': runBnd0019,
-  'bnd-0020': runBnd0020,
   'bnd-0021': runBnd0021,
   'bnd-0022': runBnd0022,
   'bnd-0023': runBnd0023,
   'bnd-0024': runBnd0024,
-  'bnd-0025': runBnd0025,
   'bnd-0026': runBnd0026,
-  // `bnd-0027` is withdrawn (AGSC-00-16) and is skipped before any handler is looked
-  // up, so it has no entry: the only reading of it was the array-as-key-set one, and
-  // that reading is gone with it. Its case is `bnd-0036`.
   'bnd-0028': runBnd0028,
   'bnd-0029': runBnd0029,
-  // rc.5 — the five successors. Four are their predecessor's case with the base or
-  // the origin stated in `input` (Q55d), so they run the same handler unchanged:
-  // the handlers already read `input.site.base` through `baseOf`, which is what
-  // makes stating it a strengthening of the vector and not a new case.
   'bnd-0030': runBnd0030,
-  'bnd-0031': runBnd0012,
-  'bnd-0032': runBnd0014,
-  'bnd-0033': runBnd0020,
-  'bnd-0034': runBnd0025,
+  'bnd-0032': runBnd0032,
+  'bnd-0033': runBnd0033,
+  'bnd-0034': runBnd0034,
   'bnd-0035': runBnd0035,
-  // rc.5 — the sixth successor. `bnd-0036` is NOT its predecessor's case with
-  // one more input: it states a different shape for one member, so it has a handler of
-  // its own and `bnd-0027`'s is gone.
   'bnd-0036': runBnd0036,
-  // rc.6 — bnd-0031's successor: the same case with the transport revision of the
-  // `mcp` surface stated in input (AGSC-11-16 as amended at rc.6).
-  'bnd-0037': runBnd0012,
+  'bnd-0037': runBnd0037,
+  'bnd-0038': runBnd0038,
+  'bnd-0039': runBnd0039,
 };
 
 module.exports.run = function run(vector) {

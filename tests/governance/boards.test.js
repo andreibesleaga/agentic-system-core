@@ -35,7 +35,7 @@ test('an unknown state in a foreign board reads as UNSPECIFIED (AGSC-11-02)', ()
   assert.strictEqual(boards.stateOf({ task_state: 'TASK_STATE_INVENTED' }), 'TASK_STATE_INVENTED');
 });
 
-// AGSC-10-13 as restated at rc.6: `claimed_by` is the `author` of the last
+// AGSC-10-13: `claimed_by` is the `author` of the last
 // first-parent commit whose `files[]` names the task's file — the shape the git-log
 // reader produces (`files[]` and `author`), never a per-key change list it cannot.
 test('claimed_by is the author of the last commit naming the task file, absent without history (AGSC-10-13)', () => {

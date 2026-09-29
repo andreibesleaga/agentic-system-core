@@ -1,6 +1,6 @@
 {
   "area": "build",
-  "description": "AGSC-04-02: verification is a double build followed by a byte comparison, and any difference is AGSC-E602. Derivation over the Bundle stated inline in input.files (a copy of the reference engine's with-assets fixture, carried here so that a port needs no file of any repository): its one concept references content/assets/logo.svg and content/assets/img/nested.svg; two builds at the same fixed instant emit the same route set with the same bytes at every route — the /assets/<path> routes of AGSC-06-01 included, since the served bytes are the file's own — so the comparison reports no AGSC-E602 and the build carries no error finding. Before rc.6 an asset route was emitted from a read that depended on the working directory, which is the kind of ambient input AGSC-04-03 forbids and this case would expose.",
+  "description": "AGSC-04-02: verification is a double build followed by a byte comparison, and any difference is AGSC-E602. Derivation over the Bundle stated inline in input.files (a copy of the reference engine's with-assets fixture, carried here so that a port needs no file of any repository): its one concept references content/assets/logo.svg and content/assets/img/nested.svg; two builds at the same fixed instant emit the same route set with the same bytes at every route — the /assets/<path> routes of AGSC-06-01 included, since the served bytes are the file's own — so the comparison reports no AGSC-E602 and the build carries no error finding. An asset route emitted from a read that depends on the working directory is the kind of ambient input AGSC-04-03 forbids, and this case exposes it.",
   "expected": {
     "byte_identical": true,
     "codes_absent": [
@@ -25,7 +25,6 @@
     }
   },
   "level": "required",
-  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "source_date_epoch": 1767225600,
     "spec_version": "1.0.0-rc.6"

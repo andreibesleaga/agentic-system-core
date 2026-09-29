@@ -1,20 +1,12 @@
-# `src/` — the per-module reference, as each part was built
+# `src/` — the per-module reference
 
-**Summary.** This is the engine's module reference as it was written while each part
-was built, between 2026-09-16 and 2026-09-24: the module tables, the public function
-signatures of each context, the libraries each part added and why, and the
-integration record (§11.1–§11.5). Section numbers are the ones this text had inside
-`src/README.md`, kept so that older citations still resolve. It is for a developer who
-needs a function's signature or the reason behind a design choice.
+**Summary.** This is the engine's module reference: the module tables, the public
+function signatures of each context, the libraries each part uses and why, and the
+integration record (§11.1–§11.5). It is for a developer who needs a function's
+signature or the reason behind a design choice.
 
 **Read first:** [README.md](README.md), the current module guide. Where this reference
-and the guide differ, the guide is current and the specification wins over both. The
-change history that followed §11.5 is in `CHANGELOG.md`, under "Engine notes moved
-from `src/README.md`".
-
-*Note, 2026-09-24:* moved here unchanged from `src/README.md` when that file was cut to
-a module guide. The words "this package" in a section mean the work package that built
-that part of the engine.
+and the guide differ, the guide is current and the specification wins over both.
 
 ---
 
@@ -576,10 +568,8 @@ why `rdfxml.js` is hand-written and why its test re-parses with `fast-xml-parser
 
 **The graph name is the Bundle IRI, and a caller may ask for the default graph.**
 `graph.nq` is a quad file whose fourth term is the Bundle IRI (AGSC-05-03) — the form
-the rc.3 vectors `graph-0010`, `graph-0013`, `graph-0014` and `build-0010` state.
-The earlier vectors `graph-0001`…`graph-0006` state triples with no graph name, so
-`dataset` takes `graph: null` for that and the area handler selects on the vector's
-input shape, as `tests/vectors/README.md` directs. `graph.ttl` and `graph.jsonld`
+the vectors `graph-0016`, `graph-0017`, `graph-0018` and `build-0011` state.
+`dataset` also takes `graph: null`, for a caller that asks for the default graph. `graph.ttl` and `graph.jsonld`
 carry the triples: Turtle has no graph names, and AGSC-05-10 asks only that the views
 be isomorphic.
 
@@ -847,7 +837,7 @@ AGSC-07-17. *(Superseded on 2026-09-21: wired `harness.js#emit` to
 AGSC-07-15, AGSC-07-16 and the `--emit` targets of AGSC-07-18 — are written
 into `dist/harness/<name>/`; see §11.9. What is still not built is
 AGSC-07-19's published skill PACK, which the `skills` verb says it does not
-write: no `compose/` vector asserts a byte of it at `1.0.0-rc.5`, and a file
+write: no `compose/` vector asserts a byte of it, and a file
 that looked plausible would be an unproved claim.)*
 
 ### Two duplications to resolve at integration — BOTH RESOLVED, see §11.3
@@ -879,40 +869,22 @@ conformance. Where this section and an earlier one differ, this one is current.
 **No claim is made before 1.0.0.** AGSC-10-05 says the reference implementation
 "will claim Level 3 at its 1.0.0 release; no claim exists before a green run of
 the Level-3 set", and AGSC-10-01 adds that a claim names one Level and is backed
-by a green run of that Level's vector set. At the `1.0.0-rc.4` tag the vector set ran
-`126 pass, 0 fail, 3 skip (3 withdrawn, 0 pending) of 129` — and four verbs of
-AGSC-09-07 answered "not implemented at this milestone" (below), so nothing was
-claimed, published or implied. *(Tense corrected 2026-09-21: this
-paragraph is the rc.4 record; the current figures are the paragraph below it.)* `agsc conform` writes a REPORT of a run; a report
-is not a claim, and AGSC-09-03 says a published claim is the claimant's own
+by a green run of that Level's vector set. `agsc conform` writes a REPORT of a run;
+a report is not a claim, and AGSC-09-03 says a published claim is the claimant's own
 assertion and that this specification defines no arbitration.
 
-*(Updated 2026-09-21 for `1.0.0-rc.5`; the counts were updated the same day, when
-`bnd-0027` was withdrawn and `bnd-0036` added.)* The vector set now runs
-`136 pass, 0 fail, 14 skip (14 withdrawn, 0 pending) of 150` —
+At `1.0.0-rc.6` the vector set runs
+`171 pass, 0 fail, 0 skip (0 withdrawn, 0 pending) of 171` —
 **every required and optional vector of every area passes, and
-`tests/conformance/pending.json` is empty.** The 14 skipped are the withdrawn
-ones, which AGSC-00-16 counts for nothing. **Three** verbs of AGSC-09-07 still answer
-"not implemented at this milestone" — `skills`, `run` and `trace`, the set
-`tests/application/cli/verbs-sixteen.test.js:34` holds — so nothing is claimed,
-published or implied. *(Superseded 2026-09-21: **no** verb answers that any
-more — the set the test holds is EMPTY — and nothing is claimed, published or implied
-all the same, because AGSC-10-05 puts the claim at the 1.0.0 release and this is
-rc.5. §11.13 says which verb gained what, and which single obligation of AGSC-09-94
-this package could not discharge.)* *(Corrected 2026-09-21: this sentence read
-"Two"; `export` left the refusing set when `--jsonld`/`--jsonl`/`--to` landed and
-`import` left it later, but `skills` never did.)* Counts, derived by `node tools/count-artifacts --json` and never typed:
-335 rules (324 active + 11 reserved) · 90 error codes · 150 vectors
-(135 required + 1 optional + 14 withdrawn) · 52 ontology terms · 18 populated
-vector areas. *(Updated 2026-09-21: the vector set gained `fm-0010`,
-AGSC-02-24's authored-single-line case, and the runner line above moved with it —
-`135 pass … of 149` before it. No rule, code, term or area was added.)*
-*(Updated 2026-09-24 for the `1.0.0-rc.6` draft, measured by the runner and the
-counter: `vectors: 153 pass, 0 fail, 29 skip (29 withdrawn, 0 pending) of 182`;
-343 rules (332 active + 11 reserved) · 90 error codes · 182 vectors (152 required +
-1 optional + 29 withdrawn) · 52 ontology terms · 19 populated vector areas. Nothing is
-claimed before 1.0.0. The newest part of this section is §11.17, and the dated
-sections after §11 are newer still.)*
+`tests/conformance/pending.json` is empty.** No verb of AGSC-09-07 answers
+"not implemented at this milestone" — the set
+`tests/application/cli/verbs-sixteen.test.js` holds is EMPTY — and nothing is
+claimed, published or implied all the same, because AGSC-10-05 puts the claim at
+the 1.0.0 release. The one obligation of AGSC-09-94 this package does not discharge
+itself (network isolation for `run`) is in the `run` row of §11.2. Counts, as
+`node tools/count-artifacts --json` derives them: 343 rules (332
+active + 11 reserved) · 91 error codes · 171 vectors (170 required + 1 optional +
+0 withdrawn) · 52 ontology terms · 19 populated vector areas.
 
 **Divergence recorded and CLOSED on 2026-09-21.** Until this date
 `/ns/context.jsonld`, as emitted by `agsc build`, carried the seven prefixes and the
@@ -920,7 +892,7 @@ sections after §11 are newer still.)*
 definitions**, so `graph.jsonld` and every `pages/<slug>.jsonld` wrote vocabulary
 IRIs unabbreviated and AGSC-06-32's round-trip clause did not hold for a built node.
 A related omission: at **Level 0** `graph.jsonld` was emitted with no `@context`
-member at all, contrary to AGSC-05-09 as amended at rc.5, and a conforming JSON-LD
+member at all, contrary to AGSC-05-09, and a conforming JSON-LD
 processor then dropped every member whose key was a term or a compact IRI —
 measured at 19 of 36 triples surviving on the reference fixture. The cause was a
 wiring omission, not a design choice, and it dates from the engine's first build
@@ -997,10 +969,8 @@ prints the AGSC-09-07 verb set and the AGSC-09-09 global flags on stderr beneath
 the finding, so the first command a person types is answered with a way forward
 rather than the word `null` (lens f; `main.js#usageText`). Under `--json`
 stderr keeps one finding object per line and the usage block is not printed.
-*(Corrected 2026-09-21: this paragraph used to add "including
-`--help`, which AGSC-09-09 does not make a global flag". AGSC-09-09 as amended at
-rc.5 DOES make `--help` a global flag; `agsc --help` and `agsc <verb>
---help` print to stdout and exit 0, `main.js#helpText`/`#helpDocument`.)*
+AGSC-09-09 makes `--help` a global flag; `agsc --help` and `agsc <verb>
+--help` print to stdout and exit 0, `main.js#helpText`/`#helpDocument`.
 
 ### 11.3 The modules integration added, moved or unified
 

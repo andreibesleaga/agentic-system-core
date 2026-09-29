@@ -21,7 +21,7 @@
  * @property {(path: string) => void} remove
  * @property {(path: string) => string[]} walk    every FILE under `path`, repository-relative,
  *   recursive, code-point sorted (AGSC-01-15); `[]` when `path` does not exist. Declared here
- * at rc.5: three application modules already required it of every implementation,
+ *   because application modules require it of every implementation,
  *   and `loadBundle` needs it for the `content/assets/**` set AGSC-03-11 resolves against.
  */
 

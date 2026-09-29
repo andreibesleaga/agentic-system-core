@@ -11,10 +11,11 @@
 // constant `WELLKNOWN_SUFFIX` below, and the path, the `_redirects` alias and the
 // peer URLs all derive from it, so a refused registration costs one PATCH.
 //
-// Pure function of its input; `site.js` writes the bytes. Vectors disc-0003,
-// disc-0004, disc-0005.
+// Pure function of its input; `site.js` writes the bytes. Vectors disc-0004,
+// disc-0005, disc-0016.
 
 const { createHash } = require('node:crypto');
+const federation = require('../boundary/federation.js');
 const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 
@@ -49,7 +50,7 @@ const ALLOWED_RELATIONS = Object.freeze([
 
 /**
  * AGSC-06-08: the bundle-level facts, carried on the anchor's `describedby` link.
- * `agsc-bundle-version` (AGSC-04-25, added at rc.6) sits between
+ * `agsc-bundle-version` (AGSC-04-25) sits between
  * `agsc-bundle-hash` and `agsc-counts` in the JCS member order of AGSC-04-05,
  * which is where a reader of the emitted bytes will find it.
  */
@@ -78,6 +79,52 @@ const RESTRICTED_OMITTED = Object.freeze([
 ]);
 /** RFC 8288 §3.4 / RFC 9264 §4.2.4: the members that are NOT target attributes. */
 const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title*', 'type']);
+
+/**
+ * AGSC-06-08 and AGSC-11-16 (with AGSC-06-35's `profile`): every target attribute
+ * this version defines. A document of a newer MINOR may carry others, which a
+ * reader ignores (AGSC-00-21, AGSC-09-93).
+ */
+const KNOWN_ATTRIBUTES = Object.freeze([
+  'agsc-access', 'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-contribute-mode', 'agsc-counts',
+  'agsc-generated-at', 'agsc-ledger-head', 'agsc-spec-version', 'agsc-surface', 'agsc-surface-version',
+  'agsc-tombstone', 'agsc-visibility', 'digest', 'profile',
+]);
+
+/**
+ * AGSC-11-20: the targets a `restricted` node serves unauthenticated — its
+ * unauthenticated view is the discovery document, `/llms.txt` and `/graph.jsonld`
+ * at Level 0 — and so the only artefacts whose `digest` it may publish. A digest
+ * over a gated artefact is a confirmation-of-content oracle, and the digest of
+ * `/graph.nq` is the bundle fingerprint the same rule withholds.
+ */
+const OPEN_WHEN_RESTRICTED = Object.freeze(['/graph.jsonld', '/llms.txt']);
+
+/**
+ * The MAJOR.MINOR of the specification this reader implements (AGSC-00-15); a caller
+ * that knows its full version passes it as `options.specVersion`.
+ */
+const OWN_SPEC_VERSION = '1.0';
+
+/** The `{major, minor}` of a version string, or `null` when it names none. */
+function majorMinor(version) {
+  const match = /^(\d+)\.(\d+)(?:\.|$)/u.exec(String(version == null ? '' : version));
+  return match === null ? null : { major: Number(match[1]), minor: Number(match[2]) };
+}
+
+/**
+ * AGSC-00-21 with AGSC-09-93: is `declared` a newer MINOR of the reader's own MAJOR?
+ * Only then are relations and attributes this version does not define ignored,
+ * with a warning, instead of failing the document; another MAJOR has no tolerance.
+ *
+ * @param {string} declared the document's `agsc-spec-version`.
+ * @param {string} own the reader's specification version.
+ */
+function newerMinor(declared, own) {
+  const theirs = majorMinor(declared);
+  const mine = majorMinor(own);
+  return theirs !== null && mine !== null && theirs.major === mine.major && theirs.minor > mine.minor;
+}
 
 /** AGSC-06-01 / AGSC-05-01: the item types whose counts AGSC-06-08 publishes. */
 const COUNTED_TYPES = Object.freeze({
@@ -178,7 +225,9 @@ function linkset(config, options = {}) {
   const anchor = `${base}/`;
   const digests = options.digests || {};
   const visibility = (config && config.visibility) || 'public';
-  const digest = (route) => (full && digests[route] != null ? digests[route] : undefined);
+  const gated = visibility === 'restricted';
+  const digest = (route) => (full && digests[route] != null
+    && (!gated || OPEN_WHEN_RESTRICTED.includes(route)) ? digests[route] : undefined);
   const emitted = options.routes == null ? null : new Set(options.routes);
   const has = (route) => (emitted === null ? full : emitted.has(route));
 
@@ -189,9 +238,7 @@ function linkset(config, options = {}) {
 
   // AGSC-06-08: bundle facts ride on the anchor's `describedby` link and NOWHERE else.
   // AGSC-11-20: a `restricted` node publishes neither the content facts nor the
-  // content version, at any Level. Until rc.6 this was stated by the rule, checked
-  // by nothing and emitted anyway (the rule was fixed, not the writer).
-  const gated = visibility === 'restricted';
+  // content version, at any Level, and no digest of a target it gates.
   const describedby = {
     digest: digest('/graph.jsonld'),
     'agsc-bundle-hash': full && !gated ? options.bundleHash : undefined,
@@ -264,12 +311,14 @@ function linkset(config, options = {}) {
   }
 
   // AGSC-06-35: related-system links, IANA-registered relations only, never derived.
-  for (const entry of (Array.isArray(config && config.related) ? config.related : [])) {
-    const relation = String(entry.rel);
-    const one = link(String(entry.href), entry.type == null ? undefined : entry.type, {
-      profile: entry.profile, title: entry.title,
-    });
-    context[relation] = byHref([...(context[relation] || []), one]);
+  // ONE implementation writes them, `federation.relatedLinks`, so the vector that
+  // proves it proves the bytes the build publishes: `type` and `title` are strings
+  // and `profile`, an extension attribute, is an array (AGSC-06-10, RFC 9264
+  // §4.2.4.1 and §4.2.4.3). A malformed `related[]` is AGSC-E209 at configuration
+  // time and contributes no link.
+  const related = federation.relatedLinks(config).links;
+  for (const relation of Object.keys(related)) {
+    context[relation] = byHref([...(context[relation] || []), ...related[relation].map((one) => ({ ...one }))]);
   }
 
   // AGSC-06-08: relation-name members ordered as JSON member names (AGSC-04-05).
@@ -299,6 +348,7 @@ function check(doc, options = {}) {
   const file = options.file == null ? WELLKNOWN_PATH : options.file;
   const out = [];
   const fail = (code, message) => out.push(finding(code, message, { file }));
+  const warn = (code, message) => out.push(finding(code, message, { file, severity: 'warn' }));
 
   if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) {
     fail('AGSC-E209', 'the discovery document is not a JSON object (AGSC-06-08)');
@@ -318,9 +368,18 @@ function check(doc, options = {}) {
       fail('AGSC-E209', 'every link context object carries an anchor (AGSC-06-09)');
       continue;
     }
+    // AGSC-00-21 / AGSC-09-93: a document of a newer MINOR of this MAJOR may use a
+    // relation or an attribute this version does not define; it is ignored, with the
+    // warning AGSC-E506 naming the newer version, and never fails the document.
+    const declared = [].concat(((context.describedby || [])[0] || {})['agsc-spec-version'] || [])[0];
+    const newer = newerMinor(declared, options.specVersion == null ? OWN_SPEC_VERSION : options.specVersion);
     for (const relation of Object.keys(context)) {
       if (relation === 'anchor') continue;
       if (!ALLOWED_RELATIONS.includes(relation)) {
+        if (newer) {
+          warn('AGSC-E506', `relation "${relation}" is not defined by this version; the document declares the newer ${declared}, so the relation is ignored (AGSC-00-21)`);
+          continue;
+        }
         fail('AGSC-E209', `relation "${relation}" is neither an IANA-registered short name nor a ${REL}<name> extension URI (AGSC-06-10)`);
         continue;
       }
@@ -334,6 +393,10 @@ function check(doc, options = {}) {
           continue;
         }
         for (const name of attributesOf(one)) {
+          if (newer && !KNOWN_ATTRIBUTES.includes(name)) {
+            warn('AGSC-E506', `target attribute "${name}" of "${relation}" is not defined by this version; the document declares the newer ${declared}, so the attribute is ignored (AGSC-00-21)`);
+            continue;
+          }
           if (!Array.isArray(one[name])) {
             fail('AGSC-E209', `target attribute "${name}" must be an array of strings (AGSC-06-08)`);
           }
@@ -416,7 +479,9 @@ function peersOf(doc) {
 function peerCheck(nodes) {
   const [a, b] = nodes;
   const findings = [];
-  const resolves = (n) => n != null && n.doc != null && check(n.doc, { level: n.level == null ? 2 : n.level }).length === 0;
+  // A warning — a relation of a newer MINOR ignored (AGSC-00-21) — never fails a peer.
+  const resolves = (n) => n != null && n.doc != null
+    && check(n.doc, { level: n.level == null ? 2 : n.level }).every((f) => f.severity !== 'error');
   const bothResolve = resolves(a) && resolves(b);
   if (!bothResolve) {
     findings.push(finding('AGSC-E907',
@@ -440,7 +505,10 @@ function peerCheck(nodes) {
 }
 
 module.exports = {
+  KNOWN_ATTRIBUTES,
+  OPEN_WHEN_RESTRICTED,
   linkset,
+  newerMinor,
   check,
   peerCheck,
   peersOf,

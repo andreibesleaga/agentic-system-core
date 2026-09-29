@@ -197,10 +197,7 @@ function pathGrammarError(relative, fromDir) {
  * So the segment test is disapplied here and the escape test is the operative one.
  * A body target that escapes is `AGSC-E902`; one that stays inside and resolves to
  * nothing is `AGSC-E310` (AGSC-03-11), never `AGSC-E902`.
- *
- * Added 2026-09-21: the rc.5 amendment had been applied to the
- * specification and not to this module, so `![logo](../assets/logo.png)` — the one
- * case the amendment exists to permit — was reported `AGSC-E902 (dot segment)`.
+ * `![logo](../assets/logo.png)` is therefore never `AGSC-E902 (dot segment)`.
  */
 function bodyPathError(relative, fromDir) {
   if (typeof relative !== 'string' || relative === '') return 'empty';
@@ -449,12 +446,10 @@ function resolve(items, options = {}) {
         resolved.push(raw);
         // AGSC-03-11: an inline link between items is the untyped `asc:mentions`.
         if (targetItem !== undefined) add(v.slug, 'mentions', targetItem.slug, true);
-        // The asset branch resolves INSIDE the Bundle and, since rc.6, is PUBLISHED:
-        // AGSC-06-01 as amended carries `/assets/<path>` for every file
+        // The asset branch resolves INSIDE the Bundle and is PUBLISHED:
+        // AGSC-06-01 carries `/assets/<path>` for every file
         // under `content/assets/` a published body references, so the reference that
-        // works in the repository works on the built site too. Until rc.6 the route
-        // set carried none, and this branch reported the resolved asset as a warning
-        // under AGSC-E310 because the link 404d while `lint` stayed green.
+        // works in the repository works on the built site too.
         continue;
       }
       unresolved.push(raw);
@@ -488,7 +483,7 @@ function resolve(items, options = {}) {
 
 /**
  * AGSC-03-11: "a link to an external origin is never resolved at build time". The
- * test is the scheme (or a protocol-relative `//`), and it is exported at rc.5
+ * test is the scheme (or a protocol-relative `//`), and it is exported
  * so that the writer's route mapping applies exactly the same test the
  * resolver does — one definition of "external", not two.
  */

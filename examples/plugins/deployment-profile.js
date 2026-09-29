@@ -10,7 +10,7 @@
 // Selector: the writer's own target, stated in its conformance claim. It maps the
 // header sets AGSC-06-17 fixes onto one host's file format. It never adds, removes
 // or reorders a header: the header SET is the specification's and the FILE is the
-// host's (AGSC-06-01 as amended at rc.5).
+// host's (AGSC-06-01).
 
 module.exports = {
   agsc_spec_version: '1.0.0',

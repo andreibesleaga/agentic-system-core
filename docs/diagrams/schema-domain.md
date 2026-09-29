@@ -141,7 +141,7 @@ are deliberately absent here — they are derived at build from git log + `verif
 All fourteen Link keys (nine core + the five Mode-2 keys) are authored as slug arrays on the item; every inverse shown is computed at
 build, never authored. `Harness` is generated-only and is never a Bundle member.
 
-rc.3 added ports (`produces`/`consumes`, AGSC-02-96), `attachments[]` (AGSC-02-98), `task_state`
-(AGSC-02-99), `visibility` and the fourth `status` value `retired` (AGSC-11-22); rc.4 added no item key.
+The item also carries ports (`produces`/`consumes`, AGSC-02-96), `attachments[]` (AGSC-02-98), `task_state`
+(AGSC-02-99), `visibility` and the fourth `status` value `retired` (AGSC-11-22).
 
 Trace: PRD-002, PRD-037, PRD-042 · PLAN.md §5.1 (`src/knowledge/`).

@@ -48,7 +48,7 @@ test('isWellFormed rejects a lone surrogate', () => {
 });
 
 // ---------------------------------------------------------------------------
-// AGSC-02-24 as amended at rc.5: authored single-line strings.
+// AGSC-02-24: authored single-line strings.
 // ---------------------------------------------------------------------------
 
 test('SINGLE_LINE_FORBIDDEN names exactly the five classes the rule names', () => {

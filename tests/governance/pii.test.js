@@ -21,7 +21,7 @@ test('a telephone number in prose is AGSC-E404', () => {
 });
 
 test('a bare run of digits is not a telephone number', () => {
-  for (const text of ['version 1.0.0-rc.4', 'the cap is 1048576 bytes', 'ISBN 9780000000000',
+  for (const text of ['version 1.0.0-rc.6', 'the cap is 1048576 bytes', 'ISBN 9780000000000',
     'port 8080', 'SOURCE_DATE_EPOCH=1767225600']) {
     assert.deepStrictEqual(pii.check({ text }), [], text);
   }

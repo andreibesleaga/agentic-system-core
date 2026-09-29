@@ -51,7 +51,7 @@ function bundle(over = {}) {
 }
 
 function run(over) {
-  return adapter.run(bundle(over), { instant: INSTANT, sha256, specVersion: '1.0.0-rc.5' });
+  return adapter.run(bundle(over), { instant: INSTANT, sha256, specVersion: '1.0.0-rc.6' });
 }
 
 test('the adapter emits exactly two files, both named, with their SHA-256', () => {
@@ -116,7 +116,7 @@ test('llms-ctx.txt carries AGSC-01-29\'s header, the terms, and one fenced secti
   assert.match(text, /^# Minimal Bundle — skim context\n/u);
   assert.match(text, /<!-- agsc:provenance\nbundle: https:\/\/minimal\.example\/\nlicense: /u);
   assert.match(text, new RegExp(`terms: ${TERMS.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}`, 'u'));
-  assert.match(text, /spec_version: 1\.0\.0-rc\.5\n/u);
+  assert.match(text, /spec_version: 1\.0\.0-rc\.6\n/u);
   assert.match(text, new RegExp(`generated_at: ${INSTANT}\\n`, 'u'));
   // AGSC-01-29: quoted prose is fenced as ```text agsc-content and is data, not
   // instruction. The record count comes from the index's own header, so the two

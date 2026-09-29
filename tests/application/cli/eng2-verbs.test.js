@@ -1,7 +1,7 @@
 'use strict';
 // tests/application/cli/eng2-verbs.test.js — the verb paths the package added:
 // `compose` writing the seven Harness files of AGSC-07-12, `lint --fix` (AGSC-03-12,
-// AGSC-04-14, AGSC-04-19, AGSC-04-20, the flag AGSC-09-09 names at rc.5), and
+// AGSC-04-14, AGSC-04-19, AGSC-04-20, the flag AGSC-09-09 names), and
 // `export --jsonld|--jsonl|--to <adapter>` (AGSC-01-26a, AGSC-01-27).
 //
 // Each verb is driven through its own module with a real port bag over a real copy of
@@ -62,7 +62,7 @@ function ctxFor(dir, options = {}) {
       proc: options.proc,
     },
     root: dir,
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     stderr: { write: (text) => lines.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},
@@ -258,7 +258,7 @@ test('AGSC-09-09: lint --fix rewrites the files, and lint without it changes not
   assert.match(after, /See \[supervisor\]\(\.\.\/concepts\/supervisor\.md\)\./u);
   assert.match(ctx.notes.join(''), /fixed: content\/concepts\/needs-a-fix\.md/u);
   assert.match(ctx.notes.join(''), /lane: fix \(1 file written\)/u);
-  // AGSC-04-19 as amended at rc.5 assigns a code PER NORMALISATION, so a
+  // AGSC-04-19 assigns a code PER NORMALISATION, so a
   // file that needed CRLF→LF, a key reorder AND a wikilink rewrite is three findings:
   // the encoding one under AGSC-E108 (AGSC-01-14) and the other two under AGSC-E506.
   const own = result.findings.filter((f) => /lint --fix normalised/u.test(f.message));

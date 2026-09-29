@@ -121,7 +121,7 @@ test('checker: the AGSC-09-11 envelope, and it MUST NOT pass over nothing', () =
   assert.strictEqual(dirty.status, 'fail');
   assert.deepStrictEqual(dirty.findings.map((f) => [f.code, f.file]), [['AGSC-E601', 'a.txt']]);
   assert.strictEqual(dirty.inputs_read, 1);
-  // AGSC-09-90 as amended at rc.6: "nothing is wrong" must be tellable from
+  // AGSC-09-90: "nothing is wrong" must be tellable from
   // "nothing was looked at".
   for (const nothing of [[], undefined, 'not a list']) {
     const empty = checker.check(nothing);

@@ -14,7 +14,7 @@ const OPTIONS = Object.freeze({
   generatedAt: '2026-01-01T00:00:00Z',
   license: 'CC-BY-4.0',
   sha256,
-  specVersion: '1.0.0-rc.5',
+  specVersion: '1.0.0-rc.6',
 });
 
 function item(slug, type, extra = {}, body = `# ${slug}\n\nThe body of ${slug}.\n`) {
@@ -69,7 +69,7 @@ test('AGSC-07-19: the description is bounded at 1024 characters and is one line'
 
 test('AGSC-07-20: each pack declares its licence and index.json IS the lockfile', () => {
   const produced = skills.packs([CLUSTER], OPTIONS);
-  // AGSC-06-18 as amended at rc.6: a CC BY Bundle's pack names its own licence.
+  // AGSC-06-18: a CC BY Bundle's pack names its own licence.
   assert.match(produced.files[0].text, /\nlicense: CC-BY-4\.0\n/u);
   assert.strictEqual(produced.index.packs[0].lock['SKILL.md'], sha256(produced.files[0].text));
   assert.strictEqual(produced.index.license, 'CC-BY-4.0');

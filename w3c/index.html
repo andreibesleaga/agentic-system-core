@@ -37,8 +37,8 @@
                                //   until the first report is published.
     copyrightStart: "2026",
     // Licence set explicitly: without a `license` key ReSpec would apply CC-BY 3.0
-    // by default, which would be a fifth licence taken implicitly on the one artefact addressed
-    // to a standards body, against NFR-10. "cc-by" is CC-BY 4.0. This document restates CC0
+    // by default, which would be a fifth licence, taken implicitly, on the one artefact addressed
+    // to a standards body. "cc-by" is CC-BY 4.0. This document restates CC0
     // vocabulary material and carries no ARR prose, so CC-BY 4.0 is the right explicit choice.
     license: "cc-by",
     localBiblio: {
@@ -47,13 +47,13 @@
         href: "https://agenticsystemcore.com/specs/",
         authors: ["Andrei N. Besleaga"],
         date: "2026",
-        status: "spec_version 1.0.0-rc.6 (draft, 2026-09-22; rc.3, rc.4 and rc.5 frozen at their tags, rc.6 in preparation — the items recorded since the rc.5 tag)"
+        status: "release candidate 1.0.0-rc.6"
       },
       "AGSC-WELLKNOWN-ID": {
-        // Title reflects (2026-09-04): the well-known URI is `knowledge-linkset`; the
-        // `agentic-knowledge` name lives on in the profile URI only; the discovery link is `describedby`.
-        // The draft's own slug and title belong to the Internet-Draft and are not renamed here.
-        title: "The knowledge-linkset Well-Known URI and Link Set Profile for Publishing Knowledge Artefacts",
+        // The draft's own title, verbatim. The well-known URI is `knowledge-linkset`; the
+        // `agentic-knowledge` name lives on in the profile URI and in the draft's slug only;
+        // the discovery link is the registered relation `describedby`.
+        title: "The 'knowledge-linkset' Well-Known URI for Publishing Knowledge Artefacts",
         href: "https://datatracker.ietf.org/doc/draft-besleaga-agentic-knowledge-wellknown/",
         authors: ["Andrei N. Besleaga"],
         status: "Internet-Draft",
@@ -140,8 +140,9 @@
   <section class="informative">
     <h3>Relationship to the Internet-Draft</h3>
     <p>
-      [[AGSC-WELLKNOWN-ID]] is the normative definition of the well-known resource, the link
-      relation type and the link set profile. This report is the vocabulary side of the same
+      [[AGSC-WELLKNOWN-ID]] is the normative definition of the well-known resource, its
+      extension link relations and the link set profile; it requests no new link relation
+      type. This report is the vocabulary side of the same
       system: the terms, the JSON-LD context, the namespace policy, and the human-readable target
       of the profile identifier. Where the two documents could disagree, [[AGSC-WELLKNOWN-ID]]
       wins for the discovery resource and this report wins for the vocabulary terms. Neither
@@ -191,7 +192,7 @@
   <h2>Vocabulary</h2>
   <p>
     The vocabulary has 12 classes and 40 properties &mdash; 52 terms in all (19 object properties,
-    21 datatype properties; counts derived by <code>tools/count-artifacts</code>, the <code>1.0.0-rc.6</code> draft, 2026-09-24). It stays inside OWL&nbsp;2 RL. There is deliberately no common superclass for the
+    21 datatype properties; counts derived by <code>tools/count-artifacts</code> at release candidate <code>1.0.0-rc.6</code>). It stays inside OWL&nbsp;2 RL. There is deliberately no common superclass for the
     six authored item types: "item" is a term of the file-format specification, not of the
     ontology.
   </p>
@@ -203,7 +204,7 @@
       <tbody>
         <tr><td><dfn data-dfn-type="dfn">asc:Bundle</dfn></td><td><code>skos:ConceptScheme</code></td><td>One directory tree of items published together; the concept scheme every Concept is in.</td></tr>
         <tr><td><dfn>asc:Cluster</dfn></td><td><code>skos:Collection</code></td><td>A navigational grouping of items. Membership is <code>skos:member</code>, authored on the item. Cluster nesting is also <code>skos:member</code> — never <code>skos:broader</code>, which would put a Collection in a semantic relation.</td></tr>
-        <tr><td><dfn>asc:Concept</dfn></td><td><code>skos:Concept</code></td><td>A unit of knowledge in a Bundle: a pattern, taxonomy, explainer, principle, decision, spec, task, term or (rc.3) architecture, distinguished by <code>asc:kind</code>.</td></tr>
+        <tr><td><dfn>asc:Concept</dfn></td><td><code>skos:Concept</code></td><td>A unit of knowledge in a Bundle: a pattern, taxonomy, explainer, principle, decision, spec, task, term or architecture, distinguished by <code>asc:kind</code>.</td></tr>
         <tr><td><dfn>asc:Episode</dfn></td><td><code>prov:Activity</code></td><td>A recorded occurrence — a session, run or incident — with a start, an actor and an outcome.</td></tr>
         <tr><td><dfn>asc:Gate</dfn></td><td><code>prov:Plan</code></td><td>A declared set of checks that a change must pass; its runs are Episodes.</td></tr>
         <tr><td><dfn>asc:Harness</dfn></td><td><code>prov:Plan</code></td><td>A generated bundle of files assembled from a validated composition of Concepts; never authored, never stored under the content tree.</td></tr>
@@ -212,7 +213,7 @@
         <tr><td><dfn>asc:Proposal</dfn></td><td><code>prov:Activity</code></td><td>A proposed change to a Bundle. It has no file: it is a forge pull request, instantiated in exports from the derived git log.</td></tr>
         <tr><td><dfn>asc:Review</dfn></td><td><code>prov:Activity</code></td><td>The human assessment of a Proposal. It has no file: it is instantiated from a verification entry at the IRI <code>&lt;item-IRI&gt;#review-&lt;n&gt;</code>.</td></tr>
         <tr><td><dfn>asc:Source</dfn></td><td><code>prov:Entity</code></td><td>An external work cited by an item. It has no file: it is instantiated from a sources entry.</td></tr>
-        <tr><td><dfn>asc:Attachment</dfn></td><td><code>prov:Entity</code></td><td>A media file carried by an item under <code>content/attachments/&lt;slug&gt;/</code>; IRI <code>&lt;item-IRI&gt;#attachment-&lt;n&gt;</code>. Pattern images are SVG only, under the safety allow-list of AGSC-02-98. Added at rc.3.</td></tr>
+        <tr><td><dfn>asc:Attachment</dfn></td><td><code>prov:Entity</code></td><td>A media file carried by an item under <code>content/attachments/&lt;slug&gt;/</code>; IRI <code>&lt;item-IRI&gt;#attachment-&lt;n&gt;</code>. Pattern images are SVG only, under the safety allow-list of AGSC-02-98.</td></tr>
       </tbody>
     </table>
   </section>
@@ -223,7 +224,8 @@
       Six of the nine core link keys reuse SKOS, Dublin Core Terms and PROV. The properties below
       are the ones this vocabulary defines: three core keys, one computed inverse, the untyped
       mention edge, the two item-reachability edges, and the five links used for engineering
-      traceability with their computed inverses &mdash; nineteen in all (two added at rc.3: <code>asc:hasAttachment</code> and <code>asc:peerOrigin</code>). A property marked
+      traceability with their computed inverses, and <code>asc:hasAttachment</code> and
+      <code>asc:peerOrigin</code> &mdash; nineteen in all. A property marked
       <em>computed inverse</em> is never authored by hand.
     </p>
     <table class="simple">
@@ -246,8 +248,8 @@
         <tr><td><dfn>asc:decides</dfn></td><td><code>asc:decidedBy</code></td><td>Computed inverse of <code>asc:decidedBy</code>; never authored.</td></tr>
         <tr><td><dfn>asc:source</dfn></td><td>—</td><td>Connects an item to each <code>asc:Source</code> instantiated from its <code>sources[]</code> entries, so a Source is reachable without string-parsing a fragment IRI. Range <code>asc:Source</code>; no domain.</td></tr>
         <tr><td><dfn>asc:review</dfn></td><td>—</td><td>Connects an item to each <code>asc:Review</code> instantiated from its <code>verified[]</code> entries, so a Review is reachable without string-parsing a fragment IRI. Range <code>asc:Review</code>; no domain.</td></tr>
-        <tr><td><dfn>asc:hasAttachment</dfn></td><td>—</td><td>Connects an item to one of its <code>asc:Attachment</code> instances (AGSC-05-29). No domain: items share no superclass. Added at rc.3.</td></tr>
-        <tr><td><dfn>asc:peerOrigin</dfn></td><td>—</td><td>The Bundle IRI of the declared peer node under whose base a cited resource lives, emitted beside <code>rdfs:seeAlso</code> (AGSC-11-12); no range is declared because this node asserts nothing about a foreign node. Added at rc.3.</td></tr>
+        <tr><td><dfn>asc:hasAttachment</dfn></td><td>—</td><td>Connects an item to one of its <code>asc:Attachment</code> instances (AGSC-05-29). No domain: items share no superclass.</td></tr>
+        <tr><td><dfn>asc:peerOrigin</dfn></td><td>—</td><td>The Bundle IRI of the declared peer node under whose base a cited resource lives, emitted beside <code>rdfs:seeAlso</code> (AGSC-11-12); no range is declared because this node asserts nothing about a foreign node.</td></tr>
       </tbody>
     </table>
   </section>
@@ -257,8 +259,8 @@
     <table class="simple">
       <thead><tr><th>Term</th><th>Domain</th><th>Range</th><th>Definition</th></tr></thead>
       <tbody>
-        <tr><td><dfn>asc:kind</dfn></td><td><code>asc:Concept</code></td><td><code>xsd:string</code></td><td>Qualifier on a Concept: pattern, taxonomy, explainer, principle, decision, spec, task, term or (rc.3) architecture.</td></tr>
-        <tr><td><dfn>asc:status</dfn></td><td>—</td><td><code>xsd:string</code></td><td>Publication state of an item: draft, stable, deprecated or (rc.3) retired.</td></tr>
+        <tr><td><dfn>asc:kind</dfn></td><td><code>asc:Concept</code></td><td><code>xsd:string</code></td><td>Qualifier on a Concept: pattern, taxonomy, explainer, principle, decision, spec, task, term or architecture.</td></tr>
+        <tr><td><dfn>asc:status</dfn></td><td>—</td><td><code>xsd:string</code></td><td>Publication state of an item: draft, stable, deprecated or retired.</td></tr>
         <tr><td><dfn>asc:staleAfter</dfn></td><td>—</td><td><code>xsd:dateTime</code></td><td>Absolute instant after which an item is stale. Staleness is a comparison, never a decay function.</td></tr>
         <tr><td><dfn>asc:origin</dfn></td><td>—</td><td><code>xsd:string</code></td><td>How an item came to exist: human, ai-assisted, ai-generated or imported.</td></tr>
         <tr><td><dfn>asc:operator</dfn></td><td>—</td><td><code>xsd:string</code></td><td>Actor accountable for an item: the human or organisation running the agent that produced it.</td></tr>
@@ -273,11 +275,11 @@
         <tr><td><dfn>asc:verifiedBy</dfn></td><td><code>asc:Review</code></td><td><code>xsd:string</code></td><td>Actor string of the human who recorded a Review.</td></tr>
         <tr><td><dfn>asc:verifiedAt</dfn></td><td><code>asc:Review</code></td><td><code>xsd:dateTime</code></td><td>Instant at which a human recorded a Review, with an explicit UTC offset.</td></tr>
         <tr><td><dfn>asc:specVersion</dfn></td><td><code>asc:Bundle</code></td><td><code>xsd:string</code></td><td>Version of the specification a Bundle declares.</td></tr>
-        <tr><td><dfn>asc:sha256</dfn></td><td><code>asc:Attachment</code></td><td><code>xsd:string</code></td><td>Lowercase-hex SHA-256 of the attachment bytes at build (AGSC-05-29). Added at rc.3.</td></tr>
-        <tr><td><dfn>asc:produces</dfn></td><td>—</td><td><code>xsd:string</code></td><td>A port type name the item produces; matched by exact equality in composition Step 5 (AGSC-02-96, AGSC-05-30, AGSC-07-23). Added at rc.3.</td></tr>
-        <tr><td><dfn>asc:consumes</dfn></td><td>—</td><td><code>xsd:string</code></td><td>A port type name the item consumes (AGSC-02-96, AGSC-05-30). Added at rc.3.</td></tr>
-        <tr><td><dfn>asc:taskState</dfn></td><td>—</td><td><code>xsd:string</code></td><td>One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13). Added at rc.3.</td></tr>
-        <tr><td><dfn>asc:retiredAt</dfn></td><td>—</td><td><code>xsd:dateTime</code></td><td>The instant an item entered status <code>retired</code>: <code>modified</code>, else <code>date</code>, by the midnight convention (AGSC-11-22, AGSC-05-14). Added at rc.3.</td></tr>
+        <tr><td><dfn>asc:sha256</dfn></td><td><code>asc:Attachment</code></td><td><code>xsd:string</code></td><td>Lowercase-hex SHA-256 of the attachment bytes at build (AGSC-05-29).</td></tr>
+        <tr><td><dfn>asc:produces</dfn></td><td>—</td><td><code>xsd:string</code></td><td>A port type name the item produces; matched by exact equality in composition Step 5 (AGSC-02-96, AGSC-05-30, AGSC-07-23).</td></tr>
+        <tr><td><dfn>asc:consumes</dfn></td><td>—</td><td><code>xsd:string</code></td><td>A port type name the item consumes (AGSC-02-96, AGSC-05-30).</td></tr>
+        <tr><td><dfn>asc:taskState</dfn></td><td>—</td><td><code>xsd:string</code></td><td>One of the nine Agent2Agent 1.0 task states, verbatim (AGSC-02-99, AGSC-10-13).</td></tr>
+        <tr><td><dfn>asc:retiredAt</dfn></td><td>—</td><td><code>xsd:dateTime</code></td><td>The instant an item entered status <code>retired</code>: <code>modified</code>, else <code>date</code>, by the midnight convention (AGSC-11-22, AGSC-05-14).</td></tr>
       </tbody>
     </table>
   </section>
@@ -303,7 +305,7 @@
     identifier yields the human-readable published specification of the profile.
   </p>
   <p>
-    The normative definition of the resource, its link relation types and its target attributes is
+    The normative definition of the resource, its extension link relations and its target attributes is
     [[AGSC-WELLKNOWN-ID]]. This section exists so that a reader arriving from the vocabulary can
     find the discovery layer, and so that the profile identifier has a stable explanation inside
     W3C space; it introduces no requirement of its own.

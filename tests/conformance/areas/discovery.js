@@ -1,13 +1,13 @@
 'use strict';
-// Conformance area `discovery` (owner:).
-// disc-0016 the RFC 9264 link set at Level ≥ 2 (superseding disc-0003, which
-// stated five bundle-fact attributes where rc.6 requires six), disc-0004 the
-// Level-0 form, disc-0005 the two-node mutual peer check, disc-0006 / disc-0007 the
-// byte layout of /llms.txt and /llms-full.txt, disc-0013 / disc-0014 their rc.6
-// successors (the same two files with the content-version line of the provenance
-// header), disc-0015 the `agsc-bundle-version` attribute at three levels of
-// visibility, disc-0012 the robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node carries. disc-0001, disc-0002, disc-0003, disc-0006, disc-0007,
-// disc-0010 and disc-0011 are withdrawn and are never run (AGSC-00-16).
+// Conformance area `discovery`.
+// disc-0016 the RFC 9264 link set at Level ≥ 2 with its six bundle-fact
+// attributes, disc-0004 the Level-0 form, disc-0005 the two-node mutual peer check,
+// disc-0013 / disc-0014 the byte layout of /llms.txt and /llms-full.txt with the
+// content-version line of the provenance header, disc-0015 the
+// `agsc-bundle-version` attribute at three levels of visibility, disc-0012 the
+// robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node
+// carries, disc-0018 the bundle hash, disc-0019 a newer MINOR's relation,
+// disc-0008 every item reachable from /llms.txt, disc-0009 the sitemap.
 
 const discovery = require('../../../src/distribution/discovery.js');
 const site = require('../../../src/distribution/site.js');
@@ -27,14 +27,10 @@ function digestsFor(routes) {
 
 /**
  * disc-0016 — the RFC 9264 link set at Level 2 and above, with the
- * SIX bundle-fact attributes of AGSC-06-08 as amended at rc.6.
+ * SIX bundle-fact attributes of AGSC-06-08.
  *
- * It supersedes disc-0003, which stated five and which that amendment falsified:
- * `agsc-bundle-version` is a bundle fact, AGSC-06-08a makes every `agsc-*`
- * attribute on the `describedby` link REQUIRED at Level 2 and above, and the
- * document disc-0003 pinned is therefore not a conforming Level-2 document.
- * disc-0003 is withdrawn and never runs; its id stays mapped here, as `bnd-0005`
- * does in the boundary area, so that a reader finds it beside its successor.
+ * `agsc-bundle-version` is a bundle fact, and AGSC-06-08a makes every `agsc-*`
+ * attribute on the `describedby` link REQUIRED at Level 2 and above.
  */
 function linksetCase(vector) {
   const expected = vector.expected;
@@ -71,10 +67,9 @@ function linksetCase(vector) {
       `unexpected ${JSON.stringify(relations.filter((r) => !expected.relations_allowed.includes(r)))}`],
     ['relations forbidden', expected.relations_forbidden.every((r) => !relations.includes(r)),
       'a forbidden short name is used'],
-    // NO READING. disc-0003 needed one, because the rc.6 amendment falsified it and
-    // a frozen vector may not be edited; it is withdrawn now (AGSC-00-16) and its
-    // successor states the six attributes the rules require, so the checker's
-    // verdict is asserted straight: a conforming Level-2 document raises nothing.
+    // NO READING. The vector states the six attributes the rules require, so the
+    // checker's verdict is asserted straight: a conforming Level-2 document raises
+    // nothing.
     ['the document validates', discovery.check(doc, { level: 2 }).length === 0
       && (expected.valid === undefined || expected.valid === true),
     JSON.stringify(discovery.check(doc, { level: 2 }))],
@@ -132,7 +127,7 @@ function peerCase(vector) {
 function llmsCase(vector) {
   const input = vector.input;
   const bundle = { ...input.bundle, clusters: input.clusters, items: input.items };
-  // rc.6 (AGSC-04-25/): the content version is an INPUT of these two files, not
+  // AGSC-04-25: the content version is an INPUT of these two files, not
   // something the writer derives — the same shape as the build instant beside it.
   const options = {
     bundleVersion: input.bundle_version,
@@ -261,7 +256,7 @@ function sitemapCase(vector) {
 }
 
 /**
- * disc-0012 — AGSC-06-18 as amended at rc.6: the robots groups.
+ * disc-0012 — AGSC-06-18: the robots groups.
  *
  * The file's bytes are NOT asserted (`file_bytes_asserted: false`): no rule pins
  * them, so the vector reads the emitted file back into groups and compares those.
@@ -339,7 +334,7 @@ function parseRobots(text) {
 }
 
 /**
- * disc-0015 (rc.6, AGSC-06-08 as amended) — `agsc-bundle-version` as a
+ * disc-0015 (AGSC-06-08) — `agsc-bundle-version` as a
  * bundle fact: one value on the anchor's `describedby` link at Level 2, omitted at
  * Level 0 with every other bundle fact, omitted on a `restricted` node although it
  * is Level 2, and `AGSC-E210` when a restricted node publishes it anyway.
@@ -414,7 +409,7 @@ function bundleVersionAttributeCase(vector) {
 }
 
 /**
- * disc-0017 (rc.6, AGSC-09-93 with AGSC-10-04) — a Level-2 document of a public
+ * disc-0017 (AGSC-09-93 with AGSC-10-04) — a Level-2 document of a public
  * node carries the `rel#ledger` link; without it the checker reports AGSC-E202, and
  * a restricted node, which publishes no ledger link (AGSC-11-20), stays valid.
  * The documents are BUILT by the publisher module, as in disc-0015, and the
@@ -452,26 +447,74 @@ function ledgerRequiredCase(vector) {
   return checks(list);
 }
 
+/**
+ * disc-0018 — AGSC-06-08 with AGSC-04-15: `agsc-bundle-hash` is the SHA-256 of the
+ * `graph.nq` the same build emits, equal to the `digest` of the `rel#graph` link to
+ * it and to the fingerprint `/now.md` shows. A real build of the fixture Bundle, at
+ * the fixed build instant; only the relation between the three values is asserted.
+ */
+function bundleHashCase(vector, ctx) {
+  const path = require('node:path');
+  const { createHash } = require('node:crypto');
+  const { createFileSystem, readSchemas } = require('../../../src/adapters/node-fs.js');
+  const { createClock } = require('../../../src/adapters/node-clock.js');
+  const validate = require('../../../src/knowledge/validate.js');
+  const { loadBundle } = require('../../../src/application/bundle.js');
+  const root = (ctx && ctx.root) || '.';
+  const fs = createFileSystem(path.join(root, 'tests', String(vector.input.bundle)));
+  const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(root)) });
+  const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+  const built = site.build(bundle, { clock, fs }, { level: vector.input.level, specVersion: vector.options.spec_version, version: '0.0.2' });
+  const nq = Buffer.from(String(built.files.get('/graph.nq')), 'utf8');
+  const sha = createHash('sha256').update(nq).digest();
+  const context = JSON.parse(String(built.files.get(discovery.WELLKNOWN_PATH))).linkset[0];
+  const hash = context.describedby[0]['agsc-bundle-hash'] || [];
+  const graphLink = (context[`${discovery.REL}graph`] || []).find((one) => /\/graph\.nq$/u.test(one.href)) || {};
+  const expected = vector.expected;
+  return checks([
+    ['one value', hash.length === expected.bundle_hash_values, JSON.stringify(hash)],
+    ['sha-256 of graph.nq', (hash[0] === `sha-256=:${sha.toString('base64')}:`) === expected.bundle_hash_equals_sha256_of_graph_nq, String(hash[0])],
+    ['digest of the rel#graph link', (JSON.stringify(graphLink.digest) === JSON.stringify(hash)) === expected.bundle_hash_equals_graph_nq_link_digest, JSON.stringify(graphLink.digest)],
+    ['/now.md fingerprint', String(built.files.get('/now.md')).includes(sha.toString('hex')) === expected.now_md_shows_the_same_hex, ''],
+  ]);
+}
+
+/**
+ * disc-0019 — AGSC-09-93 with AGSC-00-21: a relation of a newer MINOR is ignored
+ * with the warning AGSC-E506; another MAJOR gets no such tolerance.
+ */
+function newerMinorCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    if (want === undefined) { list.push([input.name, false, 'the vector states no expected case of this name']); continue; }
+    const found = discovery.check(input.document, { level: input.level, specVersion: input.reader_version });
+    const errors = found.filter((f) => f.severity === 'error');
+    list.push([`${input.name} valid`, (errors.length === 0) === want.valid, JSON.stringify(found)]);
+    const matched = findingsMatch(want.findings, found);
+    list.push([`${input.name} findings`, matched.ok && found.length === want.findings.length, matched.detail || JSON.stringify(found)]);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'disc-0013': llmsCase,
   'disc-0014': llmsCase,
   'disc-0015': bundleVersionAttributeCase,
   'disc-0017': ledgerRequiredCase,
-  'disc-0003': linksetCase,
+  'disc-0018': bundleHashCase,
+  'disc-0019': newerMinorCase,
   'disc-0016': linksetCase,
   'disc-0004': level0Case,
   'disc-0005': peerCase,
-  'disc-0006': llmsCase,
-  'disc-0007': llmsCase,
-  'disc-0010': llmsCase,
-  'disc-0011': llmsCase,
   'disc-0012': robotsCase,
   'disc-0008': reachabilityCase,
   'disc-0009': sitemapCase,
 };
 
-module.exports.run = (vector) => {
+module.exports.run = (vector, ctx) => {
   const handler = HANDLERS[vector.id];
   if (handler === undefined) return { status: 'fail', detail: `no handler for ${vector.id}` };
-  return handler(vector);
+  return handler(vector, ctx);
 };

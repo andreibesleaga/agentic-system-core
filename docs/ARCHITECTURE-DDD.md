@@ -2,7 +2,7 @@
 
 **Who this is for:** an architect or a developer who wants the domain model behind the code. **Read after:** [ARCHITECTURE-GUIDE.md](ARCHITECTURE-GUIDE.md) (the pictures) and [src/README.md](../src/README.md) (the module map).
 
-*Informative. Written 2026-09-16 for the `1.0.0-rc.3` draft; re-verified against `1.0.0-rc.4` on 2026-09-18; its context table and context map were checked against the `1.0.0-rc.6` draft on 2026-09-24, when the Interchange row and the map were corrected. It complements `docs/PLAN.md` (arc42, frozen as its first baseline) and never overrides a rule of `spec/`. Where this page and a rule disagree, the rule wins and this page is wrong.*
+*Informative. It complements `docs/PLAN.md` (arc42) and never overrides a rule of `spec/`. Where this page and a rule disagree, the rule wins and this page is wrong.*
 
 ## 1. The domain in one sentence
 
@@ -13,17 +13,17 @@ A **Bundle** is a directory of Markdown **items** joined by fourteen typed **Lin
 | Context | Aggregates / entities | Owns | Never touches | Spec home | Vector areas |
 |---|---|---|---|---|---|
 | **Knowledge** | Bundle, Item (six types), Link (14 keys), Cluster, Chunk, Attachment | parsing, validation, linking, ontology emission, index, chunk export | git, network, review | spec/01, 02, 03, 04, 05, 06 §6.5 | `frontmatter`, `slug`, `links`, `lint`, `jcs`, `graph`, `chunks`, `adopt` |
-| **Governance & Provenance** | Proposal, Review, Gate, Ledger, Channel, Agent lane (rc.4) | `prov` fields, DCO-Plus trailers, gates → CI checks, derived ledger, ingest | rendering, composition | spec/08, 01 §1.7–1.8 | `ledger`, `prov` |
+| **Governance & Provenance** | Proposal, Review, Gate, Ledger, Channel, Agent lane | `prov` fields, DCO-Plus trailers, gates → CI checks, derived ledger, ingest | rendering, composition | spec/08, 01 §1.7–1.8 | `ledger`, `prov` |
 | **Composition** | Selection, Verdict, Harness, Port wiring, saved Architecture | the five-step pipeline, the seven Harness files, emitters, skill packs | parsing, network | spec/07, 02 §2.10 | `compose`, `harness`, `skills` |
 | **Distribution** (also called Emission) | Page, Route, Discovery document, Surfaces (tools, page tools, agent-facing text, chunks), NOW, Boards | routes, headers, link set, surface declaration, budgets | writes of any kind | spec/06, 09 §9.3, 10 §10.5 | `discovery`, `build`, `cli`, `boards` |
 | **Boundary** | Peer, Visibility, Contribute target, Surface declaration, Responder/Solid hook, Tombstone | cross-origin access, peer-fetch safety, the federation walk (client rules), trust marking, contribute relation, the plugin contract, visibility and dynamic hooks, retirement | content semantics | spec/11 | `boundary` |
 | *Interchange* (supporting) | foreign formats both ways | OKF, JSON-LD, JSONL, steering files, skills import | rendering, composition | spec/01 §1.5–1.6, 03 §3.6 | `import`, `export` |
 
-**Context map.** Knowledge → *conformist* → Distribution (Distribution renders what Knowledge validated and adds nothing to it). Knowledge → *customer/supplier* → Composition (Composition consumes the resolved graph; Knowledge does not know compositions exist). Governance → *published language* (trailers, ledger entries) → Distribution, and the same published language → Interchange (provenance, the ledger and agent records reach imports and exports; added 2026-09-24). **Boundary is an anti-corruption layer around every external surface** — MCP, WebMCP, the A2A card, Solid, a peer — so that an external draft moving (the MCP handshake changed between 2025-11-25 and 2026-07-28; WebMCP's report date moved from 10 to 15 September 2026) moves a declared version string and a plugin, never the core. The four-rule plugin contract — **declare · pin · inherit · prove** (AGSC-11-16…19) — is the anti-corruption layer's interface.
+**Context map.** Knowledge → *conformist* → Distribution (Distribution renders what Knowledge validated and adds nothing to it). Knowledge → *customer/supplier* → Composition (Composition consumes the resolved graph; Knowledge does not know compositions exist). Governance → *published language* (trailers, ledger entries) → Distribution, and the same published language → Interchange (provenance, the ledger and agent records reach imports and exports). **Boundary is an anti-corruption layer around every external surface** — MCP, WebMCP, the A2A card, Solid, a peer — so that an external draft moving (the MCP handshake changed between 2025-11-25 and 2026-07-28; WebMCP's report date moved from 10 to 15 September 2026) moves a declared version string and a plugin, never the core. The four-rule plugin contract — **declare · pin · inherit · prove** (AGSC-11-16…19) — is the anti-corruption layer's interface.
 
 ## 3. Ubiquitous language
 
-The language is the vocabulary of `spec/00` §0.2 (Bundle, Item, the six types, NOW), the fourteen Link keys of AGSC-03-01, the 52 ontology terms of `ontology/agsc.ttl`, the rc.3 boundary terms (peer, surface, visibility, contribute mode, tombstone), and the rc.4 terms *agent lane* and *live board* (AGSC-00-19). It is **generated, never typed**: `node tools/gen-glossary` writes `docs/GLOSSARY.md` from the ontology's labels and comments plus the closed lists the spec fixes, so the glossary cannot drift from the definition. Words that are UI or import vocabulary — card, page, deck, note — are forbidden as types, keys or terms (AGSC-00-08).
+The language is the vocabulary of `spec/00` §0.2 (Bundle, Item, the six types, NOW), the fourteen Link keys of AGSC-03-01, the ontology terms of `ontology/agsc.ttl`, the boundary terms (peer, surface, visibility, contribute mode, tombstone), and the terms *agent lane* and *live board* (AGSC-00-19). It is **generated, never typed**: `node tools/gen-glossary` writes `docs/GLOSSARY.md` from the ontology's labels and comments plus the closed lists the spec fixes, so the glossary cannot drift from the definition. Words that are UI or import vocabulary — card, page, deck, note — are forbidden as types, keys or terms (AGSC-00-08).
 
 ## 4. Two statements the model rests on
 
@@ -32,9 +32,9 @@ The language is the vocabulary of `spec/00` §0.2 (Bundle, Item, the six types, 
 
 ## 5. Forward-compatibility rule
 
-A 1.x reader **MUST** ignore unknown members and unknown `x-<vendor>-<key>` keys (preserving them verbatim in lossless exports, AGSC-02-05/02-05a), **MUST** tolerate the reserved enum values the spec names when reading documents it did not author (AGSC-00-15, AGSC-11-02), and **MUST NOT** fail on a file whose `spec_version` MINOR is higher than its own (AGSC-00-14). A node's *own* configuration and frontmatter are validated closed, because a publisher must not emit a value its declared version does not define (AGSC-11-02 as amended). MAJOR is the only breaking boundary. Every parameter that is not a wire-format invariant lives in `agsc.config.json` with a spec default and a stated maximum (AGSC-11-01).
+A 1.x reader **MUST** ignore unknown members and unknown `x-<vendor>-<key>` keys (preserving them verbatim in lossless exports, AGSC-02-05/02-05a), **MUST** tolerate the reserved enum values the spec names when reading documents it did not author (AGSC-00-15, AGSC-11-02), and **MUST NOT** fail on a file whose `spec_version` MINOR is higher than its own (AGSC-00-14). A node's *own* configuration and frontmatter are validated closed, because a publisher must not emit a value its declared version does not define (AGSC-11-02). MAJOR is the only breaking boundary. Every parameter that is not a wire-format invariant lives in `agsc.config.json` with a spec default and a stated maximum (AGSC-11-01).
 
-## 5a. The plugin points (added at rc.6, AGSC-00-24)
+## 5a. The plugin points (AGSC-00-24)
 
 Everything this format admits as a replaceable part is one of **eight kinds**, and no
 other extension point exists at 1.x. The value of saying so in the architecture is

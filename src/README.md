@@ -302,18 +302,9 @@ A port in another language can use it without reading a line of this engine:
 
 ## 8. Where the rest went
 
-*Note, 2026-09-24:* this file used to carry the engine's build log as well as its map
-(about 2,000 lines). It was cut to this guide, and nothing was deleted:
-
-* the per-module reference as each part was built — the first module table and its
-  API, the application layer, links and lints, the graph exports, the build pipeline,
-  composition and the tool transports, and §11.1–§11.5 of the integration record —
-  is `REFERENCE.md` in this folder, with its section numbers kept;
-* §11.6–§11.17 (the specification items the engine found, the behaviour corrections of
-  2026-09-18 to 2026-09-21, the release candidates, the validators, the page tools,
-  the export forms, the legal surfaces) and the dated sections that followed them are
-  in `CHANGELOG.md`, under "Engine notes moved from `src/README.md`", with their
-  numbers kept, so a citation such as "§11.6(5)" still finds its text there.
+The per-module reference — the module table and its API, the application layer, links
+and lints, the graph exports, the build pipeline, composition and the tool transports,
+and the integration record — is `REFERENCE.md` in this folder; this file is the map.
 
 ## 9. Changes to the module map (2026-09-24)
 

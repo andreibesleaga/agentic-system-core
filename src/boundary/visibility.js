@@ -194,7 +194,7 @@ function profileRecognisedWithoutHeaders(response) {
 }
 
 /**
- * `federation.max_bytes` — AGSC-11-10(f), added at rc.5. Its bounds are the ones
+ * `federation.max_bytes` — AGSC-11-10(f). Its bounds are the ones
  * `schema/config.schema.json` declares (`minimum` 65536, `maximum` 268435456,
  * `default` 33554432). It is NOT in `federation.FEDERATION_PARAMS`, because that
  * table is the WALK parameter set whose exact five members vector `bnd-0023`

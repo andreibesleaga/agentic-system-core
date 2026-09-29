@@ -1,4 +1,4 @@
-# Workflow — the agent lane and the live board's two lanes (rc.4, AGSC-08-28…30, AGSC-10-16…18)
+# Workflow — the agent lane and the live board's two lanes (AGSC-08-28…30, AGSC-10-16…18)
 
 **What this shows.** The two lanes of the live board: a fast lane where a declared agent may act without a fresh human decision, and a slow lane where people decide. The caps, lints and budget checks that gate the fast lane are drawn on it, and the fast lane can never reach the slow one.
 

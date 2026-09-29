@@ -50,7 +50,7 @@ const FEDERATION_PARAMS = Object.freeze({
 const CONTRIBUTE_MODES = Object.freeze(['pr', 'channel', 'form']);
 /** AGSC-06-35: the IANA-registered relations a related-system link may use. */
 const RELATED_RELATIONS = Object.freeze(['describedby', 'alternate', 'related',
-  'service-desc', 'service-doc', 'service-meta', 'collection', 'item', 'cite-as']); // cite-as: rc.6,
+  'service-desc', 'service-doc', 'service-meta', 'collection', 'item', 'cite-as']); // cite-as: RFC 8574
 
 /** AGSC-03-01: the fourteen Link keys. */
 const LINK_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
@@ -232,10 +232,9 @@ function followRedirects(peer, redirects, options) {
     // resolved — whether it is absent from a supplied map or the caller supplied no
     // map at all — has no classified address to connect to and is refused.
     //
-    // Until rc.5 the guard ran only when `opts.resolved` was an object, which left a
-    // fail-open branch in the transport rules; `bnd-0005` depended on it and was
-    // withdrawn for that reason (the one blocker for 1.0.0). `bnd-0030` replaces it
-    // and carries a resolution for every hop. This is the last fail-open path in §11.
+    // The guard runs whether or not `opts.resolved` is an object, so the transport
+    // rules have no fail-open branch; vector `bnd-0030` carries a resolution for
+    // every hop.
     const resolved = resolvedFor(opts, hostOf(hop));
     const addressFault = checkAddresses(resolved === null ? [] : resolved, opts);
     if (addressFault !== null) { error = addressFault; break; }
@@ -543,9 +542,14 @@ function relatedLinks(config) {
   const links = {};
   if (findings.length === 0) {
     for (const entry of (config && config.related) || []) {
-      const link = { href: entry.href, type: entry.type };
-      if (entry.profile !== undefined) link.profile = entry.profile;
-      if (entry.title !== undefined) link.title = entry.title;
+      // RFC 9264 §4.2.4.1: `type` and `title` are strings; §4.2.4.3: `profile`, an
+      // extension target attribute, is an array of strings even with one value
+      // (AGSC-06-10). This is the one writer of these links; the build calls it.
+      const link = { href: String(entry.href), type: String(entry.type) };
+      if (entry.profile !== undefined && entry.profile !== null) {
+        link.profile = Object.freeze([].concat(entry.profile).map(String));
+      }
+      if (entry.title !== undefined && entry.title !== null) link.title = String(entry.title);
       if (!links[entry.rel]) links[entry.rel] = [];
       links[entry.rel].push(Object.freeze(link));
     }

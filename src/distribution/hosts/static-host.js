@@ -193,7 +193,7 @@ module.exports = define({
     'The server must terminate HTTPS itself or sit behind something that does: conformance is claimed for an HTTPS origin.',
     'The nginx snippet names every route whose headers differ from the site-wide set, so it is regenerated after every build; a file added later gets the site-wide headers only.',
     'Apache needs mod_headers and mod_alias enabled and AllowOverride All for the directory; without them the file is ignored or refused. Its redirects carry an absolute Location built from ServerName, so behind a TLS terminator ServerName must name the https origin.',
-    'Entity tags are the server\'s own (nginx and Apache derive them from the file\'s time and size); AGSC-11-05 as amended at rc.6 admits that, and the discovery document\'s digest is the integrity statement.',
+    'Entity tags are the server\'s own (nginx and Apache derive them from the file\'s time and size); AGSC-11-05 admits that, and the discovery document\'s digest is the integrity statement.',
   ],
   name: 'static-host',
   title: 'Any web server: nginx or Apache httpd',

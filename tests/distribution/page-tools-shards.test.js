@@ -69,11 +69,11 @@ function generatedBundle() {
       operator: 'human:tester',
     },
     site: { base: 'https://sharded.example/', tagline: 'Above the shard bound.', title: 'Sharded Bundle' },
-    spec_version: '1.0.0-rc.5',
+    spec_version: '1.0.0-rc.6',
   }, null, 2)}\n`);
   nodeFs.writeFileSync(path.join(dir, 'content', 'index.md'), [
     '---',
-    'spec_version: 1.0.0-rc.5',
+    'spec_version: 1.0.0-rc.6',
     'title: Sharded Bundle',
     'description: A generated Bundle of five hundred and twenty items, used to exercise the AGSC-06-21 shard bound.',
     'base: https://sharded.example/',
@@ -127,7 +127,7 @@ function built(dir) {
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.5', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' }) };
 }
 
 /**
@@ -195,7 +195,7 @@ test('AGSC-06-21: above 500 items /search.json IS the manifest and the shards ca
   assert.strictEqual(docs, ITEMS);
   // The other size-triggered shapes: the chunk export and the paginated index routes.
   const chunks = JSON.parse(String(files.get('/chunks.jsonl')));
-  // AGSC-06-31 as amended at rc.6: the shard manifest carries the content
+  // AGSC-06-31: the shard manifest carries the content
   // version of AGSC-04-25 beside its two members, and JCS sorts it first.
   assert.deepStrictEqual(Object.keys(chunks).sort(), ['bundle_version', 'lines_total', 'shards']);
   assert.match(chunks.bundle_version, /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u);

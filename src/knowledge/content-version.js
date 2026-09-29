@@ -1,5 +1,5 @@
 'use strict';
-// CONTEXT Knowledge — AGSC-04-25 (spec/04 §4.9, added at rc.6): the
+// CONTEXT Knowledge — AGSC-04-25 (spec/04 §4.9): the
 // CONTENT VERSION of a Bundle, `bundle_version`.
 //
 // One derivation, one place. It is a pure function of the two inputs a build

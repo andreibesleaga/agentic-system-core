@@ -164,7 +164,7 @@ test('the emitted bundle evaluates and answers in a context that holds only the 
   const verdict = core.compose(items, ['y']);
   const out = core.emit(verdict, {
     base: 'https://x.example/', instant: '2026-01-01T00:00:00Z', items,
-    licenseProse: 'CC0-1.0', name: 'n', selectionDigest: 'deadbeef', specVersion: '1.0.0-rc.4',
+    licenseProse: 'CC0-1.0', name: 'n', selectionDigest: 'deadbeef', specVersion: '1.0.0-rc.6',
   });
   assert.strictEqual(out.emitted, true);
   for (const [file, text] of out.files) {

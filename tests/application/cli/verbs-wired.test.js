@@ -46,7 +46,7 @@ function run(argv, dir, options = {}) {
     env: { SOURCE_DATE_EPOCH: EPOCH, ...(options.env || {}) },
     ports: { fs: createFileSystem(dir), proc: options.proc },
     root: dir,
-    specVersion: '1.0.0-rc.4',
+    specVersion: '1.0.0-rc.6',
     stderr,
     stdout,
     version: '0.0.0',
@@ -116,12 +116,12 @@ test('AGSC-10-02: build --level 0 writes the Level-0 artefacts and no generated 
   assert.ok(!fs.existsSync(path.join(dir, 'www', 'index.html')));
   // AGSC-06-32: no /ns/context.jsonld is emitted at Level 0.
   assert.ok(!fs.existsSync(path.join(dir, 'www', 'ns', 'context.jsonld')));
-  // CHANGED 2026-09-21: this assertion used to read `!('@context' in …)`,
-  // on the pre-rc.5 reading that a document may name no context when the node
-  // serves none. AGSC-05-09 as amended at rc.5 overturned it — "The URL is a
+  // A document names a context even when the node serves none. AGSC-05-09:
+  // "The URL is a
   // constant of this specification, resolvable by every reader at every Level, so
   // a Level-0 graph.jsonld is expandable without the node serving a context of its
-  // own" — and the old behaviour lost half the triples in a conforming processor.
+  // own" — and a document naming no context would lose half the triples in a
+  // conforming processor.
   assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'www', 'graph.jsonld'), 'utf8'))['@context'],
     'https://w3id.org/agentic-system-core/ns/1.0.0-draft.1/context.jsonld');
 });
@@ -381,10 +381,10 @@ test('a distribution with no area handlers reports skip, never a silent pass', (
 test('AGSC-09-02: a vector that does not pass is AGSC-E001, and a withdrawn one is silent', () => {
   const conformVerb = require('../../../src/application/cli/verbs/conform.js');
   const results = [
-    { id: 'disc-0006', rule: 'AGSC-06-13a', status: 'pass' },
+    { id: 'disc-0013', rule: 'AGSC-06-13a', status: 'pass' },
     { id: 'disc-0008', rule: 'AGSC-06-14', status: 'fail', detail: 'sections: got ["Coordination"]' },
     { id: 'lint-0026', rule: 'AGSC-04-19', status: 'skip', detail: 'no handler for lint-0026' },
-    { id: 'bnd-0005', rule: 'AGSC-11-09', status: 'skip', withdrawn: true, detail: 'withdrawn' },
+    { id: 'bnd-9999', rule: 'AGSC-11-09', status: 'skip', withdrawn: true, detail: 'withdrawn' },
     { id: 'cli-0007', rule: 'AGSC-09-14a', status: 'fail' },
   ];
   const findings = conformVerb.findingsFor(results);
@@ -395,7 +395,7 @@ test('AGSC-09-02: a vector that does not pass is AGSC-E001, and a withdrawn one 
   assert.strictEqual(findings[1].message, 'vector lint-0026 (AGSC-04-19) skip: no handler for lint-0026');
   // A missing `detail` never prints `undefined`, and a WITHDRAWN vector is silent.
   assert.strictEqual(findings[2].message, 'vector cli-0007 (AGSC-09-14a) fail: ');
-  assert.ok(!findings.some((f) => f.message.includes('bnd-0005')), 'a withdrawn vector was counted');
+  assert.ok(!findings.some((f) => f.message.includes('bnd-9999')), 'a withdrawn vector was counted');
   assert.deepStrictEqual(conformVerb.findingsFor(), []);
 
   // And the real run over the fixture at Level 0 reports nothing of its own.

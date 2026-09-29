@@ -148,10 +148,8 @@ const htmlEscape = xmlEscape;
  * with `src/knowledge/jsonld.js#termName`, which is the conforming one. An `asc:`
  * term is named by its LOCAL name, always. An external property is named by its
  * local name, or by its compact IRI where that local name is also an `asc:` term
- * name or is shared by two external properties. Until rc.6 this tool named every
- * `asc:` term `asc:<Term>` and ignored the collision with an `asc:` term entirely,
- * so the file it generates and the file the engine builds were not the same file —
- * although AGSC-06-32 now makes `/ns/context.jsonld` a constant of the
+ * name or is shared by two external properties, exactly as the engine names them,
+ * because AGSC-06-32 makes `/ns/context.jsonld` a constant of the
  * specification that every node's copy must equal byte for byte.
  *
  * @param {Array<Array<*>>} list the external rows, `[curie, type, rule]`
@@ -451,7 +449,7 @@ function checkContext(document, derived, file, findings) {
   const wanted = derived['@context'];
   const missing = [];
   // The derived vocabulary terms, identified by the `asc:` IRI their definition
-  // names — NOT by the key, which since rc.6 is the term's LOCAL name here
+  // names — NOT by the key, which is the term's LOCAL name here
   // and may be the compact IRI in a conforming file written the other way.
   // Keying on `asc:` prefixes of the KEY made this loop check nothing at all once
   // the derivation stopped producing such keys.

@@ -45,7 +45,7 @@ function walk(rel, keep) {
 const RULES = (() => {
   const active = new Set();
   const retired = new Set();
-  for (const m of SPEC.matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\(retired at rc)?/gu)) {
+  for (const m of SPEC.matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\((?:retired at rc|reserved:))?/gu)) {
     (m[2] ? retired : active).add(m[1]);
   }
   for (const id of retired) active.delete(id);
@@ -57,6 +57,8 @@ const VECTORS = walk('tests/vectors', (f) => f.endsWith('.json')).map((f) => ({ 
 test('every live vector cites an active rule; a withdrawn one carries a reason and a live successor', () => {
   assert.ok(VECTORS.length >= 150, `only ${VECTORS.length} vectors were read`);
   const ids = new Set(VECTORS.map((v) => v.id));
+  // No vector is withdrawn in this release, so the branch below runs for none of
+  // them today; it is the check every future withdrawal (AGSC-00-16) must pass.
   for (const v of VECTORS) {
     if (v.level === 'withdrawn') {
       assert.ok(typeof v.reason === 'string' && v.reason.length > 0, `${v.id}: withdrawn without a reason (AGSC-09-05)`);
@@ -133,7 +135,7 @@ test('every schema $id and $ref resolves', () => {
   const byId = new Map(schemas.map((s) => [s.json.$id, s.json]));
   assert.ok(schemas.length >= 3);
   for (const s of schemas) {
-    // AGSC-06-01 (rc.6): the namespace site publishes each schema at its `$id`.
+    // AGSC-06-01: the namespace site publishes each schema at its `$id`.
     assert.strictEqual(s.json.$id, `https://agenticsystemcore.com/ns/schema/${path.basename(s.file)}`, s.file);
   }
   const pointer = (doc, fragment) => fragment.split('/').slice(1)

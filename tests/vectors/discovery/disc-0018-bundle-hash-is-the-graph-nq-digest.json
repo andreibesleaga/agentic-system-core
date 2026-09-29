@@ -1,0 +1,20 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-08 with AGSC-04-15: the bundle fact `agsc-bundle-hash` is the AGSC-04 bundle hash — the SHA-256 of the bytes of `graph.nq` — written in RFC 9530 syntax, so it is the same string as the `digest` of the `https://w3id.org/agentic-system-core/rel#graph` link whose target is `graph.nq`, and the same fingerprint `/now.md` shows as lowercase hex. Derivation: build the minimal fixture at Level 2 at the fixed build instant; take the bytes the build emits at `/graph.nq`, hash them with SHA-256, base64 the 32 bytes and write `sha-256=:<base64>:`; the anchor's `describedby` link carries exactly that one value under `agsc-bundle-hash`, the `rel#graph` link to `graph.nq` carries the same value under `digest`, and `/now.md` contains the lowercase hex of the same 32 bytes. A hash over any other byte string — over the list of every emitted file and its digest, for example — is not the bundle hash. The bytes of `graph.nq` themselves are not asserted: no value in this vector depends on them, only the relation between the three.",
+  "expected": {
+    "bundle_hash_equals_graph_nq_link_digest": true,
+    "bundle_hash_equals_sha256_of_graph_nq": true,
+    "bundle_hash_values": 1,
+    "now_md_shows_the_same_hex": true
+  },
+  "id": "disc-0018",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "level": 2
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-06-08"
+}

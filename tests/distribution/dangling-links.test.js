@@ -39,7 +39,7 @@ function load(root = FIXTURE) {
   const fs = createFileSystem(root);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.5', version: '0.0.2' } };
+  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.6', version: '0.0.2' } };
 }
 
 // -------------------------------------------------------------------- (a) guard
@@ -96,7 +96,7 @@ test('the minimal fixture emits no dangling link (end to end)', () => {
   assert.deepStrictEqual(dangling.map((l) => `${l.from} -> ${l.href}`), []);
   assert.deepStrictEqual(built.findings.filter((f) => f.code === 'AGSC-E901'), []);
   // `[Supervisor](supervisor)` in `content/concepts/handoff.md` now renders as the
-  // published route; before rc.5 it rendered verbatim and 404ed.
+  // published route, never verbatim (which would 404).
   assert.ok(String(built.files.get('/concepts/handoff/index.html'))
     .includes('href="/concepts/supervisor/"'));
   // The BODY itself is untouched: `/pages/<slug>.md` is the source view (AGSC-06-02).

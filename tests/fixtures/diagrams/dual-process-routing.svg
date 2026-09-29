@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 260" role="img" aria-labelledby="dual-process-routing-title dual-process-routing-desc" font-family="system-ui, sans-serif" font-size="14">
   <title id="dual-process-routing-title">Dual-process routing diagram</title>
   <desc id="dual-process-routing-desc">dashed = slow-path results distilled into the fast path over time</desc>
-  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <defs><marker id="dual-process-routing-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
   <g fill="none" stroke="currentColor" stroke-width="1.5">
     <rect x="16" y="104" width="70" height="44" rx="6"/>
     <rect x="120" y="96" width="110" height="60" rx="6" class="agsc-accent" stroke-width="2.2"/>
     <rect x="300" y="40" width="130" height="44" rx="6"/>
     <rect x="300" y="160" width="130" height="44" rx="6"/>
-    <path d="M90 126 L116 126" marker-end="url(#ar2)"/>
-    <path d="M233.8 106.2 L296.2 85.2" marker-end="url(#ar2)"/>
-    <path d="M233.8 143.3 L296.2 161.7" marker-end="url(#ar2)"/>
-    <path d="M365 160 L365 102 L365 84" marker-end="url(#ar2)" stroke-dasharray="4 3"/>
+    <path d="M90 126 L116 126" marker-end="url(#dual-process-routing-arrow)"/>
+    <path d="M233.8 106.2 L296.2 85.2" marker-end="url(#dual-process-routing-arrow)"/>
+    <path d="M233.8 143.3 L296.2 161.7" marker-end="url(#dual-process-routing-arrow)"/>
+    <path d="M365 160 L365 102 L365 84" marker-end="url(#dual-process-routing-arrow)" stroke-dasharray="4 3"/>
   </g>
   <g fill="currentColor" text-anchor="middle">
     <text x="51" y="130" font-size="12">input</text>

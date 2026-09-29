@@ -14,4 +14,4 @@ are listed in [src/README.md](../src/README.md) §4.
 node tools/validate-schemas --json   # meta-validates the three against 2020-12
 ```
 
-Frozen between release candidates, like `spec/`. Licence: CC0-1.0.
+Published as part of `1.0.0-rc.6`, the first public release candidate; like `spec/`, it changes only in a specification pass. Licence: CC0-1.0.

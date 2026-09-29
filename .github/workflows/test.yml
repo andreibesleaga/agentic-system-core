@@ -52,6 +52,8 @@ jobs:
         run: npm ci
       - name: lint (zero warnings; style, require order, size budgets)
         run: npm run lint
+      - name: duplicates (jscpd, threshold 2 %)
+        run: npm run duplicates
       - name: architecture (the dependency rule, by dependency-cruiser)
         run: npm run arch
       - name: suite

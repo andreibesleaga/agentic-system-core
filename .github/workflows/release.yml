@@ -46,16 +46,19 @@ jobs:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
       - run: npm ci
+      - run: npm run lint
+      - run: npm run arch
+      - run: npm run duplicates
       - run: npm test
       - run: npm audit --audit-level=low
+      - run: node tools/rule-coverage --check
+      - run: node tools/requirements-matrix --check
       - run: node tools/count-artifacts --json
       - name: the independent validators of AGSC-09-90
         shell: bash
         run: |
-          # Every validator BLOCKS. `validate-spec` was a reporting step while the
-          # specification items it found were still open; they were applied at
-          # rc.6 and it exits 0 on the shipped text, so the carve-out is gone — a
-          # gate that reports and does not block protects nothing.
+          # Every validator BLOCKS: a gate that reports and does not block
+          # protects nothing.
           # validate-wellknown checks one built discovery document, so it runs in
           # the next step against a fixture build instead of with no argument.
           for t in tools/validate-*; do

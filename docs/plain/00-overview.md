@@ -10,10 +10,10 @@
 
 **Where requirements live.** Every product requirement that is served by the *shape* of the artefacts rather than one sentence is cited in §0.5, so a validator can check the citation.
 
-**Added at rc.4.** Two terms complete the language for Mode 5 — an *agent lane* (a declared, budgeted
+Two terms complete the language for Mode 5 — an *agent lane* (a declared, budgeted
 agent that proposes, never writes) and the *live board* — and one rule names the whole declared scope of
 the specification with the version at which each part becomes normative.
 
-**Added at rc.6.** One section states what readers and writers must do across versions — ignore and keep what they do not know, carry it through a round trip, never emit for a version they do not claim — closes the list of plugin kinds at eight, and reserves names for version 1.1.
+One section states what readers and writers must do across versions — ignore and keep what they do not know, carry it through a round trip, never emit for a version they do not claim — closes the list of plugin kinds at eight, and reserves names for version 1.1.
 
 Rules: `spec/00-overview.md`, ids `AGSC-00-01` … `AGSC-00-25`.

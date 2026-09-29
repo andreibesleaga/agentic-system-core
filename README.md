@@ -5,7 +5,7 @@ A specification for publishing machine-discoverable knowledge bundles — the Ag
 What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the nine independent checkers of AGSC-09-90 — seven validators and two generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
 ## Status
-**Release candidate.** This tree states specification `1.0.0-rc.6`, drafted on 2026-09-22 and not yet tagged; the latest tag is `1.0.0-rc.5`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0-rc.6` in this tree and are published from the release tag. The earlier 0.0.x releases only reserved the names, shipped no runtime, and are marked deprecated on npm and yanked on PyPI. Once `1.0.0-rc.6` is published: `npm install agentic-system-core`, or `pip install --pre agentic-system-core` (pip installs a release candidate only when asked with `--pre`).
+**Release candidate.** This tree states specification `1.0.0-rc.6`, the first public release candidate. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0-rc.6` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install --pre agentic-system-core` (pip installs a release candidate only when asked with `--pre`).
 
 The specification's own site is [AgenticSystemCore.com](https://agenticsystemcore.com).
 
@@ -21,7 +21,7 @@ no server in between.
 
 ## What is different about it
 
-To our knowledge, no other system combines discovery through already-registered web
+To the author's knowledge, no other system combines discovery through already-registered web
 mechanisms with an integrity digest on every artefact it names, a typed graph with a
 published ontology, machine artefacts whose bytes are fixed by expected-byte
 conformance vectors, governance in which every change — human or agent — arrives as a
@@ -81,7 +81,7 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
 - **A project's living specifications.** Decisions, specifications, tasks and gates
   as one governed memory, and steering files that keep a coding agent on course
   ([Mode 2](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L3](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l3--the-steering-file-that-keeps-a-coding-agent-on-course)).
-- **A pattern catalogue.** Concepts with sources and provenance, readable without
+- **A library of patterns.** Concepts with sources and provenance, readable without
   JavaScript, composable into a starting architecture
   ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md)).
 - **A team board.** A board from GitHub, GitLab, Jira, Trello, Linear, Asana, Notion,
@@ -186,6 +186,11 @@ assistants. A person decides what is written, an assistant drafts and checks it,
 person reads, edits and approves everything that is published and answers for it. Every
 published item records how its text was made and names the person accountable for it.
 Written with AI assistance, reviewed and published by a person.
+The assistance covered text, code, figures and diagrams alike. The engine itself calls no
+AI model: it contains no model adapter, and the model steps the specification describes are
+optional, off unless the person running an engine adds an adapter of their own and turns
+them on, and that person's responsibility. What an assistant or agent writes from this
+work is its own output, not a statement by the author.
 
 ## What this does not claim
 

@@ -1,43 +1,23 @@
 'use strict';
 // Conformance area `graph` — AGSC-05 and AGSC-06-32.
 //
-// graph-0001 canonical N-Quads and materialised inverses      AGSC-04-15
-// graph-0002 cluster nesting is skos:member                   AGSC-05-19
 // graph-0003 a blank node in an export block is AGSC-E605     AGSC-05-08
-// graph-0004 a Source is a fragment IRI on its item           AGSC-05-14
 // graph-0005 memory:// resolution and the foreign bundle      AGSC-05-04b
-// graph-0006 the two item-reachability edges                  AGSC-05-27
-// graph-0010 attachment nodes                                 AGSC-05-29
 // graph-0011 the context file and its round trip              AGSC-06-32
 // graph-0012 N-Quads escaping and the datatypes               AGSC-05-32
-// graph-0013 ports and task state                             AGSC-05-30
-// graph-0014 the three literal forms                          AGSC-05-31
-// graph-0026 the whole-file case of graph-0015 under a prose licence of its own (rc.6);
-// graph-0021…0025 the same cases as 0001/0002/0004/0006/0020, restated as quads
-// named by the Bundle IRI AGSC-04-15
-//
-// (0001, 0002, 0004, 0006, 0010, 0013, 0014 and 0020 are withdrawn and never run.)
+// graph-0016 attachment nodes, the whole file                 AGSC-05-29
+// graph-0017 ports and task state, the whole file             AGSC-05-30
+// graph-0018 the three literal forms, the whole file          AGSC-05-31
+// graph-0019 the context term names                           AGSC-06-32
+// graph-0021 canonical N-Quads and materialised inverses      AGSC-04-15
+// graph-0022 cluster nesting is skos:member                   AGSC-05-19
+// graph-0023 a Source is a fragment IRI on its item           AGSC-05-14
+// graph-0024 the two item-reachability edges                  AGSC-05-27
+// graph-0025 the asc:mentions edge of an inline link          AGSC-05-27
+// graph-0026 the Turtle profile, the whole file               AGSC-05-10
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
-//
-// TWO READINGS THIS HANDLER MAKES, both reported to the maintainer:
-//
-//  1. `graph-0010` calls its `nquads` the complete serialization of the vector's
-//     input, but omits the `rdf:type`, `skos:inScheme` and `asc:kind` triples that
-//     AGSC-05-12/05-17/05-26 oblige for the same item (its `items[]` entry carries
-//     "slug plus keys under test", as the vector format allows). It is therefore
-//     compared against the AGSC-05-29 attachment projection — `attachmentQuads` —
-//     byte for byte, and the whole-Bundle serialization is additionally required to
-//     contain every one of those lines and no blank node.
-//
-//  2. `graph-0013`/`graph-0014` state `turtle_lines` that carry a subject prefix or
-//     a four-space indent and end in `;`. No conforming writer can place all of them
-//     at those positions at once (the first would have to be the subject's first
-//     predicate while the last is not its last), so each expected line is compared as
-//     a predicate–object CLAUSE, after its subject or indent and its terminator are
-//     removed. What the rules under test pin — the property, the literal form and the
-//     grouping of several objects with `,` — is asserted exactly.
 
 const { execFileSync } = require('node:child_process');
 const crypto = require('node:crypto');
@@ -56,10 +36,8 @@ const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex'
 
 /**
  * The emission options a vector's input asks for. Every line of `graph.nq` is a quad
- * named by the Bundle IRI (AGSC-04-15 as amended at rc.6), so the graph term
- * is never chosen by the vector's shape: the five released cases that stated triples
- * in the default graph under the older `input.base` shape are withdrawn and are never
- * run (graph-0001/0002/0004/0006/0020, superseded by graph-0021…graph-0025).
+ * named by the Bundle IRI (AGSC-04-15), so the graph term is never chosen by the
+ * vector's shape.
  */
 function optionsFor(input) {
   return {
@@ -128,7 +106,7 @@ function literalFormsCase(vector) {
 
 /** graph-0011 — the context file (AGSC-06-32) and the expand / re-compact round trip. */
 /**
- * graph-0019 — AGSC-06-32 as amended at rc.6: the term NAMES.
+ * graph-0019 — AGSC-06-32: the term NAMES.
  *
  * The vector states the external rows itself, with the `@type` each takes, because
  * the type is fixed by the rule that emits the property and this case tests the
@@ -156,10 +134,10 @@ function termNamesCase(vector) {
 }
 
 /**
- * graph-0025 (superseding graph-0020) — AGSC-05-27 as amended at rc.6: the `asc:mentions` edge of
+ * graph-0025 — AGSC-05-27: the `asc:mentions` edge of
  * an inline body link. Only the mentions lines are asserted
  * (`whole_file_asserted: false`); the rest of the serialisation is pinned by
- * graph-0015…graph-0018.
+ * graph-0016…graph-0018 and graph-0026.
  */
 function mentionsCase(vector) {
   const input = vector.input;
@@ -226,33 +204,13 @@ function exportBlockCase(vector) {
     `got ${JSON.stringify(findings)}`]]);
 }
 
-/** graph-0010 — the attachment projection of AGSC-05-29 (see the note at the top). */
-function attachmentCase(vector) {
-  const options = optionsFor(vector.input);
-  const list = [];
-  const projection = nq.serialize(vector.input.items
-    .flatMap((item) => nq.attachmentQuads(item, options)));
-  list.push(['nquads', projection === vector.expected.nquads, `got\n${projection}`]);
-  const whole = nq.toNQuads(vector.input.items, options);
-  for (const line of vector.expected.nquads.split('\n').filter(Boolean)) {
-    list.push(['also in the whole Bundle', whole.includes(line), `missing ${line}`]);
-  }
-  if (vector.expected.blank_nodes !== undefined) {
-    const count = nq.countBlankNodes(whole);
-    list.push(['blank_nodes', count === vector.expected.blank_nodes, `got ${count}`]);
-  }
-  return checks(list);
-}
-
 /**
- * graph-0015/0016/0017/0018 (rc.5) — the WHOLE file, byte for byte.
+ * graph-0016/0017/0018/0026 — the WHOLE file, byte for byte.
  *
- * These four replace the four withdrawn vectors that stated clauses in isolation
- * (the second reading at the top of this file). A whole file needs no reading at
- * all: `expected.nquads` and `expected.turtle` are compared as bytes, which is what
+ * `expected.nquads` and `expected.turtle` are compared as bytes, which is what
  * AGSC-04-24 names for `graph.nq` and `graph.ttl` in the cross-implementation set.
  * The discriminator is `expected.turtle` being a whole document (it opens with the
- * `@prefix` block), which no released vector carries.
+ * `@prefix` block).
  */
 function wholeFileCase(vector) {
   const options = optionsFor(vector.input);
@@ -336,37 +294,6 @@ function itemsCase(vector) {
   for (const line of vector.expected.excludes || []) {
     list.push(['excludes', !nquads.includes(line), `present: ${line}`]);
   }
-  for (const line of vector.expected.nquads_lines || []) {
-    list.push(['nquads line', nquads.includes(line), `missing ${line} in\n${nquads}`]);
-  }
-
-  if (vector.expected.turtle_lines || vector.expected.turtle_never_contains
-      || vector.expected.forbidden || vector.expected.verdict_digest_exported === false) {
-    const text = turtle.toTurtle(vector.input.items, options);
-    const present = new Set(clauses(text));
-    for (const line of vector.expected.turtle_lines || []) {
-      list.push(['turtle clause', present.has(normaliseClause(line)), `missing ${JSON.stringify(normaliseClause(line))} in\n${text}`]);
-    }
-    if (vector.expected.turtle_never_contains) {
-      list.push(['turtle_never_contains', !text.includes(vector.expected.turtle_never_contains), `present in\n${text}`]);
-    }
-    if (vector.expected.verdict_digest_exported === false) {
-      // AGSC-05-30: `verdict_digest` is not exported — neither as a property nor as
-      // its value, which would be a triple under any name.
-      const digests = vector.input.items.map((item) => item.verdict_digest).filter(Boolean);
-      list.push(['verdict_digest', !/verdict/iu.test(nquads) && !digests.some((d) => nquads.includes(d)),
-        `a verdict reached the export:\n${nquads}`]);
-    }
-    if (vector.expected.forbidden) {
-      // The three forms graph-0014 forbids. The third is a statement about absence,
-      // so it is checked by re-serialising the same item without `status`.
-      list.push(['no datatype on a language-tagged literal', !nquads.includes('@en^^') && !text.includes('@en^^'), nquads]);
-      list.push(['no ^^xsd:string in Turtle', !text.includes('^^xsd:string'), text]);
-      const stripped = vector.input.items.map(({ status, ...rest }) => rest);
-      const without = nq.toNQuads(stripped, options);
-      list.push(['no asc:status when status is not authored', !without.includes(`${nq.NS}status`), without]);
-    }
-  }
   return checks(list);
 }
 
@@ -380,7 +307,6 @@ module.exports.run = (vector, ctx) => {
   if (typeof input.markdown === 'string') return exportBlockCase(vector);
   const expected = vector.expected || {};
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
-  if (input.attachment_bytes !== undefined) return attachmentCase(vector);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };
 };

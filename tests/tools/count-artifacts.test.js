@@ -89,7 +89,7 @@ describe('tools/count-artifacts — invocation', () => {
   it('counts a root it is POINTED at, not the one it lives in', () => {
     const dir = tmpdir();
     writeTree(dir, {
-      'spec/00-overview.md': '# Overview\n\n`spec_version: "1.0.0-rc.5"`\n\n- **AGSC-00-01** A rule. [PRD-002]\n',
+      'spec/00-overview.md': '# Overview\n\n`spec_version: "1.0.0-rc.9"`\n\n- **AGSC-00-01** A rule. [PRD-002]\n',
       'spec/09-conformance.md': '# Conformance\n\n| Code | Fault | Raised by |\n|---|---|---|\n| `AGSC-E201` | x | AGSC-00-01 |\n',
       'ontology/agsc.ttl': 'asc:Thing\n    a owl:Class .\n',
       'tests/vectors/jcs/jcs-0001-x.json': JSON.stringify({
@@ -102,6 +102,30 @@ describe('tools/count-artifacts — invocation', () => {
     assert.equal(result.json.counts.rules, 1);
     assert.equal(result.json.counts.vectors_total, 1);
     assert.equal(result.json.counts.ontology_classes, 1);
+  });
+
+  it('counts a reserved rule id in either marker form', () => {
+    const dir = tmpdir();
+    writeTree(dir, {
+      'spec/00-overview.md': [
+        '# Overview', '', '`spec_version: "1.0.0-rc.6"`', '',
+        '- **AGSC-00-01** A rule. [PRD-002]',
+        '- **AGSC-00-02** *(reserved: merged into AGSC-00-01; the id is never reused, AGSC-00-16.)*',
+        '- **AGSC-00-03** *(retired at rc, 2026-01-01: merged into AGSC-00-01; the id is reserved under AGSC-00-16 and never reused.)*',
+        '',
+      ].join('\n'),
+      'spec/09-conformance.md': '# Conformance\n\n| Code | Fault | Raised by |\n|---|---|---|\n| `AGSC-E201` | x | AGSC-00-01 |\n',
+      'ontology/agsc.ttl': 'asc:Thing\n    a owl:Class .\n',
+      'tests/vectors/jcs/jcs-0001-x.json': JSON.stringify({
+        area: 'jcs', description: 'x', expected: {}, id: 'jcs-0001', input: {},
+        level: 'required', rule: 'AGSC-00-01',
+      }),
+    });
+    const result = envelope('count-artifacts', [dir]);
+    assert.equal(result.code, 0, result.err);
+    assert.equal(result.json.counts.rules, 3);
+    assert.equal(result.json.counts.rules_reserved, 2);
+    assert.equal(result.json.counts.rules_active, 1);
   });
 
   it('states how many inputs it read', () => {

@@ -1,2 +1,14 @@
 AgenticSystemCore
 Copyright 2026 Andrei N. Besleaga
+
+Which licence covers which part (the licence table in README.md is the full list):
+- the engine, the command line and the checkers, the specification text under
+  spec/ and the conformance vectors under tests/vectors/: Apache License 2.0
+  (LICENSE);
+- the JSON Schemas, the ontology, the JSON-LD context, the identifiers and the
+  discovery document: CC0 1.0 Universal;
+- the prose of a published node: the AgenticSystemCore Content Use Terms 1.0
+  (LICENSE-CONTENT).
+Every right these licences do not grant is reserved by the author.
+
+AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to their owners.

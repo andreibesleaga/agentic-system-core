@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 260" role="img" aria-labelledby="bulkhead-isolation-title bulkhead-isolation-desc" font-family="system-ui, sans-serif" font-size="14">
   <title id="bulkhead-isolation-title">Bulkhead isolation diagram</title>
   <desc id="bulkhead-isolation-desc">pool A fails fast on its own — B and C never notice</desc>
-  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <defs><marker id="bulkhead-isolation-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
   <g fill="none" stroke="currentColor" stroke-width="1.5">
     <rect x="20" y="40" width="90" height="40" rx="6"/>
     <rect x="20" y="108" width="90" height="40" rx="6"/>
@@ -11,12 +11,12 @@
     <rect x="165" y="108" width="100" height="40" rx="6"/>
     <rect x="165" y="176" width="100" height="40" rx="6"/>
     <rect x="330" y="96" width="110" height="64" rx="6"/>
-    <path d="M114 60 L161 60" marker-end="url(#ar2)"/>
-    <path d="M114 128 L161 128" marker-end="url(#ar2)"/>
-    <path d="M114 196 L161 196" marker-end="url(#ar2)"/>
-    <path d="M268.7 81.5 L326.3 104.5" marker-end="url(#ar2)" stroke-dasharray="4 3"/>
-    <path d="M269 128 L326 128" marker-end="url(#ar2)"/>
-    <path d="M268.7 174.5 L326.3 151.5" marker-end="url(#ar2)"/>
+    <path d="M114 60 L161 60" marker-end="url(#bulkhead-isolation-arrow)"/>
+    <path d="M114 128 L161 128" marker-end="url(#bulkhead-isolation-arrow)"/>
+    <path d="M114 196 L161 196" marker-end="url(#bulkhead-isolation-arrow)"/>
+    <path d="M268.7 81.5 L326.3 104.5" marker-end="url(#bulkhead-isolation-arrow)" stroke-dasharray="4 3"/>
+    <path d="M269 128 L326 128" marker-end="url(#bulkhead-isolation-arrow)"/>
+    <path d="M268.7 174.5 L326.3 151.5" marker-end="url(#bulkhead-isolation-arrow)"/>
     <path d="M292 80 L308 96 M308 80 L292 96" stroke-width="2"/>
   </g>
   <g fill="currentColor" text-anchor="middle">

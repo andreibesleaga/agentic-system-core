@@ -159,7 +159,7 @@ test('import of an archive is AGSC-E903, and nothing is written', (t) => {
     assert.doesNotMatch(r.err, /internal error/u);
   }
   // A genuinely unknown adapter is still refused as one — AGSC-E203, the closed-list
-  // code, since rc.6 (it was the usage code AGSC-E002 before) — before any path is
+  // code, not the usage code AGSC-E002 — before any path is
   // looked at: the archive check does not hide the refusal.
   const unknown = agsc(dir, ['import', '--from', 'no-such-adapter', source]);
   assert.strictEqual(unknown.exit, 1);

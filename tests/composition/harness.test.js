@@ -79,7 +79,7 @@ function optionsFor(result, extra) {
     name: 'security',
     selectionDigest: createHash('sha256')
       .update(harness.selectionDigestInput(result), 'utf8').digest('hex'),
-    specVersion: '1.0.0-rc.4',
+    specVersion: '1.0.0-rc.6',
     ...(extra || {}),
   };
 }
@@ -218,7 +218,7 @@ test('AGSC-01-29: the two agent-facing digests carry the AGSC-06-15 provenance h
     // `generated_at:`. The emission passes no content version, so the block states
     // AGSC-04-25's branch 4 derived from the build instant it already carries —
     // never an empty value, because AGSC-06-13a admits no absence.
-    assert.match(text, /<!-- agsc:provenance\nbundle: https:\/\/minimal\.example\/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1\.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1\.0\nspec_version: 1\.0\.0-rc\.4\nbundle_version: 0\.0\.0\+20260101T000000Z\ngenerated_at: 2026-01-01T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov\.origin and each accepted contribution carries an Assisted-by: trailer\n-->/u,
+    assert.match(text, /<!-- agsc:provenance\nbundle: https:\/\/minimal\.example\/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1\.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1\.0\nspec_version: 1\.0\.0-rc\.6\nbundle_version: 0\.0\.0\+20260101T000000Z\ngenerated_at: 2026-01-01T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov\.origin and each accepted contribution carries an Assisted-by: trailer\n-->/u,
       `${path} does not carry the fixed provenance header of AGSC-06-15`);
     assert.match(text, /```text agsc-content\n/u, `${path} does not fence quoted prose`);
   }

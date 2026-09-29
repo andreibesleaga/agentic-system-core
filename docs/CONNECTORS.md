@@ -155,8 +155,9 @@ unless you add `--replace`, and a second import of the same archive changes noth
   no outcome, which an episode here must have), documents (they are the raw text the
   other records were derived from) and raw nodes (there is no item type for them).
 - **Refused:** an archive containing `permissions.json` (remove it — it holds
-  credentials, not knowledge); an archive of a newer COGX major version, or of a
-  newer specification version, unless you pass `--allow-newer`.
+  credentials, not knowledge); an archive of a newer COGX major version, or of
+  another major version of the specification, unless you pass `--allow-newer`. A newer
+  minor version of the specification is imported, with the warning `AGSC-E506`.
 
 ## Route 5 — an agent kit (GABBE), both ways
 
@@ -222,7 +223,8 @@ nothing.
   have both, and the adapter never invents them; a session snapshot that states no
   outcome; the resume pointer (working state, not knowledge); a skill whose
   frontmatter is not the simple YAML the format allows. Template files are skipped.
-- **Refused:** a record of a newer specification version (unless `--allow-newer`);
+- **Refused:** a record of another major version of the specification (unless
+  `--allow-newer`; a newer minor version is imported with the warning `AGSC-E506`);
   a file over the 1 MiB input cap; an archive (unpack it first).
 
 ## Route 6 — skills repositories and rule packs, both ways
@@ -292,8 +294,9 @@ frontmatter is kept whole in `x-skills-rest`.
   node's `bundle.license_prose` before you publish.
 - As with every import: nothing is written if an item already here would be
   overwritten (add `--replace` if you mean it), `--dry-run` shows the plan, a second
-  import of the same clone changes nothing, and a record of a newer specification
-  version is refused unless `--allow-newer`.
+  import of the same clone changes nothing, and a record of another major version of
+  the specification is refused unless `--allow-newer` (a newer minor version is
+  imported with the warning `AGSC-E506`).
 
 **From a node into a collection:**
 
@@ -430,6 +433,29 @@ the board's home.
 **Never automatic:** no tool writes a file, merges, pushes, opens a pull request or
 sends anything to another node; `claimed_by` is derived from history and never
 written; a claim is not a merge.
+
+## Route 8 — link diagrams (Mermaid), export only
+
+```sh
+agsc export --to mermaid    # writes dist/export/mermaid/
+```
+
+One Mermaid flowchart per published item, `items/<slug>.mmd`, showing the item and
+every published item it shares a written Link with (either direction, each edge
+labelled with its Link key), and one per published cluster, `clusters/<slug>.mmd`,
+showing the cluster's members and the Links among them. Drafts, retired and
+unreleased items, and every Link to one, are left out. Each file starts with the
+provenance block and the Content Use Terms as `%%` comment lines, so it still renders
+anywhere Mermaid does (GitHub, GitLab, Obsidian, most Markdown viewers). There is no
+import: the adapter claims no key for a round trip. For the minimal fixture,
+`items/handoff.mmd` ends with:
+
+```mermaid
+flowchart LR
+  n_handoff["Handoff"]
+  n_supervisor["Supervisor"]
+  n_supervisor -->|uses| n_handoff
+```
 
 ## Which route for which framework
 

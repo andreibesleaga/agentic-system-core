@@ -1,6 +1,6 @@
 {
   "area": "discovery",
-  "description": "A Level-0 publisher — a CMS or wiki export with no engine — publishes the same RFC 9264 link set with every digest and every agsc-* target attribute omitted: it has no ledger, no graph.nq and no build instant, and Level 0 does not ask for one. There is no structural difference between Levels: linkset is the sole top-level member everywhere (AGSC-06-08a). Without this, no CMS export could ever be Level 0 and the D50 promise would fail at its first artefact. Supersedes disc-0002.",
+  "description": "A Level-0 publisher — a CMS or wiki export with no engine — publishes the same RFC 9264 link set with every digest and every agsc-* target attribute omitted: it has no ledger, no graph.nq and no build instant, and Level 0 does not ask for one. There is no structural difference between Levels: linkset is the sole top-level member everywhere (AGSC-06-08a). Without this, no CMS export could ever be Level 0 and the Level-0 promise would fail at its first artefact.",
   "expected": {
     "attributes_omitted": [
       "agsc-bundle-hash",
@@ -48,7 +48,6 @@
     }
   },
   "level": "required",
-  "note": "path updated 2026-09-04 (D60) from /.well-known/agentic-knowledge to /.well-known/knowledge-linkset; this vector was added today at rc.2 and is unreleased, so editing in place is allowed (never done to disc-0001/0002, which are withdrawn and frozen).",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

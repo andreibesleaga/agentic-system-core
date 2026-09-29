@@ -226,7 +226,7 @@ const DATATYPE_PROPERTIES = Object.freeze([
 /**
  * Frontmatter keys that are deliberately NOT exported, each with the rule that says
  * so. Named here so that adding an export is a decision and not an accident.
- *   `verdict_digest`  AGSC-05-30 — not exported (vector `graph-0013`).
+ *   `verdict_digest`  AGSC-05-30 — not exported (vector `graph-0017`).
  *   `prov.agent`      AGSC-05-26 — a build-time severity discriminator, not a fact.
  *   `prov.agreement`  AGSC-05-26 — carried by the DCO-Plus trailer (AGSC-08-06).
  */
@@ -239,8 +239,8 @@ const NEVER_EXPORTED = Object.freeze(['verdict_digest', 'prov.agent', 'prov.agre
  * object of `schema:usageInfo` on the Bundle node AND on every item node, as an
  * `xsd:string` literal (AGSC-05-31 form (c)), so that `pages/<slug>.jsonld` and the
  * `export --jsonl` line of AGSC-01-27 carry the licence without a second fetch.
- * Before rc.5 the engine took it from `options.bundle.usage_info` and wrote it as an
- * IRI, on the Bundle alone; both were defects (vector `graph-0015`).
+ * It is never taken from `options.bundle.usage_info`, never written as an IRI and
+ * never stated on the Bundle alone (vector `graph-0026`).
  */
 const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 
@@ -251,9 +251,9 @@ const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
  *
  * They are emitted only when the caller supplies `options.bundle` — the record of the
  * build's configuration. With no configuration there is no `license_prose` to name and
- * no build whose terms could be stated, which is why every released vector that
- * serialises a bare item list (`graph-0001`, `graph-0002`, `graph-0004`, `graph-0006`)
- * expects neither triple and is unchanged by this rule.
+ * no build whose terms could be stated, which is why every vector that
+ * serialises a bare item list (`graph-0021`, `graph-0022`, `graph-0023`, `graph-0024`)
+ * expects neither triple.
  */
 function licenceQuads(bundle, subject, graph) {
   const out = [];
@@ -261,7 +261,7 @@ function licenceQuads(bundle, subject, graph) {
   if (bundle.license_prose !== undefined) {
     out.push(quad(iri(subject), iri(`${SCHEMA}license`), literal(String(bundle.license_prose)), graph));
   }
-  // AGSC-06-18 (rc.6, 2026-09-24): the Content Use Terms only where the publisher
+  // AGSC-06-18: the Content Use Terms only where the publisher
   // adopts them; otherwise the prose licence stands in their place.
   const adopted = bundle.license_prose == null || String(bundle.license_prose) === CONTENT_USE_TERMS;
   const usage = bundle.terms != null ? String(bundle.terms)
@@ -354,7 +354,7 @@ function attachmentBytes(store, slug, file) {
  * (AGSC-05-29). `options.sha256` hashes the file bytes; the Knowledge context never
  * reads a file, so both the bytes and the hash function are injected.
  *
- * Exported on its own because `graph-0010` states exactly these quads.
+ * Exported on its own because `graph-0016` states exactly these quads.
  */
 function attachmentQuads(item, options) {
   const subject = options.subject || itemIri(item, options);
@@ -405,11 +405,10 @@ function datatypeQuads(item, subject, graph) {
 /**
  * `date`/`modified` → `dcterms:created`/`dcterms:modified` (AGSC-05-27).
  *
- * At rc.5 the AGSC-05-26 table gained the two rows the gap this comment
- * used to report was about: `date` → `dcterms:created` and `modified` →
- * `dcterms:modified`, both `xsd:dateTime` at midnight of that date (AGSC-04-10), and
- * AGSC-05-31 form (b) names them as the one DCTerms exception to form (c). The
- * engine's reading is now the rule's own text; vector `graph-0018`.
+ * The AGSC-05-26 table carries the two rows: `date` → `dcterms:created` and
+ * `modified` → `dcterms:modified`, both `xsd:dateTime` at midnight of that date
+ * (AGSC-04-10), and AGSC-05-31 form (b) names them as the one DCTerms exception to
+ * form (c). The engine's reading is the rule's own text; vector `graph-0018`.
  */
 function dateQuads(item, subject, graph) {
   const out = [];
@@ -587,7 +586,7 @@ function shard(nquads, options = {}) {
 /**
  * How many blank nodes a serialization carries. Always 0 for this engine's own
  * output (AGSC-05-08); the counter exists so that a test can say so rather than
- * assume it (vector `graph-0010`).
+ * assume it (vector `graph-0021`).
  */
 function countBlankNodes(nquads) {
   return (String(nquads).match(/(?:^|[\s<])_:/gu) || []).length;

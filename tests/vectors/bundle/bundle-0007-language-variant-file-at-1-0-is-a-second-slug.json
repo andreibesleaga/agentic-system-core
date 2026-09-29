@@ -1,6 +1,6 @@
 {
   "area": "bundle",
-  "description": "AGSC-01-13 as amended on 2026-09-24: language variants are reserved to 1.1 (AGSC-00-20), so at 1.0 a file named <slug>.<lang>.md beside its primary is a second use of the primary's slug, AGSC-E206, and no variant route /<type-plural>/<slug>/<lang>/ is emitted (AGSC-06-01). Derivation over the minimal fixture plus one file content/concepts/handoff.fr.md: the slug of a file is the part of its name before the first dot (AGSC-01-11, the same grammar AGSC-05-05 reads a path with), so the two files claim the slug handoff and lint reports AGSC-E206 naming that slug; a build of the same Bundle emits /concepts/handoff/ and nothing under /concepts/handoff/fr/. Supersedes bundle-0002, which asserted the 1.1 behaviour (a shared slug, a variant route) at 1.0 and proved nothing about an engine; the 1.1 MINOR adds the route, the tags and the vectors and removes nothing.",
+  "description": "AGSC-01-13: language variants are reserved to 1.1 (AGSC-00-20), so at 1.0 a file named <slug>.<lang>.md beside its primary is a second use of the primary's slug, AGSC-E206, and no variant route /<type-plural>/<slug>/<lang>/ is emitted (AGSC-06-01). Derivation over the minimal fixture plus one file content/concepts/handoff.fr.md: the slug of a file is the part of its name before the first dot (AGSC-01-11, the same grammar AGSC-05-05 reads a path with), so the two files claim the slug handoff and lint reports AGSC-E206 naming that slug; a build of the same Bundle emits /concepts/handoff/ and nothing under /concepts/handoff/fr/. The 1.1 MINOR adds the route, the tags and the vectors and removes nothing.",
   "expected": {
     "build": {
       "routes_absent": [
@@ -23,7 +23,6 @@
     "bundle": "fixtures/minimal"
   },
   "level": "required",
-  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

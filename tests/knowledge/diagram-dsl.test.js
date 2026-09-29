@@ -209,7 +209,7 @@ test('a via waypoint, or `both`, separates the two directions', () => {
   assert.equal(diagrams.compile(via, { slug: 'x' }).svg === null, false);
   const both = 'box a 20 20 80 40 "a" acc\nbox b 200 20 80 40 "b"\narrow a b both\n';
   const svg = diagrams.compile(both, { slug: 'x' }).svg;
-  assert.ok(svg.includes('marker-start="url(#ar2)"'));
+  assert.ok(svg.includes('marker-start="url(#x-arrow)"'));
 });
 
 test('a malformed or empty via= is refused', () => {
@@ -289,7 +289,7 @@ test('thick widens a line and a bar, and acc may mark a line or a path', () => {
   assert.equal((thick.match(/stroke-width="5"/gu) || []).length, 2);
   const path = diagrams.compile('path "M10 100 L40 100" acc arrow\n', { slug: 'x' }).svg;
   assert.ok(path.includes(`class="${diagrams.ACCENT_CLASS}"`));
-  assert.ok(path.includes('marker-end="url(#ar2)"'));
+  assert.ok(path.includes('marker-end="url(#x-arrow)"'));
 });
 
 test('a canvas statement moves the note, the footer band and the margins', () => {

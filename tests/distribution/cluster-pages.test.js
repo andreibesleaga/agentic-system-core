@@ -66,7 +66,8 @@ test('item pages carry the Summary block and the metadata list of AgenticSystemC
   assert.match(page, /<dt>IRI<\/dt><dd><code>https:\/\/minimal\.example\/concepts\/handoff\/<\/code><\/dd>/u);
   assert.match(page, /<dt>Provenance<\/dt><dd>Written by a person \(origin <code>human<\/code>, operator <code>human:andreibesleaga<\/code>\)<\/dd>/u);
   // Index pages carry their own description as the Summary.
-  assert.match(String(files.get('/clusters/index.html')), /<p class="summary"><strong>Summary<\/strong>Every clusters item of this node\.<\/p>/u);
+  assert.match(String(files.get('/clusters/index.html')), /<p class="summary"><strong>Summary<\/strong>Every published cluster of this node\.<\/p>/u);
+  assert.match(String(files.get('/clusters/index.html')), /<h1>Clusters<\/h1>/u);
 });
 
 test('a cluster page lists at most 500 members and says where the complete membership is', () => {

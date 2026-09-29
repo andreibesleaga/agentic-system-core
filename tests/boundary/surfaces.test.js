@@ -35,7 +35,7 @@ test('AGSC-11-18: readOnlyHint on the five reads, consequentialHint on the two w
   // `links` returns edges, not prose, so it carries no untrustedContentHint.
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.links.untrustedContentHint, false);
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.read.untrustedContentHint, true);
-  // AGSC-11-18 as amended at rc.5 (bnd-0035, bnd-0036): `extensions` is MCP's map of
+  // AGSC-11-18 (bnd-0035, bnd-0036): `extensions` is MCP's map of
   // extension identifier to settings object, and this node's settings object carries
   // exactly `linkset` — the absolute URL of its discovery document (AGSC-06-07).
   assert.deepStrictEqual(plain(s.mcpCapabilities({ base: 'https://a.example/' })), {
@@ -74,7 +74,7 @@ test('AGSC-11-16: a surface is declared only when it is served, ordered by href'
     href: 'https://a.example/chunks.jsonl',
     rel: 'https://w3id.org/agentic-system-core/rel#surface',
   });
-  // AGSC-11-16 as amended at rc.6: the revision the transport speaks, by default.
+  // AGSC-11-16: the revision the transport speaks, by default.
   assert.deepStrictEqual(links[3]['agsc-surface-version'], [s.MCP_PROTOCOL_VERSION]);
   assert.deepStrictEqual(links[1]['agsc-surface-version'], ['2026-09-15']);
   // Nothing emitted, no server: nothing declared.

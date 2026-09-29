@@ -36,7 +36,7 @@ function bundleOf(items) {
 
 function planOf(items, options = {}) {
   return steer.plan(bundleOf(items), {
-    generatedAt: '2026-01-01T00:00:00Z', nowState: NOW, specVersion: '1.0.0-rc.5', ...options,
+    generatedAt: '2026-01-01T00:00:00Z', nowState: NOW, specVersion: '1.0.0-rc.6', ...options,
   });
 }
 
@@ -67,9 +67,9 @@ test('AGSC-01-28: the default is agents,claude, and every target carries the sam
 });
 
 test('AGSC-01-28: a target outside the registry is AGSC-E203 and names the eleven', () => {
-  // rc.6, AGSC-00-23: a value outside a closed operator list is AGSC-E203.
-  // It was AGSC-E002 until then, which AGSC-09-08 reserves for an unknown FLAG and
-  // which would have made this an exit-2 usage error rather than a finding.
+  // AGSC-00-23: a value outside a closed operator list is AGSC-E203, not
+  // AGSC-E002, which AGSC-09-08 reserves for an unknown FLAG and which would
+  // make this an exit-2 usage error rather than a finding.
   const plan = planOf([], { targets: ['agents', 'notepad'] });
   assert.deepStrictEqual(plan.files.map((f) => f.target), ['agents']);
   const one = plan.findings.find((f) => f.code === 'AGSC-E203');
@@ -113,9 +113,9 @@ test('AGSC-01-29: the provenance header, the terms and the fenced prose are all 
   assert.match(text, /^# A Node — steering for coding agents\n\n<!-- agsc:provenance\n/u);
   assert.match(text, /\nbundle: https:\/\/example\.org\/\n/u);
   assert.match(text, /\nlicense: CC-BY-4\.0\n/u);
-  // AGSC-06-18 as amended at rc.6: a CC BY Bundle's `terms` line names its own licence.
+  // AGSC-06-18: a CC BY Bundle's `terms` line names its own licence.
   assert.match(text, /\nterms: CC-BY-4\.0\n/u);
-  assert.match(text, /\nspec_version: 1\.0\.0-rc\.5\n/u);
+  assert.match(text, /\nspec_version: 1\.0\.0-rc\.6\n/u);
   assert.match(text, /\ngenerated_at: 2026-01-01T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov\.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n/u);
   assert.match(text, /```text agsc-content\n/u);
   assert.ok(text.endsWith('\n'));

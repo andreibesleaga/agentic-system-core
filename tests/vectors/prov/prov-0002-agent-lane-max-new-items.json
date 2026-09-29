@@ -171,7 +171,6 @@
     }
   },
   "level": "required",
-  "note": "added 2026-09-18 at rc.4 (D88); unreleased, may be edited in place until the rc.4 tag",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

@@ -4,9 +4,9 @@ Thank you for reading this before writing code or prose. This repository holds t
 different things, and they are changed in two different ways.
 
 - **The standard** — `spec/`, `schema/`, `ontology/`, `tests/vectors/` and
-  `docs/SPEC.md`. These are **frozen** between release candidates: a released rule
-  id keeps its meaning, a released vector is never edited (it is withdrawn and a new
-  one added), and an ontology term is deprecated rather than deleted
+  `docs/SPEC.md`. These are **frozen** as published, from the first public release
+  candidate `1.0.0-rc.6` on: a released rule id keeps its meaning, a released vector
+  is never edited (it is withdrawn and a new one added), and an ontology term is deprecated rather than deleted
   (`spec/00-overview.md`, AGSC-00-14…17). A change here is a change to the format
   every implementation must follow.
 - **The engine** — `src/`, `bin/`, `tools/`, `tests/` and the rest. This is one
@@ -32,7 +32,7 @@ engine is wrong" to be the usual answer.
 
 ## Proposing a change to the engine
 
-Normal pull request. New to the code? [docs/CODE-ORIENTATION.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CODE-ORIENTATION.md) says where to start for each kind of change *(pointer added 2026-09-24)*. Before you open it:
+Normal pull request. New to the code? [docs/CODE-ORIENTATION.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CODE-ORIENTATION.md) says where to start for each kind of change. Before you open it:
 
 ```bash
 npm ci                           # the exact pinned libraries of the lockfile

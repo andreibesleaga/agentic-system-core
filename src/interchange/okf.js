@@ -200,7 +200,7 @@ function mapFrontmatter(raw, options) {
       { file: options.path, severity: 'warn' }));
   }
 
-  // AGSC-01-22 (rc.6): a record whose licence the importer cannot establish as
+  // AGSC-01-22: a record whose licence the importer cannot establish as
   // permitting publication is written `status: draft`, so it is never published
   // (AGSC-06-30). The record's own `license` decides when it declares one; else the
   // source's (its root index.md, its root licence file).
@@ -306,15 +306,17 @@ function majorMinor(version) {
 }
 
 /**
- * AGSC-01-22's LIMIT: a source whose declared `spec_version` has a MAJOR or a
- * MINOR this tool does not implement is refused with `AGSC-E004`, before any file
- * is written, unless the caller passed the adapter's own `--allow-newer`.
+ * AGSC-01-22's LIMIT: a source whose declared `spec_version` has a MAJOR this tool
+ * does not implement is refused with `AGSC-E004`, before any file is written,
+ * unless the caller passed the adapter's own `--allow-newer`. A source of the
+ * tool's MAJOR and a newer MINOR is NOT refused: it is imported, with the warning
+ * `versionWarning` returns, and every construct the tool does not know is handled
+ * as AGSC-00-21 lists.
  *
- * "Does not implement" is read exactly as AGSC-00-15 defines compatibility: the
- * same MAJOR, and a MINOR no greater than the tool's. A source that declares
- * nothing, or declares something this reader cannot parse as SemVer, is NOT
- * refused — AGSC-01-22's tolerance covers a missing optional field, and refusing
- * for the absence of a declaration would refuse every OKF bundle in the world.
+ * A source that declares nothing, or declares something this reader cannot parse
+ * as SemVer, is NOT refused — AGSC-01-22's tolerance covers a missing optional
+ * field, and refusing for the absence of a declaration would refuse every OKF
+ * bundle in the world.
  *
  * @param {string|null} sourceVersion the source's declared `spec_version`.
  * @param {{toolSpecVersion:string, allowNewer?:boolean}} options
@@ -326,15 +328,56 @@ function versionRefusal(sourceVersion, options) {
   const source = majorMinor(sourceVersion);
   const tool = majorMinor(opts.toolSpecVersion);
   if (source === null || tool === null) return null;
-  if (source.major === tool.major && source.minor <= tool.minor) return null;
+  if (source.major === tool.major) return null;
   return finding('AGSC-E004',
-    `the source declares spec_version ${JSON.stringify(String(sourceVersion))}, whose `
-    + `${source.major === tool.major ? 'MINOR' : 'MAJOR'} this tool does not implement `
-    + `(it implements ${JSON.stringify(String(opts.toolSpecVersion))}); nothing was written. `
-    + 'Reading a newer version is safe for the constructs AGSC-00-21 lists and a guess for '
-    + 'everything else, so the choice is the operator\'s: pass --allow-newer to take it '
-    + '(AGSC-01-22, AGSC-00-20)',
+    `the source declares spec_version ${JSON.stringify(String(sourceVersion))}, whose MAJOR this tool`
+    + ` does not implement (it implements ${JSON.stringify(String(opts.toolSpecVersion))}); nothing was`
+    + ' written. Reading another MAJOR is a guess, so the choice is the operator\'s: pass --allow-newer'
+    + ' to take it (AGSC-01-22)',
     { file: 'content/index.md', severity: 'error' });
+}
+
+/**
+ * AGSC-01-22: a source of the tool's MAJOR and a newer MINOR is imported with the
+ * warning `AGSC-E506` naming the newer version; a construct of that MINOR the tool
+ * does not know is ignored and preserved as AGSC-00-21 lists.
+ *
+ * @param {string|null} sourceVersion the source's declared `spec_version`.
+ * @param {{toolSpecVersion:string}} options
+ * @returns {object|null} the warning, or `null`.
+ */
+function versionWarning(sourceVersion, options) {
+  const opts = options || {};
+  const source = majorMinor(sourceVersion);
+  const tool = majorMinor(opts.toolSpecVersion);
+  if (source === null || tool === null || source.major !== tool.major || source.minor <= tool.minor) return null;
+  return finding('AGSC-E506',
+    `the source declares spec_version ${JSON.stringify(String(sourceVersion))}, a newer MINOR than this`
+    + ` tool's ${JSON.stringify(String(opts.toolSpecVersion))}; it is imported, and what that MINOR adds`
+    + ' is ignored and preserved as AGSC-00-21 lists (AGSC-01-22)',
+    { file: 'content/index.md', severity: 'warn' });
+}
+
+/**
+ * The AGSC-01-22 warnings of a set of declared versions: one per distinct newer
+ * MINOR, at the first place it is declared, so that a hundred records of one
+ * source say it once.
+ *
+ * @param {Array<{version:(string|null), file?:string, line?:number}>} entries
+ * @param {{toolSpecVersion:string}} options
+ * @returns {Array<object>}
+ */
+function versionWarnings(entries, options) {
+  const seen = new Set();
+  const out = [];
+  for (const entry of entries || []) {
+    const warning = versionWarning(entry.version == null ? null : String(entry.version), options);
+    if (warning === null || seen.has(String(entry.version))) continue;
+    seen.add(String(entry.version));
+    out.push({ ...warning, ...(entry.file === undefined ? {} : { file: entry.file }),
+      ...(entry.line === undefined ? {} : { line: entry.line }) });
+  }
+  return out;
 }
 
 /**
@@ -411,4 +454,5 @@ module.exports = {
   FOREIGN_LINK_NAMES,
   FORMAT, RESERVED, TYPE_PLURAL,
   isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, versionRefusal,
+  versionWarning, versionWarnings,
 };

@@ -95,7 +95,7 @@ test('AGSC-02-03: the schema\'s declared types are applied to failsafe strings',
 
 test('the Bundle root is validated against bundle.schema.json (AGSC-01-04)', () => {
   const root = {
-    spec_version: '1.0.0-rc.4', okf_version: '0.2', title: 'Bundle root',
+    spec_version: '1.0.0-rc.6', okf_version: '0.2', title: 'Bundle root',
     description: 'x'.repeat(50), base: 'https://example.org/',
   };
   assert.deepStrictEqual(validate.index(root, { schemas: S }), []);
@@ -107,7 +107,7 @@ test('the Bundle root is validated against bundle.schema.json (AGSC-01-04)', () 
 
 test('configuration is closed: an unknown key is AGSC-E004 (AGSC-01-18)', () => {
   const base = {
-    spec_version: '1.0.0-rc.4',
+    spec_version: '1.0.0-rc.6',
     site: { base: 'https://example.org/', title: 'T' },
     bundle: { id: 'b' },
   };
@@ -119,7 +119,7 @@ test('configuration is closed: an unknown key is AGSC-E004 (AGSC-01-18)', () => 
 
 test('the agent-lane check is INJECTED, never imported (context boundary)', () => {
   const base = {
-    spec_version: '1.0.0-rc.4',
+    spec_version: '1.0.0-rc.6',
     site: { base: 'https://example.org/', title: 'T' },
     bundle: { id: 'b' },
     agents: [],
@@ -145,10 +145,10 @@ test('AGSC-01-02 / AGSC-01-03 placement', () => {
 });
 
 test('AGSC-00-15 MAJOR tolerance (bundle-0001)', () => {
-  assert.strictEqual(validate.majorCompatible('1.4.2', '1.0.0-rc.4'), true);
-  assert.strictEqual(validate.majorCompatible('2.0.0', '1.0.0-rc.4'), false);
-  assert.strictEqual(validate.majorCompatible(undefined, '1.0.0-rc.4'), true);
-  assert.strictEqual(validate.majorCompatible('x', '1.0.0-rc.4'), false);
+  assert.strictEqual(validate.majorCompatible('1.4.2', '1.0.0-rc.6'), true);
+  assert.strictEqual(validate.majorCompatible('2.0.0', '1.0.0-rc.6'), false);
+  assert.strictEqual(validate.majorCompatible(undefined, '1.0.0-rc.6'), true);
+  assert.strictEqual(validate.majorCompatible('x', '1.0.0-rc.6'), false);
 });
 
 test('findings sort by (file, line, col, code) (AGSC-09-10)', () => {

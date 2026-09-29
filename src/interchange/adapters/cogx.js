@@ -719,6 +719,7 @@ function plan(files, options) {
       allowNewer: opts.allowNewer === true, toolSpecVersion: opts.toolSpecVersion,
     });
     if (tooNew !== null) return { findings: [{ ...tooNew, file: MANIFEST_FILE }], refused: true, totals, writes: [] };
+    findings.push(...okf.versionWarnings([{ file: MANIFEST_FILE, version: declared }], { toolSpecVersion: opts.toolSpecVersion }));
   }
 
   const taken = new Set();

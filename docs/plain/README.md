@@ -1,6 +1,6 @@
 # The specification in plain language
 
-One short page per section of `spec/`, plus one on the six modes. These pages explain; they never decide. Where a page and a rule disagree, the rule (`spec/NN`, ids `AGSC-NN-nn`) wins. Written 2026-09-16 for the `1.0.0-rc.3` draft; re-verified against `1.0.0-rc.4` on 2026-09-18, and re-read against the `1.0.0-rc.6` draft on 2026-09-24, when the pages on the overview, the graph, composition and governance were corrected (each correction is dated on its page).
+One short page per section of `spec/`, plus one on the six modes. These pages explain; they never decide. Where a page and a rule disagree, the rule (`spec/NN`, ids `AGSC-NN-nn`) wins.
 
 **Who this is for:** anyone who wants the idea of each chapter without its rules — a colleague, a reviewer, a curious reader. **Read after:** [START-HERE.md](../START-HERE.md). **Read next:** the chapter itself in `spec/`, or [SPEC-ORIENTATION.md](../SPEC-ORIENTATION.md).
 

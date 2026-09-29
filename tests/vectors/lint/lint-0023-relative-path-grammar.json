@@ -53,7 +53,6 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-16 at rc.3 (pre-DS-4 audit); unreleased, may be edited in place until the rc.3 tag",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

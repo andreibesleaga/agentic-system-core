@@ -369,7 +369,7 @@ test('collisions: nothing is written, --dry-run reports the same, --replace repl
   assert.match(nodeFs.readFileSync(at, 'utf8'), /Every handoff/u);
 });
 
-test('a record of a newer specification is refused unless --allow-newer (AGSC-01-22)', () => {
+test('a record of another MAJOR is refused unless --allow-newer; a newer MINOR imports with a warning (AGSC-01-22)', () => {
   const source = workspace();
   exported(source);
   const kit = path.join(source, 'dist/export/gabbe');
@@ -377,8 +377,7 @@ test('a record of a newer specification is refused unless --allow-newer (AGSC-01
   const text = nodeFs.readFileSync(skill, 'utf8');
   const b64 = /<!-- agsc-item (\S+) -->/u.exec(text)[1];
   const record = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
-  record.spec_version = '1.9.0';
-  nodeFs.writeFileSync(skill, text.replace(b64, gabbe.encodeRecord(record)));
+  nodeFs.writeFileSync(skill, text.replace(b64, gabbe.encodeRecord({ ...record, spec_version: '2.0.0' })));
   const into = emptyBundle();
   const refused = imported(into, kit);
   assert.strictEqual(refused.status, 'fail');
@@ -386,6 +385,11 @@ test('a record of a newer specification is refused unless --allow-newer (AGSC-01
   assert.deepStrictEqual(tree(path.join(into, 'content')).size, 0);
   const taken = imported(into, kit, { 'allow-newer': true });
   assert.deepStrictEqual(errors(taken.findings), []);
+  nodeFs.writeFileSync(skill, text.replace(b64, gabbe.encodeRecord({ ...record, spec_version: '1.9.0' })));
+  const minor = imported(emptyBundle(), kit);
+  assert.deepStrictEqual(errors(minor.findings), []);
+  assert.deepStrictEqual(minor.findings.filter((f) => f.code === 'AGSC-E506' && f.message.includes('1.9.0'))
+    .map((f) => f.severity), ['warn']);
 });
 
 // ------------------------------------------------------------------ a foreign kit

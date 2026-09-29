@@ -72,11 +72,10 @@ describe('the nine checkers never pass vacuously (AGSC-09-90)', () => {
   });
 
   it('an ABSENT input is AGSC-E901 in the envelope, exit 1 — not a usage error', () => {
-    // TIGHTENED at rc.6. AGSC-09-90 now says a validator MUST FAIL "with
+    // AGSC-09-90 says a validator MUST FAIL "with
     // `AGSC-E901`" over absent inputs, and AGSC-09-08 reserves exit 2 for an unknown
-    // verb, an unknown flag or a missing argument. Five of the nine used to print a
-    // usage block and exit 2, so the code was in prose a caller reading the envelope
-    // never saw.
+    // verb, an unknown flag or a missing argument. A usage block and exit 2 would put
+    // the code in prose a caller reading the envelope never sees.
     const dir = tmpdir();
     for (const name of ROOTED) {
       const result = envelope(name, argvFor(name, dir));

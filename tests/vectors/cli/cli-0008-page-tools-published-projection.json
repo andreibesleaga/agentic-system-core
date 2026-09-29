@@ -1,6 +1,6 @@
 {
   "area": "cli",
-  "description": "AGSC-09-16 as amended at rc.6: the Bundle a page serves is the PUBLISHED projection of AGSC-06-30, so an item that is not published is invisible to a page tool and the page tool answers AGSC-E301 for it, exactly as the local server answers for a slug that does not exist. Derivation: `alpha` is stable and published, so both transports return the same value (AGSC-09-16's equality is over values, not bytes); `beta` is draft, so AGSC-06-30 excludes it from every published surface, the local MCP server reading the Bundle still answers it, and the page tool, which can read only what was published, returns the AGSC-09-13a error envelope with code AGSC-E301. Before rc.6 the rule required the two transports to agree for the same Bundle without naming the projection, which made it unsatisfiable on every Bundle holding a draft.",
+  "description": "AGSC-09-16: the Bundle a page serves is the PUBLISHED projection of AGSC-06-30, so an item that is not published is invisible to a page tool and the page tool answers AGSC-E301 for it, exactly as the local server answers for a slug that does not exist. Derivation: `alpha` is stable and published, so both transports return the same value (AGSC-09-16's equality is over values, not bytes); `beta` is draft, so AGSC-06-30 excludes it from every published surface, the local MCP server reading the Bundle still answers it, and the page tool, which can read only what was published, returns the AGSC-09-13a error envelope with code AGSC-E301. Without the projection, requiring the two transports to agree for the same Bundle would be unsatisfiable on every Bundle holding a draft.",
   "expected": {
     "page": [
       {
@@ -54,7 +54,6 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-22 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

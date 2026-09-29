@@ -23,13 +23,12 @@ function runConform0001(vector) {
 }
 
 /**
- * conform-0002 (withdrawn at rc.5) and conform-0004 — byte-identity across
- * implementations is for machine artefacts only. `conform-0004` is the same case in
- * one route spelling: every entry in the AGSC-06-01 form, with its leading slash
- * `route_form` is the vector's statement of that, and the handler checks it
+ * conform-0004 — byte-identity across implementations is for machine artefacts
+ * only. The vector states every entry in the AGSC-06-01 form, with its leading
+ * slash; `route_form` is the vector's statement of that, and the handler checks it
  * against the claim it was given rather than trusting the label.
  */
-function runConform0002(vector) {
+function runConform0004(vector) {
   const claimed = vector.input.claim.cross_implementation;
   const result = plain(crossImplementationClaim(claimed));
   const list = [
@@ -66,9 +65,8 @@ function runConform0003(vector) {
 
 const HANDLERS = {
   'conform-0001': runConform0001,
-  'conform-0002': runConform0002,
   'conform-0003': runConform0003,
-  'conform-0004': runConform0002,
+  'conform-0004': runConform0004,
 };
 
 module.exports.run = function run(vector) {

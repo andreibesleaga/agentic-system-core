@@ -25,7 +25,6 @@
     }
   },
   "level": "required",
-  "note": "added 2026-09-25 at rc.6; expected value derived by hand from the rule text (a head that is not the recomputed one is AGSC-E701 even when every line links)",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

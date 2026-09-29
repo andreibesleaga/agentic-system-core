@@ -25,7 +25,7 @@ const OPTIONS = Object.freeze({
   bundleId: 'fixture-node',
   date: '2026-01-01',
   operator: 'human:tester',
-  specVersion: '1.0.0-rc.4',
+  specVersion: '1.0.0-rc.6',
   title: 'Fixture Node',
 });
 
@@ -95,9 +95,9 @@ test('the totals table is derived, and states the import counts', () => {
   assert.strictEqual(totals.excisions, 1);
   assert.strictEqual(totals.files, plan().writes.length);
   assert.strictEqual(totals.dropped_related, 1);
-  // rc.5: a body link to a card that is SELECTED but HELD BACK is
+  // A body link to a card that is SELECTED but HELD BACK is
   // de-linked too, because a draft has no route (AGSC-06-30, AGSC-06-01) and a
-  // published page linking one ships a 404. The ten new drops are the links to
+  // published page linking one ships a 404. Ten of the drops are the links to
   // `beta-one`, which the clean-room class holds back.
   assert.strictEqual(totals.dropped_body_links, 20);
 });
@@ -197,7 +197,7 @@ test('the configuration the import writes carries only what the rules let it', (
   assert.deepStrictEqual(config.peers, ['https://b.example/.well-known/knowledge-linkset']);
   assert.deepStrictEqual(config.tags, { allowed: ['alpha', 'beta', 'mapping'] });
   assert.deepStrictEqual(config.releases, { 'batch-one': true, 'batch-two': true, 'beta-release': true });
-  assert.strictEqual(config.spec_version, '1.0.0-rc.4');
+  assert.strictEqual(config.spec_version, '1.0.0-rc.6');
   // With no peer declared, no `peers` member is written at all.
   assert.strictEqual(JSON.parse(plan().writes.find((w) => w.path === 'agsc.config.json').text).peers, undefined);
 });
@@ -226,7 +226,7 @@ test('the import keeps every configuration member it does not itself compute', (
   assert.strictEqual(config.site.base, 'https://example.org/');
   assert.strictEqual(config.site.title, 'Fixture Node');
   assert.deepStrictEqual(config.build, { out: 'dist' }, 'the operator\'s own out stays; feed goes');
-  assert.strictEqual(config.spec_version, '1.0.0-rc.4');
+  assert.strictEqual(config.spec_version, '1.0.0-rc.6');
   // The input is not mutated: `plan()` is pure.
   assert.deepStrictEqual(existing.site, { author: 'A Person', base: 'https://stale.example/', title: 'Stale' });
 });

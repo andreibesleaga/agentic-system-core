@@ -2,7 +2,7 @@
 /**
  * bench/parity.js — page-tool / MCP parity, call by call (measurement layer F).
  *
- * AGSC-09-16 as amended at rc.6 asks for ONE tool contract over two transports
+ * AGSC-09-16 asks for ONE tool contract over two transports
  * whose answers are equal AS VALUES, never byte-identical across the browser
  * boundary. This module measures exactly that, over a call list that is data
  * (`bench/corpus/parity-calls.json`), for any Bundle:
@@ -20,7 +20,7 @@
  * transports), with `util.isDeepStrictEqual`:
  *   transport  stdio == local: the MCP process answers what the module answers
  *   parity     page == projected and module == projected: the rule's own
- *              comparison, because AGSC-09-16 (rc.6) makes "the Bundle a page
+ *              comparison, because AGSC-09-16 makes "the Bundle a page
  *              serves the published projection" — on a Bundle holding a draft
  *              the stdio server legitimately sees more items than any page can
  * and, for every item that is NOT published, the page must answer `AGSC-E301`
@@ -183,7 +183,7 @@ async function run(bundleDir, spec, options = {}) {
     if (unequal.length === 0) row.equal += 1;
     else differing.push({ args: JSON.stringify(args).slice(0, 120), hosts: unequal, tool: name });
   }
-  // AGSC-09-16 (rc.6): an unpublished item is invisible to a page tool.
+  // AGSC-09-16: an unpublished item is invisible to a page tool.
   const unpublished = hosts.slugs.filter((slug) => !hosts.published.includes(slug));
   let hidden = 0;
   for (const slug of unpublished) {

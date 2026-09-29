@@ -427,6 +427,8 @@ function plan(files, options) {
       return { findings: [{ ...tooNew, file: entry.one.path, line: entry.one.line }], refused: true, totals, writes: [] };
     }
   }
+  findings.push(...okf.versionWarnings(own.map((entry) => ({ file: entry.one.path, line: entry.one.line,
+    version: entry.record.spec_version })), { toolSpecVersion: opts.toolSpecVersion }));
   const taken = new Set();
   const items = [];
   const boardSlugs = new Map();

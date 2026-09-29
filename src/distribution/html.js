@@ -33,6 +33,41 @@ function escapeHtml(value) {
     .split("'").join('&#39;');
 }
 
+/** A present, non-blank field as trimmed text, or '' (AGSC-02-10 source fields). */
+function field(value) {
+  return value == null ? '' : String(value).trim();
+}
+
+/** A sentence end: a full stop unless the text already ends in one of `.?!`. */
+function stop(text) {
+  return /[.?!]$/u.test(text) ? '' : '.';
+}
+
+/**
+ * One reference as a full citation (AGSC-02-10): `Author (Year). Title. <address>.
+ * Checked YYYY-MM-DD.` Each part is omitted, with its punctuation, when its field is
+ * missing; with no author the year follows the title. The date is shown as written.
+ */
+function citation(src) {
+  const author = field(src.author);
+  const year = field(src.year);
+  const title = field(src.title);
+  const checked = field(src.verified);
+  const web = /^https?:\/\//u.test(src.resource);
+  const address = web ? `<a href="${escapeHtml(src.resource)}">${escapeHtml(src.resource)}</a>` : escapeHtml(src.resource);
+  const out = [];
+  if (author !== '') out.push(year === '' ? `${escapeHtml(author)}${stop(author)}` : `${escapeHtml(author)} (${escapeHtml(year)}).`);
+  if (title === '') {
+    out.push(`${address}${author === '' && year !== '' ? ` (${escapeHtml(year)})` : ''}.`);
+  } else {
+    const label = web ? `<a href="${escapeHtml(src.resource)}">${escapeHtml(title)}</a>` : escapeHtml(title);
+    out.push(author === '' && year !== '' ? `${label} (${escapeHtml(year)}).` : `${label}${stop(title)}`);
+    out.push(`<span class="source-url">${address}</span>.`);
+  }
+  if (checked !== '') out.push(`Checked ${escapeHtml(checked)}.`);
+  return out.join(' ');
+}
+
 /**
  * The footer's one-line AI-assistance statement (AGSC-06-15's fact, in the words a
  * reader of a page needs) and the publisher's one-sentence disclaimer.
@@ -86,7 +121,7 @@ function termsLine(licenseProse, options = {}) {
   const copyright = author !== '' && year !== '' ? `&#169; ${escapeHtml(year)} ${escapeHtml(author)}. ` : '';
   const rights = adopted
     ? 'All rights reserved, citing and linking allowed.'
-    // AGSC-06-18 (rc.6, 2026-09-24): the Content Use Terms accompany the prose only
+    // AGSC-06-18: the Content Use Terms accompany the prose only
     // where the publisher adopts them; another licence is named alone.
     : `Prose: <span>${escapeHtml(license)}</span>.`;
   const text = [
@@ -110,7 +145,7 @@ function termsLine(licenseProse, options = {}) {
  * loaded from another origin (AGSC-06-05).
  *
  * @param {object} page `{url, title, description, lang, body, jsonld, licenseProse, nav,
- *   author, year}` — `author` and `year` are the footer's copyright line (rc.6).
+ *   author, year}` — `author` and `year` are the footer's copyright line.
  * @returns {string}
  */
 /**
@@ -136,7 +171,13 @@ function shell(page) {
     `<meta name="description" content="${escapeHtml(page.description)}">`,
     `<link rel="describedby" href="${WELLKNOWN_PATH}" type="${MEDIA_TYPE}">`,
   ];
-  if (page.canonical != null) head.push(`<link rel="canonical" href="${escapeHtml(page.canonical)}">`);
+  // The canonical address of the page: stated by the caller (an item page), or the
+  // configured site base plus the page's own route. A page with no route of its own
+  // (the 404 page) and a build with no site base carry none.
+  const canonical = page.canonical != null ? page.canonical
+    : (typeof page.siteBase === 'string' && page.siteBase !== '' && typeof page.route === 'string'
+      ? `${page.siteBase.replace(/\/+$/u, '')}${page.route}` : null);
+  if (canonical !== null) head.push(`<link rel="canonical" href="${escapeHtml(canonical)}">`);
   if (page.alternates !== undefined) {
     for (const alt of page.alternates) {
       head.push(`<link rel="alternate" href="${escapeHtml(alt.href)}" type="${escapeHtml(alt.type)}">`);
@@ -249,7 +290,9 @@ function diagramFigure(item, source, options = {}) {
   }
   const caption = diagram.caption == null || diagram.caption === ''
     ? '' : `<figcaption>${escapeHtml(diagram.caption)}</figcaption>`;
-  return { findings: compiled.findings, html: `<figure>${compiled.svg.replace(/\n$/u, '')}${caption}</figure>` };
+  // `class="diagram"`: the theme keeps a diagram at no less than its drawn width on a
+  // narrow screen and scrolls it inside the figure, so its labels stay readable.
+  return { findings: compiled.findings, html: `<figure class="diagram">${compiled.svg.replace(/\n$/u, '')}${caption}</figure>` };
 }
 
 /**
@@ -340,19 +383,18 @@ function itemPage(item, options = {}) {
   for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
     parts.push(`<figure><img src="/attachments/${escapeHtml(item.slug)}/${escapeHtml(attachment.file)}" alt="${escapeHtml(attachment.alt)}"><figcaption>${escapeHtml(attachment.alt)}</figcaption></figure>`);
   }
-  // AGSC-02-10: the item's authored sources, shown to the reader as its references —
-  // title linked to the source, then the author and year the item records. Only an
-  // http(s) address becomes a link; anything else is shown as text.
+  // AGSC-02-10: the item's authored sources, shown to the reader as its references,
+  // each as a full citation built only from the fields the item records:
+  // `Author (Year). Title. <address>. Checked YYYY-MM-DD.` A missing field drops its
+  // part and its punctuation. Only an http(s) address becomes a link (the title, and
+  // the address shown in full); a channel URN or anything else is plain text. When
+  // the title is missing the address is the label and is not repeated. `grade` is
+  // internal and never shown.
   const sources = (Array.isArray(item.sources) ? item.sources : [])
     .filter((src) => src && typeof src.resource === 'string' && src.resource !== '');
   if (sources.length > 0) {
     parts.push('<h2 id="references">References</h2>');
-    parts.push(`<ol class="sources">${sources.map((src, k) => {
-      const label = escapeHtml(src.title == null || String(src.title).trim() === '' ? src.resource : src.title);
-      const link = /^https?:\/\//u.test(src.resource) ? `<a href="${escapeHtml(src.resource)}">${label}</a>` : label;
-      const by = [src.author, src.year].filter((v) => v != null && String(v).trim() !== '').map((v) => escapeHtml(v)).join(', ');
-      return `<li id="source-${k + 1}">${link}${by === '' ? '' : ` — ${by}`}</li>`;
-    }).join('')}</ol>`);
+    parts.push(`<ol class="sources">${sources.map((src, k) => `<li id="source-${k + 1}">${citation(src)}</li>`).join('')}</ol>`);
   }
   parts.push(`<p class="views">Machine views: <a href="/pages/${escapeHtml(item.slug)}.md">Markdown</a> · <a href="/pages/${escapeHtml(item.slug)}.jsonld">JSON-LD</a></p>`);
   // AGSC-11-14 / AGSC-08-04: a PLAIN anchor to the forge's edit view of this item's
@@ -481,9 +523,16 @@ function composePage({ assets }, options = {}) {
       'no request leaves this origin, no key is needed and nothing is uploaded. The seven',
       'Harness files are offered one download per file, or all together as one .zip.</p>',
       '<h2>Items</h2>',
+      // The filter box starts hidden and the controller shows it once the list is
+      // painted: a control that cannot work without script is not offered.
+      '<div role="search"><form class="search" id="filter-form" hidden>',
+      '<label for="filter">Filter the items</label>',
+      '<input id="filter" name="filter" type="search" autocomplete="off" spellcheck="false" aria-controls="items">',
+      '</form></div>',
+      '<p id="filter-status" role="status" aria-live="polite"></p>',
       '<ul id="items"><li>Loading the published graph…</li></ul>',
       '<h2>Verdict</h2>',
-      '<p id="validity">Nothing selected.</p>',
+      '<p id="validity" aria-live="polite">Select one or more items to compose.</p>',
       // Focusable: the stylesheet lets a long verdict scroll sideways, and a scrollable
       // region must be reachable by keyboard (WCAG 2.1.1, AGSC-06-20).
       '<pre id="verdict" tabindex="0"></pre>',
@@ -494,6 +543,8 @@ function composePage({ assets }, options = {}) {
       '<ul id="explanations" hidden></ul>',
       '<h3 id="conflicts-heading" hidden>Conflicts</h3>',
       '<ul id="conflicts" hidden></ul>',
+      '<h3 id="warnings-heading" hidden>Warnings</h3>',
+      '<ul id="warnings" hidden></ul>',
       '<h2>Harness</h2>',
       '<p><button id="download" type="button" disabled>Build the Harness</button></p>',
       '<ul id="files"></ul>',

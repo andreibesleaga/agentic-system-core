@@ -5,7 +5,7 @@
 //
 // INDEPENDENT BY CONSTRUCTION: no import from `src/` (AGSC-09-90). It uses the two
 // libraries the engine pins for JSON Schema — `ajv` (the 2020-12 dialect) and
-// `ajv-formats` — which AGSC-09-90 admits since rc.5; everything else is stdlib.
+// `ajv-formats` — which AGSC-09-90 admits; everything else is stdlib.
 //
 //   validate-schemas [--json] [--quiet] [--help] [<root>]
 //

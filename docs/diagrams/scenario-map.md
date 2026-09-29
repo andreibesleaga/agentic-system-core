@@ -69,7 +69,7 @@ flowchart LR
 
 13 personas from `docs/PRD.md` §1 map to the twelve `features/*.feature` files and on to the four live
 surfaces plus the files-only surface used by P10 (P10's acceptance is `spec/` + `tests/vectors/`, not a
-runtime scenario). P12 and `persona-k-live-board` were added at rc.4 with Mode 5. Fan-out on
+runtime scenario). P12 and `persona-k-live-board` are Mode 5. Fan-out on
 Fb/Fc/Fe/Fg/Fh/Fi shows personas that cross more than one surface in their walkthrough.
 
 Trace: PRD-001–052 (persona table §1), PLAN.md §1.2 stakeholder table.

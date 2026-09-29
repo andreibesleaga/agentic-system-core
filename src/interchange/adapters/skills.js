@@ -603,6 +603,8 @@ function plan(input, options) {
       return { entries, findings: [{ ...tooNew, file: entry.path, line: entry.line }], refused: true, totals, writes: [] };
     }
   }
+  findings.push(...okf.versionWarnings(own.map((entry) => ({ file: entry.path, line: entry.line,
+    version: entry.record.spec_version })), { toolSpecVersion: opts.toolSpecVersion }));
   for (const entry of own) {
     const { record } = entry;
     const slug = slugs.dedupe(record.slug, taken);

@@ -290,7 +290,7 @@ function item(frontmatter, options = {}) {
       { ...base, severity: 'warn' }));
   }
 
-  // AGSC-01-21 (registered at rc.5): the 2–5 count of the §2.2 table is a WARNING,
+  // AGSC-01-21: the 2–5 count of the §2.2 table is a WARNING,
   // with or without a closed vocabulary; the schema carries no bound for it.
   if (Array.isArray(frontmatter.tags) && (frontmatter.tags.length < TAGS_MIN || frontmatter.tags.length > TAGS_MAX)) {
     findings.push(finding('AGSC-E213',
@@ -333,8 +333,8 @@ function index(frontmatter, options = {}) {
     return [finding('AGSC-E201', 'frontmatter is not a mapping', { file })];
   }
   for (const e of s.bundle(frontmatter).errors) {
-    // rc.5: bundle.schema.json's one `not` is `{"required": ["type"]}`.
-    // AGSC-01-04 as amended names AGSC-E205 for a `type` key on the Bundle root
+    // bundle.schema.json's one `not` is `{"required": ["type"]}`.
+    // AGSC-01-04 names AGSC-E205 for a `type` key on the Bundle root
     // — a file-placement violation, because the root is not an item — and the
     // §9.4 precedence paragraph reserves AGSC-E201 for a schema failure that no
     // more specific registered code names. The dedicated check below raises that

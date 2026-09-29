@@ -4,9 +4,8 @@
 // "A relative Markdown link or image whose target is inside the Bundle MUST resolve
 // to an existing item, an existing asset under `content/assets/`, or an existing
 // anchor of one of them" (AGSC-03-11). `knowledge/links.js#resolve` reads that asset
-// set from `options.assets` — and until rc.5 NO CALLER SUPPLIED IT, so the branch was
-// unreachable and every body image reference to a real asset was `AGSC-E310`. The
-// defect was masked, which failed such a reference one step earlier.
+// set from `options.assets` — and a caller that does NOT supply it makes the branch
+// unreachable and every body image reference to a real asset `AGSC-E310`.
 //
 // The wiring is: `loadBundle` lists `content/assets/**` through the FileSystem port
 // into `bundle.assets`, and every caller of `links.resolve` passes it. This file
@@ -60,13 +59,12 @@ test('the asset branch of AGSC-03-11 resolves once the set is supplied', () => {
   const withAssets = links.resolve(items, { assets: bundle.assets, config: bundle.config });
   assert.deepStrictEqual(withAssets.resolved.sort(),
     ['../assets/img/nested.svg', '../assets/logo.svg']);
-  // CHANGED at rc.6: AGSC-06-01 now carries `/assets/<path>`, so the
-  // resolved reference is not a fault of any severity. Until rc.6 it warned under
-  // AGSC-E310, because the link worked in the repository and 404d on the site.
+  // AGSC-06-01 carries `/assets/<path>`, so the resolved reference is not a fault
+  // of any severity: the link works in the repository and on the site.
   assert.deepStrictEqual(withAssets.errors.map((f) => [f.code, f.severity]), []);
 });
 
-test('AGSC-06-01 (rc.6): a referenced asset is emitted at /assets/<path>, bytes unchanged', () => {
+test('AGSC-06-01: a referenced asset is emitted at /assets/<path>, bytes unchanged', () => {
   const { bundle, fs } = load(FIXTURE);
   const { files } = site.build(bundle, { clock: FIXED_CLOCK, fs },
     { specVersion: '1.0.0-rc.6', version: '0.0.2' });
@@ -83,7 +81,7 @@ test('AGSC-06-01 (rc.6): a referenced asset is emitted at /assets/<path>, bytes 
   assert.ok(!page.includes('../assets/logo.svg'), 'the authored path reached the page');
 });
 
-test('AGSC-06-01 (rc.6): an asset no published body references is published at no route', () => {
+test('AGSC-06-01: an asset no published body references is published at no route', () => {
   const { bundle, fs } = load(FIXTURE);
   const stripped = {
     ...bundle,
@@ -104,14 +102,13 @@ test('the lint VERB passes on the fixture: it supplies the set', () => {
     env: { SOURCE_DATE_EPOCH: '1767225600' },
     ports: { fs: createFileSystem(FIXTURE) },
     root: FIXTURE,
-    specVersion: '1.0.0-rc.5',
+    specVersion: '1.0.0-rc.6',
     stderr,
     stdout,
   });
   const envelope = JSON.parse(stdout.text());
-  // CHANGED at rc.6: nothing at all. The two asset references resolve
-  // AND are published at `/assets/<path>`, so the warning that said the
-  // link 404s on the built site is no longer true and is gone.
+  // Nothing at all. The two asset references resolve AND are published at
+  // `/assets/<path>`, so no warning says the link 404s on the built site.
   assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.severity]), [], stdout.text());
   assert.deepStrictEqual(envelope.counts, { error: 0, warn: 0 });
   assert.strictEqual(envelope.status, 'pass');
@@ -150,7 +147,7 @@ test('an asset the port refuses to read is published at no route, and nothing th
 });
 
 
-test('AGSC-06-01 (rc.6): an authored theme.js is replaced by the engine script, and the build says so', () => {
+test('AGSC-06-01: an authored theme.js is replaced by the engine script, and the build says so', () => {
   const dir = nodeFs.mkdtempSync(path.join(require('node:os').tmpdir(), 'agsc-theme-'));
   try {
     nodeFs.cpSync(MINIMAL, dir, { recursive: true });

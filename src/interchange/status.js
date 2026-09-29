@@ -25,7 +25,7 @@
 
 const { finding } = require('../knowledge/validate.js');
 
-/** AGSC-02-23 (plus `retired`, added at rc.3 by AGSC-11-22). */
+/** AGSC-02-23 (plus `retired`, added by AGSC-11-22). */
 const STATUS_VALUES = Object.freeze(['draft', 'stable', 'deprecated', 'retired']);
 
 /**

@@ -117,7 +117,7 @@ test('load() runs without the boundary check at all (it is injected, never impor
 });
 
 test('AGSC-01-37: an AGSC_* value of the wrong type is AGSC-E204, and is never applied', () => {
-  // rc.5 (R-15): `build.feed` is withdrawn and reserved to 1.1, so the boolean
+  // `build.feed` is reserved to 1.1, so the boolean
   // case is carried by `run.enabled` (AGSC-09-94, schema default `false`).
   const boolean = load({ argvFlags: {}, env: { AGSC_RUN_ENABLED: 'yes' } });
   assert.deepEqual(boolean.findings.map((f) => f.code), ['AGSC-E204']);

@@ -21,7 +21,7 @@
     "tagline": "A Bundle with an asset on disk.",
     "title": "Bundle with assets"
   },
-  "spec_version": "1.0.0-rc.5",
+  "spec_version": "1.0.0-rc.6",
   "tags": {
     "allowed": [
       "agents",

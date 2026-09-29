@@ -39,7 +39,7 @@ Scope note: PRD §4 non-goals as re-read on 2026-09-15 and 2026-09-16 — `agent
 | `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 4 | PRD-026, 027 (reads via persona-c: PRD-022) |
 | `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 5 | PRD-005, 044, 045, 048, 049 |
 | `persona-j-standards.feature` | P11 standards implementer | 1 | 5 | PRD-024, 025, 050, 054 |
-| `persona-k-live-board.feature` | P12 self-driving team (rc.4) | 5 | 8 | PRD-063, 064, 065 |
+| `persona-k-live-board.feature` | P12 self-driving team | 5 | 8 | PRD-063, 064, 065 |
 | `persona-l-port-implementer.feature` | P10 port implementer | 1 | 2 | PRD-010, 054, NFR-02 |
 
 **P10 port implementer** (added 2026-09-24): one scenario writes a Level-0 node without the engine and

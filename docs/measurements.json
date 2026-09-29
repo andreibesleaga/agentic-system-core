@@ -9,13 +9,13 @@
       "rule_coverage": {
         "active": 332,
         "any_check": 322,
-        "named_by_checker": 82,
+        "named_by_checker": 84,
         "named_by_feature": 52,
         "named_by_test": 319,
         "no_check": 10,
         "uncovered": [
-          "AGSC-00-02",
           "AGSC-00-19",
+          "AGSC-00-20",
           "AGSC-01-32",
           "AGSC-03-21",
           "AGSC-04-16",
@@ -25,8 +25,8 @@
           "AGSC-10-08",
           "AGSC-10-10"
         ],
-        "with_vector": 129,
-        "without_vector": 203
+        "with_vector": 130,
+        "without_vector": 202
       },
       "rule_coverage_by_chapter": {
         "active": {
@@ -94,8 +94,8 @@
         "adopt": {
           "optional": 0,
           "required": 5,
-          "total": 6,
-          "withdrawn": 1
+          "total": 5,
+          "withdrawn": 0
         },
         "boards": {
           "optional": 0,
@@ -105,33 +105,33 @@
         },
         "boundary": {
           "optional": 0,
-          "required": 30,
-          "total": 37,
-          "withdrawn": 7
+          "required": 32,
+          "total": 32,
+          "withdrawn": 0
         },
         "build": {
           "optional": 1,
           "required": 9,
-          "total": 11,
-          "withdrawn": 1
+          "total": 10,
+          "withdrawn": 0
         },
         "bundle": {
           "optional": 0,
           "required": 7,
-          "total": 8,
-          "withdrawn": 1
+          "total": 7,
+          "withdrawn": 0
         },
         "chunks": {
           "optional": 0,
           "required": 7,
-          "total": 8,
-          "withdrawn": 1
+          "total": 7,
+          "withdrawn": 0
         },
         "cli": {
           "optional": 0,
           "required": 14,
-          "total": 15,
-          "withdrawn": 1
+          "total": 14,
+          "withdrawn": 0
         },
         "compose": {
           "optional": 0,
@@ -142,14 +142,14 @@
         "conform": {
           "optional": 0,
           "required": 3,
-          "total": 4,
-          "withdrawn": 1
+          "total": 3,
+          "withdrawn": 0
         },
         "discovery": {
           "optional": 0,
-          "required": 10,
-          "total": 17,
-          "withdrawn": 7
+          "required": 12,
+          "total": 12,
+          "withdrawn": 0
         },
         "frontmatter": {
           "optional": 0,
@@ -160,14 +160,14 @@
         "graph": {
           "optional": 0,
           "required": 14,
-          "total": 23,
-          "withdrawn": 9
+          "total": 14,
+          "withdrawn": 0
         },
         "import": {
           "optional": 0,
           "required": 3,
-          "total": 4,
-          "withdrawn": 1
+          "total": 3,
+          "withdrawn": 0
         },
         "jcs": {
           "optional": 0,
@@ -178,8 +178,8 @@
         "ledger": {
           "optional": 0,
           "required": 6,
-          "total": 7,
-          "withdrawn": 1
+          "total": 6,
+          "withdrawn": 0
         },
         "links": {
           "optional": 0,
@@ -196,8 +196,8 @@
         "prov": {
           "optional": 0,
           "required": 4,
-          "total": 5,
-          "withdrawn": 1
+          "total": 4,
+          "withdrawn": 0
         },
         "slug": {
           "optional": 0,
@@ -208,17 +208,17 @@
       },
       "vector_run": {
         "fail": 0,
-        "pass": 167,
+        "pass": 171,
         "pending": 0,
-        "skip": 32,
-        "total": 199,
-        "withdrawn": 32
+        "skip": 0,
+        "total": 171,
+        "withdrawn": 0
       },
       "vectors": {
         "optional": 1,
-        "required": 166,
-        "total": 199,
-        "withdrawn": 32
+        "required": 170,
+        "total": 171,
+        "withdrawn": 0
       }
     },
     "determinism": {
@@ -2421,7 +2421,7 @@
           "unpublished_answered_e301": 0
         }
       },
-      "note": "Compared as values after a JSON round trip, which is what AGSC-09-16 claims at rc.6; never byte-identical across the browser boundary.",
+      "note": "Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary.",
       "totals": {
         "calls": 207,
         "equal": 207,
@@ -3506,6 +3506,6 @@
     }
   },
   "schema": "agsc.measurements.v1",
-  "measured_for": "2026-09-25",
+  "measured_for": "2026-09-29",
   "spec_version": "1.0.0-rc.6"
 }

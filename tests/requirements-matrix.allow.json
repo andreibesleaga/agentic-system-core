@@ -7,7 +7,7 @@
     },
     "PRD-044": {
       "reason": "superseded",
-      "why": "the dated note of 2026-09-24 in docs/PRD.md withdraws the weekly automatic refresh at 1.0: staleness is reported offline by lint, and no lane reaches the network"
+      "why": "the note on PRD-044 in docs/PRD.md withdraws the weekly automatic refresh at 1.0: staleness is reported offline by lint, and no lane reaches the network"
     },
     "PRD-045": {
       "reason": "deferred",

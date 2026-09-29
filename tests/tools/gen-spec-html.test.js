@@ -22,7 +22,7 @@ describe('gen-spec-html — usage and the envelope', () => {
   });
 
   it('a root with no spec/ FAILS with AGSC-E901, and an empty spec/ too', () => {
-    // CHANGED at rc.6: AGSC-09-90 now says a validator MUST FAIL "with
+    // AGSC-09-90 says a validator MUST FAIL "with
     // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
     // error. An absent input is exit 1, the envelope and the code.
     assert.deepEqual(envelope('gen-spec-html', [tmpdir()]).json.findings.map((f) => f.code),
@@ -39,7 +39,7 @@ describe('gen-spec-html — usage and the envelope', () => {
     const { code, json } = envelope('gen-spec-html', [specRoot()]);
     assert.equal(code, 0);
     assert.equal(json.verb, 'gen-spec-html');
-    assert.equal(json.spec_version, '1.0.0-rc.5');
+    assert.equal(json.spec_version, '1.0.0-rc.9');
     assert.deepEqual(json.findings, []);
   });
 
@@ -70,7 +70,7 @@ describe('gen-spec-html — the pages', () => {
     capture('gen-spec-html', ['--quiet', '--out', out, root]);
     const html = fs.readFileSync(path.join(out, 'bundle', 'index.html'), 'utf8');
     assert.match(html, /<strong id="AGSC-01-01"><a href="#AGSC-01-01">AGSC-01-01<\/a><\/strong>/u);
-    assert.match(html, /<meta name="agsc-spec-version" content="1\.0\.0-rc\.5">/u);
+    assert.match(html, /<meta name="agsc-spec-version" content="1\.0\.0-rc\.9">/u);
     assert.match(html, /<title>Bundle<\/title>/u);
   });
 
@@ -276,7 +276,7 @@ describe('gen-spec-html — the helpers it exports', () => {
   });
 
   it('page escapes its title and ends with exactly one LF', () => {
-    const html = page('A & B', '1.0.0-rc.5', '<p>x</p>', '<ul></ul>');
+    const html = page('A & B', '1.0.0-rc.9', '<p>x</p>', '<ul></ul>');
     assert.match(html, /<title>A &amp; B<\/title>/u);
     assert.ok(html.endsWith('</html>\n'));
   });

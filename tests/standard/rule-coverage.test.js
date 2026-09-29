@@ -38,7 +38,7 @@ test('this repository: no rule is unverified and docs/RULE-COVERAGE.md is the ge
 function scratch(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-rulecov-'));
   const all = {
-    'spec/01-a.md': '- **AGSC-01-01** One.\n- **AGSC-01-02** Two.\n- **AGSC-01-03** *(retired at rc.3: gone.)*\n- **AGSC-01-04** Four.\n- **AGSC-01-05** Five.\n',
+    'spec/01-a.md': '- **AGSC-01-01** One.\n- **AGSC-01-02** Two.\n- **AGSC-01-03** *(reserved: gone; the id is never reused, AGSC-00-16.)*\n- **AGSC-01-04** Four.\n- **AGSC-01-05** Five.\n- **AGSC-01-06** *(retired at rc, 2026-01-01: gone.)*\n',
     'spec/00-overview.md': 'Version 1.0.0-rc.9.\n',
     'tests/vectors/a/a-0001.json': JSON.stringify({ id: 'a-0001', level: 'required', rule: 'AGSC-01-01' }),
     'tests/vectors/a/a-0002.json': JSON.stringify({ id: 'a-0002', level: 'withdrawn', rule: 'AGSC-01-02' }),

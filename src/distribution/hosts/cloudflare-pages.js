@@ -21,7 +21,7 @@ module.exports = define({
   emit,
   limits: [
     'The reference host documents at most 100 header rules and 2,100 redirects per site; a build that needs more is not deployable there as one site.',
-    'Entity tags are the host\'s own; AGSC-11-05 as amended at rc.6 admits that, and the discovery document\'s digest is the integrity statement.',
+    'Entity tags are the host\'s own; AGSC-11-05 admits that, and the discovery document\'s digest is the integrity statement.',
   ],
   name: 'cloudflare-pages',
   title: 'Cloudflare Pages, the reference',

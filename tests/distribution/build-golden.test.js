@@ -37,7 +37,7 @@ function load({ writable = false } = {}) {
   const fs = createFileSystem(writable ? scratchFixture() : FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.4', version: '0.0.2' } };
+  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.6', version: '0.0.2' } };
 }
 
 test('the fixture builds twice to identical bytes (AGSC-04-02)', () => {

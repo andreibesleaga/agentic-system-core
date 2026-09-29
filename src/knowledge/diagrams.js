@@ -74,10 +74,22 @@ const GLYPH = Object.freeze({
 });
 const GLYPH_FALLBACK = 0.62;
 
+/**
+ * The id of a diagram's arrowhead marker, derived from its slug exactly as the
+ * `<title>` and `<desc>` ids are. A page that inlines two diagrams therefore never
+ * repeats an id (HTML requires ids to be unique in a document), and each arrow
+ * resolves to its own diagram's marker.
+ */
+function markerId(slug) {
+  return `${slug}-arrow`;
+}
+
 /** The arrowhead marker; `currentColor` so it follows the reader's scheme. */
-const MARKER = '<defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5"'
-  + ' markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
-  + '<path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>';
+function marker(slug) {
+  return `<defs><marker id="${esc(markerId(slug))}" viewBox="0 0 10 10" refX="9" refY="5"`
+    + ' markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
+    + '<path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>';
+}
 
 /** The five XML entities, and nothing else — no entity declaration (AGSC-02-98). */
 function esc(value) {
@@ -224,6 +236,7 @@ function compile(dslText, options = {}) {
   const draw = [];
   const texts = [];
   const arrowGeometry = new Map();
+  const arrowRef = `url(#${esc(markerId(slug))})`;
   let accentCount = 0;
 
   const flag = (t, name) => t.includes(name);
@@ -414,8 +427,8 @@ function compile(dslText, options = {}) {
         continue;
       }
       arrowGeometry.set(key, `${String(t[1])} -> ${String(t[2])}`);
-      const start = flag(t, 'both') ? ' marker-start="url(#ar2)"' : '';
-      draw.push(`<path d="${d}" marker-end="url(#ar2)"${start}${dashAttr(t, '4 3')}${accentAttrs(t)}/>`);
+      const start = flag(t, 'both') ? ` marker-start="${arrowRef}"` : '';
+      draw.push(`<path d="${d}" marker-end="${arrowRef}"${start}${dashAttr(t, '4 3')}${accentAttrs(t)}/>`);
       continue;
     }
     if (command === 'line') {
@@ -434,7 +447,7 @@ function compile(dslText, options = {}) {
         fail('path needs a `d` value', line);
         continue;
       }
-      const arrow = flag(t, 'arrow') ? ' marker-end="url(#ar2)"' : '';
+      const arrow = flag(t, 'arrow') ? ` marker-end="${arrowRef}"` : '';
       draw.push(`<path d="${esc(d)}"${arrow}${accentAttrs(t)}${dashAttr(t, '4 3')}/>`);
       continue;
     }
@@ -556,7 +569,7 @@ function render(parts) {
     + ' font-family="system-ui, sans-serif" font-size="14">\n'
     + `  <title id="${esc(titleId)}">${esc(parts.label)}</title>\n`
     + `  <desc id="${esc(descId)}">${esc(description)}</desc>\n`
-    + `  ${MARKER}\n`
+    + `  ${marker(parts.slug)}\n`
     + '  <g fill="none" stroke="currentColor" stroke-width="1.5">\n'
     + `    ${parts.draw.join('\n    ')}\n`
     + '  </g>\n'
@@ -609,7 +622,6 @@ module.exports = {
   ACCENT_CLASS,
   ACCENT_STROKE_WIDTH,
   GLYPH,
-  MARKER,
   MAX_SOURCE_LENGTH,
   NOTE_MARGIN,
   STATEMENTS,
@@ -618,6 +630,7 @@ module.exports = {
   check,
   clip,
   compile,
+  markerId,
   esc,
   fixed,
   geometryKey,

@@ -1,6 +1,6 @@
 # Use cases — what people and agents do with a knowledge node
 
-**Who this is for:** anyone deciding whether the system fits a need. **Read after:** [plain/modes.md](plain/modes.md). *(Header added 2026-09-24.)*
+**Who this is for:** anyone deciding whether the system fits a need. **Read after:** [plain/modes.md](plain/modes.md).
 
 Nineteen concrete scenarios, in three groups: **one machine, one person**;
 **many nodes, no server**; and **many agents on one Bundle**. Each says who is

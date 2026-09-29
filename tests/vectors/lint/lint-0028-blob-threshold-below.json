@@ -1,6 +1,6 @@
 {
   "area": "lint",
-  "description": "AGSC-08-13 fixes the blob threshold of the injection scan at 256 characters (since rc.5): a base64 run of 255 characters in item prose is below it and raises no AGSC-E401 or AGSC-E402. Together with lint-0029 this pins the boundary itself, which no vector did before rc.6. The run uses only the base64 alphabet and stands alone between spaces, so no other clause of the scan applies.",
+  "description": "AGSC-08-13 fixes the blob threshold of the injection scan at 256 characters: a base64 run of 255 characters in item prose is below it and raises no AGSC-E401 or AGSC-E402. Together with lint-0029 this pins the boundary itself. The run uses only the base64 alphabet and stands alone between spaces, so no other clause of the scan applies. Expected values are derived by hand from the rule text.",
   "expected": {
     "findings": []
   },
@@ -9,7 +9,6 @@
     "markdown": "---\ntype: concept\ntitle: Router\ndescription: A routing concept used to pin the length at which a base64 run becomes a blob for the injection scan.\nkind: principle\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nThe encoded sample is QUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJ and nothing else follows it.\n"
   },
   "level": "required",
-  "note": "added 2026-09-24 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

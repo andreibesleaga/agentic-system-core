@@ -2,17 +2,12 @@
 // Conformance area `bundle`. bundle-0001 (MAJOR tolerance and unknown-key
 // preservation, AGSC-00-15). bundle-0003..0005 (the agent lane, AGSC-01-36/38) and
 // bundle-0006 — dispatched here by vector.id since their input shape (`config`
-// alone, no `markdown`) differs from bundle-0001's. bundle-0002 is withdrawn (below).
+// alone, no `markdown`) differs from bundle-0001's.
 
 const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
 const { checkAgents } = require('../../../src/governance/agents.js');
-
-// bundle-0002 (language variants, AGSC-01-13) was withdrawn on 2026-09-24 with no
-// successor: the pair AGSC-01-13/01-13a is reserved to 1.1 (AGSC-00-20), and the
-// grouping this file used to implement for it proved nothing about an engine.
-// The runner never calls a handler for a withdrawn vector.
 
 function runAgentsConfigVector(vector) {
   const findings = checkAgents(vector.input.config);
@@ -31,7 +26,7 @@ function runAgentsConfigVector(vector) {
 }
 
 /**
- * bundle-0006 (rc.6, AGSC-00-25/) — the asymmetry AGSC-00-21 names: content
+ * bundle-0006 (AGSC-00-25) — the asymmetry AGSC-00-21 names: content
  * tolerates the unknown, configuration does not.
  *
  * `agsc.config.json` is the one CLOSED surface of this format (AGSC-01-18), so a

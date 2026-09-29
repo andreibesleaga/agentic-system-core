@@ -63,7 +63,7 @@ function specRoot(extra = {}) {
     'spec/00-overview.md': [
       '# Overview',
       '',
-      '`spec_version: "1.0.0-rc.5"` The key words MUST, SHOULD are to be interpreted as described in BCP 14.',
+      '`spec_version: "1.0.0-rc.9"` The key words MUST, SHOULD are to be interpreted as described in BCP 14.',
       '',
       '- **AGSC-00-01** A Bundle is a directory tree. [PRD-002]',
       '',

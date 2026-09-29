@@ -1,5 +1,5 @@
 'use strict';
-// The discovery document beyond disc-0003/0004/0005, and the route helpers:
+// The discovery document beyond disc-0004/0005/0016, and the route helpers:
 // AGSC-06-08a's Level rule, AGSC-06-10's ordering and relation names, AGSC-06-35's
 // related-system links, AGSC-11-20's `restricted` node and AGSC-11-23's tombstone.
 
@@ -80,7 +80,8 @@ test('sitemap, robots and tdmrep state one policy three ways (AGSC-06-18/06-19)'
   assert.ok(site.sitemap(BASE, ['/b/', '/a/'], '2026-01-01T00:00:00Z')
     .indexOf(`${BASE}/a/`) < site.sitemap(BASE, ['/b/', '/a/'], '2026-01-01T00:00:00Z').indexOf(`${BASE}/b/`));
   assert.ok(site.robots(BASE).includes('ai-train=no'));
-  assert.deepStrictEqual(site.tdmrep(BASE), [{ location: `${BASE}/`, 'tdm-reservation': 1 }]);
+  // TDMRep: `location` is a path pattern, never an absolute URL.
+  assert.deepStrictEqual(site.tdmrep(BASE), [{ location: '/', 'tdm-reservation': 1 }]);
 });
 
 test('AGSC-06-19: publishedRoutes() is every HTML page of a build and nothing else', () => {
@@ -114,7 +115,7 @@ test('check() reports every structural fault a malformed document can carry', ()
   // AGSC-06-08a: a Level-0 document that carries a digest is reported.
   assert.deepStrictEqual(codes({ linkset: [{ anchor: 'a', license: [{ href: 'x', digest: ['d'] }] }] }, 0), ['AGSC-E209']);
   // AGSC-06-08a at Level ≥ 2: every required anchor attribute must be present.
-  // AGSC-10-04 (rc.6): and a public Level-2 document without the ledger link is one more fault.
+  // AGSC-10-04: and a public Level-2 document without the ledger link is one more fault.
   assert.strictEqual(codes({ linkset: [{ anchor: 'a' }] }, 2).length, discovery.ANCHOR_ATTRIBUTES.length + 1);
   assert.strictEqual(codes({ linkset: [{ anchor: 'a' }] }, 2).filter((c) => c === 'AGSC-E202').length, 1);
   // AGSC-06-11: a rel#ledger link missing its attributes at Level ≥ 2.

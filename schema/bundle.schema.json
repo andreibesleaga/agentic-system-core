@@ -14,7 +14,7 @@
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
     },
     "bundle_version": {
-      "description": "The content version of the Bundle state this document was written for (AGSC-04-25, rc.6). Derived at build and never authored; it appears in the Bundle root document only of an `export --markdown`/`--okf` output (AGSC-01-26).",
+      "description": "The content version of the Bundle state this document was written for (AGSC-04-25). Derived at build and never authored; it appears in the Bundle root document only of an `export --markdown`/`--okf` output (AGSC-01-26).",
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
     },
@@ -24,7 +24,7 @@
       "pattern": "^[0-9]+\\.[0-9]+$"
     },
     "title": {
-      "description": "AGSC-02-24 as amended at rc.5: an authored SINGLE-LINE string — no C0 control, no U+007F, U+0085, U+2028 or U+2029 — because AGSC-06-13a block (1) puts it on the `# ` line of /llms.txt and /llms-full.txt. A violation is AGSC-E204.",
+      "description": "AGSC-02-24: an authored SINGLE-LINE string — no C0 control, no U+007F, U+0085, U+2028 or U+2029 — because AGSC-06-13a block (1) puts it on the `# ` line of /llms.txt and /llms-full.txt. A violation is AGSC-E204.",
       "type": "string",
       "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$",
       "minLength": 3,
@@ -37,13 +37,13 @@
       "maxLength": 200
     },
     "base": {
-      "description": "Absolute https origin, trailing slash optional; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json, including the http://localhost[:port]/ development placeholder written by adoption. No query, no fragment, and no path segment that is . or .. (AGSC-01-19, rc.5).",
+      "description": "Absolute https origin, trailing slash optional; the IRI base of every item (AGSC-01-19, AGSC-05-01). MUST equal site.base in agsc.config.json, including the http://localhost[:port]/ development placeholder written by adoption. No query, no fragment, and no path segment that is . or .. (AGSC-01-19).",
       "type": "string",
       "pattern": "^(?:https://[^\\x00-\\x20/?#]+(?:/[^\\x00-\\x20/?#]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
     },
     "lang": { "type": "string", "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$" },
     "license": {
-      "description": "SPDX or LicenseRef identifier covering the prose of this Bundle (AGSC-06-15). Single-line: it is the `license:` line of the AGSC-06-13a provenance header (AGSC-02-24, rc.5).",
+      "description": "SPDX or LicenseRef identifier covering the prose of this Bundle (AGSC-06-15). Single-line: it is the `license:` line of the AGSC-06-13a provenance header (AGSC-02-24).",
       "type": "string",
       "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$"
     },
@@ -56,7 +56,7 @@
         "agent": { "type": "string" },
         "model": { "type": "string" },
         "operator": {
-          "description": "AGSC-02-07 as amended on 2026-09-02: human:<id> only.",
+          "description": "AGSC-02-07: human:<id> only.",
           "type": "string",
           "pattern": "^human:[a-z0-9][a-z0-9._-]*$"
         },

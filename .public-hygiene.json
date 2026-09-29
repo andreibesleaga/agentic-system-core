@@ -13,26 +13,6 @@
   ],
   "allow": [
     {
-      "check": "process",
-      "path": "tests/vectors/**",
-      "reason": "frozen conformance vectors (withdraw and add, never edit); their notes carry the rules' trace tags"
-    },
-    {
-      "check": "internal-note",
-      "path": "tests/vectors/**",
-      "reason": "frozen conformance vectors (withdraw and add, never edit); their notes record how a rule was decided"
-    },
-    {
-      "check": "personal",
-      "path": "tests/vectors/ledger/ledger-0002-derivation-from-git-log.json",
-      "reason": "frozen vector: a git-log sample whose author field is the project's own sign-off; the name form is reduced when the vector is withdrawn and re-added at 1.0.0"
-    },
-    {
-      "check": "personal",
-      "path": "tests/vectors/prov/prov-0004-dco-plus-trailer-grammar.json",
-      "reason": "frozen vector: the DCO trailer grammar is exercised on the project's own sign-off line; reduced when the vector is withdrawn and re-added at 1.0.0"
-    },
-    {
       "check": "email",
       "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.*",
       "reason": "the Internet-Draft author block and IANA contact must carry the author's e-mail (RFC 7322 section 4.1.1, RFC 8615 registration template)"
@@ -69,18 +49,6 @@
       "path": "docs/PLAN.md",
       "text": "docs/runbooks/secrets.md",
       "reason": "the plan names the secrets-rotation procedure a node operator keeps; a product deliverable, not an internal document"
-    },
-    {
-      "check": "wording",
-      "path": "docs/PRD.md",
-      "text": "NFR-12",
-      "reason": "NFR-12 names the forbidden framings in order to forbid them"
-    },
-    {
-      "check": "process",
-      "path": "CHANGELOG.md",
-      "text": "the long-form runbook",
-      "reason": "states that the long-form procedure is kept outside the repository"
     },
     {
       "check": "process",

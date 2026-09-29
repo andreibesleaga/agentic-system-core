@@ -284,7 +284,7 @@ test('collisions: nothing is written, --dry-run reports the same, --replace repl
   assert.match(read(into, 'content/concepts/handoff.md'), /Pass control/u);
 });
 
-test('a record of a newer specification is refused unless --allow-newer, and a broken record is skipped', () => {
+test('a record of another MAJOR is refused unless --allow-newer, a newer MINOR warns, and a broken record is skipped', () => {
   const source = workspace();
   exported(source, 'agentskills');
   const from = path.join(source, 'dist/export/skills/agentskills');
@@ -292,8 +292,8 @@ test('a record of a newer specification is refused unless --allow-newer, and a b
   const text = nodeFs.readFileSync(skill, 'utf8');
   const b64 = /<!-- agsc-item (\S+) -->/u.exec(text)[1];
   const record = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
-  const newer = Buffer.from(JSON.stringify({ ...record, spec_version: '1.9.0' }), 'utf8').toString('base64');
-  nodeFs.writeFileSync(skill, text.replace(b64, newer));
+  const as = (version) => Buffer.from(JSON.stringify({ ...record, spec_version: version }), 'utf8').toString('base64');
+  nodeFs.writeFileSync(skill, text.replace(b64, as('2.0.0')));
   const into = emptyBundle();
   const refused = imported(into, from);
   assert.strictEqual(refused.status, 'fail');
@@ -301,6 +301,11 @@ test('a record of a newer specification is refused unless --allow-newer, and a b
   assert.deepStrictEqual(tree(path.join(into, 'content')), new Map());
   const allowed = imported(into, from, { 'allow-newer': true });
   assert.deepStrictEqual(errors(allowed.findings), []);
+  nodeFs.writeFileSync(skill, text.replace(b64, as('1.9.0')));
+  const minor = imported(emptyBundle(), from);
+  assert.deepStrictEqual(errors(minor.findings), []);
+  assert.deepStrictEqual(minor.findings.filter((f) => f.code === 'AGSC-E506' && f.message.includes('1.9.0'))
+    .map((f) => f.severity), ['warn']);
   // An agsc-item line that decodes to no item is reported and skipped.
   nodeFs.writeFileSync(skill, `${text}\n<!-- agsc-item ${Buffer.from('{"slug":"x"}').toString('base64')} -->\n`
     + `<!-- agsc-item ${Buffer.from('not json').toString('base64')} -->\n`);

@@ -61,7 +61,7 @@ function slugList(value) {
 }
 
 /**
- * AGSC-10-13 (derivation restated at rc.6): `claimed_by` — the `author` of the last
+ * AGSC-10-13: `claimed_by` — the `author` of the last
  * first-parent commit whose `files[]` names the task's file, derived at build from
  * the extended git-log file of AGSC-08-20b. It is never authored, and absent when no
  * history is supplied, when no commit names the file, or when the last commit that

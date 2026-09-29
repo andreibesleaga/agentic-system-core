@@ -108,9 +108,10 @@ function treeSize(dir) {
 
 /**
  * Every rule id the specification declares, and which of them are active. A rule
- * is retired exactly when its id is followed by `*(retired at rc`, the test
- * `tools/count-artifacts` applies, so the two can never disagree; the word
- * "reserved" inside a rule's text says nothing about the rule itself.
+ * is reserved exactly when its id is followed by `*(reserved:` (or the older
+ * `*(retired at rc` form), the test `tools/count-artifacts` applies, so the two can
+ * never disagree; the word "reserved" elsewhere inside a rule's text says nothing
+ * about the rule itself.
  */
 function specRules() {
   const active = [];
@@ -119,7 +120,7 @@ function specRules() {
     if (!name.endsWith('.md')) continue;
     const text = fs.readFileSync(path.join(REPO, 'spec', name), 'utf8');
     for (const line of text.split('\n')) {
-      const m = /^-\s+\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\(retired at rc)?/u.exec(line);
+      const m = /^-\s+\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\((?:retired at rc|reserved:))?/u.exec(line);
       if (!m) continue;
       all.push(m[1]);
       if (m[2] === undefined) active.push(m[1]);
@@ -347,7 +348,7 @@ async function layerParity(nodes) {
     call_list: { file: 'bench/corpus/parity-calls.json', fixed: spec.calls.length, per_item: spec.per_item.length, version: spec.version },
     command: 'node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…',
     nodes: per,
-    note: 'Compared as values after a JSON round trip, which is what AGSC-09-16 claims at rc.6; never byte-identical across the browser boundary.',
+    note: 'Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary.',
     totals,
   };
 }

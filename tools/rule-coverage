@@ -120,7 +120,7 @@ function readRules(root, read) {
   const retired = new Set();
   for (const f of files) {
     const text = read(`spec/${f}`);
-    for (const m of text.matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\(retired at rc)?/g)) {
+    for (const m of text.matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\((?:retired at rc|reserved:))?/g)) {
       if (m[2]) retired.add(m[1]);
       else if (!active.includes(m[1])) active.push(m[1]);
     }

@@ -115,7 +115,7 @@ const WITH_DIAGRAM = {
 test('AGSC-02-13: the compiled diagram is inline in the page, in a figure, at no route', () => {
   const { html: figure, findings } = html.diagramFigure(WITH_DIAGRAM, DIAGRAM_SOURCE);
   assert.deepStrictEqual(findings, []);
-  assert.ok(figure.startsWith('<figure><svg '), figure);
+  assert.ok(figure.startsWith('<figure class="diagram"><svg '), figure);
   assert.ok(figure.endsWith('</figure>'), figure);
   assert.ok(!figure.includes('.svg'), 'the compiled picture is never named as a route');
   assert.ok(!figure.includes('<img'), 'an inline <svg>, never an <img> at a route');
@@ -123,7 +123,7 @@ test('AGSC-02-13: the compiled diagram is inline in the page, in a figure, at no
   const page = html.itemPage(WITH_DIAGRAM, { ...OPTIONS, diagramSource: DIAGRAM_SOURCE });
   assert.ok(page.includes(figure), 'the figure reaches the page');
   // Without a source the page keeps its prose and carries no figure.
-  assert.ok(!html.itemPage(WITH_DIAGRAM, OPTIONS).includes('<figure>'));
+  assert.ok(!html.itemPage(WITH_DIAGRAM, OPTIONS).includes('<figure class="diagram">'));
 });
 
 test('AGSC-06-20: the accessible name is diagram.alt, not the source label', () => {
@@ -145,7 +145,7 @@ test('AGSC-02-98/AGSC-E412: a source that will not compile emits no element', ()
   assert.ok(broken.findings.length > 0);
   assert.ok(broken.findings.every((f) => f.code === 'AGSC-E412'), JSON.stringify(broken.findings));
   assert.ok(broken.findings.every((f) => f.file === 'content/diagrams/router.diagram'), JSON.stringify(broken.findings));
-  assert.ok(!html.itemPage(WITH_DIAGRAM, { ...OPTIONS, diagramSource: 'box\n' }).includes('<figure>'));
+  assert.ok(!html.itemPage(WITH_DIAGRAM, { ...OPTIONS, diagramSource: 'box\n' }).includes('<figure class="diagram">'));
   // An item with no `diagram` facet, and a non-string source, are both silent.
   assert.deepStrictEqual(html.diagramFigure({ slug: 'a' }, DIAGRAM_SOURCE), { html: '', findings: [] });
   assert.deepStrictEqual(html.diagramFigure(WITH_DIAGRAM, null), { html: '', findings: [] });
@@ -154,7 +154,7 @@ test('AGSC-02-98/AGSC-E412: a source that will not compile emits no element', ()
 test('AGSC-02-98: the compiled bytes pass the allow-list before they are inlined', () => {
   const { svgViolations } = require('../../src/governance/lint.js');
   const { html: figure } = html.diagramFigure(WITH_DIAGRAM, DIAGRAM_SOURCE);
-  const svg = figure.slice('<figure>'.length, figure.indexOf('<figcaption>'));
+  const svg = figure.slice('<figure class="diagram">'.length, figure.indexOf('<figcaption>'));
   assert.deepStrictEqual(svgViolations(svg), []);
   for (const forbidden of ['<script', 'onload=', 'style=', '<!DOCTYPE', '<!ENTITY', 'data:', '<?xml']) {
     assert.ok(!figure.includes(forbidden), forbidden);
@@ -174,7 +174,7 @@ test('AGSC-02-13: a compiled diagram the allow-list refuses is AGSC-E412 and no 
   assert.match(refused.findings[0].message, /a <script> element, an on\* attribute/u);
   assert.match(refused.findings[0].message, /AGSC-02-98/u);
   const page = html.itemPage(WITH_DIAGRAM, { ...OPTIONS, diagramSource: DIAGRAM_SOURCE, svgViolations: refuse });
-  assert.ok(!page.includes('<figure>'), page);
+  assert.ok(!page.includes('<figure class="diagram">'), page);
 });
 
 // A person reads the item page, not the graph: the typed Links an item authors, a

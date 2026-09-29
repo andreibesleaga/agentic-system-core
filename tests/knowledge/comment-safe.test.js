@@ -5,7 +5,7 @@
 //
 // The defence is `knowledge/unicode.js#commentSafe`, applied by every writer of that
 // header, and it is the IDENTITY on every value that does not carry the sequence —
-// which is what lets it ship without moving a byte the vector `disc-0006` pins.
+// which is what lets it ship without moving a byte the vector `disc-0013` pins.
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -22,7 +22,7 @@ const steer = require('../../src/interchange/steer.js');
 const ROOT = path.resolve(__dirname, '..', '..');
 
 test('the HTML Standard closes a comment on --> and on --!>; both are neutralised', () => {
-  // AGSC-06-13a as amended at rc.6 names the replacement: `--&gt;`.
+  // AGSC-06-13a names the replacement: `--&gt;`.
   assert.strictEqual(commentSafe('a --> b'), 'a --&gt; b');
   assert.strictEqual(commentSafe('a --!> b'), 'a --!&gt; b');
   assert.strictEqual(commentSafe('x --> y --> z'), 'x --&gt; y --&gt; z');
@@ -51,7 +51,7 @@ test('the /llms.txt provenance comment survives a --> in the licence prose', () 
     title: 'A Node',
   };
   const text = llms.llmsTxt(bundle, {
-    generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.5',
+    generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.6',
     terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
   });
   // Exactly one comment opener and one closer, and the closer is the last line of
@@ -69,7 +69,7 @@ test('every other writer of the same header carries the same defence', () => {
   const options = {
     base: 'https://example.org/', generatedAt: '2026-01-01T00:00:00Z',
     instant: '2026-01-01T00:00:00Z', license: 'Evil --> escaped',
-    licenseProse: 'Evil --> escaped', specVersion: '1.0.0-rc.5',
+    licenseProse: 'Evil --> escaped', specVersion: '1.0.0-rc.6',
     terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
   };
   for (const [what, text] of [
@@ -83,7 +83,7 @@ test('every other writer of the same header carries the same defence', () => {
 });
 
 test('the AI-assistance line is one constant, and it is the last line of every block', () => {
-  // AGSC-06-15 (rc.6): a CONSTANT of the specification, never authored, always
+  // AGSC-06-15: a CONSTANT of the specification, never authored, always
   // immediately before `-->`. The Harness restates it for AGSC-07-13; the two
   // must never drift.
   const { ASSISTANCE, provenanceHeader } = require('../../src/knowledge/provenance-header.js');

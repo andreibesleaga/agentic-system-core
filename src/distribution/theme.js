@@ -122,6 +122,9 @@ figure.diagram { margin: 1.25rem 0 1.5rem; }
 figure.diagram svg { display: block; width: 100%; max-width: 46rem; height: auto; }
 figure.diagram svg .acc { stroke: var(--accent); }
 figure.diagram figcaption { font-size: 0.92rem; color: var(--muted); max-width: 46rem; margin-top: 0.35rem; }
+/* On a narrow screen a diagram keeps a minimum drawn width and scrolls inside its figure, so its labels stay readable. */
+figure.diagram { overflow-x: auto; }
+figure.diagram svg { min-width: 34rem; }
 /* Home page capability grid. */
 .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.75rem; padding: 0; margin: 0 0 1.5rem; list-style: none; }
 .modes li { margin: 0; border: 1px solid var(--rule); border-radius: 4px; padding: 0.6rem 0.8rem; background: var(--bg-alt); }
@@ -131,9 +134,12 @@ figure.diagram figcaption { font-size: 0.92rem; color: var(--muted); max-width: 
 /* Search. */
 form.search { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0 0 1rem; }
 form.search input { flex: 1 1 14rem; font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--fg); min-height: 44px; }
+form.search[hidden] { display: none; }
 form.search button { font: inherit; padding: 0.45rem 0.9rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg-alt); color: var(--fg); min-height: 44px; cursor: pointer; }
 #results { list-style: none; padding: 0; }
 #results li { margin: 0 0 0.75rem; }
+/* The compose page's item list: one checkbox per row, no bullet beside it. */
+#items { list-style: none; padding: 0; }
 .snippet { color: var(--muted); font-size: 0.92rem; }
 #site-index h2 { font-size: 1.1rem; }
 .edit { border-top: 1px solid var(--rule); padding-top: 0.75rem; margin-top: 2rem; color: var(--muted); font-size: 0.92rem; }

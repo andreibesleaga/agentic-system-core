@@ -9,9 +9,8 @@
 //
 // Selector: one of the nine of AGSC-09-90. It answers the AGSC-09-11 envelope and
 // writes no file. It MUST NOT pass over nothing: a checker that read no input
-// reports `AGSC-E901` and exits 1, which is the whole point of the rule as
-// amended at rc.6 — "nothing is wrong" must be tellable from "nothing was looked
-// at".
+// reports `AGSC-E901` and exits 1, which is the whole point of the rule —
+// "nothing is wrong" must be tellable from "nothing was looked at".
 
 module.exports = {
   agsc_spec_version: '1.0.0',

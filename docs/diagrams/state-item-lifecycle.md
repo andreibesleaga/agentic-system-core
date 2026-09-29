@@ -41,7 +41,7 @@ stateDiagram-v2
 
 Four `status` values (`draft | stable | deprecated | retired`, default `stable` — an item
 authored without a `status` therefore *starts* stable, and every transition including `deprecated` →
-`stable` is legal, warned but never rejected, per AGSC-02-23); `retired` was added at rc.3 by
+`stable` is legal, warned but never rejected, per AGSC-02-23); `retired` is defined by
 AGSC-11-22 — a retired item keeps its page and its canonical IRI, carries a visible retirement notice,
 leaves `search.json`, `/chunks.jsonl`, `/llms.txt`, skill packs and every composition selection, and stays
 in the graph exports with `asc:retiredAt`. There is no `archived` or `deleted` state — deletion is out of scope.

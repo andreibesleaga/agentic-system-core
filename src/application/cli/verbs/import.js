@@ -510,7 +510,8 @@ function importOkf(ctx, source, identityOptions) {
     sourceHash: facts.bundleHash,
     sourceVersion: facts.bundleVersion,
   });
-  const all = [...findings, ...planned.findings];
+  const newer = okf.versionWarning(facts.specVersion, { toolSpecVersion: ctx.specVersion });
+  const all = [...findings, ...(newer === null ? [] : [newer]), ...planned.findings];
   return finish(ctx, all, planned);
 }
 

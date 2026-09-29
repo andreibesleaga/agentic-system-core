@@ -2,10 +2,10 @@
 // tests/tools/validate-wellknown-visibility.test.js — AGSC-11-20 and AGSC-00-23 in
 // the independent checker of AGSC-09-93.
 //
-// Until rc.6 this tool knew nothing about visibility: it required every `agsc-*`
-// attribute at Level ≥ 2 and reported nothing when a gated node published the four
-// AGSC-11-20 forbids it to. A validator that cannot tell a conforming restricted
-// node from a leaking one is not checking the rule that matters most there.
+// A validator that required every `agsc-*` attribute at Level ≥ 2 and reported
+// nothing when a gated node published the four AGSC-11-20 forbids it to could not
+// tell a conforming restricted node from a leaking one, which is the rule that
+// matters most there.
 //
 // Driven as an operator drives it — a real process over a real file — so the
 // envelope and the exit code are what is asserted, not an internal. No network.
@@ -63,7 +63,7 @@ function check(doc) {
 /** The findings that are about this rule, not about a scratch directory. */
 const mine = (result, pattern) => result.envelope.findings.filter((f) => pattern.test(f.message));
 
-describe('validate-wellknown: visibility and version (rc.6)', () => {
+describe('validate-wellknown: visibility and version', () => {
   it('AGSC-11-20: a restricted node publishing the four content facts is AGSC-E210', () => {
     const result = check(document({ 'agsc-visibility': ['restricted'] }));
     const leaks = mine(result, /a restricted node must omit/u);
@@ -130,10 +130,72 @@ describe('validate-wellknown: visibility and version (rc.6)', () => {
   });
 
   it('AGSC-00-23: publishing a member the node\'s own declared version does not define', () => {
-    const result = check(document({ 'agsc-spec-version': ['2.0.0'] }));
+    const result = check(document({ 'agsc-spec-version': ['0.9.0'] }));
     const said = mine(result, /which does not define it/u);
     assert.deepEqual(said.map((f) => f.code), ['AGSC-E210']);
+    // A later MAJOR is outside what a 1.x checker can judge: no E210 for it.
+    assert.deepEqual(mine(check(document({ 'agsc-spec-version': ['2.0.0'] })), /which does not define it/u), []);
     // The conforming case says nothing.
     assert.deepEqual(mine(check(document()), /which does not define it/u), []);
+  });
+});
+
+/** A copy of `document()` with further relations placed in JSON member-name order. */
+function withRelations(doc, extra) {
+  const context = { ...doc.linkset[0], ...extra };
+  const ordered = { anchor: context.anchor };
+  for (const name of Object.keys(context).filter((k) => k !== 'anchor').sort()) ordered[name] = context[name];
+  return { linkset: [ordered] };
+}
+
+describe('validate-wellknown: the bundle hash, gated digests and a newer MINOR', () => {
+  it('AGSC-06-08 / AGSC-04-15: agsc-bundle-hash must equal the digest of the rel#graph link to graph.nq', () => {
+    const other = 'sha-256=:LCa0a2j/xo/5m0U8HTBBNBNCLXBkg7+g+YpeiGJm564=:';
+    const graph = { [`${REL}graph`]: [{ digest: [other], href: `${BASE}graph.nq`, type: 'application/n-quads' }] };
+    const wrong = mine(check(withRelations(document(), graph)), /is not the digest of/u);
+    assert.deepEqual(wrong.map((f) => f.code), ['AGSC-E210']);
+    const right = check(withRelations(document({ 'agsc-bundle-hash': [other] }), graph));
+    assert.deepEqual(mine(right, /is not the digest of/u), []);
+  });
+
+  it('AGSC-11-20: a restricted node publishes no digest of a target it gates', () => {
+    const gated = document({
+      'agsc-bundle-hash': null, 'agsc-bundle-version': null, 'agsc-counts': null,
+      'agsc-visibility': ['restricted'],
+    });
+    const graph = { [`${REL}graph`]: [{ digest: [DIGEST], href: `${BASE}graph.nq`, type: 'application/n-quads' }] };
+    const leaks = mine(check(withRelations(gated, graph)), /must omit the digest of/u);
+    assert.deepEqual(leaks.map((f) => f.code), ['AGSC-E210']);
+    assert.match(leaks[0].message, /graph\.nq/u);
+    // The digest of `/graph.jsonld`, which the node serves unauthenticated, stays.
+    assert.deepEqual(mine(check(gated), /must omit the digest of/u), []);
+    // And the gated link without its digest is not then reported as missing one.
+    const bare = withRelations(gated, { [`${REL}graph`]: [{ href: `${BASE}graph.nq`, type: 'application/n-quads' }] });
+    assert.deepEqual(mine(check(bare), /carries no digest/u), []);
+  });
+
+  it('AGSC-00-21 / AGSC-09-93: a newer MINOR\'s relation and attribute are ignored with a warning', () => {
+    const later = withRelations(document({ 'agsc-spec-version': ['1.1.0'], 'agsc-summary': ['a later attribute'] }),
+      { [`${REL}brief`]: [{ href: `${BASE}brief.md`, type: 'text/markdown' }] });
+    const result = check(later);
+    assert.deepEqual(result.envelope.findings.filter((f) => ['AGSC-E209', 'AGSC-E202'].includes(f.code)
+      && /brief|summary/u.test(f.message)), []);
+    const ignored = result.envelope.findings.filter((f) => f.code === 'AGSC-E506');
+    assert.deepEqual(ignored.map((f) => f.severity), ['warn', 'warn']);
+    assert.ok(ignored.every((f) => f.message.includes('1.1.0')), JSON.stringify(ignored));
+    // Another MAJOR has no tolerance: the same relation is AGSC-E209.
+    const major = withRelations(document({ 'agsc-spec-version': ['2.0.0'] }),
+      { [`${REL}brief`]: [{ href: `${BASE}brief.md`, type: 'text/markdown' }] });
+    assert.ok(check(major).envelope.findings.some((f) => f.code === 'AGSC-E209' && /brief/u.test(f.message)));
+  });
+
+  it('RFC 9264 §4.2.4.1: a related-system title is a string, and an array title is refused', () => {
+    const related = (title) => withRelations(document(), {
+      related: [{ href: 'https://registry.example/x.json', title, type: 'application/json' }],
+    });
+    assert.deepEqual(mine(check(related('A registry')), /target attribute title/u), []);
+    const refused = mine(check(related(['A registry'])), /target attribute title must be a string/u);
+    assert.deepEqual(refused.map((f) => f.code), ['AGSC-E201']);
+    assert.match(refused[0].message, /§4\.2\.4\.1/u);
   });
 });

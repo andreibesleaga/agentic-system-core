@@ -115,7 +115,7 @@
     },
     {
      "path": "agsc.config.json",
-     "text": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.5\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  },\n  \"lint\": {\n    \"injection_patterns\": [\n      \"transfer the funds\"\n    ]\n  }\n}\n"
+     "text": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.6\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  },\n  \"lint\": {\n    \"injection_patterns\": [\n      \"transfer the funds\"\n    ]\n  }\n}\n"
     }
    ],
    "id": "imp-configured-pattern",
@@ -621,7 +621,7 @@
    "files": [
     {
      "path": "agsc.config.json",
-     "text": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"../escaped\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.5\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+     "text": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"../escaped\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.6\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
     }
    ],
    "id": "trav-build-out",
@@ -785,7 +785,7 @@
      "path": "agsc.config.json",
      "repeat": {
       "count": 1048577,
-      "prefix": "{\"bundle\":{\"id\":\"minimal\",\"license_prose\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"license_schema\":\"CC0-1.0\",\"operator\":\"human:andreibesleaga\"},\"build\":{\"out\":\"www\"},\"site\":{\"base\":\"https://minimal.example/\",\"tdm_crawlers\":[\"Applebot-Extended\",\"CCBot\",\"ClaudeBot\",\"GPTBot\",\"Google-Extended\",\"meta-externalagent\"],\"tagline\":\"The smallest Bundle that conforms.\",\"title\":\"Minimal Bundle\"},\"spec_version\":\"1.0.0-rc.5\",\"tags\":{\"allowed\":[\"agents\",\"patterns\"]}}",
+      "prefix": "{\"bundle\":{\"id\":\"minimal\",\"license_prose\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"license_schema\":\"CC0-1.0\",\"operator\":\"human:andreibesleaga\"},\"build\":{\"out\":\"www\"},\"site\":{\"base\":\"https://minimal.example/\",\"tdm_crawlers\":[\"Applebot-Extended\",\"CCBot\",\"ClaudeBot\",\"GPTBot\",\"Google-Extended\",\"meta-externalagent\"],\"tagline\":\"The smallest Bundle that conforms.\",\"title\":\"Minimal Bundle\"},\"spec_version\":\"1.0.0-rc.6\",\"tags\":{\"allowed\":[\"agents\",\"patterns\"]}}",
       "suffix": "\n",
       "text": " "
      }

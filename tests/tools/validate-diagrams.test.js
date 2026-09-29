@@ -37,7 +37,7 @@ function diagramRoot(files = {}, extra = {}) {
     'docs/PRD.md': '| PRD-004 | a requirement |\n',
     'docs/diagrams/README.md': README,
     'docs/diagrams/algo.md': GOOD,
-    'spec/00-overview.md': '`spec_version: "1.0.0-rc.5"`\n\n- **AGSC-01-01** A rule. [PRD-004]\n',
+    'spec/00-overview.md': '`spec_version: "1.0.0-rc.9"`\n\n- **AGSC-01-01** A rule. [PRD-004]\n',
     ...Object.fromEntries(Object.entries(files).map(([k, v]) => [`docs/diagrams/${k}`, v])),
     ...extra,
   });

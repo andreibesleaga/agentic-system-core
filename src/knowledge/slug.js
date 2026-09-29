@@ -7,8 +7,8 @@
 // The grammar is `^[a-z0-9]+(?:-[a-z0-9]+)*$` with a 1-64 CODE POINT bound carried
 // by minLength/maxLength, never by a quantifier: it forbids a leading, trailing or
 // doubled hyphen by construction and compiles unchanged in RE2, Go and Rust
-// (AGSC-01-10, rc.3 blocker B4). The historical lookahead form `(?!.*--)` MUST NOT
-// be reintroduced; vector slug-0006 proves the portable form.
+// (AGSC-01-10). The lookahead form `(?!.*--)` MUST NOT be used (it does not
+// compile in RE2); vector slug-0006 proves the portable form.
 
 const { nfc, codePointLength, compareCodePoint } = require('./unicode.js');
 

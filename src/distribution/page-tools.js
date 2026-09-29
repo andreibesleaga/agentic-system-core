@@ -14,10 +14,10 @@
  * WRITE of any kind — they return the payload and stop).
  * Requirements: PRD-051, PRD-056.
  *
- * WHY THIS MODULE EXISTS. Until rc.5 the emitted page registered seven tools and
- * answered one: `src/distribution/compose-page.js` implemented `compose` and returned
- * "has no page implementation yet" for the other six. The rule was therefore
- * satisfied by the emitter and not by the artefact the site ships.
+ * WHY THIS MODULE EXISTS. The emitted page registers seven tools and answers every
+ * one of them: `src/distribution/compose-page.js` implements `compose`, and this
+ * module the other six. A page that registered seven tools and answered one would
+ * satisfy the rule in the emitter and not in the artefact the site ships.
  *
  * ONE IMPLEMENTATION, TWO HOSTS (AGSC-07-13's portability contract, the pattern of
  * `composition/browser.js`). Every function below is a SELF-CONTAINED top-level
@@ -600,6 +600,30 @@ function pageClaimants(map) {
   return out;
 }
 
+/**
+ * AGSC-10-13 with AGSC-06-10: does the node publish a board? Only a node whose
+ * discovery document carries the `…/rel#boards` link serves `/boards/index.json`,
+ * so a page asks for that route only then and a node with no task logs no 404.
+ * @param {object} map ROUTE -> text.
+ * @returns {boolean}
+ */
+function pageDeclaresBoards(map) {
+  const raw = (map || {})['/.well-known/knowledge-linkset'];
+  if (typeof raw !== 'string') return false;
+  try {
+    const doc = JSON.parse(raw);
+    const context = (doc && doc.linkset && doc.linkset[0]) || null;
+    if (context === null || typeof context !== 'object') return false;
+    // The relation is `https://` + this suffix; matched by its suffix so that the
+    // emitted script names no absolute origin (AGSC-06-05).
+    const suffix = '//w3id.org/agentic-system-core/rel#boards';
+    return Object.keys(context).some((name) => name.slice(-suffix.length) === suffix
+      && Array.isArray(context[name]) && context[name].length > 0);
+  } catch (e) {
+    return false;
+  }
+}
+
 /** AGSC-06-08: the node's own base, from the discovery document's anchor. */
 function pageBaseOf(map) {
   const raw = map['/.well-known/knowledge-linkset'];
@@ -976,7 +1000,7 @@ function pageToolset(corpus, core) {
       const kinds = pageKindToType();
       const kind = kinds[args.kind] === undefined ? 'concept' : args.kind;
       const type = kinds[kind];
-      // AGSC-09-14b as amended at rc.6: a Gate's Level is a governance decision a
+      // AGSC-09-14b: a Gate's Level is a governance decision a
       // tool call may not invent, and an episode's schema branch requires `actor`.
       if (args.kind === 'gate') {
         return pageErrorEnvelope('remember', 'AGSC-E203', 'remember does not accept kind "gate": a Gate\'s Level is a governance decision (AGSC-09-14b)');
@@ -1326,7 +1350,7 @@ const PORTABLE = Object.freeze(['pageTerms', 'pageNoAnswer', 'pageLinkKeys',
   'pageBaseIri', 'pageItemIri', 'pageNfc', 'pageTokenize', 'pageAnchorOf', 'pageSlugify',
   'pageDedupe', 'pageSplitFrontmatter', 'pageParseFrontmatter', 'pageIndentOf', 'pageNextMeaningful',
   'pageParseMap', 'pageParseValue', 'pageParseSeq', 'pageKeyEnd', 'pageScalar',
-  'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageClaimants', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
+  'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageClaimants', 'pageDeclaresBoards', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
   'pageInlineTargets', 'pageResolveBodyReference', 'pageToolset', 'pageArguments',
   'pageRequiredArguments', 'pageSlugOfIri', 'pageTaskStates', 'pageQuoteTemporal', 'pageSetLine', 'pageUnifiedDiff', 'pageBoardMove']);
 
@@ -1362,6 +1386,7 @@ const SOURCE = Object.freeze({
   pageIndexOf,
   pageCorpus,
   pageClaimants,
+  pageDeclaresBoards,
   pageBaseOf,
   pageEdges,
   pageCompare,
@@ -1444,7 +1469,9 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
       }));
     }).then(function () {
       // AGSC-10-13: the board exports carry the derived \`claimed_by\` a claim is
-      // checked against (AGSC-10-17). A node with no task has no /boards/ route.
+      // checked against (AGSC-10-17). A node with no task has no /boards/ route and
+      // no rel#boards link, so the page asks for the index only when it is declared.
+      if (!pageDeclaresBoards(sources)) return null;
       return get('/boards/index.json').then(function (text) {
         var boards = [];
         try { boards = (JSON.parse(text) || {}).boards || []; } catch (e) { boards = []; }
@@ -1516,6 +1543,7 @@ module.exports = {
   pageAnchors,
   pageCorpus,
   pageClaimants,
+  pageDeclaresBoards,
   pageEdges,
   pageIndexOf,
   pageInlineTargets,

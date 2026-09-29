@@ -114,7 +114,7 @@ function divergenceVerdicts(divergences, options) {
  * and the rest of the claim stands.
  *
  * A claimed ROUTE is recognised in the AGSC-06-01 form, with its leading slash
- * (`conform-0004`); the bare form the engine's own list used until rc.5 is still
+ * (`conform-0004`); the bare form without the slash is also
  * accepted, because a claim is a document a stranger wrote and AGSC-00-15 makes a
  * reader tolerant of a spelling its own emitter would not choose.
  */

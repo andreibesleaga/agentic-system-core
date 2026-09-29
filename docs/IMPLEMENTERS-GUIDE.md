@@ -47,7 +47,7 @@ the mistakes everything else is built on.
 
 ## 1a. A Level-0 node in ten steps, from any stack
 
-*Added 2026-09-24 (AGSC-10-10, AGSC-10-11).* Level 0 is static files that any CMS,
+*(AGSC-10-10, AGSC-10-11.)* Level 0 is static files that any CMS,
 wiki or static-site generator can export (AGSC-10-02). No engine is needed. Each step
 names what proves it: a rule, the vectors of an area you can run in your own language,
 and the reference checker if you want a ready-made one.
@@ -70,7 +70,7 @@ and no engine, and passes the shipped checker.
 
 ## 1b. Mapping an existing platform
 
-*Added 2026-09-24 (AGSC-10-10).* How the constructs of common platforms map onto items,
+*(AGSC-10-10.)* How the constructs of common platforms map onto items,
 frontmatter keys, Links and Clusters. It is guidance, not a rule: where a platform
 offers a richer relation, `related` is always a safe default (AGSC-03-19), and a
 link written in the body becomes an untyped *mentions* edge.
@@ -95,8 +95,7 @@ rather start from the files than from the platform.
 Read these in this order. Each one assumes the ones before it.
 
 1. **`spec/00-overview.md`** — the model, the six item types, the version rules
-   (AGSC-00-04, AGSC-00-09…11, AGSC-00-14…16, AGSC-00-20), and **§0.6**, added at
-   rc.6, which is the one place that states what a reader and a writer must do
+   (AGSC-00-04, AGSC-00-09…11, AGSC-00-14…16, AGSC-00-20), and **§0.6**, which is the one place that states what a reader and a writer must do
    across versions: what to ignore and preserve (AGSC-00-21), what must survive a
    round trip (AGSC-00-22), what you may not emit for a version you do not claim
    (AGSC-00-23), the closed list of eight plugin kinds (AGSC-00-24) and the names
@@ -115,7 +114,7 @@ Read these in this order. Each one assumes the ones before it.
 5. **`spec/04-canonicalization.md`** — the byte rules. §4 below is about this one.
    Run the `jcs` area.
 6. **`spec/09-conformance.md`** — the CLI contract, the error-code registry
-   (§9.4; 91 codes on 2026-09-24) and the diagnostics envelope (AGSC-09-11). Every finding you
+   (§9.4) and the diagnostics envelope (AGSC-09-11). Every finding you
    ever emit uses a code from that table; AGSC-09-15 forbids inventing one.
 7. **`spec/10-implementation-profiles.md`** — the Levels, and AGSC-10-15, which says
    which vector areas each Level runs.
@@ -133,10 +132,10 @@ implementing anything.
 
 ## 3. Running the vector set
 
-The vectors are the acceptance test. Measured on 2026-09-24 by `node tools/count-artifacts
---json` against the `1.0.0-rc.6` draft, there are **199** of them in **19** populated
-areas of the 25 AGSC-09-04 declares: 166 are `required`, 1 is `optional`, 32 are
-`withdrawn`. Run the command for today's numbers; never type them.
+The vectors are the acceptance test. `node tools/count-artifacts --json` reports how
+many there are, how many of the 25 areas AGSC-09-04 declares are populated, and how
+many are `required`, `optional` and `withdrawn`. Run the command for the numbers;
+never type them.
 
 A vector is one JSON file holding one object: `id`, `area`, `rule`, `level`,
 `description`, `input`, `expected`, and optionally `options`, `reason`, `note` and
@@ -197,7 +196,7 @@ AGSC-04-07. A byte-order mark is a finding (`AGSC-E108`), a CRLF is a finding, t
 trailing newlines are a finding. AGSC-04-23 caps a combining sequence
 (`AGSC-E607`) — normalisation of an adversarial string must not be able to blow up.
 
-**Authored single-line strings carry no line break.** AGSC-02-24 as amended at rc.5
+**Authored single-line strings carry no line break.** AGSC-02-24
 lists the members (`title`, `description`, every `tags[]` value, `prov.agent`,
 `site.title`, …) that must not contain a C0 control, U+007F, U+0085, U+2028 or
 U+2029; a violation is `AGSC-E204`. **And a writer must neutralise them as well**,
@@ -207,21 +206,19 @@ from outside. `/llms.txt`, `/now.md`, `robots.txt`, `_headers` and every `SKILL.
 are line-oriented: a newline inside an interpolated title forges a new line there.
 Vector `fm-0010`.
 
-**Six byte-level facts changed at `1.0.0-rc.6`.** A port written against rc.5 emits
-different bytes for the same Bundle after each of these, so each is named here with
-the rule that fixes it.
+**Six byte-level facts that are easy to miss.** A port that misses one emits different
+bytes for the same Bundle, so each is named here with the rule that fixes it.
 
-1. **The provenance header gains a line.** AGSC-06-15 adds `assistance:` as the last
+1. **The provenance header ends with an `assistance:` line.** AGSC-06-15 puts `assistance:` as the last
    line of the AGSC-06-13a block, immediately before `-->`. It is a CONSTANT of the
    specification, never authored and never configured, and it is carried by every
    file that carries that header — `/llms.txt`, `/llms-full.txt`, a skill pack, a
    steer bundle, a Harness file, the `llm-context` skim view. Vectors `disc-0013`
-   and `disc-0011` are the successors of the withdrawn `disc-0006`/`disc-0007` and
-   differ from them by exactly this line.
+   and `disc-0014`.
 2. **`-->` inside an interpolated value becomes `--&gt;`.** AGSC-06-13a names the
    replacement; a writer that neutralised it some other way emits different bytes for
    the same authored value, and the authored value itself is `AGSC-E204` at lint.
-3. **`robots.txt` gains one group per named crawler.** AGSC-06-18 as amended: one
+3. **`robots.txt` carries one group per named crawler.** AGSC-06-18: one
    `User-agent: <token>` + `Disallow: /` per product token of `site.tdm_crawlers[]`,
    in configuration order, **before** the `User-agent: *` group, and no `Disallow`
    for any other token. A node publishing `tdm-reservation: 1` — every node at 1.x
@@ -232,8 +229,8 @@ the rule that fixes it.
    pair of items, whatever the number of references between them; none for a
    self-reference; no computed inverse. This moves `graph.nq`, `graph.ttl`,
    `graph.jsonld`, the per-item `.jsonld` and therefore the bundle hash of every
-   node that has an inline body link. Vector `graph-0025` (its predecessor `graph-0020` was withdrawn at rc.6 when `graph.nq` was pinned to the named-graph form).
-5. **`/ns/context.jsonld` names each term one way.** AGSC-06-32 as amended pins the
+   node that has an inline body link. Vector `graph-0025`.
+5. **`/ns/context.jsonld` names each term one way.** AGSC-06-32 pins the
    term NAMES, not only the mapping: an `asc:` term is named by its local name,
    always; an external property by its local name, or by its compact IRI where that
    local name is also an `asc:` term name or is shared by two external properties.
@@ -241,11 +238,10 @@ the rule that fixes it.
    for byte. A Level ≥ 2 writer serves the versioned copy at
    `/ns/<ontology-version>/context.jsonld` as well, byte-identical. Vector
    `graph-0019`.
-6. **`/assets/<path>` is a route.** AGSC-06-01 as amended: every file under
+6. **`/assets/<path>` is a route.** AGSC-06-01: every file under
    `content/assets/` that a PUBLISHED item's body references is emitted at that path
    relative to `content/assets/`, with the authored file's bytes, and the body's
-   reference is rendered as that route. Before rc.6 there was no such route and the
-   reference 404d on the built site.
+   reference is rendered as that route.
 
 **Sort orders are stated per artefact, and they are not all the same.** Findings sort
 by `(file, line, col, code)`, code-point (AGSC-09-10). Canonical N-Quads lines sort
@@ -273,7 +269,7 @@ never a finding. With no value at all the instant is 0 and the build warns
 (`AGSC-E606`). This is what makes `verify`'s double build meaningful: build twice,
 compare bytes, and any difference is `AGSC-E602` (AGSC-09-14).
 
-**Error codes are a closed set of 90.** `AGSC-E<nnn>`, nothing else; the hundreds
+**Error codes are a closed set.** `AGSC-E<nnn>`, nothing else; the hundreds
 digit is the area (§9.4). Where two codes could name one fault, the more specific one
 wins, and §9.4's **Precedence** paragraph states exactly which. Two conforming
 implementations report the same code for the same input, and that is checkable.
@@ -282,7 +278,7 @@ implementations report the same code for the same input, and that is checkable.
 
 ## 4a. Deriving and stamping the content version (Level 2 and above)
 
-Added at rc.6. **AGSC-04-25** (`spec/04-canonicalization.md` §4.9) gives a
+**AGSC-04-25** (`spec/04-canonicalization.md` §4.9) gives a
 Bundle one short, human-readable name for the state a build published, `bundle_version`.
 It is **derived at build, never authored, never stored and never incremented** — a
 static build keeps no state between runs, so a counter of its own could not be
@@ -373,16 +369,11 @@ node tools/gen-ns --check <your-out>/ns
 `validate-wellknown --level 2` recomputes every `digest` against the bytes on disk,
 so it is the cheapest end-to-end proof that your emission is internally consistent.
 
-**One honest note about this distribution's own run.** `validate-spec` currently
-exited 1 on 2026-09-21 against the 1.0.0-rc.5 text: it found defects that are recorded as
-specification items for 1.0.0, not defects of any implementation. Treat it as a
-reporting step until those items are applied. Every other validator exits 0.
-*(Updated 2026-09-24: those items were applied in the `1.0.0-rc.6` draft, and every
-checker, `validate-spec` included, exits 0 on this tree.)*
+Every checker, `validate-spec` included, exits 0 on this distribution's own tree.
 
 ## 5a. Two routes to a claim
 
-*Added 2026-09-24 (AGSC-10-11).* **Route one — your own runner.** Read the vector files
+*(AGSC-10-11.)* **Route one — your own runner.** Read the vector files
 with your language's JSON parser (AGSC-09-06), run the areas your Level names, and
 write the report of AGSC-09-03. Nothing from this distribution runs. **Route two — the
 reference checkers.** Run `tools/validate-wellknown` and the other checkers above on
@@ -391,7 +382,7 @@ it used (AGSC-09-90). Neither is a certification.
 
 ## 5b. Querying across nodes
 
-*Added 2026-09-24 (AGSC-11-13).* A node's query surface is its published dumps, and a
+*(AGSC-11-13.)* A node's query surface is its published dumps, and a
 consumer federates on its own side: download the dumps, load them together, query.
 No node fetches another, and no node answers queries. In `graph.nq` every triple sits
 in a named graph whose name is the node's Bundle IRI, so loading two nodes' files into
@@ -452,7 +443,7 @@ make you non-conforming.
 Adapters are the one place where you must document rather than choose silently:
 AGSC-01-26a requires a memory adapter to be "listed with its claimed key set in the
 distribution's implementer documentation". This distribution's adapters are
-`llm-context` (export), `okf` and `old-site` (import), and `cogx`, `gabbe`,
+`llm-context` and `mermaid` (export), `okf` and `old-site` (import), and `cogx`, `gabbe`,
 `skills` and `board` (both ways), and `src/interchange/README.md` lists what each one
 claims.
 
@@ -479,7 +470,7 @@ set it passed. AGSC-10-15 says which vector areas belong to which Level.
 2. Produce `conformance-report.json` — `{impl, version, spec_version, class,
    results:[{id, status, got?}], summary}` (AGSC-09-03).
 3. Optionally publish it at `/conformance/`. That route exists only when you publish
-   the report (AGSC-06-01 as amended at rc.5).
+   the report (AGSC-06-01).
 4. State the claim plainly. AGSC-09-03: "A published claim is the claimant's own
    assertion; this specification defines no arbitration." There is no certification
    body and no badge. Do not imply one.
@@ -499,7 +490,7 @@ the totals), and that is a run, not a claim.
 
 ## 7a. Where a node can live
 
-*Added 2026-09-24.* A node is a set of files; any place that can put them behind an
+A node is a set of files; any place that can put them behind an
 HTTPS origin, with the response headers the rules name, can host it — a web host, a
 local machine, a clone, IPFS behind a gateway, a device, or a ledger-anchored store with
 a web interface in front. A claim names its deployment profile (AGSC-06-01); no rule of

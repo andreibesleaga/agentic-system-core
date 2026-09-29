@@ -34,7 +34,7 @@ node tools/validate-spec --json     # status "pass"
 node tools/count-artifacts --json   # rules, codes, vectors and terms, derived from these files
 ```
 
-This folder is frozen between release candidates: a change is made only in a
+This folder states `1.0.0-rc.6`, the first public release candidate. A change is made only in a
 specification pass, with a dated amendment note on the rule, and the rule id never
 changes. A defect found here is reported (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 Licence: Apache-2.0.

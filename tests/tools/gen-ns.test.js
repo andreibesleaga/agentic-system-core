@@ -46,7 +46,7 @@ const TTL = [
 function nsRoot(turtle = TTL) {
   return writeTree(tmpdir(), {
     'ontology/agsc.ttl': turtle,
-    'spec/00-overview.md': '`spec_version: "1.0.0-rc.5"`\n',
+    'spec/00-overview.md': '`spec_version: "1.0.0-rc.9"`\n',
   });
 }
 
@@ -60,7 +60,7 @@ describe('gen-ns — usage and the envelope', () => {
   });
 
   it('a root with no ontology FAILS with AGSC-E901, exit 1', () => {
-    // CHANGED at rc.6: AGSC-09-90 now says a validator MUST FAIL "with
+    // AGSC-09-90 says a validator MUST FAIL "with
     // `AGSC-E901`" over an absent input, and AGSC-09-08 reserves exit 2 for a usage
     // error. An absent input is exit 1, the envelope and the code.
     const { code, json } = envelope('gen-ns', [tmpdir()]);
@@ -74,7 +74,7 @@ describe('gen-ns — usage and the envelope', () => {
     const { code, json } = envelope('gen-ns', [nsRoot()]);
     assert.equal(code, 0);
     assert.equal(json.verb, 'gen-ns');
-    assert.equal(json.spec_version, '1.0.0-rc.5');
+    assert.equal(json.spec_version, '1.0.0-rc.9');
     assert.deepEqual(json.findings, []);
   });
 
@@ -96,7 +96,7 @@ describe('gen-ns — the derivation AGSC-06-32 fixes', () => {
   const vocabulary = () => readOntology(TTL);
 
   it('every asc: term becomes a term definition NAMED BY ITS LOCAL NAME, typed by its kind', () => {
-    // CHANGED 2026-09-22: AGSC-06-32 now pins the term NAMES as well
+    // AGSC-06-32 pins the term NAMES as well
     // as the mapping — an `asc:` term is named by its local name, always — and
     // `src/knowledge/jsonld.js#termName`, which already did that, is the conforming
     // one. This tool named every `asc:` term `asc:<Term>`, so the file it generates
@@ -235,7 +235,7 @@ describe('gen-ns — --check against a tree on disk', () => {
     assert.match(messages, /term definition of "asc:uses" is/u);
     assert.match(messages, /carry no term definition, beginning with/u);
     assert.match(messages, /no term definition for skos:broader/u);
-    // CHANGED 2026-09-21: the check resolves a term by `@id` now, so a term
+    // The check resolves a term by `@id`, so a term
     // NAMED `prefLabel` but mapped to null is "no term definition for
     // skos:prefLabel", not "the term prefLabel does not define @id".
     assert.match(messages, /no term definition for skos:prefLabel/u);

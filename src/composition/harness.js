@@ -83,8 +83,8 @@ function commentSafe(s) {
 }
 
 /**
- * AGSC-06-15: the AI-assistance statement, a constant of the specification, added at
- * rc.6. Restated here for the same PORTABILITY CONTRACT as `commentSafe` above;
+ * AGSC-06-15: the AI-assistance statement, a constant of the specification.
+ * Restated here for the same PORTABILITY CONTRACT as `commentSafe` above;
  * `knowledge/provenance-header.js#ASSISTANCE` is the same string and
  * `tests/knowledge/comment-safe.test.js` compares the two.
  */
@@ -117,7 +117,7 @@ function contentVersion(given, instant) {
 
 /**
  * AGSC-06-18: the Content Use Terms identifier, a constant of the specification —
- * carried only where the publisher adopts the terms (rc.6, 2026-09-24); a Bundle
+ * carried only where the publisher adopts the terms; a Bundle
  * whose prose licence is another one carries that licence in its place.
  */
 function terms(licenseProse) {
@@ -597,7 +597,7 @@ function skillFiles(result, options) {
  * its first sixteen lowercase-hex characters. A writer MUST derive the name from the
  * digest and from nothing else — never a path, a clock or a host — because the digest
  * reaches the emitted bytes and AGSC-07-13 must hold in a browser that has no path.
- * Vector `compose-0015`. (Before rc.5 no rule defined it and this comment said so.)
+ * Vector `compose-0015`.
  */
 function selectionDigestInput(result) {
   return canonicalJson([...((result && result.selection) || [])]);

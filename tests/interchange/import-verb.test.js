@@ -41,7 +41,7 @@ function workspace(extra = {}) {
   temporaries.push(dir);
   fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify({
     bundle: { id: 'fixture-node', operator: 'human:tester' },
-    // AGSC-06-18 as amended at rc.6: a node that publishes a TDM
+    // AGSC-06-18: a node that publishes a TDM
     // reservation — which every 1.x node does — names at least one crawler token,
     // or its build is AGSC-E202. The list is the publisher's own; these are the six
     // whose operators' own documentation says they collect content for training.
@@ -50,7 +50,7 @@ function workspace(extra = {}) {
       tdm_crawlers: ['Applebot-Extended', 'CCBot', 'ClaudeBot', 'GPTBot', 'Google-Extended', 'meta-externalagent'],
       title: 'Fixture Node',
     },
-    spec_version: '1.0.0-rc.4',
+    spec_version: '1.0.0-rc.6',
     ...extra,
   }, null, 2)}\n`);
   // RFC 9116 §2.5.3: a Bundle that publishes a site states a security contact, and
@@ -70,7 +70,7 @@ function run(argv, dir) {
     env: { SOURCE_DATE_EPOCH: EPOCH },
     ports: { fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.4',
+    specVersion: '1.0.0-rc.6',
     stderr,
     stdout,
     version: '0.0.0',
@@ -132,7 +132,7 @@ test('AGSC-09-09: an adapter\'s own flags are ADAPTER-SCOPED', () => {
   // a foreign bundle replace an item this node already holds.
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'old-site']).keys()],
     ['--selection', '--corrections', '--attach-diagrams', '--replace']);
-  // rc.6: `--allow-newer` is the OKF adapter's own flag for AGSC-01-22's
+  // `--allow-newer` is the OKF adapter's own flag for AGSC-01-22's
   // tolerance limit, and is a usage error under any other adapter or none.
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'okf']).keys()],
     ['--replace', '--allow-newer']);
@@ -177,7 +177,7 @@ test('a source directory holding no record of the format is AGSC-E901, and nothi
 test('AGSC-01-17: a Bundle whose configuration lacks an identity is AGSC-E003, not a guess', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-noconfig-'));
   temporaries.push(dir);
-  fs.writeFileSync(path.join(dir, 'agsc.config.json'), '{"spec_version":"1.0.0-rc.4"}\n');
+  fs.writeFileSync(path.join(dir, 'agsc.config.json'), '{"spec_version":"1.0.0-rc.6"}\n');
   const result = run(IMPORT, dir);
   // AGSC-09-08: AGSC-E003 is the usage class, exit 2.
   assert.strictEqual(result.exit, 2);

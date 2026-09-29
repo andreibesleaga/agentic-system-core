@@ -87,11 +87,11 @@ function loadBundle(ports, options) {
   }
   items.sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
 
-  // AGSC-03-11 (wired at rc.5): "a relative Markdown link or image whose
+  // AGSC-03-11: "a relative Markdown link or image whose
   // target is inside the Bundle MUST resolve to an existing item, AN EXISTING ASSET
   // UNDER `content/assets/`, or an existing anchor". `knowledge/links.js#resolve`
-  // reads that set from `options.assets` and no caller supplied it, so the asset
-  // branch was unreachable and every body image reference to a real file was
+  // reads that set from `options.assets`; without it the asset branch would be
+  // unreachable and every body image reference to a real file would be
   // `AGSC-E310`. The set is part of the AGGREGATE — it is loaded with the Bundle,
   // once, and passed to every resolver — and it is NAMES only: nothing is read, so
   // an asset costs one directory entry and never its bytes. The port's `walk` is

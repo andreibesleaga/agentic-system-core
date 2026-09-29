@@ -2,7 +2,7 @@
 // CONTEXT Distribution (Emission) — Surface: `/now/` and `/now.md`.
 // Implements AGSC-06-22 (generated from STORED STATE only; a section whose input is
 // absent is omitted, never guessed) and AGSC-08-25 (the monthly `usage.cost_usd`
-// rollup, which at rc.4 is also the meter of the node-wide cap `budget.usd_month`
+// rollup, which is also the meter of the node-wide cap `budget.usd_month`
 // of AGSC-01-38, and the `AGSC-E510` warning a skipped run records here).
 //
 // The rollup counts every Episode of the calendar month whose `usage` carries

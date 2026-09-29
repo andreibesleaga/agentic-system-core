@@ -8,7 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const init = require('../../src/distribution/init.js');
 
-const OPTIONS = { directory: 'My Notes', specVersion: '1.0.0-rc.4', epoch: 1767225600, gitUserEmail: 'a@example.org' };
+const OPTIONS = { directory: 'My Notes', specVersion: '1.0.0-rc.6', epoch: 1767225600, gitUserEmail: 'a@example.org' };
 
 test('existing files are never overwritten (AGSC-02-94)', () => {
   const planned = init.plan([
@@ -64,7 +64,7 @@ test('run() moves the source and copies the assets through the port (AGSC-02-93/
 });
 
 test('the synthesized index description is ≥ 40 code points by construction (AGSC-02-94)', () => {
-  const frontmatter = init.synthesizeIndex({ title: 'T', count: 0, date: '2026-01-01', specVersion: '1.0.0-rc.4' });
+  const frontmatter = init.synthesizeIndex({ title: 'T', count: 0, date: '2026-01-01', specVersion: '1.0.0-rc.6' });
   assert.ok([...frontmatter.description].length >= 40, frontmatter.description);
   assert.strictEqual(frontmatter.base, init.PLACEHOLDER_BASE);
 });

@@ -1,6 +1,6 @@
 {
   "area": "adopt",
-  "description": "End of the P0 promise: on a bare folder with no config and no index, init synthesizes agsc.config.json and content/index.md whose every value is schema-valid — site.base is the http://localhost/ development placeholder that AGSC-01-19 and config.schema.json admit, build.out is www/, the index title passes the 3-120 bound and its description the 40-200 bound — so the very next command, ci, exits 0 offline. The synthesized configuration names no other prose licence and so adopts the Content Use Terms, and a reservation naming no crawler fails the build (AGSC-06-18), so init also writes site.tdm_crawlers with its starting list of six crawler tokens, which the publisher then maintains as their own (AGSC-02-94 as amended 2026-09-25); this case supersedes adopt-0004, whose expected configuration carried no crawler list and so no longer described what init writes. Findings are warnings only, including AGSC-E506 telling the owner to set a real site.base before publishing. If this vector exits non-zero the three-command promise of PRD-053 is broken at step two.",
+  "description": "End of the three-command promise: on a bare folder with no config and no index, init synthesizes agsc.config.json and content/index.md whose every value is schema-valid — site.base is the http://localhost/ development placeholder that AGSC-01-19 and config.schema.json admit, build.out is www/, the index title passes the 3-120 bound and its description the 40-200 bound — so the very next command, ci, exits 0 offline. The synthesized configuration names no other prose licence and so adopts the Content Use Terms, and a reservation naming no crawler fails the build (AGSC-06-18), so init also writes site.tdm_crawlers with its starting list of six crawler tokens, which the publisher then maintains as their own (AGSC-02-94). Findings are warnings only, including AGSC-E506 telling the owner to set a real site.base before publishing. If this vector exits non-zero the three-command promise of PRD-053 is broken at step two. Expected values are derived by hand from the rule text.",
   "expected": {
     "config": {
       "build": {
@@ -61,7 +61,6 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-25 at rc.6 as the successor of adopt-0004; expected values derived by hand from the rule text",
   "options": {
     "source_date_epoch": 1767225600,
     "spec_version": "1.0.0-rc.6"

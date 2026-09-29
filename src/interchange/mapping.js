@@ -95,20 +95,19 @@ function ordered(frontmatter) {
  * link goes. It is never rewritten to an absolute URL, because AGSC-11-12 makes
  * cross-node reference a citation in `sources[]` and nothing else.
  *
- * "Anything else" gained a second member at rc.5: a card that IS in the
- * selection but is HELD BACK. A draft item is published on no surface (AGSC-06-30)
- * and has no route (AGSC-06-01), so a published page linking one ships a link that
- * 404s — which is exactly what the patterns node shipped, 36 times. A selected card
+ * "Anything else" includes a card that IS in the selection but is HELD BACK. A draft
+ * item is published on no surface (AGSC-06-30) and has no route (AGSC-06-01), so a
+ * published page linking one would ship a link that 404s. A selected card
  * is therefore not a link target unless it is also published, and every de-linked
  * target is recorded in the import status report so the operator sees the list.
  *
- * Until rc.5 the rewritten form was the BARE SLUG. That form resolves in the Bundle
- * (AGSC-03-11 as amended, R-04) but renders on the page as `<a href="<slug>">`,
- * which a browser resolves against the page's own route — `/concepts/a/<slug>` —
- * and which no build emits. The normal form is not enough on its own either: the
- * writer maps a resolved body reference onto the item's route
+ * The rewritten form is never the BARE SLUG. That form resolves in the Bundle
+ * (AGSC-03-11) but renders on the page as `<a href="<slug>">`, which a browser
+ * resolves against the page's own route — `/concepts/a/<slug>` — and which no build
+ * emits. The normal form is not enough on its own either: the writer maps a
+ * resolved body reference onto the item's route
  * (`distribution/site.js#bodyHrefResolver`), because the Bundle geometry and the
- * route geometry are different. The two changes are one fix.
+ * route geometry are different. The two together are one fix.
  *
  * @param {string} body
  * @param {Set<string>} inSet the imported slugs.

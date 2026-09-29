@@ -1,12 +1,12 @@
 'use strict';
-// AGSC-06-13a beyond disc-0006/disc-0007: the exclusions, the "Other" section, the
+// AGSC-06-13a beyond disc-0013/disc-0014: the exclusions, the "Other" section, the
 // single-line description and the absence of an `Optional` section at 1.x.
 
 const test = require('node:test');
 const assert = require('node:assert');
 const llms = require('../../src/distribution/llms.js');
 
-const OPTIONS = { generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.4' };
+const OPTIONS = { generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.6' };
 const BUNDLE = {
   base: 'https://a.example/',
   title: 'Node',
@@ -26,7 +26,7 @@ test('the description becomes one line and the licence is the authored one', () 
   const text = llms.llmsTxt(BUNDLE, OPTIONS);
   assert.ok(text.includes('> One line broken over two.\n'));
   assert.ok(text.includes('license: CC-BY-4.0\n'));
-  // AGSC-06-18 as amended at rc.6: the Content Use Terms only where adopted, so a
+  // AGSC-06-18: the Content Use Terms only where adopted, so a
   // CC BY Bundle's `terms` line names its own licence.
   assert.ok(text.includes('terms: CC-BY-4.0\n'));
 });

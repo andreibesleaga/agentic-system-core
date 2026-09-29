@@ -61,7 +61,9 @@ const CONTENT_TYPES = Object.freeze([
   ['/ledger.jsonl', 'application/jsonl'],
   ['/search.json', 'application/json; charset=utf-8'],
   ['/search-*.json', 'application/json; charset=utf-8'],
-  ['/boards/*', 'application/json; charset=utf-8'],
+  // Only the JSON exports: `/boards/<cluster-slug>/` is the HTML human view (AGSC-06-01),
+  // and a `_headers` splat matches every character, so `/boards/*` would serve it as JSON.
+  ['/boards/*.json', 'application/json; charset=utf-8'],
   ['/llms.txt', 'text/plain; charset=utf-8'],
   ['/llms-full.txt', 'text/plain; charset=utf-8'],
   // AGSC-06-17: the GFM variant parameter, on the per-item Markdown views.

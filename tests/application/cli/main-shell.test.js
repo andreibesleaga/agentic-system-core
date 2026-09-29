@@ -48,7 +48,7 @@ async function shell(argv, options = {}) {
     env: { SOURCE_DATE_EPOCH: '1767225600' },
     ports: { fs: PORT },
     root: '.',
-    specVersion: '1.0.0-rc.4',
+    specVersion: '1.0.0-rc.6',
     stderr,
     stdout,
     version: '0.0.0',
@@ -184,7 +184,7 @@ const usage = (argv) => {
 };
 
 test('AGSC-09-07: a missing or unknown verb names the sixteen verbs on stderr', () => {
-  // rc.5: `--help` is a global flag with its own exit 0 — see the test
+  // `--help` is a global flag with its own exit 0 — see the test
   // below. `-h` and `help` are named by no rule and stay usage errors.
   for (const argv of [[], ['-h'], ['help'], ['nosuch']]) {
     const r = usage(argv);
@@ -230,7 +230,7 @@ test('AGSC-09-09: --help prints to stdout and exits 0', () => {
   assert.strictEqual(lint.exit, 0);
   assert.strictEqual(lint.stderr, '');
   assert.ok(lint.stdout.includes('--fix'), lint.stdout);
-  // rc.5: `--self` is gone — AGSC-09-09 names `--fix` and no other flag on `lint`.
+  // No `--self`: AGSC-09-09 names `--fix` and no other flag on `lint`.
   assert.ok(!lint.stdout.includes('--self'), lint.stdout);
   assert.ok(!lint.stdout.includes('--ledger'), lint.stdout);
   const compose = usage(['compose', '--help']);
@@ -273,7 +273,7 @@ test('AGSC-09-07: an unknown verb says what was typed, so a typo is visible', ()
   assert.ok(r.stderr.includes('buidl'), r.stderr);
 });
 
-test('AGSC-09-09 (rc.6): a value flag given twice is AGSC-E002, in both modes', async () => {
+test('AGSC-09-09: a value flag given twice is AGSC-E002, in both modes', async () => {
   // AGSC-01-28 says it in as many words of `--target`: "one comma-separated list of
   // registry names, never a repeated flag". Commander keeps the LAST occurrence of
   // a repeated value flag, so `--target agents --target claude` used to export

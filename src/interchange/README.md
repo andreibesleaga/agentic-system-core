@@ -30,9 +30,10 @@ in silence.
 | `adapters/gabbe.js` | `export --to gabbe` / `import --from gabbe`: GABBE kits |
 | `adapters/skills.js` | `export --to skills` / `import --from skills`: skills repositories in five layouts |
 | `adapters/board.js` | `export --to board` / `import --from board`: project boards |
+| `adapters/mermaid.js` | `export --to mermaid`: Mermaid diagrams of the typed Links, per item and per cluster (export only) |
 
 The claimed key set of every memory adapter (AGSC-01-26a) is listed below, in the
-record of this folder, under the date each adapter was added; the `board` adapter's
+record of this folder, under the date each adapter was added; the `mermaid` adapter's
 is the last entry.
 
 ## Record of this folder
@@ -135,3 +136,9 @@ The `board` adapter was added on 2026-09-23 without an entry here; this is its e
 | adapter | direction | selected by | keys it claims |
 |---|---|---|---|
 | `board` | export and import | `export --to board --format <f>`, `import --from board --format <f> <dir>`; formats `asana`, `github`, `gitlab`, `jira`, `linear`, `markdown`, `notion`, `obsidian-kanban`, `todotxt`, `trello` (and `agsc-board`, this node's own) | **export:** the published tasks of each board, one file per board; every row carries the item's authored frontmatter, body, slug and board as one own-record, so a return import rebuilds each item exactly. **import:** our own rows — the same; a foreign row — the title, the body, the tool's state word mapped to one of the nine task states (`task_state`) and kept in `x-board-state`, the assignee in `x-board-assignee`, the dependency as `blocked-by`, a `Decision`/`Spec` type or label as that `kind`; labels, the due date, the tool's id, unresolved link ids and every other column are kept in `x-board-*` keys. Foreign rows are written as `status: draft` until a person publishes them |
+
+### Added 2026-09-29 — the `mermaid` adapter
+
+| adapter | direction | selected by | keys it claims |
+|---|---|---|---|
+| `mermaid` | export only | `export --to mermaid` | **none** — there is no `import --from mermaid`, so no key is claimed for a round trip. It reads the fourteen Link keys, `title` and `clusters` of every published item and writes `items/<slug>.mmd` (the item and its direct typed Links, both directions) and `clusters/<slug>.mmd` (the cluster's members and the Links among them), each headed by the provenance block as `%%` comment lines |

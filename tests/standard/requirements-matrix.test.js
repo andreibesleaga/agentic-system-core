@@ -41,7 +41,7 @@ function scratch(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-reqmatrix-'));
   const all = {
     'docs/PRD.md': `| ID | Requirement |\n|---|---|\n| ${req('901')} | one |\n| ${req('902')} | two |\n| ${nfr('91')} | three |\n| ${req('901')} (restated) | one again |\n\nA note to ${req('903')}, which no row defines.\n`,
-    'spec/00-overview.md': `Version 1.0.0-rc.9.\n\n- **AGSC-01-01** One, traced. [${req('901')}]\n- **AGSC-01-02** Two, cited in bold: **${req('902')}** is served here. [design]\n- **AGSC-01-03** *(retired at rc.3: gone.)* [${nfr('91')}]\n`,
+    'spec/00-overview.md': `Version 1.0.0-rc.9.\n\n- **AGSC-01-01** One, traced. [${req('901')}]\n- **AGSC-01-02** Two, cited in bold: **${req('902')}** is served here. [design]\n- **AGSC-01-03** *(reserved: gone; the id is never reused, AGSC-00-16.)* [${nfr('91')}]\n- **AGSC-01-04** *(retired at rc, 2026-01-01: gone.)* [${nfr('91')}]\n`,
     'tests/vectors/a/a-0001.json': JSON.stringify({ id: 'a-0001', level: 'required', rule: 'AGSC-01-01' }),
     ...files,
   };

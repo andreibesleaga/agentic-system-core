@@ -15,7 +15,7 @@ test('all three shipped schemas compile', () => {
   }
 });
 
-// `title` is compiled as part of the WHOLE item schema since rc.5: it now
+// `title` is compiled as part of the WHOLE item schema: it
 // carries `$ref: "#/$defs/single_line"`, and a `$ref` resolves against the document
 // that defines it, never against a subschema lifted out of it.
 const itemWith = (overrides) => ({

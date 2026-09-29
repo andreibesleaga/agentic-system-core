@@ -77,7 +77,7 @@ test('the emitted script evaluates in a context that holds only the language', (
   // A free identifier the page has no binding for would throw here, which is exactly
   // what a silent `undefined` in a tool answer would otherwise become.
   const context = vm.createContext({ TextEncoder });
-  vm.runInContext(pageTools.bundle({ bundleId: 'x', specVersion: '1.0.0-rc.5' }), context,
+  vm.runInContext(pageTools.bundle({ bundleId: 'x', specVersion: '1.0.0-rc.6' }), context,
     { filename: 'agsc-page-tools.js' });
   const api = vm.runInContext('globalThis.AGSC_PAGE_TOOLS', context);
   assert.strictEqual(typeof api.pageToolset, 'function');

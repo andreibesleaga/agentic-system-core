@@ -1,6 +1,6 @@
 {
   "area": "import",
-  "description": "AGSC-01-23 as amended at rc.6. Derivation, case by case. (1) Two incoming files that slugify alike are the collision the rule has always described: the second is suffixed `-2`, in discovery order. (2) An incoming item whose slug the TARGET Bundle already holds with DIFFERENT content is not a slug collision and is never suffixed — suffixing it would break this rule's own idempotence — so the import writes nothing at all, reports AGSC-E206 for every such path and exits non-zero; `--dry-run` reports the same. (3) A planned path whose bytes are already exactly what the import would write is unchanged and is not a collision, which is what keeps a re-run idempotent. Before rc.6 the reference engine silently replaced the operator's own item and reported `1 written`, exit 0, no finding.",
+  "description": "AGSC-01-23. Derivation, case by case. (1) Two incoming files that slugify alike are the collision the rule has always described: the second is suffixed `-2`, in discovery order. (2) An incoming item whose slug the TARGET Bundle already holds with DIFFERENT content is not a slug collision and is never suffixed — suffixing it would break this rule's own idempotence — so the import writes nothing at all, reports AGSC-E206 for every such path and exits non-zero; `--dry-run` reports the same. (3) A planned path whose bytes are already exactly what the import would write is unchanged and is not a collision, which is what keeps a re-run idempotent. An engine that silently replaces the operator's own item and reports `1 written`, exit 0, no finding, fails this case.",
   "expected": {
     "cases": [
       {
@@ -86,7 +86,6 @@
     ]
   },
   "level": "required",
-  "note": "added 2026-09-22 at rc.6; expected values derived by hand from the rule text, not from a run of any engine",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },

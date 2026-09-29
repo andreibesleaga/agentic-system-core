@@ -21,8 +21,8 @@
 //   "Every prose-carrying export MUST embed the Content Use Terms … (a CC-BY-4.0
 //   Bundle still ships under the Content Use Terms)", so the footer's terms line, the
 //   JSON-LD `schema:usageInfo` and the export headers still name the terms; and the
-//   `/legal/` AI-assistance section quotes AGSC-06-15's constant, as AGSC-06-18 as
-//   amended at rc.6 requires.
+//   `/legal/` AI-assistance section quotes AGSC-06-15's constant, as AGSC-06-18
+//   requires.
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -78,7 +78,7 @@ test('Content Use Terms Bundle: all rights reserved, the reservation in both mac
   // identifier stays machine-readable on that link (AGSC-06-18).
   assert.match(footer, /&#169; 2026 Ada Lovelace\. All rights reserved, citing and linking allowed\./u);
   assert.match(footer, /<a href="\/legal\/">Legal &amp; privacy<\/a> · <a href="\/legal\/#terms" rel="license" data-spdx="LicenseRef-AgenticSystemCore-Content-Use-1\.0">Content Use Terms<\/a><\/p>/u);
-  assert.deepStrictEqual(JSON.parse(text('/.well-known/tdmrep.json')), [{ location: 'https://minimal.example/', 'tdm-reservation': 1 }]);
+  assert.deepStrictEqual(JSON.parse(text('/.well-known/tdmrep.json')), [{ location: '/', 'tdm-reservation': 1 }]);
   assert.match(text('/robots.txt'), /^User-agent: GPTBot\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nDisallow: \/$/mu);
 });
 
@@ -88,13 +88,13 @@ test('CC BY 4.0 Bundle: no "all rights reserved", no reservation, no ai-train=no
   const footer = footerOf(page);
   assert.doesNotMatch(footer, /All rights reserved/u);
   assert.match(footer, /&#169; 2026 Ada Lovelace\. Prose: <span>CC-BY-4\.0<\/span>\./u);
-  assert.deepStrictEqual(JSON.parse(text('/.well-known/tdmrep.json')), [{ location: 'https://minimal.example/', 'tdm-reservation': 0 }]);
+  assert.deepStrictEqual(JSON.parse(text('/.well-known/tdmrep.json')), [{ location: '/', 'tdm-reservation': 0 }]);
   const robots = text('/robots.txt');
   assert.doesNotMatch(robots, /ai-train=no/u);
   assert.doesNotMatch(robots, /Disallow: \//u);
   // An empty crawler list is a fault only for a node that publishes a reservation.
   assert.ok(!built.findings.some((f) => f.code === 'AGSC-E202'), JSON.stringify(built.findings));
-  // AGSC-06-18 as amended at rc.6 (2026-09-24): the Content Use Terms accompany the
+  // AGSC-06-18: the Content Use Terms accompany the
   // prose only where the publisher adopts them, so a CC BY node names its own licence
   // everywhere the identifier would stand — the footer, the `terms:` line of the
   // provenance header, every chunk's `terms` member and `schema:usageInfo`.

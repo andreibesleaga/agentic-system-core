@@ -1,7 +1,6 @@
 // tests/conformance/areas/cli.js — area handler for `cli` vectors.
-// Owner of cli-0002, cli-0005, cli-0006: B. cli-0001 is withdrawn
-// (the runner skips it without calling here); cli-0003/cli-0004 are F's —
-// left for F to add a case for, below.
+// cli-0002, cli-0005 and cli-0006 first; cli-0003, cli-0004 and the rest after the
+// extension point below.
 'use strict';
 
 const path = require('node:path');
@@ -112,7 +111,6 @@ const HANDLERS = {
 
 // ---------------------------------------------------------------------------
 // EXTENSION POINT — cli-0003 and cli-0004.
-// Appended below B's handlers; nothing above this line is modified.
 // Rules: AGSC-09-16 (one tool contract, two transports) and AGSC-09-13a (the
 // tool error envelope, never a JSON-RPC transport error).
 // ---------------------------------------------------------------------------
@@ -160,12 +158,7 @@ function fixtureSite(ctx, vector) {
 /**
  * Evaluate the EMITTED PAGE in an isolated `node:vm` context.
  *
- * Until rc.5 this ran the registration script against the FULL local implementation
- * handed in as `AGSC_TOOLS`, so the vector proved the emitter and said nothing about
- * the artefact the site ships — which is how six tools stayed unimplemented on the
- * built site while this required vector stayed green.
- *
- * It now loads the three scripts the built site actually serves — `agsc-core.js`,
+ * It loads the three scripts the built site actually serves — `agsc-core.js`,
  * `agsc-page-tools.js` and `webmcp.js` — assembles the page corpus from the build's
  * OWN published routes, and registers through a minimal fake `document.modelContext`.
  * `fetch` and every other network global is a trap: if the page ever reached one, the
@@ -357,7 +350,7 @@ function subsetDeep(expected, actual) {
 }
 
 /**
- * cli-0007 — AGSC-09-14a as amended at rc.5: the `ask` envelope.
+ * cli-0007 — AGSC-09-14a: the `ask` envelope.
  *
  * The Bundle is stated INLINE by the vector (a base, a licence and one item), not
  * taken from a fixture, so the citation IRIs are derivable from the vector alone.
@@ -418,7 +411,7 @@ function runCli0007(vector) {
 }
 
 /**
- * cli-0008 — AGSC-09-16 as amended at rc.6.
+ * cli-0008 — AGSC-09-16.
  *
  * The Bundle a page serves is the PUBLISHED projection of AGSC-06-30. The site is
  * built from the vector's inline items with a fixed clock, the page tools are then
@@ -482,7 +475,7 @@ function runCli0008(vector) {
 }
 
 /**
- * cli-0009 (rc.6, AGSC-00-23 /) — a value outside a CLOSED operator list is
+ * cli-0009 (AGSC-00-23) — a value outside a CLOSED operator list is
  * `AGSC-E203` and a FINDING (exit 1), never `AGSC-E002` and a usage error (exit 2),
  * because `--emit` and `--target` are known flags carrying values the registry does
  * not hold (AGSC-09-08).
@@ -491,7 +484,7 @@ function runCli0008(vector) {
  * minimal fixture that carries the `router` the vector's argv names — the argv is
  * used exactly as the vector states it.
  *
- * The control case (`--emit gabbe`) states what it is about since rc.6: the REGISTRY
+ * The control case (`--emit gabbe`) states what it is about: the REGISTRY
  * accepts the name (`registry_accepts`) and no AGSC-E203 is raised (`codes_absent`).
  * Whether an emitter ships is the distribution's own claim (AGSC-07-18 makes none
  * mandatory), so this one's honest AGSC-E001 for a capability it does not offer is
@@ -574,7 +567,7 @@ Object.assign(HANDLERS, {
 });
 
 /**
- * cli-0010 (rc.6, AGSC-09-09 with AGSC-09-08) — `conform --level 4` is an invalid
+ * cli-0010 (AGSC-09-09 with AGSC-09-08) — `conform --level 4` is an invalid
  * argument: AGSC-E003 and exit 2, whether the verb reports it as a finding or the
  * shell refuses it first.
  */

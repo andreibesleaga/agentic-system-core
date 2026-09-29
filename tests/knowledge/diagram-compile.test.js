@@ -114,7 +114,7 @@ test('AGSC-04-01: two arrows that resolve to one path are refused, not overdrawn
   const ok = diagrams.compile('canvas 400 200\nbox a 20 20 100 40 "a" acc\nbox b 260 20 100 40 "b"\n'
     + 'arrow a b both dashed\n', { slug: 'x' });
   assert.deepStrictEqual(ok.findings, []);
-  assert.ok(ok.svg.includes('marker-start="url(#ar2)"'));
+  assert.ok(ok.svg.includes('marker-start="url(#x-arrow)"'));
   assert.ok(ok.svg.includes('stroke-dasharray="4 3"'));
 });
 
@@ -236,7 +236,7 @@ test('render(): the whole document is assembled from the parts, in one shape', (
   });
   assert.ok(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"'));
   assert.ok(svg.endsWith('</svg>\n'));
-  assert.ok(svg.includes(diagrams.MARKER));
+  assert.ok(svg.includes(`<marker id="${diagrams.markerId('s')}"`));
 });
 
 test('every refusal carries AGSC-E412, the file and the source line', () => {
@@ -285,4 +285,21 @@ test('AGSC-02-98: the accent is a class AND a presentation attribute, never CSS 
   assert.strictEqual(svg.split(`class="${diagrams.ACCENT_CLASS}"`).length - 1, 1);
   assert.ok(svg.includes(`class="${diagrams.ACCENT_CLASS}" stroke-width="${diagrams.ACCENT_STROKE_WIDTH}"`));
   assert.ok(!svg.includes('<style'), 'an attachment cannot be styled from outside (AGSC-E412)');
+});
+
+test('two diagrams inlined on one page never repeat an id: the arrow marker is named after the slug', () => {
+  const source = 'box a 20 20 80 40 "a" acc\nbox b 200 20 80 40 "b"\narrow a b\n';
+  const one = diagrams.compile(source, { slug: 'first' }).svg;
+  const two = diagrams.compile(source, { slug: 'second' }).svg;
+  const ids = (svg) => [...svg.matchAll(/ id="([^"]+)"/gu)].map((m) => m[1]);
+  assert.deepStrictEqual(ids(one), ['first-title', 'first-desc', 'first-arrow']);
+  assert.deepStrictEqual(ids(two), ['second-title', 'second-desc', 'second-arrow']);
+  const both = [...ids(one), ...ids(two)];
+  assert.strictEqual(new Set(both).size, both.length, 'an id repeats across the two diagrams');
+  // Every marker reference resolves inside its own diagram.
+  for (const [slug, svg] of [['first', one], ['second', two]]) {
+    for (const m of svg.matchAll(/url\(#([^)]+)\)/gu)) assert.strictEqual(m[1], diagrams.markerId(slug));
+  }
+  // Deterministic: the same slug gives the same bytes.
+  assert.strictEqual(diagrams.compile(source, { slug: 'first' }).svg, one);
 });

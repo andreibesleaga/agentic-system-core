@@ -50,7 +50,7 @@ function turtleIri(value) {
 
 /**
  * One term in Turtle syntax. A plain literal is written BARE — `"retired"`, never
- * `"retired"^^xsd:string` (AGSC-05-31 form c, vectors `graph-0013`/`graph-0014`);
+ * `"retired"^^xsd:string` (AGSC-05-31 form c, vectors `graph-0017`/`graph-0018`);
  * every other datatype is explicit; the lexical form is the N-Quads one (AGSC-05-32).
  */
 function turtleTerm(term) {

@@ -1,6 +1,6 @@
 # Testing
 
-**Who this is for:** a developer or a contributor running or adding tests. **Read after:** [CODE-ORIENTATION.md](CODE-ORIENTATION.md). *(Header added 2026-09-24.)*
+**Who this is for:** a developer or a contributor running or adding tests. **Read after:** [CODE-ORIENTATION.md](CODE-ORIENTATION.md).
 
 ## Summary
 

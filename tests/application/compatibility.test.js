@@ -10,9 +10,9 @@
 //
 // Backward: a Bundle at an older `spec_version` the rules admit is read with the
 // documented behaviour — the same MAJOR is accepted (AGSC-00-15), a MAJOR this tool
-// does not implement is refused, and an import of a newer MINOR is refused before
-// anything is written unless the operator passes the adapter's `--allow-newer`
-// (AGSC-01-22).
+// does not implement is refused, an import of another MAJOR is refused before
+// anything is written unless the operator passes the adapter's `--allow-newer`, and
+// an import of a newer MINOR proceeds with the warning AGSC-E506 (AGSC-01-22).
 //
 // The vector `lint-0027` pins the BYTES of the fix and the export for one item;
 // this file pins the BEHAVIOUR of the whole invocation around them, which no vector
@@ -208,7 +208,7 @@ test('AGSC-00-23: a closed operator list refuses a reserved value with AGSC-E203
 // --------------------------------------------------------------------- backward
 
 test('AGSC-00-15: an older spec_version of the same MAJOR is read normally', () => {
-  for (const older of ['1.0.0', '1.0.0-rc.2']) {
+  for (const older of ['1.0.0', '1.0.0-rc.0']) {
     const dir = workspace();
     nodeFs.writeFileSync(path.join(dir, 'agsc.config.json'), configOf(dir, { spec_version: older }));
     const result = run(['lint', '--json', '--quiet'], dir);
@@ -218,13 +218,21 @@ test('AGSC-00-15: an older spec_version of the same MAJOR is read normally', () 
   }
 });
 
-test('AGSC-01-22: a source of a newer MINOR is refused before anything is written', () => {
+test('AGSC-01-22: a source of another MAJOR is refused before anything is written; a newer MINOR imports with a warning', () => {
   const source = workspace();
   run(['export', '--okf', '--quiet'], source);
-  // The source declares a MINOR this tool does not implement.
   const index = path.join(source, 'dist/export/okf/content/index.md');
-  nodeFs.writeFileSync(index,
-    nodeFs.readFileSync(index, 'utf8').replace(/spec_version: .*/u, 'spec_version: "1.1.0"'));
+  const original = nodeFs.readFileSync(index, 'utf8');
+  // A newer MINOR of the tool's MAJOR is imported, with the warning AGSC-E506.
+  nodeFs.writeFileSync(index, original.replace(/spec_version: .*/u, 'spec_version: "1.1.0"'));
+  const minorTarget = workspace({ 'content/concepts': null, 'content/clusters': null });
+  const minor = run(['import', '--from', 'okf', path.join(source, 'dist/export/okf'), '--json', '--quiet'], minorTarget);
+  assert.strictEqual(minor.exit, 0, minor.stdout);
+  const warned = minor.envelope.findings.filter((f) => f.code === 'AGSC-E506' && /1\.1\.0/u.test(f.message));
+  assert.deepStrictEqual(warned.map((f) => f.severity), ['warn'], minor.stdout);
+  assert.ok(nodeFs.existsSync(path.join(minorTarget, 'content', 'concepts', 'supervisor.md')));
+  // The source declares a MAJOR this tool does not implement.
+  nodeFs.writeFileSync(index, original.replace(/spec_version: .*/u, 'spec_version: "2.0.0"'));
 
   const target = workspace({ 'content/concepts': null, 'content/clusters': null });
   const argv = ['import', '--from', 'okf', path.join(source, 'dist/export/okf'), '--json', '--quiet'];

@@ -66,3 +66,20 @@ test('the 0.0.x discovery alias is a 301, and a rename adds one entry (AGSC-06-0
 test('the ETag is the quoted lowercase-hex SHA-256 (AGSC-11-05)', () => {
   assert.strictEqual(headers.etag('abc'), '"abc"');
 });
+
+test('AGSC-06-01: only the board JSON exports are typed JSON; the HTML board page keeps its own type', () => {
+  const sets = headers.headerSets();
+  const typed = (route) => setFor(sets, route).filter(([k]) => k === 'Content-Type').map(([, v]) => v);
+  assert.deepStrictEqual(typed('/boards/*.json'), ['application/json; charset=utf-8']);
+  assert.deepStrictEqual(typed('/boards/*'), [], 'a `/boards/*` splat would also match `/boards/<cluster>/`');
+  // A `_headers` splat matches greedily, so no Content-Type rule may cover the HTML page.
+  const covers = (pattern, path) => new RegExp(`^${pattern.split('*').map((part) => part
+    .replace(/[.+?^${}()|[\]\\]/gu, '\\$&')).join('.*')}$`, 'u').test(path);
+  const html = '/boards/project-board/';
+  for (const set of sets) {
+    if (set.headers.some(([k]) => k === 'Content-Type') && covers(set.route, html)) {
+      assert.fail(`${set.route} sets a Content-Type on the HTML board page ${html}`);
+    }
+  }
+  assert.ok(covers('/boards/*.json', '/boards/project-board.json'));
+});

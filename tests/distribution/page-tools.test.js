@@ -238,7 +238,7 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   const spent = page.call('remember', { actor: 'process:x', at: '2026-09-02T10:00:00Z', body: 'x', kind: 'episode', title: 'A Spend', usage });
   assert.deepStrictEqual(JSON.parse(JSON.stringify(spent.body.frontmatter.usage)), usage);
   assert.ok(mcpTools.ARGUMENTS.remember.includes('usage'), 'the MCP manifest does not publish the usage argument');
-  // AGSC-09-14b as amended at rc.6, on this transport too: no Gate, and an episode
+  // AGSC-09-14b, on this transport too: no Gate, and an episode
   // names its actor — the argument both manifests publish.
   assert.strictEqual(page.call('remember', { body: 'x', kind: 'gate', title: 'A Gate Here' }).body.code, 'AGSC-E203');
   assert.strictEqual(page.call('remember', { at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'A Run' }).body.code, 'AGSC-E003');

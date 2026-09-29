@@ -19,7 +19,7 @@ flowchart LR
   Episode -->|"rdf:type ns:Episode"| RDF
   Procedure -->|"rdf:type ns:Procedure"| RDF
   Lesson -->|"rdf:type ns:Lesson"| RDF
-  ClusterT -->|"rdf:type skos:Collection + skos:ConceptScheme"| RDF
+  ClusterT -->|"rdf:type asc:Cluster (a skos:Collection)"| RDF
   Gate -->|"rdf:type ns:Gate"| RDF
 
   subgraph LINKS["Fourteen Link keys -> RDF properties"]
@@ -54,7 +54,7 @@ flowchart LR
   blockedBy -->|"asc:blockedBy / asc:blocks"| RDF
   decidedBy -->|"asc:decidedBy / asc:decides"| RDF
 
-  subgraph NESTED["Cluster nested-member rule (addendum 2026-09-01)"]
+  subgraph NESTED["Cluster nested-member rule"]
     Parent["parent cluster (type: cluster)"]
     Child["child cluster (type: cluster)"]
   end
@@ -74,4 +74,4 @@ composition semantics; the Mode-2 five are navigational (combiner semantics `non
 exports as `<parent> skos:member <child>` instead, so Clusters form a nested `skos:Collection` tree
 rather than a flat SKOS hierarchy.
 
-Trace: PRD-002, PRD-022 · addendum (2026-09-01) · PLAN.md §5.1 (`skos.js`, `jsonld.js`, `turtle.js`, `nquads.js`, `rdfxml.js`), §6(a) step 6.
+Trace: PRD-002, PRD-022 · PLAN.md §5.1 (`skos.js`, `jsonld.js`, `turtle.js`, `nquads.js`, `rdfxml.js`), §6(a) step 6.

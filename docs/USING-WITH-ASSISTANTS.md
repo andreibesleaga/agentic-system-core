@@ -1,6 +1,6 @@
 # Using a knowledge node with an AI assistant
 
-**Who this is for:** someone who wants an AI assistant to use a Bundle. **Read after:** [START-HERE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/START-HERE.md). *(Header added 2026-09-24.)*
+**Who this is for:** someone who wants an AI assistant to use a Bundle. **Read after:** [START-HERE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/START-HERE.md).
 
 **Summary.** A Bundle is a folder of Markdown files that this engine publishes as a
 knowledge node. One command turns that same folder into a **local tool server** your

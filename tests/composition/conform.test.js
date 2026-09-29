@@ -30,7 +30,7 @@ test('AGSC-10-06: a higher Level includes every area of the lower Levels', () =>
 
 test('AGSC-09-01 + AGSC-04-22: a complete claim names Level, version, Unicode and vectors', () => {
   const claim = {
-    level: 2, spec_version: '1.0.0-rc.4', unicode_version: '16.0.0', vectors_passed: ['slug'],
+    level: 2, spec_version: '1.0.0-rc.6', unicode_version: '16.0.0', vectors_passed: ['slug'],
   };
   assert.deepStrictEqual(claimCompleteness(claim), { complete: true, missing: [] });
   assert.deepStrictEqual(claimCompleteness({}).missing,
@@ -67,7 +67,7 @@ test('AGSC-09-03: the report shape, with `class` the Level name of AGSC-09-01', 
     impl: 'agentic-system-core',
     level: 3,
     results: [{ id: 'slug-0001', status: 'pass' }, { got: 'x', id: 'slug-0002', status: 'fail' }, { id: 'slug-0003', status: 'skip' }],
-    spec_version: '1.0.0-rc.4',
+    spec_version: '1.0.0-rc.6',
     version: '0.0.2',
   });
   assert.deepStrictEqual(Object.keys(r), ['class', 'impl', 'results', 'spec_version', 'summary', 'version']);

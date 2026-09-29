@@ -1,8 +1,8 @@
 'use strict';
-// The `init` → `ci` cases of area `adopt` (owner:): adopt-0006 (superseding
-// adopt-0004, which is withdrawn and never runs) and adopt-0005. Kept beside `areas/adopt.js` rather than inside it, so that A's
-// handler for adopt-0001…0003 is not rewritten (WAVE2-NOTES): `adopt.js` delegates
-// here when a vector carries `input.verbs`.
+// The `init` → `ci` cases of area `adopt`: adopt-0005 and adopt-0006. Kept
+// beside `areas/adopt.js` rather than inside it, so that the handler for
+// adopt-0001…0003 stays as it is: `adopt.js` delegates here when a vector carries
+// `input.verbs`.
 //
 // AGSC-02-92 is the whole point of both cases: adoption produces WARNINGS only, so
 // `ci` on a bare folder exits 0 offline — step two of PRD-053's three-command promise.
