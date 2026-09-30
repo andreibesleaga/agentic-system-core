@@ -11,6 +11,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The Internet-Draft `draft-besleaga-agentic-knowledge-wellknown-00` was posted to the IETF
+  Datatracker on 2026-09-30 (Independent Submission).
+
 ## [1.0.0-rc.6] - 2026-09-29
 
 **First public release candidate.** Everything below is part of this first public

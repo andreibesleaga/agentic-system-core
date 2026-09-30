@@ -5,7 +5,7 @@ The Internet-Draft that requests registration of the well-known URI
 AgenticSystemCore discovery document, whose registration is requested
 separately. It is intended for the Independent Submission stream.
 
-**Status:** built, not yet posted to the IETF Datatracker. Once posted, its page
+**Status:** revision `-00` posted to the IETF Datatracker on 2026-09-30. Its page
 is <https://datatracker.ietf.org/doc/draft-besleaga-agentic-knowledge-wellknown/>.
 The draft covers every 1.x version of the specification: the profile URI carries
 no version number, and a later minor version only adds relations and attributes

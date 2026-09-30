@@ -1060,8 +1060,9 @@ of writing.
   published specification that the profile URI and the extension
   relation URIs resolve to.
 * Level of maturity: working implementation of a specification that is
-  at release-candidate status; not yet publicly released. It will be
-  published with the reference engine.
+  at release-candidate status; the node is public at the address above,
+  and the reference engine is publicly released at 1.0.0-rc.6 (npm and
+  PyPI `agentic-system-core`).
 * Coverage: {{the-well-known-uri}}, {{the-link-set}},
   {{discovery-from-a-page}}, and {{the-profile-uri}}, in the full form;
   the reduced form of {{the-reduced-form}} is exercised by the
@@ -1084,8 +1085,9 @@ of writing.
   bundle facts are present and recomputable otherwise. A `--peer` flag
   performs the mutual test of {{following-peers}} and accepts two local
   files, so that the test runs with no network access.
-* Level of maturity: working implementation; not yet publicly
-  released. It will be published with the reference engine.
+* Level of maturity: working implementation; publicly released with
+  the reference engine at 1.0.0-rc.6 (npm and PyPI
+  `agentic-system-core`).
 * Coverage: {{the-well-known-uri}}, {{the-link-set}}, and the mutual
   peer test of {{following-peers}}.
 * Licensing: Apache-2.0.
@@ -1099,9 +1101,8 @@ of writing.
   and its target attributes, the reduced form, and the mutual peer
   test. They are fixtures rather than an implementation, and any
   independent implementation can be run against them.
-* Level of maturity: working implementation; the vectors are fixtures
-  and are not yet publicly released. They will be published with the
-  reference engine.
+* Level of maturity: working implementation; the vectors are fixtures,
+  publicly released with the reference engine at 1.0.0-rc.6.
 * Coverage: {{the-link-set}}, {{the-reduced-form}},
   {{following-peers}}.
 * Licensing: Apache-2.0.

@@ -20,7 +20,7 @@ resource with the existing "describedby" relation. This document
 requests one well-known URI registration and records the fields of one
 profile URI registration that is to be requested separately. 
     ' name="description">
-<meta content="xml2rfc 3.34.0" name="generator">
+<meta content="xml2rfc 3.34.1" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="Well-Known URI" name="keyword">
 <meta content="Linkset" name="keyword">
@@ -31,19 +31,19 @@ profile URI registration that is to be requested separately.
 <meta content="Agents" name="keyword">
 <meta content="draft-besleaga-agentic-knowledge-wellknown-00" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.34.0
+  xml2rfc 3.34.1
     Python 3.12.3
-    ConfigArgParse 1.7.5
+    ConfigArgParse 1.8.0
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
-    lxml 6.1.1
+    lxml 6.1.3
     natsort 8.4.0
-    platformdirs 4.11.0
+    platformdirs 4.12.1
     pycountry 26.2.16
     PyYAML 6.0.3
     requests 2.34.2
-    wcwidth 0.8.2
+    wcwidth 0.9.1
 -->
 <link href="draft-besleaga-agentic-knowledge-wellknown-00.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -368,6 +368,10 @@ table p {
   /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
      be allowed within tables more generally, it would be far better to select on a class. */
   margin: 0;
+}
+sub,
+sup {
+ white-space: nowrap;
 }
 
 /* pilcrow */
@@ -1076,6 +1080,9 @@ aside > p {
   figcaption, table caption {
     page-break-before: avoid;
   }
+  table {
+    page-break-inside: avoid;
+  }
 }
 /* Font size adjustments for print */
 @media print {
@@ -1238,7 +1245,7 @@ li > p:last-of-type:only-child {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Besleaga</td>
-<td class="center">Expires 2 April 2027</td>
+<td class="center">Expires 3 April 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1251,12 +1258,12 @@ li > p:last-of-type:only-child {
 <dd class="internet-draft">draft-besleaga-agentic-knowledge-wellknown-00</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-09-29" class="published">29 September 2026</time>
+<time datetime="2026-09-30" class="published">30 September 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-04-02">2 April 2027</time></dd>
+<dd class="expires"><time datetime="2027-04-03">3 April 2027</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1301,7 +1308,7 @@ profile URI registration that is to be requested separately.<a href="#section-ab
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 2 April 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 3 April 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2704,8 +2711,9 @@ relation URIs resolve to.<a href="#section-12-6.2.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-12-6.3">
           <p id="section-12-6.3.1">Level of maturity: working implementation of a specification that is
-at release-candidate status; not yet publicly released. It will be
-published with the reference engine.<a href="#section-12-6.3.1" class="pilcrow">¶</a></p>
+at release-candidate status; the node is public at the address above,
+and the reference engine is publicly released at 1.0.0-rc.6 (npm and
+PyPI <code>agentic-system-core</code>).<a href="#section-12-6.3.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-12-6.4">
           <p id="section-12-6.4.1">Coverage: <a href="#the-well-known-uri" class="auto internal xref">Section 3</a>, <a href="#the-link-set" class="auto internal xref">Section 4</a>,
@@ -2742,8 +2750,9 @@ performs the mutual test of <a href="#following-peers" class="auto internal xref
 files, so that the test runs with no network access.<a href="#section-12-8.2.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-12-8.3">
-          <p id="section-12-8.3.1">Level of maturity: working implementation; not yet publicly
-released. It will be published with the reference engine.<a href="#section-12-8.3.1" class="pilcrow">¶</a></p>
+          <p id="section-12-8.3.1">Level of maturity: working implementation; publicly released with
+the reference engine at 1.0.0-rc.6 (npm and PyPI
+<code>agentic-system-core</code>).<a href="#section-12-8.3.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-12-8.4">
           <p id="section-12-8.4.1">Coverage: <a href="#the-well-known-uri" class="auto internal xref">Section 3</a>, <a href="#the-link-set" class="auto internal xref">Section 4</a>, and the mutual
@@ -2769,9 +2778,8 @@ test. They are fixtures rather than an implementation, and any
 independent implementation can be run against them.<a href="#section-12-10.2.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-12-10.3">
-          <p id="section-12-10.3.1">Level of maturity: working implementation; the vectors are fixtures
-and are not yet publicly released. They will be published with the
-reference engine.<a href="#section-12-10.3.1" class="pilcrow">¶</a></p>
+          <p id="section-12-10.3.1">Level of maturity: working implementation; the vectors are fixtures,
+publicly released with the reference engine at 1.0.0-rc.6.<a href="#section-12-10.3.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-12-10.4">
           <p id="section-12-10.4.1">Coverage: <a href="#the-link-set" class="auto internal xref">Section 4</a>, <a href="#the-reduced-form" class="auto internal xref">Section 4.4</a>,
