@@ -2,7 +2,11 @@
 #
 #   Trigger    a tag `v*` pushed by the maintainer (`v1.0.0-rc.6`). The
 #              specification's own tag (`1.0.0-rc.6`, no `v`) sits on the same
-#              commit and triggers nothing. Nothing here runs on a push to a
+#              commit and triggers nothing. A manual run (workflow_dispatch)
+#              publishes a version whose `v` tag already exists, from `main`,
+#              and only when every file the packages ship is byte-identical to
+#              that tag's (a tag never moves; this is how a release whose tag
+#              run failed on a test-only defect is published). Nothing here runs on a push to a
 #              branch, on a pull request, or on `pull_request_target` (never —
 #              docs/PLAN.md §7).
 #   Secrets    none. Both packages publish over npm TRUSTED PUBLISHING (OIDC), so
@@ -24,6 +28,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'An already tagged version to publish, without the v (e.g. 1.0.0-rc.6); its tag v<version> must exist'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -109,10 +119,28 @@ jobs:
 
       - name: the tag and package.json must agree
         shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          tag="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            test "$GITHUB_REF" = "refs/heads/main" || { echo "a manual run publishes from main only, not $GITHUB_REF"; exit 1; }
+            tag="$INPUT_VERSION"
+          else
+            tag="${GITHUB_REF_NAME#v}"
+          fi
           version="$(node -p "require('./package.json').version")"
           test "$tag" = "$version" || { echo "tag $tag != package.json $version"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: a manual run ships exactly the tagged files
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin "refs/tags/v$VERSION:refs/tags/v$VERSION"
+          mapfile -t paths < <(node -e "for (const f of ['package.json', 'packages/agsc-cli', ...require('./package.json').files]) console.log(f)")
+          git diff --stat "refs/tags/v$VERSION" HEAD -- "${paths[@]}"
+          git diff --quiet "refs/tags/v$VERSION" HEAD -- "${paths[@]}" || { echo "shipped files differ from tag v$VERSION"; exit 1; }
+          echo "every shipped file equals tag v$VERSION"
 
       - name: pack both packages
         run: |
@@ -140,8 +168,8 @@ jobs:
       # bytes are the same file by construction, not two packs of one tree.
       - name: publish the engine (the attested tarball)
         shell: bash
-        run: npm publish --provenance --access public --tag latest "./agentic-system-core-${GITHUB_REF_NAME#v}.tgz"
+        run: npm publish --provenance --access public --tag latest "./agentic-system-core-${VERSION}.tgz"
 
       - name: publish the alias (the attested tarball)
         shell: bash
-        run: npm publish --provenance --access public --tag latest "./agsc-cli-${GITHUB_REF_NAME#v}.tgz"
+        run: npm publish --provenance --access public --tag latest "./agsc-cli-${VERSION}.tgz"

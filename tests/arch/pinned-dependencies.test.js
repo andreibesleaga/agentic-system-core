@@ -57,8 +57,10 @@ test('the lockfile pins every installed package to one exact version', () => {
 //
 // The result of the run this milestone recorded is 0 vulnerabilities.
 test('npm audit reports 0 vulnerabilities', { skip: process.env.AGSC_AUDIT !== '1' }, () => {
-  const { execFileSync } = require('node:child_process');
-  const raw = execFileSync('npm', ['audit', '--json'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  // Through a shell, so that Windows finds `npm.cmd`: a direct spawn of `npm`
+  // fails there with ENOENT (Node refuses to spawn a .cmd file without a shell).
+  const { execSync } = require('node:child_process');
+  const raw = execSync('npm audit --json', { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   const total = JSON.parse(raw).metadata.vulnerabilities;
   assert.strictEqual(Object.values(total).reduce((a, b) => a + b, 0), 0, JSON.stringify(total));
 });
