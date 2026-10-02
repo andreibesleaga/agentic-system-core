@@ -50,6 +50,7 @@ Trace: PRD-055; the classes of `docs/SPEC.md` §3 and AGSC-00-09…12 *are* thes
   | `disc-0016` | `discovery` | 2 | digests and `agsc-*` attributes, which the Level-0 form omits (AGSC-06-08a) |
   | `disc-0017` | `discovery` | 2 | checking a Level-2 document (AGSC-09-93) |
   | `disc-0018` | `discovery` | 2 | the bundle hash over `graph.nq`, which Level 0 does not publish (AGSC-06-08a) |
+  | `disc-0020` | `discovery` | 2 | the whole document's canonical bytes, which Level 0 does not owe (AGSC-04-04, AGSC-06-08) |
   | `lint-0026` | `lint` | 2 | the bytes `lint --fix` writes (AGSC-04-19) |
   | `bundle-0003` | `bundle` | 3 | the agent-lane configuration (AGSC-01-36, AGSC-08-28) |
   | `bundle-0004` | `bundle` | 3 | the agent-lane configuration (AGSC-01-36, AGSC-08-28) |
@@ -59,6 +60,8 @@ Trace: PRD-055; the classes of `docs/SPEC.md` §3 and AGSC-00-09…12 *are* thes
   | `lint-0003` | `lint` | 3 | the injection scan's negative control (AGSC-08-13, AGSC-10-04) |
   | `lint-0028` | `lint` | 3 | the injection scan's blob threshold (AGSC-08-13, AGSC-10-04) |
   | `lint-0029` | `lint` | 3 | the injection scan's blob threshold (AGSC-08-13, AGSC-10-04) |
+  | `lint-0032` | `lint` | 3 | the secret scan, one of the four lints (AGSC-08-15, AGSC-10-04) |
+  | `lint-0033` | `lint` | 3 | the personal-data scan, one of the four lints (AGSC-08-16, AGSC-10-04) |
   | `adopt-0007` | `adopt` | 3 | the `init` and `ci` verbs (AGSC-09-07) |
   | `adopt-0008` | `adopt` | 3 | the `init` and `ci` verbs (AGSC-09-07) |
   | `adopt-0009` | `adopt` | 3 | the `init` and `ci` verbs (AGSC-09-07) |

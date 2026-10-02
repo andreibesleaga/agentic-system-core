@@ -96,3 +96,25 @@ test('the finding names where it was found, and the file and slug it came from',
   assert.strictEqual(f.line, 7);
   assert.match(f.message, /in the body/u);
 });
+
+test('AGSC-08-13: the cap counts UTF-8 bytes, not UTF-16 units, and never splits a character', () => {
+  // 'é' is two UTF-8 bytes and one UTF-16 unit: a phrase placed after 600 KiB of it lies
+  // past the 1 MiB byte cap but inside a cap counted in UTF-16 units.
+  const filler = 'é'.repeat(600 * 1024);
+  assert.deepStrictEqual(injection.check({ text: `${filler} ignore previous instructions` }), []);
+  // A three-byte character straddling the cap is dropped whole, so no U+FFFD appears
+  // and nothing past the cap is read.
+  // The filler has a space every other byte, so it is no blob itself.
+  const straddle = `${'a '.repeat(Math.floor((injection.MAX_INPUT_BYTES - 1) / 2))}a€<!--`;
+  assert.deepStrictEqual(injection.check({ text: straddle }), []);
+  const blob = `${'a'.repeat(injection.MAX_INPUT_BYTES - 256)}`;
+  assert.match(injection.check({ text: blob })[0].message, /256 characters or more/u);
+});
+
+test('AGSC-08-13: the default set holds the minimum set of phrases the rule lists, in that order', () => {
+  const spec = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'spec', '08-governance.md'), 'utf8');
+  const sentence = /contains at least these \d+ phrases, each matched[^:]*: (.*?)\. An implementation MAY add phrases/u.exec(spec);
+  assert.ok(sentence, 'the minimum set of AGSC-08-13 was not found');
+  const listed = [...sentence[1].matchAll(/`([^`]+)`/gu)].map((m) => m[1]);
+  assert.deepStrictEqual([...injection.DEFAULT_INJECTION_PATTERNS], listed);
+});

@@ -259,6 +259,15 @@ function verify(ledger, wellknown) {
  */
 function compare(published, wellknown, derived, options = {}) {
   if (derived === null || derived === undefined) return verify(published, wellknown);
+  // AGSC-08-23 (amended 2026-10-02 for 1.0.0): the trailing `build` entry names its
+  // builder (AGSC-08-20a), so a verifier that is another implementation or version
+  // re-derives that one line differently. When the published file differs from the
+  // recomputation in that entry's `actor` alone, the per-commit lines are the proof,
+  // and the published file is held to its own chain and the published head instead.
+  if (published !== null && published !== undefined && published !== derived.ledger
+    && differsOnlyInBuilder(published, derived.ledger)) {
+    return verify(published, wellknown);
+  }
   const out = [];
   if (published !== null && published !== undefined && published !== derived.ledger) {
     const got = String(published).split('\n');
@@ -277,6 +286,34 @@ function compare(published, wellknown, derived, options = {}) {
     out.push(...verify(derived.ledger, wellknown).filter((f) => /agsc-ledger-head/u.test(f.message)));
   }
   return out;
+}
+
+/**
+ * True when two ledgers have the same lines but the last, and their last lines are
+ * `build` entries that differ in `actor` (a `process:` builder name) and therefore in
+ * `hash`, and in nothing else (AGSC-08-20a, AGSC-08-23).
+ */
+function differsOnlyInBuilder(published, derived) {
+  const a = String(published).split('\n').filter((l) => l !== '');
+  const b = String(derived).split('\n').filter((l) => l !== '');
+  if (a.length === 0 || a.length !== b.length) return false;
+  for (let i = 0; i < a.length - 1; i += 1) if (a[i] !== b[i]) return false;
+  let x;
+  let y;
+  try {
+    x = JSON.parse(a[a.length - 1]);
+    y = JSON.parse(b[b.length - 1]);
+  } catch (e) {
+    return false;
+  }
+  if (x === null || y === null || typeof x !== 'object' || typeof y !== 'object') return false;
+  if (x.kind !== 'build' || y.kind !== 'build') return false;
+  if (!/^process:/u.test(String(x.actor)) || !/^process:/u.test(String(y.actor))) return false;
+  const rest = (e) => {
+    const { actor, hash, ...others } = e;
+    return canonicalize(others);
+  };
+  return rest(x) === rest(y);
 }
 
 // ------------------------------------------------------- AGSC-08-20b: production
@@ -360,6 +397,7 @@ function produce(commits) {
 }
 
 module.exports = {
+  differsOnlyInBuilder,
   derive,
   verify,
   compare,

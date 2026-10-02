@@ -1,0 +1,638 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-08 (amended 2026-10-02 for 1.0.0): the WHOLE discovery document, for a node that serves every route of the rule's link table and names a successor, a peer, two surfaces and a contribution endpoint. The `llms-txt` surface carries no `agsc-surface-version` and the `mcp` surface does (AGSC-11-16). The expected documents are derived by hand from the table — which links are present, which carry `digest` — with AGSC-06-08a (no `digest` and no bundle fact at Level 0, no ledger link), AGSC-11-20 (a restricted node digests only `/graph.jsonld` and `/llms.txt`, publishes no content fact and no ledger link, and names its credential page), AGSC-11-16 (one surface link per surface; `agsc-access` defaults to the built-in value), AGSC-10-12 (a peer is named by its well-known URL) and AGSC-04-15 (the bundle hash is the digest of `graph.nq`). Each digest is the SHA-256 of the file text the input gives for that route. A conforming publisher given the input emits, after JCS (AGSC-04-04), exactly these bytes; links within one relation are ordered by `href` (AGSC-06-10).",
+  "expected": {
+    "cases": [
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "digest": [
+                    "sha-256=:UlgUK3r4vwaBpsaDQqF2VGZrsKmxANd/sCQzaPzuC4s=:"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                },
+                {
+                  "href": "https://next.example/.well-known/knowledge-linkset",
+                  "type": "application/linkset+json"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:vrPI5NKdgIdwY6JS1BU2fyLGx13o7aCXqTk5r7aLhTw=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.0.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-10-02T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0"
+                  ],
+                  "digest": [
+                    "sha-256=:z/rEVcf+F/I/agd2ub11YukaalseyThsHkN1TGB/wec=:"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#boards": [
+                {
+                  "digest": [
+                    "sha-256=:2z23E+o06X2c23Dna0m91+PdYlFIzoR00N/PbaWWkU4=:"
+                  ],
+                  "href": "https://example.org/boards/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#context": [
+                {
+                  "digest": [
+                    "sha-256=:SQ8SFe7m9qqHdX7ynZdzRKXRhvafUjhhToWm+3HdlXA=:"
+                  ],
+                  "href": "https://example.org/ns/context.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#contribute": [
+                {
+                  "agsc-contribute-mode": [
+                    "pull-request"
+                  ],
+                  "href": "https://forge.example/o/r/pulls"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#graph": [
+                {
+                  "digest": [
+                    "sha-256=:vrPI5NKdgIdwY6JS1BU2fyLGx13o7aCXqTk5r7aLhTw=:"
+                  ],
+                  "href": "https://example.org/graph.nq",
+                  "type": "application/n-quads"
+                },
+                {
+                  "digest": [
+                    "sha-256=:JyKBMJYugQjFwNVK02SqZ7sDAyK/IeQiK7ULKM18H9M=:"
+                  ],
+                  "href": "https://example.org/graph.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ledger": [
+                {
+                  "agsc-ledger-head": [
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                  ],
+                  "digest": [
+                    "sha-256=:AnXXika2Yx0rcKCYupIIAqd5PQ5Q07efCixjkCYQUAE=:"
+                  ],
+                  "href": "https://example.org/ledger.jsonl",
+                  "type": "application/jsonl"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#now": [
+                {
+                  "digest": [
+                    "sha-256=:lypl5WynAOr36aEYCkA484omVC5D3f2FBfHKF4K4LIA=:"
+                  ],
+                  "href": "https://example.org/now.md",
+                  "type": "text/markdown"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ontology": [
+                {
+                  "digest": [
+                    "sha-256=:yk11xOgEaFfnyuJ+WzQfP+789U/z34gV4j2Y4LG8I3g=:"
+                  ],
+                  "href": "https://example.org/ns/agsc.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#peer": [
+                {
+                  "href": "https://peer.example/.well-known/knowledge-linkset",
+                  "type": "application/linkset+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#skills": [
+                {
+                  "digest": [
+                    "sha-256=:o1gYZ/MWtXxWYSRmKGcptUvJOL9fkZ60OBAiLVv+Y/I=:"
+                  ],
+                  "href": "https://example.org/skills/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#surface": [
+                {
+                  "agsc-access": [
+                    "none"
+                  ],
+                  "agsc-surface": [
+                    "llms-txt"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                },
+                {
+                  "agsc-access": [
+                    "consent"
+                  ],
+                  "agsc-surface": [
+                    "mcp"
+                  ],
+                  "agsc-surface-version": [
+                    "2025-11-25"
+                  ],
+                  "href": "https://example.org/specs/mcp/"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ],
+              "service-doc": [
+                {
+                  "href": "https://example.org/specs/"
+                }
+              ]
+            }
+          ]
+        },
+        "name": "public-level-2"
+      },
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "digest": [
+                    "sha-256=:UlgUK3r4vwaBpsaDQqF2VGZrsKmxANd/sCQzaPzuC4s=:"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                },
+                {
+                  "href": "https://next.example/.well-known/knowledge-linkset",
+                  "type": "application/linkset+json"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-generated-at": [
+                    "2026-10-02T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0"
+                  ],
+                  "agsc-visibility": [
+                    "restricted"
+                  ],
+                  "digest": [
+                    "sha-256=:z/rEVcf+F/I/agd2ub11YukaalseyThsHkN1TGB/wec=:"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#access": [
+                {
+                  "agsc-access": [
+                    "credential"
+                  ],
+                  "href": "https://example.org/access/"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#boards": [
+                {
+                  "href": "https://example.org/boards/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#context": [
+                {
+                  "href": "https://example.org/ns/context.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#contribute": [
+                {
+                  "agsc-contribute-mode": [
+                    "pull-request"
+                  ],
+                  "href": "https://forge.example/o/r/pulls"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#graph": [
+                {
+                  "href": "https://example.org/graph.nq",
+                  "type": "application/n-quads"
+                },
+                {
+                  "href": "https://example.org/graph.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#now": [
+                {
+                  "href": "https://example.org/now.md",
+                  "type": "text/markdown"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ontology": [
+                {
+                  "href": "https://example.org/ns/agsc.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#peer": [
+                {
+                  "href": "https://peer.example/.well-known/knowledge-linkset",
+                  "type": "application/linkset+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#skills": [
+                {
+                  "href": "https://example.org/skills/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#surface": [
+                {
+                  "agsc-access": [
+                    "none"
+                  ],
+                  "agsc-surface": [
+                    "llms-txt"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                },
+                {
+                  "agsc-access": [
+                    "consent"
+                  ],
+                  "agsc-surface": [
+                    "mcp"
+                  ],
+                  "agsc-surface-version": [
+                    "2025-11-25"
+                  ],
+                  "href": "https://example.org/specs/mcp/"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ],
+              "service-doc": [
+                {
+                  "href": "https://example.org/specs/"
+                }
+              ]
+            }
+          ]
+        },
+        "name": "restricted-level-2"
+      },
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                },
+                {
+                  "href": "https://next.example/.well-known/knowledge-linkset",
+                  "type": "application/linkset+json"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#boards": [
+                {
+                  "href": "https://example.org/boards/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#context": [
+                {
+                  "href": "https://example.org/ns/context.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#contribute": [
+                {
+                  "agsc-contribute-mode": [
+                    "pull-request"
+                  ],
+                  "href": "https://forge.example/o/r/pulls"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#graph": [
+                {
+                  "href": "https://example.org/graph.nq",
+                  "type": "application/n-quads"
+                },
+                {
+                  "href": "https://example.org/graph.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#now": [
+                {
+                  "href": "https://example.org/now.md",
+                  "type": "text/markdown"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ontology": [
+                {
+                  "href": "https://example.org/ns/agsc.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#peer": [
+                {
+                  "href": "https://peer.example/.well-known/knowledge-linkset",
+                  "type": "application/linkset+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#skills": [
+                {
+                  "href": "https://example.org/skills/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#surface": [
+                {
+                  "agsc-access": [
+                    "none"
+                  ],
+                  "agsc-surface": [
+                    "llms-txt"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                },
+                {
+                  "agsc-access": [
+                    "consent"
+                  ],
+                  "agsc-surface": [
+                    "mcp"
+                  ],
+                  "agsc-surface-version": [
+                    "2025-11-25"
+                  ],
+                  "href": "https://example.org/specs/mcp/"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ],
+              "service-doc": [
+                {
+                  "href": "https://example.org/specs/"
+                }
+              ]
+            }
+          ]
+        },
+        "name": "public-level-0"
+      }
+    ]
+  },
+  "id": "disc-0020",
+  "input": {
+    "cases": [
+      {
+        "base": "https://example.org",
+        "bundle_version": "v1.0.0",
+        "contribute": [
+          {
+            "mode": "pull-request",
+            "target": "https://forge.example/o/r/pulls"
+          }
+        ],
+        "counts": [
+          "clusters=0",
+          "concepts=1",
+          "episodes=0",
+          "gates=0",
+          "lessons=0",
+          "procedures=0"
+        ],
+        "files": {
+          "/boards/index.json": "bytes of /boards/index.json\n",
+          "/graph.jsonld": "bytes of /graph.jsonld\n",
+          "/graph.nq": "bytes of /graph.nq\n",
+          "/graph.ttl": "bytes of /graph.ttl\n",
+          "/ledger.jsonl": "bytes of /ledger.jsonl\n",
+          "/llms.txt": "bytes of /llms.txt\n",
+          "/now.md": "bytes of /now.md\n",
+          "/ns/agsc.ttl": "bytes of /ns/agsc.ttl\n",
+          "/ns/context.jsonld": "bytes of /ns/context.jsonld\n",
+          "/skills/index.json": "bytes of /skills/index.json\n"
+        },
+        "generated_at": "2026-10-02T00:00:00Z",
+        "ledger_head": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "level": 2,
+        "name": "public-level-2",
+        "peers": [
+          "https://peer.example/.well-known/knowledge-linkset"
+        ],
+        "routes": [
+          "/boards/index.json",
+          "/graph.jsonld",
+          "/graph.nq",
+          "/graph.ttl",
+          "/ledger.jsonl",
+          "/legal/",
+          "/llms.txt",
+          "/now.md",
+          "/ns/agsc.ttl",
+          "/ns/context.jsonld",
+          "/skills/index.json",
+          "/specs/"
+        ],
+        "spec_version": "1.0.0",
+        "successor": "https://next.example/.well-known/knowledge-linkset",
+        "surfaces": [
+          {
+            "surface": "mcp",
+            "target": "https://example.org/specs/mcp/",
+            "version": "2025-11-25"
+          },
+          {
+            "surface": "llms-txt",
+            "target": "https://example.org/llms.txt",
+            "type": "text/plain"
+          }
+        ],
+        "visibility": "public"
+      },
+      {
+        "access": "https://example.org/access/",
+        "base": "https://example.org",
+        "bundle_version": "v1.0.0",
+        "contribute": [
+          {
+            "mode": "pull-request",
+            "target": "https://forge.example/o/r/pulls"
+          }
+        ],
+        "counts": [
+          "clusters=0",
+          "concepts=1",
+          "episodes=0",
+          "gates=0",
+          "lessons=0",
+          "procedures=0"
+        ],
+        "files": {
+          "/boards/index.json": "bytes of /boards/index.json\n",
+          "/graph.jsonld": "bytes of /graph.jsonld\n",
+          "/graph.nq": "bytes of /graph.nq\n",
+          "/graph.ttl": "bytes of /graph.ttl\n",
+          "/ledger.jsonl": "bytes of /ledger.jsonl\n",
+          "/llms.txt": "bytes of /llms.txt\n",
+          "/now.md": "bytes of /now.md\n",
+          "/ns/agsc.ttl": "bytes of /ns/agsc.ttl\n",
+          "/ns/context.jsonld": "bytes of /ns/context.jsonld\n",
+          "/skills/index.json": "bytes of /skills/index.json\n"
+        },
+        "generated_at": "2026-10-02T00:00:00Z",
+        "ledger_head": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "level": 2,
+        "name": "restricted-level-2",
+        "peers": [
+          "https://peer.example/.well-known/knowledge-linkset"
+        ],
+        "routes": [
+          "/boards/index.json",
+          "/graph.jsonld",
+          "/graph.nq",
+          "/graph.ttl",
+          "/ledger.jsonl",
+          "/legal/",
+          "/llms.txt",
+          "/now.md",
+          "/ns/agsc.ttl",
+          "/ns/context.jsonld",
+          "/skills/index.json",
+          "/specs/"
+        ],
+        "spec_version": "1.0.0",
+        "successor": "https://next.example/.well-known/knowledge-linkset",
+        "surfaces": [
+          {
+            "surface": "mcp",
+            "target": "https://example.org/specs/mcp/",
+            "version": "2025-11-25"
+          },
+          {
+            "surface": "llms-txt",
+            "target": "https://example.org/llms.txt",
+            "type": "text/plain"
+          }
+        ],
+        "visibility": "restricted"
+      },
+      {
+        "base": "https://example.org",
+        "bundle_version": "v1.0.0",
+        "contribute": [
+          {
+            "mode": "pull-request",
+            "target": "https://forge.example/o/r/pulls"
+          }
+        ],
+        "counts": [
+          "clusters=0",
+          "concepts=1",
+          "episodes=0",
+          "gates=0",
+          "lessons=0",
+          "procedures=0"
+        ],
+        "files": {
+          "/boards/index.json": "bytes of /boards/index.json\n",
+          "/graph.jsonld": "bytes of /graph.jsonld\n",
+          "/graph.nq": "bytes of /graph.nq\n",
+          "/graph.ttl": "bytes of /graph.ttl\n",
+          "/ledger.jsonl": "bytes of /ledger.jsonl\n",
+          "/llms.txt": "bytes of /llms.txt\n",
+          "/now.md": "bytes of /now.md\n",
+          "/ns/agsc.ttl": "bytes of /ns/agsc.ttl\n",
+          "/ns/context.jsonld": "bytes of /ns/context.jsonld\n",
+          "/skills/index.json": "bytes of /skills/index.json\n"
+        },
+        "generated_at": "2026-10-02T00:00:00Z",
+        "ledger_head": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "level": 0,
+        "name": "public-level-0",
+        "peers": [
+          "https://peer.example/.well-known/knowledge-linkset"
+        ],
+        "routes": [
+          "/boards/index.json",
+          "/graph.jsonld",
+          "/graph.nq",
+          "/graph.ttl",
+          "/ledger.jsonl",
+          "/legal/",
+          "/llms.txt",
+          "/now.md",
+          "/ns/agsc.ttl",
+          "/ns/context.jsonld",
+          "/skills/index.json",
+          "/specs/"
+        ],
+        "spec_version": "1.0.0",
+        "successor": "https://next.example/.well-known/knowledge-linkset",
+        "surfaces": [
+          {
+            "surface": "mcp",
+            "target": "https://example.org/specs/mcp/",
+            "version": "2025-11-25"
+          },
+          {
+            "surface": "llms-txt",
+            "target": "https://example.org/llms.txt",
+            "type": "text/plain"
+          }
+        ],
+        "visibility": "public"
+      }
+    ]
+  },
+  "level": "required",
+  "rule": "AGSC-06-08"
+}

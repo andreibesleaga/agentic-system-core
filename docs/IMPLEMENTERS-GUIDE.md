@@ -105,11 +105,11 @@ typed here, because a later version adds cases.
 
 **Cases that belong to a higher Level.** Some cases sit in an area a lower Level runs but
 test what only a higher Level does — a writer's refusal, an agent lane, a Level-2 digest,
-the injection scan, the `init` and `ci` verbs. AGSC-10-15 lists each with the Level it
+the four lints, the `init` and `ci` verbs. AGSC-10-15 lists each with the Level it
 belongs to: `bundle-0001`, `bundle-0006`, `bundle-0007`, `disc-0005` and `disc-0019` belong
 to Level 1; `bundle-0008`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`,
-`disc-0018` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
-`lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `adopt-0007`,
+`disc-0018`, `disc-0020` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
+`lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `adopt-0007`,
 `adopt-0008` and `adopt-0009` to Level 3. A claim at a lower Level neither runs them nor fails for them.
 
 **What the claim states.** The implementation and its version, the Level, the full

@@ -38,8 +38,8 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   gains `input.after_init[]` for the files a publisher adds between the two verbs.
 
 - **Conformance made exact.** AGSC-10-15 lists the cases that sit in a lower Level's
-  areas but test a higher Level's behaviour (five belong to Level 1, eight to Level 2, ten
-  to Level 3); a claim at a lower Level neither runs them nor fails for them, and
+  areas but test a higher Level's behaviour (five belong to Level 1, nine to Level 2,
+  thirteen to Level 3); a claim at a lower Level neither runs them nor fails for them, and
   `agsc conform --level <n>` selects by that list. AGSC-09-01 is now the one complete list
   of what a claim states (the implementation, the Level, the full `spec_version`, the cases
   run and passed, the Unicode version, the deployment profile, the declared surfaces, the
@@ -79,6 +79,31 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     "link-shaped" is defined (AGSC-03-03);
   - case `adopt-0005`, which said adoption leaves `ci` green although its references stay
     broken, is withdrawn and replaced by `adopt-0009`, run with the real `init` and `ci`.
+- **What byte-identity needs, written down** (each rule amended with a dated note):
+  - the discovery document's links: AGSC-06-08 has a table of every link, when it is
+    present and which links carry `digest`; new case `disc-0020` states three whole
+    documents (public and restricted at Level 2, public at Level 0);
+  - the shape of `graph.jsonld` and of each per-item `/pages/<slug>.jsonld` (AGSC-05-09):
+    two members, one node per subject in `@id` order, term names from the published
+    context, the most compact value form, one value never an array; an item's own file
+    holds the triples whose subject is the item, so a cluster's membership stays in the
+    cluster's file; new case `graph-0028` states four whole files;
+  - the tool server's tools with their arguments and results (AGSC-09-13), and every verb
+    with its flags (AGSC-09-07); `AGSC-E002` also covers a positional argument a verb does
+    not define; under `--json` standard error carries findings only, after the one
+    `{"override": …}` object per override that `ci` writes first (AGSC-09-10, AGSC-09-12,
+    AGSC-01-37);
+  - the minimum page policy: the directives every page's `Content-Security-Policy` contains
+    (AGSC-06-17);
+  - the minimum detection sets of the injection scan (28 phrases), the secret scan (key
+    blocks, provider prefixes, assignments and placeholders) and the personal-data scan
+    (e-mail and telephone shapes; a bare run of digits is not a number) — AGSC-08-13,
+    AGSC-08-15, AGSC-08-16; the provenance header a writer adds to `/llms.txt` is not
+    scanned; new cases `lint-0032` and `lint-0033`, both Level 3;
+  - the ledger's trailing `build` entry names its builder, so it — and the head — are the
+    one part of `ledger.jsonl` that differs between implementations or versions
+    (AGSC-08-20a, AGSC-04-24); its `ref` is the `content/` tree id of HEAD, an input beside
+    the git-log file. A builder-independent entry is planned for 1.1.
 
 ### Fixed
 
@@ -108,6 +133,18 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is no longer served as empty.
 - `docs/MEASUREMENTS.md` and `docs/measurements.json`: every layer measured again on
   2026-10-02; figures that were out of date are corrected (§1–§9 and the summary table).
+- The engine's discovery checker now checks each `rel#surface` link as
+  `tools/validate-wellknown` and the Python checker do (AGSC-11-16): an `llms-txt` or
+  `chunks` link carrying `agsc-surface-version`, an `mcp` link without one, or an
+  `llms-txt` link not aimed at `/llms.txt` is `AGSC-E210`.
+- `verify --ledger` no longer reports `AGSC-E702` for a published ledger that differs from
+  its own recomputation only in the builder named on the trailing `build` entry; such a
+  file is held to its own chain and the published head (AGSC-08-23).
+- The injection scan reads at most 1 MiB of UTF-8 bytes, as AGSC-08-13 says, and never
+  splits a character; it counted UTF-16 units before. Its blob finding says 256 characters,
+  the threshold it applies, not 128.
+- Notes a verb prints are no longer written to standard error under `--json`
+  (AGSC-09-10).
 
 ## [1.0.0-rc.6] - 2026-09-29
 

@@ -16,6 +16,7 @@
 // graph-0025 the asc:mentions edge of an inline link          AGSC-05-27
 // graph-0026 the Turtle profile, the whole file               AGSC-05-10
 // graph-0027 an export block is reserved: real lint and build  AGSC-02-22
+// graph-0028 graph.jsonld and the per-item files, whole        AGSC-05-09
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
@@ -342,6 +343,35 @@ function itemsCase(vector) {
   return checks(list);
 }
 
+/**
+ * graph-0028 — AGSC-05-09: the WHOLE of `graph.jsonld` and of every per-item file,
+ * compared after JCS. The context is the one generated from `ontology/agsc.ttl`, the
+ * published term names of AGSC-06-32; the per-item file is built the way the writer
+ * builds it (`site.js`: the one-item view, each node taken from the whole graph).
+ */
+function jsonldWholeCase(vector, ctx) {
+  const input = vector.input;
+  const context = jsonldView.context(
+    turtle.ontologyTerms(fs.readFileSync(path.join((ctx && ctx.root) || '.', 'ontology', 'agsc.ttl'), 'utf8')),
+    jsonldView.allExternalProperties(),
+  );
+  const options = { ...optionsFor(input), context, contextUrl: input.context_url };
+  const whole = jsonldView.toJsonLd(input.items, options);
+  const nquads = nq.toNQuads(input.items, optionsFor(input));
+  const list = [
+    ['nquads', nquads === vector.expected.nquads, `got\n${nquads}`],
+    ['graph.jsonld', jcs.canonicalize(whole) === jcs.canonicalize(vector.expected.graph_jsonld), jcs.canonicalize(whole)],
+  ];
+  const slugs = input.items.map((item) => item.slug).sort();
+  list.push(['per-item files', jcs.canonicalize(slugs) === jcs.canonicalize(Object.keys(vector.expected.per_item).sort()), slugs.join(', ')]);
+  for (const item of input.items) {
+    const one = jsonldView.restrictTo(whole, jsonldView.toJsonLd([item], options));
+    const want = vector.expected.per_item[item.slug];
+    list.push([`pages/${item.slug}.jsonld`, want !== undefined && jcs.canonicalize(one) === jcs.canonicalize(want), jcs.canonicalize(one)]);
+  }
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
   const input = vector.input || {};
   if (vector.id === 'graph-0019') return termNamesCase(vector);
@@ -352,6 +382,7 @@ module.exports.run = (vector, ctx) => {
   if (typeof input.markdown === 'string') return exportBlockCase(vector);
   if (input.item && typeof input.item.markdown === 'string' && typeof input.bundle === 'string') return reservedExportBlockCase(vector, ctx);
   const expected = vector.expected || {};
+  if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };

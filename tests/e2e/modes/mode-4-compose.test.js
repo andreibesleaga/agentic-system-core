@@ -67,8 +67,10 @@ test('Mode 4, a person and an agent: compose a Harness, run it dry, trace a run,
   assert.match(dry.stderr, /run: step 1: echo hello/u);
   const outside = kit.agsc(dir, ['run', 'fetch', '--dry-run', '--json']);
   assert.strictEqual(outside.code, 1);
-  assert.match(outside.stderr, /curl https:\/\/example\.org\/ +\[REFUSED: not in run\.allow\[\]\]/u);
   assert.ok(kit.codes(outside).includes('AGSC-E203'));
+  // The plan a person reads is a note, printed without `--json` only (AGSC-09-12).
+  const outsidePlain = kit.agsc(dir, ['run', 'fetch', '--dry-run']);
+  assert.match(outsidePlain.stderr, /curl https:\/\/example\.org\/ +\[REFUSED: not in run\.allow\[\]\]/u);
   const live = kit.agsc(dir, ['run', 'greet', '--json']);
   assert.strictEqual(live.code, 1);
   assert.ok(kit.codes(live).includes('AGSC-E001'));

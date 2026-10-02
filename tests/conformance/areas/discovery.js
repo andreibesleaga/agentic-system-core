@@ -498,6 +498,47 @@ function newerMinorCase(vector) {
   return checks(list);
 }
 
+/**
+ * disc-0020 (AGSC-06-08, amended 2026-10-02 for 1.0.0) — the WHOLE discovery
+ * document, held to the rule's link table: the publisher module builds it from the
+ * case's input, and its JCS bytes must equal those of the document the case derives
+ * by hand. Each digest is the SHA-256 of the file text the input gives for its route.
+ */
+function wholeDocumentCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    const digests = {};
+    for (const [route, text] of Object.entries(input.files || {})) digests[route] = discovery.digestOf(text);
+    const config = {
+      contribute: input.contribute,
+      peers: input.peers,
+      site: { base: input.base },
+      visibility: input.visibility,
+      ...(input.access === undefined ? {} : { access: input.access }),
+    };
+    const doc = discovery.linkset(config, {
+      bundleHash: digests['/graph.nq'],
+      bundleVersion: input.bundle_version,
+      counts: input.counts,
+      digests,
+      generatedAt: input.generated_at,
+      ledgerHead: input.ledger_head,
+      level: input.level,
+      routes: input.routes,
+      specVersion: input.spec_version,
+      successor: input.successor,
+      surfaces: input.surfaces,
+    });
+    const got = canonicalize(doc);
+    list.push([`${input.name} bytes`, want !== undefined && got === canonicalize(want.document), got]);
+    list.push([`${input.name} valid`, discovery.check(doc, { level: input.level }).length === 0,
+      JSON.stringify(discovery.check(doc, { level: input.level }))]);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'disc-0013': llmsCase,
   'disc-0014': llmsCase,
@@ -505,6 +546,7 @@ const HANDLERS = {
   'disc-0017': ledgerRequiredCase,
   'disc-0018': bundleHashCase,
   'disc-0019': newerMinorCase,
+  'disc-0020': wholeDocumentCase,
   'disc-0016': linksetCase,
   'disc-0004': level0Case,
   'disc-0005': peerCase,

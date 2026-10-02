@@ -208,8 +208,9 @@ test('the import writes the Bundle, and a SECOND run changes not one byte (AGSC-
   const second = run(IMPORT, dir);
   assert.deepStrictEqual(tree(dir), after, 'the second run changed the tree');
   assert.deepStrictEqual(second.envelope.findings, first.envelope.findings);
-  // Without `--quiet` the note says so in words, so an operator sees it too.
-  const loud = run(IMPORT.filter((a) => a !== '--quiet'), dir);
+  // Without `--quiet` and `--json` the note says so in words, so an operator sees it too
+  // (under `--json` standard error carries findings only, AGSC-09-12).
+  const loud = run(IMPORT.filter((a) => a !== '--quiet' && a !== '--json'), dir);
   assert.match(loud.stderr, /import: 0 written, 0 replaced, \d+ unchanged/u);
   assert.match(loud.stderr, /import: items: 10/u);
 });

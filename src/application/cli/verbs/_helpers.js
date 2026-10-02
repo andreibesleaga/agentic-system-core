@@ -387,7 +387,9 @@ function outsideBundle(ctx, verb) {
  * reaches stdout.
  */
 function note(ctx, text) {
-  if (ctx.flags && ctx.flags.quiet) return;
+  // AGSC-09-10: under `--json` stderr carries one finding object per line and nothing else;
+  // a verb's data is then the files it writes, which its notes only name.
+  if (ctx.flags && (ctx.flags.quiet || ctx.flags.json)) return;
   if (ctx.stderr && typeof ctx.stderr.write === 'function') ctx.stderr.write(`${text}\n`);
 }
 

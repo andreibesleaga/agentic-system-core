@@ -1,0 +1,156 @@
+{
+  "area": "lint",
+  "description": "AGSC-08-16 (amended 2026-10-02 for 1.0.0): every shape of the minimum set is detected and a bare run of digits is not. Each string is the concatenation of its `parts`, so that no file of the distribution carries a credential- or number-shaped string a secret scanner would flag; it is checked alone, as one in-scope string of an item outside prov and sources[]; `code` is the code reported for it, or null when the string raises nothing. The positives are an e-mail address, two international numbers, the three North-American forms and a tel: URI; the negatives are a version, a port, an ISBN, a bare run of eleven digits, a date and an address spelled out in words. The numbers are of fictional or reserved forms. Derived by hand from the rule text; how many findings one string raises is not asserted.",
+  "expected": {
+    "cases": [
+      {
+        "code": "AGSC-E404",
+        "name": "email"
+      },
+      {
+        "code": "AGSC-E404",
+        "name": "e164-grouped"
+      },
+      {
+        "code": "AGSC-E404",
+        "name": "e164-uk"
+      },
+      {
+        "code": "AGSC-E404",
+        "name": "north-american-paren"
+      },
+      {
+        "code": "AGSC-E404",
+        "name": "north-american-dash"
+      },
+      {
+        "code": "AGSC-E404",
+        "name": "north-american-dot"
+      },
+      {
+        "code": "AGSC-E404",
+        "name": "tel-uri"
+      },
+      {
+        "code": null,
+        "name": "version"
+      },
+      {
+        "code": null,
+        "name": "port"
+      },
+      {
+        "code": null,
+        "name": "isbn"
+      },
+      {
+        "code": null,
+        "name": "bare-digits"
+      },
+      {
+        "code": null,
+        "name": "date"
+      },
+      {
+        "code": null,
+        "name": "spelled-address"
+      }
+    ]
+  },
+  "id": "lint-0033",
+  "input": {
+    "check": "no-pii",
+    "strings": [
+      {
+        "name": "email",
+        "parts": [
+          "write to ana",
+          "@example.org"
+        ]
+      },
+      {
+        "name": "e164-grouped",
+        "parts": [
+          "+40 721",
+          " 123 456"
+        ]
+      },
+      {
+        "name": "e164-uk",
+        "parts": [
+          "+44 20 7",
+          "946 0958"
+        ]
+      },
+      {
+        "name": "north-american-paren",
+        "parts": [
+          "(555) 1",
+          "23-4567"
+        ]
+      },
+      {
+        "name": "north-american-dash",
+        "parts": [
+          "555-12",
+          "3-4567"
+        ]
+      },
+      {
+        "name": "north-american-dot",
+        "parts": [
+          "555.12",
+          "3.4567"
+        ]
+      },
+      {
+        "name": "tel-uri",
+        "parts": [
+          "tel:+407",
+          "21123456"
+        ]
+      },
+      {
+        "name": "version",
+        "parts": [
+          "version 1.0.0"
+        ]
+      },
+      {
+        "name": "port",
+        "parts": [
+          "port 8080"
+        ]
+      },
+      {
+        "name": "isbn",
+        "parts": [
+          "ISBN 978-3-16-148410-0"
+        ]
+      },
+      {
+        "name": "bare-digits",
+        "parts": [
+          "12345678901"
+        ]
+      },
+      {
+        "name": "date",
+        "parts": [
+          "2026-10-02"
+        ]
+      },
+      {
+        "name": "spelled-address",
+        "parts": [
+          "ana at example dot org"
+        ]
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-08-16"
+}

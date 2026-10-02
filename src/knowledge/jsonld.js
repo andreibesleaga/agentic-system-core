@@ -280,8 +280,9 @@ function toJsonLd(items, options = {}) {
 /**
  * AGSC-06-02 with AGSC-05-06: the per-item JSON-LD view is the whole graph's JSON-LD
  * restricted to one item, so it carries the SAME triples the graph states about that
- * item — its typed Links and their computed inverses, its `asc:mentions` edges and
- * its cluster membership included. A view built from the item alone cannot state
+ * item — its typed Links, their computed inverses and its `asc:mentions` edges
+ * included; a cluster's `skos:member` triple has the cluster as its subject and so
+ * stays in the cluster's own file (AGSC-05-09). A view built from the item alone cannot state
  * them, because a Link's target is resolved against the items in the view. The node
  * set is the one-item view's (the Bundle node, the item node and the item's own
  * `#source-n`, `#review-n` and `#attachment-n` nodes); each node's members are taken

@@ -22,8 +22,8 @@ const { finding } = require('./finding.js');
 /**
  * AGSC-08-13: the scan reads a capped input. The first bound is AGSC-01-16, which
  * refuses any input file over 1 MiB before this module ever sees it; this constant
- * is the second bound, applied in code points so that a string assembled in memory
- * (a concatenated export surface) is bounded too.
+ * is the second bound, applied in UTF-8 bytes as the rule says, so that a string
+ * assembled in memory (a concatenated export surface) is bounded too.
  */
 const MAX_INPUT_BYTES = 1048576;
 
@@ -85,7 +85,13 @@ const SCHEME = /^([A-Za-z][A-Za-z0-9+.-]*):/u;
 
 function truncate(text) {
   const s = typeof text === 'string' ? text : '';
-  return s.length > MAX_INPUT_BYTES ? s.slice(0, MAX_INPUT_BYTES) : s;
+  if (Buffer.byteLength(s, 'utf8') <= MAX_INPUT_BYTES) return s;
+  // Cut at the last character boundary at or before the cap: a UTF-8 continuation
+  // byte is 10xxxxxx, so step back over those and never split a character.
+  const bytes = Buffer.from(s, 'utf8');
+  let end = MAX_INPUT_BYTES;
+  while (end > 0 && (bytes[end] & 0xC0) === 0x80) end -= 1;
+  return bytes.subarray(0, end).toString('utf8');
 }
 
 /** AGSC-08-13: a variation selector is hidden text only OUTSIDE an emoji sequence. */
@@ -144,7 +150,7 @@ function check(input = {}) {
 
   if (BASE64_BLOB.test(normalised) || HEX_BLOB.test(normalised)) {
     findings.push(finding('AGSC-E401',
-      `a base64 or hexadecimal blob of 128 characters or more${where} (AGSC-08-13)`, base));
+      `a base64 or hexadecimal blob of 256 characters or more${where} (AGSC-08-13)`, base));
   }
 
   for (const target of targetsOf(normalised)) {

@@ -1,0 +1,216 @@
+{
+  "area": "graph",
+  "description": "AGSC-05-09 (amended 2026-10-02 for 1.0.0): the WHOLE of graph.jsonld and of each per-item file /pages/<slug>.jsonld, for three items — a concept that requires a second concept and sits in a cluster, the second concept with one source, and the cluster. The dataset is the one the N-Quads lines state (AGSC-05-06). The expected documents are derived by hand from the rule's shape: two members, @context the URL the input names and @graph one node per subject in code-point order of @id; @type the context's term name; each predicate under its term name, an @id-typed term's IRI as a bare string, a language-tagged literal as {@language, @value}, an xsd:string literal or one of the term's own datatype as its bare lexical form; one value bare, never a one-element array. The term names are those of the published context (AGSC-06-32), generated from ontology/agsc.ttl. Each per-item file holds the Bundle node, the item's node and the item's own #source-<n> nodes, identical to their nodes in graph.jsonld: beta's file carries the computed inverse isRequiredBy, and alpha's file carries no cluster membership, because the cluster's skos:member triple has the cluster as its subject. Documents are compared after JCS (AGSC-04-04).",
+  "expected": {
+    "graph_jsonld": {
+      "@context": "https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld",
+      "@graph": [
+        {
+          "@id": "https://a.example/",
+          "@type": "Bundle",
+          "schema:license": "CC0-1.0",
+          "specVersion": "1.0.0",
+          "usageInfo": "CC0-1.0"
+        },
+        {
+          "@id": "https://a.example/clusters/group/",
+          "@type": "Cluster",
+          "member": "https://a.example/concepts/alpha/",
+          "operator": "human:ana",
+          "origin": "human",
+          "prefLabel": {
+            "@language": "en",
+            "@value": "Group"
+          },
+          "schema:license": "CC0-1.0",
+          "usageInfo": "CC0-1.0"
+        },
+        {
+          "@id": "https://a.example/concepts/alpha/",
+          "@type": "Concept",
+          "inScheme": "https://a.example/",
+          "kind": "pattern",
+          "operator": "human:ana",
+          "origin": "human",
+          "prefLabel": {
+            "@language": "en",
+            "@value": "Alpha"
+          },
+          "requires": "https://a.example/concepts/beta/",
+          "schema:license": "CC0-1.0",
+          "usageInfo": "CC0-1.0"
+        },
+        {
+          "@id": "https://a.example/concepts/beta/",
+          "@type": "Concept",
+          "inScheme": "https://a.example/",
+          "isRequiredBy": "https://a.example/concepts/alpha/",
+          "kind": "pattern",
+          "operator": "human:ana",
+          "origin": "human",
+          "prefLabel": {
+            "@language": "en",
+            "@value": "Beta"
+          },
+          "schema:license": "CC0-1.0",
+          "source": "https://a.example/concepts/beta/#source-1",
+          "usageInfo": "CC0-1.0"
+        },
+        {
+          "@id": "https://a.example/concepts/beta/#source-1",
+          "@type": "Source",
+          "dcterms:source": "https://example.org/paper",
+          "title": "A paper"
+        }
+      ]
+    },
+    "nquads": "<https://a.example/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Bundle> <https://a.example/> .\n<https://a.example/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/> <https://w3id.org/agentic-system-core/ns#specVersion> \"1.0.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/clusters/group/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Cluster> <https://a.example/> .\n<https://a.example/clusters/group/> <http://www.w3.org/2004/02/skos/core#member> <https://a.example/concepts/alpha/> <https://a.example/> .\n<https://a.example/clusters/group/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Group\"@en <https://a.example/> .\n<https://a.example/clusters/group/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/clusters/group/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/clusters/group/> <https://w3id.org/agentic-system-core/ns#operator> \"human:ana\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/clusters/group/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <http://purl.org/dc/terms/requires> <https://a.example/concepts/beta/> <https://a.example/> .\n<https://a.example/concepts/alpha/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> <https://a.example/> .\n<https://a.example/concepts/alpha/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://a.example/> <https://a.example/> .\n<https://a.example/concepts/alpha/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Alpha\"@en <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#kind> \"pattern\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#operator> \"human:ana\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/alpha/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/#source-1> <http://purl.org/dc/terms/source> \"https://example.org/paper\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/#source-1> <http://purl.org/dc/terms/title> \"A paper\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/#source-1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Source> <https://a.example/> .\n<https://a.example/concepts/beta/> <http://purl.org/dc/terms/isRequiredBy> <https://a.example/concepts/alpha/> <https://a.example/> .\n<https://a.example/concepts/beta/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> <https://a.example/> .\n<https://a.example/concepts/beta/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://a.example/> <https://a.example/> .\n<https://a.example/concepts/beta/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Beta\"@en <https://a.example/> .\n<https://a.example/concepts/beta/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/> <https://w3id.org/agentic-system-core/ns#kind> \"pattern\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/> <https://w3id.org/agentic-system-core/ns#operator> \"human:ana\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://a.example/> .\n<https://a.example/concepts/beta/> <https://w3id.org/agentic-system-core/ns#source> <https://a.example/concepts/beta/#source-1> <https://a.example/> .\n",
+    "per_item": {
+      "alpha": {
+        "@context": "https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld",
+        "@graph": [
+          {
+            "@id": "https://a.example/",
+            "@type": "Bundle",
+            "schema:license": "CC0-1.0",
+            "specVersion": "1.0.0",
+            "usageInfo": "CC0-1.0"
+          },
+          {
+            "@id": "https://a.example/concepts/alpha/",
+            "@type": "Concept",
+            "inScheme": "https://a.example/",
+            "kind": "pattern",
+            "operator": "human:ana",
+            "origin": "human",
+            "prefLabel": {
+              "@language": "en",
+              "@value": "Alpha"
+            },
+            "requires": "https://a.example/concepts/beta/",
+            "schema:license": "CC0-1.0",
+            "usageInfo": "CC0-1.0"
+          }
+        ]
+      },
+      "beta": {
+        "@context": "https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld",
+        "@graph": [
+          {
+            "@id": "https://a.example/",
+            "@type": "Bundle",
+            "schema:license": "CC0-1.0",
+            "specVersion": "1.0.0",
+            "usageInfo": "CC0-1.0"
+          },
+          {
+            "@id": "https://a.example/concepts/beta/",
+            "@type": "Concept",
+            "inScheme": "https://a.example/",
+            "isRequiredBy": "https://a.example/concepts/alpha/",
+            "kind": "pattern",
+            "operator": "human:ana",
+            "origin": "human",
+            "prefLabel": {
+              "@language": "en",
+              "@value": "Beta"
+            },
+            "schema:license": "CC0-1.0",
+            "source": "https://a.example/concepts/beta/#source-1",
+            "usageInfo": "CC0-1.0"
+          },
+          {
+            "@id": "https://a.example/concepts/beta/#source-1",
+            "@type": "Source",
+            "dcterms:source": "https://example.org/paper",
+            "title": "A paper"
+          }
+        ]
+      },
+      "group": {
+        "@context": "https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld",
+        "@graph": [
+          {
+            "@id": "https://a.example/",
+            "@type": "Bundle",
+            "schema:license": "CC0-1.0",
+            "specVersion": "1.0.0",
+            "usageInfo": "CC0-1.0"
+          },
+          {
+            "@id": "https://a.example/clusters/group/",
+            "@type": "Cluster",
+            "member": "https://a.example/concepts/alpha/",
+            "operator": "human:ana",
+            "origin": "human",
+            "prefLabel": {
+              "@language": "en",
+              "@value": "Group"
+            },
+            "schema:license": "CC0-1.0",
+            "usageInfo": "CC0-1.0"
+          }
+        ]
+      }
+    }
+  },
+  "id": "graph-0028",
+  "input": {
+    "bundle": {
+      "license_prose": "CC0-1.0",
+      "spec_version": "1.0.0"
+    },
+    "context_url": "https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld",
+    "items": [
+      {
+        "clusters": [
+          "group"
+        ],
+        "kind": "pattern",
+        "lang": "en",
+        "prov": {
+          "operator": "human:ana",
+          "origin": "human"
+        },
+        "requires": [
+          "beta"
+        ],
+        "slug": "alpha",
+        "title": "Alpha",
+        "type": "concept"
+      },
+      {
+        "kind": "pattern",
+        "lang": "en",
+        "prov": {
+          "operator": "human:ana",
+          "origin": "human"
+        },
+        "slug": "beta",
+        "sources": [
+          {
+            "resource": "https://example.org/paper",
+            "title": "A paper"
+          }
+        ],
+        "title": "Beta",
+        "type": "concept"
+      },
+      {
+        "lang": "en",
+        "prov": {
+          "operator": "human:ana",
+          "origin": "human"
+        },
+        "slug": "group",
+        "title": "Group",
+        "type": "cluster"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "rule": "AGSC-05-09"
+}

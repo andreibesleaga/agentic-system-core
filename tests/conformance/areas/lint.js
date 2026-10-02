@@ -262,11 +262,33 @@ function runTagCountCases(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * lint-0032, lint-0033: the minimum shapes of AGSC-08-15 (`no-secrets`) and AGSC-08-16
+ * (`no-pii`), each string the concatenation of its `parts`, checked alone; `code` is the
+ * code reported, or null.
+ */
+function runShapes(vector) {
+  const module = vector.input.check === 'no-secrets'
+    ? require('../../../src/governance/secrets.js')
+    : require('../../../src/governance/pii.js');
+  const want = new Map(vector.expected.cases.map((c) => [c.name, c.code]));
+  const list = [];
+  for (const { name, parts } of vector.input.strings) {
+    const text = parts.join('');
+    const codes = [...new Set(module.check({ text }).map((f) => f.code))];
+    const expected = want.get(name);
+    list.push([name, expected === null ? codes.length === 0 : codes.length === 1 && codes[0] === expected, JSON.stringify(codes)]);
+  }
+  list.push(['every string has an expectation', vector.input.strings.every((s) => want.has(s.name)), '']);
+  return checks(list);
+}
+
 module.exports.run = (vector, ctx) => {
   const { input } = vector;
   if (vector.id === 'lint-0027') return runReservedMembers(vector, ctx);
   if (vector.id === 'lint-0030') return runIriCases(vector);
   if (vector.id === 'lint-0031') return runTagCountCases(vector, ctx);
+  if (input.check === 'no-secrets' || input.check === 'no-pii') return runShapes(vector);
   if (typeof input.bytes === 'string' && typeof input.file === 'string') return runFix(vector, ctx);
   if (typeof input.markdown === 'string') return runInjection(vector, ctx);
   if (input.svgs !== undefined) return runSvg(vector);

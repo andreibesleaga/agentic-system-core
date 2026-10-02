@@ -79,15 +79,19 @@ test('AGSC-01-37: a tracked .env is AGSC-E403, and the lane says when it cannot 
 
   const withoutGit = run(['lint', '--json'], dir);
   assert.ok(!withoutGit.envelope.findings.some((f) => f.code === 'AGSC-E403'));
-  assert.match(withoutGit.stderr, /without the tracked-file check of AGSC-01-37/u);
+  // The lane's note is printed without `--json` only (AGSC-09-12).
+  assert.match(run(['lint'], dir).stderr, /without the tracked-file check of AGSC-01-37/u);
 });
 
 test('AGSC-09-08: ci runs lint, build and verify, names its lanes, and exits 0', () => {
   const { envelope, exit, stderr } = run(['ci', '--json'], workspace());
   assert.strictEqual(exit, 0);
   assert.deepStrictEqual(envelope.counts, { error: 0, warn: 0 });
-  assert.match(stderr, /lane: governance/u);
-  assert.match(stderr, /skipped: \/ledger\.jsonl/u);
+  // AGSC-09-10: under `--json` standard error carries finding objects only.
+  for (const line of stderr.split('\n').filter(Boolean)) assert.doesNotThrow(() => JSON.parse(line), line);
+  const plain = run(['ci'], workspace());
+  assert.match(plain.stderr, /lane: governance/u);
+  assert.match(plain.stderr, /skipped: \/ledger\.jsonl/u);
 });
 
 test('AGSC-01-37: ci prints the NAMES of the overrides in effect, never their values', () => {
@@ -171,12 +175,16 @@ test('AGSC-07-04…09: compose closes a selection and reports the verdict', () =
   // AGSC-07-05: only `requires` closes; `uses` does not, so `handoff` is not
   // pulled in and AGSC-07-07's AGSC-E803 warning names the gap — as a WARNING.
   assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.severity]), [['AGSC-E803', 'warn']]);
-  assert.match(stderr, /verdict: \{"added":\[\],"conflicts":\[\],"hidden":\[\],"selection":\["supervisor"\],"valid":true/u);
-  // AGSC-07-12/07-13: the Harness IS written now, into `dist/harness/<name>/`, `<name>`
-  // being the selection key of `harness.harnessName` — and the note names the directory
-  // and the file count so no invocation is a silent success.
-  assert.match(stderr, /harness_emitted: true/u);
-  assert.match(stderr, /harness: dist\/harness\/[0-9a-f]{16}\/ \([0-9]+ files\)/u);
+  // AGSC-09-10: under `--json` standard error carries the one finding and nothing else.
+  assert.deepStrictEqual(stderr.split('\n').filter(Boolean).map((l) => JSON.parse(l).code), ['AGSC-E803']);
+  // Without `--json` the notes report the verdict. AGSC-07-12/07-13: the Harness IS
+  // written, into `dist/harness/<name>/`, `<name>` being the selection key of
+  // `harness.harnessName` — and the note names the directory and the file count so no
+  // invocation is a silent success.
+  const plain = run(['compose', 'supervisor'], workspace());
+  assert.match(plain.stderr, /verdict: \{"added":\[\],"conflicts":\[\],"hidden":\[\],"selection":\["supervisor"\],"valid":true/u);
+  assert.match(plain.stderr, /harness_emitted: true/u);
+  assert.match(plain.stderr, /harness: dist\/harness\/[0-9a-f]{16}\/ \([0-9]+ files\)/u);
 });
 
 test('AGSC-07-03: a selection naming no item is AGSC-E802', () => {
@@ -193,26 +201,30 @@ test('AGSC-07-24: compose --from reads the saved composition, and reports when t
 });
 
 test('AGSC-07-18: compose --emit says the target renderings are not written', () => {
-  const { envelope, exit, stderr } = run(['compose', 'supervisor', '--emit', 'gabbe', '--json'], workspace());
+  const dir = workspace();
+  const { envelope, exit } = run(['compose', 'supervisor', '--emit', 'gabbe', '--json'], dir);
   assert.strictEqual(exit, 1);
   assert.ok(envelope.findings.some((f) => /AGSC-07-18/u.test(f.message)),
     `no finding cites AGSC-07-18: ${JSON.stringify(envelope.findings)}`);
-  // A run with an error finding writes nothing, the seven files included.
-  assert.match(stderr, /harness_emitted: false/u);
+  // A run with an error finding writes nothing, the seven files included, and says so
+  // in its note when not under `--json`.
+  assert.ok(!fs.existsSync(path.join(dir, 'dist', 'harness')), 'a Harness was written');
+  assert.match(run(['compose', 'supervisor', '--emit', 'gabbe'], workspace()).stderr, /harness_emitted: false/u);
 });
 
 // ---------------------------------------------------------------- propose / review / refresh
 
 test('AGSC-08-04/08-05: propose writes the two files, prints the commands, writes nothing else', () => {
   const dir = workspace();
-  const { exit, stderr } = run(['propose', 'supervisor', '--json'], dir);
+  const { exit } = run(['propose', 'supervisor', '--json'], dir);
   assert.strictEqual(exit, 0);
   const body = fs.readFileSync(path.join(dir, 'dist', 'proposal', '1.md'), 'utf8');
   assert.ok(body.startsWith('<!-- agsc:proposal v1 -->'), 'the AGSC-08-05 marker is missing');
   assert.match(body, /## Affected slugs\n\n- supervisor/u);
   assert.match(body, /prov\.origin: human/u);
   assert.ok(fs.existsSync(path.join(dir, 'dist', 'proposal', '1.patch')));
-  assert.match(stderr, /run: git apply dist\/proposal\/1\.patch/u);
+  // The commands are notes, printed without `--json` only (AGSC-09-12).
+  assert.match(run(['propose', 'supervisor'], workspace()).stderr, /run: git apply dist\/proposal\/1\.patch/u);
 
   // A second Proposal takes the next number, never the same one.
   run(['propose', 'handoff', '--json'], dir);
@@ -251,7 +263,7 @@ test('AGSC-08-27: review is lint-only and no model call is reachable from it', (
   const dir = workspace();
   const clean = run(['review', '--json'], dir);
   assert.strictEqual(clean.exit, 0);
-  assert.match(clean.stderr, /no model call is reachable/u);
+  assert.match(run(['review'], dir).stderr, /no model call is reachable/u);
 
   const flagged = run(['review', '--json'], dir, { env: { AGSC_FEATURE_LLM_REVIEW: '1' } });
   assert.deepStrictEqual(flagged.envelope.findings.map((f) => f.code), ['AGSC-E510']);
@@ -284,7 +296,11 @@ test('AGSC-08-28: refresh --agent --dry-run runs the lane gates and writes the t
   assert.match(patch, /^\+actor: process:curator$/mu);
   assert.match(patch, /^\+started: "?2026-01-01T00:00:00Z"?$/mu);
   assert.match(patch, /^\+ {2}cost_usd: 0$/mu);
-  assert.match(ok.stderr, /run: git apply dist\/proposal\/1\.patch/u);
+  // The commands are notes, printed without `--json` only (AGSC-09-12): a second dry run
+  // in a fresh copy of the same Bundle prints them.
+  const fresh = workspace();
+  fs.writeFileSync(path.join(fresh, 'agsc.config.json'), `${JSON.stringify(config, null, 2)}\n`);
+  assert.match(run(['refresh', '--agent', 'curator', '--dry-run'], fresh).stderr, /run: git apply dist\/proposal\/1\.patch/u);
 
   // AGSC-E509: a task the lane never declared is refused BEFORE anything is written.
   const refused = run(['refresh', '--agent', 'curator', '--task', 'work', '--dry-run', '--json'], dir);

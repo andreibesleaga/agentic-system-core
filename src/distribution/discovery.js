@@ -16,6 +16,7 @@
 
 const { createHash } = require('node:crypto');
 const federation = require('../boundary/federation.js');
+const surfaces = require('../boundary/surfaces.js');
 const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 
@@ -335,6 +336,37 @@ function attributesOf(one) {
 }
 
 /**
+ * AGSC-11-16: the shape of one `rel#surface` link — the same structural checks
+ * `tools/validate-wellknown` makes, so the engine's checker and the independent
+ * validator cannot disagree about a document (found 2026-10-02: an `llms-txt` link
+ * carrying `agsc-surface-version` passed here and failed there).
+ */
+function surfaceFindings(one, fail, warn) {
+  const values = (name) => (Array.isArray(one[name]) ? one[name] : undefined);
+  const surface = values('agsc-surface');
+  const name = surface !== undefined && surface.length === 1 ? surface[0] : null;
+  if (name === null) fail('AGSC-E210', `rel#surface ${one.href}: agsc-surface must carry exactly one value (AGSC-11-16)`);
+  else if (!surfaces.SURFACE_NAMES.includes(name) && !/^x-[a-z0-9]+(-[a-z0-9]+)+$/u.test(name)) {
+    warn('AGSC-E210', `rel#surface ${one.href}: unknown surface ${JSON.stringify(name)} (AGSC-11-16; a reader treats it as not served, AGSC-11-02)`);
+  }
+  const access = values('agsc-access');
+  if (access === undefined || access.length !== 1) fail('AGSC-E210', `rel#surface ${one.href}: agsc-access must carry exactly one value (AGSC-11-16)`);
+  else if (!surfaces.ACCESS_CLASSES.includes(access[0])) {
+    warn('AGSC-E210', `rel#surface ${one.href}: unknown access class ${JSON.stringify(access[0])} (read as credential, AGSC-11-02)`);
+  }
+  const version = one['agsc-surface-version'];
+  if (name !== null && surfaces.VERSION_REQUIRED.includes(name) && !(Array.isArray(version) && version.length === 1)) {
+    fail('AGSC-E210', `rel#surface ${one.href}: agsc-surface-version is required for ${name} (AGSC-11-16)`);
+  }
+  if ((name === 'llms-txt' || name === 'chunks') && version !== undefined) {
+    fail('AGSC-E210', `rel#surface ${one.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
+  }
+  if (name === 'llms-txt' && !/\/llms\.txt$/u.test(String(one.href).split(/[?#]/u)[0])) {
+    fail('AGSC-E210', 'rel#surface llms-txt must target /llms.txt (AGSC-11-16)');
+  }
+}
+
+/**
  * Validate a discovery document (AGSC-06-08, AGSC-06-08a, AGSC-06-09/10).
  * Structural faults are Findings with registered codes, never thrown strings.
  *
@@ -404,6 +436,7 @@ function check(doc, options = {}) {
             fail('AGSC-E209', `a Level-0 document omits "${name}" (AGSC-06-08a)`);
           }
         }
+        if (relation === `${REL}surface`) surfaceFindings(one, fail, warn);
       }
     }
     if (level >= 2) {

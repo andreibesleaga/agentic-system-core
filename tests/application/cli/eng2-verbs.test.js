@@ -283,7 +283,9 @@ test('lint --fix under --json is a DRY RUN: it reports and writes nothing', () =
   const ctx = ctxFor(dir, { flags: { json: true }, verbFlags: { fix: true } });
   const result = lintVerb.run(ctx);
   assert.strictEqual(read(dir, 'content/concepts/dry.md'), unfixed, 'the dry run wrote to disk');
-  assert.match(ctx.notes.join(''), /lane: fix \(dry run under --json; 1 file would change\)/u);
+  // Under `--json` the lane's note is not printed (AGSC-09-12); the dry run is reported
+  // by its findings alone.
+  assert.deepStrictEqual(ctx.notes, []);
   const own = result.findings.filter((f) => /lint --fix would normalise/u.test(f.message));
   assert.strictEqual(own.length, 1);
   assert.match(own[0].message, /frontmatter key order/u);
