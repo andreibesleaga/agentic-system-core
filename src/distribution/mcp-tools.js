@@ -542,6 +542,7 @@ module.exports = {
   errorEnvelope,
   itemIri,
   manifest,
+  slugFromIri,
   tokenize,
   tools,
 };

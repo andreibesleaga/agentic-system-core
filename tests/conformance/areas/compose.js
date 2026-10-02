@@ -125,6 +125,17 @@ function runCompose0013(vector) {
   ]);
 }
 
+/** compose-0017 — the tie-break is the walk's own order, not the least slug sequence. */
+function runCompose0017(vector) {
+  const result = compose(vector.input.items, vector.input.selection);
+  const added = plain(result.added);
+  const wrong = vector.expected.wrong_path_if_least_slug_sequence;
+  return checks([
+    ['added', deepEqual(vector.expected.added, added), JSON.stringify(added)],
+    ['not the least slug sequence', !added.some((a) => deepEqual(wrong, a.path)), `recorded ${JSON.stringify(wrong)}`],
+  ]);
+}
+
 /**
  * compose-0015 — AGSC-07-12: the Harness directory name.
  *
@@ -242,6 +253,7 @@ const HANDLERS = {
   'compose-0011': runCompose0011,
   'compose-0012': runCompose0012,
   'compose-0013': runCompose0013,
+  'compose-0017': runCompose0017,
   'compose-0014': runCompose0014,
   'compose-0015': runCompose0015,
   'compose-0016': runCompose0016,

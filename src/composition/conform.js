@@ -46,7 +46,7 @@ const HIGHER_LEVEL_CASES = Object.freeze({
   'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2, 'disc-0018': 2, 'lint-0026': 2,
   'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3,
   'lint-0001': 3, 'lint-0002': 3, 'lint-0003': 3, 'lint-0028': 3, 'lint-0029': 3,
-  'adopt-0007': 3, 'adopt-0008': 3,
+  'adopt-0007': 3, 'adopt-0008': 3, 'adopt-0009': 3,
 });
 
 /** AGSC-04-24: the artefacts for which byte-identity ACROSS implementations holds. */

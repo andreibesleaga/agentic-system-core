@@ -109,8 +109,8 @@ the injection scan, the `init` and `ci` verbs. AGSC-10-15 lists each with the Le
 belongs to: `bundle-0001`, `bundle-0006`, `bundle-0007`, `disc-0005` and `disc-0019` belong
 to Level 1; `bundle-0008`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`,
 `disc-0018` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
-`lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `adopt-0007` and
-`adopt-0008` to Level 3. A claim at a lower Level neither runs them nor fails for them.
+`lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `adopt-0007`,
+`adopt-0008` and `adopt-0009` to Level 3. A claim at a lower Level neither runs them nor fails for them.
 
 **What the claim states.** The implementation and its version, the Level, the full
 `spec_version`, the areas and how many cases ran and passed (every failed one by id), the
@@ -535,8 +535,9 @@ a web interface in front. A claim names its deployment profile (AGSC-06-01); no 
 Say so. AGSC-00-16 makes rule ids and error codes permanent, vectors immutable (a
 wrong vector is withdrawn and superseded, never edited) and reserved ids never
 reused, precisely so that a defect can be corrected without breaking anyone. A
-correction is a MINOR bump with a registry row and a vector, exactly as a new Link
-key is (`docs/SPEC.md` §8). Open an issue against the repository named in
+correction that only clarifies the text, or adds a case conforming implementations
+already pass, is a PATCH; one that adds a key, a value, a code or a case is a MINOR,
+exactly as a new Link key is (AGSC-00-14; `docs/SPEC.md` §8). Open an issue against the repository named in
 `package.json`, quote the rule id, and say what two readings you found.
 
 ---

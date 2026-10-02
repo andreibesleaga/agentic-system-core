@@ -2,32 +2,7 @@
   "area": "adopt",
   "description": "Adoption flattens notes/agents.md to content/concepts/agents.md while AGSC-02-90 guarantees the body stays byte-identical, so every relative reference in that body stops resolving. AGSC-02-95 closes the gap without touching a byte: each broken reference is reported as the warning AGSC-E507 naming the original path, the new path and the reference, and each referenced local file that resolves under the adoption root is copied to content/assets/<original-relative-path>. An absolute URL, a fragment-only target and a path escaping the adoption root are left alone and are NOT reported. The warning never errors, so ci stays green on a bare folder (AGSC-02-92).",
   "expected": {
-    "assets_copied": [
-      "content/assets/notes/img/x.png"
-    ],
-    "body_bytes_unchanged": true,
-    "exit": 0,
-    "findings": [
-      {
-        "code": "AGSC-E507",
-        "new": "content/concepts/agents.md",
-        "original": "notes/agents.md",
-        "reference": "img/x.png",
-        "severity": "warn"
-      },
-      {
-        "code": "AGSC-E507",
-        "new": "content/concepts/agents.md",
-        "original": "notes/agents.md",
-        "reference": "../notes/b.md",
-        "severity": "warn"
-      }
-    ],
-    "not_reported": [
-      "https://example.org/spec",
-      "#agents",
-      "../../secrets.md"
-    ]
+    "withdrawn": true
   },
   "id": "adopt-0005",
   "input": {
@@ -48,10 +23,12 @@
       "ci"
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
     "source_date_epoch": 1767225600,
     "spec_version": "1.0.0-rc.6"
   },
-  "rule": "AGSC-02-95"
+  "reason": "Withdrawn for 1.0.0 (2026-10-02). The case stated that the AGSC-E507 warnings leave `ci` green on a bare folder; AGSC-02-95 and AGSC-03-11 say the opposite — a reference adoption reports as AGSC-E507 is AGSC-E310 on every later build until the publisher repairs it, so the adopted folder does not pass `ci` — and the reference engine follows them. The case passed through a schema check standing in for `ci`. Superseded by adopt-0009, which runs the real `init` and `ci`.",
+  "rule": "AGSC-02-95",
+  "superseded_by": "adopt-0009"
 }

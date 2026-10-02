@@ -1,0 +1,69 @@
+{
+  "area": "adopt",
+  "description": "Adoption flattens notes/agents.md to content/concepts/agents.md and keeps the body byte for byte (AGSC-02-90), so its relative references stop resolving. `init` reports each broken reference as the warning AGSC-E507 naming the reference, copies each referenced local file under the adoption root to content/assets/<original-relative-path>, and leaves alone an absolute URL, a fragment and a path escaping the adoption root (AGSC-02-95). The warnings do not make adoption fail; but the references are still broken, so the next `ci` — after the publisher adds the security contact — reports each as the error AGSC-E310 and exits 1 until the publisher repairs them (AGSC-02-95, AGSC-03-11). Run with the real verbs. Supersedes adopt-0005.",
+  "expected": {
+    "assets_copied": [
+      "content/assets/notes/img/x.png"
+    ],
+    "body_bytes_unchanged": true,
+    "exit": 1,
+    "findings": [
+      {
+        "code": "AGSC-E310",
+        "severity": "error"
+      }
+    ],
+    "init_findings": [
+      {
+        "code": "AGSC-E507",
+        "new": "content/concepts/agents.md",
+        "original": "notes/agents.md",
+        "reference": "img/x.png",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E507",
+        "new": "content/concepts/agents.md",
+        "original": "notes/agents.md",
+        "reference": "../notes/b.md",
+        "severity": "warn"
+      }
+    ],
+    "init_not_reported": [
+      "https://example.org/spec",
+      "#agents",
+      "../../secrets.md"
+    ]
+  },
+  "id": "adopt-0009",
+  "input": {
+    "after_init": [
+      {
+        "path": ".well-known/security.txt",
+        "text": "Contact: https://example.org/security\nExpires: 2026-12-31T00:00:00Z\n"
+      }
+    ],
+    "directory": "My Notes",
+    "files": [
+      {
+        "markdown": "# Agents\n\n![diagram](img/x.png)\n\nSee [background](../notes/b.md), [the spec](https://example.org/spec), [above](#agents) and [outside](../../secrets.md).\n",
+        "path": "notes/agents.md"
+      },
+      {
+        "binary": true,
+        "path": "notes/img/x.png"
+      }
+    ],
+    "git_user_email": "andreibesleaga@example.org",
+    "verbs": [
+      "init",
+      "ci"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-02-95"
+}

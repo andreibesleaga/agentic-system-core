@@ -84,6 +84,41 @@ function ontology() {
 }
 
 /** The loaded Bundle of AGSC-01-01…01-04, from the verb's port bag. */
+/**
+ * AGSC-05-04b: on the command line as in the tool server, `memory://<bundle-id>/<slug>`
+ * — and, by AGSC-05-04a, this node's https item IRI — is accepted wherever a slug
+ * argument is, normalized to the slug before any other rule runs. An alias that names
+ * another Bundle is refused with `AGSC-E309`; one of this Bundle that names no item is
+ * `AGSC-E301`. A value of neither form passes unchanged. The resolution is the tool
+ * server's own (`distribution/mcp-tools.js` `slugFromIri`), so the two never differ.
+ * @param {object} bundle the loaded Bundle (its `config` is read)
+ * @param {Array<string>} values the arguments that name items
+ * @returns {{values: Array<string>, finding: object|null}}
+ */
+function slugArguments(bundle, values) {
+  const { slugFromIri } = require('../../../distribution/mcp-tools.js');
+  const base = String((((bundle && bundle.config) || {}).site || {}).base || '');
+  const out = [];
+  for (const value of values || []) {
+    const text = String(value);
+    if (!text.startsWith('memory://') && !(/^https?:\/\//u.test(base) && text.startsWith(base))) {
+      out.push(value);
+      continue;
+    }
+    const resolved = slugFromIri(bundle, text);
+    if (resolved.code !== null) {
+      return {
+        finding: validate.finding(resolved.code, resolved.code === 'AGSC-E309'
+          ? `${text}: memory:// names a foreign bundle — use the https:// IRI (AGSC-05-04b)`
+          : `${text}: no item with that IRI in this Bundle (AGSC-05-04b)`, { severity: 'error' }),
+        values: null,
+      };
+    }
+    out.push(resolved.slug);
+  }
+  return { finding: null, values: out };
+}
+
 function bundleOf(ctx) {
   return loadBundle(ctx.ports, { schemas: schemas() });
 }
@@ -364,6 +399,7 @@ function instantOf(ctx) {
 }
 
 module.exports = {
+  slugArguments,
   instantOf,
   ENGINE_ROOT,
   note,

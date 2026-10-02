@@ -61,6 +61,7 @@ Trace: PRD-055; the classes of `docs/SPEC.md` §3 and AGSC-00-09…12 *are* thes
   | `lint-0029` | `lint` | 3 | the injection scan's blob threshold (AGSC-08-13, AGSC-10-04) |
   | `adopt-0007` | `adopt` | 3 | the `init` and `ci` verbs (AGSC-09-07) |
   | `adopt-0008` | `adopt` | 3 | the `init` and `ci` verbs (AGSC-09-07) |
+  | `adopt-0009` | `adopt` | 3 | the `init` and `ci` verbs (AGSC-09-07) |
 
 ## 10.6 Mode 5 — the live board: a self-driving working memory for product and project management
 

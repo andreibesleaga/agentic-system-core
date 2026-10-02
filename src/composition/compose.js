@@ -98,8 +98,8 @@ function dedupe(selection) {
  * Step 1 — closure (AGSC-07-04). Breadth-first from the whole de-duplicated
  * selection, each frontier expanded in code-point slug order and each item's
  * `requires` targets in code-point order; the path recorded is the first the
- * traversal finds, which is a shortest path with ties broken by the least slug
- * sequence. A per-item union or a depth-first walk records a different path[]
+ * traversal finds: a shortest path, and among several the one this order meets
+ * first, which is not always the least slug sequence (`compose-0017`). A per-item union or a depth-first walk records a different path[]
  * and is non-conforming (`compose-0013` proves it).
  */
 function closure(index, seedOrder, conflicts) {

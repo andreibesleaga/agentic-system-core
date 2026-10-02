@@ -296,7 +296,13 @@ function runEmitter(ctx, plugin, emission) {
 function run(ctx) {
   const bundle = helpers.bundleOf(ctx);
   const items = flatten(bundle.items);
-  const from = ctx.verbFlags && ctx.verbFlags.from;
+  const flagFrom = ctx.verbFlags && ctx.verbFlags.from;
+
+  // AGSC-05-04b: an alias or an https item IRI is the slug it names.
+  const aliased = helpers.slugArguments(bundle, [...(ctx.argv || []), ...(flagFrom === undefined ? [] : [String(flagFrom)])]);
+  if (aliased.finding !== null) return { findings: [aliased.finding], status: 'fail' };
+  const from = flagFrom === undefined ? undefined : aliased.values[aliased.values.length - 1];
+  const slugs = flagFrom === undefined ? aliased.values : aliased.values.slice(0, -1);
 
   let findings = [];
   let result;
@@ -305,7 +311,7 @@ function run(ctx) {
     findings = [...saved.findings];
     result = saved.result;
   } else {
-    result = compose.compose(items, ctx.argv || []);
+    result = compose.compose(items, slugs);
   }
 
   if (result === null || result === undefined) return { findings };

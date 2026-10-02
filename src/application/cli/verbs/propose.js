@@ -70,7 +70,10 @@ function run(ctx) {
     return { status: 'fail', findings: [{ code: 'AGSC-E003', message: 'propose requires <slug>', severity: 'error' }] };
   }
   const bundle = helpers.bundleOf(ctx);
-  const item = bundle.byslug.get(String(wanted));
+  // AGSC-05-04b: an alias or an https item IRI is the slug it names.
+  const aliased = helpers.slugArguments(bundle, [wanted]);
+  if (aliased.finding !== null) return { status: 'fail', findings: [aliased.finding] };
+  const item = bundle.byslug.get(String(aliased.values[0]));
   if (item === undefined) {
     return {
       status: 'fail',

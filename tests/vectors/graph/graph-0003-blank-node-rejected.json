@@ -2,16 +2,18 @@
   "area": "graph",
   "description": "Negative: an exported fenced turtle block introducing a blank node is refused. Exports are blank-node-free so that canonicalisation stays a sort and the conformance claim can be scoped honestly.",
   "expected": {
-    "error": "AGSC-E605"
+    "withdrawn": true
   },
   "id": "graph-0003",
   "input": {
     "base": "https://example.org",
     "markdown": "---\ntype: concept\ntitle: A2A\ndescription: An agent-to-agent protocol concept used to exercise the blank-node prohibition in exports.\nkind: explainer\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n```turtle export\n<https://example.org/concepts/a2a/> <https://w3id.org/agentic-system-core/ns#uses> [ a <https://w3id.org/agentic-system-core/ns#Concept> ] .\n```\n"
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
     "spec_version": "1.0.0-rc.6"
   },
-  "rule": "AGSC-05-08"
+  "reason": "Withdrawn for 1.0.0 (2026-10-02). The case expected AGSC-E605 for a blank node in a fenced block marked `export`, but AGSC-02-22 says such a block MUST NOT be extracted at 1.x and is the warning AGSC-E415, so no blank node from it can reach an export and AGSC-05-08 does not apply; the reference engine follows the rule, and the case passed only through a runner path that checked the block in isolation. By AGSC-00-03 the rule wins. Superseded by graph-0027, which runs the real lint and build.",
+  "rule": "AGSC-05-08",
+  "superseded_by": "graph-0027"
 }

@@ -1,7 +1,7 @@
 'use strict';
 // Conformance area `graph` — AGSC-05 and AGSC-06-32.
 //
-// graph-0003 a blank node in an export block is AGSC-E605     AGSC-05-08
+// graph-0003 WITHDRAWN for 1.0.0; superseded by graph-0027     AGSC-05-08
 // graph-0005 memory:// resolution and the foreign bundle      AGSC-05-04b
 // graph-0011 the context file and its round trip              AGSC-06-32
 // graph-0012 N-Quads escaping and the datatypes               AGSC-05-32
@@ -15,6 +15,7 @@
 // graph-0024 the two item-reachability edges                  AGSC-05-27
 // graph-0025 the asc:mentions edge of an inline link          AGSC-05-27
 // graph-0026 the Turtle profile, the whole file               AGSC-05-10
+// graph-0027 an export block is reserved: real lint and build  AGSC-02-22
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
@@ -197,6 +198,50 @@ function contextCase(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * graph-0027 — a block marked `export` is reserved at 1.x (AGSC-02-22): the real `lint`
+ * and `build` over the fixture with the item added. `lint` warns AGSC-E415 and never
+ * reports AGSC-E605; the built `graph.nq` holds no blank node and no triple of the block.
+ */
+function reservedExportBlockCase(vector, ctx) {
+  const os = require('node:os');
+  const { main } = require('../../../src/application/cli/main.js');
+  const { createFileSystem } = require('../../../src/adapters/node-fs.js');
+  const { captureStream } = require('./_shared.js');
+  const { findingsMatch } = require('./_assert.js');
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-graph-'));
+  try {
+    fs.cpSync(path.join((ctx && ctx.root) || '.', 'tests', vector.input.bundle), scratch, { recursive: true });
+    const file = path.join(scratch, vector.input.item.path);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, vector.input.item.markdown);
+    const run = (argv) => {
+      const stdout = captureStream();
+      const stderr = captureStream();
+      main(argv, {
+        env: { SOURCE_DATE_EPOCH: String(vector.options.source_date_epoch) },
+        ports: { fs: createFileSystem(scratch) }, root: scratch, specVersion: vector.options.spec_version, stderr, stdout,
+      });
+      try { return JSON.parse(stdout.text()); } catch { return { findings: [] }; }
+    };
+    const lint = run(['lint', '--json']);
+    const build = run(['build', '--json']);
+    const graph = fs.existsSync(path.join(scratch, 'www', 'graph.nq')) ? fs.readFileSync(path.join(scratch, 'www', 'graph.nq'), 'utf8') : null;
+    const expected = vector.expected;
+    const all = [...lint.findings, ...build.findings];
+    const m = findingsMatch(expected.lint, lint.findings);
+    return checks([
+      ['lint', m.ok, m.detail],
+      ['never reported', expected.never_reported.every((code) => !all.some((f) => f.code === code)), JSON.stringify(all)],
+      ['graph built', graph !== null, 'no www/graph.nq'],
+      ['blank nodes', graph !== null && nq.countBlankNodes(graph) === expected.graph_blank_nodes, 'blank node in graph.nq'],
+      ['no triple of the block', graph !== null && !graph.includes(expected.graph_never_contains), 'a triple of the block reached graph.nq'],
+    ]);
+  } finally {
+    fs.rmSync(scratch, { force: true, recursive: true });
+  }
+}
+
 /** graph-0003 — a blank node in an authored export block (AGSC-05-08). */
 function exportBlockCase(vector) {
   const findings = turtle.checkExportBlocks(vector.input.markdown);
@@ -305,6 +350,7 @@ module.exports.run = (vector, ctx) => {
   if (input.literal !== undefined) return literalFormsCase(vector);
   if (Array.isArray(input.ontology_terms)) return contextCase(vector, ctx);
   if (typeof input.markdown === 'string') return exportBlockCase(vector);
+  if (input.item && typeof input.item.markdown === 'string' && typeof input.bundle === 'string') return reservedExportBlockCase(vector, ctx);
   const expected = vector.expected || {};
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
   if (Array.isArray(input.items)) return itemsCase(vector);

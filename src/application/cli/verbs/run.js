@@ -110,7 +110,10 @@ function run(ctx) {
     };
   }
   const bundle = helpers.bundleOf(ctx);
-  const raw = bundle.byslug.get(String(slug));
+  // AGSC-05-04b: an alias or an https item IRI is the slug it names.
+  const aliased = helpers.slugArguments(bundle, [slug]);
+  if (aliased.finding !== null) return { status: 'fail', findings: [aliased.finding] };
+  const raw = bundle.byslug.get(String(aliased.values[0]));
   if (raw === undefined) {
     return {
       status: 'fail',

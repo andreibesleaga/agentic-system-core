@@ -4,7 +4,7 @@
 
 - **AGSC-03-01** Typed Links MUST be frontmatter arrays whose key is one of exactly **fourteen** names — the **nine core** keys `related`, `broader`, `narrower`, `uses`, `requires`, `excludes`, `derived-from`, `contradicts`, `supersedes`, plus the **five Mode-2** keys `implements`, `verifies`, `covers`, `blocked-by`, `decided-by`. Only the core nine carry composition semantics (§3.5, §07); the Mode-2 five are navigational and provenance edges whose combiner semantics is `none`. No fifteenth key exists at `spec_version` 1.x; new keys arrive only through the `links_ext` registry of a future MINOR (docs/SPEC.md §8). [PRD-002]
 - **AGSC-03-02** Each value MUST be a slug, optionally `<slug>#<anchor>`. Targets MUST resolve by exact slug — no suffix search, no case folding, no path guessing. An unresolved target is `AGSC-E301`. [design]
-- **AGSC-03-03** An unknown link-shaped key MUST be preserved and reported as a warning (`AGSC-E304`); it MUST NOT be treated as one of the fourteen. [design]
+- **AGSC-03-03** An unknown link-shaped key MUST be preserved and reported as a warning (`AGSC-E304`); it MUST NOT be treated as one of the fourteen. A key is **link-shaped** when its name is `peer-ref` (reserved to a later version, AGSC-00-20), `mentions` (AGSC-03-11) or one of the foreign relation names AGSC-03-19 and AGSC-03-20 list; every other unknown key is the warning `AGSC-E207` of AGSC-02-05, so that one key never carries two codes. *(Amended 2026-10-02 for 1.0.0: "link-shaped" was used and never defined.)* [design]
 
 | Key (authored) | Inverse (computed) | Symmetric | RDF property | Combiner | Lint |
 |---|---|---|---|---|---|

@@ -1,0 +1,96 @@
+{
+  "area": "compose",
+  "description": "The tie-break of the closure is the order of the breadth-first walk itself, not the least slug sequence. a requires d, b requires c, c and d both require e; the selection is a and b. The walk expands the selection in slug order (a then b, adding d and c), then the next frontier in slug order (c before d), so e is first reached from c and records the path b → c → e. Both paths to e have length 2; the lexicographically least slug sequence would be a → d → e, which this case refuses. Expected values derived by hand from AGSC-07-04 as amended for 1.0.0.",
+  "expected": {
+    "added": [
+      {
+        "path": [
+          [
+            "b",
+            "requires",
+            "c"
+          ]
+        ],
+        "slug": "c"
+      },
+      {
+        "path": [
+          [
+            "a",
+            "requires",
+            "d"
+          ]
+        ],
+        "slug": "d"
+      },
+      {
+        "path": [
+          [
+            "b",
+            "requires",
+            "c"
+          ],
+          [
+            "c",
+            "requires",
+            "e"
+          ]
+        ],
+        "slug": "e"
+      }
+    ],
+    "wrong_path_if_least_slug_sequence": [
+      [
+        "a",
+        "requires",
+        "d"
+      ],
+      [
+        "d",
+        "requires",
+        "e"
+      ]
+    ]
+  },
+  "id": "compose-0017",
+  "input": {
+    "items": [
+      {
+        "requires": [
+          "d"
+        ],
+        "slug": "a"
+      },
+      {
+        "requires": [
+          "c"
+        ],
+        "slug": "b"
+      },
+      {
+        "requires": [
+          "e"
+        ],
+        "slug": "c"
+      },
+      {
+        "requires": [
+          "e"
+        ],
+        "slug": "d"
+      },
+      {
+        "slug": "e"
+      }
+    ],
+    "selection": [
+      "a",
+      "b"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-07-04"
+}

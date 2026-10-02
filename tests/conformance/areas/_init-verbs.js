@@ -55,7 +55,9 @@ function runVerbs(vector) {
       });
       return { exit, stdout: stdout.text() };
     };
-    const ran = { init: run(['init']) };
+    const ran = { init: run(['init', '--json']) };
+    let initEnvelope = { findings: [] };
+    try { initEnvelope = JSON.parse(ran.init.stdout); } catch { /* reported below */ }
     for (const f of input.after_init) {
       const file = path.join(root, f.path);
       fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -69,6 +71,26 @@ function runVerbs(vector) {
     if (Array.isArray(expected.findings)) {
       const m = findingsMatch(expected.findings, envelope.findings);
       list.push(['findings', m.ok, m.detail]);
+    }
+    if (Array.isArray(expected.init_findings)) {
+      const m = findingsMatch(expected.init_findings, initEnvelope.findings);
+      list.push(['init findings', m.ok, m.detail]);
+    }
+    if (Array.isArray(expected.init_not_reported)) {
+      const reported = initEnvelope.findings.filter((f) => f.code === 'AGSC-E507').map((f) => f.reference);
+      list.push(['references left alone', expected.init_not_reported.every((r) => !reported.includes(r)), JSON.stringify(reported)]);
+    }
+    if (Array.isArray(expected.assets_copied)) {
+      const missing = expected.assets_copied.filter((p) => !fs.existsSync(path.join(root, p)));
+      list.push(['assets copied', missing.length === 0, `missing ${JSON.stringify(missing)}`]);
+    }
+    if (expected.body_bytes_unchanged === true) {
+      const changed = input.files.filter((f) => f.markdown != null).filter((f) => {
+        const adopted = path.join(root, 'content', 'concepts', path.basename(f.path));
+        const text = fs.existsSync(adopted) ? fs.readFileSync(adopted, 'utf8') : '';
+        return !text.endsWith(f.markdown);
+      });
+      list.push(['body bytes unchanged', changed.length === 0, JSON.stringify(changed.map((f) => f.path))]);
     }
     if (expected.no_errors === true) {
       const errors = envelope.findings.filter((f) => f.severity !== 'warn');

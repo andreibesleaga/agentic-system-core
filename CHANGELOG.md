@@ -53,13 +53,39 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   vocabulary version is from `1.0.0` on (`1.0.0`, changed later only when a term changes);
   AGSC-10-05 no longer promises a future claim; AGSC-00-16 says a release's tag is its
   immutable copy and the chapters are amended in place with dated notes; AGSC-10-08 drops a
-  SHOULD no node could follow; chapter 11's status line no longer names a release candidate.
+  SHOULD no node could follow; the status line of `spec/11-boundary.md` no longer names a release candidate.
 - `docs/IMPLEMENTERS-GUIDE.md` gains the per-Level checklist AGSC-10-10 requires, and names
   Level 3 and the Level-1 areas as the specification does; `docs/CONFORMANCE-STATEMENTS.md`
   gives a claim sentence with every element of AGSC-09-01.
 
+- **Contradictions settled** (each rule amended with a dated note):
+  - the `memory://` alias is resolved by the tool server and the command line at Level 2
+    and above (AGSC-05-04, AGSC-05-04a, AGSC-00-20); no node is ever required to emit it;
+  - a fenced block marked `export` is reserved and never extracted (AGSC-02-22): case
+    `graph-0003`, which expected a blank-node error from such a block, is withdrawn and
+    replaced by `graph-0027`, run with the real `lint` and `build`;
+  - the closure's tie-break is the breadth-first walk's own order (AGSC-07-04, new case
+    `compose-0017`);
+  - an agent lane's Episode names its instruction bundle in a source entry the schema
+    accepts (AGSC-08-28(d));
+  - the automatic merge uses the separate merge credential (AGSC-08-02);
+  - the versioning rule's neighbours follow it: a MINOR may raise a bound, never lower one
+    or change a default (AGSC-11-01); the refused-address list is the one exception and
+    concerns fetches (AGSC-11-08); a new well-known suffix is a MINOR with a redirect
+    (AGSC-06-07); configuration is the one exception to a reader's tolerance (AGSC-00-15);
+    an unknown frontmatter key in a node's own Bundle stays a warning (AGSC-00-21);
+  - "ignore and preserve" gains rows for unknown enumeration values, a second top-level
+    member of a discovery document and unknown plain target attributes (AGSC-00-21), and
+    "link-shaped" is defined (AGSC-03-03);
+  - case `adopt-0005`, which said adoption leaves `ci` green although its references stay
+    broken, is withdrawn and replaced by `adopt-0009`, run with the real `init` and `ci`.
+
 ### Fixed
 
+- The command line now resolves `memory://<bundle-id>/<slug>` and this node's https item
+  IRI wherever it takes an item name (`compose`, `compose --from`, `propose`, `run`), as
+  AGSC-05-04b requires and the tool server already did; another Bundle's alias is refused
+  with `AGSC-E309`.
 - `lint`, `build` and `ci` now report the development placeholder `site.base`
   (`http://localhost[:<port>][/]`) as the warning `AGSC-E506` on every run until it is
   replaced, as AGSC-01-19 requires; only `init` reported it before, once (found by
