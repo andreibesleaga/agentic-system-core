@@ -93,7 +93,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-051 | MAPPED | `AGSC-09-13a`, `AGSC-09-16` | 3 vectors, 11 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-052 | MAPPED | `AGSC-06-24` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-054 | MAPPED | `AGSC-09-90`, `AGSC-09-91`, `AGSC-09-92` +3 | 2 vectors, 10 tests, 0 scenarios, 7 checkers | `arch/package-manifest.test.js`, `tools/gen-ns.test.js`, `tools/gen-spec-html.test.js` +7 | — | `persona-j-standards.feature`, `persona-l-port-implementer.feature` | `docs/IMPLEMENTERS-GUIDE.md`, `docs/PLAN.md`, `docs/SPEC.md` |
-| PRD-053 | MAPPED | `AGSC-01-25`, `AGSC-02-90`, `AGSC-02-91` +4 | 6 vectors, 12 tests, 1 scenarios, 0 checkers | `bin/agsc-init-then-ci.test.js`, `conformance/areas/_init-verbs.js`, `tools/validate-features.test.js` | `adopt-0001`, `adopt-0003`, `adopt-0006` | `persona-0-dropin.feature` | `docs/diagrams/user-flows.md` |
+| PRD-053 | MAPPED | `AGSC-01-25`, `AGSC-02-90`, `AGSC-02-91` +4 | 7 vectors, 12 tests, 1 scenarios, 0 checkers | `bin/agsc-init-then-ci.test.js`, `conformance/areas/_init-verbs.js`, `tools/validate-features.test.js` | `adopt-0001`, `adopt-0003` | `persona-0-dropin.feature` | `docs/diagrams/user-flows.md` |
 | PRD-055 | MAPPED | `AGSC-00-24`, `AGSC-01-13a`, `AGSC-06-08a` +10 | 1 vectors, 14 tests, 1 scenarios, 1 checkers | — | — | — | `docs/PLAN.md`, `docs/SPEC-ORIENTATION.md`, `docs/SPEC.md` |
 | PRD-056 | MAPPED | `AGSC-01-30`, `AGSC-01-31`, `AGSC-01-32` +4 | 1 vectors, 9 tests, 1 scenarios, 0 checkers | — | — | `persona-c-agent-mcp.feature` | `docs/PLAN.md` |
 | NFR-01 | MAPPED | `AGSC-00-18` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | `tools/validate-features.test.js` | — | — | `docs/PLAN.md` |

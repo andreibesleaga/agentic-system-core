@@ -1,0 +1,45 @@
+{
+  "area": "adopt",
+  "description": "The first-run path as AGSC-02-94 states it after its 1.0.0 amendment: `init` on a bare folder of notes, then the one thing only the publisher can state — `.well-known/security.txt` with a `Contact:` field (AGSC-06-36) — then `ci`, which exits 0 with warnings only (AGSC-02-92): the adopted note has no description (AGSC-E408) and `site.base` is the development placeholder (AGSC-E506). Run with the real verbs, not a schema check of what `init` would write: `after_init` lists the files the publisher adds between the two verbs. Expected values are derived by hand from the rule text. Supersedes adopt-0006.",
+  "expected": {
+    "exit": 0,
+    "findings": [
+      {
+        "code": "AGSC-E408",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      }
+    ],
+    "no_errors": true
+  },
+  "id": "adopt-0007",
+  "input": {
+    "after_init": [
+      {
+        "path": ".well-known/security.txt",
+        "text": "Contact: https://example.org/security\nExpires: 2026-12-31T00:00:00Z\n"
+      }
+    ],
+    "directory": "My Notes",
+    "files": [
+      {
+        "markdown": "# Handoff\n\nAn agent passes control to another agent.\n",
+        "path": "notes/handoff.md"
+      }
+    ],
+    "git_user_email": "publisher@example.org",
+    "verbs": [
+      "init",
+      "ci"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-02-94"
+}

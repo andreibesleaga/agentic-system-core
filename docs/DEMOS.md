@@ -77,7 +77,7 @@ init: pass (0 error, 3 warn)
 
 Add the security contact and the third note, which already carries a frontmatter
 block with a `stale_after` instant, then lint. The warnings are the honest state of
-three bare notes: no description, no inbound link.
+three bare notes — no description, no inbound link — and the placeholder address `init` wrote into `site.base`, reported until a real `https:` address replaces it.
 
 ```bash demo
 mkdir -p .well-known && cp ../security.txt .well-known/security.txt
@@ -86,7 +86,7 @@ agsc lint
 ```
 
 ```text expect
-lint: pass (0 error, 5 warn)
+lint: pass (0 error, 6 warn)
 warn: AGSC-E408 a concept carries no description (AGSC-02-21) — content/concepts/brewing.md
 ```
 
@@ -120,7 +120,7 @@ grep -A2 '## Stale items' www/now.md
 ```
 
 ```text expect
-build: pass (0 error, 2 warn)
+build: pass (0 error, 3 warn)
 boiling-point
 brewing
 grind-size
@@ -168,7 +168,7 @@ agsc review
 
 ```text expect
 lane: review is lint-only — no model call is reachable from it (AGSC-08-27, NFR-11)
-review: pass (0 error, 5 warn)
+review: pass (0 error, 6 warn)
 ```
 
 The maintainer's one command, `ci`, runs lint, builds twice and compares the bytes,
@@ -183,7 +183,7 @@ agsc verify --ledger
 ```
 
 ```text expect
-ci: pass (0 error, 5 warn)
+ci: pass (0 error, 6 warn)
 gate: pass keys: checks,gate,level,status
 verify: pass (0 error, 0 warn)
 ```

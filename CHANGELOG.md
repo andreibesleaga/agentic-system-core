@@ -20,8 +20,29 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   for the main node unchanged. It replaces `bench-v1`, whose intents for the demonstration
   node named items that node no longer publishes; the two sets are not comparable.
 
+### Changed (specification, for 1.0.0)
+
+- **AGSC-04-16 amended.** `graph.nq` is this specification's own canonical form, not the
+  canonical N-Quads of RDFC-1.0: for a blank-node-free dataset the two hold the same quads
+  and differ in four ways of writing a term (the explicit `xsd:string` of a plain literal,
+  lowercase hex in `\u` escapes, `\u0008`/`\u000c` for backspace and form feed, U+007F
+  written as itself). The rule no longer requires the claim "equal to RDFC-1.0 output for
+  blank-node-free datasets", which was untrue, and forbids it; AGSC-04-15 names the form as
+  the specification's own. No byte of `graph.nq` and no Bundle hash changes;
+  `tests/knowledge/nquads-rdfc-differences.test.js` checks the four differences against an
+  RDFC-1.0 implementation.
+- **AGSC-02-94 amended.** `ci` exits 0 after `init` once the publisher has added the security
+  contact of AGSC-06-36; without it `ci` reports `AGSC-E901`. The rule had said "immediately
+  after `init`". Vector `adopt-0006` is withdrawn (its runner had replaced `ci` by a schema
+  check); `adopt-0007` and `adopt-0008` run the real `init` and `ci`. The test-case format
+  gains `input.after_init[]` for the files a publisher adds between the two verbs.
+
 ### Fixed
 
+- `lint`, `build` and `ci` now report the development placeholder `site.base`
+  (`http://localhost[:<port>][/]`) as the warning `AGSC-E506` on every run until it is
+  replaced, as AGSC-01-19 requires; only `init` reported it before, once (found by
+  `adopt-0007`).
 - `agsc ci` reported one wrong finding (`AGSC-E601`, "value of type undefined is not
   JSON") in place of every real one whenever a finding had no line number: a valid Bundle
   holding a folder `README.md` failed `ci`, and `ci` outside a Bundle did not say that

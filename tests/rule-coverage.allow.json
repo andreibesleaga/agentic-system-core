@@ -25,10 +25,6 @@
       "reason": "scope",
       "why": "It forbids adding embeddings, spreading activation, transclusion or bi-temporal edges to the format; there is nothing emitted to test for an absence of design."
     },
-    "AGSC-04-16": {
-      "reason": "person",
-      "why": "It fixes the wording of a conformance claim about RDFC-1.0; the canonical N-Quads bytes themselves are checked by the graph vectors."
-    },
     "AGSC-05-11": {
       "reason": "person",
       "why": "It forbids an implementer to claim to be a JSON-LD processor, an RDF parser or a SHACL engine; a claim is a statement by a person."

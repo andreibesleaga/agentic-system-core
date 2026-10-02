@@ -426,6 +426,15 @@ function config(configObject, options = {}) {
         + ' (AGSC-00-25, AGSC-00-21)' : ''}`,
       { file, key: e.keyword === 'additionalProperties' ? String((e.params || {}).additionalProperty || '') : undefined }));
   }
+  // AGSC-01-19: the development placeholder `http://localhost[:<port>][/]` is admitted, and
+  // lint reports it "until the owner replaces it" — on every run, not only by the `init`
+  // that wrote it. `build` and `ci` run this check too (verbs/lint.js `configAndRoot`).
+  const base = configObject.site && configObject.site.base;
+  if (typeof base === 'string' && /^http:\/\/localhost(?::\d+)?\/?$/u.test(base)) {
+    findings.push(finding('AGSC-E506',
+      `site.base is the development placeholder ${base}; set an https: base before publishing (AGSC-01-19)`,
+      { file, key: 'site.base', severity: 'warn' }));
+  }
   // AGSC-00-15 (2026-09-25): a Bundle whose `spec_version` has a MAJOR this tool does
   // not implement is refused (`AGSC-E004`, the exit-2 class of AGSC-09-08); a newer
   // MINOR of the tool's own MAJOR is read, with a warning. The tool's version is

@@ -1,5 +1,5 @@
 'use strict';
-// The `init` → `ci` cases of area `adopt`: adopt-0005 and adopt-0006. Kept
+// The `init` → `ci` cases of area `adopt`: adopt-0005, adopt-0007 and adopt-0008. Kept
 // beside `areas/adopt.js` rather than inside it, so that the handler for
 // adopt-0001…0003 stays as it is: `adopt.js` delegates here when a vector carries
 // `input.verbs`.
@@ -7,9 +7,78 @@
 // AGSC-02-92 is the whole point of both cases: adoption produces WARNINGS only, so
 // `ci` on a bare folder exits 0 offline — step two of PRD-053's three-command promise.
 
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const init = require('../../../src/distribution/init.js');
 const validate = require('../../../src/knowledge/validate.js');
+const { main } = require('../../../src/application/cli/main.js');
+const { createFileSystem } = require('../../../src/adapters/node-fs.js');
+const { captureStream } = require('./_shared.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
+
+/**
+ * A case that states `after_init` runs the REAL verbs (adopt-0007, adopt-0008): the
+ * engine's own `init`, then the files the publisher adds, then the engine's own
+ * `ci --json`, in a scratch folder named `input.directory`. The only stand-in is the
+ * ProcessRunner, which answers `git config --get user.email` with the case's
+ * `git_user_email` and refuses every other command, so the run depends on no git
+ * checkout. This replaced, for 1.0.0, the schema check below that let adopt-0006
+ * pass although the real `ci` refused the folder (AGSC-02-94 as amended 2026-10-02).
+ */
+function runVerbs(vector) {
+  const { input, expected } = vector;
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-adopt-'));
+  try {
+    const root = path.join(scratch, String(input.directory));
+    for (const f of input.files) {
+      const file = path.join(root, f.path);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, f.binary === true ? Buffer.from([0x89, 0x50, 0x4e, 0x47]) : f.markdown);
+    }
+    const proc = {
+      run(cmd, args) {
+        if (cmd === 'git' && args.join(' ') === 'config --get user.email') return { code: 0, stderr: '', stdout: `${input.git_user_email}\n` };
+        return { code: 1, stderr: 'not available in a conformance run', stdout: '' };
+      },
+    };
+    const run = (argv) => {
+      const stdout = captureStream();
+      const stderr = captureStream();
+      const exit = main(argv, {
+        env: { SOURCE_DATE_EPOCH: String(vector.options.source_date_epoch) },
+        ports: { fs: createFileSystem(root), proc },
+        root,
+        specVersion: vector.options.spec_version,
+        stderr,
+        stdout,
+      });
+      return { exit, stdout: stdout.text() };
+    };
+    const ran = { init: run(['init']) };
+    for (const f of input.after_init) {
+      const file = path.join(root, f.path);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, f.text);
+    }
+    ran.ci = run(['ci', '--json']);
+    let envelope = { findings: [] };
+    try { envelope = JSON.parse(ran.ci.stdout); } catch { /* reported below */ }
+    const list = [['init exit code', ran.init.exit === 0, String(ran.init.exit)]];
+    if (expected.exit !== undefined) list.push(['ci exit code', ran.ci.exit === expected.exit, `${ran.ci.exit}: ${ran.ci.stdout.slice(0, 400)}`]);
+    if (Array.isArray(expected.findings)) {
+      const m = findingsMatch(expected.findings, envelope.findings);
+      list.push(['findings', m.ok, m.detail]);
+    }
+    if (expected.no_errors === true) {
+      const errors = envelope.findings.filter((f) => f.severity !== 'warn');
+      list.push(['no error', errors.length === 0, JSON.stringify(errors)]);
+    }
+    return checks(list);
+  } finally {
+    fs.rmSync(scratch, { force: true, recursive: true });
+  }
+}
 
 /** The `ci` lane this case needs: validate the Bundle `init` just synthesized. */
 function validateBundle(planned, ctx) {
@@ -30,6 +99,7 @@ function validateBundle(planned, ctx) {
 
 module.exports.run = (vector, ctx) => {
   const { input, expected } = vector;
+  if (Array.isArray(input.after_init)) return runVerbs(vector);
   const planned = init.plan(input.files, {
     directory: input.directory,
     gitUserEmail: input.git_user_email,

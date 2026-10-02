@@ -1,0 +1,35 @@
+{
+  "area": "adopt",
+  "description": "The same bare folder as adopt-0007 with nothing added after `init`: `ci` does not pass, because a node with no security contact cannot be published (AGSC-06-36) — the writer reports AGSC-E901 and `ci` exits 1. This is why `init` prints the security contact as a step before the first build (AGSC-02-92) and why AGSC-02-94 no longer promises a green `ci` immediately after `init`. Run with the real verbs; an empty `after_init` says the publisher added nothing. Expected values are derived by hand from the rule text.",
+  "expected": {
+    "exit": 1,
+    "findings": [
+      {
+        "code": "AGSC-E901",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "adopt-0008",
+  "input": {
+    "after_init": [],
+    "directory": "My Notes",
+    "files": [
+      {
+        "markdown": "# Handoff\n\nAn agent passes control to another agent.\n",
+        "path": "notes/handoff.md"
+      }
+    ],
+    "git_user_email": "publisher@example.org",
+    "verbs": [
+      "init",
+      "ci"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.6"
+  },
+  "rule": "AGSC-02-94"
+}

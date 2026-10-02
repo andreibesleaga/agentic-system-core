@@ -69,7 +69,7 @@ Scope: **v1** = must; **should** = S1–S8; **v1.x** = later. Every `should` and
 
 | ID | Requirement | Acceptance | Scope |
 |---|---|---|---|
-| PRD-022 | WHEN `build` runs, THE SYSTEM SHALL emit the graph as JSON-LD, Turtle and N-Quads plus per-item `.md`/`.jsonld`. | Blank-node-free; sorted N-Quads = RDFC-1.0. | v1 (RDF/XML: should S1) |
+| PRD-022 | WHEN `build` runs, THE SYSTEM SHALL emit the graph as JSON-LD, Turtle and N-Quads plus per-item `.md`/`.jsonld`. | Blank-node-free; sorted N-Quads in the specification's own canonical form (*note 2026-10-02:* the same quads as RDFC-1.0 output, four terms written differently; no RDFC-1.0 claim, AGSC-04-16). | v1 (RDF/XML: should S1) |
 | PRD-023 | WHEN `agsc mcp` starts, THE SYSTEM SHALL serve a local stdio JSON-RPC server exposing exactly `search read links compose propose` over the static exports. | Five tools; results carry `source/trust/license`. | v1 (remote MCP: not at v1) |
 | PRD-024 | THE SYSTEM SHALL publish one `/.well-known/knowledge-linkset` as a conformant RFC 9264 link set (`linkset` the sole member) served as `application/linkset+json` with the profile URI `https://w3id.org/agentic-system-core/profile/agentic-knowledge`, carrying RFC 9530 `digest` and `agsc-*` extension target attributes (bundle facts on the anchor's `describedby` link, ledger head on `rel#ledger`). | Link set resolves and validates as `application/linkset+json`; every `digest` recomputes; the profile is conveyed by the media-type parameter or by `Link: …; rel="profile"`. | v1 |
 | PRD-025 | THE SYSTEM SHALL publish `llms.txt`, `llms-full.txt` and per-item Markdown for non-MCP agents. | Every item reachable from `llms.txt`. | v1 |

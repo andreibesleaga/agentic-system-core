@@ -11,7 +11,7 @@
 // three-command promise.
 //
 // `plan()` is a pure function of the file list; `run()` is the thin shell that
-// applies the plan through the FileSystem port. Vectors: adopt-0006, adopt-0005.
+// applies the plan through the FileSystem port. Vectors: adopt-0007, adopt-0008, adopt-0005.
 
 const adopt = require('../knowledge/adopt.js');
 const { finding } = require('../knowledge/validate.js');
