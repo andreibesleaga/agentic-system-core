@@ -44,7 +44,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 5. **For negative vectors**, assert the code, not the wording. Message text is deliberately unspecified so that ports may localise and improve it.
 6. **Report** `pass`, `fail` or `skip` per `id`. A `skip` on a `required` vector counts as a failure (AGSC-09-02). An optional `conformance-report.json` may be published as `{impl, version, spec_version, class, results[], summary}`.
 
-A conformance claim MUST name the class, the `spec_version` MAJOR.MINOR and the vector set passed (AGSC-00-12). No claim of RDFC-1.0 may be made from the `graph/` vectors: `graph.nq` is this specification's own canonical form, which holds the same quads as RDFC-1.0 output for a blank-node-free dataset but writes four kinds of term differently (AGSC-04-16).
+What a conformance claim states is listed once, in AGSC-09-01: among it the Level, the full `spec_version`, the areas run and the cases passed. No claim of RDFC-1.0 may be made from the `graph/` vectors: `graph.nq` is this specification's own canonical form, which holds the same quads as RDFC-1.0 output for a blank-node-free dataset but writes four kinds of term differently (AGSC-04-16).
 
 ## Present coverage
 

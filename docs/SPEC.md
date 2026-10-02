@@ -29,7 +29,7 @@ SemVer 2.0.0. **MAJOR**: a file valid under the previous MAJOR may fail. **MINOR
 
 Conformance is claimed by **Level** per `spec/10-implementation-profiles.md` — Level 0 Publisher (static files from any CMS/wiki), 1 Reader, 2 Writer/Exporter, 3 Full engine; the three classes below map to Levels 1–3.
 
-**Reader** = Level 1, **Writer** = Level 2, **Full engine** = Level 3; the authoritative per-Level rule and vector-area sets are AGSC-10-02…05 and are not restated here. A claim names the class, the `spec_version` MAJOR.MINOR and the vector set passed (AGSC-00-09…13).
+**Reader** = Level 1, **Writer** = Level 2, **Full engine** = Level 3; the authoritative per-Level rule and vector-area sets are AGSC-10-02…05 and are not restated here. What a claim states — the implementation, the Level, the full `spec_version`, the cases run and passed, the Unicode version, the deployment profile, the declared surfaces and the checker used — is listed once, in AGSC-09-01.
 
 ## 4. Standards Register
 

@@ -39,11 +39,12 @@ vector areas. You pick one and claim it.
 | 0 | Publisher — four artefacts, valid I-JSON, no canonical form required | AGSC-10-02 |
 | 1 | Reader — parse, validate, resolve links | AGSC-10-03 |
 | 2 | Writer/Exporter — every surface, canonical bytes, import and export | AGSC-10-04 |
-| 3 | Governed node — provenance gates, the four lints, channels | AGSC-10-01, spec/08 |
+| 3 | Full engine — composition, governance (provenance gates, the four lints, channels), the command line and the tool server | AGSC-10-05 |
 
 Start at Level 1. It is the smallest useful thing, it needs no emission, and the
-vector areas it runs (`frontmatter`, `slug`, `links`, `jcs`) are the ones that catch
-the mistakes everything else is built on.
+vector areas it runs (`frontmatter`, `slug`, `bundle`, `jcs`, `discovery`, `links` and
+`lint`, less the cases AGSC-10-15 assigns to a higher Level) are the ones that catch the
+mistakes everything else is built on. Section 1c lists what each Level runs.
 
 ## 1a. A Level-0 node in ten steps, from any stack
 
@@ -63,7 +64,7 @@ and the reference checker if you want a ready-made one.
 | 7 | Publish `/.well-known/knowledge-linkset`: a link set whose only member is `linkset`, one context anchored at the base, no digests at Level 0 | AGSC-06-07, AGSC-06-08a | vector `disc-0004`; `tools/validate-wellknown <file> --level 0` |
 | 8 | Serve it as `application/linkset+json` with the profile parameter, or with a `Link: …; rel="profile"` header | AGSC-06-07, AGSC-11-04 | `validate-wellknown <url> --level 0` over HTTPS |
 | 9 | Put `<link rel="describedby" href="/.well-known/knowledge-linkset" type="application/linkset+json">` in every page's head, and serve public files with `Access-Control-Allow-Origin: *` | AGSC-06-25, AGSC-11-03 | read the served headers; the Level-0 procedure's checks on the project's site |
-| 10 | Run the Level-0 vector areas (`frontmatter`, `slug`, `bundle`, `discovery`) and publish your claim: Level 0, the `spec_version`, the areas you ran | AGSC-10-01, AGSC-10-02 | your own runner's report (AGSC-09-03); [CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md) |
+| 10 | Run the Level-0 cases — the areas `frontmatter`, `slug`, `bundle` and `discovery`, less the cases AGSC-10-15 assigns to a higher Level (section 1c) — and publish your claim with the elements AGSC-09-01 lists | AGSC-10-01, AGSC-10-02, AGSC-09-01 | your own runner's report (AGSC-09-03); [CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md) |
 
 `tests/e2e/level-0-without-engine.test.js` does exactly this with a few lines of code
 and no engine, and passes the shipped checker.
@@ -87,6 +88,36 @@ link written in the body becomes an untyped *mentions* edge.
 Whatever the platform, the export writes the files of §1a and nothing more. `agsc init`
 adopts a folder of bare Markdown with no mapping at all (AGSC-02-90…93), if you would
 rather start from the files than from the platform.
+
+## 1c. The per-Level checklist
+
+*(AGSC-10-10, AGSC-10-15.)* What each Level must implement, which cases it runs, and how to
+check. A Level includes everything of the Levels below it (AGSC-10-06). How many cases a
+Level runs is printed by `agsc conform --level <n>`, or by your own runner; it is never
+typed here, because a later version adds cases.
+
+| Level | The rules it implements | The cases it runs | Check with |
+|---|---|---|---|
+| 0 — Publisher | items with the required frontmatter (spec/02), `content/index.md` (AGSC-01-04), slugs (AGSC-01-10, AGSC-01-11), `/.well-known/knowledge-linkset` in the Level-0 form (AGSC-06-07…12, AGSC-06-08a), `/graph.jsonld` (AGSC-05-09), `/llms.txt` (AGSC-06-13…15); valid I-JSON, no canonical bytes (AGSC-04-04) | areas `frontmatter`, `slug`, `bundle`, `discovery` | `agsc conform --level 0`, or your own runner; `tools/validate-wellknown <url> --level 0` on the published node |
+| 1 — Reader | + reading any conforming Bundle: the frontmatter contract, the slug grammar, the fourteen Links with their computed inverses, orphans and cycles (spec/03), the error codes and their severities (§9.4) | + areas `links`, `lint`, `jcs` | `agsc conform --level 1` |
+| 2 — Writer | + deterministic emission (spec/04), the four graph views (spec/05), the route set with search, the NOW page, the ledger and the discovery link (spec/06, AGSC-08-20…24), export and import (AGSC-01-22…29) | + areas `graph`, `build`, `adopt`, `ledger`, `import`, `export`, `skills`, `chunks`, `boards`, `boundary` | `agsc conform --level 2`; `tools/validate-wellknown <url> --level 2` on the published node |
+| 3 — Full engine | + composition (spec/07), governance (spec/08), the command line and the tool server (spec/09) | every area | `agsc conform --level 3` |
+
+**Cases that belong to a higher Level.** Some cases sit in an area a lower Level runs but
+test what only a higher Level does — a writer's refusal, an agent lane, a Level-2 digest,
+the injection scan, the `init` and `ci` verbs. AGSC-10-15 lists each with the Level it
+belongs to: `bundle-0001`, `bundle-0006`, `bundle-0007`, `disc-0005` and `disc-0019` belong
+to Level 1; `bundle-0008`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`,
+`disc-0018` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
+`lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `adopt-0007` and
+`adopt-0008` to Level 3. A claim at a lower Level neither runs them nor fails for them.
+
+**What the claim states.** The implementation and its version, the Level, the full
+`spec_version`, the areas and how many cases ran and passed (every failed one by id), the
+Unicode version of the runtime, for a published node at Level 2 or 3 its deployment
+profile, every surface it declares with what proves it, and the checker used if it was not
+your own — the list of AGSC-09-01; the wording is in
+[CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md).
 
 ---
 

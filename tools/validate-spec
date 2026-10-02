@@ -301,7 +301,10 @@ function run(argv, io) {
   const conformance = texts.get('09-conformance.md') || '';
   const registry = new Map();   // code -> { line, rules: Set }
   conformance.split('\n').forEach((line, index) => {
-    const row = /^\|\s*`(AGSC-E\d{3})`\s*\|(.*)\|([^|]*)\|\s*$/u.exec(line);
+    // `| code | meaning | rule | severity |` since 1.0.0 (the severity column of §9.4);
+    // `| code | meaning | rule |` before it — both are read, so an older text still checks.
+    const withSeverity = /^\|\s*`(AGSC-E\d{3})`\s*\|(.*)\|([^|]*)\|\s*((?:error|warning|—)[^|]*)\|\s*$/u.exec(line);
+    const row = withSeverity || /^\|\s*`(AGSC-E\d{3})`\s*\|(.*)\|([^|]*)\|\s*$/u.exec(line);
     if (!row) return;
     const code = row[1];
     const rules = new Set(row[3].match(RULE_ID_G) || []);

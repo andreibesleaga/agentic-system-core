@@ -2,7 +2,7 @@
 
 ## 9.1 Classes and claims
 
-- **AGSC-09-01** A claim MUST name its Level — AGSC-10-01 is the single statement of the class-to-Level mapping and AGSC-10-15 of the vector set a Level runs — the `spec_version` MAJOR.MINOR and the vector set passed; the class names of AGSC-00-09…11 are the Levels' names and nothing more. [PRD-010]
+- **AGSC-09-01** **The claim, in full.** A conformance claim MUST state each of the following, and this rule is the one complete list: (a) the implementation and its version; (b) exactly one Level — AGSC-10-01 is the single statement of the class-to-Level mapping and AGSC-10-15 of the vector set a Level runs, and the class names of AGSC-00-09…11 are the Levels' names and nothing more; (c) the full `spec_version` whose vectors were run, a release candidate named as such; (d) the vector set: the areas run, how many of their cases ran and how many passed, and every required case that failed or was skipped, by id (AGSC-09-02, AGSC-10-15); (e) the Unicode version of the runtime (AGSC-04-22); (f) for a published node at Level 2 or 3, the deployment profile it emitted (AGSC-06-01); (g) every surface the node declares, each with the cases or the validator run that prove it (AGSC-11-19); (h) which checker implementation ran the cases, when the claimant did not run them with its own (AGSC-10-01). AGSC-00-12, AGSC-04-22, AGSC-06-01, AGSC-10-01 and AGSC-11-19 each require some of these elements and point here; where they differ, this rule settles it. The machine-readable claim checked by `conform-0001` carries (b), (c), (e) and the areas passed as `level`, `spec_version`, `unicode_version` and `vectors_passed`; the report of AGSC-09-03 carries (a), (c) and every case's result; the published sentence carries the rest (`docs/CONFORMANCE-STATEMENTS.md` gives its wording). *(Amended 2026-10-02 for 1.0.0: until `1.0.0-rc.6` this rule named the Level, the `spec_version` MAJOR.MINOR and the vector set, while four other rules each added an element; MAJOR.MINOR alone hid which set of a release candidate ran. No element is new.)* [PRD-010]
 - **AGSC-09-02** A conformance run MUST execute every `required` vector of the declared areas and MUST report `pass`, `fail` or `skip` per vector id. A `skip` counts as a failure for a required vector. [design]
 - **AGSC-09-03** A `conformance-report.json` MUST be producible by `agsc conform` as `{impl, version, spec_version, class, results:[{id, status, got?}], summary}`, and a node MAY publish it at `/conformance/` together with a table of third-party claims. A published claim is the claimant's own assertion; this specification defines no arbitration. A claimant MAY additionally publish a **rule-coverage matrix**: for every rule id of this specification, the machine verifications that cite it — a vector's `rule`, a test, an acceptance scenario, a checker — or a stated reason why the rule is verified by review alone. The reference distribution MUST publish one, so that a reader can see which of this specification's rules are proved by the suite and which are not, without running it. No Level requires the matrix, and a published matrix is the claimant's own assertion, exactly as a published conformance report is. *(Rationale: the matrix lets a reader tell a rule proved by a vector from a rule nobody checks; the obligation is named and the artefact is not, so no file name or byte is pinned.)* [design]
 
@@ -51,99 +51,101 @@ Codes are `AGSC-E<nnn>` and nothing else; the hundreds digit is the area (`0` CL
 
 **Precedence.** Where two codes could name one fault, the more specific one wins: `AGSC-E203` is reported for every enum and `tags.allowed` violation, `AGSC-E204` for every pattern violation and every `minLength`/`maxLength` violation, and `AGSC-E201` only for a schema failure that no more specific registered code, **in any block**, names — a `maxItems` violation on a cluster's `broader` is `AGSC-E308`, not `AGSC-E201`. Two conforming engines therefore report the same code for the same input. Applying that rule to one pair: an out-of-range value inside `federation{}`, `chunks{}`, `contribute[]`, `visibility` or `related[]` is **`AGSC-E209`**, never `AGSC-E201`, because `AGSC-E209` names exactly those objects and is therefore the more specific code; an engine MUST report one code, not both (AGSC-00-09, AGSC-09-11).
 
-| Code | Meaning | Rule |
-|---|---|---|
-| `AGSC-E001` | unknown verb | AGSC-09-07 |
-| `AGSC-E002` | unknown flag | AGSC-09-09 |
-| `AGSC-E003` | missing argument | AGSC-09-08, AGSC-09-13a, AGSC-09-14b |
-| `AGSC-E004` | invalid or unknown configuration key, including a name reserved to a later version (`build.rdfxml`, `build.feed`, `routing`), a source whose declared `spec_version` MAJOR an import does not implement (AGSC-01-22), a Bundle whose own `spec_version` MAJOR the writer does not implement (AGSC-00-15) and an invocation of `run` or `trace` while `run.enabled` is `false` (AGSC-09-94); it is the exit-2 class of AGSC-09-08 wherever it is raised — a tool that cannot run against the configuration it was given has not failed a gate | AGSC-00-15, AGSC-00-20, AGSC-00-23, AGSC-00-25, AGSC-01-18, AGSC-01-22, AGSC-01-36 |
-| `AGSC-E101` | frontmatter missing | AGSC-02-01 |
-| `AGSC-E102` | frontmatter not terminated | AGSC-02-01 |
-| `AGSC-E103` | YAML anchor or alias | AGSC-02-02 |
-| `AGSC-E104` | YAML tag or merge key | AGSC-02-02 |
-| `AGSC-E105` | flow mapping or complex key | AGSC-02-02 |
-| `AGSC-E106` | duplicate key | AGSC-02-02 |
-| `AGSC-E107` | second YAML document | AGSC-02-01 |
-| `AGSC-E108` | encoding violation (BOM, CRLF, non-NFC, trailing newline), including the encoding normalisations `lint --fix` applies or reports (AGSC-04-19) | AGSC-01-14, AGSC-04-19 |
-| `AGSC-E109` | unsupported Markdown construct | AGSC-02-20 |
-| `AGSC-E201` | schema validation failed (only where no 2xx code is more specific) | AGSC-00-09, AGSC-01-37 |
-| `AGSC-E202` | required key, field or configured value missing — including an RFC 9116 `Contact:` field in the authored `.well-known/security.txt` (AGSC-06-36) and an empty `site.tdm_crawlers[]` on a node publishing a TDM reservation (AGSC-06-18) | AGSC-02-07, AGSC-06-18, AGSC-06-36, AGSC-08-01, AGSC-09-93 |
-| `AGSC-E203` | value outside enum, `tags.allowed` or another closed operator list (a `run` command whose program is not in `run.allow[]`, AGSC-09-94; a `compose --emit` or `export --steer` target the registry does not carry, the reserved `executable` among them, AGSC-00-25; an `export --to` or `import --from` adapter the distribution does not ship, AGSC-01-26a; a `remember` of `kind: gate`, AGSC-09-14b) | AGSC-00-23, AGSC-00-25, AGSC-01-21, AGSC-01-26a, AGSC-01-36, AGSC-02-18, AGSC-02-99, AGSC-09-14b, AGSC-09-94 |
-| `AGSC-E204` | pattern or length-bound violation (slug, `iri`, instant; `minLength`/`maxLength` in code points), including a `-->` in a value interpolated into the provenance header (AGSC-06-13a) and a malformed, repeated, unparsable, stale or underivable RFC 9116 `Expires` (AGSC-06-36) | AGSC-01-04, AGSC-01-10, AGSC-02-05, AGSC-02-24, AGSC-05-05, AGSC-06-13a, AGSC-06-36 |
-| `AGSC-E205` | file-placement violation (`type` does not match folder; a compiled `.svg` under `content/diagrams/`, AGSC-01-07; language-variant suffix disagrees with `lang` — a malformed `lang` itself is `AGSC-E204`) | AGSC-01-03, AGSC-01-04, AGSC-01-07, AGSC-01-13 |
-| `AGSC-E206` | slug not unique in Bundle — a retired slug reused (AGSC-01-12) and, at 1.0, a `<slug>.<lang>.md` file beside its primary (AGSC-01-13) among the cases — or an import would write over an item the target Bundle already holds (AGSC-01-23) | AGSC-01-11, AGSC-01-12, AGSC-01-13, AGSC-01-23 |
-| `AGSC-E207` | unknown key, including one this specification reserves to a later version, which is preserved like any other (warning) | AGSC-00-21, AGSC-00-23, AGSC-00-25, AGSC-02-05, AGSC-02-97, AGSC-02-99 |
-| `AGSC-E208` | language variant without a primary file | AGSC-01-13 |
-| `AGSC-E209` | boundary or discovery configuration invalid (`federation{}`, `chunks{}`, `contribute[]`, `visibility`, `related[]` out of range or malformed) | AGSC-11-01, AGSC-11-14, AGSC-06-35 |
-| `AGSC-E210` | declared surface not implemented, or emitted bytes disagree with their declaration — including bytes carrying a member of a version the node's discovery document does not declare (AGSC-00-23) | AGSC-00-23, AGSC-06-07, AGSC-11-16, AGSC-11-19 |
-| `AGSC-E211` | emitted surface without a declaration (warning) | AGSC-11-19 |
-| `AGSC-E212` | the enabled agents' `budget_usd_month` sum exceeds `budget.usd_month` | AGSC-01-36 |
-| `AGSC-E213` | `tags` array with fewer than 2 or more than 5 values (warning) | AGSC-01-21 |
-| `AGSC-E301` | link target unresolved (also an `agsc-selection` entry naming no item) | AGSC-03-02, AGSC-03-09, AGSC-03-20, AGSC-02-97 |
-| `AGSC-E302` | cycle in `requires` | AGSC-03-07 |
-| `AGSC-E303` | cycle in `broader`/`narrower` | AGSC-03-08 |
-| `AGSC-E304` | unknown link key (warning; includes a key reserved to a later version, such as `peer-ref`) | AGSC-00-21, AGSC-00-23, AGSC-03-03, AGSC-11-12 |
-| `AGSC-E305` | orphan item (warning) | AGSC-03-10 |
-| `AGSC-E306` | computed inverse authored | AGSC-03-04 |
-| `AGSC-E307` | cluster nesting deeper than 3 | AGSC-03-08 |
-| `AGSC-E308` | cluster has more than one `broader` | AGSC-03-08 |
-| `AGSC-E309` | `memory://` names a foreign bundle — use the `https://` IRI | AGSC-05-04b |
-| `AGSC-E310` | relative body link or image with no resolvable target inside the Bundle | AGSC-01-35, AGSC-03-11 |
-| `AGSC-E311` | Link key value is an absolute URL (a Link MUST NOT cross Bundles) | AGSC-11-12 |
-| `AGSC-E312` | cross-node reference not normalisable to an IRI (omitted from the graph) | AGSC-11-12 |
-| `AGSC-E401` | agent-directed imperative, blob or non-http scheme | AGSC-08-13 |
-| `AGSC-E402` | hidden text | AGSC-08-13 |
-| `AGSC-E403` | secret detected | AGSC-08-15, AGSC-01-37 |
-| `AGSC-E404` | personal data outside `prov`/`sources[]` | AGSC-08-16 |
-| `AGSC-E405` | clean-room violation | AGSC-08-17 |
-| `AGSC-E406` | expected body section missing, or a required section of a published page has no authored input and is omitted (AGSC-06-18) (warning) | AGSC-02-21, AGSC-06-18 |
-| `AGSC-E407` | executable content in a skill pack; a foreign record's executable content an import dropped (warning, AGSC-01-22) | AGSC-01-22, AGSC-07-15 |
-| `AGSC-E408` | concept or cluster carries no description (warning) | AGSC-02-21 |
-| `AGSC-E409` | warned status transition, e.g. deprecated → stable (warning) | AGSC-02-23 |
-| `AGSC-E410` | language variant diverges from its primary's Links or clusters (warning) | AGSC-01-13a |
-| `AGSC-E411` | Link target is a retired item (warning) | AGSC-11-22 |
-| `AGSC-E412` | raster or unsafe image attachment on a pattern (must be SVG; no embedded raster, no script) | AGSC-02-98 |
-| `AGSC-E413` | attachment file absent or its bytes do not match the recorded SHA-256 | AGSC-01-34 |
-| `AGSC-E414` | orphan file under `content/attachments/` that no item names (warning) | AGSC-01-34 |
-| `AGSC-E415` | `export`-tagged fenced block ignored at 1.x (warning; extraction reserved) | AGSC-02-22 |
-| `AGSC-E416` | overlapping labels: two published items of one `type` with equal `title` after NFC and case folding (warning) | AGSC-05-21 |
-| `AGSC-E501` | `prov` missing | AGSC-08-01 |
-| `AGSC-E502` | *reserved, never raised: an invalid `prov.origin` is an enum violation and takes `AGSC-E203` under the precedence paragraph* | AGSC-02-07 |
-| `AGSC-E503` | `prov.operator` missing | AGSC-08-01 |
-| `AGSC-E504` | DCO-Plus trailer missing or malformed | AGSC-08-06 |
-| `AGSC-E505` | agent-authored change without matching operator | AGSC-08-07 |
-| `AGSC-E506` | adoption defaulted or normalized a value (AGSC-02-90); `site.base` is the `http://localhost` development placeholder (AGSC-01-19); a `remember` `sources[]` entry was dropped as malformed (AGSC-09-14b); `lint --fix` normalised a file, or reported that it would (AGSC-04-19; the encoding third of that rule is `AGSC-E108`); a git tag that cannot be a content version was not used as one (AGSC-04-25); an import wrote a foreign record of unestablished licence as a draft, or `kind: explainer` on a mapped concept, or read a source of a newer MINOR of the tool's own MAJOR (AGSC-01-22); a discovery document of a newer MINOR carried a relation or a target attribute the validator does not know, which it ignored (AGSC-09-93); a folder `README.md` or `_index.md` under `content/` was skipped (AGSC-01-05); a Bundle written for a newer MINOR of the tool's own MAJOR was read (AGSC-00-15); a page tool returned a `remember` item with no operator (AGSC-09-14b); a pack member that is not a procedure was not imported (AGSC-07-22) — all warnings | AGSC-00-15, AGSC-01-05, AGSC-01-22, AGSC-02-90, AGSC-04-25, AGSC-01-19, AGSC-07-22, AGSC-09-14b, AGSC-04-19, AGSC-09-93 |
-| `AGSC-E507` | adopted body reference no longer resolves after relocation (warning) | AGSC-02-95 |
-| `AGSC-E508` | Level-0 item inherited `prov` from `bundle.operator` (warning) | AGSC-10-02 |
-| `AGSC-E509` | agent-lane Proposal outside the declared `types[]`/`tasks[]`, or from an undeclared or disabled agent | AGSC-08-28 |
-| `AGSC-E510` | model call skipped: a monthly budget reached — the lane's `budget_usd_month` or the node's `budget.usd_month` (warning) | AGSC-08-28, AGSC-01-38 |
-| `AGSC-E511` | agent-lane Proposal exceeds `max_new_items` (items created) or `max_claims` (tasks held in `TASK_STATE_WORKING`), or claims a task already held in `TASK_STATE_WORKING` by another participant | AGSC-08-28, AGSC-10-17 |
-| `AGSC-E601` | JSON artefact not JCS-canonical | AGSC-04-06 |
-| `AGSC-E602` | build not byte-reproducible, or a `run` result that does not reproduce the `expect` block recorded beside it (AGSC-09-94) | AGSC-04-02, AGSC-09-94 |
-| `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed (exit 2) | AGSC-04-09 |
-| `AGSC-E604` | emitted text not NFC | AGSC-04-07 |
-| `AGSC-E605` | blank node in an RDF export | AGSC-05-08 |
-| `AGSC-E606` | build instant defaulted to 0, no git history (warning) | AGSC-04-09 |
-| `AGSC-E607` | combining sequence exceeds the normalisation bound (error) | AGSC-04-23 |
-| `AGSC-E701` | ledger chain broken | AGSC-08-23 |
-| `AGSC-E702` | ledger rewritten or out of order | AGSC-08-23 |
-| `AGSC-E703` | git history too shallow to derive the ledger (exit 2) | AGSC-08-20a, AGSC-08-23 |
-| `AGSC-E704` | *(unassigned — reserved; never emitted)* | — |
-| `AGSC-E705` | *(unassigned — reserved; never emitted)* | — |
-| `AGSC-E706` | content-branch commit outside the merged-pull-request path, or the ingest identity holding ruleset bypass rights | AGSC-08-26 |
-| `AGSC-E707` | forge enforcement artefact drift — a file the repository tracks at the forge's own path differs from the compiled one (never a previous run's `dist/forge/` output) — or an `enforce[]` value that cannot be compiled | AGSC-08-12 |
-| `AGSC-E801` | `excludes` conflict after closure | AGSC-07-06 |
-| `AGSC-E802` | composition target unavailable (slug absent from the graph; `requires` target hidden by `supersedes`; a retired item named in a selection) | AGSC-07-03, AGSC-07-05a, AGSC-11-22 |
-| `AGSC-E803` | `contradicts` or missing `uses` (warning) | AGSC-07-07 |
-| `AGSC-E804` | port with no producer or no consumer (warning) | AGSC-02-96, AGSC-07-23 |
-| `AGSC-E805` | saved architecture's stored verdict digest is stale (warning) | AGSC-02-97, AGSC-07-24 |
-| `AGSC-E901` | file not found — including a validator input that is absent or carries nothing to validate (AGSC-09-90), an index shard a manifest names and a reader cannot obtain (AGSC-06-21), and an absent authored `.well-known/security.txt` (AGSC-06-36) | AGSC-01-01, AGSC-06-21, AGSC-06-36, AGSC-09-90 |
-| `AGSC-E902` | path escapes the Bundle root, or violates the relative-path grammar — including an archive entry name that is not relative (AGSC-07-13a) | AGSC-01-16, AGSC-01-35, AGSC-03-11, AGSC-07-13a |
-| `AGSC-E903` | archive refused — on the way IN, an archive offered as build input (AGSC-01-16); on the way OUT, a file set the byte profile of AGSC-07-13a cannot represent: a duplicate entry name, an entry or a total above 4,294,967,295 bytes, or more than 65,535 entries | AGSC-01-16, AGSC-07-13a |
-| `AGSC-E904` | size cap or normative budget exceeded — an input file over 1 MiB, an attachment over `attachments{max_bytes}`, or an emitted artefact over a budget of AGSC-06-21 that no sharding rule relieves | AGSC-01-16, AGSC-01-34, AGSC-06-21 |
-| `AGSC-E905` | peer fetch refused: scheme, address range or redirect hop violates the transport rules | AGSC-11-07, AGSC-11-08, AGSC-11-09 |
-| `AGSC-E906` | federation walk cap exceeded (hop limit, fan-out or request cap); result partial | AGSC-11-10 |
-| `AGSC-E907` | peer unreachable, its discovery document invalid, or a cross-origin fetch aborted at a cap of AGSC-11-10(f); skipped for this walk | AGSC-11-10 |
+**Severity.** Each code has the severity its row gives, in the last column; where the severity depends on the context, the row names each context. An `error` makes the verb that found it exit 1 — or 2 where the row says so, the usage and configuration class of AGSC-09-08 — and a gate fail; a `warning` is reported and never changes an exit code. A rule that names a code never gives it another severity than its row. *(Amended 2026-10-02 for 1.0.0: until `1.0.0-rc.6` the registry had no severity column, "(warning)" stood in some rows only, and `AGSC-E108`, `AGSC-E204`, `AGSC-E401`, `AGSC-E402` and `AGSC-E407` took a severity stated in another chapter; the column states what those rules already say and changes no severity.)*
+
+| Code | Meaning | Rule | Severity |
+|---|---|---|---|
+| `AGSC-E001` | unknown verb | AGSC-09-07 | error, exit 2 |
+| `AGSC-E002` | unknown flag | AGSC-09-09 | error, exit 2 |
+| `AGSC-E003` | missing argument | AGSC-09-08, AGSC-09-13a, AGSC-09-14b | error, exit 2 |
+| `AGSC-E004` | invalid or unknown configuration key, including a name reserved to a later version (`build.rdfxml`, `build.feed`, `routing`), a source whose declared `spec_version` MAJOR an import does not implement (AGSC-01-22), a Bundle whose own `spec_version` MAJOR the writer does not implement (AGSC-00-15) and an invocation of `run` or `trace` while `run.enabled` is `false` (AGSC-09-94); it is the exit-2 class of AGSC-09-08 wherever it is raised — a tool that cannot run against the configuration it was given has not failed a gate | AGSC-00-15, AGSC-00-20, AGSC-00-23, AGSC-00-25, AGSC-01-18, AGSC-01-22, AGSC-01-36 | error, exit 2 |
+| `AGSC-E101` | frontmatter missing | AGSC-02-01 | error |
+| `AGSC-E102` | frontmatter not terminated | AGSC-02-01 | error |
+| `AGSC-E103` | YAML anchor or alias | AGSC-02-02 | error |
+| `AGSC-E104` | YAML tag or merge key | AGSC-02-02 | error |
+| `AGSC-E105` | flow mapping or complex key | AGSC-02-02 | error |
+| `AGSC-E106` | duplicate key | AGSC-02-02 | error |
+| `AGSC-E107` | second YAML document | AGSC-02-01 | error |
+| `AGSC-E108` | encoding violation (BOM, CRLF, non-NFC, trailing newline), including the encoding normalisations `lint --fix` applies or reports (AGSC-04-19) | AGSC-01-14, AGSC-04-19 | error; a warning when `lint --fix` reports a normalisation it applied or would apply (AGSC-04-19) |
+| `AGSC-E109` | unsupported Markdown construct | AGSC-02-20 | warning |
+| `AGSC-E201` | schema validation failed (only where no 2xx code is more specific) | AGSC-00-09, AGSC-01-37 | error |
+| `AGSC-E202` | required key, field or configured value missing — including an RFC 9116 `Contact:` field in the authored `.well-known/security.txt` (AGSC-06-36) and an empty `site.tdm_crawlers[]` on a node publishing a TDM reservation (AGSC-06-18) | AGSC-02-07, AGSC-06-18, AGSC-06-36, AGSC-08-01, AGSC-09-93 | error |
+| `AGSC-E203` | value outside enum, `tags.allowed` or another closed operator list (a `run` command whose program is not in `run.allow[]`, AGSC-09-94; a `compose --emit` or `export --steer` target the registry does not carry, the reserved `executable` among them, AGSC-00-25; an `export --to` or `import --from` adapter the distribution does not ship, AGSC-01-26a; a `remember` of `kind: gate`, AGSC-09-14b) | AGSC-00-23, AGSC-00-25, AGSC-01-21, AGSC-01-26a, AGSC-01-36, AGSC-02-18, AGSC-02-99, AGSC-09-14b, AGSC-09-94 | error |
+| `AGSC-E204` | pattern or length-bound violation (slug, `iri`, instant; `minLength`/`maxLength` in code points), including a `-->` in a value interpolated into the provenance header (AGSC-06-13a) and a malformed, repeated, unparsable, stale or underivable RFC 9116 `Expires` (AGSC-06-36) | AGSC-01-04, AGSC-01-10, AGSC-02-05, AGSC-02-24, AGSC-05-05, AGSC-06-13a, AGSC-06-36 | error; a warning for an `Expires` more than a year after the build instant (AGSC-06-36) |
+| `AGSC-E205` | file-placement violation (`type` does not match folder; a compiled `.svg` under `content/diagrams/`, AGSC-01-07; language-variant suffix disagrees with `lang` — a malformed `lang` itself is `AGSC-E204`) | AGSC-01-03, AGSC-01-04, AGSC-01-07, AGSC-01-13 | error |
+| `AGSC-E206` | slug not unique in Bundle — a retired slug reused (AGSC-01-12) and, at 1.0, a `<slug>.<lang>.md` file beside its primary (AGSC-01-13) among the cases — or an import would write over an item the target Bundle already holds (AGSC-01-23) | AGSC-01-11, AGSC-01-12, AGSC-01-13, AGSC-01-23 | error |
+| `AGSC-E207` | unknown key, including one this specification reserves to a later version, which is preserved like any other (warning) | AGSC-00-21, AGSC-00-23, AGSC-00-25, AGSC-02-05, AGSC-02-97, AGSC-02-99 | warning |
+| `AGSC-E208` | language variant without a primary file | AGSC-01-13 | error — not raised at 1.0: language variants are reserved to 1.1 (AGSC-00-20) |
+| `AGSC-E209` | boundary or discovery configuration invalid (`federation{}`, `chunks{}`, `contribute[]`, `visibility`, `related[]` out of range or malformed) | AGSC-11-01, AGSC-11-14, AGSC-06-35 | error |
+| `AGSC-E210` | declared surface not implemented, or emitted bytes disagree with their declaration — including bytes carrying a member of a version the node's discovery document does not declare (AGSC-00-23) | AGSC-00-23, AGSC-06-07, AGSC-11-16, AGSC-11-19 | error |
+| `AGSC-E211` | emitted surface without a declaration (warning) | AGSC-11-19 | warning |
+| `AGSC-E212` | the enabled agents' `budget_usd_month` sum exceeds `budget.usd_month` | AGSC-01-36 | error |
+| `AGSC-E213` | `tags` array with fewer than 2 or more than 5 values (warning) | AGSC-01-21 | warning |
+| `AGSC-E301` | link target unresolved (also an `agsc-selection` entry naming no item) | AGSC-03-02, AGSC-03-09, AGSC-03-20, AGSC-02-97 | error |
+| `AGSC-E302` | cycle in `requires` | AGSC-03-07 | error |
+| `AGSC-E303` | cycle in `broader`/`narrower` | AGSC-03-08 | error |
+| `AGSC-E304` | unknown link key (warning; includes a key reserved to a later version, such as `peer-ref`) | AGSC-00-21, AGSC-00-23, AGSC-03-03, AGSC-11-12 | warning |
+| `AGSC-E305` | orphan item (warning) | AGSC-03-10 | warning |
+| `AGSC-E306` | computed inverse authored | AGSC-03-04 | error |
+| `AGSC-E307` | cluster nesting deeper than 3 | AGSC-03-08 | error |
+| `AGSC-E308` | cluster has more than one `broader` | AGSC-03-08 | error |
+| `AGSC-E309` | `memory://` names a foreign bundle — use the `https://` IRI | AGSC-05-04b | error |
+| `AGSC-E310` | relative body link or image with no resolvable target inside the Bundle | AGSC-01-35, AGSC-03-11 | error |
+| `AGSC-E311` | Link key value is an absolute URL (a Link MUST NOT cross Bundles) | AGSC-11-12 | error |
+| `AGSC-E312` | cross-node reference not normalisable to an IRI (omitted from the graph) | AGSC-11-12 | error |
+| `AGSC-E401` | agent-directed imperative, blob or non-http scheme | AGSC-08-13 | warning on an item a person authored; error when the item carries `prov.agent` (AGSC-08-13) |
+| `AGSC-E402` | hidden text | AGSC-08-13 | warning on an item a person authored; error when the item carries `prov.agent` (AGSC-08-13) |
+| `AGSC-E403` | secret detected | AGSC-08-15, AGSC-01-37 | error |
+| `AGSC-E404` | personal data outside `prov`/`sources[]` | AGSC-08-16 | error |
+| `AGSC-E405` | clean-room violation | AGSC-08-17 | error |
+| `AGSC-E406` | expected body section missing, or a required section of a published page has no authored input and is omitted (AGSC-06-18) (warning) | AGSC-02-21, AGSC-06-18 | warning |
+| `AGSC-E407` | executable content in a skill pack; a foreign record's executable content an import dropped (warning, AGSC-01-22) | AGSC-01-22, AGSC-07-15 | error for a skill pack, which is refused (AGSC-07-15); a warning for executable content an import dropped (AGSC-01-22) |
+| `AGSC-E408` | concept or cluster carries no description (warning) | AGSC-02-21 | warning |
+| `AGSC-E409` | warned status transition, e.g. deprecated → stable (warning) | AGSC-02-23 | warning |
+| `AGSC-E410` | language variant diverges from its primary's Links or clusters (warning) | AGSC-01-13a | warning — not raised at 1.0: language variants are reserved to 1.1 (AGSC-00-20) |
+| `AGSC-E411` | Link target is a retired item (warning) | AGSC-11-22 | warning |
+| `AGSC-E412` | raster or unsafe image attachment on a pattern (must be SVG; no embedded raster, no script) | AGSC-02-98 | error |
+| `AGSC-E413` | attachment file absent or its bytes do not match the recorded SHA-256 | AGSC-01-34 | error |
+| `AGSC-E414` | orphan file under `content/attachments/` that no item names (warning) | AGSC-01-34 | warning |
+| `AGSC-E415` | `export`-tagged fenced block ignored at 1.x (warning; extraction reserved) | AGSC-02-22 | warning |
+| `AGSC-E416` | overlapping labels: two published items of one `type` with equal `title` after NFC and case folding (warning) | AGSC-05-21 | warning |
+| `AGSC-E501` | `prov` missing | AGSC-08-01 | error |
+| `AGSC-E502` | *reserved, never raised: an invalid `prov.origin` is an enum violation and takes `AGSC-E203` under the precedence paragraph* | AGSC-02-07 | — (reserved, never raised) |
+| `AGSC-E503` | `prov.operator` missing | AGSC-08-01 | error |
+| `AGSC-E504` | DCO-Plus trailer missing or malformed | AGSC-08-06 | error |
+| `AGSC-E505` | agent-authored change without matching operator | AGSC-08-07 | error |
+| `AGSC-E506` | adoption defaulted or normalized a value (AGSC-02-90); `site.base` is the `http://localhost` development placeholder (AGSC-01-19); a `remember` `sources[]` entry was dropped as malformed (AGSC-09-14b); `lint --fix` normalised a file, or reported that it would (AGSC-04-19; the encoding third of that rule is `AGSC-E108`); a git tag that cannot be a content version was not used as one (AGSC-04-25); an import wrote a foreign record of unestablished licence as a draft, or `kind: explainer` on a mapped concept, or read a source of a newer MINOR of the tool's own MAJOR (AGSC-01-22); a discovery document of a newer MINOR carried a relation or a target attribute the validator does not know, which it ignored (AGSC-09-93); a folder `README.md` or `_index.md` under `content/` was skipped (AGSC-01-05); a Bundle written for a newer MINOR of the tool's own MAJOR was read (AGSC-00-15); a page tool returned a `remember` item with no operator (AGSC-09-14b); a pack member that is not a procedure was not imported (AGSC-07-22) — all warnings | AGSC-00-15, AGSC-01-05, AGSC-01-22, AGSC-02-90, AGSC-04-25, AGSC-01-19, AGSC-07-22, AGSC-09-14b, AGSC-04-19, AGSC-09-93 | warning |
+| `AGSC-E507` | adopted body reference no longer resolves after relocation (warning) | AGSC-02-95 | warning |
+| `AGSC-E508` | Level-0 item inherited `prov` from `bundle.operator` (warning) | AGSC-10-02 | warning |
+| `AGSC-E509` | agent-lane Proposal outside the declared `types[]`/`tasks[]`, or from an undeclared or disabled agent | AGSC-08-28 | error |
+| `AGSC-E510` | model call skipped: a monthly budget reached — the lane's `budget_usd_month` or the node's `budget.usd_month` (warning) | AGSC-08-28, AGSC-01-38 | warning |
+| `AGSC-E511` | agent-lane Proposal exceeds `max_new_items` (items created) or `max_claims` (tasks held in `TASK_STATE_WORKING`), or claims a task already held in `TASK_STATE_WORKING` by another participant | AGSC-08-28, AGSC-10-17 | error |
+| `AGSC-E601` | JSON artefact not JCS-canonical | AGSC-04-06 | error |
+| `AGSC-E602` | build not byte-reproducible, or a `run` result that does not reproduce the `expect` block recorded beside it (AGSC-09-94) | AGSC-04-02, AGSC-09-94 | error |
+| `AGSC-E603` | `SOURCE_DATE_EPOCH` malformed (exit 2) | AGSC-04-09 | error, exit 2 |
+| `AGSC-E604` | emitted text not NFC | AGSC-04-07 | error |
+| `AGSC-E605` | blank node in an RDF export | AGSC-05-08 | error |
+| `AGSC-E606` | build instant defaulted to 0, no git history (warning) | AGSC-04-09 | warning |
+| `AGSC-E607` | combining sequence exceeds the normalisation bound (error) | AGSC-04-23 | error |
+| `AGSC-E701` | ledger chain broken | AGSC-08-23 | error |
+| `AGSC-E702` | ledger rewritten or out of order | AGSC-08-23 | error |
+| `AGSC-E703` | git history too shallow to derive the ledger (exit 2) | AGSC-08-20a, AGSC-08-23 | error, exit 2 |
+| `AGSC-E704` | *(unassigned — reserved; never emitted)* | — | — (reserved, never raised) |
+| `AGSC-E705` | *(unassigned — reserved; never emitted)* | — | — (reserved, never raised) |
+| `AGSC-E706` | content-branch commit outside the merged-pull-request path, or the ingest identity holding ruleset bypass rights | AGSC-08-26 | error |
+| `AGSC-E707` | forge enforcement artefact drift — a file the repository tracks at the forge's own path differs from the compiled one (never a previous run's `dist/forge/` output) — or an `enforce[]` value that cannot be compiled | AGSC-08-12 | error |
+| `AGSC-E801` | `excludes` conflict after closure | AGSC-07-06 | error |
+| `AGSC-E802` | composition target unavailable (slug absent from the graph; `requires` target hidden by `supersedes`; a retired item named in a selection) | AGSC-07-03, AGSC-07-05a, AGSC-11-22 | error |
+| `AGSC-E803` | `contradicts` or missing `uses` (warning) | AGSC-07-07 | warning |
+| `AGSC-E804` | port with no producer or no consumer (warning) | AGSC-02-96, AGSC-07-23 | warning |
+| `AGSC-E805` | saved architecture's stored verdict digest is stale (warning) | AGSC-02-97, AGSC-07-24 | warning |
+| `AGSC-E901` | file not found — including a validator input that is absent or carries nothing to validate (AGSC-09-90), an index shard a manifest names and a reader cannot obtain (AGSC-06-21), and an absent authored `.well-known/security.txt` (AGSC-06-36) | AGSC-01-01, AGSC-06-21, AGSC-06-36, AGSC-09-90 | error |
+| `AGSC-E902` | path escapes the Bundle root, or violates the relative-path grammar — including an archive entry name that is not relative (AGSC-07-13a) | AGSC-01-16, AGSC-01-35, AGSC-03-11, AGSC-07-13a | error |
+| `AGSC-E903` | archive refused — on the way IN, an archive offered as build input (AGSC-01-16); on the way OUT, a file set the byte profile of AGSC-07-13a cannot represent: a duplicate entry name, an entry or a total above 4,294,967,295 bytes, or more than 65,535 entries | AGSC-01-16, AGSC-07-13a | error |
+| `AGSC-E904` | size cap or normative budget exceeded — an input file over 1 MiB, an attachment over `attachments{max_bytes}`, or an emitted artefact over a budget of AGSC-06-21 that no sharding rule relieves | AGSC-01-16, AGSC-01-34, AGSC-06-21 | error |
+| `AGSC-E905` | peer fetch refused: scheme, address range or redirect hop violates the transport rules | AGSC-11-07, AGSC-11-08, AGSC-11-09 | error |
+| `AGSC-E906` | federation walk cap exceeded (hop limit, fan-out or request cap); result partial | AGSC-11-10 | error; the walk continues and its result is marked partial |
+| `AGSC-E907` | peer unreachable, its discovery document invalid, or a cross-origin fetch aborted at a cap of AGSC-11-10(f); skipped for this walk | AGSC-11-10 | error; the peer is skipped for this walk |
 
 - **AGSC-09-15** Codes are permanent. A retired code MUST NOT be reused; new codes take the next free number in their block. [AGSC-00-16]
 

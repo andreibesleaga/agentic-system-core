@@ -37,6 +37,27 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   check); `adopt-0007` and `adopt-0008` run the real `init` and `ci`. The test-case format
   gains `input.after_init[]` for the files a publisher adds between the two verbs.
 
+- **Conformance made exact.** AGSC-10-15 lists the cases that sit in a lower Level's
+  areas but test a higher Level's behaviour (five belong to Level 1, eight to Level 2, ten
+  to Level 3); a claim at a lower Level neither runs them nor fails for them, and
+  `agsc conform --level <n>` selects by that list. AGSC-09-01 is now the one complete list
+  of what a claim states (the implementation, the Level, the full `spec_version`, the cases
+  run and passed, the Unicode version, the deployment profile, the declared surfaces, the
+  checker used); AGSC-00-12 points to it. AGSC-02-92 places adoption's transformations at
+  Level 2 and its `init`/`ci` run at Level 3.
+- **Severity of every error code.** The registry of §9.4 has a Severity column; codes whose
+  severity depends on the context (`AGSC-E108`, `AGSC-E204`, `AGSC-E401`, `AGSC-E402`,
+  `AGSC-E407`) name each context. No severity changes. `tools/validate-spec` reads the new
+  column and still reads the three-column form of an older text.
+- **Text written for a release candidate.** AGSC-05-25 and AGSC-05-09 say what the
+  vocabulary version is from `1.0.0` on (`1.0.0`, changed later only when a term changes);
+  AGSC-10-05 no longer promises a future claim; AGSC-00-16 says a release's tag is its
+  immutable copy and the chapters are amended in place with dated notes; AGSC-10-08 drops a
+  SHOULD no node could follow; chapter 11's status line no longer names a release candidate.
+- `docs/IMPLEMENTERS-GUIDE.md` gains the per-Level checklist AGSC-10-10 requires, and names
+  Level 3 and the Level-1 areas as the specification does; `docs/CONFORMANCE-STATEMENTS.md`
+  gives a claim sentence with every element of AGSC-09-01.
+
 ### Fixed
 
 - `lint`, `build` and `ci` now report the development placeholder `site.base`

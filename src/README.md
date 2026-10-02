@@ -261,9 +261,10 @@ vectors: <pass> pass, <fail> fail, <skip> skip (<withdrawn> withdrawn, <pending>
 `node:test` and writes the AGSC-09-03 report. `npm audit` needs the network and is run
 explicitly (`AGSC_AUDIT=1 node --test tests/arch/pinned-dependencies.test.js`).
 
-**No conformance claim is made before 1.0.0** (AGSC-10-05): a claim names one Level
-and is backed by a green run of that Level's vector set at a released version. A
-report written by `agsc conform` is not a claim (AGSC-09-03).
+**A claim is not a report** (AGSC-10-05, AGSC-09-01): a claim names one Level, is backed
+by a green run of that Level's case set at a released version and states the elements
+AGSC-09-01 lists. A report written by `agsc conform` is the record of a run, not a claim
+(AGSC-09-03).
 
 ## 6. Using the fixture from a foreign port
 

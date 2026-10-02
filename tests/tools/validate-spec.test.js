@@ -143,6 +143,39 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
     assert.ok(json.findings.some((f) => /AGSC-02-01 assigns AGSC-E201 and the section 9.4 row/u.test(f.message)));
   });
 
+  it('the severity column of 1.0.0: the rule list is the third cell, not the last', () => {
+    // §9.4 gained a fourth column, Severity, for 1.0.0. The rules a row names are in the
+    // third cell; reading the last cell would take the severity for the rule list and
+    // report every assigning rule as missing from its row.
+    const rows = (severity) => specRoot({
+      'spec/09-conformance.md': [
+        '# Conformance', '', '| Code | Meaning | Rule | Severity |', '|---|---|---|---|',
+        `| \`AGSC-E201\` | schema validation failed | AGSC-09-01 | ${severity} |`, '',
+        '- **AGSC-09-01** A mismatch is `AGSC-E201`. [PRD-054]', '',
+      ].join('\n'),
+    });
+    for (const severity of ['error', 'warning', 'error; a warning when the context says so']) {
+      const { json } = envelope('validate-spec', [rows(severity)]);
+      assert.equal(json.findings.filter((f) => f.severity === 'error').length, 0, `${severity}: ${JSON.stringify(json.findings)}`);
+    }
+    // The three-column form still checks, so an older text can be validated.
+    const old = specRoot({
+      'spec/09-conformance.md': [
+        '# Conformance', '', '| Code | Meaning | Rule |', '|---|---|---|',
+        '| `AGSC-E201` | schema validation failed | AGSC-09-01 |', '',
+        '- **AGSC-09-01** A mismatch is `AGSC-E201`. [PRD-054]', '',
+      ].join('\n'),
+    });
+    assert.equal(envelope('validate-spec', [old]).json.findings.filter((f) => f.severity === 'error').length, 0);
+  });
+
+  it('every row of the registry of this distribution carries a severity', () => {
+    const text = fs.readFileSync(path.join(REPO, 'spec', '09-conformance.md'), 'utf8');
+    const rows = text.split('\n').filter((l) => /^\| `AGSC-E\d{3}`/u.test(l));
+    assert.equal(rows.length, 91);
+    for (const row of rows) assert.match(row, /\| (?:error|warning|—)[^|]*\|\s*$/u, row.slice(0, 40));
+  });
+
   it('a registered code no rule names is a warning, and a reserved row is silent', () => {
     const root = specRoot({
       'spec/09-conformance.md': [

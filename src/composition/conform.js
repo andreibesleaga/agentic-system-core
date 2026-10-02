@@ -35,6 +35,20 @@ const LEVEL_AREAS = Object.freeze({
     'adapters', 'channels', 'harness', 'run', 'conform', 'boundary', 'chunks', 'boards']),
 });
 
+/**
+ * AGSC-10-15 (amended for 1.0.0): the cases of a Level's areas that exercise a
+ * HIGHER Level's behaviour, each with the Level it belongs to. Transcribed from the
+ * rule's table and from nowhere else; `tests/composition/conform-higher-level-cases
+ * .test.js` holds the two to one list.
+ */
+const HIGHER_LEVEL_CASES = Object.freeze({
+  'bundle-0001': 1, 'bundle-0006': 1, 'bundle-0007': 1, 'disc-0005': 1, 'disc-0019': 1,
+  'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2, 'disc-0018': 2, 'lint-0026': 2,
+  'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3,
+  'lint-0001': 3, 'lint-0002': 3, 'lint-0003': 3, 'lint-0028': 3, 'lint-0029': 3,
+  'adopt-0007': 3, 'adopt-0008': 3,
+});
+
 /** AGSC-04-24: the artefacts for which byte-identity ACROSS implementations holds. */
 const CROSS_IMPLEMENTATION = Object.freeze([
   '/graph.jsonld', '/graph.ttl', '/graph.nq', '/search.json', '/chunks.jsonl', '/ledger.jsonl',
@@ -67,8 +81,19 @@ function areasForLevel(level) {
 }
 
 /**
+ * casesForLevel(vectors, level) -> the cases a claim at `level` runs (AGSC-10-15):
+ * those of the Level's areas, less every case the rule's table assigns to a higher
+ * Level. The order of `vectors` is kept.
+ */
+function casesForLevel(vectors, level) {
+  const areas = new Set(areasForLevel(level));
+  return (vectors || []).filter((v) => areas.has(v.area)
+    && (HIGHER_LEVEL_CASES[v.id] === undefined || HIGHER_LEVEL_CASES[v.id] <= level));
+}
+
+/**
  * claimCompleteness(claim) -> { complete, missing }
- * AGSC-09-01: a claim names its Level, the spec_version MAJOR.MINOR and the
+ * AGSC-09-01 (as amended for 1.0.0): the machine-readable claim carries the Level, the full spec_version and the
  * vector set passed; AGSC-04-22 adds the runtime's Unicode version.
  */
 function claimCompleteness(claim) {
@@ -171,9 +196,11 @@ function report(input) {
 
 module.exports = {
   CROSS_IMPLEMENTATION,
+  HIGHER_LEVEL_CASES,
   HTML_REASON,
   LEVEL_NAMES,
   areasForLevel,
+  casesForLevel,
   claimCompleteness,
   crossImplementationClaim,
   divergenceVerdict,

@@ -36,7 +36,7 @@ function run(ctx) {
   }
 
   const engineFs = createFileSystem(helpers.ENGINE_ROOT);
-  const list = conformance.vectors(engineFs, { areas: conform.areasForLevel(level) });
+  const list = conform.casesForLevel(conformance.vectors(engineFs, { areas: conform.areasForLevel(level) }), level);
   const { results, tally } = conformance.runAll(list, {
     ctx: { root: helpers.ENGINE_ROOT, schemas: helpers.schemas(), specVersion: ctx.specVersion, surfaces: conformance.DECLARED_SURFACES },
     handlerFor,
@@ -63,8 +63,8 @@ function run(ctx) {
 /**
  * AGSC-09-02: a `skip` counts as a failure for a required vector — but a WITHDRAWN
  * vector is counted for nothing at all (AGSC-00-16, AGSC-09-05), so it raises no
- * finding. AGSC-10-05: no Level is claimed before 1.0.0 — the report is the record
- * of a run, never a claim.
+ * finding. AGSC-10-05, AGSC-09-01: the report is the record of a run, never a
+ * claim.
  *
  * A pure function of the run's results, so the mapping can be asserted without a
  * distribution that is missing a handler.

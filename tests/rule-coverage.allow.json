@@ -60,15 +60,6 @@
     },
     "AGSC-01-13a": {
       "why": "Reserved to 1.1 with AGSC-01-13: no variant route exists at 1.0, so nothing declares a variant's language or links its primary; the 1.1 behaviour is not implemented."
-    },
-    "AGSC-10-08": {
-      "why": "A node cannot publish its bundle id in content/index.md: bundle.schema.json has no such key and the engine keeps bundle.id in agsc.config.json only."
-    },
-    "AGSC-10-10": {
-      "why": "docs/IMPLEMENTERS-GUIDE.md has no ten-step Level-0 path and no platform mapping table (MediaWiki, WordPress, Docusaurus/MkDocs/Hugo, Notion/Confluence, Obsidian/Logseq, Django/Laravel/Rails) yet; the rule binds the 1.0.0 distribution."
-    },
-    "AGSC-10-11": {
-      "why": "The end-to-end half is met (tests/e2e/level-0-without-engine.test.js validates a Level-0 node written without the engine); the guide half waits for the steps of AGSC-10-10, each of which must name its validator."
     }
   }
 }

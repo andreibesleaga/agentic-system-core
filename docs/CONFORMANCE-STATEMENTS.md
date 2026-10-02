@@ -22,7 +22,13 @@ vectors, and nobody needs permission to publish the result.
 
 > «Your implementation name» «version» conforms to AgenticSystemCore
 > «specification version», Level «n». Verified against the published
-> conformance vectors on «date»: «passed» of «total» passed.
+> conformance vectors on «date»: «passed» of «total» passed in the
+> «named» areas, with Unicode «version»«, using «checker» ».
+
+The specification version is the full one, a release candidate named as such
+(`1.0.0-rc.6`, not `1.0`), and the checker part is needed only when you ran the
+cases with someone else's checker rather than your own. Every element a claim
+states is listed once, in rule AGSC-09-01.
 
 For a partial result, say so in the same breath — this is more useful to a
 reader than a claim that is technically true:
@@ -32,10 +38,11 @@ reader than a claim that is technically true:
 > «total» vectors passed; the «named» areas are not implemented.
 
 A node's claim also names where it is served, because
-AGSC-06-01 requires a claim to name its deployment profile. End either sentence
-with:
+AGSC-06-01 requires a claim to name its deployment profile, and every surface it
+declares with what proves it (AGSC-11-19). End either sentence with:
 
-> Deployment profile: «profile» — «its claim».
+> Deployment profile: «profile» — «its claim». Surfaces: «surface» (proved by
+> «case ids or validator run»), …
 
 `agsc-host list` and `agsc-host emit` print each profile's claim text; the profiles
 are described in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md#where-a-node-can-live).

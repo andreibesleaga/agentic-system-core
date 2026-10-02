@@ -1,6 +1,6 @@
 # AGSC-11 — The node boundary: cross-origin access, federation, contribution, surfaces, visibility, retirement
 
-**Status: NORMATIVE at `1.0.0-rc.6`** (§8 of `docs/SPEC.md` applies). This chapter governs everything that happens where a node meets another node, a browser, a stranger's URL, or a reader who may not see everything. That boundary is specified once, here, and cited from the other chapters rather than restated. Rules are `AGSC-11-nn`; vectors live in `tests/vectors/boundary/` (area `boundary`, ids `bnd-nnnn`); new codes are registered in §9.4 under their existing areas (`2` SCHEMA, `3` LINK, `4` LINT, `9` IO) — no new code area exists.
+**Status: NORMATIVE** (§8 of `docs/SPEC.md` applies; the chapter has been normative since `1.0.0-rc.6`, the first public version). This chapter governs everything that happens where a node meets another node, a browser, a stranger's URL, or a reader who may not see everything. That boundary is specified once, here, and cited from the other chapters rather than restated. Rules are `AGSC-11-nn`; vectors live in `tests/vectors/boundary/` (area `boundary`, ids `bnd-nnnn`); new codes are registered in §9.4 under their existing areas (`2` SCHEMA, `3` LINK, `4` LINT, `9` IO) — no new code area exists.
 
 ## 11.1 Scope, parameters and extensibility
 

@@ -69,7 +69,7 @@ than landing in the wrong context.
 Until it does, the four verbs that need it — `export`, `import`, `trace` and the
 Level-2 half of `skills` — answer with the AGSC-09-11 envelope, exit 1 and one
 finding that names the rule they will implement. They never report a silent
-success, and no conformance Level is claimed before 1.0.0 (AGSC-10-05).
+success.
 
 Created at integration, 2026-09-18.
 
