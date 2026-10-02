@@ -22,7 +22,7 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 
-const DEFAULT_SET = path.resolve(__dirname, '..', 'bench', 'queries', 'bench-v1');
+const DEFAULT_SET = path.resolve(__dirname, '..', 'bench', 'queries', 'bench-v2');
 const HELP = `bench [--json] [--node <dir>] [--set <dir>] [--k <n>] [--surface <list>] [--out <file>] [--dry-run] [--help]
 
   Scores a labelled query set against a built node's published surfaces and
@@ -30,7 +30,7 @@ const HELP = `bench [--json] [--node <dir>] [--set <dir>] [--k <n>] [--surface <
 
   --node <dir>     the built output of a node (the directory holding search.json)
   --set <dir>      a query set in BEIR layout: queries.jsonl + qrels/test.tsv
-                   (default: the committed set in bench/queries/bench-v1)
+                   (default: the committed set in bench/queries/bench-v2)
   --k <n>          cut-off for the @k measures (default 10)
   --surface <list> comma-separated: search,chunks,llms (default: all three)
   --out <file>     write the results JSON here as well as reporting it

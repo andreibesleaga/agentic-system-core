@@ -204,7 +204,7 @@ describe('tools/bench — the retrieval runner', () => {
   });
 
   it('the committed set labels every query it carries', () => {
-    const committed = bench.loadSet(path.join(REPO, 'bench', 'queries', 'bench-v1'));
+    const committed = bench.loadSet(path.join(REPO, 'bench', 'queries', 'bench-v2'));
     assert.equal(committed.queries.length, 20);
     for (const query of committed.queries) {
       assert.ok(committed.qrels.has(query.id), `${query.id} has no gold label`);

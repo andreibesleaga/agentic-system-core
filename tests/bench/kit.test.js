@@ -202,6 +202,39 @@ describe('bench/parity.js — one contract, two transports', () => {
     assert.equal(r.answer_types.none, 1);
   });
 
+  it('AGSC-09-16: a `remember` without an operator is the one required difference, checked by its shape and counted apart', async () => {
+    const dir = path.join(tmpdir(), 'bundle-remember');
+    fs.cpSync(FIXTURE, dir, { recursive: true });
+    const spec = {
+      calls: [
+        ['remember', { body: 'A lesson.', kind: 'lesson', title: 'A Lesson Learned Here' }],
+        ['remember', { body: 'A lesson.', kind: 'lesson', operator: 'human:someone', title: 'A Lesson Learned Here' }],
+      ],
+      per_item: [],
+    };
+    const r = await parity.run(dir, spec);
+    assert.equal(r.calls, 2);
+    // The call without an operator: the server refuses (AGSC-E003), the page proposes
+    // with prov.operator absent and AGSC-E506 — the rule's own exception, not a failure.
+    assert.equal(r.required_difference.length, 1, JSON.stringify(r));
+    assert.equal(r.required_difference[0].tool, 'remember');
+    assert.equal(r.differing.length, 0, JSON.stringify(r.differing));
+    assert.equal(r.equal, 1);
+    assert.equal(r.equal + r.required_difference.length + r.differing.length, r.calls);
+    assert.equal(r.per_tool.remember.required_difference, 1);
+  });
+
+  it('a difference that does not have the required shape stays a difference', () => {
+    const server = { body: { code: 'AGSC-E003' }, type: 'error' };
+    const page = { body: { findings: [{ code: 'AGSC-E506' }], frontmatter: { prov: { origin: 'ai-generated' } } }, type: 'proposal' };
+    assert.equal(parity.requiredDifference('remember', { kind: 'lesson' }, server, page), true);
+    assert.equal(parity.requiredDifference('remember', { kind: 'lesson', operator: 'human:x' }, server, page), false);
+    assert.equal(parity.requiredDifference('propose', { slug: 'a' }, server, page), false);
+    assert.equal(parity.requiredDifference('remember', {}, server, { ...page, body: { ...page.body, frontmatter: { prov: { operator: 'human:x' } } } }), false);
+    assert.equal(parity.requiredDifference('remember', {}, { body: { code: 'AGSC-E201' }, type: 'error' }, page), false);
+    assert.equal(parity.requiredDifference('remember', {}, server, { ...page, body: { ...page.body, findings: [] } }), false);
+  });
+
   it('the committed call list covers all seven tools', () => {
     const spec = JSON.parse(fs.readFileSync(path.join(REPO, 'bench', 'corpus', 'parity-calls.json'), 'utf8'));
     const names = new Set([...spec.calls, ...spec.per_item].map(([name]) => name));

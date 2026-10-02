@@ -229,7 +229,7 @@
         "only_left": [],
         "only_right": []
       },
-      "files_compared": 42,
+      "files_compared": 49,
       "os_matrix": {
         "note": "A second operating system cannot be measured on this machine; the CI matrix is the only place it can be run.",
         "ran_here": [
@@ -691,6 +691,7 @@
         {
           "class": "hidden-text",
           "codes": [
+            "AGSC-E109",
             "AGSC-E402"
           ],
           "expect": [
@@ -813,6 +814,7 @@
         {
           "class": "scheme",
           "codes": [
+            "AGSC-E109",
             "AGSC-E401"
           ],
           "expect": [
@@ -890,7 +892,9 @@
         },
         {
           "class": "secret",
-          "codes": [],
+          "codes": [
+            "AGSC-E109"
+          ],
           "expect": [],
           "id": "ctl-placeholder",
           "kind": "bundle",
@@ -1803,9 +1807,7 @@
         },
         {
           "class": "control",
-          "codes": [
-            "AGSC-E602"
-          ],
+          "codes": [],
           "expect": [],
           "id": "ctl-svg-clean",
           "kind": "bundle",
@@ -1901,14 +1903,14 @@
         "index_bytes": 1048576,
         "page_bytes": 102400
       },
-      "command": "node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3   # 2026-09-25, after the write-path change",
+      "command": "node bench/measure.js --layer perf   # sizes 100 500 1000 5000 10000, 3 runs each, median",
       "machine": {
         "arch": "x64",
         "cpus": 16,
         "model": "AMD Ryzen 7 5800H with Radeon Graphics",
         "node": "v24.18.0",
         "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
-        "total_mem_bytes": 33560788992
+        "total_mem_bytes": 33560780800
       },
       "rows": [
         {
@@ -1917,7 +1919,7 @@
           "chunks_bytes_per_item": 6475,
           "files": 343,
           "html_pages": 115,
-          "html_largest_bytes": 17834,
+          "html_largest_bytes": 17894,
           "html_largest_path": "search/index.html",
           "html_median_bytes": 6132,
           "html_over_budget": 0,
@@ -1926,18 +1928,18 @@
           "items": 100,
           "largest_page_bytes": 647461,
           "largest_page_path": "chunks.jsonl",
-          "ms_median": 1620,
+          "ms_median": 1717,
           "ms_runs": [
-            1654,
-            1620,
-            1587
+            1714,
+            1719,
+            1717
           ],
-          "output_bytes": 3125302,
-          "rss_kb_median": 146740,
+          "output_bytes": 3155680,
+          "rss_kb_median": 124420,
           "rss_kb_runs": [
-            124460,
-            147576,
-            146740
+            123356,
+            124420,
+            151744
           ]
         },
         {
@@ -1955,18 +1957,18 @@
           "items": 500,
           "largest_page_bytes": 3243064,
           "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 4177,
+          "ms_median": 4252,
           "ms_runs": [
-            4177,
-            4073,
-            4201
+            4269,
+            4252,
+            4178
           ],
-          "output_bytes": 14986776,
-          "rss_kb_median": 270032,
+          "output_bytes": 15120021,
+          "rss_kb_median": 271624,
           "rss_kb_runs": [
-            270032,
-            267992,
-            270700
+            271852,
+            271624,
+            268704
           ]
         },
         {
@@ -1984,18 +1986,18 @@
           "items": 1000,
           "largest_page_bytes": 3524296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 6971,
+          "ms_median": 7133,
           "ms_runs": [
-            6992,
-            6793,
-            6971
+            7450,
+            6998,
+            7133
           ],
-          "output_bytes": 29736703,
-          "rss_kb_median": 318688,
+          "output_bytes": 29998747,
+          "rss_kb_median": 329812,
           "rss_kb_runs": [
-            318688,
-            317808,
-            319800
+            319796,
+            329812,
+            398812
           ]
         },
         {
@@ -2013,18 +2015,18 @@
           "items": 5000,
           "largest_page_bytes": 17650296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 30167,
+          "ms_median": 36777,
           "ms_runs": [
-            30167,
-            30335,
-            28903
+            36612,
+            36777,
+            37610
           ],
-          "output_bytes": 148193168,
-          "rss_kb_median": 965828,
+          "output_bytes": 149505569,
+          "rss_kb_median": 1042840,
           "rss_kb_runs": [
-            967120,
-            965348,
-            965828
+            1042840,
+            1050052,
+            1037380
           ]
         },
         {
@@ -2042,104 +2044,22 @@
           "items": 10000,
           "largest_page_bytes": 35307804,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 58515,
+          "ms_median": 90017,
           "ms_runs": [
-            61690,
-            58515,
-            57551
+            91756,
+            89845,
+            90017
           ],
-          "output_bytes": 296272824,
-          "rss_kb_median": 1718264,
+          "output_bytes": 298898210,
+          "rss_kb_median": 1785768,
           "rss_kb_runs": [
-            1707660,
-            1718264,
-            1720232
+            1792320,
+            1785768,
+            1759268
           ]
         }
       ],
-      "runs_per_size": 3,
-      "measured_on": "2026-09-25",
-      "before_write_path_change": {
-        "command": "node bench/measure.js --layer perf   # sizes 100 500 1000 5000 10000, 3 runs each, median",
-        "measured_on": "2026-09-25",
-        "rows": [
-          {
-            "items": 100,
-            "ms_median": 1795,
-            "ms_runs": [
-              1795,
-              1835,
-              1780
-            ],
-            "rss_kb_median": 123848,
-            "rss_kb_runs": [
-              123424,
-              140444,
-              123848
-            ]
-          },
-          {
-            "items": 500,
-            "ms_median": 4630,
-            "ms_runs": [
-              4630,
-              4889,
-              4621
-            ],
-            "rss_kb_median": 270064,
-            "rss_kb_runs": [
-              270064,
-              271380,
-              269544
-            ]
-          },
-          {
-            "items": 1000,
-            "ms_median": 8233,
-            "ms_runs": [
-              8124,
-              8345,
-              8233
-            ],
-            "rss_kb_median": 324328,
-            "rss_kb_runs": [
-              324328,
-              381152,
-              323784
-            ]
-          },
-          {
-            "items": 5000,
-            "ms_median": 38180,
-            "ms_runs": [
-              39343,
-              38180,
-              37013
-            ],
-            "rss_kb_median": 977756,
-            "rss_kb_runs": [
-              977800,
-              976572,
-              977756
-            ]
-          },
-          {
-            "items": 10000,
-            "ms_median": 79104,
-            "ms_runs": [
-              79104,
-              78954,
-              79625
-            ],
-            "rss_kb_median": 1705684,
-            "rss_kb_runs": [
-              1705592,
-              1718496,
-              1705684
-            ]
-          }
-        ]
-      }
+      "runs_per_size": 3
     },
     "retrieval": {
       "command": "node tools/bench --node <built node> --origin-node <name> --json",
@@ -2155,35 +2075,35 @@
           "origin_node": "patterns",
           "queries": 12,
           "schema": "agsc.bench.v1",
-          "set": "bench/queries/bench-v1",
+          "set": "bench/queries/bench-v2",
           "status": "pass",
           "surfaces": {
             "chunks": {
-              "documents": 54,
+              "documents": 128,
               "queries_scored": 12,
-              "ndcg": 0.891,
-              "p1": 0.75,
-              "precision": 0.1,
-              "recall": 1,
-              "rr": 0.8542
+              "ndcg": 0.5469,
+              "p1": 0.4167,
+              "precision": 0.0667,
+              "recall": 0.6667,
+              "rr": 0.5334
             },
             "llms": {
-              "documents": 10,
+              "documents": 22,
               "queries_scored": 12,
-              "ndcg": 0.7302,
+              "ndcg": 0.7363,
               "p1": 0.5833,
-              "precision": 0.0833,
-              "recall": 0.8333,
-              "rr": 0.6944
+              "precision": 0.0917,
+              "recall": 0.9167,
+              "rr": 0.6792
             },
             "search": {
-              "documents": 15,
+              "documents": 42,
               "queries_scored": 12,
-              "ndcg": 0.8457,
-              "p1": 0.6667,
-              "precision": 0.1,
-              "recall": 1,
-              "rr": 0.7944
+              "ndcg": 0.7369,
+              "p1": 0.5833,
+              "precision": 0.0917,
+              "recall": 0.9167,
+              "rr": 0.6881
             }
           },
           "verb": "bench"
@@ -2199,20 +2119,20 @@
           "origin_node": "main",
           "queries": 8,
           "schema": "agsc.bench.v1",
-          "set": "bench/queries/bench-v1",
+          "set": "bench/queries/bench-v2",
           "status": "pass",
           "surfaces": {
             "chunks": {
-              "documents": 17,
+              "documents": 21,
               "queries_scored": 8,
-              "ndcg": 0.7049,
+              "ndcg": 0.6956,
               "p1": 0.375,
               "precision": 0.1,
               "recall": 1,
-              "rr": 0.6094
+              "rr": 0.599
             },
             "llms": {
-              "documents": 13,
+              "documents": 14,
               "queries_scored": 8,
               "ndcg": 0.6647,
               "p1": 0.5,
@@ -2221,13 +2141,13 @@
               "rr": 0.5979
             },
             "search": {
-              "documents": 15,
+              "documents": 17,
               "queries_scored": 8,
               "ndcg": 0.6939,
               "p1": 0.5,
               "precision": 0.0875,
               "recall": 0.875,
-              "rr": 0.6464
+              "rr": 0.6453
             }
           },
           "verb": "bench"
@@ -2243,59 +2163,78 @@
       },
       "command": "node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…",
       "nodes": {
-        "minimal": {
+        "fixture": {
           "answer_types": {
             "items": 5,
-            "error": 12,
+            "error": 15,
             "answer": 3,
             "verdict": 5,
-            "proposal": 6,
             "item": 3,
-            "links": 3
+            "links": 3,
+            "proposal": 3
           },
           "calls": 37,
           "differing": [],
-          "equal": 37,
+          "equal": 35,
           "items": 3,
           "items_published": 3,
           "per_tool": {
             "search": {
               "calls": 7,
-              "equal": 7
+              "equal": 7,
+              "required_difference": 0
             },
             "ask": {
               "calls": 4,
-              "equal": 4
+              "equal": 4,
+              "required_difference": 0
             },
             "compose": {
               "calls": 6,
-              "equal": 6
+              "equal": 6,
+              "required_difference": 0
             },
             "remember": {
               "calls": 4,
-              "equal": 4
+              "equal": 2,
+              "required_difference": 2
             },
             "read": {
               "calls": 5,
-              "equal": 5
+              "equal": 5,
+              "required_difference": 0
             },
             "links": {
               "calls": 5,
-              "equal": 5
+              "equal": 5,
+              "required_difference": 0
             },
             "propose": {
               "calls": 4,
-              "equal": 4
+              "equal": 4,
+              "required_difference": 0
             },
             "nosuchtool": {
               "calls": 1,
-              "equal": 1
+              "equal": 1,
+              "required_difference": 0
             },
             "READ": {
               "calls": 1,
-              "equal": 1
+              "equal": 1,
+              "required_difference": 0
             }
           },
+          "required_difference": [
+            {
+              "args": "{\"body\":\"x\",\"kind\":\"concept\",\"sources\":[{\"id\":\"s1\",\"resource\":\"nonsense\"}],\"title\":\"Handoff\"}",
+              "tool": "remember"
+            },
+            {
+              "args": "{\"body\":\"A lesson.\",\"kind\":\"lesson\",\"title\":\"A Lesson Learned Here\"}",
+              "tool": "remember"
+            }
+          ],
           "stdio_exit": 0,
           "stdio_stderr_bytes": 0,
           "transport_equal": 37,
@@ -2305,136 +2244,176 @@
         "patterns": {
           "answer_types": {
             "items": 5,
-            "error": 12,
+            "error": 15,
             "answer": 3,
-            "verdict": 17,
-            "proposal": 18,
-            "item": 15,
-            "links": 15
+            "verdict": 44,
+            "item": 42,
+            "links": 42,
+            "proposal": 42
           },
-          "calls": 85,
+          "calls": 193,
           "differing": [],
-          "equal": 85,
-          "items": 173,
-          "items_published": 15,
+          "equal": 191,
+          "items": 42,
+          "items_published": 42,
           "per_tool": {
             "search": {
               "calls": 7,
-              "equal": 7
+              "equal": 7,
+              "required_difference": 0
             },
             "ask": {
               "calls": 4,
-              "equal": 4
+              "equal": 4,
+              "required_difference": 0
             },
             "compose": {
-              "calls": 18,
-              "equal": 18
+              "calls": 45,
+              "equal": 45,
+              "required_difference": 0
             },
             "remember": {
               "calls": 4,
-              "equal": 4
+              "equal": 2,
+              "required_difference": 2
             },
             "read": {
-              "calls": 17,
-              "equal": 17
+              "calls": 44,
+              "equal": 44,
+              "required_difference": 0
             },
             "links": {
-              "calls": 17,
-              "equal": 17
+              "calls": 44,
+              "equal": 44,
+              "required_difference": 0
             },
             "propose": {
-              "calls": 16,
-              "equal": 16
+              "calls": 43,
+              "equal": 43,
+              "required_difference": 0
             },
             "nosuchtool": {
               "calls": 1,
-              "equal": 1
+              "equal": 1,
+              "required_difference": 0
             },
             "READ": {
               "calls": 1,
-              "equal": 1
+              "equal": 1,
+              "required_difference": 0
             }
           },
+          "required_difference": [
+            {
+              "args": "{\"body\":\"x\",\"kind\":\"concept\",\"sources\":[{\"id\":\"s1\",\"resource\":\"nonsense\"}],\"title\":\"Handoff\"}",
+              "tool": "remember"
+            },
+            {
+              "args": "{\"body\":\"A lesson.\",\"kind\":\"lesson\",\"title\":\"A Lesson Learned Here\"}",
+              "tool": "remember"
+            }
+          ],
           "stdio_exit": 0,
           "stdio_stderr_bytes": 0,
-          "transport_equal": 85,
-          "unpublished_calls": 474,
-          "unpublished_answered_e301": 474
+          "transport_equal": 193,
+          "unpublished_calls": 0,
+          "unpublished_answered_e301": 0
         },
         "main": {
           "answer_types": {
             "items": 5,
-            "error": 12,
+            "error": 15,
             "answer": 3,
-            "verdict": 17,
-            "proposal": 18,
-            "item": 15,
-            "links": 15
+            "verdict": 19,
+            "item": 17,
+            "links": 17,
+            "proposal": 17
           },
-          "calls": 85,
+          "calls": 93,
           "differing": [],
-          "equal": 85,
-          "items": 15,
-          "items_published": 15,
+          "equal": 91,
+          "items": 17,
+          "items_published": 17,
           "per_tool": {
             "search": {
               "calls": 7,
-              "equal": 7
+              "equal": 7,
+              "required_difference": 0
             },
             "ask": {
               "calls": 4,
-              "equal": 4
+              "equal": 4,
+              "required_difference": 0
             },
             "compose": {
-              "calls": 18,
-              "equal": 18
+              "calls": 20,
+              "equal": 20,
+              "required_difference": 0
             },
             "remember": {
               "calls": 4,
-              "equal": 4
+              "equal": 2,
+              "required_difference": 2
             },
             "read": {
-              "calls": 17,
-              "equal": 17
+              "calls": 19,
+              "equal": 19,
+              "required_difference": 0
             },
             "links": {
-              "calls": 17,
-              "equal": 17
+              "calls": 19,
+              "equal": 19,
+              "required_difference": 0
             },
             "propose": {
-              "calls": 16,
-              "equal": 16
+              "calls": 18,
+              "equal": 18,
+              "required_difference": 0
             },
             "nosuchtool": {
               "calls": 1,
-              "equal": 1
+              "equal": 1,
+              "required_difference": 0
             },
             "READ": {
               "calls": 1,
-              "equal": 1
+              "equal": 1,
+              "required_difference": 0
             }
           },
+          "required_difference": [
+            {
+              "args": "{\"body\":\"x\",\"kind\":\"concept\",\"sources\":[{\"id\":\"s1\",\"resource\":\"nonsense\"}],\"title\":\"Handoff\"}",
+              "tool": "remember"
+            },
+            {
+              "args": "{\"body\":\"A lesson.\",\"kind\":\"lesson\",\"title\":\"A Lesson Learned Here\"}",
+              "tool": "remember"
+            }
+          ],
           "stdio_exit": 0,
           "stdio_stderr_bytes": 0,
-          "transport_equal": 85,
+          "transport_equal": 93,
           "unpublished_calls": 0,
           "unpublished_answered_e301": 0
         }
       },
-      "note": "Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary.",
+      "note": "Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary. A `remember` call that declares no operator is the one input on which AGSC-09-16 requires the two transports to differ (the server refuses with AGSC-E003, the page proposes with prov.operator absent and AGSC-E506); such a call is counted under required_difference when both answers have exactly that shape, and under differing otherwise.",
       "totals": {
-        "calls": 207,
-        "equal": 207,
-        "transport_equal": 207,
-        "unpublished_answered_e301": 474,
-        "unpublished_calls": 474
+        "calls": 323,
+        "differing": 0,
+        "equal": 317,
+        "required_difference": 6,
+        "transport_equal": 323,
+        "unpublished_answered_e301": 0,
+        "unpublished_calls": 0
       }
     },
     "tokens": {
       "command": "NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,… --exports <name>=<dir>,…",
       "no_claude_count": "Anthropic publishes no offline tokenizer; no Claude token count is reported, because it would be a guess.",
       "nodes": {
-        "minimal": {
+        "fixture": {
           "chunk_files": [
             "chunks.jsonl"
           ],
@@ -2528,83 +2507,83 @@
           "vocabularies": {
             "cl100k_base": {
               "chunks_line": {
-                "items": 15,
-                "max": 1575,
-                "median": 1368,
-                "min": 177,
-                "total": 14983
+                "items": 42,
+                "max": 1242,
+                "median": 993,
+                "min": 174,
+                "total": 28721
               },
               "chunks_text": {
-                "items": 15,
-                "max": 453,
-                "median": 390,
-                "min": 12,
-                "total": 4179
+                "items": 42,
+                "max": 246,
+                "median": 204,
+                "min": 10,
+                "total": 5248
               },
               "llms_line": {
-                "items": 10,
-                "max": 49,
-                "median": 44.5,
+                "items": 22,
+                "max": 55,
+                "median": 49,
                 "min": 38,
-                "total": 443
+                "total": 1058
               },
-              "llms_file": 633,
+              "llms_file": 1343,
               "ctx_section": {
-                "items": 15,
-                "max": 727,
-                "median": 638,
+                "items": 42,
+                "max": 518,
+                "median": 444,
                 "min": 61,
-                "total": 6913
+                "total": 12022
               },
-              "ctx_file": 7164,
+              "ctx_file": 12276,
               "index_row": {
-                "items": 15,
-                "max": 197,
-                "median": 165,
-                "min": 31,
-                "total": 1929
+                "items": 42,
+                "max": 212,
+                "median": 166.5,
+                "min": 29,
+                "total": 4897
               },
-              "index_file": 1999
+              "index_file": 5041
             },
             "o200k_base": {
               "chunks_line": {
-                "items": 15,
-                "max": 1560,
-                "median": 1359,
-                "min": 174,
-                "total": 14880
+                "items": 42,
+                "max": 1232,
+                "median": 981.5,
+                "min": 172,
+                "total": 28506
               },
               "chunks_text": {
-                "items": 15,
-                "max": 446,
-                "median": 390,
-                "min": 12,
-                "total": 4163
+                "items": 42,
+                "max": 245,
+                "median": 204,
+                "min": 10,
+                "total": 5225
               },
               "llms_line": {
-                "items": 10,
-                "max": 49,
-                "median": 44,
-                "min": 38,
-                "total": 442
+                "items": 22,
+                "max": 55,
+                "median": 49,
+                "min": 39,
+                "total": 1056
               },
-              "llms_file": 627,
+              "llms_file": 1335,
               "ctx_section": {
-                "items": 15,
-                "max": 721,
-                "median": 641,
-                "min": 61,
-                "total": 6907
+                "items": 42,
+                "max": 528,
+                "median": 439,
+                "min": 60,
+                "total": 12022
               },
-              "ctx_file": 7154,
+              "ctx_file": 12273,
               "index_row": {
-                "items": 15,
-                "max": 199,
-                "median": 167,
-                "min": 31,
-                "total": 1934
+                "items": 42,
+                "max": 221,
+                "median": 166,
+                "min": 29,
+                "total": 4942
               },
-              "index_file": 2004
+              "index_file": 5086
             }
           }
         },
@@ -2615,83 +2594,83 @@
           "vocabularies": {
             "cl100k_base": {
               "chunks_line": {
-                "items": 15,
+                "items": 17,
                 "max": 1033,
                 "median": 266,
                 "min": 179,
-                "total": 4745
+                "total": 5722
               },
               "chunks_text": {
-                "items": 15,
+                "items": 17,
                 "max": 475,
                 "median": 94,
                 "min": 20,
-                "total": 1829
+                "total": 2063
               },
               "llms_line": {
-                "items": 13,
-                "max": 50,
+                "items": 14,
+                "max": 75,
                 "median": 40,
                 "min": 35,
-                "total": 531
+                "total": 606
               },
-              "llms_file": 706,
+              "llms_file": 785,
               "ctx_section": {
-                "items": 15,
+                "items": 17,
                 "max": 644,
                 "median": 139,
                 "min": 66,
-                "total": 2639
+                "total": 3118
               },
-              "ctx_file": 2888,
+              "ctx_file": 3367,
               "index_row": {
-                "items": 15,
-                "max": 126,
+                "items": 17,
+                "max": 149,
                 "median": 30,
                 "min": 26,
-                "total": 541
+                "total": 724
               },
-              "index_file": 575
+              "index_file": 762
             },
             "o200k_base": {
               "chunks_line": {
-                "items": 15,
+                "items": 17,
                 "max": 1029,
                 "median": 263,
                 "min": 176,
-                "total": 4711
+                "total": 5685
               },
               "chunks_text": {
-                "items": 15,
+                "items": 17,
                 "max": 474,
                 "median": 93,
                 "min": 20,
-                "total": 1825
+                "total": 2059
               },
               "llms_line": {
-                "items": 13,
-                "max": 51,
+                "items": 14,
+                "max": 76,
                 "median": 40,
                 "min": 35,
-                "total": 532
+                "total": 608
               },
-              "llms_file": 703,
+              "llms_file": 783,
               "ctx_section": {
-                "items": 15,
+                "items": 17,
                 "max": 643,
                 "median": 140,
                 "min": 66,
-                "total": 2636
+                "total": 3116
               },
-              "ctx_file": 2881,
+              "ctx_file": 3361,
               "index_row": {
-                "items": 15,
-                "max": 126,
-                "median": 30,
+                "items": 17,
+                "max": 149,
+                "median": 31,
                 "min": 26,
-                "total": 543
+                "total": 726
               },
-              "index_file": 577
+              "index_file": 764
             }
           }
         }
@@ -2710,7 +2689,7 @@
       "ceiling": "axe-core finds on average 57 % of WCAG issues automatically; zero violations is a floor, never a conformance claim.",
       "command": "NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,…",
       "nodes": {
-        "minimal": {
+        "fixture": {
           "by_type": {
             "clusters index": {
               "checks": 2,
@@ -2747,6 +2726,20 @@
               "rules": [],
               "violations": 0
             },
+            "episodes index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "gates index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "home": {
               "checks": 2,
               "nodes": 0,
@@ -2754,7 +2747,21 @@
               "rules": [],
               "violations": 0
             },
+            "lessons index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "now index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "procedures index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -2783,24 +2790,31 @@
               "violations": 0
             }
           },
-          "checks": 24,
-          "pages": 12,
+          "checks": 32,
+          "pages": 16,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 2345,
+              "bytes": 3294,
               "path": "concepts/supervisor/index.html"
             },
-            "median_bytes": 1466,
+            "median_bytes": 1939,
             "over_budget": [],
-            "pages": 13,
-            "total_bytes": 21285
+            "pages": 17,
+            "total_bytes": 36916
           }
         },
         "patterns": {
           "by_type": {
+            "changelog index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "clusters index": {
               "checks": 2,
               "nodes": 0,
@@ -2809,9 +2823,9 @@
               "violations": 0
             },
             "clusters page": {
-              "checks": 10,
+              "checks": 40,
               "nodes": 0,
-              "pages": 5,
+              "pages": 20,
               "rules": [],
               "violations": 0
             },
@@ -2830,9 +2844,23 @@
               "violations": 0
             },
             "concepts page": {
-              "checks": 20,
+              "checks": 44,
               "nodes": 0,
-              "pages": 10,
+              "pages": 22,
+              "rules": [],
+              "violations": 0
+            },
+            "episodes index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "gates index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
               "rules": [],
               "violations": 0
             },
@@ -2850,7 +2878,21 @@
               "rules": [],
               "violations": 0
             },
+            "lessons index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "now index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "procedures index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -2872,31 +2914,45 @@
               "violations": 0
             },
             "tags page": {
-              "checks": 38,
+              "checks": 66,
               "nodes": 0,
-              "pages": 19,
+              "pages": 33,
               "rules": [],
               "violations": 0
             }
           },
-          "checks": 84,
-          "pages": 42,
+          "checks": 176,
+          "pages": 88,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 10736,
+              "bytes": 16330,
               "path": "legal/index.html"
             },
-            "median_bytes": 1930,
+            "median_bytes": 3057,
             "over_budget": [],
-            "pages": 43,
-            "total_bytes": 139036
+            "pages": 89,
+            "total_bytes": 383579
           }
         },
         "main-engine": {
           "by_type": {
+            "boards page": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "changelog index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "clusters index": {
               "checks": 2,
               "nodes": 0,
@@ -2905,9 +2961,9 @@
               "violations": 0
             },
             "clusters page": {
-              "checks": 4,
+              "checks": 6,
               "nodes": 0,
-              "pages": 2,
+              "pages": 3,
               "rules": [],
               "violations": 0
             },
@@ -2926,9 +2982,23 @@
               "violations": 0
             },
             "concepts page": {
-              "checks": 24,
+              "checks": 26,
               "nodes": 0,
-              "pages": 12,
+              "pages": 13,
+              "rules": [],
+              "violations": 0
+            },
+            "episodes index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "gates index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
               "rules": [],
               "violations": 0
             },
@@ -2940,6 +3010,13 @@
               "violations": 0
             },
             "legal index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "lessons index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -2989,25 +3066,32 @@
               "violations": 0
             }
           },
-          "checks": 56,
-          "pages": 28,
+          "checks": 70,
+          "pages": 35,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 6234,
+              "bytes": 10008,
               "path": "legal/index.html"
             },
-            "median_bytes": 2581,
+            "median_bytes": 4014,
             "over_budget": [],
-            "pages": 29,
-            "total_bytes": 78704
+            "pages": 36,
+            "total_bytes": 139269
           }
         },
         "main-site": {
           "by_type": {
             "about index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "boards page": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -3022,9 +3106,9 @@
               "violations": 0
             },
             "clusters page": {
-              "checks": 4,
+              "checks": 6,
               "nodes": 0,
-              "pages": 2,
+              "pages": 3,
               "rules": [],
               "violations": 0
             },
@@ -3043,9 +3127,9 @@
               "violations": 0
             },
             "concepts page": {
-              "checks": 24,
+              "checks": 26,
               "nodes": 0,
-              "pages": 12,
+              "pages": 13,
               "rules": [],
               "violations": 0
             },
@@ -3057,13 +3141,27 @@
               "violations": 0
             },
             "docs page": {
-              "checks": 24,
+              "checks": 28,
               "nodes": 0,
-              "pages": 12,
+              "pages": 14,
+              "rules": [],
+              "violations": 0
+            },
+            "episodes index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
               "rules": [],
               "violations": 0
             },
             "exports index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "gates index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -3078,6 +3176,13 @@
               "violations": 0
             },
             "legal index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "lessons index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -3162,20 +3267,20 @@
               "violations": 0
             }
           },
-          "checks": 122,
-          "pages": 61,
+          "checks": 138,
+          "pages": 69,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 95681,
+              "bytes": 91753,
               "path": "specs/06-surfaces/index.html"
             },
-            "median_bytes": 9056,
+            "median_bytes": 7847,
             "over_budget": [],
-            "pages": 62,
-            "total_bytes": 1381042
+            "pages": 70,
+            "total_bytes": 1424041
           }
         }
       },
@@ -3198,314 +3303,12 @@
     },
     "package": {
       "command": "npm pack --dry-run --json",
-      "files": 581,
-      "packed_bytes": 1123332,
-      "unpacked_bytes": 3648797,
-      "measured_on": "2026-09-25",
-      "runtime_install": {
-        "command": "npm ls --omit=dev --parseable --all | xargs du -sk",
-        "packages": 135,
-        "largest_kb": {
-          "zod": 8364,
-          "@modelcontextprotocol/sdk": 6256,
-          "hono": 3704,
-          "ajv": 2544,
-          "jsonld": 2136,
-          "markdown-it": 1968,
-          "undici": 1668,
-          "fast-xml-parser": 1428,
-          "yaml": 1372,
-          "diff": 1016,
-          "n3": 900
-        }
-      }
-    },
-    "cost": {
-      "command": "scratch scripts over a loopback server (page weight: playwright-core 1.62.1 + chrome-headless-shell 1228; MCP: one `agsc mcp` process over stdio, 20 calls per tool, median); 2026-09-25",
-      "page_weight": {
-        "note": "requests and bytes one visit costs, measured in a real headless Chromium; \"plain\" is a browser without document.modelContext, \"webmcp\" one that exposes it",
-        "main_site": {
-          "item_route": "/concepts/concept/",
-          "before": {
-            "plain": {
-              "requests": 27,
-              "bytes": 139989
-            },
-            "webmcp": {
-              "requests": 27,
-              "bytes": 139989
-            }
-          },
-          "after": {
-            "plain": {
-              "requests": 6,
-              "bytes": 106867
-            },
-            "webmcp": {
-              "requests": 27,
-              "bytes": 140958
-            }
-          },
-          "front_page": {
-            "requests": 3,
-            "bytes": 28765
-          },
-          "search_page": {
-            "requests": 4,
-            "bytes": 31996,
-            "first_result_ms": 245,
-            "script": "assets/search.js",
-            "script_bytes": 3618
-          }
-        },
-        "patterns_node": {
-          "item_route": "/concepts/autonomy-ladder/",
-          "before": {
-            "plain": {
-              "requests": 54,
-              "bytes": 263017
-            },
-            "webmcp": {
-              "requests": 54,
-              "bytes": 263017
-            }
-          },
-          "after": {
-            "plain": {
-              "requests": 6,
-              "bytes": 109864
-            },
-            "webmcp": {
-              "requests": 54,
-              "bytes": 263986
-            }
-          },
-          "front_page": {
-            "requests": 3,
-            "bytes": 13552
-          },
-          "search_page": {
-            "requests": 5,
-            "bytes": 80937,
-            "first_result_ms": 225,
-            "script": "search/agsc-search.js",
-            "script_bytes": 9124
-          }
-        },
-        "bench_5000": {
-          "item_route": "/concepts/bench-item-1/",
-          "after": {
-            "plain": {
-              "requests": 6,
-              "bytes": 108047
-            },
-            "webmcp": {
-              "requests_measured_within_wait": 1715,
-              "bytes_measured_within_wait": 7987314,
-              "requests_the_read_makes": 5014
-            }
-          },
-          "front_page": {
-            "requests": 3,
-            "bytes": 12482
-          },
-          "search_page": {
-            "requests": 13,
-            "bytes": 1523179,
-            "first_result_ms": 355,
-            "script": "search/agsc-search.js",
-            "script_bytes": 8634
-          }
-        }
-      },
-      "mcp_stdio": {
-        "note": "per-call wall time and answer bytes, median of 20; startup = process start to the initialize answer (one in-memory build)",
-        "bench_5000": {
-          "startup_ms": {
-            "before": 23790.6,
-            "after": 20705.8
-          },
-          "server_rss_kb": 966572,
-          "calls": {
-            "search": {
-              "before_ms": 1527.2,
-              "after_ms": 68.93,
-              "bytes": 1253731
-            },
-            "read": {
-              "before_ms": 0.65,
-              "after_ms": 0.69,
-              "bytes": 7888
-            },
-            "links": {
-              "before_ms": 1690.92,
-              "after_ms": 1.52,
-              "bytes": 1149
-            },
-            "compose": {
-              "before_ms": 6.07,
-              "after_ms": 5.85,
-              "bytes": 561
-            },
-            "ask": {
-              "before_ms": 1447.36,
-              "after_ms": 9,
-              "bytes": 1361
-            },
-            "propose": {
-              "before_ms": 0.81,
-              "after_ms": 0.76,
-              "bytes": 7868
-            }
-          }
-        },
-        "reference_fixture": {
-          "startup_ms": {
-            "before": 1147.2,
-            "after": 1177.7
-          },
-          "calls": {
-            "search": {
-              "before_ms": 1.8,
-              "after_ms": 0.85,
-              "bytes": 1057
-            },
-            "read": {
-              "before_ms": 0.7,
-              "after_ms": 0.67,
-              "bytes": 2231
-            },
-            "links": {
-              "before_ms": 1.82,
-              "after_ms": 0.72,
-              "bytes": 741
-            },
-            "compose": {
-              "before_ms": 0.7,
-              "after_ms": 0.73,
-              "bytes": 551
-            },
-            "ask": {
-              "before_ms": 1.11,
-              "after_ms": 0.64,
-              "bytes": 1073
-            },
-            "propose": {
-              "before_ms": 1.1,
-              "after_ms": 1.04,
-              "bytes": 2201
-            }
-          }
-        }
-      },
-      "verify": {
-        "command": "/usr/bin/time -v node bin/agsc.js verify --json",
-        "bench_5000": {
-          "wall_s": 40.66,
-          "rss_kb": 1224052
-        },
-        "bench_500": {
-          "wall_s": 3.07,
-          "rss_kb": 296056
-        }
-      },
-      "cold_start": {
-        "command": "/usr/bin/time -f \"%e s %M KB\" node bin/agsc.js <verb>; modules counted from require.cache at exit",
-        "version": {
-          "wall_s_runs": [
-            0.18,
-            0.18,
-            0.19,
-            0.19,
-            0.19
-          ],
-          "rss_kb": 65292,
-          "modules": 117
-        },
-        "lint_reference_fixture": {
-          "wall_s_runs": [
-            0.78,
-            0.81,
-            0.77,
-            0.77,
-            0.77
-          ],
-          "rss_kb": 97212,
-          "modules": 284
-        },
-        "node_empty": {
-          "wall_s_runs": [
-            0.05,
-            0.04,
-            0.05
-          ],
-          "rss_kb": 44500
-        },
-        "library_load_ms": {
-          "jsonld": 192,
-          "@modelcontextprotocol/sdk/server": 291,
-          "ajv": 61,
-          "n3": 52,
-          "yaml": 52,
-          "commander": 36,
-          "markdown-it": 24
-        }
-      },
-      "hosting": {
-        "source": [
-          {
-            "url": "https://developers.cloudflare.com/pages/platform/limits/",
-            "read": "2026-09-25",
-            "page_says": "Last updated Sep 5, 2026",
-            "quotes": [
-              "Cloudflare Pages sites can contain up to 20,000 files on the Free plan.",
-              "Paid plans (such as Pro, Business, and Enterprise plans) can have up to 100,000 files per site.",
-              "The maximum file size for a single Cloudflare Pages site asset is 25 MiB.",
-              "A `_headers` file can have a maximum of 100 header rules.",
-              "A `_redirects` file can have a maximum of 2,000 static redirects and 100 dynamic redirects, for a combined total of 2,100 redirects."
-            ]
-          },
-          {
-            "url": "https://developers.cloudflare.com/pages/functions/pricing/",
-            "read": "2026-09-25",
-            "quotes": [
-              "On both free and paid plans, requests to static assets are free and unlimited."
-            ]
-          }
-        ],
-        "nodes": {
-          "main_site": {
-            "files": 149,
-            "bytes": 2497082,
-            "fits_free_plan": true,
-            "usd_month": 0
-          },
-          "patterns_node": {
-            "files": 227,
-            "bytes": 1490653,
-            "fits_free_plan": true,
-            "usd_month": 0
-          },
-          "bench_5000": {
-            "files": 15102,
-            "bytes": 148200000,
-            "header_rules": 42,
-            "redirects": 3,
-            "fits_free_plan": true,
-            "usd_month": 0
-          },
-          "bench_10000": {
-            "files": 30162,
-            "bytes": 296300000,
-            "fits_free_plan": false,
-            "needs": "a paid Pages plan (100,000 files; its price was not read in this run) or another hosting profile"
-          }
-        },
-        "free_plan_item_bound_about": 6600
-      }
+      "files": 554,
+      "packed_bytes": 1011121,
+      "unpacked_bytes": 3309447
     }
   },
   "schema": "agsc.measurements.v1",
-  "measured_for": "2026-09-29",
+  "measured_for": "2026-01-01",
   "spec_version": "1.0.0-rc.6"
 }

@@ -106,11 +106,11 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-00-23 | VERIFIED | `cli-0009` | `application/compatibility.test.js`, `tools/validate-wellknown-visibility.test.js` | — | — |
 | AGSC-00-24 | VERIFIED | — | `application/plugins.test.js`, `application/serve-command.test.js` | — | — |
 | AGSC-00-25 | VERIFIED | `bundle-0006` | `application/compatibility.test.js` | — | — |
-| AGSC-01-01 | VERIFIED | — | `e2e/modes/mode-3-skills.test.js`, `standard/rules.test.js` | — | — |
+| AGSC-01-01 | VERIFIED | — | `distribution/ci-findings-without-position.test.js`, `e2e/modes/mode-3-skills.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-01-02 | VERIFIED | — | `knowledge/validate.test.js` | — | — |
 | AGSC-01-03 | VERIFIED | — | `knowledge/links.test.js`, `knowledge/validate.test.js` | — | — |
 | AGSC-01-04 | VERIFIED | — | `knowledge/fixture-minimal.test.js`, `knowledge/validate.test.js` | — | — |
-| AGSC-01-05 | VERIFIED | — | `application/bundle-folder-notes.test.js`, `interchange/okf-roundtrip.test.js`, `knowledge/adopt.test.js` | — | — |
+| AGSC-01-05 | VERIFIED | — | `application/bundle-folder-notes.test.js`, `distribution/ci-findings-without-position.test.js`, `interchange/okf-roundtrip.test.js` +1 | — | — |
 | AGSC-01-06 | VERIFIED | — | `standard/rules.test.js` | — | — |
 | AGSC-01-07 | VERIFIED | — | `governance/lint-constructs.test.js` | — | — |
 | AGSC-01-08 | VERIFIED | — | `standard/rules.test.js` | — | — |
@@ -358,7 +358,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-08 | VERIFIED | `cli-0014` | `acceptance/steps/persona-i.js`, `adapters/node-clock.test.js`, `application/cli/verbs-sixteen.test.js` +5 | `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
 | AGSC-09-09 | VERIFIED | `cli-0010`, `cli-0012` | `acceptance/steps/persona-c.js`, `application/cli/eng2-verbs.test.js`, `application/cli/flags.test.js` +4 | `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network` | — |
 | AGSC-09-10 | VERIFIED | — | `application/cli/main-shell.test.js`, `governance/lint-order.test.js`, `knowledge/jcs.test.js` +1 | — | `validate-diagrams`, `validate-features`, `validate-ontology` +2 |
-| AGSC-09-11 | VERIFIED | `cli-0002` | `application/cli/envelope.test.js`, `application/cli/main-shell.test.js`, `application/cli/verbs-wired.test.js` +11 | — | `validate-wellknown` |
+| AGSC-09-11 | VERIFIED | `cli-0002` | `application/cli/envelope.test.js`, `application/cli/main-shell.test.js`, `application/cli/verbs-wired.test.js` +12 | — | `validate-wellknown` |
 | AGSC-09-12 | VERIFIED | — | `application/cli/verbs-sixteen.test.js`, `e2e/real-bundles.test.js` | — | — |
 | AGSC-09-13 | VERIFIED | — | `acceptance/steps/persona-c.js`, `application/cli/main-shell.test.js`, `boundary/surfaces.test.js` +4 | — | — |
 | AGSC-09-13a | VERIFIED | `cli-0004` | `distribution/mcp-client.test.js`, `distribution/mcp-tools.test.js` | — | — |
@@ -366,7 +366,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-14a | VERIFIED | `cli-0007` | `acceptance/steps/persona-c.js`, `distribution/mcp-tools.test.js`, `e2e/modes/mode-0-wiki.test.js` | `persona-c-agent-mcp.feature#Agent uses the node as memory and knowledge base over MCP` | — |
 | AGSC-09-14b | VERIFIED | — | `acceptance/steps/persona-c.js`, `distribution/mcp-client.test.js`, `distribution/mcp-resources.test.js` +5 | `persona-c-agent-mcp.feature#Agent uses the node as memory and knowledge base over MCP` | — |
 | AGSC-09-15 | VERIFIED | — | `standard/consistency.test.js` | — | — |
-| AGSC-09-16 | VERIFIED | `cli-0003`, `cli-0008` | `distribution/compose-page-run.test.js`, `distribution/mcp-tools.test.js`, `distribution/page-tools-prototype.test.js` +6 | — | — |
+| AGSC-09-16 | VERIFIED | `cli-0003`, `cli-0008` | `bench/kit.test.js`, `distribution/compose-page-run.test.js`, `distribution/mcp-tools.test.js` +7 | — | — |
 | AGSC-09-90 | VERIFIED | — | `arch/package-manifest.test.js`, `tools/standalone.test.js`, `tools/vacuous-pass.test.js` | — | `validate-diagrams`, `validate-features`, `validate-ontology` +4 |
 | AGSC-09-91 | VERIFIED | — | `standard/consistency.test.js`, `tools/validate-spec.test.js` | — | `validate-spec` |
 | AGSC-09-92 | VERIFIED | — | `standard/workflow.test.js` | — | — |

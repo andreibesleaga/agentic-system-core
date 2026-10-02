@@ -183,7 +183,7 @@ agsc verify --ledger
 ```
 
 ```text expect
-ci: pass (0 error, 7 warn)
+ci: pass (0 error, 5 warn)
 gate: pass keys: checks,gate,level,status
 verify: pass (0 error, 0 warn)
 ```

@@ -326,7 +326,11 @@ function compareFindings(a, b) {
 const REGISTERED_CODE = /^AGSC-E\d{3}$/u;
 
 function buildEnvelope({ verb, findings, status, specVersion, version }) {
-  const sorted = findings.slice().sort(compareFindings);
+  // AGSC-09-11: every finding with its position, each fault once — the shell adds the
+  // loader's findings to the verb's, and a verb such as `ci` already carries them.
+  const { uniqueFindings, withPosition } = require('../../knowledge/validate.js');
+  const jcs = require('../../knowledge/jcs.js');
+  const sorted = uniqueFindings(findings.map(withPosition), jcs.canonicalize).sort(compareFindings);
   const counts = { error: 0, warn: 0 };
   for (const f of sorted) {
     if (f.severity === 'error') counts.error += 1;

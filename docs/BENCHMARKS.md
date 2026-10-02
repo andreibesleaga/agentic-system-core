@@ -48,9 +48,9 @@ Three design decisions worth stating:
 - **`ask` is not scored separately.** AGSC-09-14a makes `ask` the first three `search` hits with mandatory citations, so its ranking is the `search` ranking truncated at three; reporting it as a fourth surface would report one number twice.
 - **`--origin-node` exists because a multi-node set measures nothing without it.** The committed set draws intents from two nodes; asking one node for the other's items produces a misses-by-construction score. Each node is scored only on the intents its own items answer.
 
-## The committed query set, `bench/queries/bench-v1`
+## The committed query set, `bench/queries/bench-v2`
 
-Twenty hand-written intents, one gold item each, over the thirty published items of the two reference nodes. Every query declares its origin (`hand-written`) and its node. The set is in the repository so that a reviewer can read every label; the runner warns on any query without a label and fails if no query has one, so a vacuous pass is impossible.
+Twenty hand-written intents, one gold item each: twelve answered by published items of the demonstration node (`patterns.agenticsystemcore.com`) and eight by published items of the main node. Every gold item is on its node's public site and in its public repository, so anyone can rebuild the node and repeat the run. `bench-v2` replaces `bench-v1`, whose twelve intents for the demonstration node named items that node no longer publishes; the two sets are not comparable, and no `bench-v1` number is cited. Every query declares its origin (`hand-written`) and its node. The set is in the repository so that a reviewer can read every label; the runner warns on any query without a label and fails if no query has one, so a vacuous pass is impossible.
 
 **This set is a harness test, not a study.** It has no dev/test split, no generated paraphrases, no second annotator, no leakage control and no confidence intervals, and the intents and the items have the same author. It is published as the first run of the instrument.
 
@@ -65,7 +65,7 @@ Its design, fixed before any number exists:
 - Conditions isolated one at a time: `llms.txt` alone; `search.json` alone; `chunks.jsonl` as a retrieval corpus; the tool server's `search` plus `links`; the `ask` tool; skill packs installed; the graph dump queried by the consumer.
 - Every model condition: temperature pinned, model id and date recorded, at least three seeded runs, medians with 95 % bootstrap intervals, paired tests with Holm correction, pass^k at k = 3, effect sizes as Cliff's δ.
 - Release in BEIR layout with a datasheet, machine-readable dataset metadata and an archival DOI. The corpus snapshot is fetched from the archive, never from the live site, and no comparator's live endpoint is ever a dependency: a comparator's published files are downloaded once, pinned by hash and dated.
-- `bench-v1` freezes at submission. A change makes `bench-v2`; a cited benchmark is never rewritten.
+- `bench-v2` freezes at submission. A change makes `bench-v3`; a cited benchmark is never rewritten.
 
 ## The memory-competency layer, and which benchmarks apply at all
 

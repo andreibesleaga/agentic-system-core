@@ -12,7 +12,7 @@
 // `knowledge/validate.js` owns — the AGSC-02-92 pass that `adopt-0006` asserts —
 // and names the missing lane in its result rather than reporting a false green.
 
-const { sortFindings } = require('../knowledge/validate.js');
+const { sortFindings, uniqueFindings, withPosition } = require('../knowledge/validate.js');
 const { canonicalize } = require('../knowledge/jcs.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
 const site = require('./site.js');
@@ -48,9 +48,19 @@ function filterWarn(findings) {
   return findings.filter((f) => f.severity === 'warn');
 }
 
+/**
+ * The findings of one run, each with its position (AGSC-09-11) and each fault once.
+ * A finding about a whole file carries no line of its own; written into
+ * `dist/gate.json` without one, it made the JCS writer refuse and `ci` report that
+ * refusal (`AGSC-E601`) in place of every real finding.
+ */
+function settle(findings) {
+  return sortFindings(uniqueFindings(findings.map(withPosition), canonicalize));
+}
+
 /** One `checks[]` entry of AGSC-08-10: a lane, its status and its findings. */
 function check(name, findings) {
-  const sorted = sortFindings(findings);
+  const sorted = settle(findings);
   return {
     findings: sorted.map((f) => ({
       code: f.code, col: f.col, file: f.file, line: f.line, message: f.message, severity: f.severity,
@@ -158,7 +168,7 @@ function ci(bundle, ports, options = {}) {
   const gateWritten = writeGate(gate, ports);
   lanes.push(gateWritten ? `gate (${GATE_FILE})` : 'gate (no writable FileSystem port; verdict returned only)');
 
-  const sorted = sortFindings(findings);
+  const sorted = settle(findings);
   const counts = countOf(sorted);
   return {
     exit: counts.error > 0 ? 1 : 0,

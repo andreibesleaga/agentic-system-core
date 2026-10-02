@@ -117,7 +117,8 @@ async function runBrowser(options) {
   const { chromium } = require('playwright-core');
   const axeSource = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
   const axeVersion = require('axe-core/package.json').version;
-  const www = options.www;
+  // Resolved first: a folder given as `a/../b` would otherwise make every file look outside it.
+  const www = path.resolve(options.www);
   const routes = routesOf(www);
   const TYPES = { '.css': 'text/css', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.txt': 'text/plain' };
   const server = http.createServer((req, res) => {

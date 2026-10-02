@@ -296,15 +296,18 @@ function layerDeterminism(scratch) {
     cwd: bundle, env: { ...process.env, SOURCE_DATE_EPOCH: EPOCH },
   });
 
+  // The comparison is of the build OUTPUT (`www/`) only. Each run's working directory also
+  // holds the copied input files, which are identical by construction; comparing them as well
+  // once reported 56 files compared where the build had written 49.
   return {
     command: 'node bench/measure.js --layer determinism',
-    double_build: diffTrees(path.join(base, 'a'), path.join(base, 'b')),
+    double_build: diffTrees(runs.a.outDir, runs.b.outDir),
     files_compared: runs.a.tree.files,
     os_matrix: {
       note: 'A second operating system cannot be measured on this machine; the CI matrix is the only place it can be run.',
       ran_here: [`${os.type()} ${os.release()} ${os.arch()}`],
     },
-    tz_locale: diffTrees(path.join(base, 'utc'), path.join(base, 'tz')),
+    tz_locale: diffTrees(runs.utc.outDir, runs.tz.outDir),
     verify_verb: { exit: verify.code, ok: verify.code === 0 },
   };
 }
@@ -339,16 +342,19 @@ async function layerParity(nodes) {
   const spec = JSON.parse(fs.readFileSync(path.join(__dirname, 'corpus', 'parity-calls.json'), 'utf8'));
   const parity = require('./parity.js');
   const per = Object.create(null);
-  const totals = { calls: 0, equal: 0, transport_equal: 0, unpublished_answered_e301: 0, unpublished_calls: 0 };
+  const totals = { calls: 0, differing: 0, equal: 0, required_difference: 0, transport_equal: 0, unpublished_answered_e301: 0, unpublished_calls: 0 };
   for (const [name, dir] of nodes) {
     per[name] = await parity.run(dir, spec);
-    for (const k of Object.keys(totals)) totals[k] += per[name][k];
+    for (const k of Object.keys(totals)) {
+      const v = per[name][k];
+      totals[k] += Array.isArray(v) ? v.length : v;
+    }
   }
   return {
     call_list: { file: 'bench/corpus/parity-calls.json', fixed: spec.calls.length, per_item: spec.per_item.length, version: spec.version },
     command: 'node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…',
     nodes: per,
-    note: 'Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary.',
+    note: 'Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary. A `remember` call that declares no operator is the one input on which AGSC-09-16 requires the two transports to differ (the server refuses with AGSC-E003, the page proposes with prov.operator absent and AGSC-E506); such a call is counted under required_difference when both answers have exactly that shape, and under differing otherwise.',
     totals,
   };
 }
@@ -418,7 +424,7 @@ function layerRetrieval(nodes) {
     const r = timed(NODE, [path.join(REPO, 'tools', 'bench'), '--node', www, '--origin-node', name, '--json'], { cwd: REPO });
     const envelope = JSON.parse(r.out);
     // The record names the node, never the path it was built into on this machine.
-    per[name] = { ...envelope, node: `<${name} build output>`, set: 'bench/queries/bench-v1' };
+    per[name] = { ...envelope, node: `<${name} build output>`, set: 'bench/queries/bench-v2' };
   }
   return { command: 'node tools/bench --node <built node> --origin-node <name> --json', nodes: per };
 }

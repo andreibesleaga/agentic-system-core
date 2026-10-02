@@ -63,6 +63,46 @@ function finding(code, message, extra = {}) {
   return f;
 }
 
+/**
+ * AGSC-09-11: every Finding carries `code`, `col`, `file`, `line`, `message` and
+ * `severity`. A finding about a whole file (a folder note, a missing file) is made
+ * without a position; it takes line 1 and column 1, and one made without a file takes
+ * the empty path — the defaults of `finding()` above, so both kinds sort and serialise
+ * alike (AGSC-09-10, AGSC-04-04). Every other member is kept; a member whose value is
+ * `undefined` is dropped, because no JSON form exists for it.
+ * @param {object} f
+ * @returns {object}
+ */
+function withPosition(f) {
+  const out = {};
+  for (const [k, v] of Object.entries(f || {})) if (v !== undefined) out[k] = v;
+  if (out.col == null) out.col = 1;
+  if (out.file == null) out.file = '';
+  if (out.line == null) out.line = 1;
+  out.message = out.message == null ? '' : String(out.message);
+  return out;
+}
+
+/**
+ * AGSC-09-11: one fault is counted once. Two lanes that see the same fault report
+ * byte-identical findings (the lint lane and the build lane both read an item's
+ * frontmatter); the second is dropped. Findings that differ in any member are kept.
+ * @param {Array<object>} findings findings already passed through `withPosition`
+ * @param {(value:object)=>string} keyOf a canonical serialisation
+ * @returns {Array<object>}
+ */
+function uniqueFindings(findings, keyOf) {
+  const seen = new Set();
+  const out = [];
+  for (const f of findings) {
+    const key = keyOf(f);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(f);
+  }
+  return out;
+}
+
 /** AGSC-09-10: order findings by (file, line, col, code), compared code-point-wise. */
 function sortFindings(findings) {
   return [...findings].sort((a, b) => compareCodePoint(a.file, b.file)
@@ -493,6 +533,8 @@ module.exports = {
   majorCompatible,
   sortFindings,
   finding,
+  withPosition,
+  uniqueFindings,
   codeFor,
   TYPE_PLURAL,
   nfc,

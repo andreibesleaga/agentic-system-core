@@ -1,0 +1,20 @@
+{"_id":"q001","metadata":{"origin":"hand-written","node":"patterns"},"text":"before my coding agent edits any file I want to see what it intends to do and say yes or no"}
+{"_id":"q002","metadata":{"origin":"hand-written","node":"patterns"},"text":"a document my agent read told it to ignore its instructions; how do I keep the part that can act away from untrusted text"}
+{"_id":"q003","metadata":{"origin":"hand-written","node":"patterns"},"text":"should I grade only the final result of an agent or also the steps it took to get there"}
+{"_id":"q004","metadata":{"origin":"hand-written","node":"patterns"},"text":"my agent gives up halfway when a service times out; what should it do when a step fails"}
+{"_id":"q005","metadata":{"origin":"hand-written","node":"patterns"},"text":"let one agent call a specialist agent like a function and keep control of the task"}
+{"_id":"q006","metadata":{"origin":"hand-written","node":"patterns"},"text":"my agent kept going round in circles and ran up a large bill; what stops that from happening"}
+{"_id":"q007","metadata":{"origin":"hand-written","node":"patterns"},"text":"how can an agent keep the procedures that worked so it does not work them out again every time"}
+{"_id":"q008","metadata":{"origin":"hand-written","node":"patterns"},"text":"I need a record of everything the agent did that nobody can quietly change afterwards"}
+{"_id":"q009","metadata":{"origin":"hand-written","node":"patterns"},"text":"run several independent subtasks at the same time and merge what comes back"}
+{"_id":"q010","metadata":{"origin":"hand-written","node":"patterns"},"text":"a multi-step run failed in the middle; how do I undo the steps that already happened"}
+{"_id":"q011","metadata":{"origin":"hand-written","node":"patterns"},"text":"how much should an agent be allowed to decide on its own for different kinds of action"}
+{"_id":"q012","metadata":{"origin":"hand-written","node":"patterns"},"text":"the agent met the number I asked for but not what I actually wanted"}
+{"_id":"q013","metadata":{"origin":"hand-written","node":"main"},"text":"what is a Bundle in this format"}
+{"_id":"q014","metadata":{"origin":"hand-written","node":"main"},"text":"how do I publish a level 0 node"}
+{"_id":"q015","metadata":{"origin":"hand-written","node":"main"},"text":"what does a gate do in the governance model"}
+{"_id":"q016","metadata":{"origin":"hand-written","node":"main"},"text":"how is a runnable architecture bundle described"}
+{"_id":"q017","metadata":{"origin":"hand-written","node":"main"},"text":"what records something that happened, with an outcome and a severity"}
+{"_id":"q018","metadata":{"origin":"hand-written","node":"main"},"text":"what are the typed relations between items called"}
+{"_id":"q019","metadata":{"origin":"hand-written","node":"main"},"text":"where does the vocabulary of the ontology live"}
+{"_id":"q020","metadata":{"origin":"hand-written","node":"main"},"text":"what page shows the current spend and the cap"}

@@ -14,7 +14,7 @@ The measured results are in [`../docs/MEASUREMENTS.md`](../docs/MEASUREMENTS.md)
 | `corpus/` | the seeded fault corpus of the security floor and the parity call list — data, readable by a reviewer. Every credential-shaped string in it is fabricated. |
 | `metrics.js` | the pure arithmetic both halves share — median, precision/recall/nDCG/MRR at k, detector precision and recall, rule coverage. No file, clock, network or random source. |
 | `gen-bundle.js` | the deterministic synthetic-Bundle generator behind the build curves. Item *n* is a pure function of *n*. It **refuses to write inside this repository**: point it at a scratch directory. |
-| `queries/bench-v1/` | the committed labelled query set in BEIR layout (`queries.jsonl`, `qrels/test.tsv`). Twenty hand-written intents over the two reference nodes, one gold item each, every label readable by a reviewer. |
+| `queries/bench-v2/` | the committed labelled query set in BEIR layout (`queries.jsonl`, `qrels/test.tsv`). Twenty hand-written intents over the two reference nodes, one gold item each, every gold item published on its node, every label readable by a reviewer. |
 
 The retrieval runner itself is [`../tools/bench`](../tools/bench), standalone and independent of `src/` by the
 rule that governs every checker here (AGSC-09-90).

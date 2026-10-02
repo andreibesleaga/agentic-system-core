@@ -42,11 +42,11 @@ At most three names are shown per cell; test files and scenario files are listed
 |---|---|---|---|---|---|---|---|
 | PRD-001 | MAPPED | `AGSC-00-11`, `AGSC-09-07`, `AGSC-09-94` +1 | 2 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/scenario-map.md` |
 | PRD-002 | MAPPED | `AGSC-00-09`, `AGSC-00-21`, `AGSC-02-24` +3 | 4 vectors, 19 tests, 1 scenarios, 2 checkers | `tools/count-artifacts.test.js`, `tools/gen-spec-html.test.js`, `tools/helpers.js` +2 | — | `persona-a-reader.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/README.md` +2 |
-| PRD-003 | MAPPED | `AGSC-00-09`, `AGSC-04-19`, `AGSC-09-11` +1 | 2 vectors, 22 tests, 1 scenarios, 2 checkers | — | — | — | — |
+| PRD-003 | MAPPED | `AGSC-00-09`, `AGSC-04-19`, `AGSC-09-11` +1 | 2 vectors, 23 tests, 1 scenarios, 2 checkers | — | — | — | — |
 | PRD-004 | MAPPED | `AGSC-00-10`, `AGSC-04-01`, `AGSC-04-02` +2 | 1 vectors, 29 tests, 2 scenarios, 0 checkers | `tools/validate-diagrams.test.js` | — | — | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/algo-build-pipeline.md` |
 | PRD-005 | MAPPED | `AGSC-06-11`, `AGSC-08-20`, `AGSC-08-20a` +3 | 6 vectors, 8 tests, 0 scenarios, 0 checkers | `tools/gen-glossary.test.js`, `tools/public-hygiene.test.js` | — | `persona-i-maintainer.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/README.md` +2 |
 | PRD-006 | MAPPED | `AGSC-01-17`, `AGSC-01-18` | 0 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | — | `docs/SPEC.md` |
-| PRD-007 | MAPPED | `AGSC-09-08`, `AGSC-09-09`, `AGSC-09-11` +1 | 4 vectors, 26 tests, 2 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
+| PRD-007 | MAPPED | `AGSC-09-08`, `AGSC-09-09`, `AGSC-09-11` +1 | 4 vectors, 27 tests, 2 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
 | PRD-008 | MAPPED | `AGSC-00-18`, `AGSC-04-25` | 1 vectors, 6 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-009 | MAPPED | `AGSC-00-18` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-010 | MAPPED | `AGSC-00-12`, `AGSC-00-23`, `AGSC-00-25` +1 | 2 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-l-port-implementer.feature` | `docs/SPEC.md` |
@@ -90,7 +90,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-048 | ALLOWED | — | — | — | — | `persona-i-maintainer.feature` | `docs/COMPLIANCE-CROSSWALK.md`, `docs/PLAN.md`, `docs/diagrams/README.md` +2 |
 | PRD-049 | MAPPED | `AGSC-09-92` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | `persona-i-maintainer.feature` | `docs/PLAN.md`, `docs/diagrams/flow-release.md` |
 | PRD-050 | ALLOWED | — | — | — | — | `persona-b-contributor.feature`, `persona-j-standards.feature` | `docs/PLAN.md`, `docs/diagrams/flow-release.md` |
-| PRD-051 | MAPPED | `AGSC-09-13a`, `AGSC-09-16` | 3 vectors, 10 tests, 0 scenarios, 0 checkers | — | — | — | — |
+| PRD-051 | MAPPED | `AGSC-09-13a`, `AGSC-09-16` | 3 vectors, 11 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-052 | MAPPED | `AGSC-06-24` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-054 | MAPPED | `AGSC-09-90`, `AGSC-09-91`, `AGSC-09-92` +3 | 2 vectors, 10 tests, 0 scenarios, 7 checkers | `arch/package-manifest.test.js`, `tools/gen-ns.test.js`, `tools/gen-spec-html.test.js` +7 | — | `persona-j-standards.feature`, `persona-l-port-implementer.feature` | `docs/IMPLEMENTERS-GUIDE.md`, `docs/PLAN.md`, `docs/SPEC.md` |
 | PRD-053 | MAPPED | `AGSC-01-25`, `AGSC-02-90`, `AGSC-02-91` +4 | 6 vectors, 12 tests, 1 scenarios, 0 checkers | `bin/agsc-init-then-ci.test.js`, `conformance/areas/_init-verbs.js`, `tools/validate-features.test.js` | `adopt-0001`, `adopt-0003`, `adopt-0006` | `persona-0-dropin.feature` | `docs/diagrams/user-flows.md` |

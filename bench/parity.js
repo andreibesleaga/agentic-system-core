@@ -159,6 +159,25 @@ function overStdio(bundleDir, calls) {
 const wire = (value) => JSON.parse(JSON.stringify(value));
 
 /**
+ * AGSC-09-16: "The one input on which the two transports MUST differ is a `remember` call
+ * that declares no operator: the local server refuses it with `AGSC-E003` and a page tool,
+ * which has no identity to declare, returns the item with `prov.operator` absent and
+ * `AGSC-E506`." A call is counted as that difference only when both answers have exactly
+ * this shape; any other inequality stays a difference.
+ * @returns {boolean}
+ */
+function requiredDifference(name, args, server, page) {
+  if (name !== 'remember') return false;
+  if (args && typeof args === 'object' && (args.operator != null || args.agent != null)) return false;
+  const s = server && server.body;
+  const p = page && page.body;
+  const prov = p && p.frontmatter && p.frontmatter.prov;
+  return Boolean(server && server.type === 'error' && s && s.code === 'AGSC-E003'
+    && page && page.type === 'proposal' && prov && prov.operator === undefined
+    && Array.isArray(p.findings) && p.findings.some((f) => f && f.code === 'AGSC-E506'));
+}
+
+/**
  * Compare every call across the four answers.
  * @param {string} bundleDir a Bundle directory (read only; `agsc mcp` writes nothing)
  * @param {{calls:Array, per_item:Array}} spec the call list
@@ -169,19 +188,25 @@ async function run(bundleDir, spec, options = {}) {
   const calls = callList(spec, hosts.published);
   const stdio = await overStdio(bundleDir, calls);
   const differing = [];
+  const required = [];
   const perTool = Object.create(null);
   let transportEqual = 0;
   for (let i = 0; i < calls.length; i += 1) {
     const [name, args] = calls[i];
     const reference = wire(hosts.projected.call(name, args));
-    const row = perTool[name] || { calls: 0, equal: 0 };
+    const row = perTool[name] || { calls: 0, equal: 0, required_difference: 0 };
     perTool[name] = row;
     row.calls += 1;
-    const unequal = ['page', 'module'].filter((host) => !util.isDeepStrictEqual(wire(hosts[host].call(name, args)), reference));
-    if (util.isDeepStrictEqual(wire(stdio.answers[i]), wire(hosts.local.call(name, args)))) transportEqual += 1;
+    const answers = { module: wire(hosts.module.call(name, args)), page: wire(hosts.page.call(name, args)) };
+    const unequal = ['page', 'module'].filter((host) => !util.isDeepStrictEqual(answers[host], reference));
+    const transportSame = util.isDeepStrictEqual(wire(stdio.answers[i]), wire(hosts.local.call(name, args)));
+    if (transportSame) transportEqual += 1;
     else unequal.push('stdio');
     if (unequal.length === 0) row.equal += 1;
-    else differing.push({ args: JSON.stringify(args).slice(0, 120), hosts: unequal, tool: name });
+    else if (transportSame && unequal.every((host) => requiredDifference(name, args, reference, answers[host]))) {
+      row.required_difference += 1;
+      required.push({ args: JSON.stringify(args).slice(0, 120), tool: name });
+    } else differing.push({ args: JSON.stringify(args).slice(0, 120), hosts: unequal, tool: name });
   }
   // AGSC-09-16: an unpublished item is invisible to a page tool.
   const unpublished = hosts.slugs.filter((slug) => !hosts.published.includes(slug));
@@ -201,10 +226,11 @@ async function run(bundleDir, spec, options = {}) {
     answer_types: types,
     calls: calls.length,
     differing,
-    equal: calls.length - differing.length,
+    equal: calls.length - differing.length - required.length,
     items: hosts.slugs.length,
     items_published: hosts.published.length,
     per_tool: perTool,
+    required_difference: required,
     stdio_exit: stdio.code,
     stdio_stderr_bytes: Buffer.byteLength(stdio.stderr),
     transport_equal: transportEqual,
@@ -213,4 +239,4 @@ async function run(bundleDir, spec, options = {}) {
   };
 }
 
-module.exports = { callList, expand, inProcess, overStdio, run };
+module.exports = { callList, expand, inProcess, overStdio, requiredDifference, run };
