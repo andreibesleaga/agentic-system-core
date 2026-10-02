@@ -26,7 +26,7 @@ read on 2026-09-24.
 
 | Standard | What it is | Why it is used here | Rules | Primary document |
 |---|---|---|---|---|
-| RFC 8615, Well-Known URIs | the `/.well-known/` path prefix and its registry | the discovery document lives at `/.well-known/knowledge-linkset` (suffix: registration to be requested) | AGSC-06-07 | <https://www.rfc-editor.org/info/rfc8615> |
+| RFC 8615, Well-Known URIs | the `/.well-known/` path prefix and its registry | the discovery document lives at `/.well-known/knowledge-linkset` (suffix: not registered; asked for in the posted Internet-Draft, no request sent to the registry) | AGSC-06-07 | <https://www.rfc-editor.org/info/rfc8615> |
 | RFC 8288, Web Linking | the model of typed links and link relations | pages point at the discovery document with the registered relation `describedby`; this project's own relations are URIs, as the RFC requires for unregistered ones | AGSC-06-10, AGSC-06-25 | <https://www.rfc-editor.org/info/rfc8288> |
 | RFC 9264, Linkset | a document format (`application/linkset+json`) that holds a set of links | the discovery document *is* a link set: one file naming every machine artefact | AGSC-06-07 to AGSC-06-10 | <https://www.rfc-editor.org/info/rfc9264> |
 | RFC 6906, the `profile` relation; RFC 7284, the Profile URI Registry | how a document says which profile of a format it follows | the discovery document's media type carries this project's profile identifier (registration to be requested) | AGSC-06-07, AGSC-11-04 | <https://www.rfc-editor.org/info/rfc6906>, <https://www.rfc-editor.org/info/rfc7284> |

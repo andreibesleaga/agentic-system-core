@@ -169,8 +169,9 @@ function run(argv, io) {
   const conformance = fs.readFileSync(path.join(specDir, '09-conformance.md'), 'utf8');
   const registered = new Set((conformance.match(/^\| `AGSC-E\d{3}`/gmu) || [])
     .map((s) => (s.match(/AGSC-E\d{3}/u) || [''])[0]));
+  // The declaration line of spec/00 (a release candidate or a release).
   const declaredSpecVersion = (fs.readFileSync(path.join(specDir, '00-overview.md'), 'utf8')
-    .match(/1\.0\.0-rc\.\d+/u) || ['unknown'])[0];
+    .match(/spec_version: "(\d+\.\d+\.\d+(?:-rc\.\d+)?)"/u) || [null, 'unknown'])[1];
 
   const json = absentDir ? [] : walk(dir).filter((f) => f.endsWith('.json')).sort();
   // a vector tree is `<area>/<prefix>-<nnnn>[-<words>].json`

@@ -244,12 +244,28 @@ function followRedirects(peer, redirects, options) {
   return Object.freeze({ declaredPeer: String(peer), error, final, followed });
 }
 
+/** True when both are URLs on one origin, or when `retrieved` is no URL at all. */
+function sameOrigin(anchor, retrieved) {
+  let from;
+  try {
+    from = new URL(String(retrieved));
+  } catch (e) {
+    return true;
+  }
+  try {
+    return new URL(String(anchor)).origin === from.origin;
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * walk(options) -> the AGSC-11-10 traversal result.
  * options: { fetch, federation, start }. `fetch(key)` is INJECTED and
  * synchronous here (the area handlers and the Clock/FileSystem ports are
  * synchronous; the async Network port is adapted by the application layer).
- * It returns `{ ok, peers }`. `key` is the canonical well-known URL, which is
+ * It returns `{ ok, peers }`, and MAY add the document's `anchor` and the `url` it was
+ * finally read from (AGSC-06-08). `key` is the canonical well-known URL, which is
  * also the visited-set key — the cross-origin cycle guard of (d).
  */
 function walk(options) {
@@ -284,6 +300,13 @@ function walk(options) {
     try {
       response = fetch(key) || { ok: false, peers: [] };
     } catch {
+      response = { ok: false, peers: [] };
+    }
+    // AGSC-06-08 (amended 2026-10-02 for 1.0.0): a document whose anchor is not on the
+    // origin it was retrieved from is not that peer's document. A fetch adapter that
+    // reports the document's `anchor` (and, after redirects, the `url` it read) is held
+    // to it here; a key that is no URL, as in the walk's own tests, is not judged.
+    if (response.ok && typeof response.anchor === 'string' && !sameOrigin(response.anchor, response.url || key)) {
       response = { ok: false, peers: [] };
     }
     if (!response.ok) {

@@ -26,9 +26,9 @@
       ],
       "properties": {
         "base": {
-          "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base. No query, no fragment, and no path segment that is . or .. (AGSC-01-19).",
+          "description": "Absolute https origin, trailing slash optional and stripped; the IRI base of every item (AGSC-01-19). The development placeholder http://localhost[:port]/ written by adoption (AGSC-02-94) is accepted and lint-warned as AGSC-E506 until the owner sets a real base. No path, query or fragment: at 1.0 a node occupies a whole origin (AGSC-01-19, AGSC-06-07).",
           "type": "string",
-          "pattern": "^(?:https://[^\\x00-\\x20/?#]+(?:/[^\\x00-\\x20/?#]+)*/?|http://localhost(?::[0-9]{1,5})?/?)$"
+          "pattern": "^(?:https://[^\\x00-\\x20/?#]+/?|http://localhost(?::[0-9]{1,5})?/?)$"
         },
         "title": {
           "$ref": "#/$defs/single_line",
@@ -149,18 +149,18 @@
       "type": "object"
     },
     "peers": {
-      "description": "Federation peers (AGSC-10-12): each entry is another node's canonical /.well-known/knowledge-linkset URL, emitted as one .../rel#peer link in the link set (AGSC-06-10).",
+      "description": "Federation peers (AGSC-10-12): each entry is another node's canonical /.well-known/knowledge-linkset URL, at the root of its origin, emitted as one .../rel#peer link in the link set (AGSC-06-10).",
       "type": "array",
       "uniqueItems": true,
       "items": {
         "type": "string",
         "format": "uri",
-        "pattern": "^https://[^\\x00-\\x20/?#]+(?:/[^\\x00-\\x20/?#]+)*/\\.well-known/knowledge-linkset$"
+        "pattern": "^https://[^\\x00-\\x20/?#]+/\\.well-known/knowledge-linkset$"
       }
     },
     "run": {
       "additionalProperties": false,
-      "description": "Opt-in execution settings for the run and trace verbs (AGSC-09-94). Both verbs exit 2 with AGSC-E001 unless enabled is true.",
+      "description": "Opt-in execution settings for the run and trace verbs (AGSC-09-94). Both verbs exit 2 with AGSC-E004 unless enabled is true (AGSC-09-94).",
       "properties": {
         "enabled": {
           "description": "Default false.",

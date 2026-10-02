@@ -5,7 +5,7 @@
 ## 1. Terms of the specification (spec/00 §0.2)
 
 - **Bundle** — one directory tree of Markdown items plus exactly one `agsc.config.json`; the unit of publication and of conformance. *(AGSC-00-04)*
-- **Item** — one `.md` file with YAML frontmatter whose `type` is one of `concept`, `episode`, `procedure`, `lesson`, `cluster`, `gate`. "Item" is a term of this specification only; no common superclass exists in the ontology (§05). *(AGSC-00-05)*
+- **Item** — one `.md` file with YAML frontmatter whose `type` is one of `concept`, `episode`, `procedure`, `lesson`, `cluster`, `gate`. "Item" is a term of this specification only; no common superclass exists in the ontology (§05). A **published** item is one that is neither `draft` nor held back by the `releases` switchboard (AGSC-01-20); a **listed** item is a published item that is not `retired`. A retired item is published — it keeps its page, its per-item copies and its place in the graph exports (AGSC-11-22) — and is not listed: it leaves `search.json`, `/llms.txt`, `/chunks.jsonl`, the skill packs, `agsc-counts` and every composition selection. A rule that names "the published set (AGSC-06-30)" means the listed set. *(Amended 2026-10-02 for 1.0.0: "published" had these two extents and no definition.)* *(AGSC-00-05)*
 - **Concept** (with a `kind` qualifier), **Episode**, **Procedure**, **Lesson**, **Cluster**, **Gate** are the six item types. **Link**, **Source**, **Proposal**, **Review**, **Bundle**, **Harness** complete the ubiquitous language; Proposal and Review have no file (they are a forge pull request and its `verified[]` evidence), Source is an inline `sources[]` entry, and a Harness is generated output only. *(AGSC-00-06)*
 - **NOW** is generated context, never an item and never hand-edited. *(AGSC-00-07)*
 - **Card**, **page**, **deck** and **note** are UI or import vocabulary; they MUST NOT appear as a `type`, a schema key or an ontology term. *(AGSC-00-08)*
@@ -87,6 +87,6 @@ Core nine carry composition semantics (spec/03 §3.5); the Mode-2 five (`impleme
 - **Walk** — a client-side traversal of peers bounded by `hop_limit`, `fan_out` and `max_requests` (AGSC-11-10).
 - **Origin marking** — every peer-derived result carries `trust: untrusted` and the peer Bundle IRI (AGSC-11-11).
 - **Tombstone** — the state of a node that stopped publishing: a valid link set with `agsc-tombstone` (AGSC-11-23).
-- **Retired** — an item status that keeps the IRI and page and leaves every export (AGSC-11-22).
+- **Retired** — an item status that keeps the IRI, the page, the per-item copies and the graph entry, and leaves the indexes, the agent text files, the chunks, the skill packs and every selection (AGSC-11-22, AGSC-00-05).
 - **Plugin contract** — declare · pin · inherit · prove (AGSC-11-16…19).
 

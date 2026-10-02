@@ -104,6 +104,32 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     one part of `ledger.jsonl` that differs between implementations or versions
     (AGSC-08-20a, AGSC-04-24); its `ref` is the `content/` tree id of HEAD, an input beside
     the git-log file. A builder-independent entry is planned for 1.1.
+- **Clarifications for 1.0.0** (each rule amended with a dated note):
+  - a discovery document whose anchor is not on the origin it was retrieved from is not
+    that node's document (AGSC-06-08); a validator reports `AGSC-E907`;
+  - at 1.0 a node occupies a whole origin: `site.base` and peer addresses carry no path
+    (AGSC-01-19, AGSC-06-07; the configuration schema refuses a path — no build with one
+    could succeed);
+  - the well-known suffix is not registered: the posted Internet-Draft asks for it and no
+    request has been sent to the registry (AGSC-06-07);
+  - `Repr-Digest` only on a response served without a content coding (AGSC-06-17); the
+    `digest` attribute is described without a reference RFC 9727 does not support
+    (AGSC-06-10); a note on `derived-from` naming an Episode under PROV-O (AGSC-02-16);
+  - "published" and "listed" items are defined once (AGSC-00-05): a retired item is
+    published and not listed;
+  - a case skipped for an undeclared surface is reported as `pass` (AGSC-09-02); a version
+    in expected output stands for the tool's own (AGSC-09-05); the fixture Bundle the test
+    cases use is part of the definition (AGSC-00-01);
+  - lists made equal between copies: the federation parameters (AGSC-01-18, AGSC-11-06),
+    the `agsc-` attributes (AGSC-06-10, AGSC-00-21), the edges that never affect a
+    composition (AGSC-07-10), the `prov` keys, the files opened to other origins
+    (AGSC-11-03), the `AGSC-E209` and `AGSC-E907` rows;
+  - eight wrong references corrected, `--dev` and user configuration stated (AGSC-09-09,
+    AGSC-09-93), the review flag read from the process environment only (AGSC-01-37);
+  - the route set names every route once (AGSC-06-01), the `mcp` surface's target and when
+    it is declared (AGSC-11-16), `/changelog/` as derived (AGSC-06-18), no `Optional`
+    section in `/llms.txt` (AGSC-06-13), redirects from `aliases[]` (AGSC-06-04), a cluster
+    page listing at most 500 members (AGSC-06-21), Node 22.13 (AGSC-10-11).
 
 ### Fixed
 
@@ -145,6 +171,19 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the threshold it applies, not 128.
 - Notes a verb prints are no longer written to standard error under `--json`
   (AGSC-09-10).
+- The engine's two readers of other nodes' discovery documents (the mutual check and the
+  federation walk) and both checkers skip a document whose anchor is on another origin
+  (AGSC-06-08).
+- Every value outside the bound table of AGSC-11-01 is one `AGSC-E209` — `attachments` and
+  `budget` were reported only as the schema's `AGSC-E201`, a federation value as both, and
+  the chunk maximum was not checked.
+- `tools/count-artifacts`, `tools/validate-vectors` and the vector runner read the declared
+  version from its declaration line, so they accept `1.0.0` as well as a release candidate.
+- Documentation corrected against the rules: the implementers' guide (the ten stamping
+  places, the reservation value, the default build instant, the pattern attachment rule),
+  `docs/SPEC.md` (federation in eight parts, the profile registration, `-0`, the boundary rules'
+  trace row), the plain guides (retired items, Levels, federation, registrations), the
+  glossary's retired line, the test-case README.
 
 ## [1.0.0-rc.6] - 2026-09-29
 

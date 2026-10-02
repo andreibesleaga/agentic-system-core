@@ -1,6 +1,6 @@
 # 10 — Implementation profiles, in plain language
 
-**Levels.** Level 0 is a hand-written discovery file over any site — a wiki, a CMS export — with no digests required. Level 1 adds the item format and links. Level 2 adds the graph, the build outputs, the chunk export, boards and the boundary rules. Level 3 is everything. The Level is the single source of which vector areas a claim runs.
+**Levels.** Level 0 is a publisher that can be hand-made over any site — a wiki, a CMS export: the items with their frontmatter, the root document, a discovery file without digests, `graph.jsonld` and `llms.txt`. Level 1 adds reading any Bundle: links, inverses and the checks. Level 2 adds the graph, the build outputs, the chunk export, boards and the boundary rules. Level 3 is everything. The Level is the single source of which vector areas a claim runs.
 
 **Foreign knowledge bases.** A mapping guide for existing wikis and note systems, so that adopting means adding a header, not rewriting.
 

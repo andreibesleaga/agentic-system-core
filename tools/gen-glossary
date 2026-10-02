@@ -110,7 +110,7 @@ function generate(root) {
   out.push('- **Walk** — a client-side traversal of peers bounded by `hop_limit`, `fan_out` and `max_requests` (AGSC-11-10).');
   out.push('- **Origin marking** — every peer-derived result carries `trust: untrusted` and the peer Bundle IRI (AGSC-11-11).');
   out.push('- **Tombstone** — the state of a node that stopped publishing: a valid link set with `agsc-tombstone` (AGSC-11-23).');
-  out.push('- **Retired** — an item status that keeps the IRI and page and leaves every export (AGSC-11-22).');
+  out.push('- **Retired** — an item status that keeps the IRI, the page, the per-item copies and the graph entry, and leaves the indexes, the agent text files, the chunks, the skill packs and every selection (AGSC-11-22, AGSC-00-05).');
   out.push('- **Plugin contract** — declare · pin · inherit · prove (AGSC-11-16…19).');
   out.push('');
   return { counts: { keys: keys.length, terms: rows.length }, text: out.join('\n') + '\n' };

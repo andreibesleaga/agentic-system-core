@@ -204,6 +204,16 @@ function profileRecognisedWithoutHeaders(response) {
  */
 const FEDERATION_MAX_BYTES = Object.freeze({ default: 33554432, max: 268435456, min: 65536 });
 
+/** AGSC-11-01: the rows of the bound table outside `federation{}`. */
+const TABLE_KEYS = Object.freeze([
+  ['chunks', 'max_bytes', Object.freeze({ integer: true, max: 65536, min: 256 })],
+  ['attachments', 'max_bytes', Object.freeze({ integer: true, max: 10485760, min: 1024 })],
+  ['budget', 'usd_month', Object.freeze({ integer: true, min: 0 })],
+]);
+
+/** The top-level configuration keys whose values AGSC-11-01 range-checks as AGSC-E209. */
+const RANGE_CHECKED_KEYS = Object.freeze(['attachments', 'budget', 'chunks', 'federation', 'visibility']);
+
 /**
  * checkBoundaryConfig(config) -> Finding[]
  * AGSC-11-01: every numeric or enumerated parameter of the boundary chapter
@@ -238,10 +248,22 @@ function checkBoundaryConfig(config) {
   if (c.visibility !== undefined && !VISIBILITY_VALUES.includes(c.visibility)) {
     findings.push(finding('AGSC-E209', 'error', { key: 'visibility', message: `visibility must be one of ${VISIBILITY_VALUES.join(', ')} (AGSC-11-01)` }));
   }
-  if (c.chunks !== undefined && c.chunks !== null && typeof c.chunks === 'object'
-      && c.chunks.max_bytes !== undefined
-      && (!Number.isInteger(c.chunks.max_bytes) || c.chunks.max_bytes < 256)) {
-    findings.push(finding('AGSC-E209', 'error', { key: 'chunks.max_bytes', message: 'chunks.max_bytes must be an integer of at least 256 (AGSC-11-01)' }));
+  // AGSC-11-01's bound table also holds `chunks.max_bytes`, `attachments.max_bytes` and
+  // `budget.usd_month`; a value outside it is AGSC-E209 like a federation value
+  // (2026-10-02: the last two were reported only by the schema, as AGSC-E201, and the
+  // chunk maximum was not checked).
+  for (const [key, field, range] of TABLE_KEYS) {
+    const holder = c[key];
+    if (holder === undefined || holder === null || typeof holder !== 'object' || holder[field] === undefined) continue;
+    const value = holder[field];
+    const ok = (range.integer ? Number.isInteger(value) : typeof value === 'number' && Number.isFinite(value))
+      && value >= range.min && (range.max === undefined || value <= range.max);
+    if (!ok) {
+      const bound = range.max === undefined ? `of at least ${range.min}` : `between ${range.min} and ${range.max}`;
+      findings.push(finding('AGSC-E209', 'error', {
+        key: `${key}.${field}`, message: `${key}.${field} must be ${range.integer ? 'an integer' : 'a number'} ${bound} (AGSC-11-01)`,
+      }));
+    }
   }
   return Object.freeze(findings.concat(federation.checkContribute(c), federation.checkRelated(c)));
 }
@@ -310,6 +332,7 @@ module.exports = {
   PROFILE_URI,
   VISIBILITY_VALUES,
   WELLKNOWN,
+  RANGE_CHECKED_KEYS,
   checkBoundaryConfig,
   etag,
   headerSets,

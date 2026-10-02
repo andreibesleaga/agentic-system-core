@@ -1,6 +1,6 @@
 # Conformance vectors
 
-These files, together with `spec/00`–`spec/11`, `schema/*.json` and `ontology/agsc.ttl`, are the definition of AgenticSystemCore. A port in any language MUST be able to reach conformance from this directory alone, without reading a line of the reference engine (NFR-02, AGSC-00-01).
+These files, together with `spec/00`–`spec/11`, `schema/*.json` and `ontology/agsc.ttl`, are the definition of AgenticSystemCore. A port in any language MUST be able to reach conformance from this directory and the fixture Bundle `tests/fixtures/minimal/` (which eight cases name as `"bundle": "fixtures/minimal"`) alone, without reading a line of the reference engine (NFR-02, AGSC-00-01).
 
 In short: every file here is one case that cites one rule; a port loads the JSON, runs the case and compares its result with `expected`. This is the first public vector set, published with `1.0.0-rc.6`, and no vector in it is withdrawn. From now on a vector is never edited in place to change its case: where a vector and its rule disagree, the rule is normative (AGSC-00-03), the corrected case ships as a new vector with a new id, and the old file stays in this directory with `level` `withdrawn`, a `reason` and, where it has a successor, `superseded_by` (AGSC-00-16, AGSC-09-04, AGSC-09-05).
 
@@ -37,7 +37,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 ## Running them from a foreign port
 
-1. **Choose a class** — reader, writer or full engine (AGSC-00-09…11). The Level is the single source of the area set (AGSC-10-15): the areas a claim runs are exactly those AGSC-10-02…05 list for its Level, and no other list exists.
+1. **Choose a Level** — 0 (publisher), 1 (reader), 2 (writer) or 3 (full engine) (AGSC-10-01…05). The Level is the single source of the area set (AGSC-10-15): the areas a claim runs are exactly those AGSC-10-02…05 list for its Level, and no other list exists.
 2. **Implement five primitives**: a failsafe-YAML reader, a JCS writer, SHA-256, Unicode NFC, and code-point sorting. Everything else in this specification is expressible on top of them.
 3. **Load each file** in your own test harness — they are plain JSON, so `glob` + parse is enough. Dispatch on `area` and on the `input`/`expected` member names present.
 4. **Compare bytes, not structures**, wherever `expected` carries a string (`output`, `nquads`, `stdout`). Compare RDF by graph isomorphism only where a vector says so; the canonical N-Quads form is compared byte-for-byte.

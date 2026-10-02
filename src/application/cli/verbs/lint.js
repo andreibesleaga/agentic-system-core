@@ -15,6 +15,7 @@ const slug = require('../../../knowledge/slug.js');
 const govLint = require('../../../governance/lint.js');
 const govFix = require('../../../governance/fix.js');
 const { checkAgents } = require('../../../governance/agents.js');
+const { RANGE_CHECKED_KEYS } = require('../../../boundary/visibility.js');
 const site = require('../../../distribution/site.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
@@ -39,8 +40,11 @@ function configAndRoot(bundle, options = {}) {
   // AGSC-01-17/18 + AGSC-01-36…38: the configuration, closed, with the agent
   // lane INJECTED (Knowledge never requires Governance), and AGSC-00-15: the
   // version this tool implements, so another MAJOR is refused (`ownVersion`).
+  // AGSC-11-01: the boundary range check runs when the configuration is loaded
+  // (`application/config/load.js`), so its keys are not reported twice.
   findings.push(...validate.config(bundle.config || {}, {
-    checkAgents, file: 'agsc.config.json', ownVersion: options.ownVersion, schemas,
+    checkAgents, file: 'agsc.config.json', ownVersion: options.ownVersion,
+    rangeCheckedElsewhere: RANGE_CHECKED_KEYS, schemas,
   }));
   // AGSC-01-04: the Bundle root.
   if (bundle.index) {

@@ -55,7 +55,7 @@ and the reference checker if you want a ready-made one.
 
 | # | Step | Rule | Proved by |
 |---|---|---|---|
-| 1 | Choose the site base: one absolute `https:` URL. Every item IRI is the base, the type folder and the slug, with a trailing slash | AGSC-05-04 | the `graph` vectors; `validate-wellknown --level 0` checks the anchor |
+| 1 | Choose the site base: one absolute `https:` URL. Every item IRI is the base, the type folder and the slug, with a trailing slash | AGSC-05-01 | the `graph` vectors; `validate-wellknown --level 0` checks the anchor |
 | 2 | Give every piece of knowledge a slug: lowercase letters, digits, single hyphens, at most 64 characters, unique | AGSC-01-10 | the `slug` vectors |
 | 3 | Export each piece as `content/<type-plural>/<slug>.md` with a YAML block carrying at least `type` and `title`; `prov` is inherited from the Bundle at Level 0, with a warning | AGSC-02-01, AGSC-10-02 | the `frontmatter` vectors; any JSON Schema 2020-12 validator with `schema/item.schema.json` |
 | 4 | Write `content/index.md` with `spec_version`, `okf_version`, `title`, `description` and `base`, and no `type` | AGSC-01-04 | the `bundle` vectors; `schema/bundle.schema.json` |
@@ -252,8 +252,9 @@ bytes for the same Bundle, so each is named here with the rule that fixes it.
 3. **`robots.txt` carries one group per named crawler.** AGSC-06-18: one
    `User-agent: <token>` + `Disallow: /` per product token of `site.tdm_crawlers[]`,
    in configuration order, **before** the `User-agent: *` group, and no `Disallow`
-   for any other token. A node publishing `tdm-reservation: 1` — every node at 1.x
-   — with an empty or absent list fails its build with `AGSC-E202`. No rule pins the
+   for any other token. A node publishing `tdm-reservation: 1` — every node under the Content Use Terms;
+   a node under another licence publishes `0` and no crawler group (AGSC-06-18) — with an
+   empty or absent list fails its build with `AGSC-E202`. No rule pins the
    whole file's bytes, and vector `disc-0012` asserts the groups rather than the
    bytes.
 4. **An inline body link emits a triple.** AGSC-05-27: one `asc:mentions` per ordered
@@ -296,8 +297,8 @@ bytes of the previous hash followed by the JCS form of the entry **excluding its
 **The build instant comes from `SOURCE_DATE_EPOCH` and from nowhere else.**
 AGSC-04-09/10/11: no wall clock, ever, in any code path that reaches an emitted byte.
 A malformed `SOURCE_DATE_EPOCH` is `AGSC-E603` and exit 2 — a configuration fault,
-never a finding. With no value at all the instant is 0 and the build warns
-(`AGSC-E606`). This is what makes `verify`'s double build meaningful: build twice,
+never a finding. With no value the instant is the time of the last commit, and only
+where no git history exists is it 0, with the warning `AGSC-E606` (AGSC-04-09). This is what makes `verify`'s double build meaningful: build twice,
 compare bytes, and any difference is `AGSC-E602` (AGSC-09-14).
 
 **Error codes are a closed set.** `AGSC-E<nnn>`, nothing else; the hundreds
@@ -335,7 +336,7 @@ content version: treat the commit as untagged **for this rule alone**, fall to t
 next branch, and report `AGSC-E506` naming the tag. The ledger is unaffected and
 still takes `kind: release` from that same tag (AGSC-08-20a).
 
-**Stamp it in exactly these nine places**, and nowhere else:
+**Stamp it in exactly these ten places**, and nowhere else (the table of AGSC-04-25):
 
 | where | how |
 |---|---|
@@ -348,6 +349,7 @@ still takes `kind: release` from that same tag (AGSC-08-20a).
 | `export --markdown` / `--okf` | the `bundle_version` key of `content/index.md`, beside `spec_version` (AGSC-01-26) — the one derived key of an otherwise byte-preserving export |
 | `export --jsonld` / `--jsonl` | **nowhere**: both are byte-identical to the graph of the same build and may not invent a member the graph does not carry (AGSC-01-27) |
 | `/changelog/` | a versions list, one row per git-log element carrying a `tag`, oldest first: the tag, that element's `committed_at` date and its `sha`. It comes from the git-log file and **not** from `ledger.jsonl`, because a 1.0 ledger entry carries `kind: release` and the commit reference but not the tag's name (AGSC-08-21) |
+| the archive of a multi-file result (`--zip`) | the file name `<directory>-<bundle_version>.zip`; the archive's content is unchanged (AGSC-04-25, AGSC-07-13a) |
 
 Two things to get right. **A browser host cannot derive it**: a page has no git
 history, so AGSC-07-13's byte-identity between a CLI Harness and a page Harness holds
@@ -447,8 +449,8 @@ make you non-conforming.
 
 * **The diagram compiler.** AGSC-01-07 and AGSC-02-13 describe a diagram DSL and its
   compiled SVG; no rule pins the SVG bytes. A compiled `.svg` must not be committed
-  (AGSC-01-07), and where a picture ships as an attachment it must be SVG with its
-  source beside it (AGSC-02-98). How you draw it is yours.
+  (AGSC-01-07), and an image attached to a concept of `kind: pattern` must be SVG
+  (AGSC-02-98; any other image type there is `AGSC-E412`). How you draw it is yours.
 * **Three of the four forge enforcement files.** AGSC-08-12 pins the bytes of
   `status-checks.json` and of nothing else. `pre-commit`, `CODEOWNERS` and
   `ruleset.json` are house style; two conforming engines will differ, and no vector

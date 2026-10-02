@@ -406,13 +406,23 @@ function index(frontmatter, options = {}) {
  * INJECTED as `options.checkAgents` by the application layer that owns both. The
  * context-boundary test enforces the direction of that arrow.
  */
+/** Schema keywords that state a range or a value set — what AGSC-11-01 also checks. */
+const RANGE_KEYWORDS = Object.freeze(['enum', 'exclusiveMaximum', 'exclusiveMinimum', 'maximum', 'minimum', 'multipleOf', 'type']);
+
 function config(configObject, options = {}) {
   const { schemas: s, file = 'agsc.config.json' } = options;
   const findings = [];
   if (configObject === null || typeof configObject !== 'object' || Array.isArray(configObject)) {
     return [finding('AGSC-E004', 'agsc.config.json is not a JSON object', { file })];
   }
+  // AGSC-11-01 / §9.4: a value the boundary range check reports as `AGSC-E209` is not
+  // reported again as the schema's `AGSC-E201`, which applies "only where no 2xx code
+  // is more specific". The caller that runs that check names its keys.
+  const elsewhere = Array.isArray(options.rangeCheckedElsewhere) ? options.rangeCheckedElsewhere : [];
   for (const e of s.config(configObject).errors) {
+    const segs = String(e.path || '').split('/').filter((seg) => seg !== '');
+    if (elsewhere.includes(segs[0]) && RANGE_KEYWORDS.includes(e.keyword)
+      && (segs.length >= 2 || segs[0] === 'visibility' || segs[0] === 'federation')) continue;
     // AGSC-01-18 / AGSC-00-25: `agsc.config.json` is the one CLOSED surface of this
     // format, so an unknown key is a refusal and not a preserved unknown — and the
     // refusal names the key, because a reserved name (`routing`) and a typo are

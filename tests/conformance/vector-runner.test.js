@@ -49,8 +49,11 @@ function handlerFor(area) {
 
 function specVersion() {
   const text = fs.readFileSync(path.join(ROOT, 'spec', '00-overview.md'), 'utf8');
-  const m = /1\.0\.0-rc\.\d+/u.exec(text);
-  return m ? m[0] : 'unknown';
+  // The declaration line of spec/00, `spec_version: "<version>"` — a release
+  // candidate or a release (plan item A4: the first `1.0.0-rc.N` in the file stops
+  // being the declaration once the version is `1.0.0`).
+  const m = /spec_version: "(\d+\.\d+\.\d+(?:-rc\.\d+)?)"/u.exec(text);
+  return m ? m[1] : 'unknown';
 }
 
 test('conformance vectors', async (t) => {

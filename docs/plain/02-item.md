@@ -6,7 +6,7 @@
 
 **Six types.** *Concept* (with a `kind`: pattern, taxonomy, explainer, principle, decision, spec, task, term, or a saved *architecture*), *Episode* (something that happened), *Procedure* (steps a reader can run; exports as a skill), *Lesson* (distilled from episodes, with a severity), *Cluster* (a navigational grouping), *Gate* (checks a change must pass).
 
-**Status.** draft, stable, deprecated and *retired* — retired items keep their page and address but leave every export.
+**Status.** draft, stable, deprecated and *retired* — retired items keep their page, their address and their place in the graph, but leave the search index, the agent text files, the chunks, the skill packs and every composition.
 
 **Body.** CommonMark. Fenced code stays code. Headings become anchors and, for the chunk export, cut points.
 

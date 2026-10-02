@@ -117,7 +117,7 @@ The official repository is <https://github.com/andreibesleaga/agentic-system-cor
 
 | Topic | Read |
 |---|---|
-| The specification (the standard itself: 343 numbered rules in twelve chapters) | [spec/](spec/) — start with [spec/00-overview.md](spec/00-overview.md); a plain-language edition is in [docs/plain/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/) |
+| The specification (the standard itself: 343 rule ids, 332 of them active, in twelve chapters) | [spec/](spec/) — start with [spec/00-overview.md](spec/00-overview.md); a plain-language edition is in [docs/plain/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/) |
 | How to read the specification | [docs/SPEC-ORIENTATION.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/SPEC-ORIENTATION.md), [docs/SPEC.md](docs/SPEC.md) |
 | The protocol: discovery document, link set, digests, peers, tool surfaces | [docs/PROTOCOLS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/PROTOCOLS.md), [spec/06-surfaces.md](spec/06-surfaces.md), [spec/11-boundary.md](spec/11-boundary.md) |
 | The Internet-Draft (the well-known link set, Independent Submission) | [internet-draft/](https://github.com/andreibesleaga/agentic-system-core/blob/main/internet-draft/) |

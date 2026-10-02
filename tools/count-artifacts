@@ -86,7 +86,8 @@ function run(argv, io) {
   const ttl = fs.existsSync(path.join(root, 'ontology/agsc.ttl')) ? read('ontology/agsc.ttl') : '';
   const n = (re) => (ttl.match(re) || []).length;
   const overview = specTexts.get('00-overview.md') || '';
-  const declared = (overview.match(/1\.0\.0-rc\.\d+/) || ['unknown'])[0];
+  // The declaration line of spec/00 (a release candidate or a release).
+  const declared = (overview.match(/spec_version: "(\d+\.\d+\.\d+(?:-rc\.\d+)?)"/u) || [null, 'unknown'])[1];
   const citedRules = new Set(vectors.map((v) => v.rule));
 
   const counts = {

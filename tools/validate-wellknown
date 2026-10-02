@@ -245,7 +245,7 @@ async function load(target) {
   READS.count += 1;
   if (isUrl(target)) {
     const r = await fetchUrl(target);
-    return { kind: 'url', name: target, bytes: r.body, headers: r.headers,
+    return { kind: 'url', name: target, retrievedFrom: r.url, bytes: r.body, headers: r.headers,
       resolve: async (href) => { READS.count += 1; return (await fetchUrl(href)).body; } };
   }
   const file = path.resolve(target);
@@ -306,6 +306,12 @@ async function check(src, level, findings) {
   if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) { F('AGSC-E201', 'link context is not an object'); return null; }
   let anchor;
   try { anchor = new URL(ctx.anchor); if (anchor.protocol !== 'https:' && !(opts.dev && anchor.protocol === 'http:')) throw 0; if (!ctx.anchor.endsWith('/')) throw 0; } catch { F('AGSC-E201', `anchor must be the absolute https Bundle IRI ending in "/" (AGSC-05-03); got ${JSON.stringify(ctx.anchor)}`); return null; }
+  // AGSC-06-08: a document whose anchor is not on the origin it was retrieved from
+  // (after redirects) is not that node's discovery document (RFC 9264 §9, RFC 8615
+  // §4.3). A file read from disk has no such origin and is not judged here.
+  if (anchor && src.kind === 'url' && src.retrievedFrom && new URL(src.retrievedFrom).origin !== anchor.origin) {
+    F('AGSC-E907', `anchor ${ctx.anchor} is not on the origin the document was retrieved from (${new URL(src.retrievedFrom).origin}); it is not that node's discovery document (AGSC-06-08)`);
+  }
   const names = KEYS.get(ctx).filter((k) => k !== 'anchor');
   const sorted = [...KEYS.get(ctx)].sort();
   if (JSON.stringify(KEYS.get(ctx)) !== JSON.stringify(sorted)) F('AGSC-E201', 'link context members are not ordered as JSON member names (AGSC-06-08, AGSC-04-05)');

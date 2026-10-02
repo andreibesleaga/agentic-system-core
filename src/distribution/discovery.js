@@ -493,6 +493,21 @@ function tombstoneOf(doc) {
   return Array.isArray(value) ? value[0] : null;
 }
 
+/**
+ * AGSC-06-08 (amended 2026-10-02 for 1.0.0): true when the document's anchor is on the
+ * origin of `url`, the URL it was retrieved from after redirects (RFC 9264 §9, RFC 8615
+ * §4.3). A document with no such URL — read from a file — is not judged, so true.
+ */
+function anchorOnOrigin(doc, url) {
+  if (url == null) return true;
+  const anchor = (((doc || {}).linkset || [])[0] || {}).anchor;
+  try {
+    return new URL(String(anchor)).origin === new URL(String(url)).origin;
+  } catch (e) {
+    return false;
+  }
+}
+
 /** Every `rel#peer` URL a document names. */
 function peersOf(doc) {
   const context = ((doc || {}).linkset || [])[0] || {};
@@ -513,8 +528,11 @@ function peerCheck(nodes) {
   const [a, b] = nodes;
   const findings = [];
   // A warning — a relation of a newer MINOR ignored (AGSC-00-21) — never fails a peer.
+  // AGSC-06-08: a document whose anchor is not on the origin of the URL it was read from
+  // is not that node's discovery document.
   const resolves = (n) => n != null && n.doc != null
-    && check(n.doc, { level: n.level == null ? 2 : n.level }).every((f) => f.severity !== 'error');
+    && check(n.doc, { level: n.level == null ? 2 : n.level }).every((f) => f.severity !== 'error')
+    && anchorOnOrigin(n.doc, n.url);
   const bothResolve = resolves(a) && resolves(b);
   if (!bothResolve) {
     findings.push(finding('AGSC-E907',
@@ -538,6 +556,7 @@ function peerCheck(nodes) {
 }
 
 module.exports = {
+  anchorOnOrigin,
   KNOWN_ATTRIBUTES,
   OPEN_WHEN_RESTRICTED,
   linkset,

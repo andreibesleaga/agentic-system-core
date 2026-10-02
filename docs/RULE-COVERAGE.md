@@ -259,7 +259,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-05 | VERIFIED | — | `distribution/build-golden.test.js`, `distribution/headers.test.js`, `distribution/html.test.js` | — | — |
 | AGSC-06-06 | VERIFIED | — | `tools/gen-ns.test.js` | — | — |
 | AGSC-06-07 | VERIFIED | — | `distribution/headers.test.js`, `distribution/routes.test.js` | — | `validate-wellknown` |
-| AGSC-06-08 | VERIFIED | `disc-0015`, `disc-0016`, `disc-0018` +1 | `acceptance/steps/persona-j.js`, `distribution/compose-page-run.test.js`, `distribution/discovery-facts.test.js` +4 | `persona-j-standards.feature#Implementer discovers the linkset via the well-known URI` | — |
+| AGSC-06-08 | VERIFIED | `disc-0015`, `disc-0016`, `disc-0018` +1 | `acceptance/steps/persona-j.js`, `distribution/compose-page-run.test.js`, `distribution/discovery-facts.test.js` +5 | `persona-j-standards.feature#Implementer discovers the linkset via the well-known URI` | — |
 | AGSC-06-08a | VERIFIED | `disc-0004` | `distribution/boards-relation.test.js`, `tools/validate-wellknown-visibility.test.js` | — | `validate-wellknown` |
 | AGSC-06-09 | VERIFIED | — | `acceptance/steps/persona-j.js`, `standard/rules.test.js` | — | — |
 | AGSC-06-10 | VERIFIED | `bnd-0039` | `acceptance/steps/persona-j.js`, `acceptance/steps/persona-l.js`, `distribution/boards-relation.test.js` +5 | `persona-j-standards.feature#Implementer discovers the linkset via the well-known URI`, `persona-l-port-implementer.feature#A Level-0 node written without the engine passes the shipped checker` | `validate-wellknown` |
@@ -379,14 +379,14 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-10-09 | VERIFIED | — | `interchange/import-safety.test.js`, `interchange/okf-roundtrip.test.js` | — | — |
 | AGSC-10-10 | VERIFIED | — | `docs/implementers-guide-rules.test.js` | — | — |
 | AGSC-10-11 | VERIFIED | — | `docs/implementers-guide-rules.test.js` | — | — |
-| AGSC-10-12 | VERIFIED | `disc-0005` | `boundary/federation.test.js`, `distribution/licence-dependent-texts.test.js`, `distribution/routes.test.js` +2 | — | `validate-wellknown` |
+| AGSC-10-12 | VERIFIED | `disc-0005` | `boundary/anchor-origin.test.js`, `boundary/federation.test.js`, `distribution/licence-dependent-texts.test.js` +3 | — | `validate-wellknown` |
 | AGSC-10-13 | VERIFIED | `brd-0001`, `brd-0002` | `distribution/boards-relation.test.js`, `distribution/build-golden.test.js`, `distribution/canonical-and-boards.test.js` +4 | — | — |
 | AGSC-10-14 | VERIFIED | `bnd-0026` | — | — | — |
 | AGSC-10-15 | VERIFIED | `conform-0003` | `application/conformance.test.js`, `composition/conform-higher-level-cases.test.js`, `composition/conform.test.js` | — | — |
 | AGSC-10-16 | PROSE-ONLY | — | — | — | — |
 | AGSC-10-17 | VERIFIED | `prov-0003` | `distribution/html.test.js`, `distribution/surfaces-eng2.test.js`, `e2e/modes/mode-5-board.test.js` +2 | — | — |
 | AGSC-10-18 | VERIFIED | — | `standard/rules.test.js` | — | — |
-| AGSC-11-01 | VERIFIED | `bnd-0017` | `application/cli/main-shell.test.js`, `application/config/load.test.js`, `boundary/visibility.test.js` | — | — |
+| AGSC-11-01 | VERIFIED | `bnd-0017` | `application/cli/main-shell.test.js`, `application/config/load.test.js`, `boundary/bound-table-codes.test.js` +1 | — | — |
 | AGSC-11-02 | VERIFIED | `bnd-0016` | `boundary/visibility.test.js`, `distribution/surface-link-check.test.js`, `governance/boards.test.js` +1 | — | — |
 | AGSC-11-03 | VERIFIED | `bnd-0001` | `arch/headers-unified.test.js`, `boundary/visibility.test.js`, `distribution/headers.test.js` | — | — |
 | AGSC-11-04 | VERIFIED | `bnd-0022` | `boundary/visibility.test.js`, `distribution/headers.test.js` | — | — |
@@ -395,7 +395,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-11-07 | VERIFIED | `bnd-0003` | `boundary/federation.test.js` | — | — |
 | AGSC-11-08 | VERIFIED | `bnd-0004` | `boundary/federation.test.js` | — | — |
 | AGSC-11-09 | VERIFIED | `bnd-0030` | `boundary/federation.test.js` | — | — |
-| AGSC-11-10 | VERIFIED | `bnd-0006`, `bnd-0007` | `boundary/federation.test.js` | — | — |
+| AGSC-11-10 | VERIFIED | `bnd-0006`, `bnd-0007` | `boundary/anchor-origin.test.js`, `boundary/federation.test.js` | — | — |
 | AGSC-11-11 | VERIFIED | `bnd-0019` | `boundary/federation.test.js` | — | — |
 | AGSC-11-12 | VERIFIED | `bnd-0008`, `bnd-0009`, `bnd-0018` | `boundary/federation.test.js`, `distribution/peer-citations.test.js`, `interchange/mapping.test.js` +2 | — | — |
 | AGSC-11-13 | VERIFIED | `bnd-0024` | `boundary/federation.test.js` | — | — |
