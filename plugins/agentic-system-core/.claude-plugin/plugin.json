@@ -1,0 +1,9 @@
+{
+  "name": "agentic-system-core",
+  "description": "Teaches Claude Code to use the AgenticSystemCore engine (agsc) in all six modes: build a knowledge node from Markdown, read and cite one, propose changes for a person to merge, compose a harness, export skills and boards.",
+  "author": { "name": "Andrei N. Besleaga", "url": "https://agenticsystemcore.com" },
+  "homepage": "https://agenticsystemcore.com/docs/agent-skill/",
+  "repository": "https://github.com/andreibesleaga/agentic-system-core",
+  "license": "CC0-1.0",
+  "keywords": ["knowledge", "agent-skills", "mcp", "llms-txt", "linkset"]
+}

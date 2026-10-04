@@ -103,6 +103,9 @@ On a folder of your own Markdown notes, once the package is installed
 (`npm install agentic-system-core`): run `agsc init` in the folder, add
 `.well-known/security.txt` with a `Contact:` line, and run `agsc ci`. Then read
 [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md) to connect an assistant.
+To teach a coding agent the engine itself, install the agent skill in
+[skills/agentic-system-core/](https://github.com/andreibesleaga/agentic-system-core/blob/main/skills/README.md): `npx skills add andreibesleaga/agentic-system-core`,
+or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-core`.
 
 ## Where to start reading
 

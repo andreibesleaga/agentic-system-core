@@ -19,6 +19,14 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   demonstration node, each answered by an item that node publishes, and the eight intents
   for the main node unchanged. It replaces `bench-v1`, whose intents for the demonstration
   node named items that node no longer publishes; the two sets are not comparable.
+- The agent skill `skills/agentic-system-core/` (`SKILL.md` and two reference files, CC0-1.0):
+  it teaches a coding agent to use the engine in all six modes, and what it never does on its
+  own. The same files ship as a Claude Code plugin in `plugins/agentic-system-core/`, listed by
+  `.claude-plugin/marketplace.json`; `tests/docs/agent-skill.test.js` keeps both copies equal and
+  every verb they name real. Neither is part of the npm package.
+- `package.json`: `mcpName` (`io.github.andreibesleaga/agentic-system-core`, the name under which
+  the tool server can be listed in the MCP Registry once a version carrying it is published) and
+  seven search keywords.
 
 ### Changed (specification, for 1.0.0)
 

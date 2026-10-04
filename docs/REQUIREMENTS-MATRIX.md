@@ -40,7 +40,7 @@ At most three names are shown per cell; test files and scenario files are listed
 
 | Requirement | Class | Rules | Checks behind the rules | Tests naming it | Vectors naming it | Scenarios | Documents |
 |---|---|---|---|---|---|---|---|
-| PRD-001 | MAPPED | `AGSC-00-11`, `AGSC-09-07`, `AGSC-09-94` +1 | 2 vectors, 10 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/scenario-map.md` |
+| PRD-001 | MAPPED | `AGSC-00-11`, `AGSC-09-07`, `AGSC-09-94` +1 | 2 vectors, 11 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/scenario-map.md` |
 | PRD-002 | MAPPED | `AGSC-00-09`, `AGSC-00-21`, `AGSC-02-24` +3 | 4 vectors, 19 tests, 1 scenarios, 2 checkers | `tools/count-artifacts.test.js`, `tools/gen-spec-html.test.js`, `tools/helpers.js` +2 | — | `persona-a-reader.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/README.md` +2 |
 | PRD-003 | MAPPED | `AGSC-00-09`, `AGSC-04-19`, `AGSC-09-11` +1 | 2 vectors, 23 tests, 1 scenarios, 2 checkers | — | — | — | — |
 | PRD-004 | MAPPED | `AGSC-00-10`, `AGSC-04-01`, `AGSC-04-02` +2 | 1 vectors, 29 tests, 2 scenarios, 0 checkers | `tools/validate-diagrams.test.js` | — | — | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/algo-build-pipeline.md` |

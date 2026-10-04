@@ -1,5 +1,6 @@
 {
     "name": "agentic-system-core",
+    "mcpName": "io.github.andreibesleaga/agentic-system-core",
     "version": "1.0.0-rc.6",
     "description": "The reference engine and command line of AgenticSystemCore: publish a Markdown knowledge Bundle as a static node of the Agentic Knowledge Web — a wiki, an RDF graph, agent memory, skills, MCP and WebMCP tools and a discovery document. Ships the specification, the JSON Schemas, the ontology, the conformance vectors and the nine independent checkers.",
     "main": "index.js",
@@ -83,7 +84,14 @@
         "agentic-memory",
         "distributed-systems",
         "ontologies",
-        "dynamic-system"
+        "dynamic-system",
+        "mcp",
+        "mcp-server",
+        "model-context-protocol",
+        "agent-skills",
+        "claude-code",
+        "llms-txt",
+        "knowledge-graph"
     ],
     "author": "Andrei N. Besleaga",
     "license": "Apache-2.0 AND CC0-1.0",

@@ -350,7 +350,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-04 | VERIFIED | — | `application/conformance.test.js`, `tools/validate-vectors-superseded.test.js` | — | `validate-vectors` |
 | AGSC-09-05 | VERIFIED | — | `application/conformance.test.js`, `standard/consistency.test.js` | — | `validate-vectors` |
 | AGSC-09-06 | VERIFIED | — | — | — | `validate-vectors` |
-| AGSC-09-07 | VERIFIED | `cli-0005` | `application/cli/main-shell.test.js`, `application/cli/verb-table-spec.test.js`, `application/cli/verbs-sixteen.test.js` | — | — |
+| AGSC-09-07 | VERIFIED | `cli-0005` | `application/cli/main-shell.test.js`, `application/cli/verb-table-spec.test.js`, `application/cli/verbs-sixteen.test.js` +1 | — | — |
 | AGSC-09-08 | VERIFIED | `cli-0014` | `acceptance/steps/persona-i.js`, `adapters/node-clock.test.js`, `application/cli/verbs-sixteen.test.js` +5 | `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
 | AGSC-09-09 | VERIFIED | `cli-0010`, `cli-0012` | `acceptance/steps/persona-c.js`, `application/cli/eng2-verbs.test.js`, `application/cli/flags.test.js` +4 | `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network` | — |
 | AGSC-09-10 | VERIFIED | — | `application/cli/json-stderr-findings-only.test.js`, `application/cli/main-shell.test.js`, `governance/lint-order.test.js` +2 | — | `validate-diagrams`, `validate-features`, `validate-ontology` +2 |
