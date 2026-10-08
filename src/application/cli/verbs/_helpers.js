@@ -25,12 +25,15 @@ const ENGINE_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 /** The separator `git ls-files -z` writes between paths. */
 const NUL = String.fromCharCode(0);
 /**
- * The three separators the git-log read uses: ASCII RS before each record, US
- * between fields, GS after the message, where git's `--name-only` list begins.
+ * The separators of the git-log read. NUL opens and closes each commit's header and
+ * message: git never prints a NUL from a message (it ends a message at its first
+ * NUL), so no message can end a record or begin another. Within the header, US
+ * separates the four fields before the message; the message is the rest, so a US
+ * inside it is kept. Until 2026-10-06 records were split on
+ * RS, US and GS, which a commit message may contain, and one commit could add a
+ * fabricated ledger entry.
  */
-const RS = String.fromCharCode(30);
 const US = String.fromCharCode(31);
-const GS = String.fromCharCode(29);
 /**
  * AGSC-08-20b's own field set, asked for in one process and with no shell:
  * the commit, its parents, the COMMITTER time in whole seconds (never a rendered
@@ -38,7 +41,7 @@ const GS = String.fromCharCode(29);
  * names are read from, and the whole message the trailers are parsed out of —
  * followed by the paths the commit changed, which `--name-only` prints after it.
  */
-const GIT_LOG_FORMAT = `--format=${RS}%H${US}%P${US}%ct${US}%D${US}%B${GS}`;
+const GIT_LOG_FORMAT = '--format=%x00%H%x1f%P%x1f%ct%x1f%D%x1f%B%x00';
 /**
  * The reference production of AGSC-08-20b, extended shape: first-parent, oldest
  * first, and `--name-only` for `files[]`. `core.quotepath=off` keeps a non-ASCII
@@ -67,8 +70,8 @@ function schemas() {
  * WHY IT IS HERE: `distribution/site.js` generates `/ns/context.jsonld` from these
  * terms and compacts every JSON-LD view against it, but Distribution never reads a
  * file and `knowledge/` never reads one either — so the application layer is the
- * only place that can hand the vocabulary to the build. Until 2026-09-21 no caller
- * did, and every built context carried 0 of the 52 `asc:` term definitions.
+ * only place that can hand the vocabulary to the build; without it, a built context
+ * would carry none of the `asc:` term definitions.
  *
  * @returns {{terms: Array<object>, version: string|null}}
  */
@@ -126,6 +129,22 @@ function bundleOf(ctx) {
 /** AGSC-05-29: the engine hashes through `node:crypto`; no pure context may. */
 function sha256(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
+}
+
+/**
+ * AGSC-09-07 (amended 2026-10-06): `--level <n>` on `build`, `ci` and `conform` is
+ * one of the four Levels, written `0`, `1`, `2` or `3`; any other value is the usage
+ * error `AGSC-E003` (exit 2), refused before anything runs. Until that day `build` and
+ * `ci` ignored `--level constructor` and `--level 9`, and
+ * `--level -1` built a site.
+ *
+ * @param {object} ctx the verb context
+ * @returns {object|null} the refusal, or null when the flag is absent or valid
+ */
+function levelRefusal(ctx) {
+  const raw = ctx.verbFlags && ctx.verbFlags.level;
+  if (raw === undefined || /^[0-3]$/u.test(String(raw))) return null;
+  return { status: 'fail', findings: [{ code: 'AGSC-E003', message: `--level must be 0, 1, 2 or 3, not ${JSON.stringify(raw)} (AGSC-09-07)`, severity: 'error' }] };
 }
 
 /**
@@ -238,33 +257,37 @@ function gitLog(ctx) {
     return undefined;
   }
   if (!result || result.code !== 0 || typeof result.stdout !== 'string') return undefined;
+  // NUL <header and message> NUL <the --name-only list> NUL <header and message> NUL …
+  // so the pieces alternate: [before the first record, record, files, record, files, …].
+  const pieces = result.stdout.split(NUL);
+  if (pieces[0].trim() !== '' || pieces.length % 2 === 0) return undefined;
   const commits = [];
-  for (const record of result.stdout.split(RS)) {
-    const text = record.replace(/^\n+/u, '');
-    if (text === '') continue;
-    const [sha, parents, seconds, decorations, rest] = text.split(US);
-    if (!/^[0-9a-f]{40,64}$/u.test(String(sha)) || !/^[0-9]+$/u.test(String(seconds))) return undefined;
-    // The message ends at GS; what follows is the `--name-only` list, one path per
-    // line. A record with no GS (a producer that did not ask for the list) carries
-    // no `files[]`, which AGSC-08-20b allows and a reader reports as not run.
-    const body = rest === undefined ? '' : rest;
-    const cut = body.indexOf(GS);
-    const message = cut === -1 ? body : body.slice(0, cut);
+  for (let i = 1; i < pieces.length; i += 2) {
+    const fields = [];
+    let rest = pieces[i];
+    for (let f = 0; f < 4; f += 1) {
+      const cut = rest.indexOf(US);
+      if (cut === -1) return undefined;
+      fields.push(rest.slice(0, cut));
+      rest = rest.slice(cut + 1);
+    }
+    const [sha, parents, seconds, decorations] = fields;
+    if (!/^[0-9a-f]{40,64}$/u.test(sha) || !/^[0-9]+$/u.test(seconds)) return undefined;
+    const message = rest;
     const commit = {
       committer_timestamp: ledger.instantFromEpoch(Number(seconds)),
       message,
-      parents: String(parents) === '' ? [] : String(parents).split(' '),
-      sha: String(sha),
+      parents: parents === '' ? [] : parents.split(' '),
+      sha,
       // `%D` is `HEAD -> main, tag: v1.4.0, origin/main`; `produce` keeps the
       // greatest `v*` of whatever it is given (AGSC-08-20b).
-      tags: String(decorations === undefined ? '' : decorations).split(',')
+      tags: decorations.split(',')
         .map((one) => one.trim())
         .filter((one) => one.startsWith('tag: '))
         .map((one) => one.slice(5)),
+      // What follows the closing NUL is the `--name-only` list, one path per line.
+      files: pieces[i + 1].split('\n').filter((line) => line !== ''),
     };
-    if (cut !== -1) {
-      commit.files = body.slice(cut + 1).split('\n').filter((line) => line !== '');
-    }
     const author = ledger.authorOf(ledger.parseTrailers(message));
     if (author !== null) commit.author = author;
     commits.push(commit);
@@ -334,22 +357,17 @@ function trackedPaths(ctx) {
 }
 
 /**
- * The honest answer of a verb AGSC-09-07 names but this milestone does not
- * implement: exit 1 with exactly one finding that cites the rule, never a
- * silent success and never an invented code.
- *
- * `AGSC-E001` is the code AGSC-09-94 itself prescribes when a verb the
- * specification names is not offered by the running node; §9.4 registers no
- * code for "recognised but not implemented", which is an OPEN QUESTION for
- * 1.0.0. The exit code is 1, not 2: nothing about the invocation was wrong.
+ * The honest answer of a verb form a rule names and this distribution does not
+ * offer: exit 1 with exactly one finding that cites the rule, never a silent success.
+ * The message names no release and no version plan; the code is the registered one,
+ * because no registered code names "a capability this distribution does not offer".
  */
 function notImplemented(verb, rule, why) {
   return {
     status: 'fail',
     findings: [{
       code: 'AGSC-E001',
-      message: `${verb} is named by ${rule} but is not implemented at this milestone: ${why}`
-        + ' — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
+      message: `${verb}: this distribution does not offer what ${rule} names here: ${why}`,
       severity: 'error',
     }],
   };
@@ -410,6 +428,7 @@ module.exports = {
   bundleOf,
   bundleVersionOf,
   buildOptions,
+  levelRefusal,
   contentTree,
   gitLog,
   notImplemented,

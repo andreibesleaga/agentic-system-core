@@ -11,6 +11,9 @@ const init = require('../../../distribution/init.js');
 const helpers = require('./_helpers.js');
 
 const SECURITY_TXT = '.well-known/security.txt';
+/** AGSC-06-18: the Content Use Terms file, and the identifier a configuration names it by. */
+const LICENSE_CONTENT = 'LICENSE-CONTENT';
+const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 
 /** Everything under the adoption root, as `plan()` wants it. */
 function filesUnder(fs) {
@@ -62,7 +65,7 @@ function instantDefaulted(ctx) {
  * (AGSC-02-92 and AGSC-02-95 as amended: a security contact is the publisher's,
  * and a node that adopts the Content Use Terms names its crawler list).
  */
-function beforeYouBuild(ctx, { fs, defaulted, wroteConfig }) {
+function beforeYouBuild(ctx, { fs, defaulted, licenseProse, wroteConfig }) {
   const lines = [];
   if (!fs.exists(SECURITY_TXT)) {
     lines.push(`before you build: add ${SECURITY_TXT} with a Contact: line (RFC 9116); `
@@ -72,6 +75,16 @@ function beforeYouBuild(ctx, { fs, defaulted, wroteConfig }) {
     lines.push('before you build: agsc.config.json names the reference crawler list in site.tdm_crawlers, '
       + 'because the default prose licence adopts the Content Use Terms; edit the list, '
       + 'or name another prose licence to publish no reservation (AGSC-06-18)');
+  }
+  // The Content Use Terms are named, but their text is not in
+  // the Bundle, so `export --markdown/--okf` refuses with AGSC-E901 and `/legal/` is
+  // not published until the publisher copies the file in or names another licence.
+  // The build does not need the file, so this is a step before publishing, and the
+  // two "before you build" steps of AGSC-02-92 stay two.
+  if (licenseProse === CONTENT_USE_TERMS && !fs.exists(LICENSE_CONTENT)) {
+    lines.push(`before you publish: copy ${LICENSE_CONTENT} from the agentic-system-core package into this folder `
+      + '(it is the text of the Content Use Terms agsc.config.json names), or name another prose licence; '
+      + 'without it export --markdown and --okf report AGSC-E901 and /legal/ is not published (AGSC-06-18)');
   }
   if (defaulted) {
     lines.push('before you build: commit once, or set SOURCE_DATE_EPOCH, so the build has an instant '
@@ -94,7 +107,16 @@ function run(ctx) {
   });
   const applied = init.run({ fs }, planned);
   for (const written of applied.written) helpers.note(ctx, `wrote: ${written}`);
-  beforeYouBuild(ctx, { fs, defaulted, wroteConfig: planned.config !== null });
+  // A note with a closed frontmatter block is left out of the adoption: AGSC-02-91
+  // keeps it as it is, and this line says so instead of leaving it out silently.
+  for (const kept of planned.kept || []) {
+    helpers.note(ctx, `left as is: ${kept} already has a frontmatter block, so init neither changes nor moves it `
+      + '(AGSC-02-91); it is not an item until it has a type and lives under content/<type-plural>/ (AGSC-01-02)');
+  }
+  const config = planned.config !== null ? planned.config : (ctx.config || {});
+  const licenseProse = (config.bundle || {}).license_prose === undefined
+    ? CONTENT_USE_TERMS : config.bundle.license_prose;
+  beforeYouBuild(ctx, { fs, defaulted, licenseProse, wroteConfig: planned.config !== null });
   return { findings: applied.findings };
 }
 

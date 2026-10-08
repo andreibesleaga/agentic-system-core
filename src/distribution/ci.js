@@ -6,8 +6,8 @@
 // of bare notes is green offline) and AGSC-08-27/08-30 (the `ci` lane contains no
 // model call — nothing here can reach one).
 //
-// The four N9 lints are `governance/lint.js`, owned by another package of this
-// milestone. They are INJECTED as `options.lint`; when neither an injected lint nor
+// The four N9 lints are `governance/lint.js`, another module of this engine.
+// They are INJECTED as `options.lint`; when neither an injected lint nor
 // that module is present, `ci` still runs the schema-and-placement obligations that
 // `knowledge/validate.js` owns — the AGSC-02-92 pass that `adopt-0007` asserts —
 // and names the missing lane in its result rather than reporting a false green.
@@ -94,6 +94,22 @@ function writeGate(verdict, ports) {
 }
 
 /**
+ * `site.build`, with AGSC-09-11's rule for a fault thrown part-way: the lanes'
+ * findings gathered so far travel with it (`e.findings`, which the command line
+ * reports beside the fault) rather than being discarded.
+ */
+function buildKeeping(bundle, ports, options, gathered) {
+  try {
+    return site.build(bundle, ports, options);
+  } catch (e) {
+    if (e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code)) {
+      e.findings = [...gathered, ...(Array.isArray(e.findings) ? e.findings : [])];
+    }
+    throw e;
+  }
+}
+
+/**
  * Run the pipeline.
  *
  * @param {object} bundle the loaded Bundle.
@@ -125,13 +141,13 @@ function ci(bundle, ports, options = {}) {
   // RFC 9116; the build still refuses to emit an invalid security contact, it simply
   // does not repeat the reason (AGSC-09-11: one fault is counted once).
   const buildOptions = typeof lint === 'function' ? { ...options, publication: false } : options;
-  const built = site.build(bundle, ports, buildOptions);
+  const built = buildKeeping(bundle, ports, buildOptions, findings);
   findings.push(...built.findings);
   lanes.push('build');
   checks.push(check('build', built.findings));
 
   // ---- verify (AGSC-04-02: build twice, compare bytes)
-  const second = site.build(bundle, ports, buildOptions);
+  const second = buildKeeping(bundle, ports, buildOptions, findings);
   const verifyFindings = [];
   for (const key of new Set([...built.files.keys(), ...second.files.keys()])) {
     if (!sameBytes(built.files.get(key), second.files.get(key))) {

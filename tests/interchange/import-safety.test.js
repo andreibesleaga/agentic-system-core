@@ -73,7 +73,7 @@ function ctxFor(dir, options = {}) {
     openRoot: (at) => createFileSystem(path.resolve(dir, at)),
     ports: { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.6',
+    specVersion: '1.0.0-rc.7',
     stderr: { write: (text) => notes.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},
@@ -190,7 +190,7 @@ test('AGSC-01-23: the old-site adapter refuses a collision too, and --replace op
   nodeFs.writeFileSync(path.join(target, 'agsc.config.json'), `${JSON.stringify({
     bundle: { id: 'fixture-node', operator: 'human:tester' },
     site: { base: 'https://example.org/', title: 'Fixture Node' },
-    spec_version: '1.0.0-rc.6',
+    spec_version: '1.0.0-rc.7',
   }, null, 2)}\n`);
   const argv = [OLD_SITE];
   const flags = { corrections: undefined, from: 'old-site', selection: path.join(OLD_SITE, 'selection.tsv') };

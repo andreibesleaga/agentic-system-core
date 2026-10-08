@@ -108,7 +108,7 @@ test what only a higher Level does — a writer's refusal, an agent lane, a Leve
 the four lints, the `init` and `ci` verbs. AGSC-10-15 lists each with the Level it
 belongs to: `bundle-0001`, `bundle-0006`, `bundle-0007`, `disc-0005` and `disc-0019` belong
 to Level 1; `bundle-0008`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`,
-`disc-0018`, `disc-0020` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
+`disc-0018`, `disc-0020`, `disc-0021` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
 `lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `adopt-0007`,
 `adopt-0008` and `adopt-0009` to Level 3. A claim at a lower Level neither runs them nor fails for them.
 
@@ -433,10 +433,10 @@ GROUP BY ?node
 ORDER BY ?node
 ```
 
-Run over the `graph.nq` files of the project's two nodes (the specification's own site
-and the patterns node, built on 2026-09-24) with any SPARQL 1.1 engine — for example
-Python's `rdflib` 7.1.4, `Dataset().parse(file, format="nquads")` once per file — it
-answered one row per node: 12 Concepts on the first and 10 on the second. Every result
+Run over the `graph.nq` files the project's two live nodes publish (the specification's
+own site and the patterns node, both read on 6 October 2026) with any SPARQL 1.1 engine —
+for example Python's `rdflib` 7.1.4, `Dataset().parse(file, format="nquads")` once per
+file — it answered one row per node: 13 Concepts on the first and 22 on the second. Every result
 taken from another node is untrusted until you check it, and carries its origin: the
 graph name (AGSC-11-11).
 
@@ -495,11 +495,15 @@ capability check and eight worked samples — is `docs/PLUGINS.md`.
 
 ## 7. Claiming a Level
 
-AGSC-09-01: a claim names its Level, the `spec_version` MAJOR.MINOR, and the vector
-set it passed. AGSC-10-15 says which vector areas belong to which Level.
+AGSC-09-01: a claim names its Level, the full `spec_version` whose cases were run (a
+release candidate named as such), the vector set it passed, the Unicode version of the
+runtime and, for a published node, its deployment profile and declared surfaces.
+AGSC-10-15 says which vector areas belong to which Level.
 
 1. Run the vector set for your Level. Every `required` vector of every declared area
-   must pass; a `skip` is a failure (AGSC-09-02).
+   must pass; a `skip` is a failure (AGSC-09-02), with one exception: a vector whose
+   `requires_surface` names a surface you do not declare is reported as `pass`, with a
+   detail saying why it was skipped.
 2. Produce `conformance-report.json` — `{impl, version, spec_version, class,
    results:[{id, status, got?}], summary}` (AGSC-09-03).
 3. Optionally publish it at `/conformance/`. That route exists only when you publish
@@ -512,10 +516,12 @@ Three things a claim must not say: never name a Level whose vectors you did not 
 never count a withdrawn vector; never attribute approval of this specification to a
 standards body or a registry that has not acted on it.
 
-**What the reference distribution claims today: nothing.** AGSC-10-05 says the
-reference implementation "will claim Level 3 at its 1.0.0 release; no claim exists
-before a green run of the Level-3 set". At `1.0.0-rc.6` the reference engine passes
-every vector of the set and skips none (the counts are the
+**What the reference distribution claims today: nothing.** AGSC-10-05 says that a
+claim of any Level "exists only after a green run of that Level's set", and that the
+reference implementation publishes its own claim in the form of AGSC-09-01; it states
+no future event. At `1.0.0-rc.7` the reference engine passes
+every vector of the set that is not withdrawn, and skips only the withdrawn ones,
+which no claim counts (the counts are the
 conformance runner's own summary line, and `node tools/count-artifacts --json` gives
 the totals), and that is a run, not a claim.
 

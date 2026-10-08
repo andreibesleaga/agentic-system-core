@@ -179,9 +179,9 @@ test('the Bundle node is emitted only when the Bundle is given (AGSC-05-03/05-26
   const withBundle = nq.toNQuads([], {
     base: 'https://e.org',
     graph: null,
-    bundle: { spec_version: '1.0.0-rc.6', license_prose: 'LicenseRef-X' },
+    bundle: { spec_version: '1.0.0-rc.7', license_prose: 'LicenseRef-X' },
   });
-  assert.ok(withBundle.includes('#specVersion> "1.0.0-rc.6"'));
+  assert.ok(withBundle.includes('#specVersion> "1.0.0-rc.7"'));
   // AGSC-05-26: both schema.org properties are `xsd:string` literals (AGSC-05-31
   // form c), never a caller-supplied IRI; AGSC-06-18 puts the
   // prose licence in `schema:usageInfo` where the Content Use Terms are not adopted.

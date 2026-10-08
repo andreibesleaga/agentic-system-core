@@ -52,7 +52,7 @@ function build(dir, options = {}) {
   return {
     bundle,
     ports: { clock, fs },
-    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2', ...options }),
+    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2', ...options }),
   };
 }
 
@@ -471,7 +471,7 @@ test('AGSC-04-02: a build carrying every new surface is still byte-reproducible'
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
-  const options = { specVersion: '1.0.0-rc.6', version: '0.0.2' };
+  const options = { specVersion: '1.0.0-rc.7', version: '0.0.2' };
   assert.deepStrictEqual(site.verify(bundle, ports, options), []);
   const first = site.build(bundle, ports, options);
   assert.ok(first.files.has('/legal/index.html') && first.files.has('/boards/work/index.html'));
@@ -489,7 +489,7 @@ test('a build whose renderer emits a link to nothing reports AGSC-E901 and fails
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
   const built = site.build(bundle, ports, {
     render: () => ({ anchors: [], headings: [], html: '<p><a href="/gone/">nowhere</a></p>' }),
-    specVersion: '1.0.0-rc.6',
+    specVersion: '1.0.0-rc.7',
     version: '0.0.2',
   });
   const dangling = built.findings.filter((f) => f.code === 'AGSC-E901');
@@ -505,7 +505,7 @@ test('a graph collaborator with no context generator names the route it cannot p
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
   const partial = site.build(bundle, ports, {
     graph: { jsonld: () => ({ '@graph': [] }) },
-    specVersion: '1.0.0-rc.6',
+    specVersion: '1.0.0-rc.7',
     version: '0.0.2',
   });
   assert.ok(partial.skipped.some((s) => s.startsWith('/ns/context.jsonld (no context generator')),

@@ -30,7 +30,7 @@ function level2(routes) {
     ledgerHead: 'a'.repeat(64),
     level: 2,
     routes,
-    specVersion: '1.0.0-rc.6',
+    specVersion: '1.0.0-rc.7',
   });
 }
 
@@ -53,7 +53,7 @@ test('a node that emits /boards/index.json links it with type and digest; one th
   // The disc-0016 shape: no route set stated, digests for the nine routes alone.
   const unstated = discovery.linkset({ site: { base: BASE } }, {
     bundleHash: discovery.digestOf('bundle'), bundleVersion: 'v1.0.0', counts: discovery.countsOf([]),
-    digests: digestsFor(ROUTES), generatedAt: '2026-01-01T00:00:00Z', ledgerHead: 'a'.repeat(64), level: 2, specVersion: '1.0.0-rc.6',
+    digests: digestsFor(ROUTES), generatedAt: '2026-01-01T00:00:00Z', ledgerHead: 'a'.repeat(64), level: 2, specVersion: '1.0.0-rc.7',
   });
   assert.strictEqual(unstated.linkset[0][`${REL}boards`], undefined);
 });

@@ -14,7 +14,7 @@ const OPTIONS = Object.freeze({
   generatedAt: '2026-01-01T00:00:00Z',
   license: 'CC-BY-4.0',
   sha256,
-  specVersion: '1.0.0-rc.6',
+  specVersion: '1.0.0-rc.7',
 });
 
 function item(slug, type, extra = {}, body = `# ${slug}\n\nThe body of ${slug}.\n`) {

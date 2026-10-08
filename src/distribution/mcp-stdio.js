@@ -12,7 +12,7 @@
  * Requirements: PRD-023.
  *
  * The JSON-RPC framing, the initialize handshake and the version negotiation
- * are the official SDK's (`@modelcontextprotocol/sdk@1.30.0`, a real CommonJS
+ * are the official SDK's (`@modelcontextprotocol/sdk@1.32.1`, a real CommonJS
  * build) — never hand-rolled. The foreign protocol version strings live in
  * `boundary/surfaces.js`, the anti-corruption layer, and never in a tool
  * function.

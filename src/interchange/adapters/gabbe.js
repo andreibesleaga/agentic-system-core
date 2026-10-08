@@ -108,10 +108,12 @@ const MARKER = /^<!-- agsc-item ([A-Za-z0-9+/]+={0,2}) -->$/gmu;
 const WHEN_LIMIT = 1024;
 
 /** A GABBE outcome word → the AGSC-02-14 `outcome`, and nothing else is guessed. */
-const OUTCOMES = Object.freeze({
+// A closed list read with a name from the outside: prototype-free, so `constructor`,
+// `toString` or `__proto__` is not an entry.
+const OUTCOMES = Object.freeze(Object.assign(Object.create(null), {
   done: 'success', fail: 'failure', failed: 'failure', failure: 'failure', ok: 'success',
   partial: 'partial', pass: 'success', passed: 'success', success: 'success',
-});
+}));
 
 /** The decision-log action types that record a DECISION rather than an occurrence. */
 const DECISION_TYPES = Object.freeze(['ADR_CREATED', 'ARCHITECTURE', 'DECISION', 'HUMAN_DECISION']);

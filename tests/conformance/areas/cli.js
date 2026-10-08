@@ -8,8 +8,9 @@ const vm = require('node:vm');
 const { main } = require('../../../src/application/cli/main.js');
 const { load } = require('../../../src/application/config/load.js');
 const { createFileSystem } = require('../../../src/adapters/node-fs.js');
-const compose = require('../../../src/application/cli/verbs/compose.js');
 const { memoryPorts, captureStream } = require('./_shared.js');
+const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
+const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
 
 function runCli0002(vector, ctx) {
   // AGSC-09-11/AGSC-09-12: the whole CLI, end to end, over the real fixture —
@@ -152,7 +153,7 @@ function fixtureSite(ctx, vector) {
   const schemas = validate.schemas(readSchemas((ctx && ctx.root) || '.'));
   const bundle = loadBundle(fs, { schemas });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: FIXTURE_EPOCH } });
-  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
 }
 
 /**
@@ -439,7 +440,7 @@ function runCli0008(vector) {
     })),
   };
   const clock = { iso: () => FIXTURE_INSTANT, now: () => Number(FIXTURE_EPOCH) };
-  const built = site.build(bundle, { clock }, { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+  const built = site.build(bundle, { clock }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
   const page = evaluateWebmcp(built, {});
   const local = tools(bundle, {});
   const problems = [];
@@ -474,91 +475,8 @@ function runCli0008(vector) {
   return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
 }
 
-/**
- * cli-0009 (AGSC-00-23) — a value outside a CLOSED operator list is
- * `AGSC-E203` and a FINDING (exit 1), never `AGSC-E002` and a usage error (exit 2),
- * because `--emit` and `--target` are known flags carrying values the registry does
- * not hold (AGSC-09-08).
- *
- * The two refusals are run end to end through the real CLI, over a copy of the
- * minimal fixture that carries the `router` the vector's argv names — the argv is
- * used exactly as the vector states it.
- *
- * The control case (`--emit gabbe`) states what it is about: the REGISTRY
- * accepts the name (`registry_accepts`) and no AGSC-E203 is raised (`codes_absent`).
- * Whether an emitter ships is the distribution's own claim (AGSC-07-18 makes none
- * mandatory), so this one's honest AGSC-E001 for a capability it does not offer is
- * the only other error allowed beside it.
- */
-function runCli0009(vector, ctx) {
-  const nodeFs = require('node:fs');
-  const os = require('node:os');
-  const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'agsc-cli-0009-'));
-  nodeFs.cpSync(path.join((ctx && ctx.root) || '.', 'tests', 'fixtures', 'minimal'), root,
-    { recursive: true });
-  nodeFs.writeFileSync(path.join(root, 'content', 'concepts', 'router.md'),
-    '---\ntype: concept\nkind: pattern\ntitle: Router\n'
-    + 'description: A pattern that routes work to the worker that fits it, carried here for cli-0009.\n'
-    + 'prov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nRoute work.\n\n'
-    + '## Selection\n\n```yaml agsc-selection\n- supervisor\n```\n');
-
-  const problems = [];
-  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
-  for (const input of vector.input.cases || []) {
-    const want = byName.get(input.name);
-    const stdout = captureStream();
-    const stderr = captureStream();
-    const exitCode = main([...input.argv, '--json', '--quiet'], {
-      env: { SOURCE_DATE_EPOCH: '1767225600' },
-      ports: { fs: createFileSystem(root) },
-      root,
-      specVersion: (vector.options || {}).spec_version,
-      stderr,
-      stdout,
-      version: (vector.options || {}).spec_version,
-    });
-    const envelope = JSON.parse(stdout.text() || '{}');
-    const findings = envelope.findings || [];
-    const codes = findings.map((f) => f.code);
-
-    if ((want.findings || []).length > 0) {
-      // A refusal: the stated code, the stated severity, and the stated exit.
-      for (const one of want.findings) {
-        if (!findings.some((f) => f.code === one.code && f.severity === one.severity)) {
-          problems.push(`${input.name}: ${one.code} (${one.severity}) not among ${JSON.stringify(codes)}`);
-        }
-      }
-      if (exitCode !== want.exit) problems.push(`${input.name}: exit ${exitCode} != ${want.exit}`);
-      if (codes.includes('AGSC-E002')) {
-        problems.push(`${input.name}: AGSC-E002 is a usage error and this is a finding (AGSC-09-08)`);
-      }
-    } else {
-      // The control: the registry holds the name and says nothing about it.
-      const emit = input.argv[input.argv.indexOf('--emit') + 1];
-      if (compose.emitterRefusal(emit) !== null) {
-        problems.push(`${input.name}: the registry refused the registered name ${emit}`);
-      }
-      for (const code of want.codes_absent || []) {
-        if (codes.includes(code)) problems.push(`${input.name}: a registered target must not be ${code}`);
-      }
-      if (want.registry_accepts !== true) problems.push(`${input.name}: the case states no registry verdict`);
-      const other = findings
-        .filter((f) => f.severity === 'error' && f.code !== 'AGSC-E001')
-        .map((f) => f.code);
-      if (other.length > 0) {
-        problems.push(`${input.name}: unexpected ${JSON.stringify(other)} beside the`
-          + ' AGSC-E001 this distribution answers for an emitter it does not ship');
-      }
-    }
-  }
-  nodeFs.rmSync(root, { force: true, recursive: true });
-  return problems.length === 0
-    ? { status: 'pass', detail: '' }
-    : { status: 'fail', detail: problems.join('; ') };
-}
-
 Object.assign(HANDLERS, {
-  'cli-0009': runCli0009,
+  'cli-0016': runCli0016,
   'cli-0003': runCli0003,
   'cli-0004': runCli0004,
   'cli-0007': runCli0007,
@@ -656,10 +574,9 @@ function runCli0011(vector, ctx) {
 }
 
 /**
- * cli-0012 (AGSC-09-09 as stated 2026-09-24) and cli-0013 (AGSC-09-94 as amended
- * the same day) — a usage refusal: the stated code on stderr, exit 2, nothing on
- * stdout. cli-0013 runs over the minimal fixture, whose configuration carries no
- * `run` block, so `run.enabled` is false by default.
+ * cli-0012 (AGSC-09-09 as stated 2026-09-24) — a usage refusal before a verb runs:
+ * the stated code on stderr, exit 2, nothing on stdout. (cli-0013, which ran here
+ * too, is withdrawn for 1.0.0; cli-0017 supersedes it.)
  */
 function runUsageRefusalCases(vector, ctx) {
   const scratch = scratchCopy(ctx, vector, 'agsc-cli-usage-');
@@ -747,9 +664,11 @@ function runCli0015(vector, ctx) {
 Object.assign(HANDLERS, {
   'cli-0011': runCli0011,
   'cli-0012': runUsageRefusalCases,
-  'cli-0013': runUsageRefusalCases,
+  'cli-0017': runCli0017,
   'cli-0014': runCli0014,
   'cli-0015': runCli0015,
+  'cli-0018': runCli0018,
+  'cli-0019': runCli0019,
 });
 
 module.exports.run = function run(vector, ctx) {

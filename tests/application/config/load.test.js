@@ -139,3 +139,26 @@ test('a malformed agsc.config.json leaves the defaults standing rather than thro
   assert.equal(loaded.config.build.out, 'www');
   assert.equal(loaded.sources['build.out'], 'default');
 });
+
+// AGSC-01-19 (amended 2026-10-06) on the environment layers. Until 2026-10-07 only the
+// project file was checked: `AGSC_BUILD_OUT=content` in the process environment or in a
+// `.env` file inside the Bundle folder was type-checked alone, and `build` wrote the
+// whole site into `content/` or into the Bundle root with exit 0.
+test('AGSC-01-19: build.out from the environment or a .env file is checked like the project file', () => {
+  for (const layer of ['env', 'dotenv']) {
+    for (const value of ['content', 'content/site', 'Content', 'dist', 'dist/www', '.', '..', 'bad seg!']) {
+      const a = layer === 'env' ? { env: { AGSC_BUILD_OUT: value } } : { dotenvText: `AGSC_BUILD_OUT=${value}\n`, env: {} };
+      const loaded = load({ projectConfig: { build: { out: 'www' } }, argvFlags: {}, ...a });
+      const hit = loaded.findings.find((f) => f.code === 'AGSC-E204' && f.path === 'build.out');
+      assert.ok(hit, `${layer} ${JSON.stringify(value)}: ${JSON.stringify(loaded.findings)}`);
+      assert.match(hit.message, /AGSC_BUILD_OUT/u, 'the finding names the override');
+      assert.equal(loaded.config.build.out, 'www', `${layer} ${JSON.stringify(value)} was applied`);
+      assert.equal(loaded.sources['build.out'], 'project');
+    }
+  }
+  for (const value of ['www-next', 'site/content', 'contents', 'out/']) {
+    const loaded = load({ projectConfig: { build: { out: 'www' } }, env: { AGSC_BUILD_OUT: value }, argvFlags: {} });
+    assert.deepEqual(loaded.findings, [], `${value}: ${JSON.stringify(loaded.findings)}`);
+    assert.equal(loaded.config.build.out, value);
+  }
+});

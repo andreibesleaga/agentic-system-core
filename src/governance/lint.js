@@ -31,7 +31,7 @@
 //
 // AGSC-E408 (a concept or cluster with no description) is deliberately NOT raised
 // here: it belongs to knowledge/validate.js, and one fault never carries two
-// codes (a design choice of 2026-09-18).
+// codes.
 
 const { XMLParser, XMLValidator } = require('fast-xml-parser');
 

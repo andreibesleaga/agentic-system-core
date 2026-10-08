@@ -11,7 +11,7 @@ const assert = require('node:assert');
 
 const plugins = require('../../src/application/plugins.js');
 
-const SPEC = '1.0.0-rc.6';
+const SPEC = '1.0.0-rc.7';
 const good = (over) => ({
   agsc_spec_version: '1.0.0',
   kind: 'checker',
@@ -89,7 +89,7 @@ test('the contract is additive within 1.x, and says so in both directions', () =
   const refused = plugins.admit(good({ plugin_api_version: '1.1.0' }), { specVersion: SPEC });
   assert.strictEqual(refused.length, 1);
   assert.strictEqual(refused[0].code, 'AGSC-E004');
-  assert.strictEqual(plugins.compatible('1.0.0', '1.0.0-rc.6'), true);
+  assert.strictEqual(plugins.compatible('1.0.0', '1.0.0-rc.7'), true);
   assert.strictEqual(plugins.compatible('1.0.99', '1.1.0'), true);
   assert.strictEqual(plugins.compatible('1.2.0', '1.1.0'), false);
   assert.strictEqual(plugins.compatible('0.9.0', '1.0.0'), false);

@@ -26,8 +26,8 @@
 //
 // Codes: AGSC-E003 (a missing or unusable invocation argument — the code
 // AGSC-09-08 assigns to a missing option argument), AGSC-E203 (a `--from` value
-// outside the closed set of formats this node reads — AGSC-01-26a, since
-// 2026-09-24; AGSC-E002 before), AGSC-E901 (the source
+// outside the closed set of formats this node reads — AGSC-01-26a),
+// AGSC-E901 (the source
 // directory holds none of the records the format declares).
 
 const path = require('node:path');
@@ -960,7 +960,7 @@ function run(ctx) {
       `import needs --from <format>; this node reads ${FORMATS.join(', ')} (AGSC-01-22)`,
       { file: '', line: 1 }));
   } else if (plugin === null && !FORMATS.includes(from)) {
-    // AGSC-01-26a (as stated 2026-09-24): a name no shipped adapter and no installed
+    // AGSC-01-26a: a name no shipped adapter and no installed
     // plugin answers is AGSC-E203, a value outside a closed operator list, exit 1 —
     // the one code for this fault on `export --to` and `import --from` alike. Until
     // then this line said AGSC-E002, the exit-2 code registered for an unknown flag.

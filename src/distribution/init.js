@@ -146,7 +146,8 @@ function credentialFiles() {
  *   AGSC-02-94 never overwrites.
  * @returns {{writes:Array<object>, copies:Array<{from:string,to:string}>,
  *   config:(object|null), indexFrontmatter:(object|null), items:Array<object>,
- *   findings:Array<object>}}
+ *   kept:Array<string>, findings:Array<object>}} — `kept`: the notes outside `content/`
+ *   left as they are because they already carry a closed frontmatter block (AGSC-02-91).
  */
 function plan(files, options = {}) {
   const existing = options.existing || {};
@@ -222,6 +223,13 @@ function plan(files, options = {}) {
     }
   }
 
+  // AGSC-02-91: a note outside `content/` that already carries a closed frontmatter
+  // block is neither modified nor moved, so it is not an item. It is named, so that it
+  // is not left out silently (the command says so; no finding, no file changes).
+  const kept = adopted.files
+    .filter((result, i) => !result.skipped && !result.changed && !String(markdown[i].path).startsWith('content/'))
+    .map((result) => result.path);
+
   // AGSC-02-94: existing files are NEVER overwritten.
   const title = adopt.titleFor('', String(options.directory), slugify(String(options.directory))).title;
   const operator = adopt.operatorFor(options.config, options.gitUserEmail);
@@ -251,7 +259,7 @@ function plan(files, options = {}) {
   }
   for (const file of credentialFiles()) if (!has(file.path)) writes.push(file);
 
-  return { writes, copies, config, indexFrontmatter, items, findings };
+  return { writes, copies, config, indexFrontmatter, items, kept, findings };
 }
 
 /**

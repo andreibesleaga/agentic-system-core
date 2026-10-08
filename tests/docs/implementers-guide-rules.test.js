@@ -39,6 +39,19 @@ test('AGSC-10-10: the guide carries the per-Level rule and case checklist, one r
   assert.match(section('1c.'), /AGSC-10-15/u);
 });
 
+test('AGSC-10-15: every case the table of higher-Level cases lists is named in the guide\'s checklist', () => {
+  // The guide's §1c restates the table of AGSC-10-15 in prose; a case added to the table
+  // and not to the guide (as `disc-0021` was until 2026-10-07) misleads a claimant.
+  const profiles = fs.readFileSync(path.join(ROOT, 'spec', '10-implementation-profiles.md'), 'utf8');
+  const start = profiles.indexOf('**AGSC-10-15**');
+  assert.ok(start >= 0);
+  const table = profiles.slice(start, profiles.indexOf('\n## ', start));
+  const cases = [...table.matchAll(/^\s*\| `([a-z]+-\d{4})` \| `[a-z]+` \| ([0-3]) \|/gmu)].map((m) => [m[1], m[2]]);
+  assert.ok(cases.length >= 20, `${cases.length} rows read from the table`);
+  const checklist = section('1c.');
+  for (const [id] of cases) assert.ok(checklist.includes(`\`${id}\``), `${id} is in the AGSC-10-15 table and not in §1c`);
+});
+
 test('AGSC-10-10: the platform mapping table names every platform the rule lists', () => {
   const mapping = section('1b.');
   for (const platform of ['MediaWiki', 'WordPress', 'Docusaurus', 'MkDocs', 'Hugo', 'Notion', 'Confluence', 'Obsidian', 'Logseq', 'Django', 'Laravel', 'Rails']) {

@@ -1,0 +1,60 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-94 with AGSC-09-10; supersedes cli-0013. run and trace have no effect unless run.enabled is true, and with it false (the default of AGSC-01-18) both exit 2 with AGSC-E004 — a configuration the tool cannot run against, AGSC-09-08's exit-2 class — and no run block is read. Derivation: the verb is one of the sixteen, so AGSC-E001 (unknown verb) cannot name the fault; the refusal comes from the configuration, which is what AGSC-E004 is registered for. Under --json, AGSC-09-10 requires exactly one JCS-canonical envelope on stdout except where exit 2 is reached before a verb is resolved (an unknown verb or flag) or an internal fault has no registered code; neither holds here, so stdout carries the envelope (verb named, status fail, the one AGSC-E004 finding) and stderr the same finding as one JSON object. The minimal fixture carries no run block, so run.enabled is false by default. cli-0013 expected an empty stdout and is withdrawn.",
+  "expected": {
+    "cases": [
+      {
+        "envelope": {
+          "codes": [
+            "AGSC-E004"
+          ],
+          "status": "fail",
+          "verb": "run"
+        },
+        "exit": 2,
+        "name": "run-disabled",
+        "stderr_codes": [
+          "AGSC-E004"
+        ]
+      },
+      {
+        "envelope": {
+          "codes": [
+            "AGSC-E004"
+          ],
+          "status": "fail",
+          "verb": "trace"
+        },
+        "exit": 2,
+        "name": "trace-disabled",
+        "stderr_codes": [
+          "AGSC-E004"
+        ]
+      }
+    ]
+  },
+  "id": "cli-0017",
+  "input": {
+    "cases": [
+      {
+        "argv": [
+          "run",
+          "handoff"
+        ],
+        "name": "run-disabled"
+      },
+      {
+        "argv": [
+          "trace",
+          "record.json"
+        ],
+        "name": "trace-disabled"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-09-94"
+}

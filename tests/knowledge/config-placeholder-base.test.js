@@ -19,7 +19,7 @@ function config(base) {
     build: { out: 'www' },
     bundle: { id: 'notes', operator: 'human:someone' },
     site: { base, title: 'Notes' },
-    spec_version: '1.0.0-rc.6',
+    spec_version: '1.0.0-rc.7',
   };
 }
 

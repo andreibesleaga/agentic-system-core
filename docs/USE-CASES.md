@@ -84,9 +84,12 @@ Bundle's own folder.
 - **Mode:** 0.
 - **Commands:** `agsc init` in the folder (each file gets a type, a title and a
   provenance block; `agsc.config.json` and `content/index.md` are written), then add
-  `.well-known/security.txt` with a `Contact:` line, then `agsc ci`. Without the
-  security contact `ci` stops with one error, because a published node must name
-  where to report a security problem.
+  `.well-known/security.txt` with a `Contact:` line, commit once (or set
+  `SOURCE_DATE_EPOCH`), then `agsc ci`, then `agsc build` for the site in `www/`.
+  Without the security contact `ci` stops with `AGSC-E901`, because a published node
+  must name where to report a security problem; without a commit or
+  `SOURCE_DATE_EPOCH` it stops with `AGSC-E204`, because the build has no instant to
+  stamp. [guides/mode-0.md](guides/mode-0.md) walks through it.
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
 ## Many nodes, no server
@@ -100,7 +103,9 @@ Bundle's own folder.
 - **Mode:** 1.
 - **Commands:** each lists the other's discovery URL in `peers[]` of
   `agsc.config.json`; each runs `agsc build`; then
-  `node tools/validate-wellknown a/www/.well-known/knowledge-linkset --peer b/www/.well-known/knowledge-linkset`.
+  `node node_modules/agentic-system-core/tools/validate-wellknown a/www/.well-known/knowledge-linkset --level 2 --peer b/www/.well-known/knowledge-linkset`
+  (from a clone: `node tools/validate-wellknown …`; without `--level` the checker
+  judges Level 0). [guides/mode-1.md](guides/mode-1.md) walks through it.
   If only one side lists the other, the check fails with "resolved, not mutual".
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
@@ -130,9 +135,9 @@ Bundle's own folder.
 - **Commands:** add `sources: [{resource: "https://peer.example/concepts/x/"}]` to an
   item of a node that lists the peer, then `agsc build`.
 - **Proven by:** `tests/boundary/federation.test.js` covers the function that makes
-  the two statements. **Not yet in the build:** the reference engine's `graph.nq`
-  does not carry them today — the function is not wired into the build. This is
-  recorded as an open item.
+  the two statements, and `tests/distribution/peer-citations.test.js` builds a real
+  Bundle and finds them in `graph.nq`, `graph.ttl`, `graph.jsonld` and the item's
+  page view; a citation of a host that is not a declared peer stays a plain source.
 
 ### D4 — One answer from three corpora
 
@@ -248,9 +253,9 @@ Bundle's own folder.
 - **Proven by:** `tests/distribution/now-spend.test.js`. This engine ships no model
   adapter, so no real model call is made anywhere.
 
-### M5 — A selection that becomes a running system
+### M5 — A selection that becomes a starting harness
 
-- **Who:** an architect, then a runtime.
+- **Who:** an architect; then whoever builds the system from it.
 - **Data flow:** selected concepts → five fixed steps (requirements closure, hiding
   superseded items, mutual exclusions, warnings, port wiring) → a Harness: up to
   seven kinds of file — `harness.jsonld`, `AGENTS.md`, `workspace.dsl`,

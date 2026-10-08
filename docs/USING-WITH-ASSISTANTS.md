@@ -5,8 +5,10 @@
 **Summary.** A Bundle is a folder of Markdown files that this engine publishes as a
 knowledge node. One command turns that same folder into a **local tool server** your
 assistant can use: `agsc mcp`. The assistant can then search the memory, read an item,
-follow its links, check a selection of items for conflicts, and ask a question and get an
-answer with citations. It can also *prepare* a new page or a change to one — and that is
+follow its links, check a selection of items for conflicts, and ask a question and get
+back the descriptions of the best-matching items with their addresses — or exactly
+`no answer in this memory`; no model is called. It can also *prepare* a new page or a
+change to one — and that is
 where it stops. Nothing is ever written to your files or to your repository by the server.
 The prepared text comes back to you, you read it, and you open the pull request. This page
 explains the whole of that, in order, and ends with the setup for five assistants.
@@ -36,7 +38,7 @@ you can look them up; you never need them to use this):
 | `read` | returns one item: its frontmatter and its text |
 | `links` | returns the typed links authored on one item |
 | `compose` | takes a selection of items and reports whether they fit together |
-| `ask` | answers a question **from this memory only**, citing at least one item |
+| `ask` | returns the descriptions of the items that best match a question, with their addresses as citations — **from this memory only**; no model is called |
 | `propose` | returns the prepared text of a change to one existing item |
 | `remember` | turns something you told it into a new, well-formed item — as text |
 
@@ -50,7 +52,8 @@ Beside the tools it offers:
   slash command or a menu) sets the assistant up to answer from this memory, cite items,
   and say exactly `no answer in this memory` when the memory does not hold the answer.
 
-Every result carries `trust: "untrusted"` and the content terms. That is deliberate: the
+Every tool result carries `trust: "untrusted"` and the content terms (a resource is the
+item's Markdown as published). That is deliberate: the
 text in a knowledge node is **data the assistant reads**, never instructions it obeys. If
 someone writes "ignore your instructions" into a page, it comes back marked as untrusted
 prose like any other sentence.
@@ -75,8 +78,10 @@ This is the whole loop. The assistant does the preparation; you do the writing.
    "propose a tidy-up of the `handoff` page".
 2. **The assistant calls `remember` or `propose`.** It gets back prepared text: for
    `remember`, a suggested file path, the frontmatter and the body; for `propose`, the
-   item's canonical Markdown. Provenance is filled in for you — who the assistant is,
-   which model, and **which person is operating it**.
+   item's canonical Markdown. Provenance is filled in from what the assistant passes:
+   `remember` needs **the person operating it** (`"operator": "human:<id>"`) or the
+   name of a declared agent lane, and records the `model` and `agent` it is given;
+   without either it refuses with `AGSC-E003`.
 3. **You read it.** This is the review. Nothing has happened to your files yet.
 4. **You save it** into the Bundle at the path the assistant suggested, and fix anything
    you disagree with. The assistant can write the file for you if it has a file tool of
@@ -112,7 +117,8 @@ arguments.
 Bundle it is started in — the folder that holds `agsc.config.json`. In an editor or a
 terminal assistant that is the project folder you opened, so **open the Bundle as the
 project** and the four configurations below need nothing else. Claude Desktop has no
-project folder, so its snippet changes directory first.
+project folder, so its snippet changes directory first or names the folder as an
+argument (`agsc mcp /path/to/your-bundle`).
 
 ### Claude Desktop
 
@@ -132,7 +138,20 @@ afterwards — it reads this file at start. Replace `/path/to/your-bundle` with 
 }
 ```
 
-On Windows, use the shell that is there:
+`agsc mcp` also takes the folder as an argument, which needs no shell:
+
+```json
+{
+  "mcpServers": {
+    "my-knowledge": {
+      "command": "npx",
+      "args": ["-y", "agsc-cli", "mcp", "/path/to/your-bundle"]
+    }
+  }
+}
+```
+
+Or change directory in a shell; on Windows, use the shell that is there:
 
 ```json
 {
@@ -147,7 +166,7 @@ On Windows, use the shell that is there:
 
 The documented configuration for this file has three members — `command`, `args` and
 `env` — and none of them names a working directory, which is why the command changes
-directory itself. (The Model Context Protocol SDK's own stdio transport does accept a
+directory itself, or names the folder as an argument. (The Model Context Protocol SDK's own stdio transport does accept a
 `cwd`; if your build of the application passes it through, `"cwd": "/path/to/your-bundle"`
 beside `command` and `args` is the tidier form.)
 

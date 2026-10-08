@@ -1,0 +1,137 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-14b: besides the seven tools, the tool server exposes every published item as an MCP resource of media type text/markdown, `graph.jsonld` as application/ld+json and `llms.txt` as text/plain, under the URIs memory://<bundle-id>/<slug>, memory://<bundle-id>/graph.jsonld and memory://<bundle-id>/llms.txt, listed in code-point order of the URI; and exactly one prompt, named answer-from-this-memory-with-citations, whose title and description are \"answer from this memory with citations\" and which takes exactly one required argument, question. A resource URI or a prompt name that does not exist is a JSON-RPC error, not the tool envelope of AGSC-09-13a. Derivation, by hand from the rule: the fixture is bundle.id minimal and publishes the three items of content/ (agent-patterns, handoff, supervisor), so the list holds five URIs; sorted by code point, graph.jsonld falls between agent-patterns and handoff and llms.txt between handoff and supervisor. The frames of input.frames are sent, in order, to the implementation's tool server for the fixture over standard input; each entry of expected.responses is compared with the response of the same id as a subset (a member the rule does not pin — a resource's name, title or text, an argument's description — is not compared; a list is compared element by element and must have the same length), and an expected `error` member means the response is a JSON-RPC error and carries no `result`.",
+  "expected": {
+    "responses": [
+      {
+        "id": 2,
+        "result": {
+          "resources": [
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/agent-patterns"
+            },
+            {
+              "mimeType": "application/ld+json",
+              "uri": "memory://minimal/graph.jsonld"
+            },
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/handoff"
+            },
+            {
+              "mimeType": "text/plain",
+              "uri": "memory://minimal/llms.txt"
+            },
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/supervisor"
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "result": {
+          "contents": [
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/handoff"
+            }
+          ]
+        }
+      },
+      {
+        "error": {},
+        "id": 4
+      },
+      {
+        "id": 5,
+        "result": {
+          "prompts": [
+            {
+              "arguments": [
+                {
+                  "name": "question",
+                  "required": true
+                }
+              ],
+              "description": "answer from this memory with citations",
+              "name": "answer-from-this-memory-with-citations",
+              "title": "answer from this memory with citations"
+            }
+          ]
+        }
+      },
+      {
+        "error": {},
+        "id": 6
+      }
+    ]
+  },
+  "id": "cli-0018",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "frames": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "params": {
+          "capabilities": {},
+          "clientInfo": {
+            "name": "conformance",
+            "version": "0"
+          },
+          "protocolVersion": "2025-11-25"
+        }
+      },
+      {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "method": "resources/list"
+      },
+      {
+        "id": 3,
+        "jsonrpc": "2.0",
+        "method": "resources/read",
+        "params": {
+          "uri": "memory://minimal/handoff"
+        }
+      },
+      {
+        "id": 4,
+        "jsonrpc": "2.0",
+        "method": "resources/read",
+        "params": {
+          "uri": "memory://minimal/no-such-item"
+        }
+      },
+      {
+        "id": 5,
+        "jsonrpc": "2.0",
+        "method": "prompts/list"
+      },
+      {
+        "id": 6,
+        "jsonrpc": "2.0",
+        "method": "prompts/get",
+        "params": {
+          "arguments": {
+            "question": "handoff"
+          },
+          "name": "no-such-prompt"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-09-14b"
+}

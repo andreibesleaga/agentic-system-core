@@ -9,7 +9,7 @@ how to check it. It is for a developer who wants to read, change or extend the e
 
 **Read after:** the root `README.md`. **Read next:** `docs/CODE-ORIENTATION.md` (a
 guided walk with a reading path per task) and `docs/ARCHITECTURE-GUIDE.md` (the
-pictures). The per-module reference as each part was built is `REFERENCE.md` in this
+pictures). The per-module reference is `REFERENCE.md` in this
 folder; the history of changes is `CHANGELOG.md` at the root.
 
 Everything here is CommonJS (`require`), Node ≥ 22.13, and deterministic: no wall
@@ -83,9 +83,9 @@ flowchart TD
   B -.uses.-> P
 ```
 
-*Amended 2026-09-24:* the arrow from Governance to Interchange was added. Interchange
-reads Governance's published language (provenance, the ledger, agent records) when
-it imports and exports, and the architecture test has always allowed it.
+The arrow from Governance to Interchange: Interchange reads Governance's published
+language (provenance, the ledger, agent records) when it imports and exports, and the
+architecture test allows it.
 
 **The shared kernel.** `shared/ordering.js` holds the two string orderings — the
 UTF-16 comparison of AGSC-04-05 and the code-point comparison of AGSC-04-12 — and
@@ -157,8 +157,11 @@ which calls into the contexts.
 | `trace` | AGSC-09-94, AGSC-02-14 | `interchange/trace.js`; off by default |
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `application/conformance.js`, `composition/conform.js` |
 
-With `run.enabled` false, `run` and `trace` answer exactly as an unknown verb does:
-exit 2 with `AGSC-E001` (AGSC-09-94). `tests/application/cli/verbs-sixteen.test.js`
+With `run.enabled` false, `run` and `trace` refuse with `AGSC-E004` and exit 2, and
+under `--json` print their envelope on stdout (AGSC-09-94, AGSC-09-10). A form of a
+known verb this distribution does not offer — `refresh --agent` without `--dry-run`,
+`run` with no isolated runner, `export --jsonld` or `--jsonl` with no graph — is
+`AGSC-E001` with exit 1, the second meaning of that code in the registry. `tests/application/cli/verbs-sixteen.test.js`
 holds the set to sixteen; `tests/application/cli/verbs-wired.test.js` runs every verb
 end to end over a copy of the fixture.
 
@@ -177,9 +180,8 @@ input; vector `cli-0003` compares them call by call.
 
 Standard formats are not reimplemented here. Every dependency is pinned to an exact
 version in `package.json`, is permissively licensed, reaches neither the network nor
-the clock at run time, and is loadable from CommonJS. *(Table brought up to date on
-2026-09-24 from `package.json` and the `require` calls in `src/`, `bin/` and `tools/`;
-the first six rows were the whole table until then.)*
+the clock at run time, and is loadable from CommonJS. The table follows `package.json`
+and the `require` calls in `src/`, `bin/` and `tools/`.
 
 | Need | Library | Version | Licence | Used in |
 |---|---|---|---|---|
@@ -194,7 +196,7 @@ the first six rows were the whole table until then.)*
 | argv parsing | `commander` | 15.0.0 | MIT | `application/cli/main.js` |
 | `.env` tokenising (`parse` only) | `dotenv` | 18.0.3 | BSD-2-Clause | `application/config/env.js` |
 | unified diffs | `diff` | 9.0.0 | BSD-3-Clause | `application/cli/verbs/propose.js` |
-| MCP over stdio | `@modelcontextprotocol/sdk` | 1.30.1 | MIT | `distribution/mcp-stdio.js` |
+| MCP over stdio | `@modelcontextprotocol/sdk` | 1.32.1 | MIT | `distribution/mcp-stdio.js` |
 | TOON encoding | `@toon-format/toon` | 4.1.1 | MIT | `interchange/adapters/llm-context.js` |
 | property tests (dev) | `fast-check` | 4.10.1 | MIT | tests only |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT | tests only |
@@ -290,8 +292,9 @@ A port in another language can use it without reading a line of this engine:
 ## 7. What this engine does not do, and where it says so
 
 * the sandboxed executor of AGSC-09-94 — the `run` verb's finding;
-* an `--emit` target of AGSC-07-18 that no emitter is installed for — the `compose`
-  verb's finding;
+* the runtime renderings of the `--emit` targets of AGSC-07-18 — a registered target
+  is refused with `AGSC-E203` (1.1, AGSC-00-20), and a composition-emitter plugin can
+  render one;
 * the AGSC-06-01 routes no module produces — `site.build`'s `skipped` list, from
   `site.UNPRODUCED_ROUTES`;
 * the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired — named in
@@ -305,19 +308,17 @@ A port in another language can use it without reading a line of this engine:
 
 The per-module reference — the module table and its API, the application layer, links
 and lints, the graph exports, the build pipeline, composition and the tool transports,
-and the integration record — is `REFERENCE.md` in this folder; this file is the map.
+and the verb and tool tables — is `REFERENCE.md` in this folder; this file is the map.
 
-## 9. Changes to the module map (2026-09-24)
+## 9. Notes on some modules
 
-*Note, 2026-09-24, appended:* `interchange/licences.js` is new — the licences an import
-recognises, shared by the skills adapter and the OKF reader (AGSC-01-22).
-`governance/boards.js#claimants(gitLog, items)` now takes the items it derives
+`interchange/licences.js` holds the licences an import recognises, shared by the skills adapter and the OKF reader (AGSC-01-22).
+`governance/boards.js#claimants(gitLog, items)` takes the items it derives
 `claimed_by` for, and exports `holderOf` and `sameParticipant`; the page tools carry
 `pageClaimants` and read the board exports. The six-mode walk is `tests/e2e/modes/`.
 
-*Note, 2026-09-25, appended:* `distribution/search-page.js` is new — the `/search/`
-page's one script, emitted like the `/compose/` scripts: it carries the own source text
-of `distribution/search.js#tokenize` and `#query` (both now self-contained and named in
+`distribution/search-page.js` is the `/search/` page's one script, emitted like the `/compose/` scripts: it carries the own source text
+of `distribution/search.js#tokenize` and `#query` (both self-contained and named in
 `search.PORTABLE`) and of `page-tools.js#pageShardRoutes` and `#pageIndexOf`, so the
 search box, the page tools and the index builder tokenize one way. `html.js#searchPage`
 is the page; `site.js#putIndex` takes an optional renderer for it.

@@ -27,7 +27,7 @@ const yaml = require('../../src/knowledge/yaml.js');
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
-const SPEC = '1.0.0-rc.6';
+const SPEC = '1.0.0-rc.7';
 const PROV = 'prov:\n  origin: human\n  operator: human:andreibesleaga\n';
 const DESC = 'A task of the delivery board, written for the board adapter tests.';
 
@@ -233,7 +233,7 @@ test('round trip: every exported item and its board come back as authored, for e
     const again = imported(into, path.join(source, 'dist/export/board', format), format);
     assert.match(again.notes, new RegExp(`import: 0 written, 0 replaced, ${expected.length + 1} unchanged`, 'u'), format);
     assert.deepStrictEqual(errors(lintVerb.run(ctxFor(into)).findings)
-      .filter((f) => f.file !== '.well-known/security.txt'), [], format);
+      .filter((f) => f.file !== '.well-known/security.txt' && f.file !== 'content/index.md'), [], format);
   }
 });
 
@@ -326,9 +326,9 @@ test('every tool\'s export becomes draft tasks on draft boards, states through t
         assert.ok(items.has(`clusters/${item.fm.clusters[0]}.md`), `${format} ${at}: its board is written`);
       }
     }
-    // The imported Bundle lints clean of errors (the target's security contact aside).
+    // The imported Bundle lints clean of errors (the target's security contact and root document aside, which no import writes).
     assert.deepStrictEqual(errors(lintVerb.run(ctxFor(into)).findings)
-      .filter((f) => f.file !== '.well-known/security.txt'), [], format);
+      .filter((f) => f.file !== '.well-known/security.txt' && f.file !== 'content/index.md'), [], format);
     // And a published copy of it exports again (drafts never do: nothing is written).
     const again = exportVerb.run(ctxFor(into, { verbFlags: { format, to: 'board' } }));
     assert.ok(again.findings.some((f) => /no board to export/u.test(f.message)), format);

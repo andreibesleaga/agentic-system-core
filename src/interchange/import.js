@@ -1,6 +1,6 @@
 'use strict';
 // src/interchange/import.js — CONTEXT Interchange, the `import --from old-site`
-// use case (AGSC-01-22, AGSC-01-23; M3-T01…T08, T16…T19).
+// use case (AGSC-01-22, AGSC-01-23).
 //
 // One old site in, one conforming Bundle out: a write PLAN, not a write. The
 // plan is a list of `{path, text}` pairs in code-point path order, so the caller

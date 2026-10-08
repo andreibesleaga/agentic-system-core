@@ -30,7 +30,7 @@ const PREAMBLE = [
 function ontologyRoot(body, extra = {}) {
   return writeTree(tmpdir(), {
     'ontology/agsc.ttl': `${PREAMBLE}${body}`,
-    'spec/00-overview.md': '`spec_version: "1.0.0-rc.6"`\n',
+    'spec/00-overview.md': '`spec_version: "1.0.0-rc.7"`\n',
     ...extra,
   });
 }
@@ -65,7 +65,7 @@ describe('validate-ontology — usage and the envelope', () => {
     const { code, json } = envelope('validate-ontology', [path.join(root, 'ontology', 'agsc.ttl')]);
     assert.equal(code, 0);
     assert.equal(json.verb, 'validate-ontology');
-    assert.equal(json.spec_version, '1.0.0-rc.6');
+    assert.equal(json.spec_version, '1.0.0-rc.7');
     assert.deepEqual(json.findings, []);
   });
 

@@ -83,3 +83,33 @@ test('AGSC-06-01: only the board JSON exports are typed JSON; the HTML board pag
   }
   assert.ok(covers('/boards/*.json', '/boards/project-board.json'));
 });
+
+// Verification finding T1 (2026-10-06): the writer put the CORS pair and the content type
+// of fourteen addresses into two blocks each, and the reference host served only one of
+// two blocks written for the same address — so the discovery document and the thirteen other
+// machine files went out without `Access-Control-Expose-Headers` (AGSC-11-03). AGSC-06-17
+// now says each address pattern is written once, with every header it takes.
+for (const visibility of ['public', 'restricted']) {
+  test(`AGSC-06-17: each address pattern is one block in _headers, carrying all its headers (${visibility})`, () => {
+    const sets = headers.headerSets({ visibility });
+    const routes = sets.map((s) => s.route);
+    const repeated = routes.filter((r, i) => routes.indexOf(r) !== i);
+    assert.deepStrictEqual(repeated, [], `written twice: ${repeated.join(' ')}`);
+    const blocks = headers.headersFile({ visibility }).split('\n').filter((l) => l.startsWith('/'));
+    assert.deepStrictEqual(blocks, routes, 'the file has one block per set, in the same order');
+    const wellknown = sets.find((s) => s.route === WELLKNOWN_PATH).headers.map(([k]) => k);
+    for (const name of ['Access-Control-Allow-Origin', 'Access-Control-Expose-Headers', 'Content-Type', 'Link', 'Cache-Control']) {
+      assert.ok(wellknown.includes(name), `the discovery document's block lacks ${name}`);
+    }
+    if (visibility === 'public') {
+      for (const route of ['/graph.jsonld', '/llms.txt', '/now.md', '/ledger.jsonl', '/pages/*.md']) {
+        const names = sets.find((s) => s.route === route).headers.map(([k]) => k);
+        assert.ok(names.includes('Access-Control-Expose-Headers') && names.includes('Content-Type'), route);
+      }
+    }
+    for (const set of sets) {
+      const names = set.headers.map(([k]) => k.toLowerCase());
+      assert.deepStrictEqual(names.filter((n, i) => names.indexOf(n) !== i), [], `${set.route} repeats a header`);
+    }
+  });
+}

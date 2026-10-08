@@ -1,9 +1,9 @@
 # Writing a plugin for this engine
 
-**Who this is for:** a developer adding a capability without changing the engine. **Read after:** [ARCHITECTURE-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-GUIDE.md) §2 (where each kind attaches). *(Header added 2026-09-24.)*
+**Who this is for:** a developer adding a capability without changing the engine. **Read after:** [ARCHITECTURE-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-GUIDE.md) §2 (where each kind attaches).
 
 **Status:** the engine's own contract, version **1.0.0** of the plugin API, for
-specification version `1.0.0-rc.6`. Added at rc.6.
+specification version `1.0.0-rc.7`. Added at rc.6.
 
 This document is for someone who wants to add a capability to a node without
 forking the engine. It says what you may add, what your code may and may not do,
@@ -33,12 +33,26 @@ are `examples/plugins/`, one per kind, each with tests.
 | `composition-emitter` | renders a Harness for one runtime | `compose --emit <target>` | AGSC-07-18 |
 | `checker` | validates one normative artefact, standalone | one of the nine of AGSC-09-90 | AGSC-09-90…92 |
 
-At `1.0.0-rc.6` this engine loads a plugin you write for **three** of the kinds —
+At 1.0 this engine loads a plugin you write for **three** of the kinds —
 the memory adapter (`export --to <path>` / `import --from <path>`), the composition
 emitter (`compose --emit <path>`) and the deployment profile (`agsc-host emit <path>`).
 The other five have their registry, their sample under `examples/plugins/` and their
 tests, and the selector column names where the specification places them; loading
 one of those five from a Bundle's configuration is a 1.1 engine item.
+
+**The channel adapter at 1.0.** AGSC-01-30 describes a channel in two directions:
+ingest, where an adapter pulls messages from an outside system and renders each as an
+item that arrives as a Proposal (`pull(since)`, `render(message)`), and the way back,
+where a Proposal is carried to a review lane. This engine's `channel-adapter` row and its
+sample cover only the second direction (`message(proposal)` composes the one message a
+review lane posts). At 1.0 no channel adapter ships, no command ingests (`refresh` has no
+`--ingest` option) and nothing loads a channel adapter from the configuration; the ingest
+direction is specified for implementations and is not implemented by this engine.
+
+**The `responder` surface at 1.0.** A node may declare a `responder` surface through the
+`surfaces[]` entry of `agsc.config.json` (AGSC-11-16, AGSC-11-21). No remote tool responder ships
+with this engine and no sample opens a network listener: a responder plugin, with its own
+security text and tests, is planned for 1.1.
 
 There is no ninth. If what you want to add is not one of these eight, it is a
 change to the specification and the place for it is a proposal against
@@ -127,7 +141,7 @@ through the registry of its kind, so every plugin passes the capability check of
 | `export --to <path or package>` | `memory-adapter` | `exportFiles(items, context)` → `{files: [{path, text}], findings?}` | the files, under `dist/export/<name>/` |
 | `import --from <path or package> <dir>` | `memory-adapter` | `importFiles(files, context)` → `{documents: [{path, text}], findings?}` | the documents, mapped exactly as an OKF bundle is (AGSC-01-22), with the same collision survey, `--dry-run` and `--replace` |
 | `compose <slug…> --emit <path or package>` | `composition-emitter` | `emit(harnessFiles, harnessDir)` → one `{path, text}` or a list | beside the Harness directory, never inside it (AGSC-07-18) |
-| `agsc-host emit <path or package>` | `deployment-profile` | `emit(input)` → `{site, server, findings}` (or the older `headerFile(sets)`) | host files in the build directory (never on a route) and under `dist/hosts/<name>/` or `--out` *(row added 2026-09-24)* |
+| `agsc-host emit <path or package>` | `deployment-profile` | `emit(input)` → `{site, server, findings}` (or the older `headerFile(sets)`) | host files in the build directory (never on a route) and under `dist/hosts/<name>/` or `--out` |
 
 `items` is a frozen copy of the published items; `files` a frozen copy of every
 file of the source directory, read by the engine; `context` carries the

@@ -78,10 +78,18 @@ function adapterOf(name) {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/u.test(id)) {
     return { module: null, reason: `"${id}" is not an adapter name (AGSC-01-10 grammar, AGSC-01-26a)` };
   }
+  const file = `../../../interchange/adapters/${id}.js`;
+  let resolved;
   try {
-    return { module: require(`../../../interchange/adapters/${id}.js`), reason: null };
+    resolved = require.resolve(file);
   } catch (e) {
     return { module: null, reason: `no adapter named "${id}" is installed (AGSC-01-26a)` };
+  }
+  // The adapter exists and failed while loading: say why, not that it is absent.
+  try {
+    return { module: require(resolved), reason: null };
+  } catch (e) {
+    return { module: null, reason: `the adapter "${id}" could not be loaded: ${(e && e.message) || String(e)} (AGSC-01-26a)` };
   }
 }
 
@@ -193,7 +201,7 @@ function adapterExport(ctx, bundle, name) {
     if (!loaded.missing) return { files: [], findings: loaded.findings, root: null, written: [] };
   }
   if (found.module === null || typeof found.module.run !== 'function') {
-    // AGSC-01-26a (as stated 2026-09-24): a name no shipped adapter and no installed
+    // AGSC-01-26a: a name no shipped adapter and no installed
     // plugin answers is AGSC-E203 — a value outside a closed operator list — and
     // exit 1, the same code `export --steer --target` gives an unregistered name.
     // Until then this line said AGSC-E001, the code registered for an unknown verb.

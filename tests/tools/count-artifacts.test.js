@@ -108,7 +108,7 @@ describe('tools/count-artifacts — invocation', () => {
     const dir = tmpdir();
     writeTree(dir, {
       'spec/00-overview.md': [
-        '# Overview', '', '`spec_version: "1.0.0-rc.6"`', '',
+        '# Overview', '', '`spec_version: "1.0.0-rc.7"`', '',
         '- **AGSC-00-01** A rule. [PRD-002]',
         '- **AGSC-00-02** *(reserved: merged into AGSC-00-01; the id is never reused, AGSC-00-16.)*',
         '- **AGSC-00-03** *(retired at rc, 2026-01-01: merged into AGSC-00-01; the id is reserved under AGSC-00-16 and never reused.)*',

@@ -5,7 +5,7 @@ A specification for publishing machine-discoverable knowledge bundles — the Ag
 What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the nine independent checkers of AGSC-09-90 — seven validators and two generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
 ## Status
-**Release candidate.** This tree states specification `1.0.0-rc.6`, the first public release candidate. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0-rc.6` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install --pre agentic-system-core` (pip installs a release candidate only when asked with `--pre`).
+**Release candidate.** This tree states specification `1.0.0-rc.7`, the second public release candidate (the first was `1.0.0-rc.6`). `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0-rc.7` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install --pre agentic-system-core` (pip installs a release candidate only when asked with `--pre`).
 
 The specification's own site is [AgenticSystemCore.com](https://agenticsystemcore.com).
 
@@ -16,13 +16,13 @@ top of each; the specification says how that folder becomes a **knowledge node**
 static website plus a graph, a search index, text files for agents and a discovery
 document — with the same bytes from any implementation. People and agents read a node
 through ordinary web addresses, change it only by proposals that a person ratifies, and
-compose its items into files a runtime can execute. Nodes find and cite each other with
-no server in between.
+compose its items into a starting harness — files an architect or an agent runtime
+starts from. Nodes find and cite each other with no server in between.
 
 ## What is different about it
 
 To the author's knowledge, no other system combines discovery through already-registered web
-mechanisms with an integrity digest on every artefact it names, a typed graph with a
+mechanisms with an integrity digest on every artefact link of its discovery document, a typed graph with a
 published ontology, machine artefacts whose bytes are fixed by expected-byte
 conformance vectors, governance in which every change — human or agent — arrives as a
 proposal carrying its provenance and a person ratifies it (directly, or by a standing
@@ -36,15 +36,15 @@ claim. Other systems have some of these properties; the dated comparison is in
 | Property | What it means | Where it is stated and proved |
 |---|---|---|
 | Discovery through registered mechanisms | one link set at a well-known address, found through the registered relation `describedby` | [AGSC-06-07](spec/06-surfaces.md), [AGSC-06-25](spec/06-surfaces.md); `tools/validate-wellknown` |
-| A digest on every artefact | each artefact the discovery document links carries its SHA-256 digest | [AGSC-06-08](spec/06-surfaces.md); the `discovery` vectors |
+| A digest on every artefact link | at Level 2, each link of the discovery document to a file the node builds (the graph files, `llms.txt`, NOW, the skills and boards indexes, the ledger, the vocabulary files) carries the SHA-256 of that file; links to surfaces, the licence page, peers and contribution targets carry none | [AGSC-06-08](spec/06-surfaces.md); the `discovery` vectors |
 | A typed graph with an ontology | fourteen typed links, four RDF views, a published OWL 2 RL vocabulary | [spec/05-graph.md](spec/05-graph.md), [ontology/agsc.ttl](ontology/agsc.ttl) |
 | Bytes fixed by vectors | two implementations given one Bundle emit the same machine files | [AGSC-04-24](spec/04-canonicalization.md); [tests/vectors/](tests/vectors/README.md) |
 | Governance with provenance | every change is a proposal with its provenance; a person ratifies; a ledger is derived from the history | [spec/08-governance.md](spec/08-governance.md) (AGSC-08-08, AGSC-08-20) |
-| Composition into a harness | selected items close over their links and become seven files an architect or an agent runtime can start from | [AGSC-07-12](spec/07-composition.md); `agsc compose` |
+| Composition into a harness | selected items close over their links and become seven kinds of file an architect or an agent runtime can start from | [AGSC-07-12](spec/07-composition.md); `agsc compose` |
 | No server | a file format and static files; no protocol, server, database or reasoner is defined | [AGSC-00-02](spec/00-overview.md) |
 
 Beside that combination, and each available elsewhere on its own: **six modes** of use
-([docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md)); **seven tools on every page** for a
+([docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md)); **seven tools on every item page and on `/compose/`** for a
 browser's own agent, identical to the local tool server ([AGSC-09-16](spec/09-conformance.md));
 **eight plugin kinds** with a forward-compatibility promise ([docs/PLUGINS.md](docs/PLUGINS.md),
 [AGSC-00-24](spec/00-overview.md)); a **content version** stamped on every surface
@@ -61,17 +61,20 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
 - **Shared memory for many agents.** Every agent reads the same published files and
   writes only by proposals a person ratifies
   ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md)).
-- **A source of skills.** Procedures become skill packs, with a lockfile of their
-  digests, that install into agent tool folders; skills from other repositories come
+- **A source of skills.** Each cluster becomes one skill pack holding its published
+  items — the procedures are the part an agent follows — with a lockfile of their
+  digests, installable into agent tool folders; skills from other repositories come
   in as procedures
   ([Mode 3](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l4--procedures-as-installable-skills)).
-- **Runnable procedures.** A selection of items becomes a harness of seven files a
-  runtime can start from ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m5--a-selection-that-becomes-a-running-system)).
+- **A starting harness.** A selection of items becomes a harness — seven kinds of file
+  an architect or a runtime can start from; it is not a running system, and no
+  rendering for a particular runtime ships at 1.0 ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m5--a-selection-that-becomes-a-starting-harness)).
 - **A live board for a team of agents.** Agents claim and finish tasks on shared boards
   until they are done; decisions stay with people
   ([Mode 5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m1--the-live-board-one-person-and-three-agents)).
 - **Knowledge across nodes.** A client reads several nodes' graph dumps and joins them
-  locally, every foreign result marked with its origin
+  locally, every foreign result marked with its origin; at 1.0 the walk is a library
+  function of the engine, not a command
   ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case D4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#d4--one-answer-from-three-corpora)).
 
 **For people**
@@ -99,19 +102,47 @@ REPO=$PWD; cp -r tests/fixtures/minimal /tmp/agsc-try && cd /tmp/agsc-try
 SOURCE_DATE_EPOCH=1767225600 node "$REPO/bin/agsc.js" ci   # lint, build twice, compare, verify: "ci: pass"
 ```
 
-On a folder of your own Markdown notes, once the package is installed
-(`npm install agentic-system-core`): run `agsc init` in the folder, add
-`.well-known/security.txt` with a `Contact:` line, and run `agsc ci`. Then read
-[docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md) to connect an assistant.
+On a folder of your own Markdown notes (Node 22.13 or later, `git`, a POSIX shell):
+
+```bash
+npm install agentic-system-core                          # in a working folder
+export PATH="$PWD/node_modules/.bin:$PATH"               # puts agsc on the PATH
+cd my-notes && agsc init                                 # each note gets a header and moves to content/concepts/
+mkdir -p .well-known && printf 'Contact: mailto:you@example.org\n' > .well-known/security.txt
+git init -q && git add -A && git commit -q -m 'my notes' # the build takes its instant from this commit
+agsc ci                                                  # ci: pass (warnings are advice, errors stop)
+agsc build                                               # the site, the graph and the agent files in www/
+```
+
+Without the security contact `ci` stops with `AGSC-E901`; without a commit (or
+`SOURCE_DATE_EPOCH`) it stops with `AGSC-E204`. The
+[Mode 0 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-0.md)
+walks through this with the lines each command prints, and five more
+[guides](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/README.md)
+do the same for the other modes. To connect an assistant, read
+[docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md).
 To teach a coding agent the engine itself, install the agent skill in
 [skills/agentic-system-core/](https://github.com/andreibesleaga/agentic-system-core/blob/main/skills/README.md): `npx skills add andreibesleaga/agentic-system-core`,
 or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-core`.
 
+## Who it is for, what you get, try it
+
+| Reader | What you get today | Try it |
+|---|---|---|
+| A person with a folder of notes | a static site of your notes with search, each page also as Markdown, a graph file and text files for assistants; no model, no server | the quick start above; the [Mode 0 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-0.md) |
+| A developer | a local tool server: seven tools over your folder for an assistant; nothing leaves the machine | `agsc mcp`, set up as in [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md); the [Mode 1 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-1.md) |
+| A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | the [Mode 2 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-2.md); `agsc ci`, `agsc export --steer` |
+| An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | the [Mode 4 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-4.md); `agsc compose <slug>… --zip`, or the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |
+| An engineer implementing or checking the format | test cases with expected bytes; checkers that judge any implementation's files; a second checker in Python | `agsc conform --level 3`; `node node_modules/agentic-system-core/tools/validate-wellknown https://agenticsystemcore.com/.well-known/knowledge-linkset --level 2`; [docs/IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) |
+| A manager deciding whether to depend on it | what you can rely on (open licences, permanent addresses, archived releases, checks by published bytes) and what you cannot (one maintainer, no support promise, no schedule); the state of every outside step; the security policy | read [GOVERNANCE.md](GOVERNANCE.md), [SECURITY.md](SECURITY.md) and the [status page](https://agenticsystemcore.com/docs/status/); look at a live node: <https://patterns.agenticsystemcore.com/> |
+| An agent or its operator reading a node | one discovery document that lists every machine file with its digest; text files, chunks and graph files at fixed addresses | `curl -s https://agenticsystemcore.com/.well-known/knowledge-linkset`, then the checker line above |
+
 ## Where to start reading
 
 [docs/START-HERE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/START-HERE.md) sends each kind of reader — someone curious,
-a developer, an implementer in another language, an architect, an agent, a standards
-reviewer or a maintainer — down one path. Agents and coding assistants working in this
+a person with notes, a developer, a team with coding assistants, an implementer in
+another language, an architect, a manager, an agent, a standards reviewer or a
+maintainer — down one path. Agents and coding assistants working in this
 repository read [AGENTS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/AGENTS.md) first.
 
 ## Documentation map
@@ -123,13 +154,13 @@ The official repository is <https://github.com/andreibesleaga/agentic-system-cor
 | The specification (the standard itself: 343 rule ids, 332 of them active, in twelve chapters) | [spec/](spec/) — start with [spec/00-overview.md](spec/00-overview.md); a plain-language edition is in [docs/plain/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/) |
 | How to read the specification | [docs/SPEC-ORIENTATION.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/SPEC-ORIENTATION.md), [docs/SPEC.md](docs/SPEC.md) |
 | The protocol: discovery document, link set, digests, peers, tool surfaces | [docs/PROTOCOLS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/PROTOCOLS.md), [spec/06-surfaces.md](spec/06-surfaces.md), [spec/11-boundary.md](spec/11-boundary.md) |
-| The Internet-Draft (the well-known link set, Independent Submission) | [internet-draft/](https://github.com/andreibesleaga/agentic-system-core/blob/main/internet-draft/) |
+| The Internet-Draft (the well-known link set; an individual Internet-Draft) | [internet-draft/](https://github.com/andreibesleaga/agentic-system-core/blob/main/internet-draft/) |
 | Schemas and vocabulary (JSON Schemas, OWL 2 RL ontology, JSON-LD context) | [schema/](schema/), [ontology/](ontology/) |
 | Architecture | [docs/ARCHITECTURE-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-GUIDE.md), [docs/ARCHITECTURE-DDD.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-DDD.md), [docs/diagrams/](docs/diagrams/) |
 | Standards it builds on and related work | [docs/RELATED-WORK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RELATED-WORK.md), [docs/COMPLIANCE-CROSSWALK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/COMPLIANCE-CROSSWALK.md) |
 | Conformance: Levels, vectors, how to state a claim | [spec/09-conformance.md](spec/09-conformance.md), [spec/10-implementation-profiles.md](spec/10-implementation-profiles.md), [tests/vectors/](tests/vectors/), [docs/CONFORMANCE-STATEMENTS.md](docs/CONFORMANCE-STATEMENTS.md) |
 | Implementing it in another language | [docs/IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) |
-| Using it: modes, demos, connectors, assistants | [docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/DEMOS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/DEMOS.md), [docs/CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md), [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md) |
+| Using it: modes, guides, demos, connectors, assistants | [docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/guides/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/README.md), [docs/DEMOS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/DEMOS.md), [docs/CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md), [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md) |
 | Plugins and extension points | [docs/PLUGINS.md](docs/PLUGINS.md) |
 | Security and threat model | [docs/SECURITY-CONSIDERATIONS.md](docs/SECURITY-CONSIDERATIONS.md), [SECURITY.md](SECURITY.md) |
 | Engineering, testing, measurements | [docs/ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md), [docs/TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md), [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md), [docs/BENCHMARKS.md](docs/BENCHMARKS.md) |
@@ -141,12 +172,14 @@ The official repository is <https://github.com/andreibesleaga/agentic-system-cor
 ## Reference engine
 
 The reference implementation of the specification lives in this repository,
-under `src/`. It **claims no conformance Level** yet: AGSC-10-05 says a claim
-exists only after a green run of the Level's vector set at 1.0.0. All sixteen
+under `src/`. It **claims no conformance Level** yet: a claim of any Level exists
+only after a green run of that Level's vector set and is published in the form
+of AGSC-09-01 (AGSC-10-05). All sixteen
 verbs of AGSC-09-07 are implemented; `run` and `trace` are off by default, as
 AGSC-09-94 requires. `agsc init` adopts a folder of Markdown; before the first
 build the publisher adds `.well-known/security.txt` with a `Contact:` line (RFC
-9116) and commits once or sets `SOURCE_DATE_EPOCH`, as `init` says on its way out.
+9116) and commits once or sets `SOURCE_DATE_EPOCH`, as `init` says on its way out;
+`agsc ci` checks, and `agsc build` writes the site.
 
 * `src/README.md` is the engine's own documentation — the bounded contexts, the
   module map, the verb → module table, how to run the conformance vectors, and
@@ -160,10 +193,27 @@ build the publisher adds `.well-known/security.txt` with a `Contact:` line (RFC
 * `docs/PLUGINS.md` is the plugin contract: the eight kinds this format admits
   (AGSC-00-24), what a plugin of each may read, emit and never do, how the engine
   finds one, and what is promised not to break within 1.x. `examples/plugins/`
-  holds one minimal, working sample per kind.
+  holds one minimal sample per kind; at 1.0 a command loads three of the kinds (a
+  memory adapter, a composition emitter and a deployment profile), and the other
+  five samples are proved by the plugin-contract test only.
 
 The engine's arrangement is one implementation choice, not part of the format.
 Where this engine and the specification disagree, the specification wins.
+
+**What the package promises to keep within 1.x.** The command line — the
+commands `agsc`, `agsc-host` and `agentic-system-core`, their verbs, flags, exit
+codes and output envelopes (AGSC-09-07 to AGSC-09-12) — the plugin contract of
+`docs/PLUGINS.md` (plugin API `1.0.0`), the nine checkers run as programs
+(`node tools/<name>`), and the six names `require('agentic-system-core')` returns:
+`LINK_RELATION`, `PROFILE_URI`, `WELLKNOWN_SUFFIX`, `run`, `specVersion` and
+`version`. `package.json` declares no `exports` map, so every file under `src/`,
+`bin/` and `tools/` can still be required; none of them is part of the promise,
+and their names and signatures may change in any release. The one exception is
+`run()` of `bin/agsc.js`, the entry the `agsc-cli` alias package calls.
+
+**Upgrading from 1.0.0-rc.6.** `CHANGELOG.md` has a section of that name: what a
+node built with rc.6 may now see refused, what changes in the built files, and
+what to do.
 
 ## Connecting agents and repositories
 

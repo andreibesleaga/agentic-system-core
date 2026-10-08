@@ -316,13 +316,30 @@ function oneLine(value, max) {
   return [...text].length > max ? [...text].slice(0, max).join('') : text;
 }
 
-/** The privacy check's own patterns (AGSC-08-16), global, so every match is replaced. */
-const EMAIL = new RegExp(`(${pii.EMAIL.source.replace('@', ')@')}`, 'gu');
+/** The privacy check's own telephone patterns (AGSC-08-16), global, so every match is replaced. */
 const PHONES = pii.PHONE.map((p) => new RegExp(p.source, 'gu'));
+
+/**
+ * A text with each e-mail address of the privacy check reduced to its local part. The
+ * addresses are the check's own spans (`pii.emailSpans`), found in linear time; until
+ * 2026-10-06 a global search with the pattern was quadratic on a long run of
+ * local-part characters.
+ */
+function redactEmails(text, redacted) {
+  const source = String(text);
+  let out = '';
+  let from = 0;
+  for (const span of pii.emailSpans(source)) {
+    out += source.slice(from, span.at);
+    from = span.end;
+    redacted.count += 1;
+  }
+  return out + source.slice(from);
+}
 
 /** A text with each e-mail address reduced to its local part and each telephone number removed. */
 function redact(text, redacted) {
-  let out = String(text).replace(EMAIL, (_, local) => { redacted.count += 1; return local; });
+  let out = redactEmails(text, redacted);
   for (const phone of PHONES) out = out.replace(phone, () => { redacted.count += 1; return '[telephone number]'; });
   return out;
 }
@@ -560,5 +577,5 @@ function plan(files, options) {
 
 module.exports = {
   EXPORT_NAMES, FORMAT, FORMAT_NAMES, STATE_NAMES,
-  decodeRecord, encodeRecord, extensionsOf, isBoardFile, plan, run, stateOfWord, taskStateOf, wordFor,
+  decodeRecord, encodeRecord, extensionsOf, isBoardFile, plan, redactEmails, run, stateOfWord, taskStateOf, wordFor,
 };

@@ -30,7 +30,7 @@ function build() {
   const port = createFileSystem(dir);
   const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
-  const built = site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.6', version: '0.0.0' });
+  const built = site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.7', version: '0.0.0' });
   fs.rmSync(dir, { force: true, recursive: true });
   return built.files;
 }
@@ -80,7 +80,7 @@ test('a cluster page lists at most 500 members and says where the complete membe
   const port = createFileSystem(dir);
   const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
-  const built = site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.6', version: '0.0.0' });
+  const built = site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.7', version: '0.0.0' });
   fs.rmSync(dir, { force: true, recursive: true });
   assert.deepStrictEqual(built.findings.filter((f) => f.severity === 'error'), []);
   const page = String(built.files.get('/clusters/bench-cluster/index.html'));

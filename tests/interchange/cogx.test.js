@@ -28,7 +28,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
 const INSTANT = '2026-01-01T00:00:00Z';
-const SPEC = '1.0.0-rc.6';
+const SPEC = '1.0.0-rc.7';
 const ITEM_SCHEMA = readSchemas(ROOT).item;
 const OWN_BASE = 'https://own.example/';
 const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
@@ -313,8 +313,9 @@ test('AGSC-01-26a: export --to cogx then import --from cogx reproduces every pub
 
   // And the imported Bundle is one this engine's own lint accepts.
   const linted = lintVerb.run(ctxFor(target));
-  // `.well-known/security.txt` is a Bundle-root file no import writes; the ITEMS are what is asserted.
-  assert.deepStrictEqual(errors(linted.findings).filter((f) => String(f.file).startsWith('content/')), []);
+  // `.well-known/security.txt` and the root document `content/index.md` are the empty
+  // target's, and no import writes them; the ITEMS are what is asserted.
+  assert.deepStrictEqual(errors(linted.findings).filter((f) => String(f.file).startsWith('content/') && f.file !== 'content/index.md'), []);
 });
 
 test('an archive of an imported Bundle round-trips too: the record is replaced, never stacked', () => {

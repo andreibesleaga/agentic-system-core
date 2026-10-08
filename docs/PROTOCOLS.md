@@ -14,10 +14,11 @@ dependencies. **Read after:** [SPEC-ORIENTATION.md](SPEC-ORIENTATION.md). **Read
 and [RELATED-WORK.md](RELATED-WORK.md) §2 (each building block's status on the day it
 was checked).
 
-Nothing here claims that any body has reviewed, adopted or approved this work. A name
-this project defines — the well-known suffix `knowledge-linkset` and the profile
-identifier — has its **registration to be requested** through the Internet-Draft in
-`internet-draft/`; neither is registered today. The primary-document links below were
+Nothing here claims that any body has reviewed, adopted or approved this work. Of the two
+names this project defines, the profile identifier is **registered** in the IANA Profile
+URIs registry (RFC 7284). The well-known suffix `knowledge-linkset` is **not registered**:
+the Internet-Draft in `internet-draft/` asks for it, and no request has been sent to the
+registry. The primary-document links below were
 read on 2026-09-24.
 
 ---
@@ -29,7 +30,7 @@ read on 2026-09-24.
 | RFC 8615, Well-Known URIs | the `/.well-known/` path prefix and its registry | the discovery document lives at `/.well-known/knowledge-linkset` (suffix: not registered; asked for in the posted Internet-Draft, no request sent to the registry) | AGSC-06-07 | <https://www.rfc-editor.org/info/rfc8615> |
 | RFC 8288, Web Linking | the model of typed links and link relations | pages point at the discovery document with the registered relation `describedby`; this project's own relations are URIs, as the RFC requires for unregistered ones | AGSC-06-10, AGSC-06-25 | <https://www.rfc-editor.org/info/rfc8288> |
 | RFC 9264, Linkset | a document format (`application/linkset+json`) that holds a set of links | the discovery document *is* a link set: one file naming every machine artefact | AGSC-06-07 to AGSC-06-10 | <https://www.rfc-editor.org/info/rfc9264> |
-| RFC 6906, the `profile` relation; RFC 7284, the Profile URI Registry | how a document says which profile of a format it follows | the discovery document's media type carries this project's profile identifier (registration to be requested) | AGSC-06-07, AGSC-11-04 | <https://www.rfc-editor.org/info/rfc6906>, <https://www.rfc-editor.org/info/rfc7284> |
+| RFC 6906, the `profile` relation; RFC 7284, the Profile URI Registry | how a document says which profile of a format it follows | the discovery document's media type carries this project's profile identifier (registered in the Profile URIs registry) | AGSC-06-07, AGSC-11-04 | <https://www.rfc-editor.org/info/rfc6906>, <https://www.rfc-editor.org/info/rfc7284> |
 | RFC 8574, `cite-as` | a registered relation naming the identifier to cite | a node MAY say which address to cite it by | AGSC-06-35 | <https://www.rfc-editor.org/info/rfc8574> |
 | RFC 9727, `api-catalog` | a well-known address plus a relation plus a profile, for APIs | the design precedent this discovery design follows | AGSC-06-07 | <https://www.rfc-editor.org/info/rfc9727> |
 | RFC 9110, HTTP Semantics | the meaning of HTTP responses, headers and content negotiation | entity tags, response headers and redirects a host sends | AGSC-11-05, AGSC-06-17 | <https://www.rfc-editor.org/info/rfc9110> |
@@ -51,7 +52,7 @@ read on 2026-09-24.
 | CommonMark 0.31.2 (+ GFM tables) | a precise Markdown grammar | the grammar of every item's body; headings are the chunk cut points | AGSC-02-20, AGSC-06-27 | <https://spec.commonmark.org/0.31.2/> |
 | YAML 1.2 (a failsafe subset) | the data format of the frontmatter block | the small, safe subset every item header is written in | AGSC-02-01, AGSC-02-02 | <https://yaml.org/spec/1.2.2/> |
 | JSON Schema 2020-12 | a vocabulary for validating JSON | the three schemas; the keyword subset is fixed | AGSC-02-24, AGSC-00-09 | <https://json-schema.org/specification> |
-| RDF 1.1 N-Quads and Turtle; JSON-LD 1.1; RDF/XML | the W3C syntaxes of an RDF graph | the four views of one graph: `graph.nq`, `graph.ttl`, `graph.jsonld`, `graph.rdf` | AGSC-05-10, AGSC-05-31, AGSC-06-32 | <https://www.w3.org/TR/n-quads/>, <https://www.w3.org/TR/turtle/>, <https://www.w3.org/TR/json-ld11/> |
+| RDF 1.1 N-Quads and Turtle; JSON-LD 1.1; RDF/XML | the W3C syntaxes of an RDF graph | the views of one graph: `graph.nq`, `graph.ttl`, `graph.jsonld` and each item's `/pages/<slug>.jsonld`; RDF/XML (`graph.rdf`) is not emitted at 1.x | AGSC-05-10, AGSC-05-31, AGSC-06-32 | <https://www.w3.org/TR/n-quads/>, <https://www.w3.org/TR/turtle/>, <https://www.w3.org/TR/json-ld11/> |
 | RDF Dataset Canonicalization (RDFC-1.0) | a canonical form for RDF datasets | not used: `graph.nq` is this specification's own canonical form, with the same quads as RDFC-1.0 output for a blank-node-free dataset and four terms written differently; no RDFC-1.0 claim may be made | AGSC-04-16 | <https://www.w3.org/TR/rdf-canon/> |
 | OWL 2 RL; SKOS; PROV-O; DCMI Terms | an ontology profile and three widely used vocabularies | the vocabulary is OWL 2 RL, clusters are SKOS collections, provenance aligns to PROV-O, metadata to Dublin Core | AGSC-05-12, AGSC-05-17 to AGSC-05-22 | <https://www.w3.org/TR/owl2-profiles/>, <https://www.w3.org/TR/skos-reference/>, <https://www.w3.org/TR/prov-o/>, <https://www.dublincore.org/specifications/dublin-core/dcmi-terms/> |
 | Open Knowledge Format (OKF) 0.2 | a Markdown-with-frontmatter format for knowledge bundles | an item is a superset of OKF; OKF bundles import and export losslessly | AGSC-01-04, AGSC-01-22, AGSC-01-26 | <https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md> |
@@ -60,7 +61,7 @@ read on 2026-09-24.
 
 | Standard | What it is | Why it is used here | Rules | Primary document |
 |---|---|---|---|---|
-| Model Context Protocol (MCP), revision 2026-07-28 | a JSON-RPC protocol between AI applications and tool servers | `agsc mcp` is a local tool server with seven tools; the extension identifier `com.agenticsystemcore/knowledge` is advertised | AGSC-09-13, AGSC-11-18 | <https://modelcontextprotocol.io/specification/2026-07-28> |
+| Model Context Protocol (MCP), revisions 2025-11-25 and 2026-07-28 | a JSON-RPC protocol between AI applications and tool servers | `agsc mcp` is a local tool server with seven tools; it speaks revision 2025-11-25 and advertises the extension identifier `com.agenticsystemcore/knowledge` in its `initialize` result. Revision 2026-07-28 is the target the rules name; under it the identifier is carried in the `server/discover` result, which the 1.0 server answers with "Method not found". Moving the server to 2026-07-28 is planned for 1.1 | AGSC-09-13, AGSC-11-16, AGSC-11-18 | <https://modelcontextprotocol.io/specification/2025-11-25>, <https://modelcontextprotocol.io/specification/2026-07-28> |
 | WebMCP (a W3C Community Group draft, not on the standards track) | an in-page API, `document.modelContext`, through which a page registers tools for the browser's agent | every built page registers the same seven tools, answering as the local server does | AGSC-09-16, AGSC-11-18 | <https://github.com/webmachinelearning/webmcp> |
 | Agent2Agent (A2A) | a protocol between agent systems, with a published Agent Card | the nine task states of a board are A2A's; an A2A card is an optional surface | AGSC-02-99, AGSC-06-34 | <https://a2a-protocol.org/latest/specification/> |
 | Agent Skills (`SKILL.md`) | a folder format for agent skills: a `SKILL.md` with YAML frontmatter | procedures are published as skill packs in this format and imported back | AGSC-07-19 to AGSC-07-22 | <https://agentskills.io/specification> |
@@ -73,7 +74,7 @@ read on 2026-09-24.
 |---|---|---|---|---|
 | RFC 9309, Robots Exclusion Protocol | `robots.txt` | one of the three licence dialects: the AI-usage signals and per-crawler groups | AGSC-06-18, AGSC-01-18 | <https://www.rfc-editor.org/info/rfc9309> |
 | TDMRep (W3C Community Group final report, 10 May 2024) | a text-and-data-mining reservation at `/.well-known/tdmrep.json` | the second licence dialect, when the node adopts the Content Use Terms | AGSC-06-18 | <https://www.w3.org/community/reports/tdmrep/CG-FINAL-tdmrep-20240510/> |
-| RFC 9116, `security.txt` | a well-known file naming where to report a vulnerability | every node publishes one; `ci` refuses a Bundle without a `Contact:` line | AGSC-06-36 | <https://www.rfc-editor.org/info/rfc9116> |
+| RFC 9116, `security.txt` | a well-known file naming where to report a vulnerability | a node publishes the file its publisher wrote in the Bundle's `.well-known/security.txt`; without that file a writer emits no route and `ci` fails with `AGSC-E901`, and without a `Contact:` line with `AGSC-E202` | AGSC-06-36 | <https://www.rfc-editor.org/info/rfc9116> |
 | RFC 7763, `text/markdown` | the media type for Markdown | the type the host sends for the per-item Markdown views | AGSC-06-17 | <https://www.rfc-editor.org/info/rfc7763> |
 
 ## 6. Process standards the repository follows

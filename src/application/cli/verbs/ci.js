@@ -22,6 +22,8 @@ function printOverrideNames(ctx) {
 }
 
 function run(ctx) {
+  const refused = helpers.levelRefusal(ctx);
+  if (refused !== null) return refused;
   printOverrideNames(ctx);
 
   const bundle = helpers.bundleOf(ctx);

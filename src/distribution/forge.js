@@ -46,14 +46,16 @@ const { finding } = require('../knowledge/validate.js');
 const FORGE_DIR = 'dist/forge';
 
 /** AGSC-08-12: the four values and the file each compiles to. */
-const TARGETS = Object.freeze({
+// A closed list read with a name from the outside: prototype-free, so `constructor`,
+// `toString` or `__proto__` is not an entry.
+const TARGETS = Object.freeze(Object.assign(Object.create(null), {
   codeowner: 'CODEOWNERS',
   hook: 'pre-commit',
   ruleset: 'ruleset.json',
   'status-check': 'status-checks.json',
-});
+}));
 /**
- * AGSC-08-12 (2026-09-25): where a repository TRACKS a compiled artefact at the
+ * AGSC-08-12: where a repository TRACKS a compiled artefact at the
  * forge's own path. Drift is measured against such a file and never against the
  * previous run's `dist/forge/` output, which is regenerated on every run. Only the
  * CODEOWNERS file has conventional in-repository paths; a ruleset, a hook and a

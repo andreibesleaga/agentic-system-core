@@ -28,7 +28,7 @@ const yaml = require('../../src/knowledge/yaml.js');
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
-const SPEC = '1.0.0-rc.6';
+const SPEC = '1.0.0-rc.7';
 
 const PROV = 'prov:\n  origin: human\n  operator: human:andreibesleaga\n';
 
@@ -331,9 +331,9 @@ test('round trip: every published item comes back byte for byte, plus prov.sourc
   assert.match(again.notes, /import: 0 written, 0 replaced, 7 unchanged/u);
   assert.deepStrictEqual(tree(path.join(into, 'content')), back);
   // And the imported Bundle is a Bundle: lint finds no error about any item (the
-  // missing security contact is the empty target's, and no import writes one).
+  // missing security contact and root document are the empty target's, and no import writes them).
   assert.deepStrictEqual(errors(lintVerb.run(ctxFor(into)).findings)
-    .filter((f) => f.file !== '.well-known/security.txt'), []);
+    .filter((f) => f.file !== '.well-known/security.txt' && f.file !== 'content/index.md'), []);
 });
 
 test('a lesson of ours appended to a kit\'s CONTINUITY comes back once, beside the kit\'s own entry', () => {

@@ -92,9 +92,19 @@ describe('1. one version, in one place', () => {
     assert.equal(release.isGreater('0.0.3', '0.0.2'), true);
     assert.equal(release.isGreater('0.0.2', '0.0.2'), false);
     assert.equal(release.isGreater('0.0.1', '0.0.2'), false);
-    // A release is greater than its own pre-release, and nothing else is.
+    // A release is greater than its own pre-release.
     assert.equal(release.isGreater('1.0.0', '1.0.0-rc.6'), true);
-    assert.equal(release.isGreater('1.0.0-rc.7', '1.0.0-rc.6'), false);
+    assert.equal(release.isGreater('1.0.0-rc.6', '1.0.0'), false);
+    // Between two pre-releases of the same numbers, SemVer 2.0.0 §11 decides: the
+    // dot-separated identifiers are compared left to right, numeric ones as numbers.
+    assert.equal(release.isGreater('1.0.0-rc.7', '1.0.0-rc.6'), true);
+    assert.equal(release.isGreater('1.0.0-rc.6', '1.0.0-rc.7'), false);
+    assert.equal(release.isGreater('1.0.0-rc.10', '1.0.0-rc.9'), true);
+    assert.equal(release.isGreater('1.0.0-rc.7', '1.0.0-rc.7'), false);
+    assert.equal(release.isGreater('1.0.0-rc.7.1', '1.0.0-rc.7'), true);
+    assert.equal(release.isGreater('1.0.0-rc', '1.0.0-rc.7'), false);
+    assert.equal(release.isGreater('1.0.0-rc.1', '1.0.0-beta.9'), true);
+    assert.equal(release.isGreater('1.0.0-beta', '1.0.0-1'), true);
     const { json } = envelope('release', ['--version', '0.0.1', distribution()]);
     assert.ok(json.findings.some((f) => /is not greater than/u.test(f.message)));
   });
@@ -265,6 +275,47 @@ describe('4. the provenance step', () => {
   });
 });
 
+describe('1b. the MCP Registry entry carries the same version', () => {
+  const entry = (version, extra = {}) => `${JSON.stringify({
+    $schema: 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json',
+    description: 'd', name: 'io.github.example/agentic-system-core', version,
+    packages: [{ identifier: 'agentic-system-core', registryType: 'npm', transport: { type: 'stdio' }, version }],
+    ...extra,
+  }, null, 2)}\n`;
+  const withMcpName = (dir) => {
+    const at = path.join(dir, 'package.json');
+    const manifest = JSON.parse(fs.readFileSync(at, 'utf8'));
+    fs.writeFileSync(at, `${JSON.stringify({ ...manifest, mcpName: 'io.github.example/agentic-system-core' }, null, 4)}\n`);
+    return dir;
+  };
+
+  it('a server.json at the version of package.json, named by mcpName, is no finding', () => {
+    const dir = withMcpName(distribution({ 'server.json': entry('0.0.2') }));
+    const { json } = envelope('release', [dir]);
+    assert.ok(!json.findings.some((f) => f.file === 'server.json'), JSON.stringify(json.findings));
+  });
+
+  it('a server.json at another version, or under another name, is AGSC-E202', () => {
+    const drifted = withMcpName(distribution({ 'server.json': entry('0.0.1') }));
+    const found = envelope('release', [drifted]).json.findings.filter((f) => f.file === 'server.json');
+    assert.ok(found.length >= 1 && found.every((f) => f.code === 'AGSC-E202'), JSON.stringify(found));
+    assert.match(found.map((f) => f.message).join('\n'), /0\.0\.1/u);
+    const renamed = withMcpName(distribution({ 'server.json': entry('0.0.2', { name: 'io.github.other/x' }) }));
+    const named = envelope('release', [renamed]).json.findings.filter((f) => f.file === 'server.json');
+    assert.ok(named.some((f) => f.code === 'AGSC-E202' && /mcpName/u.test(f.message)), JSON.stringify(named));
+  });
+
+  it('--apply writes the new version into server.json, its package entry included', () => {
+    const dir = withMcpName(distribution({ 'server.json': entry('0.0.2') }));
+    const result = release.run(['--version', '1.0.0', '--apply', dir],
+      { env: { SOURCE_DATE_EPOCH: '1767225600' }, err: () => {}, out: () => {} });
+    assert.equal(result, 0);
+    const written = JSON.parse(fs.readFileSync(path.join(dir, 'server.json'), 'utf8'));
+    assert.equal(written.version, '1.0.0');
+    assert.deepEqual(written.packages.map((p) => p.version), ['1.0.0']);
+  });
+});
+
 describe('5. --apply, and the checklist', () => {
   it('writes the two versions and the changelog heading, and nothing else', () => {
     const dir = distribution();
@@ -406,6 +457,20 @@ describe('the release workflow', () => {
     assert.match(text, /for t in tools\/validate-\*; do\n\s+case "\$t" in \*\/validate-wellknown\) continue ;; esac\n\s+node "\$t" --json\n\s+done/u);
     assert.match(text, /node tools\/validate-wellknown "\$fx\/www\/\.well-known\/knowledge-linkset" --level 1 --json/u);
     assert.ok(!/continue-on-error|\|\| true/u.test(text), 'no step may swallow a failure');
+  });
+
+  it('a job that may mint an identity token installs nothing that runs a script', () => {
+    // Verification finding C21 (2026-10-06): the publish job ran `npm ci` with install
+    // scripts while it held `id-token: write`. Every install in such a job carries
+    // `--ignore-scripts`; nothing in it needs a dependency's script to run.
+    const jobs = steps().split(/\n(?= {2}[a-z][a-z0-9-]*:\n)/u);
+    const minting = jobs.filter((job) => /id-token: write/u.test(job));
+    assert.ok(minting.length > 0, 'the publish job is found');
+    for (const job of minting) {
+      for (const line of job.split('\n').filter((l) => /\bnpm (ci|install|i)\b/u.test(l))) {
+        assert.match(line, /--ignore-scripts/u, line);
+      }
+    }
   });
 
   it('holds no npm token and runs on a tag alone', () => {

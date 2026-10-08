@@ -46,7 +46,7 @@ function run(argv, dir, options = {}) {
     env: { SOURCE_DATE_EPOCH: EPOCH, ...(options.env || {}) },
     ports: { fs: createFileSystem(dir), proc: options.proc },
     root: dir,
-    specVersion: '1.0.0-rc.6',
+    specVersion: '1.0.0-rc.7',
     stderr,
     stdout,
     version: '0.0.0',
@@ -136,9 +136,11 @@ test('AGSC-04-02: verify builds twice and compares bytes', () => {
   assert.deepStrictEqual(envelope.findings, []);
 });
 
-test('AGSC-08-20a: verify --ledger with no git-log file is AGSC-E703, never a green ledger', () => {
+test('AGSC-08-20a: verify --ledger with no git-log file is AGSC-E703 and exit 2, never a green ledger', () => {
   const { envelope, exit } = run(['verify', '--ledger', '--json'], workspace());
-  assert.strictEqual(exit, 1);
+  // AGSC-08-20a "exit 2 with AGSC-E703" and the registry's "error, exit 2" (AGSC-09-08
+  // as amended 2026-10-06); until then the engine exited 1 and this test pinned it.
+  assert.strictEqual(exit, 2);
   assert.deepStrictEqual(envelope.findings.map((f) => f.code), ['AGSC-E703']);
 });
 

@@ -90,8 +90,8 @@ lint: pass (0 error, 6 warn)
 warn: AGSC-E408 a concept carries no description (AGSC-02-21) — content/concepts/brewing.md
 ```
 
-Break a link and watch the wiki refuse to publish it. `lint` names the file and the
-line; `build` writes nothing:
+Break a link and watch the wiki refuse to publish it. `lint` and `build` name the file
+and the line, with the same finding; `build` writes nothing:
 
 ```bash demo
 printf 'Salt it like [pasta water](%s).\n' salting.md >> content/concepts/brewing.md
@@ -103,7 +103,7 @@ test ! -e www/index.html && echo "nothing was published"
 ```text expect
 error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:4
 lint exit 1
-error: AGSC-E901 /concepts/brewing/index.html links salting.md, and this build emits no route for it (AGSC-06-01)
+error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:4
 build exit 1
 nothing was published
 ```
@@ -251,8 +251,9 @@ node "$ENGINE/examples/demos/agents/mcp-call.js" links '{"slug":"supervisor"}'
   "type": "links"
 ```
 
-`ask` answers from this memory only and cites items by address; a question the memory
-cannot answer gets exactly one sentence:
+`ask` returns the descriptions of the best-matching items from this memory only, each
+cited by address, and calls no model; a question that matches nothing gets exactly one
+sentence:
 
 ```bash demo
 node "$ENGINE/examples/demos/agents/mcp-call.js" ask '{"question":"how does a handoff work"}' > ask.json
@@ -368,10 +369,11 @@ validate-wellknown fail (level 2): 22 input file(s) read, 1 error(s), 0 warning(
 checker exit 1
 ```
 
-What an agent reads first: the discovery document of `a`. Every link to a file of the
-node carries a SHA-256 digest; the peer link leads to `b`; the surfaces say what
-access each needs. The agent then reads `b`'s `llms.txt` — no node ever fetched on
-its behalf:
+What an agent reads first: the discovery document of `a`. Every link to one of the
+node's artefacts — the graph files, `llms.txt`, NOW, the ledger, the skills index —
+carries a SHA-256 digest; the peer and surface links carry none; the peer link leads
+to `b`; the surfaces say what access each needs. The agent then reads `b`'s
+`llms.txt` — no node ever fetched on its behalf:
 
 ```bash demo
 node -e 'const l = JSON.parse(require("node:fs").readFileSync("a/www/.well-known/knowledge-linkset", "utf8")).linkset[0]; console.log("anchor", l.anchor); for (const [rel, list] of Object.entries(l)) if (Array.isArray(list)) for (const one of list) console.log(rel.replace("https://w3id.org/agentic-system-core/rel#", "rel#"), one.href, one.digest ? "(digest)" : "");'
@@ -682,7 +684,7 @@ agsc compose handoff --emit crewai || echo "compose exit $?"
 ```
 
 ```text expect
-error: AGSC-E001 compose --emit crewai is named by AGSC-07-18 but is not implemented at this milestone: a target rendering is a single template plus a registry row, and this distribution ships neither — no conformance Level is claimed before 1.0.0 (AGSC-10-05)
+error: AGSC-E203 compose --emit crewai: the target is in the registry of AGSC-07-18, and this distribution ships no rendering for it (a target rendering is a single template plus a registry row); run compose without --emit for the seven Harness files, or name a composition-emitter plugin by path or package (AGSC-00-20, AGSC-00-24)
 compose exit 1
 ```
 
@@ -892,7 +894,7 @@ Mode 2 wrote.
 
 | Persona | First thing they do | Demo | The one thing it proves |
 |---|---|---|---|
-| 0 — drop-in user | `agsc init` on a folder of notes | Mode 0 | three commands take bare notes to a full local site |
+| 0 — drop-in user | `agsc init` on a folder of notes | Mode 0 | `init`, a security contact, one commit, `ci` and `build` take bare notes to a full local site |
 | A — human reader | opens the built pages, `llms.txt`, the search index | Mode 0 | the site is static, readable without JavaScript, with every item's Markdown view |
 | B — human contributor | edits a page, `lint --fix`, `propose` | Mode 0 | the patch carries the edit and a person runs the git commands |
 | C — agent reader | `search`, `read`, `links` over `agsc mcp` | An agent on the same wiki | seven tools, every answer untrusted and licensed, nothing leaves the machine |

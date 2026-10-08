@@ -23,7 +23,7 @@ const ADOPTED = Object.freeze({ 'ideas.md': 'ideas', 'notes/agents.md': 'agents'
 const findingsOf = (r) => `${r.stdout}${r.stderr}`;
 const errorLines = (r) => findingsOf(r).split('\n').filter((l) => /^error: /u.test(l));
 
-module.exports = [
+const STEPS = [
   {
     pattern: 'a directory containing "ideas.md", "notes/agents.md" and "todo.md" with no YAML frontmatter, and "kept.md" with a frontmatter block',
     run(world) {
@@ -181,3 +181,60 @@ module.exports = [
     },
   },
 ];
+
+/** Run one of the steps above by its text, so a later Given can replay them. */
+async function replay(world, text) {
+  const step = STEPS.find((d) => d.pattern === text);
+  assert.ok(step, `no step "${text}"`);
+  await step.run(world);
+}
+
+/** Every file under `content/`, and the item files under `content/concepts/`. */
+const contentOf = (world) => world.snapshot('content');
+
+STEPS.push(
+  {
+    pattern: 'a folder of bare notes adopted by "npx agentic-system-core init", repaired, and built into "www/"',
+    async run(world) {
+      for (const text of [
+        'a directory containing "ideas.md", "notes/agents.md" and "todo.md" with no YAML frontmatter, and "kept.md" with a frontmatter block',
+        'I run "npx agentic-system-core init"',
+        'I add ".well-known/security.txt" with a "Contact:" line and repair the references "AGSC-E507" named',
+        'I run "npx agentic-system-core ci"',
+        'ci passes offline with warnings only and writes its verdict to "dist/gate.json" (AGSC-02-92, AGSC-08-10)',
+        'I run "npx agentic-system-core build"',
+      ]) await replay(world, text);
+      // What a second init must not adopt: the build output (www/now.md, www/pages/*.md),
+      // the generated dist/ and the Markdown copy init itself put under content/assets/.
+      assert.ok(world.exists('www/now.md') && world.exists('www/pages/agents.md'));
+      assert.ok(world.exists('dist/gate.json'));
+      assert.ok(world.exists('content/assets/notes/agents.md'));
+      world.state.before = contentOf(world);
+      world.state.outside = new Map([...world.snapshot()].filter(([rel]) => !rel.startsWith('content/')));
+    },
+  },
+  {
+    pattern: 'I run "npx agentic-system-core init" again',
+    run(world) {
+      world.state.again = world.agsc(['init'], { offline: true });
+      assert.strictEqual(world.state.again.exit, 0, findingsOf(world.state.again));
+    },
+  },
+  {
+    pattern: 'no file under "content/" changes and nothing under "www/", "dist/" or "content/assets/" is adopted (AGSC-02-91)',
+    run(world) {
+      const after = contentOf(world);
+      assert.deepStrictEqual([...after.keys()], [...world.state.before.keys()], 'a file under content/ was added or removed');
+      for (const [rel, bytes] of after) assert.strictEqual(bytes, world.state.before.get(rel), `content/${rel} changed`);
+      // Nothing was moved out of www/ or dist/ either: an adopted file is MOVED (AGSC-02-93).
+      const now = world.snapshot();
+      for (const [rel, bytes] of world.state.outside) {
+        assert.ok(now.has(rel), `${rel} was moved away`);
+        assert.strictEqual(now.get(rel), bytes, `${rel} changed`);
+      }
+      assert.doesNotMatch(findingsOf(world.state.again), /^wrote: /mu, 'the second init wrote a file');
+    },
+  },
+);
+
+module.exports = STEPS;

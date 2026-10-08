@@ -46,4 +46,4 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     When the maintainer clones the content repo fresh
     And runs "npx agentic-system-core ci"
     Then the rebuilt "www/" is byte-identical to the last published deploy
-    And the weekly attested snapshot and the per-release Zenodo deposit remain available as fallbacks
+    And the per-release Zenodo deposit remains available as a fallback

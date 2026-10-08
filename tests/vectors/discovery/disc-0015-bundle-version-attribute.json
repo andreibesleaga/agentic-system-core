@@ -76,7 +76,7 @@
                     "2026-09-16T00:00:00Z"
                   ],
                   "agsc-spec-version": [
-                    "1.0.0-rc.6"
+                    "1.0.0-rc.7"
                   ],
                   "digest": [
                     "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"
@@ -143,7 +143,7 @@
                     "2026-09-16T00:00:00Z"
                   ],
                   "agsc-spec-version": [
-                    "1.0.0-rc.6"
+                    "1.0.0-rc.7"
                   ],
                   "agsc-visibility": [
                     "restricted"
@@ -165,7 +165,7 @@
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "rule": "AGSC-06-08"
 }

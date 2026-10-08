@@ -547,6 +547,7 @@ const HANDLERS = {
   'disc-0018': bundleHashCase,
   'disc-0019': newerMinorCase,
   'disc-0020': wholeDocumentCase,
+  'disc-0021': wholeDocumentCase,
   'disc-0016': linksetCase,
   'disc-0004': level0Case,
   'disc-0005': peerCase,

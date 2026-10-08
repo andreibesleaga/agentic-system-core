@@ -81,7 +81,7 @@ function citation(src) {
  * their `DISCLAIMER.md`; no writer emits it on its own.
  */
 const ASSISTANCE_SENTENCE = 'Written with AI assistance, reviewed and published by a person.';
-/** The footer's short form of the same fact (owner, 2026-09-23). */
+/** The footer's short form of the same fact. */
 const FOOTER_AI_NOTE = 'AI-assisted, human-reviewed.';
 const NO_CLAIM_SENTENCE = 'Independent work, published as it is, with no warranty and no'
   + ' liability; not advice; no organisation named here is connected with it; other names'
@@ -108,7 +108,7 @@ function termsLine(licenseProse, options = {}) {
   const adopted = adoptsTerms(licenseProse);
   // The human name is shown; the identifier stays machine-readable in the same element
   // (`data-spdx`), so every page still carries it (AGSC-06-18). It closes the footer,
-  // beside the legal link (owner, 2026-09-24), instead of opening the sentence.
+  // beside the legal link, instead of opening the sentence.
   const termsName = 'Content Use Terms';
   const terms = legal
     ? `<a href="/legal/#terms" rel="license" data-spdx="${escapeHtml(TERMS)}">${escapeHtml(termsName)}</a>`
@@ -129,7 +129,7 @@ function termsLine(licenseProse, options = {}) {
     options.aiAssisted === true ? escapeHtml(FOOTER_AI_NOTE) : '',
     options.disclaimer == null ? '' : escapeHtml(singleLine(String(options.disclaimer)).trim()),
   ].filter((part) => part !== '').join(' ');
-  // One paragraph, no break (owner, 2026-09-23): the links continue the text.
+  // One paragraph, no break: the links continue the text.
   // The declared peers close the footer: a person can follow them, as an agent follows
   // the `rel#peer` links of the discovery document (AGSC-10-12).
   const peers = (Array.isArray(options.peers) ? options.peers : [])
@@ -292,7 +292,9 @@ function diagramFigure(item, source, options = {}) {
     ? '' : `<figcaption>${escapeHtml(diagram.caption)}</figcaption>`;
   // `class="diagram"`: the theme keeps a diagram at no less than its drawn width on a
   // narrow screen and scrolls it inside the figure, so its labels stay readable.
-  return { findings: compiled.findings, html: `<figure class="diagram">${compiled.svg.replace(/\n$/u, '')}${caption}</figure>` };
+  // `tabindex="0"`: a region that scrolls must be reachable by keyboard (WCAG 2.1.1,
+  // AGSC-06-20); without it axe reports `scrollable-region-focusable` at 390 px.
+  return { findings: compiled.findings, html: `<figure class="diagram" tabindex="0">${compiled.svg.replace(/\n$/u, '')}${caption}</figure>` };
 }
 
 /**

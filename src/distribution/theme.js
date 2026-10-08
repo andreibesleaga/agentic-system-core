@@ -24,18 +24,18 @@ const SCRIPT_ROUTE = '/assets/theme.js';
 const STYLESHEET = `/* AgenticSystemCore.com site. System fonts, no external requests (AGSC-06-05). */
 :root {
   --bg: #fbfbfa; --bg-alt: #f1f1ee; --fg: #1a1a1a; --muted: #5c5c5c; --rule: #d9d9d4;
-  --link: #245a9c; --code-bg: #efefeb; --focus: #245a9c; --accent: #245a9c;
+  --link: #245a9c; --code-bg: #efefeb; --focus: #245a9c; --accent: #245a9c; --control: #767676;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1115; --bg-alt: #171a20; --fg: #e8e8e6; --muted: #a3a3a0; --rule: #30343b;
-    --link: #8ab4f8; --code-bg: #1b1e25; --focus: #8ab4f8; --accent: #8ab4f8;
+    --link: #8ab4f8; --code-bg: #1b1e25; --focus: #8ab4f8; --accent: #8ab4f8; --control: #8b8f98;
   }
 }
 /* The visitor's own choice (the header's theme switcher) overrides the system theme. */
 :root[data-theme="dark"] {
   --bg: #0f1115; --bg-alt: #171a20; --fg: #e8e8e6; --muted: #a3a3a0; --rule: #30343b;
-  --link: #8ab4f8; --code-bg: #1b1e25; --focus: #8ab4f8; --accent: #8ab4f8;
+  --link: #8ab4f8; --code-bg: #1b1e25; --focus: #8ab4f8; --accent: #8ab4f8; --control: #8b8f98;
 }
 :root { color-scheme: light dark; }
 :root[data-theme="light"] { color-scheme: light; }
@@ -60,7 +60,7 @@ header.site a[aria-current="page"] { text-decoration: underline; text-decoration
 /* Theme switcher: shown only when the script runs; without it the page follows the system theme. */
 .theme { margin-left: auto; display: inline-flex; align-items: center; }
 .theme[hidden] { display: none; }
-.theme select { font: inherit; font-size: 0.85rem; color: var(--fg); background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; padding: 0.1rem 0.25rem; min-height: 24px; cursor: pointer; }
+.theme select { font: inherit; font-size: 0.85rem; color: var(--fg); background: var(--bg); border: 1px solid var(--control); border-radius: 4px; padding: 0.1rem 0.25rem; min-height: 24px; cursor: pointer; }
 .theme select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 main { max-width: 46rem; margin: 0 auto; padding: 2rem 1rem 3rem; }
 main.wide { max-width: 62rem; }
@@ -88,7 +88,7 @@ pre.terms, pre.feature { white-space: pre-wrap; }
 blockquote { border-left: 3px solid var(--rule); padding: 0.25rem 0 0.25rem 1rem; color: var(--fg); }
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
-th, td { border: 1px solid var(--rule); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; }
+th, td { border: 1px solid var(--rule); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
 thead th { background: var(--bg-alt); }
 tbody th { font-weight: normal; }
 dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
@@ -109,22 +109,26 @@ aside.plain p { margin-bottom: 0.6rem; }
    trailing traceability record is a separate grey line, so the sentence itself reads without interruption. */
 li.rule-item { list-style: none; margin: 0 0 1.1rem -1.5rem; padding: 0.35rem 0 0.35rem 0.9rem; border-left: 3px solid var(--rule); }
 li.rule-item.retired { color: var(--muted); font-size: 0.92rem; border-left-style: dotted; }
-a.rule { display: inline-block; font-family: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 0.78rem; color: var(--muted); text-decoration: none; border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.35em; margin: 0 0.25em 0.25em 0; line-height: 1.5; }
+a.rule { display: inline-block; font-family: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 0.78rem; color: var(--muted); text-decoration: none; border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.35em; margin: 0 0.25em 0.25em 0; line-height: 24px; }
 a.rule strong { font-weight: 600; }
 a.rule:hover, a.rule:focus-visible { color: var(--link); border-color: var(--link); }
 a.ref, a.ref code { font-family: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 0.82em; color: var(--muted); text-decoration-color: var(--rule); }
 a.ref:hover, a.ref:focus-visible { color: var(--link); }
+/* A code span inside a reference keeps the reference's size; it is not shrunk a second time. */
+a.ref code { font-size: 1em; }
 .ref.pending { text-decoration: underline dotted; text-underline-offset: 0.2em; cursor: help; }
 .trace { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
 .trace a { color: var(--muted); }
+.trace a.ref { font-size: 1em; }
 /* Diagrams: inline SVG themed by the page colours; the caption says what the picture means. */
 figure.diagram { margin: 1.25rem 0 1.5rem; }
 figure.diagram svg { display: block; width: 100%; max-width: 46rem; height: auto; }
-figure.diagram svg .acc { stroke: var(--accent); }
+figure.diagram svg .acc, figure.diagram svg .agsc-accent { stroke: var(--accent); }
 figure.diagram figcaption { font-size: 0.92rem; color: var(--muted); max-width: 46rem; margin-top: 0.35rem; }
-/* On a narrow screen a diagram keeps a minimum drawn width and scrolls inside its figure, so its labels stay readable. */
+/* On a narrow screen a diagram keeps a minimum drawn width and scrolls inside its figure, so its labels stay readable:
+   at 42rem no label of a 460-560 px canvas is drawn under 12 px. The figure is focusable, so the keyboard reaches it. */
 figure.diagram { overflow-x: auto; }
-figure.diagram svg { min-width: 34rem; }
+figure.diagram svg { min-width: 42rem; }
 /* Home page capability grid. */
 .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.75rem; padding: 0; margin: 0 0 1.5rem; list-style: none; }
 .modes li { margin: 0; border: 1px solid var(--rule); border-radius: 4px; padding: 0.6rem 0.8rem; background: var(--bg-alt); }
@@ -133,20 +137,30 @@ figure.diagram svg { min-width: 34rem; }
 .modes li a:hover, .modes li a:focus-visible { text-decoration: underline; }
 /* Search. */
 form.search { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0 0 1rem; }
-form.search input { flex: 1 1 14rem; font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--fg); min-height: 44px; }
+form.search input { flex: 1 1 14rem; font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--control); border-radius: 4px; background: var(--bg); color: var(--fg); min-height: 44px; }
 form.search[hidden] { display: none; }
-form.search button { font: inherit; padding: 0.45rem 0.9rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg-alt); color: var(--fg); min-height: 44px; cursor: pointer; }
+form.search button { font: inherit; padding: 0.45rem 0.9rem; border: 1px solid var(--control); border-radius: 4px; background: var(--bg-alt); color: var(--fg); min-height: 44px; cursor: pointer; }
 #results { list-style: none; padding: 0; }
 #results li { margin: 0 0 0.75rem; }
 /* The compose page's item list: one checkbox per row, no bullet beside it. */
 #items { list-style: none; padding: 0; }
 .snippet { color: var(--muted); font-size: 0.92rem; }
+.source-url a { display: inline-block; padding: 2px 0; max-width: 100%; overflow-wrap: anywhere; }
 #site-index h2 { font-size: 1.1rem; }
 .edit { border-top: 1px solid var(--rule); padding-top: 0.75rem; margin-top: 2rem; color: var(--muted); font-size: 0.92rem; }
 .edit code { font-size: 0.9em; }
 @media (max-width: 36rem) { dl.meta { grid-template-columns: 1fr; } dl.meta dd { margin-bottom: 0.5rem; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
-@media print { header.site, .skip, .theme, form.search { display: none; } main, main.wide { max-width: none; } }
+@media print {
+  :root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+    color-scheme: light;
+    --bg: #ffffff; --bg-alt: #f1f1ee; --fg: #1a1a1a; --muted: #5c5c5c; --rule: #d9d9d4;
+    --link: #245a9c; --code-bg: #efefeb; --focus: #245a9c; --accent: #245a9c; --control: #767676;
+  }
+  header.site, .skip, .theme, form.search { display: none; }
+  main, main.wide { max-width: none; }
+  pre { white-space: pre-wrap; overflow: visible; }
+}
 `;
 
 const SCRIPT = `(function () {

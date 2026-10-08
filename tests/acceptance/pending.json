@@ -12,10 +12,6 @@
       "class": "forge",
       "reason": "pushing the repository and Cloudflare Pages serving www/ at a domain happen on the forge and the host, not in the engine."
     },
-    "persona-0-dropin.feature#Re-running init over an adopted and built Bundle changes nothing": {
-      "class": "gap",
-      "reason": "AGSC-02-91 requires a second init to modify nothing, and AGSC-01-23 a taken slug to be suffixed; a second init adopts the Markdown copies the first one put under content/assets/ (content/assets/notes/agents.md replaces the item content/concepts/agents.md, because adopt() starts from no taken slug) and the build output under www/ (www/now.md becomes content/concepts/now.md). Recorded for the engine; the scenario runs as written once init skips build.out, dist/ and content/assets/ and counts the slugs already under content/ as taken."
-    },
     "persona-a-reader.feature#Reader searches via the prebuilt client-side index": {
       "class": "browser",
       "reason": "typing into the search box and watching the requests the page makes needs a browser; the index itself (/search.json, AGSC-06-16) is checked by the unit tests."
@@ -54,7 +50,7 @@
     },
     "persona-i-maintainer.feature#Restore-from-zero reproduces the site from a bare clone": {
       "class": "external",
-      "reason": "comparing with the last published deploy and the weekly attested snapshot and Zenodo deposit needs the host and Zenodo; the byte-identical rebuild itself is the ci double build."
+      "reason": "comparing with the last published deploy and the Zenodo deposit needs the host and Zenodo; the byte-identical rebuild itself is the ci double build."
     },
     "persona-i-maintainer.feature#The maintainer cuts a release and the packages publish with attestations": {
       "class": "forge",

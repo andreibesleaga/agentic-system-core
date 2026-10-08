@@ -3,9 +3,9 @@
 **Summary.** Version 1.0 checks a selection of items against their typed Links and
 writes a small, deterministic set of files called a Harness. It does that correctly
 and the same way in the browser and on the command line, but what it hands back is
-thin: mostly titles and one-line descriptions. The next version plans to give Links a
+thin: mostly titles and one-line descriptions. Version 1.1, the next version, plans to give Links a
 stated formal meaning, to check that meaning, and to add a richer, still deterministic
-**composition brief** beside the Harness: a reading order, the relations explained, the
+**composition brief** beside the Harness: a dependency order, the relations explained, the
 gaps, a checklist and a context file for agents. An optional service layer can offer
 the same answers through the local tool server. Nothing here changes what a 1.0 Bundle
 builds or composes. This page is informative; where it disagrees with a rule in
@@ -41,9 +41,9 @@ wants to help shape the next version. **Read after:**
   added, nothing is flagged, the diagram has few or no edges, and the digest carries
   each item's description rather than its text.
 
-## Planned for the next version
+## Planned for 1.1, the next version
 
-The next version is a MINOR release: it adds, and removes nothing (AGSC-00-14). The
+1.1 is a MINOR release: it adds, and removes nothing (AGSC-00-14). The
 list below is a plan, not a promise of dates.
 
 ### A stated meaning for every Link
@@ -75,12 +75,12 @@ them, and shown directly on `/compose/`:
 - a plain summary of the verdict;
 - every selected item with its relations resolved — authored, inverse, symmetric and
   derived — and the reason for each;
-- a reading order: what an item needs comes before it;
+- a dependency order: what an item needs comes before it;
 - gaps and open questions: items used but not selected, related items worth a look,
   items with no sources, stale or draft items, items a newer one replaces;
 - a checklist derived from the relations: what to adopt first, what to provide, which
   contradictions to decide;
-- a context file for agents with the items' text, in reading order, marked as data;
+- a context file for agents with the items' text, in dependency order, marked as data;
 - a diagram of the selection and its nearest neighbours.
 
 The brief needs no model. An optional narration step, off by default, may use a
@@ -122,7 +122,7 @@ types, top concepts and a titled concept scheme directly; an import that reads a
 vocabulary written in Turtle into a Bundle; SHACL shapes; and a Dublin Core
 application profile for item metadata. The semantic layer over the typed links is
 planned to follow the six stages of the
-[Ontology Pipeline™ framework](https://www.ontologypipeline.com/) by J. Talisman —
+[Ontology Pipeline framework](https://www.ontologypipeline.com/) by J. Talisman (the name is a mark of its owner) —
 controlled vocabulary, metadata schema, taxonomy, thesaurus, ontology, knowledge
 graph. This names the method the work plans to follow; it claims no compatibility
 with the framework and no certification by its author.

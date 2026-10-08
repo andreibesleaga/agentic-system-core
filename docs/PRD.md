@@ -234,7 +234,7 @@ No servers, databases, queues or Workers — static Pages + CI only. No LLM in a
 
 **Note to PRD-027:** the `https://` item IRI may always be used instead of `memory://`; both forms denote the same item and every surface accepting one accepts the other (AGSC-05-04a). `memory://` is optional convenience, never required.
 
-**Note to PRD-023/PRD-056:** the MCP tool set is **seven** — `search read links compose propose ask remember` — plus resources (items, graph, llms.txt) and one prompt; `remember` writes agent memories as Episode/Lesson/Concept Proposals (auto|hitl per client channel config), `ask` answers with mandatory item-IRI citations. WebMCP mirrors the same seven. Acceptance adds: an MCP client stores an Episode via `remember` (hitl → Proposal file; auto → merged after lint-only) and gets a cited answer via `ask` over the fixture Bundle, offline.
+**Note to PRD-023/PRD-056:** the MCP tool set is **seven** — `search read links compose propose ask remember` — plus resources (items, graph, llms.txt) and one prompt; `remember` writes agent memories as Episode/Lesson/Concept Proposals (auto|hitl per client channel config), `ask` returns the descriptions of the best-matching items with their item-IRI citations, or exactly `no answer in this memory`; no model is called. WebMCP mirrors the same seven. Acceptance adds: an MCP client stores an Episode via `remember` (hitl → Proposal file; auto → merged after lint-only) and gets cited item descriptions via `ask` over the fixture Bundle, offline.
 
 **Note to PRD-051:** "the same five tools" reads as "the same seven tools" (`search read links compose propose ask remember`).
 
@@ -290,7 +290,7 @@ The same note is in `docs/PLAN.md`.
 
 ## The compatibility section and the content version
 
-Two capabilities of `1.0.0-rc.6` add no requirement id: both are discharged by requirements this
+Two capabilities added at `1.0.0-rc.6` add no requirement id: both are discharged by requirements this
 document already carries.
 
 **A compatibility and plugin section** (`spec/00` §0.6, AGSC-00-21…25). It states in one place what
@@ -347,10 +347,89 @@ a node as an ordered reading or as a supplement to another publication, and no w
 PDF/EPUB emitter (AGSC-06-03, AGSC-08-17). The parenthesis in the row names a list held
 outside every repository; a reader needs only the two rules.
 
-**Note to §1, persona P10.** No feature file names the port implementer. P10 is
-exercised by the Python checker distribution, whose test suite runs the shared vector set
-over seven of the nineteen areas natively and reports the rest as not run by that package
-(AGSC-09-02, AGSC-10-15); a Gherkin scenario for it is a 1.1 item.
+**Note to §1, persona P10.** `features/persona-l-port-implementer.feature` names the port
+implementer in two scenarios: a Level-0 node written without the engine passes the shipped
+checker, and the Python checker distribution runs the shared vector set beside the engine's
+`conform` and the two reports are compared case by case. That distribution's own test suite runs
+the shared vector set over seven of the nineteen areas natively and reports the rest as not run
+by that package (AGSC-09-02, AGSC-10-15).
+
+**Note to PRD-009 (what `init` writes at 1.0).** In an empty folder `agsc init` writes four
+files — `agsc.config.json`, `content/index.md`, `.gitignore` and `.env.example` — and takes no
+flags of its own. It writes no example Concepts, no type folders and no forge workflow; a Gate's
+workflow is compiled by `ci` into `dist/forge/` (AGSC-08-12), not by `init`. `ci` passes only
+after the publisher adds `.well-known/security.txt` with a `Contact:` line and commits once or
+sets `SOURCE_DATE_EPOCH`, the three steps `init` prints on its way out (AGSC-02-94, AGSC-06-36,
+AGSC-04-09). Example content and a scaffolded workflow are not in the declared scope of any
+version (AGSC-00-20), so they are not planned; the row's acceptance "`ci` passes unedited" does
+not hold at 1.0.
+
+**Note to PRD-056 (channels at 1.0).** What exists at 1.0 is the specification of channels
+(AGSC-01-30 to AGSC-01-33, AGSC-08-26), the `channels[]` configuration keys and the
+`channel-adapter` plugin kind (AGSC-00-24). No channel adapter ships, there is no
+`refresh --ingest` option and no reference stub, and the engine's `channel-adapter` hook covers
+carrying a Proposal to a review lane, not ingest (`docs/PLUGINS.md` §1). The `ask` half is the
+`ask` tool of the local tool server and the page tools (AGSC-09-13, AGSC-09-16), which returns the
+best-matching items with their addresses and calls no model. The ingest stub and the first
+adapters are not in the declared scope of any version (AGSC-00-20), so they are not planned.
+
+**Note to the scope cells that Amendment 6 reads as v1.0.** Amendment 6's sentence "scope cells
+reading `v1.x`/`should` above READ AS `v1.0`" does not reach these cells, which stay as follows:
+
+- PRD-022, RDF/XML: not emitted at 1.x; `build.rdfxml` is reserved to 1.1 and refused at 1.0
+  with `AGSC-E004` (AGSC-05-06, AGSC-01-18, AGSC-00-20).
+- PRD-026, "Mem0/Letta/Zep/CSV": no adapter of those names ships (`export --to csv` and
+  `--to mem0` are `AGSC-E203`); memories reach Mem0, Letta and Zep through the COGX archive that
+  Cognee reads (`export --to cogx`, `docs/CONNECTORS.md`). Direct adapters and CSV are not
+  planned for a version.
+- PRD-033, "Cursor/Copilot/Gemini/Codex/GABBE" and the `<site>` argument: `skills install`
+  writes the three trees `.agents/skills`, `.claude/skills` and `.github/skills` from the local
+  Bundle (AGSC-07-21) and refuses a URL with `AGSC-E003`; GABBE is reached by
+  `export --to gabbe`. Other install trees and installing from a site are not planned for a
+  version.
+- PRD-048, "PyPI/GHCR/Homebrew/Nix": the engine is published on npm only. The PyPI package
+  `agentic-system-core` is the independent Python checker, not the engine. No container image,
+  Homebrew formula or Nix package is planned for a version.
+- PRD-041, "LLM review: v1.0": the optional review lane is specified (AGSC-08-27) and off by
+  default; no model client ships with the reference engine, so `review` is lint-only.
+- PRD-010, "`/conformance/`: v1.x": the public conformance page is a 1.1 item (AGSC-00-20).
+
+**Note to PRD-011 and PRD-052 (`/about/`).** The reference engine emits the fixed route set
+except the routes a node authors or that no rule pins: `/about/` is authored and conditional
+(AGSC-06-01, AGSC-06-24), and `build` names it among its skipped routes ("this page is
+authored, not derived"); `/specs/` is the specification site's. A node that publishes `/about/`
+carries the per-persona Quickstart of PRD-052 there, as the main site does; a node that emits
+no `/about/`, such as the demonstration node, has no Quickstart page; the engine's guides
+(`docs/guides/`) give the same paths.
+
+**Notes to other statements that no longer match what was delivered.**
+
+- §4 (non-goals), "`bench` is the **v1.0.1** gate … the only verb off the GA path": `bench` is
+  not a verb (`agsc bench` is `AGSC-E001`); the benchmark kit is the program `tools/bench` with
+  `bench/measure.js`, and AGSC-00-20 makes it normative at 1.1.
+- §4, "No functional PyPI wrapper (v1.x)": the non-goal stands for the engine. The working PyPI
+  package is the independent Python checker (PRD-054), not a wrapper of the engine.
+- The Goal line, PRD-021 and PRD-013: the patterns of the retired site are not published on
+  agenticsystemcore.com. A selection of 22 pattern Concepts in 20 Clusters is published on the
+  demonstration node, patterns.agenticsystemcore.com; the counts "153 cards", "66 render, 87
+  dark" and "153 compile" describe the retired site's corpus, which `import --from old-site`
+  converts.
+- PRD-053, the scope note: adoption is part of plain `init`, which takes no flags, and a host's
+  configuration is written by `agsc-host emit <profile>`; `init --adopt` and
+  `init --host cloudflare` are unknown options (`AGSC-E002`).
+- PRD-053, "≤3 commands … `ci` green": two steps come between `init` and a passing `ci` — the
+  security contact `.well-known/security.txt` and one commit (or `SOURCE_DATE_EPOCH`), as the
+  note to PRD-009 says; `README.md` and `docs/USE-CASES.md` (L5) give the full path.
+- PRD-045, restore-from-zero: the clone-and-rebuild half holds (`ci` builds twice and compares
+  the bytes; a fresh clone plus `ci` reproduces `www/`). The per-release archive deposit is the
+  Zenodo record of each final release (1.0.0 and later), which carries the specification
+  archive of that release (DOI 10.5281/zenodo.23052709 names every version); release
+  candidates get none and are kept by their tags. A git mirror and a weekly attested
+  snapshot are not in place at 1.0.0; they are planned for later, with no version fixed.
+- PRD-062, "`ETag` equal to the artefact digest": AGSC-11-05 requires an `ETag` on every public
+  artefact and fixes its value only where the writer sets it; a static host sets its own entity
+  tags, so a reader takes integrity from the `digest` of the discovery document (AGSC-06-08),
+  never from an `ETag`.
 
 **Note to Amendment 9: why the Node floor is 22.13.0.** Node 22.12.0 prints a warning on standard
 error whenever the engine requires one of its ES-module libraries, and a warning there breaks the

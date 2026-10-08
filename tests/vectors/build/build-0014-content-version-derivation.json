@@ -41,7 +41,7 @@
       },
       {
         "contains": [
-          "content version v2.0.0, built at 2026-09-16T00:00:00Z, fingerprint e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855, specification 1.0.0-rc.6"
+          "content version v2.0.0, built at 2026-09-16T00:00:00Z, fingerprint e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855, specification 1.0.0-rc.7"
         ],
         "name": "now-line"
       }
@@ -161,13 +161,13 @@
         "bundle_version": "v2.0.0",
         "generated_at": "2026-09-16T00:00:00Z",
         "name": "now-line",
-        "spec_version": "1.0.0-rc.6"
+        "spec_version": "1.0.0-rc.7"
       }
     ]
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "rule": "AGSC-04-25"
 }

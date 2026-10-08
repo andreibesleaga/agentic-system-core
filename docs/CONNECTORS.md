@@ -1,6 +1,6 @@
 # Connecting agents and frameworks to a knowledge node
 
-**Who this is for:** someone connecting an agent, a framework or a repository to a node. **Read after:** [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md). *(Header added 2026-09-24.)*
+**Who this is for:** someone connecting an agent, a framework or a repository to a node. **Read after:** [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
 
 This page answers one question: **"I use tool X — how does it get at a node's
 knowledge?"** There are seven ways in, and every one of them already exists in the
@@ -86,8 +86,9 @@ specification at 1.0, so do not build a parser on it — read the node's
 
 ## Route 2 — skill packs
 
-`agsc skills` writes one pack per cluster to `dist/skills/<cluster>/SKILL.md`, plus
-`dist/skills/index.json`, which holds the SHA-256 of every file. `agsc skills
+`agsc skills` writes one pack per cluster to `dist/skills/<cluster>/SKILL.md` — each
+holding every published item of the cluster, the procedures and the items beside
+them — plus `dist/skills/index.json`, which holds the SHA-256 of every file. `agsc skills
 install .claude/skills` (or `.agents/skills`, or `.github/skills`) checks every file
 against that lockfile before it writes anything, and a second run writes nothing
 unless the packs changed. A pack is content only: no scripts, no executables, no

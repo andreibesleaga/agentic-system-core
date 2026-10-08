@@ -5,7 +5,7 @@
     "draft_excluded": [
       "hidden"
     ],
-    "output": "# Example Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.6\nbundle_version: v1.4.0\ngenerated_at: 2026-09-16T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n\n> A node of the Agentic Knowledge Web.\n\n## Coordination\n\n- [Supervisor](https://a.example/concepts/supervisor/): Routes work to workers.\n\n## Other\n\n- [Loose Note](https://a.example/concepts/loose-note/): Loose Note\n"
+    "output": "# Example Node\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0-rc.7\nbundle_version: v1.4.0\ngenerated_at: 2026-09-16T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n\n> A node of the Agentic Knowledge Web.\n\n## Coordination\n\n- [Supervisor](https://a.example/concepts/supervisor/): Routes work to workers.\n\n## Other\n\n- [Loose Note](https://a.example/concepts/loose-note/): Loose Note\n"
   },
   "id": "disc-0013",
   "input": {
@@ -42,11 +42,11 @@
         "title": "Hidden"
       }
     ],
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "rule": "AGSC-06-13a"
 }

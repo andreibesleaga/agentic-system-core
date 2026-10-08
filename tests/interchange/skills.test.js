@@ -31,7 +31,7 @@ const BIN = path.join(ROOT, 'bin', 'agsc.js');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const fixture = (name) => path.join(ROOT, 'tests', 'fixtures', `skills-${name}`);
 const EPOCH = '1767225600';
-const SPEC = '1.0.0-rc.6';
+const SPEC = '1.0.0-rc.7';
 const LAYOUTS = ['agentskills', 'claude-plugin', 'cursor', 'marketplace', 'windsurf'];
 
 const PROV = 'prov:\n  origin: human\n  operator: human:andreibesleaga\n';
@@ -261,7 +261,7 @@ test('the round-tripped Bundle lints without an error about any item', () => {
   const into = emptyBundle();
   imported(into, path.join(source, 'dist/export/skills/agentskills'));
   assert.deepStrictEqual(errors(lintVerb.run(ctxFor(into)).findings)
-    .filter((f) => f.file !== '.well-known/security.txt'), []);
+    .filter((f) => f.file !== '.well-known/security.txt' && f.file !== 'content/index.md'), []);
 });
 
 test('collisions: nothing is written, --dry-run reports the same, --replace replaces', () => {

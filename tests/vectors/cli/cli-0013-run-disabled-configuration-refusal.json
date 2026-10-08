@@ -2,20 +2,7 @@
   "area": "cli",
   "description": "AGSC-09-94: run and trace have no effect unless run.enabled is true, and with it false (the default of AGSC-01-18) both exit 2 with AGSC-E004 — a configuration the tool cannot run against, AGSC-09-08's exit-2 class — and no run block is read. Derivation: the verb is one of the sixteen, so AGSC-E001 (unknown verb) cannot name the fault; the refusal comes from the configuration, which is what AGSC-E004 is registered for. The minimal fixture carries no run block, so run.enabled is false by default.",
   "expected": {
-    "cases": [
-      {
-        "error": "AGSC-E004",
-        "exit": 2,
-        "name": "run-disabled",
-        "stdout": ""
-      },
-      {
-        "error": "AGSC-E004",
-        "exit": 2,
-        "name": "trace-disabled",
-        "stdout": ""
-      }
-    ]
+    "withdrawn": true
   },
   "id": "cli-0013",
   "input": {
@@ -36,9 +23,11 @@
       }
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
-  "rule": "AGSC-09-94"
+  "reason": "Withdrawn for 1.0.0 (2026-10-06). It expected an empty standard output under --json for run and trace refused with AGSC-E004, while AGSC-09-10 requires exactly one envelope on stdout whenever the verb is resolved and the fault carries a registered code — its two exceptions (an unknown verb or flag before a verb is resolved; an internal fault with no registered code) do not cover this refusal. Superseded by cli-0017: the same two refusals, exit 2, with the envelope on stdout.",
+  "rule": "AGSC-09-94",
+  "superseded_by": "cli-0017"
 }

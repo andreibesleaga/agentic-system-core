@@ -50,7 +50,7 @@ Every test fixes its clock (`SOURCE_DATE_EPOCH`, or fixed git author and committ
 
 ## Three operating systems
 
-`.github/workflows/test.yml` runs `npm ci`, `npm test`, the rule-coverage check and every shipped checker on Ubuntu, macOS and Windows, on Node 22 and 24, with read-only permissions and actions pinned to commit hashes. Paths are joined with `path.join`, text files are LF on every checkout (`.gitattributes`), and the test scripts quote their globs for `cmd.exe`.
+`.github/workflows/test.yml` runs, on every push and pull request, on Ubuntu, macOS and Windows and on Node 22 and 24, every step of the release gates of `release.yml` with the same wording: `npm ci`, lint, the duplicate check, the dependency rule, `npm test`, `npm audit`, the rule-coverage and requirements-matrix checks, the counting tool, every shipped checker, the discovery document of a fixture build at Levels 1 and 2, the release lane's own checks (`tools/release --json`), the hygiene sweep and the architecture lane; `tests/standard/workflow.test.js` fails if the two workflows drift apart. It runs with read-only permissions and actions pinned to commit hashes. Paths are joined with `path.join`, text files are LF on every checkout (`.gitattributes`), and the test scripts quote their globs for `cmd.exe`.
 
 ## For a second implementation
 

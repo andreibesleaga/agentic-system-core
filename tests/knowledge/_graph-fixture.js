@@ -86,7 +86,7 @@ function options(extra = {}) {
     base: 'https://example.org',
     bundle: {
       id: 'example',
-      spec_version: '1.0.0-rc.6',
+      spec_version: '1.0.0-rc.7',
       license_prose: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
       // No `usage_info`: the Content Use Terms identifier is the
       // CONSTANT of AGSC-06-18 (nquads.CONTENT_USE_TERMS) and is never configured.

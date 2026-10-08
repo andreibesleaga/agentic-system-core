@@ -230,8 +230,8 @@ function emitHarness(ctx, bundle, result, items) {
 
 /**
  * `compose --emit <target>`: the target this invocation names. A name of the closed
- * registry of AGSC-07-18 is refused as not implemented (this distribution ships no
- * template), a reserved or unknown name is `AGSC-E203`, and a local path or an
+ * registry of AGSC-07-18 is `AGSC-E203` because this distribution ships no template for
+ * it (AGSC-00-20), a reserved or unknown name is `AGSC-E203` too, and a local path or an
  * installed package is a composition-emitter PLUGIN resolved through its registry
  * (AGSC-00-24) — a remote one is `AGSC-E905`.
  *
@@ -242,11 +242,18 @@ function emitTarget(ctx, emit) {
   if (EMITTERS.includes(name) || RESERVED_EMITTERS.includes(name)) {
     const refusal = emitterRefusal(emit);
     return {
+      // AGSC-00-20: a registered rendering the distribution does not ship is refused
+      // with the registry's code, AGSC-E203 — never AGSC-E001, which names an
+      // unknown verb (exit 2). It is a finding: `--emit` is a known flag (exit 1).
       findings: [refusal === null ? {
-        code: 'AGSC-E001',
-        message: `compose --emit ${emit} is named by AGSC-07-18 but is not implemented at this milestone:`
-          + ' a target rendering is a single template plus a registry row, and this distribution ships'
-          + ' neither — no conformance Level is claimed before 1.0.0 (AGSC-10-05)',
+        code: 'AGSC-E203',
+        col: 1,
+        file: '',
+        line: 1,
+        message: `compose --emit ${emit}: the target is in the registry of AGSC-07-18, and this`
+          + ' distribution ships no rendering for it (a target rendering is a single template plus'
+          + ' a registry row); run compose without --emit for the seven Harness files, or name a'
+          + ' composition-emitter plugin by path or package (AGSC-00-20, AGSC-00-24)',
         severity: 'error',
       } : refusal],
       plugin: null,
@@ -303,6 +310,16 @@ function run(ctx) {
   if (aliased.finding !== null) return { findings: [aliased.finding], status: 'fail' };
   const from = flagFrom === undefined ? undefined : aliased.values[aliased.values.length - 1];
   const slugs = flagFrom === undefined ? aliased.values : aliased.values.slice(0, -1);
+
+  // AGSC-09-07: `compose` takes `<slug>…`, or none with `--from <slug>`. With
+  // neither it composed the empty selection and wrote an empty Harness;
+  // a missing argument is AGSC-E003, exit 2, and nothing is written.
+  if (from === undefined && slugs.length === 0) {
+    return {
+      findings: [{ code: 'AGSC-E003', message: 'compose needs at least one item slug, or --from <slug> (AGSC-09-07)', severity: 'error' }],
+      status: 'fail',
+    };
+  }
 
   let findings = [];
   let result;

@@ -190,7 +190,7 @@ graph TB
 
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
-**The nine command contracts, as shipped** *(The row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `src/README.md` §11.11 carries the same table with the findings each tool returns on this distribution.)*
+**The nine command contracts, as shipped** *(The row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `tools/README.md` lists the same tools.)*
 
 | Tool | What it checks | Rules | Status |
 |---|---|---|---|
@@ -202,7 +202,7 @@ graph TB
 | `tools/validate-features` | Gherkin parse, `@PRD` closure against `docs/PRD.md`, agreement with the coverage table of `features/README.md` | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/validate-diagrams` | the Mermaid lexical contract, a trace id per file, staleness against `spec/` and `docs/PRD.md`, the index table | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/gen-spec-html` | renders `spec/` into `/specs/` deterministically with an anchor on every rule; `--check` compares a published tree | AGSC-09-90, PRD-054 | ships; pass |
-| `tools/gen-ns` | derives `/ns/context.jsonld`, `/ns/agsc.rdf` and the `/ns/` index from the ontology, round-trips the RDF/XML; `--check` audits a built `/ns/` | AGSC-09-90, AGSC-06-32 | ships; derivation passes, `--check` fails on the reference builds (the emitted context carries no `asc:` term definitions) |
+| `tools/gen-ns` | derives `/ns/context.jsonld`, `/ns/agsc.rdf` and the `/ns/` index from the ontology, round-trips the RDF/XML; `--check` audits a built `/ns/` | AGSC-09-90, AGSC-06-32 | ships; pass |
 
 Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/agsc.js` is the only place adapters are wired.
 
@@ -460,7 +460,7 @@ workspace "AgenticSystemCore" "Distributed Ontological Agentic Memory engine —
 **Addendum (PRD-023):** `src/distribution/mcp.js` exposes seven tools (`+ ask + remember`), resources and one prompt; `ask` shares the responder module with the Channel port (`src/interchange/channels.js` → `answer(question) → {answer, citations[]}`); `remember` reuses `proposal.js`. Sequence (d) "agent remembers": MCP client → remember → item synthesized → Proposal (hitl: patch+body; auto: merged by CI after lint-only) → rebuild → resource visible.
 
 ## Addendum — performance backlog and benchmark protocol
-Sixteen performance recommendations and eight benchmark hypotheses (with baselines, statistics rules and claims discipline) are scheduled as: v1.0 — chunk sizing by heading with zero overlap, digest `ETag`/immutable caching, `Link` discovery header, SVG-as-text diagrams, sitemap/robots, complexity notes in the spec; 1.1 — incremental build keyed by per-item digests, Bloom-filter shard manifest, memory-pack export; measure-first — precomputed closure artefact, static triple-pattern fragments. The benchmark kit (`agsc bench`) runs after general availability and reports every LLM result as "observed under configuration X"; the only pre-measurement claim is structural (deterministic bytes from source, digest-bound discovery under a registered well-known name, offline-verifiable history, declared agent surfaces). Bounded contexts are five: Knowledge, Governance & Provenance, Composition, Distribution, **Boundary** (federation, surfaces, visibility), plus Interchange as a supporting context.
+Sixteen performance recommendations and eight benchmark hypotheses (with baselines, statistics rules and claims discipline) are scheduled as: v1.0 — chunk sizing by heading with zero overlap, digest `ETag`/immutable caching, `Link` discovery header, SVG-as-text diagrams, sitemap/robots, complexity notes in the spec; 1.1 — incremental build keyed by per-item digests, Bloom-filter shard manifest, memory-pack export; measure-first — precomputed closure artefact, static triple-pattern fragments. The benchmark kit (`agsc bench`) runs after general availability and reports every LLM result as "observed under configuration X"; the only pre-measurement claim is structural (deterministic bytes from source, digest-bound discovery under a well-known name whose registration is requested by the Internet-Draft, offline-verifiable history, declared agent surfaces). Bounded contexts are five: Knowledge, Governance & Provenance, Composition, Distribution, **Boundary** (federation, surfaces, visibility), plus Interchange as a supporting context.
 
 ## Addendum — the Boundary context
 
@@ -471,7 +471,7 @@ Sixteen performance recommendations and eight benchmark hypotheses (with baselin
 *ADR numbering continues from ADR-011.*
 
 **ADR-012 Plugins are declared surfaces.** Every agent surface is declared in the discovery document under the four-rule contract declare · pin · inherit · prove (AGSC-11-16…19). *Consequence:* the Boundary context is an anti-corruption layer; an external draft moving changes a version string, never the core. *Confirmation:* `bnd-0037`, `bnd-0013`, `bnd-0021`.
-**ADR-013 Two reference plugins: local MCP and WebMCP.** Same seven tools; MCP 2026-07-28 with the SEP-2133 extension id via `server/discover`; WebMCP Draft CG Report 2026-09-15 with the three hints. A2A only as the optional card beside a responder (AGSC-06-34). *Confirmation:* `cli-0003`, `bnd-0037`.
+**ADR-013 Two reference plugins: local MCP and WebMCP.** Same seven tools; MCP 2026-07-28 with the SEP-2133 extension id via `server/discover`; WebMCP Draft CG Report 2026-09-15 with the three hints. A2A only as the optional card beside a responder (AGSC-06-34). *Confirmation:* `cli-0003`, `bnd-0037`. *(As shipped at 1.0: the local server speaks MCP revision 2025-11-25 and advertises the extension identifier in its `initialize` result; see the addendum "The tree as shipped at 1.0" below.)*
 **ADR-014 The agent federates; nodes never call nodes.** Nine static, client-side parts (spec/11 §11.3); citation, never a cross-Bundle Link. *Consequence:* the `Federation` port of §5.2 has a v1 adapter — the walk in `validate-wellknown --peer` and the site client — while `Identity` and `PersonalStore` stay v2. *Confirmation:* `bnd-0003`, `bnd-0004`, `bnd-0006`…`0011`, `bnd-0030`, `bnd-0019`, `disc-0005`.
 **ADR-015 Visibility and dynamic hooks specified now, built later.** `visibility` public/restricted with the discovery document always readable; `solid` and a non-MCP `responder` declaration-only, a remote MCP `responder` served (AGSC-11-21). *Confirmation:* `bnd-0002`, `bnd-0016`.
 **ADR-016 Ports wired verdict-neutrally in Step 5.** `produces`/`consumes` on items, matched by exact name after the four verdict steps, warnings only. *Confirmation:* `compose-0011`, `compose-0012`, `graph-0017`.
@@ -482,7 +482,7 @@ Rule AGSC-00-20 names the whole scope of the specification with the version at w
 
 | Version | Target | Parts (normative at that version) |
 |---|---|---|
-| **1.0** | this version: `1.0.0-rc.6`, the first public release candidate, then `1.0.0` | Bundle and six item types (§1, §2); fourteen Links (§3); canonical forms (§4); graph (§5); surfaces (§6); composition and the Harness (§7); governance with the **agent lane** — `agents[]`, `.env`, node-wide `budget.usd_month` default 10 USD, `max_new_items`, `max_claims`, `--dry-run` (§1.8, §8.6); conformance (§9); Levels 0–3, project mode and **Mode 5 the live board** (§10); boundary — federation in nine client-side parts, plugin contract, visibility, the declaration-only surfaces `solid` and `a2a-card`, the `responder` surface served by an MCP transport (AGSC-11-21), retirement and tombstones (§11) |
+| **1.0** | this version: `1.0.0-rc.7`, the second public release candidate, then `1.0.0` | Bundle and six item types (§1, §2); fourteen Links (§3); canonical forms (§4); graph (§5); surfaces (§6); composition and the Harness (§7); governance with the **agent lane** — `agents[]`, `.env`, node-wide `budget.usd_month` default 10 USD, `max_new_items`, `max_claims`, `--dry-run` (§1.8, §8.6); conformance (§9); Levels 0–3, project mode and **Mode 5 the live board** (§10); boundary — federation in nine client-side parts, plugin contract, visibility, the declaration-only surfaces `solid` and `a2a-card`, the `responder` surface served by an MCP transport (AGSC-11-21), retirement and tombstones (§11) |
 | **1.1** (MINOR) | the next version, undated | the items AGSC-00-20 lists for 1.1 — among them the `memory://` resolver (AGSC-05-04a), `build.rdfxml` and `build.feed`, the typed cross-node Link `peer-ref`, the reserved names `weights`, `routing` and `executable` (AGSC-00-25), the `agsc-profile-encrypted` and signatures profiles, language variants, the incremental build and the memory pack, the benchmark kit, the red-team suite and the public conformance page — and the plans of [ROADMAP.md](ROADMAP.md), which are proposals until a release adds them to AGSC-00-20 |
 | **2.0** (MAJOR) | a later version, undated | servers — hosted responder, live Agent2Agent boards (AGSC-10-14), forge application for browser proposals; the Solid pod written by the node rather than only declared; IPFS snapshots and ActivityPub delivery as declared surfaces (`x-` extensions until then); CRDT live sync; SPARQL endpoint; hosted multi-tenant nodes |
 
@@ -548,6 +548,68 @@ At 1.0 `refresh` has no `--auto` flag and no lane reaches the network (the netwo
 every call, `AGSC-E905`); staleness is reported offline on the NOW page of every build, and no
 external link is fetched. The lane's other properties — at most one issue, never a commit — stand.
 `docs/PRD.md` carries the same note for PRD-044.
+
+## Addendum — the tree as shipped at 1.0
+
+The sections above are the plan as it was decided; this addendum says where the tree that
+ships differs, so that a reader does not look for a file or a behaviour that is not there.
+The plan's text is kept as it was written. Where the two differ, this addendum and the
+specification govern.
+
+**Module names (§5.1, §5.2, the PRD-023 and PRD-056 addenda).** The planned modules exist
+under other names: closure, hiding, mutual exclusion, warnings and port wiring are in
+`src/composition/compose.js` (no `closure.js`); the seven Harness files are written by
+`src/composition/harness.js` and the skill files by `src/composition/skills.js` (no
+`emit-*.js`); a gate becomes the required check through `src/distribution/forge.js` (no
+`gate.js`); proposals and review are the verbs `src/application/cli/verbs/propose.js` and
+`review.js`, and `verify`, `refresh` and `export` are verbs in the same folder (no
+`proposal.js`, `review.js`, `verify.js`, `refresh.js` or `export.js` in a bounded context);
+the tool server is `src/distribution/mcp-stdio.js` with `mcp-tools.js` and
+`mcp-resources.js` (no `mcp.js`); pages are rendered by `src/distribution/html.js` with no
+template files (no `templates/*.html`). There is no `src/interchange/channels.js` and no
+`channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
+channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is
+`src/adapters/node-network-refusing.js`, which refuses every call with `AGSC-E905`; there is no
+`node-fetch.js`. `src/README.md` holds the module map of the tree as it is.
+
+**The browser bundle (§5, §6, §13).** The composition core the browser runs is served as
+`/compose/agsc-core.js`, beside `agsc-page-tools.js`, `agsc-compose.js` and `webmcp.js`; there
+is no `/js/` folder.
+
+**The network (§2 C9, §5.2).** No verb reaches the network at 1.0, `refresh` and `mcp`
+included (the addendum "`refresh` at 1.0" above). Two shipped programs touch a network, each
+on the user's explicit command: `agsc-host serve` listens on `localhost:8080` by default and
+serves a build directory read-only, and `tools/validate-wellknown <https URL>` fetches the
+document it is given and its targets under the fetch rules of AGSC-11-07 to AGSC-11-10.
+`SECURITY.md` names both.
+
+**Workflows and the secrets document (§7).** The engine repository has two workflows, `test.yml` (every
+push and pull request) and `release.yml` (a version tag); there is no engine `ci.yml`, and the
+site workflows `ci.yml`, `review.yml` and `refresh.yml` of §7 are not shipped: each site and
+the demonstration node run one `test.yml`, and a publisher writes the workflows of its own
+repository. The secrets document §7 points at is not shipped; the secrets each
+workflow uses are named in the workflow files.
+
+**Decisions (§9).** ADR-002 ("zero runtime dependencies") is superseded by ADR-019 (the
+addendum above); read its "Accepted" in the table of §9 as "superseded".
+
+**Risks and debt (§11).** RDF/XML is not emitted at 1.x and `build.rdfxml` is reserved to 1.1
+and refused with `AGSC-E004` (AGSC-05-06, AGSC-01-18); R2's "emitted when `build.rdfxml` is
+true" no longer holds. The optional LLM review lane is specified at 1.0 (AGSC-08-27) and no
+model client ships with this engine. The benchmark kit is the program `tools/bench` with
+`bench/measure.js`, not a verb (`agsc bench` is an unknown verb); the declared scope makes the
+benchmark kit normative at 1.1 (AGSC-00-20), and there is no "v1.0.1 gate".
+
+**Restore-from-zero (§11 T6, T10; PRD-045).** The per-release archive deposit is the Zenodo
+record of each final release (1.0.0 and later); release candidates get none and are kept by
+their tags. A git mirror and a weekly attested snapshot are not in place at 1.0.0
+and are planned for later, with no version fixed; read "attested weekly snapshot" in T6 and
+"mirrors + attested snapshot" in T10 as planned, and the rebuild from a clone (`verify`, the
+double build of `ci`) as the known-good path at 1.0.
+
+**Declared scope (the table of the addendum on AGSC-00-20).** The `memory://` alias and its
+resolution are part of 1.0 (AGSC-00-20, AGSC-05-04 to AGSC-05-04b); the table's 1.1 row
+should not be read as placing the resolver there.
 
 ## Beyond 1.0
 

@@ -1,7 +1,7 @@
 'use strict';
 // src/interchange/status.js — CONTEXT Interchange.
 //
-// `status`, `release` and `tags` on import (M3-T06; AGSC-02-23, AGSC-01-20,
+// `status`, `release` and `tags` on import (AGSC-02-23, AGSC-01-20,
 // AGSC-01-21). Three separate rules that the old site ran together in two keys:
 //
 //   * `status` — the old vocabulary is `published | draft`; AGSC-02-23's is
@@ -32,14 +32,16 @@ const STATUS_VALUES = Object.freeze(['draft', 'stable', 'deprecated', 'retired']
  * AGSC-01-22/AGSC-03-19's spirit applied to `status`: a foreign value is MAPPED,
  * never added to the vocabulary. `published` is the old site's only foreign one.
  */
-const STATUS_SYNONYMS = Object.freeze({
+// A closed list read with a name from the outside: prototype-free, so `constructor`,
+// `toString` or `__proto__` is not an entry.
+const STATUS_SYNONYMS = Object.freeze(Object.assign(Object.create(null), {
   published: 'stable',
   live: 'stable',
   active: 'stable',
   wip: 'draft',
   stub: 'draft',
   archived: 'retired',
-});
+}));
 
 /** AGSC-01-21: a `batch-*` value is a release switch, not a topic. */
 const RELEASE_TAG_PREFIX = 'batch-';

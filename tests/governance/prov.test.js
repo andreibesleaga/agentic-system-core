@@ -30,41 +30,6 @@ test('AGSC-02-07: the four origins, two of which require agent and model', () =>
   for (const origin of prov.AI_ORIGINS) assert.ok(prov.ORIGINS.includes(origin));
 });
 
-test('AGSC-08-01: a missing prov is AGSC-E501 when nothing can be inherited', () => {
-  const result = prov.deriveProv({ slug: 'a', type: 'concept' }, {});
-  assert.deepStrictEqual(codes(result.findings), ['AGSC-E501']);
-  assert.strictEqual(result.prov, null);
-});
-
-test('AGSC-10-02: a Level-0 item inherits bundle.operator with the AGSC-E508 warning', () => {
-  const result = prov.deriveProv({ slug: 'a', type: 'concept' }, CONFIG);
-  assert.deepStrictEqual(codes(result.findings), ['AGSC-E508']);
-  assert.strictEqual(result.findings[0].severity, 'warn');
-  assert.strictEqual(result.inherited, true);
-  assert.deepStrictEqual(result.prov, { origin: 'human', operator: 'human:alice' });
-});
-
-test('AGSC-08-01: a prov without operator inherits, or is AGSC-E503', () => {
-  const inherited = prov.deriveProv({ slug: 'a', type: 'concept', prov: { origin: 'human' } }, CONFIG);
-  assert.deepStrictEqual(codes(inherited.findings), ['AGSC-E508']);
-  assert.strictEqual(inherited.prov.operator, 'human:alice');
-  const bare = prov.deriveProv({ slug: 'a', type: 'concept', prov: { origin: 'human' } }, {});
-  assert.deepStrictEqual(codes(bare.findings), ['AGSC-E503']);
-});
-
-test('AGSC-08-01: an ai-* origin without agent or model is AGSC-E202, twice', () => {
-  const result = prov.deriveProv({
-    slug: 'a', type: 'concept', prov: { origin: 'ai-generated', operator: 'human:alice' },
-  }, CONFIG);
-  assert.deepStrictEqual(codes(result.findings), ['AGSC-E202', 'AGSC-E202']);
-  const complete = prov.deriveProv({
-    slug: 'a',
-    type: 'concept',
-    prov: { origin: 'ai-generated', operator: 'human:alice', agent: 'w', model: 'm' },
-  }, CONFIG);
-  assert.deepStrictEqual(complete.findings, []);
-});
-
 test('AGSC-08-06: a well-formed DCO-Plus trailer block parses', () => {
   const message = 'feat: x\n\nbody\n\nSigned-off-by: Andrei N. Besleaga <a@example.org> (CA-v1)';
   const result = prov.checkTrailers(message);

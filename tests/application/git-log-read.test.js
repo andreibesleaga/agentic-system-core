@@ -19,12 +19,17 @@ const assert = require('node:assert');
 const helpers = require('../../src/application/cli/verbs/_helpers.js');
 const { createClock } = require('../../src/adapters/node-clock.js');
 
-const RS = String.fromCharCode(30);
+const NUL = String.fromCharCode(0);
 const US = String.fromCharCode(31);
 
-/** One record in the shape `git log --format=%H<US>%P<US>%ct<US>%D<US>%B<RS>` writes. */
-const record = (sha, parents, seconds, decorations, message) =>
-  [sha, parents, seconds, decorations, message].join(US) + RS;
+/**
+ * One record in the shape `git log --format=%x00%H%x1f%P%x1f%ct%x1f%D%x1f%B%x00
+ * --name-only` writes: NUL, the header and message, NUL, then the changed paths.
+ * (Until 2026-10-06 the read used RS/US/GS, which a message may contain: finding C3,
+ * `git-history-hostile.test.js`.)
+ */
+const record = (sha, parents, seconds, decorations, message, files = []) =>
+  `${NUL}${[sha, parents, seconds, decorations, message].join(US)}${NUL}${files.length === 0 ? '\n' : `\n\n${files.join('\n')}\n`}`;
 
 const ctxWith = (run, env) => ({
   ports: { clock: createClock({ env: env || { SOURCE_DATE_EPOCH: '1767225600' } }), proc: { run } },
@@ -93,12 +98,16 @@ test('every way of not getting an answer is `undefined`, and never a partial cha
   // the whole file rather than returning the elements before it, because a short
   // chain makes AGSC-04-25's branch-3 count silently wrong.
   const good = record('a'.repeat(40), '', '1756684800', '', 'first\n');
-  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `${good}not-a-record${RS}` }))),
+  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `${good}${NUL}not-a-record${NUL}\n` }))),
     undefined, 'an unparseable record');
-  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `${good}${['zz', '', '1', '', 'x'].join(US)}${RS}` }))),
+  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `${good}${NUL}${['zz', '', '1', '', 'x'].join(US)}${NUL}\n` }))),
     undefined, 'a sha that is not hexadecimal');
-  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `${good}${['b'.repeat(40), '', 'later', '', 'x'].join(US)}${RS}` }))),
+  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `${good}${NUL}${['b'.repeat(40), '', 'later', '', 'x'].join(US)}${NUL}\n` }))),
     undefined, 'a committer time that is not an integer');
+  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `${good}${NUL}${'b'.repeat(40)}` }))),
+    undefined, 'a record that is not closed');
+  assert.strictEqual(helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout: `stray${good}` }))),
+    undefined, 'text before the first record');
 });
 
 test('an empty repository reads as an empty file, and the version takes branch 4', () => {
@@ -116,10 +125,8 @@ test('with no clock at all the derivation is still total', () => {
 
 // ------------------------------------------------ the extended entry shape (AGSC-08-20b)
 
-const GS = String.fromCharCode(29);
-/** One record in the shape the reader asks for: RS first, GS after the message, then the names. */
-const named = (sha, parents, seconds, decorations, message, files) =>
-  RS + [sha, parents, seconds, decorations, message].join(US) + GS + (files.length === 0 ? '' : `\n\n${files.join('\n')}\n`);
+/** One record with its `--name-only` list (the shape of `record` above). */
+const named = (sha, parents, seconds, decorations, message, files) => record(sha, parents, seconds, decorations, message, files);
 
 test('AGSC-08-20b: files[] from --name-only, in code-point order, and the author from the trailers', () => {
   const stdout = named('a'.repeat(40), '', '1756684800', '',
@@ -131,7 +138,7 @@ test('AGSC-08-20b: files[] from --name-only, in code-point order, and the author
   const log = helpers.gitLog(ctxWith(() => ({ code: 0, stderr: '', stdout })));
   assert.deepStrictEqual(log.map((e) => e.files), [['content/a.md', 'content/b.md'], ['content/é.md'], ['content/a.md'], []]);
   assert.deepStrictEqual(log.map((e) => e.author), ['human:ada.lovelace', 'human:ada', 'process:night-lane', undefined]);
-  // The message stops at GS: no file name leaks into the trailers.
+  // The message stops at its closing NUL: no file name leaks into the trailers.
   assert.deepStrictEqual(Object.keys(log[2].trailers), ['Channel-Auto']);
   assert.strictEqual(log[0].trailers['Signed-off-by'], 'Ada Lovelace <Ada.Lovelace@example.org> (CA-v1)');
 });
@@ -200,7 +207,7 @@ test('agsc build over a real git history publishes /ledger.jsonl, and verify --l
     assert.strictEqual(built.status, 0, built.stderr);
     const text = fs.readFileSync(path.join(dir, 'www', 'ledger.jsonl'), 'utf8');
     const lines = text.trim().split('\n').map((l) => JSON.parse(l));
-    assert.deepStrictEqual(lines.map((l) => [l.kind, l.actor]), [['commit', 'human:ada'], ['build', 'process:agsc/1.0.0-rc.6']]);
+    assert.deepStrictEqual(lines.map((l) => [l.kind, l.actor]), [['commit', 'human:ada'], ['build', 'process:agsc/1.0.0-rc.7']]);
     const tree = cp.execFileSync('git', ['rev-parse', 'HEAD:content'], { cwd: dir, encoding: 'utf8' }).trim();
     assert.strictEqual(lines[1].ref, tree, 'the build entry names the committed content tree');
     const wellknown = fs.readFileSync(path.join(dir, 'www', '.well-known', 'knowledge-linkset'), 'utf8');

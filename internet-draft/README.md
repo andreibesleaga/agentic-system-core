@@ -2,10 +2,12 @@
 
 The Internet-Draft that requests registration of the well-known URI
 `knowledge-linkset` and records the fields of the profile URI of the
-AgenticSystemCore discovery document, whose registration is requested
-separately. It is intended for the Independent Submission stream.
+AgenticSystemCore discovery document. The profile URI is registered in the
+IANA Profile URIs registry (RFC 7284); the well-known suffix is not
+registered, and no request has been sent to the registry.
 
-**Status:** revision `-00` posted to the IETF Datatracker on 2026-09-30. Its page
+**Status:** revision `-00` posted to the IETF Datatracker on 2026-09-30, as an
+individual Internet-Draft with no stream. Its page
 is <https://datatracker.ietf.org/doc/draft-besleaga-agentic-knowledge-wellknown/>.
 The draft covers every 1.x version of the specification: the profile URI carries
 no version number, and a later minor version only adds relations and attributes

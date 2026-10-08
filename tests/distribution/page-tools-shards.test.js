@@ -69,11 +69,11 @@ function generatedBundle() {
       operator: 'human:tester',
     },
     site: { base: 'https://sharded.example/', tagline: 'Above the shard bound.', title: 'Sharded Bundle' },
-    spec_version: '1.0.0-rc.6',
+    spec_version: '1.0.0-rc.7',
   }, null, 2)}\n`);
   nodeFs.writeFileSync(path.join(dir, 'content', 'index.md'), [
     '---',
-    'spec_version: 1.0.0-rc.6',
+    'spec_version: 1.0.0-rc.7',
     'title: Sharded Bundle',
     'description: A generated Bundle of five hundred and twenty items, used to exercise the AGSC-06-21 shard bound.',
     'base: https://sharded.example/',
@@ -127,7 +127,7 @@ function built(dir) {
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' }) };
 }
 
 /**

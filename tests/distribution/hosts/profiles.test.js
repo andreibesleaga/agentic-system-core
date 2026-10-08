@@ -76,9 +76,9 @@ test('every profile is deterministic: the same build gives the same bytes, twice
 test('the conformance sentence names the deployment profile (AGSC-06-01, AGSC-09-01)', () => {
   const sentence = profileKit.claimSentence({
     date: '2026-09-24', implementation: 'Example', level: 2, passed: 153, profile: staticHost,
-    specVersion: '1.0.0-rc.6', total: 153, version: '1.0.0',
+    specVersion: '1.0.0-rc.7', total: 153, version: '1.0.0',
   });
-  assert.strictEqual(sentence, 'Example 1.0.0 conforms to AgenticSystemCore 1.0.0-rc.6, Level 2.'
+  assert.strictEqual(sentence, 'Example 1.0.0 conforms to AgenticSystemCore 1.0.0-rc.7, Level 2.'
     + ' Verified against the published conformance vectors on 2026-09-24: 153 of 153 passed.'
     + ` Deployment profile: static-host — ${staticHost.claim}.`);
 });
@@ -317,7 +317,7 @@ test('ledger-anchor: no discovery document is AGSC-E901, a malformed one AGSC-E2
     assert.deepStrictEqual(answer.findings.map((f) => f.code), ['AGSC-E201'], text);
     assert.deepStrictEqual(answer.server, []);
   }
-  const bare = JSON.stringify({ linkset: [{ anchor: 'https://x.example/', describedby: [{ 'agsc-spec-version': ['1.0.0-rc.6'], href: 'https://x.example/graph.jsonld' }] }] });
+  const bare = JSON.stringify({ linkset: [{ anchor: 'https://x.example/', describedby: [{ 'agsc-spec-version': ['1.0.0-rc.7'], href: 'https://x.example/graph.jsonld' }] }] });
   const answer = ledgerAnchor.emit({ discoveryText: bare });
   assert.deepStrictEqual(answer.findings.map((f) => [f.code, f.severity, f.message.split(';')[0]]), [
     ['AGSC-E202', 'warn', 'the discovery document publishes no bundle hash'],

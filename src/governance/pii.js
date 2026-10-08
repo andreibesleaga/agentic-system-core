@@ -10,8 +10,48 @@
 
 const { finding } = require('./finding.js');
 
-/** RFC 5322 dot-atom subset, which is what AGSC-08-06 also admits. */
+/**
+ * RFC 5322 dot-atom subset, which is what AGSC-08-06 also admits. The pattern states
+ * WHAT is an address; `emailSpans` below is HOW the text is searched for one.
+ */
 const EMAIL = /[A-Za-z0-9._%+!#$&'*/=?^`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+/u;
+
+/** One character of the local part of `EMAIL`. */
+const LOCAL_CHAR = /^[A-Za-z0-9._%+!#$&'*/=?^`{|}~-]$/u;
+/** The domain of `EMAIL`, matched at one position only (sticky). */
+const DOMAIN_AT = /[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+/uy;
+
+/**
+ * Every match of `EMAIL` in `text`, left to right and without overlap — exactly what
+ * a global search with that pattern finds — in time linear in the text.
+ *
+ * Searched from each `@` rather than from each position: the local part is the run of
+ * local-part characters before it (never reaching back into the previous match, and
+ * never across another `@`, which is not one of them), the domain is matched once,
+ * at the character after it. Until 2026-10-06 the pattern
+ * was tried from every position of a long run of local-part characters, which is
+ * quadratic: an item with a run of 200,000 such characters before an address cost 65 s
+ * of `agsc lint` (0.9 s after; security-corpus case `pii-email-after-long-run`).
+ *
+ * @param {string} text
+ * @returns {Array<{start:number, at:number, end:number}>}
+ */
+function emailSpans(text) {
+  const spans = [];
+  let floor = 0;
+  for (let at = text.indexOf('@'); at !== -1; at = text.indexOf('@', at + 1)) {
+    if (at <= floor || !LOCAL_CHAR.test(text[at - 1])) continue;
+    DOMAIN_AT.lastIndex = at + 1;
+    const domain = DOMAIN_AT.exec(text);
+    if (domain === null) continue;
+    let start = at - 1;
+    while (start > floor && LOCAL_CHAR.test(text[start - 1])) start -= 1;
+    const end = at + 1 + domain[0].length;
+    spans.push({ at, end, start });
+    floor = end;
+  }
+  return spans;
+}
 
 /**
  * Telephone numbers, conservatively: an E.164 number, a North-American grouped
@@ -41,7 +81,7 @@ function check(input = {}) {
   const where = input.where ? ` in ${input.where}` : '';
   const base = { file: input.file, slug: input.slug, line: input.line };
   const findings = [];
-  if (EMAIL.test(text)) {
+  if (emailSpans(text).length > 0) {
     findings.push(finding('AGSC-E404',
       `an e-mail address${where}, outside prov and sources[] (AGSC-08-16)`, base));
   }
@@ -52,4 +92,4 @@ function check(input = {}) {
   return findings;
 }
 
-module.exports = { EMAIL, PHONE, EXEMPT_KEYS, check };
+module.exports = { EMAIL, EXEMPT_KEYS, PHONE, check, emailSpans };

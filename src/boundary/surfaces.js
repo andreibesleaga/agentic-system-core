@@ -26,13 +26,13 @@
  * proves them) and the consent class carried by `agsc-access`.
  */
 
-/** The MCP wire revision `@modelcontextprotocol/sdk@1.30.0` speaks. */
+/** The MCP wire revision `@modelcontextprotocol/sdk@1.32.1` speaks. */
 const MCP_PROTOCOL_VERSION = '2025-11-25';
 /** The oldest revision that transport negotiates down to. */
 const MCP_PROTOCOL_MIN_VERSION = '2025-03-26';
 /**
  * AGSC-11-16: the MCP revision the specification targets.
- * (2026-09-24) the `mcp` surface declares the revision its transport actually speaks
+ * The `mcp` surface declares the revision its transport actually speaks
  * — `MCP_PROTOCOL_VERSION` by default — and this target is no longer a pin.
  */
 const MCP_SURFACE_VERSION = '2026-07-28';

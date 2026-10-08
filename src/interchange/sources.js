@@ -3,7 +3,7 @@
 //
 // The old site's `references.<n>.{label,url,org,year,verified}` become the one
 // citation array of AGSC-02-10, `sources[]`, whose only REQUIRED member is
-// `resource` (M3-T18).
+// `resource`.
 //
 //   label -> title     url -> resource     org -> author
 //   year  -> year (a 4-digit STRING, per $defs/source)

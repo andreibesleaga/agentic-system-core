@@ -11,7 +11,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "reason": "Withdrawn for 1.0.0 (2026-10-02). The case expected AGSC-E605 for a blank node in a fenced block marked `export`, but AGSC-02-22 says such a block MUST NOT be extracted at 1.x and is the warning AGSC-E415, so no blank node from it can reach an export and AGSC-05-08 does not apply; the reference engine follows the rule, and the case passed only through a runner path that checked the block in isolation. By AGSC-00-03 the rule wins. Superseded by graph-0027, which runs the real lint and build.",
   "rule": "AGSC-05-08",

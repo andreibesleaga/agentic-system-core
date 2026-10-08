@@ -35,7 +35,7 @@ function buildNetworkPort() {
 
 /**
  * resolveUserConfigDir(env, homedir) — AGSC-09-09's "user configuration"
- * layer (a design choice of 2026-09-18): `$XDG_CONFIG_HOME/agsc`,
+ * layer: `$XDG_CONFIG_HOME/agsc`,
  * falling back to `~/.config/agsc`. `homedir` is injected (default
  * `os.homedir()`) so a test never touches the real home directory.
  */
@@ -87,7 +87,7 @@ function bundleRoot(argv, cwd) {
   }
 }
 
-async function run() {
+async function runCli() {
   // A reader that closes the pipe early (`agsc --help | head -1`): stop quietly, as a
   // Unix tool does, instead of printing an EPIPE stack trace.
   for (const stream of [process.stdout, process.stderr]) {
@@ -122,33 +122,49 @@ async function run() {
   process.exitCode = exitCode;
 }
 
+/**
+ * A fault that carries a REGISTERED code is a diagnostic, not an internal fault.
+ * `EpochError` (AGSC-E603, exit 2) is thrown while the ports are built, before
+ * `main()` can catch anything; without this a malformed SOURCE_DATE_EPOCH came out
+ * as a stack trace with exit 1 — the opposite of AGSC-04-09, of
+ * `src/adapters/node-clock.js` and of `docs/IMPLEMENTERS-GUIDE.md` ("AGSC-E603 and
+ * exit 2, never a Finding"). Returns true when the fault was reported.
+ *
+ * Under `--json` the diagnostic goes to STDERR, one JSON object per line, exactly as
+ * `application/cli/main.js` writes the same fault: no verb ran, so there is no
+ * AGSC-09-11 envelope, and stdout under `--json` carries "exactly one JCS-canonical
+ * envelope and nothing else" (vector `cli-0002`). Both fatal paths use one stream.
+ */
+function reportRegisteredFault(e, argv) {
+  const code = e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : null;
+  if (code === null) return false;
+  const diagnostic = { code, severity: 'error', message: String(e.message) };
+  if (argv.includes('--json')) process.stderr.write(`${JSON.stringify(diagnostic)}\n`);
+  else if (!argv.includes('--quiet')) process.stderr.write(`agsc: ${code} ${diagnostic.message}\n`);
+  process.exitCode = Number.isInteger(e.exitCode) ? e.exitCode : 2;
+  return true;
+}
+
+/**
+ * The command line, for every entry point: this file, `bin/agentic-system-core`, the
+ * alias package `agsc-cli` and `index.js#run()` (AGSC-09-07). A fault with a
+ * registered code is answered here, so each of them prints the same diagnostic and
+ * exit code (AGSC-09-08); only a fault with no registered code rejects, and each
+ * entry point reports that one as an internal error.
+ */
+async function run() {
+  try {
+    await runCli();
+  } catch (e) {
+    if (!reportRegisteredFault(e, process.argv.slice(2))) throw e;
+  }
+}
+
 // Guard the side-effecting entry point so this file can be `require()`d by
 // tests (resolveUserConfigDir/loadUserConfig/buildFileSystemPort) without
 // running the real CLI.
 if (require.main === module) {
   run().catch((e) => {
-    // an error that carries a REGISTERED code is a diagnostic, not an
-    // internal fault. `EpochError` (AGSC-E603, exit 2) is thrown while the ports are
-    // built, before `main()` can catch anything, so a malformed SOURCE_DATE_EPOCH
-    // reached this handler and was printed as a stack trace with exit 1 — the
-    // opposite of AGSC-04-09 and of what `src/adapters/node-clock.js:5` and
-    // `docs/IMPLEMENTERS-GUIDE.md` both state ("AGSC-E603 and exit 2, never a
-    // Finding"). Only the empty string happened to take a path `main()` caught.
-    const code = e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : null;
-    if (code !== null) {
-      const diagnostic = { code, severity: 'error', message: String(e.message) };
-      const json = process.argv.slice(2).includes('--json');
-      const quiet = process.argv.slice(2).includes('--quiet');
-      // under `--json` the diagnostic goes to STDERR, one JSON object per
-      // line, exactly as `application/cli/main.js` writes the same fault. This is a
-      // fatal, pre-verb condition: no verb ran, so there is no AGSC-09-11 envelope,
-      // and stdout under `--json` carries "exactly one JCS-canonical envelope and
-      // nothing else" (vector `cli-0002`). Both fatal paths use the same stream.
-      if (json) process.stderr.write(`${JSON.stringify(diagnostic)}\n`);
-      else if (!quiet) process.stderr.write(`agsc: ${code} ${diagnostic.message}\n`);
-      process.exitCode = Number.isInteger(e.exitCode) ? e.exitCode : 2;
-      return;
-    }
     process.stderr.write(`agsc: internal error: ${e && e.stack ? e.stack : e}\n`);
     process.exitCode = 1;
   });

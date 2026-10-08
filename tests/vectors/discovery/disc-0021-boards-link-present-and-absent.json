@@ -1,0 +1,361 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-08 with AGSC-10-13: the boards link of the discovery document is present exactly when the node serves /boards/index.json — that is, when the Bundle holds a task — and absent otherwise; at Level 2 it carries type application/json and a digest. Two public Level-2 documents of one node with no peer, no successor, no declared surface and no contribution endpoint: with-a-board serves /boards/index.json and its document carries one rel#boards link with the SHA-256 of that file; without-a-board does not serve the route, and its document is the same document without that member — no other link and no bundle fact changes, because neither the counts nor graph.nq depend on the board export. Derivation, by hand: both documents are the public-level-2 document of disc-0020 with the rel#peer, rel#contribute and rel#surface members and the successor's alternate link removed (their inputs are absent here), and, for without-a-board, the rel#boards member removed. A conforming publisher given the input emits, after JCS (AGSC-04-04), exactly these bytes.",
+  "expected": {
+    "cases": [
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "digest": [
+                    "sha-256=:UlgUK3r4vwaBpsaDQqF2VGZrsKmxANd/sCQzaPzuC4s=:"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:vrPI5NKdgIdwY6JS1BU2fyLGx13o7aCXqTk5r7aLhTw=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.0.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-10-02T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0"
+                  ],
+                  "digest": [
+                    "sha-256=:z/rEVcf+F/I/agd2ub11YukaalseyThsHkN1TGB/wec=:"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#boards": [
+                {
+                  "digest": [
+                    "sha-256=:2z23E+o06X2c23Dna0m91+PdYlFIzoR00N/PbaWWkU4=:"
+                  ],
+                  "href": "https://example.org/boards/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#context": [
+                {
+                  "digest": [
+                    "sha-256=:SQ8SFe7m9qqHdX7ynZdzRKXRhvafUjhhToWm+3HdlXA=:"
+                  ],
+                  "href": "https://example.org/ns/context.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#graph": [
+                {
+                  "digest": [
+                    "sha-256=:vrPI5NKdgIdwY6JS1BU2fyLGx13o7aCXqTk5r7aLhTw=:"
+                  ],
+                  "href": "https://example.org/graph.nq",
+                  "type": "application/n-quads"
+                },
+                {
+                  "digest": [
+                    "sha-256=:JyKBMJYugQjFwNVK02SqZ7sDAyK/IeQiK7ULKM18H9M=:"
+                  ],
+                  "href": "https://example.org/graph.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ledger": [
+                {
+                  "agsc-ledger-head": [
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                  ],
+                  "digest": [
+                    "sha-256=:AnXXika2Yx0rcKCYupIIAqd5PQ5Q07efCixjkCYQUAE=:"
+                  ],
+                  "href": "https://example.org/ledger.jsonl",
+                  "type": "application/jsonl"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#now": [
+                {
+                  "digest": [
+                    "sha-256=:lypl5WynAOr36aEYCkA484omVC5D3f2FBfHKF4K4LIA=:"
+                  ],
+                  "href": "https://example.org/now.md",
+                  "type": "text/markdown"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ontology": [
+                {
+                  "digest": [
+                    "sha-256=:yk11xOgEaFfnyuJ+WzQfP+789U/z34gV4j2Y4LG8I3g=:"
+                  ],
+                  "href": "https://example.org/ns/agsc.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#skills": [
+                {
+                  "digest": [
+                    "sha-256=:o1gYZ/MWtXxWYSRmKGcptUvJOL9fkZ60OBAiLVv+Y/I=:"
+                  ],
+                  "href": "https://example.org/skills/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ],
+              "service-doc": [
+                {
+                  "href": "https://example.org/specs/"
+                }
+              ]
+            }
+          ]
+        },
+        "name": "with-a-board"
+      },
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "digest": [
+                    "sha-256=:UlgUK3r4vwaBpsaDQqF2VGZrsKmxANd/sCQzaPzuC4s=:"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:vrPI5NKdgIdwY6JS1BU2fyLGx13o7aCXqTk5r7aLhTw=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.0.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-10-02T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0"
+                  ],
+                  "digest": [
+                    "sha-256=:z/rEVcf+F/I/agd2ub11YukaalseyThsHkN1TGB/wec=:"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#context": [
+                {
+                  "digest": [
+                    "sha-256=:SQ8SFe7m9qqHdX7ynZdzRKXRhvafUjhhToWm+3HdlXA=:"
+                  ],
+                  "href": "https://example.org/ns/context.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#graph": [
+                {
+                  "digest": [
+                    "sha-256=:vrPI5NKdgIdwY6JS1BU2fyLGx13o7aCXqTk5r7aLhTw=:"
+                  ],
+                  "href": "https://example.org/graph.nq",
+                  "type": "application/n-quads"
+                },
+                {
+                  "digest": [
+                    "sha-256=:JyKBMJYugQjFwNVK02SqZ7sDAyK/IeQiK7ULKM18H9M=:"
+                  ],
+                  "href": "https://example.org/graph.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ledger": [
+                {
+                  "agsc-ledger-head": [
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                  ],
+                  "digest": [
+                    "sha-256=:AnXXika2Yx0rcKCYupIIAqd5PQ5Q07efCixjkCYQUAE=:"
+                  ],
+                  "href": "https://example.org/ledger.jsonl",
+                  "type": "application/jsonl"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#now": [
+                {
+                  "digest": [
+                    "sha-256=:lypl5WynAOr36aEYCkA484omVC5D3f2FBfHKF4K4LIA=:"
+                  ],
+                  "href": "https://example.org/now.md",
+                  "type": "text/markdown"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ontology": [
+                {
+                  "digest": [
+                    "sha-256=:yk11xOgEaFfnyuJ+WzQfP+789U/z34gV4j2Y4LG8I3g=:"
+                  ],
+                  "href": "https://example.org/ns/agsc.ttl",
+                  "type": "text/turtle"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#skills": [
+                {
+                  "digest": [
+                    "sha-256=:o1gYZ/MWtXxWYSRmKGcptUvJOL9fkZ60OBAiLVv+Y/I=:"
+                  ],
+                  "href": "https://example.org/skills/index.json",
+                  "type": "application/json"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ],
+              "service-doc": [
+                {
+                  "href": "https://example.org/specs/"
+                }
+              ]
+            }
+          ]
+        },
+        "name": "without-a-board"
+      }
+    ]
+  },
+  "id": "disc-0021",
+  "input": {
+    "cases": [
+      {
+        "base": "https://example.org",
+        "bundle_version": "v1.0.0",
+        "contribute": [],
+        "counts": [
+          "clusters=0",
+          "concepts=1",
+          "episodes=0",
+          "gates=0",
+          "lessons=0",
+          "procedures=0"
+        ],
+        "files": {
+          "/boards/index.json": "bytes of /boards/index.json\n",
+          "/graph.jsonld": "bytes of /graph.jsonld\n",
+          "/graph.nq": "bytes of /graph.nq\n",
+          "/graph.ttl": "bytes of /graph.ttl\n",
+          "/ledger.jsonl": "bytes of /ledger.jsonl\n",
+          "/llms.txt": "bytes of /llms.txt\n",
+          "/now.md": "bytes of /now.md\n",
+          "/ns/agsc.ttl": "bytes of /ns/agsc.ttl\n",
+          "/ns/context.jsonld": "bytes of /ns/context.jsonld\n",
+          "/skills/index.json": "bytes of /skills/index.json\n"
+        },
+        "generated_at": "2026-10-02T00:00:00Z",
+        "ledger_head": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "level": 2,
+        "name": "with-a-board",
+        "peers": [],
+        "routes": [
+          "/boards/index.json",
+          "/graph.jsonld",
+          "/graph.nq",
+          "/graph.ttl",
+          "/ledger.jsonl",
+          "/legal/",
+          "/llms.txt",
+          "/now.md",
+          "/ns/agsc.ttl",
+          "/ns/context.jsonld",
+          "/skills/index.json",
+          "/specs/"
+        ],
+        "spec_version": "1.0.0",
+        "visibility": "public"
+      },
+      {
+        "base": "https://example.org",
+        "bundle_version": "v1.0.0",
+        "contribute": [],
+        "counts": [
+          "clusters=0",
+          "concepts=1",
+          "episodes=0",
+          "gates=0",
+          "lessons=0",
+          "procedures=0"
+        ],
+        "files": {
+          "/graph.jsonld": "bytes of /graph.jsonld\n",
+          "/graph.nq": "bytes of /graph.nq\n",
+          "/graph.ttl": "bytes of /graph.ttl\n",
+          "/ledger.jsonl": "bytes of /ledger.jsonl\n",
+          "/llms.txt": "bytes of /llms.txt\n",
+          "/now.md": "bytes of /now.md\n",
+          "/ns/agsc.ttl": "bytes of /ns/agsc.ttl\n",
+          "/ns/context.jsonld": "bytes of /ns/context.jsonld\n",
+          "/skills/index.json": "bytes of /skills/index.json\n"
+        },
+        "generated_at": "2026-10-02T00:00:00Z",
+        "ledger_head": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "level": 2,
+        "name": "without-a-board",
+        "peers": [],
+        "routes": [
+          "/graph.jsonld",
+          "/graph.nq",
+          "/graph.ttl",
+          "/ledger.jsonl",
+          "/legal/",
+          "/llms.txt",
+          "/now.md",
+          "/ns/agsc.ttl",
+          "/ns/context.jsonld",
+          "/skills/index.json",
+          "/specs/"
+        ],
+        "spec_version": "1.0.0",
+        "visibility": "public"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-06-08"
+}

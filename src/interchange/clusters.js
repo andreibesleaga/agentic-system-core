@@ -1,7 +1,7 @@
 'use strict';
 // src/interchange/clusters.js — CONTEXT Interchange.
 //
-// The old site's DECKS become Clusters (M3-T08): one `type: cluster` item per
+// The old site's DECKS become Clusters: one `type: cluster` item per
 // deck, `order` and `family` carried over, membership authored ON THE ITEM
 // (`clusters[]`) and never on the cluster file (AGSC-02-19).
 //

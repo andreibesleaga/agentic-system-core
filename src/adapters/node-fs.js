@@ -154,9 +154,19 @@ function createFileSystem(root, options = {}) {
       // AGSC-01-14: text is UTF-8, and a file that is not is
       // AGSC-E108 — never silently decoded with U+FFFD. The byte-order mark is KEPT
       // (`ignoreBOM`), so the lint that reports a BOM still sees it.
+      // Only the DECODER's refusal is an encoding fault: a directory where a file was
+      // expected, or a file the process may not read, is a file that cannot be read,
+      // with the system's own reason (AGSC-E901), never "not valid UTF-8".
+      let bytes;
       try {
-        return UTF8.decode(fs.readFileSync(target));
+        bytes = fs.readFileSync(target);
       } catch (e) {
+        throw new FsError('AGSC-E901', `${p} could not be read: ${(e && e.code) || (e && e.message) || 'read error'} (AGSC-01-01)`, String(p));
+      }
+      try {
+        return UTF8.decode(bytes);
+      } catch (e) {
+        if (!(e instanceof TypeError)) throw e;
         throw new FsError('AGSC-E108', `${p} is not valid UTF-8 (AGSC-01-14)`, String(p));
       }
     },

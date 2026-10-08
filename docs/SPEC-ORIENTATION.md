@@ -78,7 +78,7 @@ member is a change to the specification, never a local extension.
 | the configuration keys (`additionalProperties` false; vendor keys start with `x-`) | AGSC-01-18, `schema/config.schema.json` |
 | the route set a writer emits, and nothing else | AGSC-06-01 |
 | the three machine-readable licence dialects | AGSC-06-18 |
-| the seven files of a Harness | AGSC-07-12 |
+| the seven kinds of file of a Harness | AGSC-07-12 |
 | the sixteen verbs of the command line | AGSC-09-07 |
 | the seven tools of the tool surface | AGSC-09-13 |
 | the error-code registry, `AGSC-E<nnn>`; codes are permanent | `spec/09-conformance.md` §9.4, AGSC-09-15 |

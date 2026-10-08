@@ -22,7 +22,7 @@
   "level": "withdrawn",
   "options": {
     "source_date_epoch": 1767225600,
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "reason": "Withdrawn for 1.0.0 (2026-10-02). The case stated that `ci` exits 0 immediately after `init` on a bare folder, and passed only because its runner replaced `ci` by a schema check of the synthesized files. The real `ci` refuses such a folder with AGSC-E901 until the publisher adds the security contact of AGSC-06-36, as AGSC-02-92 says and AGSC-02-94 now says too. Superseded by adopt-0007 (the security contact added between the two verbs: `ci` exits 0) and adopt-0008 (nothing added: `ci` exits 1 with AGSC-E901), both run with the real verbs.",
   "rule": "AGSC-02-94",

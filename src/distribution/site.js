@@ -22,11 +22,13 @@
 const { createHash } = require('node:crypto');
 const { canonicalize } = require('../knowledge/jcs.js');
 const { nfc, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
-const { finding } = require('../knowledge/validate.js');
+const { finding, unencodable } = require('../knowledge/validate.js');
 const chunks = require('../knowledge/chunks.js');
 const contentVersion = require('../knowledge/content-version.js');
 const adopt = require('../knowledge/adopt.js');
 const linksModule = require('../knowledge/links.js');
+const internalLinksModule = require('./internal-links.js');
+const { internalLinks, resolvesTo } = internalLinksModule;
 const markdown = require('../knowledge/markdown.js');
 const jsonldView = require('../knowledge/jsonld.js');
 const nquadsView = require('../knowledge/nquads.js');
@@ -144,9 +146,21 @@ function flatten(item) {
   };
 }
 
-/** AGSC-06-30 / AGSC-11-22 / AGSC-01-20: the published set, used by every surface. */
+/**
+ * AGSC-06-30 / AGSC-11-22 / AGSC-01-20: the LISTED set of AGSC-00-05 — what
+ * `search.json`, `/llms.txt`, the chunks, the skill packs, `agsc-counts` and the index
+ * pages carry. A retired item is not in it.
+ */
 function publishedItems(items, releases) {
   return (items || []).map(flatten).filter((item) => chunks.isPublished(item, releases));
+}
+
+/**
+ * AGSC-00-05 / AGSC-11-22: the PUBLISHED set — the listed items plus the retired ones,
+ * each of which keeps its page, its per-item copies and its place in the graph exports.
+ */
+function pageItemsOf(items, releases) {
+  return (items || []).map(flatten).filter((item) => chunks.keepsPage(item, releases));
 }
 
 /**
@@ -307,7 +321,7 @@ function bodyHrefResolver(item, byPath, assets) {
 }
 
 /**
- * AGSC-06-19 (as defined 2026-09-24): the published routes of a build are the
+ * AGSC-06-19: the published routes of a build are the
  * routes it emits as HTML pages — every `<route>index.html` served at `<route>`,
  * `/index.html` being `/` — and never `/404.html` or a machine file.
  * @param {Map<string,*>} files the build's route → bytes map.
@@ -323,7 +337,7 @@ function publishedRoutes(files) {
 }
 
 /**
- * AGSC-06-29 and AGSC-05-07 (as stated 2026-09-24): a Link target naming an item
+ * AGSC-06-29 and AGSC-05-07: a Link target naming an item
  * that AGSC-06-30 excludes — draft, retired, held back by `releases` — is dropped
  * from the item's Link arrays, and a key emptied by that drop is omitted, before
  * the item reaches `chunks.jsonl` or `/pages/<slug>.md`. Every other surface
@@ -551,6 +565,19 @@ function securityTxt(base, instant, options = {}) {
       'the authored .well-known/security.txt states no Contact: field — RFC 9116 section 2.5.3:'
       + ' "This field MUST always be present in a \'security.txt\' file"',
       { file }));
+  }
+
+  // AGSC-06-36 / RFC 9116 section 2.5.3: every Contact value is a URI —
+  // `mailto:` for an address, `tel:` for a number — and a web URI begins with https://.
+  for (const contact of contacts) {
+    if (!/^[A-Za-z][A-Za-z0-9+.-]*:\S+$/u.test(contact.value) || /^http:/iu.test(contact.value)) {
+      findings.push(finding('AGSC-E204',
+        `the Contact value "${singleLine(contact.value)}" is not an RFC 9116 contact URI — section 2.5.3:`
+        + ' "The value MUST follow the URI syntax described in Section 3 of [RFC3986]. This means that'
+        + ' "mailto" and "tel" URI schemes must be used when specifying email addresses and telephone'
+        + ' numbers", and a web URI "MUST begin with "https://"" (AGSC-06-36)',
+        { file, line: contact.line }));
+    }
   }
 
   const expiresFields = fields.filter((f) => f.name === 'expires');
@@ -1017,113 +1044,6 @@ function timeBudget(elapsedMs, publishedCount) {
 }
 
 /**
- * The DIRECTORY a relative href on `route` is resolved against — what a browser
- * uses as the base URL. `/a/b/index.html` is served at `/a/b/`, so its base is
- * `/a/b/`; `/pages/x.md` is served at itself, so its base is `/pages/`.
- */
-function baseDirOf(route) {
-  const r = String(route);
-  const withoutIndex = r.endsWith('/index.html') ? r.slice(0, -'index.html'.length) : r;
-  return withoutIndex.endsWith('/') ? withoutIndex : withoutIndex.slice(0, withoutIndex.lastIndexOf('/') + 1);
-}
-
-/**
- * Resolve a relative site path against a base directory, `/`-separated, with `.`
- * and `..` applied. `null` when it climbs above the site root — which is itself a
- * link to nothing, and is reported as one.
- */
-function resolveRelative(baseDir, relative) {
-  const out = baseDir.split('/').filter((s) => s !== '');
-  for (const segment of String(relative).split('/')) {
-    if (segment === '' || segment === '.') continue;
-    if (segment === '..') {
-      if (out.length === 0) return null;
-      out.pop();
-      continue;
-    }
-    out.push(segment);
-  }
-  const trailing = String(relative).endsWith('/') || String(relative) === '' ? '/' : '';
-  return `/${out.join('/')}${trailing}`;
-}
-
-/**
- * Every internal link the emitted HTML, `robots.txt` and `security.txt` carry, with
- * the route each one resolves to. A build that links a route it does not emit ships
- * a dangling internal link — the defect found on `/legal/` — so this is a
- * function the suite asserts over, not a promise in a comment.
- *
- * RELATIVE hrefs are resolved against the page's own route: a guard that read
- * site-absolute hrefs only would be blind to exactly the class of link an import
- * produces. External targets (a scheme, a protocol-relative `//`), fragment-only
- * and query-only targets are not internal links and are not collected.
- *
- * An absolute URL in one of the two text dialects is an INTERNAL link only when it
- * is under this node's own base: `security.txt` carries a `Contact:`
- * field, which is by definition somewhere else (RFC 9116 section 2.5.3 — "a web page
- * with contact information"), and reading it as a route of this build would report
- * every valid security contact as a dangling link. Without a `base` the function
- * keeps its earlier behaviour, which is what its own unit test states.
- *
- * @param {Map<string,string>} files
- * @param {object} [options] `{base}` — this node's base (AGSC-01-19), no trailing slash.
- * @returns {Array<{from:string, href:string, route:(string|null)}>}
- */
-function internalLinks(files, options = {}) {
-  const base = typeof options.base === 'string' && options.base !== '' ? options.base.replace(/\/+$/u, '') : null;
-  const out = [];
-  const add = (from, href) => {
-    const raw = String(href);
-    if (raw === '' || raw.startsWith('#') || raw.startsWith('?')) return;
-    if (linksModule.isExternalTarget(raw)) return;
-    const clean = raw.split('#')[0].split('?')[0];
-    if (clean === '') return;
-    out.push({
-      from,
-      href: raw,
-      route: clean.startsWith('/') ? clean : resolveRelative(baseDirOf(from), clean),
-    });
-  };
-  for (const route of [...files.keys()].sort(compareCodePoint)) {
-    const text = String(files.get(route));
-    if (route.endsWith('.html')) {
-      const attribute = /(?:href|src)="([^"]*)"/gu;
-      let m = attribute.exec(text);
-      while (m !== null) {
-        add(route, m[1]);
-        m = attribute.exec(text);
-      }
-    }
-    if (route === '/robots.txt' || route === '/.well-known/security.txt') {
-      const absolute = /https?:\/\/[^\s]+/gu;
-      let m = absolute.exec(text);
-      while (m !== null) {
-        // The two text dialects carry ABSOLUTE URLs; the path of one under this
-        // node's own base is what must resolve. Another origin is somebody else's.
-        if (base === null || m[0] === base || m[0].startsWith(`${base}/`)) {
-          const path = m[0].replace(/^https?:\/\/[^/]*/u, '');
-          add(route, path === '' ? '/' : path);
-        }
-        m = absolute.exec(text);
-      }
-    }
-  }
-  return out;
-}
-
-/**
- * The emitted route a site-absolute path is served from: `/x/` is `/x/index.html`,
- * `/x.json` is itself. `null` when the build emits nothing for it.
- */
-function resolvesTo(files, route) {
-  if (route === null || route === undefined) return null;
-  if (files.has(route)) return route;
-  const asIndex = route.endsWith('/') ? `${route}index.html` : `${route}/index.html`;
-  if (files.has(asIndex)) return asIndex;
-  return null;
-}
-
-/**
  * AGSC-06-21: "a writer MUST paginate any index route carrying more than 500
  * entries as `/<route>/page-<n>/` (`<n>` from `2`; page 1 is the route
  * itself)". The bound is the same 500 that shards `search.json` and
@@ -1144,7 +1064,7 @@ function paginate(route, entries, perPage = search.ITEMS_PER_SHARD) {
 }
 
 /**
- * AGSC-06-01 names routes this milestone does not produce. Each one is listed
+ * AGSC-06-01 names routes this engine does not produce. Each one is listed
  * here with the reason, and `build` puts every one of them into `skipped`, so
  * a caller can never mistake an absent route for a complete emission
  *
@@ -1234,7 +1154,57 @@ function typedLinksResolver(items) {
   return { publishedBySlug, typedLinksOf };
 }
 
+/**
+ * AGSC-01-14 (as amended 2026-10-06): the strings of the configuration, the Bundle
+ * root and the items that no JSON artefact can carry (a lone surrogate written as an
+ * escape). Each is `AGSC-E108` with its file, the finding `lint` reports for it; an
+ * item's is already among the loader's findings and is not repeated.
+ */
+function unencodableInputs(bundle) {
+  const loaded = new Set((bundle.findings || [])
+    .filter((f) => f && f.code === 'AGSC-E108').map((f) => `${f.file}\u0000${f.message}`));
+  const out = [
+    ...unencodable(bundle.config || {}, { file: 'agsc.config.json' }),
+    ...unencodable((bundle.index && bundle.index.frontmatter) || {}, { file: 'content/index.md' }),
+  ];
+  for (const item of bundle.items || []) {
+    for (const f of unencodable(item.frontmatter == null ? item : item.frontmatter, { file: item.path, slug: item.slug })) {
+      out.push({ ...f, known: loaded.has(`${f.file}\u0000${f.message}`) });
+    }
+  }
+  return out;
+}
+
+/**
+ * Build the route set of AGSC-06-01 (AGSC-04-01/02/09).
+ *
+ * AGSC-09-11: a fault never discards what was found before it. A Bundle holding a
+ * string no JSON artefact can carry is not built at all — every JSON route would
+ * fail — and the build returns the findings with that fault named by file and key;
+ * a fault thrown with a registered code part-way through carries the findings
+ * gathered so far as `e.findings`, which the command line reports beside it.
+ */
 function build(bundle, ports, options = {}) {
+  const findings = [...(bundle.findings || [])];
+  const blocked = unencodableInputs(bundle);
+  if (blocked.length > 0) {
+    findings.push(...blocked.filter((f) => !f.known).map(({ known, ...f }) => f));
+    return {
+      files: new Map(), findings, ledgerHead: null, state: null,
+      skipped: ['every route (a configuration, root or item string is not well-formed Unicode: AGSC-E108, AGSC-01-14)'],
+    };
+  }
+  try {
+    return buildSite(bundle, ports, options, findings);
+  } catch (e) {
+    if (e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code)) {
+      e.findings = [...findings, ...(Array.isArray(e.findings) ? e.findings : [])];
+    }
+    throw e;
+  }
+}
+
+function buildSite(bundle, ports, options, findings) {
   const config = bundle.config || {};
   const site = config.site || {};
   const base = String(site.base || '').replace(/\/+$/u, '');
@@ -1246,7 +1216,6 @@ function build(bundle, ports, options = {}) {
   const specVersion = options.specVersion;
   const instant = ports.clock.iso === undefined ? ledgerModule.instantFromEpoch(ports.clock.now()) : ports.clock.iso();
   const files = new Map();
-  const findings = [...(bundle.findings || [])];
   /** Attachment routes judged unservable; their page links are not a second fault. */
   const refusedAttachments = new Set();
   // AGSC-04-25: ONE content version per build, stamped in nine places. The
@@ -1262,6 +1231,9 @@ function build(bundle, ports, options = {}) {
   const put = (route, text) => files.set(route, text);
 
   const items = publishedItems(bundle.items, config.releases);
+  // AGSC-11-22: the retired items join the listed ones on their own pages, their
+  // per-item copies and the graph exports — and nowhere else.
+  const pageItems = pageItemsOf(bundle.items, config.releases);
   const allItems = (bundle.items || []).map(flatten);
   const indexFrontmatter = (bundle.index && bundle.index.frontmatter) || {};
 
@@ -1358,7 +1330,7 @@ function build(bundle, ports, options = {}) {
   // The edges are derived over the PUBLISHED projection (AGSC-06-30), so a
   // reference to an item the node does not publish contributes no triple, and a
   // self-reference — an anchor into the item's own page — contributes none either.
-  const mentions = linksModule.resolve(items)
+  const mentions = linksModule.resolve(pageItems)
     .edges
     .filter((edge) => edge.key === 'mentions' && edge.source !== edge.target)
     .map((edge) => ({ source: edge.source, target: edge.target }));
@@ -1368,7 +1340,7 @@ function build(bundle, ports, options = {}) {
   // this build hands the result to the one dataset writer, as it does `mentions`.
   // A reference under a peer base that cannot be normalised is AGSC-E312 and is
   // omitted; a reference to any other host stays a plain `dcterms:source` literal.
-  const citations = peerCitationsOf(items, `${base}/`, config.peers, findings);
+  const citations = peerCitationsOf(pageItems, `${base}/`, config.peers, findings);
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
   const graphBase = {
     citations,
@@ -1416,9 +1388,9 @@ function build(bundle, ports, options = {}) {
     const view = graphView;
     // AGSC-10-02: `/graph.jsonld` is a Level-0 artefact; the other three views and
     // the context file are AGSC-10-04's, so a Level-0 emission omits them.
-    if (typeof graph.jsonld === 'function') put('/graph.jsonld', jsonBytes(graph.jsonld(items, view)));
-    if (full && typeof graph.nquads === 'function') put('/graph.nq', textBytes(graph.nquads(items, view)));
-    if (full && typeof graph.turtle === 'function') put('/graph.ttl', textBytes(graph.turtle(items, view)));
+    if (typeof graph.jsonld === 'function') put('/graph.jsonld', jsonBytes(graph.jsonld(pageItems, view)));
+    if (full && typeof graph.nquads === 'function') put('/graph.nq', textBytes(graph.nquads(pageItems, view)));
+    if (full && typeof graph.turtle === 'function') put('/graph.ttl', textBytes(graph.turtle(pageItems, view)));
     if (full && contextObject !== null) {
       put('/ns/context.jsonld', jsonBytes(contextObject));
       // AGSC-06-01 + AGSC-05-09: a
@@ -1465,15 +1437,15 @@ function build(bundle, ports, options = {}) {
     // the loaded item — the only record that still carries the frontmatter object in
     // its authored key order — is looked up beside the flattened one.
     const loadedBySlug = new Map((bundle.items || []).map((i) => [i.slug, i]));
-    for (const item of items) {
+    for (const item of pageItems) {
       const loaded = loadedBySlug.get(item.slug);
       const source = loaded == null ? loaded
         : { ...loaded, frontmatter: withoutExcludedLinks(loaded.frontmatter, publishedSlugs) };
       put(`/pages/${item.slug}.md`, pageMarkdown(item, source));
     }
     if (graph !== null && typeof graph.jsonld === 'function') {
-      const whole = graph.jsonld(items, graphView);
-      for (const item of items) put(`/pages/${item.slug}.jsonld`, jsonBytes(jsonldView.restrictTo(whole, graph.jsonld([item], graphView))));
+      const whole = graph.jsonld(pageItems, graphView);
+      for (const item of pageItems) put(`/pages/${item.slug}.jsonld`, jsonBytes(jsonldView.restrictTo(whole, graph.jsonld([item], graphView))));
     } else {
       skipped.push('/pages/<slug>.jsonld (the RDF views were switched off; AGSC-06-02)');
     }
@@ -1565,7 +1537,7 @@ function build(bundle, ports, options = {}) {
   const publishedAssets = new Set();
   if (bundle && bundle.assets) {
     const available = new Set([...bundle.assets].map(String));
-    for (const item of items) {
+    for (const item of pageItems) {
       const fromDir = linksModule.dirOf(pathOf(item));
       for (const raw of markdown.links(item.body == null ? '' : item.body)) {
         const value = String(raw.target);
@@ -1588,7 +1560,7 @@ function build(bundle, ports, options = {}) {
   // (`/sitemap.xml` is put LAST, below, once every HTML route exists: AGSC-06-19.)
   put('/_headers', headers.headersFile(config));
   put('/_redirects', headers.redirectsFile(
-    items.flatMap((i) => (Array.isArray(i.aliases) ? i.aliases : [])
+    pageItems.flatMap((i) => (Array.isArray(i.aliases) ? i.aliases : [])
       .filter((a) => String(a).startsWith('/'))
       .map((a) => ({ from: String(a), to: routeOf(i) }))),
   ));
@@ -1601,7 +1573,7 @@ function build(bundle, ports, options = {}) {
       // the footer's AI sentence is a derived fact, not a constant
       // stated only where a published item records AI assistance — and its disclaimer
       // is the publisher's own `DISCLAIMER.md`, or nothing.
-      aiAssisted: items.some((i) => i && i.prov && ['ai-assisted', 'ai-generated'].includes(String(i.prov.origin))),
+      aiAssisted: pageItems.some((i) => i && i.prov && ['ai-assisted', 'ai-generated'].includes(String(i.prov.origin))),
       disclaimer: disclaimer === null ? null : disclaimer.first,
       // The footer's copyright line. The name is the
       // publisher's own `site.author` and the year is the year of the BUILD INSTANT,
@@ -1612,7 +1584,7 @@ function build(bundle, ports, options = {}) {
       legal: hasLegal,
       // The declared peers (AGSC-10-12) as links a PERSON can follow, beside the
       // `rel#peer` links the discovery document already carries for agents: each peer
-      // is named by its host and linked at its root (owner, 2026-09-24).
+      // is named by its host and linked at its root.
       peers: peerSites(config.peers),
       licenseProse,
       // The header of AgenticSystemCore.com — the brand links home, then one entry
@@ -1628,7 +1600,7 @@ function build(bundle, ports, options = {}) {
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
-    const { publishedBySlug, typedLinksOf } = typedLinksResolver(items);
+    const { publishedBySlug, typedLinksOf } = typedLinksResolver(pageItems);
     const membersOf = (cluster) => items
       .filter((i) => i.type !== 'cluster' && Array.isArray(i.clusters) && i.clusters.map(String).includes(cluster.slug))
       .map(entryOf);
@@ -1636,7 +1608,7 @@ function build(bundle, ports, options = {}) {
     // only a PUBLISHED item has a route (AGSC-06-30), so only a published
     // item is a rewriting target; a body link to a draft keeps its authored spelling
     // and is reported by the dangling-link guard.
-    const publishedByPath = new Map(items.map((i) => [pathOf(i), i]));
+    const publishedByPath = new Map(pageItems.map((i) => [pathOf(i), i]));
     /** One index route, paginated per AGSC-06-21 above 500 entries. */
     const putIndex = (route, title, description, entries, render = html.indexPage) => {
       for (const page of paginate(route, entries)) {
@@ -1650,7 +1622,7 @@ function build(bundle, ports, options = {}) {
       }
     };
 
-    for (const item of items) {
+    for (const item of pageItems) {
       const canonical = discovery.href(base, routeOf(item));
       const name = item.title == null ? item.slug : item.title;
       const jsonld = schemaOrg(item.type === 'concept'
@@ -1713,7 +1685,7 @@ function build(bundle, ports, options = {}) {
     }
     // AGSC-06-01: `/` is the Bundle's own index route.
     // The front page introduces the node and points at its index pages; the full
-    // lists live on those pages, so the front page stays short (owner, 2026-09-24).
+    // lists live on those pages, so the front page stays short.
     put('/index.html', frontPage({ base, bundle, indexFrontmatter, items, pageOptions, render, schemaOrg, site, textBytes }));
     // AGSC-06-02: an EMPTY type folder is omitted from navigation (the header above
     // lists only the plurals that have items) but its index route still resolves, so
@@ -1845,7 +1817,7 @@ function build(bundle, ports, options = {}) {
   if (full) for (const [route, why] of UNPRODUCED_ROUTES) skipped.push(`${route} (${why})`);
 
   // ------------------------------------------------------------ sitemap (AGSC-06-19)
-  // "every published route" — defined 2026-09-24 as every route this build emits as
+  // "every published route" — defined as every route this build emits as
   // an HTML page, never `/404.html` or a machine file. Derived from what was PUT,
   // so a page the build adds later can never be left out again: until this date
   // the list was the home page and the item pages, and a search engine was told
@@ -1868,18 +1840,10 @@ function build(bundle, ports, options = {}) {
   findings.push(...budgets(ordered));
 
   // Every site-absolute link the build emits MUST resolve to a route the build
-  // emits. This is the defect found on `/legal/`, closed here as a check
-  // rather than a habit: a link to nothing is a defect of THIS build, not of the
-  // reader who follows it.
-  for (const link of internalLinks(ordered, { base })) {
-    if (resolvesTo(ordered, link.route) !== null) continue;
-    // A refused attachment is already reported under its own code; the link
-    // to it is the same fault, not a second one.
-    if (refusedAttachments.has(link.href)) continue;
-    findings.push(finding('AGSC-E901',
-      `${link.from} links ${link.href}, and this build emits no route for it (AGSC-06-01)`,
-      { file: link.from }));
-  }
+  // emits (the defect found on `/legal/`, closed as a check rather than a habit).
+  findings.push(...internalLinksModule.danglingFindings(ordered, {
+    assets: bundle.assets, base, items: bundle.items, pageRoutes: new Map(pageItems.map((i) => [String(i.slug), `${routeOf(i)}index.html`])), refusedAttachments,
+  }));
 
   return { files: ordered, findings, skipped, state: nowState, ledgerHead };
 }
@@ -1940,7 +1904,7 @@ function verify(bundle, ports, options = {}) {
 
 module.exports = {
   build, write, verify, routeOf, sitemap, publishedRoutes, withoutExcludedLinks, robots, tdmrep, securityTxt,
-  publishedItems, jsonBytes, paginate, readAttachment, readDiagramSource,
+  publishedItems, pageItemsOf, jsonBytes, paginate, readAttachment, readDiagramSource,
   declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
   budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
   readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,

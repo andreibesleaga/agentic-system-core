@@ -23,7 +23,7 @@
       "GPTBot"
     ]
   },
-  "spec_version": "1.0.0-rc.6",
+  "spec_version": "1.0.0-rc.7",
   "tags": {
     "allowed": [
       "agents",

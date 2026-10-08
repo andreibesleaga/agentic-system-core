@@ -12,6 +12,20 @@ different about it.
 
 ---
 
+## Who it is for, what you get, try it
+
+| Reader | What you get today | Try it |
+|---|---|---|
+| A person with a folder of notes | a static site of your notes with search, each page also as Markdown, a graph file and text files for assistants; no model, no server | [guides/mode-0.md](guides/mode-0.md) |
+| A developer | a local tool server: seven tools over your folder for an assistant; nothing leaves the machine | [guides/mode-1.md](guides/mode-1.md); [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) |
+| A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | [guides/mode-2.md](guides/mode-2.md) |
+| An architect | a selection of items checked against their typed links and written as seven kinds of file: a starting point, not a running system | [guides/mode-4.md](guides/mode-4.md); the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |
+| An engineer implementing or checking the format | test cases with expected bytes; checkers that judge any implementation's files; a second checker in Python | `agsc conform --level 3`; [IMPLEMENTERS-GUIDE.md](IMPLEMENTERS-GUIDE.md) |
+| A manager deciding whether to depend on it | what you can rely on (open licences, permanent addresses, archived releases, checks by published bytes) and what you cannot (one maintainer, no support promise, no schedule) | [GOVERNANCE.md](../GOVERNANCE.md), [SECURITY.md](../SECURITY.md), the [status page](https://agenticsystemcore.com/docs/status/) |
+| An agent or its operator reading a node | one discovery document that lists every machine file with its digest; text files, chunks and graph files at fixed addresses | `curl -s https://agenticsystemcore.com/.well-known/knowledge-linkset` |
+
+The paths below say what to read, in order, for each of these readers and a few more.
+
 ## Someone curious — "what is this, and why would I care?"
 
 1. [AgenticSystemCore.com](https://agenticsystemcore.com) — the project's own site, a
@@ -25,6 +39,14 @@ different about it.
 5. [plain/README.md](plain/README.md) — each chapter of the specification in a few
    paragraphs.
 
+## A person with a folder of notes — "I want a site out of my notes"
+
+1. [guides/mode-0.md](guides/mode-0.md) — install, adopt the notes, check, build, change
+   a note as a proposal, publish; every command with the lines it prints.
+2. [guides/README.md](guides/README.md) — the five other modes, one short guide each.
+3. [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) — let an assistant read and cite
+   the notes.
+
 ## A developer — "I want to run it, read the code or change it"
 
 1. The root [README.md](../README.md), "Quick start" — install, run the tests, build the
@@ -36,6 +58,14 @@ different about it.
    libraries.
 5. [TESTING.md](TESTING.md) — the test levels, how to run each, what a green run means.
 6. [CONTRIBUTING.md](../CONTRIBUTING.md) — how a change gets in.
+
+## A team with coding assistants — "our decisions, specifications and tasks, kept in one checked place"
+
+1. [guides/mode-2.md](guides/mode-2.md) — decision, specification, task and gate files;
+   a board; the forge files of a gate; one steering file for every assistant.
+2. [guides/mode-3.md](guides/mode-3.md) and [guides/mode-5.md](guides/mode-5.md) — the
+   team's procedures as skills, and a board that agents and people share.
+3. [CONNECTORS.md](CONNECTORS.md) — every route from the files into an assistant.
 
 ## An implementer in another language — "I want my own implementation to conform"
 
@@ -55,13 +85,24 @@ different about it.
    the build, the page tools, the conformance chain, the release, where a node can live.
 2. [plain/modes.md](plain/modes.md) — the six modes, including the live board.
 3. [spec/07-composition.md](../spec/07-composition.md) — how selected items become a
-   Harness of seven files a runtime can execute.
+   Harness: seven kinds of file an architect or a runtime starts from; and
+   [guides/mode-4.md](guides/mode-4.md) to try it.
 4. [spec/11-boundary.md](../spec/11-boundary.md) — the boundary chapter: federation,
    visibility, the agent surfaces and their plugin contract.
 5. [SECURITY-CONSIDERATIONS.md](SECURITY-CONSIDERATIONS.md) — threats, the rules that
    close them, and what stays open.
 6. [ARCHITECTURE-DDD.md](ARCHITECTURE-DDD.md) and [PLAN.md](PLAN.md) — the domain model
    and the architecture decisions.
+
+## A manager — "can we depend on this?"
+
+1. [GOVERNANCE.md](../GOVERNANCE.md), "Who stands behind this" — one maintainer, open
+   licences, what happens if the maintainer stops; no support promise and no schedule.
+2. [SECURITY.md](../SECURITY.md) — how to report a vulnerability, and which versions are
+   looked after.
+3. [The status page](https://agenticsystemcore.com/docs/status/) — what is live and the
+   state of every outside step.
+4. A live node, to look at rather than read about: <https://patterns.agenticsystemcore.com/>.
 
 ## An agent or a coding assistant — "I have been asked to work here, or to use a node"
 
@@ -82,8 +123,9 @@ different about it.
 3. [PROTOCOLS.md](PROTOCOLS.md) — every outside standard the system uses, why, and in
    which rules.
 4. [internet-draft/README.md](../internet-draft/README.md) — the Internet-Draft that
-   requests the well-known name and the profile identifier (registration to be
-   requested; nothing is registered yet).
+   asks for the well-known name (not registered; no request has been sent to the
+   registry) and records the profile identifier, which is registered in the IANA
+   Profile URIs registry.
 5. [w3id/README.md](../w3id/README.md) and [w3c/README.md](../w3c/README.md) — the
    persistent identifiers and the community-group material.
 6. [RELATED-WORK.md](RELATED-WORK.md) — the dated comparison with other systems.

@@ -29,11 +29,10 @@ function handlerFor(area) {
 }
 
 function run(ctx) {
+  const refused = helpers.levelRefusal(ctx);
+  if (refused !== null) return refused;
   const raw = ctx.verbFlags && ctx.verbFlags.level;
   const level = raw === undefined ? 3 : Number(raw);
-  if (![0, 1, 2, 3].includes(level)) {
-    return { status: 'fail', findings: [{ code: 'AGSC-E003', message: `--level must be 0, 1, 2 or 3, not ${JSON.stringify(raw)}`, severity: 'error' }] };
-  }
 
   const engineFs = createFileSystem(helpers.ENGINE_ROOT);
   const list = conform.casesForLevel(conformance.vectors(engineFs, { areas: conform.areasForLevel(level) }), level);

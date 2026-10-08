@@ -22,7 +22,7 @@
 //   anything else no code names          -> AGSC-E201
 
 const { compile } = require('./schema.js');
-const { nfc, codePointLength, compareCodePoint } = require('./unicode.js');
+const { nfc, codePointLength, compareCodePoint, isWellFormed } = require('./unicode.js');
 
 /** AGSC-01-02: the folder each `type` lives in. */
 const TYPE_PLURAL = Object.freeze({
@@ -112,6 +112,45 @@ function sortFindings(findings) {
 }
 
 /**
+ * AGSC-01-14 (as amended 2026-10-06) with AGSC-04-05: a frontmatter or configuration
+ * string — a value or a member name — that is not a sequence of Unicode scalar values,
+ * i.e. one holding a lone surrogate written as an escape (`"\uD800"` in YAML or
+ * JSON), can enter no JSON artefact: I-JSON is the precondition of JCS. A UTF-8 file
+ * cannot carry a lone surrogate itself, so only an escape produces one, and `lint`
+ * reports it with its file and key, as `build` and `ci` do, instead of the build
+ * failing later with a canonicalisation fault that names no file.
+ *
+ * @param {unknown} value the parsed frontmatter or configuration object.
+ * @param {{file?:string, slug?:string, keyLines?:object}} [where]
+ * @returns {Array<object>} one `AGSC-E108` error per offending string.
+ */
+function unencodable(value, where = {}) {
+  const out = [];
+  const pointerOf = (segs) => `/${segs.map((seg) => String(seg).split('~').join('~0').split('/').join('~1')).join('/')}`;
+  const visit = (node, segs) => {
+    if (typeof node === 'string') {
+      if (!isWellFormed(node)) out.push(segs);
+      return;
+    }
+    if (node === null || typeof node !== 'object') return;
+    for (const [k, v] of Object.entries(node)) {
+      // A member NAME is a string of the artefact too; it is reported at the member.
+      if (!Array.isArray(node) && !isWellFormed(k)) out.push([...segs, k]);
+      else visit(v, [...segs, k]);
+    }
+  };
+  visit(value, []);
+  return out.map((segs) => {
+    // The pointer itself may carry the surrogate (a member name): replace it by U+FFFD
+    // so the finding stays serialisable.
+    const at = pointerOf(segs).toWellFormed();
+    return finding('AGSC-E108',
+      `${at}: the value is not well-formed Unicode (a lone surrogate written as an escape); no JSON artefact can carry it (AGSC-01-14, AGSC-04-05)`,
+      { file: where.file, slug: where.slug, line: where.keyLines ? lineOf(where.keyLines, `/${String(segs[0]).toWellFormed()}`) : undefined });
+  });
+}
+
+/**
  * Compile the three schema documents once. knowledge/ never reads files: the caller
  * (adapters/node-fs.js `readSchemas`) hands the raw objects in.
  * @param {{item:object, config:object, bundle:object}} raw
@@ -149,6 +188,21 @@ function unknownKeys(frontmatter, options = {}) {
     else out.unknown.push(key);
   }
   return out;
+}
+
+/**
+ * Set `key` on `target` as an OWN, enumerable data property. A plain `target[key] =`
+ * with the key `__proto__` sets the object's prototype instead, so a frontmatter
+ * block named `__proto__` made its members look present
+ * (`__proto__: {prov: …}` hid a missing `prov`). The key stays a key like any other,
+ * which AGSC-02-05 then reports as a malformed name.
+ */
+function setOwn(target, key, value) {
+  if (key === '__proto__') {
+    Object.defineProperty(target, key, { configurable: true, enumerable: true, value, writable: true });
+  } else {
+    target[key] = value;
+  }
 }
 
 // AGSC-02-04: how a typed scalar MUST be written, and therefore the only forms this
@@ -223,7 +277,7 @@ function applyTypes(value, schema, root) {
           }
         }
       }
-      out[key] = sub ? applyTypes(value[key], sub, rootSchema) : value[key];
+      setOwn(out, key, sub ? applyTypes(value[key], sub, rootSchema) : value[key]);
     }
     return out;
   }
@@ -301,6 +355,7 @@ function item(frontmatter, options = {}) {
     return findings;
   }
 
+  findings.push(...unencodable(frontmatter, { ...base, keyLines }));
   const result = s.item(frontmatter);
   for (const e of result.errors) {
     findings.push(finding(
@@ -372,6 +427,7 @@ function index(frontmatter, options = {}) {
   if (frontmatter === null || typeof frontmatter !== 'object' || Array.isArray(frontmatter)) {
     return [finding('AGSC-E201', 'frontmatter is not a mapping', { file })];
   }
+  findings.push(...unencodable(frontmatter, { file, keyLines }));
   for (const e of s.bundle(frontmatter).errors) {
     // bundle.schema.json's one `not` is `{"required": ["type"]}`.
     // AGSC-01-04 names AGSC-E205 for a `type` key on the Bundle root
@@ -406,6 +462,21 @@ function index(frontmatter, options = {}) {
  * INJECTED as `options.checkAgents` by the application layer that owns both. The
  * context-boundary test enforces the direction of that arrow.
  */
+/**
+ * AGSC-01-19: the reason a `build.out` value is refused, or `null`. One function for
+ * the project file (`config()` below) and for the environment layers
+ * (`application/config/load.js`), so that `AGSC_BUILD_OUT=content` in the process
+ * environment or in a `.env` file is refused exactly as `"out": "content"` is.
+ *
+ * @param {string} out
+ * @returns {string|null}
+ */
+function buildOutFault(out) {
+  const first = out.split('/')[0].toLowerCase();
+  if (first !== 'content' && first !== 'dist') return null;
+  return `build.out: "${out}" names ${first === 'content' ? 'the source tree content/, which a build never writes (AGSC-08-02)' : 'dist/, which is generated and never a build output (AGSC-01-08)'}; build.out names another directory (AGSC-01-19)`;
+}
+
 /** Schema keywords that state a range or a value set — what AGSC-11-01 also checks. */
 const RANGE_KEYWORDS = Object.freeze(['enum', 'exclusiveMaximum', 'exclusiveMinimum', 'maximum', 'minimum', 'multipleOf', 'type']);
 
@@ -415,6 +486,7 @@ function config(configObject, options = {}) {
   if (configObject === null || typeof configObject !== 'object' || Array.isArray(configObject)) {
     return [finding('AGSC-E004', 'agsc.config.json is not a JSON object', { file })];
   }
+  findings.push(...unencodable(configObject, { file }));
   // AGSC-11-01 / §9.4: a value the boundary range check reports as `AGSC-E209` is not
   // reported again as the schema's `AGSC-E201`, which applies "only where no 2xx code
   // is more specific". The caller that runs that check names its keys.
@@ -436,6 +508,15 @@ function config(configObject, options = {}) {
         + ' (AGSC-00-25, AGSC-00-21)' : ''}`,
       { file, key: e.keyword === 'additionalProperties' ? String((e.params || {}).additionalProperty || '') : undefined }));
   }
+  // AGSC-01-19 (amended 2026-10-06): `build.out` names neither the source tree
+  // `content/` (AGSC-08-02: a build never writes there) nor the generated `dist/`
+  // (AGSC-01-08), nor a path under either; the first segment is compared ASCII
+  // case-insensitively, because on a case-insensitive file system `Content` IS
+  // `content/`. Until that day `"out": "content"` wrote the
+  // whole site into the source tree and exited 0.
+  const out = configObject.build && configObject.build.out;
+  const outFault = typeof out === 'string' ? buildOutFault(out) : null;
+  if (outFault !== null) findings.push(finding('AGSC-E204', outFault, { file, key: 'build.out' }));
   // AGSC-01-19: the development placeholder `http://localhost[:<port>][/]` is admitted, and
   // lint reports it "until the owner replaces it" — on every run, not only by the `init`
   // that wrote it. `build` and `ci` run this check too (verbs/lint.js `configAndRoot`).
@@ -445,7 +526,7 @@ function config(configObject, options = {}) {
       `site.base is the development placeholder ${base}; set an https: base before publishing (AGSC-01-19)`,
       { file, key: 'site.base', severity: 'warn' }));
   }
-  // AGSC-00-15 (2026-09-25): a Bundle whose `spec_version` has a MAJOR this tool does
+  // AGSC-00-15: a Bundle whose `spec_version` has a MAJOR this tool does
   // not implement is refused (`AGSC-E004`, the exit-2 class of AGSC-09-08); a newer
   // MINOR of the tool's own MAJOR is read, with a warning. The tool's version is
   // INJECTED as `options.ownVersion`: this module knows no version of its own.
@@ -542,6 +623,7 @@ function majorCompatible(declared, own) {
 
 module.exports = {
   schemas,
+  buildOutFault,
   applyTypes,
   item,
   index,
@@ -554,6 +636,7 @@ module.exports = {
   finding,
   withPosition,
   uniqueFindings,
+  unencodable,
   codeFor,
   TYPE_PLURAL,
   nfc,

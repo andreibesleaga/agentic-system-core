@@ -14,7 +14,7 @@ const { TYPE_PLURAL } = require('../knowledge/chunks.js');
 /**
  * `/`: the Bundle's own introduction (the body of `content/index.md`) and a short
  * Browse block linking each non-empty type index with its count, then Search and Now.
- * It lists no item: the index pages do (owner, 2026-09-24).
+ * It lists no item: the index pages do.
  */
 function frontPage({ base, bundle, indexFrontmatter, items, pageOptions, render, schemaOrg, site, textBytes }) {
   const title = site.title == null ? indexFrontmatter.title : site.title;

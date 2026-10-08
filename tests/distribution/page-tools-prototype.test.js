@@ -56,16 +56,16 @@ test('an inherited member name never becomes an item IRI or a Markdown body', ()
 });
 
 test('remember refuses an inherited member as a kind and never names a function (AGSC-09-14b)', () => {
+  // Since 2026-10-06 (finding G5) a kind outside the five is AGSC-E203; until then it
+  // fell back to a concept. Either way no inherited member may become a type.
   const tools = pageTools.pageToolset(corpus(), null);
   for (const name of INHERITED) {
     const answer = tools.call('remember', {
       kind: name, title: 'Title Here', body: 'b', at: '2026-01-01T00:00:00Z',
     });
-    assert.equal(answer.type, 'proposal', `remember(kind=${name})`);
-    assert.equal(answer.body.path, 'content/concepts/title-here.md',
-      `remember(kind=${name}) must fall back to concept, not to ${name}`);
-    assert.equal(typeof answer.body.frontmatter.type, 'string');
-    assert.equal(answer.body.frontmatter.type, 'concept');
+    assert.equal(answer.type, 'error', `remember(kind=${name})`);
+    assert.equal(answer.body.code, 'AGSC-E203', `remember(kind=${name})`);
+    assert.equal(JSON.stringify(answer).includes('function'), false, `remember(kind=${name}) names a function`);
   }
 });
 

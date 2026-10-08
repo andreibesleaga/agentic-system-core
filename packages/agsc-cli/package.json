@@ -1,7 +1,7 @@
 {
     "name": "agsc-cli",
-    "version": "1.0.0-rc.6",
-    "description": "`agsc` \u2014 the short command name for the AgenticSystemCore engine. This package is an alias: it installs `agentic-system-core` at the exact same version and forwards every verb to it.",
+    "version": "1.0.0-rc.7",
+    "description": "`agsc` — the short command name for the AgenticSystemCore engine. This package is an alias: it installs `agentic-system-core` at the exact same version and forwards every verb to it.",
     "bin": {
         "agsc": "bin/agsc.js"
     },
@@ -14,7 +14,7 @@
         "node": ">=22.13.0"
     },
     "dependencies": {
-        "agentic-system-core": "1.0.0-rc.6"
+        "agentic-system-core": "1.0.0-rc.7"
     },
     "keywords": [
         "agentic",

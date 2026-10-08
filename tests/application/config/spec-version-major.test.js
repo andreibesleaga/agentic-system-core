@@ -15,17 +15,20 @@ const config = (version) => ({
   site: { base: 'https://example.org/', title: 'Example' },
   spec_version: version,
 });
-const codes = (version, own) => lintVerb.configAndRoot({ config: config(version), index: null }, { ownVersion: own })
+// The synthetic Bundle has no root document, which is AGSC-E901 since 2026-10-06
+// (finding C19); this file is about the configuration, so that finding is set aside.
+const configOnly = (findings) => findings.filter((f) => f.file !== 'content/index.md');
+const codes = (version, own) => configOnly(lintVerb.configAndRoot({ config: config(version), index: null }, { ownVersion: own }))
   .map((f) => [f.code, f.severity]);
 
 test('another MAJOR is AGSC-E004 and exit class 2; a newer MINOR warns; the own version is silent', () => {
-  assert.deepStrictEqual(codes('2.0.0', '1.0.0-rc.6'), [['AGSC-E004', 'error']]);
+  assert.deepStrictEqual(codes('2.0.0', '1.0.0-rc.7'), [['AGSC-E004', 'error']]);
   assert.ok(main.USAGE_CLASS_CODES.has('AGSC-E004'));
-  assert.deepStrictEqual(codes('1.1.0', '1.0.0-rc.6'), [['AGSC-E506', 'warn']]);
-  assert.deepStrictEqual(codes('1.0.0-rc.6', '1.0.0-rc.6'), []);
+  assert.deepStrictEqual(codes('1.1.0', '1.0.0-rc.7'), [['AGSC-E506', 'warn']]);
+  assert.deepStrictEqual(codes('1.0.0-rc.7', '1.0.0-rc.7'), []);
   assert.deepStrictEqual(codes('1.0.0', '1.2.3'), []);
 });
 
 test('without an injected version nothing is compared, as before', () => {
-  assert.deepStrictEqual(lintVerb.configAndRoot({ config: config('9.0.0'), index: null }), []);
+  assert.deepStrictEqual(configOnly(lintVerb.configAndRoot({ config: config('9.0.0'), index: null })), []);
 });

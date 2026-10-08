@@ -2,7 +2,7 @@
 
 These files, together with `spec/00`–`spec/11`, `schema/*.json` and `ontology/agsc.ttl`, are the definition of AgenticSystemCore. A port in any language MUST be able to reach conformance from this directory and the fixture Bundle `tests/fixtures/minimal/` (which eight cases name as `"bundle": "fixtures/minimal"`) alone, without reading a line of the reference engine (NFR-02, AGSC-00-01).
 
-In short: every file here is one case that cites one rule; a port loads the JSON, runs the case and compares its result with `expected`. This is the first public vector set, published with `1.0.0-rc.6`, and no vector in it is withdrawn. From now on a vector is never edited in place to change its case: where a vector and its rule disagree, the rule is normative (AGSC-00-03), the corrected case ships as a new vector with a new id, and the old file stays in this directory with `level` `withdrawn`, a `reason` and, where it has a successor, `superseded_by` (AGSC-00-16, AGSC-09-04, AGSC-09-05).
+In short: every file here is one case that cites one rule; a port loads the JSON, runs the case and compares its result with `expected`. The set is versioned with the specification and ships with each of its releases. A released vector is never edited in place to change its case: where a vector and its rule disagree, the rule is normative (AGSC-00-03), the corrected case ships as a new vector with a new id, and the old file stays in this directory with `level` `withdrawn`, a `reason` and, where it has a successor, `superseded_by` (AGSC-00-16, AGSC-09-04, AGSC-09-05).
 
 ## Format
 
@@ -48,7 +48,7 @@ What a conformance claim states is listed once, in AGSC-09-01: among it the Leve
 
 ## Present coverage
 
-**The totals are derived, never typed here** — `node tools/count-artifacts --json` reports `vectors_total`, `vectors_required`, `vectors_optional` and `vectors_withdrawn` for the tree as it stands, and that command is the only statement of them this repository makes. The first public set (`1.0.0-rc.6`) withdraws no vector.
+**The totals are derived, never typed here** — `node tools/count-artifacts --json` reports `vectors_total`, `vectors_required`, `vectors_optional` and `vectors_withdrawn` for the tree as it stands, and that command is the only statement of them this repository makes. A withdrawn vector stays in the set, so `vectors_withdrawn` counts every case withdrawn so far.
 
 **Coverage status:** derived, never typed — `node tools/count-artifacts --json` reports `rules`, `rules_with_vector` and `rules_without_vector` for `spec/00`–`spec/11`. `nquads` expectations follow AGSC-05-31 (plain literals carry `^^xsd:string` in N-Quads); `severity` is `warn`, never `warning` (AGSC-09-11); a vector carrying `requires_surface` is skipped-as-passed by a node that declares none of the named surfaces (AGSC-09-04).
 

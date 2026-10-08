@@ -104,17 +104,22 @@ function etag(hex) {
  */
 function headerSets(config = {}) {
   const restricted = config.visibility === 'restricted';
-  const sets = [{ route: '/*', headers: [...SITE_WIDE] }];
+  // AGSC-06-17 (amended 2026-10-06): ONE set per address pattern, in the order the
+  // patterns first occur. The reference host serves only one of two blocks written
+  // for the same pattern; until 2026-10-06 the CORS pair and
+  // the content type of fourteen addresses were two blocks, and the host dropped the
+  // CORS one.
+  const byRoute = new Map();
+  const add = (route, headers) => {
+    if (!byRoute.has(route)) byRoute.set(route, []);
+    byRoute.get(route).push(...headers);
+  };
+  add('/*', SITE_WIDE);
   // AGSC-11-05: the discovery link as a response header, on the Bundle IRI.
-  sets.push({
-    route: '/',
-    headers: [['Link', visibility.DESCRIBEDBY_LINK_HEADER]],
-  });
+  add('/', [['Link', visibility.DESCRIBEDBY_LINK_HEADER]]);
   // AGSC-11-20: a restricted node serves the discovery document publicly and
   // applies the wildcard to NOTHING else.
-  for (const route of (restricted ? [WELLKNOWN_PATH] : PUBLIC_ARTEFACTS)) {
-    sets.push({ route, headers: CORS.map(([k, v]) => [k, v]) });
-  }
+  for (const route of (restricted ? [WELLKNOWN_PATH] : PUBLIC_ARTEFACTS)) add(route, CORS);
   for (const [route, type] of CONTENT_TYPES) {
     const headers = [['Content-Type', type]];
     if (route === WELLKNOWN_PATH) {
@@ -123,9 +128,9 @@ function headerSets(config = {}) {
       headers.push(['Link', visibility.PROFILE_LINK_HEADER]);
     }
     if (NO_CACHE.includes(route)) headers.push(['Cache-Control', 'no-cache']);
-    sets.push({ route, headers });
+    add(route, headers);
   }
-  return sets;
+  return [...byRoute].map(([route, headers]) => ({ route, headers: headers.map(([k, v]) => [k, v]) }));
 }
 
 /** `_headers`, generated (AGSC-06-04). */

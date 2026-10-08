@@ -3,6 +3,6 @@
   "bundle": { "id": "a", "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0", "license_schema": "CC0-1.0", "operator": "human:operator" },
   "peers": ["https://b.example/.well-known/knowledge-linkset"],
   "site": { "base": "https://a.example/", "tagline": "A demo node of the AgenticSystemCore format.", "tdm_crawlers": ["CCBot", "GPTBot"], "title": "a demo" },
-  "spec_version": "1.0.0-rc.6",
+  "spec_version": "1.0.0-rc.7",
   "tags": { "allowed": ["agents", "patterns"] }
 }

@@ -6,13 +6,24 @@
 'use strict';
 
 const env = require('./env.js');
+const { buildOutFault } = require('../../knowledge/validate.js');
+
+/**
+ * Names that address JavaScript's object machinery rather than a configuration key.
+ * Configuration is CLOSED (AGSC-01-18): none of them is a key of the schema, so the
+ * config lane reports each as `AGSC-E004`; the merge never writes through them. Until
+ * 2026-10-06 `{"__proto__": {"x": 1}}` in
+ * `agsc.config.json` set `Object.prototype.x` for the whole engine process.
+ */
+const UNSAFE_SEGMENTS = Object.freeze(new Set(['__proto__', 'constructor', 'prototype']));
 
 function setPath(obj, dottedPath, value) {
   const segs = dottedPath.split('.');
+  if (segs.some((s) => UNSAFE_SEGMENTS.has(s))) return;
   let cur = obj;
   for (let i = 0; i < segs.length - 1; i++) {
     const s = segs[i];
-    if (typeof cur[s] !== 'object' || cur[s] === null || Array.isArray(cur[s])) cur[s] = {};
+    if (!Object.prototype.hasOwnProperty.call(cur, s) || typeof cur[s] !== 'object' || cur[s] === null || Array.isArray(cur[s])) cur[s] = {};
     cur = cur[s];
   }
   cur[segs[segs.length - 1]] = value;
@@ -32,6 +43,7 @@ function mergeLayer(config, sources, layerObj, layerName, prefix) {
     return;
   }
   for (const [k, v] of Object.entries(layerObj)) {
+    if (UNSAFE_SEGMENTS.has(k)) continue;
     mergeLayer(config, sources, v, layerName, prefix.concat([k]));
   }
 }
@@ -47,6 +59,25 @@ function coerce(rawValue, type) {
     return { ok: false };
   }
   return { ok: true, value: rawValue };
+}
+
+/**
+ * The reason a string an environment layer sets is refused, or `null`.
+ * @param {string} name the AGSC_* name
+ * @param {{path:string, type:string, pattern?:string}} desc
+ * @param {*} value the coerced value
+ * @returns {string|null}
+ */
+function grammarFault(name, desc, value) {
+  if (typeof value !== 'string') return null;
+  if (typeof desc.pattern === 'string' && !new RegExp(desc.pattern, 'u').test(value)) {
+    return `${name}: ${JSON.stringify(value)} does not match the grammar of ${desc.path} (${desc.pattern})`;
+  }
+  if (desc.path === 'build.out') {
+    const fault = buildOutFault(value);
+    if (fault !== null) return `${name}: ${fault}`;
+  }
+  return null;
 }
 
 /**
@@ -79,6 +110,16 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
       const c = coerce(rawValue, desc.type);
       if (!c.ok) {
         findings.push({ code: 'AGSC-E204', message: `${name} does not match the ${desc.type} type of ${desc.path}`, severity: 'error', path: desc.path });
+        continue;
+      }
+      // The value of a key meets that key's grammar whichever layer sets it
+      // (AGSC-01-37): the schema `pattern`, and for `build.out` the rule that it
+      // never names `content/` or `dist/` (AGSC-01-19). Until 2026-10-07 only the
+      // project file was checked, and `AGSC_BUILD_OUT=content` built into the
+      // source tree with exit 0.
+      const grammar = grammarFault(name, desc, c.value);
+      if (grammar !== null) {
+        findings.push({ code: 'AGSC-E204', message: grammar, severity: 'error', path: desc.path });
         continue;
       }
       setPath(config, desc.path, c.value);
@@ -133,7 +174,7 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
  *   `related[]`, reported as `AGSC-E209`. It is INJECTED, not imported:
  *   AGSC-11-01 belongs to the Boundary context
  *   (`boundary/visibility.js#checkBoundaryConfig`) and this module must be
- * able to run without it (2026-09-18 — `chunks.max_bytes` is
+ * able to run without it (`chunks.max_bytes` is
  *   never clamped by the emitter, it is refused here).
  *
  * `sources[path]` is one of 'flag'|'env'|'dotenv'|'project'|'user'|'default'.
@@ -149,17 +190,14 @@ function load(options) {
 
   // 1. schema defaults (lowest precedence). config.schema.json is frozen at
   // the current tag and does not carry a literal JSON-Schema `default` for
-  // four keys the spec prose nonetheless defaults (reported as a schema
-  // defect, fixed at the next release candidate — report). Applied
+  // four keys the spec prose nonetheless defaults (a schema gap). Applied
   // here, explicitly, so the engine behaves per the spec today regardless
   // of the schema gap:
   //   - AGSC-01-19: `build.out` MUST default to "www".
   //   - spec/06-surfaces.md ("/feed.xml is emitted only when build.feed is
-  //     true (default true)"): `build.feed` defaults to true — NOTE this
-  //     corrects the 2026-09-18 note, which stated
-  //     "build.feed false"; the specification text is the authoritative
-  //     value per project rule 6 ("the specification is the truth"), and it
-  //     is unambiguous here.
+  //     true (default true)"): `build.feed` defaults to true, not false;
+  //     the specification text is the authoritative value, and it is
+  //     unambiguous here.
   //   - AGSC-01-18: `i18n.default` defaults to "en".
   //   - AGSC-09-94 (AGSC-01-18 "run{enabled,...} required... enabled default
   //     false"): `run.enabled` defaults to false.

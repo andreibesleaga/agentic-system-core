@@ -61,7 +61,7 @@ function build({ license, crawlers, aiItem = false, disclaimer = null }) {
   const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
   const built = site.build(bundle, { clock, fs: port }, {
-    specVersion: '1.0.0-rc.6', version: '0.0.0',
+    specVersion: '1.0.0-rc.7', version: '0.0.0',
     securityTxt: 'Contact: https://example.org/contact\n',
   });
   fs.rmSync(dir, { force: true, recursive: true });

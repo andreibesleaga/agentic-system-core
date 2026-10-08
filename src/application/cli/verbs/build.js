@@ -23,17 +23,30 @@ function outPort(fs, out) {
 }
 
 function run(ctx) {
+  const refused = helpers.levelRefusal(ctx);
+  if (refused !== null) return refused;
   const bundle = helpers.bundleOf(ctx);
   // The configuration and the Bundle root are checked as `lint` checks them: a build
   // never publishes what `lint` rejects there (an `http://` peer into the discovery
   // document, a root missing `spec_version`). The item and attachment checks already
   // run inside the build.
   const gate = lintVerb.configAndRoot(bundle, { ownVersion: ctx.specVersion }).filter((f) => !(f.code === 'AGSC-E901' && f.file === 'agsc.config.json'));
-  const built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
   // AGSC-04-09: the Clock reports when the build instant defaulted to 0
   // (AGSC-E606); that is a build fact, so it is reported by the verbs that emit.
   const clockFindings = ctx.ports.clock && typeof ctx.ports.clock.findings === 'function'
     ? ctx.ports.clock.findings() : [];
+  let built;
+  try {
+    built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
+  } catch (e) {
+    // AGSC-09-11: a fault with a registered code stops the build and writes nothing
+    // (AGSC-09-08), and it is reported BESIDE everything found before it — the
+    // configuration gate's findings and the build's own (`e.findings`) — never
+    // instead of them. A fault with no registered code stays an internal error.
+    if (!(e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code))) throw e;
+    const fault = { code: e.code, file: typeof e.file === 'string' ? e.file : '', message: String(e.message || e.code), severity: 'error' };
+    return { status: 'fail', findings: dedupe([...clockFindings, ...gate, ...(Array.isArray(e.findings) ? e.findings : []), fault]) };
+  }
   const out = (ctx.config && ctx.config.build && ctx.config.build.out) || site.DEFAULT_OUT;
 
   // AGSC-09-08: a build with an error emits nothing — a half-written output

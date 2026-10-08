@@ -79,7 +79,7 @@
         "base": "https://example.org/",
         "title": "Example"
       },
-      "spec_version": "1.0.0-rc.6"
+      "spec_version": "1.0.0-rc.7"
     },
     "proposals": [
       {
@@ -130,7 +130,7 @@
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "rule": "AGSC-10-17"
 }

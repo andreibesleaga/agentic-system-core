@@ -41,7 +41,9 @@ function memoryPort(seed = {}) {
 
 test('the four values and their targets are exactly AGSC-08-12\'s, and the list is shared', () => {
   assert.deepStrictEqual(Object.keys(forge.TARGETS).sort(), [...ALL].sort());
-  assert.deepStrictEqual(forge.TARGETS, {
+  // Prototype-free since 2026-10-06 (finding C14): `constructor` is not a target.
+  assert.strictEqual(Object.getPrototypeOf(forge.TARGETS), null);
+  assert.deepStrictEqual({ ...forge.TARGETS }, {
     codeowner: 'CODEOWNERS',
     hook: 'pre-commit',
     ruleset: 'ruleset.json',

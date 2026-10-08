@@ -17,15 +17,14 @@ const ROOT = path.resolve(__dirname, '..', '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
 
-const RS = String.fromCharCode(30);
+const NUL = String.fromCharCode(0);
 const US = String.fromCharCode(31);
-const GS = String.fromCharCode(29);
 
 /** Two commits in the shape the git-log read asks for (AGSC-08-20b). */
 const HISTORY = [
   [`${'a'.repeat(40)}`, '', '1764547200', 'tag: v1.0.0', 'first\n', 'content/index.md\n'],
   [`${'b'.repeat(40)}`, 'a'.repeat(40), '1767225600', 'HEAD -> main', 'second\n', 'content/concepts/handoff.md\n'],
-].map(([sha, parents, seconds, decorations, message, files]) => `${RS}${[sha, parents, seconds, decorations, message].join(US)}${GS}\n${files}`).join('');
+].map(([sha, parents, seconds, decorations, message, files]) => `${NUL}${[sha, parents, seconds, decorations, message].join(US)}${NUL}\n\n${files}`).join('');
 
 /** The stub runner: the history, and a tree hash for `content/`. */
 const proc = {

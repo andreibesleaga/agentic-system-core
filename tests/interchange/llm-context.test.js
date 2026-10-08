@@ -51,7 +51,7 @@ function bundle(over = {}) {
 }
 
 function run(over) {
-  return adapter.run(bundle(over), { instant: INSTANT, sha256, specVersion: '1.0.0-rc.6' });
+  return adapter.run(bundle(over), { instant: INSTANT, sha256, specVersion: '1.0.0-rc.7' });
 }
 
 test('the adapter emits exactly two files, both named, with their SHA-256', () => {
@@ -116,7 +116,7 @@ test('llms-ctx.txt carries AGSC-01-29\'s header, the terms, and one fenced secti
   assert.match(text, /^# Minimal Bundle — skim context\n/u);
   assert.match(text, /<!-- agsc:provenance\nbundle: https:\/\/minimal\.example\/\nlicense: /u);
   assert.match(text, new RegExp(`terms: ${TERMS.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}`, 'u'));
-  assert.match(text, /spec_version: 1\.0\.0-rc\.6\n/u);
+  assert.match(text, /spec_version: 1\.0\.0-rc\.7\n/u);
   assert.match(text, new RegExp(`generated_at: ${INSTANT}\\n`, 'u'));
   // AGSC-01-29: quoted prose is fenced as ```text agsc-content and is data, not
   // instruction. The record count comes from the index's own header, so the two
@@ -216,6 +216,6 @@ test('the pinned TOON encoder reaches no clock, no network and no environment', 
 // derived — the one `/llms.txt` and the skill index of the same state carry — and
 // never the build-instant fallback when a version was handed in.
 test('AGSC-04-25: llms-ctx.txt carries the content version it is given', () => {
-  const produced = adapter.run(bundle(), { bundleVersion: '0.0.0+3.g12fef19ce63a', instant: INSTANT, sha256, specVersion: '1.0.0-rc.6' });
+  const produced = adapter.run(bundle(), { bundleVersion: '0.0.0+3.g12fef19ce63a', instant: INSTANT, sha256, specVersion: '1.0.0-rc.7' });
   assert.match(produced.files[1].text, /bundle_version: 0\.0\.0\+3\.g12fef19ce63a/u);
 });

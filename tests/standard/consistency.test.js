@@ -102,6 +102,7 @@ const NOT_RAISED = Object.freeze({
   'AGSC-E410': 'language variants are not implemented by the reference engine yet (AGSC-01-13a)',
   'AGSC-E604': 'every emitted text is normalised to NFC by construction, so the fault cannot arise (AGSC-04-07)',
   'AGSC-E706': 'a content-branch commit outside the pull-request path is a forge fact (AGSC-08-26)',
+  'AGSC-E508': 'no 1.0 rule raises it: AGSC-10-02 no longer describes a Level-0 provenance inheritance (amended 2026-10-07), and the code stays registered (AGSC-09-15)',
 });
 
 test('the §9.4 registry and the codes the rules name are one set (AGSC-09-15, AGSC-09-91)', () => {

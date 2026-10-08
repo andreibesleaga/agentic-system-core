@@ -175,7 +175,7 @@ function pageTools() {
   const port = createFileSystem(MINIMAL);
   const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
   const built = site.build(bundle, { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: port },
-    { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+    { specVersion: '1.0.0-rc.7', version: '0.0.2' });
   const sources = {};
   for (const [route, text] of built.files) sources[route] = String(text);
   const registered = [];

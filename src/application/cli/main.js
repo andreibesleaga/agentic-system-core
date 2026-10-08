@@ -29,7 +29,7 @@ const VERBS = [
  * (`options.spec_version`), which is what keeps a released vector reproducible
  * across an rc bump (AGSC-00-16).
  */
-const SPEC_VERSION = '1.0.0-rc.6';
+const SPEC_VERSION = '1.0.0-rc.7';
 
 // The five global flags of AGSC-09-09; every verb parser gets these.
 const GLOBAL_FLAGS = [
@@ -156,6 +156,14 @@ function retiredFlagHint(verb, argv) {
  */
 const USAGE_CLASS_CODES = new Set(['AGSC-E003', 'AGSC-E004']);
 
+/**
+ * AGSC-09-08 (as amended 2026-10-06) with AGSC-08-20a: the other exit-2 class is the
+ * environment the tool cannot run against — a git history too shallow to derive the
+ * ledger, `AGSC-E703` ("a shallow clone MUST fetch the full history or exit 2 with
+ * AGSC-E703"; the registry row says "exit 2"). Until then the engine exited 1.
+ */
+const ENVIRONMENT_CLASS_CODES = new Set(['AGSC-E703']);
+
 const ADAPTER_FLAGS = {
   import: {
     selector: '--from',
@@ -208,7 +216,8 @@ function adapterFlagsFor(verb, argv) {
   const at = argv.indexOf(scope.selector);
   const named = at === -1 ? undefined : argv[at + 1];
   if (named === undefined) return new Map();
-  if (scope.adapters[named]) return scope.adapters[named];
+  // An own entry only: `--to constructor` is not an adapter.
+  if (Object.prototype.hasOwnProperty.call(scope.adapters, named)) return scope.adapters[named];
   // Only a PATH is known to name a plugin before anything is resolved; a bare name
   // may be an adapter this engine does not ship, whose flags AGSC-09-09 refuses.
   return pluginLoader.classify(named) === 'path' && PLUGIN_FLAGS[verb] ? PLUGIN_FLAGS[verb] : new Map();
@@ -427,7 +436,7 @@ const VERB_USAGE = Object.freeze({
 });
 
 /**
- * AGSC-09-09 (as stated 2026-09-24): a positional argument a verb does not define is
+ * AGSC-09-09: a positional argument a verb does not define is
  * `AGSC-E002` with exit 2, exactly like an unknown flag. The table is the one
  * `VERB_USAGE` prints: the number of positionals each verb defines, `Infinity`
  * for `compose <slug> [<slug>…]`. Before this check `export --markdown ./out`
@@ -499,7 +508,7 @@ function helpText(version, verb) {
  *   are honoured (AGSC-09-09); never read from `process.env` directly here.
  * - root: the Bundle root (default '.').
  * - specVersion/version: OPTIONAL overrides for the envelope's corresponding
- *   members; default to SPEC_VERSION ('1.0.0-rc.6') and package.json's
+ *   members; default to SPEC_VERSION ('1.0.0-rc.7') and package.json's
  *   version. A test
  *   harness pins these per-vector (e.g. cli-0002's options.version) so the
  *   envelope stays reproducible independent of the engine's own release.
@@ -652,26 +661,30 @@ function main(argv, ctx) {
     root, ports: ports.fs, env, argvFlags: {}, userConfig: opts.userConfig, checkBoundary: checkBoundaryConfig,
   });
 
-  // AGSC-09-94 (as amended 2026-09-24): run/trace are opt-in, disabled unless
+  // AGSC-09-94: run/trace are opt-in, disabled unless
   // run.enabled is true; with it false, both exit 2 with AGSC-E004 — a
-  // configuration the tool cannot run against (AGSC-09-08's exit-2 class). Until
-  // then the code was AGSC-E001, which is registered for an unknown verb, on a verb
-  // the engine knows.
-  if ((verb === 'run' || verb === 'trace')) {
-    const enabled = !!(loaded.config && loaded.config.run && loaded.config.run.enabled === true);
-    if (!enabled) {
-      if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E004', severity: 'error', message: `${verb} is disabled (run.enabled is false)` });
-      else writeLine(stderr, `agsc: AGSC-E004 ${verb} is disabled (run.enabled is false)\n`);
-      return 2;
-    }
-  }
+  // configuration the tool cannot run against (AGSC-09-08's exit-2 class). The code
+  // is not AGSC-E001, which is registered for an unknown verb: the engine knows
+  // these verbs.
+  //
+  // AGSC-09-10: the verb is resolved and the code registered, so the refusal is an
+  // envelope like any other verb's (exit 2 through AGSC-E004's class below); until
+  // 2026-10-06 stdout stayed empty under `--json` (cli-0013, withdrawn for cli-0017).
+  const disabled = (verb === 'run' || verb === 'trace')
+    && !(loaded.config && loaded.config.run && loaded.config.run.enabled === true);
 
+  // A verb module that fails to load is a packaging fault: it keeps the internal-error
+  // path, and the reason it failed is printed with it rather than replaced.
   let verbModule;
+  let loadFault = null;
   try {
     verbModule = require(`./verbs/${verb}.js`);
   } catch (e) {
     verbModule = null;
+    loadFault = (e && e.message) || String(e);
   }
+  const noModule = () => `agsc: internal error: ${verb}: no verb module (AGSC-09-07)`
+    + `${loadFault === null ? '' : `: ${loadFault}`}\n`;
 
   const verbCtx = {
     argv: positionals,
@@ -697,13 +710,16 @@ function main(argv, ctx) {
   if (STREAMING_VERBS.has(verb)) {
     for (const f of (loaded.findings || [])) writeFindingLine(stderr, f);
     if (!verbModule || typeof verbModule.run !== 'function') {
-      writeFindingLine(stderr, { code: 'AGSC-E001', severity: 'error', message: `${verb}: no implementation` });
-      return 2;
+      writeLine(stderr, noModule());
+      return 1;
     }
+    // A fault with a registered code keeps that code; one with none is reported
+    // as the file fault it has always been.
     return Promise.resolve()
       .then(() => verbModule.run(verbCtx))
       .then(() => 0, (e) => {
-        writeFindingLine(stderr, { code: 'AGSC-E901', severity: 'error', message: `${verb}: ${e && e.message}` });
+        const code = e && typeof e.code === 'string' && REGISTERED_CODE.test(e.code) ? e.code : 'AGSC-E901';
+        writeFindingLine(stderr, { code, severity: 'error', message: `${verb}: ${e && e.message}` });
         return 1;
       });
   }
@@ -721,19 +737,27 @@ function main(argv, ctx) {
   // "exactly one envelope on stdout under --json" holds either way.
   let result;
   try {
-    if (!verbModule || typeof verbModule.run !== 'function') {
-      writeLine(stderr, `agsc: internal error: ${verb}: no verb module (AGSC-09-07)\n`);
+    if (disabled) {
+      result = {
+        findings: [{ code: 'AGSC-E004', message: `${verb} is disabled (run.enabled is false; AGSC-09-94)`, severity: 'error' }],
+        status: 'fail',
+      };
+    } else if (!verbModule || typeof verbModule.run !== 'function') {
+      writeLine(stderr, noModule());
       return 1;
+    } else {
+      result = verbModule.run(verbCtx);
     }
-    result = verbModule.run(verbCtx);
   } catch (e) {
     const code = e && typeof e.code === 'string' ? e.code : '';
     if (!REGISTERED_CODE.test(code)) {
       writeLine(stderr, `agsc: internal error: ${verb}: ${e && e.message}\n`);
       return 1;
     }
+    // AGSC-09-11: what the verb found before the fault is reported beside it — a
+    // module that throws hands its gathered findings over as `e.findings`.
     result = {
-      findings: [{
+      findings: [...(Array.isArray(e.findings) ? e.findings : []), {
         code,
         col: 1,
         file: (e && typeof e.file === 'string') ? e.file : '',
@@ -773,7 +797,8 @@ function main(argv, ctx) {
   // whole point is that configuration is the one surface where a newer version
   // must fail loudly (AGSC-00-23, AGSC-00-25, AGSC-01-22).
   if (envelope.status !== 'pass'
-    && envelope.findings.some((f) => f.severity === 'error' && USAGE_CLASS_CODES.has(f.code))) {
+    && envelope.findings.some((f) => f.severity === 'error'
+      && (USAGE_CLASS_CODES.has(f.code) || ENVIRONMENT_CLASS_CODES.has(f.code)))) {
     return 2;
   }
   return envelope.status === 'pass' ? 0 : 1;
@@ -791,6 +816,6 @@ function plainWhere(f) {
 }
 
 module.exports = {
-  main, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_USAGE,
+  main, ENVIRONMENT_CLASS_CODES, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_USAGE,
   adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
 };

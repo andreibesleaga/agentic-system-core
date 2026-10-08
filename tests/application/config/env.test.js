@@ -23,7 +23,12 @@ test('parseDotenv keeps only AGSC_* names, later line wins, comments/blank ignor
 test('envNameFor / pathForEnvName round-trip for a scalar key', () => {
   assert.equal(env.envNameFor('build.out'), 'AGSC_BUILD_OUT');
   const desc = env.pathForEnvName('AGSC_BUILD_OUT');
-  assert.deepEqual(desc, { kind: 'scalar', path: 'build.out', type: 'string' });
+  // The descriptor carries the schema's `pattern` (since 2026-10-07), so that a value
+  // set through an environment layer meets the same grammar as the project file's.
+  assert.deepEqual(desc, {
+    kind: 'scalar', path: 'build.out', type: 'string',
+    pattern: '^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*/?$',
+  });
 });
 
 test('pathForEnvName resolves integer/boolean types', () => {

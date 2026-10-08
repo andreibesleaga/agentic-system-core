@@ -87,7 +87,7 @@ Most memory benchmarks score a *conversational* memory that writes itself during
 
 ## Tools the kit uses or plans to use
 
-| tool | role | licence, as recorded in the project's research file of 2026-09-23 |
+| tool | role | licence |
 |---|---|---|
 | this repository's vectors and checkers | conformance, determinism | Apache-2.0 (code), CC0 (schemas, vectors) |
 | **BEIR** | the release format and the measure set | Apache-2.0 |

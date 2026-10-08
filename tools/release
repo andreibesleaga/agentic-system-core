@@ -4,8 +4,9 @@
 //
 // A documented, DRY-RUNNABLE path from a green tree to a published package. It
 // NEVER publishes: `npm publish` appears nowhere in this file, the tool's default
-// mode is a dry run, and even `--apply` only rewrites two version strings and one
-// changelog heading in the working tree. Publishing is done by the release
+// mode is a dry run, and even `--apply` only rewrites the version strings (the two
+// package files and the MCP Registry entry `server.json`) and one changelog heading in
+// the working tree. Publishing is done by the release
 // workflow, on a tag the MAINTAINER pushes, over npm trusted publishing (OIDC), and by
 // nothing else.
 //
@@ -49,7 +50,7 @@
 //      OIDC trusted publishing.
 // 4b. THE PyPI SIBLING. npm and PyPI are published at ONE version on
 //      launch day, so the sibling repository `../agentic-system-core-python` must
-//      state the PEP 440 spelling of this version (`1.0.0-rc.6` -> `1.0.0rc6`). It
+//      state the PEP 440 spelling of this version (`1.0.0-rc.7` -> `1.0.0rc7`). It
 //      is a DRY RUN: nothing is built, nothing is uploaded, no network is touched,
 //      and the only file read outside this repository is that one `pyproject.toml`.
 //      A sibling that is simply not checked out is a WARNING naming what was not
@@ -71,13 +72,15 @@ const path = require('node:path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
 const ALIAS_DIR = path.join('packages', 'agsc-cli');
+/** The MCP Registry entry of the npm package; it names `mcpName` and the npm version. */
+const SERVER_JSON = 'server.json';
 /** The sibling repository publishes to PyPI at the same version. */
 const PYTHON_DIR = 'agentic-system-core-python';
 const HELP = `tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
 
   The release lane of docs/PLAN.md §7, as a check. Nothing is ever published by
   this script: its default mode is a dry run and --apply writes only the version
-  strings and the changelog heading.
+  strings (package.json, the alias, server.json) and the changelog heading.
 
   --version <x.y.z>  the release being prepared (semver; greater than the current
                      package.json version is a bump, equal means the tree already
@@ -219,14 +222,33 @@ function releaseDate(env) {
 
 /** `a` is strictly greater than `b`, by semver precedence over the three numbers. */
 function isGreater(a, b) {
-  const parse = (v) => String(v).split('-')[0].split('.').map(Number);
-  const [am, an, ap] = parse(a);
-  const [bm, bn, bp] = parse(b);
+  const split = (v) => {
+    const text = String(v);
+    const dash = text.indexOf('-');
+    return dash === -1 ? [text, null] : [text.slice(0, dash), text.slice(dash + 1)];
+  };
+  const [aCore, aPre] = split(a);
+  const [bCore, bPre] = split(b);
+  const [am, an, ap] = aCore.split('.').map(Number);
+  const [bm, bn, bp] = bCore.split('.').map(Number);
   if (am !== bm) return am > bm;
   if (an !== bn) return an > bn;
   if (ap !== bp) return ap > bp;
-  // Same numbers: a release is greater than its own pre-release, and nothing else.
-  return String(b).includes('-') && !String(a).includes('-');
+  // Same numbers: a release is greater than its own pre-release; between two
+  // pre-releases SemVer 2.0.0 §11 compares the dot-separated identifiers left to
+  // right — numeric ones as numbers, below any alphanumeric one, the others in
+  // ASCII order — and a longer list is greater when every earlier identifier is equal.
+  if (aPre === null || bPre === null) return aPre === null && bPre !== null;
+  const ai = aPre.split('.');
+  const bi = bPre.split('.');
+  const numeric = (s) => /^(0|[1-9]\d*)$/u.test(s);
+  for (let i = 0; i < Math.min(ai.length, bi.length); i += 1) {
+    if (ai[i] === bi[i]) continue;
+    if (numeric(ai[i]) && numeric(bi[i])) return Number(ai[i]) > Number(bi[i]);
+    if (numeric(ai[i]) !== numeric(bi[i])) return !numeric(ai[i]);
+    return ai[i] > bi[i];
+  }
+  return ai.length > bi.length;
 }
 
 // --------------------------------------------------------------------------
@@ -359,8 +381,8 @@ function workflowFindings(root) {
  * The PEP 440 spelling of a SemVer version.
  *
  * The two version grammars are not the same and both packages are published at one
- * version, so the mapping is stated once, here. SemVer's `1.0.0-rc.6` is
- * PEP 440's `1.0.0rc6`: PEP 440 §"Pre-releases" admits `rcN` as a pre-release
+ * version, so the mapping is stated once, here. SemVer's `1.0.0-rc.7` is
+ * PEP 440's `1.0.0rc7`: PEP 440 §"Pre-releases" admits `rcN` as a pre-release
  * segment and writes it with no separator and no dot before the number. A version
  * with no pre-release part maps to itself.
  *
@@ -443,6 +465,25 @@ function pypiFindings(root, version) {
   return [];
 }
 
+/** 1b. `server.json` against the manifest: the same name and the same version. */
+function serverEntryFindings(entry, manifest) {
+  const findings = [];
+  if (manifest.mcpName !== undefined && entry.name !== manifest.mcpName) {
+    findings.push(finding('AGSC-E202', SERVER_JSON, 1,
+      `server.json names "${entry.name}" and package.json's mcpName is "${manifest.mcpName}";`
+      + ' the MCP Registry accepts the entry only when the two are equal'));
+  }
+  const stated = [['the server', entry.version],
+    ...(entry.packages || []).filter((p) => p.registryType === 'npm').map((p) => [`the npm package ${p.identifier}`, p.version])];
+  for (const [what, v] of stated) {
+    if (v !== manifest.version) {
+      findings.push(finding('AGSC-E202', SERVER_JSON, 1,
+        `server.json gives ${what} version "${v}" and the engine is ${manifest.version}; one version, in one place`));
+    }
+  }
+  return findings;
+}
+
 // --------------------------------------------------------------------------
 // 2. The changelog.
 // --------------------------------------------------------------------------
@@ -498,7 +539,7 @@ function checklist(version, bump = true) {
     'AGSC_AUDIT=1 node --test tests/arch/*.test.js   # the boundary lane',
     ...(bump ? [
       `node tools/release --version ${v}            # this script, dry run`,
-      `node tools/release --version ${v} --apply    # writes the two versions`,
+      `node tools/release --version ${v} --apply    # writes the versions`,
     ] : [
       'node tools/release                              # this script, dry run; the tree',
       `    # already carries ${v}, so there is no version to write`,
@@ -601,6 +642,11 @@ function run(argv, io = {}) {
         + ' pins the exact version it aliases, never a range'));
     }
   }
+  // 1b. the MCP Registry entry (`server.json`, published to the registry by the
+  // maintainer, never shipped in the package) names the same server as `mcpName`
+  // and carries the npm version, on the server and on its npm package entry.
+  const serverEntry = readJson(path.join(root, SERVER_JSON));
+  if (serverEntry !== null) findings.push(...serverEntryFindings(serverEntry, manifest));
   // Equal is not a fault: the first release of a version the tree already carries
   // (the versions were written when the release candidate was drafted) has nothing
   // to bump, so the checklist leaves out the two bump steps.
@@ -632,7 +678,7 @@ function run(argv, io = {}) {
   // 4c. public means clean.
   findings.push(...hygieneFindings(root, files));
 
-  // --apply: the two version strings and the changelog heading, and nothing else.
+  // --apply: the version strings and the changelog heading, and nothing else.
   const written = [];
   if (flags.has('--apply')) {
     const date = releaseDate(env);
@@ -652,6 +698,14 @@ function run(argv, io = {}) {
         };
         fs.writeFileSync(path.join(root, ALIAS_DIR, 'package.json'), `${JSON.stringify(aliasBumped, null, 4)}\n`);
         written.push(`${ALIAS_DIR}/package.json`);
+      }
+      if (serverEntry !== null) {
+        const bumpedEntry = {
+          ...serverEntry, version,
+          packages: (serverEntry.packages || []).map((p) => (p.registryType === 'npm' ? { ...p, version } : p)),
+        };
+        fs.writeFileSync(path.join(root, SERVER_JSON), `${JSON.stringify(bumpedEntry, null, 2)}\n`);
+        written.push(SERVER_JSON);
       }
       const updated = applyChangelog(changelog, version, date);
       if (updated !== changelog) {

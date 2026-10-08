@@ -11,7 +11,7 @@
     },
     "PRD-045": {
       "reason": "deferred",
-      "why": "the clone-and-rebuild half runs in the end-to-end lane over the real Bundles; the git mirror, the attested snapshot and the archive deposit are set up when the site goes live, outside this repository"
+      "why": "the clone-and-rebuild half runs in the end-to-end lane over the real Bundles; the per-release archive deposit is the Zenodo record of each final release (1.0.0 and later), outside this repository, and release candidates get none; the git mirror and the weekly attested snapshot are not in place at 1.0.0 and are planned for later, with no version fixed, as the note in docs/PRD.md says"
     },
     "PRD-048": {
       "reason": "host",

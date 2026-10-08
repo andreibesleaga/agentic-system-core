@@ -111,8 +111,7 @@ function findAgentEntry(config, name) {
  * with AGSC-E511 in the same place. Checked in that order (type first, then
  * count), matching AGSC-08-28(c)'s prose order.
  *
- * `tasks[]` enforcement (AGSC-08-28(c), added 2026-09-18 per the maintainer's
- * instruction): a Proposal, or one of its changes, MAY declare which
+ * `tasks[]` enforcement (AGSC-08-28(c)): a Proposal, or one of its changes, MAY declare which
  * AGSC-01-36 task it represents via a `task` member (`proposal.task` for the
  * whole Proposal, `change.task` to override it per change); when declared,
  * a task outside the entry's `tasks[]` is AGSC-E509. This is deliberately

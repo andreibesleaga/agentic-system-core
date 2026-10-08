@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.andreibesleaga/agentic-system-core",
+  "title": "AgenticSystemCore",
+  "description": "Read, cite, compose and remember over a Markdown knowledge Bundle, as MCP tools over stdio.",
+  "websiteUrl": "https://agenticsystemcore.com/docs/how-to-use/",
+  "repository": {
+    "url": "https://github.com/andreibesleaga/agentic-system-core",
+    "source": "github"
+  },
+  "version": "1.0.0-rc.7",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "agentic-system-core",
+      "version": "1.0.0-rc.7",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp",
+          "description": "The verb that serves the Bundle's tools, resources and prompt over stdio."
+        },
+        {
+          "type": "positional",
+          "valueHint": "bundle_path",
+          "format": "filepath",
+          "isRequired": true,
+          "description": "The folder of the Bundle to serve: the one that holds agsc.config.json and content/."
+        }
+      ]
+    }
+  ]
+}

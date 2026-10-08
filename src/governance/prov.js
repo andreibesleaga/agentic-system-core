@@ -16,7 +16,6 @@
 //   AGSC-E503 `prov.operator` missing                          AGSC-08-01
 //   AGSC-E504 DCO-Plus trailer missing or malformed            AGSC-08-06
 //   AGSC-E505 agent-authored change without matching operator  AGSC-08-07
-//   AGSC-E508 Level-0 item inherited `prov` (warning)          AGSC-10-02
 //   AGSC-E511 the lane holds more than `max_claims` tasks      AGSC-10-17
 
 const links = require('../knowledge/links.js');
@@ -58,56 +57,6 @@ const slugOfPath = (p) => {
   const base = String(p).slice(String(p).lastIndexOf('/') + 1);
   return base.endsWith('.md') ? base.slice(0, -3) : base;
 };
-
-/**
- * AGSC-08-01 / AGSC-10-02: an item's effective provenance, with the Level-0
- * inheritance made explicit rather than silent.
- *
- * @param {object} item a parsed Item or a flat frontmatter object
- * @param {object} [config] `agsc.config.json` (its `bundle.operator` is the fallback)
- * @returns {{prov:object, inherited:boolean, findings:Array<object>}}
- */
-function deriveProv(item, config = {}) {
-  const v = links.view(item);
-  const at = { file: v.path, slug: v.slug };
-  const authored = (v.fm && typeof v.fm.prov === 'object' && v.fm.prov !== null) ? v.fm.prov : null;
-  const bundleOperator = config && config.bundle ? config.bundle.operator : undefined;
-  const findings = [];
-
-  if (authored === null) {
-    if (typeof bundleOperator !== 'string' || bundleOperator === '') {
-      findings.push(finding('AGSC-E501', 'this item carries no `prov` (AGSC-08-01)', at));
-      return { prov: null, inherited: false, findings };
-    }
-    // AGSC-10-02: a Level-0 Bundle may leave `prov` to `bundle.operator`; the
-    // inheritance is recorded as a warning so that it is never invisible.
-    findings.push(finding('AGSC-E508',
-      `prov inherited from bundle.operator "${bundleOperator}" (AGSC-10-02)`,
-      { ...at, severity: 'warn' }));
-    return { prov: { origin: 'human', operator: bundleOperator }, inherited: true, findings };
-  }
-
-  const prov = { ...authored };
-  if (typeof prov.operator !== 'string' || prov.operator === '') {
-    if (typeof bundleOperator === 'string' && bundleOperator !== '') {
-      prov.operator = bundleOperator;
-      findings.push(finding('AGSC-E508',
-        `prov.operator inherited from bundle.operator "${bundleOperator}" (AGSC-10-02)`,
-        { ...at, severity: 'warn' }));
-    } else {
-      findings.push(finding('AGSC-E503', 'this item carries no `prov.operator` (AGSC-08-01)', at));
-    }
-  }
-  if (AI_ORIGINS.includes(prov.origin)) {
-    for (const key of ['agent', 'model']) {
-      if (typeof prov[key] === 'string' && prov[key] !== '') continue;
-      findings.push(finding('AGSC-E202',
-        `prov.${key} is required when prov.origin is "${prov.origin}" (AGSC-08-01)`,
-        { ...at, key: `prov.${key}` }));
-    }
-  }
-  return { prov, inherited: false, findings };
-}
 
 /** The last contiguous run of `Key: value` lines of a commit message (AGSC-08-20b). */
 function trailerBlock(message) {
@@ -295,7 +244,6 @@ module.exports = {
   checkClaims,
   checkGate,
   checkTrailers,
-  deriveProv,
   heldBy,
   isTerminal,
   parseAssisted,

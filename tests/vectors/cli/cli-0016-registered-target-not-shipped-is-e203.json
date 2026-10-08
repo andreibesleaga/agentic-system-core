@@ -1,0 +1,81 @@
+{
+  "area": "cli",
+  "description": "AGSC-00-20 (as amended 2026-10-06) with AGSC-00-23; supersedes cli-0009. A tool originates only what its declared version specifies, and where the construct is a value of a closed operator list the fault is AGSC-E203 — the code that already names a value outside a closed operator list — not a minted one (AGSC-09-15). Derivation, case by case. (1) `compose --emit executable`: `executable` is the target name AGSC-00-25 reserves to 1.1, and the emitter registry of AGSC-07-18 is closed at 1.x, so the value is refused with AGSC-E203. It is a finding and not a usage error: AGSC-09-08 reserves exit 2 for an unknown verb, an unknown flag, a missing argument or invalid configuration, and `--emit` is a known flag carrying a value the registry does not hold, so the exit code is 1. (2) `export --steer --target wombat`: the eleven target paths of AGSC-01-28 are equally closed and an unregistered name takes the same code and the same exit. (3) A registered target, `gabbe`: the registry holds the name, so what follows is the distribution's own answer. AGSC-07-18 makes no rendering mandatory at any Level, and AGSC-00-20 says that at 1.0 a rendering the distribution does not ship is refused with the registry's code. So a distribution either writes the rendering (exit 0) or refuses with AGSC-E203 and exit 1, and in no case answers AGSC-E001, which AGSC-09-07 registers for an unknown verb with exit 2. cli-0009 allowed AGSC-E001 for the third case and is withdrawn.",
+  "expected": {
+    "cases": [
+      {
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E203",
+            "severity": "error"
+          }
+        ],
+        "name": "emit-reserved-executable"
+      },
+      {
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E203",
+            "severity": "error"
+          }
+        ],
+        "name": "steer-unregistered-target"
+      },
+      {
+        "codes_absent": [
+          "AGSC-E001"
+        ],
+        "error_codes_allowed": [
+          "AGSC-E203"
+        ],
+        "exit_one_of": [
+          0,
+          1
+        ],
+        "name": "emit-registered-target",
+        "registry_accepts": true
+      }
+    ]
+  },
+  "id": "cli-0016",
+  "input": {
+    "cases": [
+      {
+        "argv": [
+          "compose",
+          "--from",
+          "router",
+          "--emit",
+          "executable"
+        ],
+        "name": "emit-reserved-executable"
+      },
+      {
+        "argv": [
+          "export",
+          "--steer",
+          "--target",
+          "wombat"
+        ],
+        "name": "steer-unregistered-target"
+      },
+      {
+        "argv": [
+          "compose",
+          "--from",
+          "router",
+          "--emit",
+          "gabbe"
+        ],
+        "name": "emit-registered-target"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-00-20"
+}

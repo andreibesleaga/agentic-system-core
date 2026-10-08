@@ -2,7 +2,7 @@
 
 **Summary.** Integration tests of the installed commands end to end: the build instant from git, `init` then `ci`, the user configuration file. Subject: `bin/`.
 
-**Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
+**Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md).
 
 ```bash
 node --test "tests/bin/*.test.js"

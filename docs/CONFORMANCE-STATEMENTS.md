@@ -26,7 +26,7 @@ vectors, and nobody needs permission to publish the result.
 > «named» areas, with Unicode «version»«, using «checker» ».
 
 The specification version is the full one, a release candidate named as such
-(`1.0.0-rc.6`, not `1.0`), and the checker part is needed only when you ran the
+(`1.0.0-rc.7`, not `1.0`), and the checker part is needed only when you ran the
 cases with someone else's checker rather than your own. Every element a claim
 states is listed once, in rule AGSC-09-01.
 

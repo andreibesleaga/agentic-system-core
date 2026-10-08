@@ -37,7 +37,7 @@ const slugs = require('../knowledge/slug.js');
 const adopt = require('../knowledge/adopt.js');
 const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
-const { pageBoardMove, pageClaimants } = require('./page-tools.js');
+const { pageBoardMove, pageClaimants, pageRememberFault } = require('./page-tools.js');
 const boardLanes = require('../governance/board-lanes.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every export carries. */
@@ -49,9 +49,11 @@ const SOURCE_RESOURCE = /^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u;
 /** AGSC-02-09: the actor grammar (the `actor` definition of item.schema.json). */
 const ACTOR = /^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u;
 /** AGSC-09-14b: `kind` to item `type`. */
-const KIND_TO_TYPE = Object.freeze({
+// A closed list read with a name from the outside: prototype-free, so `constructor`,
+// `toString` or `__proto__` is not an entry.
+const KIND_TO_TYPE = Object.freeze(Object.assign(Object.create(null), {
   concept: 'concept', episode: 'episode', gate: 'gate', lesson: 'lesson', procedure: 'procedure', task: 'concept',
-});
+}));
 
 function plural(type) {
   return type === 'cluster' ? 'clusters' : `${type}s`;
@@ -218,7 +220,11 @@ function tools(bundle, options) {
   };
 
   implementations.compose = (args) => {
-    const selection = Array.isArray(args.selection) ? args.selection : [];
+    // AGSC-09-13a: a selection that is not an array is not the empty one.
+    if (!Array.isArray(args.selection)) {
+      return errorEnvelope('compose', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
+    }
+    const selection = args.selection;
     const items = (bundle.items || []).map((i) => Object.assign({ slug: i.slug, type: i.type }, i.frontmatter));
     const result = compose(items, selection);
     return envelope('compose', 'verdict', Object.freeze({
@@ -320,7 +326,11 @@ function tools(bundle, options) {
     if (args.actor !== undefined && !ACTOR.test(String(args.actor))) {
       return errorEnvelope('remember', 'AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
     }
-    // AGSC-09-14b (2026-09-25): an item without an operator is not the conforming
+    // AGSC-09-14b: every argument copied into the item is held to the schema's bound
+    // first — the page tools run the same function.
+    const fault = pageRememberFault(args, type, (slug) => byslug.has(slug));
+    if (fault !== null) return errorEnvelope('remember', fault.code, fault.message);
+    // AGSC-09-14b: an item without an operator is not the conforming
     // item this tool promises. A declared, enabled lane's entry supplies it
     // (AGSC-08-28(b)); every other caller of the local server declares one.
     let operator = typeof args.operator === 'string' ? args.operator : null;
@@ -349,7 +359,7 @@ function tools(bundle, options) {
       frontmatter.started = args.at;
       frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
       // No `severity` here: the episode branch has no such key, and a defaulted one
-      // was reported by lint as unknown (AGSC-09-14b as corrected 2026-09-24).
+      // would be reported by lint as unknown (AGSC-09-14b).
     }
     // AGSC-09-14b's `severity` default reaches the lesson alone, the one kind whose
     // schema branch carries the key — without it the item was not conforming.
@@ -367,7 +377,9 @@ function tools(bundle, options) {
       origin: args.origin === 'human' ? 'human' : 'ai-generated',
     };
     const sources = [];
-    for (const source of args.sources || []) {
+    // A `sources` that is not a list carries no entry; it never throws into the
+    // transport (AGSC-09-13a).
+    for (const source of Array.isArray(args.sources) ? args.sources : []) {
       if (!source || typeof source.resource !== 'string' || !SOURCE_RESOURCE.test(source.resource)) {
         findings.push(Object.freeze({ code: 'AGSC-E506', message: 'source dropped', severity: 'warn' }));
         continue;
@@ -509,7 +521,8 @@ const REQUIRED_ARGUMENTS = Object.freeze({
 });
 
 const DESCRIPTIONS = Object.freeze({
-  ask: 'Answer a question from this memory, citing at least one item IRI.',
+  // `ask` assembles, it does not generate (AGSC-09-14a).
+  ask: 'Return the descriptions of the best-matching items for a question, citing their item IRIs; no model is called.',
   compose: 'Run the AGSC-07 closure algebra over a selection of item slugs.',
   links: 'Return the typed Links authored on one item.',
   propose: 'Return the Proposal payload for one item — with task_state, a prepared board move (claim, progress, finish) as a patch; performs no write.',

@@ -9,8 +9,8 @@
 // writes the two files AGSC-08-04 names — calling no model and reaching no
 // network. Without `--dry-run` the verb says it is not implemented.
 //
-// The Proposal carries the lane task as its TOP-LEVEL `task` member
-// (a design choice of 2026-09-18), one of the agent's declared
+// The Proposal carries the lane task as its TOP-LEVEL `task` member,
+// one of the agent's declared
 // `tasks[]`; a per-change `change.task` overrides it. That is what makes the
 // AGSC-E509 task check of `checkProposal` fire here.
 

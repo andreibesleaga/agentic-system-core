@@ -39,7 +39,7 @@ function built() {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' }) };
 }
 
 /** The emitted script, run as a page runs it, over the build's own published bytes. */
@@ -495,7 +495,8 @@ test('AGSC-09-14b: remember keeps a well-formed source and drops the rest', () =
   assert.strictEqual(kept.body.frontmatter.actor, 'human:andrei');
   // AGSC-01-23: a title whose slug is taken takes `-2`.
   assert.strictEqual(page.call('remember', { body: 'x', kind: 'concept', title: 'Handoff' }).body.slug, 'handoff-2');
-  // A kind outside the closed map is read as a Concept, because this tool never refuses.
-  assert.strictEqual(page.call('remember', { body: 'x', kind: 'nonsense', title: 'Another Thing' }).body.path,
-    'content/concepts/another-thing.md');
+  // A kind outside the five is AGSC-E203 (AGSC-09-14b as amended 2026-10-06, finding G5;
+  // until then it was read as a Concept).
+  assert.strictEqual(page.call('remember', { body: 'x', kind: 'nonsense', title: 'Another Thing' }).body.code,
+    'AGSC-E203');
 });

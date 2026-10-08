@@ -69,7 +69,7 @@ function build(dir, options = {}) {
   return {
     bundle,
     ports: { clock, fs },
-    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2', ...options }),
+    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2', ...options }),
   };
 }
 
@@ -174,13 +174,22 @@ test('a Contact at another origin is not read as a dangling internal link', () =
 });
 
 test('a field value can never forge a line (AGSC-02-24)', () => {
+  // The forged line rides on a field whose value the writer publishes as text.
   const { files } = build(workspace({
-    '.well-known/security.txt': 'Contact: https://example.org/c\u2028Expires: 1970-01-01T00:00:00Z\n',
+    '.well-known/security.txt': 'Contact: https://example.org/c\nPreferred-Languages: en\u2028Expires: 1970-01-01T00:00:00Z\n',
   }));
   const text = files.get('/.well-known/security.txt');
   assert.ok(text !== undefined);
   assert.strictEqual((text.match(/^Expires:/gmu) || []).length, 1);
   assert.match(text, new RegExp(`^Expires: ${DERIVED_EXPIRES}$`, 'mu'));
+  // On the Contact field the same value is no URI at all: AGSC-06-36 (amended
+  // 2026-10-06, finding G25) refuses it with AGSC-E204, and no file carries it.
+  const refused = build(workspace({
+    '.well-known/security.txt': 'Contact: https://example.org/c\u2028Expires: 1970-01-01T00:00:00Z\n',
+  }));
+  assert.strictEqual(refused.files.get('/.well-known/security.txt'), undefined);
+  assert.ok(refused.findings.some((f) => f.code === 'AGSC-E204' && f.file === '.well-known/security.txt'),
+    JSON.stringify(refused.findings));
 });
 
 test('readPrivacyNotice is total: absent, blank, unreadable and no port at all', () => {
@@ -308,7 +317,7 @@ test('the year is the BUILD INSTANT\'s year, never a clock', () => {
     const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
     const clock = createClock({ env: { SOURCE_DATE_EPOCH: epoch } });
     return String(site.build(bundle, { clock, fs },
-      { specVersion: '1.0.0-rc.6', version: '0.0.2' }).files.get('/index.html'));
+      { specVersion: '1.0.0-rc.7', version: '0.0.2' }).files.get('/index.html'));
   };
   assert.match(build(EPOCH), /&#169; 2026 /u);
   assert.match(build('1104537600'), /&#169; 2005 /u);   // 2005-01-01T00:00:00Z
@@ -326,7 +335,7 @@ test('AGSC-09-11: under ci the publication findings are reported by ONE lane', (
   const ctx = { ports: { clock, fs } };
   const result = ci.ci(bundle, { clock, fs }, {
     lint: (loaded) => lintLane.lane(ctx, loaded).findings,
-    specVersion: '1.0.0-rc.6',
+    specVersion: '1.0.0-rc.7',
     version: '0.0.2',
   });
   assert.strictEqual(result.findings.filter((f) => f.code === 'AGSC-E901').length, 1,
@@ -349,7 +358,7 @@ test('AGSC-04-09 + RFC 9116: a defaulted build instant FAILS instead of publishi
   const clock = createClock({ env: {} });                    // no epoch, no git history
   assert.strictEqual(clock.now(), 0, 'the fixture of this test is wrong');
   const { files, findings } = site.build(bundle, { clock, fs },
-    { specVersion: '1.0.0-rc.6', version: '0.0.2' });
+    { specVersion: '1.0.0-rc.7', version: '0.0.2' });
   assert.ok(!files.has('/.well-known/security.txt'),
     `an expired security contact was published: ${files.get('/.well-known/security.txt')}`);
   const fault = findings.find((f) => f.file === '.well-known/security.txt' && f.severity !== 'warn');
@@ -368,7 +377,7 @@ test('AGSC-04-02: the derived expiry stays a pure function of the build instant'
     const fs = createFileSystem(dir);
     const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
     const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-    return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' })
+    return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' })
       .files.get('/.well-known/security.txt');
   };
   const first = String(run());
@@ -379,6 +388,6 @@ test('AGSC-04-02: the derived expiry stays a pure function of the build instant'
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const fromGit = createClock({ env: {}, lastCommitSeconds: Number(EPOCH) });
   assert.match(String(site.build(bundle, { clock: fromGit, fs },
-    { specVersion: '1.0.0-rc.6', version: '0.0.2' }).files.get('/.well-known/security.txt')),
+    { specVersion: '1.0.0-rc.7', version: '0.0.2' }).files.get('/.well-known/security.txt')),
   new RegExp(`^Expires: ${DERIVED_EXPIRES}$`, 'mu'));
 });

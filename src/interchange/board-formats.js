@@ -910,9 +910,11 @@ const agscBoard = {
 };
 
 /** Every format, by the name `--format` takes. */
-const FORMATS = Object.freeze({
+// A closed list read with a name from the outside: prototype-free, so `constructor`,
+// `toString` or `__proto__` is not an entry.
+const FORMATS = Object.freeze(Object.assign(Object.create(null), {
   'agsc-board': agscBoard, asana, github, gitlab, jira, linear, markdown, notion, 'obsidian-kanban': obsidianKanban, todotxt, trello,
-});
+}));
 
 module.exports = {
   FORMATS, cardTokens, csvCell, csvObjects, dateOf, kindOfLabels, listOf, parseCsv, recordFromCell,

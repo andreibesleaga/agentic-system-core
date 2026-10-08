@@ -18,7 +18,7 @@
   "input": {
     "claim": {
       "level": 2,
-      "spec_version": "1.0.0-rc.6",
+      "spec_version": "1.0.0-rc.7",
       "unicode_version": "16.0.0",
       "vectors_passed": [
         "frontmatter",
@@ -53,7 +53,7 @@
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "rule": "AGSC-04-22"
 }

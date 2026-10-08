@@ -166,6 +166,69 @@ function pageKindToType() {
   return kinds;
 }
 
+/**
+ * AGSC-09-14b: `remember` MUST synthesize a CONFORMING item (AGSC-02). The arguments
+ * that are copied into the item are checked against the item schema's own bounds
+ * first, and the first that would make it non-conforming is refused with the code
+ * that bound carries (§9.4): a pattern or length bound `AGSC-E204`, a value outside
+ * an enum `AGSC-E203`, a wrong type in `usage` `AGSC-E201`. One function for both
+ * transports (AGSC-09-16). Until 2026-10-06 the local
+ * server returned such items unchecked.
+ *
+ * Two more since 2026-10-06: a `kind` outside the five
+ * the rule accepts is `AGSC-E203` (it was filed as a concept), and an `about` that
+ * names no item the transport can see is `AGSC-E301` (the `related` Link it became
+ * was refused by the next `lint`).
+ *
+ * @param {object} args the call's arguments
+ * @param {string} type the item type `kind` selects
+ * @param {function(string):boolean} [has] whether a slug names an item this transport sees
+ * @returns {{code:string, message:string}|null}
+ */
+function pageRememberFault(args, type, has) {
+  const line = /^[^\x00-\x1F\x7F\x85\u2028\u2029]*$/u;
+  const fault = (code, message) => ({ code, message: `${message} (AGSC-09-14b)` });
+  if (typeof args.kind !== 'string' || pageKindToType()[args.kind] === undefined) {
+    return fault('AGSC-E203', 'kind must be concept, episode, lesson, procedure or task');
+  }
+  if (args.about !== undefined && (typeof args.about !== 'string' || typeof has !== 'function' || !has(args.about))) {
+    return fault('AGSC-E301', 'about names no item of this Bundle');
+  }
+  const title = args.title;
+  if (typeof title !== 'string' || [...title].length < 3 || [...title].length > 120 || !line.test(title)) {
+    return fault('AGSC-E204', 'title must be text of 3 to 120 characters on one line (AGSC-02-24)');
+  }
+  if (args.operator !== undefined && (typeof args.operator !== 'string' || !/^human:[a-z0-9][a-z0-9._-]*$/u.test(args.operator))) {
+    return fault('AGSC-E204', 'operator must be human:<id> (AGSC-02-07)');
+  }
+  for (const key of ['agent', 'model']) {
+    if (args[key] !== undefined && (typeof args[key] !== 'string' || !line.test(args[key]))) {
+      return fault('AGSC-E204', `${key} must be text on one line (AGSC-02-24)`);
+    }
+  }
+  if (type === 'lesson' && args.severity !== undefined && ['info', 'warn', 'block'].indexOf(args.severity) === -1) {
+    return fault('AGSC-E203', 'severity must be info, warn or block');
+  }
+  if (type === 'episode') {
+    if (typeof args.at !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/u.test(args.at)) {
+      return fault('AGSC-E204', 'at must be an instant, YYYY-MM-DDTHH:MM:SSZ (AGSC-02-06)');
+    }
+    if (args.outcome !== undefined && ['success', 'partial', 'failure'].indexOf(args.outcome) === -1) {
+      return fault('AGSC-E203', 'outcome must be success, partial or failure');
+    }
+    const usage = args.usage;
+    if (usage !== null && typeof usage === 'object' && !Array.isArray(usage)) {
+      const wrong = (key, ok) => usage[key] !== undefined && !ok(usage[key]);
+      if (wrong('tokens_in', Number.isSafeInteger) || wrong('tokens_out', Number.isSafeInteger)
+        || wrong('cost_usd', Number.isFinite) || wrong('estimate', (v) => typeof v === 'boolean')
+        || wrong('model', (v) => typeof v === 'string' && line.test(v))) {
+        return fault('AGSC-E201', 'usage carries tokens_in and tokens_out as integers, cost_usd as a number, estimate as a boolean and model as one line (AGSC-02-14)');
+      }
+    }
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------- envelope */
 
 /** AGSC-08-18: the one result shape, JCS member order, `trust` fixed. */
@@ -918,7 +981,11 @@ function pageToolset(corpus, core) {
     },
 
     compose: (args) => {
-      const selection = Array.isArray(args.selection) ? args.selection : [];
+      // AGSC-09-13a: a selection that is not an array is not the empty one (finding G4).
+      if (!Array.isArray(args.selection)) {
+        return pageErrorEnvelope('compose', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
+      }
+      const selection = args.selection;
       const flat = model.items.map((i) => {
         const copy = { slug: i.slug, type: i.type };
         const fm = i.frontmatter || {};
@@ -1015,6 +1082,8 @@ function pageToolset(corpus, core) {
       if (args.actor !== undefined && !/^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u.test(String(args.actor))) {
         return pageErrorEnvelope('remember', 'AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
       }
+      const refused = pageRememberFault(args, type, (slug) => bySlug[slug] !== undefined);
+      if (refused !== null) return pageErrorEnvelope('remember', refused.code, refused.message);
       const title = typeof args.title === 'string' ? args.title : '';
       const findings = [];
       // AGSC-09-14b (2026-09-25): the page has no identity to declare, so a call
@@ -1345,7 +1414,7 @@ function pageSlugOfIri(iri, base, bundleId) {
  * `tests/arch/composition-portable.test.js`.
  */
 const PORTABLE = Object.freeze(['pageTerms', 'pageNoAnswer', 'pageLinkKeys',
-  'pageInverseKeys', 'pageTypePlural', 'pageTypedScalars', 'pageApplyTypes', 'pageKindToType',
+  'pageInverseKeys', 'pageTypePlural', 'pageTypedScalars', 'pageApplyTypes', 'pageKindToType', 'pageRememberFault',
   'pageEnvelope', 'pageErrorEnvelope',
   'pageBaseIri', 'pageItemIri', 'pageNfc', 'pageTokenize', 'pageAnchorOf', 'pageSlugify',
   'pageDedupe', 'pageSplitFrontmatter', 'pageParseFrontmatter', 'pageIndentOf', 'pageNextMeaningful',
@@ -1363,6 +1432,7 @@ const SOURCE = Object.freeze({
   pageTypedScalars,
   pageApplyTypes,
   pageKindToType,
+  pageRememberFault,
   pageEnvelope,
   pageErrorEnvelope,
   pageBaseIri,
@@ -1535,6 +1605,7 @@ module.exports = {
   PORTABLE,
   bundle,
   pageBoardMove,
+  pageRememberFault,
   pageTaskStates,
   pageUnifiedDiff,
   pageApplyTypes,

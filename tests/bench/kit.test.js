@@ -79,6 +79,19 @@ describe('bench/security.js — the pieces', () => {
     assert.deepEqual(security.leaksUnder(dir, undefined), []);
   });
 
+  it('makes a scratch copy a git repository with the commits and configuration a case lists', (t) => {
+    const cp = require('node:child_process');
+    if (cp.spawnSync('git', ['--version']).status !== 0) { t.skip('git is not installed'); return; }
+    const dir = tmpdir();
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a');
+    security.gitHistory(dir, { commits: ['first', 'second'], config: { 'core.fsmonitor': 'false' } });
+    const git = (...args) => cp.execFileSync('git', args, { cwd: dir, encoding: 'utf8' }).trim();
+    assert.equal(git('rev-list', '--count', 'HEAD'), '2');
+    assert.equal(git('log', '-1', '--format=%s'), 'second');
+    assert.equal(git('config', '--local', 'core.fsmonitor'), 'false');
+    assert.equal(git('ls-files'), 'a.txt');
+  });
+
   it('judges every outcome, and a crash is never a verdict', () => {
     const seen = (codes, exit, extra = {}) => ({ codes, exit, internal: false, leaked: [], ran: true, ...extra });
     assert.equal(security.judge({ fault: false, forbid: ['E1'] }, seen([], 0)).outcome, 'clean');

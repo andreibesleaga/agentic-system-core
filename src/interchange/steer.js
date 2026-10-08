@@ -62,7 +62,9 @@ const { finding } = require('../knowledge/validate.js');
 const { fenceProse } = require('../knowledge/markdown.js');
 
 /** AGSC-01-28's closed registry: target → the one path it writes. */
-const TARGETS = Object.freeze({
+// A closed list read with a name from the outside: prototype-free, so `constructor`,
+// `toString` or `__proto__` is not an entry.
+const TARGETS = Object.freeze(Object.assign(Object.create(null), {
   agents: 'AGENTS.md',
   aider: 'CONVENTIONS.md',
   claude: 'CLAUDE.md',
@@ -80,7 +82,7 @@ const TARGETS = Object.freeze({
   gemini: 'GEMINI.md',
   kiro: '.kiro/steering/agsc.md',
   windsurf: '.windsurf/rules/agsc.md',
-});
+}));
 
 /** AGSC-01-28: "The default is `agents,claude`." */
 const DEFAULT_TARGETS = Object.freeze(['agents', 'claude']);

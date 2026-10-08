@@ -1,5 +1,5 @@
 ---
-spec_version: 1.0.0-rc.6
+spec_version: 1.0.0-rc.7
 okf_version: "0.2"
 title: Acceptance Bundle
 description: The fixture Bundle the persona scenarios of features/ run against, with protocols, patterns and one lesson.

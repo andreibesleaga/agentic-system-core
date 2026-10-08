@@ -5,7 +5,7 @@
 ## What this is
 
 The source of the W3C-facing document for this project: the `asc:` vocabulary
-(`../ontology/agsc.ttl` — 12 classes, 40 properties (52 terms in 1.0.0-rc.6; counts derived by `tools/count-artifacts`), OWL 2 RL, CC0), its JSON-LD context, the
+(`../ontology/agsc.ttl` — 12 classes, 40 properties (52 terms in 1.0.0-rc.7; counts derived by `tools/count-artifacts`), OWL 2 RL, CC0), its JSON-LD context, the
 namespace and versioning policy at `https://w3id.org/agentic-system-core/ns#`, and a human-readable
 explanation of the profile identifier `https://w3id.org/agentic-system-core/profile/agentic-knowledge`.
 

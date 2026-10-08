@@ -1,7 +1,7 @@
 # The engine release lane of docs/PLAN.md §7.
 #
-#   Trigger    a tag `v*` pushed by the maintainer (`v1.0.0-rc.6`). The
-#              specification's own tag (`1.0.0-rc.6`, no `v`) sits on the same
+#   Trigger    a tag `v*` pushed by the maintainer (`v1.0.0-rc.7`). The
+#              specification's own tag (`1.0.0-rc.7`, no `v`) sits on the same
 #              commit and triggers nothing. A manual run (workflow_dispatch)
 #              publishes a version whose `v` tag already exists, from `main`,
 #              and only when every file the packages ship is byte-identical to
@@ -31,7 +31,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'An already tagged version to publish, without the v (e.g. 1.0.0-rc.6); its tag v<version> must exist'
+        description: 'An already tagged version to publish, without the v (e.g. 1.0.0-rc.7); its tag v<version> must exist'
         required: true
         type: string
 
@@ -115,7 +115,9 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           package-manager-cache: false
-      - run: npm ci
+      # This job holds `id-token: write`, so no dependency's install script may run in
+      # it; packing and publishing need none.
+      - run: npm ci --ignore-scripts
 
       - name: the tag and package.json must agree
         shell: bash
@@ -166,10 +168,25 @@ jobs:
       # The tarballs published are the ones attested above — one `npm pack` per
       # package, then `npm publish <file>` — so the attested bytes and the registry's
       # bytes are the same file by construction, not two packs of one tree.
+      # Each publish step first asks the registry whether this exact version is already
+      # there and, if it is, does nothing: npm refuses to publish over an existing
+      # version, so without the check a re-run after the alias failed — "Re-run failed
+      # jobs" or the manual dispatch — would stop at the engine and the alias could only
+      # go out by hand, without provenance. The real publish keeps `--provenance`.
       - name: publish the engine (the attested tarball)
         shell: bash
-        run: npm publish --provenance --access public --tag latest "./agentic-system-core-${VERSION}.tgz"
+        run: |
+          if [ "$(npm view "agentic-system-core@${VERSION}" version 2>/dev/null)" = "${VERSION}" ]; then
+            echo "agentic-system-core@${VERSION} is already on npm; nothing to publish"
+          else
+            npm publish --provenance --access public --tag latest "./agentic-system-core-${VERSION}.tgz"
+          fi
 
       - name: publish the alias (the attested tarball)
         shell: bash
-        run: npm publish --provenance --access public --tag latest "./agsc-cli-${VERSION}.tgz"
+        run: |
+          if [ "$(npm view "agsc-cli@${VERSION}" version 2>/dev/null)" = "${VERSION}" ]; then
+            echo "agsc-cli@${VERSION} is already on npm; nothing to publish"
+          else
+            npm publish --provenance --access public --tag latest "./agsc-cli-${VERSION}.tgz"
+          fi

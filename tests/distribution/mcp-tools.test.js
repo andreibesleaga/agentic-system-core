@@ -190,11 +190,13 @@ test('AGSC-09-14b: remember synthesizes a conforming item from a fixed instant',
   assert.strictEqual(lesson.body.frontmatter.severity, 'info');
   assert.strictEqual(toolset.call('remember', { body: 'x', kind: 'lesson', operator: 'human:someone', severity: 'block', title: 'A Lesson Learned' })
     .body.frontmatter.severity, 'block');
-  // A concept gets `kind: explainer`; an unknown kind falls back to a concept.
-  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', operator: 'human:someone', title: 'T' }).body.frontmatter.kind, 'explainer');
-  assert.strictEqual(toolset.call('remember', { body: '', kind: 'nonsense', operator: 'human:someone', title: 'T' }).body.frontmatter.type, 'concept');
+  // A concept gets `kind: explainer`; an unknown kind is AGSC-E203 since 2026-10-06 (finding
+  // G5; it fell back to a concept). (The titles
+  // are 3 characters or more: a shorter one is refused since 2026-10-06, finding C13.)
+  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', operator: 'human:someone', title: 'A Note' }).body.frontmatter.kind, 'explainer');
+  assert.strictEqual(toolset.call('remember', { body: '', kind: 'nonsense', operator: 'human:someone', title: 'A Note' }).body.code, 'AGSC-E203');
   // A client asserting `human` keeps that origin.
-  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', operator: 'human:someone', origin: 'human', title: 'T' })
+  assert.strictEqual(toolset.call('remember', { body: '', kind: 'concept', operator: 'human:someone', origin: 'human', title: 'A Note' })
     .body.frontmatter.prov.origin, 'human');
 });
 
@@ -226,7 +228,7 @@ test('AGSC-09-14b: remember is total — a bad source is DROPPED with AGSC-E506'
     operator: 'human:someone',
     sources: [{ id: 'a', resource: 'ftp://bad/' }, { id: 'b', resource: 'https://ok.example/x' },
       { id: 'c', resource: 'urn:agsc:channel:mail:abc' }, {}],
-    title: 'T',
+    title: 'A Note',
   });
   assert.strictEqual(result.type, 'proposal');
   assert.strictEqual(result.body.findings.length, 2);

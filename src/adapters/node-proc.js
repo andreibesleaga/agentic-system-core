@@ -13,6 +13,16 @@ const DEFAULT_MAX_BUFFER = 8 * 1024 * 1024;
 const SCRUBBED_ENV = Object.freeze(['PATH', 'HOME', 'LANG', 'LC_ALL', 'SOURCE_DATE_EPOCH', 'SystemRoot']);
 
 /**
+ * Options put before every git subcommand. A Bundle's `.git/config` is read by git
+ * itself, and a folder that arrives as an unpacked archive can carry one that names a
+ * command; `core.fsmonitor` is run by `git ls-files` (the tracked-file check of
+ * AGSC-01-37) and `log.showSignature` makes `git log` start the signature program.
+ * Command-line `-c` options win over every configuration file. Until 2026-10-06
+ * `agsc lint` ran a repository's fsmonitor command.
+ */
+const GIT_HARDENING = Object.freeze(['-c', 'core.fsmonitor=false', '-c', 'log.showSignature=false']);
+
+/**
  * Build a ProcessRunner port (see src/ports/process-runner.js).
  * @param {{cwd?: string, env?: object, timeoutMs?: number}} [options]
  */
@@ -32,7 +42,8 @@ function createProcessRunner(options = {}) {
         return { code: 2, stdout: '', stderr: `refused program name: ${cmd}` };
       }
       try {
-        const stdout = execFileSync(cmd, args, {
+        const argv = cmd === 'git' ? [...GIT_HARDENING, ...args] : args;
+        const stdout = execFileSync(cmd, argv, {
           cwd: runOptions.cwd || options.cwd || process.cwd(),
           env,
           encoding: 'utf8',
@@ -58,4 +69,4 @@ function createProcessRunner(options = {}) {
   };
 }
 
-module.exports = { createProcessRunner, SCRUBBED_ENV, DEFAULT_TIMEOUT_MS };
+module.exports = { createProcessRunner, DEFAULT_TIMEOUT_MS, GIT_HARDENING, SCRUBBED_ENV };

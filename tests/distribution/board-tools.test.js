@@ -67,7 +67,7 @@ function built(dir) {
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.6', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' }) };
 }
 
 /** The emitted page script, run as a page runs it, over the build's published bytes. */
@@ -106,7 +106,9 @@ test('a board move and a new task are the same prepared Proposal on both transpo
     ['propose', { slug: 'build-the-importer' }],
     ['remember', { body: 'Map the columns.', cluster: 'delivery', kind: 'task', operator: 'human:tester', title: 'Map the columns' }],
     ['remember', { about: 'build-the-importer', body: 'CSV needs quoting.', kind: 'lesson', operator: 'human:tester', title: 'Quote the cells' }],
-    ['remember', { about: 'Not A Slug', body: 'x', cluster: '../x', kind: 'task', operator: 'human:tester', title: 'Odd arguments' }],
+    ['remember', { body: 'x', cluster: '../x', kind: 'task', operator: 'human:tester', title: 'Odd arguments' }],
+    // AGSC-09-14b (amended 2026-10-06, finding G5): an `about` naming no item is refused.
+    ['remember', { about: 'Not A Slug', body: 'x', kind: 'task', operator: 'human:tester', title: 'Odd arguments' }],
   ];
   for (const [name, args] of calls) {
     assert.deepStrictEqual(plain(page.call(name, args)), plain(local.call(name, args)), `${name} ${JSON.stringify(args)}`);
@@ -132,6 +134,7 @@ test('a board move and a new task are the same prepared Proposal on both transpo
   assert.deepStrictEqual(local.call('remember', calls[7][1]).body.frontmatter.related, ['build-the-importer']);
   const odd = local.call('remember', calls[8][1]).body.frontmatter;
   assert.ok(!('clusters' in odd) && !('related' in odd), 'a malformed slug is never written into a link');
+  assert.strictEqual(local.call('remember', calls[9][1]).body.code, 'AGSC-E301');
 });
 
 test('the lane gates on a prepared Proposal (local tool server)', () => {

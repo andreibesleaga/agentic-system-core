@@ -8,7 +8,7 @@ Every tool prints the diagnostics envelope of AGSC-09-11 with `--json` and exits
 (pass), 1 (findings) or 2 (usage).
 
 **Read after:** the root [README](../README.md). **Read next:**
-[docs/IMPLEMENTERS-GUIDE.md](../docs/IMPLEMENTERS-GUIDE.md) §5, on checking your own
+[docs/IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) §5, on checking your own
 output with them.
 
 ## Shipped in the npm package
@@ -19,7 +19,7 @@ output with them.
 | `validate-schemas` | `schema/*.json` against JSON Schema 2020-12 |
 | `validate-ontology` | `ontology/agsc.ttl`: Turtle, the OWL 2 RL axiom list, SKOS pitfalls |
 | `validate-vectors` | every conformance vector's members and the rule and code it cites |
-| `validate-wellknown` | one discovery document, at a Level; `--peer` for the mutual check |
+| `validate-wellknown` | one discovery document, at a Level; given a URL, also the cross-origin and caching headers it is served with; `--peer` for the mutual check |
 | `validate-features` | the Gherkin scenarios of `features/` and their requirement tags |
 | `validate-diagrams` | the Mermaid pack of `docs/diagrams/` against its index |
 | `gen-spec-html` | `spec/` → the `/specs/` pages; `--check` compares a publisher's pages |

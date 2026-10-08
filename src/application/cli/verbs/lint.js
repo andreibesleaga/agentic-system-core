@@ -46,11 +46,18 @@ function configAndRoot(bundle, options = {}) {
     checkAgents, file: 'agsc.config.json', ownVersion: options.ownVersion,
     rangeCheckedElsewhere: RANGE_CHECKED_KEYS, schemas,
   }));
-  // AGSC-01-04: the Bundle root.
+  // AGSC-01-04: the Bundle root. AGSC-01-01 requires `content/` and AGSC-01-04 makes
+  // `content/index.md` its root document, so its absence is a fault and not a skipped
+  // check: until 2026-10-06 a directory with a
+  // configuration and no `content/` at all linted and built clean.
   if (bundle.index) {
     findings.push(...validate.index(bundle.index.frontmatter || {}, {
       file: 'content/index.md', schemas,
     }));
+  } else if (!(bundle.findings || []).some((f) => f.file === 'content/index.md')) {
+    findings.push(validate.finding('AGSC-E901',
+      'content/index.md, the Bundle root, is not there; a Bundle holds content/ with its root document (AGSC-01-01, AGSC-01-04)',
+      { file: 'content/index.md' }));
   }
   return findings;
 }

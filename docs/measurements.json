@@ -8,25 +8,21 @@
       },
       "rule_coverage": {
         "active": 332,
-        "any_check": 322,
-        "named_by_checker": 84,
+        "any_check": 326,
+        "named_by_checker": 90,
         "named_by_feature": 52,
-        "named_by_test": 319,
-        "no_check": 10,
+        "named_by_test": 323,
+        "no_check": 6,
         "uncovered": [
           "AGSC-00-19",
-          "AGSC-00-20",
           "AGSC-01-32",
           "AGSC-03-21",
-          "AGSC-04-16",
           "AGSC-05-24",
           "AGSC-08-29",
-          "AGSC-10-07",
-          "AGSC-10-08",
-          "AGSC-10-10"
+          "AGSC-10-07"
         ],
-        "with_vector": 130,
-        "without_vector": 202
+        "with_vector": 135,
+        "without_vector": 197
       },
       "rule_coverage_by_chapter": {
         "active": {
@@ -44,11 +40,10 @@
           "09": 24
         },
         "uncovered": {
-          "10": 3,
-          "00": 2,
+          "10": 1,
+          "00": 1,
           "01": 1,
           "03": 1,
-          "04": 1,
           "05": 1,
           "08": 1
         }
@@ -93,9 +88,9 @@
       "vector_areas": {
         "adopt": {
           "optional": 0,
-          "required": 5,
-          "total": 5,
-          "withdrawn": 0
+          "required": 6,
+          "total": 8,
+          "withdrawn": 2
         },
         "boards": {
           "optional": 0,
@@ -129,14 +124,14 @@
         },
         "cli": {
           "optional": 0,
-          "required": 14,
-          "total": 14,
-          "withdrawn": 0
+          "required": 16,
+          "total": 18,
+          "withdrawn": 2
         },
         "compose": {
           "optional": 0,
-          "required": 8,
-          "total": 8,
+          "required": 9,
+          "total": 9,
           "withdrawn": 0
         },
         "conform": {
@@ -147,8 +142,8 @@
         },
         "discovery": {
           "optional": 0,
-          "required": 12,
-          "total": 12,
+          "required": 14,
+          "total": 14,
           "withdrawn": 0
         },
         "frontmatter": {
@@ -159,9 +154,9 @@
         },
         "graph": {
           "optional": 0,
-          "required": 14,
-          "total": 14,
-          "withdrawn": 0
+          "required": 15,
+          "total": 16,
+          "withdrawn": 1
         },
         "import": {
           "optional": 0,
@@ -189,8 +184,8 @@
         },
         "lint": {
           "optional": 0,
-          "required": 15,
-          "total": 15,
+          "required": 17,
+          "total": 17,
           "withdrawn": 0
         },
         "prov": {
@@ -208,17 +203,17 @@
       },
       "vector_run": {
         "fail": 0,
-        "pass": 171,
+        "pass": 180,
         "pending": 0,
-        "skip": 0,
-        "total": 171,
-        "withdrawn": 0
+        "skip": 5,
+        "total": 185,
+        "withdrawn": 5
       },
       "vectors": {
         "optional": 1,
-        "required": 170,
-        "total": 171,
-        "withdrawn": 0
+        "required": 179,
+        "total": 185,
+        "withdrawn": 5
       }
     },
     "determinism": {
@@ -350,15 +345,26 @@
           "clean": 1,
           "controls_clean": "1/1"
         },
+        "hostile-history": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 2,
+          "controls": 0,
+          "faults": 2,
+          "handled": 2,
+          "score": "2/2",
+          "neutralised": 2,
+          "controls_clean": null
+        },
         "hostile-import": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 7,
+          "cases": 8,
           "controls": 1,
-          "faults": 6,
-          "handled": 6,
-          "score": "6/6",
-          "refused": 4,
+          "faults": 7,
+          "handled": 7,
+          "score": "7/7",
+          "refused": 5,
           "detected": 1,
           "neutralised": 1,
           "clean": 1,
@@ -413,14 +419,25 @@
         "pii": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 3,
+          "cases": 4,
           "controls": 1,
-          "faults": 2,
-          "handled": 2,
-          "score": "2/2",
-          "refused": 2,
+          "faults": 3,
+          "handled": 3,
+          "score": "3/3",
+          "refused": 3,
           "clean": 1,
           "controls_clean": "1/1"
+        },
+        "prototype-key": {
+          "beyond_rule": 0,
+          "beyond_rule_caught": 0,
+          "cases": 4,
+          "controls": 0,
+          "faults": 4,
+          "handled": 4,
+          "score": "4/4",
+          "refused": 4,
+          "controls_clean": null
         },
         "scheme": {
           "beyond_rule": 0,
@@ -448,12 +465,12 @@
         "traversal": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 8,
+          "cases": 9,
           "controls": 0,
-          "faults": 8,
-          "handled": 8,
-          "score": "8/8",
-          "refused": 8,
+          "faults": 9,
+          "handled": 9,
+          "score": "9/9",
+          "refused": 9,
           "controls_clean": null
         },
         "unsafe-svg": {
@@ -472,15 +489,15 @@
         "bundle": {
           "beyond_rule": 6,
           "beyond_rule_caught": 3,
-          "cases": 74,
+          "cases": 83,
           "controls": 10,
-          "faults": 58,
-          "handled": 58,
-          "score": "58/58",
+          "faults": 67,
+          "handled": 67,
+          "score": "67/67",
           "detected": 20,
-          "refused": 36,
+          "refused": 43,
           "clean": 10,
-          "neutralised": 2,
+          "neutralised": 4,
           "controls_clean": "10/10"
         },
         "federation": {
@@ -1023,7 +1040,6 @@
         {
           "class": "traversal",
           "codes": [
-            "AGSC-E901",
             "AGSC-E902"
           ],
           "expect": [
@@ -1038,7 +1054,6 @@
         {
           "class": "traversal",
           "codes": [
-            "AGSC-E901",
             "AGSC-E902"
           ],
           "expect": [
@@ -1761,6 +1776,117 @@
           "required": true
         },
         {
+          "class": "prototype-key",
+          "codes": [
+            "AGSC-E204",
+            "AGSC-E501"
+          ],
+          "expect": [
+            "AGSC-E501"
+          ],
+          "id": "proto-key-hides-prov",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "prototype-key",
+          "codes": [
+            "AGSC-E004"
+          ],
+          "expect": [
+            "AGSC-E004"
+          ],
+          "id": "proto-key-config",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "prototype-key",
+          "codes": [
+            "AGSC-E203"
+          ],
+          "expect": [
+            "AGSC-E203"
+          ],
+          "id": "proto-name-steer-target",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "prototype-key",
+          "codes": [
+            "AGSC-E203"
+          ],
+          "expect": [
+            "AGSC-E203"
+          ],
+          "id": "proto-name-export-adapter",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-history",
+          "codes": [],
+          "expect": [],
+          "id": "history-forged-ledger-entry",
+          "kind": "bundle",
+          "outcome": "neutralised",
+          "required": true
+        },
+        {
+          "class": "hostile-history",
+          "codes": [],
+          "expect": [],
+          "id": "history-fsmonitor-command",
+          "kind": "bundle",
+          "outcome": "neutralised",
+          "required": true
+        },
+        {
+          "class": "pii",
+          "codes": [
+            "AGSC-E401",
+            "AGSC-E404"
+          ],
+          "expect": [
+            "AGSC-E404"
+          ],
+          "id": "pii-email-after-long-run",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "traversal",
+          "codes": [
+            "AGSC-E204"
+          ],
+          "expect": [
+            "AGSC-E204"
+          ],
+          "id": "trav-build-out-source-tree",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
+            "AGSC-E201"
+          ],
+          "expect": [
+            "AGSC-E201"
+          ],
+          "id": "trace-nonfinite-usage",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
           "class": "control",
           "codes": [],
           "expect": [],
@@ -1877,7 +2003,7 @@
       ],
       "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security --scratch <dir>",
       "corpus": {
-        "cases": 104,
+        "cases": 113,
         "file": "bench/corpus/security-floor.json",
         "version": "security-floor-v1"
       },
@@ -1885,15 +2011,15 @@
       "totals": {
         "beyond_rule": 6,
         "beyond_rule_caught": 3,
-        "cases": 104,
+        "cases": 113,
         "controls": 13,
-        "faults": 85,
-        "handled": 85,
-        "score": "85/85",
+        "faults": 94,
+        "handled": 94,
+        "score": "94/94",
         "detected": 21,
-        "refused": 61,
+        "refused": 68,
         "clean": 13,
-        "neutralised": 3,
+        "neutralised": 5,
         "controls_clean": "13/13"
       }
     },
@@ -1910,7 +2036,7 @@
         "model": "AMD Ryzen 7 5800H with Radeon Graphics",
         "node": "v24.18.0",
         "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
-        "total_mem_bytes": 33560780800
+        "total_mem_bytes": 33560788992
       },
       "rows": [
         {
@@ -1928,18 +2054,18 @@
           "items": 100,
           "largest_page_bytes": 647461,
           "largest_page_path": "chunks.jsonl",
-          "ms_median": 1717,
+          "ms_median": 1846,
           "ms_runs": [
-            1714,
-            1719,
-            1717
+            1926,
+            1837,
+            1846
           ],
-          "output_bytes": 3155680,
-          "rss_kb_median": 124420,
+          "output_bytes": 3159327,
+          "rss_kb_median": 124228,
           "rss_kb_runs": [
-            123356,
-            124420,
-            151744
+            123164,
+            124228,
+            139584
           ]
         },
         {
@@ -1957,18 +2083,18 @@
           "items": 500,
           "largest_page_bytes": 3243064,
           "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 4252,
+          "ms_median": 4937,
           "ms_runs": [
-            4269,
-            4252,
-            4178
+            4937,
+            5136,
+            4917
           ],
-          "output_bytes": 15120021,
-          "rss_kb_median": 271624,
+          "output_bytes": 15123668,
+          "rss_kb_median": 274172,
           "rss_kb_runs": [
-            271852,
-            271624,
-            268704
+            272608,
+            281160,
+            274172
           ]
         },
         {
@@ -1986,18 +2112,18 @@
           "items": 1000,
           "largest_page_bytes": 3524296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 7133,
+          "ms_median": 8498,
           "ms_runs": [
-            7450,
-            6998,
-            7133
+            8498,
+            8614,
+            8258
           ],
-          "output_bytes": 29998747,
-          "rss_kb_median": 329812,
+          "output_bytes": 30002394,
+          "rss_kb_median": 375152,
           "rss_kb_runs": [
-            319796,
-            329812,
-            398812
+            372084,
+            384328,
+            375152
           ]
         },
         {
@@ -2015,18 +2141,18 @@
           "items": 5000,
           "largest_page_bytes": 17650296,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 36777,
+          "ms_median": 40175,
           "ms_runs": [
-            36612,
-            36777,
-            37610
+            42114,
+            40175,
+            39671
           ],
-          "output_bytes": 149505569,
-          "rss_kb_median": 1042840,
+          "output_bytes": 149509216,
+          "rss_kb_median": 1043888,
           "rss_kb_runs": [
-            1042840,
-            1050052,
-            1037380
+            1043888,
+            1044312,
+            1038716
           ]
         },
         {
@@ -2044,18 +2170,18 @@
           "items": 10000,
           "largest_page_bytes": 35307804,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 90017,
+          "ms_median": 101261,
           "ms_runs": [
-            91756,
-            89845,
-            90017
+            99261,
+            101261,
+            102165
           ],
-          "output_bytes": 298898210,
-          "rss_kb_median": 1785768,
+          "output_bytes": 298901857,
+          "rss_kb_median": 1783528,
           "rss_kb_runs": [
-            1792320,
-            1785768,
-            1759268
+            1788372,
+            1783528,
+            1766988
           ]
         }
       ],
@@ -2596,81 +2722,81 @@
               "chunks_line": {
                 "items": 17,
                 "max": 1033,
-                "median": 266,
+                "median": 272,
                 "min": 179,
-                "total": 5722
+                "total": 5775
               },
               "chunks_text": {
                 "items": 17,
                 "max": 475,
-                "median": 94,
+                "median": 100,
                 "min": 20,
-                "total": 2063
+                "total": 2120
               },
               "llms_line": {
                 "items": 14,
                 "max": 75,
                 "median": 40,
                 "min": 35,
-                "total": 606
+                "total": 607
               },
-              "llms_file": 785,
+              "llms_file": 787,
               "ctx_section": {
                 "items": 17,
                 "max": 644,
-                "median": 139,
+                "median": 144,
                 "min": 66,
-                "total": 3118
+                "total": 3175
               },
-              "ctx_file": 3367,
+              "ctx_file": 3425,
               "index_row": {
                 "items": 17,
                 "max": 149,
                 "median": 30,
                 "min": 26,
-                "total": 724
+                "total": 726
               },
-              "index_file": 762
+              "index_file": 764
             },
             "o200k_base": {
               "chunks_line": {
                 "items": 17,
                 "max": 1029,
-                "median": 263,
+                "median": 270,
                 "min": 176,
-                "total": 5685
+                "total": 5738
               },
               "chunks_text": {
                 "items": 17,
                 "max": 474,
-                "median": 93,
+                "median": 100,
                 "min": 20,
-                "total": 2059
+                "total": 2116
               },
               "llms_line": {
                 "items": 14,
                 "max": 76,
                 "median": 40,
                 "min": 35,
-                "total": 608
+                "total": 609
               },
-              "llms_file": 783,
+              "llms_file": 785,
               "ctx_section": {
                 "items": 17,
                 "max": 643,
-                "median": 140,
+                "median": 144,
                 "min": 66,
-                "total": 3116
+                "total": 3173
               },
-              "ctx_file": 3361,
+              "ctx_file": 3419,
               "index_row": {
                 "items": 17,
                 "max": 149,
                 "median": 31,
                 "min": 26,
-                "total": 726
+                "total": 728
               },
-              "index_file": 764
+              "index_file": 766
             }
           }
         }
@@ -2934,7 +3060,7 @@
             "median_bytes": 3057,
             "over_budget": [],
             "pages": 89,
-            "total_bytes": 383579
+            "total_bytes": 383865
           }
         },
         "main-engine": {
@@ -3076,10 +3202,10 @@
               "bytes": 10008,
               "path": "legal/index.html"
             },
-            "median_bytes": 4014,
+            "median_bytes": 4020.5,
             "over_budget": [],
             "pages": 36,
-            "total_bytes": 139269
+            "total_bytes": 139689
           }
         },
         "main-site": {
@@ -3092,6 +3218,13 @@
               "violations": 0
             },
             "boards page": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "changelog index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -3141,9 +3274,16 @@
               "violations": 0
             },
             "docs page": {
-              "checks": 28,
+              "checks": 34,
               "nodes": 0,
-              "pages": 14,
+              "pages": 17,
+              "rules": [],
+              "violations": 0
+            },
+            "docs/guides subpage": {
+              "checks": 12,
+              "nodes": 0,
+              "pages": 6,
               "rules": [],
               "violations": 0
             },
@@ -3252,6 +3392,20 @@
               "rules": [],
               "violations": 0
             },
+            "specs/06-surfaces subpage": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "specs/09-conformance subpage": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "tags index": {
               "checks": 2,
               "nodes": 0,
@@ -3267,20 +3421,20 @@
               "violations": 0
             }
           },
-          "checks": 138,
-          "pages": 69,
+          "checks": 162,
+          "pages": 81,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 91753,
-              "path": "specs/06-surfaces/index.html"
+              "bytes": 80854,
+              "path": "docs/requirements/index.html"
             },
-            "median_bytes": 7847,
+            "median_bytes": 11132,
             "over_budget": [],
-            "pages": 70,
-            "total_bytes": 1424041
+            "pages": 82,
+            "total_bytes": 1729221
           }
         }
       },
@@ -3303,12 +3457,12 @@
     },
     "package": {
       "command": "npm pack --dry-run --json",
-      "files": 554,
-      "packed_bytes": 1011121,
-      "unpacked_bytes": 3309447
+      "files": 578,
+      "packed_bytes": 1092031,
+      "unpacked_bytes": 3616822
     }
   },
   "schema": "agsc.measurements.v1",
   "measured_for": "2026-01-01",
-  "spec_version": "1.0.0-rc.6"
+  "spec_version": "1.0.0-rc.7"
 }

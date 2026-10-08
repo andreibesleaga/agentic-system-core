@@ -47,7 +47,7 @@ function load(extra) {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.6', version: '0.0.2' }, extra);
+  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.7', version: '0.0.2' }, extra);
   return { bundle, ports: { fs, clock }, options };
 }
 
@@ -86,14 +86,14 @@ async function tripleCount(document, context) {
 // ------------------------------------------------------------------
 
 test('buildOptions supplies the vocabulary the context is generated from', () => {
-  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.6', version: '0.0.2' });
+  const options = helpers.buildOptions({ specVersion: '1.0.0-rc.7', version: '0.0.2' });
   assert.strictEqual(options.ontologyTerms.length, 52,
     'the 52 terms of ontology/agsc.ttl never reached a build');
   assert.strictEqual(options.ontologyVersion, '1.0.0-draft.1',
     'the owl:versionIRI version of AGSC-05-25 never reached a build');
   // Read once and memoised, exactly as the three compiled schemas are.
   assert.strictEqual(options.ontologyTerms,
-    helpers.buildOptions({ specVersion: '1.0.0-rc.6', version: '0.0.2' }).ontologyTerms);
+    helpers.buildOptions({ specVersion: '1.0.0-rc.7', version: '0.0.2' }).ontologyTerms);
 });
 
 test('a built /ns/context.jsonld defines all 52 asc: terms and the 24 external ones (AGSC-06-32)', () => {
@@ -142,7 +142,7 @@ test('the built graph.jsonld is compact: no vocabulary IRI is written out', () =
   }
   const document = JSON.parse(files.get('/graph.jsonld'));
   assert.strictEqual(document['@graph'][0]['@type'], 'Bundle');
-  assert.strictEqual(document['@graph'][0].specVersion, '1.0.0-rc.6');  // the build's own option
+  assert.strictEqual(document['@graph'][0].specVersion, '1.0.0-rc.7');  // the build's own option
 });
 
 test('expand then re-compact reproduces graph.jsonld byte for byte (AGSC-06-32)', async () => {
@@ -172,7 +172,7 @@ test('the N-Quads and Turtle views do not move by one byte (AGSC-05-06)', () => 
   const withContext = build().files;
   // The same build with the vocabulary withheld — the state before this fix.
   const { bundle, ports } = load();
-  const without = site.build(bundle, ports, { specVersion: '1.0.0-rc.6', version: '0.0.2' }).files;
+  const without = site.build(bundle, ports, { specVersion: '1.0.0-rc.7', version: '0.0.2' }).files;
   assert.strictEqual(withContext.get('/graph.nq'), without.get('/graph.nq'));
   assert.strictEqual(withContext.get('/graph.ttl'), without.get('/graph.ttl'));
   // …and the JSON-LD view of the same triples DOES move: that is the fix.
@@ -214,7 +214,7 @@ test('the persistent context URL is derived from the vocabulary, never typed (AG
 
 test('a build given no vocabulary names what it could not emit, never silence', () => {
   const { bundle, ports } = load();
-  const built = site.build(bundle, ports, { level: 0, specVersion: '1.0.0-rc.6', version: '0.0.2' });
+  const built = site.build(bundle, ports, { level: 0, specVersion: '1.0.0-rc.7', version: '0.0.2' });
   assert.ok(!('@context' in JSON.parse(built.files.get('/graph.jsonld'))));
   assert.ok(built.skipped.some((s) => s.includes('AGSC-05-09')),
     'a graph.jsonld with no context must be named in skipped');

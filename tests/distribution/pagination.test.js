@@ -46,7 +46,7 @@ function synthetic(count) {
 }
 
 const PORTS = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }) };
-const OPTIONS = { specVersion: '1.0.0-rc.6', version: '0.0.2' };
+const OPTIONS = { specVersion: '1.0.0-rc.7', version: '0.0.2' };
 
 test('AGSC-06-21: 500 items need no shard and no page-2', () => {
   const { files } = site.build(synthetic(500), PORTS, OPTIONS);

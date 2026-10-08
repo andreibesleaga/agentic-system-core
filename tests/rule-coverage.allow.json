@@ -9,10 +9,6 @@
       "reason": "definition",
       "why": "It defines the terms agent lane and live board; the behaviour they name is checked under AGSC-01-36, AGSC-08-28 and AGSC-10-13…18."
     },
-    "AGSC-00-20": {
-      "reason": "scope",
-      "why": "It lists which part of the whole scope is normative at which version; the reserved names it implies are checked under AGSC-00-21 and AGSC-01-18."
-    },
     "AGSC-01-30": {
       "reason": "adapter",
       "why": "It binds a channel adapter's pull and render functions and the forge ingest job; the reference distribution ships no channel adapter."

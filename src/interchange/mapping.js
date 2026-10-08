@@ -1,7 +1,7 @@
 'use strict';
 // src/interchange/mapping.js — CONTEXT Interchange.
 //
-// The field mapping table old -> new (M3-T03): EVERY key of the foreign card is
+// The field mapping table old -> new: EVERY key of the foreign card is
 // accounted for — mapped, renamed, folded into another key, moved into the
 // vendor namespace, or explicitly dropped with a reason. Nothing is lost in
 // silence, which is what AGSC-01-22's tolerance means in practice.
@@ -82,7 +82,7 @@ function ordered(frontmatter) {
 }
 
 /**
- * Rewrite the old body's internal links (M3-T07, AGSC-03-11, AGSC-01-35).
+ * Rewrite the old body's internal links (AGSC-03-11, AGSC-01-35).
  *
  * `/patterns/<slug>/` begins with a slash, which AGSC-01-35 refuses outright
  * (`AGSC-E902`), so every one of them must go.

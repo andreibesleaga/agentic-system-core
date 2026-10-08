@@ -1,5 +1,5 @@
 ---
-spec_version: 1.0.0-rc.6
+spec_version: 1.0.0-rc.7
 okf_version: "0.2"
 title: b demo
 description: A tiny Bundle for the demos of the AgenticSystemCore engine; two concepts, one cluster, nothing private.

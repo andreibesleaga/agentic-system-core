@@ -3,14 +3,14 @@ name: agentic-system-core
 description: Use the AgenticSystemCore engine (command `agsc`) to turn a folder of Markdown into a knowledge node and to work in one as an agent — initialise, lint, build, verify, read, cite, propose, compose, export, import, skill packs and live boards. Use when a project holds `agsc.config.json`, when the user mentions agsc, a Bundle, a knowledge node, AgenticSystemCore or the Agentic Knowledge Web, or when an agent must read, cite or change a published node.
 license: CC0-1.0
 metadata:
-  version: "1.0.0-rc.6"
+  version: "1.0.0-rc.7"
   homepage: "https://agenticsystemcore.com/docs/how-to-use/"
   repository: "https://github.com/andreibesleaga/agentic-system-core"
 ---
 
 # AgenticSystemCore for agents
 
-A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.0.0-rc.6`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
+A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.0.0-rc.7`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
 
 ## 1. What you never do
 
@@ -30,7 +30,7 @@ One Bundle, six ways of using it; no mode adds a type or a key. A worked Bundle 
 | 1 memory for agents | read, cite and propose, on one node or many | section 6; `agsc mcp`; `agsc propose <slug>` | `peers[]` to name other nodes |
 | 2 living specifications | decisions, specs, tasks and gates in one checked memory | concepts of `kind: decision`, `spec`, `task`; gate items; `agsc ci`; `agsc export --steer` | none |
 | 3 skills | procedures installed in an agent's skills folder | `agsc skills`, `agsc skills install` | none |
-| 4 runnable knowledge | a selection of concepts as a starting architecture | `agsc compose <slug>…` | `run{}` to execute procedures |
+| 4 runnable knowledge | a selection of concepts as a starting architecture | `agsc compose <slug>…` | `run{}` to list a procedure's steps under an allow list |
 | 5 live board | people and agents working tasks until done | task concepts in a cluster; claim by proposal (section 5) | `agents[]`, `channels[]`, `budget{}`, `contribute[]` |
 
 The configuration keys are in `references/configuration.md`.
@@ -39,7 +39,7 @@ The configuration keys are in `references/configuration.md`.
 
 ```bash
 node --version            # 22.13 or later
-npx -y agsc-cli --version # agsc 1.0.0-rc.6; when the person wants it installed: npm install -g agentic-system-core
+npx -y agsc-cli --version # agsc 1.0.0-rc.7; when the person wants it installed: npm install -g agentic-system-core
 cd <bundle>               # every verb runs in the folder that holds agsc.config.json
 ```
 
@@ -52,6 +52,7 @@ From a folder of notes, `agsc init` moves every Markdown file except `README.md`
    Expires: 2027-06-01T00:00:00Z
    ```
 3. The crawler licence choice, `site.tdm_crawlers` (or keep the list `init` wrote if the person agrees).
+4. A build instant: one commit (`git init -q && git add -A && git commit -q -m 'notes'`), or `SOURCE_DATE_EPOCH` set in the environment. Without one the build instant is 1970-01-01 and `ci` reports `AGSC-E204` on the security contact's expiry.
 
 Then `agsc ci`. Until the security file exists, lint, build and ci report `AGSC-E901`.
 

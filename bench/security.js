@@ -12,7 +12,11 @@
  *
  * Six kinds of case, each driving the real code path:
  *   bundle     a copy of a base Bundle with files written, replaced or linked, then
- *              `agsc <verb> --json` spawned inside it (lint or build)
+ *              `agsc <verb> [args…] --json` spawned inside it (lint, build, ci or the
+ *              verb the case names, with its `args`); a case with `git` first makes the
+ *              copy a git repository with the commits and configuration it lists, and a
+ *              case with `inspect: "bundle"` searches the whole copy, not `www/`, for
+ *              what must not reach it
  *   import     a hostile foreign corpus handed to `agsc import --from <format>`,
  *              optionally followed by `agsc lint` over what was written
  *   wellknown  a hostile discovery document handed to `tools/validate-wellknown`
@@ -119,13 +123,41 @@ function leaksUnder(root, entries) {
 
 // ------------------------------------------------------------------ the kinds
 
+/**
+ * Make `dir` a git repository: everything in it committed with the first message, one
+ * empty commit per further message, then the configuration entries set — after the
+ * commits, so that a hostile entry is met by the engine and not by this setup. Fixed
+ * dates, no global or system configuration.
+ */
+function gitHistory(dir, git) {
+  const env = {
+    GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z',
+    GIT_CONFIG_GLOBAL: path.join(dir, '.no-global-config'), GIT_CONFIG_NOSYSTEM: '1', PATH: process.env.PATH,
+  };
+  const run = (args) => {
+    const r = cp.spawnSync('git', ['-c', 'user.name=Bench', '-c', 'user.email=bench@example.org', '-c', 'commit.gpgsign=false', ...args],
+      { cwd: dir, encoding: 'utf8', env });
+    if (r.status !== 0) throw new Error(`security: git ${args[0]} failed: ${r.stderr || r.error}`);
+  };
+  run(['init', '-q', '-b', 'main']);
+  run(['add', '-A']);
+  for (const message of git.commits || []) run(['commit', '-q', '--allow-empty', '-m', message]);
+  for (const [key, value] of Object.entries(git.config || {})) run(['config', key, value]);
+}
+
 function runBundle(c, env) {
   const dir = workspace(env, c);
   materialise(dir, c.files);
-  const r = spawn([path.join(REPO, 'bin', 'agsc.js'), c.verb || 'lint', '--json'], dir);
-  // The output inspected for a neutralisation is what the build wrote, `www/`.
+  if (c.git) gitHistory(dir, c.git);
+  const r = spawn([path.join(REPO, 'bin', 'agsc.js'), c.verb || 'lint', ...(c.args || []), '--json'], dir);
+  const internal = /internal error/u.test(r.err);
+  // The output inspected for a neutralisation is what the build wrote, `www/` — or the
+  // whole Bundle, for a construct that would act on the Bundle itself.
+  if (c.inspect === 'bundle') {
+    return { codes: codesOf(r.out), exit: r.code, internal, leaked: leaksUnder(dir, c.must_not_reach), ran: r.code !== null && !internal };
+  }
   const out = path.join(dir, 'www');
-  return { codes: codesOf(r.out), exit: r.code, internal: /internal error/u.test(r.err), leaked: leaksUnder(out, c.must_not_reach), ran: fs.existsSync(out) };
+  return { codes: codesOf(r.out), exit: r.code, internal, leaked: leaksUnder(out, c.must_not_reach), ran: fs.existsSync(out) };
 }
 
 function runImport(c, env) {
@@ -282,4 +314,4 @@ function score(corpus, env) {
   return { by_class: group('class'), by_kind: group('kind'), cases: rows, totals: tally(rows) };
 }
 
-module.exports = { bytesOf, codesOf, insideRepo, judge, leaksUnder, materialise, score, tally };
+module.exports = { bytesOf, codesOf, gitHistory, insideRepo, judge, leaksUnder, materialise, score, tally };

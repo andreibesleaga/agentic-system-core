@@ -54,7 +54,7 @@
         "base": "https://example.org/",
         "title": "Example"
       },
-      "spec_version": "1.0.0-rc.6"
+      "spec_version": "1.0.0-rc.7"
     },
     "proposal": {
       "agent": "editor",
@@ -73,7 +73,7 @@
   },
   "level": "required",
   "options": {
-    "spec_version": "1.0.0-rc.6"
+    "spec_version": "1.0.0-rc.7"
   },
   "rule": "AGSC-08-28"
 }

@@ -61,7 +61,7 @@ test('AGSC-10-04: a public Level-2 document without the ledger link is AGSC-E202
     counts: discovery.countsOf([]),
     digests: { '/graph.jsonld': discovery.digestOf('/graph.jsonld'), '/llms.txt': discovery.digestOf('/llms.txt') },
     generatedAt: '2026-01-01T00:00:00Z',
-    specVersion: '1.0.0-rc.6',
+    specVersion: '1.0.0-rc.7',
   });
   assert.ok(discovery.check(doc, { level: 2 }).some((f) => f.code === 'AGSC-E202'));
   assert.ok(!discovery.check(doc, { level: 2, requireLedger: false }).some((f) => f.code === 'AGSC-E202'));

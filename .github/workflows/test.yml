@@ -7,14 +7,24 @@
 #              standard and the end-to-end tests that need nothing outside the
 #              repository), the rule-coverage matrix in its checking mode, and
 #              every shipped validator — the six that read the distribution, and
-#              validate-wellknown at Level 2 on a build of the minimal fixture.
+#              validate-wellknown at Level 1 and at Level 2 on builds of the
+#              minimal fixture. It also runs every other gate step of release.yml,
+#              word for word, on the same six legs, so that a tag is never the
+#              first time a gate runs: `npm audit`, the requirements matrix, the counting
+#              tool, `tools/release --json`, the cleanliness check and the
+#              architecture lane with AGSC_AUDIT=1; tests/standard/workflow.test.js
+#              fails if the two lists drift apart.
 #              A seventh job, on Ubuntu only, runs `actionlint` over the workflow
 #              files themselves: the release binary of version 1.7.12, fetched from
 #              its GitHub release and refused unless its SHA-256 is the one recorded
 #              below (read from the release's checksums file on 2026-09-25).
 #   Secrets    none. Permissions: read the repository, nothing else.
-#   Determinism SOURCE_DATE_EPOCH is set for the fixture build; the suite fixes
-#              its own clocks and never reaches the network.
+#   Determinism SOURCE_DATE_EPOCH is set for the fixture builds; the suite fixes
+#              its own clocks and never reaches the network. The two audit
+#              steps (`npm audit`, and the architecture lane under AGSC_AUDIT=1)
+#              read the registry's advisory list, so a new advisory turns a push
+#              red the day it is published — which is when the release would
+#              have found it.
 #
 # Every action is pinned to a commit SHA with the version beside it; the SHAs are
 # the ones release.yml pins.
@@ -24,7 +34,7 @@ name: test
 on:
   push:
     # Every branch; a release tag is exercised by release.yml's own gates job,
-    # which runs the same suite, so a tag push does not run the matrix twice.
+    # which runs the same steps, so a tag push does not run the matrix twice.
     branches:
       - '**'
   pull_request:
@@ -58,14 +68,35 @@ jobs:
         run: npm run arch
       - name: suite
         run: npm test
+      - name: dependency advisories (the release gate's npm audit)
+        run: npm audit --audit-level=low
       - name: rule coverage (no unverified rule, matrix current)
         run: node tools/rule-coverage --check
-      - name: validators over the distribution
+      - name: requirements matrix (no unmapped requirement)
+        run: node tools/requirements-matrix --check
+      - name: counting tool (the counts, never typed by hand)
+        run: node tools/count-artifacts --json
+      - name: the independent validators of AGSC-09-90
         shell: bash
         run: |
-          for tool in validate-spec validate-schemas validate-ontology validate-vectors validate-features validate-diagrams; do
-            node "tools/$tool" --json > /dev/null
+          # Every validator BLOCKS: a gate that reports and does not block
+          # protects nothing.
+          # validate-wellknown checks one built discovery document, so it runs in
+          # the next step against a fixture build instead of with no argument.
+          for t in tools/validate-*; do
+            case "$t" in */validate-wellknown) continue ;; esac
+            node "$t" --json
           done
+      - name: the discovery document of a fixture build
+        shell: bash
+        env:
+          SOURCE_DATE_EPOCH: '1767225600'
+        run: |
+          # The fixture has no git history, so it publishes no ledger: Level 1.
+          fx="$RUNNER_TEMP/fixture"
+          cp -r tests/fixtures/minimal "$fx"
+          (cd "$fx" && node "$GITHUB_WORKSPACE/bin/agsc.js" build)
+          node tools/validate-wellknown "$fx/www/.well-known/knowledge-linkset" --level 1 --json
       - name: validate-wellknown at Level 2 on a build of the minimal fixture
         shell: bash
         env:
@@ -83,6 +114,14 @@ jobs:
           (cd "$work" && git init -q -b main && git add -A && git commit -q -m fixture \
             && node "$GITHUB_WORKSPACE/bin/agsc.js" build)
           node tools/validate-wellknown "$work/www/.well-known/knowledge-linkset" --level 2
+      - name: the release lane's own checks
+        run: node tools/release --json
+      - name: public means clean (the whole tree, not only what ships)
+        run: node tools/public-hygiene
+      - name: the architecture boundary lane
+        env:
+          AGSC_AUDIT: '1'
+        run: node --test "tests/arch/*.test.js"
 
   actionlint:
     name: actionlint (the workflow files)

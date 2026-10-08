@@ -45,10 +45,12 @@ test('Mode 4, a person and an agent: compose a Harness, run it dry, trace a run,
   const agents = kit.read(dir, `dist/harness/${name}/AGENTS.md`);
   assert.match(agents, /bundle: https:\/\/proj\.example\//u);
   assert.match(agents, /- type: concept \(task\)/u);
-  // A runtime rendering is named by the registry and not shipped at 1.0: it says so.
+  // A runtime rendering is named by the registry and not shipped at 1.0: it is refused
+  // with the registry's code (AGSC-00-20), never the unknown-verb code.
   const crewai = kit.agsc(dir, ['compose', 'handoff', '--emit', 'crewai', '--json']);
   assert.strictEqual(crewai.code, 1);
-  assert.ok(kit.codes(crewai).includes('AGSC-E001'));
+  assert.ok(kit.codes(crewai).includes('AGSC-E203'));
+  assert.ok(!kit.codes(crewai).includes('AGSC-E001'));
 
   // An agent composes the same selection through the tool server.
   const mcp = await kit.mcpClient(dir);

@@ -234,14 +234,30 @@ function linksOf(item) {
   return Object.keys(links).length === 0 ? null : links;
 }
 
-/** AGSC-06-30: the published set — the same one `search.json` and `/llms.txt` use. */
+/** AGSC-01-20: the `releases` switchboard holds back an unreleased `release`. */
+function heldBack(item, releases) {
+  return item.release != null && releases != null
+    && Object.prototype.hasOwnProperty.call(releases, item.release)
+    && releases[item.release] === false;
+}
+
+/**
+ * AGSC-06-30: the set `search.json`, `/llms.txt` and the chunk export carry — the
+ * LISTED items of AGSC-00-05, which "the published set (AGSC-06-30)" means.
+ */
 function isPublished(item, releases) {
   if (EXCLUDED_STATUS.includes(item.status)) return false;
-  // AGSC-01-20: the `releases` switchboard holds back an unreleased `release`.
-  if (item.release != null && releases != null
-      && Object.prototype.hasOwnProperty.call(releases, item.release)
-      && releases[item.release] === false) return false;
-  return true;
+  return !heldBack(item, releases);
+}
+
+/**
+ * AGSC-00-05 / AGSC-11-22: the PUBLISHED items in the plain sense — neither `draft`
+ * nor held back — which is the listed set plus the retired items. A retired item keeps
+ * its page, its per-item copies and its place in the graph exports.
+ */
+function keepsPage(item, releases) {
+  if (item.status === 'draft') return false;
+  return !heldBack(item, releases);
 }
 
 function record(fields) {
@@ -323,6 +339,10 @@ function records(items, options = {}) {
     // AGSC-06-30: one chunk per attachment, `section` = `attachment-<n>` (1-based).
     const attachments = Array.isArray(item.attachments) ? item.attachments : [];
     attachments.forEach((attachment, i) => {
+      // An entry that failed the item schema (no `media_type`, no `file`) is the
+      // `AGSC-E202` lint and the build already report; it contributes no chunk,
+      // rather than a record no JSON artefact can carry (AGSC-09-11).
+      if (attachment == null || typeof attachment.media_type !== 'string' || typeof attachment.file !== 'string') return;
       const section = `attachment-${i + 1}`;
       const isText = /^(?:text\/|image\/svg\+xml$)/u.test(String(attachment.media_type));
       const bytes = attachmentBytes[attachment.file];
@@ -422,4 +442,5 @@ module.exports = {
   TRUST,
   ITEMS_PER_SHARD,
   EXCLUDED_STATUS,
+  keepsPage,
 };

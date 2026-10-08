@@ -1,7 +1,7 @@
 'use strict';
 // src/interchange/oldsite.js — CONTEXT Interchange (a foreign format, read).
 //
-// The old-site record reader of AGSC-01-22 (M3-T02): one authored card of
+// The old-site record reader of AGSC-01-22: one authored card of
 // `OldAgenticSystemPatterns.com/content/patterns/<slug>.md` in, one flat record
 // out. PURE: no fs, no process, no clock, no network.
 //

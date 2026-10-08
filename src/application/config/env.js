@@ -92,7 +92,10 @@ function buildTable() {
         if (!t) continue;
         const name = 'AGSC_' + nextSegs.map((s) => s.toUpperCase()).join('_');
         const p = nextSegs.join('.');
-        nameToPath.set(name, { path: p, type: t });
+        // The schema's `pattern` travels with the descriptor so that a value set
+        // through an environment layer meets the same grammar as one written in
+        // the project file (AGSC-01-37: an override is the value of that key).
+        nameToPath.set(name, { path: p, type: t, ...(typeof subResolved.pattern === 'string' ? { pattern: subResolved.pattern } : {}) });
         pathToName.set(p, name);
         if (Object.prototype.hasOwnProperty.call(subResolved, 'default')) {
           pathToDefault.set(p, subResolved.default);
@@ -160,7 +163,7 @@ function pathForEnvName(name) {
   if (isCredentialName(name)) return { kind: 'credential' };
   const t = buildTable();
   const scalar = t.nameToPath.get(name);
-  if (scalar) return { kind: 'scalar', path: scalar.path, type: scalar.type };
+  if (scalar) return { kind: 'scalar', path: scalar.path, type: scalar.type, ...(scalar.pattern ? { pattern: scalar.pattern } : {}) };
 
   for (const [arrName, tag] of Object.entries(NAMED_ENTRY_ARRAYS)) {
     const prefix = `AGSC_${tag}_`;

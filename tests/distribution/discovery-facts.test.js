@@ -33,7 +33,7 @@ function built() {
     const port = createFileSystem(dir);
     const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
     const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
-    return site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.6', version: '0.0.0' });
+    return site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.7', version: '0.0.0' });
   } finally {
     fs.rmSync(dir, { force: true, recursive: true });
   }
@@ -59,7 +59,7 @@ test('AGSC-11-20: a restricted node carries a digest only on /graph.jsonld and /
     '/ns/context.jsonld', '/ledger.jsonl']) digests[route] = discovery.digestOf(route);
   const config = { access: 'https://a.example/access/', site: { base: 'https://a.example' }, visibility: 'restricted' };
   const doc = discovery.linkset(config, { digests, generatedAt: '2026-01-01T00:00:00Z', ledgerHead: 'a'.repeat(64),
-    specVersion: '1.0.0-rc.6', bundleHash: digests['/graph.nq'], bundleVersion: 'v1.0.0', counts: [] });
+    specVersion: '1.0.0-rc.7', bundleHash: digests['/graph.nq'], bundleVersion: 'v1.0.0', counts: [] });
   const withDigest = [];
   for (const [relation, links] of Object.entries(doc.linkset[0])) {
     if (relation === 'anchor') continue;

@@ -501,7 +501,7 @@ test('AGSC-10-18: an agent lane cannot change a procedure, a gate, a cluster or 
     bundle: { id: 'x', operator: 'human:alice' },
     channels: [{ adapter: 'stub', author: 'lane-bot', name: 'lane', owner: 'human:alice', publish: 'auto' }],
     site: { base: 'https://x.example/', title: 'X' },
-    spec_version: '1.0.0-rc.6',
+    spec_version: '1.0.0-rc.7',
   };
   for (const [p, type] of [['content/procedures/deploy.md', 'procedure'], ['content/gates/g.md', 'gate'], ['content/clusters/c.md', 'cluster']]) {
     const result = checkProposal(config, { agent: 'worker', author: 'lane-bot', changes: [{ path: p, type }] });

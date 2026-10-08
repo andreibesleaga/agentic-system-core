@@ -25,8 +25,11 @@ proposal names:
 4. the exact replacement wording;
 5. the conformance vector that would prove it.
 
-The maintainer keeps a list of accepted items and applies them at the next release
-candidate, all at once: a tag that has been published does not move. Expect a rule
+The maintainer keeps a list of accepted items and applies them in the next release,
+all at once: a tag that has been published does not move. Before `1.0.0` that is the
+next release candidate; from `1.0.0` on, a clarification or a vector that conforming
+implementations already pass goes into a PATCH release, and anything that adds goes
+into the next MINOR (AGSC-00-14). Expect a rule
 change to take longer than a code change, and expect "the rule is the truth, the
 engine is wrong" to be the usual answer.
 
@@ -144,11 +147,13 @@ works if that field is decorative.
 ## Releases
 
 A release carries two tags on the same commit: the specification's own tag
-(`1.0.0-rc.6`, which names the standard) and the package tag (`v1.0.0-rc.6`), which
+(`1.0.0-rc.7`, which names the standard) and the package tag (`v1.0.0-rc.7`), which
 triggers the workflow in `.github/workflows/release.yml` that publishes the npm
 packages; nothing is published from a laptop. The procedure
 around it is kept by the maintainer outside this repository, and `node tools/release`
-prints the checklist it checks against.
+prints the checklist it checks against. `server.json` is the tool server's entry for the
+MCP Registry; it carries the npm version, which `node tools/release` checks and writes
+with the package files.
 
 ## Conduct, governance and the name
 

@@ -2,7 +2,7 @@
 
 **Summary.** Unit tests of parsing, validation, slugs, canonical JSON, links, the four RDF views, chunks, adoption, the content version, the diagram compiler. Subject: `src/knowledge/`.
 
-**Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
+**Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md).
 
 ```bash
 node --test "tests/knowledge/*.test.js"
