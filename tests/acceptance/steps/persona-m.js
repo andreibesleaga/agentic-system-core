@@ -55,8 +55,10 @@ function runProgram(world, program, argv, options = {}) {
 function get(world, route, host) {
   const { origin } = world.state.loopback;
   const { hostname, port } = new URL(origin);
+  // An IPv6 origin keeps its brackets in the Host header, not in the address.
+  const address = hostname.replace(/^\[|\]$/gu, '');
   return new Promise((resolve, reject) => {
-    const req = http.request({ headers: { host: host || `${hostname}:${port}` }, hostname, method: 'GET', path: route, port }, (res) => {
+    const req = http.request({ headers: { host: host || `${hostname}:${port}` }, hostname: address, method: 'GET', path: route, port }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => resolve({ body: Buffer.concat(chunks).toString('utf8'), headers: res.headers, status: res.statusCode }));

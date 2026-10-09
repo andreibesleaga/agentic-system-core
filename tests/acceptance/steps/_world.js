@@ -13,6 +13,7 @@
 // preload of `_offline.js`, which refuses and records every network attempt, so a
 // scenario can prove that a lane made no network or model call at all.
 
+const dns = require('node:dns');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -155,14 +156,20 @@ class World {
 
   /**
    * Serve a directory of the Bundle read-only on loopback with the real `agsc-host
-   * serve`, on a port the system picks. Resolves with the origin once the server
+   * serve`, on a port the system picks, at the address `localhost` resolves to
+   * first on this machine (`::1` on the hosted CI runners, `127.0.0.1` where the
+   * hosts file maps `localhost` to IPv4 alone). That is the address the shipped
+   * `validate-wellknown` connects to for a `http://localhost:<port>/` base: it takes
+   * the first entry of the verbatim lookup, as here. Resolves with the origin the
+   * server prints, `http://127.0.0.1:<port>` or `http://[::1]:<port>`, once it
    * prints it; the server is stopped when the scenario ends.
    * @returns {Promise<{origin: string, port: number}>}
    */
-  serve(rel = 'www') {
+  async serve(rel = 'www') {
     const site = path.join(this.dir, rel);
     fs.mkdirSync(site, { recursive: true });
-    const child = spawn(process.execPath, [HOST, 'serve', '--site', site, '--port', '0', '--bind', '127.0.0.1'], {
+    const [first] = await dns.promises.lookup('localhost', { all: true, verbatim: true });
+    const child = spawn(process.execPath, [HOST, 'serve', '--site', site, '--port', '0', '--bind', first.address], {
       cwd: this.dir, env: this.env(), stdio: ['ignore', 'pipe', 'pipe'],
     });
     this.servers.push(child);
@@ -174,8 +181,8 @@ class World {
       child.stderr.on('data', (chunk) => { out += chunk; });
       child.stdout.on('data', (chunk) => {
         out += chunk;
-        const m = /at http:\/\/127\.0\.0\.1:(\d+)\//u.exec(out);
-        if (m) resolve({ origin: `http://127.0.0.1:${m[1]}`, port: Number(m[1]) });
+        const m = /at (http:\/\/(?:\[[0-9a-f:.]+\]|\d{1,3}(?:\.\d{1,3}){3}):(\d+))\//iu.exec(out);
+        if (m) resolve({ origin: m[1], port: Number(m[2]) });
       });
       child.on('error', (e) => fail(`could not start (${e.message})`));
       child.on('exit', (code) => fail(`stopped with exit ${code}`));

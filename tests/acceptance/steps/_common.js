@@ -38,7 +38,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { built } = require('./_world.js');
+const { EPOCH, built } = require('./_world.js');
 
 const ROLES = 'author|agent|contributor|maintainer|newcomer|operator|publisher|researcher|reviewer|team';
 
@@ -54,7 +54,8 @@ async function buildAndServe(world) {
   if (!fs.existsSync(path.join(world.dir, '.git'))) world.commitAll('Initial content');
   const { origin, port } = await world.serve('www');
   // The configuration schema admits a plain-HTTP base only for `localhost`; the
-  // server listens on 127.0.0.1, which `localhost` reaches.
+  // server listens on the address `localhost` resolves to first (`_world.js`
+  // serve), which is the one the shipped checker connects to.
   const config = JSON.parse(world.read('agsc.config.json'));
   config.site.base = `http://localhost:${port}/`;
   world.write('agsc.config.json', `${JSON.stringify(config, null, 2)}\n`);
@@ -73,8 +74,10 @@ module.exports = [
     pattern: 'the Bundle is a git repository of one commit with fixed dates',
     run(world) {
       world.commitAll('Initial content');
-      assert.strictEqual(world.git(['log', '-1', '--format=%aI %cI']).trim(),
-        '2026-01-01T00:00:00Z 2026-01-01T00:00:00Z'.replace(/Z/gu, '+00:00'));
+      // Git's raw date (seconds since the epoch and the zone) reads the same in
+      // every git version; the strict ISO spelling does not (`+00:00` or `Z`).
+      assert.strictEqual(world.git(['log', '-1', '--date=raw', '--format=%ad %cd']).trim(),
+        `${EPOCH} +0000 ${EPOCH} +0000`);
     },
   },
   {

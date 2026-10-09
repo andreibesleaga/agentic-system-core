@@ -17,6 +17,7 @@ and is reported as skipped and counted.
 | `runner.test.js` | each rule of `_runner.js` shown on a small scratch tree |
 | `steps/` | the step definitions: one file per persona, the shared phrases of `_common.js`, and helpers whose names start with `_` |
 | `common-steps.test.js` | every shared phrase of `steps/_common.js` driven once before any scenario uses it |
+| `loopback.test.js` | the node served on loopback is reached through `localhost` whichever address `localhost` resolves to first; `steps/_localhost-v6-first.js` gives the `::1`-first order of the hosted CI runners on any machine |
 | `bundle/` | the Bundle the scenarios run on (copied, never changed in place) |
 | `pending/` | one JSON file per scenario that does not run as written here; its `README.md` lists the classes |
 | `use-cases/` | the use cases of `docs/USE-CASES.md`, end to end |
@@ -66,7 +67,8 @@ that makes a scenario run deletes its file.
 adds the network trap of `steps/_offline.js`), `tool(name, argv)`, `git(argv)`,
 `commitAll(message)`, `commit(subject, trailers)` and `trailers()` (a scratch git
 history on fixed dates), `json()` (the last command's envelope), `serve(dir)` (the real
-`agsc-host serve` on a loopback port the system picks, stopped when the scenario ends),
+`agsc-host serve` on a loopback port the system picks, at the address `localhost`
+resolves to first, stopped when the scenario ends),
 `mcp()` (the real local tool server through the official client), `read`, `write`,
 `exists`, `snapshot`, `networkAttempts()` and `overrides` (the environment the next
 commands add or remove). Every test here fixes its own clock, reaches no network beyond
