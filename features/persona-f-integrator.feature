@@ -42,3 +42,46 @@ Feature: Integrator installs this knowledge into my agent
     Then the file is mapped to "content/procedures/<name>.md" (AGSC-07-22)
     And its declared fields survive: "description" as "description", "license" as "x-skill-license", and the body byte for byte
     And lint reports no error for the new Procedure
+
+  @PRD-034 @human @matrix-H8
+  Scenario Outline: A team imports a skills repository laid out as <layout>
+    Given a local clone of a "<layout>" skills collection in the folder "clone"
+    When the team runs "agsc import clone --from skills --layout <layout> --dry-run" under the network trap
+    Then the command exits 0
+    And the import plan wrote nothing into the Bundle
+    When the team runs "agsc import clone --from skills --layout <layout> --json" under the network trap
+    Then the command exits 0
+    And <items> skills arrive as "<type>" items, each naming its source file, the layout and its licence, or as a draft when no open licence is found
+    And <dropped> parts that would execute are dropped and reported as "AGSC-E407", and none of them reaches the Bundle
+    And the same import run again writes nothing and reports every item unchanged
+    And no network call was attempted
+
+    Examples:
+      | layout        | items | type      | dropped |
+      | agentskills   | 4     | procedure | 2       |
+      | claude-plugin | 2     | procedure | 3       |
+      | marketplace   | 1     | procedure | 0       |
+      | cursor        | 2     | concept   | 0       |
+      | windsurf      | 2     | concept   | 0       |
+
+  @PRD-034 @human @matrix-H8
+  Scenario: A team lists what a skills collection would bring in, and nothing is written
+    Given a local clone of a "agentskills" skills collection in the folder "clone"
+    And a local clone of a "awesome-list" skills collection in the folder "links"
+    When the team runs "agsc import clone --from skills --list" under the network trap
+    Then the command exits 0
+    And the list names each skill with its file and licence, and says which would arrive as a draft
+    When the team runs "agsc import links --from skills --list" under the network trap
+    Then the command exits 0
+    And the output names "3 entries point to other repositories"
+    And the import plan wrote nothing into the Bundle
+
+  @PRD-034 @PRD-032 @human @matrix-H8
+  Scenario: A team files an imported skill into one of its clusters, and that cluster's pack carries it
+    Given a local clone of a "marketplace" skills collection in the folder "clone"
+    When the team runs "agsc import clone --from skills --cluster agent-patterns" under the network trap
+    Then the command exits 0
+    And the imported skill "csv-helper" joins the cluster "agent-patterns"
+    When the team runs "agsc skills" under the network trap
+    Then the command exits 0
+    And the "agent-patterns" pack lists the imported skill "csv-helper"

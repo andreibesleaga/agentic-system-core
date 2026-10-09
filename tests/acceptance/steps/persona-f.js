@@ -1,15 +1,20 @@
 'use strict';
-// verifies AGSC-07-15, AGSC-07-16, AGSC-07-19, AGSC-07-20, AGSC-07-21, AGSC-07-22
+// verifies AGSC-01-23, AGSC-01-26a, AGSC-07-15, AGSC-07-16, AGSC-07-19, AGSC-07-20, AGSC-07-21, AGSC-07-22
 // Steps of features/persona-f-integrator.feature that run offline: `skills`,
 // `skills install <target>` and `skills import <file>` on a scratch copy of the
 // acceptance Bundle. `install` installs from the local build, never from a URL.
+// A skills collection is imported from a local clone in each of the five layouts
+// (`import --from skills`, with `--list` and `--cluster`), over the fixtures of
+// `tests/fixtures/skills-<layout>/` that the adapter's own tests read; the
+// engine never downloads anything. The phrases "the import plan wrote nothing into
+// the Bundle" and "the same import run again …" are persona-g's.
 
 const assert = require('node:assert');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { splitItem } = require('./_world.js');
+const { ROOT, splitItem } = require('./_world.js');
 
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 const BASE = 'https://agenticsystemcore.com/';
@@ -203,6 +208,82 @@ module.exports = [
       const errors = JSON.parse(lint.stdout).findings.filter((f) => f.severity === 'error');
       assert.deepStrictEqual(errors, []);
       assert.strictEqual(lint.exit, 0);
+    },
+  },
+  // ------------------------------------------------- skills collections, cloned
+  {
+    pattern: /^a local clone of a "(agentskills|claude-plugin|marketplace|cursor|windsurf|awesome-list)" skills collection in the folder "([a-z-]+)"$/u,
+    run(world, layout, folder) {
+      fs.cpSync(path.join(ROOT, 'tests', 'fixtures', `skills-${layout}`), path.join(world.dir, folder), { recursive: true });
+      world.state.clone = folder;
+      world.state.contentBefore = world.snapshot('content');
+    },
+  },
+  {
+    pattern: /^(\d+) skills arrive as "(procedure|concept)" items, each naming its source file, the layout and its licence, or as a draft when no open licence is found$/u,
+    run(world, count, type) {
+      const layout = world.last.argv[world.last.argv.indexOf('--layout') + 1];
+      const added = [...world.snapshot('content').keys()].filter((rel) => !world.state.contentBefore.has(rel));
+      assert.strictEqual(added.length, Number(count), added.join(', '));
+      for (const rel of added) {
+        const { frontmatter } = splitItem(world.read(`content/${rel}`));
+        assert.strictEqual(frontmatter.type, type, rel);
+        // A rule explains how to work and has no steps, so it is an explainer (Route 6).
+        if (type === 'concept') assert.strictEqual(frontmatter.kind, 'explainer', rel);
+        assert.strictEqual(frontmatter.prov.origin, 'imported', rel);
+        assert.strictEqual(frontmatter['x-skills-layout'], layout, rel);
+        assert.ok(world.exists(`${world.state.clone}/${frontmatter['x-skills-source']}`), `${rel} names no file of the clone`);
+        assert.ok(typeof frontmatter['x-skills-license'] === 'string' || frontmatter.status === 'draft',
+          `${rel} carries no licence and is not a draft`);
+      }
+    },
+  },
+  {
+    pattern: /^(\d+) parts that would execute are dropped and reported as "AGSC-E407", and none of them reaches the Bundle$/u,
+    run(world, count) {
+      const dropped = world.json().findings.filter((f) => f.code === 'AGSC-E407');
+      assert.strictEqual(dropped.length, Number(count), JSON.stringify(dropped));
+      for (const f of dropped) assert.strictEqual(f.severity, 'warn', JSON.stringify(f));
+      // Content only (AGSC-07-15): Markdown items, no executable bit, no pre-approved tools.
+      for (const rel of world.snapshot('content').keys()) {
+        assert.ok(rel.endsWith('.md'), `content/${rel} is not an item`);
+        const stat = fs.statSync(path.join(world.dir, 'content', rel));
+        if (process.platform !== 'win32') assert.strictEqual(stat.mode & 0o111, 0, `content/${rel} is executable`);
+        assert.doesNotMatch(world.read(`content/${rel}`), /^allowed-tools:/mu, `content/${rel} pre-approves tools`);
+      }
+    },
+  },
+  {
+    pattern: 'the list names each skill with its file and licence, and says which would arrive as a draft',
+    run(world) {
+      const said = `${world.last.stdout}${world.last.stderr}`;
+      const clone = world.last.argv[1];
+      const skills = fs.readdirSync(path.join(world.dir, clone, 'skills')).sort();
+      assert.ok(skills.length > 0);
+      for (const name of skills) {
+        const line = new RegExp(`^skills: \\[agentskills\\] skill ${name} skills/${name}/SKILL\\.md licence [^\\n]* -> (importable|draft)`, 'mu').exec(said);
+        assert.ok(line, `${name} is not listed: ${said}`);
+        const { frontmatter } = splitItem(world.read(`${clone}/skills/${name}/SKILL.md`));
+        // A licence that is not a recognised open one keeps the skill a draft.
+        if (/^Proprietary/u.test(String(frontmatter.license))) assert.strictEqual(line[1], 'draft', name);
+      }
+    },
+  },
+  {
+    pattern: /^the imported skill "([a-z0-9-]+)" joins the cluster "([a-z0-9-]+)"$/u,
+    run(world, slug, cluster) {
+      const { frontmatter } = splitItem(world.read(`content/procedures/${slug}.md`));
+      assert.deepStrictEqual(frontmatter.clusters, [cluster]);
+      assert.ok(world.exists(`content/clusters/${cluster}.md`), `${cluster} is not a cluster of this Bundle`);
+    },
+  },
+  {
+    pattern: /^the "([a-z0-9-]+)" pack lists the imported skill "([a-z0-9-]+)"$/u,
+    run(world, pack, slug) {
+      const { body } = splitItem(world.read(`dist/skills/${pack}/SKILL.md`));
+      assert.ok(body.includes(`- item: ${BASE}procedures/${slug}/\n- type: procedure\n`), `${slug} is not in the ${pack} pack`);
+      const index = JSON.parse(world.read('dist/skills/index.json'));
+      assert.ok(index.packs.some((p) => p.name === pack), `${pack} is not in the lockfile`);
     },
   },
 ];

@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E10",
+  "reason": "the server speaks the revision 2025-11-25, which answers a resource that does not exist with -32002, and the reference engine still answers -32602, the code of a later revision.",
+  "scenario": "A missing resource is answered with -32002 under 2025-11-25"
+}

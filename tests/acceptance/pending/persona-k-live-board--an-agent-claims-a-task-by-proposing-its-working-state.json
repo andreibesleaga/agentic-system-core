@@ -1,5 +1,0 @@
-{
-  "class": "model",
-  "reason": "'refresh --agent worker' without --dry-run opens a real Proposal through a model and a channel, which the reference engine does not ship.",
-  "scenario": "An agent claims a task by proposing its working state"
-}

@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E3",
+  "reason": "a value from the environment that the configuration schema refuses (AGSC_BUILD_OUT=content) is reported as AGSC-E204, but the refused layer is dropped and build still writes the build output under the configured folder, and ci writes its gate file; the same value written in agsc.config.json makes both write nothing (AGSC-01-37 says \"as if written in the file\"). Meanwhile the input-check tests cover the finding.",
+  "scenario": "An environment override that names the source tree writes nothing"
+}

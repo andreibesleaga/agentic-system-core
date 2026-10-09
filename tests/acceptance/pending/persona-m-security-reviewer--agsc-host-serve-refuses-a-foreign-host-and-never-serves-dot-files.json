@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E1",
+  "reason": "agsc-host serve answers a request under any Host header and hides only the four host files at the root of the build, so a page that rebinds a name to the loopback address can read what is served, dot-files included. Meanwhile the server tests check the read-only routes and the headers.",
+  "scenario": "agsc-host serve refuses a foreign Host and never serves dot-files"
+}

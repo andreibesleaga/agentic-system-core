@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "the pull request and its body are written on the forge; the marker and the sections propose writes into dist/proposal/1.md, and the sign-off the contributor commits, are checked by the scenario \"An outside contributor commits with the CA-v1 sign-off\".",
+  "scenario": "The contributor opens the pull request with the proposal body"
+}

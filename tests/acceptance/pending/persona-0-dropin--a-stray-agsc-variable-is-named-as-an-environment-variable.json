@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E3",
+  "reason": "a stray AGSC_ variable in the shell fails every verb with \"unknown configuration override AGSC_DOI\", which neither says it is an environment variable nor how to clear it.",
+  "scenario": "A stray AGSC_ variable is named as an environment variable"
+}

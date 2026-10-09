@@ -1,4 +1,4 @@
-# Trace: PRD-010, PRD-054, NFR-02 · spec/09 conformance, spec/10 Levels
+# Trace: PRD-010, PRD-054, PRD-055, NFR-02 · spec/09 conformance, spec/10 Levels
 @persona-l @mode-1
 Feature: Port implementer proves a second implementation conforms
   As P10 (port implementer)
@@ -18,3 +18,12 @@ Feature: Port implementer proves a second implementation conforms
     When the port implementer runs the engine's "conform" and the Python package's "run-vectors" over the same "tests/vectors/"
     Then every vector the Python package runs has the same result as in the engine's conformance report
     And every vector it does not run is reported as not run with a reason, never counted as a pass
+
+  @PRD-055 @agent @matrix-H14
+  Scenario: The reference engine's Level-3 report
+    Given a fresh copy of the acceptance Bundle
+    When the agent runs "agsc conform --level 3 --to report.json"
+    Then the command exits 0
+    And "report.json" names the implementation "agentic-system-core" and the class "full-engine", which is Level 3 (AGSC-10-01, AGSC-09-03)
+    And every required case of the Level-3 set is reported "pass" by its id, and "summary.fail" is 0
+    And every withdrawn case is reported apart as "skip", never counted as a pass, and "summary.pass" counts only the cases that ran and passed (AGSC-09-02, AGSC-09-05)

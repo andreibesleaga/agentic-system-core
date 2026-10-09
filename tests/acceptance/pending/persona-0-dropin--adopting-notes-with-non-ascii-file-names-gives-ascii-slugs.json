@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E5",
+  "reason": "the slug function lower-cases with the Unicode rules, so a note named with the capital I with dot above becomes \"i-stanbul\" where the rule's ASCII lower-casing gives \"stanbul\".",
+  "scenario": "Adopting notes with non-ASCII file names gives ASCII slugs"
+}

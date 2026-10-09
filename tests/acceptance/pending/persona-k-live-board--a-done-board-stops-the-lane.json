@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E4",
+  "reason": "refresh --agent <lane> --dry-run never checks for a task the lane can claim: on a board whose every task is completed (done true) it still writes dist/proposal/1.patch and says nothing about it (AGSC-10-17).",
+  "scenario": "A done board stops the lane"
+}

@@ -1,5 +1,0 @@
-{
-  "class": "external",
-  "reason": "comparing with the last published deploy and the Zenodo deposit needs the host and Zenodo; the byte-identical rebuild itself is the ci double build.",
-  "scenario": "Restore-from-zero reproduces the site from a bare clone"
-}

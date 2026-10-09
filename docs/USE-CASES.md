@@ -2,7 +2,7 @@
 
 **Who this is for:** anyone deciding whether the system fits a need. **Read after:** [plain/modes.md](plain/modes.md).
 
-Nineteen concrete scenarios, in three groups: **one machine, one person**;
+Twenty-one concrete scenarios, in three groups: **one machine, one person**;
 **many nodes, no server**; and **many agents on one Bundle**. Each says who is
 involved, where the data goes, which published surfaces it touches, which of the
 node's modes it is, the exact commands, and how it is proven.
@@ -91,6 +91,51 @@ Bundle's own folder.
   `SOURCE_DATE_EPOCH` it stops with `AGSC-E204`, because the build has no instant to
   stamp. [guides/mode-0.md](guides/mode-0.md) walks through it.
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
+
+### L6 — An agent kit and the node, both ways
+
+- **Who:** one person or a team whose coding agents keep their skills and memory in
+  a GABBE kit (plain Markdown under `agents/`).
+- **Data flow:** the node's published items → the kit's folders (procedures as
+  skills, gates as guides, concepts and clusters as semantic memory, episodes as
+  decision logs, lessons as entries of `CONTINUITY.md`), each file opening with the
+  provenance block; and a kit's own records back into the node as items marked
+  `prov.origin: imported`. Files only; nothing is fetched.
+- **Surfaces:** the published items, through the GABBE adapter.
+- **Mode:** 2, and 3 for the skills.
+- **Commands:** `agsc export --to gabbe` writes `dist/export/gabbe/agents/…`; copy its
+  `agsc/` folders into the kit, and append the `CONTINUITY.md` entries to the kit's
+  own file rather than replace it. Back again: `agsc import --from gabbe <kit> --dry-run`
+  for the plan, then the same command without `--dry-run`; a second import of the same
+  kit changes nothing. See [CONNECTORS.md](CONNECTORS.md), route 5.
+- **Proven by:** `tests/acceptance/use-cases/use-cases.test.js` (the export, and the
+  kit read back item for item into a copy of the node that holds no item yet), and
+  `tests/interchange/gabbe.test.js` for a kit's own records. No GABBE tool is run.
+
+### L7 — A skills collection becomes procedures, and goes back out
+
+- **Who:** one person or a team, and a collection of skills or rules that others
+  already share: Agent Skills folders, a Claude Code plugin or marketplace, Cursor or
+  Windsurf rules.
+- **Data flow:** a local clone → items (a skill becomes a procedure, a rule a concept
+  of kind `explainer`), each keeping its source file, layout and licence. Anything
+  that would execute is dropped and reported, and a skill whose licence is not a
+  recognised open one arrives as a draft, so it is never published until a person
+  has read its terms. Out again: the node's packs, laid out for one of the five
+  tools. The engine downloads nothing.
+- **Surfaces:** the skill packs, through the skills adapter.
+- **Mode:** 3.
+- **Commands:** `git clone <collection>`, then `agsc import --from skills --list <clone>`
+  (what would come in; nothing is written), `agsc import --from skills <clone> --dry-run`,
+  then the same command without `--dry-run` (`--layout <name>` picks one layout,
+  `--cluster <slug>` files every skill in one cluster). Out:
+  `agsc export --to skills --layout marketplace` (or `agentskills`, `claude-plugin`,
+  `cursor`, `windsurf`). See [CONNECTORS.md](CONNECTORS.md), route 6, for the
+  collections and the exact commands.
+- **Proven by:** `tests/acceptance/use-cases/use-cases.test.js` (a marketplace clone
+  listed, planned, imported and imported again; the packs exported and read back),
+  the five layouts in `features/persona-f-integrator.feature`, and
+  `tests/interchange/skills.test.js`. No collection is cloned from the network.
 
 ## Many nodes, no server
 
@@ -302,8 +347,10 @@ Bundle's own folder.
 - **Commands:** `agsc import --from board --format jira ./from-jira --dry-run`, then
   without `--dry-run`; change `status: draft` where the work may be public;
   `agsc build`; `agsc export --to board --format jira` for the way back.
-- **Proven by:** `tests/interchange/board.test.js` (every format: import, export, and
-  the round trip). No tool's own importer is run.
+- **Proven by:** `tests/acceptance/use-cases/use-cases.test.js` (a Jira export
+  planned, imported, published, built as a board, exported and read back), the eleven
+  formats in `features/persona-g-team.feature`, and `tests/interchange/board.test.js`
+  (every format: import, export, and the round trip). No tool's own importer is run.
 
 ### M8 — Working a live board with agents, on two nodes
 

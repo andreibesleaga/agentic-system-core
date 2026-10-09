@@ -22,7 +22,7 @@ kind of reader down one path.
 | Page | For |
 |---|---|
 | [guides/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/README.md) | one short guide per mode, on your own files: who it is for, what you get, the commands and what they print |
-| [USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md) | nineteen concrete scenarios with their commands |
+| [USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md) | twenty-one concrete scenarios with their commands |
 | [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md) | connecting agents, frameworks and repositories to a node |
 | [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) | the local tool server for an AI assistant |
 | [PLUGINS.md](PLUGINS.md) | writing a plugin of one of the eight kinds |

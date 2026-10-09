@@ -1,5 +1,0 @@
-{
-  "class": "model",
-  "reason": "the second half runs 'refresh --agent worker' without --dry-run, which needs a model adapter.",
-  "scenario": "The board reaches done and the agent stops"
-}

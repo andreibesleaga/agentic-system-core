@@ -25,9 +25,18 @@ Feature: Agent proposer contributes a change humans ratify
     And no network write occurs from the "propose" verb
 
   @PRD-040 @human @matrix-A4
-  Scenario: Operator runs the printed commands and the PR carries the trailer
-    Given the operator has reviewed the printed commands
-    When the operator runs them
+  Scenario: The operator runs the printed commands and commits with the trailers
+    Given the agent's edit of "content/concepts/<slug>.md" is proposed from a git repository of one commit
+    When the operator runs the printed "agsc lint --fix" and "git checkout -b proposal/1"
+    And the operator commits the change as printed, with a "Signed-off-by:" trailer and an "Assisted-by:" line naming "prov.operator"
+    Then the trailer block of that commit passes the grammar for an "ai-assisted" change (AGSC-08-06, AGSC-08-07)
+    And lint and build pass on the branch "proposal/1", and the ledger entry of that commit names the operator from the sign-off (AGSC-08-20a)
+    And "dist/proposal/1.patch" applies with "git apply" to a clean checkout of the first commit, and the item it gives passes lint
+
+  @PRD-040 @human @matrix-A4
+  Scenario: The operator's pull request carries the trailer and follows the contributor's path
+    Given the operator has committed the Proposal on the branch "proposal/1"
+    When the operator opens the pull request
     Then the resulting PR carries an "Assisted-by:" trailer and the "prov" block from the file
     And the PR follows the same CI/merge path as a human contributor's Proposal
 

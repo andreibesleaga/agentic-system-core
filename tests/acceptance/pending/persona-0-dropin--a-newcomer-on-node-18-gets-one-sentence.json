@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E6",
+  "reason": "the command line has no guard for a Node.js older than its floor: on a Node.js that reports v18.19.1 it runs on and exits 0, and a real Node.js 18 stops with ERR_REQUIRE_ESM and a stack trace instead of one sentence.",
+  "scenario": "A newcomer on Node 18 gets one sentence"
+}

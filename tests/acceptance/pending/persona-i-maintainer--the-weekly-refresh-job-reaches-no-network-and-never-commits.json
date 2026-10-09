@@ -1,5 +1,0 @@
-{
-  "class": "forge",
-  "reason": "the cron trigger and 'gh issue create' are forge behaviour; the stale-items list of the NOW page is checked by the unit tests.",
-  "scenario": "The weekly refresh job reaches no network and never commits"
-}

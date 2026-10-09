@@ -1,6 +1,0 @@
-{
-  "class": "conditional",
-  "needs": "browser",
-  "reason": "naming the Harness and clicking Download needs a browser; the Harness file set is covered by the compose and harness tests.",
-  "scenario": "Architect names and downloads a seven-file Harness"
-}

@@ -1,0 +1,5 @@
+{
+  "class": "external",
+  "reason": "comparing with the last published deploy needs the host, and the fallback needs the Zenodo deposit; the rebuild from a bare clone itself is the conditional scenario \"Restore-from-zero rebuilds the node byte for byte from a bare clone\".",
+  "scenario": "Restore-from-zero matches the last published deploy and the Zenodo deposit"
+}

@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E7",
+  "reason": "\"agsc help\" answers AGSC-E001 with no hint naming \"agsc --help\", and \"agsc --help\" lists the sixteen verbs on two lines with no sentence of purpose for each.",
+  "scenario": "A newcomer asks for help"
+}

@@ -28,6 +28,18 @@
 | P11 | Standards implementer | Adopt the discovery format on my site |
 | P12 | Self-driving team (Mode 5) | Let agents and people plan, claim and finish a project's tasks on one live board until it is done |
 
+### 1.1 Amendment 12 — three more personas (2026-10-09)
+
+The rows above stand as written; these three are added. Each one uses requirements this
+document already carries, so no requirement id is added, and each has a feature file of its own
+under `features/` (persona-m, persona-n and persona-o).
+
+| # | Persona | Job to be done | Modes | Requirements it exercises |
+|---|---|---|---|---|
+| P13 | Security reviewer or auditor | Judge whether a node and its engine can be trusted, from evidence I can run again offline: the ledger and its anchor, the security contact, the fence around untrusted prose, the secret and personal-data checks, the served headers, and what the tools do with hostile input | 0 and 1 (the reviewer reads every mode the same way) | PRD-005, PRD-023, PRD-047, PRD-050, PRD-053, PRD-062, PRD-065, NFR-07 |
+| P14 | Researcher | Measure a node with the shipped kit, offline, get the same numbers every time, and cite exactly the node, its content version, the specification version and the engine I measured | 0 and 1 | PRD-010, PRD-022, PRD-047, PRD-060, NFR-04, NFR-05 |
+| P15 | Restricted publisher | Say in public that my node exists and where a reader asks for access, while its content stays gated, and still pass the conformance checks on the public view | 0 | PRD-024, PRD-057 |
+
 ---
 
 ## 2. Functional requirements (EARS)

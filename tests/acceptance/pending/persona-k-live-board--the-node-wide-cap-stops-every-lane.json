@@ -1,0 +1,6 @@
+{
+  "class": "gap",
+  "closes_in": "E4",
+  "reason": "refresh --agent <lane> --dry-run never reads the node-wide cap budget.usd_month (here lowered by the .env file): with the cap reached it still writes dist/proposal/1.patch, exits 0 and reports no AGSC-E510 warning (AGSC-08-25, AGSC-08-28 e).",
+  "scenario": "The node-wide cap stops every lane"
+}

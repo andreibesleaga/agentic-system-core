@@ -1,5 +1,5 @@
 {
   "class": "forge",
-  "reason": "pushing a tag, trusted publishing and provenance attestations happen on the forge and the registry.",
+  "reason": "pushing a tag, trusted publishing and the provenance attestations happen on the forge and the registry; the permissions and the attest and publish steps of release.yml are read by the scenario \"The release workflow holds only the permissions trusted publishing and provenance need\".",
   "scenario": "The maintainer cuts a release and the packages publish with attestations"
 }

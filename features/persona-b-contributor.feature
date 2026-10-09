@@ -17,11 +17,21 @@ Feature: Human contributor fixes a page and passes a hard review gate
     And the discovery document names the same target as its "…rel#contribute" link with mode "pr" (AGSC-11-14)
 
   @PRD-040 @PRD-042 @human @matrix-H4
-  Scenario: Contributor commits with the required trailer and PR marker
-    Given the contributor has edited frontmatter or body in the fork
-    When the contributor commits the change
-    Then the commit message contains "Signed-off-by: <Name> <email> (CA-v1)"
-    And the PR body contains the marker "<!-- agsc:proposal v1 -->"
+  Scenario: An outside contributor commits with the CA-v1 sign-off
+    Given the Bundle is a git repository of one commit with fixed dates
+    And the contributor has edited the body of "content/concepts/a2a.md" in the fork
+    When the contributor runs "agsc propose a2a"
+    Then the command exits 0
+    And "dist/proposal/1.md" opens with the marker "<!-- agsc:proposal v1 -->" and states the rationale, the affected slug "a2a" and "prov.origin" (AGSC-08-05)
+    When the contributor commits the change with the trailer "Signed-off-by: <Name> <email> (CA-v1)"
+    Then the trailer block of that commit passes the sign-off grammar, with the agreement "CA-v1" (AGSC-08-06)
+    And after "agsc build" the ledger entry of that commit names the contributor from the sign-off, not "human:unknown" (AGSC-08-20a)
+
+  @PRD-040 @PRD-042 @human @matrix-H4
+  Scenario: The contributor opens the pull request with the proposal body
+    Given the contributor has committed the change with the sign-off on a branch of the fork
+    When the contributor opens the pull request with the body of "dist/proposal/1.md"
+    Then the PR body contains the marker "<!-- agsc:proposal v1 -->"
     And the PR body states rationale, affected slugs and "prov.origin"
 
   @PRD-041 @PRD-042 @agent @matrix-A13

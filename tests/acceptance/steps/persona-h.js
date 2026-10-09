@@ -1,10 +1,15 @@
 'use strict';
-// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-05-04, AGSC-05-04b
-// Steps of features/persona-h-memory.feature that run offline.
+// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-05-04, AGSC-05-04b, AGSC-06-26
+// Steps of features/persona-h-memory.feature that run offline: the lossless export
+// forms, a foreign OKF bundle, the COGX archive another memory system reads, there
+// and back, the connectors example that reshapes `chunks.jsonl` for a framework's
+// memory store, and the other export forms. The import into a copy of the Bundle
+// that holds no item, and the import run again, are persona-g's phrases.
 
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 const { FIXTURE, ROOT, built, linkset, splitItem } = require('./_world.js');
 
@@ -23,6 +28,21 @@ const OKF = Object.freeze({
 });
 
 const envelopeOf = (result) => result.structuredContent;
+
+const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
+const RECORDS = path.join(ROOT, 'examples', 'connectors', 'frameworks', 'records.js');
+const SHAPES = Object.freeze(['langgraph', 'autogen', 'mem0']);
+
+/** The citation members of one reshaped record, wherever its framework keeps metadata. */
+function citationOf(shape, record) {
+  if (shape === 'langgraph') return record.value;
+  return record.metadata;
+}
+
+/** The `@id`s of a built graph. */
+function graphIds(dir) {
+  return JSON.parse(fs.readFileSync(path.join(dir, 'www', 'graph.jsonld'), 'utf8'))['@graph'].map((n) => n['@id']).sort();
+}
 
 module.exports = [
   {
@@ -201,6 +221,103 @@ module.exports = [
         assert.match(f.message, /required property 'kind'/u, JSON.stringify(f));
       }
       assert.deepStrictEqual(world.networkAttempts(), []);
+    },
+  },
+  // ----------------------------------------------- COGX, records.js, other forms
+  {
+    pattern: 'the archive "dist/export/cogx" holds no "permissions.json", and every record names its item\'s IRI, the licence, the terms and the trust mark "untrusted"',
+    run(world) {
+      const dir = 'dist/export/cogx';
+      assert.ok(world.exists(`${dir}/manifest.json`), 'the archive has no manifest');
+      assert.ok(!world.exists(`${dir}/permissions.json`), 'the archive carries permissions.json');
+      const files = fs.readdirSync(path.join(world.dir, dir)).filter((f) => f.endsWith('.jsonl')).sort();
+      assert.ok(files.includes('entities.jsonl'), files.join(', '));
+      let records = 0;
+      for (const file of files) {
+        for (const line of world.read(`${dir}/${file}`).split('\n').filter(Boolean)) {
+          // A raw node is a plain property record: its record sits at the top level. A
+          // fact names its item as the subject of the statement.
+          const record = JSON.parse(line);
+          const agsc = record.metadata ? record.metadata.agsc : record.agsc;
+          assert.match(agsc.iri || record.subject_ref, /^https:\/\/agenticsystemcore\.com\//u, `${file}: ${line}`);
+          assert.strictEqual(agsc.license, TERMS, file);
+          assert.strictEqual(agsc.terms, TERMS, file);
+          assert.strictEqual(agsc.trust, 'untrusted', file);
+          records += 1;
+        }
+      }
+      assert.ok(records > 0);
+    },
+  },
+  {
+    pattern: 'the copy builds, and its graph names every item the first node\'s graph names',
+    run(world) {
+      built(world, { offline: true });
+      const copy = world.agsc(['build'], { cwd: world.state.target, offline: true });
+      assert.strictEqual(copy.exit, 0, copy.stdout + copy.stderr);
+      assert.deepStrictEqual(graphIds(world.state.target), graphIds(world.dir));
+    },
+  },
+  {
+    pattern: 'the agent reshapes "www/chunks.jsonl" with the connectors example records.js for LangGraph, AutoGen and Mem0 under the network trap',
+    run(world) {
+      world.state.records = {};
+      for (const shape of SHAPES) {
+        const r = spawnSync(process.execPath, [RECORDS, path.join(world.dir, 'www', 'chunks.jsonl'), shape],
+          { cwd: world.dir, encoding: 'utf8', env: world.offlineEnv() });
+        assert.strictEqual(r.status, 0, r.stderr);
+        world.state.records[shape] = r.stdout.split('\n').filter(Boolean).map((line) => JSON.parse(line));
+      }
+    },
+  },
+  {
+    pattern: 'each shape gives one record per chunk, and every record keeps the item IRI, the chunk digest, the licence, the terms and the trust mark "untrusted"',
+    run(world) {
+      const chunks = world.read('www/chunks.jsonl').split('\n').filter(Boolean).map((line) => JSON.parse(line));
+      assert.ok(chunks.length > 0);
+      for (const shape of SHAPES) {
+        const records = world.state.records[shape];
+        assert.strictEqual(records.length, chunks.length, shape);
+        records.forEach((record, i) => {
+          const cited = citationOf(shape, record);
+          assert.strictEqual(cited.iri, chunks[i].iri, shape);
+          assert.strictEqual(cited.digest, chunks[i].digest, shape);
+          assert.strictEqual(cited.license, chunks[i].license, shape);
+          assert.strictEqual(cited.terms, TERMS, shape);
+          assert.strictEqual(cited.trust, 'untrusted', shape);
+        });
+      }
+      assert.deepStrictEqual(world.state.records.langgraph[0].namespace, ['agenticsystemcore.com', chunks[0].item]);
+      assert.strictEqual(world.state.records.autogen[0].content, chunks[0].text);
+      assert.strictEqual(world.state.records.mem0[0].text, chunks[0].text);
+    },
+  },
+  {
+    pattern: 'each line of "dist/export/items.jsonl" is the node of the item\'s "www/pages/<slug>.jsonld", one line per item in slug order',
+    run(world) {
+      const pages = fs.readdirSync(path.join(world.dir, 'www', 'pages')).filter((f) => f.endsWith('.jsonld'))
+        .sort((a, b) => (a < b ? -1 : 1));
+      const lines = world.read('dist/export/items.jsonl').split('\n');
+      assert.strictEqual(lines.pop(), '', 'the file does not end with one LF');
+      assert.strictEqual(lines.length, pages.length);
+      // Each per-item view is already one canonical JSON line; the export line is that node.
+      pages.forEach((page, i) => assert.strictEqual(lines[i], world.read(`www/pages/${page}`).replace(/\n$/u, ''), page));
+    },
+  },
+  {
+    pattern: /^"(dist\/export\/[^"]+)" is written, carries the Content Use Terms, and a second run writes the same bytes$/u,
+    run(world, rel) {
+      const first = fs.readFileSync(path.join(world.dir, rel));
+      if (rel.endsWith('.zip')) {
+        // A stored archive: the terms file travels whole, as an entry of the export root.
+        assert.ok(first.includes(Buffer.from('LICENSE-CONTENT')), 'the archive has no LICENSE-CONTENT entry');
+        assert.ok(first.includes(fs.readFileSync(path.join(world.dir, 'LICENSE-CONTENT'))), 'the terms are not in the archive');
+      } else {
+        assert.ok(first.toString('utf8').includes(`terms: ${TERMS}`), `${rel} does not name the terms`);
+      }
+      const again = world.agsc(world.last.argv, { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.ok(fs.readFileSync(path.join(world.dir, rel)).equals(first), `${rel} changed on the second run`);
     },
   },
 ];

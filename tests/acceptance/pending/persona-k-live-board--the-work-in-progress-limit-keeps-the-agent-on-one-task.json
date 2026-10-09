@@ -1,5 +1,0 @@
-{
-  "class": "model",
-  "reason": "'worker proposes' is a model-driven lane run; the AGSC-E511 claim cap is covered by the governance tests.",
-  "scenario": "The work-in-progress limit keeps the agent on one task"
-}

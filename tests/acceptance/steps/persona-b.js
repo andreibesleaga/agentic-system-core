@@ -1,17 +1,83 @@
 'use strict';
-// verifies AGSC-04-02, AGSC-08-10, AGSC-08-30, AGSC-11-14
+// verifies AGSC-04-02, AGSC-08-05, AGSC-08-06, AGSC-08-10, AGSC-08-30, AGSC-11-14
 // Steps of features/persona-b-contributor.feature that run offline: the edit link
-// a contributor follows, and the `ci` lane a change runs through, under a preload
-// that refuses every network call (so no model service can be reached either).
+// a contributor follows, the local half of a contribution (the Proposal files
+// `propose` writes, a commit signed off under the contributor agreement, and the
+// ledger entry the build derives from it), and the `ci` lane a change runs
+// through, under a preload that refuses every network call (so no model service
+// can be reached either).
 
 const assert = require('node:assert');
+const path = require('node:path');
 
-const { built, linkset, splitItem } = require('./_world.js');
+const { ROOT, built, linkset, splitItem } = require('./_world.js');
+
+// The trailer grammar of AGSC-08-06 has no verb of its own; the engine's parser is
+// the check a forge's CI runs, so the step calls it directly.
+const prov = require(path.join(ROOT, 'src', 'governance', 'prov.js'));
 
 const TARGET = 'https://github.com/andreibesleaga/AgenticSystemCore.com';
 const CONTRIBUTE = 'https://w3id.org/agentic-system-core/rel#contribute';
+/** The outside contributor; the address is joined at run time, never written whole. */
+const CONTRIBUTOR = { local: 'ada.contributor', name: 'Ada Contributor' };
+const signOff = () => `Signed-off-by: ${CONTRIBUTOR.name} <${[CONTRIBUTOR.local, 'example.org'].join('@')}> (CA-v1)`;
 
 module.exports = [
+  {
+    pattern: 'the contributor has edited the body of "content/concepts/a2a.md" in the fork',
+    run(world) {
+      const before = world.read('content/concepts/a2a.md');
+      const after = before.replace(/\n## Intent\n\n([^\n]+)\n/u, '\n## Intent\n\n$1 Each agent keeps its own tools private.\n');
+      assert.notStrictEqual(after, before, 'the item has no Intent paragraph to edit');
+      world.write('content/concepts/a2a.md', after);
+    },
+  },
+  {
+    pattern: '"dist/proposal/1.md" opens with the marker "<!-- agsc:proposal v1 -->" and states the rationale, the affected slug "a2a" and "prov.origin" (AGSC-08-05)',
+    run(world) {
+      const body = world.read('dist/proposal/1.md');
+      assert.match(body, /^<!-- agsc:proposal v1 -->\n/u);
+      assert.match(body, /## Rationale\n/u);
+      assert.match(body, /## Affected slugs\n\n- a2a\n/u);
+      assert.match(body, /- prov\.origin: human\n/u);
+      assert.ok(world.exists('dist/proposal/1.patch'));
+    },
+  },
+  {
+    pattern: 'the contributor commits the change with the trailer "Signed-off-by: <Name> <email> (CA-v1)"',
+    run(world) {
+      // The content change only: the Proposal files under dist/ are not committed.
+      world.git(['add', 'content']);
+      world.git(['commit', '-q', '-m', 'Say what each agent keeps private', '-m', signOff()],
+        { GIT_AUTHOR_DATE: '2026-01-02T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-02T00:00:00Z' });
+      world.state.signed = world.git(['rev-parse', 'HEAD']).trim();
+      assert.deepStrictEqual(world.trailers(), [signOff()]);
+    },
+  },
+  {
+    pattern: 'the trailer block of that commit passes the sign-off grammar, with the agreement "CA-v1" (AGSC-08-06)',
+    run(world) {
+      const message = world.git(['log', '-1', '--format=%B', world.state.signed]);
+      const { findings, signoff } = prov.checkTrailers(message, { prov: { origin: 'human' } });
+      assert.deepStrictEqual(findings, []);
+      assert.strictEqual(signoff.name, CONTRIBUTOR.name);
+      assert.strictEqual(signoff.agreement, 'CA-v1');
+    },
+  },
+  {
+    pattern: 'after "agsc build" the ledger entry of that commit names the contributor from the sign-off, not "human:unknown" (AGSC-08-20a)',
+    run(world) {
+      built(world, { offline: true });
+      const entries = world.read('www/ledger.jsonl').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+      const entry = entries.find((e) => e.ref === world.state.signed);
+      assert.ok(entry, `no ledger entry names ${world.state.signed}`);
+      assert.strictEqual(entry.kind, 'commit');
+      assert.strictEqual(entry.actor, `human:${CONTRIBUTOR.local}`);
+      // The commit's author is the scratch identity: the actor comes from the sign-off.
+      assert.notStrictEqual(world.git(['log', '-1', '--format=%an', world.state.signed]).trim(), CONTRIBUTOR.name);
+      assert.deepStrictEqual(world.networkAttempts(), []);
+    },
+  },
   {
     pattern: 'the Bundle names the contribution target "https://github.com/andreibesleaga/AgenticSystemCore.com" with mode "pr"',
     run(world) {

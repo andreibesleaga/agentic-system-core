@@ -1,5 +1,0 @@
-{
-  "class": "forge",
-  "reason": "pushing the repository and Cloudflare Pages serving www/ at a domain happen on the forge and the host, not in the engine.",
-  "scenario": "Publishing the adopted wiki"
-}

@@ -2,13 +2,19 @@
 // verifies AGSC-02-90, AGSC-02-91, AGSC-02-92, AGSC-02-93, AGSC-02-95, AGSC-08-10
 // Steps of features/persona-0-dropin.feature that run offline: a folder of bare
 // notes adopted by the real `init`, repaired by the publisher, passed by `ci`,
-// built, and served by the real local MCP server.
+// built, served by the real local MCP server, and published locally through the
+// real `agsc-host` (the reference hosting profile, then `serve` on loopback). The
+// steps of the scenarios that wait on a gap are written here too: non-ASCII file
+// names, the help a newcomer asks for, a stray `AGSC_` variable, an old Node.js
+// and the security contact the agent skill teaches.
 
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { built, splitItem } = require('./_world.js');
+const { spawnSync } = require('node:child_process');
+
+const { HOST, AGSC, ROOT, built, splitItem } = require('./_world.js');
 
 /** The notes of the drop-in user, as they were before `init` touched them. */
 const NOTES = Object.freeze({
@@ -19,6 +25,13 @@ const NOTES = Object.freeze({
 const KEPT = '---\ntitle: Kept as written\n---\n\nThis note already had frontmatter.\n';
 const SKETCH = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff]);
 const ADOPTED = Object.freeze({ 'ideas.md': 'ideas', 'notes/agents.md': 'agents', 'todo.md': 'todo' });
+
+/** The two names AGSC-02-91 must lower-case as ASCII only: U+212A and U+0130. */
+const KELVIN = '\u212Aelvin.md';
+const ISTANBUL = '\u0130stanbul.md';
+/** The closed verb list of AGSC-09-07, written out here rather than read from the engine. */
+const VERBS = Object.freeze(['init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
+  'propose', 'review', 'refresh', 'skills', 'mcp', 'run', 'trace', 'conform']);
 
 const findingsOf = (r) => `${r.stdout}${r.stderr}`;
 const errorLines = (r) => findingsOf(r).split('\n').filter((l) => /^error: /u.test(l));
@@ -233,6 +246,131 @@ STEPS.push(
         assert.strictEqual(now.get(rel), bytes, `${rel} changed`);
       }
       assert.doesNotMatch(findingsOf(world.state.again), /^wrote: /mu, 'the second init wrote a file');
+    },
+  },
+);
+
+STEPS.push(
+  {
+    pattern: 'I run "agsc-host emit cloudflare-pages"',
+    run(world) {
+      const r = spawnSync(process.execPath, [HOST, 'emit', 'cloudflare-pages', '--json'], {
+        cwd: world.dir, encoding: 'utf8', env: world.offlineEnv(),
+      });
+      world.last = { argv: ['emit', 'cloudflare-pages'], exit: r.status, stderr: r.stderr, stdout: r.stdout };
+      assert.strictEqual(r.status, 0, findingsOf(world.last));
+    },
+  },
+  {
+    pattern: 'the host claims the reference profile, whose "_headers" and "_redirects" the build already wrote into "www/"',
+    run(world) {
+      const emitted = world.json();
+      assert.strictEqual(emitted.status, 'pass');
+      assert.strictEqual(emitted.profile, 'cloudflare-pages');
+      assert.match(emitted.claim, /the reference profile/u);
+      // The reference profile adds nothing: its two host files are part of every build.
+      assert.deepStrictEqual(emitted.written, []);
+      assert.ok(world.exists('www/_headers') && world.exists('www/_redirects'));
+      assert.match(world.read('www/_headers'), /\/\.well-known\/knowledge-linkset/u);
+    },
+  },
+  {
+    pattern: 'a directory of bare notes named with the Kelvin sign U+212A, as in "Kelvin.md", and with the capital I with dot above U+0130, as in "Istanbul.md"',
+    run(world) {
+      world.dir = world.temp('agsc-acc-names-');
+      world.write(KELVIN, '# Kelvin\n\nA note whose file name starts with the Kelvin sign.\n');
+      world.write(ISTANBUL, '# Istanbul\n\nA note whose file name starts with a capital I with a dot above.\n');
+      assert.deepStrictEqual(fs.readdirSync(world.dir).sort(), [KELVIN, ISTANBUL].sort());
+    },
+  },
+  {
+    pattern: 'the note named with U+212A becomes "content/concepts/kelvin.md", because NFC turns the Kelvin sign into the letter K before the ASCII lower-casing (AGSC-02-91)',
+    run(world) {
+      assert.ok(world.exists('content/concepts/kelvin.md'), fs.readdirSync(path.join(world.dir, 'content', 'concepts')).join(', '));
+    },
+  },
+  {
+    pattern: 'the note named with U+0130 becomes "content/concepts/stanbul.md", because only A to Z are lower-cased and every other character becomes "-" (AGSC-02-91)',
+    run(world) {
+      const slugs = fs.readdirSync(path.join(world.dir, 'content', 'concepts')).sort();
+      assert.deepStrictEqual(slugs, ['kelvin.md', 'stanbul.md']);
+      for (const name of slugs) assert.match(name, /^[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u);
+    },
+  },
+  {
+    pattern: 'each adopted file records its original file name in "aliases" (AGSC-02-93)',
+    run(world) {
+      assert.deepStrictEqual(splitItem(world.read('content/concepts/kelvin.md')).frontmatter.aliases, [KELVIN]);
+      assert.deepStrictEqual(splitItem(world.read('content/concepts/stanbul.md')).frontmatter.aliases, [ISTANBUL]);
+    },
+  },
+  {
+    pattern: 'an empty folder',
+    run(world) {
+      world.dir = world.temp('agsc-acc-empty-');
+    },
+  },
+  {
+    pattern: 'the help gives each of the sixteen verbs of AGSC-09-07 a line of its own with a sentence of purpose',
+    run(world) {
+      const lines = world.last.stdout.split('\n').map((l) => l.trim());
+      for (const verb of VERBS) {
+        // A line of its own: it starts with the verb, and what follows is a sentence,
+        // not the next verbs of a list.
+        const own = lines.filter((l) => l.split(/\s+/u)[0] === verb);
+        assert.strictEqual(own.length, 1, `"${verb}" begins ${own.length} lines of agsc --help:\n${world.last.stdout}`);
+        const rest = own[0].split(/\s+/u).slice(1);
+        assert.ok(rest.length >= 3 && rest.some((word) => !VERBS.includes(word)),
+          `the line of "${verb}" carries no sentence of purpose: ${own[0]}`);
+      }
+    },
+  },
+  {
+    pattern: 'a folder of bare notes adopted by "npx agentic-system-core init"',
+    run(world) {
+      world.dir = world.temp('agsc-acc-notes-');
+      world.write('ideas.md', '# Ideas\n\nAn agent is a program that acts for a person.\n');
+      world.write('todo.md', 'Write the first note.\n');
+      const init = world.agsc(['init'], { offline: true });
+      assert.strictEqual(init.exit, 0, findingsOf(init));
+      assert.ok(world.exists('content/concepts/ideas.md') && world.exists('agsc.config.json'));
+    },
+  },
+  {
+    pattern: /^the newcomer runs "agsc --version" on a Node\.js that reports "v(\d+\.\d+\.\d+)"$/u,
+    run(world, version) {
+      // An older Node.js, as the guard of the command line sees it: a preload that
+      // makes this Node.js report another version before the entry point runs.
+      const shim = path.join(world.home, 'old-node.js');
+      fs.writeFileSync(shim, [
+        `Object.defineProperty(process, 'version', { value: 'v${version}' });`,
+        `Object.defineProperty(process.versions, 'node', { value: '${version}' });`, ''].join('\n'));
+      const r = spawnSync(process.execPath, ['--require', shim, AGSC, '--version'], {
+        cwd: world.dir, encoding: 'utf8', env: world.offlineEnv(),
+      });
+      world.last = { argv: ['--version'], exit: r.status, stderr: r.stderr, stdout: r.stdout };
+    },
+  },
+  {
+    pattern: 'the output is that one line, with no stack trace',
+    run(world) {
+      const text = findingsOf(world.last).trim();
+      assert.ok(!text.includes('\n'), `more than one line:\n${text}`);
+      assert.doesNotMatch(text, /^\s+at /mu);
+    },
+  },
+  {
+    pattern: 'the newcomer writes ".well-known/security.txt" exactly as the agent skill shows it',
+    run(world) {
+      // The block that follows the sentence naming `.well-known/security.txt` in the
+      // skill's setup section, byte for byte (its indentation removed).
+      const skill = fs.readFileSync(path.join(ROOT, 'skills', 'agentic-system-core', 'SKILL.md'), 'utf8');
+      const after = skill.slice(skill.indexOf('written to `.well-known/security.txt`'));
+      const block = /\n( *)```text\n([\s\S]*?)\n\1```/u.exec(after);
+      assert.ok(block, 'the agent skill shows no security.txt block');
+      const text = `${block[2].split('\n').map((l) => l.slice(block[1].length)).join('\n')}\n`;
+      assert.match(text, /^Contact: /mu);
+      world.write('.well-known/security.txt', text);
     },
   },
 );
