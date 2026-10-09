@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 44 |
 | Checker header | 31 |
 
-Acceptance scenarios: 56 in `features/` (a Scenario Outline counts once), of which 21 are pending with a reason in `tests/acceptance/pending.json`. The executed scenarios name 44 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 56 in `features/` (a Scenario Outline counts once), of which 21 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 44 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 

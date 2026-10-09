@@ -2,8 +2,9 @@
 
 Thirteen `.feature` files, one per persona walkthrough of the `docs/PRD.md` §1 persona table
 §3 (a)–(j), plus the drop-in user (0), the live board (k) and the port implementer (l). Each file is `Feature:` + 2–4 `Scenario:`/`Scenario Outline:` in strict Given/When/Then,
-tagged `@persona-x` + one or more `@PRD-xxx`. Content is drawn only from the frozen walkthrough steps
-and `docs/PRD.md` acceptance criteria — nothing invented.
+tagged `@persona-x`, `@mode-n`, one actor tag (`@human` or `@agent`) and one or more `@PRD-xxx`, and,
+where it covers a row of `features/MATRIX.md`, `@matrix-<row>` (see "Tags" below). Content is drawn
+only from the frozen walkthrough steps and `docs/PRD.md` acceptance criteria — nothing invented.
 
 ## How these map to the E2E suite
 
@@ -45,8 +46,8 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 judges it with the shipped checker alone; the other runs the Python checker package over the same
 `tests/vectors/` as the engine's `conform` and compares the two reports vector by vector. The second
 one runs wherever that package's checkout sits beside the engine and a Python 3.9+ interpreter exists,
-and is reported as skipped, with the reason, where it does not (`conditional` in
-`tests/acceptance/pending.json`). The shared vectors themselves remain the port's full acceptance
+and is reported as skipped, with the reason, where it does not (its pending file under `tests/acceptance/pending/` is of class `conditional`, and
+`tests/acceptance/steps/_python-package.js` probes for the checkout and the interpreter). The shared vectors themselves remain the port's full acceptance
 (`spec/09-conformance`).
 
 ## How the runner executes them
@@ -56,9 +57,30 @@ scenario — each Examples row of an Outline — through the step definitions of
 `tests/acceptance/steps/`, against the real command line, the real local MCP server and the shipped
 tools, on scratch copies of `tests/acceptance/bundle/`, with a fixed build instant and a preload that
 refuses every network call. The commands a step names are the verbs and flags of `agsc <verb> --help`
-of this release. A scenario that needs a forge, a model adapter, an outside service or a live browser
-session is listed in `tests/acceptance/pending.json` with that class and its reason; a scenario whose
-rule the reference engine does not meet yet is listed there as a `gap`, and its steps are written.
+of this release. A scenario that needs a forge, a model adapter or an outside service has one file of its own under `tests/acceptance/pending/` with that class and its reason; one that needs a browser or another local tool has a file of class `conditional` naming the need, and runs wherever its probe finds it; a scenario whose rule the reference engine does not meet yet has a file of class `gap` naming in `closes_in` the change that makes it run, and its steps are written.
+
+## Tags
+
+Every scenario carries, on itself or inherited from its `Feature:`:
+
+- `@persona-x`, the persona of its file, and `@mode-n`, the mode (0–5) the journey runs in;
+- exactly one actor tag. `@human` when a person performs the `When` steps — the reader, the author,
+  the contributor, the maintainer, the operator who runs the printed commands, the architect. `@agent`
+  when software does — an MCP client, a coding agent reading steer files or an installed skill pack, an
+  agent proposer or a bot opening pull requests, an agent lane on a live board, the lint-only review
+  lane;
+- one or more `@PRD-xxx` (or `@NFR-xx`) requirement ids of `docs/PRD.md`;
+- `@matrix-<row>` for each row of `features/MATRIX.md` the scenario covers (for example
+  `@matrix-H18`). A scenario of a `gap`, `forge`, `model` or `external` pending file may carry the tag
+  too; it covers its row only once it runs.
+
+`features/MATRIX.md` holds the persona × mode × surface matrix: one table of persona rows (`H1`…
+for people, `A1`… for agents) and one table of surfaces, each with a target status (B, C, G→X, P, U,
+rec, 1.1), defined at the top of that file. `tools/validate-features` reports a scenario with no actor
+tag and a `@matrix-` tag naming no row as errors; `tools/validate-features --strict-matrix` also
+reports, as errors, every row or surface no running scenario covers, a U or rec cell without its
+reason, a G cell without its `gap` file or a `gap` file without its G cell, and a persona of the
+`docs/PRD.md` table that no feature file declares.
 
 ## Traceability
 

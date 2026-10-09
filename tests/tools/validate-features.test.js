@@ -13,7 +13,7 @@ const { REPO, capture, codes, envelope, tmpdir, tool, writeTree } = require('./h
 const { parseFeature, readmeCoverage } = tool('validate-features');
 
 const GOOD = [
-  '@persona-0 @PRD-053',
+  '@persona-0 @human @PRD-053',
   'Feature: A drop-in user',
   '  As a user',
   '  I want a wiki',
@@ -157,7 +157,7 @@ describe('validate-features — the faults', () => {
 
   it('a comment line and a Rule: keyword are accepted', () => {
     const json = only({
-      'x.feature': ['# a comment', 'Feature: f', '', '  Rule: a rule', '', '  Scenario: s', '    Given a thing', ''].join('\n'),
+      'x.feature': ['# a comment', '@agent', 'Feature: f', '', '  Rule: a rule', '', '  Scenario: s', '    Given a thing', ''].join('\n'),
     });
     assert.deepEqual(codes(json), []);
   });
@@ -210,7 +210,7 @@ describe('validate-features — the helpers it exports', () => {
     const parsed = parseFeature(GOOD, 'x.feature');
     assert.equal(parsed.features, 1);
     assert.equal(parsed.scenarios.length, 2);
-    assert.deepEqual([...parsed.tags].sort(), ['@PRD-053', '@persona-0']);
+    assert.deepEqual([...parsed.tags].sort(), ['@PRD-053', '@human', '@persona-0']);
     assert.deepEqual(parsed.findings, []);
   });
 
@@ -231,7 +231,246 @@ describe('validate-features — the real distribution', () => {
   it('the shipped pack parses, closes against docs/PRD.md and agrees with its README', () => {
     const result = capture('validate-features', [REPO]);
     assert.equal(result.code, 0);
-    assert.equal(result.err, '');
-    assert.match(result.out, /^validate-features: 13 input file\(s\) read, \d+ scenarios, \d+ requirement ids tagged, 0 error, 0 warn/u);
+    assert.match(result.out, /^validate-features: \d+ input file\(s\) read, \d+ scenarios, \d+ requirement ids tagged, 0 error, \d+ warn/u);
+    assert.ok(fs.existsSync(path.join(REPO, 'features', 'MATRIX.md')), 'the shipped pack carries features/MATRIX.md');
+    // Every scenario names its actor. The only warnings normal mode may still print
+    // are the matrix's own coverage findings (a row or surface no running scenario
+    // covers yet, a G cell whose gap file is not written yet): `--strict-matrix`
+    // turns those into errors. Every other finding is a defect of the pack.
+    for (const line of result.err.split('\n').filter(Boolean)) {
+      assert.match(line, /^warn: (?:features\/MATRIX\.md|docs\/PRD\.md|tests\/acceptance\/pending\/[^:]+):\d+:1 AGSC-E20[123] /u);
+    }
+  });
+
+  it('every shipped scenario names one actor and one mode, and every persona row and surface is in the matrix', () => {
+    const { parseFeature, readMatrix } = tool('validate-features');
+    const dir = path.join(REPO, 'features');
+    let scenarios = 0;
+    for (const name of fs.readdirSync(dir).filter((f) => f.endsWith('.feature')).sort()) {
+      const parsed = parseFeature(fs.readFileSync(path.join(dir, name), 'utf8'), `features/${name}`);
+      for (const s of parsed.scenarios) {
+        scenarios += 1;
+        const tags = new Set([...s.inherited, ...s.tags]);
+        const actors = ['@human', '@agent'].filter((t) => tags.has(t));
+        assert.equal(actors.length, 1, `${name} "${s.name}" names ${actors.length} actors`);
+        assert.equal([...tags].filter((t) => /^@mode-[0-5]$/u.test(t)).length, 1, `${name} "${s.name}" names no single @mode-n`);
+        assert.ok(tags.has(`@${name.split('-').slice(0, 2).join('-')}`), `${name} "${s.name}" carries no @persona tag of its file`);
+      }
+    }
+    assert.ok(scenarios > 0);
+    const matrix = readMatrix(fs.readFileSync(path.join(dir, 'MATRIX.md'), 'utf8'));
+    assert.deepEqual(matrix.problems, []);
+    const ids = (letter, n) => Array.from({ length: n }, (_, i) => `${letter}${i + 1}`);
+    assert.deepEqual(matrix.rows.map((r) => r.id), [...ids('H', 21), ...ids('A', 18)]);
+    assert.deepEqual(matrix.surfaces.map((s) => s.label), [
+      'CLI verbs (16)', 'Global flags', 'MCP tools (7)', 'MCP resources and the prompt', 'Page tools (7)',
+      'Discovery Levels 0–3', 'Exports and adapters', 'Imports', 'Live boards, claims, lanes, budget, .env',
+      'Six modes', 'Restricted visibility', 'Federation, peers, contribute', 'security.txt', 'Legal texts, TDM',
+      'Hosting profiles', 'Ledger and anchor',
+    ]);
+    for (const entry of [...matrix.rows, ...matrix.surfaces]) {
+      assert.ok(entry.status.size > 0, `${entry.id || entry.label}: no status`);
+      for (const s of ['U', 'rec']) if (entry.status.has(s)) assert.ok(entry.reason, `${entry.id || entry.label}: ${s} without a reason`);
+    }
+    const modes = matrix.surfaces.find((s) => s.label === 'Six modes');
+    assert.equal(modes.stems.length, 6, 'the six-modes surface names one feature per mode');
+  });
+});
+
+describe('validate-features — the actor tag of every scenario', () => {
+  const UNTAGGED = 'Feature: f\n  As P0 (someone)\n\n  Scenario: s\n    Given a thing\n';
+  const MATRIX = '| Row | Who | Feature file | Target | Reason |\n|---|---|---|---|---|\n| H1 | someone | persona-0 | B | |\n';
+
+  it('a scenario without @human or @agent is a warning while the pack has no features/MATRIX.md', () => {
+    const { code, json } = envelope('validate-features', [featureRoot({ 'x.feature': UNTAGGED })]);
+    assert.equal(code, 0);
+    const actor = json.findings.filter((f) => /carries no actor tag/u.test(f.message));
+    assert.equal(actor.length, 1);
+    assert.equal(actor[0].code, 'AGSC-E202');
+    assert.equal(actor[0].severity, 'warn');
+    assert.equal(actor[0].line, 4);
+  });
+
+  it('the same scenario is an error once the pack carries features/MATRIX.md', () => {
+    const { code, json } = envelope('validate-features', [featureRoot({ 'MATRIX.md': MATRIX, 'x.feature': UNTAGGED })]);
+    assert.equal(code, 1);
+    assert.ok(json.findings.some((f) => f.severity === 'error' && /"s" carries no actor tag/u.test(f.message)));
+  });
+
+  it('a Feature tag, a Rule tag or the tags of every Examples block carry the actor too', () => {
+    const json = envelope('validate-features', [featureRoot({
+      'MATRIX.md': MATRIX,
+      'x.feature': ['@agent', 'Feature: f', '', '  Scenario: s', '    Given a thing', ''].join('\n'),
+      'y.feature': ['Feature: g', '', '  @human', '  Rule: r', '', '  Scenario: s', '    Given a thing', ''].join('\n'),
+      'z.feature': ['Feature: h', '', '  Scenario Outline: o', '    Given a <thing>', '',
+        '    @human', '    Examples:', '      | thing |', '      | a     |', '',
+        '    @agent', '    Examples:', '      | thing |', '      | b     |', ''].join('\n'),
+      'w.feature': ['Feature: i', '', '  Scenario Outline: half', '    Given a <thing>', '',
+        '    @human', '    Examples:', '      | thing |', '      | a     |', '',
+        '    Examples:', '      | thing |', '      | b     |', ''].join('\n'),
+    })]).json;
+    const actor = json.findings.filter((f) => /actor tag/u.test(f.message));
+    assert.deepEqual(actor.map((f) => f.file), ['features/w.feature'], JSON.stringify(actor));
+  });
+
+  it('a @matrix- tag naming a row features/MATRIX.md does not define is AGSC-E201, with or without the matrix', () => {
+    const tagged = `@persona-0 @human @matrix-H9\n${GOOD.split('\n').slice(1).join('\n')}`;
+    const withMatrix = envelope('validate-features', [featureRoot({ 'MATRIX.md': MATRIX, 'persona-0.feature': tagged })]);
+    assert.equal(withMatrix.code, 1);
+    assert.ok(withMatrix.json.findings.some((f) => f.code === 'AGSC-E201' && /@matrix-H9 names a row/u.test(f.message)));
+    const without = envelope('validate-features', [featureRoot({ 'persona-0.feature': tagged })]);
+    assert.equal(without.code, 1);
+    assert.ok(without.json.findings.some((f) => f.code === 'AGSC-E201' && /@matrix-H9/u.test(f.message)));
+  });
+});
+
+describe('validate-features — the persona × mode × surface matrix', () => {
+  const MATRIX = [
+    '# Matrix',
+    '',
+    '| Row | Who | Feature file | Target | Reason |',
+    '|---|---|---|---|---|',
+    '| H1 | Solo author | persona-0 | B | |',
+    '| H2 | Publisher | persona-0 | B | |',
+    '| H3 | Reader | — | U | — |',
+    '| H4 | Manager | — | rec | prose is the right evidence for this reader |',
+    '| H5 | Maintainer | persona-0 | B + G→E9, E11 | |',
+    '| H6 | Old reader | persona-0 | U — reason: a unit test covers this whole row | |',
+    '| A1 | Agent | — | 1.1 | |',
+    '',
+    '| Surface | Target | Scenario | Reason |',
+    '|---|---|---|---|',
+    '| CLI verbs | B | persona-0 | |',
+    '| MCP tools | B | persona-z | |',
+    '| Global flags | U | — | a unit test covers every flag |',
+    '| Live boards | B + G→E4 | persona-0 | |',
+    '',
+  ].join('\n');
+  const FEATURE = [
+    '@persona-0 @human',
+    'Feature: Drop-in',
+    '  As P0 (drop-in user)',
+    '',
+    '  @matrix-H1 @matrix-H5',
+    '  Scenario: Runs now',
+    '    Given a thing',
+    '',
+    '  @matrix-H5',
+    '  Scenario: Waits for nine',
+    '    Given a thing',
+    '',
+    '  @matrix-H1',
+    '  Scenario: Waits for seven',
+    '    Given a thing',
+    '',
+    '  Scenario: Waits untagged',
+    '    Given a thing',
+    '',
+  ].join('\n');
+  const gap = (scenario, closes) => JSON.stringify({ class: 'gap', closes_in: closes, reason: 'a sentence of reason long enough', scenario });
+
+  function matrixRoot() {
+    return featureRoot({ 'MATRIX.md': MATRIX, 'persona-0.feature': FEATURE }, {
+      'docs/PRD.md': '| P0 | Drop-in user | x |\n| P1 | Human reader | y |\n\n| PRD-053 | a requirement |\n',
+      'tests/acceptance/pending/persona-0--waits-for-nine.json': gap('Waits for nine', 'E9'),
+      'tests/acceptance/pending/persona-0--waits-for-seven.json': gap('Waits for seven', 'E7'),
+      'tests/acceptance/pending/persona-0--waits-untagged.json': gap('Waits untagged', 'E8'),
+    });
+  }
+
+  const EXPECTED = [
+    /H2 is covered by no scenario that runs/u,
+    /H3 is marked U and records no reason/u,
+    /H5 waits for E11 and no gap file names it/u,
+    /persona-0--waits-for-seven\.json closes in E7 and no row it tags \(H1\) waits for E7/u,
+    /persona-0--waits-untagged\.json closes in E8 and its scenario carries no @matrix- tag, and no surface of persona-0 waits for E8/u,
+    /surface "MCP tools" names persona-z, which has no feature file/u,
+    /surface "Live boards" waits for E4 and no gap file of persona-0 names it/u,
+    /persona P1 of docs\/PRD\.md has no feature file/u,
+  ];
+
+  it('--strict-matrix reports each uncovered row, reasonless U, unmatched G cell, unmatched gap file and persona as an error', () => {
+    const { code, json } = envelope('validate-features', ['--strict-matrix', matrixRoot()]);
+    assert.equal(code, 1);
+    const matrix = json.findings.filter((f) => f.file === 'features/MATRIX.md' || f.file.startsWith('tests/acceptance/pending/') || f.file === 'docs/PRD.md');
+    for (const pattern of EXPECTED) {
+      const hit = matrix.filter((f) => pattern.test(f.message));
+      assert.equal(hit.length, 1, `${pattern}: ${JSON.stringify(matrix, null, 1)}`);
+      assert.equal(hit[0].severity, 'error');
+    }
+    assert.equal(matrix.length, EXPECTED.length, JSON.stringify(matrix, null, 1));
+  });
+
+  it('without the flag the same findings are warnings and the pack passes', () => {
+    const { code, json } = envelope('validate-features', [matrixRoot()]);
+    assert.equal(code, 0);
+    for (const pattern of EXPECTED) {
+      assert.ok(json.findings.some((f) => pattern.test(f.message) && f.severity === 'warn'), String(pattern));
+    }
+    const human = capture('validate-features', [matrixRoot()]);
+    assert.match(human.out, /; matrix: 7 rows, 4 surfaces, 3 gap files\n$/u);
+  });
+
+  it('a complete matrix passes in strict mode', () => {
+    const root = featureRoot({
+      'MATRIX.md': [
+        '| Row | Who | Feature file | Target | Reason |', '|---|---|---|---|---|',
+        '| H1 | Solo author | persona-0 | B + G→E9 | |', '| H4 | Manager | — | rec | prose is the right evidence for this reader |',
+        '', '| Surface | Target | Scenario |', '|---|---|---|', '| CLI verbs | B + G→E9 | persona-0 |', '',
+      ].join('\n'),
+      'persona-0.feature': ['@persona-0 @human', 'Feature: Drop-in', '  As P0 (drop-in user)', '',
+        '  @matrix-H1', '  Scenario: Runs now', '    Given a thing', '',
+        '  @matrix-H1', '  Scenario: Waits for nine', '    Given a thing', ''].join('\n'),
+    }, {
+      'docs/PRD.md': '| P0 | Drop-in user | x |\n\n| PRD-053 | a requirement |\n',
+      'tests/acceptance/pending/persona-0--waits-for-nine.json': gap('Waits for nine', 'E9'),
+    });
+    const { code, json } = envelope('validate-features', ['--strict-matrix', root]);
+    assert.deepEqual(json.findings, []);
+    assert.equal(code, 0);
+  });
+
+  it('a conditional scenario covers a C row; a forge-pending one covers nothing', () => {
+    const root = featureRoot({
+      'MATRIX.md': '| Row | Who | Feature file | Target |\n|---|---|---|---|\n| H1 | a | persona-0 | C |\n| H2 | b | persona-0 | B |\n',
+      'persona-0.feature': ['@persona-0 @human', 'Feature: f', '  As P0 (x)', '',
+        '  @matrix-H1', '  Scenario: In a browser', '    Given a thing', '',
+        '  @matrix-H2', '  Scenario: On a forge', '    Given a thing', ''].join('\n'),
+    }, {
+      'docs/PRD.md': '| P0 | Drop-in user | x |\n\n| PRD-053 | a requirement |\n',
+      'tests/acceptance/pending/persona-0--in-a-browser.json': JSON.stringify({ class: 'conditional', needs: 'browser', reason: 'a sentence of reason long enough', scenario: 'In a browser' }),
+      'tests/acceptance/pending/persona-0--on-a-forge.json': JSON.stringify({ class: 'forge', reason: 'a sentence of reason long enough', scenario: 'On a forge' }),
+    });
+    const { json } = envelope('validate-features', ['--strict-matrix', root]);
+    assert.deepEqual(json.findings.map((f) => f.message.replace(/ \(.*$/u, '')), ['row H2 is covered by no scenario that runs']);
+  });
+
+  it('a status outside the closed list, and a matrix with no Target column, are reported', () => {
+    const root = featureRoot({
+      'MATRIX.md': '| Row | Who | Feature file | Target |\n|---|---|---|---|\n| H1 | a | persona-0 | maybe |\n\n| Row | Who |\n|---|---|\n| H2 | b |\n',
+    });
+    const { json } = envelope('validate-features', ['--strict-matrix', root]);
+    assert.ok(json.findings.some((f) => f.code === 'AGSC-E203' && /row H1: the target "maybe" names no status/u.test(f.message)));
+    assert.ok(json.findings.some((f) => f.code === 'AGSC-E202' && /a table of features\/MATRIX\.md has no Target column/u.test(f.message)));
+  });
+
+  it('--strict-matrix on a pack with no features/MATRIX.md is AGSC-E901', () => {
+    const { code, json } = envelope('validate-features', ['--strict-matrix', featureRoot()]);
+    assert.equal(code, 1);
+    assert.ok(json.findings.some((f) => f.code === 'AGSC-E901' && /features\/MATRIX\.md/u.test(f.message)));
+  });
+
+  it('readMatrix reads both tables, the G cells with their continued lists, and the reasons', () => {
+    const { readMatrix } = tool('validate-features');
+    const matrix = readMatrix(MATRIX);
+    assert.deepEqual(matrix.rows.map((r) => r.id), ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'A1']);
+    assert.deepEqual(matrix.rows.find((r) => r.id === 'H5').gaps, ['E9', 'E11']);
+    assert.deepEqual([...matrix.rows.find((r) => r.id === 'H5').status].sort(), ['B', 'G']);
+    assert.equal(matrix.rows.find((r) => r.id === 'H6').reason, 'a unit test covers this whole row');
+    assert.equal(matrix.rows.find((r) => r.id === 'H3').reason, '');
+    assert.deepEqual(matrix.surfaces.map((s) => s.label), ['CLI verbs', 'MCP tools', 'Global flags', 'Live boards']);
+    assert.deepEqual(matrix.surfaces.find((s) => s.label === 'Live boards').stems, ['persona-0']);
+    assert.deepEqual(matrix.surfaces.find((s) => s.label === 'Live boards').gaps, ['E4']);
+    assert.deepEqual(readMatrix('| Row | Target |\n|---|---|\n| H1 | B + G→RS-a, RS-b; w3id live P |\n').rows[0].gaps, ['RS-a', 'RS-b']);
   });
 });

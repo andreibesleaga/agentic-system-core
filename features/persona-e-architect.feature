@@ -9,13 +9,13 @@ Feature: Architect turns Concepts into a starting architecture
     Given "/compose/" loads "/graph.jsonld" and "www/compose/agsc-core.js"
     And "www/compose/agsc-core.js" is the "src/composition/" module set, bundled, with no "node:" import
 
-  @PRD-036
+  @PRD-036 @human @matrix-H9
   Scenario: Selecting Concepts triggers requires-closure with an explanation
     When the architect ticks the Concept "handoff"
     Then the panel shows "auto-added: supervisor ← required-by handoff"
     And the addition carries an explanation path from the selection to "supervisor"
 
-  @PRD-036
+  @PRD-036 @human @matrix-H9
   Scenario: Excludes mutex and warnings surface before download
     Given the architect has selected two Concepts related by "excludes"
     When the closure runs
@@ -25,7 +25,7 @@ Feature: Architect turns Concepts into a starting architecture
     Given a selected Concept has a "uses" target that is not selected
     Then the panel shows a soft warning for the missing "uses" target
 
-  @PRD-037
+  @PRD-037 @human @matrix-H9
   Scenario: Architect names and downloads a seven-file Harness
     When the architect names the Harness "harness-x"
     And clicks "Download"
@@ -40,7 +40,7 @@ Feature: Architect turns Concepts into a starting architecture
       | skills/<slug>/SKILL.md            |
     And if browser zip writing is unavailable, files download individually as the documented fallback
 
-  @PRD-038
+  @PRD-038 @human @matrix-H9
   Scenario: Browser output is byte-identical to the CLI for the same selection
     When the architect runs "npx agentic-system-core compose a2a mcp supervisor --out ./harness-x/" on the CLI
     And separately runs "www/compose/agsc-core.js" as "/compose/" does, over the published "/graph.jsonld", in a context that holds nothing but the language

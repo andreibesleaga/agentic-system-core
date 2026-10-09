@@ -1,9 +1,10 @@
-@persona-0 @PRD-053
+@persona-0 @mode-0 @PRD-053
 Feature: Drop-in user — plain Markdown becomes a live ontologic wiki
   As a user with a folder of plain .md notes
   I want a living, linked, agent-readable wiki with zero configuration
   So that my notes become an online ontologic memory in three commands
 
+  @human @matrix-H1
   Scenario: Three commands from bare notes to a full local site
     Given a directory containing "ideas.md", "notes/agents.md" and "todo.md" with no YAML frontmatter, and "kept.md" with a frontmatter block
     When I run "npx agentic-system-core init"
@@ -21,11 +22,13 @@ Feature: Drop-in user — plain Markdown becomes a live ontologic wiki
     Then "www/" contains the site, "graph.jsonld", "llms.txt" and "/.well-known/knowledge-linkset"
     And "npx agentic-system-core mcp" serves search, read and links over the same files
 
+  @human @matrix-H1
   Scenario: Re-running init over an adopted and built Bundle changes nothing
     Given a folder of bare notes adopted by "npx agentic-system-core init", repaired, and built into "www/"
     When I run "npx agentic-system-core init" again
     Then no file under "content/" changes and nothing under "www/", "dist/" or "content/assets/" is adopted (AGSC-02-91)
 
+  @human @matrix-H2
   Scenario: Publishing the adopted wiki
     Given the adopted Bundle from the previous scenario
     When I push the repository with the generated GitHub workflow

@@ -1,23 +1,26 @@
 'use strict';
 // The world of one acceptance scenario: a scratch Bundle copied from
 // `tests/acceptance/bundle/`, the REAL command line spawned without a shell, the
-// real local MCP server reached through the official SDK client, and a scratch
-// git history when a scenario needs one.
+// real local MCP server reached through the official SDK client, a scratch git
+// history when a scenario needs one, and the built node served read-only on
+// loopback by the real `agsc-host serve` when a scenario checks it over HTTP.
 //
 // Deterministic: every child gets a fixed build instant (SOURCE_DATE_EPOCH, or
 // fixed git author/committer dates), an empty git identity, NO_COLOR and a
 // scratch HOME; nothing reaches the network; every scratch directory is removed
-// when the scenario ends. A child run with `{ offline: true }` also carries the
+// when the scenario ends, and every server it started is stopped. A child run with
+// `{ offline: true }` also carries the
 // preload of `_offline.js`, which refuses and records every network attempt, so a
 // scenario can prove that a lane made no network or model call at all.
 
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..', '..', '..');
 const AGSC = path.join(ROOT, 'bin', 'agsc.js');
+const HOST = path.join(ROOT, 'bin', 'agsc-host.js');
 const FIXTURE = path.join(ROOT, 'tests', 'acceptance', 'bundle');
 const OFFLINE = path.join(__dirname, '_offline.js');
 const EPOCH = '1767225600';
@@ -27,12 +30,16 @@ class World {
   constructor() {
     this.temporaries = [];
     this.clients = [];
+    this.servers = [];
     this.home = this.temp('agsc-acc-home-');
     fs.writeFileSync(path.join(this.home, '.gitconfig-empty'), '');
     this.dir = null;
     this.last = null;
     this.trap = path.join(this.home, 'network-attempts.txt');
     this.state = Object.create(null);
+    // What the next commands add to, or remove from, their environment
+    // (`_common.js`: the environment variable "X" is "v" / is unset).
+    this.overrides = { env: Object.create(null), unset: [] };
   }
 
   /** A scratch directory under the system temporary directory, removed at the end. */
@@ -85,8 +92,9 @@ class World {
 
   /** Run `agsc <argv…>` in the current Bundle (or `cwd`), no shell; remembers the result. */
   agsc(argv, options = {}) {
-    const env = options.offline ? this.offlineEnv(options.env || {}) : this.env(options.env || {});
-    for (const name of options.unset || []) delete env[name];
+    const extra = { ...this.overrides.env, ...(options.env || {}) };
+    const env = options.offline ? this.offlineEnv(extra) : this.env(extra);
+    for (const name of [...this.overrides.unset, ...(options.unset || [])]) delete env[name];
     const r = spawnSync(process.execPath, [AGSC, ...argv], {
       cwd: options.cwd || this.dir, encoding: 'utf8', env,
     });
@@ -115,6 +123,63 @@ class World {
     if (!fs.existsSync(path.join(this.dir, '.git'))) this.git(['init', '-q', '-b', 'main']);
     this.git(['add', '-A']);
     this.git(['commit', '-q', '-m', message], extraEnv);
+  }
+
+  /**
+   * One more commit on the fixed dates, with the given trailers (`Key: value`
+   * lines) after a blank line, as `git interpret-trailers` reads them. The
+   * working tree is committed as it is; with nothing changed the commit is empty.
+   * The first commit of a Bundle that has no history yet holds the whole tree.
+   */
+  commit(subject, trailers = [], extraEnv = {}) {
+    if (!fs.existsSync(path.join(this.dir, '.git'))) this.git(['init', '-q', '-b', 'main']);
+    this.git(['add', '-A']);
+    const body = trailers.length ? ['-m', trailers.join('\n')] : [];
+    this.git(['commit', '-q', '--allow-empty', '-m', subject, ...body], extraEnv);
+  }
+
+  /** The trailers of the last commit, one `Key: value` string each. */
+  trailers() {
+    return this.git(['log', '-1', '--format=%(trailers:only,unfold)']).split('\n').filter(Boolean);
+  }
+
+  /** The last command's standard output as the AGSC-09-11 envelope (or any JSON). */
+  json() {
+    if (!this.last) throw new Error('no command has run yet');
+    try {
+      return JSON.parse(this.last.stdout);
+    } catch (e) {
+      throw new Error(`the output is not JSON: ${this.last.stdout}${this.last.stderr}`, { cause: e });
+    }
+  }
+
+  /**
+   * Serve a directory of the Bundle read-only on loopback with the real `agsc-host
+   * serve`, on a port the system picks. Resolves with the origin once the server
+   * prints it; the server is stopped when the scenario ends.
+   * @returns {Promise<{origin: string, port: number}>}
+   */
+  serve(rel = 'www') {
+    const site = path.join(this.dir, rel);
+    fs.mkdirSync(site, { recursive: true });
+    const child = spawn(process.execPath, [HOST, 'serve', '--site', site, '--port', '0', '--bind', '127.0.0.1'], {
+      cwd: this.dir, env: this.env(), stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    this.servers.push(child);
+    return new Promise((resolve, reject) => {
+      let out = '';
+      const fail = (why) => reject(new Error(`agsc-host serve ${why}: ${out}`));
+      child.stdout.setEncoding('utf8');
+      child.stderr.setEncoding('utf8');
+      child.stderr.on('data', (chunk) => { out += chunk; });
+      child.stdout.on('data', (chunk) => {
+        out += chunk;
+        const m = /at http:\/\/127\.0\.0\.1:(\d+)\//u.exec(out);
+        if (m) resolve({ origin: `http://127.0.0.1:${m[1]}`, port: Number(m[1]) });
+      });
+      child.on('error', (e) => fail(`could not start (${e.message})`));
+      child.on('exit', (code) => fail(`stopped with exit ${code}`));
+    });
   }
 
   read(rel) {
@@ -171,6 +236,13 @@ class World {
     for (const client of this.clients) {
       try { await client.close(); } catch (e) { /* already closed */ }
     }
+    for (const child of this.servers) {
+      if (child.exitCode === null && child.signalCode === null) {
+        const gone = new Promise((resolve) => child.once('exit', resolve));
+        child.kill();
+        await gone;
+      }
+    }
     for (const dir of this.temporaries) fs.rmSync(dir, { force: true, recursive: true });
   }
 }
@@ -216,4 +288,4 @@ function built(world, options = {}) {
   return r;
 }
 
-module.exports = { AGSC, EPOCH, FIXTURE, INSTANT, ROOT, World, built, linkset, pythonPackage, splitItem };
+module.exports = { AGSC, EPOCH, FIXTURE, HOST, INSTANT, ROOT, World, built, linkset, pythonPackage, splitItem };

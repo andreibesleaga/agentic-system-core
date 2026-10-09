@@ -1,0 +1,5 @@
+{
+  "class": "external",
+  "reason": "the 303 redirects are served by the w3id service from its .htaccess, which runs on w3id's host.",
+  "scenario": "Implementer content-negotiates the vocabulary via w3id"
+}

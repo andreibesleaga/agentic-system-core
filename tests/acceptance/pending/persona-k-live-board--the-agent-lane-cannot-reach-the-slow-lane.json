@@ -1,0 +1,5 @@
+{
+  "class": "model",
+  "reason": "'the agent opens a Proposal' is a model-driven lane run; the AGSC-E509 gate itself is covered by tests/governance/agents tests and refresh --dry-run.",
+  "scenario": "The agent lane cannot reach the slow lane"
+}

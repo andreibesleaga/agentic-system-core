@@ -8,7 +8,7 @@ Feature: Agent uses a node as external auditable memory
   Background:
     Given the read path reuses persona-c (MCP) and the write path reuses persona-d (proposer)
 
-  @PRD-026
+  @PRD-026 @agent @matrix-A5
   Scenario: Agent exports the Bundle in three lossless forms
     Given the Bundle root carries the Content Use Terms as "LICENSE-CONTENT"
     When the agent runs "npx agentic-system-core export --markdown"
@@ -18,13 +18,13 @@ Feature: Agent uses a node as external auditable memory
     When the agent runs "npx agentic-system-core export --jsonld"
     Then "dist/export/graph.jsonld" equals "www/graph.jsonld" byte-for-byte
 
-  @PRD-026
+  @PRD-026 @human @matrix-A5
   Scenario: Exported Markdown Bundle opens unchanged as an Obsidian vault
     Given "dist/export/markdown/" was produced by "export --markdown"
     When the folder is opened as an Obsidian vault
     Then no file requires modification to render correctly
 
-  @PRD-026
+  @PRD-026 @agent @matrix-A5
   Scenario: Agent imports a foreign OKF bundle idempotently
     When the agent runs "npx agentic-system-core import ./some-okf-bundle --from okf"
     Then each file is written under the folder of its type, a "procedure" under "content/procedures/"
@@ -33,7 +33,7 @@ Feature: Agent uses a node as external auditable memory
     And a second run writes nothing and reports every item unchanged
     And "npx agentic-system-core lint" finds no error in the imported items except a concept "kind" the foreign bundle never declared
 
-  @PRD-027
+  @PRD-027 @agent @matrix-A5
   Scenario: memory:// URIs are documented as an alias only, never resolved
     Given an item's slug is "a2a" in bundle "agenticsystemcore"
     When documentation shows "memory://agenticsystemcore/a2a"

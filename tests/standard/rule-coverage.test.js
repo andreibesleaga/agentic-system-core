@@ -102,25 +102,50 @@ test('an unverified rule, a stale allow entry, a bad reason and an unknown marke
   }
 });
 
-test('acceptance: an executed scenario counts, a pending one does not, and a stale pending entry fails', () => {
+test('acceptance: an executed scenario counts, a pending one does not, and a stale pending file fails', () => {
+  const pending = (scenario, extra = {}) => JSON.stringify({ class: 'forge', reason: 'needs a forge to run', scenario, ...extra });
   const dir = scratch({
-    'features/one.feature': '@persona-x\nFeature: One\n\n  Background:\n    Given a thing (AGSC-01-04)\n\n  @AGSC-01-05\n  Scenario: Runs\n    When it runs\n\n  Scenario: Waits\n    When it waits for AGSC-01-02\n',
-    'tests/acceptance/pending.json': JSON.stringify({ pending: {
-      'one.feature#Waits': { class: 'forge', reason: 'needs a forge' },
-      'one.feature#Gone': { class: 'forge', reason: 'names no scenario' },
-    } }),
+    'features/one.feature': '@persona-x\nFeature: One\n\n  Background:\n    Given a thing (AGSC-01-04)\n\n  @AGSC-01-05\n  Scenario: Runs\n    When it runs\n\n  Scenario: Waits\n    When it waits for AGSC-01-02\n\n  Scenario: Browses\n    When it browses for AGSC-01-03 and AGSC-01-01\n\n  Scenario: Probes\n    When it probes for AGSC-01-02\n',
+    'tests/acceptance/pending/one--waits.json': pending('Waits'),
+    'tests/acceptance/pending/one--gone.json': pending('Gone'),
+    // A conditional scenario whose need has no probe module yet runs nowhere: pending.
+    'tests/acceptance/pending/one--browses.json': pending('Browses', { class: 'conditional', needs: 'browser' }),
+    // One whose probe module exists runs wherever the need is present: executed.
+    'tests/acceptance/pending/one--probes.json': pending('Probes', { class: 'conditional', needs: 'python-package' }),
+    'tests/acceptance/steps/_python-package.js': 'module.exports = { probe: () => ({ available: false, reason: "x" }) };\n',
+    'tests/acceptance/pending/README.md': 'not a pending file\n',
   });
   try {
     const r = capture(['--json', dir]);
     const envelope = JSON.parse(r.out);
     const byId = Object.fromEntries(envelope.rules.map((x) => [x.id, x]));
-    assert.deepStrictEqual(byId['AGSC-01-04'].acceptance, ['one.feature#Runs'], 'the Background belongs to every scenario');
+    assert.deepStrictEqual(byId['AGSC-01-04'].acceptance, ['one.feature#Runs', 'one.feature#Probes'], 'the Background belongs to every scenario');
     assert.deepStrictEqual(byId['AGSC-01-05'].acceptance, ['one.feature#Runs']);
-    assert.deepStrictEqual(byId['AGSC-01-02'].acceptance, [], 'a pending scenario verifies nothing');
-    assert.strictEqual(envelope.totals.acceptance_scenarios, 2);
-    assert.strictEqual(envelope.totals.acceptance_scenarios_pending, 1);
-    assert.ok(envelope.findings.some((f) => /pending entry "one\.feature#Gone" names no scenario/u.test(f.message)));
+    assert.deepStrictEqual(byId['AGSC-01-02'].acceptance, ['one.feature#Probes'], 'a pending scenario verifies nothing');
+    assert.deepStrictEqual(byId['AGSC-01-01'].acceptance, [], 'a conditional scenario with no probe verifies nothing');
+    assert.strictEqual(envelope.totals.acceptance_scenarios, 4);
+    assert.strictEqual(envelope.totals.acceptance_scenarios_pending, 2);
+    const stale = envelope.findings.filter((f) => /names no scenario/u.test(f.message));
+    assert.strictEqual(stale.length, 1);
+    assert.strictEqual(stale[0].code, 'AGSC-E301');
+    assert.strictEqual(stale[0].file, 'tests/acceptance/pending/one--gone.json');
+    assert.match(stale[0].message, /"one\.feature#Gone" names no scenario/u);
     assert.strictEqual(r.code, 1);
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
+});
+
+test('acceptance: a pending file that is not JSON, or names no scenario member, is AGSC-E201', () => {
+  const dir = scratch({
+    'features/one.feature': '@persona-x\nFeature: One\n\n  Scenario: Runs\n    When it runs\n',
+    'tests/acceptance/pending/one--runs.json': '{ "class": ',
+    'tests/acceptance/pending/nofeature.json': JSON.stringify({ class: 'forge', reason: 'needs a forge to run', scenario: 'Runs' }),
+  });
+  try {
+    const envelope = JSON.parse(capture(['--json', dir]).out);
+    const bad = envelope.findings.filter((f) => f.code === 'AGSC-E201').map((f) => f.file).sort();
+    assert.deepStrictEqual(bad, ['tests/acceptance/pending/nofeature.json', 'tests/acceptance/pending/one--runs.json']);
   } finally {
     fs.rmSync(dir, { force: true, recursive: true });
   }

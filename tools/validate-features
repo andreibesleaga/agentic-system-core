@@ -10,7 +10,7 @@
 // more, so a file that reaches for a construct the pack does not use is reported
 // rather than silently accepted.
 //
-//   validate-features [--json] [--quiet] [--help] [<root>|<dir>]
+//   validate-features [--json] [--quiet] [--strict-matrix] [--help] [<root>|<dir>]
 //
 // Exit 0 pass, 1 fail, 2 usage. Deterministic: no clock, no network, findings
 // sorted by (file, line, col, code) per AGSC-09-10.
@@ -28,7 +28,35 @@
 //              Outline with no `Examples:`
 //   AGSC-E207  (warning) the coverage table of `features/README.md` and a file's own
 //              tags disagree
-//   AGSC-E901  the features directory is missing
+//   AGSC-E901  the features directory is missing; `--strict-matrix` on a pack with
+//              no `features/MATRIX.md`
+//
+// The actor and the matrix. Every scenario carries `@human` or `@agent` (on itself,
+// its Feature, its Rule, or every one of its Examples blocks); a scenario without
+// one is AGSC-E202 — an error once the pack carries `features/MATRIX.md`, a warning
+// before. A `@matrix-<row>` tag naming a row the matrix does not define is
+// AGSC-E201. `features/MATRIX.md` holds two kinds of Markdown table, told apart by
+// the first header cell: persona rows (`Row`: an id such as H1 or A12; `Who`;
+// `Feature file`; `Target`; optional `Reason`) and surfaces (`Surface`; `Target`;
+// `Scenario`; optional `Reason`). A Target names statuses: B (runs offline), C
+// (runs where its conditional need is present), `G→<change>[, <change>…]` (a
+// scenario written now whose pending file of class `gap` names the change in
+// `closes_in`), P (a pending half that needs a forge, a model or an outside
+// service), U (unit tests only) and rec (no scenario by design) — both with a
+// reason, in the Reason cell or after "reason:" in the Target cell — and 1.1. The
+// matrix checks, warnings by default and errors with `--strict-matrix`:
+//   AGSC-E202  a B or C row that no running scenario tagged `@matrix-<row>` covers;
+//              a B or C surface whose Scenario cell names no feature stem
+//              (`persona-x`), or one with no feature file or no running scenario;
+//              a U or rec cell with no reason; a G cell no gap file answers (for a
+//              row: a gap file whose scenario is tagged with the row; for a
+//              surface: a gap file of a feature the surface names); a persona of
+//              the `docs/PRD.md` tables (a row whose first cell is `P<n>`) that no
+//              feature file declares (`As P<n>` in its description, or its row of
+//              the `features/README.md` coverage table)
+//   AGSC-E201  a gap file under `tests/acceptance/pending/` that answers no G cell
+//   AGSC-E203  a Target that names no status
+// "Running" means the scenario has no pending file, or one of class `conditional`.
 //
 // PRD ids that no scenario tags are an informational count, never a failure: the
 // pack covers the persona walkthroughs, not every requirement.
@@ -37,14 +65,17 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
-const HELP = `validate-features [--json] [--quiet] [--help] [<root>|<dir>]
+const HELP = `validate-features [--json] [--quiet] [--strict-matrix] [--help] [<root>|<dir>]
 
-  Parses every features/*.feature file and closes its @PRD tags against the
-  requirement ids of docs/PRD.md (PRD-054).
+  Parses every features/*.feature file, closes its @PRD tags against the
+  requirement ids of docs/PRD.md (PRD-054), checks that every scenario names its
+  actor (@human or @agent), and checks features/MATRIX.md against the scenarios
+  and the pending files of tests/acceptance/pending/.
 
-  --json    emit the AGSC-09-11 diagnostics envelope on stdout
-  --quiet   emit nothing; the exit code is the result
-  --help    this text
+  --json           emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet          emit nothing; the exit code is the result
+  --strict-matrix  report the matrix findings as errors, not warnings
+  --help           this text
 
   Exit 0 pass, 1 fail, 2 usage.
 `;
@@ -52,6 +83,11 @@ const HELP = `validate-features [--json] [--quiet] [--help] [<root>|<dir>]
 const STEP = /^\s*(Given|When|Then|And|But|\*)\s+\S/u;
 const TAG_LINE = /^\s*@\S/u;
 const ID_TAG = /@((?:PRD|NFR)-\d{2,3})/gu;
+const ACTORS = Object.freeze(['@agent', '@human']);
+const MATRIX_TAG = /^@matrix-(.+)$/u;
+const MATRIX_FILE = 'features/MATRIX.md';
+const PENDING_DIR = 'tests/acceptance/pending';
+const CHANGE = '[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*';
 
 // --------------------------------------------------------------------------
 // JCS (RFC 8785), the sliver this tool needs: NFC member names, UTF-16 order.
@@ -99,6 +135,8 @@ function parseFeature(text, file) {
   let current = null;            // the open Scenario / Scenario Outline / Background
   let docString = null;          // the fence that opened an unterminated doc string
   let pendingTags = [];
+  let featureTags = [];          // the tags of the Feature, inherited by every scenario
+  let ruleTags = [];             // the tags of the open Rule, inherited by its scenarios
   let headerColumns = null;      // the column count of the table currently open
   let examplesHeader = null;     // the Examples header names of the open Outline
 
@@ -142,19 +180,24 @@ function parseFeature(text, file) {
         closeScenario();
         features += 1;
         if (features > 1) findings.push(finding('AGSC-E201', file, n, 'a second Feature: in one file'));
+        featureTags = pendingTags;
         pendingTags = [];
         return;
       }
       if (keyword[1] === 'Rule') {
         // A Rule groups scenarios; it is not one, and it carries no steps.
         closeScenario();
+        ruleTags = pendingTags;
         pendingTags = [];
         return;
       }
       if (keyword[1] === 'Examples' || keyword[1] === 'Scenarios') {
         if (!current || !current.outline) {
           findings.push(finding('AGSC-E201', file, n, 'Examples: outside a Scenario Outline'));
-        } else current.examples = true;
+        } else {
+          current.examples = true;
+          current.examplesTags.push(pendingTags);
+        }
         examplesHeader = null;
         pendingTags = [];
         return;
@@ -163,6 +206,8 @@ function parseFeature(text, file) {
       if (features === 0) findings.push(finding('AGSC-E201', file, n, `${keyword[1]}: before any Feature:`));
       current = {
         examples: false,
+        examplesTags: [],
+        inherited: [...featureTags, ...ruleTags],
         keyword: keyword[1],
         line: n,
         name,
@@ -244,6 +289,196 @@ function readmeCoverage(text) {
   return table;
 }
 
+/** The scenario's own tags with the ones it inherits from its Feature and Rule. */
+function effectiveTags(scenario) {
+  return new Set([...scenario.inherited, ...scenario.tags]);
+}
+
+/** Does the scenario name its actor — itself, by inheritance, or on every Examples block? */
+function hasActor(scenario) {
+  const own = effectiveTags(scenario);
+  if (ACTORS.some((a) => own.has(a))) return true;
+  return scenario.examplesTags.length > 0
+    && scenario.examplesTags.every((tags) => ACTORS.some((a) => tags.includes(a)));
+}
+
+/**
+ * The PRD personas each row of the features/README.md coverage table declares for
+ * its file: the `P<n>` ids at the start of the cell after the file name.
+ * @returns {Map<string, Set<string>>} file name → persona ids
+ */
+function readmePersonas(text) {
+  const table = new Map();
+  for (const line of text.split('\n')) {
+    const row = /^\|\s*`([^`]+\.feature)`\s*\|([^|]*)\|/u.exec(line);
+    if (!row) continue;
+    const ids = row[2].match(/\bP\d{1,2}\b/gu);
+    if (ids) table.set(row[1], new Set(ids));
+  }
+  return table;
+}
+
+/**
+ * The statuses of one Target cell. The part after "reason:" is the reason; the G
+ * cells carry their change ids, a comma continuing the list (`G→E3, E5`).
+ * @returns {{status:Set<string>, gaps:string[], reason:string}}
+ */
+function parseTarget(text) {
+  const cut = text.search(/reason:/iu);
+  let head = cut >= 0 ? text.slice(0, cut) : text;
+  const reason = cut >= 0 ? text.slice(cut + 'reason:'.length).trim() : '';
+  const gaps = [];
+  const g = new RegExp(`G\\s*(?:→|->)\\s*(${CHANGE}(?:\\s*,\\s*${CHANGE})*)`, 'gu');
+  head = head.replace(g, (_, list) => {
+    gaps.push(...list.split(',').map((x) => x.trim()));
+    return ' ';
+  });
+  const status = new Set(gaps.length ? ['G'] : []);
+  for (const m of head.matchAll(/(?<![\w.])(B|C|P|U|rec|1\.1)(?![\w.])/gu)) status.add(m[1]);
+  return { gaps, reason, status };
+}
+
+/** A reason cell that says nothing ("", "—", "-") is no reason. */
+function cleanReason(text) {
+  const t = (text || '').trim();
+  return /^[—–-]*$/u.test(t) ? '' : t;
+}
+
+/**
+ * The persona rows and the surfaces of features/MATRIX.md (see the header comment
+ * for the table format), and the problems of the file's own form.
+ * @returns {{rows:Array, surfaces:Array, problems:Array<{code:string,line:number,message:string}>}}
+ */
+function readMatrix(text) {
+  const rows = [];
+  const surfaces = [];
+  const problems = [];
+  let header = null;
+  let kind = null;
+  let target = -1;
+  text.split('\n').forEach((raw, index) => {
+    const line = raw.trim();
+    if (!line.startsWith('|')) { header = null; return; }
+    const cells = line.replace(/^\||\|$/gu, '').split('|').map((c) => c.trim().replace(/`/gu, ''));
+    if (header === null) {
+      header = cells.map((c) => c.toLowerCase());
+      kind = { row: 'row', surface: 'surface' }[header[0]] || null;
+      target = header.findIndex((h) => h.startsWith('target'));
+      if (kind && target < 0) {
+        problems.push({ code: 'AGSC-E202', line: index + 1, message: 'a table of features/MATRIX.md has no Target column' });
+        kind = null;
+      }
+      return;
+    }
+    if (!kind || /^:?-+:?$/u.test(cells[0])) return;
+    const column = (re) => {
+      const k = header.findIndex((h) => re.test(h));
+      return k >= 0 ? (cells[k] || '') : '';
+    };
+    const parsed = parseTarget(cells[target] || '');
+    const entry = {
+      gaps: parsed.gaps,
+      line: index + 1,
+      reason: cleanReason(column(/^reason/u)) || parsed.reason,
+      status: parsed.status,
+      stems: [...new Set(column(/^(feature|scenario)/u).match(/persona-[0-9a-z]+/gu) || [])],
+      target: cells[target] || '',
+    };
+    if (kind === 'surface') { surfaces.push({ label: cells[0], ...entry }); return; }
+    if (!/^[A-Z]\d+$/u.test(cells[0])) {
+      problems.push({ code: 'AGSC-E204', line: index + 1, message: `the row id "${cells[0]}" is not a capital letter and a number` });
+      return;
+    }
+    rows.push({ id: cells[0], ...entry });
+  });
+  return { problems, rows, surfaces };
+}
+
+/**
+ * The pending files of the acceptance runner: `<feature-stem>--<slug>.json`, each
+ * naming its scenario. Only what the matrix needs is read here; the runner holds
+ * the other rules of these files.
+ * @returns {Map<string, {file:string, class:string, closes_in?:string, stem:string}>} keyed `<stem>#<scenario>`
+ */
+function readPendingFiles(root) {
+  const dir = path.join(root, ...PENDING_DIR.split('/'));
+  const out = new Map();
+  if (!fs.existsSync(dir)) return out;
+  for (const name of fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort(compareCodePoint)) {
+    let entry;
+    try { entry = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')); } catch { continue; }
+    const cut = name.indexOf('--');
+    if (cut < 1 || !entry || typeof entry.scenario !== 'string') continue;
+    const stem = name.slice(0, cut);
+    out.set(`${stem}#${entry.scenario}`, { ...entry, file: `${PENDING_DIR}/${name}`, stem });
+  }
+  return out;
+}
+
+/**
+ * The matrix findings: coverage of every B/C row and surface, the reasons of U and
+ * rec, the G cells against the gap files both ways, and the PRD personas.
+ * @param {{rows:Array, surfaces:Array}} matrix
+ * @param {Array<{stem:string, file:string, name:string, tags:Set<string>, runs:boolean}>} scenarios
+ * @param {Map} pending
+ * @param {{prdPersonas:string[], declared:Set<string>, severity:string}} context
+ */
+function matrixFindings(matrix, scenarios, pending, context) {
+  const out = [];
+  const add = (code, file, line, message) => out.push(finding(code, file, line, message, context.severity));
+  const stems = new Set(scenarios.map((s) => s.stem));
+  const runsTagged = (id) => scenarios.some((s) => s.runs && s.tags.has(`@matrix-${id}`));
+  const gaps = [...pending.values()].filter((p) => p.class === 'gap');
+  const scenarioOf = (p) => scenarios.find((s) => s.stem === p.stem && s.name === p.scenario);
+  const reasonNeeded = (entry, what) => {
+    for (const s of ['U', 'rec']) {
+      if (entry.status.has(s) && !entry.reason) add('AGSC-E202', MATRIX_FILE, entry.line, `${what} is marked ${s} and records no reason`);
+    }
+  };
+  for (const row of matrix.rows) {
+    if (row.status.size === 0) add('AGSC-E203', MATRIX_FILE, row.line, `row ${row.id}: the target "${row.target}" names no status (B, C, G→…, P, U, rec, 1.1)`);
+    if ((row.status.has('B') || row.status.has('C')) && !runsTagged(row.id)) {
+      add('AGSC-E202', MATRIX_FILE, row.line, `row ${row.id} is covered by no scenario that runs (no scenario tagged @matrix-${row.id} runs, here or where its need is present)`);
+    }
+    reasonNeeded(row, `row ${row.id}`);
+    for (const change of row.gaps) {
+      const answered = gaps.some((p) => p.closes_in === change && (scenarioOf(p) || { tags: new Set() }).tags.has(`@matrix-${row.id}`));
+      if (!answered) add('AGSC-E202', MATRIX_FILE, row.line, `row ${row.id} waits for ${change} and no gap file names it (class gap, closes_in ${change}, its scenario tagged @matrix-${row.id})`);
+    }
+  }
+  for (const surface of matrix.surfaces) {
+    const what = `surface "${surface.label}"`;
+    if (surface.status.size === 0) add('AGSC-E203', MATRIX_FILE, surface.line, `${what}: the target "${surface.target}" names no status (B, C, G→…, P, U, rec, 1.1)`);
+    if (surface.status.has('B') || surface.status.has('C')) {
+      if (surface.stems.length === 0) add('AGSC-E202', MATRIX_FILE, surface.line, `${what} names no feature (persona-x) in its Scenario cell`);
+      for (const stem of surface.stems) {
+        const own = [...stems].filter((s) => s === stem || s.startsWith(`${stem}-`));
+        if (own.length === 0) add('AGSC-E202', MATRIX_FILE, surface.line, `${what} names ${stem}, which has no feature file`);
+        else if (!scenarios.some((s) => own.includes(s.stem) && s.runs)) add('AGSC-E202', MATRIX_FILE, surface.line, `${what} names ${stem}, which has no scenario that runs`);
+      }
+    }
+    reasonNeeded(surface, what);
+    for (const change of surface.gaps) {
+      const answered = gaps.some((p) => p.closes_in === change && surface.stems.some((stem) => p.stem === stem || p.stem.startsWith(`${stem}-`)));
+      if (!answered) add('AGSC-E202', MATRIX_FILE, surface.line, `${what} waits for ${change} and no gap file of ${surface.stems.join(', ') || 'its features'} names it`);
+    }
+  }
+  for (const p of gaps) {
+    const rowIds = [...((scenarioOf(p) || { tags: new Set() }).tags)].map((t) => MATRIX_TAG.exec(t)).filter(Boolean).map((m) => m[1]);
+    const byRow = matrix.rows.some((r) => rowIds.includes(r.id) && r.gaps.includes(p.closes_in));
+    const bySurface = matrix.surfaces.some((s) => s.gaps.includes(p.closes_in) && s.stems.some((stem) => p.stem === stem || p.stem.startsWith(`${stem}-`)));
+    if (byRow || bySurface) continue;
+    const name = path.posix.basename(p.file);
+    add('AGSC-E201', p.file, 1, rowIds.length
+      ? `${name} closes in ${p.closes_in} and no row it tags (${rowIds.join(', ')}) waits for ${p.closes_in}, nor any surface of ${p.stem}`
+      : `${name} closes in ${p.closes_in} and its scenario carries no @matrix- tag, and no surface of ${p.stem} waits for ${p.closes_in}`);
+  }
+  for (const id of context.prdPersonas) {
+    if (!context.declared.has(id)) add('AGSC-E202', 'docs/PRD.md', 1, `persona ${id} of docs/PRD.md has no feature file (none says "As ${id}" or lists it in the features/README.md table)`);
+  }
+  return out;
+}
+
 function envelopeOf(findings, declared, version) {
   findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
     || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
@@ -288,7 +523,7 @@ function run(argv, io) {
   let sawTarget = false;
   for (const arg of argv) {
     if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
-    if (arg === '--json' || arg === '--quiet') flags.add(arg);
+    if (arg === '--json' || arg === '--quiet' || arg === '--strict-matrix') flags.add(arg);
     else if (arg.startsWith('-')) return usage(`unknown flag ${arg} (AGSC-E002)`);
     else if (sawTarget) return usage(`unexpected argument ${arg} (AGSC-E002)`);
     else { target = path.resolve(arg); sawTarget = true; }
@@ -309,6 +544,15 @@ function run(argv, io) {
   const coverage = fs.existsSync(readmePath)
     ? readmeCoverage(fs.readFileSync(readmePath, 'utf8'))
     : new Map();
+
+  const readmePersonasTable = fs.existsSync(readmePath)
+    ? readmePersonas(fs.readFileSync(readmePath, 'utf8'))
+    : new Map();
+  const matrixPath = path.join(direct, 'MATRIX.md');
+  const matrix = fs.existsSync(matrixPath) ? readMatrix(fs.readFileSync(matrixPath, 'utf8')) : null;
+  const pending = readPendingFiles(root);
+  const all = [];                // every scenario, with what the matrix needs of it
+  const declared = new Set();    // the PRD personas some feature file declares
 
   const names = fs.readdirSync(direct).filter((f) => f.endsWith('.feature')).sort();
   // zero files read is not a clean pack. The directory resolution above
@@ -333,6 +577,17 @@ function run(argv, io) {
     const parsed = parseFeature(raw, file);
     findings.push(...parsed.findings);
     scenarios += parsed.scenarios.length;
+    const stem = name.replace(/\.feature$/u, '');
+    for (const s of parsed.scenarios) {
+      const entry = pending.get(`${stem}#${s.name}`);
+      all.push({ file, line: s.line, name: s.name, runs: !entry || entry.class === 'conditional', stem, tags: effectiveTags(s) });
+      if (!hasActor(s)) {
+        findings.push(finding('AGSC-E202', file, s.line, `${s.keyword} "${s.name}" carries no actor tag (@human or @agent)`,
+          matrix ? 'error' : 'warn'));
+      }
+    }
+    for (const m of raw.matchAll(/^\s*As (P\d{1,2})\b/gmu)) declared.add(m[1]);
+    for (const id of readmePersonasTable.get(name) || []) declared.add(id);
 
     const ids = new Set();
     for (const m of raw.matchAll(ID_TAG)) ids.add(m[1]);
@@ -360,6 +615,25 @@ function run(argv, io) {
     }
   }
 
+  const rowIds = new Set(matrix ? matrix.rows.map((r) => r.id) : []);
+  for (const s of all) {
+    for (const tag of [...s.tags].sort(compareCodePoint)) {
+      const m = MATRIX_TAG.exec(tag);
+      if (m && !rowIds.has(m[1])) {
+        findings.push(finding('AGSC-E201', s.file, s.line, `tag ${tag} names a row ${MATRIX_FILE} does not define`));
+      }
+    }
+  }
+  if (flags.has('--strict-matrix') && !matrix) {
+    findings.push(finding('AGSC-E901', MATRIX_FILE, 1, `--strict-matrix needs ${MATRIX_FILE}, and the pack carries none`));
+  }
+  if (matrix) {
+    const severity = flags.has('--strict-matrix') ? 'error' : 'warn';
+    for (const p of matrix.problems) findings.push(finding(p.code, MATRIX_FILE, p.line, p.message, severity));
+    const prdPersonas = prdText ? [...new Set([...prdText.matchAll(/^\|\s*(P\d{1,2})\s*\|/gmu)].map((m) => m[1]))] : [];
+    findings.push(...matrixFindings(matrix, all, pending, { declared, prdPersonas, severity }));
+  }
+
   const uncovered = prdText ? [...prdIds].filter((id) => !covered.has(id)).length : 0;
   const envelope = envelopeOf(findings, specVersion(root), packageVersion(root));
   if (flags.has('--json')) {
@@ -370,7 +644,9 @@ function run(argv, io) {
     }
     out(`validate-features: ${names.length} input file(s) read, ${scenarios} scenarios, ${covered.size} requirement ids tagged, `
       + `${envelope.counts.error} error, ${envelope.counts.warn} warn; `
-      + `requirement ids no scenario tags (informational): ${uncovered}\n`);
+      + `requirement ids no scenario tags (informational): ${uncovered}`
+      + `${matrix ? `; matrix: ${matrix.rows.length} rows, ${matrix.surfaces.length} surfaces, `
+        + `${[...pending.values()].filter((p) => p.class === 'gap').length} gap files` : ''}\n`);
   }
   return envelope.status === 'pass' ? 0 : 1;
 }
@@ -378,4 +654,6 @@ function run(argv, io) {
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { HELP, canonicalize, compareCodePoint, parseFeature, readmeCoverage, run };
+module.exports = {
+  HELP, canonicalize, compareCodePoint, parseFeature, parseTarget, readMatrix, readmeCoverage, readmePersonas, run,
+};

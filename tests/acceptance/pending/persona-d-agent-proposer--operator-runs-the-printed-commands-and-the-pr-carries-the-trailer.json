@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "running the printed git and gh commands opens a pull request on the forge.",
+  "scenario": "Operator runs the printed commands and the PR carries the trailer"
+}

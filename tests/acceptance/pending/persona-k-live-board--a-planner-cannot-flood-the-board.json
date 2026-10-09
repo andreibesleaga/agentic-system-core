@@ -1,0 +1,5 @@
+{
+  "class": "model",
+  "reason": "'worker opens a Proposal that creates 21 task concepts' is a model-driven lane run; the max_new_items cap is covered by the governance tests.",
+  "scenario": "A planner cannot flood the board"
+}

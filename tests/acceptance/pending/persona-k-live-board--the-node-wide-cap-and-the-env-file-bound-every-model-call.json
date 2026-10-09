@@ -1,0 +1,5 @@
+{
+  "class": "model",
+  "reason": "'refresh --agent worker' without --dry-run needs a model adapter; the override-name line of ci and AGSC-E403 are covered by the ci and secrets tests.",
+  "scenario": "The node-wide cap and the .env file bound every model call"
+}

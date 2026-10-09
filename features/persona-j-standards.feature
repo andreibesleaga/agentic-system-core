@@ -5,7 +5,7 @@ Feature: Standards implementer adopts the discovery format on their own site
   I want one well-known discovery file with an RFC 9264 linkset and content negotiation for the vocabulary
   So that I can adopt the pattern on my own site using only static files, no server code
 
-  @PRD-024
+  @PRD-024 @human @matrix-H15
   Scenario: Implementer discovers the linkset via the well-known URI
     When the implementer reads "/.well-known/knowledge-linkset" and the headers "_headers" serves it with
     Then it is served as "application/linkset+json" with profile "https://w3id.org/agentic-system-core/profile/agentic-knowledge" and "linkset" is its sole top-level member (AGSC-06-17, AGSC-06-08)
@@ -16,14 +16,14 @@ Feature: Standards implementer adopts the discovery format on their own site
     And it links relation "…rel#now" to "/now.md" and "…rel#skills" to "/skills/index.json"
     And it links "alternate" to "/llms.txt", and every target on the node's own origin is a file the build emitted
 
-  @PRD-024
+  @PRD-024 @human @matrix-H15
   Scenario: Implementer verifies the link-set integrity attributes
     When the implementer reads the "describedby" link to "/graph.jsonld" inside "/.well-known/knowledge-linkset"
     Then it carries "agsc-spec-version", "agsc-generated-at", "agsc-counts" and "agsc-bundle-hash", every value an array
     And the "…rel#graph" and "…rel#ledger" links each carry a "digest" of the form "sha-256=:<base64>:"
     And "agsc-generated-at" derives from "SOURCE_DATE_EPOCH", never the wall clock
 
-  @PRD-050
+  @PRD-050 @human @matrix-H15
   Scenario: Implementer content-negotiates the vocabulary via w3id
     When the implementer requests "https://w3id.org/agentic-system-core/ns#Concept" with "Accept: text/turtle"
     Then w3id's ".htaccess" issues a 303 redirect to "/ns/agsc.ttl"
@@ -33,13 +33,13 @@ Feature: Standards implementer adopts the discovery format on their own site
     Then the response is the "/ns/" HTML index
     And every redirect target is same-origin, never an open redirect
 
-  @PRD-025
+  @PRD-025 @human @matrix-H15
   Scenario: Implementer falls back to llms.txt without any RDF tooling
     When the implementer fetches "/llms.txt"
     Then every published item is reachable from the listed links
     And no authentication or API key is required
 
-  @PRD-054
+  @PRD-054 @human @matrix-H15
   Scenario: Implementer validates the published artifacts with the shipped tools
     When the implementer runs "the shipped validate-wellknown tool on https://agenticsystemcore.com/.well-known/knowledge-linkset"
     Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "validate-wellknown"

@@ -21,8 +21,10 @@
 //               `// verifies AGSC-nn-nn[, AGSC-nn-nn …]` — the marker says the
 //               assertions of that file check the rule;
 //   acceptance  a scenario of features/*.feature that the acceptance runner
-//               (tests/acceptance/features.test.js) executes — i.e. one not listed
-//               in tests/acceptance/pending.json — whose tags, Background or steps
+//               (tests/acceptance/features.test.js) executes — i.e. one with no file
+//               of its own under tests/acceptance/pending/, or one whose file is of
+//               the class `conditional` and whose need has its probe module
+//               tests/acceptance/steps/_<needs>.js — whose tags, Background or steps
 //               carry the id;
 //   checker     a checker under tools/validate-* whose header comment (the lines
 //               before the first line of code) carries the id.
@@ -36,7 +38,8 @@
 // that names an unknown or retired rule, or a marker that does (AGSC-E301); an
 // allow-list reason outside the closed list or without a sentence (AGSC-E203); an
 // allow-list entry for a rule that is in fact verified, so the list stays minimal
-// (AGSC-E201); a pending entry naming no scenario (AGSC-E301); with --check, a
+// (AGSC-E201); a pending file that is not JSON or does not name its scenario
+// (AGSC-E201), or that names no scenario of features/ (AGSC-E301); with --check, a
 // docs/RULE-COVERAGE.md that differs from what this run generates (AGSC-E201).
 // A test TITLE naming an unknown or retired id is a warning only (titles also
 // describe history).
@@ -55,7 +58,8 @@ const path = require('node:path');
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
 const DOC = 'docs/RULE-COVERAGE.md';
 const ALLOW = 'tests/rule-coverage.allow.json';
-const PENDING = 'tests/acceptance/pending.json';
+const PENDING = 'tests/acceptance/pending';
+const PROBES = 'tests/acceptance/steps';
 const RULE = /AGSC-\d{2}-\d{2,3}[a-z]?/g;
 
 /** The closed reasons a rule may be prose-only for; each is explained in the matrix. */
@@ -208,6 +212,37 @@ function featureScenarios(text) {
   return scenarios;
 }
 
+/**
+ * The pending scenarios: one JSON file each under tests/acceptance/pending/, named
+ * `<feature-stem>--<scenario-slug>.json` and carrying the scenario's exact name in
+ * `scenario`. The acceptance runner holds every other rule of these files; this
+ * reader needs only which scenario each one names, and whether that scenario still
+ * runs somewhere — a `conditional` one whose need has its probe module does.
+ * @returns {Map<string, {file:string, runs:boolean}>} keyed `<file>.feature#<scenario>`
+ */
+function readPending(root, read, add) {
+  const out = new Map();
+  for (const rel of walk(root, PENDING, (r) => r.endsWith('.json'))) {
+    let entry;
+    try {
+      entry = JSON.parse(read(rel));
+    } catch (e) {
+      add('AGSC-E201', rel, 1, `a pending file is not JSON: ${e.message}`);
+      continue;
+    }
+    const name = path.posix.basename(rel);
+    const cut = name.indexOf('--');
+    if (cut < 1 || !entry || typeof entry.scenario !== 'string') {
+      add('AGSC-E201', rel, 1, 'a pending file is named <feature-stem>--<scenario-slug>.json and names its scenario in "scenario"');
+      continue;
+    }
+    const runs = entry.class === 'conditional' && typeof entry.needs === 'string'
+      && /^[a-z][a-z0-9-]*$/.test(entry.needs) && fs.existsSync(path.join(root, PROBES, `_${entry.needs}.js`));
+    out.set(`${name.slice(0, cut)}.feature#${entry.scenario}`, { file: rel, runs });
+  }
+  return out;
+}
+
 /** Rule ids in the header comment of a checker: the lines before the first code line. */
 function checkerHeader(text) {
   const ids = new Set();
@@ -262,8 +297,7 @@ function measure(root) {
     }
   }
 
-  let pending = {};
-  if (fs.existsSync(path.join(root, PENDING))) pending = JSON.parse(read(PENDING)).pending || {};
+  const pending = readPending(root, read, add);
   const scenarioKeys = new Set();
   const acceptance = new Map();
   let scenariosTotal = 0;
@@ -274,7 +308,7 @@ function measure(root) {
       if (scenarioKeys.has(key)) continue;
       scenarioKeys.add(key);
       scenariosTotal += 1;
-      if (Object.prototype.hasOwnProperty.call(pending, key)) { scenariosPending += 1; continue; }
+      if (pending.has(key) && !pending.get(key).runs) { scenariosPending += 1; continue; }
       for (const id of s.ids) {
         if (!activeSet.has(id)) continue;
         if (!acceptance.has(id)) acceptance.set(id, []);
@@ -282,8 +316,8 @@ function measure(root) {
       }
     }
   }
-  for (const key of Object.keys(pending).sort(byCodePoint)) {
-    if (!scenarioKeys.has(key)) add('AGSC-E301', PENDING, 1, `pending entry "${key}" names no scenario of features/`);
+  for (const [key, { file }] of [...pending].sort(([a], [b]) => byCodePoint(a, b))) {
+    if (!scenarioKeys.has(key)) add('AGSC-E301', file, 1, `pending file "${key}" names no scenario of features/`);
   }
 
   const checkers = new Map();
@@ -416,7 +450,7 @@ function render(result) {
   out.push(`| Executed acceptance scenario | ${totals.by_acceptance} |`);
   out.push(`| Checker header | ${totals.by_checker} |`);
   out.push('');
-  out.push(`Acceptance scenarios: ${totals.acceptance_scenarios} in \`features/\` (a Scenario Outline counts once), of which ${totals.acceptance_scenarios_pending} are pending with a reason in \`tests/acceptance/pending.json\`. ${totals.by_acceptance === 0
+  out.push(`Acceptance scenarios: ${totals.acceptance_scenarios} in \`features/\` (a Scenario Outline counts once), of which ${totals.acceptance_scenarios_pending} are pending, each with a reason in its own file under \`tests/acceptance/pending/\`. ${totals.by_acceptance === 0
     ? 'The executed scenarios carry no rule id in their text; the rules they check are named by `// verifies` markers in their step files, counted as tests.'
     : `The executed scenarios name ${totals.by_acceptance} rules in their tags or steps; their step files also name the rules they check in \`// verifies\` markers, counted as tests.`}`);
   out.push('');

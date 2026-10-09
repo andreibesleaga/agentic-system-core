@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "approval, the branch ruleset, the merge and the Cloudflare deploy happen on the forge and the host.",
+  "scenario": "Maintainer reviews, ratifies and the change deploys"
+}

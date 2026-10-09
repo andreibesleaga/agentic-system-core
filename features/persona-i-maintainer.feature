@@ -5,7 +5,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
   I want one identical pipeline locally and in CI, plus an unattended weekly refresh
   So that the site stays green with no manual publishing step beyond git writes
 
-  @PRD-049
+  @PRD-049 @human @matrix-H5
   Scenario: Local ci and CI ci run the identical pipeline
     When the maintainer runs "npx agentic-system-core ci" locally
     Then the pipeline runs lint, then build twice with a byte comparison, then verify, and writes "dist/gate.json" (AGSC-04-02, AGSC-08-10)
@@ -13,7 +13,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     When the same commit runs "ci" in a fresh clone, as the shipped GitHub Action does with "contents: read"
     Then the exit code and "dist/gate.json" match the local run exactly
 
-  @PRD-005
+  @PRD-005 @human @matrix-H5
   Scenario: Every build/ci run derives the whole verifiable ledger
     When "agsc build" or "agsc ci" completes successfully
     Then "ledger.jsonl" is recomputed from git history into the build output as lines "{ts, kind, ref, actor, prev, hash}"
@@ -24,7 +24,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the recomputed head equals the "agsc-ledger-head" attribute of the "…rel#ledger" link in the well-known file
     And tampering with any one line, or truncating the tail, makes "verify --ledger" fail
 
-  @PRD-044
+  @PRD-044 @human @matrix-H5
   Scenario: The weekly refresh job reaches no network and never commits
     Given the cron "29 5 * * 0" fires "refresh.yml"
     When "agsc build" runs over the Bundle
@@ -34,14 +34,14 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And it never creates a commit
     And running it again with unchanged findings is idempotent (no duplicate issue)
 
-  @PRD-048
+  @PRD-048 @human @matrix-H5
   Scenario: The maintainer cuts a release and the packages publish with attestations
     When the maintainer pushes a tag "v1.0.0"
     Then "release.yml" runs on Node 24 with "id-token: write" and "attestations: write"
     And "agentic-system-core" (bin "agsc") and the "agsc-cli" alias publish via npm trusted publishing
     And both packages carry "actions/attest" provenance
 
-  @PRD-045
+  @PRD-045 @human @matrix-H5
   Scenario: Restore-from-zero reproduces the site from a bare clone
     When the maintainer clones the content repo fresh
     And runs "npx agentic-system-core ci"

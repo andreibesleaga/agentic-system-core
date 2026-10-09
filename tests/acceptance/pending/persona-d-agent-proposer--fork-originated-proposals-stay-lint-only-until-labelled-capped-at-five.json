@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "the open-bot-PR cap and fork secrets are forge workflow behaviour.",
+  "scenario": "Fork-originated Proposals stay lint-only until labelled, capped at five"
+}

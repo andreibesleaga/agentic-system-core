@@ -8,20 +8,20 @@ Feature: Agent reader queries structured knowledge without scraping
   Background:
     Given no remote MCP server is served and no "agent-card.json" is emitted at v1; both MAY be declared as surfaces (AGSC-06-34, AGSC-11-21)
 
-  @PRD-023
+  @PRD-023 @agent @matrix-A2
   Scenario: Agent starts the local stdio MCP server
     When the operator runs "npx agentic-system-core mcp <bundle-path>" from outside the Bundle
     Then the server starts and speaks JSON-RPC 2.0 over stdio
     And the server exposes exactly seven tools: "search", "read", "links", "compose", "propose", "ask", "remember"
 
-  @PRD-023 @PRD-024
+  @PRD-023 @PRD-024 @agent @matrix-A2
   Scenario: The server reads the local Bundle, never the network
     When the server starts over the acceptance Bundle with every network call refused
     Then it answers "search", "read" and "links" from the Bundle's own files
     And an item edited on disk is served as edited when the server next starts
     And "mcp" given a URL instead of a Bundle directory is refused with "AGSC-E003" and exit 2 (AGSC-09-09)
 
-  @PRD-023
+  @PRD-023 @agent @matrix-A2
   Scenario: Agent calls search then read then links, all trust-labelled
     When the agent calls tool "search" with arguments "{query: \"protocol\"}"
     Then the result is the envelope "source", "trust: untrusted", "license" and "type" around hits naming "a2a" and "mcp" (AGSC-08-18)
@@ -30,7 +30,7 @@ Feature: Agent reader queries structured knowledge without scraping
     When the agent calls tool "links" with argument "{slug: \"mcp\"}"
     Then the result lists the "requires" Link from "a2a" as its computed inverse "required-by"
 
-  @PRD-025
+  @PRD-025 @agent
   Scenario: Non-MCP agent reads via llms.txt and RDF instead
     Given the agent has no MCP client
     When the agent fetches "/llms.txt"
@@ -39,7 +39,7 @@ Feature: Agent reader queries structured knowledge without scraping
     Then the response loads into a standard RDF parser with zero blank nodes
 
 
-  @PRD-056
+  @PRD-056 @agent @matrix-A2
   Scenario: Agent uses the node as memory and knowledge base over MCP
     Given "npx agentic-system-core mcp" is running over the acceptance Bundle
     When the agent calls tool "ask" with "What pattern handles tool-use retries?"

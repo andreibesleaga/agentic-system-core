@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "the commit trailer and the pull-request body are written by the contributor on the forge; the marker propose writes is checked by the persona-d acceptance test.",
+  "scenario": "Contributor commits with the required trailer and PR marker"
+}

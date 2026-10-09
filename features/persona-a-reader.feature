@@ -9,7 +9,7 @@ Feature: Human reader finds a pattern with evidence
     Given the acceptance Bundle is built into "www/" for the site "https://agenticsystemcore.com/"
     And an item with "status: draft" stays dark: no page, no link, no index entry (AGSC-06-30)
 
-  @PRD-011 @PRD-025
+  @PRD-011 @PRD-025 @human @matrix-H3
   Scenario: Home page states software-and-registry identity, no narrative
     When the reader opens "/"
     Then the page shows the Bundle's title and the summary of "content/index.md"
@@ -18,7 +18,7 @@ Feature: Human reader finds a pattern with evidence
     And the page introduces the node and links each non-empty index page with its count, listing no item itself
     And the page contains no "start here" link and no imposed reading order
 
-  @PRD-014
+  @PRD-014 @human @matrix-H3
   Scenario: Reader searches via the prebuilt client-side index
     Given no server-side search endpoint exists
     When the reader types a query into the search box
@@ -26,7 +26,7 @@ Feature: Human reader finds a pattern with evidence
     And results are filtered client-side from the fetched inverted index
     And no network request is made to any third-party search service
 
-  @PRD-002 @PRD-013
+  @PRD-002 @PRD-013 @human @matrix-H3
   Scenario: Reader opens a Concept page and sees evidence
     When the reader navigates to "/concepts/a2a/"
     Then the page shows the title, the description as its summary, the type and kind, the cluster "Protocols" and the provenance
@@ -36,7 +36,7 @@ Feature: Human reader finds a pattern with evidence
     And the graph carries the typed Link "requires" to "mcp" and its computed inverse on "mcp" (AGSC-03-04)
     And the page offers "Propose an edit" as a plain link to the forge's edit view of "content/concepts/a2a.md"
 
-  @PRD-015
+  @PRD-015 @human @matrix-H3
   Scenario: Reader inspects cluster membership and the NOW page
     When the reader navigates to "/clusters/protocols/"
     Then the page lists every published item that names the cluster, each with its description

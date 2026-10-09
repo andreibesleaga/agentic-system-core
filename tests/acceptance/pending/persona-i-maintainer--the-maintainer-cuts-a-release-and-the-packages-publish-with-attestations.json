@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "pushing a tag, trusted publishing and provenance attestations happen on the forge and the registry.",
+  "scenario": "The maintainer cuts a release and the packages publish with attestations"
+}

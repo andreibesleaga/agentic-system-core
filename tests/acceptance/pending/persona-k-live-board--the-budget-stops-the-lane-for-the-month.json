@@ -1,0 +1,5 @@
+{
+  "class": "model",
+  "reason": "'refresh --agent worker' without --dry-run needs a model adapter; the budget meter (AGSC-E510) is covered by the NOW spend tests.",
+  "scenario": "The budget stops the lane for the month"
+}
