@@ -256,19 +256,22 @@ function acceptedHrefs(declared, findings) {
 }
 
 /**
- * AGSC-11-18, the MCP half: what `server/discover` advertises in its capabilities,
- * and what the per-request capabilities carry. The two are THE SAME OBJECT — revision
- * `2026-07-28` has no initialization handshake, so there is no moment at which they
- * could differ.
+ * AGSC-11-18, the MCP half: the capabilities object the tool server reports under
+ * the revision its transport speaks. Under `2025-11-25`, the revision of
+ * `MCP_PROTOCOL_VERSION`, that is the `initialize` result (MCP SEP-2133). Under
+ * `2026-07-28`, which a later transport will speak, the same object is what
+ * `server/discover` advertises and what the per-request capabilities carry, that
+ * revision having no initialization handshake.
  *
  * `extensions` is a MAP of extension identifier to that extension's settings object,
  * as MCP defines it. AGSC-11-18 pins this node's settings object:
  * exactly one member, `linkset`, the absolute `https` URL of `/.well-known/
  * knowledge-linkset` (AGSC-06-07), and no other. Vector `bnd-0035`.
  *
- * Vector `bnd-0036` states the map, so nothing reads this return value as a bare
- * identifier list. `bnd-0037`'s `mcp_extensions` member is the list of identifiers
- * advertised and is the map's key set by definition.
+ * Vectors `bnd-0035` and `bnd-0036` are run against the `initialize` result of a
+ * real session, so they check what the transport reports, not this function.
+ * `bnd-0037`'s `mcp_extensions` member is the list of identifiers advertised and is
+ * the map's key set by definition.
  *
  * @param {{base?:string}} options  the node's `site.base`
  */

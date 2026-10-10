@@ -35,7 +35,11 @@ function ontologyRoot(body, extra = {}) {
   });
 }
 
+// `skos:Concept` is declared, as AGSC-05-25 asks of every class of another
+// vocabulary the file names; without it the fixture is itself a fault.
 const CONCEPT = [
+  'skos:Concept a owl:Class .',
+  '',
   'asc:Concept',
   '    a owl:Class ;',
   '    rdfs:label "Concept" ;',

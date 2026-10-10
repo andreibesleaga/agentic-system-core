@@ -11,7 +11,7 @@
 //
 // Before anything is written the run checks where a lane run stops: the build
 // instant (AGSC-04-09, refused with AGSC-E204 when it defaulted, as `build` refuses),
-// the month's spend against the lane's and the node's budget (AGSC-08-28(e), the
+// the month's spend (the Bundle's Episodes and those earlier dry runs printed, AGSC-08-25) against the lane's and the node's budget (AGSC-08-28(e), the
 // warning AGSC-E510, the same meter as the NOW page) and, for a lane that works
 // tasks, a task it can claim (AGSC-10-17). A run that stops writes nothing.
 //
@@ -20,11 +20,12 @@
 // `tasks[]`; a per-change `change.task` overrides it. That is what makes the
 // AGSC-E509 task check of `checkProposal` fire here.
 
-const { createTwoFilesPatch } = require('diff');
+const { applyPatch, createTwoFilesPatch, parsePatch } = require('diff');
 const { checkProposal, findAgentEntry } = require('../../../governance/agents.js');
 const fix = require('../../../governance/fix.js');
 const { serialize } = require('../../../knowledge/adopt.js');
 const slugs = require('../../../knowledge/slug.js');
+const frontmatter = require('../../../knowledge/frontmatter.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const boards = require('../../../governance/boards.js');
 const now = require('../../../distribution/now.js');
@@ -112,6 +113,43 @@ function hasClaimableTask(entry, items, gitLog) {
 }
 
 /**
+ * AGSC-08-25: the Episodes the lane run counts besides the Bundle's own — those printed
+ * by an earlier dry run, which a build never reads. A dry run writes its Episode as a
+ * new file under `content/episodes/` in `dist/proposal/<n>.patch`; each such file whose
+ * slug the Bundle does not hold yet (once merged, the Bundle's copy is the one counted)
+ * is read as an item. A patch that does not parse, or a file that is no item, adds
+ * nothing.
+ *
+ * @param {object} fs the FileSystem port.
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} the printed Episodes, as `itemsOf` gives items.
+ */
+function printedEpisodes(fs, bundle) {
+  const out = [];
+  for (let n = 1; fs.exists(`${propose.DIR}/${n}.md`); n += 1) {
+    if (!fs.exists(`${propose.DIR}/${n}.patch`)) continue;
+    let files;
+    try {
+      files = parsePatch(String(fs.readFile(`${propose.DIR}/${n}.patch`, 'utf8')));
+    } catch (e) {
+      continue;
+    }
+    for (const file of files) {
+      const m = /^b\/content\/episodes\/([a-z0-9-]+)\.md$/u.exec(String(file.newFileName));
+      if (m === null || file.oldFileName !== '/dev/null' || bundle.byslug.has(m[1])) continue;
+      const at = `content/episodes/${m[1]}.md`;
+      const text = applyPatch('', file);
+      // Typed as the loader types an item (AGSC-02-03), so `cost_usd` is a number.
+      const item = typeof text === 'string' ? frontmatter.parseItem(text, { path: at, schemas: helpers.schemas() }) : null;
+      if (item && item.frontmatter && typeof item.frontmatter === 'object') {
+        out.push({ ...item.frontmatter, path: at, slug: m[1], type: 'episode' });
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * The stop conditions of one lane run, checked before anything is written: a
  * `{findings}` result when the run stops, else `null`.
  */
@@ -137,8 +175,11 @@ function stopped(ctx, entry, bundle) {
   const items = itemsOf(bundle);
   const config = ctx.config || {};
   // AGSC-08-28(e): the lane stops for the month once its own budget or the node's is
-  // reached — the meter of AGSC-08-25, the one the NOW page shows.
-  const reached = now.budgetReached(items, config, { lane: entry.name, month: helpers.instantOf(ctx).slice(0, 7) });
+  // reached — the meter of AGSC-08-25, the one the NOW page shows, over the Bundle's
+  // Episodes and, as AGSC-08-25 gives the lane run to count, those its earlier dry
+  // runs printed.
+  const metered = [...items, ...printedEpisodes(ctx.ports.fs, bundle)];
+  const reached = now.budgetReached(metered, config, { lane: entry.name, month: helpers.instantOf(ctx).slice(0, 7) });
   if (reached.length > 0) {
     helpers.note(ctx, `refresh: the ${entry.name} lane stops for the month: a monthly budget is reached; nothing was written`);
     return { findings: reached, wrote: [] };

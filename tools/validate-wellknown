@@ -72,25 +72,27 @@ const TARGET_MAX_BYTES = 33554432; // federation.max_bytes default: any other ar
 const REDIRECT_LIMIT = 3;        // federation.redirect_limit default (AGSC-11-06/09)
 const TIMEOUT_MS = 10000;        // federation.timeout_ms default (AGSC-11-06)
 
+// The per-response deadline's timer, the platform's by default. A caller of `run` may
+// hand in its own (`io.timer`, AGSC-11-10(e, f)), so that a test fires the deadline
+// instead of waiting for it; the command line always uses this one.
+const PLATFORM_TIMER = Object.freeze({ clear: (handle) => clearTimeout(handle), set: (callback, ms) => setTimeout(callback, ms) });
+
 // ---------------------------------------------------------------- arguments
-function usage(code, message) {
-  const env = envelope([{ code, col: 1, file: '', line: 1, message, severity: 'error' }]);
-  if (opts.json) process.stdout.write(jcs(env) + '\n'); else process.stderr.write(`${code} ${message}\n`);
-  process.exit(2);
-}
-const opts = { json: false, dev: false, level: 0, target: null, peer: null };
-{
-  const a = process.argv.slice(2);
-  opts.json = a.includes('--json');
+/** The options of one run; with them, the usage fault ([code, message]) or the `help` that ends it. */
+function parseArgs(a) {
+  const opts = { json: a.includes('--json'), dev: false, level: 0, target: null, peer: null };
+  const fault = (code, message) => ({ opts, fault: [code, message] });
   for (let i = 0; i < a.length; i++) {
     const x = a[i];
     if (x === '--json') continue;
     else if (x === '--dev') opts.dev = true;
-    else if (x === '--level') { const v = a[++i]; if (!/^[0-3]$/.test(v || '')) usage('AGSC-E003', '--level needs 0, 1, 2 or 3'); opts.level = Number(v); } else if (x === '--peer') { const v = a[++i]; if (!v) usage('AGSC-E003', '--peer needs a url or file'); opts.peer = v; } else if (x === '-h' || x === '--help') { process.stdout.write(fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 10).map((l) => l.replace(/^\/\/ ?/, '')).join('\n') + '\n'); process.exit(0); } else if (x.startsWith('-')) usage('AGSC-E002', `unknown flag ${x}`);
+    else if (x === '--level') { const v = a[++i]; if (!/^[0-3]$/.test(v || '')) return fault('AGSC-E003', '--level needs 0, 1, 2 or 3'); opts.level = Number(v); } else if (x === '--peer') { const v = a[++i]; if (!v) return fault('AGSC-E003', '--peer needs a url or file'); opts.peer = v; } else if (x === '-h' || x === '--help') return { opts, help: true };
+    else if (x.startsWith('-')) return fault('AGSC-E002', `unknown flag ${x}`);
     else if (!opts.target) opts.target = x;
-    else usage('AGSC-E002', `unexpected argument ${x}`);
+    else return fault('AGSC-E002', `unexpected argument ${x}`);
   }
-  if (!opts.target) usage('AGSC-E003', 'missing <url|file>');
+  if (!opts.target) return fault('AGSC-E003', 'missing <url|file>');
+  return { opts };
 }
 
 // ---------------------------------------------------------------- output
@@ -183,9 +185,9 @@ const BLOCK4 = new net.BlockList(), BLOCK6 = new net.BlockList();
 const LOOP4 = new net.BlockList();
 LOOP4.addSubnet('127.0.0.0', 8, 'ipv4');
 const isLoop = (a, fam) => fam === 6 ? a === '::1' : LOOP4.check(a, 'ipv4');
-function refused(addr, family) {
+function refused(addr, family, dev) {
   const t = family === 6 ? 'ipv6' : 'ipv4';
-  if (t === 'ipv4' ? LOOP4.check(addr, t) : addr === '::1') return !opts.dev;
+  if (t === 'ipv4' ? LOOP4.check(addr, t) : addr === '::1') return !dev;
   return t === 'ipv4' ? BLOCK4.check(addr, t) : BLOCK6.check(addr, t);
 }
 class TransportError extends Error { constructor(code, m) { super(m); this.code = code; } }
@@ -195,21 +197,22 @@ class TransportError extends Error { constructor(code, m) { super(m); this.code 
 // resetting — and to its byte cap, and is aborted at either bound with AGSC-E907.
 // Until 2026-10-06 the timeout was an idle one, a
 // response over the cap was AGSC-E904 and every target was held to 1 MiB.
-function fetchOnce(url, cap) {
+// `session` is the run's: `dev` admits plain http to loopback, `timer` sets the deadline.
+function fetchOnce(url, cap, session) {
   return new Promise((resolve, reject) => {
     let u;
     try { u = new URL(url); } catch { return reject(new TransportError('AGSC-E905', `not an absolute URL: ${url}`)); }
     const isHttp = u.protocol === 'http:';
-    if (u.protocol !== 'https:' && !(isHttp && opts.dev)) return reject(new TransportError('AGSC-E905', `scheme not allowed: ${u.protocol}`));
+    if (u.protocol !== 'https:' && !(isHttp && session.dev)) return reject(new TransportError('AGSC-E905', `scheme not allowed: ${u.protocol}`));
     const literal = u.hostname.replace(/^\[|\]$/g, '');
     if (net.isIP(literal)) { // the platform resolver is bypassed for literals, so classify here
-      if (refused(literal, net.isIP(literal))) return reject(new TransportError('AGSC-E905', `address refused: ${literal}`));
+      if (refused(literal, net.isIP(literal), session.dev)) return reject(new TransportError('AGSC-E905', `address refused: ${literal}`));
       if (isHttp && !isLoop(literal, net.isIP(literal))) return reject(new TransportError('AGSC-E905', 'http is allowed only to loopback under --dev'));
     }
     const lookup = (host, o, cb) => dns.lookup(host, { all: true, verbatim: true }, (err, list) => {
       if (err) return cb(err);
       if (!list.length) return cb(new Error('no address'));
-      const bad = list.find((x) => refused(x.address, x.family));
+      const bad = list.find((x) => refused(x.address, x.family, session.dev));
       if (bad) return cb(new TransportError('AGSC-E905', `address refused: ${bad.address}`));
       if (isHttp && !list.every((x) => isLoop(x.address, x.family))) return cb(new TransportError('AGSC-E905', 'http is allowed only to loopback under --dev'));
       const pick = list[0];
@@ -220,7 +223,7 @@ function fetchOnce(url, cap) {
     const req = mod.request(u, { method: 'GET', lookup, timeout: TIMEOUT_MS, headers: { accept: 'application/linkset+json, application/json;q=0.5' } }, (res) => {
       const chunks = []; let size = 0;
       res.on('data', (c) => { size += c.length; if (size > cap) { res.destroy(); reject(new TransportError('AGSC-E907', `response exceeds ${cap} bytes, the cap of AGSC-11-10(f)`)); } else chunks.push(c); });
-      res.on('end', () => { clearTimeout(deadline); resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }); });
+      res.on('end', () => { session.timer.clear(deadline); resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }); });
       res.on('error', reject);
     });
     // Re-verify the connected socket (AGSC-11-08). A kept-alive socket is handed out
@@ -230,21 +233,21 @@ function fetchOnce(url, cap) {
     req.on('socket', (sock) => {
       const verify = () => {
         const remote = sock.remoteAddress;
-        if (!remote || refused(remote, net.isIPv6(remote) ? 6 : 4)) req.destroy(new TransportError('AGSC-E905', `socket address refused: ${remote}`));
+        if (!remote || refused(remote, net.isIPv6(remote) ? 6 : 4, session.dev)) req.destroy(new TransportError('AGSC-E905', `socket address refused: ${remote}`));
       };
       if (sock.connecting) sock.once('connect', verify); else verify();
     });
     req.on('timeout', () => req.destroy(new TransportError('AGSC-E907', 'timeout')));
-    const deadline = setTimeout(() => req.destroy(new TransportError('AGSC-E907', `timeout: no complete response within ${TIMEOUT_MS} ms (AGSC-11-10(e, f))`)), TIMEOUT_MS);
-    req.on('error', (e) => { clearTimeout(deadline); reject(e instanceof TransportError ? e : (e.code === 'AGSC-E905' ? e : new TransportError('AGSC-E907', e.message))); });
-    req.on('close', () => clearTimeout(deadline));
+    const deadline = session.timer.set(() => req.destroy(new TransportError('AGSC-E907', `timeout: no complete response within ${TIMEOUT_MS} ms (AGSC-11-10(e, f))`)), TIMEOUT_MS);
+    req.on('error', (e) => { session.timer.clear(deadline); reject(e instanceof TransportError ? e : (e.code === 'AGSC-E905' ? e : new TransportError('AGSC-E907', e.message))); });
+    req.on('close', () => session.timer.clear(deadline));
     req.end();
   });
 }
-async function fetchUrl(url, cap = MAX_BYTES) {
+async function fetchUrl(url, cap, session) {
   let current = url;
   for (let hop = 0; ; hop++) {
-    const r = await fetchOnce(current, cap);
+    const r = await fetchOnce(current, cap, session);
     if ([301, 302, 303, 307, 308].includes(r.status) && r.headers.location) {
       if (hop >= REDIRECT_LIMIT) throw new TransportError('AGSC-E905', `more than ${REDIRECT_LIMIT} redirects`);
       current = new URL(r.headers.location, current).href;
@@ -257,15 +260,15 @@ async function fetchUrl(url, cap = MAX_BYTES) {
 
 // ---------------------------------------------------------------- source abstraction
 const isUrl = (s) => /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
-/**: how many documents this run actually read, printed with the verdict so
- *  that "nothing is wrong" can be told apart from "nothing was looked at". */
-const READS = { count: 0 };
-async function load(target) {
-  READS.count += 1;
+/** One document to check, from a URL or a file. Each document read is counted in
+ *  `session.reads`, printed with the verdict so that "nothing is wrong" can be told
+ *  apart from "nothing was looked at". */
+async function load(target, session) {
+  session.reads += 1;
   if (isUrl(target)) {
-    const r = await fetchUrl(target);
+    const r = await fetchUrl(target, MAX_BYTES, session);
     return { kind: 'url', name: target, retrievedFrom: r.url, bytes: r.body, headers: r.headers,
-      resolve: async (href) => { READS.count += 1; const t = await fetchUrl(href, TARGET_MAX_BYTES); return { bytes: t.body, headers: t.headers, url: t.url }; } };
+      resolve: async (href) => { session.reads += 1; const t = await fetchUrl(href, TARGET_MAX_BYTES, session); return { bytes: t.body, headers: t.headers, url: t.url }; } };
   }
   const file = path.resolve(target);
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw new TransportError('AGSC-E901', `file not found: ${target}`);
@@ -282,12 +285,19 @@ async function load(target) {
       const f = path.resolve(siteRoot, '.' + p);
       if (!f.startsWith(siteRoot + path.sep)) throw new TransportError('AGSC-E902', `path escapes the site root: ${href}`);
       if (!fs.existsSync(f)) throw new TransportError('AGSC-E901', `target not found on disk: ${p}`);
-      READS.count += 1;
+      session.reads += 1;
       return { bytes: fs.readFileSync(f), headers: null, url: href };
     } };
 }
 
 // ---------------------------------------------------------------- checks
+const LINKSET = 'application/linkset+json';
+/**
+ * AGSC-06-07, AGSC-09-93: the media type is application/linkset+json in every case, and
+ * the profile URI rides on its `profile` parameter or on a `Link: …; rel="profile"`
+ * header; the header replaces only the parameter, never the media type. A file has no
+ * response headers and is not judged.
+ */
 function mediaTypeOk(headers) {
   if (!headers) return { checked: false };
   const ct = String(headers['content-type'] || '');
@@ -297,14 +307,21 @@ function mediaTypeOk(headers) {
     let v = m[2].trim(); if (v.startsWith('"')) v = v.slice(1, -1).replace(/\\(.)/g, '$1');
     params[m[1].toLowerCase()] = v;
   }
-  const byParam = essence === 'application/linkset+json' && (params.profile || '').split(/\s+/).includes(PROFILE);
+  const byParam = essence === LINKSET && (params.profile || '').split(/\s+/).includes(PROFILE);
   const links = [].concat(headers.link || []).join(',');
   const byLink = links.split(/,(?=\s*<)/).some((l) => {
     const m = /^\s*<([^>]*)>(.*)$/.exec(l); if (!m) return false;
     const rel = /;\s*rel\s*=\s*(?:"([^"]*)"|([^;\s]+))/i.exec(m[2]);
     return m[1] === PROFILE && rel && (rel[1] || rel[2]).split(/\s+/).includes('profile');
   });
-  return { checked: true, essence, ok: byParam || byLink, byParam, byLink };
+  return { checked: true, essence, ok: essence === LINKSET && (byParam || byLink), byParam, byLink };
+}
+/** The one message for a media type that fails AGSC-06-07, naming the half that is missing; null when it holds. */
+function mediaTypeShortfall(mt) {
+  if (!mt.checked || mt.ok) return null;
+  if (mt.essence !== LINKSET && (mt.byParam || mt.byLink)) return `media type "${mt.essence}" is not ${LINKSET}; the profile Link header replaces only the profile parameter, never the media type (AGSC-06-07)`;
+  if (mt.essence !== LINKSET) return `media type "${mt.essence}" is not ${LINKSET} and no profile is carried: need ${LINKSET} with profile="${PROFILE}", or ${LINKSET} with a Link header rel="profile" (AGSC-06-07)`;
+  return `media type ${LINKSET} carries no profile: need profile="${PROFILE}", or a Link header with rel="profile" (AGSC-06-07)`;
 }
 
 // AGSC-11-03: the public artefacts, as origin-rooted paths (a node occupies a whole
@@ -347,11 +364,12 @@ function checkHeaders(got, isDocument, run) {
   for (const [code, message] of headerShortfalls(got.headers, scope)) run.F(code, `${got.url}: ${message}`, severity);
 }
 
-async function check(src, level, findings) {
-  const F = (code, message, severity = 'error') => findings.push({ code, col: 1, file: src.name, line: 1, message, severity });
-  const mt = mediaTypeOk(src.headers);
-  if (mt.checked && !mt.ok) F('AGSC-E201', `media type is "${mt.essence}" and no profile is carried: need application/linkset+json with profile="${PROFILE}", or a Link header with rel="profile" (AGSC-06-07)`);
-  if (mt.checked && mt.ok && mt.essence !== 'application/linkset+json') F('AGSC-E201', `media type "${mt.essence}" is not application/linkset+json (AGSC-06-07)`);
+/**
+ * AGSC-06-08: the document's bytes, its JSON and its outer shape, then its one link
+ * context and that context's anchor. Returns `{ anchor, ctx }`, or null when nothing
+ * further can be checked.
+ */
+function parseDocument(src, level, F, dev) {
   const text = src.bytes.toString('utf8');
   if (!Buffer.from(text, 'utf8').equals(src.bytes)) { F('AGSC-E201', 'document is not valid UTF-8'); return null; }
   let doc;
@@ -364,29 +382,20 @@ async function check(src, level, findings) {
   const ctx = doc.linkset[0];
   if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) { F('AGSC-E201', 'link context is not an object'); return null; }
   let anchor;
-  try { anchor = new URL(ctx.anchor); if (anchor.protocol !== 'https:' && !(opts.dev && anchor.protocol === 'http:')) throw 0; if (!ctx.anchor.endsWith('/')) throw 0; } catch { F('AGSC-E201', `anchor must be the absolute https Bundle IRI ending in "/" (AGSC-05-03); got ${JSON.stringify(ctx.anchor)}`); return null; }
+  try { anchor = new URL(ctx.anchor); if (anchor.protocol !== 'https:' && !(dev && anchor.protocol === 'http:')) throw 0; if (!ctx.anchor.endsWith('/')) throw 0; } catch { F('AGSC-E201', `anchor must be the absolute https Bundle IRI ending in "/" (AGSC-05-03); got ${JSON.stringify(ctx.anchor)}`); return null; }
   // AGSC-06-08: a document whose anchor is not on the origin it was retrieved from
   // (after redirects) is not that node's discovery document (RFC 9264 §9, RFC 8615
   // §4.3). A file read from disk has no such origin and is not judged here.
   if (anchor && src.kind === 'url' && src.retrievedFrom && new URL(src.retrievedFrom).origin !== anchor.origin) {
     F('AGSC-E907', `anchor ${ctx.anchor} is not on the origin the document was retrieved from (${new URL(src.retrievedFrom).origin}); it is not that node's discovery document (AGSC-06-08)`);
   }
-  const names = KEYS.get(ctx).filter((k) => k !== 'anchor');
   const sorted = [...KEYS.get(ctx)].sort();
   if (JSON.stringify(KEYS.get(ctx)) !== JSON.stringify(sorted)) F('AGSC-E201', 'link context members are not ordered as JSON member names (AGSC-06-08, AGSC-04-05)');
-  const result = { anchor: ctx.anchor, peers: [], ctx };
-  // AGSC-11-20: a gated node's own declaration decides which attributes are
-  // REQUIRED and which are FORBIDDEN, so it is read once, before the links.
-  const describedby = Array.isArray(ctx.describedby) ? ctx.describedby : [];
-  const anchorLink = describedby.find((t) => t && typeof t.href === 'string' && /\/graph\.jsonld$/.test(t.href)) || {};
-  const gated = Array.isArray(anchorLink['agsc-visibility'])
-    && anchorLink['agsc-visibility'].map(String).includes('restricted');
-  // AGSC-09-93 (amended 2026-10-06): given a URL, the headers of the rules on
-  // cross-origin reading and caching, on the document and on every same-origin
-  // public artefact this run fetches. A file has no response headers.
-  const headerRun = { anchor, F, gated, level, seen: new Set() };
-  const headerChecks = (got, isDocument) => checkHeaders(got, isDocument, headerRun);
-  headerChecks({ headers: src.headers, url: src.retrievedFrom }, true);
+  return { anchor, ctx };
+}
+
+/** AGSC-11-20 and AGSC-10-04: what a restricted node omits, and the ledger link a public Level ≥ 2 node carries. */
+function checkGate(ctx, anchorLink, gated, level, F) {
   if (gated) {
     for (const a of RESTRICTED_OMITTED) {
       if (anchorLink[a] !== undefined) F('AGSC-E210', `a restricted node must omit "${a}": per-type population, the fingerprint, the content version and the ledger head are content facts (AGSC-11-20)`);
@@ -397,6 +406,13 @@ async function check(src, level, findings) {
     // node claiming it publishes `/ledger.jsonl` and links it.
     F('AGSC-E202', 'no rel#ledger link: a Level ≥ 2 node publishes /ledger.jsonl and links it (AGSC-10-04, AGSC-09-93)');
   }
+}
+
+/**
+ * The version the document declares (`agsc-spec-version`), whether it is a newer MINOR
+ * of this checker's MAJOR, and the content version it publishes. Returns `{ declared, newer }`.
+ */
+function checkVersion(anchorLink, F) {
   // AGSC-00-23 / AGSC-E210: a node may not publish bytes carrying a member of a
   // version its own `agsc-spec-version` does not define. Checked for the members
   // this specification knows how to look for — today, the content version, which
@@ -424,84 +440,168 @@ async function check(src, level, findings) {
       F('AGSC-E210', `the node publishes agsc-bundle-version while declaring agsc-spec-version ${JSON.stringify(declared)}, which does not define it (AGSC-00-23, AGSC-04-25)`);
     }
   }
-  for (const rel of names) {
+  return { declared, newer };
+}
+
+/** AGSC-06-10, RFC 9264 §4.2.4: the value form of each attribute of one target; a newer MINOR's attribute is ignored with a warning. */
+function checkAttributes(rel, t, { declared, newer }, F) {
+  for (const k of KEYS.get(t)) {
+    if (k === 'href') continue;
+    const v = t[k];
+    if (newer && !KNOWN_ATTRS.has(k)) { F('AGSC-E506', `relation ${rel}: target attribute ${k} is not defined by this version; the document declares the newer ${declared}, so it is ignored (AGSC-00-21, AGSC-09-93)`, 'warn'); continue; }
+    if (RFC8288_STRING_ATTRS.has(k)) { if (typeof v !== 'string') F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a string (RFC 9264 §4.2.4.1)`); } else if (k === 'title*') { if (!Array.isArray(v)) F('AGSC-E201', `relation ${rel}: title* must be an array (RFC 9264 §4.2.4.2)`); } else if (!Array.isArray(v) || !v.length || !v.every((s) => typeof s === 'string')) F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a non-empty array of strings (AGSC-06-10)`);
+  }
+}
+
+/**
+ * AGSC-06-08, AGSC-06-08a, AGSC-11-20: one target's digest — its form, and at Level ≥ 2
+ * (or from a file) the bytes it names — or, where it is missing, whether Level ≥ 2
+ * requires it.
+ */
+async function checkDigest(t, h, rel, ext, doc) {
+  const { anchor, ctx, F, gated, headerChecks, level, src } = doc;
+  const sameOrigin = h.origin === anchor.origin;
+  const artefact = sameOrigin && !h.pathname.endsWith('/') && rel !== 'license' && rel !== 'service-doc' && ext !== 'surface' && ext !== 'peer'
+    // AGSC-06-08: the optional signature link "affects no
+    // digest, no claim and no walk", so its target is never an artefact that needs one.
+    && ext !== 'signature';
+  const open = sameOrigin && OPEN_WHEN_RESTRICTED.some((p) => h.pathname.endsWith(p));
+  // AGSC-11-20: a restricted node publishes no digest of a target it gates.
+  if (gated && t.digest !== undefined && !open) F('AGSC-E210', `relation ${rel}: a restricted node must omit the digest of ${t.href}, a target it does not serve unauthenticated (AGSC-11-20)`);
+  if (t.digest === undefined) {
+    if (level >= 2 && artefact && !(gated && !OPEN_WHEN_RESTRICTED.some((p) => h.pathname.endsWith(p)))) F('AGSC-E202', `relation ${rel}: artefact link ${t.href} carries no digest (required at Level ≥ 2, AGSC-06-08a)`);
+    return;
+  }
+  if (!Array.isArray(t.digest) || t.digest.length !== 1 || !/^sha-256=:[A-Za-z0-9+/]{43}=:$/.test(t.digest[0])) { F('AGSC-E204', `relation ${rel}: digest must be one "sha-256=:<base64>:" string (AGSC-06-08, RFC 9530, RFC 9651)`); return; }
+  if (level < 2 && src.kind !== 'file') return;
+  try {
+    const got = await src.resolve(t.href, ctx.anchor);
+    if (got) {
+      const d = 'sha-256=:' + crypto.createHash('sha256').update(got.bytes).digest('base64') + ':';
+      if (d !== t.digest[0]) F('AGSC-E201', `relation ${rel}: digest does not match the bytes of ${t.href}`);
+      headerChecks(got, false);
+    }
+  } catch (e) { F(e.code || 'AGSC-E907', `relation ${rel}: ${e.message}`); }
+}
+
+/** AGSC-11-16: one rel#surface target's declaration; an llms-txt or chunks target must resolve. */
+async function checkSurface(t, h, doc) {
+  const { ctx, F, headerChecks, src } = doc;
+  const s = t['agsc-surface'], acc = t['agsc-access'], ver = t['agsc-surface-version'];
+  const name = Array.isArray(s) && s.length === 1 ? s[0] : null;
+  if (!name) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface must carry exactly one value (AGSC-11-16)`);
+  else if (!SURFACES.has(name) && !/^x-[a-z0-9]+(-[a-z0-9]+)+$/.test(name)) F('AGSC-E210', `rel#surface ${t.href}: unknown surface ${JSON.stringify(name)} (AGSC-11-16; a reader treats it as not served, AGSC-11-02)`, 'warn');
+  if (!(Array.isArray(acc) && acc.length === 1)) F('AGSC-E210', `rel#surface ${t.href}: agsc-access must carry exactly one value (AGSC-11-16)`);
+  else if (!ACCESS.has(acc[0])) F('AGSC-E210', `rel#surface ${t.href}: unknown access class ${JSON.stringify(acc[0])} (read as credential, AGSC-11-02)`, 'warn');
+  if (name && SURFACE_NEEDS_VERSION.has(name) && !(Array.isArray(ver) && ver.length === 1)) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version is required for ${name} (AGSC-11-16)`);
+  if (name && (name === 'llms-txt' || name === 'chunks') && ver !== undefined) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
+  if (name === 'llms-txt' && h.pathname !== '/llms.txt' && !h.pathname.endsWith('/llms.txt')) F('AGSC-E210', `rel#surface llms-txt must target /llms.txt (AGSC-11-16)`);
+  if (name === 'llms-txt' || name === 'chunks') {
+    try { headerChecks(await src.resolve(t.href, ctx.anchor), false); } catch (e) { F('AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
+  }
+}
+
+/**
+ * One target of one relation (AGSC-06-08, AGSC-06-10, AGSC-06-35): its form, its order
+ * after `prev`, its attributes, its digest and what its relation declares. Returns the
+ * href the next target is ordered against.
+ */
+async function checkTarget(t, prev, rel, ext, doc) {
+  const { anchorLink, F, level, gated, result } = doc;
+  if (!t || typeof t !== 'object' || Array.isArray(t) || typeof t.href !== 'string') { F('AGSC-E201', `relation ${rel}: every target is an object with a string href`); return prev; }
+  let h; try { h = new URL(t.href); } catch { F('AGSC-E201', `relation ${rel}: href ${JSON.stringify(t.href)} is not absolute (AGSC-06-10)`); return prev; }
+  if (prev !== null && !(prev < t.href)) F('AGSC-E201', `relation ${rel}: targets are not ordered by href code point (AGSC-06-10)`);
+  checkAttributes(rel, t, doc.version, F);
+  // AGSC-06-08 / AGSC-04-15: `agsc-bundle-hash` is the SHA-256 of `graph.nq`, so
+  // where both are published it equals the digest of the rel#graph link to it.
+  if (ext === 'graph' && /\/graph\.nq$/.test(h.pathname) && Array.isArray(t.digest) && Array.isArray(anchorLink['agsc-bundle-hash'])
+    && String(anchorLink['agsc-bundle-hash'][0]) !== String(t.digest[0])) F('AGSC-E210', `agsc-bundle-hash ${JSON.stringify(String(anchorLink['agsc-bundle-hash'][0]))} is not the digest of ${t.href}, the bundle hash of AGSC-04-15 (AGSC-06-08)`);
+  await checkDigest(t, h, rel, ext, doc);
+  // AGSC-06-08a requires every `agsc-*` attribute at Level ≥ 2 — EXCEPT the four
+  // AGSC-11-20 forbids a gated node to publish, which are checked above instead.
+  if (level >= 2 && rel === 'describedby' && /\/graph\.jsonld$/.test(h.pathname)) for (const a of LEVEL2_ATTRS) if (t[a] === undefined && !(gated && RESTRICTED_OMITTED.includes(a))) F('AGSC-E202', `describedby ${t.href}: ${a} is required at Level ≥ 2 (AGSC-06-08)`);
+  if (level >= 2 && !gated && ext === 'ledger' && t['agsc-ledger-head'] === undefined) F('AGSC-E202', 'rel#ledger: agsc-ledger-head is required at Level ≥ 2 (AGSC-06-08)');
+  if (RELATED_ONLY.has(rel) && typeof t.type !== 'string') F('AGSC-E209', `related-system link ${rel} ${t.href} must carry type (AGSC-06-35)`);
+  if (ext === 'peer') result.peers.push(t.href);
+  if (ext === 'surface') await checkSurface(t, h, doc);
+  return t.href;
+}
+
+/** AGSC-06-10, AGSC-06-35: every relation of the link context, and each of its targets in order. */
+async function checkRelations(doc) {
+  const { ctx, F, version } = doc;
+  for (const rel of KEYS.get(ctx).filter((k) => k !== 'anchor')) {
     const ext = rel.startsWith(REL) ? rel.slice(REL.length) : null;
     if (!(REGISTERED.has(rel) || (ext !== null && EXTENSIONS.has(ext)))) {
-      if (newer) { F('AGSC-E506', `relation ${JSON.stringify(rel)} is not defined by this version; the document declares the newer ${declared}, so it is ignored (AGSC-00-21, AGSC-09-93)`, 'warn'); continue; }
+      if (version.newer) { F('AGSC-E506', `relation ${JSON.stringify(rel)} is not defined by this version; the document declares the newer ${version.declared}, so it is ignored (AGSC-00-21, AGSC-09-93)`, 'warn'); continue; }
       F('AGSC-E209', `relation ${JSON.stringify(rel)} is neither a registered name of AGSC-06-10/06-35 nor a …/rel#<name> extension URI`);
     }
     const arr = ctx[rel];
     if (!Array.isArray(arr) || !arr.length) { F('AGSC-E201', `relation ${rel}: value must be a non-empty array of target objects (RFC 9264 §4.2.2)`); continue; }
     let prev = null;
-    for (const t of arr) {
-      if (!t || typeof t !== 'object' || Array.isArray(t) || typeof t.href !== 'string') { F('AGSC-E201', `relation ${rel}: every target is an object with a string href`); continue; }
-      let h; try { h = new URL(t.href); } catch { F('AGSC-E201', `relation ${rel}: href ${JSON.stringify(t.href)} is not absolute (AGSC-06-10)`); continue; }
-      if (prev !== null && !(prev < t.href)) F('AGSC-E201', `relation ${rel}: targets are not ordered by href code point (AGSC-06-10)`);
-      prev = t.href;
-      for (const k of KEYS.get(t)) {
-        if (k === 'href') continue;
-        const v = t[k];
-        if (newer && !KNOWN_ATTRS.has(k)) { F('AGSC-E506', `relation ${rel}: target attribute ${k} is not defined by this version; the document declares the newer ${declared}, so it is ignored (AGSC-00-21, AGSC-09-93)`, 'warn'); continue; }
-        if (RFC8288_STRING_ATTRS.has(k)) { if (typeof v !== 'string') F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a string (RFC 9264 §4.2.4.1)`); } else if (k === 'title*') { if (!Array.isArray(v)) F('AGSC-E201', `relation ${rel}: title* must be an array (RFC 9264 §4.2.4.2)`); } else if (!Array.isArray(v) || !v.length || !v.every((s) => typeof s === 'string')) F('AGSC-E201', `relation ${rel}: target attribute ${k} must be a non-empty array of strings (AGSC-06-10)`);
-      }
-      const sameOrigin = h.origin === anchor.origin;
-      const artefact = sameOrigin && !h.pathname.endsWith('/') && rel !== 'license' && rel !== 'service-doc' && ext !== 'surface' && ext !== 'peer'
-        // AGSC-06-08: the optional signature link "affects no
-        // digest, no claim and no walk", so its target is never an artefact that needs one.
-        && ext !== 'signature';
-      // AGSC-11-20: a restricted node publishes no digest of a target it gates.
-      if (gated && t.digest !== undefined && !(sameOrigin && OPEN_WHEN_RESTRICTED.some((p) => h.pathname.endsWith(p)))) F('AGSC-E210', `relation ${rel}: a restricted node must omit the digest of ${t.href}, a target it does not serve unauthenticated (AGSC-11-20)`);
-      // AGSC-06-08 / AGSC-04-15: `agsc-bundle-hash` is the SHA-256 of `graph.nq`, so
-      // where both are published it equals the digest of the rel#graph link to it.
-      if (ext === 'graph' && /\/graph\.nq$/.test(h.pathname) && Array.isArray(t.digest) && Array.isArray(anchorLink['agsc-bundle-hash'])
-        && String(anchorLink['agsc-bundle-hash'][0]) !== String(t.digest[0])) F('AGSC-E210', `agsc-bundle-hash ${JSON.stringify(String(anchorLink['agsc-bundle-hash'][0]))} is not the digest of ${t.href}, the bundle hash of AGSC-04-15 (AGSC-06-08)`);
-      if (t.digest !== undefined) {
-        if (!Array.isArray(t.digest) || t.digest.length !== 1 || !/^sha-256=:[A-Za-z0-9+/]{43}=:$/.test(t.digest[0])) F('AGSC-E204', `relation ${rel}: digest must be one "sha-256=:<base64>:" string (AGSC-06-08, RFC 9530, RFC 9651)`);
-        else if (level >= 2 || src.kind === 'file') {
-          try {
-            const got = await src.resolve(t.href, ctx.anchor);
-            if (got) {
-              const d = 'sha-256=:' + crypto.createHash('sha256').update(got.bytes).digest('base64') + ':';
-              if (d !== t.digest[0]) F('AGSC-E201', `relation ${rel}: digest does not match the bytes of ${t.href}`);
-              headerChecks(got, false);
-            }
-          } catch (e) { F(e.code || 'AGSC-E907', `relation ${rel}: ${e.message}`); }
-        }
-      } else if (level >= 2 && artefact && !(gated && !OPEN_WHEN_RESTRICTED.some((p) => h.pathname.endsWith(p)))) F('AGSC-E202', `relation ${rel}: artefact link ${t.href} carries no digest (required at Level ≥ 2, AGSC-06-08a)`);
-      // AGSC-06-08a requires every `agsc-*` attribute at Level ≥ 2 — EXCEPT the four
-      // AGSC-11-20 forbids a gated node to publish, which are checked above instead.
-      if (level >= 2 && rel === 'describedby' && /\/graph\.jsonld$/.test(h.pathname)) for (const a of LEVEL2_ATTRS) if (t[a] === undefined && !(gated && RESTRICTED_OMITTED.includes(a))) F('AGSC-E202', `describedby ${t.href}: ${a} is required at Level ≥ 2 (AGSC-06-08)`);
-      if (level >= 2 && !gated && ext === 'ledger' && t['agsc-ledger-head'] === undefined) F('AGSC-E202', 'rel#ledger: agsc-ledger-head is required at Level ≥ 2 (AGSC-06-08)');
-      if (RELATED_ONLY.has(rel) && typeof t.type !== 'string') F('AGSC-E209', `related-system link ${rel} ${t.href} must carry type (AGSC-06-35)`);
-      if (ext === 'peer') result.peers.push(t.href);
-      if (ext === 'surface') {
-        const s = t['agsc-surface'], acc = t['agsc-access'], ver = t['agsc-surface-version'];
-        const name = Array.isArray(s) && s.length === 1 ? s[0] : null;
-        if (!name) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface must carry exactly one value (AGSC-11-16)`);
-        else if (!SURFACES.has(name) && !/^x-[a-z0-9]+(-[a-z0-9]+)+$/.test(name)) F('AGSC-E210', `rel#surface ${t.href}: unknown surface ${JSON.stringify(name)} (AGSC-11-16; a reader treats it as not served, AGSC-11-02)`, 'warn');
-        if (!(Array.isArray(acc) && acc.length === 1)) F('AGSC-E210', `rel#surface ${t.href}: agsc-access must carry exactly one value (AGSC-11-16)`);
-        else if (!ACCESS.has(acc[0])) F('AGSC-E210', `rel#surface ${t.href}: unknown access class ${JSON.stringify(acc[0])} (read as credential, AGSC-11-02)`, 'warn');
-        if (name && SURFACE_NEEDS_VERSION.has(name) && !(Array.isArray(ver) && ver.length === 1)) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version is required for ${name} (AGSC-11-16)`);
-        if (name && (name === 'llms-txt' || name === 'chunks') && ver !== undefined) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
-        if (name === 'llms-txt' && h.pathname !== '/llms.txt' && !h.pathname.endsWith('/llms.txt')) F('AGSC-E210', `rel#surface llms-txt must target /llms.txt (AGSC-11-16)`);
-        if (name === 'llms-txt' || name === 'chunks') {
-          try { headerChecks(await src.resolve(t.href, ctx.anchor), false); } catch (e) { F('AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
-        }
-      }
-    }
+    for (const t of arr) prev = await checkTarget(t, prev, rel, ext, doc);
   }
+}
+
+/**
+ * AGSC-09-93: one discovery document, one group of checks after another — the media
+ * type, the document (`parseDocument`), the response headers (`checkHeaders`), what a
+ * restricted node omits (`checkGate`), the declared version (`checkVersion`), and the
+ * relations and their targets (`checkRelations`). Returns the anchor and the peers
+ * for the mutual check of AGSC-10-12, or null when the document cannot be read.
+ */
+async function check(src, level, findings, session) {
+  const F = (code, message, severity = 'error') => findings.push({ code, col: 1, file: src.name, line: 1, message, severity });
+  const shortfall = mediaTypeShortfall(mediaTypeOk(src.headers));
+  if (shortfall) F('AGSC-E201', shortfall);
+  const parsed = parseDocument(src, level, F, session.dev);
+  if (!parsed) return null;
+  const { anchor, ctx } = parsed;
+  const result = { anchor: ctx.anchor, peers: [], ctx };
+  // AGSC-11-20: a gated node's own declaration decides which attributes are
+  // REQUIRED and which are FORBIDDEN, so it is read once, before the links.
+  const describedby = Array.isArray(ctx.describedby) ? ctx.describedby : [];
+  const anchorLink = describedby.find((t) => t && typeof t.href === 'string' && /\/graph\.jsonld$/.test(t.href)) || {};
+  const gated = Array.isArray(anchorLink['agsc-visibility'])
+    && anchorLink['agsc-visibility'].map(String).includes('restricted');
+  // AGSC-09-93 (amended 2026-10-06): given a URL, the headers of the rules on
+  // cross-origin reading and caching, on the document and on every same-origin
+  // public artefact this run fetches. A file has no response headers.
+  const headerRun = { anchor, F, gated, level, seen: new Set() };
+  const headerChecks = (got, isDocument) => checkHeaders(got, isDocument, headerRun);
+  headerChecks({ headers: src.headers, url: src.retrievedFrom }, true);
+  checkGate(ctx, anchorLink, gated, level, F);
+  const version = checkVersion(anchorLink, F);
+  await checkRelations({ anchor, anchorLink, ctx, F, gated, headerChecks, level, result, src, version });
   return result;
 }
 
 // ---------------------------------------------------------------- main
-(async () => {
+/**
+ * One run of the command. `argv` holds the arguments after the script's name; `io`
+ * may hand in `out` and `err` (each a function of a string; the process's streams by
+ * default) and the deadline `timer` (`{ set(callback, ms), clear(handle) }`; the
+ * platform's by default). Resolves to the exit code: 0 pass, 1 fail, 2 usage.
+ */
+async function run(argv, io = {}) {
+  const out = io.out || ((s) => process.stdout.write(s));
+  const err = io.err || ((s) => process.stderr.write(s));
+  const { opts, fault, help } = parseArgs(argv);
+  if (help) { out(fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 10).map((l) => l.replace(/^\/\/ ?/, '')).join('\n') + '\n'); return 0; }
+  if (fault) {
+    const [code, message] = fault;
+    const env = envelope([{ code, col: 1, file: '', line: 1, message, severity: 'error' }]);
+    if (opts.json) out(jcs(env) + '\n'); else err(`${code} ${message}\n`);
+    return 2;
+  }
+  const session = { dev: opts.dev, reads: 0, timer: io.timer || PLATFORM_TIMER };
   const findings = [];
-  const run = async (target, level) => {
-    try { const src = await load(target); return { src, r: await check(src, level, findings) }; } catch (e) { findings.push({ code: e.code && /^AGSC-E\d{3}$/.test(e.code) ? e.code : 'AGSC-E907', col: 1, file: target, line: 1, message: e.message, severity: 'error' }); return null; }
+  const one = async (target, level) => {
+    try { const src = await load(target, session); return { src, r: await check(src, level, findings, session) }; } catch (e) { findings.push({ code: e.code && /^AGSC-E\d{3}$/.test(e.code) ? e.code : 'AGSC-E907', col: 1, file: target, line: 1, message: e.message, severity: 'error' }); return null; }
   };
-  const a = await run(opts.target, opts.level);
+  const a = await one(opts.target, opts.level);
   if (opts.peer) {
-    const b = await run(opts.peer, opts.level);
+    const b = await one(opts.peer, opts.level);
     const canon = (r) => new URL(`.well-known/${WELLKNOWN_SUFFIX}`, r.anchor).href;
     if (a && a.r && b && b.r) {
       if (!a.r.peers.includes(canon(b.r))) findings.push({ code: 'AGSC-E907', col: 1, file: opts.target, line: 1, message: `resolved, not mutual: no rel#peer names ${canon(b.r)} (AGSC-10-12)`, severity: 'error' });
@@ -509,10 +609,14 @@ async function check(src, level, findings) {
     } else if (!findings.length) findings.push({ code: 'AGSC-E907', col: 1, file: opts.peer, line: 1, message: 'peer check could not run: a document is invalid', severity: 'error' });
   }
   const env = envelope(findings);
-  if (opts.json) process.stdout.write(jcs(env) + '\n');
+  if (opts.json) out(jcs(env) + '\n');
   else {
-    for (const f of env.findings) process.stderr.write(`${f.file}:${f.line}:${f.col} ${f.severity} ${f.code} ${f.message}\n`);
-    process.stdout.write(`validate-wellknown ${env.status} (level ${opts.level}): ${READS.count} input file(s) read, ${env.counts.error} error(s), ${env.counts.warn} warning(s)\n`);
+    for (const f of env.findings) err(`${f.file}:${f.line}:${f.col} ${f.severity} ${f.code} ${f.message}\n`);
+    out(`validate-wellknown ${env.status} (level ${opts.level}): ${session.reads} input file(s) read, ${env.counts.error} error(s), ${env.counts.warn} warning(s)\n`);
   }
-  process.exit(env.status === 'pass' ? 0 : 1);
-})();
+  return env.status === 'pass' ? 0 : 1;
+}
+
+if (require.main === module) run(process.argv.slice(2)).then((code) => process.exit(code));
+
+module.exports = { mediaTypeOk, run };

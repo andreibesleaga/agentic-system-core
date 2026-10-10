@@ -129,9 +129,15 @@ module.exports = [
     pattern: 'the lane\'s Proposal claiming a task was merged with the trailer "Channel-Auto: lane"',
     run(world) {
       world.commitAll('Open the sprint-1 board');
+      // The Proposal is a branch, and the auto lane merges it with a merge commit that
+      // carries the trailer: with an auto channel, every commit of the content branch
+      // after the root is such a merge (AGSC-08-26(g)).
+      const day2 = { GIT_AUTHOR_DATE: '2026-01-02T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-02T00:00:00Z' };
+      world.git(['checkout', '-q', '-b', 'proposal']);
       task(world, 'task-a', 'TASK_STATE_WORKING');
-      world.commitAll('Claim task-a\n\nChannel-Auto: lane',
-        { GIT_AUTHOR_DATE: '2026-01-02T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-02T00:00:00Z' });
+      world.commitAll('Claim task-a', day2);
+      world.git(['checkout', '-q', 'main']);
+      world.git(['merge', '-q', '--no-ff', 'proposal', '-m', 'Claim task-a\n\nChannel-Auto: lane'], day2);
       world.state.laneCommit = world.git(['rev-parse', 'HEAD']).trim();
     },
   },

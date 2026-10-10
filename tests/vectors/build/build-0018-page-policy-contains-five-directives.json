@@ -1,0 +1,42 @@
+{
+  "area": "build",
+  "description": "AGSC-06-17 as amended for 1.0.0: the served Content-Security-Policy contains at least default-src 'none', script-src 'self', style-src 'self', img-src 'self' and connect-src 'self' and admits no inline script, and the case asserts that it CONTAINS these directives, never the whole string — a writer MAY add directives that only restrict further. Derivation from the rule text: each of the five is a directive name with one source, so a policy contains it when it carries a directive of that name whose source list includes that source; inline script is admitted by 'unsafe-inline', 'unsafe-hashes', a nonce source or a hash source in the directive that governs scripts (script-src-elem and script-src-attr where present, else script-src, else default-src), so none of them may appear there. The policy is served on every address, which the Cloudflare Pages profile of this case writes as the pattern /*. The two content types are asserted whole, as the rule states them, and the profile's header fallback of AGSC-06-07 is the whole header line. AGSC-06-01 makes the header set and not the file format normative, so no _headers bytes are asserted. This case supersedes build-0012, which asserted two of the five directives; the legacy redirect that build-0012 also asserted is a SHOULD of the same rule and is not asserted here.",
+  "expected": {
+    "content_security_policy": {
+      "admits_inline_script": false,
+      "contains": [
+        "default-src 'none'",
+        "script-src 'self'",
+        "style-src 'self'",
+        "img-src 'self'",
+        "connect-src 'self'"
+      ],
+      "route": "/*",
+      "whole_string_asserted": false
+    },
+    "file_bytes_asserted": false,
+    "header_fallback_admitted": "Link: <https://w3id.org/agentic-system-core/profile/agentic-knowledge>; rel=\"profile\"",
+    "headers": {
+      "/.well-known/knowledge-linkset": {
+        "Content-Type": "application/linkset+json; profile=\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\""
+      },
+      "/pages/*.md": {
+        "Content-Type": "text/markdown; charset=utf-8; variant=GFM"
+      }
+    }
+  },
+  "id": "build-0018",
+  "input": {
+    "deployment_profile": "cloudflare-pages",
+    "routes": [
+      "/pages/alpha.md",
+      "/.well-known/knowledge-linkset",
+      "/index.html"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-06-17"
+}

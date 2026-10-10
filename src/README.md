@@ -303,8 +303,8 @@ A port in another language can use it without reading a line of this engine:
   render one;
 * the AGSC-06-01 routes no module produces — `site.build`'s `skipped` list, from
   `site.UNPRODUCED_ROUTES`;
-* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired — named in
-  the lint lane's `lanes`;
+* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired or the
+  Bundle is not in a git repository — named in the lint lane's `lanes`;
 * `/ledger.jsonl`, when the Bundle has no history (AGSC-08-20a) — named in `skipped`,
   and `verify --ledger` then reports `AGSC-E703` rather than a green chain;
 * the live half of `refresh` and of the model-backed `review` — they need a model and

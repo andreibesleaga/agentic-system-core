@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "E10",
-  "reason": "the engine's address check of AGSC-11-08 (federation.checkAddresses, which the federation walk applies before every fetch) admits ::127.0.0.1 and ::ffff:8.8.8.8, so the walk reads such a peer and records it as unreachable (AGSC-E907) instead of refusing it before reading (AGSC-E905); the shipped checker already refuses both addresses before connecting, which the scenario's last step shows today.",
-  "scenario": "A peer at an IPv4-compatible or IPv4-mapped address is refused as the shipped checker refuses it"
-}

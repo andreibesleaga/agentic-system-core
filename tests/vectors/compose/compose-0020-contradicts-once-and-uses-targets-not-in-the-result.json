@@ -1,0 +1,125 @@
+{
+  "area": "compose",
+  "description": "Step 4 warnings, each AGSC-E803, none invalidating. planner and reactive each author contradicts naming the other: one warning, not two, with the code-point first author, planner, as source. swarm alone authors contradicts naming solo: the one warning names its author swarm as source although solo sorts first. planner's contradicts naming monolith, which is in the graph but not in the result, gives nothing. uses targets not in the result each warn, with the authoring item as source: memory (in the graph, not selected), critic (in no item of the graph) and cache-v1 (selected, then hidden by cache-v2 at Step 2). warnings[] is sorted by source, then target. The composition is valid, so the Harness is emitted.",
+  "expected": {
+    "exit": 0,
+    "harness_emitted": true,
+    "verdict": {
+      "added": [],
+      "conflicts": [],
+      "hidden": [
+        "cache-v1"
+      ],
+      "selection": [
+        "cache-v2",
+        "planner",
+        "reactive",
+        "solo",
+        "swarm"
+      ],
+      "valid": true,
+      "warnings": [
+        {
+          "code": "AGSC-E803",
+          "key": "uses",
+          "source": "planner",
+          "target": "critic"
+        },
+        {
+          "code": "AGSC-E803",
+          "key": "uses",
+          "source": "planner",
+          "target": "memory"
+        },
+        {
+          "code": "AGSC-E803",
+          "key": "contradicts",
+          "source": "planner",
+          "target": "reactive"
+        },
+        {
+          "code": "AGSC-E803",
+          "key": "uses",
+          "source": "reactive",
+          "target": "cache-v1"
+        },
+        {
+          "code": "AGSC-E803",
+          "key": "contradicts",
+          "source": "swarm",
+          "target": "solo"
+        }
+      ]
+    }
+  },
+  "id": "compose-0020",
+  "input": {
+    "items": [
+      {
+        "slug": "cache-v1",
+        "type": "concept"
+      },
+      {
+        "slug": "cache-v2",
+        "supersedes": [
+          "cache-v1"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "memory",
+        "type": "concept"
+      },
+      {
+        "slug": "monolith",
+        "type": "concept"
+      },
+      {
+        "contradicts": [
+          "reactive",
+          "monolith"
+        ],
+        "slug": "planner",
+        "type": "concept",
+        "uses": [
+          "memory",
+          "critic"
+        ]
+      },
+      {
+        "contradicts": [
+          "planner"
+        ],
+        "slug": "reactive",
+        "type": "concept",
+        "uses": [
+          "cache-v1"
+        ]
+      },
+      {
+        "slug": "solo",
+        "type": "concept"
+      },
+      {
+        "contradicts": [
+          "solo"
+        ],
+        "slug": "swarm",
+        "type": "concept"
+      }
+    ],
+    "selection": [
+      "swarm",
+      "reactive",
+      "solo",
+      "planner",
+      "cache-v1",
+      "cache-v2"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-07-07"
+}

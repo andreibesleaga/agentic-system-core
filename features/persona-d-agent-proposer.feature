@@ -17,11 +17,12 @@ Feature: Agent proposer contributes a change humans ratify
   @PRD-039 @agent @matrix-A4
   Scenario: Agent normalizes and writes a local patch, never pushes
     Given the agent's edit of "content/concepts/<slug>.md" left keys out of schema order, a wikilink and no trailing LF
-    When the agent runs "npx agentic-system-core lint --fix"
-    Then wikilinks, key order and trailing LF are normalized, and a second lint reports no error (AGSC-04-19, AGSC-03-12)
     When the agent runs "npx agentic-system-core propose <slug>"
     Then the CLI writes "dist/proposal/1.patch" and "dist/proposal/1.md", the PR body opening with "<!-- agsc:proposal v1 -->" (AGSC-08-05)
     And the CLI prints, but does not execute, "git apply dist/proposal/1.patch", "git checkout -b proposal/1" and the pull-request step (AGSC-08-04)
+    When the agent runs "npx agentic-system-core lint --fix"
+    Then wikilinks, key order and trailing LF are normalized, and a second lint reports no error (AGSC-04-19, AGSC-03-12)
+    And the patch, applied to the edit as the agent left it, gives the file "lint --fix" wrote (AGSC-04-19)
     And no network write occurs from the "propose" verb
 
   @PRD-040 @human @matrix-A4
@@ -32,6 +33,7 @@ Feature: Agent proposer contributes a change humans ratify
     Then the trailer block of that commit passes the grammar for an "ai-assisted" change (AGSC-08-06, AGSC-08-07)
     And lint and build pass on the branch "proposal/1", and the ledger entry of that commit names the operator from the sign-off (AGSC-08-20a)
     And "dist/proposal/1.patch" applies with "git apply" to a clean checkout of the first commit, and the item it gives passes lint
+    And the item that patch gives is the file the operator committed after "agsc lint --fix" (AGSC-04-19)
 
   @PRD-040 @human @matrix-A4
   Scenario: The operator's pull request carries the trailer and follows the contributor's path

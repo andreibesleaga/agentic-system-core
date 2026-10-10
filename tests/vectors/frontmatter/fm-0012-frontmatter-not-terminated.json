@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-01: an opening line whose block is never closed by a later `---` is AGSC-E102. The file opens with `---` on line 1 and holds the keys of a valid concept, then its body, and no later line is `---`. The fault is reported on line 1, the opening line whose block never closes. A body line such as `## Intent` does not close the block, so a reader must not guess where the frontmatter ends; it reports this one error.",
+  "expected": {
+    "error": "AGSC-E102",
+    "line": 1
+  },
+  "id": "fm-0012",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\nprov:\n  origin: human\n  operator: human:tester\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-01"
+}

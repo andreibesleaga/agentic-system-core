@@ -1,6 +1,6 @@
 // tests/conformance/areas/cli.js — area handler for `cli` vectors.
 // cli-0002, cli-0005 and cli-0006 first; cli-0003, cli-0004 and the rest after the
-// extension point below.
+// extension point below; cli-0020…cli-0022 in _cli-instant-and-order.js.
 'use strict';
 
 const path = require('node:path');
@@ -11,6 +11,8 @@ const { createFileSystem } = require('../../../src/adapters/node-fs.js');
 const { memoryPorts, captureStream } = require('./_shared.js');
 const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
 const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
+const { runCli0020, runCli0021, runCli0022 } = require('./_cli-instant-and-order.js');
+const { guarded } = require('./_expected-reads.js');
 
 function runCli0002(vector, ctx) {
   // AGSC-09-11/AGSC-09-12: the whole CLI, end to end, over the real fixture —
@@ -669,12 +671,16 @@ Object.assign(HANDLERS, {
   'cli-0015': runCli0015,
   'cli-0018': runCli0018,
   'cli-0019': runCli0019,
+  'cli-0020': runCli0020,
+  'cli-0021': runCli0021,
+  'cli-0022': runCli0022,
 });
 
-module.exports.run = function run(vector, ctx) {
+// A required case with no handler is a FAIL, never a skip: the suite counted a skip
+// as passed, so a new case with no handler passed it unrun. Guarded: a pass that left
+// a member of `expected` unread is a fail too (_expected-reads.js).
+module.exports.run = guarded((vector, ctx) => {
   const handler = HANDLERS[vector.id];
-  if (!handler) {
-    return { status: 'skip', detail: `cli.js (B) does not own ${vector.id} — see-CONTRACT.md area ownership table` };
-  }
+  if (!handler) return { status: 'fail', detail: `${vector.id}: no handler in area cli` };
   return handler(vector, ctx);
-};
+});

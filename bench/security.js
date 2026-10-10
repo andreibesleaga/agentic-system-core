@@ -13,10 +13,15 @@
  * Six kinds of case, each driving the real code path:
  *   bundle     a copy of a base Bundle with files written, replaced or linked, then
  *              `agsc <verb> [args…] --json` spawned inside it (lint, build, ci or the
- *              verb the case names, with its `args`); a case with `git` first makes the
+ *              verb the case names, with its `args`; `command: "agsc-host"` spawns
+ *              `agsc-host` instead, and `env` adds environment variables, the
+ *              configuration layer of AGSC-01-37); a case with `git` first makes the
  *              copy a git repository with the commits and configuration it lists, and a
  *              case with `inspect: "bundle"` searches the whole copy, not `www/`, for
- *              what must not reach it
+ *              what must not reach it. A case with `outside: true` gets an empty folder
+ *              beside the copy, `<id>.outside`, whose absolute path replaces `{{outside}}`
+ *              in its file texts, arguments and environment values; a `must_not_reach`
+ *              entry with `under: "outside"` is looked for in that folder
  *   import     a hostile foreign corpus handed to `agsc import --from <format>`,
  *              optionally followed by `agsc lint` over what was written
  *   wellknown  a hostile discovery document handed to `tools/validate-wellknown`
@@ -29,6 +34,13 @@
  * absence of novel injection". The corpus is a list of KNOWN shapes; a full score
  * says the engine stops these shapes and nothing more.
  *
+ * A case with `bound: true` feeds a run just under 1 MiB long where a slow pattern
+ * would stall: its command is started with a kill bound of BOUND_MS. A pattern that
+ * scans such a run from every start position needs on the order of an hour, a linear
+ * scan about a second, so the outcome is "finished" or "killed", far apart on either
+ * side of the bound; a killed run is missed. The bound is the only time the scorer
+ * uses: no duration is measured, recorded or compared.
+ *
  * Deterministic: a fixed `SOURCE_DATE_EPOCH`, no clock read, no network, no random
  * source. Every write goes under the scratch directory the caller names, which must
  * lie outside this repository.
@@ -40,6 +52,10 @@ const path = require('node:path');
 
 const REPO = path.resolve(__dirname, '..');
 const EPOCH = '1767225600';
+/** The kill bound of a case with `bound: true`, in milliseconds (see the header). */
+const BOUND_MS = 120000;
+/** The two commands a `bundle` case can start. */
+const COMMANDS = Object.freeze({ 'agsc': path.join('bin', 'agsc.js'), 'agsc-host': path.join('bin', 'agsc-host.js') });
 
 /** True when `dir` is this repository or lies inside it. */
 function insideRepo(dir) {
@@ -82,12 +98,33 @@ function codesOf(stdout) {
   return [...new Set(codes)].sort();
 }
 
-function spawn(args, cwd) {
+/**
+ * Start the engine. `extra` adds environment variables (a case's `env`); `bound` starts
+ * it with the kill bound, and `killed` says whether the bound stopped it.
+ */
+function spawn(args, cwd, extra = {}, bound = false) {
   const r = cp.spawnSync(process.execPath, args, {
-    cwd, encoding: 'utf8', env: { NO_COLOR: '1', PATH: process.env.PATH, SOURCE_DATE_EPOCH: EPOCH },
+    cwd, encoding: 'utf8', env: { ...extra, NO_COLOR: '1', PATH: process.env.PATH, SOURCE_DATE_EPOCH: EPOCH },
     maxBuffer: 64 * 1024 * 1024,
+    ...(bound ? { killSignal: 'SIGKILL', timeout: BOUND_MS } : {}),
   });
-  return { code: r.status, err: r.stderr || '', out: r.stdout || '' };
+  return { code: r.status, err: r.stderr || '', killed: Boolean(r.error && r.error.code === 'ETIMEDOUT'), out: r.stdout || '' };
+}
+
+/**
+ * The case with every `{{outside}}` in its file texts, arguments and environment
+ * values replaced by `outside`, written with forward slashes (a JSON string needs no
+ * escape then). The case itself is not changed.
+ */
+function withOutside(c, outside) {
+  const slashed = outside.split(path.sep).join('/');
+  const put = (text) => String(text).split('{{outside}}').join(slashed);
+  return {
+    ...c,
+    args: (c.args || []).map(put),
+    env: Object.fromEntries(Object.entries(c.env || {}).map(([name, value]) => [name, put(value)])),
+    files: (c.files || []).map((f) => (typeof f.text === 'string' ? { ...f, text: put(f.text) } : f)),
+  };
 }
 
 /** A fresh copy of the base Bundle for one case. */
@@ -127,7 +164,9 @@ function leaksUnder(root, entries) {
  * Make `dir` a git repository: everything in it committed with the first message, one
  * empty commit per further message, then the configuration entries set — after the
  * commits, so that a hostile entry is met by the engine and not by this setup. Fixed
- * dates, no global or system configuration.
+ * dates, no global or system configuration. A message given as a byte description
+ * (`bytesOf`), such as a repeated run too long for one command-line argument, is
+ * handed to git as a file.
  */
 function gitHistory(dir, git) {
   const env = {
@@ -141,23 +180,50 @@ function gitHistory(dir, git) {
   };
   run(['init', '-q', '-b', 'main']);
   run(['add', '-A']);
-  for (const message of git.commits || []) run(['commit', '-q', '--allow-empty', '-m', message]);
+  (git.commits || []).forEach((message, n) => {
+    if (typeof message === 'string') return run(['commit', '-q', '--allow-empty', '-m', message]);
+    const file = path.join(path.dirname(dir), `${path.basename(dir)}.message-${n}`);
+    fs.writeFileSync(file, bytesOf(message));
+    try { run(['commit', '-q', '--allow-empty', '-F', file]); } finally { fs.rmSync(file, { force: true }); }
+    return undefined;
+  });
   for (const [key, value] of Object.entries(git.config || {})) run(['config', key, value]);
 }
 
-function runBundle(c, env) {
-  const dir = workspace(env, c);
+/** A fresh, empty folder beside the case's copy, for a case with `outside: true`. */
+function outsideFolder(env, c) {
+  const dir = path.join(env.scratch, 'security', `${c.id}.outside`);
+  fs.rmSync(dir, { force: true, recursive: true });
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function runBundle(spec, env) {
+  const dir = workspace(env, spec);
+  const outside = spec.outside === true ? outsideFolder(env, spec) : null;
+  const c = outside === null ? spec : withOutside(spec, outside);
   materialise(dir, c.files);
   if (c.git) gitHistory(dir, c.git);
-  const r = spawn([path.join(REPO, 'bin', 'agsc.js'), c.verb || 'lint', ...(c.args || []), '--json'], dir);
+  const command = COMMANDS[c.command || 'agsc'];
+  if (command === undefined) throw new Error(`security: case ${c.id} names an unknown command "${c.command}"`);
+  const r = spawn([path.join(REPO, command), c.verb || 'lint', ...(c.args || []), '--json'], dir, c.env, c.bound === true);
   const internal = /internal error/u.test(r.err);
+  const mustNot = (c.must_not_reach || []).filter((m) => m.under !== 'outside');
+  const leakedOutside = outside === null ? [] : leaksUnder(outside, (c.must_not_reach || []).filter((m) => m.under === 'outside'))
+    .map((rel) => `{{outside}}/${rel}`);
   // The output inspected for a neutralisation is what the build wrote, `www/` — or the
   // whole Bundle, for a construct that would act on the Bundle itself.
   if (c.inspect === 'bundle') {
-    return { codes: codesOf(r.out), exit: r.code, internal, leaked: leaksUnder(dir, c.must_not_reach), ran: r.code !== null && !internal };
+    return {
+      codes: codesOf(r.out), exit: r.code, internal, killed: r.killed,
+      leaked: [...leaksUnder(dir, mustNot), ...leakedOutside], ran: r.code !== null && !internal,
+    };
   }
   const out = path.join(dir, 'www');
-  return { codes: codesOf(r.out), exit: r.code, internal, leaked: leaksUnder(out, c.must_not_reach), ran: fs.existsSync(out) };
+  return {
+    codes: codesOf(r.out), exit: r.code, internal, killed: r.killed,
+    leaked: [...leaksUnder(out, mustNot), ...leakedOutside], ran: fs.existsSync(out),
+  };
 }
 
 function runImport(c, env) {
@@ -244,11 +310,15 @@ const KINDS = Object.freeze({
  *                  `accept_other` and none it lists under `expect`: the input was
  *                  stopped, but under a different code from the one the rule names —
  *                  handled, and still a defect of the diagnostic
+ *   finished       the case feeds a long run (`finish` names the exit codes the verb
+ *                  may end with): the verb finished inside the kill bound with one of
+ *                  them and no internal error
  *   neutralised    the case lists outputs under `must_not_reach`, the run produced
  *                  output, and none of them reached it
  * Anything else is MISSED — including an internal error, which is never a verdict.
  * Every observed leak is a miss whatever the codes say: a finding that lets the
- * construct through anyway has not stopped it.
+ * construct through anyway has not stopped it. A run the kill bound stopped is a miss
+ * too, whatever it printed before it was stopped.
  * A CONTROL passes when none of its `forbid` codes was reported.
  */
 function judge(c, observed) {
@@ -258,10 +328,12 @@ function judge(c, observed) {
     const forbidden = (c.forbid || []).filter((code) => observed.codes.includes(code));
     return { forbidden_reported: forbidden, ok: forbidden.length === 0, outcome: forbidden.length === 0 ? 'clean' : 'false-positive' };
   }
+  if (observed.killed === true) return { hit, killed: true, ok: false, outcome: 'missed' };
   if (observed.leaked.length > 0) return { hit, leaked: observed.leaked, ok: false, outcome: 'missed' };
   if (hit.length > 0) return { hit, ok: true, outcome: observed.exit === 0 ? 'detected' : 'refused' };
   const other = (c.accept_other || []).filter((code) => observed.codes.includes(code));
   if (other.length > 0 && observed.exit !== 0 && !observed.internal) return { hit: other, ok: true, outcome: 'refused-other' };
+  if (c.finish && c.finish.exit.includes(observed.exit) && !observed.internal) return { hit, ok: true, outcome: 'finished' };
   if (Array.isArray(c.must_not_reach) && observed.ran) return { hit, ok: true, outcome: 'neutralised' };
   return { hit, ok: false, outcome: 'missed' };
 }
@@ -314,4 +386,4 @@ function score(corpus, env) {
   return { by_class: group('class'), by_kind: group('kind'), cases: rows, totals: tally(rows) };
 }
 
-module.exports = { bytesOf, codesOf, gitHistory, insideRepo, judge, leaksUnder, materialise, score, tally };
+module.exports = { BOUND_MS, bytesOf, codesOf, gitHistory, insideRepo, judge, leaksUnder, materialise, score, tally, withOutside };

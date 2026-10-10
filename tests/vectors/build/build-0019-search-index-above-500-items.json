@@ -1,0 +1,2040 @@
+{
+  "area": "build",
+  "description": "AGSC-06-21 with AGSC-06-16 and AGSC-06-23: a search index above 500 items. The 502 items are listed in descending slug order, so a writer that cuts shards in input order puts n-0502 in the first shard and fails. Derivation from the rule text: above 500 items the index is sharded as /search-<nn>.json, zero-padded from 01, in slug order, every shard carrying the docs of at most 500 items, so /search-01.json carries n-0001 to n-0500 and /search-02.json carries n-0501 and n-0502; /search.json is then the manifest {shards, docs_total}, whose bytes are JCS plus one LF (AGSC-04-04): docs_total 502 and the two shard paths in order. Each shard is a complete AGSC-06-16 index over its own slice whose postings count from zero in its own docs[]: the title Note 0501 tokenizes to note and 0501 (AGSC-06-23), so the second shard's whole bytes carry note with the postings [0,1] — not [500,501], the other reading, which answers wrongly on every shard but the first. The first shard is asserted by its number of docs and its first and last slug.",
+  "expected": {
+    "output": "{\"docs_total\":502,\"shards\":[\"/search-01.json\",\"/search-02.json\"]}\n",
+    "shards": [
+      {
+        "docs_count": 500,
+        "first_slug": "n-0001",
+        "last_slug": "n-0500",
+        "path": "/search-01.json"
+      },
+      {
+        "docs_count": 2,
+        "first_slug": "n-0501",
+        "last_slug": "n-0502",
+        "output": "{\"docs\":[{\"slug\":\"n-0501\",\"title\":\"Note 0501\"},{\"slug\":\"n-0502\",\"title\":\"Note 0502\"}],\"terms\":{\"0501\":[0],\"0502\":[1],\"note\":[0,1]}}\n",
+        "path": "/search-02.json"
+      }
+    ]
+  },
+  "id": "build-0019",
+  "input": {
+    "items": [
+      {
+        "slug": "n-0502",
+        "title": "Note 0502"
+      },
+      {
+        "slug": "n-0501",
+        "title": "Note 0501"
+      },
+      {
+        "slug": "n-0500",
+        "title": "Note 0500"
+      },
+      {
+        "slug": "n-0499",
+        "title": "Note 0499"
+      },
+      {
+        "slug": "n-0498",
+        "title": "Note 0498"
+      },
+      {
+        "slug": "n-0497",
+        "title": "Note 0497"
+      },
+      {
+        "slug": "n-0496",
+        "title": "Note 0496"
+      },
+      {
+        "slug": "n-0495",
+        "title": "Note 0495"
+      },
+      {
+        "slug": "n-0494",
+        "title": "Note 0494"
+      },
+      {
+        "slug": "n-0493",
+        "title": "Note 0493"
+      },
+      {
+        "slug": "n-0492",
+        "title": "Note 0492"
+      },
+      {
+        "slug": "n-0491",
+        "title": "Note 0491"
+      },
+      {
+        "slug": "n-0490",
+        "title": "Note 0490"
+      },
+      {
+        "slug": "n-0489",
+        "title": "Note 0489"
+      },
+      {
+        "slug": "n-0488",
+        "title": "Note 0488"
+      },
+      {
+        "slug": "n-0487",
+        "title": "Note 0487"
+      },
+      {
+        "slug": "n-0486",
+        "title": "Note 0486"
+      },
+      {
+        "slug": "n-0485",
+        "title": "Note 0485"
+      },
+      {
+        "slug": "n-0484",
+        "title": "Note 0484"
+      },
+      {
+        "slug": "n-0483",
+        "title": "Note 0483"
+      },
+      {
+        "slug": "n-0482",
+        "title": "Note 0482"
+      },
+      {
+        "slug": "n-0481",
+        "title": "Note 0481"
+      },
+      {
+        "slug": "n-0480",
+        "title": "Note 0480"
+      },
+      {
+        "slug": "n-0479",
+        "title": "Note 0479"
+      },
+      {
+        "slug": "n-0478",
+        "title": "Note 0478"
+      },
+      {
+        "slug": "n-0477",
+        "title": "Note 0477"
+      },
+      {
+        "slug": "n-0476",
+        "title": "Note 0476"
+      },
+      {
+        "slug": "n-0475",
+        "title": "Note 0475"
+      },
+      {
+        "slug": "n-0474",
+        "title": "Note 0474"
+      },
+      {
+        "slug": "n-0473",
+        "title": "Note 0473"
+      },
+      {
+        "slug": "n-0472",
+        "title": "Note 0472"
+      },
+      {
+        "slug": "n-0471",
+        "title": "Note 0471"
+      },
+      {
+        "slug": "n-0470",
+        "title": "Note 0470"
+      },
+      {
+        "slug": "n-0469",
+        "title": "Note 0469"
+      },
+      {
+        "slug": "n-0468",
+        "title": "Note 0468"
+      },
+      {
+        "slug": "n-0467",
+        "title": "Note 0467"
+      },
+      {
+        "slug": "n-0466",
+        "title": "Note 0466"
+      },
+      {
+        "slug": "n-0465",
+        "title": "Note 0465"
+      },
+      {
+        "slug": "n-0464",
+        "title": "Note 0464"
+      },
+      {
+        "slug": "n-0463",
+        "title": "Note 0463"
+      },
+      {
+        "slug": "n-0462",
+        "title": "Note 0462"
+      },
+      {
+        "slug": "n-0461",
+        "title": "Note 0461"
+      },
+      {
+        "slug": "n-0460",
+        "title": "Note 0460"
+      },
+      {
+        "slug": "n-0459",
+        "title": "Note 0459"
+      },
+      {
+        "slug": "n-0458",
+        "title": "Note 0458"
+      },
+      {
+        "slug": "n-0457",
+        "title": "Note 0457"
+      },
+      {
+        "slug": "n-0456",
+        "title": "Note 0456"
+      },
+      {
+        "slug": "n-0455",
+        "title": "Note 0455"
+      },
+      {
+        "slug": "n-0454",
+        "title": "Note 0454"
+      },
+      {
+        "slug": "n-0453",
+        "title": "Note 0453"
+      },
+      {
+        "slug": "n-0452",
+        "title": "Note 0452"
+      },
+      {
+        "slug": "n-0451",
+        "title": "Note 0451"
+      },
+      {
+        "slug": "n-0450",
+        "title": "Note 0450"
+      },
+      {
+        "slug": "n-0449",
+        "title": "Note 0449"
+      },
+      {
+        "slug": "n-0448",
+        "title": "Note 0448"
+      },
+      {
+        "slug": "n-0447",
+        "title": "Note 0447"
+      },
+      {
+        "slug": "n-0446",
+        "title": "Note 0446"
+      },
+      {
+        "slug": "n-0445",
+        "title": "Note 0445"
+      },
+      {
+        "slug": "n-0444",
+        "title": "Note 0444"
+      },
+      {
+        "slug": "n-0443",
+        "title": "Note 0443"
+      },
+      {
+        "slug": "n-0442",
+        "title": "Note 0442"
+      },
+      {
+        "slug": "n-0441",
+        "title": "Note 0441"
+      },
+      {
+        "slug": "n-0440",
+        "title": "Note 0440"
+      },
+      {
+        "slug": "n-0439",
+        "title": "Note 0439"
+      },
+      {
+        "slug": "n-0438",
+        "title": "Note 0438"
+      },
+      {
+        "slug": "n-0437",
+        "title": "Note 0437"
+      },
+      {
+        "slug": "n-0436",
+        "title": "Note 0436"
+      },
+      {
+        "slug": "n-0435",
+        "title": "Note 0435"
+      },
+      {
+        "slug": "n-0434",
+        "title": "Note 0434"
+      },
+      {
+        "slug": "n-0433",
+        "title": "Note 0433"
+      },
+      {
+        "slug": "n-0432",
+        "title": "Note 0432"
+      },
+      {
+        "slug": "n-0431",
+        "title": "Note 0431"
+      },
+      {
+        "slug": "n-0430",
+        "title": "Note 0430"
+      },
+      {
+        "slug": "n-0429",
+        "title": "Note 0429"
+      },
+      {
+        "slug": "n-0428",
+        "title": "Note 0428"
+      },
+      {
+        "slug": "n-0427",
+        "title": "Note 0427"
+      },
+      {
+        "slug": "n-0426",
+        "title": "Note 0426"
+      },
+      {
+        "slug": "n-0425",
+        "title": "Note 0425"
+      },
+      {
+        "slug": "n-0424",
+        "title": "Note 0424"
+      },
+      {
+        "slug": "n-0423",
+        "title": "Note 0423"
+      },
+      {
+        "slug": "n-0422",
+        "title": "Note 0422"
+      },
+      {
+        "slug": "n-0421",
+        "title": "Note 0421"
+      },
+      {
+        "slug": "n-0420",
+        "title": "Note 0420"
+      },
+      {
+        "slug": "n-0419",
+        "title": "Note 0419"
+      },
+      {
+        "slug": "n-0418",
+        "title": "Note 0418"
+      },
+      {
+        "slug": "n-0417",
+        "title": "Note 0417"
+      },
+      {
+        "slug": "n-0416",
+        "title": "Note 0416"
+      },
+      {
+        "slug": "n-0415",
+        "title": "Note 0415"
+      },
+      {
+        "slug": "n-0414",
+        "title": "Note 0414"
+      },
+      {
+        "slug": "n-0413",
+        "title": "Note 0413"
+      },
+      {
+        "slug": "n-0412",
+        "title": "Note 0412"
+      },
+      {
+        "slug": "n-0411",
+        "title": "Note 0411"
+      },
+      {
+        "slug": "n-0410",
+        "title": "Note 0410"
+      },
+      {
+        "slug": "n-0409",
+        "title": "Note 0409"
+      },
+      {
+        "slug": "n-0408",
+        "title": "Note 0408"
+      },
+      {
+        "slug": "n-0407",
+        "title": "Note 0407"
+      },
+      {
+        "slug": "n-0406",
+        "title": "Note 0406"
+      },
+      {
+        "slug": "n-0405",
+        "title": "Note 0405"
+      },
+      {
+        "slug": "n-0404",
+        "title": "Note 0404"
+      },
+      {
+        "slug": "n-0403",
+        "title": "Note 0403"
+      },
+      {
+        "slug": "n-0402",
+        "title": "Note 0402"
+      },
+      {
+        "slug": "n-0401",
+        "title": "Note 0401"
+      },
+      {
+        "slug": "n-0400",
+        "title": "Note 0400"
+      },
+      {
+        "slug": "n-0399",
+        "title": "Note 0399"
+      },
+      {
+        "slug": "n-0398",
+        "title": "Note 0398"
+      },
+      {
+        "slug": "n-0397",
+        "title": "Note 0397"
+      },
+      {
+        "slug": "n-0396",
+        "title": "Note 0396"
+      },
+      {
+        "slug": "n-0395",
+        "title": "Note 0395"
+      },
+      {
+        "slug": "n-0394",
+        "title": "Note 0394"
+      },
+      {
+        "slug": "n-0393",
+        "title": "Note 0393"
+      },
+      {
+        "slug": "n-0392",
+        "title": "Note 0392"
+      },
+      {
+        "slug": "n-0391",
+        "title": "Note 0391"
+      },
+      {
+        "slug": "n-0390",
+        "title": "Note 0390"
+      },
+      {
+        "slug": "n-0389",
+        "title": "Note 0389"
+      },
+      {
+        "slug": "n-0388",
+        "title": "Note 0388"
+      },
+      {
+        "slug": "n-0387",
+        "title": "Note 0387"
+      },
+      {
+        "slug": "n-0386",
+        "title": "Note 0386"
+      },
+      {
+        "slug": "n-0385",
+        "title": "Note 0385"
+      },
+      {
+        "slug": "n-0384",
+        "title": "Note 0384"
+      },
+      {
+        "slug": "n-0383",
+        "title": "Note 0383"
+      },
+      {
+        "slug": "n-0382",
+        "title": "Note 0382"
+      },
+      {
+        "slug": "n-0381",
+        "title": "Note 0381"
+      },
+      {
+        "slug": "n-0380",
+        "title": "Note 0380"
+      },
+      {
+        "slug": "n-0379",
+        "title": "Note 0379"
+      },
+      {
+        "slug": "n-0378",
+        "title": "Note 0378"
+      },
+      {
+        "slug": "n-0377",
+        "title": "Note 0377"
+      },
+      {
+        "slug": "n-0376",
+        "title": "Note 0376"
+      },
+      {
+        "slug": "n-0375",
+        "title": "Note 0375"
+      },
+      {
+        "slug": "n-0374",
+        "title": "Note 0374"
+      },
+      {
+        "slug": "n-0373",
+        "title": "Note 0373"
+      },
+      {
+        "slug": "n-0372",
+        "title": "Note 0372"
+      },
+      {
+        "slug": "n-0371",
+        "title": "Note 0371"
+      },
+      {
+        "slug": "n-0370",
+        "title": "Note 0370"
+      },
+      {
+        "slug": "n-0369",
+        "title": "Note 0369"
+      },
+      {
+        "slug": "n-0368",
+        "title": "Note 0368"
+      },
+      {
+        "slug": "n-0367",
+        "title": "Note 0367"
+      },
+      {
+        "slug": "n-0366",
+        "title": "Note 0366"
+      },
+      {
+        "slug": "n-0365",
+        "title": "Note 0365"
+      },
+      {
+        "slug": "n-0364",
+        "title": "Note 0364"
+      },
+      {
+        "slug": "n-0363",
+        "title": "Note 0363"
+      },
+      {
+        "slug": "n-0362",
+        "title": "Note 0362"
+      },
+      {
+        "slug": "n-0361",
+        "title": "Note 0361"
+      },
+      {
+        "slug": "n-0360",
+        "title": "Note 0360"
+      },
+      {
+        "slug": "n-0359",
+        "title": "Note 0359"
+      },
+      {
+        "slug": "n-0358",
+        "title": "Note 0358"
+      },
+      {
+        "slug": "n-0357",
+        "title": "Note 0357"
+      },
+      {
+        "slug": "n-0356",
+        "title": "Note 0356"
+      },
+      {
+        "slug": "n-0355",
+        "title": "Note 0355"
+      },
+      {
+        "slug": "n-0354",
+        "title": "Note 0354"
+      },
+      {
+        "slug": "n-0353",
+        "title": "Note 0353"
+      },
+      {
+        "slug": "n-0352",
+        "title": "Note 0352"
+      },
+      {
+        "slug": "n-0351",
+        "title": "Note 0351"
+      },
+      {
+        "slug": "n-0350",
+        "title": "Note 0350"
+      },
+      {
+        "slug": "n-0349",
+        "title": "Note 0349"
+      },
+      {
+        "slug": "n-0348",
+        "title": "Note 0348"
+      },
+      {
+        "slug": "n-0347",
+        "title": "Note 0347"
+      },
+      {
+        "slug": "n-0346",
+        "title": "Note 0346"
+      },
+      {
+        "slug": "n-0345",
+        "title": "Note 0345"
+      },
+      {
+        "slug": "n-0344",
+        "title": "Note 0344"
+      },
+      {
+        "slug": "n-0343",
+        "title": "Note 0343"
+      },
+      {
+        "slug": "n-0342",
+        "title": "Note 0342"
+      },
+      {
+        "slug": "n-0341",
+        "title": "Note 0341"
+      },
+      {
+        "slug": "n-0340",
+        "title": "Note 0340"
+      },
+      {
+        "slug": "n-0339",
+        "title": "Note 0339"
+      },
+      {
+        "slug": "n-0338",
+        "title": "Note 0338"
+      },
+      {
+        "slug": "n-0337",
+        "title": "Note 0337"
+      },
+      {
+        "slug": "n-0336",
+        "title": "Note 0336"
+      },
+      {
+        "slug": "n-0335",
+        "title": "Note 0335"
+      },
+      {
+        "slug": "n-0334",
+        "title": "Note 0334"
+      },
+      {
+        "slug": "n-0333",
+        "title": "Note 0333"
+      },
+      {
+        "slug": "n-0332",
+        "title": "Note 0332"
+      },
+      {
+        "slug": "n-0331",
+        "title": "Note 0331"
+      },
+      {
+        "slug": "n-0330",
+        "title": "Note 0330"
+      },
+      {
+        "slug": "n-0329",
+        "title": "Note 0329"
+      },
+      {
+        "slug": "n-0328",
+        "title": "Note 0328"
+      },
+      {
+        "slug": "n-0327",
+        "title": "Note 0327"
+      },
+      {
+        "slug": "n-0326",
+        "title": "Note 0326"
+      },
+      {
+        "slug": "n-0325",
+        "title": "Note 0325"
+      },
+      {
+        "slug": "n-0324",
+        "title": "Note 0324"
+      },
+      {
+        "slug": "n-0323",
+        "title": "Note 0323"
+      },
+      {
+        "slug": "n-0322",
+        "title": "Note 0322"
+      },
+      {
+        "slug": "n-0321",
+        "title": "Note 0321"
+      },
+      {
+        "slug": "n-0320",
+        "title": "Note 0320"
+      },
+      {
+        "slug": "n-0319",
+        "title": "Note 0319"
+      },
+      {
+        "slug": "n-0318",
+        "title": "Note 0318"
+      },
+      {
+        "slug": "n-0317",
+        "title": "Note 0317"
+      },
+      {
+        "slug": "n-0316",
+        "title": "Note 0316"
+      },
+      {
+        "slug": "n-0315",
+        "title": "Note 0315"
+      },
+      {
+        "slug": "n-0314",
+        "title": "Note 0314"
+      },
+      {
+        "slug": "n-0313",
+        "title": "Note 0313"
+      },
+      {
+        "slug": "n-0312",
+        "title": "Note 0312"
+      },
+      {
+        "slug": "n-0311",
+        "title": "Note 0311"
+      },
+      {
+        "slug": "n-0310",
+        "title": "Note 0310"
+      },
+      {
+        "slug": "n-0309",
+        "title": "Note 0309"
+      },
+      {
+        "slug": "n-0308",
+        "title": "Note 0308"
+      },
+      {
+        "slug": "n-0307",
+        "title": "Note 0307"
+      },
+      {
+        "slug": "n-0306",
+        "title": "Note 0306"
+      },
+      {
+        "slug": "n-0305",
+        "title": "Note 0305"
+      },
+      {
+        "slug": "n-0304",
+        "title": "Note 0304"
+      },
+      {
+        "slug": "n-0303",
+        "title": "Note 0303"
+      },
+      {
+        "slug": "n-0302",
+        "title": "Note 0302"
+      },
+      {
+        "slug": "n-0301",
+        "title": "Note 0301"
+      },
+      {
+        "slug": "n-0300",
+        "title": "Note 0300"
+      },
+      {
+        "slug": "n-0299",
+        "title": "Note 0299"
+      },
+      {
+        "slug": "n-0298",
+        "title": "Note 0298"
+      },
+      {
+        "slug": "n-0297",
+        "title": "Note 0297"
+      },
+      {
+        "slug": "n-0296",
+        "title": "Note 0296"
+      },
+      {
+        "slug": "n-0295",
+        "title": "Note 0295"
+      },
+      {
+        "slug": "n-0294",
+        "title": "Note 0294"
+      },
+      {
+        "slug": "n-0293",
+        "title": "Note 0293"
+      },
+      {
+        "slug": "n-0292",
+        "title": "Note 0292"
+      },
+      {
+        "slug": "n-0291",
+        "title": "Note 0291"
+      },
+      {
+        "slug": "n-0290",
+        "title": "Note 0290"
+      },
+      {
+        "slug": "n-0289",
+        "title": "Note 0289"
+      },
+      {
+        "slug": "n-0288",
+        "title": "Note 0288"
+      },
+      {
+        "slug": "n-0287",
+        "title": "Note 0287"
+      },
+      {
+        "slug": "n-0286",
+        "title": "Note 0286"
+      },
+      {
+        "slug": "n-0285",
+        "title": "Note 0285"
+      },
+      {
+        "slug": "n-0284",
+        "title": "Note 0284"
+      },
+      {
+        "slug": "n-0283",
+        "title": "Note 0283"
+      },
+      {
+        "slug": "n-0282",
+        "title": "Note 0282"
+      },
+      {
+        "slug": "n-0281",
+        "title": "Note 0281"
+      },
+      {
+        "slug": "n-0280",
+        "title": "Note 0280"
+      },
+      {
+        "slug": "n-0279",
+        "title": "Note 0279"
+      },
+      {
+        "slug": "n-0278",
+        "title": "Note 0278"
+      },
+      {
+        "slug": "n-0277",
+        "title": "Note 0277"
+      },
+      {
+        "slug": "n-0276",
+        "title": "Note 0276"
+      },
+      {
+        "slug": "n-0275",
+        "title": "Note 0275"
+      },
+      {
+        "slug": "n-0274",
+        "title": "Note 0274"
+      },
+      {
+        "slug": "n-0273",
+        "title": "Note 0273"
+      },
+      {
+        "slug": "n-0272",
+        "title": "Note 0272"
+      },
+      {
+        "slug": "n-0271",
+        "title": "Note 0271"
+      },
+      {
+        "slug": "n-0270",
+        "title": "Note 0270"
+      },
+      {
+        "slug": "n-0269",
+        "title": "Note 0269"
+      },
+      {
+        "slug": "n-0268",
+        "title": "Note 0268"
+      },
+      {
+        "slug": "n-0267",
+        "title": "Note 0267"
+      },
+      {
+        "slug": "n-0266",
+        "title": "Note 0266"
+      },
+      {
+        "slug": "n-0265",
+        "title": "Note 0265"
+      },
+      {
+        "slug": "n-0264",
+        "title": "Note 0264"
+      },
+      {
+        "slug": "n-0263",
+        "title": "Note 0263"
+      },
+      {
+        "slug": "n-0262",
+        "title": "Note 0262"
+      },
+      {
+        "slug": "n-0261",
+        "title": "Note 0261"
+      },
+      {
+        "slug": "n-0260",
+        "title": "Note 0260"
+      },
+      {
+        "slug": "n-0259",
+        "title": "Note 0259"
+      },
+      {
+        "slug": "n-0258",
+        "title": "Note 0258"
+      },
+      {
+        "slug": "n-0257",
+        "title": "Note 0257"
+      },
+      {
+        "slug": "n-0256",
+        "title": "Note 0256"
+      },
+      {
+        "slug": "n-0255",
+        "title": "Note 0255"
+      },
+      {
+        "slug": "n-0254",
+        "title": "Note 0254"
+      },
+      {
+        "slug": "n-0253",
+        "title": "Note 0253"
+      },
+      {
+        "slug": "n-0252",
+        "title": "Note 0252"
+      },
+      {
+        "slug": "n-0251",
+        "title": "Note 0251"
+      },
+      {
+        "slug": "n-0250",
+        "title": "Note 0250"
+      },
+      {
+        "slug": "n-0249",
+        "title": "Note 0249"
+      },
+      {
+        "slug": "n-0248",
+        "title": "Note 0248"
+      },
+      {
+        "slug": "n-0247",
+        "title": "Note 0247"
+      },
+      {
+        "slug": "n-0246",
+        "title": "Note 0246"
+      },
+      {
+        "slug": "n-0245",
+        "title": "Note 0245"
+      },
+      {
+        "slug": "n-0244",
+        "title": "Note 0244"
+      },
+      {
+        "slug": "n-0243",
+        "title": "Note 0243"
+      },
+      {
+        "slug": "n-0242",
+        "title": "Note 0242"
+      },
+      {
+        "slug": "n-0241",
+        "title": "Note 0241"
+      },
+      {
+        "slug": "n-0240",
+        "title": "Note 0240"
+      },
+      {
+        "slug": "n-0239",
+        "title": "Note 0239"
+      },
+      {
+        "slug": "n-0238",
+        "title": "Note 0238"
+      },
+      {
+        "slug": "n-0237",
+        "title": "Note 0237"
+      },
+      {
+        "slug": "n-0236",
+        "title": "Note 0236"
+      },
+      {
+        "slug": "n-0235",
+        "title": "Note 0235"
+      },
+      {
+        "slug": "n-0234",
+        "title": "Note 0234"
+      },
+      {
+        "slug": "n-0233",
+        "title": "Note 0233"
+      },
+      {
+        "slug": "n-0232",
+        "title": "Note 0232"
+      },
+      {
+        "slug": "n-0231",
+        "title": "Note 0231"
+      },
+      {
+        "slug": "n-0230",
+        "title": "Note 0230"
+      },
+      {
+        "slug": "n-0229",
+        "title": "Note 0229"
+      },
+      {
+        "slug": "n-0228",
+        "title": "Note 0228"
+      },
+      {
+        "slug": "n-0227",
+        "title": "Note 0227"
+      },
+      {
+        "slug": "n-0226",
+        "title": "Note 0226"
+      },
+      {
+        "slug": "n-0225",
+        "title": "Note 0225"
+      },
+      {
+        "slug": "n-0224",
+        "title": "Note 0224"
+      },
+      {
+        "slug": "n-0223",
+        "title": "Note 0223"
+      },
+      {
+        "slug": "n-0222",
+        "title": "Note 0222"
+      },
+      {
+        "slug": "n-0221",
+        "title": "Note 0221"
+      },
+      {
+        "slug": "n-0220",
+        "title": "Note 0220"
+      },
+      {
+        "slug": "n-0219",
+        "title": "Note 0219"
+      },
+      {
+        "slug": "n-0218",
+        "title": "Note 0218"
+      },
+      {
+        "slug": "n-0217",
+        "title": "Note 0217"
+      },
+      {
+        "slug": "n-0216",
+        "title": "Note 0216"
+      },
+      {
+        "slug": "n-0215",
+        "title": "Note 0215"
+      },
+      {
+        "slug": "n-0214",
+        "title": "Note 0214"
+      },
+      {
+        "slug": "n-0213",
+        "title": "Note 0213"
+      },
+      {
+        "slug": "n-0212",
+        "title": "Note 0212"
+      },
+      {
+        "slug": "n-0211",
+        "title": "Note 0211"
+      },
+      {
+        "slug": "n-0210",
+        "title": "Note 0210"
+      },
+      {
+        "slug": "n-0209",
+        "title": "Note 0209"
+      },
+      {
+        "slug": "n-0208",
+        "title": "Note 0208"
+      },
+      {
+        "slug": "n-0207",
+        "title": "Note 0207"
+      },
+      {
+        "slug": "n-0206",
+        "title": "Note 0206"
+      },
+      {
+        "slug": "n-0205",
+        "title": "Note 0205"
+      },
+      {
+        "slug": "n-0204",
+        "title": "Note 0204"
+      },
+      {
+        "slug": "n-0203",
+        "title": "Note 0203"
+      },
+      {
+        "slug": "n-0202",
+        "title": "Note 0202"
+      },
+      {
+        "slug": "n-0201",
+        "title": "Note 0201"
+      },
+      {
+        "slug": "n-0200",
+        "title": "Note 0200"
+      },
+      {
+        "slug": "n-0199",
+        "title": "Note 0199"
+      },
+      {
+        "slug": "n-0198",
+        "title": "Note 0198"
+      },
+      {
+        "slug": "n-0197",
+        "title": "Note 0197"
+      },
+      {
+        "slug": "n-0196",
+        "title": "Note 0196"
+      },
+      {
+        "slug": "n-0195",
+        "title": "Note 0195"
+      },
+      {
+        "slug": "n-0194",
+        "title": "Note 0194"
+      },
+      {
+        "slug": "n-0193",
+        "title": "Note 0193"
+      },
+      {
+        "slug": "n-0192",
+        "title": "Note 0192"
+      },
+      {
+        "slug": "n-0191",
+        "title": "Note 0191"
+      },
+      {
+        "slug": "n-0190",
+        "title": "Note 0190"
+      },
+      {
+        "slug": "n-0189",
+        "title": "Note 0189"
+      },
+      {
+        "slug": "n-0188",
+        "title": "Note 0188"
+      },
+      {
+        "slug": "n-0187",
+        "title": "Note 0187"
+      },
+      {
+        "slug": "n-0186",
+        "title": "Note 0186"
+      },
+      {
+        "slug": "n-0185",
+        "title": "Note 0185"
+      },
+      {
+        "slug": "n-0184",
+        "title": "Note 0184"
+      },
+      {
+        "slug": "n-0183",
+        "title": "Note 0183"
+      },
+      {
+        "slug": "n-0182",
+        "title": "Note 0182"
+      },
+      {
+        "slug": "n-0181",
+        "title": "Note 0181"
+      },
+      {
+        "slug": "n-0180",
+        "title": "Note 0180"
+      },
+      {
+        "slug": "n-0179",
+        "title": "Note 0179"
+      },
+      {
+        "slug": "n-0178",
+        "title": "Note 0178"
+      },
+      {
+        "slug": "n-0177",
+        "title": "Note 0177"
+      },
+      {
+        "slug": "n-0176",
+        "title": "Note 0176"
+      },
+      {
+        "slug": "n-0175",
+        "title": "Note 0175"
+      },
+      {
+        "slug": "n-0174",
+        "title": "Note 0174"
+      },
+      {
+        "slug": "n-0173",
+        "title": "Note 0173"
+      },
+      {
+        "slug": "n-0172",
+        "title": "Note 0172"
+      },
+      {
+        "slug": "n-0171",
+        "title": "Note 0171"
+      },
+      {
+        "slug": "n-0170",
+        "title": "Note 0170"
+      },
+      {
+        "slug": "n-0169",
+        "title": "Note 0169"
+      },
+      {
+        "slug": "n-0168",
+        "title": "Note 0168"
+      },
+      {
+        "slug": "n-0167",
+        "title": "Note 0167"
+      },
+      {
+        "slug": "n-0166",
+        "title": "Note 0166"
+      },
+      {
+        "slug": "n-0165",
+        "title": "Note 0165"
+      },
+      {
+        "slug": "n-0164",
+        "title": "Note 0164"
+      },
+      {
+        "slug": "n-0163",
+        "title": "Note 0163"
+      },
+      {
+        "slug": "n-0162",
+        "title": "Note 0162"
+      },
+      {
+        "slug": "n-0161",
+        "title": "Note 0161"
+      },
+      {
+        "slug": "n-0160",
+        "title": "Note 0160"
+      },
+      {
+        "slug": "n-0159",
+        "title": "Note 0159"
+      },
+      {
+        "slug": "n-0158",
+        "title": "Note 0158"
+      },
+      {
+        "slug": "n-0157",
+        "title": "Note 0157"
+      },
+      {
+        "slug": "n-0156",
+        "title": "Note 0156"
+      },
+      {
+        "slug": "n-0155",
+        "title": "Note 0155"
+      },
+      {
+        "slug": "n-0154",
+        "title": "Note 0154"
+      },
+      {
+        "slug": "n-0153",
+        "title": "Note 0153"
+      },
+      {
+        "slug": "n-0152",
+        "title": "Note 0152"
+      },
+      {
+        "slug": "n-0151",
+        "title": "Note 0151"
+      },
+      {
+        "slug": "n-0150",
+        "title": "Note 0150"
+      },
+      {
+        "slug": "n-0149",
+        "title": "Note 0149"
+      },
+      {
+        "slug": "n-0148",
+        "title": "Note 0148"
+      },
+      {
+        "slug": "n-0147",
+        "title": "Note 0147"
+      },
+      {
+        "slug": "n-0146",
+        "title": "Note 0146"
+      },
+      {
+        "slug": "n-0145",
+        "title": "Note 0145"
+      },
+      {
+        "slug": "n-0144",
+        "title": "Note 0144"
+      },
+      {
+        "slug": "n-0143",
+        "title": "Note 0143"
+      },
+      {
+        "slug": "n-0142",
+        "title": "Note 0142"
+      },
+      {
+        "slug": "n-0141",
+        "title": "Note 0141"
+      },
+      {
+        "slug": "n-0140",
+        "title": "Note 0140"
+      },
+      {
+        "slug": "n-0139",
+        "title": "Note 0139"
+      },
+      {
+        "slug": "n-0138",
+        "title": "Note 0138"
+      },
+      {
+        "slug": "n-0137",
+        "title": "Note 0137"
+      },
+      {
+        "slug": "n-0136",
+        "title": "Note 0136"
+      },
+      {
+        "slug": "n-0135",
+        "title": "Note 0135"
+      },
+      {
+        "slug": "n-0134",
+        "title": "Note 0134"
+      },
+      {
+        "slug": "n-0133",
+        "title": "Note 0133"
+      },
+      {
+        "slug": "n-0132",
+        "title": "Note 0132"
+      },
+      {
+        "slug": "n-0131",
+        "title": "Note 0131"
+      },
+      {
+        "slug": "n-0130",
+        "title": "Note 0130"
+      },
+      {
+        "slug": "n-0129",
+        "title": "Note 0129"
+      },
+      {
+        "slug": "n-0128",
+        "title": "Note 0128"
+      },
+      {
+        "slug": "n-0127",
+        "title": "Note 0127"
+      },
+      {
+        "slug": "n-0126",
+        "title": "Note 0126"
+      },
+      {
+        "slug": "n-0125",
+        "title": "Note 0125"
+      },
+      {
+        "slug": "n-0124",
+        "title": "Note 0124"
+      },
+      {
+        "slug": "n-0123",
+        "title": "Note 0123"
+      },
+      {
+        "slug": "n-0122",
+        "title": "Note 0122"
+      },
+      {
+        "slug": "n-0121",
+        "title": "Note 0121"
+      },
+      {
+        "slug": "n-0120",
+        "title": "Note 0120"
+      },
+      {
+        "slug": "n-0119",
+        "title": "Note 0119"
+      },
+      {
+        "slug": "n-0118",
+        "title": "Note 0118"
+      },
+      {
+        "slug": "n-0117",
+        "title": "Note 0117"
+      },
+      {
+        "slug": "n-0116",
+        "title": "Note 0116"
+      },
+      {
+        "slug": "n-0115",
+        "title": "Note 0115"
+      },
+      {
+        "slug": "n-0114",
+        "title": "Note 0114"
+      },
+      {
+        "slug": "n-0113",
+        "title": "Note 0113"
+      },
+      {
+        "slug": "n-0112",
+        "title": "Note 0112"
+      },
+      {
+        "slug": "n-0111",
+        "title": "Note 0111"
+      },
+      {
+        "slug": "n-0110",
+        "title": "Note 0110"
+      },
+      {
+        "slug": "n-0109",
+        "title": "Note 0109"
+      },
+      {
+        "slug": "n-0108",
+        "title": "Note 0108"
+      },
+      {
+        "slug": "n-0107",
+        "title": "Note 0107"
+      },
+      {
+        "slug": "n-0106",
+        "title": "Note 0106"
+      },
+      {
+        "slug": "n-0105",
+        "title": "Note 0105"
+      },
+      {
+        "slug": "n-0104",
+        "title": "Note 0104"
+      },
+      {
+        "slug": "n-0103",
+        "title": "Note 0103"
+      },
+      {
+        "slug": "n-0102",
+        "title": "Note 0102"
+      },
+      {
+        "slug": "n-0101",
+        "title": "Note 0101"
+      },
+      {
+        "slug": "n-0100",
+        "title": "Note 0100"
+      },
+      {
+        "slug": "n-0099",
+        "title": "Note 0099"
+      },
+      {
+        "slug": "n-0098",
+        "title": "Note 0098"
+      },
+      {
+        "slug": "n-0097",
+        "title": "Note 0097"
+      },
+      {
+        "slug": "n-0096",
+        "title": "Note 0096"
+      },
+      {
+        "slug": "n-0095",
+        "title": "Note 0095"
+      },
+      {
+        "slug": "n-0094",
+        "title": "Note 0094"
+      },
+      {
+        "slug": "n-0093",
+        "title": "Note 0093"
+      },
+      {
+        "slug": "n-0092",
+        "title": "Note 0092"
+      },
+      {
+        "slug": "n-0091",
+        "title": "Note 0091"
+      },
+      {
+        "slug": "n-0090",
+        "title": "Note 0090"
+      },
+      {
+        "slug": "n-0089",
+        "title": "Note 0089"
+      },
+      {
+        "slug": "n-0088",
+        "title": "Note 0088"
+      },
+      {
+        "slug": "n-0087",
+        "title": "Note 0087"
+      },
+      {
+        "slug": "n-0086",
+        "title": "Note 0086"
+      },
+      {
+        "slug": "n-0085",
+        "title": "Note 0085"
+      },
+      {
+        "slug": "n-0084",
+        "title": "Note 0084"
+      },
+      {
+        "slug": "n-0083",
+        "title": "Note 0083"
+      },
+      {
+        "slug": "n-0082",
+        "title": "Note 0082"
+      },
+      {
+        "slug": "n-0081",
+        "title": "Note 0081"
+      },
+      {
+        "slug": "n-0080",
+        "title": "Note 0080"
+      },
+      {
+        "slug": "n-0079",
+        "title": "Note 0079"
+      },
+      {
+        "slug": "n-0078",
+        "title": "Note 0078"
+      },
+      {
+        "slug": "n-0077",
+        "title": "Note 0077"
+      },
+      {
+        "slug": "n-0076",
+        "title": "Note 0076"
+      },
+      {
+        "slug": "n-0075",
+        "title": "Note 0075"
+      },
+      {
+        "slug": "n-0074",
+        "title": "Note 0074"
+      },
+      {
+        "slug": "n-0073",
+        "title": "Note 0073"
+      },
+      {
+        "slug": "n-0072",
+        "title": "Note 0072"
+      },
+      {
+        "slug": "n-0071",
+        "title": "Note 0071"
+      },
+      {
+        "slug": "n-0070",
+        "title": "Note 0070"
+      },
+      {
+        "slug": "n-0069",
+        "title": "Note 0069"
+      },
+      {
+        "slug": "n-0068",
+        "title": "Note 0068"
+      },
+      {
+        "slug": "n-0067",
+        "title": "Note 0067"
+      },
+      {
+        "slug": "n-0066",
+        "title": "Note 0066"
+      },
+      {
+        "slug": "n-0065",
+        "title": "Note 0065"
+      },
+      {
+        "slug": "n-0064",
+        "title": "Note 0064"
+      },
+      {
+        "slug": "n-0063",
+        "title": "Note 0063"
+      },
+      {
+        "slug": "n-0062",
+        "title": "Note 0062"
+      },
+      {
+        "slug": "n-0061",
+        "title": "Note 0061"
+      },
+      {
+        "slug": "n-0060",
+        "title": "Note 0060"
+      },
+      {
+        "slug": "n-0059",
+        "title": "Note 0059"
+      },
+      {
+        "slug": "n-0058",
+        "title": "Note 0058"
+      },
+      {
+        "slug": "n-0057",
+        "title": "Note 0057"
+      },
+      {
+        "slug": "n-0056",
+        "title": "Note 0056"
+      },
+      {
+        "slug": "n-0055",
+        "title": "Note 0055"
+      },
+      {
+        "slug": "n-0054",
+        "title": "Note 0054"
+      },
+      {
+        "slug": "n-0053",
+        "title": "Note 0053"
+      },
+      {
+        "slug": "n-0052",
+        "title": "Note 0052"
+      },
+      {
+        "slug": "n-0051",
+        "title": "Note 0051"
+      },
+      {
+        "slug": "n-0050",
+        "title": "Note 0050"
+      },
+      {
+        "slug": "n-0049",
+        "title": "Note 0049"
+      },
+      {
+        "slug": "n-0048",
+        "title": "Note 0048"
+      },
+      {
+        "slug": "n-0047",
+        "title": "Note 0047"
+      },
+      {
+        "slug": "n-0046",
+        "title": "Note 0046"
+      },
+      {
+        "slug": "n-0045",
+        "title": "Note 0045"
+      },
+      {
+        "slug": "n-0044",
+        "title": "Note 0044"
+      },
+      {
+        "slug": "n-0043",
+        "title": "Note 0043"
+      },
+      {
+        "slug": "n-0042",
+        "title": "Note 0042"
+      },
+      {
+        "slug": "n-0041",
+        "title": "Note 0041"
+      },
+      {
+        "slug": "n-0040",
+        "title": "Note 0040"
+      },
+      {
+        "slug": "n-0039",
+        "title": "Note 0039"
+      },
+      {
+        "slug": "n-0038",
+        "title": "Note 0038"
+      },
+      {
+        "slug": "n-0037",
+        "title": "Note 0037"
+      },
+      {
+        "slug": "n-0036",
+        "title": "Note 0036"
+      },
+      {
+        "slug": "n-0035",
+        "title": "Note 0035"
+      },
+      {
+        "slug": "n-0034",
+        "title": "Note 0034"
+      },
+      {
+        "slug": "n-0033",
+        "title": "Note 0033"
+      },
+      {
+        "slug": "n-0032",
+        "title": "Note 0032"
+      },
+      {
+        "slug": "n-0031",
+        "title": "Note 0031"
+      },
+      {
+        "slug": "n-0030",
+        "title": "Note 0030"
+      },
+      {
+        "slug": "n-0029",
+        "title": "Note 0029"
+      },
+      {
+        "slug": "n-0028",
+        "title": "Note 0028"
+      },
+      {
+        "slug": "n-0027",
+        "title": "Note 0027"
+      },
+      {
+        "slug": "n-0026",
+        "title": "Note 0026"
+      },
+      {
+        "slug": "n-0025",
+        "title": "Note 0025"
+      },
+      {
+        "slug": "n-0024",
+        "title": "Note 0024"
+      },
+      {
+        "slug": "n-0023",
+        "title": "Note 0023"
+      },
+      {
+        "slug": "n-0022",
+        "title": "Note 0022"
+      },
+      {
+        "slug": "n-0021",
+        "title": "Note 0021"
+      },
+      {
+        "slug": "n-0020",
+        "title": "Note 0020"
+      },
+      {
+        "slug": "n-0019",
+        "title": "Note 0019"
+      },
+      {
+        "slug": "n-0018",
+        "title": "Note 0018"
+      },
+      {
+        "slug": "n-0017",
+        "title": "Note 0017"
+      },
+      {
+        "slug": "n-0016",
+        "title": "Note 0016"
+      },
+      {
+        "slug": "n-0015",
+        "title": "Note 0015"
+      },
+      {
+        "slug": "n-0014",
+        "title": "Note 0014"
+      },
+      {
+        "slug": "n-0013",
+        "title": "Note 0013"
+      },
+      {
+        "slug": "n-0012",
+        "title": "Note 0012"
+      },
+      {
+        "slug": "n-0011",
+        "title": "Note 0011"
+      },
+      {
+        "slug": "n-0010",
+        "title": "Note 0010"
+      },
+      {
+        "slug": "n-0009",
+        "title": "Note 0009"
+      },
+      {
+        "slug": "n-0008",
+        "title": "Note 0008"
+      },
+      {
+        "slug": "n-0007",
+        "title": "Note 0007"
+      },
+      {
+        "slug": "n-0006",
+        "title": "Note 0006"
+      },
+      {
+        "slug": "n-0005",
+        "title": "Note 0005"
+      },
+      {
+        "slug": "n-0004",
+        "title": "Note 0004"
+      },
+      {
+        "slug": "n-0003",
+        "title": "Note 0003"
+      },
+      {
+        "slug": "n-0002",
+        "title": "Note 0002"
+      },
+      {
+        "slug": "n-0001",
+        "title": "Note 0001"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-06-21"
+}

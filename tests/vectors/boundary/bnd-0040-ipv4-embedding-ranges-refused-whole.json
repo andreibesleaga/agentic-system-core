@@ -1,0 +1,59 @@
+{
+  "area": "boundary",
+  "description": "Expected codes are derived by hand from the rule text. AGSC-11-08 lists `::/96` (IPv4-compatible) and `::ffff:0:0/96` (IPv4-mapped) as refused whole, whatever IPv4 address they embed, a globally reachable one included, and requires every textual form of one address to be classified alike. Derivation: b.example resolves to `::127.0.0.1`, inside `::/96`, refused; c.example resolves to `::7f00:1`, the same address written in hexadecimal, refused; d.example resolves to `::ffff:8.8.8.8`, inside `::ffff:0:0/96` although the embedded IPv4 address is globally reachable, refused; e.example resolves to `8.8.8.8`, a plain IPv4 address in no range of the list, allowed, which shows that refusing the mapped range does not refuse the IPv4 addresses it maps. The invocation carries no `--dev`.",
+  "expected": {
+    "results": [
+      {
+        "code": "AGSC-E905",
+        "host": "b.example"
+      },
+      {
+        "code": "AGSC-E905",
+        "host": "c.example"
+      },
+      {
+        "code": "AGSC-E905",
+        "host": "d.example"
+      },
+      {
+        "code": null,
+        "host": "e.example"
+      }
+    ]
+  },
+  "id": "bnd-0040",
+  "input": {
+    "dev": false,
+    "resolved": [
+      {
+        "addresses": [
+          "::127.0.0.1"
+        ],
+        "host": "b.example"
+      },
+      {
+        "addresses": [
+          "::7f00:1"
+        ],
+        "host": "c.example"
+      },
+      {
+        "addresses": [
+          "::ffff:8.8.8.8"
+        ],
+        "host": "d.example"
+      },
+      {
+        "addresses": [
+          "8.8.8.8"
+        ],
+        "host": "e.example"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-11-08"
+}

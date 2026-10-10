@@ -1,0 +1,51 @@
+{
+  "area": "compose",
+  "description": "The same chain as compose-0018 with its middle link left out of the selection: agent-v3 supersedes agent-v2, agent-v2 supersedes agent-v1, and only agent-v1 and agent-v3 are selected. agent-v2 is in the graph but not in the set Step 1 closed (nothing requires it), so it hides nothing, and agent-v3 does not supersede agent-v1 itself: hiding does not pass through an item outside that set, and supersedes is not made transitive. hidden[] is empty and both selected items survive.",
+  "expected": {
+    "exit": 0,
+    "harness_emitted": true,
+    "verdict": {
+      "added": [],
+      "conflicts": [],
+      "hidden": [],
+      "selection": [
+        "agent-v1",
+        "agent-v3"
+      ],
+      "valid": true,
+      "warnings": []
+    }
+  },
+  "id": "compose-0019",
+  "input": {
+    "items": [
+      {
+        "slug": "agent-v1",
+        "type": "concept"
+      },
+      {
+        "slug": "agent-v2",
+        "supersedes": [
+          "agent-v1"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "agent-v3",
+        "supersedes": [
+          "agent-v2"
+        ],
+        "type": "concept"
+      }
+    ],
+    "selection": [
+      "agent-v3",
+      "agent-v1"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-07-05"
+}

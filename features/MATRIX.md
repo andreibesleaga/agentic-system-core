@@ -27,11 +27,11 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 
 | Row | Who | Feature file | Target | Reason |
 |---|---|---|---|---|
-| H1 | Solo author, folder of notes (P0) | persona-0 | B + G→E7 | |
+| H1 | Solo author, folder of notes (P0) | persona-0 | B | |
 | H2 | Solo author publishing (P0, P9) | persona-0: a local publish over loopback | B; forge push P | |
 | H3 | Human reader (P1) | persona-a | B + C (search) | |
 | H4 | Contributor (P2) | persona-b: the local commit half | B; PR body P | |
-| H5 | Maintainer and operator (P9) | persona-i | B; publish P; G→E11 | |
+| H5 | Maintainer and operator (P9) | persona-i | B; publish P | |
 | H6 | Project team (P7) | persona-g | B | |
 | H7 | Team with procedures (P6) | persona-f | B | |
 | H8 | Skills-repository importer | persona-f: an outline over the five layouts | B | |
@@ -49,14 +49,14 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | H20 | Manager deciding to depend on it | — | rec | prose (README, CONFORMANCE-STATEMENTS, GOVERNANCE) is the right evidence for this reader; no journey runs a command |
 | H21 | Old-site importer (maintainer only) | persona-i: an import of the old-site fixture | B | |
 | A1 | Coding agent reading steer files | persona-g | B | |
-| A2 | MCP reader (P3) | persona-c | B + G→E10 | |
+| A2 | MCP reader (P3) | persona-c | B | |
 | A3 | MCP client, the one prompt | persona-c | B | |
 | A4 | Agent proposer (P4) | persona-d | B; PR P | |
 | A5 | Agent as external memory (P8) | persona-h | B; Obsidian P | |
 | A6 | Page agent (document.modelContext) | persona-c: offline and in a browser | B + C | |
 | A7 | Crawler honouring robots.txt and the TDM reservation | persona-c | B | |
 | A8 | Discovery client walking peers (library) | — | U | a library function only; walking peers as a command would add behaviour, which is outside this version |
-| A9 | Federation peer checking a node | persona-j | B + G→E10 | |
+| A9 | Federation peer checking a node | persona-j | B | |
 | A10 | Skills consumer fetching packs | persona-f | B | |
 | A11 | Lane working the board through the tool server | persona-k | B | |
 | A12 | Lane run by refresh --dry-run | persona-k | B | |
@@ -82,7 +82,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | Live boards, claims, lanes, budget, .env | B | persona-k | |
 | Six modes | B | persona-0 (mode 0), persona-h (mode 1), persona-g (mode 2), persona-f (mode 3), persona-e (mode 4), persona-k (mode 5) | |
 | Restricted visibility | B + G→RS-a, RS-b | persona-o | |
-| Federation, peers, contribute | B + G→E10 | persona-j | |
+| Federation, peers, contribute | B | persona-j | |
 | security.txt | B | persona-0, persona-m | |
 | Legal texts, TDM | B | persona-0, persona-c (a crawler) | |
 | Hosting profiles | B | persona-0, persona-m | |

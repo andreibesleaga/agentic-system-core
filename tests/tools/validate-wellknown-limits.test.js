@@ -4,18 +4,18 @@
 // for a discovery document, `federation.max_bytes` for any other artefact — and is
 // aborted at the bound with `AGSC-E907`.
 //
-// Until 2026-10-06 (verification finding C17 (a) and (b)) the independent checker
-// (a) used an idle timeout, so a server sending one byte every few seconds held it for
-//     as long as it liked; and
-// (b) reported a response over the cap as `AGSC-E904` (the input-file code) where the
-//     rule names `AGSC-E907`, and held every target to 1 MiB, so a node whose
-//     `graph.jsonld` was over 1 MiB could not pass at Level 2.
+// The deadline is one timer from the request to the last byte, never an idle timer
+// that each arriving chunk would reset, so a server sending one byte every few seconds
+// cannot hold the checker. A response over the cap is `AGSC-E907`, the fetch code the
+// rule names, and only the discovery document is held to 1 MiB, so a node whose
+// `graph.jsonld` is over 1 MiB passes at Level 2.
 // A local FILE over 1 MiB stays `AGSC-E904` (AGSC-01-16): that is an input, not a fetch.
 //
-// A real process over real HTTP on a loopback server this test starts (the checker's
-// `--dev` admits plain http to loopback only); no outside network. The slow server
-// writes a chunk every 2 s and would finish after 16 s; the checker's deadline is
-// 10 s, so the margins on both sides are several seconds.
+// The deadline tests call the checker in process with a fake timer (the `timer` of
+// `run`'s second argument), so they wait for no real deadline: the test fires it. The
+// cap tests run the shipped command as a real process. Both go over real HTTP to a
+// loopback server this test starts (the checker's `--dev` admits plain http to
+// loopback only); no outside network.
 
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
@@ -28,12 +28,20 @@ const { after, before, it } = require('node:test');
 
 const { REPO } = require('./helpers');
 
+const tool = require(path.join(REPO, 'tools', 'validate-wellknown'));
+
 const MIB = 1024 * 1024;
 const TYPE = 'application/linkset+json; profile="https://w3id.org/agentic-system-core/profile/agentic-knowledge"';
 
 let server;
 let origin;
-const timers = new Set();
+/** Resolved by the server once it has sent part of `/stall/` and holds the rest back. */
+let stalled;
+let markStalled = () => {};
+
+/** The cross-origin and caching headers of a conforming discovery document. */
+const SERVED = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'Link, ETag, Content-Type',
+  'cache-control': 'no-cache', 'content-type': TYPE, etag: '"e"' };
 
 function documentAt(anchor, extra = {}) {
   return `${JSON.stringify({
@@ -50,21 +58,16 @@ const bigDigest = `sha-256=:${crypto.createHash('sha256').update(bigGraph).diges
 
 before(async () => {
   server = http.createServer((req, res) => {
-    if (req.url === '/slow/.well-known/knowledge-linkset') {
-      const body = Buffer.from(documentAt(`${origin}/slow/`));
-      res.writeHead(200, { 'content-length': String(body.length), 'content-type': TYPE });
-      const pieces = 8;
-      let sent = 0;
-      const step = Math.ceil(body.length / pieces);
-      const tick = () => {
-        if (res.destroyed) return;
-        res.write(body.subarray(sent, sent + step));
-        sent += step;
-        if (sent >= body.length) { res.end(); return; }
-        const timer = setTimeout(tick, 2000);
-        timers.add(timer);
-      };
-      tick();
+    if (req.url === '/stall/.well-known/knowledge-linkset') {
+      // Two pieces of the body, then nothing: the response never completes.
+      const body = Buffer.from(documentAt(`${origin}/stall/`));
+      res.writeHead(200, { ...SERVED, 'content-length': String(body.length) });
+      res.write(body.subarray(0, 10), () => res.write(body.subarray(10, 20), () => markStalled()));
+      return;
+    }
+    if (req.url === '/quick/.well-known/knowledge-linkset') {
+      res.writeHead(200, SERVED);
+      res.end(documentAt(`${origin}/quick/`));
       return;
     }
     if (req.url === '/big/.well-known/knowledge-linkset') {
@@ -90,7 +93,6 @@ before(async () => {
 });
 
 after(() => {
-  for (const timer of timers) clearTimeout(timer);
   server.closeAllConnections();
   server.close();
 });
@@ -102,15 +104,60 @@ function check(target, level = '0') {
   });
 }
 
-it('C17 (a): a response that does not complete within the deadline is AGSC-E907', async () => {
-  const { code, envelope } = await check(`${origin}/slow/.well-known/knowledge-linkset`);
-  assert.notEqual(code, 0, JSON.stringify(envelope));
-  const hit = envelope.findings.find((f) => f.code === 'AGSC-E907');
-  assert.ok(hit, JSON.stringify(envelope.findings));
-  assert.match(hit.message, /10000 ms|timeout/u);
+/**
+ * A timer the test fires itself: it records every deadline the checker sets (its
+ * callback and its length) and every one it clears.
+ */
+function fakeTimer() {
+  const set = [];
+  const cleared = [];
+  return {
+    clear(handle) { cleared.push(handle); },
+    cleared,
+    set(callback, ms) { const handle = { callback, ms }; set.push(handle); return handle; },
+    setCalls: set,
+  };
+}
+
+/** The checker in process, with a fake timer; the streams are captured. */
+function inProcess(target, timer) {
+  const io = { err: '', out: '' };
+  const done = tool.run([target, '--dev', '--json'], { err: (s) => { io.err += s; }, out: (s) => { io.out += s; }, timer });
+  return { done, io };
+}
+
+it('a response that does not complete within the deadline is AGSC-E907, and arriving data does not move the deadline', async () => {
+  const started = process.hrtime.bigint();
+  stalled = new Promise((resolve) => { markStalled = resolve; });
+  const timer = fakeTimer();
+  const { done, io } = inProcess(`${origin}/stall/.well-known/knowledge-linkset`, timer);
+  await stalled;
+  // One deadline for the response, of the default length, set before the first byte.
+  assert.equal(timer.setCalls.length, 1);
+  assert.equal(timer.setCalls[0].ms, 10000);
+  timer.setCalls[0].callback();
+  const code = await done;
+  assert.equal(code, 1, io.out);
+  const hit = JSON.parse(io.out).findings.find((f) => f.code === 'AGSC-E907');
+  assert.ok(hit, io.out);
+  assert.match(hit.message, /^timeout: no complete response within 10000 ms \(AGSC-11-10\(e, f\)\)$/u);
+  // The two pieces that arrived set no new deadline.
+  assert.equal(timer.setCalls.length, 1);
+  assert.ok(process.hrtime.bigint() - started < 1_000_000_000n, 'the deadline test waited for real time');
 });
 
-it('C17 (b): a fetched discovery document over 1 MiB is AGSC-E907, not AGSC-E904', async () => {
+it('a complete response clears its own deadline, and only that one', async () => {
+  const timer = fakeTimer();
+  const { done, io } = inProcess(`${origin}/quick/.well-known/knowledge-linkset`, timer);
+  assert.equal(await done, 0, io.out);
+  assert.equal(io.err, '');
+  assert.equal(JSON.parse(io.out).status, 'pass');
+  assert.equal(timer.setCalls.length, 1);
+  assert.ok(timer.cleared.length >= 1);
+  assert.ok(timer.cleared.every((handle) => handle === timer.setCalls[0]), 'a deadline other than the response\'s own was cleared');
+});
+
+it('a fetched discovery document over 1 MiB is AGSC-E907, not AGSC-E904', async () => {
   const { code, envelope } = await check(`${origin}/big/.well-known/knowledge-linkset`);
   assert.notEqual(code, 0);
   const codes = envelope.findings.map((f) => f.code);
@@ -118,14 +165,14 @@ it('C17 (b): a fetched discovery document over 1 MiB is AGSC-E907, not AGSC-E904
   assert.ok(!codes.includes('AGSC-E904'), JSON.stringify(envelope.findings));
 });
 
-it('C17 (b): a target over 1 MiB and under federation.max_bytes is read and its digest checked', async () => {
+it('a target over 1 MiB and under federation.max_bytes is read and its digest checked', async () => {
   const { envelope } = await check(`${origin}/large-graph/.well-known/knowledge-linkset`, '2');
   const about = envelope.findings.filter((f) => /relation describedby|graph\.jsonld/u.test(f.message));
   assert.ok(!about.some((f) => ['AGSC-E904', 'AGSC-E907'].includes(f.code)), JSON.stringify(about));
   assert.ok(!about.some((f) => /digest does not match/u.test(f.message)), JSON.stringify(about));
 });
 
-it('C17 (b): a local file over 1 MiB stays AGSC-E904, the input cap of AGSC-01-16', async () => {
+it('a local file over 1 MiB stays AGSC-E904, the input cap of AGSC-01-16', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-wk-limits-'));
   try {
     const file = path.join(dir, '.well-known', 'knowledge-linkset');

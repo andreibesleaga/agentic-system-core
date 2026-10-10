@@ -10,6 +10,7 @@
 // AGSC-08-13…17).
 
 const validate = require('../../../knowledge/validate.js');
+const frontmatter = require('../../../knowledge/frontmatter.js');
 const links = require('../../../knowledge/links.js');
 const slug = require('../../../knowledge/slug.js');
 const govLint = require('../../../governance/lint.js');
@@ -62,6 +63,43 @@ function configAndRoot(bundle, options = {}) {
   return findings;
 }
 
+/** Whether a ProcessRunner port is wired, so a missing git answer means "no repository". */
+function hasRunner(ctx) {
+  const proc = ctx.ports && ctx.ports.proc;
+  return Boolean(proc && typeof proc.run === 'function');
+}
+
+/**
+ * AGSC-01-14 over the `.md` files of a Bundle that are not items: `PRIVACY.md` at the
+ * root and every page under `site/`. The checks are the ones every item file gets
+ * (`knowledge/frontmatter.js#split`): a byte-order mark, CR line endings, a C0 control
+ * character, non-NFC text and anything but one final line feed are `AGSC-E108`, and a
+ * file over the cap of AGSC-01-16 is `AGSC-E904`. A file the port refuses to read (not
+ * UTF-8, a link out of the root) is reported with the port's own code.
+ *
+ * @param {object} [fsPort] the FileSystem port.
+ * @returns {Array<object>} the findings, in file order.
+ */
+function encodingFindings(fsPort) {
+  if (!fsPort || typeof fsPort.exists !== 'function') return [];
+  const files = [];
+  if (fsPort.exists('PRIVACY.md')) files.push('PRIVACY.md');
+  if (fsPort.exists('site')) files.push(...fsPort.walk('site').filter((p) => p.endsWith('.md')));
+  const findings = [];
+  for (const file of files) {
+    let text;
+    try {
+      text = String(fsPort.readFile(file, 'utf8'));
+    } catch (e) {
+      findings.push(validate.finding(e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : 'AGSC-E901',
+        String((e && e.message) || e), { file }));
+      continue;
+    }
+    findings.push(...frontmatter.split(text, { file }).errors.filter((f) => f.code === 'AGSC-E108' || f.code === 'AGSC-E904'));
+  }
+  return findings;
+}
+
 function lane(ctx, bundle) {
   const findings = [];
   const lanes = ['parse', 'schema'];
@@ -104,8 +142,13 @@ function lane(ctx, bundle) {
     trackedPaths: tracked === null ? undefined : tracked,
   }));
   lanes.push(tracked === null
-    ? 'governance (without the tracked-file check of AGSC-01-37: no ProcessRunner port)'
+    ? `governance (without the tracked-file check of AGSC-01-37: ${hasRunner(ctx) ? 'not a git repository' : 'no ProcessRunner port'})`
     : 'governance');
+
+  // AGSC-01-14 binds `PRIVACY.md` and the pages under `site/` as it binds items: they
+  // are `.md` files a Bundle carries as input.
+  findings.push(...encodingFindings(fsPort));
+  lanes.push('encoding');
 
   // RFC 9116 + PRD-019: the two legal-facing surfaces need a security contact, a
   // privacy notice and an operator that only the publisher can supply. They are

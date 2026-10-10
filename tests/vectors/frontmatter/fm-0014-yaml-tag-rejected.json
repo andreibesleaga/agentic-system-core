@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-02: a YAML tag is outside the permitted subset and is AGSC-E104. Line 3 writes the title with the core-schema tag `!!str`. Every scalar is already a string under the failsafe schema (AGSC-02-03), so the tag would change nothing here, but a reader MUST reject it: a tag names a type, and types come from the item schema only. Everything else in the file is valid, so the tag is the only defect, on line 3.",
+  "expected": {
+    "error": "AGSC-E104",
+    "line": 3
+  },
+  "id": "fm-0014",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: !!str Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-02"
+}

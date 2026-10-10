@@ -11,6 +11,7 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const YAML = require('yaml');
+const { applyPatch } = require('diff');
 
 const { ROOT } = require('./_world.js');
 
@@ -161,6 +162,16 @@ module.exports = [
     },
   },
   {
+    pattern: 'the patch, applied to the edit as the agent left it, gives the file "lint --fix" wrote (AGSC-04-19)',
+    run(world) {
+      // Without history the patch runs from the working bytes to the canonical form, and
+      // that form is the one `lint --fix` writes: key order, quoting, wikilinks, final LF.
+      const given = applyPatch(MESSY, world.read('dist/proposal/1.patch'));
+      assert.strictEqual(typeof given, 'string', 'the patch does not apply to the edit');
+      assert.strictEqual(given, world.read(ITEM), 'the patch and lint --fix give different files');
+    },
+  },
+  {
     pattern: 'no network write occurs from the "propose" verb',
     run(world) {
       assert.deepStrictEqual(world.networkAttempts(), []);
@@ -246,6 +257,16 @@ module.exports = [
       assert.strictEqual(item.frontmatter.prov.operator, world.state.operator);
       const lint = world.agsc(['lint'], { cwd: clone, offline: true });
       assert.strictEqual(lint.exit, 0, lint.stdout + lint.stderr);
+      world.state.clone = clone;
+    },
+  },
+  {
+    pattern: 'the item that patch gives is the file the operator committed after "agsc lint --fix" (AGSC-04-19)',
+    run(world) {
+      // The patch carries the form `lint --fix` writes, so a reviewer who applies it
+      // gets byte for byte what the operator committed (AGSC-04-19).
+      const committed = world.git(['show', `${world.state.applied}:${ITEM}`]);
+      assert.strictEqual(fs.readFileSync(path.join(world.state.clone, ITEM), 'utf8'), committed);
     },
   },
 ];

@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-24 and the common-key table of section 2.2: `description` is 40 to 200 Unicode code points when present, on every item type, not only where AGSC-02-21 makes it lint-required (concept and cluster). This episode carries every key its type requires, and a `description` of 9 code points, `Reviewed.`, on line 4. A length bound is a pattern or length-bound violation, which the precedence paragraph of spec/09 section 9.4 gives AGSC-E204. It is the only error in the file.",
+  "expected": {
+    "error": "AGSC-E204",
+    "line": 4
+  },
+  "id": "fm-0019",
+  "input": {
+    "markdown": "---\ntype: episode\ntitle: Release candidate review\ndescription: Reviewed.\nstarted: \"2026-01-01T00:00:00Z\"\nactor: human:tester\noutcome: success\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## What happened\n\nThe candidate was reviewed.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-24"
+}

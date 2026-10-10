@@ -4,7 +4,9 @@
 // build, 2 a usage or configuration fault), AGSC-04-02 (the build is run twice and
 // the bytes compared), AGSC-02-92 (adoption's warnings never fail `ci`, so a folder
 // of bare notes is green offline) and AGSC-08-27/08-30 (the `ci` lane contains no
-// model call — nothing here can reach one).
+// model call — nothing here can reach one) and AGSC-08-26(g) (on a Bundle with an
+// `auto` channel, the verify lane reports each content-branch commit after the root
+// that is not a merge commit or carries none of the three trailers, `AGSC-E706`).
 //
 // The four N9 lints are `governance/lint.js`, another module of this engine.
 // They are INJECTED as `options.lint`; when neither an injected lint nor
@@ -17,6 +19,7 @@ const { canonicalize } = require('../knowledge/jcs.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
 const site = require('./site.js');
 const forge = require('./forge.js');
+const autoMerge = require('../governance/auto-merge.js');
 
 /** AGSC-08-10: where `ci` writes the gate verdict. */
 const GATE_FILE = 'dist/gate.json';
@@ -161,6 +164,8 @@ function ci(bundle, ports, options = {}) {
       });
     }
   }
+  // AGSC-08-26(g): the history the git-log file shows, on a Bundle with an auto channel.
+  verifyFindings.push(...autoMerge.check(options.gitLog, bundle.config));
   findings.push(...verifyFindings);
   lanes.push('verify');
   checks.push(check('verify', verifyFindings));

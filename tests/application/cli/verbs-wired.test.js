@@ -127,7 +127,7 @@ test('AGSC-10-02: build --level 0 writes the Level-0 artefacts and no generated 
   // own" — and a document naming no context would lose half the triples in a
   // conforming processor.
   assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'www', 'graph.jsonld'), 'utf8'))['@context'],
-    'https://w3id.org/agentic-system-core/ns/1.0.0-draft.1/context.jsonld');
+    'https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld');
 });
 
 test('AGSC-04-02: verify builds twice and compares bytes', () => {
@@ -216,6 +216,22 @@ test('AGSC-07-18: compose --emit says the target renderings are not written', ()
 
 // ---------------------------------------------------------------- propose / review / refresh
 
+/**
+ * A fixture copy whose `supervisor` item is NOT in the canonical form `lint --fix`
+ * writes (its `prov` keys in another order), so that a Proposal with no history has a
+ * change to carry. The fixture itself is canonical, and its Proposal is empty.
+ */
+function editedWorkspace() {
+  const dir = workspace();
+  const at = path.join(dir, 'content', 'concepts', 'supervisor.md');
+  const text = fs.readFileSync(at, 'utf8');
+  const edited = text.replace('prov:\n  origin: human\n  operator: human:andreibesleaga',
+    'prov:\n  operator: human:andreibesleaga\n  origin: human');
+  assert.notStrictEqual(edited, text);
+  fs.writeFileSync(at, edited);
+  return dir;
+}
+
 test('AGSC-08-04/08-05: propose writes the two files, prints the commands, writes nothing else', () => {
   const dir = workspace();
   const { exit } = run(['propose', 'supervisor', '--json'], dir);
@@ -226,7 +242,7 @@ test('AGSC-08-04/08-05: propose writes the two files, prints the commands, write
   assert.match(body, /prov\.origin: human/u);
   assert.ok(fs.existsSync(path.join(dir, 'dist', 'proposal', '1.patch')));
   // The commands are notes, printed without `--json` only (AGSC-09-12).
-  assert.match(run(['propose', 'supervisor'], workspace()).stderr, /run: git apply dist\/proposal\/1\.patch/u);
+  assert.match(run(['propose', 'supervisor'], editedWorkspace()).stderr, /run: git apply dist\/proposal\/1\.patch/u);
 
   // A second Proposal takes the next number, never the same one.
   run(['propose', 'handoff', '--json'], dir);
@@ -254,7 +270,8 @@ test('AGSC-04-19: a Proposal that changes nothing says so instead of claiming a 
   const { createFileSystem } = require('../../../src/adapters/node-fs.js');
   const bundle = loadBundle({ fs: createFileSystem(dir) }, { schemas: helpers.schemas() });
   const item = bundle.byslug.get('supervisor');
-  fs.writeFileSync(path.join(dir, item.path), proposeVerb.canonicalItem(item));
+  fs.writeFileSync(path.join(dir, item.path),
+    proposeVerb.canonicalItem(item, fs.readFileSync(path.join(dir, item.path), 'utf8'), bundle));
 
   const second = run(['propose', 'supervisor', '--json'], dir);
   assert.strictEqual(second.exit, 0);
@@ -685,7 +702,7 @@ test('export --markdown with an error finding writes nothing', () => {
 });
 
 test('AGSC-08-04: a runner that throws is no history — propose diffs the working bytes', () => {
-  const dir = workspace();
+  const dir = editedWorkspace();
   const proc = { run: () => { throw new Error('no git here'); } };
   const r = run(['propose', 'supervisor'], dir, { proc });
   assert.strictEqual(r.exit, 0, r.stderr);

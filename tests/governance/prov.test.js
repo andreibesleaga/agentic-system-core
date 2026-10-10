@@ -57,7 +57,7 @@ test('AGSC-08-06: a missing or malformed trailer is AGSC-E504', () => {
   assert.deepStrictEqual(codes(prov.checkTrailers(undefined).findings), ['AGSC-E504']);
 });
 
-test('AGSC-08-07: an ai-* change needs an Assisted-by naming prov.operator', () => {
+test('AGSC-08-07: an Assisted-by line, when present, names prov.operator', () => {
   const block = 'Signed-off-by: A <a@example.org> (CA-v1)\n'
     + 'Assisted-by: agsc/1.0.0 (operator: human:alice)';
   const good = prov.checkTrailers(block, { prov: { origin: 'ai-generated', operator: 'human:alice' } });
@@ -69,6 +69,14 @@ test('AGSC-08-07: an ai-* change needs an Assisted-by naming prov.operator', () 
     { prov: { origin: 'human', operator: 'human:bob' } });
   assert.deepStrictEqual(human.findings, []);
   assert.strictEqual(prov.parseAssisted('Assisted-by: agsc 1.0.0 (operator: human:alice)'), null);
+
+  // AGSC-08-07 makes the line optional (MAY): an ai-* change with a sign-off and no
+  // Assisted-by line is no finding; a line that is present is still checked.
+  const signedOnly = prov.checkTrailers('Signed-off-by: A <a@example.org> (CA-v1)',
+    { prov: { origin: 'ai-assisted', operator: 'human:alice' } });
+  assert.deepStrictEqual(signedOnly.findings, []);
+  assert.deepStrictEqual(signedOnly.assisted, []);
+  assert.match(wrong.findings[0].message, /an Assisted-by line is present and none names prov\.operator "human:bob"/u);
 });
 
 test('AGSC-08-20b: the trailer block is the LAST contiguous run of Key: value lines', () => {

@@ -16,10 +16,11 @@
  * same object, not two renderings that could drift. The application layer runs
  * the build and hands the map in (`application/cli/verbs/mcp.js`), because
  * Distribution reads no file (the context map of docs/ARCHITECTURE-DDD.md §2).
- * An item's bytes are `/pages/<slug>.md` (AGSC-06-01), which is the PUBLISHED
- * projection of AGSC-06-30 — a draft, retired or release-gated item has no
- * page, so it is not a resource either, exactly as it is invisible to a page
- * tool under AGSC-09-16.
+ * An item's bytes are `/pages/<slug>.md` (AGSC-06-01, AGSC-05-07). Every
+ * PUBLISHED item (AGSC-00-05) has that page, a retired one included, so the
+ * resources are the published items; a draft or release-gated item has no
+ * page and is not a resource. A page tool sees less: the listed set of
+ * AGSC-09-16, without the retired items.
  *
  * WHY `memory://`. AGSC-05-04/05-04b make `memory://<bundle-id>/<slug>` this
  * project's documented alias of an item IRI, "resolved locally, and only for
@@ -182,7 +183,7 @@ function catalogue(bundle, options) {
         title: PROMPT_TITLE,
       })]),
     }),
-    /** `resources/read` — `null` for an unknown URI, which the transport turns into -32602. */
+    /** `resources/read` — `null` for an unknown URI, which the transport turns into -32002. */
     read: (uri) => {
       const entry = entries.get(String(uri));
       if (entry === undefined) return null;

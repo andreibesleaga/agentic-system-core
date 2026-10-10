@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-02: a merge key is outside the permitted subset and is AGSC-E104, the code it shares with a tag. Line 7 is `<<: base`, the first line inside the `prov` mapping. Without merge-key support it would be a key named `<<`; with it, a general YAML reader would try to merge another mapping into `prov`. A reader of this format does neither and reports AGSC-E104 on line 7. The rest of the file is valid, so this is the only error.",
+  "expected": {
+    "error": "AGSC-E104",
+    "line": 7
+  },
+  "id": "fm-0015",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\nprov:\n  <<: base\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-02"
+}

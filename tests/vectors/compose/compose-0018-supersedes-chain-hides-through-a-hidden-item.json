@@ -1,0 +1,54 @@
+{
+  "area": "compose",
+  "description": "A supersedes chain inside the set Step 1 closed. agent-v3 supersedes agent-v2, and agent-v2 supersedes agent-v1; all three are selected. \"The result\" of Step 2 is the closed set, a hidden item included, so agent-v2 still hides agent-v1 although agent-v2 is itself hidden: hidden[] is agent-v1 and agent-v2, and only agent-v3 survives. A writer that let only surviving items hide would keep agent-v1 in selection[]. Nothing requires a hidden item, so the composition is valid and the Harness is emitted. The input order agent-v1, agent-v2, agent-v3 does not reach the verdict.",
+  "expected": {
+    "exit": 0,
+    "harness_emitted": true,
+    "verdict": {
+      "added": [],
+      "conflicts": [],
+      "hidden": [
+        "agent-v1",
+        "agent-v2"
+      ],
+      "selection": [
+        "agent-v3"
+      ],
+      "valid": true,
+      "warnings": []
+    }
+  },
+  "id": "compose-0018",
+  "input": {
+    "items": [
+      {
+        "slug": "agent-v1",
+        "type": "concept"
+      },
+      {
+        "slug": "agent-v2",
+        "supersedes": [
+          "agent-v1"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "agent-v3",
+        "supersedes": [
+          "agent-v2"
+        ],
+        "type": "concept"
+      }
+    ],
+    "selection": [
+      "agent-v1",
+      "agent-v2",
+      "agent-v3"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-07-05"
+}

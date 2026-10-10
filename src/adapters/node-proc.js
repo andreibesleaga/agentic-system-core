@@ -9,8 +9,14 @@ const { execFileSync } = require('node:child_process');
 
 const DEFAULT_TIMEOUT_MS = 10000;
 const DEFAULT_MAX_BUFFER = 8 * 1024 * 1024;
-/** The environment a child is allowed to see; nothing else is inherited. */
-const SCRUBBED_ENV = Object.freeze(['PATH', 'HOME', 'LANG', 'LC_ALL', 'SOURCE_DATE_EPOCH', 'SystemRoot']);
+/**
+ * The environment a child is allowed to see; nothing else is inherited. On Windows
+ * git finds the user's configuration through `USERPROFILE` (or `HOMEDRIVE` with
+ * `HOMEPATH`) when `HOME` is not set, so those three are kept beside `HOME`.
+ */
+const SCRUBBED_ENV = Object.freeze([
+  'PATH', 'HOME', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH', 'LANG', 'LC_ALL', 'SOURCE_DATE_EPOCH', 'SystemRoot',
+]);
 
 /**
  * Options put before every git subcommand. A Bundle's `.git/config` is read by git

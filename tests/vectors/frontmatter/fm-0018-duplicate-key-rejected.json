@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-02: a duplicate key is AGSC-E106. Line 6 repeats `title`, first written on line 3. Either value alone is a valid title, so the defect is the repetition: a general YAML reader would keep one of the two silently, and two readers could keep different ones. The error is reported on line 6, the second occurrence, and it is the only error in the file.",
+  "expected": {
+    "error": "AGSC-E106",
+    "line": 6
+  },
+  "id": "fm-0018",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\ntitle: Supervisor again\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-02"
+}

@@ -394,12 +394,12 @@ function item(frontmatter, options = {}) {
   }
 
   // AGSC-00-17: an item MAY carry `spec_version`; when it does, its MAJOR is the one
-  // the Bundle root fixes (`agsc.config.json`), and another MAJOR is `AGSC-E204`.
+  // the configuration fixes (`agsc.config.json`), and another MAJOR is `AGSC-E204`.
   const own = options.config && options.config.spec_version;
   if (typeof frontmatter.spec_version === 'string' && typeof own === 'string'
       && !majorCompatible(frontmatter.spec_version, own)) {
     findings.push(finding('AGSC-E204',
-      `spec_version "${frontmatter.spec_version}" carries another MAJOR than the Bundle root's "${own}" (AGSC-00-17)`,
+      `spec_version "${frontmatter.spec_version}" carries another MAJOR than the configuration's "${own}" (AGSC-00-17)`,
       { ...base, key: 'spec_version', line: lineOf(keyLines, '/spec_version') }));
   }
 

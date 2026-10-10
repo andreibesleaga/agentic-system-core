@@ -7,7 +7,7 @@
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 
-const { readOntology, readSchemas } = require('../../../adapters/node-fs.js');
+const { readOntology, readSchemas, safeJoin } = require('../../../adapters/node-fs.js');
 const validate = require('../../../knowledge/validate.js');
 const links = require('../../../knowledge/links.js');
 const ledger = require('../../../governance/ledger.js');
@@ -132,7 +132,7 @@ function sha256(bytes) {
 }
 
 /**
- * AGSC-09-07 (amended 2026-10-06): `--level <n>` on `build`, `ci` and `conform` is
+ * AGSC-09-09 (amended 2026-10-06): `--level <n>` on `build`, `ci` and `conform` is
  * one of the four Levels, written `0`, `1`, `2` or `3`; any other value is the usage
  * error `AGSC-E003` (exit 2), refused before anything runs. Until that day `build` and
  * `ci` ignored `--level constructor` and `--level 9`, and
@@ -144,7 +144,7 @@ function sha256(bytes) {
 function levelRefusal(ctx) {
   const raw = ctx.verbFlags && ctx.verbFlags.level;
   if (raw === undefined || /^[0-3]$/u.test(String(raw))) return null;
-  return { status: 'fail', findings: [{ code: 'AGSC-E003', message: `--level must be 0, 1, 2 or 3, not ${JSON.stringify(raw)} (AGSC-09-07)`, severity: 'error' }] };
+  return { status: 'fail', findings: [{ code: 'AGSC-E003', message: `--level must be 0, 1, 2 or 3, not ${JSON.stringify(raw)} (AGSC-09-09)`, severity: 'error' }] };
 }
 
 /**
@@ -374,6 +374,32 @@ function notImplemented(verb, rule, why) {
 }
 
 /**
+ * AGSC-09-09: `compose --out` and `conform --to` take a path relative to the Bundle
+ * root; an absolute path, or one that leaves the root, is `AGSC-E902` before anything
+ * is written. The FileSystem port refuses such a path too, but on the first path it
+ * is handed, which for a report is its parent folder (`conform --to /tmp/r.json`
+ * named `/tmp`): this check names the value the person typed, and the flag.
+ *
+ * @param {string} flag the verb and flag, for the message (`conform --to`).
+ * @param {string} value the value given.
+ * @returns {object|null} the refusing `AGSC-E902` finding, or null for a relative path inside the root.
+ */
+function outPathRefusal(flag, value) {
+  try {
+    // Lexical only: any root shows whether a relative path climbs out of it.
+    safeJoin(path.resolve(ENGINE_ROOT, 'bundle'), String(value));
+    return null;
+  } catch (e) {
+    return {
+      code: 'AGSC-E902',
+      file: String(value),
+      message: `${flag} takes a path relative to the Bundle root (AGSC-09-09); ${e.message}`,
+      severity: 'error',
+    };
+  }
+}
+
+/**
  * AGSC-01-01: a verb that reads a Bundle refuses to run where there is none, as
  * `build` and `lint` do, rather than exiting 0 having done nothing (`skills`,
  * `skills install` and `mcp` once did). `null` inside a Bundle.
@@ -423,6 +449,7 @@ module.exports = {
   instantOf,
   ENGINE_ROOT,
   note,
+  outPathRefusal,
   outsideBundle,
   attachmentFacts,
   bundleOf,

@@ -2,6 +2,8 @@
 
 **Summary.** The conformance vector runner: `vector-runner.test.js` runs every vector of `tests/vectors/` through the handlers in `areas/` and prints one summary line; `pending.json` lists any vector held back (empty today). Subject: `tests/vectors/`.
 
+The `build` and `cli` handlers are guarded by `areas/_expected-reads.js` (tested by `expected-reads.test.js`): a pass that left a member of a case's `expected` unread becomes a fail, and a case with no handler fails, so no case passes without being checked.
+
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md).
 
 ```bash

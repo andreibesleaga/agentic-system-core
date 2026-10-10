@@ -57,7 +57,7 @@ and the reference checker if you want a ready-made one.
 |---|---|---|---|
 | 1 | Choose the site base: one absolute `https:` URL. Every item IRI is the base, the type folder and the slug, with a trailing slash | AGSC-05-01 | the `graph` vectors; `validate-wellknown --level 0` checks the anchor |
 | 2 | Give every piece of knowledge a slug: lowercase letters, digits, single hyphens, at most 64 characters, unique | AGSC-01-10 | the `slug` vectors |
-| 3 | Export each piece as `content/<type-plural>/<slug>.md` with a YAML block carrying at least `type` and `title`; `prov` is inherited from the Bundle at Level 0, with a warning | AGSC-02-01, AGSC-10-02 | the `frontmatter` vectors; any JSON Schema 2020-12 validator with `schema/item.schema.json` |
+| 3 | Export each piece as `content/<type-plural>/<slug>.md` with a YAML block carrying at least `type` and `title`; include the `prov` block with `origin` and `operator`: an item without it is `AGSC-E501` at every Level | AGSC-02-01, AGSC-08-01, AGSC-10-02 | the `frontmatter` vectors; any JSON Schema 2020-12 validator with `schema/item.schema.json` |
 | 4 | Write `content/index.md` with `spec_version`, `okf_version`, `title`, `description` and `base`, and no `type` | AGSC-01-04 | the `bundle` vectors; `schema/bundle.schema.json` |
 | 5 | Publish `/graph.jsonld`, the JSON-LD view of the items | AGSC-05-09 | any JSON-LD 1.1 processor: it must expand without error |
 | 6 | Publish `/llms.txt` in the fixed byte layout | AGSC-06-13, AGSC-06-13a | vector `disc-0013` (compare bytes) |
@@ -287,6 +287,11 @@ blank node in an RDF export is `AGSC-E605`. Canonical N-Quads is the `toRDF` lin
 sorted code-point-wise, with plain literals typed `xsd:string` (AGSC-05-31/32).
 `graph.jsonld` must survive the round trip of AGSC-06-32: expanding it with the
 published `/ns/context.jsonld` and re-compacting must reproduce it byte for byte.
+`graph.jsonld` always has the two members `@context` and `@graph` (AGSC-05-09), even
+when its graph holds one node; a JSON-LD processor's
+compaction drops `@graph` around a single node unless it is asked to keep it (in
+`jsonld` 9.0.0 for JavaScript, the option `graph: true`), so keep it when you run the
+round trip.
 
 **Digests are SHA-256 over the emitted bytes.** In the discovery document each one is
 carried in the RFC 9530 syntax `sha-256=:<base64>:` as a one-element array
@@ -370,6 +375,69 @@ import record and the newer-source refusal).
 
 ---
 
+## 4b. Reading the graph as plain JSON, and property graphs
+
+**Framing, for a consumer without an RDF engine.** `graph.jsonld` is a flat list of
+nodes, one per subject, sorted by `@id` (AGSC-05-09). A program that wants a tree —
+each Cluster with its members inside it, say — does not need a triple store: a JSON-LD
+processor that implements JSON-LD 1.1 Framing (a W3C Recommendation of 16 July 2020,
+<https://www.w3.org/TR/json-ld11-framing/>) reshapes the document with a *frame*. This
+frame keeps every Cluster and embeds each member with only its label and definition:
+
+```json
+{
+  "@context": "https://your-node.example/ns/context.jsonld",
+  "@type": "Cluster",
+  "member": {
+    "@embed": "@always",
+    "@explicit": true,
+    "prefLabel": {},
+    "definition": {}
+  }
+}
+```
+
+Put in `@context` the URL the node's own `graph.jsonld` names, so that the term names
+of the result are the ones the node uses (AGSC-06-32 makes them a constant of this
+specification). With `jsonld` 9.0.0 for JavaScript the call is
+`jsonld.frame(graph, frame)`. The result is
+ordinary nested JSON: each Cluster object carries a `member` array of objects with
+`@id`, `@type`, `prefLabel` and `definition`. `"@embed": "@always"` embeds a member
+under every Cluster it belongs to rather than once (`@once`, the default), and
+`"@explicit": true` leaves out every member property the frame does not name. A
+frame is a reading aid on the consumer's side: nothing in the specification pins
+framed output, and the published bytes stay those of AGSC-05-09.
+
+**Property graphs and GQL.** The graph of a node is RDF (spec/05), not a property
+graph, and this specification defines no property-graph serialisation and no query
+surface in GQL (ISO/IEC 39075:2024), the ISO query language for property graphs, or
+in any other language: a node's query surface is its published dumps, and a
+consumer queries the dumps it downloaded (AGSC-11-13, section 5b). Loading a node into a property-graph store is a
+mechanical mapping: each item becomes a vertex whose literal values (label,
+definition, dates, `kind`) become vertex properties, and each Link becomes one edge
+labelled with its key. At 1.0 a Link carries no property of its own — weighted Links
+are reserved to 1.1 (AGSC-00-20, AGSC-00-25) — so the edges need none, and nothing is
+lost either way.
+
+## 4c. What composition costs (Level 3)
+
+AGSC-07-04 fixes the closure of Step 1 as a **breadth-first** walk of `requires` from
+the de-duplicated selection, with each frontier taken in code-point slug order and
+each item's `requires` targets in code-point order. With a map from slug to item,
+the walk visits every item it reaches once and follows every `requires` Link out of
+a visited item once, so for a selection of *k* slugs that reaches *n* items through
+*e* `requires` Links it does O(*k* + *n* + *e*) steps, plus the sorts that pin the
+order — O((*k* + *n* + *e*) log(*k* + *n* + *e*)) in all — and keeps O(*n*) items in
+memory. Steps 2 to 4 (AGSC-07-05 to AGSC-07-07: hiding, mutex, warnings) each look at
+the Links of the items in the closed set once, which is linear in those Links; Step 5
+(AGSC-07-23) is linear in the ports of the surviving items. AGSC-07-08 runs each step
+exactly once, in that order, so the whole composition is close to linear in the part
+of the graph the selection reaches, never in the whole Bundle. The closure is unique
+as a set; only the explanation `path[]` depends on the order of the walk, which is
+why the rule pins it, and why a depth-first walk is not conforming.
+
+---
+
 ## 5. Checking your own output
 
 Nine command contracts check the normative artefacts and the output of any node
@@ -379,7 +447,7 @@ conformance claim names which it ran.
 
 | Tool | What it checks | Rule |
 |---|---|---|
-| `validate-spec` | the specification's own consistency — duplicate and unresolved rule ids, code closure, trace brackets, version literals | AGSC-09-91 |
+| `validate-spec` | the specification's own consistency — duplicate and unresolved rule ids, code closure, trace brackets, version literals, the key words in their BCP 14 forms and all listed, every normative sentence inside a rule, the one dated-note form | AGSC-09-91 |
 | `validate-schemas` | `schema/*.json` against JSON Schema 2020-12 and the closed keyword subset | AGSC-02-24 |
 | `validate-ontology` | `ontology/agsc.ttl` — OWL 2 RL-safe, blank-node-free, the SKOS integrity conditions | AGSC-05-22 |
 | `validate-vectors` | the vector files' own format | AGSC-09-90 |
@@ -541,8 +609,10 @@ a web interface in front. A claim names its deployment profile (AGSC-06-01); no 
 ## 8. If you find a defect in the specification
 
 Say so. AGSC-00-16 makes rule ids and error codes permanent, vectors immutable (a
-wrong vector is withdrawn and superseded, never edited) and reserved ids never
-reused, precisely so that a defect can be corrected without breaking anyone. A
+wrong vector is withdrawn and superseded, never edited; the one in-place edit AGSC-00-16
+allows is the specification-version string a case carries, updated at a release
+candidate or the release, together with re-pointing a case's `rule` to the rule that
+absorbed a retired one) and reserved ids never reused, precisely so that a defect can be corrected without breaking anyone. A
 correction that only clarifies the text, or adds a case conforming implementations
 already pass, is a PATCH; one that adds a key, a value, a code or a case is a MINOR,
 exactly as a new Link key is (AGSC-00-14; `docs/SPEC.md` §8). Open an issue against the repository named in

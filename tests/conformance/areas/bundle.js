@@ -9,6 +9,7 @@ const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
 const { checkAgents } = require('../../../src/governance/agents.js');
+const { guarded } = require('./_expected-reads.js');
 
 function runAgentsConfigVector(vector) {
   const findings = checkAgents(vector.input.config);
@@ -74,8 +75,10 @@ function reservedConfigCase(vector, ctx) {
 /**
  * The minimal fixture with the vector's files added, in a scratch directory that is
  * removed afterwards, and the real `lint --json` run over it through the CLI's own
- * entry point: the shape of every case whose input is `bundle` plus `add_files`.
- * Returns `{exit, findings, root}` to `inspect`, which runs before the directory goes.
+ * entry point: the shape of every case whose input is `bundle` plus `add_files`
+ * (and, where a JSON string cannot carry the file, `add_sized_files` and `add_links`,
+ * tests/vectors/README.md). Returns `{exit, findings, root}` to `inspect`, which runs
+ * before the directory goes. The `lint` area runs its fixture cases through it too.
  */
 function onFixture(vector, ctx, inspect) {
   const path = require('node:path');
@@ -87,9 +90,20 @@ function onFixture(vector, ctx, inspect) {
   const engineRoot = (ctx && ctx.root) || '.';
   const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), `agsc-${vector.id}-`));
   nodeFs.cpSync(path.join(engineRoot, 'tests', String(vector.input.bundle || 'fixtures/minimal')), root, { recursive: true });
-  for (const [file, text] of Object.entries(vector.input.add_files || {})) {
+  const place = (file) => {
     nodeFs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
-    nodeFs.writeFileSync(path.join(root, file), text);
+    return path.join(root, file);
+  };
+  for (const [file, text] of Object.entries(vector.input.add_files || {})) nodeFs.writeFileSync(place(file), text);
+  // A file of `bytes` bytes, each the one ASCII character `fill`.
+  for (const [file, { bytes, fill }] of Object.entries(vector.input.add_sized_files || {})) {
+    nodeFs.writeFileSync(place(file), Buffer.alloc(bytes, String(fill)));
+  }
+  // A symbolic link whose target is read from the link's own folder.
+  for (const [file, target] of Object.entries(vector.input.add_links || {})) {
+    const at = place(file);
+    const kind = nodeFs.statSync(path.resolve(path.dirname(at), target)).isDirectory() ? 'dir' : 'file';
+    nodeFs.symlinkSync(target, at, kind);
   }
   try {
     const stdout = captureStream();
@@ -189,7 +203,7 @@ const B_HANDLERS = {
   'bundle-0005': runAgentsConfigVector,
 };
 
-module.exports.run = (vector, ctx) => {
+function run(vector, ctx) {
   const bHandler = B_HANDLERS[vector.id];
   if (bHandler) return bHandler(vector, ctx);
 
@@ -216,4 +230,8 @@ module.exports.run = (vector, ctx) => {
     list.push(['findings', m.ok, m.detail]);
   }
   return checks(list);
-};
+}
+
+module.exports.run = guarded(run);
+// The fixture runner, shared with the `lint` area's cases of the same input shape.
+module.exports.fixtureLintCase = fixtureLintCase;

@@ -5,7 +5,7 @@
  * `compose`, `propose`, `ask`, `remember`), AGSC-09-13a (the tool error
  * envelope: the AGSC-08-18 envelope with `type: "error"` and a `body` of
  * `{code, message}`, NEVER a JSON-RPC transport error), AGSC-09-14a (the
- * Channel responder `ask`: an answer over published exports only, at least one
+ * Channel responder `ask`: an answer over this Bundle (drafts included, AGSC-09-13), at least one
  * item IRI cited, the fixed "no answer in this memory" string, the Content Use
  * Terms embedded), AGSC-09-14b (`remember` synthesizes a conforming item and
  * hands it to the Proposal path; an invalid `sources[]` entry is DROPPED with
@@ -46,7 +46,10 @@ const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 const NO_ANSWER = 'no answer in this memory';
 /** AGSC-02-10: the two schemes a client-supplied `sources[].resource` may use. */
 const SOURCE_RESOURCE = /^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u;
-/** AGSC-02-09: the actor grammar (the `actor` definition of item.schema.json). */
+/**
+ * AGSC-02-09: the three client forms of the actor grammar; the versioned process form
+ * (`process:<name>/<version>`) is a writer's own, never a client's.
+ */
 const ACTOR = /^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u;
 /** AGSC-09-14b: `kind` to item `type`. */
 // A closed list read with a name from the outside: prototype-free, so `constructor`,

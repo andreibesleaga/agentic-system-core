@@ -173,9 +173,12 @@ function compose(items, selection) {
   const path = closure(index, seedOrder.filter((s) => index.has(s)), conflicts);
   const closed = [...path.keys()].filter((slug) => path.get(slug) !== null);
 
-  // Step 2 — hiding, then the AGSC-07-05a hard-dependency guard.
+  // Step 2 — hiding, then the AGSC-07-05a hard-dependency guard. The closed set is
+  // walked in code-point order, so that when several members supersede one target
+  // the guard names the code-point least of them and input order never reaches the
+  // verdict (AGSC-07-09).
   const supersededBy = new Map();
-  for (const slug of closed) {
+  for (const slug of byCodePoint(closed)) {
     for (const target of linkTargets(index.get(slug), 'supersedes')) {
       if (path.has(target) && path.get(target) !== null && !supersededBy.has(target)) {
         supersededBy.set(target, slug);

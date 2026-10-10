@@ -11,6 +11,7 @@ const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
 const adopt = require('../../../src/knowledge/adopt.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 /** fm-0008: the adoption case that lives in this area rather than in `adopt/`. */
 function runAdoption(vector) {
@@ -67,7 +68,7 @@ function runPreParsed(vector, ctx) {
   return checks(list);
 }
 
-module.exports.run = (vector, ctx) => {
+function run(vector, ctx) {
   const { input, expected } = vector;
   if (Array.isArray(input.files)) return runAdoption(vector);
   if (input.frontmatter !== undefined) return runPreParsed(vector, ctx);
@@ -176,4 +177,6 @@ module.exports.run = (vector, ctx) => {
     }
   }
   return { status: 'fail', detail: 'no handler for this input shape in area frontmatter' };
-};
+}
+
+module.exports.run = guarded(run);

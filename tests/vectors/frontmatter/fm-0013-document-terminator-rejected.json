@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-01: no `...` terminator and no second document (AGSC-E107). Line 6 is the YAML document-end marker `...`, inside a block that line 10 then closes with `---`, so the block is closed (not AGSC-E102) and every key is valid. A reader that handed the block to a general YAML parser would stop the document at line 6 and lose the `prov` mapping, which is why the marker is refused instead of read. The one error is AGSC-E107 on line 6.",
+  "expected": {
+    "error": "AGSC-E107",
+    "line": 6
+  },
+  "id": "fm-0013",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\n...\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-01"
+}

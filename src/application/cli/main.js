@@ -14,6 +14,7 @@ const { load } = require('../config/load.js');
 const { checkBoundaryConfig } = require('../../boundary/visibility.js');
 const { createClock, isMalformedEpoch } = require('../../adapters/node-clock.js');
 const pluginLoader = require('../plugin-loader.js');
+const { canonicalize } = require('../../knowledge/jcs.js');
 
 const VERBS = [
   'init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
@@ -338,8 +339,7 @@ function buildEnvelope({ verb, findings, status, specVersion, version }) {
   // AGSC-09-11: every finding with its position, each fault once — the shell adds the
   // loader's findings to the verb's, and a verb such as `ci` already carries them.
   const { uniqueFindings, withPosition } = require('../../knowledge/validate.js');
-  const jcs = require('../../knowledge/jcs.js');
-  const sorted = uniqueFindings(findings.map(withPosition), jcs.canonicalize).sort(compareFindings);
+  const sorted = uniqueFindings(findings.map(withPosition), canonicalize).sort(compareFindings);
   const counts = { error: 0, warn: 0 };
   for (const f of sorted) {
     if (f.severity === 'error') counts.error += 1;
@@ -357,24 +357,6 @@ function buildEnvelope({ verb, findings, status, specVersion, version }) {
   };
 }
 
-/**
- * The envelope MUST be emitted JCS-canonical (AGSC-09-10/AGSC-04-05). This
- * module never implements its own RFC 8785 writer (-CONTRACT.md): it
- * requires A's knowledge/jcs.js and returns null when that module is not
- * yet present, so a caller can fail closed instead of emitting non-canonical
- * bytes.
- */
-function serializeEnvelope(envelope) {
-  let jcs;
-  try {
-    jcs = require('../../knowledge/jcs.js');
-  } catch (e) {
-    return null;
-  }
-  if (!jcs || typeof jcs.canonicalize !== 'function') return null;
-  return jcs.canonicalize(envelope);
-}
-
 function writeLine(stream, text) {
   if (stream && typeof stream.write === 'function') stream.write(text);
 }
@@ -384,15 +366,42 @@ function writeFindingLine(stderr, f) {
 }
 
 /**
- * The usage block a person sees when no verb, or no known verb, was given.
- * It names the AGSC-09-07 verb set and the AGSC-09-09 global flags and nothing
- * else — this shell has no manual to duplicate and no rule to paraphrase. It is
- * a DIAGNOSTIC, so it is written to stderr (AGSC-09-10), and it is emitted only
- * outside `--json`, where one line must be one finding object.
+ * The usage block a person sees from `agsc --help` (on stdout) and when no verb, or
+ * no known verb, was given (on stderr, a DIAGNOSTIC there, AGSC-09-10, and emitted
+ * only outside `--json`, where one line must be one finding object). It names the
+ * AGSC-09-07 verb set, each verb on a line of its own with the sentence of purpose of
+ * that rule's table, and the AGSC-09-09 global flags.
  */
 const GLOBAL_FLAG_NAMES = Object.freeze(['--json', '--quiet', '--plain', '--no-input', '--help', '--version']);
 
+/**
+ * What each verb does, in one sentence: the "What it does" column of AGSC-09-07's
+ * table, in words a person new to the engine can act on.
+ */
+const VERB_PURPOSE = Object.freeze({
+  init: 'adopts a folder of Markdown notes into a Bundle',
+  lint: 'runs every check of a Bundle and writes nothing; with --fix, applies the normalisations',
+  build: 'writes the site and its machine-readable files into build.out',
+  verify: 'builds twice and compares the bytes; with --ledger, recomputes the ledger chain',
+  ci: 'runs the checks, two builds and the comparison, and writes the gate verdict',
+  export: 'writes one export: Markdown, OKF, JSON-LD, JSONL, steering files or a memory adapter',
+  import: 'imports a folder of another format through the adapter named by --from',
+  compose: 'composes the selected items and writes their Harness',
+  propose: 'writes the Proposal of a change to one item, for a pull request',
+  review: 'runs the review lane: checks, a label and a comment, never a model call',
+  refresh: 'runs the agent lane named by --agent; this engine runs it with --dry-run',
+  skills: 'emits every skill pack, installs them under a target, or imports one pack',
+  mcp: 'serves the seven tools over standard input and output',
+  run: 'runs the steps of a procedure; opt-in through run.enabled',
+  trace: 'records a captured agent run as an Episode; opt-in through run.enabled',
+  conform: 'runs the conformance cases of a Level and writes the report',
+});
+
+/** The hint every unknown-verb answer carries, so a person knows where help is. */
+const HELP_HINT = 'run agsc --help for the sixteen verbs, or agsc <verb> --help for one verb';
+
 function usageText(version) {
+  const width = Math.max(...VERBS.map((v) => v.length));
   return [
     '',
     `agsc ${version} — the reference engine of the Agentic System Core format.`,
@@ -400,12 +409,12 @@ function usageText(version) {
     'Usage: agsc <verb> [flags]',
     '',
     'Verbs (AGSC-09-07):',
-    `  ${VERBS.slice(0, 8).join('  ')}`,
-    `  ${VERBS.slice(8).join('  ')}`,
+    ...VERBS.map((verb) => `  ${verb.padEnd(width)}  ${VERB_PURPOSE[verb]}`),
     '',
     `Global flags (AGSC-09-09): ${GLOBAL_FLAG_NAMES.join('  ')}`,
     '',
     'Each verb takes its own flags; an unknown flag is AGSC-E002 and exit 2.',
+    'Run agsc <verb> --help for the flags and arguments of one verb.',
     'A Bundle is the directory holding agsc.config.json; run a verb from inside it.',
     '',
   ].join('\n');
@@ -427,7 +436,7 @@ const VERB_USAGE = Object.freeze({
   lint: 'agsc lint [--fix]',
   mcp: 'agsc mcp [<path>]',
   propose: 'agsc propose <slug>',
-  refresh: 'agsc refresh [--agent <name>] [--task <slug>] [--dry-run]',
+  refresh: 'agsc refresh --agent <name> [--task <slug>] [--dry-run]',
   review: 'agsc review',
   run: 'agsc run <slug> [--dry-run]',
   skills: 'agsc skills | agsc skills install [<target>] | agsc skills import <file>',
@@ -488,6 +497,8 @@ function helpText(version, verb) {
   const lines = [
     '',
     `agsc ${version} — ${VERB_USAGE[verb]}`,
+    '',
+    `${verb}: ${VERB_PURPOSE[verb]}.`,
     '',
     `Flags of ${verb} (AGSC-09-09): ${own.length === 0 ? '(none)' : own.join('  ')}`,
   ];
@@ -551,7 +562,7 @@ function main(argv, ctx) {
     const named = args.find((a) => VERBS.includes(a));
     if (jsonMode) {
       const document = helpDocument(version, named);
-      writeLine(stdout, `${serializeEnvelope(document) || JSON.stringify(document)}\n`);
+      writeLine(stdout, `${canonicalize(document)}\n`);
     } else {
       writeLine(stdout, helpText(version, named));
     }
@@ -584,10 +595,10 @@ function main(argv, ctx) {
     // But the answer must still tell a person what to do: the message names
     // what was typed (or says that nothing was), and the human stream carries the
     // verb list. Under `--json` stderr stays exactly ONE finding object per line
-    // (AGSC-09-10), so the usage block is printed only in the human mode.
-    const message = verb === null
-      ? 'no verb given'
-      : `unknown verb ${JSON.stringify(verb)}`;
+    // (AGSC-09-10), so the usage block is printed only in the human mode; the hint
+    // that names `agsc --help` is in the message itself, so both modes carry it
+    // (`agsc help` is the first thing many people type).
+    const message = `${verb === null ? 'no verb given' : `unknown verb ${JSON.stringify(verb)}`}; ${HELP_HINT}`;
     if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E001', severity: 'error', message });
     else {
       writeLine(stderr, `agsc: AGSC-E001 ${message}\n`);
@@ -782,13 +793,8 @@ function main(argv, ctx) {
   const envelope = buildEnvelope({ verb, findings, status, specVersion, version });
 
   if (jsonMode) {
-    const bytes = serializeEnvelope(envelope);
-    if (bytes === null) {
-      // AGSC-04-05/09-10: cannot emit a non-canonical envelope; fail closed.
-      writeFindingLine(stderr, { code: 'AGSC-E601', severity: 'error', message: 'JCS canonicalizer unavailable (src/knowledge/jcs.js not yet implemented); envelope not emitted' });
-      return 1;
-    }
-    writeLine(stdout, bytes + '\n');
+    // AGSC-09-10 / AGSC-04-05: the envelope is JCS-canonical, through the one writer.
+    writeLine(stdout, `${canonicalize(envelope)}\n`);
     for (const f of envelope.findings) writeFindingLine(stderr, f);
   } else {
     writeLine(stdout, `${verb}: ${envelope.status} (${envelope.counts.error} error, ${envelope.counts.warn} warn)\n`);
@@ -861,6 +867,7 @@ function plainWhere(f) {
 }
 
 module.exports = {
-  main, ENVIRONMENT_CLASS_CODES, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_USAGE,
+  main, ENVIRONMENT_CLASS_CODES, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_PURPOSE,
+  VERB_USAGE,
   adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
 };

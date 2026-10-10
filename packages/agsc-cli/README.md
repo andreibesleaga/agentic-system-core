@@ -1,6 +1,6 @@
 # agsc-cli
 
-Short alias for [`agentic-system-core`](https://www.npmjs.com/package/agentic-system-core) — the AgenticSystemCore CLI (a Distributed Ontological Agentic Memory engine, reference node of the Agentic Knowledge Web).
+Short alias for [`agentic-system-core`](https://www.npmjs.com/package/agentic-system-core) — the reference engine and command line of AgenticSystemCore: publish a Markdown knowledge Bundle as a static node of the Agentic Knowledge Web — a wiki, an RDF graph, agent memory, skills, MCP and WebMCP tools and a discovery document.
 
 ```sh
 npx agsc-cli --help

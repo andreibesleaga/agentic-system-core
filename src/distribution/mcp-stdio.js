@@ -36,6 +36,20 @@ const { tools } = require('./mcp-tools.js');
 
 const SERVER_NAME = 'agentic-system-core';
 
+/** MCP revision 2025-11-25, Resources, "Error Handling": "Resource not found: `-32002`". */
+const RESOURCE_NOT_FOUND = -32002;
+
+/**
+ * resourceNotFound(uri) -> Error
+ * The JSON-RPC error of a `resources/read` whose URI names no resource, as the
+ * revision this transport speaks words it: code `-32002`, the message "Resource not
+ * found" and the URI as `data`. The SDK writes an error's `code`, `message` and
+ * `data` as they are; its `McpError` would prefix the message with the code.
+ */
+function resourceNotFound(uri) {
+  return Object.assign(new Error('Resource not found'), { code: RESOURCE_NOT_FOUND, data: { uri } });
+}
+
 /**
  * createServer(bundle, options) -> { server, toolset, resources }
  * The wiring alone: one `tools/list` handler returning the shared manifest and
@@ -56,15 +70,18 @@ function createServer(bundle, options) {
   // AGSC-11-18: `extensions` is MCP's map of extension
   // identifier to settings object, and this node's settings object carries exactly
   // `linkset`. The Boundary context owns both the identifier and the object
-  // (`surfaces.mcpCapabilities`); the transport only carries what it is given, so
-  // `server/discover` and the per-request capabilities cannot drift apart.
+  // (`surfaces.mcpCapabilities`); the transport only carries what it is given. This
+  // transport speaks revision 2025-11-25, so the map travels in the `initialize`
+  // result (MCP SEP-2133); `server/discover` and the per-request capabilities belong
+  // to revision 2026-07-28, which a later transport will speak.
   const base = ((bundle && bundle.config && bundle.config.site) || {}).base;
   const server = new Server(
     { name: SERVER_NAME, version: opts.version || '0.0.0' },
     // AGSC-09-14b: a server that serves resources and prompts MUST say so —
     // "Servers that support resources MUST declare the `resources` capability",
     // "Servers that support prompts MUST declare the `prompts` capability"
-    // (MCP, Resources and Prompts, revision 2026-07-28, read 2026-09-22).
+    // (MCP, Resources and Prompts, revision 2025-11-25, the revision this transport
+    // speaks, read 2026-10-10; the same at revision 2026-07-28, read 2026-09-22).
     // Neither `listChanged` nor `subscribe` is declared: a Bundle is loaded once
     // and this server never mutates it, so it would promise a notification it
     // could never have cause to send.
@@ -86,18 +103,18 @@ function createServer(bundle, options) {
 
   // AGSC-09-14b's resources and prompt. A MISS here is a PROTOCOL fault, not a
   // domain fault, so AGSC-09-13a's envelope does not apply and MCP's own rule
-  // does: "If the requested resource does not exist, servers MUST return a
-  // JSON-RPC error with code `-32602` (Invalid Params)" (MCP, Resources,
-  // revision 2026-07-28, read 2026-09-22), and for prompts "Invalid prompt
-  // name: `-32602`; Missing required arguments: `-32602`" (MCP, Prompts, same
-  // revision, same day). The envelope stays what a TOOL returns.
+  // does, in the revision this transport speaks (AGSC-11-16): "Resource not
+  // found: `-32002`", with the URI as `data` (MCP, Resources, revision 2025-11-25,
+  // read 2026-10-10; revision 2026-07-28 moves it to `-32602`, which a transport
+  // speaking that revision will answer), and for prompts "Invalid prompt name:
+  // `-32602` (Invalid params); Missing required arguments: `-32602` (Invalid
+  // params)" (MCP, Prompts, revision 2025-11-25, same day). The envelope stays
+  // what a TOOL returns.
   server.setRequestHandler(ListResourcesRequestSchema, async () => resources.list());
 
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const found = resources.read(request.params.uri);
-    if (found === null) {
-      throw new McpError(ErrorCode.InvalidParams, 'Resource not found', { uri: request.params.uri });
-    }
+    if (found === null) throw resourceNotFound(request.params.uri);
     return found;
   });
 

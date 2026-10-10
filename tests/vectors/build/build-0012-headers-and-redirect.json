@@ -2,26 +2,7 @@
   "area": "build",
   "description": "Expected bytes are derived by hand from the rule text. AGSC-06-17 is a MUST over served bytes. It obliges three Content-Type / policy facts and one redirect, and AGSC-06-01 makes the normative content THE HEADER SET AND THE REDIRECT, never the file format: _headers and _redirects are the Cloudflare Pages deployment profile's rendering of them, and a writer on another host emits the equivalent configuration and names its profile in the conformance claim. This vector therefore asserts the header set and the redirect and deliberately asserts NO file bytes — pinning _headers bytes would invent a grammar no rule states. The profile parameter on the linkset media type is the RFC 7284 profile URI of AGSC-06-07, whose header fallback (RFC 6906 Link rel=profile) is the admitted alternative where the media-type parameter cannot be set.",
   "expected": {
-    "file_bytes_asserted": false,
-    "header_fallback_admitted": "Link: <https://w3id.org/agentic-system-core/profile/agentic-knowledge>; rel=\"profile\"",
-    "headers": {
-      "/*": {
-        "Content-Security-Policy": "default-src 'none'; script-src 'self'"
-      },
-      "/.well-known/knowledge-linkset": {
-        "Content-Type": "application/linkset+json; profile=\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\""
-      },
-      "/pages/*.md": {
-        "Content-Type": "text/markdown; charset=utf-8; variant=GFM"
-      }
-    },
-    "redirects": [
-      {
-        "from": "/.well-known/agentic-knowledge",
-        "status": 301,
-        "to": "/.well-known/knowledge-linkset"
-      }
-    ]
+    "withdrawn": true
   },
   "id": "build-0012",
   "input": {
@@ -32,9 +13,11 @@
       "/index.html"
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
     "spec_version": "1.0.0-rc.7"
   },
-  "rule": "AGSC-06-17"
+  "reason": "Withdrawn for 1.0.0 (2026-10-10). The case asserted only two of the five Content-Security-Policy directives AGSC-06-17 requires: the rule, amended on 2026-10-02 for 1.0.0, also requires style-src 'self', img-src 'self' and connect-src 'self', and says that the policy admits no inline script. It also asserted the legacy redirect, which the same rule makes a SHOULD. Superseded by build-0018, which asserts all five directives and that no inline script is admitted.",
+  "rule": "AGSC-06-17",
+  "superseded_by": "build-0018"
 }

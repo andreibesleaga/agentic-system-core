@@ -19,6 +19,10 @@ folder, the conformance sentence and the one pinned form of the Action.
 `requirements-and-plan.test.js` checks that the requirements document and the plan
 answer, each with a dated note, every statement of theirs that no longer holds, and
 that the benchmark pages, the demos and the Mode 5 guide say what this version ships.
+`docs-accuracy.test.js` keeps the protocols page, the two orientation pages, the
+implementers' guide, the connectors page and the security considerations true: where
+a page describes the engine, the engine is asked the same question, and the guide's
+JSON-LD framing example is run.
 Subject: the documentation.
 
 **Read after:** [tests/README.md](../README.md).

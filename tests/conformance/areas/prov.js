@@ -1,6 +1,7 @@
 // tests/conformance/areas/prov.js — area handler for `prov` vectors.
-// prov-0001 and prov-0002 (the agent lane's proposal check), prov-0003 (claims)
-// and prov-0005 (the DCO-Plus trailer grammar).
+// prov-0001 and prov-0002 (the agent lane's proposal check), prov-0003 (claims),
+// prov-0005 (the DCO-Plus trailer grammar) and prov-0006 to prov-0008 (clause (g)
+// of the auto-channel rule over the git-log file).
 'use strict';
 
 const { checkProposal } = require('../../../src/governance/agents.js');
@@ -92,11 +93,40 @@ function runTrailerGrammarVector(vector) {
   return problems.length === 0 ? { status: 'pass', detail: '' } : { status: 'fail', detail: problems.join('; ') };
 }
 
+// --- prov-0006 to prov-0008: AGSC-08-26(g), the part the git-log file shows ---
+
+const autoMerge = require('../../../src/governance/auto-merge.js');
+
+/**
+ * AGSC-08-26(g): the configuration and the git-log file in, the findings out. The
+ * expected `findings[]` is the whole list: the same number of findings, each
+ * matching its entry's members in order; a negative case also names its `error`.
+ */
+function runAutoMergeHistoryVector(vector) {
+  const findings = autoMerge.check(vector.input.git_log, vector.input.config);
+  const want = vector.expected.findings || [];
+  const problems = [];
+  if (vector.expected.error !== undefined && !findings.some((f) => f.code === vector.expected.error)) {
+    problems.push(`no finding with code ${vector.expected.error}`);
+  }
+  if (findings.length !== want.length) problems.push(`${findings.length} findings, expected ${want.length}`);
+  want.forEach((w, i) => {
+    if (!findings[i] || !Object.keys(w).every((k) => findings[i][k] === w[k])) {
+      problems.push(`finding ${i + 1} does not match ${JSON.stringify(w)}`);
+    }
+  });
+  return problems.length === 0 ? { status: 'pass', detail: '' }
+    : { status: 'fail', detail: `${problems.join('; ')} (${JSON.stringify(findings.map((f) => f.code))})` };
+}
+
 const HANDLERS = {
   'prov-0001': runCheckProposalVector,
   'prov-0002': runCheckProposalVector,
   'prov-0003': runClaimVector,
   'prov-0005': runTrailerGrammarVector,
+  'prov-0006': runAutoMergeHistoryVector,
+  'prov-0007': runAutoMergeHistoryVector,
+  'prov-0008': runAutoMergeHistoryVector,
 };
 
 module.exports.run = function run(vector, ctx) {

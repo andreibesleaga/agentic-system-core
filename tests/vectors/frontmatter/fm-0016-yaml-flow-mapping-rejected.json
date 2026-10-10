@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-02: a flow mapping is outside the permitted subset and is AGSC-E105. Line 6 writes the `prov` mapping in flow style, `{origin: human, operator: \"human:tester\"}`, which holds the same two members a block mapping would. The subset admits flow sequences of scalars but no flow mappings, so a reader MUST reject it even though its members are valid. It is the only defect, on line 6.",
+  "expected": {
+    "error": "AGSC-E105",
+    "line": 6
+  },
+  "id": "fm-0016",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\nprov: {origin: human, operator: \"human:tester\"}\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-02"
+}

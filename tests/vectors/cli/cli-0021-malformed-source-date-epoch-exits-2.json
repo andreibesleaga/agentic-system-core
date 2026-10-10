@@ -1,0 +1,83 @@
+{
+  "area": "cli",
+  "description": "AGSC-04-09 with AGSC-09-08: SOURCE_DATE_EPOCH is an integer number of seconds since the Unix epoch, and a malformed value MUST exit 2 with AGSC-E603, the configuration class of AGSC-09-08, which is an environment fault and never a finding. Derivation: a word, a value with a fraction and a value with a unit suffix are each not an integer number of seconds; build reads the build instant, and ci runs the build, so each refuses with exit 2 and names AGSC-E603 on stderr, and AGSC-E603 is not among the findings of any envelope written to stdout. An absent or empty value is not malformed (the build instant then falls back to the git history and to 0, cli-0022), so no case here uses one.",
+  "expected": {
+    "cases": [
+      {
+        "error": "AGSC-E603",
+        "exit": 2,
+        "name": "word",
+        "not_a_finding": true
+      },
+      {
+        "error": "AGSC-E603",
+        "exit": 2,
+        "name": "fraction",
+        "not_a_finding": true
+      },
+      {
+        "error": "AGSC-E603",
+        "exit": 2,
+        "name": "unit-suffix",
+        "not_a_finding": true
+      },
+      {
+        "error": "AGSC-E603",
+        "exit": 2,
+        "name": "ci",
+        "not_a_finding": true
+      }
+    ]
+  },
+  "id": "cli-0021",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "argv": [
+          "build",
+          "--json"
+        ],
+        "environment": {
+          "SOURCE_DATE_EPOCH": "tomorrow"
+        },
+        "name": "word"
+      },
+      {
+        "argv": [
+          "build",
+          "--json"
+        ],
+        "environment": {
+          "SOURCE_DATE_EPOCH": "1767225600.5"
+        },
+        "name": "fraction"
+      },
+      {
+        "argv": [
+          "build",
+          "--json"
+        ],
+        "environment": {
+          "SOURCE_DATE_EPOCH": "1767225600s"
+        },
+        "name": "unit-suffix"
+      },
+      {
+        "argv": [
+          "ci",
+          "--json"
+        ],
+        "environment": {
+          "SOURCE_DATE_EPOCH": "tomorrow"
+        },
+        "name": "ci"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-04-09"
+}

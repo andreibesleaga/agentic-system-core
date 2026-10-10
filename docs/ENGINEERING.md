@@ -66,7 +66,6 @@ engine writes (the golden build test proves it), and never by raising the budget
 
 | Where | The budget it is near | The split it is a candidate for |
 |---|---|---|
-| `tools/validate-wellknown`, the `check` function | complexity: at the ceiling | one function per group of checks (the document, its targets, the response headers, the peer) |
 | `src/distribution/site.js`, `buildSite` | complexity and lines per function | one function per family of routes |
 | `src/distribution/site.js`, the whole file | lines per file | those route families in modules of their own |
 | `src/knowledge/diagrams.js`, `compile` | the largest function of the Knowledge context | one function per diagram construct |

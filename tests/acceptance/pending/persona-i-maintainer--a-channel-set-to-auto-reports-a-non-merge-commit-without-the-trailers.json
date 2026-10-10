@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "E11",
-  "reason": "verify and ci do not report AGSC-E706 yet: with a channel whose publish choice is auto, a non-merge commit with none of the three trailers passes ci.",
-  "scenario": "A channel set to auto reports a non-merge commit without the trailers"
-}

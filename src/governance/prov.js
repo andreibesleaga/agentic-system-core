@@ -120,12 +120,14 @@ function checkTrailers(message, context = {}) {
     findings.push(finding('AGSC-E504',
       `the Assisted-by line does not match the AGSC-08-06 grammar: ${JSON.stringify(line)}`, at));
   }
+  // AGSC-08-07: the Assisted-by line is OPTIONAL (MAY); when one is present on an
+  // ai-* change, one of them names `prov.operator`. A missing line is no finding.
   const prov = context.prov || {};
-  if (AI_ORIGINS.includes(prov.origin)) {
+  if (AI_ORIGINS.includes(prov.origin) && assisted.length > 0) {
     const match = assisted.some((a) => a.operator === prov.operator);
     if (!match) {
       findings.push(finding('AGSC-E505',
-        `an "${prov.origin}" change needs an Assisted-by line naming prov.operator (AGSC-08-07)`,
+        `an "${prov.origin}" change: an Assisted-by line is present and none names prov.operator "${prov.operator}" (AGSC-08-07)`,
         { ...at, operator: prov.operator }));
     }
   }

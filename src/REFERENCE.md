@@ -590,6 +590,7 @@ drive them, `init` and `ci`.
 |---|---|---|
 | `knowledge/chunks.js` | Knowledge | AGSC-06-26…31 — the two cuts, the identifier, the record, the exclusions, the shards |
 | `governance/ledger.js` | Governance | AGSC-08-20…24 — the derivation, the production of the git-log file, the chain, `verify --ledger` |
+| `governance/auto-merge.js` | Governance | AGSC-08-26(g) — the history check of a channel set to `auto`, read from the git-log file |
 | `governance/boards.js` | Governance | AGSC-10-13, AGSC-10-16…18 — the board exports, the derived `done` and `claimed_by`, the WIP limit |
 | `distribution/search.js` | Distribution | AGSC-06-16, AGSC-06-21, AGSC-06-23 — the normative tokenizer and the index |
 | `distribution/llms.js` | Distribution | AGSC-06-13, 06-13a, 06-14, 06-15 — the byte layout of the two text files |
@@ -816,10 +817,14 @@ anti-corruption layer, never in a tool function.
 an external version literal.
 
 Address classification (AGSC-11-08) uses **`node:net.BlockList`**, the
-platform's own classifier, because the rule forbids hand-parsing an address
-literal. `::ffff:0:0/96` is deliberately not added as a subnet: BlockList
-already checks an IPv4-mapped address against the IPv4 rules, which is exactly
-what the rule asks, while adding it would make every IPv4 address match.
+platform's own classifier, because the rule requires every textual form of one
+address to be classified alike, which a parser of addresses gives. The
+IPv4-compatible `::/96` and the IPv4-mapped `::ffff:0:0/96` are refused whole,
+whatever IPv4 address they embed, as both checkers refuse them; `--dev` admits
+`127.0.0.0/8` and `::1` and nothing else. Each family has a list of its own and an
+address is checked against its own family's list only: BlockList checks an IPv4
+address against an IPv6 subnet through its mapped form, so one shared list holding
+`::ffff:0:0/96` would make every IPv4 address match.
 
 ### The Harness, and two rules implemented once
 
@@ -877,8 +882,8 @@ built node.
 | `init` | AGSC-02-90…95, AGSC-01-37 | `application/cli/verbs/init.js` → `distribution/init.js`, `knowledge/adopt.js` | wired |
 | `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired |
 | `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired |
-| `verify` | AGSC-04-02, AGSC-08-23 | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify` | wired |
-| `ci` | AGSC-09-08 | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected | wired |
+| `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g) | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check` | wired |
+| `ci` | AGSC-09-08, AGSC-08-26(g) | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected; its verify lane adds `governance/auto-merge.js#check` | wired |
 | `export` | AGSC-01-26…29, AGSC-01-26a | `verbs/export.js` → `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) ; `--zip` writes one archive beside each multi-file export root |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf}.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`) and for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22; `--dry-run` on both; `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
 | `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12 | `verbs/compose.js` → `composition/{compose,architecture,harness}.js` | wired, and it WRITES the seven Harness file kinds of AGSC-07-12 into `dist/harness/<name>/` or `--out`; `--zip` writes them as one archive BESIDE that directory; `--emit <path or package>` runs a composition-emitter plugin, and a registered `--emit` target this distribution does not ship is refused with `AGSC-E203`, exit 1 (AGSC-00-20, AGSC-07-18) |
@@ -985,8 +990,8 @@ Bundle rather than reading one itself.
 * the sandboxed executor of AGSC-09-94 — the `run` verb's finding;
 * the AGSC-06-01 routes no module produces — `site.build`'s `skipped`, from
   `site.UNPRODUCED_ROUTES`;
-* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired —
-  named in the lint lane's `lanes`;
+* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired or the
+  Bundle is not in a git repository — named in the lint lane's `lanes`;
 * `/ledger.jsonl`, when no git-log file is supplied (AGSC-08-20a) — named in
   `skipped`, and `verify --ledger` then reports `AGSC-E703` rather than a green
   chain;

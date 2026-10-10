@@ -1,7 +1,7 @@
 'use strict';
 // tests/conformance/areas/compose.js — area handler for `compose` vectors.
-// Rules: AGSC-07-04..08, AGSC-07-09, AGSC-07-13a, AGSC-07-17,
-// AGSC-07-23, AGSC-07-24, AGSC-02-97.
+// Rules: AGSC-07-03, AGSC-07-04..08, AGSC-07-05a, AGSC-07-09, AGSC-07-13a,
+// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-02-97.
 
 const crypto = require('node:crypto');
 
@@ -257,6 +257,11 @@ const HANDLERS = {
   'compose-0014': runCompose0014,
   'compose-0015': runCompose0015,
   'compose-0016': runCompose0016,
+  'compose-0018': runVerdictVector,
+  'compose-0019': runVerdictVector,
+  'compose-0020': runVerdictVector,
+  'compose-0021': runVerdictVector,
+  'compose-0022': runVerdictVector,
 };
 
 module.exports.run = function run(vector) {

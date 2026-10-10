@@ -9,8 +9,9 @@
 // The change is the person's: the patch runs from the COMMITTED version of the
 // item's file (`git show HEAD:./<path>` through the ProcessRunner port; nothing,
 // for a file the last commit does not hold) to the CANONICAL form of the working
-// file — the key order and the byte profile of AGSC-04-19/AGSC-04-07 — so an
-// edited item is proposed with its edit. With no repository (no runner, no git,
+// file — the bytes `lint --fix` writes (AGSC-04-19/AGSC-04-07, `governance/fix.js`,
+// the one implementation of those normalisations) — so an edited item is proposed
+// with its edit, and `agsc lint --fix` brings the working file to the patch's form. With no repository (no runner, no git,
 // no commit) the only change the engine can compute is the canonical form of the
 // working file itself, and the patch runs from the working bytes. When the patch
 // is empty the verb says so with a warning and prints no command that would fail.
@@ -20,7 +21,8 @@
 // reimplementing one.
 
 const { createTwoFilesPatch } = require('diff');
-const adopt = require('../../../knowledge/adopt.js');
+const fix = require('../../../governance/fix.js');
+const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
 
 const DIR = 'dist/proposal';
@@ -34,10 +36,22 @@ function nextNumber(fs) {
   return n;
 }
 
-/** AGSC-04-19 + AGSC-04-07: the canonical bytes of one item. */
-function canonicalItem(item) {
-  const body = String(item.body == null ? '' : item.body).split('\r\n').join('\n');
-  return `${adopt.serialize(item.frontmatter)}${body.replace(/\n*$/u, '\n')}`.normalize('NFC');
+/**
+ * AGSC-04-19 + AGSC-04-07: the canonical bytes of one item — exactly what `lint --fix`
+ * writes for it: the nested keys in the schema's order, dates and instants quoted,
+ * the wikilinks of AGSC-03-12 rewritten, LF, NFC and one final line feed.
+ *
+ * @param {object} item a loaded item.
+ * @param {string} source its authored bytes.
+ * @param {object} bundle the loaded Bundle, for the slug-to-type map of AGSC-03-12.
+ * @returns {string}
+ */
+function canonicalItem(item, source, bundle) {
+  const typeOfSlug = new Map();
+  for (const one of (bundle && bundle.items) || []) {
+    if (!typeOfSlug.has(String(one.slug))) typeOfSlug.set(String(one.slug), String(one.type || 'concept'));
+  }
+  return fix.fixItem(item, { itemSchema: readSchemas(helpers.ENGINE_ROOT).item, source, typeOfSlug }).after;
 }
 
 /** AGSC-08-05: the pull-request body. */
@@ -83,7 +97,7 @@ function run(ctx) {
 
   const fs = ctx.ports.fs;
   const working = String(fs.readFile(item.path, 'utf8'));
-  const after = canonicalItem(item);
+  const after = canonicalItem(item, working, bundle);
   const committed = committedText(ctx, item.path);
   const before = committed === undefined ? working : committed.text;
   const number = nextNumber(fs);
@@ -103,7 +117,7 @@ function run(ctx) {
       code: 'AGSC-E506',
       file: item.path,
       message: committed === undefined
-        ? `the Proposal is empty: ${item.slug} is already in the canonical form of AGSC-04-19`
+        ? `the Proposal is empty: there is no commit to compare ${item.path} with yet; commit once, then propose`
         : `the Proposal is empty: ${item.path} is the same as in the last commit, in the canonical form of AGSC-04-19`,
       severity: 'warn',
       slug: item.slug,

@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-01: a file MUST begin on line 1 with `---`, and a file with no such opening line is AGSC-E101. This file holds a valid concept's keys and body but starts with the `type` line, so no block opens on line 1. The fault belongs to line 1, the line that should have held the opening `---`. It is the only error a reader reports: with no opening line there is no block to parse, so no key of it is checked.",
+  "expected": {
+    "error": "AGSC-E101",
+    "line": 1
+  },
+  "id": "fm-0011",
+  "input": {
+    "markdown": "type: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-01"
+}

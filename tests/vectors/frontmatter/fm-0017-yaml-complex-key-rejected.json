@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-02: a complex key is outside the permitted subset and is AGSC-E105, the code it shares with a flow mapping. Line 9 opens an explicit key, `? [a, b]`, whose key is a sequence, and line 10 gives its value. A key of this format is a scalar name matching AGSC-02-05's pattern, and no such name can be a sequence. The rest of the file is valid, so the one error is AGSC-E105 on line 9.",
+  "expected": {
+    "error": "AGSC-E105",
+    "line": 9
+  },
+  "id": "fm-0017",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nkind: explainer\nprov:\n  origin: human\n  operator: human:tester\n? [a, b]\n: value\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-02"
+}

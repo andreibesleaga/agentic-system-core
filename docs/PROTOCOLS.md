@@ -19,7 +19,7 @@ names this project defines, the profile identifier is **registered** in the IANA
 URIs registry (RFC 7284). The well-known suffix `knowledge-linkset` is **not registered**:
 the Internet-Draft in `internet-draft/` asks for it, and no request has been sent to the
 registry. The primary-document links below were
-read on 2026-09-24.
+read on 2026-09-24, and the `Unencoded-Digest` draft on 2026-10-10.
 
 ---
 
@@ -40,7 +40,7 @@ read on 2026-09-24.
 
 | Standard | What it is | Why it is used here | Rules | Primary document |
 |---|---|---|---|---|
-| RFC 9530, Digest Fields | the syntax for content digests (`sha-256`) | every artefact the discovery document names carries its SHA-256 digest; a host may send `Repr-Digest` | AGSC-06-08, AGSC-06-17 | <https://www.rfc-editor.org/info/rfc9530> |
+| RFC 9530, Digest Fields | the syntax for content digests (`sha-256`) | every artefact the discovery document names carries its SHA-256 digest; a host may send `Repr-Digest`, but only on a response without a content coding, because under compression that field is computed over the coded bytes. `Unencoded-Digest`, the field that carries the digest of the bytes before any content coding, is what the link-set digest corresponds to; it is defined in `draft-ietf-httpbis-unencoded-digest`, which updates RFC 9530 and was in the RFC Editor queue, not yet an RFC, on 2026-10-10. No 1.0 rule names it, and the reference engine does not emit either field | AGSC-06-08, AGSC-06-17 | <https://www.rfc-editor.org/info/rfc9530>, <https://datatracker.ietf.org/doc/draft-ietf-httpbis-unencoded-digest/> |
 | RFC 8785, JSON Canonicalization Scheme (Informational) | one byte form for any JSON value | every JSON file is written in this form, after Unicode NFC, so two implementations emit the same bytes | AGSC-04-04 to AGSC-04-06, AGSC-04-21 | <https://www.rfc-editor.org/info/rfc8785> |
 | RFC 7493, I-JSON | the interoperable subset of JSON | every JSON artefact, and every vector, is I-JSON | AGSC-04-04, AGSC-09-06 | <https://www.rfc-editor.org/info/rfc7493> |
 | Unicode 16.0.0 and UTS #46 | characters, normalisation (NFC), IDNA mapping | text is normalised before it is sorted or hashed; host names are compared after mapping | AGSC-04-22, AGSC-11-12 | <https://www.unicode.org/versions/Unicode16.0.0/>, <https://www.unicode.org/reports/tr46/> |
@@ -72,7 +72,7 @@ read on 2026-09-24.
 
 | Standard | What it is | Why it is used here | Rules | Primary document |
 |---|---|---|---|---|
-| RFC 9309, Robots Exclusion Protocol | `robots.txt` | one of the three licence dialects: the AI-usage signals and per-crawler groups | AGSC-06-18, AGSC-01-18 | <https://www.rfc-editor.org/info/rfc9309> |
+| RFC 9309, Robots Exclusion Protocol | `robots.txt` | one of the three licence dialects: the per-crawler groups; the `Content-Signal` line is an optional other record of RFC 9309 §2.2.4, not a dialect | AGSC-06-18, AGSC-01-18 | <https://www.rfc-editor.org/info/rfc9309> |
 | TDMRep (W3C Community Group final report, 10 May 2024) | a text-and-data-mining reservation at `/.well-known/tdmrep.json` | the second licence dialect, when the node adopts the Content Use Terms | AGSC-06-18 | <https://www.w3.org/community/reports/tdmrep/CG-FINAL-tdmrep-20240510/> |
 | RFC 9116, `security.txt` | a well-known file naming where to report a vulnerability | a node publishes the file its publisher wrote in the Bundle's `.well-known/security.txt`; without that file a writer emits no route and `ci` fails with `AGSC-E901`, and without a `Contact:` line with `AGSC-E202` | AGSC-06-36 | <https://www.rfc-editor.org/info/rfc9116> |
 | RFC 7763, `text/markdown` | the media type for Markdown | the type the host sends for the per-item Markdown views | AGSC-06-17 | <https://www.rfc-editor.org/info/rfc7763> |

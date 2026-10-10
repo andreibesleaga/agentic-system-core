@@ -101,6 +101,26 @@ test('AGSC-07-05a: a surviving item requiring a hidden one invalidates, naming t
   }]);
 });
 
+test('AGSC-07-05a: with two superseding items the code-point least is named, whatever the input order', () => {
+  const items = [
+    { requires: ['z'], slug: 'w' }, { slug: 'x', supersedes: ['z'] }, { slug: 'y', supersedes: ['z'] }, { slug: 'z' },
+  ];
+  const expected = [{ code: 'AGSC-E802', key: 'requires', pair: ['w', 'z'], superseding: 'x' }];
+  for (const selection of [['x', 'y', 'w'], ['y', 'x', 'w'], ['w', 'y', 'x'], ['y', 'w', 'x', 'z']]) {
+    assert.deepStrictEqual(plain(verdictOf(compose(items, selection)).conflicts), expected,
+      `the selection ${JSON.stringify(selection)} named another superseding item`);
+  }
+  // The same holds when a superseding item is itself hidden (AGSC-07-05: the
+  // result is the closed set, hidden items included).
+  const chained = items.concat([{ slug: 'v', supersedes: ['y'] }]);
+  assert.deepStrictEqual(plain(verdictOf(compose(chained, ['y', 'v', 'x', 'w'])).conflicts), expected);
+  // The rule states it in plain words.
+  const rule = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'spec', '07-composition.md'), 'utf8')
+    .split('\n').find((line) => line.startsWith('- **AGSC-07-05a**'));
+  assert.ok(rule.includes('the superseding item named is the first of them in code-point order'),
+    'AGSC-07-05a does not say which superseding item is named');
+});
+
 test('AGSC-07-06: excludes is evaluated over the survivors only, pairs sorted and de-duplicated', () => {
   const items = [
     { excludes: ['b'], slug: 'a' }, { excludes: ['a'], slug: 'b' }, { slug: 'c', supersedes: ['b'] },

@@ -165,7 +165,7 @@ Bundle's own folder.
 - **Mode:** 1.
 - **Commands:** none at 1.0 — the walk is a library function
   (`src/boundary/federation.js`, `walk`) that takes the fetch function it may use; no
-  command line wraps it yet.
+  command wraps it, and none is planned for a fixed version.
 - **Proven by:** `tests/boundary/federation.test.js`, with an injected fetch and no
   network. A walk over real peers needs the network and is not run by any test.
 
@@ -279,8 +279,8 @@ Bundle's own folder.
 - **Commands:** set `publish: auto` on the channel in `agsc.config.json`.
 - **Proven by:** `tests/governance/agents.test.js` (the agent-lane conditions) and
   `tests/distribution/forge.test.js` (the enforcement files a forge needs). The merges
-  run on the forge; **no channel adapter ships**, so the channel
-  itself is not runnable yet.
+  run on the forge; **no channel adapter ships** at 1.0, so the channel itself does
+  not run: channel adapters are planned for 1.1 (AGSC-00-20).
 
 ### M4 — Cost that cannot run away
 
@@ -314,7 +314,8 @@ Bundle's own folder.
 - **Mode:** 4.
 - **Commands:** `agsc compose <slug> [<slug>…]` writes `dist/harness/<name>/`; add
   `--zip` for one archive. The runtime emitters (`--emit crewai` and the other five
-  names) are named by the specification and **not built yet**.
+  names) are named by the specification and refused at 1.0 with `AGSC-E203`; their
+  runtime renderings are planned for 1.1 (AGSC-00-20).
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
 ### M6 — The same page, answered by the browser's own agent

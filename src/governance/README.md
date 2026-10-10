@@ -20,6 +20,7 @@
 | `finding.js` | the one place a Governance finding is built |
 | `agents.js` | agent declarations, what an agent may propose, and the spend cap |
 | `ledger.js` | the ledger derived from the history, its hash chain and `verify --ledger` |
+| `auto-merge.js` | the history check of a channel set to `auto`: every commit after the root is a merge carrying one of the three trailers |
 | `boards.js` | a Cluster read as a board: the two board exports, `done`, `claimed_by`, the WIP limit |
 | `board-lanes.js` | the agent-lane gates on a board Proposal: claim, move, new task |
 

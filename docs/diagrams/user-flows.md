@@ -48,7 +48,7 @@ flowchart TD
   F --> G["3 excludes mutex reported over the survivors"]
   G --> H["4 contradicts / missing uses warnings shown"]
   H --> I["Name the Harness"]
-  I --> J["Generate seven files in memory"]
+  I --> J["Generate the seven file kinds in memory"]
   J --> K{"Browser zip writer available?"}
   K -- yes --> L["Download harness-<name>.zip"]
   K -- no --> M["Download files one by one (fallback)"]

@@ -1,0 +1,48 @@
+{
+  "area": "prov",
+  "description": "AGSC-08-26(g) on a Bundle whose one channel has the publish choice auto. The git-log file of AGSC-08-20b holds the root commit, with no trailer, and one later commit made directly on the content branch: one parent, so not a merge commit, and none of the trailers Signed-off-by, Proposal or Channel-Auto. The root commit, which no merge can produce, is exempt; the later commit is AGSC-E706, reported once, as an error. The input is the configuration and the git-log file; the forge-side parts of the clause (reachability from a merged pull request, the forge identity of the author, the bypass list) are not part of the case.",
+  "expected": {
+    "error": "AGSC-E706",
+    "findings": [
+      {
+        "code": "AGSC-E706",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "prov-0006",
+  "input": {
+    "config": {
+      "channels": [
+        {
+          "adapter": "github",
+          "author": "channel-bot",
+          "name": "main",
+          "owner": "human:ada",
+          "publish": "auto"
+        }
+      ]
+    },
+    "git_log": [
+      {
+        "committed_at": "2026-01-01T00:00:00Z",
+        "parents": [],
+        "sha": "1111111111111111111111111111111111111111",
+        "trailers": {}
+      },
+      {
+        "committed_at": "2026-01-02T00:00:00Z",
+        "parents": [
+          "1111111111111111111111111111111111111111"
+        ],
+        "sha": "2222222222222222222222222222222222222222",
+        "trailers": {}
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-08-26"
+}
