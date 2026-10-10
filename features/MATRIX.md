@@ -43,7 +43,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | H14 | Port implementer (P10) | persona-l; the Python checker's CI runs the conditional one | B | |
 | H15 | Standards implementer (P11) | persona-j | B; w3id live P | |
 | H16 | Federating publishers | persona-j | B | |
-| H17 | Restricted publisher (P15) | persona-o | B + G→RS-a, RS-b | |
+| H17 | Restricted publisher (P15) | persona-o | B | |
 | H18 | Security reviewer (P13) | persona-m | B | |
 | H19 | Researcher (P14) | persona-n | B | |
 | H20 | Manager deciding to depend on it | — | rec | prose (README, CONFORMANCE-STATEMENTS, GOVERNANCE) is the right evidence for this reader; no journey runs a command |
@@ -81,7 +81,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | Imports | B | persona-h (okf, cogx), persona-f (skills repositories), persona-g (board, gabbe), persona-i (old-site) | |
 | Live boards, claims, lanes, budget, .env | B | persona-k | |
 | Six modes | B | persona-0 (mode 0), persona-h (mode 1), persona-g (mode 2), persona-f (mode 3), persona-e (mode 4), persona-k (mode 5) | |
-| Restricted visibility | B + G→RS-a, RS-b | persona-o | |
+| Restricted visibility | B | persona-o | |
 | Federation, peers, contribute | B | persona-j | |
 | security.txt | B | persona-0, persona-m | |
 | Legal texts, TDM | B | persona-0, persona-c (a crawler) | |

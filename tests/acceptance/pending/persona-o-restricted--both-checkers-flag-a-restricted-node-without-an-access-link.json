@@ -1,6 +1,6 @@
 {
-  "class": "gap",
-  "closes_in": "RS-b",
-  "reason": "neither the shipped validate-wellknown nor the Python checker reports a restricted node with no access link or with two (both pass such a document at Level 0), although AGSC-11-20 asks for exactly one; the scenario's checker steps also run the Python checker, which needs its checkout beside the engine.",
+  "class": "conditional",
+  "needs": "python-package",
+  "reason": "the scenario runs both checkers; the Python checker package is a separate repository, so the scenario runs where its checkout sits beside the engine (or ACCEPTANCE_PYTHON_PACKAGE names it) and a Python 3.9 or newer interpreter exists",
   "scenario": "Both checkers flag a restricted node without an access link"
 }

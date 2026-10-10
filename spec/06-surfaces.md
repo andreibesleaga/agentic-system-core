@@ -37,11 +37,11 @@
   | `rel#peer` | another node's well-known URL | one per `peers[]` entry (AGSC-10-12) | no |
   | `rel#surface` | a surface | one per surface served (AGSC-11-16) | no |
   | `rel#contribute` | a contribution endpoint | one per `contribute[]` entry (AGSC-11-14) | no |
-  | `rel#access` | a credential page | the node is `restricted` and names one (AGSC-11-20) | no |
+  | `rel#access` | a credential page | the node is `restricted`: exactly one, to the page its `access` key names (AGSC-11-20) | no |
   | `rel#signature` | a detached signature | OPTIONAL, see above | no |
   | the relations of AGSC-06-35 | related systems | OPTIONAL | no |
 
-  `rel#…` abbreviates `https://w3id.org/agentic-system-core/rel#…`. A `restricted` node carries `digest` only on the `describedby` and `/llms.txt` links (AGSC-11-20). A node MAY serve a further file under its own route; a link to it is not an artefact link of this table and carries no `digest` requirement. A surface link (`rel#surface`) carries no file digest: the `chunks` surface's records each carry their own `digest` (AGSC-06-29). *(Amended 2026-10-10 for 1.0.0: "no other top-level member may be present" written as a prohibition with its key word, and the trace bracket moved from the middle of the rule to its end)* [PRD-024, RFC 9264, RFC 9530, RFC 9651]
+  `rel#…` abbreviates `https://w3id.org/agentic-system-core/rel#…`. A `restricted` node carries `digest` only on the `describedby` and `/llms.txt` links (AGSC-11-20). A node MAY serve a further file under its own route; a link to it is not an artefact link of this table and carries no `digest` requirement. A surface link (`rel#surface`) carries no file digest: the `chunks` surface's records each carry their own `digest` (AGSC-06-29). *(Amended 2026-10-10 for 1.0.0: "no other top-level member may be present" written as a prohibition with its key word, and the trace bracket moved from the middle of the rule to its end)* *(Amended 2026-10-10 for 1.0.0: the `rel#access` row said the link is present when a restricted node "names one", which read as optional against AGSC-11-20's "exactly one"; the row now says exactly one, to the page the configuration's `access` key names.)* [PRD-024, RFC 9264, RFC 9530, RFC 9651]
 
 Example — the document served at `/.well-known/knowledge-linkset`:
 

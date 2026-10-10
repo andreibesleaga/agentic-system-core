@@ -1,0 +1,103 @@
+{
+  "area": "build",
+  "description": "AGSC-07-19: /skills/index.json is one JSON object in JCS form followed by one LF, with exactly the members bundle_version (the content version of AGSC-04-25), license (bundle.license_prose, or the Content Use Terms identifier where none is set), packs (one entry per pack in code-point order of name), spec_version and terms (the Content Use Terms identifier, or the prose licence where the Bundle adopts another). A pack entry has exactly description, lock, members (the slugs of the cluster's published members, code-point order), name and path (the route of the pack's SKILL.md). Derivation over the minimal fixture with alder (draft) and birch (retired) added to the cluster agent-patterns, built with SOURCE_DATE_EPOCH 1767225600 and no git history, so the content version is 0.0.0+20260101T000000Z (AGSC-04-25 with no tag and no history). members is [handoff, supervisor]: a draft is not published, and a retired item leaves the skill packs (AGSC-00-05). In the first sub-case the Bundle adopts the Content Use Terms, so license and terms are both their identifier; in the second it adopts CC-BY-4.0 (configuration and root document), so both are CC-BY-4.0. The pack entry is compared without its lock, whose value is the subject of the next case. The members of index and pack_members are compared as sets, by name.",
+  "expected": {
+    "cases": [
+      {
+        "bundle_version": "0.0.0+20260101T000000Z",
+        "jcs_with_one_lf": true,
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "members": [
+          "bundle_version",
+          "license",
+          "packs",
+          "spec_version",
+          "terms"
+        ],
+        "name": "content-use-terms",
+        "pack_members": [
+          "description",
+          "lock",
+          "members",
+          "name",
+          "path"
+        ],
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "members": [
+              "handoff",
+              "supervisor"
+            ],
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          }
+        ],
+        "spec_version": "1.0.0-rc.7",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+      },
+      {
+        "bundle_version": "0.0.0+20260101T000000Z",
+        "jcs_with_one_lf": true,
+        "license": "CC-BY-4.0",
+        "members": [
+          "bundle_version",
+          "license",
+          "packs",
+          "spec_version",
+          "terms"
+        ],
+        "name": "another-licence",
+        "pack_members": [
+          "description",
+          "lock",
+          "members",
+          "name",
+          "path"
+        ],
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "members": [
+              "handoff",
+              "supervisor"
+            ],
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          }
+        ],
+        "spec_version": "1.0.0-rc.7",
+        "terms": "CC-BY-4.0"
+      }
+    ]
+  },
+  "id": "build-0025",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "add_files": {
+          "content/concepts/alder.md": "---\ntype: concept\ntitle: Alder\ndescription: A draft concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: draft\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Alder.\n",
+          "content/concepts/birch.md": "---\ntype: concept\ntitle: Birch\ndescription: A retired concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: retired\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Birch.\n"
+        },
+        "name": "content-use-terms"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"CC-BY-4.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n",
+          "content/concepts/alder.md": "---\ntype: concept\ntitle: Alder\ndescription: A draft concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: draft\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Alder.\n",
+          "content/concepts/birch.md": "---\ntype: concept\ntitle: Birch\ndescription: A retired concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: retired\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Birch.\n",
+          "content/index.md": "---\nspec_version: 1.0.0-rc.7\nokf_version: \"0.2\"\ntitle: Minimal Bundle\ndescription: The smallest Bundle that conforms to AgenticSystemCore, used by the engine's own tests as a fixture.\nbase: https://minimal.example/\nlang: en\nlicense: CC-BY-4.0\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Minimal Bundle\n\nTwo concepts and one cluster: enough to build, lint, compose and serve.\n"
+        },
+        "name": "another-licence"
+      }
+    ],
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-07-19"
+}

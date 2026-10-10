@@ -1,0 +1,29 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-01-21: `tags.allowed` is the closed tag vocabulary, and a tag outside it MUST be reported as AGSC-E203, which section 9.4 registers as an error. The minimal fixture's configuration allows `agents` and `patterns`, and its lint reports nothing. One concept is added that conforms in every key, is a member of the fixture's cluster and carries two tags, so the 2-5 count of the section 2.2 table (the warning AGSC-E213) is met: `agents`, which is allowed, and `unlisted`, which is not. The whole list `lint` reports is one AGSC-E203 error naming that file and item, and lint exits 1 (AGSC-09-08). The allowed tag beside it raises nothing.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E203",
+          "file": "content/concepts/off-list.md",
+          "severity": "error",
+          "slug": "off-list"
+        }
+      ]
+    }
+  },
+  "id": "lint-0038",
+  "input": {
+    "add_files": {
+      "content/concepts/off-list.md": "---\ntype: concept\ntitle: Off list\ndescription: A concept whose second tag is outside the closed vocabulary of the fixture.\ntags:\n  - agents\n  - unlisted\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-01-21"
+}

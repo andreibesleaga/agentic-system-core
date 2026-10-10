@@ -1,5 +1,29 @@
 {
-  "_": "Requirements of docs/PRD.md that no rule traces to and no test or vector names, each with a reason from the closed list of tools/requirements-matrix and a sentence saying why. An entry for a requirement that is in fact mapped is an error, so the list stays short.",
+  "_": "Requirements of docs/PRD.md that no rule traces to and no test or vector names (\"requirements\"), each with a reason from the closed list of tools/requirements-matrix and a sentence saying why; requirements that are mapped but met in part (\"partly\"), each with a reason and a sentence saying which part no rule or check stands behind; and requirements measured by a command (\"measured\"), each with its package.json script and the test that asserts it runs. An entry for a requirement that is in fact mapped is an error, so the lists stay short.",
+  "measured": {
+    "NFR-03": {
+      "asserted_by": "tests/standard/workflow.test.js",
+      "script": "test:coverage"
+    }
+  },
+  "partly": {
+    "PRD-009": {
+      "reason": "deferred",
+      "why": "AGSC-02-94 checks the four files init writes; the three example Concepts, the type folders and the forge workflow the row names are planned for 1.1, and ci passes only after the three steps init prints, as the note to PRD-009 in docs/PRD.md says"
+    },
+    "PRD-043": {
+      "reason": "host",
+      "why": "its one rule, AGSC-01-30, carries no check: running pull requests from forks lint-only and without secrets is done by the forge, and the cap of five open Proposals binds a channel adapter, which the reference distribution does not ship at 1.0 (planned for 1.1, as the note on the capabilities planned for 1.1 in docs/PRD.md says)"
+    },
+    "PRD-056": {
+      "reason": "deferred",
+      "why": "the channel rules, the channels[] keys and the channel-adapter plugin kind are specified and checked, and the ask half is the ask tool; no channel adapter, ingest option or reference stub ships at 1.0, and they are planned for 1.1, as the note to PRD-056 in docs/PRD.md says"
+    },
+    "PRD-063": {
+      "reason": "deferred",
+      "why": "the rules of the agent lane are checked and refresh --agent runs with --dry-run; a live run is made by an agent outside the engine, as a client of the local tool server or the page tools, and the model adapter for the agent lane is planned for 1.1, as the note to PRD-063 in docs/PRD.md says"
+    }
+  },
   "requirements": {
     "PRD-030": {
       "reason": "site",

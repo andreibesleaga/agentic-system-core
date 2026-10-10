@@ -285,3 +285,142 @@ test('the Node line after 24 is a leg of both lanes, and the floor stays the low
     assert.deepStrictEqual(nodes, ['22.13.0', '24', '26'], `${path.basename(file)}: Node lines`);
   }
 });
+
+// ------------------------------------------------------------------------------
+// The release lane's hardening, the weekly run, the browser lane and dependabot.
+// ------------------------------------------------------------------------------
+
+const DEPENDABOT = path.join(ROOT, '.github', 'dependabot.yml');
+
+/** The publish job of release.yml: the one job behind the `release` environment. */
+function publishJob() {
+  const jobs = Object.values(load(RELEASE).jobs).filter((job) => job.environment === 'release');
+  assert.strictEqual(jobs.length, 1, 'one job publishes, behind the release environment');
+  return jobs[0];
+}
+
+/** A shell `case` pattern of the forms `*-*` or `*`, as a regular expression. */
+function casePattern(glob) {
+  const body = glob.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/gu, '\\$&')).join('.*');
+  return new RegExp(`^${body}$`, 'u');
+}
+
+test('test.yml also runs once a week, so a quiet repository still meets a new advisory or runner image', () => {
+  const workflow = load(FILE);
+  assert.ok('push' in workflow.on && 'pull_request' in workflow.on, 'push and pull request stay');
+  const schedule = workflow.on.schedule;
+  assert.ok(Array.isArray(schedule) && schedule.length === 1, 'one schedule entry');
+  const fields = String(schedule[0].cron).trim().split(/\s+/u);
+  assert.strictEqual(fields.length, 5, `cron "${schedule[0].cron}" has five fields`);
+  const [minute, hour, dom, month, dow] = fields;
+  assert.match(minute, /^[0-5]?\d$/u, 'a fixed minute');
+  assert.match(hour, /^(1?\d|2[0-3])$/u, 'a fixed hour');
+  assert.deepStrictEqual([dom, month], ['*', '*'], 'every month, any day of the month');
+  assert.match(dow, /^[0-6]$/u, 'one fixed day of the week: weekly, not daily');
+});
+
+test('a browser job runs the browser lane on Ubuntu with pinned, checksummed downloads; it is not a required context', () => {
+  const workflow = load(FILE);
+  const entries = Object.entries(workflow.jobs).filter(([, job]) => JSON.stringify(job.steps || []).includes('AGSC_BROWSER'));
+  assert.strictEqual(entries.length, 1, 'one job runs the browser lane');
+  const [id, job] = entries[0];
+  assert.strictEqual(job['runs-on'], 'ubuntu-latest');
+  for (const context of contexts(id, job)) {
+    assert.ok(!REQUIRED_CONTEXTS.includes(context), `${context} must not be a required context`);
+  }
+  for (const step of job.steps.filter((s) => s.uses)) {
+    assert.match(step.uses, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/u, `${step.uses} is not pinned to a commit`);
+  }
+  const script = job.steps.map((s) => s.run || '').join('\n');
+  // Both downloads name an exact version and are refused unless their SHA-256 matches.
+  const fetched = [...script.matchAll(/curl [^\n]*"(https:\/\/[^"]+)"/gu)].map((m) => m[1]);
+  const playwright = fetched.find((u) => /\/playwright-core\/-\/playwright-core-\d+\.\d+\.\d+\.tgz$/u.test(u));
+  const shell = fetched.find((u) => /\/chrome-for-testing-public\/\d+\.\d+\.\d+\.\d+\/linux64\/chrome-headless-shell-linux64\.zip$/u.test(u));
+  assert.ok(playwright, 'playwright-core is fetched by exact version from the registry');
+  assert.ok(shell, 'chrome-headless-shell is fetched by exact version from Chrome for Testing');
+  const sums = [...script.matchAll(/echo "([0-9a-f]{64}) {2}[^"]+" \| sha256sum -c -/gu)];
+  assert.strictEqual(sums.length, 2, 'each download is checked against a recorded SHA-256 before use');
+  assert.ok(!/npm (i|install)\b[^\n]*playwright/u.test(script), 'playwright-core is never resolved by npm at run time');
+  assert.ok(!/npx playwright install/u.test(script), 'no browser is fetched by an unpinned installer');
+  // The lane's switches, on every step that runs a test.
+  const testing = job.steps.filter((s) => /node --test/u.test(s.run || ''));
+  assert.ok(testing.length >= 1);
+  for (const step of testing) {
+    assert.strictEqual(String((step.env || {}).AGSC_BROWSER), '1');
+    assert.match(String((step.env || {}).CHROME_EXE), /chrome-headless-shell$/u);
+    assert.match(String((step.env || {}).NODE_PATH), /node_modules$/u);
+  }
+  // Every test file that reads AGSC_BROWSER is run, and none of them may skip:
+  // a lane whose browser silently failed to start would otherwise pass by skipping.
+  const walkTests = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const at = path.join(dir, e.name);
+    if (e.isDirectory()) return walkTests(at);
+    return e.name.endsWith('.test.js') ? [path.relative(ROOT, at).split(path.sep).join('/')] : [];
+  });
+  const browserFiles = walkTests(path.join(ROOT, 'tests'))
+    .filter((f) => fs.readFileSync(path.join(ROOT, f), 'utf8').includes(['process', 'env', 'AGSC_BROWSER'].join('.')));
+  assert.ok(browserFiles.length >= 3, `browser test files found: ${browserFiles.join(', ')}`);
+  for (const file of browserFiles) assert.ok(script.includes(file), `${file} is not run by the browser job`);
+  assert.match(script, /grep -qx '# skipped 0' /u, 'the browser files must skip nothing (the TAP summary line)');
+  // The acceptance scenarios that need a browser run there too.
+  assert.match(script, /node --test [^\n]*tests\/acceptance\/features\.test\.js/u);
+});
+
+test('the release lane publishes a pre-release under the dist-tag next and a final release under latest', () => {
+  const job = publishJob();
+  const setting = job.steps.filter((s) => /DIST_TAG=/u.test(s.run || ''));
+  assert.strictEqual(setting.length, 1, 'one step chooses the dist-tag');
+  const run = String(setting[0].run);
+  assert.match(run, /case "\$\{version%%\+\*\}" in/u, 'the choice reads the version without build metadata');
+  const arms = [...run.matchAll(/^\s*([^\s)]+)\)\s*dist_tag=(\w+)\s*;;/gmu)].map((m) => [casePattern(m[1]), m[2]]);
+  assert.ok(arms.length >= 2, 'a pre-release arm and a final-release arm');
+  assert.match(run, /echo "DIST_TAG=\$dist_tag" >> "\$GITHUB_ENV"/u);
+  const choose = (version) => (arms.find(([re]) => re.test(version.split('+')[0])) || [null, null])[1];
+  for (const v of ['1.0.0', '1.0.1', '1.1.0', '2.0.0', '1.0.0+build.5']) assert.strictEqual(choose(v), 'latest', v);
+  for (const v of ['1.0.0-rc.7', '1.1.0-rc.1', '2.0.0-beta.2', '1.1.0-alpha.1+b-2']) assert.strictEqual(choose(v), 'next', v);
+  // Both publishes use the chosen tag, and the step that chooses it runs before them.
+  const publishes = job.steps.filter((s) => /npm publish/u.test(s.run || ''));
+  assert.strictEqual(publishes.length, 2);
+  for (const step of publishes) {
+    assert.match(String(step.run), /npm publish --provenance --access public --tag "\$\{DIST_TAG\}" /u);
+    assert.ok(!/--tag latest/u.test(String(step.run)), 'no fixed dist-tag');
+    assert.ok(job.steps.indexOf(setting[0]) < job.steps.indexOf(step));
+  }
+});
+
+test('the release lane publishes only a tag whose commit is on main', () => {
+  const job = publishJob();
+  const checkout = job.steps.find((s) => /^actions\/checkout@/u.test(s.uses || ''));
+  assert.strictEqual(Number(checkout.with['fetch-depth']), 0, 'the whole history, so ancestry can be read');
+  const all = job.steps.map((s) => s.run || '').join('\n');
+  assert.ok(!/git fetch[^\n]*--depth/u.test(all), 'no fetch cuts the history again');
+  const checks = job.steps.filter((s) => /merge-base --is-ancestor/u.test(s.run || ''));
+  assert.strictEqual(checks.length, 1, 'one ancestry check');
+  const [step] = checks;
+  assert.strictEqual(step.if, undefined, 'on a tag push and on a manual run alike');
+  const run = String(step.run);
+  assert.match(run, /git fetch --no-tags origin "\+refs\/heads\/main:refs\/remotes\/origin\/main" "\+refs\/tags\/v\$VERSION:refs\/tags\/v\$VERSION"/u,
+    'main and the tag are fetched first');
+  // The tag's own commit, never $GITHUB_SHA: on a manual run that is the head of main.
+  assert.match(run, /commit="\$\(git rev-parse "v\$VERSION\^\{commit\}"\)"/u);
+  assert.match(run, /git merge-base --is-ancestor "\$commit" origin\/main \|\|/u);
+  assert.ok(!/GITHUB_SHA/u.test(run));
+  const firstPack = job.steps.findIndex((s) => /npm pack|npm publish/u.test(s.run || ''));
+  const version = job.steps.findIndex((s) => /echo "VERSION=/u.test(s.run || ''));
+  assert.ok(version >= 0 && version < job.steps.indexOf(step), 'VERSION is known before the check');
+  assert.ok(job.steps.indexOf(step) < firstPack, 'the check runs before anything is packed or published');
+});
+
+test('dependabot proposes monthly, grouped updates of the pinned actions and the npm dependencies', () => {
+  const config = load(DEPENDABOT);
+  assert.strictEqual(config.version, 2);
+  const byEcosystem = Object.fromEntries(config.updates.map((u) => [u['package-ecosystem'], u]));
+  assert.deepStrictEqual(Object.keys(byEcosystem).sort(), ['github-actions', 'npm']);
+  for (const [name, update] of Object.entries(byEcosystem)) {
+    assert.strictEqual(update.directory, '/', `${name}: the repository root`);
+    assert.strictEqual(update.schedule.interval, 'monthly', `${name}: monthly`);
+    const groups = Object.values(update.groups || {});
+    assert.strictEqual(groups.length, 1, `${name}: one group, so one pull request a month`);
+    assert.deepStrictEqual(groups[0].patterns, ['*'], `${name}: the group takes every update`);
+  }
+});

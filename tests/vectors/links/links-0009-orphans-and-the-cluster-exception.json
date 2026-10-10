@@ -1,0 +1,87 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-10: an item with no inbound Link and no `clusters[]` entry MUST be reported as an orphan, the warning AGSC-E305. A `clusters[]` entry is an inbound reference to the cluster it names, so a cluster that one item lists is never an orphan (kept, listed by member). An inbound Link is any Link edge whose target is the item, authored or computed: linker authors `related` to linked and receives the computed symmetric edge, and user authors `uses` to used and receives the computed `used-by`, so none of those four is an orphan. An inline link is an `asc:mentions` edge and not a Link (AGSC-03-11), so mentioner, whose body links to target, gives target no inbound Link. The orphans are empty (a cluster no item lists), lonely, mentioner and target: four warnings, in slug order. Nothing is an error.",
+  "expected": {
+    "errors": [],
+    "warnings": [
+      {
+        "code": "AGSC-E305",
+        "slug": "empty"
+      },
+      {
+        "code": "AGSC-E305",
+        "slug": "lonely"
+      },
+      {
+        "code": "AGSC-E305",
+        "slug": "mentioner"
+      },
+      {
+        "code": "AGSC-E305",
+        "slug": "target"
+      }
+    ]
+  },
+  "id": "links-0009",
+  "input": {
+    "items": [
+      {
+        "description": "A cluster that one item lists, so it has an inbound reference.",
+        "slug": "kept",
+        "type": "cluster"
+      },
+      {
+        "description": "A cluster that no item lists and no Link names.",
+        "slug": "empty",
+        "type": "cluster"
+      },
+      {
+        "clusters": [
+          "kept"
+        ],
+        "slug": "member",
+        "type": "concept"
+      },
+      {
+        "related": [
+          "linked"
+        ],
+        "slug": "linker",
+        "type": "concept"
+      },
+      {
+        "slug": "linked",
+        "type": "concept"
+      },
+      {
+        "slug": "user",
+        "type": "concept",
+        "uses": [
+          "used"
+        ]
+      },
+      {
+        "slug": "used",
+        "type": "concept"
+      },
+      {
+        "body": "See [the target](target) for more.",
+        "slug": "mentioner",
+        "type": "concept"
+      },
+      {
+        "slug": "target",
+        "type": "concept"
+      },
+      {
+        "slug": "lonely",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-03-10"
+}

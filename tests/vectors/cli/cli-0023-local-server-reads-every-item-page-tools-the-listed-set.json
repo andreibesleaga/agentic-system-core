@@ -1,0 +1,209 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-13: the local tool server answers from the Bundle it is started in, as it is on disk: draft, retired and release-gated items included; it is the author's own tool, not a published surface, and a page tool sees only the listed set of AGSC-09-16. Derivation over the minimal fixture with three items added to the cluster agent-patterns: alder (draft), birch (retired) and cedar (release: autumn, with releases {\"autumn\": false}). Over standard input (stdio entries, by the id of each tools/call frame) read answers the item envelope for handoff, alder, birch and cedar, and the error envelope AGSC-E301 only for a slug that does not exist. The page tools of the site the same Bundle builds (page entries, one per call) answer handoff and the error envelope AGSC-E301 for alder, birch and cedar, as for a slug that does not exist. The resources the server lists (responses, compared as a subset, a list element by element) are the published items: birch is among them because a retired item keeps its resource (AGSC-00-05, AGSC-09-14b), and alder and cedar are not; sorted by code point, birch falls between agent-patterns and graph.jsonld.",
+  "expected": {
+    "page": [
+      {
+        "slug": "handoff",
+        "status": "ok"
+      },
+      {
+        "error": "AGSC-E301",
+        "slug": "alder",
+        "status": "error"
+      },
+      {
+        "error": "AGSC-E301",
+        "slug": "birch",
+        "status": "error"
+      },
+      {
+        "error": "AGSC-E301",
+        "slug": "cedar",
+        "status": "error"
+      },
+      {
+        "error": "AGSC-E301",
+        "slug": "no-such-item",
+        "status": "error"
+      }
+    ],
+    "responses": [
+      {
+        "id": 2,
+        "result": {
+          "resources": [
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/agent-patterns"
+            },
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/birch"
+            },
+            {
+              "mimeType": "application/ld+json",
+              "uri": "memory://minimal/graph.jsonld"
+            },
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/handoff"
+            },
+            {
+              "mimeType": "text/plain",
+              "uri": "memory://minimal/llms.txt"
+            },
+            {
+              "mimeType": "text/markdown",
+              "uri": "memory://minimal/supervisor"
+            }
+          ]
+        }
+      }
+    ],
+    "stdio": [
+      {
+        "id": 3,
+        "slug": "handoff",
+        "status": "ok"
+      },
+      {
+        "id": 4,
+        "slug": "alder",
+        "status": "ok"
+      },
+      {
+        "id": 5,
+        "slug": "birch",
+        "status": "ok"
+      },
+      {
+        "id": 6,
+        "slug": "cedar",
+        "status": "ok"
+      },
+      {
+        "error": "AGSC-E301",
+        "id": 7,
+        "slug": "no-such-item",
+        "status": "error"
+      }
+    ]
+  },
+  "id": "cli-0023",
+  "input": {
+    "add_files": {
+      "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  },\n  \"releases\": {\n    \"autumn\": false\n  }\n}\n",
+      "content/concepts/alder.md": "---\ntype: concept\ntitle: Alder\ndescription: A draft concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: draft\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Alder.\n",
+      "content/concepts/birch.md": "---\ntype: concept\ntitle: Birch\ndescription: A retired concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: retired\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Birch.\n",
+      "content/concepts/cedar.md": "---\ntype: concept\ntitle: Cedar\ndescription: A concept held back by the release switchboard, added by a conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nrelease: autumn\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Cedar.\n"
+    },
+    "bundle": "fixtures/minimal",
+    "calls": [
+      {
+        "slug": "handoff",
+        "tool": "read"
+      },
+      {
+        "slug": "alder",
+        "tool": "read"
+      },
+      {
+        "slug": "birch",
+        "tool": "read"
+      },
+      {
+        "slug": "cedar",
+        "tool": "read"
+      },
+      {
+        "slug": "no-such-item",
+        "tool": "read"
+      }
+    ],
+    "frames": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "params": {
+          "capabilities": {},
+          "clientInfo": {
+            "name": "conformance",
+            "version": "0"
+          },
+          "protocolVersion": "2025-11-25"
+        }
+      },
+      {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "method": "resources/list"
+      },
+      {
+        "id": 3,
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "arguments": {
+            "slug": "handoff"
+          },
+          "name": "read"
+        }
+      },
+      {
+        "id": 4,
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "arguments": {
+            "slug": "alder"
+          },
+          "name": "read"
+        }
+      },
+      {
+        "id": 5,
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "arguments": {
+            "slug": "birch"
+          },
+          "name": "read"
+        }
+      },
+      {
+        "id": 6,
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "arguments": {
+            "slug": "cedar"
+          },
+          "name": "read"
+        }
+      },
+      {
+        "id": 7,
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "arguments": {
+            "slug": "no-such-item"
+          },
+          "name": "read"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-09-13"
+}

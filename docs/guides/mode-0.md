@@ -70,7 +70,17 @@ What `init` did, so nothing surprises you later:
   and a `.env.example`;
 - it took the accountable person's id from your git e-mail (the part before `@`). With no
   git e-mail it writes `human:unknown`; change `bundle.operator` in `agsc.config.json`
-  and `operator:` in each note to `human:<your-id>` if you want a real name there.
+  and `operator:` in each note to `human:<your-id>` if you want a real name there;
+- it **left out** any note that already begins with a header (a first line `---` closed
+  by a later `---`), even one with no `type:` line: such a note stays where it is,
+  unchanged, and is not published. `init` names each one:
+
+```text
+left as is: handoff.md already has a frontmatter block, so init neither changes nor moves it (AGSC-02-91); it is not an item until it has a type and lives under content/<type-plural>/ (AGSC-01-02)
+```
+
+To publish such a note, delete its header (keep the text) and run `agsc init` again: it
+adopts the note like the others and leaves the rest as they are.
 
 ## 2. Add a security contact, commit once, check
 
@@ -210,7 +220,8 @@ verify: pass (0 error, 0 warn)
 The `node -e` line only sets `site.base`; editing the file by hand does the same. The new
 warning asks for a `PRIVACY.md` beside `LICENSE-CONTENT`, which `/legal/` then shows.
 Upload `www/` to any host that serves files over HTTPS; `agsc-host list` names the
-profiles the engine can write host settings for.
+profiles the engine can write host settings for, and the [publishing guide](publish.md)
+takes the node from here to a live address and checks it there.
 
 ## When it says no
 
@@ -218,12 +229,16 @@ profiles the engine can write host settings for.
 |---|---|---|
 | `error: AGSC-E901 no .well-known/security.txt in the Bundle root …` | no security contact | step 2 |
 | `error: AGSC-E204 the build instant defaulted to 1970-01-01T00:00:00Z …` | no commit and no `SOURCE_DATE_EPOCH` | commit once, or `export SOURCE_DATE_EPOCH=$(date +%s)` |
-| `error: AGSC-E004 environment variable AGSC_… is not a configuration name this engine knows; unset it (AGSC-01-37)` | a shell variable whose name starts with `AGSC_` that the engine does not know; nothing is written until it is gone | `unset` it (when the message names the `.env` file instead, remove that line) |
+| `error: AGSC-E004 environment variable AGSC_… is not a configuration name this engine knows; unset it (AGSC-01-37)` | a shell variable whose name starts with `AGSC_` that the engine does not know; nothing is written until it is gone | `unset` it (`env` lists the variables; when the message names the `.env` file instead, remove that line) |
 | `error: AGSC-E310 …` and `build` writes nothing | a link to a note that does not exist | fix the link at the file and line named |
 | `agsc: command not found` | the `export PATH=…` line was not run in this shell | run the two `export` lines again from the working folder |
 
+Every other code the guides and the demos print is on the [troubleshooting](troubleshooting.md)
+page, with its cause and what to do.
+
 ## What next
 
+- Put the site online and check it live: [Publish](publish.md).
 - Let an assistant read and cite these notes: [Mode 1](mode-1.md).
 - Check every push on GitHub: the action in the root [README](../../README.md#connecting-agents-and-repositories).
 - The same mode on a ready-made folder, with more cases (stale notes, a broken link):

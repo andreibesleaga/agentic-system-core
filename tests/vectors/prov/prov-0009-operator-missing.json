@@ -1,0 +1,29 @@
+{
+  "area": "prov",
+  "description": "Derived from AGSC-08-01: every item MUST carry `prov{origin, operator}`, and a missing `operator` is AGSC-E503, an error; a missing `prov` would be AGSC-E501 instead (`fm-0004`). One concept is added to the minimal fixture whose `prov` names its origin and no operator; every other key conforms and it is a member of the fixture's cluster. The whole list `lint` reports is one AGSC-E503 error naming that file and item, and lint exits 1.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E503",
+          "file": "content/concepts/no-operator.md",
+          "severity": "error",
+          "slug": "no-operator"
+        }
+      ]
+    }
+  },
+  "id": "prov-0009",
+  "input": {
+    "add_files": {
+      "content/concepts/no-operator.md": "---\ntype: concept\ntitle: No operator\ndescription: A concept whose provenance names its origin and leaves out the operator.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\nkind: principle\n---\n\nA principle.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-08-01"
+}

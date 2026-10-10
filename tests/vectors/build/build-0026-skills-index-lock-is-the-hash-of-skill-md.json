@@ -1,0 +1,23 @@
+{
+  "area": "build",
+  "description": "AGSC-07-20: each pack is accompanied by a SHA-256 lockfile carried as the lock member of its entry in /skills/index.json, AGSC-06-01 emitting no other route for one. The lock member is {\"SKILL.md\": <hex>}, the lowercase-hex SHA-256 of the pack's SKILL.md bytes. Derivation over the minimal fixture, built with SOURCE_DATE_EPOCH set and no git history: one pack, agent-patterns; its lock has exactly the one member SKILL.md (lock_members), and that value is 64 lowercase hexadecimal digits equal to the SHA-256 of the bytes the build serves at the entry's path (lock_is_sha256_of_skill_md). No route other than the index carries a lock: no emitted route ends in .lock or names a lockfile (no_lock_route). The bytes of SKILL.md are an implementation's, so the case pins the relation between the two files and not either digest.",
+  "expected": {
+    "lock_is_sha256_of_skill_md": true,
+    "lock_members": [
+      "SKILL.md"
+    ],
+    "no_lock_route": true,
+    "packs_count": 1
+  },
+  "id": "build-0026",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-07-20"
+}

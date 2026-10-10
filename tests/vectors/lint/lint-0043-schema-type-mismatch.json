@@ -1,0 +1,29 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-00-09 and the precedence paragraph of section 9.4: a reader validates every item against schema/item.schema.json, and a schema failure that no more specific registered code names is AGSC-E201, an error. AGSC-02-03 reads every scalar as a string and applies the schema's types, and the schema types `tags` as an array of strings. One concept is added to the minimal fixture whose `tags` is the plain scalar `agents`; every other key conforms. A type mismatch is not an enum, pattern, length, required-key or cluster-parent failure, so none of AGSC-E202, AGSC-E203, AGSC-E204 or AGSC-E308 names it. The whole list `lint` reports is one AGSC-E201 error naming that file and item, and lint exits 1. The tag count warning AGSC-E213 is not reported, because there is no list to count.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E201",
+          "file": "content/concepts/scalar-tags.md",
+          "severity": "error",
+          "slug": "scalar-tags"
+        }
+      ]
+    }
+  },
+  "id": "lint-0043",
+  "input": {
+    "add_files": {
+      "content/concepts/scalar-tags.md": "---\ntype: concept\ntitle: Scalar tags\ndescription: A concept whose tags key holds one string where the schema asks for a list of strings.\ntags: agents\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-00-09"
+}

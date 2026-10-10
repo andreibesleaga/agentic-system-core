@@ -1,0 +1,69 @@
+{
+  "area": "build",
+  "description": "AGSC-06-01: a writer MUST emit exactly the route set the rule lists, with the conditional routes only under their conditions. Derivation, by hand from the rule, over the minimal fixture (two concepts, handoff and supervisor; one cluster, agent-patterns; the tags agents and patterns; an authored .well-known/security.txt with a Contact field; no LICENSE-CONTENT, no authored /about/, no task item, no asset) built with SOURCE_DATE_EPOCH set and no git history, for the Cloudflare Pages deployment profile: the home page, the five type indexes, the two concept pages, the cluster index and page, the two tag pages, /search/ with /search.json, /now/ and /now.md, /compose/, /skills/ with its index and the one pack, the two context routes of /ns/ (the second named by the vocabulary version 1.0.0), the three graph exports, the six per-item copies, /llms.txt and /llms-full.txt, /sitemap.xml, /robots.txt, /.well-known/tdmrep.json, /chunks.jsonl, the discovery document, /.well-known/security.txt, /404.html, _headers and _redirects: 42 routes. Absent by their conditions: /legal/, /about/, /changelog/ and /ledger.jsonl (no git-log file), /boards/**, /conformance/, the agent card, the VoID description, /assets/<path>, /specs/**, shards and index pages and /graph/fragments/**. A route ending in / is served as its index.html. The route set does not bound the same-origin presentation and script files a page of the set loads: the three the specification names (page_assets_required) are emitted, and every other emitted file is a .js or .css file that some emitted page loads by a script src or a stylesheet link (other_files_are_page_assets).",
+  "expected": {
+    "no_error_finding": true,
+    "other_files_are_page_assets": true,
+    "page_assets_required": [
+      "/assets/site.css",
+      "/assets/theme.js",
+      "/search/agsc-search.js"
+    ],
+    "routes": [
+      "/",
+      "/.well-known/knowledge-linkset",
+      "/.well-known/security.txt",
+      "/.well-known/tdmrep.json",
+      "/404.html",
+      "/_headers",
+      "/_redirects",
+      "/chunks.jsonl",
+      "/clusters/",
+      "/clusters/agent-patterns/",
+      "/compose/",
+      "/concepts/",
+      "/concepts/handoff/",
+      "/concepts/supervisor/",
+      "/episodes/",
+      "/gates/",
+      "/graph.jsonld",
+      "/graph.nq",
+      "/graph.ttl",
+      "/lessons/",
+      "/llms-full.txt",
+      "/llms.txt",
+      "/now.md",
+      "/now/",
+      "/ns/1.0.0/context.jsonld",
+      "/ns/context.jsonld",
+      "/pages/agent-patterns.jsonld",
+      "/pages/agent-patterns.md",
+      "/pages/handoff.jsonld",
+      "/pages/handoff.md",
+      "/pages/supervisor.jsonld",
+      "/pages/supervisor.md",
+      "/procedures/",
+      "/robots.txt",
+      "/search.json",
+      "/search/",
+      "/sitemap.xml",
+      "/skills/",
+      "/skills/agent-patterns/SKILL.md",
+      "/skills/index.json",
+      "/tags/agents/",
+      "/tags/patterns/"
+    ]
+  },
+  "id": "build-0024",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "deployment_profile": "cloudflare-pages",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-06-01"
+}

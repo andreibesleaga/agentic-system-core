@@ -5,10 +5,12 @@
 scratch copy with the fixed build instant the page names, and checks that every line
 of the `text expect` block after it was printed. A demo the page cannot run — one
 that needs a browser, a forge or a model key — has no runnable block.
-`guides.test.js` does the same for the six mode guides of
-[docs/guides/](../../docs/guides/README.md): each guide runs from top to bottom as one
-walk-through, with no build instant set (the guides commit, as a reader does; the git
-dates are fixed). Both use `_page-runner.js`; with `DOCS_ENGINE_PACKAGE` pointing at an
+`guides.test.js` does the same for the seven guides of
+[docs/guides/](../../docs/guides/README.md), the six mode guides and the publishing
+guide: each guide runs from top to bottom as one walk-through, with no build instant set
+(the guides commit, as a reader does; the git dates are fixed). Both check that every
+code a demo or a guide prints has a row on the reference page
+`docs/guides/troubleshooting.md`. Both use `_page-runner.js`; with `DOCS_ENGINE_PACKAGE` pointing at an
 installed copy of the packed package, they check the pages against the package as it
 will be published. `agent-skill.test.js` keeps the agent skill in
 `skills/agentic-system-core/` well-formed, its verbs real, and the plugin's copy equal

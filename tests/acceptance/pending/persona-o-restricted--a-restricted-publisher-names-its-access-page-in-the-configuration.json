@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "RS-a",
-  "reason": "AGSC-11-20 asks a restricted node for exactly one access link, but the configuration schema refuses a top-level access key (AGSC-E004 at lint, exit 2), and lint does not report a restricted node that names no access page.",
-  "scenario": "A restricted publisher names its access page in the configuration"
-}

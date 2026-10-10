@@ -1,0 +1,37 @@
+{
+  "area": "prov",
+  "description": "Derived from AGSC-08-12: `ci` compiles the `codeowner` value of a gate's `enforce[]` into dist/forge/CODEOWNERS, and where a file the repository holds at the forge's own path differs from the compiled one, `ci` MUST report the difference as AGSC-E707, an error, and MUST NOT overwrite it. One L1 gate enforcing `codeowner` is added to the minimal fixture, with a .github/CODEOWNERS that names another owner than the fixture's operator. `ci --json` reports exactly one finding, AGSC-E707 naming .github/CODEOWNERS, and exits 1; the held file keeps its bytes; and the compiled file is written under dist/forge/. The bytes of the compiled CODEOWNERS are an implementation's choice (AGSC-08-12), so they are not asserted; nor is the compiled file compared with any earlier run.",
+  "expected": {
+    "exit": 1,
+    "files_present": [
+      "dist/forge/CODEOWNERS"
+    ],
+    "files_unchanged": [
+      ".github/CODEOWNERS"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E707",
+        "file": ".github/CODEOWNERS",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "prov-0012",
+  "input": {
+    "add_files": {
+      ".github/CODEOWNERS": "* @another-owner\n",
+      "content/gates/owners.md": "---\ntype: gate\ntitle: Owners gate\ndescription: A gate whose only enforcement is a code-owner file, held here for the forge case.\nlevel: L1\nenforce: [codeowner]\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\nEvery change is reviewed by an owner.\n"
+    },
+    "argv": [
+      "ci",
+      "--json"
+    ],
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-08-12"
+}

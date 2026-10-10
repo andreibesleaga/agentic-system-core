@@ -116,7 +116,10 @@ function run(demo, scratch, epoch) {
   return { outputs: parts.map((p) => p.split('\n').map((l) => l.replace(/\s+$/u, ''))), status: r.status, stdout: r.stdout };
 }
 
-/** Run one demo in a fresh scratch directory and assert every expected line was printed. */
+/**
+ * Run one demo in a fresh scratch directory and assert every expected line was printed.
+ * Returns what each step printed, line by line.
+ */
 function check(demo, { epoch, prefix }) {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   try {
@@ -131,6 +134,7 @@ function check(demo, { epoch, prefix }) {
         assert.ok(outputs[i].includes(line), `step ${i + 1} of "${demo.heading}" did not print the line\n  ${line}\nit printed:\n${outputs[i].join('\n')}`);
       }
     });
+    return outputs;
   } finally {
     fs.rmSync(scratch, { force: true, recursive: true });
     fs.rmSync(trapOf(scratch), { force: true });

@@ -18,6 +18,7 @@ const contentVersion = require('../../../src/knowledge/content-version.js');
 const { createClock } = require('../../../src/adapters/node-clock.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
+const surfaces = require('./_build-surfaces.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -383,6 +384,8 @@ const HANDLERS = {
   'build-0017': reproducibleAssetsCase,
   'build-0018': servedHeadersCase,
   'build-0019': shardedSearchCase,
+  // The cases over the files a whole build writes (_build-surfaces.js).
+  ...surfaces.HANDLERS,
   // The search-tokenizer cases (AGSC-06-16/06-23).
   'build-0001': searchCase,
   'build-0002': searchCase,

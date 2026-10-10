@@ -1,0 +1,54 @@
+{
+  "area": "build",
+  "description": "AGSC-01-20: an item carrying release: <key> is published only when releases[<key>] is true. Derivation over the minimal fixture with releases {\"autumn\": false, \"spring\": true} in the configuration and two items in the cluster agent-patterns: cedar (release: autumn) and dogwood (release: spring). Held back, cedar is on no surface at all: no emitted file has a route or bytes that contain the string cedar (in_no_file), so it has no page, no per-item copy, no graph entry, no search, llms or chunk entry, no skill-pack member and no place on an index page or in the sitemap. Released, dogwood is published like any item: its page and per-item copies are emitted and the listing surfaces name it. The build is run with SOURCE_DATE_EPOCH set and no git history.",
+  "expected": {
+    "carried_by": {
+      "/chunks.jsonl": [
+        "dogwood"
+      ],
+      "/concepts/": [
+        "dogwood"
+      ],
+      "/graph.nq": [
+        "dogwood"
+      ],
+      "/llms.txt": [
+        "dogwood"
+      ],
+      "/search.json": [
+        "dogwood"
+      ],
+      "/sitemap.xml": [
+        "dogwood"
+      ],
+      "/skills/index.json": [
+        "dogwood"
+      ]
+    },
+    "in_no_file": [
+      "cedar"
+    ],
+    "no_error_finding": true,
+    "routes_present": [
+      "/concepts/dogwood/",
+      "/pages/dogwood.jsonld",
+      "/pages/dogwood.md"
+    ]
+  },
+  "id": "build-0022",
+  "input": {
+    "add_files": {
+      "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  },\n  \"releases\": {\n    \"autumn\": false,\n    \"spring\": true\n  }\n}\n",
+      "content/concepts/cedar.md": "---\ntype: concept\ntitle: Cedar\ndescription: A concept held back by the release switchboard, added by a conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nrelease: autumn\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Cedar.\n",
+      "content/concepts/dogwood.md": "---\ntype: concept\ntitle: Dogwood\ndescription: A concept released by the release switchboard, added by a conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nrelease: spring\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Dogwood.\n"
+    },
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-01-20"
+}

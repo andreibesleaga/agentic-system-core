@@ -34,6 +34,17 @@
 // engine does not implement yet, never counted as verified, listed and not
 // failing the run; UNVERIFIED otherwise. Retired (reserved) ids are excluded.
 //
+// An informational tier, which gates nothing: a VERIFIED rule is verified END TO
+// END when a live conformance vector, an executed acceptance scenario, a step
+// file of the acceptance runner (its `// verifies` marker) or a test under
+// tests/e2e/ (a walk through the command line or a built node) names it;
+// otherwise its evidence is unit, integration, architecture or checker-header
+// evidence only. The matrix lists the rules of that second kind whose text — the
+// rule's block from its bullet to the next bullet or heading, dated notes left
+// out — carries a requirement keyword of BCP 14 (MUST, MUST NOT, REQUIRED, SHALL)
+// and names a code (`AGSC-Ennn`), so a reader sees which coded MUSTs no case or
+// walk pins yet.
+//
 // Findings (each exits 1): an UNVERIFIED rule (AGSC-E202); an allow-list entry
 // that names an unknown or retired rule, or a marker that does (AGSC-E301); an
 // allow-list reason outside the closed list or without a sentence (AGSC-E203); an
@@ -61,6 +72,13 @@ const ALLOW = 'tests/rule-coverage.allow.json';
 const PENDING = 'tests/acceptance/pending';
 const PROBES = 'tests/acceptance/steps';
 const RULE = /AGSC-\d{2}-\d{2,3}[a-z]?/g;
+const RULE_BULLET = /^- \*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*/u;
+const CODE = /AGSC-E\d{3}/g;
+const MUST = /\b(?:MUST|REQUIRED|SHALL)\b/u;
+/** A dated note `*( … )*`, one level of parentheses inside. */
+const NOTE = /\*\((?:[^()]|\([^()]*\))*\)\*/gu;
+/** The test folders whose files run the whole engine: the walks, and the acceptance runner's steps. */
+const E2E = ['tests/e2e/', 'tests/acceptance/steps/'];
 
 /** The closed reasons a rule may be prose-only for; each is explained in the matrix. */
 const REASONS = Object.freeze({
@@ -117,19 +135,50 @@ function walk(root, dir, keep) {
   return out.sort(byCodePoint);
 }
 
-/** Active and retired rule ids of spec/*.md. */
+/**
+ * The text of each rule block: from its `- **AGSC-nn-nn**` bullet to the next
+ * bullet of a rule or the next heading (the reading of tools/requirements-matrix).
+ * @param {string} text
+ * @returns {Map<string, string>}
+ */
+function ruleBlocks(text) {
+  const blocks = new Map();
+  let current = null;
+  for (const line of text.split('\n')) {
+    const bullet = RULE_BULLET.exec(line);
+    if (bullet) {
+      current = [line];
+      if (!blocks.has(bullet[1])) blocks.set(bullet[1], current);
+    } else if (/^#{1,6} /u.test(line)) {
+      current = null;
+    } else if (current) {
+      current.push(line);
+    }
+  }
+  return new Map([...blocks].map(([id, lines]) => [id, lines.join('\n')]));
+}
+
+/** What the text of a rule requires: a BCP 14 requirement keyword, and the codes it names. */
+function ruleDemands(block) {
+  const text = (block || '').replace(NOTE, '');
+  return { codes: [...new Set(text.match(CODE) || [])].sort(byCodePoint), must: MUST.test(text) };
+}
+
+/** Active and retired rule ids of spec/*.md, and the text of each rule block. */
 function readRules(root, read) {
   const files = fs.readdirSync(path.join(root, 'spec')).filter((f) => f.endsWith('.md')).sort(byCodePoint);
   const active = [];
   const retired = new Set();
+  const blocks = new Map();
   for (const f of files) {
     const text = read(`spec/${f}`);
     for (const m of text.matchAll(/\*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*( \*\((?:retired at rc|reserved:))?/g)) {
       if (m[2]) retired.add(m[1]);
       else if (!active.includes(m[1])) active.push(m[1]);
     }
+    for (const [id, block] of ruleBlocks(text)) if (!blocks.has(id)) blocks.set(id, block);
   }
-  return { active: active.filter((id) => !retired.has(id)).sort(byCodePoint), retired };
+  return { active: active.filter((id) => !retired.has(id)).sort(byCodePoint), blocks, retired };
 }
 
 /** Rule ids cited by live vectors: id → sorted vector ids. */
@@ -269,7 +318,7 @@ function measure(root) {
   const add = (code, file, line, message, severity = 'error') =>
     findings.push({ code, col: 1, file, line, message, severity });
 
-  const { active, retired } = readRules(root, read);
+  const { active, blocks, retired } = readRules(root, read);
   const activeSet = new Set(active);
   const vectors = readVectors(root, read);
 
@@ -346,6 +395,10 @@ function measure(root) {
       tests: tests.get(id) || [],
       vectors: vectors.get(id) || [],
     };
+    const demands = ruleDemands(blocks.get(id));
+    entry.codes = demands.codes;
+    entry.must = demands.must;
+    entry.e2e_tests = entry.tests.filter((f) => E2E.some((dir) => f.startsWith(dir)));
     const verified = entry.vectors.length + entry.tests.length + entry.acceptance.length + entry.checkers.length > 0;
     const allowed = Object.prototype.hasOwnProperty.call(allow, id) ? allow[id] : null;
     const gap = Object.prototype.hasOwnProperty.call(gaps, id) ? gaps[id] : null;
@@ -366,6 +419,10 @@ function measure(root) {
       entry.class = 'UNVERIFIED';
       add('AGSC-E202', `spec/${id.slice(5, 7)}`, 1, `${id} has no machine check and no prose-only reason`);
     }
+    // The informational tier: it changes no class and gates nothing.
+    entry.end_to_end = entry.class === 'VERIFIED'
+      && entry.vectors.length + entry.acceptance.length + entry.e2e_tests.length > 0;
+    entry.must_code_unit_only = entry.class === 'VERIFIED' && !entry.end_to_end && entry.must && entry.codes.length > 0;
     return entry;
   });
   for (const [id, value] of Object.entries(gaps).sort(([a], [b]) => byCodePoint(a, b))) {
@@ -393,9 +450,12 @@ function measure(root) {
     by_checker: rules.filter((r) => r.checkers.length).length,
     by_test: rules.filter((r) => r.tests.length).length,
     by_vector: rules.filter((r) => r.vectors.length).length,
+    end_to_end: rules.filter((r) => r.end_to_end).length,
     gap: count('GAP'),
+    must_code_unit_only: rules.filter((r) => r.must_code_unit_only).length,
     prose_only: count('PROSE-ONLY'),
     retired: retired.size,
+    unit_only: rules.filter((r) => r.class === 'VERIFIED' && !r.end_to_end).length,
     unverified: count('UNVERIFIED'),
     verified: count('VERIFIED'),
   };
@@ -405,6 +465,7 @@ function measure(root) {
     const list = rules.filter((r) => r.part === c);
     byPart[c] = {
       active: list.length,
+      end_to_end: list.filter((r) => r.end_to_end).length,
       gap: count('GAP', list),
       prose_only: count('PROSE-ONLY', list),
       unverified: count('UNVERIFIED', list),
@@ -427,6 +488,27 @@ function cell(list, max = 3) {
   if (list.length === 0) return '—';
   const shown = list.slice(0, max).map((x) => `\`${x}\``).join(', ');
   return list.length > max ? `${shown} +${list.length - max}` : shown;
+}
+
+/** The informational end-to-end section of the matrix. */
+function renderEndToEnd(out, rules, totals) {
+  out.push('## End to end');
+  out.push('');
+  out.push(`This tier is informational: it gates nothing. A verified rule is verified end to end when a live conformance vector, an acceptance scenario the runner executes, a step file of that runner (in a \`// verifies\` marker) or a test under \`tests/e2e/\` (a walk through the command line or a built node) names it. ${totals.end_to_end} of the ${totals.verified} verified rules are verified end to end; the other ${totals.unit_only} rest on unit, integration, architecture or checker-header evidence only, which shows that a check exists, not that the rule holds when the whole engine runs.`);
+  out.push('');
+  const listed = rules.filter((r) => r.must_code_unit_only);
+  out.push(`Of those, ${totals.must_code_unit_only} state a requirement with MUST, MUST NOT, REQUIRED or SHALL and name a code, so a conformance case or a walk could pin them:`);
+  out.push('');
+  if (listed.length === 0) out.push('None.');
+  else {
+    out.push('| Rule | Codes it names | Unit evidence |');
+    out.push('|---|---|---|');
+    for (const r of listed) {
+      const evidence = [...r.tests.map((f) => f.replace(/^tests\//, '')), ...r.checkers.map((f) => f.replace(/^tools\//, ''))];
+      out.push(`| ${r.id} | ${cell(r.codes)} | ${cell(evidence)} |`);
+    }
+  }
+  out.push('');
 }
 
 /** The generated Markdown matrix. */
@@ -456,14 +538,15 @@ function render(result) {
   out.push('');
   out.push('## Per part of the specification');
   out.push('');
-  out.push('| Part | Active | Verified | Prose-only | Gap | Unverified |');
-  out.push('|---|---:|---:|---:|---:|---:|');
+  out.push('| Part | Active | Verified | End to end | Prose-only | Gap | Unverified |');
+  out.push('|---|---:|---:|---:|---:|---:|---:|');
   // Keys such as "10" are integer-like, so object order would put them first.
   for (const c of Object.keys(byPart).sort(byCodePoint)) {
     const n = byPart[c];
-    out.push(`| ${c} ${TITLES[c] || ''} | ${n.active} | ${n.verified} | ${n.prose_only} | ${n.gap} | ${n.unverified} |`);
+    out.push(`| ${c} ${TITLES[c] || ''} | ${n.active} | ${n.verified} | ${n.end_to_end} | ${n.prose_only} | ${n.gap} | ${n.unverified} |`);
   }
   out.push('');
+  renderEndToEnd(out, rules, totals);
   out.push('## Prose-only rules');
   out.push('');
   out.push('The reasons are a closed list:');
@@ -501,12 +584,12 @@ function render(result) {
   out.push('');
   out.push('Test files are listed by path; at most three names are shown per cell.');
   out.push('');
-  out.push('| Rule | Class | Vectors | Tests | Acceptance | Checkers |');
-  out.push('|---|---|---|---|---|---|');
+  out.push('| Rule | Class | End to end | Vectors | Tests | Acceptance | Checkers |');
+  out.push('|---|---|---|---|---|---|---|');
   for (const r of rules) {
     const files = r.tests.map((f) => f.replace(/^tests\//, ''));
     const checkers = r.checkers.map((f) => f.replace(/^tools\//, ''));
-    out.push(`| ${r.id} | ${r.class} | ${cell(r.vectors)} | ${cell(files)} | ${cell(r.acceptance)} | ${cell(checkers)} |`);
+    out.push(`| ${r.id} | ${r.class} | ${r.end_to_end ? 'yes' : '—'} | ${cell(r.vectors)} | ${cell(files)} | ${cell(r.acceptance)} | ${cell(checkers)} |`);
   }
   out.push('');
   return out.join('\n');
@@ -580,7 +663,8 @@ function run(argv, io) {
     if (!quiet) {
       out(`rule-coverage: ${result.inputsRead} input file(s) read, ${t.active} active rules: ${t.verified} verified, ${t.prose_only} prose-only, ${t.unverified} unverified; `
         + `${t.gap} gap; checks naming a rule: vector ${t.by_vector}, test ${t.by_test}, acceptance ${t.by_acceptance}, checker ${t.by_checker}; `
-        + `scenarios ${t.acceptance_scenarios} (${t.acceptance_scenarios_pending} pending); ${errors} error, ${warns} warn\n`);
+        + `scenarios ${t.acceptance_scenarios} (${t.acceptance_scenarios_pending} pending); `
+        + `end to end ${t.end_to_end} of ${t.verified} verified; ${errors} error, ${warns} warn\n`);
     }
   }
   return errors ? 1 : 0;
@@ -590,4 +674,4 @@ function run(argv, io) {
 // exitCode, not exit(): a large --json envelope on a pipe must be flushed first.
 if (require.main === module) process.exitCode = run(process.argv.slice(2));
 
-module.exports = { HELP, REASONS, checkerHeader, featureScenarios, measure, render, run, testCitations };
+module.exports = { HELP, REASONS, checkerHeader, featureScenarios, measure, render, ruleBlocks, ruleDemands, run, testCitations };

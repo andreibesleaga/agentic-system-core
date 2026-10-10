@@ -12,6 +12,7 @@ Feature: Restricted publisher tells the world the node exists while its content 
     And the Bundle is built
     And the publisher keeps the discovery document of this public build
     When the publisher makes the node restricted
+    And the publisher names its access page "https://agenticsystemcore.com/access/"
     And the Bundle is built
     Then the anchor's "describedby" link says "agsc-visibility" "restricted" and still carries "agsc-spec-version" and "agsc-generated-at" (AGSC-11-20)
     And it omits "agsc-counts", "agsc-bundle-hash", "agsc-bundle-version" and "agsc-ledger-head", which the public build carried, and the "…rel#ledger" link
@@ -52,6 +53,7 @@ Feature: Restricted publisher tells the world the node exists while its content 
   Scenario: An unauthenticated agent sees only the public view of a restricted node
     Given a fresh copy of the acceptance Bundle
     And the publisher makes the node restricted
+    And the publisher names its access page "https://agenticsystemcore.com/access/"
     And the Bundle is built and served on loopback
     When an agent with no credentials reads the node over loopback from another origin
     Then only "/.well-known/knowledge-linkset" is served with "Access-Control-Allow-Origin: *"; "/graph.jsonld", "/llms.txt", "/chunks.jsonl" and an item page are served without it (AGSC-11-20, AGSC-11-03)

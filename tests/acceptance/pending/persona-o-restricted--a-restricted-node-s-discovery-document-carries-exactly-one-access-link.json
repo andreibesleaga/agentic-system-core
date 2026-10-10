@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "RS-a",
-  "reason": "the build emits the access link from the configuration's access key, which the configuration schema refuses (AGSC-E004), so a restricted build either fails or carries no access link, against AGSC-11-20's exactly one.",
-  "scenario": "A restricted node's discovery document carries exactly one access link"
-}

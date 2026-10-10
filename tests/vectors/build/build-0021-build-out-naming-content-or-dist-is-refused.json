@@ -1,0 +1,135 @@
+{
+  "area": "build",
+  "description": "AGSC-01-19: build.out MUST NOT name content/, which a build never writes, or dist/, which is generated, or a path under either, its first segment compared ASCII case-insensitively; a value that does is AGSC-E204. A trailing / is accepted and stripped. Each sub-case runs `build` over a scratch copy of the minimal fixture, with SOURCE_DATE_EPOCH set and no git history: four project files whose build.out is content, dist, Content/site and dist/www, and the same value content given as the environment value AGSC_BUILD_OUT, which sets build.out through the environment layer. Each is refused with an error finding AGSC-E204 and writes no file anywhere in the Bundle, so the source tree is never overwritten; the exit code is 1 or 2 (an error finding, or a configuration fault, AGSC-09-08). The control www/ builds, exits 0, reports no AGSC-E204 and writes only under www/.",
+  "expected": {
+    "cases": [
+      {
+        "exit_one_of": [
+          1,
+          2
+        ],
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "severity": "error"
+          }
+        ],
+        "name": "content",
+        "nothing_written": true
+      },
+      {
+        "exit_one_of": [
+          1,
+          2
+        ],
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "severity": "error"
+          }
+        ],
+        "name": "dist",
+        "nothing_written": true
+      },
+      {
+        "exit_one_of": [
+          1,
+          2
+        ],
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "severity": "error"
+          }
+        ],
+        "name": "upper-case-content-with-a-path",
+        "nothing_written": true
+      },
+      {
+        "exit_one_of": [
+          1,
+          2
+        ],
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "severity": "error"
+          }
+        ],
+        "name": "under-dist",
+        "nothing_written": true
+      },
+      {
+        "exit_one_of": [
+          1,
+          2
+        ],
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "severity": "error"
+          }
+        ],
+        "name": "environment-layer",
+        "nothing_written": true
+      },
+      {
+        "codes_absent": [
+          "AGSC-E204"
+        ],
+        "exit": 0,
+        "name": "trailing-slash-accepted",
+        "written_only_under": "www/"
+      }
+    ]
+  },
+  "id": "build-0021",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"content\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+        },
+        "name": "content"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"dist\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+        },
+        "name": "dist"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"Content/site\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+        },
+        "name": "upper-case-content-with-a-path"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"dist/www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+        },
+        "name": "under-dist"
+      },
+      {
+        "environment": {
+          "AGSC_BUILD_OUT": "content"
+        },
+        "name": "environment-layer"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www/\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+        },
+        "name": "trailing-slash-accepted"
+      }
+    ],
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-01-19"
+}

@@ -606,6 +606,37 @@ a web interface in front. A claim names its deployment profile (AGSC-06-01); no 
 
 ---
 
+## 7b. A restricted node
+
+A node whose content is gated still publishes its discovery document, so that readers
+and agents learn that it exists and where to ask for access, and nothing more
+(AGSC-11-20). What changes, compared with a public node:
+
+- **Configuration.** `"visibility": "restricted"` and the top-level `access` key, an
+  absolute `https:` URL naming the page where a reader obtains credentials
+  (AGSC-01-18). The key is read only on a restricted node. A restricted configuration
+  without it is `AGSC-E202`: `lint` reports it, and `build` and `ci` refuse to write
+  the node.
+- **Discovery document.** Exactly one `…/rel#access` link, to that page, with the
+  attribute `agsc-access` `credential`; `agsc-visibility` `restricted` on the anchor's
+  `describedby` link, beside `agsc-spec-version` and `agsc-generated-at`; no
+  `agsc-counts`, `agsc-bundle-hash`, `agsc-bundle-version` or `agsc-ledger-head`; no
+  `…/rel#ledger` link; and a `digest` only on the `/graph.jsonld` and `/llms.txt`
+  links. Case `disc-0020` shows the whole document.
+- **Response headers.** Only the discovery document is served with
+  `Access-Control-Allow-Origin: *`; no other file of the node is. The reference
+  engine's `_headers` writes the wildcard for the discovery document alone, but a host
+  may add it to every response by default: Cloudflare Pages does, on files no
+  `_headers` rule names. On such a host, remove the header from every other file with
+  the host's own setting, or the node does not meet AGSC-11-20.
+- **The claim.** Conformance is asserted against the unauthenticated view: the
+  discovery document, `/llms.txt` and `/graph.jsonld`, at Level 0. Both discovery
+  checkers, `tools/validate-wellknown` and the Python checker, report a restricted node
+  with no `…/rel#access` link as `AGSC-E202` and one with more than one as
+  `AGSC-E210`, at every Level (case `disc-0022`).
+
+---
+
 ## 8. If you find a defect in the specification
 
 Say so. AGSC-00-16 makes rule ids and error codes permanent, vectors immutable (a

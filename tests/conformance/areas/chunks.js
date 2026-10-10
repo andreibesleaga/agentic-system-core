@@ -5,9 +5,28 @@
 // numeric ordinal order, chk-0008 the shards and the manifest, whose first member
 // is `bundle_version` (AGSC-06-31).
 
+//
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail. chk-0006's two members are read as follows:
+// `vendor_member_permitted` says that a writer MAY append `x-<vendor>-<key>` members
+// to a record (AGSC-02-05a), so the records are compared with `lines` after any such
+// member is set aside; `lexical_order_is_wrong` is the order a string sort of the
+// ordinals gives, which the records must not follow.
+
 const chunks = require('../../../src/knowledge/chunks.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual, subsetOf } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
+
+/** AGSC-02-05a: the vendor namespace. */
+const VENDOR_MEMBER = /^x-[a-z0-9]+(-[a-z0-9]+)+$/u;
+
+/** A record with its vendor members set aside. */
+function withoutVendor(record) {
+  const out = {};
+  for (const [key, value] of Object.entries(record || {})) if (!VENDOR_MEMBER.test(key)) out[key] = value;
+  return out;
+}
 
 /** The items of a vector: a literal list, or `item_count` copies of a template. */
 function itemsOf(input) {
@@ -28,18 +47,27 @@ function recordsOf(vector) {
   }).records;
 }
 
-module.exports.run = (vector) => {
+module.exports.run = guarded((vector) => {
   const expected = vector.expected;
   const list = recordsOf(vector);
   const result = [];
+  const vendorPermitted = typeof expected.vendor_member_permitted === 'string';
 
   if (expected.lines !== undefined) {
     result.push(['line count', list.length === expected.lines.length,
       `${list.length} records, ${expected.lines.length} expected`]);
     expected.lines.forEach((line, i) => {
-      result.push([`line ${i}`, list[i] !== undefined && deepEqual(line, list[i]),
+      const got = vendorPermitted ? withoutVendor(list[i]) : list[i];
+      result.push([`line ${i}`, list[i] !== undefined && deepEqual(line, got),
         JSON.stringify(list[i])]);
     });
+  }
+  if (typeof expected.lexical_order_is_wrong === 'string') {
+    const ordinals = list.map((r) => r.ordinal);
+    const lexical = ordinals.map(String).sort().slice(0, expected.lexical_order_is_wrong.split(',').length).join(',');
+    const emitted = ordinals.slice(0, expected.lexical_order_is_wrong.split(',').length).join(',');
+    result.push(['a string sort of the ordinals gives the stated wrong order', lexical === expected.lexical_order_is_wrong, lexical]);
+    result.push(['the records do not follow it', emitted !== expected.lexical_order_is_wrong, emitted]);
   }
   if (expected.citation_anchor_for_line_1 !== undefined) {
     const anchor = chunks.citationAnchor(list[1].id);
@@ -116,4 +144,4 @@ module.exports.run = (vector) => {
   }
 
   return checks(result);
-};
+});

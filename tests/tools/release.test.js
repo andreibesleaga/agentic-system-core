@@ -128,8 +128,8 @@ describe('1. one version, in one place', () => {
 
   it('the checklist carries the tag pair, trusted publishing and the deprecation check', () => {
     const text = release.checklist('1.0.0-rc.7', false).join('\n');
-    assert.match(text, /git tag -s 1\.0\.0-rc\.7 /u);
-    assert.match(text, /git tag -s v1\.0\.0-rc\.7 /u);
+    assert.match(text, /git tag -a 1\.0\.0-rc\.7 /u);
+    assert.match(text, /git tag -a v1\.0\.0-rc\.7 /u);
     assert.match(text, /Settings -> Trusted publishing/u);
     assert.match(text, /npm view agentic-system-core@1\.0\.0-rc\.7 deprecated/u);
     assert.match(text, /npm deprecate agsc-cli@1\.0\.0-rc\.7 ""/u);
@@ -339,7 +339,7 @@ describe('5. --apply, and the checklist', () => {
     const lines = release.checklist('1.0.0');
     const text = lines.join('\n');
     for (const needle of ['npm ci', 'npm test', 'npm audit', 'tools/count-artifacts',
-      'tools/validate-*', 'tests/arch', 'npm pack --dry-run', 'git tag -s v1.0.0',
+      'tools/validate-*', 'tests/arch', 'npm pack --dry-run', 'git tag -a v1.0.0',
       'Wayback']) {
       assert.match(text, new RegExp(needle.replace(/[*]/gu, '\\*'), 'u'), needle);
     }
@@ -432,18 +432,19 @@ describe('the release workflow', () => {
   /** The workflow without its comments: what RUNS, not what it explains. */
   const steps = () => workflow().split('\n').filter((l) => !/^\s*#/u.test(l)).join('\n');
 
-  it('sets the dist-tag explicitly on both publishes', () => {
+  it('sets the dist-tag explicitly on both publishes, from the version', () => {
     // npm's docs (docs.npmjs.com/cli/v11/commands/npm-dist-tag, read 2026-09-22):
     // "Publishing a package sets the `latest` tag to the published version unless
     // the `--tag` option is used" — and the convention is that a pre-release does
-    // NOT take `latest`. decides otherwise for this release, so the flag is
-    // written out rather than left to a default nobody chose.
+    // NOT take `latest`. So the flag is always written out, and its value is chosen
+    // from the version (tests/standard/workflow.test.js checks the choice).
     const publishes = steps().split('\n').filter((l) => l.includes('npm publish'));
     assert.equal(publishes.length, 2, 'the engine and the alias, and nothing else');
     for (const line of publishes) {
       assert.match(line, /--provenance/u, line);
       assert.match(line, /--access public/u, line);
-      assert.match(line, /--tag latest/u, line);
+      assert.match(line, /--tag "\$\{DIST_TAG\}"/u, line);
+      assert.ok(!/--tag latest/u.test(line), line);
     }
   });
 
@@ -489,7 +490,7 @@ describe('the release workflow', () => {
     // long-form runbook is kept outside the repository. Nothing here may point at a
     // repository file that a reader would then not find.
     const printed = release.checklist('1.2.3').join('\n');
-    assert.match(printed, /git tag -s v1\.2\.3/u, 'the tag command');
+    assert.match(printed, /git tag -a v1\.2\.3/u, 'the tag command');
     assert.match(printed, /npm view agentic-system-core version/u, 'the live check');
     assert.match(printed, /npm install agentic-system-core@1\.2\.3/u, 'the fresh-install smoke test');
     assert.match(printed, /npm deprecate/u, 'the rollback');
@@ -551,5 +552,96 @@ describe('tools/release — the public-hygiene step', () => {
     assert.match(found[0].message, /boom/u);
     const odd = release.hygieneFindings('/nowhere', [], { sweep: () => { throw null; } });
     assert.match(odd[0].message, /unknown error/u);
+  });
+});
+
+// ------------------------------------- the checklist's route, and what npm ships
+
+describe('the printed checklist follows the release route', () => {
+  it('annotated tags, the release branch and its pull request, the specification tag first, the approval', () => {
+    const lines = release.checklist('1.2.3', false);
+    const text = lines.join('\n');
+    assert.ok(!/git tag -s/u.test(text), 'one tag form: annotated, never signed');
+    assert.match(text, /git tag -a 1\.2\.3 -m "AgenticSystemCore 1\.2\.3"/u);
+    assert.match(text, /git tag -a v1\.2\.3 -m "AgenticSystemCore 1\.2\.3"/u);
+    assert.match(text, /release\/1\.2\.3/u, 'the release branch');
+    assert.match(text, /pull request/u, 'the change reaches main through a pull request');
+    assert.ok(!/git push origin main/u.test(text), 'main is protected: nothing is pushed to it directly');
+    assert.ok(!/only once the repository is public/u.test(text), 'the repository is public');
+    // The specification tag is pushed (it starts no workflow) before the package tag
+    // is even made; the package tag starts the release workflow.
+    const at = (re) => lines.findIndex((l) => re.test(l));
+    const specPush = at(/^\s*\d+\. git push origin 1\.2\.3\b/u);
+    const pkgTag = at(/^\s*\d+\. git tag -a v1\.2\.3 /u);
+    const pkgPush = at(/^\s*\d+\. git push origin v1\.2\.3\b/u);
+    const merge = at(/pull --ff-only origin main/u);
+    assert.ok(merge >= 0 && specPush > merge, 'the tags are made on main after the merge');
+    assert.ok(specPush >= 0 && pkgTag > specPush && pkgPush > pkgTag, 'spec tag pushed, then the package tag');
+    // Publishing waits for the maintainer's approval of the "release" environment.
+    assert.match(text.replace(/\s+/gu, ' '), /approv\w* [^.]*"release" environment/u);
+    // The dist-tag is the version's, and the tagged commit must be on main.
+    assert.match(text.replace(/\s+/gu, ' '), /next for a pre-release/u);
+    assert.match(text.replace(/\s+/gu, ' '), /on main/u);
+  });
+});
+
+/** The files `npm pack` would ship from `dir`, as npm itself lists them (no network). */
+function npmPackList(dir) {
+  const cp = require('node:child_process');
+  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const result = cp.spawnSync(npm, ['pack', '--dry-run', '--json', '--ignore-scripts', '--offline'], {
+    cwd: dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, shell: process.platform === 'win32',
+  });
+  assert.equal(result.status, 0, `npm pack --dry-run failed: ${result.stderr}`);
+  return JSON.parse(result.stdout)[0].files.map((f) => f.path).sort();
+}
+
+describe('3b. the pack list is what npm ships, folder READMEs included', () => {
+  it('a bare file name in `files` ships that name from every folder npm walks', () => {
+    // npm reads an entry with no slash, such as README.md, as a name to keep wherever it
+    // is found in a folder it walks: the folders above every entry, and a folder named
+    // like a one-segment folder entry (`bin/`) inside one of those. The count is computed
+    // here and compared with npm itself, so a new README cannot make the two disagree.
+    const dir = distribution({
+      'LICENSE': 'x\n',
+      'bin/a.js': 'x\n',
+      'docs/README.md': 'x\n',
+      'docs/S.md': 'x\n',
+      'docs/other/README.md': 'x\n',
+      'package.json': `${JSON.stringify({
+        files: ['bin/', 'docs/S.md', 'src/', 'tests/vectors/', 'README.md', 'LICENSE', 'CHANGELOG.md'],
+        name: 'agentic-system-core', version: '0.0.2',
+      }, null, 4)}\n`,
+      'src/deep/readme.md': 'x\n',
+      'tests/README.md': 'x\n',
+      'tests/bin/README.md': 'x\n',
+      'tests/bin/LICENSE': 'x\n',
+      'tests/bin/run.test.js': 'x\n',
+      'tests/bin/deep/README.md': 'x\n',
+      'tests/other/README.md': 'x\n',
+      'tests/vectors/README.md': 'x\n',
+      'tests/vectors/x/Readme.MD': 'x\n',
+      'top/README.md': 'x\n',
+    });
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+    const mine = release.packList(dir, manifest);
+    assert.deepEqual(mine, npmPackList(dir));
+    for (const shipped of ['docs/README.md', 'tests/README.md', 'tests/bin/README.md', 'tests/bin/LICENSE']) {
+      assert.ok(mine.includes(shipped), shipped);
+    }
+    for (const kept of ['docs/other/README.md', 'tests/other/README.md', 'tests/bin/run.test.js',
+      'tests/bin/deep/README.md', 'top/README.md']) {
+      assert.ok(!mine.includes(kept), kept);
+    }
+  });
+
+  it('a folder README under tests/ is documentation, not test bloat', () => {
+    const findings = release.packFindings(tmpdir(), ['tests/README.md', 'tests/bin/README.md', 'tests/bin/x.test.js']);
+    assert.deepEqual(findings.filter((f) => f.code === 'AGSC-E904').map((f) => f.file), ['tests/bin/x.test.js']);
+  });
+
+  it('the real distribution: the computed list equals npm pack --dry-run, file for file', () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
+    assert.deepEqual(release.packList(REPO, manifest), npmPackList(REPO));
   });
 });

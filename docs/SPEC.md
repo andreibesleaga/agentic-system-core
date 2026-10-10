@@ -9,7 +9,7 @@ Every rule ends with a trace bracket that names what the rule serves: a requirem
 | Section | Covers | Vector areas |
 |---|---|---|
 | `00-overview` | scope, BCP 14 usage, the defined terms (§0.2), conformance classes, SemVer policy | `bundle/` |
-| `01-bundle` | folders, `content/index.md`, slugs, encoding, `agsc.config.json`, import tolerance, **export (`--markdown/--okf/--jsonld/--jsonl/--steer`)** | `slug/`, `bundle/`, `import/`; `export/`, `adapters/` and `channels/` are declared and not populated at 1.0 |
+| `01-bundle` | folders, `content/index.md`, slugs, encoding, `agsc.config.json`, import tolerance, **export (`--markdown/--okf/--jsonld/--jsonl/--steer`)** | `slug/`, `bundle/`, `import/`, `export/`; `adapters/` and `channels/` are declared and not populated at 1.0 |
 | `02-item` | YAML failsafe subset, common keys, per-type keys, body sections, **adoption of bare Markdown** | `frontmatter/`, `adopt/` |
 | `03-links` | the fourteen keys (nine core + five Mode-2), computed inverses, cycles, wikilinks, combiner semantics | `links/` |
 | `04-canonicalization` | JCS, NFC/LF/UTC seconds, `SOURCE_DATE_EPOCH`, ordering, hashes | `jcs/`, `graph/` |

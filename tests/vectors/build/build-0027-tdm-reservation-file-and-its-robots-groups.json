@@ -1,0 +1,66 @@
+{
+  "area": "build",
+  "description": "AGSC-06-18: the TDMRep policy is served at /.well-known/tdmrep.json, the only route that carries it (no /tdmrep.json), as a JSON artefact in JCS form with one LF (AGSC-04-04). A reservation of 1 is accompanied by one robots.txt group User-agent: <token> with Disallow: / per token of site.tdm_crawlers[], in configuration order and before the User-agent: * group, and no Disallow for any other token; a Bundle whose prose carries another licence publishes tdm-reservation 0 and no crawler group. Derivation over the minimal fixture built with SOURCE_DATE_EPOCH set and no git history, in two sub-cases: as it is (the Content Use Terms, six tokens) and with CC-BY-4.0 as its prose licence (configuration and root document). reservation_for_paths gives, for each path, the tdm-reservation of the first rule of the file whose location pattern matches it under the TDM Reservation Protocol (a prefix match in which * stands for any characters and a final $ ends the pattern): every path of the node is reserved in the first sub-case and not reserved in the second. The location strings themselves are not pinned. robots_disallow_all_groups lists the user agents of the groups that carry Disallow: /, in file order; the * group never does.",
+  "expected": {
+    "cases": [
+      {
+        "jcs_with_one_lf": true,
+        "name": "content-use-terms",
+        "reservation_for_paths": {
+          "/": 1,
+          "/concepts/handoff/": 1,
+          "/graph.nq": 1,
+          "/pages/handoff.md": 1
+        },
+        "robots_disallow_all_groups": [
+          "Applebot-Extended",
+          "CCBot",
+          "ClaudeBot",
+          "GPTBot",
+          "Google-Extended",
+          "meta-externalagent"
+        ],
+        "routes_absent": [
+          "/tdmrep.json"
+        ]
+      },
+      {
+        "jcs_with_one_lf": true,
+        "name": "another-licence",
+        "reservation_for_paths": {
+          "/": 0,
+          "/concepts/handoff/": 0,
+          "/graph.nq": 0,
+          "/pages/handoff.md": 0
+        },
+        "robots_disallow_all_groups": [],
+        "routes_absent": [
+          "/tdmrep.json"
+        ]
+      }
+    ]
+  },
+  "id": "build-0027",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "name": "content-use-terms"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"CC-BY-4.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n",
+          "content/index.md": "---\nspec_version: 1.0.0-rc.7\nokf_version: \"0.2\"\ntitle: Minimal Bundle\ndescription: The smallest Bundle that conforms to AgenticSystemCore, used by the engine's own tests as a fixture.\nbase: https://minimal.example/\nlang: en\nlicense: CC-BY-4.0\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Minimal Bundle\n\nTwo concepts and one cluster: enough to build, lint, compose and serve.\n"
+        },
+        "name": "another-licence"
+      }
+    ],
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-06-18"
+}

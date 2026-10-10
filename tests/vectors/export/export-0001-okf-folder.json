@@ -1,0 +1,53 @@
+{
+  "area": "export",
+  "description": "Derived from AGSC-01-26: `export --okf` emits the lint-normalized Bundle itself, one `.md` file per published item with its bytes unchanged, the Bundle root document content/index.md carrying `bundle_version` beside `spec_version` and `okf_version`, the OKF-reserved content/log.md, and a LICENSE-CONTENT file at the export root. The minimal fixture is given a LICENSE-CONTENT and three concepts: edited (a date and a later modified date), undated (neither) and draft-note (status draft). Paths are relative to the export root. `files` is the whole list of files the export writes, so the draft is absent (AGSC-06-30). Every item file and LICENSE-CONTENT are the Bundle's own bytes (`byte_preserving`). content/log.md is one line `- <slug>: <modified, else date, else the empty string>` per published item in slug order, derived from the items alone. content/index.md contains the OKF version and the content version of AGSC-04-25, which for a Bundle with no git history built at SOURCE_DATE_EPOCH 1767225600 is 0.0.0 with the build instant as its build metadata. The export exits 0.",
+  "expected": {
+    "byte_preserving": [
+      "LICENSE-CONTENT",
+      "content/clusters/agent-patterns.md",
+      "content/concepts/edited.md",
+      "content/concepts/handoff.md",
+      "content/concepts/supervisor.md",
+      "content/concepts/undated.md"
+    ],
+    "exit": 0,
+    "file_bytes": {
+      "content/log.md": "- agent-patterns: 2026-01-01\n- edited: 2026-03-04\n- handoff: 2026-01-01\n- supervisor: 2026-01-01\n- undated: \n"
+    },
+    "files": [
+      "LICENSE-CONTENT",
+      "content/clusters/agent-patterns.md",
+      "content/concepts/edited.md",
+      "content/concepts/handoff.md",
+      "content/concepts/supervisor.md",
+      "content/concepts/undated.md",
+      "content/index.md",
+      "content/log.md"
+    ],
+    "files_contain": {
+      "content/index.md": [
+        "okf_version: \"0.2\"",
+        "bundle_version: \"0.0.0+20260101T000000Z\"",
+        "spec_version: "
+      ]
+    }
+  },
+  "id": "export-0001",
+  "input": {
+    "add_files": {
+      "LICENSE-CONTENT": "Content Use Terms of this fixture, version 1.0.\n",
+      "content/concepts/draft-note.md": "---\ntype: concept\ntitle: Draft note\ndescription: A draft concept that no published surface carries, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nstatus: draft\ndate: \"2026-02-03\"\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n",
+      "content/concepts/edited.md": "---\ntype: concept\ntitle: Edited\ndescription: A published concept with a date and a later modified date, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nmodified: \"2026-03-04\"\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n",
+      "content/concepts/undated.md": "---\ntype: concept\ntitle: Undated\ndescription: A published concept with neither a date nor a modified date, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n"
+    },
+    "bundle": "fixtures/minimal",
+    "flags": [
+      "--okf"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-01-26"
+}

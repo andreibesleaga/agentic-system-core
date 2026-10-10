@@ -7,13 +7,18 @@
 // `agsc-bundle-version` attribute at three levels of visibility, disc-0012 the
 // robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node
 // carries, disc-0018 the bundle hash, disc-0019 a newer MINOR's relation,
-// disc-0008 every item reachable from /llms.txt, disc-0009 the sitemap.
+// disc-0008 every item reachable from /llms.txt, disc-0009 the sitemap, disc-0022
+// the one access link of a restricted node, judged by the shipped discovery checker.
+//
+// Every handler is guarded (_expected-reads.js): a pass that left a member of
+// `expected` unread is a fail.
 
 const discovery = require('../../../src/distribution/discovery.js');
 const site = require('../../../src/distribution/site.js');
 const llms = require('../../../src/distribution/llms.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 /** RFC 8288 §3.4 / RFC 9264 §4.2.4: the members that are NOT target attributes. */
 const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title*', 'type']);
@@ -79,7 +84,9 @@ function linksetCase(vector) {
 function level0Case(vector) {
   const expected = vector.expected;
   const doc = vector.input.wellknown;
-  const errors = discovery.check(doc, { level: 0 });
+  // The Level the case states its verdict for (Level 0, the form this case is about).
+  const level = expected.level;
+  const errors = discovery.check(doc, { level });
   const context = doc.linkset[0];
   const attributes = Object.keys(context)
     .filter((k) => k !== 'anchor')
@@ -87,7 +94,7 @@ function level0Case(vector) {
   // The same builder at Level 0 must produce a document of the SAME shape: the
   // route set a publisher offers is its own (a CMS export need not publish
   // `/specs/`), but the structure and the omissions are the rule.
-  const built = discovery.linkset({ site: { base: vector.input.base } }, { level: 0 });
+  const built = discovery.linkset({ site: { base: vector.input.base } }, { level });
   const builtAttributes = Object.keys(built.linkset[0])
     .filter((k) => k !== 'anchor')
     .flatMap((relation) => built.linkset[0][relation].flatMap((one) => discovery.attributesOf(one)));
@@ -103,8 +110,9 @@ function level0Case(vector) {
       deepEqual(Object.keys(built), ['linkset'])
       && typeof built.linkset[0].anchor === 'string'
       && builtAttributes.length === 0
-      && discovery.check(built, { level: 0 }).length === 0,
+      && discovery.check(built, { level }).length === 0,
       JSON.stringify(built)],
+    ['level', level === 0, `the case states Level ${JSON.stringify(level)}; its documents are the Level-0 form`],
   ]);
 }
 
@@ -539,6 +547,47 @@ function wholeDocumentCase(vector) {
   return checks(list);
 }
 
+/**
+ * disc-0022 (AGSC-11-20 with AGSC-09-93) — a restricted node carries exactly one
+ * `rel#access` link. Each document is judged by the discovery checker that ships with
+ * the engine (`tools/validate-wellknown`), run as a process over the document written
+ * where a build writes it, at the case's Level: its verdict and its complete list of
+ * errors are the case's.
+ */
+function accessLinkCase(vector) {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { spawnSync } = require('node:child_process');
+  const tool = path.resolve(__dirname, '..', '..', '..', 'tools', 'validate-wellknown');
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), `agsc-${vector.id}-`));
+  try {
+    for (const input of vector.input.cases || []) {
+      const want = byName.get(input.name);
+      if (want === undefined) { list.push([input.name, false, 'the vector states no expected case of this name']); continue; }
+      const dir = path.join(root, input.name, '.well-known');
+      fs.mkdirSync(dir, { recursive: true });
+      const file = path.join(dir, 'knowledge-linkset');
+      fs.writeFileSync(file, `${canonicalize(input.document)}\n`);
+      const run = spawnSync(process.execPath, [tool, file, '--level', String(input.level), '--json'], { encoding: 'utf8' });
+      let findings = null;
+      try { findings = JSON.parse(run.stdout).findings; } catch { /* reported below */ }
+      if (!Array.isArray(findings)) { list.push([`${input.name} envelope`, false, run.stdout + run.stderr]); continue; }
+      const errors = findings.filter((f) => f.severity === 'error');
+      list.push([`${input.name} valid`, (errors.length === 0) === want.valid && (run.status === 0) === want.valid,
+        `exit ${run.status}: ${JSON.stringify(findings)}`]);
+      const matched = findingsMatch(want.findings, errors);
+      list.push([`${input.name} findings`, matched.ok && errors.length === want.findings.length,
+        matched.detail || JSON.stringify(errors)]);
+    }
+  } finally {
+    fs.rmSync(root, { force: true, recursive: true });
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'disc-0013': llmsCase,
   'disc-0014': llmsCase,
@@ -548,6 +597,7 @@ const HANDLERS = {
   'disc-0019': newerMinorCase,
   'disc-0020': wholeDocumentCase,
   'disc-0021': wholeDocumentCase,
+  'disc-0022': accessLinkCase,
   'disc-0016': linksetCase,
   'disc-0004': level0Case,
   'disc-0005': peerCase,
@@ -556,8 +606,9 @@ const HANDLERS = {
   'disc-0009': sitemapCase,
 };
 
-module.exports.run = (vector, ctx) => {
+// Guarded: a pass that left a member of `expected` unread is a fail (_expected-reads.js).
+module.exports.run = guarded((vector, ctx) => {
   const handler = HANDLERS[vector.id];
   if (handler === undefined) return { status: 'fail', detail: `no handler for ${vector.id}` };
   return handler(vector, ctx);
-};
+});

@@ -1,0 +1,176 @@
+{
+  "area": "discovery",
+  "description": "AGSC-11-20: a node whose `agsc-visibility` is `restricted` MUST carry exactly one `https://w3id.org/agentic-system-core/rel#access` link, whose target names where a reader obtains credentials, and it asserts conformance for its unauthenticated view at Level 0; a discovery checker (AGSC-09-93) asks for that link at every Level. Derivation, case by case. Each document is the Level-0 view of one restricted node at https://example.org: the anchor's `describedby` link carries the two attributes AGSC-11-20 keeps on a restricted node (`agsc-generated-at`, `agsc-spec-version`) and `agsc-visibility: [\"restricted\"]`, with no digest and none of the four content facts; the `alternate` link names /llms.txt and the `license` link the legal page. The documents differ only in the access link. (1) restricted-without-access-link carries none: the required link is missing, so the checker reports exactly one error, AGSC-E202, as for any other missing required member. (2) restricted-with-two-access-links carries two, to /access/ and /access/other/: the rule says exactly one, so the declaration disagrees with the rule, and the checker reports exactly one error, AGSC-E210, once for the relation and not once per link. (3) restricted-with-one-access-link carries one, to /access/, with `agsc-access: [\"credential\"]`: it is valid, with no finding. Nothing else in any document is a fault, so each list of findings is complete.",
+  "expected": {
+    "cases": [
+      {
+        "findings": [
+          {
+            "code": "AGSC-E202",
+            "severity": "error"
+          }
+        ],
+        "name": "restricted-without-access-link",
+        "valid": false
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E210",
+            "severity": "error"
+          }
+        ],
+        "name": "restricted-with-two-access-links",
+        "valid": false
+      },
+      {
+        "findings": [],
+        "name": "restricted-with-one-access-link",
+        "valid": true
+      }
+    ]
+  },
+  "id": "disc-0022",
+  "input": {
+    "cases": [
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-generated-at": [
+                    "2026-09-16T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0-rc.7"
+                  ],
+                  "agsc-visibility": [
+                    "restricted"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ]
+            }
+          ]
+        },
+        "level": 0,
+        "name": "restricted-without-access-link"
+      },
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-generated-at": [
+                    "2026-09-16T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0-rc.7"
+                  ],
+                  "agsc-visibility": [
+                    "restricted"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#access": [
+                {
+                  "agsc-access": [
+                    "credential"
+                  ],
+                  "href": "https://example.org/access/"
+                },
+                {
+                  "agsc-access": [
+                    "credential"
+                  ],
+                  "href": "https://example.org/access/other/"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ]
+            }
+          ]
+        },
+        "level": 0,
+        "name": "restricted-with-two-access-links"
+      },
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-generated-at": [
+                    "2026-09-16T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.0.0-rc.7"
+                  ],
+                  "agsc-visibility": [
+                    "restricted"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#access": [
+                {
+                  "agsc-access": [
+                    "credential"
+                  ],
+                  "href": "https://example.org/access/"
+                }
+              ],
+              "license": [
+                {
+                  "href": "https://example.org/legal/"
+                }
+              ]
+            }
+          ]
+        },
+        "level": 0,
+        "name": "restricted-with-one-access-link"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-11-20"
+}

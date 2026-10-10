@@ -1,6 +1,7 @@
 // tests/conformance/areas/cli.js — area handler for `cli` vectors.
 // cli-0002, cli-0005 and cli-0006 first; cli-0003, cli-0004 and the rest after the
-// extension point below; cli-0020…cli-0022 in _cli-instant-and-order.js.
+// extension point below; cli-0020…cli-0022 in _cli-instant-and-order.js, and
+// cli-0023…cli-0025 in _cli-tool-sets-and-gate.js.
 'use strict';
 
 const path = require('node:path');
@@ -12,6 +13,7 @@ const { memoryPorts, captureStream } = require('./_shared.js');
 const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
 const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
 const { runCli0020, runCli0021, runCli0022 } = require('./_cli-instant-and-order.js');
+const { loaderSources, runCli0023, runCli0024, runCli0025 } = require('./_cli-tool-sets-and-gate.js');
 const { guarded } = require('./_expected-reads.js');
 
 function runCli0002(vector, ctx) {
@@ -197,8 +199,11 @@ function evaluateWebmcp(built, options) {
   // The corpus is assembled from the published routes synchronously — the sandbox
   // has no `fetch` but a trap, so nothing can leave this process. The ASYNCHRONOUS
   // path the browser takes is proved by `tests/distribution/compose-page-run.test.js`.
+  // `loader: true` hands the corpus exactly the routes the emitted loader fetches (the
+  // listed pages only, loaderSources); otherwise every route of the build.
   const api = sandbox.AGSC_PAGE_TOOLS;
-  const pageToolset = api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), sandbox.AGSC_CORE);
+  const corpusSources = opts.loader === true ? loaderSources(api, sources) : sources;
+  const pageToolset = api.install(api.pageCorpus(corpusSources, { bundleId: api.BUNDLE_ID }), sandbox.AGSC_CORE);
   vm.runInContext(sources['/compose/webmcp.js'], context, { filename: 'webmcp.js' });
   return { networkCalls, pageToolset, registered, sources, state: sandbox.AGSC_WEBMCP };
 }
@@ -674,6 +679,10 @@ Object.assign(HANDLERS, {
   'cli-0020': runCli0020,
   'cli-0021': runCli0021,
   'cli-0022': runCli0022,
+  // The page tools are evaluated over the built site exactly as cli-0003 does.
+  'cli-0023': (vector, ctx) => runCli0023(vector, ctx, evaluateWebmcp),
+  'cli-0024': runCli0024,
+  'cli-0025': runCli0025,
 });
 
 // A required case with no handler is a FAIL, never a skip: the suite counted a skip

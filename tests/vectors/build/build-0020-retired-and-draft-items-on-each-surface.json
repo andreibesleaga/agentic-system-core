@@ -1,0 +1,110 @@
+{
+  "area": "build",
+  "description": "AGSC-00-05: a published item is neither draft nor held back; a listed item is a published item that is not retired. A retired item keeps its page, its per-item copies and its place in the graph exports, and leaves search.json, /llms.txt, /llms-full.txt, /chunks.jsonl, the skill packs, agsc-counts and the index pages that list items (a type's, a tag's, a cluster's members, the home page and the search page). A draft item is on no published surface at all. Derivation over the minimal fixture with two items added to the cluster agent-patterns: alder (status draft) and birch (status retired), both tagged agents and patterns. The build emits /concepts/birch/, /pages/birch.md and /pages/birch.jsonld and no route for alder; the three graph exports name birch and never alder; each listing surface (carried_by and not_carried_by compare the bytes served at the route with the slug as a string) names neither; and the concepts count of agsc-counts in the discovery document stays 2 (handoff and supervisor), the listed concepts only. A route ending in / is served as its index.html. The build is run with SOURCE_DATE_EPOCH set and no git history.",
+  "expected": {
+    "carried_by": {
+      "/concepts/birch/": [
+        "birch"
+      ],
+      "/graph.jsonld": [
+        "birch"
+      ],
+      "/graph.nq": [
+        "birch"
+      ],
+      "/graph.ttl": [
+        "birch"
+      ]
+    },
+    "files_contain": {
+      "/.well-known/knowledge-linkset": [
+        "\"concepts=2\""
+      ]
+    },
+    "no_error_finding": true,
+    "not_carried_by": {
+      "/": [
+        "alder",
+        "birch"
+      ],
+      "/chunks.jsonl": [
+        "alder",
+        "birch"
+      ],
+      "/clusters/agent-patterns/": [
+        "alder",
+        "birch"
+      ],
+      "/concepts/": [
+        "alder",
+        "birch"
+      ],
+      "/graph.jsonld": [
+        "alder"
+      ],
+      "/graph.nq": [
+        "alder"
+      ],
+      "/graph.ttl": [
+        "alder"
+      ],
+      "/llms-full.txt": [
+        "alder",
+        "birch"
+      ],
+      "/llms.txt": [
+        "alder",
+        "birch"
+      ],
+      "/search.json": [
+        "alder",
+        "birch"
+      ],
+      "/search/": [
+        "alder",
+        "birch"
+      ],
+      "/skills/agent-patterns/SKILL.md": [
+        "alder",
+        "birch"
+      ],
+      "/skills/index.json": [
+        "alder",
+        "birch"
+      ],
+      "/tags/agents/": [
+        "alder",
+        "birch"
+      ],
+      "/tags/patterns/": [
+        "alder",
+        "birch"
+      ]
+    },
+    "routes_absent": [
+      "/concepts/alder/",
+      "/pages/alder.jsonld",
+      "/pages/alder.md"
+    ],
+    "routes_present": [
+      "/concepts/birch/",
+      "/pages/birch.jsonld",
+      "/pages/birch.md"
+    ]
+  },
+  "id": "build-0020",
+  "input": {
+    "add_files": {
+      "content/concepts/alder.md": "---\ntype: concept\ntitle: Alder\ndescription: A draft concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: draft\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Alder.\n",
+      "content/concepts/birch.md": "---\ntype: concept\ntitle: Birch\ndescription: A retired concept that a conformance case adds to show which surfaces carry it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nstatus: retired\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Birch.\n"
+    },
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-00-05"
+}

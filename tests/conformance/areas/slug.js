@@ -5,8 +5,32 @@
 
 const slug = require('../../../src/knowledge/slug.js');
 const { checks } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
-module.exports.run = (vector) => {
+/**
+ * The regular-expression features outside the subset RE2, Go `regexp`, Rust `regex`
+ * and PCRE2 share (tests/vectors/README.md, porting notes), each with the form that
+ * gives it away in a pattern's source.
+ */
+const NON_PORTABLE_FEATURES = Object.freeze([
+  ['lookahead', /\(\?[=!]/u],
+  ['lookbehind', /\(\?<[=!]/u],
+  ['backreference', /\\[1-9]|\\k</u],
+  ['named group', /\(\?<[A-Za-z]/u],
+  ['atomic group', /\(\?>/u],
+  ['possessive quantifier', /[*+?}]\+/u],
+  ['unicode escape', /\\u/u],
+  ['property escape', /\\[pP]\{/u],
+]);
+
+/** The non-portable features one pattern source uses, by name. */
+function featuresUsed(source) {
+  return NON_PORTABLE_FEATURES.filter(([, re]) => re.test(source)).map(([name]) => name);
+}
+
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded((vector) => {
   const { input, expected } = vector;
   const list = [];
 
@@ -21,6 +45,11 @@ module.exports.run = (vector) => {
     }
     if (expected.lookahead === false) {
       list.push(['no-lookahead', !/\(\?[=!]/u.test(slug.SLUG_PATTERN), slug.SLUG_PATTERN]);
+    }
+    if (Array.isArray(expected.engine_features_used)) {
+      const used = featuresUsed(slug.SLUG_PATTERN);
+      list.push(['engine features used', JSON.stringify(used) === JSON.stringify(expected.engine_features_used),
+        JSON.stringify(used)]);
     }
     return checks(list);
   }
@@ -53,4 +82,4 @@ module.exports.run = (vector) => {
       JSON.stringify(findings.map((f) => f.code))]);
   }
   return checks(list);
-};
+});

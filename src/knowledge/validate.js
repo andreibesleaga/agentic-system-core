@@ -517,6 +517,16 @@ function config(configObject, options = {}) {
   const out = configObject.build && configObject.build.out;
   const outFault = typeof out === 'string' ? buildOutFault(out) : null;
   if (outFault !== null) findings.push(finding('AGSC-E204', outFault, { file, key: 'build.out' }));
+  // AGSC-11-20: a `restricted` node carries exactly one `…/rel#access` link, and the
+  // configuration's `access` key is where its target comes from; a restricted
+  // configuration that names none is a required value missing (`AGSC-E202`), so `build`
+  // and `ci`, which run this check, never publish a restricted node without the link.
+  if (configObject.visibility === 'restricted' && configObject.access === undefined) {
+    findings.push(finding('AGSC-E202',
+      'visibility is restricted and no access page is named; a restricted node carries exactly one rel#access link,'
+      + ' whose target is where a reader obtains credentials: name it in the top-level access key (AGSC-11-20)',
+      { file, key: 'access' }));
+  }
   // AGSC-01-19: the development placeholder `http://localhost[:<port>][/]` is admitted, and
   // lint reports it "until the owner replaces it" — on every run, not only by the `init`
   // that wrote it. `build` and `ci` run this check too (verbs/lint.js `configAndRoot`).

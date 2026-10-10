@@ -1,0 +1,44 @@
+{
+  "area": "links",
+  "description": "Negative, derived from AGSC-03-08: `broader`/`narrower` MUST be acyclic, AGSC-E303, and a `narrower` on another cluster that names a cluster adds an edge to the acyclicity check. Three clusters: deck names family as its broader, sub-deck names deck as its broader, and sub-deck also names family as its narrower, which makes sub-deck the parent of family. No cluster authors two broader values, and the three form the cycle family, sub-deck, deck. The cycle is the one error. The order in which the slugs of the cycle are reported is not fixed by the rule, so it is not asserted; the depth bound is checked after acyclicity and is not reached.",
+  "expected": {
+    "error": "AGSC-E303",
+    "errors": [
+      "AGSC-E303"
+    ]
+  },
+  "id": "links-0008",
+  "input": {
+    "items": [
+      {
+        "description": "The family cluster, whose parent is named only by a narrower value.",
+        "slug": "family",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "family"
+        ],
+        "description": "The deck cluster, nested under the family.",
+        "slug": "deck",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "deck"
+        ],
+        "description": "The sub-deck cluster, which also names the family as its narrower.",
+        "narrower": [
+          "family"
+        ],
+        "slug": "sub-deck",
+        "type": "cluster"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-03-08"
+}

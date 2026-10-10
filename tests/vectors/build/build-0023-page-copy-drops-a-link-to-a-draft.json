@@ -1,0 +1,28 @@
+{
+  "area": "build",
+  "description": "AGSC-05-07: /pages/<slug>.md is a byte-identical copy of the lint-normalized source file with one derived change: a Link target naming an item AGSC-06-30 excludes is removed from the frontmatter array, and a key emptied by that removal is omitted. Derivation over the minimal fixture with two files replaced or added, each authored in lint-normalized form (the date unquoted, as lint --fix writes it): alder, a draft concept, and supervisor, whose uses[] is [alder, handoff] and whose related[] is [alder]. The page copy of supervisor is the source with the line naming alder removed from uses[] and the whole related key omitted, because its only target was removed; nothing else changes, the body included. The draft alder has no page copy. The build is run with SOURCE_DATE_EPOCH set and no git history.",
+  "expected": {
+    "no_error_finding": true,
+    "route_bytes": {
+      "/pages/supervisor.md": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: 2026-01-01\nprov:\n  origin: human\n  operator: human:andreibesleaga\nuses:\n  - handoff\nkind: pattern\n---\n\n## Intent\n\nRoute work to specialised workers and collect what they return.\n\n## Context & Forces\n\nOne agent cannot hold every skill. Work has to be split, and the split has to be\nlegible afterwards.\n\n## Structure\n\nA supervisor receives a task, chooses a worker, hands the task over and merges the\nresults.\n\n## Consequences & Trade-offs\n\nRouting adds a hop and a place for the reasoning to be recorded; it also adds a\nsingle point of failure.\n\n## Related Patterns\n\nSee [Handoff](handoff) for the hand-over itself.\n"
+    },
+    "routes_absent": [
+      "/pages/alder.md"
+    ]
+  },
+  "id": "build-0023",
+  "input": {
+    "add_files": {
+      "content/concepts/alder.md": "---\ntype: concept\ntitle: Alder\ndescription: A draft concept that a published item links to, added by a conformance case.\ntags:\n  - agents\n  - patterns\ndate: 2026-01-01\nstatus: draft\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nShow what the surfaces of a node carry for Alder.\n",
+      "content/concepts/supervisor.md": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: 2026-01-01\nprov:\n  origin: human\n  operator: human:andreibesleaga\nuses:\n  - alder\n  - handoff\nrelated:\n  - alder\nkind: pattern\n---\n\n## Intent\n\nRoute work to specialised workers and collect what they return.\n\n## Context & Forces\n\nOne agent cannot hold every skill. Work has to be split, and the split has to be\nlegible afterwards.\n\n## Structure\n\nA supervisor receives a task, chooses a worker, hands the task over and merges the\nresults.\n\n## Consequences & Trade-offs\n\nRouting adds a hop and a place for the reasoning to be recorded; it also adds a\nsingle point of failure.\n\n## Related Patterns\n\nSee [Handoff](handoff) for the hand-over itself.\n"
+    },
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-05-07"
+}

@@ -13,6 +13,13 @@
 #              no NPM_TOKEN exists in this repository and none is read here.
 #   Provenance `actions/attest-build-provenance` attests each tarball, and
 #              `npm publish --provenance` records the build on the registry.
+#   On main    The publish job reads the whole history and refuses a tag whose
+#              commit is not on `main`: with release branches, a tag pushed on a
+#              branch head before its pull request is merged would otherwise
+#              publish a commit `main` does not have.
+#   Dist-tag   Chosen from the version: a pre-release (`1.1.0-rc.1`) is published
+#              under `next`, a final release (`1.0.0`) under `latest`, so a later
+#              release candidate never takes `latest` from a final release.
 #
 # Every action is pinned to a commit SHA with the version beside it, so that a
 # moved tag cannot change what runs (docs/PLAN.md §7). Each SHA was read from the
@@ -129,6 +136,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The whole history: the step "the tagged commit is on main" reads ancestry.
+          fetch-depth: 0
       # npm trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0
       # (docs.npmjs.com/trusted-publishers). Node 24 ships a newer npm, so keep
       # this job on 24 even though the engine itself supports Node >= 22.13.0.
@@ -155,12 +164,30 @@ jobs:
           version="$(node -p "require('./package.json').version")"
           test "$tag" = "$version" || { echo "tag $tag != package.json $version"; exit 1; }
           echo "VERSION=$version" >> "$GITHUB_ENV"
+          # The dist-tag follows the version (build metadata after `+` aside): a
+          # pre-release goes to `next`, a final release to `latest`.
+          case "${version%%+*}" in
+            *-*) dist_tag=next ;;
+            *) dist_tag=latest ;;
+          esac
+          echo "DIST_TAG=$dist_tag" >> "$GITHUB_ENV"
+          echo "publishing $version under the dist-tag $dist_tag"
+
+      # On a tag push $GITHUB_SHA is the tag's commit, but on a manual run it is the
+      # head of main, so the commit checked is always the one the tag names.
+      - name: the tagged commit is on main
+        shell: bash
+        run: |
+          git fetch --no-tags origin "+refs/heads/main:refs/remotes/origin/main" "+refs/tags/v$VERSION:refs/tags/v$VERSION"
+          commit="$(git rev-parse "v$VERSION^{commit}")"
+          git merge-base --is-ancestor "$commit" origin/main || { echo "v$VERSION names $commit, which is not on main"; exit 1; }
+          echo "v$VERSION names $commit, which is on main"
 
       - name: a manual run ships exactly the tagged files
         if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
-          git fetch --no-tags --depth=1 origin "refs/tags/v$VERSION:refs/tags/v$VERSION"
+          # The tag was fetched by the step before.
           mapfile -t paths < <(node -e "for (const f of ['package.json', 'packages/agsc-cli', ...require('./package.json').files]) console.log(f)")
           git diff --stat "refs/tags/v$VERSION" HEAD -- "${paths[@]}"
           git diff --quiet "refs/tags/v$VERSION" HEAD -- "${paths[@]}" || { echo "shipped files differ from tag v$VERSION"; exit 1; }
@@ -176,17 +203,13 @@ jobs:
         with:
           subject-path: '*.tgz'
 
-      # `--tag latest` is stated rather than left to the default, deliberately.
-      # npm's own documentation (docs.npmjs.com/cli/v11/commands/npm-dist-tag, read
-      # 2026-09-22) says "Publishing a package sets the `latest` tag to the published
-      # version unless the `--tag` option is used", and adds "Typically, projects only
-      # use the `latest` tag for stable release versions, and use other tags for
-      # unstable versions such as prereleases". So a pre-release DOES take `latest`
-      # by default, and the convention says it usually should not. This release
-      # decides the opposite, for a reason: the only prior versions of both
-      # names are the 0.0.2 name reservations, so `npm install agentic-system-core`
-      # has to give the working engine rather than a stub. Writing the flag makes
-      # that a decision a reader can see, instead of a default nobody chose.
+      # `--tag` is always stated rather than left to the default. npm's own
+      # documentation (docs.npmjs.com/cli/v11/commands/npm-dist-tag, read 2026-09-22)
+      # says "Publishing a package sets the `latest` tag to the published version
+      # unless the `--tag` option is used", and adds "Typically, projects only use the
+      # `latest` tag for stable release versions, and use other tags for unstable
+      # versions such as prereleases". So the value is DIST_TAG, chosen from the
+      # version above: `next` for a pre-release, `latest` for a final release.
       # The tarballs published are the ones attested above — one `npm pack` per
       # package, then `npm publish <file>` — so the attested bytes and the registry's
       # bytes are the same file by construction, not two packs of one tree.
@@ -201,7 +224,7 @@ jobs:
           if [ "$(npm view "agentic-system-core@${VERSION}" version 2>/dev/null)" = "${VERSION}" ]; then
             echo "agentic-system-core@${VERSION} is already on npm; nothing to publish"
           else
-            npm publish --provenance --access public --tag latest "./agentic-system-core-${VERSION}.tgz"
+            npm publish --provenance --access public --tag "${DIST_TAG}" "./agentic-system-core-${VERSION}.tgz"
           fi
 
       - name: publish the alias (the attested tarball)
@@ -210,5 +233,5 @@ jobs:
           if [ "$(npm view "agsc-cli@${VERSION}" version 2>/dev/null)" = "${VERSION}" ]; then
             echo "agsc-cli@${VERSION} is already on npm; nothing to publish"
           else
-            npm publish --provenance --access public --tag latest "./agsc-cli-${VERSION}.tgz"
+            npm publish --provenance --access public --tag "${DIST_TAG}" "./agsc-cli-${VERSION}.tgz"
           fi

@@ -1,0 +1,37 @@
+{
+  "area": "prov",
+  "description": "Derived from AGSC-08-17: the clean-room lint MUST refuse, as AGSC-E405, a reference to a numbered division of a work anywhere in authored prose: the case-folded word chapter or chapters followed by whitespace and decimal digits or a Roman numeral, refused as a pattern and never as a literal list of numbers. Three concepts are added to the minimal fixture, each conforming in every key and a member of its cluster. roman.md writes the plural in capitals followed by a Roman numeral, which case folding and the Roman alternative both catch: one error. tabbed.md writes the singular, a tab and decimal digits, which the whitespace of the rule catches: one error. plain.md uses the word with no numeral after it: nothing. The whole list `lint` reports is the two AGSC-E405 errors, and lint exits 1. The clean-room lint is one of the four lints AGSC-10-04 places at Level 3, which is why the case sits in this area.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E405",
+          "file": "content/concepts/roman.md",
+          "severity": "error",
+          "slug": "roman"
+        },
+        {
+          "code": "AGSC-E405",
+          "file": "content/concepts/tabbed.md",
+          "severity": "error",
+          "slug": "tabbed"
+        }
+      ]
+    }
+  },
+  "id": "prov-0011",
+  "input": {
+    "add_files": {
+      "content/concepts/plain.md": "---\ntype: concept\ntitle: Plain\ndescription: A concept whose prose uses the word for a division of a work with no numeral after it.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nEach chapter of a long work is a division, and naming one is fine.\n",
+      "content/concepts/roman.md": "---\ntype: concept\ntitle: Roman\ndescription: A concept whose prose names numbered divisions of a work with a Roman numeral.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nAs CHAPTERS XII and XIII of a long work show, a division can be named.\n",
+      "content/concepts/tabbed.md": "---\ntype: concept\ntitle: Tabbed\ndescription: A concept whose prose names a numbered division of a work after a tab character.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nSee chapter\t7 for the division.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-08-17"
+}
