@@ -27,7 +27,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 
 | Row | Who | Feature file | Target | Reason |
 |---|---|---|---|---|
-| H1 | Solo author, folder of notes (P0) | persona-0 | B + G→E3, E5, E6, E7 | |
+| H1 | Solo author, folder of notes (P0) | persona-0 | B + G→E7 | |
 | H2 | Solo author publishing (P0, P9) | persona-0: a local publish over loopback | B; forge push P | |
 | H3 | Human reader (P1) | persona-a | B + C (search) | |
 | H4 | Contributor (P2) | persona-b: the local commit half | B; PR body P | |
@@ -36,7 +36,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | H7 | Team with procedures (P6) | persona-f | B | |
 | H8 | Skills-repository importer | persona-f: an outline over the five layouts | B | |
 | H9 | Architect (P5) | persona-e | B + C ×3 | |
-| H10 | People on a live board (P12) | persona-k | B + G→E4 | |
+| H10 | People on a live board (P12) | persona-k | B | |
 | H11 | Board to and from a project tool, eleven formats | persona-g: an outline | B | |
 | H12 | Team on the GABBE kit | persona-g | B | |
 | H13 | Other memory systems through COGX | persona-h: a COGX export and import round trip, offline | B | |
@@ -44,7 +44,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | H15 | Standards implementer (P11) | persona-j | B; w3id live P | |
 | H16 | Federating publishers | persona-j | B | |
 | H17 | Restricted publisher (P15) | persona-o | B + G→RS-a, RS-b | |
-| H18 | Security reviewer (P13) | persona-m | B + G→E1, E2, E3 | |
+| H18 | Security reviewer (P13) | persona-m | B + G→E1 | |
 | H19 | Researcher (P14) | persona-n | B | |
 | H20 | Manager deciding to depend on it | — | rec | prose (README, CONFORMANCE-STATEMENTS, GOVERNANCE) is the right evidence for this reader; no journey runs a command |
 | H21 | Old-site importer (maintainer only) | persona-i: an import of the old-site fixture | B | |
@@ -59,7 +59,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | A9 | Federation peer checking a node | persona-j | B + G→E10 | |
 | A10 | Skills consumer fetching packs | persona-f | B | |
 | A11 | Lane working the board through the tool server | persona-k | B | |
-| A12 | Lane run by refresh --dry-run | persona-k | G→E4 | |
+| A12 | Lane run by refresh --dry-run | persona-k | B | |
 | A13 | Review agent (lint only) | persona-b | B | |
 | A14 | Memory-framework importers (records.js) | persona-h: records.js reshapes chunks.jsonl for a memory framework, offline | B | |
 | A15 | Project-tool importer and exporter | persona-g: an outline | B | |
@@ -79,11 +79,11 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | Discovery Levels 0–3 | B for every Level | persona-l (Level 0, the Level-3 claim), persona-j (Level 1, Level 2) | |
 | Exports and adapters | B | persona-h (export --jsonl, an outline over --zip, mermaid and llm-context, cogx), persona-f (skills), persona-g (gabbe, board) | |
 | Imports | B | persona-h (okf, cogx), persona-f (skills repositories), persona-g (board, gabbe), persona-i (old-site) | |
-| Live boards, claims, lanes, budget, .env | B + G→E4 | persona-k | |
+| Live boards, claims, lanes, budget, .env | B | persona-k | |
 | Six modes | B | persona-0 (mode 0), persona-h (mode 1), persona-g (mode 2), persona-f (mode 3), persona-e (mode 4), persona-k (mode 5) | |
 | Restricted visibility | B + G→RS-a, RS-b | persona-o | |
 | Federation, peers, contribute | B + G→E10 | persona-j | |
-| security.txt | B + G→E6 | persona-0, persona-m | |
+| security.txt | B | persona-0, persona-m | |
 | Legal texts, TDM | B | persona-0, persona-c (a crawler) | |
 | Hosting profiles | B + G→E1 | persona-0, persona-m | |
-| Ledger and anchor | B + G→E2 | persona-i, persona-k, persona-m | |
+| Ledger and anchor | B | persona-i, persona-k, persona-m | |

@@ -6,8 +6,10 @@ different things, and they are changed in two different ways.
 - **The standard** — `spec/`, `schema/`, `ontology/`, `tests/vectors/` and
   `docs/SPEC.md`. These are **frozen** as published, from the first public release
   candidate `1.0.0-rc.6` on: a released rule id keeps its meaning, a released vector
-  is never edited (it is withdrawn and a new one added), and an ontology term is deprecated rather than deleted
-  (`spec/00-overview.md`, AGSC-00-14…17). A change here is a change to the format
+  is never edited, except the specification-version string, which AGSC-00-16 lets a
+  release edit in place (any other change withdraws it and adds a new one), and an
+  ontology term is deprecated rather than deleted (`spec/00-overview.md`,
+  AGSC-00-14…17). A change here is a change to the format
   every implementation must follow.
 - **The engine** — `src/`, `bin/`, `tools/`, `tests/` and the rest. This is one
   implementation of the standard. It can be fixed, refactored and extended freely,
@@ -40,7 +42,7 @@ Normal pull request. New to the code? [docs/CODE-ORIENTATION.md](https://github.
 ```bash
 npm ci                           # the exact pinned libraries of the lockfile
 npm test                         # the whole suite, node:test, offline
-npm run test:coverage            # line coverage of src/ must stay at or above 99.9 %
+npm run test:coverage            # coverage of src/: lines 99.9 %, functions 99 %, branches 93 %
 npm run audit                    # npm audit must report 0 vulnerabilities
 node tools/count-artifacts --json   # the rule, code, vector and term counts
 node tools/validate-vectors --json  # every conformance vector is well formed
@@ -48,7 +50,8 @@ node --test tests/arch/*.test.js    # the context boundaries and the purity rule
 ```
 
 All of these must pass, and the test comes first: write the failing test, then the
-smallest change that makes it pass. Every test is deterministic — a fixed clock
+smallest change that makes it pass. The coverage bar is line coverage 99.9 %, functions
+99 %, branches 93 %, enforced in CI: a pull request below it does not merge. Every test is deterministic — a fixed clock
 (`SOURCE_DATE_EPOCH`), no network, no wall clock, no randomness — because the build
 is reproducible byte for byte and the tests are what hold it that way.
 
@@ -63,9 +66,10 @@ system, no clock, no network, no process — and reach the outside world only th
 the ports in `src/ports/`. `tests/arch/` enforces this and will fail the build if a
 module reaches across a boundary.
 
-## Signing off — and one thing that is not settled
+## Signing off
 
-Every accepted contribution carries a trailer block. The rule is `AGSC-08-06` in
+An outside contribution — a commit from anyone other than the maintainer — carries a
+trailer block; the maintainer's own commits are exempt. The rule is `AGSC-08-06` in
 `spec/08-governance.md`, and this is its grammar, quoted in full:
 
 ```abnf
@@ -82,14 +86,23 @@ So a commit message ends with a line of this shape:
 Signed-off-by: Ada Lovelace <ada@example.org> (CA-v1)
 ```
 
-and, when the prose or code was drafted with an AI assistant — `prov.origin` is
-`ai-assisted` or `ai-generated` — an extra line naming the accountable human
-(`AGSC-08-07`; a missing or malformed trailer is `AGSC-E504`, and an AI-origin change
-whose operator does not match is `AGSC-E505`):
+A missing or malformed sign-off is `AGSC-E504`. When the prose or code was drafted
+with an AI assistant — `prov.origin` is `ai-assisted` or `ai-generated` — a second
+line can name the accountable human. The `Assisted-by:` line is optional in the
+specification (`AGSC-08-07`); clause (h) of the agreement, below, is your own promise
+to write it when a software tool helped you. Its operator is the item's
+`prov.operator`:
 
 ```
 Assisted-by: claude/opus-4 (operator: human:ada)
 ```
+
+**How the ledger names you.** The ledger a build derives from the git history
+(`AGSC-08-20a`) names the author of each commit from its `Signed-off-by:` trailer: the
+part of the address before the `@`, normalised as `AGSC-02-90` says, as `human:<id>`,
+so the sign-off above gives `human:ada`. A commit with no sign-off, such as one of the
+maintainer's own, is named `human:unknown`. Version 1.0 has no configuration key that
+maps a commit's git identity to a named author.
 
 **What `CA-v1` means.** The token names the file `CONTRIBUTOR-AGREEMENT` at the root
 of this repository. Read it before your first commit. In short: you certify that you
@@ -146,12 +159,16 @@ works if that field is decorative.
 
 ## Releases
 
-A release carries two tags on the same commit: the specification's own tag
-(`1.0.0-rc.7`, which names the standard) and the package tag (`v1.0.0-rc.7`), which
-triggers the workflow in `.github/workflows/release.yml` that publishes the npm
-packages; nothing is published from a laptop. The procedure
-around it is kept by the maintainer outside this repository, and `node tools/release`
-prints the checklist it checks against. `server.json` is the tool server's entry for the
+A release is prepared on a `release/<version>` branch (for example `release/1.0.0`)
+and reaches `main` through a pull request whose checks are green. It then carries two
+annotated tags (`git tag -a`) on the same commit: the specification's own tag
+(`1.0.0`, which names the standard) and the package tag (`v1.0.0`). The specification
+tag is pushed before the package tag. The package tag triggers the workflow in
+`.github/workflows/release.yml` that publishes the npm packages, and publishing waits
+for the maintainer's approval of the `release` and `pypi` environments (npm from this
+repository, PyPI from the Python checker's); nothing is published from a laptop. The
+procedure around it is kept by the maintainer outside this repository, and
+`node tools/release` prints the checklist it checks against. `server.json` is the tool server's entry for the
 MCP Registry; it carries the npm version, which `node tools/release` checks and writes
 with the package files.
 

@@ -11,11 +11,11 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 135 |
-| Unit, integration or architecture test | 308 |
+| Unit, integration or architecture test | 309 |
 | Executed acceptance scenario | 68 |
-| Checker header | 31 |
+| Checker header | 32 |
 
-Acceptance scenarios: 120 in `features/` (a Scenario Outline counts once), of which 32 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 68 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 120 in `features/` (a Scenario Outline counts once), of which 20 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 68 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -76,7 +76,7 @@ Test files are listed by path; at most three names are shown per cell.
 
 | Rule | Class | Vectors | Tests | Acceptance | Checkers |
 |---|---|---|---|---|---|
-| AGSC-00-01 | VERIFIED | — | `arch/package-manifest.test.js` | — | — |
+| AGSC-00-01 | VERIFIED | — | `arch/package-manifest.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-00-02 | PROSE-ONLY | — | — | — | — |
 | AGSC-00-03 | VERIFIED | — | `standard/consistency.test.js` | — | — |
 | AGSC-00-04 | VERIFIED | — | `tools/validate-schemas.test.js` | — | `validate-schemas` |
@@ -91,11 +91,11 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-00-13 | VERIFIED | — | `conformance/vector-runner.test.js` | — | — |
 | AGSC-00-14 | VERIFIED | — | `standard/rules.test.js` | — | — |
 | AGSC-00-15 | VERIFIED | `bundle-0001`, `bundle-0008` | `application/compatibility.test.js`, `application/serve-command.test.js`, `knowledge/validate.test.js` | — | — |
-| AGSC-00-16 | VERIFIED | — | `application/conformance.test.js`, `standard/consistency.test.js` | — | — |
+| AGSC-00-16 | VERIFIED | — | `application/conformance.test.js`, `standard/consistency.test.js`, `standard/rules.test.js` | — | `validate-spec` |
 | AGSC-00-17 | VERIFIED | — | `knowledge/validate-major.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-00-18 | VERIFIED | — | `standard/rules.test.js` | — | — |
 | AGSC-00-19 | PROSE-ONLY | — | — | — | — |
-| AGSC-00-20 | VERIFIED | `cli-0016` | — | — | — |
+| AGSC-00-20 | VERIFIED | `cli-0016` | `application/config/load.test.js` | — | — |
 | AGSC-00-21 | VERIFIED | — | `application/compatibility.test.js`, `distribution/discovery-facts.test.js`, `distribution/reader-tolerance.test.js` +1 | — | `validate-wellknown` |
 | AGSC-00-22 | VERIFIED | `lint-0027` | `application/compatibility.test.js`, `application/plugin-examples.test.js` | — | — |
 | AGSC-00-23 | VERIFIED | — | `application/compatibility.test.js`, `tools/validate-wellknown-visibility.test.js` | — | — |
@@ -138,7 +138,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-35 | VERIFIED | `lint-0023` | `adapters/node-fs.test.js`, `governance/lint-order.test.js`, `interchange/mapping.test.js` +1 | — | — |
 | AGSC-01-36 | VERIFIED | `bundle-0003`, `bundle-0004`, `bundle-0005` | `acceptance/steps/persona-k.js`, `governance/agents.test.js`, `governance/prov.test.js` | — | — |
 | AGSC-01-37 | VERIFIED | `cli-0006` | `acceptance/steps/persona-m.js`, `application/cli/json-stderr-findings-only.test.js`, `application/cli/verbs-wired.test.js` +4 | `persona-k-live-board.feature#ci --json names the budget override and never its value` | — |
-| AGSC-01-38 | VERIFIED | — | `distribution/now-spend.test.js` | — | — |
+| AGSC-01-38 | VERIFIED | — | `application/cli/refresh-stops.test.js`, `distribution/now-spend.test.js` | — | — |
 | AGSC-02-01 | VERIFIED | — | `interchange/oldsite.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
 | AGSC-02-02 | VERIFIED | `fm-0005` | `distribution/page-tools.test.js`, `knowledge/yaml.test.js` | — | — |
 | AGSC-02-03 | VERIFIED | `fm-0001`, `fm-0006` | `distribution/page-tools.test.js`, `interchange/clusters.test.js`, `knowledge/validate.test.js` +1 | — | — |
@@ -164,9 +164,9 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-23 | VERIFIED | — | `governance/lint-order.test.js`, `interchange/status.test.js` | — | — |
 | AGSC-02-24 | VERIFIED | `fm-0010`, `frontmatter-0030` | `composition/skills.test.js`, `distribution/public-statements.test.js`, `interchange/clusters.test.js` +7 | — | `validate-schemas` |
 | AGSC-02-90 | VERIFIED | `adopt-0001` | `acceptance/steps/persona-0.js`, `application/cli/verbs-wired.test.js`, `knowledge/adopt.test.js` +1 | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
-| AGSC-02-91 | VERIFIED | `adopt-0002`, `fm-0008` | `acceptance/steps/persona-0.js`, `application/cli/init-notes.test.js`, `distribution/init.test.js` +5 | `persona-0-dropin.feature#Three commands from bare notes to a full local site`, `persona-0-dropin.feature#Re-running init over an adopted and built Bundle changes nothing` | — |
+| AGSC-02-91 | VERIFIED | `adopt-0002`, `fm-0008`, `slug-0007` | `acceptance/steps/persona-0.js`, `application/cli/init-notes.test.js`, `distribution/init.test.js` +5 | `persona-0-dropin.feature#Three commands from bare notes to a full local site`, `persona-0-dropin.feature#Re-running init over an adopted and built Bundle changes nothing`, `persona-0-dropin.feature#Adopting notes with non-ASCII file names gives ASCII slugs` | — |
 | AGSC-02-92 | VERIFIED | `adopt-0003` | `acceptance/steps/persona-0.js`, `distribution/init.test.js`, `knowledge/adopt.test.js` | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
-| AGSC-02-93 | VERIFIED | — | `acceptance/steps/persona-0.js`, `distribution/init.test.js`, `knowledge/adopt.test.js` | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
+| AGSC-02-93 | VERIFIED | — | `acceptance/steps/persona-0.js`, `distribution/init.test.js`, `knowledge/adopt.test.js` | `persona-0-dropin.feature#Three commands from bare notes to a full local site`, `persona-0-dropin.feature#Adopting notes with non-ASCII file names gives ASCII slugs` | — |
 | AGSC-02-94 | VERIFIED | `adopt-0007`, `adopt-0008` | `distribution/init.test.js` | — | — |
 | AGSC-02-95 | VERIFIED | `adopt-0009` | `acceptance/steps/persona-0.js`, `distribution/acceptance-findings.test.js`, `distribution/init.test.js` +2 | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
 | AGSC-02-96 | VERIFIED | `lint-0025` | `governance/lint-order.test.js` | — | — |
@@ -199,7 +199,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-04-06 | VERIFIED | — | `standard/rules.test.js` | — | — |
 | AGSC-04-07 | VERIFIED | `build-0015` | `knowledge/turtle.test.js`, `knowledge/unicode.test.js`, `standard/consistency.test.js` | — | — |
 | AGSC-04-08 | VERIFIED | — | `standard/rules.test.js` | — | — |
-| AGSC-04-09 | VERIFIED | — | `acceptance/steps/persona-j.js`, `adapters/node-clock.test.js`, `application/cli/main-shell.test.js` +6 | — | — |
+| AGSC-04-09 | VERIFIED | — | `acceptance/steps/persona-j.js`, `adapters/node-clock.test.js`, `application/cli/main-shell.test.js` +7 | — | — |
 | AGSC-04-10 | VERIFIED | — | `adapters/node-clock.test.js`, `governance/ledger.test.js` | — | — |
 | AGSC-04-11 | VERIFIED | — | `standard/rules.test.js` | — | — |
 | AGSC-04-12 | VERIFIED | — | `composition/compose.test.js` | — | — |
@@ -288,7 +288,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-33 | VERIFIED | `build-0011` | `knowledge/nquads.test.js` | — | — |
 | AGSC-06-34 | VERIFIED | — | `boundary/surfaces.test.js` | `persona-c-agent-mcp.feature#Agent starts the local stdio MCP server`, `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled` +9 | — |
 | AGSC-06-35 | VERIFIED | `bnd-0029` | `boundary/federation.test.js`, `distribution/discovery-facts.test.js`, `distribution/relations-rc6.test.js` +1 | — | `validate-wellknown` |
-| AGSC-06-36 | VERIFIED | `build-0013` | `acceptance/steps/persona-m.js` | — | — |
+| AGSC-06-36 | VERIFIED | `build-0013` | `acceptance/steps/persona-m.js`, `docs/agent-skill.test.js` | — | — |
 | AGSC-07-01 | VERIFIED | — | `distribution/compose-page-run.test.js`, `distribution/surfaces-eng2.test.js` | — | — |
 | AGSC-07-03 | VERIFIED | — | `application/cli/verbs-wired.test.js`, `composition/compose.test.js` | — | — |
 | AGSC-07-04 | VERIFIED | `compose-0013`, `compose-0017` | `application/cli/verbs-wired.test.js`, `composition/compose.test.js` | — | — |
@@ -337,10 +337,10 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-08-22 | VERIFIED | — | `acceptance/steps/persona-i.js`, `governance/ledger.test.js` | — | — |
 | AGSC-08-23 | VERIFIED | `ledger-0001`, `ledger-0006`, `ledger-0007` | `acceptance/steps/persona-i.js`, `acceptance/steps/persona-m.js`, `distribution/acceptance-findings.test.js` +2 | — | — |
 | AGSC-08-24 | VERIFIED | — | `acceptance/steps/persona-i.js` | — | — |
-| AGSC-08-25 | VERIFIED | — | `distribution/now-spend.test.js`, `distribution/surfaces-eng2.test.js`, `e2e/modes/mode-4-compose.test.js` +1 | — | — |
+| AGSC-08-25 | VERIFIED | — | `application/cli/refresh-stops.test.js`, `distribution/now-spend.test.js`, `distribution/surfaces-eng2.test.js` +2 | — | — |
 | AGSC-08-26 | PROSE-ONLY | — | — | — | — |
 | AGSC-08-27 | VERIFIED | — | `application/cli/verbs-wired.test.js`, `e2e/modes/mode-0-wiki.test.js` | — | — |
-| AGSC-08-28 | VERIFIED | `prov-0001`, `prov-0002` | `application/cli/verbs-wired.test.js`, `distribution/now-spend.test.js`, `distribution/surfaces-eng2.test.js` +4 | `persona-k-live-board.feature#The agent lane cannot reach the slow lane` | — |
+| AGSC-08-28 | VERIFIED | `prov-0001`, `prov-0002` | `application/cli/refresh-stops.test.js`, `application/cli/verbs-wired.test.js`, `distribution/now-spend.test.js` +5 | `persona-k-live-board.feature#The agent lane cannot reach the slow lane`, `persona-k-live-board.feature#The NOW page shows the budget warning when a cap is reached` | — |
 | AGSC-08-29 | PROSE-ONLY | — | — | — | — |
 | AGSC-08-30 | VERIFIED | — | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-k.js`, `standard/rules.test.js` | `persona-b-contributor.feature#CI runs a lint-only review, no LLM call`, `persona-k-live-board.feature#The build stays deterministic while the lane is non-deterministic` | — |
 | AGSC-09-01 | VERIFIED | — | `composition/conform.test.js`, `distribution/hosts/profiles.test.js` | — | — |
@@ -363,7 +363,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-15 | VERIFIED | — | `standard/consistency.test.js` | — | — |
 | AGSC-09-16 | VERIFIED | `cli-0003`, `cli-0008` | `acceptance/steps/persona-c.js`, `bench/kit.test.js`, `distribution/compose-page-run.test.js` +9 | `persona-c-agent-mcp.feature#A page agent calls the seven page tools without a browser`, `persona-c-agent-mcp.feature#A page agent calls the seven page tools in a browser through document.modelContext`, `persona-c-agent-mcp.feature#An MCP client composes a selection through the compose tool` | — |
 | AGSC-09-90 | VERIFIED | — | `arch/package-manifest.test.js`, `tools/standalone.test.js`, `tools/vacuous-pass.test.js` | — | `validate-diagrams`, `validate-features`, `validate-ontology` +4 |
-| AGSC-09-91 | VERIFIED | — | `standard/consistency.test.js`, `tools/validate-spec.test.js` | — | `validate-spec` |
+| AGSC-09-91 | VERIFIED | — | `standard/consistency.test.js`, `standard/rules.test.js`, `tools/validate-spec.test.js` | — | `validate-spec` |
 | AGSC-09-92 | VERIFIED | — | `standard/workflow.test.js` | — | — |
 | AGSC-09-93 | VERIFIED | `disc-0017`, `disc-0019` | `acceptance/steps/persona-j.js`, `acceptance/steps/persona-o.js`, `distribution/discovery-facts.test.js` +1 | — | `validate-wellknown` |
 | AGSC-09-94 | VERIFIED | `cli-0017` | `acceptance/steps/persona-e.js`, `application/cli/eng5-verbs.test.js`, `application/cli/flags.test.js` +4 | `persona-e-architect.feature#run --dry-run prints the resolved command list and executes nothing`, `persona-e-architect.feature#trace records a captured agent run as an Episode, offline` | — |
@@ -379,11 +379,11 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-10-10 | VERIFIED | — | `docs/implementers-guide-rules.test.js` | — | — |
 | AGSC-10-11 | VERIFIED | — | `docs/implementers-guide-rules.test.js` | — | — |
 | AGSC-10-12 | VERIFIED | `disc-0005` | `acceptance/steps/persona-j.js`, `boundary/anchor-origin.test.js`, `boundary/federation.test.js` +4 | `persona-j-standards.feature#Two publishers federate and pass the mutual check both ways` | `validate-wellknown` |
-| AGSC-10-13 | VERIFIED | `brd-0001`, `brd-0002` | `acceptance/steps/persona-g.js`, `distribution/boards-relation.test.js`, `distribution/build-golden.test.js` +5 | `persona-k-live-board.feature#An agent claims a task by proposing its working state through the tool server`, `persona-k-live-board.feature#The work-in-progress limit keeps the agent on one task` | — |
+| AGSC-10-13 | VERIFIED | `brd-0001`, `brd-0002` | `acceptance/steps/persona-g.js`, `distribution/boards-relation.test.js`, `distribution/build-golden.test.js` +5 | `persona-k-live-board.feature#An agent claims a task by proposing its working state through the tool server`, `persona-k-live-board.feature#The work-in-progress limit keeps the agent on one task`, `persona-k-live-board.feature#A done board stops the lane` | — |
 | AGSC-10-14 | VERIFIED | `bnd-0026` | — | — | — |
 | AGSC-10-15 | VERIFIED | `conform-0003` | `application/conformance.test.js`, `composition/conform-higher-level-cases.test.js`, `composition/conform.test.js` +1 | — | — |
 | AGSC-10-16 | PROSE-ONLY | — | — | — | — |
-| AGSC-10-17 | VERIFIED | `prov-0003` | `distribution/html.test.js`, `distribution/surfaces-eng2.test.js`, `e2e/modes/mode-5-board.test.js` +2 | `persona-k-live-board.feature#An agent claims a task by proposing its working state through the tool server`, `persona-k-live-board.feature#The work-in-progress limit keeps the agent on one task` | — |
+| AGSC-10-17 | VERIFIED | `prov-0003` | `application/cli/refresh-stops.test.js`, `distribution/html.test.js`, `distribution/surfaces-eng2.test.js` +3 | `persona-k-live-board.feature#An agent claims a task by proposing its working state through the tool server`, `persona-k-live-board.feature#The work-in-progress limit keeps the agent on one task` | — |
 | AGSC-10-18 | VERIFIED | — | `standard/rules.test.js` | `persona-k-live-board.feature#The agent lane cannot reach the slow lane` | — |
 | AGSC-11-01 | VERIFIED | `bnd-0017` | `application/cli/main-shell.test.js`, `application/config/load.test.js`, `boundary/bound-table-codes.test.js` +1 | — | — |
 | AGSC-11-02 | VERIFIED | `bnd-0016` | `boundary/visibility.test.js`, `distribution/surface-link-check.test.js`, `governance/boards.test.js` +1 | — | — |

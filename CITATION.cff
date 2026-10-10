@@ -23,7 +23,9 @@ authors:
   - family-names: Besleaga
     given-names: Andrei N.
     orcid: https://orcid.org/0009-0001-3464-5283
-license: Apache-2.0
+license:
+  - Apache-2.0
+  - CC0-1.0
 repository-code: https://github.com/andreibesleaga/agentic-system-core
 url: https://agenticsystemcore.com
 keywords:

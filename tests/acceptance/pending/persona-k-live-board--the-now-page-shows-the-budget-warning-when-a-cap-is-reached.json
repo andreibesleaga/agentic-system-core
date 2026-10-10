@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "E4",
-  "reason": "the NOW state drops the findings of the month's spend, so with the cap reached neither /now.md, /now/ nor the build envelope carries the AGSC-E510 warning that AGSC-08-28 e requires; the spend function's own return value is checked by the NOW spend unit tests.",
-  "scenario": "The NOW page shows the budget warning when a cap is reached"
-}

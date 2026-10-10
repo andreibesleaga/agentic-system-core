@@ -1195,13 +1195,24 @@ function build(bundle, ports, options = {}) {
     };
   }
   try {
-    return buildSite(bundle, ports, options, findings);
+    return withBudgetWarnings(buildSite(bundle, ports, options, findings));
   } catch (e) {
     if (e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code)) {
       e.findings = [...findings, ...(Array.isArray(e.findings) ? e.findings : [])];
     }
     throw e;
   }
+}
+
+/**
+ * AGSC-08-28(e): a budget reached is recorded as the warning `AGSC-E510` in the NOW
+ * page (`now.js`, the state's `budget_reached`), and the build that writes that page
+ * reports the same warning, so the envelope of `build` and `ci` carries it.
+ */
+function withBudgetWarnings(built) {
+  const reached = built.state && built.state.budget_reached;
+  if (Array.isArray(reached) && built.files.has('/now.md')) built.findings.push(...reached);
+  return built;
 }
 
 function buildSite(bundle, ports, options, findings) {

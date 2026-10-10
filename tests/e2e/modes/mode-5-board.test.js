@@ -10,6 +10,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
@@ -100,4 +101,24 @@ test('Mode 5, a lane, a person and a stranger work one live board', async () => 
   const now = kit.read(dir, 'www/now.md');
   // The lane row: enabled, one run (the dry run's Episode), its spend of 0 counted.
   assert.match(now, /^\| worker \| yes \| 1 \| \d+ \| 0 \| 1 \|$/mu, now);
+
+  // Once the month's spend reaches the lane's budget (1 USD here, also the node's cap),
+  // the lane stops: the dry run writes nothing and warns AGSC-E510, and the NOW page
+  // and the build envelope record the warning (AGSC-08-28(e), AGSC-01-38).
+  fs.rmSync(path.join(dir, 'dist', 'proposal'), { force: true, recursive: true });
+  kit.write(dir, 'content/episodes/worker-paid-run.md', ['---', 'type: episode', 'title: A paid run of the worker lane',
+    'description: One run of the worker lane that spent its whole monthly budget on model calls.',
+    'actor: process:worker', `started: "${kit.INSTANT}"`, 'outcome: partial',
+    'usage:', '  model: test-model', '  tokens_in: 10', '  tokens_out: 10', '  cost_usd: 1', '  estimate: true',
+    'prov:', '  origin: ai-generated', '  agent: worker', '  model: test-model', '  operator: human:tester',
+    '---', '', '## What happened', '', 'The lane ran once and spent its budget.', ''].join('\n'));
+  const stopped = kit.agsc(dir, ['refresh', '--agent', 'worker', '--dry-run', '--json']);
+  assert.strictEqual(stopped.code, 0, stopped.stderr);
+  assert.ok(stopped.envelope.findings.some((f) => f.code === 'AGSC-E510' && f.severity === 'warn'), JSON.stringify(stopped.envelope));
+  assert.ok(!fs.existsSync(path.join(dir, 'dist', 'proposal', '1.patch')), 'the lane ran past its budget');
+  const paid = kit.agsc(dir, ['build', '--json']);
+  assert.strictEqual(paid.code, 0, paid.stderr);
+  assert.ok(paid.envelope.findings.some((f) => f.code === 'AGSC-E510'), JSON.stringify(paid.envelope));
+  assert.match(kit.read(dir, 'www/now.md'), /^- AGSC-E510: /mu);
+  assert.match(kit.read(dir, 'www/now/index.html'), /AGSC-E510/u);
 });

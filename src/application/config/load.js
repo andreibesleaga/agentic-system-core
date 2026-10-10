@@ -81,6 +81,19 @@ function grammarFault(name, desc, value) {
 }
 
 /**
+ * AGSC-01-37: the message for an `AGSC_` name this engine does not know, naming the
+ * layer it came from and the remedy.
+ * @param {string} name the AGSC_* name
+ * @param {string} layerName 'env' (the process environment) or 'dotenv' (the `.env` file)
+ * @returns {string}
+ */
+function unknownNameMessage(name, layerName) {
+  return layerName === 'dotenv'
+    ? `${name} in the .env file is not a configuration name this engine knows; remove that line (AGSC-01-37)`
+    : `environment variable ${name} is not a configuration name this engine knows; unset it (AGSC-01-37)`;
+}
+
+/**
  * Apply one env-style layer (a Map<AGSC_name, rawStringValue>) on top of
  * `config`/`sources`/`credentials`, per AGSC-01-37's addressing rules.
  * Returns the list of recognised AGSC_* names this layer actually touched
@@ -92,8 +105,10 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
     const desc = env.pathForEnvName(name);
     if (!desc) {
       // Recognised AGSC_ prefix but not a known key: AGSC-E004 (invalid/unknown
-      // configuration key), reported as a finding, never applied.
-      findings.push({ code: 'AGSC-E004', message: `unknown configuration override ${name}`, severity: 'error' });
+      // configuration key), reported as a finding, never applied. The message says
+      // where the name came from and how to clear it, because the usual cause is a
+      // shell variable the operator set for something else.
+      findings.push({ code: 'AGSC-E004', message: unknownNameMessage(name, layerName), severity: 'error' });
       continue;
     }
     if (desc.kind === 'environment') {
@@ -190,20 +205,17 @@ function load(options) {
 
   // 1. schema defaults (lowest precedence). config.schema.json is frozen at
   // the current tag and does not carry a literal JSON-Schema `default` for
-  // four keys the spec prose nonetheless defaults (a schema gap). Applied
+  // three keys the spec prose nonetheless defaults (a schema gap). Applied
   // here, explicitly, so the engine behaves per the spec today regardless
   // of the schema gap:
   //   - AGSC-01-19: `build.out` MUST default to "www".
-  //   - spec/06-surfaces.md ("/feed.xml is emitted only when build.feed is
-  //     true (default true)"): `build.feed` defaults to true, not false;
-  //     the specification text is the authoritative value, and it is
-  //     unambiguous here.
   //   - AGSC-01-18: `i18n.default` defaults to "en".
   //   - AGSC-09-94 (AGSC-01-18 "run{enabled,...} required... enabled default
   //     false"): `run.enabled` defaults to false.
+  // `build.feed` gets no default: it is a name reserved to 1.1 that a 1.0 tool
+  // refuses in a configuration file (AGSC-00-20, AGSC-06-01), and nothing reads it.
   const PROSE_DEFAULTS = [
     ['build.out', 'www'], // AGSC-01-19
-    ['build.feed', true], // spec/06-surfaces.md ("default true")
     ['i18n.default', 'en'], // AGSC-01-18
     ['run.enabled', false], // AGSC-09-94, AGSC-01-18
   ];

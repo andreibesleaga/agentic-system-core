@@ -24,6 +24,11 @@ const cursor = require('../../examples/connectors/cursor/connect.js');
 const records = require('../../examples/connectors/frameworks/records.js');
 const run = require('../../examples/connectors/_run.js');
 
+// The engine refuses an `AGSC_` name it does not know (AGSC-01-37, `AGSC-E004`, exit 2).
+// The suite's own switches start with `AGSC_` too (`AGSC_AUDIT=1` for the architecture
+// lane), so none reaches the commands this file starts.
+for (const name of Object.keys(process.env)) if (name.startsWith('AGSC_')) delete process.env[name];
+
 const temporaries = [];
 test.after(() => {
   for (const dir of temporaries) nodeFs.rmSync(dir, { force: true, recursive: true });

@@ -1,0 +1,7 @@
+# The issue chooser: a blank issue stays possible; a security problem goes to
+# private vulnerability reporting, never to a public issue (SECURITY.md).
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem privately
+    url: https://github.com/andreibesleaga/agentic-system-core/security/advisories/new
+    about: Private vulnerability reporting. Please do not open a public issue for a security problem.

@@ -12,7 +12,11 @@ dates are fixed). Both use `_page-runner.js`; with `DOCS_ENGINE_PACKAGE` pointin
 installed copy of the packed package, they check the pages against the package as it
 will be published. `agent-skill.test.js` keeps the agent skill in
 `skills/agentic-system-core/` well-formed, its verbs real, and the plugin's copy equal
-to it. Subject: the documentation.
+to it. `governance-texts.test.js` keeps the governance texts at the root of the
+repository and the forms under `.github/` saying the same thing as each other: who
+signs off, how the ledger names an author, the supported versions, the licence of each
+folder, the conformance sentence and the one pinned form of the Action. Subject: the
+documentation.
 
 **Read after:** [tests/README.md](../README.md).
 

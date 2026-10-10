@@ -50,7 +50,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-008 | MAPPED | `AGSC-00-18`, `AGSC-04-25` | 1 vectors, 6 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-009 | MAPPED | `AGSC-00-18` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-010 | MAPPED | `AGSC-00-12`, `AGSC-00-23`, `AGSC-00-25` +1 | 1 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-l-port-implementer.feature`, `persona-n-researcher.feature` | `docs/SPEC.md` |
-| PRD-011 | MAPPED | `AGSC-06-01`, `AGSC-06-36` | 1 vectors, 12 tests, 1 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature` | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/user-flows.md` |
+| PRD-011 | MAPPED | `AGSC-06-01`, `AGSC-06-36` | 1 vectors, 13 tests, 1 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature` | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/user-flows.md` |
 | PRD-012 | MAPPED | `AGSC-00-18` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-013 | MAPPED | `AGSC-02-13` | 0 vectors, 5 tests, 1 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature` | — |
 | PRD-014 | MAPPED | `AGSC-06-16`, `AGSC-06-23` | 3 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-a-reader.feature` | — |
@@ -86,19 +86,19 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-044 | ALLOWED | — | — | — | — | `persona-i-maintainer.feature` | `docs/PLAN.md` |
 | PRD-045 | ALLOWED | — | — | — | — | `persona-i-maintainer.feature` | `docs/PLAN.md` |
 | PRD-046 | MAPPED | `AGSC-06-05`, `AGSC-08-15` | 1 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
-| PRD-047 | MAPPED | `AGSC-06-36` | 1 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | `persona-m-security-reviewer.feature`, `persona-n-researcher.feature` | — |
+| PRD-047 | MAPPED | `AGSC-06-36` | 1 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | `persona-m-security-reviewer.feature`, `persona-n-researcher.feature` | — |
 | PRD-048 | ALLOWED | — | — | — | — | `persona-i-maintainer.feature` | `docs/COMPLIANCE-CROSSWALK.md`, `docs/PLAN.md`, `docs/diagrams/README.md` +2 |
 | PRD-049 | MAPPED | `AGSC-09-92` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | `persona-i-maintainer.feature` | `docs/PLAN.md`, `docs/diagrams/flow-release.md` |
 | PRD-050 | ALLOWED | — | — | — | — | `persona-b-contributor.feature`, `persona-j-standards.feature`, `persona-m-security-reviewer.feature` | `docs/PLAN.md`, `docs/diagrams/flow-release.md` |
 | PRD-051 | MAPPED | `AGSC-09-13a`, `AGSC-09-16` | 3 vectors, 13 tests, 3 scenarios, 0 checkers | — | — | `persona-c-agent-mcp.feature` | — |
 | PRD-052 | MAPPED | `AGSC-06-24` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | — |
-| PRD-054 | MAPPED | `AGSC-09-90`, `AGSC-09-91`, `AGSC-09-92` +3 | 2 vectors, 13 tests, 1 scenarios, 7 checkers | `arch/package-manifest.test.js`, `tools/gen-ns.test.js`, `tools/gen-spec-html.test.js` +7 | — | `persona-j-standards.feature`, `persona-l-port-implementer.feature` | `docs/IMPLEMENTERS-GUIDE.md`, `docs/PLAN.md`, `docs/SPEC.md` |
-| PRD-053 | MAPPED | `AGSC-01-25`, `AGSC-02-90`, `AGSC-02-91` +4 | 7 vectors, 13 tests, 2 scenarios, 0 checkers | `bin/agsc-init-then-ci.test.js`, `conformance/areas/_init-verbs.js`, `tools/validate-features.test.js` | `adopt-0001`, `adopt-0003` | `persona-0-dropin.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/user-flows.md` |
+| PRD-054 | MAPPED | `AGSC-09-90`, `AGSC-09-91`, `AGSC-09-92` +3 | 2 vectors, 14 tests, 1 scenarios, 7 checkers | `arch/package-manifest.test.js`, `tools/gen-ns.test.js`, `tools/gen-spec-html.test.js` +7 | — | `persona-j-standards.feature`, `persona-l-port-implementer.feature` | `docs/IMPLEMENTERS-GUIDE.md`, `docs/PLAN.md`, `docs/SPEC.md` |
+| PRD-053 | MAPPED | `AGSC-01-25`, `AGSC-02-90`, `AGSC-02-91` +4 | 8 vectors, 13 tests, 3 scenarios, 0 checkers | `bin/agsc-init-then-ci.test.js`, `conformance/areas/_init-verbs.js`, `tools/validate-features.test.js` | `adopt-0001`, `adopt-0003` | `persona-0-dropin.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/user-flows.md` |
 | PRD-055 | MAPPED | `AGSC-00-24`, `AGSC-01-13a`, `AGSC-06-08a` +10 | 1 vectors, 14 tests, 2 scenarios, 1 checkers | — | — | `persona-j-standards.feature`, `persona-l-port-implementer.feature` | `docs/PLAN.md`, `docs/SPEC-ORIENTATION.md`, `docs/SPEC.md` |
 | PRD-056 | MAPPED | `AGSC-01-30`, `AGSC-01-31`, `AGSC-01-32` +4 | 2 vectors, 9 tests, 2 scenarios, 0 checkers | — | — | `persona-c-agent-mcp.feature`, `persona-i-maintainer.feature` | `docs/PLAN.md` |
 | NFR-01 | MAPPED | `AGSC-00-18` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | `tools/validate-features.test.js` | — | — | `docs/PLAN.md` |
-| NFR-02 | MAPPED | `AGSC-00-01`, `AGSC-00-03`, `AGSC-00-21` +3 | 1 vectors, 10 tests, 0 scenarios, 2 checkers | — | — | `persona-l-port-implementer.feature` | `docs/PLAN.md`, `docs/SPEC.md` |
-| NFR-03 | MAPPED | `AGSC-09-91` | 0 vectors, 2 tests, 0 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
+| NFR-02 | MAPPED | `AGSC-00-01`, `AGSC-00-03`, `AGSC-00-21` +3 | 1 vectors, 11 tests, 0 scenarios, 2 checkers | — | — | `persona-l-port-implementer.feature` | `docs/PLAN.md`, `docs/SPEC.md` |
+| NFR-03 | MAPPED | `AGSC-09-91` | 0 vectors, 3 tests, 0 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
 | NFR-04 | MAPPED | `AGSC-06-23` | 2 vectors, 3 tests, 0 scenarios, 0 checkers | — | — | `persona-n-researcher.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/README.md` +2 |
 | NFR-05 | MAPPED | `AGSC-08-30` | 0 vectors, 3 tests, 2 scenarios, 0 checkers | — | — | `persona-n-researcher.feature` | `docs/PLAN.md`, `docs/SPEC.md` |
 | NFR-06 | MAPPED | `AGSC-06-21` | 0 vectors, 7 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
@@ -106,15 +106,15 @@ At most three names are shown per cell; test files and scenario files are listed
 | NFR-08 | MAPPED | `AGSC-06-20` | 0 vectors, 3 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
 | NFR-09 | MAPPED | `AGSC-00-18` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md`, `docs/diagrams/README.md`, `docs/diagrams/flow-release.md` +1 |
 | NFR-10 | MAPPED | `AGSC-07-16` | 0 vectors, 2 tests, 1 scenarios, 0 checkers | `tools/public-hygiene.test.js` | — | — | `docs/PLAN.md` |
-| NFR-11 | MAPPED | `AGSC-01-37`, `AGSC-01-38`, `AGSC-02-14` +3 | 4 vectors, 15 tests, 2 scenarios, 0 checkers | `application/cli/verbs-wired.test.js` | — | — | `docs/DEMOS.md`, `docs/PLAN.md`, `docs/diagrams/README.md` +1 |
+| NFR-11 | MAPPED | `AGSC-01-37`, `AGSC-01-38`, `AGSC-02-14` +3 | 4 vectors, 16 tests, 3 scenarios, 0 checkers | `application/cli/verbs-wired.test.js` | — | — | `docs/DEMOS.md`, `docs/PLAN.md`, `docs/diagrams/README.md` +1 |
 | NFR-12 | MAPPED | `AGSC-08-17` | 0 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
 | NFR-13 | MAPPED | `AGSC-00-18` | 0 vectors, 1 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
-| PRD-057 | MAPPED | `AGSC-02-96`, `AGSC-07-23`, `AGSC-10-13` +4 | 9 vectors, 21 tests, 3 scenarios, 1 checkers | — | — | `persona-j-standards.feature`, `persona-o-restricted.feature` | — |
+| PRD-057 | MAPPED | `AGSC-02-96`, `AGSC-07-23`, `AGSC-10-13` +4 | 9 vectors, 21 tests, 4 scenarios, 1 checkers | — | — | `persona-j-standards.feature`, `persona-o-restricted.feature` | — |
 | PRD-058 | MAPPED | `AGSC-11-14` | 2 vectors, 4 tests, 2 scenarios, 0 checkers | — | — | `persona-j-standards.feature` | — |
 | PRD-059 | MAPPED | `AGSC-02-98`, `AGSC-05-29` | 3 vectors, 8 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-060 | MAPPED | `AGSC-04-24`, `AGSC-06-13a` | 3 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | `persona-n-researcher.feature` | `docs/ARCHITECTURE-DDD.md` |
 | PRD-061 | MAPPED | `AGSC-06-26`, `AGSC-06-29` | 2 vectors, 4 tests, 1 scenarios, 0 checkers | — | — | `persona-c-agent-mcp.feature`, `persona-h-memory.feature` | — |
 | PRD-062 | MAPPED | `AGSC-11-05` | 1 vectors, 4 tests, 0 scenarios, 1 checkers | — | — | `persona-m-security-reviewer.feature` | — |
-| PRD-063 | MAPPED | `AGSC-01-36`, `AGSC-08-28`, `AGSC-08-29` | 5 vectors, 8 tests, 1 scenarios, 0 checkers | — | — | `persona-k-live-board.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
+| PRD-063 | MAPPED | `AGSC-01-36`, `AGSC-08-28`, `AGSC-08-29` | 5 vectors, 9 tests, 2 scenarios, 0 checkers | — | — | `persona-k-live-board.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
 | PRD-064 | MAPPED | `AGSC-10-16`, `AGSC-10-18` | 0 vectors, 1 tests, 1 scenarios, 0 checkers | — | — | `persona-g-team.feature`, `persona-k-live-board.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
-| PRD-065 | MAPPED | `AGSC-00-20`, `AGSC-01-37`, `AGSC-01-38` +1 | 4 vectors, 13 tests, 2 scenarios, 0 checkers | — | — | `persona-k-live-board.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
+| PRD-065 | MAPPED | `AGSC-00-20`, `AGSC-01-37`, `AGSC-01-38` +1 | 4 vectors, 14 tests, 3 scenarios, 0 checkers | — | — | `persona-k-live-board.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |

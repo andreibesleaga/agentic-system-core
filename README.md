@@ -232,9 +232,9 @@ with their commands.
 
 **Check a Bundle on every push (GitHub Actions).** `action.yml` at the root of this
 repository is a composite action that runs `agsc ci` with the engine at the same
-commit as the action, so the ref you write pins the engine version. Pin it to a
-release tag or a full commit SHA, give the job read access only, and fetch the
-history the ledger reads:
+commit as the action, so the ref you write pins the engine version. Pin it to the
+package tag, `v1.0.0` (not the specification tag `1.0.0`), or to that tag's full commit
+SHA, give the job read access only, and fetch the history the ledger reads:
 
 ```yaml
 permissions:
@@ -246,17 +246,19 @@ jobs:
       - uses: actions/checkout@<commit-sha>
         with:
           fetch-depth: 0
-      - uses: andreibesleaga/agentic-system-core@<tag-or-commit-sha>
+      - uses: andreibesleaga/agentic-system-core@v1.0.0
 ```
 
 **Lint before every commit (pre-commit).** `.pre-commit-hooks.yaml` offers one hook,
 `agsc-lint`, which runs `agsc lint` over the whole Bundle whenever an item or the
-configuration changed:
+configuration changed. Pin `rev` the same way, to the package tag or its full commit
+SHA. The hook runs under the system Node, which must be Node 22.13 or later; where the
+system Node is older, set `language_version` for the hook to a newer version:
 
 ```yaml
 repos:
   - repo: https://github.com/andreibesleaga/agentic-system-core
-    rev: <tag-or-commit-sha>
+    rev: v1.0.0
     hooks:
       - id: agsc-lint
 ```
@@ -269,9 +271,10 @@ person reads, edits and approves everything that is published and answers for it
 published item records how its text was made and names the person accountable for it.
 Written with AI assistance, reviewed and published by a person.
 The assistance covered text, code, figures and diagrams alike. The engine itself calls no
-AI model: it contains no model adapter, and the model steps the specification describes are
-optional, off unless the person running an engine adds an adapter of their own and turns
-them on, and that person's responsibility. What an assistant or agent writes from this
+AI model and contains no model adapter. The model steps the specification describes are
+optional: a live run is made by an agent outside the engine — Claude Code, a script — as a
+client of `agsc mcp` or the page tools, under the lane's declared limits (AGSC-08-28), and
+it is the responsibility of the person who runs that agent. What an assistant or agent writes from this
 work is its own output, not a statement by the author.
 
 ## What this does not claim
@@ -297,10 +300,13 @@ AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to
 | The JSON Schemas, the ontology, the identifiers and the discovery document | CC0-1.0 |
 | The specification text under `spec/` | Apache-2.0 |
 | The conformance vectors under `tests/vectors/` | Apache-2.0 |
+| The documentation under `docs/`, the scenarios under `features/` and the examples under `examples/` | Apache-2.0 |
+| The W3C-format personal draft under `w3c/` | CC-BY-4.0 |
+| The Internet-Draft under `internet-draft/` | Apache-2.0; as a posted Internet-Draft also under BCP 78 and the IETF Trust Legal Provisions |
 | The prose of a published node — item bodies, descriptions and the pages and exports that carry them | the Content Use Terms in `LICENSE-CONTENT` |
 
-Contributions are signed off under the agreement in `CONTRIBUTOR-AGREEMENT`, which the
-token `CA-v1` names; `CONTRIBUTING.md` says what that means in plain words.
+Outside contributions are signed off under the agreement in `CONTRIBUTOR-AGREEMENT`, which
+the token `CA-v1` names; `CONTRIBUTING.md` says what that means in plain words.
 `GOVERNANCE.md` says who decides and what happens if the maintainer stops,
 `TRADEMARK-POLICY.md` how the project's name may be used,
 `docs/CONFORMANCE-STATEMENTS.md` how to say that an implementation conforms,

@@ -294,8 +294,11 @@ Bundle's own folder.
 - **Surfaces:** the NOW page.
 - **Mode:** 0 or 5.
 - **Commands:** `agsc refresh --agent <name> --dry-run` shows the proposal a run would
-  open; `agsc build` publishes the NOW page with the meter.
-- **Proven by:** `tests/distribution/now-spend.test.js`. This engine ships no model
+  open, or, once a budget is reached, writes nothing and warns `AGSC-E510`; `agsc build`
+  publishes the NOW page with the meter and, when a budget is reached, the same warning.
+- **Proven by:** `tests/distribution/now-spend.test.js`, `tests/application/cli/refresh-stops.test.js`,
+  the Mode 5 walk `tests/e2e/modes/mode-5-board.test.js` and the persona-k scenarios of
+  `features/persona-k-live-board.feature`. This engine ships no model
   adapter, so no real model call is made anywhere.
 
 ### M5 — A selection that becomes a starting harness

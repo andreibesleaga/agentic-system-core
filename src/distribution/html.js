@@ -532,7 +532,9 @@ function composePage({ assets }, options = {}) {
       '<input id="filter" name="filter" type="search" autocomplete="off" spellcheck="false" aria-controls="items">',
       '</form></div>',
       '<p id="filter-status" role="status" aria-live="polite"></p>',
-      '<ul id="items"><li>Loading the published graph…</li></ul>',
+      // Replaced by one checkbox per item once the controller runs; without script it
+      // says what the page needs and where the same result comes from.
+      '<ul id="items"><li>This page needs JavaScript; the same result comes from <code>agsc compose</code>.</li></ul>',
       '<h2>Verdict</h2>',
       '<p id="validity" aria-live="polite">Select one or more items to compose.</p>',
       // Focusable: the stylesheet lets a long verdict scroll sideways, and a scrollable

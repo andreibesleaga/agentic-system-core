@@ -673,6 +673,10 @@ function main(argv, ctx) {
   const disabled = (verb === 'run' || verb === 'trace')
     && !(loaded.config && loaded.config.run && loaded.config.run.enabled === true);
 
+  // AGSC-01-37 / AGSC-09-08: a configuration error from any layer stops a verb that
+  // writes before it runs (see `stopsBeforeRunning`).
+  const stopped = stopsBeforeRunning(verb, verbFlags, loaded.findings);
+
   // A verb module that fails to load is a packaging fault: it keeps the internal-error
   // path, and the reason it failed is printed with it rather than replaced.
   let verbModule;
@@ -709,6 +713,7 @@ function main(argv, ctx) {
   // emits no envelope at all.
   if (STREAMING_VERBS.has(verb)) {
     for (const f of (loaded.findings || [])) writeFindingLine(stderr, f);
+    if (stopped) return exitClass(loaded.findings);
     if (!verbModule || typeof verbModule.run !== 'function') {
       writeLine(stderr, noModule());
       return 1;
@@ -737,7 +742,10 @@ function main(argv, ctx) {
   // "exactly one envelope on stdout under --json" holds either way.
   let result;
   try {
-    if (disabled) {
+    if (stopped) {
+      // The envelope carries the configuration findings alone; the verb never ran.
+      result = { findings: [], status: 'fail' };
+    } else if (disabled) {
       result = {
         findings: [{ code: 'AGSC-E004', message: `${verb} is disabled (run.enabled is false; AGSC-09-94)`, severity: 'error' }],
         status: 'fail',
@@ -796,12 +804,49 @@ function main(argv, ctx) {
   // "this tool cannot run against this configuration at all" — and AGSC-00-21's
   // whole point is that configuration is the one surface where a newer version
   // must fail loudly (AGSC-00-23, AGSC-00-25, AGSC-01-22).
-  if (envelope.status !== 'pass'
-    && envelope.findings.some((f) => f.severity === 'error'
-      && (USAGE_CLASS_CODES.has(f.code) || ENVIRONMENT_CLASS_CODES.has(f.code)))) {
-    return 2;
-  }
-  return envelope.status === 'pass' ? 0 : 1;
+  return envelope.status === 'pass' ? 0 : exitClass(envelope.findings);
+}
+
+/**
+ * AGSC-09-08: the exit code of a run that did not pass — 2 when an error names a
+ * configuration or an environment the tool cannot run against, 1 otherwise.
+ * @param {Array<object>} findings
+ * @returns {1|2}
+ */
+function exitClass(findings) {
+  return (findings || []).some((f) => f.severity === 'error'
+    && (USAGE_CLASS_CODES.has(f.code) || ENVIRONMENT_CLASS_CODES.has(f.code))) ? 2 : 1;
+}
+
+/**
+ * The verbs that write nothing whatever the configuration says: `lint` without
+ * `--fix` and `verify` read the Bundle and report.
+ */
+function writesNothing(verb, verbFlags) {
+  return verb === 'verify' || (verb === 'lint' && verbFlags.fix !== true);
+}
+
+/**
+ * AGSC-01-37 / AGSC-09-08: whether a configuration error stops this verb before it
+ * runs. A value an environment layer sets that the schema refuses is an error "as if
+ * written in the file", but the refused value never reaches the resolved
+ * configuration, so the verb itself cannot see it: until 2026-10-10
+ * `AGSC_BUILD_OUT=content agsc build` reported `AGSC-E204`, exited 1 and still wrote
+ * the whole site under the default `www/`, and `ci` wrote `dist/gate.json` with the
+ * verdict `pass`. The same held for an `AGSC_` name this engine does not know
+ * (`AGSC-E004`, exit 2: a configuration the tool cannot run against, yet the site was
+ * written) and for a range error of the boundary chapter (`AGSC-E209`), which only this
+ * shell reports. Every verb that writes now stops before it runs; `lint` and `verify`
+ * still run, so that they report everything they find beside the configuration
+ * error, as they do when the fault is written in `agsc.config.json`.
+ * @param {string} verb
+ * @param {object} verbFlags
+ * @param {Array<object>} configFindings the findings of the configuration loader
+ * @returns {boolean}
+ */
+function stopsBeforeRunning(verb, verbFlags, configFindings) {
+  if (writesNothing(verb, verbFlags)) return false;
+  return (configFindings || []).some((f) => f.severity === 'error');
 }
 
 /**

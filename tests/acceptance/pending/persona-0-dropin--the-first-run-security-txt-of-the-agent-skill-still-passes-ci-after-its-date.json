@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "E6",
-  "reason": "the agent skill teaches a security.txt with the fixed \"Expires: 2027-06-01T00:00:00Z\", so a node set up from it fails ci from that date on; the guides already write the Contact line only.",
-  "scenario": "The first-run security.txt of the agent skill still passes ci after its date"
-}

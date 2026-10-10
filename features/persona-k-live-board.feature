@@ -94,7 +94,7 @@ Feature: Self-driving team — agents and people finish a project's tasks on one
     Given every task of "sprint-1" is in "TASK_STATE_COMPLETED"
     When the Bundle is built
     Then "/boards/sprint-1.json" carries done true (AGSC-10-13)
-    When the agent runs "agsc refresh --agent worker --dry-run --json" under the network trap
+    When the agent runs "agsc refresh --agent worker --dry-run" under the network trap
     Then the command exits 0
     And the Bundle does not hold "dist/proposal/1.patch"
     And the output names "nothing can be claimed"

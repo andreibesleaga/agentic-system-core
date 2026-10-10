@@ -125,6 +125,65 @@ test('AGSC-00-18: every requirement the rule cites exists, and every rule it nam
   }
 });
 
+// The editorial frame of the specification text, read here without the validator
+// that enforces it (tools/validate-spec), so that two readings agree.
+const SPEC_FILES = fs.readdirSync(path.join(ROOT, 'spec')).filter((f) => /^\d{2}-.*\.md$/u.test(f)).sort()
+  .map((f) => ({ file: `spec/${f}`, lines: read(`spec/${f}`).split('\n') }));
+const KEY_WORD_G = /(?<![\w-])(MUST NOT|SHALL NOT|SHOULD NOT|NOT RECOMMENDED|MUST|SHALL|SHOULD|REQUIRED|RECOMMENDED|MAY|OPTIONAL)(?![\w-])/gu;
+const where = (hits) => hits.map((h) => `${h.file}:${h.line} ${h.text}`).join('\n');
+function eachLine(visit) {
+  const hits = [];
+  for (const { file, lines } of SPEC_FILES) {
+    lines.forEach((line, index) => {
+      const text = visit(line, file);
+      if (text) hits.push({ file, line: index + 1, text });
+    });
+  }
+  return hits;
+}
+
+test('AGSC-00-01: the key-words sentence lists every BCP 14 key word the specification uses', () => {
+  const sentence = read('spec/00-overview.md').split('\n').find((l) => /BCP 14/u.test(l)) || '';
+  const listed = new Set(sentence.match(KEY_WORD_G) || []);
+  const unlisted = eachLine((line) => {
+    if (line === sentence) return null;
+    const missing = [...new Set(line.match(KEY_WORD_G) || [])].filter((k) => !listed.has(k));
+    return missing.length ? missing.join(', ') : null;
+  });
+  assert.deepStrictEqual(where(unlisted), '');
+});
+
+test('AGSC-00-16: every dated amendment note reads "(Amended <date> for <version>: <what changed>)"', () => {
+  const notes = eachLine((line) => [...line.matchAll(/\*\(\s*(?:[A-Za-z]+\s+){0,2}?(?:amended|added)\b/giu)]
+    .map((m) => line.slice(m.index))
+    .filter((note) => !/^\*\(Amended \d{4}-\d{2}-\d{2} for \d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?: \S/u.test(note))
+    .map((note) => note.slice(0, 40)).join(' | ') || null);
+  assert.deepStrictEqual(where(notes), '');
+});
+
+test('AGSC-09-91: no key word is written in a form BCP 14 does not define', () => {
+  const bad = eachLine((line) => (line.match(/(?<![\w-])(?:(?:MUST|SHALL|SHOULD|MAY) (?:not|never)|(?:not|nor|never) (?:MUST|SHALL|SHOULD|MAY|REQUIRED|RECOMMENDED|OPTIONAL)|(?:MUST|SHALL|SHOULD|MAY|REQUIRED|RECOMMENDED|OPTIONAL) (?:ALWAYS|NEVER|ONLY|ALSO)|(?:MAY|REQUIRED|RECOMMENDED|OPTIONAL) NOT|NOT (?:MUST|SHALL|SHOULD|MAY|REQUIRED|OPTIONAL))(?![\w-])/gu) || []).join(' | ') || null);
+  assert.deepStrictEqual(where(bad), '');
+});
+
+test('AGSC-09-91: no MUST or SHOULD stands in a table row or a paragraph outside every rule', () => {
+  const outside = [];
+  for (const { file, lines } of SPEC_FILES) {
+    let inRule = false;
+    let fenced = false;
+    lines.forEach((line, index) => {
+      if (/^\s*(```|~~~)/u.test(line)) fenced = !fenced;
+      if (/^- \*\*AGSC-\d{2}-\d{2,3}[a-z]?\*\*/u.test(line)) inRule = true;
+      else if (/^#{1,6} /u.test(line)) inRule = false;
+      else if (!fenced && !inRule && !/BCP 14/u.test(line)
+        && /(?<![\w-])(MUST|SHOULD|SHALL|REQUIRED|RECOMMENDED)(?![\w-])/u.test(line)) {
+        outside.push({ file, line: index + 1, text: line.slice(0, 60) });
+      }
+    });
+  }
+  assert.deepStrictEqual(where(outside), '');
+});
+
 // ---------------------------------------------------------------- 01 bundle
 
 test('AGSC-01-01: a Bundle with no agsc.config.json is refused with AGSC-E901', () => {

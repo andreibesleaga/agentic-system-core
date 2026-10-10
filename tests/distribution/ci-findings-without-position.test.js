@@ -34,10 +34,19 @@ function scratch(t, copyFixture = true) {
   return dir;
 }
 
+/**
+ * The child's environment: this process's, without any `AGSC_` name. The engine refuses
+ * an `AGSC_` name it does not know (AGSC-01-37), and the suite's own switches
+ * (`AGSC_AUDIT=1` for the architecture lane) are not names it knows: passed through,
+ * they turned every run of this file into an `AGSC-E004` refusal with exit 2.
+ */
+function cleanEnv() {
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('AGSC_')));
+  return { ...env, NO_COLOR: '1', SOURCE_DATE_EPOCH: '1767225600' };
+}
+
 function run(dir, ...args) {
-  const r = spawnSync(process.execPath, [CLI, ...args], {
-    cwd: dir, encoding: 'utf8', env: { ...process.env, NO_COLOR: '1', SOURCE_DATE_EPOCH: '1767225600' },
-  });
+  const r = spawnSync(process.execPath, [CLI, ...args], { cwd: dir, encoding: 'utf8', env: cleanEnv() });
   return { code: r.status, err: r.stderr || '', out: r.stdout || '' };
 }
 

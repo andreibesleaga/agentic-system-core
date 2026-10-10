@@ -46,10 +46,9 @@ cd <bundle>               # every verb runs in the folder that holds agsc.config
 From a folder of notes, `agsc init` moves every Markdown file except `README.md` to `content/concepts/` as `kind: explainer` (type, title, a provenance block, an `aliases:` entry with the old path), and writes `agsc.config.json`, the root document `content/index.md`, `.gitignore` and `.env.example`. Then ask the person for three things and write them:
 
 1. The node's `https://` address: set `site.base` in `agsc.config.json` and `base:` in `content/index.md` to the same value (a mismatch is `AGSC-E204`).
-2. A security contact, written to `.well-known/security.txt` in exactly this shape (no fraction of a second, under a year away):
+2. A security contact, written to `.well-known/security.txt` as one `Contact:` line (a `mailto:` or `https://` address). Write no `Expires:` line: the build adds one, the build instant plus 364 days, so the file never goes stale:
    ```text
    Contact: mailto:security@example.org
-   Expires: 2027-06-01T00:00:00Z
    ```
 3. The crawler licence choice, `site.tdm_crawlers` (or keep the list `init` wrote if the person agrees).
 4. A build instant: one commit (`git init -q && git add -A && git commit -q -m 'notes'`), or `SOURCE_DATE_EPOCH` set in the environment. Without one the build instant is 1970-01-01 and `ci` reports `AGSC-E204` on the security contact's expiry.

@@ -4,6 +4,18 @@
 // of its own, beside `agsc`, whose verb set AGSC-09-07 closes at sixteen.
 'use strict';
 
+// The Node.js floor, before the engine's first `require` (`bin/agsc.js` answers it
+// without loading the engine on an older Node.js): one sentence and exit 2.
+const { nodeFloorRefusal } = require('./agsc.js');
+
+if (nodeFloorRefusal('agsc-host', process.version) !== null) {
+  if (require.main === module) {
+    process.stderr.write(nodeFloorRefusal('agsc-host', process.version) + '\n');
+    process.exitCode = 2;
+  }
+  return;
+}
+
 const hosting = require('../src/application/hosting.js');
 const { SPEC_VERSION } = require('../src/application/cli/main.js');
 

@@ -70,15 +70,40 @@ function epochFromInstant(instant) {
 }
 
 /**
+ * The address inside the first `<…>` of a trailer value that holds at least one
+ * character, or null: what the pattern `/<([^>]+)>/u` finds, in time linear in the
+ * value. Each `<` is tried in turn and the search for its `>` starts right after it;
+ * when no `>` follows, no later `<` can have one either, so the search stops. The
+ * pattern itself scanned to the end of the value from every `<`, so one commit whose
+ * trailer was a long run of `<` stalled `build` (100,000 characters took about 55 s).
+ *
+ * @param {string} value
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string|null}
+ */
+function bracketed(value, meter) {
+  if (meter !== undefined) meter.steps += value.length + 1;
+  for (let open = value.indexOf('<'); open !== -1; open = value.indexOf('<', open + 1)) {
+    const close = value.indexOf('>', open + 1);
+    if (meter !== undefined) meter.steps += (close === -1 ? value.length : close) - open;
+    if (close === -1) return null;
+    if (close > open + 1) return value.slice(open + 1, close);
+  }
+  return null;
+}
+
+/**
  * AGSC-08-20a: `actor` is the `Signed-off-by` local part normalized to `human:<id>`
  * per AGSC-02-90(2), else `human:unknown`. The normalization is A's, imported
  * rather than restated, so one rule has one implementation.
  * @param {string|undefined} signedOffBy
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {string}
  */
-function actorOf(signedOffBy) {
-  const m = /<([^>]+)>/u.exec(String(signedOffBy == null ? '' : signedOffBy));
-  const email = m === null ? String(signedOffBy == null ? '' : signedOffBy).trim() : m[1];
+function actorOf(signedOffBy, meter) {
+  const value = String(signedOffBy == null ? '' : signedOffBy);
+  const inside = bracketed(value, meter);
+  const email = inside === null ? value.trim() : inside;
   if (!email.includes('@')) return 'human:unknown';
   return operatorFor({}, email).operator;
 }
@@ -325,10 +350,12 @@ function differsOnlyInBuilder(published, derived) {
  * occurrence of a key winning, reported in its authored spelling.
  *
  * @param {string} message
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {object} a null-prototype map (no prototype pollution from a commit).
  */
-function parseTrailers(message) {
+function parseTrailers(message, meter) {
   const lines = String(message).split('\n');
+  if (meter !== undefined) meter.steps += String(message).length + 1;
   while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
   let start = lines.length;
   while (start > 0 && lines[start - 1].trim() !== '') start -= 1;
@@ -339,27 +366,28 @@ function parseTrailers(message) {
   if (!block.every((l, i) => (i === 0 ? isKey(l) : isKey(l) || isContinuation(l)))) {
     return Object.create(null);
   }
-  const order = [];
-  const values = Object.create(null);
+  // One entry per key, by its lower-case spelling, in the order of each key's last
+  // occurrence: a Map moves a key to the end when it is deleted and set again. A
+  // search of the key list for every line made a block of many distinct keys
+  // quadratic.
+  const entries = new Map();
+  let last = null;
   for (const line of block) {
+    // One step per line: the lookup by key is a Map's, not a search of the list.
+    if (meter !== undefined) meter.steps += 1;
     if (isContinuation(line)) {
-      const last = order[order.length - 1];
-      values[last] = `${values[last]} ${line.trim()}`;
+      const entry = entries.get(last);
+      entry.value = `${entry.value} ${line.trim()}`;
       continue;
     }
     const at = line.indexOf(':');
     const key = line.slice(0, at);
-    const value = line.slice(at + 1).trim();
-    const existing = order.find((k) => k.toLowerCase() === key.toLowerCase());
-    if (existing !== undefined) {
-      order.splice(order.indexOf(existing), 1);
-      delete values[existing];
-    }
-    order.push(key);
-    values[key] = value;
+    last = key.toLowerCase();
+    entries.delete(last);
+    entries.set(last, { key, value: line.slice(at + 1).trim() });
   }
   const out = Object.create(null);
-  for (const key of order) out[key] = values[key];
+  for (const { key, value } of entries.values()) out[key] = value;
   return out;
 }
 

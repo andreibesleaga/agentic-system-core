@@ -6,6 +6,39 @@
 // rooted via createFileSystem(root)) and hands them to the command line's `main()`.
 'use strict';
 
+/**
+ * nodeFloorRefusal(command, version) -> string|null
+ *
+ * The Node.js floor of package.json "engines" (>=22.13.0), checked before the first
+ * `require` of the engine: on an older Node.js that `require` stops with
+ * ERR_REQUIRE_ESM and a stack trace, so the command answers one sentence instead.
+ * Returns that sentence, or null when `version` (a `process.version` such as
+ * "v18.19.1") meets the floor or cannot be read. Plain CommonJS that an old Node.js
+ * parses; `bin/agsc-host.js` asks the same function.
+ */
+function nodeFloorRefusal(command, version) {
+  const floor = [22, 13];
+  const parts = /^v?(\d+)\.(\d+)\./u.exec(String(version));
+  if (parts === null) return null;
+  const major = Number(parts[1]);
+  if (major > floor[0] || (major === floor[0] && Number(parts[2]) >= floor[1])) return null;
+  return command + ' needs Node.js ' + floor.join('.') + ' or later; this is ' + version;
+}
+
+if (nodeFloorRefusal('agsc', process.version) !== null) {
+  // Every entry point calls run(): this file, `bin/agentic-system-core`, the alias
+  // package `agsc-cli` and `index.js#run()`. Exit code 2, as for every other refusal
+  // that comes before a verb runs (AGSC-09-08).
+  const refuse = function () {
+    process.stderr.write(nodeFloorRefusal('agsc', process.version) + '\n');
+    process.exitCode = 2;
+    return Promise.resolve();
+  };
+  module.exports = { nodeFloorRefusal, run: refuse };
+  if (require.main === module) refuse();
+  return;
+}
+
 const { main } = require('../src/application/cli/main.js');
 const nodeFs = require('../src/adapters/node-fs.js');
 const nodeClock = require('../src/adapters/node-clock.js');
@@ -170,4 +203,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { bundleRoot, resolveUserConfigDir, loadUserConfig, buildFileSystemPort, run };
+module.exports = { bundleRoot, resolveUserConfigDir, loadUserConfig, buildFileSystemPort, nodeFloorRefusal, run };

@@ -42,6 +42,41 @@ test('slugify is total (AGSC-02-91)', () => {
   assert.ok(slug.isValid(slug.slugify('x'.repeat(200))));
 });
 
+test('slugify lower-cases A to Z only, after NFC (AGSC-02-91)', () => {
+  // U+0130 (capital I with dot above) is not in A-Z, so it becomes a hyphen and
+  // is trimmed; Unicode lower-casing would have given "i" + U+0307 ("i-stanbul").
+  assert.strictEqual(slug.slugify('İstanbul'), 'stanbul');
+  assert.strictEqual(slug.slugify('Kadıköy İzmir'), 'kad-k-y-zmir');
+  // NFC maps the Kelvin sign U+212A to the letter K first, so it lower-cases to "k".
+  assert.strictEqual(slug.slugify('Kelvin'), 'kelvin');
+  // ASCII names are unchanged.
+  assert.strictEqual(slug.slugify('Agentic System Core 2026'), 'agentic-system-core-2026');
+  assert.strictEqual(slug.slugify('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 'abcdefghijklmnopqrstuvwxyz');
+});
+
+test('slugify of every single code point follows the words of AGSC-02-91', () => {
+  // An independent reading of the rule: NFC, A-Z lower-cased, every other
+  // character outside [a-z0-9] a hyphen, runs collapsed, edges trimmed, empty -> note.
+  const byRule = (text) => {
+    let out = '';
+    for (const ch of text.normalize('NFC')) {
+      const c = ch.codePointAt(0);
+      if (c >= 0x41 && c <= 0x5a) out += String.fromCodePoint(c + 0x20);
+      else if ((c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39)) out += ch;
+      else out += '-';
+    }
+    out = out.replace(/-+/g, '-').replace(/^-/, '').replace(/-$/, '');
+    return out === '' ? 'note' : out;
+  };
+  const differ = [];
+  for (let cp = 0; cp <= 0x10ffff; cp += 1) {
+    if (cp >= 0xd800 && cp <= 0xdfff) continue;
+    const text = `a${String.fromCodePoint(cp)}b`;
+    if (slug.slugify(text) !== byRule(text)) differ.push(cp.toString(16));
+  }
+  assert.deepStrictEqual(differ, []);
+});
+
 test('dedupe suffixes in discovery order and stays inside 64 (AGSC-01-23)', () => {
   assert.strictEqual(slug.dedupe('a', new Set()), 'a');
   assert.strictEqual(slug.dedupe('a', new Set(['a'])), 'a-2');

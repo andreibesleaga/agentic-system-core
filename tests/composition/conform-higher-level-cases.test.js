@@ -16,6 +16,11 @@ const { spawnSync } = require('node:child_process');
 
 const conform = require('../../src/composition/conform.js');
 
+// The engine refuses an `AGSC_` name it does not know (AGSC-01-37, `AGSC-E004`, exit 2).
+// The suite's own switches start with `AGSC_` too (`AGSC_AUDIT=1` for the architecture
+// lane), so none reaches the commands this file starts.
+for (const name of Object.keys(process.env)) if (name.startsWith('AGSC_')) delete process.env[name];
+
 const ROOT = path.join(__dirname, '..', '..');
 const CLI = path.join(ROOT, 'bin', 'agsc.js');
 

@@ -5,6 +5,11 @@ Which licence covers which part (the licence table in README.md is the full list
 - the engine, the command line and the checkers, the specification text under
   spec/ and the conformance vectors under tests/vectors/: Apache License 2.0
   (LICENSE);
+- the documentation under docs/, the scenarios under features/ and the examples
+  under examples/: Apache License 2.0 (LICENSE);
+- the W3C-format personal draft under w3c/: CC BY 4.0;
+- the Internet-Draft under internet-draft/: Apache License 2.0, and as a posted
+  Internet-Draft also under BCP 78 and the IETF Trust Legal Provisions;
 - the JSON Schemas, the ontology, the JSON-LD context, the identifiers and the
   discovery document: CC0 1.0 Universal;
 - the prose of a published node: the AgenticSystemCore Content Use Terms 1.0

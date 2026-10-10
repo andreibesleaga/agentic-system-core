@@ -218,7 +218,7 @@ profiles the engine can write host settings for.
 |---|---|---|
 | `error: AGSC-E901 no .well-known/security.txt in the Bundle root …` | no security contact | step 2 |
 | `error: AGSC-E204 the build instant defaulted to 1970-01-01T00:00:00Z …` | no commit and no `SOURCE_DATE_EPOCH` | commit once, or `export SOURCE_DATE_EPOCH=$(date +%s)` |
-| `error: AGSC-E004 unknown configuration override AGSC_…` | a shell variable whose name starts with `AGSC_` that the engine does not know | `unset` it |
+| `error: AGSC-E004 environment variable AGSC_… is not a configuration name this engine knows; unset it (AGSC-01-37)` | a shell variable whose name starts with `AGSC_` that the engine does not know; nothing is written until it is gone | `unset` it (when the message names the `.env` file instead, remove that line) |
 | `error: AGSC-E310 …` and `build` writes nothing | a link to a note that does not exist | fix the link at the file and line named |
 | `agsc: command not found` | the `export PATH=…` line was not run in this shell | run the two `export` lines again from the working folder |
 

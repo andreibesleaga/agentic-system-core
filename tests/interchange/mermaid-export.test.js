@@ -21,6 +21,11 @@ const exportVerb = require('../../src/application/cli/verbs/export.js');
 const adapter = require('../../src/interchange/adapters/mermaid.js');
 const { LINK_KEYS } = require('../../src/knowledge/links.js');
 
+// The engine refuses an `AGSC_` name it does not know (AGSC-01-37, `AGSC-E004`, exit 2).
+// The suite's own switches start with `AGSC_` too (`AGSC_AUDIT=1` for the architecture
+// lane), so none reaches the commands this file starts.
+for (const name of Object.keys(process.env)) if (name.startsWith('AGSC_')) delete process.env[name];
+
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const AGSC = path.join(ROOT, 'bin', 'agsc.js');

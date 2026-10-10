@@ -1,6 +1,7 @@
 'use strict';
 // Conformance area `slug` — AGSC-01-10 (grammar, 1-64 code points,
-// portable pattern) and AGSC-01-11 (unique across the whole Bundle).
+// portable pattern), AGSC-01-11 (unique across the whole Bundle) and the
+// slugifier of AGSC-02-91 (NFC, then only A-Z lower-cased).
 
 const slug = require('../../../src/knowledge/slug.js');
 const { checks } = require('./_assert.js');
@@ -30,6 +31,14 @@ module.exports.run = (vector) => {
     const findings = slug.check(stems, { files: input.paths });
     list.push(['error', findings.length > 0 && findings[0].code === expected.error,
       JSON.stringify(findings.map((f) => f.code))]);
+    return checks(list);
+  }
+
+  // slug-0007: the slugifier of AGSC-02-91 over a list of file stems.
+  if (Array.isArray(input.texts)) {
+    const got = input.texts.map((text) => slug.slugify(text));
+    list.push(['slugs', Array.isArray(expected.slugs) && JSON.stringify(got) === JSON.stringify(expected.slugs),
+      JSON.stringify(got)]);
     return checks(list);
   }
 

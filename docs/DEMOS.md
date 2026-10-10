@@ -922,7 +922,9 @@ Mode 2 wrote.
   and merging the pull request is the forge's.
 - **A model key** (an agent lane that writes pages): the engine ships no model adapter,
   so `refresh --agent <name> --dry-run` is the whole of what runs; the budget, the
-  lane gates and the Episode are real, the model call is not made.
+  lane gates and the Episode are real, the model call is not made. The dry run stops,
+  writing nothing, once the month's spend reaches the lane's or the node's budget
+  (`AGSC-E510`, also on the NOW page) or when no board holds a task the lane can claim.
 - **An isolating runner** (`agsc run` executing a step): none ships; `run --dry-run`
   resolves the steps and `run` refuses with the reason.
 

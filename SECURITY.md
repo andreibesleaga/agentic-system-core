@@ -29,16 +29,23 @@ who asks to be credited is credited in the release notes.
 
 | Version | Supported |
 |---|---|
-| the latest release candidate of `1.0.0`, until `1.0.0` is released | yes |
-| from `1.0.0` on: the latest `1.x` release | yes |
-| an earlier release candidate, once a later one or `1.0.0` is out | no — upgrade (the change log says how) |
+| `1.0.x` | yes (the latest patch) |
+| any `1.0.0-rc.*` | no — upgrade to `1.0.0` (the change log says how) |
 | anything older | no |
 
 Fixes are made on the current line only, in a new release; there is no
-long-term-support branch and no fix is made to a release candidate after its
-successor is out. Every released version stays readable at its tag in this
-repository and its packages stay installable, but none of them is supported once a
-later version is out.
+long-term-support branch, and no fix is made to a release candidate. Every released
+version stays readable at its tag in this repository and its packages stay
+installable, but none of them is supported once a later version is out.
+
+## Coordinated disclosure
+
+A fix is released first, and the advisory follows it. While a report is being
+handled, its details stay between the reporter and the maintainer. Once the fixed
+release is out, the maintainer publishes a GitHub security advisory for this
+repository that names the affected and the fixed versions and credits the reporter
+who asked to be credited; a GitHub advisory can carry a CVE identifier. Please keep
+the details private until that advisory is published.
 
 ## What this project is, and what that means for a report
 

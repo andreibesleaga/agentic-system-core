@@ -64,8 +64,9 @@ header.site a[aria-current="page"] { text-decoration: underline; text-decoration
 .theme select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 main { max-width: 46rem; margin: 0 auto; padding: 2rem 1rem 3rem; }
 main.wide { max-width: 62rem; }
-/* Prose keeps a readable measure even on wide pages; tables and figures may use the full width. */
-main.wide > p, main.wide > ul, main.wide > ol, main.wide > h2, main.wide > h3, main.wide > h4, main.wide > blockquote, main.wide > aside, main.wide > dl, main.wide > section { max-width: 46rem; }
+/* Prose keeps a readable measure, about 70 characters a line and never more than 80 (WCAG 1.4.8); figures, diagrams,
+   tables, code and the card grid use the whole column, so a diagram keeps its 42rem minimum without scrolling on a desktop. */
+main > :not(figure, pre, table, .table-wrap, .modes) { max-width: 34rem; }
 footer.site { border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9rem; }
 footer.site p { max-width: 60rem; margin: 0 auto; padding: 0.5rem 1rem; }
 footer.site p:first-child { padding-top: 1.25rem; }
@@ -88,7 +89,9 @@ pre.terms, pre.feature { white-space: pre-wrap; }
 blockquote { border-left: 3px solid var(--rule); padding: 0.25rem 0 0.25rem 1rem; color: var(--fg); }
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
-th, td { border: 1px solid var(--rule); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th, td { border: 1px solid var(--rule); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; overflow-wrap: break-word; }
+/* A long address or identifier may break anywhere; an ordinary word in a cell is never split. */
+th code, td code, th a, td a { overflow-wrap: anywhere; }
 thead th { background: var(--bg-alt); }
 tbody th { font-weight: normal; }
 dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
@@ -120,11 +123,12 @@ a.ref code { font-size: 1em; }
 .trace { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
 .trace a { color: var(--muted); }
 .trace a.ref { font-size: 1em; }
-/* Diagrams: inline SVG themed by the page colours; the caption says what the picture means. */
+/* Diagrams: inline SVG themed by the page colours; the caption says what the picture means. The caption's
+   smaller type takes its measure in em, so it holds as many characters a line as the prose around it. */
 figure.diagram { margin: 1.25rem 0 1.5rem; }
 figure.diagram svg { display: block; width: 100%; max-width: 46rem; height: auto; }
 figure.diagram svg .acc, figure.diagram svg .agsc-accent { stroke: var(--accent); }
-figure.diagram figcaption { font-size: 0.92rem; color: var(--muted); max-width: 46rem; margin-top: 0.35rem; }
+figure.diagram figcaption { font-size: 0.92rem; color: var(--muted); max-width: 34em; margin-top: 0.35rem; }
 /* On a narrow screen a diagram keeps a minimum drawn width and scrolls inside its figure, so its labels stay readable:
    at 42rem no label of a 460-560 px canvas is drawn under 12 px. The figure is focusable, so the keyboard reaches it. */
 figure.diagram { overflow-x: auto; }

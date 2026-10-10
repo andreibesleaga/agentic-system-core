@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "E2",
-  "reason": "the ledger reads the actor of a commit from its Signed-off-by value with a pattern that scans from every start position, so a run of \"<\" just under 1 MiB in one commit message keeps build running past the 120-second bound of the step (100,000 characters alone take about 55 s). Meanwhile the ledger tests cover ordinary trailers.",
-  "scenario": "A hostile commit trailer does not stall build"
-}

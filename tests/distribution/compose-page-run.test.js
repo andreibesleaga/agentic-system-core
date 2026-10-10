@@ -464,6 +464,20 @@ test('with nothing selected the page asks for a selection instead of saying "val
   assert.match(String(files.get('/compose/index.html')), /<p id="validity"[^>]*>Select one or more items to compose\.<\/p>/u);
 });
 
+test('without script the item list says the page needs JavaScript and names the command that gives the same result', async () => {
+  const { files } = builtFixture();
+  const markup = String(files.get('/compose/index.html'));
+  // A reader without script (or an agent reading the markup) is never told the page is
+  // still loading: it says what the page needs and where the same Harness comes from.
+  assert.match(markup, /<ul id="items"><li>This page needs JavaScript; the same result comes from <code>agsc compose<\/code>\.<\/li><\/ul>/u);
+  assert.doesNotMatch(markup, /Loading the published graph/u);
+  // With script, the controller replaces that sentence with one checkbox per item.
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.ok(page.document.nodes.get('items').children.length >= 2);
+});
+
 test('AGSC-07-07: the warnings are shown to the reader, each with its code and a sentence', async () => {
   const { files } = builtFixture();
   const page = openPage({ files });

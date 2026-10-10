@@ -1,0 +1,28 @@
+{
+  "area": "slug",
+  "description": "The slugifier of a file stem: NFC first, then only the letters A to Z are lower-cased; every other character outside [a-z0-9] becomes a hyphen, runs of hyphens collapse, leading and trailing hyphens are trimmed, and an empty result becomes note. The capital I with dot above (U+0130) is therefore a hyphen, never the letter i that Unicode lower-casing would give, so every implementation names an adopted file the same way.",
+  "expected": {
+    "slugs": [
+      "stanbul",
+      "kad-k-y-zmir",
+      "d-yarbakir",
+      "note",
+      "my-notes-2026"
+    ]
+  },
+  "id": "slug-0007",
+  "input": {
+    "texts": [
+      "İstanbul",
+      "Kadıköy İzmir",
+      "DİYARBAKIR",
+      "ÀÉÎ",
+      "My Notes 2026"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-02-91"
+}

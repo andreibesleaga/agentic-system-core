@@ -84,3 +84,85 @@ test('AGSC-08-25: an episode belongs to the month of its `started` instant', () 
   assert.ok(lane, JSON.stringify(state));
   assert.strictEqual(lane.runs, 2);
 });
+
+// AGSC-08-25: the month's spend is a decimal sum, each addend rounded to six decimal
+// places, compared with the cap as a decimal and never as a binary float. Ten runs of
+// 0.1 USD reach a cap of 1 USD; a binary-float sum reads 0.9999999999999999 and missed it.
+test('AGSC-08-25: ten runs of 0.1 USD reach a cap of 1 USD (decimal, not binary float)', () => {
+  const items = Array.from({ length: 10 }, (_, i) => ({
+    type: 'episode', slug: `run-${i}`, started: '2026-01-02T00:00:00Z', actor: 'process:worker', usage: { cost_usd: 0.1 },
+  }));
+  const rollup = now.spend(items, { budget: { usd_month: 1 } }, { month: '2026-01' });
+  assert.deepStrictEqual(rollup.findings.map((f) => f.code), ['AGSC-E510']);
+  const lane = now.budgetReached(items, { agents: [{ budget_usd_month: 1, enabled: true, name: 'worker' }], budget: { usd_month: 10 } },
+    { lane: 'worker', month: '2026-01' });
+  assert.deepStrictEqual(lane.map((f) => [f.code, f.severity]), [['AGSC-E510', 'warn']]);
+  assert.match(lane[0].message, /worker/u);
+});
+
+test('AGSC-08-25: an addend is rounded to six decimal places before it is summed', () => {
+  // 0.0000004 rounds to 0, so it adds nothing; 0.9999996 rounds to 1.000000 and reaches
+  // a cap of 1 USD, which the unrounded binary sum (0.9999999…) never did.
+  const items = [
+    { type: 'episode', slug: 'a', started: '2026-01-02T00:00:00Z', usage: { cost_usd: 0.9999994 } },
+    { type: 'episode', slug: 'b', started: '2026-01-02T00:00:00Z', usage: { cost_usd: 4e-7 } },
+  ];
+  assert.deepStrictEqual(now.spend(items, { budget: { usd_month: 1 } }, { month: '2026-01' }).findings, []);
+  const rounded = [{ type: 'episode', slug: 'c', started: '2026-01-02T00:00:00Z', usage: { cost_usd: 0.9999996 } }];
+  assert.deepStrictEqual(now.spend(rounded, { budget: { usd_month: 1 } }, { month: '2026-01' }).findings.map((f) => f.code), ['AGSC-E510']);
+});
+
+// AGSC-08-28(e): a lane stops for the month once ITS OWN budget_usd_month is reached,
+// even while the node's cap is not; a lane below its budget, a disabled lane and a
+// lane of another month are not reported.
+test('AGSC-08-28(e): each enabled lane is compared with its own budget_usd_month', () => {
+  const run = (slug, actor, cost, started = '2026-01-05T00:00:00Z') => ({
+    type: 'episode', slug, started, actor, usage: { cost_usd: cost },
+  });
+  const items = [run('w1', 'process:worker', 3), run('w2', 'worker', 2), run('p1', 'process:planner', 1),
+    run('old', 'process:planner', 9, '2025-12-31T23:59:59Z'), run('i1', 'process:idle', 7)];
+  const config = {
+    agents: [
+      { budget_usd_month: 5, enabled: true, name: 'worker' },
+      { budget_usd_month: 2, enabled: true, name: 'planner' },
+      { budget_usd_month: 1, enabled: false, name: 'idle' },
+    ],
+    budget: { usd_month: 20 },
+  };
+  const all = now.budgetReached(items, config, { month: '2026-01' });
+  assert.deepStrictEqual(all.map((f) => f.code), ['AGSC-E510']);
+  assert.match(all[0].message, /"worker"/u);
+  assert.deepStrictEqual(now.budgetReached(items, config, { lane: 'planner', month: '2026-01' }), []);
+  assert.deepStrictEqual(now.budgetReached(items, config, { lane: 'worker', month: '2026-01' }).length, 1);
+});
+
+test('AGSC-08-28(e): the node cap and a lane budget reached are both named, node first', () => {
+  const items = [{ type: 'episode', slug: 'w', started: '2026-01-05T00:00:00Z', actor: 'process:worker', usage: { cost_usd: 10 } }];
+  const config = { agents: [{ budget_usd_month: 5, enabled: true, name: 'worker' }], budget: { usd_month: 10 } };
+  const found = now.budgetReached(items, config, { month: '2026-01' });
+  assert.deepStrictEqual(found.map((f) => [f.code, f.severity, f.file]),
+    [['AGSC-E510', 'warn', '/now.md'], ['AGSC-E510', 'warn', '/now.md']]);
+  assert.match(found[0].message, /node's monthly budget/u);
+  assert.match(found[1].message, /"worker"/u);
+});
+
+// AGSC-08-28(e): "recording the skipped run as the warning AGSC-E510 in the NOW page".
+// Before, `state()` kept only the meter and dropped the warning, so neither `/now.md`
+// nor `/now/` said the cap was reached.
+test('AGSC-08-28(e): a reached budget is a NOW section naming AGSC-E510', () => {
+  const items = [{ type: 'episode', slug: 'w', started: '2026-01-05T00:00:00Z', actor: 'process:worker', usage: { cost_usd: 10 } }];
+  const config = { agents: [{ budget_usd_month: 5, enabled: true, name: 'worker' }], budget: { usd_month: 10 } };
+  const state = now.state([], config, { allItems: items, instant: INSTANT });
+  assert.deepStrictEqual(state.budget_reached.map((f) => f.code), ['AGSC-E510', 'AGSC-E510']);
+  const text = now.nowMarkdown(state);
+  assert.match(text, /^## Budget reached$/mu);
+  assert.strictEqual(text.match(/^- AGSC-E510: /gmu).length, 2, text);
+});
+
+test('AGSC-06-22: below every cap the NOW state carries no budget section (bytes unchanged)', () => {
+  const items = [{ type: 'episode', slug: 'w', started: '2026-01-05T00:00:00Z', actor: 'process:worker', usage: { cost_usd: 4.99 } }];
+  const config = { agents: [{ budget_usd_month: 5, enabled: true, name: 'worker' }], budget: { usd_month: 10 } };
+  const state = now.state([], config, { allItems: items, instant: INSTANT });
+  assert.ok(!('budget_reached' in state), JSON.stringify(state));
+  assert.ok(!now.nowMarkdown(state).includes('AGSC-E510'));
+});

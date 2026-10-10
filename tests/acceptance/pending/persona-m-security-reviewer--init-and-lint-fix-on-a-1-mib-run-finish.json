@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "E2",
-  "reason": "adoption by init scans relative references, and lint --fix scans code spans, with patterns that scan from every start position, so a note of one long run of \"[\" or an item ending with one long run of backticks keeps each command running past the 120-second bound of the step (100,000 characters alone take about 30 s). Meanwhile the adoption and fix tests cover ordinary input.",
-  "scenario": "init and lint --fix on a 1 MiB run finish"
-}

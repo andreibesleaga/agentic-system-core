@@ -387,9 +387,9 @@ specification's prose defaults: `build.out` ("www", AGSC-01-19), `i18n.default` 
 AGSC-01-18) and `run.enabled` (`false`, AGSC-09-94). `application/config/load.js`
 applies them explicitly (`PROSE_DEFAULTS`, cited by rule id);
 `application/config/env.js#allDefaults` derives only what `config.schema.json`
-literally declares, mechanically, never hand-typed. The same table also sets an
-internal `build.feed` value, which nothing at 1.0 reads: `build.feed` is a name reserved
-to 1.1, and a configuration file that names it is refused with `AGSC-E004` (AGSC-00-20).
+literally declares, mechanically, never hand-typed. The table gives `build.feed` no
+value: it is a name reserved to 1.1, a configuration file that names it is refused with
+`AGSC-E004` (AGSC-00-20), and nothing at 1.0 reads it.
 
 ### `tasks[]` enforcement (AGSC-08-28(c))
 
