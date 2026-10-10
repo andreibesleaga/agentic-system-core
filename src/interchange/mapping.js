@@ -81,6 +81,75 @@ function ordered(frontmatter) {
   return out;
 }
 
+/** The slug characters of an old-site link: `[a-z0-9]` first, then `[a-z0-9-]`. */
+function isSlugChar(ch, first) {
+  return (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || (!first && ch === '-');
+}
+
+const PATTERNS_PREFIX = '(/patterns/';
+
+/**
+ * The rest of an old-site link whose label closes at `close` (the `]`): the text
+ * after it must be `(/patterns/<slug>/)`. The slug run holds no `/`, so reading it
+ * whole is the only way the link can end.
+ * @param {string} text
+ * @param {number} close
+ * @param {{steps:number}} [meter]
+ * @returns {{end:number, target:string}|null} `null` when the text is not a link.
+ */
+function patternTail(text, close, meter) {
+  let i = close + 1;
+  if (!text.startsWith(PATTERNS_PREFIX, i)) return null;
+  i += PATTERNS_PREFIX.length;
+  const start = i;
+  while (i < text.length && isSlugChar(text[i], i === start)) i += 1;
+  if (meter !== undefined) meter.steps += i - close;
+  if (i === start || text[i] !== '/' || text[i + 1] !== ')') return null;
+  return { end: i + 2, target: text.slice(start, i) };
+}
+
+/**
+ * The old site's body links `[label](/patterns/<slug>/)`, left to right and without
+ * overlap: exactly what the pattern `/\[([^\]]*)\]\(\/patterns\/([a-z0-9][a-z0-9-]*)\/\)/gu`
+ * matched, found in linear time. The label of a link that starts at a `[` runs to
+ * the first `]` after it, so every `[` before one `]` shares that `]` and its tail
+ * is read once; when no `]` follows a `[`, no later `[` can start a link. The
+ * pattern read to the end of the text from every `[`, so a body that was one long
+ * run of `[` stalled the import (100,000 characters took about 30 s).
+ *
+ * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {Array<{index:number, end:number, label:string, target:string}>}
+ */
+function patternLinks(text, meter) {
+  const found = [];
+  let close = -1;
+  let tailAt = -1;
+  let tail = null;
+  let from = 0;
+  for (let open = text.indexOf('[', from); open !== -1; open = text.indexOf('[', from)) {
+    if (meter !== undefined) meter.steps += open - from + 1;
+    if (close <= open) {
+      close = text.indexOf(']', open + 1);
+      if (meter !== undefined) meter.steps += (close === -1 ? text.length : close) - open;
+      if (close === -1) break;
+    }
+    if (tailAt !== close) {
+      tailAt = close;
+      tail = patternTail(text, close, meter);
+    }
+    if (tail === null) {
+      from = open + 1;
+      continue;
+    }
+    found.push({ end: tail.end, index: open, label: text.slice(open + 1, close), target: tail.target });
+    from = tail.end;
+  }
+  // The last search, which found no `[` (or stopped at a `[` with no `]` after it).
+  if (meter !== undefined) meter.steps += text.length - from + 1;
+  return found;
+}
+
 /**
  * Rewrite the old body's internal links (AGSC-03-11, AGSC-01-35).
  *
@@ -122,15 +191,20 @@ function rewriteBodyLinks(body, inSet, options = {}) {
   const delinked = [];
   const published = options.publishedSet === undefined ? inSet : options.publishedSet;
   const text = String(body === undefined ? '' : body);
-  const out = text.replace(/\[([^\]]*)\]\(\/patterns\/([a-z0-9][a-z0-9-]*)\/\)/gu,
-    (whole, label, target) => {
-      if (inSet.has(target) && published.has(target)) {
-        rewritten.push(target);
-        return `[${label}](../concepts/${target}.md)`;
-      }
+  let out = '';
+  let from = 0;
+  for (const { index, end, label, target } of patternLinks(text)) {
+    out += text.slice(from, index);
+    from = end;
+    if (inSet.has(target) && published.has(target)) {
+      rewritten.push(target);
+      out += `[${label}](../concepts/${target}.md)`;
+    } else {
       delinked.push(target);
-      return label;
-    });
+      out += label;
+    }
+  }
+  out += text.slice(from);
   const findings = delinked.length === 0 ? [] : [finding('AGSC-E301',
     `${delinked.length} body reference(s) leave the PUBLISHED imported set and were de-linked,`
     + ` not rewritten as URLs (AGSC-03-02, AGSC-11-12, AGSC-06-30):`
@@ -459,5 +533,6 @@ module.exports = {
   filterLinks,
   mapCard,
   ordered,
+  patternLinks,
   rewriteBodyLinks,
 };

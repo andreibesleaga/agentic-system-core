@@ -1,7 +1,6 @@
 'use strict';
 // Unit tests for `src/knowledge/turtle.js` — the stable-Turtle profile (AGSC-05-10),
-// the literal forms (AGSC-05-31), the vocabulary reader and the blank-node rule
-// (AGSC-05-08).
+// the literal forms (AGSC-05-31) and the vocabulary reader.
 //
 // The profile is checked the honest way: what this module writes is handed straight
 // back to `n3`'s parser and the triple set is compared with the one that went in. A
@@ -99,59 +98,8 @@ test('the reader counts the 12 classes and 40 properties the ontology declares (
   assert.strictEqual(terms.filter((t) => t.kind !== 'class').length, 40);
 });
 
-test('a blank node in an export block is AGSC-E605 (AGSC-05-08)', () => {
-  const body = '```turtle export\n<https://a/> <https://b/> [ a <https://c/> ] .\n```\n';
-  const findings = turtle.checkExportBlocks(body, { file: 'content/concepts/a.md' });
-  assert.strictEqual(findings.length, 1);
-  assert.strictEqual(findings[0].code, 'AGSC-E605');
-  assert.strictEqual(findings[0].severity, 'error');
-  assert.strictEqual(findings[0].file, 'content/concepts/a.md');
-  assert.strictEqual(findings[0].line, 1);
-});
-
-test('a labelled blank node and a collection are refused too (AGSC-05-08)', () => {
-  const labelled = '```turtle export\n_:x <https://b/> <https://c/> .\n```\n';
-  assert.strictEqual(turtle.checkExportBlocks(labelled)[0].code, 'AGSC-E605');
-  const collection = '```turtle export\n<https://a/> <https://b/> ( <https://c/> ) .\n```\n';
-  assert.strictEqual(turtle.checkExportBlocks(collection)[0].code, 'AGSC-E605');
-});
-
-test('an export block without a blank node, a block without `export`, and a non-RDF fence pass', () => {
-  assert.deepStrictEqual(turtle.checkExportBlocks('```turtle export\n<https://a/> <https://b/> <https://c/> .\n```\n'), []);
-  assert.deepStrictEqual(turtle.checkExportBlocks('```turtle\n<https://a/> <https://b/> [ ] .\n```\n'), []);
-  assert.deepStrictEqual(turtle.checkExportBlocks('```js export\nconst a = [ ];\n```\n'), []);
-  assert.deepStrictEqual(turtle.checkExportBlocks('no fence at all\n'), []);
-});
-
-test('a block that does not parse states no triple, so it raises no blank-node finding', () => {
-  assert.deepStrictEqual(turtle.checkExportBlocks('```turtle export\nthis is not turtle\n```\n'), []);
-});
-
-test('the line of a finding is the fence line, offset when the body is not the file (AGSC-09-11)', () => {
-  const body = 'a\nb\n```turtle export\n_:x <https://b/> <https://c/> .\n```\n';
-  assert.strictEqual(turtle.checkExportBlocks(body)[0].line, 3);
-  assert.strictEqual(turtle.checkExportBlocks(body, { lineOffset: 10 })[0].line, 13);
-});
-
 test('n3 is the parser, and it is the pinned version', () => {
   assert.strictEqual(require('n3/package.json').version, '2.7.12');
   assert.ok(new N3.Parser({ format: 'N-Quads' })
     .parse('<https://a/> <https://b/> "c" <https://g/> .\n')[0].graph.value, 'https://g/');
-});
-
-test('an unclosed fence states nothing, and a fence inside another fence is content', () => {
-  assert.deepStrictEqual(turtle.checkExportBlocks('```turtle export\n_:x <https://b/> <https://c/> .\n'), []);
-  const nested = '````text\n```turtle export\n_:x <https://b/> <https://c/> .\n```\n````\n';
-  assert.deepStrictEqual(turtle.checkExportBlocks(nested), []);
-});
-
-test('a tilde fence and a longer closing run are both accepted (CommonMark 0.31.2)', () => {
-  assert.strictEqual(turtle.checkExportBlocks('~~~turtle export\n_:x <https://b/> <https://c/> .\n~~~~\n')[0].code, 'AGSC-E605');
-  // a closing run shorter than the opening one does not close the block
-  assert.deepStrictEqual(turtle.checkExportBlocks('````turtle export\n_:x <https://b/> <https://c/> .\n```\n'), []);
-});
-
-test('a second export block in the same body is reported on its own line', () => {
-  const body = '```turtle export\n_:x <https://b/> <https://c/> .\n```\n\n```turtle export\n_:y <https://b/> <https://c/> .\n```\n';
-  assert.deepStrictEqual(turtle.checkExportBlocks(body).map((f) => f.line), [1, 5]);
 });

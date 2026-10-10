@@ -174,17 +174,34 @@ function row(values) {
   };
 }
 
+/**
+ * The text without its trailing line feeds, read back from the end: what
+ * `.replace(/\n+$/u, '')` gave, in linear time. That pattern read to the end of every
+ * run of line feeds from each of its positions, so a card body with a long run of
+ * line feeds before its last word stalled the import (100,000 took about 35 s).
+ *
+ * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string}
+ */
+function withoutTrailingFeeds(text, meter) {
+  let feeds = 0;
+  while (feeds < text.length && text.charCodeAt(text.length - 1 - feeds) === 0x0a) feeds += 1;
+  if (meter !== undefined) meter.steps += feeds + 1;
+  return feeds === 0 ? text : text.slice(0, text.length - feeds);
+}
+
 /** The own-record, from a text that carries `<!-- agsc-item B64 -->` on a line of its own; and the text without it. */
 function takeRecord(text) {
   const src = String(text == null ? '' : text);
   const m = /(?:^|\n)[ \t]*<!-- agsc-item ([A-Za-z0-9+/]+={0,2}) -->[ \t]*(?=\n|$)/u.exec(src);
   if (m === null) return { record: null, text: src };
-  return { record: m[1], text: (src.slice(0, m.index) + src.slice(m.index + m[0].length)).replace(/\n+$/u, '') };
+  return { record: m[1], text: withoutTrailingFeeds(src.slice(0, m.index) + src.slice(m.index + m[0].length)) };
 }
 
 /** A body with the own-record line appended (an HTML comment: invisible where Markdown renders). */
 function withRecord(body, record) {
-  const text = String(body == null ? '' : body).replace(/\n+$/u, '');
+  const text = withoutTrailingFeeds(String(body == null ? '' : body));
   if (record == null) return text;
   return `${text}${text === '' ? '' : '\n\n'}<!-- agsc-item ${record} -->`;
 }
@@ -666,6 +683,62 @@ function cardLine(r, withDate) {
   return `- [${r.done === true ? 'x' : ' '}] ${tokens.join(' ')}`;
 }
 
+/** One whitespace character, as `\s` matches it under the `u` flag (a single-character test, never a run). */
+const SPACE = /\s/u;
+const isSpace = (ch) => SPACE.test(ch);
+
+/** The characters `.` does not match (no `s` flag): the line terminators. */
+function isLineTerminator(ch) {
+  return ch === '\n' || ch === '\r' || ch === '\u2028' || ch === '\u2029';
+}
+
+/**
+ * An ATX heading line, `{marks, text}` or `null`: exactly what the pattern
+ * `/^(#{1,6})\s+(.+?)\s*#*\s*$/u` captured, in linear time. That pattern tried every
+ * end of the text with every split of the closing whitespace, so one heading with a
+ * long run of spaces before its last word took cubic time (20,000 spaces took more
+ * than 100 s).
+ *
+ * How the pattern matched, read as a scan: the marks are the whole leading run of
+ * `#` (one to six), and a whitespace character must follow them. The text starts
+ * after the whole whitespace run that follows; if nothing is left, the run gives
+ * back its characters one at a time from the end. The text then ends at the first
+ * position from which the rest of the line is whitespace, `#` marks, whitespace,
+ * and at least one character (one code point) after its start; it may hold no line
+ * terminator.
+ *
+ * @param {string} line
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {{marks:string, text:string}|null}
+ */
+function markdownHeading(line, meter) {
+  let marks = 0;
+  while (marks < line.length && marks <= 6 && line[marks] === '#') marks += 1;
+  if (meter !== undefined) meter.steps += marks + 1;
+  if (marks === 0 || marks > 6 || marks >= line.length || !isSpace(line[marks])) return null;
+  // The start of the closing sequence: whitespace, then `#` marks, then whitespace.
+  let tail = line.length;
+  while (tail > 0 && isSpace(line[tail - 1])) tail -= 1;
+  while (tail > 0 && line[tail - 1] === '#') tail -= 1;
+  while (tail > 0 && isSpace(line[tail - 1])) tail -= 1;
+  let run = marks;
+  while (run < line.length && isSpace(line[run])) run += 1;
+  if (meter !== undefined) meter.steps += (line.length - tail) + (run - marks) + 1;
+  // The first line terminator at or after `start`, found once from the end of the
+  // run and then extended backwards one start at a time.
+  let stop = run;
+  while (stop < line.length && !isLineTerminator(line[stop])) stop += 1;
+  if (meter !== undefined) meter.steps += stop - run + 1;
+  for (let start = run; start > marks; start -= 1) {
+    if (start < run && isLineTerminator(line[start])) stop = start;
+    if (meter !== undefined) meter.steps += 1;
+    if (start >= line.length) continue;
+    const end = Math.max(start + String.fromCodePoint(line.codePointAt(start)).length, tail);
+    if (end <= stop) return { marks: line.slice(0, marks), text: line.slice(start, end) };
+  }
+  return null;
+}
+
 /** Card lines of a Markdown list (`- [ ]` / `* [x]`), their indented continuation lines, and the heading above. */
 function markdownCards(text, { kanban }) {
   const lines = String(text).replace(/\r\n?/gu, '\n').split('\n');
@@ -679,11 +752,11 @@ function markdownCards(text, { kanban }) {
   lines.forEach((line, i) => {
     if (/^(?:```|~~~)/u.test(line)) fence = !fence;
     if (fence || /^%%/u.test(line)) { current = null; return; }
-    const heading = /^(#{1,6})\s+(.+?)\s*#*\s*$/u.exec(line);
+    const heading = markdownHeading(line);
     if (heading !== null) {
       current = null;
-      if (heading[1].length === 1 && !kanban) h1 = heading[2];
-      else { lane = heading[2]; completeLane = false; archived = /^archive$/iu.test(heading[2]); }
+      if (heading.marks.length === 1 && !kanban) h1 = heading.text;
+      else { lane = heading.text; completeLane = false; archived = /^archive$/iu.test(heading.text); }
       return;
     }
     if (/^\*\*\*\s*$/u.test(line) && kanban) { archived = true; return; }
@@ -746,7 +819,7 @@ const markdown = {
       }
       out.push('');
     }
-    return `${out.join('\n').replace(/\n+$/u, '')}\n`;
+    return `${withoutTrailingFeeds(out.join('\n'))}\n`;
   },
 };
 
@@ -850,8 +923,22 @@ const todotxt = {
  * the peer and are expanded to the peer's IRIs (AGSC-11-15). `/boards/index.json`
  * lists boards and holds no task: it is named and skipped.
  */
-function peerBase(iri) {
-  return String(iri == null ? '' : iri).replace(/[^/]+\/[^/]+\/?$/u, '');
+function peerBase(iri, meter) {
+  // What `.replace(/[^/]+\/[^/]+\/?$/u, '')` gave, read back from the end in linear
+  // time: one trailing `/` aside, the last two segments must be non-empty, and the
+  // base is everything before them. The pattern read to the end of the IRI from
+  // every position, so an IRI with no `/` took quadratic time (100,000 characters
+  // took about 27 s).
+  const text = String(iri == null ? '' : iri);
+  const end = text.endsWith('/') ? text.length - 1 : text.length;
+  let last = end;
+  while (last > 0 && text[last - 1] !== '/') last -= 1;
+  let first = last - 1;
+  while (first > 0 && text[first - 1] !== '/') first -= 1;
+  if (meter !== undefined) meter.steps += text.length - first + 1;
+  // `last` is the start of the last segment, `first` of the one before it.
+  if (last === end || last === 0 || first >= last - 1) return text;
+  return text.slice(0, first);
 }
 
 const agscBoard = {
@@ -917,6 +1004,6 @@ const FORMATS = Object.freeze(Object.assign(Object.create(null), {
 }));
 
 module.exports = {
-  FORMATS, cardTokens, csvCell, csvObjects, dateOf, kindOfLabels, listOf, parseCsv, recordFromCell,
-  stemOf, takeRecord, uncell, withRecord, writeCsv,
+  FORMATS, cardTokens, csvCell, csvObjects, dateOf, kindOfLabels, listOf, markdownHeading, parseCsv, peerBase,
+  recordFromCell, stemOf, takeRecord, uncell, withRecord, withoutTrailingFeeds, writeCsv,
 };

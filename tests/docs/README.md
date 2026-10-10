@@ -15,8 +15,11 @@ will be published. `agent-skill.test.js` keeps the agent skill in
 to it. `governance-texts.test.js` keeps the governance texts at the root of the
 repository and the forms under `.github/` saying the same thing as each other: who
 signs off, how the ledger names an author, the supported versions, the licence of each
-folder, the conformance sentence and the one pinned form of the Action. Subject: the
-documentation.
+folder, the conformance sentence and the one pinned form of the Action.
+`requirements-and-plan.test.js` checks that the requirements document and the plan
+answer, each with a dated note, every statement of theirs that no longer holds, and
+that the benchmark pages, the demos and the Mode 5 guide say what this version ships.
+Subject: the documentation.
 
 **Read after:** [tests/README.md](../README.md).
 
@@ -25,5 +28,7 @@ node --test tests/docs/demos.test.js tests/docs/guides.test.js tests/docs/agent-
 ```
 
 Deterministic: fixed clock, empty git identity, no network, scratch files only under
-the system temporary directory, removed afterwards. Skipped on Windows (the demos and
+the system temporary directory, removed afterwards. Every Node process a page's steps
+start runs under the network trap of `tests/acceptance/steps/_offline.js`, and a page
+whose steps reached for the network fails. Skipped on Windows (the demos and
 guides are written for a POSIX shell).

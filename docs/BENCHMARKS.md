@@ -4,7 +4,7 @@
 
 This document describes the benchmark kit under `bench/` and the standalone runner `tools/bench`. The measured results live in `docs/MEASUREMENTS.md`; this file is about method.
 
-**Two halves, deliberately separated.** The *measurements* half needs no model, no network, no key and no external dataset: conformance counts, determinism byte comparisons, the security floor, build curves, accessibility. It runs today, and it is what carries this format's own property claims. The *studies* half — retrieval quality, memory competencies, the six modes end to end — needs a corpus, a judge model and a licence check for every dataset, and it is the `bench` verb's work at **v1.0.1**, within thirty days of the 1.0 release. Nothing here moves that date.
+**Two halves, deliberately separated.** The *measurements* half needs no model, no network, no key and no external dataset: conformance counts, determinism byte comparisons, the security floor, build curves, accessibility. It runs today, and it is what carries this format's own property claims. The *studies* half — retrieval quality, memory competencies, the six modes end to end — needs a corpus, a judge model and a licence check for every dataset, and it is the work of the `tools/bench` program at **1.1**, the version at which the declared scope makes the benchmark kit normative (AGSC-00-20). There is no `agsc bench` verb.
 
 ## Running it
 
@@ -54,7 +54,7 @@ Twenty hand-written intents, one gold item each: twelve answered by published it
 
 **This set is a harness test, not a study.** It has no dev/test split, no generated paraphrases, no second annotator, no leakage control and no confidence intervals, and the intents and the items have the same author. It is published as the first run of the instrument.
 
-## The study the kit is built for (v1.0.1)
+## The study the kit is built for (1.1)
 
 The retrieval study is the one benchmark contribution this project claims, and only in this form: *to the author's knowledge no published benchmark measures intent-to-item retrieval across a knowledge node's several agent surfaces — a plain-text index, a prebuilt lexical index, a chunk export, a tool server and a graph dump — so the task set and its labels are released as a contribution in their own right.* No superlative, and no performance claim.
 

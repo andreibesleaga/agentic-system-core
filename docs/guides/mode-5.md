@@ -9,7 +9,9 @@ tasks are open, who holds which, and whether the board is done; **agent lanes** 
 in the configuration, each with its owner, its budget and its limit of tasks held at once;
 claims made as proposals (the tool server returns a patch and writes nothing) that take
 effect only when a person commits them; refusals for a task already held and for a lane
-over its limit. No model adapter ships with the engine: an agent's own run is shown as a
+over its limit. No model adapter ships with the engine: a live run is made by an agent
+outside the engine — Claude Code, a script — as a client of `agsc mcp` or the page tools,
+under the lane's declared limits (AGSC-08-28), and the lane's own run is shown here as a
 dry run.
 
 **Read after:** [Mode 2](mode-2.md). **Next:** the [guides index](README.md).
@@ -207,7 +209,9 @@ for its Episode, with no commit and no `SOURCE_DATE_EPOCH` (`AGSC-E204`, as `bui
 
 - **A model.** The engine ships no model adapter, so `refresh --agent <lane>` without
   `--dry-run` refuses; the budget and the stop it causes, the lane's limits and the
-  Episode are real, the model call is not made.
+  Episode are real, the model call is not made. A live run is made by an agent outside
+  the engine, with its own model, as a client of `agsc mcp` or the page tools, as the
+  claims in this guide are made (AGSC-08-28).
 - **A forge.** Pull requests, required checks and `publish: auto` merges happen on
   GitHub, GitLab or similar; `agsc ci` writes the files the forge needs ([Mode 2](mode-2.md)).
 

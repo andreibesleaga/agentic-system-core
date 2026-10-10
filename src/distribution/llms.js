@@ -5,9 +5,10 @@
 // AGSC-06-15 (the provenance header and the `text agsc-content` fence) and the
 // exclusions of AGSC-06-30 / AGSC-11-22.
 //
-// The layout is a profile of llms.txt v2: the H1 comes FIRST, which is that
-// convention's one required element; everything after it is pinned here because the
-// convention fixes no grammar and two conforming writers must emit identical bytes.
+// The layout follows llms.txt v2's H1, which comes FIRST and is that convention's one
+// required element; everything after it is pinned here because the convention fixes
+// no grammar and two conforming writers must emit identical bytes. The summary
+// blockquote follows the provenance comment, so a v2 parser reads no summary.
 //
 // Pure function of its input; `site.js` writes the bytes. Vectors disc-0013, disc-0014.
 
@@ -23,6 +24,58 @@ function iriOf(base, item) {
   if (item.iri != null && item.iri !== '') return String(item.iri);
   const plural = TYPE_PLURAL[item.type] || TYPE_PLURAL.concept;
   return `${String(base).replace(/\/+$/u, '')}/${plural}/${item.slug}/`;
+}
+
+/** One whitespace character, as `\s` matches it under the `u` flag (a single-character test, never a run). */
+const SPACE = /\s/u;
+
+/**
+ * Every whitespace run that holds a line feed becomes one space; other runs stay:
+ * what replacing every match of the pattern `\s*\n\s*` (flags `gu`) with one space
+ * gave, in one pass. That pattern read to the end of a whitespace run from every
+ * position in it, so a description with a long run of spaces stalled the build
+ * (100,000 characters took about 22 s).
+ *
+ * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string}
+ */
+function collapseLineBreaks(text, meter) {
+  let out = '';
+  let from = 0;
+  let i = 0;
+  while (i < text.length) {
+    if (!SPACE.test(text[i])) { i += 1; continue; }
+    const start = i;
+    let feed = false;
+    while (i < text.length && SPACE.test(text[i])) {
+      if (text[i] === '\n') feed = true;
+      i += 1;
+    }
+    if (feed) {
+      out += `${text.slice(from, start)} `;
+      from = i;
+    }
+  }
+  if (meter !== undefined) meter.steps += text.length + 1;
+  return out + text.slice(from);
+}
+
+/**
+ * The text with exactly one trailing line feed: what `.replace(/\n*$/u, '\n')` gave,
+ * read back from the end. That pattern read to the end of every run of line feeds
+ * from each of its positions, so a body with a long run of line feeds before its last
+ * word stalled the build (100,000 took about 57 s).
+ *
+ * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string}
+ */
+function withOneTrailingFeed(text, meter) {
+  let end = text.length;
+  while (end > 0 && text[end - 1] === '\n') end -= 1;
+  if (meter !== undefined) meter.steps += text.length - end + 1;
+  return `${text.slice(0, end)}\n`;
 }
 
 /** AGSC-06-30: the published set — drafts and retired items appear in neither file. */
@@ -130,7 +183,7 @@ function llmsTxt(bundle, options = {}) {
     // from the single-line bound, exactly because this block collapses it; the
     // neutraliser then removes the remaining separators the collapse does not see
     // (U+0085, U+2028, U+2029 and the other C0 controls) —.
-    `> ${singleLine(b.description.replace(/\s*\n\s*/gu, ' '))}`,
+    `> ${singleLine(collapseLineBreaks(b.description))}`,
   ];
   const { blocks } = sectionBlocks(b);
   return `${[...head, ...blocks].join('\n\n')}\n`;
@@ -150,7 +203,7 @@ function llmsFullTxt(bundle, options = {}) {
   const b = settle(bundle, options);
   const { order } = sectionBlocks(b);
   const bodies = order.map((it) => {
-    const body = String(it.body == null ? '' : it.body).replace(/\n*$/u, '\n');
+    const body = withOneTrailingFeed(String(it.body == null ? '' : it.body));
     return `\n## ${singleLine(it.title)}\n<!-- agsc:item ${singleLine(iriOf(b.base, it))} -->\n\`\`\`text agsc-content\n${body}\`\`\`\n`;
   });
   return llmsTxt(bundle, options) + bodies.join('');
@@ -164,4 +217,6 @@ module.exports = {
   primaryCluster,
   isPublished,
   iriOf,
+  collapseLineBreaks,
+  withOneTrailingFeed,
 };

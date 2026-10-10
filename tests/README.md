@@ -27,6 +27,7 @@ matrix, the optional lanes and the three operating systems.
 ```bash
 npm install
 npm test                                  # everything that needs nothing outside the repository
+npm run test:coverage                     # the suite measured over src/; fails below the coverage bar
 node --test "tests/knowledge/*.test.js"   # one folder
 node tools/rule-coverage --check          # every active rule has a check or a stated reason
 ```

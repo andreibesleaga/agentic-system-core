@@ -860,9 +860,11 @@ node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"agent":"worker","bo
   "type": "proposal"
 ```
 
-The lane's own run, dry. No model adapter ships with the engine, so a live run needs
-one; the dry run shows the shape of what the lane would open — a proposal carrying
-the Episode of the run — and prints the commands a person may run. Applied and
+The lane's own run, dry. No model adapter ships with the engine: a live run is made by
+an agent outside the engine — Claude Code, a script — as a client of `agsc mcp` or the
+page tools, as the claims above were made, under the lane's declared limits
+(AGSC-08-28). The dry run shows the shape of what the lane would open — a proposal
+carrying the Episode of the run — and prints the commands a person may run. Applied and
 built, the NOW page counts the run in the lane's row (enabled, one run, its spend, its
 cap). An undeclared lane is refused:
 
@@ -921,8 +923,10 @@ Mode 2 wrote.
   `dist/forge/status-checks.json`, and the shipped `action.yml` runs `agsc ci`; opening
   and merging the pull request is the forge's.
 - **A model key** (an agent lane that writes pages): the engine ships no model adapter,
-  so `refresh --agent <name> --dry-run` is the whole of what runs; the budget, the
-  lane gates and the Episode are real, the model call is not made. The dry run stops,
+  so `refresh --agent <name> --dry-run` is the whole of what the lane's own run does;
+  the budget, the lane gates and the Episode are real, the model call is not made. A
+  live run is made by an agent outside the engine, with its own model, as a client of
+  `agsc mcp` or the page tools (AGSC-08-28). The dry run stops,
   writing nothing, once the month's spend reaches the lane's or the node's budget
   (`AGSC-E510`, also on the NOW page) or when no board holds a task the lane can claim.
 - **An isolating runner** (`agsc run` executing a step): none ships; `run --dry-run`

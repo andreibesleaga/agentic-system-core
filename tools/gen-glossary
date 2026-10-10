@@ -50,9 +50,18 @@ function generate(root) {
   out.push('');
   const s00 = read('spec/00-overview.md');
   const sec = s00.slice(s00.indexOf('## 0.2 Terms'), s00.indexOf('## 0.3'));
-  for (const m of sec.matchAll(/^- \*\*(AGSC-00-\d{2}[a-z]?)\*\* (.*)$/gm)) {
-    const text = stripTrace(m[2].replace(/\s*\[[^\]]*\]\s*$/, ''));
-    out.push(`- ${text} *(${m[1]})*`);
+  // A rule line, and the terms its nested list defines ("  - **Term** — definition"),
+  // each listed under the id of the rule that holds it.
+  let rule = null;
+  for (const line of sec.split('\n')) {
+    const top = line.match(/^- \*\*(AGSC-00-\d{2}[a-z]?)\*\* (.*)$/);
+    if (top) {
+      rule = top[1];
+      out.push(`- ${stripTrace(top[2].replace(/\s*\[[^\]]*\]\s*$/, ''))} *(${rule})*`);
+      continue;
+    }
+    const nested = rule && line.match(/^ {2}- (\*\*.+?\*\* — .*)$/);
+    if (nested) out.push(`- ${stripTrace(nested[1])} *(${rule})*`);
   }
   out.push('');
 
@@ -65,7 +74,7 @@ function generate(root) {
     .filter((k) => !['none'].includes(k));
   out.push(keys.map((k) => '`' + k + '`').join(' · '));
   out.push('');
-  out.push('Core nine carry composition semantics (spec/03 §3.5); the Mode-2 five (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`) are navigational and provenance edges. Inverses are computed, never authored (spec/03 §3.2).');
+  out.push('Of the core nine, `uses`, `requires`, `excludes`, `contradicts` and `supersedes` carry composition semantics (spec/03 §3.5); `related`, `broader`, `narrower` and `derived-from` never change a composition (AGSC-03-18), and the Mode-2 five (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`) are navigational and provenance edges. Inverses are computed, never authored (spec/03 §3.2).');
   out.push('');
 
   // 3. ontology terms

@@ -358,9 +358,9 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; the eng
 |---|---|---|---|---|
 | R1 | Hand-written **Markdown subset renderer** — highest risk; 153 bodies must render | — | ship the old renderer's feature level + GFM tables; golden-test all 153; unsupported syntax is a lint error, not a rendering surprise | M4 |
 | R2 | **Turtle / RDF-XML / N-Quads** escaping and datatypes subtly wrong | — | validate once offline (rapper/Jena), lock with golden fixtures; RDF/XML stays in v1.0, emitted when `build.rdfxml` is true (AGSC-05-06) | M5 |
-| R3 | Browser ≡ CLI composition core with **no bundler**, plus a hand-written zip writer | — | one ESM entry copied to `www/js/`; test forbids `node:` imports in `src/composition/`; per-file download fallback; the hand-written STORE-only writer is kept for 1.0.0 (decided 2026-10-02): AGSC-07-13a pins every byte of the archive, which a third-party library would have to be held to release by release | M8 |
+| R3 | Browser ≡ CLI composition core with **no bundler**, plus a hand-written zip writer | — | one ESM entry copied to `www/js/`; test forbids `node:` imports in `src/composition/`; per-file download fallback; the hand-written STORE-only writer is kept for 1.0.0: AGSC-07-13a pins every byte of the archive, which a third-party library would have to be held to release by release | M8 |
 | R5 | **w3id PR latency** — `/ns/` IRIs unresolvable until merged | ADR-005 | IRI fixed in `ontology/agsc.ttl`; PR after M2; launch does not depend on it | maintainer |
-| R6 | `injection-scan` **false positives** deter human contributors | — | severity split + labelled override + config-owned wordlists; measured on the 153-card corpus pre-launch | M13 |
+| R6 | `injection-scan` **false positives** deter human contributors | — | severity split + labelled override + config-owned wordlists; measured on the demonstration corpus pre-launch | M13 |
 | R7 | Zero-dep parsers ⇒ **ReDoS, prototype pollution, traversal, resource bombs** | — | index-based state machines not regexes; `Object.create(null)` + `__proto__`/`constructor` rejection; ids-only paths; 1 MiB caps; seeded fuzz lane on tags; **archives refused entirely** | M1, M12 |
 | R8 | **Correspondence-rule drift** — a module with no spec section or vector | — | §5.3 machine-checked in `ci` against its **Area due** column; `tools/validate-spec` closes rule-id and error-code drift mechanically (PRD-054); deferred items named below, not hidden | M13 |
 
@@ -610,6 +610,68 @@ double build of `ci`) as the known-good path at 1.0.
 **Declared scope (the table of the addendum on AGSC-00-20).** The `memory://` alias and its
 resolution are part of 1.0 (AGSC-00-20, AGSC-05-04 to AGSC-05-04b); the table's 1.1 row
 should not be read as placing the resolver there.
+
+## Addendum — notes at 1.0.0 (2026-10-10)
+
+The sections and addenda above stay as they were written. These notes say how some of their
+statements read at `1.0.0`; where one of them and an earlier passage differ, the note here
+governs. `docs/PRD.md` carries the requirement side in its "Notes at 1.0.0".
+
+**The `memory://` alias (§3, the external-interfaces paragraph).** "A documented alias, never
+resolved" reads: never dereferenced over the network and never emitted as an RDF subject
+(AGSC-05-04), and resolved locally by the command line and the local tool server when the
+`<bundle-id>` is the Bundle's own `bundle.id`, another Bundle's id being refused with
+`AGSC-E309` (AGSC-05-04b). The 1.1 row of the declared-scope table is read as the addendum
+"The tree as shipped at 1.0" says: the resolver is part of 1.0.
+
+**The coverage bar (§7, the engine CI row; §10, the NFR-03 row).** "coverage ≥99%" and "coverage
+lane" read: `npm run test:coverage`, with the thresholds lines 99.9 %, functions 99 % and
+branches 93 % on `src/`, runs inside the check `test (ubuntu-latest, Node 24)` of `test.yml`,
+which every pull request must pass. The golden-thread half is `node tools/requirements-matrix
+--check`.
+
+**The licence row (§10, NFR-10).** There is no REUSE or SPDX lint at 1.0, and "REUSE green" is
+not claimed: the licences are stated by `LICENSE`, `LICENSE-CONTENT`, `NOTICE`, the `license`
+field of `package.json` and the SPDX header of every browser script, and a REUSE layout is a
+1.1 item (the PRD's note to PRD-047 and NFR-10).
+
+**R7 and T7 (§11, §12).** "Index-based state machines not regexes" and "a seeded fuzz lane on
+tags" do not describe the tree: the engine reads its formats through maintained libraries
+(ADR-019) and still uses regular expressions. The controls that exist are these: the size caps;
+a linear scan with a step-count test for each text scanner whose pattern could take quadratic
+time on one long run (the `*-linear.test.js` tests); one seeded, deterministic fuzz test,
+`tests/security/fuzz-patterns.test.js`, which checks those scanners against the patterns they
+replaced and bounds their steps on long runs, and runs with the rest of the suite on every push,
+not only on tags; and the security corpus that `bench/measure.js --layer security` runs.
+
+**The caching line (the addendum on the performance backlog).** "Digest `ETag`/immutable caching"
+is not shipped at 1.0 in that form. An `ETag` is sent on every public artefact, its value set by
+the host unless the writer sets it, and it is never an integrity statement (AGSC-11-05).
+`Cache-Control: public, max-age=31536000, immutable` is reserved for digest-named asset paths,
+which no 1.0 route has, so a 1.0 node sends it nowhere; the versioned vocabulary copies under
+`/ns/<version>/` are served with the host's default `max-age=0, must-revalidate`, and
+`immutable` on them is planned for 1.1 (AGSC-00-20). The same line's "benchmark kit
+(`agsc bench`)" is the `tools/bench` program, as the addendum "The tree as shipped at 1.0"
+says.
+
+**ADR-013.** "MCP 2026-07-28 … via `server/discover`" reads as the record's own closing
+parenthesis says: the local tool server speaks MCP revision 2025-11-25 and its `initialize`
+handshake, and it does not serve `server/discover`. The tool server on revision 2026-07-28,
+with `server/discover`, is planned for 1.1 (AGSC-00-20).
+
+**ADR-004.** "The nine core keys carry composition semantics" reads: five of the nine core keys —
+uses, requires, excludes, contradicts and supersedes — change a composition, and related,
+broader, narrower and derived-from are navigational or provenance edges that never change one
+(AGSC-03-01, AGSC-03-18).
+
+**Capabilities planned for 1.1.** The plugin adapters "Deno/Bun/Workers" of the `FileSystem`
+port (§5.2) and the portability ADR-002 names — running the engine's library on Deno, Bun and
+Cloudflare Workers — are planned for 1.1. So are the real channel adapters of the addendum
+"(PRD-056)", which also names a fixture stub that does not ship (the addendum "The tree as
+shipped at 1.0"), and the git mirror and a weekly attested snapshot of a node that the addendum
+"The tree as shipped at 1.0" calls "planned for later, with no version fixed". The other
+capabilities of the reference distribution planned for 1.1 are listed in AGSC-00-20 and in the
+PRD's "Notes at 1.0.0". Each adds behaviour, which `1.0.0` does not.
 
 ## Beyond 1.0
 

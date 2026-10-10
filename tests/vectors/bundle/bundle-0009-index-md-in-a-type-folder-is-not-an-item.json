@@ -1,0 +1,28 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-05: index.md MAY exist in any folder (OKF reserved), and a reader MUST NOT read an index.md, a README.md or an _index.md in a folder under content/ as an item; it reports each one it skips as the warning AGSC-E506. Derivation over the minimal fixture, whose lint reports nothing, plus one file content/concepts/index.md holding a title and a sentence and no type, kind or prov: read as an item it would fail lint with AGSC-E202 (no type), AGSC-E205 (the type does not match the folder) and AGSC-E501 (no prov). Skipped as a folder note, it yields exactly one finding, the AGSC-E506 warning naming that file, and lint exits 0. The Bundle root content/index.md is not such a file: it is read as the root document (AGSC-01-04).",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E506",
+          "file": "content/concepts/index.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0009",
+  "input": {
+    "add_files": {
+      "content/concepts/index.md": "---\ntitle: Concepts\n---\n\nThe concepts of this node, one file each.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-01-05"
+}

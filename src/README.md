@@ -101,9 +101,15 @@ specification section that governs it is cited in every module header.
 
 **Purity.** `knowledge/`, `governance/` and `composition/` never touch a file, a
 process, a clock, a network or a random number. They take strings and records and
-return records. Everything that reaches the outside world does so through a port,
-and only the application layer and `bin/` may construct an adapter.
-`tests/arch/core-purity.test.js` enforces this.
+return records. Everything else that reaches the outside world does so through a
+port, and only the application layer and `bin/` may construct an adapter, with one
+exception: `application/hosting.js`, the deployment profiles and local server of
+`agsc-host`, reads and writes files with `node:fs` directly. Moving it behind the
+FileSystem port is planned for 1.1. `tests/arch/core-purity.test.js` enforces the
+purity of the three contexts, `tests/arch/never-touches.test.js` the "Never touches"
+column of `docs/ARCHITECTURE-DDD.md` §2, and `tests/arch/application-builtins.test.js`
+the Node built-ins the application layer may load (`path`, `crypto`, `util`; `fs` in
+`hosting.js` only; `os` in `cli/verbs/run.js` only).
 
 **Errors.** A domain fault is a **Finding** with a registered `AGSC-E<nnn>` code
 (AGSC-09-11), returned, never thrown. A thrown error means a programming fault — a

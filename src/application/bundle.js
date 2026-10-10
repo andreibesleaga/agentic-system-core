@@ -25,8 +25,12 @@ const yaml = require('../knowledge/yaml.js');
 
 /** AGSC-03-11 / AGSC-02-95: where a Bundle's non-item files live. */
 const ASSETS_DIR = 'content/assets';
-/** AGSC-01-05: the two file names a type folder may hold that are never items. */
-const FOLDER_NOTES = new Set(['readme.md', '_index.md']);
+/**
+ * AGSC-01-05: the three file names a type folder may hold that are never items,
+ * compared ASCII case-insensitively. `content/index.md` is the Bundle root
+ * (AGSC-01-04) and is read below, never from a type folder.
+ */
+const FOLDER_NOTES = new Set(['readme.md', '_index.md', 'index.md']);
 
 /** AGSC-01-03: the type folders, in the plural form the route set uses. */
 const TYPE_FOLDERS = Object.freeze({
@@ -60,9 +64,9 @@ function loadBundle(ports, options) {
     for (const entry of fs.readdir(dir)) {
       if (!entry.endsWith('.md')) continue;
       const path = `${dir}/${entry}`;
-      // AGSC-01-05: a folder `README.md` or `_index.md` is never an
-      // item; a reader skips it and says so, so that a publisher may keep a README
-      // beside the items without `lint`, `build` and `ci` reading it as one.
+      // AGSC-01-05: a folder `index.md`, `README.md` or `_index.md` is never
+      // an item; a reader skips it and says so, so that a publisher may keep a
+      // folder note beside the items without `lint`, `build` and `ci` reading it as one.
       if (FOLDER_NOTES.has(entry.toLowerCase())) {
         findings.push({
           code: 'AGSC-E506',
@@ -86,6 +90,7 @@ function loadBundle(ports, options) {
     }
   }
   items.sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
+  for (const finding of variantsWithoutPrimary(items)) findings.push(finding);
 
   // AGSC-03-11: "a relative Markdown link or image whose
   // target is inside the Bundle MUST resolve to an existing item, AN EXISTING ASSET
@@ -132,6 +137,34 @@ function loadBundle(ports, options) {
     items: Object.freeze(items),
     root: fs.root === undefined ? '' : fs.root,
   });
+}
+
+/** The file stem of an item path: its name without the final `.md`. */
+function stemOf(path) {
+  return path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/u, '');
+}
+
+/**
+ * AGSC-01-13 (amended 2026-10-10 for 1.0.0). At 1.0 a file whose stem holds a dot
+ * is read as `<slug>.<lang>.md` with the slug before the first dot; beside its
+ * primary (a file whose stem IS that slug, in any type folder) it is a second use
+ * of the slug, which the slug check of `lint` reports as AGSC-E206. With no primary
+ * its stem is not a slug (AGSC-01-10, AGSC-01-11): one AGSC-E204 per such file,
+ * naming the file and the slug, in discovery order.
+ */
+function variantsWithoutPrimary(items) {
+  const primaries = new Set(items.map((i) => stemOf(i.path)).filter((stem) => !stem.includes('.')));
+  return items
+    .filter((i) => stemOf(i.path).includes('.') && !primaries.has(i.slug))
+    .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+    .map((i) => Object.freeze({
+      code: 'AGSC-E204',
+      file: i.path,
+      message: `file stem "${stemOf(i.path)}" is not a slug: it reads as a language variant of "${i.slug}", `
+        + `and no file of the Bundle is that primary (AGSC-01-13, AGSC-01-10)`,
+      severity: 'error',
+      slug: i.slug,
+    }));
 }
 
 /** The FileSystem port of a port bag, or the port itself when one was passed. */

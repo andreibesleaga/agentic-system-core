@@ -204,7 +204,7 @@ node bench/measure.js --layer retrieval --scratch <dir> --nodes patterns=<build>
 | main | search.json | 0.875 | 0.088 | 0.694 | 0.500 | 0.645 | 8 | 17 |
 | main | llms.txt | 0.875 | 0.088 | 0.665 | 0.500 | 0.598 | 8 | 14 |
 
-Twenty intents over 59 published items is a smoke test of the surfaces, not a study: no split, no paraphrases, no second annotator, no intervals, and the intents and items share an author. The study is specified in `docs/BENCHMARKS.md` and is the `bench` verb's job at v1.0.1. The `ask` tool is not scored separately: its ranking is the `search` ranking truncated at three.
+Twenty intents over 59 published items is a smoke test of the surfaces, not a study: no split, no paraphrases, no second annotator, no intervals, and the intents and items share an author. The study is specified in `docs/BENCHMARKS.md` and is the `tools/bench` program's work at 1.1. The `ask` tool is not scored separately: its ranking is the `search` ranking truncated at three.
 
 ---
 
@@ -223,7 +223,7 @@ axe-core 4.13.0 in headless Chromium through playwright-core 1.62.1 (both instal
 | main node (engine page shell) | 35 | 70 | 18 | **0** | 0 | 10.0 KB |
 | main site (its own generator) | 81 | 162 | 30 | **0** | 0 | 80.9 KB |
 
-Page types are the templates a route is rendered from: home, each section's index, each section's item or term page, paginated indexes. The per-type counts are in `docs/measurements.json` under `layers.a11y.nodes.<build>.by_type`; every type has zero violations. **axe-core finds on average 57 % of WCAG issues automatically: zero is a floor, not a conformance claim.** This lane loads every page at one size, 1200 × 900; the site repository's own lane (`scripts/a11y.js`) also loads every page at 390 px. The Lighthouse performance category is not measured and is never a gate.
+Page types are the templates a route is rendered from: home, each section's index, each section's item or term page, paginated indexes. The per-type counts are in `docs/measurements.json` under `layers.a11y.nodes.<build>.by_type`; every type has zero violations. **axe-core finds on average 57 % of WCAG issues automatically: zero is a floor, not a conformance claim.** This lane loads every page at one size, 1200 × 900; the site repository's own lane (`scripts/a11y.js`) loads every page at 390, 768 and 1280 px. The Lighthouse performance category is not measured and is never a gate.
 
 ---
 
@@ -270,7 +270,7 @@ By folder, the largest shipped parts are `src/distribution` (453 KB, 31 files), 
 
 | layer | why it has no number |
 |---|---|
-| Three-OS matrix | the same suite and builds on macOS and Windows at Node 22.13 and 24 cannot be run from one machine; the CI matrix runs them on every push |
+| Three-OS matrix | the same suite and builds on macOS and Windows at Node 22.13, 24 and 26 cannot be run from one machine; the CI matrix runs them on every push |
 | COGX import | the engine ships a COGX adapter, but the security corpus does not yet feed it hostile archives; the OKF adapter is the import lane scored in §3 |
 
 ---

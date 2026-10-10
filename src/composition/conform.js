@@ -42,7 +42,8 @@ const LEVEL_AREAS = Object.freeze({
  * .test.js` holds the two to one list.
  */
 const HIGHER_LEVEL_CASES = Object.freeze({
-  'bundle-0001': 1, 'bundle-0006': 1, 'bundle-0007': 1, 'disc-0005': 1, 'disc-0019': 1,
+  'bundle-0001': 1, 'bundle-0006': 1, 'bundle-0007': 1, 'bundle-0009': 1, 'bundle-0010': 1,
+  'disc-0005': 1, 'disc-0019': 1,
   'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2, 'disc-0018': 2, 'disc-0020': 2, 'disc-0021': 2,
   'lint-0026': 2,
   'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3,

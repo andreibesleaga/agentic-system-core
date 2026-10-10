@@ -31,7 +31,12 @@ function node(name, peer, { licence }) {
   return dir;
 }
 
-const checker = (args) => spawnSync(process.execPath, [path.join(kit.ROOT, 'tools', 'validate-wellknown'), ...args], { encoding: 'utf8' });
+/** The shipped checker over local files, under the network trap like every other child of the walk. */
+function checker(args) {
+  const r = spawnSync(process.execPath, [path.join(kit.ROOT, 'tools', 'validate-wellknown'), ...args], { encoding: 'utf8', env: kit.env(kit.scratch('m1-checker')) });
+  kit.offline();
+  return r;
+}
 
 test('Mode 1, a person: two nodes pass the mutual check at Level 2, and a one-sided claim fails it', () => {
   const a = node('a', 'b', { licence: false });

@@ -1,0 +1,29 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-13: language variants are reserved to 1.1 (AGSC-00-20). At 1.0 a file named <slug>.<lang>.md beside its primary is a second use of the slug, AGSC-E206 (bundle-0007). The same file with no primary anywhere in the Bundle has a stem that is not a slug: AGSC-01-11 makes the slug the file stem, and the stem lonely.fr fails the grammar of AGSC-01-10, so the file is reported as AGSC-E204, naming the file and the slug read before the first dot, and lint exits 1. Derivation over the minimal fixture, whose lint reports nothing, plus one file content/concepts/lonely.fr.md that is otherwise a valid concept and names the fixture's cluster (so it is no orphan, AGSC-03-10): the one finding is that error.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E204",
+          "file": "content/concepts/lonely.fr.md",
+          "severity": "error",
+          "slug": "lonely"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0010",
+  "input": {
+    "add_files": {
+      "content/concepts/lonely.fr.md": "---\ntype: concept\nkind: explainer\ntitle: Seul\ndescription: Un concept en francais sans fichier primaire, ajoute ici pour le cas de test de la langue.\nlang: fr\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nRester seul.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-01-13"
+}

@@ -1,6 +1,6 @@
 # `tests/arch/`
 
-**Summary.** Architecture tests: context boundaries, purity of the core, pinned libraries, the package file list, the plugin contract, text-source hygiene, and the suite leaving no scratch behind. Subject: the whole tree.
+**Summary.** Architecture tests: context boundaries, purity of the core, what each context never touches, the built-ins of the application layer, pinned libraries, the package file list, the plugin contract, text-source hygiene, and the suite leaving no scratch behind. Subject: the whole tree.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

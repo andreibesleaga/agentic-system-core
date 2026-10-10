@@ -41,3 +41,14 @@ test('package.json, the alias package and the lowest CI matrix entry name one No
     assert.strictEqual(lowest, floor, `${workflow}: the lowest Node in the matrix is ${lowest}, the floor is ${floor}`);
   }
 });
+
+test('the two lanes test the same Node lines, each a different major line at or above the floor', () => {
+  const floor = floorOf(JSON.parse(read('package.json')).engines.node);
+  const lanes = ['.github/workflows/test.yml', '.github/workflows/release.yml'].map(matrixOf);
+  assert.deepStrictEqual(lanes[0], lanes[1], 'test.yml and release.yml list the same Node lines');
+  const majors = lanes[0].map((v) => v.split('.')[0]);
+  assert.strictEqual(new Set(majors).size, majors.length, `one leg per major line: ${lanes[0].join(', ')}`);
+  for (const version of lanes[0]) {
+    assert.ok(byVersion(version, floor) >= 0, `${version} is below the floor ${floor}`);
+  }
+});

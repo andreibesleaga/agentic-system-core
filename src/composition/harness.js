@@ -7,8 +7,8 @@
  *               selected item; `decisions/NNNN-<slug>.md` numbered in the
  *               de-duplicated first-occurrence input order of AGSC-07-03
  *               restricted to the survivors; `harness.jsonld` a JCS JSON
- *               document, NOT an RDF export (AGSC-05-08 and AGSC-E605 do not
- *               reach its nested objects).
+ *               document, NOT an RDF export (the blank-node rule AGSC-05-08 does
+ *               not reach its nested objects).
  *   AGSC-07-13  one algorithm in every host: the same source text that runs here
  *               is what `composition/browser.js` emits for the page, so the two
  *               cannot drift. Reproducible from the graph + the selection +
@@ -337,7 +337,7 @@ function constraintLines(member) {
  * `harness.jsonld` — "selection, closure with explanation paths, links, verdict"
  * (AGSC-07-12), plus the wiring of AGSC-07-23, the two licence facts of
  * AGSC-07-16 and the selection digest. A JSON document in JCS form, not an RDF
- * export: its nested objects carry no `@id` and AGSC-E605 does not apply to them.
+ * export: its nested objects carry no `@id` and AGSC-05-08 does not apply to them.
  */
 function harnessJsonld(result, options) {
   const links = {};

@@ -17,10 +17,11 @@ and is reported as skipped and counted.
 | `runner.test.js` | each rule of `_runner.js` shown on a small scratch tree |
 | `steps/` | the step definitions: one file per persona, the shared phrases of `_common.js`, and helpers whose names start with `_` |
 | `common-steps.test.js` | every shared phrase of `steps/_common.js` driven once before any scenario uses it |
+| `network-trap.test.js` | the network trap of `steps/_offline.js` in the other offline lanes: the mode walks, the use cases and the documentation pages run every child under it, and a network attempt a child caught and ignored still fails the lane |
 | `loopback.test.js` | the node served on loopback is reached through `localhost` whichever address `localhost` resolves to first; `steps/_localhost-v6-first.js` gives the `::1`-first order of the hosted CI runners on any machine |
 | `bundle/` | the Bundle the scenarios run on (copied, never changed in place) |
 | `pending/` | one JSON file per scenario that does not run as written here; its `README.md` lists the classes |
-| `use-cases/` | the use cases of `docs/USE-CASES.md`, end to end |
+| `use-cases/` | the use cases of `docs/USE-CASES.md`, end to end, every command under the network trap |
 
 ```bash
 npm run test:acceptance

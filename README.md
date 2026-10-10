@@ -123,7 +123,9 @@ do the same for the other modes. To connect an assistant, read
 [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md).
 To teach a coding agent the engine itself, install the agent skill in
 [skills/agentic-system-core/](https://github.com/andreibesleaga/agentic-system-core/blob/main/skills/README.md): `npx skills add andreibesleaga/agentic-system-core`,
-or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-core`.
+or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-core`
+(the marketplace file `.claude-plugin/marketplace.json` points at the plugin in
+[plugins/](https://github.com/andreibesleaga/agentic-system-core/blob/main/plugins/README.md)).
 
 ## Who it is for, what you get, try it
 

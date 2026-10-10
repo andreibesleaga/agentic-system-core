@@ -243,13 +243,6 @@ function reservedExportBlockCase(vector, ctx) {
   }
 }
 
-/** graph-0003 — a blank node in an authored export block (AGSC-05-08). */
-function exportBlockCase(vector) {
-  const findings = turtle.checkExportBlocks(vector.input.markdown);
-  return checks([['error', findings.some((f) => f.code === vector.expected.error),
-    `got ${JSON.stringify(findings)}`]]);
-}
-
 /**
  * graph-0016/0017/0018/0026 — the WHOLE file, byte for byte.
  *
@@ -379,7 +372,6 @@ module.exports.run = (vector, ctx) => {
   if (Array.isArray(input.value) && input.bundle_id !== undefined) return memoryCase(vector);
   if (input.literal !== undefined) return literalFormsCase(vector);
   if (Array.isArray(input.ontology_terms)) return contextCase(vector, ctx);
-  if (typeof input.markdown === 'string') return exportBlockCase(vector);
   if (input.item && typeof input.item.markdown === 'string' && typeof input.bundle === 'string') return reservedExportBlockCase(vector, ctx);
   const expected = vector.expected || {};
   if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);

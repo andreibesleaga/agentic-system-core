@@ -502,7 +502,7 @@ by discipline.
 |---|---|
 | `knowledge/nquads.js` | AGSC-05-01…03 (IRIs), 05-12/13 (classes), 05-14/15 (Source and Review fragment IRIs), 05-16 (Links and inverses), 05-26/05-30 (the frontmatter → property table), 05-29 (attachments), 05-31/32 (literal forms and escaping), 04-13/15/16 (the sort that is the canonicalisation), 06-33 (static fragments) |
 | `knowledge/skos.js` | AGSC-05-12/13, 05-17…05-20 — the SKOS integrity rules, IRI-free and injected with a resolver so that `nquads.js` may require it without a cycle |
-| `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), 05-08 (`AGSC-E605`), and the vocabulary reader that feeds AGSC-06-32 |
+| `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), and the vocabulary reader that feeds AGSC-06-32 |
 | `knowledge/jsonld.js` | AGSC-05-09 (`graph.jsonld`), AGSC-06-32 (`/ns/context.jsonld`), AGSC-05-04b (`memory://`, `AGSC-E309`) |
 | `knowledge/rdfxml.js` | AGSC-05-06 — RESERVED at 1.x, not emitted; kept correct by an isomorphism test |
 
@@ -521,7 +521,6 @@ labels(item, {lang}); membership(items, resolve)
 // knowledge/turtle.js
 turtleIri(v); turtleTerm(term); turtlePredicate(v); prefixBlock(); serialize(quads)
 toTurtle(items, options); parse(text, options); ontologyTerms(turtleText); ontologyVersion(turtleText)
-checkExportBlocks(markdown, {file, lineOffset}) -> Finding[]
 // knowledge/jsonld.js
 context(ontologyTerms, externalProperties) -> object; allExternalProperties(); persistentContextUrl(ontologyVersion)
 contextFrom(…); expandCompact(v); termName(compact, ascNames, locals); restrictTo(…)

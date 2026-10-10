@@ -5,7 +5,9 @@
 //
 // Deterministic: a fixed build instant, no network, no git identity (HOME and the
 // global git configuration point at empty scratch files), scratch Bundles under
-// `os.tmpdir()`. The scenarios that need a forge, a model, a live peer or a browser
+// `os.tmpdir()`. Every command runs under the network trap of `../steps/_offline.js`,
+// which refuses and records every network call; a command that recorded one fails its
+// step, even when it caught the refusal and went on. The scenarios that need a forge, a model, a live peer or a browser
 // are marked in docs/USE-CASES.md with the test that covers their offline part, or
 // with the reason nothing can; the last test here keeps that table honest.
 
@@ -21,6 +23,7 @@ const AGSC = path.join(ROOT, 'bin', 'agsc.js');
 const VALIDATE_WELLKNOWN = path.join(ROOT, 'tools', 'validate-wellknown');
 const MINIMAL = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
+const OFFLINE = path.join(ROOT, 'tests', 'acceptance', 'steps', '_offline.js');
 
 const temporaries = [];
 test.after(() => {
@@ -35,18 +38,27 @@ function temp(prefix) {
 
 const HOME = temp('agsc-uc-home-');
 fs.writeFileSync(path.join(HOME, '.gitconfig-empty'), '');
+const TRAP = path.join(HOME, 'network-attempts.txt');
 const ENV = {
+  ACCEPTANCE_NETWORK_TRAP: TRAP,
   GIT_CONFIG_GLOBAL: path.join(HOME, '.gitconfig-empty'),
   GIT_CONFIG_NOSYSTEM: '1',
   HOME,
+  NODE_OPTIONS: `--require ${JSON.stringify(OFFLINE)}`,
   NO_COLOR: '1',
   PATH: process.env.PATH,
   SOURCE_DATE_EPOCH: EPOCH,
 };
 
-/** Run one command line in `cwd`; return `{status, stdout, stderr}`. */
+/**
+ * Run one command line in `cwd`; return `{status, stdout, stderr}`. Throws when the
+ * command recorded a network attempt (the record is cleared once reported).
+ */
 function sh(cwd, script, args) {
   const r = spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', env: ENV });
+  const attempts = fs.existsSync(TRAP) ? fs.readFileSync(TRAP, 'utf8').split('\n').filter(Boolean) : [];
+  fs.rmSync(TRAP, { force: true });
+  if (attempts.length > 0) throw new Error(`${path.basename(script)} ${args.join(' ')} reached for the network: ${attempts.join(', ')}`);
   return { status: r.status, stderr: r.stderr, stdout: r.stdout };
 }
 const agsc = (cwd, ...args) => sh(cwd, AGSC, args);
@@ -393,6 +405,15 @@ test('M8 — a person and two agents on two nodes work one live board', () => {
   const version = (text) => /^bundle_version: (.+)$/mu.exec(text)[1];
   assert.notStrictEqual(version(read(nodeA, 'www/llms.txt')), version(before.llms));
   assert.match(version(read(nodeA, 'www/llms.txt')), /^0\.0\.0\+2\./u);
+});
+
+test('every command of this file runs under the network trap: an attempt it ignored still fails the step', () => {
+  assert.match(ENV.NODE_OPTIONS || '', /--require\s+\S*_offline\.js/u, 'the commands here do not load steps/_offline.js');
+  // Loopback port 9: nothing listens there, and nothing leaves the machine.
+  const swallowed = "try { require('node:net').connect(9, '127.0.0.1').on('error', () => {}); } catch (e) { /* ignored */ }";
+  assert.throws(() => sh(ROOT, '-e', [swallowed]), /reached for the network: net\.connect/u);
+  // The record is cleared once reported, so the next command starts clean.
+  assert.strictEqual(agsc(bundle(), 'lint').status, 0);
 });
 
 test('docs/USE-CASES.md: every scenario is present, and each says how it is proven', () => {

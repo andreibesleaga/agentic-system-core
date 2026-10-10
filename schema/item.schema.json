@@ -588,9 +588,9 @@
       "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$"
     },
     "actor": {
-      "description": "AGSC-02-09: human:<id>, process:<id> or <producer>/<version>.",
+      "description": "AGSC-02-09: human:<id>, process:<id>, process:<id>/<version> (the ledger's trailing build entry, AGSC-08-20a) or <producer>/<version>.",
       "type": "string",
-      "pattern": "^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._+-]*)$"
+      "pattern": "^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._+-]*)?|[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._+-]*)$"
     },
     "human_actor": {
       "description": "AGSC-02-07: prov.operator is a person, human:<id> only, so the DCO-Plus Assisted-by trailer of AGSC-08-06 can always match it.",

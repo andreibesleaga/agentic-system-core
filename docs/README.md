@@ -42,7 +42,7 @@ kind of reader down one path.
 | [TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md) | the test levels and how to run them |
 | [RULE-COVERAGE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RULE-COVERAGE.md) | for every rule, the checks that verify it (generated) |
 | [REQUIREMENTS-MATRIX.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/REQUIREMENTS-MATRIX.md) | for every requirement of the PRD, the rules that trace to it and the checks behind them (generated) |
-| [ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) | the gates, the size limits, the dependency rule, and how the five repositories are checked |
+| [ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) | the gates, the size limits, the dependency rule, and how the four public repositories are checked |
 | [MEASUREMENTS.md](MEASUREMENTS.md), [BENCHMARKS.md](BENCHMARKS.md) | the measured numbers and the method behind them |
 | [diagrams/](diagrams/README.md) | the diagram pack: Mermaid sources and rendered SVG |
 | [ROADMAP.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ROADMAP.md) | what composition and the graph do today, and what is planned for the next version |

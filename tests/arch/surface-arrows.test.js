@@ -69,7 +69,8 @@ test('the Surface modules reach the network through nothing at all', () => {
 });
 
 test('Boundary classifies addresses with the platform, never by hand', () => {
-  // AGSC-11-08: "an implementation MUST NOT hand-parse address literals".
+  // AGSC-11-08: classification gives every textual form of one address the same
+  // result, which a parser of addresses gives and a match on the literal's text does not.
   const federation = sources().find((f) => f.rel === 'src/boundary/federation.js');
   assert.ok(federation.requires.includes('node:net'), 'federation.js must use node:net.BlockList');
   assert.match(federation.text, /new net\.BlockList\(\)/u);

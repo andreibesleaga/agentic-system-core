@@ -58,7 +58,11 @@ package touch a network, each only when a person runs it:
 - `agsc-host serve` serves a build directory read-only over plain HTTP. It binds
   `localhost:8080` unless told otherwise (`--bind`, `--port`), answers `GET` and
   `HEAD` only, and never follows a link out of the directory it serves; any origin
-  other than loopback needs a TLS terminator in front.
+  other than loopback needs a TLS terminator in front. It answers only a request
+  whose `Host` header names `localhost`, a loopback address or the address it is
+  bound to, and refuses any other with `421`, so a web page that points a name of
+  its own at the machine cannot read what it serves; it never serves a file or
+  folder whose name begins with a dot, except `.well-known`.
 - `tools/validate-wellknown <URL>` fetches the discovery document it is given and
   its targets: `https` only, a closed list of refused addresses checked again on
   the open socket, at most three redirects, a deadline and a byte cap per

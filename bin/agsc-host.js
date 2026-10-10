@@ -28,8 +28,10 @@ if (require.main === module) {
       throw e;
     });
   }
+  // The environment is handed over as a snapshot, as `bin/agsc.js` does: its
+  // `AGSC_*` names are a layer of the configuration (AGSC-01-37).
   hosting.main(process.argv.slice(2), {
-    cwd: process.cwd(), specVersion: SPEC_VERSION, stderr: process.stderr, stdout: process.stdout,
+    cwd: process.cwd(), env: Object.assign({}, process.env), specVersion: SPEC_VERSION, stderr: process.stderr, stdout: process.stdout,
   }).then((code) => { process.exitCode = code; }, (e) => {
     process.stderr.write(`agsc-host: internal error: ${e && e.stack ? e.stack : e}\n`);
     process.exitCode = 1;

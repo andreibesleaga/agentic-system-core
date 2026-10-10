@@ -26,4 +26,4 @@ SOURCE_DATE_EPOCH=1767225600 node measure.js --layer conformance --scratch /tmp/
 ```
 
 Nothing in this kit needs a key, a network connection or a model. The parts that do — the retrieval and
-memory studies — are the `bench` verb's work at v1.0.1 and are specified, not run, in `docs/BENCHMARKS.md`.
+memory studies — are the work of the `tools/bench` program at 1.1 and are specified, not run, in `docs/BENCHMARKS.md`.

@@ -27,6 +27,12 @@ output with them.
 | `count-artifacts` | every published count, derived from the files (rules, codes, vectors, terms) |
 | `bench` | the retrieval benchmark over a built node's published surfaces (`docs/BENCHMARKS.md`) |
 
+**What `validate-wellknown` does not check at 1.0.** Given a URL, it checks the
+response headers of the discovery document and of every same-origin public artefact
+it fetches. It does not read the home page `/`, so the `describedby` response header
+that AGSC-11-05 recommends there goes unchecked; that rule is a recommendation, not a
+requirement. Checking it, with one more fetch, is planned for 1.1.
+
 ## Kept in the repository only
 
 | Tool | What it is for |

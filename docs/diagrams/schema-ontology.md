@@ -68,8 +68,8 @@ is additionally a `skos:Collection` plus, at the Bundle root, a `skos:ConceptSch
 step 6). All fourteen authored Link keys map to a fixed property (AGSC-05-26): three vocabularies in
 play — `skos:` (advisory/hierarchy), `dcterms:`/`prov:` (hard semantics: closure, derivation,
 supersession), and the project's own `asc:` terms for `uses`/`excludes`/`contradicts` and the five
-Mode-2 keys, which have no exact SKOS/DCTERMS/PROV equivalent. Only the nine core keys carry
-composition semantics; the Mode-2 five are navigational (combiner semantics `none`, AGSC-03-18). The nested-member rule is the one place `broader` on an item does
+Mode-2 keys, which have no exact SKOS/DCTERMS/PROV equivalent. Five of the nine core keys —
+`uses`, `requires`, `excludes`, `contradicts` and `supersedes` — carry composition semantics; `related`, `broader`, `narrower`, `derived-from` and the Mode-2 five never change a composition (AGSC-03-18). The nested-member rule is the one place `broader` on an item does
 **not** become `skos:broader`: when the *subject* item itself has `type: cluster`, its `broader` edge
 exports as `<parent> skos:member <child>` instead, so Clusters form a nested `skos:Collection` tree
 rather than a flat SKOS hierarchy.

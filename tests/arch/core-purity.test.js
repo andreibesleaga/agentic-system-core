@@ -7,6 +7,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const { codeOf, requiresOf } = require('./_code.js');
 const { sources } = require('./_scan.js');
 
 const PURE_CONTEXTS = ['knowledge', 'governance', 'composition'];
@@ -24,28 +25,58 @@ const FORBIDDEN_TEXT = [
   ['performance.now', /\bperformance\s*\.\s*now\b/u],
 ];
 
-test('pure contexts require no host module', () => {
-  for (const file of sources()) {
-    const context = file.dir.split('/')[0];
-    if (!PURE_CONTEXTS.includes(context)) continue;
-    for (const specifier of file.requires) {
-      assert.ok(!FORBIDDEN_MODULES.includes(specifier),
-        `${file.rel} requires the host module "${specifier}"`);
-      assert.ok(!specifier.includes('../adapters'),
-        `${file.rel} requires an adapter ("${specifier}"); ports are injected, never imported`);
-    }
+/** The host modules and adapters one module of a pure context requires. */
+function moduleFaults(text, rel) {
+  const faults = [];
+  for (const specifier of requiresOf(text, rel)) {
+    if (FORBIDDEN_MODULES.includes(specifier)) faults.push(`${rel} requires the host module "${specifier}"`);
+    if (specifier.includes('../adapters')) faults.push(`${rel} requires an adapter ("${specifier}"); ports are injected, never imported`);
   }
+  return faults;
+}
+
+/** The clock, environment and randomness texts in one module's code. */
+function textFaults(text, rel) {
+  // Every comment is removed (tests/arch/_code.js), so that a rule may be NAMED
+  // without tripping the check, at the end of a line of code as well.
+  const code = codeOf(text, rel);
+  return FORBIDDEN_TEXT.filter(([, re]) => re.test(code))
+    .map(([label]) => `${rel} uses ${label}; the domain is deterministic (AGSC-04-03)`);
+}
+
+/** The modules of the three pure contexts. */
+function pureSources() {
+  const found = sources().filter((file) => PURE_CONTEXTS.includes(file.dir.split('/')[0]));
+  assert.ok(found.length > 0, 'the scan found no module of a pure context');
+  return found;
+}
+
+test('pure contexts require no host module', () => {
+  for (const file of pureSources()) assert.deepStrictEqual(moduleFaults(file.text, file.rel), []);
 });
 
 test('pure contexts read no clock, environment or randomness', () => {
-  for (const file of sources()) {
-    const context = file.dir.split('/')[0];
-    if (!PURE_CONTEXTS.includes(context)) continue;
-    // Comments are stripped so that a rule may be NAMED without tripping the check.
-    const code = file.text.replace(/\/\*[\s\S]*?\*\//gu, '').replace(/^\s*\/\/.*$/gmu, '');
-    for (const [label, re] of FORBIDDEN_TEXT) {
-      assert.ok(!re.test(code), `${file.rel} uses ${label}; the domain is deterministic (AGSC-04-03)`);
-    }
+  for (const file of pureSources()) assert.deepStrictEqual(textFaults(file.text, file.rel), []);
+});
+
+test('a comment may name what the code may not do; the code beside a comment is still read', () => {
+  // Named in a comment at the end of a line, and in a block comment: not a fault.
+  const named = [
+    "const instant = input.instant; // never Date.now or require('node:fs')",
+    '/* Math.random, process.env */ const seed = input.seed;',
+  ].join('\n');
+  assert.deepStrictEqual([...moduleFaults(named, 'probe.js'), ...textFaults(named, 'probe.js')], []);
+  // The code before a trailing comment, or after a string holding "//", is still read.
+  const probes = [
+    ['const instant = Date.now(); // a trailing comment', 'Date.now'],
+    ["const home = 'https://example.org/'; const seed = Math.random();", 'Math.random'],
+    ["const fs = require('node:fs'); // a trailing comment", 'node:fs'],
+    ['const fs = require("node:fs");', 'node:fs'],
+    ["const port = require('../adapters/node-fs.js'); /* a block comment */", 'adapter'],
+  ];
+  for (const [probe, expected] of probes) {
+    const faults = [...moduleFaults(probe, 'probe.js'), ...textFaults(probe, 'probe.js')];
+    assert.ok(faults.some((f) => f.includes(expected)), `${probe} → ${JSON.stringify(faults)}`);
   }
 });
 
@@ -57,7 +88,7 @@ test('no bounded context touches the process, the clock or randomness', () => {
   const PROCESS = /\bprocess\s*\./u;
   for (const file of sources()) {
     if (!CONTEXTS.includes(file.dir.split('/')[0])) continue;
-    const code = file.text.replace(/\/\*[\s\S]*?\*\//gu, '').replace(/^\s*\/\/.*$/gmu, '');
+    const code = codeOf(file.text, file.rel);
     assert.ok(!PROCESS.test(code), `${file.rel} reads the process; the application layer passes what it needs`);
     for (const [label, re] of FORBIDDEN_TEXT) {
       assert.ok(!re.test(code), `${file.rel} uses ${label}; the build instant arrives through the Clock port (AGSC-04-03)`);

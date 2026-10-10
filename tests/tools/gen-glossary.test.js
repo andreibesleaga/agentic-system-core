@@ -43,6 +43,36 @@ describe('tools/gen-glossary', () => {
     assert.equal(glossary.run(['--check'], { ...quiet, root: dir }), 1);
   });
 
+  it('a term defined in the nested list of a section 0.2 rule is listed with that rule\'s id', () => {
+    const dir = tmpdir();
+    for (const rel of ['spec/03-links.md', 'spec/11-boundary.md', 'ontology/agsc.ttl']) {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.copyFileSync(path.join(REPO, rel), path.join(dir, rel));
+    }
+    fs.writeFileSync(path.join(dir, 'spec', '00-overview.md'), [
+      '# AGSC-00', '', '## 0.2 Terms', '',
+      '- **AGSC-00-04** **Bundle** — a folder. The rules also use these terms:',
+      '',
+      '  - **Forge** — the hosting service of the repository.',
+      '  - **`refs[]`** — a list of URLs.',
+      '',
+      '  *(Amended 2026-10-10 for 1.0.0: the terms were added)* [design]',
+      '- **AGSC-00-05** **Item** — one file. [design]',
+      '', '## 0.3 Classes', '',
+      '- **AGSC-00-09** **Reader** — not a term of 0.2.',
+      '  - **Ignored** — outside 0.2.', '',
+    ].join('\n'));
+    fs.mkdirSync(path.join(dir, 'docs'));
+    const quiet = { err: () => {}, out: () => {} };
+    assert.equal(glossary.run([], { ...quiet, root: dir }), 0);
+    const text = fs.readFileSync(path.join(dir, 'docs', 'GLOSSARY.md'), 'utf8');
+    assert.ok(text.includes('- **Forge** — the hosting service of the repository. *(AGSC-00-04)*'), text.slice(0, 600));
+    assert.ok(text.includes('- **`refs[]`** — a list of URLs. *(AGSC-00-04)*'));
+    assert.ok(text.includes('- **Item** — one file. *(AGSC-00-05)*'));
+    assert.ok(!text.includes('Ignored'));
+    assert.ok(!text.includes('Amended 2026-10-10'), 'the closing note of a rule is not a term');
+  });
+
   it('trace brackets are removed and Markdown links are kept', () => {
     assert.equal(glossary.stripTrace('A term. [PRD-005]'), 'A term.');
     assert.equal(glossary.stripTrace('A term [design] here'), 'A term here');

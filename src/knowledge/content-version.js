@@ -87,7 +87,8 @@ function tagOf(element) {
  *   2. `<tag>+<n>.g<hash>` — the newest earlier element that carries a usable
  *      tag, the number of elements after it up to and including the built
  *      commit, and twelve hexadecimal characters of the built commit's `sha`;
- *   3. `0.0.0+<n>.g<hash>` when no element carries a usable tag, `<n>` being
+ *   3. `0.0.0+<n>.g<hash>` when no element carries a usable tag, or when the
+ *      result of branch 2 would be longer than the grammar admits, `<n>` being
  *      the number of elements in the git-log file;
  *   4. `0.0.0+<instant>` with no git history at all.
  *
@@ -128,7 +129,15 @@ function bundleVersion(input = {}) {
     const { tag } = tagOf(log[i]);
     if (tag === null) continue;
     const n = log.length - 1 - i;
-    return { branch: 2, findings, version: `${tag}+${n}.g${hash}` };
+    const version = `${tag}+${n}.g${hash}`;
+    if (GRAMMAR.test(version)) return { branch: 2, findings, version };
+    // AGSC-04-25 (amended 2026-10-10 for 1.0.0): a usable tag whose branch-2 result
+    // passes the grammar's 64 characters is not used; the derivation takes branch 3.
+    findings.push(finding('AGSC-E506',
+      `git tag "${tag}" with "+${n}.g${hash}" added is longer than the 64 characters of `
+      + `${GRAMMAR.source}, so the content version takes the untagged form (AGSC-04-25)`,
+      { severity: 'warn' }));
+    break;
   }
 
   return { branch: 3, findings, version: `${UNTAGGED}+${log.length}.g${hash}` };

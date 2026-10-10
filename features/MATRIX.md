@@ -44,7 +44,7 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | H15 | Standards implementer (P11) | persona-j | B; w3id live P | |
 | H16 | Federating publishers | persona-j | B | |
 | H17 | Restricted publisher (P15) | persona-o | B + G→RS-a, RS-b | |
-| H18 | Security reviewer (P13) | persona-m | B + G→E1 | |
+| H18 | Security reviewer (P13) | persona-m | B | |
 | H19 | Researcher (P14) | persona-n | B | |
 | H20 | Manager deciding to depend on it | — | rec | prose (README, CONFORMANCE-STATEMENTS, GOVERNANCE) is the right evidence for this reader; no journey runs a command |
 | H21 | Old-site importer (maintainer only) | persona-i: an import of the old-site fixture | B | |
@@ -85,5 +85,5 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | Federation, peers, contribute | B + G→E10 | persona-j | |
 | security.txt | B | persona-0, persona-m | |
 | Legal texts, TDM | B | persona-0, persona-c (a crawler) | |
-| Hosting profiles | B + G→E1 | persona-0, persona-m | |
+| Hosting profiles | B | persona-0, persona-m | |
 | Ledger and anchor | B | persona-i, persona-k, persona-m | |

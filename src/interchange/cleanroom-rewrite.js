@@ -134,6 +134,23 @@ function tailOf(sentence) {
 }
 
 /**
+ * The text without its trailing spaces and tabs, read back from the end: what
+ * `.replace(/[ \t]+$/u, '')` gave, in linear time. That pattern read to the end of
+ * every run of spaces and tabs from each of its positions, so a long run earlier on
+ * the line stalled the rewrite (100,000 characters took about 30 s).
+ *
+ * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string}
+ */
+function withoutTrailingBlanks(text, meter) {
+  let end = text.length;
+  while (end > 0 && (text[end - 1] === ' ' || text[end - 1] === '\t')) end -= 1;
+  if (meter !== undefined) meter.steps += text.length - end + 1;
+  return text.slice(0, end);
+}
+
+/**
  * Join two halves across an excision, repairing ONLY what the cut created: a
  * doubled space, or a space now sitting before punctuation. Nothing else in the
  * prose is touched — four of the hundred cards carry a legitimate `" ."` (an
@@ -152,7 +169,7 @@ function seam(left, right) {
   // A cut at the end of a line leaves the space that separated it from the
   // removed sentence. Two trailing spaces are a hard line break in Markdown, so
   // the space the cut exposed is removed with it.
-  if (last === ' ' && first === '\n') return `${left.replace(/[ \t]+$/u, '')}${right}`;
+  if (last === ' ' && first === '\n') return `${withoutTrailingBlanks(left)}${right}`;
   return `${left}${right}`;
 }
 
@@ -269,6 +286,7 @@ module.exports = {
   numberedDivision,
   removeOne,
   rewrite,
+  withoutTrailingBlanks,
   seam,
   sentenceSpan,
   tailOf,

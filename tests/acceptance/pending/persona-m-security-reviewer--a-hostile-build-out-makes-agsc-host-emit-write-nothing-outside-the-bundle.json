@@ -1,6 +1,0 @@
-{
-  "class": "gap",
-  "closes_in": "E1",
-  "reason": "agsc-host emit takes build.out from agsc.config.json without the path checks of AGSC-01-19 and AGSC-01-35, so a value such as \"../elsewhere\" makes it write the host files (.htaccess, _redirects, .nojekyll) outside the Bundle and exit 0; lint already reports the same value as AGSC-E902. Meanwhile the lint vectors check the path grammar.",
-  "scenario": "A hostile build.out makes agsc-host emit write nothing outside the Bundle"
-}

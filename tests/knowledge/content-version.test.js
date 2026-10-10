@@ -128,3 +128,45 @@ test('compactInstant and fromInstant', () => {
   assert.strictEqual(cv.fromInstant('2026-09-16T00:00:00Z'), '0.0.0+20260916T000000Z');
   assert.strictEqual(cv.abbreviate('A1B2C3D4E5F6071829'), 'a1b2c3d4e5f6');
 });
+
+// AGSC-04-25 (amended 2026-10-10 for 1.0.0): an earlier tag the grammar refuses is
+// skipped, and a branch-2 result that the grammar's 64-character bound refuses — a
+// usable earlier tag with the `+<n>.g<hash>` suffix added — is not used either: the
+// derivation takes branch 3, and the verbs that derive the version warn AGSC-E506
+// naming the tag. Until this amendment branch 2 returned a value outside the grammar.
+test('an unusable EARLIER tag is skipped and the newest usable one before it is taken', () => {
+  const log = [commit('b'.repeat(40), 'v1.4.0'), commit('c'.repeat(40), 'release/1.5'),
+    commit('a1b2c3d4e5f60718293a4b5c6d7e8f9012345678')];
+  const got = cv.bundleVersion({ gitLog: log });
+  assert.strictEqual(got.version, 'v1.4.0+2.ga1b2c3d4e5f6');
+  assert.strictEqual(got.branch, 2);
+  assert.deepStrictEqual(got.findings.map((f) => f.code), ['AGSC-E506']);
+  assert.match(got.findings[0].message, /release\/1\.5/u);
+});
+
+test('an over-long branch-2 result falls to branch 3, with AGSC-E506 naming the tag', () => {
+  const tag = `v${'1'.repeat(55)}`; // 56 characters: a usable tag, but not with "+1.g<12 hex>"
+  const log = [commit('b'.repeat(40), tag), commit('a'.repeat(40))];
+  const got = cv.bundleVersion({ gitLog: log });
+  assert.match(got.version, cv.GRAMMAR);
+  assert.strictEqual(got.version, '0.0.0+2.gaaaaaaaaaaaa');
+  assert.strictEqual(got.branch, 3);
+  assert.deepStrictEqual(got.findings.map((f) => [f.code, f.severity]), [['AGSC-E506', 'warn']]);
+  assert.ok(got.findings[0].message.includes(tag), got.findings[0].message);
+});
+
+test('the longest earlier tag that still fits is used by branch 2', () => {
+  const tag = `v${'1'.repeat(47)}`; // 48 + "+1.g" (4) + 12 = 64 characters exactly
+  const got = cv.bundleVersion({ gitLog: [commit('b'.repeat(40), tag), commit('a'.repeat(40))] });
+  assert.strictEqual(got.version, `${tag}+1.gaaaaaaaaaaaa`);
+  assert.strictEqual(got.version.length, 64);
+  assert.deepStrictEqual(got.findings, []);
+});
+
+test('the grammar is total over branch 2 as well', () => {
+  for (const length of [40, 50, 52, 53, 60, 64]) {
+    const tag = `v${'2'.repeat(length - 1)}`;
+    const got = cv.bundleVersion({ gitLog: [commit('b'.repeat(40), tag), commit('c'.repeat(40)), commit('a'.repeat(40))] });
+    assert.match(got.version, cv.GRAMMAR, `${length}: ${got.version}`);
+  }
+});

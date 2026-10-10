@@ -19,6 +19,10 @@ const ledger = require('../../src/governance/ledger.js');
 const fix = require('../../src/governance/fix.js');
 const pii = require('../../src/governance/pii.js');
 const adopt = require('../../src/knowledge/adopt.js');
+const mapping = require('../../src/interchange/mapping.js');
+const boards = require('../../src/interchange/board-formats.js');
+const cleanroomRewrite = require('../../src/interchange/cleanroom-rewrite.js');
+const llms = require('../../src/distribution/llms.js');
 const { assertLinear, longRuns, texts } = require('../_linear-kit.js');
 
 const SEED = 20261010;
@@ -35,6 +39,13 @@ const OLD = {
   span: /(`+)(?:[^`]|(?!\1)`)*\1/gu,
   wikilink: /(!?)\[\[([^\]|#]*)(#[^\]|]*)?(\|[^\]]*)?\]\]/gu,
   link: /(!?)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu,
+  patternLink: /\[([^\]]*)\]\(\/patterns\/([a-z0-9][a-z0-9-]*)\/\)/gu,
+  peerBase: /[^/]+\/[^/]+\/?$/u,
+  heading: /^(#{1,6})\s+(.+?)\s*#*\s*$/u,
+  trailingFeeds: /\n+$/u,
+  trailingBlanks: /[ \t]+$/u,
+  lineBreak: /\s*\n\s*/gu,
+  oneTrailingFeed: /\n*$/u,
 };
 
 /** The code spans as the two patterns found them. */
@@ -170,15 +181,69 @@ const SCANNERS = [
       return [...text.matchAll(pattern)].map((m) => ({ at: m.index + m[0].indexOf(AT), end: m.index + m[0].length, start: m.index }));
     },
   },
+  {
+    name: 'the old site\'s pattern links',
+    alphabet: ['[', ']', '(', ')', '/', '](/patterns/', '[a](/patterns/', 'ab', '-', 'a-b/)', '/)', 'A', '\n', '\u{1F600}'],
+    scan: (text, meter) => mapping.patternLinks(text, meter),
+    found: (result) => result.length > 0,
+    reference: (text) => [...text.matchAll(OLD.patternLink)]
+      .map((m) => ({ end: m.index + m[0].length, index: m.index, label: m[1], target: m[2] })),
+  },
+  {
+    name: 'the base of a peer board\'s IRI',
+    alphabet: ['/', 'a', 'b.json', '//', ':', 'https:', '\ud83d', '\u{1F600}', ' '],
+    scan: (text, meter) => boards.peerBase(text, meter),
+    found: (result, text) => result !== text,
+    reference: (text) => text.replace(OLD.peerBase, ''),
+  },
+  {
+    name: 'the Markdown heading',
+    alphabet: ['#', '# ', '##', '#######', ' ', '  ', '\t', '\u00a0', '\u2028', '\n', '\r', 'a', 'b c', '\u{1F600}', '\ud83d'],
+    maxLength: 16,
+    scan: (text, meter) => boards.markdownHeading(text, meter),
+    found: (result) => result !== null,
+    reference: (text) => {
+      const m = OLD.heading.exec(text);
+      return m === null ? null : { marks: m[1], text: m[2] };
+    },
+  },
+  {
+    name: 'the trailing line feeds of a board card',
+    alphabet: ['\n', '\n\n', 'a', ' ', '\r'],
+    scan: (text, meter) => boards.withoutTrailingFeeds(text, meter),
+    found: (result, text) => result !== text,
+    reference: (text) => text.replace(OLD.trailingFeeds, ''),
+  },
+  {
+    name: 'the blanks a clean-room cut exposes',
+    alphabet: ['\t', ' ', '  ', 'a', '\n', '\u00a0'],
+    scan: (text, meter) => cleanroomRewrite.withoutTrailingBlanks(text, meter),
+    found: (result, text) => result !== text,
+    reference: (text) => text.replace(OLD.trailingBlanks, ''),
+  },
+  {
+    name: 'the line breaks of the description in /llms.txt',
+    alphabet: ['\n', ' ', '\t', '\r', '\v', '\f', '\u00a0', '\u2028', '\u2029', '\u3000', '\ufeff', 'a', '\u0085'],
+    scan: (text, meter) => llms.collapseLineBreaks(text, meter),
+    found: (result, text) => result !== text,
+    reference: (text) => text.replace(OLD.lineBreak, ' '),
+  },
+  {
+    name: 'the trailing line feeds of a body in /llms-full.txt',
+    alphabet: ['\n', '\n\n', 'a', ' ', '\r'],
+    scan: (text, meter) => llms.withOneTrailingFeed(text, meter),
+    found: (result, text) => result !== `${text}\n`,
+    reference: (text) => text.replace(OLD.oneTrailingFeed, '\n'),
+  },
 ];
 
 for (const [n, scanner] of SCANNERS.entries()) {
   test(`${scanner.name}: the scanner finds exactly what the old pattern found`, () => {
     let found = 0;
-    for (const text of texts(SEED + n, COUNT, scanner.alphabet)) {
+    for (const text of texts(SEED + n, COUNT, scanner.alphabet, scanner.maxLength)) {
       const expected = scanner.reference(text);
       assert.deepEqual(scanner.scan(text), expected, JSON.stringify(text));
-      if (scanner.found(expected)) found += 1;
+      if (scanner.found(expected, text)) found += 1;
     }
     assert.ok(found > COUNT / 100, `the generated texts exercise what the pattern finds (${found})`);
   });

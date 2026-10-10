@@ -180,11 +180,11 @@ test('a missing build directory is AGSC-E901; the directory comes from build.out
     const result = await run(argv, empty);
     assert.deepStrictEqual([result.code, result.json.findings.map((f) => f.code)], [1, ['AGSC-E901']], argv.join(' '));
   }
-  assert.strictEqual(hosting.defaultSite(empty), 'www');
+  assert.deepStrictEqual(hosting.defaultSite(empty), { findings: [], out: 'www' });
   fs.writeFileSync(path.join(empty, 'agsc.config.json'), '{"build":{"out":"public"}}');
-  assert.strictEqual(hosting.defaultSite(empty), 'public');
+  assert.deepStrictEqual(hosting.defaultSite(empty), { findings: [], out: 'public' });
   fs.writeFileSync(path.join(empty, 'agsc.config.json'), '{not json');
-  assert.strictEqual(hosting.defaultSite(empty), 'www');
+  assert.deepStrictEqual(hosting.defaultSite(empty), { findings: [], out: 'www' });
 });
 
 test('a link inside the build is reported and never followed; a write through a link is refused', async () => {

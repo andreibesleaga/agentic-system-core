@@ -1,8 +1,9 @@
 # `.github/workflows/` — the two automated lanes
 
 **Summary.** Two GitHub Actions workflows. `test.yml` runs the whole test suite on
-every push and pull request, on Ubuntu, macOS and Windows with Node 22 and 24, with
-read-only permissions. `release.yml` publishes the npm packages, and runs only when the
+every push and pull request, on Ubuntu, macOS and Windows with Node 22.13.0, 24 and
+26, with read-only permissions; on Ubuntu with Node 24 the suite runs measured, and
+fails below the coverage bar, and every leg installs the two packed tarballs together. `release.yml` publishes the npm packages, and runs only when the
 maintainer pushes a `v*` tag; it holds no token (npm trusted publishing) and attests
 each tarball it publishes. Every action is pinned to a commit hash.
 
