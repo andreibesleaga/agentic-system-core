@@ -37,6 +37,7 @@ const chunks = require('../../knowledge/chunks.js');
 const { singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { fenceProse } = require('../../knowledge/markdown.js');
+const { withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The seven uniform members of the index, in AGSC-06-29's own member order. */
 const INDEX_COLUMNS = Object.freeze(['id', 'item', 'kind', 'section', 'ordinal', 'title', 'digest']);
@@ -152,7 +153,7 @@ function llmsCtxTxt(records, options) {
 function run(bundle, options) {
   const config = (bundle && bundle.config) || {};
   const site = config.site || {};
-  const base = `${String(site.base || '').replace(/\/+$/u, '')}/`;
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
   const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
   const items = (bundle && bundle.items ? bundle.items : []).map((item) => (
     item && item.frontmatter

@@ -56,7 +56,7 @@ test('the CSP is default-src none with script-src self (AGSC-06-05, AGSC-06-17)'
   assert.ok(headers.SECURITY_POLICY.includes("script-src 'self'"));
 });
 
-test('the 0.0.x discovery alias is a 301, and a rename adds one entry (AGSC-06-04/06-17)', () => {
+test('the legacy discovery alias is a 301, and a rename adds one entry (AGSC-06-04/06-17)', () => {
   const text = headers.redirectsFile([{ from: '/old/', to: '/concepts/new/' }]);
   assert.ok(text.includes(`${WELLKNOWN_ALIAS} ${WELLKNOWN_PATH} 301`));
   assert.ok(text.includes('/old/ /concepts/new/ 301'));
@@ -84,7 +84,7 @@ test('AGSC-06-01: only the board JSON exports are typed JSON; the HTML board pag
   assert.ok(covers('/boards/*.json', '/boards/project-board.json'));
 });
 
-// Verification finding T1 (2026-10-06): the writer put the CORS pair and the content type
+// Before the fix, the writer put the CORS pair and the content type
 // of fourteen addresses into two blocks each, and the reference host served only one of
 // two blocks written for the same address — so the discovery document and the thirteen other
 // machine files went out without `Access-Control-Expose-Headers` (AGSC-11-03). AGSC-06-17

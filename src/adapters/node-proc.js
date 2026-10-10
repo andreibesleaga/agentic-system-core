@@ -23,8 +23,8 @@ const SCRUBBED_ENV = Object.freeze([
  * itself, and a folder that arrives as an unpacked archive can carry one that names a
  * command; `core.fsmonitor` is run by `git ls-files` (the tracked-file check of
  * AGSC-01-37) and `log.showSignature` makes `git log` start the signature program.
- * Command-line `-c` options win over every configuration file. Until 2026-10-06
- * `agsc lint` ran a repository's fsmonitor command.
+ * Command-line `-c` options win over every configuration file. Without them
+ * `agsc lint` would run a repository's fsmonitor command.
  */
 const GIT_HARDENING = Object.freeze(['-c', 'core.fsmonitor=false', '-c', 'log.showSignature=false']);
 

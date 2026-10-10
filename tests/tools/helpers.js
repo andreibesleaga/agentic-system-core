@@ -1,7 +1,9 @@
 'use strict';
 // Shared helpers for the tests of the PRD-054 validators and generators
 // (`tools/`, AGSC-09-90). Every tool exports `run(argv, io)` and returns its exit
-// code instead of calling `process.exit`, so a test drives it in process: the exit
+// code instead of calling `process.exit` (`validate-wellknown`'s `run` returns a
+// promise of it, and its `io` may also carry the deadline `timer`), so a test
+// drives it in process: the exit
 // code, both streams and the AGSC-09-11 envelope are all observable, and the
 // coverage reporter sees the lines the test executed.
 

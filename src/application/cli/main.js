@@ -158,10 +158,10 @@ function retiredFlagHint(verb, argv) {
 const USAGE_CLASS_CODES = new Set(['AGSC-E003', 'AGSC-E004']);
 
 /**
- * AGSC-09-08 (as amended 2026-10-06) with AGSC-08-20a: the other exit-2 class is the
+ * AGSC-09-08 (as amended) with AGSC-08-20a: the other exit-2 class is the
  * environment the tool cannot run against — a git history too shallow to derive the
  * ledger, `AGSC-E703` ("a shallow clone MUST fetch the full history or exit 2 with
- * AGSC-E703"; the registry row says "exit 2"). Until then the engine exited 1.
+ * AGSC-E703"; the registry row says "exit 2"), not exit 1.
  */
 const ENVIRONMENT_CLASS_CODES = new Set(['AGSC-E703']);
 
@@ -679,8 +679,8 @@ function main(argv, ctx) {
   // these verbs.
   //
   // AGSC-09-10: the verb is resolved and the code registered, so the refusal is an
-  // envelope like any other verb's (exit 2 through AGSC-E004's class below); until
-  // 2026-10-06 stdout stayed empty under `--json` (cli-0013, withdrawn for cli-0017).
+  // envelope like any other verb's (exit 2 through AGSC-E004's class below), never an
+  // empty stdout under `--json` (cli-0017, which replaced the withdrawn cli-0013).
   const disabled = (verb === 'run' || verb === 'trace')
     && !(loaded.config && loaded.config.run && loaded.config.run.enabled === true);
 
@@ -836,13 +836,13 @@ function writesNothing(verb, verbFlags) {
  * AGSC-01-37 / AGSC-09-08: whether a configuration error stops this verb before it
  * runs. A value an environment layer sets that the schema refuses is an error "as if
  * written in the file", but the refused value never reaches the resolved
- * configuration, so the verb itself cannot see it: until 2026-10-10
- * `AGSC_BUILD_OUT=content agsc build` reported `AGSC-E204`, exited 1 and still wrote
- * the whole site under the default `www/`, and `ci` wrote `dist/gate.json` with the
- * verdict `pass`. The same held for an `AGSC_` name this engine does not know
- * (`AGSC-E004`, exit 2: a configuration the tool cannot run against, yet the site was
- * written) and for a range error of the boundary chapter (`AGSC-E209`), which only this
- * shell reports. Every verb that writes now stops before it runs; `lint` and `verify`
+ * configuration, so the verb itself cannot see it: left to the verb,
+ * `AGSC_BUILD_OUT=content agsc build` would report `AGSC-E204`, exit 1 and still write
+ * the whole site under the default `www/`, and `ci` would write `dist/gate.json` with
+ * the verdict `pass`. The same holds for an `AGSC_` name this engine does not know
+ * (`AGSC-E004`, exit 2: a configuration the tool cannot run against) and for a range
+ * error of the boundary chapter (`AGSC-E209`), which only this shell reports. So every
+ * verb that writes stops before it runs; `lint` and `verify`
  * still run, so that they report everything they find beside the configuration
  * error, as they do when the fault is written in `agsc.config.json`.
  * @param {string} verb

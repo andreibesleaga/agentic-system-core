@@ -24,6 +24,7 @@
 const { createHash } = require('node:crypto');
 const { compareCodePoint } = require('./unicode.js');
 const markdown = require('./markdown.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-18: the Content Use Terms identifier, a constant, never configurable. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -213,7 +214,7 @@ function citationAnchor(id) {
 /** AGSC-05-01: the item IRI. A `type` this specification does not name is unknown. */
 function itemIri(base, item) {
   const plural = TYPE_PLURAL[item.type] || TYPE_PLURAL.concept;
-  return `${String(base).replace(/\/+$/u, '')}/${plural}/${item.slug}/`;
+  return `${withoutTrailingSlashes(String(base))}/${plural}/${item.slug}/`;
 }
 
 /**

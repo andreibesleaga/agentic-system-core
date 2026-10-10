@@ -1,28 +1,27 @@
 'use strict';
-// The command line refuses inputs that a rule already excludes (verification findings
-// of 2026-10-06). Before that day each of these ran and exited 0, or ended in an
-// internal error:
+// The command line refuses inputs that a rule already excludes. Before the fix each
+// of these ran and exited 0, or ended in an internal error:
 //
-//   C8   `build.out` naming the source tree: `"build": {"out": "content"}` wrote the
+//   (a)  `build.out` naming the source tree: `"build": {"out": "content"}` wrote the
 //        whole site into `content/` (AGSC-08-02: a build never writes into `content/`),
 //        and `dist` was accepted the same way (AGSC-01-08: generated, never an input).
 //        Now `AGSC-E204`, from the configuration check of lint, build and ci
-//        (AGSC-01-19 as amended 2026-10-06).
-//   C14  closed lists that answered the names of `Object.prototype` members:
+//        (AGSC-01-19 as amended).
+//   (b)  closed lists that answered the names of `Object.prototype` members:
 //        `export --steer --target constructor` wrote a file named
 //        `function Object() { [native code] }`; `export --to board --format toString`
 //        exited 0; `export --to constructor` and `import --from constructor` ended in
 //        an internal error. Each is now refused like any other unknown name.
-//   C15  `--level` on `build` and `ci` was not checked: `--level constructor` and
+//   (c)  `--level` on `build` and `ci` was not checked: `--level constructor` and
 //        `--level 9` were ignored and `--level -1` built 11 files. It is now checked as
-//        `conform` checks it: `AGSC-E003`, exit 2 (AGSC-09-07 as amended 2026-10-06).
-//   C19  a directory with `agsc.config.json` and no `content/index.md` linted and built
+//        `conform` checks it: `AGSC-E003`, exit 2 (AGSC-09-07 as amended).
+//   (d)  a directory with `agsc.config.json` and no `content/index.md` linted and built
 //        clean. The Bundle root is required (AGSC-01-01, AGSC-01-04): `AGSC-E901`.
-//   C28  `trace` wrote an Episode it never validated: `"tokens_in": 1e999` became
+//   (e)  `trace` wrote an Episode it never validated: `"tokens_in": 1e999` became
 //        `tokens_in: Infinity`, which the next build refused. The Episode is now checked
 //        against the item schema before it is written, and nothing is written when it
 //        fails.
-//   C8, the environment layers: a value an environment layer sets that the schema
+//   (f)  the environment layers: a value an environment layer sets that the schema
 //        refuses (`AGSC_BUILD_OUT=content`, in the shell or in `.env`) was reported, but
 //        the refused value was dropped and `build` still wrote the site under `www/`,
 //        and `ci` wrote `dist/gate.json` with the verdict `pass` while it exited 1. A
@@ -43,9 +42,9 @@ const { ROOT, agsc, codes, scratch, writeConfig } = require('./_bundle-run.js');
 
 const PROTOTYPE_NAMES = ['constructor', 'toString', '__proto__', 'hasOwnProperty'];
 
-// ------------------------------------------------------------------ C8
+// ------------------------------------------------------------------ (a)
 
-test('C8: build.out may not name content/ or dist/, or a path under either', async (t) => {
+test('(a) build.out may not name content/ or dist/, or a path under either', async (t) => {
   for (const out of ['content', 'content/', 'content/site', 'Content', 'dist', 'dist/www', 'DIST']) {
     const dir = scratch(t);
     writeConfig(dir, (c) => { c.build.out = out; });
@@ -61,7 +60,7 @@ test('C8: build.out may not name content/ or dist/, or a path under either', asy
   }
 });
 
-test('C8: a build.out that only starts with the same letters is accepted', async (t) => {
+test('(a) a build.out that only starts with the same letters is accepted', async (t) => {
   for (const out of ['contents', 'content-site', 'distribution', 'site/content']) {
     const dir = scratch(t);
     writeConfig(dir, (c) => { c.build.out = out; });
@@ -71,9 +70,9 @@ test('C8: a build.out that only starts with the same letters is accepted', async
   }
 });
 
-// ------------------------------------------------------------------ C14
+// ------------------------------------------------------------------ (b)
 
-test('C14: every selector answers a prototype member name as it answers any unknown name', async (t) => {
+test('(b) every selector answers a prototype member name as it answers any unknown name', async (t) => {
   // The twin differs in its last letter: an unknown name of the same shape, whose
   // answer (code and exit) is the one the prototype name must get.
   const twin = (name) => `${name.slice(0, -1)}x`;
@@ -102,7 +101,7 @@ test('C14: every selector answers a prototype member name as it answers any unkn
   }
 });
 
-test('C14: an import record and a status word named after a prototype member are not table hits', () => {
+test('(b) an import record and a status word named after a prototype member are not table hits', () => {
   const status = require('../../../src/interchange/status.js');
   for (const name of PROTOTYPE_NAMES) {
     const mapped = status.status(name);
@@ -113,9 +112,9 @@ test('C14: an import record and a status word named after a prototype member are
   for (const name of PROTOTYPE_NAMES) assert.equal(gabbe.outcomeOf(name), null, name);
 });
 
-// ------------------------------------------------------------------ C15
+// ------------------------------------------------------------------ (c)
 
-test('C15: --level on build and ci is 0, 1, 2 or 3, or AGSC-E003 with exit 2', async (t) => {
+test('(c) --level on build and ci is 0, 1, 2 or 3, or AGSC-E003 with exit 2', async (t) => {
   const dir = scratch(t);
   for (const verb of ['build', 'ci']) {
     for (const level of ['constructor', '9', '-1', '1.5', '', '02']) {
@@ -131,9 +130,9 @@ test('C15: --level on build and ci is 0, 1, 2 or 3, or AGSC-E003 with exit 2', a
   }
 });
 
-// ------------------------------------------------------------------ C19
+// ------------------------------------------------------------------ (d)
 
-test('C19: a Bundle without content/index.md is AGSC-E901 in lint, build and ci', async (t) => {
+test('(d) a Bundle without content/index.md is AGSC-E901 in lint, build and ci', async (t) => {
   for (const remove of [path.join('content', 'index.md'), 'content']) {
     const dir = scratch(t);
     fs.rmSync(path.join(dir, remove), { force: true, recursive: true });
@@ -147,9 +146,9 @@ test('C19: a Bundle without content/index.md is AGSC-E901 in lint, build and ci'
   }
 });
 
-// ------------------------------------------------------------------ C28
+// ------------------------------------------------------------------ (e)
 
-test('C28: trace writes no Episode that fails the item schema', async (t) => {
+test('(e) trace writes no Episode that fails the item schema', async (t) => {
   const dir = scratch(t);
   writeConfig(dir, (c) => { c.run = { enabled: true }; });
   // Written as text: JSON.stringify cannot spell 1e999, and JSON.parse reads it as Infinity.
@@ -170,11 +169,11 @@ test('C28: trace writes no Episode that fails the item schema', async (t) => {
   assert.equal(lint.exit, 0, JSON.stringify(lint.findings));
 });
 
-// ------------------------------------------------------------------ C8, the environment layers
-// (verification finding of 2026-10-07): the same value through `AGSC_BUILD_OUT` or a
+// ------------------------------------------------------------------ (f) the environment layers
+// The same value through `AGSC_BUILD_OUT` or a
 // `.env` file in the Bundle folder bypassed the check above.
 
-test('C8: build.out from AGSC_BUILD_OUT or a .env file is refused like the project value', async (t) => {
+test('(f) build.out from AGSC_BUILD_OUT or a .env file is refused like the project value', async (t) => {
   for (const out of ['content', 'Content/site', 'dist', '.', '..']) {
     for (const layer of ['env', 'dotenv']) {
       const dir = scratch(t);
@@ -200,7 +199,7 @@ test('C8: build.out from AGSC_BUILD_OUT or a .env file is refused like the proje
 /** The pieces of a stray name, joined at run time. */
 const STRAY = ['AGSC', 'DOI'].join('_');
 
-test('C8: a stray AGSC_ name is named as an environment variable to unset, and nothing is written', async (t) => {
+test('(f) a stray AGSC_ name is named as an environment variable to unset, and nothing is written', async (t) => {
   for (const layer of ['env', 'dotenv']) {
     const dir = scratch(t);
     const options = layer === 'env' ? { env: { [STRAY]: '10.5281/zenodo.1' } } : {};
@@ -223,7 +222,7 @@ test('C8: a stray AGSC_ name is named as an environment variable to unset, and n
   }
 });
 
-test('C8: a range error in the project file (AGSC-E209) also stops build and ci before they write', async (t) => {
+test('(f) a range error in the project file (AGSC-E209) also stops build and ci before they write', async (t) => {
   const dir = scratch(t);
   writeConfig(dir, (c) => { c.visibility = 'bogus'; });
   for (const verb of ['build', 'ci']) {
@@ -235,7 +234,7 @@ test('C8: a range error in the project file (AGSC-E209) also stops build and ci 
   assert.ok(!fs.existsSync(path.join(dir, 'dist')), 'ci wrote dist/ beside AGSC-E209');
 });
 
-test('C8: lint and verify write nothing, so they still report every finding beside an environment error', async (t) => {
+test('(f) lint and verify write nothing, so they still report every finding beside an environment error', async (t) => {
   const dir = scratch(t);
   // A concept without a description: lint reports AGSC-E408 for it, whatever the configuration.
   fs.writeFileSync(path.join(dir, 'content', 'concepts', 'bare.md'), '---\ntype: concept\ntitle: A bare concept\n'
@@ -252,7 +251,7 @@ test('C8: lint and verify write nothing, so they still report every finding besi
   assert.ok(!v.findings.some((f) => f.code === 'AGSC-E001'), 'verify ran');
 });
 
-test('C8: the tool server does not start beside a configuration error; the finding goes to stderr', (t) => {
+test('(f) the tool server does not start beside a configuration error; the finding goes to stderr', (t) => {
   const dir = scratch(t);
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('AGSC_')));
   const r = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agsc.js'), 'mcp'], {

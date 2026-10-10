@@ -461,7 +461,7 @@ describe('the release workflow', () => {
   });
 
   it('a job that may mint an identity token installs nothing that runs a script', () => {
-    // Verification finding C21 (2026-10-06): the publish job ran `npm ci` with install
+    // Before the fix, the publish job ran `npm ci` with install
     // scripts while it held `id-token: write`. Every install in such a job carries
     // `--ignore-scripts`; nothing in it needs a dependency's script to run.
     const jobs = steps().split(/\n(?= {2}[a-z][a-z0-9-]*:\n)/u);

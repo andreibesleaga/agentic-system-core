@@ -33,6 +33,7 @@ const net = require('node:net');
 const { domainToASCII } = require('node:url');
 const nquads = require('../knowledge/nquads.js');
 const { REL, finding } = require('./surfaces.js');
+const { collapseTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-07: the one discovery suffix, held as a single constant. */
 const WELLKNOWN_SUFFIX = '.well-known/knowledge-linkset';
@@ -308,7 +309,7 @@ function walk(options) {
     } catch {
       response = { ok: false, peers: [] };
     }
-    // AGSC-06-08 (amended 2026-10-02 for 1.0.0): a document whose anchor is not on the
+    // AGSC-06-08 (as amended for 1.0.0): a document whose anchor is not on the
     // origin it was retrieved from is not that peer's document. A fetch adapter that
     // reports the document's `anchor` (and, after redirects, the `url` it read) is held
     // to it here; a key that is no URL, as in the walk's own tests, is not judged.
@@ -431,7 +432,7 @@ function peerCitations(items, options) {
   const quads = [];
   const emitted = [];
   for (const item of items || []) {
-    const iri = `${String(base).replace(/\/+$/u, '/')}${plural(item.type)}/${item.slug}/`;
+    const iri = `${collapseTrailingSlashes(String(base))}${plural(item.type)}/${item.slug}/`;
     for (const source of item.sources || []) {
       if (typeof source.resource !== 'string') continue;
       const { error, url } = normaliseReference(source.resource);

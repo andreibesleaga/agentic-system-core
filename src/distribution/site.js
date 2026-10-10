@@ -52,6 +52,7 @@ const surfaces = require('../boundary/surfaces.js');
 const federation = require('../boundary/federation.js');
 const browserBundle = require('../composition/browser.js');
 const skills = require('../composition/skills.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = chunks;
 
@@ -188,7 +189,7 @@ function pageItemsOf(items, releases) {
 function declaredSurfaces(options) {
   const config = options.config || {};
   const declared = surfaces.declare({
-    base: `${String(options.base).replace(/\/+$/u, '')}/`,
+    base: `${withoutTrailingSlashes(String(options.base))}/`,
     emitted: options.emitted || [],
     mcpServed: options.mcpServed === true,
     surfaces: Array.isArray(config.surfaces) ? config.surfaces : [],
@@ -227,8 +228,7 @@ function contributeEditUrl(config, path) {
   const entry = entries.find((c) => c && c.mode === 'pr' && typeof c.target === 'string'
     && /^https:\/\//u.test(c.target));
   if (entry === undefined) return null;
-  const repository = String(entry.target)
-    .replace(/\/+$/u, '')
+  const repository = withoutTrailingSlashes(String(entry.target))
     .replace(/\.git$/u, '')
     .replace(/\/(?:compare|pulls|pull\/new|issues\/new)$/u, '');
   const host = repository.replace(/^https:\/\//u, '').split('/')[0].toLowerCase();
@@ -370,7 +370,7 @@ function sitemap(base, routes, instant) {
 }
 
 /**
- * AGSC-06-18, dialect 1: the AI-usage signals of `robots.txt` (RFC 9309). The
+ * AGSC-06-18, dialect 1: the per-crawler groups of `robots.txt` (RFC 9309). The
  * comment names `/legal/` only when the build emits it: a file that points
  * at a route the same build does not produce is a dangling link whichever dialect
  * carries it.
@@ -754,7 +754,7 @@ function operatorLine(config) {
  */
 function publicationFindings(bundle, ports, options = {}) {
   const config = (bundle && bundle.config) || {};
-  const base = String((config.site && config.site.base) || '').replace(/\/+$/u, '');
+  const base = withoutTrailingSlashes(String((config.site && config.site.base) || ''));
   const level = options.level == null ? 2 : Number(options.level);
   const clock = ports && ports.clock;
   const instant = options.instant !== undefined ? options.instant
@@ -1101,7 +1101,7 @@ const UNPRODUCED_ROUTES = Object.freeze([
 function skillPacks(bundle, options, config) {
   const resolved = config === undefined ? (bundle.config || {}) : config;
   const site = resolved.site || {};
-  const base = String(site.base || '').replace(/\/+$/u, '');
+  const base = withoutTrailingSlashes(String(site.base || ''));
   return skills.packs(publishedItems(bundle.items, resolved.releases), {
     base: `${base}/`,
     bundleVersion: options.bundleVersion,
@@ -1155,7 +1155,7 @@ function typedLinksResolver(items) {
 }
 
 /**
- * AGSC-01-14 (as amended 2026-10-06): the strings of the configuration, the Bundle
+ * AGSC-01-14 (as amended): the strings of the configuration, the Bundle
  * root and the items that no JSON artefact can carry (a lone surrogate written as an
  * escape). Each is `AGSC-E108` with its file, the finding `lint` reports for it; an
  * item's is already among the loader's findings and is not repeated.
@@ -1218,7 +1218,7 @@ function withBudgetWarnings(built) {
 function buildSite(bundle, ports, options, findings) {
   const config = bundle.config || {};
   const site = config.site || {};
-  const base = String(site.base || '').replace(/\/+$/u, '');
+  const base = withoutTrailingSlashes(String(site.base || ''));
   const level = options.level == null ? 2 : Number(options.level);
   // AGSC-10-02 / AGSC-10-04: a Level-0 publisher emits the four Level-0 artefacts
   // and nothing this specification asks only of a writer.

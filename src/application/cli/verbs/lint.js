@@ -49,8 +49,8 @@ function configAndRoot(bundle, options = {}) {
   }));
   // AGSC-01-04: the Bundle root. AGSC-01-01 requires `content/` and AGSC-01-04 makes
   // `content/index.md` its root document, so its absence is a fault and not a skipped
-  // check: until 2026-10-06 a directory with a
-  // configuration and no `content/` at all linted and built clean.
+  // check: without it a directory with a configuration and no `content/` at all
+  // would lint and build clean.
   if (bundle.index) {
     findings.push(...validate.index(bundle.index.frontmatter || {}, {
       file: 'content/index.md', schemas,

@@ -2,7 +2,7 @@
 // AGSC-09-14b: `remember` MUST synthesize a CONFORMING item, and AGSC-09-13a: a tool
 // that cannot fulfil a call answers the error envelope, never a transport error.
 //
-// Until 2026-10-06 (verification finding C13) the local tool server did not check its
+// Before the fix, the local tool server did not check its
 // arguments:
 //   (a) `kind: "constructor"` (or `toString`, `__proto__`) was a table hit and gave a
 //       Proposal for `content/function Object() { [native code] }s/….md`;
@@ -33,9 +33,9 @@ function schemaFaults(body) {
   return validate.item(body.frontmatter, { schemas }).filter((f) => f.severity !== 'warn');
 }
 
-test('C13 (a): a kind named after a prototype member is not a kind', () => {
-  // Since 2026-10-06 (finding G5, AGSC-09-14b amended) a kind outside the five is
-  // AGSC-E203; until then it fell back to a concept.
+test('(a) a kind named after a prototype member is not a kind', () => {
+  // Since AGSC-09-14b was amended, a kind outside the five is AGSC-E203; before, it
+  // fell back to a concept.
   for (const kind of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
     const r = toolset().call('remember', { body: 'x', kind, operator: OPERATOR, title: 'A Plain Note' });
     assert.equal(r.type, 'error', kind);
@@ -43,7 +43,7 @@ test('C13 (a): a kind named after a prototype member is not a kind', () => {
   }
 });
 
-test('C13 (b): sources that is not a list is not a transport error', () => {
+test('(b) sources that is not a list is not a transport error', () => {
   for (const sources of [5, 'https://example.org/', { resource: 'https://example.org/' }, null]) {
     const r = toolset().call('remember', { body: 'x', kind: 'concept', operator: OPERATOR, sources, title: 'A Plain Note' });
     assert.equal(r.type, 'proposal', JSON.stringify(sources));
@@ -51,7 +51,7 @@ test('C13 (b): sources that is not a list is not a transport error', () => {
   }
 });
 
-test('C13 (c): an argument that would make the item non-conforming is refused with its code', () => {
+test('(c) an argument that would make the item non-conforming is refused with its code', () => {
   const base = { body: 'x', operator: OPERATOR, title: 'A Plain Note' };
   const cases = [
     [{ ...base, kind: 'concept', title: 'T' }, 'AGSC-E204'],
@@ -76,7 +76,7 @@ test('C13 (c): an argument that would make the item non-conforming is refused wi
   }
 });
 
-test('C13: every Proposal remember returns on the local server passes the item schema', () => {
+test('every Proposal remember returns on the local server passes the item schema', () => {
   const calls = [
     { body: 'x', kind: 'concept', operator: OPERATOR, title: 'A Plain Note' },
     { body: 'x', kind: 'task', operator: OPERATOR, title: 'A Task Here', cluster: 'agent-patterns' },
@@ -91,7 +91,7 @@ test('C13: every Proposal remember returns on the local server passes the item s
   }
 });
 
-test('C13: the page tools run the same check (AGSC-09-16)', () => {
+test('the page tools run the same check (AGSC-09-16)', () => {
   assert.equal(typeof pageTools.pageRememberFault, 'function');
   assert.ok(pageTools.PORTABLE.includes('pageRememberFault'), 'the check is emitted into the page');
   assert.deepEqual(pageTools.pageRememberFault({ kind: 'lesson', severity: 'catastrophic', title: 'A Lesson' }, 'lesson').code, 'AGSC-E203');

@@ -2,7 +2,7 @@
 // The DDD context map, enforced. `src/` IS the map, so the arrows are checkable:
 // a require that points the wrong way is a design defect, not a style question.
 //
-//   shared       -> nothing                          (SHARED KERNEL: the two orderings)
+//   shared       -> nothing                          (SHARED KERNEL: orderings, trailing slashes)
 //   knowledge    -> knowledge, shared (plus the pinned libraries)
 //   governance   -> knowledge, ports, shared
 //   composition  -> knowledge, ports, shared

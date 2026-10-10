@@ -146,7 +146,7 @@ test('static-host: nginx, parsed, sends every route exactly the reference header
   assert.deepStrictEqual(byName(nginxHeaders(parsed, '/no/such/')), byName(staticHost.siteWide(input.sets)));
   // the directory route `/` is answered by its own block, so its Link header is kept
   assert.ok(parsed.blocks.get('=/').lines.includes('try_files /index.html =404;'));
-  // the 0.0.x alias, and the host configuration kept from being served
+  // the legacy alias, and the host configuration kept from being served
   assert.deepStrictEqual(parsed.blocks.get('=/.well-known/agentic-knowledge').lines, ['return 301 /.well-known/knowledge-linkset;']);
   for (const file of rules.CONFIG_FILES) assert.deepStrictEqual(parsed.blocks.get(`=/${file}`).lines, ['return 404;'], file);
 });

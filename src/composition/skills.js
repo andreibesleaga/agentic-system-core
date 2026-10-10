@@ -54,6 +54,7 @@ const { provenanceHeader: provenanceBlock } = require('../knowledge/provenance-h
 const { finding } = require('../knowledge/validate.js');
 const slugs = require('../knowledge/slug.js');
 const { fenceProse } = require('../knowledge/markdown.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -237,7 +238,7 @@ function install(index, available, installed, options) {
   const writes = [];
   const updated = [];
   const unchanged = [];
-  const target = String(options.target).replace(/\/+$/u, '');
+  const target = withoutTrailingSlashes(String(options.target));
 
   for (const pack of (index && index.packs) || []) {
     const name = String(pack.name);
@@ -378,7 +379,7 @@ function splitPack(text, options) {
     if (open === null) continue;
     let end = i + 6;
     while (end < lines.length && lines[end] !== open[1]) end += 1;
-    const slug = iri[1].replace(/\/+$/u, '').split('/').pop();
+    const slug = withoutTrailingSlashes(iri[1]).split('/').pop();
     const body = `${lines.slice(i + 6, end).join('\n').replace(/\n+$/u, '')}\n`;
     i = end;
     if (type[1] !== 'procedure') {

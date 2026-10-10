@@ -148,6 +148,16 @@ function canonicalize(value) {
   return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
 }
 
+/**
+ * `text` without the run of `/` at its end, read back from the end (linear in the
+ * length; the engine's copy is `src/shared/trailing.js`, which a tool does not load).
+ */
+function withoutTrailingSlashes(text) {
+  let end = text.length;
+  while (end > 0 && text.charCodeAt(end - 1) === 0x2f) end -= 1;
+  return text.slice(0, end);
+}
+
 /** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
 function compareCodePoint(a, b) {
   const ia = a[Symbol.iterator]();
@@ -265,7 +275,7 @@ function walk(root, dir) {
   if (!fs.existsSync(at)) return out;
   if (!fs.statSync(at).isDirectory()) return [dir];
   for (const entry of fs.readdirSync(at, { withFileTypes: true })) {
-    const rel = `${dir.replace(/\/+$/u, '')}/${entry.name}`;
+    const rel = `${withoutTrailingSlashes(dir)}/${entry.name}`;
     if (entry.isDirectory()) out.push(...walk(root, rel));
     else out.push(rel);
   }
@@ -292,7 +302,7 @@ const ROOT_ALWAYS = /^(?:package\.json|(?:readme|copying|license|licence)(?:\..*
  */
 function packList(root, manifest) {
   const declared = (Array.isArray(manifest.files) ? manifest.files : [])
-    .map((e) => String(e).replace(/^\.?\/+/u, '').replace(/\/+$/u, '')).filter((e) => e !== '');
+    .map((e) => withoutTrailingSlashes(String(e).replace(/^\.?\/+/u, ''))).filter((e) => e !== '');
   const isDir = (rel) => { try { return fs.statSync(path.join(root, rel)).isDirectory(); } catch { return false; } };
   const folders = declared.filter(isDir);
   const files = new Set(declared.filter((e) => e.includes('/') && !isDir(e)));
@@ -784,5 +794,5 @@ module.exports = {
   ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
   applyChangelog, canonicalize, changelogFindings, checklist, hygieneFindings, isGreater, neverShipped,
   packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
-  workflowFindings,
+  withoutTrailingSlashes, workflowFindings,
 };

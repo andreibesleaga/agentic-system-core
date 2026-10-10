@@ -13,7 +13,7 @@
 // are checked with no network (NFR-13). A <url> argument is also checked for the
 // response headers of the rules on cross-origin reading and caching (AGSC-11-03,
 // AGSC-11-05) on the document and on every same-origin public artefact the run reads:
-// errors at Level 2 and above, warnings below (AGSC-09-93, amended 2026-10-06).
+// errors at Level 2 and above, warnings below (AGSC-09-93, as amended).
 //
 // Error codes. The §9.4 registry names no dedicated code for the shape checks of
 // AGSC-09-93; until a MINOR assigns them this tool uses
@@ -196,8 +196,7 @@ class TransportError extends Error { constructor(code, m) { super(m); this.code 
 // AGSC-11-10(e, f): every fetch is held to the timeout PER RESPONSE — one deadline
 // from the request to the last byte, not an idle timer a slow server can keep
 // resetting — and to its byte cap, and is aborted at either bound with AGSC-E907.
-// Until 2026-10-06 the timeout was an idle one, a
-// response over the cap was AGSC-E904 and every target was held to 1 MiB.
+// The cap is each target's own (`cap`), not one 1 MiB bound for every target.
 // `session` is the run's: `dev` admits plain http to loopback, `timer` sets the deadline.
 function fetchOnce(url, cap, session) {
   return new Promise((resolve, reject) => {
@@ -576,7 +575,7 @@ async function check(src, level, findings, session) {
   const anchorLink = describedby.find((t) => t && typeof t.href === 'string' && /\/graph\.jsonld$/.test(t.href)) || {};
   const gated = Array.isArray(anchorLink['agsc-visibility'])
     && anchorLink['agsc-visibility'].map(String).includes('restricted');
-  // AGSC-09-93 (amended 2026-10-06): given a URL, the headers of the rules on
+  // AGSC-09-93 (as amended): given a URL, the headers of the rules on
   // cross-origin reading and caching, on the document and on every same-origin
   // public artefact this run fetches. A file has no response headers.
   const headerRun = { anchor, F, gated, level, seen: new Set() };

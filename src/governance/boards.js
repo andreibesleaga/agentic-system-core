@@ -15,6 +15,7 @@
 const { compareCodePoint } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const { TYPE_PLURAL } = require('../knowledge/chunks.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-02-99: the nine Agent2Agent 1.0 task states, verbatim. */
 const TASK_STATES = Object.freeze([
@@ -38,7 +39,7 @@ const DEFAULT_MAX_CLAIMS = 1;
 /** AGSC-05-01 / AGSC-05-03: `<site.base>/<type-plural>/<slug>/`. */
 function iriOf(base, type, slug) {
   const plural = TYPE_PLURAL[type] || TYPE_PLURAL.concept;
-  return `${String(base).replace(/\/+$/u, '')}/${plural}/${slug}/`;
+  return `${withoutTrailingSlashes(String(base))}/${plural}/${slug}/`;
 }
 
 /** AGSC-10-13: a task is a `concept` of `kind: task`. */

@@ -145,7 +145,7 @@ function stemOf(path) {
 }
 
 /**
- * AGSC-01-13 (amended 2026-10-10 for 1.0.0). At 1.0 a file whose stem holds a dot
+ * AGSC-01-13 (as amended for 1.0.0). At 1.0 a file whose stem holds a dot
  * is read as `<slug>.<lang>.md` with the slug before the first dot; beside its
  * primary (a file whose stem IS that slug, in any type folder) it is a second use
  * of the slug, which the slug check of `lint` reports as AGSC-E206. With no primary

@@ -83,6 +83,7 @@ const steer = require('../steer.js');
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
 const { isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
+const { withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'gabbe';
@@ -204,7 +205,7 @@ function continuityEntry(item, record) {
 function run(bundle, options) {
   const config = (bundle && bundle.config) || {};
   const site = config.site || {};
-  const base = `${String(site.base || '').replace(/\/+$/u, '')}/`;
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
   const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
   const header = provenanceLines({
     bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,

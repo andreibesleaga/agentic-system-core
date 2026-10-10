@@ -3,14 +3,14 @@
 // configuration are inputs the engine reads; neither may steer what it derives or run
 // anything.
 //
-// C3 (verification finding, 2026-10-06): the git-log read (AGSC-08-20b) split records
+// (a) The git-log read (AGSC-08-20b) split records
 //    on the control characters RS, US and GS, which a commit message may contain. One
 //    real commit could therefore add a second, fabricated ledger entry — another actor,
 //    `kind: release`, a commit id that does not exist — and the forged tag fed the
 //    content version (AGSC-04-25). A message containing US alone was cut short. The
 //    read now separates records with NUL, the one byte git never prints from a
 //    message, so a message is data whatever it holds.
-// C16 (verification finding, 2026-10-06): git ran with the repository's own
+// (b) Git ran with the repository's own
 //    configuration, so a `.git/config` that came with a downloaded folder ran a
 //    command (`core.fsmonitor`) during `agsc lint`. Every git call of the ProcessRunner
 //    adapter now switches that hook off.
@@ -56,7 +56,7 @@ function forgingMessage() {
   return `first${GS}\n${RS}${forged}${GS}\n\nSigned-off-by: Ada <ada@example.org> (CA-v1)`;
 }
 
-test('C3: a commit message cannot add a ledger entry or a tag', (t) => {
+test('(a) a commit message cannot add a ledger entry or a tag', (t) => {
   if (!HAVE_GIT) { t.skip('git is not installed'); return; }
   const { dir, env, git } = repository(t);
   git('commit', '-q', '-m', forgingMessage());
@@ -74,7 +74,7 @@ test('C3: a commit message cannot add a ledger entry or a tag', (t) => {
   assert.equal(ledger[0].actor, 'human:ada');
 });
 
-test('C3: a message holding the old separators is kept whole, trailers included', (t) => {
+test('(a) a message holding the old separators is kept whole, trailers included', (t) => {
   if (!HAVE_GIT) { t.skip('git is not installed'); return; }
   const { dir, env, git } = repository(t);
   git('commit', '-q', '-m', `subject with a ${US} unit separator`, '-m', 'Signed-off-by: Ada <ada@example.org> (CA-v1)');
@@ -84,7 +84,7 @@ test('C3: a message holding the old separators is kept whole, trailers included'
   assert.ok(log[0].files.includes('content/index.md'), JSON.stringify(log[0].files));
 });
 
-test('C16: a .git/config fsmonitor command is not run by lint, build or ci', async (t) => {
+test('(b) a .git/config fsmonitor command is not run by lint, build or ci', async (t) => {
   if (!HAVE_GIT) { t.skip('git is not installed'); return; }
   const { dir, env, git } = repository(t);
   git('commit', '-q', '-m', 'first', '-m', 'Signed-off-by: Ada <ada@example.org> (CA-v1)');
@@ -103,7 +103,7 @@ test('C16: a .git/config fsmonitor command is not run by lint, build or ci', asy
   }
 });
 
-test('C16: the adapter puts the hardening options before every git subcommand', () => {
+test('(b) the adapter puts the hardening options before every git subcommand', () => {
   const calls = [];
   const cpModule = require('node:child_process');
   const original = cpModule.execFileSync;

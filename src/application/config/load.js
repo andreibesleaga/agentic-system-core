@@ -11,9 +11,9 @@ const { buildOutFault } = require('../../knowledge/validate.js');
 /**
  * Names that address JavaScript's object machinery rather than a configuration key.
  * Configuration is CLOSED (AGSC-01-18): none of them is a key of the schema, so the
- * config lane reports each as `AGSC-E004`; the merge never writes through them. Until
- * 2026-10-06 `{"__proto__": {"x": 1}}` in
- * `agsc.config.json` set `Object.prototype.x` for the whole engine process.
+ * config lane reports each as `AGSC-E004`; the merge never writes through them, so
+ * `{"__proto__": {"x": 1}}` in `agsc.config.json` cannot set `Object.prototype.x` for
+ * the whole engine process.
  */
 const UNSAFE_SEGMENTS = Object.freeze(new Set(['__proto__', 'constructor', 'prototype']));
 
@@ -129,9 +129,9 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
       }
       // The value of a key meets that key's grammar whichever layer sets it
       // (AGSC-01-37): the schema `pattern`, and for `build.out` the rule that it
-      // never names `content/` or `dist/` (AGSC-01-19). Until 2026-10-07 only the
-      // project file was checked, and `AGSC_BUILD_OUT=content` built into the
-      // source tree with exit 0.
+      // never names `content/` or `dist/` (AGSC-01-19). Checking the project file
+      // alone would let `AGSC_BUILD_OUT=content` build into the source tree with
+      // exit 0.
       const grammar = grammarFault(name, desc, c.value);
       if (grammar !== null) {
         findings.push({ code: 'AGSC-E204', message: grammar, severity: 'error', path: desc.path });

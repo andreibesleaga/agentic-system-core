@@ -23,6 +23,7 @@
 
 const { compile } = require('./schema.js');
 const { nfc, codePointLength, compareCodePoint, isWellFormed } = require('./unicode.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-01-02: the folder each `type` lives in. */
 const TYPE_PLURAL = Object.freeze({
@@ -112,7 +113,7 @@ function sortFindings(findings) {
 }
 
 /**
- * AGSC-01-14 (as amended 2026-10-06) with AGSC-04-05: a frontmatter or configuration
+ * AGSC-01-14 (as amended) with AGSC-04-05: a frontmatter or configuration
  * string — a value or a member name — that is not a sequence of Unicode scalar values,
  * i.e. one holding a lone surrogate written as an escape (`"\uD800"` in YAML or
  * JSON), can enter no JSON artefact: I-JSON is the precondition of JCS. A UTF-8 file
@@ -508,12 +509,12 @@ function config(configObject, options = {}) {
         + ' (AGSC-00-25, AGSC-00-21)' : ''}`,
       { file, key: e.keyword === 'additionalProperties' ? String((e.params || {}).additionalProperty || '') : undefined }));
   }
-  // AGSC-01-19 (amended 2026-10-06): `build.out` names neither the source tree
-  // `content/` (AGSC-08-02: a build never writes there) nor the generated `dist/`
-  // (AGSC-01-08), nor a path under either; the first segment is compared ASCII
-  // case-insensitively, because on a case-insensitive file system `Content` IS
-  // `content/`. Until that day `"out": "content"` wrote the
-  // whole site into the source tree and exited 0.
+  // AGSC-01-19 (as amended): `build.out` names neither the source tree `content/`
+  // (AGSC-08-02: a build never writes there) nor the generated `dist/` (AGSC-01-08),
+  // nor a path under either; the first segment is compared ASCII case-insensitively,
+  // because on a case-insensitive file system `Content` IS `content/`. Without this
+  // check `"out": "content"` would write the whole site into the source tree and
+  // exit 0.
   const out = configObject.build && configObject.build.out;
   const outFault = typeof out === 'string' ? buildOutFault(out) : null;
   if (outFault !== null) findings.push(finding('AGSC-E204', outFault, { file, key: 'build.out' }));
@@ -572,7 +573,7 @@ function itemIri(filePath, frontmatter, base) {
   if (!frontmatter || frontmatter.iri == null || typeof base !== 'string' || base === '') return [];
   const m = /^content\/([a-z]+)\/([^/.]+)(?:\.[^/]+)?\.md$/u.exec(String(filePath).split('\\').join('/'));
   if (!m) return [];
-  const expected = `${base.replace(/\/+$/u, '')}/${m[1]}/${m[2]}/`;
+  const expected = `${withoutTrailingSlashes(base)}/${m[1]}/${m[2]}/`;
   if (String(frontmatter.iri) === expected) return [];
   return [finding('AGSC-E204', `iri "${frontmatter.iri}" is not the computed item IRI "${expected}" (AGSC-05-05)`,
     { file: filePath, slug: m[2] })];

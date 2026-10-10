@@ -29,7 +29,7 @@ flowchart TD
   A["Application layer<br/>configuration · CLI verbs"]
   P["Ports<br/>FileSystem · Clock · ProcessRunner · Network"]
   AD["Adapters (Node)"]
-  S["Shared kernel<br/>src/shared/ordering.js"]
+  S["Shared kernel<br/>src/shared/ordering.js · trailing.js"]
 
   K -->|conformist| D
   K -->|customer / supplier| C
@@ -60,6 +60,13 @@ adapter owes AGSC-01-15 the same code-point order that the Knowledge context owe
 AGSC-04-12, and an adapter may not reach into a bounded context. A second copy of the
 comparator would be worse than the arrow it removes: two orderings can drift, one
 cannot. `knowledge/unicode.js` re-exports both, so every existing caller is unchanged.
+`src/shared/trailing.js` holds `withoutTrailingSlashes` and `collapseTrailingSlashes`,
+the trim every context applies to a base address or a folder path before it appends a
+route. Each reads back from the end, so it is linear in the length of the text; the
+pattern they replaced read to the end from every slash of a run and was quadratic. The
+code the build copies into every node's pages (the page tools' script, the compose
+page's script and `composition/archive.js#archiveName`) keeps its own copy, since
+changing it changes the bytes every node emits.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

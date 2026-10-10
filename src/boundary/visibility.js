@@ -32,6 +32,7 @@ const federation = require('./federation.js');
 
 const { plural } = federation;
 const { ACCESS_CLASSES, REL, SURFACE_NAMES, finding } = require('./surfaces.js');
+const { collapseTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-11-20: the closed `visibility` list, most restrictive last. */
 const VISIBILITY_VALUES = Object.freeze(['public', 'restricted']);
@@ -250,8 +251,8 @@ function checkBoundaryConfig(config) {
   }
   // AGSC-11-01's bound table also holds `chunks.max_bytes`, `attachments.max_bytes` and
   // `budget.usd_month`; a value outside it is AGSC-E209 like a federation value
-  // (2026-10-02: the last two were reported only by the schema, as AGSC-E201, and the
-  // chunk maximum was not checked).
+  // (the schema alone would report the last two as AGSC-E201, and would not check the
+  // chunk maximum).
   for (const [key, field, range] of TABLE_KEYS) {
     const holder = c[key];
     if (holder === undefined || holder === null || typeof holder !== 'object' || holder[field] === undefined) continue;
@@ -302,7 +303,7 @@ function retirement(items, options) {
     if (!retired.has(item.slug)) continue;
     const stamp = retiredAt(item);
     if (stamp === null) continue;
-    const iri = `${String(base).replace(/\/+$/u, '/')}${plural(item.type)}/${item.slug}/`;
+    const iri = `${collapseTrailingSlashes(String(base))}${plural(item.type)}/${item.slug}/`;
     quads.push(`<${iri}> <${ASC}retiredAt> "${stamp}"^^<${XSD_DATETIME}> <${base}> .`);
   }
   return Object.freeze({

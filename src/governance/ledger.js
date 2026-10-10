@@ -284,7 +284,7 @@ function verify(ledger, wellknown) {
  */
 function compare(published, wellknown, derived, options = {}) {
   if (derived === null || derived === undefined) return verify(published, wellknown);
-  // AGSC-08-23 (amended 2026-10-02 for 1.0.0): the trailing `build` entry names its
+  // AGSC-08-23 (as amended for 1.0.0): the trailing `build` entry names its
   // builder (AGSC-08-20a), so a verifier that is another implementation or version
   // re-derives that one line differently. When the published file differs from the
   // recomputation in that entry's `actor` alone, the per-commit lines are the proof,

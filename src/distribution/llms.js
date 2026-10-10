@@ -15,6 +15,7 @@
 const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { provenanceHeader } = require('../knowledge/provenance-header.js');
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS, termsFor } = require('../knowledge/chunks.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-01-18: the default of `bundle.license_prose`. */
 const DEFAULT_LICENSE = TERMS;
@@ -23,7 +24,7 @@ const DEFAULT_LICENSE = TERMS;
 function iriOf(base, item) {
   if (item.iri != null && item.iri !== '') return String(item.iri);
   const plural = TYPE_PLURAL[item.type] || TYPE_PLURAL.concept;
-  return `${String(base).replace(/\/+$/u, '')}/${plural}/${item.slug}/`;
+  return `${withoutTrailingSlashes(String(base))}/${plural}/${item.slug}/`;
 }
 
 /** One whitespace character, as `\s` matches it under the `u` flag (a single-character test, never a run). */

@@ -131,7 +131,7 @@ function bundleVersion(input = {}) {
     const n = log.length - 1 - i;
     const version = `${tag}+${n}.g${hash}`;
     if (GRAMMAR.test(version)) return { branch: 2, findings, version };
-    // AGSC-04-25 (amended 2026-10-10 for 1.0.0): a usable tag whose branch-2 result
+    // AGSC-04-25 (as amended for 1.0.0): a usable tag whose branch-2 result
     // passes the grammar's 64 characters is not used; the derivation takes branch 3.
     findings.push(finding('AGSC-E506',
       `git tag "${tag}" with "+${n}.g${hash}" added is longer than the 64 characters of `

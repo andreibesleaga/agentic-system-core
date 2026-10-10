@@ -29,9 +29,8 @@ const NUL = String.fromCharCode(0);
  * message: git never prints a NUL from a message (it ends a message at its first
  * NUL), so no message can end a record or begin another. Within the header, US
  * separates the four fields before the message; the message is the rest, so a US
- * inside it is kept. Until 2026-10-06 records were split on
- * RS, US and GS, which a commit message may contain, and one commit could add a
- * fabricated ledger entry.
+ * inside it is kept. Records split on RS, US and GS would break on a commit message
+ * that contains them, and one commit could add a fabricated ledger entry.
  */
 const US = String.fromCharCode(31);
 /**
@@ -132,11 +131,10 @@ function sha256(bytes) {
 }
 
 /**
- * AGSC-09-09 (amended 2026-10-06): `--level <n>` on `build`, `ci` and `conform` is
- * one of the four Levels, written `0`, `1`, `2` or `3`; any other value is the usage
- * error `AGSC-E003` (exit 2), refused before anything runs. Until that day `build` and
- * `ci` ignored `--level constructor` and `--level 9`, and
- * `--level -1` built a site.
+ * AGSC-09-09 (as amended): `--level <n>` on `build`, `ci` and `conform` is one of the
+ * four Levels, written `0`, `1`, `2` or `3`; any other value is the usage error
+ * `AGSC-E003` (exit 2), refused before anything runs, so that `--level constructor`,
+ * `--level 9` and `--level -1` are never ignored and never build a site.
  *
  * @param {object} ctx the verb context
  * @returns {object|null} the refusal, or null when the flag is absent or valid

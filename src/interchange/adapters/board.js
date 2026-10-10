@@ -55,6 +55,7 @@ const { encodeRecord } = ownRecord;
 const { isObject, itemText, plain } = require('../records.js');
 const pii = require('../../governance/pii.js');
 const { FORMATS } = require('../board-formats.js');
+const { withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'board';
@@ -203,7 +204,7 @@ function run(bundle, options) {
   const writer = FORMATS[format];
   const config = (bundle && bundle.config) || {};
   const site = config.site || {};
-  const base = `${String(site.base || '').replace(/\/+$/u, '')}/`;
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
   const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
   const header = provenanceLines({
     bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
@@ -321,9 +322,9 @@ const PHONES = pii.PHONE.map((p) => new RegExp(p.source, 'gu'));
 
 /**
  * A text with each e-mail address of the privacy check reduced to its local part. The
- * addresses are the check's own spans (`pii.emailSpans`), found in linear time; until
- * 2026-10-06 a global search with the pattern was quadratic on a long run of
- * local-part characters.
+ * addresses are the check's own spans (`pii.emailSpans`), found in linear time; a
+ * global search with the pattern is quadratic on a long run of local-part
+ * characters.
  */
 function redactEmails(text, redacted) {
   const source = String(text);

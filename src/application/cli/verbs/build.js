@@ -12,10 +12,11 @@
 const site = require('../../../distribution/site.js');
 const lintVerb = require('./lint.js');
 const helpers = require('./_helpers.js');
+const { withoutTrailingSlashes } = require('../../../shared/trailing.js');
 
 /** A FileSystem port whose every path is placed under `build.out`. */
 function outPort(fs, out) {
-  const prefix = `${String(out).replace(/\/+$/u, '')}/`;
+  const prefix = `${withoutTrailingSlashes(String(out))}/`;
   return {
     mkdirp: (p) => fs.mkdirp(`${prefix}${p}`),
     writeFile: (p, data) => fs.writeFile(`${prefix}${p}`, data),

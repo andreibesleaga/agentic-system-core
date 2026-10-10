@@ -39,6 +39,7 @@ const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
 const { pageBoardMove, pageClaimants, pageRememberFault } = require('./page-tools.js');
 const boardLanes = require('../governance/board-lanes.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every export carries. */
 const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -64,7 +65,7 @@ function plural(type) {
 
 /** A Bundle IRI always ends in exactly one `/` (AGSC-05-03). */
 function baseIri(base) {
-  return `${String(base === undefined || base === null ? '/' : base).replace(/\/+$/u, '')}/`;
+  return `${withoutTrailingSlashes(String(base === undefined || base === null ? '/' : base))}/`;
 }
 
 /** AGSC-05-01: an item's canonical HTTPS IRI. */

@@ -83,6 +83,7 @@ const {
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
 const { isObject, itemText, oneLine, plain, yamlString } = require('../records.js');
+const { withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'skills';
@@ -155,7 +156,7 @@ function basename(path) {
 
 /** `./skills/x/` → `skills/x`; `./` → ``. Never leaves the clone: `..` is refused. */
 function relativeDir(value) {
-  const text = String(value).split('\\').join('/').replace(/^(?:\.\/)+|^\.$/u, '').replace(/\/+$/u, '');
+  const text = withoutTrailingSlashes(String(value).split('\\').join('/').replace(/^(?:\.\/)+|^\.$/u, ''));
   if (text.split('/').some((part) => part === '..') || text.startsWith('/')) return null;
   return text;
 }
@@ -782,7 +783,7 @@ function run(bundle, options) {
   if (findings.some((f) => f.severity === 'error')) return { files: [], findings };
   const config = (bundle && bundle.config) || {};
   const site = config.site || {};
-  const base = `${String(site.base || '').replace(/\/+$/u, '')}/`;
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
   const bundleVersion = String(produced.index.bundle_version || opts.bundleVersion || '');
   const bySlug = new Map(((bundle && bundle.items) || []).filter((i) => i && i.frontmatter).map((i) => [String(i.slug), i]));
   const texts = new Map((produced.files || []).map((f) => [f.path, f.text]));

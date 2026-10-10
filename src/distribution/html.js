@@ -22,6 +22,7 @@ const diagrams = require('../knowledge/diagrams.js');
 const lint = require('../governance/lint.js');
 const { WELLKNOWN_PATH, MEDIA_TYPE } = require('./discovery.js');
 const theme = require('./theme.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** The five characters that must never reach markup unescaped. */
 function escapeHtml(value) {
@@ -176,7 +177,7 @@ function shell(page) {
   // (the 404 page) and a build with no site base carry none.
   const canonical = page.canonical != null ? page.canonical
     : (typeof page.siteBase === 'string' && page.siteBase !== '' && typeof page.route === 'string'
-      ? `${page.siteBase.replace(/\/+$/u, '')}${page.route}` : null);
+      ? `${withoutTrailingSlashes(page.siteBase)}${page.route}` : null);
   if (canonical !== null) head.push(`<link rel="canonical" href="${escapeHtml(canonical)}">`);
   if (page.alternates !== undefined) {
     for (const alt of page.alternates) {

@@ -26,6 +26,8 @@
  * proves them) and the consent class carried by `agsc-access`.
  */
 
+const { collapseTrailingSlashes } = require('../shared/trailing.js');
+
 /** The MCP wire revision `@modelcontextprotocol/sdk@1.32.1` speaks. */
 const MCP_PROTOCOL_VERSION = '2025-11-25';
 /** The oldest revision that transport negotiates down to. */
@@ -121,7 +123,7 @@ function firstValue(value) {
 }
 
 function absolute(base, route) {
-  return String(base).replace(/\/+$/u, '/') + String(route).replace(/^\//u, '');
+  return collapseTrailingSlashes(String(base)) + String(route).replace(/^\//u, '');
 }
 
 /**

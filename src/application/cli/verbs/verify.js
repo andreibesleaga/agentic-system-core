@@ -11,6 +11,7 @@ const site = require('../../../distribution/site.js');
 const ledger = require('../../../governance/ledger.js');
 const autoMerge = require('../../../governance/auto-merge.js');
 const helpers = require('./_helpers.js');
+const { withoutTrailingSlashes } = require('../../../shared/trailing.js');
 
 /** A file of the local build output, or null when it is absent or refused. */
 function readLocal(ctx, at) {
@@ -47,8 +48,8 @@ function run(ctx) {
     // the ledger and the well-known file of the local build output — or a
     // tampered line or a truncated tail would go unseen: the fresh derivation
     // always agrees with itself.
-    const out = String((ctx.config && ctx.config.build && ctx.config.build.out) || site.DEFAULT_OUT)
-      .replace(/\/+$/u, '');
+    const out = withoutTrailingSlashes(String((ctx.config && ctx.config.build && ctx.config.build.out)
+      || site.DEFAULT_OUT));
     const localLedger = readLocal(ctx, `${out}/ledger.jsonl`);
     const localWellknown = readLocal(ctx, `${out}/.well-known/knowledge-linkset`);
     const publishedDocument = localWellknown === null ? null : parseOrNull(localWellknown);

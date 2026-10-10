@@ -4,7 +4,7 @@
 // Section 3 of [RFC3986]. This means that "mailto" and "tel" URI schemes must be used
 // when specifying email addresses and telephone numbers", and "If this field indicates
 // a web URI, then it MUST begin with "https://"". A bare address was accepted and
-// published unchanged (verification finding G25, 2026-10-02); it is now AGSC-E204,
+// published unchanged; it is now AGSC-E204,
 // like the other malformed values of the rule, and the route is not emitted.
 //
 // Pure: the writer function with a fixed build instant.
@@ -24,7 +24,7 @@ function write(contact) {
   return site.securityTxt(BASE, INSTANT, { authored: `Contact: ${contact}\n`, publishing: true });
 }
 
-test('G25: a Contact that is not a URI is AGSC-E204 and nothing is emitted', () => {
+test('a Contact that is not a URI is AGSC-E204 and nothing is emitted', () => {
   for (const contact of [at('security', 'example.org'), phone(' '), 'example.org/security', 'http://example.org/security', 'see the website']) {
     const r = write(contact);
     assert.equal(r.text, null, contact);
@@ -34,7 +34,7 @@ test('G25: a Contact that is not a URI is AGSC-E204 and nothing is emitted', () 
   }
 });
 
-test('G25: the RFC 9116 forms are published as before', () => {
+test('the RFC 9116 forms are published as before', () => {
   for (const contact of [`mailto:${at('security', 'example.org')}`, `tel:${phone('-')}`, 'https://example.org/security-contact.html']) {
     const r = write(contact);
     assert.deepEqual(r.findings, [], contact);
