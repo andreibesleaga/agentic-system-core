@@ -156,12 +156,17 @@ test('AGSC-09-09: the --level refusal cites AGSC-09-09, where the sentence is', 
 test('AGSC-09-09: a refused conform --to names the path given, and nothing is written', async (t) => {
   const dir = scratch(t, 'agsc-msg-');
   const outside = path.join(path.dirname(dir), `${path.basename(dir)}-report.json`);
-  for (const to of [outside, '../report.json', 'dist/../../report.json']) {
+  // The last two are typed as on Windows, so every platform sees a backslash.
+  for (const to of [outside, '../report.json', 'dist/../../report.json', '..\\report.json', 'C:\\Users\\agsc\\report.json']) {
     const r = await agsc(dir, ['conform', '--to', to, '--json']);
     assert.strictEqual(r.exit, 1);
     const refusal = envelopeFindings(r).filter((f) => f.code === 'AGSC-E902');
     assert.strictEqual(refusal.length, 1, JSON.stringify(r.findings));
-    assert.ok(refusal[0].message.includes(to), `the message does not name ${to}: ${refusal[0].message}`);
+    // The file member is the value as typed; the message names it in the one
+    // path form of the file-system port, with `/` (src/adapters/node-fs.js safeJoin).
+    assert.strictEqual(refusal[0].file, to);
+    const named = to.split('\\').join('/');
+    assert.ok(refusal[0].message.includes(named), `the message does not name ${named}: ${refusal[0].message}`);
     assert.match(refusal[0].message, /conform --to/u);
     assert.ok(!fs.existsSync(path.join(dir, 'dist')), 'conform wrote something');
   }
