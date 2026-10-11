@@ -528,3 +528,9 @@ Read "coverage ≥99%" in §5's definition of done the same way.
 - Item (6), "a DOI for each release", reads "a DOI for each final release": the Zenodo record
   gets a version for `1.0.0` and for each later final release, and release candidates get none
   and are kept by their tags. The Internet-Draft is an individual Internet-Draft.
+
+**Note to §1, persona P10 (the areas at 1.0.0; 2026-10-11).** The note to persona P10 above
+says that the Python checker distribution runs "seven of the nineteen areas". At `1.0.0` the
+shared vector set has twenty populated areas, the `export` area having been added; the Python
+checker distribution runs the same seven of them natively and reports the other thirteen as
+not run by that package.

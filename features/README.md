@@ -1,7 +1,7 @@
 # features/ — Gherkin persona scenarios (the end-to-end acceptance source)
 
 Sixteen `.feature` files, one per persona walkthrough of the `docs/PRD.md` §1 persona table
-§3 (a)–(j), plus the drop-in user (0), the live board (k), the port implementer (l), the security reviewer (m), the researcher (n) and the restricted publisher (o). Each file is `Feature:` + 2–4 `Scenario:`/`Scenario Outline:` in strict Given/When/Then,
+§3 (a)–(j), plus the drop-in user (0), the live board (k), the port implementer (l), the security reviewer (m), the researcher (n) and the restricted publisher (o). Each file is `Feature:` + 3–14 `Scenario:`/`Scenario Outline:` in strict Given/When/Then,
 tagged `@persona-x`, `@mode-n`, one actor tag (`@human` or `@agent`) and one or more `@PRD-xxx`, and,
 where it covers a row of `features/MATRIX.md`, `@matrix-<row>` (see "Tags" below). Content is drawn
 only from the frozen walkthrough steps and `docs/PRD.md` acceptance criteria — nothing invented.
@@ -31,7 +31,7 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | `persona-0-dropin.feature` | P0 drop-in user | 0 | 9 | PRD-053 |
 | `persona-a-reader.feature` | P1 human reader | 0 | 4 | PRD-002, 011, 013, 014, 015, 025 |
 | `persona-b-contributor.feature` | P2 human contributor | 0 | 5 | PRD-039, 040, 041, 042, 050 |
-| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 13 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
+| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 14 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
 | `persona-d-agent-proposer.feature` | P4 agent proposer | 1 (write) | 5 | PRD-039, 040, 042, 043 |
 | `persona-e-architect.feature` | P5 architect/combiner | 4 | 6 | PRD-001, 036, 037, 038 |
 | `persona-f-integrator.feature` | P6 integrator | 3 | 7 | PRD-032, 033, 034, 035 |

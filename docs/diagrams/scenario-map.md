@@ -18,6 +18,9 @@ flowchart LR
     P10["P10 Port implementer"]
     P11["P11 Standards implementer"]
     P12["P12 Self-driving team (Mode 5)"]
+    P13["P13 Security reviewer"]
+    P14["P14 Researcher"]
+    P15["P15 Restricted publisher"]
   end
 
   subgraph FEATURES["features/*.feature"]
@@ -33,6 +36,10 @@ flowchart LR
     Fi["persona-i-maintainer"]
     Fj["persona-j-standards"]
     Fk["persona-k-live-board"]
+    Fl["persona-l-port-implementer"]
+    Fm["persona-m-security-reviewer"]
+    Fn["persona-n-researcher"]
+    Fo["persona-o-restricted"]
   end
 
   subgraph SURFACES["Surfaces touched"]
@@ -61,15 +68,22 @@ flowchart LR
   Fh --> MCP
   P9 --> Fi --> CLI
   Fi --> PR
-  P10 --> FILES
+  P10 --> Fl --> FILES
+  Fl --> CLI
   P11 --> Fj --> SITE
   P12 --> Fk --> CLI
   Fk --> SITE
+  P13 --> Fm --> CLI
+  Fm --> MCP
+  P14 --> Fn --> CLI
+  Fn --> SITE
+  P15 --> Fo --> SITE
+  Fo --> CLI
 ```
 
-13 personas from `docs/PRD.md` §1 map to the twelve `features/*.feature` files and on to the four live
-surfaces plus the files-only surface used by P10 (P10's acceptance is `spec/` + `tests/vectors/`, not a
-runtime scenario). P12 and `persona-k-live-board` are Mode 5. Fan-out on
-Fb/Fc/Fe/Fg/Fh/Fi shows personas that cross more than one surface in their walkthrough.
+Sixteen personas from `docs/PRD.md` §1 (P0 to P15) map to the sixteen `features/*.feature` files and on to the four live
+surfaces plus the files-only surface used by P10 (a port is built from `spec/` + `tests/vectors/` alone;
+`persona-l-port-implementer` checks its result with the shipped checker and the Python checker). P12 and `persona-k-live-board` are Mode 5. Fan-out on
+F0/Fb/Fc/Fe/Fg/Fh/Fi/Fk/Fl/Fm/Fn/Fo shows personas that cross more than one surface in their walkthrough.
 
 Trace: PRD-001–052 (persona table §1), PLAN.md §1.2 stakeholder table.

@@ -30,6 +30,11 @@ part, no document calls it a release candidate, and that the reference engine's 
 [docs/CONFORMANCE-STATEMENTS.md](../../docs/CONFORMANCE-STATEMENTS.md) states every element
 of AGSC-09-01 with the numbers `tools/count-artifacts` gives, quoted word for word by the
 README.
+`quoted-counts.test.js` checks the counts the documents quote — the populated areas,
+the cases that name the fixture Bundle, the scenarios of each feature file, the personas of
+the demos and of the scenario map, the guides — against the tree, and the figures of
+[docs/MEASUREMENTS.md](../../docs/MEASUREMENTS.md) against the record
+`docs/measurements.json` it was written from, which names the version it measured.
 Subject: the documentation.
 
 **Read after:** [tests/README.md](../README.md).

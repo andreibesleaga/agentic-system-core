@@ -1,6 +1,6 @@
 # Conformance vectors
 
-These files, together with `spec/00`–`spec/11`, `schema/*.json` and `ontology/agsc.ttl`, are the definition of AgenticSystemCore. A port in any language MUST be able to reach conformance from this directory and the fixture Bundle `tests/fixtures/minimal/` (which eight cases name as `"bundle": "fixtures/minimal"`) alone, without reading a line of the reference engine (NFR-02, AGSC-00-01).
+These files, together with `spec/00`–`spec/11`, `schema/*.json` and `ontology/agsc.ttl`, are the definition of AgenticSystemCore. A port in any language MUST be able to reach conformance from this directory and the fixture Bundle `tests/fixtures/minimal/` (the Bundle a case names as `"bundle": "fixtures/minimal"`) alone, without reading a line of the reference engine (NFR-02, AGSC-00-01).
 
 In short: every file here is one case that cites one rule; a port loads the JSON, runs the case and compares its result with `expected`. The set is versioned with the specification and ships with each of its releases. A released vector is never edited in place to change its case: where a vector and its rule disagree, the rule is normative (AGSC-00-03), the corrected case ships as a new vector with a new id, and the old file stays in this directory with `level` `withdrawn`, a `reason` and, where it has a successor, `superseded_by` (AGSC-00-16, AGSC-09-04, AGSC-09-05).
 

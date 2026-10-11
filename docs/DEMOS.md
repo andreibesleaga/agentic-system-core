@@ -1,7 +1,7 @@
 # Demos — every mode and every persona, run from an empty folder
 
 **Summary.** This page is a set of small, complete demonstrations: one for each of
-the six modes of using a Bundle, and one for what each of the thirteen personas of
+the six modes of using a Bundle, and one for what each of the sixteen personas of
 the scenarios does first. Each demo starts from an empty folder with nothing but the
 `agentic-system-core` package, takes under five minutes, gives the exact commands,
 quotes the lines a real run printed, and names the one thing it proves. The agent
@@ -892,7 +892,7 @@ Mode 2 wrote.
 
 ---
 
-## The thirteen personas, by demo
+## The sixteen personas, by demo
 
 | Persona | First thing they do | Demo | The one thing it proves |
 |---|---|---|---|
@@ -909,6 +909,9 @@ Mode 2 wrote.
 | J — standards implementer | `validate-wellknown --level 2 --peer` | Mode 1 | one discovery file, checked with a shipped tool, no server code |
 | K — self-driving team | a lane claims a task through the tools | Mode 5 | claims are proposals; the commit decides the holder; refusals are the same everywhere |
 | L — port implementer | `validate-wellknown --level 0` on a hand-written node | Mode 1 | the checker judges the files, not the engine that wrote them |
+| M — security reviewer | `ci` before the security contact exists; `verify --ledger` | Mode 0 | a node without a security contact does not pass, and the ledger re-derives from the history |
+| N — researcher | `bench/measure.js --layer determinism`, offline, with a fixed build instant | the benchmark kit, `bench/README.md` (no demo on this page) | every figure names the command that produced it, and a second run gives the same bytes |
+| O — restricted publisher | `"visibility": "restricted"` with an `access` link; `validate-wellknown --level 2` | the Level-2 check of `docs/guides/publish.md`; `docs/IMPLEMENTERS-GUIDE.md` §7b (no demo on this page) | the discovery document says the node exists and where to ask for access, and the shipped checker judges it |
 
 ---
 
