@@ -25,6 +25,11 @@ that the benchmark pages, the demos and the Mode 5 guide say what this version s
 implementers' guide, the connectors page and the security considerations true: where
 a page describes the engine, the engine is asked the same question, and the guide's
 JSON-LD framing example is run.
+`release-wording.test.js` checks that, once the declared version carries no pre-release
+part, no document calls it a release candidate, and that the reference engine's claim in
+[docs/CONFORMANCE-STATEMENTS.md](../../docs/CONFORMANCE-STATEMENTS.md) states every element
+of AGSC-09-01 with the numbers `tools/count-artifacts` gives, quoted word for word by the
+README.
 Subject: the documentation.
 
 **Read after:** [tests/README.md](../README.md).

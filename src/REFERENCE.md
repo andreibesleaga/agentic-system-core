@@ -859,11 +859,13 @@ this one is current.
 
 ### 11.1 The conformance claim
 
-The reference engine publishes **no conformance claim** in this release candidate. A
-claim of any Level exists only after a green run of that Level's set and is published
-in the form of AGSC-09-01 (AGSC-10-01, AGSC-10-05). `agsc conform` writes a REPORT of a
-run; a report is not a claim, and AGSC-09-03 says a published claim is the claimant's
-own assertion and that this specification defines no arbitration.
+The reference engine claims Level 3, the full engine. A claim of any Level exists only
+after a green run of that Level's set and is published in the form of AGSC-09-01
+(AGSC-10-01, AGSC-10-05); this engine's claim is kept in one place,
+[docs/CONFORMANCE-STATEMENTS.md](../docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)
+("The reference engine's claim"), and the README quotes it. `agsc conform` writes a
+REPORT of a run; a report is not a claim, and AGSC-09-03 says a published claim is the
+claimant's own assertion and that this specification defines no arbitration.
 
 The result of a run is not typed here, because it changes with every release:
 `node --test tests/conformance/vector-runner.test.js` prints the one summary line of §4,

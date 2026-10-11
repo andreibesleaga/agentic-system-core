@@ -584,14 +584,16 @@ Three things a claim must not say: never name a Level whose vectors you did not 
 never count a withdrawn vector; never attribute approval of this specification to a
 standards body or a registry that has not acted on it.
 
-**What the reference distribution claims today: nothing.** AGSC-10-05 says that a
-claim of any Level "exists only after a green run of that Level's set", and that the
-reference implementation publishes its own claim in the form of AGSC-09-01; it states
-no future event. At `1.0.0` the reference engine passes
-every vector of the set that is not withdrawn, and skips only the withdrawn ones,
-which no claim counts (the counts are the
-conformance runner's own summary line, and `node tools/count-artifacts --json` gives
-the totals), and that is a run, not a claim.
+**What the reference distribution claims.** AGSC-10-05 says that a claim of any Level
+"exists only after a green run of that Level's set", and that the reference
+implementation publishes its own claim in the form of AGSC-09-01. At `1.0.0` the
+reference engine passes every vector of the set that is not withdrawn, and skips only
+the withdrawn ones, which no claim counts; on that run it claims Level 3, and the claim,
+with what each of its parts rests on, is in
+[CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md#the-reference-engines-claim). The
+counts are the conformance runner's own summary line, and `node tools/count-artifacts
+--json` gives the totals. It is a worked example of every element of AGSC-09-01 for a
+claim of your own.
 
 ---
 

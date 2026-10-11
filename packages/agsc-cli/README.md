@@ -3,7 +3,8 @@
 Short alias for [`agentic-system-core`](https://www.npmjs.com/package/agentic-system-core) — the reference engine and command line of AgenticSystemCore: publish a Markdown knowledge Bundle as a static node of the Agentic Knowledge Web — a wiki, an RDF graph, agent memory, skills, MCP and WebMCP tools and a discovery document.
 
 ```sh
-npx agsc-cli --help
+npm install -g agsc-cli   # the `agsc` command, with the engine at the same version
+npx agsc-cli --help       # or run it once, without installing
 ```
 
 This package contains no logic: it depends on `agentic-system-core` at a pinned version and forwards to its `agsc` binary. Its version is written by the engine's release workflow. Docs: https://agenticsystemcore.com · Licence: Apache-2.0.

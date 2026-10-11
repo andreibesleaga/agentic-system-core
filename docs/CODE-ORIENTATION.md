@@ -16,7 +16,7 @@ truth; the engine is one implementation of it.
 
 | Folder | What it is | Start with |
 |---|---|---|
-| `spec/`, `schema/`, `ontology/`, `tests/vectors/` | **the standard**: rules, schemas, vocabulary, vectors. Frozen between release candidates | [SPEC-ORIENTATION.md](SPEC-ORIENTATION.md) |
+| `spec/`, `schema/`, `ontology/`, `tests/vectors/` | **the standard**: rules, schemas, vocabulary, vectors. Frozen at each release | [SPEC-ORIENTATION.md](SPEC-ORIENTATION.md) |
 | `src/` | **the engine**: five bounded contexts, a supporting context, the application layer, ports and adapters | [src/README.md](../src/README.md) |
 | `bin/` | the commands `agsc`, `agentic-system-core` and `agsc-host` | [bin/README.md](../bin/README.md) |
 | `index.js` | the package's programmatic entry: discovery constants, versions, `run()` | the file itself |

@@ -374,7 +374,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-08-28 | VERIFIED | yes | `prov-0001`, `prov-0002`, `prov-0013` | `application/cli/refresh-process-lane.test.js`, `application/cli/refresh-stops.test.js`, `application/cli/verbs-wired.test.js` +6 | `persona-k-live-board.feature#The agent lane cannot reach the slow lane`, `persona-k-live-board.feature#The NOW page shows the budget warning when a cap is reached` | — |
 | AGSC-08-29 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-08-30 | VERIFIED | yes | — | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-k.js`, `standard/rules.test.js` | `persona-b-contributor.feature#CI runs a lint-only review, no LLM call`, `persona-k-live-board.feature#The build stays deterministic while the lane is non-deterministic` | — |
-| AGSC-09-01 | VERIFIED | — | — | `composition/conform.test.js`, `distribution/hosts/profiles.test.js` | — | — |
+| AGSC-09-01 | VERIFIED | — | — | `composition/conform.test.js`, `distribution/hosts/profiles.test.js`, `docs/release-wording.test.js` | — | — |
 | AGSC-09-02 | VERIFIED | yes | — | `acceptance/steps/persona-l.js`, `application/cli/verbs-wired.test.js`, `e2e/real-bundles.test.js` | `persona-l-port-implementer.feature#The reference engine's Level-3 report` | — |
 | AGSC-09-03 | VERIFIED | yes | — | `acceptance/steps/persona-l.js`, `application/cli/verbs-wired.test.js`, `application/conformance.test.js` +1 | `persona-l-port-implementer.feature#The reference engine's Level-3 report` | — |
 | AGSC-09-04 | VERIFIED | — | — | `application/conformance.test.js`, `tools/validate-vectors-superseded.test.js` | — | `validate-vectors` |

@@ -664,6 +664,12 @@ uses, requires, excludes, contradicts and supersedes — change a composition, a
 broader, narrower and derived-from are navigational or provenance edges that never change one
 (AGSC-03-01, AGSC-03-18).
 
+**The 1.0 row of the declared-scope table, and the engine's claim (note of 2026-10-11).**
+"This version: `1.0.0`, after two public release candidates" counts the candidates published
+before it, from `1.0.0-rc.6` to `1.0.0-rc.7`. At `1.0.0` the reference engine claims Level 3,
+the full engine (AGSC-10-05); the claim, with what each of its parts rests on, is in
+`docs/CONFORMANCE-STATEMENTS.md` under "The reference engine's claim", and the README quotes it.
+
 **Capabilities planned for 1.1.** The plugin adapters "Deno/Bun/Workers" of the `FileSystem`
 port (§5.2) and the portability ADR-002 names — running the engine's library on Deno, Bun and
 Cloudflare Workers — are planned for 1.1. So are the real channel adapters of the addendum

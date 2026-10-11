@@ -5,7 +5,7 @@ A specification for publishing machine-discoverable knowledge bundles — the Ag
 What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the nine independent checkers of AGSC-09-90 — seven validators and two generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
 ## Status
-**Release candidate.** This tree states specification `1.0.0-rc.7`, the second public release candidate (the first was `1.0.0-rc.6`). `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0-rc.7` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install --pre agentic-system-core` (pip installs a release candidate only when asked with `--pre`).
+**Released.** This tree states specification `1.0.0`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install agentic-system-core`. The reference engine claims Level 3 ([its claim](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
 
 The specification's own site is [AgenticSystemCore.com](https://agenticsystemcore.com).
 
@@ -179,11 +179,25 @@ The official repository is <https://github.com/andreibesleaga/agentic-system-cor
 ## Reference engine
 
 The reference implementation of the specification lives in this repository,
-under `src/`. It **claims no conformance Level** yet: a claim of any Level exists
-only after a green run of that Level's vector set and is published in the form
-of AGSC-09-01 (AGSC-10-05). All sixteen
-verbs of AGSC-09-07 are implemented; `run` and `trace` are off by default, as
-AGSC-09-94 requires. `agsc init` adopts a folder of Markdown; before the first
+under `src/`. It claims **Level 3**, the full engine. A claim of any Level exists
+only after a green run of that Level's vector set and is published in the form of
+AGSC-09-01 (AGSC-10-05); the engine's claim is kept in
+[docs/CONFORMANCE-STATEMENTS.md](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim),
+with what each part of it rests on, and reads:
+
+> agentic-system-core 1.0.0 conforms to AgenticSystemCore 1.0.0, Level 3.
+> Verified against the published conformance vectors on 2026-10-11: 242 of 242
+> passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
+> chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
+> jcs, ledger, links, lint, prov, slug), 241 required and 1 optional, the 6
+> withdrawn cases excluded, with Unicode 17.0. Deployment profile:
+> cloudflare-pages — the reference profile: `_headers` and `_redirects` as
+> `agsc build` writes them. Surfaces: llms-txt (proved by disc-0013, disc-0014),
+> chunks (proved by chk-0001, chk-0002, chk-0003, chk-0004, chk-0005, chk-0006,
+> chk-0008), webmcp (proved by cli-0003).
+
+All sixteen verbs of AGSC-09-07 are implemented; `run` and `trace` are off by
+default, as AGSC-09-94 requires. `agsc init` adopts a folder of Markdown; before the first
 build the publisher adds `.well-known/security.txt` with a `Contact:` line (RFC
 9116) and commits once or sets `SOURCE_DATE_EPOCH`, as `init` says on its way out;
 `agsc ci` checks, and `agsc build` writes the site.
@@ -218,9 +232,12 @@ codes and output envelopes (AGSC-09-07 to AGSC-09-12) — the plugin contract of
 and their names and signatures may change in any release. The one exception is
 `run()` of `bin/agsc.js`, the entry the `agsc-cli` alias package calls.
 
-**Upgrading from 1.0.0-rc.6.** `CHANGELOG.md` has a section of that name: what a
-node built with rc.6 may now see refused, what changes in the built files, and
-what to do.
+**Upgrading from a release candidate.** `CHANGELOG.md` has one section for each
+step: [Upgrading from 1.0.0-rc.7](CHANGELOG.md#upgrading-from-100-rc7), under
+`1.0.0`, and [Upgrading from 1.0.0-rc.6](CHANGELOG.md#upgrading-from-100-rc6), under
+`1.0.0-rc.7`. Each says what a node built with the earlier version may now see
+refused, what changes in the built files, and what to do. A node still on
+`1.0.0-rc.6` reads the second section first, then the first.
 
 ## Connecting agents and repositories
 

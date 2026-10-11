@@ -50,6 +50,49 @@ are described in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-syste
 The levels, and the rules and vector areas each one covers, are defined in
 `spec/10-implementation-profiles.md`.
 
+## The reference engine's claim
+
+The reference engine in this repository publishes its own claim, as AGSC-10-05
+asks, in the form above:
+
+> agentic-system-core 1.0.0 conforms to AgenticSystemCore 1.0.0, Level 3.
+> Verified against the published conformance vectors on 2026-10-11: 242 of 242
+> passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
+> chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
+> jcs, ledger, links, lint, prov, slug), 241 required and 1 optional, the 6
+> withdrawn cases excluded, with Unicode 17.0. Deployment profile:
+> cloudflare-pages — the reference profile: `_headers` and `_redirects` as
+> `agsc build` writes them. Surfaces: llms-txt (proved by disc-0013, disc-0014),
+> chunks (proved by chk-0001, chk-0002, chk-0003, chk-0004, chk-0005, chk-0006,
+> chk-0008), webmcp (proved by cli-0003).
+
+What each part rests on:
+
+- **The run.** `agsc conform --level 3 --to conformance-report.json`, the
+  engine's own runner, so the claim names no other checker. The report's summary
+  is 242 passed, 0 failed and 6 skipped. The six skipped are the withdrawn cases,
+  which no claim counts for or against (AGSC-09-05); no required case failed or
+  was skipped.
+- **The runtime.** Node.js 24.21.0, the current release of the Node.js 24 line
+  that the continuous-integration run uses, with Unicode 17.0. The same run on
+  Node.js 22.13.0 (Unicode 16.0) and on Node.js 26.11.1 (Unicode 17.0) writes
+  the same report, byte for byte. All three Unicode versions are inside the
+  window AGSC-04-22 states.
+- **The deployment profile and the surfaces.** A node that `agsc build` writes
+  declares three surfaces in its discovery document, `llms-txt`, `chunks` and
+  `webmcp`, and the cases named above prove each of them (AGSC-11-19). It does
+  not declare `mcp`: the local tool server, `agsc mcp`, is a program a person
+  runs beside a Bundle, not a route of a node, and a 1.0 writer does not declare
+  it (AGSC-11-16). Cloudflare Pages is the reference profile of those that
+  `agsc-host list` prints; a node served another way names its own profile.
+- **What it does not say.** The claim is this project's own assertion about its
+  own engine (AGSC-09-03). It certifies nothing, and it says nothing about
+  another implementation or about any particular node.
+
+The numbers are re-run for each release, not copied: `node tools/count-artifacts
+--json` gives the case counts and the areas, and `tests/docs/release-wording.test.js`
+fails when the claim and that count disagree.
+
 ## What you must not say
 
 - Do not say "certified", "approved" or "official", or use any word that

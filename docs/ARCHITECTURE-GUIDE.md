@@ -135,7 +135,8 @@ Source: [diagrams/flow-conformance-chain.md](diagrams/flow-conformance-chain.md)
 4. The **checkers** check the specification, the vectors and a built node without
    importing the engine (AGSC-09-90).
 5. A **claim** names one Level and one released version and rests on a green run
-   (AGSC-10-01); the reference engine claims nothing before 1.0.0 (AGSC-10-05).
+   (AGSC-10-01); the reference engine claims Level 3 at 1.0.0 (AGSC-10-05,
+   [its claim](CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
 
 [RULE-COVERAGE.md](RULE-COVERAGE.md) lists, for every active rule, the checks that
 verify it.

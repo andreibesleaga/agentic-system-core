@@ -68,7 +68,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-007 | MAPPED | `AGSC-09-08`, `AGSC-09-09`, `AGSC-09-11` +1 | 5 vectors, 32 tests, 2 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
 | PRD-008 | MAPPED | `AGSC-00-18`, `AGSC-04-25`; served by `AGSC-00-17` | 1 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-009 | PARTLY | `AGSC-00-18`; served by `AGSC-02-94` | 2 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | — | — |
-| PRD-010 | MAPPED | `AGSC-00-12`, `AGSC-00-23`, `AGSC-00-25` +1 | 1 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-l-port-implementer.feature`, `persona-n-researcher.feature` | `docs/SPEC.md` |
+| PRD-010 | MAPPED | `AGSC-00-12`, `AGSC-00-23`, `AGSC-00-25` +1 | 1 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | `persona-l-port-implementer.feature`, `persona-n-researcher.feature` | `docs/SPEC.md` |
 | PRD-011 | MAPPED | `AGSC-06-01`, `AGSC-06-36` | 2 vectors, 13 tests, 1 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature` | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/user-flows.md` |
 | PRD-012 | MAPPED | `AGSC-00-18`; served by `AGSC-07-01`, `AGSC-08-27` | 0 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-013 | MAPPED | `AGSC-02-13` | 0 vectors, 6 tests, 1 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature` | — |
