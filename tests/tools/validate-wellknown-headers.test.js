@@ -194,7 +194,7 @@ it('AGSC-11-20: a restricted node is asked the cross-origin pair on its document
       const ctx = {
         alternate: [{ digest: [digest(llms)], href: `${at}/llms.txt`, type: 'text/plain' }],
         anchor: `${at}/`,
-        describedby: [{ 'agsc-generated-at': ['2026-01-01T00:00:00Z'], 'agsc-spec-version': ['1.0.0-rc.7'],
+        describedby: [{ 'agsc-generated-at': ['2026-01-01T00:00:00Z'], 'agsc-spec-version': ['1.0.0'],
           'agsc-visibility': ['restricted'], digest: [digest(graph)], href: `${at}/graph.jsonld`, type: 'application/ld+json' }],
         'https://w3id.org/agentic-system-core/rel#access': [{ href: `${at}/access/`, type: 'text/html' }],
       };

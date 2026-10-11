@@ -17,7 +17,7 @@ test('the frontmatter, lint and bundle area handlers are guarded', () => {
   // A real case of each area, one of each input shape the guard must see through,
   // with one member added that no branch reads: the pass becomes a fail naming it.
   const all = conformance.vectors(createFileSystem(ROOT));
-  const ctx = { root: ROOT, schemas: validate.schemas(readSchemas(ROOT)), specVersion: '1.0.0-rc.7' };
+  const ctx = { root: ROOT, schemas: validate.schemas(readSchemas(ROOT)), specVersion: '1.0.0' };
   for (const id of ['fm-0005', 'fm-0009', 'lint-0001', 'lint-0034', 'bundle-0006', 'bundle-0009']) {
     const vector = all.find((v) => v.id === id);
     assert.ok(vector, id);

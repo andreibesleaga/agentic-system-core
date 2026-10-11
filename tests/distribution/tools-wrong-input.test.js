@@ -44,7 +44,7 @@ function built() {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' }) };
 }
 
 /** The three hosts of the one tool contract: local server, module page tools, emitted page script. */

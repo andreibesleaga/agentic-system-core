@@ -276,7 +276,7 @@ function contentVersionCase(vector) {
       JSON.stringify(findings.map((f) => f.code))]);
     if (want.ledger_kind_of_built_commit !== undefined) {
       // The tag AGSC-04-25 could not use is still the tag AGSC-08-20a releases on.
-      const derived = ledger.derive(input.git_log, 'f'.repeat(40), '1.0.0-rc.7',
+      const derived = ledger.derive(input.git_log, 'f'.repeat(40), '1.0.0',
         { epoch: input.source_date_epoch });
       const built = derived.entries[input.git_log.length - 1];
       list.push([`${input.name} ledger kind`, built.kind === want.ledger_kind_of_built_commit,

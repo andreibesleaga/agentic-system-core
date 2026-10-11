@@ -31,7 +31,7 @@ const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const AGSC = path.join(ROOT, 'bin', 'agsc.js');
 const EPOCH = '1767225600';
 const INSTANT = '2026-01-01T00:00:00Z';
-const SPEC = '1.0.0-rc.7';
+const SPEC = '1.0.0';
 const OUT = 'dist/export/mermaid';
 const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
 

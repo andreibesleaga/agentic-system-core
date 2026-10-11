@@ -28,7 +28,7 @@ const yaml = require('../../src/knowledge/yaml.js');
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
-const SPEC = '1.0.0-rc.7';
+const SPEC = '1.0.0';
 
 const PROV = 'prov:\n  origin: human\n  operator: human:andreibesleaga\n';
 

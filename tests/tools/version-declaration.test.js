@@ -88,3 +88,107 @@ describe('plan item A4: the tools read a 1.0.0 declaration', () => {
     }
   });
 });
+
+/** Copy `rel` into `root`, turning only the version under test into the release; history literals stay. */
+function copyWithOnly(root, rel, from, to) {
+  const source = path.join(REPO, rel);
+  const target = path.join(root, rel);
+  if (fs.statSync(source).isDirectory()) {
+    fs.mkdirSync(target, { recursive: true });
+    for (const name of fs.readdirSync(source)) copyWithOnly(root, path.join(rel, name), from, to);
+    return;
+  }
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, fs.readFileSync(source, 'utf8').split(from).join(to));
+}
+
+describe('the declaration is read from its own line, never from a version quoted as history', () => {
+  it('validate-spec reports the declared release although the overview quotes earlier candidates', () => {
+    const root = tmpdir();
+    const declared = /`spec_version: "(\d+\.\d+\.\d+(?:-rc\.\d+)?)"`/u.exec(fs.readFileSync(path.join(REPO, 'spec', '00-overview.md'), 'utf8'))[1];
+    for (const rel of ['spec', 'docs/PRD.md']) copyWithOnly(root, rel, `spec_version: "${declared}"`, `spec_version: "${RELEASE}"`);
+    const overview = fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8');
+    assert.match(overview, CANDIDATE, 'the copy still quotes an earlier candidate as history');
+    const result = envelope('validate-spec', [root]);
+    assert.equal(result.json.spec_version, RELEASE);
+  });
+});
+
+describe('the tree states the version it releases, in every place that carries it', () => {
+  const read = (rel) => fs.readFileSync(path.join(REPO, rel), 'utf8');
+  const json = (rel) => JSON.parse(read(rel));
+  const declared = /`spec_version: "([^"]+)"`/u.exec(read('spec/00-overview.md'))[1];
+
+  it('the specification declares 1.0.0', () => {
+    assert.equal(declared, RELEASE);
+    assert.match(read('docs/SPEC.md'), new RegExp(`spec_version: "${RELEASE.replace(/\./gu, '\\.')}"`, 'u'));
+  });
+
+  it('the two packages, the alias dependency and the MCP Registry entry carry the same version', () => {
+    const pkg = json('package.json');
+    const alias = json('packages/agsc-cli/package.json');
+    const server = json('server.json');
+    assert.equal(pkg.version, RELEASE);
+    assert.equal(alias.version, RELEASE);
+    assert.equal(alias.dependencies['agentic-system-core'], RELEASE);
+    assert.equal(server.version, RELEASE);
+    assert.deepEqual(server.packages.map((p) => p.version), [RELEASE]);
+    const lock = json('package-lock.json');
+    assert.equal(lock.version, RELEASE);
+    assert.equal(lock.packages[''].version, RELEASE);
+  });
+
+  it('the engine states the declared version as the one it implements', () => {
+    assert.match(read('src/application/cli/main.js'), new RegExp(`const SPEC_VERSION = '${declared.replace(/\./gu, '\\.')}';`, 'u'));
+  });
+
+  it('the agent skill and its plugin copy name the release', () => {
+    for (const rel of ['skills/agentic-system-core/SKILL.md', 'plugins/agentic-system-core/skills/agentic-system-core/SKILL.md']) {
+      const text = read(rel);
+      assert.match(text, new RegExp(`version: "${RELEASE.replace(/\./gu, '\\.')}"`, 'u'), rel);
+      assert.doesNotMatch(text, CANDIDATE, rel);
+    }
+  });
+
+  it('every Bundle the distribution ships declares the release in its configuration and its root index', () => {
+    const roots = ['tests/fixtures/minimal', 'tests/fixtures/with-assets', 'tests/acceptance/bundle',
+      ...fs.readdirSync(path.join(REPO, 'examples', 'demos'), { withFileTypes: true }).filter((e) => e.isDirectory()).flatMap((demo) => {
+        const base = path.join('examples', 'demos', demo.name);
+        return fs.existsSync(path.join(REPO, base, 'agsc.config.json')) ? [base]
+          : fs.readdirSync(path.join(REPO, base)).map((sub) => path.join(base, sub)).filter((b) => fs.existsSync(path.join(REPO, b, 'agsc.config.json')));
+      })];
+    assert.ok(roots.length >= 9, 'the fixtures and the demos are found');
+    for (const base of roots) {
+      assert.equal(json(path.join(base, 'agsc.config.json')).spec_version, RELEASE, base);
+      assert.match(read(path.join(base, 'content', 'index.md')), new RegExp(`^spec_version: "?${RELEASE.replace(/\./gu, '\\.')}"?$`, 'mu'), base);
+    }
+  });
+
+  it('the vocabulary file records a modification after the last candidate was released', () => {
+    const ttl = read('ontology/agsc.ttl');
+    const modified = /dcterms:modified "(\d{4}-\d{2}-\d{2})"\^\^xsd:date/u.exec(ttl)[1];
+    const candidate = /^## \[1\.0\.0-rc\.7\] - (\d{4}-\d{2}-\d{2})$/mu.exec(read('CHANGELOG.md'))[1];
+    assert.ok(modified > candidate, `dcterms:modified ${modified} is after the 1.0.0-rc.7 release of ${candidate}`);
+  });
+
+  it('CITATION.cff names the release, its date and the paper it asks to be cited by', () => {
+    const YAML = require('yaml');
+    const cff = YAML.parse(read('CITATION.cff'));
+    assert.equal(String(cff.version), RELEASE);
+    const heading = new RegExp(`^## \\[${RELEASE.replace(/\./gu, '\\.')}\\] - (\\d{4}-\\d{2}-\\d{2})$`, 'mu').exec(read('CHANGELOG.md'));
+    assert.ok(heading, 'the change log dates the release');
+    const released = cff['date-released'] instanceof Date ? cff['date-released'].toISOString().slice(0, 10) : String(cff['date-released']);
+    assert.equal(released, heading[1], 'one release day in the change log and the citation file');
+    assert.ok((cff.identifiers || []).some((i) => i.type === 'doi' && /^10\.5281\/zenodo\.\d+$/u.test(i.value)), 'the concept DOI is listed');
+    assert.equal(cff['preferred-citation'].doi, cff.identifiers.find((i) => i.type === 'doi').value, 'the paper is cited by the same concept DOI');
+    assert.equal(cff.doi, undefined, 'no software DOI is claimed');
+  });
+
+  it('the change log opens the release section with the upgrade note from the last candidate', () => {
+    const log = read('CHANGELOG.md');
+    const at = log.search(new RegExp(`^## \\[${RELEASE.replace(/\./gu, '\\.')}\\] - \\d{4}-\\d{2}-\\d{2}$`, 'mu'));
+    assert.ok(at > 0, 'the release has its dated heading');
+    const section = log.slice(at).split(/^## \[/mu)[1];
+    assert.match(section.split('\n').filter(Boolean)[1], /^### Upgrading from 1\.0\.0-rc\.7$/u);
+  });
+});

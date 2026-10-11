@@ -22,10 +22,10 @@ const codes = (version, own) => configOnly(lintVerb.configAndRoot({ config: conf
   .map((f) => [f.code, f.severity]);
 
 test('another MAJOR is AGSC-E004 and exit class 2; a newer MINOR warns; the own version is silent', () => {
-  assert.deepStrictEqual(codes('2.0.0', '1.0.0-rc.7'), [['AGSC-E004', 'error']]);
+  assert.deepStrictEqual(codes('2.0.0', '1.0.0'), [['AGSC-E004', 'error']]);
   assert.ok(main.USAGE_CLASS_CODES.has('AGSC-E004'));
-  assert.deepStrictEqual(codes('1.1.0', '1.0.0-rc.7'), [['AGSC-E506', 'warn']]);
-  assert.deepStrictEqual(codes('1.0.0-rc.7', '1.0.0-rc.7'), []);
+  assert.deepStrictEqual(codes('1.1.0', '1.0.0'), [['AGSC-E506', 'warn']]);
+  assert.deepStrictEqual(codes('1.0.0', '1.0.0'), []);
   assert.deepStrictEqual(codes('1.0.0', '1.2.3'), []);
 });
 

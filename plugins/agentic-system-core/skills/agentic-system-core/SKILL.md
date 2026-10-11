@@ -3,14 +3,14 @@ name: agentic-system-core
 description: Use the AgenticSystemCore engine (command `agsc`) to turn a folder of Markdown into a knowledge node and to work in one as an agent — initialise, lint, build, verify, read, cite, propose, compose, export, import, skill packs and live boards. Use when a project holds `agsc.config.json`, when the user mentions agsc, a Bundle, a knowledge node, AgenticSystemCore or the Agentic Knowledge Web, or when an agent must read, cite or change a published node.
 license: CC0-1.0
 metadata:
-  version: "1.0.0-rc.7"
+  version: "1.0.0"
   homepage: "https://agenticsystemcore.com/docs/how-to-use/"
   repository: "https://github.com/andreibesleaga/agentic-system-core"
 ---
 
 # AgenticSystemCore for agents
 
-A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.0.0-rc.7`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
+A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.0.0`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
 
 ## 1. What you never do
 
@@ -39,7 +39,7 @@ The configuration keys are in `references/configuration.md`.
 
 ```bash
 node --version            # 22.13 or later
-npx -y agsc-cli --version # agsc 1.0.0-rc.7; when the person wants it installed: npm install -g agentic-system-core
+npx -y agsc-cli --version # agsc 1.0.0; when the person wants it installed: npm install -g agentic-system-core
 cd <bundle>               # every verb runs in the folder that holds agsc.config.json
 ```
 

@@ -37,7 +37,7 @@ function build(options) {
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
   return site.build(bundle, { clock, fs },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2', ...(options || {}) });
+    { specVersion: '1.0.0', version: '0.0.2', ...(options || {}) });
 }
 
 test('AGSC-04-25: the build derives the version from the git-log file it is given', () => {
@@ -71,7 +71,7 @@ test('AGSC-04-25: ONE value reaches every stamping place', () => {
   // (3) the NOW line, with the four values in AGSC-06-22's order.
   assert.match(String(files.get('/now.md')),
     new RegExp(`\\ncontent version ${VERSION}, built at 2026-01-01T00:00:00Z, `
-      + 'fingerprint [0-9a-f]{64}, specification 1\\.0\\.0-rc\\.7\\n', 'u'));
+      + 'fingerprint [0-9a-f]{64}, specification 1\\.0\\.0\\n', 'u'));
   // The fingerprint IS the SHA-256 of graph.nq (AGSC-04-15), not some other digest.
   const { createHash } = require('node:crypto');
   const fingerprint = createHash('sha256').update(String(files.get('/graph.nq')), 'utf8').digest('hex');
@@ -140,7 +140,7 @@ test('AGSC-11-20: a restricted node stamps nothing a content oracle could read',
   };
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
   const { files } = site.build(bundle, { clock, fs },
-    { bundleVersion: VERSION, gitLog: GIT_LOG, specVersion: '1.0.0-rc.7', version: '0.0.2' });
+    { bundleVersion: VERSION, gitLog: GIT_LOG, specVersion: '1.0.0', version: '0.0.2' });
   const anchor = JSON.parse(String(files.get('/.well-known/knowledge-linkset'))).linkset[0].describedby[0];
   for (const gone of ['agsc-bundle-version', 'agsc-bundle-hash', 'agsc-counts']) {
     assert.strictEqual(anchor[gone], undefined, `${gone} reached a restricted node`);

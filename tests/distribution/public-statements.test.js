@@ -69,7 +69,7 @@ function build(dir, options = {}) {
   return {
     bundle,
     ports: { clock, fs },
-    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2', ...options }),
+    ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2', ...options }),
   };
 }
 
@@ -317,7 +317,7 @@ test('the year is the BUILD INSTANT\'s year, never a clock', () => {
     const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
     const clock = createClock({ env: { SOURCE_DATE_EPOCH: epoch } });
     return String(site.build(bundle, { clock, fs },
-      { specVersion: '1.0.0-rc.7', version: '0.0.2' }).files.get('/index.html'));
+      { specVersion: '1.0.0', version: '0.0.2' }).files.get('/index.html'));
   };
   assert.match(build(EPOCH), /&#169; 2026 /u);
   assert.match(build('1104537600'), /&#169; 2005 /u);   // 2005-01-01T00:00:00Z
@@ -335,7 +335,7 @@ test('AGSC-09-11: under ci the publication findings are reported by ONE lane', (
   const ctx = { ports: { clock, fs } };
   const result = ci.ci(bundle, { clock, fs }, {
     lint: (loaded) => lintLane.lane(ctx, loaded).findings,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     version: '0.0.2',
   });
   assert.strictEqual(result.findings.filter((f) => f.code === 'AGSC-E901').length, 1,
@@ -358,7 +358,7 @@ test('AGSC-04-09 + RFC 9116: a defaulted build instant FAILS instead of publishi
   const clock = createClock({ env: {} });                    // no epoch, no git history
   assert.strictEqual(clock.now(), 0, 'the fixture of this test is wrong');
   const { files, findings } = site.build(bundle, { clock, fs },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+    { specVersion: '1.0.0', version: '0.0.2' });
   assert.ok(!files.has('/.well-known/security.txt'),
     `an expired security contact was published: ${files.get('/.well-known/security.txt')}`);
   const fault = findings.find((f) => f.file === '.well-known/security.txt' && f.severity !== 'warn');
@@ -377,7 +377,7 @@ test('AGSC-04-02: the derived expiry stays a pure function of the build instant'
     const fs = createFileSystem(dir);
     const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
     const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-    return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' })
+    return site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' })
       .files.get('/.well-known/security.txt');
   };
   const first = String(run());
@@ -388,6 +388,6 @@ test('AGSC-04-02: the derived expiry stays a pure function of the build instant'
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const fromGit = createClock({ env: {}, lastCommitSeconds: Number(EPOCH) });
   assert.match(String(site.build(bundle, { clock: fromGit, fs },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2' }).files.get('/.well-known/security.txt')),
+    { specVersion: '1.0.0', version: '0.0.2' }).files.get('/.well-known/security.txt')),
   new RegExp(`^Expires: ${DERIVED_EXPIRES}$`, 'mu'));
 });

@@ -157,7 +157,7 @@ function fixtureSite(ctx, vector) {
   const schemas = validate.schemas(readSchemas((ctx && ctx.root) || '.'));
   const bundle = loadBundle(fs, { schemas });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: FIXTURE_EPOCH } });
-  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' });
 }
 
 /**
@@ -447,7 +447,7 @@ function runCli0008(vector) {
     })),
   };
   const clock = { iso: () => FIXTURE_INSTANT, now: () => Number(FIXTURE_EPOCH) };
-  const built = site.build(bundle, { clock }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+  const built = site.build(bundle, { clock }, { specVersion: '1.0.0', version: '0.0.2' });
   const page = evaluateWebmcp(built, {});
   const local = tools(bundle, {});
   const problems = [];

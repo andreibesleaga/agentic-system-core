@@ -207,7 +207,7 @@ test('agsc build over a real git history publishes /ledger.jsonl, and verify --l
     assert.strictEqual(built.status, 0, built.stderr);
     const text = fs.readFileSync(path.join(dir, 'www', 'ledger.jsonl'), 'utf8');
     const lines = text.trim().split('\n').map((l) => JSON.parse(l));
-    assert.deepStrictEqual(lines.map((l) => [l.kind, l.actor]), [['commit', 'human:ada'], ['build', 'process:agsc/1.0.0-rc.7']]);
+    assert.deepStrictEqual(lines.map((l) => [l.kind, l.actor]), [['commit', 'human:ada'], ['build', 'process:agsc/1.0.0']]);
     const tree = cp.execFileSync('git', ['rev-parse', 'HEAD:content'], { cwd: dir, encoding: 'utf8' }).trim();
     assert.strictEqual(lines[1].ref, tree, 'the build entry names the committed content tree');
     const wellknown = fs.readFileSync(path.join(dir, 'www', '.well-known', 'knowledge-linkset'), 'utf8');

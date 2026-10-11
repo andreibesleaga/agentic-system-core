@@ -1,12 +1,10 @@
 # Citation File Format 1.2.0 — https://citation-file-format.github.io
 # How to cite this work. Read by GitHub, Zenodo and reference managers.
 #
-# Filled in at the 1.0.0 release, and not before:
-#   doi:           the Zenodo DOI of the deposit, e.g. 10.5281/zenodo.0000000
-#   version:       1.0.0
-#   date-released: the release date, YYYY-MM-DD
-# Each is left out rather than guessed until the 1.0.0 release: a citation that
-# names a DOI which does not resolve is worse than one that names none.
+# The release this file describes is version 1.0.0 (`version`, `date-released`). The
+# DOI under `identifiers` is the concept DOI of the paper's Zenodo record, which always
+# resolves to the paper's latest version; the paper is the preferred citation. The
+# software itself carries no DOI of its own.
 #
 # Written with AI assistance, reviewed and published by a person. (CFF 1.2.0 has no
 # note field and allows no extra key, so this sentence lives in a comment.)
@@ -19,6 +17,8 @@ abstract: >-
   machine-readable discovery documents, so that both people and software agents
   can find, read and cite the same material with its provenance intact.
 type: software
+version: 1.0.0
+date-released: 2026-10-14
 authors:
   - family-names: Besleaga
     given-names: Andrei N.
@@ -35,3 +35,19 @@ keywords:
   - linked data
   - static site
   - specification
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23052709
+    description: The concept DOI of the paper's record on Zenodo (every version of the paper).
+preferred-citation:
+  type: generic
+  title: "AgenticSystemCore: Distributed Knowledge Bundles and Runnable Systems, for People and Agents"
+  authors:
+    - family-names: Besleaga
+      given-names: Andrei N.
+      orcid: https://orcid.org/0009-0001-3464-5283
+  year: 2026
+  publisher:
+    name: Zenodo
+  doi: 10.5281/zenodo.23052709
+  url: https://doi.org/10.5281/zenodo.23052709

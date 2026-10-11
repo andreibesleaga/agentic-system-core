@@ -94,8 +94,8 @@ test('the alias is the same version and depends on the engine EXACTLY', () => {
 test('the version is one SemVer string, and the CLI reports that one', () => {
   assert.match(manifest.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u);
   // The engine version and the SPECIFICATION version are two different numbers
-  // (AGSC-09-90). At this release candidate the maintainer publishes them equal,
-  // and they are still read from two different places.
+  // (AGSC-09-90). The maintainer publishes them equal, and they are still read
+  // from two different places.
   const main = fs.readFileSync(path.join(ROOT, 'src', 'application', 'cli', 'main.js'), 'utf8');
   const declared = /const SPEC_VERSION = '([^']+)';/u.exec(main);
   assert.ok(declared, 'src/application/cli/main.js must declare SPEC_VERSION');

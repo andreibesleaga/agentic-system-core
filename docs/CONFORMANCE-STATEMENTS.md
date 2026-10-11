@@ -25,8 +25,8 @@ vectors, and nobody needs permission to publish the result.
 > conformance vectors on «date»: «passed» of «total» passed in the
 > «named» areas, with Unicode «version»«, using «checker» ».
 
-The specification version is the full one, a release candidate named as such
-(`1.0.0-rc.7`, not `1.0`), and the checker part is needed only when you ran the
+The specification version is the full one (`1.0.0`, not `1.0`; a release
+candidate is named with its pre-release part), and the checker part is needed only when you ran the
 cases with someone else's checker rather than your own. Every element a claim
 states is listed once, in rule AGSC-09-01.
 

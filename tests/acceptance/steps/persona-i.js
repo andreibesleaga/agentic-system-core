@@ -387,7 +387,7 @@ module.exports = [
       world.write('agsc.config.json', `${JSON.stringify({
         bundle: { id: 'old-site-node', operator: 'human:andreibesleaga' },
         site: { base: 'https://example.org/', tdm_crawlers: ['CCBot', 'GPTBot'], title: 'Old site node' },
-        spec_version: '1.0.0-rc.7',
+        spec_version: '1.0.0',
       }, null, 2)}\n`);
       world.write('.well-known/security.txt', 'Contact: https://security.example.net/report\n');
     },

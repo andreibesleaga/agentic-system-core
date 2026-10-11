@@ -46,7 +46,7 @@ function run(argv, dir, options = {}) {
     env: { SOURCE_DATE_EPOCH: EPOCH, ...(options.env || {}) },
     ports: { fs: createFileSystem(dir), proc: options.proc },
     root: dir,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr,
     stdout,
     version: '0.0.0',

@@ -227,7 +227,7 @@ test('AGSC-00-17: an item\'s other MAJOR is compared with the configuration\'s s
   const r = await agsc(dir, ['lint', '--json']);
   const e204 = r.findings.find((f) => f.code === 'AGSC-E204' && f.key === 'spec_version');
   assert.ok(e204, JSON.stringify(r.findings));
-  assert.match(e204.message, /carries another MAJOR than the configuration's "1\.0\.0-rc\.7"/u);
+  assert.match(e204.message, /carries another MAJOR than the configuration's "1\.0\.0"/u);
 });
 
 // ---------------------------------------------------------------- refresh

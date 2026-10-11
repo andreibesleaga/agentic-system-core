@@ -390,7 +390,7 @@ describe('validate-spec — the helpers it exports', () => {
 describe('validate-spec — the real distribution', () => {
   it('runs on the shipped spec/ and reports only known, recorded items', () => {
     const { code, json } = envelope('validate-spec', [REPO]);
-    assert.equal(json.spec_version, '1.0.0-rc.7');
+    assert.equal(json.spec_version, '1.0.0');
     assert.equal(json.version, JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8')).version);
     assert.equal(code, json.counts.error === 0 ? 0 : 1);
     // Every finding is a registered code and carries a real file:line.

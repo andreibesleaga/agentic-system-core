@@ -236,7 +236,7 @@ module.exports = [
   {
     pattern: '"/now/" and "/now.md" carry the line "content version …, built at …, fingerprint …, specification …" (AGSC-06-22)',
     run(world) {
-      const line = /^content version \S+, built at 2026-01-01T00:00:00Z, fingerprint [0-9a-f]{64}, specification 1\.0\.0-rc\.7$/mu;
+      const line = /^content version \S+, built at 2026-01-01T00:00:00Z, fingerprint [0-9a-f]{64}, specification 1\.0\.0$/mu;
       const md = line.exec(world.state.nowMd);
       assert.ok(md, world.state.nowMd);
       assert.ok(world.state.nowHtml.includes(`<p>${md[0]}</p>`), 'the HTML page does not carry the same line');

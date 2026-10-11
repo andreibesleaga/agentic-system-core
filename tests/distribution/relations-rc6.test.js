@@ -35,7 +35,7 @@ function level2(extra) {
         'agsc-bundle-version': ['v1.0.0'],
         'agsc-counts': ['clusters=0', 'concepts=1', 'episodes=0', 'gates=0', 'lessons=0', 'procedures=0'],
         'agsc-generated-at': ['2026-09-16T00:00:00Z'],
-        'agsc-spec-version': ['1.0.0-rc.7'],
+        'agsc-spec-version': ['1.0.0'],
         digest: [DIGEST],
         href: `${BASE}graph.jsonld`,
         type: 'application/ld+json',

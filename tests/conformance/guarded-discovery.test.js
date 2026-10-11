@@ -24,7 +24,7 @@ function caseOf(id) {
 test('the discovery area handler is guarded', () => {
   // A Level-0 document, a set of sub-cases, and the cases the shipped checker judges:
   // with one member added that no branch reads, the pass becomes a fail naming it.
-  const ctx = { root: ROOT, specVersion: '1.0.0-rc.7' };
+  const ctx = { root: ROOT, specVersion: '1.0.0' };
   for (const id of ['disc-0004', 'disc-0017', 'disc-0022']) {
     const vector = caseOf(id);
     assert.equal(area.run(vector, ctx).status, 'pass', id);

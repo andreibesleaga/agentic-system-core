@@ -81,7 +81,7 @@ function ctxFor(dir, options = {}) {
     },
     root: dir,
     runCwd: options.runCwd,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr: { write: (text) => lines.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},
@@ -204,7 +204,7 @@ test('the pack `build` publishes and the pack `skills` writes are the same bytes
         .schemas(require('../../../src/adapters/node-fs.js').readSchemas(ROOT)),
     }),
     { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: createFileSystem(dir) },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2' },
+    { specVersion: '1.0.0', version: '0.0.2' },
   );
   assert.strictEqual(built.files.get('/skills/agent-patterns/SKILL.md'),
     read(dir, 'dist/skills/agent-patterns/SKILL.md'));

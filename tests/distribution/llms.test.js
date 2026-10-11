@@ -6,7 +6,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const llms = require('../../src/distribution/llms.js');
 
-const OPTIONS = { generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.7' };
+const OPTIONS = { generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0' };
 const BUNDLE = {
   base: 'https://a.example/',
   title: 'Node',

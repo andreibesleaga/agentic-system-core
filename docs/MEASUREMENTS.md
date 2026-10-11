@@ -330,7 +330,7 @@ Every figure is from this document; nothing is rounded up.
 
 | quantity | value |
 |---|---|
-| specification version measured | 1.0.0-rc.7 (measured 2026-10-07) |
+| specification version measured | measured on 2026-10-07 at 1.0.0-rc.7 |
 | rules declared / active / reserved | 343 / 332 / 11 |
 | conformance vectors: total / required / optional / withdrawn | 185 / 179 / 1 / 5 |
 | vector run | 180 pass, 0 fail, 5 skipped (the 5 withdrawn) |

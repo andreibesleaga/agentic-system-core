@@ -17,7 +17,7 @@ const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const ALL = conformance.vectors(createFileSystem(ROOT));
-const CTX = { root: ROOT, schemas: validate.schemas(readSchemas(ROOT)), specVersion: '1.0.0-rc.7' };
+const CTX = { root: ROOT, schemas: validate.schemas(readSchemas(ROOT)), specVersion: '1.0.0' };
 
 test('the chunks, export, links, prov and slug area handlers are guarded', () => {
   // A real case of each area and of each input shape, with one member added that no

@@ -3,7 +3,7 @@
 **Who this is for:** a developer adding a capability without changing the engine. **Read after:** [ARCHITECTURE-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ARCHITECTURE-GUIDE.md) §2 (where each kind attaches).
 
 **Status:** the engine's own contract, version **1.0.0** of the plugin API, for
-specification version `1.0.0-rc.7`. Added at rc.6.
+specification version `1.0.0`. Added at rc.6.
 
 This document is for someone who wants to add a capability to a node without
 forking the engine. It says what you may add, what your code may and may not do,

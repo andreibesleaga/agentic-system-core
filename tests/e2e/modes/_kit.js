@@ -169,7 +169,7 @@ function bundle(prefix, { base = 'https://proj.example/', id = prefix, site = {}
     build: { out: 'www/' },
     bundle: { id, operator: 'human:tester' },
     site: { base, title: id, ...site },
-    spec_version: '1.0.0-rc.7',
+    spec_version: '1.0.0',
     ...config,
   }, null, 2)}\n`);
   return dir;

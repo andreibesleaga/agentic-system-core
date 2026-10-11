@@ -36,7 +36,7 @@ function bundleOf(items) {
 
 function planOf(items, options = {}) {
   return steer.plan(bundleOf(items), {
-    generatedAt: '2026-01-01T00:00:00Z', nowState: NOW, specVersion: '1.0.0-rc.7', ...options,
+    generatedAt: '2026-01-01T00:00:00Z', nowState: NOW, specVersion: '1.0.0', ...options,
   });
 }
 
@@ -117,7 +117,7 @@ test('AGSC-01-29: the provenance header, the terms and the fenced prose are all 
   assert.match(text, /\nlicense: CC-BY-4\.0\n/u);
   // AGSC-06-18: a CC BY Bundle's `terms` line names its own licence.
   assert.match(text, /\nterms: CC-BY-4\.0\n/u);
-  assert.match(text, /\nspec_version: 1\.0\.0-rc\.7\n/u);
+  assert.match(text, /\nspec_version: 1\.0\.0\n/u);
   assert.match(text, /\ngenerated_at: 2026-01-01T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov\.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n/u);
   assert.match(text, /```text agsc-content\n/u);
   assert.ok(text.endsWith('\n'));
@@ -232,6 +232,6 @@ test('flatten() leaves an already-flat record alone', () => {
 test('AGSC-04-25: the steer header states the content version it was handed', () => {
   const planned = require('../../src/interchange/steer.js').plan(
     { config: { site: { base: 'https://x.example/', title: 'X' } }, items: [] },
-    { bundleVersion: 'v9.9.9', generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.7' });
+    { bundleVersion: 'v9.9.9', generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0' });
   assert.ok(planned.files[0].text.split('\n').includes('bundle_version: v9.9.9'));
 });

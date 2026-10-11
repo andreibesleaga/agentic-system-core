@@ -83,7 +83,7 @@ function refresh(dir, { epoch = EPOCH, json = true, agent = 'worker' } = {}) {
     env: epoch === null ? {} : { SOURCE_DATE_EPOCH: epoch },
     ports: { fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr,
     stdout,
     version: '0.0.0',

@@ -27,7 +27,7 @@ const REL_ACCESS = `${discovery.REL}access`;
 const BASE = {
   bundle: { id: 'minimal' },
   site: { base: 'https://minimal.example/', title: 'Minimal Bundle' },
-  spec_version: '1.0.0-rc.7',
+  spec_version: '1.0.0',
 };
 
 /** The findings of the configuration check alone. */

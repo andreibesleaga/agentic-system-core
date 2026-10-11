@@ -8,13 +8,13 @@
     "url": "https://github.com/andreibesleaga/agentic-system-core",
     "source": "github"
   },
-  "version": "1.0.0-rc.7",
+  "version": "1.0.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "agentic-system-core",
-      "version": "1.0.0-rc.7",
+      "version": "1.0.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

@@ -587,7 +587,7 @@ standards body or a registry that has not acted on it.
 **What the reference distribution claims today: nothing.** AGSC-10-05 says that a
 claim of any Level "exists only after a green run of that Level's set", and that the
 reference implementation publishes its own claim in the form of AGSC-09-01; it states
-no future event. At `1.0.0-rc.7` the reference engine passes
+no future event. At `1.0.0` the reference engine passes
 every vector of the set that is not withdrawn, and skips only the withdrawn ones,
 which no claim counts (the counts are the
 conformance runner's own summary line, and `node tools/count-artifacts --json` gives

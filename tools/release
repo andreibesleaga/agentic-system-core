@@ -629,7 +629,7 @@ function checklist(version, bump = true) {
     `In a fresh temporary directory: npm install agentic-system-core@${v}`,
     '    and npx agsc-cli --version                      # the live smoke test',
     `The PyPI half, in ../${PYTHON_DIR}: its own tag, its own`,
-    '    trusted-publishing workflow, then pip install --pre in a fresh venv.',
+    `    trusted-publishing workflow, then pip install ${/-/u.test(v) ? '--pre ' : ''}agentic-system-core==${pep440(v) || v} in a fresh venv.`,
     'Capture the release page and both package pages in the Wayback Machine.',
   ];
   const numbered = [];

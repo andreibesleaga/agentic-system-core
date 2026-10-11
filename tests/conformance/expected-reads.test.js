@@ -53,7 +53,7 @@ test('the build and cli area handlers are guarded', () => {
   // A real case of each area with one member added that no branch reads: the pass the
   // handler would give becomes a fail naming that member.
   const all = conformance.vectors(createFileSystem(ROOT));
-  const ctx = { root: ROOT, specVersion: '1.0.0-rc.7' };
+  const ctx = { root: ROOT, specVersion: '1.0.0' };
   for (const id of ['build-0016', 'cli-0010']) {
     const vector = all.find((v) => v.id === id);
     const area = require(`./areas/${vector.area}.js`);

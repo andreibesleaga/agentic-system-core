@@ -47,7 +47,7 @@
 { "counts": { "error": 0, "warn": 0 },
   "findings": [],
   "schema": "agsc.diagnostics.v1",
-  "spec_version": "1.0.0-rc.7",
+  "spec_version": "1.0.0",
   "status": "pass",
   "verb": "lint",
   "version": "0.1.0" }

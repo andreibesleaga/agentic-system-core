@@ -164,7 +164,7 @@ test('AGSC-07-12: decision records of items the closure added follow in added[] 
   const result = compose(items, ['z', 'p', 'y']);
   const records = harness.decisionRecords(result, {
     items, instant: '2026-01-01T00:00:00Z', licenseProse: 'CC-BY-4.0', selectionDigest: '0'.repeat(64),
-    specVersion: '1.0.0-rc.7', base: 'https://example.org/',
+    specVersion: '1.0.0', base: 'https://example.org/',
   });
   assert.deepStrictEqual(records.map((r) => r.path),
     ['decisions/0001-z.md', 'decisions/0002-y.md', 'decisions/0003-b.md', 'decisions/0004-m.md']);
@@ -184,7 +184,7 @@ test('AGSC-07-16: every emitted file states both licence facts', () => {
   const result = compose(items, ['a', 'p']);
   const { files } = harness.emit(result, {
     items, instant: '2026-01-01T00:00:00Z', licenseProse: 'CC-BY-4.0', selectionDigest: '0'.repeat(64),
-    specVersion: '1.0.0-rc.7', base: 'https://example.org/', name: '0'.repeat(16),
+    specVersion: '1.0.0', base: 'https://example.org/', name: '0'.repeat(16),
   });
   assert.strictEqual(files.size, 7);
   for (const [file, text] of files) {

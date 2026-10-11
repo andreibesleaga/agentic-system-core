@@ -30,7 +30,7 @@ const VERBS = [
  * (`options.spec_version`), which is what keeps a released vector reproducible
  * across an rc bump (AGSC-00-16).
  */
-const SPEC_VERSION = '1.0.0-rc.7';
+const SPEC_VERSION = '1.0.0';
 
 // The five global flags of AGSC-09-09; every verb parser gets these.
 const GLOBAL_FLAGS = [
@@ -519,7 +519,7 @@ function helpText(version, verb) {
  *   are honoured (AGSC-09-09); never read from `process.env` directly here.
  * - root: the Bundle root (default '.').
  * - specVersion/version: OPTIONAL overrides for the envelope's corresponding
- *   members; default to SPEC_VERSION ('1.0.0-rc.7') and package.json's
+ *   members; default to SPEC_VERSION ('1.0.0') and package.json's
  *   version. A test
  *   harness pins these per-vector (e.g. cli-0002's options.version) so the
  *   envelope stays reproducible independent of the engine's own release.

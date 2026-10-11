@@ -13,7 +13,7 @@ const { readSchemas } = require('../../src/adapters/node-fs.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const schemas = validate.schemas(readSchemas(ROOT));
-const config = { spec_version: '1.0.0-rc.7' };
+const config = { spec_version: '1.0.0' };
 
 function concept(extra) {
   return {
@@ -39,7 +39,7 @@ test('AGSC-00-17: an item of another MAJOR is AGSC-E204 on the spec_version key'
 });
 
 test('AGSC-00-17: the same MAJOR, or no spec_version at all, raises nothing', () => {
-  assert.ok(!codes(validate.item(concept({ spec_version: '1.0.0-rc.7' }), { schemas, config, slug: 'handoff' })).includes('AGSC-E204'));
+  assert.ok(!codes(validate.item(concept({ spec_version: '1.0.0' }), { schemas, config, slug: 'handoff' })).includes('AGSC-E204'));
   assert.ok(!codes(validate.item(concept({ spec_version: '1.4.2' }), { schemas, config, slug: 'handoff' })).includes('AGSC-E204'));
   assert.ok(!codes(validate.item(concept(), { schemas, config, slug: 'handoff' })).includes('AGSC-E204'));
   // Without a Bundle root to fix the MAJOR the check has nothing to compare with.

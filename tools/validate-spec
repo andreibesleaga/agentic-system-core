@@ -332,7 +332,10 @@ function run(argv, io) {
     findings.push(finding('AGSC-E901', 'spec/09-conformance.md', 1,
       'the conformance section that carries the section 9.4 registry is missing (AGSC-09-91)'));
   }
-  const declared = ((texts.get('00-overview.md') || '').match(/\d+\.\d+\.\d+-rc\.\d+/u) || ['unknown'])[0];
+  // The declaration is the `spec_version: "<version>"` line, a release or a candidate, and
+  // never the first candidate literal of the file: a released overview still quotes the
+  // candidates before it as history (the pattern of `tools/count-artifacts`).
+  const declared = ((texts.get('00-overview.md') || '').match(/spec_version: "(\d+\.\d+\.\d+(?:-rc\.\d+)?)"/u) || [null, 'unknown'])[1];
   if (declared === 'unknown' && texts.has('00-overview.md')) {
     findings.push(finding('AGSC-E901', 'spec/00-overview.md', 1,
       'the overview declares no spec_version, so every version comparison below is vacuous'

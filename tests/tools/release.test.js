@@ -137,6 +137,13 @@ describe('1. one version, in one place', () => {
     assert.ok(!/The PyPI half of,/u.test(text));
   });
 
+  it('the PyPI smoke test asks pip for a pre-release only when the version is one', () => {
+    assert.match(release.checklist('1.0.0-rc.7', false).join('\n'), /then pip install --pre agentic-system-core==1\.0\.0rc7 in a fresh venv/u);
+    const final = release.checklist('1.0.0', false).join('\n');
+    assert.match(final, /then pip install agentic-system-core==1\.0\.0 in a fresh venv/u);
+    assert.doesNotMatch(final, /--pre/u);
+  });
+
   it('a version that is not semver is a usage error, exit 2', () => {
     assert.equal(capture('release', ['--version', 'one']).code, 2);
     assert.equal(capture('release', ['--version=1.2']).code, 2);
