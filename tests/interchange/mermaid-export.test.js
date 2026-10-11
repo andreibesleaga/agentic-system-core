@@ -247,7 +247,7 @@ test('labels are quoted and escaped; ids are prefixed and clear of reserved word
   assert.strictEqual(adapter.nodeId('class-state-graph'), 'n_class_state_graph');
   assert.strictEqual(adapter.subgraphId('end'), 'c_end');
   const out = adapter.run({
-    config: { site: { base: 'https://x.example/' } },
+    config: { releases: { next: true }, site: { base: 'https://x.example/' } },
     items: [
       { frontmatter: { title: 'A "quoted" <title>', type: 'concept', requires: ['graph#part'] }, slug: 'end', type: 'concept' },
       { frontmatter: { title: 'Graph', type: 'concept' }, slug: 'graph', type: 'concept' },
@@ -255,7 +255,7 @@ test('labels are quoted and escaped; ids are prefixed and clear of reserved word
       { frontmatter: { title: 'Gone', type: 'concept', status: 'retired' }, slug: 'gone', type: 'concept' },
     ],
   }, { instant: INSTANT, sha256, specVersion: SPEC });
-  // `releases` does not hold `next` back here, so `held` is published; a retired item never is.
+  // `releases` sets `next` to true here, so `held` is published; a retired item never is.
   assert.deepStrictEqual(out.files.map((f) => f.path), ['items/end.mmd', 'items/graph.mmd', 'items/held.mmd']);
   const text = out.files[0].text;
   assert.match(text, /^ {2}n_end\["A #quot;quoted#quot; #lt;title#gt;"\]$/mu);

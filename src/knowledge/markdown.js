@@ -21,6 +21,7 @@
 
 const MarkdownIt = require('markdown-it');
 const { nfc } = require('./unicode.js');
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
 
 /** One renderer instance: markdown-it is stateless across `render` calls. */
 const md = new MarkdownIt({ html: false, linkify: false, typographer: false });
@@ -96,6 +97,22 @@ function lineOf(token, fallback) {
 }
 
 /**
+ * The line breaks one child of an inline token spans, so that a reference or a
+ * construct in the second line of a paragraph is reported on that line and not on
+ * the paragraph's first (AGSC-09-11): a soft or hard break, and a line feed kept in
+ * text or inline HTML. (A code span's line feed is read as a space by CommonMark and
+ * leaves no trace in its token, so a reference after a code span that crosses a line
+ * is reported one line early.)
+ */
+function breaksIn(child) {
+  if (child.type === 'softbreak' || child.type === 'hardbreak') return 1;
+  if (child.type !== 'text' && child.type !== 'html_inline') return 0;
+  let count = 0;
+  for (let at = child.content.indexOf('\n'); at >= 0; at = child.content.indexOf('\n', at + 1)) count += 1;
+  return count;
+}
+
+/**
  * Parse a body once and report everything the rest of the engine reads from it.
  *
  * @param {string} body the item body (LF, NFC — AGSC-01-14)
@@ -117,10 +134,11 @@ function scan(body) {
     } else if (token.type === 'fence') {
       fences.push({ info: token.info, content: token.content, line: lineOf(token, 1) });
     } else if (token.type === 'inline') {
-      const line = lineOf(token, 1);
+      let line = lineOf(token, 1);
       for (const child of token.children || []) {
         if (child.type === 'link_open') links.push({ kind: 'link', target: child.attrGet('href') || '', line });
         else if (child.type === 'image') links.push({ kind: 'image', target: child.attrGet('src') || '', line });
+        line += breaksIn(child);
       }
     }
   }
@@ -233,19 +251,22 @@ function constructs(body) {
       push('footnote definition', line, first.content);
     }
     let inLink = 0;
+    let at = line;
     for (const child of children) {
+      const here = at;
+      at += breaksIn(child);
       if (child.type === 'link_open') inLink += 1;
       if (child.type === 'link_close') inLink -= 1;
-      if (child.type === 's_open') push('strikethrough', line, '~~');
-      if (child.type === 'html_inline' || child.type === 'html_block') push('raw HTML', line, child.content);
+      if (child.type === 's_open') push('strikethrough', here, '~~');
+      if (child.type === 'html_inline' || child.type === 'html_block') push('raw HTML', here, child.content);
       if (child.type !== 'text') continue;
       const text = child.content;
-      for (const m of text.matchAll(/<\/?[A-Za-z][^<>]*>|<!--/gu)) push('raw HTML', line, m[0]);
-      for (const m of text.matchAll(/\[\^[^\]\s]+\](?!:)/gu)) push('footnote reference', line, m[0]);
+      for (const m of text.matchAll(/<\/?[A-Za-z][^<>]*>|<!--/gu)) push('raw HTML', here, m[0]);
+      for (const m of text.matchAll(/\[\^[^\]\s]+\](?!:)/gu)) push('footnote reference', here, m[0]);
       // The text of a link (`[t](url)`, or the autolink `<url>`) is authored linking,
       // not a bare literal.
       if (inLink > 0) continue;
-      for (const m of text.matchAll(/(?:^|[\s(])((?:https?:\/\/|www\.)[^\s<>()]+)/gu)) push('autolink literal', line, m[1]);
+      for (const m of text.matchAll(/(?:^|[\s(])((?:https?:\/\/|www\.)[^\s<>()]+)/gu)) push('autolink literal', here, m[1]);
     }
   }
   return out;
@@ -284,7 +305,7 @@ function headings(body) {
  * @returns {string}
  */
 function fenceProse(text) {
-  const body = String(text == null ? '' : text).replace(/\n*$/u, '');
+  const body = withoutTrailingFeeds(String(text == null ? '' : text));
   let longest = 0;
   for (const run of body.match(/`+/gu) || []) if (run.length > longest) longest = run.length;
   const fence = '`'.repeat(longest < 3 ? 3 : longest + 1);

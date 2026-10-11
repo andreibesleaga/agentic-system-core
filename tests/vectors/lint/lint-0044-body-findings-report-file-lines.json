@@ -1,0 +1,44 @@
+{
+  "area": "lint",
+  "description": "AGSC-09-11: the line of a finding is a line of the file it names, so a finding about the body of an item counts the lines of the frontmatter block before the body. One concept is added to the minimal fixture, conforming in every key, whose frontmatter block takes lines 1 to 14; its body holds a strikethrough on line 16 (AGSC-E109, AGSC-02-20), a body reference to a file that does not exist on line 18 (AGSC-E310, AGSC-03-11) and an export-tagged fenced block opening on line 20 (AGSC-E415, AGSC-02-22). The whole list lint reports is those three findings, each on that line of the file; the reference is an error, so lint exits 1. Counted from the start of the body the three lines would be 2, 4 and 6.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/lines.md",
+          "line": 16,
+          "severity": "warn",
+          "slug": "lines"
+        },
+        {
+          "code": "AGSC-E310",
+          "file": "content/concepts/lines.md",
+          "line": 18,
+          "severity": "error",
+          "slug": "lines"
+        },
+        {
+          "code": "AGSC-E415",
+          "file": "content/concepts/lines.md",
+          "line": 20,
+          "severity": "warn",
+          "slug": "lines"
+        }
+      ]
+    }
+  },
+  "id": "lint-0044",
+  "input": {
+    "add_files": {
+      "content/concepts/lines.md": "---\ntype: concept\ntitle: Lines\ndescription: A concept whose body findings are reported on the lines of its own file.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA paragraph with ~~struck~~ text.\n\nSee [the gone page](gone.md).\n\n```turtle export\n<https://example.org/a> <https://example.org/b> <https://example.org/c> .\n```\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0-rc.7"
+  },
+  "rule": "AGSC-09-11"
+}

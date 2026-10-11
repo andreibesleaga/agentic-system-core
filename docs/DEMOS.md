@@ -101,9 +101,9 @@ test ! -e www/index.html && echo "nothing was published"
 ```
 
 ```text expect
-error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:4
+error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:15
 lint exit 1
-error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:4
+error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:15
 build exit 1
 nothing was published
 ```

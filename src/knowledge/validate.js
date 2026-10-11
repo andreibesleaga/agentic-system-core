@@ -4,6 +4,8 @@
 // AGSC-01-11 (slug identity), AGSC-01-18 (closed configuration), AGSC-02-05 and
 // AGSC-02-05a (key names, the `x-` vendor namespace), AGSC-02-07/AGSC-08-01 (prov),
 // AGSC-02-21 (AGSC-E408), AGSC-02-24 (length bounds) and the §9.4 code precedence.
+// `aiProvenance` is AGSC-08-01's conditional `agent`/`model` check, which the lint lane
+// runs (governance/lint.js) and loading an item does not.
 //
 // PURE: no fs, no process, no clock, no network, no cross-context require.
 //
@@ -579,6 +581,32 @@ function itemIri(filePath, frontmatter, base) {
     { file: filePath, slug: m[2] })];
 }
 
+/** AGSC-08-01: the two origins under which `agent` and `model` MUST be present. */
+const AI_ORIGINS = Object.freeze(['ai-assisted', 'ai-generated']);
+
+/**
+ * AGSC-08-01: under an `ai-assisted` or `ai-generated` origin, `prov.agent` and
+ * `prov.model` MUST be present, and each one missing is `AGSC-E202`. The item schema
+ * cannot state the condition (its keyword subset has no `if`), so this is a lint
+ * check, run by the lint lane and never by loading an item: a missing `prov`, or a
+ * `prov` that is not a mapping, is the schema's fault (`AGSC-E501`, `AGSC-E201`) and
+ * is not reported again here. An empty value is not a name, so it counts as missing.
+ *
+ * @param {object} frontmatter
+ * @param {{file?:string, slug?:string}} [at]
+ * @returns {Array<object>} Findings, `agent` before `model`.
+ */
+function aiProvenance(frontmatter, at = {}) {
+  const prov = frontmatter && typeof frontmatter === 'object' ? frontmatter.prov : undefined;
+  if (prov === null || typeof prov !== 'object' || Array.isArray(prov)) return [];
+  if (!AI_ORIGINS.includes(prov.origin)) return [];
+  return ['agent', 'model']
+    .filter((member) => prov[member] === undefined || prov[member] === null || prov[member] === '')
+    .map((member) => finding('AGSC-E202',
+      `prov.${member} is missing; an item whose origin is ${prov.origin} names the ${member} that helped write it (AGSC-08-01)`,
+      { file: at.file, slug: at.slug }));
+}
+
 /**
  * AGSC-01-02 / AGSC-01-03 / AGSC-01-11: the file MUST live at
  * `content/<type-plural>/<slug>.md` and its `type` MUST match the folder.
@@ -633,6 +661,7 @@ function majorCompatible(declared, own) {
 }
 
 module.exports = {
+  aiProvenance,
   schemas,
   buildOutFault,
   applyTypes,

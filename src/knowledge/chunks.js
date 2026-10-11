@@ -235,11 +235,18 @@ function linksOf(item) {
   return Object.keys(links).length === 0 ? null : links;
 }
 
-/** AGSC-01-20: the `releases` switchboard holds back an unreleased `release`. */
+/**
+ * AGSC-01-20: an item carrying `release: <key>` is published only when
+ * `releases[<key>]` is `true`. A key the switchboard sets to `false`, a key it does
+ * not name and a switchboard that is absent all hold the item back; a name every
+ * object inherits (`constructor`, `__proto__`) is not a key of the switchboard.
+ */
 function heldBack(item, releases) {
-  return item.release != null && releases != null
+  if (item.release == null) return false;
+  const released = releases != null && typeof releases === 'object'
     && Object.prototype.hasOwnProperty.call(releases, item.release)
-    && releases[item.release] === false;
+    && releases[item.release] === true;
+  return !released;
 }
 
 /**

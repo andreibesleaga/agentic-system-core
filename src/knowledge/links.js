@@ -92,11 +92,36 @@ const SCHEME = /^[A-Za-z][A-Za-z0-9+.-]*:/u;
 const SLUG_BODY = String(SLUG_PATTERN).replace(/^\^/u, '').replace(/\$$/u, '');
 const LINK_VALUE = new RegExp(`^(${SLUG_BODY})(?:#([a-z0-9](?:[a-z0-9-]*[a-z0-9])?))?$`, 'u');
 
+/**
+ * The file line the body of `item` starts on. A parsed item carries it as
+ * `lineOffset` (`frontmatter.js#parseItem`); any other record — the flat objects the
+ * vectors pass, a record a caller assembled — has no frontmatter block before its
+ * body, so its body starts on line 1.
+ *
+ * @param {object} item
+ * @returns {number}
+ */
+function bodyLineOf(item) {
+  const offset = item == null ? undefined : item.lineOffset;
+  return Number.isSafeInteger(offset) && offset >= 1 ? offset : 1;
+}
+
+/**
+ * AGSC-09-11: the FILE line of a line counted from the start of the body (1-based),
+ * for an item whose body starts on file line `bodyLine`.
+ *
+ * @param {number} bodyLine the line of the body's first line in its file.
+ * @param {number} line a 1-based line of the body.
+ * @returns {number}
+ */
+function fileLine(bodyLine, line) {
+  return line + bodyLine - 1;
+}
+
 /** The frontmatter view of an item: vectors pass flat objects, the loader nests. */
 function view(item) {
-  const fm = (item && typeof item.frontmatter === 'object' && item.frontmatter !== null)
-    ? item.frontmatter
-    : item;
+  const nested = item && typeof item.frontmatter === 'object' && item.frontmatter !== null;
+  const fm = nested ? item.frontmatter : item;
   const type = item.type != null ? item.type : fm.type;
   const slug = item.slug != null ? item.slug : fm.slug;
   const plural = TYPE_PLURAL[type] || 'concepts';
@@ -105,6 +130,9 @@ function view(item) {
     type,
     fm,
     body: typeof item.body === 'string' ? item.body : '',
+    // a flat record is its frontmatter, so a `lineOffset` in it would be an authored
+    // key, never the parser's fact: only a nested record carries the offset.
+    lineOffset: nested ? bodyLineOf(item) : 1,
     path: item.path || `content/${plural}/${slug}.md`,
   };
 }
@@ -417,7 +445,7 @@ function resolve(items, options = {}) {
           unresolved.push(raw);
           findings.push(finding('AGSC-E310',
             `body reference "${raw}" names no anchor of this item (AGSC-03-11)`,
-            { file: v.path, slug: v.slug, line: ref.line }));
+            { file: v.path, slug: v.slug, line: fileLine(v.lineOffset, ref.line) }));
         }
         continue;
       }
@@ -425,7 +453,7 @@ function resolve(items, options = {}) {
       if (grammar !== null) {
         findings.push(finding('AGSC-E902',
           `body reference "${raw}" violates the relative-path grammar (${grammar}) (AGSC-01-35)`,
-          { file: v.path, slug: v.slug, line: ref.line }));
+          { file: v.path, slug: v.slug, line: fileLine(v.lineOffset, ref.line) }));
         unresolved.push(raw);
         continue;
       }
@@ -455,7 +483,7 @@ function resolve(items, options = {}) {
       unresolved.push(raw);
       findings.push(finding('AGSC-E310',
         `body reference "${raw}" resolves to nothing inside the Bundle (AGSC-03-11)`,
-        { file: v.path, slug: v.slug, line: ref.line }));
+        { file: v.path, slug: v.slug, line: fileLine(v.lineOffset, ref.line) }));
     }
   }
 
@@ -500,8 +528,10 @@ module.exports = {
   SYMMETRIC,
   SLUG_PATTERN,
   anchors,
+  bodyLineOf,
   bodyPathError,
   dirOf,
+  fileLine,
   findCycle,
   isExternalTarget,
   pathGrammarError,

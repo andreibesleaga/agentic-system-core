@@ -222,3 +222,35 @@ test('AGSC-02-03: a cyclic or very long $ref chain terminates instead of looping
   const short = { $defs: { s0: { $ref: '#/$defs/s1' }, s1: { type: 'integer' } }, properties: { n: { $ref: '#/$defs/s0' } }, type: 'object' };
   assert.deepStrictEqual(validate.applyTypes({ n: '7' }, short, short), { n: 7 });
 });
+
+test('AGSC-08-01: an ai-* origin without agent or model is AGSC-E202, from the lint lane only', () => {
+  const lint = require('../../src/governance/lint.js');
+  const at = { file: 'content/concepts/supervisor.md', slug: 'supervisor' };
+  const withProv = (prov) => ({ ...CONCEPT, prov: { operator: 'human:andreibesleaga', ...prov } });
+  const missing = (fm) => validate.aiProvenance(fm, at).map((f) => [f.code, f.severity, f.file, f.slug,
+    /\b(agent|model)\b/u.exec(f.message)[1]]);
+  for (const origin of ['ai-assisted', 'ai-generated']) {
+    assert.deepStrictEqual(missing(withProv({ origin })), [
+      ['AGSC-E202', 'error', at.file, at.slug, 'agent'],
+      ['AGSC-E202', 'error', at.file, at.slug, 'model'],
+    ], origin);
+    assert.deepStrictEqual(missing(withProv({ origin, agent: 'claude-code' })),
+      [['AGSC-E202', 'error', at.file, at.slug, 'model']]);
+    assert.deepStrictEqual(missing(withProv({ origin, model: 'm' })),
+      [['AGSC-E202', 'error', at.file, at.slug, 'agent']]);
+    assert.deepStrictEqual(missing(withProv({ origin, agent: '', model: null })).map((f) => f[4]), ['agent', 'model']);
+    assert.deepStrictEqual(missing(withProv({ origin, agent: 'claude-code', model: 'm' })), []);
+  }
+  // a human or imported origin needs neither; no prov, or a prov that is not a
+  // mapping, is AGSC-E501 or a schema fault elsewhere, never this check.
+  for (const fm of [withProv({ origin: 'human' }), withProv({ origin: 'imported' }),
+    { ...CONCEPT, prov: undefined }, { ...CONCEPT, prov: 'ai-assisted' }, null]) {
+    assert.deepStrictEqual(missing(fm), [], JSON.stringify(fm));
+  }
+  // the item schema cannot state the condition, so loading an item does not report it
+  // (a build is not refused); the lint aggregate does.
+  const fm = withProv({ origin: 'ai-assisted' });
+  assert.ok(!codes(fm).includes('AGSC-E202'));
+  const linted = lint.lint({ items: [{ ...at, type: 'concept', frontmatter: fm, body: 'Text.\n' }], config: {} });
+  assert.deepStrictEqual(linted.filter((f) => f.code === 'AGSC-E202').map((f) => f.file), [at.file, at.file]);
+});

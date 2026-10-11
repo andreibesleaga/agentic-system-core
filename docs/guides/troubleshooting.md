@@ -18,7 +18,7 @@ Every finding is one line: its severity, its code, a sentence that names the cau
 the rule, and, when the finding is about a file, the file and line after a dash:
 
 ```text
-error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:4
+error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:15
 ```
 
 An **error** stops the command: nothing is written, and the exit code is 1. A

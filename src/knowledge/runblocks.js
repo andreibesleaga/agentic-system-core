@@ -28,6 +28,7 @@
  */
 
 const { finding } = require('./validate.js');
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
 
 /** The two executable info strings (AGSC-02-22's spelling, and the only one). */
 const RUN_INFO = Object.freeze(['run']);
@@ -115,7 +116,8 @@ function command(line) {
  * The `run` steps of one Procedure, each with the `expect` block that
  * immediately follows it (AGSC-09-94) and the allow-list verdict (`run.allow[]`).
  *
- * @param {object} item the item, flattened `{body, slug, type, path}`.
+ * @param {object} item the item, flattened `{body, slug, type, path}`, with the
+ *   parsed item's `lineOffset` when the caller has it.
  * @param {object} options `{allow: string[]}` from `agsc.config.json`.
  * @returns {{findings:Array<object>, steps:Array<object>}}
  */
@@ -129,7 +131,11 @@ function steps(item, options = {}) {
     return { findings, steps: [] };
   }
   const allow = (Array.isArray(options.allow) ? options.allow : []).map(String);
-  const blocks = fences(item.body);
+  // AGSC-09-11: a finding names a line of the file. The caller passes the file line the
+  // body starts on (`lineOffset` of the parsed item); without it the body's own line
+  // is the file's.
+  const offset = Number.isSafeInteger(item.lineOffset) && item.lineOffset >= 1 ? item.lineOffset : 1;
+  const blocks = fences(item.body).map((block) => ({ ...block, line: block.line + offset - 1 }));
   const out = [];
   for (let i = 0; i < blocks.length; i += 1) {
     const block = blocks[i];
@@ -180,7 +186,7 @@ function steps(item, options = {}) {
  * @returns {boolean}
  */
 function matches(captured, expected) {
-  const trim = (text) => String(text == null ? '' : text).replace(/\r\n/gu, '\n').replace(/\n+$/u, '');
+  const trim = (text) => withoutTrailingFeeds(String(text == null ? '' : text).replace(/\r\n/gu, '\n'));
   return trim(captured) === trim(expected);
 }
 

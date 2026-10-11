@@ -1,9 +1,9 @@
 // tests/conformance/areas/prov.js — area handler for `prov` vectors.
 // prov-0001 and prov-0002 (the agent lane's proposal check), prov-0003 (claims),
 // prov-0005 (the DCO-Plus trailer grammar), prov-0006 to prov-0008 (clause (g)
-// of the auto-channel rule over the git-log file), prov-0009 and prov-0011 (the real
-// `lint` over the minimal fixture with files added: a missing operator, the
-// clean-room pattern), prov-0010 (the Assisted-by operator of AGSC-08-07), and
+// of the auto-channel rule over the git-log file), prov-0009, prov-0011 and prov-0014
+// (the real `lint` over the minimal fixture with files added: a missing operator, the
+// clean-room pattern, an `ai-*` origin without its model), prov-0010 (the Assisted-by operator of AGSC-08-07), and
 // prov-0012 and prov-0013 (a real verb over the fixture: `ci` and the forge files,
 // `refresh` and the lane budget). The handler is guarded, and a case with no handler
 // fails, so no case passes without being checked.
@@ -238,6 +238,7 @@ const HANDLERS = {
   'prov-0011': fixtureLintCase,
   'prov-0012': runVerbOnFixture,
   'prov-0013': runVerbOnFixture,
+  'prov-0014': fixtureLintCase,
 };
 
 module.exports.run = guarded(function run(vector, ctx) {

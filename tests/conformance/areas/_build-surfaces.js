@@ -9,7 +9,9 @@
 //   build-0024 (AGSC-06-01) the whole route set of the minimal fixture;
 //   build-0025 (AGSC-07-19) the shape of `/skills/index.json`;
 //   build-0026 (AGSC-07-20) the lock of each pack is the hash of its `SKILL.md`;
-//   build-0027 (AGSC-06-18) the TDM reservation file and its robots groups.
+//   build-0027 (AGSC-06-18) the TDM reservation file and its robots groups;
+//   build-0028 (AGSC-01-20) a release key the switchboard does not declare holds an
+//              item back everywhere.
 //
 // Each run copies the named fixture to a scratch folder, writes `input.add_files` (and a
 // sub-case's own) over it, and runs the whole command line with the file-system port
@@ -133,7 +135,7 @@ function surfaceChecks(expected, run) {
   return list;
 }
 
-/** build-0020, build-0022, build-0023: one build, the surface checks. */
+/** build-0020, build-0022, build-0023, build-0028: one build, the surface checks. */
 function surfacesCase(vector, ctx) {
   return onBuild(vector, ctx, null, (run) => checks(surfaceChecks(vector.expected, run)));
 }
@@ -326,6 +328,7 @@ const HANDLERS = Object.freeze({
   'build-0025': skillsIndexCase,
   'build-0026': skillsLockCase,
   'build-0027': tdmrepCase,
+  'build-0028': surfacesCase,
 });
 
 module.exports = { HANDLERS, disallowAllGroups, isJcsWithOneLf, onBuild, pageAssets, parseOr, tdmMatches };

@@ -15,7 +15,8 @@
 //            `#` comments.
 // Rejected   AGSC-E103 anchor (`&a`) or alias (`*a`)            (vector fm-0005)
 //            AGSC-E104 tag (`!!int`) or merge key (`<<`)
-//            AGSC-E105 flow mapping, complex key, any other construct outside the subset
+//            AGSC-E105 flow mapping, complex key, explicit `?` key, any other construct
+//                      outside the subset
 //            AGSC-E106 duplicate key
 //            AGSC-E107 a second YAML document
 //            AGSC-E904 input above the AGSC-01-16 size cap
@@ -131,6 +132,32 @@ function collectViolations(doc) {
 }
 
 /**
+ * The offset of every explicit-key indicator (`?`) in the token stream. AGSC-02-02
+ * admits block mappings of plain `key: value` entries; the explicit form is not in
+ * the subset whatever the key it opens, so a scalar name opened by `?` is refused as
+ * a complex key is. The composed document no longer shows which form a key took, so
+ * the indicator is read from the parser's tokens, which carry it.
+ *
+ * @param {Array<object>} tokens the parser's tokens of one YAML stream.
+ * @returns {Array<{code:string, offset:number, message:string}>}
+ */
+function explicitKeys(tokens) {
+  const found = [];
+  for (const token of tokens) {
+    if (token.type !== 'document') continue;
+    YAML.CST.visit(token, (item) => {
+      for (const part of item.start || []) {
+        if (part.type === 'explicit-key-ind') {
+          found.push({ code: 'AGSC-E105', offset: part.offset,
+            message: 'explicit keys (`?`) are outside the permitted subset (AGSC-02-02)' });
+        }
+      }
+    });
+  }
+  return found;
+}
+
+/**
  * Parse the AGSC-02-02 failsafe subset.
  *
  * @param {string} text YAML source (no document markers).
@@ -150,15 +177,16 @@ function parse(text, options = {}) {
   }
 
   const lineCounter = new YAML.LineCounter();
-  const docs = YAML.parseAllDocuments(source, {
+  // What `YAML.parseAllDocuments` does, in its two steps, so that the parser's tokens
+  // stay at hand for `explicitKeys`.
+  const tokens = Array.from(new YAML.Parser(lineCounter.addNewLine).parse(source));
+  const docs = Array.from(new YAML.Composer({
     schema: 'failsafe',
     // Duplicate keys are AGSC-E106 and are found in `collectViolations` in linear
     // time; the library's own check is quadratic in the key count (see there).
     uniqueKeys: false,
     merge: false,
-    lineCounter,
-    prettyErrors: false,
-  });
+  }).compose(tokens));
   if (docs.length > 1) {
     const second = docs[1];
     const offset = second.range ? second.range[0] : 0;
@@ -176,6 +204,7 @@ function parse(text, options = {}) {
       message: e.message.split('\n')[0],
     })),
     ...collectViolations(doc),
+    ...explicitKeys(tokens),
   ];
   if (faults.length > 0) {
     faults.sort((a, b) => a.offset - b.offset);
