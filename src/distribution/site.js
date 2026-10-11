@@ -52,7 +52,7 @@ const surfaces = require('../boundary/surfaces.js');
 const federation = require('../boundary/federation.js');
 const browserBundle = require('../composition/browser.js');
 const skills = require('../composition/skills.js');
-const { withoutTrailingSlashes } = require('../shared/trailing.js');
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
 
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = chunks;
 
@@ -129,7 +129,7 @@ function schemaOrg(value) {
 
 /** AGSC-04-07: UTF-8, LF, NFC, exactly one trailing LF. */
 function textBytes(text) {
-  return nfc(String(text).split('\r\n').join('\n')).replace(/\n*$/u, '\n');
+  return withOneTrailingFeed(nfc(String(text).split('\r\n').join('\n')));
 }
 
 /**
@@ -887,6 +887,30 @@ function judgeAttachment(ports, item, attachment) {
   return { bytes, finding: null, refused: false };
 }
 
+/**
+ * AGSC-06-01: every attachment an item names is a route of its own, carrying the
+ * authored bytes AGSC-05-29 hashed. A refused attachment is recorded in
+ * `sink.refused`, so that its page links are not a second fault; its finding is
+ * reported only when `sink.report` is true, because when a lint lane ran (`ci`) it
+ * already reported the fault, and one fault is counted once (AGSC-09-11). The bytes
+ * are withheld either way.
+ *
+ * @param {object} sink `{findings, put, refused, report}`
+ */
+function putAttachments(ports, item, sink) {
+  for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
+    if (!attachment || typeof attachment.file !== 'string') continue;
+    const judged = judgeAttachment(ports, item, attachment);
+    const route = `/attachments/${item.slug}/${attachment.file}`;
+    if (judged.refused) {
+      sink.refused.add(route);
+      if (sink.report && judged.finding !== null) sink.findings.push(judged.finding);
+      continue;
+    }
+    if (judged.bytes !== null && judged.bytes !== undefined) sink.put(route, judged.bytes);
+  }
+}
+
 function readAttachment(ports, slug, file) {
   const fs = ports && ports.fs;
   if (!fs || typeof fs.readFile !== 'function') return null;
@@ -1282,6 +1306,8 @@ function buildSite(bundle, ports, options, findings) {
       { bundleVersion, generatedAt: instant });
     for (const file of chunkFiles.files) put(file.path, file.text);
   }
+  // AGSC-06-28: each chunk that begins with a heading is an in-page anchor on it.
+  const anchorsBySlug = html.chunkAnchors(chunkRecords);
 
   // ------------------------------------------------------------ skill packs (AGSC-07-19)
   // The PUBLISHED packs of spec/07 §7.4, one per Cluster, plus the index that is
@@ -1652,28 +1678,15 @@ function buildSite(bundle, ports, options, findings) {
       if (diagramSource !== null) {
         findings.push(...html.diagramFigure(item, diagramSource).findings);
       }
-      // AGSC-06-01: every attachment the item names is a route of its own, carrying
-      // the authored bytes AGSC-05-29 hashed.
-      for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
-        if (!attachment || typeof attachment.file !== 'string') continue;
-        const judged = judgeAttachment(ports, item, attachment);
-        if (judged.refused) {
-          refusedAttachments.add(`/attachments/${item.slug}/${attachment.file}`);
-          // When a lint lane ran (`ci`), it already reported the fault: one fault is
-          // counted once (AGSC-09-11), and the bytes are withheld either way.
-          if (options.publication !== false && judged.finding !== null) findings.push(judged.finding);
-          continue;
-        }
-        if (judged.bytes !== null && judged.bytes !== undefined) {
-          put(`/attachments/${item.slug}/${attachment.file}`, judged.bytes);
-        }
-      }
+      // AGSC-06-01: every attachment the item names is a route of its own.
+      putAttachments(ports, item, { findings, put, refused: refusedAttachments, report: options.publication !== false });
       // the body's references are rendered as the ROUTES this build emits,
       // never as the authored Bundle paths, which resolve to nothing on the site.
       put(`${routeOf(item)}index.html`, html.itemPage(item, {
         ...pageOptions,
         render: (body) => render(body, { href: bodyHrefResolver(item, publishedByPath, publishedAssets) }),
         canonical,
+        chunkAnchors: anchorsBySlug.get(item.slug),
         jsonld,
         // AGSC-09-16: "the `/compose/` page AND THE ITEM PAGES". The three scripts
         // are the same shared files the `/compose/` route already serves — a

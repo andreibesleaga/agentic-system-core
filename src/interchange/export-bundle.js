@@ -70,6 +70,7 @@ const frontmatter = require('../knowledge/frontmatter.js');
 const yaml = require('../knowledge/yaml.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
 
 /** AGSC-01-26: the file the export root carries, so the terms travel beside the prose. */
 const LICENSE_FILE = 'LICENSE-CONTENT';
@@ -119,7 +120,7 @@ function indexFile(source, options) {
   const findings = [];
   const text = fix.normaliseText(String(source == null ? '' : source));
   const split = frontmatter.split(text);
-  let block = split.hasFrontmatter === true ? String(split.yamlText).replace(/\n*$/u, '') : '';
+  let block = split.hasFrontmatter === true ? withoutTrailingFeeds(String(split.yamlText)) : '';
   const body = split.hasFrontmatter === true ? String(split.body) : text.replace(/^\s*$/u, '');
 
   let parsed = Object.create(null);

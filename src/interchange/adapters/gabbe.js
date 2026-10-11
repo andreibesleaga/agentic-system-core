@@ -83,7 +83,7 @@ const steer = require('../steer.js');
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
 const { isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
-const { withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'gabbe';
@@ -189,7 +189,7 @@ function continuityEntry(item, record) {
   if (date != null) lines.push(`**Date**: ${singleLine(date)}`);
   lines.push(`**Status**: ${item['x-gabbe-status'] == null ? 'ACTIVE' : singleLine(item['x-gabbe-status'])}`);
   lines.push(`**Severity**: ${singleLine(item.severity == null ? 'info' : item.severity)}`);
-  const body = String(item.body == null ? '' : item.body).replace(/\n+$/u, '');
+  const body = withoutTrailingFeeds(String(item.body == null ? '' : item.body));
   if (body !== '') lines.push('', ...body.split('\n').map((l) => (l === '' ? '>' : `> ${l}`)));
   return lines.join('\n');
 }

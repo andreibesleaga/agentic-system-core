@@ -21,6 +21,7 @@
 
 const { finding } = require('../knowledge/validate.js');
 const { nfc } = require('../knowledge/unicode.js');
+const { withOneTrailingFeed } = require('../shared/trailing.js');
 
 /** AGSC-01-16: the size cap every parsed input lives under. */
 const MAX_BYTES = 1048576;
@@ -174,7 +175,7 @@ function readCard(file) {
 
   // AGSC-01-14: LF, NFC, exactly one trailing LF. The body is normalised here so
   // that no later stage has to think about the foreign file's bytes.
-  const body = `${rawBody.replace(/\n+$/u, '')}\n`;
+  const body = withOneTrailingFeed(rawBody);
 
   return { slug, path, record, body, keys, findings };
 }
@@ -189,7 +190,7 @@ function readCard(file) {
  */
 function normaliseSource(text) {
   const body = nfc(String(text).split('\r\n').join('\n').split('\r').join('\n'));
-  return `${body.replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(body);
 }
 
 module.exports = {

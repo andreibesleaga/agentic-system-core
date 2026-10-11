@@ -575,3 +575,23 @@ test('the state table both ways', () => {
     }
   }
 });
+
+test('AGSC-10-13: a peer board\'s blocked_by slug naming a task of the same board takes that task\'s iri', () => {
+  // The slug of a task listed on the board expands to the iri the board gives that
+  // task; any other slug keeps the Concept folder under the board's base.
+  const text = JSON.stringify({
+    board: 'oct',
+    iri: 'https://peer.example/clusters/oct/',
+    tasks: [
+      { blocked_by: ['wire', 'other', 'constructor'], iri: 'https://peer.example/kb/concepts/ship/', slug: 'ship', state: 'TASK_STATE_WORKING', title: 'Ship' },
+      { iri: 'https://peer.example/kb/concepts/wire/', slug: 'wire', state: 'TASK_STATE_SUBMITTED', title: 'Wire' },
+    ],
+  });
+  const read = formats.FORMATS['agsc-board'].parse(text, 'oct.json');
+  assert.deepStrictEqual(read.rows[0].blockedBy, [
+    'https://peer.example/kb/concepts/wire/',
+    'https://peer.example/concepts/other/',
+    'https://peer.example/concepts/constructor/',
+  ]);
+  assert.deepStrictEqual(read.rows[1].blockedBy, []);
+});

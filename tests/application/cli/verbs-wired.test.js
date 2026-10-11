@@ -615,6 +615,8 @@ test('AGSC-07-03/05a: a retired slug and a superseded hard dependency say what t
   const r1 = retired.envelope.findings.find((f) => f.code === 'AGSC-E802');
   assert.ok(r1, JSON.stringify(retired.envelope.findings));
   assert.ok(r1.message.includes('retired') && r1.message.includes('AGSC-07-03'), r1.message);
+  // a retired item is refused whether it is selected or only required (AGSC-11-22)
+  assert.ok(r1.message.includes('cannot be selected or required'), r1.message);
 
   const superseded = run(['compose', 'needer', 'newer', '--json'], dir);
   const r2 = superseded.envelope.findings.find((f) => f.code === 'AGSC-E802');

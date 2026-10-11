@@ -47,15 +47,21 @@ const TYPE_FOLDERS = Object.freeze({
  * ports: the port bag `{fs, clock, proc, network}`; only `fs` is read here.
  * A bare FileSystem port is accepted too, so that a caller holding one port
  * need not wrap it (the bag is the convention, not a ceremony).
- * options: { schemas } — the compiled schemas of `knowledge/validate.js#schemas`,
- * INJECTED because the Knowledge context never reads a file and only an
- * adapter may (`adapters/node-fs.js#readSchemas`).
+ * options: { schemas, resolveConfig } — the compiled schemas of
+ * `knowledge/validate.js#schemas`, INJECTED because the Knowledge context never
+ * reads a file and only an adapter may (`adapters/node-fs.js#readSchemas`); and,
+ * OPTIONAL, a function from the parsed `agsc.config.json` to the configuration as
+ * resolved (AGSC-01-37), which the record then carries as `config`.
  */
 function loadBundle(ports, options) {
   const opts = options || {};
   const fs = fileSystemOf(ports);
   const findings = [];
-  const config = readJson(fs, 'agsc.config.json', findings);
+  // AGSC-01-37: a caller that resolved the configuration's override layers hands
+  // the resolution in, so that every item is read against the same configuration
+  // the build uses.
+  const fileConfig = readJson(fs, 'agsc.config.json', findings);
+  const config = typeof opts.resolveConfig === 'function' ? opts.resolveConfig(fileConfig) : fileConfig;
   const items = [];
 
   for (const folder of Object.keys(TYPE_FOLDERS)) {

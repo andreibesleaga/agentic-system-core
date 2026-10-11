@@ -48,7 +48,7 @@ const chunks = require('../../knowledge/chunks.js');
 const { LINK_KEYS } = require('../../knowledge/links.js');
 const { compareCodePoint, singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
-const { withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to`. */
 const FORMAT = 'mermaid';
@@ -135,7 +135,7 @@ function headerOf(header) {
 
 /** Join lines with LF and end with exactly one LF. */
 function text(lines) {
-  return `${lines.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(lines.join('\n'));
 }
 
 /**

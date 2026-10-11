@@ -54,7 +54,7 @@ const { provenanceHeader: provenanceBlock } = require('../knowledge/provenance-h
 const { finding } = require('../knowledge/validate.js');
 const slugs = require('../knowledge/slug.js');
 const { fenceProse } = require('../knowledge/markdown.js');
-const { withoutTrailingSlashes } = require('../shared/trailing.js');
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -124,7 +124,7 @@ function packText(cluster, members, options) {
       `- type: ${singleLine(member.type)}`, '',
       fenceProse(member.body === '' || member.body == null ? member.description : member.body), '');
   }
-  return `${lines.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(lines.join('\n'));
 }
 
 /**
@@ -380,7 +380,7 @@ function splitPack(text, options) {
     let end = i + 6;
     while (end < lines.length && lines[end] !== open[1]) end += 1;
     const slug = withoutTrailingSlashes(iri[1]).split('/').pop();
-    const body = `${lines.slice(i + 6, end).join('\n').replace(/\n+$/u, '')}\n`;
+    const body = withOneTrailingFeed(lines.slice(i + 6, end).join('\n'));
     i = end;
     if (type[1] !== 'procedure') {
       findings.push(finding('AGSC-E506', `${iri[1]} is a ${type[1]}, not a procedure; a skill import maps`
@@ -424,7 +424,7 @@ function unfence(text) {
     }
     out.push(line);
   }
-  return `${out.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(out.join('\n'));
 }
 
 module.exports = {

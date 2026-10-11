@@ -29,6 +29,7 @@ const mapping = require('./mapping.js');
 const oldsite = require('./oldsite.js');
 const selectionModule = require('./selection.js');
 const statusModule = require('./status.js');
+const { withOneTrailingFeed } = require('../shared/trailing.js');
 
 /** The one foreign format this verb reads, and the value of `--from`. */
 const FORMAT = 'old-site';
@@ -94,7 +95,7 @@ function jsonBytes(value) {
 /** An item file: the AGSC-04-19 frontmatter block, then the body. */
 function itemFile(frontmatter, body) {
   const text = `${serialize(frontmatter)}${body.startsWith('\n') ? '' : '\n'}${body}`;
-  return `${text.replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(text);
 }
 
 /**

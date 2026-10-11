@@ -15,7 +15,7 @@
 //
 // Pure function of its input.
 
-const { TERMS } = require('../knowledge/chunks.js');
+const { TERMS, citationAnchor } = require('../knowledge/chunks.js');
 const { singleLine } = require('../knowledge/unicode.js');
 const { ASSISTANCE } = require('../knowledge/provenance-header.js');
 const diagrams = require('../knowledge/diagrams.js');
@@ -159,6 +159,45 @@ function withoutRepeatedTitle(body, title) {
   const match = /^\s*<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>\s*/u.exec(text);
   if (match === null || match[1].trim() !== escapeHtml(title).trim()) return text;
   return text.slice(match[0].length);
+}
+
+/**
+ * AGSC-06-28 / AGSC-06-30: the in-page anchors of a build's chunks, by item slug.
+ * Only a chunk that begins with a heading has one — a named section's first piece of
+ * text (`ordinal` 0); chunk 0, the later pieces Cut 2 makes, a cluster's chunk and an
+ * attachment's chunk are cited at the top of their page. The anchor is `chunk-` and
+ * the first 16 hex characters of the chunk's `id` (`knowledge/chunks.js#citationAnchor`).
+ *
+ * @param {Array<object>} records the chunk records of `knowledge/chunks.js#records`
+ * @returns {Map<string, Array<{anchor:string, section:string}>>}
+ */
+function chunkAnchors(records) {
+  const out = new Map();
+  for (const c of records || []) {
+    if (c.section === '' || c.ordinal !== 0 || c.type !== 'text') continue;
+    if (!out.has(c.item)) out.set(c.item, []);
+    out.get(c.item).push({ anchor: citationAnchor(c.id).slice(1), section: c.section });
+  }
+  return out;
+}
+
+/**
+ * AGSC-06-28: "a page MUST render [the chunk citation] as an in-page anchor on the
+ * chunk's heading". The anchor is an empty `<span>` opening that heading, so the
+ * heading keeps its AGSC-03-13 `id` and every link to it still resolves. A chunk's
+ * `section` is the anchor of a level-2 or level-3 heading (AGSC-06-27), and an
+ * AGSC-03-13 anchor holds only `[a-z0-9-]`, so the pattern meets each heading tag
+ * once and never backtracks.
+ *
+ * @param {string} body the rendered body
+ * @param {Array<{anchor:string, section:string}>} [anchors] this item's anchors
+ * @returns {string}
+ */
+function withChunkAnchors(body, anchors) {
+  if (!Array.isArray(anchors) || anchors.length === 0) return body;
+  const bySection = new Map(anchors.map((a) => [a.section, a.anchor]));
+  return body.replace(/<(h[23]) id="([a-z0-9-]*)">/gu, (open, _tag, id) => (bySection.has(id)
+    ? `${open}<span id="${escapeHtml(bySection.get(id))}"></span>` : open));
 }
 
 function shell(page) {
@@ -353,7 +392,8 @@ function itemPage(item, options = {}) {
   if (item.status === 'deprecated') {
     parts.push('<p class="deprecated" role="note">This item is deprecated.</p>');
   }
-  parts.push(withoutRepeatedTitle(rendered.html, item.title == null ? item.slug : item.title));
+  // AGSC-06-28: the anchor of each chunk that begins with a heading, on that heading.
+  parts.push(withoutRepeatedTitle(withChunkAnchors(rendered.html, options.chunkAnchors), item.title == null ? item.slug : item.title));
   // AGSC-03-01: the typed Links the item authors, each target linked — the caller
   // passes published targets only, so a held-back item is never named here.
   const typed = (Array.isArray(options.links) ? options.links : []).filter((l) => l.targets.length > 0);
@@ -699,6 +739,7 @@ function changelogPage(rows, options = {}) {
 
 module.exports = {
   homePage,
+  chunkAnchors, withChunkAnchors,
   shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
   boardPage, composePage, legalPage, searchPage,
   adoptsTerms, escapeHtml, termsLine, NO_CLAIM_SENTENCE, HONEST_LIMIT,

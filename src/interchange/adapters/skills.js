@@ -83,7 +83,7 @@ const {
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
 const { isObject, itemText, oneLine, plain, yamlString } = require('../records.js');
-const { withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'skills';
@@ -809,7 +809,7 @@ function run(bundle, options) {
     if (text === undefined) continue;
     const records = [name, ...(pack.members || []).map(String).sort(compareCodePoint)]
       .map(recordOf).filter((r) => r !== null).map((r) => `<!-- agsc-item ${r} -->`);
-    const body = `${packBody(text).replace(/\n+$/u, '')}\n\n${records.join('\n')}\n`;
+    const body = `${withoutTrailingFeeds(packBody(text))}\n\n${records.join('\n')}\n`;
     const description = yamlString(pack.description);
     if (layout === 'cursor') {
       out.set(`${CURSOR_DIR}/${name}.mdc`, `---\ndescription: ${description}\nglobs:\nalwaysApply: false\n---\n${body}`);

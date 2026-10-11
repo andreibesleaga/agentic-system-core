@@ -62,11 +62,12 @@ comparator would be worse than the arrow it removes: two orderings can drift, on
 cannot. `knowledge/unicode.js` re-exports both, so every existing caller is unchanged.
 `src/shared/trailing.js` holds `withoutTrailingSlashes` and `collapseTrailingSlashes`,
 the trim every context applies to a base address or a folder path before it appends a
-route. Each reads back from the end, so it is linear in the length of the text; the
-pattern they replaced read to the end from every slash of a run and was quadratic. The
-code the build copies into every node's pages (the page tools' script, the compose
-page's script and `composition/archive.js#archiveName`) keeps its own copy, since
-changing it changes the bytes every node emits.
+route, and `withoutTrailingFeeds` and `withOneTrailingFeed`, the trim of a text's
+trailing line feeds. Each reads back from the end, so it is linear in the length of
+the text; the patterns they replaced read to the end from every slash or line feed of
+a run and were quadratic. The code the build copies into every node's pages (the page
+tools' script, the compose page's script and `composition/archive.js#archiveName`)
+keeps its own copy, since changing it changes the bytes every node emits.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

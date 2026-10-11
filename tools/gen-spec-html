@@ -97,6 +97,18 @@ function sectionOf(name) {
   return match ? { number: match[1], slug: match[2] } : null;
 }
 
+/**
+ * `text` without the run of line feeds at its end, read back from the end (linear in
+ * the length; the engine's copy is `src/shared/trailing.js`, which a tool does not
+ * load). `meter`, when given, counts the characters examined.
+ */
+function withoutTrailingFeeds(text, meter) {
+  let end = text.length;
+  while (end > 0 && text.charCodeAt(end - 1) === 0x0a) end -= 1;
+  if (meter !== undefined) meter.steps += text.length - end + 1;
+  return text.slice(0, end);
+}
+
 /** One page, wrapped in the same deterministic shell as every other. */
 function page(title, specVersion, body, navigation) {
   return [
@@ -113,7 +125,7 @@ function page(title, specVersion, body, navigation) {
     navigation,
     '</nav>',
     '<main>',
-    body.replace(/\n+$/u, ''),
+    withoutTrailingFeeds(body),
     '</main>',
     '</body>',
     '</html>',

@@ -15,7 +15,7 @@ and is reported as skipped and counted.
 | `features.test.js` | the scenario runner: every scenario, every example of an outline, one test each, and the checks that keep the pending files and the step definitions honest |
 | `_runner.js` | the runner's rules: reading the scenarios, the step definitions and the pending files, and what a pending file means for the run |
 | `runner.test.js` | each rule of `_runner.js` shown on a small scratch tree |
-| `steps/` | the step definitions: one file per persona, the shared phrases of `_common.js`, and helpers whose names start with `_` |
+| `steps/` | the step definitions: one file per persona (and a second, `persona-x-<topic>.js`, where one file would exceed the size budget of the tests), the shared phrases of `_common.js`, and helpers whose names start with `_` |
 | `common-steps.test.js` | every shared phrase of `steps/_common.js` driven once before any scenario uses it |
 | `network-trap.test.js` | the network trap of `steps/_offline.js` in the other offline lanes: the mode walks, the use cases and the documentation pages run every child under it, and a network attempt a child caught and ignored still fails the lane |
 | `loopback.test.js` | the node served on loopback is reached through `localhost` whichever address `localhost` resolves to first; `steps/_localhost-v6-first.js` gives the `::1`-first order of the hosted CI runners on any machine |

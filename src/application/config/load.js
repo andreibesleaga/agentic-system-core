@@ -307,4 +307,60 @@ function load(options) {
   return { config, sources, findings, envOverrides, ignoredEnvNames, credentials };
 }
 
-module.exports = { load };
+/** The layers of AGSC-01-37 that override the configuration file (AGSC-09-09's order). */
+const OVERRIDE_LAYERS = new Set(['dotenv', 'env', 'flag']);
+/** The arrays whose named entries an override addresses (`AGSC_AGENT_<NAME>_<KEY>`, env.js). */
+const NAMED_ENTRIES = Object.freeze(['agents', 'channels']);
+
+/** The value at a dotted path of a plain object, or `undefined`. */
+function valueAt(obj, segs) {
+  let cur = obj;
+  for (const s of segs) {
+    if (cur === null || typeof cur !== 'object' || !Object.prototype.hasOwnProperty.call(cur, s)) return undefined;
+    cur = cur[s];
+  }
+  return cur;
+}
+
+/**
+ * AGSC-01-37 / AGSC-04-18: the configuration input of the build — `agsc.config.json`
+ * with the environment overrides applied, and nothing else. Only the values an
+ * override layer set (the `.env` file, the process environment, a flag) are taken
+ * from the resolved configuration; the schema defaults and a user configuration are
+ * not overrides and are not build inputs (AGSC-04-18 names four inputs), so a build
+ * with no override is the build of the file alone, byte for byte. A named entry of
+ * `agents[]` or `channels[]` is matched by `name`, and one the file does not hold is
+ * added, in the resolved configuration's order. The file's object is never changed:
+ * with no override it is returned as it is, otherwise a copy is.
+ *
+ * @param {object} file the parsed `agsc.config.json`
+ * @param {{config?:object, sources?:object}} resolved the result of `load`
+ * @returns {object}
+ */
+function withOverrides(file, resolved) {
+  const sources = (resolved && resolved.sources) || {};
+  const paths = Object.keys(sources).filter((p) => OVERRIDE_LAYERS.has(sources[p])).sort();
+  if (paths.length === 0) return file;
+  const out = JSON.parse(JSON.stringify(file || {}));
+  const config = resolved.config || {};
+  for (const p of paths) {
+    const segs = p.split('.');
+    if (!NAMED_ENTRIES.includes(segs[0])) setPath(out, p, valueAt(config, segs));
+  }
+  for (const key of NAMED_ENTRIES) {
+    for (const entry of (Array.isArray(config[key]) ? config[key] : [])) {
+      const keys = paths.filter((p) => p.startsWith(`${key}.${entry && entry.name}.`)).map((p) => p.split('.')[2]);
+      if (keys.length === 0) continue;
+      if (!Array.isArray(out[key])) out[key] = [];
+      let target = out[key].find((e) => e && e.name === entry.name);
+      if (target === undefined) {
+        target = { name: entry.name };
+        out[key].push(target);
+      }
+      for (const k of keys) target[k] = entry[k];
+    }
+  }
+  return out;
+}
+
+module.exports = { load, withOverrides };

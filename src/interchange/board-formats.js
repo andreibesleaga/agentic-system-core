@@ -28,6 +28,10 @@
  * PURE: no fs, no clock, no network.
  */
 
+// The text without its trailing line feeds, read back from the end in linear time
+// (`shared/trailing.js`); exported again below for the linear-time tests.
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
+
 // --------------------------------------------------------------------------- CSV
 
 /** RFC 4180 records of a CSV text (CRLF or LF; a leading BOM ignored). */
@@ -172,23 +176,6 @@ function row(values) {
     fields: Object.create(null), id: null, kind: null, labels: [], line: 1, record: null,
     state: null, title: '', updated: null, ...values,
   };
-}
-
-/**
- * The text without its trailing line feeds, read back from the end: what
- * `.replace(/\n+$/u, '')` gave, in linear time. That pattern read to the end of every
- * run of line feeds from each of its positions, so a card body with a long run of
- * line feeds before its last word stalled the import (100,000 took about 35 s).
- *
- * @param {string} text
- * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
- * @returns {string}
- */
-function withoutTrailingFeeds(text, meter) {
-  let feeds = 0;
-  while (feeds < text.length && text.charCodeAt(text.length - 1 - feeds) === 0x0a) feeds += 1;
-  if (meter !== undefined) meter.steps += feeds + 1;
-  return feeds === 0 ? text : text.slice(0, text.length - feeds);
 }
 
 /** The own-record, from a text that carries `<!-- agsc-item B64 -->` on a line of its own; and the text without it. */
@@ -951,6 +938,11 @@ const agscBoard = {
     if (!isObject(value) || !Array.isArray(value.tasks)) throw new Error('a board export is a JSON object with tasks[] (AGSC-10-13)');
     const base = peerBase(value.iri);
     const board = typeof value.board === 'string' && value.board.trim() !== '' ? value.board : stemOf(path);
+    // AGSC-10-13: a slug that names a task of this board expands to that task's `iri`;
+    // any other slug to the Concept folder under the board's base.
+    const taskIri = new Map(value.tasks.filter((task) => isObject(task) && typeof task.slug === 'string'
+      && typeof task.iri === 'string').map((task) => [task.slug, task.iri]));
+    const expand = (slug) => (taskIri.has(slug) ? taskIri.get(slug) : `${base}concepts/${slug}/`);
     // The decisions and specs this writer files beside a board ride in one extra
     // member a board reader ignores (AGSC-00-15), each with its kind.
     const extra = (Array.isArray(value['x-agsc-items']) ? value['x-agsc-items'] : []).filter(isObject)
@@ -962,7 +954,7 @@ const agscBoard = {
         'x-agsc-record']);
       return row({
         assignee: typeof task.claimed_by === 'string' ? task.claimed_by : null,
-        blockedBy: listOf(task.blocked_by).map((slug) => `${base}concepts/${slug}/`),
+        blockedBy: listOf(task.blocked_by).map(expand),
         board,
         fields,
         id: typeof task.iri === 'string' ? task.iri : null,

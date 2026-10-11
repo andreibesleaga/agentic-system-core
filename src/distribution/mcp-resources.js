@@ -39,6 +39,7 @@
  */
 
 const { compareCodePoint } = require('../shared/ordering.js');
+const { withOneTrailingFeed } = require('../shared/trailing.js');
 
 /** AGSC-06-01: the two whole-Bundle artefacts AGSC-09-14b names, and their media types. */
 const ARTEFACTS = Object.freeze([
@@ -85,7 +86,7 @@ function fenced(text) {
   const safe = String(text === undefined || text === null ? '' : text)
     .normalize('NFC')
     .replace(/`{3,}/gu, (run) => "'".repeat(run.length));
-  return `\`\`\`text agsc-content\n${safe.replace(/\n*$/u, '\n')}\`\`\``;
+  return `\`\`\`text agsc-content\n${withOneTrailingFeed(safe)}\`\`\``;
 }
 
 /** The instruction half of the prompt: what to call, what to cite, what never to trust. */

@@ -734,7 +734,7 @@ run: step 1: echo hello
 run: --dry-run: 1 step(s) resolved, nothing executed
 run: pass (0 error, 0 warn)
 run: step 1: curl https://example.org/   [REFUSED: not in run.allow[]]
-error: AGSC-E203 fetch: the program "curl" is not in run.allow[] (echo), so AGSC-09-94 refuses it — content/procedures/fetch.md:8
+error: AGSC-E203 fetch: the program "curl" is not in run.allow[] (echo), so AGSC-09-94 refuses it — content/procedures/fetch.md:19
 run exit 1
 run: fail (1 error, 0 warn)
 ```

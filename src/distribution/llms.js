@@ -15,7 +15,10 @@
 const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { provenanceHeader } = require('../knowledge/provenance-header.js');
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS, termsFor } = require('../knowledge/chunks.js');
-const { withoutTrailingSlashes } = require('../shared/trailing.js');
+// The body's trailing line feeds are made exactly one by the shared scan from the end,
+// in linear steps (a body with a long run of line feeds before its last word once
+// stalled the build); it stays exported here for the tests that meter this file's scans.
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-01-18: the default of `bundle.license_prose`. */
 const DEFAULT_LICENSE = TERMS;
@@ -60,23 +63,6 @@ function collapseLineBreaks(text, meter) {
   }
   if (meter !== undefined) meter.steps += text.length + 1;
   return out + text.slice(from);
-}
-
-/**
- * The text with exactly one trailing line feed: what `.replace(/\n*$/u, '\n')` gave,
- * read back from the end. That pattern read to the end of every run of line feeds
- * from each of its positions, so a body with a long run of line feeds before its last
- * word stalled the build (100,000 took about 57 s).
- *
- * @param {string} text
- * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
- * @returns {string}
- */
-function withOneTrailingFeed(text, meter) {
-  let end = text.length;
-  while (end > 0 && text[end - 1] === '\n') end -= 1;
-  if (meter !== undefined) meter.steps += text.length - end + 1;
-  return `${text.slice(0, end)}\n`;
 }
 
 /** AGSC-06-30: the published set — drafts and retired items appear in neither file. */

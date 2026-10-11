@@ -354,6 +354,24 @@ test('AGSC-11-15: boards merge by IRI, rename nothing, and expand local slugs', 
   assert.deepStrictEqual(plain(f.mergeBoards(undefined).boardsKept), []);
 });
 
+test('AGSC-10-13: a blocked_by slug naming a task of the same board expands to that task\'s iri', () => {
+  // The board's tasks live under a base path the origin alone cannot give; a slug that
+  // names one of them takes its own iri, and any other slug keeps the Concept folder.
+  const merged = f.mergeBoards([{
+    board: 'oct',
+    iri: 'https://a.example/kb/clusters/oct/',
+    tasks: [
+      { blocked_by: ['wire', 'other'], iri: 'https://a.example/kb/concepts/ship/', slug: 'ship' },
+      { blocked_by: [], iri: 'https://a.example/kb/concepts/wire/', slug: 'wire' },
+      { blocked_by: ['constructor'], iri: 'https://a.example/kb/concepts/odd/', slug: 'odd' },
+    ],
+  }]);
+  assert.deepStrictEqual(plain(merged.expandedBlockedBy), {
+    'https://a.example/kb/concepts/odd/': ['https://a.example/concepts/constructor/'],
+    'https://a.example/kb/concepts/ship/': ['https://a.example/kb/concepts/wire/', 'https://a.example/concepts/other/'],
+  });
+});
+
 test('AGSC-11-11: a peer-derived result names its origin; a local one does not', () => {
   const result = f.peerResults({
     localHits: [{ slug: 'alpha' }], peer: 'https://b.example/', peerHits: [{ slug: 'beta' }],

@@ -50,7 +50,7 @@ function conflictMessage(conflict) {
       + ' or `agsc lint` the Bundle to see which slugs exist (AGSC-07-03)';
   }
   if (conflict.key === 'status') {
-    return `\`${a}\` is retired and cannot be selected (AGSC-07-03, AGSC-11-22)`;
+    return `\`${a}\` is retired and cannot be selected or required (AGSC-07-03, AGSC-11-22)`;
   }
   if (conflict.key === 'requires' && conflict.superseding !== undefined) {
     return `required item superseded — select \`${conflict.superseding}\`:`

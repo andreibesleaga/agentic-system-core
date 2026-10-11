@@ -122,7 +122,8 @@ function run(ctx) {
         { file: '', severity: 'error' })],
     };
   }
-  const item = { ...raw.frontmatter, body: raw.body, path: raw.path, slug: raw.slug, type: raw.type };
+  // AGSC-09-11: `lineOffset` lets the run-block reader name a block by its file line.
+  const item = { ...raw.frontmatter, body: raw.body, lineOffset: raw.lineOffset, path: raw.path, slug: raw.slug, type: raw.type };
   const parsed = runblocks.steps(item, settings(ctx));
   const findings = [...parsed.findings];
 

@@ -643,7 +643,9 @@ function clientUnion(dumps) {
  * mergeBoards(boards) -> { boardsKept, expandedBlockedBy, renamed, tasksKept }
  * AGSC-11-15, F9 (with AGSC-10-13): a merging client keys tasks by item IRI
  * and boards by Bundle IRI, renames NEITHER, and expands a board's local
- * `blocked_by`/`decided_by` slugs against that board's own origin.
+ * `blocked_by`/`decided_by` slugs against that board's own origin: a slug that
+ * names a task of the same board takes that task's `iri`, any other slug the
+ * Concept folder (AGSC-10-13).
  */
 function originOf(iri) {
   const m = /^([A-Za-z][A-Za-z0-9+.-]*:\/\/[^/]+\/)/u.exec(String(iri));
@@ -657,9 +659,12 @@ function mergeBoards(boards) {
   for (const board of boards || []) {
     boardsKept.push(board.iri);
     const origin = originOf(board.iri);
+    const taskIri = new Map((board.tasks || []).filter((task) => typeof task.slug === 'string'
+      && typeof task.iri === 'string').map((task) => [task.slug, task.iri]));
     for (const task of board.tasks || []) {
       tasksKept.push(task.iri);
-      const blocked = (task.blocked_by || []).map((slug) => `${origin}concepts/${slug}/`);
+      const blocked = (task.blocked_by || [])
+        .map((slug) => (taskIri.has(slug) ? taskIri.get(slug) : `${origin}concepts/${slug}/`));
       if (blocked.length > 0) expandedBlockedBy[task.iri] = Object.freeze(blocked);
     }
   }

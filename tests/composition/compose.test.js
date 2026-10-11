@@ -56,6 +56,54 @@ test('AGSC-11-22: a retired item named in a selection is AGSC-E802', () => {
   assert.strictEqual(v.conflicts[0].key, 'status');
 });
 
+test('AGSC-11-22: a selected retired item leaves the selection and is not closed over', () => {
+  const items = [{ requires: ['base'], slug: 'old', status: 'retired' }, { slug: 'base' }, { slug: 'a' }];
+  const v = compose(items, ['old', 'a']);
+  assert.strictEqual(v.valid, false);
+  assert.deepStrictEqual(plain(v.selection), ['a']);
+  assert.deepStrictEqual(plain(v.added), []);
+  assert.deepStrictEqual(plain(v.order), ['a']);
+  assert.deepStrictEqual(plain(v.conflicts), [{ code: 'AGSC-E802', key: 'status', pair: ['old', 'old'] }]);
+});
+
+test('AGSC-11-22: a retired item reached through requires is AGSC-E802 and is not added', () => {
+  const items = [
+    { requires: ['legacy', 'store'], slug: 'app' },
+    { requires: ['deep'], slug: 'legacy', status: 'retired' },
+    { slug: 'deep' }, { slug: 'store' },
+  ];
+  const v = compose(items, ['app']);
+  assert.strictEqual(v.valid, false);
+  assert.deepStrictEqual(plain(v.selection), ['app', 'store']);
+  assert.deepStrictEqual(plain(v.added), [{ path: [['app', 'requires', 'store']], slug: 'store' }]);
+  assert.deepStrictEqual(plain(v.hidden), []);
+  assert.deepStrictEqual(plain(v.conflicts), [{ code: 'AGSC-E802', key: 'status', pair: ['legacy', 'legacy'] }]);
+});
+
+test('AGSC-11-22: a retired item both selected and required, or required twice, is one conflict', () => {
+  const items = [
+    { requires: ['gone'], slug: 'a' }, { requires: ['gone'], slug: 'b' }, { slug: 'gone', status: 'retired' },
+  ];
+  for (const selection of [['gone', 'a', 'b'], ['a', 'b'], ['b', 'gone', 'a']]) {
+    const v = compose(items, selection);
+    assert.deepStrictEqual(plain(v.conflicts), [{ code: 'AGSC-E802', key: 'status', pair: ['gone', 'gone'] }],
+      selection.join(','));
+    assert.deepStrictEqual(plain(v.selection), ['a', 'b'], selection.join(','));
+    assert.deepStrictEqual(plain(v.added), [], selection.join(','));
+  }
+});
+
+test('AGSC-11-22: a retired item that only a supersedes or uses Link names changes nothing', () => {
+  // `supersedes` MAY name a retired item without warning, and a `uses` target outside
+  // the result is the Step 4 warning it always was: neither Link reaches the closure.
+  const items = [{ slug: 'new', supersedes: ['old'], uses: ['old'] }, { slug: 'old', status: 'retired' }];
+  const v = compose(items, ['new']);
+  assert.strictEqual(v.valid, true);
+  assert.deepStrictEqual(plain(v.selection), ['new']);
+  assert.deepStrictEqual(plain(v.hidden), []);
+  assert.deepStrictEqual(plain(v.warnings), [{ code: 'AGSC-E803', key: 'uses', source: 'new', target: 'old' }]);
+});
+
 test('AGSC-07-04: a requires target that does not exist is AGSC-E802 and is not closed over', () => {
   const v = compose([{ requires: ['ghost'], slug: 'a' }], ['a']);
   assert.deepStrictEqual(plain(v.selection), ['a']);

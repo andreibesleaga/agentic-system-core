@@ -35,6 +35,7 @@ const { finding } = require('../knowledge/validate.js');
 const { nfc, compareCodePoint } = require('../knowledge/unicode.js');
 const yaml = require('../knowledge/yaml.js');
 const frontmatter = require('../knowledge/frontmatter.js');
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
 
 /** The extensions an `![[…]]` embed may become an image for; anything else is removed. */
 const IMAGE_EXTENSIONS = Object.freeze(['.avif', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp']);
@@ -423,18 +424,6 @@ function quoteTemporal(value) {
  * where every other normalisation of that rule is `AGSC-E506`.
  */
 const ENCODING_CHANGE = 'line endings, NFC and the trailing newline';
-
-/**
- * The text without its trailing line feeds: what `.replace(/\n+$/u, '')` gave, by a
- * loop from the end. The pattern tried every line feed of the text as the start of
- * the trailing run, which was quadratic in a long run of line feeds before the end.
- */
-function withoutTrailingFeeds(text, meter) {
-  let end = text.length;
-  while (end > 0 && text[end - 1] === '\n') end -= 1;
-  if (meter !== undefined) meter.steps += text.length - end + 1;
-  return text.slice(0, end);
-}
 
 /** AGSC-04-19: LF line endings, NFC, exactly one trailing newline. */
 function normaliseText(text, meter) {

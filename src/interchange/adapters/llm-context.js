@@ -37,7 +37,7 @@ const chunks = require('../../knowledge/chunks.js');
 const { singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { fenceProse } = require('../../knowledge/markdown.js');
-const { withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The seven uniform members of the index, in AGSC-06-29's own member order. */
 const INDEX_COLUMNS = Object.freeze(['id', 'item', 'kind', 'section', 'ordinal', 'title', 'digest']);
@@ -94,7 +94,7 @@ function chunksIndexToon(records) {
   // one case so the artefact always declares its columns and always decodes to the
   // same empty table — proven by decoding it back in the suite.
   if (rows.length === 0) return `chunks[0]{${INDEX_COLUMNS.join(',')}}:\n`;
-  return `${encode({ chunks: rows }).replace(/\n*$/u, '')}\n`;
+  return withOneTrailingFeed(encode({ chunks: rows }));
 }
 
 /**
@@ -136,7 +136,7 @@ function llmsCtxTxt(records, options) {
       `- ordinal: ${singleLine(record.ordinal)}`, '',
       fenceProse(record.text), '');
   }
-  return `${lines.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(lines.join('\n'));
 }
 
 /**

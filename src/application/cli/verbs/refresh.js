@@ -43,13 +43,16 @@ function taskOf(entry, requested) {
  * AGSC-08-28(d): the Episode of one run, as a conforming item — `actor` the lane,
  * in the actor grammar of AGSC-02-09 (`process:<name>`), `started` the run's
  * instant, `usage` the AGSC-02-14 record of a run that called no model, and the
- * provenance of (b).
+ * provenance of (b), with the `agent` and `model` of AGSC-08-01.
  */
 function episodeOf(entry, task, { started, operator } = {}) {
   const usage = { cost_usd: 0, estimate: true, tokens_in: 0, tokens_out: 0 };
   if (typeof entry.model === 'string' && entry.model !== '') usage.model = entry.model;
+  // AGSC-08-01: an `ai-*` origin names its agent and its model. A `process` lane has
+  // no `model` (AGSC-01-36: "absent otherwise") and its run calls none, so its Episode
+  // names the lane's kind, `process`, and stays an item `lint` accepts.
   const prov = { origin: 'ai-generated', agent: entry.name };
-  if (typeof entry.model === 'string' && entry.model !== '') prov.model = entry.model;
+  prov.model = typeof entry.model === 'string' && entry.model !== '' ? entry.model : 'process';
   const who = typeof entry.operator === 'string' && entry.operator !== '' ? entry.operator : operator;
   if (typeof who === 'string' && who !== '') prov.operator = who;
   return {

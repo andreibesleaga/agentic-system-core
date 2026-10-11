@@ -55,7 +55,7 @@ const { encodeRecord } = ownRecord;
 const { isObject, itemText, plain } = require('../records.js');
 const pii = require('../../governance/pii.js');
 const { FORMATS } = require('../board-formats.js');
-const { withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'board';
@@ -266,7 +266,7 @@ function run(bundle, options) {
         assignee: flat['x-board-assignee'] == null ? null : String(flat['x-board-assignee']),
         blockedBy: (Array.isArray(flat['blocked-by']) ? flat['blocked-by'] : [])
           .map((s) => String(s).split('#')[0]).filter((s) => ids.has(s)),
-        body: String(flat.body == null ? '' : flat.body).replace(/\n+$/u, ''),
+        body: withoutTrailingFeeds(String(flat.body == null ? '' : flat.body)),
         created: flat.date == null ? null : String(flat.date).slice(0, 10),
         done: state === 'TASK_STATE_COMPLETED',
         due: flat['x-board-due'] == null ? null : String(flat['x-board-due']),

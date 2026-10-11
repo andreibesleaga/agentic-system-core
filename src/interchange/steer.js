@@ -60,7 +60,7 @@ const { commentSafe, compareCodePoint, singleLine } = require('../knowledge/unic
 const { provenanceLines } = require('../knowledge/provenance-header.js');
 const { finding } = require('../knowledge/validate.js');
 const { fenceProse } = require('../knowledge/markdown.js');
-const { withoutTrailingSlashes } = require('../shared/trailing.js');
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-01-28's closed registry: target → the one path it writes. */
 // A closed list read with a name from the outside: prototype-free, so `constructor`,
@@ -212,7 +212,7 @@ function steerText(items, options) {
     }
   }
 
-  return `${lines.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(lines.join('\n'));
 }
 
 /**

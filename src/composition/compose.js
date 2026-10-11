@@ -8,7 +8,8 @@
  * shape and every ordering), AGSC-07-10 (the five inert keys), AGSC-07-23
  * (Step 5, port wiring), AGSC-07-24 and AGSC-02-97 (`compose --from` over a
  * `kind: architecture` item's `yaml agsc-selection` block), AGSC-11-22 (a
- * retired item named in a selection is AGSC-E802).
+ * retired item named in a selection, or reached through `requires`, is AGSC-E802
+ * and leaves the closed set).
  * Requirements: PRD-036, PRD-038.
  *
  * PURE: no file system, no process, no clock, no network, no randomness
@@ -101,11 +102,16 @@ function dedupe(selection) {
  * traversal finds: a shortest path, and among several the one this order meets
  * first, which is not always the least slug sequence (`compose-0017`). A per-item union or a depth-first walk records a different path[]
  * and is non-conforming (`compose-0013` proves it).
+ *
+ * A retired item never enters the closed set (AGSC-11-22, AGSC-07-03): a selected
+ * one is marked closed-out here (the caller has already reported it), a `requires`
+ * target that is retired is reported once with `key` `status`, and neither is
+ * followed, so what only it requires is not added (`compose-0023`).
  */
 function closure(index, seedOrder, conflicts) {
   const path = new Map();
-  for (const slug of seedOrder) path.set(slug, []);
-  let frontier = byCodePoint(seedOrder);
+  for (const slug of seedOrder) path.set(slug, isRetired(index.get(slug)) ? null : []);
+  let frontier = byCodePoint(seedOrder.filter((slug) => path.get(slug) !== null));
   while (frontier.length > 0) {
     const next = [];
     for (const source of frontier) {
@@ -115,6 +121,11 @@ function closure(index, seedOrder, conflicts) {
         if (path.has(target)) continue;
         if (!index.has(target)) {
           conflicts.push({ code: 'AGSC-E802', key: 'requires', pair: byCodePoint([source, target]) });
+          path.set(target, null);
+          continue;
+        }
+        if (isRetired(index.get(target))) {
+          conflicts.push({ code: 'AGSC-E802', key: 'status', pair: [target, target] });
           path.set(target, null);
           continue;
         }

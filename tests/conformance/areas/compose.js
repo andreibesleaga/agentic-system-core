@@ -262,6 +262,7 @@ const HANDLERS = {
   'compose-0020': runVerdictVector,
   'compose-0021': runVerdictVector,
   'compose-0022': runVerdictVector,
+  'compose-0023': runVerdictVector,
 };
 
 module.exports.run = function run(vector) {

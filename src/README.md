@@ -33,7 +33,7 @@ byte for byte and no library produces.
 | `application/` | application layer | configuration, the command line and its sixteen verbs, the Bundle loader, the conformance run, plugins, `agsc-host` | [application/README.md](application/README.md) |
 | `ports/` | hexagonal ports | four interfaces, no code: FileSystem, Clock, ProcessRunner, Network | none: `tests/ports/` holds the folder to exactly its four interface files, and each file's header is its documentation |
 | `adapters/` | hexagonal adapters | the Node implementations of the four ports | [adapters/README.md](adapters/README.md) |
-| `shared/` | shared kernel | the two string orderings and the trailing-slash trim, and nothing else | [shared/README.md](shared/README.md) |
+| `shared/` | shared kernel | the two string orderings and the trailing-slash and trailing line-feed trims, and nothing else | [shared/README.md](shared/README.md) |
 
 Entry points: `bin/agsc.js` builds the four ports from `adapters/` and calls
 `application/cli/main.js#main`, which dispatches to one module per verb in
@@ -92,9 +92,10 @@ UTF-16 comparison of AGSC-04-05 and the code-point comparison of AGSC-04-12 — 
 depends on nothing. The FileSystem adapter owes AGSC-01-15 the same code-point order
 that the Knowledge context owes AGSC-04-12, and an adapter may not reach into a
 bounded context; one comparator in one place cannot drift. `shared/trailing.js` holds
-the trailing-slash trim that every context applies to a base address or a folder path
-before it appends a route; it reads back from the end, so it is linear in the length
-of the text where the pattern it replaced was quadratic.
+the trims every context applies to the end of a text: the trailing slashes of a base
+address or a folder path, removed before a route is appended, and the trailing line
+feeds of a text, removed or made exactly one. Each reads back from the end, so it is
+linear in the length of the text where the patterns it replaced were quadratic.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

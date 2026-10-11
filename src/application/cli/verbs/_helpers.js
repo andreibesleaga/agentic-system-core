@@ -14,6 +14,7 @@ const ledger = require('../../../governance/ledger.js');
 const contentVersion = require('../../../knowledge/content-version.js');
 const turtle = require('../../../knowledge/turtle.js');
 const { loadBundle } = require('../../bundle.js');
+const { withOverrides } = require('../../config/load.js');
 
 /**
  * The engine's own root — where `schema/`, `ontology/` and `tests/vectors/`
@@ -121,8 +122,19 @@ function slugArguments(bundle, values) {
   return { finding: null, values: out };
 }
 
+/**
+ * The Bundle a verb works on. Its configuration is the one AGSC-01-37 names as the
+ * build's input: `agsc.config.json` with the environment overrides applied
+ * (`resolvedConfig`), so a value from `.env` or the process environment reaches the
+ * built bytes as the same value written in the file would (AGSC-04-18).
+ */
 function bundleOf(ctx) {
-  return loadBundle(ctx.ports, { schemas: schemas() });
+  return loadBundle(ctx.ports, { resolveConfig: (file) => resolvedConfig(file, ctx), schemas: schemas() });
+}
+
+/** AGSC-01-37: the file's configuration with the override layers of `ctx` applied. */
+function resolvedConfig(file, ctx) {
+  return withOverrides(file, ctx);
 }
 
 /** AGSC-05-29: the engine hashes through `node:crypto`; no pure context may. */
@@ -452,6 +464,7 @@ module.exports = {
   attachmentFacts,
   bundleOf,
   bundleVersionOf,
+  resolvedConfig,
   buildOptions,
   levelRefusal,
   contentTree,

@@ -16,6 +16,7 @@
 const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const { capMeter } = require('../governance/agents.js');
+const { withOneTrailingFeed } = require('../shared/trailing.js');
 const { COUNTED_TYPES } = require('./discovery.js');
 
 /** AGSC-02-14: an Episode carries the `usage` record the rollup counts. */
@@ -364,7 +365,7 @@ function nowMarkdown(nowState, facts) {
         + `| ${a.merges} | ${a.spent_usd} | ${a.cap_usd === undefined ? '—' : a.cap_usd} |`),
       '');
   }
-  return `${lines.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(lines.join('\n'));
 }
 
 module.exports = {

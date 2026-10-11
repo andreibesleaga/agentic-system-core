@@ -101,6 +101,13 @@ Feature: Agent reader queries structured knowledge without scraping
     And the lines are ordered by item, section and ordinal, and no draft item is among them (AGSC-06-30)
     And a second build gives the same lines
 
+  @PRD-061 @agent @mode-1
+  Scenario: An agent cites a chunk back and the item page shows it at its heading
+    Given the node is built
+    When a memory framework loads "/chunks.jsonl" line by line
+    Then every chunk that begins with a heading is an in-page anchor "chunk-" and the first 16 hex characters of its "id" on that heading of its item page (AGSC-06-28)
+    And every other chunk is cited at the top of its page, and no page carries a chunk anchor that names no chunk (AGSC-06-30)
+
   @PRD-036 @agent @mode-4
   Scenario: An MCP client composes a selection through the compose tool
     Given "npx agentic-system-core mcp" is running over the acceptance Bundle

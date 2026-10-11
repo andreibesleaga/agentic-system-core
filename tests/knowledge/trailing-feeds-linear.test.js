@@ -3,9 +3,9 @@
 // the end, in linear steps (src/shared/trailing.js). The patterns it replaces,
 // `/\n+$/u` and `/\n*$/u`, read to the end of every run of line feeds from each of
 // its positions, so a body with a long run of line feeds before its last word stalled
-// the caller (100,000 line feeds took tens of seconds). The modules of the Knowledge
-// context use the shared scan, and the last test keeps the patterns from coming back
-// there.
+// the caller (100,000 line feeds took tens of seconds). Every module of the engine, its
+// command and its tools uses the shared scan (or, where it cannot load it, a loop of its
+// own tested against it), and the last test keeps the patterns from coming back.
 //
 // Steps are counted, not timed (tests/_linear-kit.js).
 
@@ -99,16 +99,16 @@ function files(dir) {
   return out;
 }
 
-// The folders whose modules no longer carry either pattern. The other contexts move
-// onto the shared scan next, and their folders join this list when they do. The shared
-// module names the patterns it replaced in its comments.
-const FOLDERS = ['src/knowledge', 'src/shared'];
+// Every folder of code the engine ships or runs, and its entry file. The shared module
+// names the patterns it replaced in its comments.
+const FOLDERS = ['src', 'bin', 'tools'];
+const ENTRIES = ['index.js'];
 const KEPT = new Set(['src/shared/trailing.js']);
 
-test('no module of the Knowledge context uses either trailing line-feed pattern', () => {
+test('no module, command or tool uses either trailing line-feed pattern', () => {
   const patterns = ['/\\n+$/', '/\\n*$/'];
   const offenders = [];
-  for (const rel of FOLDERS.flatMap(files)) {
+  for (const rel of [...FOLDERS.flatMap(files), ...ENTRIES]) {
     if (KEPT.has(rel)) continue;
     const text = fs.readFileSync(path.join(REPO, rel), 'utf8');
     text.split('\n').forEach((line, i) => {
