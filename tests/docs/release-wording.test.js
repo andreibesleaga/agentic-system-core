@@ -7,8 +7,9 @@
 // says that the reference engine makes no conformance claim. The reference engine's
 // claim (AGSC-10-05) is written once, in docs/CONFORMANCE-STATEMENTS.md under the
 // heading "The reference engine's claim", in the form of AGSC-09-01, with the numbers
-// the tree's own count gives; the README quotes it word for word, and src/REFERENCE.md,
-// the implementers' guide and the architecture guide point to it.
+// the tree's own count gives; the bullets under it ("The run", "The runtime") give the
+// same numbers; the README quotes it word for word, and src/REFERENCE.md, the
+// implementers' guide and the architecture guide point to it.
 //
 // Deterministic: reads files and runs `tools/count-artifacts` in process; no clock,
 // no network, no child process.
@@ -148,6 +149,40 @@ function claimText() {
   return flat(claimBlock().replace(/^> ?/gmu, ''));
 }
 
+/** One bullet under the claim, `- **<name>.** …`, as one line of prose. */
+function claimBullet(name) {
+  const lines = section(read('docs/CONFORMANCE-STATEMENTS.md'), CLAIM_HEADING).split('\n');
+  const start = lines.findIndex((l) => l.startsWith(`- **${name}.**`));
+  assert.ok(start !== -1, `"## ${CLAIM_HEADING}" has no bullet "${name}."`);
+  let end = start + 1;
+  while (end < lines.length && lines[end].startsWith('  ')) end += 1;
+  return flat(lines.slice(start, end).join('\n'));
+}
+
+// Counts written in words, as the documents write them (the same reading as the
+// quoted-counts test, copied: test files do not import each other).
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
+  'nineteen', 'twenty'];
+const TENS = { forty: 40, thirty: 30, twenty: 20, fifty: 50 };
+
+/** A count written in digits or in English words up to fifty-nine; null for anything else. */
+function number(written) {
+  const w = String(written).toLowerCase().replace(/,/gu, '');
+  if (/^\d+$/u.test(w)) return Number(w);
+  const at = WORDS.indexOf(w);
+  if (at !== -1) return at;
+  const m = /^(twenty|thirty|forty|fifty)-(one|two|three|four|five|six|seven|eight|nine)$/u.exec(w);
+  return m ? TENS[m[1]] + WORDS.indexOf(m[2]) : null;
+}
+
+/** How a sentence counts `n` Unicode versions that all sit inside one window. */
+function unicodeWindowPhrase(n) {
+  if (n === 1) return 'The Unicode version is inside the window';
+  if (n === 2) return 'Both Unicode versions are inside the window';
+  return `All ${WORDS[n] || n} Unicode versions are inside the window`;
+}
+
 test('the detector finds each candidate form and leaves the general sentences alone', () => {
   const flagged = [
     '**Release candidate.** This tree states specification `1.0.0-rc.7`.',
@@ -251,6 +286,24 @@ test('the reference engine\'s claim is written once, in the form of AGSC-09-01, 
   assert.doesNotMatch(claim, /\bmcp \(proved/u, 'a 1.0 writer does not declare mcp (AGSC-11-16)');
   // No word that suggests the project vouches for itself.
   assert.doesNotMatch(claim, /certif|approved|official/iu);
+
+  // The run under the claim gives the same numbers as the claim: the cases run all
+  // passed, and the withdrawn ones are the skipped ones.
+  const runBullet = claimBullet('The run');
+  assert.ok(runBullet.includes(`summary is ${run} passed, 0 failed and ${c.vectors_withdrawn} skipped.`),
+    `"The run" does not say "${run} passed, 0 failed and ${c.vectors_withdrawn} skipped"`);
+  const skipped = /\bThe ([a-z0-9-]+) skipped are the withdrawn cases\b/iu.exec(runBullet);
+  assert.ok(skipped, '"The run" does not say which cases were skipped');
+  assert.equal(number(skipped[1]), c.vectors_withdrawn,
+    `"The run" calls ${skipped[1]} cases withdrawn; the count gives ${c.vectors_withdrawn}`);
+
+  // The runtime: the word that counts the Unicode versions counts the ones the bullet names.
+  const runtime = claimBullet('The runtime');
+  const versions = new Set([...runtime.matchAll(/\bUnicode (\d+\.\d+)/gu)].map((m) => m[1]));
+  assert.ok(versions.size > 0, '"The runtime" names no Unicode version');
+  const phrase = unicodeWindowPhrase(versions.size);
+  assert.ok(runtime.includes(`${phrase} AGSC-04-22 states`),
+    `"The runtime" names ${versions.size} Unicode versions (${[...versions].join(', ')}) and must say "${phrase} AGSC-04-22 states"`);
 });
 
 test('the README quotes the claim word for word and links to it; the other pages point to it', () => {
