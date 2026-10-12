@@ -324,3 +324,77 @@ test('the README quotes the claim word for word and links to it; the other pages
   const architecture = flat(read('docs/ARCHITECTURE-GUIDE.md'));
   assert.ok(architecture.includes(`(CONFORMANCE-STATEMENTS.md#${CLAIM_ANCHOR})`), 'the architecture guide does not point to the claim');
 });
+
+/** The text of one `## [<version>]` section of the change log, up to the next `## [`. */
+function changelogSection(version) {
+  const text = read('CHANGELOG.md');
+  const head = `\n## [${version}] - `;
+  const start = text.indexOf(head);
+  assert.ok(start !== -1, `the change log has no "## [${version}]" section`);
+  const end = text.indexOf('\n## [', start + head.length);
+  return text.slice(start, end === -1 ? text.length : end);
+}
+
+/** The release date of the change-log section that follows `version`'s, in the file order. */
+function previousReleaseDate(version) {
+  const heads = [...read('CHANGELOG.md').matchAll(/^## \[([^\]]+)\] - (\d{4}-\d{2}-\d{2})$/gmu)];
+  const at = heads.findIndex((m) => m[1] === version);
+  assert.ok(at !== -1 && at + 1 < heads.length, `no release before ${version} in the change log`);
+  return heads[at + 1][2];
+}
+
+/** Note text compared loosely: no backticks, one space, lower case, no closing full stop. */
+function noteKey(text) {
+  return flat(text.replace(/`/gu, '')).trim().toLowerCase().replace(/\.$/u, '').trim();
+}
+
+/** Every dated note of `spec/*.md` written for `version`: [{ rule, day, text }]. */
+function amendmentNotes(version) {
+  const notes = [];
+  const literal = version.replace(/\./gu, '\\.');
+  const note = new RegExp(`\\*\\(Amended (\\d{4}-\\d{2}-\\d{2}) for ${literal}: ([\\s\\S]*?)\\)\\*`, 'gu');
+  const dir = path.join(ROOT, 'spec');
+  for (const name of fs.readdirSync(dir).filter((n) => n.endsWith('.md')).sort()) {
+    const lines = fs.readFileSync(path.join(dir, name), 'utf8').split('\n');
+    let rule = null;
+    let block = [];
+    const close = () => {
+      if (rule) for (const m of block.join('\n').matchAll(note)) notes.push({ rule, day: m[1], text: m[2] });
+    };
+    for (const line of lines) {
+      const start = /^- \*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*/u.exec(line);
+      if (start || line.startsWith('#')) {
+        close();
+        rule = start ? start[1] : null;
+        block = start ? [line] : [];
+      } else if (rule) {
+        block.push(line);
+      }
+    }
+    close();
+  }
+  return notes;
+}
+
+test('the 1.0.0 change log says what the version adds and where the vocabulary address moves', () => {
+  const body = flat(changelogSection('1.0.0'));
+  assert.ok(body.includes('adds one section, §0.7'),
+    'the upgrading paragraph does not say that 1.0.0 adds one section, §0.7 (the normative references)');
+  assert.ok(!body.includes('adds no section'), 'the upgrading paragraph still says that 1.0.0 adds no section');
+  assert.ok(body.includes('the `@context` of `graph.jsonld` on a Level 0 or 1 node'),
+    'the vocabulary bullet does not limit the move of the graph\'s `@context` to a Level 0 or 1 node, the only node that names the versioned address');
+});
+
+test('the 1.0.0 change log names every rule amended after the previous release, with its note', () => {
+  const section = changelogSection('1.0.0');
+  const entries = flat(section);
+  const since = previousReleaseDate('1.0.0');
+  const notes = amendmentNotes('1.0.0').filter((n) => n.day > since);
+  assert.ok(notes.length > 0, `no note dated after ${since}`);
+  const unnamed = [...new Set(notes.map((n) => n.rule))]
+    .filter((rule) => !new RegExp(`^- ${rule}: `, 'mu').test(section));
+  assert.deepEqual(unnamed, [], `rules amended after ${since} with no entry in the 1.0.0 section`);
+  const sectionKey = noteKey(entries);
+  const missing = notes.filter((n) => !sectionKey.includes(noteKey(n.text))).map((n) => `${n.rule} (${n.day})`);
+  assert.deepEqual(missing, [], 'amendment notes whose text the 1.0.0 section does not carry');
+});

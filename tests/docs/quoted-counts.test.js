@@ -185,3 +185,21 @@ test('the pages that count the guides say seven', () => {
     assert.match(text, /seven (?:short )?guides/u, `${rel} does not say seven guides`);
   }
 });
+
+test('the summary table of docs/MEASUREMENTS.md quotes the record', () => {
+  const text = flat(MEASUREMENTS);
+  const c = RECORD.layers.conformance;
+  const run = c.vector_run;
+  assert.ok(text.includes(`| vector run | ${run.pass} pass, ${run.fail} fail, ${run.skip} skipped (the ${run.withdrawn} withdrawn) |`),
+    'the summary row of the vector run is not the record\'s');
+  const v = c.vectors;
+  assert.ok(text.includes(`Of the ${v.total} vectors, ${v.required} are required, ${v.optional} is optional and ${v.withdrawn} are withdrawn`),
+    'the sentence that splits the vectors is not the record\'s');
+  const s = RECORD.layers.security.totals;
+  assert.ok(text.includes(`| security floor: seeded faults stopped | ${s.handled} of ${s.faults}, each under its rule's code (${s.detected} detected, ${s.refused} refused, ${s.neutralised} neutralised, ${s.finished} finished; none missed)`),
+    'the summary row of the security score is not the record\'s');
+  assert.ok(text.includes(`${s.detected} detected, ${s.refused} refused, ${s.neutralised} neutralised, ${s.finished} finished, none refused under another code`),
+    'the security score line of §3 is not the record\'s');
+  assert.ok(text.includes(`| security floor: valid controls clean | ${s.clean} of ${s.controls} |`),
+    'the summary row of the security controls is not the record\'s');
+});

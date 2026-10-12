@@ -96,12 +96,12 @@ test('the bundle chapter: a root base that differs from the site base is not rep
 test('the conformance chapter, exit codes: a configuration value that breaks its key\'s schema is a finding with exit 1', () => {
   const block = rule(read('spec/09-conformance.md'), 'AGSC-09-08');
   const text = plain(withoutNotes(block));
-  assert.match(text, /Invalid configuration is a configuration the tool cannot run against: a configuration name it does not know or that is reserved to a later version, a spec_version MAJOR it does not implement, or a run or trace invocation while run\.enabled is false \(AGSC-E004, whose registry row lists every case\); and a malformed SOURCE_DATE_EPOCH \(AGSC-E603\)\./u);
+  assert.match(text, /Invalid configuration is a configuration the tool cannot run against: a configuration file whose top level is not a JSON object, a configuration name it does not know or that is reserved to a later version, a spec_version MAJOR it does not implement, or a run or trace invocation while run\.enabled is false \(AGSC-E004, whose registry row lists every case\); and a malformed SOURCE_DATE_EPOCH \(AGSC-E603\)\./u);
   assert.doesNotMatch(text, /or a spec_version MAJOR it does not implement \(AGSC-E004\)/u, 'the definition still stops at two cases');
   assert.match(text, /A configuration value that breaks its key's schema is a finding \(AGSC-E204 for a pattern or length bound, or the more specific code of the precedence in §9\.4\) and exits 1, as does a configuration file that is not well-formed JSON\./u);
   const notes = plain(block).match(/\(Amended 2026-10-12 for 1\.0\.0: [^]*?\)\*/gu) ?? [];
   assert.strictEqual(notes.length, 1, 'the rule carries one note of this day, amended in place');
-  assert.match(notes[0], /they are the faults of AGSC-E004, run and trace while run\.enabled is false among them, and the malformed SOURCE_DATE_EPOCH of AGSC-E603;/u);
+  assert.match(notes[0], /they are the faults of AGSC-E004, a configuration file that is not a JSON object and run and trace while run\.enabled is false among them, and the malformed SOURCE_DATE_EPOCH of AGSC-E603;/u);
   assert.match(notes[0], /No behaviour changes\.\)\*$/u);
 });
 
@@ -110,6 +110,7 @@ test('the conformance chapter, exit codes: every case the registry row of the co
   assert.ok(row, 'the registry has no AGSC-E004 row');
   const cases = plain(row.split('|')[2]);
   assert.match(cases, /a name reserved to a later version/u);
+  assert.match(cases, /a configuration file whose top level is not a JSON object/u);
   assert.match(cases, /a source whose declared spec_version MAJOR an import does not implement \(AGSC-01-22\)/u);
   assert.match(cases, /a Bundle whose own spec_version MAJOR the writer does not implement/u);
   assert.match(cases, /an invocation of run or trace while run\.enabled is false/u);

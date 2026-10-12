@@ -9,8 +9,8 @@
       "rule_coverage": {
         "active": 332,
         "any_check": 327,
-        "named_by_checker": 93,
-        "named_by_feature": 74,
+        "named_by_checker": 94,
+        "named_by_feature": 78,
         "named_by_test": 325,
         "no_check": 5,
         "uncovered": [
@@ -98,9 +98,9 @@
         },
         "boundary": {
           "optional": 0,
-          "required": 34,
-          "total": 34,
-          "withdrawn": 0
+          "required": 35,
+          "total": 36,
+          "withdrawn": 1
         },
         "build": {
           "optional": 1,
@@ -207,17 +207,17 @@
       },
       "vector_run": {
         "fail": 0,
-        "pass": 242,
+        "pass": 243,
         "pending": 0,
-        "skip": 6,
-        "total": 248,
-        "withdrawn": 6
+        "skip": 7,
+        "total": 250,
+        "withdrawn": 7
       },
       "vectors": {
         "optional": 1,
-        "required": 241,
-        "total": 248,
-        "withdrawn": 6
+        "required": 242,
+        "total": 250,
+        "withdrawn": 7
       }
     },
     "determinism": {
@@ -436,12 +436,12 @@
         "long-run": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 2,
+          "cases": 7,
           "controls": 0,
-          "faults": 2,
-          "handled": 2,
-          "score": "2/2",
-          "finished": 2,
+          "faults": 7,
+          "handled": 7,
+          "score": "7/7",
+          "finished": 7,
           "controls_clean": null
         },
         "oversized": {
@@ -528,16 +528,16 @@
         "bundle": {
           "beyond_rule": 6,
           "beyond_rule_caught": 3,
-          "cases": 91,
+          "cases": 93,
           "controls": 11,
-          "faults": 74,
-          "handled": 74,
-          "score": "74/74",
+          "faults": 76,
+          "handled": 76,
+          "score": "76/76",
           "detected": 20,
           "refused": 47,
           "clean": 11,
           "neutralised": 4,
-          "finished": 3,
+          "finished": 5,
           "controls_clean": "11/11"
         },
         "federation": {
@@ -555,15 +555,16 @@
         "import": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 7,
+          "cases": 10,
           "controls": 1,
-          "faults": 6,
-          "handled": 6,
-          "score": "6/6",
+          "faults": 9,
+          "handled": 9,
+          "score": "9/9",
           "refused": 4,
           "detected": 1,
           "neutralised": 1,
           "clean": 1,
+          "finished": 3,
           "controls_clean": "1/1"
         },
         "redirect": {
@@ -2134,28 +2135,84 @@
           "kind": "bundle",
           "outcome": "finished",
           "required": true
+        },
+        {
+          "class": "long-run",
+          "codes": [
+            "AGSC-E506"
+          ],
+          "expect": [],
+          "id": "long-run-import-skills",
+          "kind": "import",
+          "outcome": "finished",
+          "required": true
+        },
+        {
+          "class": "long-run",
+          "codes": [
+            "AGSC-E101",
+            "AGSC-E202",
+            "AGSC-E203",
+            "AGSC-E305",
+            "AGSC-E408",
+            "AGSC-E901"
+          ],
+          "expect": [],
+          "id": "long-run-import-old-site",
+          "kind": "import",
+          "outcome": "finished",
+          "required": true
+        },
+        {
+          "class": "long-run",
+          "codes": [
+            "AGSC-E506"
+          ],
+          "expect": [],
+          "id": "long-run-init-line-ends",
+          "kind": "bundle",
+          "outcome": "finished",
+          "required": true
+        },
+        {
+          "class": "long-run",
+          "codes": [],
+          "expect": [],
+          "id": "long-run-import-gabbe",
+          "kind": "import",
+          "outcome": "finished",
+          "required": true
+        },
+        {
+          "class": "long-run",
+          "codes": [],
+          "expect": [],
+          "id": "long-run-skills-pack",
+          "kind": "bundle",
+          "outcome": "finished",
+          "required": true
         }
       ],
       "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security --scratch <dir>",
       "corpus": {
-        "cases": 121,
+        "cases": 126,
         "file": "bench/corpus/security-floor.json",
-        "version": "security-floor-v2"
+        "version": "security-floor-v3"
       },
       "limit": "AGSC-08-19: these lints prove neither safety nor the absence of novel injection. An implementation MUST NOT claim more.",
       "totals": {
         "beyond_rule": 6,
         "beyond_rule_caught": 3,
-        "cases": 121,
+        "cases": 126,
         "controls": 14,
-        "faults": 101,
-        "handled": 101,
-        "score": "101/101",
+        "faults": 106,
+        "handled": 106,
+        "score": "106/106",
         "detected": 21,
         "refused": 72,
         "clean": 14,
         "neutralised": 5,
-        "finished": 3,
+        "finished": 8,
         "controls_clean": "14/14"
       }
     },
@@ -2190,18 +2247,18 @@
           "items": 100,
           "largest_page_bytes": 647461,
           "largest_page_path": "chunks.jsonl",
-          "ms_median": 1792,
+          "ms_median": 1605,
           "ms_runs": [
-            1867,
-            1792,
-            1723
+            1683,
+            1551,
+            1605
           ],
-          "output_bytes": 3180417,
-          "rss_kb_median": 123244,
+          "output_bytes": 3181415,
+          "rss_kb_median": 123576,
           "rss_kb_runs": [
-            126476,
-            123244,
-            122940
+            123576,
+            124836,
+            122648
           ]
         },
         {
@@ -2219,18 +2276,18 @@
           "items": 500,
           "largest_page_bytes": 3243064,
           "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 4454,
+          "ms_median": 4056,
           "ms_runs": [
-            4454,
-            4535,
-            4421
+            4169,
+            4056,
+            4050
           ],
-          "output_bytes": 15224758,
-          "rss_kb_median": 272628,
+          "output_bytes": 15225756,
+          "rss_kb_median": 273256,
           "rss_kb_runs": [
-            270352,
-            272628,
-            275664
+            273256,
+            276100,
+            270036
           ]
         },
         {
@@ -2248,18 +2305,18 @@
           "items": 1000,
           "largest_page_bytes": 3524291,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 7850,
+          "ms_median": 7270,
           "ms_runs": [
-            7574,
-            8568,
-            7850
+            7465,
+            7270,
+            7223
           ],
-          "output_bytes": 30203484,
-          "rss_kb_median": 385084,
+          "output_bytes": 30204482,
+          "rss_kb_median": 386560,
           "rss_kb_runs": [
-            379288,
-            388388,
-            385084
+            386560,
+            380536,
+            391880
           ]
         },
         {
@@ -2277,18 +2334,18 @@
           "items": 5000,
           "largest_page_bytes": 17650291,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 38116,
+          "ms_median": 34593,
           "ms_runs": [
-            39251,
-            37991,
-            38116
+            34924,
+            34467,
+            34593
           ],
-          "output_bytes": 150510306,
-          "rss_kb_median": 1038948,
+          "output_bytes": 150511304,
+          "rss_kb_median": 1051856,
           "rss_kb_runs": [
-            1028352,
-            1051692,
-            1038948
+            1055608,
+            1051248,
+            1051856
           ]
         },
         {
@@ -2306,18 +2363,18 @@
           "items": 10000,
           "largest_page_bytes": 35307799,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 96566,
+          "ms_median": 86638,
           "ms_runs": [
-            96566,
-            103480,
-            91187
+            85153,
+            86638,
+            100338
           ],
-          "output_bytes": 300902947,
-          "rss_kb_median": 1704328,
+          "output_bytes": 300903945,
+          "rss_kb_median": 1820732,
           "rss_kb_runs": [
-            1855744,
-            1694456,
-            1704328
+            1820732,
+            1855564,
+            1701536
           ]
         }
       ],
@@ -2876,7 +2933,7 @@
                 "min": 35,
                 "total": 607
               },
-              "llms_file": 783,
+              "llms_file": 784,
               "ctx_section": {
                 "items": 17,
                 "max": 644,
@@ -2884,7 +2941,7 @@
                 "min": 66,
                 "total": 3178
               },
-              "ctx_file": 3424,
+              "ctx_file": 3425,
               "index_row": {
                 "items": 17,
                 "max": 146,
@@ -2916,7 +2973,7 @@
                 "min": 35,
                 "total": 609
               },
-              "llms_file": 781,
+              "llms_file": 782,
               "ctx_section": {
                 "items": 17,
                 "max": 643,
@@ -2924,7 +2981,7 @@
                 "min": 66,
                 "total": 3176
               },
-              "ctx_file": 3418,
+              "ctx_file": 3419,
               "index_row": {
                 "items": 17,
                 "max": 146,
@@ -3571,13 +3628,13 @@
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 90537,
+              "bytes": 92845,
               "path": "specs/00-overview/index.html"
             },
-            "median_bytes": 12193,
+            "median_bytes": 12259,
             "over_budget": [],
             "pages": 101,
-            "total_bytes": 2092969
+            "total_bytes": 2104024
           }
         }
       },
@@ -3600,9 +3657,9 @@
     },
     "package": {
       "command": "npm pack --dry-run --json",
-      "files": 655,
-      "packed_bytes": 1246249,
-      "unpacked_bytes": 4200960
+      "files": 658,
+      "packed_bytes": 1257371,
+      "unpacked_bytes": 4233981
     }
   },
   "schema": "agsc.measurements.v1",
