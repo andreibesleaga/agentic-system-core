@@ -10,6 +10,7 @@ const { composeFrom, selectionBlock, selectionFences } = require('../../../src/c
 const { dslRelationships, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
 const archive = require('../../../src/composition/archive.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 /** AGSC-07-17: an invalid composition returns the verdict alone, exit 1. */
 function exitCodeOf(result) {
@@ -265,8 +266,10 @@ const HANDLERS = {
   'compose-0023': runVerdictVector,
 };
 
-module.exports.run = function run(vector) {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded(function run(vector) {
   const handler = HANDLERS[vector.id];
   if (!handler) return { status: 'fail', detail: `compose.js has no handler for ${vector.id}` };
   return handler(vector);
-};
+});

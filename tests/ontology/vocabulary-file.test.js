@@ -168,6 +168,21 @@ test('the 1.0.0 version and the dates the rule states (AGSC-05-25)', () => {
   assert.match(one(ONTOLOGY, `${DCTERMS}modified`).value, /^\d{4}-\d{2}-\d{2}$/u);
 });
 
+test('the modification date is the date of the release that ships this version of the file (AGSC-05-25)', () => {
+  // The rule derives `modified` from the release, never from a clock, and the copy
+  // served under the version IRI never changes once it is served, so the date is
+  // held equal to the release's own date in the change log and in the citation file.
+  const version = one(ONTOLOGY, `${OWL}versionInfo`).value;
+  const modified = one(ONTOLOGY, `${DCTERMS}modified`).value;
+  const changelog = fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8');
+  const heading = changelog.split('\n').find((line) => line.startsWith(`## [${version}] - `));
+  assert.ok(heading, `the change log has no section for version ${version}`);
+  assert.strictEqual(modified, heading.slice(`## [${version}] - `.length));
+  const citation = fs.readFileSync(path.join(ROOT, 'CITATION.cff'), 'utf8');
+  const field = (name) => (citation.split('\n').find((line) => line.startsWith(`${name}: `)) || '').slice(name.length + 2);
+  if (field('version') === version) assert.strictEqual(modified, field('date-released'));
+});
+
 test('the header names every section a property may be emitted by, and the dates as the rule words them', () => {
   assert.ok(TTL.includes('# emitted by a rule of spec/05 sections 5.3, 5.6 and 5.7 or of spec/11 (AGSC-05-28)'));
   assert.ok(!TTL.includes('section 5.6 (AGSC-05-26..28)'));

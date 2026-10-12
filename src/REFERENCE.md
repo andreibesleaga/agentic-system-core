@@ -65,9 +65,16 @@ the trim every context applies to a base address or a folder path before it appe
 route, and `withoutTrailingFeeds` and `withOneTrailingFeed`, the trim of a text's
 trailing line feeds. Each reads back from the end, so it is linear in the length of
 the text; the patterns they replaced read to the end from every slash or line feed of
-a run and were quadratic. The code the build copies into every node's pages (the page
-tools' script, the compose page's script and `composition/archive.js#archiveName`)
-keeps its own copy, since changing it changes the bytes every node emits.
+a run and were quadratic. The scripts the build copies into every node's pages (the
+page tools' script and the compose page's script) keep their own copy, since changing
+them changes the bytes every node emits; `composition/archive.js#archiveName`, whose
+source text the compose page's bundle carries, uses the module's own portable
+`withoutTrailingSlashes`. `src/shared/key-value-line.js` holds `keyValueLine`,
+`lineRest`, `lineText` and `hasLineTerminator`: the rest of one line after a fixed head
+(a "key: value" line, a heading's text), read with one match of the head, one search
+for a line terminator and one slice. The patterns they replaced (a run of blanks, then
+`(.*)$` or `(.+)$`) read the rest of the line again for every blank they gave back when
+the line held a carriage return, U+2028 or U+2029.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

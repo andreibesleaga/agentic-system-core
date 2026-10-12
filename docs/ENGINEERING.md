@@ -90,7 +90,7 @@ The directory layout is the domain model, and `npm run arch` checks it. Each par
 
 | Part of `src/` | May require |
 |---|---|
-| `shared/` | nothing inside `src/` (the shared kernel: the two string orderings and the trailing-slash and trailing line-feed trims) |
+| `shared/` | nothing inside `src/` (the shared kernel: the two string orderings, the trailing-slash and trailing line-feed trims, and the reader of the rest of a line after a fixed head) |
 | `knowledge/` | `knowledge/`, `shared/` |
 | `governance/` | `knowledge/`, `governance/`, `ports/`, `shared/` |
 | `composition/` | `knowledge/`, `composition/`, `ports/`, `shared/` |

@@ -43,6 +43,16 @@ Feature: Human contributor fixes a page and passes a hard review gate
     And every finding names its file, line and column
     And no model or network call occurs anywhere in this lane (AGSC-08-30)
 
+  @PRD-041 @PRD-042 @agent @matrix-A13
+  Scenario: The review lane labels the change and comments on its findings, with no model call
+    Given the contributor's change adds a concept with no description
+    When the change runs "npx agentic-system-core review" under the network trap
+    Then review exits 0, and its label is the verdict with the counts, "review: pass (0 error, 1 warn)" (AGSC-09-07)
+    And its comment names each finding by code and file, the concept with no description among them, and says the lane is lint-only (AGSC-08-27)
+    And the same review with "--json" gives every finding its file, line and column
+    And with "AGSC_FEATURE_LLM_REVIEW" set to "1" the review still passes, warns that no model adapter ran, and makes no model call
+    And no model or network call occurs anywhere in the review lane (AGSC-08-27, AGSC-08-30)
+
   @PRD-041 @PRD-050 @human @matrix-H4
   Scenario: Maintainer reviews, ratifies and the change deploys
     Given the required CI status check is green

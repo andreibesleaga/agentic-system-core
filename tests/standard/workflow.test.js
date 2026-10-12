@@ -11,12 +11,15 @@
 //     whose thresholds CONTRIBUTING.md states;
 //   - every leg packs both packages and installs the two tarballs together, so the
 //     tag push is never the first time the packed files are installed;
-//   - the Node line after 24 is tested too, as a leg of its own.
+//   - the Node line after 24 is tested too, as a leg of its own;
+//   - the browser job fails when a scenario that needs the browser is skipped.
 
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const YAML = require('yaml');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -364,6 +367,50 @@ test('a browser job runs the browser lane on Ubuntu with pinned, checksummed dow
   assert.match(script, /grep -qx '# skipped 0' /u, 'the browser files must skip nothing (the TAP summary line)');
   // The acceptance scenarios that need a browser run there too.
   assert.match(script, /node --test [^\n]*tests\/acceptance\/features\.test\.js/u);
+});
+
+/** The one job of test.yml that runs the browser lane. */
+function browserJob() {
+  const entries = Object.values(load(FILE).jobs).filter((job) => JSON.stringify(job.steps || []).includes('AGSC_BROWSER'));
+  assert.strictEqual(entries.length, 1, 'one job runs the browser lane');
+  return entries[0];
+}
+
+/** bash, where this machine has one that runs a script (the step runs on Ubuntu). */
+const BASH = process.platform !== 'win32' && spawnSync('bash', ['-c', 'exit 0']).status === 0;
+
+test('the browser job fails when a scenario that needs the browser is skipped', { skip: BASH ? false : 'no bash here' }, () => {
+  const steps = browserJob().steps;
+  const at = steps.findIndex((s) => /node --test [^\n]*tests\/acceptance\/features\.test\.js/u.test(s.run || ''));
+  assert.ok(at >= 0, 'the browser job runs the acceptance scenarios');
+  const scenarios = steps[at];
+  // The scenarios' TAP is kept for the next step; pipefail keeps a failing scenario failing.
+  assert.strictEqual(scenarios.shell, 'bash');
+  assert.match(scenarios.run, /set -euo pipefail/u);
+  assert.match(scenarios.run, /--test-reporter=tap [^\n]*\| tee "\$RUNNER_TEMP\/acceptance-browser\.tap"/u);
+  const guard = steps[at + 1];
+  assert.ok(guard && /acceptance-browser\.tap/u.test(guard.run || ''), 'the step after the scenarios reads their TAP');
+  // The guard, run as the runner runs it, over scratch TAP output.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-browser-tap-'));
+  try {
+    const ran = 'ok 4 - persona-a-reader — Reader searches via the prebuilt client-side index';
+    const skipped = `${ran} # SKIP not available here (browser): no browser here. the reason`;
+    for (const [lines, passes] of [
+      [[ran, 'ok 5 - persona-b-contributor — CI runs a lint-only review, no LLM call', '# pass 2', '# skipped 0'], true],
+      [['ok 3 - persona-b-contributor — The contributor opens the pull request # SKIP pending (forge): on the forge', ran,
+        '# pass 1', '# skipped 1'], true],
+      [[skipped, '# pass 0', '# skipped 1'], false],
+      [[ran.replace('ok 4', 'ok 1'), skipped.replace('ok 4', 'ok 2'), '# pass 1', '# skipped 1'], false],
+      [['# pass 0', '# skipped 0'], false],
+    ]) {
+      fs.writeFileSync(path.join(dir, 'acceptance-browser.tap'), `TAP version 13\n${lines.join('\n')}\n`);
+      const r = spawnSync('bash', ['-e', '-c', guard.run], { cwd: dir, encoding: 'utf8', env: { ...process.env, RUNNER_TEMP: dir } });
+      assert.strictEqual(r.status === 0, passes, `${lines.join(' | ')}: ${r.stdout}${r.stderr}`);
+      assert.strictEqual(r.stdout.includes('::error::'), !passes, r.stdout);
+    }
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
 });
 
 test('the release lane publishes a pre-release under the dist-tag next and a final release under latest', () => {

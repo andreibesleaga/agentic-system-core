@@ -1,9 +1,11 @@
 'use strict';
-// verifies AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08
+// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates; the stale items
 // the NOW page lists; the permissions and steps of the shipped release workflow,
-// read from the file; the import of the old site; and, where the real-Bundle lane
+// read from the file; the import of the old site; a retired item that keeps its
+// slug and page while its successor takes the old address, and the refusal of a
+// second item under the retired slug; and, where the real-Bundle lane
 // is switched on, a restore from a bare clone of the patterns node. The steps of
 // the scenario that waits on a gap (a channel whose publish choice is auto) are
 // written here too.
@@ -444,6 +446,55 @@ module.exports = [
       const ci = world.agsc(['ci', '--json'], { offline: true });
       assert.strictEqual(ci.exit, 0, ci.stdout + ci.stderr);
       assert.strictEqual(JSON.parse(ci.stdout).status, 'pass');
+    },
+  },
+  {
+    pattern: /^the item "(content\/concepts\/[a-z0-9-]+\.md)" is retired and superseded by "([a-z0-9-]+)", which keeps the old address "(\/[a-z0-9/-]+\/)" among its aliases$/u,
+    run(world, rel, successor, alias) {
+      const old = world.read(rel);
+      const { frontmatter } = splitItem(old);
+      assert.strictEqual(frontmatter.status, undefined, `${rel} already carries a status`);
+      // AGSC-11-22: the retired item stays in the Bundle, under its own slug.
+      world.write(rel, old.replace(/\nkind: pattern\n/u, '\nkind: pattern\nstatus: retired\n'));
+      assert.strictEqual(splitItem(world.read(rel)).frontmatter.status, 'retired');
+      const retired = path.basename(rel, '.md');
+      // The successor is a new item with a new slug; `supersedes` names the retired one
+      // (AGSC-01-12), and the address an earlier site gave it is one of its aliases.
+      world.write(`content/concepts/${successor}.md`, ['---', 'type: concept', 'title: Bounded retries',
+        'description: Every failed tool call is retried a fixed number of times with backoff, then reported.',
+        'clusters:', '  - agent-patterns', 'date: "2026-01-01"', 'prov:', '  origin: human', '  operator: human:andreibesleaga',
+        'supersedes:', `  - ${retired}`, 'aliases:', `  - ${alias}`, 'kind: pattern', '---', '',
+        splitItem(old).body.trim(), ''].join('\n'));
+      world.state.superseded = { alias, retired, successor };
+    },
+  },
+  {
+    pattern: /^the retired item keeps its slug and its page "(\/concepts\/[a-z0-9-]+\/)", which says it is retired \(AGSC-01-12, AGSC-11-22\)$/u,
+    run(world, route) {
+      const { retired } = world.state.superseded;
+      assert.strictEqual(route, `/concepts/${retired}/`);
+      const page = world.read(`www${route}index.html`);
+      assert.match(page, /This item is retired\. Its address stays valid and its identifier never changes/u);
+      // The successor has a page of its own, at its own slug.
+      assert.ok(world.exists(`www/concepts/${world.state.superseded.successor}/index.html`));
+    },
+  },
+  {
+    pattern: /^"_redirects" sends "(\/[a-z0-9/-]+\/)" to "(\/concepts\/[a-z0-9-]+\/)" with a 301, and no line redirects the retired page \(AGSC-06-04\)$/u,
+    run(world, from, to) {
+      const lines = world.read('www/_redirects').split('\n').filter((l) => l !== '' && !l.startsWith('#'));
+      assert.ok(lines.includes(`${from} ${to} 301`), lines.join('\n'));
+      const retiredPage = `/concepts/${world.state.superseded.retired}/`;
+      assert.ok(!lines.some((l) => l.split(' ')[0] === retiredPage), lines.join('\n'));
+    },
+  },
+  {
+    pattern: /^a new lesson "(content\/lessons\/([a-z0-9-]+)\.md)" reuses the retired slug$/u,
+    run(world, rel, slug) {
+      assert.strictEqual(slug, world.state.superseded.retired);
+      world.write(rel, world.read('content/lessons/record-why-a-handoff-happened.md')
+        .replace('title: Record why a handoff happened', 'title: Tool-use retries need a budget'));
+      assert.strictEqual(splitItem(world.read(rel)).frontmatter.title, 'Tool-use retries need a budget');
     },
   },
 ];

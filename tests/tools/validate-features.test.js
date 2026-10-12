@@ -445,6 +445,45 @@ describe('validate-features — the persona × mode × surface matrix', () => {
     assert.deepEqual(json.findings.map((f) => f.message.replace(/ \(.*$/u, '')), ['row H2 is covered by no scenario that runs']);
   });
 
+  // The verb set of AGSC-09-07, read from spec/09-conformance.md, against the step
+  // text of the scenarios that run: a CLI surface marked B claims every verb.
+  const VERB_SPEC = '- **AGSC-09-07** The verb set is exactly **three**: `init`, `lint`, `review`. `run` and `trace` are not verbs of this pack.\n';
+  function verbRoot(reviewRuns) {
+    return featureRoot({
+      'MATRIX.md': '| Surface | Target | Scenario |\n|---|---|---|\n| CLI verbs (3) | B for all 3 | persona-0 |\n',
+      'persona-0.feature': ['@persona-0 @human @mode-0', 'Feature: f', '  As P0 (x)', '',
+        '  Scenario: Starts', '    When the author runs "agsc init"', '    Then "npx agentic-system-core lint" exits 0', '',
+        '  Scenario: Reviews on a forge', '    When the forge runs "agsc review"', '    Then a label is added', ''].join('\n'),
+    }, {
+      'docs/PRD.md': '| P0 | Drop-in user | x |\n\n| PRD-053 | a requirement |\n',
+      'spec/09-conformance.md': VERB_SPEC,
+      ...(reviewRuns ? {} : { 'tests/acceptance/pending/persona-0--reviews-on-a-forge.json':
+        JSON.stringify({ class: 'forge', reason: 'a sentence of reason long enough', scenario: 'Reviews on a forge' }) }),
+    });
+  }
+
+  it('--strict-matrix reports a verb of AGSC-09-07 that no running scenario runs, on the CLI surface', () => {
+    const { code, json } = envelope('validate-features', ['--strict-matrix', verbRoot(false)]);
+    assert.equal(code, 1);
+    assert.deepEqual(json.findings.map((f) => [f.code, f.file, f.line, f.severity]),
+      [['AGSC-E202', 'features/MATRIX.md', 3, 'error']]);
+    assert.match(json.findings[0].message,
+      /surface "CLI verbs \(3\)" claims every verb, and no scenario that runs has "agsc review" or "agentic-system-core review" in a step \(AGSC-09-07\)/u);
+    const warned = envelope('validate-features', [verbRoot(false)]);
+    assert.equal(warned.code, 0);
+    assert.deepEqual(warned.json.findings.map((f) => f.severity), ['warn']);
+    // Once the scenario runs, every verb is covered.
+    assert.deepEqual(envelope('validate-features', ['--strict-matrix', verbRoot(true)]).json.findings, []);
+  });
+
+  it('cliVerbs reads the verb set of AGSC-09-07; the shipped list is the command line\'s', () => {
+    const { cliVerbs } = tool('validate-features');
+    assert.deepEqual(cliVerbs(VERB_SPEC), ['init', 'lint', 'review']);
+    assert.deepEqual(cliVerbs('- **AGSC-09-06** no verb list here\n'), []);
+    const shipped = cliVerbs(fs.readFileSync(path.join(REPO, 'spec', '09-conformance.md'), 'utf8'));
+    assert.deepEqual(shipped, require(path.join(REPO, 'src', 'application', 'cli', 'main.js')).VERBS);
+  });
+
   it('a status outside the closed list, and a matrix with no Target column, are reported', () => {
     const root = featureRoot({
       'MATRIX.md': '| Row | Who | Feature file | Target |\n|---|---|---|---|\n| H1 | a | persona-0 | maybe |\n\n| Row | Who |\n|---|---|\n| H2 | b |\n',

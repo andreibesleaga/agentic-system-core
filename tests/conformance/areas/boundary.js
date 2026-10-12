@@ -8,7 +8,7 @@
 // not derive. No expectation is weakened by it; every other vector states its base.
 //
 // AGSC-11-18 makes the MCP `extensions` capability MCP's own "map of extension
-// identifiers to per-extension settings objects", and `bnd-0035` and `bnd-0036` pin
+// identifiers to per-extension settings objects", and `bnd-0042` and `bnd-0036` pin
 // the capabilities object as the node reports it under the revision its transport
 // speaks. Their handlers therefore open a real stdio session with the tool server
 // (`agsc mcp` on a scratch copy of the fixture Bundle, its `site.base` set to the
@@ -17,7 +17,9 @@
 // program to run in its place (the tests run a server that reports no map).
 // `bnd-0037`'s member `mcp_extensions` IS the list of identifiers advertised, which is
 // the map's key set; the settings object of each is pinned by AGSC-11-18 and asserted
-// by `bnd-0035`.
+// by `bnd-0042`. `bnd-0035`, withdrawn, stated members of revision 2026-07-28 that no
+// session of this transport can show; it has no handler, because a withdrawn case is
+// never run.
 
 const fs = require('node:fs');
 const os = require('node:os');
@@ -28,6 +30,7 @@ const federation = require('../../../src/boundary/federation.js');
 const visibility = require('../../../src/boundary/visibility.js');
 const surfaces = require('../../../src/boundary/surfaces.js');
 const { checks, deepEqual, findingsMatch, subsetOf } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 const DEFAULT_BASE = 'https://a.example/';
 
@@ -197,7 +200,7 @@ const FIXTURE_EPOCH = '1767225600';
  * server exits (AGSC-09-13). `result` is the `initialize` result, or null; `detail`
  * says what came back when there is none.
  */
-function initializeResult(vector, ctx, client) {
+function initializeResult(vector, ctx, client, revision = MCP_REVISION) {
   const engine = path.resolve((ctx && ctx.root) || path.join(__dirname, '..', '..', '..'));
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-mcp-capabilities-'));
   try {
@@ -207,7 +210,7 @@ function initializeResult(vector, ctx, client) {
     fs.writeFileSync(path.join(root, 'agsc.config.json'), `${JSON.stringify(config, null, 2)}\n`);
     const frames = [
       { id: 1, jsonrpc: '2.0', method: 'initialize',
-        params: { capabilities: {}, clientInfo: { name: client, version: '1.0.0' }, protocolVersion: MCP_REVISION } },
+        params: { capabilities: {}, clientInfo: { name: client, version: '1.0.0' }, protocolVersion: revision } },
       { jsonrpc: '2.0', method: 'notifications/initialized' },
     ];
     const program = (ctx && ctx.mcpServer) || [path.join(engine, 'bin', 'agsc.js'), 'mcp'];
@@ -234,40 +237,37 @@ function capabilitiesOf(session) {
 }
 
 /**
- * bnd-0035 — AGSC-11-18: the MCP extension's settings object, as a real session
- * reports it. Under revision 2025-11-25 the capabilities are reported once per
- * session, in the `initialize` result, so the handler opens two sessions with two
- * different clients and holds the reported maps to the case: each equals the stated
- * map, and the two reports are the same object, which is what
- * `discover_and_per_request_identical` asks of every report a node makes. The
- * `initialization_handshake` member and the `observed` list describe revision
- * 2026-07-28, which has no handshake and reports through `server/discover` and the
- * per-request capabilities; the reference transport does not speak that revision, so
- * neither is compared with anything here, and a runner for a transport that speaks
- * it reads those two reports instead. The settings object is also given to the
- * `validate-wellknown` check of AGSC-11-18 as reported, and once with a member added.
+ * bnd-0042 — AGSC-11-18: the MCP extension's settings object, as a real session
+ * reports it under the revision the case names (`input.mcp_revision`, 2025-11-25):
+ * once per session, in the `initialize` result. The handler opens one session per
+ * `input.sessions`, each with a different client, and holds the reported maps to the
+ * case: the first equals the stated map, and every session reports the same object.
+ * The settings object is also given to the check of AGSC-11-18 as reported, and once
+ * with a member added.
  */
-function runBnd0035(vector, ctx) {
+function runBnd0042(vector, ctx) {
   const base = baseOf(vector);
-  const first = initializeResult(vector, ctx, 'conformance-first');
-  const second = initializeResult(vector, ctx, 'conformance-second');
-  const reported = capabilitiesOf(first).extensions;
-  const again = capabilitiesOf(second).extensions;
+  const revision = vector.input.mcp_revision;
+  const count = Number.isInteger(vector.input.sessions) && vector.input.sessions >= 2 ? vector.input.sessions : 2;
+  const sessions = Array.from({ length: count }, (_, i) => initializeResult(vector, ctx, `conformance-${i + 1}`, revision));
+  const [first] = sessions;
+  const reports = sessions.map((session) => capabilitiesOf(session).extensions);
+  const reported = reports[0];
   const settings = (reported && reported[surfaces.MCP_EXTENSION_ID]) || {};
   const extra = { ...settings, 'x-other': 1 };
   const withExtra = surfaces.checkMcpExtensions({ [surfaces.MCP_EXTENSION_ID]: extra }, { base });
   const clean = surfaces.checkMcpExtensions(reported || {}, { base });
+  const same = reported !== undefined
+    && reports.every((one) => deepEqual(plain(reported), plain(one === undefined ? null : one)));
   return checks([
     ['extensions', deepEqual(vector.expected.extensions, plain(reported === undefined ? null : reported)),
       `the initialize result reports ${JSON.stringify(reported)} (${first.detail})`],
-    ['revision', Boolean(first.result) && first.result.protocolVersion === MCP_REVISION,
-      `the server did not negotiate ${MCP_REVISION}: ${first.detail}`],
+    ['revision', Boolean(first.result) && first.result.protocolVersion === revision,
+      `the server did not negotiate ${revision}: ${first.detail}`],
     ['settings_members', deepEqual(vector.expected.settings_members, Object.keys(settings).sort()),
       JSON.stringify(Object.keys(settings))],
-    ['discover_and_per_request_identical',
-      (reported !== undefined && deepEqual(plain(reported), plain(again === undefined ? null : again)))
-        === vector.expected.discover_and_per_request_identical,
-      `first session ${JSON.stringify(reported)}, second session ${JSON.stringify(again)}`],
+    ['every_session_reports_the_same_object', same === vector.expected.every_session_reports_the_same_object,
+      reports.map((one) => JSON.stringify(one)).join(' / ')],
     ['the reported object is accepted', reported !== undefined && clean.length === 0, JSON.stringify(plain(clean))],
     ['additional_member_is', withExtra.length > 0 && withExtra.every((f) => f.code === vector.expected.additional_member_is),
       JSON.stringify(plain(withExtra))],
@@ -462,7 +462,7 @@ function runBnd0037(vector) {
     ['links', deepEqual(vector.expected.links, links), JSON.stringify(links)],
     // `mcp_extensions` is the list of extension IDENTIFIERS advertised. MCP's
     // `extensions` is a map of identifier to settings object (AGSC-11-18), so the
-    // identifiers are its keys; the settings object is pinned by bnd-0035 and
+    // identifiers are its keys; the settings object is pinned by bnd-0042 and
     // asserted there. See the note at the top.
     ['mcp_extensions', deepEqual(vector.expected.mcp_extensions, Object.keys(extensions).sort()),
       JSON.stringify(extensions)],
@@ -674,17 +674,20 @@ const HANDLERS = {
   'bnd-0032': runBnd0032,
   'bnd-0033': runBnd0033,
   'bnd-0034': runBnd0034,
-  'bnd-0035': runBnd0035,
   'bnd-0036': runBnd0036,
   'bnd-0037': runBnd0037,
   'bnd-0038': runBnd0038,
   'bnd-0039': runBnd0039,
   'bnd-0040': runAddressCase,
   'bnd-0041': runAddressCase,
+  'bnd-0042': runBnd0042,
+  'bnd-0043': runAddressCase,
 };
 
-module.exports.run = function run(vector, ctx) {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded(function run(vector, ctx) {
   const handler = HANDLERS[vector.id];
   if (!handler) return { status: 'fail', detail: `boundary.js has no handler for ${vector.id}` };
   return handler(vector, ctx);
-};
+});

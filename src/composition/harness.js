@@ -642,18 +642,48 @@ function harnessName(selectionDigest) {
 }
 
 /**
+ * Whether a text holds an `allowed-tools` key: the name at the start of the text or
+ * after a line feed, with only blanks between, then blanks and a colon. Read in linear
+ * steps: each occurrence of the name is found once, and only the blanks right before
+ * and right after it are read, so a long run of line feeds cannot cost quadratic time.
+ *
+ * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {boolean}
+ */
+function allowedToolsKey(text, meter) {
+  const name = 'allowed-tools';
+  const blank = /\s/u;
+  let steps = text.length + 1;
+  let found = false;
+  for (let at = text.indexOf(name); at >= 0 && !found; at = text.indexOf(name, at + 1)) {
+    let start = at;
+    while (start > 0 && blank.test(text[start - 1])) start -= 1;
+    let end = at + name.length;
+    while (end < text.length && blank.test(text[end])) end += 1;
+    steps += (at - start) + (end - at - name.length) + 1;
+    found = (start === 0 || text.slice(start, at).includes('\n')) && text[end] === ':';
+  }
+  if (meter !== undefined) meter.steps += steps;
+  return found;
+}
+
+/**
  * AGSC-07-15, as a check rather than a promise: nothing executable, no shebang,
  * no `allowed-tools`, no symlink (a Harness is a map of text, so a symlink can
  * only arrive as a path that leaves the directory), no eighth file kind.
+ *
+ * @param {Iterable<[string, string]>} files path and text of each file.
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {Array<{code:string, file:string, message:string, severity:string}>}
  */
-function executableViolations(files) {
+function executableViolations(files, meter) {
   const out = [];
   const fixed = fixedFiles();
   for (const [path, text] of files) {
     const reasons = [];
     if (/^#!/u.test(String(text))) reasons.push('a shebang line');
-    if (/(^|\n)\s*allowed-tools\s*:/u.test(String(text))) reasons.push('an allowed-tools key');
+    if (allowedToolsKey(String(text), meter)) reasons.push('an allowed-tools key');
     if (/\.(?:sh|bash|zsh|ps1|cmd|bat|py|js|mjs|cjs|exe)$/u.test(path)) reasons.push('an executable file extension');
     if (path.startsWith('/') || path.split('/').includes('..')) reasons.push('a path outside the Harness directory');
     const known = fixed.includes(path)
@@ -744,11 +774,12 @@ const PORTABLE = Object.freeze(['singleLine', 'commentSafe', 'assistance', 'cont
   'mermaidEdges', 'isEmitted', 'linksOf', 'members', 'memberOrder', 'provenanceHeader',
   'licenceSentence', 'withoutTrailingFeeds', 'fenceProse', 'constraintLines', 'harnessJsonld', 'agentsMd',
   'dslIdentifier', 'quoted', 'relationships', 'workspaceDsl', 'diagramMmd', 'arc42Md',
-  'decisionRecords', 'skillFiles', 'selectionDigestInput', 'executableViolations', 'emit']);
+  'decisionRecords', 'skillFiles', 'selectionDigestInput', 'allowedToolsKey', 'executableViolations', 'emit']);
 
 module.exports = {
   PORTABLE,
   agentsMd,
+  allowedToolsKey,
   arc42Md,
   arc42Sections,
   canonicalJson,

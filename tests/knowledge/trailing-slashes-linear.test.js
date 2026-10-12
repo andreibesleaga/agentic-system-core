@@ -96,12 +96,12 @@ function files(dir) {
 }
 
 // The code the build copies into every node's pages keeps its own copy of the
-// pattern: the page tools' script, the compose page's script, and `archiveName`,
-// whose source text the compose page's bundle carries (composition/browser.js).
-// Changing them changes the bytes every node emits, which waits for a later version.
-// The shared module names the pattern it replaced in its comments.
-const KEPT = new Set(['src/distribution/page-tools.js', 'src/distribution/compose-page.js',
-  'src/composition/archive.js', 'src/shared/trailing.js']);
+// pattern: the page tools' script and the compose page's script. Changing them changes
+// the bytes every node emits, which waits for a later version. `archiveName`, whose
+// source text the compose page's bundle carries (composition/browser.js), has its own
+// portable scan (tests/composition/archive-linear.test.js). The shared module names the
+// pattern it replaced in its comments.
+const KEPT = new Set(['src/distribution/page-tools.js', 'src/distribution/compose-page.js', 'src/shared/trailing.js']);
 
 test('no module, command or tool outside the emitted page code uses the pattern', () => {
   const pattern = ['/', '\\/', '+$/'].join('');

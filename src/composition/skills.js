@@ -55,6 +55,7 @@ const { finding } = require('../knowledge/validate.js');
 const slugs = require('../knowledge/slug.js');
 const { fenceProse } = require('../knowledge/markdown.js');
 const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
+const { keyValueLine } = require('../shared/key-value-line.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -292,6 +293,27 @@ function diffSummary(before, after) {
   return `+${added} -${removed} lines`;
 }
 
+/** A pack frontmatter key, its colon and the blanks after it. */
+const PACK_KEY = /^([a-z][a-z0-9_-]*):\s*/u;
+
+/**
+ * The "key: value" lines of a pack's frontmatter block, each value trimmed; a line whose
+ * value holds a carriage return, U+2028 or U+2029 inside it is not read. Linear steps
+ * (`shared/key-value-line.js`): a pack handed to `skills import` is untrusted input.
+ *
+ * @param {string} yamlText
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {object}
+ */
+function declaredKeys(yamlText, meter) {
+  const declared = Object.create(null);
+  for (const line of String(yamlText).split('\n')) {
+    const pair = keyValueLine(line, PACK_KEY, meter);
+    if (pair !== null) declared[pair.key] = pair.value.trim();
+  }
+  return declared;
+}
+
 /**
  * AGSC-07-22: "`skills import` MUST map a `SKILL.md` to a `procedure` item,
  * round-tripping without loss of the declared fields."
@@ -319,11 +341,7 @@ function importPack(text, options) {
       + ' (AGSC-07-19, AGSC-07-20, AGSC-02-01)', { file: PACK_FILE, severity: 'error' }));
     return { body: '', findings, frontmatter: null, path: null };
   }
-  const declared = Object.create(null);
-  for (const line of match[1].split('\n')) {
-    const pair = /^([a-z][a-z0-9_-]*):\s*(.*)$/u.exec(line);
-    if (pair !== null) declared[pair[1]] = pair[2].trim();
-  }
+  const declared = declaredKeys(match[1]);
   const name = String(declared.name || '');
   if (!slugs.isValid(name)) {
     findings.push(finding('AGSC-E204',
@@ -361,11 +379,7 @@ function splitPack(text, options) {
   const source = String(text == null ? '' : text);
   const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/u.exec(source);
   if (match === null || !match[2].includes('<!-- agsc:provenance') || !match[2].includes(PACK_MARKER)) return null;
-  const declared = Object.create(null);
-  for (const line of match[1].split('\n')) {
-    const pair = /^([a-z][a-z0-9_-]*):\s*(.*)$/u.exec(line);
-    if (pair !== null) declared[pair[1]] = pair[2].trim();
-  }
+  const declared = declaredKeys(match[1]);
   const cluster = String(declared.name || '');
   const lines = match[2].split('\n');
   const items = [];
@@ -429,6 +443,6 @@ function unfence(text) {
 
 module.exports = {
   DESCRIPTION_MAX, FORBIDDEN_KEYS, INSTALL_TARGETS, PACK_FILE, TERMS,
-  diffSummary, executableViolations, fenceProse, importPack, install,
+  declaredKeys, diffSummary, executableViolations, fenceProse, importPack, install,
   packDescription, packText, packs, provenanceHeader, splitPack, unfence,
 };

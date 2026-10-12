@@ -84,6 +84,7 @@ const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
 const { isObject, itemText, oneLine, plain, yamlString } = require('../records.js');
 const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { keyValueLine } = require('../../shared/key-value-line.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'skills';
@@ -167,17 +168,26 @@ function under(dir, path) {
 
 // ------------------------------------------------------------------- frontmatter
 
+/** A top-level key, its colon and the blanks after it (the head of a lenient line). */
+const FLAT_KEY = /^([A-Za-z][A-Za-z0-9_-]*):[ \t]*/u;
+
 /**
  * The top-level `key: value` lines of a frontmatter block, for a block the failsafe
  * subset of AGSC-02-02 refuses (a Cursor rule's unquoted `globs: *.ts` is a YAML
- * alias to a strict parser). Nested values are not read.
+ * alias to a strict parser). Nested values are not read, and neither is a line that
+ * holds a line terminator other than the line feed. The line is read in linear steps
+ * (`shared/key-value-line.js`): a foreign repository is untrusted input.
+ *
+ * @param {string} yamlText
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {object}
  */
-function flatFrontmatter(yamlText) {
+function flatFrontmatter(yamlText, meter) {
   const out = Object.create(null);
   for (const line of String(yamlText).split('\n')) {
-    const m = /^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$/u.exec(line);
+    const m = keyValueLine(line, FLAT_KEY, meter);
     if (m === null) continue;
-    let value = m[2].trim();
+    let value = m.value.trim();
     if (/^".*"$/u.test(value)) {
       try {
         value = JSON.parse(value);
@@ -185,7 +195,7 @@ function flatFrontmatter(yamlText) {
         value = value.slice(1, -1);
       }
     } else if (/^'.*'$/u.test(value)) value = value.slice(1, -1).replace(/''/gu, '\'');
-    out[m[1]] = String(value);
+    out[m.key] = String(value);
   }
   return out;
 }

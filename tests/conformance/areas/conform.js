@@ -6,6 +6,7 @@ const {
   areasForLevel, claimCompleteness, crossImplementationClaim, divergenceVerdicts,
 } = require('../../../src/composition/conform.js');
 const { checks, deepEqual } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 function plain(value) {
   return JSON.parse(JSON.stringify(value));
@@ -69,8 +70,10 @@ const HANDLERS = {
   'conform-0004': runConform0004,
 };
 
-module.exports.run = function run(vector) {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded(function run(vector) {
   const handler = HANDLERS[vector.id];
   if (!handler) return { status: 'fail', detail: `conform.js has no handler for ${vector.id}` };
   return handler(vector);
-};
+});

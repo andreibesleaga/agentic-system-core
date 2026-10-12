@@ -43,7 +43,7 @@ function mutatedServer(dir) {
 }
 
 test('AGSC-11-18: both capability cases pass against the initialize result of a real session', () => {
-  for (const id of ['bnd-0035', 'bnd-0036']) {
+  for (const id of ['bnd-0042', 'bnd-0036']) {
     const result = area.run(vector(id), { root: ROOT });
     assert.deepStrictEqual(result, { detail: '', status: 'pass' }, id);
   }
@@ -53,7 +53,7 @@ test('AGSC-11-18: a server that reports no extensions map fails both capability 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-mutated-mcp-'));
   try {
     const ctx = { mcpServer: mutatedServer(dir), root: ROOT };
-    const first = area.run(vector('bnd-0035'), ctx);
+    const first = area.run(vector('bnd-0042'), ctx);
     assert.strictEqual(first.status, 'fail');
     assert.match(first.detail, /^extensions: /u);
     const second = area.run(vector('bnd-0036'), ctx);
@@ -72,7 +72,7 @@ test('AGSC-11-18: the runner compares what the server reports, never the case wi
     const end = text.indexOf('\n}\n', start);
     return text.slice(start, end);
   };
-  for (const name of ['runBnd0035', 'runBnd0036']) {
+  for (const name of ['runBnd0042', 'runBnd0036']) {
     const source = body(name);
     // The capabilities come from the session, not from the Boundary context's function.
     assert.doesNotMatch(source, /surfaces\.mcpCapabilities/u, name);

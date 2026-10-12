@@ -5,7 +5,11 @@ cases. `fuzz-patterns.test.js` is the seeded fuzz lane of the text scanners that
 replaced regular expressions: on a fixed set of generated short texts each scanner
 returns exactly what the expression it replaced returned, and on long runs of every
 character of that expression's alphabet it stays within a constant number of steps
-per character.
+per character. `regex-literals-linear.test.js` is the generic guard beside it: it reads
+every regular-expression literal in `src/` (the three scripts the build copies into
+every node's pages aside) and refuses the shapes known to take quadratic time on one
+long line, unless an allow-list names the literal and says why it is linear where it is
+used.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md).
 

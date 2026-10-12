@@ -1,4 +1,4 @@
-# Trace: PRD-005, PRD-017, PRD-021, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056 · PLAN §7
+# Trace: PRD-005, PRD-017, PRD-018, PRD-021, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056 · PLAN §7
 @persona-i @mode-0
 Feature: Maintainer-as-operator keeps the site green with zero maintenance
   As P9 (maintainer-as-operator)
@@ -42,7 +42,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the workflow reads with "contents: read", and only the publishing job, behind the "release" environment, adds "id-token: write" and "attestations: write"
     And the publishing job runs on Node 24, attests the packed tarballs with "actions/attest-build-provenance" pinned to a commit, and publishes "agentic-system-core" and "agsc-cli" each with "--provenance"
 
-  @PRD-048 @human
+  @PRD-048 @human @matrix-H5
   Scenario: The maintainer cuts a release and the packages publish with attestations
     When the maintainer pushes a tag "v1.0.0"
     Then "agentic-system-core" (bin "agsc") and the "agsc-cli" alias publish via npm trusted publishing
@@ -73,6 +73,20 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the "AGSC-E706" finding names the sha of that commit, and not the root commit (AGSC-08-26)
     When the maintainer runs "agsc verify --json"
     Then the JSON envelope carries the error "AGSC-E706"
+
+  @PRD-018 @human @matrix-H5
+  Scenario: A superseded item keeps its slug and its page, its old address redirects, and the slug is never reused
+    Given a fresh copy of the acceptance Bundle
+    And the item "content/concepts/tool-use-retries.md" is retired and superseded by "bounded-retries", which keeps the old address "/patterns/tool-use-retries/" among its aliases
+    When the maintainer runs "agsc build"
+    Then the command exits 0
+    And the retired item keeps its slug and its page "/concepts/tool-use-retries/", which says it is retired (AGSC-01-12, AGSC-11-22)
+    And "_redirects" sends "/patterns/tool-use-retries/" to "/concepts/bounded-retries/" with a 301, and no line redirects the retired page (AGSC-06-04)
+    When a new lesson "content/lessons/tool-use-retries.md" reuses the retired slug
+    And the maintainer runs "agsc ci --json"
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E206"
+    And the output names "content/lessons/tool-use-retries.md"
 
   @PRD-021 @human @matrix-H21
   Scenario: A maintainer imports the old site

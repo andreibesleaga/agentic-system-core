@@ -10,7 +10,7 @@
 
 ## 8.2 DCO-Plus trailer grammar
 
-- **AGSC-08-06** An accepted contribution MUST carry a trailer block matching the grammar below. A contribution is a change offered by someone other than the node's maintainer: the maintainer's own commits need no sign-off under this rule, while on a node with a `channels[]` entry whose `publish` is `auto` every commit of the content branch still carries one of the three trailers of AGSC-08-26(g). *(Amended 2026-10-10 for 1.0.0: the rule did not say who contributes; the maintainer's own commits are not contributions.)* [PRD-040]
+- **AGSC-08-06** An accepted contribution MUST carry a trailer block matching the grammar below. A contribution is a change offered by someone other than the node's maintainer: the maintainer's own commits need no sign-off under this rule, while on a node with a `channels[]` entry whose `publish` is `auto` every commit that AGSC-08-26(g) checks still carries one of its three trailers. *(Amended 2026-10-10 for 1.0.0: the rule did not say who contributes; the maintainer's own commits are not contributions.)* *(Amended 2026-10-12 for 1.0.0: the sentence named every commit of the content branch, while AGSC-08-26(g) exempts the root commit and checks the first-parent chain; it now names the commits that clause checks. No behaviour changes.)* [PRD-040]
 
 ```abnf
 trailer-block = signoff *( LF assisted )

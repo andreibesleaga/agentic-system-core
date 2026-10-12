@@ -35,7 +35,7 @@
 #              below (read from the release's checksums file on 2026-09-25).
 #   Browser    One job on Ubuntu runs the browser lane (AGSC_BROWSER=1): the three
 #              browser test files, none of which may skip, and the acceptance
-#              scenarios that need a browser. playwright-core 1.61.1 comes from the
+#              scenarios, none of which may skip for want of the browser. playwright-core 1.61.1 comes from the
 #              npm registry and chrome-headless-shell 149.0.7827.55 from Chrome for
 #              Testing, each refused unless its SHA-256 is the one recorded below
 #              (read on 2026-10-10; the registry's sha512 integrity of the same
@@ -214,11 +214,27 @@ jobs:
           # A browser that failed to start would make these tests skip, not fail.
           grep -qx '# skipped 0' "$RUNNER_TEMP/browser.tap" || { echo "a browser test skipped: the browser lane did not run"; exit 1; }
       - name: the acceptance scenarios, with the browser present
+        shell: bash
         env:
           AGSC_BROWSER: '1'
           CHROME_EXE: ${{ runner.temp }}/chrome-headless-shell-linux64/chrome-headless-shell
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node --test tests/acceptance/features.test.js
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap tests/acceptance/features.test.js | tee "$RUNNER_TEMP/acceptance-browser.tap"
+      - name: no scenario that needs the browser was skipped
+        # A browser that failed to start would make those scenarios skip, not fail.
+        shell: bash
+        run: |
+          tap="$RUNNER_TEMP/acceptance-browser.tap"
+          if grep -q '# SKIP not available here (browser)' "$tap"; then
+            echo "::error::a scenario that needs the browser was skipped, so the browser lane did not run it"
+            exit 1
+          fi
+          if ! grep -qE '^# pass [1-9][0-9]*$' "$tap"; then
+            echo "::error::no acceptance scenario passed in the browser lane"
+            exit 1
+          fi
 
   actionlint:
     name: actionlint (the workflow files)

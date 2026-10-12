@@ -22,8 +22,9 @@
  *              beside the copy, `<id>.outside`, whose absolute path replaces `{{outside}}`
  *              in its file texts, arguments and environment values; a `must_not_reach`
  *              entry with `under: "outside"` is looked for in that folder
- *   import     a hostile foreign corpus handed to `agsc import --from <format>`,
- *              optionally followed by `agsc lint` over what was written
+ *   import     a hostile foreign corpus handed to `agsc import --from <format>`, with
+ *              the case's `args` after it (`{{source}}` in one is the corpus's
+ *              absolute path), optionally followed by `agsc lint` over what was written
  *   wellknown  a hostile discovery document handed to `tools/validate-wellknown`
  *   federation the walk of AGSC-11-10 over hostile discovery documents served by an
  *              injected in-memory fetch (no socket is opened)
@@ -239,7 +240,9 @@ function runImport(c, env) {
     fs.mkdirSync(source, { recursive: true });
     materialise(source, c.source);
   }
-  const r = spawn([path.join(REPO, 'bin', 'agsc.js'), 'import', '--from', c.format, target, '--json'], dir);
+  const slashed = target.split(path.sep).join('/');
+  const args = (c.args || []).map((arg) => String(arg).split('{{source}}').join(slashed));
+  const r = spawn([path.join(REPO, 'bin', 'agsc.js'), 'import', '--from', c.format, target, ...args, '--json'], dir, {}, c.bound === true);
   let codes = codesOf(r.out);
   let exit = r.code;
   if (c.then_lint === true && r.code === 0) {
@@ -248,7 +251,10 @@ function runImport(c, env) {
     exit = lint.code;
   }
   // What an import produced is the Bundle's `content/` tree.
-  return { codes, exit, internal: /internal error/u.test(r.err), leaked: leaksUnder(path.join(dir, 'content'), c.must_not_reach), ran: r.code === 0 };
+  return {
+    codes, exit, internal: /internal error/u.test(r.err), killed: r.killed,
+    leaked: leaksUnder(path.join(dir, 'content'), c.must_not_reach), ran: r.code === 0,
+  };
 }
 
 function runWellknown(c, env) {

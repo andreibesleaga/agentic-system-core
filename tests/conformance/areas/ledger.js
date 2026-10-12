@@ -10,8 +10,11 @@
 const ledger = require('../../../src/governance/ledger.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
-module.exports.run = (vector) => {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded((vector) => {
   const input = vector.input;
   const expected = vector.expected;
   const result = [];
@@ -70,4 +73,4 @@ module.exports.run = (vector) => {
     JSON.stringify(ledger.verify(derived.ledger, wellknown))]);
 
   return checks(result);
-};
+});

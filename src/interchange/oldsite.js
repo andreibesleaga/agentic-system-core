@@ -22,6 +22,7 @@
 const { finding } = require('../knowledge/validate.js');
 const { nfc } = require('../knowledge/unicode.js');
 const { withOneTrailingFeed } = require('../shared/trailing.js');
+const { keyValueLine } = require('../shared/key-value-line.js');
 
 /** AGSC-01-16: the size cap every parsed input lives under. */
 const MAX_BYTES = 1048576;
@@ -29,8 +30,8 @@ const MAX_BYTES = 1048576;
 /** The fence AGSC-02-01 uses, and the old site uses too. */
 const FENCE = '---';
 
-/** A dotted key: `references.0.label` -> ['references', '0', 'label']. */
-const KEY_LINE = /^([A-Za-z0-9_.]+):[ \t]*(.*)$/u;
+/** A dotted key (`references.0.label` -> ['references', '0', 'label']), its colon and the blanks after it. */
+const KEY_LINE = /^([A-Za-z0-9_.]+):[ \t]*/u;
 
 /** A flow sequence of scalars: `[a, b, "c, d"]`. */
 function parseFlowSequence(text) {
@@ -115,6 +116,20 @@ function setDotted(target, segments, value) {
  *   leaves 42 of its 153 diagram sources without one).
  */
 /**
+ * One "key: value" line of a card: its dotted key and the value to the end of the line,
+ * or null. A line holding U+2028 or U+2029, which the card reader does not turn into a
+ * line feed, is not one. Linear steps (`shared/key-value-line.js`): a foreign card is
+ * untrusted input.
+ *
+ * @param {string} line
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {{key:string, value:string}|null}
+ */
+function keyLine(line, meter) {
+  return keyValueLine(line, KEY_LINE, meter);
+}
+
+/**
  * The slug a card path yields: its file stem, `/` being the separator everywhere.
  * Exported so that a caller can address a card BEFORE reading it (the per-record
  * corrections are keyed by slug and are applied to the record's own bytes).
@@ -162,15 +177,15 @@ function readCard(file) {
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     if (line.trim() === '') continue;
-    const match = KEY_LINE.exec(line);
+    const match = keyLine(line);
     if (match === null) {
       findings.push(finding('AGSC-E101',
         `"${path}" line ${i + 2} is not a "key: value" line and was skipped (AGSC-01-22)`,
         { file: path, slug, line: i + 2, severity: 'warn' }));
       continue;
     }
-    keys.push(match[1]);
-    setDotted(record, match[1].split('.'), parseValue(match[2]));
+    keys.push(match.key);
+    setDotted(record, match.key.split('.'), parseValue(match.value));
   }
 
   // AGSC-01-14: LF, NFC, exactly one trailing LF. The body is normalised here so
@@ -195,6 +210,7 @@ function normaliseSource(text) {
 
 module.exports = {
   MAX_BYTES,
+  keyLine,
   normaliseSource,
   parseFlowSequence,
   parseScalar,

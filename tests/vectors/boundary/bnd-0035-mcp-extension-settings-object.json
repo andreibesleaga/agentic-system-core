@@ -2,17 +2,7 @@
   "area": "boundary",
   "description": "Expected bytes are derived by hand from the rule text. The settings object of the MCP extension identifier. MCP revision 2026-07-28 defines `extensions` as \"a map of extension identifiers to per-extension settings objects\", and AGSC-11-17 requires every byte a declared surface emits to be pinned by a rule and proved by a required vector — so the object itself is normative rather than left to the published extension note. Derivation from AGSC-11-18: the map carries the identifier `com.agenticsystemcore/knowledge` (valid under MCP's _meta key naming rules, SEP-2133); its settings object has EXACTLY ONE member, `linkset`, whose value is the absolute https URL of this node's /.well-known/knowledge-linkset (AGSC-06-07), derived from site.base and never configured; and no other member is emitted, so a second member is a declaration that disagrees with the rule and is AGSC-E210 from validate-wellknown (AGSC-11-16, AGSC-11-19). That revision has no initialization handshake (AGSC-11-18), so the same object travels in the server/discover result and in the capabilities carried per request, and the two MUST be identical.",
   "expected": {
-    "additional_member_is": "AGSC-E210",
-    "discover_and_per_request_identical": true,
-    "extensions": {
-      "com.agenticsystemcore/knowledge": {
-        "linkset": "https://a.example/.well-known/knowledge-linkset"
-      }
-    },
-    "initialization_handshake": false,
-    "settings_members": [
-      "linkset"
-    ]
+    "withdrawn": true
   },
   "id": "bnd-0035",
   "input": {
@@ -29,9 +19,11 @@
       "base": "https://a.example/"
     }
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
     "spec_version": "1.0.0"
   },
-  "rule": "AGSC-11-18"
+  "reason": "Withdrawn for 1.0.0 (2026-10-12). The case was required, and its member `initialization_handshake` describes MCP revision 2026-07-28, which has no initialization handshake; a transport that speaks revision 2025-11-25 (AGSC-11-16), as the reference transport does, has nothing that member can be compared with, so no runner of that transport could check it and a pass asserted nothing about it. Its `observed` list and the name `discover_and_per_request_identical` describe the same revision. Superseded by bnd-0042, which states the same settings object of AGSC-11-18 in members that hold for revision 2025-11-25: the `initialize` result of every session. A case for revision 2026-07-28 waits for the version that serves it (AGSC-00-20).",
+  "rule": "AGSC-11-18",
+  "superseded_by": "bnd-0042"
 }

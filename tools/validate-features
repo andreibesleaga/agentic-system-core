@@ -54,6 +54,9 @@
 //              the `docs/PRD.md` tables (a row whose first cell is `P<n>`) that no
 //              feature file declares (`As P<n>` in its description, or its row of
 //              the `features/README.md` coverage table)
+//              a B surface named "CLI verbs" while a verb of the AGSC-09-07 set (read
+//              from `spec/09-conformance.md`) appears, as `agsc <verb>` or
+//              `agentic-system-core <verb>`, in the steps of no running scenario
 //   AGSC-E201  a gap file under `tests/acceptance/pending/` that answers no G cell
 //   AGSC-E203  a Target that names no status
 // "Running" means the scenario has no pending file, or one of class `conditional`.
@@ -70,7 +73,8 @@ const HELP = `validate-features [--json] [--quiet] [--strict-matrix] [--help] [<
   Parses every features/*.feature file, closes its @PRD tags against the
   requirement ids of docs/PRD.md (PRD-054), checks that every scenario names its
   actor (@human or @agent), and checks features/MATRIX.md against the scenarios
-  and the pending files of tests/acceptance/pending/.
+  and the pending files of tests/acceptance/pending/; beside spec/, a "CLI verbs"
+  surface marked B must run every verb of AGSC-09-07 in some scenario.
 
   --json           emit the AGSC-09-11 diagnostics envelope on stdout
   --quiet          emit nothing; the exit code is the result
@@ -139,6 +143,7 @@ function parseFeature(text, file) {
   let ruleTags = [];             // the tags of the open Rule, inherited by its scenarios
   let headerColumns = null;      // the column count of the table currently open
   let examplesHeader = null;     // the Examples header names of the open Outline
+  let backgroundSteps = [];      // the step texts of the Background, run before every scenario
 
   const closeScenario = () => {
     if (!current) return;
@@ -150,7 +155,8 @@ function parseFeature(text, file) {
       findings.push(finding('AGSC-E202', file, current.line,
         `Scenario Outline "${current.name}" carries no Examples:`));
     }
-    if (current.keyword !== 'Background') scenarios.push(current);
+    if (current.keyword === 'Background') backgroundSteps = current.stepTexts;
+    else scenarios.push({ ...current, stepTexts: [...backgroundSteps, ...current.stepTexts] });
     current = null;
   };
 
@@ -213,6 +219,7 @@ function parseFeature(text, file) {
         name,
         outline: keyword[1] === 'Scenario Outline' || keyword[1] === 'Scenario Template',
         placeholders: new Set(),
+        stepTexts: [],
         steps: 0,
         tags: pendingTags.slice(),
       };
@@ -250,6 +257,7 @@ function parseFeature(text, file) {
         return;
       }
       current.steps += 1;
+      current.stepTexts.push(trimmed);
       for (const m of trimmed.matchAll(/<([^<>]+)>/gu)) current.placeholders.add(m[1].trim());
       return;
     }
@@ -479,6 +487,47 @@ function matrixFindings(matrix, scenarios, pending, context) {
   return out;
 }
 
+/**
+ * The verb set of AGSC-09-07 as `spec/09-conformance.md` states it: the code spans
+ * of the list after "The verb set is exactly …:". Empty when the text holds no list.
+ * @returns {string[]}
+ */
+function cliVerbs(text) {
+  const rule = /\*\*AGSC-09-07\*\*[^\n]*?The verb set is exactly[^:\n]*:((?:\s*`[a-z][a-z-]*`,?)+)/u.exec(text);
+  return rule ? [...rule[1].matchAll(/`([a-z][a-z-]*)`/gu)].map((m) => m[1]) : [];
+}
+
+/**
+ * A surface named "CLI verbs" with status B claims every verb: each verb of the
+ * AGSC-09-07 set must appear as `agsc <verb>` or `agentic-system-core <verb>` in the
+ * steps of a scenario that runs. Checked only where the pack sits beside the
+ * specification (`spec/09-conformance.md` under the root).
+ * @param {{surfaces:Array}} matrix
+ * @param {Array<{runs:boolean, steps:string[]}>} scenarios
+ * @param {string|null} specText
+ * @param {string} severity
+ */
+function verbFindings(matrix, scenarios, specText, severity) {
+  const out = [];
+  if (specText === null) return out;
+  const verbs = cliVerbs(specText);
+  const running = scenarios.filter((s) => s.runs).flatMap((s) => s.steps);
+  for (const surface of matrix.surfaces.filter((s) => /^CLI verbs\b/iu.test(s.label) && s.status.has('B'))) {
+    const what = `surface "${surface.label}" claims every verb`;
+    if (verbs.length === 0) {
+      out.push(finding('AGSC-E202', MATRIX_FILE, surface.line, `${what}, and spec/09-conformance.md states no verb set to check (AGSC-09-07)`, severity));
+      continue;
+    }
+    for (const verb of verbs) {
+      const used = new RegExp(`(?:^|[^\\w-])(?:agsc|agentic-system-core) ${verb}(?![\\w-])`, 'u');
+      if (running.some((step) => used.test(step))) continue;
+      out.push(finding('AGSC-E202', MATRIX_FILE, surface.line,
+        `${what}, and no scenario that runs has "agsc ${verb}" or "agentic-system-core ${verb}" in a step (AGSC-09-07)`, severity));
+    }
+  }
+  return out;
+}
+
 function envelopeOf(findings, declared, version) {
   findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
     || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
@@ -580,7 +629,7 @@ function run(argv, io) {
     const stem = name.replace(/\.feature$/u, '');
     for (const s of parsed.scenarios) {
       const entry = pending.get(`${stem}#${s.name}`);
-      all.push({ file, line: s.line, name: s.name, runs: !entry || entry.class === 'conditional', stem, tags: effectiveTags(s) });
+      all.push({ file, line: s.line, name: s.name, runs: !entry || entry.class === 'conditional', stem, steps: s.stepTexts, tags: effectiveTags(s) });
       if (!hasActor(s)) {
         findings.push(finding('AGSC-E202', file, s.line, `${s.keyword} "${s.name}" carries no actor tag (@human or @agent)`,
           matrix ? 'error' : 'warn'));
@@ -632,6 +681,8 @@ function run(argv, io) {
     for (const p of matrix.problems) findings.push(finding(p.code, MATRIX_FILE, p.line, p.message, severity));
     const prdPersonas = prdText ? [...new Set([...prdText.matchAll(/^\|\s*(P\d{1,2})\s*\|/gmu)].map((m) => m[1]))] : [];
     findings.push(...matrixFindings(matrix, all, pending, { declared, prdPersonas, severity }));
+    const specPath = path.join(root, 'spec', '09-conformance.md');
+    findings.push(...verbFindings(matrix, all, fs.existsSync(specPath) ? fs.readFileSync(specPath, 'utf8') : null, severity));
   }
 
   const uncovered = prdText ? [...prdIds].filter((id) => !covered.has(id)).length : 0;
@@ -655,5 +706,5 @@ function run(argv, io) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  HELP, canonicalize, compareCodePoint, parseFeature, parseTarget, readMatrix, readmeCoverage, readmePersonas, run,
+  HELP, canonicalize, cliVerbs, compareCodePoint, parseFeature, parseTarget, readMatrix, readmeCoverage, readmePersonas, run,
 };

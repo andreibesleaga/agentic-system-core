@@ -186,10 +186,10 @@ AGSC-09-01 (AGSC-10-05); the engine's claim is kept in
 with what each part of it rests on, and reads:
 
 > agentic-system-core 1.0.0 conforms to AgenticSystemCore 1.0.0, Level 3.
-> Verified against the published conformance vectors on 2026-10-11: 242 of 242
+> Verified against the published conformance vectors on 2026-10-12: 243 of 243
 > passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
 > chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
-> jcs, ledger, links, lint, prov, slug), 241 required and 1 optional, the 6
+> jcs, ledger, links, lint, prov, slug), 242 required and 1 optional, the 7
 > withdrawn cases excluded, with Unicode 17.0. Deployment profile:
 > cloudflare-pages — the reference profile: `_headers` and `_redirects` as
 > `agsc build` writes them. Surfaces: llms-txt (proved by disc-0013, disc-0014),

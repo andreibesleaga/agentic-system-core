@@ -679,6 +679,25 @@ shipped at 1.0"), and the git mirror and a weekly attested snapshot of a node th
 capabilities of the reference distribution planned for 1.1 are listed in AGSC-00-20 and in the
 PRD's "Notes at 1.0.0". Each adds behaviour, which `1.0.0` does not.
 
+**Further items planned for 1.1 (note of 2026-10-12).** AGSC-00-20 also names six items
+decided for 1.1 while `1.0.0` was prepared: the AI-assistance statement of AGSC-06-15
+reworded, because the `Assisted-by:` line of AGSC-08-07 is optional (at `1.0.0` the
+constant is kept byte for byte); a root `base` that differs from `site.base` reported as
+`AGSC-E204` (AGSC-01-04); a board export naming the type of each target of a blocked-by or
+decided-by Link (AGSC-10-13); the round trip of AGSC-06-32 for a graph of one node; an HTML
+block counted once rather than once per tag (AGSC-02-20); and no `AGSC-E407` for prose
+quoted inside the content fence of a skill pack (AGSC-07-15). Three more change what a
+node serves without changing the format: on a restricted node, an access class for the
+`chunks` surface that says its target is gated, and a host profile that removes a host's
+default `Access-Control-Allow-Origin: *` from every file but the discovery document (at
+`1.0.0` the implementers' guide, §7b, says how to remove it); and linear-time patterns in
+the page script and the compose page that every node emits, which `1.0.0` leaves byte for
+byte as they are.
+
+**The well-known name of the performance addendum (note of 2026-10-12).** The
+Internet-Draft's text requests the registration of the well-known name; no request has
+been sent to the registry.
+
 ## Beyond 1.0
 
 What is planned after 1.0 for composition and the meaning of Links — a stated semantics for every Link key, semantic lint warnings, a deterministic composition brief beside the Harness, and an optional service endpoint — is described in [ROADMAP.md](ROADMAP.md).

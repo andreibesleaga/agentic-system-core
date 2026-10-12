@@ -33,6 +33,7 @@ const jcs = require('../../../src/knowledge/jcs.js');
 const linksModule = require('../../../src/knowledge/links.js');
 const fixture = require('../../knowledge/_graph-fixture.js');
 const { checks } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -365,7 +366,9 @@ function jsonldWholeCase(vector, ctx) {
   return checks(list);
 }
 
-module.exports.run = (vector, ctx) => {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded((vector, ctx) => {
   const input = vector.input || {};
   if (vector.id === 'graph-0019') return termNamesCase(vector);
   if (vector.id === 'graph-0025') return mentionsCase(vector);
@@ -378,7 +381,7 @@ module.exports.run = (vector, ctx) => {
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };
-};
+});
 
 module.exports.clauses = clauses;
 module.exports.normaliseClause = normaliseClause;

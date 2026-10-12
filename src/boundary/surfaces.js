@@ -268,9 +268,9 @@ function acceptedHrefs(declared, findings) {
  * `extensions` is a MAP of extension identifier to that extension's settings object,
  * as MCP defines it. AGSC-11-18 pins this node's settings object:
  * exactly one member, `linkset`, the absolute `https` URL of `/.well-known/
- * knowledge-linkset` (AGSC-06-07), and no other. Vector `bnd-0035`.
+ * knowledge-linkset` (AGSC-06-07), and no other. Vector `bnd-0042`.
  *
- * Vectors `bnd-0035` and `bnd-0036` are run against the `initialize` result of a
+ * Vectors `bnd-0042` and `bnd-0036` are run against the `initialize` result of a
  * real session, so they check what the transport reports, not this function.
  * `bnd-0037`'s `mcp_extensions` member is the list of identifiers advertised and is
  * the map's key set by definition.
@@ -291,7 +291,7 @@ function mcpCapabilities(options) {
  * AGSC-11-18: "a node MUST emit that member and MUST emit no
  * other". A missing, wrong or additional member is `AGSC-E210` from
  * `validate-wellknown` — the same code AGSC-11-16/11-19 already give a declaration a
- * node cannot back. Vector `bnd-0035`.
+ * node cannot back. Vector `bnd-0042`.
  */
 function checkMcpExtensions(extensions, options) {
   const base = (options || {}).base || '/';

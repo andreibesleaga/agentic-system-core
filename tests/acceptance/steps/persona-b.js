@@ -1,11 +1,11 @@
 'use strict';
-// verifies AGSC-04-02, AGSC-08-05, AGSC-08-06, AGSC-08-10, AGSC-08-30, AGSC-11-14
+// verifies AGSC-04-02, AGSC-08-05, AGSC-08-06, AGSC-08-10, AGSC-08-27, AGSC-08-30, AGSC-09-07, AGSC-11-14
 // Steps of features/persona-b-contributor.feature that run offline: the edit link
 // a contributor follows, the local half of a contribution (the Proposal files
 // `propose` writes, a commit signed off under the contributor agreement, and the
-// ledger entry the build derives from it), and the `ci` lane a change runs
-// through, under a preload that refuses every network call (so no model service
-// can be reached either).
+// ledger entry the build derives from it), and the `ci` and `review` lanes a
+// change runs through, under a preload that refuses every network call (so no
+// model service can be reached either).
 
 const assert = require('node:assert');
 const path = require('node:path');
@@ -183,6 +183,62 @@ module.exports = [
         assert.ok(Number.isInteger(f.line) && f.line >= 1, JSON.stringify(f));
         assert.ok(Number.isInteger(f.col) && f.col >= 1, JSON.stringify(f));
       }
+    },
+  },
+  {
+    pattern: 'the change runs "npx agentic-system-core review" under the network trap',
+    run(world) {
+      world.state.review = world.agsc(['review'], { offline: true });
+    },
+  },
+  {
+    pattern: 'review exits 0, and its label is the verdict with the counts, "review: pass (0 error, 1 warn)" (AGSC-09-07)',
+    run(world) {
+      const { review } = world.state;
+      assert.strictEqual(review.exit, 0, review.stdout + review.stderr);
+      // The label is the one line on standard output; the comment goes to standard error.
+      assert.strictEqual(review.stdout, 'review: pass (0 error, 1 warn)\n');
+    },
+  },
+  {
+    pattern: 'its comment names each finding by code and file, the concept with no description among them, and says the lane is lint-only (AGSC-08-27)',
+    run(world) {
+      const lines = world.state.review.stderr.split('\n').filter(Boolean);
+      const findings = lines.filter((l) => /^(error|warn): /u.test(l));
+      assert.deepStrictEqual(findings,
+        ['warn: AGSC-E408 a concept carries no description (AGSC-02-21) — content/concepts/retry-budget.md']);
+      assert.ok(lines.includes('lane: review is lint-only — no model call is reachable from it (AGSC-08-27, NFR-11)'),
+        world.state.review.stderr);
+    },
+  },
+  {
+    pattern: 'the same review with "--json" gives every finding its file, line and column',
+    run(world) {
+      const r = world.agsc(['review', '--json'], { offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      const envelope = world.json();
+      assert.strictEqual(envelope.verb, 'review');
+      assert.strictEqual(envelope.status, 'pass');
+      assert.deepStrictEqual(envelope.counts, { error: 0, warn: 1 });
+      assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.file, f.line, f.col]),
+        [['AGSC-E408', 'content/concepts/retry-budget.md', 1, 1]]);
+    },
+  },
+  {
+    pattern: 'with "AGSC_FEATURE_LLM_REVIEW" set to "1" the review still passes, warns that no model adapter ran, and makes no model call',
+    run(world) {
+      const r = world.agsc(['review', '--json'], { env: { AGSC_FEATURE_LLM_REVIEW: '1' }, offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      const envelope = world.json();
+      assert.strictEqual(envelope.status, 'pass');
+      assert.deepStrictEqual(envelope.findings.map((f) => [f.code, f.severity]).sort(),
+        [['AGSC-E408', 'warn'], ['AGSC-E510', 'warn']]);
+    },
+  },
+  {
+    pattern: 'no model or network call occurs anywhere in the review lane (AGSC-08-27, AGSC-08-30)',
+    run(world) {
+      assert.deepStrictEqual(world.networkAttempts(), []);
     },
   },
   {

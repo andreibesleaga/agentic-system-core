@@ -12,6 +12,10 @@
 // a run of `[` handed to `agsc init`, and an item ending in a run of backticks handed
 // to `agsc lint --fix`, each just under 1 MiB. A pattern that scans such a run from
 // every start position needs on the order of an hour; a linear scan about a second.
+// Five more long runs end a long line in a line terminator that `.` does not match (a
+// carriage return, U+2028): a foreign skill's frontmatter line, an old site's card line,
+// a GABBE continuity heading and state line, a skill pack's frontmatter line, and two
+// notes' heading lines handed to `agsc init`.
 // The runner starts each of these commands with a kill bound, so the outcome is
 // "finished" or "killed", far apart on either side of the bound: no duration is
 // measured or asserted.
@@ -53,7 +57,7 @@ const NEW_CASES = Object.freeze({
 
 describe('the corpus: configuration paths and long runs', () => {
   it('carries the corpus version that counts these cases', () => {
-    assert.equal(CORPUS.version, 'security-floor-v2');
+    assert.equal(CORPUS.version, 'security-floor-v3');
   });
 
   it('holds every new case as a scored fault of its class', () => {
@@ -177,5 +181,45 @@ describe('the new cases, end to end on the reference fixture', () => {
     for (const row of result.cases) assert.equal(row.ok, true, `${row.id}: ${row.outcome} ${JSON.stringify(row.codes)}`);
     assert.equal(result.by_class['hostile-host-config'].score, '3/3');
     assert.equal(result.by_class['environment-layer'].controls_clean, '1/1');
+  });
+});
+
+/** The long lines that end in a line terminator, with the bytes each case writes. */
+const LINE_END_CASES = Object.freeze({
+  'long-run-import-gabbe': (c) => c.source.map((f) => f.repeat),
+  'long-run-import-old-site': (c) => [c.source[0].repeat],
+  'long-run-import-skills': (c) => [c.source[0].repeat],
+  'long-run-init-line-ends': (c) => c.files.filter((f) => f.repeat).map((f) => f.repeat),
+  'long-run-skills-pack': (c) => [c.files[0].repeat],
+});
+
+describe('the corpus: long lines that end in a line terminator', () => {
+  it('feeds each line just under 1 MiB, ending in a carriage return or U+2028, under the kill bound', () => {
+    for (const [id, runsOf] of Object.entries(LINE_END_CASES)) {
+      const c = byId(id);
+      assert.equal(c.bound, true, id);
+      assert.equal(c.class, 'long-run', id);
+      assert.ok(Array.isArray(c.finish.exit), id);
+      for (const run of runsOf(c)) {
+        const text = security.bytesOf({ repeat: run }).toString('utf8');
+        assert.ok(Buffer.byteLength(text) < MIB && Buffer.byteLength(text) > MIB - 1024, `${id}: just under 1 MiB`);
+        assert.equal(run.text, ' ', `${id}: a run of blanks`);
+        assert.match(run.suffix, /^[^\n]*[\r\u2028]/u, `${id}: the line goes on past a line terminator`);
+      }
+    }
+    assert.deepEqual(byId('long-run-import-old-site').args, ['--selection', '{{source}}/selection.tsv']);
+    assert.deepEqual(byId('long-run-skills-pack').args, ['import', 'pack/SKILL.md']);
+  });
+
+  it('finishes every one inside the bound', () => {
+    const cases = CORPUS.cases.filter((c) => Object.hasOwn(LINE_END_CASES, c.id));
+    const result = security.score({ cases, version: CORPUS.version }, { base: FIXTURE, scratch: tmpdir() });
+    assert.deepEqual(Object.fromEntries(result.cases.map((c) => [c.id, c.outcome])), {
+      'long-run-import-gabbe': 'finished',
+      'long-run-import-old-site': 'finished',
+      'long-run-import-skills': 'finished',
+      'long-run-init-line-ends': 'finished',
+      'long-run-skills-pack': 'finished',
+    });
   });
 });

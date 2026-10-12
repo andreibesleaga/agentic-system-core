@@ -23,6 +23,15 @@ const mapping = require('../../src/interchange/mapping.js');
 const boards = require('../../src/interchange/board-formats.js');
 const cleanroomRewrite = require('../../src/interchange/cleanroom-rewrite.js');
 const llms = require('../../src/distribution/llms.js');
+const skillsAdapter = require('../../src/interchange/adapters/skills.js');
+const oldsite = require('../../src/interchange/oldsite.js');
+const gabbe = require('../../src/interchange/adapters/gabbe.js');
+const frontmatter = require('../../src/knowledge/frontmatter.js');
+const runblocks = require('../../src/knowledge/runblocks.js');
+const { nfc } = require('../../src/knowledge/unicode.js');
+const archive = require('../../src/composition/archive.js');
+const harness = require('../../src/composition/harness.js');
+const packs = require('../../src/composition/skills.js');
 const { assertLinear, longRuns, texts } = require('../_linear-kit.js');
 
 const SEED = 20261010;
@@ -46,7 +55,53 @@ const OLD = {
   trailingBlanks: /[ \t]+$/u,
   lineBreak: /\s*\n\s*/gu,
   oneTrailingFeed: /\n*$/u,
+  skillKey: /^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$/u,
+  cardKey: /^([A-Za-z0-9_.]+):[ \t]*(.*)$/u,
+  packKey: /^([a-z][a-z0-9_-]*):\s*(.*)$/u,
+  title: /^#[ \t]+(.*)$/u,
+  fenceOpener: /^\s{0,3}(`{3,}|~{3,})\s*(\S.*?)?\s*$/u,
+  trailingSlashes: /\/+$/u,
+  allowedTools: /(^|\n)\s*allowed-tools\s*:/u,
+  entryHeading: /^###\s+(.+)$/u,
+  stateLine: /^(\d{4}-\d{2}-\d{2})(?:[^:\n]{0,60})?:\s+(.+)$/u,
 };
+
+/** The lenient frontmatter reader of the skills import as the pattern made it. */
+function oldFlatFrontmatter(yamlText) {
+  const out = Object.create(null);
+  for (const line of yamlText.split('\n')) {
+    const m = OLD.skillKey.exec(line);
+    if (m === null) continue;
+    let value = m[2].trim();
+    if (/^".*"$/u.test(value)) {
+      try { value = JSON.parse(value); } catch (e) { value = value.slice(1, -1); }
+    } else if (/^'.*'$/u.test(value)) value = value.slice(1, -1).replace(/''/gu, '\'');
+    out[m[1]] = String(value);
+  }
+  return { ...out };
+}
+
+/** The pack frontmatter keys as the pattern read them. */
+function oldDeclared(yamlText) {
+  const out = Object.create(null);
+  for (const line of yamlText.split('\n')) {
+    const m = OLD.packKey.exec(line);
+    if (m !== null) out[m[1]] = m[2].trim();
+  }
+  return { ...out };
+}
+
+/** The first heading of a note as the pattern found it. */
+function oldFirstHeading(body) {
+  for (const line of body.split('\n')) {
+    const m = OLD.title.exec(line);
+    if (m && nfc(m[1]).trim() !== '') return nfc(m[1]).trim();
+  }
+  return null;
+}
+
+/** The terminators `.` does not match, and the blanks around them. */
+const LINE_ENDS = ['\r', '\u2028', '\u2029', ' ', '\t', '\u00a0'];
 
 /** The code spans as the two patterns found them. */
 function oldCodeSpans(text) {
@@ -234,6 +289,81 @@ const SCANNERS = [
     scan: (text, meter) => llms.withOneTrailingFeed(text, meter),
     found: (result, text) => result !== `${text}\n`,
     reference: (text) => text.replace(OLD.oneTrailingFeed, '\n'),
+  },
+  {
+    name: 'the key lines of a foreign skill\'s frontmatter',
+    alphabet: ['name:', 'globs:', ':', '"', '\'', 'x', '*.ts', '\n', ...LINE_ENDS],
+    scan: (text, meter) => ({ ...skillsAdapter.flatFrontmatter(text, meter) }),
+    found: (result) => Object.keys(result).length > 0,
+    reference: oldFlatFrontmatter,
+  },
+  {
+    name: 'the key lines of an old site\'s card',
+    alphabet: ['title:', 'a.b:', ':', '.', 'x', 'é', ...LINE_ENDS],
+    scan: (text, meter) => oldsite.keyLine(text, meter),
+    found: (result) => result !== null && result.value !== '',
+    reference: (text) => {
+      const m = OLD.cardKey.exec(text);
+      return m === null ? null : { key: m[1], value: m[2] };
+    },
+  },
+  {
+    name: 'the key lines of a skill pack',
+    alphabet: ['name:', 'license:', ':', 'x', 'A', '\n', '\u0085', ...LINE_ENDS],
+    scan: (text, meter) => ({ ...packs.declaredKeys(text, meter) }),
+    found: (result) => Object.keys(result).length > 0,
+    reference: oldDeclared,
+  },
+  {
+    name: 'the title of an adopted note',
+    alphabet: ['#', '# ', '#\t', '##', 'a', 'Title', 'e\u0301', '\n', ...LINE_ENDS],
+    scan: (text, meter) => frontmatter.firstHeading(text, meter),
+    found: (result) => result !== null,
+    reference: oldFirstHeading,
+  },
+  {
+    name: 'the opener of a run block\'s fence',
+    alphabet: ['```', '~~~', '`', '~', '````', 'run', 'a b', ...LINE_ENDS],
+    scan: (text, meter) => runblocks.fenceOpener(text, meter),
+    found: (result) => result !== null && result.info !== undefined,
+    reference: (text) => {
+      const m = OLD.fenceOpener.exec(text);
+      return m === null ? null : { fence: m[1], info: m[2] };
+    },
+  },
+  {
+    name: 'the trailing slashes of an archive name',
+    alphabet: ['/', '//', 'a', '\\', '\n', ' ', '.', '\u{1F600}'],
+    scan: (text, meter) => archive.withoutTrailingSlashes(text, meter),
+    found: (result, text) => result !== text,
+    reference: (text) => text.replace(OLD.trailingSlashes, ''),
+  },
+  {
+    name: 'the allowed-tools key of a Harness file',
+    alphabet: ['allowed-tools', 'allowed-tools:', ':', '\n', 'a', '-', 'x\n', ...LINE_ENDS],
+    scan: (text, meter) => harness.allowedToolsKey(text, meter),
+    found: (result) => result === true,
+    reference: (text) => OLD.allowedTools.test(text),
+  },
+  {
+    name: 'the entry headings of a GABBE continuity file',
+    alphabet: ['###', '### ', '#', 'a', 'b c', ...LINE_ENDS],
+    scan: (text, meter) => gabbe.entryHeading(text, meter),
+    found: (result) => result !== null,
+    reference: (text) => {
+      const m = OLD.entryHeading.exec(text);
+      return m === null ? null : m[1];
+    },
+  },
+  {
+    name: 'the dated lines of a GABBE state file',
+    alphabet: ['2026-01-01', ':', '2026-01-01:', 'a', 'b c', '-', '\n', ...LINE_ENDS],
+    scan: (text, meter) => gabbe.stateEntry(text, meter),
+    found: (result) => result !== null,
+    reference: (text) => {
+      const m = OLD.stateLine.exec(text);
+      return m === null ? null : { date: m[1], text: m[2] };
+    },
   },
 ];
 

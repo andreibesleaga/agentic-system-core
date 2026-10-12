@@ -2411,7 +2411,174 @@
    "id": "long-run-lint-fix",
    "kind": "bundle",
    "verb": "lint"
+  },
+  {
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "format": "skills",
+   "id": "long-run-import-skills",
+   "kind": "import",
+   "source": [
+    {
+     "path": "skills/evil/SKILL.md",
+     "repeat": {
+      "count": 1047939,
+      "prefix": "---\nname: evil\ndescription: A foreign skill whose frontmatter is not the failsafe subset.\nglobs: *.ts\nlicense:",
+      "suffix": "\u2028x\n---\nBody.\n",
+      "text": " "
+     }
+    }
+   ]
+  },
+  {
+   "args": [
+    "--selection",
+    "{{source}}/selection.tsv"
+   ],
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "finish": {
+    "exit": [
+     0,
+     1
+    ]
+   },
+   "format": "old-site",
+   "id": "long-run-import-old-site",
+   "kind": "import",
+   "source": [
+    {
+     "path": "content/patterns/evil.md",
+     "repeat": {
+      "count": 1048016,
+      "prefix": "---\nid: evil\ntitle:",
+      "suffix": "\u2028x\nkind: pattern\n---\nBody.\n",
+      "text": " "
+     }
+    },
+    {
+     "path": "selection.tsv",
+     "text": "slug\ttitle\tclass\told_status\tdecision\treason\nevil\tEvil\tW\tpublished\tCHOOSE\tseeded\n"
+    }
+   ]
+  },
+  {
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "files": [
+    {
+     "path": "agsc.config.json",
+     "remove": true
+    },
+    {
+     "path": "content",
+     "remove": true
+    },
+    {
+     "path": "README.md",
+     "remove": true
+    },
+    {
+     "path": ".well-known",
+     "remove": true
+    },
+    {
+     "path": "note.md",
+     "repeat": {
+      "count": 1048055,
+      "prefix": "# ",
+      "suffix": "\rTitle\n",
+      "text": " "
+     }
+    },
+    {
+     "path": "other.md",
+     "repeat": {
+      "count": 1048053,
+      "prefix": "# ",
+      "suffix": "\u2028Title\n",
+      "text": " "
+     }
+    }
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "id": "long-run-init-line-ends",
+   "kind": "bundle",
+   "verb": "init"
+  },
+  {
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "format": "gabbe",
+   "id": "long-run-import-gabbe",
+   "kind": "import",
+   "source": [
+    {
+     "path": "agents/memory/CONTINUITY.md",
+     "repeat": {
+      "count": 1048022,
+      "prefix": "# CONTINUITY\n\n## Entries\n\n###",
+      "suffix": "a\u2028b\n\nText.\n",
+      "text": " "
+     }
+    },
+    {
+     "path": "agents/memory/PROJECT_STATE.md",
+     "repeat": {
+      "count": 1048027,
+      "prefix": "# PROJECT_STATE.md\n\n2026-01-01:",
+      "suffix": "a\u2028b\n",
+      "text": " "
+     }
+    }
+   ]
+  },
+  {
+   "args": [
+    "import",
+    "pack/SKILL.md"
+   ],
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "files": [
+    {
+     "path": "pack/SKILL.md",
+     "repeat": {
+      "count": 1048021,
+      "prefix": "---\nname: evil\ndescription:",
+      "suffix": "e\u2028f\n---\nBody.\n",
+      "text": " "
+     }
+    }
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "id": "long-run-skills-pack",
+   "kind": "bundle",
+   "verb": "skills"
   }
  ],
- "version": "security-floor-v2"
+ "version": "security-floor-v3"
 }
