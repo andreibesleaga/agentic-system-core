@@ -139,6 +139,9 @@ agsc-host serve
 serving …/my-notes/www at http://127.0.0.1:8080/ — read-only; stop with Ctrl-C
 ```
 
+To run the checkers against this address, see the publishing guide §6 — `localhost`, not
+`127.0.0.1`, in `site.base` and on the command line.
+
 Each note has a page under `/concepts/<name>/` and a Markdown copy under
 `/pages/<name>.md`; `/.well-known/knowledge-linkset` is the discovery document an agent
 reads first.

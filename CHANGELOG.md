@@ -188,7 +188,11 @@ not listed.
   are named among the changes of behaviour or of emitted bytes that 1.0 does not make — the
   AI-assistance statement reworded, the root base check, the general board-slug case, a
   one-node graph's round trip, an HTML block counted once and fenced prose in a skill pack.
-  A clarification: no tool behaviour and no emitted byte changes.
+  A clarification: no tool behaviour and no emitted byte changes. The 1.1 list attributed
+  `isError` and the unknown-tool error to MCP revision 2026-07-28, where revision 2025-11-25,
+  the one 1.0 speaks, already defines both and the 1.0 transport answers them with the
+  AGSC-09-13a envelope; the `remember` refusal and the nesting bound are added to the list.
+  No behaviour changes.
 - AGSC-00-21: Five rows added — the gate verdict, the description file of a Harness, the
   conformance report, the agent card, and an `AGSC_` environment name that addresses no key.
 
@@ -246,6 +250,8 @@ not listed.
 - AGSC-04-04: Whether the six named artefacts were the whole list was not said.
 - AGSC-04-05: The string serialisation, the difference between producing and re-serialising,
   the trailing line feed and the treatment of noncharacters were not stated.
+- AGSC-04-09: The reference engine read an empty `SOURCE_DATE_EPOCH` as unset and no sentence
+  said so. No behaviour changes.
 - AGSC-04-13: The members' key named the cluster's own `order` first, which no member
   carries, so members always sorted by slug alone; the text now says so.
 - AGSC-04-18: The rule counted `content/`, `agsc.config.json`, the instant and the git-log
@@ -389,7 +395,11 @@ not listed.
   `resource` and `id` only. The resources were every item, and then only a published item
   named with AGSC-06-30, which AGSC-00-05 reads as the listed set, while the reference
   engine exposes every published item, a retired one included; the set and the bytes of an
-  item's resource are said; nothing a node emits changes.
+  item's resource are said; nothing a node emits changes. The item this rule promises
+  conforms to the schema, and the `agent`/`model` condition of AGSC-08-01 is a lint check the
+  schema cannot express, so a call with an operator alone under the default origin returned
+  an item that `lint` refused; the sentence now says so. No behaviour changes; reporting it
+  in the call is listed for 1.1 in AGSC-00-20.
 - AGSC-09-15: The second requirement stood in the precedence paragraph of §9.4, without a
   rule id.
 - AGSC-09-16: The page's item set was called the published projection, which AGSC-00-05
@@ -410,7 +420,11 @@ not listed.
   First amended 2026-10-07, see AGSC-10-02; now marked reserved, as no rule raises it. Who
   raises the code at 1.0 was not said. The two flags added; the reference engine already
   refused them. The codes that no case asserts are named, each with its reason; no code and
-  no severity changes.
+  no severity changes. The `AGSC-E105` row names, beside a flow mapping or a complex key, a
+  frontmatter nested deeper than the engine can read or write back, until a version states a
+  bound: `build`, `ci`, `lint --fix` and `import` stopped with an internal error on such a
+  frontmatter where `lint` had passed it; every verb now reports this code, the one the
+  reader already gave the same input.
 - AGSC-09-90: Marked (reference distribution) for the obligation on the reference
   distribution to ship the validators.
 - AGSC-09-91: Four faults were added to the list — a table row or a paragraph outside every
@@ -502,6 +516,22 @@ not listed.
 - `run` reads a fence opener's info string in linear time.
 - The archive name of `--zip` and of the compose page's "download all" link drops a
   folder's trailing slashes in linear time. The name is unchanged.
+- `build`, `ci`, `lint --fix` and `import` stopped with an internal error on a frontmatter
+  nested deeper than the writer could hold, where `lint` had passed it; every verb now
+  reports `AGSC-E105`, the code the reader already gives the same input. No limit is added:
+  an input that passed before passes unchanged.
+- The conformance runner: the cases whose boolean members were asserted in one polarity
+  only are asserted in both, so a case that states the other value fails. The shipped
+  cases keep their statuses.
+- Documentation corrected against the rules: the assistant guide (§4) and the Mode 1 guide
+  say that `remember` needs `agent` and `model` too, unless the call says `"origin": "human"`,
+  or the saved item fails `agsc lint` with `AGSC-E202` (AGSC-08-01); the publishing guide
+  (§6) says how a node served on the author's own machine is checked at Level 2
+  (`http://localhost:8080/` in `site.base` and on the command line, with `--dev`), and the
+  Mode 0 guide points to it; the troubleshooting page gains a row for `AGSC-E603`, where an
+  empty `SOURCE_DATE_EPOCH` counts as unset; `NOTICE` and the README's licence table name
+  the agent skill under `skills/` and `plugins/` and the plugin marketplace files under
+  `.claude-plugin/` as CC0-1.0.
 
 ### Security
 
@@ -512,6 +542,9 @@ not listed.
   quadratic or worse time on hostile input (one commit with 100 KB of `<` made `build` take
   close to a minute); each is now a linear scan, and the security corpus covers them.
 - The address classifier refuses the IPv4-compatible and IPv4-mapped IPv6 ranges whole.
+- The security corpus gains two seeded cases for deep frontmatter nesting (`build`,
+  `import --from okf`); each finishes under `AGSC-E105` or passes, never with an internal
+  error.
 
 ## [1.0.0-rc.7] - 2026-10-08
 

@@ -43,8 +43,8 @@ module.exports.run = guarded((vector) => {
     if (expected.pattern !== undefined) {
       list.push(['pattern', slug.SLUG_PATTERN === expected.pattern, slug.SLUG_PATTERN]);
     }
-    if (expected.lookahead === false) {
-      list.push(['no-lookahead', !/\(\?[=!]/u.test(slug.SLUG_PATTERN), slug.SLUG_PATTERN]);
+    if (expected.lookahead !== undefined) {
+      list.push(['lookahead', /\(\?[=!]/u.test(slug.SLUG_PATTERN) === expected.lookahead, slug.SLUG_PATTERN]);
     }
     if (Array.isArray(expected.engine_features_used)) {
       const used = featuresUsed(slug.SLUG_PATTERN);

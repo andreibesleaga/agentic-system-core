@@ -64,12 +64,23 @@ function insideRepo(dir) {
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
 }
 
-/** The bytes a corpus file entry describes: text, base64, or a repeated run. */
+/**
+ * The bytes a corpus file entry describes: text, base64, a repeated run, or a nested
+ * run — `open` once at each deeper indentation, then `leaf` one level deeper still: a
+ * block mapping `count` levels deep, which no repeated text can spell because every
+ * level is indented one `indent` more than the last.
+ */
 function bytesOf(entry) {
   if (typeof entry.base64 === 'string') return Buffer.from(entry.base64, 'base64');
   if (entry.repeat) {
     const r = entry.repeat;
     return Buffer.from(`${r.prefix || ''}${String(r.text).repeat(r.count)}${r.suffix || ''}`, 'utf8');
+  }
+  if (entry.nest) {
+    const n = entry.nest;
+    let text = n.prefix || '';
+    for (let level = 1; level <= n.count; level += 1) text += `${String(n.indent).repeat(level)}${n.open}`;
+    return Buffer.from(`${text}${String(n.indent).repeat(n.count + 1)}${n.leaf || ''}${n.suffix || ''}`, 'utf8');
   }
   return Buffer.from(String(entry.text), 'utf8');
 }

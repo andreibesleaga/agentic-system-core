@@ -89,7 +89,7 @@ test('AGSC-00-20: the eleven capabilities of the reference distribution are plan
 
 test('AGSC-00-20: the items already sent to 1.1 are named, and an unknown key is AGSC-E004 only in the configuration', () => {
   const rule = normative(ruleText(OVERVIEW, 'AGSC-00-20'));
-  for (const p of [/provenance/u, /duplicate-of/u, /import/u, /search and ask/u, /2026-07-28/u, /isError/u,
+  for (const p of [/provenance/u, /duplicate-of/u, /import/u, /search and ask/u, /2025-11-25/u, /2026-07-28/u, /isError/u,
     /failed conformance case/u, /Content-Digest/u, /Cursor/u, /security\.txt/u, /immutable/u, /model-adapter plugin kind/u,
     /ledger names the author/u, /different `?spec_version`? values/u, /punctuation or letters outside ASCII/u, /sources\[\]`? entry it keeps/u]) {
     assert.match(rule, p, `${p} is not named in the declared scope`);

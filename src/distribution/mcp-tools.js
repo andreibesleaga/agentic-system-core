@@ -444,7 +444,15 @@ function tools(bundle, options) {
         ? 'memory:// names a foreign bundle — use the https:// IRI'
         : 'no item with that IRI in this Bundle');
     }
-    return implementations[name](aliased.args);
+    try {
+      return implementations[name](aliased.args);
+    } catch (e) {
+      // AGSC-09-13a: a fault the engine reports under a registered code — the
+      // canonical writer refusing a frontmatter it cannot hold (AGSC-E105) — is the
+      // error envelope, not a transport error. A fault with no code stays a throw.
+      if (!(e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code))) throw e;
+      return errorEnvelope(name, e.code, String(e.message || e.code));
+    }
   }
 
   return Object.freeze({ call, manifest: () => manifest() });

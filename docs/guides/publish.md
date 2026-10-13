@@ -142,7 +142,18 @@ bytes, and the digests in the discovery document then no longer match what is se
 
 Run the same checker on the live address. Given a URL, it fetches the discovery document
 and every file it lists from the host, compares each digest with the bytes served, and
-checks the response headers as well:
+checks the response headers as well.
+
+**On your own machine first.** `agsc-host serve` prints `http://127.0.0.1:8080/`, but both
+checkers compare the discovery document's anchor with the origin they fetched it from, and
+the configuration admits `http://localhost(:port)/` as the one non-HTTPS `site.base`. To
+check a node served locally at Level 2, set `site.base` to `http://localhost:8080/`,
+rebuild, serve, and run each checker on
+`http://localhost:8080/.well-known/knowledge-linkset --level 2 --dev` (the Python checker
+also needs `--allow-network`); use `localhost`, not `127.0.0.1`, in both places. `--dev`
+admits plain `http` to a loopback address and nothing else (AGSC-09-93).
+
+On the live address:
 
 ```bash
 node "$ENGINE/tools/validate-wellknown" https://notes.example.org/.well-known/knowledge-linkset --level 2

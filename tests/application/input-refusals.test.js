@@ -178,3 +178,85 @@ test('an import file over the cap is AGSC-E904, not "could not be read"', (t) =>
   assert.ok(r.codes.includes('AGSC-E904'), r.codes.join(','));
   assert.ok(!r.codes.includes('AGSC-E901'), r.codes.join(','));
 });
+
+// A frontmatter of nested block maps that `lint` passes used to stop `build`, `ci`
+// and `lint --fix` with an internal error (the writer's stack overflowed), and the
+// same shape in a foreign file stopped `import --from okf` the same way. Every verb
+// now finishes or refuses under a registered code, AGSC-E105, the code the reader
+// gives the same input when its own stack overflows (AGSC-02-02, AGSC-09-11). The
+// depth below sits between the writer's limit and the reader's on the default stack,
+// so each verb takes one of three roads, every one of them clean: the reader refuses
+// the file, the writer refuses it, or both hold it and the verb succeeds.
+const DEEP_LEVELS = 800;
+
+function nestedBlockMaps(levels) {
+  let text = 'x:\n';
+  for (let i = 1; i <= levels; i += 1) text += `${' '.repeat(i)}k${i === levels ? ': leaf\n' : ':\n'}`;
+  return text;
+}
+
+function deepItem(dir) {
+  const item = path.join(dir, 'content', 'concepts', 'handoff.md');
+  fs.writeFileSync(item, fs.readFileSync(item, 'utf8').replace('kind: pattern\n', `kind: pattern\n${nestedBlockMaps(DEEP_LEVELS)}`));
+}
+
+function filesUnder(root) {
+  if (!fs.existsSync(root)) return [];
+  return fs.readdirSync(root, { recursive: true, withFileTypes: true })
+    .filter((d) => d.isFile()).map((d) => path.join(d.parentPath || d.path, d.name)).sort();
+}
+
+/** The invariant of every road: a registered outcome, never an internal error. */
+function assertClean(r, label) {
+  assert.doesNotMatch(r.err, /internal error/u, `${label}: ${r.err.slice(0, 200)}`);
+  assert.ok(r.exit === 0 || r.exit === 1, `${label}: exit ${r.exit}`);
+  assert.ok(Array.isArray(r.envelope.findings), `${label}: no envelope on standard output`);
+  const errors = [...new Set(r.envelope.findings.filter((f) => f.severity === 'error').map((f) => f.code))].sort();
+  if (r.exit === 1) {
+    assert.ok(errors.includes('AGSC-E105'), `${label}: ${errors.join(',')}`);
+    // The reader's own refusal also leaves the item without a type (AGSC-E205).
+    assert.ok(errors.every((code) => code === 'AGSC-E105' || code === 'AGSC-E205'), `${label}: ${errors.join(',')}`);
+  } else {
+    assert.deepStrictEqual(errors, [], label);
+  }
+}
+
+test('build, ci and lint --fix finish or refuse a deeply nested frontmatter under AGSC-E105, never an internal error', () => {
+  for (const argv of [['build'], ['ci'], ['lint', '--fix']]) {
+    const dir = workspace();
+    deepItem(dir);
+    const before = filesUnder(path.join(dir, 'content'));
+    const r = agsc(dir, argv);
+    assertClean(r, argv.join(' '));
+    if (r.exit === 1) assert.deepStrictEqual(filesUnder(path.join(dir, 'www')), [], `${argv.join(' ')}: a refused build wrote files`);
+    assert.deepStrictEqual(filesUnder(path.join(dir, 'content')), before, `${argv.join(' ')}: the source tree changed`);
+    const named = r.envelope.findings.filter((f) => f.code === 'AGSC-E105');
+    for (const f of named) assert.strictEqual(f.file, 'content/concepts/handoff.md', `${argv.join(' ')}: the finding names the item`);
+  }
+});
+
+test('lint alone keeps passing the item whose writer road is the one that refuses it', () => {
+  const dir = workspace();
+  deepItem(dir);
+  const r = agsc(dir, ['lint']);
+  assertClean(r, 'lint');
+});
+
+test('import --from okf finishes or refuses a deeply nested foreign frontmatter under AGSC-E105, and a refusal writes nothing', (t) => {
+  for (const extra of [[], ['--dry-run']]) {
+    const dir = workspace();
+    const source = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-deep-'));
+    t.after(() => fs.rmSync(source, { recursive: true, force: true }));
+    fs.writeFileSync(path.join(source, 'deep.md'),
+      `---\ntype: concept\ntitle: Deep Item\ndescription: A foreign item whose frontmatter is nested very deep.\n${nestedBlockMaps(DEEP_LEVELS)}---\n\nBody.\n`);
+    const before = filesUnder(path.join(dir, 'content'));
+    const r = agsc(dir, ['import', '--from', 'okf', source, ...extra]);
+    assertClean(r, `import ${extra.join(' ')}`);
+    if (r.exit === 1 || extra.length > 0) {
+      assert.deepStrictEqual(filesUnder(path.join(dir, 'content')), before, `import ${extra.join(' ')}: wrote under content/`);
+    }
+    for (const f of r.envelope.findings.filter((x) => x.code === 'AGSC-E105')) {
+      assert.match(f.file, /deep\.md$/u, `import ${extra.join(' ')}: the finding names the foreign file`);
+    }
+  }
+});

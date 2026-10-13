@@ -317,6 +317,7 @@ AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to
 |---|---|
 | The engine, the command line and the checkers | Apache-2.0 (`LICENSE`) |
 | The JSON Schemas, the ontology, the identifiers and the discovery document | CC0-1.0 |
+| The agent skill under `skills/` and `plugins/`, and the plugin marketplace files under `.claude-plugin/` | CC0-1.0 |
 | The specification text under `spec/` | Apache-2.0 |
 | The conformance vectors under `tests/vectors/` | Apache-2.0 |
 | The documentation under `docs/`, the scenarios under `features/` and the examples under `examples/` | Apache-2.0 |

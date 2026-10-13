@@ -20,6 +20,13 @@
 // "finished" or "killed", far apart on either side of the bound: no duration is
 // measured or asserted.
 //
+// Deep frontmatter nesting: an item, and a foreign file handed to `agsc import --from
+// okf`, whose frontmatter is a block mapping several hundred levels deep, inside every
+// cap and inside the YAML subset. The writer's stack used to overflow on it and `build`
+// and `import` stopped with an internal error where `lint` had passed the item. Each
+// case finishes with exit 0 or refuses under AGSC-E105, the code the reader already
+// gives the same shape when its own stack overflows; an internal error is a miss.
+//
 // Deterministic: a fixed SOURCE_DATE_EPOCH, no network, no randomness. Every write goes
 // to a temporary directory outside the repository, removed on exit.
 
@@ -57,7 +64,7 @@ const NEW_CASES = Object.freeze({
 
 describe('the corpus: configuration paths and long runs', () => {
   it('carries the corpus version that counts these cases', () => {
-    assert.equal(CORPUS.version, 'security-floor-v3');
+    assert.equal(CORPUS.version, 'security-floor-v4');
   });
 
   it('holds every new case as a scored fault of its class', () => {
@@ -221,5 +228,52 @@ describe('the corpus: long lines that end in a line terminator', () => {
       'long-run-init-line-ends': 'finished',
       'long-run-skills-pack': 'finished',
     });
+  });
+});
+
+/** The deep-nesting cases, with the member of each that holds the nested run. */
+const DEEP_CASES = Object.freeze({
+  'deep-frontmatter-build': (c) => c.files[0],
+  'deep-frontmatter-okf-import': (c) => c.source[0],
+});
+
+describe('the corpus: deep frontmatter nesting', () => {
+  it('spells a nested run as one block mapping, each level one indent deeper', () => {
+    const text = security.bytesOf({ nest: { count: 2, indent: ' ', leaf: 'k: leaf\n', open: 'k:\n', prefix: 'x:\n', suffix: '---\n' } });
+    assert.equal(text.toString('utf8'), 'x:\n k:\n  k:\n   k: leaf\n---\n');
+  });
+
+  it('feeds each case a frontmatter hundreds of levels deep, under every cap, finishing or refusing under AGSC-E105', () => {
+    for (const [id, fileOf] of Object.entries(DEEP_CASES)) {
+      const c = byId(id);
+      assert.ok(c, `the corpus has no case ${id}`);
+      const file = fileOf(c);
+      assert.equal(file.nest.count, 800, id);
+      assert.equal(file.nest.indent, ' ', id);
+      assert.match(file.nest.prefix, /\nx:\n$/u, `${id}: the run hangs from one unknown key`);
+      const bytes = security.bytesOf(file);
+      assert.ok(bytes.length < MIB, `${id}: under the 1 MiB cap`);
+      assert.ok(!bytes.toString('utf8').includes('{'), `${id}: block mappings only, no flow mapping`);
+      assert.deepEqual(c.expect, ['AGSC-E105'], id);
+      assert.deepEqual(c.finish, { exit: [0] }, id);
+      assert.notEqual(c.fault, false, `${id} is a fault, not a control`);
+      assert.notEqual(c.required, false, `${id} is scored`);
+    }
+    assert.equal(byId('deep-frontmatter-build').kind, 'bundle');
+    assert.equal(byId('deep-frontmatter-build').verb, 'build');
+    assert.equal(byId('deep-frontmatter-build').class, 'oversized');
+    assert.equal(byId('deep-frontmatter-okf-import').kind, 'import');
+    assert.equal(byId('deep-frontmatter-okf-import').format, 'okf');
+    assert.equal(byId('deep-frontmatter-okf-import').class, 'hostile-import');
+  });
+
+  it('handles both, end to end: refused under AGSC-E105 or finished, never an internal error', () => {
+    const cases = CORPUS.cases.filter((c) => Object.hasOwn(DEEP_CASES, c.id));
+    const result = security.score({ cases, version: CORPUS.version }, { base: FIXTURE, scratch: tmpdir() });
+    for (const row of result.cases) {
+      assert.equal(row.internal_error, false, `${row.id}: an internal error`);
+      assert.ok(row.outcome === 'refused' || row.outcome === 'finished', `${row.id}: ${row.outcome} ${JSON.stringify(row.codes)}`);
+      assert.equal(row.ok, true, row.id);
+    }
   });
 });

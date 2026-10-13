@@ -92,9 +92,9 @@ function jsonBytes(value) {
   return `${JSON.stringify(sort(value), null, 2)}\n`;
 }
 
-/** An item file: the AGSC-04-19 frontmatter block, then the body. */
-function itemFile(frontmatter, body) {
-  const text = `${serialize(frontmatter)}${body.startsWith('\n') ? '' : '\n'}${body}`;
+/** An item file at `file`: the AGSC-04-19 frontmatter block, then the body. */
+function itemFile(frontmatter, body, file) {
+  const text = `${serialize(frontmatter, file)}${body.startsWith('\n') ? '' : '\n'}${body}`;
   return withOneTrailingFeed(text);
 }
 
@@ -368,7 +368,7 @@ function plan(input, options) {
     }
 
     const frontmatter = mapping.ordered(mapped.frontmatter);
-    writes.push({ path: mapped.path, text: itemFile(frontmatter, mapped.body) });
+    writes.push({ path: mapped.path, text: itemFile(frontmatter, mapped.body, mapped.path) });
     items.push({
       slug, path: mapped.path, frontmatter, body: mapped.body,
       class: row.class === undefined ? '' : row.class,
@@ -383,7 +383,7 @@ function plan(input, options) {
   });
   findings.push(...built.findings);
   for (const cluster of built.clusters) {
-    writes.push({ path: cluster.path, text: itemFile(cluster.frontmatter, cluster.body) });
+    writes.push({ path: cluster.path, text: itemFile(cluster.frontmatter, cluster.body, cluster.path) });
   }
 
   // ------------------------------------------------- the Bundle's own two files
@@ -441,7 +441,7 @@ function plan(input, options) {
   };
   writes.push({
     path: 'content/index.md',
-    text: itemFile(indexFrontmatter, indexBody(options, items.length, built.clusters.length, published)),
+    text: itemFile(indexFrontmatter, indexBody(options, items.length, built.clusters.length, published), 'content/index.md'),
   });
 
   writes.sort((a, b) => byCodePoint(a.path, b.path));

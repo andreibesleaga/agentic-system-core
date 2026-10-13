@@ -96,9 +96,26 @@ function contentFolderOf(filePath) {
   return m && CONTENT_FOLDERS.includes(m[1]) ? m[1] : null;
 }
 
-/** Serialize a frontmatter object to the AGSC-04-19 block, fences included. */
-function serialize(frontmatterObject) {
-  return `---\n${YAML.stringify(failsafeScalars(frontmatterObject), YAML_PROFILE)}---\n`;
+/**
+ * Serialize a frontmatter object to the AGSC-04-19 block, fences included.
+ *
+ * A frontmatter nested deeper than this process's stack can hold overflows the
+ * writer (the library and `failsafeScalars` both walk the tree by recursion), and
+ * the bare `RangeError` used to reach the command line as an internal error where
+ * `lint` had passed the item. The reader already reports every construct the same
+ * library cannot handle as `AGSC-E105` (`knowledge/yaml.js#codeForLibraryError`),
+ * so the writer reports that code for the same input — a Finding, never a crash
+ * (AGSC-09-11). No bound is added: AGSC-02-02 admits block mappings and 1.0 states
+ * no depth. `file` names the item where the caller knows it, for the Finding.
+ */
+function serialize(frontmatterObject, file = '') {
+  try {
+    return `---\n${YAML.stringify(failsafeScalars(frontmatterObject), YAML_PROFILE)}---\n`;
+  } catch (e) {
+    if (!(e instanceof RangeError)) throw e;
+    throw Object.assign(new Error('the frontmatter is nested deeper than the writer can hold; '
+      + 'AGSC-02-02 admits block mappings, and 1.0 states no bound'), { code: 'AGSC-E105', file: String(file) });
+  }
 }
 
 /**

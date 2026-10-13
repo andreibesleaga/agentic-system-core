@@ -836,6 +836,33 @@
    "verb": "ci"
   },
   {
+   "class": "oversized",
+   "expect": [
+    "AGSC-E105"
+   ],
+   "files": [
+    {
+     "nest": {
+      "count": 800,
+      "indent": " ",
+      "leaf": "k: leaf\n",
+      "open": "k:\n",
+      "prefix": "---\ntype: concept\ntitle: Bench Security Case\ndescription: A seeded case of the security-floor corpus, written to exercise one lint.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\nx:\n",
+      "suffix": "---\n\n## Intent\n\nPass control from one agent to another.\n\n## Context & Forces\n\nForces.\n\n## Structure\n\nStructure.\n\n## Consequences & Trade-offs\n\nTrade-offs.\n\n## Related Patterns\n\nSee [Supervisor](supervisor).\n"
+     },
+     "path": "content/concepts/evil.md"
+    }
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "id": "deep-frontmatter-build",
+   "kind": "bundle",
+   "verb": "build"
+  },
+  {
    "class": "archive",
    "expect": [
     "AGSC-E903"
@@ -1769,6 +1796,33 @@
   {
    "class": "hostile-import",
    "expect": [
+    "AGSC-E105"
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "format": "okf",
+   "id": "deep-frontmatter-okf-import",
+   "kind": "import",
+   "source": [
+    {
+     "nest": {
+      "count": 800,
+      "indent": " ",
+      "leaf": "k: leaf\n",
+      "open": "k:\n",
+      "prefix": "---\ntype: concept\ntitle: Deep Item\ndescription: A foreign item whose frontmatter is nested deeper than a writer holds.\nx:\n",
+      "suffix": "---\n\nBody.\n"
+     },
+     "path": "deep.md"
+    }
+   ]
+  },
+  {
+   "class": "hostile-import",
+   "expect": [
     "AGSC-E405"
    ],
    "format": "okf",
@@ -2580,5 +2634,5 @@
    "verb": "skills"
   }
  ],
- "version": "security-floor-v3"
+ "version": "security-floor-v4"
 }

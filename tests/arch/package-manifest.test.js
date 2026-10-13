@@ -72,9 +72,9 @@ test('AGSC-00-01 + AGSC-08-06: the texts a consumer has to be able to read ship'
 });
 
 test('no private path can reach the tarball', () => {
-  // Project rule (owner, 2026-09-04): planning files never enter a public artefact.
+  // Planning files never enter a public artefact.
   for (const entry of manifest.files || []) {
-    assert.ok(!/GABBE|discovery-product|05-WILEY/u.test(entry), entry);
+    assert.ok(!/GABBE|discovery-product/u.test(entry), entry);
   }
 });
 

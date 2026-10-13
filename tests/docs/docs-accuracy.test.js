@@ -162,6 +162,30 @@ test('the implementers\' guide: graph.jsonld keeps @graph, and the round trip mu
   assert.match(part, /`graph: true`/u);
 });
 
+// --- docs/USING-WITH-ASSISTANTS.md and the Mode 1 guide: what remember needs ---------------
+
+for (const [rel, heading] of [['docs/USING-WITH-ASSISTANTS.md', '4.'], ['docs/guides/mode-1.md', '2.']]) {
+  test(`${rel}: remember needs the agent and the model too, unless the call asserts a human origin`, () => {
+    const text = flat(section(read(rel), heading));
+    assert.match(text, /`remember` needs the person operating it \(`"operator": "human:<id>"`\) or a declared agent lane, \*\*and\*\* the `agent` and `model` that helped write the item, unless the call says `"origin": "human"`; without an operator it refuses with `AGSC-E003`, and without `agent` and `model` the saved item fails `agsc lint` with `AGSC-E202` \(AGSC-08-01\)\./u);
+    assert.doesNotMatch(text, /records the `model` and `agent` it is given/u, 'the sentence that read as if the operator alone were enough');
+  });
+}
+
+// --- docs/guides/publish.md: a node served on the author's own machine -----------------------
+
+test('the publishing guide says how to run both checkers against a locally served node', () => {
+  const text = flat(section(read('docs/guides/publish.md'), '6.'));
+  assert.match(text, /\*\*On your own machine first\.\*\* `agsc-host serve` prints `http:\/\/127\.0\.0\.1:8080\/`/u);
+  assert.match(text, /set `site\.base` to `http:\/\/localhost:8080\/`, rebuild, serve, and run each checker on `http:\/\/localhost:8080\/\.well-known\/knowledge-linkset --level 2 --dev` \(the Python checker also needs `--allow-network`\); use `localhost`, not `127\.0\.0\.1`, in both places/u);
+  assert.match(text, /`--dev` admits plain `http` to a loopback address and nothing else \(AGSC-09-93\)/u);
+  // The paragraph is prose: the guide runner finds no new command block in section 6.
+  const blocks = section(read('docs/guides/publish.md'), '6.').match(/^```bash/gmu) || [];
+  assert.equal(blocks.length, 2, 'section 6 keeps its two command blocks, one per checker');
+  // The sentence of the Mode 0 guide points here.
+  assert.match(flat(read('docs/guides/mode-0.md')), /To run the checkers against this address, see the publishing guide §6 — `localhost`, not `127\.0\.0\.1`, in `site\.base` and on the command line\./u);
+});
+
 // --- docs/CONNECTORS.md -------------------------------------------------------------
 
 test('the connectors page: an agent name that is no declared lane runs no lane gate, as the engine does', () => {

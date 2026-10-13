@@ -150,6 +150,16 @@ test('every folder that ships text has a licence: NOTICE and the README table ag
   assert.match(row('w3c/'), /CC-BY-4\.0/u);
   assert.match(notice, /internet-draft\/[^;]*BCP 78/u);
   assert.match(row('internet-draft/'), /BCP 78/u);
+  // The agent skill and the plugin marketplace files declare CC0 in their own files
+  // (skills/*/SKILL.md, plugins/*/.claude-plugin/plugin.json, .claude-plugin/marketplace.json).
+  assert.match(notice, /skills\/ and plugins\/[^;]*\.claude-plugin\/[^;]*CC0 1\.0 Universal/u, 'NOTICE: the skill and the marketplace files');
+  const skill = row('skills/');
+  assert.match(skill, /`plugins\/`[^|]*`\.claude-plugin\/`/u, 'README: one row names the skill, the plugin and the marketplace files');
+  assert.match(skill, /CC0-1\.0/u, 'README: the skill row');
+  for (const rel of ['skills/agentic-system-core/SKILL.md', 'plugins/agentic-system-core/skills/agentic-system-core/SKILL.md']) {
+    assert.match(read(rel), /^license: CC0-1\.0$/mu, `${rel} declares the same licence`);
+  }
+  assert.equal(JSON.parse(read('plugins/agentic-system-core/.claude-plugin/plugin.json')).license, 'CC0-1.0');
 });
 
 test('CITATION.cff names both licences of the package', () => {

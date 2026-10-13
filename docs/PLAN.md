@@ -694,6 +694,19 @@ default `Access-Control-Allow-Origin: *` from every file but the discovery docum
 the page script and the compose page that every node emits, which `1.0.0` leaves byte for
 byte as they are.
 
+**Three more items planned for 1.1 (second note of 2026-10-12).** AGSC-00-20 names two
+more items decided for 1.1 after the 12 October audit: a `remember` call that declares an
+operator alone under the default `ai-generated` origin refused with `AGSC-E003`, or
+answered with the two `AGSC-E202` of AGSC-08-01 in `findings`, on both transports at once
+(at `1.0.0` the call returns the item and `agsc lint` refuses it; the assistant guide and
+the Mode 1 guide say so); and a stated nesting bound for the block mappings and sequences
+of the AGSC-02-02 subset, checked by `lint` so that every verb agrees (at `1.0.0` a
+frontmatter nested deeper than the engine can read or write back is `AGSC-E105` from every
+verb, with no stated bound). A third is a capability of the reference distribution:
+`agsc-host serve` printing and binding `localhost` rather than `127.0.0.1`, so that the
+address it prints is the one the checkers accept (at `1.0.0` the publishing guide, §6, says
+how to check a locally served node).
+
 **The well-known name of the performance addendum (note of 2026-10-12).** The
 Internet-Draft's text requests the registration of the well-known name; no request has
 been sent to the registry.

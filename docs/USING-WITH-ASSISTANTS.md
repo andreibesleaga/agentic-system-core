@@ -79,9 +79,11 @@ This is the whole loop. The assistant does the preparation; you do the writing.
 2. **The assistant calls `remember` or `propose`.** It gets back prepared text: for
    `remember`, a suggested file path, the frontmatter and the body; for `propose`, the
    item's canonical Markdown. Provenance is filled in from what the assistant passes:
-   `remember` needs **the person operating it** (`"operator": "human:<id>"`) or the
-   name of a declared agent lane, and records the `model` and `agent` it is given;
-   without either it refuses with `AGSC-E003`.
+   `remember` needs the person operating it (`"operator": "human:<id>"`) or a declared
+   agent lane, **and** the `agent` and `model` that helped write the item, unless the
+   call says `"origin": "human"`; without an operator it refuses with `AGSC-E003`, and
+   without `agent` and `model` the saved item fails `agsc lint` with `AGSC-E202`
+   (AGSC-08-01).
 3. **You read it.** This is the review. Nothing has happened to your files yet.
 4. **You save it** into the Bundle at the path the assistant suggested, and fix anything
    you disagree with. The assistant can write the file for you if it has a file tool of

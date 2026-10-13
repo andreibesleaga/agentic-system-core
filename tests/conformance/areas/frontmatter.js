@@ -28,13 +28,13 @@ function runAdoption(vector) {
     const m = findingsMatch(vector.expected.findings, first.findings);
     list.push(['findings', m.ok, m.detail]);
   }
-  if (vector.expected.idempotent === true) {
+  if (vector.expected.idempotent !== undefined) {
     const again = adopt.adopt(result.files.map((f) => ({ path: f.path, markdown: f.output })),
       { config: vector.input.config });
     const byPath = new Map(result.files.map((f) => [f.path, f.output]));
     list.push(['idempotent',
-      again.files.every((f) => f.output === byPath.get(f.path) && f.changed === false),
-      'a second adoption changed the bytes']);
+      again.files.every((f) => f.output === byPath.get(f.path) && f.changed === false) === vector.expected.idempotent,
+      'a second adoption changed the bytes, or kept them where the case states a change']);
   }
   return checks(list);
 }
@@ -58,12 +58,12 @@ function runPreParsed(vector, ctx) {
     list.push(['vendor-not-warned', keys.vendor.every((k) => !warned.has(k)),
       `AGSC-E207 raised for a reserved x- key: ${[...warned].join(', ')}`]);
   }
-  if (vector.expected.valid === true) {
+  if (vector.expected.valid !== undefined) {
     // The case states only the keys under test (AGSC-09-04 `items[]` convention), so
     // "valid" means no error is attributable to a key it preserves.
     const blamed = findings.filter((f) => f.severity === 'error'
       && f.key != null && Object.prototype.hasOwnProperty.call(preserved, f.key));
-    list.push(['valid', blamed.length === 0, JSON.stringify(blamed.map((f) => f.code))]);
+    list.push(['valid', (blamed.length === 0) === vector.expected.valid, JSON.stringify(blamed.map((f) => f.code))]);
   }
   return checks(list);
 }

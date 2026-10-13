@@ -441,7 +441,7 @@ function plan(files, options) {
     const ordered = fix.orderKeys(mapped.frontmatter,
       fix.declaredOrder(opts.itemSchema, String(mapped.frontmatter.type)),
       opts.itemSchema, String(mapped.frontmatter.type), null);
-    const text = fix.normaliseText(`${serialize(fix.quoteTemporal(ordered))}${nfc(read.body)}`);
+    const text = fix.normaliseText(`${serialize(fix.quoteTemporal(ordered), path)}${nfc(read.body)}`);
     writes.push({ path: target, text });
     totals.items += 1;
   }

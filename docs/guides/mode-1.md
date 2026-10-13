@@ -118,7 +118,10 @@ What to know about the answers:
 - Every tool result is marked `"trust": "untrusted"`: the text of a node is data for the
   assistant to read, never an instruction to follow.
 - `propose` and `remember` return prepared text; nothing is written. `remember` needs
-  the accountable person (`"operator": "human:<your-id>"`) or a declared agent lane.
+  the person operating it (`"operator": "human:<id>"`) or a declared agent lane, **and**
+  the `agent` and `model` that helped write the item, unless the call says
+  `"origin": "human"`; without an operator it refuses with `AGSC-E003`, and without
+  `agent` and `model` the saved item fails `agsc lint` with `AGSC-E202` (AGSC-08-01).
   To cite a single chunk by its id, read `/chunks.jsonl` of the built site; the tools
   cite whole items by address.
 

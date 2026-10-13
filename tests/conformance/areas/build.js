@@ -367,8 +367,8 @@ function reproducibleAssetsCase(vector, ctx) {
   list.push(['byte identical', identical === vector.expected.byte_identical, JSON.stringify(differing)]);
   const codes = first.findings.map((f) => f.code);
   for (const code of vector.expected.codes_absent || []) list.push([`no ${code}`, !codes.includes(code), JSON.stringify(codes)]);
-  if (vector.expected.no_error_finding === true) {
-    list.push(['no error finding', first.findings.every((f) => f.severity !== 'error'),
+  if (vector.expected.no_error_finding !== undefined) {
+    list.push(['no_error_finding', first.findings.every((f) => f.severity !== 'error') === vector.expected.no_error_finding,
       JSON.stringify(first.findings.filter((f) => f.severity === 'error').map((f) => `${f.code} ${f.message}`))]);
   }
   for (const route of vector.expected.includes_routes || []) list.push([`emits ${route}`, first.files.has(route), routesA.filter((r) => r.startsWith('/assets/')).join(' ')]);

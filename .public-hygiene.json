@@ -93,11 +93,6 @@
       "reason": "a fixture the clean-room rewrite must clean"
     },
     {
-      "check": "wording",
-      "path": "tests/arch/package-manifest.test.js",
-      "reason": "the test that proves no private name reaches the npm tarball"
-    },
-    {
       "check": "private-name",
       "path": "tests/arch/package-manifest.test.js",
       "reason": "the test that proves no private name reaches the npm tarball"

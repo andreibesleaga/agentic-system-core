@@ -476,7 +476,7 @@ function fixItem(item, options) {
   // markers — with dates and instants kept as quoted strings (AGSC-02-04).
   // `frontmatter.split` returns the YAML text without its closing newline, so the
   // authored block is reassembled with exactly one before it is compared.
-  const block = serialize(quoteTemporal(ordered));
+  const block = serialize(quoteTemporal(ordered), path);
   const authored = split.yamlText === ''
     ? '---\n---\n'
     : `---\n${withoutTrailingFeeds(String(split.yamlText))}\n---\n`;

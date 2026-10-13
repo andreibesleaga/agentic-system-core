@@ -673,7 +673,7 @@ function pageMarkdown(item, source) {
   const frontmatter = source == null ? null : source.frontmatter;
   const body = item.body == null ? '' : item.body;
   if (frontmatter == null || typeof frontmatter !== 'object') return textBytes(body);
-  return textBytes(`${adopt.serialize(frontmatter)}${body}`);
+  return textBytes(`${adopt.serialize(frontmatter, source.path)}${body}`);
 }
 
 /**

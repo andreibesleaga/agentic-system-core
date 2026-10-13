@@ -103,7 +103,7 @@ describe('1. one version, in one place', () => {
     assert.equal(release.isGreater('1.0.0-rc.7', '1.0.0-rc.7'), false);
     assert.equal(release.isGreater('1.0.0-rc.7.1', '1.0.0-rc.7'), true);
     assert.equal(release.isGreater('1.0.0-rc', '1.0.0-rc.7'), false);
-    assert.equal(release.isGreater('1.0.0-rc.1', '1.0.0-beta.9'), true);
+    assert.equal(release.isGreater('2.0.0-rc.1', '2.0.0-beta.9'), true);
     assert.equal(release.isGreater('1.0.0-beta', '1.0.0-1'), true);
     const { json } = envelope('release', ['--version', '0.0.1', distribution()]);
     assert.ok(json.findings.some((f) => /is not greater than/u.test(f.message)));

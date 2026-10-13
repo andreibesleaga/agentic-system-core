@@ -277,7 +277,7 @@ Bundle:
 
 ```bash demo
 node "$ENGINE/examples/demos/agents/mcp-call.js" propose '{"slug":"handoff"}' | grep -E '"(slug|type)"'
-node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"episode","title":"Run one","body":"## What happened\n\nAnswered from memory.\n\n## Outcome\n\nsuccess\n\n## Next\n\nNothing.","actor":"process:probe","at":"2026-09-02T10:00:00Z","operator":"human:operator","model":"m","usage":{"cost_usd":0.01,"estimate":false,"model":"m","tokens_in":10,"tokens_out":5}}' | grep -E '"(path|type|started|cost_usd)"'
+node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"episode","title":"Run one","body":"## What happened\n\nAnswered from memory.\n\n## Outcome\n\nsuccess\n\n## Next\n\nNothing.","actor":"process:probe","at":"2026-09-02T10:00:00Z","operator":"human:operator","agent":"agent:probe","model":"m","usage":{"cost_usd":0.01,"estimate":false,"model":"m","tokens_in":10,"tokens_out":5}}' | grep -E '"(path|type|started|cost_usd)"'
 node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"episode","title":"Run one","body":"x","actor":"process:probe"}' || echo "mcp-call exit $?"
 node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"lesson","title":"No operator","body":"## Lesson\n\nx"}' | grep '"message"'
 ls content/episodes 2>/dev/null || echo "content unchanged"
@@ -398,7 +398,7 @@ An agent on `a` records a lesson that cites `b` — through `sources[]`, never t
 link, so nothing is fetched and the citation keeps its origin:
 
 ```bash demo
-(cd a && node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"lesson","title":"Pair retries with a breaker","body":"## Lesson\n\nPair retries with a breaker.\n\n## Evidence\n\nThe supervisor page of node b.\n\n## Check before\n\nA retry loop exists.","operator":"human:operator","sources":[{"id":"b-supervisor","resource":"https://b.example/concepts/supervisor/"}]}' | grep -E '"(resource|path|type)"')
+(cd a && node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"lesson","title":"Pair retries with a breaker","body":"## Lesson\n\nPair retries with a breaker.\n\n## Evidence\n\nThe supervisor page of node b.\n\n## Check before\n\nA retry loop exists.","operator":"human:operator","agent":"agent:probe","model":"m","sources":[{"id":"b-supervisor","resource":"https://b.example/concepts/supervisor/"}]}' | grep -E '"(resource|path|type)"')
 ```
 
 ```text expect

@@ -75,9 +75,8 @@ function linksetCase(vector) {
     // NO READING. The vector states the six attributes the rules require, so the
     // checker's verdict is asserted straight: a conforming Level-2 document raises
     // nothing.
-    ['the document validates', discovery.check(doc, { level: 2 }).length === 0
-      && (expected.valid === undefined || expected.valid === true),
-    JSON.stringify(discovery.check(doc, { level: 2 }))],
+    ['the document validates', (discovery.check(doc, { level: 2 }).length === 0) === (expected.valid !== false),
+      JSON.stringify(discovery.check(doc, { level: 2 }))],
   ]);
 }
 
@@ -208,7 +207,7 @@ function reachabilityCase(vector) {
     // AGSC-02-23: a draft is not published, so it is neither reachable nor a fault.
     list.push([`not_published ${iri}`, !text.includes(iri) && !full.includes(iri), 'a draft reached the index']);
   }
-  if (vector.expected.llms_full_reachability_identical === true) {
+  if (vector.expected.llms_full_reachability_identical !== undefined) {
     const fullSections = new Map();
     let heading = null;
     for (const line of full.split('\n')) {
@@ -218,7 +217,7 @@ function reachabilityCase(vector) {
       if (entry !== null && heading !== null) fullSections.set(entry[1], heading);
     }
     list.push(['llms_full_reachability_identical',
-      deepEqual([...sectionOf.entries()].sort(), [...fullSections.entries()].sort()),
+      deepEqual([...sectionOf.entries()].sort(), [...fullSections.entries()].sort()) === vector.expected.llms_full_reachability_identical,
       JSON.stringify([...fullSections.entries()])]);
   }
   return checks(list);
@@ -245,16 +244,15 @@ function sitemapCase(vector) {
     ['xml_bytes_asserted', vector.expected.xml_bytes_asserted === false,
       'no rule pins the XML serialisation of AGSC-06-19'],
   ];
-  if (vector.expected.lastmod_is_build_instant === true) {
+  if (vector.expected.lastmod_is_build_instant !== undefined) {
     // AGSC-04-02/04-09: a per-item date would make the file depend on content dates
     // and break the double build; a second build at another instant moves every
-    // entry together and nothing else.
+    // entry together and nothing else, and the same instant reproduces the same bytes.
     const other = site.sitemap(base, vector.input.published_routes, '2027-02-03T00:00:00Z');
     const moved = [...other.matchAll(/<lastmod>([^<]+)<\/lastmod>/gu)].map((m) => m[1]);
-    list.push(['lastmod_is_build_instant', moved.every((v) => v === '2027-02-03T00:00:00Z'),
-      JSON.stringify(moved)]);
-    list.push(['the same instant reproduces the same bytes',
-      site.sitemap(base, vector.input.published_routes, vector.input.build_instant) === xml, '']);
+    const holds = moved.every((v) => v === '2027-02-03T00:00:00Z')
+      && site.sitemap(base, vector.input.published_routes, vector.input.build_instant) === xml;
+    list.push(['lastmod_is_build_instant', holds === vector.expected.lastmod_is_build_instant, JSON.stringify(moved)]);
   }
   for (const type of vector.expected.jsonld_types_closed_set || []) {
     list.push([`jsonld type ${type}`, ['Dataset', 'DefinedTerm', 'TechArticle'].includes(type),

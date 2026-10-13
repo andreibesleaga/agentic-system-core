@@ -354,3 +354,22 @@ test('AGSC-06-23: the search tool tokenizes title, description and tags, not the
   assert.deepStrictEqual(plain(answer.citations), ['https://a.example/concepts/supervisor/']);
   assert.ok(answer.body.includes(CONTENT_USE_TERMS));
 });
+
+// `propose` serialises through the canonical writer, so a frontmatter nested deeper
+// than the writer can hold used to escape the tool as a bare RangeError, which the
+// stdio transport would have answered as a JSON-RPC internal error. A domain fault
+// is an envelope (AGSC-09-13a): the writer's refusal reaches the caller under the
+// reader's code for the same input, AGSC-E105.
+test('AGSC-09-13a: propose answers a frontmatter the writer cannot hold with the AGSC-E105 envelope', () => {
+  let deep = 'leaf';
+  for (let i = 0; i < 100000; i += 1) deep = { k: deep };
+  const bundle = {
+    byslug: new Map([['deep', { slug: 'deep', type: 'concept', frontmatter: { title: 'Deep', x: deep }, body: 'Body.\n' }]]),
+    config: { site: { base: '/' } },
+    items: [],
+  };
+  const answer = tools(bundle, {}).call('propose', { slug: 'deep' });
+  assert.strictEqual(answer.type, 'error');
+  assert.strictEqual(answer.body.code, 'AGSC-E105');
+  assert.match(answer.body.message, /nested deeper/u);
+});
