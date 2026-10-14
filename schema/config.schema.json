@@ -400,7 +400,7 @@
       "description": "AGSC-11-20: the page where a reader of a restricted node obtains credentials, an absolute https URL; the target of the node's one …/rel#access link. Read only when visibility is restricted; a restricted configuration that names none is AGSC-E202 (AGSC-01-18).",
       "type": "string",
       "format": "uri",
-      "pattern": "^https://[^\\x00-\\x20/?#]+(?:[/?#][^\\x00-\\x20]*)?$"
+      "pattern": "^https://(?!:)[^\\x00-\\x20/?#]+(?:[/?#][^\\x00-\\x20]*)?$"
     },
     "attachments": {
       "type": "object",
