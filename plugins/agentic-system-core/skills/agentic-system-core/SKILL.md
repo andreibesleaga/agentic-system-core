@@ -92,7 +92,7 @@ clusters: [agent-patterns]     # first is primary; membership is written here, n
 status: stable                 # draft | stable (default) | deprecated | retired
 prov:
   origin: ai-assisted          # human | ai-assisted | ai-generated | imported; never human for a change you made
-  operator: human:<login>      # required, lowercase; the accountable person (init derives it from git user.email; else ask)
+  operator: human:<login>      # required, lowercase; the accountable person: ask them which login to use
   agent: <client>/<version>    # name yourself here; once set, injection-scan hits are errors, not warnings
   model: <model id>            # optional
 uses: [supervisor]             # typed links: slugs under exactly fourteen keys, see below

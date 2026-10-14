@@ -43,3 +43,7 @@ GABBE/
 
 # Vectors are part of the definition (AGSC-00-01): the generic build/ rule above must not swallow tests/vectors/build/
 !tests/vectors/build/
+
+# Local agent-tool installs (a skill installed into this checkout with `npx skills add`)
+.claude/
+skills-lock.json

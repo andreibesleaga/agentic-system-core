@@ -79,7 +79,7 @@ test('the plugin carries the same bytes as skills/agentic-system-core/', () => {
 
 test('the plugin is content only: no hooks, no MCP server, no scripts, no executables', () => {
   for (const f of files(PLUGIN)) {
-    assert.match(f, /^(?:\.claude-plugin\/plugin\.json|README\.md|skills\/agentic-system-core\/.+\.md)$/u, `unexpected file in the plugin: ${f}`);
+    assert.match(f, /^(?:\.claude-plugin\/plugin\.json|\.claude-plugin\/icon\.png|README\.md|skills\/agentic-system-core\/.+\.md)$/u, `unexpected file in the plugin: ${f}`);
   }
 });
 
@@ -90,4 +90,22 @@ test('the marketplace names the plugin by the same name and points at its folder
   assert.equal(market.plugins[0].name, plugin.name);
   assert.equal(path.resolve(ROOT, market.plugins[0].source), PLUGIN);
   assert.equal(plugin.name, 'agentic-system-core');
+});
+
+test('the plugin carries a version equal to the package version and a square PNG icon of 512 to 2048 px under 2 MB', () => {
+  const plugin = JSON.parse(fs.readFileSync(path.join(PLUGIN, '.claude-plugin', 'plugin.json'), 'utf8'));
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  assert.equal(plugin.version, pkg.version);
+  const png = fs.readFileSync(path.join(PLUGIN, '.claude-plugin', 'icon.png'));
+  assert.equal(png.subarray(1, 4).toString('latin1'), 'PNG');
+  const w = png.readUInt32BE(16), h = png.readUInt32BE(20);
+  assert.equal(w, h);
+  assert.ok(w >= 512 && w <= 2048, `icon side ${w}`);
+  assert.ok(png.length < 2 * 1024 * 1024);
+});
+
+test('the skill never tells an agent to read a person\'s identity from the machine', () => {
+  for (const rel of ['skills/agentic-system-core/SKILL.md', path.relative(ROOT, path.join(PLUGIN, 'skills', 'agentic-system-core', 'SKILL.md'))]) {
+    assert.doesNotMatch(fs.readFileSync(path.join(ROOT, rel), 'utf8'), /user\.email/u, rel);
+  }
 });
