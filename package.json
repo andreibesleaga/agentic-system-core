@@ -102,17 +102,17 @@
     "homepage": "https://agenticsystemcore.com",
     "dependencies": {
         "@modelcontextprotocol/sdk": "1.32.1",
-        "@toon-format/toon": "4.1.1",
+        "@toon-format/toon": "4.4.0",
         "ajv": "8.20.0",
         "ajv-formats": "3.0.1",
         "commander": "15.0.0",
         "diff": "9.0.0",
-        "dotenv": "18.0.3",
-        "fast-xml-parser": "5.11.1",
+        "dotenv": "18.0.7",
+        "fast-xml-parser": "5.11.2",
         "json-canonicalize": "3.0.1",
         "jsonld": "9.0.0",
         "markdown-it": "15.0.2",
-        "n3": "2.7.12",
+        "n3": "2.13.12",
         "yaml": "2.9.1"
     },
     "devDependencies": {
@@ -120,12 +120,12 @@
         "@cucumber/messages": "34.2.1",
         "@eslint/js": "10.0.1",
         "@stylistic/eslint-plugin": "5.10.0",
-        "dependency-cruiser": "18.4.0",
-        "eslint": "10.11.0",
+        "dependency-cruiser": "18.5.0",
+        "eslint": "10.12.0",
         "eslint-plugin-import-x": "4.17.1",
-        "fast-check": "4.10.1",
+        "fast-check": "4.10.2",
         "fflate": "0.8.3",
-        "globals": "17.12.0",
-        "jscpd": "5.3.2"
+        "globals": "17.13.0",
+        "jscpd": "5.4.1"
     }
 }
