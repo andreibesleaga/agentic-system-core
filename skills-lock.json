@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "agentic-system-core": {
+      "source": "andreibesleaga/agentic-system-core",
+      "sourceType": "github",
+      "skillPath": "skills/agentic-system-core/SKILL.md",
+      "computedHash": "b84d6d8d948bb491510b0ba797746343ff5953e1fe27b5df70051a5b49954143"
+    }
+  }
+}
