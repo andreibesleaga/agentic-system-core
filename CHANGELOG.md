@@ -542,7 +542,7 @@ not listed.
   quadratic or worse time on hostile input (one commit with 100 KB of `<` made `build` take
   close to a minute); each is now a linear scan, and the security corpus covers them.
 - The address classifier refuses the IPv4-compatible and IPv4-mapped IPv6 ranges whole.
-- The security corpus gains two seeded cases for deep frontmatter nesting (`build`,
+- The security corpus (`security-floor-v4`) gains two seeded cases for deep frontmatter nesting (`build`,
   `import --from okf`); each finishes under `AGSC-E105` or passes, never with an internal
   error.
 
