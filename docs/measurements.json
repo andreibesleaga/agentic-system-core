@@ -387,12 +387,12 @@
         "hostile-import": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 8,
+          "cases": 9,
           "controls": 1,
-          "faults": 7,
-          "handled": 7,
-          "score": "7/7",
-          "refused": 5,
+          "faults": 8,
+          "handled": 8,
+          "score": "8/8",
+          "refused": 6,
           "detected": 1,
           "neutralised": 1,
           "clean": 1,
@@ -447,12 +447,12 @@
         "oversized": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 4,
+          "cases": 5,
           "controls": 0,
-          "faults": 4,
-          "handled": 4,
-          "score": "4/4",
-          "refused": 4,
+          "faults": 5,
+          "handled": 5,
+          "score": "5/5",
+          "refused": 5,
           "controls_clean": null
         },
         "pii": {
@@ -528,13 +528,13 @@
         "bundle": {
           "beyond_rule": 6,
           "beyond_rule_caught": 3,
-          "cases": 93,
+          "cases": 94,
           "controls": 11,
-          "faults": 76,
-          "handled": 76,
-          "score": "76/76",
+          "faults": 77,
+          "handled": 77,
+          "score": "77/77",
           "detected": 20,
-          "refused": 47,
+          "refused": 48,
           "clean": 11,
           "neutralised": 4,
           "finished": 5,
@@ -555,12 +555,12 @@
         "import": {
           "beyond_rule": 0,
           "beyond_rule_caught": 0,
-          "cases": 10,
+          "cases": 11,
           "controls": 1,
-          "faults": 9,
-          "handled": 9,
-          "score": "9/9",
-          "refused": 4,
+          "faults": 10,
+          "handled": 10,
+          "score": "10/10",
+          "refused": 5,
           "detected": 1,
           "neutralised": 1,
           "clean": 1,
@@ -1310,6 +1310,20 @@
           "required": true
         },
         {
+          "class": "oversized",
+          "codes": [
+            "AGSC-E105",
+            "AGSC-E207"
+          ],
+          "expect": [
+            "AGSC-E105"
+          ],
+          "id": "deep-frontmatter-build",
+          "kind": "bundle",
+          "outcome": "refused",
+          "required": true
+        },
+        {
           "class": "archive",
           "codes": [],
           "expect": [
@@ -1796,6 +1810,19 @@
         {
           "class": "hostile-import",
           "codes": [
+            "AGSC-E105"
+          ],
+          "expect": [
+            "AGSC-E105"
+          ],
+          "id": "deep-frontmatter-okf-import",
+          "kind": "import",
+          "outcome": "refused",
+          "required": true
+        },
+        {
+          "class": "hostile-import",
+          "codes": [
             "AGSC-E506"
           ],
           "expect": [
@@ -2195,21 +2222,21 @@
       ],
       "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security --scratch <dir>",
       "corpus": {
-        "cases": 126,
+        "cases": 128,
         "file": "bench/corpus/security-floor.json",
-        "version": "security-floor-v3"
+        "version": "security-floor-v4"
       },
       "limit": "AGSC-08-19: these lints prove neither safety nor the absence of novel injection. An implementation MUST NOT claim more.",
       "totals": {
         "beyond_rule": 6,
         "beyond_rule_caught": 3,
-        "cases": 126,
+        "cases": 128,
         "controls": 14,
-        "faults": 106,
-        "handled": 106,
-        "score": "106/106",
+        "faults": 108,
+        "handled": 108,
+        "score": "108/108",
         "detected": 21,
-        "refused": 72,
+        "refused": 74,
         "clean": 14,
         "neutralised": 5,
         "finished": 8,
