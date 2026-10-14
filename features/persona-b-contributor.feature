@@ -9,22 +9,32 @@ Feature: Human contributor fixes a page and passes a hard review gate
     Given the Bundle names the contribution target "https://github.com/andreibesleaga/AgenticSystemCore.com" with mode "pr"
     And the item "content/concepts/a2a.md" exists with a valid "prov" block
 
-  @PRD-039
+  @PRD-039 @human @matrix-H4
   Scenario: Contributor opens the fork-and-edit URL from the page footer
     When the contributor reads the "Propose an edit" link on "/concepts/a2a/"
     Then it points at "https://github.com/andreibesleaga/AgenticSystemCore.com/edit/HEAD/content/concepts/a2a.md", the forge's edit view of the default branch
     And it is a plain anchor: the page has no form, and nothing it loads comes from another origin
     And the discovery document names the same target as its "…rel#contribute" link with mode "pr" (AGSC-11-14)
 
-  @PRD-040 @PRD-042
-  Scenario: Contributor commits with the required trailer and PR marker
-    Given the contributor has edited frontmatter or body in the fork
-    When the contributor commits the change
-    Then the commit message contains "Signed-off-by: <Name> <email> (CA-v1)"
-    And the PR body contains the marker "<!-- agsc:proposal v1 -->"
+  @PRD-040 @PRD-042 @human @matrix-H4
+  Scenario: An outside contributor commits with the CA-v1 sign-off
+    Given the Bundle is a git repository of one commit with fixed dates
+    And the contributor has edited the body of "content/concepts/a2a.md" in the fork
+    When the contributor runs "agsc propose a2a"
+    Then the command exits 0
+    And "dist/proposal/1.md" opens with the marker "<!-- agsc:proposal v1 -->" and states the rationale, the affected slug "a2a" and "prov.origin" (AGSC-08-05)
+    When the contributor commits the change with the trailer "Signed-off-by: <Name> <email> (CA-v1)"
+    Then the trailer block of that commit passes the sign-off grammar, with the agreement "CA-v1" (AGSC-08-06)
+    And after "agsc build" the ledger entry of that commit names the contributor from the sign-off, not "human:unknown" (AGSC-08-20a)
+
+  @PRD-040 @PRD-042 @human @matrix-H4
+  Scenario: The contributor opens the pull request with the proposal body
+    Given the contributor has committed the change with the sign-off on a branch of the fork
+    When the contributor opens the pull request with the body of "dist/proposal/1.md"
+    Then the PR body contains the marker "<!-- agsc:proposal v1 -->"
     And the PR body states rationale, affected slugs and "prov.origin"
 
-  @PRD-041 @PRD-042
+  @PRD-041 @PRD-042 @agent @matrix-A13
   Scenario: CI runs a lint-only review, no LLM call
     Given the contributor's change adds a concept with no description
     When the change runs "npx agentic-system-core ci"
@@ -33,7 +43,17 @@ Feature: Human contributor fixes a page and passes a hard review gate
     And every finding names its file, line and column
     And no model or network call occurs anywhere in this lane (AGSC-08-30)
 
-  @PRD-041 @PRD-050
+  @PRD-041 @PRD-042 @agent @matrix-A13
+  Scenario: The review lane labels the change and comments on its findings, with no model call
+    Given the contributor's change adds a concept with no description
+    When the change runs "npx agentic-system-core review" under the network trap
+    Then review exits 0, and its label is the verdict with the counts, "review: pass (0 error, 1 warn)" (AGSC-09-07)
+    And its comment names each finding by code and file, the concept with no description among them, and says the lane is lint-only (AGSC-08-27)
+    And the same review with "--json" gives every finding its file, line and column
+    And with "AGSC_FEATURE_LLM_REVIEW" set to "1" the review still passes, warns that no model adapter ran, and makes no model call
+    And no model or network call occurs anywhere in the review lane (AGSC-08-27, AGSC-08-30)
+
+  @PRD-041 @PRD-050 @human @matrix-H4
   Scenario: Maintainer reviews, ratifies and the change deploys
     Given the required CI status check is green
     When the maintainer adds "verified: [{by: human:andreibesleaga, at: \"2026-09-02\"}]" to the changed file

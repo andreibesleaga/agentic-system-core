@@ -53,7 +53,7 @@ function ctxFor(dir, options = {}) {
     openRoot: (at) => createFileSystem(path.resolve(dir, at)),
     ports: { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr: { write: (text) => lines.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},

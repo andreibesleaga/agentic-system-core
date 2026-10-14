@@ -39,7 +39,7 @@ function load(root = FIXTURE) {
   const fs = createFileSystem(root);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.7', version: '0.0.2' } };
+  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0', version: '0.0.2' } };
 }
 
 // -------------------------------------------------------------------- (a) guard

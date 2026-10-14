@@ -5,7 +5,7 @@
  * `compose`, `propose`, `ask`, `remember`), AGSC-09-13a (the tool error
  * envelope: the AGSC-08-18 envelope with `type: "error"` and a `body` of
  * `{code, message}`, NEVER a JSON-RPC transport error), AGSC-09-14a (the
- * Channel responder `ask`: an answer over published exports only, at least one
+ * Channel responder `ask`: an answer over this Bundle (drafts included, AGSC-09-13), at least one
  * item IRI cited, the fixed "no answer in this memory" string, the Content Use
  * Terms embedded), AGSC-09-14b (`remember` synthesizes a conforming item and
  * hands it to the Proposal path; an invalid `sources[]` entry is DROPPED with
@@ -39,6 +39,7 @@ const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
 const { pageBoardMove, pageClaimants, pageRememberFault } = require('./page-tools.js');
 const boardLanes = require('../governance/board-lanes.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every export carries. */
 const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -46,7 +47,10 @@ const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 const NO_ANSWER = 'no answer in this memory';
 /** AGSC-02-10: the two schemes a client-supplied `sources[].resource` may use. */
 const SOURCE_RESOURCE = /^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u;
-/** AGSC-02-09: the actor grammar (the `actor` definition of item.schema.json). */
+/**
+ * AGSC-02-09: the three client forms of the actor grammar; the versioned process form
+ * (`process:<name>/<version>`) is a writer's own, never a client's.
+ */
 const ACTOR = /^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u;
 /** AGSC-09-14b: `kind` to item `type`. */
 // A closed list read with a name from the outside: prototype-free, so `constructor`,
@@ -61,7 +65,7 @@ function plural(type) {
 
 /** A Bundle IRI always ends in exactly one `/` (AGSC-05-03). */
 function baseIri(base) {
-  return `${String(base === undefined || base === null ? '/' : base).replace(/\/+$/u, '')}/`;
+  return `${withoutTrailingSlashes(String(base === undefined || base === null ? '/' : base))}/`;
 }
 
 /** AGSC-05-01: an item's canonical HTTPS IRI. */
@@ -440,7 +444,15 @@ function tools(bundle, options) {
         ? 'memory:// names a foreign bundle — use the https:// IRI'
         : 'no item with that IRI in this Bundle');
     }
-    return implementations[name](aliased.args);
+    try {
+      return implementations[name](aliased.args);
+    } catch (e) {
+      // AGSC-09-13a: a fault the engine reports under a registered code — the
+      // canonical writer refusing a frontmatter it cannot hold (AGSC-E105) — is the
+      // error envelope, not a transport error. A fault with no code stays a throw.
+      if (!(e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code))) throw e;
+      return errorEnvelope(name, e.code, String(e.message || e.code));
+    }
   }
 
   return Object.freeze({ call, manifest: () => manifest() });

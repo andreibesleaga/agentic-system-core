@@ -73,3 +73,15 @@ test('AGSC-10-08: the Bundle id is published as bundle.id of the configuration, 
   const index = JSON.parse(fs.readFileSync(path.join(ROOT, 'schema', 'bundle.schema.json'), 'utf8'));
   assert.ok(!Object.prototype.hasOwnProperty.call(index.properties || {}, 'id'), 'content/index.md has no id key');
 });
+
+test('AGSC-11-20: the guide says how a restricted node names its access page and what it may not serve openly', () => {
+  const part = section('7b.').replace(/\s+/gu, ' ');
+  assert.match(part, /AGSC-11-20/u);
+  assert.match(part, /"visibility": "restricted"/u);
+  assert.match(part, /top-level `access` key/u);
+  assert.match(part, /`AGSC-E202`/u);
+  assert.match(part, /[Ee]xactly one `…\/rel#access` link/u);
+  // A host that adds the cross-origin wildcard to every response by default breaks the rule.
+  assert.match(part, /`Access-Control-Allow-Origin: \*`/u);
+  assert.match(part, /by default/u);
+});

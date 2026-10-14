@@ -1,7 +1,6 @@
 'use strict';
-// AGSC-09-08 / AGSC-09-11: a catch block names the fault it caught. Until
-// 2026-10-06 (verification finding C12) several replaced a specific fault by a
-// generic or wrong one:
+// AGSC-09-08 / AGSC-09-11: a catch block names the fault it caught. Before the fix,
+// several replaced a specific fault by a generic or wrong one:
 //   (a) any read error was "not valid UTF-8" — a directory where a file was expected
 //       (and a permission-denied file) gave `AGSC-E108`;
 //   (b) any error while loading a verb module was "no verb module", and a streaming
@@ -62,7 +61,7 @@ function brokenModule(t, file, error) {
   });
 }
 
-test('C12 (a): a directory where an item file is expected is not "not valid UTF-8"', async (t) => {
+test('(a) a directory where an item file is expected is not "not valid UTF-8"', async (t) => {
   const dir = scratch(t);
   fs.mkdirSync(path.join(dir, 'content', 'concepts', 'odd.md'));
   const r = await agsc(dir, ['lint', '--json']);
@@ -72,7 +71,7 @@ test('C12 (a): a directory where an item file is expected is not "not valid UTF-
   assert.doesNotMatch(odd[0].message, /UTF-8/u);
 });
 
-test('C12 (a): a file that is not UTF-8 is still AGSC-E108', async (t) => {
+test('(a) a file that is not UTF-8 is still AGSC-E108', async (t) => {
   const dir = scratch(t);
   fs.writeFileSync(path.join(dir, 'content', 'concepts', 'bad.md'), Buffer.from([0x2d, 0x2d, 0x2d, 0x0a, 0xff, 0xfe, 0x0a]));
   const r = await agsc(dir, ['lint', '--json']);
@@ -81,7 +80,7 @@ test('C12 (a): a file that is not UTF-8 is still AGSC-E108', async (t) => {
   assert.equal(bad[0].code, 'AGSC-E108');
 });
 
-test('C12 (b): a verb module that fails to load is an internal error that keeps its reason', async (t) => {
+test('(b) a verb module that fails to load is an internal error that keeps its reason', async (t) => {
   const dir = scratch(t);
   brokenModule(t, '../../../src/application/cli/verbs/review.js', new Error('the reason it failed'));
   const r = await agsc(dir, ['review']);
@@ -90,7 +89,7 @@ test('C12 (b): a verb module that fails to load is an internal error that keeps 
   assert.match(r.stderr, /the reason it failed/u);
 });
 
-test('C12 (b): a streaming verb whose module fails to load is not AGSC-E001 (unknown verb)', async (t) => {
+test('(b) a streaming verb whose module fails to load is not AGSC-E001 (unknown verb)', async (t) => {
   const dir = scratch(t);
   brokenModule(t, '../../../src/application/cli/verbs/mcp.js', new Error('the reason it failed'));
   const r = await agsc(dir, ['mcp']);
@@ -99,7 +98,7 @@ test('C12 (b): a streaming verb whose module fails to load is not AGSC-E001 (unk
   assert.match(r.stderr, /the reason it failed/u);
 });
 
-test('C12 (c): trace reports a path escape as AGSC-E902, not as a JSON fault', async (t) => {
+test('(c) trace reports a path escape as AGSC-E902, not as a JSON fault', async (t) => {
   const dir = scratch(t);
   const configFile = path.join(dir, 'agsc.config.json');
   const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
@@ -111,7 +110,7 @@ test('C12 (c): trace reports a path escape as AGSC-E902, not as a JSON fault', a
   assert.ok(!codes.includes('AGSC-E201'), JSON.stringify(codes));
 });
 
-test('C12 (d): an adapter module that fails to load keeps its reason, and is not "not installed"', async (t) => {
+test('(d) an adapter module that fails to load keeps its reason, and is not "not installed"', async (t) => {
   const dir = scratch(t);
   brokenModule(t, '../../../src/interchange/adapters/cogx.js', new Error('the reason it failed'));
   const r = await agsc(dir, ['export', '--to', 'cogx', '--json']);
@@ -121,7 +120,7 @@ test('C12 (d): an adapter module that fails to load keeps its reason, and is not
   assert.doesNotMatch(message, /is installed/u);
 });
 
-test('C12 (e): the streaming verb passes a registered code through', async (t) => {
+test('(e) the streaming verb passes a registered code through', async (t) => {
   const dir = scratch(t);
   const verb = require('../../../src/application/cli/verbs/mcp.js');
   const original = verb.run;

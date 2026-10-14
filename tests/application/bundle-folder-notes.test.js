@@ -42,3 +42,24 @@ test('an item file beside them is read as before', () => {
   assert.deepStrictEqual(bundle.items.map((i) => i.slug), ['a']);
   assert.deepStrictEqual(bundle.findings.filter((f) => f.code === 'AGSC-E506'), []);
 });
+
+// AGSC-01-05 (amended 2026-10-10 for 1.0.0): `index.md` MAY exist in any folder, so an
+// `index.md` inside a type folder is a folder note as well. Read as an item it failed
+// lint (`AGSC-E202`, `AGSC-E205`, `AGSC-E501`) in a Bundle the rule says may hold it.
+test('an index.md inside a type folder is a folder note: skipped with AGSC-E506, never parsed', () => {
+  const bundle = loadBundle(port(['a.md', 'index.md']), {});
+  assert.deepStrictEqual(bundle.items.map((i) => i.slug), ['a']);
+  assert.deepStrictEqual(bundle.findings.map((f) => [f.code, f.file, f.severity]), [
+    ['AGSC-E506', 'content/concepts/index.md', 'warn'],
+  ]);
+  assert.match(bundle.findings[0].message, /AGSC-01-05/u);
+});
+
+test('the three names are compared ASCII case-insensitively (AGSC-01-05)', () => {
+  const bundle = loadBundle(port(['INDEX.md', 'Index.md', 'a.md']), {});
+  assert.deepStrictEqual(bundle.items.map((i) => i.slug), ['a']);
+  assert.deepStrictEqual(bundle.findings.map((f) => [f.code, f.file]), [
+    ['AGSC-E506', 'content/concepts/INDEX.md'],
+    ['AGSC-E506', 'content/concepts/Index.md'],
+  ]);
+});

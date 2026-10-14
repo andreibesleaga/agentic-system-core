@@ -68,6 +68,45 @@ test('AGSC-11-08: the closed special-purpose list, in both families and through 
   assert.strictEqual(f.isLoopbackLiteral('example.com'), false);
 });
 
+test('AGSC-11-08: the IPv4-compatible and IPv4-mapped ranges are refused whole, in every textual form', () => {
+  // `::/96` and `::ffff:0:0/96` are refused whatever IPv4 address they embed, a
+  // globally reachable one included, as both checkers refuse them.
+  for (const address of ['::127.0.0.1', '::7f00:1', '0:0:0:0:0:0:7f00:1', '::8.8.8.8', '::808:808',
+    '::ffff:8.8.8.8', '::ffff:808:808', '0:0:0:0:0:ffff:808:808', '::ffff:127.0.0.1', '::ffff:7f00:1']) {
+    assert.strictEqual(f.checkAddresses([address]), 'AGSC-E905', address);
+    assert.strictEqual(f.checkAddresses([address], { dev: true }), 'AGSC-E905', `${address} under --dev`);
+  }
+  // The plain IPv4 address those forms embed is still a public address: refusing the
+  // mapped range must not refuse the whole IPv4 internet.
+  assert.strictEqual(f.checkAddresses(['8.8.8.8']), null);
+  assert.strictEqual(f.checkAddresses(['8.8.8.8'], { dev: true }), null);
+  assert.strictEqual(f.checkAddresses(['93.184.215.14', '2606:2800:21f:cb07::']), null);
+  // `::1` is the one address of `::/96` that --dev admits, in every textual form.
+  assert.strictEqual(f.checkAddresses(['0:0:0:0:0:0:0:1'], { dev: true }), null);
+  assert.strictEqual(f.checkAddresses(['0:0:0:0:0:0:0:1']), 'AGSC-E905');
+  assert.strictEqual(f.checkAddresses(['::'], { dev: true }), 'AGSC-E905');
+  // AGSC-11-07 judges the same literal the same way: a mapped loopback address is
+  // not the loopback address http is allowed to under --dev.
+  assert.strictEqual(f.isLoopbackLiteral('::ffff:127.0.0.1'), false);
+  assert.strictEqual(f.isLoopbackLiteral('::127.0.0.1'), false);
+  assert.strictEqual(f.isLoopbackLiteral('0:0:0:0:0:0:0:1'), true);
+  assert.strictEqual(f.checkScheme('http://[::ffff:127.0.0.1]:8080/x', { dev: true }), 'AGSC-E905');
+  // A peer at such an address is refused before the walk reads it.
+  const reads = [];
+  const fetch = (key) => {
+    reads.push(key);
+    return key === 'https://a.example/x' ? { ok: true, peers: ['https://b.example/x'] } : { ok: true, peers: [] };
+  };
+  for (const address of ['::127.0.0.1', '::ffff:8.8.8.8']) {
+    reads.length = 0;
+    const result = f.walk({
+      fetch, resolved: { 'a.example': ['93.184.215.14'], 'b.example': [address] }, start: 'https://a.example/x',
+    });
+    assert.deepStrictEqual(plain(result.skipped), [{ code: 'AGSC-E905', peer: 'https://b.example/x' }], address);
+    assert.deepStrictEqual(reads, ['https://a.example/x'], address);
+  }
+});
+
 test('AGSC-11-09: at most redirect_limit hops, every hop re-checked, the peer unchanged', () => {
   const peer = 'https://b.example/.well-known/knowledge-linkset';
   const four = ['https://b.example/r1', 'https://b.example/r2', 'https://b.example/r3', 'https://b.example/r4'];
@@ -313,6 +352,24 @@ test('AGSC-11-15: boards merge by IRI, rename nothing, and expand local slugs', 
   assert.deepStrictEqual(plain(merged.renamed), []);
   assert.deepStrictEqual(plain(f.mergeBoards([{ iri: 'not-an-iri' }]).boardsKept), ['not-an-iri']);
   assert.deepStrictEqual(plain(f.mergeBoards(undefined).boardsKept), []);
+});
+
+test('AGSC-10-13: a blocked_by slug naming a task of the same board expands to that task\'s iri', () => {
+  // The board's tasks live under a base path the origin alone cannot give; a slug that
+  // names one of them takes its own iri, and any other slug keeps the Concept folder.
+  const merged = f.mergeBoards([{
+    board: 'oct',
+    iri: 'https://a.example/kb/clusters/oct/',
+    tasks: [
+      { blocked_by: ['wire', 'other'], iri: 'https://a.example/kb/concepts/ship/', slug: 'ship' },
+      { blocked_by: [], iri: 'https://a.example/kb/concepts/wire/', slug: 'wire' },
+      { blocked_by: ['constructor'], iri: 'https://a.example/kb/concepts/odd/', slug: 'odd' },
+    ],
+  }]);
+  assert.deepStrictEqual(plain(merged.expandedBlockedBy), {
+    'https://a.example/kb/concepts/odd/': ['https://a.example/concepts/constructor/'],
+    'https://a.example/kb/concepts/ship/': ['https://a.example/kb/concepts/wire/', 'https://a.example/concepts/other/'],
+  });
 });
 
 test('AGSC-11-11: a peer-derived result names its origin; a local one does not', () => {

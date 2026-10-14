@@ -1,7 +1,7 @@
 'use strict';
 // AGSC-09-11 for `build` and `ci`: a fault that stops the build is reported beside
 // every finding gathered before it, and never replaces a specific fault by a
-// generic one. Until 2026-10-06 (verification finding C6):
+// generic one. Before the fix:
 //   (a) an attachment entry without `media_type` — `lint` says `AGSC-E202`; `build`
 //       said only `AGSC-E601` "value of type undefined is not JSON", with no file;
 //   (b) a string holding a lone surrogate written as an escape (`"Hand\uD800off"` in
@@ -52,7 +52,7 @@ function edit(dir, rel, from, to) {
 
 const codes = (envelope) => envelope.findings.map((f) => f.code);
 
-test('C6 (a): an attachment entry without media_type is AGSC-E202 in build as in lint, never AGSC-E601', (t) => {
+test('(a) an attachment entry without media_type is AGSC-E202 in build as in lint, never AGSC-E601', (t) => {
   const dir = scratch(t);
   edit(dir, HANDOFF, 'kind: pattern\n', 'kind: pattern\nattachments:\n  - file: note.txt\n    alt: A note\n');
   fs.mkdirSync(path.join(dir, 'content', 'attachments', 'handoff'), { recursive: true });
@@ -69,7 +69,7 @@ test('C6 (a): an attachment entry without media_type is AGSC-E202 in build as in
   assert.ok(!fs.existsSync(path.join(dir, 'www')), 'a build with an error writes nothing');
 });
 
-test('C6 (b): a lone surrogate in an item value is AGSC-E108 with file and key, in lint, build and ci', (t) => {
+test('(b) a lone surrogate in an item value is AGSC-E108 with file and key, in lint, build and ci', (t) => {
   const dir = scratch(t);
   edit(dir, HANDOFF, 'title: Handoff\n', 'title: "Hand\\uD800off"\n');
   for (const verb of ['lint', 'build', 'ci']) {
@@ -83,7 +83,7 @@ test('C6 (b): a lone surrogate in an item value is AGSC-E108 with file and key, 
   }
 });
 
-test('C6 (b, c): a lone surrogate in the configuration is AGSC-E108 on agsc.config.json, and the gathered warnings stay', (t) => {
+test('(b, c) a lone surrogate in the configuration is AGSC-E108 on agsc.config.json, and the gathered warnings stay', (t) => {
   const dir = scratch(t);
   // A gathered warning: a concept without a description is AGSC-E408 (AGSC-02-21).
   edit(dir, path.join('content', 'concepts', 'supervisor.md'),
@@ -99,7 +99,7 @@ test('C6 (b, c): a lone surrogate in the configuration is AGSC-E108 on agsc.conf
   assert.ok(!codes(r.envelope).includes('AGSC-E601'), JSON.stringify(r.envelope.findings));
 });
 
-test('C6 (c): a fault thrown with a registered code inside the build keeps every finding gathered before it', (t) => {
+test('(c) a fault thrown with a registered code inside the build keeps every finding gathered before it', (t) => {
   const dir = scratch(t);
   edit(dir, path.join('content', 'concepts', 'supervisor.md'),
     'description: A coordinating agent that routes work to specialised workers and collects their results.\n', '');

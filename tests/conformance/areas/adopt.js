@@ -8,8 +8,11 @@ const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
 const initVerbs = require('./_init-verbs.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
-module.exports.run = (vector, ctx) => {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded((vector, ctx) => {
   const { input, expected } = vector;
 
   // --- EXTENSION POINT -------------------------------------------
@@ -78,4 +81,4 @@ module.exports.run = (vector, ctx) => {
       'a second adoption changed the bytes']);
   }
   return checks(list);
-};
+});

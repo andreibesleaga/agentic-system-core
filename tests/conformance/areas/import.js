@@ -11,6 +11,7 @@ const slugs = require('../../../src/knowledge/slug.js');
 const verb = require('../../../src/application/cli/verbs/import.js');
 const okf = require('../../../src/interchange/okf.js');
 const { checks, findingsMatch } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 /** The Bundle's FileSystem port, over a plain map of path → text. */
 function memoryFs(files) {
@@ -240,9 +241,11 @@ function foreignLinkCase(vector) {
   return checks(list);
 }
 
-module.exports.run = (vector, ctx) => {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded((vector, ctx) => {
   if (vector.id === 'imp-0004') return foreignLinkCase(vector);
   if (vector.id === 'imp-0001') return collisionCase(vector);
   if (vector.id === 'imp-0002') return sourceRecordCase(vector, ctx);
   return { status: 'fail', detail: `${vector.id}: no handler in area import` };
-};
+});

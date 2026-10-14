@@ -1,0 +1,5 @@
+{
+  "class": "external",
+  "reason": "the 303 redirects are served by the w3id service from its .htaccess, which runs on w3id's host; the rules themselves are applied offline by the scenario \"The w3id rule file sends the namespace, a fixed version, the profile and the relations to the site\".",
+  "scenario": "Implementer content-negotiates the vocabulary via w3id"
+}

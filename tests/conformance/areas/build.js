@@ -2,9 +2,9 @@
 // Conformance area `build`.
 //
 // The static query fragments of AGSC-06-33 (cut from `graph.nq`), the search
-// tokenizer, the served header set and redirect, `security.txt`, the content
-// version, the trailing LF, the stale instant and the reproducible assets. The
-// EXTENSION POINT at the bottom holds the search-tokenizer cases.
+// tokenizer and the sharded index, the served header set, `security.txt`, the
+// content version, the trailing LF, the stale instant and the reproducible assets.
+// HANDLERS at the bottom maps each case id to its handler.
 
 const crypto = require('node:crypto');
 const nq = require('../../../src/knowledge/nquads.js');
@@ -17,6 +17,8 @@ const ledger = require('../../../src/governance/ledger.js');
 const contentVersion = require('../../../src/knowledge/content-version.js');
 const { createClock } = require('../../../src/adapters/node-clock.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
+const surfaces = require('./_build-surfaces.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -81,21 +83,41 @@ function fragmentIndexCase(vector) {
 }
 
 /**
- * build-0012 — AGSC-06-17's served header set and redirect.
+ * A Content-Security-Policy as directives: name -> source list (CSP3 §2.2: directive
+ * names are case-insensitive, sources are separated by ASCII whitespace).
+ */
+function policyDirectives(policy) {
+  const out = new Map();
+  for (const part of String(policy).split(';')) {
+    const [name, ...sources] = part.trim().split(/\s+/u).filter(Boolean);
+    if (name !== undefined && !out.has(name.toLowerCase())) out.set(name.toLowerCase(), sources);
+  }
+  return out;
+}
+
+/**
+ * True when the policy lets an inline script run: a directive that governs scripts
+ * (`script-src-elem` and `script-src-attr` where present, else `script-src`, else
+ * `default-src`) names 'unsafe-inline', 'unsafe-hashes', a nonce or a hash source.
+ */
+function admitsInlineScript(directives) {
+  const governing = (name) => directives.get(name) || directives.get('script-src') || directives.get('default-src') || [];
+  const inline = (source) => /^'(unsafe-inline|unsafe-hashes|nonce-[^']*|sha(256|384|512)-[^']*)'$/iu.test(source);
+  return ['script-src-elem', 'script-src-attr'].some((name) => governing(name).some(inline));
+}
+
+/**
+ * build-0018 — AGSC-06-17's served header set (supersedes build-0012).
  *
- * The vector asserts the HEADER SET and the REDIRECT and deliberately asserts no
- * `_headers`/`_redirects` bytes (`file_bytes_asserted: false`): AGSC-06-01
- * makes the file format a deployment-profile detail. So this handler reads the sets
- * the WRITER produces (`headers.headerSets`), not the Cloudflare file.
- *
- * ONE READING: AGSC-06-17 obliges "a `default-src 'none'` policy with
- * `script-src 'self'`", not a whole policy string, and the vector states the shortest
- * text that satisfies it. The engine's policy carries six further directives, each
- * narrower than the default, so the assertion is that every directive the vector
- * names is present — never that the policy is exactly those two.
+ * The case asserts the HEADER SET and no `_headers` bytes (`file_bytes_asserted:
+ * false`): AGSC-06-01 makes the file format a deployment-profile detail, so this
+ * handler reads the sets the WRITER produces (`headers.headerSets`). The policy is
+ * asserted by CONTAINMENT, as the rule says (`whole_string_asserted: false`): every
+ * stated directive is present with its source, and no inline script is admitted.
  */
 function servedHeadersCase(vector) {
   const list = [];
+  const expected = vector.expected;
   const sets = headers.headerSets({});
   const forRoute = (route) => {
     const out = {};
@@ -105,37 +127,60 @@ function servedHeadersCase(vector) {
     }
     return out;
   };
-  for (const [route, expected] of Object.entries(vector.expected.headers)) {
+  for (const [route, want] of Object.entries(expected.headers)) {
     const actual = forRoute(route);
-    for (const [name, value] of Object.entries(expected)) {
-      const got = actual[name];
-      const ok = name === 'Content-Security-Policy'
-        ? String(value).split(';').map((d) => d.trim()).filter(Boolean).every((d) => String(got).includes(d))
-        : got === value;
-      list.push([`${route} ${name}`, ok, `got ${JSON.stringify(got)}`]);
+    for (const [name, value] of Object.entries(want)) {
+      list.push([`${route} ${name}`, actual[name] === value, `got ${JSON.stringify(actual[name])}`]);
     }
   }
-  if (vector.expected.header_fallback_admitted) {
-    // AGSC-06-07/AGSC-11-04: the profile travels primarily on the media type and
-    // secondarily as an RFC 6906 Link header; a consumer MUST accept either, so the
-    // writer emits both.
-    // The vector states the whole header line, name and all.
-    const wellknown = forRoute('/.well-known/knowledge-linkset');
-    list.push(['header_fallback_admitted',
-      `Link: ${wellknown.Link}` === vector.expected.header_fallback_admitted,
-      `got ${JSON.stringify(`Link: ${wellknown.Link}`)}`]);
+  const csp = expected.content_security_policy;
+  const policy = forRoute(csp.route)['Content-Security-Policy'];
+  const directives = policyDirectives(policy);
+  list.push([`policy served on ${csp.route}`, typeof policy === 'string', `got ${JSON.stringify(policy)}`]);
+  for (const directive of csp.contains) {
+    const [name, ...sources] = directive.split(/\s+/u);
+    const have = directives.get(name.toLowerCase()) || [];
+    list.push([`policy contains ${directive}`, sources.every((s) => have.includes(s)), `got ${JSON.stringify(policy)}`]);
   }
-  const redirects = headers.redirectsFile()
-    .split('\n').filter((l) => l !== '' && !l.startsWith('#'))
-    .map((l) => l.split(' '))
-    .map(([from, to, status]) => ({ from, status: Number(status), to }));
-  for (const want of vector.expected.redirects || []) {
-    list.push([`redirect ${want.from}`, redirects.some((r) => deepEqual(want, r)), JSON.stringify(redirects)]);
-  }
-  list.push(['file_bytes_asserted', vector.expected.file_bytes_asserted === false,
+  list.push(['admits_inline_script', admitsInlineScript(directives) === csp.admits_inline_script,
+    `got ${JSON.stringify(policy)}`]);
+  list.push(['whole_string_asserted', csp.whole_string_asserted === false,
+    'AGSC-06-17: a case on the policy asserts that it contains these directives, never the whole string']);
+  // AGSC-06-07/AGSC-11-04: the profile travels primarily on the media type and
+  // secondarily as an RFC 6906 Link header; the vector states the whole header line.
+  const wellknown = forRoute('/.well-known/knowledge-linkset');
+  list.push(['header_fallback_admitted', `Link: ${wellknown.Link}` === expected.header_fallback_admitted,
+    `got ${JSON.stringify(`Link: ${wellknown.Link}`)}`]);
+  list.push(['file_bytes_asserted', expected.file_bytes_asserted === false,
     'AGSC-06-01 makes the file format a deployment-profile detail']);
   list.push(['deployment_profile', vector.input.deployment_profile === 'cloudflare-pages',
     'this writer emits the Cloudflare Pages profile and states it in its claim (AGSC-09-01)']);
+  return checks(list);
+}
+
+/**
+ * build-0019 — AGSC-06-21: a search index above 500 items. `/search.json` is the
+ * manifest (its bytes), and each `/search-<nn>.json` shard is a complete AGSC-06-16
+ * index over its own slice of the slug order, with postings counted in its own
+ * `docs[]`; a shard entry states its size, first and last slug, and may state its
+ * whole bytes.
+ */
+function shardedSearchCase(vector) {
+  const expected = vector.expected;
+  const emitted = new Map(search.files(vector.input.items).files.map((f) => [f.path, `${canonicalize(f.value)}\n`]));
+  const list = [['/search.json bytes', emitted.get('/search.json') === expected.output,
+    JSON.stringify(emitted.get('/search.json'))]];
+  const paths = [...emitted.keys()].filter((p) => p !== '/search.json');
+  list.push(['shard paths', deepEqual(paths, expected.shards.map((s) => s.path)), JSON.stringify(paths)]);
+  for (const want of expected.shards) {
+    const bytes = emitted.get(want.path);
+    const docs = bytes === undefined ? [] : JSON.parse(bytes).docs;
+    list.push([`${want.path} docs_count`, docs.length === want.docs_count, `${docs.length}`]);
+    list.push([`${want.path} first_slug`, (docs[0] || {}).slug === want.first_slug, JSON.stringify(docs[0])]);
+    list.push([`${want.path} last_slug`, (docs[docs.length - 1] || {}).slug === want.last_slug,
+      JSON.stringify(docs[docs.length - 1])]);
+    if (want.output !== undefined) list.push([`${want.path} bytes`, bytes === want.output, JSON.stringify(bytes)]);
+  }
   return checks(list);
 }
 
@@ -231,7 +276,7 @@ function contentVersionCase(vector) {
       JSON.stringify(findings.map((f) => f.code))]);
     if (want.ledger_kind_of_built_commit !== undefined) {
       // The tag AGSC-04-25 could not use is still the tag AGSC-08-20a releases on.
-      const derived = ledger.derive(input.git_log, 'f'.repeat(40), '1.0.0-rc.7',
+      const derived = ledger.derive(input.git_log, 'f'.repeat(40), '1.0.0',
         { epoch: input.source_date_epoch });
       const built = derived.entries[input.git_log.length - 1];
       list.push([`${input.name} ledger kind`, built.kind === want.ledger_kind_of_built_commit,
@@ -270,8 +315,9 @@ function trailingLfCase(vector, ctx) {
       if (!bytes.endsWith(vector.expected.html_pages_end_with)) bad.push(`${route} (html tail)`);
     }
   }
-  list.push(['every text file ends with exactly one LF', bad.length === 0, JSON.stringify(bad)]);
-  list.push(['no byte-order mark', bom.length === 0, JSON.stringify(bom)]);
+  list.push(['every text file ends with exactly one LF',
+    (bad.length === 0) === vector.expected.every_text_file_ends_with_exactly_one_lf, JSON.stringify(bad)]);
+  list.push(['no byte-order mark', (bom.length === 0) === vector.expected.no_byte_order_mark, JSON.stringify(bom)]);
   list.push(['html pages exist', htmlPages > 0, `${htmlPages} html pages`]);
   for (const route of vector.expected.includes_routes || []) {
     list.push([`emits ${route}`, built.files.has(route), [...built.files.keys()].filter((r) => r.endsWith('.html')).join(' ')]);
@@ -321,29 +367,34 @@ function reproducibleAssetsCase(vector, ctx) {
   list.push(['byte identical', identical === vector.expected.byte_identical, JSON.stringify(differing)]);
   const codes = first.findings.map((f) => f.code);
   for (const code of vector.expected.codes_absent || []) list.push([`no ${code}`, !codes.includes(code), JSON.stringify(codes)]);
-  if (vector.expected.no_error_finding === true) {
-    list.push(['no error finding', first.findings.every((f) => f.severity !== 'error'),
+  if (vector.expected.no_error_finding !== undefined) {
+    list.push(['no_error_finding', first.findings.every((f) => f.severity !== 'error') === vector.expected.no_error_finding,
       JSON.stringify(first.findings.filter((f) => f.severity === 'error').map((f) => `${f.code} ${f.message}`))]);
   }
   for (const route of vector.expected.includes_routes || []) list.push([`emits ${route}`, first.files.has(route), routesA.filter((r) => r.startsWith('/assets/')).join(' ')]);
   return checks(list);
 }
 
-module.exports.run = (vector, ctx) => {
-  if (vector.id === 'build-0015') return trailingLfCase(vector, ctx);
-  if (vector.id === 'build-0016') return staleCase(vector);
-  if (vector.id === 'build-0017') return reproducibleAssetsCase(vector, ctx);
-  if (vector.id === 'build-0014') return contentVersionCase(vector);
-  if (vector.id === 'build-0013') return securityTxtCase(vector);
-  if (vector.id === 'build-0011') return fragmentIndexCase(vector);
-  if (vector.id === 'build-0012') return servedHeadersCase(vector);
-
-  // ---------------------------------------------------------------- EXTENSION POINT
-  // The build-0001…build-0003 cases (search tokenizer, AGSC-06-16/06-23).
-  if (vector.id === 'build-0001' || vector.id === 'build-0002' || vector.id === 'build-0003') {
-    return searchCase(vector);
-  }
-  // ---------------------------------------------------------------------------------
-
-  return { status: 'fail', detail: `${vector.id}: no handler in area build`, ctx };
+const HANDLERS = {
+  'build-0011': fragmentIndexCase,
+  'build-0013': securityTxtCase,
+  'build-0014': contentVersionCase,
+  'build-0015': trailingLfCase,
+  'build-0016': staleCase,
+  'build-0017': reproducibleAssetsCase,
+  'build-0018': servedHeadersCase,
+  'build-0019': shardedSearchCase,
+  // The cases over the files a whole build writes (_build-surfaces.js).
+  ...surfaces.HANDLERS,
+  // The search-tokenizer cases (AGSC-06-16/06-23).
+  'build-0001': searchCase,
+  'build-0002': searchCase,
+  'build-0003': searchCase,
 };
+
+// Guarded: a pass that left a member of `expected` unread is a fail (_expected-reads.js).
+module.exports.run = guarded((vector, ctx) => {
+  const handler = HANDLERS[vector.id];
+  if (handler === undefined) return { status: 'fail', detail: `${vector.id}: no handler in area build` };
+  return handler(vector, ctx);
+});

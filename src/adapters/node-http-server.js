@@ -4,7 +4,9 @@
 // The server owns the socket and the file reads; WHAT to answer is not decided
 // here. Every request is handed, with a fresh view of the directory, to the
 // `answer(question, view)` function the application layer wires in (the `local`
-// hosting profile), which returns `{status, headers, file}`. A link is never
+// hosting profile), which returns `{status, headers, file}`. The question carries
+// the method, the path, the `Host` header and `If-None-Match`, so the profile can
+// refuse a request that names another host. A link is never
 // followed out of the directory, and a failure is a 500, never a thrown error on
 // the socket.
 
@@ -55,7 +57,7 @@ function handle(dir, answer, req, res) {
   try {
     const view = siteView(dir);
     const question = String(req.url || '/').split('?')[0];
-    plan = answer({ ifNoneMatch: req.headers['if-none-match'], method: req.method, path: question }, view);
+    plan = answer({ host: req.headers.host, ifNoneMatch: req.headers['if-none-match'], method: req.method, path: question }, view);
     if (plan.file !== null) body = view.read(plan.file);
   } catch (e) {
     plan = { file: null, headers: [], status: 500 };

@@ -23,6 +23,7 @@
 //   AGSC-E415       `export`-tagged fence ignored (warn) AGSC-02-22
 //   AGSC-E109       unsupported Markdown construct (warn) AGSC-02-20 (markdown.js)
 //   AGSC-E416       overlapping labels (warn)           AGSC-05-21
+//   AGSC-E202       `agent`/`model` missing under an `ai-*` origin AGSC-08-01 (validate.js)
 //   AGSC-E205       a compiled .svg under content/diagrams/ AGSC-01-07
 //   AGSC-E607       combining sequence over the bound   AGSC-04-23
 //   AGSC-E804       port with no producer or consumer (warn) AGSC-02-96
@@ -36,7 +37,7 @@
 const { XMLParser, XMLValidator } = require('fast-xml-parser');
 
 const { checkCombining, COMBINING_BOUND } = require('../knowledge/unicode.js');
-const { sortFindings } = require('../knowledge/validate.js');
+const { aiProvenance, sortFindings } = require('../knowledge/validate.js');
 const { finding } = require('./finding.js');
 const links = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
@@ -420,7 +421,7 @@ function checkFences(item) {
     .filter((f) => f.info.split(/\s+/u).includes('export'))
     .map((f) => finding('AGSC-E415',
       'an `export`-tagged fenced block is not extracted at 1.x (AGSC-02-22)',
-      { file: v.path, slug: v.slug, line: f.line, severity: 'warn' }));
+      { file: v.path, slug: v.slug, line: links.fileLine(v.lineOffset, f.line), severity: 'warn' }));
 }
 
 /**
@@ -431,7 +432,7 @@ function checkConstructs(item) {
   const v = links.view(item);
   return markdown.constructs(v.body).map((c) => finding('AGSC-E109',
     `unsupported Markdown construct, ${c.construct}: ${c.text} (AGSC-02-20)`,
-    { file: v.path, line: c.line, severity: 'warn', slug: v.slug }));
+    { file: v.path, line: links.fileLine(v.lineOffset, c.line), severity: 'warn', slug: v.slug }));
 }
 
 /**
@@ -568,6 +569,7 @@ function lint(bundle = {}, options = {}) {
       findings.push(...injection.check({ ...at, text, severity, patterns, where: `attachment ${attachment.file}` }));
     }
 
+    findings.push(...aiProvenance(v.fm, at));
     findings.push(...checkSections(item));
     findings.push(...checkFences(item));
     findings.push(...checkConstructs(item));

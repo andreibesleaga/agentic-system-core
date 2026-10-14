@@ -1,7 +1,7 @@
 'use strict';
 // tests/application/cli/_bundle-run.js — a scratch copy of the minimal fixture and
-// one in-process `agsc` call over it, for the hardening tests of 2026-10-06
-// (verification findings C2–C28). Not a test file itself (the leading `_`).
+// one in-process `agsc` call over it, for the hardening tests of the command line.
+// Not a test file itself (the leading `_`).
 //
 // Deterministic: fixed SOURCE_DATE_EPOCH, no network; every copy is removed when the
 // test ends.

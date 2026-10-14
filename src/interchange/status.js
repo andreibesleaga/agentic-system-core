@@ -9,7 +9,7 @@
 //     until it is mapped to `stable`.
 //   * `release` — AGSC-01-20's switchboard. An item carrying `release: <key>`
 //     publishes only when `releases[<key>]` is `true`, so every key an item uses
-//     MUST appear in the configuration or the item silently publishes.
+//     MUST appear in the configuration set to `true`, or the item is held back.
 //   * `tags` — AGSC-01-21's closed vocabulary. The old `tags` array mixes topics
 //     with `batch-*` RELEASE switches, which are not topics at all; the `batch-*`
 //     values are dropped from `tags` and expressed through `release` instead.
@@ -135,8 +135,8 @@ function tags(list, options = {}) {
  * carries, plus every `batch-*` tag that became one, all `true`.
  *
  * AGSC-01-20 publishes an item with `release: <key>` only when the switch is
- * `true`, and a key that is ABSENT from the switchboard leaves the item
- * published. Writing every key explicitly is therefore the honest form: the
+ * `true`, and a key that is ABSENT from the switchboard holds the item back.
+ * Writing every key explicitly is therefore what keeps an imported item published: the
  * owner turns one off and one batch disappears from every surface.
  *
  * @param {Iterable<string>} keys

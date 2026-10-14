@@ -32,3 +32,6 @@ Serious or repeated cases are blocked permanently.
 Report a problem through the contact page at
 <https://andreibesleaga.com/contact/>. Say where it happened and link to it.
 Reports are read by the maintainer only and are not published.
+
+A report about the maintainer, who is the one person enforcing this page, can go
+to GitHub instead, through its own tools for reporting abuse or content.

@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "the auto-merge job that merges a lane's Proposal under every condition of AGSC-08-26 runs on a forge with the channel owner's merge credential; the claim it merges is prepared, applied and committed offline in \"An agent claims a task by proposing its working state through the tool server\", and the ledger's mode \"auto\" is checked in \"The build stays deterministic while the lane is non-deterministic\".",
+  "scenario": "A forge merges the agent's claim automatically"
+}

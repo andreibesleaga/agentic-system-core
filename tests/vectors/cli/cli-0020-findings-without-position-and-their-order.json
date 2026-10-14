@@ -1,0 +1,73 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-10 with AGSC-09-11: under --json the findings of ci are ordered by (file, line, col, code), compared code-point-wise, in the envelope and on stderr alike, and every finding carries code, col, file, line, message and severity — including the findings that have no position of their own. The case is the minimal fixture with three files added, run with no SOURCE_DATE_EPOCH in a directory that is not a git checkout. Derivation from the rule text: with no SOURCE_DATE_EPOCH and no git history the build instant is 0 with the warning AGSC-E606 (AGSC-04-09), a finding about no file, so its file is the empty string and it sorts before every path; the authored security.txt carries an Expires after that instant, so it raises nothing. content/concepts/README.md is a folder note, skipped with the warning AGSC-E506 (AGSC-01-05), a finding about a whole file, so it carries line 1 and col 1. content/concepts/beacon.md is a pattern concept with no description and no Related Patterns section, two warnings of AGSC-02-21 (AGSC-E408, AGSC-E406), and a tag outside tags.allowed, the error AGSC-E203 of AGSC-01-21, so ci fails with exit 1 (AGSC-09-08). Code-point order puts README.md (R is U+0052) before beacon.md (b is U+0062), the order a case-insensitive or locale sort reverses. findings_in_order lists findings that must appear in that relative order; findings lists findings that must appear, in any order; ordered_by names the sort key every adjacent pair must respect; stderr_lines_match_findings says that the finding objects on stderr are the envelope's, one per line, in the same order.",
+  "expected": {
+    "exit": 1,
+    "finding_members": [
+      "code",
+      "col",
+      "file",
+      "line",
+      "message",
+      "severity"
+    ],
+    "findings": [
+      {
+        "code": "AGSC-E406",
+        "file": "content/concepts/beacon.md",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E408",
+        "file": "content/concepts/beacon.md",
+        "severity": "warn"
+      }
+    ],
+    "findings_in_order": [
+      {
+        "code": "AGSC-E606",
+        "file": "",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "col": 1,
+        "file": "content/concepts/README.md",
+        "line": 1,
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E203",
+        "file": "content/concepts/beacon.md",
+        "severity": "error"
+      }
+    ],
+    "ordered_by": [
+      "file",
+      "line",
+      "col",
+      "code"
+    ],
+    "stderr_lines_match_findings": true
+  },
+  "id": "cli-0020",
+  "input": {
+    "add_files": {
+      ".well-known/security.txt": "Contact: https://example.org/security-contact\nExpires: 1970-12-31T00:00:00Z\nPreferred-Languages: en\n",
+      "content/concepts/README.md": "# About this folder\n\nNot an item.\n",
+      "content/concepts/beacon.md": "---\ntype: concept\ntitle: Beacon\ntags:\n  - agents\n  - unlisted\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nA signal that marks a place.\n\n## Context & Forces\n\nWithout a mark, a place is found by search alone.\n\n## Structure\n\nOne fixed point, visible from far away.\n\n## Consequences & Trade-offs\n\nEasy to find; easy to copy.\n"
+    },
+    "argv": [
+      "ci",
+      "--json"
+    ],
+    "bundle": "fixtures/minimal",
+    "environment": {},
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-10"
+}

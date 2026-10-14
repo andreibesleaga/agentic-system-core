@@ -2,13 +2,13 @@
 // AGSC-08-01 / AGSC-02-05 / AGSC-01-18: a key named like a member of JavaScript's
 // object prototype is a key like any other.
 //
-// Until 2026-10-06 (verification findings C2 and C4):
-//   C2  a frontmatter key `__proto__` was copied by plain assignment, which SET the
+// Before the fix:
+//   (a) a frontmatter key `__proto__` was copied by plain assignment, which SET the
 //       copy's prototype: an item with no `prov` of its own and a `__proto__: {prov: …}`
 //       block passed lint and build with 0 findings, and the page carried no
 //       provenance at all. It is now an own key, so the missing `prov` is `AGSC-E501`
 //       and the key itself is a malformed key name (`AGSC-E204`, AGSC-02-05).
-//   C4  `agsc.config.json` (and the user configuration) was merged by plain
+//   (b) `agsc.config.json` (and the user configuration) was merged by plain
 //       assignment, so `{"__proto__": {"x": 1}}` wrote into `Object.prototype` of the
 //       engine process and every verb then died with an internal error. The merge now
 //       skips `__proto__`, `constructor` and `prototype`, and lint reports the key as
@@ -36,7 +36,7 @@ function protoProv(dir) {
     '__proto__:\n  prov:\n    origin: human\n    operator: human:someone-else\n'));
 }
 
-test('C2: a frontmatter __proto__ block does not stand in for a missing prov (lint)', async (t) => {
+test('(a) a frontmatter __proto__ block does not stand in for a missing prov (lint)', async (t) => {
   const dir = scratch(t);
   protoProv(dir);
   const r = await agsc(dir, ['lint', '--json']);
@@ -46,7 +46,7 @@ test('C2: a frontmatter __proto__ block does not stand in for a missing prov (li
   assert.notEqual(r.exit, 0);
 });
 
-test('C2: build and ci refuse the same item', async (t) => {
+test('(a) build and ci refuse the same item', async (t) => {
   const dir = scratch(t);
   protoProv(dir);
   for (const verb of ['build', 'ci']) {
@@ -57,7 +57,7 @@ test('C2: build and ci refuse the same item', async (t) => {
   assert.ok(!fs.existsSync(path.join(dir, 'www')), 'a build with an error writes nothing');
 });
 
-test('C2: applyTypes keeps a __proto__ key as an own key and never sets a prototype', () => {
+test('(a) applyTypes keeps a __proto__ key as an own key and never sets a prototype', () => {
   const parsed = JSON.parse('{"title":"T","__proto__":{"prov":{"origin":"human"}}}');
   const typed = validate.applyTypes(parsed, { type: 'object', properties: {} });
   assert.equal(Object.getPrototypeOf(typed), Object.prototype);
@@ -66,7 +66,7 @@ test('C2: applyTypes keeps a __proto__ key as an own key and never sets a protot
   assert.deepEqual(Object.keys(typed), ['title', '__proto__']);
 });
 
-test('C4: a __proto__ member in agsc.config.json pollutes nothing and is AGSC-E004', async (t) => {
+test('(b) a __proto__ member in agsc.config.json pollutes nothing and is AGSC-E004', async (t) => {
   const dir = scratch(t);
   const text = fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8')
     .replace('{\n', '{\n  "__proto__": {"pollutedByConfig": "yes"},\n');
@@ -79,7 +79,7 @@ test('C4: a __proto__ member in agsc.config.json pollutes nothing and is AGSC-E0
   assert.equal(r.exit, 2);
 });
 
-test('C4: load() skips __proto__, constructor and prototype in every layer', () => {
+test('(b) load() skips __proto__, constructor and prototype in every layer', () => {
   const project = JSON.parse('{"__proto__":{"a":1},"site":{"constructor":{"prototype":{"b":2}},"title":"T"}}');
   const user = JSON.parse('{"__proto__":{"c":3},"build":{"prototype":{"d":4}}}');
   const loaded = load({ projectConfig: project, userConfig: user });

@@ -6,7 +6,7 @@ checker, a duplication limit, the rule-coverage and requirements matrices, the
 public-hygiene sweep and, for a release, a dry run of the release lane. This page says
 what each check enforces, how to run it, what the size limits are and why they exist,
 how to add a module without breaking the dependency rule, and how the workflows of
-the five repositories fit together. Nothing here is normative: where this page and a
+the four public repositories fit together. Nothing here is normative: where this page and a
 rule of `spec/` disagree, the rule wins.
 
 **Who this is for:** a contributor to the engine, or a maintainer setting up the
@@ -25,10 +25,10 @@ runs the same commands (§5); nothing runs there that cannot run here.
 | Lint | `npm run lint` | ESLint's recommended rules, the house style (two-space indent, single quotes, semicolons, trailing commas on multi-line lists, LF), the order of `require` lines (Node built-ins, then packages, then this repository's files) and the size budgets of §2. **Zero warnings**: a warning is a failure. |
 | Format | `npm run format` | The same linter with `--fix`: it rewrites what it can (style, order) and reports what it cannot. There is no second formatter, so the formatter and the linter cannot disagree. |
 | Dependency rule | `npm run arch` | dependency-cruiser over `src/`, `bin/` and `index.js` with the map of §3: each part of `src/` may require only the parts its row allows; the pure contexts use no Node built-in but `crypto`; an adapter is constructed only by the application layer or `bin/`; Interchange and Distribution never require each other; no module requires a sample plugin, a checker or `examples/`; no devDependency at run time; no undeclared or unresolvable require; no cycle; no orphan. |
-| Purity | part of `npm test` (`tests/arch/core-purity.test.js`) | No bounded context touches `process`, `Date.now`, `new Date`, `Math.random`; the outside world is reached through a port. |
+| Purity | part of `npm test` (`tests/arch/core-purity.test.js`, `never-touches.test.js`, `application-builtins.test.js`) | No bounded context touches `process`, `Date.now`, `new Date`, `Math.random`; the outside world is reached through a port. No context loads what the "Never touches" column of [ARCHITECTURE-DDD.md](ARCHITECTURE-DDD.md) §2 excludes, and the application layer loads only the Node built-ins listed in §3. |
 | Duplication | `npm run duplicates` | jscpd over the same files: at most 2 % duplicated lines. The clones kept on purpose are listed in §2. |
 | Rule coverage | `npm run rule-coverage` | Every active rule of `spec/` is verified by a vector, a test, an executed scenario or a checker, or is prose-only for a stated reason; [RULE-COVERAGE.md](RULE-COVERAGE.md) is current. `node tools/rule-coverage --write` regenerates the page. |
-| Requirements | `npm run requirements` | Every requirement of [PRD.md](PRD.md) is traced by a rule or named by a test or a live vector, or stays unmapped for a stated reason; [REQUIREMENTS-MATRIX.md](REQUIREMENTS-MATRIX.md) is current. `node tools/requirements-matrix --write` regenerates the page. |
+| Requirements | `npm run requirements` | Every requirement of [PRD.md](PRD.md) is traced by a rule or named by a test or a live vector, or stays unmapped for a stated reason; a requirement met only in part, or traced only by rules that carry no check, names the part that waits; [REQUIREMENTS-MATRIX.md](REQUIREMENTS-MATRIX.md) is current. `node tools/requirements-matrix --write` regenerates the page. |
 | Counts | `node tools/count-artifacts --json` | Every published count (rules, codes, vectors, terms) is derived from the files, never typed; `ok: true` and no finding. |
 | Validators | `for t in tools/validate-*; do node "$t" --json; done` | The independent checkers over the distribution: rule text, schemas, ontology, vectors, scenarios, diagrams; the discovery document of a fixture build at Level 2 (`validate-wellknown`). |
 | Hygiene | `node tools/public-hygiene .` | "Public means clean": no private path, working-process vocabulary, secret, e-mail address, personal data beyond the canonical name, or forbidden wording in any file of the tree. The allowed hits, each with its reason, are in `.public-hygiene.json`. 0 errors. |
@@ -59,10 +59,17 @@ limit stops meaning anything.
 | Parameters of a function | 7 | 6 |
 | Lines per file | 1,960 | 770 |
 
-The functions nearest the top of these budgets are the site builder, the discovery
-checker, the diagram compiler and the command-line entry; each is a candidate for a
-split into per-route or per-check functions, and the budgets hold them where they are
-until that happens.
+A few places sit at or near the top of these budgets. Each is a candidate for a split
+into smaller functions, and the budgets hold them where they are until that happens. A
+change inside one of them starts by extracting a helper, with no change in what the
+engine writes (the golden build test proves it), and never by raising the budget:
+
+| Where | The budget it is near | The split it is a candidate for |
+|---|---|---|
+| `src/distribution/site.js`, `buildSite` | complexity and lines per function | one function per family of routes |
+| `src/distribution/site.js`, the whole file | lines per file | those route families in modules of their own |
+| `src/knowledge/diagrams.js`, `compile` | the largest function of the Knowledge context | one function per diagram construct |
+| `src/application/cli/main.js`, `main` | the largest command-line function, well under both budgets | one function per group of options |
 
 Duplication is limited to 2 % of lines. A few clones are kept on purpose and are
 worth knowing before "fixing" them: the page tools' function source is emitted into
@@ -83,7 +90,7 @@ The directory layout is the domain model, and `npm run arch` checks it. Each par
 
 | Part of `src/` | May require |
 |---|---|
-| `shared/` | nothing inside `src/` (the shared kernel: the two string orderings) |
+| `shared/` | nothing inside `src/` (the shared kernel: the two string orderings, the trailing-slash and trailing line-feed trims, and the reader of the rest of a line after a fixed head) |
 | `knowledge/` | `knowledge/`, `shared/` |
 | `governance/` | `knowledge/`, `governance/`, `ports/`, `shared/` |
 | `composition/` | `knowledge/`, `composition/`, `ports/`, `shared/` |
@@ -111,7 +118,14 @@ To add a module:
    `interchange/`, `distribution/` and `shared/` may use the Node built-in `crypto`
    and nothing else; the Boundary may also use `net` and `url` to classify addresses
    without opening a connection. Anything else — `fs`, `child_process`, a socket, the
-   clock — is an adapter, and only `application/` and `bin/` construct one.
+   clock — is an adapter, and only `application/` and `bin/` construct one. The
+   application layer itself loads only `path`, `crypto` and `util`, plus `os` in
+   `cli/verbs/run.js`, and `fs` in one module: `src/application/hosting.js`, the
+   deployment profiles and local server of `agsc-host`, is the one exception that
+   reads and writes files directly instead of through the FileSystem port. Moving it
+   behind the port is planned for 1.1. `tests/arch/application-builtins.test.js` holds
+   this list, and fails when a module loads anything else or when an exception is no
+   longer used.
 4. **Give it a header and a README line.** The module header names the rules it
    serves (`AGSC-nn-nn`); the README of its folder gets one line. `npm run arch`
    refuses an orphan module, and the rule-coverage gate warns when a test names a
@@ -135,24 +149,30 @@ default path — the instant of the last commit — is exercised on every run.
 
 ## 5. How the repositories are checked
 
-Five public repositories carry the work. Each has its own workflow file; none holds a
-secret; every action is pinned to a commit hash with the version beside it, so that a
-moved tag cannot change what runs; every job has read-only permissions unless it
-publishes.
+Four public repositories carry the work: the engine, the reference site, the demo
+node and the Python package. Each has its own workflow file; none holds a secret;
+every action is pinned to a commit hash with the version beside it, so that a moved
+tag cannot change what runs; every job has read-only permissions unless it publishes.
 
 | Repository | Workflow | Runs on | What it runs |
 |---|---|---|---|
-| `agentic-system-core` (this engine) | `test.yml` on every push and pull request | Ubuntu, macOS, Windows × Node 22.13.0 and 24 (six legs), plus one `actionlint` job on Ubuntu | every step of the release gates, with the same wording: `npm ci`, lint, the duplicate check, the dependency rule, the suite, `npm audit`, rule coverage, the requirements matrix, the counting tool, every validator, the Level-1 check of a fixture built without git, `validate-wellknown` at Level 2 on a fixture build, the release dry run, hygiene, the architecture lane (a test fails if the two workflows drift apart); `actionlint` over the workflow files themselves |
-| | `release.yml` on a `v*` tag | the same six legs, then one publish job | the same gates again; then npm trusted publishing with build provenance |
+| `agentic-system-core` (this engine) | `test.yml` on every push and pull request, and weekly | Ubuntu, macOS, Windows × Node 22.13.0, 24 and 26 (nine legs; the six of 22.13.0 and 24 are the required checks, the three of 26 are not), plus one `actionlint` job on Ubuntu and one browser job on Ubuntu that is not a required check | every step of the release gates, with the same wording and under the same condition: `npm ci`, lint, the duplicate check, the dependency rule, the suite (on Ubuntu × Node 24 measured by `npm run test:coverage`, which fails below 99.9 % of lines, 99 % of functions or 93 % of branches of `src/`), `npm audit`, rule coverage, the requirements matrix, the counting tool, every validator, the Level-1 check of a fixture built without git, `validate-wellknown` at Level 2 on a fixture build, the packed install (both tarballs installed together in an empty folder, each command printing the packed version), the release dry run, hygiene, the architecture lane (a test fails if the two workflows drift apart or a required check context is no longer produced); `actionlint` over the workflow files themselves |
+| | `release.yml` on a `v*` tag | the same nine legs, then one publish job | the same gates again; then, only for a tag whose commit is on `main`, npm trusted publishing with build provenance, under the dist-tag `next` for a pre-release and `latest` for a final release |
 | `AgenticSystemCore.com` (the reference site) | `test.yml` on every push and pull request | Ubuntu, Node 22.13.0, the engine checked out beside it | `node scripts/build.js && node scripts/check.js` (two identical builds equal to the committed output; the discovery document at Levels 0 and 2; links, headers, contrast, hygiene), `node scripts/page-tools-check.js`, the hygiene sweep; the browser lane (`scripts/a11y.js`, axe-core) on request |
-| `AgenticSystemCore-Patterns` (the second node) | `test.yml` on every push and pull request | Ubuntu, Node 22.13.0, the engine checked out beside it | `agsc lint`, `agsc build`, `agsc verify --ledger`, `agsc ci`, `agsc conform --level 2`, `validate-wellknown --level 2` on the built discovery document, `publish-set --check`, the hygiene sweep |
-| `agentic-system-core-python` (the Python package) | `test.yml` on every push and pull request | Ubuntu 24.04, Python 3.9 and 3.13, the engine beside it with Node 22.13.0 | `pytest` under `coverage` (the equivalence tests run the engine's checker and vector runner); on 3.13 also `ruff check` and `mypy` at exact pins |
-| | `release.yml` on a `v*` tag | Ubuntu 24.04 | the tests, one build, PyPI trusted publishing |
-| `agentic-system-core-php` (the PHP package) | none yet | — | the checks are run by hand until a workflow exists |
+| `agsc-demo-node` (the demonstration node) | `test.yml` on every push and pull request | Ubuntu, Node 22.13.0, the engine checked out beside it | `agsc lint`, `agsc build`, `agsc verify --ledger`, `agsc ci`, `agsc conform --level 2`, `validate-wellknown --level 2` on the built discovery document, `publish-set --check`, the hygiene sweep |
+| `agentic-system-core-python` (the Python package) | `test.yml` on every push and pull request, and called by `release.yml` | Ubuntu 24.04, Python 3.9, 3.13 and 3.14 (three legs; 3.9 and 3.13 are required checks together with `ruff and mypy (Python 3.13)`, 3.14 is not), the engine and the main site beside it, Node 22.13.0 | `pytest` under `coverage` (the equivalence tests run the engine's checker and vector runner); the engine's port-implementer scenarios (`persona-l`) with the package beside the engine, where a skipped scenario fails the leg; on 3.13 also `ruff check` and `mypy` at exact pins |
+| | `release.yml` on a `v*` tag | Ubuntu 24.04 | the tag must be the version and its commit must be on `main`; the whole `test.yml` with the engine at the specification tag of that version; one build; PyPI trusted publishing |
 
-**The engine beside the other repositories.** The site, the patterns node and the
+**The demo node is an export.** `agsc-demo-node` holds the published items of the
+demonstration node and only those. The maintainer keeps the node in a private working
+copy that also holds items still in draft; the public repository is exported from it.
+The private copy carries the same workflow, with the same `node` job on every push,
+so the node is checked by the same steps on both sides of the export. A PHP package
+also exists, as a private placeholder with no workflow; it is not one of the four.
+
+**The engine beside the other repositories.** The site, the demo node and the
 Python package all need the engine at a known state: the site's generator reads the
-specification and the engine emits every machine file; the patterns node is built by
+specification and the engine emits every machine file; the demo node is built by
 the engine; the Python suite compares its checker with the engine's. Each of those
 workflows therefore checks out `andreibesleaga/agentic-system-core` side by side with
 its own repository, at the ref named by the `ENGINE_REF` variable at the top of
@@ -164,9 +184,9 @@ exactly that.
 
 **Which checks to require on `main`.** A maintainer who protects the default branch
 can require the status checks the workflows produce: for the engine the six `test`
-legs and the `actionlint` job; for the site the `site` job; for the patterns node the
-`node` job; for the Python package the two `tests` legs and the `lint` job. GitHub's
-own page (read 2026-09-25) names the path: Settings → Branches → "Add classic branch
+legs and the `actionlint` job; for the site the `site` job; for the demo node the
+`node` job; for the Python package the two `tests` legs and the `ruff and mypy` job.
+GitHub's own page (read 2026-09-25) names the path: Settings → Branches → "Add classic branch
 protection rule", then "Require status checks to pass before merging" with "Require
 branches to be up to date before merging", "Require a pull request before merging",
 and "Do not allow bypassing the above settings"; force pushes and deletions stay

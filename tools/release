@@ -59,8 +59,11 @@
 //      files that would ship (the list of step 3, in process: no process is started);
 //      every error it reports is a finding here, so a private path, a process note, an e-mail
 //      address or a secret stops the release lane like any other failure.
-//   5. THE MAINTAINER'S CHECKLIST. Printed last, as the exact commands to run in order.
-//      Every git command in it is the maintainer's; this tool runs none.
+//   5. THE MAINTAINER'S CHECKLIST. Printed last, as the exact commands to run in order:
+//      the gates on a release branch, a pull request into main, then, on the merged
+//      commit, the annotated specification tag pushed before the annotated package
+//      tag, whose workflow publishes after the maintainer approves the `release`
+//      environment. Every git command in it is the maintainer's; this tool runs none.
 //
 // This tool is NOT one of the nine command contracts of AGSC-09-90 — it validates
 // no normative artefact — so it is deliberately named `release` and not
@@ -143,6 +146,16 @@ function canonicalize(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
   const names = Object.keys(value).map((k) => k.normalize('NFC')).sort();
   return `{${names.map((n) => `${JSON.stringify(n)}:${canonicalize(value[n])}`).join(',')}}`;
+}
+
+/**
+ * `text` without the run of `/` at its end, read back from the end (linear in the
+ * length; the engine's copy is `src/shared/trailing.js`, which a tool does not load).
+ */
+function withoutTrailingSlashes(text) {
+  let end = text.length;
+  while (end > 0 && text.charCodeAt(end - 1) === 0x2f) end -= 1;
+  return text.slice(0, end);
 }
 
 /** AGSC-09-10: order by (file, line, col, code), compared code-point-wise. */
@@ -262,26 +275,57 @@ function walk(root, dir) {
   if (!fs.existsSync(at)) return out;
   if (!fs.statSync(at).isDirectory()) return [dir];
   for (const entry of fs.readdirSync(at, { withFileTypes: true })) {
-    const rel = `${dir.replace(/\/+$/u, '')}/${entry.name}`;
+    const rel = `${withoutTrailingSlashes(dir)}/${entry.name}`;
     if (entry.isDirectory()) out.push(...walk(root, rel));
     else out.push(rel);
   }
   return out.sort(compareCodePoint);
 }
 
+/** The files npm ships from the package root whatever `files` says (nocase). */
+const ROOT_ALWAYS = /^(?:package\.json|(?:readme|copying|license|licence)(?:\..*[^~$])?)$/iu;
+
 /**
  * The file list `npm pack` would produce from `package.json#files`, plus the
  * files npm always includes. It is computed from the manifest so that the check
- * runs offline and in a sandbox; `npm pack --dry-run` is the maintainer's own
- * confirmation and is step 4 of the checklist.
+ * runs offline and in a sandbox, and `tests/tools/release.test.js` compares it,
+ * file for file, with `npm pack --dry-run --json`.
+ *
+ * It follows the three things npm does with the entries (npm-packlist):
+ *   - a folder entry ships everything below it, and a file entry with a slash ships
+ *     that one file;
+ *   - npm walks the folders above every entry, and, inside a folder it walks, a
+ *     folder named like a one-segment folder entry (`bin/` also walks `tests/bin/`);
+ *   - an entry with no slash that names a file (`README.md`, `LICENSE`) is a name
+ *     npm keeps, ignoring case, in EVERY folder it walks — which is why each walked
+ *     folder's README ships beside the files the entries name.
  */
 function packList(root, manifest) {
-  const always = ['package.json', 'README.md', 'LICENSE'];
-  const declared = Array.isArray(manifest.files) ? manifest.files : [];
+  const declared = (Array.isArray(manifest.files) ? manifest.files : [])
+    .map((e) => withoutTrailingSlashes(String(e).replace(/^\.?\/+/u, ''))).filter((e) => e !== '');
+  const isDir = (rel) => { try { return fs.statSync(path.join(root, rel)).isDirectory(); } catch { return false; } };
+  const folders = declared.filter(isDir);
+  const files = new Set(declared.filter((e) => e.includes('/') && !isDir(e)));
+  const names = new Set(declared.filter((e) => !e.includes('/') && !isDir(e)).map((e) => e.toLowerCase()));
+  const nested = new Set(folders.filter((e) => !e.includes('/')));
   const out = new Set();
-  for (const entry of [...always, ...declared]) {
-    for (const file of walk(root, entry)) out.add(file.replace(/^\/+/u, ''));
-  }
+  const visit = (dir) => {
+    let entries;
+    try { entries = fs.readdirSync(path.join(root, dir), { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const rel = dir === '' ? entry.name : `${dir}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (folders.some((f) => rel === f || rel.startsWith(`${f}/`))) {
+          for (const file of walk(root, rel)) out.add(file);
+        } else if (declared.some((e) => e.startsWith(`${rel}/`)) || nested.has(entry.name)) {
+          visit(rel);
+        }
+      } else if (files.has(rel) || names.has(entry.name.toLowerCase()) || (dir === '' && ROOT_ALWAYS.test(entry.name))) {
+        out.add(rel);
+      }
+    }
+  };
+  visit('');
   return [...out].sort(compareCodePoint);
 }
 
@@ -316,7 +360,10 @@ function packFindings(root, files) {
           + ' repository, so it is never part of the package'));
       }
     }
-    if (file.startsWith('tests/') && !SHIPPED_TEST_PATHS.some((p) => file.startsWith(p))) {
+    // A folder README is documentation that npm ships from every folder it walks
+    // (`packList`), not test bloat.
+    const readme = /^readme(?:\..*)?$/iu.test(path.posix.basename(file));
+    if (file.startsWith('tests/') && !readme && !SHIPPED_TEST_PATHS.some((p) => file.startsWith(p))) {
       findings.push(finding('AGSC-E904', file, 1,
         `${file} would ship: the only test paths a distribution ships are ${SHIPPED_TEST_PATHS.join(', ')}`
         + ' (AGSC-09-90 and what `agsc conform` needs), and everything else under tests/ is bloat'
@@ -528,6 +575,8 @@ function applyChangelog(text, version, date) {
 function checklist(version, bump = true) {
   const v = version === null ? '<x.y.z>' : version;
   const steps = [
+    `git switch -c release/${v}                     # the release branch, from an up-to-date main`,
+    `    # (git switch release/${v} if it already exists); every step up to the commit runs on it`,
     'npm ci                                          # the lockfile, exactly',
     'npm test                                        # 0 fail, twice, identical',
     'npm run test:coverage                           # src/ at or above 99.9 %',
@@ -544,17 +593,26 @@ function checklist(version, bump = true) {
       'node tools/release                              # this script, dry run; the tree',
       `    # already carries ${v}, so there is no version to write`,
     ]),
-    'npm pack --dry-run                              # confirm the contents',
+    'npm pack --dry-run                              # the same file count as above',
     `git add -A && git commit -m "release: ${v}"`,
-    `git tag -s ${v} -m "AgenticSystemCore ${v}"            # the specification's tag`,
-    `    # (a release that changes the specification; the site build and the archive read it)`,
-    `git tag -s v${v} -m "AgenticSystemCore ${v}"           # the package tag, SAME commit`,
+    `git push origin release/${v}`,
+    '    # open a pull request into main; wait until every job of test.yml is green',
+    '    # on it, then merge it (main is protected: nothing is pushed to it directly)',
+    'git switch main && git pull --ff-only origin main',
+    `    # the tags go on the merged commit of main; check that package.json says ${v}`,
+    `git tag -a ${v} -m "AgenticSystemCore ${v}"            # the specification's tag`,
+    `git push origin ${v}                               # starts no workflow`,
+    '    # the site build and the archive read this tag: build and deploy the site that',
+    '    # names this version before the package tag below starts the publishing',
+    `git tag -a v${v} -m "AgenticSystemCore ${v}"           # the package tag, SAME commit`,
     `    # check: test "$(git rev-parse ${v}^{commit})" = "$(git rev-parse v${v}^{commit})"`,
-    `git push origin main && git push origin ${v}`,
-    `git push origin v${v}                             # only once the repository is public`,
-    `    # npm makes no build provenance for a private repository. The v tag starts ${WORKFLOW},`,
-    '    # which publishes both packages over npm TRUSTED PUBLISHING (OIDC, no secret',
-    '    # in this repository), sets the dist-tag `latest` explicitly and attaches',
+    `git push origin v${v}`,
+    `    # The v tag starts ${WORKFLOW}. Its gates run on every leg; then the publish`,
+    '    # job checks that the tagged commit is on main and waits for the maintainer to',
+    '    # approve the "release" environment on GitHub (the run page -> Review',
+    '    # deployments). Approved, it publishes both packages over npm TRUSTED PUBLISHING',
+    '    # (OIDC, no secret in this repository), with the dist-tag chosen from the',
+    '    # version (latest for a final release, next for a pre-release), and attaches',
     '    # build provenance. Turning a trusted publisher on for a package name is a',
     '    # one-time step on npmjs.com: the package\'s Settings -> Trusted publishing',
     '    # -> GitHub Actions, this repository, workflow release.yml, environment',
@@ -571,7 +629,7 @@ function checklist(version, bump = true) {
     `In a fresh temporary directory: npm install agentic-system-core@${v}`,
     '    and npx agsc-cli --version                      # the live smoke test',
     `The PyPI half, in ../${PYTHON_DIR}: its own tag, its own`,
-    '    trusted-publishing workflow, then pip install --pre in a fresh venv.',
+    `    trusted-publishing workflow, then pip install ${/-/u.test(v) ? '--pre ' : ''}agentic-system-core==${pep440(v) || v} in a fresh venv.`,
     'Capture the release page and both package pages in the Wayback Machine.',
   ];
   const numbered = [];
@@ -736,5 +794,5 @@ module.exports = {
   ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
   applyChangelog, canonicalize, changelogFindings, checklist, hygieneFindings, isGreater, neverShipped,
   packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
-  workflowFindings,
+  withoutTrailingSlashes, workflowFindings,
 };

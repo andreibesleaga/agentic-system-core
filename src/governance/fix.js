@@ -35,6 +35,7 @@ const { finding } = require('../knowledge/validate.js');
 const { nfc, compareCodePoint } = require('../knowledge/unicode.js');
 const yaml = require('../knowledge/yaml.js');
 const frontmatter = require('../knowledge/frontmatter.js');
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
 
 /** The extensions an `![[…]]` embed may become an image for; anything else is removed. */
 const IMAGE_EXTENSIONS = Object.freeze(['.avif', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp']);
@@ -116,34 +117,205 @@ function orderKeys(value, order, itemSchema, type, at) {
   return out;
 }
 
+/** A line terminator as a regular expression's `^` and `$` read them under the `m` flag. */
+function isLineTerminator(ch) {
+  return ch === '\n' || ch === '\r' || ch === '\u2028' || ch === '\u2029';
+}
+
+/** The first line start after `from`: one past the next line terminator, or -1. */
+function nextLineStart(text, from, meter) {
+  let i = from;
+  while (i < text.length && !isLineTerminator(text[i])) i += 1;
+  if (meter !== undefined) meter.steps += i - from + 1;
+  return i < text.length ? i + 1 : -1;
+}
+
+/**
+ * The fence character `ch` repeated at least `size` times at `at`, after at most
+ * three spaces (a closing fence line), or -1; else the index after the fence.
+ */
+function closingFenceAt(text, at, ch, size, meter) {
+  let i = at;
+  while (i < text.length && text[i] === ' ' && i - at < 3) i += 1;
+  let run = 0;
+  while (run < size && text[i + run] === ch) run += 1;
+  if (meter !== undefined) meter.steps += i - at + run + 1;
+  return run === size ? i + size : -1;
+}
+
+/**
+ * Fenced code blocks (CommonMark 0.31.2 §4.5), left to right: exactly the matches of
+ * the pattern this module used until 1.0.0,
+ * `/^(?: {0,3})(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^(?: {0,3})\1[^\n]*(?:\n|$)|$(?![\s\S]))/gmu`,
+ * found line by line in time linear in the body. An opening fence is at most three
+ * spaces and a run of three or more backticks or tildes at a line start, followed
+ * somewhere by a line feed; the block ends at the end of the first later line that
+ * starts with at most three spaces and the same run, or at the end of the body (an
+ * unclosed fence is closed by the end of the containing block). Line starts are those
+ * of the pattern's `^`: after a line feed, a carriage return, U+2028 or U+2029. The
+ * pattern backtracked over every shorter fence when no line feed followed one, so one
+ * long run of backticks took quadratic time.
+ */
+function fencedBlocks(text, meter) {
+  const out = [];
+  let at = 0;
+  while (at !== -1 && at < text.length) {
+    let i = at;
+    while (i < text.length && text[i] === ' ' && i - at < 4) i += 1;
+    const ch = text[i];
+    let run = 0;
+    if (i - at <= 3 && (ch === '`' || ch === '~')) while (text[i + run] === ch) run += 1;
+    if (meter !== undefined) meter.steps += i - at + run + 1;
+    if (run < 3) { at = nextLineStart(text, at, meter); continue; }
+    const feed = text.indexOf('\n', i + run);
+    if (feed === -1) break;
+    if (meter !== undefined) meter.steps += feed - i - run + 1;
+    let end = text.length;
+    for (let line = feed + 1; line !== -1 && line < text.length; line = nextLineStart(text, line, meter)) {
+      const after = closingFenceAt(text, line, ch, run, meter);
+      if (after === -1) continue;
+      const close = text.indexOf('\n', after);
+      if (meter !== undefined) meter.steps += (close === -1 ? text.length : close) - after + 1;
+      end = close === -1 ? text.length : close + 1;
+      break;
+    }
+    out.push([at, end]);
+    at = end;
+  }
+  return out;
+}
+
+/**
+ * Code spans, left to right: exactly the matches of the pattern this module used
+ * until 1.0.0, `/(`+)(?:[^`]|(?!\1)`)*\1/gu`, in time linear in the body.
+ *
+ * From the first backtick of a run (or from inside one, where the last match ended),
+ * the pattern takes the longest opening `k` backticks for which a closing string of
+ * `k` backticks exists: either inside the same run (when the rest of the run holds at
+ * least `k` more) or at the start of the first later run of at least `k`. So `k` is
+ * the larger of half the run and the smaller of the run and the longest later run.
+ * The pattern found that by trying every `k` from every start, which was quadratic
+ * in a long run of backticks.
+ */
+function backtickSpans(text, meter) {
+  const runs = [];
+  for (let i = text.indexOf('`'); i !== -1; i = text.indexOf('`', i)) {
+    let j = i;
+    while (text[j] === '`') j += 1;
+    runs.push([i, j]);
+    i = j;
+  }
+  if (meter !== undefined) meter.steps += text.length + 1;
+  const longestFrom = new Array(runs.length + 1).fill(0);
+  for (let r = runs.length - 1; r >= 0; r -= 1) {
+    longestFrom[r] = Math.max(runs[r][1] - runs[r][0], longestFrom[r + 1]);
+  }
+  const out = [];
+  let at = 0;
+  let r = 0;
+  for (;;) {
+    while (r < runs.length && runs[r][1] <= at) r += 1;
+    if (r === runs.length) break;
+    const start = Math.max(at, runs[r][0]);
+    const size = runs[r][1] - start;
+    const k = Math.max(Math.floor(size / 2), Math.min(size, longestFrom[r + 1]));
+    if (k === 0) break;
+    let close = start + k;
+    if (size - k < k) {
+      let later = r + 1;
+      while (runs[later][1] - runs[later][0] < k) later += 1;
+      if (meter !== undefined) meter.steps += later - r;
+      close = runs[later][0];
+    }
+    out.push([start, close + k]);
+    at = close + k;
+  }
+  return out;
+}
+
 /**
  * The spans of a Markdown body that are CODE and therefore not prose: fenced blocks
  * (CommonMark 0.31.2 §4.5) and code spans (§6.1). A wikilink inside one of them is an
  * example, and rewriting it would change what the example says — which AGSC-04-20
- * forbids.
+ * forbids. A code span that starts inside a fenced block is part of the block.
+ *
+ * Both scans are linear in the body (`fencedBlocks`, `backtickSpans`); the result is
+ * the one the two patterns gave.
  *
  * @param {string} body
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {Array<[number, number]>} half-open [start, end) offsets, in order.
  */
-function codeSpans(body) {
-  const out = [];
+function codeSpans(body, meter) {
   const text = String(body);
-  // `$` is per line under `m`, so the "no closing fence" arm asserts the true end of
-  // the input with `$(?![\s\S])`: an unclosed fence runs to the end of the file, which
-  // is what CommonMark 0.31.2 §4.5 says ("closed by the end of the containing block").
-  const fence = /^(?: {0,3})(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^(?: {0,3})\1[^\n]*(?:\n|$)|$(?![\s\S]))/gmu;
-  let m = fence.exec(text);
-  while (m !== null) {
-    out.push([m.index, m.index + m[0].length]);
-    m = fence.exec(text);
+  const fences = fencedBlocks(text, meter);
+  const out = [];
+  let f = 0;
+  for (const span of backtickSpans(text, meter)) {
+    while (f < fences.length && fences[f][1] <= span[0]) {
+      out.push(fences[f]);
+      f += 1;
+    }
+    if (f < fences.length && fences[f][0] <= span[0]) continue;
+    out.push(span);
   }
-  const span = /(`+)(?:[^`]|(?!\1)`)*\1/gu;
-  m = span.exec(text);
-  while (m !== null) {
-    if (!out.some(([s, e]) => m.index >= s && m.index < e)) out.push([m.index, m.index + m[0].length]);
-    m = span.exec(text);
+  while (f < fences.length) {
+    out.push(fences[f]);
+    f += 1;
   }
-  return out.sort((a, b) => a[0] - b[0]);
+  return out;
+}
+
+/**
+ * The next wikilink at or after `from`: exactly the next match of the pattern this
+ * module used until 1.0.0, `/(!?)\[\[([^\]|#]*)(#[^\]|]*)?(\|[^\]]*)?\]\]/gu`, in
+ * time linear over all calls with a rising `from`. After `[[` every part stops at
+ * the first `]`, so a link exists exactly when that `]` is followed by another; the
+ * target ends at the first `|` or `#` before it, an anchor runs from a `#` to the
+ * first `|`, and an alias from that `|` to the `]`. The pattern scanned to the end of
+ * the body from every `[[` of a long run of `[`, which was quadratic.
+ *
+ * @returns {{index:number, whole:string, embed:boolean, target:string,
+ *   anchor:(string|undefined), alias:(string|undefined)}|null}
+ */
+function nextWikilink(text, from, closer, meter) {
+  for (let open = text.indexOf('[[', from); open !== -1; open = text.indexOf('[[', open + 1)) {
+    if (meter !== undefined) meter.steps += 1;
+    const close = closer(open + 2);
+    if (close === -1) return null;
+    if (text[close + 1] !== ']') continue;
+    const index = open > from && text[open - 1] === '!' ? open - 1 : open;
+    let targetEnd = open + 2;
+    while (targetEnd < close && text[targetEnd] !== '|' && text[targetEnd] !== '#') targetEnd += 1;
+    let anchorEnd = targetEnd;
+    if (text[targetEnd] === '#') while (anchorEnd < close && text[anchorEnd] !== '|') anchorEnd += 1;
+    if (meter !== undefined) meter.steps += close - open;
+    return {
+      index,
+      whole: text.slice(index, close + 2),
+      embed: index !== open,
+      target: text.slice(open + 2, targetEnd),
+      anchor: anchorEnd === targetEnd ? undefined : text.slice(targetEnd, anchorEnd),
+      alias: anchorEnd === close ? undefined : text.slice(anchorEnd, close),
+    };
+  }
+  return null;
+}
+
+/**
+ * The first `ch` at or after `from`, for queries whose `from` never decreases: each
+ * answer is kept, so a run of queries scans the text once. -1 when there is none.
+ */
+function forwardFinder(text, ch, meter) {
+  let asked = Infinity;
+  let found = -1;
+  return (from) => {
+    if (from >= asked && (found === -1 || from <= found)) return found;
+    asked = from;
+    found = text.indexOf(ch, from);
+    if (meter !== undefined) meter.steps += (found === -1 ? text.length : found) - from + 1;
+    return found;
+  };
 }
 
 /** The relative Markdown target AGSC-03-12 prescribes for a resolved wikilink. */
@@ -165,25 +337,36 @@ function relativeTarget(type, slug, anchor) {
  *
  * @param {string} body
  * @param {Map<string,string>} typeOfSlug slug → item type.
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {{body:string, rewritten:number, left:Array<string>}}
  */
-function rewriteWikilinks(body, typeOfSlug) {
+function rewriteWikilinks(body, typeOfSlug, meter) {
   const text = String(body);
-  const spans = codeSpans(text);
-  const inCode = (index) => spans.some(([s, e]) => index >= s && index < e);
+  const spans = codeSpans(text, meter);
+  // The links come in rising order, so one pass over the spans (in order of their
+  // starts) answers "is this index inside code": the furthest end of every span that
+  // starts at or before it.
+  let next = 0;
+  let reach = 0;
+  const inCode = (index) => {
+    while (next < spans.length && spans[next][0] <= index) {
+      reach = Math.max(reach, spans[next][1]);
+      next += 1;
+    }
+    return index < reach;
+  };
+  const closer = forwardFinder(text, ']', meter);
   const left = [];
   let rewritten = 0;
-  const pattern = /(!?)\[\[([^\]|#]*)(#[^\]|]*)?(\|[^\]]*)?\]\]/gu;
   let out = '';
   let cursor = 0;
-  let m = pattern.exec(text);
-  while (m !== null) {
-    const whole = m[0];
-    if (inCode(m.index)) { m = pattern.exec(text); continue; }
-    const target = m[2].trim();
-    const anchor = (m[3] === undefined ? '' : m[3].slice(1)).trim();
-    const alias = (m[4] === undefined ? '' : m[4].slice(1)).trim();
-    const embed = m[1] === '!';
+  for (let m = nextWikilink(text, 0, closer, meter); m !== null;
+    m = nextWikilink(text, m.index + m.whole.length, closer, meter)) {
+    const { whole, embed } = m;
+    if (inCode(m.index)) continue;
+    const target = m.target.trim();
+    const anchor = (m.anchor === undefined ? '' : m.anchor.slice(1)).trim();
+    const alias = (m.alias === undefined ? '' : m.alias.slice(1)).trim();
     let replacement = null;
     if (embed) {
       // "`![[…]]` embeds MUST be converted to images or removed" (AGSC-03-12). An
@@ -203,7 +386,6 @@ function rewriteWikilinks(body, typeOfSlug) {
       cursor = m.index + whole.length;
       rewritten += 1;
     }
-    m = pattern.exec(text);
   }
   out += text.slice(cursor);
   return { body: out, left, rewritten };
@@ -244,8 +426,8 @@ function quoteTemporal(value) {
 const ENCODING_CHANGE = 'line endings, NFC and the trailing newline';
 
 /** AGSC-04-19: LF line endings, NFC, exactly one trailing newline. */
-function normaliseText(text) {
-  return `${nfc(String(text).split('\r\n').join('\n').split('\r').join('\n')).replace(/\n+$/u, '')}\n`;
+function normaliseText(text, meter) {
+  return `${withoutTrailingFeeds(nfc(String(text).split('\r\n').join('\n').split('\r').join('\n')), meter)}\n`;
 }
 
 /**
@@ -294,10 +476,10 @@ function fixItem(item, options) {
   // markers — with dates and instants kept as quoted strings (AGSC-02-04).
   // `frontmatter.split` returns the YAML text without its closing newline, so the
   // authored block is reassembled with exactly one before it is compared.
-  const block = serialize(quoteTemporal(ordered));
+  const block = serialize(quoteTemporal(ordered), path);
   const authored = split.yamlText === ''
     ? '---\n---\n'
-    : `---\n${String(split.yamlText).replace(/\n*$/u, '')}\n---\n`;
+    : `---\n${withoutTrailingFeeds(String(split.yamlText))}\n---\n`;
   if (block !== authored) changes.push('frontmatter key order and the AGSC-04-19 YAML profile');
 
   const rewrite = rewriteWikilinks(split.body, options.typeOfSlug);

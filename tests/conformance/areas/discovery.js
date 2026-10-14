@@ -7,13 +7,18 @@
 // `agsc-bundle-version` attribute at three levels of visibility, disc-0012 the
 // robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node
 // carries, disc-0018 the bundle hash, disc-0019 a newer MINOR's relation,
-// disc-0008 every item reachable from /llms.txt, disc-0009 the sitemap.
+// disc-0008 every item reachable from /llms.txt, disc-0009 the sitemap, disc-0022
+// the one access link of a restricted node, judged by the shipped discovery checker.
+//
+// Every handler is guarded (_expected-reads.js): a pass that left a member of
+// `expected` unread is a fail.
 
 const discovery = require('../../../src/distribution/discovery.js');
 const site = require('../../../src/distribution/site.js');
 const llms = require('../../../src/distribution/llms.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 /** RFC 8288 §3.4 / RFC 9264 §4.2.4: the members that are NOT target attributes. */
 const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title*', 'type']);
@@ -70,16 +75,17 @@ function linksetCase(vector) {
     // NO READING. The vector states the six attributes the rules require, so the
     // checker's verdict is asserted straight: a conforming Level-2 document raises
     // nothing.
-    ['the document validates', discovery.check(doc, { level: 2 }).length === 0
-      && (expected.valid === undefined || expected.valid === true),
-    JSON.stringify(discovery.check(doc, { level: 2 }))],
+    ['the document validates', (discovery.check(doc, { level: 2 }).length === 0) === (expected.valid !== false),
+      JSON.stringify(discovery.check(doc, { level: 2 }))],
   ]);
 }
 
 function level0Case(vector) {
   const expected = vector.expected;
   const doc = vector.input.wellknown;
-  const errors = discovery.check(doc, { level: 0 });
+  // The Level the case states its verdict for (Level 0, the form this case is about).
+  const level = expected.level;
+  const errors = discovery.check(doc, { level });
   const context = doc.linkset[0];
   const attributes = Object.keys(context)
     .filter((k) => k !== 'anchor')
@@ -87,7 +93,7 @@ function level0Case(vector) {
   // The same builder at Level 0 must produce a document of the SAME shape: the
   // route set a publisher offers is its own (a CMS export need not publish
   // `/specs/`), but the structure and the omissions are the rule.
-  const built = discovery.linkset({ site: { base: vector.input.base } }, { level: 0 });
+  const built = discovery.linkset({ site: { base: vector.input.base } }, { level });
   const builtAttributes = Object.keys(built.linkset[0])
     .filter((k) => k !== 'anchor')
     .flatMap((relation) => built.linkset[0][relation].flatMap((one) => discovery.attributesOf(one)));
@@ -103,8 +109,9 @@ function level0Case(vector) {
       deepEqual(Object.keys(built), ['linkset'])
       && typeof built.linkset[0].anchor === 'string'
       && builtAttributes.length === 0
-      && discovery.check(built, { level: 0 }).length === 0,
+      && discovery.check(built, { level }).length === 0,
       JSON.stringify(built)],
+    ['level', level === 0, `the case states Level ${JSON.stringify(level)}; its documents are the Level-0 form`],
   ]);
 }
 
@@ -200,7 +207,7 @@ function reachabilityCase(vector) {
     // AGSC-02-23: a draft is not published, so it is neither reachable nor a fault.
     list.push([`not_published ${iri}`, !text.includes(iri) && !full.includes(iri), 'a draft reached the index']);
   }
-  if (vector.expected.llms_full_reachability_identical === true) {
+  if (vector.expected.llms_full_reachability_identical !== undefined) {
     const fullSections = new Map();
     let heading = null;
     for (const line of full.split('\n')) {
@@ -210,7 +217,7 @@ function reachabilityCase(vector) {
       if (entry !== null && heading !== null) fullSections.set(entry[1], heading);
     }
     list.push(['llms_full_reachability_identical',
-      deepEqual([...sectionOf.entries()].sort(), [...fullSections.entries()].sort()),
+      deepEqual([...sectionOf.entries()].sort(), [...fullSections.entries()].sort()) === vector.expected.llms_full_reachability_identical,
       JSON.stringify([...fullSections.entries()])]);
   }
   return checks(list);
@@ -237,16 +244,15 @@ function sitemapCase(vector) {
     ['xml_bytes_asserted', vector.expected.xml_bytes_asserted === false,
       'no rule pins the XML serialisation of AGSC-06-19'],
   ];
-  if (vector.expected.lastmod_is_build_instant === true) {
+  if (vector.expected.lastmod_is_build_instant !== undefined) {
     // AGSC-04-02/04-09: a per-item date would make the file depend on content dates
     // and break the double build; a second build at another instant moves every
-    // entry together and nothing else.
+    // entry together and nothing else, and the same instant reproduces the same bytes.
     const other = site.sitemap(base, vector.input.published_routes, '2027-02-03T00:00:00Z');
     const moved = [...other.matchAll(/<lastmod>([^<]+)<\/lastmod>/gu)].map((m) => m[1]);
-    list.push(['lastmod_is_build_instant', moved.every((v) => v === '2027-02-03T00:00:00Z'),
-      JSON.stringify(moved)]);
-    list.push(['the same instant reproduces the same bytes',
-      site.sitemap(base, vector.input.published_routes, vector.input.build_instant) === xml, '']);
+    const holds = moved.every((v) => v === '2027-02-03T00:00:00Z')
+      && site.sitemap(base, vector.input.published_routes, vector.input.build_instant) === xml;
+    list.push(['lastmod_is_build_instant', holds === vector.expected.lastmod_is_build_instant, JSON.stringify(moved)]);
   }
   for (const type of vector.expected.jsonld_types_closed_set || []) {
     list.push([`jsonld type ${type}`, ['Dataset', 'DefinedTerm', 'TechArticle'].includes(type),
@@ -539,6 +545,47 @@ function wholeDocumentCase(vector) {
   return checks(list);
 }
 
+/**
+ * disc-0022 (AGSC-11-20 with AGSC-09-93) — a restricted node carries exactly one
+ * `rel#access` link. Each document is judged by the discovery checker that ships with
+ * the engine (`tools/validate-wellknown`), run as a process over the document written
+ * where a build writes it, at the case's Level: its verdict and its complete list of
+ * errors are the case's.
+ */
+function accessLinkCase(vector) {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { spawnSync } = require('node:child_process');
+  const tool = path.resolve(__dirname, '..', '..', '..', 'tools', 'validate-wellknown');
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), `agsc-${vector.id}-`));
+  try {
+    for (const input of vector.input.cases || []) {
+      const want = byName.get(input.name);
+      if (want === undefined) { list.push([input.name, false, 'the vector states no expected case of this name']); continue; }
+      const dir = path.join(root, input.name, '.well-known');
+      fs.mkdirSync(dir, { recursive: true });
+      const file = path.join(dir, 'knowledge-linkset');
+      fs.writeFileSync(file, `${canonicalize(input.document)}\n`);
+      const run = spawnSync(process.execPath, [tool, file, '--level', String(input.level), '--json'], { encoding: 'utf8' });
+      let findings = null;
+      try { findings = JSON.parse(run.stdout).findings; } catch { /* reported below */ }
+      if (!Array.isArray(findings)) { list.push([`${input.name} envelope`, false, run.stdout + run.stderr]); continue; }
+      const errors = findings.filter((f) => f.severity === 'error');
+      list.push([`${input.name} valid`, (errors.length === 0) === want.valid && (run.status === 0) === want.valid,
+        `exit ${run.status}: ${JSON.stringify(findings)}`]);
+      const matched = findingsMatch(want.findings, errors);
+      list.push([`${input.name} findings`, matched.ok && errors.length === want.findings.length,
+        matched.detail || JSON.stringify(errors)]);
+    }
+  } finally {
+    fs.rmSync(root, { force: true, recursive: true });
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'disc-0013': llmsCase,
   'disc-0014': llmsCase,
@@ -548,6 +595,7 @@ const HANDLERS = {
   'disc-0019': newerMinorCase,
   'disc-0020': wholeDocumentCase,
   'disc-0021': wholeDocumentCase,
+  'disc-0022': accessLinkCase,
   'disc-0016': linksetCase,
   'disc-0004': level0Case,
   'disc-0005': peerCase,
@@ -556,8 +604,9 @@ const HANDLERS = {
   'disc-0009': sitemapCase,
 };
 
-module.exports.run = (vector, ctx) => {
+// Guarded: a pass that left a member of `expected` unread is a fail (_expected-reads.js).
+module.exports.run = guarded((vector, ctx) => {
   const handler = HANDLERS[vector.id];
   if (handler === undefined) return { status: 'fail', detail: `no handler for ${vector.id}` };
   return handler(vector, ctx);
-};
+});

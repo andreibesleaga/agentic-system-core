@@ -26,12 +26,17 @@ const skills = require('../../src/interchange/adapters/skills.js');
 const frontmatter = require('../../src/knowledge/frontmatter.js');
 const yaml = require('../../src/knowledge/yaml.js');
 
+// The engine refuses an `AGSC_` name it does not know (AGSC-01-37, `AGSC-E004`, exit 2).
+// The suite's own switches start with `AGSC_` too (`AGSC_AUDIT=1` for the architecture
+// lane), so none reaches the commands this file starts.
+for (const name of Object.keys(process.env)) if (name.startsWith('AGSC_')) delete process.env[name];
+
 const ROOT = path.resolve(__dirname, '..', '..');
 const BIN = path.join(ROOT, 'bin', 'agsc.js');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const fixture = (name) => path.join(ROOT, 'tests', 'fixtures', `skills-${name}`);
 const EPOCH = '1767225600';
-const SPEC = '1.0.0-rc.7';
+const SPEC = '1.0.0';
 const LAYOUTS = ['agentskills', 'claude-plugin', 'cursor', 'marketplace', 'windsurf'];
 
 const PROV = 'prov:\n  origin: human\n  operator: human:andreibesleaga\n';

@@ -11,9 +11,9 @@ const { buildOutFault } = require('../../knowledge/validate.js');
 /**
  * Names that address JavaScript's object machinery rather than a configuration key.
  * Configuration is CLOSED (AGSC-01-18): none of them is a key of the schema, so the
- * config lane reports each as `AGSC-E004`; the merge never writes through them. Until
- * 2026-10-06 `{"__proto__": {"x": 1}}` in
- * `agsc.config.json` set `Object.prototype.x` for the whole engine process.
+ * config lane reports each as `AGSC-E004`; the merge never writes through them, so
+ * `{"__proto__": {"x": 1}}` in `agsc.config.json` cannot set `Object.prototype.x` for
+ * the whole engine process.
  */
 const UNSAFE_SEGMENTS = Object.freeze(new Set(['__proto__', 'constructor', 'prototype']));
 
@@ -81,6 +81,19 @@ function grammarFault(name, desc, value) {
 }
 
 /**
+ * AGSC-01-37: the message for an `AGSC_` name this engine does not know, naming the
+ * layer it came from and the remedy.
+ * @param {string} name the AGSC_* name
+ * @param {string} layerName 'env' (the process environment) or 'dotenv' (the `.env` file)
+ * @returns {string}
+ */
+function unknownNameMessage(name, layerName) {
+  return layerName === 'dotenv'
+    ? `${name} in the .env file is not a configuration name this engine knows; remove that line (AGSC-01-37)`
+    : `environment variable ${name} is not a configuration name this engine knows; unset it (AGSC-01-37)`;
+}
+
+/**
  * Apply one env-style layer (a Map<AGSC_name, rawStringValue>) on top of
  * `config`/`sources`/`credentials`, per AGSC-01-37's addressing rules.
  * Returns the list of recognised AGSC_* names this layer actually touched
@@ -92,8 +105,10 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
     const desc = env.pathForEnvName(name);
     if (!desc) {
       // Recognised AGSC_ prefix but not a known key: AGSC-E004 (invalid/unknown
-      // configuration key), reported as a finding, never applied.
-      findings.push({ code: 'AGSC-E004', message: `unknown configuration override ${name}`, severity: 'error' });
+      // configuration key), reported as a finding, never applied. The message says
+      // where the name came from and how to clear it, because the usual cause is a
+      // shell variable the operator set for something else.
+      findings.push({ code: 'AGSC-E004', message: unknownNameMessage(name, layerName), severity: 'error' });
       continue;
     }
     if (desc.kind === 'environment') {
@@ -114,9 +129,9 @@ function applyEnvLayer(config, sources, credentials, findings, entries, layerNam
       }
       // The value of a key meets that key's grammar whichever layer sets it
       // (AGSC-01-37): the schema `pattern`, and for `build.out` the rule that it
-      // never names `content/` or `dist/` (AGSC-01-19). Until 2026-10-07 only the
-      // project file was checked, and `AGSC_BUILD_OUT=content` built into the
-      // source tree with exit 0.
+      // never names `content/` or `dist/` (AGSC-01-19). Checking the project file
+      // alone would let `AGSC_BUILD_OUT=content` build into the source tree with
+      // exit 0.
       const grammar = grammarFault(name, desc, c.value);
       if (grammar !== null) {
         findings.push({ code: 'AGSC-E204', message: grammar, severity: 'error', path: desc.path });
@@ -190,20 +205,17 @@ function load(options) {
 
   // 1. schema defaults (lowest precedence). config.schema.json is frozen at
   // the current tag and does not carry a literal JSON-Schema `default` for
-  // four keys the spec prose nonetheless defaults (a schema gap). Applied
+  // three keys the spec prose nonetheless defaults (a schema gap). Applied
   // here, explicitly, so the engine behaves per the spec today regardless
   // of the schema gap:
   //   - AGSC-01-19: `build.out` MUST default to "www".
-  //   - spec/06-surfaces.md ("/feed.xml is emitted only when build.feed is
-  //     true (default true)"): `build.feed` defaults to true, not false;
-  //     the specification text is the authoritative value, and it is
-  //     unambiguous here.
   //   - AGSC-01-18: `i18n.default` defaults to "en".
   //   - AGSC-09-94 (AGSC-01-18 "run{enabled,...} required... enabled default
   //     false"): `run.enabled` defaults to false.
+  // `build.feed` gets no default: it is a name reserved to 1.1 that a 1.0 tool
+  // refuses in a configuration file (AGSC-00-20, AGSC-06-01), and nothing reads it.
   const PROSE_DEFAULTS = [
     ['build.out', 'www'], // AGSC-01-19
-    ['build.feed', true], // spec/06-surfaces.md ("default true")
     ['i18n.default', 'en'], // AGSC-01-18
     ['run.enabled', false], // AGSC-09-94, AGSC-01-18
   ];
@@ -295,4 +307,60 @@ function load(options) {
   return { config, sources, findings, envOverrides, ignoredEnvNames, credentials };
 }
 
-module.exports = { load };
+/** The layers of AGSC-01-37 that override the configuration file (AGSC-09-09's order). */
+const OVERRIDE_LAYERS = new Set(['dotenv', 'env', 'flag']);
+/** The arrays whose named entries an override addresses (`AGSC_AGENT_<NAME>_<KEY>`, env.js). */
+const NAMED_ENTRIES = Object.freeze(['agents', 'channels']);
+
+/** The value at a dotted path of a plain object, or `undefined`. */
+function valueAt(obj, segs) {
+  let cur = obj;
+  for (const s of segs) {
+    if (cur === null || typeof cur !== 'object' || !Object.prototype.hasOwnProperty.call(cur, s)) return undefined;
+    cur = cur[s];
+  }
+  return cur;
+}
+
+/**
+ * AGSC-01-37 / AGSC-04-18: the configuration input of the build — `agsc.config.json`
+ * with the environment overrides applied, and nothing else. Only the values an
+ * override layer set (the `.env` file, the process environment, a flag) are taken
+ * from the resolved configuration; the schema defaults and a user configuration are
+ * not overrides and are not build inputs (AGSC-04-18 names four inputs), so a build
+ * with no override is the build of the file alone, byte for byte. A named entry of
+ * `agents[]` or `channels[]` is matched by `name`, and one the file does not hold is
+ * added, in the resolved configuration's order. The file's object is never changed:
+ * with no override it is returned as it is, otherwise a copy is.
+ *
+ * @param {object} file the parsed `agsc.config.json`
+ * @param {{config?:object, sources?:object}} resolved the result of `load`
+ * @returns {object}
+ */
+function withOverrides(file, resolved) {
+  const sources = (resolved && resolved.sources) || {};
+  const paths = Object.keys(sources).filter((p) => OVERRIDE_LAYERS.has(sources[p])).sort();
+  if (paths.length === 0) return file;
+  const out = JSON.parse(JSON.stringify(file || {}));
+  const config = resolved.config || {};
+  for (const p of paths) {
+    const segs = p.split('.');
+    if (!NAMED_ENTRIES.includes(segs[0])) setPath(out, p, valueAt(config, segs));
+  }
+  for (const key of NAMED_ENTRIES) {
+    for (const entry of (Array.isArray(config[key]) ? config[key] : [])) {
+      const keys = paths.filter((p) => p.startsWith(`${key}.${entry && entry.name}.`)).map((p) => p.split('.')[2]);
+      if (keys.length === 0) continue;
+      if (!Array.isArray(out[key])) out[key] = [];
+      let target = out[key].find((e) => e && e.name === entry.name);
+      if (target === undefined) {
+        target = { name: entry.name };
+        out[key].push(target);
+      }
+      for (const k of keys) target[k] = entry[k];
+    }
+  }
+  return out;
+}
+
+module.exports = { load, withOverrides };

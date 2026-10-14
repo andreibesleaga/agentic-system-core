@@ -4,7 +4,7 @@
 
 This document describes the benchmark kit under `bench/` and the standalone runner `tools/bench`. The measured results live in `docs/MEASUREMENTS.md`; this file is about method.
 
-**Two halves, deliberately separated.** The *measurements* half needs no model, no network, no key and no external dataset: conformance counts, determinism byte comparisons, the security floor, build curves, accessibility. It runs today, and it is what carries this format's own property claims. The *studies* half — retrieval quality, memory competencies, the six modes end to end — needs a corpus, a judge model and a licence check for every dataset, and it is the `bench` verb's work at **v1.0.1**, within thirty days of the 1.0 release. Nothing here moves that date.
+**Two halves, deliberately separated.** The *measurements* half needs no model, no network, no key and no external dataset: conformance counts, determinism byte comparisons, the security floor, build curves, accessibility. It runs today, and it is what carries this format's own property claims. The *studies* half — retrieval quality, memory competencies, the six modes end to end — needs a corpus, a judge model and a licence check for every dataset, and it is the work of the `tools/bench` program at **1.1**, the version at which the declared scope makes the benchmark kit normative (AGSC-00-20). There is no `agsc bench` verb.
 
 ## Running it
 
@@ -54,7 +54,7 @@ Twenty hand-written intents, one gold item each: twelve answered by published it
 
 **This set is a harness test, not a study.** It has no dev/test split, no generated paraphrases, no second annotator, no leakage control and no confidence intervals, and the intents and the items have the same author. It is published as the first run of the instrument.
 
-## The study the kit is built for (v1.0.1)
+## The study the kit is built for (1.1)
 
 The retrieval study is the one benchmark contribution this project claims, and only in this form: *to the author's knowledge no published benchmark measures intent-to-item retrieval across a knowledge node's several agent surfaces — a plain-text index, a prebuilt lexical index, a chunk export, a tool server and a graph dump — so the task set and its labels are released as a contribution in their own right.* No superlative, and no performance claim.
 
@@ -105,4 +105,4 @@ Every licence in this table is quoted from the source page in the project's date
 1. That it is faster, cheaper or more accurate than another system — unless that system was run here on the same tasks and both configurations are published, and even then as an observation on a date.
 2. That the content lints prove safety. AGSC-08-19 forbids it in terms: "These lints prove neither safety nor the absence of novel injection … An implementation MUST NOT claim more."
 3. That an automated accessibility pass establishes WCAG conformance. axe-core finds on average 57 % of WCAG issues automatically; that is the ceiling of what an automated pass can say.
-4. That determinism holds across implementations, until a second implementation has run the vectors. Two of nineteen populated areas have an independent pass today, and none of the seventeen that carry emitted bytes.
+4. That determinism holds across implementations, until a second implementation has run the vectors. Seven of the twenty populated areas are run by a second implementation today, the Python checker distribution, which passes every vector of them that it runs; no second implementation builds a whole node, so the emitted files of two implementations have not been compared byte for byte.

@@ -15,13 +15,14 @@
 //
 // Pure function of its input.
 
-const { TERMS } = require('../knowledge/chunks.js');
+const { TERMS, citationAnchor } = require('../knowledge/chunks.js');
 const { singleLine } = require('../knowledge/unicode.js');
 const { ASSISTANCE } = require('../knowledge/provenance-header.js');
 const diagrams = require('../knowledge/diagrams.js');
 const lint = require('../governance/lint.js');
 const { WELLKNOWN_PATH, MEDIA_TYPE } = require('./discovery.js');
 const theme = require('./theme.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** The five characters that must never reach markup unescaped. */
 function escapeHtml(value) {
@@ -160,6 +161,45 @@ function withoutRepeatedTitle(body, title) {
   return text.slice(match[0].length);
 }
 
+/**
+ * AGSC-06-28 / AGSC-06-30: the in-page anchors of a build's chunks, by item slug.
+ * Only a chunk that begins with a heading has one — a named section's first piece of
+ * text (`ordinal` 0); chunk 0, the later pieces Cut 2 makes, a cluster's chunk and an
+ * attachment's chunk are cited at the top of their page. The anchor is `chunk-` and
+ * the first 16 hex characters of the chunk's `id` (`knowledge/chunks.js#citationAnchor`).
+ *
+ * @param {Array<object>} records the chunk records of `knowledge/chunks.js#records`
+ * @returns {Map<string, Array<{anchor:string, section:string}>>}
+ */
+function chunkAnchors(records) {
+  const out = new Map();
+  for (const c of records || []) {
+    if (c.section === '' || c.ordinal !== 0 || c.type !== 'text') continue;
+    if (!out.has(c.item)) out.set(c.item, []);
+    out.get(c.item).push({ anchor: citationAnchor(c.id).slice(1), section: c.section });
+  }
+  return out;
+}
+
+/**
+ * AGSC-06-28: "a page MUST render [the chunk citation] as an in-page anchor on the
+ * chunk's heading". The anchor is an empty `<span>` opening that heading, so the
+ * heading keeps its AGSC-03-13 `id` and every link to it still resolves. A chunk's
+ * `section` is the anchor of a level-2 or level-3 heading (AGSC-06-27), and an
+ * AGSC-03-13 anchor holds only `[a-z0-9-]`, so the pattern meets each heading tag
+ * once and never backtracks.
+ *
+ * @param {string} body the rendered body
+ * @param {Array<{anchor:string, section:string}>} [anchors] this item's anchors
+ * @returns {string}
+ */
+function withChunkAnchors(body, anchors) {
+  if (!Array.isArray(anchors) || anchors.length === 0) return body;
+  const bySection = new Map(anchors.map((a) => [a.section, a.anchor]));
+  return body.replace(/<(h[23]) id="([a-z0-9-]*)">/gu, (open, _tag, id) => (bySection.has(id)
+    ? `${open}<span id="${escapeHtml(bySection.get(id))}"></span>` : open));
+}
+
 function shell(page) {
   const head = [
     '<!doctype html>',
@@ -176,7 +216,7 @@ function shell(page) {
   // (the 404 page) and a build with no site base carry none.
   const canonical = page.canonical != null ? page.canonical
     : (typeof page.siteBase === 'string' && page.siteBase !== '' && typeof page.route === 'string'
-      ? `${page.siteBase.replace(/\/+$/u, '')}${page.route}` : null);
+      ? `${withoutTrailingSlashes(page.siteBase)}${page.route}` : null);
   if (canonical !== null) head.push(`<link rel="canonical" href="${escapeHtml(canonical)}">`);
   if (page.alternates !== undefined) {
     for (const alt of page.alternates) {
@@ -352,7 +392,8 @@ function itemPage(item, options = {}) {
   if (item.status === 'deprecated') {
     parts.push('<p class="deprecated" role="note">This item is deprecated.</p>');
   }
-  parts.push(withoutRepeatedTitle(rendered.html, item.title == null ? item.slug : item.title));
+  // AGSC-06-28: the anchor of each chunk that begins with a heading, on that heading.
+  parts.push(withoutRepeatedTitle(withChunkAnchors(rendered.html, options.chunkAnchors), item.title == null ? item.slug : item.title));
   // AGSC-03-01: the typed Links the item authors, each target linked — the caller
   // passes published targets only, so a held-back item is never named here.
   const typed = (Array.isArray(options.links) ? options.links : []).filter((l) => l.targets.length > 0);
@@ -532,7 +573,9 @@ function composePage({ assets }, options = {}) {
       '<input id="filter" name="filter" type="search" autocomplete="off" spellcheck="false" aria-controls="items">',
       '</form></div>',
       '<p id="filter-status" role="status" aria-live="polite"></p>',
-      '<ul id="items"><li>Loading the published graph…</li></ul>',
+      // Replaced by one checkbox per item once the controller runs; without script it
+      // says what the page needs and where the same result comes from.
+      '<ul id="items"><li>This page needs JavaScript; the same result comes from <code>agsc compose</code>.</li></ul>',
       '<h2>Verdict</h2>',
       '<p id="validity" aria-live="polite">Select one or more items to compose.</p>',
       // Focusable: the stylesheet lets a long verdict scroll sideways, and a scrollable
@@ -696,6 +739,7 @@ function changelogPage(rows, options = {}) {
 
 module.exports = {
   homePage,
+  chunkAnchors, withChunkAnchors,
   shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
   boardPage, composePage, legalPage, searchPage,
   adoptsTerms, escapeHtml, termsLine, NO_CLAIM_SENTENCE, HONEST_LIMIT,

@@ -54,6 +54,8 @@ const { provenanceHeader: provenanceBlock } = require('../knowledge/provenance-h
 const { finding } = require('../knowledge/validate.js');
 const slugs = require('../knowledge/slug.js');
 const { fenceProse } = require('../knowledge/markdown.js');
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
+const { keyValueLine } = require('../shared/key-value-line.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -123,7 +125,7 @@ function packText(cluster, members, options) {
       `- type: ${singleLine(member.type)}`, '',
       fenceProse(member.body === '' || member.body == null ? member.description : member.body), '');
   }
-  return `${lines.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(lines.join('\n'));
 }
 
 /**
@@ -237,7 +239,7 @@ function install(index, available, installed, options) {
   const writes = [];
   const updated = [];
   const unchanged = [];
-  const target = String(options.target).replace(/\/+$/u, '');
+  const target = withoutTrailingSlashes(String(options.target));
 
   for (const pack of (index && index.packs) || []) {
     const name = String(pack.name);
@@ -291,6 +293,27 @@ function diffSummary(before, after) {
   return `+${added} -${removed} lines`;
 }
 
+/** A pack frontmatter key, its colon and the blanks after it. */
+const PACK_KEY = /^([a-z][a-z0-9_-]*):\s*/u;
+
+/**
+ * The "key: value" lines of a pack's frontmatter block, each value trimmed; a line whose
+ * value holds a carriage return, U+2028 or U+2029 inside it is not read. Linear steps
+ * (`shared/key-value-line.js`): a pack handed to `skills import` is untrusted input.
+ *
+ * @param {string} yamlText
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {object}
+ */
+function declaredKeys(yamlText, meter) {
+  const declared = Object.create(null);
+  for (const line of String(yamlText).split('\n')) {
+    const pair = keyValueLine(line, PACK_KEY, meter);
+    if (pair !== null) declared[pair.key] = pair.value.trim();
+  }
+  return declared;
+}
+
 /**
  * AGSC-07-22: "`skills import` MUST map a `SKILL.md` to a `procedure` item,
  * round-tripping without loss of the declared fields."
@@ -318,11 +341,7 @@ function importPack(text, options) {
       + ' (AGSC-07-19, AGSC-07-20, AGSC-02-01)', { file: PACK_FILE, severity: 'error' }));
     return { body: '', findings, frontmatter: null, path: null };
   }
-  const declared = Object.create(null);
-  for (const line of match[1].split('\n')) {
-    const pair = /^([a-z][a-z0-9_-]*):\s*(.*)$/u.exec(line);
-    if (pair !== null) declared[pair[1]] = pair[2].trim();
-  }
+  const declared = declaredKeys(match[1]);
   const name = String(declared.name || '');
   if (!slugs.isValid(name)) {
     findings.push(finding('AGSC-E204',
@@ -360,11 +379,7 @@ function splitPack(text, options) {
   const source = String(text == null ? '' : text);
   const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/u.exec(source);
   if (match === null || !match[2].includes('<!-- agsc:provenance') || !match[2].includes(PACK_MARKER)) return null;
-  const declared = Object.create(null);
-  for (const line of match[1].split('\n')) {
-    const pair = /^([a-z][a-z0-9_-]*):\s*(.*)$/u.exec(line);
-    if (pair !== null) declared[pair[1]] = pair[2].trim();
-  }
+  const declared = declaredKeys(match[1]);
   const cluster = String(declared.name || '');
   const lines = match[2].split('\n');
   const items = [];
@@ -378,8 +393,8 @@ function splitPack(text, options) {
     if (open === null) continue;
     let end = i + 6;
     while (end < lines.length && lines[end] !== open[1]) end += 1;
-    const slug = iri[1].replace(/\/+$/u, '').split('/').pop();
-    const body = `${lines.slice(i + 6, end).join('\n').replace(/\n+$/u, '')}\n`;
+    const slug = withoutTrailingSlashes(iri[1]).split('/').pop();
+    const body = withOneTrailingFeed(lines.slice(i + 6, end).join('\n'));
     i = end;
     if (type[1] !== 'procedure') {
       findings.push(finding('AGSC-E506', `${iri[1]} is a ${type[1]}, not a procedure; a skill import maps`
@@ -423,11 +438,11 @@ function unfence(text) {
     }
     out.push(line);
   }
-  return `${out.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(out.join('\n'));
 }
 
 module.exports = {
   DESCRIPTION_MAX, FORBIDDEN_KEYS, INSTALL_TARGETS, PACK_FILE, TERMS,
-  diffSummary, executableViolations, fenceProse, importPack, install,
+  declaredKeys, diffSummary, executableViolations, fenceProse, importPack, install,
   packDescription, packText, packs, provenanceHeader, splitPack, unfence,
 };

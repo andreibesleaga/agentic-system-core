@@ -27,6 +27,7 @@
 
 const { canonicalize } = require('../knowledge/jcs.js');
 const { isObject } = require('./records.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** The own-record payload of one item, as the base64 of its JCS bytes. */
 function encodeRecord(record) {
@@ -63,7 +64,7 @@ function baseOf(value) {
   if (typeof value !== 'string') return null;
   let text = value.trim();
   if (text.endsWith(WELLKNOWN)) text = text.slice(0, text.length - WELLKNOWN.length);
-  text = text.replace(/\/+$/u, '');
+  text = withoutTrailingSlashes(text);
   return text === '' ? null : `${text}/`;
 }
 

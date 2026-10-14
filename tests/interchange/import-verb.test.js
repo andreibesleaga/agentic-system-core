@@ -50,7 +50,7 @@ function workspace(extra = {}) {
       tdm_crawlers: ['Applebot-Extended', 'CCBot', 'ClaudeBot', 'GPTBot', 'Google-Extended', 'meta-externalagent'],
       title: 'Fixture Node',
     },
-    spec_version: '1.0.0-rc.7',
+    spec_version: '1.0.0',
     ...extra,
   }, null, 2)}\n`);
   // RFC 9116 §2.5.3: a Bundle that publishes a site states a security contact, and
@@ -70,7 +70,7 @@ function run(argv, dir) {
     env: { SOURCE_DATE_EPOCH: EPOCH },
     ports: { fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr,
     stdout,
     version: '0.0.0',
@@ -177,7 +177,7 @@ test('a source directory holding no record of the format is AGSC-E901, and nothi
 test('AGSC-01-17: a Bundle whose configuration lacks an identity is AGSC-E003, not a guess', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-noconfig-'));
   temporaries.push(dir);
-  fs.writeFileSync(path.join(dir, 'agsc.config.json'), '{"spec_version":"1.0.0-rc.7"}\n');
+  fs.writeFileSync(path.join(dir, 'agsc.config.json'), '{"spec_version":"1.0.0"}\n');
   const result = run(IMPORT, dir);
   // AGSC-09-08: AGSC-E003 is the usage class, exit 2.
   assert.strictEqual(result.exit, 2);

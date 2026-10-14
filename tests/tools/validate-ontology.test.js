@@ -30,12 +30,16 @@ const PREAMBLE = [
 function ontologyRoot(body, extra = {}) {
   return writeTree(tmpdir(), {
     'ontology/agsc.ttl': `${PREAMBLE}${body}`,
-    'spec/00-overview.md': '`spec_version: "1.0.0-rc.7"`\n',
+    'spec/00-overview.md': '`spec_version: "1.0.0"`\n',
     ...extra,
   });
 }
 
+// `skos:Concept` is declared, as AGSC-05-25 asks of every class of another
+// vocabulary the file names; without it the fixture is itself a fault.
 const CONCEPT = [
+  'skos:Concept a owl:Class .',
+  '',
   'asc:Concept',
   '    a owl:Class ;',
   '    rdfs:label "Concept" ;',
@@ -65,7 +69,7 @@ describe('validate-ontology — usage and the envelope', () => {
     const { code, json } = envelope('validate-ontology', [path.join(root, 'ontology', 'agsc.ttl')]);
     assert.equal(code, 0);
     assert.equal(json.verb, 'validate-ontology');
-    assert.equal(json.spec_version, '1.0.0-rc.7');
+    assert.equal(json.spec_version, '1.0.0');
     assert.deepEqual(json.findings, []);
   });
 

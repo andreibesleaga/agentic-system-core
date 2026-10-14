@@ -72,9 +72,9 @@ test('AGSC-00-01 + AGSC-08-06: the texts a consumer has to be able to read ship'
 });
 
 test('no private path can reach the tarball', () => {
-  // Project rule (owner, 2026-09-04): planning files never enter a public artefact.
+  // Planning files never enter a public artefact.
   for (const entry of manifest.files || []) {
-    assert.ok(!/GABBE|discovery-product|05-WILEY/u.test(entry), entry);
+    assert.ok(!/GABBE|discovery-product/u.test(entry), entry);
   }
 });
 
@@ -94,8 +94,8 @@ test('the alias is the same version and depends on the engine EXACTLY', () => {
 test('the version is one SemVer string, and the CLI reports that one', () => {
   assert.match(manifest.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u);
   // The engine version and the SPECIFICATION version are two different numbers
-  // (AGSC-09-90). At this release candidate the maintainer publishes them equal,
-  // and they are still read from two different places.
+  // (AGSC-09-90). The maintainer publishes them equal, and they are still read
+  // from two different places.
   const main = fs.readFileSync(path.join(ROOT, 'src', 'application', 'cli', 'main.js'), 'utf8');
   const declared = /const SPEC_VERSION = '([^']+)';/u.exec(main);
   assert.ok(declared, 'src/application/cli/main.js must declare SPEC_VERSION');

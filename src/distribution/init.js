@@ -18,6 +18,7 @@ const { finding } = require('../knowledge/validate.js');
 const { slugify } = require('../knowledge/slug.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
 const { instantFromEpoch } = require('../governance/ledger.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-02-94(a): the development placeholder AGSC-01-19 and the schema admit. */
 const PLACEHOLDER_BASE = 'http://localhost/';
@@ -156,7 +157,7 @@ function plan(files, options = {}) {
   // Never adopted: the build output, the generated `dist/` and the copies
   // AGSC-02-95 made under content/assets/ — adopting them a second time would
   // move a generated file or an asset copy over an item (AGSC-02-91, AGSC-01-23).
-  const out = `${String((options.config && options.config.build && options.config.build.out) || DEFAULT_OUT).replace(/\/+$/u, '')}/`;
+  const out = `${withoutTrailingSlashes(String((options.config && options.config.build && options.config.build.out) || DEFAULT_OUT))}/`;
   const generated = (p) => p.startsWith(out) || p.startsWith('dist/') || p.startsWith(ASSETS_PREFIX);
   const all = [...(files || [])]
     .sort((a, b) => compareCodePoint(String(a.path), String(b.path)));

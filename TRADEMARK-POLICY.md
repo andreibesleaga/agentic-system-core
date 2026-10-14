@@ -27,14 +27,14 @@ ask.
 
 ## Saying that you conform
 
-Say it in exactly this form, and only when it is true for the version and the
-level you name:
-
-> «Your implementation» «version» conforms to AgenticSystemCore «spec version»,
-> Level «n». It passed «passed» of «total» conformance vectors on «date».
+Use the sentence that
+[`docs/CONFORMANCE-STATEMENTS.md`](docs/CONFORMANCE-STATEMENTS.md) gives, with
+every element rule AGSC-09-01 lists, and only when it is true for the version and
+the level you name. This policy does not restate that sentence, so there is one
+wording to follow.
 
 The conformance vectors are how this name keeps its meaning: an implementation
-that passes them is entitled to say so, in these words, without asking; one
+that passes them is entitled to say so, in those words, without asking; one
 that does not pass them may not use the name to describe itself as conforming.
 
 ## The attribution line
@@ -72,8 +72,9 @@ attached to one thing.
   organisation, domain name or social-media handle.
 - Using it so that people may think this project sponsors, certifies, approves
   or is responsible for what you offer.
-- Saying "conforms", "compatible" or "certified" without the version, the level
-  and the passing vectors — or at all, if the vectors do not pass.
+- Saying "conforms", "compatible" or "certified" without the statement
+  [`docs/CONFORMANCE-STATEMENTS.md`](docs/CONFORMANCE-STATEMENTS.md) sets out —
+  or at all, if the vectors do not pass.
 - Registering the name, or a confusingly similar name, as a trademark,
   company name or domain name anywhere.
 

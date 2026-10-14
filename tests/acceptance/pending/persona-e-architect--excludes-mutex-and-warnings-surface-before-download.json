@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "the panel's messages need a browser; the closure algebra behind them is covered by the compose vectors.",
+  "scenario": "Excludes mutex and warnings surface before download"
+}

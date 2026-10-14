@@ -104,11 +104,10 @@ function etag(hex) {
  */
 function headerSets(config = {}) {
   const restricted = config.visibility === 'restricted';
-  // AGSC-06-17 (amended 2026-10-06): ONE set per address pattern, in the order the
-  // patterns first occur. The reference host serves only one of two blocks written
-  // for the same pattern; until 2026-10-06 the CORS pair and
-  // the content type of fourteen addresses were two blocks, and the host dropped the
-  // CORS one.
+  // AGSC-06-17 (as amended): ONE set per address pattern, in the order the patterns
+  // first occur. The reference host serves only one of two blocks written for the
+  // same pattern, so the CORS pair and the content type of an address written as two
+  // blocks would lose the CORS one.
   const byRoute = new Map();
   const add = (route, headers) => {
     if (!byRoute.has(route)) byRoute.set(route, []);
@@ -142,8 +141,8 @@ function headersFile(config = {}) {
 }
 
 /**
- * `_redirects`, generated (AGSC-06-04, AGSC-06-17). The 0.0.x discovery alias is
- * present until the last 0.0.x consumer is retired; a renamed or superseded
+ * `_redirects`, generated (AGSC-06-04, AGSC-06-17). The legacy discovery alias
+ * (AGSC-06-17, a SHOULD) is present; a renamed or superseded
  * slug adds one entry per `aliases[]` value.
  *
  * @param {Array<{from:string, to:string, status?:number}>} [renames]

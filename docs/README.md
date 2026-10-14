@@ -21,8 +21,8 @@ kind of reader down one path.
 
 | Page | For |
 |---|---|
-| [guides/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/README.md) | one short guide per mode, on your own files: who it is for, what you get, the commands and what they print |
-| [USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md) | nineteen concrete scenarios with their commands |
+| [guides/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/README.md) | seven short guides, one per mode and one for publishing, on your own files: who it is for, what you get, the commands and what they print |
+| [USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md) | twenty-one concrete scenarios with their commands |
 | [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md) | connecting agents, frameworks and repositories to a node |
 | [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) | the local tool server for an AI assistant |
 | [PLUGINS.md](PLUGINS.md) | writing a plugin of one of the eight kinds |
@@ -42,7 +42,7 @@ kind of reader down one path.
 | [TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md) | the test levels and how to run them |
 | [RULE-COVERAGE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RULE-COVERAGE.md) | for every rule, the checks that verify it (generated) |
 | [REQUIREMENTS-MATRIX.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/REQUIREMENTS-MATRIX.md) | for every requirement of the PRD, the rules that trace to it and the checks behind them (generated) |
-| [ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) | the gates, the size limits, the dependency rule, and how the five repositories are checked |
+| [ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) | the gates, the size limits, the dependency rule, and how the four public repositories are checked |
 | [MEASUREMENTS.md](MEASUREMENTS.md), [BENCHMARKS.md](BENCHMARKS.md) | the measured numbers and the method behind them |
 | [diagrams/](diagrams/README.md) | the diagram pack: Mermaid sources and rendered SVG |
 | [ROADMAP.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ROADMAP.md) | what composition and the graph do today, and what is planned for the next version |

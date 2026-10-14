@@ -10,7 +10,8 @@
 // duplicated.
 //
 // Codes emitted here, and the rule each comes from:
-//   AGSC-E202 `agent`/`model` missing under an `ai-*` origin   AGSC-08-01
+//   (AGSC-E202 `agent`/`model` missing under an `ai-*` origin, AGSC-08-01, is
+//   knowledge/validate.js#aiProvenance, run by lint.js)
 //   AGSC-E203 a gate's `checks[]` disagrees with its `level`   AGSC-02-18
 //   AGSC-E501 `prov` missing                                   AGSC-08-01
 //   AGSC-E503 `prov.operator` missing                          AGSC-08-01
@@ -21,6 +22,7 @@
 const links = require('../knowledge/links.js');
 const { finding } = require('./finding.js');
 const agents = require('./agents.js');
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
 
 /** AGSC-02-07: the four origins. */
 const ORIGINS = Object.freeze(['human', 'ai-assisted', 'ai-generated', 'imported']);
@@ -60,7 +62,7 @@ const slugOfPath = (p) => {
 
 /** The last contiguous run of `Key: value` lines of a commit message (AGSC-08-20b). */
 function trailerBlock(message) {
-  const lines = String(message === undefined ? '' : message).replace(/\n+$/u, '').split('\n');
+  const lines = withoutTrailingFeeds(String(message === undefined ? '' : message)).split('\n');
   const block = [];
   for (let i = lines.length - 1; i >= 0; i -= 1) {
     if (!TRAILER_LINE.test(lines[i])) break;
@@ -120,12 +122,14 @@ function checkTrailers(message, context = {}) {
     findings.push(finding('AGSC-E504',
       `the Assisted-by line does not match the AGSC-08-06 grammar: ${JSON.stringify(line)}`, at));
   }
+  // AGSC-08-07: the Assisted-by line is OPTIONAL (MAY); when one is present on an
+  // ai-* change, one of them names `prov.operator`. A missing line is no finding.
   const prov = context.prov || {};
-  if (AI_ORIGINS.includes(prov.origin)) {
+  if (AI_ORIGINS.includes(prov.origin) && assisted.length > 0) {
     const match = assisted.some((a) => a.operator === prov.operator);
     if (!match) {
       findings.push(finding('AGSC-E505',
-        `an "${prov.origin}" change needs an Assisted-by line naming prov.operator (AGSC-08-07)`,
+        `an "${prov.origin}" change: an Assisted-by line is present and none names prov.operator "${prov.operator}" (AGSC-08-07)`,
         { ...at, operator: prov.operator }));
     }
   }

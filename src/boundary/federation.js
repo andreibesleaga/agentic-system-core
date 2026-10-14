@@ -33,6 +33,7 @@ const net = require('node:net');
 const { domainToASCII } = require('node:url');
 const nquads = require('../knowledge/nquads.js');
 const { REL, finding } = require('./surfaces.js');
+const { collapseTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-07: the one discovery suffix, held as a single constant. */
 const WELLKNOWN_SUFFIX = '.well-known/knowledge-linkset';
@@ -64,42 +65,46 @@ const ASC_PEER_ORIGIN = 'https://w3id.org/agentic-system-core/ns#peerOrigin';
 /**
  * AGSC-11-08, the closed normative list, transcribed from the rule. Every
  * prefix whose IANA "Globally Reachable" value is not True, plus the
- * IPv4-embedding prefixes and the multicast ranges. `::ffff:0:0/96` is
- * deliberately NOT a rule here: the rule says a mapped address is "checked as
- * the mapped IPv4", and `node:net.BlockList` does exactly that natively —
- * adding it as a subnet would instead make BlockList match every IPv4
- * address, which would refuse the whole internet.
+ * IPv4-embedding prefixes and the multicast ranges. The IPv4-compatible
+ * `::/96` and the IPv4-mapped `::ffff:0:0/96` are refused whole, whatever IPv4
+ * address they embed, as both checkers refuse them. Each family has a list of
+ * its own and an address is checked against its own family's list only:
+ * `node:net.BlockList` matches an IPv4 address against an IPv6 subnet through
+ * its mapped form, so one shared list holding `::ffff:0:0/96` would refuse
+ * every IPv4 address, the whole internet.
  */
 const REFUSED_V4 = Object.freeze(['0.0.0.0/8', '10.0.0.0/8', '100.64.0.0/10', '127.0.0.0/8',
   '169.254.0.0/16', '172.16.0.0/12', '192.0.0.0/24', '192.0.2.0/24', '192.88.99.0/24',
   '192.168.0.0/16', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/4',
   '240.0.0.0/4', '255.255.255.255/32']);
-const REFUSED_V6 = Object.freeze(['::/128', '::1/128', '64:ff9b::/96', '64:ff9b:1::/48',
+const REFUSED_V6 = Object.freeze(['::/128', '::1/128', '::/96', '::ffff:0:0/96', '64:ff9b::/96', '64:ff9b:1::/48',
   '100::/64', '100:0:0:1::/64', '2001::/32', '2001:2::/48', '2001:10::/28', '2001:db8::/32',
   '2002::/16', '3fff::/20', '5f00::/16', 'fc00::/7', 'fe80::/10', 'fec0::/10', 'ff00::/8']);
 /** AGSC-11-07/11-08: the two prefixes `--dev` exempts. */
 const LOOPBACK_V4 = '127.0.0.0/8';
 const LOOPBACK_V6 = '::1/128';
 
-function blockList(v4, v6) {
+/** One `node:net.BlockList` per family, holding that family's prefixes only. */
+function blockList(cidrs, type) {
   const list = new net.BlockList();
-  for (const cidr of v4) {
+  for (const cidr of cidrs) {
     const [address, prefix] = cidr.split('/');
-    list.addSubnet(address, Number(prefix), 'ipv4');
-  }
-  for (const cidr of v6) {
-    const [address, prefix] = cidr.split('/');
-    list.addSubnet(address, Number(prefix), 'ipv6');
+    list.addSubnet(address, Number(prefix), type);
   }
   return list;
 }
 
-const STRICT = blockList(REFUSED_V4, REFUSED_V6);
-const WITHOUT_LOOPBACK = blockList(
-  REFUSED_V4.filter((c) => c !== LOOPBACK_V4),
-  REFUSED_V6.filter((c) => c !== LOOPBACK_V6),
-);
-const LOOPBACK_ONLY = blockList([LOOPBACK_V4], [LOOPBACK_V6]);
+const REFUSED = Object.freeze({ 4: blockList(REFUSED_V4, 'ipv4'), 6: blockList(REFUSED_V6, 'ipv6') });
+const LOOPBACK = Object.freeze({ 4: blockList([LOOPBACK_V4], 'ipv4'), 6: blockList([LOOPBACK_V6], 'ipv6') });
+
+/**
+ * Is this IP literal one of the two loopback prefixes AGSC-11-07 names, judged
+ * by the platform's parser in its own family, so that every textual form of
+ * `::1` is loopback and no mapped or compatible form of `127.0.0.1` is?
+ */
+function isLoopbackAddress(address, family) {
+  return LOOPBACK[family].check(address, family === 4 ? 'ipv4' : 'ipv6');
+}
 
 /** AGSC-11-06/11-01: the parameters actually in force, defaults where absent. */
 function effectiveFederation(config) {
@@ -133,7 +138,7 @@ function peerLinks(config) {
 function isLoopbackLiteral(host) {
   const family = net.isIP(host);
   if (family === 0) return false;
-  return LOOPBACK_ONLY.check(host, family === 4 ? 'ipv4' : 'ipv6');
+  return isLoopbackAddress(host, family);
 }
 
 function hostOf(url) {
@@ -171,12 +176,14 @@ function checkScheme(url, options) {
  */
 function checkAddresses(addresses, options) {
   const opts = options || {};
-  const list = opts.dev === true ? WITHOUT_LOOPBACK : STRICT;
   if (!Array.isArray(addresses) || addresses.length === 0) return 'AGSC-E905';
   for (const address of addresses) {
     const family = net.isIP(address);
     if (family === 0) return 'AGSC-E905';
-    if (list.check(address, family === 4 ? 'ipv4' : 'ipv6')) return 'AGSC-E905';
+    // `--dev` exempts `127.0.0.0/8` and `::1` and nothing else: `::1` is the one
+    // address of `::/96` admitted, and a mapped `::ffff:127.0.0.1` stays refused.
+    const exempt = opts.dev === true && isLoopbackAddress(address, family);
+    if (!exempt && REFUSED[family].check(address, family === 4 ? 'ipv4' : 'ipv6')) return 'AGSC-E905';
   }
   return null;
 }
@@ -302,7 +309,7 @@ function walk(options) {
     } catch {
       response = { ok: false, peers: [] };
     }
-    // AGSC-06-08 (amended 2026-10-02 for 1.0.0): a document whose anchor is not on the
+    // AGSC-06-08 (as amended for 1.0.0): a document whose anchor is not on the
     // origin it was retrieved from is not that peer's document. A fetch adapter that
     // reports the document's `anchor` (and, after redirects, the `url` it read) is held
     // to it here; a key that is no URL, as in the walk's own tests, is not judged.
@@ -425,7 +432,7 @@ function peerCitations(items, options) {
   const quads = [];
   const emitted = [];
   for (const item of items || []) {
-    const iri = `${String(base).replace(/\/+$/u, '/')}${plural(item.type)}/${item.slug}/`;
+    const iri = `${collapseTrailingSlashes(String(base))}${plural(item.type)}/${item.slug}/`;
     for (const source of item.sources || []) {
       if (typeof source.resource !== 'string') continue;
       const { error, url } = normaliseReference(source.resource);
@@ -636,7 +643,9 @@ function clientUnion(dumps) {
  * mergeBoards(boards) -> { boardsKept, expandedBlockedBy, renamed, tasksKept }
  * AGSC-11-15, F9 (with AGSC-10-13): a merging client keys tasks by item IRI
  * and boards by Bundle IRI, renames NEITHER, and expands a board's local
- * `blocked_by`/`decided_by` slugs against that board's own origin.
+ * `blocked_by`/`decided_by` slugs against that board's own origin: a slug that
+ * names a task of the same board takes that task's `iri`, any other slug the
+ * Concept folder (AGSC-10-13).
  */
 function originOf(iri) {
   const m = /^([A-Za-z][A-Za-z0-9+.-]*:\/\/[^/]+\/)/u.exec(String(iri));
@@ -650,9 +659,12 @@ function mergeBoards(boards) {
   for (const board of boards || []) {
     boardsKept.push(board.iri);
     const origin = originOf(board.iri);
+    const taskIri = new Map((board.tasks || []).filter((task) => typeof task.slug === 'string'
+      && typeof task.iri === 'string').map((task) => [task.slug, task.iri]));
     for (const task of board.tasks || []) {
       tasksKept.push(task.iri);
-      const blocked = (task.blocked_by || []).map((slug) => `${origin}concepts/${slug}/`);
+      const blocked = (task.blocked_by || [])
+        .map((slug) => (taskIri.has(slug) ? taskIri.get(slug) : `${origin}concepts/${slug}/`));
       if (blocked.length > 0) expandedBlockedBy[task.iri] = Object.freeze(blocked);
     }
   }

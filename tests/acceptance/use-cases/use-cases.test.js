@@ -5,7 +5,9 @@
 //
 // Deterministic: a fixed build instant, no network, no git identity (HOME and the
 // global git configuration point at empty scratch files), scratch Bundles under
-// `os.tmpdir()`. The scenarios that need a forge, a model, a live peer or a browser
+// `os.tmpdir()`. Every command runs under the network trap of `../steps/_offline.js`,
+// which refuses and records every network call; a command that recorded one fails its
+// step, even when it caught the refusal and went on. The scenarios that need a forge, a model, a live peer or a browser
 // are marked in docs/USE-CASES.md with the test that covers their offline part, or
 // with the reason nothing can; the last test here keeps that table honest.
 
@@ -21,6 +23,7 @@ const AGSC = path.join(ROOT, 'bin', 'agsc.js');
 const VALIDATE_WELLKNOWN = path.join(ROOT, 'tools', 'validate-wellknown');
 const MINIMAL = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
+const OFFLINE = path.join(ROOT, 'tests', 'acceptance', 'steps', '_offline.js');
 
 const temporaries = [];
 test.after(() => {
@@ -35,18 +38,27 @@ function temp(prefix) {
 
 const HOME = temp('agsc-uc-home-');
 fs.writeFileSync(path.join(HOME, '.gitconfig-empty'), '');
+const TRAP = path.join(HOME, 'network-attempts.txt');
 const ENV = {
+  ACCEPTANCE_NETWORK_TRAP: TRAP,
   GIT_CONFIG_GLOBAL: path.join(HOME, '.gitconfig-empty'),
   GIT_CONFIG_NOSYSTEM: '1',
   HOME,
+  NODE_OPTIONS: `--require ${JSON.stringify(OFFLINE)}`,
   NO_COLOR: '1',
   PATH: process.env.PATH,
   SOURCE_DATE_EPOCH: EPOCH,
 };
 
-/** Run one command line in `cwd`; return `{status, stdout, stderr}`. */
+/**
+ * Run one command line in `cwd`; return `{status, stdout, stderr}`. Throws when the
+ * command recorded a network attempt (the record is cleared once reported).
+ */
 function sh(cwd, script, args) {
   const r = spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', env: ENV });
+  const attempts = fs.existsSync(TRAP) ? fs.readFileSync(TRAP, 'utf8').split('\n').filter(Boolean) : [];
+  fs.rmSync(TRAP, { force: true });
+  if (attempts.length > 0) throw new Error(`${path.basename(script)} ${args.join(' ')} reached for the network: ${attempts.join(', ')}`);
   return { status: r.status, stderr: r.stderr, stdout: r.stdout };
 }
 const agsc = (cwd, ...args) => sh(cwd, AGSC, args);
@@ -62,6 +74,50 @@ function bundle(over) {
 }
 
 const read = (dir, at) => fs.readFileSync(path.join(dir, at), 'utf8');
+
+/** Every file under `dir`, relative, with its text, in code-point order (empty when absent). */
+function tree(dir) {
+  const out = new Map();
+  const walk = (sub) => {
+    for (const name of fs.readdirSync(path.join(dir, sub)).sort()) {
+      const rel = sub === '' ? name : `${sub}/${name}`;
+      if (fs.statSync(path.join(dir, rel)).isDirectory()) walk(rel);
+      else out.set(rel, fs.readFileSync(path.join(dir, rel), 'utf8'));
+    }
+  };
+  if (fs.existsSync(dir)) walk('');
+  return out;
+}
+
+/** The same node checked out again with no item yet: its configuration, root document and contact. */
+function emptied(dir) {
+  const copy = temp('agsc-uc-copy-');
+  for (const at of ['agsc.config.json', 'content/index.md', '.well-known/security.txt']) {
+    fs.mkdirSync(path.dirname(path.join(copy, at)), { recursive: true });
+    fs.copyFileSync(path.join(dir, at), path.join(copy, at));
+  }
+  return copy;
+}
+
+/** An item file as {frontmatter, body}, with the `prov.source_version` an import adds removed. */
+function authored(text) {
+  const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/u.exec(text);
+  assert.ok(m, 'the file has no frontmatter block');
+  const frontmatter = require('yaml').parse(m[1]);
+  if (frontmatter.prov) delete frontmatter.prov.source_version;
+  return { body: m[2].replace(/^\n+/u, ''), frontmatter };
+}
+
+/** Assert that every item of `back` came back as `source` holds it, plus the source's content version. */
+function cameBack(source, back, version = '0.0.0+20260101T000000Z') {
+  const items = [...tree(path.join(back, 'content')).entries()].filter(([at]) => at !== 'index.md');
+  assert.ok(items.length > 0, 'nothing came back');
+  for (const [at, text] of items) {
+    assert.match(text, new RegExp(`^ {2}source_version: ${version.replace(/[+.]/gu, '\\$&')}$`, 'mu'), at);
+    assert.deepStrictEqual(authored(text), authored(read(source, `content/${at}`)), at);
+  }
+  return items.map(([at]) => at);
+}
 
 test('L3 — the steering bundle: one command, identical bytes at every conventional path', () => {
   const dir = bundle();
@@ -120,6 +176,57 @@ test('L5 — a folder of notes becomes a node: init, add the security contact, c
   const emptied = agsc(dir, 'ci');
   assert.strictEqual(emptied.status, 1);
   assert.match(emptied.stdout + emptied.stderr, /AGSC-E202[^\n]*tdm_crawlers/u);
+});
+
+test('L6 — an agent kit and the node, both ways: export into GABBE, read the kit back', () => {
+  const dir = bundle();
+  const r = agsc(dir, 'export', '--to', 'gabbe');
+  assert.strictEqual(r.status, 0, r.stderr);
+  const kit = path.join(dir, 'dist', 'export', 'gabbe');
+  const files = [...tree(kit).keys()];
+  assert.ok(files.includes('agents/guides/agsc/steering.md'), files.join(', '));
+  for (const slug of ['agent-patterns', 'handoff', 'supervisor']) {
+    assert.ok(files.includes(`agents/memory/semantic/agsc/${slug}.md`), `${slug} is not semantic memory`);
+  }
+  for (const [at, text] of tree(kit)) assert.match(text, /<!-- agsc:provenance\n/u, `${at} has no provenance block`);
+  // Back from the kit: the plan first, then the import, then the same import again.
+  const copy = emptied(dir);
+  const plan = agsc(copy, 'import', '--from', 'gabbe', kit, '--dry-run');
+  assert.strictEqual(plan.status, 0, plan.stderr);
+  assert.ok(!fs.existsSync(path.join(copy, 'content', 'concepts')), 'the plan wrote an item');
+  const back = agsc(copy, 'import', '--from', 'gabbe', kit);
+  assert.strictEqual(back.status, 0, back.stderr);
+  assert.deepStrictEqual(cameBack(dir, copy), ['clusters/agent-patterns.md', 'concepts/handoff.md', 'concepts/supervisor.md']);
+  assert.match(agsc(copy, 'import', '--from', 'gabbe', kit).stderr, /import: 0 written, 0 replaced, 3 unchanged/u);
+  assert.strictEqual(agsc(copy, 'build').status, 0);
+});
+
+test('L7 — a skills collection becomes procedures, and the packs of the node go back out as a collection', () => {
+  const dir = bundle();
+  // `git clone` is the person's step; the engine reads the local clone and fetches nothing.
+  fs.cpSync(path.join(ROOT, 'tests', 'fixtures', 'skills-marketplace'), path.join(dir, 'clone'), { recursive: true });
+  const before = tree(path.join(dir, 'content'));
+  const list = agsc(dir, 'import', '--from', 'skills', '--list', 'clone');
+  assert.strictEqual(list.status, 0, list.stderr);
+  assert.match(list.stderr, /\[marketplace\] skill csv-helper skills\/csv-helper\/SKILL\.md licence Apache-2\.0[^\n]*-> importable/u);
+  assert.strictEqual(agsc(dir, 'import', '--from', 'skills', 'clone', '--dry-run').status, 0);
+  assert.deepStrictEqual(tree(path.join(dir, 'content')), before, 'the plan wrote something');
+  const imported = agsc(dir, 'import', '--from', 'skills', 'clone');
+  assert.strictEqual(imported.status, 0, imported.stderr);
+  const procedure = read(dir, 'content/procedures/csv-helper.md');
+  assert.match(procedure, /^type: procedure$/mu);
+  assert.match(procedure, /^x-skills-layout: marketplace$/mu);
+  assert.match(procedure, /^x-skills-license: Apache-2\.0/mu);
+  assert.match(agsc(dir, 'import', '--from', 'skills', 'clone').stderr, /import: 0 written, 0 replaced, 1 unchanged/u);
+  // Out again, in a layout another tool reads; and that folder read back loses nothing.
+  const out = agsc(dir, 'export', '--to', 'skills', '--layout', 'marketplace');
+  assert.strictEqual(out.status, 0, out.stderr);
+  const exported = path.join(dir, 'dist', 'export', 'skills', 'marketplace');
+  assert.ok(fs.existsSync(path.join(exported, '.claude-plugin', 'marketplace.json')));
+  const copy = emptied(dir);
+  const back = agsc(copy, 'import', '--from', 'skills', exported);
+  assert.strictEqual(back.status, 0, back.stderr);
+  assert.deepStrictEqual(cameBack(dir, copy), ['clusters/agent-patterns.md', 'concepts/handoff.md', 'concepts/supervisor.md']);
 });
 
 test('D1 — two nodes that check each other, offline, from two local files', () => {
@@ -190,6 +297,37 @@ test('M5 — a selection that becomes a harness, the same bytes twice', () => {
   // An invalid selection emits no harness, only the verdict (AGSC-07-17).
   const bad = agsc(dir, 'compose', 'no-such-item');
   assert.strictEqual(bad.status, 1);
+});
+
+test('M7 — a board comes in from the export file of a tracker, is published, and goes back out', () => {
+  const dir = bundle();
+  fs.cpSync(path.join(ROOT, 'tests', 'fixtures', 'pm-jira'), path.join(dir, 'from-jira'), { recursive: true });
+  const before = tree(path.join(dir, 'content'));
+  const plan = agsc(dir, 'import', '--from', 'board', '--format', 'jira', './from-jira', '--dry-run');
+  assert.strictEqual(plan.status, 0, plan.stderr);
+  assert.match(plan.stderr, /import: --dry-run: 4 file\(s\) would be written/u);
+  assert.deepStrictEqual(tree(path.join(dir, 'content')), before, 'the plan wrote something');
+  const imported = agsc(dir, 'import', '--from', 'board', '--format', 'jira', './from-jira');
+  assert.strictEqual(imported.status, 0, imported.stderr);
+  const added = [...tree(path.join(dir, 'content')).keys()].filter((at) => !before.has(at));
+  assert.deepStrictEqual(added, ['clusters/apollo.md', 'concepts/choose-the-storage.md', 'concepts/set-up-the-board.md',
+    'concepts/sum-a1.md']);
+  // Every row is a draft until a person publishes it; the person does, here, for all of them.
+  for (const at of added) {
+    const text = read(dir, `content/${at}`);
+    assert.match(text, /^status: draft$/mu, at);
+    fs.writeFileSync(path.join(dir, 'content', at), text.replace(/^status: draft\n/mu, ''));
+  }
+  assert.strictEqual(agsc(dir, 'build').status, 0);
+  assert.deepStrictEqual(JSON.parse(read(dir, 'www/boards/index.json')).boards.map((b) => b.cluster), ['apollo']);
+  const out = agsc(dir, 'export', '--to', 'board', '--format', 'jira');
+  assert.strictEqual(out.status, 0, out.stderr);
+  assert.deepStrictEqual(fs.readdirSync(path.join(dir, 'dist', 'export', 'board', 'jira')), ['apollo.csv']);
+  // Our own import reads that file back exactly.
+  const copy = emptied(dir);
+  const back = agsc(copy, 'import', '--from', 'board', '--format', 'jira', path.join(dir, 'dist', 'export', 'board', 'jira'));
+  assert.strictEqual(back.status, 0, back.stderr);
+  assert.deepStrictEqual(cameBack(dir, copy), added);
 });
 
 /** git in a scratch repository, with a fixed identity and a fixed commit instant. */
@@ -269,9 +407,19 @@ test('M8 — a person and two agents on two nodes work one live board', () => {
   assert.match(version(read(nodeA, 'www/llms.txt')), /^0\.0\.0\+2\./u);
 });
 
+test('every command of this file runs under the network trap: an attempt it ignored still fails the step', () => {
+  assert.match(ENV.NODE_OPTIONS || '', /--require\s+\S*_offline\.js/u, 'the commands here do not load steps/_offline.js');
+  // Loopback port 9: nothing listens there, and nothing leaves the machine.
+  const swallowed = "try { require('node:net').connect(9, '127.0.0.1').on('error', () => {}); } catch (e) { /* ignored */ }";
+  assert.throws(() => sh(ROOT, '-e', [swallowed]), /reached for the network: net\.connect/u);
+  // The record is cleared once reported, so the next command starts clean.
+  assert.strictEqual(agsc(bundle(), 'lint').status, 0);
+});
+
 test('docs/USE-CASES.md: every scenario is present, and each says how it is proven', () => {
   const doc = fs.readFileSync(path.join(ROOT, 'docs', 'USE-CASES.md'), 'utf8');
-  const ids = ['L1', 'L2', 'L3', 'L4', 'L5', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8'];
+  const ids = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6',
+    'M7', 'M8'];
   const here = fs.readFileSync(__filename, 'utf8');
   for (const id of ids) {
     const heading = new RegExp(`^### ${id} — `, 'mu');
@@ -281,5 +429,13 @@ test('docs/USE-CASES.md: every scenario is present, and each says how it is prov
     if (/\*\*Proven by:\*\* `tests\/acceptance\/use-cases\/use-cases\.test\.js`/u.test(section)) {
       assert.ok(here.includes(`test('${id} — `), `${id} claims an acceptance test that does not exist`);
     }
+  }
+  // The count in the introduction is the number of sections.
+  const words = { 21: 'Twenty-one' };
+  assert.match(doc, new RegExp(`^${words[ids.length]} concrete scenarios`, 'mu'));
+  // Every use case whose offline part runs here says so.
+  for (const id of ['L6', 'L7', 'M7']) {
+    const section = doc.split(new RegExp(`^### ${id} — `, 'mu'))[1].split(/^### /mu)[0];
+    assert.match(section, /\*\*Proven by:\*\* `tests\/acceptance\/use-cases\/use-cases\.test\.js`/u, `${id} is not proven here`);
   }
 });

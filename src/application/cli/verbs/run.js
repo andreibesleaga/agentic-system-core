@@ -2,8 +2,9 @@
 /**
  * src/application/cli/verbs/run.js — `run <slug>` (AGSC-09-07, AGSC-09-94).
  *
- * OPT-IN. `main.js` already refuses the verb with `AGSC-E001` and exit 2 while
- * `run.enabled` is false, "exactly as an unknown verb"; nothing below is reachable
+ * OPT-IN. `main.js` already refuses the verb with `AGSC-E004` and exit 2 while
+ * `run.enabled` is false — a configuration the tool cannot run against (AGSC-09-94),
+ * in an envelope like any other verb's; nothing below is reachable
  * until an operator turns it on in `agsc.config.json`.
  *
  * WHAT IS IMPLEMENTED HERE, AND WHAT IS NOT.
@@ -121,7 +122,8 @@ function run(ctx) {
         { file: '', severity: 'error' })],
     };
   }
-  const item = { ...raw.frontmatter, body: raw.body, path: raw.path, slug: raw.slug, type: raw.type };
+  // AGSC-09-11: `lineOffset` lets the run-block reader name a block by its file line.
+  const item = { ...raw.frontmatter, body: raw.body, lineOffset: raw.lineOffset, path: raw.path, slug: raw.slug, type: raw.type };
   const parsed = runblocks.steps(item, settings(ctx));
   const findings = [...parsed.findings];
 

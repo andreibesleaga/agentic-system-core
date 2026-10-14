@@ -29,16 +29,23 @@ who asks to be credited is credited in the release notes.
 
 | Version | Supported |
 |---|---|
-| the latest release candidate of `1.0.0`, until `1.0.0` is released | yes |
-| from `1.0.0` on: the latest `1.x` release | yes |
-| an earlier release candidate, once a later one or `1.0.0` is out | no — upgrade (the change log says how) |
+| `1.0.x` | yes (the latest patch) |
+| any `1.0.0-rc.*` | no — upgrade to `1.0.0` (the change log says how) |
 | anything older | no |
 
 Fixes are made on the current line only, in a new release; there is no
-long-term-support branch and no fix is made to a release candidate after its
-successor is out. Every released version stays readable at its tag in this
-repository and its packages stay installable, but none of them is supported once a
-later version is out.
+long-term-support branch, and no fix is made to a release candidate. Every released
+version stays readable at its tag in this repository and its packages stay
+installable, but none of them is supported once a later version is out.
+
+## Coordinated disclosure
+
+A fix is released first, and the advisory follows it. While a report is being
+handled, its details stay between the reporter and the maintainer. Once the fixed
+release is out, the maintainer publishes a GitHub security advisory for this
+repository that names the affected and the fixed versions and credits the reporter
+who asked to be credited; a GitHub advisory can carry a CVE identifier. Please keep
+the details private until that advisory is published.
 
 ## What this project is, and what that means for a report
 
@@ -51,7 +58,11 @@ package touch a network, each only when a person runs it:
 - `agsc-host serve` serves a build directory read-only over plain HTTP. It binds
   `localhost:8080` unless told otherwise (`--bind`, `--port`), answers `GET` and
   `HEAD` only, and never follows a link out of the directory it serves; any origin
-  other than loopback needs a TLS terminator in front.
+  other than loopback needs a TLS terminator in front. It answers only a request
+  whose `Host` header names `localhost`, a loopback address or the address it is
+  bound to, and refuses any other with `421`, so a web page that points a name of
+  its own at the machine cannot read what it serves; it never serves a file or
+  folder whose name begins with a dot, except `.well-known`.
 - `tools/validate-wellknown <URL>` fetches the discovery document it is given and
   its targets: `https` only, a closed list of refused addresses checked again on
   the open socket, at most three redirects, a deadline and a byte cap per

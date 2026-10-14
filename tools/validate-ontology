@@ -27,8 +27,17 @@
 //   AGSC-E202  the ontology declares no `owl:versionIRI` (AGSC-05-25); a term marked
 //              `owl:deprecated` with no `dcterms:isReplacedBy` (AGSC-05-25)
 //   AGSC-E203  a predicate or a declared type outside the OWL 2 RL-safe set
-//              (AGSC-05-22); an `asc:Item` class, which AGSC-05-13 forbids
-//   AGSC-E204  a vocabulary IRI outside the persistent hash namespace of AGSC-05-02
+//              (AGSC-05-22); a range or a term literal whose datatype is not one
+//              of the OWL 2 RL datatypes (OWL 2 Profiles §4.2: `xsd:date` is not
+//              on the list, and `owl:real` and `owl:rational` MUST NOT be used);
+//              a class or an annotation property that the file uses and does not
+//              declare (AGSC-05-25), without which an OWL 2 profile checker finds
+//              the file outside the profile; an `asc:Item` class, which AGSC-05-13
+//              forbids
+//   AGSC-E204  a vocabulary IRI outside the persistent hash namespace of AGSC-05-02:
+//              the only things the file may say about another vocabulary's entity
+//              are the declarations of AGSC-05-25 — one `rdf:type` triple
+//              (`owl:Class` or `owl:AnnotationProperty`) for an entity it uses
 //   AGSC-E605  a blank node, which AGSC-05-08 forbids in this dataset
 //   AGSC-E901  the ontology file is missing
 //
@@ -37,7 +46,10 @@
 // would take OWL 2 DL beyond RL — a restriction, a union, an intersection, a
 // complement, an enumeration, a cardinality — needs one. What remains to police is
 // the flat axiom vocabulary below, plus the two property characteristics OWL 2 RL
-// excludes (`owl:ReflexiveProperty`, and `owl:disjointUnionOf` on a class).
+// excludes (`owl:ReflexiveProperty`, and `owl:disjointUnionOf` on a class), the
+// datatypes, and the declarations. The literals on the ontology node itself are
+// metadata AGSC-05-22 leaves out of its scope (its `xsd:date` values), so the
+// datatype check reads ranges and the literals of terms only.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -47,8 +59,10 @@ const HELP = `validate-ontology [--json] [--quiet] [--help] [<root>|<file.ttl>]
 
   Parses ontology/agsc.ttl and checks it against AGSC-05-02 (the persistent hash
   namespace), AGSC-05-08 (blank-node-free), AGSC-05-13 (no asc:Item), AGSC-05-22
-  (OWL 2 RL), AGSC-05-25 (versionIRI and deprecation) and AGSC-05-26a, together
-  with the SKOS integrity conditions S19, S20, S32 and S37 those rules rely on.
+  (OWL 2 RL: the axioms, the datatypes and the declarations), AGSC-05-25
+  (versionIRI, deprecation and the declarations of the entities of other
+  vocabularies) and AGSC-05-26a, together with the SKOS integrity conditions S19,
+  S20, S32 and S37 those rules rely on.
 
   --json    emit the AGSC-09-11 diagnostics envelope on stdout
   --quiet   emit nothing; the exit code is the result
@@ -66,6 +80,7 @@ const SKOS = 'http://www.w3.org/2004/02/skos/core#';
 const DCTERMS = 'http://purl.org/dc/terms/';
 const VANN = 'http://purl.org/vocab/vann/';
 const VOAF = 'http://purl.org/vocommons/voaf#';
+const XSD = 'http://www.w3.org/2001/XMLSchema#';
 
 /** AGSC-05-22: the flat axiom and annotation vocabulary an RL-safe, blank-node-free
  *  vocabulary may use. Anything else is reported rather than silently accepted. */
@@ -89,6 +104,26 @@ const ALLOWED_TYPES = Object.freeze(new Set([
   `${OWL}ObjectProperty`, `${OWL}Ontology`, `${OWL}SymmetricProperty`, `${OWL}TransitiveProperty`,
   `${VOAF}Vocabulary`, // AGSC-05-25: the ontology node only
 ]));
+/** OWL 2 Profiles §4.2.1: the datatypes OWL 2 RL supports. `rdf:langString` is the
+ *  RDF 1.1 name of a language-tagged `rdf:PlainLiteral`. */
+const RL_DATATYPES = Object.freeze(new Set([
+  `${RDF}PlainLiteral`, `${RDF}XMLLiteral`, `${RDF}langString`, `${RDFS}Literal`,
+  ...['decimal', 'integer', 'nonNegativeInteger', 'nonPositiveInteger', 'positiveInteger',
+    'negativeInteger', 'long', 'int', 'short', 'byte', 'unsignedLong', 'unsignedInt', 'unsignedShort',
+    'unsignedByte', 'float', 'double', 'string', 'normalizedString', 'token', 'language', 'Name',
+    'NCName', 'NMTOKEN', 'boolean', 'hexBinary', 'base64Binary', 'anyURI', 'dateTime',
+    'dateTimeStamp'].map((local) => `${XSD}${local}`),
+]));
+/** An IRI in a datatype position: every XSD name and the datatypes of RDF, RDFS and OWL. */
+const isDatatype = (iri) => iri.startsWith(XSD) || RL_DATATYPES.has(iri)
+  || iri === `${OWL}real` || iri === `${OWL}rational`;
+/** The predicates whose object is a class (a range is a class unless it is a datatype). */
+const CLASS_POSITIONS = Object.freeze(new Set([
+  `${RDFS}subClassOf`, `${RDFS}domain`, `${RDFS}range`, `${OWL}disjointWith`, `${OWL}equivalentClass`,
+]));
+/** The two declarations AGSC-05-25 lets the file make about another vocabulary's entity. */
+const DECLARATIONS = Object.freeze(new Set([`${OWL}AnnotationProperty`, `${OWL}Class`]));
+
 /** SKOS Reference S19/S20: every one of these has domain and range `skos:Concept`. */
 const SEMANTIC_RELATIONS = Object.freeze(new Set([
   `${SKOS}broadMatch`, `${SKOS}broader`, `${SKOS}broaderTransitive`, `${SKOS}closeMatch`,
@@ -144,6 +179,62 @@ function ancestors(start, superClassOf) {
     }
   }
   return seen;
+}
+
+/**
+ * AGSC-05-22 and AGSC-05-25, the parts an OWL 2 profile checker reads beyond the
+ * axiom allow-list: the datatypes, the declarations, and the entities of other
+ * vocabularies (declared, used, and described by nothing else).
+ * @returns {string[]} the external IRIs that are well-formed declarations
+ */
+function profileFindings(quads, file, findings) {
+  const typesOf = new Map();
+  const bySubject = new Map();
+  for (const quad of quads) {
+    const s = quad.subject.value;
+    if (!bySubject.has(s)) bySubject.set(s, []);
+    bySubject.get(s).push(quad);
+    if (quad.predicate.value === `${RDF}type`) {
+      if (!typesOf.has(s)) typesOf.set(s, new Set());
+      typesOf.get(s).add(quad.object.value);
+    }
+  }
+  const declaredAs = (iri, type) => (typesOf.get(iri) || new Set()).has(type);
+  const isProperty = (iri) => ['AnnotationProperty', 'DatatypeProperty', 'ObjectProperty'].some((t) => declaredAs(iri, `${OWL}${t}`));
+  const used = new Set();
+  const undeclared = new Map(); // IRI -> message
+  for (const quad of quads) {
+    const s = quad.subject.value;
+    const p = quad.predicate.value;
+    const o = quad.object;
+    if (p === `${RDFS}range` && isDatatype(o.value) && !RL_DATATYPES.has(o.value)) {
+      findings.push(finding('AGSC-E203', file,
+        `the range <${o.value}> of <${s}> is not an OWL 2 RL datatype (OWL 2 Profiles §4.2, AGSC-05-22)`));
+    } else if (p === `${RDFS}range` && declaredAs(s, `${OWL}DatatypeProperty`) && !isDatatype(o.value)) {
+      findings.push(finding('AGSC-E203', file,
+        `the datatype property <${s}> has the range <${o.value}>, which is not an OWL 2 RL datatype (AGSC-05-22)`));
+    }
+    if (o.termType === 'Literal' && s !== ONTOLOGY_IRI && !RL_DATATYPES.has(o.datatype.value)) {
+      findings.push(finding('AGSC-E203', file,
+        `a literal on <${s}> has the datatype <${o.datatype.value}>, which is not an OWL 2 RL datatype (OWL 2 Profiles §4.2, AGSC-05-22)`));
+    }
+    if (!p.startsWith(RDF) && !p.startsWith(RDFS) && !p.startsWith(OWL)) {
+      used.add(p);
+      if (!isProperty(p)) undeclared.set(p, `the annotation property <${p}> is used and not declared (owl:AnnotationProperty) in the file (AGSC-05-25)`);
+    }
+    const classPosition = (CLASS_POSITIONS.has(p) && !isDatatype(o.value))
+      || (p === `${RDF}type` && !o.value.startsWith(OWL) && !o.value.startsWith(RDFS));
+    if (classPosition && o.value !== `${OWL}Thing` && o.value !== `${OWL}Nothing`) {
+      used.add(o.value);
+      if (!declaredAs(o.value, `${OWL}Class`)) {
+        undeclared.set(o.value, `<${o.value}> is used as a class and not declared (owl:Class) in the file (AGSC-05-22, AGSC-05-25)`);
+      }
+    }
+  }
+  for (const iri of [...undeclared.keys()].sort(compareCodePoint)) findings.push(finding('AGSC-E203', file, undeclared.get(iri)));
+  return [...bySubject.keys()].filter((s) => s !== ONTOLOGY_IRI && !s.startsWith(NS)
+    && used.has(s) && bySubject.get(s).length === 1
+    && bySubject.get(s)[0].predicate.value === `${RDF}type` && DECLARATIONS.has(bySubject.get(s)[0].object.value));
 }
 
 function envelopeOf(findings, declared, version) {
@@ -279,12 +370,18 @@ function run(argv, io) {
     else if (p === `${DCTERMS}isReplacedBy`) replaced.add(s);
   }
 
+  // ---- AGSC-05-22/05-25: datatypes and declarations ------------------------
+  const declarations = new Set(profileFindings(quads, file, findings));
+
   // ---- AGSC-05-02: the persistent hash namespace --------------------------
-  const terms = [...subjects].filter((s) => s !== ONTOLOGY_IRI).sort(compareCodePoint);
+  // A declaration of another vocabulary's entity that the file uses (AGSC-05-25)
+  // is not a term of this vocabulary; anything else said about such an IRI is.
+  const terms = [...subjects].filter((s) => s !== ONTOLOGY_IRI && !declarations.has(s)).sort(compareCodePoint);
   for (const term of terms) {
     if (!term.startsWith(NS)) {
       findings.push(finding('AGSC-E204', file,
-        `<${term}> is described here and is not in the persistent namespace ${NS} (AGSC-05-02)`));
+        `<${term}> is described here and is not in the persistent namespace ${NS} (AGSC-05-02); `
+        + 'of another vocabulary\'s entity the file only declares one it uses, by its type triple alone (AGSC-05-25)'));
     }
   }
 

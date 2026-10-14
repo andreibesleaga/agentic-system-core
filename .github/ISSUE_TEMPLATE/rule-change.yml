@@ -1,0 +1,50 @@
+# GitHub issue form: a proposal to change a rule of the specification.
+# The five fields are the five parts CONTRIBUTING.md asks a proposal to name.
+# Format: https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+name: Change a rule of the specification
+description: Propose a change to a rule (AGSC-nn-nn) of spec/, with the replacement wording and the vector that proves it.
+title: "AGSC-nn-nn: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Say which rule is wrong, not which code is wrong. CONTRIBUTING.md, "Proposing a change to the standard", explains each part.
+        A security problem does not belong here: report it privately, as SECURITY.md says.
+  - type: input
+    id: rule
+    attributes:
+      label: The rule
+      description: The rule id (AGSC-nn-nn) and the file and line it is on.
+      placeholder: AGSC-06-18, spec/06-surfaces.md line 40
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What the rule says today
+      description: The rule's text, quoted.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What goes wrong
+      description: What goes wrong if an implementer follows the rule — ideally two conforming implementations that disagree, or a rule that cannot be satisfied.
+    validations:
+      required: true
+  - type: textarea
+    id: replacement
+    attributes:
+      label: The replacement wording
+      description: The exact text the rule would say instead.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: vector
+    attributes:
+      label: The conformance vector
+      description: The case that would prove the changed rule — its input and the output it expects.
+    validations:
+      required: true

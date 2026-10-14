@@ -1,11 +1,11 @@
 # `w3c/` — the W3C-facing specification source
 
-**Status: SKELETON, to be published INDIVIDUALLY in W3C format.** `index.html` uses ReSpec `specStatus: "unofficial"` — the standard W3C document format for personal drafts, explicitly not a W3C publication — hosted from this repository on GitHub Pages (agenticsystemcore.com links to it and does not mirror it) with persistent identifiers from w3id.org. No W3C Community Group is needed for that; the CG route is parked and can be enabled later by switching `specStatus` to `"CG-DRAFT"` and adding `group`.
+**Status: SKELETON, to be published INDIVIDUALLY in W3C format.** `index.html` uses ReSpec `specStatus: "unofficial"` — the standard W3C document format for personal drafts, explicitly not a W3C publication. The report is not published anywhere at 1.0.0: it is repository source only, and agenticsystemcore.com neither links to it nor mirrors it. Publishing its static export on a page of its own (GitHub Pages, for example), with persistent identifiers from w3id.org, is not planned for a fixed version. No W3C Community Group is needed for that; the CG route is parked and can be enabled later by switching `specStatus` to `"CG-DRAFT"` and adding `group`.
 
 ## What this is
 
 The source of the W3C-facing document for this project: the `asc:` vocabulary
-(`../ontology/agsc.ttl` — 12 classes, 40 properties (52 terms in 1.0.0-rc.7; counts derived by `tools/count-artifacts`), OWL 2 RL, CC0), its JSON-LD context, the
+(`../ontology/agsc.ttl` — 12 classes, 40 properties (52 terms in 1.0.0; counts derived by `tools/count-artifacts`), OWL 2 RL, CC0), its JSON-LD context, the
 namespace and versioning policy at `https://w3id.org/agentic-system-core/ns#`, and a human-readable
 explanation of the profile identifier `https://w3id.org/agentic-system-core/profile/agentic-knowledge`.
 
@@ -32,7 +32,7 @@ No build tooling lives here and none is wanted.
 # Live preview (renders client-side; needs network access to www.w3.org)
 python3 -m http.server 8000 --directory .    # then open http://localhost:8000/
 
-# Static export — this is what gets published. Default 10 s timeout is too short;
+# Static export — this is what would be published. Default 10 s timeout is too short;
 # the first run downloads ~100 MB (Chromium, via puppeteer).
 npx respec --src index.html --out build/index.html -t 60
 grep -c 'respec-w3c' build/index.html        # must print 0
@@ -55,8 +55,9 @@ references `www.w3.org` for the TR stylesheets and `scripts/TR/2021/fixup.js`.
 
 - this directory is **repository source**; it is not part of `build.out` and is never emitted into
   `www/`;
-- the report is published on **GitHub Pages**, as the static export, not as this source;
-- `agenticsystemcore.com` **links to** the report and does not mirror it.
+- if the report is published, it is published as the static export on a page of its own (GitHub
+  Pages, for example), never as this source — at 1.0.0 it is not published;
+- `agenticsystemcore.com` would **link to** a published report and never mirror it.
 
 ## What is not here, on purpose
 

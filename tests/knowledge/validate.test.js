@@ -95,7 +95,7 @@ test('AGSC-02-03: the schema\'s declared types are applied to failsafe strings',
 
 test('the Bundle root is validated against bundle.schema.json (AGSC-01-04)', () => {
   const root = {
-    spec_version: '1.0.0-rc.7', okf_version: '0.2', title: 'Bundle root',
+    spec_version: '1.0.0', okf_version: '0.2', title: 'Bundle root',
     description: 'x'.repeat(50), base: 'https://example.org/',
   };
   assert.deepStrictEqual(validate.index(root, { schemas: S }), []);
@@ -107,7 +107,7 @@ test('the Bundle root is validated against bundle.schema.json (AGSC-01-04)', () 
 
 test('configuration is closed: an unknown key is AGSC-E004 (AGSC-01-18)', () => {
   const base = {
-    spec_version: '1.0.0-rc.7',
+    spec_version: '1.0.0',
     site: { base: 'https://example.org/', title: 'T' },
     bundle: { id: 'b' },
   };
@@ -119,7 +119,7 @@ test('configuration is closed: an unknown key is AGSC-E004 (AGSC-01-18)', () => 
 
 test('the agent-lane check is INJECTED, never imported (context boundary)', () => {
   const base = {
-    spec_version: '1.0.0-rc.7',
+    spec_version: '1.0.0',
     site: { base: 'https://example.org/', title: 'T' },
     bundle: { id: 'b' },
     agents: [],
@@ -145,10 +145,10 @@ test('AGSC-01-02 / AGSC-01-03 placement', () => {
 });
 
 test('AGSC-00-15 MAJOR tolerance (bundle-0001)', () => {
-  assert.strictEqual(validate.majorCompatible('1.4.2', '1.0.0-rc.7'), true);
-  assert.strictEqual(validate.majorCompatible('2.0.0', '1.0.0-rc.7'), false);
-  assert.strictEqual(validate.majorCompatible(undefined, '1.0.0-rc.7'), true);
-  assert.strictEqual(validate.majorCompatible('x', '1.0.0-rc.7'), false);
+  assert.strictEqual(validate.majorCompatible('1.4.2', '1.0.0'), true);
+  assert.strictEqual(validate.majorCompatible('2.0.0', '1.0.0'), false);
+  assert.strictEqual(validate.majorCompatible(undefined, '1.0.0'), true);
+  assert.strictEqual(validate.majorCompatible('x', '1.0.0'), false);
 });
 
 test('findings sort by (file, line, col, code) (AGSC-09-10)', () => {
@@ -221,4 +221,36 @@ test('AGSC-02-03: a cyclic or very long $ref chain terminates instead of looping
   // A chain inside the bound DOES resolve, so the guard is not simply refusing.
   const short = { $defs: { s0: { $ref: '#/$defs/s1' }, s1: { type: 'integer' } }, properties: { n: { $ref: '#/$defs/s0' } }, type: 'object' };
   assert.deepStrictEqual(validate.applyTypes({ n: '7' }, short, short), { n: 7 });
+});
+
+test('AGSC-08-01: an ai-* origin without agent or model is AGSC-E202, from the lint lane only', () => {
+  const lint = require('../../src/governance/lint.js');
+  const at = { file: 'content/concepts/supervisor.md', slug: 'supervisor' };
+  const withProv = (prov) => ({ ...CONCEPT, prov: { operator: 'human:andreibesleaga', ...prov } });
+  const missing = (fm) => validate.aiProvenance(fm, at).map((f) => [f.code, f.severity, f.file, f.slug,
+    /\b(agent|model)\b/u.exec(f.message)[1]]);
+  for (const origin of ['ai-assisted', 'ai-generated']) {
+    assert.deepStrictEqual(missing(withProv({ origin })), [
+      ['AGSC-E202', 'error', at.file, at.slug, 'agent'],
+      ['AGSC-E202', 'error', at.file, at.slug, 'model'],
+    ], origin);
+    assert.deepStrictEqual(missing(withProv({ origin, agent: 'claude-code' })),
+      [['AGSC-E202', 'error', at.file, at.slug, 'model']]);
+    assert.deepStrictEqual(missing(withProv({ origin, model: 'm' })),
+      [['AGSC-E202', 'error', at.file, at.slug, 'agent']]);
+    assert.deepStrictEqual(missing(withProv({ origin, agent: '', model: null })).map((f) => f[4]), ['agent', 'model']);
+    assert.deepStrictEqual(missing(withProv({ origin, agent: 'claude-code', model: 'm' })), []);
+  }
+  // a human or imported origin needs neither; no prov, or a prov that is not a
+  // mapping, is AGSC-E501 or a schema fault elsewhere, never this check.
+  for (const fm of [withProv({ origin: 'human' }), withProv({ origin: 'imported' }),
+    { ...CONCEPT, prov: undefined }, { ...CONCEPT, prov: 'ai-assisted' }, null]) {
+    assert.deepStrictEqual(missing(fm), [], JSON.stringify(fm));
+  }
+  // the item schema cannot state the condition, so loading an item does not report it
+  // (a build is not refused); the lint aggregate does.
+  const fm = withProv({ origin: 'ai-assisted' });
+  assert.ok(!codes(fm).includes('AGSC-E202'));
+  const linted = lint.lint({ items: [{ ...at, type: 'concept', frontmatter: fm, body: 'Text.\n' }], config: {} });
+  assert.deepStrictEqual(linted.filter((f) => f.code === 'AGSC-E202').map((f) => f.file), [at.file, at.file]);
 });

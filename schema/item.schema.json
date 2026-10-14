@@ -30,9 +30,11 @@
       "maxLength": 120
     },
     "description": {
-      "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present on those two types the 40-200 code-point bound is enforced by their branches (AGSC-02-24).",
+      "description": "Optional everywhere in the schema; lint-required on concept and cluster as AGSC-E408 (AGSC-02-21). Where present, on every type, 40-200 Unicode code points (§2.2 common-key table, AGSC-02-24).",
       "$ref": "#/$defs/single_line",
-      "type": "string"
+      "type": "string",
+      "minLength": 40,
+      "maxLength": 200
     },
     "status": {
       "description": "Default stable.",
@@ -211,11 +213,9 @@
           "const": "concept"
         },
         "description": {
-          "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24).",
+          "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24), bounded once at the top level for every type.",
           "$ref": "#/$defs/single_line",
-          "type": "string",
-          "minLength": 40,
-          "maxLength": 200
+          "type": "string"
         },
         "kind": {
           "enum": [
@@ -476,11 +476,9 @@
           "const": "cluster"
         },
         "description": {
-          "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24).",
+          "description": "40-200 Unicode code points (§2.2 common-key table, AGSC-02-24), bounded once at the top level for every type.",
           "$ref": "#/$defs/single_line",
-          "type": "string",
-          "minLength": 40,
-          "maxLength": 200
+          "type": "string"
         },
         "broader": {
           "description": "At most one parent cluster: the tree is mono-parent (AGSC-03-08); more than one value is AGSC-E308 (AGSC-03-08).",
@@ -588,9 +586,9 @@
       "pattern": "^[^\\x00-\\x1F\\x7F\\x85\\u2028\\u2029]*$"
     },
     "actor": {
-      "description": "AGSC-02-09: human:<id>, process:<id> or <producer>/<version>.",
+      "description": "AGSC-02-09: human:<id>, process:<id>, process:<id>/<version> (the ledger's trailing build entry, AGSC-08-20a) or <producer>/<version>.",
       "type": "string",
-      "pattern": "^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._+-]*)$"
+      "pattern": "^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._+-]*)?|[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._+-]*)$"
     },
     "human_actor": {
       "description": "AGSC-02-07: prov.operator is a person, human:<id> only, so the DCO-Plus Assisted-by trailer of AGSC-08-06 can always match it.",

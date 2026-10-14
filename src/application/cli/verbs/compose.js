@@ -12,6 +12,7 @@ const { instantFromEpoch } = require('../../../governance/ledger.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 const archiveWriter = require('./_archive.js');
+const { withoutTrailingSlashes } = require('../../../shared/trailing.js');
 
 /**
  * The flat item record the Composition context reads (slug, type, frontmatter) — and
@@ -49,7 +50,7 @@ function conflictMessage(conflict) {
       + ' or `agsc lint` the Bundle to see which slugs exist (AGSC-07-03)';
   }
   if (conflict.key === 'status') {
-    return `\`${a}\` is retired and cannot be selected (AGSC-07-03, AGSC-11-22)`;
+    return `\`${a}\` is retired and cannot be selected or required (AGSC-07-03, AGSC-11-22)`;
   }
   if (conflict.key === 'requires' && conflict.superseding !== undefined) {
     return `required item superseded — select \`${conflict.superseding}\`:`
@@ -173,7 +174,7 @@ function emitHarness(ctx, bundle, result, items) {
   const selectionDigest = helpers.sha256(harness.selectionDigestInput(result));
   const name = harness.harnessName(selectionDigest);
   const emission = harness.emit(result, {
-    base: `${String(site.base || '').replace(/\/+$/u, '')}/`,
+    base: `${withoutTrailingSlashes(String(site.base || ''))}/`,
     // AGSC-04-25 / AGSC-07-12: `harness.jsonld` and the provenance header of every
     // `AGENTS.md` and `SKILL.md` carry the content version. It is DERIVED HERE and
     // handed in, because AGSC-07-13 obliges the CLI and the `/compose/` page to emit
@@ -193,7 +194,7 @@ function emitHarness(ctx, bundle, result, items) {
     return { archive: null, dir: null, emitted: false, files: [], findings, missing: ['every file: the emission broke a rule (AGSC-07-17)'] };
   }
   const raw = ctx.verbFlags && ctx.verbFlags.out;
-  const dir = `${String(raw === undefined || raw === '' ? `dist/harness/${name}` : raw).replace(/\/+$/u, '')}/`;
+  const dir = `${withoutTrailingSlashes(String(raw === undefined || raw === '' ? `dist/harness/${name}` : raw))}/`;
   const written = [];
   for (const [path, text] of emission.files) {
     const at = `${dir}${path}`;

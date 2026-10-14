@@ -70,8 +70,8 @@ function run(ctx) {
   // AGSC-09-94 / AGSC-01-22: the Episode is an item like any other, so the bytes about
   // to be written are read back as `lint` reads them and checked against the item
   // schema first; a record that maps to an item the next build would refuse (a
-  // `tokens_in` of 1e999 becomes `Infinity`) writes nothing. Until 2026-10-06
-  // the file was written unchecked and `trace` said pass.
+  // `tokens_in` of 1e999 becomes `Infinity`) writes nothing, rather than an
+  // unchecked file and a `trace` that says pass.
   const check = frontmatter.parseItem(text, { config: bundle.config, path: mapped.path, schemas: helpers.schemas() });
   const faults = check.findings.filter((f) => f.severity !== 'warn');
   if (faults.length > 0) return { findings: [...mapped.findings, ...faults], status: 'fail' };

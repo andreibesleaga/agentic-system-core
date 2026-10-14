@@ -208,7 +208,7 @@ test('AGSC-05-04b: a memory:// alias is accepted wherever a slug is, on both tra
   const fsPort = createFileSystem(MINIMAL);
   const bundle = loadBundle(fsPort, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  const { files } = site.build(bundle, { clock, fs: fsPort }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+  const { files } = site.build(bundle, { clock, fs: fsPort }, { specVersion: '1.0.0', version: '0.0.2' });
   const local = mcpTools.tools(bundle, {});
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
@@ -254,7 +254,7 @@ test('AGSC-05-04a: wherever memory:// is accepted, the https item IRI is accepte
   const fsPort = createFileSystem(MINIMAL);
   const bundle = loadBundle(fsPort, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  const { files } = site.build(bundle, { clock, fs: fsPort }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+  const { files } = site.build(bundle, { clock, fs: fsPort }, { specVersion: '1.0.0', version: '0.0.2' });
   const local = mcpTools.tools(bundle, {});
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);

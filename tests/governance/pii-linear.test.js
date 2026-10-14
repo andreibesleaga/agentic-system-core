@@ -1,25 +1,24 @@
 'use strict';
 // AGSC-08-16 (`no-pii`): the e-mail check is linear in the length of the text.
 //
-// Until 2026-10-06 (verification finding C5) the e-mail pattern was tried from every
-// position of a run of local-part characters, so one long line was quadratic: an item
-// with a 200,000-character run before an address cost 65 s of `agsc lint` (0.9 s after;
-// security-corpus case `pii-email-after-long-run`). The check now starts from each `@`
-// and looks at the characters around
-// it, and finds exactly what the pattern found (the equivalence test below compares
-// the two over a fixed, generated set of texts).
+// The e-mail pattern used to be tried from every position of a run of local-part
+// characters, so one long line was quadratic: an item with a 200,000-character run
+// before an address cost 65 s of `agsc lint` (0.9 s after; security-corpus case
+// `pii-email-after-long-run`). The check now starts from each `@` and looks at the
+// characters around it, and finds exactly what the pattern found (the equivalence
+// test below compares the two over a fixed, generated set of texts).
 //
 // The board adapter's redaction (`export --to board`) used the same pattern globally
 // and now uses the same spans.
 //
-// The bound below is a ceiling three orders of magnitude above the linear run time,
-// not a measurement: before the change this test did not finish within two minutes.
+// Steps are counted, not timed (tests/_linear-kit.js): the scan reports the
+// characters it examines, and the bound is a small constant times the length.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const pii = require('../../src/governance/pii.js');
+const { MIB, assertLinear } = require('../_linear-kit.js');
 
-const MIB = 1024 * 1024;
 const AT = '@';
 
 /** The pattern as it stood, kept here as the reference the new scan must equal. */
@@ -42,7 +41,7 @@ function* texts(count) {
   }
 }
 
-test('C5: the e-mail scan finds exactly what the reference pattern finds', () => {
+test('the e-mail scan finds exactly what the reference pattern finds', () => {
   let positives = 0;
   for (const text of texts(40000)) {
     const expected = REFERENCE.test(text);
@@ -55,7 +54,7 @@ test('C5: the e-mail scan finds exactly what the reference pattern finds', () =>
   assert.ok(positives > 500, `the generated set exercises the positive case (${positives})`);
 });
 
-test('C5: the redaction the board adapter applies is unchanged', () => {
+test('the redaction the board adapter applies is unchanged', () => {
   const board = require('../../src/interchange/adapters/board.js');
   for (const text of texts(5000)) {
     const expected = { count: 0 };
@@ -67,12 +66,16 @@ test('C5: the redaction the board adapter applies is unchanged', () => {
   }
 });
 
-test('C5: a 1 MiB line costs linear time, with or without an @', { timeout: 20000 }, () => {
+test('a 1 MiB line costs linear steps, with or without an @', () => {
   const local = 'a'.repeat(MIB);
+  const spans = (text, meter) => pii.emailSpans(text, meter);
+  assert.deepEqual(assertLinear('emailSpans, a local-part run', spans, local, 4), []);
   assert.deepEqual(pii.check({ text: local }), []);
-  assert.deepEqual(pii.emailSpans(`${local}${AT}x`), []);
+  assert.deepEqual(assertLinear('emailSpans, a run then a bare @', spans, `${local}${AT}x`, 4), []);
+  assert.equal(assertLinear('emailSpans, a run then an address', spans, `${local}${AT}example.org`, 4).length, 1);
   assert.equal(pii.check({ text: `${local}${AT}example.org` }).length, 1);
-  assert.equal(pii.emailSpans(`x${AT}${'a'.repeat(MIB)}-`).length, 0);
-  assert.equal(pii.emailSpans(`a${AT}b.c `.repeat(MIB / 8)).length, MIB / 8);
-  assert.equal(pii.emailSpans(`${'a.'.repeat(MIB / 2)}${AT}`).length, 0);
+  assert.equal(assertLinear('emailSpans, a domain run', spans, `x${AT}${'a'.repeat(MIB)}-`, 4).length, 0);
+  assert.equal(assertLinear('emailSpans, many addresses', spans, `a${AT}b.c `.repeat(MIB / 8), 4).length, MIB / 8);
+  assert.equal(assertLinear('emailSpans, dotted run', spans, `${'a.'.repeat(MIB / 2)}${AT}`, 4).length, 0);
+  assert.equal(assertLinear('emailSpans, a run of @', spans, AT.repeat(MIB), 4).length, 0);
 });

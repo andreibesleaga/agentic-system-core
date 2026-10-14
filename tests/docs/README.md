@@ -5,14 +5,37 @@
 scratch copy with the fixed build instant the page names, and checks that every line
 of the `text expect` block after it was printed. A demo the page cannot run — one
 that needs a browser, a forge or a model key — has no runnable block.
-`guides.test.js` does the same for the six mode guides of
-[docs/guides/](../../docs/guides/README.md): each guide runs from top to bottom as one
-walk-through, with no build instant set (the guides commit, as a reader does; the git
-dates are fixed). Both use `_page-runner.js`; with `DOCS_ENGINE_PACKAGE` pointing at an
+`guides.test.js` does the same for the seven guides of
+[docs/guides/](../../docs/guides/README.md), the six mode guides and the publishing
+guide: each guide runs from top to bottom as one walk-through, with no build instant set
+(the guides commit, as a reader does; the git dates are fixed). Both check that every
+code a demo or a guide prints has a row on the reference page
+`docs/guides/troubleshooting.md`. Both use `_page-runner.js`; with `DOCS_ENGINE_PACKAGE` pointing at an
 installed copy of the packed package, they check the pages against the package as it
 will be published. `agent-skill.test.js` keeps the agent skill in
 `skills/agentic-system-core/` well-formed, its verbs real, and the plugin's copy equal
-to it. Subject: the documentation.
+to it. `governance-texts.test.js` keeps the governance texts at the root of the
+repository and the forms under `.github/` saying the same thing as each other: who
+signs off, how the ledger names an author, the supported versions, the licence of each
+folder, the conformance sentence and the one pinned form of the Action.
+`requirements-and-plan.test.js` checks that the requirements document and the plan
+answer, each with a dated note, every statement of theirs that no longer holds, and
+that the benchmark pages, the demos and the Mode 5 guide say what this version ships.
+`docs-accuracy.test.js` keeps the protocols page, the two orientation pages, the
+implementers' guide, the connectors page and the security considerations true: where
+a page describes the engine, the engine is asked the same question, and the guide's
+JSON-LD framing example is run.
+`release-wording.test.js` checks that, once the declared version carries no pre-release
+part, no document calls it a release candidate, and that the reference engine's claim in
+[docs/CONFORMANCE-STATEMENTS.md](../../docs/CONFORMANCE-STATEMENTS.md) states every element
+of AGSC-09-01 with the numbers `tools/count-artifacts` gives, quoted word for word by the
+README.
+`quoted-counts.test.js` checks the counts the documents quote — the populated areas,
+the cases that name the fixture Bundle, the scenarios of each feature file, the personas of
+the demos and of the scenario map, the guides — against the tree, and the figures of
+[docs/MEASUREMENTS.md](../../docs/MEASUREMENTS.md) against the record
+`docs/measurements.json` it was written from, which names the version it measured.
+Subject: the documentation.
 
 **Read after:** [tests/README.md](../README.md).
 
@@ -21,5 +44,7 @@ node --test tests/docs/demos.test.js tests/docs/guides.test.js tests/docs/agent-
 ```
 
 Deterministic: fixed clock, empty git identity, no network, scratch files only under
-the system temporary directory, removed afterwards. Skipped on Windows (the demos and
+the system temporary directory, removed afterwards. Every Node process a page's steps
+start runs under the network trap of `tests/acceptance/steps/_offline.js`, and a page
+whose steps reached for the network fails. Skipped on Windows (the demos and
 guides are written for a POSIX shell).

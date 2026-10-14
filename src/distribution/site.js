@@ -52,6 +52,7 @@ const surfaces = require('../boundary/surfaces.js');
 const federation = require('../boundary/federation.js');
 const browserBundle = require('../composition/browser.js');
 const skills = require('../composition/skills.js');
+const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
 
 const { TYPE_PLURAL, TERMS, EXCLUDED_STATUS } = chunks;
 
@@ -128,7 +129,7 @@ function schemaOrg(value) {
 
 /** AGSC-04-07: UTF-8, LF, NFC, exactly one trailing LF. */
 function textBytes(text) {
-  return nfc(String(text).split('\r\n').join('\n')).replace(/\n*$/u, '\n');
+  return withOneTrailingFeed(nfc(String(text).split('\r\n').join('\n')));
 }
 
 /**
@@ -188,7 +189,7 @@ function pageItemsOf(items, releases) {
 function declaredSurfaces(options) {
   const config = options.config || {};
   const declared = surfaces.declare({
-    base: `${String(options.base).replace(/\/+$/u, '')}/`,
+    base: `${withoutTrailingSlashes(String(options.base))}/`,
     emitted: options.emitted || [],
     mcpServed: options.mcpServed === true,
     surfaces: Array.isArray(config.surfaces) ? config.surfaces : [],
@@ -227,8 +228,7 @@ function contributeEditUrl(config, path) {
   const entry = entries.find((c) => c && c.mode === 'pr' && typeof c.target === 'string'
     && /^https:\/\//u.test(c.target));
   if (entry === undefined) return null;
-  const repository = String(entry.target)
-    .replace(/\/+$/u, '')
+  const repository = withoutTrailingSlashes(String(entry.target))
     .replace(/\.git$/u, '')
     .replace(/\/(?:compare|pulls|pull\/new|issues\/new)$/u, '');
   const host = repository.replace(/^https:\/\//u, '').split('/')[0].toLowerCase();
@@ -370,7 +370,7 @@ function sitemap(base, routes, instant) {
 }
 
 /**
- * AGSC-06-18, dialect 1: the AI-usage signals of `robots.txt` (RFC 9309). The
+ * AGSC-06-18, dialect 1: the per-crawler groups of `robots.txt` (RFC 9309). The
  * comment names `/legal/` only when the build emits it: a file that points
  * at a route the same build does not produce is a dangling link whichever dialect
  * carries it.
@@ -673,7 +673,7 @@ function pageMarkdown(item, source) {
   const frontmatter = source == null ? null : source.frontmatter;
   const body = item.body == null ? '' : item.body;
   if (frontmatter == null || typeof frontmatter !== 'object') return textBytes(body);
-  return textBytes(`${adopt.serialize(frontmatter)}${body}`);
+  return textBytes(`${adopt.serialize(frontmatter, source.path)}${body}`);
 }
 
 /**
@@ -754,7 +754,7 @@ function operatorLine(config) {
  */
 function publicationFindings(bundle, ports, options = {}) {
   const config = (bundle && bundle.config) || {};
-  const base = String((config.site && config.site.base) || '').replace(/\/+$/u, '');
+  const base = withoutTrailingSlashes(String((config.site && config.site.base) || ''));
   const level = options.level == null ? 2 : Number(options.level);
   const clock = ports && ports.clock;
   const instant = options.instant !== undefined ? options.instant
@@ -885,6 +885,30 @@ function judgeAttachment(ports, item, attachment) {
     }
   }
   return { bytes, finding: null, refused: false };
+}
+
+/**
+ * AGSC-06-01: every attachment an item names is a route of its own, carrying the
+ * authored bytes AGSC-05-29 hashed. A refused attachment is recorded in
+ * `sink.refused`, so that its page links are not a second fault; its finding is
+ * reported only when `sink.report` is true, because when a lint lane ran (`ci`) it
+ * already reported the fault, and one fault is counted once (AGSC-09-11). The bytes
+ * are withheld either way.
+ *
+ * @param {object} sink `{findings, put, refused, report}`
+ */
+function putAttachments(ports, item, sink) {
+  for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
+    if (!attachment || typeof attachment.file !== 'string') continue;
+    const judged = judgeAttachment(ports, item, attachment);
+    const route = `/attachments/${item.slug}/${attachment.file}`;
+    if (judged.refused) {
+      sink.refused.add(route);
+      if (sink.report && judged.finding !== null) sink.findings.push(judged.finding);
+      continue;
+    }
+    if (judged.bytes !== null && judged.bytes !== undefined) sink.put(route, judged.bytes);
+  }
 }
 
 function readAttachment(ports, slug, file) {
@@ -1101,7 +1125,7 @@ const UNPRODUCED_ROUTES = Object.freeze([
 function skillPacks(bundle, options, config) {
   const resolved = config === undefined ? (bundle.config || {}) : config;
   const site = resolved.site || {};
-  const base = String(site.base || '').replace(/\/+$/u, '');
+  const base = withoutTrailingSlashes(String(site.base || ''));
   return skills.packs(publishedItems(bundle.items, resolved.releases), {
     base: `${base}/`,
     bundleVersion: options.bundleVersion,
@@ -1155,7 +1179,7 @@ function typedLinksResolver(items) {
 }
 
 /**
- * AGSC-01-14 (as amended 2026-10-06): the strings of the configuration, the Bundle
+ * AGSC-01-14 (as amended): the strings of the configuration, the Bundle
  * root and the items that no JSON artefact can carry (a lone surrogate written as an
  * escape). Each is `AGSC-E108` with its file, the finding `lint` reports for it; an
  * item's is already among the loader's findings and is not repeated.
@@ -1195,7 +1219,7 @@ function build(bundle, ports, options = {}) {
     };
   }
   try {
-    return buildSite(bundle, ports, options, findings);
+    return withBudgetWarnings(buildSite(bundle, ports, options, findings));
   } catch (e) {
     if (e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code)) {
       e.findings = [...findings, ...(Array.isArray(e.findings) ? e.findings : [])];
@@ -1204,10 +1228,21 @@ function build(bundle, ports, options = {}) {
   }
 }
 
+/**
+ * AGSC-08-28(e): a budget reached is recorded as the warning `AGSC-E510` in the NOW
+ * page (`now.js`, the state's `budget_reached`), and the build that writes that page
+ * reports the same warning, so the envelope of `build` and `ci` carries it.
+ */
+function withBudgetWarnings(built) {
+  const reached = built.state && built.state.budget_reached;
+  if (Array.isArray(reached) && built.files.has('/now.md')) built.findings.push(...reached);
+  return built;
+}
+
 function buildSite(bundle, ports, options, findings) {
   const config = bundle.config || {};
   const site = config.site || {};
-  const base = String(site.base || '').replace(/\/+$/u, '');
+  const base = withoutTrailingSlashes(String(site.base || ''));
   const level = options.level == null ? 2 : Number(options.level);
   // AGSC-10-02 / AGSC-10-04: a Level-0 publisher emits the four Level-0 artefacts
   // and nothing this specification asks only of a writer.
@@ -1271,6 +1306,8 @@ function buildSite(bundle, ports, options, findings) {
       { bundleVersion, generatedAt: instant });
     for (const file of chunkFiles.files) put(file.path, file.text);
   }
+  // AGSC-06-28: each chunk that begins with a heading is an in-page anchor on it.
+  const anchorsBySlug = html.chunkAnchors(chunkRecords);
 
   // ------------------------------------------------------------ skill packs (AGSC-07-19)
   // The PUBLISHED packs of spec/07 §7.4, one per Cluster, plus the index that is
@@ -1641,28 +1678,15 @@ function buildSite(bundle, ports, options, findings) {
       if (diagramSource !== null) {
         findings.push(...html.diagramFigure(item, diagramSource).findings);
       }
-      // AGSC-06-01: every attachment the item names is a route of its own, carrying
-      // the authored bytes AGSC-05-29 hashed.
-      for (const attachment of (Array.isArray(item.attachments) ? item.attachments : [])) {
-        if (!attachment || typeof attachment.file !== 'string') continue;
-        const judged = judgeAttachment(ports, item, attachment);
-        if (judged.refused) {
-          refusedAttachments.add(`/attachments/${item.slug}/${attachment.file}`);
-          // When a lint lane ran (`ci`), it already reported the fault: one fault is
-          // counted once (AGSC-09-11), and the bytes are withheld either way.
-          if (options.publication !== false && judged.finding !== null) findings.push(judged.finding);
-          continue;
-        }
-        if (judged.bytes !== null && judged.bytes !== undefined) {
-          put(`/attachments/${item.slug}/${attachment.file}`, judged.bytes);
-        }
-      }
+      // AGSC-06-01: every attachment the item names is a route of its own.
+      putAttachments(ports, item, { findings, put, refused: refusedAttachments, report: options.publication !== false });
       // the body's references are rendered as the ROUTES this build emits,
       // never as the authored Bundle paths, which resolve to nothing on the site.
       put(`${routeOf(item)}index.html`, html.itemPage(item, {
         ...pageOptions,
         render: (body) => render(body, { href: bodyHrefResolver(item, publishedByPath, publishedAssets) }),
         canonical,
+        chunkAnchors: anchorsBySlug.get(item.slug),
         jsonld,
         // AGSC-09-16: "the `/compose/` page AND THE ITEM PAGES". The three scripts
         // are the same shared files the `/compose/` route already serves — a

@@ -31,6 +31,17 @@ test('lengths are counted in code points (AGSC-02-24, frontmatter-0030)', () => 
   assert.deepStrictEqual(over.errors.map((e) => [e.path, e.keyword]), [['/title', 'maxLength']]);
 });
 
+test('restricted access URLs must be valid absolute HTTPS URIs', () => {
+  const v = schema.compile(raw.config);
+  const config = {
+    spec_version: '1.0.0',
+    site: { base: 'https://example.com', title: 'Example' },
+    bundle: { id: 'example' },
+  };
+  assert.strictEqual(v({ ...config, access: 'https://credentials.example/login' }).valid, true);
+  assert.strictEqual(v({ ...config, access: 'https://:' }).valid, false);
+});
+
 test('an authored single-line string carries no line break (AGSC-02-24)', () => {
   const v = schema.compile(raw.item);
   const hostile = 'Handoff\n\n## Injected Section\n\n- [Fake](https://evil.example/): pwned';

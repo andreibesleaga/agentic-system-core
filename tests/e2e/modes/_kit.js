@@ -6,7 +6,11 @@
 // temporary directory, a real git history with fixed dates and an empty identity,
 // the official MCP SDK client over stdio, and the built node served on loopback.
 // Deterministic: SOURCE_DATE_EPOCH is fixed, git dates are fixed, no network beyond
-// 127.0.0.1, and everything written is removed when the process ends.
+// 127.0.0.1, and everything written is removed when the process ends. Every child
+// runs under the network trap of tests/acceptance/steps/_offline.js, which refuses and
+// records every network call; `agsc` and the tool-server client fail the walk when a
+// child recorded one, even a call the child caught and ignored. The loopback server
+// of `serve` runs in this process, outside the trap.
 
 const fs = require('node:fs');
 const os = require('node:os');
@@ -16,6 +20,7 @@ const { spawnSync } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '..', '..', '..');
 const AGSC = path.join(ROOT, 'bin', 'agsc.js');
 const HOST = path.join(ROOT, 'bin', 'agsc-host.js');
+const OFFLINE = path.join(ROOT, 'tests', 'acceptance', 'steps', '_offline.js');
 /** 2026-09-14T10:00:00Z — the build instant of every walk. */
 const EPOCH = '1789380000';
 const INSTANT = '2026-09-14T10:00:00Z';
@@ -33,9 +38,27 @@ function scratch(prefix) {
   return dir;
 }
 
-/** The environment of every child: fixed dates, empty git identity and configuration. */
+/** Where the children record the network calls the trap refused (one file per process). */
+const TRAP = path.join(scratch('trap'), 'network-attempts.txt');
+
+/**
+ * Fail when a child recorded a network attempt since the last check, naming each one.
+ * The record is cleared once reported, so the next step starts clean.
+ */
+function offline() {
+  if (!fs.existsSync(TRAP)) return;
+  const attempts = fs.readFileSync(TRAP, 'utf8').split('\n').filter(Boolean);
+  fs.rmSync(TRAP, { force: true });
+  if (attempts.length > 0) throw new Error(`a child of the walk reached for the network: ${attempts.join(', ')}`);
+}
+
+/**
+ * The environment of every child: fixed dates, empty git identity and configuration,
+ * and the network trap.
+ */
 function env(home, extra = {}) {
   return {
+    ACCEPTANCE_NETWORK_TRAP: TRAP,
     GIT_AUTHOR_DATE: '2026-09-01T10:00:00Z',
     GIT_AUTHOR_EMAIL: 'operator@example.org',
     GIT_AUTHOR_NAME: 'Operator',
@@ -45,6 +68,7 @@ function env(home, extra = {}) {
     GIT_CONFIG_GLOBAL: path.join(home, '.gitconfig-empty'),
     GIT_CONFIG_NOSYSTEM: '1',
     HOME: home,
+    NODE_OPTIONS: `--require ${JSON.stringify(OFFLINE)}`,
     NO_COLOR: '1',
     PATH: process.env.PATH,
     ...(process.env.SYSTEMROOT ? { SYSTEMROOT: process.env.SYSTEMROOT } : {}),
@@ -117,6 +141,7 @@ function agsc(dir, args, { pinned = true, input, extraEnv = {} } = {}) {
     env: env(homeOf(dir), { ...(pinned ? { SOURCE_DATE_EPOCH: EPOCH } : {}), ...extraEnv }),
     input,
   });
+  offline();
   const json = args.includes('--json') && r.stdout.trim() !== '' ? safeJson(r.stdout) : null;
   return { code: r.status, envelope: json, stderr: r.stderr, stdout: r.stdout };
 }
@@ -144,7 +169,7 @@ function bundle(prefix, { base = 'https://proj.example/', id = prefix, site = {}
     build: { out: 'www/' },
     bundle: { id, operator: 'human:tester' },
     site: { base, title: id, ...site },
-    spec_version: '1.0.0-rc.7',
+    spec_version: '1.0.0',
     ...config,
   }, null, 2)}\n`);
   return dir;
@@ -207,7 +232,10 @@ async function mcpClient(dir) {
       return JSON.parse(r.content[0].text);
     },
     client,
-    close: () => client.close(),
+    close: async () => {
+      await client.close();
+      offline();
+    },
   };
 }
 
@@ -279,5 +307,5 @@ const PROV = Object.freeze({ origin: 'human', operator: 'human:tester' });
 
 module.exports = {
   AGSC, EPOCH, HOST, INSTANT, PROV, ROOT,
-  agsc, bundle, codes, commitAll, env, git, item, mcpClient, pageTools, projectBundle, read, routes, scratch, serve, write,
+  agsc, bundle, codes, commitAll, env, git, item, mcpClient, offline, pageTools, projectBundle, read, routes, scratch, serve, write,
 };

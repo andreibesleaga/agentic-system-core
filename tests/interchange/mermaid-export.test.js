@@ -21,12 +21,17 @@ const exportVerb = require('../../src/application/cli/verbs/export.js');
 const adapter = require('../../src/interchange/adapters/mermaid.js');
 const { LINK_KEYS } = require('../../src/knowledge/links.js');
 
+// The engine refuses an `AGSC_` name it does not know (AGSC-01-37, `AGSC-E004`, exit 2).
+// The suite's own switches start with `AGSC_` too (`AGSC_AUDIT=1` for the architecture
+// lane), so none reaches the commands this file starts.
+for (const name of Object.keys(process.env)) if (name.startsWith('AGSC_')) delete process.env[name];
+
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const AGSC = path.join(ROOT, 'bin', 'agsc.js');
 const EPOCH = '1767225600';
 const INSTANT = '2026-01-01T00:00:00Z';
-const SPEC = '1.0.0-rc.7';
+const SPEC = '1.0.0';
 const OUT = 'dist/export/mermaid';
 const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
 
@@ -242,7 +247,7 @@ test('labels are quoted and escaped; ids are prefixed and clear of reserved word
   assert.strictEqual(adapter.nodeId('class-state-graph'), 'n_class_state_graph');
   assert.strictEqual(adapter.subgraphId('end'), 'c_end');
   const out = adapter.run({
-    config: { site: { base: 'https://x.example/' } },
+    config: { releases: { next: true }, site: { base: 'https://x.example/' } },
     items: [
       { frontmatter: { title: 'A "quoted" <title>', type: 'concept', requires: ['graph#part'] }, slug: 'end', type: 'concept' },
       { frontmatter: { title: 'Graph', type: 'concept' }, slug: 'graph', type: 'concept' },
@@ -250,7 +255,7 @@ test('labels are quoted and escaped; ids are prefixed and clear of reserved word
       { frontmatter: { title: 'Gone', type: 'concept', status: 'retired' }, slug: 'gone', type: 'concept' },
     ],
   }, { instant: INSTANT, sha256, specVersion: SPEC });
-  // `releases` does not hold `next` back here, so `held` is published; a retired item never is.
+  // `releases` sets `next` to true here, so `held` is published; a retired item never is.
   assert.deepStrictEqual(out.files.map((f) => f.path), ['items/end.mmd', 'items/graph.mmd', 'items/held.mmd']);
   const text = out.files[0].text;
   assert.match(text, /^ {2}n_end\["A #quot;quoted#quot; #lt;title#gt;"\]$/mu);

@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "Negative, derived from AGSC-02-02: the permitted subset is block mappings of plain `key: value` entries, block sequences, flow sequences of scalars and the scalar forms, and an explicit key opened by `?` is none of them, even when the key it opens is a plain scalar name. It is a construct outside the subset, AGSC-E105, the code a complex key carries (fm-0017, whose explicit key is a sequence). Line 8 opens the explicit key `? kind` and line 9 gives its value. The rest of the file is valid, so the one error is AGSC-E105 on line 8.",
+  "expected": {
+    "error": "AGSC-E105",
+    "line": 8
+  },
+  "id": "fm-0020",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Supervisor\ndescription: A coordinating agent that routes work to specialised workers and collects their results.\nprov:\n  origin: human\n  operator: human:tester\n? kind\n: explainer\n---\n\n## Intent\n\nRoute work to workers.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-02"
+}

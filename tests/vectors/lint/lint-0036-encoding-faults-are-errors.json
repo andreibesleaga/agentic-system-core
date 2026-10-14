@@ -1,0 +1,52 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-01-14: every `.md` file MUST be UTF-8 without a byte-order mark, use LF line endings, be NFC-normalized and end with exactly one LF, and a `.md` file MUST NOT contain a C0 control character other than U+0009 and U+000A; each fault is AGSC-E108, which section 9.4 registers as an error (it is a warning only when `lint --fix` reports a normalisation it applied, AGSC-04-19, a case `lint-0026` covers). Over the minimal fixture, whose lint reports nothing, five concept files are added, each conforming in every key and a member of the fixture's cluster, and each carrying exactly one of the five faults: a leading U+FEFF (bom.md), CRLF line endings (crlf.md), a title written as `e` followed by U+0301 COMBINING ACUTE ACCENT, whose NFC form is U+00E9 (nfd.md), no LF after the last line (nolf.md), and U+0007 in the body (ctrl.md). The whole list `lint` reports is five AGSC-E108 errors, one naming each file, and lint exits 1. The vector itself stays NFC and ASCII: each fault is written as a JSON escape.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E108",
+          "file": "content/concepts/bom.md",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E108",
+          "file": "content/concepts/crlf.md",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E108",
+          "file": "content/concepts/ctrl.md",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E108",
+          "file": "content/concepts/nfd.md",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E108",
+          "file": "content/concepts/nolf.md",
+          "severity": "error"
+        }
+      ]
+    }
+  },
+  "id": "lint-0036",
+  "input": {
+    "add_files": {
+      "content/concepts/bom.md": "\ufeff---\ntype: concept\ntitle: Byte order mark\ndescription: A concept file that starts with a byte-order mark and is otherwise conforming.\nkind: explainer\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n# Byte order mark\n\nBody.\n",
+      "content/concepts/crlf.md": "---\r\ntype: concept\r\ntitle: Carriage returns\r\ndescription: A concept file whose lines each end with a carriage return and a line feed.\r\nkind: explainer\r\nclusters:\r\n  - agent-patterns\r\nprov:\r\n  origin: human\r\n  operator: human:tester\r\n---\r\n\r\n# Carriage returns\r\n\r\nBody.\r\n",
+      "content/concepts/ctrl.md": "---\ntype: concept\ntitle: Control character\ndescription: A concept file whose body holds a C0 control character other than tab and LF.\nkind: explainer\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n# Control character\n\nBody \u0007 bell.\n",
+      "content/concepts/nfd.md": "---\ntype: concept\ntitle: Cafe\u0301\ndescription: A concept file whose title is written in decomposed form, which is not NFC.\nkind: explainer\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n# Cafe\u0301\n\nBody.\n",
+      "content/concepts/nolf.md": "---\ntype: concept\ntitle: No final line feed\ndescription: A concept file that does not end with a line feed after its last line.\nkind: explainer\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n# No final line feed\n\nBody."
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-14"
+}

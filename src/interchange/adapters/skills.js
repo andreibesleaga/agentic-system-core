@@ -83,6 +83,8 @@ const {
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
 const { isObject, itemText, oneLine, plain, yamlString } = require('../records.js');
+const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { keyValueLine } = require('../../shared/key-value-line.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'skills';
@@ -155,7 +157,7 @@ function basename(path) {
 
 /** `./skills/x/` → `skills/x`; `./` → ``. Never leaves the clone: `..` is refused. */
 function relativeDir(value) {
-  const text = String(value).split('\\').join('/').replace(/^(?:\.\/)+|^\.$/u, '').replace(/\/+$/u, '');
+  const text = withoutTrailingSlashes(String(value).split('\\').join('/').replace(/^(?:\.\/)+|^\.$/u, ''));
   if (text.split('/').some((part) => part === '..') || text.startsWith('/')) return null;
   return text;
 }
@@ -166,17 +168,26 @@ function under(dir, path) {
 
 // ------------------------------------------------------------------- frontmatter
 
+/** A top-level key, its colon and the blanks after it (the head of a lenient line). */
+const FLAT_KEY = /^([A-Za-z][A-Za-z0-9_-]*):[ \t]*/u;
+
 /**
  * The top-level `key: value` lines of a frontmatter block, for a block the failsafe
  * subset of AGSC-02-02 refuses (a Cursor rule's unquoted `globs: *.ts` is a YAML
- * alias to a strict parser). Nested values are not read.
+ * alias to a strict parser). Nested values are not read, and neither is a line that
+ * holds a line terminator other than the line feed. The line is read in linear steps
+ * (`shared/key-value-line.js`): a foreign repository is untrusted input.
+ *
+ * @param {string} yamlText
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {object}
  */
-function flatFrontmatter(yamlText) {
+function flatFrontmatter(yamlText, meter) {
   const out = Object.create(null);
   for (const line of String(yamlText).split('\n')) {
-    const m = /^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$/u.exec(line);
+    const m = keyValueLine(line, FLAT_KEY, meter);
     if (m === null) continue;
-    let value = m[2].trim();
+    let value = m.value.trim();
     if (/^".*"$/u.test(value)) {
       try {
         value = JSON.parse(value);
@@ -184,7 +195,7 @@ function flatFrontmatter(yamlText) {
         value = value.slice(1, -1);
       }
     } else if (/^'.*'$/u.test(value)) value = value.slice(1, -1).replace(/''/gu, '\'');
-    out[m[1]] = String(value);
+    out[m.key] = String(value);
   }
   return out;
 }
@@ -782,7 +793,7 @@ function run(bundle, options) {
   if (findings.some((f) => f.severity === 'error')) return { files: [], findings };
   const config = (bundle && bundle.config) || {};
   const site = config.site || {};
-  const base = `${String(site.base || '').replace(/\/+$/u, '')}/`;
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
   const bundleVersion = String(produced.index.bundle_version || opts.bundleVersion || '');
   const bySlug = new Map(((bundle && bundle.items) || []).filter((i) => i && i.frontmatter).map((i) => [String(i.slug), i]));
   const texts = new Map((produced.files || []).map((f) => [f.path, f.text]));
@@ -808,7 +819,7 @@ function run(bundle, options) {
     if (text === undefined) continue;
     const records = [name, ...(pack.members || []).map(String).sort(compareCodePoint)]
       .map(recordOf).filter((r) => r !== null).map((r) => `<!-- agsc-item ${r} -->`);
-    const body = `${packBody(text).replace(/\n+$/u, '')}\n\n${records.join('\n')}\n`;
+    const body = `${withoutTrailingFeeds(packBody(text))}\n\n${records.join('\n')}\n`;
     const description = yamlString(pack.description);
     if (layout === 'cursor') {
       out.set(`${CURSOR_DIR}/${name}.mdc`, `---\ndescription: ${description}\nglobs:\nalwaysApply: false\n---\n${body}`);

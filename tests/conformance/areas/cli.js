@@ -1,6 +1,7 @@
 // tests/conformance/areas/cli.js — area handler for `cli` vectors.
 // cli-0002, cli-0005 and cli-0006 first; cli-0003, cli-0004 and the rest after the
-// extension point below.
+// extension point below; cli-0020…cli-0022 in _cli-instant-and-order.js, and
+// cli-0023…cli-0025 in _cli-tool-sets-and-gate.js.
 'use strict';
 
 const path = require('node:path');
@@ -11,6 +12,9 @@ const { createFileSystem } = require('../../../src/adapters/node-fs.js');
 const { memoryPorts, captureStream } = require('./_shared.js');
 const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
 const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
+const { runCli0020, runCli0021, runCli0022 } = require('./_cli-instant-and-order.js');
+const { loaderSources, runCli0023, runCli0024, runCli0025 } = require('./_cli-tool-sets-and-gate.js');
+const { guarded } = require('./_expected-reads.js');
 
 function runCli0002(vector, ctx) {
   // AGSC-09-11/AGSC-09-12: the whole CLI, end to end, over the real fixture —
@@ -153,7 +157,7 @@ function fixtureSite(ctx, vector) {
   const schemas = validate.schemas(readSchemas((ctx && ctx.root) || '.'));
   const bundle = loadBundle(fs, { schemas });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: FIXTURE_EPOCH } });
-  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' });
 }
 
 /**
@@ -195,8 +199,11 @@ function evaluateWebmcp(built, options) {
   // The corpus is assembled from the published routes synchronously — the sandbox
   // has no `fetch` but a trap, so nothing can leave this process. The ASYNCHRONOUS
   // path the browser takes is proved by `tests/distribution/compose-page-run.test.js`.
+  // `loader: true` hands the corpus exactly the routes the emitted loader fetches (the
+  // listed pages only, loaderSources); otherwise every route of the build.
   const api = sandbox.AGSC_PAGE_TOOLS;
-  const pageToolset = api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), sandbox.AGSC_CORE);
+  const corpusSources = opts.loader === true ? loaderSources(api, sources) : sources;
+  const pageToolset = api.install(api.pageCorpus(corpusSources, { bundleId: api.BUNDLE_ID }), sandbox.AGSC_CORE);
   vm.runInContext(sources['/compose/webmcp.js'], context, { filename: 'webmcp.js' });
   return { networkCalls, pageToolset, registered, sources, state: sandbox.AGSC_WEBMCP };
 }
@@ -440,7 +447,7 @@ function runCli0008(vector) {
     })),
   };
   const clock = { iso: () => FIXTURE_INSTANT, now: () => Number(FIXTURE_EPOCH) };
-  const built = site.build(bundle, { clock }, { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+  const built = site.build(bundle, { clock }, { specVersion: '1.0.0', version: '0.0.2' });
   const page = evaluateWebmcp(built, {});
   const local = tools(bundle, {});
   const problems = [];
@@ -669,12 +676,20 @@ Object.assign(HANDLERS, {
   'cli-0015': runCli0015,
   'cli-0018': runCli0018,
   'cli-0019': runCli0019,
+  'cli-0020': runCli0020,
+  'cli-0021': runCli0021,
+  'cli-0022': runCli0022,
+  // The page tools are evaluated over the built site exactly as cli-0003 does.
+  'cli-0023': (vector, ctx) => runCli0023(vector, ctx, evaluateWebmcp),
+  'cli-0024': runCli0024,
+  'cli-0025': runCli0025,
 });
 
-module.exports.run = function run(vector, ctx) {
+// A required case with no handler is a FAIL, never a skip: the suite counted a skip
+// as passed, so a new case with no handler passed it unrun. Guarded: a pass that left
+// a member of `expected` unread is a fail too (_expected-reads.js).
+module.exports.run = guarded((vector, ctx) => {
   const handler = HANDLERS[vector.id];
-  if (!handler) {
-    return { status: 'skip', detail: `cli.js (B) does not own ${vector.id} — see-CONTRACT.md area ownership table` };
-  }
+  if (!handler) return { status: 'fail', detail: `${vector.id}: no handler in area cli` };
   return handler(vector, ctx);
-};
+});

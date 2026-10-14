@@ -1,0 +1,30 @@
+{
+  "area": "boundary",
+  "description": "Expected bytes are derived by hand from the rule text. The settings object of the MCP extension identifier, as a node reports it under MCP revision 2025-11-25, the revision its transport declares (AGSC-11-16). Derivation from AGSC-11-18: under a revision earlier than 2026-07-28 the node advertises the identifier `com.agenticsystemcore/knowledge` in the `extensions` map of the capabilities in its `initialize` result (MCP SEP-2133); the settings object of that identifier has EXACTLY ONE member, `linkset`, whose value is the absolute https URL of this node's /.well-known/knowledge-linkset (AGSC-06-07), derived from site.base and never configured; and the node emits no other member, so a settings object with a second member disagrees with the rule and is AGSC-E210 from the check of a declared surface (AGSC-11-16, AGSC-11-19). Under that revision the capabilities are reported once per session, in its `initialize` result, so two sessions opened by two different clients report the same object. Revision 2026-07-28, which has no initialization handshake and reports the object in its server/discover result, is not the subject of this case.",
+  "expected": {
+    "additional_member_is": "AGSC-E210",
+    "every_session_reports_the_same_object": true,
+    "extensions": {
+      "com.agenticsystemcore/knowledge": {
+        "linkset": "https://a.example/.well-known/knowledge-linkset"
+      }
+    },
+    "settings_members": [
+      "linkset"
+    ]
+  },
+  "id": "bnd-0042",
+  "input": {
+    "mcp_revision": "2025-11-25",
+    "mcp_served": true,
+    "sessions": 2,
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-18"
+}

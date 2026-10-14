@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "real-bundles",
+  "reason": "it clones the patterns node, a sibling checkout that the real-Bundle lane of tests/e2e uses, so it runs only where AGSC_E2E=1 and that checkout is present.",
+  "scenario": "Restore-from-zero rebuilds the node byte for byte from a bare clone"
+}

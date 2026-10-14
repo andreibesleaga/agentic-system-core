@@ -70,3 +70,20 @@ test('AGSC-08-02: an unset name is not passed to the child, and nothing else is'
       `${name} is neither in the scrub list, the test runner's own, nor injected by the OS`);
   }
 });
+
+// On Windows git finds the user's configuration through USERPROFILE (or HOMEDRIVE
+// with HOMEPATH) when HOME is not set; without them `agsc init` derived
+// `prov.operator` with no `user.email`. The three names are passed when the parent
+// set them, like HOME, and still nothing else.
+test('the scrub list keeps the three Windows home names, so git finds the user\'s configuration', () => {
+  for (const name of ['USERPROFILE', 'HOMEDRIVE', 'HOMEPATH']) assert.ok(SCRUBBED_ENV.includes(name), name);
+  const runner = createProcessRunner({
+    env: {
+      HOMEDRIVE: 'C:', HOMEPATH: '\\Users\\a', PATH: require('node:path').dirname(process.execPath), USERPROFILE: 'C:\\Users\\a',
+    },
+  });
+  const seen = runner.run('node', ['-e',
+    'process.stdout.write([process.env.USERPROFILE, process.env.HOMEDRIVE, process.env.HOMEPATH].join("|"))']);
+  assert.strictEqual(seen.code, 0, seen.stderr);
+  assert.strictEqual(seen.stdout, 'C:\\Users\\a|C:|\\Users\\a');
+});

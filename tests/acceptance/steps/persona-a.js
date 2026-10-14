@@ -1,14 +1,18 @@
 'use strict';
-// verifies AGSC-02-13, AGSC-03-04, AGSC-06-02, AGSC-06-22, AGSC-06-25, AGSC-06-30
-// Steps of features/persona-a-reader.feature that run offline: the pages a reader
-// opens are read from the build output of the acceptance Bundle, which stands in
-// for the deployed site (the same bytes a host serves from `www/`).
+/* global document */
+// verifies AGSC-02-13, AGSC-03-04, AGSC-06-02, AGSC-06-16, AGSC-06-22, AGSC-06-25, AGSC-06-30
+// Steps of features/persona-a-reader.feature. Offline: the pages a reader opens are
+// read from the build output of the acceptance Bundle, which stands in for the
+// deployed site (the same bytes a host serves from `www/`). In a browser
+// (`_browser.js`): the reader searches on the served `/search/` page, and every
+// request the page makes is recorded.
 
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const { ROOT, built, splitItem } = require('./_world.js');
+const browser = require('./_browser.js');
 
 const BASE = 'https://agenticsystemcore.com/';
 const DRAFT = 'content/concepts/unreleased-idea.md';
@@ -232,7 +236,7 @@ module.exports = [
   {
     pattern: '"/now/" and "/now.md" carry the line "content version …, built at …, fingerprint …, specification …" (AGSC-06-22)',
     run(world) {
-      const line = /^content version \S+, built at 2026-01-01T00:00:00Z, fingerprint [0-9a-f]{64}, specification 1\.0\.0-rc\.7$/mu;
+      const line = /^content version \S+, built at 2026-01-01T00:00:00Z, fingerprint [0-9a-f]{64}, specification 1\.0\.0$/mu;
       const md = line.exec(world.state.nowMd);
       assert.ok(md, world.state.nowMd);
       assert.ok(world.state.nowHtml.includes(`<p>${md[0]}</p>`), 'the HTML page does not carry the same line');
@@ -261,6 +265,59 @@ module.exports = [
       built(world);
       assert.strictEqual(world.read('www/now.md'), world.state.nowMd);
       assert.strictEqual(world.read('www/now/index.html'), world.state.nowHtml);
+    },
+  },
+  {
+    pattern: 'no server-side search endpoint exists',
+    run(world) {
+      // The node is static files: the search page, the index it reads, and no
+      // function, worker or rewrite a host could answer a query with.
+      assert.ok(world.exists('www/search/index.html') && world.exists('www/search.json'));
+      const files = [...world.snapshot('www').keys()];
+      assert.deepStrictEqual(files.filter((f) => /^(functions\/|_worker\.js$|_routes\.json$)/u.test(f)), []);
+      assert.doesNotMatch(world.read('www/_redirects'), /search/u);
+    },
+  },
+  {
+    pattern: 'the reader types a query into the search box',
+    async run(world) {
+      const opened = await browser.open(world, '/search/');
+      await opened.page.waitForSelector('#search-form:not([hidden])', { timeout: 10000 });
+      await opened.page.click('#q');
+      await opened.page.keyboard.type('handoff');
+      await opened.page.keyboard.press('Enter');
+      await opened.page.waitForSelector('#results li a', { timeout: 10000 });
+      world.state.search = opened;
+    },
+  },
+  {
+    pattern: 'the browser fetches "/search.json" once',
+    run(world) {
+      const { origin, requests } = world.state.search;
+      assert.deepStrictEqual(requests.filter((u) => u.split('?')[0] === `${origin}/search.json`), [`${origin}/search.json`]);
+    },
+  },
+  {
+    pattern: 'results are filtered client-side from the fetched inverted index',
+    async run(world) {
+      const { origin, page, requests } = world.state.search;
+      const hrefs = () => page.evaluate(() => [...document.querySelectorAll('#results li a')].map((a) => a.getAttribute('href')));
+      assert.ok((await hrefs()).includes('/concepts/handoff/'), JSON.stringify(await hrefs()));
+      // A second query is answered from the index already in the page: no request at all.
+      const before = requests.length;
+      await page.fill('#q', 'supervisor');
+      await page.waitForFunction(() => [...document.querySelectorAll('#results li a')]
+        .some((a) => a.getAttribute('href') === '/concepts/supervisor/'), null, { timeout: 10000 });
+      assert.deepStrictEqual(requests.slice(before), [], 'the second query made a request');
+      // The query never left the page: no request carried it.
+      assert.deepStrictEqual(requests.filter((u) => /handoff|supervisor/u.test(u.slice(origin.length))), []);
+    },
+  },
+  {
+    pattern: 'no network request is made to any third-party search service',
+    run(world) {
+      assert.deepStrictEqual(world.state.search.offOrigin, [], 'the page requested another origin');
+      assert.deepStrictEqual(world.state.search.errors, [], 'the page logged errors');
     },
   },
 ];

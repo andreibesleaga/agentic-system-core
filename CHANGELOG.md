@@ -11,6 +11,541 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-14
+
+### Upgrading from 1.0.0-rc.7
+
+`1.0.0` adds one section, §0.7, which lists the documents the rules already cite
+normatively, and adds, renumbers and removes no rule. Every change below is
+a defect fix against a rule that already stood, a clarification, a test case that a
+conforming implementation already passes, documentation, or a change to the test and
+release process. A Bundle that conforms to
+`1.0.0-rc.7` conforms to `1.0.0`, except where it breaks one of the rules listed under
+"What `lint`, `build`, `ci` and `verify` may now report"; a Bundle that still declares
+`spec_version: 1.0.0-rc.7` keeps building, because a reader accepts any Bundle of the same
+MAJOR (AGSC-00-15).
+
+**What changes in the files a build writes:**
+
+- the specification version stamped in the built files is `1.0.0`: the three graph files,
+  `/pages/*.jsonld`, `/llms.txt`, `/llms-full.txt`, `/now.md`, the skill packs, the compose and
+  search scripts, and the build entry `process:agsc/1.0.0` of `/ledger.jsonl`; the digests,
+  the bundle hash and the ledger head of the discovery document follow (AGSC-06-08);
+- the vocabulary address: the vocabulary's version is `1.0.0`, so the versioned vocabulary
+  route `/ns/<version>/context.jsonld` moves from `/ns/1.0.0-draft.1/` to `/ns/1.0.0/`, and
+  so does the `@context` of `graph.jsonld` on a Level 0 or 1 node, which names that
+  versioned address (AGSC-05-09, AGSC-05-25); the namespace document site keeps serving the
+  pre-release copy, byte for byte;
+- the default stylesheet (`/assets/site.css`): prose is held to a readable measure (34rem,
+  about 70 characters), while figures, tables and code blocks keep the wider column; a table
+  cell breaks only between words, and only code and links inside a cell may break anywhere;
+- item pages: every chunk that begins at a heading is an in-page anchor, an empty
+  `<span id="chunk-<id>">` opening that heading, so a cited chunk can be reached on its page
+  (AGSC-06-28);
+- `/compose/`: the page says that it needs JavaScript before it loads the graph, and
+  `/compose/agsc-core.js` leaves a retired item out of a composition: a selected or required
+  retired item is reported as the conflict `AGSC-E802` and is not in `selection[]`
+  (AGSC-07-03, AGSC-11-22);
+- the configuration layers of AGSC-01-37 (`.env`, the process environment, a flag) now reach
+  what `build`, `verify`, `ci`, `export` and `mcp` produce, as AGSC-04-18 names them among the
+  build inputs; a build with no override writes the same bytes as before.
+
+**What `lint`, `build`, `ci` and `verify` may now report** (each was already outside a rule;
+the engine now says so):
+
+- an `ai-assisted` or `ai-generated` item without `prov.agent` or `prov.model`: `AGSC-E202`
+  from `lint` (AGSC-08-01). Add the two values.
+- an item whose `release` key the switchboard `releases` does not set to `true` is held back
+  from every surface (AGSC-01-20); an undeclared key no longer publishes the item.
+- an explicit YAML key (`? key`) in front matter: `AGSC-E105`.
+- a language-variant file with no primary (`name.fr.md` without `name.md`): `AGSC-E204`; it
+  was published under the primary's slug (AGSC-01-10, AGSC-01-11, AGSC-01-13).
+- an `index.md` inside a type folder is a note about that folder and no longer an item
+  (AGSC-01-05); it failed `lint` before.
+- a node with `visibility: "restricted"` names its credential page in the new configuration
+  key `access`, an absolute `https:` URL; without it `lint` reports `AGSC-E202` and `build` and
+  `ci` write nothing (AGSC-01-18, AGSC-11-20). The build emits exactly one access link, and
+  both discovery checkers require exactly one (`AGSC-E202` for none, `AGSC-E210` for more).
+- a configuration with a channel of `publish: "auto"`: `verify` and `ci` report `AGSC-E706` for
+  each commit of the content branch's first-parent chain after the root that is not a merge
+  commit, or that carries none of `Signed-off-by`, `Proposal` or `Channel-Auto`
+  (AGSC-08-26 (g)). Nothing is reported for a configuration with no automatic channel.
+- a configuration error from any layer (the project file, `.env` or the process environment)
+  now stops every verb that writes before it writes anything; `lint` and `verify` still
+  report every other finding beside it.
+- `PRIVACY.md` and the `.md` pages under `site/` are checked against AGSC-01-14
+  (`AGSC-E108`).
+- `AGSC-E109`, `AGSC-E310`, `AGSC-E415`, `AGSC-E902` and the findings of `run` name the line
+  of the file, not the line counted from the start of the body.
+- `Assisted-by:` is optional (AGSC-08-07): `AGSC-E505` is reported only when such a line is
+  present and none of them names `prov.operator`.
+
+**What changes on the command line and in the tools:**
+
+- `agsc --help` gives each of the sixteen verbs a line with its purpose; an unknown verb's
+  message says how to get help.
+- `propose` writes its patch in the form `lint --fix` writes, so the applied patch gives the
+  committed file; before the first commit it says to commit once.
+- `refresh --agent <name> --dry-run` stops before it writes when a budget is reached (the
+  warning `AGSC-E510`, exit 0), when nothing can be claimed (exit 0), or when there is no
+  build instant (`AGSC-E204`, exit 1); the NOW page shows "Budget reached".
+- `agsc-host emit` and `serve` check `build.out` through every configuration layer
+  (`AGSC-E204`, `AGSC-E902`) and write nothing outside the Bundle; `serve` answers `421` to a
+  request whose `Host` names neither the loopback nor the bound address, `400` to a missing
+  `Host`, and `404` to a path with a dot segment other than `.well-known`.
+- on a Node.js older than 22.13 every entry point prints one line and exits 2.
+- the local tool server answers a missing resource with `-32002`, the code of the MCP
+  revision it speaks (2025-11-25).
+- the address classifier refuses the whole of `::/96` and `::ffff:0:0/96`, as both checkers
+  already did (AGSC-11-08).
+- slugs lower-case the ASCII letters only, after NFC (AGSC-02-91).
+- `tools/validate-wellknown` and the Python checker require the media type
+  `application/linkset+json` in every case, with the profile as a parameter or a `Link`
+  header (AGSC-06-07, AGSC-09-93).
+- `tools/validate-ontology` reports a datatype outside OWL 2 RL and a class or annotation
+  property used without a declaration (AGSC-05-22).
+- `tools/validate-spec` reads the declared version from the `spec_version` line, not from the
+  first release-candidate version the overview quotes as history.
+- the slow patterns found in the ledger's trailer reading, `lint --fix`, `init`, the old-site
+  import, the board formats, `/llms.txt` and `/llms-full.txt`, and every trailing-slash and
+  trailing line-feed trim are linear scans that give the same result.
+
+**What to do.** Install `1.0.0`; run `agsc ci` in each Bundle and fix what it reports (most
+often the two provenance values of an AI-assisted item); set `spec_version: "1.0.0"` in
+`agsc.config.json` and `content/index.md` when you want the Bundle to state the release;
+rebuild and deploy, because the digests in the discovery document change with the bytes;
+then check the deployed node with
+`node node_modules/agentic-system-core/tools/validate-wellknown https://<your-node>/.well-known/knowledge-linkset --level 2`.
+
+### Added
+
+- Conformance cases, each passed by the engine and cross-checked by the Python checker where
+  it runs the case: `bnd-0040` to `bnd-0043`, `build-0018` to `build-0028`, `bundle-0009`,
+  `bundle-0010`, `cli-0020` to `cli-0025`, `compose-0018` to `compose-0023`, `disc-0022`,
+  `export-0001` and `export-0002` (a new `export` area), `fm-0011` to `fm-0020`, `links-0008`,
+  `links-0009`, `lint-0034` to `lint-0044`, `prov-0006` to `prov-0014` and `slug-0007`.
+  `build-0012` is withdrawn and replaced by `build-0018`, and `bnd-0035`, whose members
+  described MCP revision 2026-07-28, which the reference tool server does not speak, is
+  withdrawn and replaced by `bnd-0042`, which states the same settings object for revision
+  2025-11-25.
+- The vocabulary file is inside OWL 2 RL and OWL 2 DL: the classes and annotation properties
+  it uses from other vocabularies are declared. Its version is `1.0.0`
+  (`owl:versionIRI …/ns/1.0.0`), `dcterms:issued` is 2026-09-29, the day of the `1.0.0-rc.6`
+  tag, `dcterms:modified` is the date of this release (AGSC-05-25), and nine comments are
+  corrected.
+- The specification's normative references (§0.7) and the definitions of the terms the rules
+  used without one (§0.2).
+- Continuous integration: a coverage gate inside the required Node 24 leg (lines 99.9 %,
+  functions 99 %, branches 93 %); every leg packs both packages and installs them together;
+  Node 26 legs; a weekly run; a browser job, which fails when a scenario that needs the
+  browser is skipped; Dependabot for the pinned actions and npm.
+- The release lane publishes a pre-release under `next` and a final release under `latest`,
+  and refuses a tag whose commit is not on `main`.
+- `CITATION.cff` names this version, its release date and the paper's concept DOI
+  (`10.5281/zenodo.23052709`) as the preferred citation.
+- Acceptance scenarios for the review lane (`agsc review`: a label, a comment, every finding
+  with its file, line and column, and no model or network call, also with
+  `AGSC_FEATURE_LLM_REVIEW=1`) and for a retired item that keeps its slug and its page while
+  its old address redirects to its successor, with a second item under the same slug refused
+  (`AGSC-E206`). `tools/validate-features --strict-matrix` fails when a verb of AGSC-09-07 is
+  run by no scenario.
+- The conformance runner guards every area against a vacuous pass: a pass that leaves a member
+  of a case's `expected` unread is a fail.
+- The security corpus (`security-floor-v3`) adds five long-line cases: the skills, old-site and
+  GABBE imports, `skills import`, and `init` on heading lines ending in a carriage return and
+  in U+2028. Each must finish inside the kill bound.
+- A new guard test reads every regular expression in the engine's source and refuses the
+  shapes known to take quadratic time on one long line. Its allow-list states why each listed
+  exception is linear.
+
+### Changed (specification)
+
+Every rule below carries a dated amendment note in `spec/`; the text after each id is that
+note. The list also names the rules amended before `1.0.0-rc.7` whose notes its change log
+did not list. Notes changed only in form (one form for every amendment note, AGSC-00-16) are
+not listed.
+
+#### §0 Overview
+
+- AGSC-00-01: The sentence no longer counts the test cases that name the fixture Bundle;
+  the count it gave was out of date.
+- AGSC-00-05: The lists of what a retired item keeps and leaves did not name the tool
+  server's resources, `/llms-full.txt` or the page tools, and the local tool server, which
+  reads drafts, was not set apart from the published surfaces.
+- AGSC-00-06: The terms that the rules use without a definition were defined here — the six
+  modes and the Mode-2 Links, persona, forge, content branch, namespace document site,
+  launch pipeline and `refs[]` — and the two unregistered private names were stated as such.
+- AGSC-00-17: The rule did not say which value governs when the two differ; the item check
+  compares with the configuration's value, which "the MAJOR the Bundle root fixes" did not
+  say.
+- AGSC-00-18: The example content, type folders and workflow were said to be in no version's
+  scope; they are planned for 1.1. The sentence on PRD-008 said that both documents carry a
+  matching MAJOR, which no check compares; it now names the comparison AGSC-00-17 makes.
+- AGSC-00-20: The capabilities of the reference distribution that earlier wording placed in
+  no version, or did not name, are listed as planned for 1.1; the items already decided for
+  1.1 are named; "an unknown key" is limited to the configuration. A clarification: no tool
+  behaviour and no emitted byte changes. Six items decided for 1.1 while 1.0.0 was prepared
+  are named among the changes of behaviour or of emitted bytes that 1.0 does not make — the
+  AI-assistance statement reworded, the root base check, the general board-slug case, a
+  one-node graph's round trip, an HTML block counted once and fenced prose in a skill pack.
+  A clarification: no tool behaviour and no emitted byte changes. The 1.1 list attributed
+  `isError` and the unknown-tool error to MCP revision 2026-07-28, where revision 2025-11-25,
+  the one 1.0 speaks, already defines both and the 1.0 transport answers them with the
+  AGSC-09-13a envelope; the `remember` refusal and the nesting bound are added to the list.
+  No behaviour changes.
+- AGSC-00-21: Five rows added — the gate verdict, the description file of a Harness, the
+  conformance report, the agent card, and an `AGSC_` environment name that addresses no key.
+
+#### §1 Bundle
+
+- AGSC-01-04: A 1.0 writer forms every IRI from site.base; reporting a root base that
+  differs from site.base as AGSC-E204 is planned for 1.1 (AGSC-00-20).
+- AGSC-01-05: An `index.md` inside a type folder, which the first sentence permits, was read
+  as an item and failed lint for want of `type` and `prov`; it is now a folder note like the
+  other two names, and the comparison of the names is stated.
+- AGSC-01-10: What the grammar settles on case-insensitive and length-limited file systems,
+  and what it leaves open, is stated.
+- AGSC-01-13: A variant file whose primary is absent was read silently as its primary's
+  slug, and the language of an item with no `lang` key was stated only for the 1.1 primary;
+  both are now stated for 1.0.
+- AGSC-01-14: The text files outside the four suffixes were not named.
+- AGSC-01-17: The codes that report a configuration fault were not named.
+- AGSC-01-18: `access`, the key that names a restricted node's credential page for
+  AGSC-11-20, was missing from this list and from the configuration schema.
+- AGSC-01-26: No surface now reads no published surface, and the local tool server, which
+  reads drafts as the required case `cli-0008` pins, is named as no published surface;
+  nothing a node emits changes.
+- AGSC-01-29: The failure named no code.
+- AGSC-01-30: The rejection named no code.
+- AGSC-01-35: The prohibition on a leading `/` is written with the key word in capitals.
+
+#### §2 Items
+
+- AGSC-02-09: The third form was missing, so this grammar and the actor pattern of
+  `schema/item.schema.json` refused the actor that the ledger's trailing entry of
+  AGSC-08-20a carries; the form is added to both, and no emitted byte changes.
+- AGSC-02-13: The rule did not say whose slug `diagram.file` names.
+- AGSC-02-20: The rule did not say which finding, if any, an unescaped `{` or `<` gives.
+- AGSC-02-21: The rule did not say whether the three lists after the pattern list are under
+  the same warning.
+- AGSC-02-23: The rule did not say how a lint that reads one file sees a transition.
+- AGSC-02-24: The subset was said to bind "the three item-facing schemas", which counted the
+  configuration schema that the same rule lets use more keywords.
+
+#### §3 Links
+
+- AGSC-03-01: The rule said that all of the core nine carry composition semantics, while
+  AGSC-03-18 says that four of them never change a composition.
+- AGSC-03-02: The table's Lint column read as if four keys could keep an unresolved target.
+- AGSC-03-08: The rule did not say whether the bounds count authored values or computed
+  edges.
+- AGSC-03-10: The rule did not say whether computed inverse and symmetric edges count as
+  inbound.
+- AGSC-03-12: The rule did not say which embeds become images, what text an alias-less
+  wikilink takes, or what happens to a wikilink naming no item.
+- AGSC-03-18: The combiner `advisory` was used and never defined.
+
+#### §4 Canonical forms
+
+- AGSC-04-04: Whether the six named artefacts were the whole list was not said.
+- AGSC-04-05: The string serialisation, the difference between producing and re-serialising,
+  the trailing line feed and the treatment of noncharacters were not stated.
+- AGSC-04-09: The reference engine read an empty `SOURCE_DATE_EPOCH` as unset and no sentence
+  said so. No behaviour changes.
+- AGSC-04-13: The members' key named the cluster's own `order` first, which no member
+  carries, so members always sorted by slug alone; the text now says so.
+- AGSC-04-18: The rule counted `content/`, `agsc.config.json`, the instant and the git-log
+  file as the only inputs, leaving out the other files of the Bundle root, the environment
+  overrides and the two facts of the trailing ledger entry.
+- AGSC-04-25: What happens to an unusable tag on an earlier element, and to a branch-2
+  result longer than 64 characters, was not stated; the reference engine returned such a
+  result outside the grammar.
+
+#### §5 Graph and vocabulary
+
+- AGSC-05-04a: A word that is not a key word is written in lower case.
+- AGSC-05-05: The requirement on `id` stood only in the key table of §2.2, without a rule
+  id.
+- AGSC-05-09: `"@version"` and `"@protected"` were asked of `graph.jsonld`, which only a
+  context file can carry; the bare form of an `xsd:string` literal is limited to a term with
+  no `@type`, which is what JSON-LD 1.1 reads back as a string; the sentence on compaction
+  is added. No emitted byte changes.
+- AGSC-05-22: The rule named "lint" without saying which check rejects the file or with
+  which code.
+- AGSC-05-23: The rule asked for every inverse to be materialized without saying that
+  `derivation-of` has no property.
+- AGSC-05-25: `issued` is the date of the first published tagged release, and `modified`
+  that of the release that first ships the version of the file; a changed annotation is
+  stated to take a new vocabulary version; the annotation properties and the classes of
+  other vocabularies the file uses are declared in it, which an OWL 2 profile checker needs
+  to find the file inside OWL 2 RL.
+- AGSC-05-31: The default language tag is `i18n.default`, else `en`, as AGSC-01-13 and the
+  reference engine already had it.
+
+#### §6 Surfaces
+
+- AGSC-06-08: "no other top-level member may be present" written as a prohibition with its
+  key word, and the trace bracket moved from the middle of the rule to its end. The
+  `rel#access` row said the link is present when a restricted node "names one", which read
+  as optional against AGSC-11-20's "exactly one"; the row now says exactly one, to the page
+  the configuration's `access` key names.
+- AGSC-06-10: The rule denied that any registry of target attributes exists; RFC 9423
+  created one, scoped to CoRE, which holds neither name.
+- AGSC-06-13: The file was described as following llms.txt v2 as a whole; it follows v2's H1
+  only, and the rule now says that a v2 parser reads no summary.
+- AGSC-06-13a: "No other line may appear" written as a prohibition with its key word. The
+  layout was described as following llms.txt v2 as a whole; block (1) now says that it
+  follows v2's H1 only.
+- AGSC-06-14: The rule said "every published item", a set that includes the retired items
+  AGSC-06-13a leaves out.
+- AGSC-06-15: The rule said that AGSC-02-07 and AGSC-08-07 make the statement true; the
+  line of AGSC-08-07 is optional, so the rule now says what each clause rests on, and that
+  the constant is kept byte for byte at 1.x; rewording the constant is planned for 1.1
+  (AGSC-00-20). No emitted byte changes.
+- AGSC-06-17: The redirect was a MUST bounded by a condition no one can test, which named a
+  version line older than this one; that clause is removed, the redirect is a SHOULD, and
+  the rule says that the legacy name will not be registered. The reference engine still
+  writes the redirect, so no emitted byte changes.
+- AGSC-06-18: `robots.txt` was credited with signals about the use of content by AI that RFC
+  9309 does not define; the `Content-Signal` line every reference `robots.txt` carries was
+  named nowhere; and the two build failures named no code.
+- AGSC-06-24: The rule also bound the security considerations of another document, which
+  this specification cannot bind, and did not say which words the statement is.
+- AGSC-06-32: The word "typed" is dropped; not every external term definition carries an
+  `@type`.
+
+#### §7 Composition
+
+- AGSC-07-03: The rule did not give the verdict entry for a slug not present in the graph. A
+  selected retired item stayed in `selection[]`, and a retired item reached through
+  `requires` was added with no conflict, against AGSC-11-22.
+- AGSC-07-05: The rule did not say whether a hidden item still hides what it supersedes.
+- AGSC-07-05a: The rule did not say which superseding item is named when several supersede
+  the hidden target, and the answer depended on input order, against AGSC-07-09.
+- AGSC-07-07: The rule did not say whether a symmetric `contradicts` pair yields one warning
+  or two.
+- AGSC-07-12: The numbering of a decision record for an item the closure added, which has no
+  input position, was not given. The two requirements of this paragraph are those of
+  AGSC-07-13 and are stated without key words.
+- AGSC-07-13a: Code-point order was called this specification's only ordering, beside the
+  UTF-16 member-name order of AGSC-04-05.
+- AGSC-07-15: The prohibition on a published skill pack is written as its own key word.
+- AGSC-07-16: The rule did not say which files state the two facts or how.
+- AGSC-07-19: The shape of `/skills/index.json` was not given, although it is a JSON
+  artefact with a digest.
+- AGSC-07-20: The rule required the lockfile to be verified without naming the code of a
+  failed verification.
+
+#### §8 Governance
+
+- AGSC-08-02: The rule did not say where the two derived members are emitted; no 1.0
+  artefact emits them.
+- AGSC-08-06: The rule did not say who contributes; the maintainer's own commits are not
+  contributions. The sentence named every commit of the content branch, while
+  AGSC-08-26(g) exempts the root commit and checks the first-parent chain; it now names the
+  commits that clause checks. No behaviour changes.
+- AGSC-08-07: The line was mandatory; it is optional, and a line that is present is still
+  checked against `prov.operator`.
+- AGSC-08-20b: The rule did not say whether the "not run" report carries a code; it carries
+  none.
+- AGSC-08-24: The rule did not say what "attested at release" asks for.
+- AGSC-08-25: The rule asked the NOW page for a count that includes records a build cannot
+  read; it now says which verb counts what.
+- AGSC-08-26: Clause (g) could not be met, since the root commit is never a merge commit; it
+  now exempts the root commit, reads the first-parent chain of the git-log file, applies
+  only where a channel publishes `auto`, as the rule already said, and says which parts
+  `verify` and `ci` check from that file and which the forge's CI checks.
+- AGSC-08-27: "the build" is the implementation's own build, and the failure carries no
+  finding code.
+- AGSC-08-28: (e) said that the run records the skipped run in the NOW page, which a run
+  does not write; the run reports it, and the NOW page shows the reached budget. (b) did not
+  say which model a lane of kind process names; it names its kind, as the reference engine
+  writes it. No behaviour changes.
+
+#### §9 Conformance
+
+- AGSC-09-03: Marked (reference distribution) for the obligation on the reference
+  distribution to publish a rule-coverage matrix.
+- AGSC-09-08: The rule did not say which configuration faults are invalid configuration;
+  they are the faults of `AGSC-E004`, a configuration file that is not a JSON object and
+  `run` and `trace` while `run.enabled` is `false` among them, and the malformed
+  `SOURCE_DATE_EPOCH` of `AGSC-E603`; a configuration value that breaks its key's schema is
+  a finding with exit 1, as the registry and the reference engine already have it. No
+  behaviour changes.
+- AGSC-09-09: An absolute or escaping `compose --out` or `conform --to` is refused with
+  `AGSC-E902`; the reference engine already refused it, and this rule did not say so.
+- AGSC-09-10: A malformed `SOURCE_DATE_EPOCH` is named among the faults answered before a
+  verb is resolved; the reference engine already answered it so, and the case `cli-0021`
+  pins its exit and code.
+- AGSC-09-11: Which members every finding carries, which it carries only when they apply,
+  and where a finding with no file sorts were not said.
+- AGSC-09-13: The `read` cell said one published item, while the required case `cli-0008`
+  and the reference engine have the local server answer a draft; the cell reads one item of
+  the Bundle, and the local server's item set is said; nothing a node emits changes.
+- AGSC-09-14a: "the stop words the tokenizer drops" contradicted AGSC-06-23, which has no
+  stop-word list; the empty `citations[]` of the no-answer result, which `cli-0007` pins,
+  was not said, and "every answer" read as including it. The responder was said to use only
+  the published exports, while the local tool server and the required case `cli-0008` answer
+  from the author's own Bundle, drafts included; the two places it answers from are said;
+  nothing a node emits changes.
+- AGSC-09-14b: The signature named fewer arguments than the AGSC-09-13 table, without
+  `agent`, `model`, `operator` and `origin`; the safe-integer bound both transports apply to
+  `usage` was unstated; a failing `sources[]` entry was given two codes, and the sentence
+  said its other members were truncated and normalised, where both transports keep
+  `resource` and `id` only. The resources were every item, and then only a published item
+  named with AGSC-06-30, which AGSC-00-05 reads as the listed set, while the reference
+  engine exposes every published item, a retired one included; the set and the bytes of an
+  item's resource are said; nothing a node emits changes. The item this rule promises
+  conforms to the schema, and the `agent`/`model` condition of AGSC-08-01 is a lint check the
+  schema cannot express, so a call with an operator alone under the default origin returned
+  an item that `lint` refused; the sentence now says so. No behaviour changes; reporting it
+  in the call is listed for 1.1 in AGSC-00-20.
+- AGSC-09-15: The second requirement stood in the precedence paragraph of §9.4, without a
+  rule id.
+- AGSC-09-16: The page's item set was called the published projection, which AGSC-00-05
+  reads as the listed set; it is named the listed set, the local server's answer for an item
+  a page cannot see is said, and so is where the equality of the two transports holds;
+  nothing a node emits changes. The requirement to report one code moved into AGSC-09-15.
+  Rows that now name the rules of chapters 01, 03, 05 and 07 citing their codes, each a
+  clarification that changes no code and no severity: `AGSC-E202` names AGSC-01-29;
+  `AGSC-E203` names AGSC-01-30 and AGSC-05-22; `AGSC-E204` names a file whose stem holds a
+  dot and names no primary (AGSC-01-13); `AGSC-E208` says which code a 1.0 tool reports
+  instead; `AGSC-E413`, `AGSC-E901` and `AGSC-E506` name the skill-pack uses of AGSC-07-20,
+  and `AGSC-E506` names AGSC-03-12 and a folder `index.md` as a folder note. The `remember`
+  use added; both transports already reported it. A restricted configuration with no access
+  page, and a restricted node's discovery document with no access link, were added, with
+  their rule. The extension-surface use named; `bnd-0021` already expected it. The checker's
+  use on a restricted node was added; it already reported the four content facts and now
+  also a second access link. The parenthesis restates AGSC-11-12 and carries no key word.
+  First amended 2026-10-07, see AGSC-10-02; now marked reserved, as no rule raises it. Who
+  raises the code at 1.0 was not said. The two flags added; the reference engine already
+  refused them. The codes that no case asserts are named, each with its reason; no code and
+  no severity changes. The `AGSC-E105` row names, beside a flow mapping or a complex key, a
+  frontmatter nested deeper than the engine can read or write back, until a version states a
+  bound: `build`, `ci`, `lint --fix` and `import` stopped with an internal error on such a
+  frontmatter where `lint` had passed it; every verb now reports this code, the one the
+  reader already gave the same input.
+- AGSC-09-90: Marked (reference distribution) for the obligation on the reference
+  distribution to ship the validators.
+- AGSC-09-91: Four faults were added to the list — a table row or a paragraph outside every
+  rule that only cites a rule id, a malformed key word, a key word the key-words sentence
+  does not list, and a dated note not in the one form.
+- AGSC-09-92: Whose CI was not said; the validators check the specification's own artefacts,
+  which the reference distribution holds.
+- AGSC-09-93: The media type is required in every case, as AGSC-06-07 says; the `Link`
+  header replaces only the `profile` parameter, and the sentence had accepted either the
+  media type or the header. The check of a restricted node's one access link, which
+  AGSC-11-20 requires and the checker did not make, is stated.
+- AGSC-09-94: The timeout's value and the vendor name of a kept trace member were not said.
+
+#### §10 Implementation profiles
+
+- AGSC-10-02: The rule listed the Bundle's files among what a Level-0 node serves; it now
+  names the routes the node serves and says that the content files are the Bundle the
+  Level-0 cases read.
+- AGSC-10-08: "publish" read as if a route served the id; the configuration is not a route,
+  so the rule says "declare" and names what carries the id.
+- AGSC-10-10: Marked (reference distribution) for the obligation on the 1.0.0 distribution
+  to ship the implementers' guide.
+- AGSC-10-11: Marked (reference distribution) for the obligation on the reference
+  distribution's own end-to-end run.
+- AGSC-10-13: The expansion of a board slug named only the origin, and an item IRI also
+  holds the type folder.
+- AGSC-10-15: The rows `bundle-0009` and `bundle-0010` added with their new cases.
+
+#### §11 Boundary
+
+- AGSC-11-04: The sentence said that conformance as a whole MUST NOT differ, which read
+  wider than the profile carrier it is about.
+- AGSC-11-05: The `no-cache` directive cites RFC 9111. "It MUST send an `ETag`" bound the
+  writer for what the host that serves the node does; the rationale for the SHOULD no longer
+  leans on the wider reading of AGSC-11-04.
+- AGSC-11-08: The IPv4-compatible and IPv4-mapped ranges were "checked as the embedded
+  IPv4", which admitted two readings for a mapped public address; both checkers refuse the
+  whole ranges, and the rule now says so. "A well-tested library" and "MUST NOT hand-parse"
+  could not be tested and are replaced by the result every textual form must give. The
+  NAT64, Teredo and 6to4 prefixes were also "checked as the embedded IPv4"; every checker
+  refuses each of them whole, an address that embeds a globally reachable IPv4 address
+  included, and the rule now says so. No behaviour changes.
+- AGSC-11-10: The members of a walk result beyond `partial` were not said.
+- AGSC-11-14: The code of an `auto` contribute channel, which `bnd-0011` expects, was not
+  named.
+- AGSC-11-17: On what terms an extension surface, which AGSC-11-16 admits, may be declared
+  was not said.
+- AGSC-11-18: The two cases pinned the map "as it is carried in the `server/discover`
+  result", a method a transport speaking `2025-11-25` does not serve; they pin it as
+  reported under the revision spoken, and the `initialize` branch cites SEP-2133.
+  `bnd-0042` replaces the withdrawn `bnd-0035`, whose members for revision `2026-07-28` no
+  session under `2025-11-25` can show.
+- AGSC-11-20: A restricted node asserts conformance at Level 0, where AGSC-06-08a omits the
+  two attributes this rule keeps; which rule wins was not said. The rule asked for exactly
+  one access link but named no configuration key for its target, and the configuration
+  schema refused one as an unknown key, so no restricted node could carry the link; the
+  `access` key, the finding for a restricted configuration without it, and the `agsc-access`
+  attribute the link already carried are stated.
+
+#### Amended before `1.0.0-rc.7` and missing from its notes
+
+- AGSC-01-26a: The opening cross-reference named two of the three rules that define the five
+  flags.
+- AGSC-03-01: The sentence pointed to a document outside the specification for that
+  registry.
+- AGSC-03-13: The grammar is named as the item schema's, which AGSC-03-02 applies; the
+  sentence had pointed at AGSC-03-02 alone.
+- AGSC-07-05: The trace bracket named AGSC-03-17, a reserved id with no rule.
+- AGSC-08-23: The recomputation writes the verifier's own trailing entry, AGSC-08-20a, so
+  another implementation or version reported a correct file as `AGSC-E702`.
+- AGSC-08-26: The limit was stated only in a planning document outside the specification.
+- AGSC-08-29: "T9" is named as the threat row of the security considerations document; the
+  rule had cited it bare.
+- AGSC-11-07: The mutual check is run by `tools/validate-wellknown --peer` (AGSC-09-93); the
+  sentence had named a `verify --peer` flag the verb table does not define.
+
+### Fixed
+
+- Importing from a skills repository (`import --from skills`), an old site
+  (`import --from old-site`) or a GABBE kit (`import --from gabbe`), and `skills import` of a
+  skill pack, now read each frontmatter line, entry heading and dated state line in linear
+  time. Before, one long line that ended in a carriage return, U+2028 or U+2029 could stall
+  the import for minutes. The imported result is unchanged.
+- `init` reads an adopted note's title in linear time; a long heading line ending in a
+  carriage return or U+2028 no longer stalls it. The titles are unchanged.
+- The Harness check that no file carries an `allowed-tools` key (AGSC-07-15) runs in linear
+  time, in the command line and on the compose page. A long run of line feeds no longer
+  stalls it.
+- `run` reads a fence opener's info string in linear time.
+- The archive name of `--zip` and of the compose page's "download all" link drops a
+  folder's trailing slashes in linear time. The name is unchanged.
+- `build`, `ci`, `lint --fix` and `import` stopped with an internal error on a frontmatter
+  nested deeper than the writer could hold, where `lint` had passed it; every verb now
+  reports `AGSC-E105`, the code the reader already gives the same input. No limit is added:
+  an input that passed before passes unchanged.
+- The conformance runner: the cases whose boolean members were asserted in one polarity
+  only are asserted in both, so a case that states the other value fails. The shipped
+  cases keep their statuses.
+- Documentation corrected against the rules: the assistant guide (§4) and the Mode 1 guide
+  say that `remember` needs `agent` and `model` too, unless the call says `"origin": "human"`,
+  or the saved item fails `agsc lint` with `AGSC-E202` (AGSC-08-01); the publishing guide
+  (§6) says how a node served on the author's own machine is checked at Level 2
+  (`http://localhost:8080/` in `site.base` and on the command line, with `--dev`), and the
+  Mode 0 guide points to it; the troubleshooting page gains a row for `AGSC-E603`, where an
+  empty `SOURCE_DATE_EPOCH` counts as unset; `NOTICE` and the README's licence table name
+  the agent skill under `skills/` and `plugins/` and the plugin marketplace files under
+  `.claude-plugin/` as CC0-1.0.
+
+### Security
+
+- `agsc-host` can no longer be pointed outside the Bundle through `build.out`, from any
+  configuration layer, and `serve` refuses a request for a foreign `Host` (a page that
+  rebinds a name to the loopback address).
+- The ledger's `Signed-off-by` reading and the other slow patterns listed above took
+  quadratic or worse time on hostile input (one commit with 100 KB of `<` made `build` take
+  close to a minute); each is now a linear scan, and the security corpus covers them.
+- The address classifier refuses the IPv4-compatible and IPv4-mapped IPv6 ranges whole.
+- The security corpus (`security-floor-v4`) gains two seeded cases for deep frontmatter nesting (`build`,
+  `import --from okf`); each finishes under `AGSC-E105` or passes, never with an internal
+  error.
+
 ## [1.0.0-rc.7] - 2026-10-08
 
 ### Upgrading from 1.0.0-rc.6

@@ -16,7 +16,7 @@ truth; the engine is one implementation of it.
 
 | Folder | What it is | Start with |
 |---|---|---|
-| `spec/`, `schema/`, `ontology/`, `tests/vectors/` | **the standard**: rules, schemas, vocabulary, vectors. Frozen between release candidates | [SPEC-ORIENTATION.md](SPEC-ORIENTATION.md) |
+| `spec/`, `schema/`, `ontology/`, `tests/vectors/` | **the standard**: rules, schemas, vocabulary, vectors. Frozen at each release | [SPEC-ORIENTATION.md](SPEC-ORIENTATION.md) |
 | `src/` | **the engine**: five bounded contexts, a supporting context, the application layer, ports and adapters | [src/README.md](../src/README.md) |
 | `bin/` | the commands `agsc`, `agentic-system-core` and `agsc-host` | [bin/README.md](../bin/README.md) |
 | `index.js` | the package's programmatic entry: discovery constants, versions, `run()` | the file itself |
@@ -89,7 +89,7 @@ verifies (`distribution/ci.js`).
 |---|---|---|
 | Fix a wrong lint result | the rule in `spec/08-governance.md` or `spec/03-links.md` | `src/governance/lint.js` or `src/knowledge/links.js`, and the vectors of the `lint` or `links` area |
 | Change what a page looks like | AGSC-06-02, AGSC-06-05, AGSC-06-20 (accessibility) | `src/distribution/html.js`, `src/distribution/theme.js`, `tests/distribution/` |
-| Change a machine file's bytes | the rule, and the vector that pins the bytes | the emitter in `src/knowledge/` or `src/distribution/`; a released vector is never edited — a specification pass withdraws and replaces it |
+| Change a machine file's bytes | the rule, and the vector that pins the bytes | the emitter in `src/knowledge/` or `src/distribution/`; a released vector is never edited, except the specification-version string it carries, which AGSC-00-16 lets a release update in place — otherwise a specification pass withdraws and replaces it |
 | Add an import or export format | AGSC-01-22, AGSC-01-26a, [PLUGINS.md](PLUGINS.md) | write a memory-adapter plugin (`examples/plugins/memory-adapter.js`); built-in adapters live in `src/interchange/adapters/` |
 | Put a node on a new kind of host | [CONNECTORS.md](CONNECTORS.md#where-a-node-can-live) | a deployment-profile plugin (`examples/hosts/header-rules.js`); built-ins in `src/distribution/hosts/` |
 | Change a tool of the tool surface | AGSC-09-13, AGSC-09-16 | `src/distribution/mcp-tools.js`; the page gets the same code through `page-tools.js`, and vector `cli-0003` compares the two |

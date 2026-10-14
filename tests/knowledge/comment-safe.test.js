@@ -32,7 +32,7 @@ test('the HTML Standard closes a comment on --> and on --!>; both are neutralise
 
 test('it is the IDENTITY on every ordinary value, so no pinned byte moves', () => {
   for (const value of ['CC-BY-4.0', 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
-    'a - b -- c', '<!-- opener', '1.0.0-rc.7', '2026-01-01T00:00:00Z', 'https://example.org/']) {
+    'a - b -- c', '<!-- opener', '1.0.0', '2026-01-01T00:00:00Z', 'https://example.org/']) {
     assert.strictEqual(commentSafe(value), value, value);
   }
 });
@@ -51,7 +51,7 @@ test('the /llms.txt provenance comment survives a --> in the licence prose', () 
     title: 'A Node',
   };
   const text = llms.llmsTxt(bundle, {
-    generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0-rc.7',
+    generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0',
     terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
   });
   // Exactly one comment opener and one closer, and the closer is the last line of
@@ -69,7 +69,7 @@ test('every other writer of the same header carries the same defence', () => {
   const options = {
     base: 'https://example.org/', generatedAt: '2026-01-01T00:00:00Z',
     instant: '2026-01-01T00:00:00Z', license: 'Evil --> escaped',
-    licenseProse: 'Evil --> escaped', specVersion: '1.0.0-rc.7',
+    licenseProse: 'Evil --> escaped', specVersion: '1.0.0',
     terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
   };
   for (const [what, text] of [
@@ -91,7 +91,7 @@ test('the AI-assistance line is one constant, and it is the last line of every b
   const options = {
     base: 'https://example.org/', generatedAt: '2026-01-01T00:00:00Z',
     instant: '2026-01-01T00:00:00Z', license: 'CC0-1.0', licenseProse: 'CC0-1.0',
-    specVersion: '1.0.0-rc.7', terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
+    specVersion: '1.0.0', terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
   };
   for (const [what, text] of [
     ['shared', provenanceHeader({ bundle: options.base, generatedAt: options.generatedAt,

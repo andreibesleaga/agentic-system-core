@@ -1,0 +1,72 @@
+{
+  "area": "compose",
+  "description": "Two members of the result supersede the same item, and a survivor requires it. report requires store-v1, which Step 1 adds; store-v2 and store-cloud both supersede store-v1, so Step 2 hides it and the hard-dependency guard reports AGSC-E802 naming report and store-v1. The superseding item named is the code-point least of the two, store-cloud, whatever the input order: here the selection lists store-v2 first, so a writer that names the first superseding item it meets in input order reports store-v2, and input order would reach the verdict (AGSC-07-09). Closure is not re-run and nothing is substituted, so the composition is invalid.",
+  "expected": {
+    "exit": 1,
+    "harness_emitted": false,
+    "verdict": {
+      "added": [],
+      "conflicts": [
+        {
+          "code": "AGSC-E802",
+          "key": "requires",
+          "pair": [
+            "report",
+            "store-v1"
+          ],
+          "superseding": "store-cloud"
+        }
+      ],
+      "hidden": [
+        "store-v1"
+      ],
+      "selection": [
+        "report",
+        "store-cloud",
+        "store-v2"
+      ],
+      "valid": false,
+      "warnings": []
+    }
+  },
+  "id": "compose-0022",
+  "input": {
+    "items": [
+      {
+        "requires": [
+          "store-v1"
+        ],
+        "slug": "report",
+        "type": "concept"
+      },
+      {
+        "slug": "store-cloud",
+        "supersedes": [
+          "store-v1"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "store-v1",
+        "type": "concept"
+      },
+      {
+        "slug": "store-v2",
+        "supersedes": [
+          "store-v1"
+        ],
+        "type": "concept"
+      }
+    ],
+    "selection": [
+      "store-v2",
+      "store-cloud",
+      "report"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-05a"
+}

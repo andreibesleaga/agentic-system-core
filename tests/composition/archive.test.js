@@ -75,7 +75,7 @@ function ctxFor(dir, verbFlags, argv) {
       fs: createFileSystem(dir),
     },
     root: dir,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr: { write: (text) => lines.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: verbFlags || {},
@@ -307,14 +307,14 @@ test('AGSC-07-13: the page builds the same archive bytes as the CLI, for the sam
     licenseProse: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
     name: 'fixture',
     selectionDigest: createHash('sha256').update(harness.selectionDigestInput(result), 'utf8').digest('hex'),
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
   };
   const emission = harness.emit(result, options);
   assert.ok(emission.emitted && emission.files.size >= 5);
 
   // The page host: the language and nothing else — no require, no fs, no TextEncoder.
   const context = vm.createContext(Object.create(null));
-  vm.runInContext(browser.bundle({ specVersion: '1.0.0-rc.7' }), context, { filename: 'agsc-core.js' });
+  vm.runInContext(browser.bundle({ specVersion: '1.0.0' }), context, { filename: 'agsc-core.js' });
   const core = vm.runInContext('globalThis.AGSC_CORE', context);
   assert.strictEqual(vm.runInContext('typeof TextEncoder', context), 'undefined');
 

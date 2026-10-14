@@ -1,7 +1,7 @@
 # Demos — every mode and every persona, run from an empty folder
 
 **Summary.** This page is a set of small, complete demonstrations: one for each of
-the six modes of using a Bundle, and one for what each of the thirteen personas of
+the six modes of using a Bundle, and one for what each of the sixteen personas of
 the scenarios does first. Each demo starts from an empty folder with nothing but the
 `agentic-system-core` package, takes under five minutes, gives the exact commands,
 quotes the lines a real run printed, and names the one thing it proves. The agent
@@ -101,9 +101,9 @@ test ! -e www/index.html && echo "nothing was published"
 ```
 
 ```text expect
-error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:4
+error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:15
 lint exit 1
-error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:4
+error: AGSC-E310 body reference "salting.md" resolves to nothing inside the Bundle (AGSC-03-11) — content/concepts/brewing.md:15
 build exit 1
 nothing was published
 ```
@@ -277,7 +277,7 @@ Bundle:
 
 ```bash demo
 node "$ENGINE/examples/demos/agents/mcp-call.js" propose '{"slug":"handoff"}' | grep -E '"(slug|type)"'
-node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"episode","title":"Run one","body":"## What happened\n\nAnswered from memory.\n\n## Outcome\n\nsuccess\n\n## Next\n\nNothing.","actor":"process:probe","at":"2026-09-02T10:00:00Z","operator":"human:operator","model":"m","usage":{"cost_usd":0.01,"estimate":false,"model":"m","tokens_in":10,"tokens_out":5}}' | grep -E '"(path|type|started|cost_usd)"'
+node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"episode","title":"Run one","body":"## What happened\n\nAnswered from memory.\n\n## Outcome\n\nsuccess\n\n## Next\n\nNothing.","actor":"process:probe","at":"2026-09-02T10:00:00Z","operator":"human:operator","agent":"agent:probe","model":"m","usage":{"cost_usd":0.01,"estimate":false,"model":"m","tokens_in":10,"tokens_out":5}}' | grep -E '"(path|type|started|cost_usd)"'
 node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"episode","title":"Run one","body":"x","actor":"process:probe"}' || echo "mcp-call exit $?"
 node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"lesson","title":"No operator","body":"## Lesson\n\nx"}' | grep '"message"'
 ls content/episodes 2>/dev/null || echo "content unchanged"
@@ -398,7 +398,7 @@ An agent on `a` records a lesson that cites `b` — through `sources[]`, never t
 link, so nothing is fetched and the citation keeps its origin:
 
 ```bash demo
-(cd a && node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"lesson","title":"Pair retries with a breaker","body":"## Lesson\n\nPair retries with a breaker.\n\n## Evidence\n\nThe supervisor page of node b.\n\n## Check before\n\nA retry loop exists.","operator":"human:operator","sources":[{"id":"b-supervisor","resource":"https://b.example/concepts/supervisor/"}]}' | grep -E '"(resource|path|type)"')
+(cd a && node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"kind":"lesson","title":"Pair retries with a breaker","body":"## Lesson\n\nPair retries with a breaker.\n\n## Evidence\n\nThe supervisor page of node b.\n\n## Check before\n\nA retry loop exists.","operator":"human:operator","agent":"agent:probe","model":"m","sources":[{"id":"b-supervisor","resource":"https://b.example/concepts/supervisor/"}]}' | grep -E '"(resource|path|type)"')
 ```
 
 ```text expect
@@ -734,7 +734,7 @@ run: step 1: echo hello
 run: --dry-run: 1 step(s) resolved, nothing executed
 run: pass (0 error, 0 warn)
 run: step 1: curl https://example.org/   [REFUSED: not in run.allow[]]
-error: AGSC-E203 fetch: the program "curl" is not in run.allow[] (echo), so AGSC-09-94 refuses it — content/procedures/fetch.md:8
+error: AGSC-E203 fetch: the program "curl" is not in run.allow[] (echo), so AGSC-09-94 refuses it — content/procedures/fetch.md:19
 run exit 1
 run: fail (1 error, 0 warn)
 ```
@@ -860,9 +860,11 @@ node "$ENGINE/examples/demos/agents/mcp-call.js" remember '{"agent":"worker","bo
   "type": "proposal"
 ```
 
-The lane's own run, dry. No model adapter ships with the engine, so a live run needs
-one; the dry run shows the shape of what the lane would open — a proposal carrying
-the Episode of the run — and prints the commands a person may run. Applied and
+The lane's own run, dry. No model adapter ships with the engine: a live run is made by
+an agent outside the engine — Claude Code, a script — as a client of `agsc mcp` or the
+page tools, as the claims above were made, under the lane's declared limits
+(AGSC-08-28). The dry run shows the shape of what the lane would open — a proposal
+carrying the Episode of the run — and prints the commands a person may run. Applied and
 built, the NOW page counts the run in the lane's row (enabled, one run, its spend, its
 cap). An undeclared lane is refused:
 
@@ -890,7 +892,7 @@ Mode 2 wrote.
 
 ---
 
-## The thirteen personas, by demo
+## The sixteen personas, by demo
 
 | Persona | First thing they do | Demo | The one thing it proves |
 |---|---|---|---|
@@ -907,6 +909,9 @@ Mode 2 wrote.
 | J — standards implementer | `validate-wellknown --level 2 --peer` | Mode 1 | one discovery file, checked with a shipped tool, no server code |
 | K — self-driving team | a lane claims a task through the tools | Mode 5 | claims are proposals; the commit decides the holder; refusals are the same everywhere |
 | L — port implementer | `validate-wellknown --level 0` on a hand-written node | Mode 1 | the checker judges the files, not the engine that wrote them |
+| M — security reviewer | `ci` before the security contact exists; `verify --ledger` | Mode 0 | a node without a security contact does not pass, and the ledger re-derives from the history |
+| N — researcher | `bench/measure.js --layer determinism`, offline, with a fixed build instant | the benchmark kit, `bench/README.md` (no demo on this page) | every figure names the command that produced it, and a second run gives the same bytes |
+| O — restricted publisher | `"visibility": "restricted"` with an `access` link; `validate-wellknown --level 2` | the Level-2 check of `docs/guides/publish.md`; `docs/IMPLEMENTERS-GUIDE.md` §7b (no demo on this page) | the discovery document says the node exists and where to ask for access, and the shipped checker judges it |
 
 ---
 
@@ -921,8 +926,12 @@ Mode 2 wrote.
   `dist/forge/status-checks.json`, and the shipped `action.yml` runs `agsc ci`; opening
   and merging the pull request is the forge's.
 - **A model key** (an agent lane that writes pages): the engine ships no model adapter,
-  so `refresh --agent <name> --dry-run` is the whole of what runs; the budget, the
-  lane gates and the Episode are real, the model call is not made.
+  so `refresh --agent <name> --dry-run` is the whole of what the lane's own run does;
+  the budget, the lane gates and the Episode are real, the model call is not made. A
+  live run is made by an agent outside the engine, with its own model, as a client of
+  `agsc mcp` or the page tools (AGSC-08-28). The dry run stops,
+  writing nothing, once the month's spend reaches the lane's or the node's budget
+  (`AGSC-E510`, also on the NOW page) or when no board holds a task the lane can claim.
 - **An isolating runner** (`agsc run` executing a step): none ships; `run --dry-run`
   resolves the steps and `run` refuses with the reason.
 

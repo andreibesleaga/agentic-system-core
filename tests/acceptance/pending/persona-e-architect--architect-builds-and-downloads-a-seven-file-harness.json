@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "ticking the items, pressing the button and taking the download needs a browser; the Harness file set and the archive bytes are also covered by the compose and harness tests and by the mode walks.",
+  "scenario": "Architect builds and downloads a seven-file Harness"
+}

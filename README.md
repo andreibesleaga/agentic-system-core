@@ -5,7 +5,7 @@ A specification for publishing machine-discoverable knowledge bundles — the Ag
 What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the nine independent checkers of AGSC-09-90 — seven validators and two generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
 ## Status
-**Release candidate.** This tree states specification `1.0.0-rc.7`, the second public release candidate (the first was `1.0.0-rc.6`). `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0-rc.7` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install --pre agentic-system-core` (pip installs a release candidate only when asked with `--pre`).
+**Released.** This tree states specification `1.0.0`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install agentic-system-core`. The reference engine claims Level 3 ([its claim](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
 
 The specification's own site is [AgenticSystemCore.com](https://agenticsystemcore.com).
 
@@ -123,7 +123,9 @@ do the same for the other modes. To connect an assistant, read
 [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md).
 To teach a coding agent the engine itself, install the agent skill in
 [skills/agentic-system-core/](https://github.com/andreibesleaga/agentic-system-core/blob/main/skills/README.md): `npx skills add andreibesleaga/agentic-system-core`,
-or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-core`.
+or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-core`
+(the marketplace file `.claude-plugin/marketplace.json` points at the plugin in
+[plugins/](https://github.com/andreibesleaga/agentic-system-core/blob/main/plugins/README.md)).
 
 ## Who it is for, what you get, try it
 
@@ -132,8 +134,13 @@ or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-c
 | A person with a folder of notes | a static site of your notes with search, each page also as Markdown, a graph file and text files for assistants; no model, no server | the quick start above; the [Mode 0 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-0.md) |
 | A developer | a local tool server: seven tools over your folder for an assistant; nothing leaves the machine | `agsc mcp`, set up as in [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md); the [Mode 1 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-1.md) |
 | A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | the [Mode 2 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-2.md); `agsc ci`, `agsc export --steer` |
+| A team that keeps its procedures as skills | each procedure as an installable skill pack, checked against a lockfile and holding no scripts; skills collections and rule folders imported as procedures, and the packs exported back for five tools | the [Mode 3 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-3.md); `agsc skills install .claude/skills`; `agsc import --from skills --list <clone>` |
 | An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | the [Mode 4 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-4.md); `agsc compose <slug>… --zip`, or the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |
+| A team of people and agents on a live board | tasks as checked files, and every cluster that holds tasks published as a board; claims and moves as proposals through the tool server, merged by a person; board files to and from eleven project tools | the [Mode 5 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-5.md); `agsc import --from board --format jira <folder> --dry-run` |
 | An engineer implementing or checking the format | test cases with expected bytes; checkers that judge any implementation's files; a second checker in Python | `agsc conform --level 3`; `node node_modules/agentic-system-core/tools/validate-wellknown https://agenticsystemcore.com/.well-known/knowledge-linkset --level 2`; [docs/IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) |
+| A security reviewer | a ledger re-derived from git history and checked offline; an anchor file that `agsc-host verify-anchor` checks against the build; `security.txt` checked by `ci`; untrusted prose fenced in every tool result; a security corpus with its scores | `agsc verify --ledger`; [docs/SECURITY-CONSIDERATIONS.md](docs/SECURITY-CONSIDERATIONS.md), [SECURITY.md](SECURITY.md); the [security reviewer's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-m-security-reviewer.feature) |
+| A researcher | a benchmark kit that runs offline with no model and no key; the graph as JSON-LD, Turtle and N-Quads, which hold the same statements; a citation file and a conformance report to cite | [docs/BENCHMARKS.md](docs/BENCHMARKS.md), [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md), [CITATION.cff](CITATION.cff); the [researcher's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-n-researcher.feature) |
+| A publisher whose content is gated | a node that says it exists while its content stays behind access control: the discovery document stays public, the bundle facts a public node shows are left out, and the checker accepts their absence | `"visibility": "restricted"` in `agsc.config.json` (AGSC-11-20 in [spec/11-boundary.md](spec/11-boundary.md)); the [restricted publisher's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-o-restricted.feature) |
 | A manager deciding whether to depend on it | what you can rely on (open licences, permanent addresses, archived releases, checks by published bytes) and what you cannot (one maintainer, no support promise, no schedule); the state of every outside step; the security policy | read [GOVERNANCE.md](GOVERNANCE.md), [SECURITY.md](SECURITY.md) and the [status page](https://agenticsystemcore.com/docs/status/); look at a live node: <https://patterns.agenticsystemcore.com/> |
 | An agent or its operator reading a node | one discovery document that lists every machine file with its digest; text files, chunks and graph files at fixed addresses | `curl -s https://agenticsystemcore.com/.well-known/knowledge-linkset`, then the checker line above |
 
@@ -172,11 +179,25 @@ The official repository is <https://github.com/andreibesleaga/agentic-system-cor
 ## Reference engine
 
 The reference implementation of the specification lives in this repository,
-under `src/`. It **claims no conformance Level** yet: a claim of any Level exists
-only after a green run of that Level's vector set and is published in the form
-of AGSC-09-01 (AGSC-10-05). All sixteen
-verbs of AGSC-09-07 are implemented; `run` and `trace` are off by default, as
-AGSC-09-94 requires. `agsc init` adopts a folder of Markdown; before the first
+under `src/`. It claims **Level 3**, the full engine. A claim of any Level exists
+only after a green run of that Level's vector set and is published in the form of
+AGSC-09-01 (AGSC-10-05); the engine's claim is kept in
+[docs/CONFORMANCE-STATEMENTS.md](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim),
+with what each part of it rests on, and reads:
+
+> agentic-system-core 1.0.0 conforms to AgenticSystemCore 1.0.0, Level 3.
+> Verified against the published conformance vectors on 2026-10-12: 243 of 243
+> passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
+> chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
+> jcs, ledger, links, lint, prov, slug), 242 required and 1 optional, the 7
+> withdrawn cases excluded, with Unicode 17.0. Deployment profile:
+> cloudflare-pages — the reference profile: `_headers` and `_redirects` as
+> `agsc build` writes them. Surfaces: llms-txt (proved by disc-0013, disc-0014),
+> chunks (proved by chk-0001, chk-0002, chk-0003, chk-0004, chk-0005, chk-0006,
+> chk-0008), webmcp (proved by cli-0003).
+
+All sixteen verbs of AGSC-09-07 are implemented; `run` and `trace` are off by
+default, as AGSC-09-94 requires. `agsc init` adopts a folder of Markdown; before the first
 build the publisher adds `.well-known/security.txt` with a `Contact:` line (RFC
 9116) and commits once or sets `SOURCE_DATE_EPOCH`, as `init` says on its way out;
 `agsc ci` checks, and `agsc build` writes the site.
@@ -211,9 +232,12 @@ codes and output envelopes (AGSC-09-07 to AGSC-09-12) — the plugin contract of
 and their names and signatures may change in any release. The one exception is
 `run()` of `bin/agsc.js`, the entry the `agsc-cli` alias package calls.
 
-**Upgrading from 1.0.0-rc.6.** `CHANGELOG.md` has a section of that name: what a
-node built with rc.6 may now see refused, what changes in the built files, and
-what to do.
+**Upgrading from a release candidate.** `CHANGELOG.md` has one section for each
+step: [Upgrading from 1.0.0-rc.7](CHANGELOG.md#upgrading-from-100-rc7), under
+`1.0.0`, and [Upgrading from 1.0.0-rc.6](CHANGELOG.md#upgrading-from-100-rc6), under
+`1.0.0-rc.7`. Each says what a node built with the earlier version may now see
+refused, what changes in the built files, and what to do. A node still on
+`1.0.0-rc.6` reads the second section first, then the first.
 
 ## Connecting agents and repositories
 
@@ -222,14 +246,14 @@ published Bundle — steering files, skill packs, the MCP server, and the COGX
 memory archive (`agsc export --to cogx` / `agsc import --from cogx`), the format Cognee
 reads and writes and into which it translates Mem0, LangMem, Letta and Zep memories
 when they are migrated into Cognee. `examples/connectors/` holds the
-working examples, and `docs/USE-CASES.md` walks through nineteen concrete scenarios
+working examples, and `docs/USE-CASES.md` walks through twenty-one concrete scenarios
 with their commands.
 
 **Check a Bundle on every push (GitHub Actions).** `action.yml` at the root of this
 repository is a composite action that runs `agsc ci` with the engine at the same
-commit as the action, so the ref you write pins the engine version. Pin it to a
-release tag or a full commit SHA, give the job read access only, and fetch the
-history the ledger reads:
+commit as the action, so the ref you write pins the engine version. Pin it to the
+package tag, `v1.0.0` (not the specification tag `1.0.0`), or to that tag's full commit
+SHA, give the job read access only, and fetch the history the ledger reads:
 
 ```yaml
 permissions:
@@ -241,17 +265,19 @@ jobs:
       - uses: actions/checkout@<commit-sha>
         with:
           fetch-depth: 0
-      - uses: andreibesleaga/agentic-system-core@<tag-or-commit-sha>
+      - uses: andreibesleaga/agentic-system-core@v1.0.0
 ```
 
 **Lint before every commit (pre-commit).** `.pre-commit-hooks.yaml` offers one hook,
 `agsc-lint`, which runs `agsc lint` over the whole Bundle whenever an item or the
-configuration changed:
+configuration changed. Pin `rev` the same way, to the package tag or its full commit
+SHA. The hook runs under the system Node, which must be Node 22.13 or later; where the
+system Node is older, set `language_version` for the hook to a newer version:
 
 ```yaml
 repos:
   - repo: https://github.com/andreibesleaga/agentic-system-core
-    rev: <tag-or-commit-sha>
+    rev: v1.0.0
     hooks:
       - id: agsc-lint
 ```
@@ -264,9 +290,10 @@ person reads, edits and approves everything that is published and answers for it
 published item records how its text was made and names the person accountable for it.
 Written with AI assistance, reviewed and published by a person.
 The assistance covered text, code, figures and diagrams alike. The engine itself calls no
-AI model: it contains no model adapter, and the model steps the specification describes are
-optional, off unless the person running an engine adds an adapter of their own and turns
-them on, and that person's responsibility. What an assistant or agent writes from this
+AI model and contains no model adapter. The model steps the specification describes are
+optional: a live run is made by an agent outside the engine — Claude Code, a script — as a
+client of `agsc mcp` or the page tools, under the lane's declared limits (AGSC-08-28), and
+it is the responsibility of the person who runs that agent. What an assistant or agent writes from this
 work is its own output, not a statement by the author.
 
 ## What this does not claim
@@ -290,12 +317,16 @@ AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to
 |---|---|
 | The engine, the command line and the checkers | Apache-2.0 (`LICENSE`) |
 | The JSON Schemas, the ontology, the identifiers and the discovery document | CC0-1.0 |
+| The agent skill under `skills/` and `plugins/`, and the plugin marketplace files under `.claude-plugin/` | CC0-1.0 |
 | The specification text under `spec/` | Apache-2.0 |
 | The conformance vectors under `tests/vectors/` | Apache-2.0 |
+| The documentation under `docs/`, the scenarios under `features/` and the examples under `examples/` | Apache-2.0 |
+| The W3C-format personal draft under `w3c/` | CC-BY-4.0 |
+| The Internet-Draft under `internet-draft/` | Apache-2.0; as a posted Internet-Draft also under BCP 78 and the IETF Trust Legal Provisions |
 | The prose of a published node — item bodies, descriptions and the pages and exports that carry them | the Content Use Terms in `LICENSE-CONTENT` |
 
-Contributions are signed off under the agreement in `CONTRIBUTOR-AGREEMENT`, which the
-token `CA-v1` names; `CONTRIBUTING.md` says what that means in plain words.
+Outside contributions are signed off under the agreement in `CONTRIBUTOR-AGREEMENT`, which
+the token `CA-v1` names; `CONTRIBUTING.md` says what that means in plain words.
 `GOVERNANCE.md` says who decides and what happens if the maintainer stops,
 `TRADEMARK-POLICY.md` how the project's name may be used,
 `docs/CONFORMANCE-STATEMENTS.md` how to say that an implementation conforms,

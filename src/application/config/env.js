@@ -3,7 +3,7 @@
 //
 // This module reads schema/config.schema.json once, through the adapter that is
 // the one door the schemas enter by (`adapters/node-fs.js#readSchemas`), to
-// derive its name table mechanically (never hand-typed). Raw `.env` syntax is parsed by `dotenv@18.0.0` (`.parse()` only —
+// derive its name table mechanically (never hand-typed). Raw `.env` syntax is parsed by `dotenv@18.0.3` (`.parse()` only —
 // never `.config()`, which would touch `process.env` itself); the AGSC_*
 // name filtering, credential exclusion and AGSC-09-09 precedence stay this
 // module's own (ADR-019: hand-write only what a library does not do).
@@ -201,7 +201,7 @@ function pathForEnvName(name) {
 /**
  * parseDotenv(text) -> { entries: Map<name,value>, ignored: string[], findings: [] }
  *
- * Raw `NAME=value` tokenising is `dotenv@18.0.0`'s `parse()` (ADR-019;
+ * Raw `NAME=value` tokenising is `dotenv@18.0.3`'s `parse()` (ADR-019;
  * a later line wins over an earlier one, comments and blank lines are
  * skipped — the object `dotenv.parse` returns already reflects that, since
  * a later key simply overwrites the earlier one). This module's own job,

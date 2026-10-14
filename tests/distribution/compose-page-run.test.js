@@ -64,7 +64,7 @@ function builtFixture() {
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
-  return { bundle, ...site.build(bundle, ports, { specVersion: '1.0.0-rc.7', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, ports, { specVersion: '1.0.0', version: '0.0.2' }) };
 }
 
 /** The smallest DOM the controller touches: ids, text, children and one listener. */
@@ -178,7 +178,7 @@ test('AGSC-07-13: the seven files the PAGE builds are byte-identical to the CLI\
     licenseProse: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
     name: harness.harnessName(digest),
     selectionDigest: digest,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
   });
   assert.deepStrictEqual([...emitted.files.keys()], [...there.files.keys()]);
   for (const [at, text] of there.files) {
@@ -462,6 +462,20 @@ test('with nothing selected the page asks for a selection instead of saying "val
   // The markup the build emits starts with the same sentence, so a reader without
   // script is never told that an empty selection is valid.
   assert.match(String(files.get('/compose/index.html')), /<p id="validity"[^>]*>Select one or more items to compose\.<\/p>/u);
+});
+
+test('without script the item list says the page needs JavaScript and names the command that gives the same result', async () => {
+  const { files } = builtFixture();
+  const markup = String(files.get('/compose/index.html'));
+  // A reader without script (or an agent reading the markup) is never told the page is
+  // still loading: it says what the page needs and where the same Harness comes from.
+  assert.match(markup, /<ul id="items"><li>This page needs JavaScript; the same result comes from <code>agsc compose<\/code>\.<\/li><\/ul>/u);
+  assert.doesNotMatch(markup, /Loading the published graph/u);
+  // With script, the controller replaces that sentence with one checkbox per item.
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  assert.ok(page.document.nodes.get('items').children.length >= 2);
 });
 
 test('AGSC-07-07: the warnings are shown to the reader, each with its code and a sentence', async () => {

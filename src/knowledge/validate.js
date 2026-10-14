@@ -4,6 +4,8 @@
 // AGSC-01-11 (slug identity), AGSC-01-18 (closed configuration), AGSC-02-05 and
 // AGSC-02-05a (key names, the `x-` vendor namespace), AGSC-02-07/AGSC-08-01 (prov),
 // AGSC-02-21 (AGSC-E408), AGSC-02-24 (length bounds) and the §9.4 code precedence.
+// `aiProvenance` is AGSC-08-01's conditional `agent`/`model` check, which the lint lane
+// runs (governance/lint.js) and loading an item does not.
 //
 // PURE: no fs, no process, no clock, no network, no cross-context require.
 //
@@ -23,6 +25,7 @@
 
 const { compile } = require('./schema.js');
 const { nfc, codePointLength, compareCodePoint, isWellFormed } = require('./unicode.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-01-02: the folder each `type` lives in. */
 const TYPE_PLURAL = Object.freeze({
@@ -112,7 +115,7 @@ function sortFindings(findings) {
 }
 
 /**
- * AGSC-01-14 (as amended 2026-10-06) with AGSC-04-05: a frontmatter or configuration
+ * AGSC-01-14 (as amended) with AGSC-04-05: a frontmatter or configuration
  * string — a value or a member name — that is not a sequence of Unicode scalar values,
  * i.e. one holding a lone surrogate written as an escape (`"\uD800"` in YAML or
  * JSON), can enter no JSON artefact: I-JSON is the precondition of JCS. A UTF-8 file
@@ -394,12 +397,12 @@ function item(frontmatter, options = {}) {
   }
 
   // AGSC-00-17: an item MAY carry `spec_version`; when it does, its MAJOR is the one
-  // the Bundle root fixes (`agsc.config.json`), and another MAJOR is `AGSC-E204`.
+  // the configuration fixes (`agsc.config.json`), and another MAJOR is `AGSC-E204`.
   const own = options.config && options.config.spec_version;
   if (typeof frontmatter.spec_version === 'string' && typeof own === 'string'
       && !majorCompatible(frontmatter.spec_version, own)) {
     findings.push(finding('AGSC-E204',
-      `spec_version "${frontmatter.spec_version}" carries another MAJOR than the Bundle root's "${own}" (AGSC-00-17)`,
+      `spec_version "${frontmatter.spec_version}" carries another MAJOR than the configuration's "${own}" (AGSC-00-17)`,
       { ...base, key: 'spec_version', line: lineOf(keyLines, '/spec_version') }));
   }
 
@@ -508,15 +511,25 @@ function config(configObject, options = {}) {
         + ' (AGSC-00-25, AGSC-00-21)' : ''}`,
       { file, key: e.keyword === 'additionalProperties' ? String((e.params || {}).additionalProperty || '') : undefined }));
   }
-  // AGSC-01-19 (amended 2026-10-06): `build.out` names neither the source tree
-  // `content/` (AGSC-08-02: a build never writes there) nor the generated `dist/`
-  // (AGSC-01-08), nor a path under either; the first segment is compared ASCII
-  // case-insensitively, because on a case-insensitive file system `Content` IS
-  // `content/`. Until that day `"out": "content"` wrote the
-  // whole site into the source tree and exited 0.
+  // AGSC-01-19 (as amended): `build.out` names neither the source tree `content/`
+  // (AGSC-08-02: a build never writes there) nor the generated `dist/` (AGSC-01-08),
+  // nor a path under either; the first segment is compared ASCII case-insensitively,
+  // because on a case-insensitive file system `Content` IS `content/`. Without this
+  // check `"out": "content"` would write the whole site into the source tree and
+  // exit 0.
   const out = configObject.build && configObject.build.out;
   const outFault = typeof out === 'string' ? buildOutFault(out) : null;
   if (outFault !== null) findings.push(finding('AGSC-E204', outFault, { file, key: 'build.out' }));
+  // AGSC-11-20: a `restricted` node carries exactly one `…/rel#access` link, and the
+  // configuration's `access` key is where its target comes from; a restricted
+  // configuration that names none is a required value missing (`AGSC-E202`), so `build`
+  // and `ci`, which run this check, never publish a restricted node without the link.
+  if (configObject.visibility === 'restricted' && configObject.access === undefined) {
+    findings.push(finding('AGSC-E202',
+      'visibility is restricted and no access page is named; a restricted node carries exactly one rel#access link,'
+      + ' whose target is where a reader obtains credentials: name it in the top-level access key (AGSC-11-20)',
+      { file, key: 'access' }));
+  }
   // AGSC-01-19: the development placeholder `http://localhost[:<port>][/]` is admitted, and
   // lint reports it "until the owner replaces it" — on every run, not only by the `init`
   // that wrote it. `build` and `ci` run this check too (verbs/lint.js `configAndRoot`).
@@ -562,10 +575,36 @@ function itemIri(filePath, frontmatter, base) {
   if (!frontmatter || frontmatter.iri == null || typeof base !== 'string' || base === '') return [];
   const m = /^content\/([a-z]+)\/([^/.]+)(?:\.[^/]+)?\.md$/u.exec(String(filePath).split('\\').join('/'));
   if (!m) return [];
-  const expected = `${base.replace(/\/+$/u, '')}/${m[1]}/${m[2]}/`;
+  const expected = `${withoutTrailingSlashes(base)}/${m[1]}/${m[2]}/`;
   if (String(frontmatter.iri) === expected) return [];
   return [finding('AGSC-E204', `iri "${frontmatter.iri}" is not the computed item IRI "${expected}" (AGSC-05-05)`,
     { file: filePath, slug: m[2] })];
+}
+
+/** AGSC-08-01: the two origins under which `agent` and `model` MUST be present. */
+const AI_ORIGINS = Object.freeze(['ai-assisted', 'ai-generated']);
+
+/**
+ * AGSC-08-01: under an `ai-assisted` or `ai-generated` origin, `prov.agent` and
+ * `prov.model` MUST be present, and each one missing is `AGSC-E202`. The item schema
+ * cannot state the condition (its keyword subset has no `if`), so this is a lint
+ * check, run by the lint lane and never by loading an item: a missing `prov`, or a
+ * `prov` that is not a mapping, is the schema's fault (`AGSC-E501`, `AGSC-E201`) and
+ * is not reported again here. An empty value is not a name, so it counts as missing.
+ *
+ * @param {object} frontmatter
+ * @param {{file?:string, slug?:string}} [at]
+ * @returns {Array<object>} Findings, `agent` before `model`.
+ */
+function aiProvenance(frontmatter, at = {}) {
+  const prov = frontmatter && typeof frontmatter === 'object' ? frontmatter.prov : undefined;
+  if (prov === null || typeof prov !== 'object' || Array.isArray(prov)) return [];
+  if (!AI_ORIGINS.includes(prov.origin)) return [];
+  return ['agent', 'model']
+    .filter((member) => prov[member] === undefined || prov[member] === null || prov[member] === '')
+    .map((member) => finding('AGSC-E202',
+      `prov.${member} is missing; an item whose origin is ${prov.origin} names the ${member} that helped write it (AGSC-08-01)`,
+      { file: at.file, slug: at.slug }));
 }
 
 /**
@@ -622,6 +661,7 @@ function majorCompatible(declared, own) {
 }
 
 module.exports = {
+  aiProvenance,
   schemas,
   buildOutFault,
   applyTypes,

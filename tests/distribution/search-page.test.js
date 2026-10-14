@@ -42,7 +42,7 @@ function built() {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' }) };
 }
 
 /** A value flattened out of the vm realm (a cross-realm array has another prototype). */
@@ -118,7 +118,7 @@ const SAMPLES = ['', 'a', 'ÉCOLE Σigma ABC', 'x² Ⅷ a-b', 'नमस्त�
 // ------------------------------------------------------------- the tokenizer, twice
 
 test('AGSC-06-23: the page script carries the SOURCE TEXT of the tokenizer the index was built with', () => {
-  const text = searchPage.script({ specVersion: '1.0.0-rc.7' });
+  const text = searchPage.script({ specVersion: '1.0.0' });
   for (const name of search.PORTABLE) {
     const source = String(search[name]);
     assert.ok(source.startsWith(`function ${name}(`), `${name} is not a plain function declaration`);
@@ -129,8 +129,8 @@ test('AGSC-06-23: the page script carries the SOURCE TEXT of the tokenizer the i
     assert.ok(text.includes(String(pageTools[name])), `the script does not carry ${name}'s own source text`);
   }
   assert.ok(text.endsWith('}());\n') && !text.endsWith('\n\n'), 'the script does not end in exactly one LF');
-  assert.strictEqual(text, searchPage.script({ specVersion: '1.0.0-rc.7' }), 'the script is not deterministic');
-  assert.ok(text.includes('spec_version: 1.0.0-rc.7') && searchPage.script().includes('spec_version: unset'));
+  assert.strictEqual(text, searchPage.script({ specVersion: '1.0.0' }), 'the script is not deterministic');
+  assert.ok(text.includes('spec_version: 1.0.0') && searchPage.script().includes('spec_version: unset'));
 });
 
 test('AGSC-06-23: in a context with nothing but the language, the page tokenizes byte for byte as the writer did', () => {
@@ -227,7 +227,7 @@ test('AGSC-06-01 / AGSC-06-17: /search/ is a form over /search.json with the ite
   assert.ok(page.includes('<a href="/search/" aria-current="page">Search</a>'), 'the navigation does not mark the page');
   // The script is emitted at its route, and is exactly the module's own text.
   const script = String(files.get(searchPage.SCRIPT_ROUTE));
-  assert.strictEqual(script, searchPage.script({ plurals: searchPage.pluralsOf(bundle.items), specVersion: '1.0.0-rc.7' }));
+  assert.strictEqual(script, searchPage.script({ plurals: searchPage.pluralsOf(bundle.items), specVersion: '1.0.0' }));
   assert.ok(script.includes('"agent-patterns":"clusters"'), 'the cluster is not in the plural table');
   assert.ok(!script.includes('"handoff"'), 'a concept is in the plural table, which lists only what is not a concept');
 });

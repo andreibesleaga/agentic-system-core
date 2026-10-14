@@ -31,7 +31,7 @@ function build() {
   const port = createFileSystem(dir);
   const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
-  built = site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0-rc.7', version: '0.0.0' }).files;
+  built = site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0', version: '0.0.0' }).files;
   fs.rmSync(dir, { force: true, recursive: true });
   return built;
 }

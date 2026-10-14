@@ -1,0 +1,28 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-01-03: the `type` key is authoritative and MUST match the containing folder; a mismatch is AGSC-E205. Over the minimal fixture, whose lint reports nothing, one file is added: content/concepts/wrong-folder.md, a lesson that carries every key and body section its type asks for (AGSC-02-21) and is a member of the fixture's cluster, so that nothing but its placement is at fault. AGSC-01-02 puts a lesson under content/lessons/, so the whole list `lint` reports is one AGSC-E205 error naming that file, and lint exits 1. The folder is never taken as the type: the item is not re-typed as a concept, which would raise the concept's own required keys instead.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E205",
+          "file": "content/concepts/wrong-folder.md",
+          "severity": "error"
+        }
+      ]
+    }
+  },
+  "id": "lint-0034",
+  "input": {
+    "add_files": {
+      "content/concepts/wrong-folder.md": "---\ntype: lesson\ntitle: Wrong folder\ndescription: A lesson that is valid in every key but sits in the concepts folder of the Bundle.\nclusters:\n  - agent-patterns\nseverity: info\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Lesson\n\nPlace each item in its type's folder.\n\n## Evidence\n\nThis file.\n\n## Check before\n\nThe folder name.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-03"
+}

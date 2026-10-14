@@ -1,5 +1,5 @@
 {
- "about": "The seeded fault corpus of the security floor (docs/MEASUREMENTS.md, research/39 Layer C). Every case is a known shape; a full score says the engine stops these shapes and nothing more (AGSC-08-19). Every credential-shaped value is fabricated, and stored base64-encoded so that no secret scanner mistakes it for a leak. Cases marked required:false are shapes beyond what AGSC-08-13 enumerates and are reported, never scored.",
+ "about": "The seeded fault corpus of the security floor (docs/MEASUREMENTS.md, research/39 Layer C). Every case is a known shape; a full score says the engine stops these shapes and nothing more (AGSC-08-19). Every credential-shaped value is fabricated, and stored base64-encoded so that no secret scanner mistakes it for a leak. Cases marked required:false are shapes beyond what AGSC-08-13 enumerates and are reported, never scored. Cases marked bound:true feed a run just under 1 MiB long where a slow pattern would stall; their command is started with a kill bound, and they are handled when it finishes inside it.",
  "cases": [
   {
    "class": "imperative",
@@ -834,6 +834,33 @@
    "id": "big-combining-run",
    "kind": "bundle",
    "verb": "ci"
+  },
+  {
+   "class": "oversized",
+   "expect": [
+    "AGSC-E105"
+   ],
+   "files": [
+    {
+     "nest": {
+      "count": 800,
+      "indent": " ",
+      "leaf": "k: leaf\n",
+      "open": "k:\n",
+      "prefix": "---\ntype: concept\ntitle: Bench Security Case\ndescription: A seeded case of the security-floor corpus, written to exercise one lint.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\nx:\n",
+      "suffix": "---\n\n## Intent\n\nPass control from one agent to another.\n\n## Context & Forces\n\nForces.\n\n## Structure\n\nStructure.\n\n## Consequences & Trade-offs\n\nTrade-offs.\n\n## Related Patterns\n\nSee [Supervisor](supervisor).\n"
+     },
+     "path": "content/concepts/evil.md"
+    }
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "id": "deep-frontmatter-build",
+   "kind": "bundle",
+   "verb": "build"
   },
   {
    "class": "archive",
@@ -1769,6 +1796,33 @@
   {
    "class": "hostile-import",
    "expect": [
+    "AGSC-E105"
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "format": "okf",
+   "id": "deep-frontmatter-okf-import",
+   "kind": "import",
+   "source": [
+    {
+     "nest": {
+      "count": 800,
+      "indent": " ",
+      "leaf": "k: leaf\n",
+      "open": "k:\n",
+      "prefix": "---\ntype: concept\ntitle: Deep Item\ndescription: A foreign item whose frontmatter is nested deeper than a writer holds.\nx:\n",
+      "suffix": "---\n\nBody.\n"
+     },
+     "path": "deep.md"
+    }
+   ]
+  },
+  {
+   "class": "hostile-import",
+   "expect": [
     "AGSC-E405"
    ],
    "format": "okf",
@@ -2193,7 +2247,392 @@
    "id": "beyond-split-lines",
    "kind": "bundle",
    "required": false
+  },
+  {
+   "args": [
+    "static-host"
+   ],
+   "class": "hostile-host-config",
+   "command": "agsc-host",
+   "expect": [
+    "AGSC-E204",
+    "AGSC-E902"
+   ],
+   "files": [
+    {
+     "path": "agsc.config.json",
+     "text": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"../host-out-parent.outside\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+    }
+   ],
+   "id": "host-out-parent",
+   "inspect": "bundle",
+   "kind": "bundle",
+   "must_not_reach": [
+    {
+     "under": "outside"
+    },
+    {
+     "path": "dist/hosts"
+    }
+   ],
+   "outside": true,
+   "verb": "emit"
+  },
+  {
+   "args": [
+    "static-host"
+   ],
+   "class": "hostile-host-config",
+   "command": "agsc-host",
+   "expect": [
+    "AGSC-E204",
+    "AGSC-E902"
+   ],
+   "files": [
+    {
+     "path": "agsc.config.json",
+     "text": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"{{outside}}\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+    }
+   ],
+   "id": "host-out-absolute",
+   "inspect": "bundle",
+   "kind": "bundle",
+   "must_not_reach": [
+    {
+     "under": "outside"
+    },
+    {
+     "path": "dist/hosts"
+    }
+   ],
+   "outside": true,
+   "verb": "emit"
+  },
+  {
+   "args": [
+    "static-host"
+   ],
+   "class": "hostile-host-config",
+   "command": "agsc-host",
+   "expect": [
+    "AGSC-E204"
+   ],
+   "files": [
+    {
+     "path": "agsc.config.json",
+     "text": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"content\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0-rc.7\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+    }
+   ],
+   "id": "host-out-source-tree",
+   "inspect": "bundle",
+   "kind": "bundle",
+   "must_not_reach": [
+    {
+     "path": "content/.htaccess"
+    },
+    {
+     "path": "dist/hosts"
+    }
+   ],
+   "verb": "emit"
+  },
+  {
+   "class": "environment-layer",
+   "env": {
+    "AGSC_BUILD_OUT": "content"
+   },
+   "expect": [
+    "AGSC-E204"
+   ],
+   "id": "env-build-out-source-tree",
+   "inspect": "bundle",
+   "kind": "bundle",
+   "must_not_reach": [
+    {
+     "path": "www"
+    },
+    {
+     "path": "content/index.html"
+    }
+   ],
+   "verb": "build"
+  },
+  {
+   "class": "environment-layer",
+   "env": {
+    "AGSC_BUILD_OUT": "public"
+   },
+   "fault": false,
+   "forbid": [
+    "AGSC-E004",
+    "AGSC-E204",
+    "AGSC-E902"
+   ],
+   "id": "ctl-env-build-out",
+   "kind": "bundle",
+   "verb": "build"
+  },
+  {
+   "bound": true,
+   "class": "hostile-history",
+   "expect": [],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "git": {
+    "commits": [
+     "first\n\nSigned-off-by: Bench <bench@example.org> (CA-v1)",
+     {
+      "repeat": {
+       "count": 1048463,
+       "prefix": "A commit with a hostile trailer\n\nSigned-off-by: ",
+       "suffix": "\n",
+       "text": "<"
+      }
+     }
+    ]
+   },
+   "id": "history-long-trailer",
+   "kind": "bundle",
+   "verb": "build"
+  },
+  {
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "files": [
+    {
+     "path": "agsc.config.json",
+     "remove": true
+    },
+    {
+     "path": "content",
+     "remove": true
+    },
+    {
+     "path": "README.md",
+     "remove": true
+    },
+    {
+     "path": ".well-known",
+     "remove": true
+    },
+    {
+     "path": "note.md",
+     "repeat": {
+      "count": 1048503,
+      "prefix": "# Note\n\n",
+      "suffix": "\n",
+      "text": "["
+     }
+    }
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "id": "long-run-init",
+   "kind": "bundle",
+   "verb": "init"
+  },
+  {
+   "args": [
+    "--fix"
+   ],
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "files": [
+    {
+     "path": "content/concepts/evil.md",
+     "repeat": {
+      "count": 1048019,
+      "prefix": "---\ntype: concept\ntitle: Bench Security Case\ndescription: A seeded case of the security-floor corpus, written to exercise one lint.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\nkind: pattern\n---\n\n## Intent\n\nA body that ends in a long run of backticks.\n\n## Context & Forces\n\nForces.\n\n## Structure\n\nStructure.\n\n## Consequences & Trade-offs\n\nTrade-offs.\n\n## Related Patterns\n\nSee [Supervisor](supervisor).\n\n",
+      "suffix": "\n",
+      "text": "`"
+     }
+    }
+   ],
+   "finish": {
+    "exit": [
+     0,
+     1
+    ]
+   },
+   "id": "long-run-lint-fix",
+   "kind": "bundle",
+   "verb": "lint"
+  },
+  {
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "format": "skills",
+   "id": "long-run-import-skills",
+   "kind": "import",
+   "source": [
+    {
+     "path": "skills/evil/SKILL.md",
+     "repeat": {
+      "count": 1047939,
+      "prefix": "---\nname: evil\ndescription: A foreign skill whose frontmatter is not the failsafe subset.\nglobs: *.ts\nlicense:",
+      "suffix": "\u2028x\n---\nBody.\n",
+      "text": " "
+     }
+    }
+   ]
+  },
+  {
+   "args": [
+    "--selection",
+    "{{source}}/selection.tsv"
+   ],
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "finish": {
+    "exit": [
+     0,
+     1
+    ]
+   },
+   "format": "old-site",
+   "id": "long-run-import-old-site",
+   "kind": "import",
+   "source": [
+    {
+     "path": "content/patterns/evil.md",
+     "repeat": {
+      "count": 1048016,
+      "prefix": "---\nid: evil\ntitle:",
+      "suffix": "\u2028x\nkind: pattern\n---\nBody.\n",
+      "text": " "
+     }
+    },
+    {
+     "path": "selection.tsv",
+     "text": "slug\ttitle\tclass\told_status\tdecision\treason\nevil\tEvil\tW\tpublished\tCHOOSE\tseeded\n"
+    }
+   ]
+  },
+  {
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "files": [
+    {
+     "path": "agsc.config.json",
+     "remove": true
+    },
+    {
+     "path": "content",
+     "remove": true
+    },
+    {
+     "path": "README.md",
+     "remove": true
+    },
+    {
+     "path": ".well-known",
+     "remove": true
+    },
+    {
+     "path": "note.md",
+     "repeat": {
+      "count": 1048055,
+      "prefix": "# ",
+      "suffix": "\rTitle\n",
+      "text": " "
+     }
+    },
+    {
+     "path": "other.md",
+     "repeat": {
+      "count": 1048053,
+      "prefix": "# ",
+      "suffix": "\u2028Title\n",
+      "text": " "
+     }
+    }
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "id": "long-run-init-line-ends",
+   "kind": "bundle",
+   "verb": "init"
+  },
+  {
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "format": "gabbe",
+   "id": "long-run-import-gabbe",
+   "kind": "import",
+   "source": [
+    {
+     "path": "agents/memory/CONTINUITY.md",
+     "repeat": {
+      "count": 1048022,
+      "prefix": "# CONTINUITY\n\n## Entries\n\n###",
+      "suffix": "a\u2028b\n\nText.\n",
+      "text": " "
+     }
+    },
+    {
+     "path": "agents/memory/PROJECT_STATE.md",
+     "repeat": {
+      "count": 1048027,
+      "prefix": "# PROJECT_STATE.md\n\n2026-01-01:",
+      "suffix": "a\u2028b\n",
+      "text": " "
+     }
+    }
+   ]
+  },
+  {
+   "args": [
+    "import",
+    "pack/SKILL.md"
+   ],
+   "bound": true,
+   "class": "long-run",
+   "expect": [],
+   "files": [
+    {
+     "path": "pack/SKILL.md",
+     "repeat": {
+      "count": 1048021,
+      "prefix": "---\nname: evil\ndescription:",
+      "suffix": "e\u2028f\n---\nBody.\n",
+      "text": " "
+     }
+    }
+   ],
+   "finish": {
+    "exit": [
+     0
+    ]
+   },
+   "id": "long-run-skills-pack",
+   "kind": "bundle",
+   "verb": "skills"
   }
  ],
- "version": "security-floor-v1"
+ "version": "security-floor-v4"
 }

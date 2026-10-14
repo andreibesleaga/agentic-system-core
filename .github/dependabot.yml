@@ -1,0 +1,24 @@
+# Version updates for this repository (security updates are switched on in the
+# repository settings and need no file). Once a month, Dependabot opens at most one
+# pull request per ecosystem, grouping every update in it: the actions the
+# workflows pin to a commit SHA, and the npm dependencies of package-lock.json.
+# Each pull request runs test.yml like any other and is merged by the maintainer.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      npm:
+        patterns:
+          - '*'

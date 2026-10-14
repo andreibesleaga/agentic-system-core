@@ -28,29 +28,42 @@ const DOMAIN_AT = /[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A
  * Searched from each `@` rather than from each position: the local part is the run of
  * local-part characters before it (never reaching back into the previous match, and
  * never across another `@`, which is not one of them), the domain is matched once,
- * at the character after it. Until 2026-10-06 the pattern
- * was tried from every position of a long run of local-part characters, which is
- * quadratic: an item with a run of 200,000 such characters before an address cost 65 s
- * of `agsc lint` (0.9 s after; security-corpus case `pii-email-after-long-run`).
+ * at the character after it. A pattern tried from every position of a long run of
+ * local-part characters is quadratic: an item with a run of 200,000 such characters
+ * before an address cost 65 s of `agsc lint` that way, and 0.9 s this way
+ * (security-corpus case `pii-email-after-long-run`).
  *
  * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests):
+ *   the local part read back from each `@` and the run of domain characters after it,
+ *   which bounds what the domain pattern reads there.
  * @returns {Array<{start:number, at:number, end:number}>}
  */
-function emailSpans(text) {
+function emailSpans(text, meter) {
   const spans = [];
   let floor = 0;
+  if (meter !== undefined) meter.steps += text.length + 1;
   for (let at = text.indexOf('@'); at !== -1; at = text.indexOf('@', at + 1)) {
+    if (meter !== undefined) meter.steps += domainRun(text, at + 1) - at;
     if (at <= floor || !LOCAL_CHAR.test(text[at - 1])) continue;
     DOMAIN_AT.lastIndex = at + 1;
     const domain = DOMAIN_AT.exec(text);
     if (domain === null) continue;
     let start = at - 1;
     while (start > floor && LOCAL_CHAR.test(text[start - 1])) start -= 1;
+    if (meter !== undefined) meter.steps += at - start;
     const end = at + 1 + domain[0].length;
     spans.push({ at, end, start });
     floor = end;
   }
   return spans;
+}
+
+/** The end of the run of characters the domain of `EMAIL` is made of, from `from`. */
+function domainRun(text, from) {
+  let i = from;
+  while (i < text.length && /^[A-Za-z0-9.-]$/u.test(text[i])) i += 1;
+  return i;
 }
 
 /**

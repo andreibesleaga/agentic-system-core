@@ -1,0 +1,112 @@
+{
+  "area": "compose",
+  "description": "Retired items in a selection and in its closure. old is selected and retired: it is the conflict {code AGSC-E802, key status, pair [old, old]}, it is not in selection[], and its requires target base is not added, because Step 1 does not follow the requires of a retired item. app is selected and requires gone, legacy and store. legacy is retired and reached only through requires: it takes the same entry, pair [legacy, legacy], and is neither added nor followed, so deep, which only legacy requires, is not added either. gone is retired, selected and required: it gives one entry, not two. store is added with its path. conflicts[] is sorted by pair. The composition is invalid, so the verdict is returned alone with exit 1 and no Harness.",
+  "expected": {
+    "exit": 1,
+    "harness_emitted": false,
+    "verdict": {
+      "added": [
+        {
+          "path": [
+            [
+              "app",
+              "requires",
+              "store"
+            ]
+          ],
+          "slug": "store"
+        }
+      ],
+      "conflicts": [
+        {
+          "code": "AGSC-E802",
+          "key": "status",
+          "pair": [
+            "gone",
+            "gone"
+          ]
+        },
+        {
+          "code": "AGSC-E802",
+          "key": "status",
+          "pair": [
+            "legacy",
+            "legacy"
+          ]
+        },
+        {
+          "code": "AGSC-E802",
+          "key": "status",
+          "pair": [
+            "old",
+            "old"
+          ]
+        }
+      ],
+      "hidden": [],
+      "selection": [
+        "app",
+        "store"
+      ],
+      "valid": false,
+      "warnings": []
+    }
+  },
+  "id": "compose-0023",
+  "input": {
+    "items": [
+      {
+        "requires": [
+          "gone",
+          "legacy",
+          "store"
+        ],
+        "slug": "app",
+        "type": "concept"
+      },
+      {
+        "slug": "base",
+        "type": "concept"
+      },
+      {
+        "slug": "deep",
+        "type": "concept"
+      },
+      {
+        "slug": "gone",
+        "status": "retired",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "deep"
+        ],
+        "slug": "legacy",
+        "status": "retired",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "base"
+        ],
+        "slug": "old",
+        "status": "retired",
+        "type": "concept"
+      },
+      {
+        "slug": "store",
+        "type": "concept"
+      }
+    ],
+    "selection": [
+      "old",
+      "app",
+      "gone"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-22"
+}

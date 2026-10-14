@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "python-package",
+  "reason": "the Python checker package is a separate repository; the scenario runs where its checkout sits beside the engine (or ACCEPTANCE_PYTHON_PACKAGE names it) and a Python 3.9 or newer interpreter exists, and nowhere is it counted as run when it was not",
+  "scenario": "The Python package's runner agrees with the engine on the shared vectors"
+}

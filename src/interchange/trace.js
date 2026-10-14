@@ -42,6 +42,7 @@
 const slugs = require('../knowledge/slug.js');
 const { singleLine, nfc } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
+const { withOneTrailingFeed } = require('../shared/trailing.js');
 
 /** AGSC-02-14: the five members of `usage`, and no sixth. */
 const USAGE_MEMBERS = Object.freeze(['cost_usd', 'estimate', 'model', 'tokens_in', 'tokens_out']);
@@ -161,7 +162,7 @@ function toEpisode(record, options = {}) {
   }
 
   const bodyRaw = pick(record, 'body');
-  const body = bodyRaw === undefined ? '' : `${nfc(String(bodyRaw)).replace(/\n+$/u, '')}\n`;
+  const body = bodyRaw === undefined ? '' : withOneTrailingFeed(nfc(String(bodyRaw)));
   return {
     body: body === '' ? `# ${title}\n` : `# ${title}\n\n${body}`,
     findings,

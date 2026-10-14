@@ -2,6 +2,10 @@
 
 **Summary.** The conformance vector runner: `vector-runner.test.js` runs every vector of `tests/vectors/` through the handlers in `areas/` and prints one summary line; `pending.json` lists any vector held back (empty today). Subject: `tests/vectors/`.
 
+The handler of every area is guarded by `areas/_expected-reads.js` (tested by `expected-reads.test.js`, `guarded-areas.test.js`, which names every area and fails for a handler file it does not name, `guarded-handlers.test.js` and `guarded-discovery.test.js`): a pass that left a member of a case's `expected` unread becomes a fail, and a case with no handler fails, so no case passes without being checked.
+
+`vectors-readme.test.js` checks that `tests/vectors/README.md` names every member a case uses, and `codes-asserted.test.js` that every registered error code is asserted by a case or named, with its reason, in the registry's paragraph "Codes no case asserts" (`spec/09-conformance.md` §9.4).
+
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md).
 
 ```bash

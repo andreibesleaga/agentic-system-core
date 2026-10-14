@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "ticking a Concept and reading the panel needs a browser; the closure and its explanation paths are covered by the compose vectors, and the page's module is the one the Background names.",
+  "scenario": "Selecting Concepts triggers requires-closure with an explanation"
+}

@@ -62,7 +62,7 @@ function ctxFor(dir, options = {}) {
       proc: options.proc,
     },
     root: dir,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr: { write: (text) => lines.push(String(text)) },
     stdout: { write: () => {} },
     verbFlags: options.verbFlags || {},

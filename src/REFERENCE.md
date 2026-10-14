@@ -29,7 +29,7 @@ flowchart TD
   A["Application layer<br/>configuration · CLI verbs"]
   P["Ports<br/>FileSystem · Clock · ProcessRunner · Network"]
   AD["Adapters (Node)"]
-  S["Shared kernel<br/>src/shared/ordering.js"]
+  S["Shared kernel<br/>src/shared/ordering.js · trailing.js"]
 
   K -->|conformist| D
   K -->|customer / supplier| C
@@ -60,6 +60,21 @@ adapter owes AGSC-01-15 the same code-point order that the Knowledge context owe
 AGSC-04-12, and an adapter may not reach into a bounded context. A second copy of the
 comparator would be worse than the arrow it removes: two orderings can drift, one
 cannot. `knowledge/unicode.js` re-exports both, so every existing caller is unchanged.
+`src/shared/trailing.js` holds `withoutTrailingSlashes` and `collapseTrailingSlashes`,
+the trim every context applies to a base address or a folder path before it appends a
+route, and `withoutTrailingFeeds` and `withOneTrailingFeed`, the trim of a text's
+trailing line feeds. Each reads back from the end, so it is linear in the length of
+the text; the patterns they replaced read to the end from every slash or line feed of
+a run and were quadratic. The scripts the build copies into every node's pages (the
+page tools' script and the compose page's script) keep their own copy, since changing
+them changes the bytes every node emits; `composition/archive.js#archiveName`, whose
+source text the compose page's bundle carries, uses the module's own portable
+`withoutTrailingSlashes`. `src/shared/key-value-line.js` holds `keyValueLine`,
+`lineRest`, `lineText` and `hasLineTerminator`: the rest of one line after a fixed head
+(a "key: value" line, a heading's text), read with one match of the head, one search
+for a line terminator and one slice. The patterns they replaced (a run of blanks, then
+`(.*)$` or `(.+)$`) read the rest of the line again for every blank they gave back when
+the line held a carriage return, U+2028 or U+2029.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,
@@ -387,9 +402,9 @@ specification's prose defaults: `build.out` ("www", AGSC-01-19), `i18n.default` 
 AGSC-01-18) and `run.enabled` (`false`, AGSC-09-94). `application/config/load.js`
 applies them explicitly (`PROSE_DEFAULTS`, cited by rule id);
 `application/config/env.js#allDefaults` derives only what `config.schema.json`
-literally declares, mechanically, never hand-typed. The same table also sets an
-internal `build.feed` value, which nothing at 1.0 reads: `build.feed` is a name reserved
-to 1.1, and a configuration file that names it is refused with `AGSC-E004` (AGSC-00-20).
+literally declares, mechanically, never hand-typed. The table gives `build.feed` no
+value: it is a name reserved to 1.1, a configuration file that names it is refused with
+`AGSC-E004` (AGSC-00-20), and nothing at 1.0 reads it.
 
 ### `tasks[]` enforcement (AGSC-08-28(c))
 
@@ -502,7 +517,7 @@ by discipline.
 |---|---|
 | `knowledge/nquads.js` | AGSC-05-01…03 (IRIs), 05-12/13 (classes), 05-14/15 (Source and Review fragment IRIs), 05-16 (Links and inverses), 05-26/05-30 (the frontmatter → property table), 05-29 (attachments), 05-31/32 (literal forms and escaping), 04-13/15/16 (the sort that is the canonicalisation), 06-33 (static fragments) |
 | `knowledge/skos.js` | AGSC-05-12/13, 05-17…05-20 — the SKOS integrity rules, IRI-free and injected with a resolver so that `nquads.js` may require it without a cycle |
-| `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), 05-08 (`AGSC-E605`), and the vocabulary reader that feeds AGSC-06-32 |
+| `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), and the vocabulary reader that feeds AGSC-06-32 |
 | `knowledge/jsonld.js` | AGSC-05-09 (`graph.jsonld`), AGSC-06-32 (`/ns/context.jsonld`), AGSC-05-04b (`memory://`, `AGSC-E309`) |
 | `knowledge/rdfxml.js` | AGSC-05-06 — RESERVED at 1.x, not emitted; kept correct by an isomorphism test |
 
@@ -521,7 +536,6 @@ labels(item, {lang}); membership(items, resolve)
 // knowledge/turtle.js
 turtleIri(v); turtleTerm(term); turtlePredicate(v); prefixBlock(); serialize(quads)
 toTurtle(items, options); parse(text, options); ontologyTerms(turtleText); ontologyVersion(turtleText)
-checkExportBlocks(markdown, {file, lineOffset}) -> Finding[]
 // knowledge/jsonld.js
 context(ontologyTerms, externalProperties) -> object; allExternalProperties(); persistentContextUrl(ontologyVersion)
 contextFrom(…); expandCompact(v); termName(compact, ascNames, locals); restrictTo(…)
@@ -591,6 +605,7 @@ drive them, `init` and `ci`.
 |---|---|---|
 | `knowledge/chunks.js` | Knowledge | AGSC-06-26…31 — the two cuts, the identifier, the record, the exclusions, the shards |
 | `governance/ledger.js` | Governance | AGSC-08-20…24 — the derivation, the production of the git-log file, the chain, `verify --ledger` |
+| `governance/auto-merge.js` | Governance | AGSC-08-26(g) — the history check of a channel set to `auto`, read from the git-log file |
 | `governance/boards.js` | Governance | AGSC-10-13, AGSC-10-16…18 — the board exports, the derived `done` and `claimed_by`, the WIP limit |
 | `distribution/search.js` | Distribution | AGSC-06-16, AGSC-06-21, AGSC-06-23 — the normative tokenizer and the index |
 | `distribution/llms.js` | Distribution | AGSC-06-13, 06-13a, 06-14, 06-15 — the byte layout of the two text files |
@@ -817,10 +832,14 @@ anti-corruption layer, never in a tool function.
 an external version literal.
 
 Address classification (AGSC-11-08) uses **`node:net.BlockList`**, the
-platform's own classifier, because the rule forbids hand-parsing an address
-literal. `::ffff:0:0/96` is deliberately not added as a subnet: BlockList
-already checks an IPv4-mapped address against the IPv4 rules, which is exactly
-what the rule asks, while adding it would make every IPv4 address match.
+platform's own classifier, because the rule requires every textual form of one
+address to be classified alike, which a parser of addresses gives. The
+IPv4-compatible `::/96` and the IPv4-mapped `::ffff:0:0/96` are refused whole,
+whatever IPv4 address they embed, as both checkers refuse them; `--dev` admits
+`127.0.0.0/8` and `::1` and nothing else. Each family has a list of its own and an
+address is checked against its own family's list only: BlockList checks an IPv4
+address against an IPv6 subnet through its mapped form, so one shared list holding
+`::ffff:0:0/96` would make every IPv4 address match.
 
 ### The Harness, and two rules implemented once
 
@@ -847,11 +866,13 @@ this one is current.
 
 ### 11.1 The conformance claim
 
-The reference engine publishes **no conformance claim** in this release candidate. A
-claim of any Level exists only after a green run of that Level's set and is published
-in the form of AGSC-09-01 (AGSC-10-01, AGSC-10-05). `agsc conform` writes a REPORT of a
-run; a report is not a claim, and AGSC-09-03 says a published claim is the claimant's
-own assertion and that this specification defines no arbitration.
+The reference engine claims Level 3, the full engine. A claim of any Level exists only
+after a green run of that Level's set and is published in the form of AGSC-09-01
+(AGSC-10-01, AGSC-10-05); this engine's claim is kept in one place,
+[docs/CONFORMANCE-STATEMENTS.md](../docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)
+("The reference engine's claim"), and the README quotes it. `agsc conform` writes a
+REPORT of a run; a report is not a claim, and AGSC-09-03 says a published claim is the
+claimant's own assertion and that this specification defines no arbitration.
 
 The result of a run is not typed here, because it changes with every release:
 `node --test tests/conformance/vector-runner.test.js` prints the one summary line of §4,
@@ -878,8 +899,8 @@ built node.
 | `init` | AGSC-02-90…95, AGSC-01-37 | `application/cli/verbs/init.js` → `distribution/init.js`, `knowledge/adopt.js` | wired |
 | `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired |
 | `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired |
-| `verify` | AGSC-04-02, AGSC-08-23 | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify` | wired |
-| `ci` | AGSC-09-08 | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected | wired |
+| `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g) | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check` | wired |
+| `ci` | AGSC-09-08, AGSC-08-26(g) | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected; its verify lane adds `governance/auto-merge.js#check` | wired |
 | `export` | AGSC-01-26…29, AGSC-01-26a | `verbs/export.js` → `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) ; `--zip` writes one archive beside each multi-file export root |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf}.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`) and for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22; `--dry-run` on both; `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
 | `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12 | `verbs/compose.js` → `composition/{compose,architecture,harness}.js` | wired, and it WRITES the seven Harness file kinds of AGSC-07-12 into `dist/harness/<name>/` or `--out`; `--zip` writes them as one archive BESIDE that directory; `--emit <path or package>` runs a composition-emitter plugin, and a registered `--emit` target this distribution does not ship is refused with `AGSC-E203`, exit 1 (AGSC-00-20, AGSC-07-18) |
@@ -986,8 +1007,8 @@ Bundle rather than reading one itself.
 * the sandboxed executor of AGSC-09-94 — the `run` verb's finding;
 * the AGSC-06-01 routes no module produces — `site.build`'s `skipped`, from
   `site.UNPRODUCED_ROUTES`;
-* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired —
-  named in the lint lane's `lanes`;
+* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired or the
+  Bundle is not in a git repository — named in the lint lane's `lanes`;
 * `/ledger.jsonl`, when no git-log file is supplied (AGSC-08-20a) — named in
   `skipped`, and `verify --ledger` then reports `AGSC-E703` rather than a green
   chain;

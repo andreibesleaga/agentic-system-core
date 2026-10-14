@@ -175,7 +175,7 @@ function pageTools() {
   const port = createFileSystem(MINIMAL);
   const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
   const built = site.build(bundle, { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs: port },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+    { specVersion: '1.0.0', version: '0.0.2' });
   const sources = {};
   for (const [route, text] of built.files) sources[route] = String(text);
   const registered = [];
@@ -315,10 +315,10 @@ test('AGSC-09-14b: the client lists every published item, graph.jsonld and llms.
     await assert.rejects(
       () => client.readResource({ uri: 'memory://minimal/not-a-resource' }),
       (e) => {
-        // MCP, Resources, revision 2026-07-28: a resource that does not exist is
-        // -32602, not this project's tool envelope.
-        assert.strictEqual(e.code, ErrorCode.InvalidParams);
-        assert.strictEqual(e.code, -32602);
+        // MCP, Resources, revision 2025-11-25 (the revision this server speaks):
+        // a resource that does not exist is -32002, not this project's tool envelope.
+        assert.strictEqual(e.code, -32002);
+        assert.deepStrictEqual(e.data, { uri: 'memory://minimal/not-a-resource' });
         return true;
       },
     );

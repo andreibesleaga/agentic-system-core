@@ -16,6 +16,7 @@
 const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const { capMeter } = require('../governance/agents.js');
+const { withOneTrailingFeed } = require('../shared/trailing.js');
 const { COUNTED_TYPES } = require('./discovery.js');
 
 /** AGSC-02-14: an Episode carries the `usage` record the rollup counts. */
@@ -48,20 +49,86 @@ function episodeInstant(item) {
   return item.date == null ? item.modified : item.date;
 }
 
+/**
+ * AGSC-08-25: one `cost_usd` addend in whole millionths of a dollar — rounded to six
+ * decimal places (half up), read from the number's own shortest decimal form so that
+ * no binary-float error enters the sum. Anything but a finite number adds nothing,
+ * as it adds nothing to the meter's displayed sum.
+ */
+function micros(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0n;
+  const m = /^(-?)(\d+)(?:\.(\d+))?(?:e([+-]\d+))?$/u.exec(String(value));
+  const digits = `${m[2]}${m[3] || ''}`;
+  const point = m[2].length + Number(m[4] || 0) + 6;
+  let whole;
+  if (point >= digits.length) whole = BigInt(`${digits}${'0'.repeat(point - digits.length)}`);
+  else if (point < 0) whole = 0n;
+  else whole = BigInt(digits.slice(0, point) || '0') + (digits[point] >= '5' ? 1n : 0n);
+  return m[1] === '-' ? -whole : whole;
+}
+
+/**
+ * AGSC-08-25: is a cap reached? The sum of the addends, each rounded to six decimal
+ * places, compared with the cap as a decimal — never as a binary float, so ten runs of
+ * 0.1 USD reach a cap of 1 USD. A cap of 0 is not compared (as the node meter did).
+ */
+function reached(costs, cap) {
+  if (!(typeof cap === 'number' && cap > 0)) return false;
+  let sum = 0n;
+  for (const cost of costs) sum += micros(cost);
+  return sum >= micros(cap);
+}
+
+/** The month's Episodes (AGSC-08-25: an Episode belongs to the month of its `started`). */
+function monthEpisodes(items, month) {
+  return (items || []).filter((i) => isEpisode(i) && i.usage != null && monthOf(episodeInstant(i)) === month);
+}
+
+/** AGSC-08-28(d): a lane's Episodes carry `actor` `process:<name>` (or the bare name). */
+function ofLane(item, name) {
+  return String(item.actor) === name || String(item.actor) === `process:${name}`;
+}
+
 function spend(items, config, options = {}) {
   const month = String(options.month);
-  const usage = (items || [])
-    .filter((i) => isEpisode(i) && i.usage != null)
-    .filter((i) => monthOf(episodeInstant(i)) === month)
-    .map((i) => i.usage);
+  const usage = monthEpisodes(items, month).map((i) => i.usage);
   const meter = capMeter(usage, config);
   const findings = [];
-  if (meter.cap_usd > 0 && meter.spent_usd >= meter.cap_usd) {
+  if (reached(usage.map((u) => u.cost_usd), meter.cap_usd)) {
     findings.push(finding('AGSC-E510',
       `the node's monthly budget of ${meter.cap_usd} USD is reached for ${month}; every model-calling path stops for the month (AGSC-08-25, AGSC-01-38)`,
       { file: '/now.md', severity: 'warn' }));
   }
   return { month, episodes: usage.length, ...meter, findings };
+}
+
+/**
+ * AGSC-08-28(e) and AGSC-01-38: every monthly budget that is reached, as the warning
+ * `AGSC-E510` — the node's `budget.usd_month` first, then each enabled lane whose own
+ * `budget_usd_month` is reached by the month's Episodes of that lane, in name order.
+ * With `options.lane` only that lane is compared (the stop check of one lane run).
+ *
+ * @param {Array<object>} items every item, merged and proposed.
+ * @param {object} config `agsc.config.json`, the environment overrides applied.
+ * @param {{month:string, lane?:string}} options
+ * @returns {Array<object>} the findings, empty when no budget is reached.
+ */
+function budgetReached(items, config, options = {}) {
+  const month = String(options.month);
+  const episodes = monthEpisodes(items, month);
+  const out = spend(episodes, config, { month }).findings;
+  const lanes = (Array.isArray(config && config.agents) ? config.agents : [])
+    .filter((lane) => lane && lane.enabled === true && typeof lane.budget_usd_month === 'number')
+    .filter((lane) => options.lane === undefined || String(lane.name) === String(options.lane))
+    .sort((a, b) => compareCodePoint(String(a.name), String(b.name)));
+  for (const lane of lanes) {
+    const name = String(lane.name);
+    if (!reached(episodes.filter((i) => ofLane(i, name)).map((i) => i.usage.cost_usd), lane.budget_usd_month)) continue;
+    out.push(finding('AGSC-E510',
+      `the monthly budget of ${lane.budget_usd_month} USD of the agent lane "${singleLine(name)}" is reached for ${month}; the lane stops for the month (AGSC-08-28(e))`,
+      { file: '/now.md', severity: 'warn' }));
+  }
+  return out;
 }
 
 /**
@@ -153,10 +220,8 @@ function perAgent(items, config, options = {}) {
   }
   return lanes.map((lane) => {
     const name = String(lane.name);
-    const episodes = (items || []).filter((i) => isEpisode(i) && i.usage != null
-      // AGSC-08-28(d) names the lane; AGSC-02-09's grammar writes it `process:<name>`.
-      && (String(i.actor) === name || String(i.actor) === `process:${name}`)
-      && monthOf(episodeInstant(i)) === month);
+    // AGSC-08-28(d) names the lane; AGSC-02-09's grammar writes it `process:<name>`.
+    const episodes = monthEpisodes(items, month).filter((i) => ofLane(i, name));
     let spent = 0;
     for (const episode of episodes) {
       const cost = Number(episode.usage.cost_usd);
@@ -216,6 +281,10 @@ function state(items, config, options = {}) {
       cap_usd: rollup.cap_usd, month: rollup.month, ratio: rollup.ratio, spent_usd: rollup.spent_usd,
     };
   }
+  // AGSC-08-28(e): a budget reached is recorded "as the warning AGSC-E510 in the NOW
+  // page" — the node's cap and each lane's own budget. Absent while no budget is reached.
+  const reachedBudgets = budgetReached(all, config, { month: monthOf(instant) });
+  if (reachedBudgets.length > 0) out.budget_reached = reachedBudgets;
   // AGSC-10-17: the tasks no agent lane will pick up, because they need a person.
   const waiting = waitingForAPerson(all, { claimedBy: options.claimedBy });
   if (waiting.length > 0) out.waiting_for_a_person = waiting;
@@ -282,6 +351,12 @@ function nowMarkdown(nowState, facts) {
       `- cap: ${nowState.spend.cap_usd} USD`,
       '');
   }
+  if (nowState.budget_reached !== undefined) {
+    lines.push('## Budget reached', '',
+      'Every model-calling path named here stops for the calendar month (AGSC-08-28(e), AGSC-01-38).', '',
+      ...nowState.budget_reached.map((f) => `- ${f.code}: ${singleLine(f.message)}`),
+      '');
+  }
   if (nowState.agents !== undefined) {
     lines.push('## Agent lanes', '',
       '| lane | enabled | runs | merges | spent USD | cap USD |',
@@ -290,10 +365,10 @@ function nowMarkdown(nowState, facts) {
         + `| ${a.merges} | ${a.spent_usd} | ${a.cap_usd === undefined ? '—' : a.cap_usd} |`),
       '');
   }
-  return `${lines.join('\n').replace(/\n+$/u, '')}\n`;
+  return withOneTrailingFeed(lines.join('\n'));
 }
 
 module.exports = {
-  state, spend, counts, staleItems, nowMarkdown, buildLine,
+  state, spend, budgetReached, counts, staleItems, nowMarkdown, buildLine,
   perAgent, waitingForAPerson, WAITING_STATES,
 };

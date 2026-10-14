@@ -27,8 +27,8 @@ here is what it means in practice.
 What you can rely on: the specification, the schemas, the vocabulary and the
 conformance vectors are published under licences that let you continue without
 anyone's permission; the vocabulary addresses do not depend on this project's
-domain; every release is archived independently; and conformance is defined by
-published bytes, not by anyone's opinion.
+domain; every final release is archived independently; and conformance is defined
+by published bytes, not by anyone's opinion.
 
 What you cannot rely on: a release schedule, a support channel, or a
 guarantee that any question will be answered quickly.
@@ -65,9 +65,10 @@ is described in [`TRADEMARK-POLICY.md`](TRADEMARK-POLICY.md).
    vector proving the new behaviour is welcome twice over.
 4. The maintainer answers, accepts, asks for changes, or declines with a
    reason. A decline is recorded with its reason.
-5. Every accepted change carries a sign-off, as
-   [`CONTRIBUTING.md`](CONTRIBUTING.md) describes, and an item written with the
-   help of a software assistant says so in its provenance record.
+5. An outside contribution carries a sign-off, as
+   [`CONTRIBUTING.md`](CONTRIBUTING.md) describes; the maintainer's own commits are
+   exempt. An item written with the help of a software assistant says so in its
+   provenance record, whoever wrote it.
 
 Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
 
@@ -116,7 +117,8 @@ that person cannot continue.
 - The vocabulary addresses are `w3id.org` permanent identifiers, not addresses
   on this project's own domain, so they can be pointed elsewhere if the domain
   lapses.
-- Every published release is archived independently of this project, so the
+- Every final release is deposited on Zenodo; every release stays in the npm
+  and PyPI registries. Both are kept independently of this project, so the
   bytes survive the loss of any single account.
 - If the maintainer stops, the repositories are archived with a notice saying
   so, and the licences keep every permission they gave.

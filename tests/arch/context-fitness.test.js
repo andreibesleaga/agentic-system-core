@@ -1,6 +1,6 @@
 'use strict';
 // Seven architectural rules the documents state for the bounded contexts and that no
-// test enforced (verification finding C9, 2026-10-02, "Note B" items 1 to 7). A probe
+// test enforced. A probe
 // module in `src/knowledge/` that broke any of them passed every other architecture
 // test, the dependency checker and the linter, because those read `require('…')` with
 // single quotes and five fixed texts only.
@@ -74,7 +74,7 @@ function violations(text, filename) {
     .map((m) => `${filename}:${m.line} ${m.message}`);
 }
 
-test('C9: no bounded context loads, fetches, randomises, localises, reads a clock, sets a timer or reaches the global object', () => {
+test('no bounded context loads, fetches, randomises, localises, reads a clock, sets a timer or reaches the global object', () => {
   const found = [];
   let files = 0;
   for (const file of sources()) {
@@ -86,7 +86,7 @@ test('C9: no bounded context loads, fetches, randomises, localises, reads a cloc
   assert.deepStrictEqual(found, []);
 });
 
-test('C9: the check is not vacuous — each of the seven is caught in a probe module', () => {
+test('the check is not vacuous — each of the seven is caught in a probe module', () => {
   const probes = [
     ['1 dynamic import', 'module.exports = () => import("node:fs");'],
     ['1 createRequire', 'const { createRequire } = require("node:module"); module.exports = createRequire;'],

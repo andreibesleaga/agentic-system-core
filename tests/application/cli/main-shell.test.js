@@ -48,7 +48,7 @@ async function shell(argv, options = {}) {
     env: { SOURCE_DATE_EPOCH: '1767225600' },
     ports: { fs: PORT },
     root: '.',
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr,
     stdout,
     version: '0.0.0',
@@ -120,8 +120,8 @@ test('AGSC-09-09: --version answers in both modes and reads no Bundle', async ()
   // With no version supplied at all, the shell reads its own package.json.
   const stdout = captureStream();
   main(['--version'], { env: {}, stdout });
-  // The package version is a SemVer string, and at a release candidate it carries a
-  // pre-release part (`1.0.0-rc.7`) — which is what publishes to npm.
+  // The package version is a SemVer string; a release candidate carries a pre-release
+  // part (such as `-rc.7`), and either form is what publishes to npm.
   assert.match(stdout.text(), /^agsc \d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\n$/u);
 });
 

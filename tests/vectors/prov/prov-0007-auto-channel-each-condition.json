@@ -1,0 +1,63 @@
+{
+  "area": "prov",
+  "description": "AGSC-08-26(g): its two git-log conditions are checked on their own. On a Bundle with an auto channel, after the exempt root commit, a merge commit (two parents) that carries none of the three trailers fails the trailer condition, and a commit with one parent that carries a Signed-off-by trailer fails the merge condition. Each element is one AGSC-E706 error, so the run reports exactly two.",
+  "expected": {
+    "error": "AGSC-E706",
+    "findings": [
+      {
+        "code": "AGSC-E706",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E706",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "prov-0007",
+  "input": {
+    "config": {
+      "channels": [
+        {
+          "adapter": "github",
+          "author": "channel-bot",
+          "name": "main",
+          "owner": "human:ada",
+          "publish": "auto"
+        }
+      ]
+    },
+    "git_log": [
+      {
+        "committed_at": "2026-01-01T00:00:00Z",
+        "parents": [],
+        "sha": "1111111111111111111111111111111111111111",
+        "trailers": {}
+      },
+      {
+        "committed_at": "2026-01-02T00:00:00Z",
+        "parents": [
+          "1111111111111111111111111111111111111111",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "sha": "2222222222222222222222222222222222222222",
+        "trailers": {}
+      },
+      {
+        "committed_at": "2026-01-03T00:00:00Z",
+        "parents": [
+          "2222222222222222222222222222222222222222"
+        ],
+        "sha": "3333333333333333333333333333333333333333",
+        "trailers": {
+          "Signed-off-by": "Ada Example <ada@example.org> (CA-v1)"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-26"
+}

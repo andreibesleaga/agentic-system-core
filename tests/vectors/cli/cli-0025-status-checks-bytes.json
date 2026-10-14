@@ -1,0 +1,98 @@
+{
+  "area": "cli",
+  "description": "AGSC-08-12: ci compiles a gate item's enforce[] value status-check, once per run, to dist/forge/status-checks.json, a JCS-canonical array of the check names the Bundle's gate items imply in code-point order, followed by one LF; of the four forge outputs only this one has pinned bytes. AGSC-08-09: a gate item's checks[] compile to one name per value, and a gate item with no checks[] implies its level's set (L1 schema and links; L2 adds provenance, determinism and review). Each sub-case runs `ci --json` over a scratch copy of the minimal fixture with SOURCE_DATE_EPOCH set and no git history. One L2 gate with no checks[]: the five names. Two gates, link-gate (L1, checks [schema, links]) and review-gate (L2, no checks[]): the union, each name once, the same five. A gate whose enforce[] does not name status-check: no such file (output null). Where the Bundle holds a file at the forge's own path that differs from the compiled one, here a .github/CODEOWNERS that names another owner beside a gate enforcing codeowner, ci reports AGSC-E707 for that file, exits 1 and leaves the file as it was (unchanged gives its bytes after the run). In every sub-case nothing is written under build.out by the compilation: no file whose path holds forge is under www/ (not_in_build_out). Running ci a second time gives the same bytes (idempotent).",
+  "expected": {
+    "cases": [
+      {
+        "idempotent": true,
+        "name": "one-l2-gate",
+        "not_in_build_out": true,
+        "output": "[\"determinism\",\"links\",\"provenance\",\"review\",\"schema\"]\n"
+      },
+      {
+        "idempotent": true,
+        "name": "two-gate-items",
+        "not_in_build_out": true,
+        "output": "[\"determinism\",\"links\",\"provenance\",\"review\",\"schema\"]\n"
+      },
+      {
+        "idempotent": true,
+        "name": "no-status-check-enforced",
+        "not_in_build_out": true,
+        "output": null
+      },
+      {
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E707",
+            "file": ".github/CODEOWNERS",
+            "severity": "error"
+          }
+        ],
+        "idempotent": true,
+        "name": "tracked-codeowners-differs",
+        "not_in_build_out": true,
+        "output": null,
+        "unchanged": {
+          ".github/CODEOWNERS": "* @someone-else\n"
+        }
+      }
+    ]
+  },
+  "id": "cli-0025",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "add_files": {
+          "content/gates/review-gate.md": "---\ntype: gate\ntitle: Review gate\ndescription: A gate that a conformance case adds, so that ci writes its verdict and compiles its checks.\nlevel: L2\nenforce:\n  - status-check\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Purpose\n\nHold the Bundle to its L2 checks.\n"
+        },
+        "argv": [
+          "ci",
+          "--json"
+        ],
+        "name": "one-l2-gate"
+      },
+      {
+        "add_files": {
+          "content/gates/link-gate.md": "---\ntype: gate\ntitle: Link gate\ndescription: A gate that a conformance case adds, so that ci writes its verdict and compiles its checks.\nlevel: L1\nchecks:\n  - schema\n  - links\nenforce:\n  - status-check\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Purpose\n\nHold the Bundle to its L1 checks.\n",
+          "content/gates/review-gate.md": "---\ntype: gate\ntitle: Review gate\ndescription: A gate that a conformance case adds, so that ci writes its verdict and compiles its checks.\nlevel: L2\nenforce:\n  - status-check\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Purpose\n\nHold the Bundle to its L2 checks.\n"
+        },
+        "argv": [
+          "ci",
+          "--json"
+        ],
+        "name": "two-gate-items"
+      },
+      {
+        "add_files": {
+          "content/gates/review-gate.md": "---\ntype: gate\ntitle: Review gate\ndescription: A gate that a conformance case adds, so that ci writes its verdict and compiles its checks.\nlevel: L2\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Purpose\n\nHold the Bundle to its L2 checks.\n"
+        },
+        "argv": [
+          "ci",
+          "--json"
+        ],
+        "name": "no-status-check-enforced"
+      },
+      {
+        "add_files": {
+          ".github/CODEOWNERS": "* @someone-else\n",
+          "content/gates/review-gate.md": "---\ntype: gate\ntitle: Review gate\ndescription: A gate that a conformance case adds, so that ci writes its verdict and compiles its checks.\nlevel: L2\nenforce:\n  - codeowner\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Purpose\n\nHold the Bundle to its L2 checks.\n"
+        },
+        "argv": [
+          "ci",
+          "--json"
+        ],
+        "name": "tracked-codeowners-differs"
+      }
+    ],
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-12"
+}

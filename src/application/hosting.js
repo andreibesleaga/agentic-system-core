@@ -28,6 +28,12 @@
  * `server` files go under
  * `--out`, and every path is relative with no `..` (`AGSC-E902`). A run with an
  * error finding writes nothing.
+ *
+ * The build directory is `--site` when given — the user's choice — and otherwise
+ * `build.out` resolved through every layer of the configuration (AGSC-01-37) and held
+ * to AGSC-01-19 and AGSC-01-35 as `agsc` holds it: a value the Bundle's configuration
+ * points outside the Bundle root is refused before anything is read, written or
+ * served.
  */
 
 const fs = require('node:fs');
@@ -43,8 +49,12 @@ const local = require('../distribution/hosts/local.js');
 const anchor = require('../distribution/hosts/ledger-anchor.js');
 const { WELLKNOWN_PATH } = require('../distribution/discovery.js');
 const { canonicalize } = require('../knowledge/jcs.js');
-const { finding } = require('../knowledge/validate.js');
+const { buildOutFault, finding } = require('../knowledge/validate.js');
+const { pathGrammarError } = require('../knowledge/links.js');
+const { load } = require('./config/load.js');
+const configNames = require('./config/env.js');
 const httpServer = require('../adapters/node-http-server.js');
+const { createFileSystem } = require('../adapters/node-fs.js');
 
 const { inside } = httpServer;
 
@@ -197,30 +207,114 @@ function runProfile(profile, input) {
   return { findings, server: server.files, site: site.files };
 }
 
-/** Write text files under `root`, refusing to pass through a link on the way. */
-function writeUnder(root, files) {
-  const written = [];
-  for (const f of files) {
-    const full = path.join(root, ...f.path.split('/'));
-    fs.mkdirSync(path.dirname(full), { recursive: true });
-    if (!inside(root, path.dirname(full)) || (fs.existsSync(full) && fs.lstatSync(full).isSymbolicLink())) {
-      throw Object.assign(new Error(`${f.path} would be written through a link`), { code: 'AGSC-E902' });
-    }
-    fs.writeFileSync(full, f.text, 'utf8');
-    written.push(full);
+const throughLink = (rel) => Object.assign(new Error(`${rel} would be written through a link`), { code: 'AGSC-E902' });
+
+/** The nearest path at or above `dir` that exists, a link included (it is not followed). */
+function nearestExisting(dir) {
+  let probe = dir;
+  while (fs.lstatSync(probe, { throwIfNoEntry: false }) === undefined) {
+    const parent = path.dirname(probe);
+    if (parent === probe) return probe;
+    probe = parent;
   }
-  return written;
+  return probe;
 }
 
-/** The build directory named by the Bundle's configuration, or `www`. */
-function defaultSite(cwd) {
-  try {
-    const config = JSON.parse(fs.readFileSync(path.join(cwd, 'agsc.config.json'), 'utf8'));
-    if (config && config.build && typeof config.build.out === 'string' && config.build.out !== '') return config.build.out;
-  } catch (e) {
-    // no configuration, or one that does not parse: the default stands
+/**
+ * Write the text files of every group `{root, files, fence}` under its `root`, never
+ * through a link out of `fence` (the folder the files must stay in). Every file is
+ * checked before any folder is made or any file written: the nearest part of its
+ * folder that exists must lie inside `fence` once links are resolved — or above a
+ * `fence` not made yet, where nothing exists to pass through. The check is made again
+ * after the folders are made, and a file that is itself a link is never written.
+ * @param {Array<{root:string, files:Array<{path:string, text:string}>, fence:string}>} groups
+ * @returns {Array<string>} the files written
+ */
+function writeUnder(groups) {
+  const plan = [];
+  for (const { root, files, fence } of groups) {
+    for (const f of files) {
+      const full = path.join(root, ...f.path.split('/'));
+      const existing = nearestExisting(path.dirname(full));
+      if ((existing === fence || existing.startsWith(fence + path.sep)) && !inside(fence, existing)) throw throughLink(f.path);
+      plan.push({ fence, full, rel: f.path, text: f.text });
+    }
   }
-  return 'www';
+  for (const { fence, full, rel, text } of plan) {
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    if (!inside(fence, path.dirname(full)) || (fs.existsSync(full) && fs.lstatSync(full).isSymbolicLink())) throw throughLink(rel);
+    fs.writeFileSync(full, text, 'utf8');
+  }
+  return plan.map((p) => p.full);
+}
+
+/** The grammar `agsc.config.json` gives `build.out` (`schema/config.schema.json`). */
+const OUT_GRAMMAR = new RegExp(configNames.pathForEnvName('AGSC_BUILD_OUT').pattern, 'u');
+
+/**
+ * Why a resolved `build.out` value is refused, as findings: outside the grammar of
+ * AGSC-01-19 (`AGSC-E204`), a `.` or `..` segment, a leading `/` or an empty one, or
+ * a path that resolves outside the Bundle root such as a drive path on Windows
+ * (AGSC-01-35, `AGSC-E902`), or naming `content/` or `dist/` (AGSC-01-19, `AGSC-E204`).
+ */
+function outFaults(out, cwd) {
+  const where = { file: 'agsc.config.json' };
+  if (typeof out !== 'string') return [finding('AGSC-E204', 'build.out is not a string; it names the build directory (AGSC-01-19)', where)];
+  const findings = [];
+  if (!OUT_GRAMMAR.test(out)) {
+    findings.push(finding('AGSC-E204', `build.out "${out}" does not match the grammar of build.out (${OUT_GRAMMAR.source}) (AGSC-01-19)`, where));
+  }
+  const value = out.replace(/\/$/u, '');
+  const root = path.resolve(cwd);
+  const resolved = path.resolve(root, value);
+  const reason = pathGrammarError(value) || (resolved.startsWith(root + path.sep) ? null : 'escapes the Bundle root');
+  if (reason !== null) {
+    findings.push(finding('AGSC-E902', `build.out "${out}" violates the path grammar (${reason}); the build directory lies inside the Bundle root (AGSC-01-35)`, where));
+  }
+  const named = buildOutFault(value);
+  if (named !== null) findings.push(finding('AGSC-E204', named, where));
+  return findings;
+}
+
+/**
+ * The build directory named by the configuration when no `--site` is given:
+ * `build.out` through every layer (the project file, the `.env` file, the process
+ * environment; AGSC-01-37), `www` by default (AGSC-01-19), with the findings that
+ * refuse it. A configuration file that does not parse leaves the default (`lint`
+ * reports it).
+ * @param {string} cwd the Bundle root
+ * @param {object} [env] a snapshot of the process environment
+ * @returns {{out:(string|null), findings:Array<object>}}
+ */
+function defaultSite(cwd, env) {
+  let loaded;
+  try {
+    loaded = load({ env: env || {}, ports: createFileSystem(cwd), root: cwd });
+  } catch (e) {
+    const code = /^AGSC-E9\d\d$/u.test(String(e && e.code)) ? e.code : 'AGSC-E901';
+    return { findings: [finding(code, `the configuration cannot be read: ${e && e.message}`, { file: (e && e.file) || '' })], out: null };
+  }
+  const layered = loaded.findings.filter((f) => f.path === 'build.out').map((f) => finding(f.code, f.message, { file: '' }));
+  if (layered.length > 0) return { findings: layered, out: null };
+  const out = loaded.config.build.out;
+  const findings = outFaults(out, cwd);
+  return findings.length > 0 ? { findings, out: null } : { findings, out: out.replace(/\/$/u, '') };
+}
+
+/**
+ * The build directory a command reads: `--site` as given, or the configured one,
+ * which must also stay inside the Bundle root once links are resolved (AGSC-01-35).
+ * @returns {{site:(string|null), findings:Array<object>}}
+ */
+function siteOf(values, ctx) {
+  if (values.site) return { findings: [], site: path.resolve(ctx.cwd, values.site) };
+  const { out, findings } = defaultSite(ctx.cwd, ctx.env);
+  if (out === null) return { findings, site: null };
+  const site = path.resolve(ctx.cwd, out);
+  if (fs.existsSync(site) && !inside(ctx.cwd, site)) {
+    return { findings: [finding('AGSC-E902', `build.out "${out}" reaches outside the Bundle root through a link (AGSC-01-35)`, { file: 'agsc.config.json' })], site: null };
+  }
+  return { findings: [], site };
 }
 
 /**
@@ -230,12 +324,19 @@ function defaultSite(cwd) {
  * @returns {Promise<{server:object, url:string}>}
  */
 function serve(options) {
+  // The names it answers to: the loopback names and the `--bind` value, then the
+  // address the socket reports once it listens (`local.hostNames`).
+  let hosts = local.hostNames(options.bind);
   const answer = (question, view) => local.respond(question, {
     ...view,
+    hosts,
     redirects: rules.parseRedirects(view.readText(rules.REDIRECTS_FILE)).rules,
     sets: rules.parseHeaders(view.readText(rules.HEADERS_FILE)).sets,
   });
-  return httpServer.listen({ ...options, answer });
+  return httpServer.listen({ ...options, answer }).then((running) => {
+    hosts = local.hostNames(options.bind, new URL(running.url).hostname);
+    return running;
+  });
 }
 
 // ------------------------------------------------------------------ the command line
@@ -274,7 +375,8 @@ function list(io, json, specVersion) {
 function emitCommand(io, json, values, positionals, ctx) {
   const name = positionals[0];
   if (name === undefined) return usageError(io, json, 'AGSC-E003', 'emit needs a profile name, a path or a package');
-  const site = path.resolve(ctx.cwd, values.site || defaultSite(ctx.cwd));
+  const { site, findings: configured } = siteOf(values, ctx);
+  if (site === null) return report(io, json, { command: 'emit', findings: configured });
   const resolved = resolveProfile(name, { root: ctx.cwd, specVersion: ctx.specVersion });
   if (resolved.profile === null) return report(io, json, { command: 'emit', findings: resolved.findings });
   const profile = resolved.profile;
@@ -286,7 +388,10 @@ function emitCommand(io, json, values, positionals, ctx) {
   let written = [];
   if (!findings.some((f) => f.severity === 'error')) {
     try {
-      written = [...writeUnder(site, answer.site), ...writeUnder(out, answer.server)];
+      // The default `--out` is the engine's choice and stays inside the Bundle; an
+      // explicit one is the user's, as `--site` is.
+      written = writeUnder([{ files: answer.site, fence: site, root: site },
+        { files: answer.server, fence: values.out ? out : path.resolve(ctx.cwd), root: out }]);
     } catch (e) {
       findings.push(finding(e.code === 'AGSC-E902' ? 'AGSC-E902' : 'AGSC-E901', String(e.message), { file: '' }));
     }
@@ -309,7 +414,9 @@ function verifyAnchorCommand(io, json, values, positionals, ctx) {
   } catch (e) {
     return report(io, json, { command: 'verify-anchor', findings: [finding('AGSC-E901', `cannot read ${file}`, { file })] });
   }
-  const { input, findings: read } = readSite(path.resolve(ctx.cwd, values.site || defaultSite(ctx.cwd)));
+  const { site, findings: configured } = siteOf(values, ctx);
+  if (site === null) return report(io, json, { command: 'verify-anchor', findings: configured });
+  const { input, findings: read } = readSite(site);
   if (input === null) return report(io, json, { command: 'verify-anchor', findings: read });
   const findings = anchor.verify(text, input);
   return report(io, json, {
@@ -324,7 +431,8 @@ async function serveCommand(io, json, values, ctx) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     return usageError(io, json, 'AGSC-E003', '--port needs a number from 0 to 65535');
   }
-  const site = path.resolve(ctx.cwd, values.site || defaultSite(ctx.cwd));
+  const { site, findings: configured } = siteOf(values, ctx);
+  if (site === null) return report(io, json, { command: 'serve', findings: configured });
   if (!fs.existsSync(site) || !fs.statSync(site).isDirectory()) {
     return report(io, json, { command: 'serve', findings: [finding('AGSC-E901', `the build directory ${site} does not exist; run agsc build first`, { file: site })] });
   }
@@ -337,7 +445,8 @@ async function serveCommand(io, json, values, ctx) {
   if (typeof ctx.onListening === 'function') ctx.onListening(running.server);
   const lines = [`serving ${site} at ${running.url} — read-only; stop with Ctrl-C`];
   if (!/^(localhost|127\.|\[::1\])/u.test(running.url.slice('http://'.length))) {
-    lines.push('this is not a loopback address: put a TLS terminator in front, conformance is claimed for an HTTPS origin');
+    lines.push('this is not a loopback address: put a TLS terminator in front, conformance is claimed for an HTTPS origin;'
+      + ' it answers only a Host that names localhost, a loopback address or this address');
   }
   return report(io, json, { command: 'serve', extra: { url: running.url }, findings: [], lines });
 }
@@ -345,7 +454,9 @@ async function serveCommand(io, json, values, ctx) {
 /**
  * The command line. Exit codes follow AGSC-09-08: 0 success, 1 findings, 2 usage.
  * @param {Array<string>} argv
- * @param {{stdout, stderr, cwd:string, specVersion:string, onListening?:Function}} ctx
+ * @param {{stdout, stderr, cwd:string, specVersion:string, env?:object, onListening?:Function}} ctx
+ *   `env` a snapshot of the process environment, for the `AGSC_*` layer of the
+ *   configuration (never read from `process.env` here).
  * @returns {Promise<number>}
  */
 async function main(argv, ctx) {

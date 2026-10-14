@@ -1,0 +1,74 @@
+{
+  "area": "compose",
+  "description": "A selected slug that no item of the graph carries. The selection names ghost twice; after de-duplication it gives one conflict, {code AGSC-E802, key selection, pair [ghost, ghost]}, the slug written twice because a pair always holds two members. worker is present and requires store, which Step 1 adds with its path, and api-v0, which no item carries: that is the conflict with key requires and the pair in code-point order, api-v0 before worker, not requiring item first. conflicts[] is sorted by pair. Either conflict makes the composition invalid, so the verdict is returned alone with exit 1 and no Harness.",
+  "expected": {
+    "exit": 1,
+    "harness_emitted": false,
+    "verdict": {
+      "added": [
+        {
+          "path": [
+            [
+              "worker",
+              "requires",
+              "store"
+            ]
+          ],
+          "slug": "store"
+        }
+      ],
+      "conflicts": [
+        {
+          "code": "AGSC-E802",
+          "key": "requires",
+          "pair": [
+            "api-v0",
+            "worker"
+          ]
+        },
+        {
+          "code": "AGSC-E802",
+          "key": "selection",
+          "pair": [
+            "ghost",
+            "ghost"
+          ]
+        }
+      ],
+      "hidden": [],
+      "selection": [
+        "store",
+        "worker"
+      ],
+      "valid": false,
+      "warnings": []
+    }
+  },
+  "id": "compose-0021",
+  "input": {
+    "items": [
+      {
+        "slug": "store",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "api-v0",
+          "store"
+        ],
+        "slug": "worker",
+        "type": "concept"
+      }
+    ],
+    "selection": [
+      "ghost",
+      "worker",
+      "ghost"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-03"
+}

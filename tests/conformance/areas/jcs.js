@@ -5,12 +5,15 @@
 
 const jcs = require('../../../src/knowledge/jcs.js');
 const { checks } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 function memberOrder(text) {
   return [...text.matchAll(/"((?:[^"\\]|\\.)*)":/gu)].map((m) => JSON.parse(`"${m[1]}"`));
 }
 
-module.exports.run = (vector) => {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded((vector) => {
   const got = jcs.canonicalize(vector.input.value);
   const list = [['output', got === vector.expected.output, `got ${JSON.stringify(got)}`]];
   if (Array.isArray(vector.expected.order)) {
@@ -29,4 +32,4 @@ module.exports.run = (vector) => {
       'member names were sorted by code point, not UTF-16 code units']);
   }
   return checks(list);
-};
+});

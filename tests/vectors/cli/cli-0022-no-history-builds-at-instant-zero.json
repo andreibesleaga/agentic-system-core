@@ -1,0 +1,40 @@
+{
+  "area": "cli",
+  "description": "AGSC-04-09: where no git history exists — the drop-in flow runs before git init — the build instant defaults to 0, 1970-01-01T00:00:00Z, with the warning AGSC-E606, so the instant is always defined. The case is the minimal fixture run by build with no SOURCE_DATE_EPOCH in a directory that is not a git checkout; its security.txt is authored with an Expires after that instant, so AGSC-06-36 raises nothing. Derivation: AGSC-E606 is a finding about no file, so its file is the empty string (AGSC-09-11); a warning alone leaves the exit 0 (AGSC-09-08); the NOW line of AGSC-06-22 renders the instant as AGSC-04-10 says and the content version of AGSC-04-25 takes branch 4 with no history, 0.0.0+19700101T000000Z; and every sitemap lastmod is the build instant (AGSC-06-19). files_contain maps an emitted route to strings that its bytes contain.",
+  "expected": {
+    "exit": 0,
+    "files_contain": {
+      "/now.md": [
+        "content version 0.0.0+19700101T000000Z, built at 1970-01-01T00:00:00Z, fingerprint "
+      ],
+      "/sitemap.xml": [
+        "<lastmod>1970-01-01T00:00:00Z</lastmod>"
+      ]
+    },
+    "findings": [
+      {
+        "code": "AGSC-E606",
+        "file": "",
+        "severity": "warn"
+      }
+    ]
+  },
+  "id": "cli-0022",
+  "input": {
+    "add_files": {
+      ".well-known/security.txt": "Contact: https://example.org/security-contact\nExpires: 1970-12-31T00:00:00Z\nPreferred-Languages: en\n"
+    },
+    "argv": [
+      "build",
+      "--json"
+    ],
+    "bundle": "fixtures/minimal",
+    "environment": {},
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-04-09"
+}

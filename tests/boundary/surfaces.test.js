@@ -35,7 +35,7 @@ test('AGSC-11-18: readOnlyHint on the five reads, consequentialHint on the two w
   // `links` returns edges, not prose, so it carries no untrustedContentHint.
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.links.untrustedContentHint, false);
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.read.untrustedContentHint, true);
-  // AGSC-11-18 (bnd-0035, bnd-0036): `extensions` is MCP's map of
+  // AGSC-11-18 (bnd-0042, bnd-0036): `extensions` is MCP's map of
   // extension identifier to settings object, and this node's settings object carries
   // exactly `linkset` — the absolute URL of its discovery document (AGSC-06-07).
   assert.deepStrictEqual(plain(s.mcpCapabilities({ base: 'https://a.example/' })), {

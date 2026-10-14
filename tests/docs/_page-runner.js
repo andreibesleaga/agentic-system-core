@@ -9,7 +9,10 @@
 // (standard output and standard error together). Steps run in order, in one shell,
 // in a fresh scratch directory under the system temporary directory, with an empty
 // git identity, no network and `agsc` resolved to this repository's own command line.
-// A plain ```bash block is shown, not run.
+// A plain ```bash block is shown, not run. Every Node process a step starts runs under
+// the network trap of tests/acceptance/steps/_offline.js, which refuses and records
+// every network call; a page whose steps recorded one fails, even when the step caught
+// the refusal and went on.
 //
 // DOCS_ENGINE_PACKAGE, when set, names an installed copy of the package (for example
 // node_modules/agentic-system-core after installing the packed tarball): `agsc`,
@@ -23,6 +26,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..', '..');
+const OFFLINE = path.join(ROOT, 'tests', 'acceptance', 'steps', '_offline.js');
 const PACKAGE = process.env.DOCS_ENGINE_PACKAGE ? path.resolve(process.env.DOCS_ENGINE_PACKAGE) : ROOT;
 
 const BASH = process.platform === 'win32' ? null : spawnSync('bash', ['-c', 'echo ok'], { encoding: 'utf8' });
@@ -68,7 +72,13 @@ function parse(markdown, { whole } = {}) {
   return demos.filter((d) => d.steps.length > 0);
 }
 
-/** The environment of a run: empty git identity, `agsc` on the PATH, the build instant if given. */
+/** Where the steps of a run in `scratch` record the network calls the trap refused (beside it, not in it). */
+const trapOf = (scratch) => `${scratch}.network-attempts.txt`;
+
+/**
+ * The environment of a run: empty git identity, `agsc` on the PATH, the network trap,
+ * the build instant if given.
+ */
 function environment(scratch, epoch) {
   const shims = path.join(scratch, 'bin');
   fs.mkdirSync(shims);
@@ -79,6 +89,7 @@ function environment(scratch, epoch) {
   }
   fs.writeFileSync(path.join(scratch, '.gitconfig-empty'), '');
   const env = {
+    ACCEPTANCE_NETWORK_TRAP: trapOf(scratch),
     ENGINE: PACKAGE,
     GIT_AUTHOR_DATE: '2026-09-01T10:00:00Z',
     GIT_AUTHOR_EMAIL: 'operator@example.org',
@@ -89,6 +100,7 @@ function environment(scratch, epoch) {
     GIT_CONFIG_GLOBAL: path.join(scratch, '.gitconfig-empty'),
     GIT_CONFIG_NOSYSTEM: '1',
     HOME: scratch,
+    NODE_OPTIONS: `--require ${JSON.stringify(OFFLINE)}`,
     NO_COLOR: '1',
     PATH: `${shims}${path.delimiter}${process.env.PATH}`,
   };
@@ -104,11 +116,17 @@ function run(demo, scratch, epoch) {
   return { outputs: parts.map((p) => p.split('\n').map((l) => l.replace(/\s+$/u, ''))), status: r.status, stdout: r.stdout };
 }
 
-/** Run one demo in a fresh scratch directory and assert every expected line was printed. */
+/**
+ * Run one demo in a fresh scratch directory and assert every expected line was printed.
+ * Returns what each step printed, line by line.
+ */
 function check(demo, { epoch, prefix }) {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   try {
     const { outputs, status, stdout } = run(demo, scratch, epoch);
+    const trap = trapOf(scratch);
+    const attempts = fs.existsSync(trap) ? fs.readFileSync(trap, 'utf8').split('\n').filter(Boolean) : [];
+    assert.deepStrictEqual(attempts, [], `a step of "${demo.heading}" reached for the network: ${attempts.join(', ')}`);
     assert.strictEqual(status, 0, `a step failed:\n${stdout.slice(-3000)}`);
     assert.strictEqual(outputs.length, demo.steps.length, 'a step printed no marker');
     demo.steps.forEach((step, i) => {
@@ -116,9 +134,11 @@ function check(demo, { epoch, prefix }) {
         assert.ok(outputs[i].includes(line), `step ${i + 1} of "${demo.heading}" did not print the line\n  ${line}\nit printed:\n${outputs[i].join('\n')}`);
       }
     });
+    return outputs;
   } finally {
     fs.rmSync(scratch, { force: true, recursive: true });
+    fs.rmSync(trapOf(scratch), { force: true });
   }
 }
 
-module.exports = { PACKAGE, ROOT, SKIP, check, parse };
+module.exports = { PACKAGE, ROOT, SKIP, check, environment, parse };

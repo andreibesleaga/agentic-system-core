@@ -4,7 +4,9 @@
 page. The page registers the seven tools only when the browser offers
 `document.modelContext`; the tool reads the node's own published files from the same
 origin — no server, no key, no other host — and answers exactly what the local MCP
-server would answer for the same input over the published items.
+server would answer for the same input on a Bundle whose items are all listed
+(AGSC-00-05). The local server also reads draft, retired and release-gated items,
+which a page never sees (AGSC-09-16).
 
 ```mermaid
 sequenceDiagram

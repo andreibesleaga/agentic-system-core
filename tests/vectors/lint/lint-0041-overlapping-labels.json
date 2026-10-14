@@ -1,0 +1,29 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-21: two published items of one `type` whose `title` values are equal after NFC and case folding are the warning AGSC-E416. The minimal fixture holds the concept `handoff`, titled Handoff, and its lint reports nothing. Three items are added, each conforming in every key and a member of the fixture's cluster: the concept `the-handoff` titled HANDOFF, equal to Handoff after case folding, so one warning; the draft concept `draft-supervisor` titled Supervisor, equal to the published concept `supervisor`, which raises nothing because a draft is not published (AGSC-06-30); and the cluster `handoff-cluster` titled Handoff, which raises nothing because a cluster is not of the concept's type. The whole list is one AGSC-E416 warning, and lint exits 0. The rule names no item of the pair as the one that carries the finding, so `file` and `slug` are not asserted.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E416",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "lint-0041",
+  "input": {
+    "add_files": {
+      "content/clusters/handoff-cluster.md": "---\ntype: cluster\ntitle: Handoff\ndescription: A cluster whose title equals a concept's title, which is not an overlap of one type.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\nA cluster.\n",
+      "content/concepts/draft-supervisor.md": "---\ntype: concept\ntitle: Supervisor\ndescription: A draft concept whose title equals a published concept, which is not an overlap.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nstatus: draft\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n",
+      "content/concepts/the-handoff.md": "---\ntype: concept\ntitle: HANDOFF\ndescription: A concept whose title equals the title of another concept after case folding.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-21"
+}

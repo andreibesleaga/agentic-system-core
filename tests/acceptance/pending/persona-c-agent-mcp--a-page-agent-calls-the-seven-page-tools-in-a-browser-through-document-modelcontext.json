@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "a page that registers its tools through document.modelContext needs a browser; the same three scripts run without one in the scenario before this one, and their answers are compared with the local tool server there.",
+  "scenario": "A page agent calls the seven page tools in a browser through document.modelContext"
+}

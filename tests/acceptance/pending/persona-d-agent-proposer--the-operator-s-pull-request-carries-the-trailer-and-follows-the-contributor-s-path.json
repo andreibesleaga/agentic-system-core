@@ -1,0 +1,5 @@
+{
+  "class": "forge",
+  "reason": "opening the pull request and its CI and merge path happen on the forge; running the printed commands and committing with the trailers run offline in the scenario \"The operator runs the printed commands and commits with the trailers\".",
+  "scenario": "The operator's pull request carries the trailer and follows the contributor's path"
+}

@@ -8,6 +8,7 @@
 const { compareCodePoint } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
 const linksModule = require('../knowledge/links.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /**
  * The DIRECTORY a relative href on `route` is resolved against — what a browser
@@ -63,7 +64,7 @@ function resolveRelative(baseDir, relative) {
  * @returns {Array<{from:string, href:string, route:(string|null)}>}
  */
 function internalLinks(files, options = {}) {
-  const base = typeof options.base === 'string' && options.base !== '' ? options.base.replace(/\/+$/u, '') : null;
+  const base = typeof options.base === 'string' && options.base !== '' ? withoutTrailingSlashes(options.base) : null;
   const out = [];
   const add = (from, href) => {
     const raw = String(href);

@@ -115,8 +115,10 @@ Source: [diagrams/flow-page-tool-call.md](diagrams/flow-page-tool-call.md). The 
 registers the seven tools only when the browser offers `document.modelContext`; without
 it, the page works unchanged. A tool reads the node's own published files from the same
 origin — no other host, no key, no cookie (AGSC-06-05) — and answers what the local
-tool server answers for the same input over the published items; vector `cli-0003`
-proves it call by call. `propose` and `remember` return text and write nothing
+tool server answers for the same input on a Bundle whose items are all listed
+(AGSC-00-05); vector `cli-0003` proves it call by call. The local tool server also
+reads draft, retired and release-gated items, which a page never sees (AGSC-09-16,
+vector `cli-0008`). `propose` and `remember` return text and write nothing
 (AGSC-09-16).
 
 ## 5. The conformance chain
@@ -133,7 +135,8 @@ Source: [diagrams/flow-conformance-chain.md](diagrams/flow-conformance-chain.md)
 4. The **checkers** check the specification, the vectors and a built node without
    importing the engine (AGSC-09-90).
 5. A **claim** names one Level and one released version and rests on a green run
-   (AGSC-10-01); the reference engine claims nothing before 1.0.0 (AGSC-10-05).
+   (AGSC-10-01); the reference engine claims Level 3 at 1.0.0 (AGSC-10-05,
+   [its claim](CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
 
 [RULE-COVERAGE.md](RULE-COVERAGE.md) lists, for every active rule, the checks that
 verify it.

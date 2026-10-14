@@ -96,9 +96,26 @@ function contentFolderOf(filePath) {
   return m && CONTENT_FOLDERS.includes(m[1]) ? m[1] : null;
 }
 
-/** Serialize a frontmatter object to the AGSC-04-19 block, fences included. */
-function serialize(frontmatterObject) {
-  return `---\n${YAML.stringify(failsafeScalars(frontmatterObject), YAML_PROFILE)}---\n`;
+/**
+ * Serialize a frontmatter object to the AGSC-04-19 block, fences included.
+ *
+ * A frontmatter nested deeper than this process's stack can hold overflows the
+ * writer (the library and `failsafeScalars` both walk the tree by recursion), and
+ * the bare `RangeError` used to reach the command line as an internal error where
+ * `lint` had passed the item. The reader already reports every construct the same
+ * library cannot handle as `AGSC-E105` (`knowledge/yaml.js#codeForLibraryError`),
+ * so the writer reports that code for the same input — a Finding, never a crash
+ * (AGSC-09-11). No bound is added: AGSC-02-02 admits block mappings and 1.0 states
+ * no depth. `file` names the item where the caller knows it, for the Finding.
+ */
+function serialize(frontmatterObject, file = '') {
+  try {
+    return `---\n${YAML.stringify(failsafeScalars(frontmatterObject), YAML_PROFILE)}---\n`;
+  } catch (e) {
+    if (!(e instanceof RangeError)) throw e;
+    throw Object.assign(new Error('the frontmatter is nested deeper than the writer can hold; '
+      + 'AGSC-02-02 admits block mappings, and 1.0 states no bound'), { code: 'AGSC-E105', file: String(file) });
+  }
 }
 
 /**
@@ -228,21 +245,93 @@ function adopt(files, options = {}) {
 }
 
 /**
+ * The characters `\s` matches under the `u` flag (ECMA-262 WhiteSpace and
+ * LineTerminator): tab, line feed, vertical tab, form feed, carriage return, space,
+ * U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000, U+FEFF.
+ */
+function isSpace(ch) {
+  const c = ch.charCodeAt(0);
+  return (c >= 0x09 && c <= 0x0d) || c === 0x20 || c === 0xa0 || c === 0x1680
+    || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 || c === 0x202f
+    || c === 0x205f || c === 0x3000 || c === 0xfeff;
+}
+
+/**
+ * The first index at or after `from` whose character passes `test`, for queries
+ * whose `from` never decreases: each answer is kept, so a run of queries scans the
+ * text once. -1 when there is none.
+ */
+function forwardFinder(text, test, meter) {
+  let asked = Infinity;
+  let found = -1;
+  return (from) => {
+    if (from >= asked && (found === -1 || from <= found)) return found;
+    let i = from;
+    while (i < text.length && !test(text[i])) i += 1;
+    if (meter !== undefined) meter.steps += i - from + 1;
+    asked = from;
+    found = i < text.length ? i : -1;
+    return found;
+  };
+}
+
+/**
+ * Every Markdown link or image `[text](target)` or `[text](target "title")`, left to
+ * right: exactly the matches of the pattern this module used until 1.0.0,
+ * `/(!?)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu`, in time linear in the body.
+ * From a `[`, the text runs to the first `]`, which a `(` must follow; the target runs
+ * to the first `)` or white space and holds at least one character; after white space
+ * a title must open with `"` and close with the next `"`, followed by `)`. Every part
+ * stops at the first character that ends it, so the search from each `[` depends only
+ * on where those characters are, and kept answers make the whole search one pass. The
+ * pattern scanned to the end of the body from every `[` of a long run, which was
+ * quadratic (a note of 100,000 `[` kept `agsc init` busy for 30 s).
+ */
+function markdownLinks(text, meter) {
+  const out = [];
+  const closeText = forwardFinder(text, (ch) => ch === ']', meter);
+  const targetEnd = forwardFinder(text, (ch) => ch === ')' || isSpace(ch), meter);
+  const afterSpace = forwardFinder(text, (ch) => !isSpace(ch), meter);
+  const closeTitle = forwardFinder(text, (ch) => ch === '"', meter);
+  let from = 0;
+  if (meter !== undefined) meter.steps += text.length + 1;
+  for (let open = text.indexOf('[', from); open !== -1; open = text.indexOf('[', open + 1)) {
+    if (meter !== undefined) meter.steps += 1;
+    const close = closeText(open + 1);
+    if (close === -1) break;
+    if (text[close + 1] !== '(') continue;
+    const end = targetEnd(close + 2);
+    if (end === -1 || end === close + 2) continue;
+    let last = end;
+    if (text[end] !== ')') {
+      const quote = afterSpace(end);
+      if (quote === -1 || text[quote] !== '"') continue;
+      const closing = closeTitle(quote + 1);
+      if (closing === -1 || text[closing + 1] !== ')') continue;
+      last = closing + 1;
+    }
+    const image = open > from && text[open - 1] === '!';
+    out.push({ image, target: text.slice(close + 2, end) });
+    from = last + 1;
+    open = last;
+  }
+  return out;
+}
+
+/**
  * AGSC-02-95 (input to distribution/init.js, which owns the copying and AGSC-E507):
  * every relative Markdown link or image reference in a body. Absolute URLs,
  * fragment-only targets and `mailto:` are excluded, exactly as the rule requires.
+ * @param {string} body
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {Array<{reference:string, image:boolean}>}
  */
-function relativeReferences(body) {
+function relativeReferences(body, meter) {
   const out = [];
-  const re = /(!?)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu;
-  let m = re.exec(String(body));
-  while (m !== null) {
-    const target = m[2];
+  for (const { image, target } of markdownLinks(String(body), meter)) {
     if (!/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(target) && !target.startsWith('#') && !target.startsWith('//')) {
-      out.push({ reference: target, image: m[1] === '!' });
+      out.push({ reference: target, image });
     }
-    m = re.exec(String(body));
   }
   return out;
 }

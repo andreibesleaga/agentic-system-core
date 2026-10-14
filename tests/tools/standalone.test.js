@@ -70,7 +70,7 @@ describe('tools/ are independent of the engine (AGSC-09-90)', () => {
 
   it('every tool answers --help with exit 0 and writes nothing to stderr', () => {
     for (const name of NINE) {
-      if (name === 'validate-vectors' || name === 'validate-wellknown') continue;   // shipped earlier, no run() export
+      if (name === 'validate-vectors' || name === 'validate-wellknown') continue;   // left out of this loop; validate-wellknown's run() is asynchronous
       const result = capture(name, ['--help']);
       assert.equal(result.code, 0, name);
       assert.equal(result.err, '', name);

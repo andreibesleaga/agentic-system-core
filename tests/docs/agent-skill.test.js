@@ -60,6 +60,17 @@ test('every `agsc <verb>` the skill names is a verb of the engine (AGSC-09-07)',
   }
 });
 
+test('the security contact the skill teaches carries no date that expires (AGSC-06-36 derives Expires at build)', () => {
+  // A fixed `Expires:` in a first-run example makes `ci` fail from that date on; with
+  // the `Contact:` line alone the writer derives `Expires` from the build instant.
+  for (const f of files(SKILL)) {
+    const text = fs.readFileSync(path.join(SKILL, f), 'utf8');
+    assert.doesNotMatch(text, /^\s*Expires:/mu, `${f} shows a dated Expires line`);
+  }
+  const skill = fs.readFileSync(path.join(SKILL, 'SKILL.md'), 'utf8');
+  assert.match(skill, /^\s*Contact: \S+$/mu, 'the skill shows the Contact line');
+});
+
 test('the plugin carries the same bytes as skills/agentic-system-core/', () => {
   const copy = path.join(PLUGIN, 'skills', 'agentic-system-core');
   assert.deepEqual(files(copy), files(SKILL));

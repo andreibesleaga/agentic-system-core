@@ -1,14 +1,23 @@
 'use strict';
-// verifies AGSC-01-26, AGSC-01-28, AGSC-03-20, AGSC-06-30, AGSC-08-09, AGSC-08-10, AGSC-08-12
+// verifies AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-28, AGSC-03-20, AGSC-06-30, AGSC-08-09, AGSC-08-10, AGSC-08-12, AGSC-10-13
 // Steps of features/persona-g-team.feature that run offline: a team's Bundle
 // scaffolded by the real `init` in an empty directory, holding its own working
-// record (Mode 2) as ordinary items, linted, built, exported and passed by `ci`.
+// record (Mode 2) as ordinary items, linted, built, exported and passed by `ci`;
+// the same Bundle moved into a GABBE kit and back, and a board moved to and from
+// the files of eleven project tools and back (the fixtures of
+// `tests/fixtures/pm-<tool>/`, the ones the adapter's own tests read).
+//
+// Three phrases here are reused by persona-f and persona-h, which run imports of
+// their own: "the import plan wrote nothing into the Bundle", "… into a copy of the
+// Bundle that holds no item", and "the same import run again writes nothing …".
+// A step that sets up an import's input records the Bundle's `content/` first, in
+// `world.state.contentBefore`, so that a dry run can be shown to write nothing.
 
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ROOT, built } = require('./_world.js');
+const { ROOT, built, splitItem } = require('./_world.js');
 
 const PROV = ['prov:', '  origin: human', '  operator: human:team-lead'];
 const MODE2_LINKS = ['implements', 'verifies', 'covers', 'blocked-by', 'decided-by'];
@@ -31,6 +40,58 @@ function gate(world, level, checks) {
 }
 
 const errorsOf = (r) => JSON.parse(r.stdout).findings.filter((f) => f.severity === 'error');
+
+/** The content version of an untagged Bundle with no history, built at the fixed instant. */
+const UNTAGGED = '0.0.0+20260101T000000Z';
+
+/** Every file under `dir`, relative, with its bytes as base64, in code-point order. */
+function tree(dir) {
+  const out = new Map();
+  const walk = (sub) => {
+    for (const name of fs.readdirSync(path.join(dir, sub)).sort()) {
+      const rel = sub === '' ? name : `${sub}/${name}`;
+      if (fs.statSync(path.join(dir, rel)).isDirectory()) walk(rel);
+      else out.set(rel, fs.readFileSync(path.join(dir, rel)).toString('base64'));
+    }
+  };
+  if (fs.existsSync(dir)) walk('');
+  return out;
+}
+
+/** The items of a Bundle directory, `content/<plural>/<slug>.md` → {frontmatter, body}. */
+function itemsOf(dir) {
+  const out = new Map();
+  for (const rel of tree(path.join(dir, 'content')).keys()) {
+    if (rel === 'index.md' || !rel.endsWith('.md')) continue;
+    const { body, frontmatter } = splitItem(fs.readFileSync(path.join(dir, 'content', rel), 'utf8'));
+    out.set(rel, { body: body.replace(/^\n+/u, ''), frontmatter });
+  }
+  return out;
+}
+
+/** An item as it was authored: its `prov.source_version`, which an import adds, removed. */
+function authored(item) {
+  const frontmatter = JSON.parse(JSON.stringify(item.frontmatter));
+  if (frontmatter.prov) delete frontmatter.prov.source_version;
+  return { body: item.body, frontmatter };
+}
+
+/** Assert that `target` holds exactly the items `expected` names, each as `source` authored it. */
+function sameItems(world, source, target, expected) {
+  assert.deepStrictEqual([...target.keys()].sort(), [...expected].sort());
+  for (const rel of expected) {
+    const back = target.get(rel);
+    assert.strictEqual(back.frontmatter.prov.source_version, UNTAGGED, `${rel}: the exporting node's content version`);
+    assert.deepStrictEqual(authored(back), authored(source.get(rel)), `${rel} did not come back as authored`);
+  }
+}
+
+/** The files the last import added under `content/`, against the snapshot taken before it. */
+function addedSince(world) {
+  const before = world.state.contentBefore;
+  assert.ok(before, 'no snapshot of content/ was taken before the import');
+  return [...world.snapshot('content').keys()].filter((rel) => !before.has(rel)).map((rel) => `content/${rel}`);
+}
 
 module.exports = [
   {
@@ -248,6 +309,145 @@ module.exports = [
         }
       }
       assert.ok(world.exists('dist/export/markdown/content/concepts/specs-first.md'), 'the export is empty');
+    },
+  },
+  // ---------------------------------------------------------------- GABBE kit
+  {
+    pattern: 'the kit holds the procedure as a skill, the gate as a guide, each concept as semantic memory, the session log as a decision log and the lesson in "CONTINUITY.md"',
+    run(world) {
+      const kit = 'dist/export/gabbe/agents';
+      assert.ok(world.exists(`${kit}/skills/agsc/cut-a-release.skill.md`), 'the procedure is not a skill');
+      assert.ok(world.exists(`${kit}/guides/agsc/release-gate.md`), 'the gate is not a guide');
+      for (const slug of ['specs-first', 'one-engine', 'board-export', 'board-test']) {
+        assert.ok(world.exists(`${kit}/memory/semantic/agsc/${slug}.md`), `${slug} is not semantic memory`);
+      }
+      assert.ok(world.exists(`${kit}/memory/episodic/agsc/session-one.md`), 'the session log is not a decision log');
+      assert.match(world.read(`${kit}/memory/CONTINUITY.md`), /Review before merge/u);
+      // Every file starts with the provenance block, so the kit says where it came from.
+      assert.match(world.read(`${kit}/skills/agsc/cut-a-release.skill.md`), /<!-- agsc:provenance\n/u);
+    },
+  },
+  {
+    pattern: /^the (?:team|author) imports "([^"]+)" with "([^"]+)" into a copy of the Bundle that holds no item$/u,
+    run(world, from, flags) {
+      // The same node, checked out again before any item exists: its configuration,
+      // its root document and its security contact, and no item.
+      const target = world.temp('agsc-acc-copy-');
+      for (const rel of ['agsc.config.json', 'content/index.md', '.well-known/security.txt', 'LICENSE-CONTENT']) {
+        if (!world.exists(rel)) continue;
+        fs.mkdirSync(path.dirname(path.join(target, rel)), { recursive: true });
+        fs.copyFileSync(path.join(world.dir, rel), path.join(target, rel));
+      }
+      const argv = ['import', path.join(world.dir, from), ...flags.split(' ')];
+      const r = world.agsc(argv, { cwd: target, offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      world.state.target = target;
+      world.state.lastImport = { argv, cwd: target };
+    },
+  },
+  {
+    pattern: 'every published item comes back as authored, with the exporting node\'s content version',
+    run(world) {
+      const source = itemsOf(world.dir);
+      const published = [...source].filter(([, item]) => item.frontmatter.status !== 'draft').map(([rel]) => rel);
+      assert.ok(published.length > 0);
+      sameItems(world, source, itemsOf(world.state.target), published);
+    },
+  },
+  {
+    pattern: 'the same import run again writes nothing and reports every item unchanged',
+    run(world) {
+      const { argv, cwd } = world.state.lastImport || { argv: world.last.argv, cwd: world.dir };
+      assert.strictEqual(argv[0], 'import', `the last command was not an import: ${argv.join(' ')}`);
+      const before = tree(path.join(cwd, 'content'));
+      const again = world.agsc(argv.filter((a) => a !== '--json'), { cwd, offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      const m = /^import: 0 written, 0 replaced, (\d+) unchanged$/mu.exec(again.stderr);
+      assert.ok(m && Number(m[1]) > 0, again.stderr);
+      assert.deepStrictEqual(tree(path.join(cwd, 'content')), before);
+    },
+  },
+  // ------------------------------------------------------- boards and trackers
+  {
+    pattern: /^the team's "(agsc-board|asana|github|gitlab|jira|linear|markdown|notion|obsidian-kanban|todotxt|trello)" export file is in the folder "([a-z-]+)"$/u,
+    run(world, tool, folder) {
+      fs.cpSync(path.join(ROOT, 'tests', 'fixtures', `pm-${tool}`), path.join(world.dir, folder), { recursive: true });
+      world.state.tool = tool;
+      world.state.contentBefore = world.snapshot('content');
+    },
+  },
+  {
+    pattern: 'the import plan wrote nothing into the Bundle',
+    run(world) {
+      assert.deepStrictEqual(world.snapshot('content'), world.state.contentBefore);
+    },
+  },
+  {
+    pattern: 'every row of the export arrives as a draft task on a draft board, so nothing of it is published yet',
+    run(world) {
+      const added = addedSince(world);
+      const items = added.map((rel) => ({ rel, ...splitItem(world.read(rel)) }));
+      assert.ok(items.some((i) => i.frontmatter.kind === 'task'), `no task arrived: ${added.join(', ')}`);
+      assert.ok(items.some((i) => i.frontmatter.type === 'cluster'), `no board arrived: ${added.join(', ')}`);
+      for (const { frontmatter, rel } of items) {
+        assert.strictEqual(frontmatter.status, 'draft', `${rel} is not a draft`);
+        assert.strictEqual(frontmatter.prov.origin, 'imported', rel);
+        if (frontmatter.type === 'concept') {
+          assert.ok(frontmatter['x-board-source'].startsWith(`${world.state.tool}:`), `${rel} does not name its row`);
+        }
+      }
+      world.state.imported = added;
+    },
+  },
+  {
+    pattern: 'the team publishes the imported board',
+    run(world) {
+      for (const rel of world.state.imported) {
+        const text = world.read(rel);
+        assert.match(text, /^status: draft\n/mu, rel);
+        world.write(rel, text.replace(/^status: draft\n/mu, ''));
+      }
+    },
+  },
+  {
+    pattern: 'every board the export carries comes back with its items as published',
+    run(world) {
+      const source = itemsOf(world.dir);
+      const imported = world.state.imported.map((rel) => rel.slice('content/'.length));
+      // A board is a cluster holding at least one task (AGSC-10-13): the export
+      // carries each board with every item filed in it, and nothing else.
+      const boards = new Set(imported.map((rel) => source.get(rel).frontmatter)
+        .filter((fm) => fm.kind === 'task').flatMap((fm) => fm.clusters || []));
+      assert.ok(boards.size > 0);
+      const expected = imported.filter((rel) => {
+        const fm = source.get(rel).frontmatter;
+        if (fm.type === 'cluster') return boards.has(rel.replace(/^clusters\/|\.md$/gu, ''));
+        return (fm.clusters || []).some((c) => boards.has(c));
+      });
+      sameItems(world, source, itemsOf(world.state.target), expected);
+    },
+  },
+  {
+    pattern: 'the team\'s Bundle holds a published board "delivery" with two tasks',
+    run(world) {
+      item(world, 'content/clusters/delivery.md', ['type: cluster', 'title: Delivery',
+        'description: The delivery board of the team, which holds the tasks of the next release.', ...PROV],
+      'The tasks of the next release.');
+      concept(world, 'write-the-notes', 'task', 'Write the release notes',
+        'A task of the delivery board, done once the release notes exist and a person has read them.',
+        ['clusters:', '  - delivery', 'task_state: TASK_STATE_WORKING']);
+      concept(world, 'review-the-notes', 'task', 'Review the release notes',
+        'A task of the delivery board, done once a second person has reviewed the release notes.',
+        ['clusters:', '  - delivery', 'task_state: TASK_STATE_SUBMITTED']);
+    },
+  },
+  {
+    pattern: '"dist/export/board/github/delivery.json" lists the two tasks of the board as issues',
+    run(world) {
+      const issues = JSON.parse(world.read('dist/export/board/github/delivery.json'));
+      assert.deepStrictEqual(issues.map((i) => [i.title, i.state]),
+        [['Review the release notes', 'open'], ['Write the release notes', 'open']]);
+      for (const issue of issues) assert.strictEqual(issue.milestone.title, 'Delivery');
     },
   },
 ];

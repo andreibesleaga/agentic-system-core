@@ -1,0 +1,65 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-01-16 and AGSC-01-34: an input file larger than its cap MUST be refused with AGSC-E904 (1 MiB, 1,048,576 bytes, for every input file outside content/attachments/; `attachments{max_bytes}`, default 1 MiB, for an attachment), an archive MUST be refused entirely with AGSC-E903, and any path escaping the Bundle root MUST be refused with AGSC-E902. Over the minimal fixture, whose lint reports nothing, the case adds: a concept attachment-holder whose three attachments are at-the-cap.txt (exactly 1,048,576 bytes: at the cap, not above it, so accepted; the large files are filled with full stops, which no lint reads as an encoded blob), over-the-cap.txt (1,048,577 bytes: AGSC-E904) and data.zip (an archive, the 22 bytes of an empty ZIP file, an end-of-central-directory record alone: AGSC-E903); a concept linked-attachments whose attachment folder content/attachments/linked-attachments is a symbolic link to `../../..`, the folder that holds the Bundle root, so that its attachment `hosts` lies outside the root (AGSC-E902); and content/concepts/oversize.md, an input file of 1,048,577 bytes (AGSC-E904), refused before it is read, so its content is never parsed. The whole list `lint` reports is these four errors, and lint exits 1. `add_sized_files` and `add_links` state the large files and the link, which a JSON string cannot carry.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E904",
+          "file": "content/concepts/oversize.md",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E903",
+          "path": "content/attachments/attachment-holder/data.zip",
+          "severity": "error",
+          "slug": "attachment-holder"
+        },
+        {
+          "code": "AGSC-E904",
+          "path": "content/attachments/attachment-holder/over-the-cap.txt",
+          "severity": "error",
+          "slug": "attachment-holder"
+        },
+        {
+          "code": "AGSC-E902",
+          "path": "content/attachments/linked-attachments/hosts",
+          "severity": "error",
+          "slug": "linked-attachments"
+        }
+      ]
+    }
+  },
+  "id": "lint-0037",
+  "input": {
+    "add_files": {
+      "content/attachments/attachment-holder/data.zip": "PK\u0005\u0006\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "content/concepts/attachment-holder.md": "---\ntype: concept\ntitle: Attachment holder\ndescription: A concept that names three attachments, one at the cap, one over it and an archive.\nkind: explainer\nclusters:\n  - agent-patterns\nattachments:\n  - file: at-the-cap.txt\n    media_type: text/plain\n    alt: A text file of exactly one mebibyte.\n  - file: data.zip\n    media_type: application/zip\n    alt: An archive.\n  - file: over-the-cap.txt\n    media_type: text/plain\n    alt: A text file one byte over one mebibyte.\nprov:\n  origin: human\n  operator: human:tester\n---\n\n# Attachment holder\n\nBody.\n",
+      "content/concepts/linked-attachments.md": "---\ntype: concept\ntitle: Linked attachments\ndescription: A concept whose attachment folder is a link that leads out of the Bundle root.\nkind: explainer\nclusters:\n  - agent-patterns\nattachments:\n  - file: hosts\n    media_type: text/plain\n    alt: A file outside the Bundle.\nprov:\n  origin: human\n  operator: human:tester\n---\n\n# Linked attachments\n\nBody.\n"
+    },
+    "add_links": {
+      "content/attachments/linked-attachments": "../../.."
+    },
+    "add_sized_files": {
+      "content/attachments/attachment-holder/at-the-cap.txt": {
+        "bytes": 1048576,
+        "fill": "."
+      },
+      "content/attachments/attachment-holder/over-the-cap.txt": {
+        "bytes": 1048577,
+        "fill": "."
+      },
+      "content/concepts/oversize.md": {
+        "bytes": 1048577,
+        "fill": "."
+      }
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-16"
+}

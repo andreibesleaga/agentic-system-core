@@ -33,6 +33,7 @@ const jcs = require('../../../src/knowledge/jcs.js');
 const linksModule = require('../../../src/knowledge/links.js');
 const fixture = require('../../knowledge/_graph-fixture.js');
 const { checks } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -75,11 +76,11 @@ function memoryCase(vector) {
   list.push(['resolved', own && own.slug === vector.expected.resolved, `got ${JSON.stringify(own)}`]);
   list.push(['foreign', Boolean(foreign) && foreign.finding.code === vector.expected.foreign_bundle.error,
     `got ${JSON.stringify(foreign)}`]);
-  if (vector.expected.emitted_as_rdf_subject === false) {
+  if (vector.expected.emitted_as_rdf_subject !== undefined) {
     // The alias has no path into the dataset: every subject is built by `itemIri`.
     const items = [{ type: 'concept', slug: own.slug, title: 'Alias', lang: 'en' }];
     const text = nq.toNQuads(items, { base: vector.input.base });
-    list.push(['never a subject', !text.includes('memory://'), text]);
+    list.push(['emitted_as_rdf_subject', text.includes('memory://') === vector.expected.emitted_as_rdf_subject, text]);
   }
   return checks(list);
 }
@@ -99,9 +100,10 @@ function literalFormsCase(vector) {
   for (const forbidden of vector.expected.forbidden_forms || []) {
     list.push([`forbidden ${forbidden}`, !written.includes(forbidden), `got ${JSON.stringify(written)}`]);
   }
-  if (vector.expected.turtle_literal_has_explicit_xsd_string === false) {
+  if (vector.expected.turtle_literal_has_explicit_xsd_string !== undefined) {
     const inTurtle = turtle.turtleTerm(plain);
-    list.push(['turtle has no ^^xsd:string', !inTurtle.includes('^^'), `got ${JSON.stringify(inTurtle)}`]);
+    list.push(['turtle_literal_has_explicit_xsd_string',
+      inTurtle.includes('^^') === vector.expected.turtle_literal_has_explicit_xsd_string, `got ${JSON.stringify(inTurtle)}`]);
   }
   return checks(list);
 }
@@ -157,11 +159,11 @@ function mentionsCase(vector) {
     ['whole_file_asserted', vector.expected.whole_file_asserted === false,
       'no rule pins the whole document here'],
   ];
-  if (vector.expected.inverse_materialised === false) {
+  if (vector.expected.inverse_materialised !== undefined) {
     // AGSC-03-04 lists the computed inverses and `mentions` is not among them.
     list.push(['inverse_materialised',
-      !nquads.includes(`<${nq.bundleIri(options.base)}concepts/beta/> <${nq.NS}mentions>`),
-      'a computed inverse reached the export']);
+      nquads.includes(`<${nq.bundleIri(options.base)}concepts/beta/> <${nq.NS}mentions>`) === vector.expected.inverse_materialised,
+      'a computed inverse reached the export, or the one the case states did not']);
   }
   return checks(list);
 }
@@ -172,7 +174,7 @@ function contextCase(vector, ctx) {
   list.push(['context', jcs.canonicalize(got) === jcs.canonicalize(vector.expected.context),
     `got ${jcs.canonicalize(got)}`]);
 
-  if (vector.expected.roundtrip_byte_identical === true) {
+  if (vector.expected.roundtrip_byte_identical !== undefined) {
     // The round trip needs a document that uses the WHOLE vocabulary, so it is run
     // against the context generated from `ontology/agsc.ttl` and the representative
     // Bundle, not against the four terms this vector's input names.
@@ -194,7 +196,9 @@ function contextCase(vector, ctx) {
     } catch (error) {
       return checks([...list, ['roundtrip', false, `the processor failed: ${error.message}`]]);
     }
-    list.push(['roundtrip', jcs.canonicalize(JSON.parse(after)) === before, 'expanding and re-compacting changed the bytes']);
+    list.push(['roundtrip_byte_identical',
+      (jcs.canonicalize(JSON.parse(after)) === before) === vector.expected.roundtrip_byte_identical,
+      'expanding and re-compacting changed the bytes, or kept them where the case states a change']);
   }
   return checks(list);
 }
@@ -243,13 +247,6 @@ function reservedExportBlockCase(vector, ctx) {
   }
 }
 
-/** graph-0003 — a blank node in an authored export block (AGSC-05-08). */
-function exportBlockCase(vector) {
-  const findings = turtle.checkExportBlocks(vector.input.markdown);
-  return checks([['error', findings.some((f) => f.code === vector.expected.error),
-    `got ${JSON.stringify(findings)}`]]);
-}
-
 /**
  * graph-0016/0017/0018/0026 — the WHOLE file, byte for byte.
  *
@@ -266,15 +263,16 @@ function wholeFileCase(vector) {
   list.push(['nquads', nquads === vector.expected.nquads, `got\n${nquads}`]);
   list.push(['turtle', text === vector.expected.turtle, `got\n${text}`]);
 
-  if (vector.expected.prefix_block_is_constant === true) {
+  if (vector.expected.prefix_block_is_constant !== undefined) {
     // AGSC-05-10(a): the seven lines are emitted whether the dataset uses the
     // namespace or not, so the block of THIS dataset must equal the block of a
     // dataset that uses nothing at all — and `owl:`/`rdf:` are never declared.
     const constant = turtle.prefixBlock();
     const emitted = text.split('\n\n')[0];
-    list.push(['prefix block', emitted === constant, `got ${JSON.stringify(emitted)}`]);
-    list.push(['seven lines', constant.split('\n').filter(Boolean).length === 7, constant]);
-    list.push(['no owl:/rdf: prefix', !/^@prefix (owl|rdf):/mu.test(constant), constant]);
+    const holds = emitted === constant && constant.split('\n').filter(Boolean).length === 7
+      && !/^@prefix (owl|rdf):/mu.test(constant);
+    list.push(['prefix_block_is_constant', holds === vector.expected.prefix_block_is_constant,
+      `got ${JSON.stringify(emitted)} against ${JSON.stringify(constant)}`]);
   }
   if (vector.expected.blank_nodes !== undefined) {
     const count = nq.countBlankNodes(nquads);
@@ -283,10 +281,11 @@ function wholeFileCase(vector) {
   if (vector.expected.turtle_never_contains) {
     list.push(['turtle_never_contains', !text.includes(vector.expected.turtle_never_contains), `present in\n${text}`]);
   }
-  if (vector.expected.verdict_digest_exported === false) {
+  if (vector.expected.verdict_digest_exported !== undefined) {
     const digests = vector.input.items.map((item) => item.verdict_digest).filter(Boolean);
-    list.push(['verdict_digest', !/verdict/iu.test(nquads) && !digests.some((d) => nquads.includes(d)),
-      `a verdict reached the export:\n${nquads}`]);
+    const exported = /verdict/iu.test(nquads) || digests.some((d) => nquads.includes(d));
+    list.push(['verdict_digest_exported', exported === vector.expected.verdict_digest_exported,
+      `a verdict reached the export, or the one the case states did not:\n${nquads}`]);
   }
   for (const forbidden of vector.expected.forbidden || []) list.push(forbiddenCheck(forbidden, vector, options, nquads, text));
   return checks(list);
@@ -372,21 +371,22 @@ function jsonldWholeCase(vector, ctx) {
   return checks(list);
 }
 
-module.exports.run = (vector, ctx) => {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded((vector, ctx) => {
   const input = vector.input || {};
   if (vector.id === 'graph-0019') return termNamesCase(vector);
   if (vector.id === 'graph-0025') return mentionsCase(vector);
   if (Array.isArray(input.value) && input.bundle_id !== undefined) return memoryCase(vector);
   if (input.literal !== undefined) return literalFormsCase(vector);
   if (Array.isArray(input.ontology_terms)) return contextCase(vector, ctx);
-  if (typeof input.markdown === 'string') return exportBlockCase(vector);
   if (input.item && typeof input.item.markdown === 'string' && typeof input.bundle === 'string') return reservedExportBlockCase(vector, ctx);
   const expected = vector.expected || {};
   if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };
-};
+});
 
 module.exports.clauses = clauses;
 module.exports.normaliseClause = normaliseClause;

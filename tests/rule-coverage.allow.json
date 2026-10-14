@@ -33,10 +33,6 @@
       "reason": "person",
       "why": "It forbids claiming more than the lints and hashes prove; a claim is a statement by a person."
     },
-    "AGSC-08-26": {
-      "reason": "forge",
-      "why": "The conditions for an auto merge are checked by the forge's CI against the pull-request author, the ruleset and the merge credential, none of which the engine sees."
-    },
     "AGSC-08-29": {
       "reason": "definition",
       "why": "It defines a self-driving node as the conjunction of conditions that AGSC-08-26 and AGSC-08-28 state and the tests of those rules check."

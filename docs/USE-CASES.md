@@ -2,7 +2,7 @@
 
 **Who this is for:** anyone deciding whether the system fits a need. **Read after:** [plain/modes.md](plain/modes.md).
 
-Nineteen concrete scenarios, in three groups: **one machine, one person**;
+Twenty-one concrete scenarios, in three groups: **one machine, one person**;
 **many nodes, no server**; and **many agents on one Bundle**. Each says who is
 involved, where the data goes, which published surfaces it touches, which of the
 node's modes it is, the exact commands, and how it is proven.
@@ -92,6 +92,51 @@ Bundle's own folder.
   stamp. [guides/mode-0.md](guides/mode-0.md) walks through it.
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
+### L6 — An agent kit and the node, both ways
+
+- **Who:** one person or a team whose coding agents keep their skills and memory in
+  a GABBE kit (plain Markdown under `agents/`).
+- **Data flow:** the node's published items → the kit's folders (procedures as
+  skills, gates as guides, concepts and clusters as semantic memory, episodes as
+  decision logs, lessons as entries of `CONTINUITY.md`), each file opening with the
+  provenance block; and a kit's own records back into the node as items marked
+  `prov.origin: imported`. Files only; nothing is fetched.
+- **Surfaces:** the published items, through the GABBE adapter.
+- **Mode:** 2, and 3 for the skills.
+- **Commands:** `agsc export --to gabbe` writes `dist/export/gabbe/agents/…`; copy its
+  `agsc/` folders into the kit, and append the `CONTINUITY.md` entries to the kit's
+  own file rather than replace it. Back again: `agsc import --from gabbe <kit> --dry-run`
+  for the plan, then the same command without `--dry-run`; a second import of the same
+  kit changes nothing. See [CONNECTORS.md](CONNECTORS.md), route 5.
+- **Proven by:** `tests/acceptance/use-cases/use-cases.test.js` (the export, and the
+  kit read back item for item into a copy of the node that holds no item yet), and
+  `tests/interchange/gabbe.test.js` for a kit's own records. No GABBE tool is run.
+
+### L7 — A skills collection becomes procedures, and goes back out
+
+- **Who:** one person or a team, and a collection of skills or rules that others
+  already share: Agent Skills folders, a Claude Code plugin or marketplace, Cursor or
+  Windsurf rules.
+- **Data flow:** a local clone → items (a skill becomes a procedure, a rule a concept
+  of kind `explainer`), each keeping its source file, layout and licence. Anything
+  that would execute is dropped and reported, and a skill whose licence is not a
+  recognised open one arrives as a draft, so it is never published until a person
+  has read its terms. Out again: the node's packs, laid out for one of the five
+  tools. The engine downloads nothing.
+- **Surfaces:** the skill packs, through the skills adapter.
+- **Mode:** 3.
+- **Commands:** `git clone <collection>`, then `agsc import --from skills --list <clone>`
+  (what would come in; nothing is written), `agsc import --from skills <clone> --dry-run`,
+  then the same command without `--dry-run` (`--layout <name>` picks one layout,
+  `--cluster <slug>` files every skill in one cluster). Out:
+  `agsc export --to skills --layout marketplace` (or `agentskills`, `claude-plugin`,
+  `cursor`, `windsurf`). See [CONNECTORS.md](CONNECTORS.md), route 6, for the
+  collections and the exact commands.
+- **Proven by:** `tests/acceptance/use-cases/use-cases.test.js` (a marketplace clone
+  listed, planned, imported and imported again; the packs exported and read back),
+  the five layouts in `features/persona-f-integrator.feature`, and
+  `tests/interchange/skills.test.js`. No collection is cloned from the network.
+
 ## Many nodes, no server
 
 ### D1 — Two nodes that check each other
@@ -120,7 +165,7 @@ Bundle's own folder.
 - **Mode:** 1.
 - **Commands:** none at 1.0 — the walk is a library function
   (`src/boundary/federation.js`, `walk`) that takes the fetch function it may use; no
-  command line wraps it yet.
+  command wraps it, and none is planned for a fixed version.
 - **Proven by:** `tests/boundary/federation.test.js`, with an injected fetch and no
   network. A walk over real peers needs the network and is not run by any test.
 
@@ -234,8 +279,8 @@ Bundle's own folder.
 - **Commands:** set `publish: auto` on the channel in `agsc.config.json`.
 - **Proven by:** `tests/governance/agents.test.js` (the agent-lane conditions) and
   `tests/distribution/forge.test.js` (the enforcement files a forge needs). The merges
-  run on the forge; **no channel adapter ships**, so the channel
-  itself is not runnable yet.
+  run on the forge; **no channel adapter ships** at 1.0, so the channel itself does
+  not run: channel adapters are planned for 1.1 (AGSC-00-20).
 
 ### M4 — Cost that cannot run away
 
@@ -249,8 +294,11 @@ Bundle's own folder.
 - **Surfaces:** the NOW page.
 - **Mode:** 0 or 5.
 - **Commands:** `agsc refresh --agent <name> --dry-run` shows the proposal a run would
-  open; `agsc build` publishes the NOW page with the meter.
-- **Proven by:** `tests/distribution/now-spend.test.js`. This engine ships no model
+  open, or, once a budget is reached, writes nothing and warns `AGSC-E510`; `agsc build`
+  publishes the NOW page with the meter and, when a budget is reached, the same warning.
+- **Proven by:** `tests/distribution/now-spend.test.js`, `tests/application/cli/refresh-stops.test.js`,
+  the Mode 5 walk `tests/e2e/modes/mode-5-board.test.js` and the persona-k scenarios of
+  `features/persona-k-live-board.feature`. This engine ships no model
   adapter, so no real model call is made anywhere.
 
 ### M5 — A selection that becomes a starting harness
@@ -266,7 +314,8 @@ Bundle's own folder.
 - **Mode:** 4.
 - **Commands:** `agsc compose <slug> [<slug>…]` writes `dist/harness/<name>/`; add
   `--zip` for one archive. The runtime emitters (`--emit crewai` and the other five
-  names) are named by the specification and **not built yet**.
+  names) are named by the specification and refused at 1.0 with `AGSC-E203`; their
+  runtime renderings are planned for 1.1 (AGSC-00-20).
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
 ### M6 — The same page, answered by the browser's own agent
@@ -302,8 +351,10 @@ Bundle's own folder.
 - **Commands:** `agsc import --from board --format jira ./from-jira --dry-run`, then
   without `--dry-run`; change `status: draft` where the work may be public;
   `agsc build`; `agsc export --to board --format jira` for the way back.
-- **Proven by:** `tests/interchange/board.test.js` (every format: import, export, and
-  the round trip). No tool's own importer is run.
+- **Proven by:** `tests/acceptance/use-cases/use-cases.test.js` (a Jira export
+  planned, imported, published, built as a board, exported and read back), the eleven
+  formats in `features/persona-g-team.feature`, and `tests/interchange/board.test.js`
+  (every format: import, export, and the round trip). No tool's own importer is run.
 
 ### M8 — Working a live board with agents, on two nodes
 

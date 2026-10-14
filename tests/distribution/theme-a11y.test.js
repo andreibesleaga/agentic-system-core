@@ -8,12 +8,15 @@
 //       WCAG 2.1.1, AGSC-06-20) — plan item B12;
 //   U4  form controls have a 3:1 outline (WCAG 1.4.11): one `--control` colour;
 //   U5  a table cell wraps, so a long value (a commit hash) does not scroll the page
-//       sideways at 320–390 px (WCAG 1.4.10);
+//       sideways at 320–390 px (WCAG 1.4.10), and an ordinary word in a cell is never
+//       split in two: only code and links may break anywhere;
 //   U11 an error-code reference is not shrunk twice (0.82 × 0.82 em);
 //   U18 the engine's diagram accent class `agsc-accent` is coloured like the site's `.acc`;
 //   U10 print: dark text on white whatever the visitor chose, and code wraps on paper;
 //   U19 rule chips and source addresses are 24 px targets (WCAG 2.5.8), and a long
-//       address still breaks inside its box, so the page does not scroll sideways.
+//       address still breaks inside its box, so the page does not scroll sideways;
+//   and the reading measure: prose about 70 characters a line, never more than 80
+//   (WCAG 1.4.8), while figures, tables, code and the card grid keep the whole column.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -58,8 +61,31 @@ test('U4: every form control has an outline of at least 3:1 against the page in 
   }
 });
 
-test('U5: table cells wrap a long value', () => {
-  assert.match(CSS, /th, td \{[^}]*overflow-wrap: anywhere/u);
+test('table cells keep whole words; a long code value or address in a cell may still break anywhere', () => {
+  // `anywhere` on the cell itself lets automatic table layout shrink a column to one
+  // letter, which split ordinary words ("Conc/ept") on desktop; `break-word` breaks a
+  // word only when it cannot fit a line on its own.
+  assert.match(CSS, /th, td \{[^}]*overflow-wrap: break-word; \}/u);
+  assert.doesNotMatch(CSS, /th, td \{[^}]*anywhere/u);
+  assert.match(CSS, /\nth code, td code, th a, td a \{ overflow-wrap: anywhere; \}\n/u);
+});
+
+test('prose keeps a readable measure: 34rem, while figures, code, tables and the card grid use the whole column', () => {
+  // About 70 characters a line at 16 px in the system fonts, never more than 80 (WCAG 1.4.8).
+  assert.match(CSS, /\nmain > :not\(figure, pre, table, \.table-wrap, \.modes\) \{ max-width: 34rem; \}\n/u);
+  // The 46rem column, the wide pages and the 42rem diagram minimum are unchanged.
+  assert.match(CSS, /\nmain \{ max-width: 46rem; margin: 0 auto; padding: 2rem 1rem 3rem; \}\n/u);
+  assert.match(CSS, /\nmain\.wide \{ max-width: 62rem; \}\n/u);
+  assert.match(CSS, /figure\.diagram svg \{ display: block; width: 100%; max-width: 46rem; height: auto; \}/u);
+  // The old prose rule held prose to the whole 46rem column on wide pages only.
+  assert.doesNotMatch(CSS, /main\.wide > p/u);
+});
+
+test('a diagram caption keeps the prose measure in characters', () => {
+  // The caption is set at 0.92rem, so a 34rem box would hold about 81 characters a line
+  // (measured in a browser at 1280 px); 34em of its own font is the prose measure.
+  assert.match(CSS, /figure\.diagram figcaption \{ font-size: 0\.92rem;[^}]*max-width: 34em;/u);
+  assert.doesNotMatch(CSS, /figure\.diagram figcaption \{[^}]*max-width: (?:46|34)rem;/u);
 });
 
 test('U11: an error-code reference is not shrunk twice', () => {

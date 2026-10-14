@@ -39,8 +39,10 @@ only under the system temporary directory. Keep them that way.
 
 - **Do not edit** `spec/`, `schema/`, `ontology/`, `tests/vectors/*.json` or
   `docs/SPEC.md` unless the task is a specification pass. Rule ids are permanent; a
-  changed rule gets a dated amendment note; a released vector is withdrawn and
-  replaced, never edited; a new error code only where no registered one fits.
+  changed rule gets a dated amendment note; a released vector is never edited, except
+  the specification-version string, which AGSC-00-16 lets a release edit in place
+  (any other change withdraws and replaces it); a new error code only where no
+  registered one fits.
 - **Do not edit generated files by hand**: `docs/GLOSSARY.md`
   (`node tools/gen-glossary`), `docs/RULE-COVERAGE.md` (`node tools/rule-coverage
   --write`), `docs/measurements.json` (`node bench/measure.js`).

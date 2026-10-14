@@ -1,0 +1,92 @@
+{
+  "area": "cli",
+  "description": "AGSC-08-10: ci writes the gate verdict once per run to dist/gate.json as a JCS-canonical object {gate, level, checks:[{name, status, findings}], status} followed by one LF (AGSC-04-04), status pass or fail; gate is the slug of the Bundle's gate item, or ci with level L1 when the Bundle holds none; a Bundle that holds several gate items writes one such object per gate as a JCS-canonical array in slug order. Each sub-case runs `ci --json` over a scratch copy of the minimal fixture with SOURCE_DATE_EPOCH set and no git history. The fixture holds no gate item: one object, gate ci, level L1. With two gate items added, review-gate (L2) and link-gate (L1), an array of two, link-gate first by code point. verdicts gives gate, level and status of each object in file order; verdict_is_array says whether the file holds an array; verdict_members and check_members are the exact member names of each object and of each check, compared as sets. The names of the checks are an implementation's and are not compared.",
+  "expected": {
+    "cases": [
+      {
+        "check_members": [
+          "findings",
+          "name",
+          "status"
+        ],
+        "exit": 0,
+        "jcs_with_one_lf": true,
+        "name": "no-gate-item",
+        "verdict_is_array": false,
+        "verdict_members": [
+          "checks",
+          "gate",
+          "level",
+          "status"
+        ],
+        "verdicts": [
+          {
+            "gate": "ci",
+            "level": "L1",
+            "status": "pass"
+          }
+        ]
+      },
+      {
+        "check_members": [
+          "findings",
+          "name",
+          "status"
+        ],
+        "exit": 0,
+        "jcs_with_one_lf": true,
+        "name": "two-gate-items",
+        "verdict_is_array": true,
+        "verdict_members": [
+          "checks",
+          "gate",
+          "level",
+          "status"
+        ],
+        "verdicts": [
+          {
+            "gate": "link-gate",
+            "level": "L1",
+            "status": "pass"
+          },
+          {
+            "gate": "review-gate",
+            "level": "L2",
+            "status": "pass"
+          }
+        ]
+      }
+    ]
+  },
+  "id": "cli-0024",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "argv": [
+          "ci",
+          "--json"
+        ],
+        "name": "no-gate-item"
+      },
+      {
+        "add_files": {
+          "content/gates/link-gate.md": "---\ntype: gate\ntitle: Link gate\ndescription: A gate that a conformance case adds, so that ci writes its verdict and compiles its checks.\nlevel: L1\nchecks:\n  - schema\n  - links\nenforce:\n  - status-check\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Purpose\n\nHold the Bundle to its L1 checks.\n",
+          "content/gates/review-gate.md": "---\ntype: gate\ntitle: Review gate\ndescription: A gate that a conformance case adds, so that ci writes its verdict and compiles its checks.\nlevel: L2\nenforce:\n  - status-check\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n## Purpose\n\nHold the Bundle to its L2 checks.\n"
+        },
+        "argv": [
+          "ci",
+          "--json"
+        ],
+        "name": "two-gate-items"
+      }
+    ],
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-10"
+}

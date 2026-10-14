@@ -1,0 +1,28 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-01-04: the Bundle root content/index.md is not an item and MUST NOT carry `type`; a `type` key on it is AGSC-E205, a file-placement violation, because the root is not an item, and bundle.schema.json refuses it. Over the minimal fixture, whose lint reports nothing, the root document is replaced by the same file with one line added, `type: concept`, which would be a valid type on an item. The whole list `lint` reports is one AGSC-E205 error naming content/index.md, and lint exits 1: the schema's refusal of the key is that same fault, so it is not reported a second time under another code (the precedence paragraph of spec/09 section 9.4).",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E205",
+          "file": "content/index.md",
+          "severity": "error"
+        }
+      ]
+    }
+  },
+  "id": "lint-0035",
+  "input": {
+    "add_files": {
+      "content/index.md": "---\nspec_version: 1.0.0\nokf_version: \"0.2\"\ntitle: Minimal Bundle\ndescription: The smallest Bundle that conforms to AgenticSystemCore, used by the engine's own tests as a fixture.\nbase: https://minimal.example/\nlang: en\ntype: concept\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Minimal Bundle\n\nTwo concepts and one cluster: enough to build, lint, compose and serve.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-04"
+}

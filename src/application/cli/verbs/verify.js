@@ -3,10 +3,15 @@
 // AGSC-04-02: build the Bundle twice and compare the bytes; a difference is
 // `AGSC-E602`. With `--ledger` (AGSC-08-23) the derived chain is verified
 // against the head the discovery document publishes — `AGSC-E701`/`AGSC-E702`.
+// AGSC-08-26(g): on a Bundle with an `auto` channel, each content-branch commit
+// after the root that is not a merge commit or carries none of the three trailers
+// is `AGSC-E706`, read from the same git-log file the build is given.
 
 const site = require('../../../distribution/site.js');
 const ledger = require('../../../governance/ledger.js');
+const autoMerge = require('../../../governance/auto-merge.js');
 const helpers = require('./_helpers.js');
+const { withoutTrailingSlashes } = require('../../../shared/trailing.js');
 
 /** A file of the local build output, or null when it is absent or refused. */
 function readLocal(ctx, at) {
@@ -29,7 +34,7 @@ function parseOrNull(text) {
 function run(ctx) {
   const bundle = helpers.bundleOf(ctx);
   const options = helpers.buildOptions(ctx);
-  const findings = [...site.verify(bundle, ctx.ports, options)];
+  const findings = [...site.verify(bundle, ctx.ports, options), ...autoMerge.check(options.gitLog, bundle.config)];
   // AGSC-04-09: the Clock reports when the build instant defaulted to 0
   // (AGSC-E606); that is a build fact, so it is reported by the verbs that emit.
   const clockFindings = ctx.ports.clock && typeof ctx.ports.clock.findings === 'function'
@@ -43,8 +48,8 @@ function run(ctx) {
     // the ledger and the well-known file of the local build output — or a
     // tampered line or a truncated tail would go unseen: the fresh derivation
     // always agrees with itself.
-    const out = String((ctx.config && ctx.config.build && ctx.config.build.out) || site.DEFAULT_OUT)
-      .replace(/\/+$/u, '');
+    const out = withoutTrailingSlashes(String((ctx.config && ctx.config.build && ctx.config.build.out)
+      || site.DEFAULT_OUT));
     const localLedger = readLocal(ctx, `${out}/ledger.jsonl`);
     const localWellknown = readLocal(ctx, `${out}/.well-known/knowledge-linkset`);
     const publishedDocument = localWellknown === null ? null : parseOrNull(localWellknown);

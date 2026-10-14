@@ -7,13 +7,14 @@
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 
-const { readOntology, readSchemas } = require('../../../adapters/node-fs.js');
+const { readOntology, readSchemas, safeJoin } = require('../../../adapters/node-fs.js');
 const validate = require('../../../knowledge/validate.js');
 const links = require('../../../knowledge/links.js');
 const ledger = require('../../../governance/ledger.js');
 const contentVersion = require('../../../knowledge/content-version.js');
 const turtle = require('../../../knowledge/turtle.js');
 const { loadBundle } = require('../../bundle.js');
+const { withOverrides } = require('../../config/load.js');
 
 /**
  * The engine's own root — where `schema/`, `ontology/` and `tests/vectors/`
@@ -29,9 +30,8 @@ const NUL = String.fromCharCode(0);
  * message: git never prints a NUL from a message (it ends a message at its first
  * NUL), so no message can end a record or begin another. Within the header, US
  * separates the four fields before the message; the message is the rest, so a US
- * inside it is kept. Until 2026-10-06 records were split on
- * RS, US and GS, which a commit message may contain, and one commit could add a
- * fabricated ledger entry.
+ * inside it is kept. Records split on RS, US and GS would break on a commit message
+ * that contains them, and one commit could add a fabricated ledger entry.
  */
 const US = String.fromCharCode(31);
 /**
@@ -122,8 +122,19 @@ function slugArguments(bundle, values) {
   return { finding: null, values: out };
 }
 
+/**
+ * The Bundle a verb works on. Its configuration is the one AGSC-01-37 names as the
+ * build's input: `agsc.config.json` with the environment overrides applied
+ * (`resolvedConfig`), so a value from `.env` or the process environment reaches the
+ * built bytes as the same value written in the file would (AGSC-04-18).
+ */
 function bundleOf(ctx) {
-  return loadBundle(ctx.ports, { schemas: schemas() });
+  return loadBundle(ctx.ports, { resolveConfig: (file) => resolvedConfig(file, ctx), schemas: schemas() });
+}
+
+/** AGSC-01-37: the file's configuration with the override layers of `ctx` applied. */
+function resolvedConfig(file, ctx) {
+  return withOverrides(file, ctx);
 }
 
 /** AGSC-05-29: the engine hashes through `node:crypto`; no pure context may. */
@@ -132,11 +143,10 @@ function sha256(bytes) {
 }
 
 /**
- * AGSC-09-07 (amended 2026-10-06): `--level <n>` on `build`, `ci` and `conform` is
- * one of the four Levels, written `0`, `1`, `2` or `3`; any other value is the usage
- * error `AGSC-E003` (exit 2), refused before anything runs. Until that day `build` and
- * `ci` ignored `--level constructor` and `--level 9`, and
- * `--level -1` built a site.
+ * AGSC-09-09 (as amended): `--level <n>` on `build`, `ci` and `conform` is one of the
+ * four Levels, written `0`, `1`, `2` or `3`; any other value is the usage error
+ * `AGSC-E003` (exit 2), refused before anything runs, so that `--level constructor`,
+ * `--level 9` and `--level -1` are never ignored and never build a site.
  *
  * @param {object} ctx the verb context
  * @returns {object|null} the refusal, or null when the flag is absent or valid
@@ -144,7 +154,7 @@ function sha256(bytes) {
 function levelRefusal(ctx) {
   const raw = ctx.verbFlags && ctx.verbFlags.level;
   if (raw === undefined || /^[0-3]$/u.test(String(raw))) return null;
-  return { status: 'fail', findings: [{ code: 'AGSC-E003', message: `--level must be 0, 1, 2 or 3, not ${JSON.stringify(raw)} (AGSC-09-07)`, severity: 'error' }] };
+  return { status: 'fail', findings: [{ code: 'AGSC-E003', message: `--level must be 0, 1, 2 or 3, not ${JSON.stringify(raw)} (AGSC-09-09)`, severity: 'error' }] };
 }
 
 /**
@@ -374,6 +384,32 @@ function notImplemented(verb, rule, why) {
 }
 
 /**
+ * AGSC-09-09: `compose --out` and `conform --to` take a path relative to the Bundle
+ * root; an absolute path, or one that leaves the root, is `AGSC-E902` before anything
+ * is written. The FileSystem port refuses such a path too, but on the first path it
+ * is handed, which for a report is its parent folder (`conform --to /tmp/r.json`
+ * named `/tmp`): this check names the value the person typed, and the flag.
+ *
+ * @param {string} flag the verb and flag, for the message (`conform --to`).
+ * @param {string} value the value given.
+ * @returns {object|null} the refusing `AGSC-E902` finding, or null for a relative path inside the root.
+ */
+function outPathRefusal(flag, value) {
+  try {
+    // Lexical only: any root shows whether a relative path climbs out of it.
+    safeJoin(path.resolve(ENGINE_ROOT, 'bundle'), String(value));
+    return null;
+  } catch (e) {
+    return {
+      code: 'AGSC-E902',
+      file: String(value),
+      message: `${flag} takes a path relative to the Bundle root (AGSC-09-09); ${e.message}`,
+      severity: 'error',
+    };
+  }
+}
+
+/**
  * AGSC-01-01: a verb that reads a Bundle refuses to run where there is none, as
  * `build` and `lint` do, rather than exiting 0 having done nothing (`skills`,
  * `skills install` and `mcp` once did). `null` inside a Bundle.
@@ -423,10 +459,12 @@ module.exports = {
   instantOf,
   ENGINE_ROOT,
   note,
+  outPathRefusal,
   outsideBundle,
   attachmentFacts,
   bundleOf,
   bundleVersionOf,
+  resolvedConfig,
   buildOptions,
   levelRefusal,
   contentTree,

@@ -1,14 +1,14 @@
 'use strict';
 // AGSC-09-13, AGSC-09-13a, AGSC-09-14b and AGSC-09-16: two tools that answered a
-// wrong input as if it were right (verification findings G4 and G5, 2026-10-02).
+// wrong input as if it were right.
 //
-//   G4  `compose {"selection": "sourdough"}` answered `{"selection": [], "valid": true}`:
+//   (a) `compose {"selection": "sourdough"}` answered `{"selection": [], "valid": true}`:
 //       a selection that is not an array was read as an empty one. The tool table of
 //       AGSC-09-13 says `selection` is an array of slugs; the call is now `AGSC-E201`.
 //       `agsc compose` with no slug and no `--from` wrote an empty Harness and passed;
 //       the per-verb table of AGSC-09-07 gives `<slug>…`, or none with `--from`, so it
 //       is now `AGSC-E003` (missing argument), exit 2, and nothing is written.
-//   G5  `remember` returned items that the next `lint` refused, with `findings: []`:
+//   (b) `remember` returned items that the next `lint` refused, with `findings: []`:
 //       an unknown `kind` became a concept (AGSC-09-14b accepts five kinds: anything
 //       else is `AGSC-E203`), and an `about` naming no item became a `related` Link
 //       that `lint` reports as `AGSC-E301` (now refused with that code).
@@ -44,7 +44,7 @@ function built() {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0-rc.7', version: '0.0.2' }) };
+  return { bundle, ...site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' }) };
 }
 
 /** The three hosts of the one tool contract: local server, module page tools, emitted page script. */
@@ -66,7 +66,7 @@ function transports() {
 
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
-test('G4: a compose selection that is not an array is AGSC-E201 on both transports', () => {
+test('(a) a compose selection that is not an array is AGSC-E201 on both transports', () => {
   const hosts = transports();
   for (const selection of ['supervisor', 5, { 0: 'supervisor' }, true]) {
     const local = plain(hosts.local.call('compose', { selection }));
@@ -83,7 +83,7 @@ test('G4: a compose selection that is not an array is AGSC-E201 on both transpor
   }
 });
 
-test('G5: remember refuses a kind outside the five with AGSC-E203, on both transports', () => {
+test('(b) remember refuses a kind outside the five with AGSC-E203, on both transports', () => {
   const hosts = transports();
   for (const kind of ['note', 'pattern', 'explainer', 'constructor', '__proto__', 'Concept', '']) {
     const args = { body: 'x', kind, operator: OPERATOR, title: 'A Plain Note' };
@@ -100,7 +100,7 @@ test('G5: remember refuses a kind outside the five with AGSC-E203, on both trans
   }
 });
 
-test('G5: remember refuses an about that names no item with AGSC-E301, on both transports', () => {
+test('(b) remember refuses an about that names no item with AGSC-E301, on both transports', () => {
   const hosts = transports();
   for (const about of ['nope', 'no-such-item', 'Not A Slug']) {
     const args = { about, body: 'x', kind: 'concept', operator: OPERATOR, title: 'A Comment' };
@@ -115,7 +115,7 @@ test('G5: remember refuses an about that names no item with AGSC-E301, on both t
   assert.deepEqual(plain(ok.body.frontmatter.related), ['handoff']);
 });
 
-test('G5: what remember returns for the fixture passes lint with no error', () => {
+test('(b) what remember returns for the fixture passes lint with no error', () => {
   const schemas = validate.schemas(readSchemas(ROOT));
   const local = transports().local;
   const r = local.call('remember', { about: 'supervisor', body: 'x', cluster: 'agent-patterns', kind: 'task', operator: OPERATOR, title: 'Follow Up' });
@@ -145,7 +145,7 @@ function composeCli(argv) {
   }
 }
 
-test('G4: agsc compose with no slug and no --from is AGSC-E003, exit 2, and writes nothing', () => {
+test('(a) agsc compose with no slug and no --from is AGSC-E003, exit 2, and writes nothing', () => {
   const got = composeCli([]);
   assert.equal(got.exit, 2, got.err);
   assert.match(`${got.out}${got.err}`, /AGSC-E003/u);

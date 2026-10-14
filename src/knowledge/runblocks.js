@@ -28,6 +28,8 @@
  */
 
 const { finding } = require('./validate.js');
+const { withoutTrailingFeeds } = require('../shared/trailing.js');
+const { hasLineTerminator } = require('../shared/key-value-line.js');
 
 /** The two executable info strings (AGSC-02-22's spelling, and the only one). */
 const RUN_INFO = Object.freeze(['run']);
@@ -55,6 +57,30 @@ const SHELL_CHARACTERS = Object.freeze({
   '~': 'home expansion',
 });
 
+/** Up to three blanks and a fence of three or more backticks or tildes. */
+const FENCE_OPENER = /^\s{0,3}(`{3,}|~{3,})/u;
+
+/**
+ * A fence opener (CommonMark 0.31.2 §4.5): up to three blanks, the fence, and the info
+ * string trimmed (undefined when there is none), or null. A line whose info string
+ * holds a carriage return, U+2028 or U+2029 inside it is not an opener. Linear steps:
+ * the fence is matched once and the rest of the line trimmed once (`trim` removes the
+ * same characters as `\s`), so a long info string cannot cost quadratic time.
+ *
+ * @param {string} line
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {{fence:string, info:(string|undefined)}|null}
+ */
+function fenceOpener(line, meter) {
+  const head = FENCE_OPENER.exec(line);
+  if (meter) meter.steps += 1;
+  if (head === null) return null;
+  const info = line.slice(head[0].length).trim();
+  if (meter) meter.steps += line.length;
+  if (hasLineTerminator(info, meter)) return null;
+  return { fence: head[1], info: info === '' ? undefined : info };
+}
+
 /**
  * Every fenced block of a body, in document order, with its info string.
  *
@@ -62,19 +88,20 @@ const SHELL_CHARACTERS = Object.freeze({
  * tildes, closed by at least as many of the same character.
  *
  * @param {string} body
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {Array<{info:string, line:number, text:string}>}
  */
-function fences(body) {
+function fences(body, meter) {
   const lines = String(body == null ? '' : body).split('\n');
   const out = [];
   let open = null;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     if (open === null) {
-      const start = /^\s{0,3}(`{3,}|~{3,})\s*(\S.*?)?\s*$/u.exec(line);
+      const start = fenceOpener(line, meter);
       if (start === null) continue;
-      if (start[1].startsWith('`') && (start[2] || '').includes('`')) continue;
-      open = { fence: start[1], info: (start[2] || '').trim(), line: i + 1, text: [] };
+      if (start.fence.startsWith('`') && (start.info || '').includes('`')) continue;
+      open = { fence: start.fence, info: start.info || '', line: i + 1, text: [] };
       continue;
     }
     const close = new RegExp(`^\\s{0,3}${open.fence[0] === '`' ? '`' : '~'}{${open.fence.length},}\\s*$`, 'u');
@@ -115,7 +142,8 @@ function command(line) {
  * The `run` steps of one Procedure, each with the `expect` block that
  * immediately follows it (AGSC-09-94) and the allow-list verdict (`run.allow[]`).
  *
- * @param {object} item the item, flattened `{body, slug, type, path}`.
+ * @param {object} item the item, flattened `{body, slug, type, path}`, with the
+ *   parsed item's `lineOffset` when the caller has it.
  * @param {object} options `{allow: string[]}` from `agsc.config.json`.
  * @returns {{findings:Array<object>, steps:Array<object>}}
  */
@@ -129,7 +157,11 @@ function steps(item, options = {}) {
     return { findings, steps: [] };
   }
   const allow = (Array.isArray(options.allow) ? options.allow : []).map(String);
-  const blocks = fences(item.body);
+  // AGSC-09-11: a finding names a line of the file. The caller passes the file line the
+  // body starts on (`lineOffset` of the parsed item); without it the body's own line
+  // is the file's.
+  const offset = Number.isSafeInteger(item.lineOffset) && item.lineOffset >= 1 ? item.lineOffset : 1;
+  const blocks = fences(item.body).map((block) => ({ ...block, line: block.line + offset - 1 }));
   const out = [];
   for (let i = 0; i < blocks.length; i += 1) {
     const block = blocks[i];
@@ -180,8 +212,8 @@ function steps(item, options = {}) {
  * @returns {boolean}
  */
 function matches(captured, expected) {
-  const trim = (text) => String(text == null ? '' : text).replace(/\r\n/gu, '\n').replace(/\n+$/u, '');
+  const trim = (text) => withoutTrailingFeeds(String(text == null ? '' : text).replace(/\r\n/gu, '\n'));
   return trim(captured) === trim(expected);
 }
 
-module.exports = { EXPECT_INFO, RUN_INFO, command, fences, matches, steps };
+module.exports = { EXPECT_INFO, RUN_INFO, command, fenceOpener, fences, matches, steps };

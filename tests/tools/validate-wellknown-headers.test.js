@@ -5,9 +5,9 @@
 // (AGSC-11-03) and caching (AGSC-11-05). A missing header or value is AGSC-E202, a
 // forbidden one AGSC-E201; errors at Level 2 and above, warnings below.
 //
-// Until 2026-10-06 (verification finding T1, checker half) the checker read only the
+// Before the fix, the checker read only the
 // media type, so both live nodes passed while they served no
-// `Access-Control-Expose-Headers` at all. The same run proves verification finding O8:
+// `Access-Control-Expose-Headers` at all. The same run proves a second fix:
 // a check that reads more than ten files over one kept-alive connection printed
 // "MaxListenersExceededWarning" before its verdict.
 //
@@ -35,7 +35,7 @@ let sets;
 /** What the server changes in a response's headers for the current case. */
 let mutate = (headers) => headers;
 
-/** O8: a node under `/many/` whose document links fourteen files, each with a digest. */
+/** A node under `/many/` whose document links fourteen files, each with a digest. */
 const MANY = Object.fromEntries(Array.from({ length: 14 }, (_, i) => [`/many/f${String(i).padStart(2, '0')}.json`, `{"n":${i}}\n`]));
 function many(route, res) {
   const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'Link, ETag, Content-Type', etag: '"x"' };
@@ -102,8 +102,8 @@ it('a node served with the full header set passes at Level 2', async () => {
   assert.equal(stderr, '');
 });
 
-it('O8: fifteen reads over one kept-alive connection print no Node warning', async () => {
-  // Before 2026-10-06 every request added a `connect` listener to the reused socket, and
+it('fifteen reads over one kept-alive connection print no Node warning', async () => {
+  // Before the fix every request added a `connect` listener to the reused socket, and
   // the eleventh printed "MaxListenersExceededWarning" before the verdict.
   const { envelope, stderr } = await check(2, '/many/');
   assert.doesNotMatch(stderr, /MaxListenersExceededWarning|Warning/u);
@@ -194,7 +194,7 @@ it('AGSC-11-20: a restricted node is asked the cross-origin pair on its document
       const ctx = {
         alternate: [{ digest: [digest(llms)], href: `${at}/llms.txt`, type: 'text/plain' }],
         anchor: `${at}/`,
-        describedby: [{ 'agsc-generated-at': ['2026-01-01T00:00:00Z'], 'agsc-spec-version': ['1.0.0-rc.7'],
+        describedby: [{ 'agsc-generated-at': ['2026-01-01T00:00:00Z'], 'agsc-spec-version': ['1.0.0'],
           'agsc-visibility': ['restricted'], digest: [digest(graph)], href: `${at}/graph.jsonld`, type: 'application/ld+json' }],
         'https://w3id.org/agentic-system-core/rel#access': [{ href: `${at}/access/`, type: 'text/html' }],
       };

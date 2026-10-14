@@ -10,6 +10,6 @@
 
 **Plugins.** Every agent surface — llms.txt, chunks, the local MCP server, WebMCP page tools, an optional Agent Card, a Solid pod, a remote responder — is declared in the discovery file with its external version and access class, must have its bytes pinned and proved, inherits the safety floor, and is checked against what is actually served.
 
-**Hooks for later.** A node can be public or restricted today. A remote responder that speaks MCP is served now; one that speaks another protocol is declared now and built later, and encrypted Bundles and per-item visibility are left to a later version. A retired item keeps its address; a node that stops publishing leaves a tombstone.
+**Hooks for later.** A node can be public or restricted at 1.0. A remote MCP responder is in scope at 1.0; the reference engine ships none. A responder that speaks another protocol is only declared at 1.0 (live Agent2Agent boards are planned for 2.0), and encrypted Bundles and per-item visibility are planned for 1.1, under the reserved profile name `agsc-profile-encrypted`. A retired item keeps its address; a node that stops publishing leaves a tombstone.
 
 Rules: `spec/11-boundary.md`, `AGSC-11-01` … `AGSC-11-23`. Threats and what stays open: `docs/SECURITY-CONSIDERATIONS.md`.

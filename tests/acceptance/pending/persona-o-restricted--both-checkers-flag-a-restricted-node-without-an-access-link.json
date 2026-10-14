@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "python-package",
+  "reason": "the scenario runs both checkers; the Python checker package is a separate repository, so the scenario runs where its checkout sits beside the engine (or ACCEPTANCE_PYTHON_PACKAGE names it) and a Python 3.9 or newer interpreter exists",
+  "scenario": "Both checkers flag a restricted node without an access link"
+}

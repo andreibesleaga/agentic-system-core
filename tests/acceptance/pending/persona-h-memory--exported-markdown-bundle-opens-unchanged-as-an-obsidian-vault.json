@@ -1,0 +1,5 @@
+{
+  "class": "external",
+  "reason": "opening a folder as an Obsidian vault needs the Obsidian application.",
+  "scenario": "Exported Markdown Bundle opens unchanged as an Obsidian vault"
+}

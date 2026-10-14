@@ -1,18 +1,18 @@
 'use strict';
 // CONTEXT Knowledge — the stable-Turtle view of the dataset, and the Turtle this
-// engine READS (the vocabulary file, and an authored export block).
+// engine READS (the vocabulary file).
 //
 // Implements AGSC-05-10 (the stable-Turtle profile), AGSC-05-30/05-31 (a plain
-// literal is written bare in Turtle and never `^^xsd:string`), AGSC-05-32 (the same
-// lexical forms as N-Quads inside Turtle syntax) and AGSC-05-08 (a blank node in an
-// export is `AGSC-E605`).
+// literal is written bare in Turtle and never `^^xsd:string`) and AGSC-05-32 (the
+// same lexical forms as N-Quads inside Turtle syntax). An authored block marked
+// `export` is never extracted at 1.x (AGSC-02-22), so no blank node from authored
+// input reaches an export, and nothing here reports the blank-node fault of AGSC-05-08.
 //
-// PURE: no fs, no process, no clock, no network. The vocabulary text and the item
-// body are passed in as strings.
+// PURE: no fs, no process, no clock, no network. The vocabulary text is passed in
+// as a string.
 //
 // LIBRARY SPLIT. Reading Turtle is `n3@2.7.12`'s job and is done by it here —
-// `ontologyTerms` and `parse` are thin wrappers over `N3.Parser`, which is why the
-// blank-node check of AGSC-05-08 is a real parse and not a regular expression.
+// `ontologyTerms` and `parse` are thin wrappers over `N3.Parser`.
 // WRITING is ours: the profile of AGSC-05-10 (fixed prefix list in fixed order,
 // grouping with `;` and `,`, four-space continuation, `a` for `rdf:type`, no
 // `^^xsd:string`) is pinned by the specification and matches no library's layout —
@@ -23,11 +23,6 @@
 const N3 = require('n3');
 const nq = require('./nquads.js');
 const { compareCodePoint } = require('./unicode.js');
-
-/** A Finding (AGSC-09-11). Domain faults are returned, never thrown. */
-function finding(code, message, extra = {}) {
-  return { code, col: 1, line: 1, message, severity: 'error', ...extra };
-}
 
 // ---------------------------------------------------------------- writing
 
@@ -155,82 +150,6 @@ function ontologyVersion(turtleText) {
   return null;
 }
 
-/** One fenced-code line: up to three spaces, the ticks, the info string (CommonMark 0.31.2). */
-const FENCE = /^( {0,3})(`{3,}|~{3,})(.*)$/u;
-
-/** The RDF languages of AGSC-02-22, when the fence also carries the reserved word `export`. */
-const RDF_FENCE_LANGUAGES = Object.freeze(['turtle', 'ntriples', 'nquads', 'trig']);
-
-function isRdfExport(info) {
-  const words = info.trim().split(/\s+/u);
-  return RDF_FENCE_LANGUAGES.includes(words[0]) && words.includes('export');
-}
-
-/**
- * Does this block state a blank node? Answered by a real parse, not a regular
- * expression: `[ … ]`, `_:b` and a collection are three syntaxes for the same thing,
- * and `n3` knows all three. A block that does not parse states no triple, so it
- * introduces no blank node — its syntax is not this rule's business, since AGSC-02-22
- * keeps 1.x from extracting the block at all.
- */
-function hasBlankNode(body) {
-  let quads;
-  try {
-    quads = parse(body);
-  } catch {
-    return false;
-  }
-  return quads.some((q) => [q.subject, q.object, q.graph].some((t) => t && t.termType === 'BlankNode'));
-}
-
-/**
- * AGSC-05-08 — the RDF dataset is blank-node-free, so a blank node introduced by an
- * authored export block is `AGSC-E605`.
- *
- * A fenced block whose info string carries `export` on an RDF language (AGSC-02-22)
- * is parsed with `n3` and refused when it states a blank node. The block itself is NOT
- * extracted at 1.x — that is AGSC-02-22's reserved `AGSC-E415` warning, raised by the
- * lint lane, not here.
- *
- * The scan is line by line rather than one expression over the whole body: a fence
- * pattern with a back-reference to its own opening ticks is quadratic on an input
- * full of unclosed fences, and an item body reaches this function from the outside
- * (AGSC-01-16 caps it at 1 MiB, which is more than enough to be felt).
- *
- * @param {string} markdown  an item body (or a whole file; the fence scan ignores frontmatter)
- * @returns {object[]} Findings, sorted by line
- */
-function checkExportBlocks(markdown, options = {}) {
-  const findings = [];
-  const lines = String(markdown).split('\n');
-  let open = null;
-  for (let n = 0; n < lines.length; n += 1) {
-    const fence = FENCE.exec(lines[n]);
-    if (open === null) {
-      if (fence && isRdfExport(fence[3])) {
-        open = { char: fence[2][0], length: fence[2].length, line: n + 1, body: [] };
-      } else if (fence) {
-        open = { char: fence[2][0], length: fence[2].length, line: n + 1, body: null };
-      }
-      continue;
-    }
-    const closes = fence !== null && fence[2][0] === open.char
-      && fence[2].length >= open.length && fence[3].trim() === '';
-    if (!closes) {
-      if (open.body !== null) open.body.push(lines[n]);
-      continue;
-    }
-    if (open.body !== null && hasBlankNode(open.body.join('\n'))) {
-      findings.push(finding('AGSC-E605', 'blank node in an RDF export block; exports are blank-node-free (AGSC-05-08)', {
-        ...(options.file ? { file: options.file } : {}),
-        line: open.line + (options.lineOffset || 0),
-      }));
-    }
-    open = null;
-  }
-  return findings;
-}
-
 module.exports = {
   turtleIri,
   turtleTerm,
@@ -241,5 +160,4 @@ module.exports = {
   parse,
   ontologyTerms,
   ontologyVersion,
-  checkExportBlocks,
 };

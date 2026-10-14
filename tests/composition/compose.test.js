@@ -56,6 +56,54 @@ test('AGSC-11-22: a retired item named in a selection is AGSC-E802', () => {
   assert.strictEqual(v.conflicts[0].key, 'status');
 });
 
+test('AGSC-11-22: a selected retired item leaves the selection and is not closed over', () => {
+  const items = [{ requires: ['base'], slug: 'old', status: 'retired' }, { slug: 'base' }, { slug: 'a' }];
+  const v = compose(items, ['old', 'a']);
+  assert.strictEqual(v.valid, false);
+  assert.deepStrictEqual(plain(v.selection), ['a']);
+  assert.deepStrictEqual(plain(v.added), []);
+  assert.deepStrictEqual(plain(v.order), ['a']);
+  assert.deepStrictEqual(plain(v.conflicts), [{ code: 'AGSC-E802', key: 'status', pair: ['old', 'old'] }]);
+});
+
+test('AGSC-11-22: a retired item reached through requires is AGSC-E802 and is not added', () => {
+  const items = [
+    { requires: ['legacy', 'store'], slug: 'app' },
+    { requires: ['deep'], slug: 'legacy', status: 'retired' },
+    { slug: 'deep' }, { slug: 'store' },
+  ];
+  const v = compose(items, ['app']);
+  assert.strictEqual(v.valid, false);
+  assert.deepStrictEqual(plain(v.selection), ['app', 'store']);
+  assert.deepStrictEqual(plain(v.added), [{ path: [['app', 'requires', 'store']], slug: 'store' }]);
+  assert.deepStrictEqual(plain(v.hidden), []);
+  assert.deepStrictEqual(plain(v.conflicts), [{ code: 'AGSC-E802', key: 'status', pair: ['legacy', 'legacy'] }]);
+});
+
+test('AGSC-11-22: a retired item both selected and required, or required twice, is one conflict', () => {
+  const items = [
+    { requires: ['gone'], slug: 'a' }, { requires: ['gone'], slug: 'b' }, { slug: 'gone', status: 'retired' },
+  ];
+  for (const selection of [['gone', 'a', 'b'], ['a', 'b'], ['b', 'gone', 'a']]) {
+    const v = compose(items, selection);
+    assert.deepStrictEqual(plain(v.conflicts), [{ code: 'AGSC-E802', key: 'status', pair: ['gone', 'gone'] }],
+      selection.join(','));
+    assert.deepStrictEqual(plain(v.selection), ['a', 'b'], selection.join(','));
+    assert.deepStrictEqual(plain(v.added), [], selection.join(','));
+  }
+});
+
+test('AGSC-11-22: a retired item that only a supersedes or uses Link names changes nothing', () => {
+  // `supersedes` MAY name a retired item without warning, and a `uses` target outside
+  // the result is the Step 4 warning it always was: neither Link reaches the closure.
+  const items = [{ slug: 'new', supersedes: ['old'], uses: ['old'] }, { slug: 'old', status: 'retired' }];
+  const v = compose(items, ['new']);
+  assert.strictEqual(v.valid, true);
+  assert.deepStrictEqual(plain(v.selection), ['new']);
+  assert.deepStrictEqual(plain(v.hidden), []);
+  assert.deepStrictEqual(plain(v.warnings), [{ code: 'AGSC-E803', key: 'uses', source: 'new', target: 'old' }]);
+});
+
 test('AGSC-07-04: a requires target that does not exist is AGSC-E802 and is not closed over', () => {
   const v = compose([{ requires: ['ghost'], slug: 'a' }], ['a']);
   assert.deepStrictEqual(plain(v.selection), ['a']);
@@ -99,6 +147,26 @@ test('AGSC-07-05a: a surviving item requiring a hidden one invalidates, naming t
   assert.deepStrictEqual(plain(compose(items, ['new', 'app']).conflicts), [{
     code: 'AGSC-E802', key: 'requires', pair: ['app', 'legacy'], superseding: 'new',
   }]);
+});
+
+test('AGSC-07-05a: with two superseding items the code-point least is named, whatever the input order', () => {
+  const items = [
+    { requires: ['z'], slug: 'w' }, { slug: 'x', supersedes: ['z'] }, { slug: 'y', supersedes: ['z'] }, { slug: 'z' },
+  ];
+  const expected = [{ code: 'AGSC-E802', key: 'requires', pair: ['w', 'z'], superseding: 'x' }];
+  for (const selection of [['x', 'y', 'w'], ['y', 'x', 'w'], ['w', 'y', 'x'], ['y', 'w', 'x', 'z']]) {
+    assert.deepStrictEqual(plain(verdictOf(compose(items, selection)).conflicts), expected,
+      `the selection ${JSON.stringify(selection)} named another superseding item`);
+  }
+  // The same holds when a superseding item is itself hidden (AGSC-07-05: the
+  // result is the closed set, hidden items included).
+  const chained = items.concat([{ slug: 'v', supersedes: ['y'] }]);
+  assert.deepStrictEqual(plain(verdictOf(compose(chained, ['y', 'v', 'x', 'w'])).conflicts), expected);
+  // The rule states it in plain words.
+  const rule = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'spec', '07-composition.md'), 'utf8')
+    .split('\n').find((line) => line.startsWith('- **AGSC-07-05a**'));
+  assert.ok(rule.includes('the superseding item named is the first of them in code-point order'),
+    'AGSC-07-05a does not say which superseding item is named');
 });
 
 test('AGSC-07-06: excludes is evaluated over the survivors only, pairs sorted and de-duplicated', () => {

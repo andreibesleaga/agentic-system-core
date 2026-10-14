@@ -67,7 +67,7 @@ test('the asset branch of AGSC-03-11 resolves once the set is supplied', () => {
 test('AGSC-06-01: a referenced asset is emitted at /assets/<path>, bytes unchanged', () => {
   const { bundle, fs } = load(FIXTURE);
   const { files } = site.build(bundle, { clock: FIXED_CLOCK, fs },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+    { specVersion: '1.0.0', version: '0.0.2' });
   for (const asset of ['logo.svg', 'img/nested.svg']) {
     const route = `/assets/${asset}`;
     assert.ok(files.has(route), `${route} was not emitted`);
@@ -89,7 +89,7 @@ test('AGSC-06-01: an asset no published body references is published at no route
       .filter((line) => !line.includes('assets/')).join('\n') })),
   };
   const { files } = site.build(stripped, { clock: FIXED_CLOCK, fs },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+    { specVersion: '1.0.0', version: '0.0.2' });
   // The default theme's two files are the engine's own, not authored assets.
   assert.deepStrictEqual([...files.keys()].filter((r) => r.startsWith('/assets/')
     && r !== '/assets/site.css' && r !== '/assets/theme.js'), []);
@@ -102,7 +102,7 @@ test('the lint VERB passes on the fixture: it supplies the set', () => {
     env: { SOURCE_DATE_EPOCH: '1767225600' },
     ports: { fs: createFileSystem(FIXTURE) },
     root: FIXTURE,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr,
     stdout,
   });
@@ -139,7 +139,7 @@ test('an asset the port refuses to read is published at no route, and nothing th
     },
   };
   const { files, findings } = site.build(bundle, { clock: FIXED_CLOCK, fs: refusing },
-    { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+    { specVersion: '1.0.0', version: '0.0.2' });
   // The default theme's two files are the engine's own, not authored assets.
   assert.deepStrictEqual([...files.keys()].filter((r) => r.startsWith('/assets/')
     && r !== '/assets/site.css' && r !== '/assets/theme.js'), []);
@@ -156,7 +156,7 @@ test('AGSC-06-01: an authored theme.js is replaced by the engine script, and the
     nodeFs.appendFileSync(path.join(dir, 'content', 'concepts', 'handoff.md'), '\n[script](../assets/theme.js)\n');
     const { bundle, fs } = load(dir);
     const { files, findings } = site.build(bundle, { clock: FIXED_CLOCK, fs },
-      { specVersion: '1.0.0-rc.7', version: '0.0.2' });
+      { specVersion: '1.0.0', version: '0.0.2' });
     assert.ok(!String(files.get('/assets/theme.js')).includes('alert(1)'), 'the authored script was published');
     assert.ok(findings.some((f) => f.code === 'AGSC-E506' && f.file === 'content/assets/theme.js'));
   } finally {

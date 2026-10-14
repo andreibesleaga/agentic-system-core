@@ -28,11 +28,25 @@
 | P11 | Standards implementer | Adopt the discovery format on my site |
 | P12 | Self-driving team (Mode 5) | Let agents and people plan, claim and finish a project's tasks on one live board until it is done |
 
+### 1.1 Amendment 12 — three more personas (2026-10-09)
+
+The rows above stand as written; these three are added. Each one uses requirements this
+document already carries, so no requirement id is added, and each has a feature file of its own
+under `features/` (persona-m, persona-n and persona-o).
+
+| # | Persona | Job to be done | Modes | Requirements it exercises |
+|---|---|---|---|---|
+| P13 | Security reviewer or auditor | Judge whether a node and its engine can be trusted, from evidence I can run again offline: the ledger and its anchor, the security contact, the fence around untrusted prose, the secret and personal-data checks, the served headers, and what the tools do with hostile input | 0 and 1 (the reviewer reads every mode the same way) | PRD-005, PRD-023, PRD-047, PRD-050, PRD-053, PRD-062, PRD-065, NFR-07 |
+| P14 | Researcher | Measure a node with the shipped kit, offline, get the same numbers every time, and cite exactly the node, its content version, the specification version and the engine I measured | 0 and 1 | PRD-010, PRD-022, PRD-047, PRD-060, NFR-04, NFR-05 |
+| P15 | Restricted publisher | Say in public that my node exists and where a reader asks for access, while its content stays gated, and still pass the conformance checks on the public view | 0 | PRD-024, PRD-057 |
+
 ---
 
 ## 2. Functional requirements (EARS)
 
 Scope: **v1** = must; **should** = S1–S8; **v1.x** = later. Every `should` and `v1.x` cell reads as v1.0 (Amendment 6).
+
+*Note (2026-10-10): the cells that do not read as v1.0 are listed in the "Note to the scope cells that Amendment 6 reads as v1.0" near the end of this document; the capabilities planned for 1.1 are in the "Notes at 1.0.0" after it.*
 
 ### 2.1 Cross-cutting: engine & CLI
 
@@ -69,7 +83,7 @@ Scope: **v1** = must; **should** = S1–S8; **v1.x** = later. Every `should` and
 
 | ID | Requirement | Acceptance | Scope |
 |---|---|---|---|
-| PRD-022 | WHEN `build` runs, THE SYSTEM SHALL emit the graph as JSON-LD, Turtle and N-Quads plus per-item `.md`/`.jsonld`. | Blank-node-free; sorted N-Quads in the specification's own canonical form (*note 2026-10-02:* the same quads as RDFC-1.0 output, four terms written differently; no RDFC-1.0 claim, AGSC-04-16). | v1 (RDF/XML: should S1) |
+| PRD-022 | WHEN `build` runs, THE SYSTEM SHALL emit the graph as JSON-LD, Turtle and N-Quads plus per-item `.md`/`.jsonld`. | Blank-node-free; sorted N-Quads in the specification's own canonical form (*note:* the same quads as RDFC-1.0 output, four terms written differently; no RDFC-1.0 claim, AGSC-04-16). | v1 (RDF/XML: should S1) |
 | PRD-023 | WHEN `agsc mcp` starts, THE SYSTEM SHALL serve a local stdio JSON-RPC server exposing exactly `search read links compose propose` over the static exports. | Five tools; results carry `source/trust/license`. | v1 (remote MCP: not at v1) |
 | PRD-024 | THE SYSTEM SHALL publish one `/.well-known/knowledge-linkset` as a conformant RFC 9264 link set (`linkset` the sole member) served as `application/linkset+json` with the profile URI `https://w3id.org/agentic-system-core/profile/agentic-knowledge`, carrying RFC 9530 `digest` and `agsc-*` extension target attributes (bundle facts on the anchor's `describedby` link, ledger head on `rel#ledger`). | Link set resolves and validates as `application/linkset+json`; every `digest` recomputes; the profile is conveyed by the media-type parameter or by `Link: …; rel="profile"`. | v1 |
 | PRD-025 | THE SYSTEM SHALL publish `llms.txt`, `llms-full.txt` and per-item Markdown for non-MCP agents. | Every item reachable from `llms.txt`. | v1 |
@@ -436,3 +450,87 @@ error whenever the engine requires one of its ES-module libraries, and a warning
 MCP server's clean-stderr contract; 22.13.0 is the first 22.x release that prints it only on
 request. The development gates (the linter) need 22.13.0 as well. `package.json`, the CI matrix
 and a test that keeps the two equal carry the floor.
+
+## Notes at 1.0.0 (2026-10-10)
+
+The rows, the amendments and the notes above stay as they were written. These notes say how
+some of them read at `1.0.0`; where one of them and an earlier note differ, the note here
+governs.
+
+**Note on the capabilities planned for 1.1.** Eleven capabilities of the reference distribution
+are planned for 1.1 (AGSC-00-20):
+
+1. an ingest stub and channel adapters (PRD-056);
+2. `init` writing example Concepts, type folders and a forge workflow, with the options
+   `init --forge` and `init --host` (PRD-009, PRD-053);
+3. direct memory adapters for Mem0, Letta, Zep and CSV (PRD-026);
+4. installing skill packs into other agents' install trees, and installing them from a published
+   site (PRD-033);
+5. distribution through GHCR, Homebrew and Nix, and a PyPI wrapper of the engine (PRD-048, §4);
+6. a git mirror and a weekly attested snapshot of a node (PRD-045);
+7. a model client for the review lane (PRD-041);
+8. `narrate`, a model-written narration of a composition, run on the reader's own key (§4 rules
+   out a server-side one);
+9. memory adapters for Basic Memory and for Claude Code's memory files;
+10. running the engine's library on Deno, Bun and Cloudflare Workers;
+11. a model adapter for the agent lane (PRD-063).
+
+They are capabilities of the reference distribution, not parts of the format: no version
+requires a tool to ship them, and no conformance claim depends on them. They wait for 1.1
+because each one adds behaviour, and `1.0.0` adds no behaviour beyond a defect fix. So where a
+note above says of one of them "not planned", "not in the declared scope of any version", "not
+planned for a version" or "planned for later, with no version fixed", or that no container
+image, Homebrew formula or Nix package "is planned for a version", read "planned for 1.1". §4's "No functional PyPI wrapper" and the note that
+keeps that non-goal for the engine read the same way: at 1.0 the PyPI package is the
+independent Python checker, and a wrapper of the engine is planned for 1.1.
+
+**Note to PRD-063 (a live run of an agent lane at 1.0).** The Mode 5 note above says that the
+engine implements the agent lane, "channels, refresh" included. At 1.0 the reference engine
+ships no model adapter and no channel adapter: `refresh --agent <name>` runs only with
+`--dry-run`, which writes the Proposal the lane would open, with the Episode of the run, and
+calls no model; without `--dry-run` the verb refuses. A live run is made by an agent outside the
+engine — Claude Code, a script — as a client of the local tool server (`agsc mcp`) or of the
+page tools, under the rules of the lane it runs as (AGSC-08-28 allows both routes); the gating
+lanes stay model-free. The model adapter for the agent lane is planned for 1.1 (the note
+above). A model-adapter plugin kind beside the eight of AGSC-00-24 is a candidate for 1.1, since
+a new plugin kind is a change of the specification.
+
+**Note to PRD-027 and §4 (`memory://` at 1.0).** The row's "not resolve it", its acceptance
+"Alias-only; no resolver", its version cell "(resolver: v2)" and §4's
+"`memory://` = documented alias only" read as follows at 1.0: the command line and the local
+tool server resolve `memory://<bundle-id>/<slug>` to the item when `<bundle-id>` is the Bundle's own `bundle.id`, and
+refuse another Bundle's id with `AGSC-E309` (AGSC-05-04b; the cases `graph-0005` and
+`cli-0015`). The alias is never dereferenced over the network and never emitted as an RDF
+subject (AGSC-05-04), and the `https://` IRI may always be used instead (the note to PRD-027
+above).
+
+**Note to NFR-03 (the coverage bar at 1.0).** The bar that continuous integration enforces on
+`src/` is higher than the row's 99 % of lines: lines 99.9 %, functions 99 % and branches 93 %,
+the thresholds of `npm run test:coverage`, which runs inside a check every pull request must
+pass (`test (ubuntu-latest, Node 24)`). `CONTRIBUTING.md` states the same three figures. The
+row's "no requirement without a test" is checked by `node tools/requirements-matrix --check`.
+Read "coverage ≥99%" in §5's definition of done the same way.
+
+**Note to §5, the definition of done at 1.0.0.**
+
+- Item (1), "persona walkthroughs (a)–(j)", reads as one walkthrough for each persona of §1 and
+  §1.1: the feature files `persona-0` and `persona-a` to `persona-o` under `features/` (P0 to
+  P15), which the acceptance runner executes, a scenario that needs a forge, a model or an
+  outside service being listed as pending with its reason; with them, the six mode walks of
+  `tests/e2e/modes/` and the runs of the guides and the demos (`tests/docs/`).
+- Item (2): the coverage figure reads as the note to NFR-03 says.
+- Item (4), the benchmark kit run on real data with its results and datasheet on Zenodo, is 1.1
+  work, when AGSC-00-20 makes the kit normative. At `1.0.0` the measurement half runs
+  (`bench/measure.js`, recorded in `docs/MEASUREMENTS.md`), and the kit's study belongs to the
+  `tools/bench` program. Item 1 of "Resolved at review",
+  "published benchmarks are a v1.0.1 gate within 30 days of launch", reads "published
+  benchmarks are 1.1 work"; there is no `bench` verb and no 1.0.1 gate.
+- Item (6), "a DOI for each release", reads "a DOI for each final release": the Zenodo record
+  gets a version for `1.0.0` and for each later final release, and release candidates get none
+  and are kept by their tags. The Internet-Draft is an individual Internet-Draft.
+
+**Note to §1, persona P10 (the areas at 1.0.0; 2026-10-11).** The note to persona P10 above
+says that the Python checker distribution runs "seven of the nineteen areas". At `1.0.0` the
+shared vector set has twenty populated areas, the `export` area having been added; the Python
+checker distribution runs the same seven of them natively and reports the other thirteen as
+not run by that package.

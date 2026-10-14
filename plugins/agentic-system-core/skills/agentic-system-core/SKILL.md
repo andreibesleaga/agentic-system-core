@@ -3,14 +3,14 @@ name: agentic-system-core
 description: Use the AgenticSystemCore engine (command `agsc`) to turn a folder of Markdown into a knowledge node and to work in one as an agent — initialise, lint, build, verify, read, cite, propose, compose, export, import, skill packs and live boards. Use when a project holds `agsc.config.json`, when the user mentions agsc, a Bundle, a knowledge node, AgenticSystemCore or the Agentic Knowledge Web, or when an agent must read, cite or change a published node.
 license: CC0-1.0
 metadata:
-  version: "1.0.0-rc.7"
+  version: "1.0.0"
   homepage: "https://agenticsystemcore.com/docs/how-to-use/"
   repository: "https://github.com/andreibesleaga/agentic-system-core"
 ---
 
 # AgenticSystemCore for agents
 
-A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.0.0-rc.7`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
+A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.0.0`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
 
 ## 1. What you never do
 
@@ -39,17 +39,16 @@ The configuration keys are in `references/configuration.md`.
 
 ```bash
 node --version            # 22.13 or later
-npx -y agsc-cli --version # agsc 1.0.0-rc.7; when the person wants it installed: npm install -g agentic-system-core
+npx -y agsc-cli --version # agsc 1.0.0; when the person wants it installed: npm install -g agentic-system-core
 cd <bundle>               # every verb runs in the folder that holds agsc.config.json
 ```
 
 From a folder of notes, `agsc init` moves every Markdown file except `README.md` to `content/concepts/` as `kind: explainer` (type, title, a provenance block, an `aliases:` entry with the old path), and writes `agsc.config.json`, the root document `content/index.md`, `.gitignore` and `.env.example`. Then ask the person for three things and write them:
 
 1. The node's `https://` address: set `site.base` in `agsc.config.json` and `base:` in `content/index.md` to the same value (a mismatch is `AGSC-E204`).
-2. A security contact, written to `.well-known/security.txt` in exactly this shape (no fraction of a second, under a year away):
+2. A security contact, written to `.well-known/security.txt` as one `Contact:` line (a `mailto:` or `https://` address). Write no `Expires:` line: the build adds one, the build instant plus 364 days, so the file never goes stale:
    ```text
    Contact: mailto:security@example.org
-   Expires: 2027-06-01T00:00:00Z
    ```
 3. The crawler licence choice, `site.tdm_crawlers` (or keep the list `init` wrote if the person agrees).
 4. A build instant: one commit (`git init -q && git add -A && git commit -q -m 'notes'`), or `SOURCE_DATE_EPOCH` set in the environment. Without one the build instant is 1970-01-01 and `ci` reports `AGSC-E204` on the security contact's expiry.

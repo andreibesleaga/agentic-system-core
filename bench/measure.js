@@ -4,11 +4,12 @@
  *
  * What it is, and what it is not. This script produces `docs/measurements.json`,
  * the generated record that `docs/MEASUREMENTS.md` reads from. It is NOT the
- * `bench` verb: `bench` is the v1.0.1 gate (docs/PRD.md §4) and covers the
- * retrieval and memory studies, which need a corpus and a judge model. The five
- * layers here need no model, no network, no dataset licence and no key, and
- * they are the layers that carry the specification's own property claims, so
- * they run before GA and against artefacts the engine already produces.
+ * study: the retrieval and memory studies are the work of the
+ * `tools/bench` program at 1.1 (docs/BENCHMARKS.md), and they need a corpus
+ * and a judge model. The five layers here need no model, no network, no
+ * dataset licence and no key, and they are the layers that carry the
+ * specification's own property claims, so they run before GA and against
+ * artefacts the engine already produces.
  *
  *   node bench/measure.js --layer conformance --scratch <dir>
  *   node bench/measure.js --layer perf        --scratch <dir>

@@ -11,7 +11,7 @@ const assert = require('node:assert');
 
 const plugins = require('../../src/application/plugins.js');
 
-const SPEC = '1.0.0-rc.7';
+const SPEC = '1.0.0';
 const good = (over) => ({
   agsc_spec_version: '1.0.0',
   kind: 'checker',

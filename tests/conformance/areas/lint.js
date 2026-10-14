@@ -1,7 +1,9 @@
 'use strict';
 // Conformance area `lint` — AGSC-08-13 (the injection scan), AGSC-01-34
 // and AGSC-02-98 (attachments and the SVG allow-list), AGSC-04-23 (the combining
-// bound), AGSC-01-35 (the relative-path grammar) and AGSC-02-96 (ports).
+// bound), AGSC-01-35 (the relative-path grammar) and AGSC-02-96 (ports); and, through
+// the real `lint` over the minimal fixture with files added (the runner of the
+// `bundle` area), AGSC-01-03, AGSC-01-04, AGSC-01-14 and AGSC-01-16.
 //
 // Each vector states one lint, so each handler runs that lint and nothing else:
 // a vector that says `findings: []` is stating that ITS lint is silent, not that
@@ -18,6 +20,8 @@ const lint = require('../../../src/governance/lint.js');
 const fix = require('../../../src/governance/fix.js');
 const exportBundle = require('../../../src/interchange/export-bundle.js');
 const { deepEqual, findingsMatch, checks } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
+const { fixtureLintCase } = require('./bundle.js');
 
 const INJECTION_CODES = ['AGSC-E401', 'AGSC-E402'];
 
@@ -283,8 +287,10 @@ function runShapes(vector) {
   return checks(list);
 }
 
-module.exports.run = (vector, ctx) => {
+function run(vector, ctx) {
   const { input } = vector;
+  // The minimal fixture with files added, through the real `lint` (`bundle` + `add_files`).
+  if (typeof input.bundle === 'string') return fixtureLintCase(vector, ctx);
   if (vector.id === 'lint-0027') return runReservedMembers(vector, ctx);
   if (vector.id === 'lint-0030') return runIriCases(vector);
   if (vector.id === 'lint-0031') return runTagCountCases(vector, ctx);
@@ -299,4 +305,6 @@ module.exports.run = (vector, ctx) => {
   }
   if (Array.isArray(input.items)) return runPorts(vector, ctx);
   return { status: 'fail', detail: `no handler for this input shape in area lint (${vector.id})` };
-};
+}
+
+module.exports.run = guarded(run);

@@ -73,6 +73,28 @@ test('the releases switchboard holds an item back (AGSC-01-20, AGSC-06-30)', () 
   assert.strictEqual(chunks.records([item], { base: BASE, releases: { next: true } }).records.length, 1);
 });
 
+test('a release key the switchboard does not set to true holds the item back (AGSC-01-20)', () => {
+  // "an item carrying `release: <key>` is published only when `releases[<key>]` is
+  // `true`": a key the switchboard does not name, a switchboard that is absent, and a
+  // name every object inherits are none of them `true`.
+  const item = (release) => CONCEPT('Body.\n', { release, status: 'stable' });
+  for (const releases of [{ other: true }, undefined, null, {}]) {
+    assert.strictEqual(chunks.isPublished(item('next'), releases), false, JSON.stringify(releases));
+    assert.strictEqual(chunks.keepsPage(item('next'), releases), false, JSON.stringify(releases));
+    assert.strictEqual(chunks.records([item('next')], { base: BASE, releases }).records.length, 0);
+  }
+  for (const inherited of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    assert.strictEqual(chunks.isPublished(item(inherited), { next: true }), false, inherited);
+  }
+  // a value that is not the boolean true holds the item back too.
+  assert.strictEqual(chunks.isPublished(item('next'), { next: 'true' }), false);
+  // an item with no `release` is always published, with or without a switchboard.
+  for (const releases of [undefined, {}, { next: false }]) {
+    assert.strictEqual(chunks.isPublished(CONCEPT('Body.\n', { status: 'stable' }), releases), true);
+  }
+  assert.strictEqual(chunks.isPublished(item('next'), { next: true }), true);
+});
+
 test('links are key → slug arrays, anchors stripped, in code-point order (AGSC-06-29)', () => {
   assert.deepStrictEqual(chunks.linksOf({ requires: ['b#x', 'a'], related: [] }), { requires: ['a', 'b'] });
   assert.strictEqual(chunks.linksOf({ related: [] }), null, 'an empty links object is omitted');

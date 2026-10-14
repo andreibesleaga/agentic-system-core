@@ -19,11 +19,12 @@ const federation = require('../boundary/federation.js');
 const surfaces = require('../boundary/surfaces.js');
 const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-07: the one substitutable constant. */
 const WELLKNOWN_SUFFIX = 'knowledge-linkset';
 const WELLKNOWN_PATH = `/.well-known/${WELLKNOWN_SUFFIX}`;
-/** AGSC-06-17: the alias kept until the last 0.0.x consumer is retired. */
+/** AGSC-06-17: the legacy alias, a SHOULD. */
 const WELLKNOWN_ALIAS = '/.well-known/agentic-knowledge';
 const MEDIA_TYPE = 'application/linkset+json';
 const PROFILE = 'https://w3id.org/agentic-system-core/profile/agentic-knowledge';
@@ -170,7 +171,7 @@ function countsOf(items) {
 
 /** Absolute URL from the Bundle base plus a route (AGSC-06-10: every href is absolute). */
 function href(base, route) {
-  return `${String(base).replace(/\/+$/u, '')}${route}`;
+  return `${withoutTrailingSlashes(String(base))}${route}`;
 }
 
 /** The canonical well-known URL of a node, the value a `rel#peer` link names. */
@@ -222,7 +223,7 @@ function linkset(config, options = {}) {
   const level = options.level == null ? 2 : Number(options.level);
   const full = level >= 2;
   const site = (config && config.site) || {};
-  const base = String(site.base || '').replace(/\/+$/u, '');
+  const base = withoutTrailingSlashes(String(site.base || ''));
   const anchor = `${base}/`;
   const digests = options.digests || {};
   const visibility = (config && config.visibility) || 'public';
@@ -338,8 +339,8 @@ function attributesOf(one) {
 /**
  * AGSC-11-16: the shape of one `rel#surface` link — the same structural checks
  * `tools/validate-wellknown` makes, so the engine's checker and the independent
- * validator cannot disagree about a document (found 2026-10-02: an `llms-txt` link
- * carrying `agsc-surface-version` passed here and failed there).
+ * validator cannot disagree about a document (an `llms-txt` link carrying
+ * `agsc-surface-version`, for example, fails in both).
  */
 function surfaceFindings(one, fail, warn) {
   const values = (name) => (Array.isArray(one[name]) ? one[name] : undefined);
@@ -494,7 +495,7 @@ function tombstoneOf(doc) {
 }
 
 /**
- * AGSC-06-08 (amended 2026-10-02 for 1.0.0): true when the document's anchor is on the
+ * AGSC-06-08 (as amended for 1.0.0): true when the document's anchor is on the
  * origin of `url`, the URL it was retrieved from after redirects (RFC 9264 §9, RFC 8615
  * §4.3). A document with no such URL — read from a file — is not judged, so true.
  */

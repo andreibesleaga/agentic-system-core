@@ -200,12 +200,12 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
       && /a normative sentence outside every rule carries no rule id/u.test(f.message)));
   });
 
-  it('the same sentence naming a rule id, in a table, in a heading or in a fence is not a fault', () => {
+  it('the same sentence in a heading, in a fence or inside a rule\'s own table is not a fault', () => {
     const root = specRoot({
       'spec/02-item.md': [
-        '# Item', '', '## A MUST heading', '', '| a | b |', '|---|---|', '| x | MUST |', '',
-        'An engine MUST do what AGSC-02-01 says.', '', '```', 'An engine MUST fence.', '```', '',
-        '- **AGSC-02-01** One. [PRD-002]', '',
+        '# Item', '', '## A MUST heading', '', '```', 'An engine MUST fence.', '```', '',
+        '- **AGSC-02-01** One, with a table. [PRD-002]', '', '| a | b |', '|---|---|', '| x | MUST |', '',
+        '  An indented paragraph of the rule: a writer MUST do it.', '',
       ].join('\n'),
     });
     const { json } = envelope('validate-spec', [root]);
@@ -261,6 +261,119 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
   });
 });
 
+describe('validate-spec — the editorial frame: one note form, the key words, every MUST under a rule', () => {
+  const lint = (files) => envelope('validate-spec', [specRoot(files)]).json;
+  const rule = (body) => ({ 'spec/02-item.md': `# Item\n\n- **AGSC-02-01** ${body} [PRD-002]\n` });
+  const hits = (json, re) => json.findings.filter((f) => re.test(f.message));
+
+  it('a dated note in the one form passes', () => {
+    const json = lint(rule('A writer MUST do it. *(Amended 2026-10-02 for 1.0.0: the case was not stated)*'));
+    assert.equal(json.counts.error, 0, JSON.stringify(json.findings));
+  });
+
+  it('each other written form of a dated note fails with AGSC-E204', () => {
+    const forms = [
+      '*(amended 2026-10-02 for 1.0.0: lower case)*',
+      '*(row amended 2026-10-07 for 1.0.0: a row)*',
+      '*(row amended 2026-10-06 and 2026-10-07 for 1.0.0: two dates)*',
+      '*(Rows amended 2026-10-02 to 2026-10-07 for 1.0.0, a range)*',
+      '*(row added 2026-10-02 for 1.0.0)*',
+      '*(Note added 2026-10-02 for 1.0.0: a note)*',
+      '*(Amended for 1.0.0: no date)*',
+      '*(Amended 2026-10-02: no version)*',
+      '*(Amended 2026-10-02 for 1.0.0)*',
+    ];
+    for (const form of forms) {
+      const json = lint(rule(`A writer MUST do it. ${form}`));
+      const found = hits(json, /dated note is not in the one form/u);
+      assert.equal(found.length, 1, `${form}: ${JSON.stringify(json.findings)}`);
+      assert.equal(found[0].code, 'AGSC-E204');
+      assert.equal(found[0].line, 3);
+    }
+  });
+
+  it('an italic note that is no amendment is not checked for the form', () => {
+    const json = lint(rule('One. *(Rationale: a reason.)* *(reserved: stated by AGSC-02-01.)* *(retired at rc, 2026-01-01: merged.)*'));
+    assert.equal(hits(json, /dated note/u).length, 0, JSON.stringify(json.findings));
+  });
+
+  it('a MUST in a table row outside every rule fails, rule id or not', () => {
+    const json = lint({
+      'spec/02-item.md': [
+        '# Item', '', '| Key | Rule |', '|---|---|', '| `iri` | if present MUST equal the computed IRI |',
+        '| `AGSC-E311` | a Link MUST NOT cross Bundles (AGSC-02-01) |', '', '- **AGSC-02-01** One. [PRD-002]', '',
+      ].join('\n'),
+    });
+    const found = hits(json, /a normative sentence outside every rule/u);
+    assert.deepEqual(found.map((f) => `${f.code} ${f.line}`), ['AGSC-E202 5', 'AGSC-E202 6']);
+  });
+
+  it('a paragraph outside every rule that only cites a rule id fails', () => {
+    const json = lint({
+      'spec/02-item.md': [
+        '# Item', '', '- **AGSC-02-01** One. [PRD-002]', '', '## Precedence', '',
+        '**Precedence.** An engine MUST report one code, as AGSC-02-01 says.', '',
+        '*A note: a node MUST NOT expose it, which AGSC-02-01 excludes.*', '',
+      ].join('\n'),
+    });
+    assert.deepEqual(hits(json, /a normative sentence outside every rule/u).map((f) => f.line), [7, 9]);
+  });
+
+  it('a key word in a malformed form fails with AGSC-E204', () => {
+    for (const bad of ['it MUST not begin with a slash', 'nor MUST a pack', 'a reader MAY ALWAYS read it',
+      'a reader MAY NOT read it', 'a writer MUST NEVER write it', 'a writer SHOULD not write it',
+      'it is not REQUIRED', 'a writer MUST ONLY write it', 'a writer SHALL never write it']) {
+      const json = lint({ ...rule(`${bad}.`), 'spec/00-overview.md': [
+        '# Overview', '',
+        '`spec_version: "1.0.0-rc.9"` The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, '
+        + 'RECOMMENDED, NOT RECOMMENDED, MAY, OPTIONAL are to be interpreted as described in BCP 14.', '',
+        '- **AGSC-00-01** A Bundle is a directory tree. [PRD-002]', '',
+      ].join('\n') });
+      const found = hits(json, /key word in a form BCP 14 does not define/u);
+      assert.equal(found.length, 1, `${bad}: ${JSON.stringify(json.findings)}`);
+      assert.equal(found[0].code, 'AGSC-E204');
+    }
+  });
+
+  it('the well-formed key words, NOT alone and an acronym before a key word pass', () => {
+    const json = lint({
+      'spec/00-overview.md': [
+        '# Overview', '',
+        '`spec_version: "1.0.0-rc.9"` The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", '
+        + '"SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" are to be interpreted as described in BCP 14.', '',
+        '- **AGSC-00-01** A Bundle is a directory tree. [PRD-002]', '',
+      ].join('\n'),
+      ...rule('A writer MUST NOT, SHOULD NOT, SHALL NOT; it is NOT RECOMMENDED; the IRI MUST hold; a MINOR MAY add; '
+        + 'a field is OPTIONAL and REQUIRED elsewhere; that is NOT a fault.'),
+    });
+    assert.equal(json.counts.error, 0, JSON.stringify(json.findings));
+  });
+
+  it('a key word the text uses and the key-words sentence does not list fails once, at its first use', () => {
+    const json = lint({
+      ...rule('A field is OPTIONAL.'),
+      'spec/03-links.md': '# Links\n\n- **AGSC-03-01** It is OPTIONAL and RECOMMENDED; a writer MAY do it. [PRD-002]\n',
+    });
+    const found = hits(json, /is not listed in the key-words sentence/u);
+    // The fixture's sentence lists MUST and SHOULD only, so MAY is reported too.
+    assert.deepEqual(found.map((f) => `${f.code} ${f.file}:${f.line} ${f.message.split(' ')[5]}`).sort(),
+      ['AGSC-E202 spec/02-item.md:3 OPTIONAL', 'AGSC-E202 spec/03-links.md:3 MAY', 'AGSC-E202 spec/03-links.md:3 RECOMMENDED']);
+    assert.match(found.find((f) => f.file === 'spec/02-item.md').message, /OPTIONAL .*2 uses/u);
+  });
+
+  it('NOT RECOMMENDED is its own key word, not a use of RECOMMENDED', () => {
+    const json = lint(rule('It is NOT RECOMMENDED.'));
+    const found = hits(json, /is not listed in the key-words sentence/u);
+    assert.equal(found.length, 1, JSON.stringify(json.findings));
+    assert.match(found[0].message, /^the BCP 14 key word NOT RECOMMENDED /u);
+  });
+
+  it('with no key-words sentence every key word used is reported', () => {
+    const json = lint({ 'spec/00-overview.md': '# Overview\n\n`spec_version: "1.0.0-rc.9"`\n\n- **AGSC-00-01** A Bundle is a tree. [PRD-002]\n' });
+    assert.deepEqual(hits(json, /is not listed in the key-words sentence/u).map((f) => f.message.split(' ')[5]), ['MUST']);
+  });
+});
+
 describe('validate-spec — the helpers it exports', () => {
   it('ruleBlocks ends a block at the next rule or the next heading', () => {
     const blocks = ruleBlocks('- **AGSC-01-01** one\n  more\n\n- **AGSC-01-02** two\n\n## H\n\ntail\n', 'spec/x.md');
@@ -277,7 +390,7 @@ describe('validate-spec — the helpers it exports', () => {
 describe('validate-spec — the real distribution', () => {
   it('runs on the shipped spec/ and reports only known, recorded items', () => {
     const { code, json } = envelope('validate-spec', [REPO]);
-    assert.equal(json.spec_version, '1.0.0-rc.7');
+    assert.equal(json.spec_version, '1.0.0');
     assert.equal(json.version, JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8')).version);
     assert.equal(code, json.counts.error === 0 ? 0 : 1);
     // Every finding is a registered code and carries a real file:line.

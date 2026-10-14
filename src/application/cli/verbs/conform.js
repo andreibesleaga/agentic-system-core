@@ -31,6 +31,11 @@ function handlerFor(area) {
 function run(ctx) {
   const refused = helpers.levelRefusal(ctx);
   if (refused !== null) return refused;
+  // AGSC-09-09: the report path is checked before the cases run, and the refusal
+  // names the path given.
+  const to = (ctx.verbFlags && ctx.verbFlags.to) || 'dist/conformance-report.json';
+  const outside = helpers.outPathRefusal('conform --to', to);
+  if (outside !== null) return { status: 'fail', findings: [outside] };
   const raw = ctx.verbFlags && ctx.verbFlags.level;
   const level = raw === undefined ? 3 : Number(raw);
 
@@ -50,7 +55,6 @@ function run(ctx) {
   });
   const bytes = `${canonicalize(document)}\n`;
 
-  const to = (ctx.verbFlags && ctx.verbFlags.to) || 'dist/conformance-report.json';
   ctx.ports.fs.mkdirp(path.posix.dirname(String(to)));
   ctx.ports.fs.writeFile(String(to), bytes);
   helpers.note(ctx, conformance.summaryLine(tally, list.length));

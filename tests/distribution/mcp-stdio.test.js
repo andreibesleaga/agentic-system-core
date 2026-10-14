@@ -115,6 +115,27 @@ test('a protocol fault stays a JSON-RPC error — that is what error results are
   assert.strictEqual(frames[1].result, undefined);
 });
 
+test('a missing resource is -32002, the code of the revision the server speaks; a missing prompt stays -32602', async () => {
+  const { code, err, out } = await exchange([
+    INITIALIZE,
+    { id: 2, jsonrpc: '2.0', method: 'resources/read', params: { uri: 'memory://minimal/no-such-item' } },
+    { id: 3, jsonrpc: '2.0', method: 'prompts/get', params: { arguments: { question: 'x' }, name: 'no-such-prompt' } },
+  ]);
+  const frames = out.split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l));
+  assert.strictEqual(frames.length, 3, out);
+  // AGSC-11-16: the transport speaks revision 2025-11-25, and that revision's
+  // Resources page says "Resource not found: -32002", with the URI as data.
+  assert.strictEqual(frames[0].result.protocolVersion, '2025-11-25');
+  assert.strictEqual(frames[1].result, undefined);
+  assert.deepStrictEqual(frames[1].error,
+    { code: -32002, data: { uri: 'memory://minimal/no-such-item' }, message: 'Resource not found' });
+  // The same revision's Prompts page: "Invalid prompt name: -32602".
+  assert.strictEqual(frames[2].result, undefined);
+  assert.strictEqual(frames[2].error.code, -32602);
+  assert.strictEqual(err, '');
+  assert.strictEqual(code, 0);
+});
+
 test('serve writes protocol frames to the stdout it is given, and nothing else (AGSC-09-13)', async () => {
   const { serve } = require('../../src/distribution/mcp-stdio.js');
   const { PassThrough } = require('node:stream');

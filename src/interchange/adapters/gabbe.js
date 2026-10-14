@@ -83,6 +83,8 @@ const steer = require('../steer.js');
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
 const { isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
+const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { lineText } = require('../../shared/key-value-line.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'gabbe';
@@ -188,7 +190,7 @@ function continuityEntry(item, record) {
   if (date != null) lines.push(`**Date**: ${singleLine(date)}`);
   lines.push(`**Status**: ${item['x-gabbe-status'] == null ? 'ACTIVE' : singleLine(item['x-gabbe-status'])}`);
   lines.push(`**Severity**: ${singleLine(item.severity == null ? 'info' : item.severity)}`);
-  const body = String(item.body == null ? '' : item.body).replace(/\n+$/u, '');
+  const body = withoutTrailingFeeds(String(item.body == null ? '' : item.body));
   if (body !== '') lines.push('', ...body.split('\n').map((l) => (l === '' ? '>' : `> ${l}`)));
   return lines.join('\n');
 }
@@ -204,7 +206,7 @@ function continuityEntry(item, record) {
 function run(bundle, options) {
   const config = (bundle && bundle.config) || {};
   const site = config.site || {};
-  const base = `${String(site.base || '').replace(/\/+$/u, '')}/`;
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
   const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
   const header = provenanceLines({
     bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
@@ -356,6 +358,38 @@ function pastReference(lines, i) {
   return false;
 }
 
+/** The marks of a CONTINUITY entry heading. */
+const ENTRY_MARKS = /^###/u;
+
+/** The date of a PROJECT_STATE line and what may stand between it and its colon. */
+const STATE_DATE = /^(\d{4}-\d{2}-\d{2})(?:[^:\n]{0,60})?:/u;
+
+/**
+ * The text of a CONTINUITY entry heading (`### <text>`), or null. Linear steps
+ * (`shared/key-value-line.js`): a foreign kit is untrusted input.
+ *
+ * @param {string} line
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string|null}
+ */
+function entryHeading(line, meter) {
+  const found = lineText(line, ENTRY_MARKS, meter);
+  return found === null ? null : found.text;
+}
+
+/**
+ * The date and the text of a dated PROJECT_STATE line (`<date> …: <text>`), or null.
+ * Linear steps, as `entryHeading`.
+ *
+ * @param {string} line
+ * @param {{steps:number}} [meter]
+ * @returns {{date:string, text:string}|null}
+ */
+function stateEntry(line, meter) {
+  const found = lineText(line, STATE_DATE, meter);
+  return found === null ? null : { date: found.head[1], text: found.text };
+}
+
 /**
  * Parse one foreign file into candidate records. Each candidate is
  * `{type, title, body, fm, line}` or `{skip: reason, line}`.
@@ -444,10 +478,10 @@ function foreignRecords(path, text, kind) {
         return;
       }
       if (!inEntries) return;
-      const heading = /^###\s+(.+)$/u.exec(line);
+      const heading = entryHeading(line);
       if (heading !== null) {
         flush();
-        current = { line: i + 1, lines: [], own: false, title: heading[1].trim() };
+        current = { line: i + 1, lines: [], own: false, title: heading.trim() };
       } else if (current !== null && /^<!-- agsc-item /u.test(lines[i])) current.own = true;
       else if (current !== null && line.trim() !== '---') current.lines.push(line);
     });
@@ -498,14 +532,14 @@ function foreignRecords(path, text, kind) {
   }
   if (kind === 'state') {
     lines.forEach((line, i) => {
-      const m = /^(\d{4}-\d{2}-\d{2})(?:[^:\n]{0,60})?:\s+(.+)$/u.exec(line);
+      const m = stateEntry(line);
       if (m === null) return;
-      const text = m[2].trim();
+      const text = m.text.trim();
       const plainText = text.replace(/\*\*/gu, '');
       const first = (/^(.+?[.!?])(\s|$)/u.exec(plainText) || [null, plainText])[1];
       const fm = Object.create(null);
       fm.kind = 'decision';
-      out.push({ body: `${text}\n`, date: m[1], fm, line: i + 1, stem: first, type: 'concept' });
+      out.push({ body: `${text}\n`, date: m.date, fm, line: i + 1, stem: first, type: 'concept' });
     });
     return out;
   }
@@ -754,6 +788,6 @@ function plan(files, options) {
 
 module.exports = {
   AUDIT_LOG, CLAIMED_KEYS, CONTINUITY, FORMAT, PROJECT_STATE, RESUME_POINTER,
-  actorOf, cells, decodeRecord, encodeRecord, instantOf,
-  isKitFile, kindOf, outcomeOf, plan, run, valueOf, withoutComments,
+  actorOf, cells, decodeRecord, encodeRecord, entryHeading, instantOf,
+  isKitFile, kindOf, outcomeOf, plan, run, stateEntry, valueOf, withoutComments,
 };

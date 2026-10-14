@@ -33,7 +33,7 @@ byte for byte and no library produces.
 | `application/` | application layer | configuration, the command line and its sixteen verbs, the Bundle loader, the conformance run, plugins, `agsc-host` | [application/README.md](application/README.md) |
 | `ports/` | hexagonal ports | four interfaces, no code: FileSystem, Clock, ProcessRunner, Network | none: `tests/ports/` holds the folder to exactly its four interface files, and each file's header is its documentation |
 | `adapters/` | hexagonal adapters | the Node implementations of the four ports | [adapters/README.md](adapters/README.md) |
-| `shared/` | shared kernel | the two string orderings, and nothing else | [shared/README.md](shared/README.md) |
+| `shared/` | shared kernel | the two string orderings, the trailing-slash and trailing line-feed trims, and the reader of the rest of a line after a fixed head, and nothing else | [shared/README.md](shared/README.md) |
 
 Entry points: `bin/agsc.js` builds the four ports from `adapters/` and calls
 `application/cli/main.js#main`, which dispatches to one module per verb in
@@ -58,7 +58,7 @@ flowchart TD
   A["Application layer<br/>configuration · CLI verbs"]
   P["Ports<br/>FileSystem · Clock · ProcessRunner · Network"]
   AD["Adapters (Node)"]
-  S["Shared kernel<br/>src/shared/ordering.js"]
+  S["Shared kernel<br/>src/shared/ordering.js · trailing.js"]
 
   K -->|conformist| D
   K -->|customer / supplier| C
@@ -91,7 +91,15 @@ architecture test allows it.
 UTF-16 comparison of AGSC-04-05 and the code-point comparison of AGSC-04-12 — and
 depends on nothing. The FileSystem adapter owes AGSC-01-15 the same code-point order
 that the Knowledge context owes AGSC-04-12, and an adapter may not reach into a
-bounded context; one comparator in one place cannot drift.
+bounded context; one comparator in one place cannot drift. `shared/trailing.js` holds
+the trims every context applies to the end of a text: the trailing slashes of a base
+address or a folder path, removed before a route is appended, and the trailing line
+feeds of a text, removed or made exactly one. Each reads back from the end, so it is
+linear in the length of the text where the patterns it replaced were quadratic.
+`shared/key-value-line.js` reads the rest of one line after a fixed head (a "key:
+value" line of a foreign frontmatter block, a heading's text): the head is matched
+once, the rest searched once for a line terminator and then sliced, where the patterns
+it replaced read the rest again for every blank they gave back.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,
@@ -101,9 +109,15 @@ specification section that governs it is cited in every module header.
 
 **Purity.** `knowledge/`, `governance/` and `composition/` never touch a file, a
 process, a clock, a network or a random number. They take strings and records and
-return records. Everything that reaches the outside world does so through a port,
-and only the application layer and `bin/` may construct an adapter.
-`tests/arch/core-purity.test.js` enforces this.
+return records. Everything else that reaches the outside world does so through a
+port, and only the application layer and `bin/` may construct an adapter, with one
+exception: `application/hosting.js`, the deployment profiles and local server of
+`agsc-host`, reads and writes files with `node:fs` directly. Moving it behind the
+FileSystem port is planned for 1.1. `tests/arch/core-purity.test.js` enforces the
+purity of the three contexts, `tests/arch/never-touches.test.js` the "Never touches"
+column of `docs/ARCHITECTURE-DDD.md` §2, and `tests/arch/application-builtins.test.js`
+the Node built-ins the application layer may load (`path`, `crypto`, `util`; `fs` in
+`hosting.js` only; `os` in `cli/verbs/run.js` only).
 
 **Errors.** A domain fault is a **Finding** with a registered `AGSC-E<nnn>` code
 (AGSC-09-11), returned, never thrown. A thrown error means a programming fault — a
@@ -297,8 +311,8 @@ A port in another language can use it without reading a line of this engine:
   render one;
 * the AGSC-06-01 routes no module produces — `site.build`'s `skipped` list, from
   `site.UNPRODUCED_ROUTES`;
-* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired — named in
-  the lint lane's `lanes`;
+* the tracked-file half of AGSC-01-37, when no ProcessRunner port is wired or the
+  Bundle is not in a git repository — named in the lint lane's `lanes`;
 * `/ledger.jsonl`, when the Bundle has no history (AGSC-08-20a) — named in `skipped`,
   and `verify --ledger` then reports `AGSC-E703` rather than a green chain;
 * the live half of `refresh` and of the model-backed `review` — they need a model and

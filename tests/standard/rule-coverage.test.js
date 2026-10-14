@@ -34,6 +34,27 @@ test('this repository: no rule is unverified and docs/RULE-COVERAGE.md is the ge
   assert.ok(envelope.totals.active >= 300);
 });
 
+test('this repository: the end-to-end tier is informational and consistent, and lists the MUST rules with a code and only unit evidence', () => {
+  const r = capture(['--json', ROOT]);
+  const envelope = JSON.parse(r.out);
+  const t = envelope.totals;
+  assert.strictEqual(t.end_to_end + t.unit_only, t.verified);
+  assert.ok(t.end_to_end > t.by_vector / 2, 'every rule a vector names is verified end to end');
+  const byId = Object.fromEntries(envelope.rules.map((x) => [x.id, x]));
+  assert.strictEqual(byId['AGSC-08-28'].end_to_end, true, 'two cases and two executed scenarios name it');
+  const listed = envelope.rules.filter((x) => x.must_code_unit_only);
+  assert.strictEqual(listed.length, t.must_code_unit_only);
+  for (const x of listed) {
+    assert.strictEqual(x.class, 'VERIFIED', x.id);
+    assert.strictEqual(x.end_to_end, false, x.id);
+    assert.strictEqual(x.must, true, x.id);
+    assert.ok(x.codes.length > 0, x.id);
+  }
+  const md = fs.readFileSync(path.join(ROOT, 'docs', 'RULE-COVERAGE.md'), 'utf8');
+  assert.match(md, /\n## End to end\n/u);
+  assert.match(md, new RegExp(`${t.end_to_end} of the ${t.verified} verified rules are verified end to end`, 'u'));
+});
+
 /** A four-rule distribution in a scratch directory. */
 function scratch(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-rulecov-'));
@@ -102,25 +123,50 @@ test('an unverified rule, a stale allow entry, a bad reason and an unknown marke
   }
 });
 
-test('acceptance: an executed scenario counts, a pending one does not, and a stale pending entry fails', () => {
+test('acceptance: an executed scenario counts, a pending one does not, and a stale pending file fails', () => {
+  const pending = (scenario, extra = {}) => JSON.stringify({ class: 'forge', reason: 'needs a forge to run', scenario, ...extra });
   const dir = scratch({
-    'features/one.feature': '@persona-x\nFeature: One\n\n  Background:\n    Given a thing (AGSC-01-04)\n\n  @AGSC-01-05\n  Scenario: Runs\n    When it runs\n\n  Scenario: Waits\n    When it waits for AGSC-01-02\n',
-    'tests/acceptance/pending.json': JSON.stringify({ pending: {
-      'one.feature#Waits': { class: 'forge', reason: 'needs a forge' },
-      'one.feature#Gone': { class: 'forge', reason: 'names no scenario' },
-    } }),
+    'features/one.feature': '@persona-x\nFeature: One\n\n  Background:\n    Given a thing (AGSC-01-04)\n\n  @AGSC-01-05\n  Scenario: Runs\n    When it runs\n\n  Scenario: Waits\n    When it waits for AGSC-01-02\n\n  Scenario: Browses\n    When it browses for AGSC-01-03 and AGSC-01-01\n\n  Scenario: Probes\n    When it probes for AGSC-01-02\n',
+    'tests/acceptance/pending/one--waits.json': pending('Waits'),
+    'tests/acceptance/pending/one--gone.json': pending('Gone'),
+    // A conditional scenario whose need has no probe module yet runs nowhere: pending.
+    'tests/acceptance/pending/one--browses.json': pending('Browses', { class: 'conditional', needs: 'browser' }),
+    // One whose probe module exists runs wherever the need is present: executed.
+    'tests/acceptance/pending/one--probes.json': pending('Probes', { class: 'conditional', needs: 'python-package' }),
+    'tests/acceptance/steps/_python-package.js': 'module.exports = { probe: () => ({ available: false, reason: "x" }) };\n',
+    'tests/acceptance/pending/README.md': 'not a pending file\n',
   });
   try {
     const r = capture(['--json', dir]);
     const envelope = JSON.parse(r.out);
     const byId = Object.fromEntries(envelope.rules.map((x) => [x.id, x]));
-    assert.deepStrictEqual(byId['AGSC-01-04'].acceptance, ['one.feature#Runs'], 'the Background belongs to every scenario');
+    assert.deepStrictEqual(byId['AGSC-01-04'].acceptance, ['one.feature#Runs', 'one.feature#Probes'], 'the Background belongs to every scenario');
     assert.deepStrictEqual(byId['AGSC-01-05'].acceptance, ['one.feature#Runs']);
-    assert.deepStrictEqual(byId['AGSC-01-02'].acceptance, [], 'a pending scenario verifies nothing');
-    assert.strictEqual(envelope.totals.acceptance_scenarios, 2);
-    assert.strictEqual(envelope.totals.acceptance_scenarios_pending, 1);
-    assert.ok(envelope.findings.some((f) => /pending entry "one\.feature#Gone" names no scenario/u.test(f.message)));
+    assert.deepStrictEqual(byId['AGSC-01-02'].acceptance, ['one.feature#Probes'], 'a pending scenario verifies nothing');
+    assert.deepStrictEqual(byId['AGSC-01-01'].acceptance, [], 'a conditional scenario with no probe verifies nothing');
+    assert.strictEqual(envelope.totals.acceptance_scenarios, 4);
+    assert.strictEqual(envelope.totals.acceptance_scenarios_pending, 2);
+    const stale = envelope.findings.filter((f) => /names no scenario/u.test(f.message));
+    assert.strictEqual(stale.length, 1);
+    assert.strictEqual(stale[0].code, 'AGSC-E301');
+    assert.strictEqual(stale[0].file, 'tests/acceptance/pending/one--gone.json');
+    assert.match(stale[0].message, /"one\.feature#Gone" names no scenario/u);
     assert.strictEqual(r.code, 1);
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
+});
+
+test('acceptance: a pending file that is not JSON, or names no scenario member, is AGSC-E201', () => {
+  const dir = scratch({
+    'features/one.feature': '@persona-x\nFeature: One\n\n  Scenario: Runs\n    When it runs\n',
+    'tests/acceptance/pending/one--runs.json': '{ "class": ',
+    'tests/acceptance/pending/nofeature.json': JSON.stringify({ class: 'forge', reason: 'needs a forge to run', scenario: 'Runs' }),
+  });
+  try {
+    const envelope = JSON.parse(capture(['--json', dir]).out);
+    const bad = envelope.findings.filter((f) => f.code === 'AGSC-E201').map((f) => f.file).sort();
+    assert.deepStrictEqual(bad, ['tests/acceptance/pending/nofeature.json', 'tests/acceptance/pending/one--runs.json']);
   } finally {
     fs.rmSync(dir, { force: true, recursive: true });
   }
@@ -141,6 +187,70 @@ test('--write then --check agree, the text is deterministic, and a hand edit is 
     const r = capture(['--check', dir]);
     assert.strictEqual(r.code, 1);
     assert.match(r.err, /is not the generated text/u);
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
+});
+
+test('end to end: a case, an executed scenario, a step file or a walk under tests/e2e/ counts; a unit test or a checker header does not', () => {
+  const dir = scratch({
+    'spec/01-a.md': [
+      '- **AGSC-01-01** One MUST hold, else `AGSC-E201`.',
+      '- **AGSC-01-02** Two MUST hold, else `AGSC-E202`.',
+      '- **AGSC-01-03** *(reserved: gone; the id is never reused, AGSC-00-16.)*',
+      '- **AGSC-01-04** Four MUST hold. *(Amended 2026-10-10 for 1.0.0: it no longer names `AGSC-E299` (a dated note is left out).)*',
+      '- **AGSC-01-05** Five SHOULD hold, else `AGSC-E203`.',
+      '- **AGSC-01-07** Seven MUST hold, else `AGSC-E204`.',
+      '- **AGSC-01-08** Eight is REQUIRED (`AGSC-E205`).',
+      '- **AGSC-01-10** Ten MUST hold, else `AGSC-E208`.',
+      '- **AGSC-01-09** Nine MUST NOT fail.',
+      '',
+      '  A note under the rule names `AGSC-E206`.',
+      '',
+      '## Next',
+      '',
+      'Prose after the heading names `AGSC-E207` and MUST, and belongs to no rule.',
+      '',
+    ].join('\n'),
+    'tests/u.test.js': `${TEST}('AGSC-01-04 and AGSC-01-05 hold', () => {});\n`,
+    'tests/e2e/walk.test.js': `${MARK} AGSC-01-07\n`,
+    'tests/acceptance/steps/one.js': `${MARK} AGSC-01-10\n`,
+    'features/one.feature': '@persona-x\nFeature: One\n\n  @AGSC-01-08\n  Scenario: Runs\n    When it runs\n',
+    'tools/validate-x': `#!/usr/bin/env node\n// checks AGSC-01-09\n'use strict';\n`,
+  });
+  try {
+    const r = capture(['--json', dir]);
+    const envelope = JSON.parse(r.out);
+    assert.strictEqual(r.code, 0, r.out);
+    const byId = Object.fromEntries(envelope.rules.map((x) => [x.id, x]));
+    const tier = (id) => [byId[id].end_to_end, byId[id].must, byId[id].codes, byId[id].must_code_unit_only];
+    assert.deepStrictEqual(tier('AGSC-01-01'), [true, true, ['AGSC-E201'], false], 'a case');
+    assert.deepStrictEqual(tier('AGSC-01-02'), [false, true, ['AGSC-E202'], true], 'a unit test title only');
+    assert.deepStrictEqual(tier('AGSC-01-04'), [false, true, [], false], 'no code: the one in its dated note does not count');
+    assert.deepStrictEqual(tier('AGSC-01-05'), [false, false, ['AGSC-E203'], false], 'no MUST');
+    assert.deepStrictEqual(tier('AGSC-01-07'), [true, true, ['AGSC-E204'], false], 'a walk under tests/e2e/');
+    assert.deepStrictEqual(tier('AGSC-01-08'), [true, true, ['AGSC-E205'], false], 'an executed scenario');
+    assert.deepStrictEqual(tier('AGSC-01-09'), [false, true, ['AGSC-E206'], true], 'a checker header only; the note under the rule is part of it');
+    assert.deepStrictEqual(byId['AGSC-01-09'].e2e_tests, []);
+    assert.deepStrictEqual(byId['AGSC-01-07'].e2e_tests, ['tests/e2e/walk.test.js']);
+    assert.deepStrictEqual(tier('AGSC-01-10'), [true, true, ['AGSC-E208'], false], 'a step file of the acceptance runner');
+    const t = envelope.totals;
+    assert.deepStrictEqual([t.verified, t.end_to_end, t.unit_only, t.must_code_unit_only], [8, 4, 4, 2]);
+    assert.deepStrictEqual(envelope.by_part['01'].end_to_end, 4);
+    assert.match(capture([dir]).out, /; end to end 4 of 8 verified; 0 error, 0 warn\n$/u);
+
+    fs.mkdirSync(path.join(dir, 'docs'));
+    assert.strictEqual(capture(['--write', '--quiet', dir]).code, 0);
+    const md = fs.readFileSync(path.join(dir, 'docs', 'RULE-COVERAGE.md'), 'utf8');
+    assert.match(md, /\n## End to end\n\nThis tier is informational: it gates nothing\./u);
+    assert.match(md, /4 of the 8 verified rules are verified end to end/u);
+    assert.match(md, /\| AGSC-01-02 \| `AGSC-E202` \| `x\.test\.js` \|/u);
+    assert.match(md, /\| AGSC-01-09 \| `AGSC-E206` \| `validate-x` \|/u);
+    assert.doesNotMatch(md, /\| AGSC-01-04 \| `/u);
+    assert.match(md, /\| 01 Bundle \| 8 \| 8 \| 4 \| 0 \| 0 \| 0 \|/u);
+    assert.match(md, /\| AGSC-01-01 \| VERIFIED \| yes \|/u);
+    assert.match(md, /\| AGSC-01-02 \| VERIFIED \| — \|/u);
+    assert.ok(md.indexOf('## End to end') < md.indexOf('## Prose-only rules'));
   } finally {
     fs.rmSync(dir, { force: true, recursive: true });
   }

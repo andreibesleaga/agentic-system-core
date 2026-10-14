@@ -2,11 +2,10 @@
 // AGSC-00-20 and the note to PRD-037: at 1.0 the six runtime renderings of AGSC-07-18
 // are registered, and "a rendering the distribution does not ship is refused with the
 // registry's code" — `AGSC-E203`, a value outside the set the distribution can act on
-// (AGSC-01-26a gives an adapter the distribution does not ship the same code). Until
-// 2026-10-06 `compose --emit crewai` answered `AGSC-E001`, the code registered for an
-// unknown verb (verification finding Q9), and two refusals said "not implemented at
-// this milestone … no conformance Level is claimed before 1.0.0", which is false on the
-// day 1.0.0 ships (finding G20).
+// (AGSC-01-26a gives an adapter the distribution does not ship the same code). Before
+// the fix, `compose --emit crewai` answered `AGSC-E001`, the code registered for an
+// unknown verb, and two refusals said "not implemented at this milestone … no
+// conformance Level is claimed before 1.0.0", which is false on the day 1.0.0 ships.
 //
 // Deterministic: fixed SOURCE_DATE_EPOCH, no network; scratch copies of the minimal fixture.
 
@@ -43,7 +42,7 @@ function agsc(dir, argv) {
 
 const DATED = /milestone|before 1\.0\.0/u;
 
-test('Q9: a registered rendering this distribution does not ship is AGSC-E203, exit 1', (t) => {
+test('a registered rendering this distribution does not ship is AGSC-E203, exit 1', (t) => {
   const dir = scratch(t);
   for (const target of ['gabbe', 'kaiban-distributed', 'crewai', 'langgraph', 'adk-msaf', 'n8n']) {
     assert.equal(compose.emitterRefusal(target), null, `the registry holds ${target}`);
@@ -56,7 +55,7 @@ test('Q9: a registered rendering this distribution does not ship is AGSC-E203, e
   }
 });
 
-test('G20: refresh --agent without --dry-run names no milestone and no release', (t) => {
+test('refresh --agent without --dry-run names no milestone and no release', (t) => {
   const dir = scratch(t);
   const configFile = path.join(dir, 'agsc.config.json');
   const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));

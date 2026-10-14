@@ -91,3 +91,36 @@ test('the body is byte-identical after adoption (AGSC-02-90)', () => {
   assert.ok(r.output.endsWith(`\n${body}`));
   assert.strictEqual(r.body, body);
 });
+
+// A frontmatter nested deeper than the writer's stack can hold used to escape as a
+// bare RangeError, which the command line reported as an internal error. The reader
+// already maps every construct the YAML library cannot handle to AGSC-E105, so the
+// writer reports the same code for the same input; nothing that serialised before
+// stops serialising (AGSC-02-02, AGSC-09-11).
+function nestedMaps(depth) {
+  let value = 'leaf';
+  for (let i = 0; i < depth; i += 1) value = { k: value };
+  return { type: 'concept', title: 'Deep', x: value };
+}
+
+test('a frontmatter nested deeper than the writer can hold is AGSC-E105, never a bare RangeError', () => {
+  assert.throws(() => adopt.serialize(nestedMaps(100000)), (e) => {
+    assert.strictEqual(e.code, 'AGSC-E105');
+    assert.match(e.message, /nested deeper/u);
+    assert.strictEqual(e.file, '');
+    return true;
+  });
+  assert.throws(() => adopt.serialize(nestedMaps(100000), 'content/concepts/deep.md'), (e) => {
+    assert.strictEqual(e.code, 'AGSC-E105');
+    assert.strictEqual(e.file, 'content/concepts/deep.md');
+    return true;
+  });
+});
+
+test('a frontmatter of 64 nested maps serialises and round-trips unchanged', () => {
+  const yaml = require('../../src/knowledge/yaml.js');
+  const frontmatter = require('../../src/knowledge/frontmatter.js');
+  const text = adopt.serialize(nestedMaps(64));
+  const split = frontmatter.split(text, { file: 'deep.md' });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(yaml.parse(split.yamlText))), nestedMaps(64));
+});

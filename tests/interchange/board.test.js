@@ -27,7 +27,7 @@ const yaml = require('../../src/knowledge/yaml.js');
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const EPOCH = '1767225600';
-const SPEC = '1.0.0-rc.7';
+const SPEC = '1.0.0';
 const PROV = 'prov:\n  origin: human\n  operator: human:andreibesleaga\n';
 const DESC = 'A task of the delivery board, written for the board adapter tests.';
 
@@ -574,4 +574,24 @@ test('the state table both ways', () => {
       assert.strictEqual(board.stateOfWord(board.wordFor(format, state, null)), expected(format, state), `${format} ${state}`);
     }
   }
+});
+
+test('AGSC-10-13: a peer board\'s blocked_by slug naming a task of the same board takes that task\'s iri', () => {
+  // The slug of a task listed on the board expands to the iri the board gives that
+  // task; any other slug keeps the Concept folder under the board's base.
+  const text = JSON.stringify({
+    board: 'oct',
+    iri: 'https://peer.example/clusters/oct/',
+    tasks: [
+      { blocked_by: ['wire', 'other', 'constructor'], iri: 'https://peer.example/kb/concepts/ship/', slug: 'ship', state: 'TASK_STATE_WORKING', title: 'Ship' },
+      { iri: 'https://peer.example/kb/concepts/wire/', slug: 'wire', state: 'TASK_STATE_SUBMITTED', title: 'Wire' },
+    ],
+  });
+  const read = formats.FORMATS['agsc-board'].parse(text, 'oct.json');
+  assert.deepStrictEqual(read.rows[0].blockedBy, [
+    'https://peer.example/kb/concepts/wire/',
+    'https://peer.example/concepts/other/',
+    'https://peer.example/concepts/constructor/',
+  ]);
+  assert.deepStrictEqual(read.rows[1].blockedBy, []);
 });

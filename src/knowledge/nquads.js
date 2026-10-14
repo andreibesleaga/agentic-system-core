@@ -27,6 +27,7 @@
 
 const { compareCodePoint } = require('./unicode.js');
 const skos = require('./skos.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 // ---------------------------------------------------------------- namespaces
 
@@ -101,7 +102,7 @@ function typePlural(type) {
 
 /** `<site.base>/` — the Bundle IRI (AGSC-05-03). Accepts the base with or without its trailing slash. */
 function bundleIri(base) {
-  return `${String(base || '').replace(/\/+$/u, '')}/`;
+  return `${withoutTrailingSlashes(String(base || ''))}/`;
 }
 
 /** `<site.base>/<type-plural>/<slug>/` — the item IRI (AGSC-05-01). */

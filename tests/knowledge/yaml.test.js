@@ -58,6 +58,19 @@ test('flow mappings, complex keys and nested flow collections are AGSC-E105', ()
   rejects('c: [{a: 1}]\n', 'AGSC-E105');
 });
 
+test('an explicit `?` key is outside the subset and is AGSC-E105, even with a scalar name (AGSC-02-02)', () => {
+  // AGSC-02-02 admits block mappings of plain `key: value` entries; the `?` form is
+  // not in the list, whatever the key it opens.
+  rejects('a: 1\n? kind\n: explainer\n', 'AGSC-E105', 3);
+  rejects('? kind\n', 'AGSC-E105', 2);
+  rejects('?\n  kind\n: explainer\n', 'AGSC-E105', 2);
+  rejects('prov:\n  ? origin\n  : human\n', 'AGSC-E105', 3);
+  rejects('list:\n  - ? a\n    : b\n', 'AGSC-E105', 3);
+  // a `?` inside a scalar is text, not the indicator.
+  assert.deepStrictEqual(yaml.parse('title: "Why? Because"\nq: what?\n'), { title: 'Why? Because', q: 'what?' });
+  assert.deepStrictEqual(yaml.parse('t: |\n  ? not a key\n'), { t: '? not a key\n' });
+});
+
 test('duplicate keys are AGSC-E106 (AGSC-02-02)', () => {
   rejects('a: 1\na: 2\n', 'AGSC-E106', 3);
 });

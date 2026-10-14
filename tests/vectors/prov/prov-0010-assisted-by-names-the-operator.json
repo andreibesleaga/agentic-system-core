@@ -1,0 +1,74 @@
+{
+  "area": "prov",
+  "description": "Derived from AGSC-08-07: when `prov.origin` is `ai-assisted` or `ai-generated`, an Assisted-by line naming the operator MAY be added beside the Signed-off-by line, and when one is present its operator MUST match `prov.operator`, else AGSC-E505. Each sub-case is a well-formed DCO-Plus trailer block (AGSC-08-06, the grammar `prov-0005` pins) beside the `prov` of the change it signs, with a fictitious contributor and a neutral producer. operator-matches: an ai-assisted change whose Assisted-by line names its operator, no finding. operator-differs: an ai-assisted change whose Assisted-by line names another operator, AGSC-E505. line-absent: an ai-generated change with no Assisted-by line, no finding, because the line is optional. human-origin: a change of origin `human` whose Assisted-by line names another operator, no finding, because the rule binds the two ai-* origins only. `codes` is the whole list of codes the check reports for the block.",
+  "expected": {
+    "results": [
+      {
+        "codes": [],
+        "name": "operator-matches"
+      },
+      {
+        "codes": [
+          "AGSC-E505"
+        ],
+        "name": "operator-differs"
+      },
+      {
+        "codes": [],
+        "name": "line-absent"
+      },
+      {
+        "codes": [],
+        "name": "human-origin"
+      }
+    ]
+  },
+  "id": "prov-0010",
+  "input": {
+    "trailers": [
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)\nAssisted-by: example-model/1.0 (operator: human:ada)",
+        "name": "operator-matches",
+        "prov": {
+          "agent": "example-agent",
+          "model": "example-model",
+          "operator": "human:ada",
+          "origin": "ai-assisted"
+        }
+      },
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)\nAssisted-by: example-model/1.0 (operator: human:bob)",
+        "name": "operator-differs",
+        "prov": {
+          "agent": "example-agent",
+          "model": "example-model",
+          "operator": "human:ada",
+          "origin": "ai-assisted"
+        }
+      },
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)",
+        "name": "line-absent",
+        "prov": {
+          "agent": "example-agent",
+          "model": "example-model",
+          "operator": "human:ada",
+          "origin": "ai-generated"
+        }
+      },
+      {
+        "block": "Signed-off-by: Ada Example <ada@example.org> (CA-v1)\nAssisted-by: example-model/1.0 (operator: human:bob)",
+        "name": "human-origin",
+        "prov": {
+          "operator": "human:ada",
+          "origin": "human"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-07"
+}

@@ -1,5 +1,5 @@
-# The test lane: the whole suite on three operating systems and two Node lines,
-# on every push and every pull request.
+# The test lane: the whole suite on three operating systems and three Node lines,
+# on every push and every pull request, and once a week.
 #
 #   What runs  `npm ci`, the linter (`npm run lint`), the dependency rule
 #              (`npm run arch`), `npm test` (unit, integration, architecture, the
@@ -9,22 +9,51 @@
 #              every shipped validator — the six that read the distribution, and
 #              validate-wellknown at Level 1 and at Level 2 on builds of the
 #              minimal fixture. It also runs every other gate step of release.yml,
-#              word for word, on the same six legs, so that a tag is never the
+#              word for word, on the same legs, so that a tag is never the
 #              first time a gate runs: `npm audit`, the requirements matrix, the counting
 #              tool, `tools/release --json`, the cleanliness check and the
 #              architecture lane with AGSC_AUDIT=1; tests/standard/workflow.test.js
 #              fails if the two lists drift apart.
-#              A seventh job, on Ubuntu only, runs `actionlint` over the workflow
+#   Legs       Node 22.13.0 (the floor), 24 and 26 on each system. The six legs of
+#              22.13.0 and 24 are the check contexts branch protection requires;
+#              their job names never change. The Node 26 legs are new contexts and
+#              are not required.
+#   Coverage   On the required leg Ubuntu × Node 24 the suite runs as
+#              `npm run test:coverage` in place of `npm test`: the same test files,
+#              measured over src/, and the step fails below 99.9 % of lines, 99 % of
+#              functions or 93 % of branches (the thresholds are in package.json;
+#              tests/_coverage-bar.js compares them to the decimal, because Node's
+#              own threshold flags read whole numbers only).
+#   Packed     Every leg packs the engine and the alias package, installs the two
+#   install    tarballs together in an empty folder and runs `agsc`,
+#              `agentic-system-core` and the alias, each of which must print the
+#              packed version. So the files npm would ship are installed on all
+#              three systems before any tag, not first on the tag push.
+#              A further job, on Ubuntu only, runs `actionlint` over the workflow
 #              files themselves: the release binary of version 1.7.12, fetched from
 #              its GitHub release and refused unless its SHA-256 is the one recorded
 #              below (read from the release's checksums file on 2026-09-25).
+#   Browser    One job on Ubuntu runs the browser lane (AGSC_BROWSER=1): the three
+#              browser test files, none of which may skip, and the acceptance
+#              scenarios, none of which may skip for want of the browser. playwright-core 1.61.1 comes from the
+#              npm registry and chrome-headless-shell 149.0.7827.55 from Chrome for
+#              Testing, each refused unless its SHA-256 is the one recorded below
+#              (read on 2026-10-10; the registry's sha512 integrity of the same
+#              tarball agrees). The job is not a check context branch protection
+#              requires.
+#   Weekly     A scheduled run every Monday, so that a new advisory or a changed
+#              runner image is found in a week even when nothing is pushed. GitHub
+#              turns a schedule off after 60 days with no activity in the
+#              repository; it runs on the default branch.
 #   Secrets    none. Permissions: read the repository, nothing else.
 #   Determinism SOURCE_DATE_EPOCH is set for the fixture builds; the suite fixes
 #              its own clocks and never reaches the network. The two audit
 #              steps (`npm audit`, and the architecture lane under AGSC_AUDIT=1)
 #              read the registry's advisory list, so a new advisory turns a push
 #              red the day it is published — which is when the release would
-#              have found it.
+#              have found it. The packed install reads the registry too, for the
+#              engine's dependencies, as a user's install does, and the browser
+#              and actionlint jobs fetch their pinned, checksummed downloads.
 #
 # Every action is pinned to a commit SHA with the version beside it; the SHAs are
 # the ones release.yml pins.
@@ -38,6 +67,9 @@ on:
     branches:
       - '**'
   pull_request:
+  schedule:
+    # Mondays at 04:17 UTC.
+    - cron: '17 4 * * 1'
 
 permissions:
   contents: read
@@ -50,7 +82,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: ['22.13.0', '24']
+        node: ['22.13.0', '24', '26']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -67,7 +99,11 @@ jobs:
       - name: architecture (the dependency rule, by dependency-cruiser)
         run: npm run arch
       - name: suite
+        if: ${{ !(matrix.os == 'ubuntu-latest' && matrix.node == '24') }}
         run: npm test
+      - name: suite, measured (coverage of src/ at 99.9 % lines, 99 % functions, 93 % branches)
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        run: npm run test:coverage
       - name: dependency advisories (the release gate's npm audit)
         run: npm audit --audit-level=low
       - name: rule coverage (no unverified rule, matrix current)
@@ -114,6 +150,22 @@ jobs:
           (cd "$work" && git init -q -b main && git add -A && git commit -q -m fixture \
             && node "$GITHUB_WORKSPACE/bin/agsc.js" build)
           node tools/validate-wellknown "$work/www/.well-known/knowledge-linkset" --level 2
+      - name: the packed install (both tarballs, installed together in an empty folder)
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          dest="$RUNNER_TEMP/packed"
+          mkdir -p "$dest/install"
+          npm pack --pack-destination "$dest"
+          npm pack --pack-destination "$dest" ./packages/agsc-cli
+          cd "$dest/install"
+          printf '{ "private": true }\n' > package.json
+          npm install --no-audit --no-fund "$dest/agentic-system-core-$version.tgz" "$dest/agsc-cli-$version.tgz"
+          test "$(npx --no-install agsc --version | tr -d '\r')" = "agsc $version"
+          test "$(npx --no-install agentic-system-core --version | tr -d '\r')" = "agsc $version"
+          test "$(npx --no-install agsc-cli --version | tr -d '\r')" = "agsc $version"
+          test "$(node node_modules/agsc-cli/bin/agsc.js --version | tr -d '\r')" = "agsc $version"
       - name: the release lane's own checks
         run: node tools/release --json
       - name: public means clean (the whole tree, not only what ships)
@@ -122,6 +174,67 @@ jobs:
         env:
           AGSC_AUDIT: '1'
         run: node --test "tests/arch/*.test.js"
+
+  browser:
+    name: browser (ubuntu-latest, chrome-headless-shell 149.0.7827.55)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: install
+        run: npm ci
+      - name: fetch playwright-core 1.61.1 and chrome-headless-shell 149.0.7827.55 and verify their checksums before use
+        shell: bash
+        run: |
+          set -euo pipefail
+          # playwright-core has no dependencies: its tarball is unpacked outside the
+          # repository and reached through NODE_PATH, so no install script runs.
+          pw="$RUNNER_TEMP/pw/node_modules/playwright-core"
+          mkdir -p "$pw"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/playwright-core.tgz" "https://registry.npmjs.org/playwright-core/-/playwright-core-1.61.1.tgz"
+          echo "3740bba3a3e93b4c7bd7c0f6e3c0e5f8cdce498bef13511e4d534cc99a8ce198  $RUNNER_TEMP/playwright-core.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/playwright-core.tgz" -C "$pw" --strip-components=1
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/chrome-headless-shell.zip" "https://storage.googleapis.com/chrome-for-testing-public/149.0.7827.55/linux64/chrome-headless-shell-linux64.zip"
+          echo "410c9407d5de3fea80d9398666be06f2aa09154a3fa7b327dc254e336bb4c4b7  $RUNNER_TEMP/chrome-headless-shell.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/chrome-headless-shell.zip" -d "$RUNNER_TEMP"
+          "$RUNNER_TEMP/chrome-headless-shell-linux64/chrome-headless-shell" --version
+      - name: the browser test files (none may skip)
+        shell: bash
+        env:
+          AGSC_BROWSER: '1'
+          CHROME_EXE: ${{ runner.temp }}/chrome-headless-shell-linux64/chrome-headless-shell
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap tests/e2e/browser.test.js tests/e2e/modes/browser.test.js tests/distribution/search-page-browser.test.js | tee "$RUNNER_TEMP/browser.tap"
+          # A browser that failed to start would make these tests skip, not fail.
+          grep -qx '# skipped 0' "$RUNNER_TEMP/browser.tap" || { echo "a browser test skipped: the browser lane did not run"; exit 1; }
+      - name: the acceptance scenarios, with the browser present
+        shell: bash
+        env:
+          AGSC_BROWSER: '1'
+          CHROME_EXE: ${{ runner.temp }}/chrome-headless-shell-linux64/chrome-headless-shell
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap tests/acceptance/features.test.js | tee "$RUNNER_TEMP/acceptance-browser.tap"
+      - name: no scenario that needs the browser was skipped
+        # A browser that failed to start would make those scenarios skip, not fail.
+        shell: bash
+        run: |
+          tap="$RUNNER_TEMP/acceptance-browser.tap"
+          if grep -q '# SKIP not available here (browser)' "$tap"; then
+            echo "::error::a scenario that needs the browser was skipped, so the browser lane did not run it"
+            exit 1
+          fi
+          if ! grep -qE '^# pass [1-9][0-9]*$' "$tap"; then
+            echo "::error::no acceptance scenario passed in the browser lane"
+            exit 1
+          fi
 
   actionlint:
     name: actionlint (the workflow files)

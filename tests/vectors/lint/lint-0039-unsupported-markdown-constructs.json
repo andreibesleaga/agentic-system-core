@@ -1,0 +1,71 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-02-20: the body is CommonMark 0.31.2 plus GFM tables, and each occurrence of an unsupported construct outside a code span or a fenced block is one AGSC-E109 warning, never a silent rendering difference. The unsupported constructs are raw HTML blocks and inline HTML, footnote references and definitions, and every GFM extension other than tables. One concept is added to the minimal fixture, conforming in every key, whose body holds eight occurrences: an inline open tag and an inline close tag (two inline HTML occurrences: CommonMark reads each tag as one raw HTML inline), a one-line HTML block `<hr>`, a footnote reference, a footnote definition, a strikethrough, a task-list marker and an autolink literal. A code span and a fenced block that hold the same constructs raise nothing, and the GFM table raises nothing. The whole list `lint` reports is eight AGSC-E109 warnings naming that file, and lint exits 0, because a warning never changes an exit code (section 9.4). The `line` of each finding is not asserted here. An HTML block whose open and close tags sit on separate lines is not used, because this case does not settle whether such a block is one occurrence or one per tag.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        },
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        },
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        },
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        },
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        },
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        },
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        },
+        {
+          "code": "AGSC-E109",
+          "file": "content/concepts/constructs.md",
+          "severity": "warn",
+          "slug": "constructs"
+        }
+      ]
+    }
+  },
+  "id": "lint-0039",
+  "input": {
+    "add_files": {
+      "content/concepts/constructs.md": "---\ntype: concept\ntitle: Constructs\ndescription: A concept whose body holds each construct the Markdown profile of this format leaves out.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA paragraph with <span>inline HTML</span> in it.\n\n<hr>\n\nA claim with a note.[^1]\n\n[^1]: The note itself.\n\nSome ~~struck~~ text.\n\n- [ ] a task-list item\n\nSee www.example.com for more.\n\nCode spans hold `<div>` and `[^2]` and `~~x~~` as text.\n\n```text\n<div>fenced</div>\n[^3]: not a note\n~~not struck~~\n```\n\n| Column | Value |\n|---|---|\n| one | 1 |\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-20"
+}

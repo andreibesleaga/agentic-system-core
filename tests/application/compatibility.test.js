@@ -79,7 +79,7 @@ function run(argv, dir) {
     env: { SOURCE_DATE_EPOCH: EPOCH },
     ports: { fs: createFileSystem(dir) },
     root: dir,
-    specVersion: '1.0.0-rc.7',
+    specVersion: '1.0.0',
     stderr: { write: (t) => err.push(String(t)) },
     stdout: { write: (t) => out.push(String(t)) },
     version: '0.0.2',

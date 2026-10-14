@@ -14,6 +14,7 @@ const yaml = require('./yaml.js');
 const validate = require('./validate.js');
 const slugs = require('./slug.js');
 const { nfc } = require('./unicode.js');
+const { lineRest } = require('../shared/key-value-line.js');
 
 const FENCE = '---';
 /** UTF-8 byte length without Node's Buffer: knowledge/ stays runtime-portable. */
@@ -118,16 +119,25 @@ function keyLines(yamlText, lineOffset = 1) {
   return map;
 }
 
+/** An ATX level-1 heading's mark and the blanks after it. */
+const HEADING = /^#[ \t]+/u;
+
 /**
  * The first ATX `#` heading of a body, NFC-normalized and trimmed, or null
- * (AGSC-02-90's title source). The pattern is deliberately linear — no trailing
- * `\s*$` after a greedy `.*` — so a pathological line cannot cost quadratic time.
+ * (AGSC-02-90's title source). A line that holds a carriage return, U+2028 or U+2029
+ * is not a heading. The line is read in linear steps (`shared/key-value-line.js`): the
+ * marks and the blanks are matched once, the rest of the line is searched for a line
+ * terminator once and then sliced, so a long heading line cannot cost quadratic time.
+ *
+ * @param {string} body
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string|null}
  */
-function firstHeading(body) {
+function firstHeading(body, meter) {
   for (const line of String(body).split('\n')) {
-    const m = /^#[ \t]+(.*)$/u.exec(line);
-    if (m) {
-      const text = nfc(m[1]).trim();
+    const m = lineRest(line, HEADING, meter);
+    if (m !== null) {
+      const text = nfc(m.rest).trim();
       if (text !== '') return text;
     }
   }

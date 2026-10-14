@@ -1,0 +1,59 @@
+{
+  "area": "boundary",
+  "description": "Expected codes are derived by hand from the rule text. AGSC-11-08 lists every prefix that embeds an IPv4 address among the refused ranges whatever its registry value, the NAT64 prefix `64:ff9b::/96` and the 6to4 prefix `2002::/16` among them, and the two other IPv4-embedding ranges, `::/96` and `::ffff:0:0/96`, are refused whole whatever IPv4 address they embed (`bnd-0040`). Derivation: b.example resolves to `64:ff9b::8.8.8.8`, inside `64:ff9b::/96`, refused although the IPv4 address it embeds is globally reachable; c.example resolves to `64:ff9b::808:808`, the same address written in hexadecimal, refused alike; d.example resolves to `2002:808:808::1`, inside `2002::/16`, refused although the IPv4 address it embeds, 8.8.8.8, is globally reachable; e.example resolves to `8.8.8.8`, a plain IPv4 address in no range of the list, allowed, which shows that refusing the translation prefixes does not refuse the IPv4 addresses they embed. The invocation carries no `--dev`.",
+  "expected": {
+    "results": [
+      {
+        "code": "AGSC-E905",
+        "host": "b.example"
+      },
+      {
+        "code": "AGSC-E905",
+        "host": "c.example"
+      },
+      {
+        "code": "AGSC-E905",
+        "host": "d.example"
+      },
+      {
+        "code": null,
+        "host": "e.example"
+      }
+    ]
+  },
+  "id": "bnd-0043",
+  "input": {
+    "dev": false,
+    "resolved": [
+      {
+        "addresses": [
+          "64:ff9b::8.8.8.8"
+        ],
+        "host": "b.example"
+      },
+      {
+        "addresses": [
+          "64:ff9b::808:808"
+        ],
+        "host": "c.example"
+      },
+      {
+        "addresses": [
+          "2002:808:808::1"
+        ],
+        "host": "d.example"
+      },
+      {
+        "addresses": [
+          "8.8.8.8"
+        ],
+        "host": "e.example"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-08"
+}

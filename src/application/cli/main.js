@@ -14,6 +14,7 @@ const { load } = require('../config/load.js');
 const { checkBoundaryConfig } = require('../../boundary/visibility.js');
 const { createClock, isMalformedEpoch } = require('../../adapters/node-clock.js');
 const pluginLoader = require('../plugin-loader.js');
+const { canonicalize } = require('../../knowledge/jcs.js');
 
 const VERBS = [
   'init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
@@ -29,7 +30,7 @@ const VERBS = [
  * (`options.spec_version`), which is what keeps a released vector reproducible
  * across an rc bump (AGSC-00-16).
  */
-const SPEC_VERSION = '1.0.0-rc.7';
+const SPEC_VERSION = '1.0.0';
 
 // The five global flags of AGSC-09-09; every verb parser gets these.
 const GLOBAL_FLAGS = [
@@ -157,10 +158,10 @@ function retiredFlagHint(verb, argv) {
 const USAGE_CLASS_CODES = new Set(['AGSC-E003', 'AGSC-E004']);
 
 /**
- * AGSC-09-08 (as amended 2026-10-06) with AGSC-08-20a: the other exit-2 class is the
+ * AGSC-09-08 (as amended) with AGSC-08-20a: the other exit-2 class is the
  * environment the tool cannot run against — a git history too shallow to derive the
  * ledger, `AGSC-E703` ("a shallow clone MUST fetch the full history or exit 2 with
- * AGSC-E703"; the registry row says "exit 2"). Until then the engine exited 1.
+ * AGSC-E703"; the registry row says "exit 2"), not exit 1.
  */
 const ENVIRONMENT_CLASS_CODES = new Set(['AGSC-E703']);
 
@@ -338,8 +339,7 @@ function buildEnvelope({ verb, findings, status, specVersion, version }) {
   // AGSC-09-11: every finding with its position, each fault once — the shell adds the
   // loader's findings to the verb's, and a verb such as `ci` already carries them.
   const { uniqueFindings, withPosition } = require('../../knowledge/validate.js');
-  const jcs = require('../../knowledge/jcs.js');
-  const sorted = uniqueFindings(findings.map(withPosition), jcs.canonicalize).sort(compareFindings);
+  const sorted = uniqueFindings(findings.map(withPosition), canonicalize).sort(compareFindings);
   const counts = { error: 0, warn: 0 };
   for (const f of sorted) {
     if (f.severity === 'error') counts.error += 1;
@@ -357,24 +357,6 @@ function buildEnvelope({ verb, findings, status, specVersion, version }) {
   };
 }
 
-/**
- * The envelope MUST be emitted JCS-canonical (AGSC-09-10/AGSC-04-05). This
- * module never implements its own RFC 8785 writer (-CONTRACT.md): it
- * requires A's knowledge/jcs.js and returns null when that module is not
- * yet present, so a caller can fail closed instead of emitting non-canonical
- * bytes.
- */
-function serializeEnvelope(envelope) {
-  let jcs;
-  try {
-    jcs = require('../../knowledge/jcs.js');
-  } catch (e) {
-    return null;
-  }
-  if (!jcs || typeof jcs.canonicalize !== 'function') return null;
-  return jcs.canonicalize(envelope);
-}
-
 function writeLine(stream, text) {
   if (stream && typeof stream.write === 'function') stream.write(text);
 }
@@ -384,15 +366,42 @@ function writeFindingLine(stderr, f) {
 }
 
 /**
- * The usage block a person sees when no verb, or no known verb, was given.
- * It names the AGSC-09-07 verb set and the AGSC-09-09 global flags and nothing
- * else — this shell has no manual to duplicate and no rule to paraphrase. It is
- * a DIAGNOSTIC, so it is written to stderr (AGSC-09-10), and it is emitted only
- * outside `--json`, where one line must be one finding object.
+ * The usage block a person sees from `agsc --help` (on stdout) and when no verb, or
+ * no known verb, was given (on stderr, a DIAGNOSTIC there, AGSC-09-10, and emitted
+ * only outside `--json`, where one line must be one finding object). It names the
+ * AGSC-09-07 verb set, each verb on a line of its own with the sentence of purpose of
+ * that rule's table, and the AGSC-09-09 global flags.
  */
 const GLOBAL_FLAG_NAMES = Object.freeze(['--json', '--quiet', '--plain', '--no-input', '--help', '--version']);
 
+/**
+ * What each verb does, in one sentence: the "What it does" column of AGSC-09-07's
+ * table, in words a person new to the engine can act on.
+ */
+const VERB_PURPOSE = Object.freeze({
+  init: 'adopts a folder of Markdown notes into a Bundle',
+  lint: 'runs every check of a Bundle and writes nothing; with --fix, applies the normalisations',
+  build: 'writes the site and its machine-readable files into build.out',
+  verify: 'builds twice and compares the bytes; with --ledger, recomputes the ledger chain',
+  ci: 'runs the checks, two builds and the comparison, and writes the gate verdict',
+  export: 'writes one export: Markdown, OKF, JSON-LD, JSONL, steering files or a memory adapter',
+  import: 'imports a folder of another format through the adapter named by --from',
+  compose: 'composes the selected items and writes their Harness',
+  propose: 'writes the Proposal of a change to one item, for a pull request',
+  review: 'runs the review lane: checks, a label and a comment, never a model call',
+  refresh: 'runs the agent lane named by --agent; this engine runs it with --dry-run',
+  skills: 'emits every skill pack, installs them under a target, or imports one pack',
+  mcp: 'serves the seven tools over standard input and output',
+  run: 'runs the steps of a procedure; opt-in through run.enabled',
+  trace: 'records a captured agent run as an Episode; opt-in through run.enabled',
+  conform: 'runs the conformance cases of a Level and writes the report',
+});
+
+/** The hint every unknown-verb answer carries, so a person knows where help is. */
+const HELP_HINT = 'run agsc --help for the sixteen verbs, or agsc <verb> --help for one verb';
+
 function usageText(version) {
+  const width = Math.max(...VERBS.map((v) => v.length));
   return [
     '',
     `agsc ${version} — the reference engine of the Agentic System Core format.`,
@@ -400,12 +409,12 @@ function usageText(version) {
     'Usage: agsc <verb> [flags]',
     '',
     'Verbs (AGSC-09-07):',
-    `  ${VERBS.slice(0, 8).join('  ')}`,
-    `  ${VERBS.slice(8).join('  ')}`,
+    ...VERBS.map((verb) => `  ${verb.padEnd(width)}  ${VERB_PURPOSE[verb]}`),
     '',
     `Global flags (AGSC-09-09): ${GLOBAL_FLAG_NAMES.join('  ')}`,
     '',
     'Each verb takes its own flags; an unknown flag is AGSC-E002 and exit 2.',
+    'Run agsc <verb> --help for the flags and arguments of one verb.',
     'A Bundle is the directory holding agsc.config.json; run a verb from inside it.',
     '',
   ].join('\n');
@@ -427,7 +436,7 @@ const VERB_USAGE = Object.freeze({
   lint: 'agsc lint [--fix]',
   mcp: 'agsc mcp [<path>]',
   propose: 'agsc propose <slug>',
-  refresh: 'agsc refresh [--agent <name>] [--task <slug>] [--dry-run]',
+  refresh: 'agsc refresh --agent <name> [--task <slug>] [--dry-run]',
   review: 'agsc review',
   run: 'agsc run <slug> [--dry-run]',
   skills: 'agsc skills | agsc skills install [<target>] | agsc skills import <file>',
@@ -489,6 +498,8 @@ function helpText(version, verb) {
     '',
     `agsc ${version} — ${VERB_USAGE[verb]}`,
     '',
+    `${verb}: ${VERB_PURPOSE[verb]}.`,
+    '',
     `Flags of ${verb} (AGSC-09-09): ${own.length === 0 ? '(none)' : own.join('  ')}`,
   ];
   if (adapters !== null) {
@@ -508,7 +519,7 @@ function helpText(version, verb) {
  *   are honoured (AGSC-09-09); never read from `process.env` directly here.
  * - root: the Bundle root (default '.').
  * - specVersion/version: OPTIONAL overrides for the envelope's corresponding
- *   members; default to SPEC_VERSION ('1.0.0-rc.7') and package.json's
+ *   members; default to SPEC_VERSION ('1.0.0') and package.json's
  *   version. A test
  *   harness pins these per-vector (e.g. cli-0002's options.version) so the
  *   envelope stays reproducible independent of the engine's own release.
@@ -551,7 +562,7 @@ function main(argv, ctx) {
     const named = args.find((a) => VERBS.includes(a));
     if (jsonMode) {
       const document = helpDocument(version, named);
-      writeLine(stdout, `${serializeEnvelope(document) || JSON.stringify(document)}\n`);
+      writeLine(stdout, `${canonicalize(document)}\n`);
     } else {
       writeLine(stdout, helpText(version, named));
     }
@@ -584,10 +595,10 @@ function main(argv, ctx) {
     // But the answer must still tell a person what to do: the message names
     // what was typed (or says that nothing was), and the human stream carries the
     // verb list. Under `--json` stderr stays exactly ONE finding object per line
-    // (AGSC-09-10), so the usage block is printed only in the human mode.
-    const message = verb === null
-      ? 'no verb given'
-      : `unknown verb ${JSON.stringify(verb)}`;
+    // (AGSC-09-10), so the usage block is printed only in the human mode; the hint
+    // that names `agsc --help` is in the message itself, so both modes carry it
+    // (`agsc help` is the first thing many people type).
+    const message = `${verb === null ? 'no verb given' : `unknown verb ${JSON.stringify(verb)}`}; ${HELP_HINT}`;
     if (jsonMode) writeFindingLine(stderr, { code: 'AGSC-E001', severity: 'error', message });
     else {
       writeLine(stderr, `agsc: AGSC-E001 ${message}\n`);
@@ -668,10 +679,14 @@ function main(argv, ctx) {
   // these verbs.
   //
   // AGSC-09-10: the verb is resolved and the code registered, so the refusal is an
-  // envelope like any other verb's (exit 2 through AGSC-E004's class below); until
-  // 2026-10-06 stdout stayed empty under `--json` (cli-0013, withdrawn for cli-0017).
+  // envelope like any other verb's (exit 2 through AGSC-E004's class below), never an
+  // empty stdout under `--json` (cli-0017, which replaced the withdrawn cli-0013).
   const disabled = (verb === 'run' || verb === 'trace')
     && !(loaded.config && loaded.config.run && loaded.config.run.enabled === true);
+
+  // AGSC-01-37 / AGSC-09-08: a configuration error from any layer stops a verb that
+  // writes before it runs (see `stopsBeforeRunning`).
+  const stopped = stopsBeforeRunning(verb, verbFlags, loaded.findings);
 
   // A verb module that fails to load is a packaging fault: it keeps the internal-error
   // path, and the reason it failed is printed with it rather than replaced.
@@ -709,6 +724,7 @@ function main(argv, ctx) {
   // emits no envelope at all.
   if (STREAMING_VERBS.has(verb)) {
     for (const f of (loaded.findings || [])) writeFindingLine(stderr, f);
+    if (stopped) return exitClass(loaded.findings);
     if (!verbModule || typeof verbModule.run !== 'function') {
       writeLine(stderr, noModule());
       return 1;
@@ -737,7 +753,10 @@ function main(argv, ctx) {
   // "exactly one envelope on stdout under --json" holds either way.
   let result;
   try {
-    if (disabled) {
+    if (stopped) {
+      // The envelope carries the configuration findings alone; the verb never ran.
+      result = { findings: [], status: 'fail' };
+    } else if (disabled) {
       result = {
         findings: [{ code: 'AGSC-E004', message: `${verb} is disabled (run.enabled is false; AGSC-09-94)`, severity: 'error' }],
         status: 'fail',
@@ -774,13 +793,8 @@ function main(argv, ctx) {
   const envelope = buildEnvelope({ verb, findings, status, specVersion, version });
 
   if (jsonMode) {
-    const bytes = serializeEnvelope(envelope);
-    if (bytes === null) {
-      // AGSC-04-05/09-10: cannot emit a non-canonical envelope; fail closed.
-      writeFindingLine(stderr, { code: 'AGSC-E601', severity: 'error', message: 'JCS canonicalizer unavailable (src/knowledge/jcs.js not yet implemented); envelope not emitted' });
-      return 1;
-    }
-    writeLine(stdout, bytes + '\n');
+    // AGSC-09-10 / AGSC-04-05: the envelope is JCS-canonical, through the one writer.
+    writeLine(stdout, `${canonicalize(envelope)}\n`);
     for (const f of envelope.findings) writeFindingLine(stderr, f);
   } else {
     writeLine(stdout, `${verb}: ${envelope.status} (${envelope.counts.error} error, ${envelope.counts.warn} warn)\n`);
@@ -796,12 +810,49 @@ function main(argv, ctx) {
   // "this tool cannot run against this configuration at all" — and AGSC-00-21's
   // whole point is that configuration is the one surface where a newer version
   // must fail loudly (AGSC-00-23, AGSC-00-25, AGSC-01-22).
-  if (envelope.status !== 'pass'
-    && envelope.findings.some((f) => f.severity === 'error'
-      && (USAGE_CLASS_CODES.has(f.code) || ENVIRONMENT_CLASS_CODES.has(f.code)))) {
-    return 2;
-  }
-  return envelope.status === 'pass' ? 0 : 1;
+  return envelope.status === 'pass' ? 0 : exitClass(envelope.findings);
+}
+
+/**
+ * AGSC-09-08: the exit code of a run that did not pass — 2 when an error names a
+ * configuration or an environment the tool cannot run against, 1 otherwise.
+ * @param {Array<object>} findings
+ * @returns {1|2}
+ */
+function exitClass(findings) {
+  return (findings || []).some((f) => f.severity === 'error'
+    && (USAGE_CLASS_CODES.has(f.code) || ENVIRONMENT_CLASS_CODES.has(f.code))) ? 2 : 1;
+}
+
+/**
+ * The verbs that write nothing whatever the configuration says: `lint` without
+ * `--fix` and `verify` read the Bundle and report.
+ */
+function writesNothing(verb, verbFlags) {
+  return verb === 'verify' || (verb === 'lint' && verbFlags.fix !== true);
+}
+
+/**
+ * AGSC-01-37 / AGSC-09-08: whether a configuration error stops this verb before it
+ * runs. A value an environment layer sets that the schema refuses is an error "as if
+ * written in the file", but the refused value never reaches the resolved
+ * configuration, so the verb itself cannot see it: left to the verb,
+ * `AGSC_BUILD_OUT=content agsc build` would report `AGSC-E204`, exit 1 and still write
+ * the whole site under the default `www/`, and `ci` would write `dist/gate.json` with
+ * the verdict `pass`. The same holds for an `AGSC_` name this engine does not know
+ * (`AGSC-E004`, exit 2: a configuration the tool cannot run against) and for a range
+ * error of the boundary chapter (`AGSC-E209`), which only this shell reports. So every
+ * verb that writes stops before it runs; `lint` and `verify`
+ * still run, so that they report everything they find beside the configuration
+ * error, as they do when the fault is written in `agsc.config.json`.
+ * @param {string} verb
+ * @param {object} verbFlags
+ * @param {Array<object>} configFindings the findings of the configuration loader
+ * @returns {boolean}
+ */
+function stopsBeforeRunning(verb, verbFlags, configFindings) {
+  if (writesNothing(verb, verbFlags)) return false;
+  return (configFindings || []).some((f) => f.severity === 'error');
 }
 
 /**
@@ -816,6 +867,7 @@ function plainWhere(f) {
 }
 
 module.exports = {
-  main, ENVIRONMENT_CLASS_CODES, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_USAGE,
+  main, ENVIRONMENT_CLASS_CODES, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_PURPOSE,
+  VERB_USAGE,
   adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
 };

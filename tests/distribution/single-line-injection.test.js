@@ -73,7 +73,7 @@ function load() {
   const fs = createFileSystem(FIXTURE);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0-rc.7', version: '0.0.2' } };
+  return { bundle, ports: { fs, clock }, options: { specVersion: '1.0.0', version: '0.0.2' } };
 }
 
 /** Put the payload where validation would have caught it, after validation ran. */
@@ -176,7 +176,7 @@ test('LAYER 2: the llms-ctx.txt adapter is immune too', () => {
   }];
   const text = llmContext.llmsCtxTxt(records, {
     base: 'https://example.org/', generatedAt: '2026-01-01T00:00:00Z',
-    license: 'CC-BY-4.0\nlicense: MIT', specVersion: '1.0.0-rc.7',
+    license: 'CC-BY-4.0\nlicense: MIT', specVersion: '1.0.0',
     terms: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
     title: 'A node --> and out',
   });

@@ -358,9 +358,9 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; the eng
 |---|---|---|---|---|
 | R1 | Hand-written **Markdown subset renderer** — highest risk; 153 bodies must render | — | ship the old renderer's feature level + GFM tables; golden-test all 153; unsupported syntax is a lint error, not a rendering surprise | M4 |
 | R2 | **Turtle / RDF-XML / N-Quads** escaping and datatypes subtly wrong | — | validate once offline (rapper/Jena), lock with golden fixtures; RDF/XML stays in v1.0, emitted when `build.rdfxml` is true (AGSC-05-06) | M5 |
-| R3 | Browser ≡ CLI composition core with **no bundler**, plus a hand-written zip writer | — | one ESM entry copied to `www/js/`; test forbids `node:` imports in `src/composition/`; per-file download fallback; the hand-written STORE-only writer is kept for 1.0.0 (decided 2026-10-02): AGSC-07-13a pins every byte of the archive, which a third-party library would have to be held to release by release | M8 |
+| R3 | Browser ≡ CLI composition core with **no bundler**, plus a hand-written zip writer | — | one ESM entry copied to `www/js/`; test forbids `node:` imports in `src/composition/`; per-file download fallback; the hand-written STORE-only writer is kept for 1.0.0: AGSC-07-13a pins every byte of the archive, which a third-party library would have to be held to release by release | M8 |
 | R5 | **w3id PR latency** — `/ns/` IRIs unresolvable until merged | ADR-005 | IRI fixed in `ontology/agsc.ttl`; PR after M2; launch does not depend on it | maintainer |
-| R6 | `injection-scan` **false positives** deter human contributors | — | severity split + labelled override + config-owned wordlists; measured on the 153-card corpus pre-launch | M13 |
+| R6 | `injection-scan` **false positives** deter human contributors | — | severity split + labelled override + config-owned wordlists; measured on the demonstration corpus pre-launch | M13 |
 | R7 | Zero-dep parsers ⇒ **ReDoS, prototype pollution, traversal, resource bombs** | — | index-based state machines not regexes; `Object.create(null)` + `__proto__`/`constructor` rejection; ids-only paths; 1 MiB caps; seeded fuzz lane on tags; **archives refused entirely** | M1, M12 |
 | R8 | **Correspondence-rule drift** — a module with no spec section or vector | — | §5.3 machine-checked in `ci` against its **Area due** column; `tools/validate-spec` closes rule-id and error-code drift mechanically (PRD-054); deferred items named below, not hidden | M13 |
 
@@ -482,7 +482,7 @@ Rule AGSC-00-20 names the whole scope of the specification with the version at w
 
 | Version | Target | Parts (normative at that version) |
 |---|---|---|
-| **1.0** | this version: `1.0.0-rc.7`, the second public release candidate, then `1.0.0` | Bundle and six item types (§1, §2); fourteen Links (§3); canonical forms (§4); graph (§5); surfaces (§6); composition and the Harness (§7); governance with the **agent lane** — `agents[]`, `.env`, node-wide `budget.usd_month` default 10 USD, `max_new_items`, `max_claims`, `--dry-run` (§1.8, §8.6); conformance (§9); Levels 0–3, project mode and **Mode 5 the live board** (§10); boundary — federation in nine client-side parts, plugin contract, visibility, the declaration-only surfaces `solid` and `a2a-card`, the `responder` surface served by an MCP transport (AGSC-11-21), retirement and tombstones (§11) |
+| **1.0** | this version: `1.0.0`, after two public release candidates | Bundle and six item types (§1, §2); fourteen Links (§3); canonical forms (§4); graph (§5); surfaces (§6); composition and the Harness (§7); governance with the **agent lane** — `agents[]`, `.env`, node-wide `budget.usd_month` default 10 USD, `max_new_items`, `max_claims`, `--dry-run` (§1.8, §8.6); conformance (§9); Levels 0–3, project mode and **Mode 5 the live board** (§10); boundary — federation in nine client-side parts, plugin contract, visibility, the declaration-only surfaces `solid` and `a2a-card`, the `responder` surface served by an MCP transport (AGSC-11-21), retirement and tombstones (§11) |
 | **1.1** (MINOR) | the next version, undated | the items AGSC-00-20 lists for 1.1 — among them the `memory://` resolver (AGSC-05-04a), `build.rdfxml` and `build.feed`, the typed cross-node Link `peer-ref`, the reserved names `weights`, `routing` and `executable` (AGSC-00-25), the `agsc-profile-encrypted` and signatures profiles, language variants, the incremental build and the memory pack, the benchmark kit, the red-team suite and the public conformance page — and the plans of [ROADMAP.md](ROADMAP.md), which are proposals until a release adds them to AGSC-00-20 |
 | **2.0** (MAJOR) | a later version, undated | servers — hosted responder, live Agent2Agent boards (AGSC-10-14), forge application for browser proposals; the Solid pod written by the node rather than only declared; IPFS snapshots and ActivityPub delivery as declared surfaces (`x-` extensions until then); CRDT live sync; SPARQL endpoint; hosted multi-tenant nodes |
 
@@ -610,6 +610,106 @@ double build of `ci`) as the known-good path at 1.0.
 **Declared scope (the table of the addendum on AGSC-00-20).** The `memory://` alias and its
 resolution are part of 1.0 (AGSC-00-20, AGSC-05-04 to AGSC-05-04b); the table's 1.1 row
 should not be read as placing the resolver there.
+
+## Addendum — notes at 1.0.0 (2026-10-10)
+
+The sections and addenda above stay as they were written. These notes say how some of their
+statements read at `1.0.0`; where one of them and an earlier passage differ, the note here
+governs. `docs/PRD.md` carries the requirement side in its "Notes at 1.0.0".
+
+**The `memory://` alias (§3, the external-interfaces paragraph).** "A documented alias, never
+resolved" reads: never dereferenced over the network and never emitted as an RDF subject
+(AGSC-05-04), and resolved locally by the command line and the local tool server when the
+`<bundle-id>` is the Bundle's own `bundle.id`, another Bundle's id being refused with
+`AGSC-E309` (AGSC-05-04b). The 1.1 row of the declared-scope table is read as the addendum
+"The tree as shipped at 1.0" says: the resolver is part of 1.0.
+
+**The coverage bar (§7, the engine CI row; §10, the NFR-03 row).** "coverage ≥99%" and "coverage
+lane" read: `npm run test:coverage`, with the thresholds lines 99.9 %, functions 99 % and
+branches 93 % on `src/`, runs inside the check `test (ubuntu-latest, Node 24)` of `test.yml`,
+which every pull request must pass. The golden-thread half is `node tools/requirements-matrix
+--check`.
+
+**The licence row (§10, NFR-10).** There is no REUSE or SPDX lint at 1.0, and "REUSE green" is
+not claimed: the licences are stated by `LICENSE`, `LICENSE-CONTENT`, `NOTICE`, the `license`
+field of `package.json` and the SPDX header of every browser script, and a REUSE layout is a
+1.1 item (the PRD's note to PRD-047 and NFR-10).
+
+**R7 and T7 (§11, §12).** "Index-based state machines not regexes" and "a seeded fuzz lane on
+tags" do not describe the tree: the engine reads its formats through maintained libraries
+(ADR-019) and still uses regular expressions. The controls that exist are these: the size caps;
+a linear scan with a step-count test for each text scanner whose pattern could take quadratic
+time on one long run (the `*-linear.test.js` tests); one seeded, deterministic fuzz test,
+`tests/security/fuzz-patterns.test.js`, which checks those scanners against the patterns they
+replaced and bounds their steps on long runs, and runs with the rest of the suite on every push,
+not only on tags; and the security corpus that `bench/measure.js --layer security` runs.
+
+**The caching line (the addendum on the performance backlog).** "Digest `ETag`/immutable caching"
+is not shipped at 1.0 in that form. An `ETag` is sent on every public artefact, its value set by
+the host unless the writer sets it, and it is never an integrity statement (AGSC-11-05).
+`Cache-Control: public, max-age=31536000, immutable` is reserved for digest-named asset paths,
+which no 1.0 route has, so a 1.0 node sends it nowhere; the versioned vocabulary copies under
+`/ns/<version>/` are served with the host's default `max-age=0, must-revalidate`, and
+`immutable` on them is planned for 1.1 (AGSC-00-20). The same line's "benchmark kit
+(`agsc bench`)" is the `tools/bench` program, as the addendum "The tree as shipped at 1.0"
+says.
+
+**ADR-013.** "MCP 2026-07-28 … via `server/discover`" reads as the record's own closing
+parenthesis says: the local tool server speaks MCP revision 2025-11-25 and its `initialize`
+handshake, and it does not serve `server/discover`. The tool server on revision 2026-07-28,
+with `server/discover`, is planned for 1.1 (AGSC-00-20).
+
+**ADR-004.** "The nine core keys carry composition semantics" reads: five of the nine core keys —
+uses, requires, excludes, contradicts and supersedes — change a composition, and related,
+broader, narrower and derived-from are navigational or provenance edges that never change one
+(AGSC-03-01, AGSC-03-18).
+
+**The 1.0 row of the declared-scope table, and the engine's claim (note of 2026-10-11).**
+"This version: `1.0.0`, after two public release candidates" counts the candidates published
+before it, from `1.0.0-rc.6` to `1.0.0-rc.7`. At `1.0.0` the reference engine claims Level 3,
+the full engine (AGSC-10-05); the claim, with what each of its parts rests on, is in
+`docs/CONFORMANCE-STATEMENTS.md` under "The reference engine's claim", and the README quotes it.
+
+**Capabilities planned for 1.1.** The plugin adapters "Deno/Bun/Workers" of the `FileSystem`
+port (§5.2) and the portability ADR-002 names — running the engine's library on Deno, Bun and
+Cloudflare Workers — are planned for 1.1. So are the real channel adapters of the addendum
+"(PRD-056)", which also names a fixture stub that does not ship (the addendum "The tree as
+shipped at 1.0"), and the git mirror and a weekly attested snapshot of a node that the addendum
+"The tree as shipped at 1.0" calls "planned for later, with no version fixed". The other
+capabilities of the reference distribution planned for 1.1 are listed in AGSC-00-20 and in the
+PRD's "Notes at 1.0.0". Each adds behaviour, which `1.0.0` does not.
+
+**Further items planned for 1.1 (note of 2026-10-12).** AGSC-00-20 also names six items
+decided for 1.1 while `1.0.0` was prepared: the AI-assistance statement of AGSC-06-15
+reworded, because the `Assisted-by:` line of AGSC-08-07 is optional (at `1.0.0` the
+constant is kept byte for byte); a root `base` that differs from `site.base` reported as
+`AGSC-E204` (AGSC-01-04); a board export naming the type of each target of a blocked-by or
+decided-by Link (AGSC-10-13); the round trip of AGSC-06-32 for a graph of one node; an HTML
+block counted once rather than once per tag (AGSC-02-20); and no `AGSC-E407` for prose
+quoted inside the content fence of a skill pack (AGSC-07-15). Three more change what a
+node serves without changing the format: on a restricted node, an access class for the
+`chunks` surface that says its target is gated, and a host profile that removes a host's
+default `Access-Control-Allow-Origin: *` from every file but the discovery document (at
+`1.0.0` the implementers' guide, §7b, says how to remove it); and linear-time patterns in
+the page script and the compose page that every node emits, which `1.0.0` leaves byte for
+byte as they are.
+
+**Three more items planned for 1.1 (second note of 2026-10-12).** AGSC-00-20 names two
+more items decided for 1.1 after the 12 October audit: a `remember` call that declares an
+operator alone under the default `ai-generated` origin refused with `AGSC-E003`, or
+answered with the two `AGSC-E202` of AGSC-08-01 in `findings`, on both transports at once
+(at `1.0.0` the call returns the item and `agsc lint` refuses it; the assistant guide and
+the Mode 1 guide say so); and a stated nesting bound for the block mappings and sequences
+of the AGSC-02-02 subset, checked by `lint` so that every verb agrees (at `1.0.0` a
+frontmatter nested deeper than the engine can read or write back is `AGSC-E105` from every
+verb, with no stated bound). A third is a capability of the reference distribution:
+`agsc-host serve` printing and binding `localhost` rather than `127.0.0.1`, so that the
+address it prints is the one the checkers accept (at `1.0.0` the publishing guide, §6, says
+how to check a locally served node).
+
+**The well-known name of the performance addendum (note of 2026-10-12).** The
+Internet-Draft's text requests the registration of the well-known name; no request has
+been sent to the registry.
 
 ## Beyond 1.0
 

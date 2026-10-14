@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "typing into the search box and watching the requests the page makes needs a browser; the index itself (/search.json, AGSC-06-16) is checked by the unit tests.",
+  "scenario": "Reader searches via the prebuilt client-side index"
+}

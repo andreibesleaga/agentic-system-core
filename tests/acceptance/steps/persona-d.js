@@ -1,11 +1,23 @@
 'use strict';
-// verifies AGSC-03-12, AGSC-04-19, AGSC-08-01, AGSC-08-04, AGSC-08-05
-// Steps of features/persona-d-agent-proposer.feature that run offline.
-// The file names the persona's rules in its scenarios; the assertions below are
-// what make them hold.
+// verifies AGSC-03-12, AGSC-04-19, AGSC-08-01, AGSC-08-04, AGSC-08-05, AGSC-08-07
+// Steps of features/persona-d-agent-proposer.feature that run offline, the
+// operator's half included: the printed commands applied in a clean checkout, the
+// commit carrying the sign-off and the `Assisted-by:` line, and the ledger entry
+// the build derives from it. The file names the persona's rules in its scenarios;
+// the assertions below are what make them hold.
 
 const assert = require('node:assert');
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 const YAML = require('yaml');
+const { applyPatch } = require('diff');
+
+const { ROOT } = require('./_world.js');
+
+// The trailer grammar of AGSC-08-06 and AGSC-08-07 has no verb of its own; the
+// engine's parser is the check a forge's CI runs, so the step calls it directly.
+const provRules = require(path.join(ROOT, 'src', 'governance', 'prov.js'));
 
 /** Split an item file into its frontmatter object and body. */
 function parseItem(text) {
@@ -19,6 +31,21 @@ function writeItem(world, rel, frontmatter, body) {
 }
 
 const ITEM = 'content/concepts/supervisor.md';
+/** The operator's own sign-off; the address is joined at run time, never written whole. */
+const OPERATOR = { local: 'acceptance-operator', name: 'Acceptance Operator' };
+
+/** The agent's edit: a sharper body and the full prov block of an operator-run agent. */
+function agentEdit(world) {
+  const { body, frontmatter } = parseItem(world.read(ITEM));
+  frontmatter.prov = {
+    agent: 'claude-code/1.0',
+    model: 'example-model-1',
+    operator: world.state.operator,
+    origin: 'ai-assisted',
+  };
+  writeItem(world, ITEM, frontmatter,
+    body.replace('Route work to specialised workers', 'Route each piece of work to a specialised worker'));
+}
 
 /** The agent's edit as it left the file: keys out of order, a wikilink, no final LF. */
 const MESSY = ['---', 'title: Supervisor', 'type: concept', 'kind: pattern',
@@ -40,15 +67,7 @@ module.exports = [
   {
     pattern: 'the agent edits "content/concepts/<slug>.md"',
     run(world) {
-      const { body, frontmatter } = parseItem(world.read(ITEM));
-      frontmatter.prov = {
-        agent: 'claude-code/1.0',
-        model: 'example-model-1',
-        operator: world.state.operator,
-        origin: 'ai-assisted',
-      };
-      writeItem(world, ITEM, frontmatter,
-        body.replace('Route work to specialised workers', 'Route each piece of work to a specialised worker'));
+      agentEdit(world);
     },
   },
   {
@@ -143,9 +162,111 @@ module.exports = [
     },
   },
   {
+    pattern: 'the patch, applied to the edit as the agent left it, gives the file "lint --fix" wrote (AGSC-04-19)',
+    run(world) {
+      // Without history the patch runs from the working bytes to the canonical form, and
+      // that form is the one `lint --fix` writes: key order, quoting, wikilinks, final LF.
+      const given = applyPatch(MESSY, world.read('dist/proposal/1.patch'));
+      assert.strictEqual(typeof given, 'string', 'the patch does not apply to the edit');
+      assert.strictEqual(given, world.read(ITEM), 'the patch and lint --fix give different files');
+    },
+  },
+  {
     pattern: 'no network write occurs from the "propose" verb',
     run(world) {
       assert.deepStrictEqual(world.networkAttempts(), []);
+    },
+  },
+  {
+    pattern: 'the agent\'s edit of "content/concepts/<slug>.md" is proposed from a git repository of one commit',
+    run(world) {
+      world.commitAll('Add the acceptance Bundle');
+      agentEdit(world);
+      world.state.propose = world.agsc(['propose', 'supervisor'], { offline: true });
+      assert.strictEqual(world.state.propose.exit, 0, world.state.propose.stdout + world.state.propose.stderr);
+      assert.ok(world.exists('dist/proposal/1.patch'));
+    },
+  },
+  {
+    pattern: 'the operator runs the printed "agsc lint --fix" and "git checkout -b proposal/1"',
+    run(world) {
+      // In a repository the working tree already carries the change, so propose
+      // prints no "git apply" (AGSC-08-04): the operator normalises, branches and commits.
+      const printed = world.state.propose.stderr.split('\n').filter((l) => l.startsWith('run: '));
+      assert.deepStrictEqual(printed, ['run: agsc lint --fix', 'run: git checkout -b proposal/1',
+        `run: git add ${ITEM} && git commit`, 'run: open a pull request with the body of dist/proposal/1.md']);
+      const fix = world.agsc(['lint', '--fix'], { offline: true });
+      assert.strictEqual(fix.exit, 0, fix.stdout + fix.stderr);
+      world.git(['checkout', '-q', '-b', 'proposal/1']);
+    },
+  },
+  {
+    pattern: 'the operator commits the change as printed, with a "Signed-off-by:" trailer and an "Assisted-by:" line naming "prov.operator"',
+    run(world) {
+      const trailers = [
+        `Signed-off-by: ${OPERATOR.name} <${[OPERATOR.local, 'example.org'].join('@')}> (CA-v1)`,
+        `Assisted-by: claude-code/1.0 (operator: ${world.state.operator})`,
+      ];
+      world.git(['add', ITEM]);
+      world.git(['commit', '-q', '-m', 'Sharpen the intent of supervisor', '-m', trailers.join('\n')],
+        { GIT_AUTHOR_DATE: '2026-01-02T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-02T00:00:00Z' });
+      world.state.applied = world.git(['rev-parse', 'HEAD']).trim();
+      assert.deepStrictEqual(world.trailers(), trailers);
+      // The Proposal files under dist/ stay out of the commit.
+      assert.deepStrictEqual(world.git(['show', '--name-only', '--format=', 'HEAD']).split('\n').filter(Boolean), [ITEM]);
+    },
+  },
+  {
+    pattern: 'the trailer block of that commit passes the grammar for an "ai-assisted" change (AGSC-08-06, AGSC-08-07)',
+    run(world) {
+      const message = world.git(['log', '-1', '--format=%B', world.state.applied]);
+      const { prov } = parseItem(world.read(ITEM)).frontmatter;
+      const checked = provRules.checkTrailers(message, { file: ITEM, prov });
+      assert.deepStrictEqual(checked.findings, []);
+      assert.strictEqual(checked.signoff.agreement, 'CA-v1');
+      assert.deepStrictEqual(checked.assisted.map((a) => a.operator), [prov.operator]);
+    },
+  },
+  {
+    pattern: 'lint and build pass on the branch "proposal/1", and the ledger entry of that commit names the operator from the sign-off (AGSC-08-20a)',
+    run(world) {
+      assert.strictEqual(world.git(['rev-parse', '--abbrev-ref', 'HEAD']).trim(), 'proposal/1');
+      const lint = world.agsc(['lint'], { offline: true });
+      assert.strictEqual(lint.exit, 0, lint.stdout + lint.stderr);
+      const build = world.agsc(['build'], { offline: true });
+      assert.strictEqual(build.exit, 0, build.stdout + build.stderr);
+      const entries = world.read('www/ledger.jsonl').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+      const entry = entries.find((e) => e.ref === world.state.applied);
+      assert.ok(entry, `no ledger entry names ${world.state.applied}`);
+      assert.strictEqual(entry.actor, `human:${OPERATOR.local}`);
+      assert.ok(!fs.existsSync(path.join(world.dir, 'content', 'ledger.jsonl')));
+      assert.deepStrictEqual(world.networkAttempts(), []);
+    },
+  },
+  {
+    pattern: '"dist/proposal/1.patch" applies with "git apply" to a clean checkout of the first commit, and the item it gives passes lint',
+    run(world) {
+      // A reviewer's own checkout of the commit the Proposal was made against.
+      const clone = path.join(world.temp('agsc-acc-reviewer-'), 'node');
+      world.git(['clone', '-q', '--no-hardlinks', '--branch', 'main', world.dir, clone]);
+      const applied = spawnSync('git', ['apply', path.join(world.dir, 'dist', 'proposal', '1.patch')],
+        { cwd: clone, encoding: 'utf8', env: world.env() });
+      assert.strictEqual(applied.status, 0, applied.stderr);
+      const item = parseItem(fs.readFileSync(path.join(clone, ITEM), 'utf8'));
+      assert.match(item.body, /Route each piece of work to a specialised worker/u);
+      assert.strictEqual(item.frontmatter.prov.operator, world.state.operator);
+      const lint = world.agsc(['lint'], { cwd: clone, offline: true });
+      assert.strictEqual(lint.exit, 0, lint.stdout + lint.stderr);
+      world.state.clone = clone;
+    },
+  },
+  {
+    pattern: 'the item that patch gives is the file the operator committed after "agsc lint --fix" (AGSC-04-19)',
+    run(world) {
+      // The patch carries the form `lint --fix` writes, so a reviewer who applies it
+      // gets byte for byte what the operator committed (AGSC-04-19).
+      const committed = world.git(['show', `${world.state.applied}:${ITEM}`]);
+      assert.strictEqual(fs.readFileSync(path.join(world.state.clone, ITEM), 'utf8'), committed);
     },
   },
 ];

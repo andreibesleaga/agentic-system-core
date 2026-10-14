@@ -66,14 +66,15 @@ function check(slugs, options = {}) {
 }
 
 /**
- * AGSC-02-91 slugifier: NFC, ASCII-lower-cased, every character outside [a-z0-9]
+ * AGSC-02-91 slugifier: NFC, ASCII-lower-cased (A-Z only), every character outside [a-z0-9]
  * replaced by `-`, runs of `-` collapsed, leading and trailing `-` trimmed,
  * clipped to 64 code points and any resulting trailing `-` trimmed; an empty
  * result becomes `note`. A total function: it never throws and never returns an
  * invalid slug.
  */
 function slugify(text) {
-  const source = nfc(String(text == null ? '' : text)).toLowerCase();
+  // ASCII lower-casing only: `toLowerCase()` would turn U+0130 into "i" + U+0307.
+  const source = nfc(String(text == null ? '' : text)).replace(/[A-Z]/g, (c) => c.toLowerCase());
   let out = '';
   for (const ch of source) {
     out += /^[a-z0-9]$/.test(ch) ? ch : '-';

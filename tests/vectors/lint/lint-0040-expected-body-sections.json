@@ -1,0 +1,49 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-02-21: a lint MUST warn, AGSC-E406, for each heading of an item's list that the body lacks; `kind: pattern` lists Intent, Context & Forces, Structure, Consequences & Trade-offs and Related Patterns, `procedure` lists When, Steps and Checks, and `lesson` lists Lesson, Evidence and Check before; the check compares the heading text only, at any heading level. Three items are added to the minimal fixture, each conforming in every key and a member of its cluster. partial-pattern.md carries Intent at the second level and Structure at the third, so three headings are missing: three warnings. bare-lesson.md carries Lesson and Evidence, so Check before is missing: one warning. deep-procedure.md carries all three of its headings at the third level, so it raises nothing. The whole list is those four AGSC-E406 warnings, and lint exits 0.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E406",
+          "file": "content/concepts/partial-pattern.md",
+          "severity": "warn",
+          "slug": "partial-pattern"
+        },
+        {
+          "code": "AGSC-E406",
+          "file": "content/concepts/partial-pattern.md",
+          "severity": "warn",
+          "slug": "partial-pattern"
+        },
+        {
+          "code": "AGSC-E406",
+          "file": "content/concepts/partial-pattern.md",
+          "severity": "warn",
+          "slug": "partial-pattern"
+        },
+        {
+          "code": "AGSC-E406",
+          "file": "content/lessons/bare-lesson.md",
+          "severity": "warn",
+          "slug": "bare-lesson"
+        }
+      ]
+    }
+  },
+  "id": "lint-0040",
+  "input": {
+    "add_files": {
+      "content/concepts/partial-pattern.md": "---\ntype: concept\ntitle: Partial pattern\ndescription: A pattern concept whose body carries two of the five sections its kind asks for.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: pattern\n---\n\n## Intent\n\nState the intent.\n\n### Structure\n\nA third-level heading still counts.\n",
+      "content/lessons/bare-lesson.md": "---\ntype: lesson\ntitle: Bare lesson\ndescription: A lesson whose body carries two of the three sections its type asks for in this case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nseverity: info\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Lesson\n\nOne thing learned.\n\n## Evidence\n\nOne observation.\n",
+      "content/procedures/deep-procedure.md": "---\ntype: procedure\ntitle: Deep procedure\ndescription: A procedure whose three sections all sit at the third heading level of its body.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n### When\n\nAlways.\n\n### Steps\n\n1. Do it.\n\n### Checks\n\nIt is done.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-21"
+}

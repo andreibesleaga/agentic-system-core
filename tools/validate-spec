@@ -20,8 +20,15 @@
 //              does not immediately follow rule `<n>`; a trace tag naming a PRD/NFR
 //              id docs/PRD.md does not define; (warning) a registered code no rule
 //              names at all
-//   AGSC-E202  a MUST/SHOULD sentence with no rule id; a rule with no trace bracket
+//   AGSC-E202  a MUST/SHOULD sentence with no rule id — one in a table row or a
+//              paragraph outside every rule's block, even when it cites a rule id,
+//              since a cross-reference is not the sentence's own id; a rule with no
+//              trace bracket; a BCP 14 key word the text uses that the key-words
+//              sentence of spec/00 (the line naming BCP 14) does not list
 //   AGSC-E203  an error code used in spec/01-11 but absent from the §9.4 registry
+//   AGSC-E204  a dated amendment note not in the one form
+//              `*(Amended YYYY-MM-DD for <version>: <what changed>)*` (AGSC-00-16); a key
+//              word in a form BCP 14 does not define ("MUST not", "nor MUST", "MAY ALWAYS")
 //   AGSC-E901  a required input file is missing
 //
 // Carve-out (a), AGSC-09-91: a version literal on a line that is plainly a record of
@@ -46,7 +53,9 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..');
 const HELP = `validate-spec [--json] [--quiet] [--help] [<root>]
 
   Checks spec/*.md against AGSC-09-91: rule-id uniqueness and resolution, the
-  MUST/SHOULD grammar, trace-bracket presence, error-code closure against the
+  MUST/SHOULD grammar (every normative sentence inside a rule, the key words in
+  their BCP 14 forms and all listed in the key-words sentence), the one form of a
+  dated amendment note, trace-bracket presence, error-code closure against the
   section 9.4 registry, and version-literal agreement with the spec/00 declaration.
 
   --json    emit the AGSC-09-11 diagnostics envelope on stdout
@@ -67,8 +76,26 @@ const NORMATIVE = /(?<![\w-])(MUST NOT|MUST|SHOULD NOT|SHOULD|SHALL NOT|SHALL|RE
 const HISTORY_WORD = /(?<![\w-])(re-verified|at|since|amended|added|withdrawn|before|until|from|for|against|written)(?![\w-])/iu;
 /** AGSC-09-91 carve-out (a): a full `YYYY-MM-DD` date also marks a record of the past. */
 const HISTORY_DATE = /\d{4}-\d{2}-\d{2}/u;
+/** Every BCP 14 key word (RFC 8174), the two-word forms first so that `MUST NOT` is one word. */
+const KEY_WORD_G = /(?<![\w-])(MUST NOT|SHALL NOT|SHOULD NOT|NOT RECOMMENDED|MUST|SHALL|SHOULD|REQUIRED|RECOMMENDED|MAY|OPTIONAL)(?![\w-])/gu;
+/**
+ * A key word in a form BCP 14 does not define: a lower-case negation joined to it
+ * (`MUST not`, `nor MUST`) or a capital word that makes no key word of RFC 8174
+ * (`MAY ALWAYS`, `MAY NOT`, `NOT REQUIRED`). A capital word that is no key word and
+ * no adverb — an acronym such as `IRI MUST` — is not one.
+ */
+const MALFORMED_KEY_WORD_G = new RegExp([
+  '(?:MUST|SHALL|SHOULD|MAY) (?:not|never)',
+  '(?:not|nor|never) (?:MUST|SHALL|SHOULD|MAY|REQUIRED|RECOMMENDED|OPTIONAL)',
+  '(?:MUST|SHALL|SHOULD|MAY|REQUIRED|RECOMMENDED|OPTIONAL) (?:ALWAYS|NEVER|ONLY|ALSO)',
+  '(?:MAY|REQUIRED|RECOMMENDED|OPTIONAL) NOT',
+  'NOT (?:MUST|SHALL|SHOULD|MAY|REQUIRED|OPTIONAL)',
+].map((form) => `(?<![\\w-])${form}(?![\\w-])`).join('|'), 'gu');
+/** The opening of a dated amendment note, in any of the forms the text has used. */
+const NOTE_OPENING_G = /\*\(\s*(?:[A-Za-z]+\s+){0,2}?(?:amended|added)\b/giu;
+/** The one form of a dated amendment note (AGSC-00-16). */
+const NOTE_FORM = /^\*\(Amended \d{4}-\d{2}-\d{2} for \d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?: \S/u;
 const RULE_ID_G = /AGSC-\d{2}-\d{2,3}[a-z]?/gu;
-const RULE_ID = /AGSC-\d{2}-\d{2,3}[a-z]?/u;
 const RULE_BULLET = /^- \*\*(AGSC-\d{2}-\d{2,3}[a-z]?)\*\*/u;
 const CODE_G = /AGSC-E\d{3}/gu;
 /** The specification's own assigning constructions: `… is AGSC-Ennn`, `… are …`, `… → …`. */
@@ -159,6 +186,67 @@ function fencedLines(text) {
   return inside;
 }
 
+/**
+ * The dated amendment notes of one file that are not in the one form of AGSC-00-16,
+ * `*(Amended YYYY-MM-DD for <version>: <what changed>)*`: one date, one version, and
+ * the change stated after the colon — so that a search for the notes of a version
+ * finds every rule amended for it. An italic note that is no amendment (a rationale,
+ * a reserved or retired marker) is not a dated note and is not checked.
+ */
+function noteFindings(file, text) {
+  const findings = [];
+  text.split('\n').forEach((line, index) => {
+    for (const opening of line.matchAll(NOTE_OPENING_G)) {
+      const note = line.slice(opening.index);
+      if (NOTE_FORM.test(note)) continue;
+      findings.push(finding('AGSC-E204', file, index + 1,
+        `a dated note is not in the one form "*(Amended YYYY-MM-DD for <version>: <what changed>)*": `
+        + `"${note.slice(0, 48)}…" (AGSC-00-16, AGSC-09-91)`));
+    }
+  });
+  return findings;
+}
+
+/** The key words of one file written in a form BCP 14 does not define. */
+function keyWordFormFindings(file, text) {
+  const findings = [];
+  text.split('\n').forEach((line, index) => {
+    for (const bad of line.matchAll(MALFORMED_KEY_WORD_G)) {
+      findings.push(finding('AGSC-E204', file, index + 1,
+        `a key word in a form BCP 14 does not define: "${bad[0]}" — write MUST NOT, SHOULD NOT, SHALL NOT, `
+        + 'NOT RECOMMENDED or the plain key word (AGSC-09-91)'));
+    }
+  });
+  return findings;
+}
+
+/**
+ * Every BCP 14 key word the specification uses must be listed in its key-words
+ * sentence — the line of spec/00 that names BCP 14 — or a reader has no definition
+ * for it. One finding per unlisted key word, at its first use.
+ */
+function keyWordListFindings(specFiles, texts) {
+  const overview = (texts.get('00-overview.md') || '').split('\n');
+  const at = overview.findIndex((line) => /BCP\s?14/u.test(line));
+  const listed = new Set(at < 0 ? [] : overview[at].match(KEY_WORD_G));
+  const where = at < 0 ? ': spec/00-overview.md has no line naming BCP 14' : ` of spec/00-overview.md:${at + 1}`;
+  const uses = new Map();    // key word -> { count, file, line }
+  for (const name of specFiles) {
+    texts.get(name).split('\n').forEach((line, index) => {
+      if (name === '00-overview.md' && index === at) return;
+      for (const [word] of line.matchAll(KEY_WORD_G)) {
+        if (listed.has(word)) continue;
+        const use = uses.get(word) || { count: 0, file: `spec/${name}`, line: index + 1 };
+        use.count += 1;
+        uses.set(word, use);
+      }
+    });
+  }
+  return [...uses].map(([word, use]) => finding('AGSC-E202', use.file, use.line,
+    `the BCP 14 key word ${word} is not listed in the key-words sentence${where} `
+    + `(${use.count} use${use.count === 1 ? '' : 's'}, the first here) (AGSC-09-91)`));
+}
+
 function envelopeOf(findings, declared, version) {
   findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
     || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
@@ -244,7 +332,10 @@ function run(argv, io) {
     findings.push(finding('AGSC-E901', 'spec/09-conformance.md', 1,
       'the conformance section that carries the section 9.4 registry is missing (AGSC-09-91)'));
   }
-  const declared = ((texts.get('00-overview.md') || '').match(/\d+\.\d+\.\d+-rc\.\d+/u) || ['unknown'])[0];
+  // The declaration is the `spec_version: "<version>"` line, a release or a candidate, and
+  // never the first candidate literal of the file: a released overview still quotes the
+  // candidates before it as history (the pattern of `tools/count-artifacts`).
+  const declared = ((texts.get('00-overview.md') || '').match(/spec_version: "(\d+\.\d+\.\d+(?:-rc\.\d+)?)"/u) || [null, 'unknown'])[1];
   if (declared === 'unknown' && texts.has('00-overview.md')) {
     findings.push(finding('AGSC-E901', 'spec/00-overview.md', 1,
       'the overview declares no spec_version, so every version comparison below is vacuous'
@@ -363,7 +454,17 @@ function run(argv, io) {
     }
   }
 
+  // ---- the key words: their forms and the key-words sentence ---------------
+  findings.push(...keyWordListFindings(specFiles, texts));
+  for (const name of specFiles) {
+    findings.push(...keyWordFormFindings(`spec/${name}`, texts.get(name)));
+    findings.push(...noteFindings(`spec/${name}`, texts.get(name)));
+  }
+
   // ---- a MUST/SHOULD sentence with no rule id ------------------------------
+  // A sentence carries a rule id when it stands in that rule's block. A table row
+  // or a paragraph outside every block is a fault even when it cites a rule id: a
+  // cross-reference names another rule, not the sentence's own.
   for (const name of specFiles) {
     const file = `spec/${name}`;
     const text = texts.get(name);
@@ -375,12 +476,12 @@ function run(argv, io) {
     text.split('\n').forEach((line, index) => {
       const n = index + 1;
       if (fenced.has(n) || inRule.has(n)) return;
-      if (line.trim() === '' || /^#{1,6} /u.test(line) || /^\s*\|/u.test(line)) return;
+      if (line.trim() === '' || /^#{1,6} /u.test(line)) return;
       if (/BCP\s?14|RFC\s?2119|RFC\s?8174/u.test(line)) return;   // the key-word boilerplate
       if (!NORMATIVE.test(line)) return;
-      if (RULE_ID.test(line)) return;
       findings.push(finding('AGSC-E202', file, n,
-        'a normative sentence outside every rule carries no rule id (AGSC-09-91)'));
+        'a normative sentence outside every rule carries no rule id — fold it into a rule, '
+        + 'or write it without a key word (AGSC-09-91)'));
     });
   }
 
@@ -455,4 +556,7 @@ function run(argv, io) {
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { HELP, canonicalize, compareCodePoint, fencedLines, ruleBlocks, run, traceBracket };
+module.exports = {
+  HELP, canonicalize, compareCodePoint, fencedLines, keyWordFormFindings, keyWordListFindings, noteFindings,
+  ruleBlocks, run, traceBracket,
+};

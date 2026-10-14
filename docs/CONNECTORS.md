@@ -425,7 +425,14 @@ than `max_claims`, or a claim of a task another participant already holds in
 `TASK_STATE_WORKING` is `AGSC-E511`. The first merged claim wins: a second claim
 prepared against the old state no longer applies, and prepared again it is refused.
 The page cannot see a node's lanes (they are configuration, never published), so a
-page answers the same payload and the gates run at review.
+page answers the same payload and the gates run at review. An `agent` name that
+names none of the node's `agents[]` entries declares no lane, so the call runs no lane
+gate: the tool server prepares the Proposal as it would for any other contributor,
+and only the refusal of a claim on a task someone else already holds applies, as it
+does to every participant (AGSC-10-17); review is the gate for it (AGSC-08). This
+differs from `agsc refresh --agent`, which refuses such a name with `AGSC-E509`.
+Refusing it in the tool server as well would change what the server answers, so 1.0
+does not do it.
 
 Two nodes work one board when one is a clone of the other, or when a node's `peers[]`
 names the other: each agent prepares against its own copy and the person merges into
@@ -481,7 +488,7 @@ test: they need the framework installed. The record shapes they read are produce
 
 ## Checking a node in CI and before a commit
 
-- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@<tag-or-commit-sha>`
+- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@v1.0.0` (the package tag, or its full commit SHA)
   runs `agsc ci` with the engine at that ref. Give the job `contents: read` and check
   out with `fetch-depth: 0`. See the root `action.yml`.
 - **pre-commit:** the hook `agsc-lint` from `.pre-commit-hooks.yaml` runs `agsc lint`
@@ -516,7 +523,7 @@ or a served byte. `agsc-host list` prints every profile with its claim and its l
 | `cloudflare-pages` — the reference | `agsc build` | `_headers`, `_redirects` (already written by the build) | the header and redirect sets exactly as the rules state them | the host allows at most 100 header rules and 2,100 redirects per site |
 | `static-host` — nginx or Apache httpd | `agsc-host emit static-host` | `dist/hosts/static-host/nginx.conf` (to `include` in a `server {}` block) and `www/.htaccess` | the test suite parses both files and checks, route by route, that each sends exactly the reference headers; both were also run against nginx 1.31.3 and Apache httpd 2.4.58, where the discovery checker passed at Level 2 | the server must terminate HTTPS or sit behind something that does; the nginx file is regenerated after every build; Apache needs mod_headers, mod_alias and `AllowOverride All` |
 | `github-pages` | `agsc-host emit github-pages` | `www/.nojekyll`, and `dist/hosts/github-pages/headers.json` for the proxy in front | the header table equals the reference, route by route | GitHub Pages lets a site set no response header and no redirect, and serves the discovery document with a type derived from its (absent) extension: **no Level can be claimed for a bare Pages origin**; a proxy or CDN in front must set what `headers.json` lists |
-| `local` — a laptop, a device, an appliance | `agsc-host serve` | nothing | over loopback, the discovery checker passes the served node at Level 2, and every route carries the reference headers, the built bytes and a SHA-256 entity tag | plain HTTP: fine on `http://localhost`, the development origin the configuration admits; any other origin needs a TLS terminator in front; read-only, one machine, no `Date` header |
+| `local` — a laptop, a device, an appliance | `agsc-host serve` | nothing | over loopback, the discovery checker passes the served node at Level 2, and every route carries the reference headers, the built bytes and a SHA-256 entity tag | plain HTTP: fine on `http://localhost`, the development origin the configuration admits; any other origin needs a TLS terminator in front; read-only, one machine, no `Date` header; it answers only a `Host` that names `localhost`, a loopback address or the address it is bound to, and any other `Host` with 421 |
 | `git-clone` — the repository itself | `agsc build`, then `agsc-host serve` | nothing | the same as `local`, over a build of the clone; the ledger and content version come from the clone's own history | a forge's raw-file service is not a host: its URLs carry the owner, repository and ref before the path, so RFC 8615's well-known location is never at the top of an origin, and GitHub's raw service answers `text/plain` for every file |
 | `ipfs` — through an HTTP gateway | `agsc-host emit ipfs` | `www/_redirects` in the IPFS web-redirects grammar (the alias, plus `/* /404.html 404`), and `dist/hosts/ipfs/manifest.json` with every file's size and SHA-256 | the redirects file carries the reference redirect; the manifest lets anyone check that a gateway serves the built bytes | a gateway sniffs content types and takes no publisher headers, so the discovery document's media type needs a web interface in front; redirects work only on a subdomain or DNSLink gateway; every build is a new CID |
 | `ledger-anchor` | `agsc-host emit ledger-anchor`, and `agsc-host verify-anchor <anchor.json>` | `dist/hosts/ledger-anchor/anchor.json` (JCS-canonical) and `anchor.sha256` | the anchor holds the Bundle IRI, bundle hash, content version, ledger head, specification version, build instant and the discovery document's digest; `verify-anchor` tells whether a build is the anchored one (`AGSC-E210`, or `AGSC-E701` for the ledger head) | a ledger does not serve the node; recording the anchor (or `ots stamp anchor.json`) is the operator's own step, and nothing here reaches a chain |

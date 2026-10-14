@@ -350,6 +350,24 @@ function archiveBytes(files, options) {
 }
 
 /**
+ * The text without its trailing slashes, read back from the end in linear steps: what
+ * `shared/trailing.js#withoutTrailingSlashes` gives. It is restated here because of this
+ * module's portability contract: the compose page's script carries this function's own
+ * source text, which may name nothing the script does not declare.
+ * `tests/composition/archive-linear.test.js` compares the two on a seeded corpus.
+ *
+ * @param {string} text
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
+ * @returns {string}
+ */
+function withoutTrailingSlashes(text, meter) {
+  let end = text.length;
+  while (end > 0 && text.charCodeAt(end - 1) === 47) end -= 1;
+  if (meter !== undefined) meter.steps += text.length - end + 1;
+  return end === text.length ? text : text.slice(0, end);
+}
+
+/**
  * The archive's own file name: the directory the files were written into, the
  * CONTENT VERSION of the Bundle they came from (AGSC-04-25,
  * "the Harness archive name carries the content version"), and `.zip`.
@@ -362,10 +380,11 @@ function archiveBytes(files, options) {
  * @param {string} stem the path of the directory the files were written into, with
  *   no trailing slash — `dist/harness/<name>`, `dist/skills`, `dist/export/steer`.
  * @param {string} version the content version, or anything outside its grammar.
+ * @param {{steps:number}} [meter] counts the characters examined (linear-time tests).
  * @returns {string}
  */
-function archiveName(stem, version) {
-  const base = String(stem == null ? '' : stem).replace(/\/+$/u, '');
+function archiveName(stem, version, meter) {
+  const base = withoutTrailingSlashes(String(stem == null ? '' : stem), meter);
   const raw = String(version == null ? '' : version);
   const safe = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u.test(raw) ? raw : 'unversioned';
   return `${base}-${safe}.zip`;
@@ -376,7 +395,7 @@ function archiveName(stem, version) {
  * emits into the page bundle of AGSC-07-13.
  */
 const PORTABLE = Object.freeze(['utf8Bytes', 'crc32', 'dosTimestamp', 'archiveEntries',
-  'archiveViolations', 'zipArchive', 'archiveBytes', 'archiveName']);
+  'archiveViolations', 'zipArchive', 'archiveBytes', 'withoutTrailingSlashes', 'archiveName']);
 
 module.exports = {
   PORTABLE,
@@ -387,5 +406,6 @@ module.exports = {
   crc32,
   dosTimestamp,
   utf8Bytes,
+  withoutTrailingSlashes,
   zipArchive,
 };

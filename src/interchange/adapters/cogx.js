@@ -84,6 +84,7 @@ const { neutraliseSingleLine } = require('../mapping.js');
 const okf = require('../okf.js');
 const ownRecord = require('../own-record.js');
 const { isObject, itemText, lessonText, oneLine, plain } = require('../records.js');
+const { withoutTrailingSlashes } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'cogx';
@@ -341,7 +342,7 @@ function sortedJson(value) {
 function run(bundle, options) {
   const config = (bundle && bundle.config) || {};
   const site = config.site || {};
-  const base = `${String(site.base || '').replace(/\/+$/u, '')}/`;
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
   const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
   const header = provenanceLines({
     bundle: base,

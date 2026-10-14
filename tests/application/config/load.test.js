@@ -49,21 +49,47 @@ test('an unrecognised AGSC_ name is reported as AGSC-E004, never applied', () =>
   assert.ok(loaded.findings.some((f) => f.code === 'AGSC-E004'));
 });
 
-test('the four prose defaults schema/config.schema.json omits are still applied (AGSC-01-19, spec/06-surfaces.md, AGSC-01-18, AGSC-09-94)', () => {
+// AGSC-01-37: the message says where the name came from and what to do about it.
+// Until 2026-10-10 both layers said "unknown configuration override <NAME>", which
+// told a newcomer with a stray shell variable neither that it was one nor how to clear it.
+test('AGSC-01-37: an unknown AGSC_ name is named as an environment variable or a .env line, with the remedy', () => {
+  const fromEnv = load({ env: { AGSC_NO_SUCH_KEY: 'x' }, argvFlags: {} });
+  assert.deepEqual(fromEnv.findings, [{
+    code: 'AGSC-E004',
+    message: 'environment variable AGSC_NO_SUCH_KEY is not a configuration name this engine knows; unset it (AGSC-01-37)',
+    severity: 'error',
+  }]);
+  const fromFile = load({ dotenvText: 'AGSC_NO_SUCH_KEY=x\n', env: {}, argvFlags: {} });
+  assert.deepEqual(fromFile.findings, [{
+    code: 'AGSC-E004',
+    message: 'AGSC_NO_SUCH_KEY in the .env file is not a configuration name this engine knows; remove that line (AGSC-01-37)',
+    severity: 'error',
+  }]);
+});
+
+test('the three prose defaults schema/config.schema.json omits are still applied (AGSC-01-19, AGSC-01-18, AGSC-09-94)', () => {
   const loaded = load({ env: {}, argvFlags: {} });
   assert.equal(loaded.config.build.out, 'www');
-  assert.equal(loaded.config.build.feed, true); // spec/06-surfaces.md: "default true"
   assert.equal(loaded.config.i18n.default, 'en');
   assert.equal(loaded.config.run.enabled, false);
-  for (const p of ['build.out', 'build.feed', 'i18n.default', 'run.enabled']) {
+  for (const p of ['build.out', 'i18n.default', 'run.enabled']) {
     assert.equal(loaded.sources[p], 'default');
   }
 });
 
+// AGSC-00-20 / AGSC-06-01: `build.feed` is a name reserved to 1.1 that a 1.0 tool
+// refuses in a configuration file, and nothing at 1.0 reads it. Until 2026-10-10 the
+// loader still gave it the default `true`, citing a sentence the specification no
+// longer has.
+test('AGSC-00-20: the reserved name build.feed gets no default', () => {
+  const loaded = load({ env: {}, argvFlags: {} });
+  assert.equal(Object.prototype.hasOwnProperty.call(loaded.config.build, 'feed'), false);
+  assert.equal(loaded.sources['build.feed'], undefined);
+});
+
 test('a prose default yields to a project-config value at the same path', () => {
-  const loaded = load({ projectConfig: { build: { out: 'dist', feed: false } }, env: {}, argvFlags: {} });
+  const loaded = load({ projectConfig: { build: { out: 'dist' } }, env: {}, argvFlags: {} });
   assert.equal(loaded.config.build.out, 'dist');
-  assert.equal(loaded.config.build.feed, false);
   assert.equal(loaded.sources['build.out'], 'project');
 });
 

@@ -8,17 +8,29 @@
 // not derive. No expectation is weakened by it; every other vector states its base.
 //
 // AGSC-11-18 makes the MCP `extensions` capability MCP's own "map of extension
-// identifiers to per-extension settings objects". `bnd-0036` states the map, and this
-// handler compares the map the Boundary context returns and projects nothing.
+// identifiers to per-extension settings objects", and `bnd-0042` and `bnd-0036` pin
+// the capabilities object as the node reports it under the revision its transport
+// speaks. Their handlers therefore open a real stdio session with the tool server
+// (`agsc mcp` on a scratch copy of the fixture Bundle, its `site.base` set to the
+// case's) as a client of revision 2025-11-25, and compare the capabilities of the
+// `initialize` result; they project nothing. `ctx.mcpServer` may name another server
+// program to run in its place (the tests run a server that reports no map).
 // `bnd-0037`'s member `mcp_extensions` IS the list of identifiers advertised, which is
 // the map's key set; the settings object of each is pinned by AGSC-11-18 and asserted
-// by `bnd-0035`.
+// by `bnd-0042`. `bnd-0035`, withdrawn, stated members of revision 2026-07-28 that no
+// session of this transport can show; it has no handler, because a withdrawn case is
+// never run.
 
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const discovery = require('../../../src/distribution/discovery.js');
 const federation = require('../../../src/boundary/federation.js');
 const visibility = require('../../../src/boundary/visibility.js');
 const surfaces = require('../../../src/boundary/surfaces.js');
 const { checks, deepEqual, findingsMatch, subsetOf } = require('./_assert.js');
+const { guarded } = require('./_expected-reads.js');
 
 const DEFAULT_BASE = 'https://a.example/';
 
@@ -126,8 +138,12 @@ function runBnd0003(vector) {
   return checks([['results', deepEqual(vector.expected.results, results), JSON.stringify(results)]]);
 }
 
-/** bnd-0004 — AGSC-11-08: the closed IANA special-purpose list, both families. */
-function runBnd0004(vector) {
+/**
+ * bnd-0004, bnd-0040, bnd-0041 — AGSC-11-08: the closed IANA special-purpose list,
+ * both families; the IPv4-compatible and IPv4-mapped ranges refused whole in every
+ * textual form; `--dev` admitting the two loopback addresses and nothing else.
+ */
+function runAddressCase(vector) {
   const results = vector.input.resolved.map((entry) => ({
     code: federation.checkAddresses(entry.addresses, { dev: vector.input.dev }), host: entry.host,
   }));
@@ -172,35 +188,89 @@ function runBnd0030(vector) {
   return checks(list);
 }
 
+/** The MCP revision the reference transport speaks (AGSC-11-16), which this client requests. */
+const MCP_REVISION = '2025-11-25';
+/** 2026-01-01T00:00:00Z — the fixed instant of `tests/fixtures/minimal/README.md`. */
+const FIXTURE_EPOCH = '1767225600';
+
 /**
- * bnd-0035 — AGSC-11-18: the MCP extension's settings
- * object. The same object travels in `server/discover` and in the per-request
- * capabilities, there being no initialization handshake in revision 2026-07-28, so
- * the handler asks the Boundary context twice and compares.
+ * initializeResult(vector, ctx, client) -> { result, detail }
+ * One stdio session with the tool server: `initialize` as a client of
+ * `MCP_REVISION`, then `notifications/initialized`, then end of input, on which the
+ * server exits (AGSC-09-13). `result` is the `initialize` result, or null; `detail`
+ * says what came back when there is none.
  */
-function runBnd0035(vector) {
+function initializeResult(vector, ctx, client, revision = MCP_REVISION) {
+  const engine = path.resolve((ctx && ctx.root) || path.join(__dirname, '..', '..', '..'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-mcp-capabilities-'));
+  try {
+    fs.cpSync(path.join(engine, 'tests', 'fixtures', 'minimal'), root, { recursive: true });
+    const config = JSON.parse(fs.readFileSync(path.join(root, 'agsc.config.json'), 'utf8'));
+    config.site.base = baseOf(vector);
+    fs.writeFileSync(path.join(root, 'agsc.config.json'), `${JSON.stringify(config, null, 2)}\n`);
+    const frames = [
+      { id: 1, jsonrpc: '2.0', method: 'initialize',
+        params: { capabilities: {}, clientInfo: { name: client, version: '1.0.0' }, protocolVersion: revision } },
+      { jsonrpc: '2.0', method: 'notifications/initialized' },
+    ];
+    const program = (ctx && ctx.mcpServer) || [path.join(engine, 'bin', 'agsc.js'), 'mcp'];
+    const run = spawnSync(process.execPath, program, {
+      cwd: root,
+      encoding: 'utf8',
+      env: { NO_COLOR: '1', PATH: process.env.PATH, SOURCE_DATE_EPOCH: FIXTURE_EPOCH },
+      input: frames.map((f) => `${JSON.stringify(f)}\n`).join(''),
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    const answer = String(run.stdout || '').split('\n').filter((l) => l.trim() !== '')
+      .map((l) => JSON.parse(l)).find((m) => m.id === 1);
+    const result = answer && answer.result && typeof answer.result === 'object' ? answer.result : null;
+    return { detail: `exit ${run.status}; stdout ${String(run.stdout)}; stderr ${String(run.stderr)}`, result };
+  } finally {
+    fs.rmSync(root, { force: true, recursive: true });
+  }
+}
+
+/** The capabilities object of an `initialize` result, or `{}`. */
+function capabilitiesOf(session) {
+  const capabilities = session.result && session.result.capabilities;
+  return capabilities && typeof capabilities === 'object' ? capabilities : {};
+}
+
+/**
+ * bnd-0042 — AGSC-11-18: the MCP extension's settings object, as a real session
+ * reports it under the revision the case names (`input.mcp_revision`, 2025-11-25):
+ * once per session, in the `initialize` result. The handler opens one session per
+ * `input.sessions`, each with a different client, and holds the reported maps to the
+ * case: the first equals the stated map, and every session reports the same object.
+ * The settings object is also given to the check of AGSC-11-18 as reported, and once
+ * with a member added.
+ */
+function runBnd0042(vector, ctx) {
   const base = baseOf(vector);
-  const discover = plain(surfaces.mcpCapabilities({ base }));
-  const perRequest = plain(surfaces.mcpCapabilities({ base }));
-  const settings = discover.extensions[surfaces.MCP_EXTENSION_ID] || {};
+  const revision = vector.input.mcp_revision;
+  const count = Number.isInteger(vector.input.sessions) && vector.input.sessions >= 2 ? vector.input.sessions : 2;
+  const sessions = Array.from({ length: count }, (_, i) => initializeResult(vector, ctx, `conformance-${i + 1}`, revision));
+  const [first] = sessions;
+  const reports = sessions.map((session) => capabilitiesOf(session).extensions);
+  const reported = reports[0];
+  const settings = (reported && reported[surfaces.MCP_EXTENSION_ID]) || {};
   const extra = { ...settings, 'x-other': 1 };
   const withExtra = surfaces.checkMcpExtensions({ [surfaces.MCP_EXTENSION_ID]: extra }, { base });
-  const clean = surfaces.checkMcpExtensions(discover.extensions, { base });
+  const clean = surfaces.checkMcpExtensions(reported || {}, { base });
+  const same = reported !== undefined
+    && reports.every((one) => deepEqual(plain(reported), plain(one === undefined ? null : one)));
   return checks([
-    ['extensions', deepEqual(vector.expected.extensions, discover.extensions), JSON.stringify(discover.extensions)],
+    ['extensions', deepEqual(vector.expected.extensions, plain(reported === undefined ? null : reported)),
+      `the initialize result reports ${JSON.stringify(reported)} (${first.detail})`],
+    ['revision', Boolean(first.result) && first.result.protocolVersion === revision,
+      `the server did not negotiate ${revision}: ${first.detail}`],
     ['settings_members', deepEqual(vector.expected.settings_members, Object.keys(settings).sort()),
       JSON.stringify(Object.keys(settings))],
-    ['discover_and_per_request_identical',
-      (JSON.stringify(discover) === JSON.stringify(perRequest)) === vector.expected.discover_and_per_request_identical,
-      JSON.stringify(perRequest)],
-    ['the pinned object is accepted', clean.length === 0, JSON.stringify(plain(clean))],
+    ['every_session_reports_the_same_object', same === vector.expected.every_session_reports_the_same_object,
+      reports.map((one) => JSON.stringify(one)).join(' / ')],
+    ['the reported object is accepted', reported !== undefined && clean.length === 0, JSON.stringify(plain(clean))],
     ['additional_member_is', withExtra.length > 0 && withExtra.every((f) => f.code === vector.expected.additional_member_is),
       JSON.stringify(plain(withExtra))],
-    // AGSC-11-18: revision 2026-07-28 has no initialization handshake, which
-    // is WHY the two capability reports are the same object and not a negotiation.
-    ['initialization_handshake', vector.expected.initialization_handshake === false,
-      'revision 2026-07-28 establishes no session (AGSC-11-18)'],
-    ['observed', (vector.input.observed || []).length === 2, 'both capability reports must be observed'],
   ]);
 }
 
@@ -392,7 +462,7 @@ function runBnd0037(vector) {
     ['links', deepEqual(vector.expected.links, links), JSON.stringify(links)],
     // `mcp_extensions` is the list of extension IDENTIFIERS advertised. MCP's
     // `extensions` is a map of identifier to settings object (AGSC-11-18), so the
-    // identifiers are its keys; the settings object is pinned by bnd-0035 and
+    // identifiers are its keys; the settings object is pinned by bnd-0042 and
     // asserted there. See the note at the top.
     ['mcp_extensions', deepEqual(vector.expected.mcp_extensions, Object.keys(extensions).sort()),
       JSON.stringify(extensions)],
@@ -462,20 +532,27 @@ function runBnd0021(vector) {
 
 /**
  * bnd-0036 — AGSC-11-18: the floor in each surface's own vocabulary. The vector
- * states `capabilities.extensions`
- * as MCP's map of extension identifier to settings object, so the handler compares
- * the capabilities object the Boundary context returns and makes no projection of it.
- * `subsetOf` compares each named member with `deepEqual`, so `capabilities` — and the
- * map inside it — is pinned whole.
+ * states `capabilities.extensions` as MCP's map of extension identifier to settings
+ * object, under the key `server/discover`, the carrier of revision 2026-07-28. The
+ * reference transport speaks 2025-11-25, whose carrier is the `initialize` result
+ * (AGSC-11-18), so the handler compares the capabilities a real session reports
+ * there. Each member the case states inside `capabilities` is compared whole with
+ * `deepEqual`, so the map is pinned whole; the capabilities object also carries the
+ * core members `tools`, `resources` and `prompts` (AGSC-09-14b), which this case
+ * does not state.
  */
-function runBnd0036(vector) {
+function runBnd0036(vector, ctx) {
   const list = [];
   for (const [tool, expected] of Object.entries(vector.expected.webmcp)) {
     list.push([`webmcp.${tool}`, subsetOf(expected, surfaces.WEBMCP_ANNOTATIONS[tool]),
       JSON.stringify(surfaces.WEBMCP_ANNOTATIONS[tool])]);
   }
-  const discover = { capabilities: plain(surfaces.mcpCapabilities({ base: baseOf(vector) })) };
-  list.push(['mcp.server/discover', subsetOf(vector.expected.mcp['server/discover'], discover), JSON.stringify(discover)]);
+  const session = initializeResult(vector, ctx, 'conformance');
+  const capabilities = plain(capabilitiesOf(session));
+  const stated = vector.expected.mcp['server/discover'].capabilities;
+  list.push([`mcp.capabilities (the initialize result under ${MCP_REVISION})`,
+    Boolean(session.result) && session.result.protocolVersion === MCP_REVISION && subsetOf(stated, capabilities),
+    `${JSON.stringify(capabilities)} (${session.detail})`]);
   return checks(list);
 }
 
@@ -573,7 +650,7 @@ const HANDLERS = {
   'bnd-0001': runBnd0001,
   'bnd-0002': runBnd0002,
   'bnd-0003': runBnd0003,
-  'bnd-0004': runBnd0004,
+  'bnd-0004': runAddressCase,
   'bnd-0006': runBnd0006,
   'bnd-0007': runBnd0007,
   'bnd-0008': runBnd0008,
@@ -597,15 +674,20 @@ const HANDLERS = {
   'bnd-0032': runBnd0032,
   'bnd-0033': runBnd0033,
   'bnd-0034': runBnd0034,
-  'bnd-0035': runBnd0035,
   'bnd-0036': runBnd0036,
   'bnd-0037': runBnd0037,
   'bnd-0038': runBnd0038,
   'bnd-0039': runBnd0039,
+  'bnd-0040': runAddressCase,
+  'bnd-0041': runAddressCase,
+  'bnd-0042': runBnd0042,
+  'bnd-0043': runAddressCase,
 };
 
-module.exports.run = function run(vector) {
+// The handler is guarded (`_expected-reads.js`): a pass that left a member of
+// `expected` unread is a fail.
+module.exports.run = guarded(function run(vector, ctx) {
   const handler = HANDLERS[vector.id];
   if (!handler) return { status: 'fail', detail: `boundary.js has no handler for ${vector.id}` };
-  return handler(vector);
-};
+  return handler(vector, ctx);
+});
