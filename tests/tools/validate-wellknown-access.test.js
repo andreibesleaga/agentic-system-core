@@ -115,6 +115,80 @@ describe('validate-wellknown: the access link of a restricted node (AGSC-11-20)'
     assert.equal(code, 0);
   });
 
+  it('an access link with no agsc-access fails with one AGSC-E202 (AGSC-11-20, disc-0020)', async () => {
+    const doc = document({ access: [ACCESS] });
+    delete doc.linkset[0][`${REL}access`][0]['agsc-access'];
+    const { code, envelope } = await check(doc);
+    assert.equal(code, 1);
+    assert.deepEqual(envelope.findings.map((f) => [f.code, f.severity]), [['AGSC-E202', 'error']]);
+    // The Python checker words it the same.
+    assert.equal(envelope.findings[0].message, `rel#access ${ACCESS}: the access link of a restricted node carries agsc-access ["credential"] (AGSC-11-20)`);
+  });
+
+  it('an access link with another access class fails with one AGSC-E210', async () => {
+    let last;
+    for (const value of [['none'], ['consent'], ['credential', 'credential'], ['x-other']]) {
+      const doc = document({ access: [ACCESS] });
+      doc.linkset[0][`${REL}access`][0]['agsc-access'] = value;
+      const { code, envelope } = await check(doc);
+      assert.equal(code, 1, JSON.stringify(value));
+      assert.deepEqual(envelope.findings.map((f) => [f.code, f.severity]), [['AGSC-E210', 'error']], JSON.stringify(value));
+      last = envelope.findings[0].message;
+    }
+    assert.equal(last, `rel#access ${ACCESS}: the access link of a restricted node carries exactly agsc-access ["credential"]; this one carries ["x-other"] (AGSC-11-20)`);
+  });
+
+  it('a malformed agsc-access is AGSC-E201 alone and is not judged again', async () => {
+    for (const value of [[], 'credential', [1]]) {
+      const doc = document({ access: [ACCESS] });
+      doc.linkset[0][`${REL}access`][0]['agsc-access'] = value;
+      const { envelope } = await check(doc);
+      assert.deepEqual(envelope.findings.map((f) => f.code), ['AGSC-E201'], JSON.stringify(value));
+    }
+  });
+
+  it('every access link of a restricted node is asked its access class', async () => {
+    const doc = document({ access: [ACCESS, `${ACCESS}other/`] });
+    delete doc.linkset[0][`${REL}access`][1]['agsc-access'];
+    const { envelope } = await check(doc);
+    assert.deepEqual(envelope.findings.map((f) => f.code).sort(), ['AGSC-E202', 'AGSC-E210']);
+  });
+
+  it('a public node is not asked the access class of an access link', async () => {
+    const doc = document({ access: [ACCESS], visibility: 'public' });
+    delete doc.linkset[0][`${REL}access`][0]['agsc-access'];
+    const { code, envelope } = await check(doc);
+    assert.deepEqual(envelope.findings, []);
+    assert.equal(code, 0);
+  });
+
+  it('a restricted node keeps agsc-generated-at and agsc-spec-version at every Level', async () => {
+    for (const name of ['agsc-generated-at', 'agsc-spec-version']) {
+      for (const level of ['0', '1']) {
+        const doc = document({ access: [ACCESS] });
+        delete doc.linkset[0].describedby[0][name];
+        const { code, envelope } = await check(doc, level);
+        assert.equal(code, 1, `${name} level ${level}`);
+        assert.deepEqual(envelope.findings.map((f) => [f.code, f.severity]), [['AGSC-E202', 'error']], `${name} level ${level}`);
+        // The Python checker words it the same.
+        assert.equal(envelope.findings[0].message, `a restricted node carries "${name}" at every Level: it says only that the node exists and is current (AGSC-11-20)`);
+      }
+      // At Level 2 the absence is reported once, with the other Level-2 attributes.
+      const doc = document({ access: [ACCESS] });
+      delete doc.linkset[0].describedby[0][name];
+      const { envelope } = await check(doc, '2');
+      assert.deepEqual(envelope.findings.filter((f) => f.message.includes(name)).map((f) => f.code), ['AGSC-E202'], name);
+    }
+  });
+
+  it('a public Level-0 node is not asked agsc-generated-at or agsc-spec-version', async () => {
+    const doc = document({ visibility: 'public' });
+    assert.equal(doc.linkset[0].describedby[0]['agsc-generated-at'], undefined);
+    const { code, envelope } = await check(doc);
+    assert.deepEqual(envelope.findings, []);
+    assert.equal(code, 0);
+  });
+
   it('the shipped command reports the same as a real process, in text and in JSON', () => {
     const at = place(document());
     const text = spawnSync(process.execPath, [TOOL, at, '--level', '0'], { encoding: 'utf8' });

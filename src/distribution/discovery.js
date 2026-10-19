@@ -79,6 +79,8 @@ const LEVEL0_OMITTED = Object.freeze([
 const RESTRICTED_OMITTED = Object.freeze([
   'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-ledger-head',
 ]);
+/** AGSC-11-20: the two a `restricted` node carries at every Level, Level 0 included. */
+const RESTRICTED_KEPT = Object.freeze(['agsc-generated-at', 'agsc-spec-version']);
 /** RFC 8288 §3.4 / RFC 9264 §4.2.4: the members that are NOT target attributes. */
 const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title*', 'type']);
 
@@ -246,8 +248,10 @@ function linkset(config, options = {}) {
     'agsc-bundle-hash': full && !gated ? options.bundleHash : undefined,
     'agsc-bundle-version': full && !gated ? options.bundleVersion : undefined,
     'agsc-counts': full && !gated ? options.counts : undefined,
-    'agsc-generated-at': full ? options.generatedAt : undefined,
-    'agsc-spec-version': full ? options.specVersion : undefined,
+    // AGSC-11-20: a restricted node keeps these two at every Level — they say only
+    // that the node exists and is current; the Level-0 omission does not reach them.
+    'agsc-generated-at': full || gated ? options.generatedAt : undefined,
+    'agsc-spec-version': full || gated ? options.specVersion : undefined,
   };
   // AGSC-11-20: emitted only when the value is `restricted`.
   if (visibility === 'restricted') describedby['agsc-visibility'] = 'restricted';
@@ -405,6 +409,9 @@ function check(doc, options = {}) {
     // relation or an attribute this version does not define; it is ignored, with the
     // warning AGSC-E506 naming the newer version, and never fails the document.
     const declared = [].concat(((context.describedby || [])[0] || {})['agsc-spec-version'] || [])[0];
+    // AGSC-11-20: a restricted node keeps `agsc-generated-at` and `agsc-spec-version`
+    // at every Level, so the Level-0 omission of AGSC-06-08a does not reach them there.
+    const gatedAnchor = [].concat(((context.describedby || [])[0] || {})['agsc-visibility'] || []).map(String).includes('restricted');
     const newer = newerMinor(declared, options.specVersion == null ? OWN_SPEC_VERSION : options.specVersion);
     for (const relation of Object.keys(context)) {
       if (relation === 'anchor') continue;
@@ -433,7 +440,7 @@ function check(doc, options = {}) {
           if (!Array.isArray(one[name])) {
             fail('AGSC-E209', `target attribute "${name}" must be an array of strings (AGSC-06-08)`);
           }
-          if (level === 0 && LEVEL0_OMITTED.includes(name)) {
+          if (level === 0 && LEVEL0_OMITTED.includes(name) && !(gatedAnchor && RESTRICTED_KEPT.includes(name))) {
             fail('AGSC-E209', `a Level-0 document omits "${name}" (AGSC-06-08a)`);
           }
         }

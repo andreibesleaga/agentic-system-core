@@ -55,10 +55,15 @@ function digested(context) {
   return out.sort();
 }
 
-/** Write the derived restricted document with the given access links and run both checkers on it. */
-function checkBoth(world, accessLinks) {
+/**
+ * Write the derived restricted document with the given access links and run both
+ * checkers on it. Each link carries `agsc-access: ["credential"]`, as the engine's
+ * writer emits it (AGSC-11-20, case disc-0020), unless `change` alters the context.
+ */
+function checkBoth(world, accessLinks, change = () => {}) {
   const context = structuredClone(world.state.restricted);
-  if (accessLinks.length) context[`${REL}access`] = accessLinks.map((href) => ({ href }));
+  if (accessLinks.length) context[`${REL}access`] = accessLinks.map((href) => ({ 'agsc-access': ['credential'], href }));
+  change(context);
   world.write(`www${WELLKNOWN}`, `${canonical({ linkset: [context] })}\n`);
   const file = path.join(world.dir, 'www', ...WELLKNOWN.split('/').filter(Boolean));
   const node = world.tool('validate-wellknown', [file, '--level', '0', '--json']);
@@ -203,6 +208,38 @@ module.exports = [
     pattern: /^the document carries (two|exactly one) "…rel#access" links?$/u,
     run(world, how) {
       checkBoth(world, how === 'two' ? [ACCESS_PAGE, 'https://agenticsystemcore.com/access/other/'] : [ACCESS_PAGE]);
+    },
+  },
+  {
+    pattern: /^the document's one "…rel#access" link carries (no "agsc-access"|"agsc-access" "none")$/u,
+    run(world, how) {
+      checkBoth(world, [ACCESS_PAGE], (context) => {
+        const [link] = context[`${REL}access`];
+        if (how.startsWith('no')) delete link['agsc-access'];
+        else link['agsc-access'] = ['none'];
+      });
+    },
+  },
+  {
+    pattern: /^the document carries exactly one "…rel#access" link and no "(agsc-generated-at|agsc-spec-version)"$/u,
+    run(world, name) {
+      checkBoth(world, [ACCESS_PAGE], (context) => { delete anchorLink(context)[name]; });
+    },
+  },
+  {
+    pattern: /^both report the error "(AGSC-E\d{3})" for (the access class of the access link|"(agsc-generated-at|agsc-spec-version)", which a restricted node keeps at every Level), and nothing else$/u,
+    run(world, code, what, name) {
+      const lists = [];
+      for (const [checker, exit, out] of world.state.checks) {
+        assert.strictEqual(exit, 1, `${checker} passes it: ${out}`);
+        const { findings } = JSON.parse(out);
+        // The one finding names what is wrong: the access attribute, or the kept fact.
+        assert.deepStrictEqual(findings.map((f) => [f.code, f.severity]), [[code, 'error']], `${checker}: ${out}`);
+        assert.ok(findings[0].message.includes(name || 'agsc-access'), `${checker}: ${out}`);
+        lists.push(findings.map((f) => `${f.code} ${f.message}`));
+      }
+      // Parity (AGSC-09-93): the two checkers give the same verdict in the same words.
+      assert.deepStrictEqual(lists[0], lists[1]);
     },
   },
   {

@@ -48,6 +48,14 @@ Feature: Restricted publisher tells the world the node exists while its content 
     Then both report the error "AGSC-E210" for the repeated access link
     When the document carries exactly one "…rel#access" link
     Then both pass it
+    When the document's one "…rel#access" link carries no "agsc-access"
+    Then both report the error "AGSC-E202" for the access class of the access link, and nothing else
+    When the document's one "…rel#access" link carries "agsc-access" "none"
+    Then both report the error "AGSC-E210" for the access class of the access link, and nothing else
+    When the document carries exactly one "…rel#access" link and no "agsc-generated-at"
+    Then both report the error "AGSC-E202" for "agsc-generated-at", which a restricted node keeps at every Level, and nothing else
+    When the document carries exactly one "…rel#access" link and no "agsc-spec-version"
+    Then both report the error "AGSC-E202" for "agsc-spec-version", which a restricted node keeps at every Level, and nothing else
 
   @PRD-057 @agent @matrix-H17
   Scenario: An unauthenticated agent sees only the public view of a restricted node

@@ -635,7 +635,10 @@ and agents learn that it exists and where to ask for access, and nothing more
   discovery document, `/llms.txt` and `/graph.jsonld`, at Level 0. Both discovery
   checkers, `tools/validate-wellknown` and the Python checker, report a restricted node
   with no `…/rel#access` link as `AGSC-E202` and one with more than one as
-  `AGSC-E210`, at every Level (case `disc-0022`).
+  `AGSC-E210`, at every Level (case `disc-0022`). They also report an access link without
+  `agsc-access` as `AGSC-E202` and one with any value other than `credential` as
+  `AGSC-E210`, and, at Levels 0 and 1, a missing `agsc-generated-at` or
+  `agsc-spec-version` as `AGSC-E202`.
 
 ---
 
