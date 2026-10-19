@@ -195,10 +195,12 @@ changed, and there is no option to replace them. To bring an improved pack home:
 1. copy the pack's `SKILL.md` into the Bundle, for example as `incoming/SKILL.md`;
 2. move each procedure the pack holds out of `content/procedures/`, keeping the old files;
 3. run `agsc skills import incoming/SKILL.md`;
-4. compare each new file with the one you moved aside, and restore by hand what the
-   import does not carry: the `description`, the `when` line, the `date` and the `prov`
-   block (the import writes `origin: imported` and the operator of the run, and adds an
-   `x-skill-license` key you may remove).
+4. for each procedure, keep the file you moved aside as the base: its whole header stays
+   as it was (`description`, `when`, `date`, `prov`, every cluster, typed links such as
+   `requires`, licence keys), and copy into it only the improved title and body text from
+   the new file. The import rebuilds only the type, the title, one cluster, a new `prov`
+   (`origin: imported`, the operator of the run) and a pack-level `x-skill-license` key, so
+   the new file's header is not a replacement for the old one.
 
 Concepts in the pack are reported and not imported. A lossless round trip is planned for
 a later version.
