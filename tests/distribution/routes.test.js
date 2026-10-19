@@ -66,6 +66,29 @@ test('a restricted node keeps agsc-generated-at and agsc-spec-version at every L
     ['a Level-0 document omits "agsc-generated-at" (AGSC-06-08a)', 'a Level-0 document omits "agsc-spec-version" (AGSC-06-08a)']);
 });
 
+test('the check reads the anchor link by its /graph.jsonld target, not by position (AGSC-11-20, AGSC-06-35)', () => {
+  // A related describedby link merges into the anchor's relation and is ordered by
+  // href (AGSC-06-10), so one that sorts before the node's own /graph.jsonld comes first.
+  const facts = { counts: ['concepts=1'], generatedAt: '2026-01-01T00:00:00Z', specVersion: '1.0.0' };
+  const related = [{ rel: 'describedby', href: 'https://a.example/.well-known/void', type: 'text/turtle' }];
+  const restricted = { ...CONFIG, visibility: 'restricted', access: `${BASE}/access/`, related };
+  const digests = { '/graph.jsonld': discovery.digestOf('/graph.jsonld'), '/llms.txt': discovery.digestOf('/llms.txt') };
+  for (const level of [0, 1, 2]) {
+    const shut = discovery.linkset(restricted, { ...facts, digests, level });
+    const hrefs = shut.linkset[0].describedby.map((one) => one.href);
+    assert.deepStrictEqual(hrefs, ['https://a.example/.well-known/void', `${BASE}/graph.jsonld`], `level ${level}`);
+    assert.deepStrictEqual(discovery.check(shut, { level }), [], `level ${level}`);
+  }
+  // A public node with the same earlier-sorting link still has its Level-0 omission enforced.
+  const open = discovery.linkset({ ...CONFIG, related }, { ...facts, level: 2 });
+  for (const targets of Object.values(open.linkset[0])) if (Array.isArray(targets)) for (const t of targets) delete t.digest;
+  delete open.linkset[0][`${discovery.REL}ledger`];
+  const anchor = open.linkset[0].describedby.find((one) => one.href === `${BASE}/graph.jsonld`);
+  for (const name of ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts']) delete anchor[name];
+  assert.deepStrictEqual(discovery.check(open, { level: 0 }).map((f) => f.message).sort(),
+    ['a Level-0 document omits "agsc-generated-at" (AGSC-06-08a)', 'a Level-0 document omits "agsc-spec-version" (AGSC-06-08a)']);
+});
+
 test('a tombstoned peer is resolved, not mutual (AGSC-11-23, AGSC-10-12)', () => {
   const a = { url: discovery.wellknownUrl('https://a.example/'), level: 0,
     doc: discovery.linkset({ site: { base: 'https://a.example/' }, peers: [discovery.wellknownUrl('https://b.example/')] }, { level: 0 }) };

@@ -335,6 +335,18 @@ function linkset(config, options = {}) {
   return { linkset: [ordered] };
 }
 
+/**
+ * AGSC-06-08: the anchor's own `describedby` link, the one whose target is
+ * `/graph.jsonld` and that carries the bundle facts. Found by its target, as
+ * `tools/validate-wellknown` finds it, never by position: a related-system
+ * `describedby` link (AGSC-06-35) merges into the same relation and is ordered by
+ * href (AGSC-06-10), so it may come first.
+ */
+function anchorLinkOf(context) {
+  const describedby = Array.isArray(context.describedby) ? context.describedby : [];
+  return describedby.find((one) => one && typeof one.href === 'string' && /\/graph\.jsonld$/u.test(one.href));
+}
+
 /** The target attributes of one link object — everything that is not an RFC member. */
 function attributesOf(one) {
   return Object.keys(one).filter((k) => !LINK_MEMBERS.includes(k)).sort(compareCodePoint);
@@ -408,10 +420,11 @@ function check(doc, options = {}) {
     // AGSC-00-21 / AGSC-09-93: a document of a newer MINOR of this MAJOR may use a
     // relation or an attribute this version does not define; it is ignored, with the
     // warning AGSC-E506 naming the newer version, and never fails the document.
-    const declared = [].concat(((context.describedby || [])[0] || {})['agsc-spec-version'] || [])[0];
+    const anchorLink = anchorLinkOf(context) || {};
+    const declared = [].concat(anchorLink['agsc-spec-version'] || [])[0];
     // AGSC-11-20: a restricted node keeps `agsc-generated-at` and `agsc-spec-version`
     // at every Level, so the Level-0 omission of AGSC-06-08a does not reach them there.
-    const gatedAnchor = [].concat(((context.describedby || [])[0] || {})['agsc-visibility'] || []).map(String).includes('restricted');
+    const gatedAnchor = [].concat(anchorLink['agsc-visibility'] || []).map(String).includes('restricted');
     const newer = newerMinor(declared, options.specVersion == null ? OWN_SPEC_VERSION : options.specVersion);
     for (const relation of Object.keys(context)) {
       if (relation === 'anchor') continue;
@@ -448,7 +461,7 @@ function check(doc, options = {}) {
       }
     }
     if (level >= 2) {
-      const describedby = (context.describedby || [])[0];
+      const describedby = anchorLinkOf(context);
       const present = describedby === undefined ? [] : attributesOf(describedby);
       // AGSC-11-20: on a gated node the four content attributes are FORBIDDEN, not
       // required — the same document is valid with them absent and invalid with
@@ -496,7 +509,7 @@ function check(doc, options = {}) {
 /** AGSC-11-23: a node that stops publishing carries `agsc-tombstone` on its anchor. */
 function tombstoneOf(doc) {
   const context = ((doc || {}).linkset || [])[0] || {};
-  const describedby = (context.describedby || [])[0] || {};
+  const describedby = anchorLinkOf(context) || {};
   const value = describedby['agsc-tombstone'];
   return Array.isArray(value) ? value[0] : null;
 }
