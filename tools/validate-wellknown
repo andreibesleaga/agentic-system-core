@@ -22,8 +22,10 @@
 // AGSC-E204 for a malformed digest; AGSC-E209 for a relation outside AGSC-06-10/06-35;
 // AGSC-E210 for a declaration that disagrees with the node (a surface, an
 // `agsc-bundle-hash` that is not the digest of `graph.nq`, a restricted node's
-// content facts, gated digests or second `rel#access` link; a restricted node with no
-// `rel#access` link is AGSC-E202); AGSC-E506 (warning) for a relation or attribute
+// content facts, gated digests, second `rel#access` link or an `agsc-access` other
+// than `credential` on it; a restricted node with no `rel#access` link, an access
+// link with no `agsc-access`, or no `agsc-generated-at` or `agsc-spec-version` at
+// Level 0 or 1, is AGSC-E202); AGSC-E506 (warning) for a relation or attribute
 // of a newer MINOR, which is ignored (AGSC-00-21); AGSC-E601 for non-canonical
 // bytes at Level ≥ 2; AGSC-E901/E904/E905/E907 for I/O. A missing response header or
 // header value is AGSC-E202 and one the rules forbid is AGSC-E201.
@@ -63,6 +65,8 @@ const LEVEL2_ATTRS = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 
 // carry the commit count and the commit hash of the content branch) and the ledger
 // head are all content facts. Presence is AGSC-E210 (AGSC-09-93).
 const RESTRICTED_OMITTED = ['agsc-bundle-hash', 'agsc-bundle-version', 'agsc-counts', 'agsc-ledger-head'];
+// AGSC-11-20: the two a `restricted` node MUST still carry, at every Level.
+const RESTRICTED_KEPT = ['agsc-generated-at', 'agsc-spec-version'];
 // AGSC-04-25's grammar: one line, ASCII, safe unescaped in a link-set attribute.
 const VERSION_GRAMMAR = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/;
 const SURFACES = new Set(['llms-txt', 'chunks', 'mcp', 'webmcp', 'a2a-card', 'solid', 'responder']);
@@ -412,6 +416,15 @@ function checkGate(ctx, anchorLink, gated, level, F) {
     const where = 'a restricted node carries exactly one rel#access link, naming where a reader obtains credentials';
     if (access === undefined) F('AGSC-E202', `${where}; this one carries none (AGSC-11-20)`);
     else if (Array.isArray(access) && access.length > 1) F('AGSC-E210', `${where}; this one carries ${access.length} (AGSC-11-20)`);
+    // AGSC-11-20: the two facts that say only that the node exists and is current
+    // stay on a restricted node at every Level; the Level-0 omission of AGSC-06-08a
+    // does not reach them. At Level ≥ 2 their absence is already reported with the
+    // other Level-2 attributes (`checkTarget`), so only Levels 0 and 1 are judged here.
+    if (level < 2) {
+      for (const a of RESTRICTED_KEPT) {
+        if (anchorLink[a] === undefined) F('AGSC-E202', `a restricted node carries "${a}" at every Level: it says only that the node exists and is current (AGSC-11-20)`);
+      }
+    }
   } else if (level >= 2 && !(Array.isArray(ctx[REL + 'ledger']) && ctx[REL + 'ledger'].length)) {
     // AGSC-10-04 / AGSC-09-93: the derived ledger is part of Level 2, so a public
     // node claiming it publishes `/ledger.jsonl` and links it.
@@ -513,6 +526,20 @@ async function checkSurface(t, h, doc) {
 }
 
 /**
+ * AGSC-11-20: the access link of a restricted node carries the one-value target
+ * attribute `agsc-access` `credential` (case disc-0020). Its absence is AGSC-E202; any
+ * other value is AGSC-E210. A value that is not a non-empty array of strings is
+ * already AGSC-E201 (`checkAttributes`) and is not judged again here.
+ */
+function checkAccessTarget(t, F) {
+  const acc = t['agsc-access'];
+  if (acc === undefined) F('AGSC-E202', `rel#access ${t.href}: the access link of a restricted node carries agsc-access ["credential"] (AGSC-11-20)`);
+  else if (Array.isArray(acc) && acc.length && acc.every((s) => typeof s === 'string') && !(acc.length === 1 && acc[0] === 'credential')) {
+    F('AGSC-E210', `rel#access ${t.href}: the access link of a restricted node carries exactly agsc-access ["credential"]; this one carries ${JSON.stringify(acc)} (AGSC-11-20)`);
+  }
+}
+
+/**
  * One target of one relation (AGSC-06-08, AGSC-06-10, AGSC-06-35): its form, its order
  * after `prev`, its attributes, its digest and what its relation declares. Returns the
  * href the next target is ordered against.
@@ -535,6 +562,7 @@ async function checkTarget(t, prev, rel, ext, doc) {
   if (RELATED_ONLY.has(rel) && typeof t.type !== 'string') F('AGSC-E209', `related-system link ${rel} ${t.href} must carry type (AGSC-06-35)`);
   if (ext === 'peer') result.peers.push(t.href);
   if (ext === 'surface') await checkSurface(t, h, doc);
+  if (ext === 'access' && gated) checkAccessTarget(t, F);
   return t.href;
 }
 

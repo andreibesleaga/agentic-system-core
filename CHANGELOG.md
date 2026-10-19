@@ -11,6 +11,21 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `tools/validate-wellknown` now asks a restricted node for everything AGSC-11-20
+  already requires of it: the `…/rel#access` link carries `agsc-access` `credential`
+  (missing is `AGSC-E202`, another value `AGSC-E210`), and `agsc-generated-at` and
+  `agsc-spec-version` are present at Levels 0 and 1 (missing is `AGSC-E202`; Level 2
+  and above already reported them).
+- The build's own discovery check finds the node's anchor link by its `/graph.jsonld`
+  target rather than by its position, so a related `describedby` link that sorts first
+  no longer breaks a restricted build. The Python checker makes the same checks with the
+  same codes and words.
+- A restricted node built at Level 0 or 1 now carries `agsc-generated-at` and
+  `agsc-spec-version`, as AGSC-11-20 requires at every Level, and the build's own check
+  accepts them there. A public node's output is unchanged.
+
 ## [1.0.0] - 2026-10-14
 
 ### Upgrading from 1.0.0-rc.7

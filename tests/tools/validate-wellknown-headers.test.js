@@ -196,7 +196,7 @@ it('AGSC-11-20: a restricted node is asked the cross-origin pair on its document
         anchor: `${at}/`,
         describedby: [{ 'agsc-generated-at': ['2026-01-01T00:00:00Z'], 'agsc-spec-version': ['1.0.0'],
           'agsc-visibility': ['restricted'], digest: [digest(graph)], href: `${at}/graph.jsonld`, type: 'application/ld+json' }],
-        'https://w3id.org/agentic-system-core/rel#access': [{ href: `${at}/access/`, type: 'text/html' }],
+        'https://w3id.org/agentic-system-core/rel#access': [{ 'agsc-access': ['credential'], href: `${at}/access/`, type: 'text/html' }],
       };
       res.writeHead(200, { 'cache-control': 'no-cache', etag: '"d"',
         'content-type': 'application/linkset+json; profile="https://w3id.org/agentic-system-core/profile/agentic-knowledge"',
