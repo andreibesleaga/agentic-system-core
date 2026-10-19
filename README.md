@@ -1,6 +1,6 @@
 # Agentic System Core
 
-A specification for publishing machine-discoverable knowledge bundles — the [Agentic Knowledge Web](https://agenticknowledgeweb.com).
+A specification for publishing machine-discoverable knowledge bundles — the Agentic Knowledge Web.
 
 What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the nine independent checkers of AGSC-09-90 — seven validators and two generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
