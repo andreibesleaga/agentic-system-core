@@ -639,6 +639,11 @@ and agents learn that it exists and where to ask for access, and nothing more
   `agsc-access` as `AGSC-E202` and one with any value other than `credential` as
   `AGSC-E210`, and, at Levels 0 and 1, a missing `agsc-generated-at` or
   `agsc-spec-version` as `AGSC-E202`.
+- **Known gap at 1.0.0.** The reference engine still writes the content version, which
+  carries the commit count and a commit hash, into `/llms.txt` (the line
+  `bundle_version:`) and into the NOW page (`content version …`) of a restricted node,
+  and `/llms.txt` is part of the unauthenticated view; leaving it out on a restricted
+  node is planned for 1.1.
 
 ---
 

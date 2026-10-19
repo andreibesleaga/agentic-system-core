@@ -8,8 +8,9 @@ anyone curious about the opt-in `run` verb.
 the selection requires, refuses items that exclude each other, warns about
 contradictions) and writes a **Harness**: seven kinds of file — agent instructions
 (`AGENTS.md`), a C4 model (`workspace.dsl`), a Mermaid diagram, an arc42 skeleton, one
-decision record per selected item, one skill file per selected procedure, and a JSON-LD
-record of it all — plus a zip archive. It is a starting point, not a running system: no
+decision record per selected item, one skill file per selected procedure, and a record
+of it all, `harness.jsonld`, in canonical JSON (JCS; despite its name, not an RDF JSON-LD
+document) — plus a zip archive. It is a starting point, not a running system: no
 rendering for a particular runtime ships, and `agsc run` lists a procedure's steps but
 executes nothing without an isolating runner.
 
@@ -117,7 +118,7 @@ lint: pass (0 error, 1 warn)
 
 ```bash demo
 agsc compose retry-with-backoff smoke-test --zip
-find dist/harness -type f | sed 's|^dist/harness/[^/]*/||' | sort
+find dist/harness -mindepth 2 -type f | sed 's|^dist/harness/[^/]*/||' | sort
 ```
 
 ```text expect
@@ -193,7 +194,10 @@ The run record is a JSON object: who ran it (`actor`), the `outcome`, when it `s
 (here the time of the last commit stands in for "just now", because the NOW page counts
 a run's spend in the month it started), a `title`, and what it used. Unlike the other
 verbs, `trace` writes straight into `content/episodes/`; read the file before you commit
-it.
+it. `trace` works only with `run.enabled` set, as in step 3. The Episode it writes has no
+`## What happened`, `## Outcome` and `## Next` sections yet, so `agsc lint` warns three times
+with `AGSC-E406`, once for each section, until you add them, and once with `AGSC-E305`
+until a cluster or another item links to it.
 
 ## What next
 

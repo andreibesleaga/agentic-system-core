@@ -50,6 +50,11 @@ build: pass (0 error, 2 warn)
 link of the discovery document is written for that address, and a checker that fetches
 the document from another address refuses it (see [When it says no](#when-it-says-no)).
 
+Run `agsc ci` before every publish, not `agsc build` alone. At 1.0.0 `build` passes a
+typed link whose target does not exist and leaves that link out of the graph, while
+`lint` and `ci` refuse it with `AGSC-E301`; `build` refuses only a broken link in the
+text of a note (`AGSC-E310`).
+
 ## 2. Check the build as a reader will
 
 Before anything leaves your machine, run the shipped checker on the discovery document
@@ -82,7 +87,13 @@ cloudflare-pages — Cloudflare Pages, the reference
 static-host — Any web server: nginx or Apache httpd
 github-pages — GitHub Pages, with a proxy in front for the headers
 local — The node's own machine or device (agsc-host serve)
+git-clone — A clone of the node's repository
+ipfs — IPFS through an HTTP gateway
+ledger-anchor — A ledger-anchored record of each build
 ```
+
+Under each profile, its `claim:` and `limit:` lines are left out here. The list ends with
+`solid`, a declaration only at 1.0.0, with no host settings to write.
 
 Read the limits of the one you choose before you upload. For example, GitHub Pages lets
 no site set a response header, so a node there needs a proxy in front that sets them, or

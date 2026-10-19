@@ -149,7 +149,10 @@ reads first.
 ## 4. Change a note — as a proposal
 
 Give `hydration` a description. A note's header is plain YAML between two `---` lines;
-this is the whole file after the edit:
+this is the whole file after the edit. Before you copy it: the block writes
+`operator: human:unknown`, which is what `init` writes when git has no e-mail. In your
+own notes, add only the `description:` line and keep the `operator:` line `init` wrote,
+so that your real id is not overwritten:
 
 ```bash demo
 cat > content/concepts/hydration.md <<'NOTE'
@@ -182,8 +185,7 @@ run: open a pull request with the body of dist/proposal/1.md
 propose: pass (0 error, 0 warn)
 ```
 
-(In your own notes, keep the `operator:` line `init` wrote; `human:unknown` is what it
-writes when git has no e-mail.) `propose` compares your edit with the last commit and writes a patch and a pull-request
+`propose` compares your edit with the last commit and writes a patch and a pull-request
 text; it runs nothing. You run the lines it printed (with a commit message of your own):
 
 ```bash demo

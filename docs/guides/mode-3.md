@@ -181,9 +181,29 @@ import: 1 written, 0 replaced, 0 unchanged
 
 `--list` shows what would come in and under which licence, and writes nothing. The
 imported file keeps its own licence (`x-skills-license`) and is marked
-`origin: imported`; read it before you commit it. A pack this format emitted goes back
+`origin: imported`; read it before you commit it. Its title is the skill's name
+(`plain-notes`), and until you give it `## When`, `## Steps` and `## Checks` sections,
+`agsc lint` warns three times with `AGSC-E406`. A pack this format emitted goes back
 into its items with `agsc skills import <file>`
 ([DEMOS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/DEMOS.md#mode-3--the-evolving-skills-library) shows it).
+
+At 1.0.0 that works into another Bundle, or for a procedure the Bundle does not hold yet.
+Into the pack's own Bundle the import is refused with `AGSC-E206` (`… already exists with
+other bytes`) for every procedure the Bundle already holds, even when the pack has not
+changed, and there is no option to replace them. To bring an improved pack home:
+
+1. copy the pack's `SKILL.md` into the Bundle, for example as `incoming/SKILL.md`;
+2. move each procedure the pack holds out of `content/procedures/`, keeping the old files;
+3. run `agsc skills import incoming/SKILL.md`;
+4. for each procedure, keep the file you moved aside as the base: its whole header stays
+   as it was (`description`, `when`, `date`, `prov`, every cluster, typed links such as
+   `requires`, licence keys), and copy into it only the improved title and body text from
+   the new file. The import rebuilds only the type, the title, one cluster, a new `prov`
+   (`origin: imported`, the operator of the run) and a pack-level `x-skill-license` key, so
+   the new file's header is not a replacement for the old one.
+
+Concepts in the pack are reported and not imported. A lossless round trip is planned for
+a later version.
 
 ## What next
 

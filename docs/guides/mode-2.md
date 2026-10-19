@@ -37,10 +37,15 @@ Six files, one per thing. Each is a header between `---` lines and a short Markd
 | File | `type` / `kind` | What makes it that thing |
 |---|---|---|
 | `content/clusters/<board>.md` | `type: cluster` | a group of items; the tasks in it form a board |
-| `content/concepts/<name>.md` | `kind: decision` | a `## Decision` section |
-| `content/concepts/<name>.md` | `kind: spec` | a `## Specification` section; `implements:` the decision |
+| `content/concepts/<name>.md` | `kind: decision` | by convention, a `## Decision` section |
+| `content/concepts/<name>.md` | `kind: spec` | by convention, a `## Specification` section; `implements:` the decision |
 | `content/concepts/<name>.md` | `kind: task` | `task_state:` — `TASK_STATE_` followed by `SUBMITTED` (new), `WORKING`, `INPUT_REQUIRED`, `AUTH_REQUIRED`, `COMPLETED`, `FAILED`, `CANCELED` or `REJECTED`; `clusters:` names its board; `blocked-by:` other tasks |
-| `content/gates/<name>.md` | `type: gate` | `level:` `L1` (schema and links) or `L2` (adds provenance, determinism, review); `checks:`; `enforce:` (`status-check`, `ruleset`, `hook`, `codeowner`) |
+| `content/gates/<name>.md` | `type: gate` | `level:` `L1` (schema and links) or `L2` (adds provenance, determinism, review); `checks:`, when given, exactly the set the level implies (AGSC-02-18); `enforce:` (`status-check`, `ruleset`, `hook`, `codeowner`) |
+
+Nothing checks the `## Decision` and `## Specification` sections; they are the
+convention readers and the pages expect. At 1.0.0 `lint` does not yet report a gate
+whose `checks:` differ from its level, so keep the two in step by hand, or leave
+`checks:` out.
 
 The board and the decision:
 
@@ -161,6 +166,8 @@ level: L2
 checks:
   - schema
   - links
+  - provenance
+  - determinism
   - review
 enforce:
   - status-check
@@ -208,15 +215,20 @@ node -e 'console.log(JSON.stringify(require("./dist/forge/ruleset.json").rules.r
 
 ```text expect
 ci: pass (0 error, 1 warn)
-["links","review","schema"]
+["determinism","links","provenance","review","schema"]
 ["agsc ci"]
 ```
 
 `dist/forge/status-checks.json` lists the gate's checks; `dist/forge/ruleset.json`
 requires one status, `agsc ci`, because that is the one job a forge runs and its verdict
 (`dist/gate.json`) covers every check. On GitHub, the action in the root
-[README](../../README.md#connecting-agents-and-repositories) runs that job; you apply the
-ruleset in the repository's settings.
+[README](../../README.md#connecting-agents-and-repositories) runs that job.
+`dist/forge/ruleset.json` is a description of the rule, not the shape GitHub's ruleset
+import takes: transcribe it by hand, as a branch ruleset in the repository's settings
+that requires the status check `agsc ci`. `agsc ci` does not enforce the check
+`review`; it means turning on the forge's own required review, on GitHub the rule
+"Require a pull request before merging" with at least one required approval, in the
+same ruleset.
 
 ## 3. One steering file for every assistant
 
@@ -233,6 +245,8 @@ export --steer: 3 targets (agents, claude, cursor), identical bytes at each path
 Copy `dist/export/steer/AGENTS.md`, `CLAUDE.md` and `.cursor/rules/agsc.mdc` into the
 repository the assistants work in. The file states the current state of the project and
 quotes the items as data, not as instructions; run the command again after a change.
+At 1.0.0 the Cursor rule carries no front matter (it is planned for 1.1, AGSC-01-28),
+so Cursor may not apply it to every chat on its own; mention the rule where you need it.
 
 ## 4. The board
 
@@ -249,7 +263,8 @@ task-login-tests TASK_STATE_SUBMITTED blocked by: task-login-form
 ```
 
 The same board is a page at `/boards/login/`; each task, the decision and the gate have
-their own pages with their state, level, checks and links. To move a task, change its
+their own pages with their state, level, checks and the links each one declares; at
+1.0.0 a page does not list the links other items make to it. To move a task, change its
 `task_state:` and commit; with agents claiming tasks, the board becomes a live board:
 [Mode 5](mode-5.md). A board from GitHub, GitLab, Jira, Trello, Linear and other tools
 comes in with `agsc import --from board --format <name> <folder>`
