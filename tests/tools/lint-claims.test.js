@@ -57,6 +57,28 @@ describe('tools/lint-claims — wording', () => {
     assert.deepEqual(json.findings.map((f) => f.line), [3]);
   });
 
+  it('reads the text beside a marker, and a region that opens and closes on one line', () => {
+    const dir = writeTree(tmpdir(), {
+      'inline.md': [
+        'Run it first. <!-- claims:start -->C2 beats C0.<!-- claims:end --> The first step.',
+        '<!-- claims:start -->',
+        'C2 wins. <!-- claims:end --> unique ids, first of all.',
+      ].join('\n'),
+    });
+    const { code, json } = envelope('lint-claims', [path.join(dir, 'inline.md')]);
+    assert.equal(code, 1);
+    // "beats" at its column on line 1, "wins" on line 3; nothing outside a region.
+    assert.deepEqual(json.findings.map((f) => [f.line, f.col, f.message.slice(0, 9)]),
+      [[1, 39, '"beat(s)"'], [3, 4, '"win(s)" ']]);
+  });
+
+  it('catches a hundred per cent written with zero decimals', () => {
+    const forms = ['100.0', '%', '100.00%'];
+    const dir = writeTree(tmpdir(), { 'p.md': `${forms[0]} ${forms[1]} and ${forms[2]}, but not 100.5 %\n` });
+    const { json } = envelope('lint-claims', [path.join(dir, 'p.md')]);
+    assert.deepEqual(json.findings.map((f) => f.col), [1, 13]);
+  });
+
   it('reports a claims region that is never closed', () => {
     const dir = writeTree(tmpdir(), { 'open.md': 'intro\n<!-- claims:start -->\nmeasured 0.5\n' });
     const { code, json } = envelope('lint-claims', [path.join(dir, 'open.md')]);

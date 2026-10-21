@@ -307,7 +307,9 @@ function bootstrapCI(values, options = {}) {
  * @param {number[]} b the other condition, the same tasks in the same order
  * @param {{resamples?:number, seed?:number}} [options]
  * @returns {{exact:boolean, mean_difference:number, n:number, p:number}|null}
- *   null when the lists are empty or of different lengths.
+ *   null when the lists are empty or of different lengths. `p` is unrounded, so a
+ *   small probability is never shown as 0 and Holm's correction gets it whole;
+ *   round it only for display.
  */
 function pairedPermutationTest(a, b, options = {}) {
   if (!Array.isArray(a) || !Array.isArray(b) || a.length === 0 || a.length !== b.length) return null;
@@ -316,8 +318,10 @@ function pairedPermutationTest(a, b, options = {}) {
   const n = diffs.length;
   const sum = diffs.reduce((acc, d) => acc + d, 0);
   // A tolerance, so a permuted sum equal to the observed one in exact arithmetic
-  // is never lost to a floating-point last digit.
-  const observed = Math.abs(sum) - 1e-9;
+  // is never lost to a floating-point last digit. It scales with the differences
+  // themselves, so the test reads the same in any unit.
+  const scale = diffs.reduce((acc, d) => acc + Math.abs(d), 0);
+  const observed = Math.abs(sum) - 1e-12 * scale;
   const flippedSum = (pattern) => diffs.reduce((acc, d, i) => acc + (pattern(i) ? -d : d), 0);
   let hits = 0;
   if (n <= 16) {
@@ -325,19 +329,20 @@ function pairedPermutationTest(a, b, options = {}) {
     for (let mask = 0; mask < patterns; mask += 1) {
       if (Math.abs(flippedSum((i) => (mask >> i) & 1)) >= observed) hits += 1;
     }
-    return { exact: true, mean_difference: round4(sum / n), n, p: round4(hits / patterns) };
+    return { exact: true, mean_difference: round4(sum / n), n, p: hits / patterns };
   }
   const next = seeded(seed);
   for (let r = 0; r < resamples; r += 1) {
     if (Math.abs(flippedSum(() => next() < 0.5)) >= observed) hits += 1;
   }
-  return { exact: false, mean_difference: round4(sum / n), n, p: round4((hits + 1) / (resamples + 1)) };
+  return { exact: false, mean_difference: round4(sum / n), n, p: (hits + 1) / (resamples + 1) };
 }
 
 /**
  * Holm's step-down correction for a family of p values.
  * @param {number[]} pValues
- * @returns {number[]} the adjusted p values, in the order given, each at most 1.
+ * @returns {number[]} the adjusted p values, in the order given, each at most 1,
+ *   unrounded: rounding could carry a value across a significance threshold.
  */
 function holm(pValues) {
   const m = pValues.length;
@@ -346,7 +351,7 @@ function holm(pValues) {
   let running = 0;
   order.forEach(([p, index], rank) => {
     running = Math.max(running, Math.min(1, (m - rank) * p));
-    adjusted[index] = round4(running);
+    adjusted[index] = running;
   });
   return adjusted;
 }

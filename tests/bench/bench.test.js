@@ -156,6 +156,15 @@ describe('bench/metrics.js — the agent-side statistics', () => {
     assert.equal(metrics.pairedPermutationTest([1, 1, 1, 1, 1], [2, 2, 2, 2, 2]).p, 0.0625);
   });
 
+  it('pairedPermutationTest reads the same in any unit and keeps a small p whole', () => {
+    // Differences of 1e-10 are as decisive as differences of 1.
+    const tiny = metrics.pairedPermutationTest([1e-10, 1e-10, 1e-10, 1e-10, 1e-10], [0, 0, 0, 0, 0]);
+    assert.equal(tiny.p, 0.0625);
+    // Sixteen equal differences: exactly 2 of 65,536 patterns, never rounded to 0.
+    const sixteen = Array.from({ length: 16 }, () => 1);
+    assert.equal(metrics.pairedPermutationTest(sixteen, sixteen.map(() => 0)).p, 2 / 65536);
+  });
+
   it('pairedPermutationTest resamples above 16 pairs, reproducibly, and never reports 0', () => {
     const a = Array.from({ length: 20 }, () => 1);
     const b = Array.from({ length: 20 }, () => 0);
@@ -174,9 +183,12 @@ describe('bench/metrics.js — the agent-side statistics', () => {
 
   it('holm adjusts step-down, keeps the given order, stays monotone and caps at 1', () => {
     // Sorted: 0.01×3 = 0.03; 0.03×2 = 0.06; 0.04×1 = 0.04, raised to 0.06.
-    assert.deepEqual(metrics.holm([0.01, 0.04, 0.03]), [0.03, 0.06, 0.06]);
+    const adjusted = metrics.holm([0.01, 0.04, 0.03]);
+    [0.03, 0.06, 0.06].forEach((want, i) => assert.ok(Math.abs(adjusted[i] - want) < 1e-12, `${adjusted}`));
     assert.deepEqual(metrics.holm([0.5, 0.6]), [1, 1]);
     assert.deepEqual(metrics.holm([]), []);
+    // Unrounded: a family of one keeps its p, which must not drift to the threshold.
+    assert.deepEqual(metrics.holm([0.05004]), [0.05004]);
   });
 
   it('cliffsDelta counts dominance over every pair', () => {

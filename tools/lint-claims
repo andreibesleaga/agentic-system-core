@@ -6,11 +6,11 @@
 //   lint-claims [--json] [--results <file>]... [--help] <file>...
 //
 // Text files (Markdown, HTML, plain text). Only the claims regions are read when
-// a file marks any — the lines between `<!-- claims:start -->` and
-// `<!-- claims:end -->` — so a README is held to the rule where it reports
+// a file marks any — the text between `<!-- claims:start -->` and
+// `<!-- claims:end -->`, on one line or across many — so a README is held to the rule where it reports
 // results and nowhere else; a file with no marker is read whole. In what is read,
 // each of these words is a finding (AGSC-E405): "first", "unique", a hundred per
-// cent written as a number, "#1", "SOTA", "beat(s)", "win(s)".
+// cent written as a number (with or without zero decimals), "#1", "SOTA", "beat(s)", "win(s)".
 //
 // Results files (JSON, `{ "rows": [...] }`). Every row must name its `model`, its
 // `date` (YYYY-MM-DD), its sample size `n` (a positive integer), its `metric`, its
@@ -47,7 +47,7 @@ const END = '<!-- claims:end -->';
 const WORDING = [
   ['"first"', /\bfirst\b/giu],
   ['"unique"', /\bunique\b/giu],
-  ['a hundred per cent', /(?<![\w.])100\s?%/gu],
+  ['a hundred per cent', /(?<![\w.])100(?:\.0+)?\s?%/gu],
   ['"#1"', /#1\b/gu],
   ['"SOTA"', /\bSOTA\b/giu],
   ['"beat(s)"', /\bbeats?\b/giu],
@@ -61,32 +61,41 @@ function finding(code, file, line, col, message) {
 }
 
 /**
- * The lines of `text` that are read, as [lineNumber, line] pairs, plus a finding
- * for a claims region that is opened and never closed.
+ * The text of `text` that is read, as [lineNumber, column offset, text] segments,
+ * plus a finding for a claims region that is opened and never closed. Markers are
+ * taken in order, so a region may open and close on one line, and the text beside
+ * a marker on its own line is read with its original columns.
  */
-function readLines(file, text) {
+function readSegments(file, text) {
   const lines = text.split('\n');
-  if (!lines.some((l) => l.includes(START))) return { findings: [], lines: lines.map((l, i) => [i + 1, l]) };
-  const kept = [];
+  if (!text.includes(START)) return { findings: [], segments: lines.map((l, i) => [i + 1, 0, l]) };
+  const segments = [];
   let openedAt = 0;
   lines.forEach((line, i) => {
-    if (line.includes(START)) openedAt = i + 1;
-    else if (line.includes(END)) openedAt = 0;
-    else if (openedAt > 0) kept.push([i + 1, line]);
+    let at = 0;
+    for (;;) {
+      const marker = openedAt > 0 ? END : START;
+      const next = line.indexOf(marker, at);
+      const stop = next === -1 ? line.length : next;
+      if (openedAt > 0 && stop > at) segments.push([i + 1, at, line.slice(at, stop)]);
+      if (next === -1) break;
+      openedAt = openedAt > 0 ? 0 : i + 1;
+      at = next + marker.length;
+    }
   });
   const findings = openedAt > 0
     ? [finding('AGSC-E202', file, openedAt, 1, `the claims region opened here has no ${END}`)]
     : [];
-  return { findings, lines: kept };
+  return { findings, segments };
 }
 
 /** Forbidden wording in one text file. */
 function lintText(file, text) {
-  const { findings, lines } = readLines(file, text);
-  for (const [number, line] of lines) {
+  const { findings, segments } = readSegments(file, text);
+  for (const [number, offset, segment] of segments) {
     for (const [label, pattern] of WORDING) {
-      for (const match of line.matchAll(pattern)) {
-        findings.push(finding('AGSC-E405', file, number, match.index + 1,
+      for (const match of segment.matchAll(pattern)) {
+        findings.push(finding('AGSC-E405', file, number, offset + match.index + 1,
           `${label} words a measurement as a ranking; state the measured difference with its model, date, n and interval`));
       }
     }
