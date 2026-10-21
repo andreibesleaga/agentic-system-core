@@ -40,7 +40,7 @@ requirement. Checking it, with one more fetch, is planned for 1.1.
 | `rule-coverage` | the rule-coverage matrix; `--write` regenerates `docs/RULE-COVERAGE.md`, `--check` fails when it is stale |
 | `requirements-matrix` | the requirements matrix: for every requirement of `docs/PRD.md`, the rules that trace to it and the checks that name it; `--write` regenerates `docs/REQUIREMENTS-MATRIX.md`, `--check` fails when it is stale |
 | `gen-glossary` | writes `docs/GLOSSARY.md` from the specification and the ontology; `--check` |
-| `lint-claims` | the claims lint of the benchmark kit: ranking words in a results text, and results rows that name no model, date, sample size or interval ([docs/BENCHMARKS.md](../docs/BENCHMARKS.md)) |
+| `lint-claims` | the claims lint of the benchmark kit: ranking words in a results text, and results rows that name no model, calendar date, sample size, metric, value or confidence interval, or compare with another system without both configurations ([docs/BENCHMARKS.md](../docs/BENCHMARKS.md)) |
 | `public-hygiene` | "public means clean": a sweep of a working tree for text that must never be published |
 | `publish-set` | sets which items of a Bundle are published, from one list |
 | `release` | the release lane as a dry run: version, changelog, package contents, provenance step |

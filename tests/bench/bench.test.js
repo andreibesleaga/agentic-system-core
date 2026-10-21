@@ -160,25 +160,54 @@ describe('bench/metrics.js — the agent-side statistics', () => {
     // Differences of 1e-10 are as decisive as differences of 1.
     const tiny = metrics.pairedPermutationTest([1e-10, 1e-10, 1e-10, 1e-10, 1e-10], [0, 0, 0, 0, 0]);
     assert.equal(tiny.p, 0.0625);
+    // Exact ties that floating point splits: in exact arithmetic p = 23/32. With no
+    // tolerance it reads 22/32, and a fixed tolerance fails once the unit is small.
+    const ties = [0.2, -0.3, -0.4, -0.1, 0.4, 0.7];
+    const zeros = ties.map(() => 0);
+    assert.equal(metrics.pairedPermutationTest(ties, zeros).p, 0.71875);
+    assert.equal(metrics.pairedPermutationTest(ties.map((d) => d * 1e-14), zeros).p, 0.71875);
     // Sixteen equal differences: exactly 2 of 65,536 patterns, never rounded to 0.
     const sixteen = Array.from({ length: 16 }, () => 1);
     assert.equal(metrics.pairedPermutationTest(sixteen, sixteen.map(() => 0)).p, 2 / 65536);
   });
 
-  it('pairedPermutationTest resamples above 16 pairs, reproducibly, and never reports 0', () => {
+  it('pairedPermutationTest resamples above 16 pairs, never reports 0 and keeps p unrounded', () => {
     const a = Array.from({ length: 20 }, () => 1);
     const b = Array.from({ length: 20 }, () => 0);
-    const result = metrics.pairedPermutationTest(a, b, { resamples: 999, seed: 3 });
-    assert.equal(result.exact, false);
-    assert.equal(result.mean_difference, 1);
-    assert.ok(result.p > 0 && result.p <= 0.01, `p = ${result.p}`);
-    assert.deepEqual(metrics.pairedPermutationTest(a, b, { resamples: 999, seed: 3 }), result);
+    // Only the two all-same-sign patterns reach the observed sum, so no draw hits:
+    // p = (0 + 1) / (997 + 1), a value four decimals would change.
+    const result = metrics.pairedPermutationTest(a, b, { resamples: 997, seed: 3 });
+    assert.deepEqual(result, { exact: false, mean_difference: 1, n: 20, p: 1 / 998 });
+  });
+
+  it('pairedPermutationTest is reproducible from its seed, and the seed matters', () => {
+    const a = [1, -1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, 1, -1];
+    const b = a.map(() => 0);
+    const p = (seed) => metrics.pairedPermutationTest(a, b, { resamples: 999, seed }).p;
+    assert.equal(p(3), p(3));
+    assert.equal(p(3), 0.273);
+    assert.notEqual(p(3), p(5));
   });
 
   it('pairedPermutationTest refuses unpaired input', () => {
     assert.equal(metrics.pairedPermutationTest([1, 2], [1]), null);
     assert.equal(metrics.pairedPermutationTest([], []), null);
     assert.equal(metrics.pairedPermutationTest('a', 'b'), null);
+  });
+
+  it('every statistic refuses a missing value instead of reading it as a number', () => {
+    // A null citation score (nothing cited, or no gold unit) is an absence: it must
+    // be dropped before the statistics, never read as 0 or let through as NaN.
+    for (const missing of [null, undefined, Number.NaN, '0.5']) {
+      assert.equal(metrics.pairedPermutationTest([1, missing, 3], [1, 2, 3]), null, `${missing}`);
+      assert.equal(metrics.cliffsDelta([missing], [0.5]), null, `${missing}`);
+      assert.equal(metrics.bootstrapCI([missing, 0.2, 0.4]), null, `${missing}`);
+      assert.equal(metrics.median([missing, 0.2, 0.4]), null, `${missing}`);
+      assert.equal(metrics.holm([0.01, missing]), null, `${missing}`);
+    }
+    assert.equal(metrics.holm([0.01, 1.2]), null, 'a p value above 1 is no probability');
+    assert.equal(metrics.holm('not a list'), null);
+    assert.equal(metrics.bootstrapCI([1, 2, 3], { resamples: 0 }), null);
   });
 
   it('holm adjusts step-down, keeps the given order, stays monotone and caps at 1', () => {

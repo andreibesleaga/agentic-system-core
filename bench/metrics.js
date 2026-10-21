@@ -15,15 +15,28 @@
  */
 
 /**
+ * True for a non-empty list of finite numbers. The statistics below refuse
+ * anything else (a `null` score, `undefined`, `NaN`), because JavaScript would read
+ * `null` as 0 and let `NaN` through every comparison: a missing value must stay an
+ * absence, never become a measurement. Drop the null scores before calling them.
+ * @param {unknown} values
+ * @returns {boolean}
+ */
+function finiteList(values) {
+  return Array.isArray(values) && values.length > 0 && values.every((x) => typeof x === 'number' && Number.isFinite(x));
+}
+
+/**
  * The median of a list of numbers. Even-length lists take the mean of the two
  * middle values, which is what "median of three runs" never has to do — three
  * runs is the project's standing sample size.
  * @param {number[]} values
- * @returns {number|null} null for an empty list, so a missing measurement is
- *   visible as an absence instead of a zero.
+ * @returns {number|null} null for an empty list, or for one holding anything but
+ *   finite numbers, so a missing measurement is visible as an absence instead of
+ *   a zero or a shifted middle.
  */
 function median(values) {
-  if (!Array.isArray(values) || values.length === 0) return null;
+  if (!finiteList(values)) return null;
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
@@ -244,6 +257,8 @@ function seeded(seed) {
  * @returns {{cited:number, correct:number, gold:number, precision:number|null, recall:number|null}}
  *   `precision` is null when nothing was cited and `recall` when the task has no
  *   gold unit (an unanswerable task): an absence, never a zero that would move a mean.
+ *   The statistics below refuse a null, so drop those tasks (and, for a paired
+ *   test, their pairs) before computing an interval or a test.
  */
 function citationScore(cited, gold) {
   const citedSet = new Set(cited);
@@ -273,11 +288,12 @@ function quantile(sorted, q) {
  * @param {{level?:number, resamples?:number, seed?:number, statistic?:(xs:number[])=>number}} [options]
  *   level 0.95, 10,000 resamples, seed 1 and the median unless given.
  * @returns {{estimate:number, high:number, level:number, low:number, n:number, resamples:number, seed:number}|null}
- *   null for an empty sample.
+ *   null for an empty sample, a sample holding anything but finite numbers, or
+ *   fewer than one resample.
  */
 function bootstrapCI(values, options = {}) {
-  if (!Array.isArray(values) || values.length === 0) return null;
   const { level = 0.95, resamples = 10000, seed = 1, statistic = median } = options;
+  if (!finiteList(values) || !Number.isInteger(resamples) || resamples < 1) return null;
   const next = seeded(seed);
   const stats = new Array(resamples);
   const sample = new Array(values.length);
@@ -307,21 +323,24 @@ function bootstrapCI(values, options = {}) {
  * @param {number[]} b the other condition, the same tasks in the same order
  * @param {{resamples?:number, seed?:number}} [options]
  * @returns {{exact:boolean, mean_difference:number, n:number, p:number}|null}
- *   null when the lists are empty or of different lengths. `p` is unrounded, so a
+ *   null when the lists are empty, of different lengths, or hold anything but
+ *   finite numbers (a missing value would otherwise read as the most significant
+ *   result the test can report). `p` is unrounded, so a
  *   small probability is never shown as 0 and Holm's correction gets it whole;
  *   round it only for display.
  */
 function pairedPermutationTest(a, b, options = {}) {
-  if (!Array.isArray(a) || !Array.isArray(b) || a.length === 0 || a.length !== b.length) return null;
+  if (!finiteList(a) || !finiteList(b) || a.length !== b.length) return null;
   const { resamples = 10000, seed = 1 } = options;
   const diffs = a.map((x, i) => x - b[i]);
   const n = diffs.length;
   const sum = diffs.reduce((acc, d) => acc + d, 0);
   // A tolerance, so a permuted sum equal to the observed one in exact arithmetic
-  // is never lost to a floating-point last digit. It scales with the differences
-  // themselves, so the test reads the same in any unit.
-  const scale = diffs.reduce((acc, d) => acc + Math.abs(d), 0);
-  const observed = Math.abs(sum) - 1e-12 * scale;
+  // is never lost to a floating-point last digit. It is the rounding error a sum of
+  // n terms can carry (n² ulps of the largest term), so it reads the same in any
+  // unit and stays far below any real difference between two sums.
+  const largest = diffs.reduce((acc, d) => Math.max(acc, Math.abs(d)), 0);
+  const observed = Math.abs(sum) - n * n * Number.EPSILON * largest;
   const flippedSum = (pattern) => diffs.reduce((acc, d, i) => acc + (pattern(i) ? -d : d), 0);
   let hits = 0;
   if (n <= 16) {
@@ -341,10 +360,14 @@ function pairedPermutationTest(a, b, options = {}) {
 /**
  * Holm's step-down correction for a family of p values.
  * @param {number[]} pValues
- * @returns {number[]} the adjusted p values, in the order given, each at most 1,
+ * @returns {number[]|null} the adjusted p values, in the order given, each at most 1,
  *   unrounded: rounding could carry a value across a significance threshold.
+ *   An empty family gives an empty list; null when a member is not a probability.
  */
 function holm(pValues) {
+  if (!Array.isArray(pValues)) return null;
+  if (pValues.length === 0) return [];
+  if (!finiteList(pValues) || pValues.some((p) => p < 0 || p > 1)) return null;
   const m = pValues.length;
   const order = pValues.map((p, i) => [p, i]).sort((x, y) => x[0] - y[0]);
   const adjusted = new Array(m);
@@ -361,10 +384,11 @@ function holm(pValues) {
  * reverse, over every pair. −1..1; 0 when neither side dominates.
  * @param {number[]} a
  * @param {number[]} b
- * @returns {number|null} null when either list is empty.
+ * @returns {number|null} null when either list is empty or holds anything but
+ *   finite numbers.
  */
 function cliffsDelta(a, b) {
-  if (!Array.isArray(a) || !Array.isArray(b) || a.length === 0 || b.length === 0) return null;
+  if (!finiteList(a) || !finiteList(b)) return null;
   let balance = 0;
   for (const x of a) {
     for (const y of b) balance += Math.sign(x - y);

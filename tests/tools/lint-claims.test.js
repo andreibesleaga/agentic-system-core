@@ -79,11 +79,37 @@ describe('tools/lint-claims — wording', () => {
     assert.deepEqual(json.findings.map((f) => f.col), [1, 13]);
   });
 
+  it('catches the other spellings of a hundred per cent and leaves larger numbers alone', () => {
+    // Assembled at run time, so this file never carries one.
+    const hundred = '100';
+    const caught = [`${hundred},0 %`, `${hundred}&nbsp;%`, `${hundred}\\%`, `${hundred} &#37;`, `${hundred}  &percnt;`];
+    const passed = [`1,${hundred} %`, `2${hundred} %`, `0.${hundred} %`];
+    const dir = writeTree(tmpdir(), { 'a.md': `${caught.join('\n')}\n`, 'b.md': `${passed.join('\n')}\n` });
+    assert.deepEqual(envelope('lint-claims', [path.join(dir, 'a.md')]).json.findings.map((f) => f.line), [1, 2, 3, 4, 5]);
+    assert.equal(envelope('lint-claims', [path.join(dir, 'b.md')]).code, 0);
+  });
+
+  it('reads two regions on one line, and treats a marker in a code span as text', () => {
+    const dir = writeTree(tmpdir(), {
+      'two.md': 'a <!-- claims:start -->it beats<!-- claims:end --> b <!-- claims:start -->it wins<!-- claims:end --> first\n',
+      'explains.md': 'Mark a region with `<!-- claims:start -->` and `<!-- claims:end -->`; C2 beats C0.\n',
+    });
+    assert.deepEqual(envelope('lint-claims', [path.join(dir, 'two.md')]).json.findings.map((f) => f.col), [27, 78]);
+    // No real marker, so the whole page is read and the claim is caught.
+    assert.deepEqual(envelope('lint-claims', [path.join(dir, 'explains.md')]).json.findings.map((f) => f.col), [74]);
+  });
+
+  it('reads a file that starts with a byte-order mark at its real columns', () => {
+    const dir = writeTree(tmpdir(), { 'bom.md': '\uFEFFIt beats C0.\n', 'r.json': `\uFEFF${results([ROW])}` });
+    assert.deepEqual(envelope('lint-claims', [path.join(dir, 'bom.md')]).json.findings.map((f) => f.col), [4]);
+    assert.equal(envelope('lint-claims', ['--results', path.join(dir, 'r.json')]).code, 0);
+  });
+
   it('reports a claims region that is never closed', () => {
-    const dir = writeTree(tmpdir(), { 'open.md': 'intro\n<!-- claims:start -->\nmeasured 0.5\n' });
+    const dir = writeTree(tmpdir(), { 'open.md': 'intro\nsee <!-- claims:start -->\nmeasured 0.5\n' });
     const { code, json } = envelope('lint-claims', [path.join(dir, 'open.md')]);
     assert.equal(code, 1);
-    assert.deepEqual(json.findings.map((f) => [f.code, f.line]), [['AGSC-E202', 2]]);
+    assert.deepEqual(json.findings.map((f) => [f.code, f.line, f.col]), [['AGSC-E202', 2, 5]]);
   });
 
   it('leaves words that merely contain a ranking word alone', () => {
@@ -111,6 +137,9 @@ describe('tools/lint-claims — results rows', () => {
         { ...ROW, date: '14 Nov 2026', n: 0 },
         { ...ROW, system: 'mem0' },
         null,
+        { ...ROW, date: '2026-02-30', value: Number.NaN },
+        { ...ROW, configs: { 'agentic-system-core': { tag: 'v1.0.1' } }, system: 'constructor' },
+        { ...ROW, configs: { 'agentic-system-core': true, mem0: {} }, date: '2026-99-99', system: 'mem0' },
       ]),
     });
     const { code, json } = envelope('lint-claims', ['--results', path.join(dir, 'r.json')]);
@@ -124,6 +153,23 @@ describe('tools/lint-claims — results rows', () => {
     assert.ok(messages.includes('row 3 compares with mem0 but publishes no configuration for agentic-system-core'));
     assert.ok(messages.includes('row 3 compares with mem0 but publishes no configuration for mem0'));
     assert.equal(messages.filter((m) => m.startsWith('row 4 ')).length, 6);
+    // A day the calendar does not have, and a value JSON wrote as null.
+    assert.ok(messages.includes('row 5 carries no date (YYYY-MM-DD)'));
+    assert.ok(messages.includes('row 5 carries no numeric value'));
+    // An inherited member name is no published configuration.
+    assert.ok(messages.includes('row 6 compares with constructor but publishes no configuration for constructor'));
+    // Placeholders publish nothing, and month 99 is no month.
+    assert.ok(messages.includes('row 7 compares with mem0 but publishes no configuration for agentic-system-core'));
+    assert.ok(messages.includes('row 7 compares with mem0 but publishes no configuration for mem0'));
+    assert.ok(messages.includes('row 7 carries no date (YYYY-MM-DD)'));
+  });
+
+  it('refuses a measurement that overflows to infinity', () => {
+    // JSON.parse reads 1e400 as Infinity; written as raw text, as a results file would carry it.
+    const row = JSON.stringify(ROW).replace('"value":0.52', '"value":1e400').replace('[0.42,0.61]', '[1e400,1e400]');
+    const dir = writeTree(tmpdir(), { 'r.json': `{"rows":[${row}]}` });
+    const messages = envelope('lint-claims', ['--results', path.join(dir, 'r.json')]).json.findings.map((f) => f.message);
+    assert.deepEqual(messages, ['row 0 carries no numeric value', 'row 0 carries no confidence interval [low, high]']);
   });
 
   it('fails a results file that is not JSON or holds no rows', () => {
@@ -150,6 +196,8 @@ describe('tools/lint-claims — the command', () => {
     assert.match(help.out, /^lint-claims \[--json\]/u);
     assert.equal(capture('lint-claims', []).code, 2);
     assert.equal(capture('lint-claims', ['--results']).code, 2);
+    // A flag is never taken as the results file.
+    assert.equal(capture('lint-claims', ['--results', '--json']).code, 2);
     const unknown = capture('lint-claims', ['--strict', 'x.md']);
     assert.equal(unknown.code, 2);
     assert.match(unknown.err, /AGSC-E002/u);

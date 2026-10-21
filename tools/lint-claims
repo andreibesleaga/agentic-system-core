@@ -1,22 +1,27 @@
 #!/usr/bin/env node
-// The claims lint of the benchmark kit (docs/BENCHMARKS.md, "How results may be
-// described"). It fails a results page, a README table or a results file that
+// The claims lint of the benchmark kit (docs/BENCHMARKS.md, "What this project
+// will never claim"). It fails a results page, a README table or a results file that
 // words a measurement as a ranking, or prints a number a reader cannot trace.
 //
 //   lint-claims [--json] [--results <file>]... [--help] <file>...
 //
 // Text files (Markdown, HTML, plain text). Only the claims regions are read when
 // a file marks any — the text between `<!-- claims:start -->` and
-// `<!-- claims:end -->`, on one line or across many — so a README is held to the rule where it reports
-// results and nowhere else; a file with no marker is read whole. In what is read,
-// each of these words is a finding (AGSC-E405): "first", "unique", a hundred per
-// cent written as a number (with or without zero decimals), "#1", "SOTA", "beat(s)", "win(s)".
+// `<!-- claims:end -->`, on one line or across many — so a README is held to the
+// rule where it reports results and nowhere else; a file with no marker is read
+// whole. A marker quoted in a code span (between backticks) is text, not a marker,
+// so a page that explains the markers is still read whole. In what is read, each of
+// these words is a finding (AGSC-E405): "first", "unique", a hundred per cent
+// written as a number (with zero decimals, a decimal comma, an escaped or
+// HTML-entity per-cent sign or space), "#1", "SOTA", "beat(s)", "win(s)".
 //
 // Results files (JSON, `{ "rows": [...] }`). Every row must name its `model`, its
-// `date` (YYYY-MM-DD), its sample size `n` (a positive integer), its `metric`, its
-// `value` and a confidence interval `ci: [low, high]` with low ≤ high. A row that
+// `date` (a calendar date, YYYY-MM-DD), its sample size `n` (a positive integer),
+// its `metric`, its `value` (a finite number) and a confidence interval
+// `ci: [low, high]` of finite numbers with low ≤ high. A row that
 // compares with another system (`system` other than "agentic-system-core") must
-// carry both configurations in `configs`, one per system. Each missing member is
+// carry both configurations in `configs`, one per system, each an object with at
+// least one member (a placeholder such as `true` or `{}` publishes nothing). Each missing member is
 // a finding (AGSC-E202).
 //
 // Exit 0 pass, 1 findings, 2 usage.
@@ -47,14 +52,38 @@ const END = '<!-- claims:end -->';
 const WORDING = [
   ['"first"', /\bfirst\b/giu],
   ['"unique"', /\bunique\b/giu],
-  ['a hundred per cent', /(?<![\w.])100(?:\.0+)?\s?%/gu],
+  // Not after a digit, a dot or a comma, so 1,100 % and 0.100 % are other numbers.
+  ['a hundred per cent', /(?<![\w.,])100(?:[.,]0+)?(?:\s|&nbsp;|&#160;)*\\?(?:%|&percnt;|&#37;)/gu],
   ['"#1"', /#1\b/gu],
   ['"SOTA"', /\bSOTA\b/giu],
   ['"beat(s)"', /\bbeats?\b/giu],
   ['"win(s)"', /\bwins?\b/giu],
 ];
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/u;
+const DATE = /^(\d{4})-(\d{2})-(\d{2})$/u;
+
+/** True for a YYYY-MM-DD string that names a day of the Gregorian calendar. */
+function isCalendarDate(text) {
+  const parts = DATE.exec(String(text));
+  if (!parts) return false;
+  const [year, month, day] = parts.slice(1).map(Number);
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  return days !== undefined && day >= 1 && day <= days;
+}
+
+/** True for a published configuration: an object (not a list) with at least one member. */
+function isConfiguration(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+/** The index of the next `marker` on `line` from `from` that is not quoted in a code span, or -1. */
+function markerAt(line, marker, from) {
+  for (let at = line.indexOf(marker, from); at !== -1; at = line.indexOf(marker, at + 1)) {
+    if (line[at - 1] !== '`' && line[at + marker.length] !== '`') return at;
+  }
+  return -1;
+}
 
 function finding(code, file, line, col, message) {
   return { code, col, file, line, message, severity: 'error' };
@@ -68,23 +97,23 @@ function finding(code, file, line, col, message) {
  */
 function readSegments(file, text) {
   const lines = text.split('\n');
-  if (!text.includes(START)) return { findings: [], segments: lines.map((l, i) => [i + 1, 0, l]) };
+  if (!lines.some((l) => markerAt(l, START, 0) !== -1)) return { findings: [], segments: lines.map((l, i) => [i + 1, 0, l]) };
   const segments = [];
-  let openedAt = 0;
+  let opened = null;
   lines.forEach((line, i) => {
     let at = 0;
     for (;;) {
-      const marker = openedAt > 0 ? END : START;
-      const next = line.indexOf(marker, at);
+      const marker = opened ? END : START;
+      const next = markerAt(line, marker, at);
       const stop = next === -1 ? line.length : next;
-      if (openedAt > 0 && stop > at) segments.push([i + 1, at, line.slice(at, stop)]);
+      if (opened && stop > at) segments.push([i + 1, at, line.slice(at, stop)]);
       if (next === -1) break;
-      openedAt = openedAt > 0 ? 0 : i + 1;
+      opened = opened ? null : { col: next + 1, line: i + 1 };
       at = next + marker.length;
     }
   });
-  const findings = openedAt > 0
-    ? [finding('AGSC-E202', file, openedAt, 1, `the claims region opened here has no ${END}`)]
+  const findings = opened
+    ? [finding('AGSC-E202', file, opened.line, opened.col, `the claims region opened here has no ${END}`)]
     : [];
   return { findings, segments };
 }
@@ -107,18 +136,19 @@ function lintText(file, text) {
 function rowProblems(row) {
   const problems = [];
   if (typeof row.model !== 'string' || row.model === '') problems.push('names no model');
-  if (typeof row.date !== 'string' || !DATE.test(row.date)) problems.push('carries no date (YYYY-MM-DD)');
+  if (!isCalendarDate(row.date)) problems.push('carries no date (YYYY-MM-DD)');
   if (!Number.isInteger(row.n) || row.n < 1) problems.push('carries no sample size n');
   if (typeof row.metric !== 'string' || row.metric === '') problems.push('names no metric');
-  if (typeof row.value !== 'number') problems.push('carries no numeric value');
+  if (!Number.isFinite(row.value)) problems.push('carries no numeric value');
   const ci = row.ci;
-  if (!Array.isArray(ci) || ci.length !== 2 || !ci.every((x) => typeof x === 'number') || ci[0] > ci[1]) {
+  if (!Array.isArray(ci) || ci.length !== 2 || !ci.every(Number.isFinite) || ci[0] > ci[1]) {
     problems.push('carries no confidence interval [low, high]');
   }
   if (row.system !== undefined && row.system !== OWN_SYSTEM) {
-    const configs = row.configs || {};
+    const configs = row.configs && typeof row.configs === 'object' ? row.configs : {};
     for (const system of [OWN_SYSTEM, row.system]) {
-      if (!configs[system]) problems.push(`compares with ${row.system} but publishes no configuration for ${system}`);
+      // Own members only: an inherited name such as `constructor` is no configuration.
+      if (!Object.hasOwn(configs, system) || !isConfiguration(configs[system])) problems.push(`compares with ${row.system} but publishes no configuration for ${system}`);
     }
   }
   return problems;
@@ -146,7 +176,7 @@ function parse(argv) {
     else if (arg === '--json') options.json = true;
     else if (arg === '--results') {
       i += 1;
-      if (argv[i] === undefined) return { error: '--results needs a file (AGSC-E003)' };
+      if (argv[i] === undefined || argv[i].startsWith('-')) return { error: '--results needs a file (AGSC-E003)' };
       options.results.push(argv[i]);
     } else if (arg.startsWith('-')) return { error: `unknown flag ${arg} (AGSC-E002)` };
     else options.texts.push(arg);
@@ -164,7 +194,8 @@ function lintAll(options) {
   const findings = inputs.flatMap(([file, lint]) => {
     let text;
     try {
-      text = fs.readFileSync(file, 'utf8');
+      // A byte-order mark is no part of the text: JSON.parse refuses it and it would shift line 1.
+      text = fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, '');
     } catch {
       return [finding('AGSC-E901', file, 1, 1, 'cannot be read')];
     }
