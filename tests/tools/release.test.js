@@ -590,6 +590,25 @@ describe('the printed checklist follows the release route', () => {
     assert.match(text.replace(/\s+/gu, ' '), /next for a pre-release/u);
     assert.match(text.replace(/\s+/gu, ' '), /on main/u);
   });
+
+  it('a package-only patch (package 1.0.1, specification 1.0.0) carries the package tag alone', () => {
+    const lines = release.checklist('1.0.1', false, '1.0.0');
+    const text = lines.join('\n');
+    assert.doesNotMatch(text, /git tag -a 1\.0\.1 /u, 'no specification tag: the specification did not move');
+    assert.doesNotMatch(text, /git push origin 1\.0\.1\b/u);
+    assert.match(text, /the specification stays 1\.0\.0: NO specification tag/u);
+    const at = (re) => lines.findIndex((l) => re.test(l));
+    const merge = at(/pull --ff-only origin main/u);
+    const pkgTag = at(/^\s*\d+\. git tag -a v1\.0\.1 -m "AgenticSystemCore 1\.0\.1"/u);
+    const pkgPush = at(/^\s*\d+\. git push origin v1\.0\.1\b/u);
+    assert.ok(merge >= 0 && pkgTag > merge && pkgPush > pkgTag, 'the package tag is made on main after the merge, then pushed');
+  });
+
+  it('a release whose version is the declared specification keeps the two tags', () => {
+    const text = release.checklist('1.1.0', false, '1.1.0').join('\n');
+    assert.match(text, /git tag -a 1\.1\.0 -m "AgenticSystemCore 1\.1\.0"/u);
+    assert.match(text, /git tag -a v1\.1\.0 -m "AgenticSystemCore 1\.1\.0"/u);
+  });
 });
 
 /** The files `npm pack` would ship from `dir`, as npm itself lists them (no network). */

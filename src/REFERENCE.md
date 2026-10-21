@@ -479,7 +479,7 @@ checkClaims(config, proposal, board) -> { accepted, findings, held_after }
 
 | Need | Library | Version | Licence |
 |---|---|---|---|
-| Markdown (CommonMark 0.31.2 + GFM tables) | `markdown-it` | 15.0.2 | MIT |
+| Markdown (CommonMark 0.31.2 + GFM tables) | `markdown-it` | 15.0.3 | MIT |
 | XML/SVG allow-list | `fast-xml-parser` | 5.11.1 | MIT |
 
 `markdown-it` runs `{html:false, linkify:false, typographer:false}`: raw HTML never

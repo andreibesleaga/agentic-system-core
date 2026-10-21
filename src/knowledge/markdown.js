@@ -6,7 +6,7 @@
 //
 // PURE: no fs, no process, no clock, no network.
 //
-// The renderer is `markdown-it@15.0.2` configured `{html:false, linkify:false,
+// The renderer is `markdown-it` (pinned in package.json) configured `{html:false, linkify:false,
 // typographer:false}`: raw HTML never passes through, bare URLs are never turned
 // into links behind the author's back, and no character is substituted for a
 // prettier one — three properties AGSC-02-20 and AGSC-04-07 need and that a

@@ -488,7 +488,7 @@ test: they need the framework installed. The record shapes they read are produce
 
 ## Checking a node in CI and before a commit
 
-- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@v1.0.0` (the package tag, or its full commit SHA)
+- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@v1.0.1` (the package tag, or its full commit SHA)
   runs `agsc ci` with the engine at that ref. Give the job `contents: read` and check
   out with `fetch-depth: 0`. See the root `action.yml`.
 - **pre-commit:** the hook `agsc-lint` from `.pre-commit-hooks.yaml` runs `agsc lint`

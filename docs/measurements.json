@@ -221,7 +221,7 @@
       }
     },
     "determinism": {
-      "command": "node bench/measure.js --layer determinism",
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer determinism --scratch <dir>",
       "double_build": {
         "compared": 49,
         "different": [],
@@ -2249,7 +2249,7 @@
         "index_bytes": 1048576,
         "page_bytes": 102400
       },
-      "command": "node bench/measure.js --layer perf   # sizes 100 500 1000 5000 10000, 3 runs each, median",
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3",
       "machine": {
         "arch": "x64",
         "cpus": 16,
@@ -2507,7 +2507,7 @@
         "per_item": 4,
         "version": "parity-calls-v1"
       },
-      "command": "node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…",
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer parity --scratch <dir> --nodes <name>=<bundle dir>,…",
       "nodes": {
         "fixture": {
           "answer_types": {
@@ -2756,7 +2756,7 @@
       }
     },
     "tokens": {
-      "command": "NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,… --exports <name>=<dir>,…",
+      "command": "SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --scratch <dir> --nodes <name>=<www>,… --exports <name>=<dir>,…",
       "no_claude_count": "Anthropic publishes no offline tokenizer; no Claude token count is reported, because it would be a guess.",
       "nodes": {
         "fixture": {
@@ -3033,7 +3033,7 @@
     },
     "a11y": {
       "ceiling": "axe-core finds on average 57 % of WCAG issues automatically; zero violations is a floor, never a conformance claim.",
-      "command": "NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,…",
+      "command": "SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --scratch <dir> --nodes <name>=<www>,…",
       "nodes": {
         "fixture": {
           "by_type": {

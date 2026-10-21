@@ -62,8 +62,9 @@
 //   5. THE MAINTAINER'S CHECKLIST. Printed last, as the exact commands to run in order:
 //      the gates on a release branch, a pull request into main, then, on the merged
 //      commit, the annotated specification tag pushed before the annotated package
-//      tag, whose workflow publishes after the maintainer approves the `release`
-//      environment. Every git command in it is the maintainer's; this tool runs none.
+//      tag (a package-only patch, whose version differs from the declared
+//      specification, carries the package tag alone), whose workflow publishes after
+//      the maintainer approves the `release` environment. Every git command in it is the maintainer's; this tool runs none.
 //
 // This tool is NOT one of the nine command contracts of AGSC-09-90 — it validates
 // no normative artefact — so it is deliberately named `release` and not
@@ -572,8 +573,13 @@ function applyChangelog(text, version, date) {
 // --------------------------------------------------------------------------
 // 5. The maintainer's checklist.
 // --------------------------------------------------------------------------
-function checklist(version, bump = true) {
+function checklist(version, bump = true, spec = null) {
   const v = version === null ? '<x.y.z>' : version;
+  // A release that moves the specification carries two tags on one commit: the
+  // specification's (no `v`) and the package's (`v…`). A package-only patch, whose
+  // version differs from the declared specification, carries the package tag alone
+  // (README, "Versions").
+  const movesSpec = spec === null || spec === v;
   const steps = [
     `git switch -c release/${v}                     # the release branch, from an up-to-date main`,
     `    # (git switch release/${v} if it already exists); every step up to the commit runs on it`,
@@ -600,12 +606,18 @@ function checklist(version, bump = true) {
     '    # on it, then merge it (main is protected: nothing is pushed to it directly)',
     'git switch main && git pull --ff-only origin main',
     `    # the tags go on the merged commit of main; check that package.json says ${v}`,
-    `git tag -a ${v} -m "AgenticSystemCore ${v}"            # the specification's tag`,
-    `git push origin ${v}                               # starts no workflow`,
-    '    # the site build and the archive read this tag: build and deploy the site that',
-    '    # names this version before the package tag below starts the publishing',
-    `git tag -a v${v} -m "AgenticSystemCore ${v}"           # the package tag, SAME commit`,
-    `    # check: test "$(git rev-parse ${v}^{commit})" = "$(git rev-parse v${v}^{commit})"`,
+    ...(movesSpec ? [
+      `git tag -a ${v} -m "AgenticSystemCore ${v}"            # the specification's tag`,
+      `git push origin ${v}                               # starts no workflow`,
+      '    # the site build and the archive read this tag: build and deploy the site that',
+      '    # names this version before the package tag below starts the publishing',
+      `git tag -a v${v} -m "AgenticSystemCore ${v}"           # the package tag, SAME commit`,
+      `    # check: test "$(git rev-parse ${v}^{commit})" = "$(git rev-parse v${v}^{commit})"`,
+    ] : [
+      `    # the specification stays ${spec}: NO specification tag for this release;`,
+      '    # the site keeps reading the specification from its own tag',
+      `git tag -a v${v} -m "AgenticSystemCore ${v}"           # the package tag only`,
+    ]),
     `git push origin v${v}`,
     `    # The v tag starts ${WORKFLOW}. Its gates run on every leg; then the publish`,
     '    # job checks that the tagged commit is on main and waits for the maintainer to',
@@ -782,7 +794,7 @@ function run(argv, io = {}) {
       + ` ${envelope.counts.warn} warn; mode: ${flags.has('--apply') ? 'APPLY' : 'dry run'}`
       + `${written.length === 0 ? '' : ` (wrote ${written.join(', ')})`}\n`);
     out(`release: nothing was published, and this script never publishes.\n\n`);
-    for (const line of checklist(version === null ? manifest.version : version, bump)) out(`${line}\n`);
+    for (const line of checklist(version === null ? manifest.version : version, bump, specVersion(root))) out(`${line}\n`);
   }
   return envelope.status === 'pass' ? 0 : 1;
 }

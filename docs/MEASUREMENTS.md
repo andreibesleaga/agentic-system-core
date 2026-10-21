@@ -69,7 +69,7 @@ node tools/count-artifacts --json
 ## 2. Determinism — the same bytes twice, and across a time zone and a locale
 
 ```
-node bench/measure.js --layer determinism --scratch <dir>
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer determinism --scratch <dir>
 ```
 
 | comparison | files compared | files differing |
@@ -130,7 +130,7 @@ An outcome is one of six: **detected** (the rule's code, exit 0), **refused** (t
 
 ```
 node bench/gen-bundle.js --items <n> --out <scratch>/n<n>
-node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3
 ```
 
 Generated Bundles, each item a pure function of its number, three runs per size, median reported. The Bundles are generated outside the repository; the generator refuses to write inside it.
@@ -170,7 +170,7 @@ No HTML page exceeds the budget at any size. The largest page is the cluster pag
 ## 5. Page-tool / MCP parity, call by call
 
 ```
-node bench/measure.js --layer parity --scratch <dir> --nodes fixture=<bundle>,patterns=<bundle>,main=<bundle>
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer parity --scratch <dir> --nodes fixture=<bundle>,patterns=<bundle>,main=<bundle>
 ```
 
 The call list (`bench/corpus/parity-calls.json`) has 25 fixed calls — every tool of AGSC-09-13, every domain-error path (unknown tool, missing argument, unknown slug, a foreign `memory://` IRI, a 1 MiB + 1 argument), the two local-only writers — and four per-item templates (`read`, `links`, `propose`, `compose`) run once for every published item. Each call is asked of **the real `agsc mcp` process over stdio**, of **the emitted page script** run in a fresh `vm` context over the build's own bytes, of the page-tools module, and of the in-process server, and the answers are compared **as values** after a JSON round trip — the comparison AGSC-09-16 makes, never byte-identity across the browser boundary.
@@ -193,7 +193,7 @@ Measured on three Bundles anyone can rebuild: the reference fixture, the demonst
 ## 6. Retrieval across the published surfaces
 
 ```
-node bench/measure.js --layer retrieval --scratch <dir> --nodes patterns=<build>,main=<build>     # query set: bench/queries/bench-v2
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer retrieval --scratch <dir> --nodes patterns=<build>,main=<build>     # query set: bench/queries/bench-v2
 ```
 
 **Observed under this configuration**, not proved: the committed set `bench-v2` of 20 hand-written intents (12 for the demonstration node, 8 for the main node), one gold item each, k = 10, against three model-free surfaces of each node's build by the current engine. No model, no key, no network.
@@ -214,7 +214,7 @@ Twenty intents over 59 published items is a smoke test of the surfaces, not a st
 ## 7. Accessibility per page type
 
 ```
-NODE_PATH=<scratch>/node_modules CHROME_EXE=<chromium> node bench/measure.js --layer a11y --scratch <dir> --nodes <name>=<build>,…
+SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules CHROME_EXE=<chromium> node bench/measure.js --layer a11y --scratch <dir> --nodes <name>=<build>,…
 ```
 
 axe-core 4.13.0 in headless Chromium through playwright-core 1.62.1 (both installed outside the repository), the WCAG 2.0/2.1/2.2 A and AA tags plus best practices — the tag set of the site repository's own browser lane — over every page, in the light and in the dark colour scheme. Every request to another origin is blocked and counted.
@@ -233,7 +233,7 @@ Page types are the templates a route is rendered from: home, each section's inde
 ## 8. Tokens per item
 
 ```
-NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --scratch <dir> --nodes <name>=<build>,… --exports <name>=<llm-context dir>,…
+SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --scratch <dir> --nodes <name>=<build>,… --exports <name>=<llm-context dir>,…
 ```
 
 `gpt-tokenizer` 2.9.0 (MIT, offline, the published BPE tables), two vocabularies: `o200k_base` and `cl100k_base`. **No Claude count**: there is no offline Claude tokenizer, so such a number would be a guess. Median tokens **per item**, `o200k_base` (`cl100k_base` in brackets):

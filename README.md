@@ -5,7 +5,18 @@ A specification for publishing machine-discoverable knowledge bundles — the Ag
 What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the nine independent checkers of AGSC-09-90 — seven validators and two generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
 ## Status
-**Released.** This tree states specification `1.0.0`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.0` and are published from the release tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install agentic-system-core`. The reference engine claims Level 3 ([its claim](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
+**Released.** This tree states specification `1.0.0`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.0.1` (see "Versions" below) and are published from the package tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install agentic-system-core`. The reference engine claims Level 3 ([its claim](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
+
+**Versions.** Two numbers, stated apart. The *specification version* (`spec_version`,
+declared in `spec/00-overview.md`) names the rules, schemas, vocabulary and conformance
+vectors; a Bundle declares it in `agsc.config.json`. The *package version* (`package.json`,
+`agentic-system-core` and `agsc-cli` on npm, `agentic-system-core` on PyPI) names the
+implementation; it moves alone for a patch that changes no rule and no emitted byte —
+a dependency fix, a defect in a check — and a package-only release carries the package
+tag `v<version>` and no specification tag. `agsc --version` prints the package version;
+the conformance claim names both ("agentic-system-core 1.0.1 conforms to
+AgenticSystemCore 1.0.0, Level 3"); the change log says for every release whether the
+specification moved.
 
 The specification's own site is [AgenticSystemCore.com](https://agenticsystemcore.com).
 
@@ -185,7 +196,7 @@ AGSC-09-01 (AGSC-10-05); the engine's claim is kept in
 [docs/CONFORMANCE-STATEMENTS.md](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim),
 with what each part of it rests on, and reads:
 
-> agentic-system-core 1.0.0 conforms to AgenticSystemCore 1.0.0, Level 3.
+> agentic-system-core 1.0.1 conforms to AgenticSystemCore 1.0.0, Level 3.
 > Verified against the published conformance vectors on 2026-10-12: 243 of 243
 > passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
 > chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
@@ -252,7 +263,7 @@ with their commands.
 **Check a Bundle on every push (GitHub Actions).** `action.yml` at the root of this
 repository is a composite action that runs `agsc ci` with the engine at the same
 commit as the action, so the ref you write pins the engine version. Pin it to the
-package tag, `v1.0.0` (not the specification tag `1.0.0`), or to that tag's full commit
+package tag, `v1.0.1` (not a specification tag: a package may be patched while the specification stays at `1.0.0`), or to that tag's full commit
 SHA, give the job read access only, and fetch the history the ledger reads:
 
 ```yaml
@@ -265,7 +276,7 @@ jobs:
       - uses: actions/checkout@<commit-sha>
         with:
           fetch-depth: 0
-      - uses: andreibesleaga/agentic-system-core@v1.0.0
+      - uses: andreibesleaga/agentic-system-core@v1.0.1
 ```
 
 **Lint before every commit (pre-commit).** `.pre-commit-hooks.yaml` offers one hook,
@@ -277,7 +288,7 @@ system Node is older, set `language_version` for the hook to a newer version:
 ```yaml
 repos:
   - repo: https://github.com/andreibesleaga/agentic-system-core
-    rev: v1.0.0
+    rev: v1.0.1
     hooks:
       - id: agsc-lint
 ```

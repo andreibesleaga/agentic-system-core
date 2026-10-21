@@ -147,7 +147,8 @@ verify it.
 
 Source: [diagrams/flow-release.md](diagrams/flow-release.md). The maintainer runs the
 checks locally (`node tools/release` is a dry run that never publishes), then pushes
-the specification's tag and the engine's `v` tag on one commit. Only the `v` tag starts
+the specification's tag and the engine's `v` tag on one commit (a package-only patch,
+which leaves the specification as it is, carries the `v` tag alone). Only the `v` tag starts
 `.github/workflows/release.yml`, which re-runs the gates, packs once, attests the
 tarballs and publishes exactly those, with no stored token.
 

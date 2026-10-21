@@ -13,7 +13,7 @@
 #       steps:
 #         - uses: actions/checkout@<sha>
 #           with: { fetch-depth: 0 }  # the ledger and the content version read history
-#         - uses: andreibesleaga/agentic-system-core@v1.0.0   # the package tag, or its full commit SHA
+#         - uses: andreibesleaga/agentic-system-core@v1.0.1   # the package tag, or its full commit SHA
 #
 # Least privilege: the action reads the checked-out repository, installs the
 # engine's pinned runtime dependencies (`npm ci --omit=dev --ignore-scripts`, from

@@ -55,7 +55,7 @@ The levels, and the rules and vector areas each one covers, are defined in
 The reference engine in this repository publishes its own claim, as AGSC-10-05
 asks, in the form above:
 
-> agentic-system-core 1.0.0 conforms to AgenticSystemCore 1.0.0, Level 3.
+> agentic-system-core 1.0.1 conforms to AgenticSystemCore 1.0.0, Level 3.
 > Verified against the published conformance vectors on 2026-10-12: 243 of 243
 > passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
 > chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,

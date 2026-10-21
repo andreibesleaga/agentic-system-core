@@ -311,3 +311,26 @@ it('the bench counts active rules exactly as tools/count-artifacts does', () => 
   assert.strictEqual(rules.all.length, counted.rules);
   assert.strictEqual(rules.active.length, counted.rules_active);
 });
+
+describe('the recorded commands run as printed', () => {
+  // docs/measurements.json and the "Reproduce with" lines of the site print each layer's
+  // `command`; at 1.0.0 four of them left out the fixed clock or the scratch directory that
+  // every run of bench/measure.js needs, so they exited 2 as printed.
+  const { COMMANDS } = require('../../bench/measure.js');
+  const record = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'measurements.json'), 'utf8'));
+
+  it('every command in the table carries the fixed clock and a scratch directory', () => {
+    for (const [layer, command] of Object.entries(COMMANDS)) {
+      assert.match(command, /^SOURCE_DATE_EPOCH=1767225600 /u, layer);
+      assert.match(command, new RegExp(`--layer ${layer} --scratch <dir>`, 'u'), layer);
+    }
+  });
+
+  it('the record prints, for each layer this script runs, the table\'s line', () => {
+    for (const [layer, command] of Object.entries(COMMANDS)) {
+      const printed = record.layers[layer].command;
+      // perf adds the sizes and the run count it measured, as arguments.
+      assert.ok(printed === command || (layer === 'perf' && /^ --sizes [\d,]+ --runs \d+$/u.test(printed.slice(command.length)) && printed.startsWith(command)), `${layer}: ${printed}`);
+    }
+  });
+});

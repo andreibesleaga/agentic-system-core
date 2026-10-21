@@ -49,6 +49,21 @@ const EPOCH = '1767225600';   // 2026-01-01T00:00:00Z — the project's fixed cl
 
 const LAYERS = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'retrieval', 'parity', 'tokens', 'a11y', 'package']);
 
+// The command each layer records, so a reader can re-run one line exactly as printed: every run
+// of this script needs the fixed clock (it reads no wall clock) and a scratch directory. One table,
+// so the printed lines cannot drift apart; tests/bench/bench.test.js holds the record to it.
+// (`retrieval` records the `tools/bench` line it runs, and `package` the `npm pack` line.)
+const RUN = `SOURCE_DATE_EPOCH=${EPOCH} node bench/measure.js`;
+const COMMANDS = Object.freeze({
+  conformance: `${RUN} --layer conformance --scratch <dir>`,
+  determinism: `${RUN} --layer determinism --scratch <dir>`,
+  security: `${RUN} --layer security --scratch <dir>`,
+  perf: `${RUN} --layer perf --scratch <dir>`,
+  parity: `${RUN} --layer parity --scratch <dir> --nodes <name>=<bundle dir>,…`,
+  tokens: `SOURCE_DATE_EPOCH=${EPOCH} NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --scratch <dir> --nodes <name>=<www>,… --exports <name>=<dir>,…`,
+  a11y: `SOURCE_DATE_EPOCH=${EPOCH} NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --scratch <dir> --nodes <name>=<www>,…`,
+});
+
 const HELP = `measure --layer <name> --scratch <dir> [--json]
 measure --assemble --scratch <dir> --out <file>
 
@@ -212,7 +227,7 @@ function layerConformance() {
   }
 
   return {
-    command: 'SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch <dir>',
+    command: COMMANDS.conformance,
     error_codes: { registered: counts.error_codes_registered, used: counts.error_codes_used },
     rule_coverage: coverage,
     rule_coverage_by_chapter: {
@@ -301,7 +316,7 @@ function layerDeterminism(scratch) {
   // holds the copied input files, which are identical by construction; comparing them as well
   // once reported 56 files compared where the build had written 49.
   return {
-    command: 'node bench/measure.js --layer determinism',
+    command: COMMANDS.determinism,
     double_build: diffTrees(runs.a.outDir, runs.b.outDir),
     files_compared: runs.a.tree.files,
     os_matrix: {
@@ -324,7 +339,7 @@ function layerSecurity(scratch) {
     cases: result.cases.map((c) => ({
       class: c.class, codes: c.codes, expect: c.expect, id: c.id, kind: c.kind, outcome: c.outcome, required: c.required,
     })),
-    command: 'SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer security --scratch <dir>',
+    command: COMMANDS.security,
     corpus: { cases: corpus.cases.length, file: 'bench/corpus/security-floor.json', version: corpus.version },
     limit: 'AGSC-08-19: these lints prove neither safety nor the absence of novel injection. An implementation MUST NOT claim more.',
     totals: result.totals,
@@ -353,7 +368,7 @@ async function layerParity(nodes) {
   }
   return {
     call_list: { file: 'bench/corpus/parity-calls.json', fixed: spec.calls.length, per_item: spec.per_item.length, version: spec.version },
-    command: 'node bench/measure.js --layer parity --nodes <name>=<bundle dir>,…',
+    command: COMMANDS.parity,
     nodes: per,
     note: 'Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary. A `remember` call that declares no operator is the one input on which AGSC-09-16 requires the two transports to differ (the server refuses with AGSC-E003, the page proposes with prov.operator absent and AGSC-E506); such a call is counted under required_difference when both answers have exactly that shape, and under differing otherwise.',
     totals,
@@ -370,7 +385,7 @@ function layerTokens(nodes, exports) {
     cl100k = require('gpt-tokenizer/encoding/cl100k_base');
     version = require('gpt-tokenizer/package.json').version;
   } catch {
-    return { command: 'node bench/measure.js --layer tokens', status: 'not run', reason: 'gpt-tokenizer is not resolvable; install it outside the repository and set NODE_PATH' };
+    return { command: COMMANDS.tokens, status: 'not run', reason: 'gpt-tokenizer is not resolvable; install it outside the repository and set NODE_PATH' };
   }
   const encoders = {
     cl100k_base: (t) => cl100k.encode(t, { allowedSpecial: 'all' }).length,
@@ -380,7 +395,7 @@ function layerTokens(nodes, exports) {
   const per = Object.create(null);
   for (const [name, www] of nodes) per[name] = tokens.count(www, exportOf.get(name) || null, encoders);
   return {
-    command: 'NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --nodes <name>=<www>,… --exports <name>=<dir>,…',
+    command: COMMANDS.tokens,
     no_claude_count: 'Anthropic publishes no offline tokenizer; no Claude token count is reported, because it would be a guess.',
     nodes: per,
     tokenizer: { library: 'gpt-tokenizer', licence: 'MIT', version, vocabularies: ['cl100k_base', 'o200k_base'] },
@@ -393,9 +408,9 @@ async function layerA11y(nodes) {
   try {
     versions = { axe_core: require('axe-core/package.json').version, playwright_core: require('playwright-core/package.json').version };
   } catch {
-    return { command: 'node bench/measure.js --layer a11y', status: 'not run', reason: 'playwright-core and axe-core are not resolvable (NODE_PATH)' };
+    return { command: COMMANDS.a11y, status: 'not run', reason: 'playwright-core and axe-core are not resolvable (NODE_PATH)' };
   }
-  if (!process.env.CHROME_EXE) return { command: 'node bench/measure.js --layer a11y', status: 'not run', reason: 'CHROME_EXE is not set' };
+  if (!process.env.CHROME_EXE) return { command: COMMANDS.a11y, status: 'not run', reason: 'CHROME_EXE is not set' };
   const per = Object.create(null);
   for (const [name, www] of nodes) {
     const run = await a11y.runBrowser({ chrome: process.env.CHROME_EXE, www });
@@ -411,7 +426,7 @@ async function layerA11y(nodes) {
   }
   return {
     ceiling: 'axe-core finds on average 57 % of WCAG issues automatically; zero violations is a floor, never a conformance claim.',
-    command: 'NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --nodes <name>=<www>,…',
+    command: COMMANDS.a11y,
     nodes: per,
     schemes: ['light', 'dark'],
     tags: a11y.AXE_TAGS,
@@ -503,7 +518,8 @@ function layerPerf(scratch, sizes, runsPerSize) {
       index_bytes: 1048576,
       page_bytes: 102400,
     },
-    command: `node bench/measure.js --layer perf   # sizes ${sizes.join(' ')}, ${runsPerSize} runs each, median`,
+    // The sizes and the run count are arguments, so replaying the line measures the same set.
+    command: `${COMMANDS.perf} --sizes ${sizes.join(',')} --runs ${runsPerSize}`,
     machine: {
       arch: os.arch(), cpus: os.cpus().length, model: (os.cpus()[0] || {}).model || null,
       node: process.version, platform: `${os.type()} ${os.release()}`, total_mem_bytes: os.totalmem(),
@@ -580,6 +596,6 @@ function run(argv, io) {
 
 if (require.main === module) Promise.resolve(run(process.argv.slice(2))).then((code) => process.exit(code));
 
-module.exports = { HELP, LAYERS, run, specRules };
+module.exports = { COMMANDS, HELP, LAYERS, run, specRules };
 
 /* c8 ignore stop */
