@@ -9,7 +9,7 @@
 // a file marks any — the text between `<!-- claims:start -->` and
 // `<!-- claims:end -->`, on one line or across many — so a README is held to the
 // rule where it reports results and nowhere else; a file with no marker is read
-// whole. A marker quoted in a code span (between backticks) is text, not a marker,
+// whole. A marker inside a code span (between backticks) is text, not a marker,
 // so a page that explains the markers is still read whole. In what is read, each of
 // these words is a finding (AGSC-E405): "first", "unique", a hundred per cent
 // written as a number (with zero decimals, a decimal comma, an escaped or
@@ -77,10 +77,29 @@ function isConfiguration(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
 }
 
-/** The index of the next `marker` on `line` from `from` that is not quoted in a code span, or -1. */
+/**
+ * The code spans of one line, as [start, end) ranges: a run of backticks opens a
+ * span that the next run of the same length closes (CommonMark). An unclosed run
+ * is literal text.
+ */
+function codeSpans(line) {
+  const runs = [...line.matchAll(/`+/gu)].map((m) => ({ at: m.index, length: m[0].length }));
+  const spans = [];
+  for (let i = 0; i < runs.length; i += 1) {
+    const close = runs.findIndex((run, j) => j > i && run.length === runs[i].length);
+    if (close === -1) continue;
+    spans.push([runs[i].at, runs[close].at + runs[close].length]);
+    i = close;
+  }
+  return spans;
+}
+
+/** The index of the next `marker` on `line` from `from` that lies in no code span, or -1. */
 function markerAt(line, marker, from) {
+  const spans = codeSpans(line);
+  const quoted = (at) => spans.some(([start, end]) => at < end && at + marker.length > start);
   for (let at = line.indexOf(marker, from); at !== -1; at = line.indexOf(marker, at + 1)) {
-    if (line[at - 1] !== '`' && line[at + marker.length] !== '`') return at;
+    if (!quoted(at)) return at;
   }
   return -1;
 }

@@ -23,7 +23,17 @@
  * @returns {boolean}
  */
 function finiteList(values) {
-  return Array.isArray(values) && values.length > 0 && values.every((x) => typeof x === 'number' && Number.isFinite(x));
+  if (!Array.isArray(values) || values.length === 0) return false;
+  // An index loop, not `every`: `every` skips the holes of a sparse list.
+  for (let i = 0; i < values.length; i += 1) {
+    if (typeof values[i] !== 'number' || !Number.isFinite(values[i])) return false;
+  }
+  return true;
+}
+
+/** True for a count of resamples a run can finish: a positive integer. */
+function isCount(value) {
+  return Number.isSafeInteger(value) && value >= 1;
 }
 
 /**
@@ -288,12 +298,14 @@ function quantile(sorted, q) {
  * @param {{level?:number, resamples?:number, seed?:number, statistic?:(xs:number[])=>number}} [options]
  *   level 0.95, 10,000 resamples, seed 1 and the median unless given.
  * @returns {{estimate:number, high:number, level:number, low:number, n:number, resamples:number, seed:number}|null}
- *   null for an empty sample, a sample holding anything but finite numbers, or
- *   fewer than one resample.
+ *   null for an empty sample, a sample holding anything but finite numbers, a
+ *   resample count that is not a positive integer, or a level outside (0, 1)
+ *   (0.95, not 95).
  */
 function bootstrapCI(values, options = {}) {
   const { level = 0.95, resamples = 10000, seed = 1, statistic = median } = options;
-  if (!finiteList(values) || !Number.isInteger(resamples) || resamples < 1) return null;
+  if (!finiteList(values) || !isCount(resamples)) return null;
+  if (!Number.isFinite(level) || level <= 0 || level >= 1) return null;
   const next = seeded(seed);
   const stats = new Array(resamples);
   const sample = new Array(values.length);
@@ -325,13 +337,13 @@ function bootstrapCI(values, options = {}) {
  * @returns {{exact:boolean, mean_difference:number, n:number, p:number}|null}
  *   null when the lists are empty, of different lengths, or hold anything but
  *   finite numbers (a missing value would otherwise read as the most significant
- *   result the test can report). `p` is unrounded, so a
+ *   result the test can report), or when `resamples` is not a positive integer. `p` is unrounded, so a
  *   small probability is never shown as 0 and Holm's correction gets it whole;
  *   round it only for display.
  */
 function pairedPermutationTest(a, b, options = {}) {
-  if (!finiteList(a) || !finiteList(b) || a.length !== b.length) return null;
   const { resamples = 10000, seed = 1 } = options;
+  if (!finiteList(a) || !finiteList(b) || a.length !== b.length || !isCount(resamples)) return null;
   const diffs = a.map((x, i) => x - b[i]);
   const n = diffs.length;
   const sum = diffs.reduce((acc, d) => acc + d, 0);

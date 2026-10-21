@@ -99,6 +99,18 @@ describe('tools/lint-claims — wording', () => {
     assert.deepEqual(envelope('lint-claims', [path.join(dir, 'explains.md')]).json.findings.map((f) => f.col), [74]);
   });
 
+  it('treats both markers inside one code span, padded or double-quoted, as text', () => {
+    const dir = writeTree(tmpdir(), {
+      'one.md': 'Markers: `<!-- claims:start --> … <!-- claims:end -->`; C2 beats C0.\n',
+      'two.md': 'Markers: `` `<!-- claims:start -->` ``; C2 wins.\n',
+      'open.md': 'An unclosed ` is text: <!-- claims:start -->C2 beats C0.<!-- claims:end -->\n',
+    });
+    assert.deepEqual(envelope('lint-claims', [path.join(dir, 'one.md')]).json.findings.map((f) => f.col), [60]);
+    assert.deepEqual(envelope('lint-claims', [path.join(dir, 'two.md')]).json.findings.map((f) => f.col), [44]);
+    // A lone backtick opens no span, so the marker after it is a real one.
+    assert.deepEqual(envelope('lint-claims', [path.join(dir, 'open.md')]).json.findings.map((f) => f.col), [48]);
+  });
+
   it('reads a file that starts with a byte-order mark at its real columns', () => {
     const dir = writeTree(tmpdir(), { 'bom.md': '\uFEFFIt beats C0.\n', 'r.json': `\uFEFF${results([ROW])}` });
     assert.deepEqual(envelope('lint-claims', [path.join(dir, 'bom.md')]).json.findings.map((f) => f.col), [4]);

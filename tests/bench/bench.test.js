@@ -205,9 +205,26 @@ describe('bench/metrics.js — the agent-side statistics', () => {
       assert.equal(metrics.median([missing, 0.2, 0.4]), null, `${missing}`);
       assert.equal(metrics.holm([0.01, missing]), null, `${missing}`);
     }
+    // A hole in a sparse list is a missing value too.
+    // eslint-disable-next-line no-sparse-arrays
+    const sparse = [1, , 3];
+    assert.equal(metrics.median(sparse), null);
+    assert.equal(metrics.pairedPermutationTest(new Array(2), [0, 0]), null);
     assert.equal(metrics.holm([0.01, 1.2]), null, 'a p value above 1 is no probability');
     assert.equal(metrics.holm('not a list'), null);
     assert.equal(metrics.bootstrapCI([1, 2, 3], { resamples: 0 }), null);
+  });
+
+  it('a resample count or a level a run cannot use is refused, never run', () => {
+    const twenty = Array.from({ length: 20 }, () => 0);
+    for (const resamples of [0, -1, 0.5, Infinity, Number.NaN]) {
+      assert.equal(metrics.pairedPermutationTest(twenty, twenty, { resamples }), null, `${resamples}`);
+      assert.equal(metrics.bootstrapCI([1, 2, 3], { resamples }), null, `${resamples}`);
+    }
+    // 0.95, not 95; and a level of 0, 1, below 0 or NaN gives no interval.
+    for (const level of [95, 0, 1, -0.5, Number.NaN]) {
+      assert.equal(metrics.bootstrapCI([1, 2, 3], { level, resamples: 100 }), null, `${level}`);
+    }
   });
 
   it('holm adjusts step-down, keeps the given order, stays monotone and caps at 1', () => {
