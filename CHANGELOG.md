@@ -11,7 +11,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [1.0.1] - 2026-10-30
+## [1.0.1] - 2026-10-21
 
 A patch of the packages. **Specification `1.0.0` is unchanged**: no rule, schema,
 vocabulary term or conformance vector changes. Only the package tag `v1.0.1` exists for
