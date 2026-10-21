@@ -1,10 +1,12 @@
 # Citation File Format 1.2.0 — https://citation-file-format.github.io
 # How to cite this work. Read by GitHub, Zenodo and reference managers.
 #
-# The release this file describes is version 1.0.0 (`version`, `date-released`). The
+# The release this file describes is the one `version` and `date-released` name: the
+# package version (the specification version is declared in spec/00-overview.md). The
 # DOI under `identifiers` is the concept DOI of the paper's Zenodo record, which always
-# resolves to the paper's latest version; the paper is the preferred citation. The
-# software itself carries no DOI of its own.
+# resolves to the paper's latest version; the paper is the preferred citation. Each
+# GitHub release of the software is also archived on Zenodo; that record is not claimed
+# here, so the paper stays the one citation.
 #
 # Written with AI assistance, reviewed and published by a person. (CFF 1.2.0 has no
 # note field and allows no extra key, so this sentence lives in a comment.)
@@ -17,8 +19,8 @@ abstract: >-
   machine-readable discovery documents, so that both people and software agents
   can find, read and cite the same material with its provenance intact.
 type: software
-version: 1.0.0
-date-released: 2026-10-14
+version: 1.0.1
+date-released: 2026-10-30
 authors:
   - family-names: Besleaga
     given-names: Andrei N.

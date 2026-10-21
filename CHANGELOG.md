@@ -11,6 +11,39 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-30
+
+A patch of the packages. **Specification `1.0.0` is unchanged**: no rule, schema,
+vocabulary term or conformance vector changes. Only the package tag `v1.0.1` exists for
+this release; there is no specification tag, because the specification did not move
+(README, "Versions").
+
+What a node built with 1.0.1 may see, measured on the engine's determinism corpus (49
+files) and on both public nodes: the same bytes as with 1.0.0, except the build record
+in `/ledger.jsonl`, which names the engine that built it (`"actor":
+"process:agsc/1.0.1"`, the trailing `build` entry of AGSC-08-20a), and so the ledger head
+and digest the discovery document carries. The Markdown parser's update below also
+makes two rare CommonMark edge cases stricter; neither occurs on either public node.
+
+### Security
+
+- `markdown-it` 15.0.2 → 15.0.3, the Markdown parser every item is rendered with:
+  [GHSA-gfr2-rv44-r23c](https://github.com/advisories/GHSA-gfr2-rv44-r23c)
+  (quadratic-time rendering of a multi-line link reference definition, high) and
+  [GHSA-vfgh-jcmw-g37q](https://github.com/advisories/GHSA-vfgh-jcmw-g37q)
+  (quadratic-time inline HTML parsing, low). The second needs `html: true`; the engine
+  renders with `html: false`, so only the first could reach a Bundle. 15.0.3 also
+  follows CommonMark more strictly in two edge cases: a reference-definition label
+  longer than 999 characters is no longer a definition, and a reference title on the
+  next line needs whitespace before it. `argparse`, the parser's own dependency, moves
+  with it (3.0.2 → 3.0.3).
+- `hono` 4.13.8 → 4.13.13 in the lockfile, a dependency of `@modelcontextprotocol/sdk`
+  (the tool server's library):
+  [GHSA-5r4p-p66f-jhc7](https://github.com/advisories/GHSA-5r4p-p66f-jhc7)
+  (`serveStatic` decodes a request path twice, moderate). The engine serves no static
+  file through it — `agsc mcp` speaks stdio — so nothing the engine does was exposed;
+  the pin moves so that `npm audit` is clean for every installer.
+
 ### Fixed
 
 - `tools/validate-wellknown` now asks a restricted node for everything AGSC-11-20
@@ -25,6 +58,20 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A restricted node built at Level 0 or 1 now carries `agsc-generated-at` and
   `agsc-spec-version`, as AGSC-11-20 requires at every Level, and the build's own check
   accepts them there. A public node's output is unchanged.
+- `bench/measure.js` records, for every layer it runs, the complete command, with
+  `SOURCE_DATE_EPOCH` and `--scratch <dir>`, from one table; `docs/measurements.json`
+  and `docs/MEASUREMENTS.md` print those lines, so each runs as printed (at 1.0.0 four
+  of the six lines the site prints exited 2 as recorded). The measured figures are
+  unchanged (the run of 2026-10-12).
+
+### Changed
+
+- The package version and the specification version are stated apart: the packages are
+  `1.0.1`, the specification they implement is `1.0.0`, and the conformance claim reads
+  "agentic-system-core 1.0.1 conforms to AgenticSystemCore 1.0.0, Level 3"
+  (README, "Versions"). `tools/release` prints the package tag alone for such a patch,
+  and the version test checks each version where it is stated.
+- The pull-request template asks what changed, why, and how it was proved.
 
 ## [1.0.0] - 2026-10-14
 

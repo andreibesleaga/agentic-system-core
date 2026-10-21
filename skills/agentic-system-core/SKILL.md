@@ -3,7 +3,7 @@ name: agentic-system-core
 description: Use the AgenticSystemCore engine (command `agsc`) to turn a folder of Markdown into a knowledge node and to work in one as an agent — initialise, lint, build, verify, read, cite, propose, compose, export, import, skill packs and live boards. Use when a project holds `agsc.config.json`, when the user mentions agsc, a Bundle, a knowledge node, AgenticSystemCore or the Agentic Knowledge Web, or when an agent must read, cite or change a published node.
 license: CC0-1.0
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   homepage: "https://agenticsystemcore.com/docs/how-to-use/"
   repository: "https://github.com/andreibesleaga/agentic-system-core"
 ---
@@ -39,7 +39,7 @@ The configuration keys are in `references/configuration.md`.
 
 ```bash
 node --version            # 22.13 or later
-npx -y agsc-cli --version # agsc 1.0.0; when the person wants it installed: npm install -g agentic-system-core
+npx -y agsc-cli --version # agsc 1.0.1; when the person wants it installed: npm install -g agentic-system-core
 cd <bundle>               # every verb runs in the folder that holds agsc.config.json
 ```
 

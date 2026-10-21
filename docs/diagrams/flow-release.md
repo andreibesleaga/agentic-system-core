@@ -1,7 +1,8 @@
 # Flow — a release
 
 **What this shows.** How a version reaches npm. The maintainer runs the release checks
-locally, then pushes two tags on one commit: the specification's own tag and the
+locally, then pushes the tags on one commit (two when the specification moved, the
+package tag alone for a package-only patch): the specification's own tag and the
 engine's `v` tag. Only the `v` tag starts the release workflow, which re-runs every
 gate on three operating systems, packs both packages once, attests the tarballs and
 publishes exactly those tarballs through npm trusted publishing. No token is stored.

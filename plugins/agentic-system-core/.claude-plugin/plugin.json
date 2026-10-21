@@ -1,6 +1,6 @@
 {
   "name": "agentic-system-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Teaches Claude Code to use the AgenticSystemCore engine (agsc) in all six modes: build a knowledge node from Markdown, read and cite one, propose changes for a person to merge, compose a harness, export skills and boards.",
   "author": { "name": "Andrei N. Besleaga", "url": "https://agenticsystemcore.com" },
   "homepage": "https://agenticsystemcore.com/docs/agent-skill/",

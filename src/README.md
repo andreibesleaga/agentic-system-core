@@ -203,7 +203,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT | `knowledge/schema.js`, `tools/validate-schemas` |
 | `format` keyword | `ajv-formats` | 3.0.1 | MIT | the same two |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT | `knowledge/jcs.js` |
-| CommonMark + GFM tables | `markdown-it` | 15.0.2 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
+| CommonMark + GFM tables | `markdown-it` | 15.0.3 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
 | Turtle and N-Quads | `n3` | 2.7.12 | MIT | `knowledge/turtle.js`, `tools/validate-ontology`, `tools/gen-ns` |
 | XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.1 | MIT | `governance/lint.js`, `tools/gen-ns` |
 | JSON-LD round-trip proof | `jsonld` | 9.0.0 | BSD-3-Clause | the shipped conformance areas under `tests/conformance/areas/` |

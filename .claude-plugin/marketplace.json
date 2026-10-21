@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "agentic-system-core",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "source": "./plugins/agentic-system-core",
       "description": "Teaches Claude Code to use the AgenticSystemCore engine (agsc) in all six modes: build a knowledge node from Markdown, read and cite one, propose changes for a person to merge, compose a harness, export skills and boards.",
       "license": "CC0-1.0",

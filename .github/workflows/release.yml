@@ -1,7 +1,8 @@
 # The engine release lane of docs/PLAN.md §7.
 #
 #   Trigger    a tag `v*` pushed by the maintainer (`v1.0.0`). The
-#              specification's own tag (`1.0.0`, no `v`) sits on the same
+#              specification's own tag (`1.0.0`, no `v`; only when the specification
+#              moved, never for a package-only patch) sits on the same
 #              commit and triggers nothing. A manual run (workflow_dispatch)
 #              publishes a version whose `v` tag already exists, from `main`,
 #              and only when every file the packages ship is byte-identical to

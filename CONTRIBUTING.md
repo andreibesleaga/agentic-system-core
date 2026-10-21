@@ -162,8 +162,10 @@ works if that field is decorative.
 A release is prepared on a `release/<version>` branch (for example `release/1.0.0`)
 and reaches `main` through a pull request whose checks are green. It then carries two
 annotated tags (`git tag -a`) on the same commit: the specification's own tag
-(`1.0.0`, which names the standard) and the package tag (`v1.0.0`). The specification
-tag is pushed before the package tag. The package tag triggers the workflow in
+(`1.0.0`, which names the specification version) and the package tag (`v1.0.0`). The specification
+tag is pushed before the package tag. A package-only patch, whose version differs from
+the declared specification (README, "Versions"), carries the package tag alone;
+`node tools/release` prints which case applies. The package tag triggers the workflow in
 `.github/workflows/release.yml` that publishes the npm packages, and publishing waits
 for the maintainer's approval of the `release` and `pypi` environments (npm from this
 repository, PyPI from the Python checker's); nothing is published from a laptop. The
