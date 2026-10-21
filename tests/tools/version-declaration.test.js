@@ -189,15 +189,22 @@ describe('the tree states the version it releases, in every place that carries i
   });
 
   it('the change log opens the 1.0.0 section with the upgrade note from the last candidate', () => {
+    // History: the 1.0.0 release, whatever the current versions are.
     const log = read('CHANGELOG.md');
-    const at = log.search(new RegExp(`^## \\[${SPEC.replace(/\./gu, '\\.')}\\] - \\d{4}-\\d{2}-\\d{2}$`, 'mu'));
+    const at = log.search(/^## \[1\.0\.0\] - \d{4}-\d{2}-\d{2}$/mu);
     assert.ok(at > 0, 'the release has its dated heading');
     const section = log.slice(at).split(/^## \[/mu)[1];
     assert.match(section.split('\n').filter(Boolean)[1], /^### Upgrading from 1\.0\.0-rc\.7$/u);
   });
 
-  it('a package-only release says that the specification did not move, and carries no spec tag', () => {
-    if (PACKAGE === SPEC) return; // a release that moves the specification needs no such note
+  it('the package version is the specification version, or a patch of it that says the specification did not move', () => {
+    const [pMajor, pMinor] = PACKAGE.split('.');
+    const [sMajor, sMinor] = SPEC.split('.');
+    assert.deepEqual([pMajor, pMinor], [sMajor, sMinor], 'a package patch implements the same MAJOR.MINOR specification');
+    if (PACKAGE === SPEC) {
+      assert.match(read('README.md'), new RegExp(`agentic-system-core ${PACKAGE.replace(/\./gu, '\\.')} conforms to AgenticSystemCore ${SPEC.replace(/\./gu, '\\.')}, Level 3`, 'u'));
+      return;
+    }
     const log = read('CHANGELOG.md');
     const at = log.search(new RegExp(`^## \\[${PACKAGE.replace(/\./gu, '\\.')}\\] - \\d{4}-\\d{2}-\\d{2}$`, 'mu'));
     assert.ok(at > 0, 'the package release has its dated heading');
