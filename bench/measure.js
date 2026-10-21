@@ -518,7 +518,8 @@ function layerPerf(scratch, sizes, runsPerSize) {
       index_bytes: 1048576,
       page_bytes: 102400,
     },
-    command: `${COMMANDS.perf}   # sizes ${sizes.join(' ')}, ${runsPerSize} runs each, median`,
+    // The sizes and the run count are arguments, so replaying the line measures the same set.
+    command: `${COMMANDS.perf} --sizes ${sizes.join(',')} --runs ${runsPerSize}`,
     machine: {
       arch: os.arch(), cpus: os.cpus().length, model: (os.cpus()[0] || {}).model || null,
       node: process.version, platform: `${os.type()} ${os.release()}`, total_mem_bytes: os.totalmem(),

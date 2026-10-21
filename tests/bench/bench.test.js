@@ -329,8 +329,8 @@ describe('the recorded commands run as printed', () => {
   it('the record prints, for each layer this script runs, the table\'s line', () => {
     for (const [layer, command] of Object.entries(COMMANDS)) {
       const printed = record.layers[layer].command;
-      // perf adds the sizes and runs it measured as a trailing comment.
-      assert.ok(printed === command || printed.startsWith(`${command}   # `), `${layer}: ${printed}`);
+      // perf adds the sizes and the run count it measured, as arguments.
+      assert.ok(printed === command || (layer === 'perf' && /^ --sizes [\d,]+ --runs \d+$/u.test(printed.slice(command.length)) && printed.startsWith(command)), `${layer}: ${printed}`);
     }
   });
 });

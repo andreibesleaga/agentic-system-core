@@ -2249,7 +2249,7 @@
         "index_bytes": 1048576,
         "page_bytes": 102400
       },
-      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir>   # sizes 100 500 1000 5000 10000, 3 runs each, median",
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3",
       "machine": {
         "arch": "x64",
         "cpus": 16,
