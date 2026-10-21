@@ -11,6 +11,19 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `bench/metrics.js`: the statistics of the agent-side study — citation precision and
+  recall on unit ids, a percentile bootstrap interval, a paired permutation test (exact
+  up to 16 pairs), Holm's correction and Cliff's delta. The resampling draws from a
+  seeded generator, so the same seed gives the same bytes; probabilities are returned
+  unrounded, and a list holding a missing value (`null`, `undefined`, `NaN`) is
+  refused rather than read as a number.
+- `tools/lint-claims` (kept in the repository): fails ranking words in a results text and
+  results rows that do not name their model, calendar date, sample size, metric, value
+  and confidence interval, or that compare with another system without both
+  configurations (docs/BENCHMARKS.md, "What this project will never claim").
+
 ## [1.0.1] - 2026-10-21
 
 A patch of the packages. **Specification `1.0.0` is unchanged**: no rule, schema,

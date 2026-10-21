@@ -109,6 +109,144 @@ describe('bench/metrics.js — the arithmetic', () => {
   });
 });
 
+describe('bench/metrics.js — the agent-side statistics', () => {
+  it('citationScore scores cited unit ids against the gold units, each unit once', () => {
+    assert.deepEqual(metrics.citationScore(['u#c1', 'u#c2', 'u#c2'], ['u#c2', 'u#c3']),
+      { cited: 2, correct: 1, gold: 2, precision: 0.5, recall: 0.5 });
+    assert.deepEqual(metrics.citationScore(['u#c1'], ['u#c1']),
+      { cited: 1, correct: 1, gold: 1, precision: 1, recall: 1 });
+  });
+
+  it('citationScore reports an absence, not a zero, where a score is undefined', () => {
+    // Nothing cited: precision undefined, recall 0 of the gold set.
+    assert.deepEqual(metrics.citationScore([], ['u#c1']),
+      { cited: 0, correct: 0, gold: 1, precision: null, recall: 0 });
+    // An unanswerable task: no gold unit, so recall is undefined.
+    assert.deepEqual(metrics.citationScore(['u#c1'], []),
+      { cited: 1, correct: 0, gold: 0, precision: 0, recall: null });
+  });
+
+  it('bootstrapCI is reproducible from its seed and brackets the estimate', () => {
+    const values = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5];
+    const first = metrics.bootstrapCI(values, { resamples: 2000, seed: 7 });
+    assert.deepEqual(metrics.bootstrapCI(values, { resamples: 2000, seed: 7 }), first);
+    assert.equal(first.estimate, 4);
+    assert.ok(first.low <= first.estimate && first.estimate <= first.high);
+    assert.deepEqual([first.n, first.resamples, first.seed, first.level], [11, 2000, 7, 0.95]);
+    assert.notDeepEqual(metrics.bootstrapCI(values, { resamples: 2000, seed: 8 }), first);
+  });
+
+  it('bootstrapCI takes another statistic, collapses on a constant sample and refuses an empty one', () => {
+    const mean = (xs) => xs.reduce((a, x) => a + x, 0) / xs.length;
+    assert.equal(metrics.bootstrapCI([1, 2, 3, 4], { resamples: 500, statistic: mean }).estimate, 2.5);
+    const constant = metrics.bootstrapCI([0.5, 0.5, 0.5], { resamples: 100 });
+    assert.deepEqual([constant.low, constant.estimate, constant.high], [0.5, 0.5, 0.5]);
+    assert.equal(metrics.bootstrapCI([]), null);
+    assert.equal(metrics.bootstrapCI('not a list'), null);
+  });
+
+  it('pairedPermutationTest is exact up to 16 pairs', () => {
+    // Every difference +1 over five pairs: only the all-plus and all-minus
+    // patterns reach |sum| = 5, so p = 2 / 32.
+    assert.deepEqual(metrics.pairedPermutationTest([2, 2, 2, 2, 2], [1, 1, 1, 1, 1]),
+      { exact: true, mean_difference: 1, n: 5, p: 0.0625 });
+    // No difference at all: every pattern reaches |sum| = 0, so p = 1.
+    assert.equal(metrics.pairedPermutationTest([1, 2, 3], [1, 2, 3]).p, 1);
+    // The sign of the difference does not change a two-sided p.
+    assert.equal(metrics.pairedPermutationTest([1, 1, 1, 1, 1], [2, 2, 2, 2, 2]).p, 0.0625);
+  });
+
+  it('pairedPermutationTest reads the same in any unit and keeps a small p whole', () => {
+    // Differences of 1e-10 are as decisive as differences of 1.
+    const tiny = metrics.pairedPermutationTest([1e-10, 1e-10, 1e-10, 1e-10, 1e-10], [0, 0, 0, 0, 0]);
+    assert.equal(tiny.p, 0.0625);
+    // Exact ties that floating point splits: in exact arithmetic p = 23/32. With no
+    // tolerance it reads 22/32, and a fixed tolerance fails once the unit is small.
+    const ties = [0.2, -0.3, -0.4, -0.1, 0.4, 0.7];
+    const zeros = ties.map(() => 0);
+    assert.equal(metrics.pairedPermutationTest(ties, zeros).p, 0.71875);
+    assert.equal(metrics.pairedPermutationTest(ties.map((d) => d * 1e-14), zeros).p, 0.71875);
+    // Sixteen equal differences: exactly 2 of 65,536 patterns, never rounded to 0.
+    const sixteen = Array.from({ length: 16 }, () => 1);
+    assert.equal(metrics.pairedPermutationTest(sixteen, sixteen.map(() => 0)).p, 2 / 65536);
+  });
+
+  it('pairedPermutationTest resamples above 16 pairs, never reports 0 and keeps p unrounded', () => {
+    const a = Array.from({ length: 20 }, () => 1);
+    const b = Array.from({ length: 20 }, () => 0);
+    // Only the two all-same-sign patterns reach the observed sum, so no draw hits:
+    // p = (0 + 1) / (997 + 1), a value four decimals would change.
+    const result = metrics.pairedPermutationTest(a, b, { resamples: 997, seed: 3 });
+    assert.deepEqual(result, { exact: false, mean_difference: 1, n: 20, p: 1 / 998 });
+  });
+
+  it('pairedPermutationTest is reproducible from its seed, and the seed matters', () => {
+    const a = [1, -1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, 1, -1];
+    const b = a.map(() => 0);
+    const p = (seed) => metrics.pairedPermutationTest(a, b, { resamples: 999, seed }).p;
+    assert.equal(p(3), p(3));
+    assert.equal(p(3), 0.273);
+    assert.notEqual(p(3), p(5));
+  });
+
+  it('pairedPermutationTest refuses unpaired input', () => {
+    assert.equal(metrics.pairedPermutationTest([1, 2], [1]), null);
+    assert.equal(metrics.pairedPermutationTest([], []), null);
+    assert.equal(metrics.pairedPermutationTest('a', 'b'), null);
+  });
+
+  it('every statistic refuses a missing value instead of reading it as a number', () => {
+    // A null citation score (nothing cited, or no gold unit) is an absence: it must
+    // be dropped before the statistics, never read as 0 or let through as NaN.
+    for (const missing of [null, undefined, Number.NaN, '0.5']) {
+      assert.equal(metrics.pairedPermutationTest([1, missing, 3], [1, 2, 3]), null, `${missing}`);
+      assert.equal(metrics.cliffsDelta([missing], [0.5]), null, `${missing}`);
+      assert.equal(metrics.bootstrapCI([missing, 0.2, 0.4]), null, `${missing}`);
+      assert.equal(metrics.median([missing, 0.2, 0.4]), null, `${missing}`);
+      assert.equal(metrics.holm([0.01, missing]), null, `${missing}`);
+    }
+    // A hole in a sparse list is a missing value too.
+    // eslint-disable-next-line no-sparse-arrays
+    const sparse = [1, , 3];
+    assert.equal(metrics.median(sparse), null);
+    assert.equal(metrics.pairedPermutationTest(new Array(2), [0, 0]), null);
+    assert.equal(metrics.holm([0.01, 1.2]), null, 'a p value above 1 is no probability');
+    assert.equal(metrics.holm('not a list'), null);
+    assert.equal(metrics.bootstrapCI([1, 2, 3], { resamples: 0 }), null);
+  });
+
+  it('a resample count or a level a run cannot use is refused, never run', () => {
+    const twenty = Array.from({ length: 20 }, () => 0);
+    for (const resamples of [0, -1, 0.5, Infinity, Number.NaN]) {
+      assert.equal(metrics.pairedPermutationTest(twenty, twenty, { resamples }), null, `${resamples}`);
+      assert.equal(metrics.bootstrapCI([1, 2, 3], { resamples }), null, `${resamples}`);
+    }
+    // 0.95, not 95; and a level of 0, 1, below 0 or NaN gives no interval.
+    for (const level of [95, 0, 1, -0.5, Number.NaN]) {
+      assert.equal(metrics.bootstrapCI([1, 2, 3], { level, resamples: 100 }), null, `${level}`);
+    }
+  });
+
+  it('holm adjusts step-down, keeps the given order, stays monotone and caps at 1', () => {
+    // Sorted: 0.01×3 = 0.03; 0.03×2 = 0.06; 0.04×1 = 0.04, raised to 0.06.
+    const adjusted = metrics.holm([0.01, 0.04, 0.03]);
+    [0.03, 0.06, 0.06].forEach((want, i) => assert.ok(Math.abs(adjusted[i] - want) < 1e-12, `${adjusted}`));
+    assert.deepEqual(metrics.holm([0.5, 0.6]), [1, 1]);
+    assert.deepEqual(metrics.holm([]), []);
+    // Unrounded: a family of one keeps its p, which must not drift to the threshold.
+    assert.deepEqual(metrics.holm([0.05004]), [0.05004]);
+  });
+
+  it('cliffsDelta counts dominance over every pair', () => {
+    assert.equal(metrics.cliffsDelta([4, 5], [1, 2]), 1);
+    assert.equal(metrics.cliffsDelta([1, 2], [4, 5]), -1);
+    assert.equal(metrics.cliffsDelta([1, 2, 3], [1, 2, 3]), 0);
+    // a < b in three pairs, a tie in one: −3 / 4.
+    assert.equal(metrics.cliffsDelta([1, 2], [2, 3]), -0.75);
+    assert.equal(metrics.cliffsDelta([], [1]), null);
+  });
+});
+
 describe('bench/gen-bundle.js — the synthetic Bundle', () => {
   it('is a pure function of the item count: two generations agree byte for byte', () => {
     assert.deepEqual(gen.bundle(3, 'x'), gen.bundle(3, 'x'));

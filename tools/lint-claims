@@ -1,0 +1,260 @@
+#!/usr/bin/env node
+// The claims lint of the benchmark kit (docs/BENCHMARKS.md, "What this project
+// will never claim"). It fails a results page, a README table or a results file that
+// words a measurement as a ranking, or prints a number a reader cannot trace.
+//
+//   lint-claims [--json] [--results <file>]... [--help] <file>...
+//
+// Text files (Markdown, HTML, plain text). Only the claims regions are read when
+// a file marks any — the text between `<!-- claims:start -->` and
+// `<!-- claims:end -->`, on one line or across many — so a README is held to the
+// rule where it reports results and nowhere else; a file with no marker is read
+// whole. A marker inside a code span (between backticks) is text, not a marker,
+// so a page that explains the markers is still read whole. In what is read, each of
+// these words is a finding (AGSC-E405): "first", "unique", a hundred per cent
+// written as a number (with zero decimals, a decimal comma, an escaped or
+// HTML-entity per-cent sign or space), "#1", "SOTA", "beat(s)", "win(s)".
+//
+// Results files (JSON, `{ "rows": [...] }`). Every row must name its `model`, its
+// `date` (a calendar date, YYYY-MM-DD), its sample size `n` (a positive integer),
+// its `metric`, its `value` (a finite number) and a confidence interval
+// `ci: [low, high]` of finite numbers with low ≤ high. A row that
+// compares with another system (`system` other than "agentic-system-core") must
+// carry both configurations in `configs`, one per system, each an object with at
+// least one member (a placeholder such as `true` or `{}` publishes nothing). Each missing member is
+// a finding (AGSC-E202).
+//
+// Exit 0 pass, 1 findings, 2 usage.
+'use strict';
+const fs = require('fs');
+
+const HELP = `lint-claims [--json] [--results <file>]... [--help] <file>...
+
+  Fails text that words a measurement as a ranking, and results rows a reader
+  cannot trace (model, date, n, metric, value, confidence interval; both
+  configurations for a cross-system row).
+
+  <file>            a Markdown, HTML or text file; only its claims regions
+                    (<!-- claims:start --> ... <!-- claims:end -->) are read
+                    when it marks any, otherwise the whole file
+  --results <file>  a results file, { "rows": [...] }; may be given more than once
+  --json            emit the envelope on stdout
+  --help            this text
+
+  Exit 0 pass, 1 findings, 2 usage.
+`;
+
+const OWN_SYSTEM = 'agentic-system-core';
+const START = '<!-- claims:start -->';
+const END = '<!-- claims:end -->';
+
+/** The forbidden wording: [label, pattern]. Each pattern is global and case-blind. */
+const WORDING = [
+  ['"first"', /\bfirst\b/giu],
+  ['"unique"', /\bunique\b/giu],
+  // Not after a digit, a dot or a comma, so 1,100 % and 0.100 % are other numbers.
+  ['a hundred per cent', /(?<![\w.,])100(?:[.,]0+)?(?:\s|&nbsp;|&#160;)*\\?(?:%|&percnt;|&#37;)/gu],
+  ['"#1"', /#1\b/gu],
+  ['"SOTA"', /\bSOTA\b/giu],
+  ['"beat(s)"', /\bbeats?\b/giu],
+  ['"win(s)"', /\bwins?\b/giu],
+];
+
+const DATE = /^(\d{4})-(\d{2})-(\d{2})$/u;
+
+/** True for a YYYY-MM-DD string that names a day of the Gregorian calendar. */
+function isCalendarDate(text) {
+  const parts = DATE.exec(String(text));
+  if (!parts) return false;
+  const [year, month, day] = parts.slice(1).map(Number);
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  return days !== undefined && day >= 1 && day <= days;
+}
+
+/** True for a published configuration: an object (not a list) with at least one member. */
+function isConfiguration(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+/**
+ * The code spans of one line, as [start, end) ranges: a run of backticks opens a
+ * span that the next run of the same length closes (CommonMark). An unclosed run
+ * is literal text.
+ */
+function codeSpans(line) {
+  const runs = [...line.matchAll(/`+/gu)].map((m) => ({ at: m.index, length: m[0].length }));
+  const spans = [];
+  for (let i = 0; i < runs.length; i += 1) {
+    const close = runs.findIndex((run, j) => j > i && run.length === runs[i].length);
+    if (close === -1) continue;
+    spans.push([runs[i].at, runs[close].at + runs[close].length]);
+    i = close;
+  }
+  return spans;
+}
+
+/** The index of the next `marker` on `line` from `from` that lies in no code span, or -1. */
+function markerAt(line, marker, from) {
+  const spans = codeSpans(line);
+  const quoted = (at) => spans.some(([start, end]) => at < end && at + marker.length > start);
+  for (let at = line.indexOf(marker, from); at !== -1; at = line.indexOf(marker, at + 1)) {
+    if (!quoted(at)) return at;
+  }
+  return -1;
+}
+
+function finding(code, file, line, col, message) {
+  return { code, col, file, line, message, severity: 'error' };
+}
+
+/**
+ * The text of `text` that is read, as [lineNumber, column offset, text] segments,
+ * plus a finding for a claims region that is opened and never closed. Markers are
+ * taken in order, so a region may open and close on one line, and the text beside
+ * a marker on its own line is read with its original columns.
+ */
+function readSegments(file, text) {
+  const lines = text.split('\n');
+  if (!lines.some((l) => markerAt(l, START, 0) !== -1)) return { findings: [], segments: lines.map((l, i) => [i + 1, 0, l]) };
+  const segments = [];
+  let opened = null;
+  lines.forEach((line, i) => {
+    let at = 0;
+    for (;;) {
+      const marker = opened ? END : START;
+      const next = markerAt(line, marker, at);
+      const stop = next === -1 ? line.length : next;
+      if (opened && stop > at) segments.push([i + 1, at, line.slice(at, stop)]);
+      if (next === -1) break;
+      opened = opened ? null : { col: next + 1, line: i + 1 };
+      at = next + marker.length;
+    }
+  });
+  const findings = opened
+    ? [finding('AGSC-E202', file, opened.line, opened.col, `the claims region opened here has no ${END}`)]
+    : [];
+  return { findings, segments };
+}
+
+/** Forbidden wording in one text file. */
+function lintText(file, text) {
+  const { findings, segments } = readSegments(file, text);
+  for (const [number, offset, segment] of segments) {
+    for (const [label, pattern] of WORDING) {
+      for (const match of segment.matchAll(pattern)) {
+        findings.push(finding('AGSC-E405', file, number, offset + match.index + 1,
+          `${label} words a measurement as a ranking; state the measured difference with its model, date, n and interval`));
+      }
+    }
+  }
+  return findings;
+}
+
+/** The members one row is missing, as messages. */
+function rowProblems(row) {
+  const problems = [];
+  if (typeof row.model !== 'string' || row.model === '') problems.push('names no model');
+  if (!isCalendarDate(row.date)) problems.push('carries no date (YYYY-MM-DD)');
+  if (!Number.isInteger(row.n) || row.n < 1) problems.push('carries no sample size n');
+  if (typeof row.metric !== 'string' || row.metric === '') problems.push('names no metric');
+  if (!Number.isFinite(row.value)) problems.push('carries no numeric value');
+  const ci = row.ci;
+  if (!Array.isArray(ci) || ci.length !== 2 || !ci.every(Number.isFinite) || ci[0] > ci[1]) {
+    problems.push('carries no confidence interval [low, high]');
+  }
+  if (row.system !== undefined && row.system !== OWN_SYSTEM) {
+    const configs = row.configs && typeof row.configs === 'object' ? row.configs : {};
+    for (const system of [OWN_SYSTEM, row.system]) {
+      // Own members only: an inherited name such as `constructor` is no configuration.
+      if (!Object.hasOwn(configs, system) || !isConfiguration(configs[system])) problems.push(`compares with ${row.system} but publishes no configuration for ${system}`);
+    }
+  }
+  return problems;
+}
+
+/** Untraceable rows in one results file. */
+function lintResults(file, text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    return [finding('AGSC-E202', file, 1, 1, `not JSON: ${e.message}`)];
+  }
+  if (!data || !Array.isArray(data.rows)) return [finding('AGSC-E202', file, 1, 1, 'holds no rows[] array')];
+  return data.rows.flatMap((row, i) => rowProblems(row || {})
+    .map((problem) => finding('AGSC-E202', file, 1, 1, `row ${i} ${problem}`)));
+}
+
+/** The arguments, or a usage message. */
+function parse(argv) {
+  const options = { help: false, json: false, results: [], texts: [] };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--help' || arg === '-h') options.help = true;
+    else if (arg === '--json') options.json = true;
+    else if (arg === '--results') {
+      i += 1;
+      if (argv[i] === undefined || argv[i].startsWith('-')) return { error: '--results needs a file (AGSC-E003)' };
+      options.results.push(argv[i]);
+    } else if (arg.startsWith('-')) return { error: `unknown flag ${arg} (AGSC-E002)` };
+    else options.texts.push(arg);
+  }
+  if (!options.help && options.texts.length + options.results.length === 0) {
+    return { error: 'nothing to lint: name a file or a --results file (AGSC-E003)' };
+  }
+  return { options };
+}
+
+/** Every input read and linted; an unreadable one is itself a finding. */
+function lintAll(options) {
+  const inputs = [...options.texts.map((f) => [f, lintText]), ...options.results.map((f) => [f, lintResults])];
+  let read = 0;
+  const findings = inputs.flatMap(([file, lint]) => {
+    let text;
+    try {
+      // A byte-order mark is no part of the text: JSON.parse refuses it and it would shift line 1.
+      text = fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, '');
+    } catch {
+      return [finding('AGSC-E901', file, 1, 1, 'cannot be read')];
+    }
+    read += 1;
+    return lint(file, text);
+  });
+  return { findings, read };
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out:(s:string)=>void, err:(s:string)=>void}} [io]
+ * @returns {number} exit code: 0 pass, 1 findings, 2 usage
+ */
+function run(argv, io) {
+  const out = (io && io.out) || ((s) => process.stdout.write(s));
+  const err = (io && io.err) || ((s) => process.stderr.write(s));
+  const parsed = parse(argv);
+  if (parsed.error) { err(`lint-claims: ${parsed.error}\n${HELP}`); return 2; }
+  if (parsed.options.help) { out(HELP); return 0; }
+
+  const { findings, read } = lintAll(parsed.options);
+  const status = findings.length === 0 ? 'pass' : 'fail';
+  if (parsed.options.json) {
+    out(`${JSON.stringify({
+      counts: { error: findings.length, warn: 0 },
+      findings,
+      inputs_read: read,
+      schema: 'agsc.lint-claims.v1',
+      status,
+      verb: 'lint-claims',
+    }, null, 2)}\n`);
+  } else {
+    for (const f of findings) err(`${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    out(`lint-claims ${status}: ${read} input file(s) read, ${findings.length} error(s)\n`);
+  }
+  return status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, WORDING, lintResults, lintText, run };
