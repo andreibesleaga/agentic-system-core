@@ -111,7 +111,7 @@
         "fast-xml-parser": "5.11.1",
         "json-canonicalize": "3.0.1",
         "jsonld": "9.0.0",
-        "markdown-it": "15.0.2",
+        "markdown-it": "15.0.3",
         "n3": "2.7.12",
         "yaml": "2.9.1"
     },
