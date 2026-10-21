@@ -142,7 +142,7 @@ The paths below say what to read, in order, for each of these readers and a few 
 2. [.github/workflows/README.md](../.github/workflows/README.md) — the test lane and the
    release lane.
 3. [tools/README.md](../tools/README.md) — the maintainer tools: `rule-coverage`,
-   `public-hygiene`, `release`, `gen-glossary`, `publish-set`.
+   `public-hygiene`, `release`, `gen-glossary`, `publish-set`, `lint-claims`.
 4. [CHANGELOG.md](../CHANGELOG.md) — what changed, release by release.
 5. [MEASUREMENTS.md](MEASUREMENTS.md) — the measured numbers and the commands that
    reproduce them.

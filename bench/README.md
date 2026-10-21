@@ -12,7 +12,7 @@ The measured results are in [`../docs/MEASUREMENTS.md`](../docs/MEASUREMENTS.md)
 | `tokens.js` | token counts per item for `llms.txt`, `chunks.jsonl` and the `llm-context` export; the tokenizer is injected (installed outside the repository). |
 | `a11y.js` | axe-core counts per page template through a headless browser (installed outside the repository), and the HTML-only page-weight sweep against the ≤ 100 KB budget. |
 | `corpus/` | the seeded fault corpus of the security floor and the parity call list — data, readable by a reviewer. Every credential-shaped string in it is fabricated. |
-| `metrics.js` | the pure arithmetic both halves share — median, precision/recall/nDCG/MRR at k, detector precision and recall, rule coverage. No file, clock, network or random source. |
+| `metrics.js` | the pure arithmetic both halves share — median, precision/recall/nDCG/MRR at k, detector precision and recall, rule coverage — and the statistics of the agent-side study: citation precision and recall on unit ids, a percentile bootstrap interval, a paired permutation test, Holm's correction and Cliff's delta. No file, clock or network; the resampling draws from a seeded generator, so a seed fixes the bytes. |
 | `gen-bundle.js` | the deterministic synthetic-Bundle generator behind the build curves. Item *n* is a pure function of *n*. It **refuses to write inside this repository**: point it at a scratch directory. |
 | `queries/bench-v2/` | the committed labelled query set in BEIR layout (`queries.jsonl`, `qrels/test.tsv`). Twenty hand-written intents over the two reference nodes, one gold item each, every gold item published on its node, every label readable by a reviewer. |
 
