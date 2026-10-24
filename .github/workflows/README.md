@@ -1,7 +1,7 @@
 # `.github/workflows/` — the two automated lanes
 
 **Summary.** Two GitHub Actions workflows. `test.yml` runs the whole test suite on
-every push and pull request, and once a week, on Ubuntu, macOS and Windows with Node
+every pull request, every push to `main` or a `release/` branch, and once a week, on Ubuntu, macOS and Windows with Node
 22.13.0, 24 and 26, with read-only permissions; on Ubuntu with Node 24 the suite runs
 measured, and fails below the coverage bar, and every leg installs the two packed
 tarballs together. A further job on Ubuntu runs the browser lane with a pinned
