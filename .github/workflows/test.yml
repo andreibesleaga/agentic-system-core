@@ -1,5 +1,5 @@
 # The test lane: the whole suite on three operating systems and three Node lines,
-# on every push and every pull request, and once a week.
+# on every pull request, every push to main or a release branch, and once a week.
 #
 #   What runs  `npm ci`, the linter (`npm run lint`), the dependency rule
 #              (`npm run arch`), `npm test` (unit, integration, architecture, the
@@ -62,10 +62,14 @@ name: test
 
 on:
   push:
-    # Every branch; a release tag is exercised by release.yml's own gates job,
-    # which runs the same steps, so a tag push does not run the matrix twice.
+    # main and release branches only: a pull request's commits are tested by the
+    # pull_request event (a push to any branch ran every leg twice), and a tag on a
+    # release-branch commit is still tested before the tag. A release tag itself is
+    # exercised by release.yml's own gates job, which runs the same steps, so a tag
+    # push does not run the matrix twice.
     branches:
-      - '**'
+      - main
+      - 'release/**'
   pull_request:
   schedule:
     # Mondays at 04:17 UTC.
@@ -73,6 +77,12 @@ on:
 
 permissions:
   contents: read
+
+# A newer push to the same pull request cancels the run it supersedes; runs on main,
+# on a release branch and the weekly run are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:

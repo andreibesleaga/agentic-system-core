@@ -273,7 +273,7 @@ By folder, the largest shipped parts are `tests/vectors` (632 KB, 251 files, rea
 
 | layer | why it has no number |
 |---|---|
-| Three-OS matrix | the same suite and builds on macOS and Windows at Node 22.13, 24 and 26 cannot be run from one machine; the CI matrix runs them on every push |
+| Three-OS matrix | the same suite and builds on macOS and Windows at Node 22.13, 24 and 26 cannot be run from one machine; the CI matrix runs them on every pull request and every push to `main` |
 | COGX import | the engine ships a COGX adapter, but the security corpus does not yet feed it hostile archives; the OKF adapter is the import lane scored in §3 |
 
 ---

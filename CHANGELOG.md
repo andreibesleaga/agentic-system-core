@@ -11,6 +11,14 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- CI: `test.yml` runs pushes on `main` and `release/` branches only, and a newer push to a
+  pull request cancels the run it supersedes. A push to a pull request's branch had run
+  all nine legs twice, once for the push and once for the pull request. Every pull
+  request, every merge and the weekly run still cover the three operating systems and
+  three Node lines; the required check names are unchanged.
+
 ### Added
 
 - `bench/metrics.js`: the statistics of the agent-side study — citation precision and
