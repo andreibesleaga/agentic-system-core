@@ -322,6 +322,19 @@ test('test.yml also runs once a week, so a quiet repository still meets a new ad
   assert.match(dow, /^[0-6]$/u, 'one fixed day of the week: weekly, not daily');
 });
 
+// A push to a pull request's branch ran every leg twice, once for the push and once for
+// the pull request; pushes are tested on main and release branches only, and a newer
+// push to a pull request cancels the run it supersedes, never a run on main.
+test('test.yml runs each commit once: pushes on main and release branches, pull requests, superseded pull request runs cancelled', () => {
+  const workflow = load(FILE);
+  assert.deepStrictEqual(workflow.on.push.branches, ['main', 'release/**']);
+  assert.ok('pull_request' in workflow.on, 'every pull request is tested');
+  assert.deepStrictEqual(workflow.concurrency, {
+    group: '${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}',
+    'cancel-in-progress': "${{ github.event_name == 'pull_request' }}",
+  });
+});
+
 test('a browser job runs the browser lane on Ubuntu with pinned, checksummed downloads; it is not a required context', () => {
   const workflow = load(FILE);
   const entries = Object.entries(workflow.jobs).filter(([, job]) => JSON.stringify(job.steps || []).includes('AGSC_BROWSER'));
