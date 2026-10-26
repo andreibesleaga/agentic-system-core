@@ -1,0 +1,47 @@
+# GitHub issue form: a defect in the engine, the checkers or a published node.
+# A security problem does not belong here: report it privately, as SECURITY.md says.
+name: Report a defect
+description: Something the engine, a checker or a published node does that its documentation or the specification says it must not.
+title: "defect: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One defect per issue. A security problem is reported privately (SECURITY.md), never here.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `agsc --version` (and `pip show agentic-system-core` for the Python checker).
+      placeholder: agsc 1.0.1
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: The exact commands, from an empty folder where possible, and the files they need.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What the documentation or the specification says should happen
+      description: Name the page or the rule (AGSC-nn-nn) if you know it.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happens instead
+      description: The output, with `--json` if the verb has it, and the exit code.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: Linux 6.6, Node 22.13.0 / Windows 11, Node 24
