@@ -18,6 +18,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   all nine legs twice, once for the push and once for the pull request. Every pull
   request, every merge and the weekly run still cover the three operating systems and
   three Node lines; the required check names are unchanged.
+- Docs: `TESTING.md` names the public export for the real-bundles lane.
 
 ### Added
 
