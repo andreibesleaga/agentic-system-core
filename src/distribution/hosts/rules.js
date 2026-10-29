@@ -100,15 +100,30 @@ function parseRedirects(text) {
   return { findings, rules };
 }
 
-/** A pattern of literal characters and greedy `*` splats, as an anchored RegExp. */
-function patternRegExp(pattern) {
-  const body = String(pattern).split('*').map((part) => part.replace(/[.+?^${}()|[\]\\/]/gu, '\\$&')).join('.*');
-  return new RegExp(`^${body}$`, 'u');
-}
+const LINE_TERMINATOR = /[\n\r\u2028\u2029]/u;
 
-/** Does `pattern` match the request path `path`? */
+/**
+ * Does `pattern` match the request path `path`? The pattern is literal characters and
+ * `*` splats; a splat takes any run of characters except a line terminator, as the
+ * `.*` of the regular expression it replaces did. Each literal part is placed at its
+ * first possible position after the one before it, which leaves the shortest gaps, so
+ * the path is read once and no split of it is tried again.
+ */
 function matches(pattern, path) {
-  return patternRegExp(pattern).test(String(path));
+  const parts = String(pattern).split('*');
+  const text = String(path);
+  if (parts.length === 1) return text === parts[0];
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  const end = text.length - last.length;
+  if (end < first.length || !text.startsWith(first) || !text.endsWith(last)) return false;
+  let at = first.length;
+  for (const part of parts.slice(1, -1)) {
+    const found = text.indexOf(part, at);
+    if (found < 0 || found + part.length > end || LINE_TERMINATOR.test(text.slice(at, found))) return false;
+    at = found + part.length;
+  }
+  return !LINE_TERMINATOR.test(text.slice(at, end));
 }
 
 /**

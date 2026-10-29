@@ -66,3 +66,17 @@ test('the default environment is the process environment', () => {
     else process.env.SOURCE_DATE_EPOCH = saved;
   }
 });
+
+// I-122: an empty SOURCE_DATE_EPOCH is read as unset (AGSC-04-09), and from 1.1 the
+// Clock says it was there: the warning AGSC-E603, beside the AGSC-E606 of the default.
+test('AGSC-04-09: an empty SOURCE_DATE_EPOCH is read as unset and reported as the warning AGSC-E603', () => {
+  const clock = createClock({ env: { SOURCE_DATE_EPOCH: '' } });
+  assert.strictEqual(clock.now(), 0);
+  assert.deepStrictEqual(clock.findings().map((f) => [f.code, f.severity]), [['AGSC-E603', 'warn'], ['AGSC-E606', 'warn']]);
+  assert.match(clock.findings()[0].message, /SOURCE_DATE_EPOCH is set but empty.*read as unset.*AGSC-04-09/u);
+  const fromGit = createClock({ env: { SOURCE_DATE_EPOCH: '' }, lastCommitSeconds: 1767225600 });
+  assert.strictEqual(fromGit.now(), 1767225600);
+  assert.deepStrictEqual(fromGit.findings().map((f) => f.code), ['AGSC-E603']);
+  // an absent variable says nothing of the kind
+  assert.deepStrictEqual(createClock({ env: {}, lastCommitSeconds: 5 }).findings(), []);
+});

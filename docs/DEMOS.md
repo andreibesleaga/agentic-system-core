@@ -130,12 +130,12 @@ www/graph.jsonld
 ```
 
 To look at it in a browser, `agsc-host serve` serves `www/` read-only on
-`http://127.0.0.1:8080/` (the page for a note is `/concepts/brewing/`, its Markdown
+`http://localhost:8080/` (the page for a note is `/concepts/brewing/`, its Markdown
 view `/pages/brewing.md`); the search box reads `www/search.json` in the browser and
 asks no server. That step is shown, not run by the test:
 
 ```bash
-agsc-host serve            # serving …/www at http://127.0.0.1:8080/ — read-only; stop with Ctrl-C
+agsc-host serve            # serving …/www at http://localhost:8080/ — read-only; stop with Ctrl-C
 ```
 
 Now the contributor's loop. Commit the wiki, edit a page, normalise it, and ask for a
@@ -472,7 +472,7 @@ typed links without opening the graph.
 
 The fixture is the two-concept Bundle plus a `login` board: a decision, a
 specification that implements it, two tasks (one working, blocked by the other), a
-procedure, and a gate with three checks.
+procedure, and a gate at Level 2 with the five checks that level implies.
 
 `ci` writes the gate record and the forge files. `status-checks.json` keeps the gate's
 own check names; the ruleset requires only `agsc ci`, the job the shipped action
@@ -488,7 +488,7 @@ node -e 'console.log("ruleset requires", JSON.stringify(require("./dist/forge/ru
 
 ```text expect
 ci: pass (0 error, 1 warn)
-["links","review","schema"]
+["determinism","links","provenance","review","schema"]
 ruleset requires ["agsc ci"]
 ```
 
@@ -525,7 +525,7 @@ node -e 'const b = JSON.parse(require("node:fs").readFileSync("www/boards/login.
 <dt>Task state</dt><dd><code>TASK_STATE_WORKING</code></dd>
 <code>blocked-by</code>: <a href="/concepts/task-login-form/">
 <dt>Level</dt><dd><code>L2</code></dd>
-<dt>Checks</dt><dd><code>schema</code>, <code>links</code>, <code>review</code></dd>
+<dt>Checks</dt><dd><code>schema</code>, <code>links</code>, <code>provenance</code>, <code>determinism</code>, <code>review</code></dd>
 <code>contradicts</code>: <a href="/concepts/supervisor/">
 done: false
 task-login-form TASK_STATE_SUBMITTED

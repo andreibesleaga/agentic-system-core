@@ -6,6 +6,7 @@
 // under --json, one line per finding otherwise. Exit 0 pass, 1 fail, 2 usage.
 //
 //   validate-wellknown <url|file> [--level 0|1|2|3] [--peer <url|file>] [--json] [--dev]
+//                      [--allow-network] [--max-requests <1..2000>]
 //
 // A <file> argument is a path to the document itself. Its targets are resolved on
 // disk by mapping each same-origin href path onto the directory that contains
@@ -76,6 +77,7 @@ const MAX_BYTES = 1048576;       // 1 MiB: a discovery document (AGSC-01-16, AGS
 const TARGET_MAX_BYTES = 33554432; // federation.max_bytes default: any other artefact (AGSC-11-01, AGSC-11-10(f))
 const REDIRECT_LIMIT = 3;        // federation.redirect_limit default (AGSC-11-06/09)
 const TIMEOUT_MS = 10000;        // federation.timeout_ms default (AGSC-11-06)
+const MAX_REQUESTS = Object.freeze({ default: 500, max: 2000, min: 1 }); // federation.max_requests (AGSC-11-06)
 
 // The per-response deadline's timer, the platform's by default. A caller of `run` may
 // hand in its own (`io.timer`, AGSC-11-10(e, f)), so that a test fires the deadline
@@ -85,13 +87,19 @@ const PLATFORM_TIMER = Object.freeze({ clear: (handle) => clearTimeout(handle), 
 // ---------------------------------------------------------------- arguments
 /** The options of one run; with them, the usage fault ([code, message]) or the `help` that ends it. */
 function parseArgs(a) {
-  const opts = { json: a.includes('--json'), dev: false, level: 0, target: null, peer: null };
+  const opts = { allowNetwork: false, json: a.includes('--json'), dev: false, level: 0, maxRequests: MAX_REQUESTS.default, target: null, peer: null };
   const fault = (code, message) => ({ opts, fault: [code, message] });
   for (let i = 0; i < a.length; i++) {
     const x = a[i];
     if (x === '--json') continue;
     else if (x === '--dev') opts.dev = true;
-    else if (x === '--level') { const v = a[++i]; if (!/^[0-3]$/.test(v || '')) return fault('AGSC-E003', '--level needs 0, 1, 2 or 3'); opts.level = Number(v); } else if (x === '--peer') { const v = a[++i]; if (!v) return fault('AGSC-E003', '--peer needs a url or file'); opts.peer = v; } else if (x === '-h' || x === '--help') return { opts, help: true };
+    else if (x === '--allow-network') opts.allowNetwork = true;
+    else if (x === '--max-requests') {
+      const v = a[++i];
+      const n = /^[0-9]{1,5}$/.test(v || '') ? Number(v) : 0;
+      if (n < MAX_REQUESTS.min || n > MAX_REQUESTS.max) return fault('AGSC-E003', `--max-requests needs a whole number from ${MAX_REQUESTS.min} to ${MAX_REQUESTS.max}`);
+      opts.maxRequests = n;
+    } else if (x === '--level') { const v = a[++i]; if (!/^[0-3]$/.test(v || '')) return fault('AGSC-E003', '--level needs 0, 1, 2 or 3'); opts.level = Number(v); } else if (x === '--peer') { const v = a[++i]; if (!v) return fault('AGSC-E003', '--peer needs a url or file'); opts.peer = v; } else if (x === '-h' || x === '--help') return { opts, help: true };
     else if (x.startsWith('-')) return fault('AGSC-E002', `unknown flag ${x}`);
     else if (!opts.target) opts.target = x;
     else return fault('AGSC-E002', `unexpected argument ${x}`);
@@ -251,6 +259,9 @@ function fetchOnce(url, cap, session) {
 async function fetchUrl(url, cap, session) {
   let current = url;
   for (let hop = 0; ; hop++) {
+    // AGSC-11-10(c): every request counts against the budget, redirects included.
+    if (session.requests >= session.maxRequests) throw new TransportError('AGSC-E906', `request budget of ${session.maxRequests} spent (federation.max_requests, AGSC-11-10(c))`);
+    session.requests += 1;
     const r = await fetchOnce(current, cap, session);
     if ([301, 302, 303, 307, 308].includes(r.status) && r.headers.location) {
       if (hop >= REDIRECT_LIMIT) throw new TransportError('AGSC-E905', `more than ${REDIRECT_LIMIT} redirects`);
@@ -633,7 +644,12 @@ async function run(argv, io = {}) {
     if (opts.json) out(jcs(env) + '\n'); else err(`${code} ${message}\n`);
     return 2;
   }
-  const session = { dev: opts.dev, reads: 0, timer: io.timer || PLATFORM_TIMER };
+  const session = { dev: opts.dev, maxRequests: opts.maxRequests, reads: 0, requests: 0, timer: io.timer || PLATFORM_TIMER };
+  // The Python checker fetches only with --allow-network. This one still does, so a 1.0 command line
+  // keeps working; the human form says so once, and the flag is required from 2.0.
+  if (!opts.allowNetwork && !opts.json && [opts.target, opts.peer].some((t) => t && isUrl(t))) {
+    err('validate-wellknown: fetching over the network without --allow-network; from 2.0 the flag is required\n');
+  }
   const findings = [];
   const one = async (target, level) => {
     try { const src = await load(target, session); return { src, r: await check(src, level, findings, session) }; } catch (e) { findings.push({ code: e.code && /^AGSC-E\d{3}$/.test(e.code) ? e.code : 'AGSC-E907', col: 1, file: target, line: 1, message: e.message, severity: 'error' }); return null; }

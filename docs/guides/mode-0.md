@@ -136,7 +136,7 @@ agsc-host serve
 ```
 
 ```text
-serving …/my-notes/www at http://127.0.0.1:8080/ — read-only; stop with Ctrl-C
+serving …/my-notes/www at http://localhost:8080/ — read-only; stop with Ctrl-C
 ```
 
 To run the checkers against this address, see the publishing guide §6 — `localhost`, not
@@ -209,7 +209,7 @@ another licence in `bundle.license_prose`); and the history checked:
 
 ```bash demo
 cp "$ENGINE/LICENSE-CONTENT" .
-node -e 'const f = "agsc.config.json", fs = require("node:fs"), c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = "https://notes.example.org/"; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n");'
+node -e 'const fs = require("node:fs"), base = "https://notes.example.org/", f = "agsc.config.json", c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = base; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n"); const i = "content/index.md"; fs.writeFileSync(i, fs.readFileSync(i, "utf8").replace(/^base: .*$/m, "base: " + base));'
 git add -A && git commit -q -m 'ready to publish'
 agsc ci
 agsc build
@@ -222,7 +222,9 @@ wrote: 48 files under www/
 verify: pass (0 error, 0 warn)
 ```
 
-The `node -e` line only sets `site.base`; editing the file by hand does the same. The new
+The `node -e` line sets `site.base` and the `base` of the root document `content/index.md`,
+which must agree (AGSC-01-04; from 1.1 `lint` warns when they differ); editing the two by
+hand does the same. The new
 warning asks for a `PRIVACY.md` beside `LICENSE-CONTENT`, which `/legal/` then shows.
 Upload `www/` to any host that serves files over HTTPS; `agsc-host list` names the
 profiles the engine can write host settings for, and the [publishing guide](publish.md)

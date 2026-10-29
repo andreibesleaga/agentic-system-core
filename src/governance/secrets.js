@@ -86,20 +86,36 @@ function check(input = {}) {
   return findings;
 }
 
+/** Names that look like `.env.<name>` but are templates meant to be committed. */
+const ENV_TEMPLATES = new Set(['.env.example', '.env.sample', '.env.template']);
+
+const basename = (p) => p.slice(p.lastIndexOf('/') + 1);
+
 /**
- * AGSC-01-37: a `.env` present on the content branch is AGSC-E403.
+ * AGSC-01-37: a `.env` present on the content branch is AGSC-E403. From 1.1 a
+ * tracked `.env.<name>` (`.env.local`, `.env.production`) is the same code as a
+ * warning: it was valid in 1.0, so it is not refused (AGSC-00-14).
  *
  * @param {Iterable<string>} trackedPaths the git-tracked paths, from the
  *   ProcessRunner port (`git ls-files`) or supplied directly by a test.
- * @returns {Array<object>} Findings; empty when `.env` is not tracked.
+ * @returns {Array<object>} Findings; empty when no `.env` file is tracked.
  */
 function checkTracked(trackedPaths) {
   const paths = Array.from(trackedPaths || []);
-  const hit = paths.find((p) => p === '.env' || p.endsWith('/.env'));
-  if (hit === undefined) return [];
-  return [finding(TRACKED_ENV_CODE,
-    'the environment file is tracked on the content branch; no Bundle file may hold a secret (AGSC-01-37, AGSC-08-15)',
-    { file: hit, path: hit })];
+  const out = [];
+  const plain = paths.find((p) => basename(p) === '.env');
+  if (plain !== undefined) {
+    out.push(finding(TRACKED_ENV_CODE,
+      'the environment file is tracked on the content branch; no Bundle file may hold a secret (AGSC-01-37, AGSC-08-15)',
+      { file: plain, path: plain }));
+  }
+  const named = paths.find((p) => basename(p).startsWith('.env.') && !ENV_TEMPLATES.has(basename(p)));
+  if (named !== undefined) {
+    out.push(finding(TRACKED_ENV_CODE,
+      'an environment file is tracked on the content branch; it may hold a secret (AGSC-01-37, AGSC-08-15)',
+      { file: named, path: named, severity: 'warn' }));
+  }
+  return out;
 }
 
 module.exports = { TRACKED_ENV_CODE, SHAPES, check, checkTracked, isPlaceholder };

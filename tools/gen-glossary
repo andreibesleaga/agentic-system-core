@@ -32,9 +32,38 @@ const HELP = `gen-glossary [--check] [--help]
  * (`[text](url)`) is left alone.
  */
 function stripTrace(text) {
-  return String(text)
-    .replace(/\s*\[(?:design|(?:[A-Z][A-Za-z]*-)+\d[\w.-]*|RFC \d+[^\]]*)(?:,\s*[^\]]+)*\](?!\()/gu, '')
-    .replace(/\s+$/u, '');
+  const s = String(text);
+  // The bracket closes at the first `]` after its `[` (nothing inside it holds one), so
+  // that `]` is looked for once per run of brackets, and a bracket whose `]` opens a
+  // link (`](`) is skipped without reading its content.
+  const mark = /\[(?:design|(?:[A-Z][A-Za-z]*-)+\d[\w.-]*|RFC \d+[^\]]*)(?:,[^\]]+)?\]/uy;
+  let out = '';
+  let from = 0;
+  let close = -1;
+  for (let open = s.indexOf('['); open >= 0; open = s.indexOf('[', open + 1)) {
+    if (close < open) close = s.indexOf(']', open);
+    if (close < 0) break;
+    mark.lastIndex = open;
+    if (s[close + 1] === '(' || !mark.test(s)) continue;
+    let start = open;
+    while (start > from && /\s/u.test(s[start - 1])) start -= 1;
+    out += s.slice(from, start);
+    from = close + 1;
+    open = close;
+  }
+  return (out + s.slice(from)).trimEnd();
+}
+
+/**
+ * The text without a bracket that ends it (`text [tag]  `), and the space before the
+ * bracket. Found from the end: a pattern for it would start a scan at every `[`.
+ */
+function dropTrailingBracket(text) {
+  const trimmed = text.trimEnd();
+  if (!trimmed.endsWith(']')) return text;
+  // The bracket opens at the first `[` after the previous `]` (it holds no `]`).
+  const open = trimmed.indexOf('[', trimmed.lastIndexOf(']', trimmed.length - 2) + 1);
+  return open < 0 || open >= trimmed.length - 1 ? text : trimmed.slice(0, open).trimEnd();
 }
 
 function generate(root) {
@@ -57,7 +86,7 @@ function generate(root) {
     const top = line.match(/^- \*\*(AGSC-00-\d{2}[a-z]?)\*\* (.*)$/);
     if (top) {
       rule = top[1];
-      out.push(`- ${stripTrace(top[2].replace(/\s*\[[^\]]*\]\s*$/, ''))} *(${rule})*`);
+      out.push(`- ${stripTrace(dropTrailingBracket(top[2]))} *(${rule})*`);
       continue;
     }
     const nested = rule && line.match(/^ {2}- (\*\*.+?\*\* — .*)$/);
@@ -164,4 +193,4 @@ function run(argv, io = {}) {
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { HELP, generate, run, stripTrace };
+module.exports = { HELP, dropTrailingBracket, generate, run, stripTrace };

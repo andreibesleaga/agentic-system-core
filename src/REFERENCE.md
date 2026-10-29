@@ -779,7 +779,7 @@ checkBoundaryConfig(config) -> Finding[]; retirement(items, {base}); retiredAt(i
 // boundary/federation.js
 effectiveFederation(config); peerBase(url); peerLinks(config)
 checkScheme(url, {dev}); checkAddresses(addresses, {dev}); followRedirects(peer, hops, options)
-walk({start, fetch, federation}) -> { error, ignoredByFanOut, notDescended, partial, requests, skipped, visited }
+walk({start, fetch, federation, resolved, dev}) -> { error, ignoredByFanOut, notDescended, partial, requests, skipped, visited }
 normaliseReference(raw) -> { error, url }; peerCitations(items, {base, peers}); serializeQuads(quads)
 linkKeyBoundary(items); checkContribute(config); contributeLinks(config, {clientSupports})
 checkRelated(config); relatedLinks(config); mutualCheck(nodes); clientUnion(dumps)

@@ -176,7 +176,7 @@ for (const [rel, heading] of [['docs/USING-WITH-ASSISTANTS.md', '4.'], ['docs/gu
 
 test('the publishing guide says how to run both checkers against a locally served node', () => {
   const text = flat(section(read('docs/guides/publish.md'), '6.'));
-  assert.match(text, /\*\*On your own machine first\.\*\* `agsc-host serve` prints `http:\/\/127\.0\.0\.1:8080\/`/u);
+  assert.match(text, /\*\*On your own machine first\.\*\* `agsc-host serve` prints `http:\/\/localhost:8080\/` \(before 1\.1 it printed `http:\/\/127\.0\.0\.1:8080\/`\), and both checkers compare/u);
   assert.match(text, /set `site\.base` to `http:\/\/localhost:8080\/`, rebuild, serve, and run each checker on `http:\/\/localhost:8080\/\.well-known\/knowledge-linkset --level 2 --dev` \(the Python checker also needs `--allow-network`\); use `localhost`, not `127\.0\.0\.1`, in both places/u);
   assert.match(text, /`--dev` admits plain `http` to a loopback address and nothing else \(AGSC-09-93\)/u);
   // The paragraph is prose: the guide runner finds no new command block in section 6.

@@ -65,3 +65,17 @@ test('AGSC-01-37: a tracked .env is AGSC-E403 whatever it holds', () => {
   const [nested] = secrets.checkTracked(['sub/.env']);
   assert.strictEqual(nested.path, 'sub/.env');
 });
+
+test('AGSC-01-37 (1.1): a tracked .env.<name> is a warning, the template names are not reported', () => {
+  const [local] = secrets.checkTracked(['.env.local']);
+  assert.strictEqual(local.code, 'AGSC-E403');
+  assert.strictEqual(local.severity, 'warn');
+  assert.strictEqual(local.path, '.env.local');
+  const [nested] = secrets.checkTracked(['site/.env.production']);
+  assert.strictEqual(nested.severity, 'warn');
+  assert.deepStrictEqual(secrets.checkTracked(['.env.example', 'a/.env.sample', '.env.template', '.envrc', 'env.local']), []);
+  // the plain file stays an error, and it is reported first when both are tracked
+  const both = secrets.checkTracked(['.env.local', '.env']);
+  assert.strictEqual(both.length, 2);
+  assert.strictEqual(both[0].severity, 'error');
+});

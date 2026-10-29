@@ -188,6 +188,28 @@ function runBnd0030(vector) {
   return checks(list);
 }
 
+/**
+ * bnd-0049 — AGSC-11-08: the library walk fetches nothing for a host the caller did
+ * not resolve (or resolved to nothing), exactly as the checker and the redirect
+ * guard already refuse it (AGSC-11-10).
+ */
+function runBnd0049(vector) {
+  const list = [];
+  const dev = vector.input.dev === true;
+  for (const kase of vector.input.cases) {
+    const resolved = Object.create(null);
+    for (const entry of kase.resolved || []) resolved[entry.host] = entry.addresses;
+    let fetched = false;
+    const fetch = () => { fetched = true; return { ok: true, peers: [] }; };
+    const result = federation.walk({ dev, fetch, resolved, start: kase.peer });
+    const error = result.skipped.length > 0 ? result.skipped[0].code : null;
+    const expected = vector.expected.cases.find((c) => c.name === kase.name) || {};
+    list.push([`${kase.name} fetched`, fetched === expected.fetched, String(fetched)]);
+    list.push([`${kase.name} error`, error === expected.error, String(error)]);
+  }
+  return checks(list);
+}
+
 /** The MCP revision the reference transport speaks (AGSC-11-16), which this client requests. */
 const MCP_REVISION = '2025-11-25';
 /** 2026-01-01T00:00:00Z — the fixed instant of `tests/fixtures/minimal/README.md`. */
@@ -683,6 +705,7 @@ const HANDLERS = {
   'bnd-0041': runAddressCase,
   'bnd-0042': runBnd0042,
   'bnd-0043': runAddressCase,
+  'bnd-0049': runBnd0049,
 };
 
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of

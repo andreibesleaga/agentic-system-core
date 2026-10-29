@@ -189,14 +189,15 @@ function checkAddresses(addresses, options) {
 }
 
 /**
- * resolvedFor(options, host) -> string[] | null
- * The addresses a caller has resolved for `host`, or `null` when the caller
- * supplied no resolution map at all. An IP literal resolves to itself.
+ * resolvedFor(options, host) -> string[]
+ * The addresses a caller has resolved for `host`; an IP literal resolves to
+ * itself. A host the caller did not resolve, or supplied no map for, has no
+ * classified address, and `checkAddresses` refuses the empty list.
  */
 function resolvedFor(options, host) {
   const opts = options || {};
   if (net.isIP(host) !== 0) return [host];
-  if (!opts.resolved || typeof opts.resolved !== 'object') return null;
+  if (!opts.resolved || typeof opts.resolved !== 'object') return [];
   return opts.resolved[host] || [];
 }
 
@@ -212,8 +213,7 @@ function peerFault(value, options) {
   if (!/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(raw)) return null;
   const schemeFault = checkScheme(raw, options);
   if (schemeFault !== null) return schemeFault;
-  const resolved = resolvedFor(options, hostOf(raw));
-  return resolved === null ? null : checkAddresses(resolved, options);
+  return checkAddresses(resolvedFor(options, hostOf(raw)), options);
 }
 
 /**
@@ -242,8 +242,7 @@ function followRedirects(peer, redirects, options) {
     // The guard runs whether or not `opts.resolved` is an object, so the transport
     // rules have no fail-open branch; vector `bnd-0030` carries a resolution for
     // every hop.
-    const resolved = resolvedFor(opts, hostOf(hop));
-    const addressFault = checkAddresses(resolved === null ? [] : resolved, opts);
+    const addressFault = checkAddresses(resolvedFor(opts, hostOf(hop)), opts);
     if (addressFault !== null) { error = addressFault; break; }
     followed += 1;
     final = String(hop);

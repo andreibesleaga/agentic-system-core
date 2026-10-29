@@ -78,10 +78,13 @@ function listen(options) {
   const dir = path.resolve(options.site);
   const server = http.createServer((req, res) => handle(dir, options.answer, req, res));
   return new Promise((resolve, reject) => {
+    const bind = options.bind || 'localhost';
     server.once('error', reject);
-    server.listen(options.port === undefined ? 8080 : options.port, options.bind || 'localhost', () => {
+    server.listen(options.port === undefined ? 8080 : options.port, bind, () => {
       const address = server.address();
-      const host = address.family === 'IPv6' ? `[${address.address}]` : address.address;
+      // The name `localhost` is reported as asked: it is the one plain-http base the
+      // configuration admits (AGSC-01-18), and a client that resolves it may get ::1.
+      const host = bind === 'localhost' ? bind : address.family === 'IPv6' ? `[${address.address}]` : address.address;
       resolve({ server, url: `http://${host}:${address.port}/` });
     });
   });

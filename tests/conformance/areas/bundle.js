@@ -193,6 +193,8 @@ function specVersionCase(vector, ctx) {
 }
 
 const B_HANDLERS = {
+  'bundle-0017': fixtureLintCase,
+  'bundle-0016': fixtureLintCase,
   'bundle-0010': fixtureLintCase,
   'bundle-0009': fixtureLintCase,
   'bundle-0008': specVersionCase,

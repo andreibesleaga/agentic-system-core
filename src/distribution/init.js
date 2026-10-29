@@ -226,10 +226,16 @@ function plan(files, options = {}) {
 
   // AGSC-02-91: a note outside `content/` that already carries a closed frontmatter
   // block is neither modified nor moved, so it is not an item. It is named, so that it
-  // is not left out silently (the command says so; no finding, no file changes).
+  // is not left out silently: a warning for each, and no file changes (AGSC-E506).
   const kept = adopted.files
     .filter((result, i) => !result.skipped && !result.changed && !String(markdown[i].path).startsWith('content/'))
     .map((result) => result.path);
+  for (const path of kept) {
+    findings.push(finding('AGSC-E506',
+      `${path} is left where it is: it already carries a frontmatter block, which init never changes, `
+      + 'so it is not an item; move it under content/ with a type to make it one (AGSC-02-91)',
+      { file: path, severity: 'warn' }));
+  }
 
   // AGSC-02-94: existing files are NEVER overwritten.
   const title = adopt.titleFor('', String(options.directory), slugify(String(options.directory))).title;

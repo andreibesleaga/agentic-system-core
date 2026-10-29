@@ -178,7 +178,9 @@ const LINE_PATTERNS = Object.freeze([
   ['secret', 'JSON Web Token', /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/gu],
 
   // e-mail addresses -------------------------------------------------------
-  ['email', 'e-mail address', /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/gu],
+  // RFC 5321 bounds (local part 64, label 63) keep a scan from reading a long run to its end
+  // from every start; an address over them is not one.
+  ['email', 'e-mail address', /\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63})*\.[A-Za-z]{2,63}\b/gu],
 
   // personal data ----------------------------------------------------------
   ['personal', 'author name form', /\bAndrei\b(?!\s+N\.\s+Be[sș]leag[aă]\b)/gu],

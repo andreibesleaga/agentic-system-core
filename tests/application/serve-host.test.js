@@ -117,6 +117,22 @@ test('a server bound to another name answers that name, and still not a foreign 
   }
 });
 
+// I-121: the one plain-http base the configuration admits is `http://localhost[:port]/`
+// (AGSC-01-18), and a checker refuses a document whose anchor is not on the origin it
+// was fetched from, so the address the server prints is the name it was asked to bind.
+test('a server bound to localhost, by default or by name, prints localhost; an address prints itself', async () => {
+  const site = path.join(buildFixture(), 'www');
+  for (const [bind, host] of [[undefined, 'localhost'], ['localhost', 'localhost'], ['127.0.0.1', '127.0.0.1']]) {
+    const running = await hosting.serve({ bind, port: 0, site });
+    try {
+      const { port } = running.server.address();
+      assert.strictEqual(running.url, `http://${host}:${port}/`, String(bind));
+    } finally {
+      await new Promise((resolve) => running.server.close(resolve));
+    }
+  }
+});
+
 test('SECURITY.md says what the server answers, in the words these tests check', () => {
   const text = fs.readFileSync(path.join(ROOT, 'SECURITY.md'), 'utf8').replace(/`/gu, '').replace(/\s+/gu, ' ');
   assert.ok(text.includes('It answers only a request whose Host header names localhost, a loopback address or the address it is bound to,'

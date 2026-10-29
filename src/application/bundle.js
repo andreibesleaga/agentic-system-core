@@ -22,6 +22,7 @@
 const frontmatter = require('../knowledge/frontmatter.js');
 const validate = require('../knowledge/validate.js');
 const yaml = require('../knowledge/yaml.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-03-11 / AGSC-02-95: where a Bundle's non-item files live. */
 const ASSETS_DIR = 'content/assets';
@@ -132,6 +133,7 @@ function loadBundle(ports, options) {
       ? validate.applyTypes(parsed, opts.schemas.bundle.schema || {})
       : parsed;
     index = Object.freeze({ body: split.body, frontmatter: typed });
+    findings.push(...rootDisagreements(typed, config));
   }
 
   return Object.freeze({
@@ -143,6 +145,35 @@ function loadBundle(ports, options) {
     items: Object.freeze(items),
     root: fs.root === undefined ? '' : fs.root,
   });
+}
+
+/**
+ * AGSC-00-17 and AGSC-01-04 (as amended for 1.1.0): the Bundle root document and
+ * the configuration may disagree. The configuration governs, and nothing else
+ * changes, so each difference is a warning that names the root document: a
+ * different `spec_version` is AGSC-E506, a different `base` (a trailing slash is
+ * not a difference) is AGSC-E204. A value missing on either side is not compared;
+ * the root's own schema check reports a missing required key.
+ */
+function rootDisagreements(rootFrontmatter, config) {
+  const root = rootFrontmatter || {};
+  const cfg = config || {};
+  const out = [];
+  const warn = (code, message) => out.push(Object.freeze({
+    code, file: 'content/index.md', message, severity: 'warn',
+  }));
+  if (typeof root.spec_version === 'string' && typeof cfg.spec_version === 'string'
+      && root.spec_version !== cfg.spec_version) {
+    warn('AGSC-E506', `content/index.md declares spec_version ${root.spec_version} and agsc.config.json declares `
+      + `${cfg.spec_version}; the configuration's value governs (AGSC-00-17)`);
+  }
+  const siteBase = cfg.site && cfg.site.base;
+  if (typeof root.base === 'string' && typeof siteBase === 'string'
+      && withoutTrailingSlashes(root.base) !== withoutTrailingSlashes(siteBase)) {
+    warn('AGSC-E204', `content/index.md declares base ${root.base} and site.base is ${siteBase}; `
+      + 'every IRI is formed from site.base (AGSC-01-04)');
+  }
+  return out;
 }
 
 /** The file stem of an item path: its name without the final `.md`. */

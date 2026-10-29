@@ -35,7 +35,7 @@ printf '# Sourdough starter\n\nFlour and water, fed once a day.\n' > sourdough.m
 agsc init > /dev/null 2>&1
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 cp "$ENGINE/LICENSE-CONTENT" .
-node -e 'const f = "agsc.config.json", fs = require("node:fs"), c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = "https://notes.example.org/"; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n");'
+node -e 'const fs = require("node:fs"), base = "https://notes.example.org/", f = "agsc.config.json", c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = base; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n"); const i = "content/index.md"; fs.writeFileSync(i, fs.readFileSync(i, "utf8").replace(/^base: .*$/m, "base: " + base));'
 git init -q -b main && git add -A && git commit -q -m 'ready to publish'
 agsc ci
 agsc build
@@ -50,10 +50,10 @@ build: pass (0 error, 2 warn)
 link of the discovery document is written for that address, and a checker that fetches
 the document from another address refuses it (see [When it says no](#when-it-says-no)).
 
-Run `agsc ci` before every publish, not `agsc build` alone. At 1.0.0 `build` passes a
-typed link whose target does not exist and leaves that link out of the graph, while
-`lint` and `ci` refuse it with `AGSC-E301`; `build` refuses only a broken link in the
-text of a note (`AGSC-E310`).
+Run `agsc ci` before every publish, not `agsc build` alone. A typed link whose target
+does not exist is left out of the graph: `lint` and `ci` refuse it with `AGSC-E301`, and
+from 1.1 `build` reports it as a warning with the same code, where at 1.0.0 it said
+nothing; `build` refuses only a broken link in the text of a note (`AGSC-E310`).
 
 ## 2. Check the build as a reader will
 
@@ -155,14 +155,17 @@ Run the same checker on the live address. Given a URL, it fetches the discovery 
 and every file it lists from the host, compares each digest with the bytes served, and
 checks the response headers as well.
 
-**On your own machine first.** `agsc-host serve` prints `http://127.0.0.1:8080/`, but both
-checkers compare the discovery document's anchor with the origin they fetched it from, and
+**On your own machine first.** `agsc-host serve` prints `http://localhost:8080/` (before 1.1 it
+printed `http://127.0.0.1:8080/`), and both checkers compare the discovery document's anchor with the origin they fetched it from, and
 the configuration admits `http://localhost(:port)/` as the one non-HTTPS `site.base`. To
 check a node served locally at Level 2, set `site.base` to `http://localhost:8080/`,
 rebuild, serve, and run each checker on
 `http://localhost:8080/.well-known/knowledge-linkset --level 2 --dev` (the Python checker
 also needs `--allow-network`); use `localhost`, not `127.0.0.1`, in both places. `--dev`
-admits plain `http` to a loopback address and nothing else (AGSC-09-93).
+admits plain `http` to a loopback address and nothing else (AGSC-09-93). The Node checker
+accepts `--allow-network` too, and says so once when a URL is given without it (from 2.0 the
+flag is required); `--max-requests <n>` (1 to 2000, default 500) stops a run that would
+fetch more files than that, with `AGSC-E906`.
 
 On the live address:
 

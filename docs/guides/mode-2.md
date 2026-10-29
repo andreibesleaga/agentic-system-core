@@ -43,9 +43,9 @@ Six files, one per thing. Each is a header between `---` lines and a short Markd
 | `content/gates/<name>.md` | `type: gate` | `level:` `L1` (schema and links) or `L2` (adds provenance, determinism, review); `checks:`, when given, exactly the set the level implies (AGSC-02-18); `enforce:` (`status-check`, `ruleset`, `hook`, `codeowner`) |
 
 Nothing checks the `## Decision` and `## Specification` sections; they are the
-convention readers and the pages expect. At 1.0.0 `lint` does not yet report a gate
-whose `checks:` differ from its level, so keep the two in step by hand, or leave
-`checks:` out.
+convention readers and the pages expect. From 1.1 `lint` reports a gate whose `checks:`
+differ from its level as a warning (`AGSC-E203`, AGSC-02-18; at 1.0 it did not), so keep
+the two in step by hand, or leave `checks:` out.
 
 The board and the decision:
 

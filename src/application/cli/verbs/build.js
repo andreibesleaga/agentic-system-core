@@ -9,6 +9,7 @@
 // and a Bundle-rooted port refuses anything that escapes it (AGSC-E902), so the
 // build can never write outside the Bundle.
 
+const links = require('../../../knowledge/links.js');
 const site = require('../../../distribution/site.js');
 const lintVerb = require('./lint.js');
 const helpers = require('./_helpers.js');
@@ -32,6 +33,10 @@ function run(ctx) {
   // document, a root missing `spec_version`). The item and attachment checks already
   // run inside the build.
   const gate = lintVerb.configAndRoot(bundle, { ownVersion: ctx.specVersion }).filter((f) => !(f.code === 'AGSC-E901' && f.file === 'agsc.config.json'));
+  // A Link whose target does not exist is dropped from the graph; `lint` and `ci` report
+  // it as AGSC-E301. From 1.1 `build` reports it too, as a warning, because a 1.0 Bundle
+  // that carried one built (AGSC-00-14).
+  gate.push(...danglingLinks(bundle));
   // AGSC-04-09: the Clock reports when the build instant defaulted to 0
   // (AGSC-E606); that is a build fact, so it is reported by the verbs that emit.
   const clockFindings = ctx.ports.clock && typeof ctx.ports.clock.findings === 'function'
@@ -58,6 +63,12 @@ function run(ctx) {
   }
   for (const route of built.skipped) helpers.note(ctx, `skipped: ${route}`);
   return { findings: dedupe([...clockFindings, ...gate, ...built.findings]) };
+}
+
+/** The unresolved Link targets of the Bundle, as warnings. */
+function danglingLinks(bundle) {
+  const resolved = links.resolve(bundle.items || [], { assets: bundle.assets, config: bundle.config });
+  return resolved.errors.filter((f) => f.code === 'AGSC-E301').map((f) => ({ ...f, severity: 'warn' }));
 }
 
 /** One fault is counted once (AGSC-09-11): the build may report what the gate did. */

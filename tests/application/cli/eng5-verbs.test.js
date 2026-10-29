@@ -419,6 +419,22 @@ test('AGSC-09-94: trace maps a captured record to an Episode and executes no pro
   assert.match(written, /x-trace-agent: process:ignored/u);
   assert.match(written, /It ran\./u);
   assert.match(ctx.notes.join(''), /no process was executed/u);
+  // I-155: the three sections of an Episode (AGSC-02-21), the record's text in the first.
+  assert.match(written, /\n# Nightly refresh\n\n## What happened\n\nIt ran\.\n\n## Outcome\n\npartial\n\n## Next\n\nNothing was recorded\.\n$/u);
+});
+
+test('I-155: a record with no text, and a record that has some of the sections already', () => {
+  const traces = {
+    'bare.json': JSON.stringify({ started: '2026-01-01T00:00:00Z', title: 'Bare run' }),
+    'partial.json': JSON.stringify({ body: '## What happened\n\nIt ran twice.\n\n## Next\n\nRun it again.', started: '2026-01-02T00:00:00Z', title: 'Own sections' }),
+  };
+  const dir = workspace(traces);
+  traceVerb.run(ctxFor(dir, { argv: ['bare.json'] }));
+  traceVerb.run(ctxFor(dir, { argv: ['partial.json'] }));
+  assert.match(read(dir, 'content/episodes/bare-run.md'),
+    /\n# Bare run\n\n## What happened\n\nNothing was recorded\.\n\n## Outcome\n\npartial\n\n## Next\n\nNothing was recorded\.\n$/u);
+  assert.match(read(dir, 'content/episodes/own-sections.md'),
+    /\n# Own sections\n\n## What happened\n\nIt ran twice\.\n\n## Next\n\nRun it again\.\n\n## Outcome\n\npartial\n$/u);
 });
 
 test('AGSC-01-23: tracing the same record twice writes the same bytes', () => {

@@ -115,3 +115,19 @@ test('AGSC-02-91: a second init over an adopted, built Bundle adopts nothing and
   const moved = fresh.writes.find((w) => w.from === 'notes/agents.md');
   assert.strictEqual(moved.path, 'content/concepts/agents-2.md');
 });
+
+// I-103: a note outside content/ that already carries a closed frontmatter block is
+// neither moved nor changed (AGSC-02-91), and from 1.1 init says so for each one.
+test('AGSC-02-91: a root note with its own frontmatter is left out and named in a warning', () => {
+  const planned = init.plan([
+    { path: 'about.md', markdown: '---\ntitle: About\n---\n\nBody.\n' },
+    { path: 'plain.md', markdown: '# Plain\n' },
+  ], OPTIONS);
+  assert.deepStrictEqual(planned.kept, ['about.md']);
+  const named = planned.findings.filter((f) => f.file === 'about.md');
+  assert.strictEqual(named.length, 1);
+  assert.strictEqual(named[0].code, 'AGSC-E506');
+  assert.strictEqual(named[0].severity, 'warn');
+  assert.match(named[0].message, /about\.md.*left where it is.*AGSC-02-91/u);
+  assert.ok(!planned.findings.some((f) => f.file === 'plain.md' && /left where it is/u.test(f.message)));
+});

@@ -53,6 +53,20 @@ function documentAt(anchor, extra = {}) {
   })}\n`;
 }
 
+/** A document with `count` describedby targets, each carrying a digest, so Level 2 fetches every one. */
+function manyTargets(anchor, count) {
+  const digest = [`sha-256=:${crypto.createHash('sha256').update('{}').digest('base64')}:`];
+  return `${JSON.stringify({
+    linkset: [{
+      alternate: [{ href: `${anchor}llms.txt`, type: 'text/plain' }],
+      anchor,
+      describedby: Array.from({ length: count }, (_, i) => ({ digest, href: `${anchor}t${i}.jsonld`, type: 'application/ld+json' })),
+    }],
+  })}\n`;
+}
+/** How many target requests the server saw under /many/ (the document itself is not counted). */
+let targetRequests = 0;
+
 const bigGraph = Buffer.alloc(2 * MIB, 0x20);
 const bigDigest = `sha-256=:${crypto.createHash('sha256').update(bigGraph).digest('base64')}:`;
 
@@ -63,6 +77,17 @@ before(async () => {
       const body = Buffer.from(documentAt(`${origin}/stall/`));
       res.writeHead(200, { ...SERVED, 'content-length': String(body.length) });
       res.write(body.subarray(0, 10), () => res.write(body.subarray(10, 20), () => markStalled()));
+      return;
+    }
+    if (req.url === '/many/.well-known/knowledge-linkset') {
+      res.writeHead(200, SERVED);
+      res.end(manyTargets(`${origin}/many/`, 6));
+      return;
+    }
+    if (req.url.startsWith('/many/t')) {
+      targetRequests += 1;
+      res.writeHead(200, { 'content-type': 'application/ld+json' });
+      res.end('{}');
       return;
     }
     if (req.url === '/quick/.well-known/knowledge-linkset') {
@@ -183,4 +208,56 @@ it('a local file over 1 MiB stays AGSC-E904, the input cap of AGSC-01-16', async
   } finally {
     fs.rmSync(dir, { force: true, recursive: true });
   }
+});
+
+// I-083 (AGSC-11-10(c)): no document can make the checker fetch without bound. The
+// request budget is `federation.max_requests` (500 by default, 1 to 2000); every request,
+// the document's own included, counts, and the one past the budget is AGSC-E906.
+it('--max-requests ends a run that would fetch more targets than the budget, with AGSC-E906', async () => {
+  targetRequests = 0;
+  const done = await new Promise((resolve) => {
+    execFile(process.execPath, [path.join(REPO, 'tools', 'validate-wellknown'), `${origin}/many/.well-known/knowledge-linkset`,
+      '--level', '2', '--dev', '--json', '--max-requests', '3'], { encoding: 'utf8', timeout: 60000 },
+    (error, stdout) => resolve({ code: error ? error.code : 0, envelope: JSON.parse(stdout) }));
+  });
+  assert.equal(targetRequests, 2, 'the document plus two targets spend the budget of three');
+  const hits = done.envelope.findings.filter((f) => f.code === 'AGSC-E906');
+  assert.ok(hits.length >= 1, JSON.stringify(done.envelope.findings));
+  assert.match(hits[0].message, /request budget of 3/u);
+});
+
+it('without --max-requests the default budget of 500 lets a small document through', async () => {
+  targetRequests = 0;
+  const { envelope } = await check(`${origin}/many/.well-known/knowledge-linkset`, '2');
+  assert.equal(targetRequests, 6);
+  assert.ok(!envelope.findings.some((f) => f.code === 'AGSC-E906'), JSON.stringify(envelope.findings));
+});
+
+it('--max-requests takes a whole number from 1 to 2000', async () => {
+  for (const bad of ['0', '2001', 'ten', '']) {
+    const io = { err: '', out: '' };
+    const code = await tool.run(['x', '--max-requests', bad], { err: (s) => { io.err += s; }, out: (s) => { io.out += s; } });
+    assert.equal(code, 2, bad);
+    assert.match(io.err, /AGSC-E003 --max-requests needs a whole number from 1 to 2000/u);
+  }
+});
+
+// I-083 (opt-in): the Python checker needs --allow-network to fetch. The Node checker
+// accepts the same flag; from 1.1 a URL without it is still fetched, with a note on the
+// error stream in the human form (a refusal of a 1.0-valid command line waits for 2.0).
+it('--allow-network is accepted, and a URL without it is fetched with one note in the human form', async () => {
+  const run = async (args) => {
+    const io = { err: '', out: '' };
+    const code = await tool.run(args, { err: (s) => { io.err += s; }, out: (s) => { io.out += s; } });
+    return { code, io };
+  };
+  const target = `${origin}/quick/.well-known/knowledge-linkset`;
+  const without = await run([target, '--dev']);
+  assert.equal(without.code, 0, without.io.err);
+  assert.match(without.io.err, /^validate-wellknown: fetching over the network without --allow-network;/u);
+  const withFlag = await run([target, '--dev', '--allow-network']);
+  assert.equal(withFlag.code, 0, withFlag.io.err);
+  assert.equal(withFlag.io.err, '');
+  const json = await run([target, '--dev', '--json']);
+  assert.equal(json.io.err, '');
 });

@@ -119,6 +119,27 @@ function rankChunks(nodeDir, tokens) {
   return { documents: seen, ranked: [...best.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map((e) => e[0]) };
 }
 
+/**
+ * The first `[text](target)rest` of a line, as `[text, target, rest]`, or null. It
+ * keeps the position of the next `]` and the next `)` it found, so a line of
+ * brackets is read once and not from every `[` to its end.
+ */
+function llmsLink(line) {
+  let close = -1;
+  let paren = -1;
+  for (let open = line.indexOf('['); open >= 0; open = line.indexOf('[', open + 1)) {
+    if (close < open) close = line.indexOf(']', open + 1);
+    if (close < 0) return null;
+    if (close === open + 1 || line[close + 1] !== '(') continue;
+    if (paren < close + 2) paren = line.indexOf(')', close + 2);
+    if (paren < 0) return null;
+    const rest = line.slice(paren + 1);
+    // `.` does not match a line terminator, so the rest of the line may hold none.
+    if (paren > close + 2 && !/[\n\r\u2028\u2029]/u.test(rest)) return [line.slice(open + 1, close), line.slice(close + 2, paren), rest];
+  }
+  return null;
+}
+
 /** llms.txt: one link per line; the slug is the last path segment of the target. */
 function rankLlms(nodeDir, tokens) {
   const file = path.join(nodeDir, 'llms.txt');
@@ -126,12 +147,12 @@ function rankLlms(nodeDir, tokens) {
   const score = new Map();
   let seen = 0;
   for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
-    const link = /\[([^\]]+)\]\(([^)]+)\)(.*)$/u.exec(line);
+    const link = llmsLink(line);
     if (!link) continue;
     seen += 1;
-    const segments = link[2].split('/').filter((s) => s !== '');
+    const segments = link[1].split('/').filter((s) => s !== '');
     const slug = segments[segments.length - 1];
-    const bag = new Set(tokenize(`${link[1]} ${link[3]}`));
+    const bag = new Set(tokenize(`${link[0]} ${link[2]}`));
     const hit = tokens.filter((t) => bag.has(t)).length;
     if (hit > 0) score.set(slug, Math.max(score.get(slug) || 0, hit));
   }
@@ -252,4 +273,4 @@ function run(argv, io) {
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { HELP, SURFACES, loadSet, mean, rankChunks, rankLlms, rankSearch, run, score, tokenize };
+module.exports = { HELP, SURFACES, llmsLink, loadSet, mean, rankChunks, rankLlms, rankSearch, run, score, tokenize };

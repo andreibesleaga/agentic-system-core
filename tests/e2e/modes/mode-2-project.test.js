@@ -16,7 +16,7 @@ const forge = require('../../../src/distribution/forge.js');
 test('Mode 2, a person and a CI job: the gate compiles to a ruleset whose required check a job reports', () => {
   const dir = kit.projectBundle('m2');
   kit.write(dir, 'content/gates/merge-gate.md', kit.item({
-    type: 'gate', title: 'Merge gate', level: 'L2', checks: ['schema', 'links', 'review'],
+    type: 'gate', title: 'Merge gate', level: 'L2', checks: ['schema', 'links', 'provenance', 'determinism', 'review'],
     enforce: ['status-check', 'ruleset'], prov: kit.PROV,
   }, '# Merge gate\n\nEvery change passes these checks before it merges.'));
   kit.write(dir, 'content/concepts/decide-the-login.md', kit.item({
@@ -32,7 +32,7 @@ test('Mode 2, a person and a CI job: the gate compiles to a ruleset whose requir
   assert.strictEqual(ci.code, 0, ci.stderr);
   const ruleset = JSON.parse(kit.read(dir, 'dist/forge/ruleset.json'));
   const statusChecks = JSON.parse(kit.read(dir, 'dist/forge/status-checks.json'));
-  assert.deepStrictEqual(statusChecks, ['links', 'review', 'schema'], 'status-checks.json keeps the pinned gate checks');
+  assert.deepStrictEqual(statusChecks, ['determinism', 'links', 'provenance', 'review', 'schema'], 'status-checks.json keeps the pinned gate checks');
   // The ruleset requires only names a job reports: the job that runs `agsc ci`, whose
   // name the action's usage shows. Requiring "schema" or "links" would block every merge.
   assert.deepStrictEqual(ruleset.rules.required_status_checks, [forge.CI_CHECK]);
@@ -53,7 +53,7 @@ test('Mode 2, a person and a CI job: the gate compiles to a ruleset whose requir
   assert.match(task, /<code>blocked-by<\/code>: <a href="\/concepts\/task-login-form\/">Build the login form<\/a>/u);
   const gatePage = kit.read(dir, 'www/gates/merge-gate/index.html');
   assert.match(gatePage, /<dt>Level<\/dt><dd><code>L2<\/code><\/dd>/u);
-  assert.match(gatePage, /<dt>Checks<\/dt><dd><code>schema<\/code>, <code>links<\/code>, <code>review<\/code><\/dd>/u);
+  assert.match(gatePage, /<dt>Checks<\/dt><dd><code>schema<\/code>, <code>links<\/code>, <code>provenance<\/code>, <code>determinism<\/code>, <code>review<\/code><\/dd>/u);
   const decision = kit.read(dir, 'www/concepts/decide-the-login/index.html');
   assert.match(decision, /<code>contradicts<\/code>: <a href="\/concepts\/supervisor\/">/u);
   assert.ok(path.isAbsolute(dir));

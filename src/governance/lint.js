@@ -48,6 +48,7 @@ const injection = require('./injection.js');
 const secrets = require('./secrets.js');
 const pii = require('./pii.js');
 const cleanroom = require('./cleanroom.js');
+const prov = require('./prov.js');
 
 /** AGSC-01-34: `attachments{max_bytes}` default 1 MiB, maximum 10 MiB. */
 const ATTACHMENT_MAX_BYTES_DEFAULT = 1048576;
@@ -512,6 +513,60 @@ function checkEnforce(items) {
   return out;
 }
 
+/**
+ * AGSC-02-18: a `gate`'s `checks[]` MUST equal the set its `level` implies. A 1.0
+ * engine did not look, so a Bundle whose gate disagrees was valid, and from 1.1 the
+ * disagreement is reported as a warning (AGSC-00-14). An unknown `level` is the
+ * schema's to refuse, and is not repeated here.
+ *
+ * @param {Array<object>} items the loaded items.
+ * @returns {Array<object>} Findings, all warnings.
+ */
+function checkGates(items) {
+  const out = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const v = links.view(item);
+    if (v.type !== 'gate') continue;
+    for (const f of prov.checkGate(item).findings) {
+      if (f.key === 'checks') out.push({ ...f, severity: 'warn' });
+    }
+  }
+  return out;
+}
+
+/** The slugs a Link or `clusters[]` value names; an anchor (`slug#id`) is not part of the slug. */
+const slugsOf = (value) => asArray(value).filter((s) => typeof s === 'string').map((s) => s.split('#')[0]);
+
+/**
+ * The two board faults the 1.0 lint passed over, as warnings (AGSC-00-14): a cycle in
+ * `blocked-by` (AGSC-03-07 treats a cycle in `requires` the same way) and a
+ * `clusters[]` entry that names no cluster (AGSC-02-19, AGSC-03-10).
+ *
+ * @param {Array<object>} items the loaded items.
+ * @returns {Array<object>} Findings, all warnings.
+ */
+function checkBoards(items) {
+  const views = (Array.isArray(items) ? items : []).map((item) => links.view(item));
+  const out = [];
+  const slugs = new Set(views.map((v) => v.slug));
+  const adjacency = new Map(views.map((v) => [v.slug, slugsOf(v.fm['blocked-by'])]));
+  const cycle = links.findCycle(adjacency, slugs);
+  if (cycle !== null) {
+    const first = views.find((v) => v.slug === cycle[0]);
+    out.push(finding('AGSC-E302', `cycle in "blocked-by": ${cycle.join(' -> ')} (AGSC-03-07)`,
+      { file: first.path, severity: 'warn', slug: first.slug }));
+  }
+  const clusters = new Set(views.filter((v) => v.type === 'cluster').map((v) => v.slug));
+  for (const v of views) {
+    for (const name of slugsOf(v.fm.clusters)) {
+      if (clusters.has(name)) continue;
+      out.push(finding('AGSC-E301', `clusters[] entry "${name}" names no cluster of this Bundle (AGSC-02-19)`,
+        { file: v.path, key: 'clusters', severity: 'warn', slug: v.slug }));
+    }
+  }
+  return out;
+}
+
 const WARNED_TRANSITIONS = Object.freeze([['deprecated', 'stable'], ['retired', 'draft'],
   ['retired', 'stable'], ['retired', 'deprecated']]);
 
@@ -588,6 +643,8 @@ function lint(bundle = {}, options = {}) {
   findings.push(...checkCompiledSvg([...(options.diagramPaths || []), ...(options.trackedPaths || bundle.trackedPaths || [])]));
   findings.push(...checkPorts(items).findings);
   findings.push(...checkEnforce(items));
+  findings.push(...checkGates(items));
+  findings.push(...checkBoards(items));
   findings.push(...secrets.checkTracked(options.trackedPaths || bundle.trackedPaths));
   findings.push(...cleanroom.check({ paths: options.paths || [], emitters: options.emitters || [] }));
 
@@ -620,7 +677,9 @@ module.exports = {
   checkFences,
   checkOverlappingLabels,
   checkPaths,
+  checkBoards,
   checkEnforce,
+  checkGates,
   checkPorts,
   checkSections,
   checkSvg,

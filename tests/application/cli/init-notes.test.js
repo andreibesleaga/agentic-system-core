@@ -90,11 +90,15 @@ test('D1 / AGSC-02-91: a root note with a closed block and no type is left as it
     assert.match(kept[0], /handoff\.md/u);
     assert.match(kept[0], /AGSC-02-91/u);
     assert.match(kept[0], /content\/<type-plural>\//u);
-    // A message, not a finding: the same warnings as for the bare note alone.
+    // From 1.1 it is also a warning (AGSC-E506, I-103): the warnings of the bare note alone,
+    // plus exactly one that names the note.
     const alone = folder({ 'agents.md': 'Notes on agents.\n' });
     try {
       const warnings = (text) => text.split('\n').filter((l) => l.startsWith('warn: '));
-      assert.deepEqual(warnings(got.err), warnings(run(alone, ['init']).err));
+      const named = warnings(got.err).filter((l) => l.includes('handoff.md'));
+      assert.equal(named.length, 1, got.err);
+      assert.match(named[0], /AGSC-E506.*left where it is.*AGSC-02-91/u);
+      assert.deepEqual(warnings(got.err).filter((l) => !l.includes('handoff.md')), warnings(run(alone, ['init']).err));
     } finally { fs.rmSync(alone, { force: true, recursive: true }); }
   } finally { fs.rmSync(dir, { force: true, recursive: true }); }
 });

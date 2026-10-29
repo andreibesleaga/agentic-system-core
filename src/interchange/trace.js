@@ -82,6 +82,23 @@ function keepKey(name) {
 }
 
 /**
+ * The Episode body (AGSC-02-21): the record's text under "What happened", then "Outcome"
+ * and "Next", so that a traced Episode has the three sections `lint` looks for. A
+ * record whose text already has a section of that name keeps it as written, and only
+ * the sections it lacks are added.
+ */
+function episodeBody(title, body, outcome) {
+  const nothing = 'Nothing was recorded.';
+  const has = (heading) => body.split('\n').some((line) => line.trimEnd() === `## ${heading}`);
+  const parts = [`# ${title}`];
+  if (has('What happened')) parts.push(body.trimEnd());
+  else parts.push(`## What happened\n\n${body === '' ? nothing : body.trimEnd()}`);
+  if (!has('Outcome')) parts.push(`## Outcome\n\n${outcome}`);
+  if (!has('Next')) parts.push(`## Next\n\n${nothing}`);
+  return `${parts.join('\n\n')}\n`;
+}
+
+/**
  * Map one agent-run record to an Episode item.
  *
  * @param {object} record the parsed trace file.
@@ -164,7 +181,7 @@ function toEpisode(record, options = {}) {
   const bodyRaw = pick(record, 'body');
   const body = bodyRaw === undefined ? '' : withOneTrailingFeed(nfc(String(bodyRaw)));
   return {
-    body: body === '' ? `# ${title}\n` : `# ${title}\n\n${body}`,
+    body: episodeBody(title, body, outcome),
     findings,
     frontmatter,
     path: `content/episodes/${slug}.md`,
@@ -172,4 +189,4 @@ function toEpisode(record, options = {}) {
   };
 }
 
-module.exports = { OUTCOMES, pick, toEpisode };
+module.exports = { OUTCOMES, episodeBody, pick, toEpisode };

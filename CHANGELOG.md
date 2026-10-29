@@ -25,6 +25,35 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   1.1 text; `tests/rule-coverage.allow.json` states why AGSC-10-19 is prose-only and
   rewords the entry of AGSC-05-24; the codes registered by 1.1 and not yet raised are
   named in the consistency test.
+- `federation.walk` fails closed (AGSC-11-08, AGSC-11-10; I-152): a host the caller gave no
+  resolution for is no longer handed to the fetch, so a walk with no `resolved` map fetches
+  only IP literals. `validate-wellknown` counts every request against a budget (AGSC-11-10(c);
+  default 500, `--max-requests <1..2000>`, `AGSC-E906` when spent) and accepts `--allow-network`,
+  noting once in the human form that a URL without it will need the flag from 2.0 (I-083).
+- A tracked `.env.<name>` (`.env.local`, `.env.production`) is the warning `AGSC-E403`; the
+  template names `.env.example`, `.env.sample` and `.env.template` are not reported (AGSC-01-37; I-082).
+- `lint`, `build` and `ci` warn when `content/index.md` and `agsc.config.json` declare different
+  `spec_version` values (`AGSC-E506`, AGSC-00-17; I-102) or when the root `base` differs from
+  `site.base` (`AGSC-E204`, AGSC-01-04; I-116). No exit code and no emitted byte changes.
+- `init` names each root note it leaves where it is because it already carries a frontmatter
+  block, as the warning `AGSC-E506` (AGSC-02-91; I-103).
+- `lint` warns about a gate whose `checks[]` differ from its level (`AGSC-E203`, AGSC-02-18; I-148),
+  a cycle in `blocked-by` (`AGSC-E302`, AGSC-03-07) and a `clusters[]` entry that names no cluster
+  (`AGSC-E301`, AGSC-02-19; I-154). The shipped `examples/demos/mode-2-project` gate lists the
+  full Level 2 set; its built gate page, graph and chunk files change accordingly (AGSC-02-18).
+- `build` reports a typed-link target that does not exist as the warning `AGSC-E301` (AGSC-03-02;
+  I-153); `lint` and `ci` keep the error.
+- An empty `SOURCE_DATE_EPOCH` is still read as unset and now also reported as the warning
+  `AGSC-E603` (AGSC-04-09; I-122).
+- `trace` writes the three Episode sections, "What happened", "Outcome" and "Next" (AGSC-02-21;
+  I-155): a traced Episode's body changes from a bare title and text to those sections.
+- `agsc-host serve` reports `http://localhost:<port>/` when it was asked for `localhost`, the
+  default, as the one plain-http `site.base` the configuration admits (AGSC-01-18; I-121).
+- `hosts/rules.js` matches a route with several `*` splats in linear time (I-119), and the
+  repository tools' patterns that read their own files no longer rescan from every position
+  (`tools/release`, `validate-features`, `validate-spec`, `requirements-matrix`, `gen-glossary`,
+  `validate-diagrams`, `gen-spec-html`, `public-hygiene`, `bench`; I-117). The e-mail pattern of
+  `public-hygiene` now bounds the local part at 64 and a label at 63 characters.
 
 ### Added
 

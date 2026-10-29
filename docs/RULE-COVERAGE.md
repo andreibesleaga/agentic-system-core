@@ -126,7 +126,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-00-14 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-00-15 | VERIFIED | yes | `bundle-0001`, `bundle-0011` | `application/compatibility.test.js`, `application/serve-command.test.js`, `knowledge/validate.test.js` | — | — |
 | AGSC-00-16 | VERIFIED | — | — | `application/conformance.test.js`, `standard/consistency.test.js`, `standard/rules.test.js` | — | `validate-spec` |
-| AGSC-00-17 | VERIFIED | yes | `bundle-0016` | `application/cli/messages-and-help.test.js`, `knowledge/validate-major.test.js`, `standard/declared-scope.test.js` +1 | — | — |
+| AGSC-00-17 | VERIFIED | yes | `bundle-0016` | `application/bundle-root-consistency.test.js`, `application/cli/messages-and-help.test.js`, `knowledge/validate-major.test.js` +2 | — | — |
 | AGSC-00-18 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-00-19 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-00-20 | VERIFIED | yes | `cli-0016` | `application/config/load.test.js`, `standard/declared-scope.test.js` | — | — |
@@ -138,7 +138,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-01 | VERIFIED | yes | — | `distribution/ci-findings-without-position.test.js`, `e2e/modes/mode-3-skills.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-01-02 | VERIFIED | — | — | `knowledge/validate.test.js` | — | — |
 | AGSC-01-03 | VERIFIED | yes | `lint-0034` | `knowledge/links.test.js`, `knowledge/validate.test.js` | — | — |
-| AGSC-01-04 | VERIFIED | yes | `bundle-0017`, `lint-0035` | `knowledge/fixture-minimal.test.js`, `knowledge/validate.test.js`, `standard/root-base.test.js` | — | — |
+| AGSC-01-04 | VERIFIED | yes | `bundle-0017`, `lint-0035` | `application/bundle-root-consistency.test.js`, `knowledge/fixture-minimal.test.js`, `knowledge/validate.test.js` +1 | — | — |
 | AGSC-01-05 | VERIFIED | yes | `bundle-0009` | `application/bundle-folder-notes.test.js`, `distribution/ci-findings-without-position.test.js`, `interchange/okf-roundtrip.test.js` +1 | — | — |
 | AGSC-01-06 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-01-07 | VERIFIED | — | — | `governance/lint-constructs.test.js` | — | — |
@@ -194,8 +194,8 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-15 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-02-16 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-02-17 | VERIFIED | — | — | `knowledge/links.test.js` | — | — |
-| AGSC-02-18 | VERIFIED | yes | `fm-0003` | `governance/prov.test.js` | — | — |
-| AGSC-02-19 | VERIFIED | — | — | `interchange/clusters.test.js` | — | — |
+| AGSC-02-18 | VERIFIED | yes | `fm-0003` | `governance/lint-boards-gates.test.js`, `governance/prov.test.js` | — | — |
+| AGSC-02-19 | VERIFIED | — | — | `governance/lint-boards-gates.test.js`, `interchange/clusters.test.js` | — | — |
 | AGSC-02-20 | VERIFIED | yes | `lint-0039` | `governance/lint-constructs.test.js`, `knowledge/file-lines.test.js`, `knowledge/markdown.test.js` +1 | — | — |
 | AGSC-02-21 | VERIFIED | yes | `lint-0040` | `governance/lint-order.test.js`, `knowledge/validate.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
 | AGSC-02-22 | VERIFIED | yes | `graph-0027` | `governance/lint-order.test.js`, `knowledge/file-lines.test.js`, `knowledge/markdown.test.js` +1 | — | — |
@@ -218,7 +218,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-03-04 | VERIFIED | yes | `links-0001`, `links-0003` | `acceptance/steps/persona-a.js`, `knowledge/links.test.js`, `knowledge/nquads.test.js` | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
 | AGSC-03-05 | VERIFIED | — | — | `knowledge/links.test.js` | — | — |
 | AGSC-03-06 | VERIFIED | — | — | `distribution/page-tools.test.js`, `knowledge/links.test.js` | — | — |
-| AGSC-03-07 | VERIFIED | yes | `links-0002` | `knowledge/links.test.js` | — | — |
+| AGSC-03-07 | VERIFIED | yes | `links-0002` | `governance/lint-boards-gates.test.js`, `knowledge/links.test.js` | — | — |
 | AGSC-03-08 | VERIFIED | yes | `links-0005`, `links-0006`, `links-0008` | `knowledge/links.test.js`, `knowledge/validate.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
 | AGSC-03-09 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-03-10 | VERIFIED | yes | `links-0009` | `knowledge/links.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
