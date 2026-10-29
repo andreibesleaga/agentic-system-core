@@ -161,7 +161,11 @@ xml = open(path, encoding="utf-8").read()
 
 xml = re.sub(r"(?m)^[ \t]*<\?line -?[0-9]+\?>[ \t]*\n", "", xml)
 
-start = xml.find('<references anchor="sec-combined-references">')
+# Ported from the sustainability -09 v3-postprocess.py: depending on the
+# xml2rfc version the wrapper carries anchor="sec-combined-references" or
+# no anchor at all.
+_m = re.search(r'<references(?: anchor="sec-combined-references")?>\s*(?=<name>References</name>)', xml)
+start = _m.start() if _m else -1
 if start >= 0:
     depth, pos = 0, start
     for m in re.finditer(r"<references[\s>]|</references>", xml[start:]):
@@ -187,7 +191,7 @@ if start >= 0:
     # either way; see the maintainer notes, "Rejected: conditional references wrapper".
     keep_wrapper = False
     if True:
-        inner = re.sub(r'^<references anchor="sec-combined-references">\s*', "", inner)
+        inner = re.sub(r'^<references(?: anchor="sec-combined-references")?>\s*', "", inner)
         inner = re.sub(r"^<name>References</name>\s*", "", inner)
         line_start = xml.rfind("\n", 0, start) + 1
         close_end = pos + len("</references>")

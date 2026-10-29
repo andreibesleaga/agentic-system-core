@@ -99,7 +99,7 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
   JavaScript, composable into a starting architecture
   ([Mode 4](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md)).
 - **A team board.** A board from GitHub, GitLab, Jira, Trello, Linear, Asana, Notion,
-  Obsidian or plain Markdown becomes a live board and goes back again
+  Obsidian, Todo.txt or plain Markdown becomes a live board and goes back again
   ([Mode 5](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case M7](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#m7--a-teams-board-becomes-a-live-board)).
 
 ## Quick start
@@ -147,7 +147,7 @@ or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-c
 | A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | the [Mode 2 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-2.md); `agsc ci`, `agsc export --steer` |
 | A team that keeps its procedures as skills | each procedure as an installable skill pack, checked against a lockfile and holding no scripts; skills collections and rule folders imported as procedures, and the packs exported back for five tools | the [Mode 3 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-3.md); `agsc skills install .claude/skills`; `agsc import --from skills --list <clone>` |
 | An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | the [Mode 4 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-4.md); `agsc compose <slug>… --zip`, or the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |
-| A team of people and agents on a live board | tasks as checked files, and every cluster that holds tasks published as a board; claims and moves as proposals through the tool server, merged by a person; board files to and from eleven project tools | the [Mode 5 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-5.md); `agsc import --from board --format jira <folder> --dry-run` |
+| A team of people and agents on a live board | tasks as checked files, and every cluster that holds tasks published as a board; claims and moves as proposals through the tool server, merged by a person; board files to and from ten project tools and other nodes | the [Mode 5 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-5.md); `agsc import --from board --format jira <folder> --dry-run` |
 | An engineer implementing or checking the format | test cases with expected bytes; checkers that judge any implementation's files; a second checker in Python | `agsc conform --level 3`; `node node_modules/agentic-system-core/tools/validate-wellknown https://agenticsystemcore.com/.well-known/knowledge-linkset --level 2`; [docs/IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) |
 | A security reviewer | a ledger re-derived from git history and checked offline; an anchor file that `agsc-host verify-anchor` checks against the build; `security.txt` checked by `ci`; untrusted prose fenced in every tool result; a security corpus with its scores | `agsc verify --ledger`; [docs/SECURITY-CONSIDERATIONS.md](docs/SECURITY-CONSIDERATIONS.md), [SECURITY.md](SECURITY.md); the [security reviewer's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-m-security-reviewer.feature) |
 | A researcher | a benchmark kit that runs offline with no model and no key; the graph as JSON-LD, Turtle and N-Quads, which hold the same statements; a citation file and a conformance report to cite | [docs/BENCHMARKS.md](docs/BENCHMARKS.md), [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md), [CITATION.cff](CITATION.cff); the [researcher's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-n-researcher.feature) |
@@ -197,7 +197,7 @@ AGSC-09-01 (AGSC-10-05); the engine's claim is kept in
 with what each part of it rests on, and reads:
 
 > agentic-system-core 1.0.1 conforms to AgenticSystemCore 1.0.0, Level 3.
-> Verified against the published conformance vectors on 2026-10-12: 243 of 243
+> Verified against the published conformance vectors on 2026-10-29: 243 of 243
 > passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
 > chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
 > jcs, ledger, links, lint, prov, slug), 242 required and 1 optional, the 7

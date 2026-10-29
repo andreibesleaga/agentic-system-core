@@ -1,6 +1,6 @@
-# Algorithm — combiner closure (`closure.js`, PLAN §6(c) step 3)
+# Algorithm — combiner closure (`src/composition/compose.js`, PLAN §6(c) step 3)
 
-**What this shows.** The five fixed steps the combiner runs over a selection — closure, hiding, exclusion, contradiction and dependency warnings, then port wiring — and the verdict each step can reach. The same code runs in the CLI and in the browser, and a vector asserts the two agree byte for byte.
+**What this shows.** The five fixed steps the combiner runs over a selection — closure, hiding, exclusion, contradiction and dependency warnings, then port wiring — and the verdict each step can reach. The same code runs in the CLI and in the browser, and a test asserts the two agree byte for byte.
 
 ```mermaid
 flowchart TD
@@ -37,8 +37,10 @@ Order is the normative order of `spec/07-composition.md` (AGSC-07-04…08) and o
 step 3: `requires` closure → `supersedes` hiding (with the AGSC-07-05a hard-dependency guard) →
 `excludes` mutex over the **survivors** → `contradicts`/`uses` warnings. The order is not cosmetic:
 evaluating `excludes` before hiding lets an item that Step 2 removes invalidate a composition that is
-in fact valid — `tests/vectors/compose/compose-0001` is exactly that case. The same module runs
-identically in the CLI (`src/composition/closure.js`) and in the browser (`www/js/agsc-core.js`, no
-`node:` imports) — a vector asserts the two are byte-identical for the same input (PRD-038).
+in fact valid — `tests/vectors/compose/compose-0001` is exactly that case. The same functions run
+in the CLI (`src/composition/compose.js`) and in the browser (`/compose/agsc-core.js`, which
+`src/composition/browser.js` emits from their own source text, with no `node:` imports) — a test,
+`tests/composition/browser.test.js`, asserts the two are byte-identical for the same input
+(AGSC-07-13, PRD-038).
 
 Trace: PRD-036, PRD-037, PRD-038 · PLAN.md §6(c).

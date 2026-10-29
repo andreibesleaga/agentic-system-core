@@ -316,7 +316,7 @@ All actions SHA-pinned with Dependabot; **never `pull_request_target`**; the eng
 
 **ADR-003 Static-only, Pages from `www/`.** No servers, databases, queues or Workers at v1; CI is the only backend and every write path ends in a PR — which makes NFR-09, Q5 and most of §12 true by construction. Workers stay a *future optional plugin backend*, never required. *PRD-050.*
 
-**ADR-004 One vocabulary, fourteen Links.** Six item types with a `kind` qualifier on Concept plus **fourteen** authored Link keys with computed inverses serve all five modes: the nine core keys carry composition semantics, and the five Mode-2 keys (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`), promoted to first-class keys by, are navigational — combiner semantics `none`. Four competing foreign link lists are still mapped on import. Adding a type or key costs a schema bump + spec section + vectors — deliberately expensive. *PRD-002.*
+**ADR-004 One vocabulary, fourteen Links.** Six item types with a `kind` qualifier on Concept plus **fourteen** authored Link keys with computed inverses serve all five modes: the nine core keys carry composition semantics, and the five Mode-2 keys (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`), promoted to first-class keys, are navigational — combiner semantics `none`. Four competing foreign link lists are still mapped on import. Adding a type or key costs a schema bump + spec section + vectors — deliberately expensive. *PRD-002.*
 
 **ADR-005 `/ns/` conneg via w3id `.htaccess`.** Conneg is the one thing a static host cannot do; putting it in w3id yields zero project-owned server code, permanent IRIs independent of the domain, and no attack surface we operate. Costs a foreign-repo PR (gating `/ns/` resolution only) and a same-origin table kept in sync. Fallback if w3id refuses: a `run_worker_first` handler — not built at v1. *PRD-050.*
 
@@ -663,6 +663,12 @@ with `server/discover`, is planned for 1.1 (AGSC-00-20).
 uses, requires, excludes, contradicts and supersedes — change a composition, and related,
 broader, narrower and derived-from are navigational or provenance edges that never change one
 (AGSC-03-01, AGSC-03-18).
+
+**Names in the plan's baseline (note of 2026-10-29).** The checkers are extensionless programs
+`tools/<name>`, not `tools/*.js`; the secrets page the baseline names does not exist, and the shipped workflows
+hold no stored secret (releases use npm trusted publishing); the browser–CLI parity of §6(c) step
+6 is proved by `tests/composition/browser.test.js` (AGSC-07-13), not by a vector; and the
+vocabulary line's "only the core nine drive composition" reads as the ADR-004 note above says.
 
 **The 1.0 row of the declared-scope table, and the engine's claim (note of 2026-10-11).**
 "This version: `1.0.0`, after two public release candidates" counts the candidates published

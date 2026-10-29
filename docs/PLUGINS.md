@@ -132,8 +132,8 @@ table of §1 and nowhere else. `agsc.config.json` gains no `plugins` key: the
 configuration is closed (AGSC-01-18), and every kind already has a place the
 rules admit.
 
-**What the verbs load.** Three verbs take a plugin on the command line, each
-through the registry of its kind, so every plugin passes the capability check of
+**What the verbs load.** Three verbs of `agsc`, and `agsc-host emit`, take a plugin on
+the command line, each through the registry of its kind, so every plugin passes the capability check of
 §3 before it runs:
 
 | verb and flag | kind | the hook the engine calls | what is written |

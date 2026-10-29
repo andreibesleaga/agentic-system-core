@@ -55,6 +55,6 @@ node tools/requirements-matrix --check # the same for the requirements matrix
 node tools/gen-glossary --check        # "docs/GLOSSARY.md: current (…)"
 ```
 
-Each takes `--help`. Requires Node 22.13 or later and `npm install` at the root (the
+Each takes `--help`. Requires Node 22.13 or later and `npm ci` at the root (the
 checkers that read Turtle, XML, Markdown or JSON Schema use the same pinned libraries
 as the engine, listed in [src/README.md](../src/README.md) §4).

@@ -23,5 +23,5 @@ node bin/agsc-host.js list                                # the seven hosting pr
 ```
 
 A verb runs on the Bundle in the current directory (the folder holding
-`agsc.config.json`). Requires Node 22.13 or later and `npm install` at the repository
+`agsc.config.json`). Requires Node 22.13 or later and `npm ci` at the repository
 root. Installed from npm, the same commands are `agsc …` and `agsc-host …`.

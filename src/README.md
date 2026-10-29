@@ -250,7 +250,7 @@ that requires a property declared in a sibling subschema.
 ## 5. Running the conformance vectors
 
 ```bash
-npm install                      # exact pins; the lockfile is committed
+npm ci                           # exact pins; the lockfile is committed
 node --test 'tests/**/*.test.js' # unit, architecture, conformance and acceptance suites
 node tools/validate-vectors --json
 node tools/count-artifacts --json

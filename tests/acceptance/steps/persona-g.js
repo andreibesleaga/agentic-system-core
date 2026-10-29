@@ -4,7 +4,7 @@
 // scaffolded by the real `init` in an empty directory, holding its own working
 // record (Mode 2) as ordinary items, linted, built, exported and passed by `ci`;
 // the same Bundle moved into a GABBE kit and back, and a board moved to and from
-// the files of eleven project tools and back (the fixtures of
+// the files of ten project tools and other nodes and back (the fixtures of
 // `tests/fixtures/pm-<tool>/`, the ones the adapter's own tests read).
 //
 // Three phrases here are reused by persona-f and persona-h, which run imports of

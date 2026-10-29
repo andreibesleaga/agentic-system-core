@@ -4,7 +4,7 @@ One Bundle, one format, six ways of using it. No mode adds a type or a key; each
 
 **Mode 0 — auto-wiki (the default, no model).** Write Markdown, run one command, get a site with a graph, search, an agent-facing text file and a discovery document. Nothing needs a language model. *Optional:* an **agent lane** — a declared, budgeted model-driven agent that creates, edits, reviews and updates pages non-deterministically, always as proposals; with the channel's `publish: auto` the wiki becomes self-driving, evolving by the model alone under the standing ratification, the lints, the budget and the rule that procedures, gates and configuration stay with people (spec/08 §8.6).
 
-**Mode 1 — distributed agentic memory.** Agents read the Bundle through the local tool server or the page tools cite items by address — a chunk by its stable id from `/chunks.jsonl`, which the tools do not return — and propose changes that a human ratifies. Peers federate on the client side; everything from elsewhere is marked untrusted with its origin.
+**Mode 1 — distributed agentic memory.** Agents read the Bundle through the local tool server or the page tools, cite items by address — a chunk by its stable id from `/chunks.jsonl`, which the tools do not return — and propose changes that a human ratifies. Peers federate on the client side; everything from elsewhere is marked untrusted with its origin.
 
 **Mode 2 — live specs and SDLC memory.** Concepts of kind principle, decision, spec, task and term, plus gates and episodes, with the five engineering links (`implements`, `verifies`, `covers`, `blocked-by`, `decided-by`). Project mode turns tasks and clusters into boards.
 
