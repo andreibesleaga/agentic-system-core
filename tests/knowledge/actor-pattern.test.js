@@ -1,6 +1,7 @@
 'use strict';
 // AGSC-02-09: the actor grammar admits the actor the ledger's trailing `build`
-// entry carries (AGSC-08-20a), `process:agsc/<version>`. The specification emitted
+// entry carries (AGSC-08-20a): `process:agsc` from 1.1 and `process:agsc/<version>` in a
+// ledger written under 1.0, which a 1.1 reader still meets. The 1.0 specification emitted
 // that form while its own grammar, and the item schema's `actor` definition,
 // refused a `/` after `process:`. This test builds the minimal fixture with a
 // git-log file, reads the last line of `/ledger.jsonl` and checks its actor
@@ -44,7 +45,7 @@ test('AGSC-02-09: the ledger\'s trailing build actor matches the item schema\'s 
   for (const version of [PACKAGE_VERSION, '1.0.0', '1.0.0-rc.7', '2.3.4+build.5']) {
     const entry = lastLedgerEntry(version);
     assert.strictEqual(entry.kind, 'build');
-    assert.strictEqual(entry.actor, `process:agsc/${version}`);
+    assert.strictEqual(entry.actor, 'process:agsc', 'from 1.1 the entry names the build step and no version (AGSC-08-20a)');
     assert.ok(ACTOR.test(entry.actor), `${entry.actor} is refused by the actor pattern of AGSC-02-09`);
   }
 });

@@ -62,6 +62,39 @@ test('AGSC-08-20b: one process, oldest first, tags read out of the decorations',
   assert.strictEqual(log[1].trailers['Signed-off-by'], 'Ada <ada@example.org>');
 });
 
+// AGSC-08-20b (1.1): `author_email` is supplied when `ledger.actors` is configured, and only then.
+test('AGSC-08-20b: with ledger.actors configured the author addresses are read in a second process', () => {
+  const calls = [];
+  const sha = (c) => c.repeat(40);
+  const stdout = record(sha('a'), '', '1756684800', '', 'first\n') + record(sha('b'), sha('a'), '1757289600', '', 'second\n');
+  const run = (cmd, args) => {
+    calls.push(args);
+    return args.includes('--name-only') ? { code: 0, stderr: '', stdout }
+      : { code: 0, stderr: '', stdout: `${sha('a')}${US}Ada@Example.org\n${sha('b')}${US}\n` };
+  };
+  const ctx = { ...ctxWith(run), config: { ledger: { actors: { 'ada@example.org': 'human:ada' } } } };
+  const log = helpers.gitLog(ctx);
+  assert.strictEqual(calls.length, 2);
+  assert.deepStrictEqual(calls[1].slice(0, 4), ['log', '--first-parent', '--reverse', '--format=%H%x1f%ae']);
+  assert.deepStrictEqual(log.map((e) => e.author_email), ['ada@example.org', undefined]);
+
+  calls.length = 0;
+  helpers.gitLog({ ...ctxWith(run), config: { ledger: { actors: {} } } });
+  helpers.gitLog(ctxWith(run));
+  assert.strictEqual(calls.length, 2, 'no map, no second process: one process for each of the two reads');
+});
+
+test('AGSC-08-20b: an address list the reader cannot match to the chain is no address, never a wrong one', () => {
+  const sha = (c) => c.repeat(40);
+  const stdout = record(sha('a'), '', '1756684800', '', 'first\n');
+  const ctx = (second) => ({ ...ctxWith((cmd, args) => (args.includes('--name-only') ? { code: 0, stderr: '', stdout } : second)),
+    config: { ledger: { actors: { 'ada@example.org': 'human:ada' } } } });
+  for (const answer of [{ code: 1, stderr: '', stdout: '' }, { code: 0, stderr: '', stdout: 42 }, null,
+    { code: 0, stderr: '', stdout: `${sha('z')}${US}ada@example.org\n` }]) {
+    assert.deepStrictEqual(helpers.gitLog(ctx(answer)).map((e) => e.author_email), [undefined]);
+  }
+});
+
 test('the content version this invocation derives comes from that one file', () => {
   const stdout = record('a'.repeat(40), '', '1756684800', 'tag: v1.4.0', 'first\n')
     + record('a1b2c3d4e5f60718293a4b5c6d7e8f9012345678', 'a'.repeat(40), '1757289600', '', 'second\n');
@@ -207,15 +240,47 @@ test('agsc build over a real git history publishes /ledger.jsonl, and verify --l
     assert.strictEqual(built.status, 0, built.stderr);
     const text = fs.readFileSync(path.join(dir, 'www', 'ledger.jsonl'), 'utf8');
     const lines = text.trim().split('\n').map((l) => JSON.parse(l));
-    // The build entry names the engine that built the node (AGSC-08-20a): its package version.
-    const engine = require('../../package.json').version;
-    assert.deepStrictEqual(lines.map((l) => [l.kind, l.actor]), [['commit', 'human:ada'], ['build', `process:agsc/${engine}`]]);
+    // From 1.1 the build entry names the build step and no implementation or version (AGSC-08-20a).
+    assert.deepStrictEqual(lines.map((l) => [l.kind, l.actor]), [['commit', 'human:ada'], ['build', 'process:agsc']]);
     const tree = cp.execFileSync('git', ['rev-parse', 'HEAD:content'], { cwd: dir, encoding: 'utf8' }).trim();
     assert.strictEqual(lines[1].ref, tree, 'the build entry names the committed content tree');
     const wellknown = fs.readFileSync(path.join(dir, 'www', '.well-known', 'knowledge-linkset'), 'utf8');
     assert.ok(wellknown.includes('rel#ledger'), 'the discovery document links the ledger');
     const verified = agsc('verify', '--ledger');
     assert.strictEqual(verified.status, 0, verified.stderr);
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
+});
+
+test('AGSC-08-20a (1.1): a commit with no sign-off takes its actor from ledger.actors, end to end', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const cp = require('node:child_process');
+  const ROOT = path.resolve(__dirname, '..', '..');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-ledger-actors-'));
+  try {
+    fs.cpSync(path.join(ROOT, 'tests', 'fixtures', 'minimal'), dir, { recursive: true });
+    const file = path.join(dir, 'agsc.config.json');
+    const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+    config.ledger = { actors: { 'ada@example.org': 'human:ada' } };
+    fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+    const env = {
+      ...Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('AGSC_') && !k.startsWith('GIT_'))),
+      GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z',
+      GIT_CONFIG_GLOBAL: path.join(dir, '.no-global'), GIT_CONFIG_NOSYSTEM: '1', SOURCE_DATE_EPOCH: '1767225600',
+    };
+    const git = (...args) => cp.execFileSync('git', ['-c', 'user.name=Ada', '-c', 'user.email=Ada@Example.org',
+      '-c', 'commit.gpgsign=false', ...args], { cwd: dir, env, stdio: 'pipe' });
+    git('init', '-q', '-b', 'main');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'first, no sign-off');
+    const built = cp.spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agsc.js'), 'build'], { cwd: dir, encoding: 'utf8', env });
+    assert.strictEqual(built.status, 0, built.stderr);
+    const text = fs.readFileSync(path.join(dir, 'www', 'ledger.jsonl'), 'utf8');
+    assert.deepStrictEqual(text.trim().split('\n').map((l) => JSON.parse(l).actor), ['human:ada', 'process:agsc']);
+    assert.ok(!text.includes('example.org'), 'the address reaches no ledger byte');
   } finally {
     fs.rmSync(dir, { force: true, recursive: true });
   }

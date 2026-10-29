@@ -338,6 +338,24 @@ test('AGSC-11-14: the edit link is derived from contribute[] and from nothing el
     'content/concepts/x.md'), null);
 });
 
+test('AGSC-11-14 (1.1): repository and branch name the source, and the edit link no longer infers them from target', () => {
+  const at = (entry, path_) => site.contributeEditUrl({ contribute: [entry] }, path_);
+  const file = 'content/concepts/x.md';
+  // The repository is read as given, from an entry of any mode; the branch defaults to HEAD.
+  assert.strictEqual(at({ mode: 'form', repository: 'https://github.com/a/b', target: 'https://forms.example/a' }, file),
+    'https://github.com/a/b/edit/HEAD/content/concepts/x.md');
+  assert.strictEqual(at({ branch: 'next-1.1', mode: 'pr', repository: 'https://github.com/a/b.git', target: 'https://github.com/other/node/compare' }, file),
+    'https://github.com/a/b/edit/next-1.1/content/concepts/x.md');
+  // A branch with a slash keeps it; each segment is percent-encoded.
+  assert.strictEqual(at({ branch: 'release/v 1', mode: 'pr', repository: 'https://gitlab.com/a/b', target: 'https://gitlab.com/a/b' }, file),
+    'https://gitlab.com/a/b/-/edit/release/v%201/content/concepts/x.md');
+  // A forge this engine cannot state the edit view of: the repository itself is the link.
+  assert.strictEqual(at({ mode: 'pr', repository: 'https://forge.example/a/b', target: 'https://forge.example/a/b/pulls' }, file),
+    'https://forge.example/a/b');
+  // Without them the 1.0 behaviour is unchanged.
+  assert.strictEqual(at({ mode: 'pr', target: 'https://github.com/a/b' }, file), 'https://github.com/a/b/edit/HEAD/content/concepts/x.md');
+});
+
 test('AGSC-11-14: the item page carries a plain "Propose an edit" anchor, and no form', () => {
   const page = html.itemPage(
     { body: 'Body.', description: 'A description.', slug: 'x', title: 'Ex', type: 'concept' },

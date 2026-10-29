@@ -41,7 +41,7 @@ test('kind is release, then merge, then commit (AGSC-08-20a)', () => {
     { sha: 'c'.repeat(40), committed_at: '2026-01-03T00:00:00Z', parents: ['b'], trailers: { Proposal: '1' } },
     { sha: 'd'.repeat(40), committed_at: '2026-01-04T00:00:00Z', parents: ['c'], tag: 'v1.0.0', trailers: { 'Channel-Auto': 'telegram' } },
   ];
-  const { entries } = ledger.derive(log, 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  const { entries } = ledger.derive(log, 'e'.repeat(40), { epoch: 1767225600 });
   assert.deepStrictEqual(entries.map((e) => e.kind), ['commit', 'merge', 'merge', 'release', 'build']);
   // AGSC-08-21: `mode: auto` rides on a release when the tagged commit is itself an auto merge.
   assert.strictEqual(entries[3].mode, 'auto');
@@ -50,7 +50,7 @@ test('kind is release, then merge, then commit (AGSC-08-20a)', () => {
 
 test('a truncated tail and a rewritten line are both reported (AGSC-08-23)', () => {
   const log = [{ sha: 'a'.repeat(40), committed_at: '2026-01-01T00:00:00Z', parents: [], trailers: {} }];
-  const { ledger: text, head } = ledger.derive(log, 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  const { ledger: text, head } = ledger.derive(log, 'e'.repeat(40), { epoch: 1767225600 });
   assert.deepStrictEqual(ledger.verify(text, HEAD_OF(head)), []);
   const truncated = `${text.split('\n')[0]}\n`;
   assert.deepStrictEqual(ledger.verify(truncated, HEAD_OF(head)).map((f) => f.code), ['AGSC-E701']);
@@ -61,11 +61,11 @@ test('a truncated tail and a rewritten line are both reported (AGSC-08-23)', () 
 
 test('compare: a published line the history does not derive is AGSC-E702 at that line (AGSC-08-23)', () => {
   const log = [{ sha: 'a'.repeat(40), committed_at: '2026-01-01T00:00:00Z', parents: [], trailers: {} }];
-  const derived = ledger.derive(log, 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  const derived = ledger.derive(log, 'e'.repeat(40), { epoch: 1767225600 });
   assert.deepStrictEqual(ledger.compare(derived.ledger, HEAD_OF(derived.head), derived), []);
   // Line 1 claims a release where the history holds a commit; the file is re-hashed
   // so that its own chain still links — only the comparison can see it.
-  const claimed = ledger.derive([{ ...log[0], tag: 'v9.9.9' }], 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  const claimed = ledger.derive([{ ...log[0], tag: 'v9.9.9' }], 'e'.repeat(40), { epoch: 1767225600 });
   assert.match(claimed.ledger.split('\n')[0], /"kind":"release"/u);
   const findings = ledger.compare(claimed.ledger, HEAD_OF(claimed.head), derived, { file: 'www/ledger.jsonl' });
   assert.deepStrictEqual(findings.map((f) => [f.code, f.line, f.file]),
@@ -74,7 +74,7 @@ test('compare: a published line the history does not derive is AGSC-E702 at that
 
 test('compare: with no history, a published ledger missing its last line is AGSC-E701 (AGSC-08-23)', () => {
   const log = [{ sha: 'a'.repeat(40), committed_at: '2026-01-01T00:00:00Z', parents: [], trailers: {} }];
-  const { ledger: text, head } = ledger.derive(log, 'e'.repeat(40), '0.1.0', { epoch: 1767225600 });
+  const { ledger: text, head } = ledger.derive(log, 'e'.repeat(40), { epoch: 1767225600 });
   assert.deepStrictEqual(ledger.compare(text, HEAD_OF(head), null), []);
   const truncated = `${text.split('\n')[0]}\n`;
   assert.deepStrictEqual(ledger.compare(truncated, HEAD_OF(head), null).map((f) => f.code), ['AGSC-E701']);
@@ -83,10 +83,10 @@ test('compare: with no history, a published ledger missing its last line is AGSC
 });
 
 test('the genesis prev is 64 zeros and every hash is 64 lowercase hex (AGSC-08-22)', () => {
-  const { entries } = ledger.derive([], 'e'.repeat(40), '0.1.0', { epoch: 0 });
+  const { entries } = ledger.derive([], 'e'.repeat(40), { epoch: 0 });
   assert.strictEqual(entries[0].prev, ledger.GENESIS);
   assert.match(entries[0].hash, /^[0-9a-f]{64}$/u);
-  assert.strictEqual(entries[0].actor, 'process:agsc/0.1.0');
+  assert.strictEqual(entries[0].actor, 'process:agsc', 'AGSC-08-20a from 1.1: the build step, not an implementation');
 });
 
 test('the greatest v* tag wins and a non-version tag is ignored (AGSC-08-20b)', () => {
@@ -161,7 +161,7 @@ const SEED = { numRuns: 300, seed: 20260919, verbose: 0 };
 
 test('AGSC-08-22: the chain links every entry to its predecessor, from GENESIS', () => {
   fc.assert(fc.property(gitLogArb, fc.integer({ min: 0, max: 1893456000 }), (log, epoch) => {
-    const { entries, head } = ledger.derive(log, 'a'.repeat(40), '0.0.2', { epoch });
+    const { entries, head } = ledger.derive(log, 'a'.repeat(40), { epoch });
     assert.strictEqual(entries.length, log.length + 1, 'one entry per commit plus one build');
     assert.strictEqual(entries[0].prev, ledger.GENESIS);
     for (let i = 0; i < entries.length; i += 1) {
@@ -177,8 +177,8 @@ test('AGSC-08-22: the chain links every entry to its predecessor, from GENESIS',
 
 test('AGSC-08-20a: derivation is a pure function of its inputs (byte-reproducible)', () => {
   fc.assert(fc.property(gitLogArb, fc.integer({ min: 0, max: 1893456000 }), (log, epoch) => {
-    const a = ledger.derive(log, 'b'.repeat(40), '0.0.2', { epoch });
-    const b = ledger.derive(log, 'b'.repeat(40), '0.0.2', { epoch });
+    const a = ledger.derive(log, 'b'.repeat(40), { epoch });
+    const b = ledger.derive(log, 'b'.repeat(40), { epoch });
     assert.strictEqual(a.ledger, b.ledger);
     assert.strictEqual(a.head, b.head);
     // Every line is one JCS-canonical object followed by exactly one LF.
@@ -190,7 +190,7 @@ test('AGSC-08-20a: derivation is a pure function of its inputs (byte-reproducibl
 
 test('AGSC-08-22: any change to any entry breaks the chain at that entry', () => {
   fc.assert(fc.property(gitLogArb.filter((l) => l.length >= 1), fc.nat(), (log, pick) => {
-    const { entries } = ledger.derive(log, 'c'.repeat(40), '0.0.2', { epoch: 0 });
+    const { entries } = ledger.derive(log, 'c'.repeat(40), { epoch: 0 });
     const i = pick % entries.length;
     const tampered = { ...entries[i], actor: `${entries[i].actor}!` };
     assert.notStrictEqual(ledger.hashEntry(tampered.prev, tampered), entries[i].hash,

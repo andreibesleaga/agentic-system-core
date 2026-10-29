@@ -55,6 +55,33 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `validate-diagrams`, `gen-spec-html`, `public-hygiene`, `bench`; I-117). The e-mail pattern of
   `public-hygiene` now bounds the local part at 64 and a label at 63 characters.
 
+- Ledger (AGSC-08-20a, AGSC-08-20b, AGSC-08-23; I-076, I-077): the trailing `build` entry of
+  `/ledger.jsonl` names the fixed `process:agsc` and no longer `process:agsc/<version>`, so every
+  conforming writer derives one ledger, one `agsc-ledger-head` and one `digest` of the ledger link from
+  one history. Byte change, only in a node built from git history: the last line of `ledger.jsonl`,
+  `agsc-ledger-head` and the ledger link's `digest` in `.well-known/knowledge-linkset`. A ledger
+  written under 1.0 still verifies. `ledger.actors` maps a commit author's address to an actor when
+  the commit has no sign-off; the address is read in a second `git log` only when the map is
+  configured and reaches no output byte (a node without the map is unchanged).
+- `conform` reports a failed or skipped required case as `AGSC-E005` and no longer as `AGSC-E001`
+  (AGSC-09-02); a Level lists its areas in the fixed order of AGSC-09-04 and
+  `HIGHER_LEVEL_CASES` holds every row of the table of AGSC-10-15.
+- `lint`, `build` and `ci` warn `AGSC-E423` for a Windows device name, a case-only collision under
+  `content/assets/` or `content/attachments/`, a path over 200 code points, a trailing space or period or
+  a reserved character in a name (AGSC-01-40), and for a Unicode noncharacter in authored text
+  (AGSC-04-05); and `AGSC-E108` for a byte-order mark or non-NFC text in `.env`, `security.txt`,
+  `LICENSE-CONTENT` and an SVG attachment (AGSC-01-14). Warnings only; no exit code and no byte moves.
+- A frontmatter nested deeper than 64 levels is the warning `AGSC-E105` (AGSC-02-02) and is read as
+  authored; a typed `peers[]` entry of `translation-layer` with no `crosswalk` is now reported as
+  `AGSC-E202` (AGSC-11-24, AGSC-01-18) where the schema check had returned an invalid result with no
+  error, and an invalid `oneOf` instance never returns without an error.
+- `contribute[].repository` and `branch` are read for the edit link (AGSC-11-14): without them the link
+  is unchanged; a malformed `repository` or `branch` is `AGSC-E209`.
+- The 60 s build-time budget of AGSC-06-21 is advisory (AGSC-04-03): the unused `timeBudget` helper and
+  its constant are removed.
+- Tests: the round trip of AGSC-06-32 puts `@graph` back for a graph of one node; `help` stays the flag
+  `--help` (`cli-0036` handler; its flag names come with the packages that add the flags).
+
 ### Added
 
 - `bench/metrics.js`: the statistics of the agent-side study — citation precision and

@@ -491,6 +491,25 @@ function linkKeyBoundary(items) {
 }
 
 /**
+ * AGSC-11-14 (1.1): a branch name is malformed when it is empty, begins with `-` or `/`,
+ * contains `..`, `//`, `@{`, a space, a control character or one of `~ ^ : ? * [ \`, or
+ * ends in `/`, `.` or `.lock` — the rules of `git check-ref-format`.
+ */
+const MALFORMED_BRANCH = /^$|^[-/]|\.\.|\/\/|@\{|[\u0000-\u0020\u007f~^:?*[\\]|[/.]$|\.lock$/u;
+
+/** The reason a `contribute[]` entry's `repository` or `branch` is malformed, or null. */
+function sourceFault(entry) {
+  if (entry.repository !== undefined
+      && (typeof entry.repository !== 'string' || !/^https:\/\/[^\u0000-\u0020]+$/u.test(entry.repository))) {
+    return 'repository must be an absolute https: URL';
+  }
+  if (entry.branch !== undefined && (typeof entry.branch !== 'string' || MALFORMED_BRANCH.test(entry.branch))) {
+    return 'branch is not a valid git ref name';
+  }
+  return null;
+}
+
+/**
  * checkContribute(config) -> Finding[]
  * AGSC-11-14: a malformed `contribute[]` entry is AGSC-E209, and a `channel`
  * target MUST be backed by a `channels[]` entry whose `publish` is `hitl` —
@@ -508,6 +527,8 @@ function checkContribute(config) {
       continue;
     }
     if (typeof entry.target !== 'string' || entry.target === '') { bad('missing target'); continue; }
+    const fault = sourceFault(entry);
+    if (fault !== null) { bad(fault); continue; }
     if ((entry.mode === 'pr' || entry.mode === 'form') && !/^https:\/\//u.test(entry.target)) {
       bad('a pr or form target must be an https: URL');
       continue;

@@ -11,7 +11,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 313 |
+| Unit, integration or architecture test | 315 |
 | Executed acceptance scenario | 75 |
 | Checker header | 33 |
 
@@ -174,11 +174,11 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-37 | VERIFIED | yes | `cli-0006` | `acceptance/steps/persona-m.js`, `application/cli/env-reaches-build.test.js`, `application/cli/json-stderr-findings-only.test.js` +6 | `persona-k-live-board.feature#ci --json names the budget override and never its value` | — |
 | AGSC-01-38 | VERIFIED | — | — | `application/cli/refresh-stops.test.js`, `distribution/now-spend.test.js` | — | — |
 | AGSC-01-39 | VERIFIED | yes | `imp-0006`, `imp-0007`, `imp-0008` | — | — | — |
-| AGSC-01-40 | VERIFIED | yes | `bundle-0013`, `bundle-0014`, `bundle-0015` | — | — | — |
+| AGSC-01-40 | VERIFIED | yes | `bundle-0013`, `bundle-0014`, `bundle-0015` | `governance/portable-names.test.js` | — | — |
 | AGSC-01-41 | VERIFIED | yes | `bundle-0020` | — | — | — |
 | AGSC-01-42 | VERIFIED | yes | `bundle-0018`, `bundle-0019` | — | — | — |
 | AGSC-02-01 | VERIFIED | yes | `fm-0011`, `fm-0012`, `fm-0013` | `interchange/oldsite.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
-| AGSC-02-02 | VERIFIED | yes | `fm-0005`, `fm-0014`, `fm-0015` +6 | `distribution/page-tools.test.js`, `knowledge/yaml.test.js` | — | — |
+| AGSC-02-02 | VERIFIED | yes | `fm-0005`, `fm-0014`, `fm-0015` +6 | `distribution/page-tools.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
 | AGSC-02-03 | VERIFIED | yes | `fm-0001`, `fm-0006` | `distribution/page-tools.test.js`, `interchange/clusters.test.js`, `knowledge/validate.test.js` +1 | — | — |
 | AGSC-02-04 | VERIFIED | — | — | `distribution/page-tools.test.js`, `governance/fix.test.js` | — | — |
 | AGSC-02-05 | VERIFIED | — | — | `knowledge/validate.test.js` | — | — |
@@ -239,7 +239,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-04-02 | VERIFIED | yes | `build-0017` | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-i.js`, `application/cli/verbs-wired.test.js` +11 | `persona-b-contributor.feature#CI runs a lint-only review, no LLM call`, `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
 | AGSC-04-03 | VERIFIED | — | — | `knowledge/jsonld-roundtrip.test.js` | — | — |
 | AGSC-04-04 | VERIFIED | — | — | `composition/harness.test.js`, `distribution/build-golden.test.js`, `knowledge/jcs.test.js` +2 | — | — |
-| AGSC-04-05 | VERIFIED | yes | `bundle-0021`, `jcs-0001`, `jcs-0002` +2 | `knowledge/jcs.test.js`, `knowledge/properties.test.js` | — | — |
+| AGSC-04-05 | VERIFIED | yes | `bundle-0021`, `jcs-0001`, `jcs-0002` +2 | `governance/portable-names.test.js`, `knowledge/jcs.test.js`, `knowledge/properties.test.js` | — | — |
 | AGSC-04-06 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-04-07 | VERIFIED | yes | `build-0015` | `knowledge/turtle.test.js`, `knowledge/unicode.test.js`, `standard/consistency.test.js` | — | — |
 | AGSC-04-08 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
@@ -400,7 +400,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-08-19 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-08-20 | VERIFIED | yes | — | `acceptance/steps/persona-i.js`, `acceptance/steps/persona-k.js` | — | — |
 | AGSC-08-20a | VERIFIED | yes | `ledger-0008`, `ledger-0009`, `ledger-0010` +1 | `application/cli/verbs-wired.test.js`, `application/git-log-read.test.js`, `governance/ledger-builder-line.test.js` +1 | `persona-b-contributor.feature#An outside contributor commits with the CA-v1 sign-off`, `persona-d-agent-proposer.feature#The operator runs the printed commands and commits with the trailers` | — |
-| AGSC-08-20b | VERIFIED | yes | `ledger-0004` | `application/git-log-read.test.js`, `governance/ledger.test.js`, `governance/prov.test.js` +1 | — | — |
+| AGSC-08-20b | VERIFIED | yes | `ledger-0004` | `application/git-log-read.test.js`, `governance/ledger-builder-line.test.js`, `governance/ledger.test.js` +2 | — | — |
 | AGSC-08-21 | VERIFIED | — | — | `governance/ledger.test.js` | — | — |
 | AGSC-08-22 | VERIFIED | yes | — | `acceptance/steps/persona-i.js`, `governance/ledger.test.js` | — | — |
 | AGSC-08-23 | VERIFIED | yes | `ledger-0001`, `ledger-0006`, `ledger-0007` | `acceptance/steps/persona-i.js`, `acceptance/steps/persona-m.js`, `distribution/acceptance-findings.test.js` +2 | — | — |
@@ -483,4 +483,4 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-11-21 | VERIFIED | yes | `bnd-0028` | `boundary/surfaces.test.js` | `persona-c-agent-mcp.feature#Agent starts the local stdio MCP server`, `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled` +11 | — |
 | AGSC-11-22 | VERIFIED | yes | `bnd-0032`, `compose-0023` | `acceptance/steps/persona-i.js`, `boundary/visibility.test.js`, `composition/compose.test.js` +3 | `persona-i-maintainer.feature#A superseded item keeps its slug and its page, its old address redirects, and the slug is never reused` | — |
 | AGSC-11-23 | VERIFIED | yes | `bnd-0015` | `boundary/federation.test.js`, `distribution/routes.test.js` | — | — |
-| AGSC-11-24 | VERIFIED | yes | `bnd-0046`, `bnd-0047`, `bnd-0048` | — | — | — |
+| AGSC-11-24 | VERIFIED | yes | `bnd-0046`, `bnd-0047`, `bnd-0048` | `knowledge/schema.test.js` | — | — |

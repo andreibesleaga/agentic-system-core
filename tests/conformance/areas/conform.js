@@ -1,10 +1,11 @@
 'use strict';
 // tests/conformance/areas/conform.js — area handler for `conform` vectors.
-// Rules: AGSC-04-22, AGSC-04-24, AGSC-10-15.
+// Rules: AGSC-04-22, AGSC-04-24, AGSC-09-02, AGSC-10-15.
 
 const {
   areasForLevel, claimCompleteness, crossImplementationClaim, divergenceVerdicts,
 } = require('../../../src/composition/conform.js');
+const { findingsFor } = require('../../../src/application/cli/verbs/conform.js');
 const { checks, deepEqual } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
 
@@ -64,10 +65,44 @@ function runConform0003(vector) {
   ]);
 }
 
+/**
+ * conform-0005 — a Level's areas in the fixed order of AGSC-09-04 (AGSC-10-15).
+ * The lists are compared as sequences; the class sentences are never consulted.
+ */
+function runConform0005(vector) {
+  const claims = vector.input.claims;
+  const byLevel = vector.expected.areas_by_level;
+  return checks([
+    ['areas_by_level', claims.every((c) => deepEqual(byLevel[String(c.level)], plain(areasForLevel(c.level)))),
+      JSON.stringify(claims.map((c) => plain(areasForLevel(c.level))))],
+    ['second_list_consulted', vector.expected.second_list_consulted === false,
+      'conform.js reads AGSC-10-02..05 only; the class sentences of AGSC-00-09..11 are never consulted'],
+    ['source', typeof vector.expected.source === 'string' && vector.expected.source.includes('AGSC-09-04'),
+      'the order is the one AGSC-09-04 names'],
+  ]);
+}
+
+/**
+ * conform-0006 — a failed or skipped required case is one AGSC-E005 finding, a
+ * withdrawn case none, and the verb exits 1 exactly when a finding exists (AGSC-09-02).
+ */
+function runConform0006(vector) {
+  const findings = findingsFor(vector.input.results);
+  const codes = findings.map((f) => f.code);
+  return checks([
+    ['findings', deepEqual(vector.expected.findings, findings.map((f) => ({ code: f.code, severity: f.severity }))),
+      JSON.stringify(findings)],
+    ['codes_absent', vector.expected.codes_absent.every((c) => !codes.includes(c)), JSON.stringify(codes)],
+    ['exit', vector.expected.exit === (findings.length > 0 ? 1 : 0), String(findings.length)],
+  ]);
+}
+
 const HANDLERS = {
   'conform-0001': runConform0001,
   'conform-0003': runConform0003,
   'conform-0004': runConform0004,
+  'conform-0005': runConform0005,
+  'conform-0006': runConform0006,
 };
 
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of

@@ -120,3 +120,20 @@ test('AGSC-01-14: a missing or doubled trailing LF is AGSC-E108', () => {
   assert.deepStrictEqual(fm.split('').errors.map((e) => e.code), ['AGSC-E101'],
     'an empty file is a missing block, not a trailing-LF fault');
 });
+
+// AGSC-02-02 (1.1, fm-0021 and fm-0026): a frontmatter nested deeper than 64 levels that the
+// tool can still read is the warning AGSC-E105 and is processed as authored; 64 levels are fine.
+const deepItem = (levels) => {
+  const nest = Array.from({ length: levels - 2 }, (_, i) => `${'  '.repeat(i + 1)}a:`).join('\n');
+  const leaf = `${'  '.repeat(levels - 1)}z: 1`;
+  return `---\ntype: concept\ntitle: Deep\nx-acme-nest:\n${nest}\n${leaf}\n---\n`;
+};
+
+test('AGSC-02-02: nesting beyond 64 levels is one AGSC-E105 warning and the value is kept', () => {
+  const over = fm.parseItem(deepItem(66), { path: 'content/concepts/deep.md', schemas: S });
+  const warnings = over.findings.filter((f) => f.code === 'AGSC-E105');
+  assert.deepStrictEqual(warnings.map((f) => [f.severity, f.file]), [['warn', 'content/concepts/deep.md']]);
+  assert.ok(over.frontmatter['x-acme-nest'], 'the deep value is processed as authored');
+  const within = fm.parseItem(deepItem(64), { path: 'content/concepts/deep.md', schemas: S });
+  assert.deepStrictEqual(within.findings.filter((f) => f.code === 'AGSC-E105'), []);
+});

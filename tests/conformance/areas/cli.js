@@ -10,6 +10,7 @@ const { main } = require('../../../src/application/cli/main.js');
 const { load } = require('../../../src/application/config/load.js');
 const { createFileSystem } = require('../../../src/adapters/node-fs.js');
 const { memoryPorts, captureStream } = require('./_shared.js');
+const { runCli0036 } = require('./_cli-help.js');
 const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
 const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
 const { runCli0020, runCli0021, runCli0022 } = require('./_cli-instant-and-order.js');
@@ -683,6 +684,7 @@ Object.assign(HANDLERS, {
   'cli-0023': (vector, ctx) => runCli0023(vector, ctx, evaluateWebmcp),
   'cli-0024': runCli0024,
   'cli-0025': runCli0025,
+  'cli-0036': runCli0036,
 });
 
 // A required case with no handler is a FAIL, never a skip: the suite counted a skip

@@ -40,7 +40,7 @@ test('the ledger derived from a commit with a hostile trailer names an unknown a
   const log = ledger.produce([{
     sha: 'a'.repeat(40), parents: [], committer_timestamp: '2026-01-01T00:00:00Z', message, tags: [],
   }]);
-  const derived = ledger.derive(log, 'b'.repeat(40), '1.0.0', { epoch: 1767225600 });
+  const derived = ledger.derive(log, 'b'.repeat(40), { epoch: 1767225600 });
   assert.equal(derived.entries[0].actor, 'human:unknown');
   assert.equal(derived.entries[0].kind, 'commit');
 });

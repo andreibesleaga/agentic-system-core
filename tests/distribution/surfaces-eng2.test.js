@@ -233,7 +233,6 @@ test('AGSC-06-21: the three budgets are the rule\'s own numbers', () => {
   assert.strictEqual(site.BUDGET_INDEX_DOC_BYTES, 1000000);
   assert.strictEqual(site.BUDGET_SEARCH_PER_ITEM_BYTES, undefined);
   assert.strictEqual(site.BUDGET_SEARCH_TOTAL_BYTES, undefined);
-  assert.strictEqual(site.BUDGET_MS_PER_500_ITEMS, 60000);
 });
 
 test('AGSC-06-21: the fixture is inside every budget, so a green build raises none', () => {
@@ -290,22 +289,13 @@ test('AGSC-06-21: the index budget is 1 MB per DOCUMENT', () => {
   assert.deepStrictEqual(site.budgets(new Map([['/chunks.jsonl', `${atBound}x`]]), 500), []);
 });
 
-test('AGSC-06-21: the time budget scales with the Bundle and is never measured inside build()', () => {
-  assert.deepStrictEqual(site.timeBudget(1000, 100), []);
-  assert.deepStrictEqual(site.timeBudget(60000, 500), []);
-  const over = site.timeBudget(60001, 500);
-  assert.strictEqual(over.length, 1);
-  assert.strictEqual(over[0].code, 'AGSC-E904');
-  assert.match(over[0].message, /60 s per 500 items/u);
-  // 5 000 items get ten times the allowance, so a conforming Bundle is not punished.
-  assert.deepStrictEqual(site.timeBudget(600000, 5000), []);
-  // A caller that measured nothing reports nothing — a duration is never invented.
-  assert.deepStrictEqual(site.timeBudget(undefined, 500), []);
-  assert.deepStrictEqual(site.timeBudget(Number.NaN, 500), []);
-  // The build itself never reads a clock for this, so two builds stay byte-identical.
+test('AGSC-06-21 (1.1): the build-time budget is advisory, so nothing measures time or fails a build on it', () => {
+  // 1.0 exported a helper that turned a measured duration into AGSC-E904; no verb called it, and
+  // AGSC-04-03 says from 1.1 that a build never measures time. The helper and its constant are gone.
+  assert.strictEqual(site.timeBudget, undefined);
+  assert.strictEqual(site.BUDGET_MS_PER_500_ITEMS, undefined);
   const source = nodeFs.readFileSync(path.join(ROOT, 'src', 'distribution', 'site.js'), 'utf8');
-  assert.ok(!/function build[\s\S]*?timeBudget\(/u.test(source),
-    'build() measures a wall-clock duration, which would make a finding machine-dependent');
+  assert.ok(!/timeBudget|BUDGET_MS/u.test(source), 'site.js still names a time budget');
 });
 
 // ---------------------------------------------------------------- /boards/<cluster>/

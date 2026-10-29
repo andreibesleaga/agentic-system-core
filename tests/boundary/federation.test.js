@@ -252,6 +252,21 @@ test('AGSC-11-14: a malformed contribute entry is AGSC-E209', () => {
   assert.deepStrictEqual(plain(f.checkContribute(undefined)), []);
 });
 
+test('AGSC-11-14 (1.1): repository is an https address and branch follows git check-ref-format, else AGSC-E209', () => {
+  const entry = (extra) => ({ contribute: [{ mode: 'pr', target: 'https://x.example/pr', ...extra }] });
+  for (const good of [{ repository: 'https://github.com/a/b' }, { branch: 'main' }, { branch: 'release/v1.0' },
+    { branch: 'HEAD', repository: 'https://github.com/a/b.git' }, { branch: 'feature_1-x' }]) {
+    assert.deepStrictEqual(plain(f.checkContribute(entry(good))), [], JSON.stringify(good));
+  }
+  for (const bad of [{ repository: 'http://github.com/a/b' }, { repository: 'github.com/a/b' }, { repository: '' },
+    { branch: '' }, { branch: '-x' }, { branch: '/x' }, { branch: 'a..b' }, { branch: 'a//b' }, { branch: 'a@{1}' },
+    { branch: 'a b' }, { branch: 'a\u0001b' }, { branch: 'a~b' }, { branch: 'a^b' }, { branch: 'a:b' }, { branch: 'a?b' },
+    { branch: 'a*b' }, { branch: 'a[b' }, { branch: 'a\\b' }, { branch: 'a/' }, { branch: 'a.' }, { branch: 'a.lock' },
+    { branch: 'a/b.lock' }, { branch: 7 }]) {
+    assert.strictEqual(f.checkContribute(entry(bad))[0].code, 'AGSC-E209', JSON.stringify(bad));
+  }
+});
+
 test('AGSC-11-14: propose uses the first contribute mode the client supports', () => {
   const config = {
     channels: [{ name: 'mail', publish: 'hitl' }],

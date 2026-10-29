@@ -50,6 +50,7 @@ const GIT_LOG_FORMAT = '--format=%x00%H%x1f%P%x1f%ct%x1f%D%x1f%B%x00';
  * `--diff-merges=first-parent` states what `--first-parent` implies for a merge,
  * so that no configuration can change the list.
  */
+const GIT_AUTHOR_FORMAT = '--format=%H%x1f%ae';
 const GIT_LOG_ARGS = Object.freeze(['-c', 'core.quotepath=off', 'log', '--first-parent', '--reverse',
   '--no-renames', '--name-only', '--diff-merges=first-parent', GIT_LOG_FORMAT, 'HEAD']);
 
@@ -302,7 +303,42 @@ function gitLog(ctx) {
     if (author !== null) commit.author = author;
     commits.push(commit);
   }
+  if (hasActorMap(ctx.config)) {
+    const emails = authorEmails(ctx);
+    for (const commit of commits) if (emails.has(commit.sha)) commit.author_email = emails.get(commit.sha);
+  }
   return ledger.produce(commits);
+}
+
+/** Whether `ledger.actors` of AGSC-01-18 holds at least one address. */
+function hasActorMap(config) {
+  const actors = config && config.ledger && config.ledger.actors;
+  return actors !== null && typeof actors === 'object' && Object.keys(actors).length > 0;
+}
+
+/**
+ * AGSC-08-20b (1.1): the author address of every commit of the chain, by sha, in ASCII
+ * lower case. It is asked for only when `ledger.actors` is configured, in a second
+ * process, so a Bundle without the map reads the history exactly as under 1.0. A
+ * commit the answer does not name gets no address.
+ *
+ * @param {object} ctx the verb context.
+ * @returns {Map<string, string>}
+ */
+function authorEmails(ctx) {
+  const emails = new Map();
+  let result;
+  try {
+    result = ctx.ports.proc.run('git', ['log', '--first-parent', '--reverse', GIT_AUTHOR_FORMAT, 'HEAD']);
+  } catch (e) {
+    return emails;
+  }
+  if (!result || result.code !== 0 || typeof result.stdout !== 'string') return emails;
+  for (const line of result.stdout.split('\n')) {
+    const [sha, email] = line.split(US);
+    if (/^[0-9a-f]{40,64}$/u.test(sha) && email) emails.set(sha, email);
+  }
+  return emails;
 }
 
 /**

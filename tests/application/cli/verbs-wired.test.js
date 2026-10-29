@@ -413,7 +413,7 @@ test('a distribution with no area handlers reports skip, never a silent pass', (
   assert.strictEqual(conformVerb.handlerFor('no-such-area'), null);
 });
 
-test('AGSC-09-02: a vector that does not pass is AGSC-E001, and a withdrawn one is silent', () => {
+test('AGSC-09-02: a vector that does not pass is AGSC-E005, and a withdrawn one is silent', () => {
   const conformVerb = require('../../../src/application/cli/verbs/conform.js');
   const results = [
     { id: 'disc-0013', rule: 'AGSC-06-13a', status: 'pass' },
@@ -423,7 +423,7 @@ test('AGSC-09-02: a vector that does not pass is AGSC-E001, and a withdrawn one 
     { id: 'cli-0007', rule: 'AGSC-09-14a', status: 'fail' },
   ];
   const findings = conformVerb.findingsFor(results);
-  assert.deepStrictEqual(findings.map((f) => f.code), ['AGSC-E001', 'AGSC-E001', 'AGSC-E001']);
+  assert.deepStrictEqual(findings.map((f) => f.code), ['AGSC-E005', 'AGSC-E005', 'AGSC-E005']);
   assert.ok(findings.every((f) => f.severity === 'error'));
   assert.strictEqual(findings[0].message,
     'vector disc-0008 (AGSC-06-14) fail: sections: got ["Coordination"]');

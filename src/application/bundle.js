@@ -119,7 +119,9 @@ function loadBundle(ports, options) {
     const split = frontmatter.split(indexText, { file: 'content/index.md' });
     let parsed = {};
     try {
-      parsed = yaml.parse(split.yamlText || '');
+      const read = yaml.parseWithDepth(split.yamlText || '');
+      parsed = read.value;
+      findings.push(...frontmatter.nestingWarnings(read.depth, 'content/index.md'));
     } catch (e) {
       findings.push(Object.freeze({
         code: e && e.code ? e.code : 'AGSC-E105',

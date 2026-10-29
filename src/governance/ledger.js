@@ -12,7 +12,7 @@
 // arrives as an integer through the Clock port. `node:crypto` is a deterministic
 // function of its input, not host state (AGSC-04-03).
 //
-// Vectors: ledger-0001, ledger-0003, ledger-0004, ledger-0005.
+// Vectors: ledger-0001, ledger-0004, ledger-0006 to ledger-0011.
 
 const { createHash } = require('node:crypto');
 const { canonicalize } = require('../knowledge/jcs.js');
@@ -26,6 +26,11 @@ const GENESIS = '0'.repeat(64);
 const KINDS = Object.freeze(['build', 'commit', 'merge', 'release']);
 
 const SECONDS_PER_DAY = 86400;
+
+/** AGSC-08-20a: the actor of a commit that names no one. */
+const UNKNOWN_ACTOR = 'human:unknown';
+/** AGSC-08-20a (1.1): the trailing entry names the build step, never an implementation or its version. */
+const BUILD_ACTOR = 'process:agsc';
 
 /**
  * AGSC-04-10 from whole UTC seconds, without a clock and without `Date`: the civil
@@ -104,8 +109,25 @@ function actorOf(signedOffBy, meter) {
   const value = String(signedOffBy == null ? '' : signedOffBy);
   const inside = bracketed(value, meter);
   const email = inside === null ? value.trim() : inside;
-  if (!email.includes('@')) return 'human:unknown';
+  if (!email.includes('@')) return UNKNOWN_ACTOR;
   return operatorFor({}, email).operator;
+}
+
+/**
+ * AGSC-08-20a (1.1): the actor of a commit. The `Signed-off-by` local part wins; else
+ * the actor that `ledger.actors` maps the commit's `author_email` to, when it maps it;
+ * else `human:unknown`. The address is used for the look-up only and is never published.
+ * @param {object} commit an element of the git-log file.
+ * @param {object} [actors] `ledger.actors` of AGSC-01-18: lower-case address -> `human:<id>`.
+ * @returns {string}
+ */
+function commitActor(commit, actors) {
+  const signed = actorOf(trailer(commit.trailers, 'Signed-off-by'));
+  if (signed !== UNKNOWN_ACTOR || typeof commit.author_email !== 'string') return signed;
+  const mapped = actors !== null && typeof actors === 'object'
+    && Object.prototype.hasOwnProperty.call(actors, commit.author_email.toLowerCase())
+    ? actors[commit.author_email.toLowerCase()] : undefined;
+  return typeof mapped === 'string' ? mapped : UNKNOWN_ACTOR;
 }
 
 /**
@@ -160,11 +182,11 @@ function hashEntry(prev, entry) {
  *
  * @param {Array<object>} gitLog `[{sha, committed_at, parents[], tag?, trailers{}}]`.
  * @param {string} contentTree the git tree hash of `content/`.
- * @param {string} version the engine version, for `process:agsc/<version>`.
- * @param {{epoch:number}} options `SOURCE_DATE_EPOCH` in whole seconds.
+ * @param {{epoch:number, actors?:object}} options `SOURCE_DATE_EPOCH` in whole seconds,
+ *   and `ledger.actors` of AGSC-01-18 when the Bundle configures it.
  * @returns {{ledger:string, head:string, entries:Array<object>}}
  */
-function derive(gitLog, contentTree, version, options = {}) {
+function derive(gitLog, contentTree, options = {}) {
   const entries = [];
   let prev = GENESIS;
   for (const commit of (gitLog || [])) {
@@ -173,7 +195,7 @@ function derive(gitLog, contentTree, version, options = {}) {
     const isMerge = (Array.isArray(commit.parents) ? commit.parents.length : 0) >= 2
       || trailer(trailers, 'Proposal') !== undefined;
     const entry = {
-      actor: actorOf(trailer(trailers, 'Signed-off-by')),
+      actor: commitActor(commit, options.actors),
       kind: isRelease ? 'release' : (isMerge ? 'merge' : 'commit'),
       prev,
       ref: String(commit.sha),
@@ -187,7 +209,7 @@ function derive(gitLog, contentTree, version, options = {}) {
     entries.push(entry);
   }
   const build = {
-    actor: `process:agsc/${version}`,
+    actor: BUILD_ACTOR,
     kind: 'build',
     prev,
     ref: String(contentTree),
@@ -420,6 +442,11 @@ function produce(commits) {
     if (tags.length > 0) entry.tag = tags[tags.length - 1];
     if (Array.isArray(commit.files)) entry.files = commit.files.map(String).sort(compareCodePoint);
     if (typeof commit.author === 'string' && commit.author !== '') entry.author = commit.author;
+    // AGSC-08-20b (1.1): the address of the commit's author in ASCII lower case, used for the
+    // look-up of `ledger.actors` and published nowhere.
+    if (typeof commit.author_email === 'string' && commit.author_email !== '') {
+      entry.author_email = commit.author_email.replace(/[A-Z]/gu, (c) => c.toLowerCase());
+    }
     return entry;
   });
 }
@@ -435,8 +462,10 @@ module.exports = {
   hashEntry,
   actorOf,
   authorOf,
+  commitActor,
   instantFromEpoch,
   epochFromInstant,
+  BUILD_ACTOR,
   GENESIS,
   KINDS,
 };

@@ -15,41 +15,62 @@
  */
 
 /**
- * AGSC-10-15: the Level IS the vector set. These four arrays are transcribed
- * from AGSC-10-02 to AGSC-10-05 and from nowhere else — in particular NOT from
- * the class sentences of AGSC-00-09 to AGSC-00-11, which describe what a class
- * implements and are never read as a competing list (`conform-0003`).
- * Membership, not order, is what those rules fix.
+ * AGSC-09-04: the twenty-five areas in the order the rule names them. From 1.1 a
+ * claim lists a Level's areas in this order (AGSC-10-15, AGSC-09-01(d)).
  */
-const LEVEL_AREAS = Object.freeze({
-  // AGSC-10-02 — Level 0, Publisher.
-  0: Object.freeze(['frontmatter', 'slug', 'bundle', 'discovery']),
-  // AGSC-10-03 — Level 1, Reader: Level 0 + links, lint, jcs.
-  1: Object.freeze(['frontmatter', 'slug', 'bundle', 'jcs', 'discovery', 'links', 'lint']),
-  // AGSC-10-04 — Level 2, Writer/Exporter.
-  2: Object.freeze(['frontmatter', 'slug', 'bundle', 'jcs', 'discovery', 'links', 'lint',
-    'graph', 'build', 'adopt', 'ledger', 'import', 'export', 'skills', 'chunks', 'boards', 'boundary']),
-  // AGSC-10-05 — Level 3, Full engine: all twenty-five areas of AGSC-09-04.
-  3: Object.freeze(['frontmatter', 'slug', 'links', 'jcs', 'graph', 'lint', 'cli', 'bundle',
-    'prov', 'ledger', 'compose', 'build', 'discovery', 'adopt', 'import', 'export', 'skills',
-    'adapters', 'channels', 'harness', 'run', 'conform', 'boundary', 'chunks', 'boards']),
-});
+const AREA_ORDER = Object.freeze(['frontmatter', 'slug', 'links', 'jcs', 'graph', 'lint', 'cli',
+  'bundle', 'prov', 'ledger', 'compose', 'build', 'discovery', 'adopt', 'import', 'export',
+  'skills', 'adapters', 'channels', 'harness', 'run', 'conform', 'boundary', 'chunks', 'boards']);
 
 /**
- * AGSC-10-15 (amended for 1.0.0): the cases of a Level's areas that exercise a
+ * AGSC-10-15: the Level IS the vector set. The membership of each Level is
+ * transcribed from AGSC-10-02 to AGSC-10-05 and from nowhere else — in particular
+ * NOT from the class sentences of AGSC-00-09 to AGSC-00-11, which describe what a
+ * class implements and are never read as a competing list (`conform-0005`).
+ * Each Level names the areas of the one below it and these additions; Level 3
+ * names all twenty-five.
+ */
+const LEVEL_ADDS = Object.freeze({
+  // AGSC-10-02 — Level 0, Publisher.
+  0: Object.freeze(['frontmatter', 'slug', 'bundle', 'discovery']),
+  // AGSC-10-03 — Level 1, Reader.
+  1: Object.freeze(['links', 'jcs', 'lint']),
+  // AGSC-10-04 — Level 2, Writer/Exporter.
+  2: Object.freeze(['graph', 'build', 'adopt', 'ledger', 'import', 'export', 'skills',
+    'chunks', 'boards', 'boundary']),
+  // AGSC-10-05 — Level 3, Full engine: every area.
+  3: AREA_ORDER,
+});
+
+/** The areas of each Level, in the fixed order of AREA_ORDER. */
+const LEVEL_AREAS = Object.freeze([0, 1, 2, 3].reduce((byLevel, level) => {
+  const names = new Set([].concat(...Object.keys(LEVEL_ADDS).filter((l) => Number(l) <= level).map((l) => LEVEL_ADDS[l])));
+  byLevel[level] = Object.freeze(AREA_ORDER.filter((area) => names.has(area)));
+  return byLevel;
+}, []));
+
+/**
+ * AGSC-10-15 (amended for 1.0.0 and 1.1.0): the cases of a Level's areas that exercise a
  * HIGHER Level's behaviour, each with the Level it belongs to. Transcribed from the
  * rule's table and from nowhere else; `tests/composition/conform-higher-level-cases
- * .test.js` holds the two to one list.
+ * .test.js` holds the two to one list. From 1.1 the table also holds the rows for the
+ * cases 1.1 adds (AGSC-10-19) and the withdrawn cases keep theirs (AGSC-00-13).
  */
 const HIGHER_LEVEL_CASES = Object.freeze({
   'bundle-0001': 1, 'bundle-0006': 1, 'bundle-0007': 1, 'bundle-0009': 1, 'bundle-0010': 1,
-  'disc-0005': 1, 'disc-0019': 1,
-  'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2, 'disc-0018': 2, 'disc-0020': 2, 'disc-0021': 2,
-  'lint-0026': 2,
-  'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3,
-  'lint-0001': 3, 'lint-0002': 3, 'lint-0003': 3, 'lint-0028': 3, 'lint-0029': 3,
-  'lint-0032': 3, 'lint-0033': 3,
-  'adopt-0007': 3, 'adopt-0008': 3, 'adopt-0009': 3,
+  'disc-0005': 1, 'disc-0019': 1, 'bundle-0012': 1, 'bundle-0013': 1, 'bundle-0014': 1,
+  'bundle-0015': 1, 'bundle-0016': 1, 'bundle-0017': 1, 'bundle-0020': 1, 'bundle-0021': 1,
+  'fm-0021': 1, 'fm-0022': 1, 'fm-0023': 1, 'fm-0024': 1, 'fm-0025': 1, 'disc-0023': 1, 'fm-0026': 1,
+  'fm-0027': 1,
+  'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2,
+  'disc-0018': 2, 'disc-0020': 2, 'disc-0021': 2, 'lint-0026': 2, 'bundle-0011': 2, 'disc-0026': 2,
+  'disc-0027': 2, 'disc-0028': 2, 'disc-0029': 2, 'disc-0030': 2, 'disc-0031': 2, 'disc-0032': 2,
+  'disc-0033': 2,
+  'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3, 'lint-0001': 3, 'lint-0002': 3, 'lint-0003': 3,
+  'lint-0028': 3, 'lint-0029': 3, 'lint-0032': 3, 'lint-0033': 3, 'adopt-0007': 3, 'adopt-0008': 3,
+  'adopt-0009': 3, 'bundle-0018': 3, 'bundle-0019': 3, 'imp-0006': 3, 'imp-0007': 3, 'imp-0008': 3,
+  'bnd-0046': 3, 'bnd-0047': 3, 'bnd-0048': 3, 'bnd-0050': 3, 'lint-0046': 3, 'lint-0047': 3,
+  'lint-0048': 3, 'lint-0049': 3, 'lint-0050': 3, 'lint-0057': 3, 'lint-0058': 3, 'lint-0059': 3,
 });
 
 /** AGSC-04-24: the artefacts for which byte-identity ACROSS implementations holds. */

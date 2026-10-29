@@ -115,9 +115,22 @@ function discriminate(branches, value) {
 }
 
 /**
+ * The unique branch whose `type` is the JSON type of the instance, or -1: how a
+ * `peers[]` entry that is an object is told from one that is a string.
+ */
+function discriminateByType(branches, value) {
+  if (!Array.isArray(branches)) return -1;
+  const kind = Array.isArray(value) ? 'array' : (value === null ? 'null' : typeof value);
+  const same = (branch) => branch && (branch.type === kind || (branch.type === 'integer' && Number.isInteger(value)));
+  const matching = branches.map((b, i) => (same(b) ? i : -1)).filter((i) => i >= 0);
+  return matching.length === 1 ? matching[0] : -1;
+}
+
+/**
  * Reduce Ajv's `oneOf` noise to the branch the instance was aiming at. With no
  * discriminator, keep the most specific keyword any branch reported, so that §9.4's
- * precedence (enum/const beats pattern/length beats the generic failure) still holds.
+ * precedence (enum/const beats pattern/length beats the generic failure) still holds;
+ * failing that, the one branch of the instance's JSON type.
  */
 function narrowOneOf(errors, rootSchema, instance) {
   let out = errors;
@@ -129,17 +142,34 @@ function narrowOneOf(errors, rootSchema, instance) {
     const chosen = discriminate(branches, value);
     const attributable = (err) => err.schemaPath.startsWith(`${prefix}/`);
     const branchOf = (err) => Number(err.schemaPath.slice(prefix.length + 1).split('/')[0]);
+    const keepBranch = (index) => out.filter((err) => err !== e && !(attributable(err) && branchOf(err) !== index));
     if (chosen >= 0) {
-      out = out.filter((err) => err !== e && !(attributable(err) && branchOf(err) !== chosen));
+      out = keepBranch(chosen);
+      continue;
+    }
+    const mine = out.filter(attributable);
+    const specific = mine.find((x) => x.keyword === 'enum' || x.keyword === 'const')
+      || mine.find((x) => ['pattern', 'minLength', 'maxLength'].includes(x.keyword));
+    const byType = specific ? -1 : discriminateByType(branches, value);
+    if (byType >= 0) {
+      out = keepBranch(byType);
     } else {
-      const mine = out.filter(attributable);
-      const specific = mine.find((x) => x.keyword === 'enum' || x.keyword === 'const')
-        || mine.find((x) => ['pattern', 'minLength', 'maxLength'].includes(x.keyword));
-      out = out.filter((err) => err !== e && !attributable(err));
-      if (specific) out = out.concat([specific]);
+      // Nothing specific to say: keep the generic error, so an invalid instance never
+      // comes back with no error at all.
+      out = out.filter((err) => err !== e && !attributable(err)).concat([specific || e]);
     }
   }
   return out;
+}
+
+/**
+ * Ajv adds a wrapper error, keyword `if`, ("must match "then" schema") beside the errors
+ * of the `then` subschema. The inner errors say what is wrong, so the wrapper is
+ * dropped whenever one of them is there: one fault is reported once (AGSC-09-11).
+ */
+function withoutIfWrappers(errors) {
+  return errors.filter((e) => e.keyword !== 'if'
+    || !errors.some((o) => o.schemaPath.startsWith(e.schemaPath.replace(/\/if$/u, '/then/'))));
 }
 
 /**
@@ -161,7 +191,7 @@ function compile(schemaObject) {
   const fn = function validate(value) {
     const valid = validateFn(value);
     if (valid) return { valid: true, errors: [] };
-    const narrowed = narrowOneOf(validateFn.errors || [], schemaObject, value);
+    const narrowed = withoutIfWrappers(narrowOneOf(validateFn.errors || [], schemaObject, value));
     return {
       valid: false,
       errors: narrowed.map((e) => ({

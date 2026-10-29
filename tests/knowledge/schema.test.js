@@ -138,3 +138,24 @@ test('local $ref resolves and a boolean subschema is honoured', () => {
   assert.strictEqual(v({ a: 'x', b: 1 }).valid, true);
   assert.strictEqual(v({ a: 'y' }).errors[0].keyword, 'pattern');
 });
+
+test('AGSC-11-24: a branch that matches by JSON type alone keeps its own errors (a typed peer with no crosswalk)', () => {
+  const v = schema.compile(raw.config);
+  const config = (peer) => ({ bundle: { id: 'e', operator: 'human:a' }, peers: [peer],
+    site: { base: 'https://e.example/', title: 'E' }, spec_version: '1.0.0' });
+  const url = 'https://c.example/.well-known/knowledge-linkset';
+  const missing = v(config({ relationship: 'translation-layer', url }));
+  assert.strictEqual(missing.valid, false);
+  // One fault, one error: Ajv's wrapper error for the failed `then` is not repeated.
+  assert.deepStrictEqual(missing.errors.map((e) => [e.keyword, e.params.missingProperty]), [['required', 'crosswalk']]);
+  assert.strictEqual(v(config({ relationship: 'translation-layer', url, crosswalk: 'domain/c.ttl' })).valid, true);
+  assert.strictEqual(v(config({ relationship: 'friend', url })).errors[0].keyword, 'enum');
+  assert.strictEqual(v(config(url)).valid, true);
+});
+
+test('a oneOf that no branch can explain still reports an error, never an invalid result with none', () => {
+  const v = schema.compile({ oneOf: [{ type: 'string' }, { type: 'object' }] });
+  const r = v(3);
+  assert.strictEqual(r.valid, false);
+  assert.deepStrictEqual(r.errors.map((e) => e.keyword), ['oneOf']);
+});

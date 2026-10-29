@@ -67,7 +67,18 @@ async function roundTrip(files) {
   };
   const expanded = await jsonldProcessor.expand(document, { documentLoader });
   const compacted = await jsonldProcessor.compact(expanded, url, { documentLoader });
-  return { after: canonicalize(compacted), before: canonicalize(document) };
+  return { after: canonicalize(withGraph(compacted)), before: canonicalize(document) };
+}
+
+/**
+ * AGSC-06-32 (1.1): a graph of ONE node is compacted by a JSON-LD processor without `@graph`, the node's
+ * members standing beside `@context`. The round trip compares as a value, so that form is the same
+ * document as `{"@context": …, "@graph": [node]}`.
+ */
+function withGraph(compacted) {
+  if (compacted['@graph'] !== undefined) return compacted;
+  const { '@context': context, ...node } = compacted;
+  return { '@context': context, '@graph': [node] };
 }
 
 /** The number of triples a JSON-LD document yields in a conforming processor. */
@@ -147,6 +158,15 @@ test('the built graph.jsonld is compact: no vocabulary IRI is written out', () =
 
 test('expand then re-compact reproduces graph.jsonld byte for byte (AGSC-06-32)', async () => {
   const { after, before } = await roundTrip(build().files);
+  assert.strictEqual(after, before);
+});
+
+test('a graph of one node round-trips too: the processor drops @graph and the comparison puts it back (AGSC-06-32)', async () => {
+  const { bundle, ports, options } = load();
+  const bare = { ...bundle, items: [], index: bundle.index };
+  const { files } = site.build(bare, ports, options);
+  assert.strictEqual(JSON.parse(files.get('/graph.jsonld'))['@graph'].length, 1, 'the Bundle node alone');
+  const { after, before } = await roundTrip(files);
   assert.strictEqual(after, before);
 });
 

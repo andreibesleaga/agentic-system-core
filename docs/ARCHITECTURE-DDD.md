@@ -137,4 +137,4 @@ Symbols: `n` items · `m` authored links · `b` body bytes · `t` distinct token
 | Federation walk | 11-10 | ≤ min(`max_requests`, Σ_{i≤h} `fan_out`^i) requests | Θ(p³) at h = 3 without the caps — hence the caps |
 | Static fragments | 06-33 | O(s) build; ≈ \|S\| + \|P\| files | optional; measure before promising |
 
-The one budget the spec states is ≤ 60 s per 500 items (AGSC-06-21). Every row is linear or `n log n` in its input.
+The one time budget the spec states is ≤ 60 s per 500 items (AGSC-06-21), advisory from 1.1: no build measures time. Every row is linear or `n log n` in its input.

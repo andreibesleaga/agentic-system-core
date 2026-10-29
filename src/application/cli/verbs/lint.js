@@ -15,6 +15,8 @@ const links = require('../../../knowledge/links.js');
 const slug = require('../../../knowledge/slug.js');
 const govLint = require('../../../governance/lint.js');
 const govFix = require('../../../governance/fix.js');
+const portable = require('../../../governance/portable-names.js');
+const textFiles = require('../../../governance/text-files.js');
 const { checkAgents } = require('../../../governance/agents.js');
 const { RANGE_CHECKED_KEYS } = require('../../../boundary/visibility.js');
 const site = require('../../../distribution/site.js');
@@ -100,6 +102,52 @@ function encodingFindings(fsPort) {
   return findings;
 }
 
+/**
+ * AGSC-01-40 and AGSC-04-05 (1.1): the warnings for names, paths and characters that
+ * only some file systems or I-JSON readers refuse. The files are those the Bundle
+ * carries as input: `content/`, `site/`, `PRIVACY.md` and the configuration.
+ * `lint`, `ci` and `build` all report them.
+ *
+ * @param {object} ctx the verb context.
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} warnings, AGSC-E423.
+ */
+function portableNames(ctx, bundle) {
+  const fsPort = ctx.ports && ctx.ports.fs;
+  const paths = [];
+  if (fsPort && typeof fsPort.exists === 'function') {
+    for (const dir of ['content', 'site']) if (fsPort.exists(dir)) paths.push(...fsPort.walk(dir));
+    for (const file of ['PRIVACY.md', 'agsc.config.json']) if (fsPort.exists(file)) paths.push(file);
+  }
+  return [...portable.checkPaths(paths), ...portable.checkBundleText(bundle)];
+}
+
+/**
+ * AGSC-01-14 (1.1) over the four text files that carry none of its four suffixes: the
+ * root `.env`, the authored `.well-known/security.txt`, `LICENSE-CONTENT` and every SVG
+ * under `content/attachments/`. A byte-order mark and non-NFC text are warnings; a file
+ * that is absent, or that the port cannot decode, is not this check's to report.
+ *
+ * @param {object} [fsPort] the FileSystem port.
+ * @returns {Array<object>} warnings, AGSC-E108.
+ */
+function textFileFindings(fsPort) {
+  if (!fsPort || typeof fsPort.exists !== 'function') return [];
+  const files = ['.env', '.well-known/security.txt', 'LICENSE-CONTENT'].filter((file) => fsPort.exists(file));
+  if (fsPort.exists('content/attachments')) {
+    files.push(...fsPort.walk('content/attachments').filter((file) => file.toLowerCase().endsWith('.svg')));
+  }
+  const findings = [];
+  for (const file of files) {
+    try {
+      findings.push(...textFiles.check(file, String(fsPort.readFile(file, 'utf8'))));
+    } catch (e) {
+      // Not decodable or not readable: the loader and the attachment lint report those.
+    }
+  }
+  return findings;
+}
+
 function lane(ctx, bundle) {
   const findings = [];
   const lanes = ['parse', 'schema'];
@@ -149,6 +197,10 @@ function lane(ctx, bundle) {
   // are `.md` files a Bundle carries as input.
   findings.push(...encodingFindings(fsPort));
   lanes.push('encoding');
+
+  findings.push(...textFileFindings(fsPort));
+  findings.push(...portableNames(ctx, bundle));
+  lanes.push('portable names');
 
   // RFC 9116 + PRD-019: the two legal-facing surfaces need a security contact, a
   // privacy notice and an operator that only the publisher can supply. They are
@@ -240,4 +292,4 @@ function run(ctx) {
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, fix, lane, run };
+module.exports = { name: 'lint', configAndRoot, fix, lane, portableNames, run, textFileFindings };

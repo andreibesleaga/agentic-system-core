@@ -225,10 +225,13 @@ function declaredSurfaces(options) {
  */
 function contributeEditUrl(config, path) {
   const entries = Array.isArray(config && config.contribute) ? config.contribute : [];
-  const entry = entries.find((c) => c && c.mode === 'pr' && typeof c.target === 'string'
+  // From 1.1 an entry may name the source repository and branch itself; they are read as
+  // given, from an entry of any mode, and the `pr` target is no longer taken for the repository.
+  const named = entries.find((c) => c && typeof c.repository === 'string' && /^https:\/\//u.test(c.repository));
+  const entry = named || entries.find((c) => c && c.mode === 'pr' && typeof c.target === 'string'
     && /^https:\/\//u.test(c.target));
   if (entry === undefined) return null;
-  const repository = withoutTrailingSlashes(String(entry.target))
+  const repository = withoutTrailingSlashes(String(named ? entry.repository : entry.target))
     .replace(/\.git$/u, '')
     .replace(/\/(?:compare|pulls|pull\/new|issues\/new)$/u, '');
   const host = repository.replace(/^https:\/\//u, '').split('/')[0].toLowerCase();
@@ -238,18 +241,21 @@ function contributeEditUrl(config, path) {
   // forge this engine states the edit-view spelling of.
   const segment = Object.prototype.hasOwnProperty.call(FORGE_EDIT_SEGMENT, host)
     ? FORGE_EDIT_SEGMENT[host] : undefined;
-  if (segment === undefined) return entry.target;
-  return `${repository}${segment}${path.split('/').map(encodeURIComponent).join('/')}`;
+  if (segment === undefined) return named ? repository : entry.target;
+  const ref = typeof entry.branch === 'string' && named ? entry.branch : 'HEAD';
+  const encode = (value) => value.split('/').map(encodeURIComponent).join('/');
+  return `${repository}${segment}${encode(ref)}/${encode(path)}`;
 }
 
 /**
- * The edit-view spelling of the forges whose shape this engine states. A host absent
- * from this map is never guessed at: the contribution target is linked instead.
+ * The edit-view spelling of the forges whose shape this engine states: the part before the
+ * branch (or `HEAD`, which names the default branch without this engine knowing its name).
+ * A host absent from this map is never guessed at: the contribution target is linked instead.
  */
 const FORGE_EDIT_SEGMENT = Object.freeze({
-  'codeberg.org': '/_edit/HEAD/',
-  'github.com': '/edit/HEAD/',
-  'gitlab.com': '/-/edit/HEAD/',
+  'codeberg.org': '/_edit/',
+  'github.com': '/edit/',
+  'gitlab.com': '/-/edit/',
 });
 
 /** AGSC-05-01: `<site.base>/<type-plural>/<slug>/`. */
@@ -973,7 +979,7 @@ function readDiagramSource(ports, slug) {
  * ≤60 s build per 500 items … Exceeding a budget that no sharding rule relieves MUST
  * fail the build." (Three budgets.)
  *
- * All three byte/scale budgets are MEASURED here. The rule says a breach MUST FAIL the build, and
+ * The byte budgets are MEASURED here. The rule says a breach MUST FAIL the build, and
  * `spec/09-conformance.md` §9.4 registers NO code for a budget breach — so the
  * measurement is reported under `AGSC-E904`, the size-cap code, whose registry row
  * names AGSC-01-16 and AGSC-01-34 and not this rule. That is a compromise and it is
@@ -985,11 +991,10 @@ function readDiagramSource(ports, slug) {
  * spells `1 MiB` explicitly where it means the binary prefix — so the two rules
  * distinguish them deliberately.
  *
- * The three BYTE budgets are measured here, where the bytes are. The fourth is a
- * DURATION, and a duration is a wall-clock measure: measuring it inside `build`
- * would make a finding depend on how busy the machine is, which is exactly the
- * flaky test this project forbids and would break `verify`'s byte comparison. It is
- * therefore `timeBudget()`, which the CLI calls with the elapsed time it measured.
+ * The third budget of the rule, 60 s per 500 items, is a DURATION. From 1.1 it is
+ * advisory (AGSC-06-21, AGSC-04-03): a build never measures time, because a finding
+ * that depends on how busy the machine is would break `verify`'s byte comparison, so
+ * nothing here measures it and no build is refused for being slow.
  *
  * @param {Map<string,string>} files the emitted map.
  * @param {number} publishedCount the published item count.
@@ -1011,7 +1016,6 @@ const BUDGET_HTML_BYTES = 100000;
  * on its own.
  */
 const BUDGET_INDEX_DOC_BYTES = 1000000;
-const BUDGET_MS_PER_500_ITEMS = 60000;
 /**
  * How many members a cluster page lists. AGSC-06-21 paginates an INDEX route above 500 entries
  * and says an item page "is never paginated"; a cluster page is an item page under the same 100 KB
@@ -1047,24 +1051,6 @@ function budgets(files) {
     }
   }
   return out;
-}
-
-/**
- * AGSC-06-21's fourth budget: "≤60 s build per 500 items". The allowance scales with
- * the Bundle, so the budget is per-scale and a 5,000-item Bundle conforms.
- *
- * @param {number} elapsedMs the wall-clock duration the CALLER measured.
- * @param {number} publishedCount
- * @returns {Array<object>} Findings.
- */
-function timeBudget(elapsedMs, publishedCount) {
-  if (elapsedMs == null || !Number.isFinite(Number(elapsedMs))) return [];
-  const allowed = Math.max(1, Math.ceil(Number(publishedCount) / 500)) * BUDGET_MS_PER_500_ITEMS;
-  if (Number(elapsedMs) <= allowed) return [];
-  return [finding('AGSC-E904',
-    `the build took ${Math.round(Number(elapsedMs))} ms for ${publishedCount} published items; `
-    + `AGSC-06-21 budgets ${allowed} ms (60 s per 500 items)`,
-    { file: 'agsc.config.json' })];
 }
 
 /**
@@ -1333,8 +1319,8 @@ function buildSite(bundle, ports, options, findings) {
   // ------------------------------------------------------------ ledger (AGSC-08-20)
   let ledgerHead = null;
   if (full && options.gitLog !== undefined && options.contentTree !== undefined) {
-    const derived = ledgerModule.derive(options.gitLog, options.contentTree, options.version,
-      { epoch: ports.clock.now() });
+    const derived = ledgerModule.derive(options.gitLog, options.contentTree,
+      { actors: (config.ledger || {}).actors, epoch: ports.clock.now() });
     put('/ledger.jsonl', derived.ledger);
     ledgerHead = derived.head;
   } else {
@@ -1930,9 +1916,9 @@ module.exports = {
   build, write, verify, routeOf, sitemap, publishedRoutes, withoutExcludedLinks, robots, tdmrep, securityTxt,
   publishedItems, pageItemsOf, jsonBytes, paginate, readAttachment, readDiagramSource,
   declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
-  budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
+  budgets, internalLinks, resolvesTo, readLicenseContent,
   readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,
   bodyHrefResolver,
-  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS, CLUSTER_MEMBERS_SHOWN,
+  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, CLUSTER_MEMBERS_SHOWN,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

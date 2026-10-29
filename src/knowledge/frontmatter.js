@@ -145,6 +145,18 @@ function firstHeading(body, meter) {
 }
 
 /**
+ * AGSC-02-02 (1.1): a frontmatter nested deeper than 64 levels that the tool could
+ * still read is the warning AGSC-E105, and it is processed as authored. The error
+ * of 1.0 stays for what the tool cannot read.
+ */
+function nestingWarnings(depth, file) {
+  if (depth <= yaml.NESTING_BOUND) return [];
+  return [validate.finding('AGSC-E105',
+    `the frontmatter is nested ${depth} levels deep; AGSC-02-02 bounds it at ${yaml.NESTING_BOUND} and it is processed as authored`,
+    { file, line: 1, severity: 'warn' })];
+}
+
+/**
  * Parse one item file into the shared Item record (see src/README.md).
  *
  * @param {string} markdown the whole file.
@@ -170,7 +182,9 @@ function parseItem(markdown, options = {}) {
   const lines = keyLines(parts.yamlText, 1);
   let frontmatter;
   try {
-    frontmatter = yaml.parse(parts.yamlText, { lineOffset: 1 });
+    const parsed = yaml.parseWithDepth(parts.yamlText, { lineOffset: 1 });
+    frontmatter = parsed.value;
+    findings.push(...nestingWarnings(parsed.depth, file));
   } catch (e) {
     if (e instanceof yaml.YamlError) {
       findings.push(validate.finding(e.code, e.message, { file, line: e.line, col: e.col }));
@@ -200,4 +214,4 @@ function parseItem(markdown, options = {}) {
   return item;
 }
 
-module.exports = { split, parseItem, hasClosedFrontmatter, keyLines, firstHeading, FENCE, MAX_INPUT_BYTES };
+module.exports = { split, parseItem, nestingWarnings, hasClosedFrontmatter, keyLines, firstHeading, FENCE, MAX_INPUT_BYTES };
