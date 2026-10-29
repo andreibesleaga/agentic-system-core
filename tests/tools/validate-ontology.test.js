@@ -116,6 +116,12 @@ describe('validate-ontology — the faults', () => {
     assert.ok(json.findings.some((f) => f.code === 'AGSC-E203' && /disjointUnionOf/u.test(f.message)));
   });
 
+  it('skos:definition on a term is an allowed annotation (the 1.1 Meaning column, AGSC-03-01)', () => {
+    const root = ontologyRoot(`${CONCEPT}skos:definition a owl:AnnotationProperty .\n\nasc:uses a owl:ObjectProperty ;\n    rdfs:label "uses" ;\n    skos:definition "The subject needs the object to work as described." .\n`);
+    const { json } = envelope('validate-ontology', [root]);
+    assert.deepEqual(json.findings.filter((f) => /skos:definition|definition/u.test(f.message)), []);
+  });
+
   it('a declared type outside OWL 2 RL is AGSC-E203', () => {
     const root = ontologyRoot(`${CONCEPT}asc:reflexive a owl:ReflexiveProperty .\n`);
     const { json } = envelope('validate-ontology', [root]);

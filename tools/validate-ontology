@@ -96,6 +96,8 @@ const ALLOWED_PREDICATES = Object.freeze(new Set([
   // AGSC-05-25: the ontology node's registry metadata.
   `${DCTERMS}creator`, `${DCTERMS}issued`, `${DCTERMS}publisher`,
   `${VANN}preferredNamespacePrefix`, `${VANN}preferredNamespaceUri`,
+  // AGSC-03-01 (1.1): the plain meaning of each relation, mirrored from the Meaning column.
+  `${SKOS}definition`,
 ]));
 /** The `rdf:type` objects OWL 2 RL admits for a term of a flat vocabulary. */
 const ALLOWED_TYPES = Object.freeze(new Set([
