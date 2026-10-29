@@ -675,6 +675,7 @@ const HANDLERS = {
   'bnd-0033': runBnd0033,
   'bnd-0034': runBnd0034,
   'bnd-0036': runBnd0036,
+  'bnd-0050': runBnd0036,
   'bnd-0037': runBnd0037,
   'bnd-0038': runBnd0038,
   'bnd-0039': runBnd0039,

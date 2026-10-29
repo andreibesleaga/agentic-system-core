@@ -18,6 +18,13 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   all nine legs twice, once for the push and once for the pull request. Every pull
   request, every merge and the weekly run still cover the three operating systems and
   three Node lines; the required check names are unchanged.
+- Tests only, no emitted byte (AGSC-00-14): the conformance handlers register `compose-0027`
+  (the Harness pin, AGSC-07-12), `bnd-0050` and `disc-0023`; the tests that pinned the
+  1.0 wording or counts of AGSC-00-20, AGSC-01-04, AGSC-01-10, AGSC-02-02 (E105),
+  AGSC-05-25 (ten annotation properties, 312 triples) and AGSC-09-91 (105 codes) pin the
+  1.1 text; `tests/rule-coverage.allow.json` states why AGSC-10-19 is prose-only and
+  rewords the entry of AGSC-05-24; the codes registered by 1.1 and not yet raised are
+  named in the consistency test.
 
 ### Added
 

@@ -593,6 +593,7 @@ const HANDLERS = {
   'disc-0017': ledgerRequiredCase,
   'disc-0018': bundleHashCase,
   'disc-0019': newerMinorCase,
+  'disc-0023': newerMinorCase,
   'disc-0020': wholeDocumentCase,
   'disc-0021': wholeDocumentCase,
   'disc-0022': accessLinkCase,

@@ -7,7 +7,7 @@ const crypto = require('node:crypto');
 
 const { compose, verdictOf } = require('../../../src/composition/compose.js');
 const { composeFrom, selectionBlock, selectionFences } = require('../../../src/composition/architecture.js');
-const { dslRelationships, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
+const { dslRelationships, emit, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
 const archive = require('../../../src/composition/archive.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
@@ -248,6 +248,39 @@ function runCompose0016(vector) {
   ]);
 }
 
+function sha256(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
+/** compose-0027 — AGSC-07-12: the SHA-256 of every Harness file, for a fixed build. */
+function runCompose0027(vector) {
+  const fixed = vector.input.fixed;
+  const want = vector.expected.cases;
+  const list = [];
+  vector.input.cases.forEach((entry, i) => {
+    const result = compose(entry.items, entry.selection);
+    const digest = sha256(selectionDigestInput(result));
+    const emission = emit(result, {
+      base: fixed.base,
+      bundleVersion: fixed.bundle_version,
+      instant: fixed.instant,
+      items: entry.items,
+      licenseProse: fixed.license_prose,
+      name: harnessName(digest),
+      selectionDigest: digest,
+      specVersion: fixed.spec_version,
+    });
+    const got = {};
+    for (const [path, text] of emission.files) got[path] = sha256(text);
+    const expected = want[i] || {};
+    list.push([`${entry.name} name`, expected.name === entry.name, String(expected.name)]);
+    list.push([`${entry.name} emitted`, emission.emitted === expected.emitted, String(emission.emitted)]);
+    list.push([`${entry.name} files`, deepEqual(expected.sha256, got), JSON.stringify(got)]);
+  });
+  list.push(['case count', want.length === vector.input.cases.length, String(want.length)]);
+  return checks(list);
+}
+
 const HANDLERS = {
   'compose-0001': runVerdictVector,
   'compose-0002': runVerdictVector,
@@ -264,6 +297,7 @@ const HANDLERS = {
   'compose-0021': runVerdictVector,
   'compose-0022': runVerdictVector,
   'compose-0023': runVerdictVector,
+  'compose-0027': runCompose0027,
 };
 
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of

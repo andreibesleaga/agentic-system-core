@@ -100,6 +100,22 @@ const RESERVED = new Set(REGISTRY.filter((r) => /never raised|never emitted|unas
 const NOT_RAISED = Object.freeze({
   'AGSC-E208': 'language variants are not implemented by the reference engine yet (AGSC-01-13)',
   'AGSC-E410': 'language variants are not implemented by the reference engine yet (AGSC-01-13a)',
+  // Registered by the 1.1 specification; the engine does not raise them yet. Each leaves this list
+  // when the code that raises it is written, and the test then fails until the entry is removed.
+  'AGSC-E005': 'a failed conformance case is still reported with AGSC-E001 (AGSC-09-02)',
+  'AGSC-E313': 'the self-link warning is not implemented yet (AGSC-03-23)',
+  'AGSC-E314': 'the contradictory-pair warning is not implemented yet (AGSC-03-24)',
+  'AGSC-E315': 'the unexpected-target-kind warning is not implemented yet (AGSC-03-25)',
+  'AGSC-E316': 'the supersedes-target-still-stable warning is not implemented yet (AGSC-03-26)',
+  'AGSC-E317': 'typed domain links are not read yet (AGSC-03-27)',
+  'AGSC-E417': 'the minimum-sources lint is not implemented yet (AGSC-08-31)',
+  'AGSC-E418': 'the check of a declared domain context is not implemented yet (AGSC-02-25)',
+  'AGSC-E419': 'the per-context title uniqueness is not implemented yet (AGSC-08-32)',
+  'AGSC-E420': 'the check of the site vocabulary is not implemented yet (AGSC-05-38)',
+  'AGSC-E421': 'the check of the site shapes is not implemented yet (AGSC-05-41)',
+  'AGSC-E422': 'the check of the competency questions is not implemented yet (AGSC-05-41)',
+  'AGSC-E423': 'the warning for names and paths that only some file systems refuse is not implemented yet (AGSC-01-40)',
+  'AGSC-E512': 'the warrant check is not implemented yet (AGSC-05-40)',
   'AGSC-E604': 'every emitted text is normalised to NFC by construction, so the fault cannot arise (AGSC-04-07)',
   'AGSC-E605': 'no authored block is extracted into an export at 1.x (AGSC-02-22), so no blank node from authored input reaches one; the vocabulary checks of tools/ raise it on the vocabulary files (AGSC-05-08)',
 });

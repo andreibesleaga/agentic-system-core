@@ -63,7 +63,7 @@ const findingsOf = (root) => envelope('validate-ontology', [root]).json.findings
 const ANNOTATION_PROPERTIES = [
   `${DCTERMS}creator`, `${DCTERMS}description`, `${DCTERMS}issued`, `${DCTERMS}license`,
   `${DCTERMS}modified`, `${DCTERMS}publisher`, `${DCTERMS}title`,
-  `${VANN}preferredNamespacePrefix`, `${VANN}preferredNamespaceUri`,
+  `${VANN}preferredNamespacePrefix`, `${VANN}preferredNamespaceUri`, `${SKOS}definition`,
 ];
 const EXTERNAL_CLASSES = [
   `${VOAF}Vocabulary`,
@@ -71,7 +71,7 @@ const EXTERNAL_CLASSES = [
   `${PROV}Activity`, `${PROV}Entity`, `${PROV}Plan`,
 ];
 
-test('the file declares the nine annotation properties and the seven classes of other vocabularies it uses (AGSC-05-25)', () => {
+test('the file declares the ten annotation properties and the seven classes of other vocabularies it uses (AGSC-05-25)', () => {
   for (const iri of ANNOTATION_PROPERTIES) {
     assert.deepStrictEqual(objects(iri, RDF_TYPE).map((o) => o.value), [`${OWL}AnnotationProperty`], `${iri} is not declared`);
   }
@@ -87,7 +87,7 @@ test('the file declares the nine annotation properties and the seven classes of 
 test('every class the file names and every annotation predicate it uses is declared in it', () => {
   const declared = (iri, type) => objects(iri, RDF_TYPE).some((o) => o.value === type);
   const BUILT_IN = new Set([`${OWL}Thing`, `${OWL}Ontology`, `${OWL}Class`, `${OWL}ObjectProperty`,
-    `${OWL}DatatypeProperty`, `${OWL}AnnotationProperty`, `${OWL}SymmetricProperty`]);
+    `${OWL}DatatypeProperty`, `${OWL}AnnotationProperty`, `${OWL}SymmetricProperty`, `${OWL}IrreflexiveProperty`]);
   for (const q of QUADS) {
     const p = q.predicate.value;
     if (!p.startsWith(OWL) && !p.startsWith(RDFS) && p !== RDF_TYPE) {

@@ -172,7 +172,7 @@ describe('validate-spec — the faults AGSC-09-91 names', () => {
   it('every row of the registry of this distribution carries a severity', () => {
     const text = fs.readFileSync(path.join(REPO, 'spec', '09-conformance.md'), 'utf8');
     const rows = text.split('\n').filter((l) => /^\| `AGSC-E\d{3}`/u.test(l));
-    assert.equal(rows.length, 91);
+    assert.equal(rows.length, 105);
     for (const row of rows) assert.match(row, /\| (?:error|warning|—)[^|]*\|\s*$/u, row.slice(0, 40));
   });
 

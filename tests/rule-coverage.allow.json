@@ -27,7 +27,7 @@
     },
     "AGSC-05-24": {
       "reason": "deferred",
-      "why": "The SHACL lane is a 1.1 item (AGSC-00-20); at 1.x no shapes are generated and the rule only binds whoever builds that lane."
+      "why": "The SHACL lane is a 1.1 item (AGSC-00-20) whose generator, tools/gen-shapes, is not written yet; until it is, no shapes are generated and the rule only binds whoever builds that lane. Remove this entry when a test of the lane names the rule."
     },
     "AGSC-08-19": {
       "reason": "person",
@@ -44,6 +44,10 @@
     "AGSC-10-16": {
       "reason": "definition",
       "why": "It defines a live board by conditions (a)–(d) that AGSC-10-13, AGSC-10-17 and AGSC-11-14/16 state and their tests check."
+    },
+    "AGSC-10-19": {
+      "reason": "pointer",
+      "why": "It assigns each addition of 1.1 to a Level; the assignment is carried by the table of AGSC-10-15 and checked by the conform cases that list the areas of each Level."
     }
   },
   "gaps": {
