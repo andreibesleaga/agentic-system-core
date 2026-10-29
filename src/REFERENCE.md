@@ -4,7 +4,8 @@
 function signatures of each context, the libraries each part uses and why, and the
 verb and tool tables with what the engine does not do (§11). It is for a developer who needs a function's
 signature or the reason behind a design choice. It describes the engine as it is;
-it carries no history.
+it carries no history. It covers the modules other contexts call; every module is
+listed, with what it does, in its folder's README.
 
 **Read first:** [README.md](README.md), the current module guide. Where this reference
 and the guide differ, the guide is current and the specification wins over both.
@@ -272,8 +273,8 @@ that requires a property declared in a sibling subschema.
 ## 4. Running the conformance vectors
 
 ```bash
-npm install                      # exact pins; the lockfile is committed
-node --test 'tests/**/*.test.js' # unit, architecture and conformance suites
+npm ci                           # exact pins; the lockfile is committed
+node --test 'tests/**/*.test.js' # unit, architecture, conformance and acceptance suites
 node tools/validate-vectors --json
 node tools/count-artifacts --json
 ```
@@ -901,7 +902,7 @@ built node.
 | `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired |
 | `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g) | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check` | wired |
 | `ci` | AGSC-09-08, AGSC-08-26(g) | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected; its verify lane adds `governance/auto-merge.js#check` | wired |
-| `export` | AGSC-01-26…29, AGSC-01-26a | `verbs/export.js` → `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) ; `--zip` writes one archive beside each multi-file export root |
+| `export` | AGSC-01-26…29, AGSC-01-26a | `verbs/export.js` → `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`); `--zip` writes one archive beside each multi-file export root |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf}.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`) and for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22; `--dry-run` on both; `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
 | `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12 | `verbs/compose.js` → `composition/{compose,architecture,harness}.js` | wired, and it WRITES the seven Harness file kinds of AGSC-07-12 into `dist/harness/<name>/` or `--out`; `--zip` writes them as one archive BESIDE that directory; `--emit <path or package>` runs a composition-emitter plugin, and a registered `--emit` target this distribution does not ship is refused with `AGSC-E203`, exit 1 (AGSC-00-20, AGSC-07-18) |
 | `propose` | AGSC-08-04, AGSC-08-05 | `verbs/propose.js` → `knowledge/adopt.js`, `diff@9.0.0` | wired |

@@ -13,6 +13,8 @@
 | `site.js` | the build use case: every route, `build`, `write` and `verify` |
 | `html.js` | the page templates |
 | `theme.js` | the default look of every engine-built page and the theme switcher |
+| `front-page.js` | the front page `/`: the Bundle's own introduction, a Browse block with each non-empty type index and its count, and the footer's peer links |
+| `internal-links.js` | the build's dangling-link check: every internal link a built page carries resolves to a route the same build emits (AGSC-06-01) |
 | `discovery.js` | the discovery document (`/.well-known/knowledge-linkset`) and its checker |
 | `headers.js` | `_headers` and `_redirects` |
 | `llms.js` | `/llms.txt` and `/llms-full.txt`, byte for byte |

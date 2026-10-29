@@ -229,7 +229,7 @@ test('the Internet-Draft and spec/06 agree on the well-known file (extractor, wi
   // and that every declaration attribute the draft defines is named by a rule.
   // What it CANNOT check: the meaning of the prose (client behaviour, caching,
   // security and privacy considerations), which stays a reading task.
-  const draft = read('internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.md');
+  const draft = read('internet-draft/draft-besleaga-agentic-knowledge-wellknown-01.md');
   const section = (anchor) => {
     const at = draft.indexOf(`{#${anchor}}`);
     assert.ok(at > 0, `the draft has no section {#${anchor}}`);

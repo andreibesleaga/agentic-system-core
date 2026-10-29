@@ -42,7 +42,7 @@ flowchart TD
 flowchart TD
   A["Open /compose/"] --> B["Load graph.jsonld + agsc-core.js"]
   B --> C["Tick Concepts, filter by cluster/tag"]
-  C --> D["closure.js runs client-side"]
+  C --> D["the combiner runs client-side (/compose/agsc-core.js)"]
   D --> E["1 requires closure adds items + explanation path"]
   E --> F["2 supersedes hides superseded items\n(a survivor requiring a hidden item = AGSC-E802)"]
   F --> G["3 excludes mutex reported over the survivors"]

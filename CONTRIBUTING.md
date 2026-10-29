@@ -61,9 +61,9 @@ To lint a Bundle (a content repository, not this one):
 node bin/agsc.js lint --json     # run from the Bundle's own root
 ```
 
-Keep to the architecture: `src/knowledge/` and `src/governance/` are pure — no file
-system, no clock, no network, no process — and reach the outside world only through
-the ports in `src/ports/`. `tests/arch/` enforces this and will fail the build if a
+Keep to the architecture: `src/knowledge/`, `src/governance/` and `src/composition/` are
+pure — no file system, no clock, no network, no process — and reach the outside world only
+through the ports in `src/ports/`. `tests/arch/` enforces this and will fail the build if a
 module reaches across a boundary.
 
 ## Signing off

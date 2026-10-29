@@ -23,6 +23,7 @@ kind of reader down one path.
 |---|---|
 | [guides/](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/README.md) | seven short guides, one per mode and one for publishing, on your own files: who it is for, what you get, the commands and what they print |
 | [USE-CASES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md) | twenty-one concrete scenarios with their commands |
+| [DEMOS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/DEMOS.md) | one runnable demo per mode and per persona, from an empty folder, with the lines a real run printed |
 | [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md) | connecting agents, frameworks and repositories to a node |
 | [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) | the local tool server for an AI assistant |
 | [CITING-A-CHUNK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CITING-A-CHUNK.md) | how to cite one chunk of `/chunks.jsonl` and check the citation later, with a worked example from the live node |

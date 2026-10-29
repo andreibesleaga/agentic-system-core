@@ -14,19 +14,25 @@
   "allow": [
     {
       "check": "email",
-      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.*",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-0*.*",
       "reason": "the Internet-Draft author block and IANA contact must carry the author's e-mail (RFC 7322 section 4.1.1, RFC 8615 registration template)"
     },
     {
       "check": "personal",
-      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.*",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-0*.*",
       "reason": "RFC-style author surname in the running page header, the author block and the self-citation"
     },
     {
       "check": "missing-file",
-      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-00.html",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-0*.html",
       "text": "rfc-local.css",
       "reason": "xml2rfc's optional local stylesheet hook; the rendered draft works without it"
+    },
+    {
+      "check": "missing-file",
+      "path": "internet-draft/draft-besleaga-agentic-knowledge-wellknown-01.html",
+      "text": "metadata.min.js",
+      "reason": "xml2rfc's optional Datatracker metadata script; the rendered draft works without it"
     },
     {
       "check": "todo",

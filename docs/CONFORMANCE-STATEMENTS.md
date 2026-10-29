@@ -56,7 +56,7 @@ The reference engine in this repository publishes its own claim, as AGSC-10-05
 asks, in the form above:
 
 > agentic-system-core 1.0.1 conforms to AgenticSystemCore 1.0.0, Level 3.
-> Verified against the published conformance vectors on 2026-10-12: 243 of 243
+> Verified against the published conformance vectors on 2026-10-29: 243 of 243
 > passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
 > chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
 > jcs, ledger, links, lint, prov, slug), 242 required and 1 optional, the 7
@@ -73,11 +73,12 @@ What each part rests on:
   is 243 passed, 0 failed and 7 skipped. The seven skipped are the withdrawn cases,
   which no claim counts for or against (AGSC-09-05); no required case failed or
   was skipped.
-- **The runtime.** Node.js 24.21.0, the current release of the Node.js 24 line
-  that the continuous-integration run uses, with Unicode 17.0. The same run on
-  Node.js 22.13.0 (Unicode 16.0) and on Node.js 26.11.1 (Unicode 17.0) writes
-  the same report, byte for byte. Both Unicode versions are inside the window
-  AGSC-04-22 states.
+- **The runtime.** Node.js 24.18.0 of the Node.js 24 line that the
+  continuous-integration run uses, with Unicode 17.0. The same run on
+  Node.js 22.22.3 (Unicode 17.0) writes the same report, byte for byte. The
+  run of 2026-10-12 on the 1.0.0 tree gave the same counts on Node.js 22.13.0
+  (Unicode 16.0) and 26.11.1 (Unicode 17.0). Both Unicode versions are inside
+  the window AGSC-04-22 states.
 - **The deployment profile and the surfaces.** A node that `agsc build` writes
   declares three surfaces in its discovery document, `llms-txt`, `chunks` and
   `webmcp`, and the cases named above prove each of them (AGSC-11-19). It does

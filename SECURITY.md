@@ -30,7 +30,7 @@ who asks to be credited is credited in the release notes.
 | Version | Supported |
 |---|---|
 | `1.0.x` | yes (the latest patch) |
-| any `1.0.0-rc.*` | no — upgrade to `1.0.0` (the change log says how) |
+| any `1.0.0-rc.*` | no — upgrade to the latest `1.0.x` (the change log says how) |
 | anything older | no |
 
 Fixes are made on the current line only, in a new release; there is no

@@ -33,7 +33,8 @@ No build tooling lives here and none is wanted.
 python3 -m http.server 8000 --directory .    # then open http://localhost:8000/
 
 # Static export — this is what would be published. Default 10 s timeout is too short;
-# the first run downloads ~100 MB (Chromium, via puppeteer).
+# the first run downloads ~100 MB (Chromium, via puppeteer). ReSpec does not create build/.
+mkdir -p build
 npx respec --src index.html --out build/index.html -t 60
 grep -c 'respec-w3c' build/index.html        # must print 0
 ```
