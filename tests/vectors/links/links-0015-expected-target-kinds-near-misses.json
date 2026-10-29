@@ -1,0 +1,160 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-25, near misses: every key here points at a kind its cell admits, so nothing is reported. `decided-by` toward a decision; `blocked-by` toward a task; a lesson `derived-from` an episode, and a concept `derived-from` a spec (the cell binds only a lesson); `verifies` toward a spec, a task, a procedure and a gate; `implements` toward a pattern and a spec; `broader` toward a concept and toward a lesson (one family); `supersedes` between two concepts; and `related`, `uses` and `covers`, whose cell is `any`, toward an episode and a procedure. The hub item gives the sources an inbound link; the superseded spec is deprecated.",
+  "expected": {
+    "errors": [],
+    "warnings": []
+  },
+  "id": "links-0015",
+  "input": {
+    "items": [
+      {
+        "decided-by": [
+          "dec1"
+        ],
+        "kind": "principle",
+        "slug": "d2",
+        "type": "concept"
+      },
+      {
+        "blocked-by": [
+          "t1"
+        ],
+        "kind": "task",
+        "slug": "k2",
+        "type": "concept"
+      },
+      {
+        "derived-from": [
+          "ep1"
+        ],
+        "severity": "info",
+        "slug": "l2",
+        "type": "lesson"
+      },
+      {
+        "derived-from": [
+          "sp1"
+        ],
+        "kind": "principle",
+        "slug": "c2",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "slug": "v2",
+        "type": "concept",
+        "verifies": [
+          "sp1",
+          "t1",
+          "proc1",
+          "g1"
+        ]
+      },
+      {
+        "implements": [
+          "pat1",
+          "sp1"
+        ],
+        "kind": "task",
+        "slug": "i2",
+        "type": "concept"
+      },
+      {
+        "broader": [
+          "sp1",
+          "les1"
+        ],
+        "kind": "principle",
+        "slug": "b2",
+        "type": "concept"
+      },
+      {
+        "kind": "spec",
+        "slug": "p2",
+        "supersedes": [
+          "sp2"
+        ],
+        "type": "concept"
+      },
+      {
+        "covers": [
+          "proc1"
+        ],
+        "kind": "principle",
+        "related": [
+          "ep1"
+        ],
+        "slug": "r1",
+        "type": "concept",
+        "uses": [
+          "ep1"
+        ]
+      },
+      {
+        "kind": "decision",
+        "slug": "dec1",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "slug": "t1",
+        "type": "concept"
+      },
+      {
+        "kind": "spec",
+        "slug": "sp1",
+        "type": "concept"
+      },
+      {
+        "kind": "pattern",
+        "slug": "pat1",
+        "type": "concept"
+      },
+      {
+        "slug": "ep1",
+        "type": "episode"
+      },
+      {
+        "slug": "proc1",
+        "type": "procedure"
+      },
+      {
+        "level": "L1",
+        "slug": "g1",
+        "type": "gate"
+      },
+      {
+        "severity": "info",
+        "slug": "les1",
+        "type": "lesson"
+      },
+      {
+        "kind": "spec",
+        "slug": "sp2",
+        "status": "deprecated",
+        "type": "concept"
+      },
+      {
+        "related": [
+          "b2",
+          "c2",
+          "d2",
+          "i2",
+          "k2",
+          "l2",
+          "p2",
+          "r1",
+          "v2"
+        ],
+        "slug": "hub",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-25"
+}

@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "AGSC-02-25: domain_role is one of aggregate-root, entity, value-object, domain-event and policy. Derivation: the frontmatter writes manager, which is none of them; the precedence paragraph of spec/09 section 9.4 gives every value outside an enumeration the code AGSC-E203. The key is on line 6, after type, title, description and kind (lines 2 to 5) and the opening line.",
+  "expected": {
+    "error": "AGSC-E203",
+    "line": 6
+  },
+  "id": "fm-0023",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Account\ndescription: A term of the case on the domain keys; its keys are the point of the case.\nkind: term\ndomain_role: manager\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-25"
+}

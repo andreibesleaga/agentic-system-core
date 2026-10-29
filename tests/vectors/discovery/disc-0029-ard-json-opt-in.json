@@ -1,0 +1,88 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-42: /.well-known/ard.json (the Agentic Resource Discovery manifest, version 0.91, status \"Proposal\", dated 26 August 2026, agenticresourcediscovery.org/spec, read 2026-10-29 — a proposal, not a standard, and not in the IANA well-known registry) is emitted only when discovery.ai_catalog is true, beside ai-catalog.json (disc-0028). The file is {\"entries\":[…]} in JCS form with one trailing LF. ARD defines no digest member on an entry, so the SHA-256 of the exact bytes served at url is carried as metadata.digest (sha256: and the lowercase hex); representativeQueries is not written, because it would have to be invented, and the absence is the ARD warning this rule accepts. Entries are in identifier order. The same four cases as disc-0028. Derived by hand.",
+  "expected": {
+    "cases": [
+      {
+        "file": "{\"entries\":[{\"description\":\"A node of the Agentic Knowledge Web.\",\"displayName\":\"Example Node\",\"identifier\":\"urn:air:a.example:knowledge:example\",\"metadata\":{\"digest\":\"sha256:b5bf6e233ec20bbe282b808786bb8530bb2fef37161477af2c9b37037b6c345f\"},\"type\":\"application/linkset+json; profile=\\\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\\\"\",\"url\":\"https://a.example/.well-known/knowledge-linkset\"}]}\n",
+        "name": "switch-on-no-card"
+      },
+      {
+        "file": "{\"entries\":[{\"description\":\"A node of the Agentic Knowledge Web.\",\"displayName\":\"Example Node\",\"identifier\":\"urn:air:a.example:a2a:example\",\"metadata\":{\"digest\":\"sha256:eb817f216412c70562f8824de9d5f13dece75ebb3622565e1701e3e6698276bc\"},\"type\":\"application/a2a-agent-card+json\",\"url\":\"https://a.example/.well-known/agent-card.json\"},{\"description\":\"A node of the Agentic Knowledge Web.\",\"displayName\":\"Example Node\",\"identifier\":\"urn:air:a.example:knowledge:example\",\"metadata\":{\"digest\":\"sha256:b5bf6e233ec20bbe282b808786bb8530bb2fef37161477af2c9b37037b6c345f\"},\"type\":\"application/linkset+json; profile=\\\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\\\"\",\"url\":\"https://a.example/.well-known/knowledge-linkset\"}]}\n",
+        "name": "switch-on-with-card"
+      },
+      {
+        "file": null,
+        "name": "switch-off"
+      },
+      {
+        "file": null,
+        "findings": [
+          {
+            "code": "AGSC-E209",
+            "severity": "error"
+          }
+        ],
+        "name": "host-is-not-a-domain-name"
+      }
+    ]
+  },
+  "id": "disc-0029",
+  "input": {
+    "cases": [
+      {
+        "ai_catalog": true,
+        "bundle_id": "example",
+        "card_bytes": null,
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "switch-on-no-card",
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        }
+      },
+      {
+        "ai_catalog": true,
+        "bundle_id": "example",
+        "card_bytes": "{\"capabilities\":{},\"name\":\"Example Node\"}\n",
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "switch-on-with-card",
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        }
+      },
+      {
+        "ai_catalog": false,
+        "bundle_id": "example",
+        "card_bytes": null,
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "switch-off",
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        }
+      },
+      {
+        "ai_catalog": true,
+        "bundle_id": "example",
+        "card_bytes": null,
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "host-is-not-a-domain-name",
+        "site": {
+          "base": "http://localhost:8080/",
+          "title": "Example Node"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-42"
+}

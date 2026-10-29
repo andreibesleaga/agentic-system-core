@@ -1,0 +1,25 @@
+{
+  "area": "import",
+  "description": "AGSC-01-39 with AGSC-01-23: a second run of the SKOS import over the same file, into the Bundle the first run wrote, changes nothing. Derivation: the file of imp-0006 is imported twice; the first run writes the three items, the second run finds every planned path already holding exactly the bytes it would write, so it writes nothing, reports no AGSC-E206 collision and leaves the three files as they were (a path whose bytes are already what the import would write is unchanged, and is not a collision). The fixture is written for the purpose: it is not the example data of any site.",
+  "expected": {
+    "first_run_writes": [
+      "animal",
+      "cat",
+      "taxonomy"
+    ],
+    "second_run_changed": [],
+    "second_run_findings": []
+  },
+  "id": "imp-0008",
+  "input": {
+    "i18n_default": "en",
+    "operator": "human:tester",
+    "runs": 2,
+    "turtle": "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n@prefix dcterms: <http://purl.org/dc/terms/> .\n@prefix ex: <https://example.org/voc/> .\n\nex:scheme a skos:ConceptScheme ;\n  skos:prefLabel \"Taxonomy\"@en .\n\nex:animal a skos:Concept ;\n  skos:inScheme ex:scheme ;\n  skos:topConceptOf ex:scheme ;\n  skos:prefLabel \"Animal\"@en ;\n  skos:altLabel \"Creature\"@en ;\n  skos:definition \"A living organism that feeds on organic matter and can move by its own means.\"@en ;\n  skos:narrower ex:cat ;\n  dcterms:source <https://example.org/sources/zoology> .\n\nex:cat a skos:Concept ;\n  skos:inScheme ex:scheme ;\n  skos:prefLabel \"Cat\"@en ;\n  skos:broader ex:animal ;\n  skos:definition \"A small feline.\"@en .\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-39"
+}

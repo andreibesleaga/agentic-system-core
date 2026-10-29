@@ -1,0 +1,57 @@
+{
+  "area": "build",
+  "description": "AGSC-06-37: /chunks-index.toon is emitted only when the published set holds at most 500 items; above that it is not emitted, because /chunks.jsonl is sharded and the index has no shard. Two Bundles built as in chk-0008: 501 items (the index is not emitted and /chunks.jsonl is the manifest) and 3 items (the index may be emitted; when it is, its header counts the same number of lines as /chunks.jsonl and its rows follow the same order). Its absence is never a fault. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "index_emitted": false,
+        "name": "above-500"
+      },
+      {
+        "header_if_emitted": "chunks[3]{id,item,kind,section,ordinal,title,digest}:",
+        "index_may_be_emitted": true,
+        "name": "three-items"
+      }
+    ]
+  },
+  "id": "build-0037",
+  "input": {
+    "cases": [
+      {
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "item_count": 501,
+        "item_template": {
+          "body": "One line.\n",
+          "kind": "explainer",
+          "type": "concept"
+        },
+        "name": "above-500",
+        "site": {
+          "base": "https://a.example/"
+        }
+      },
+      {
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "item_count": 3,
+        "item_template": {
+          "body": "One line.\n",
+          "kind": "explainer",
+          "type": "concept"
+        },
+        "name": "three-items",
+        "site": {
+          "base": "https://a.example/"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-37"
+}

@@ -1,0 +1,65 @@
+{
+  "area": "export",
+  "description": "AGSC-09-17 (a): the manifest is written only when `--manifest` is given, so the files of an export are those of 1.0 otherwise (`export-0001`, `export-0002`), and it is a pure function of the build. Same fixture as `export-0003`, exported with `--jsonl`. `with-manifest`: the export writes `items.jsonl` and `export-manifest.json`, the manifest lists `items.jsonl` and nothing else (never itself), with the digest of that file's bytes, which are the lines of `export-0002`; the same run repeated writes the same manifest bytes (`repeat_identical`). `without-manifest`: the export writes `items.jsonl` alone. The limits on the header fields of AGSC-09-17 (b) are served-file rules, proved by the `build` cases of the headers and not here.",
+  "expected": {
+    "cases": [
+      {
+        "files": [
+          "export-manifest.json",
+          "items.jsonl"
+        ],
+        "manifest": {
+          "bundle_hash": "a79add4885cd267ea1824aea766380b664f1a37fc080e3bcd9c62354beb8b467",
+          "bundle_version": "0.0.0+20260101T000000Z",
+          "files": [
+            {
+              "content_digest": "sha-256=:Yi1C9X317KI2f64ow8h/sytx8yD2Ed5CqnATA6/Lj64=:",
+              "path": "items.jsonl"
+            }
+          ],
+          "item_count": 5,
+          "items_digest": "43b8c246095114b1d96b75e363a6ae4ac24f3f926707810e226653982f1e44e3"
+        },
+        "manifest_lists_itself": false,
+        "name": "with-manifest",
+        "repeat_identical": true
+      },
+      {
+        "files": [
+          "items.jsonl"
+        ],
+        "name": "without-manifest"
+      }
+    ]
+  },
+  "id": "export-0004",
+  "input": {
+    "add_files": {
+      "LICENSE-CONTENT": "Content Use Terms of this fixture, version 1.0.\n",
+      "content/concepts/draft-note.md": "---\ntype: concept\ntitle: Draft note\ndescription: A draft concept that no published surface carries, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nstatus: draft\ndate: \"2026-02-03\"\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n",
+      "content/concepts/edited.md": "---\ntype: concept\ntitle: Edited\ndescription: A published concept with a date and a later modified date, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nmodified: \"2026-03-04\"\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n",
+      "content/concepts/undated.md": "---\ntype: concept\ntitle: Undated\ndescription: A published concept with neither a date nor a modified date, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n"
+    },
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "flags": [
+          "--jsonl",
+          "--manifest"
+        ],
+        "name": "with-manifest"
+      },
+      {
+        "flags": [
+          "--jsonl"
+        ],
+        "name": "without-manifest"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-17"
+}

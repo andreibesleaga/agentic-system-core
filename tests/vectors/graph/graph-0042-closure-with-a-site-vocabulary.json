@@ -1,0 +1,64 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-37 and AGSC-05-38: the closure also reads the site vocabulary in force. Over the graph of `graph-0044`, `dom:Engine` is a subclass of `asc:Concept`, so `engine-a`, which already has the item class `asc:Concept`, gains `skos:Concept` through it; `dom:controlled-by` and `dom:controls` are sub-properties of `asc:uses`, so each controller link gives an `asc:uses` edge, and the inverse of `asc:uses`, `asc:usedBy`, gives the edge back. The vocabulary's own triples add nothing new (prp-inv1 and prp-inv2 find the inverse pair already stated). The file is sorted by bytes and ends with one LF.",
+  "expected": {
+    "closure": "<https://minimal.example/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#ConceptScheme> <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Collection> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://w3id.org/agentic-system-core/ns#usedBy> <https://minimal.example/concepts/engine-a/> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://w3id.org/agentic-system-core/ns#uses> <https://minimal.example/concepts/engine-a/> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://w3id.org/agentic-system-core/ns#usedBy> <https://minimal.example/concepts/ctl/> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://w3id.org/agentic-system-core/ns#uses> <https://minimal.example/concepts/ctl/> <https://minimal.example/> .\n",
+    "warnings": []
+  },
+  "id": "graph-0042",
+  "input": {
+    "bundle": {
+      "license_prose": "CC0-1.0",
+      "spec_version": "1.0.0"
+    },
+    "items": [
+      {
+        "domain_context": "ctx",
+        "domain_links": {
+          "controlled-by": [
+            "ctl"
+          ]
+        },
+        "domain_role": "aggregate-root",
+        "domain_type": "Engine",
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "engine-a",
+        "title": "Engine A",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ctl",
+        "title": "Controller",
+        "type": "concept"
+      },
+      {
+        "description": "The context that holds the engines.",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ctx",
+        "title": "Propulsion",
+        "type": "cluster"
+      }
+    ],
+    "site": {
+      "base": "https://minimal.example/"
+    },
+    "vocabulary": "@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n\nasc:Concept\n    a owl:Class .\n\nasc:Episode\n    a owl:Class .\n\nasc:Cluster\n    a owl:Class .\n\nasc:uses\n    a owl:ObjectProperty .\n\nskos:definition\n    a owl:AnnotationProperty .\n\n<https://minimal.example/ns/domain>\n    a owl:Ontology ;\n    rdfs:label \"Minimal domain vocabulary\" .\n\ndom:Engine\n    a owl:Class ;\n    rdfs:label \"Engine\" ;\n    rdfs:subClassOf asc:Concept ;\n    skos:definition \"A machine that turns fuel into thrust.\"@en .\n\ndom:controlled-by\n    a owl:ObjectProperty ;\n    rdfs:label \"controlled by\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controls ;\n    skos:definition \"This engine is run by the target controller.\"@en .\n\ndom:controls\n    a owl:ObjectProperty ;\n    rdfs:label \"controls\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controlled-by ;\n    skos:definition \"This controller runs the target engine.\"@en .\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-37"
+}

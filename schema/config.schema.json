@@ -56,6 +56,21 @@
             "pattern": "^[A-Za-z_-]+$"
           },
           "uniqueItems": true
+        },
+        "query_page": {
+          "description": "AGSC-06-39: whether the /query/ page is written. Default true; false keeps the route set of 1.0. Added at 1.1: a Bundle that sets it SHOULD declare spec_version 1.1.0 or later (AGSC-01-18).",
+          "type": "boolean",
+          "default": true
+        },
+        "author_orcid": {
+          "description": "ORCID iD of site.author, the creator of the Dataset block (AGSC-06-41). Added at 1.1 (AGSC-01-18).",
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+        },
+        "security_policy": {
+          "description": "AGSC-06-36: absolute https address of the vulnerability-disclosure page named by the Policy field of security.txt. Added at 1.1 (AGSC-01-18).",
+          "type": "string",
+          "pattern": "^https://[^\\x00-\\x20]+$"
         }
       }
     },
@@ -79,6 +94,30 @@
         },
         "operator": {
           "$ref": "#/$defs/human_actor"
+        },
+        "creator": {
+          "description": "The creator of the Dataset block (AGSC-06-41): a name and, optionally, an ORCID iD. Added at 1.1 (AGSC-01-18).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/single_line",
+              "type": "string",
+              "minLength": 1
+            },
+            "orcid": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+            }
+          }
+        },
+        "license_url": {
+          "description": "Absolute https address of a specific version of the licence text, for the Dataset block (AGSC-06-41). Added at 1.1 (AGSC-01-18).",
+          "type": "string",
+          "pattern": "^https://[^\\x00-\\x20]+$"
         }
       }
     },
@@ -149,13 +188,56 @@
       "type": "object"
     },
     "peers": {
-      "description": "Federation peers (AGSC-10-12): each entry is another node's canonical /.well-known/knowledge-linkset URL, at the root of its origin, emitted as one .../rel#peer link in the link set (AGSC-06-10).",
+      "description": "Federation peers (AGSC-10-12): each entry is another node's canonical /.well-known/knowledge-linkset URL, at the root of its origin, emitted as one .../rel#peer link in the link set (AGSC-06-10). From 1.1 an entry may instead be an object {url, relationship, crosswalk} (AGSC-11-24); a 1.0 tool reports it as AGSC-E004.",
       "type": "array",
       "uniqueItems": true,
       "items": {
-        "type": "string",
-        "format": "uri",
-        "pattern": "^https://[^\\x00-\\x20/?#]+/\\.well-known/knowledge-linkset$"
+        "oneOf": [
+          {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://[^\\x00-\\x20/?#]+/\\.well-known/knowledge-linkset$"
+          },
+          {
+            "description": "AGSC-11-24: a typed peer. url is the string of the plain form; relationship is the context-map pattern; crosswalk is a relative path (AGSC-01-35) to a Turtle file of skos:exactMatch, closeMatch, broadMatch and narrowMatch statements, REQUIRED for translation-layer. A malformed entry is AGSC-E209.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "url",
+              "relationship"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "pattern": "^https://[^\\x00-\\x20/?#]+/\\.well-known/knowledge-linkset$"
+              },
+              "relationship": {
+                "enum": [
+                  "shared-kernel",
+                  "conformist",
+                  "translation-layer"
+                ]
+              },
+              "crosswalk": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$"
+              }
+            },
+            "if": {
+              "properties": {
+                "relationship": {
+                  "const": "translation-layer"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "crosswalk"
+              ]
+            }
+          }
+        ]
       }
     },
     "run": {
@@ -254,6 +336,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "min_sources": {
+          "description": "AGSC-08-31: the number of counted sources a pattern, taxonomy, explainer or principle concept needs before lint stops warning (AGSC-E417); 0 turns the check off. Added at 1.1 (AGSC-01-18).",
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
         }
       }
     },
@@ -313,6 +401,11 @@
           "minimum": 256,
           "maximum": 65536,
           "default": 4096
+        },
+        "content_digest": {
+          "description": "AGSC-06-29: whether a chunk line carries content_digest. Default false. Added at 1.1 (AGSC-01-18).",
+          "type": "boolean",
+          "default": false
         }
       },
       "patternProperties": {
@@ -380,6 +473,17 @@
           "channel": {
             "type": "string",
             "pattern": "^[a-z0-9-]+$"
+          },
+          "repository": {
+            "description": "AGSC-11-14: absolute https address of the repository that holds the source files. Added at 1.1.",
+            "type": "string",
+            "pattern": "^https://[^\\x00-\\x20]+$"
+          },
+          "branch": {
+            "description": "AGSC-11-14: the branch the node is built from; default HEAD. A name holding .. or //, or ending in / or .lock, is malformed (AGSC-E209). Added at 1.1.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,254}$",
+            "default": "HEAD"
           }
         },
         "patternProperties": {
@@ -460,6 +564,11 @@
               "consent",
               "credential"
             ]
+          },
+          "binding": {
+            "description": "AGSC-06-34: the A2A protocolBinding of a responder entry. Default JSONRPC. Added at 1.1 (AGSC-01-18).",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9+._-]{1,32}$"
           }
         },
         "allOf": [
@@ -703,6 +812,91 @@
             }
           }
         ]
+      }
+    },
+    "compose": {
+      "description": "AGSC-07-25: composition settings. Added at 1.1 (AGSC-01-18).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "brief": {
+          "description": "Whether compose also writes the brief. Default false.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "discovery": {
+      "description": "AGSC-06-42: discovery settings. Added at 1.1 (AGSC-01-18).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ai_catalog": {
+          "description": "Whether the two catalogue files /.well-known/ard.json and /.well-known/ai-catalog.json are written. Both are proposals, not registered well-known URIs. Default false.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "ledger": {
+      "description": "AGSC-08-20a: the author map of the derived ledger. Added at 1.1 (AGSC-01-18).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actors": {
+          "description": "Map from a commit author's e-mail address, lower case, to the human:<id> actor the ledger names for a commit that carries no Signed-off-by trailer. The addresses stay in configuration and reach no published artefact.",
+          "type": "object",
+          "patternProperties": {
+            "^[^\\x00-\\x20@]+@[^\\x00-\\x20@]+$": {
+              "$ref": "#/$defs/human_actor"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "domain": {
+      "description": "AGSC-01-41: the optional domain layer. Absent, the Bundle is a Bundle of 1.0 and every byte it emits is unchanged. Added at 1.1 (AGSC-01-18).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vocabulary": {
+          "description": "Relative path (AGSC-01-35) to a Turtle file of the node's own classes and relations (AGSC-05-38); not under content/, dist/ or build.out.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$"
+        },
+        "shapes": {
+          "description": "Relative path to a Turtle file of SHACL shapes (AGSC-05-41).",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$"
+        },
+        "questions": {
+          "description": "Relative path to a JSON file of competency questions (AGSC-05-41).",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$"
+        },
+        "contexts": {
+          "description": "Clusters declared as bounded contexts, each with its own namespace (AGSC-08-32). A repeated cluster or namespace is AGSC-E209; a cluster that names no cluster item is AGSC-E301.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "cluster",
+              "namespace"
+            ],
+            "properties": {
+              "cluster": {
+                "$ref": "#/$defs/slug"
+              },
+              "namespace": {
+                "type": "string",
+                "pattern": "^https://[^\\x00-\\x20]+[#/]$"
+              }
+            }
+          }
+        }
       }
     }
   },

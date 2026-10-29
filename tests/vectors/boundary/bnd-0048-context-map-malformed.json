@@ -1,0 +1,73 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-24: a typed peer that cannot be applied is refused with the code of its fault. Derivation, case by case: (1) a translation-layer peer with no crosswalk lacks a required member, AGSC-E202; (2) a relationship friend is outside the enumeration, AGSC-E203; (3) a crosswalk that holds a statement with skos:relatedMatch, which is not one of the four predicates, is a statement of another shape, AGSC-E209; (4) a crosswalk path that names no file of the Bundle is AGSC-E901. Each refusal is a fault of the node's own configuration, found before any peer is fetched.",
+  "expected": {
+    "cases": [
+      {
+        "error": "AGSC-E202",
+        "name": "translation-layer-without-crosswalk"
+      },
+      {
+        "error": "AGSC-E203",
+        "name": "unknown-relationship"
+      },
+      {
+        "error": "AGSC-E209",
+        "name": "statement-of-another-shape"
+      },
+      {
+        "error": "AGSC-E901",
+        "name": "crosswalk-file-absent"
+      }
+    ]
+  },
+  "id": "bnd-0048",
+  "input": {
+    "cases": [
+      {
+        "crosswalks": {},
+        "name": "translation-layer-without-crosswalk",
+        "peer": {
+          "relationship": "translation-layer",
+          "url": "https://b.example/.well-known/knowledge-linkset"
+        }
+      },
+      {
+        "crosswalks": {},
+        "name": "unknown-relationship",
+        "peer": {
+          "relationship": "friend",
+          "url": "https://b.example/.well-known/knowledge-linkset"
+        }
+      },
+      {
+        "crosswalks": {
+          "domain/b.ttl": "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n<https://a.example/concepts/account/> skos:relatedMatch <https://b.example/concepts/account/> .\n"
+        },
+        "name": "statement-of-another-shape",
+        "peer": {
+          "crosswalk": "domain/b.ttl",
+          "relationship": "shared-kernel",
+          "url": "https://b.example/.well-known/knowledge-linkset"
+        }
+      },
+      {
+        "crosswalks": {},
+        "name": "crosswalk-file-absent",
+        "peer": {
+          "crosswalk": "domain/missing.ttl",
+          "relationship": "conformist",
+          "url": "https://b.example/.well-known/knowledge-linkset"
+        }
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-24"
+}

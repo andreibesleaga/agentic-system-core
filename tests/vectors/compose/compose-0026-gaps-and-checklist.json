@@ -1,0 +1,288 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-27: every kind of gap and every kind of checklist line, in the order the rule fixes, over one invalid composition so that the `resolve` kind appears. Derivation by hand: `ship` requires `pipeline` (added by closure), `ship` uses `canary` and is related to `rollout`, both listed and not selected (kinds `uses-not-selected`, `related-not-selected`); `pipeline` consumes the port `artifact` that no member produces (`port-without-producer`, and `provide-port`); `lint-b` has no `sources[]` (`no-sources`); `ship` has `stale_after` 2026-05-01, before the build instant (`stale`); `legacy-pipeline` is deprecated (`deprecated`) and contradicts `pipeline`, authored by `legacy-pipeline` (`contradiction`, and `decide`); the listed `pipeline-v2` supersedes `pipeline` and is not selected (`replaced-outside`); `smoke` verifies `ship` (`verify`); `ship` is `blocked-by` `approve`, which is listed and not selected (`unblock`); `lint-a` excludes `lint-b`, so the composition is invalid with AGSC-E801 (`resolve`). Gaps are ordered by the order of their kinds, then by slug and target by code point; the checklist opens with `adopt` in dependency order, then the other kinds in the rule's order. Only `gaps` and `checklist` are asserted.",
+  "expected": {
+    "cases": [
+      {
+        "checklist": [
+          {
+            "kind": "adopt",
+            "slug": "legacy-pipeline",
+            "text": "adopt `legacy-pipeline`"
+          },
+          {
+            "kind": "adopt",
+            "slug": "lint-a",
+            "text": "adopt `lint-a`"
+          },
+          {
+            "kind": "adopt",
+            "slug": "lint-b",
+            "text": "adopt `lint-b`"
+          },
+          {
+            "kind": "adopt",
+            "slug": "pipeline",
+            "text": "adopt `pipeline`"
+          },
+          {
+            "kind": "adopt",
+            "slug": "ship",
+            "text": "adopt `ship`"
+          },
+          {
+            "kind": "provide-port",
+            "slug": "pipeline",
+            "target": "artifact",
+            "text": "provide port `artifact` for `pipeline`"
+          },
+          {
+            "kind": "decide",
+            "slug": "legacy-pipeline",
+            "target": "pipeline",
+            "text": "decide between `legacy-pipeline` and `pipeline`, which contradict each other"
+          },
+          {
+            "kind": "verify",
+            "slug": "ship",
+            "target": "smoke",
+            "text": "run `smoke`, which verifies `ship`"
+          },
+          {
+            "kind": "unblock",
+            "slug": "ship",
+            "target": "approve",
+            "text": "finish `approve`, which blocks `ship`"
+          },
+          {
+            "kind": "resolve",
+            "slug": "lint-a",
+            "target": "lint-b",
+            "text": "resolve AGSC-E801 between `lint-a` and `lint-b`"
+          }
+        ],
+        "gaps": [
+          {
+            "kind": "uses-not-selected",
+            "slug": "ship",
+            "target": "canary",
+            "text": "`ship` uses `canary`, which is not in the selection"
+          },
+          {
+            "kind": "related-not-selected",
+            "slug": "ship",
+            "target": "rollout",
+            "text": "`ship` is related to `rollout`, which is not in the selection"
+          },
+          {
+            "kind": "port-without-producer",
+            "slug": "pipeline",
+            "target": "artifact",
+            "text": "`pipeline` consumes port `artifact`, which no member produces"
+          },
+          {
+            "kind": "no-sources",
+            "slug": "lint-b",
+            "text": "`lint-b` names no source"
+          },
+          {
+            "kind": "stale",
+            "slug": "ship",
+            "text": "`ship` is stale since 2026-05-01"
+          },
+          {
+            "kind": "deprecated",
+            "slug": "legacy-pipeline",
+            "text": "`legacy-pipeline` is deprecated"
+          },
+          {
+            "kind": "replaced-outside",
+            "slug": "pipeline",
+            "target": "pipeline-v2",
+            "text": "`pipeline` is replaced by `pipeline-v2`, which is not in the selection"
+          },
+          {
+            "kind": "contradiction",
+            "slug": "legacy-pipeline",
+            "target": "pipeline",
+            "text": "`legacy-pipeline` contradicts `pipeline`"
+          }
+        ],
+        "name": "every-kind"
+      }
+    ]
+  },
+  "id": "compose-0026",
+  "input": {
+    "cases": [
+      {
+        "items": [
+          {
+            "blocked-by": [
+              "approve"
+            ],
+            "body": "Ship.\n",
+            "description": "Release the build to production.",
+            "kind": "task",
+            "related": [
+              "rollout"
+            ],
+            "requires": [
+              "pipeline"
+            ],
+            "slug": "ship",
+            "sources": [
+              {
+                "resource": "https://example.org/ship"
+              }
+            ],
+            "stale_after": "2026-05-01",
+            "title": "Ship it",
+            "type": "concept",
+            "uses": [
+              "canary"
+            ]
+          },
+          {
+            "consumes": [
+              "artifact"
+            ],
+            "description": "Builds and tests every change.",
+            "kind": "pattern",
+            "slug": "pipeline",
+            "sources": [
+              {
+                "resource": "https://example.org/pipeline"
+              }
+            ],
+            "title": "Pipeline",
+            "type": "concept"
+          },
+          {
+            "contradicts": [
+              "pipeline"
+            ],
+            "description": "The pipeline we are leaving.",
+            "kind": "pattern",
+            "slug": "legacy-pipeline",
+            "sources": [
+              {
+                "resource": "https://example.org/legacy-pipeline"
+              }
+            ],
+            "status": "deprecated",
+            "supersedes": [],
+            "title": "Legacy pipeline",
+            "type": "concept"
+          },
+          {
+            "description": "The pipeline that replaces the first one.",
+            "kind": "pattern",
+            "slug": "pipeline-v2",
+            "sources": [
+              {
+                "resource": "https://example.org/pipeline-v2"
+              }
+            ],
+            "supersedes": [
+              "pipeline"
+            ],
+            "title": "Pipeline v2",
+            "type": "concept"
+          },
+          {
+            "description": "Releases to a few users first.",
+            "kind": "pattern",
+            "slug": "canary",
+            "sources": [
+              {
+                "resource": "https://example.org/canary"
+              }
+            ],
+            "title": "Canary",
+            "type": "concept"
+          },
+          {
+            "description": "What to do when a release fails.",
+            "kind": "explainer",
+            "slug": "rollout",
+            "sources": [
+              {
+                "resource": "https://example.org/rollout"
+              }
+            ],
+            "title": "Rollout",
+            "type": "concept"
+          },
+          {
+            "description": "A person signs the release off.",
+            "kind": "task",
+            "slug": "approve",
+            "sources": [
+              {
+                "resource": "https://example.org/approve"
+              }
+            ],
+            "title": "Approve the release",
+            "type": "concept"
+          },
+          {
+            "description": "Checks a release is alive.",
+            "slug": "smoke",
+            "sources": [
+              {
+                "resource": "https://example.org/smoke"
+              }
+            ],
+            "title": "Smoke test",
+            "type": "procedure",
+            "verifies": [
+              "ship"
+            ]
+          },
+          {
+            "description": "A rule that excludes lint B.",
+            "excludes": [
+              "lint-b"
+            ],
+            "kind": "principle",
+            "slug": "lint-a",
+            "sources": [
+              {
+                "resource": "https://example.org/la"
+              }
+            ],
+            "title": "Lint A",
+            "type": "concept"
+          },
+          {
+            "description": "A rule that lint A excludes.",
+            "kind": "principle",
+            "slug": "lint-b",
+            "title": "Lint B",
+            "type": "concept"
+          }
+        ],
+        "name": "every-kind",
+        "selection": [
+          "ship",
+          "legacy-pipeline",
+          "lint-a",
+          "lint-b"
+        ]
+      }
+    ],
+    "fixed": {
+      "base": "https://brief.example/",
+      "bundle_version": "1.4.0",
+      "instant": "2026-09-16T12:34:56Z",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-27"
+}

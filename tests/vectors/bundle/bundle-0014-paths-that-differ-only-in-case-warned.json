@@ -1,0 +1,29 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-40 (b): two paths under content/assets/ that are equal after NFC and Unicode simple case folding collide on a case-insensitive file system, and the warning AGSC-E423 is reported on each path of the group except the first in code-point order. Derivation: content/assets/Photo.txt and content/assets/photo.txt fold to one name; capital P sorts before small p, so Photo.txt is first and the one warning names content/assets/photo.txt. The minimal fixture's lint reports nothing and neither file is a fault of any other rule. Exit 0.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E423",
+          "file": "content/assets/photo.txt",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0014",
+  "input": {
+    "add_files": {
+      "content/assets/Photo.txt": "a\n",
+      "content/assets/photo.txt": "b\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-40"
+}

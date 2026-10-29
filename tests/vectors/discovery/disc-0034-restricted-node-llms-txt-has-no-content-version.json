@@ -1,0 +1,45 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-13a with AGSC-11-20: a restricted node leaves the bundle_version line out of the provenance header of /llms.txt, because the content version is commit activity by another name; the header runs from spec_version straight to generated_at, and nothing else of the layout changes. The input is the node of disc-0024 without its escape item and without the draft, marked restricted; the same input, public, gives the bundle_version line. Expected bytes are derived by hand from AGSC-06-13a.",
+  "expected": {
+    "output": "# Example Node\n\n> A node of the Agentic Knowledge Web.\n\n<!-- agsc:provenance\nbundle: https://a.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0\ngenerated_at: 2026-09-16T00:00:00Z\nassistance: content may be AI-assisted; each item states its origin in prov.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n\n## Coordination\n\n- [Supervisor](https://a.example/concepts/supervisor/): Routes work to workers.\n\n## Other\n\n- [Loose Note](https://a.example/concepts/loose-note/): Loose Note\n"
+  },
+  "id": "disc-0034",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "description": "A node of the Agentic Knowledge Web.",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "title": "Example Node"
+    },
+    "bundle_version": "v1.4.0",
+    "clusters": [
+      {
+        "slug": "coordination",
+        "title": "Coordination"
+      }
+    ],
+    "generated_at": "2026-09-16T00:00:00Z",
+    "items": [
+      {
+        "clusters": [
+          "coordination"
+        ],
+        "description": "Routes work to workers.",
+        "slug": "supervisor",
+        "title": "Supervisor"
+      },
+      {
+        "slug": "loose-note",
+        "title": "Loose Note"
+      }
+    ],
+    "spec_version": "1.0.0",
+    "visibility": "restricted"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-13a"
+}

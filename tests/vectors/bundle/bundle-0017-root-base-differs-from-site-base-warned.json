@@ -1,0 +1,28 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-04 as amended for 1.1: a root document whose base differs from site.base is reported as the warning AGSC-E204, naming content/index.md; a writer still forms every IRI from site.base, so the warning changes no exit code and no byte. Derivation: the fixture's site.base is https://minimal.example/; the root document is replaced by a copy whose base is https://other.example/. Exit 0.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E204",
+          "file": "content/index.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0017",
+  "input": {
+    "add_files": {
+      "content/index.md": "---\nspec_version: 1.0.0\nokf_version: \"0.2\"\ntitle: Minimal Bundle\ndescription: The smallest Bundle that conforms to AgenticSystemCore, used by the engine's own tests as a fixture.\nbase: https://other.example/\nlang: en\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Minimal Bundle\n\nTwo concepts and one cluster: enough to build, lint, compose and serve.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-04"
+}

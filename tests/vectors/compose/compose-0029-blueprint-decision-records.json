@@ -1,0 +1,141 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-29: one MADR record for each distinct target of a `decided-by` Link authored by a member. `inventory` and `orders` both cite `adr-queue`, so there is exactly one record, numbered 0001, whose context sentence names both in code-point order and quotes the target's body fenced as data (AGSC-01-29). The record carries the provenance header, the licence sentence and the selection digest of the Harness files. Fixture: the saved architecture `order-platform` selects `orders` and `settle-run`; `orders` requires `inventory` (added by closure), uses the listed `email`, is decided by `adr-queue` (as `inventory` is) and produces the port `order-placed`, which `settle-run` consumes; `settle-run` is verified by the listed `settle-check`. The blueprint is written by `compose --from order-platform --brief` and only then, into the `blueprint/` subdirectory of the companion directory, never into the Harness directory (AGSC-07-29); two builds write the same bytes.",
+  "expected": {
+    "file_bytes": {
+      "blueprint/decisions/0001-adr-queue.md": "---\nstatus: accepted\ndate: 2026-09-16\n---\n\n# Use a queue\n\n<!-- agsc:provenance\nbundle: https://brief.example/\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nterms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nspec_version: 1.0.0\nbundle_version: 1.4.0\ngenerated_at: 2026-09-16T12:34:56Z\nassistance: content may be AI-assisted; each item states its origin in prov.origin and each accepted contribution carries an Assisted-by: trailer\n-->\n\nHarness structure is CC0-1.0 to you; the prose it quotes travels under the Content Use Terms LicenseRef-AgenticSystemCore-Content-Use-1.0 (AGSC-07-16).\n\nSelection digest: 9fe01769e105a2bc74ef42c9b79241b642de401fdfc61f97358619d6b26cca80\n\n## Context and Problem Statement\n\nMembers of this composition cite `adr-queue` as the decision behind them: `inventory`, `orders`.\n\n```text agsc-content\nWe use a queue between orders and settlement.\n```\n\n## Decision Outcome\n\nChosen option: as recorded in `adr-queue`.\n\n### Consequences\n\n_To be written._\n"
+    },
+    "files_under": {
+      "blueprint/decisions/": [
+        "0001-adr-queue.md"
+      ]
+    }
+  },
+  "id": "compose-0029",
+  "input": {
+    "fixed": {
+      "base": "https://brief.example/",
+      "bundle_version": "1.4.0",
+      "instant": "2026-09-16T12:34:56Z",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0"
+    },
+    "from": "order-platform",
+    "items": [
+      {
+        "body": "The platform.\n\n```yaml agsc-selection\n- orders\n- settle-run\n```\n",
+        "description": "Accepts orders and settles them.",
+        "kind": "architecture",
+        "slug": "order-platform",
+        "sources": [
+          {
+            "resource": "https://example.org/platform"
+          }
+        ],
+        "title": "Order platform",
+        "type": "concept"
+      },
+      {
+        "decided-by": [
+          "adr-queue"
+        ],
+        "description": "Accepts and stores orders.",
+        "kind": "pattern",
+        "produces": [
+          "order-placed"
+        ],
+        "requires": [
+          "inventory"
+        ],
+        "slug": "orders",
+        "sources": [
+          {
+            "resource": "https://example.org/orders"
+          }
+        ],
+        "title": "Orders",
+        "type": "concept",
+        "uses": [
+          "email"
+        ]
+      },
+      {
+        "decided-by": [
+          "adr-queue"
+        ],
+        "description": "Counts stock.",
+        "kind": "pattern",
+        "slug": "inventory",
+        "sources": [
+          {
+            "resource": "https://example.org/inventory"
+          }
+        ],
+        "title": "Inventory",
+        "type": "concept"
+      },
+      {
+        "body": "Settle the orders.\n",
+        "consumes": [
+          "order-placed"
+        ],
+        "description": "Settles the day.",
+        "slug": "settle-run",
+        "sources": [
+          {
+            "resource": "https://example.org/settle"
+          }
+        ],
+        "title": "Settle run",
+        "type": "procedure",
+        "uses": [
+          "orders"
+        ]
+      },
+      {
+        "description": "Checks a settle run.",
+        "slug": "settle-check",
+        "sources": [
+          {
+            "resource": "https://example.org/check"
+          }
+        ],
+        "title": "Settle check",
+        "type": "procedure",
+        "verifies": [
+          "settle-run"
+        ]
+      },
+      {
+        "body": "We use a queue between orders and settlement.\n",
+        "description": "Orders reach settlement through a queue.",
+        "kind": "decision",
+        "slug": "adr-queue",
+        "sources": [
+          {
+            "resource": "https://example.org/adr"
+          }
+        ],
+        "title": "Use a queue",
+        "type": "concept"
+      },
+      {
+        "description": "Sends mail.",
+        "kind": "pattern",
+        "slug": "email",
+        "sources": [
+          {
+            "resource": "https://example.org/email"
+          }
+        ],
+        "title": "Email",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-29"
+}

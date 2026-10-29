@@ -1,0 +1,475 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-12: the compatibility pin of the seven Harness file kinds. For every valid composition case of the set — the selections of `compose-0011`, `-0012`, `-0013`, `-0015`, `-0017`, `-0018`, `-0019` and `-0020`, whose items and selections are repeated here so that this case stands alone, and one more, `all-seven-kinds`, that fills the per-Concept and per-Procedure kinds — the case carries the SHA-256 of every file the Harness writes, keyed by its path relative to `dist/harness/<name>/`, for a build instant, a content version, a site base and a licence fixed in `fixed`; `spec_version` is fixed too, because the provenance header of every file states the version of the specification the tool implements, which a pin must not depend on. The values were produced by the 1.0.1 engine and are a pin, not a new behaviour: a later MINOR may add files beside the Harness directory (AGSC-07-25, AGSC-07-29, AGSC-07-30) and must not move a byte of these. `compose-0021`, `-0022`, `-0023`, `-0001` and `-0002` are not in the set because their compositions are invalid and emit no Harness (AGSC-07-17). The case does not claim cross-implementation byte-identity of the Harness, which AGSC-04-24 withholds until the `harness/` area has cases; it holds the reference engine to its own bytes across versions.",
+  "expected": {
+    "cases": [
+      {
+        "emitted": true,
+        "name": "compose-0011",
+        "sha256": {
+          "AGENTS.md": "9af8c226f8877b34651a8be0cee8f9a1667f0c4096c741854f2485a433cfb819",
+          "arc42.md": "f5603cd6099d65f6b17b6d66f77f541a0f95da1fbce7aaf6068d03a19cd8a772",
+          "decisions/0001-router.md": "50baf8be24374b3d909d8230065f8525dd8a7d04d6b985409cee99b400ef3e1c",
+          "decisions/0002-worker.md": "5601c5d003ec2dd3c0a165134a1d4739fa1bfa26d3426b2a115c446169a6b129",
+          "decisions/0003-logger.md": "c1778bcb4af79a8563c9f67ec5b22c7e2377dc1ea684cac7d551aef40aef67ac",
+          "diagram.mmd": "67fd2bb45336cfa3a4af0524a81c269f8413f8b3416c3719b5bd99363e7f8400",
+          "harness.jsonld": "1ff3b34ae7bed3323ac80800ff0e70656eb68453e5c23f57608abedef970a4a5",
+          "workspace.dsl": "68161807bbfbe2c122f21637bea0b162c08c687f19b2cf655dfffecc3d412509"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "compose-0012",
+        "sha256": {
+          "AGENTS.md": "24db651f2d32b6f14294403ba011ca56ba0464df6ae28e4b85e8d12a32882202",
+          "arc42.md": "f7833e568d576861a89695fb5e216f60d14c5d3714ea88d4c6b054851b8bfe1a",
+          "decisions/0001-router.md": "769b87d1bf2d076805fd8f6d8c4765aa908ab62d59f522f32b9d494941029520",
+          "decisions/0002-worker.md": "d3b71b310d98bb82817255080cf39d13a1a6e12fbb5f06cde150e91fadfe2703",
+          "diagram.mmd": "14da7eb7dc68f119c290edc04b29a9301c7930c0b25838bcc12792e33c1fd375",
+          "harness.jsonld": "205552310a12dcc1cc722a4956097d34676445b182f3ee8e300390814cbcee78",
+          "workspace.dsl": "5a76676cc310df870c081c888d3ec724ebfee9d6f215154205cbb4572283ac38"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "compose-0013",
+        "sha256": {
+          "AGENTS.md": "0572257b6e601cb0cd432b938f37719d807c7d2025588edf05d66b3c24f4f85b",
+          "arc42.md": "153552b6bc4d65b0d7a2f090a1546fe13f82ec62b14ed45be9d1327b3e9ebd1f",
+          "decisions/0001-a.md": "b6ee5a7f661e93e8d756592553138bc08ac0d822c42acea0d97201f87ddecf73",
+          "decisions/0002-b.md": "5eed32ac8566963705af6a027ac4739318c35af5675413adf0d850af382744c0",
+          "decisions/0003-c.md": "622e0838ed12cf7dca4920efc38133a9b1c6f585f7b278934c98354cdaefb150",
+          "decisions/0004-d.md": "44f6823b87c5f21f9925ad065f3fce0ef1e15df9590b1a615c4c0e4e6ab6a53c",
+          "diagram.mmd": "41f032f4670c1a9bbfe446551f4140c560bd515e0c5ce650e2db43959eab9898",
+          "harness.jsonld": "9b66c292d76c736d51f1e364ad3e76a95391a702cb7791437c08a780bc789948",
+          "workspace.dsl": "fcfeca16d009a1b7b3a2be016058763569cd3e596565cfee685da4eb88665015"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "compose-0015",
+        "sha256": {
+          "AGENTS.md": "c64c55b08d2ad642808c1aee5cd3e0a03e63d0167812b5a71e1ecc5144a19d98",
+          "arc42.md": "9b132e5b50fc843298f4afea0d1c4aa9151c222f4ebf13239d9b0e6623c03051",
+          "decisions/0001-b.md": "5287daed66935828f8c0cea50e962ce41c6be4806b20b698ce07f862c6f6dcf7",
+          "decisions/0002-a.md": "49b4eb3119f475cbd80b88a67551f3fbab6f09fb8cd26c67e7e08814e65e0cc4",
+          "diagram.mmd": "b033c935dddae147761a9ab86b25cc5596bc0eefefc36d2d6e434cb3dfd88e55",
+          "harness.jsonld": "dfa9c88ddeab709fb1b28ea86e5a1bb2c3ac0cb219cb6ef49e2fd3e8168235b4",
+          "workspace.dsl": "90d8e0a1547bbb77f1548b8c940a4598679767a4eaa41f7b10d5213c180211f1"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "compose-0017",
+        "sha256": {
+          "AGENTS.md": "aec1d89f035c4c03df1e40369d612fd5f0b7112b12ebb906a5a2f39ca969c8dc",
+          "arc42.md": "b15fe4a0e58a849d3a7b042b256fe729770e4c7edf62d61823562477780b5a51",
+          "decisions/0001-a.md": "6f7b96ba69df812778673d456bfcd3241bb004e969f84c759fc9bfe1aa87733e",
+          "decisions/0002-b.md": "44487f47d11f9cb8546ad388e1870a65ab5d3b8c1e054d6d733b9f72ebbc7aeb",
+          "decisions/0003-c.md": "8315b852ba1fa5dfbf0da37c6890221b21822577514befd0c71ddc6d1299df0e",
+          "decisions/0004-d.md": "18e482d58bffd78b814e7383e26ee009de0b2b8679b8eaece61da46282279a7d",
+          "decisions/0005-e.md": "4143b398a2659097aa0741629a2e770a1c7fcd87fb801d2a5b19f56c68c2e69c",
+          "diagram.mmd": "f7e374ce877cd58fde2f6035d6ea16f5e13703ace459ca15780d337e1eac1293",
+          "harness.jsonld": "7d17d865a6818cab3f5a0c68adf7a8192ba554456931ff4b8c6780927b8fdbc3",
+          "workspace.dsl": "c422df5861a63fcc0aa72c0ded6059969007a6eda0f79f04e9ef9465575c97f6"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "compose-0018",
+        "sha256": {
+          "AGENTS.md": "b462049e046f1d27b465c21a8fada64178d93acdee2c3248fcee67f0e57a2232",
+          "arc42.md": "9dafdade32f0983813f1a4c65fd96db1d52f11a4e5f384c5297133db98ee20b0",
+          "decisions/0001-agent-v3.md": "34c3286fbe781054f28eaff705caa0a8938df9eadd52b0b19b88d46ed27d70e5",
+          "diagram.mmd": "50c160d3ea60dafa287c8938f0de5ee2070cd843edb41d6c3d7c2ad1d4fc3d69",
+          "harness.jsonld": "2111c62396c40dfcf25a462b55635dd2b972ae6e26d985158e0b39eb384f1b60",
+          "workspace.dsl": "8732b11e1639cecd80335b2cb22a28b08bb9d5030d9cbc975852f3d2ba4b97cb"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "compose-0019",
+        "sha256": {
+          "AGENTS.md": "d71e15e59fe06ae753170180f54d95bf1845c47ce883c40987bd8019db4ae5cd",
+          "arc42.md": "35636489e3d4b16836f309e62e226f37bd8603833688a8cdbf7941f80e81acca",
+          "decisions/0001-agent-v3.md": "53eaaa7620713d5060943bf4822b82003a2dfaefccc366b3c74ceaafd33fa5fc",
+          "decisions/0002-agent-v1.md": "891d83790cbda0952b1b5d6e48afa2d954aa82bdf3ac4cc24c9c356ccf00cf19",
+          "diagram.mmd": "a52445a444d4e25008a8734640e67b370bb6be2ac474aa36acc1e863692af61a",
+          "harness.jsonld": "21823dac07645f95f0a4acf26c87525166e2b104181c8459211eda8892404c44",
+          "workspace.dsl": "ecd81fd59e50a3b58b7954a325144554ef20a26a3667e44393fb0f15f648201e"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "compose-0020",
+        "sha256": {
+          "AGENTS.md": "6db1e22954b16298ac01febbea3e813ce94350d42d31c00c82889e3115fb1bca",
+          "arc42.md": "4b8f4cdbd74739e7e43fa0f1988246267636ea21bdaa129153770c28473e1b7b",
+          "decisions/0001-swarm.md": "cb3c63b968b872eda5bf07ba31292214931c7a7190fd8b661739ccc55b13b5d4",
+          "decisions/0002-reactive.md": "5f628104f6335dd7f6aceae36dcca9c203203473c218295e62a264718240417c",
+          "decisions/0003-solo.md": "ebd550f2d2861816a81edc9a19b2e04768ec55ea5a618b3bd98f04b3261e5d8b",
+          "decisions/0004-planner.md": "b782735d979c7cf08ff23e794c20db72de6cb71dce4dfec03dfa4b455223070d",
+          "decisions/0005-cache-v2.md": "32e5a95ff75b704e0e9cf1b5f9f6084a9740f8c43086ea8932bdd4ba1b8d2e46",
+          "diagram.mmd": "0fb8d79fed6b1675653c8e698a11dbd224cb0f38a99094bbea716496d5f9b7f5",
+          "harness.jsonld": "0c6623da31f30c9a91801ed47688825eb37af455afc0f60acf9a1d68a3395414",
+          "workspace.dsl": "f19e1272adad8e532ff3746bc12ce65560467849a4a35c6cb0996e5eba7339cc"
+        }
+      },
+      {
+        "emitted": true,
+        "name": "all-seven-kinds",
+        "sha256": {
+          "AGENTS.md": "de37d6b30da11023bbe129a3e9891a894a3dac8ba89660b5c53f3204e9f4baaf",
+          "arc42.md": "a4d68cfa3b515c8d9918d7928e6108c876c665982f706ebf0ca1fa90d5aef27f",
+          "decisions/0001-planner.md": "7669fa49b38be5cbdb5036fcc76c1a1441acf84cc5acd250edc11f5355c2f373",
+          "decisions/0002-tools.md": "be8c0dcfd4f19603486e536fad910047ed3dc4bc5412c7f059a4bc0d2b1ec3de",
+          "decisions/0003-memory.md": "fdd0973a3fa1dc4f08fe0c4730c5ad125afe71cee0ec3b906e8edce055fb49c1",
+          "diagram.mmd": "51630dd64a47dd6a3f19acacb5b23a018577f0117d683b0fe71c8cd1e74d245d",
+          "harness.jsonld": "0e8b8e5467092b9c619a1de75abf60f98bf989f41ebafad01fce30412df05b8e",
+          "skills/run-plan/SKILL.md": "3776d7d3700b0ad811a8dccdb3e398f05846592a51e27feff290abd478151ef8",
+          "workspace.dsl": "c7157b9612988ed48955a6060060e8ed982f45cc6d40e4cb11feab6f536c2316"
+        }
+      }
+    ]
+  },
+  "id": "compose-0027",
+  "input": {
+    "cases": [
+      {
+        "items": [
+          {
+            "consumes": [
+              "metrics"
+            ],
+            "produces": [
+              "task"
+            ],
+            "slug": "router"
+          },
+          {
+            "consumes": [
+              "task"
+            ],
+            "produces": [
+              "result",
+              "metrics"
+            ],
+            "slug": "worker"
+          },
+          {
+            "consumes": [
+              "result",
+              "audit"
+            ],
+            "slug": "logger"
+          }
+        ],
+        "name": "compose-0011",
+        "selection": [
+          "router",
+          "worker",
+          "logger"
+        ]
+      },
+      {
+        "items": [
+          {
+            "body": "Text.\n\n```yaml agsc-selection\n- router\n- worker\n```\n",
+            "kind": "architecture",
+            "slug": "my-arch",
+            "type": "concept",
+            "verdict_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "produces": [
+              "task"
+            ],
+            "slug": "router"
+          },
+          {
+            "consumes": [
+              "task"
+            ],
+            "slug": "worker"
+          }
+        ],
+        "name": "compose-0012",
+        "selection": [
+          "router",
+          "worker"
+        ]
+      },
+      {
+        "items": [
+          {
+            "requires": [
+              "c"
+            ],
+            "slug": "a"
+          },
+          {
+            "requires": [
+              "d"
+            ],
+            "slug": "b"
+          },
+          {
+            "requires": [
+              "d"
+            ],
+            "slug": "c"
+          },
+          {
+            "slug": "d"
+          }
+        ],
+        "name": "compose-0013",
+        "selection": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "items": [
+          {
+            "slug": "a"
+          },
+          {
+            "slug": "b"
+          }
+        ],
+        "name": "compose-0015",
+        "selection": [
+          "b",
+          "a"
+        ]
+      },
+      {
+        "items": [
+          {
+            "requires": [
+              "d"
+            ],
+            "slug": "a"
+          },
+          {
+            "requires": [
+              "c"
+            ],
+            "slug": "b"
+          },
+          {
+            "requires": [
+              "e"
+            ],
+            "slug": "c"
+          },
+          {
+            "requires": [
+              "e"
+            ],
+            "slug": "d"
+          },
+          {
+            "slug": "e"
+          }
+        ],
+        "name": "compose-0017",
+        "selection": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "items": [
+          {
+            "slug": "agent-v1",
+            "type": "concept"
+          },
+          {
+            "slug": "agent-v2",
+            "supersedes": [
+              "agent-v1"
+            ],
+            "type": "concept"
+          },
+          {
+            "slug": "agent-v3",
+            "supersedes": [
+              "agent-v2"
+            ],
+            "type": "concept"
+          }
+        ],
+        "name": "compose-0018",
+        "selection": [
+          "agent-v1",
+          "agent-v2",
+          "agent-v3"
+        ]
+      },
+      {
+        "items": [
+          {
+            "slug": "agent-v1",
+            "type": "concept"
+          },
+          {
+            "slug": "agent-v2",
+            "supersedes": [
+              "agent-v1"
+            ],
+            "type": "concept"
+          },
+          {
+            "slug": "agent-v3",
+            "supersedes": [
+              "agent-v2"
+            ],
+            "type": "concept"
+          }
+        ],
+        "name": "compose-0019",
+        "selection": [
+          "agent-v3",
+          "agent-v1"
+        ]
+      },
+      {
+        "items": [
+          {
+            "slug": "cache-v1",
+            "type": "concept"
+          },
+          {
+            "slug": "cache-v2",
+            "supersedes": [
+              "cache-v1"
+            ],
+            "type": "concept"
+          },
+          {
+            "slug": "memory",
+            "type": "concept"
+          },
+          {
+            "slug": "monolith",
+            "type": "concept"
+          },
+          {
+            "contradicts": [
+              "reactive",
+              "monolith"
+            ],
+            "slug": "planner",
+            "type": "concept",
+            "uses": [
+              "memory",
+              "critic"
+            ]
+          },
+          {
+            "contradicts": [
+              "planner"
+            ],
+            "slug": "reactive",
+            "type": "concept",
+            "uses": [
+              "cache-v1"
+            ]
+          },
+          {
+            "slug": "solo",
+            "type": "concept"
+          },
+          {
+            "contradicts": [
+              "solo"
+            ],
+            "slug": "swarm",
+            "type": "concept"
+          }
+        ],
+        "name": "compose-0020",
+        "selection": [
+          "swarm",
+          "reactive",
+          "solo",
+          "planner",
+          "cache-v1",
+          "cache-v2"
+        ]
+      },
+      {
+        "items": [
+          {
+            "body": "The planner splits goals.\n",
+            "description": "Splits a goal into steps.",
+            "kind": "pattern",
+            "produces": [
+              "plan"
+            ],
+            "requires": [
+              "memory"
+            ],
+            "slug": "planner",
+            "title": "Planner",
+            "type": "concept",
+            "uses": [
+              "tools"
+            ]
+          },
+          {
+            "description": "Keeps what the agent learned.",
+            "kind": "principle",
+            "slug": "memory",
+            "title": "Memory",
+            "type": "concept"
+          },
+          {
+            "consumes": [
+              "plan"
+            ],
+            "description": "What the agent can call.",
+            "kind": "pattern",
+            "slug": "tools",
+            "title": "Tools",
+            "type": "concept"
+          },
+          {
+            "body": "1. Take a step.\n2. Check it.\n",
+            "description": "Carry out a plan step by step.",
+            "slug": "run-plan",
+            "title": "Run a plan",
+            "type": "procedure"
+          },
+          {
+            "description": "A lesson about reviewing a plan.",
+            "slug": "review",
+            "title": "Review",
+            "type": "lesson"
+          }
+        ],
+        "name": "all-seven-kinds",
+        "selection": [
+          "run-plan",
+          "planner",
+          "tools",
+          "review"
+        ]
+      }
+    ],
+    "fixed": {
+      "base": "https://pin.example/",
+      "bundle_version": "1.4.0",
+      "instant": "2026-09-16T12:34:56Z",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-12"
+}

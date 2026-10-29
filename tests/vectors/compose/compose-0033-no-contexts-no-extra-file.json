@@ -1,0 +1,114 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-30: the same items and the same selection as `compose-0032`, on a node whose configuration declares no context (`domain` absent). `compose` writes the Harness and nothing else: no companion directory, no `context-map.json`, and the seven file kinds have the same bytes as in `compose-0032` (`harness_sha256`), so that the domain layer costs a node that does not use it not one file. A node that uses `domain_context` on an item without declaring a context in `domain.contexts` also writes none.",
+  "expected": {
+    "companion_directory": false,
+    "companion_files": [],
+    "harness_sha256": {
+      "AGENTS.md": "ff91e80b66b57744ab5e72d4cdec01b7023508c2e96b83adbf84c46f915cf95f",
+      "arc42.md": "ddff322fe089d9afad1b21c95580ba2f4513ea4eaeb2d1c9426edfe6e0f33ccf",
+      "decisions/0001-invoice.md": "e1a30b33f52f2b1179344906e233f9fdb5876b205e18d523b75628b13376a65b",
+      "decisions/0002-ledger-entry.md": "44d95a3b10862b2872a050980bae4445b3cbc2e60a51cb2e613eb2b8095cbba1",
+      "decisions/0003-glossary.md": "f34bd8d7f4c42a3423ce7c9a1f21692a70201eac751cb29f48787418f0c79f67",
+      "decisions/0004-parcel.md": "aa079630f99ff29dd1ddb4641b074eaeb1ac48eb13dde76ab55d1855ce211383",
+      "diagram.mmd": "545e4380ac4a2536734dbc4b368669c4e05572f94a962dee8a11946edee79d1d",
+      "harness.jsonld": "72f933e2cfa9031f833e1b6a367f0c991598bbe3ca0ec3b247d160e21a171499",
+      "workspace.dsl": "b2778820b172c8288eb3cab927d77aaea49e57e2bae49690ad94f76466afaa59"
+    }
+  },
+  "id": "compose-0033",
+  "input": {
+    "config": {},
+    "fixed": {
+      "base": "https://brief.example/",
+      "bundle_version": "1.4.0",
+      "instant": "2026-09-16T12:34:56Z",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0"
+    },
+    "items": [
+      {
+        "description": "Everything about getting paid.",
+        "slug": "billing",
+        "title": "Billing",
+        "type": "cluster"
+      },
+      {
+        "description": "Everything about moving goods.",
+        "slug": "shipping",
+        "title": "Shipping",
+        "type": "cluster"
+      },
+      {
+        "clusters": [
+          "billing"
+        ],
+        "description": "A request for payment.",
+        "kind": "pattern",
+        "requires": [
+          "parcel"
+        ],
+        "slug": "invoice",
+        "sources": [
+          {
+            "resource": "https://example.org/invoice"
+          }
+        ],
+        "title": "Invoice",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "billing"
+        ],
+        "description": "One line of the books.",
+        "kind": "pattern",
+        "slug": "ledger-entry",
+        "sources": [
+          {
+            "resource": "https://example.org/ledger"
+          }
+        ],
+        "title": "Ledger entry",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "shipping"
+        ],
+        "description": "A thing that ships.",
+        "kind": "pattern",
+        "slug": "parcel",
+        "sources": [
+          {
+            "resource": "https://example.org/parcel"
+          }
+        ],
+        "title": "Parcel",
+        "type": "concept"
+      },
+      {
+        "description": "Words used across both contexts.",
+        "kind": "term",
+        "slug": "glossary",
+        "sources": [
+          {
+            "resource": "https://example.org/glossary"
+          }
+        ],
+        "title": "Glossary",
+        "type": "concept"
+      }
+    ],
+    "selection": [
+      "invoice",
+      "ledger-entry",
+      "glossary"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-30"
+}

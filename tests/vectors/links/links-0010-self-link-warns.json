@@ -1,0 +1,43 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-23: an item whose value for a key other than `requires`, `broader` and `narrower` names the item itself is reported once per key as the warning AGSC-E313, carried by that item. Item `a` names itself under `related` and under `uses` (with an anchor that exists, `a#top`), which are two findings on `a`, one per key; `b` is linked from `a` so neither item is an orphan. Nothing is an error: the edges are still built.",
+  "expected": {
+    "errors": [],
+    "warnings": [
+      {
+        "code": "AGSC-E313",
+        "slug": "a"
+      },
+      {
+        "code": "AGSC-E313",
+        "slug": "a"
+      }
+    ]
+  },
+  "id": "links-0010",
+  "input": {
+    "items": [
+      {
+        "body": "# Top\n",
+        "related": [
+          "a",
+          "b"
+        ],
+        "slug": "a",
+        "type": "concept",
+        "uses": [
+          "a#top"
+        ]
+      },
+      {
+        "slug": "b",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-23"
+}

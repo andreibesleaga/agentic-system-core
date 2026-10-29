@@ -1,0 +1,58 @@
+{
+  "area": "ledger",
+  "description": "AGSC-08-20a as amended for 1.1: a commit's actor is the Signed-off-by local part, else the actor that ledger.actors maps the commit's author_email to, else human:unknown. Derivation with ledger.actors = {ada@example.org: human:ada}: (1) the first commit is signed off by bob@example.org although its author is ada@example.org; the sign-off wins, so human:bob; (2) the second has no sign-off and the author ada@example.org, which the map holds, so human:ada; (3) the third has no sign-off and the author eve@example.org, which the map does not hold, so human:unknown; (4) the fourth carries no author_email at all, which is conforming, so human:unknown. The trailing entry is process:agsc. The addresses are used for the look-up only and appear nowhere in the ledger bytes. Without the map the same history gives human:bob, human:unknown, human:unknown, human:unknown, which is the 1.0 result.",
+  "expected": {
+    "head": "880ea82b8a4fa251562c9b418fa733a2bdcfb21a0485930a7f1283b959137838",
+    "ledger": "{\"actor\":\"human:bob\",\"hash\":\"bdc39ad362f8782cd36fef0e93288348d2337c9ccb09919f50f6c7d8d72c670e\",\"kind\":\"commit\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"1111111111111111111111111111111111111111\",\"ts\":\"2026-01-01T00:00:00Z\"}\n{\"actor\":\"human:ada\",\"hash\":\"4ef48dd6b3ab5d4ad355fda29e2c8a593482d75810f70ce9743c76d560653f5c\",\"kind\":\"commit\",\"prev\":\"bdc39ad362f8782cd36fef0e93288348d2337c9ccb09919f50f6c7d8d72c670e\",\"ref\":\"2222222222222222222222222222222222222222\",\"ts\":\"2026-01-02T00:00:00Z\"}\n{\"actor\":\"human:unknown\",\"hash\":\"8e5b41b73d9c3bff2e39402b7db860975cc2ccd09e71897091d401d648acbe58\",\"kind\":\"commit\",\"prev\":\"4ef48dd6b3ab5d4ad355fda29e2c8a593482d75810f70ce9743c76d560653f5c\",\"ref\":\"3333333333333333333333333333333333333333\",\"ts\":\"2026-01-03T00:00:00Z\"}\n{\"actor\":\"human:unknown\",\"hash\":\"594cd043afee051e98d30ed3964f1542fd7bd9250a3ce4f79e30f1085be8518d\",\"kind\":\"commit\",\"prev\":\"8e5b41b73d9c3bff2e39402b7db860975cc2ccd09e71897091d401d648acbe58\",\"ref\":\"4444444444444444444444444444444444444444\",\"ts\":\"2026-01-04T00:00:00Z\"}\n{\"actor\":\"process:agsc\",\"hash\":\"880ea82b8a4fa251562c9b418fa733a2bdcfb21a0485930a7f1283b959137838\",\"kind\":\"build\",\"prev\":\"594cd043afee051e98d30ed3964f1542fd7bd9250a3ce4f79e30f1085be8518d\",\"ref\":\"4444444444444444444444444444444444444444\",\"ts\":\"2026-01-04T00:00:00Z\"}\n"
+  },
+  "id": "ledger-0009",
+  "input": {
+    "content_tree": "4444444444444444444444444444444444444444",
+    "git_log": [
+      {
+        "author_email": "ada@example.org",
+        "committed_at": "2026-01-01T00:00:00Z",
+        "parents": [],
+        "sha": "1111111111111111111111111111111111111111",
+        "trailers": {
+          "Signed-off-by": "Bob Example <bob@example.org> (CA-v1)"
+        }
+      },
+      {
+        "author_email": "ada@example.org",
+        "committed_at": "2026-01-02T00:00:00Z",
+        "parents": [
+          "1111111111111111111111111111111111111111"
+        ],
+        "sha": "2222222222222222222222222222222222222222",
+        "trailers": {}
+      },
+      {
+        "author_email": "eve@example.org",
+        "committed_at": "2026-01-03T00:00:00Z",
+        "parents": [
+          "2222222222222222222222222222222222222222"
+        ],
+        "sha": "3333333333333333333333333333333333333333",
+        "trailers": {}
+      },
+      {
+        "committed_at": "2026-01-04T00:00:00Z",
+        "parents": [
+          "3333333333333333333333333333333333333333"
+        ],
+        "sha": "4444444444444444444444444444444444444444",
+        "trailers": {}
+      }
+    ],
+    "ledger_actors": {
+      "ada@example.org": "human:ada"
+    }
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767484800,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-20a"
+}

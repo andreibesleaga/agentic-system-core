@@ -1,0 +1,33 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-35, generator G5: the title or an alias of an item of `kind` `term`, found as a whole phrase in the body of another item that has no Link to it, is a `uses` suggestion (a term is never suggested as `related`, so G3 skips it). `user-a` names the term Idempotency key and gets one suggestion; `user-b` also names it but already authors `uses`, so nothing.",
+  "expected": {
+    "file_bytes": {
+      "dist/suggestions.json": "{\"bundle_version\":\"0.0.0+19700101T000000Z\",\"suggestions\":[{\"evidence\":[{\"kind\":\"phrase\",\"phrase\":\"Idempotency key\"}],\"generator\":\"G5\",\"key\":\"uses\",\"source\":\"user-a\",\"target\":\"term-x\"}]}\n"
+    },
+    "lint": {
+      "exit": 0,
+      "findings": []
+    },
+    "written_only_under": "dist"
+  },
+  "id": "lint-0050",
+  "input": {
+    "add_files": {
+      "content/concepts/term-x.md": "---\ntype: concept\ntitle: Idempotency key\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: term\n---\n\nA short definition.\n",
+      "content/concepts/user-a.md": "---\ntype: concept\ntitle: User note a\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nWe send an idempotency key on every request.\n",
+      "content/concepts/user-b.md": "---\ntype: concept\ntitle: User note b\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nuses:\n  - term-x\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nWe send an idempotency key too.\n"
+    },
+    "argv": [
+      "lint",
+      "--suggest"
+    ],
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-35"
+}

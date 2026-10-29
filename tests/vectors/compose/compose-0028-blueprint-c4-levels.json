@@ -1,0 +1,138 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-29: the three C4 levels as Mermaid text (https://c4model.com/): level 1 draws the architecture as the node `system` and, as external nodes, the listed items outside the selection that a member reaches, one edge for each distinct key; level 2 draws the Concepts of the selection in a subgraph named by the architecture's title with the authored Links and the port wiring between them; level 3 draws the other members, `settle-run` here, inside the subgraph of the code-point-least Concept that an authored Link joins it to. Fixture: the saved architecture `order-platform` selects `orders` and `settle-run`; `orders` requires `inventory` (added by closure), uses the listed `email`, is decided by `adr-queue` (as `inventory` is) and produces the port `order-placed`, which `settle-run` consumes; `settle-run` is verified by the listed `settle-check`. The blueprint is written by `compose --from order-platform --brief` and only then, into the `blueprint/` subdirectory of the companion directory, never into the Harness directory (AGSC-07-29); two builds write the same bytes.",
+  "expected": {
+    "file_bytes": {
+      "blueprint/c4-components.mmd": "%% C4 level 3, components (https://c4model.com/)\n%% Harness structure is CC0-1.0 to you; the prose it quotes travels under the Content Use Terms LicenseRef-AgenticSystemCore-Content-Use-1.0 (AGSC-07-16).\n%% selection digest: 9fe01769e105a2bc74ef42c9b79241b642de401fdfc61f97358619d6b26cca80\n%% generated at: 2026-09-16T12:34:56Z\n%% terms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nflowchart LR\n  subgraph ordersc[\"orders\"]\n    c_settle_run[\"settle-run\"]\n  end\n  c_settle_run -->|uses| orders\n  orders -->|produces order-placed| c_settle_run\n",
+      "blueprint/c4-containers.mmd": "%% C4 level 2, containers (https://c4model.com/)\n%% Harness structure is CC0-1.0 to you; the prose it quotes travels under the Content Use Terms LicenseRef-AgenticSystemCore-Content-Use-1.0 (AGSC-07-16).\n%% selection digest: 9fe01769e105a2bc74ef42c9b79241b642de401fdfc61f97358619d6b26cca80\n%% generated at: 2026-09-16T12:34:56Z\n%% terms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nflowchart LR\n  subgraph system[\"Order platform\"]\n    inventory[\"inventory\"]\n    orders[\"orders\"]\n  end\n  orders -->|requires| inventory\n",
+      "blueprint/c4-context.mmd": "%% C4 level 1, system context (https://c4model.com/)\n%% Harness structure is CC0-1.0 to you; the prose it quotes travels under the Content Use Terms LicenseRef-AgenticSystemCore-Content-Use-1.0 (AGSC-07-16).\n%% selection digest: 9fe01769e105a2bc74ef42c9b79241b642de401fdfc61f97358619d6b26cca80\n%% generated at: 2026-09-16T12:34:56Z\n%% terms: LicenseRef-AgenticSystemCore-Content-Use-1.0\nflowchart LR\n  system[\"Order platform\"]\n  c_adr_queue[\"adr-queue\"]\n  email[\"email\"]\n  c_settle_check[\"settle-check\"]\n  system -->|decided-by| c_adr_queue\n  system -->|uses| email\n  system -->|verified-by| c_settle_check\n"
+    }
+  },
+  "id": "compose-0028",
+  "input": {
+    "fixed": {
+      "base": "https://brief.example/",
+      "bundle_version": "1.4.0",
+      "instant": "2026-09-16T12:34:56Z",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0"
+    },
+    "from": "order-platform",
+    "items": [
+      {
+        "body": "The platform.\n\n```yaml agsc-selection\n- orders\n- settle-run\n```\n",
+        "description": "Accepts orders and settles them.",
+        "kind": "architecture",
+        "slug": "order-platform",
+        "sources": [
+          {
+            "resource": "https://example.org/platform"
+          }
+        ],
+        "title": "Order platform",
+        "type": "concept"
+      },
+      {
+        "decided-by": [
+          "adr-queue"
+        ],
+        "description": "Accepts and stores orders.",
+        "kind": "pattern",
+        "produces": [
+          "order-placed"
+        ],
+        "requires": [
+          "inventory"
+        ],
+        "slug": "orders",
+        "sources": [
+          {
+            "resource": "https://example.org/orders"
+          }
+        ],
+        "title": "Orders",
+        "type": "concept",
+        "uses": [
+          "email"
+        ]
+      },
+      {
+        "decided-by": [
+          "adr-queue"
+        ],
+        "description": "Counts stock.",
+        "kind": "pattern",
+        "slug": "inventory",
+        "sources": [
+          {
+            "resource": "https://example.org/inventory"
+          }
+        ],
+        "title": "Inventory",
+        "type": "concept"
+      },
+      {
+        "body": "Settle the orders.\n",
+        "consumes": [
+          "order-placed"
+        ],
+        "description": "Settles the day.",
+        "slug": "settle-run",
+        "sources": [
+          {
+            "resource": "https://example.org/settle"
+          }
+        ],
+        "title": "Settle run",
+        "type": "procedure",
+        "uses": [
+          "orders"
+        ]
+      },
+      {
+        "description": "Checks a settle run.",
+        "slug": "settle-check",
+        "sources": [
+          {
+            "resource": "https://example.org/check"
+          }
+        ],
+        "title": "Settle check",
+        "type": "procedure",
+        "verifies": [
+          "settle-run"
+        ]
+      },
+      {
+        "body": "We use a queue between orders and settlement.\n",
+        "description": "Orders reach settlement through a queue.",
+        "kind": "decision",
+        "slug": "adr-queue",
+        "sources": [
+          {
+            "resource": "https://example.org/adr"
+          }
+        ],
+        "title": "Use a queue",
+        "type": "concept"
+      },
+      {
+        "description": "Sends mail.",
+        "kind": "pattern",
+        "slug": "email",
+        "sources": [
+          {
+            "resource": "https://example.org/email"
+          }
+        ],
+        "title": "Email",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-29"
+}

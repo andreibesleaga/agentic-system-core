@@ -1,0 +1,35 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-35, generator G1: an inline link from `source` to `target` with no Link between the two items, in either direction, is a `related` suggestion with the evidence `mention`. `alpha` links to `beta` and gets one suggestion. `gamma` links to `delta` but already authors `related` toward it, so nothing. `eps` is marked `ai-generated`, so its link is evidence that is ignored. The fixture's own `handoff` and `supervisor` link to each other and are already joined by `uses`, so they give nothing. `lint --suggest` writes only under `dist/`; the content tree is untouched; the content version is that of a Bundle with no git history (AGSC-04-09, AGSC-04-25).",
+  "expected": {
+    "file_bytes": {
+      "dist/suggestions.json": "{\"bundle_version\":\"0.0.0+19700101T000000Z\",\"suggestions\":[{\"evidence\":[{\"kind\":\"mention\"}],\"generator\":\"G1\",\"key\":\"related\",\"source\":\"alpha\",\"target\":\"beta\"}]}\n"
+    },
+    "lint": {
+      "exit": 0,
+      "findings": []
+    },
+    "written_only_under": "dist"
+  },
+  "id": "lint-0046",
+  "input": {
+    "add_files": {
+      "content/concepts/alpha.md": "---\ntype: concept\ntitle: Alpha note\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nThis builds on [the next note](beta) in the series.\n",
+      "content/concepts/beta.md": "---\ntype: concept\ntitle: Beta note\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/delta.md": "---\ntype: concept\ntitle: Delta note\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/eps.md": "---\ntype: concept\ntitle: Epsilon note\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: ai-generated\n  operator: human:tester\n  model: test-model\n  agent: test-agent\nkind: principle\n---\n\nThis points at [the next note](beta) too.\n",
+      "content/concepts/gamma.md": "---\ntype: concept\ntitle: Gamma note\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nrelated:\n  - delta\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nSee [the linked note](delta).\n"
+    },
+    "argv": [
+      "lint",
+      "--suggest"
+    ],
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-35"
+}

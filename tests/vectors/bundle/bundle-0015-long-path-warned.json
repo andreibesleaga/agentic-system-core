@@ -1,0 +1,29 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-40 (c): a file path relative to the Bundle root longer than 200 code points is the warning AGSC-E423. Derivation: content/assets/ is 15 characters, three directories of 60 letters and a slash are 183, so content/assets/ and the three directories make 198; the file a.txt makes 203, which is over the bound, and the file ab makes 200, which is not (the bound is 'longer than 200'). One warning, on the longer path. Exit 0. The warnings for a segment that ends in a space or a period or holds one of the Windows reserved characters have no case here because a Bundle holding such a file name cannot be checked out on Windows, where this case would also be run.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E423",
+          "file": "content/assets/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/a.txt",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0015",
+  "input": {
+    "add_files": {
+      "content/assets/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/a.txt": "a\n",
+      "content/assets/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/ab": "b\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-40"
+}

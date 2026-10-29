@@ -1,0 +1,58 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-26: a `supersedes` target whose status is `stable`, authored or by default (AGSC-02-23), is the warning AGSC-E316, carried by the item that authors the `supersedes`. `n1` supersedes `o1`, which authors no status and so is stable by default; `n2` supersedes `o2`, which authors `status: stable`. Two findings. The warning changes neither item: the hiding step of composition is unchanged. The hub item gives `n1` and `n2` an inbound link.",
+  "expected": {
+    "errors": [],
+    "warnings": [
+      {
+        "code": "AGSC-E316",
+        "slug": "n1"
+      },
+      {
+        "code": "AGSC-E316",
+        "slug": "n2"
+      }
+    ]
+  },
+  "id": "links-0016",
+  "input": {
+    "items": [
+      {
+        "slug": "n1",
+        "supersedes": [
+          "o1"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "o1",
+        "type": "concept"
+      },
+      {
+        "slug": "n2",
+        "supersedes": [
+          "o2"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "o2",
+        "status": "stable",
+        "type": "concept"
+      },
+      {
+        "related": [
+          "n1",
+          "n2"
+        ],
+        "slug": "hub",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-26"
+}

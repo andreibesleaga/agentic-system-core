@@ -1,0 +1,88 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-42: /.well-known/ai-catalog.json (the AI Catalog draft, specVersion \"1.0\", ai-catalog.io/spec, read 2026-10-29 — a draft, not a standard, and not in the IANA well-known registry) is emitted only when discovery.ai_catalog is true. The file is {\"entries\":[…],\"specVersion\":\"1.0\"} in JCS form with one trailing LF; an entry has identifier (urn:air:<host>:knowledge:<bundle.id>, and urn:air:<host>:a2a:<bundle.id> for the card), displayName, type (the media type the discovery document is served with, parameter included; application/a2a-agent-card+json for the card), url, description and digest, written sha256: and the lowercase hex SHA-256 of the exact bytes served at url; entries are in identifier order, so the card entry (a2a) comes before the discovery entry (knowledge). Four cases: the switch on without a card; with a card; the switch off (no file); the switch on with a host that is not a fully qualified domain name (rejected at build, AGSC-E209). The digests are the SHA-256 of the two byte strings of the input. Derived by hand.",
+  "expected": {
+    "cases": [
+      {
+        "file": "{\"entries\":[{\"description\":\"A node of the Agentic Knowledge Web.\",\"digest\":\"sha256:b5bf6e233ec20bbe282b808786bb8530bb2fef37161477af2c9b37037b6c345f\",\"displayName\":\"Example Node\",\"identifier\":\"urn:air:a.example:knowledge:example\",\"type\":\"application/linkset+json; profile=\\\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\\\"\",\"url\":\"https://a.example/.well-known/knowledge-linkset\"}],\"specVersion\":\"1.0\"}\n",
+        "name": "switch-on-no-card"
+      },
+      {
+        "file": "{\"entries\":[{\"description\":\"A node of the Agentic Knowledge Web.\",\"digest\":\"sha256:eb817f216412c70562f8824de9d5f13dece75ebb3622565e1701e3e6698276bc\",\"displayName\":\"Example Node\",\"identifier\":\"urn:air:a.example:a2a:example\",\"type\":\"application/a2a-agent-card+json\",\"url\":\"https://a.example/.well-known/agent-card.json\"},{\"description\":\"A node of the Agentic Knowledge Web.\",\"digest\":\"sha256:b5bf6e233ec20bbe282b808786bb8530bb2fef37161477af2c9b37037b6c345f\",\"displayName\":\"Example Node\",\"identifier\":\"urn:air:a.example:knowledge:example\",\"type\":\"application/linkset+json; profile=\\\"https://w3id.org/agentic-system-core/profile/agentic-knowledge\\\"\",\"url\":\"https://a.example/.well-known/knowledge-linkset\"}],\"specVersion\":\"1.0\"}\n",
+        "name": "switch-on-with-card"
+      },
+      {
+        "file": null,
+        "name": "switch-off"
+      },
+      {
+        "file": null,
+        "findings": [
+          {
+            "code": "AGSC-E209",
+            "severity": "error"
+          }
+        ],
+        "name": "host-is-not-a-domain-name"
+      }
+    ]
+  },
+  "id": "disc-0028",
+  "input": {
+    "cases": [
+      {
+        "ai_catalog": true,
+        "bundle_id": "example",
+        "card_bytes": null,
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "switch-on-no-card",
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        }
+      },
+      {
+        "ai_catalog": true,
+        "bundle_id": "example",
+        "card_bytes": "{\"capabilities\":{},\"name\":\"Example Node\"}\n",
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "switch-on-with-card",
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        }
+      },
+      {
+        "ai_catalog": false,
+        "bundle_id": "example",
+        "card_bytes": null,
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "switch-off",
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        }
+      },
+      {
+        "ai_catalog": true,
+        "bundle_id": "example",
+        "card_bytes": null,
+        "description": "A node of the Agentic Knowledge Web.",
+        "discovery_document_bytes": "{\"linkset\":[{\"anchor\":\"https://a.example/\"}]}\n",
+        "name": "host-is-not-a-domain-name",
+        "site": {
+          "base": "http://localhost:8080/",
+          "title": "Example Node"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-42"
+}

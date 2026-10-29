@@ -1,0 +1,79 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-27: a node with a site vocabulary may state domain links under `domain_links`, and three faults are the error AGSC-E317. `x1` names a member, `owns`, that the vocabulary does not declare; `x2` authors `controlled-by`, the computed inverse of the declared property `controls`; the cluster `x3` uses `relates-to-term`, whose super-property is `skos:related`, which would make a `skos:Collection` a `skos:Concept` (AGSC-05-20). The vocabulary is given as `domain_properties`, each with its local name, the link property it specialises and, where the vocabulary declares them, an inverse or symmetry. The hub item and the cluster membership keep every item from being an orphan.",
+  "expected": {
+    "error": "AGSC-E317",
+    "errors": [
+      "AGSC-E317",
+      "AGSC-E317",
+      "AGSC-E317"
+    ],
+    "warnings": []
+  },
+  "id": "links-0018",
+  "input": {
+    "domain_properties": [
+      {
+        "inverse": "controlled-by",
+        "name": "controls",
+        "super": "uses"
+      },
+      {
+        "name": "relates-to-term",
+        "super": "related",
+        "symmetric": true
+      }
+    ],
+    "items": [
+      {
+        "domain_links": {
+          "owns": [
+            "y1"
+          ]
+        },
+        "slug": "x1",
+        "type": "concept"
+      },
+      {
+        "domain_links": {
+          "controlled-by": [
+            "y1"
+          ]
+        },
+        "slug": "x2",
+        "type": "concept"
+      },
+      {
+        "description": "A cluster that uses a related-type domain link.",
+        "domain_links": {
+          "relates-to-term": [
+            "y1"
+          ]
+        },
+        "slug": "x3",
+        "type": "cluster"
+      },
+      {
+        "slug": "y1",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "x3"
+        ],
+        "related": [
+          "x1",
+          "x2",
+          "y1"
+        ],
+        "slug": "hub",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-27"
+}

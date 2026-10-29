@@ -1,0 +1,38 @@
+{
+  "area": "cli",
+  "description": "WebMCP is one tool contract over two transports (AGSC-09-16), now over ten tools. The ten tools registered through document.modelContext MUST have the same names, the same argument names and results equal as values to the local stdio MCP server's for the same input and Bundle: the seven tools of `cli-0003` and `brief`, `explain` and `check` (AGSC-09-13). The three new tools answer over the listed set and write nothing; the two write tools stay local-only on the browser transport: they return the Proposal payload and perform no network write, and the auto publish mode is unavailable there. Registration is feature-detected, so a page with no document.modelContext still works. The names are asserted in code-point order. This case is the successor of `cli-0003`, which listed seven.",
+  "expected": {
+    "manifests_identical": true,
+    "results_byte_identical": true,
+    "tools": [
+      "ask",
+      "brief",
+      "check",
+      "compose",
+      "explain",
+      "links",
+      "propose",
+      "read",
+      "remember",
+      "search"
+    ],
+    "webmcp_write_tools_local_only": true,
+    "without_model_context": {
+      "page_functional": true,
+      "tools_registered": 0
+    }
+  },
+  "id": "cli-0026",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "transports": [
+      "mcp-stdio",
+      "webmcp"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-16"
+}

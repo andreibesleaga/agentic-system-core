@@ -2,28 +2,7 @@
   "area": "discovery",
   "description": "AGSC-09-93 with AGSC-00-21: a discovery document whose `agsc-spec-version` has the reader's MAJOR and a newer MINOR may use a relation this version does not define; a 1.0 reader ignores it, with the warning AGSC-E506 naming the newer version, and never reports it as AGSC-E209 or AGSC-E202. Another MAJOR has no such tolerance. Derivation, case by case, each document otherwise a complete public Level-2 document (the six bundle facts on the anchor's `describedby` link, the ledger link with its head, and a `digest` on every link, the `rel#brief` link included, so no reader can report a missing digest; digests are not recomputed in this case). (1) `newer-minor`: `agsc-spec-version` is `1.1.0` and the document carries one link under `https://w3id.org/agentic-system-core/rel#brief`, which AGSC-06-10 does not list: the document is valid, with exactly one finding, the warning AGSC-E506. (2) `other-major`: the same document declaring `2.0.0`: the unknown relation is the error AGSC-E209, so the document is invalid, and it is the only finding — a 1.x reader cannot know what a later MAJOR defines, so it judges no attribute of that document against AGSC-00-23 (no AGSC-E210 for `agsc-bundle-version`, which this version defines from MAJOR 1). The reader in both cases is a 1.0 reader.",
   "expected": {
-    "cases": [
-      {
-        "findings": [
-          {
-            "code": "AGSC-E506",
-            "severity": "warn"
-          }
-        ],
-        "name": "newer-minor",
-        "valid": true
-      },
-      {
-        "findings": [
-          {
-            "code": "AGSC-E209",
-            "severity": "error"
-          }
-        ],
-        "name": "other-major",
-        "valid": false
-      }
-    ]
+    "withdrawn": true
   },
   "id": "disc-0019",
   "input": {
@@ -154,9 +133,11 @@
       }
     ]
   },
-  "level": "required",
+  "level": "withdrawn",
   "options": {
     "spec_version": "1.0.0"
   },
-  "rule": "AGSC-09-93"
+  "reason": "Withdrawn for 1.1.0 (2026-10-29). Its first sub-case declared `agsc-spec-version` 1.1.0 and expected a 1.0 reader to find it newer; once the tool under test is 1.1 the document is no longer a newer MINOR and the expectation fails, and the case would fail again at every later MINOR. Superseded by disc-0023: the same two sub-cases with a document at 1.99.0 and a 1.1.0 reader.",
+  "rule": "AGSC-09-93",
+  "superseded_by": "disc-0023"
 }

@@ -1,0 +1,102 @@
+{
+  "area": "import",
+  "description": "AGSC-01-39: the SKOS import maps a thesaurus to items. Derivation over the Turtle file below, with i18n.default en and the operator human:tester. The scheme becomes the cluster taxonomy, titled by its prefLabel. The concept Animal becomes the concept animal of kind term: title from the English prefLabel, aliases [Creature] from the altLabel, description from the definition (77 code points, inside 40 to 200), clusters [taxonomy] from inScheme and topConceptOf, narrower [cat], one source from dcterms:source, and its own IRI kept in x-skos-iri. The concept Cat becomes cat: its definition has 15 code points, outside 40 to 200, so it is written as the first paragraph of the body, no description is written, and that is one warning; broader [animal]. Every item is status draft with prov {origin imported, operator human:tester}, one warning each, so four AGSC-E506 warnings in all (three drafts, one definition in the body) and no error. Items are given as parsed frontmatter and body text, in slug order.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      }
+    ],
+    "items": [
+      {
+        "body": "",
+        "frontmatter": {
+          "aliases": [
+            "Creature"
+          ],
+          "clusters": [
+            "taxonomy"
+          ],
+          "description": "A living organism that feeds on organic matter and can move by its own means.",
+          "kind": "term",
+          "narrower": [
+            "cat"
+          ],
+          "prov": {
+            "operator": "human:tester",
+            "origin": "imported"
+          },
+          "sources": [
+            {
+              "resource": "https://example.org/sources/zoology"
+            }
+          ],
+          "status": "draft",
+          "title": "Animal",
+          "type": "concept",
+          "x-skos-iri": "https://example.org/voc/animal"
+        },
+        "slug": "animal"
+      },
+      {
+        "body": "A small feline.\n",
+        "frontmatter": {
+          "broader": [
+            "animal"
+          ],
+          "clusters": [
+            "taxonomy"
+          ],
+          "kind": "term",
+          "prov": {
+            "operator": "human:tester",
+            "origin": "imported"
+          },
+          "status": "draft",
+          "title": "Cat",
+          "type": "concept",
+          "x-skos-iri": "https://example.org/voc/cat"
+        },
+        "slug": "cat"
+      },
+      {
+        "body": "",
+        "frontmatter": {
+          "prov": {
+            "operator": "human:tester",
+            "origin": "imported"
+          },
+          "status": "draft",
+          "title": "Taxonomy",
+          "type": "cluster",
+          "x-skos-iri": "https://example.org/voc/scheme"
+        },
+        "slug": "taxonomy"
+      }
+    ]
+  },
+  "id": "imp-0006",
+  "input": {
+    "i18n_default": "en",
+    "operator": "human:tester",
+    "turtle": "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n@prefix dcterms: <http://purl.org/dc/terms/> .\n@prefix ex: <https://example.org/voc/> .\n\nex:scheme a skos:ConceptScheme ;\n  skos:prefLabel \"Taxonomy\"@en .\n\nex:animal a skos:Concept ;\n  skos:inScheme ex:scheme ;\n  skos:topConceptOf ex:scheme ;\n  skos:prefLabel \"Animal\"@en ;\n  skos:altLabel \"Creature\"@en ;\n  skos:definition \"A living organism that feeds on organic matter and can move by its own means.\"@en ;\n  skos:narrower ex:cat ;\n  dcterms:source <https://example.org/sources/zoology> .\n\nex:cat a skos:Concept ;\n  skos:inScheme ex:scheme ;\n  skos:prefLabel \"Cat\"@en ;\n  skos:broader ex:animal ;\n  skos:definition \"A small feline.\"@en .\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-39"
+}

@@ -1,0 +1,56 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-19 (1): under MCP revision 2026-07-28 there is no `initialize`: a request carries its revision and capabilities in `_meta`, and `server/discover` is implemented. The frames contain one request, `server/discover`, with `_meta` and no handshake before it. The result is `{resultType: \"complete\", supportedVersions, capabilities, ttlMs, cacheScope, _meta}`: `supportedVersions` is `[\"2026-07-28\", \"2025-11-25\"]` on standard input and output (a client of the earlier revision is still served there); `capabilities` carries `prompts`, `resources` and `tools` and the `extensions` map with `com.agenticsystemcore/knowledge` and its settings object, whose one member `linkset` is the absolute URL of the node's `/.well-known/knowledge-linkset` (AGSC-11-18; the fixture's `site.base` is `https://minimal.example/`); `ttlMs` is 0 and `cacheScope` is `private`; `_meta` names the server. Only the members stated here are compared. Derived from the revision's `server/discover` page read on 2026-10-29.",
+  "expected": {
+    "responses": [
+      {
+        "id": 1,
+        "result": {
+          "cacheScope": "private",
+          "capabilities": {
+            "extensions": {
+              "com.agenticsystemcore/knowledge": {
+                "linkset": "https://minimal.example/.well-known/knowledge-linkset"
+              }
+            },
+            "prompts": {},
+            "resources": {},
+            "tools": {}
+          },
+          "resultType": "complete",
+          "supportedVersions": [
+            "2026-07-28",
+            "2025-11-25"
+          ],
+          "ttlMs": 0
+        }
+      }
+    ]
+  },
+  "id": "cli-0032",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "frames": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "server/discover",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "conformance",
+              "version": "0"
+            },
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+          }
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-19"
+}

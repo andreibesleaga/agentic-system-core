@@ -1,0 +1,42 @@
+{
+  "area": "build",
+  "description": "AGSC-06-22 with AGSC-11-20: the line that /now/ and /now.md carry is `content version <bundle_version>, built at <instant>, fingerprint <bundle-hash>, specification <spec_version>` on a public node; on a restricted node it is `built at <instant>, specification <spec_version>`, because the content version and the fingerprint are facts that AGSC-11-20 keeps out of the discovery document and no file anyone may read can carry them. Two nodes with the same facts, public and restricted. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "line": "content version v1.4.0, built at 2026-09-16T00:00:00Z, fingerprint bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, specification 1.0.0",
+        "name": "public"
+      },
+      {
+        "line": "built at 2026-09-16T00:00:00Z, specification 1.0.0",
+        "name": "restricted"
+      }
+    ]
+  },
+  "id": "build-0036",
+  "input": {
+    "cases": [
+      {
+        "bundle_version": "v1.4.0",
+        "fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "instant": "2026-09-16T00:00:00Z",
+        "name": "public",
+        "spec_version": "1.0.0",
+        "visibility": "public"
+      },
+      {
+        "bundle_version": "v1.4.0",
+        "fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "instant": "2026-09-16T00:00:00Z",
+        "name": "restricted",
+        "spec_version": "1.0.0",
+        "visibility": "restricted"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-22"
+}

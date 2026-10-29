@@ -1,0 +1,195 @@
+{
+  "area": "chunks",
+  "description": "AGSC-06-44 with AGSC-06-29: the licence URL of a node is bundle.license_url when configured (a URL that names a specific version of the licence), else the absolute URL of /legal/ when bundle.license_prose is the Content Use Terms identifier and the node emits /legal/, else none; every chunk carries it as license_url, and the license and terms members are unchanged. The member content_digest is present only when chunks.content_digest is true, and then holds the SHA-256 of the same bytes as digest in the RFC 9530 form sha-256=:<base64>: (RFC 9651 Byte Sequence); digest stays the bare lowercase hex and the two name the same hash. Four cases: a configured URL; the /legal/ URL; no URL (the node has another prose licence and no URL); and the content_digest switch on. Derived by hand with hashlib.",
+  "expected": {
+    "cases": [
+      {
+        "lines": [
+          {
+            "digest": "e11941718f69365cb49291703e72327f1091042b1350ab1bd795a43359794f30",
+            "id": "32b959431fa25696a5107491217eafe60a44cb920385b9e4f22be189082d2b97",
+            "iri": "https://a.example/concepts/one/",
+            "item": "one",
+            "kind": "concept",
+            "license": "CC-BY-4.0",
+            "license_url": "https://creativecommons.org/licenses/by/4.0/",
+            "ordinal": 0,
+            "section": "",
+            "subkind": "pattern",
+            "terms": "CC-BY-4.0",
+            "text": "Intro.\n",
+            "title": "One",
+            "trust": "untrusted",
+            "type": "text"
+          }
+        ],
+        "name": "configured-url"
+      },
+      {
+        "lines": [
+          {
+            "digest": "e11941718f69365cb49291703e72327f1091042b1350ab1bd795a43359794f30",
+            "id": "32b959431fa25696a5107491217eafe60a44cb920385b9e4f22be189082d2b97",
+            "iri": "https://a.example/concepts/one/",
+            "item": "one",
+            "kind": "concept",
+            "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+            "license_url": "https://a.example/legal/",
+            "ordinal": 0,
+            "section": "",
+            "subkind": "pattern",
+            "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+            "text": "Intro.\n",
+            "title": "One",
+            "trust": "untrusted",
+            "type": "text"
+          }
+        ],
+        "name": "legal-page-url"
+      },
+      {
+        "lines": [
+          {
+            "digest": "e11941718f69365cb49291703e72327f1091042b1350ab1bd795a43359794f30",
+            "id": "32b959431fa25696a5107491217eafe60a44cb920385b9e4f22be189082d2b97",
+            "iri": "https://a.example/concepts/one/",
+            "item": "one",
+            "kind": "concept",
+            "license": "CC-BY-4.0",
+            "ordinal": 0,
+            "section": "",
+            "subkind": "pattern",
+            "terms": "CC-BY-4.0",
+            "text": "Intro.\n",
+            "title": "One",
+            "trust": "untrusted",
+            "type": "text"
+          }
+        ],
+        "name": "no-url"
+      },
+      {
+        "lines": [
+          {
+            "content_digest": "sha-256=:4RlBcY9pNly0kpFwPnIyfxCRBCsTUKsb15WkM1l5TzA=:",
+            "digest": "e11941718f69365cb49291703e72327f1091042b1350ab1bd795a43359794f30",
+            "id": "32b959431fa25696a5107491217eafe60a44cb920385b9e4f22be189082d2b97",
+            "iri": "https://a.example/concepts/one/",
+            "item": "one",
+            "kind": "concept",
+            "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+            "ordinal": 0,
+            "section": "",
+            "subkind": "pattern",
+            "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+            "text": "Intro.\n",
+            "title": "One",
+            "trust": "untrusted",
+            "type": "text"
+          }
+        ],
+        "name": "content-digest-on"
+      }
+    ]
+  },
+  "id": "chk-0015",
+  "input": {
+    "cases": [
+      {
+        "bundle": {
+          "license_prose": "CC-BY-4.0",
+          "license_url": "https://creativecommons.org/licenses/by/4.0/"
+        },
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [
+          {
+            "body": "Intro.\n",
+            "kind": "pattern",
+            "slug": "one",
+            "title": "One",
+            "type": "concept"
+          }
+        ],
+        "legal_emitted": false,
+        "name": "configured-url",
+        "site": {
+          "base": "https://a.example/"
+        }
+      },
+      {
+        "bundle": {
+          "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+        },
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [
+          {
+            "body": "Intro.\n",
+            "kind": "pattern",
+            "slug": "one",
+            "title": "One",
+            "type": "concept"
+          }
+        ],
+        "legal_emitted": true,
+        "name": "legal-page-url",
+        "site": {
+          "base": "https://a.example/"
+        }
+      },
+      {
+        "bundle": {
+          "license_prose": "CC-BY-4.0"
+        },
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [
+          {
+            "body": "Intro.\n",
+            "kind": "pattern",
+            "slug": "one",
+            "title": "One",
+            "type": "concept"
+          }
+        ],
+        "legal_emitted": false,
+        "name": "no-url",
+        "site": {
+          "base": "https://a.example/"
+        }
+      },
+      {
+        "bundle": {
+          "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+        },
+        "chunks": {
+          "content_digest": true,
+          "max_bytes": 4096
+        },
+        "items": [
+          {
+            "body": "Intro.\n",
+            "kind": "pattern",
+            "slug": "one",
+            "title": "One",
+            "type": "concept"
+          }
+        ],
+        "legal_emitted": false,
+        "name": "content-digest-on",
+        "site": {
+          "base": "https://a.example/"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-44"
+}

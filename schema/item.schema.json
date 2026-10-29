@@ -199,6 +199,48 @@
         },
         "additionalProperties": false
       }
+    },
+    "domain_type": {
+      "description": "AGSC-02-25: local name of a class of the node's vocabulary file (AGSC-05-38); within the item's context it names the class under that context's namespace. Added at 1.1. A name that no class carries is AGSC-E418, which lint reports because the schema cannot see the vocabulary file.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "domain_role": {
+      "description": "AGSC-02-25: the role of the item in its domain (Evans, Domain-Driven Design, 2003). Added at 1.1. A value outside the list is AGSC-E203.",
+      "enum": [
+        "aggregate-root",
+        "entity",
+        "value-object",
+        "domain-event",
+        "policy"
+      ]
+    },
+    "domain_context": {
+      "description": "AGSC-02-25: slug of a cluster that domain.contexts declares as a context (AGSC-08-32). Added at 1.1. A slug that names no declared context is AGSC-E418, which lint reports because the schema cannot see the configuration.",
+      "$ref": "#/$defs/slug"
+    },
+    "warrant": {
+      "description": "AGSC-02-25: what grounds the term. source is REQUIRED, a non-empty single-line string; type is REQUIRED, one of the three kinds of warrant of ANSI/NISO Z39.19-2005 (R2010). A violation is AGSC-E512. Unknown members are preserved. Added at 1.1.",
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "source",
+        "type"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/single_line",
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "literary",
+            "user",
+            "organisational"
+          ]
+        }
+      }
     }
   },
   "oneOf": [

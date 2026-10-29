@@ -1,0 +1,37 @@
+{
+  "area": "import",
+  "description": "AGSC-01-22 as amended for 1.1: every item an import writes from a source this node does not own is written with status draft, whatever its licence and whatever status the source gave it, and reported once as AGSC-E506. Derivation over one OKF document that declares an established licence, CC0-1.0, and the status stable: before 1.1 it kept status stable and drew no warning; now the mapped frontmatter carries status draft, keeps the licence, and there is exactly one AGSC-E506 warning, for the draft status, and no error.",
+  "expected": {
+    "error_count": 0,
+    "findings": [
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      }
+    ],
+    "frontmatter_has": {
+      "license": "CC0-1.0",
+      "status": "draft"
+    },
+    "keys_absent": []
+  },
+  "id": "imp-0005",
+  "input": {
+    "frontmatter": {
+      "license": "CC0-1.0",
+      "prov": {
+        "operator": "human:tester",
+        "origin": "imported"
+      },
+      "status": "stable",
+      "title": "Licensed record",
+      "type": "concept"
+    },
+    "path": "licensed.md"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-22"
+}

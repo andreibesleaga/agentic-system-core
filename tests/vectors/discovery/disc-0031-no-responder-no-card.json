@@ -1,0 +1,125 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-34 with AGSC-06-07: the card is emitted only when the node declares both a2a-card and a responder surface. Three nodes: a2a-card declared and no responder (no card is emitted, and the declaration is a card without an endpoint, reported as AGSC-E210); a responder declared and no a2a-card (no card, no finding); neither (no card, no finding). A read-only local MCP tool server declares no responder and makes no node eligible. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "file": null,
+        "findings": [
+          {
+            "code": "AGSC-E210",
+            "severity": "error"
+          }
+        ],
+        "name": "card-without-responder"
+      },
+      {
+        "file": null,
+        "findings": [],
+        "name": "responder-without-card"
+      },
+      {
+        "file": null,
+        "findings": [],
+        "name": "neither"
+      }
+    ]
+  },
+  "id": "disc-0031",
+  "input": {
+    "cases": [
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "card-without-responder",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [
+          {
+            "access": "none",
+            "surface": "a2a-card",
+            "target": "https://a.example/.well-known/agent-card.json",
+            "version": "1.0"
+          }
+        ],
+        "visibility": "public"
+      },
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "responder-without-card",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [
+          {
+            "access": "consent",
+            "binding": "HTTP+JSON",
+            "surface": "responder",
+            "target": "https://a.example/a2a",
+            "version": "a2a:1.0"
+          }
+        ],
+        "visibility": "public"
+      },
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "neither",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [],
+        "visibility": "public"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-34"
+}

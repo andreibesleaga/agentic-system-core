@@ -1,0 +1,192 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-26: the order of the survivors in `brief.json` (`order`). Expected values are derived by hand from the rule: a member comes after the targets of its `requires`, `broader` and `derived-from` edges (authored or computed), and among the members all of whose predecessors are taken the least slug by code point goes next. `precedence-then-code-point`: `alpha` is free and least, so it is first; then `lib`, the least of the free members `lib`, `root`, `source-note` and `zeta`, which frees `app`; then `app`, `root` (which frees `leaf`), `leaf`, `source-note` (which frees `report`), `report` and `zeta`. `the-input-order-does-not-reach-the-order` gives the same selection reversed and expects the same order (AGSC-07-09). `a-cycle-across-two-keys-takes-the-least-slug`: `x` derived-from `y` puts `y` first and `y` broader `x` puts `x` first, a cycle through two keys that AGSC-03-07 and AGSC-03-08 do not refuse; `z` is free and goes first, then no member is available, so the least slug left, `x`, is taken, then `y`. The phrase of the plan is dependency order, not a reading order.",
+  "expected": {
+    "cases": [
+      {
+        "name": "precedence-then-code-point",
+        "order": [
+          "alpha",
+          "lib",
+          "app",
+          "root",
+          "leaf",
+          "source-note",
+          "report",
+          "zeta"
+        ]
+      },
+      {
+        "name": "the-input-order-does-not-reach-the-order",
+        "order": [
+          "alpha",
+          "lib",
+          "app",
+          "root",
+          "leaf",
+          "source-note",
+          "report",
+          "zeta"
+        ]
+      },
+      {
+        "name": "a-cycle-across-two-keys-takes-the-least-slug",
+        "order": [
+          "z",
+          "x",
+          "y"
+        ]
+      }
+    ]
+  },
+  "id": "compose-0025",
+  "input": {
+    "cases": [
+      {
+        "items": [
+          {
+            "requires": [
+              "lib"
+            ],
+            "slug": "app",
+            "type": "concept"
+          },
+          {
+            "slug": "lib",
+            "type": "concept"
+          },
+          {
+            "broader": [
+              "root"
+            ],
+            "slug": "leaf",
+            "type": "concept"
+          },
+          {
+            "slug": "root",
+            "type": "concept"
+          },
+          {
+            "derived-from": [
+              "source-note"
+            ],
+            "slug": "report",
+            "type": "concept"
+          },
+          {
+            "slug": "source-note",
+            "type": "concept"
+          },
+          {
+            "slug": "alpha",
+            "type": "concept"
+          },
+          {
+            "slug": "zeta",
+            "type": "concept"
+          }
+        ],
+        "name": "precedence-then-code-point",
+        "selection": [
+          "zeta",
+          "report",
+          "leaf",
+          "app",
+          "alpha",
+          "source-note",
+          "root",
+          "lib"
+        ]
+      },
+      {
+        "items": [
+          {
+            "requires": [
+              "lib"
+            ],
+            "slug": "app",
+            "type": "concept"
+          },
+          {
+            "slug": "lib",
+            "type": "concept"
+          },
+          {
+            "broader": [
+              "root"
+            ],
+            "slug": "leaf",
+            "type": "concept"
+          },
+          {
+            "slug": "root",
+            "type": "concept"
+          },
+          {
+            "derived-from": [
+              "source-note"
+            ],
+            "slug": "report",
+            "type": "concept"
+          },
+          {
+            "slug": "source-note",
+            "type": "concept"
+          },
+          {
+            "slug": "alpha",
+            "type": "concept"
+          },
+          {
+            "slug": "zeta",
+            "type": "concept"
+          }
+        ],
+        "name": "the-input-order-does-not-reach-the-order",
+        "selection": [
+          "lib",
+          "root",
+          "source-note",
+          "alpha",
+          "app",
+          "leaf",
+          "report",
+          "zeta"
+        ]
+      },
+      {
+        "items": [
+          {
+            "derived-from": [
+              "y"
+            ],
+            "slug": "x",
+            "type": "concept"
+          },
+          {
+            "broader": [
+              "x"
+            ],
+            "slug": "y",
+            "type": "concept"
+          },
+          {
+            "slug": "z",
+            "type": "concept"
+          }
+        ],
+        "name": "a-cycle-across-two-keys-takes-the-least-slug",
+        "selection": [
+          "y",
+          "z",
+          "x"
+        ]
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-07-26"
+}

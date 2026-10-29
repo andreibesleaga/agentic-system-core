@@ -1,0 +1,63 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-26, near misses: a `supersedes` whose target is `deprecated`, `retired` or `draft` raises nothing. The first two already say they are replaced (AGSC-11-22 admits a retired target without a warning), and a draft is on no published surface (AGSC-06-30). The hub item gives the superseding items an inbound link.",
+  "expected": {
+    "errors": [],
+    "warnings": []
+  },
+  "id": "links-0017",
+  "input": {
+    "items": [
+      {
+        "slug": "n3",
+        "supersedes": [
+          "o3"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "o3",
+        "status": "deprecated",
+        "type": "concept"
+      },
+      {
+        "slug": "n4",
+        "supersedes": [
+          "o4"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "o4",
+        "status": "retired",
+        "type": "concept"
+      },
+      {
+        "slug": "n5",
+        "supersedes": [
+          "o5"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "o5",
+        "status": "draft",
+        "type": "concept"
+      },
+      {
+        "related": [
+          "n3",
+          "n4",
+          "n5"
+        ],
+        "slug": "hub",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-26"
+}

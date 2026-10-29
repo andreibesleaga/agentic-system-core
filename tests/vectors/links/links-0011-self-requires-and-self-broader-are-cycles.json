@@ -1,0 +1,46 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-23, near miss: a self-`requires` is the cycle error AGSC-E302 (AGSC-03-07) and a self-`broader` on a cluster is the cycle error AGSC-E303 (AGSC-03-08), and neither also raises AGSC-E313. Item `r` requires itself, cluster `k` names itself as its broader; `f` relates to `r` and lists `k` so that neither is an orphan. The two cycle errors are the only findings, so the list of warnings is empty.",
+  "expected": {
+    "errors": [
+      "AGSC-E302",
+      "AGSC-E303"
+    ],
+    "warnings": []
+  },
+  "id": "links-0011",
+  "input": {
+    "items": [
+      {
+        "requires": [
+          "r"
+        ],
+        "slug": "r",
+        "type": "concept"
+      },
+      {
+        "broader": [
+          "k"
+        ],
+        "description": "A cluster that names itself.",
+        "slug": "k",
+        "type": "cluster"
+      },
+      {
+        "clusters": [
+          "k"
+        ],
+        "related": [
+          "r"
+        ],
+        "slug": "f",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-23"
+}

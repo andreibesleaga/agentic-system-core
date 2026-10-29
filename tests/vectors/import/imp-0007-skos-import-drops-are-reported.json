@@ -1,0 +1,135 @@
+{
+  "area": "import",
+  "description": "AGSC-01-39: what the SKOS import cannot carry is dropped, and each dropped statement is one AGSC-E506 warning naming its subject and predicate. Derivation over the file of imp-0006 with Cat changed: a second prefLabel in French (dropped; the English one is the title), a notation, a scope note, a skos:exactMatch to another thesaurus, a skos:broader whose object ex:missing is no concept of the file, and a definition now long enough (70 code points) to be the description; and ex:Thing, an owl:Class, which is none of concept, scheme or collection and whose one statement is dropped. Six dropped statements and three draft warnings, nine AGSC-E506 in all, no error. The broader Link keeps animal only; the items are those of imp-0006 except that cat has the description and an empty body.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "predicate": "http://www.w3.org/2004/02/skos/core#prefLabel",
+        "severity": "warn",
+        "subject": "https://example.org/voc/cat"
+      },
+      {
+        "code": "AGSC-E506",
+        "predicate": "http://www.w3.org/2004/02/skos/core#notation",
+        "severity": "warn",
+        "subject": "https://example.org/voc/cat"
+      },
+      {
+        "code": "AGSC-E506",
+        "predicate": "http://www.w3.org/2004/02/skos/core#scopeNote",
+        "severity": "warn",
+        "subject": "https://example.org/voc/cat"
+      },
+      {
+        "code": "AGSC-E506",
+        "predicate": "http://www.w3.org/2004/02/skos/core#exactMatch",
+        "severity": "warn",
+        "subject": "https://example.org/voc/cat"
+      },
+      {
+        "code": "AGSC-E506",
+        "predicate": "http://www.w3.org/2004/02/skos/core#broader",
+        "severity": "warn",
+        "subject": "https://example.org/voc/cat"
+      },
+      {
+        "code": "AGSC-E506",
+        "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+        "severity": "warn",
+        "subject": "https://example.org/voc/Thing"
+      }
+    ],
+    "items": [
+      {
+        "body": "",
+        "frontmatter": {
+          "aliases": [
+            "Creature"
+          ],
+          "clusters": [
+            "taxonomy"
+          ],
+          "description": "A living organism that feeds on organic matter and can move by its own means.",
+          "kind": "term",
+          "narrower": [
+            "cat"
+          ],
+          "prov": {
+            "operator": "human:tester",
+            "origin": "imported"
+          },
+          "sources": [
+            {
+              "resource": "https://example.org/sources/zoology"
+            }
+          ],
+          "status": "draft",
+          "title": "Animal",
+          "type": "concept",
+          "x-skos-iri": "https://example.org/voc/animal"
+        },
+        "slug": "animal"
+      },
+      {
+        "body": "",
+        "frontmatter": {
+          "broader": [
+            "animal"
+          ],
+          "clusters": [
+            "taxonomy"
+          ],
+          "description": "A small domesticated feline kept as a pet or to control mice and rats.",
+          "kind": "term",
+          "prov": {
+            "operator": "human:tester",
+            "origin": "imported"
+          },
+          "status": "draft",
+          "title": "Cat",
+          "type": "concept",
+          "x-skos-iri": "https://example.org/voc/cat"
+        },
+        "slug": "cat"
+      },
+      {
+        "body": "",
+        "frontmatter": {
+          "prov": {
+            "operator": "human:tester",
+            "origin": "imported"
+          },
+          "status": "draft",
+          "title": "Taxonomy",
+          "type": "cluster",
+          "x-skos-iri": "https://example.org/voc/scheme"
+        },
+        "slug": "taxonomy"
+      }
+    ]
+  },
+  "id": "imp-0007",
+  "input": {
+    "i18n_default": "en",
+    "operator": "human:tester",
+    "turtle": "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n@prefix dcterms: <http://purl.org/dc/terms/> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix ex: <https://example.org/voc/> .\n\nex:scheme a skos:ConceptScheme ;\n  skos:prefLabel \"Taxonomy\"@en .\n\nex:animal a skos:Concept ;\n  skos:inScheme ex:scheme ;\n  skos:topConceptOf ex:scheme ;\n  skos:prefLabel \"Animal\"@en ;\n  skos:altLabel \"Creature\"@en ;\n  skos:definition \"A living organism that feeds on organic matter and can move by its own means.\"@en ;\n  skos:narrower ex:cat ;\n  dcterms:source <https://example.org/sources/zoology> .\n\nex:cat a skos:Concept ;\n  skos:inScheme ex:scheme ;\n  skos:prefLabel \"Cat\"@en, \"Chat\"@fr ;\n  skos:notation \"C-1\" ;\n  skos:scopeNote \"Domestic cats only.\"@en ;\n  skos:exactMatch <https://other.example/voc/cat> ;\n  skos:broader ex:animal, ex:missing ;\n  skos:definition \"A small domesticated feline kept as a pet or to control mice and rats.\"@en .\n\nex:Thing a owl:Class .\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-39"
+}

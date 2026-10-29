@@ -1,0 +1,124 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-13 (the domain parts) for a node that uses the domain layer: a `search` hit and the body of a `read` answer carry `domain` — an object with the members `context`, `role`, `type` and `warrant` that the item states — and the `brief` tool's `items` entries carry it too (AGSC-07-25). An item that states none (`note`) has no `domain` member in any answer, so that an answer about it has the bytes it has on a node without the layer. The values are those of the item's own keys: `domain_context`, `domain_role`, `domain_type` and `warrant` (AGSC-02-25, AGSC-05-40). The same value comes from the page tools over the listed set (AGSC-09-16).",
+  "expected": {
+    "results": [
+      {
+        "domain_of_hits": {
+          "invoice": {
+            "context": "billing",
+            "role": "aggregate-root",
+            "type": "Invoice",
+            "warrant": {
+              "source": "https://example.org/invoice",
+              "type": "literary"
+            }
+          }
+        },
+        "tool": "search"
+      },
+      {
+        "domain": {
+          "context": "billing",
+          "role": "aggregate-root",
+          "type": "Invoice",
+          "warrant": {
+            "source": "https://example.org/invoice",
+            "type": "literary"
+          }
+        },
+        "tool": "read"
+      },
+      {
+        "domain_absent": true,
+        "tool": "read"
+      },
+      {
+        "brief_items_domain": {
+          "invoice": {
+            "context": "billing",
+            "role": "aggregate-root",
+            "type": "Invoice",
+            "warrant": {
+              "source": "https://example.org/invoice",
+              "type": "literary"
+            }
+          }
+        },
+        "tool": "brief"
+      }
+    ],
+    "transports_equal": true
+  },
+  "id": "cli-0037",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+    },
+    "calls": [
+      {
+        "arguments": {
+          "query": "payment"
+        },
+        "tool": "search"
+      },
+      {
+        "arguments": {
+          "slug": "invoice"
+        },
+        "tool": "read"
+      },
+      {
+        "arguments": {
+          "slug": "note"
+        },
+        "tool": "read"
+      },
+      {
+        "arguments": {
+          "selection": [
+            "invoice",
+            "note"
+          ]
+        },
+        "tool": "brief"
+      }
+    ],
+    "items": [
+      {
+        "body": "An invoice asks for payment.\n",
+        "description": "A request for payment, issued once.",
+        "domain_context": "billing",
+        "domain_role": "aggregate-root",
+        "domain_type": "Invoice",
+        "kind": "pattern",
+        "slug": "invoice",
+        "sources": [
+          {
+            "resource": "https://example.org/invoice"
+          }
+        ],
+        "title": "Invoice",
+        "type": "concept",
+        "warrant": {
+          "source": "https://example.org/invoice",
+          "type": "literary"
+        }
+      },
+      {
+        "body": "A note.\n",
+        "description": "A note that states no domain key at all.",
+        "kind": "explainer",
+        "slug": "note",
+        "title": "Note",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-13"
+}

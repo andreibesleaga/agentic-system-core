@@ -1,0 +1,51 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-42: arrow, line and text take the token rel=KEY, KEY one of the fourteen Link keys of AGSC-03-01, which adds a class and no colour (the hook of the graph view of AGSC-06-38). Derivation, case by case; every byte other than the class is what the 1.0.1 engine compiles for the same source without the token, and the class stands where the accent would. (1) arrow a b and text uses carry rel=uses, the accent is on box a: the arrow gets class=\"agsc-rel-uses\" after its marker-end and the text gets the class after font-size. (2) the accent is on the arrow itself together with rel=uses: one class attribute holding both values, agsc-accent first, followed by stroke-width=\"2.2\". (3) rel=friend names no Link key: AGSC-E412 and no SVG. The expected documents of (1) and (2) are the 1.0.1 compilations of the sources with the token removed, edited by hand at the one place the rule names; no engine produces them yet.",
+  "expected": {
+    "cases": [
+      {
+        "name": "rel-beside-the-accent",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 100\" role=\"img\" aria-labelledby=\"rel-title rel-desc\" font-family=\"system-ui, sans-serif\" font-size=\"14\">\n  <title id=\"rel-title\">rel diagram</title>\n  <desc id=\"rel-desc\">rel diagram. A line drawing; the highlighted element carries the accent.</desc>\n  <defs><marker id=\"rel-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0 0 L10 5 L0 10 z\" fill=\"currentColor\"/></marker></defs>\n  <g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\">\n    <rect x=\"20\" y=\"20\" width=\"60\" height=\"30\" rx=\"6\" class=\"agsc-accent\" stroke-width=\"2.2\"/>\n    <rect x=\"120\" y=\"20\" width=\"60\" height=\"30\" rx=\"6\"/>\n    <path d=\"M84 35 L116 35\" marker-end=\"url(#rel-arrow)\" class=\"agsc-rel-uses\"/>\n  </g>\n  <g fill=\"currentColor\" text-anchor=\"middle\">\n    <text x=\"50\" y=\"39\" font-size=\"12\">A</text>\n    <text x=\"150\" y=\"39\" font-size=\"12\">B</text>\n    <text x=\"100\" y=\"80\" font-size=\"11\" class=\"agsc-rel-uses\">uses</text>\n  </g>\n</svg>\n"
+      },
+      {
+        "name": "rel-with-the-accent",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 100\" role=\"img\" aria-labelledby=\"rel-title rel-desc\" font-family=\"system-ui, sans-serif\" font-size=\"14\">\n  <title id=\"rel-title\">rel diagram</title>\n  <desc id=\"rel-desc\">rel diagram. A line drawing; the highlighted element carries the accent.</desc>\n  <defs><marker id=\"rel-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0 0 L10 5 L0 10 z\" fill=\"currentColor\"/></marker></defs>\n  <g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\">\n    <rect x=\"20\" y=\"20\" width=\"60\" height=\"30\" rx=\"6\"/>\n    <rect x=\"120\" y=\"20\" width=\"60\" height=\"30\" rx=\"6\"/>\n    <path d=\"M84 35 L116 35\" marker-end=\"url(#rel-arrow)\" class=\"agsc-accent agsc-rel-uses\" stroke-width=\"2.2\"/>\n  </g>\n  <g fill=\"currentColor\" text-anchor=\"middle\">\n    <text x=\"50\" y=\"39\" font-size=\"12\">A</text>\n    <text x=\"150\" y=\"39\" font-size=\"12\">B</text>\n  </g>\n</svg>\n"
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E412",
+            "severity": "error"
+          }
+        ],
+        "name": "rel-names-no-link-key",
+        "svg": null
+      }
+    ]
+  },
+  "id": "bundle-0019",
+  "input": {
+    "cases": [
+      {
+        "name": "rel-beside-the-accent",
+        "slug": "rel",
+        "source": "canvas 200 100\nbox a 20 20 60 30 \"A\" acc\nbox b 120 20 60 30 \"B\"\narrow a b rel=uses\ntext 100 80 \"uses\" rel=uses\n"
+      },
+      {
+        "name": "rel-with-the-accent",
+        "slug": "rel",
+        "source": "canvas 200 100\nbox a 20 20 60 30 \"A\"\nbox b 120 20 60 30 \"B\"\narrow a b acc rel=uses\n"
+      },
+      {
+        "name": "rel-names-no-link-key",
+        "slug": "rel",
+        "source": "canvas 200 100\nbox a 20 20 60 30 \"A\" acc\nbox b 120 20 60 30 \"B\"\narrow a b rel=friend\ntext 100 80 \"uses\"\n"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-42"
+}

@@ -1,0 +1,156 @@
+{
+  "area": "import",
+  "description": "AGSC-01-22 as amended for 1.1: import tolerance has one limit and one record, and every item an import writes from a source this node does not own arrives as a draft with one AGSC-E506 warning. This case replaces imp-0002, which called 1.1.0 a newer MINOR; 1.99.0 stays newer for every 1.x tool. Derivation, case by case. (1) newer-minor-imported: the source declares 1.99.0, the tool's MAJOR and a newer MINOR, so the import proceeds, exits 0, writes the item and reports two AGSC-E506 warnings, one naming the newer version and one naming the draft status; the item carries prov.source_version and prov.source_hash taken verbatim from the source and prov.origin imported. (2) other-major-refused: a source declaring 2.0.0 is refused before anything is written, AGSC-E004, exit 2, and --dry-run reports the same. (3) allow-newer-writes: the same 2.0.0 source with the adapter's own --allow-newer flag is imported, and the one warning is the draft status. (4) source-states-neither: a source that publishes no content version and no bundle hash yields an item with both members absent, and again the one warning is the draft status. Every item written is status draft.",
+  "expected": {
+    "cases": [
+      {
+        "exit": 0,
+        "findings": [
+          {
+            "code": "AGSC-E506",
+            "severity": "warn"
+          },
+          {
+            "code": "AGSC-E506",
+            "severity": "warn"
+          }
+        ],
+        "name": "newer-minor-imported",
+        "prov": {
+          "origin": "imported",
+          "source_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source_version": "v9.0.0"
+        },
+        "status": "draft",
+        "written": [
+          "router"
+        ]
+      },
+      {
+        "dry_run_reports_the_same": true,
+        "exit": 2,
+        "findings": [
+          {
+            "code": "AGSC-E004",
+            "severity": "error"
+          }
+        ],
+        "name": "other-major-refused",
+        "written": []
+      },
+      {
+        "exit": 0,
+        "findings": [
+          {
+            "code": "AGSC-E506",
+            "severity": "warn"
+          }
+        ],
+        "name": "allow-newer-writes",
+        "prov": {
+          "origin": "imported",
+          "source_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source_version": "v9.0.0"
+        },
+        "status": "draft",
+        "written": [
+          "router"
+        ]
+      },
+      {
+        "exit": 0,
+        "findings": [
+          {
+            "code": "AGSC-E506",
+            "severity": "warn"
+          }
+        ],
+        "name": "source-states-neither",
+        "prov_members_absent": [
+          "source_hash",
+          "source_version"
+        ],
+        "status": "draft",
+        "written": [
+          "router"
+        ]
+      }
+    ]
+  },
+  "id": "imp-0009",
+  "input": {
+    "cases": [
+      {
+        "allow_newer": false,
+        "name": "newer-minor-imported",
+        "source": {
+          "bundle_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bundle_version": "v9.0.0",
+          "items": [
+            {
+              "body": "Body.\n",
+              "slug": "router",
+              "title": "Router"
+            }
+          ],
+          "spec_version": "1.99.0"
+        },
+        "tool_spec_version": "1.0.0"
+      },
+      {
+        "allow_newer": false,
+        "name": "other-major-refused",
+        "source": {
+          "bundle_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bundle_version": "v9.0.0",
+          "items": [
+            {
+              "body": "Body.\n",
+              "slug": "router",
+              "title": "Router"
+            }
+          ],
+          "spec_version": "2.0.0"
+        },
+        "tool_spec_version": "1.0.0"
+      },
+      {
+        "allow_newer": true,
+        "name": "allow-newer-writes",
+        "source": {
+          "bundle_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bundle_version": "v9.0.0",
+          "items": [
+            {
+              "body": "Body.\n",
+              "slug": "router",
+              "title": "Router"
+            }
+          ],
+          "spec_version": "2.0.0"
+        },
+        "tool_spec_version": "1.0.0"
+      },
+      {
+        "allow_newer": false,
+        "name": "source-states-neither",
+        "source": {
+          "items": [
+            {
+              "body": "Body.\n",
+              "slug": "router",
+              "title": "Router"
+            }
+          ],
+          "spec_version": "1.0.0"
+        },
+        "tool_spec_version": "1.0.0"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-22"
+}

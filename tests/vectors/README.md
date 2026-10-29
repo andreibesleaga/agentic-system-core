@@ -73,75 +73,81 @@ Every member a case uses, by area: the members of its `input` and `expected` obj
 
 ### `boundary`
 
-- **input:** `access`, `agsc-access`, `agsc-contribute-mode`, `agsc-surface`, `agsc-visibility`, `artefacts`, `attempt_direct_copy`, `base`, `boards`, `cases`, `channels`, `client_supports`, `config`, `contribute`, `declared`, `dev`, `dumps`, `emitted`, `emitted_undeclared`, `federation`, `generated_at`, `graph`, `invalid_config`, `items`, `ledger_head`, `level`, `local_hits`, `mcp_revision`, `mcp_served`, `nodes`, `observed`, `paths`, `peer`, `peer_hits`, `peers`, `pinning_vectors`, `resolved`, `resolves`, `responder_declared`, `responses`, `routes`, `sessions`, `site`, `static_boards_present`, `static_served`, `surfaces`, `unreachable`, `visibility`, `webmcp_report_date`
-- **input `cases[]` entries:** `name`, `peer`, `redirects`, `resolved`
+- **input:** `access`, `agsc-access`, `agsc-contribute-mode`, `agsc-surface`, `agsc-visibility`, `artefacts`, `attempt_direct_copy`, `base`, `boards`, `cases`, `channels`, `client_supports`, `config`, `contribute`, `crosswalks`, `declared`, `dev`, `dumps`, `emitted`, `emitted_undeclared`, `federation`, `generated_at`, `graph`, `invalid_config`, `items`, `ledger_head`, `level`, `local_hits`, `mcp_revision`, `mcp_served`, `nodes`, `observed`, `paths`, `peer`, `peer_hits`, `peers`, `pinning_vectors`, `resolved`, `resolves`, `responder_declared`, `responses`, `results`, `routes`, `sessions`, `site`, `static_boards_present`, `static_served`, `surfaces`, `unreachable`, `visibility`, `webmcp_report_date`
+- **input `cases[]` entries:** `crosswalks`, `name`, `peer`, `redirects`, `resolved`
 - **expected:** `accepted`, `access_read_as`, `additional_member_is`, `address_guard_unconditional`, `affects`, `agsc-visibility`, `alternate_is_same_node`, `anchor_attributes`, `boards_kept`, `both_resolve`, `bytes_checked_by_validator`, `cases`, `client_union_quads`, `closure_edges_added`, `code`, `compose_selection_of_old`, `contribute_read_as`, `copy_path`, `declaration_accepted`, `digest_targets`, `direct_copy_refused`, `effective`, `emitted`, `error`, `every_session_reports_the_same_object`, `expanded_blocked_by`, `extensions`, `fetch_attempts_for_b`, `fetches_during_build`, `findings`, `forbidden_headers`, `graph_has`, `headers`, `ignored_by_fan_out`, `immutable_emitted`, `in_chunks`, `in_llms`, `in_search`, `invalid_config_error`, `ledger_link`, `links`, `links_without_digest`, `mcp`, `mcp_extensions`, `mcp_version_echoes_input`, `mcp_version_pattern`, `mutual`, `not_descended_by_hop_limit`, `nquads`, `page_kept`, `partial`, `peer_base_derived_from`, `peer_links`, `preserved_keys`, `profile_recognised`, `propose_uses`, `reader_consumes`, `reencoded`, `related`, `renamed`, `requests`, `results`, `same_result_without_header_access`, `served_at_1_0`, `server_side_query_endpoint`, `settings_members`, `skipped`, `surface_read_as`, `tasks_kept`, `tombstoned`, `unknown_link_ignored`, `visibility_read_as`, `visited`, `walk_descends_into_b`, `webmcp`, `webmcp_annotations`, `webmcp_version_echoes_input`, `webmcp_version_pattern`, `wellknown_public`, `wellknown_wildcard`, `wildcard_allowed`, `withdrawn`
-- **expected `cases[]` entries:** `declared_peer_unchanged`, `error`, `followed`, `name`
+- **expected `cases[]` entries:** `declared_peer_unchanged`, `error`, `fetched`, `followed`, `name`
 
 ### `build`
 
 - **input:** `add_files`, `base`, `build_instant`, `bundle`, `cases`, `deployment_profile`, `files`, `generated_at`, `git_history`, `items`, `nquads`, `routes`
-- **input `cases[]` entries:** `add_files`, `authored`, `bundle_hash`, `bundle_version`, `environment`, `generated_at`, `git_log`, `instant`, `legal`, `name`, `source_date_epoch`, `spec_version`
-- **expected:** `byte_identical`, `carried_by`, `cases`, `codes_absent`, `content_security_policy`, `every_text_file_ends_with_exactly_one_lf`, `file_bytes_asserted`, `files_contain`, `header_fallback_admitted`, `headers`, `html_pages_end_with`, `in_no_file`, `includes_routes`, `index`, `lock_is_sha256_of_skill_md`, `lock_members`, `no_byte_order_mark`, `no_error_finding`, `no_lock_route`, `not_carried_by`, `object_files`, `other_files_are_page_assets`, `output`, `packs_count`, `page_assets_required`, `route_bytes`, `routes`, `routes_absent`, `routes_present`, `search`, `shards`, `stale`, `withdrawn`, `wrong_if_code_point_sorted`
-- **expected `cases[]` entries:** `bundle_version`, `codes_absent`, `contains`, `exit`, `exit_one_of`, `findings`, `jcs_with_one_lf`, `ledger_kind_of_built_commit`, `license`, `members`, `name`, `nothing_written`, `pack_members`, `packs`, `reservation_for_paths`, `robots_disallow_all_groups`, `routes_absent`, `spec_version`, `terms`, `text`, `written_only_under`
+- **input `cases[]` entries:** `add_files`, `authored`, `bundle_hash`, `bundle_version`, `chunks`, `environment`, `fingerprint`, `generated_at`, `git_log`, `instant`, `item_count`, `item_template`, `items`, `items_template`, `labels`, `legal`, `linking_items`, `name`, `releases`, `security_policy`, `site`, `source_date_epoch`, `spec_version`, `target`, `visibility`
+- **expected:** `absent_routes`, `byte_identical`, `cache_control_immutable_not_on`, `cache_control_immutable_on`, `cache_control_value_on_versioned_copies`, `carried_by`, `cases`, `codes_absent`, `content_security_policy`, `content_security_policy_count`, `every_address_pattern_written_once`, `every_text_file_ends_with_exactly_one_lf`, `file_bytes_asserted`, `files_contain`, `header_fallback_admitted`, `headers`, `html_pages_end_with`, `in_no_file`, `includes_routes`, `index`, `link_header_on_home_block`, `lock_is_sha256_of_skill_md`, `lock_members`, `namespace_site_addresses_not_immutable`, `no_byte_order_mark`, `no_error_finding`, `no_lock_route`, `not_carried_by`, `object_files`, `optional_routes`, `other_files_are_page_assets`, `output`, `packs_count`, `page_assets_required`, `pages`, `route_bytes`, `routes`, `routes_absent`, `routes_present`, `search`, `shards`, `stale`, `withdrawn`, `wrong_if_code_point_sorted`
+- **expected `cases[]` entries:** `answers`, `bundle_version`, `codes_absent`, `contains`, `csp_contains`, `csp_count_on_route`, `csp_forbids`, `definition_list_of_engine`, `downloads`, `examples_include_the_ten_questions`, `exit`, `exit_one_of`, `figure_has_text_equivalent`, `figure_neighbours`, `files_under_route`, `findings`, `header_if_emitted`, `html_bytes_at_most`, `in_sitemap`, `index_emitted`, `index_may_be_emitted`, `jcs_with_one_lf`, `ledger_kind_of_built_commit`, `license`, `line`, `linked_from_any_page`, `linked_from_every_generated_page`, `meaning_in_every_row`, `members`, `more_neighbours_stated`, `name`, `not_named_on_the_page_of_a`, `nothing_written`, `origins_outside_the_node`, `pack_members`, `packs`, `refuses`, `reservation_for_paths`, `robots_disallow_all_groups`, `route_present`, `routes_absent`, `rows_of_a`, `share_link_holds_query_in`, `spec_version`, `stores_nothing`, `table_has_domain_columns`, `table_row_of_engine`, `terms`, `text`, `vocabulary_explorer`, `written_only_under`
 
 ### `bundle`
 
 - **input:** `add_files`, `bundle`, `cases`, `config`, `markdown`
-- **input `cases[]` entries:** `config`, `name`
-- **expected:** `accepted`, `build`, `cases`, `error`, `findings`, `lint`, `preserved`
-- **expected `cases[]` entries:** `accepted`, `exit`, `findings`, `name`, `preserved`
+- **input `cases[]` entries:** `config`, `name`, `slug`, `source`
+- **expected:** `accepted`, `build`, `cases`, `error`, `findings`, `lint`, `preserved`, `withdrawn`
+- **expected `cases[]` entries:** `accepted`, `exit`, `findings`, `name`, `preserved`, `svg`
 
 ### `chunks`
 
-- **input:** `attachment_bytes`, `bundle_version`, `chunks`, `item_count`, `item_template`, `items`, `site`, `slugs_are`
-- **expected:** `attachment_chunk`, `byte_lengths`, `chunks`, `citation_anchor_for_line_1`, `cluster_chunk_text`, `ends_with_single_lf`, `first_slug_in_shard_02`, `heading_repeated`, `items_absent`, `items_present`, `last_slug_in_shard_01`, `lexical_order_is_wrong`, `line_count`, `lines`, `manifest`, `ordinals`, `output`, `overlap`, `sections`, `shard_line_counts`, `vendor_member_permitted`
+- **input:** `attachment_bytes`, `bundle_version`, `cases`, `chunks`, `item_count`, `item_template`, `items`, `site`, `slugs_are`
+- **input `cases[]` entries:** `bundle`, `chunks`, `items`, `legal_emitted`, `name`, `site`
+- **expected:** `attachment_chunk`, `byte_lengths`, `cases`, `chunks`, `citation_anchor_for_line_1`, `cluster_chunk_text`, `ends_with_single_lf`, `first_slug_in_shard_02`, `heading_repeated`, `items_absent`, `items_present`, `last_slug_in_shard_01`, `lexical_order_is_wrong`, `line_count`, `lines`, `manifest`, `ordinals`, `output`, `overlap`, `sections`, `shard_line_counts`, `text_never_begins_with_a_line_feed`, `vendor_member_permitted`, `withdrawn`
+- **expected `cases[]` entries:** `agsc_chunk_count`, `agsc_chunk_set`, `chunk_set_input_bytes`, `digest`, `header`, `lines`, `name`, `output`, `row_prefixes`
 
 ### `cli`
 
-- **input:** `add_files`, `argv`, `base`, `bundle`, `calls`, `cases`, `config`, `env_file`, `environment`, `frames`, `git_history`, `items`, `reference`, `remove_config_keys`, `tool`, `tools_list_id`, `transports`
-- **input `cases[]` entries:** `add_files`, `argv`, `environment`, `name`
-- **expected:** `body_is_text`, `cases`, `citations_is_top_level_member`, `envelope_members`, `error`, `exit`, `files_contain`, `finding_members`, `findings`, `findings_in_order`, `ignored`, `jsonrpc_error`, `manifests_identical`, `ordered_by`, `overrides_in_effect`, `page`, `resolved`, `responses`, `results`, `results_byte_identical`, `stderr_lines_match_findings`, `stdio`, `stdout`, `stdout_must_not_contain`, `tools`, `transports_byte_identical`, `values_equal_for_published`, `webmcp_write_tools_local_only`, `withdrawn`, `without_model_context`
-- **expected `cases[]` entries:** `body`, `check_members`, `codes_absent`, `envelope`, `equals_reference`, `error`, `error_codes_allowed`, `error_count`, `exit`, `exit_one_of`, `findings`, `idempotent`, `jcs_with_one_lf`, `name`, `not_a_finding`, `not_in_build_out`, `output`, `registry_accepts`, `stderr_codes`, `stdout`, `type`, `unchanged`, `verdict_is_array`, `verdict_members`, `verdicts`
+- **input:** `add_files`, `argv`, `base`, `bundle`, `bundle_version`, `calls`, `cases`, `config`, `env_file`, `environment`, `frames`, `git_history`, `http`, `item_count`, `item_template`, `items`, `mcp_served`, `reference`, `remove_config_keys`, `slugs_are`, `tool`, `tools_list_id`, `transports`
+- **input `cases[]` entries:** `add_files`, `argv`, `environment`, `frames`, `http`, `name`
+- **expected:** `body_is_text`, `cases`, `chunk_records`, `citations_is_top_level_member`, `declared_equals_newest_supported`, `declared_surface_version`, `envelope_members`, `error`, `exit`, `files_contain`, `finding_members`, `findings`, `findings_in_order`, `http`, `ignored`, `jsonrpc_error`, `manifests_identical`, `ordered_by`, `overrides_in_effect`, `page`, `protocol_version_constant`, `resolved`, `responses`, `results`, `results_byte_identical`, `stderr_lines_match_findings`, `stdio`, `stdout`, `stdout_must_not_contain`, `tools`, `transports_byte_identical`, `transports_equal`, `values_equal_for_published`, `webmcp_write_tools_local_only`, `withdrawn`, `without_model_context`
+- **expected `cases[]` entries:** `body`, `check_members`, `codes_absent`, `envelope`, `equals_reference`, `error`, `error_codes_allowed`, `error_count`, `exit`, `exit_one_of`, `findings`, `idempotent`, `jcs_with_one_lf`, `name`, `not_a_finding`, `not_in_build_out`, `nothing_written`, `output`, `registry_accepts`, `responses`, `status`, `stderr_codes`, `stdout`, `stdout_contains`, `type`, `unchanged`, `verdict_is_array`, `verdict_members`, `verdicts`
 
 ### `compose`
 
-- **input:** `archive_name_stem`, `bundle_version`, `bundle_version_outside_the_grammar`, `files`, `instant`, `items`, `selection`
-- **expected:** `added`, `archive_name`, `archive_name_when_version_is_outside_the_grammar`, `base64`, `block_rendered_as_prose`, `central_directory_at`, `central_directory_bytes`, `dsl_relationships`, `entries`, `entry_order`, `exit`, `extracted_selection`, `fields`, `findings`, `harness_dir`, `harness_emitted`, `rendered_as_prose`, `same_verdict_as_explicit`, `selection`, `selection_digest`, `selection_read`, `sha256`, `total_bytes`, `valid`, `verdict`, `verdict_steps_1_to_4_unchanged`, `violations`, `warnings_added`, `wiring`, `wrong_path_if_depth_first_or_per_item_union`, `wrong_path_if_least_slug_sequence`
+- **input:** `archive_name_stem`, `bundle_version`, `bundle_version_outside_the_grammar`, `cases`, `config`, `files`, `fixed`, `from`, `instant`, `items`, `selection`
+- **input `cases[]` entries:** `items`, `name`, `selection`
+- **expected:** `added`, `archive_name`, `archive_name_when_version_is_outside_the_grammar`, `base64`, `block_rendered_as_prose`, `cases`, `central_directory_at`, `central_directory_bytes`, `companion_directory`, `companion_files`, `dsl_relationships`, `entries`, `entry_order`, `exit`, `extracted_selection`, `fields`, `file_bytes`, `files_under`, `findings`, `harness_dir`, `harness_emitted`, `harness_sha256`, `rendered_as_prose`, `same_verdict_as_explicit`, `selection`, `selection_digest`, `selection_read`, `sha256`, `total_bytes`, `valid`, `verdict`, `verdict_steps_1_to_4_unchanged`, `violations`, `warnings_added`, `wiring`, `wrong_path_if_depth_first_or_per_item_union`, `wrong_path_if_least_slug_sequence`
+- **expected `cases[]` entries:** `checklist`, `emitted`, `file_bytes`, `gaps`, `harness_emitted`, `name`, `order`, `sha256`
 
 ### `conform`
 
-- **input:** `claim`, `divergences`
-- **expected:** `accepted`, `areas`, `claim_complete`, `divergence_verdicts`, `reason`, `rejected`, `route_form`, `second_list_consulted`, `source`
+- **input:** `claim`, `claims`, `divergences`, `results`
+- **expected:** `accepted`, `areas`, `areas_by_level`, `claim_complete`, `codes_absent`, `divergence_verdicts`, `exit`, `findings`, `reason`, `rejected`, `route_form`, `second_list_consulted`, `source`, `withdrawn`
 
 ### `discovery`
 
-- **input:** `base`, `build_instant`, `bundle`, `bundle_version`, `cases`, `clusters`, `generated_at`, `items`, `ledger_head`, `level`, `listed_clusters`, `nodes`, `published_routes`, `site`, `spec_version`, `wellknown`
-- **input `cases[]` entries:** `access`, `base`, `bundle_version`, `contribute`, `counts`, `document`, `files`, `generated_at`, `ledger_head`, `level`, `name`, `peers`, `reader_version`, `routes`, `spec_version`, `successor`, `surfaces`, `tdm_crawlers`, `tdm_reservation`, `visibility`, `wellknown`
-- **expected:** `anchor_link_attributes`, `attribute_values_are_arrays`, `attributes_omitted`, `both_appears_once_under`, `both_resolve`, `bundle_hash_equals_graph_nq_link_digest`, `bundle_hash_equals_sha256_of_graph_nq`, `bundle_hash_values`, `cases`, `draft_excluded`, `each_names_the_other`, `jsonld_types_closed_set`, `lastmod`, `lastmod_is_build_instant`, `ledger_link_attributes`, `level`, `llms_full_reachability_identical`, `llms_full_txt`, `llms_txt`, `media_type`, `mutual`, `not_published`, `now_md_shows_the_same_hex`, `output`, `path`, `peer_relation`, `profile`, `reachable`, `relations_allowed`, `relations_forbidden`, `sections`, `top_level_members`, `unreachable`, `urls`, `valid`, `xml_bytes_asserted`
-- **expected `cases[]` entries:** `attributes_omitted`, `bundle_version`, `describedby_attribute_order`, `document`, `file_bytes_asserted`, `findings`, `groups`, `name`, `presence_would_be`, `valid`
+- **input:** `add_files`, `base`, `build_instant`, `bundle`, `bundle_version`, `cases`, `clusters`, `generated_at`, `git_history`, `items`, `ledger_head`, `level`, `listed_clusters`, `nodes`, `published_routes`, `site`, `spec_version`, `validator_cases`, `visibility`, `wellknown`
+- **input `cases[]` entries:** `access`, `ai_catalog`, `base`, `bundle`, `bundle_id`, `bundle_version`, `card_bytes`, `chunks_served`, `contribute`, `counts`, `description`, `discovery_document_bytes`, `document`, `files`, `files_served`, `generated_at`, `instant`, `ledger_head`, `legal_emitted`, `level`, `license_url`, `name`, `packs`, `peers`, `reader_version`, `related`, `routes`, `site`, `spec_version`, `successor`, `surfaces`, `tdm_crawlers`, `tdm_reservation`, `visibility`, `wellknown`
+- **expected:** `anchor_link_attributes`, `attribute_values_are_arrays`, `attributes_omitted`, `both_appears_once_under`, `both_resolve`, `bundle_hash_equals_graph_nq_link_digest`, `bundle_hash_equals_sha256_of_graph_nq`, `bundle_hash_values`, `cases`, `draft_excluded`, `each_names_the_other`, `files_containing_a_prov_term`, `jsonld_types_closed_set`, `lastmod`, `lastmod_is_build_instant`, `ledger_link_attributes`, `level`, `llms_full_reachability_identical`, `llms_full_txt`, `llms_txt`, `media_type`, `mutual`, `not_published`, `now_md_shows_the_same_hex`, `output`, `path`, `peer_relation`, `profile`, `reachable`, `relations_allowed`, `relations_forbidden`, `sections`, `top_level_members`, `unreachable`, `urls`, `valid`, `validator_cases`, `withdrawn`, `xml_bytes_asserted`
+- **expected `cases[]` entries:** `attributes_omitted`, `block`, `bundle_version`, `codes_reported`, `describedby_attribute_order`, `document`, `file`, `file_bytes_asserted`, `findings`, `groups`, `links_as_set`, `name`, `presence_would_be`, `valid`
 
 ### `export`
 
-- **input:** `add_files`, `bundle`, `flags`
-- **expected:** `byte_preserving`, `exit`, `file_bytes`, `files`, `files_contain`, `lines_from_pages`
+- **input:** `add_files`, `bundle`, `cases`, `flags`
+- **input `cases[]` entries:** `flags`, `name`
+- **expected:** `byte_preserving`, `cases`, `exit`, `file_bytes`, `files`, `files_contain`, `jcs_with_one_lf`, `lines_from_pages`, `manifest`, `manifest_members`
+- **expected `cases[]` entries:** `files`, `manifest`, `manifest_lists_itself`, `name`, `repeat_identical`
 
 ### `frontmatter`
 
 - **input:** `config`, `files`, `foreign_board_state`, `frontmatter`, `items`, `markdown`, `own_items`
-- **expected:** `error`, `errors`, `findings`, `foreign_read_as`, `frontmatter`, `idempotent`, `line`, `output`, `path`, `preserved`, `results`, `valid`, `warnings`
+- **expected:** `error`, `errors`, `findings`, `foreign_read_as`, `frontmatter`, `idempotent`, `line`, `no_warning_for`, `output`, `path`, `preserved`, `results`, `valid`, `warning_count`, `warnings`
 
 ### `graph`
 
-- **input:** `attachment_bytes`, `base`, `bundle`, `bundle_id`, `context_url`, `external_properties`, `external_properties_used`, `item`, `items`, `lang_literal`, `literal`, `markdown`, `ontology_terms`, `site`, `typed_literal`, `value`
-- **expected:** `blank_nodes`, `contains`, `context`, `emitted_as_rdf_subject`, `excludes`, `forbidden`, `forbidden_forms`, `foreign_bundle`, `graph_blank_nodes`, `graph_jsonld`, `graph_never_contains`, `inverse_materialised`, `lint`, `mentions_lines`, `never_reported`, `nquads`, `nquads_lang`, `nquads_literal`, `nquads_typed`, `per_item`, `prefix_block_is_constant`, `resolved`, `roundtrip_byte_identical`, `term_names`, `turtle`, `turtle_literal_has_explicit_xsd_string`, `turtle_never_contains`, `verdict_digest_exported`, `whole_file_asserted`, `withdrawn`
+- **input:** `at`, `attachment_bytes`, `base`, `bundle`, `bundle_id`, `context_url`, `external_properties`, `external_properties_used`, `item`, `items`, `lang_literal`, `literal`, `markdown`, `ontology_terms`, `ontology_versions`, `question`, `questions`, `selection`, `shapes`, `site`, `subject`, `typed_literal`, `value`, `vocabulary`
+- **expected:** `answer`, `blank_nodes`, `closure`, `contains`, `context`, `context_url`, `emitted_as_rdf_subject`, `excludes`, `forbidden`, `forbidden_forms`, `foreign_bundle`, `graph_blank_nodes`, `graph_files_unchanged`, `graph_jsonld`, `graph_jsonld_identical_across_ontology_versions`, `graph_never_contains`, `invariants`, `inverse_materialised`, `jsonld_type`, `lint`, `mentions_lines`, `never_reported`, `nquads`, `nquads_lang`, `nquads_literal`, `nquads_typed`, `per_item`, `prefix_block_is_constant`, `questions`, `readings`, `resolved`, `roundtrip_byte_identical`, `skos`, `term_names`, `turtle`, `turtle_literal_has_explicit_xsd_string`, `turtle_never_contains`, `verdict_digest_exported`, `warnings`, `whole_file_asserted`, `withdrawn`
 
 ### `import`
 
-- **input:** `cases`, `frontmatter`, `path`
+- **input:** `cases`, `frontmatter`, `i18n_default`, `operator`, `path`, `runs`, `turtle`
 - **input `cases[]` entries:** `allow_newer`, `existing`, `incoming`, `name`, `source`, `tool_spec_version`
-- **expected:** `cases`, `error_count`, `findings`, `frontmatter_has`, `keys_absent`
-- **expected `cases[]` entries:** `dry_run_reports_the_same`, `exit`, `findings`, `name`, `prov`, `prov_members_absent`, `unchanged`, `written`
+- **expected:** `cases`, `error_count`, `findings`, `first_run_writes`, `frontmatter_has`, `items`, `keys_absent`, `second_run_changed`, `second_run_findings`, `withdrawn`
+- **expected `cases[]` entries:** `dry_run_reports_the_same`, `exit`, `findings`, `name`, `prov`, `prov_members_absent`, `status`, `unchanged`, `written`
 
 ### `jcs`
 
@@ -150,20 +156,20 @@ Every member a case uses, by area: the members of its `input` and `expected` obj
 
 ### `ledger`
 
-- **input:** `commits`, `content_tree`, `git_log`, `ledger`, `published`, `side_branch`, `version`, `wellknown`
-- **expected:** `error`, `git_log`, `head`, `ledger`, `line`, `side_branch_excluded`
+- **input:** `commits`, `content_tree`, `git_log`, `ledger`, `ledger_actors`, `published`, `side_branch`, `version`, `versions`, `wellknown`
+- **expected:** `error`, `git_log`, `head`, `identical_across_versions`, `ledger`, `line`, `side_branch_excluded`, `withdrawn`
 
 ### `links`
 
-- **input:** `items`, `markdown`
+- **input:** `domain_properties`, `items`, `markdown`
 - **expected:** `anchors`, `chain`, `cycle`, `edges`, `error`, `errors`, `parents`, `resolved`, `skipped_external`, `unresolved`, `warnings`
 
 ### `lint`
 
-- **input:** `add_files`, `add_links`, `add_sized_files`, `attachment_bytes`, `bundle`, `bytes`, `cases`, `check`, `config`, `file`, `files`, `files_present`, `items`, `markdown`, `paths`, `strings`, `svgs`
-- **input `cases[]` entries:** `frontmatter`, `name`, `path`, `tags`
-- **expected:** `cases`, `clean`, `error`, `findings`, `idempotent`, `lint`, `matched`, `output`, `severity`, `twice`
-- **expected `cases[]` entries:** `code`, `error`, `exit`, `findings`, `idempotent`, `name`, `no_finding_for`, `output`, `status`, `valid`
+- **input:** `add_files`, `add_links`, `add_sized_files`, `argv`, `attachment_bytes`, `bundle`, `bytes`, `cases`, `check`, `config`, `file`, `files`, `files_present`, `git_history`, `items`, `markdown`, `paths`, `strings`, `svgs`
+- **input `cases[]` entries:** `add_files`, `frontmatter`, `name`, `path`, `tags`
+- **expected:** `cases`, `clean`, `error`, `file_bytes`, `findings`, `idempotent`, `lint`, `matched`, `output`, `severity`, `twice`, `verify`, `written_only_under`
+- **expected `cases[]` entries:** `code`, `error`, `exit`, `findings`, `idempotent`, `name`, `no_finding_for`, `output`, `status`, `valid`, `verify`
 
 ### `prov`
 

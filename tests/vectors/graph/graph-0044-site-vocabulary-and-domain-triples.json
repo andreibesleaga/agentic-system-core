@@ -1,0 +1,69 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-38 and AGSC-05-39: a node that declares a site vocabulary publishes every triple of the vocabulary file in the named graph of the Bundle, and an item that states a domain type, a role, a context and a domain link adds exactly the triples the rule names: a second `rdf:type` (the site class, the item keeps `asc:Concept`), `schema:additionalType` (the role), `dcterms:isPartOf` to the cluster that declares the context, the domain link as `<item> <site property> <target>`, and the computed inverse the vocabulary declares. The input gives the vocabulary text, three items and the site base; the expected value is the whole `graph.nq`. `jsonld_type` states the `@type` of `engine-a` in `graph.jsonld`: an array of the two classes in code-point order of their IRIs, the site class first. A node that declares no vocabulary emits none of these lines (the cases `graph-0026` and `graph-0028` stay as they are).",
+  "expected": {
+    "jsonld_type": {
+      "https://minimal.example/concepts/engine-a/": [
+        "https://minimal.example/ns/domain#Engine",
+        "Concept"
+      ]
+    },
+    "nquads": "<http://www.w3.org/2004/02/skos/core#definition> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#AnnotationProperty> <https://minimal.example/> .\n<https://minimal.example/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Bundle> <https://minimal.example/> .\n<https://minimal.example/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/> <https://w3id.org/agentic-system-core/ns#specVersion> \"1.0.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Cluster> <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <http://www.w3.org/2004/02/skos/core#definition> \"The context that holds the engines.\"@en <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Propulsion\"@en <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <https://w3id.org/agentic-system-core/ns#operator> \"human:tester\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/clusters/ctx/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://minimal.example/> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Controller\"@en <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://minimal.example/ns/domain#controls> <https://minimal.example/concepts/engine-a/> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://w3id.org/agentic-system-core/ns#kind> \"principle\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://w3id.org/agentic-system-core/ns#operator> \"human:tester\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/ctl/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <http://purl.org/dc/terms/isPartOf> <https://minimal.example/clusters/ctx/> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://minimal.example/ns/domain#Engine> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <http://www.w3.org/2004/02/skos/core#inScheme> <https://minimal.example/> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <http://www.w3.org/2004/02/skos/core#prefLabel> \"Engine A\"@en <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://minimal.example/ns/domain#controlled-by> <https://minimal.example/concepts/ctl/> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://schema.org/additionalType> \"aggregate-root\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://schema.org/license> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://schema.org/usageInfo> \"CC0-1.0\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://w3id.org/agentic-system-core/ns#kind> \"principle\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://w3id.org/agentic-system-core/ns#operator> \"human:tester\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/concepts/engine-a/> <https://w3id.org/agentic-system-core/ns#origin> \"human\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/ns/domain#Engine> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> <https://minimal.example/> .\n<https://minimal.example/ns/domain#Engine> <http://www.w3.org/2000/01/rdf-schema#label> \"Engine\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/ns/domain#Engine> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://w3id.org/agentic-system-core/ns#Concept> <https://minimal.example/> .\n<https://minimal.example/ns/domain#Engine> <http://www.w3.org/2004/02/skos/core#definition> \"A machine that turns fuel into thrust.\"@en <https://minimal.example/> .\n<https://minimal.example/ns/domain#controlled-by> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controlled-by> <http://www.w3.org/2000/01/rdf-schema#label> \"controlled by\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controlled-by> <http://www.w3.org/2000/01/rdf-schema#subPropertyOf> <https://w3id.org/agentic-system-core/ns#uses> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controlled-by> <http://www.w3.org/2002/07/owl#inverseOf> <https://minimal.example/ns/domain#controls> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controlled-by> <http://www.w3.org/2004/02/skos/core#definition> \"This engine is run by the target controller.\"@en <https://minimal.example/> .\n<https://minimal.example/ns/domain#controls> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controls> <http://www.w3.org/2000/01/rdf-schema#label> \"controls\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controls> <http://www.w3.org/2000/01/rdf-schema#subPropertyOf> <https://w3id.org/agentic-system-core/ns#uses> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controls> <http://www.w3.org/2002/07/owl#inverseOf> <https://minimal.example/ns/domain#controlled-by> <https://minimal.example/> .\n<https://minimal.example/ns/domain#controls> <http://www.w3.org/2004/02/skos/core#definition> \"This controller runs the target engine.\"@en <https://minimal.example/> .\n<https://minimal.example/ns/domain> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Ontology> <https://minimal.example/> .\n<https://minimal.example/ns/domain> <http://www.w3.org/2000/01/rdf-schema#label> \"Minimal domain vocabulary\"^^<http://www.w3.org/2001/XMLSchema#string> <https://minimal.example/> .\n<https://w3id.org/agentic-system-core/ns#Cluster> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> <https://minimal.example/> .\n<https://w3id.org/agentic-system-core/ns#Concept> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> <https://minimal.example/> .\n<https://w3id.org/agentic-system-core/ns#Episode> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> <https://minimal.example/> .\n<https://w3id.org/agentic-system-core/ns#uses> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> <https://minimal.example/> .\n"
+  },
+  "id": "graph-0044",
+  "input": {
+    "bundle": {
+      "license_prose": "CC0-1.0",
+      "spec_version": "1.0.0"
+    },
+    "items": [
+      {
+        "domain_context": "ctx",
+        "domain_links": {
+          "controlled-by": [
+            "ctl"
+          ]
+        },
+        "domain_role": "aggregate-root",
+        "domain_type": "Engine",
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "engine-a",
+        "title": "Engine A",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ctl",
+        "title": "Controller",
+        "type": "concept"
+      },
+      {
+        "description": "The context that holds the engines.",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ctx",
+        "title": "Propulsion",
+        "type": "cluster"
+      }
+    ],
+    "site": {
+      "base": "https://minimal.example/"
+    },
+    "vocabulary": "@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n\nasc:Concept\n    a owl:Class .\n\nasc:Episode\n    a owl:Class .\n\nasc:Cluster\n    a owl:Class .\n\nasc:uses\n    a owl:ObjectProperty .\n\nskos:definition\n    a owl:AnnotationProperty .\n\n<https://minimal.example/ns/domain>\n    a owl:Ontology ;\n    rdfs:label \"Minimal domain vocabulary\" .\n\ndom:Engine\n    a owl:Class ;\n    rdfs:label \"Engine\" ;\n    rdfs:subClassOf asc:Concept ;\n    skos:definition \"A machine that turns fuel into thrust.\"@en .\n\ndom:controlled-by\n    a owl:ObjectProperty ;\n    rdfs:label \"controlled by\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controls ;\n    skos:definition \"This engine is run by the target controller.\"@en .\n\ndom:controls\n    a owl:ObjectProperty ;\n    rdfs:label \"controls\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controlled-by ;\n    skos:definition \"This controller runs the target engine.\"@en .\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-39"
+}

@@ -1,0 +1,42 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-40 and AGSC-02-25: the key `warrant` is an object with a `source` and a `type`, and the type is one of `literary`, `user` and `organisational`. `w-ok` is valid. `w-nosource` has no `source`, `w-notype` has no `type`, and `w-wrongtype` has the type `popular`: each is one error AGSC-E512. The four items are members of the fixture's cluster, so none is an orphan.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E512",
+          "file": "content/concepts/w-notype.md",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E512",
+          "file": "content/concepts/w-nosource.md",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E512",
+          "file": "content/concepts/w-wrongtype.md",
+          "severity": "error"
+        }
+      ]
+    }
+  },
+  "id": "lint-0056",
+  "input": {
+    "add_files": {
+      "agsc.config.json": "{\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n",
+      "content/concepts/w-nosource.md": "---\ntype: concept\ntitle: Journal term\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nwarrant:\n  type: user\nprov:\n  origin: human\n  operator: human:tester\nkind: term\n---\n\nA short definition.\n",
+      "content/concepts/w-notype.md": "---\ntype: concept\ntitle: Entry term\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nwarrant:\n  source: https://example.org/glossary\nprov:\n  origin: human\n  operator: human:tester\nkind: term\n---\n\nA short definition.\n",
+      "content/concepts/w-ok.md": "---\ntype: concept\ntitle: Ledger term\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nwarrant:\n  source: https://example.org/glossary\n  type: literary\nprov:\n  origin: human\n  operator: human:tester\nkind: term\n---\n\nA short definition.\n",
+      "content/concepts/w-wrongtype.md": "---\ntype: concept\ntitle: Posting term\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nwarrant:\n  source: https://example.org/glossary\n  type: popular\nprov:\n  origin: human\n  operator: human:tester\nkind: term\n---\n\nA short definition.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-40"
+}

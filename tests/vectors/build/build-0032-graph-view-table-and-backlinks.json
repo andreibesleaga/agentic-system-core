@@ -1,0 +1,112 @@
+{
+  "area": "build",
+  "description": "AGSC-06-38 (a SHOULD, so the case is optional): an item page shows its neighbourhood as a figure with a relations table as the text equivalent; the table has one row for each relation key that links the item and another published item, in either direction, with the key, the direction, the other item and the plain meaning of the key (from the Meaning column of AGSC-03-01); the incoming rows are the backlinks. Items: a requires b; c uses a; a also requires d, a draft; e is held back by the releases switchboard and uses a. The page of a therefore has two rows — requires -> b, and uses <- c — and names neither d nor e anywhere (not in the figure, not in the table, not as a backlink). The figure draws at most 24 neighbours and the table says how many more exist (the second case: 30 items link to a, 24 are drawn, the table says 6 more). A writer that draws a figure also writes the table. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "figure_has_text_equivalent": true,
+        "meaning_in_every_row": true,
+        "name": "rows-and-exclusions",
+        "not_named_on_the_page_of_a": [
+          "d",
+          "e"
+        ],
+        "rows_of_a": [
+          {
+            "direction": "incoming",
+            "key": "uses",
+            "other": "c"
+          },
+          {
+            "direction": "outgoing",
+            "key": "requires",
+            "other": "b"
+          }
+        ]
+      },
+      {
+        "figure_neighbours": 24,
+        "more_neighbours_stated": 6,
+        "name": "cap-at-24"
+      }
+    ]
+  },
+  "id": "build-0032",
+  "input": {
+    "cases": [
+      {
+        "items": [
+          {
+            "body": "A.\n",
+            "kind": "explainer",
+            "requires": [
+              "b",
+              "d"
+            ],
+            "slug": "a",
+            "title": "A",
+            "type": "concept"
+          },
+          {
+            "body": "B.\n",
+            "kind": "explainer",
+            "slug": "b",
+            "title": "B",
+            "type": "concept"
+          },
+          {
+            "body": "C.\n",
+            "kind": "explainer",
+            "slug": "c",
+            "title": "C",
+            "type": "concept",
+            "uses": [
+              "a"
+            ]
+          },
+          {
+            "body": "D.\n",
+            "kind": "explainer",
+            "slug": "d",
+            "status": "draft",
+            "title": "D",
+            "type": "concept"
+          },
+          {
+            "body": "E.\n",
+            "kind": "explainer",
+            "release": "later",
+            "slug": "e",
+            "title": "E",
+            "type": "concept",
+            "uses": [
+              "a"
+            ]
+          }
+        ],
+        "name": "rows-and-exclusions",
+        "releases": {
+          "later": false
+        }
+      },
+      {
+        "items_template": {
+          "body": "N.\n",
+          "kind": "explainer",
+          "type": "concept",
+          "uses": [
+            "a"
+          ]
+        },
+        "linking_items": 30,
+        "name": "cap-at-24",
+        "target": "a"
+      }
+    ]
+  },
+  "level": "optional",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-38"
+}

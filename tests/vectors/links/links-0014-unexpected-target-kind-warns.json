@@ -1,0 +1,141 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-25: a resolved target that does not match the Expected target kinds cell of its key is the warning AGSC-E315, carried by the item that authors the key. Seven items each break one cell: `decided-by` toward a task, `blocked-by` toward a decision, a lesson `derived-from` a spec (an episode is expected), `verifies` toward an episode, `implements` toward a task, a concept that `supersedes` a lesson (the same `type` is expected), and `broader` toward an episode (the same family is expected). The lesson `q1` is deprecated so that the `supersedes` raises no other warning, and the hub item gives the sources an inbound link. The seven findings are in slug order.",
+  "expected": {
+    "errors": [],
+    "warnings": [
+      {
+        "code": "AGSC-E315",
+        "slug": "b1"
+      },
+      {
+        "code": "AGSC-E315",
+        "slug": "d1"
+      },
+      {
+        "code": "AGSC-E315",
+        "slug": "i1"
+      },
+      {
+        "code": "AGSC-E315",
+        "slug": "k1"
+      },
+      {
+        "code": "AGSC-E315",
+        "slug": "l1"
+      },
+      {
+        "code": "AGSC-E315",
+        "slug": "p1"
+      },
+      {
+        "code": "AGSC-E315",
+        "slug": "v1"
+      }
+    ]
+  },
+  "id": "links-0014",
+  "input": {
+    "items": [
+      {
+        "decided-by": [
+          "t1"
+        ],
+        "kind": "principle",
+        "slug": "d1",
+        "type": "concept"
+      },
+      {
+        "blocked-by": [
+          "dec1"
+        ],
+        "kind": "task",
+        "slug": "k1",
+        "type": "concept"
+      },
+      {
+        "derived-from": [
+          "sp1"
+        ],
+        "severity": "info",
+        "slug": "l1",
+        "type": "lesson"
+      },
+      {
+        "kind": "task",
+        "slug": "v1",
+        "type": "concept",
+        "verifies": [
+          "ep1"
+        ]
+      },
+      {
+        "implements": [
+          "t1"
+        ],
+        "kind": "task",
+        "slug": "i1",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "slug": "p1",
+        "supersedes": [
+          "q1"
+        ],
+        "type": "concept"
+      },
+      {
+        "broader": [
+          "ep1"
+        ],
+        "kind": "principle",
+        "slug": "b1",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "slug": "t1",
+        "type": "concept"
+      },
+      {
+        "kind": "decision",
+        "slug": "dec1",
+        "type": "concept"
+      },
+      {
+        "kind": "spec",
+        "slug": "sp1",
+        "type": "concept"
+      },
+      {
+        "slug": "ep1",
+        "type": "episode"
+      },
+      {
+        "severity": "info",
+        "slug": "q1",
+        "status": "deprecated",
+        "type": "lesson"
+      },
+      {
+        "related": [
+          "b1",
+          "d1",
+          "i1",
+          "k1",
+          "l1",
+          "p1",
+          "v1"
+        ],
+        "slug": "hub",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-25"
+}

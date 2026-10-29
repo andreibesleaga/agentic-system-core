@@ -1,0 +1,28 @@
+{
+  "area": "bundle",
+  "description": "AGSC-04-05 as amended for 1.1: a Unicode noncharacter in authored text is the warning AGSC-E423 (RFC 7493 section 2.1 excludes noncharacters from I-JSON); nothing is refused and the character still reaches the artefacts unchanged. Derivation: one conforming concept is added to the minimal fixture whose body holds U+FDD0, the first of the noncharacters U+FDD0 to U+FDEF; the one finding is a warning on that file. Exit 0. The vector file writes the character as the escape \\ufdd0 so that the file is itself valid I-JSON.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E423",
+          "file": "content/concepts/noncharacter.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0021",
+  "input": {
+    "add_files": {
+      "content/concepts/noncharacter.md": "---\ntype: concept\nkind: explainer\ntitle: Noncharacter\ndescription: A concept whose body holds a Unicode noncharacter, which the lint reports and does not refuse.\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText with a noncharacter \ufdd0 inside it.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-04-05"
+}

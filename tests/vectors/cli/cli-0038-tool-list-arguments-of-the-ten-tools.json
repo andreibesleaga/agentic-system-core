@@ -1,0 +1,152 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-13: the tool server lists exactly ten tools, and each takes exactly the arguments of the rule's table under those names, the required ones marked required in its inputSchema. Derivation, by hand from the table of AGSC-09-13 (a bold argument is required): ask {question}; brief {selection} required; check {selection}, none required (omitted means every listed item); compose {selection}; explain {key, source, target}, all three required; links {iri, slug}, none required (give one); propose {slug} required, with agent, at and task_state; read {slug}; remember {body, kind, title} required, with about, actor, agent, at, cluster, model, operator, origin, outcome, severity, sources and usage; search {query}. The frames are those of `cli-0019`, sent in order to the implementation's tool server for the fixture over standard input; from the tools/list response each tool is reduced to its name, the sorted names of its inputSchema properties (`arguments`) and its sorted inputSchema `required` list, the tools are sorted by name, and the result must equal expected.tools exactly. A tool's description and annotations are not pinned by this case. This case is the successor of `cli-0019`, which listed seven.",
+  "expected": {
+    "tools": [
+      {
+        "arguments": [
+          "question"
+        ],
+        "name": "ask",
+        "required": [
+          "question"
+        ]
+      },
+      {
+        "arguments": [
+          "selection"
+        ],
+        "name": "brief",
+        "required": [
+          "selection"
+        ]
+      },
+      {
+        "arguments": [
+          "selection"
+        ],
+        "name": "check",
+        "required": []
+      },
+      {
+        "arguments": [
+          "selection"
+        ],
+        "name": "compose",
+        "required": [
+          "selection"
+        ]
+      },
+      {
+        "arguments": [
+          "key",
+          "source",
+          "target"
+        ],
+        "name": "explain",
+        "required": [
+          "key",
+          "source",
+          "target"
+        ]
+      },
+      {
+        "arguments": [
+          "iri",
+          "slug"
+        ],
+        "name": "links",
+        "required": []
+      },
+      {
+        "arguments": [
+          "agent",
+          "at",
+          "slug",
+          "task_state"
+        ],
+        "name": "propose",
+        "required": [
+          "slug"
+        ]
+      },
+      {
+        "arguments": [
+          "slug"
+        ],
+        "name": "read",
+        "required": [
+          "slug"
+        ]
+      },
+      {
+        "arguments": [
+          "about",
+          "actor",
+          "agent",
+          "at",
+          "body",
+          "cluster",
+          "kind",
+          "model",
+          "operator",
+          "origin",
+          "outcome",
+          "severity",
+          "sources",
+          "title",
+          "usage"
+        ],
+        "name": "remember",
+        "required": [
+          "body",
+          "kind",
+          "title"
+        ]
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "name": "search",
+        "required": [
+          "query"
+        ]
+      }
+    ]
+  },
+  "id": "cli-0038",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "frames": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "params": {
+          "capabilities": {},
+          "clientInfo": {
+            "name": "conformance",
+            "version": "0"
+          },
+          "protocolVersion": "2025-11-25"
+        }
+      },
+      {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "method": "tools/list"
+      }
+    ],
+    "tools_list_id": 2
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-13"
+}

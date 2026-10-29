@@ -1,0 +1,28 @@
+{
+  "area": "bundle",
+  "description": "AGSC-00-17 as amended for 1.1: where content/index.md and agsc.config.json carry different spec_version values, a tool reports the difference as the warning AGSC-E506 and the configuration's value governs. Derivation: the fixture's configuration declares 1.0.0; the Bundle root document is replaced by a copy that declares 1.0.1, the same MAJOR, so nothing else is at fault. One warning on content/index.md. Exit 0.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E506",
+          "file": "content/index.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0016",
+  "input": {
+    "add_files": {
+      "content/index.md": "---\nspec_version: 1.0.1\nokf_version: \"0.2\"\ntitle: Minimal Bundle\ndescription: The smallest Bundle that conforms to AgenticSystemCore, used by the engine's own tests as a fixture.\nbase: https://minimal.example/\nlang: en\nlicense: LicenseRef-AgenticSystemCore-Content-Use-1.0\nprov:\n  origin: human\n  operator: human:andreibesleaga\n---\n\n# Minimal Bundle\n\nTwo concepts and one cluster: enough to build, lint, compose and serve.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-00-17"
+}

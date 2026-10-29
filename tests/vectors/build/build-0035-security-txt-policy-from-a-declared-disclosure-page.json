@@ -1,0 +1,77 @@
+{
+  "area": "build",
+  "description": "AGSC-06-36 as amended for 1.1: Policy is derived, where the authored file states none, as the absolute URL of the disclosure page that site.security_policy declares and otherwise, as in 1.0, of /legal/ where that route is emitted. Derivation, case by case, with the clause structure of build-0013 (Expires is the build instant plus 364 days: 2026-01-01T00:00:00Z + 364 d = 2026-12-31T00:00:00Z; derived fields follow the authored ones, in the order Expires, Canonical, Policy). (1) declared: the declared page wins over /legal/ even though /legal/ is emitted. (2) default: no declared page, /legal/ emitted: the 1.0 bytes of build-0013. (3) declared-without-legal: the declared page is used although /legal/ is not emitted. (4) authored-policy-kept: the authored file states Policy, which is published verbatim in the authored order, and no Policy is derived. (5) neither: no declared page and no /legal/: no Policy line.",
+  "expected": {
+    "cases": [
+      {
+        "findings": [],
+        "name": "declared",
+        "text": "Contact: mailto:security@a.example\nExpires: 2026-12-31T00:00:00Z\nCanonical: https://a.example/.well-known/security.txt\nPolicy: https://a.example/disclosure/\n"
+      },
+      {
+        "findings": [],
+        "name": "default",
+        "text": "Contact: mailto:security@a.example\nExpires: 2026-12-31T00:00:00Z\nCanonical: https://a.example/.well-known/security.txt\nPolicy: https://a.example/legal/\n"
+      },
+      {
+        "findings": [],
+        "name": "declared-without-legal",
+        "text": "Contact: mailto:security@a.example\nExpires: 2026-12-31T00:00:00Z\nCanonical: https://a.example/.well-known/security.txt\nPolicy: https://a.example/disclosure/\n"
+      },
+      {
+        "findings": [],
+        "name": "authored-policy-kept",
+        "text": "Contact: mailto:security@a.example\nPolicy: https://a.example/own-policy/\nExpires: 2026-12-31T00:00:00Z\nCanonical: https://a.example/.well-known/security.txt\n"
+      },
+      {
+        "findings": [],
+        "name": "neither",
+        "text": "Contact: mailto:security@a.example\nExpires: 2026-12-31T00:00:00Z\nCanonical: https://a.example/.well-known/security.txt\n"
+      }
+    ]
+  },
+  "id": "build-0035",
+  "input": {
+    "base": "https://a.example/",
+    "cases": [
+      {
+        "authored": "Contact: mailto:security@a.example\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": true,
+        "name": "declared",
+        "security_policy": "https://a.example/disclosure/"
+      },
+      {
+        "authored": "Contact: mailto:security@a.example\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": true,
+        "name": "default"
+      },
+      {
+        "authored": "Contact: mailto:security@a.example\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": false,
+        "name": "declared-without-legal",
+        "security_policy": "https://a.example/disclosure/"
+      },
+      {
+        "authored": "Contact: mailto:security@a.example\nPolicy: https://a.example/own-policy/\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": true,
+        "name": "authored-policy-kept",
+        "security_policy": "https://a.example/disclosure/"
+      },
+      {
+        "authored": "Contact: mailto:security@a.example\n",
+        "instant": "2026-01-01T00:00:00Z",
+        "legal": false,
+        "name": "neither"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-36"
+}

@@ -1,0 +1,93 @@
+{
+  "area": "conform",
+  "description": "AGSC-10-15 as amended for 1.1: the Level is the single source of the vector set, and a claim lists a Level's areas in one fixed order, the order in which AGSC-09-04 names the twenty-five areas, restricted to the areas the Level names (AGSC-10-02 to AGSC-10-05); no class sentence of AGSC-00-09 to AGSC-00-11 is consulted. It replaces conform-0003, which asserted the Level-1 list in the order AGSC-10-15 then left open. Derivation: AGSC-09-04 names frontmatter, slug, links, jcs, graph, lint, cli, bundle, prov, ledger, compose, build, discovery, adopt, import, export, skills, adapters, channels, harness, run, conform, boundary, chunks, boards. Level 0 names frontmatter, slug, bundle, discovery; Level 1 adds links, jcs, lint; Level 2 adds graph, build, adopt, ledger, import, export, skills, chunks, boards, boundary; Level 3 is all twenty-five.",
+  "expected": {
+    "areas_by_level": {
+      "0": [
+        "frontmatter",
+        "slug",
+        "bundle",
+        "discovery"
+      ],
+      "1": [
+        "frontmatter",
+        "slug",
+        "links",
+        "jcs",
+        "lint",
+        "bundle",
+        "discovery"
+      ],
+      "2": [
+        "frontmatter",
+        "slug",
+        "links",
+        "jcs",
+        "graph",
+        "lint",
+        "bundle",
+        "ledger",
+        "build",
+        "discovery",
+        "adopt",
+        "import",
+        "export",
+        "skills",
+        "boundary",
+        "chunks",
+        "boards"
+      ],
+      "3": [
+        "frontmatter",
+        "slug",
+        "links",
+        "jcs",
+        "graph",
+        "lint",
+        "cli",
+        "bundle",
+        "prov",
+        "ledger",
+        "compose",
+        "build",
+        "discovery",
+        "adopt",
+        "import",
+        "export",
+        "skills",
+        "adapters",
+        "channels",
+        "harness",
+        "run",
+        "conform",
+        "boundary",
+        "chunks",
+        "boards"
+      ]
+    },
+    "second_list_consulted": false,
+    "source": "AGSC-09-04, AGSC-10-02, AGSC-10-03, AGSC-10-04, AGSC-10-05, AGSC-10-15"
+  },
+  "id": "conform-0005",
+  "input": {
+    "claims": [
+      {
+        "level": 0
+      },
+      {
+        "level": 1
+      },
+      {
+        "level": 2
+      },
+      {
+        "level": 3
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-10-15"
+}

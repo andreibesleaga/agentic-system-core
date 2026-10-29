@@ -1,0 +1,72 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-41, two sub-cases over the fixture of `lint-0057`. In `severity-warning` the shape's severity is `sh:Warning`: the same missing controller on `engine-a` is a warning AGSC-E421 and `verify` exits 0. In `outside-the-subset` the property shape uses `sh:sparql`, which is not in the SHACL Core subset the engine evaluates: the shapes file is the error AGSC-E420 and no invariant is evaluated.",
+  "expected": {
+    "cases": [
+      {
+        "name": "severity-warning",
+        "verify": {
+          "exit": 0,
+          "findings": [
+            {
+              "code": "AGSC-E421",
+              "severity": "warn",
+              "slug": "engine-a"
+            }
+          ]
+        }
+      },
+      {
+        "name": "outside-the-subset",
+        "verify": {
+          "exit": 1,
+          "findings": [
+            {
+              "code": "AGSC-E420",
+              "file": "domain/shapes.ttl",
+              "severity": "error"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "id": "lint-0058",
+  "input": {
+    "argv": [
+      "verify",
+      "--json"
+    ],
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"domain\": {\n    \"shapes\": \"domain/shapes.ttl\",\n    \"vocabulary\": \"domain/vocabulary.ttl\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n",
+          "content/concepts/ctl.md": "---\ntype: concept\ntitle: Controller\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndomain_links:\n  controls:\n    - engine-b\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+          "content/concepts/engine-a.md": "---\ntype: concept\ntitle: Engine a\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndomain_type: Engine\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+          "content/concepts/engine-b.md": "---\ntype: concept\ntitle: Engine b\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndomain_type: Engine\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+          "domain/shapes.ttl": "@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix sh: <http://www.w3.org/ns/shacl#> .\n@prefix shp: <https://minimal.example/ns/domain-shapes#> .\n\nshp:EngineShape\n    a sh:NodeShape ;\n    sh:property shp:EngineControlled ;\n    sh:targetClass dom:Engine .\n\nshp:EngineControlled\n    a sh:PropertyShape ;\n    sh:message \"Every engine needs a controller.\"@en ;\n    sh:minCount 1 ;\n    sh:path dom:controlled-by ;\n    sh:severity sh:Warning .\n",
+          "domain/vocabulary.ttl": "@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n\nasc:Concept\n    a owl:Class .\n\nasc:Episode\n    a owl:Class .\n\nasc:Cluster\n    a owl:Class .\n\nasc:uses\n    a owl:ObjectProperty .\n\nskos:definition\n    a owl:AnnotationProperty .\n\n<https://minimal.example/ns/domain>\n    a owl:Ontology ;\n    rdfs:label \"Minimal domain vocabulary\" .\n\ndom:Engine\n    a owl:Class ;\n    rdfs:label \"Engine\" ;\n    rdfs:subClassOf asc:Concept ;\n    skos:definition \"A machine that turns fuel into thrust.\"@en .\n\ndom:controlled-by\n    a owl:ObjectProperty ;\n    rdfs:label \"controlled by\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controls ;\n    skos:definition \"This engine is run by the target controller.\"@en .\n\ndom:controls\n    a owl:ObjectProperty ;\n    rdfs:label \"controls\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controlled-by ;\n    skos:definition \"This controller runs the target engine.\"@en .\n"
+        },
+        "name": "severity-warning"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"domain\": {\n    \"shapes\": \"domain/shapes.ttl\",\n    \"vocabulary\": \"domain/vocabulary.ttl\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n",
+          "content/concepts/ctl.md": "---\ntype: concept\ntitle: Controller\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndomain_links:\n  controls:\n    - engine-b\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+          "content/concepts/engine-a.md": "---\ntype: concept\ntitle: Engine a\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndomain_type: Engine\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+          "content/concepts/engine-b.md": "---\ntype: concept\ntitle: Engine b\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndomain_type: Engine\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+          "domain/shapes.ttl": "@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix sh: <http://www.w3.org/ns/shacl#> .\n@prefix shp: <https://minimal.example/ns/domain-shapes#> .\n\nshp:EngineShape\n    a sh:NodeShape ;\n    sh:property shp:EngineControlled ;\n    sh:targetClass dom:Engine .\n\nshp:EngineControlled\n    a sh:PropertyShape ;\n    sh:message \"Every engine needs a controller.\"@en ;\n    sh:minCount 1 ;\n    sh:sparql shp:Anything ;\n    sh:path dom:controlled-by ;\n    sh:severity sh:Violation .\n",
+          "domain/vocabulary.ttl": "@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n\nasc:Concept\n    a owl:Class .\n\nasc:Episode\n    a owl:Class .\n\nasc:Cluster\n    a owl:Class .\n\nasc:uses\n    a owl:ObjectProperty .\n\nskos:definition\n    a owl:AnnotationProperty .\n\n<https://minimal.example/ns/domain>\n    a owl:Ontology ;\n    rdfs:label \"Minimal domain vocabulary\" .\n\ndom:Engine\n    a owl:Class ;\n    rdfs:label \"Engine\" ;\n    rdfs:subClassOf asc:Concept ;\n    skos:definition \"A machine that turns fuel into thrust.\"@en .\n\ndom:controlled-by\n    a owl:ObjectProperty ;\n    rdfs:label \"controlled by\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controls ;\n    skos:definition \"This engine is run by the target controller.\"@en .\n\ndom:controls\n    a owl:ObjectProperty ;\n    rdfs:label \"controls\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controlled-by ;\n    skos:definition \"This controller runs the target engine.\"@en .\n"
+        },
+        "name": "outside-the-subset"
+      }
+    ],
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-41"
+}

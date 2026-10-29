@@ -1,0 +1,259 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-19 (4), (5) and (3) with AGSC-09-13a. `modern` (requests with 2026-07-28 `_meta`): `resources/read` of a URI that names no resource is the JSON-RPC error -32602 with `data.uri`; `tools/call` of a name the server does not serve is -32602; a `read` of a slug that is not in the Bundle is a result, not a JSON-RPC error, whose `isError` is true and whose `structuredContent` is the AGSC-09-13a envelope with the code AGSC-E301; a `read` that succeeds has `isError` false; a request of a revision the server does not speak is -32022 with `data.supported` `[\"2026-07-28\", \"2025-11-25\"]` and `data.requested` the value sent; `subscriptions/listen` is answered as an unknown method (-32601). `legacy` (a client that opens with `initialize` of 2025-11-25): the same `resources/read` miss is -32002, the code of that revision, with `data.uri`, and a tool error carries `isError` true there too.",
+  "expected": {
+    "cases": [
+      {
+        "name": "modern",
+        "responses": [
+          {
+            "error": {
+              "code": -32602,
+              "data": {
+                "uri": "memory://minimal/no-such-item"
+              }
+            },
+            "id": 1
+          },
+          {
+            "error": {
+              "code": -32602
+            },
+            "id": 2
+          },
+          {
+            "id": 3,
+            "result": {
+              "isError": true,
+              "resultType": "complete",
+              "structuredContent": {
+                "body": {
+                  "code": "AGSC-E301"
+                },
+                "source": "read",
+                "trust": "untrusted",
+                "type": "error"
+              }
+            }
+          },
+          {
+            "id": 4,
+            "result": {
+              "isError": false,
+              "resultType": "complete"
+            }
+          },
+          {
+            "error": {
+              "code": -32022,
+              "data": {
+                "requested": "1900-01-01",
+                "supported": [
+                  "2026-07-28",
+                  "2025-11-25"
+                ]
+              }
+            },
+            "id": 5
+          },
+          {
+            "error": {
+              "code": -32601
+            },
+            "id": 6
+          }
+        ]
+      },
+      {
+        "name": "legacy",
+        "responses": [
+          {
+            "id": 1,
+            "result": {
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          {
+            "error": {
+              "code": -32002,
+              "data": {
+                "uri": "memory://minimal/no-such-item"
+              }
+            },
+            "id": 2
+          },
+          {
+            "id": 3,
+            "result": {
+              "isError": true,
+              "structuredContent": {
+                "body": {
+                  "code": "AGSC-E301"
+                },
+                "type": "error"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "id": "cli-0034",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "frames": [
+          {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "resources/read",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              },
+              "uri": "memory://minimal/no-such-item"
+            }
+          },
+          {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              },
+              "arguments": {},
+              "name": "no-such-tool"
+            }
+          },
+          {
+            "id": 3,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              },
+              "arguments": {
+                "slug": "no-such-item"
+              },
+              "name": "read"
+            }
+          },
+          {
+            "id": 4,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              },
+              "arguments": {
+                "slug": "handoff"
+              },
+              "name": "read"
+            }
+          },
+          {
+            "id": 5,
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "1900-01-01"
+              }
+            }
+          },
+          {
+            "id": 6,
+            "jsonrpc": "2.0",
+            "method": "subscriptions/listen",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              }
+            }
+          }
+        ],
+        "name": "modern"
+      },
+      {
+        "frames": [
+          {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          },
+          {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "resources/read",
+            "params": {
+              "uri": "memory://minimal/no-such-item"
+            }
+          },
+          {
+            "id": 3,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "arguments": {
+                "slug": "no-such-item"
+              },
+              "name": "read"
+            }
+          }
+        ],
+        "name": "legacy"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-19"
+}

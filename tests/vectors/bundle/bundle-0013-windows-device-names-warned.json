@@ -1,0 +1,30 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-40: a path segment whose part before the first dot is a Windows device name is the warning AGSC-E423, and nothing is refused. The minimal fixture's lint reports nothing. Three conforming concepts are added to its cluster: con.md, whose slug con matches the slug grammar of AGSC-01-10 and which Windows opens as the console device, so one warning naming it; console.md, whose stem merely begins with con, and com10.md, because Windows reserves com1 to com9 and no more, which are the near misses and raise nothing. Warnings leave the exit code 0 (AGSC-00-14).",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E423",
+          "file": "content/concepts/con.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0013",
+  "input": {
+    "add_files": {
+      "content/concepts/com10.md": "---\ntype: concept\nkind: explainer\ntitle: Com ten\ndescription: A concept called com10, which is not a device name because Windows reserves com1 to com9 only.\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n",
+      "content/concepts/con.md": "---\ntype: concept\nkind: explainer\ntitle: Device named file\ndescription: A concept whose slug is a Windows device name; it matches the slug grammar of the specification.\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n",
+      "content/concepts/console.md": "---\ntype: concept\nkind: explainer\ntitle: Console notes\ndescription: A concept whose file name only begins like a device name, used as the near miss of the case.\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-40"
+}

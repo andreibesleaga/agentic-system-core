@@ -1,0 +1,259 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-18 and MCP revision 2026-07-28: the request headers are checked against the body and the revision. Header or body mismatches are HTTP 400 with JSON-RPC error -32020 (`Mcp-Name` differs from `params.name`; `MCP-Protocol-Version` missing; `MCP-Protocol-Version` differs from `io.modelcontextprotocol/protocolVersion` of `_meta`). A request of the revision 2025-11-25 — the one a client opens with `initialize` and a session — is HTTP 400 with -32022 and `data.supported` `[\"2026-07-28\"]`, `data.requested` the value sent. A method the server does not implement is HTTP 404 with -32601. A notification is accepted with HTTP 202 and no body. A session header a client sends is ignored: the answer is 200 and carries none (`headers_absent`). Codes and statuses are those of the transport page read on 2026-10-29.",
+  "expected": {
+    "http": [
+      {
+        "body": {
+          "error": {
+            "code": -32020
+          }
+        },
+        "name": "mcp-name-differs-from-the-body",
+        "status": 400
+      },
+      {
+        "body": {
+          "error": {
+            "code": -32020
+          }
+        },
+        "name": "version-header-missing",
+        "status": 400
+      },
+      {
+        "body": {
+          "error": {
+            "code": -32020
+          }
+        },
+        "name": "version-header-differs-from-meta",
+        "status": 400
+      },
+      {
+        "body": {
+          "error": {
+            "code": -32022,
+            "data": {
+              "requested": "2025-11-25",
+              "supported": [
+                "2026-07-28"
+              ]
+            }
+          }
+        },
+        "name": "a-revision-the-transport-does-not-speak",
+        "status": 400
+      },
+      {
+        "body": {
+          "error": {
+            "code": -32601
+          }
+        },
+        "name": "unknown-method",
+        "status": 404
+      },
+      {
+        "name": "a-notification",
+        "no_body": true,
+        "status": 202
+      },
+      {
+        "headers_absent": [
+          "mcp-session-id"
+        ],
+        "name": "a-session-header-is-ignored",
+        "status": 200
+      }
+    ]
+  },
+  "id": "cli-0030",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "http": [
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            },
+            "arguments": {
+              "query": "x"
+            },
+            "name": "search"
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/call",
+          "Mcp-Name": "read"
+        },
+        "method": "POST",
+        "name": "mcp-name-differs-from-the-body",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "Mcp-Method": "tools/list"
+        },
+        "method": "POST",
+        "name": "version-header-missing",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2025-11-25",
+          "Mcp-Method": "tools/list"
+        },
+        "method": "POST",
+        "name": "version-header-differs-from-meta",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2025-11-25"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2025-11-25",
+          "Mcp-Method": "tools/list"
+        },
+        "method": "POST",
+        "name": "a-revision-the-transport-does-not-speak",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/frobnicate",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/frobnicate"
+        },
+        "method": "POST",
+        "name": "unknown-method",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "jsonrpc": "2.0",
+          "method": "notifications/initialized",
+          "params": {}
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "notifications/initialized"
+        },
+        "method": "POST",
+        "name": "a-notification",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/list",
+          "Mcp-Session-Id": "abc"
+        },
+        "method": "POST",
+        "name": "a-session-header-is-ignored",
+        "path": "/mcp"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-18"
+}

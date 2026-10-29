@@ -1,0 +1,50 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-18 from 1.1, the webmcp half for the three tools that 1.1 adds (AGSC-09-13). `readOnlyHint: true` on `brief`, `explain` and `check`, which write nothing; `untrustedContentHint: true` on `brief`, whose result carries prose (the titles and the quoted prose of the selection), and `untrustedContentHint: false` on `explain` and `check`, whose results are slugs, keys, rule names and codes only, as `links` is. The seven tools of 1.0 stay as bnd-0036 states them. The `mcp` half is repeated from bnd-0036 so that the case runs through the same handler: the settings object of the extension identifier `com.agenticsystemcore/knowledge` under the capabilities the node reports, one member `linkset`, the absolute https URL of this node's /.well-known/knowledge-linkset for the stated `site.base`.",
+  "expected": {
+    "mcp": {
+      "server/discover": {
+        "capabilities": {
+          "extensions": {
+            "com.agenticsystemcore/knowledge": {
+              "linkset": "https://a.example/.well-known/knowledge-linkset"
+            }
+          }
+        }
+      }
+    },
+    "webmcp": {
+      "brief": {
+        "readOnlyHint": true,
+        "untrustedContentHint": true
+      },
+      "check": {
+        "readOnlyHint": true,
+        "untrustedContentHint": false
+      },
+      "explain": {
+        "readOnlyHint": true,
+        "untrustedContentHint": false
+      }
+    }
+  },
+  "id": "bnd-0050",
+  "input": {
+    "site": {
+      "base": "https://a.example/"
+    },
+    "surfaces": [
+      "webmcp",
+      "mcp"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "requires_surface": [
+    "webmcp",
+    "mcp"
+  ],
+  "rule": "AGSC-11-18"
+}

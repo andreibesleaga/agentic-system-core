@@ -66,6 +66,9 @@ skos:Concept
 skos:ConceptScheme
     a owl:Class .
 
+skos:definition
+    a owl:AnnotationProperty .
+
 prov:Activity
     a owl:Class .
 
@@ -179,7 +182,8 @@ asc:blockedBy
     rdfs:comment "Mode-2 key 13: the subject cannot proceed until the object is resolved. No domain, range or super-property is declared. Combiner semantics: none." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "blocked by" ;
-    owl:inverseOf asc:blocks .
+    owl:inverseOf asc:blocks ;
+    skos:definition "This item cannot go ahead until the target is resolved."@en .
 
 asc:blocks
     a owl:ObjectProperty ;
@@ -197,10 +201,11 @@ asc:consumes
     rdfs:range xsd:string .
 
 asc:contradicts
-    a owl:ObjectProperty, owl:SymmetricProperty ;
+    a owl:ObjectProperty, owl:IrreflexiveProperty, owl:SymmetricProperty ;
     rdfs:comment "Asserts that two items cannot both be true. A pair of them in the result of a composition is a warning (AGSC-E803), never a failure (AGSC-07-07). No domain or range is declared: any item type may author this key, and declaring asc:Concept would entail a Concept typing for Procedures, Episodes and Gates." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
-    rdfs:label "contradicts" .
+    rdfs:label "contradicts" ;
+    skos:definition "This item and the target make claims that cannot both be true."@en .
 
 asc:coveredBy
     a owl:ObjectProperty ;
@@ -214,14 +219,16 @@ asc:covers
     rdfs:comment "Mode-2 key 12: the subject covers the object (a test, a check or a document covering a requirement). Combiner semantics: none." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "covers" ;
-    owl:inverseOf asc:coveredBy .
+    owl:inverseOf asc:coveredBy ;
+    skos:definition "This item covers the target, as a test or a document covers a requirement."@en .
 
 asc:decidedBy
     a owl:ObjectProperty ;
     rdfs:comment "Mode-2 key 14: the subject was settled by the object, a decision item. Combiner semantics: none." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "decided by" ;
-    owl:inverseOf asc:decides .
+    owl:inverseOf asc:decides ;
+    skos:definition "The target is the decision record that settled this item."@en .
 
 asc:decides
     a owl:ObjectProperty ;
@@ -231,10 +238,11 @@ asc:decides
     owl:inverseOf asc:decidedBy .
 
 asc:excludes
-    a owl:ObjectProperty, owl:SymmetricProperty ;
+    a owl:ObjectProperty, owl:IrreflexiveProperty, owl:SymmetricProperty ;
     rdfs:comment "Asserts mutual exclusion. Evaluated after the requires closure; a surviving pair invalidates a composition. No domain or range is declared, for the reason given on asc:contradicts." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
-    rdfs:label "excludes" .
+    rdfs:label "excludes" ;
+    skos:definition "This item and the target cannot be used together."@en .
 
 asc:generatedAt
     a owl:DatatypeProperty ;
@@ -277,7 +285,8 @@ asc:implements
     rdfs:comment "Mode-2 key 10: the subject realises the object (code or a procedure realising a spec). Combiner semantics: none." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "implements" ;
-    owl:inverseOf asc:implementedBy .
+    owl:inverseOf asc:implementedBy ;
+    skos:definition "This item puts the target into practice, as code or a procedure puts a specification into practice."@en .
 
 asc:isVerifiedBy
     a owl:ObjectProperty ;
@@ -430,7 +439,8 @@ asc:uses
     rdfs:comment "Soft dependency: the subject draws on the object. A composition warns when a used item is absent. No domain, range or super-property is declared: skos:related is a sub-property of skos:semanticRelation, whose domain and range are skos:Concept (S19/S20), so a super-property axiom would re-introduce the unintended Concept typing and the S37 contradiction for Clusters (AGSC-05-26a)." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "uses" ;
-    owl:inverseOf asc:usedBy .
+    owl:inverseOf asc:usedBy ;
+    skos:definition "This item draws on the target and can still be used when the target is absent."@en .
 
 asc:verifiedAt
     a owl:DatatypeProperty ;
@@ -461,4 +471,5 @@ asc:verifies
     rdfs:comment "Mode-2 key 11: the subject checks that the object holds. Its computed inverse is asc:isVerifiedBy (the datatype property asc:verifiedBy carries a Review actor and is unrelated). Combiner semantics: none." ;
     rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
     rdfs:label "verifies" ;
-    owl:inverseOf asc:isVerifiedBy .
+    owl:inverseOf asc:isVerifiedBy ;
+    skos:definition "This item checks that the target holds."@en .

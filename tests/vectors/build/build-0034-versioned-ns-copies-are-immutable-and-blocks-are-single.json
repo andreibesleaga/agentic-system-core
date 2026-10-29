@@ -1,0 +1,45 @@
+{
+  "area": "build",
+  "description": "AGSC-06-06 with AGSC-06-17: every file under a version directory /ns/<major>.<minor>.<patch>/ is served with Cache-Control: public, max-age=31536000, immutable, and no other address is (the unversioned /ns/context.jsonld, the namespace site's /ns/agsc.ttl, /ns/agsc.rdf, /ns/schema/** and the /ns/ index change with a release); in _headers each address pattern is written once, with the Link values of AGSC-06-40 in the one block of / and one Content-Security-Policy for /query/. The case is stated on the header set of the Cloudflare Pages profile, not on file bytes (AGSC-06-01): for each address, the headers served; for the patterns, how many blocks name each. Derived by hand from the rules.",
+  "expected": {
+    "cache_control_immutable_not_on": [
+      "/",
+      "/.well-known/knowledge-linkset",
+      "/ns/context.jsonld",
+      "/query/"
+    ],
+    "cache_control_immutable_on": [
+      "/ns/1.0.0/context.jsonld"
+    ],
+    "cache_control_value_on_versioned_copies": "public, max-age=31536000, immutable",
+    "content_security_policy_count": {
+      "/query/": 1
+    },
+    "every_address_pattern_written_once": true,
+    "link_header_on_home_block": true,
+    "namespace_site_addresses_not_immutable": [
+      "/ns/",
+      "/ns/agsc.rdf",
+      "/ns/agsc.ttl",
+      "/ns/schema/item.schema.json"
+    ]
+  },
+  "id": "build-0034",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "deployment_profile": "cloudflare-pages",
+    "git_history": false,
+    "routes": [
+      "/",
+      "/ns/1.0.0/context.jsonld",
+      "/ns/context.jsonld",
+      "/query/"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-06"
+}

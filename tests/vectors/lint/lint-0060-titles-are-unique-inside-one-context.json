@@ -1,0 +1,39 @@
+{
+  "area": "lint",
+  "description": "AGSC-08-32: on a node that declares contexts, the label check of AGSC-05-21 is made inside each context, and inside a context two published items with equal title after NFC and case folding are the warning AGSC-E419 whatever their types, reported on the later one by path. Derivation: the configuration is the fixture's with domain.contexts naming the clusters billing and shipping, each with a namespace; the clusters are added. Four items are titled Account: account-a (concept, billing), account-b (concept, shipping), account-c (concept, billing, written ACCOUNT) and the procedure account-steps (billing). account-a is the first of the billing group by path; account-c is a second concept of that context and account-steps a second item of another type, so each is one AGSC-E419, and neither is AGSC-E416. account-b is in the other context and is compared with nothing: the 1.0 check would have reported it as AGSC-E416 beside account-a, and 1.1 reports no warning for it. Two warnings, exit 0.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E419",
+          "file": "content/concepts/account-c.md",
+          "severity": "warn"
+        },
+        {
+          "code": "AGSC-E419",
+          "file": "content/procedures/account-steps.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "lint-0060",
+  "input": {
+    "add_files": {
+      "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  },\n  \"domain\": {\n    \"contexts\": [\n      {\n        \"cluster\": \"billing\",\n        \"namespace\": \"https://minimal.example/ns/billing#\"\n      },\n      {\n        \"cluster\": \"shipping\",\n        \"namespace\": \"https://minimal.example/ns/shipping#\"\n      }\n    ]\n  }\n}\n",
+      "content/clusters/billing.md": "---\ntype: cluster\ntitle: Billing\ndescription: The billing context of the case on bounded contexts, with its own namespace.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\nA cluster.\n",
+      "content/clusters/shipping.md": "---\ntype: cluster\ntitle: Shipping\ndescription: The shipping context of the case on bounded contexts, with its own namespace.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\nA cluster.\n",
+      "content/concepts/account-a.md": "---\ntype: concept\nkind: term\ntitle: Account\ndescription: A term used by the case on bounded contexts; its title is the point of the case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - billing\nprov:\n  origin: human\n  operator: human:tester\n---\n\nThe term.\n",
+      "content/concepts/account-b.md": "---\ntype: concept\nkind: term\ntitle: Account\ndescription: A term used by the case on bounded contexts; its title is the point of the case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - shipping\nprov:\n  origin: human\n  operator: human:tester\n---\n\nThe term.\n",
+      "content/concepts/account-c.md": "---\ntype: concept\nkind: term\ntitle: ACCOUNT\ndescription: A term used by the case on bounded contexts; its title is the point of the case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - billing\nprov:\n  origin: human\n  operator: human:tester\n---\n\nThe term.\n",
+      "content/procedures/account-steps.md": "---\ntype: procedure\ntitle: ACCOUNT\ntags:\n  - agents\n  - patterns\nclusters:\n  - billing\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## When\n\nWhen an account is opened.\n\n## Steps\n\nOpen it.\n\n## Checks\n\nIt exists.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-32"
+}

@@ -1,0 +1,51 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-24: a translation-layer peer needs a crosswalk, and a result whose IRI is the object of several statements carries one crosswalk object for each, in code-point order of local. Derivation: a.example keeps its own model and translates b.example's through domain/b.ttl, which holds two statements about https://b.example/concepts/client/: a.example's customer is skos:broadMatch to it (the peer's concept is broader) and a.example's account-holder is skos:closeMatch to it. The result for that IRI carries both objects in code-point order of local, so account-holder (a) comes before customer (c). The relationship is translation-layer and the result stays untrusted with its origin; the crosswalk makes it neither trusted nor a Link.",
+  "expected": {
+    "results": [
+      {
+        "crosswalk": [
+          {
+            "local": "https://a.example/concepts/account-holder/",
+            "match": "closeMatch"
+          },
+          {
+            "local": "https://a.example/concepts/customer/",
+            "match": "broadMatch"
+          }
+        ],
+        "iri": "https://b.example/concepts/client/",
+        "origin": "https://b.example/",
+        "relationship": "translation-layer",
+        "trust": "untrusted"
+      }
+    ]
+  },
+  "id": "bnd-0047",
+  "input": {
+    "crosswalks": {
+      "domain/b.ttl": "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n<https://a.example/concepts/customer/> skos:broadMatch <https://b.example/concepts/client/> .\n<https://a.example/concepts/account-holder/> skos:closeMatch <https://b.example/concepts/client/> .\n"
+    },
+    "peers": [
+      {
+        "crosswalk": "domain/b.ttl",
+        "relationship": "translation-layer",
+        "url": "https://b.example/.well-known/knowledge-linkset"
+      }
+    ],
+    "results": [
+      {
+        "iri": "https://b.example/concepts/client/",
+        "origin": "https://b.example/"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-24"
+}

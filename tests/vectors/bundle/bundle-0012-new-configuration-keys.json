@@ -1,0 +1,267 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-18 as amended for 1.1: the keys 1.1 adds are all OPTIONAL and the configuration stays closed. Derivation, case by case, each configuration being otherwise minimal and valid. (1) every key 1.1 adds, with a value of the right type, is accepted with no finding: compose.brief, discovery.ai_catalog, lint.min_sources, site.query_page, site.author_orcid, bundle.creator, bundle.license_url, contribute[].repository and branch, a typed peer of each relationship, ledger.actors and the four members of domain. The configuration declares 1.0.0, the tool's own version, so no newer-MINOR warning is raised; a Bundle that uses the keys SHOULD declare 1.1.0 or later but need not for this case. (2) a boolean given as a string is a schema failure, AGSC-E201, at compose.brief; (3) a negative lint.min_sources is AGSC-E201; (4) a string for site.query_page is AGSC-E201; (5) a relationship outside the three is a value outside an enumeration, AGSC-E203, which the precedence paragraph of spec/09 section 9.4 gives to every enumeration violation; (6) a translation-layer peer with no crosswalk lacks a required member, AGSC-E202 (AGSC-11-24); (7) a domain path with a parent-directory segment fails the relative-path grammar, a pattern violation, AGSC-E204. Exit 0 for the accepted configuration and 1 for the others: none of these is a usage-class code (AGSC-09-08).",
+  "expected": {
+    "cases": [
+      {
+        "accepted": true,
+        "exit": 0,
+        "findings": [],
+        "name": "new-keys-accepted"
+      },
+      {
+        "accepted": false,
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E201",
+            "path": "compose.brief",
+            "severity": "error"
+          }
+        ],
+        "name": "brief-wrong-type"
+      },
+      {
+        "accepted": false,
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E201",
+            "path": "lint.min_sources",
+            "severity": "error"
+          }
+        ],
+        "name": "min-sources-negative"
+      },
+      {
+        "accepted": false,
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E201",
+            "path": "site.query_page",
+            "severity": "error"
+          }
+        ],
+        "name": "query-page-wrong-type"
+      },
+      {
+        "accepted": false,
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E203",
+            "path": "peers[0].relationship",
+            "severity": "error"
+          }
+        ],
+        "name": "peer-relationship-unknown"
+      },
+      {
+        "accepted": false,
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E202",
+            "severity": "error"
+          }
+        ],
+        "name": "translation-layer-needs-a-crosswalk"
+      },
+      {
+        "accepted": false,
+        "exit": 1,
+        "findings": [
+          {
+            "code": "AGSC-E204",
+            "path": "domain.vocabulary",
+            "severity": "error"
+          }
+        ],
+        "name": "domain-path-leaves-the-bundle"
+      }
+    ]
+  },
+  "id": "bundle-0012",
+  "input": {
+    "cases": [
+      {
+        "config": {
+          "bundle": {
+            "creator": {
+              "name": "Ada Example",
+              "orcid": "0000-0002-1825-0097"
+            },
+            "id": "example",
+            "license_url": "https://example.org/licence/1.1/",
+            "operator": "human:alice"
+          },
+          "compose": {
+            "brief": true
+          },
+          "contribute": [
+            {
+              "branch": "main",
+              "mode": "pr",
+              "repository": "https://example.org/repo.git",
+              "target": "https://example.org/pr/"
+            }
+          ],
+          "discovery": {
+            "ai_catalog": true
+          },
+          "domain": {
+            "contexts": [
+              {
+                "cluster": "billing",
+                "namespace": "https://example.org/ns/billing#"
+              }
+            ],
+            "questions": "domain/questions.json",
+            "shapes": "domain/shapes.ttl",
+            "vocabulary": "domain/vocabulary.ttl"
+          },
+          "ledger": {
+            "actors": {
+              "ada@example.org": "human:ada"
+            }
+          },
+          "lint": {
+            "min_sources": 2
+          },
+          "peers": [
+            "https://b.example/.well-known/knowledge-linkset",
+            {
+              "crosswalk": "domain/c-crosswalk.ttl",
+              "relationship": "translation-layer",
+              "url": "https://c.example/.well-known/knowledge-linkset"
+            },
+            {
+              "relationship": "conformist",
+              "url": "https://d.example/.well-known/knowledge-linkset"
+            }
+          ],
+          "site": {
+            "author_orcid": "0000-0002-1825-0097",
+            "base": "https://example.org/",
+            "query_page": false,
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "new-keys-accepted"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "compose": {
+            "brief": "yes"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "brief-wrong-type"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "lint": {
+            "min_sources": -1
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "min-sources-negative"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "query_page": "no",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "query-page-wrong-type"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "peers": [
+            {
+              "relationship": "friend",
+              "url": "https://c.example/.well-known/knowledge-linkset"
+            }
+          ],
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "peer-relationship-unknown"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "peers": [
+            {
+              "relationship": "translation-layer",
+              "url": "https://c.example/.well-known/knowledge-linkset"
+            }
+          ],
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "translation-layer-needs-a-crosswalk"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "domain": {
+            "vocabulary": "../vocabulary.ttl"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "domain-path-leaves-the-bundle"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-18"
+}

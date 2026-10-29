@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "AGSC-02-25: the type of a warrant is one of literary, user and organisational, the three kinds of warrant of ANSI/NISO Z39.19. Derivation: the warrant below has a source and the type personal, which is none of the three, so AGSC-E512 (not AGSC-E203, which AGSC-E512 is more specific than). The warrant key is on line 6.",
+  "expected": {
+    "error": "AGSC-E512",
+    "line": 6
+  },
+  "id": "fm-0027",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Account\ndescription: A term of the case on the domain keys; its keys are the point of the case.\nkind: term\nwarrant:\n  source: https://example.org/survey\n  type: personal\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-25"
+}

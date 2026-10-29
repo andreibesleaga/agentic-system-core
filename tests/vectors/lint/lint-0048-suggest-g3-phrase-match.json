@@ -1,0 +1,35 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-35, generator G3: the `title` or an alias of `target`, at least four code points long and found in the body of `source` as a whole phrase (compared after NFC and case folding, touching no letter or digit on either side, outside code spans and fenced blocks), is a `related` suggestion with the matching label as evidence. `phrase-a` contains Rate limiter in prose: one suggestion (the same words inside a code span are ignored). `phrase-d` contains the alias throttle: one suggestion naming the alias Throttle. `phrase-c` has rate limiters (a letter follows) and API, which is only three code points long: nothing.",
+  "expected": {
+    "file_bytes": {
+      "dist/suggestions.json": "{\"bundle_version\":\"0.0.0+19700101T000000Z\",\"suggestions\":[{\"evidence\":[{\"kind\":\"phrase\",\"phrase\":\"Rate limiter\"}],\"generator\":\"G3\",\"key\":\"related\",\"source\":\"phrase-a\",\"target\":\"phrase-b\"},{\"evidence\":[{\"kind\":\"phrase\",\"phrase\":\"Throttle\"}],\"generator\":\"G3\",\"key\":\"related\",\"source\":\"phrase-d\",\"target\":\"phrase-b\"}]}\n"
+    },
+    "lint": {
+      "exit": 0,
+      "findings": []
+    },
+    "written_only_under": "dist"
+  },
+  "id": "lint-0048",
+  "input": {
+    "add_files": {
+      "content/concepts/api.md": "---\ntype: concept\ntitle: API\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/phrase-a.md": "---\ntype: concept\ntitle: Phrase note a\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nThe rate limiter protects a service. A `rate limiter` in code is ignored.\n",
+      "content/concepts/phrase-b.md": "---\ntype: concept\ntitle: Rate limiter\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\naliases:\n  - Throttle\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/phrase-c.md": "---\ntype: concept\ntitle: Phrase note c\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nOur rate limiters are tuned. API is fast.\n",
+      "content/concepts/phrase-d.md": "---\ntype: concept\ntitle: Phrase note d\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA throttle slows callers.\n"
+    },
+    "argv": [
+      "lint",
+      "--suggest"
+    ],
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-35"
+}

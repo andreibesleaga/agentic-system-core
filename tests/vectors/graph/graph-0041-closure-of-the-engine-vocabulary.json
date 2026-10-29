@@ -1,0 +1,98 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-37: `export --closure` writes the triples that the RL subset (cax-sco, prp-dom, prp-rng, prp-spo1, prp-symp, prp-inv1, prp-inv2, prp-trp, with prp-irp as a check) entails from `graph.nq` and `ontology/agsc.ttl` and that `graph.nq` does not hold, in the named graph of the Bundle. Here they are the superclass types (`asc:Concept` gives `skos:Concept`, the lesson gives both, the cluster `skos:Collection`, the episode `prov:Activity`, the Source `prov:Entity`, the Bundle `skos:ConceptScheme`) and the types the domain of `asc:kind`, `asc:grade` and the other properties gives. The inverses and symmetric partners are already in the graph, so they add nothing. Item `a` excludes itself: `asc:excludes` is irreflexive in the vocabulary, so prp-irp reports the warning AGSC-E313 and adds no triple. The file is sorted by bytes and ends with one LF.",
+  "expected": {
+    "closure": "<https://a.example/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#ConceptScheme> <https://a.example/> .\n<https://a.example/clusters/k/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Collection> <https://a.example/> .\n<https://a.example/concepts/a/#source-1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/prov#Entity> <https://a.example/> .\n<https://a.example/concepts/a/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> <https://a.example/> .\n<https://a.example/concepts/c/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> <https://a.example/> .\n<https://a.example/episodes/e/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/prov#Activity> <https://a.example/> .\n<https://a.example/lessons/b/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> <https://a.example/> .\n<https://a.example/lessons/b/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/agentic-system-core/ns#Concept> <https://a.example/> .\n",
+    "warnings": [
+      "AGSC-E313"
+    ]
+  },
+  "id": "graph-0041",
+  "input": {
+    "bundle": {
+      "license_prose": "CC0-1.0",
+      "spec_version": "1.0.0"
+    },
+    "items": [
+      {
+        "clusters": [
+          "k"
+        ],
+        "excludes": [
+          "a",
+          "c"
+        ],
+        "kind": "term",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "a",
+        "sources": [
+          {
+            "grade": "primary",
+            "resource": "https://example.org/p"
+          }
+        ],
+        "title": "a",
+        "type": "concept",
+        "uses": [
+          "b"
+        ]
+      },
+      {
+        "clusters": [
+          "k"
+        ],
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "severity": "info",
+        "slug": "b",
+        "title": "b",
+        "type": "lesson"
+      },
+      {
+        "kind": "term",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "c",
+        "title": "c",
+        "type": "concept"
+      },
+      {
+        "description": "A cluster for the closure case.",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "k",
+        "title": "k",
+        "type": "cluster"
+      },
+      {
+        "actor": "human:tester",
+        "outcome": "success",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "e",
+        "started": "2026-01-01T00:00:00Z",
+        "title": "e",
+        "type": "episode"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-37"
+}

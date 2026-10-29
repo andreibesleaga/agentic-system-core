@@ -1,0 +1,218 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-40: the Link header of the home page carries the FAIR Signposting Level 1 links (signposting.org/FAIR, read 2026-10-29): cite-as exactly once (the first related[] cite-as link in href order, else the Bundle IRI), two type links (https://schema.org/Dataset then https://schema.org/AboutPage), describedby for the discovery document and for /graph.jsonld, item for the graph files and the chunks, license when the node has a licence URL (AGSC-06-44), and linkset for the discovery document. The values are compared as a set of {href, rel, type} (the order and the folding of the values into one field or several are not asserted, and the targets on the node are root-relative while cite-as and license are absolute). Three nodes: public with a DOI as cite-as and a versioned licence URL; public with the defaults (the Content Use Terms, /legal/ emitted); restricted (no item link). The validator part: given a URL whose / response lacks the describedby link, validate-wellknown reports a warning under AGSC-E202, because the header is a SHOULD in AGSC-06-25. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "links_as_set": [
+          {
+            "href": "https://doi.org/10.5281/zenodo.1",
+            "rel": "cite-as"
+          },
+          {
+            "href": "/.well-known/knowledge-linkset",
+            "rel": "describedby",
+            "type": "application/linkset+json"
+          },
+          {
+            "href": "/graph.jsonld",
+            "rel": "describedby",
+            "type": "application/ld+json"
+          },
+          {
+            "href": "/chunks.jsonl",
+            "rel": "item",
+            "type": "application/jsonl"
+          },
+          {
+            "href": "/graph.nq",
+            "rel": "item",
+            "type": "application/n-quads"
+          },
+          {
+            "href": "/graph.ttl",
+            "rel": "item",
+            "type": "text/turtle"
+          },
+          {
+            "href": "https://creativecommons.org/licenses/by/4.0/",
+            "rel": "license"
+          },
+          {
+            "href": "/.well-known/knowledge-linkset",
+            "rel": "linkset",
+            "type": "application/linkset+json"
+          },
+          {
+            "href": "https://schema.org/AboutPage",
+            "rel": "type"
+          },
+          {
+            "href": "https://schema.org/Dataset",
+            "rel": "type"
+          }
+        ],
+        "name": "public-with-doi-and-versioned-licence"
+      },
+      {
+        "links_as_set": [
+          {
+            "href": "https://a.example/",
+            "rel": "cite-as"
+          },
+          {
+            "href": "/.well-known/knowledge-linkset",
+            "rel": "describedby",
+            "type": "application/linkset+json"
+          },
+          {
+            "href": "/graph.jsonld",
+            "rel": "describedby",
+            "type": "application/ld+json"
+          },
+          {
+            "href": "/chunks.jsonl",
+            "rel": "item",
+            "type": "application/jsonl"
+          },
+          {
+            "href": "/graph.nq",
+            "rel": "item",
+            "type": "application/n-quads"
+          },
+          {
+            "href": "/graph.ttl",
+            "rel": "item",
+            "type": "text/turtle"
+          },
+          {
+            "href": "https://a.example/legal/",
+            "rel": "license"
+          },
+          {
+            "href": "/.well-known/knowledge-linkset",
+            "rel": "linkset",
+            "type": "application/linkset+json"
+          },
+          {
+            "href": "https://schema.org/AboutPage",
+            "rel": "type"
+          },
+          {
+            "href": "https://schema.org/Dataset",
+            "rel": "type"
+          }
+        ],
+        "name": "public-defaults"
+      },
+      {
+        "links_as_set": [
+          {
+            "href": "https://a.example/",
+            "rel": "cite-as"
+          },
+          {
+            "href": "/.well-known/knowledge-linkset",
+            "rel": "describedby",
+            "type": "application/linkset+json"
+          },
+          {
+            "href": "/graph.jsonld",
+            "rel": "describedby",
+            "type": "application/ld+json"
+          },
+          {
+            "href": "https://a.example/legal/",
+            "rel": "license"
+          },
+          {
+            "href": "/.well-known/knowledge-linkset",
+            "rel": "linkset",
+            "type": "application/linkset+json"
+          },
+          {
+            "href": "https://schema.org/AboutPage",
+            "rel": "type"
+          },
+          {
+            "href": "https://schema.org/Dataset",
+            "rel": "type"
+          }
+        ],
+        "name": "restricted"
+      }
+    ],
+    "validator_cases": [
+      {
+        "findings": [
+          {
+            "code": "AGSC-E202",
+            "severity": "warning"
+          }
+        ],
+        "name": "home-without-the-describedby-link"
+      },
+      {
+        "findings": [],
+        "name": "home-with-the-describedby-link"
+      }
+    ]
+  },
+  "id": "disc-0026",
+  "input": {
+    "cases": [
+      {
+        "base": "https://a.example/",
+        "chunks_served": true,
+        "legal_emitted": true,
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "name": "public-with-doi-and-versioned-licence",
+        "related": [
+          {
+            "href": "https://doi.org/10.5281/zenodo.1",
+            "rel": "cite-as",
+            "type": "text/html"
+          }
+        ],
+        "visibility": "public"
+      },
+      {
+        "base": "https://a.example/",
+        "chunks_served": true,
+        "legal_emitted": true,
+        "name": "public-defaults",
+        "related": [],
+        "visibility": "public"
+      },
+      {
+        "base": "https://a.example/",
+        "chunks_served": true,
+        "legal_emitted": true,
+        "name": "restricted",
+        "related": [],
+        "visibility": "restricted"
+      }
+    ],
+    "validator_cases": [
+      {
+        "home_link_header": [
+          "</graph.jsonld>; rel=\"describedby\"; type=\"application/ld+json\""
+        ],
+        "level": 2,
+        "name": "home-without-the-describedby-link"
+      },
+      {
+        "home_link_header": [
+          "</.well-known/knowledge-linkset>; rel=\"describedby\"; type=\"application/linkset+json\""
+        ],
+        "level": 2,
+        "name": "home-with-the-describedby-link"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-40"
+}

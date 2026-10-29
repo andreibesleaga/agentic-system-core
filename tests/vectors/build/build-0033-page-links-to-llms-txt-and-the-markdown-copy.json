@@ -1,0 +1,63 @@
+{
+  "area": "build",
+  "description": "AGSC-06-46: every generated HTML page carries in its head a describedby link to /llms.txt with type text/plain, and every item page also an alternate link with type text/markdown to its /pages/<slug>.md — the two relations llms.txt v2 (modified 2026-08-10, llmstxt.org, read 2026-10-29) defines for a page. The minimal fixture, built with SOURCE_DATE_EPOCH set and no git history: the home page and /clusters/ carry the describedby link only, the concept page /concepts/handoff/ carries both. The discovery document is still reached by its own describedby link, selected by its type (AGSC-06-25). Derived by hand.",
+  "expected": {
+    "pages": {
+      "/": {
+        "head_links_exclude": [
+          {
+            "rel": "alternate",
+            "type": "text/markdown"
+          }
+        ],
+        "head_links_include": [
+          {
+            "href": "/llms.txt",
+            "rel": "describedby",
+            "type": "text/plain"
+          }
+        ]
+      },
+      "/clusters/": {
+        "head_links_include": [
+          {
+            "href": "/llms.txt",
+            "rel": "describedby",
+            "type": "text/plain"
+          }
+        ]
+      },
+      "/concepts/handoff/": {
+        "head_links_include": [
+          {
+            "href": "/llms.txt",
+            "rel": "describedby",
+            "type": "text/plain"
+          },
+          {
+            "href": "/pages/handoff.md",
+            "rel": "alternate",
+            "type": "text/markdown"
+          },
+          {
+            "href": "/.well-known/knowledge-linkset",
+            "rel": "describedby",
+            "type": "application/linkset+json"
+          }
+        ]
+      }
+    }
+  },
+  "id": "build-0033",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "deployment_profile": "cloudflare-pages",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-46"
+}

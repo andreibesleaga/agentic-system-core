@@ -1,0 +1,135 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-07 and AGSC-09-09: `--help` prints the verb set and the global flag list to stdout and exits 0, and with a verb prints that verb's flags; `help` is not a seventeenth verb, so `agsc help` is an unknown verb (AGSC-E001, exit 2). Only names are asserted, never wording: `stdout_contains` lists strings the output holds. Without a verb the output names the sixteen verbs and the six global flags; `lint --help` names `--fix` and `--suggest`; `compose --help` names `--from`, `--emit`, `--out`, `--zip`, `--brief` and `--narrate`; `export --help` names the export flags including `--skos`, `--closure` and `--manifest`; `mcp --help` names `--http` and `--bind`.",
+  "expected": {
+    "cases": [
+      {
+        "exit": 0,
+        "name": "global",
+        "stdout_contains": [
+          "init",
+          "lint",
+          "build",
+          "verify",
+          "ci",
+          "export",
+          "import",
+          "compose",
+          "propose",
+          "review",
+          "refresh",
+          "skills",
+          "mcp",
+          "run",
+          "trace",
+          "conform",
+          "--json",
+          "--quiet",
+          "--plain",
+          "--no-input",
+          "--version",
+          "--help"
+        ]
+      },
+      {
+        "exit": 0,
+        "name": "lint",
+        "stdout_contains": [
+          "--fix",
+          "--suggest"
+        ]
+      },
+      {
+        "exit": 0,
+        "name": "compose",
+        "stdout_contains": [
+          "--from",
+          "--emit",
+          "--out",
+          "--zip",
+          "--brief",
+          "--narrate"
+        ]
+      },
+      {
+        "exit": 0,
+        "name": "export",
+        "stdout_contains": [
+          "--markdown",
+          "--okf",
+          "--jsonld",
+          "--jsonl",
+          "--steer",
+          "--skos",
+          "--closure",
+          "--manifest",
+          "--to",
+          "--zip"
+        ]
+      },
+      {
+        "exit": 0,
+        "name": "mcp",
+        "stdout_contains": [
+          "--http",
+          "--bind"
+        ]
+      },
+      {
+        "error": "AGSC-E001",
+        "exit": 2,
+        "name": "help-is-not-a-verb"
+      }
+    ]
+  },
+  "id": "cli-0036",
+  "input": {
+    "cases": [
+      {
+        "argv": [
+          "--help"
+        ],
+        "name": "global"
+      },
+      {
+        "argv": [
+          "lint",
+          "--help"
+        ],
+        "name": "lint"
+      },
+      {
+        "argv": [
+          "compose",
+          "--help"
+        ],
+        "name": "compose"
+      },
+      {
+        "argv": [
+          "export",
+          "--help"
+        ],
+        "name": "export"
+      },
+      {
+        "argv": [
+          "mcp",
+          "--help"
+        ],
+        "name": "mcp"
+      },
+      {
+        "argv": [
+          "help"
+        ],
+        "name": "help-is-not-a-verb"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-07"
+}

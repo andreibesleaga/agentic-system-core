@@ -1,0 +1,46 @@
+{
+  "area": "frontmatter",
+  "description": "AGSC-02-25 with AGSC-00-21: from 1.1 the four domain keys are known keys, so a tool that implements 1.1 reports no AGSC-E207 for them, while a key it does not know, colour, is still the warning AGSC-E207 and is preserved. (A 1.0 tool reports AGSC-E207 for all five and preserves them; that is why the keys are safe to add.) The item is given pre-parsed, with its slug.",
+  "expected": {
+    "findings": [
+      {
+        "code": "AGSC-E207",
+        "key": "colour",
+        "severity": "warn"
+      }
+    ],
+    "no_warning_for": [
+      "domain_context",
+      "domain_role",
+      "domain_type",
+      "warrant"
+    ]
+  },
+  "id": "fm-0025",
+  "input": {
+    "frontmatter": {
+      "colour": "blue",
+      "description": "A term of the case on the domain keys; its keys are the point of the case.",
+      "domain_context": "billing",
+      "domain_role": "entity",
+      "domain_type": "Account",
+      "kind": "term",
+      "prov": {
+        "operator": "human:tester",
+        "origin": "human"
+      },
+      "slug": "account",
+      "title": "Account",
+      "type": "concept",
+      "warrant": {
+        "source": "https://example.org/policy/accounts",
+        "type": "user"
+      }
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-25"
+}

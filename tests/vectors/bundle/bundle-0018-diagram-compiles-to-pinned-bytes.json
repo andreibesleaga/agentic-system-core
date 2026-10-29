@@ -1,0 +1,72 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-42: the .diagram grammar and the SVG it compiles to are pinned from 1.1. Case one compiles a source that uses all twelve statements (canvas, label, region, box, circle, arrow with and without via, line, bar, path, text, cross, note) for the slug pinned; the expected bytes are the compiled document and every figure in them follows from the rule: for example the arrow from a to b is the segment between the centres (90,80) and (250,80) clipped to the borders of the two rectangles (140,80) and (200,80) and drawn 4 px inside each, M144 80 L196 80; the arrow from b to c leaves b at (250,100), passes the waypoint (250,120) and ends 4 px short of the bounding square of the circle, L115 153.8. Cases two to four are refusals, each AGSC-E412 and no SVG: an unknown statement, two accented elements, and acc with thick on one statement, which would write stroke-width twice and is not well-formed XML. The first case is accepted by the 1.0.1 engine byte for byte; the last is accepted by it too, which is why the rule refuses it.",
+  "expected": {
+    "cases": [
+      {
+        "name": "all-twelve-statements",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 460 260\" role=\"img\" aria-labelledby=\"pinned-title pinned-desc\" font-family=\"system-ui, sans-serif\" font-size=\"14\">\n  <title id=\"pinned-title\">Pinned diagram</title>\n  <desc id=\"pinned-desc\">A pinned diagram.</desc>\n  <defs><marker id=\"pinned-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0 0 L10 5 L0 10 z\" fill=\"currentColor\"/></marker></defs>\n  <g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\">\n    <rect x=\"20\" y=\"40\" width=\"420\" height=\"190\" rx=\"8\" stroke-dasharray=\"6 4\"/>\n    <rect x=\"40\" y=\"60\" width=\"100\" height=\"40\" rx=\"6\" class=\"agsc-accent\" stroke-width=\"2.2\"/>\n    <rect x=\"200\" y=\"60\" width=\"100\" height=\"40\" rx=\"6\" stroke-dasharray=\"5 3\"/>\n    <circle cx=\"90\" cy=\"160\" r=\"25\"/>\n    <path d=\"M144 80 L196 80\" marker-end=\"url(#pinned-arrow)\"/>\n    <path d=\"M250 100 L250 120 L115 153.8\" marker-end=\"url(#pinned-arrow)\" stroke-dasharray=\"4 3\"/>\n    <path d=\"M20 235 L440 235\" stroke-dasharray=\"6 5\"/>\n    <path d=\"M300 150 L400 150\" stroke-width=\"5\"/>\n    <path d=\"M330 170 L380 190\" marker-end=\"url(#pinned-arrow)\"/>\n    <path d=\"M412 92 L428 108 M428 92 L412 108\" stroke-width=\"2\"/>\n  </g>\n  <g fill=\"currentColor\" text-anchor=\"middle\">\n    <text x=\"230\" y=\"32\" font-size=\"11\">Trust boundary</text>\n    <text x=\"90\" y=\"84\" font-size=\"12\">Client</text>\n    <text x=\"250\" y=\"76\" font-size=\"12\">Gateway</text>\n    <text x=\"250\" y=\"92\" font-size=\"12\">node</text>\n    <text x=\"90\" y=\"164\" font-size=\"11\">DB</text>\n    <text x=\"400\" y=\"215\" font-size=\"12\" text-anchor=\"end\">Notes</text>\n    <text x=\"230\" y=\"248\" font-size=\"11\">A pinned diagram.</text>\n  </g>\n</svg>\n"
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E412",
+            "severity": "error"
+          }
+        ],
+        "name": "unknown-statement",
+        "svg": null
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E412",
+            "severity": "error"
+          }
+        ],
+        "name": "two-accents",
+        "svg": null
+      },
+      {
+        "findings": [
+          {
+            "code": "AGSC-E412",
+            "severity": "error"
+          }
+        ],
+        "name": "accent-with-thick",
+        "svg": null
+      }
+    ]
+  },
+  "id": "bundle-0018",
+  "input": {
+    "cases": [
+      {
+        "name": "all-twelve-statements",
+        "slug": "pinned",
+        "source": "# a diagram that uses every statement\ncanvas 460 260\nlabel \"Pinned diagram\"\nregion zone 20 40 420 190 \"Trust boundary\"\nbox a 40 60 100 40 \"Client\" acc\nbox b 200 60 100 40 \"Gateway|node\" dashed\ncircle c 90 160 25 \"DB\"\narrow a b\narrow b c via=250,120 dashed\nline 20 235 440 235 dashed\nbar 300 150 100 thick\npath \"M330 170 L380 190\" arrow\ntext 400 215 \"Notes\" size=12 right\ncross 420 100\nnote \"A pinned diagram.\"\n"
+      },
+      {
+        "name": "unknown-statement",
+        "slug": "t",
+        "source": "wedge 1 2\nbox a 1 1 10 10 acc\n"
+      },
+      {
+        "name": "two-accents",
+        "slug": "t",
+        "source": "box a 1 1 10 10 acc\nbox b 50 50 10 10 acc\n"
+      },
+      {
+        "name": "accent-with-thick",
+        "slug": "t",
+        "source": "line 10 10 50 50 acc thick\n"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-42"
+}

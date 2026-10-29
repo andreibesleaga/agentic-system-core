@@ -1,0 +1,96 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-41: the shapes and the competency questions are evaluated over one data graph, the published `graph.nq` together with the closure of AGSC-05-37. The shape asks every `dom:Engine` for a `dom:controlled-by`. `engine-b` has one because the computed inverse of the `dom:controls` link of `ctl` is a triple of `graph.nq` (AGSC-03-27); `engine-a` has none, so the result is one violation with the message and the shape that the file gives. Of the two questions, `has-an-engine` is answered `true` and agrees; `engines` lists only `engine-a` while the data has two engines, so it differs. The case works on the evaluation itself, below the `verify` verb that `lint-0057` and `lint-0059` run.",
+  "expected": {
+    "invariants": [
+      {
+        "focus": "https://minimal.example/concepts/engine-a/",
+        "message": "Every engine needs a controller.",
+        "severity": "Violation",
+        "shape": "https://minimal.example/ns/domain-shapes#EngineControlled"
+      }
+    ],
+    "questions": [
+      {
+        "id": "engines",
+        "result": "differs"
+      },
+      {
+        "id": "has-an-engine",
+        "result": "agrees"
+      }
+    ]
+  },
+  "id": "graph-0046",
+  "input": {
+    "items": [
+      {
+        "domain_type": "Engine",
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "engine-a",
+        "title": "Engine a",
+        "type": "concept"
+      },
+      {
+        "domain_type": "Engine",
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "engine-b",
+        "title": "Engine b",
+        "type": "concept"
+      },
+      {
+        "domain_links": {
+          "controls": [
+            "engine-b"
+          ]
+        },
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ctl",
+        "title": "Ctl",
+        "type": "concept"
+      }
+    ],
+    "questions": [
+      {
+        "expected": true,
+        "id": "has-an-engine",
+        "query": "PREFIX dom: <https://minimal.example/ns/domain#> ASK { ?x a dom:Engine }",
+        "question": "Does the site describe at least one engine?"
+      },
+      {
+        "expected": {
+          "rows": [
+            [
+              "<https://minimal.example/concepts/engine-a/>"
+            ]
+          ]
+        },
+        "id": "engines",
+        "query": "PREFIX dom: <https://minimal.example/ns/domain#> SELECT ?x WHERE { ?x a dom:Engine } ORDER BY ?x",
+        "question": "Which items are engines?"
+      }
+    ],
+    "shapes": "@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix sh: <http://www.w3.org/ns/shacl#> .\n@prefix shp: <https://minimal.example/ns/domain-shapes#> .\n\nshp:EngineShape\n    a sh:NodeShape ;\n    sh:property shp:EngineControlled ;\n    sh:targetClass dom:Engine .\n\nshp:EngineControlled\n    a sh:PropertyShape ;\n    sh:message \"Every engine needs a controller.\"@en ;\n    sh:minCount 1 ;\n    sh:path dom:controlled-by ;\n    sh:severity sh:Violation .\n",
+    "site": {
+      "base": "https://minimal.example/"
+    },
+    "vocabulary": "@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix dom: <https://minimal.example/ns/domain#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n\nasc:Concept\n    a owl:Class .\n\nasc:Episode\n    a owl:Class .\n\nasc:Cluster\n    a owl:Class .\n\nasc:uses\n    a owl:ObjectProperty .\n\nskos:definition\n    a owl:AnnotationProperty .\n\n<https://minimal.example/ns/domain>\n    a owl:Ontology ;\n    rdfs:label \"Minimal domain vocabulary\" .\n\ndom:Engine\n    a owl:Class ;\n    rdfs:label \"Engine\" ;\n    rdfs:subClassOf asc:Concept ;\n    skos:definition \"A machine that turns fuel into thrust.\"@en .\n\ndom:controlled-by\n    a owl:ObjectProperty ;\n    rdfs:label \"controlled by\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controls ;\n    skos:definition \"This engine is run by the target controller.\"@en .\n\ndom:controls\n    a owl:ObjectProperty ;\n    rdfs:label \"controls\" ;\n    rdfs:subPropertyOf asc:uses ;\n    owl:inverseOf dom:controlled-by ;\n    skos:definition \"This controller runs the target engine.\"@en .\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-41"
+}

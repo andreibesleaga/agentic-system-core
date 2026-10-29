@@ -1,0 +1,86 @@
+{
+  "area": "export",
+  "description": "AGSC-09-17 (a): `export --okf --manifest` writes the export of `export-0001` and, beside its files, `export-manifest.json`. Same fixture as `export-0001`: the minimal Bundle with `LICENSE-CONTENT` and the concepts `edited`, `undated` and the draft `draft-note`. `files` is the whole list of files written, now with the manifest, in code-point order of the path. The manifest is one JCS object with one trailing LF and exactly the members `bundle_hash`, `bundle_version`, `files`, `item_count`, `items_digest` and `spec_version`. `bundle_hash` is the lowercase-hex SHA-256 of the `graph.nq` of the same build (the value `agsc-bundle-hash` carries, AGSC-06-08); `bundle_version` is `0.0.0+20260101T000000Z`, the content version of a Bundle with no git history built at SOURCE_DATE_EPOCH 1767225600 (as `export-0001` shows); `files` has one `{content_digest, path}` for each file except the manifest, in code-point order of `path`, `content_digest` being the value `sha-256=:<base64>:` of RFC 9530 over the bytes of that file, standard base64 with padding; `item_count` is 5 (the draft is not published, AGSC-06-30); `items_digest` is the lowercase-hex SHA-256 of the JCS form of the array of the five item IRIs in code-point order. The value of `spec_version` is the tool's own and is not pinned. The manifest does not list itself.",
+  "expected": {
+    "exit": 0,
+    "files": [
+      "LICENSE-CONTENT",
+      "content/clusters/agent-patterns.md",
+      "content/concepts/edited.md",
+      "content/concepts/handoff.md",
+      "content/concepts/supervisor.md",
+      "content/concepts/undated.md",
+      "content/index.md",
+      "content/log.md",
+      "export-manifest.json"
+    ],
+    "jcs_with_one_lf": true,
+    "manifest": {
+      "bundle_hash": "a79add4885cd267ea1824aea766380b664f1a37fc080e3bcd9c62354beb8b467",
+      "bundle_version": "0.0.0+20260101T000000Z",
+      "files": [
+        {
+          "content_digest": "sha-256=:i8iq9+MSC4h6PTVPoYEyPvcqphAIfvQYK1e35zA4ZQk=:",
+          "path": "LICENSE-CONTENT"
+        },
+        {
+          "content_digest": "sha-256=:zeBCJtCMNPwz1QUV1U2+GJq8l/W9K+pB4mQtUSuCBVQ=:",
+          "path": "content/clusters/agent-patterns.md"
+        },
+        {
+          "content_digest": "sha-256=:bYwjzJHIshjdlxhnkhJnRCOZUklNSfHWO1aMxCIjh34=:",
+          "path": "content/concepts/edited.md"
+        },
+        {
+          "content_digest": "sha-256=:lkQa735ct7Kj9NDnoE/Fc0bd140blYjSZ/CKTvp/C0Q=:",
+          "path": "content/concepts/handoff.md"
+        },
+        {
+          "content_digest": "sha-256=:QHczqLD7YHbdN3j5U3RrBclpjF6uy6eqZbYAjtO2dsc=:",
+          "path": "content/concepts/supervisor.md"
+        },
+        {
+          "content_digest": "sha-256=:iqbLOlogFT8fzY5d2PSP7V1LX91+voLEF1Ih+6lC2tQ=:",
+          "path": "content/concepts/undated.md"
+        },
+        {
+          "content_digest": "sha-256=:yejTsb3eqLVTsBeD7zAU7iehwIcrNj+UmhdVV1YCZ90=:",
+          "path": "content/index.md"
+        },
+        {
+          "content_digest": "sha-256=:2gXlb+O6Ij1o4MOU1WcU4mHXQXbn9MiPg491UeIxoYE=:",
+          "path": "content/log.md"
+        }
+      ],
+      "item_count": 5,
+      "items_digest": "43b8c246095114b1d96b75e363a6ae4ac24f3f926707810e226653982f1e44e3"
+    },
+    "manifest_members": [
+      "bundle_hash",
+      "bundle_version",
+      "files",
+      "item_count",
+      "items_digest",
+      "spec_version"
+    ]
+  },
+  "id": "export-0003",
+  "input": {
+    "add_files": {
+      "LICENSE-CONTENT": "Content Use Terms of this fixture, version 1.0.\n",
+      "content/concepts/draft-note.md": "---\ntype: concept\ntitle: Draft note\ndescription: A draft concept that no published surface carries, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nstatus: draft\ndate: \"2026-02-03\"\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n",
+      "content/concepts/edited.md": "---\ntype: concept\ntitle: Edited\ndescription: A published concept with a date and a later modified date, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\ndate: \"2026-01-01\"\nmodified: \"2026-03-04\"\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n",
+      "content/concepts/undated.md": "---\ntype: concept\ntitle: Undated\ndescription: A published concept with neither a date nor a modified date, held for the export cases.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA principle.\n"
+    },
+    "bundle": "fixtures/minimal",
+    "flags": [
+      "--okf",
+      "--manifest"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-17"
+}

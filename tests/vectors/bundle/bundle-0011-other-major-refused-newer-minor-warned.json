@@ -1,0 +1,88 @@
+{
+  "area": "bundle",
+  "description": "AGSC-00-15: a writer accepts any Bundle whose spec_version MAJOR equals its own and MUST refuse, with AGSC-E004 and exit 2, a Bundle whose agsc.config.json declares a MAJOR it does not implement; a newer MINOR of its own MAJOR SHOULD be warned as AGSC-E506 and is otherwise accepted. This case replaces bundle-0008, which used 1.1.0 as its newer MINOR; 1.99.0 is newer than the tool's own version for every 1.x tool, so the case does not change when the declared version moves. Derivation, case by case, against a tool that implements the spec_version of this vector's options: (1) 2.0.0 is MAJOR 2 against MAJOR 1: refused, one AGSC-E004 error, exit 2. (2) 1.99.0 is the same MAJOR and a MINOR beyond the tool's: accepted with one AGSC-E506 warning and exit 0. (3) the tool's own version is accepted with no finding. Every configuration is otherwise minimal and valid, so the version is the only thing that can differ.",
+  "expected": {
+    "cases": [
+      {
+        "accepted": false,
+        "exit": 2,
+        "findings": [
+          {
+            "code": "AGSC-E004",
+            "severity": "error"
+          }
+        ],
+        "name": "other-major-refused"
+      },
+      {
+        "accepted": true,
+        "exit": 0,
+        "findings": [
+          {
+            "code": "AGSC-E506",
+            "severity": "warn"
+          }
+        ],
+        "name": "newer-minor-warned"
+      },
+      {
+        "accepted": true,
+        "exit": 0,
+        "findings": [],
+        "name": "own-version-accepted"
+      }
+    ]
+  },
+  "id": "bundle-0011",
+  "input": {
+    "cases": [
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "2.0.0"
+        },
+        "name": "other-major-refused"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.99.0"
+        },
+        "name": "newer-minor-warned"
+      },
+      {
+        "config": {
+          "bundle": {
+            "id": "example",
+            "operator": "human:alice"
+          },
+          "site": {
+            "base": "https://example.org/",
+            "title": "Example"
+          },
+          "spec_version": "1.0.0"
+        },
+        "name": "own-version-accepted"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-00-15"
+}

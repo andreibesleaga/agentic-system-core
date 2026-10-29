@@ -1,0 +1,195 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-18: what the transport refuses. (1) A request with an `Origin` whose host is not `127.0.0.1`, `localhost` or `[::1]` is HTTP 403 and runs no tool (DNS rebinding, MCP transport page, Security & Endpoint); (2) so is a request whose `Host` names another host, since a name re-pointed at the loopback address arrives with its own name; (3) GET and (4) DELETE on the endpoint are HTTP 405 and (5) another path HTTP 404; (6) `mcp --http 0 --bind 0.0.0.0` starts nothing and exits 2 with AGSC-E003, as does (7) `mcp --bind 127.0.0.1` without `--http`; (8) a `propose` call over HTTP returns the Proposal payload (HTTP 200, `isError` false) and writes nothing: `dist/proposal/` does not exist afterwards and no file of the Bundle changed (`nothing_written`). The server is read-only.",
+  "expected": {
+    "cases": [
+      {
+        "name": "foreign-origin",
+        "status": 403
+      },
+      {
+        "name": "rebound-host-name",
+        "status": 403
+      },
+      {
+        "name": "get-on-the-endpoint",
+        "status": 405
+      },
+      {
+        "name": "delete-on-the-endpoint",
+        "status": 405
+      },
+      {
+        "name": "another-path",
+        "status": 404
+      },
+      {
+        "error": "AGSC-E003",
+        "exit": 2,
+        "name": "bind-that-is-not-loopback"
+      },
+      {
+        "error": "AGSC-E003",
+        "exit": 2,
+        "name": "bind-without-http"
+      },
+      {
+        "name": "propose-over-http",
+        "nothing_written": true,
+        "status": 200
+      }
+    ]
+  },
+  "id": "cli-0031",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "http": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              }
+            }
+          },
+          "headers": {
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list",
+            "Origin": "https://evil.example"
+          },
+          "method": "POST",
+          "name": "foreign-origin",
+          "path": "/mcp"
+        },
+        "name": "foreign-origin"
+      },
+      {
+        "http": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              }
+            }
+          },
+          "headers": {
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+            "Host": "rebound.example:8080",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list"
+          },
+          "method": "POST",
+          "name": "rebound-host-name",
+          "path": "/mcp"
+        },
+        "name": "rebound-host-name"
+      },
+      {
+        "http": {
+          "headers": {
+            "Accept": "text/event-stream"
+          },
+          "method": "GET",
+          "name": "get-on-the-endpoint",
+          "path": "/mcp"
+        },
+        "name": "get-on-the-endpoint"
+      },
+      {
+        "http": {
+          "headers": {},
+          "method": "DELETE",
+          "name": "delete-on-the-endpoint",
+          "path": "/mcp"
+        },
+        "name": "delete-on-the-endpoint"
+      },
+      {
+        "http": {
+          "headers": {},
+          "method": "POST",
+          "name": "another-path",
+          "path": "/other"
+        },
+        "name": "another-path"
+      },
+      {
+        "argv": [
+          "mcp",
+          "--http",
+          "0",
+          "--bind",
+          "0.0.0.0"
+        ],
+        "name": "bind-that-is-not-loopback"
+      },
+      {
+        "argv": [
+          "mcp",
+          "--bind",
+          "127.0.0.1"
+        ],
+        "name": "bind-without-http"
+      },
+      {
+        "http": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              },
+              "arguments": {
+                "slug": "supervisor"
+              },
+              "name": "propose"
+            }
+          },
+          "headers": {
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "propose"
+          },
+          "method": "POST",
+          "name": "propose-over-http",
+          "path": "/mcp"
+        },
+        "name": "propose-over-http"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-18"
+}

@@ -1,0 +1,72 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-27: a declared domain property is an edge with its own key. `p` states `controls` toward `q` and `relates-to-term` toward `q`; the vocabulary declares `controlled-by` as the inverse of `controls` and `relates-to-term` as symmetric, so the inverse and the symmetric partner are computed, as AGSC-03-04 and AGSC-03-05 do for the fourteen keys, and both items have an inbound edge, so neither is an orphan. The edges are sorted by source, key and target.",
+  "expected": {
+    "edges": [
+      {
+        "computed": false,
+        "key": "controls",
+        "source": "p",
+        "target": "q"
+      },
+      {
+        "computed": false,
+        "key": "relates-to-term",
+        "source": "p",
+        "target": "q"
+      },
+      {
+        "computed": true,
+        "key": "controlled-by",
+        "source": "q",
+        "target": "p"
+      },
+      {
+        "computed": true,
+        "key": "relates-to-term",
+        "source": "q",
+        "target": "p"
+      }
+    ],
+    "errors": [],
+    "warnings": []
+  },
+  "id": "links-0019",
+  "input": {
+    "domain_properties": [
+      {
+        "inverse": "controlled-by",
+        "name": "controls",
+        "super": "uses"
+      },
+      {
+        "name": "relates-to-term",
+        "super": "related",
+        "symmetric": true
+      }
+    ],
+    "items": [
+      {
+        "domain_links": {
+          "controls": [
+            "q"
+          ],
+          "relates-to-term": [
+            "q"
+          ]
+        },
+        "slug": "p",
+        "type": "concept"
+      },
+      {
+        "slug": "q",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-27"
+}

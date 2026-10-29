@@ -1,0 +1,110 @@
+{
+  "area": "chunks",
+  "description": "AGSC-06-45: no chunk text begins with a line feed. blank-start has a body that begins with two blank lines; its chunk 0 is \"Intro paragraph.\\n\", not \"\\n\\nIntro paragraph.\\n\", so its digest is the SHA-256 of the text without them — the same digest as the plain item whose body has no blank line (05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3) — while its id is unchanged by the rule (the id derives from the IRI, the section and the ordinal only, AGSC-06-28). space-line begins with two lines that hold only white space (spaces, a tab) and its chunk 0 starts at \"First line.\". The chunk that Cut 1 cuts at a heading (blank-start/intent) is as in 1.0. Derived by hand from the rule; digests and ids computed with hashlib.",
+  "expected": {
+    "lines": [
+      {
+        "digest": "05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3",
+        "id": "00b8ba183afbd1b304c309e337bb95bde1c570b302c1ba20291f3bc7f3fc4e35",
+        "iri": "https://a.example/concepts/blank-start/",
+        "item": "blank-start",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "Intro paragraph.\n",
+        "title": "Blank Start",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "f06d38fc6bf3920390daa6d7057f02efbbde8c993345e2813ae8c9e35f86df94",
+        "id": "d16f7571677e95a5a8ff76d0c73b6d62390220529d349037d35e7501870068aa",
+        "iri": "https://a.example/concepts/blank-start/",
+        "item": "blank-start",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "intent",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "## Intent\n\nCoordinate workers.\n",
+        "title": "Blank Start",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3",
+        "id": "f59d762c4907c65172df8f658ad8a4bdae110ec40d272813dbf8186befe69610",
+        "iri": "https://a.example/concepts/plain/",
+        "item": "plain",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "Intro paragraph.\n",
+        "title": "Plain",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "a3a433f4d36fd9254e65b167b3e1288849982cce50693d210b258b1cfbe656b0",
+        "id": "e8cb0e7e707475658e45443e0056b064f999038986299c787f5c8c6bc9578a59",
+        "iri": "https://a.example/concepts/space-line/",
+        "item": "space-line",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "First line.\n",
+        "title": "Space Line",
+        "trust": "untrusted",
+        "type": "text"
+      }
+    ],
+    "text_never_begins_with_a_line_feed": true
+  },
+  "id": "chk-0016",
+  "input": {
+    "chunks": {
+      "max_bytes": 4096
+    },
+    "items": [
+      {
+        "body": "\n\nIntro paragraph.\n\n## Intent\n\nCoordinate workers.\n",
+        "kind": "explainer",
+        "slug": "blank-start",
+        "title": "Blank Start",
+        "type": "concept"
+      },
+      {
+        "body": "Intro paragraph.\n",
+        "kind": "explainer",
+        "slug": "plain",
+        "title": "Plain",
+        "type": "concept"
+      },
+      {
+        "body": "   \n\t\nFirst line.\n",
+        "kind": "explainer",
+        "slug": "space-line",
+        "title": "Space Line",
+        "type": "concept"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-45"
+}

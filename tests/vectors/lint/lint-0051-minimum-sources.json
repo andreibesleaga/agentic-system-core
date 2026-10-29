@@ -1,0 +1,48 @@
+{
+  "area": "lint",
+  "description": "AGSC-08-31: with lint.min_sources set to N greater than 0, a published concept of kind pattern, taxonomy, explainer or principle with fewer than N counted sources is the warning AGSC-E417; a source that is the IRI of an ai-generated item of the Bundle does not count. Derivation with N = 2 over the minimal fixture, whose two concepts handoff and supervisor are patterns with no sources, so each is one warning. Five concepts are added: solid (explainer, two distinct sources) raises nothing; thin (explainer, one source) is one warning; ai-grounded (explainer) has two sources, one of which is the IRI https://minimal.example/concepts/ai-note/ of the ai-generated concept ai-note, so it counts one and is one warning; ai-note and plain-term are of kind term, which is not one of the four kinds, and raise nothing whatever their sources. Four warnings, exit 0. The configuration is the fixture's with lint.min_sources added; with the key absent, or 0, nothing is checked and the fixture's own lint is empty.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E417",
+          "file": "content/concepts/ai-grounded.md",
+          "severity": "warn"
+        },
+        {
+          "code": "AGSC-E417",
+          "file": "content/concepts/handoff.md",
+          "severity": "warn"
+        },
+        {
+          "code": "AGSC-E417",
+          "file": "content/concepts/supervisor.md",
+          "severity": "warn"
+        },
+        {
+          "code": "AGSC-E417",
+          "file": "content/concepts/thin.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "lint-0051",
+  "input": {
+    "add_files": {
+      "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  },\n  \"lint\": {\n    \"min_sources\": 2\n  }\n}\n",
+      "content/concepts/ai-grounded.md": "---\ntype: concept\nkind: explainer\ntitle: AI grounded\ndescription: A concept used by the case on the minimum number of sources of an item.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://example.org/a\n  - resource: https://minimal.example/concepts/ai-note/\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n",
+      "content/concepts/ai-note.md": "---\ntype: concept\nkind: term\ntitle: AI note\ndescription: A concept used by the case on the minimum number of sources of an item.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: ai-generated\n  agent: note-writer\n  model: example-model-1\n  operator: human:tester\n---\n\n## Intent\n\nText.\n",
+      "content/concepts/plain-term.md": "---\ntype: concept\nkind: term\ntitle: Plain term\ndescription: A concept used by the case on the minimum number of sources of an item.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n",
+      "content/concepts/solid.md": "---\ntype: concept\nkind: explainer\ntitle: Solid\ndescription: A concept used by the case on the minimum number of sources of an item.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://example.org/a\n  - resource: https://example.org/b\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n",
+      "content/concepts/thin.md": "---\ntype: concept\nkind: explainer\ntitle: Thin\ndescription: A concept used by the case on the minimum number of sources of an item.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://example.org/a\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-31"
+}

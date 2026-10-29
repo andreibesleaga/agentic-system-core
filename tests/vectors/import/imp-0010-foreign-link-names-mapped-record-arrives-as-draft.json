@@ -1,0 +1,80 @@
+{
+  "area": "import",
+  "description": "AGSC-03-19 and AGSC-03-20 with AGSC-01-22: foreign link names are mapped on import and never added to the vocabulary - refines becomes narrower, conflicts-with becomes excludes, blockedBy becomes blocked-by and tests becomes verifies - and from 1.1 the record arrives as a draft. This case replaces imp-0004. Derivation over one OKF document with those four keys and an established licence (CC0-1.0): the mapped frontmatter carries the four Link keys with the same targets and none of the four foreign spellings, each mapping is reported once as the AGSC-E506 warning of AGSC-01-22, so four warnings, and the record is written with status draft and one further AGSC-E506 for that, five in all and no error. The licence is established, which before 1.1 left the record published; the case isolates the mapping and the draft by its input alone.",
+  "expected": {
+    "error_count": 0,
+    "findings": [
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      },
+      {
+        "code": "AGSC-E506",
+        "severity": "warn"
+      }
+    ],
+    "frontmatter_has": {
+      "blocked-by": [
+        "c"
+      ],
+      "excludes": [
+        "d"
+      ],
+      "narrower": [
+        "b"
+      ],
+      "status": "draft",
+      "verifies": [
+        "e"
+      ]
+    },
+    "keys_absent": [
+      "refines",
+      "blockedBy",
+      "conflicts-with",
+      "tests"
+    ]
+  },
+  "id": "imp-0010",
+  "input": {
+    "frontmatter": {
+      "blockedBy": [
+        "c"
+      ],
+      "conflicts-with": [
+        "d"
+      ],
+      "license": "CC0-1.0",
+      "prov": {
+        "operator": "human:tester",
+        "origin": "imported"
+      },
+      "refines": [
+        "b"
+      ],
+      "tests": [
+        "e"
+      ],
+      "title": "Refined pattern",
+      "type": "concept"
+    },
+    "path": "refines.md"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-19"
+}

@@ -1,0 +1,627 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-33: the readings of a small Link graph, each with its reasons. The graph holds a `broader` chain `a`, `b`, `c`; a `requires` chain `x`, `y`, `z`; a `supersedes` chain `p`, `q`, `r`; a `derived-from` chain from the lesson `l` through the episode `e1` to the episode `e0`; a `blocked-by` chain `t1`, `t2`, `t3`; and one `related` pair. Every authored edge gives an `inverse` reading, `related` gives a `symmetric` one, each chain of two edges gives a `transitive` reading (for `requires`, `closure`) in both directions through the computed inverse key, and a pair that already holds a direct edge is not a reading. Ordered by source, key and target. `graph_files_unchanged` states that the four graph files of the same input carry none of the transitive readings.",
+  "expected": {
+    "graph_files_unchanged": true,
+    "readings": [
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "a",
+                "broader",
+                "b"
+              ],
+              [
+                "b",
+                "broader",
+                "c"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "broader",
+        "source": "a",
+        "target": "c"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "a",
+                "broader",
+                "b"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "narrower",
+        "source": "b",
+        "target": "a"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "c",
+                "narrower",
+                "b"
+              ],
+              [
+                "b",
+                "narrower",
+                "a"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "narrower",
+        "source": "c",
+        "target": "a"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "b",
+                "broader",
+                "c"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "narrower",
+        "source": "c",
+        "target": "b"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "e1",
+                "derived-from",
+                "e0"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "derivation-of",
+        "source": "e0",
+        "target": "e1"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "e0",
+                "derivation-of",
+                "e1"
+              ],
+              [
+                "e1",
+                "derivation-of",
+                "l"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "derivation-of",
+        "source": "e0",
+        "target": "l"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "l",
+                "derived-from",
+                "e1"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "derivation-of",
+        "source": "e1",
+        "target": "l"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "l",
+                "derived-from",
+                "e1"
+              ],
+              [
+                "e1",
+                "derived-from",
+                "e0"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "derived-from",
+        "source": "l",
+        "target": "e0"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "p",
+                "supersedes",
+                "q"
+              ],
+              [
+                "q",
+                "supersedes",
+                "r"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "supersedes",
+        "source": "p",
+        "target": "r"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "p",
+                "supersedes",
+                "q"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "superseded-by",
+        "source": "q",
+        "target": "p"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "r",
+                "superseded-by",
+                "q"
+              ],
+              [
+                "q",
+                "superseded-by",
+                "p"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "superseded-by",
+        "source": "r",
+        "target": "p"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "q",
+                "supersedes",
+                "r"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "superseded-by",
+        "source": "r",
+        "target": "q"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "t1",
+                "blocked-by",
+                "t2"
+              ],
+              [
+                "t2",
+                "blocked-by",
+                "t3"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "blocked-by",
+        "source": "t1",
+        "target": "t3"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "t1",
+                "blocked-by",
+                "t2"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "blocks",
+        "source": "t2",
+        "target": "t1"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "t3",
+                "blocks",
+                "t2"
+              ],
+              [
+                "t2",
+                "blocks",
+                "t1"
+              ]
+            ],
+            "rule": "transitive"
+          }
+        ],
+        "key": "blocks",
+        "source": "t3",
+        "target": "t1"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "t2",
+                "blocked-by",
+                "t3"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "blocks",
+        "source": "t3",
+        "target": "t2"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "s",
+                "related",
+                "u"
+              ]
+            ],
+            "rule": "symmetric"
+          }
+        ],
+        "key": "related",
+        "source": "u",
+        "target": "s"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "x",
+                "requires",
+                "y"
+              ],
+              [
+                "y",
+                "requires",
+                "z"
+              ]
+            ],
+            "rule": "closure"
+          }
+        ],
+        "key": "requires",
+        "source": "x",
+        "target": "z"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "x",
+                "requires",
+                "y"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "required-by",
+        "source": "y",
+        "target": "x"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "z",
+                "required-by",
+                "y"
+              ],
+              [
+                "y",
+                "required-by",
+                "x"
+              ]
+            ],
+            "rule": "closure"
+          }
+        ],
+        "key": "required-by",
+        "source": "z",
+        "target": "x"
+      },
+      {
+        "because": [
+          {
+            "from": [
+              [
+                "y",
+                "requires",
+                "z"
+              ]
+            ],
+            "rule": "inverse"
+          }
+        ],
+        "key": "required-by",
+        "source": "z",
+        "target": "y"
+      }
+    ]
+  },
+  "id": "graph-0029",
+  "input": {
+    "items": [
+      {
+        "broader": [
+          "b"
+        ],
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "a",
+        "title": "a",
+        "type": "concept"
+      },
+      {
+        "broader": [
+          "c"
+        ],
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "b",
+        "title": "b",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "c",
+        "title": "c",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "requires": [
+          "y"
+        ],
+        "slug": "x",
+        "title": "x",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "requires": [
+          "z"
+        ],
+        "slug": "y",
+        "title": "y",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "z",
+        "title": "z",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "p",
+        "supersedes": [
+          "q"
+        ],
+        "title": "p",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "q",
+        "supersedes": [
+          "r"
+        ],
+        "title": "q",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "r",
+        "title": "r",
+        "type": "concept"
+      },
+      {
+        "derived-from": [
+          "e1"
+        ],
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "severity": "info",
+        "slug": "l",
+        "title": "l",
+        "type": "lesson"
+      },
+      {
+        "derived-from": [
+          "e0"
+        ],
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "e1",
+        "title": "e1",
+        "type": "episode"
+      },
+      {
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "e0",
+        "title": "e0",
+        "type": "episode"
+      },
+      {
+        "blocked-by": [
+          "t2"
+        ],
+        "kind": "task",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "t1",
+        "title": "t1",
+        "type": "concept"
+      },
+      {
+        "blocked-by": [
+          "t3"
+        ],
+        "kind": "task",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "t2",
+        "title": "t2",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "t3",
+        "title": "t3",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "related": [
+          "u"
+        ],
+        "slug": "s",
+        "title": "s",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "u",
+        "title": "u",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-33"
+}

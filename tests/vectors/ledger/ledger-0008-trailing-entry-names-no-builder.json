@@ -1,0 +1,57 @@
+{
+  "area": "ledger",
+  "description": "AGSC-08-20a as amended for 1.1: the trailing build entry is builder-independent, its actor the fixed string process:agsc, so one history and one content tree give one ledger and one head whichever implementation, at whichever version, derives them. Derivation: the history of ledger-0005 (a root commit, a channel-auto merge, a commit tagged v1.0.0, all signed off by Ada Example) is derived twice, as builder version 0.1.0 and as builder version 9.9.9; the two ledgers are the same bytes, the three first entries are those of ledger-0005 and the trailing entry has actor process:agsc, kind build, ts the SOURCE_DATE_EPOCH 1767484800 (2026-01-04T00:00:00Z) and ref the tree. The head is the hash of that trailing entry, as AGSC-08-22 defines it, and the derived ledger verifies against it (AGSC-08-23).",
+  "expected": {
+    "head": "a3989c6a4794b3f019978c28b4cc2467796c1075431c4d66d990bfc195cbcd5c",
+    "identical_across_versions": true,
+    "ledger": "{\"actor\":\"human:ada\",\"hash\":\"61fbde95c6e349ffa5ced333a1137d2d26d1467ccebd3da31971c7a52862bd5b\",\"kind\":\"commit\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"1111111111111111111111111111111111111111\",\"ts\":\"2026-01-01T00:00:00Z\"}\n{\"actor\":\"human:ada\",\"hash\":\"0ec056e1a0a6136e9fedfab1d37e4e3c0e60c8828d55bf9b7ceb3e4fa8a468f9\",\"kind\":\"merge\",\"mode\":\"auto\",\"prev\":\"61fbde95c6e349ffa5ced333a1137d2d26d1467ccebd3da31971c7a52862bd5b\",\"ref\":\"2222222222222222222222222222222222222222\",\"ts\":\"2026-01-02T00:00:00Z\"}\n{\"actor\":\"human:ada\",\"hash\":\"3479ca9a23db08b012976f8ea44a88f3796abe35943ca87c9b80ef9167d3572d\",\"kind\":\"release\",\"prev\":\"0ec056e1a0a6136e9fedfab1d37e4e3c0e60c8828d55bf9b7ceb3e4fa8a468f9\",\"ref\":\"3333333333333333333333333333333333333333\",\"ts\":\"2026-01-03T00:00:00Z\"}\n{\"actor\":\"process:agsc\",\"hash\":\"a3989c6a4794b3f019978c28b4cc2467796c1075431c4d66d990bfc195cbcd5c\",\"kind\":\"build\",\"prev\":\"3479ca9a23db08b012976f8ea44a88f3796abe35943ca87c9b80ef9167d3572d\",\"ref\":\"4444444444444444444444444444444444444444\",\"ts\":\"2026-01-04T00:00:00Z\"}\n"
+  },
+  "id": "ledger-0008",
+  "input": {
+    "content_tree": "4444444444444444444444444444444444444444",
+    "git_log": [
+      {
+        "committed_at": "2026-01-01T00:00:00Z",
+        "parents": [],
+        "sha": "1111111111111111111111111111111111111111",
+        "trailers": {
+          "Signed-off-by": "Ada Example <ada@example.org> (CA-v1)"
+        }
+      },
+      {
+        "committed_at": "2026-01-02T00:00:00Z",
+        "parents": [
+          "1111111111111111111111111111111111111111",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "sha": "2222222222222222222222222222222222222222",
+        "trailers": {
+          "Channel-Auto": "telegram",
+          "Ingested-by": "telegram",
+          "Signed-off-by": "Ada Example <ada@example.org> (CA-v1)"
+        }
+      },
+      {
+        "committed_at": "2026-01-03T00:00:00Z",
+        "parents": [
+          "2222222222222222222222222222222222222222"
+        ],
+        "sha": "3333333333333333333333333333333333333333",
+        "tag": "v1.0.0",
+        "trailers": {
+          "Signed-off-by": "Ada Example <ada@example.org> (CA-v1)"
+        }
+      }
+    ],
+    "versions": [
+      "0.1.0",
+      "9.9.9"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767484800,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-20a"
+}

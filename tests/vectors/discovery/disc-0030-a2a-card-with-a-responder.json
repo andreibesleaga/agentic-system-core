@@ -1,0 +1,102 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-34: a node that declares both a2a-card and a responder surface emits /.well-known/agent-card.json, the Agent2Agent 1.0 Agent Card (a2a-protocol.org/latest/specification, version 1.0.0, read 2026-10-29; agent-card.json is in the IANA registry as permanent since 2025-08-01). The card carries the members 1.0 requires — name, description, supportedInterfaces, version, capabilities, defaultInputModes, defaultOutputModes, skills — and each skill carries id, name, description and tags (tags is required by 1.0 on every AgentSkill). supportedInterfaces has one interface for the responder entry (url its target, protocolBinding its binding member, protocolVersion the version declared for a2a-card); skills has one skill for each pack of /skills/index.json in index order; version is the content version, and on a restricted node the specification version. Serialised JCS with one trailing LF. Two cases, public and restricted. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "file": "{\"capabilities\":{},\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"application/json\"],\"description\":\"A node of the Agentic Knowledge Web.\",\"name\":\"Example Node\",\"skills\":[{\"description\":\"Recurring shapes for arranging agents and the work that passes between them, gathered in one place.\",\"id\":\"agent-patterns\",\"name\":\"agent-patterns\",\"tags\":[\"knowledge\",\"skill-pack\"]},{\"description\":\"How a worker hands work back.\",\"id\":\"hand-back\",\"name\":\"hand-back\",\"tags\":[\"knowledge\",\"skill-pack\"]}],\"supportedInterfaces\":[{\"protocolBinding\":\"HTTP+JSON\",\"protocolVersion\":\"1.0\",\"url\":\"https://a.example/a2a\"}],\"version\":\"v1.4.0\"}\n",
+        "name": "public"
+      },
+      {
+        "file": "{\"capabilities\":{},\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"application/json\"],\"description\":\"A node of the Agentic Knowledge Web.\",\"name\":\"Example Node\",\"skills\":[{\"description\":\"Recurring shapes for arranging agents and the work that passes between them, gathered in one place.\",\"id\":\"agent-patterns\",\"name\":\"agent-patterns\",\"tags\":[\"knowledge\",\"skill-pack\"]},{\"description\":\"How a worker hands work back.\",\"id\":\"hand-back\",\"name\":\"hand-back\",\"tags\":[\"knowledge\",\"skill-pack\"]}],\"supportedInterfaces\":[{\"protocolBinding\":\"HTTP+JSON\",\"protocolVersion\":\"1.0\",\"url\":\"https://a.example/a2a\"}],\"version\":\"1.0.0\"}\n",
+        "name": "restricted"
+      }
+    ]
+  },
+  "id": "disc-0030",
+  "input": {
+    "cases": [
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "public",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [
+          {
+            "access": "consent",
+            "binding": "HTTP+JSON",
+            "surface": "responder",
+            "target": "https://a.example/a2a",
+            "version": "a2a:1.0"
+          },
+          {
+            "access": "none",
+            "surface": "a2a-card",
+            "target": "https://a.example/.well-known/agent-card.json",
+            "version": "1.0"
+          }
+        ],
+        "visibility": "public"
+      },
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "restricted",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [
+          {
+            "access": "consent",
+            "binding": "HTTP+JSON",
+            "surface": "responder",
+            "target": "https://a.example/a2a",
+            "version": "a2a:1.0"
+          },
+          {
+            "access": "none",
+            "surface": "a2a-card",
+            "target": "https://a.example/.well-known/agent-card.json",
+            "version": "1.0"
+          }
+        ],
+        "visibility": "restricted"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-34"
+}

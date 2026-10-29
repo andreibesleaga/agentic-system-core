@@ -1,0 +1,102 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-13 (the citation record): the body of a `read` answer carries `chunks`, one record for each chunk of the item in the order of AGSC-06-29, with exactly the members `algorithm`, `bundle_version`, `coverage`, `digest`, `id`, `iri`, `item`, `license`, `ordinal`, `section` and `terms` (and `license_url` only where the node has one, which this fixture has not). `algorithm` is `sha-256` and `coverage` is `text`: `digest` is the SHA-256 of the UTF-8 bytes of the chunk's `text` (AGSC-06-29), so a client that holds the text checks it before it hands it to a model (AGSC-06-44). The item `supervisor` has three chunks: chunk 0 before the first heading, then the sections `intent` and `structure`; their ids and digests are those the chunk lines of the same Bundle carry (`chk-0001`), with the content version `v1.4.0` stated in `bundle_version`. The draft `draft-one` is not published and has no chunk, so its `read` on the local server, which does answer it (AGSC-09-13), carries `chunks` `[]`. The record carries no retrieval time: the client adds it. The same value comes from the page tools over the listed set (AGSC-09-16).",
+  "expected": {
+    "chunk_records": [
+      {
+        "chunks": [
+          {
+            "algorithm": "sha-256",
+            "bundle_version": "v1.4.0",
+            "coverage": "text",
+            "digest": "05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3",
+            "id": "fab259f68aeb928d4db30fb9f01e78bc85b4818ee79d46d65b3d44f0f5a65596",
+            "iri": "https://a.example/concepts/supervisor/",
+            "item": "supervisor",
+            "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+            "ordinal": 0,
+            "section": "",
+            "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+          },
+          {
+            "algorithm": "sha-256",
+            "bundle_version": "v1.4.0",
+            "coverage": "text",
+            "digest": "f06d38fc6bf3920390daa6d7057f02efbbde8c993345e2813ae8c9e35f86df94",
+            "id": "492be754d0c8c02f36983693a7e4e1d30ea28c52420de57fab12cc4776b8d009",
+            "iri": "https://a.example/concepts/supervisor/",
+            "item": "supervisor",
+            "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+            "ordinal": 0,
+            "section": "intent",
+            "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+          },
+          {
+            "algorithm": "sha-256",
+            "bundle_version": "v1.4.0",
+            "coverage": "text",
+            "digest": "9f0404c950dead4e2c57499317ea6c8a81459f42fc52f7236692e5552b2e44ff",
+            "id": "72403edf9a20f92ff605900def5dedf13849ad67ac38b2582a8c6de68096e051",
+            "iri": "https://a.example/concepts/supervisor/",
+            "item": "supervisor",
+            "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+            "ordinal": 0,
+            "section": "structure",
+            "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+          }
+        ],
+        "slug": "supervisor"
+      },
+      {
+        "chunks": [],
+        "slug": "draft-one"
+      }
+    ]
+  },
+  "id": "cli-0028",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+    },
+    "bundle_version": "v1.4.0",
+    "calls": [
+      {
+        "arguments": {
+          "slug": "supervisor"
+        },
+        "tool": "read"
+      },
+      {
+        "arguments": {
+          "slug": "draft-one"
+        },
+        "tool": "read"
+      }
+    ],
+    "items": [
+      {
+        "body": "Intro paragraph.\n\n## Intent\n\nCoordinate workers.\n\n## Structure\n\nThe supervisor hands work to workers.\n",
+        "description": "Coordinates a team of workers.",
+        "kind": "pattern",
+        "slug": "supervisor",
+        "title": "Supervisor",
+        "type": "concept"
+      },
+      {
+        "body": "Draft body.\n",
+        "description": "A draft.",
+        "kind": "explainer",
+        "slug": "draft-one",
+        "status": "draft",
+        "title": "Draft one",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-13"
+}

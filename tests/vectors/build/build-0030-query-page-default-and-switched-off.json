@@ -1,0 +1,76 @@
+{
+  "area": "build",
+  "description": "AGSC-06-39: a writer that serves /graph.nq emits /query/ unless site.query_page is false. Two sub-cases over the minimal fixture, built with SOURCE_DATE_EPOCH set and no git history, for the Cloudflare Pages profile. (1) default: /query/ exists, is listed in /sitemap.xml (AGSC-06-19), is linked from every generated page, its HTML is at most 100000 bytes (AGSC-06-21; the query engine and its licence text are page assets outside that budget), it requests nothing outside the node's origin, its policy contains the five directives of AGSC-06-17 and none of 'unsafe-eval', 'unsafe-inline' or a host source, with 'wasm-unsafe-eval' admitted in script-src of this route only, and it carries exactly one Content-Security-Policy. The page answers SELECT, ASK, CONSTRUCT and DESCRIBE, refuses an update and a SERVICE clause, offers the ten questions of the graph as examples, results as a table (and a graph picture for CONSTRUCT, DESCRIBE or three-column results), CSV and JSON downloads, a share link whose query is in the fragment, and a vocabulary explorer; it stores nothing (AGSC-06-05). (2) switched off: no /query/, no file under it, no link to it from any page, no entry in the sitemap. The facts are asserted as such, not as bytes: HTML is not byte-pinned (AGSC-04-24). Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "answers": [
+          "SELECT",
+          "ASK",
+          "CONSTRUCT",
+          "DESCRIBE"
+        ],
+        "csp_contains": [
+          "default-src 'none'",
+          "script-src 'self'",
+          "style-src 'self'",
+          "img-src 'self'",
+          "connect-src 'self'"
+        ],
+        "csp_count_on_route": 1,
+        "csp_forbids": [
+          "'unsafe-eval'",
+          "'unsafe-inline'"
+        ],
+        "downloads": [
+          "csv",
+          "json"
+        ],
+        "examples_include_the_ten_questions": true,
+        "html_bytes_at_most": 100000,
+        "in_sitemap": true,
+        "linked_from_every_generated_page": true,
+        "name": "default",
+        "origins_outside_the_node": [],
+        "refuses": [
+          "SERVICE",
+          "update"
+        ],
+        "route_present": true,
+        "share_link_holds_query_in": "fragment",
+        "stores_nothing": true,
+        "vocabulary_explorer": true
+      },
+      {
+        "files_under_route": [],
+        "in_sitemap": false,
+        "linked_from_any_page": false,
+        "name": "switched-off",
+        "route_present": false
+      }
+    ]
+  },
+  "id": "build-0030",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "cases": [
+      {
+        "name": "default"
+      },
+      {
+        "add_files": {
+          "agsc.config.json": "{\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"query_page\": false,\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+        },
+        "name": "switched-off"
+      }
+    ],
+    "deployment_profile": "cloudflare-pages",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-39"
+}

@@ -1,0 +1,17 @@
+{
+  "area": "frontmatter",
+  "description": "AGSC-02-25: a warrant needs a source and a type. Derivation: the warrant below has a type, literary, and no source, so it is AGSC-E512, the code that names a warrant without a source or with a type outside literary, user and organisational; AGSC-E512 is more specific than the AGSC-E201 a schema failure would otherwise give. The warrant key is on line 6.",
+  "expected": {
+    "error": "AGSC-E512",
+    "line": 6
+  },
+  "id": "fm-0024",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Account\ndescription: A term of the case on the domain keys; its keys are the point of the case.\nkind: term\nwarrant:\n  type: literary\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-25"
+}

@@ -1,0 +1,186 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-19 (2), (3) and (6): under 2026-07-28 every result carries `resultType: \"complete\"`, and the results of `tools/list`, `prompts/list`, `resources/list` and `resources/read` carry `ttlMs` 0 and `cacheScope` `private`, because the server answers from the Bundle on disk, which can change between two requests and holds items that are not listed. `tools/list` returns the ten tools in code-point order of `name`, each with the annotations of AGSC-09-19 (6): `readOnlyHint` true on the eight reading tools and false on `propose` and `remember`; `openWorldHint` false on all ten (the default of the revision is true); `destructiveHint` false on `propose` and `remember` (its default is true and it matters only for a tool that is not read-only). Only the stated members are compared; the tool list is compared whole, in order.",
+  "expected": {
+    "responses": [
+      {
+        "id": 1,
+        "result": {
+          "cacheScope": "private",
+          "resultType": "complete",
+          "tools": [
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "ask"
+            },
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "brief"
+            },
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "check"
+            },
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "compose"
+            },
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "explain"
+            },
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "links"
+            },
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "openWorldHint": false,
+                "readOnlyHint": false
+              },
+              "name": "propose"
+            },
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "read"
+            },
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "openWorldHint": false,
+                "readOnlyHint": false
+              },
+              "name": "remember"
+            },
+            {
+              "annotations": {
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "name": "search"
+            }
+          ],
+          "ttlMs": 0
+        }
+      },
+      {
+        "id": 2,
+        "result": {
+          "cacheScope": "private",
+          "resultType": "complete",
+          "ttlMs": 0
+        }
+      },
+      {
+        "id": 3,
+        "result": {
+          "cacheScope": "private",
+          "resultType": "complete",
+          "ttlMs": 0
+        }
+      },
+      {
+        "id": 4,
+        "result": {
+          "cacheScope": "private",
+          "resultType": "complete",
+          "ttlMs": 0
+        }
+      }
+    ]
+  },
+  "id": "cli-0033",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "frames": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "tools/list",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "conformance",
+              "version": "0"
+            },
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "method": "prompts/list",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "conformance",
+              "version": "0"
+            },
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "jsonrpc": "2.0",
+        "method": "resources/list",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "conformance",
+              "version": "0"
+            },
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "jsonrpc": "2.0",
+        "method": "resources/read",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "conformance",
+              "version": "0"
+            },
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+          },
+          "uri": "memory://minimal/handoff"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-19"
+}

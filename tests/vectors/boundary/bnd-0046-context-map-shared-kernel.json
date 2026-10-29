@@ -1,0 +1,57 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-24: a peer entry may state a relationship and a crosswalk of SKOS mapping statements, which a federating client applies to the results it derives from that peer. Derivation: the node a.example lists b.example as a shared-kernel peer with the crosswalk domain/b.ttl, which says that its concept https://a.example/concepts/account/ is skos:exactMatch to https://b.example/concepts/account/. A search over b.example returns that concept and another that the crosswalk does not mention. Both results carry trust untrusted and origin https://b.example/ (AGSC-11-11) and the relationship shared-kernel; the first carries the member crosswalk with one object, match exactMatch and local the a.example concept; the second has no crosswalk member. Nothing is merged into a.example's items and no Link is made (AGSC-11-12).",
+  "expected": {
+    "results": [
+      {
+        "crosswalk": [
+          {
+            "local": "https://a.example/concepts/account/",
+            "match": "exactMatch"
+          }
+        ],
+        "iri": "https://b.example/concepts/account/",
+        "origin": "https://b.example/",
+        "relationship": "shared-kernel",
+        "trust": "untrusted"
+      },
+      {
+        "iri": "https://b.example/concepts/invoice/",
+        "origin": "https://b.example/",
+        "relationship": "shared-kernel",
+        "trust": "untrusted"
+      }
+    ]
+  },
+  "id": "bnd-0046",
+  "input": {
+    "crosswalks": {
+      "domain/b.ttl": "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n<https://a.example/concepts/account/> skos:exactMatch <https://b.example/concepts/account/> .\n"
+    },
+    "peers": [
+      {
+        "crosswalk": "domain/b.ttl",
+        "relationship": "shared-kernel",
+        "url": "https://b.example/.well-known/knowledge-linkset"
+      }
+    ],
+    "results": [
+      {
+        "iri": "https://b.example/concepts/account/",
+        "origin": "https://b.example/"
+      },
+      {
+        "iri": "https://b.example/concepts/invoice/",
+        "origin": "https://b.example/"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-24"
+}

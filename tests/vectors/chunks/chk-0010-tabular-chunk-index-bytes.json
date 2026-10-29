@@ -1,0 +1,88 @@
+{
+  "area": "chunks",
+  "description": "AGSC-06-37: /chunks-index.toon, when a writer emits it, is the TOON tabular form (@toon-format/toon 4.1.1, specification 4.1, §9.3) of the records of /chunks.jsonl: the header chunks[<n>]{id,item,kind,section,ordinal,title,digest}: with n the number of chunk lines, then one row per line in the same order, id and digest cut to their first 16 hexadecimal characters; one trailing LF. The input is that of chk-0009 (four chunk lines), so the header says chunks[4] and the rows follow the record order (agent-patterns, handoff, supervisor, supervisor/intent). An empty Bundle gets the header with 0 and no row. The row text for the expected file was produced by the encoder the rule names; the header, the order and the cut identifiers are checked against chk-0009 (the 16-character prefixes of its ids and digests).",
+  "expected": {
+    "cases": [
+      {
+        "header": "chunks[4]{id,item,kind,section,ordinal,title,digest}:",
+        "name": "four-lines",
+        "output": "chunks[4]{id,item,kind,section,ordinal,title,digest}:\n  e11d74a1a525c087,agent-patterns,cluster,\"\",0,Agent Patterns,5dbd5aaba17f7737\n  59f88d26acfea2c7,handoff,concept,\"\",0,Handoff,17db20f1c369c8c2\n  fab259f68aeb928d,supervisor,concept,\"\",0,Supervisor,e11941718f69365c\n  492be754d0c8c02f,supervisor,concept,intent,0,Supervisor,a8910d4a8ff443c0\n",
+        "row_prefixes": [
+          [
+            "e11d74a1a525c087",
+            "5dbd5aaba17f7737"
+          ],
+          [
+            "59f88d26acfea2c7",
+            "17db20f1c369c8c2"
+          ],
+          [
+            "fab259f68aeb928d",
+            "e11941718f69365c"
+          ],
+          [
+            "492be754d0c8c02f",
+            "a8910d4a8ff443c0"
+          ]
+        ]
+      },
+      {
+        "header": "chunks[0]{id,item,kind,section,ordinal,title,digest}:",
+        "name": "empty",
+        "output": "chunks[0]{id,item,kind,section,ordinal,title,digest}:\n"
+      }
+    ]
+  },
+  "id": "chk-0010",
+  "input": {
+    "cases": [
+      {
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [
+          {
+            "body": "Intro.\n\n## Intent\n\nCoordinate.\n",
+            "description": "Routes work to workers.",
+            "kind": "pattern",
+            "slug": "supervisor",
+            "title": "Supervisor",
+            "type": "concept"
+          },
+          {
+            "body": "Pass work on.\n",
+            "kind": "pattern",
+            "slug": "handoff",
+            "title": "Handoff",
+            "type": "concept"
+          },
+          {
+            "description": "Recurring shapes.",
+            "slug": "agent-patterns",
+            "title": "Agent Patterns",
+            "type": "cluster"
+          }
+        ],
+        "name": "four-lines",
+        "site": {
+          "base": "https://a.example/"
+        }
+      },
+      {
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [],
+        "name": "empty",
+        "site": {
+          "base": "https://a.example/"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-37"
+}

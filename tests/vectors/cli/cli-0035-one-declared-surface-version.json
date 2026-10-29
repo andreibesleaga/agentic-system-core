@@ -1,0 +1,49 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-19 (the declaration) with AGSC-11-16: a node whose tool server speaks both revisions declares ONE value as the `agsc-surface-version` of its `mcp` surface, the newest revision the transport speaks, `2026-07-28`. The node serves the tool server to others (`mcp_served`), so its discovery document carries the `rel#surface` link of `mcp`; the link's `agsc-surface-version` is `[\"2026-07-28\"]`, and it equals the first element of `supportedVersions` that the stdio server returns for `server/discover` (`declared_equals_newest_supported`). A server that speaks `2025-11-25` only declares that revision (AGSC-11-16; `bnd-0037` states the echo), which is not this case. The protocol-version constant of the distribution is the same value (`protocol_version_constant`).",
+  "expected": {
+    "declared_equals_newest_supported": true,
+    "declared_surface_version": [
+      "2026-07-28"
+    ],
+    "protocol_version_constant": "2026-07-28",
+    "responses": [
+      {
+        "id": 1,
+        "result": {
+          "supportedVersions": [
+            "2026-07-28",
+            "2025-11-25"
+          ]
+        }
+      }
+    ]
+  },
+  "id": "cli-0035",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "frames": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "server/discover",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "conformance",
+              "version": "0"
+            },
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+          }
+        }
+      }
+    ],
+    "mcp_served": true
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-19"
+}

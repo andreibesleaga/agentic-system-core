@@ -1,0 +1,36 @@
+{
+  "area": "slug",
+  "description": "AGSC-01-10 and AGSC-01-40: the slug grammar is unchanged at 1.1. The nine device names below match it and are valid slugs; AGSC-01-40 reports them as warnings where they become file names, which a slug check does not do.",
+  "expected": {
+    "valid": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "id": "slug-0008",
+  "input": {
+    "slugs": [
+      "con",
+      "prn",
+      "aux",
+      "nul",
+      "com1",
+      "com9",
+      "lpt1",
+      "lpt9",
+      "con-notes"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-10"
+}

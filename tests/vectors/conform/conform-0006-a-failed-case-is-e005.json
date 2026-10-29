@@ -1,0 +1,54 @@
+{
+  "area": "conform",
+  "description": "AGSC-09-02: `conform` reports each required case that failed or was skipped as one finding with the code AGSC-E005 and severity error, and a withdrawn case, which counts for nothing (AGSC-00-16), and a passed case as none. The input is the result list of a run: a failed case, a skipped required case, a passed case and a withdrawn one that was skipped. The findings are the two for the failed and the skipped case, in the order of the results, and none carries the code AGSC-E001, which 1.0 used and which names an unknown verb. The exit code of the verb is 1 exactly when a finding exists.",
+  "expected": {
+    "codes_absent": [
+      "AGSC-E001"
+    ],
+    "exit": 1,
+    "findings": [
+      {
+        "code": "AGSC-E005",
+        "severity": "error"
+      },
+      {
+        "code": "AGSC-E005",
+        "severity": "error"
+      }
+    ]
+  },
+  "id": "conform-0006",
+  "input": {
+    "results": [
+      {
+        "detail": "the engine returned another value",
+        "id": "frontmatter-0001",
+        "rule": "AGSC-02-01",
+        "status": "fail"
+      },
+      {
+        "detail": "no handler",
+        "id": "lint-0001",
+        "rule": "AGSC-05-21",
+        "status": "skip"
+      },
+      {
+        "detail": "",
+        "id": "slug-0001",
+        "rule": "AGSC-02-91",
+        "status": "pass"
+      },
+      {
+        "id": "cli-0003",
+        "rule": "AGSC-09-16",
+        "status": "skip",
+        "withdrawn": true
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-02"
+}

@@ -1,0 +1,61 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-08 as amended for 1.1: a fetcher that holds no classified address list for the host it is asked to fetch does not connect and reports AGSC-E905. Derivation, case by case: (1) localhost, which the caller did not resolve: refused; (2) b.example whose resolution returned no address: refused; (3) the control, b.example resolved to 93.184.215.14, a globally reachable address, is fetched. The library walk of AGSC-11-10 must behave as the checker already does.",
+  "expected": {
+    "cases": [
+      {
+        "error": "AGSC-E905",
+        "fetched": false,
+        "name": "host-not-resolved"
+      },
+      {
+        "error": "AGSC-E905",
+        "fetched": false,
+        "name": "resolution-returned-nothing"
+      },
+      {
+        "error": null,
+        "fetched": true,
+        "name": "resolved-to-a-public-address"
+      }
+    ]
+  },
+  "id": "bnd-0049",
+  "input": {
+    "cases": [
+      {
+        "name": "host-not-resolved",
+        "peer": "https://localhost/.well-known/knowledge-linkset",
+        "resolved": []
+      },
+      {
+        "name": "resolution-returned-nothing",
+        "peer": "https://b.example/.well-known/knowledge-linkset",
+        "resolved": [
+          {
+            "addresses": [],
+            "host": "b.example"
+          }
+        ]
+      },
+      {
+        "name": "resolved-to-a-public-address",
+        "peer": "https://b.example/.well-known/knowledge-linkset",
+        "resolved": [
+          {
+            "addresses": [
+              "93.184.215.14"
+            ],
+            "host": "b.example"
+          }
+        ]
+      }
+    ],
+    "dev": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-08"
+}

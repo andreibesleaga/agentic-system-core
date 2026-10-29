@@ -1,0 +1,218 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-18: `mcp --http 0` serves the ten tools over the Streamable HTTP transport of MCP revision 2026-07-28 on a loopback address, the same tools and envelopes as the stdio form. Each request is its own POST to `/mcp` with `Accept` listing `application/json` and `text/event-stream`, `MCP-Protocol-Version: 2026-07-28`, `Mcp-Method` and, for `tools/call`, `Mcp-Name`; each answer is one `application/json` object with HTTP 200. `server-discover` returns the `server/discover` result of AGSC-09-19 with `supportedVersions` of the HTTP transport, which lists the one revision it speaks. `tools-list` returns the ten names in code-point order. `search` returns the AGSC-08-18 envelope in `structuredContent` with `isError` false, and the request that carries a loopback `Origin` (`localhost` with any port) is admitted. No answer carries an `Mcp-Session-Id` header (`headers_absent`).",
+  "expected": {
+    "http": [
+      {
+        "body": {
+          "id": 1,
+          "result": {
+            "resultType": "complete",
+            "supportedVersions": [
+              "2026-07-28"
+            ]
+          }
+        },
+        "content_type": "application/json",
+        "headers_absent": [
+          "mcp-session-id"
+        ],
+        "name": "server-discover",
+        "status": 200
+      },
+      {
+        "body": {
+          "result": {
+            "resultType": "complete",
+            "tools": [
+              {
+                "name": "ask"
+              },
+              {
+                "name": "brief"
+              },
+              {
+                "name": "check"
+              },
+              {
+                "name": "compose"
+              },
+              {
+                "name": "explain"
+              },
+              {
+                "name": "links"
+              },
+              {
+                "name": "propose"
+              },
+              {
+                "name": "read"
+              },
+              {
+                "name": "remember"
+              },
+              {
+                "name": "search"
+              }
+            ]
+          }
+        },
+        "content_type": "application/json",
+        "name": "tools-list",
+        "status": 200
+      },
+      {
+        "body": {
+          "result": {
+            "isError": false,
+            "resultType": "complete",
+            "structuredContent": {
+              "source": "search",
+              "trust": "untrusted",
+              "type": "items"
+            }
+          }
+        },
+        "content_type": "application/json",
+        "name": "search",
+        "status": 200
+      },
+      {
+        "body": {
+          "result": {
+            "resultType": "complete"
+          }
+        },
+        "name": "search-from-a-loopback-origin",
+        "status": 200
+      }
+    ]
+  },
+  "id": "cli-0029",
+  "input": {
+    "bundle": "fixtures/minimal",
+    "http": [
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "server/discover",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "server/discover"
+        },
+        "method": "POST",
+        "name": "server-discover",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/list"
+        },
+        "method": "POST",
+        "name": "tools-list",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            },
+            "arguments": {
+              "query": "supervisor"
+            },
+            "name": "search"
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/call",
+          "Mcp-Name": "search"
+        },
+        "method": "POST",
+        "name": "search",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            },
+            "arguments": {
+              "query": "handoff"
+            },
+            "name": "search"
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/call",
+          "Mcp-Name": "search",
+          "Origin": "http://localhost:5173"
+        },
+        "method": "POST",
+        "name": "search-from-a-loopback-origin",
+        "path": "/mcp"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-18"
+}

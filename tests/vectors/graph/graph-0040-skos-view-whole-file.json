@@ -1,0 +1,109 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-36: `export --skos` writes one Turtle file of the published projection with its own two-line prefix block. It copies the SKOS triples of the graph whose ends are in the view, and adds `a skos:ConceptScheme` for the Bundle, `a skos:Concept` for each concept and lesson, `a skos:Collection` for the cluster `grp`, `skos:hasTopConcept` and `skos:topConceptOf` for each concept with no `skos:broader` (`alpha`, `gamma` and the lesson `les`; `beta` has a broader), and the scheme record from `site.title`, `site.tagline`, `site.author` and `bundle.license_prose`. The episode `ep` is not a SKOS concept: it and the `skos:member` triple that names it are left out. The cluster has no `skos:inScheme`, because the graph gives none to a Collection. The stable-Turtle ordering of AGSC-05-10 applies, so the type of a Collection sorts before its other predicates and the dcterms predicates of the scheme sort before its type.",
+  "expected": {
+    "skos": "@prefix dcterms: <http://purl.org/dc/terms/> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n\n<https://a.example/> dcterms:creator \"Andrei N. Besleaga\" ;\n    dcterms:description \"A node for the SKOS case.\" ;\n    dcterms:license \"CC0-1.0\" ;\n    dcterms:title \"Example node\" ;\n    a skos:ConceptScheme ;\n    skos:hasTopConcept <https://a.example/concepts/alpha/> , <https://a.example/concepts/gamma/> , <https://a.example/lessons/les/> .\n\n<https://a.example/clusters/grp/> a skos:Collection ;\n    skos:definition \"A cluster of letters for the case.\"@en ;\n    skos:member <https://a.example/concepts/alpha/> , <https://a.example/concepts/beta/> ;\n    skos:prefLabel \"Letters\"@en .\n\n<https://a.example/concepts/alpha/> a skos:Concept ;\n    skos:altLabel \"A one\"@en ;\n    skos:definition \"The first letter of the Greek alphabet.\"@en ;\n    skos:inScheme <https://a.example/> ;\n    skos:narrower <https://a.example/concepts/beta/> ;\n    skos:prefLabel \"Alpha\"@en ;\n    skos:related <https://a.example/concepts/gamma/> ;\n    skos:topConceptOf <https://a.example/> .\n\n<https://a.example/concepts/beta/> a skos:Concept ;\n    skos:broader <https://a.example/concepts/alpha/> ;\n    skos:definition \"The second letter of the Greek alphabet.\"@en ;\n    skos:inScheme <https://a.example/> ;\n    skos:prefLabel \"Beta\"@en .\n\n<https://a.example/concepts/gamma/> a skos:Concept ;\n    skos:inScheme <https://a.example/> ;\n    skos:prefLabel \"Gamma\"@en ;\n    skos:related <https://a.example/concepts/alpha/> ;\n    skos:topConceptOf <https://a.example/> .\n\n<https://a.example/lessons/les/> a skos:Concept ;\n    skos:inScheme <https://a.example/> ;\n    skos:prefLabel \"A lesson\"@en ;\n    skos:topConceptOf <https://a.example/> .\n"
+  },
+  "id": "graph-0040",
+  "input": {
+    "bundle": {
+      "license_prose": "CC0-1.0",
+      "spec_version": "1.0.0"
+    },
+    "items": [
+      {
+        "aliases": [
+          "A one"
+        ],
+        "clusters": [
+          "grp"
+        ],
+        "description": "The first letter of the Greek alphabet.",
+        "kind": "term",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "alpha",
+        "title": "Alpha",
+        "type": "concept"
+      },
+      {
+        "broader": [
+          "alpha"
+        ],
+        "clusters": [
+          "grp"
+        ],
+        "description": "The second letter of the Greek alphabet.",
+        "kind": "term",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "beta",
+        "title": "Beta",
+        "type": "concept"
+      },
+      {
+        "kind": "term",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "related": [
+          "alpha"
+        ],
+        "slug": "gamma",
+        "title": "Gamma",
+        "type": "concept"
+      },
+      {
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "severity": "info",
+        "slug": "les",
+        "title": "A lesson",
+        "type": "lesson"
+      },
+      {
+        "description": "A cluster of letters for the case.",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "grp",
+        "title": "Letters",
+        "type": "cluster"
+      },
+      {
+        "actor": "human:tester",
+        "clusters": [
+          "grp"
+        ],
+        "outcome": "success",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ep",
+        "started": "2026-01-01T00:00:00Z",
+        "title": "A run",
+        "type": "episode"
+      }
+    ],
+    "site": {
+      "author": "Andrei N. Besleaga",
+      "base": "https://a.example/",
+      "tagline": "A node for the SKOS case.",
+      "title": "Example node"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-36"
+}

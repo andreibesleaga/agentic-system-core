@@ -1,0 +1,39 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-21: two published items of one `type` where a `title` or an alias of one equals a `title` or an alias of the other, after NFC and case folding, are the warning AGSC-E416, carried by the later item in path order and naming the earlier. `the-coordinator` and `the-dispatcher` share the alias Router (case differs): the finding is on `the-dispatcher`. The title of `planner`, Dispatch plan, equals the alias of `scheduler`: the finding is on `scheduler`. Raising nothing: a draft concept with the same alias (not published, AGSC-06-30), a cluster with the same alias (not the concept type), and `echo`, whose own alias equals its own title (one item is not a pair). The whole list is two warnings and lint exits 0. The released case `lint-0041` states the title half and stays valid.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E416",
+          "file": "content/concepts/scheduler.md",
+          "severity": "warn"
+        },
+        {
+          "code": "AGSC-E416",
+          "file": "content/concepts/the-dispatcher.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "lint-0045",
+  "input": {
+    "add_files": {
+      "content/clusters/router-cluster.md": "---\ntype: cluster\ntitle: Router cluster\ndescription: A fixture item written for this conformance case.\naliases:\n  - Router\nprov:\n  origin: human\n  operator: human:tester\n---\n\nA cluster.\n",
+      "content/concepts/draft-router.md": "---\ntype: concept\ntitle: Draft router\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\naliases:\n  - Router\nstatus: draft\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/echo.md": "---\ntype: concept\ntitle: Echo\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\naliases:\n  - echo\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/planner.md": "---\ntype: concept\ntitle: Dispatch plan\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/scheduler.md": "---\ntype: concept\ntitle: Scheduler\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\naliases:\n  - dispatch plan\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/the-coordinator.md": "---\ntype: concept\ntitle: Coordinator one\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\n  - router-cluster\naliases:\n  - Router\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/the-dispatcher.md": "---\ntype: concept\ntitle: Coordinator two\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\naliases:\n  - router\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-21"
+}

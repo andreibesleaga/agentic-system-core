@@ -1,0 +1,402 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-34, question 1. If I choose `x`, what else must I take? `x` requires `y`, which requires `z`: the answer is `y` and `z`. The input is one fixture of 31 items shared by the ten question cases, the subject (and, for questions 4 and 9, the selection and the instant) and the question number; the answer has the shape the rule gives and is ordered by code point.",
+  "expected": {
+    "answer": [
+      "y",
+      "z"
+    ]
+  },
+  "id": "graph-0030",
+  "input": {
+    "items": [
+      {
+        "description": "The top cluster of the world fixture.",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "c-top",
+        "title": "c-top",
+        "type": "cluster"
+      },
+      {
+        "broader": [
+          "c-top"
+        ],
+        "description": "A sub-cluster of the top cluster.",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "c-sub",
+        "title": "c-sub",
+        "type": "cluster"
+      },
+      {
+        "clusters": [
+          "c-sub"
+        ],
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "i1",
+        "title": "i1",
+        "type": "concept"
+      },
+      {
+        "clusters": [
+          "c-top"
+        ],
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "i2",
+        "title": "i2",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "requires": [
+          "y"
+        ],
+        "slug": "x",
+        "title": "x",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "requires": [
+          "z"
+        ],
+        "slug": "y",
+        "title": "y",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "z",
+        "title": "z",
+        "type": "concept"
+      },
+      {
+        "excludes": [
+          "ex2"
+        ],
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ex1",
+        "title": "ex1",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ex2",
+        "title": "ex2",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "p",
+        "supersedes": [
+          "q"
+        ],
+        "title": "p",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "q",
+        "supersedes": [
+          "r"
+        ],
+        "title": "q",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "r",
+        "title": "r",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ver",
+        "title": "ver",
+        "type": "concept",
+        "verifies": [
+          "spec1"
+        ]
+      },
+      {
+        "kind": "spec",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "spec1",
+        "title": "spec1",
+        "type": "concept"
+      },
+      {
+        "blocked-by": [
+          "t2"
+        ],
+        "kind": "task",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "t1",
+        "title": "t1",
+        "type": "concept"
+      },
+      {
+        "blocked-by": [
+          "t3"
+        ],
+        "kind": "task",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "t2",
+        "title": "t2",
+        "type": "concept"
+      },
+      {
+        "kind": "task",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "t3",
+        "title": "t3",
+        "type": "concept"
+      },
+      {
+        "derived-from": [
+          "e1",
+          "m"
+        ],
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "severity": "info",
+        "slug": "l",
+        "title": "l",
+        "type": "lesson"
+      },
+      {
+        "derived-from": [
+          "e0"
+        ],
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "e1",
+        "title": "e1",
+        "type": "episode"
+      },
+      {
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "e0",
+        "title": "e0",
+        "type": "episode"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "m",
+        "title": "m",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "st",
+        "stale_after": "2026-01-01T00:00:00Z",
+        "title": "st",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "dr",
+        "status": "draft",
+        "title": "dr",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "dep",
+        "status": "deprecated",
+        "title": "dep",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ret",
+        "status": "retired",
+        "title": "ret",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "ok",
+        "title": "ok",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "s1",
+        "sources": [
+          {
+            "resource": "https://example.org/a"
+          },
+          {
+            "resource": "https://example.org/b"
+          }
+        ],
+        "title": "s1",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "s2",
+        "sources": [
+          {
+            "resource": "https://example.org/a"
+          }
+        ],
+        "title": "s2",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "s3",
+        "sources": [
+          {
+            "resource": "https://example.org/b"
+          },
+          {
+            "resource": "https://example.org/c"
+          }
+        ],
+        "title": "s3",
+        "type": "concept"
+      },
+      {
+        "consumes": [
+          "cap-a",
+          "cap-b"
+        ],
+        "kind": "principle",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "consumer",
+        "title": "consumer",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "produces": [
+          "cap-a"
+        ],
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "prod",
+        "title": "prod",
+        "type": "concept"
+      }
+    ],
+    "question": 1,
+    "subject": "x"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-34"
+}

@@ -1,0 +1,140 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-24: a pair `(A, B)` that carries `requires` with `excludes`, `requires` with `supersedes`, `requires` with `contradicts`, or `uses` with `excludes` is reported once per combination as the warning AGSC-E314, carried by `A`, the item that authors the `requires`, `supersedes` or `uses`. The first four items each author both keys toward their `b` item. In the fifth and sixth pairs only the `b` item authors the `excludes`, which AGSC-03-05 materialises both ways, so `a5` holds `requires` and `excludes` toward `b5` (and `a6` holds `uses` and `excludes` toward `b6`) and each finding is still carried by the `a` item. `b2` is deprecated so that the `supersedes` raises no other warning. The hub item gives `a1` to `a5` an inbound link.",
+  "expected": {
+    "errors": [],
+    "warnings": [
+      {
+        "code": "AGSC-E314",
+        "slug": "a1"
+      },
+      {
+        "code": "AGSC-E314",
+        "slug": "a2"
+      },
+      {
+        "code": "AGSC-E314",
+        "slug": "a3"
+      },
+      {
+        "code": "AGSC-E314",
+        "slug": "a4"
+      },
+      {
+        "code": "AGSC-E314",
+        "slug": "a5"
+      },
+      {
+        "code": "AGSC-E314",
+        "slug": "a6"
+      }
+    ]
+  },
+  "id": "links-0012",
+  "input": {
+    "items": [
+      {
+        "excludes": [
+          "b1"
+        ],
+        "requires": [
+          "b1"
+        ],
+        "slug": "a1",
+        "type": "concept"
+      },
+      {
+        "slug": "b1",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "b2"
+        ],
+        "slug": "a2",
+        "supersedes": [
+          "b2"
+        ],
+        "type": "concept"
+      },
+      {
+        "slug": "b2",
+        "status": "deprecated",
+        "type": "concept"
+      },
+      {
+        "contradicts": [
+          "b3"
+        ],
+        "requires": [
+          "b3"
+        ],
+        "slug": "a3",
+        "type": "concept"
+      },
+      {
+        "slug": "b3",
+        "type": "concept"
+      },
+      {
+        "excludes": [
+          "b4"
+        ],
+        "slug": "a4",
+        "type": "concept",
+        "uses": [
+          "b4"
+        ]
+      },
+      {
+        "slug": "b4",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "b5"
+        ],
+        "slug": "a5",
+        "type": "concept"
+      },
+      {
+        "excludes": [
+          "a5"
+        ],
+        "slug": "b5",
+        "type": "concept"
+      },
+      {
+        "slug": "a6",
+        "type": "concept",
+        "uses": [
+          "b6"
+        ]
+      },
+      {
+        "excludes": [
+          "a6"
+        ],
+        "slug": "b6",
+        "type": "concept"
+      },
+      {
+        "related": [
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6"
+        ],
+        "slug": "hub",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-24"
+}

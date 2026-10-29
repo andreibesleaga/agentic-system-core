@@ -1,0 +1,30 @@
+{
+  "area": "boundary",
+  "description": "AGSC-11-20 as amended for 1.1: a restricted node sends no Access-Control-Allow-Origin header on any artefact other than the discovery document, so a deployment profile for a host that adds the wildcard by default overrides it. Derivation: for each of the paths below, the header set a restricted node's writer states carries neither Access-Control-Allow-Origin nor Access-Control-Expose-Headers, and no credentials header either (bnd-0001 states the wildcard for a public node, bnd-0002 the discovery document of a restricted one). The case states no header that must be present.",
+  "expected": {
+    "forbidden_headers": [
+      "Access-Control-Allow-Credentials",
+      "Access-Control-Allow-Origin",
+      "Access-Control-Expose-Headers"
+    ],
+    "headers": {}
+  },
+  "id": "bnd-0045",
+  "input": {
+    "paths": [
+      "/chunks.jsonl",
+      "/graph.nq",
+      "/ledger.jsonl",
+      "/now.md",
+      "/pages/handoff.md",
+      "/search.json",
+      "/skills/index.json"
+    ],
+    "visibility": "restricted"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-20"
+}

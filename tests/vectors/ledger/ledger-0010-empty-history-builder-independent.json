@@ -1,0 +1,20 @@
+{
+  "area": "ledger",
+  "description": "A repository with no history - the drop-in folder before its first commit - still has a defined ledger and a defined head: the trailing build entry alone, whose prev is the 64-zero genesis. It replaces ledger-0003 for 1.1, where the trailing entry's actor is the fixed string process:agsc and not process:agsc/<version> (AGSC-08-20a). Without this rule the published agsc-ledger-head would be undefined for every freshly adopted Bundle.",
+  "expected": {
+    "head": "36b40bf1e80da6a39e1b05b60c958e59795b257c9c304dbb9addaebadcae1742",
+    "ledger": "{\"actor\":\"process:agsc\",\"hash\":\"36b40bf1e80da6a39e1b05b60c958e59795b257c9c304dbb9addaebadcae1742\",\"kind\":\"build\",\"prev\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"ref\":\"4444444444444444444444444444444444444444\",\"ts\":\"2026-01-04T00:00:00Z\"}\n"
+  },
+  "id": "ledger-0010",
+  "input": {
+    "content_tree": "4444444444444444444444444444444444444444",
+    "git_log": [],
+    "version": "0.1.0"
+  },
+  "level": "required",
+  "options": {
+    "source_date_epoch": 1767484800,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-08-20a"
+}

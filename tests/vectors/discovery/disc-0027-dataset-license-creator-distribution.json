@@ -1,0 +1,196 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-41: the Dataset block of the home page carries, besides name, description and url, a license URL that names a specific version of the licence (here version 4.0 of a Creative Commons licence, from bundle.license_url), a creator (a Person) whose sameAs is https://orcid.org/ followed by the ORCID iD of site.author_orcid, isAccessibleForFree true on a node that is not restricted, and one DataDownload for each machine file the node serves, in the order graph.jsonld, graph.ttl, graph.nq, chunks.jsonl, the discovery document, each with an absolute contentUrl and an encodingFormat (application/jsonl for the chunks). The block names the PROV-O prefix in its @context and holds prov:generatedAtTime (the build instant) and prov:wasAttributedTo (the creator). The second case is the node with none of license_url, creator and ORCID: those three members are omitted and nothing is invented; the PROV-O generation time stays. The third is a restricted node: no distribution. The block is compared as a JSON value (member order is not asserted, as for any page of HTML). Derived by hand from the rule and from the Google Search Central dataset guide (last updated 2026-09-08, read 2026-10-29).",
+  "expected": {
+    "cases": [
+      {
+        "block": {
+          "@context": [
+            "https://schema.org",
+            {
+              "prov": "http://www.w3.org/ns/prov#"
+            }
+          ],
+          "@type": "Dataset",
+          "creator": {
+            "@type": "Person",
+            "name": "Josiah Carberry",
+            "sameAs": "https://orcid.org/0000-0002-1825-0097"
+          },
+          "description": "Recurring shapes for arranging agents and the work that passes between them.",
+          "distribution": [
+            {
+              "@type": "DataDownload",
+              "contentUrl": "https://a.example/graph.jsonld",
+              "encodingFormat": "application/ld+json"
+            },
+            {
+              "@type": "DataDownload",
+              "contentUrl": "https://a.example/graph.ttl",
+              "encodingFormat": "text/turtle"
+            },
+            {
+              "@type": "DataDownload",
+              "contentUrl": "https://a.example/graph.nq",
+              "encodingFormat": "application/n-quads"
+            },
+            {
+              "@type": "DataDownload",
+              "contentUrl": "https://a.example/chunks.jsonl",
+              "encodingFormat": "application/jsonl"
+            },
+            {
+              "@type": "DataDownload",
+              "contentUrl": "https://a.example/.well-known/knowledge-linkset",
+              "encodingFormat": "application/linkset+json"
+            }
+          ],
+          "isAccessibleForFree": true,
+          "license": "https://creativecommons.org/licenses/by/4.0/",
+          "name": "Example Node",
+          "prov:generatedAtTime": {
+            "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "@value": "2026-01-01T00:00:00Z"
+          },
+          "prov:wasAttributedTo": {
+            "@type": "Person",
+            "name": "Josiah Carberry",
+            "sameAs": "https://orcid.org/0000-0002-1825-0097"
+          },
+          "url": "https://a.example/"
+        },
+        "name": "configured"
+      },
+      {
+        "block": {
+          "@context": [
+            "https://schema.org",
+            {
+              "prov": "http://www.w3.org/ns/prov#"
+            }
+          ],
+          "@type": "Dataset",
+          "description": "Recurring shapes for arranging agents and the work that passes between them.",
+          "distribution": [
+            {
+              "@type": "DataDownload",
+              "contentUrl": "https://a.example/graph.nq",
+              "encodingFormat": "application/n-quads"
+            }
+          ],
+          "isAccessibleForFree": true,
+          "name": "Example Node",
+          "prov:generatedAtTime": {
+            "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "@value": "2026-01-01T00:00:00Z"
+          },
+          "url": "https://a.example/"
+        },
+        "name": "nothing-configured"
+      },
+      {
+        "block": {
+          "@context": [
+            "https://schema.org",
+            {
+              "prov": "http://www.w3.org/ns/prov#"
+            }
+          ],
+          "@type": "Dataset",
+          "creator": {
+            "@type": "Person",
+            "name": "Josiah Carberry",
+            "sameAs": "https://orcid.org/0000-0002-1825-0097"
+          },
+          "description": "Recurring shapes for arranging agents and the work that passes between them.",
+          "license": "https://creativecommons.org/licenses/by/4.0/",
+          "name": "Example Node",
+          "prov:generatedAtTime": {
+            "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "@value": "2026-01-01T00:00:00Z"
+          },
+          "prov:wasAttributedTo": {
+            "@type": "Person",
+            "name": "Josiah Carberry",
+            "sameAs": "https://orcid.org/0000-0002-1825-0097"
+          },
+          "url": "https://a.example/"
+        },
+        "name": "restricted"
+      }
+    ]
+  },
+  "id": "disc-0027",
+  "input": {
+    "cases": [
+      {
+        "bundle": {
+          "id": "example",
+          "license_url": "https://creativecommons.org/licenses/by/4.0/"
+        },
+        "description": "Recurring shapes for arranging agents and the work that passes between them.",
+        "files_served": [
+          "/graph.jsonld",
+          "/graph.ttl",
+          "/graph.nq",
+          "/chunks.jsonl",
+          "/.well-known/knowledge-linkset"
+        ],
+        "instant": "2026-01-01T00:00:00Z",
+        "name": "configured",
+        "site": {
+          "author": "Josiah Carberry",
+          "author_orcid": "0000-0002-1825-0097",
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "visibility": "public"
+      },
+      {
+        "bundle": {
+          "id": "example",
+          "license_prose": "CC0-1.0"
+        },
+        "description": "Recurring shapes for arranging agents and the work that passes between them.",
+        "files_served": [
+          "/graph.nq"
+        ],
+        "instant": "2026-01-01T00:00:00Z",
+        "name": "nothing-configured",
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "visibility": "public"
+      },
+      {
+        "bundle": {
+          "id": "example",
+          "license_url": "https://creativecommons.org/licenses/by/4.0/"
+        },
+        "description": "Recurring shapes for arranging agents and the work that passes between them.",
+        "files_served": [
+          "/graph.jsonld",
+          "/graph.ttl",
+          "/graph.nq",
+          "/chunks.jsonl",
+          "/.well-known/knowledge-linkset"
+        ],
+        "instant": "2026-01-01T00:00:00Z",
+        "name": "restricted",
+        "site": {
+          "author": "Josiah Carberry",
+          "author_orcid": "0000-0002-1825-0097",
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "visibility": "restricted"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-41"
+}

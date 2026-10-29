@@ -1,0 +1,91 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-13 (the bound): a `search` answer carries at most 100 hits, and an `ask` answer cites at most 100 item IRIs. The fixture has 120 items `w-001` … `w-120` whose description holds the token `widget`, and three items whose description holds the token `gadget`. `widget` matches 120 items with one point each, so the order is by slug in code-point order: the answer carries `w-001` … `w-100` (`first_slug`, `last_slug`, `hit_count` 100) and `total` 120. `gadget` matches 3 items: the answer carries all three and no `total` member, so an answer under the bound has the bytes of 1.0 and `cli-0007` and `cli-0008` stay valid. The `ask` of `widget` cites between 1 and 100 IRIs. Both transports return the same value (AGSC-09-16): `transports_equal` asks the page tools to agree with the local server on all three calls.",
+  "expected": {
+    "results": [
+      {
+        "first_slug": "w-001",
+        "hit_count": 100,
+        "last_slug": "w-100",
+        "tool": "search",
+        "total": 120
+      },
+      {
+        "hit_count": 3,
+        "tool": "search",
+        "total_absent": true
+      },
+      {
+        "citation_count_between": [
+          1,
+          100
+        ],
+        "tool": "ask"
+      }
+    ],
+    "transports_equal": true
+  },
+  "id": "cli-0027",
+  "input": {
+    "bundle": {
+      "base": "https://a.example/",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0"
+    },
+    "calls": [
+      {
+        "arguments": {
+          "query": "widget"
+        },
+        "tool": "search"
+      },
+      {
+        "arguments": {
+          "query": "gadget"
+        },
+        "tool": "search"
+      },
+      {
+        "arguments": {
+          "question": "widget"
+        },
+        "tool": "ask"
+      }
+    ],
+    "item_count": 120,
+    "item_template": {
+      "description": "A widget of the shop, one of many alike.",
+      "kind": "explainer",
+      "title": "Part",
+      "type": "concept"
+    },
+    "items": [
+      {
+        "description": "A gadget that is nothing like the others.",
+        "kind": "explainer",
+        "slug": "g-1",
+        "title": "Gadget one",
+        "type": "concept"
+      },
+      {
+        "description": "Another gadget for the same shop window.",
+        "kind": "explainer",
+        "slug": "g-2",
+        "title": "Gadget two",
+        "type": "concept"
+      },
+      {
+        "description": "A third gadget on the shelf.",
+        "kind": "explainer",
+        "slug": "g-3",
+        "title": "Gadget three",
+        "type": "concept"
+      }
+    ],
+    "slugs_are": "w-001 … w-120"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-13"
+}

@@ -1,0 +1,35 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-35, generator G2: two items that cite two or more of the same `sources[].resource` strings (compared exactly) and have no Link between them are a `related` suggestion from the earlier slug to the later, one `shared-source` evidence entry per shared resource in code-point order. `src-a` and `src-b` share two and get a suggestion. `src-a` and `src-c` share one, so nothing. `src-d` shares two with both but is `ai-generated`, so its sources are ignored. `src-e` shares two with `src-a` and `src-b` but already authors `related` toward `src-a`, so that pair gets nothing; its pair with `src-b` is still suggested.",
+  "expected": {
+    "file_bytes": {
+      "dist/suggestions.json": "{\"bundle_version\":\"0.0.0+19700101T000000Z\",\"suggestions\":[{\"evidence\":[{\"kind\":\"shared-source\",\"resource\":\"https://example.org/one\"},{\"kind\":\"shared-source\",\"resource\":\"https://example.org/two\"}],\"generator\":\"G2\",\"key\":\"related\",\"source\":\"src-a\",\"target\":\"src-b\"},{\"evidence\":[{\"kind\":\"shared-source\",\"resource\":\"https://example.org/one\"},{\"kind\":\"shared-source\",\"resource\":\"https://example.org/two\"}],\"generator\":\"G2\",\"key\":\"related\",\"source\":\"src-b\",\"target\":\"src-e\"}]}\n"
+    },
+    "lint": {
+      "exit": 0,
+      "findings": []
+    },
+    "written_only_under": "dist"
+  },
+  "id": "lint-0047",
+  "input": {
+    "add_files": {
+      "content/concepts/src-a.md": "---\ntype: concept\ntitle: Source note a\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://example.org/one\n  - resource: https://example.org/two\n  - resource: https://example.org/three\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/src-b.md": "---\ntype: concept\ntitle: Source note b\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://example.org/two\n  - resource: https://example.org/one\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/src-c.md": "---\ntype: concept\ntitle: Source note c\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://example.org/three\n  - resource: https://example.org/four\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/src-d.md": "---\ntype: concept\ntitle: Source note d\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://example.org/one\n  - resource: https://example.org/two\nprov:\n  origin: ai-generated\n  operator: human:tester\n  model: test-model\n  agent: test-agent\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/src-e.md": "---\ntype: concept\ntitle: Source note e\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nrelated:\n  - src-a\nsources:\n  - resource: https://example.org/one\n  - resource: https://example.org/two\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n"
+    },
+    "argv": [
+      "lint",
+      "--suggest"
+    ],
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-35"
+}

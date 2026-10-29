@@ -1,0 +1,34 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-35, generator G4: a `lesson` with no `derived-from` is a `derived-from` suggestion toward each episode that has any Link or mention edge to or from it, and, when there is none, one suggestion whose `target` is `null` with the evidence `none`. `lesson-a` is linked to `episode-a`, which gives one suggestion with the evidence `episode`. `lesson-b` has no episode, which gives the `null` target. `lesson-c` already authors `derived-from`, so nothing. A `null` target sorts before every slug.",
+  "expected": {
+    "file_bytes": {
+      "dist/suggestions.json": "{\"bundle_version\":\"0.0.0+19700101T000000Z\",\"suggestions\":[{\"evidence\":[{\"kind\":\"episode\"}],\"generator\":\"G4\",\"key\":\"derived-from\",\"source\":\"lesson-a\",\"target\":\"episode-a\"},{\"evidence\":[{\"kind\":\"none\"}],\"generator\":\"G4\",\"key\":\"derived-from\",\"source\":\"lesson-b\",\"target\":null}]}\n"
+    },
+    "lint": {
+      "exit": 0,
+      "findings": []
+    },
+    "written_only_under": "dist"
+  },
+  "id": "lint-0049",
+  "input": {
+    "add_files": {
+      "content/episodes/episode-a.md": "---\ntype: episode\ntitle: First run\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nrelated:\n  - lesson-a\nprov:\n  origin: human\n  operator: human:tester\nstarted: \"2026-01-01T00:00:00Z\"\nactor: human:tester\noutcome: success\n---\n\n## What happened\n\nA run.\n\n## Outcome\n\nOk.\n\n## Next\n\nNone.\n",
+      "content/lessons/lesson-a.md": "---\ntype: lesson\ntitle: First lesson\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nseverity: info\n---\n\n## Lesson\n\nCheck twice.\n\n## Evidence\n\nOne run.\n\n## Check before\n\nShipping.\n",
+      "content/lessons/lesson-b.md": "---\ntype: lesson\ntitle: Second lesson\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nseverity: info\n---\n\n## Lesson\n\nCheck once.\n\n## Evidence\n\nNone.\n\n## Check before\n\nNothing.\n",
+      "content/lessons/lesson-c.md": "---\ntype: lesson\ntitle: Third lesson\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nderived-from:\n  - episode-a\nprov:\n  origin: human\n  operator: human:tester\nseverity: info\n---\n\n## Lesson\n\nCheck often.\n\n## Evidence\n\nTwo runs.\n\n## Check before\n\nMerging.\n"
+    },
+    "argv": [
+      "lint",
+      "--suggest"
+    ],
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-35"
+}

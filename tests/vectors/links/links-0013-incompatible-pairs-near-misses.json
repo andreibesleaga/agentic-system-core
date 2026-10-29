@@ -1,0 +1,89 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-24, near misses: `requires` with `uses` is not a combination; two keys held toward two different items (`n2` requires `m2` and excludes `m3`) are not a combination; `uses` with `contradicts` is not a combination; `s1` requires `s2` while `s2` supersedes `s1`, which are two different ordered pairs, each holding one key; none of them is reported. The hub item gives the sources an inbound link; `s1` is deprecated so that the `supersedes` raises no other warning.",
+  "expected": {
+    "errors": [],
+    "warnings": []
+  },
+  "id": "links-0013",
+  "input": {
+    "items": [
+      {
+        "requires": [
+          "m1"
+        ],
+        "slug": "n1",
+        "type": "concept",
+        "uses": [
+          "m1"
+        ]
+      },
+      {
+        "slug": "m1",
+        "type": "concept"
+      },
+      {
+        "excludes": [
+          "m3"
+        ],
+        "requires": [
+          "m2"
+        ],
+        "slug": "n2",
+        "type": "concept"
+      },
+      {
+        "slug": "m2",
+        "type": "concept"
+      },
+      {
+        "slug": "m3",
+        "type": "concept"
+      },
+      {
+        "contradicts": [
+          "m4"
+        ],
+        "slug": "n3",
+        "type": "concept",
+        "uses": [
+          "m4"
+        ]
+      },
+      {
+        "slug": "m4",
+        "type": "concept"
+      },
+      {
+        "requires": [
+          "s2"
+        ],
+        "slug": "s1",
+        "status": "deprecated",
+        "type": "concept"
+      },
+      {
+        "slug": "s2",
+        "supersedes": [
+          "s1"
+        ],
+        "type": "concept"
+      },
+      {
+        "related": [
+          "n1",
+          "n2",
+          "n3",
+          "s1"
+        ],
+        "slug": "hub",
+        "type": "concept"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-03-24"
+}

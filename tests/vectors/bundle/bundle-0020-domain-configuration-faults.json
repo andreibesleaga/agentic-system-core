@@ -1,0 +1,31 @@
+{
+  "area": "bundle",
+  "description": "AGSC-01-41: the files and clusters that the domain object names must exist. Derivation over the minimal fixture with its configuration replaced by one that adds domain.vocabulary naming domain/missing.ttl, a file the Bundle does not hold, and domain.contexts declaring a context for the cluster ghost, which no cluster item of the Bundle is. The vocabulary file that cannot be read is AGSC-E901 (an input a verb requires and cannot open, AGSC-01-01) and the context for a cluster that is not there is AGSC-E301 (an unresolved slug); both are errors, so exit 1. The state of the rest of the fixture is unchanged.",
+  "expected": {
+    "lint": {
+      "exit": 1,
+      "findings": [
+        {
+          "code": "AGSC-E301",
+          "severity": "error"
+        },
+        {
+          "code": "AGSC-E901",
+          "severity": "error"
+        }
+      ]
+    }
+  },
+  "id": "bundle-0020",
+  "input": {
+    "add_files": {
+      "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"base\": \"https://minimal.example/\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  },\n  \"domain\": {\n    \"contexts\": [\n      {\n        \"cluster\": \"ghost\",\n        \"namespace\": \"https://minimal.example/ns/ghost#\"\n      }\n    ],\n    \"vocabulary\": \"domain/missing.ttl\"\n  }\n}\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-01-41"
+}

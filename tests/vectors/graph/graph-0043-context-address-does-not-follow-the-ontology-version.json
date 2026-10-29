@@ -1,0 +1,35 @@
+{
+  "area": "graph",
+  "description": "Derived from AGSC-05-09: the `@context` of `graph.jsonld` names the context version, a constant `1.0.0` at every version 1.x, and not the ontology version of AGSC-05-25. The case builds the same one-item Bundle twice, once with the vocabulary file reporting the ontology version `1.0.0` and once `1.1.0`: both documents name `https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld` and are byte-identical, so raising the ontology version changes no byte of any `graph.jsonld`.",
+  "expected": {
+    "context_url": "https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld",
+    "graph_jsonld_identical_across_ontology_versions": true
+  },
+  "id": "graph-0043",
+  "input": {
+    "items": [
+      {
+        "kind": "term",
+        "prov": {
+          "operator": "human:tester",
+          "origin": "human"
+        },
+        "slug": "alpha",
+        "title": "Alpha",
+        "type": "concept"
+      }
+    ],
+    "ontology_versions": [
+      "1.0.0",
+      "1.1.0"
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-05-09"
+}

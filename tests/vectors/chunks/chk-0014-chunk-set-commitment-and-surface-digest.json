@@ -1,0 +1,62 @@
+{
+  "area": "chunks",
+  "description": "AGSC-06-44: the chunks surface link carries a digest over the canonical bytes of /chunks.jsonl, agsc-chunk-count (the number of chunk lines) and agsc-chunk-set (the SHA-256 over the concatenation, in file order, of the 64 lowercase hexadecimal characters of each chunk id followed by one LF). Case three-lines is the export of chk-0001 (three lines): count 3; the digest is that of the three JCS lines each ended by LF; the commitment is the SHA-256 of the three ids each followed by LF (195 bytes). Case empty has no line: count 0, the digest and the commitment are both the SHA-256 of the empty byte string. In the discovery document the values are written in the sha-256=:<base64>: form of AGSC-06-08. Derived by hand with hashlib from the rule text.",
+  "expected": {
+    "cases": [
+      {
+        "agsc_chunk_count": "3",
+        "agsc_chunk_set": "sha-256=:9vE0suasEh2nRipOufzVOnOq4hsxe12aaWusAGJP2yI=:",
+        "chunk_set_input_bytes": 195,
+        "digest": "sha-256=:b8nJOd/FwXVHPkfkScBhQhSAzIlZjcld+yFvPrMANkQ=:",
+        "name": "three-lines"
+      },
+      {
+        "agsc_chunk_count": "0",
+        "agsc_chunk_set": "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:",
+        "digest": "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:",
+        "name": "empty"
+      }
+    ]
+  },
+  "id": "chk-0014",
+  "input": {
+    "cases": [
+      {
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [
+          {
+            "body": "Intro paragraph.\n\n## Intent\n\nCoordinate workers.\n\n## Structure\n\n```text\ncode stays\n```\n",
+            "kind": "pattern",
+            "requires": [
+              "worker"
+            ],
+            "slug": "supervisor",
+            "title": "Supervisor",
+            "type": "concept"
+          }
+        ],
+        "name": "three-lines",
+        "site": {
+          "base": "https://a.example/"
+        }
+      },
+      {
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [],
+        "name": "empty",
+        "site": {
+          "base": "https://a.example/"
+        }
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-44"
+}

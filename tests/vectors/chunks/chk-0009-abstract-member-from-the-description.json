@@ -1,0 +1,111 @@
+{
+  "area": "chunks",
+  "description": "AGSC-06-29 at 1.1: a chunk record carries the member abstract, the item's own description copied unchanged, whenever the item has a non-empty description, and omits it otherwise. Every chunk of the item carries it (both chunks of supervisor), and a cluster's chunk, whose text already is its description, carries it too. handoff has no description and its record has no abstract. The other members are those of chk-0001 (digest over the UTF-8 bytes of text, id from the IRI, the section anchor and the ordinal), and the records are ordered by item slug. Derived by hand from the rule; the digests and ids are SHA-256 values computed from the rule text.",
+  "expected": {
+    "lines": [
+      {
+        "abstract": "Recurring shapes.",
+        "digest": "5dbd5aaba17f7737de0e701ac485cada617ac6ec433da31ea754a9ee2dbb72da",
+        "id": "e11d74a1a525c0877c743580cf2337db65cf8ab2c2f503afadd0bce99d9236de",
+        "iri": "https://a.example/clusters/agent-patterns/",
+        "item": "agent-patterns",
+        "kind": "cluster",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "Recurring shapes.",
+        "title": "Agent Patterns",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "17db20f1c369c8c2305729cba7cbddb3a43a351b401473ef6c2672d06aab687b",
+        "id": "59f88d26acfea2c73bf758a0666c800bbdde4cc9e453554c38a09ee2e7a7be4a",
+        "iri": "https://a.example/concepts/handoff/",
+        "item": "handoff",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "",
+        "subkind": "pattern",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "Pass work on.\n",
+        "title": "Handoff",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "abstract": "Routes work to workers.",
+        "digest": "e11941718f69365cb49291703e72327f1091042b1350ab1bd795a43359794f30",
+        "id": "fab259f68aeb928d4db30fb9f01e78bc85b4818ee79d46d65b3d44f0f5a65596",
+        "iri": "https://a.example/concepts/supervisor/",
+        "item": "supervisor",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "",
+        "subkind": "pattern",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "Intro.\n",
+        "title": "Supervisor",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "abstract": "Routes work to workers.",
+        "digest": "a8910d4a8ff443c0c93a1c7d759f283b2ce3bc54d57976bbca715e8af8252cff",
+        "id": "492be754d0c8c02f36983693a7e4e1d30ea28c52420de57fab12cc4776b8d009",
+        "iri": "https://a.example/concepts/supervisor/",
+        "item": "supervisor",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "intent",
+        "subkind": "pattern",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": "## Intent\n\nCoordinate.\n",
+        "title": "Supervisor",
+        "trust": "untrusted",
+        "type": "text"
+      }
+    ]
+  },
+  "id": "chk-0009",
+  "input": {
+    "chunks": {
+      "max_bytes": 4096
+    },
+    "items": [
+      {
+        "body": "Intro.\n\n## Intent\n\nCoordinate.\n",
+        "description": "Routes work to workers.",
+        "kind": "pattern",
+        "slug": "supervisor",
+        "title": "Supervisor",
+        "type": "concept"
+      },
+      {
+        "body": "Pass work on.\n",
+        "kind": "pattern",
+        "slug": "handoff",
+        "title": "Handoff",
+        "type": "concept"
+      },
+      {
+        "description": "Recurring shapes.",
+        "slug": "agent-patterns",
+        "title": "Agent Patterns",
+        "type": "cluster"
+      }
+    ],
+    "site": {
+      "base": "https://a.example/"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-29"
+}

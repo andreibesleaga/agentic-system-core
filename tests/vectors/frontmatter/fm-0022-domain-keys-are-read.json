@@ -1,0 +1,33 @@
+{
+  "area": "frontmatter",
+  "description": "AGSC-02-25: an item may carry domain_type, domain_role, domain_context and warrant. Derivation: the frontmatter below carries all four with valid values (the role is one of the five, the warrant has a source and one of the three types), so it has no error, and the parsed frontmatter holds the four keys with the warrant as a nested mapping, every scalar a string (AGSC-02-03). A domain_type that names no class of a vocabulary file and a domain_context that names no declared context are AGSC-E418, which needs the configuration and is pinned by lint-0061, not here.",
+  "expected": {
+    "errors": [],
+    "frontmatter": {
+      "description": "A term of the case on the domain keys; its keys are the point of the case.",
+      "domain_context": "billing",
+      "domain_role": "aggregate-root",
+      "domain_type": "Account",
+      "kind": "term",
+      "prov": {
+        "operator": "human:tester",
+        "origin": "human"
+      },
+      "title": "Account",
+      "type": "concept",
+      "warrant": {
+        "source": "https://example.org/policy/accounts",
+        "type": "organisational"
+      }
+    }
+  },
+  "id": "fm-0022",
+  "input": {
+    "markdown": "---\ntype: concept\ntitle: Account\ndescription: A term of the case on the domain keys; its keys are the point of the case.\nkind: term\ndomain_type: Account\ndomain_role: aggregate-root\ndomain_context: billing\nwarrant:\n  source: https://example.org/policy/accounts\n  type: organisational\nprov:\n  origin: human\n  operator: human:tester\n---\n\n## Intent\n\nText.\n"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-02-25"
+}

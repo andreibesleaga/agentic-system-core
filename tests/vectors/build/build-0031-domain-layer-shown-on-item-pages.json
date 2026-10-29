@@ -1,0 +1,110 @@
+{
+  "area": "build",
+  "description": "AGSC-06-38 for a node that uses the domain layer: the relations table of an item page shows, in each row, the other item's domain type and context, and the page shows the item's own domain type, role, context and warrant in a definition list under the table, each with the label the site vocabulary gives it. Two nodes of two items each, engine requires fuel-pump. (1) with the layer: the page of engine has a definition list of four entries (Domain type: Aircraft engine; Domain role: aggregate root; Domain context: Propulsion; Warrant: literary, with its source) and a table row for requires -> fuel-pump showing Fuel pump and Propulsion. (2) without the layer (no site vocabulary file, no domain key): the page has no definition list of these terms and the table has no domain column — the page differs from a 1.0 page only by the figure, the table and the backlinks. The facts are asserted as such, not as bytes. The key names (domain_type, domain_role, domain_context, warrant) and the vocabulary labels are those of the domain-layer rules of sections 02 and 05 as written by B02-WP5b; this case states only what the PAGE shows.",
+  "expected": {
+    "cases": [
+      {
+        "definition_list_of_engine": [
+          {
+            "term": "Domain type",
+            "value": "Aircraft engine"
+          },
+          {
+            "term": "Domain role",
+            "value": "aggregate root"
+          },
+          {
+            "term": "Domain context",
+            "value": "Propulsion"
+          },
+          {
+            "term": "Warrant",
+            "value": "literary: https://example.org/standards/engine-handbook"
+          }
+        ],
+        "name": "with-the-layer",
+        "table_row_of_engine": {
+          "direction": "outgoing",
+          "key": "requires",
+          "other": "fuel-pump",
+          "other_context": "Propulsion",
+          "other_domain_type": "Fuel pump"
+        }
+      },
+      {
+        "definition_list_of_engine": [],
+        "name": "without-the-layer",
+        "table_has_domain_columns": false
+      }
+    ]
+  },
+  "id": "build-0031",
+  "input": {
+    "cases": [
+      {
+        "items": [
+          {
+            "body": "An engine.\n",
+            "domain_context": "propulsion",
+            "domain_role": "aggregate-root",
+            "domain_type": "aircraft-engine",
+            "kind": "explainer",
+            "requires": [
+              "fuel-pump"
+            ],
+            "slug": "engine",
+            "title": "Engine",
+            "type": "concept",
+            "warrant": {
+              "source": "https://example.org/standards/engine-handbook",
+              "type": "literary"
+            }
+          },
+          {
+            "body": "A pump.\n",
+            "domain_context": "propulsion",
+            "domain_type": "fuel-pump",
+            "kind": "explainer",
+            "slug": "fuel-pump",
+            "title": "Fuel Pump",
+            "type": "concept"
+          }
+        ],
+        "labels": {
+          "aggregate-root": "aggregate root",
+          "aircraft-engine": "Aircraft engine",
+          "fuel-pump": "Fuel pump",
+          "propulsion": "Propulsion"
+        },
+        "name": "with-the-layer"
+      },
+      {
+        "items": [
+          {
+            "body": "An engine.\n",
+            "kind": "explainer",
+            "requires": [
+              "fuel-pump"
+            ],
+            "slug": "engine",
+            "title": "Engine",
+            "type": "concept"
+          },
+          {
+            "body": "A pump.\n",
+            "kind": "explainer",
+            "slug": "fuel-pump",
+            "title": "Fuel Pump",
+            "type": "concept"
+          }
+        ],
+        "name": "without-the-layer"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-38"
+}

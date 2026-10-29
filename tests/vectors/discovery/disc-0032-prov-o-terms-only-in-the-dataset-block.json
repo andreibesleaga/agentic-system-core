@@ -1,0 +1,24 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-41 with the confinement of the PROV-O terms: the PROV-O terms prov:generatedAtTime and prov:wasAttributedTo appear in the Dataset block of the home page and in no other output of the build: not in graph.jsonld, graph.ttl or graph.nq (their bytes and the @context address stay those of 1.0), not in a pages/<slug>.jsonld, not in the block of another index page. The fixture is the minimal Bundle built with SOURCE_DATE_EPOCH set and no git history, with site.author and site.author_orcid configured so that prov:wasAttributedTo is present; the expected list names every emitted file that contains either term. Derived by hand from the rule.",
+  "expected": {
+    "files_containing_a_prov_term": [
+      "/index.html"
+    ]
+  },
+  "id": "disc-0032",
+  "input": {
+    "add_files": {
+      "agsc.config.json": "{\n  \"bundle\": {\n    \"id\": \"minimal\",\n    \"license_prose\": \"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\n    \"license_schema\": \"CC0-1.0\",\n    \"operator\": \"human:andreibesleaga\"\n  },\n  \"build\": {\n    \"out\": \"www\"\n  },\n  \"site\": {\n    \"author\": \"Josiah Carberry\",\n    \"author_orcid\": \"0000-0002-1825-0097\",\n    \"base\": \"https://minimal.example/\",\n    \"tagline\": \"The smallest Bundle that conforms.\",\n    \"tdm_crawlers\": [\n      \"Applebot-Extended\",\n      \"CCBot\",\n      \"ClaudeBot\",\n      \"GPTBot\",\n      \"Google-Extended\",\n      \"meta-externalagent\"\n    ],\n    \"title\": \"Minimal Bundle\"\n  },\n  \"spec_version\": \"1.0.0\",\n  \"tags\": {\n    \"allowed\": [\n      \"agents\",\n      \"patterns\"\n    ]\n  }\n}\n"
+    },
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "note": "The build harness (source_date_epoch 1767225600, no git history) is that of build-0029; the case has no handler yet (expected red until the Dataset block lands).",
+  "options": {
+    "source_date_epoch": 1767225600,
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-06-41"
+}
