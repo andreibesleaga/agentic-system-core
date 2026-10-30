@@ -410,6 +410,28 @@ function detect(paths) {
   return found;
 }
 
+/**
+ * The layout an import with no `--layout` reads: the first detected layout (priority
+ * order) that would import at least one skill or rule. A marketplace file whose plugins
+ * all name a source outside the clone is detected first and imports nothing, so reading
+ * it would report "0 written, pass" beside a clone that holds a plain SKILL.md. When no
+ * detected layout imports anything the first detected one is returned, so the report
+ * still names what was found.
+ *
+ * @param {string[]} detected `detect()`'s answer.
+ * @param {{files:object, paths:string[]}} input
+ * @param {object} options as `plan()`'s, without `layout`.
+ * @returns {(string|undefined)} `undefined` when nothing was detected.
+ */
+function firstImportable(detected, input, options) {
+  // A refused plan (a newer major, AGSC-01-22) is chosen on purpose: the refusal is the answer.
+  const found = detected.find((layout) => {
+    const planned = plan(input, { ...options, layout });
+    return planned.refused || planned.writes.length > 0;
+  });
+  return found === undefined ? detected[0] : found;
+}
+
 /** Should the verb read this file's text? (Everything else is listed, never read.) */
 function isRelevant(path) {
   const p = String(path);
@@ -866,7 +888,7 @@ function run(bundle, options) {
 
 module.exports = {
   CLAIMED_KEYS, FORMAT, LAYOUTS, NEEDS_SKILL_PACKS, OPEN_LICENSES,
-  catalogue, decodeRecord, detect, encodeRecord, flatFrontmatter, isRelevant, licenceFromText, licenceId,
+  catalogue, decodeRecord, detect, encodeRecord, firstImportable, flatFrontmatter, isRelevant, licenceFromText, licenceId,
   licenceOf, linkEntries, packBody, packLicence, plan, readFrontmatter, relativeDir, run, sources,
   supportingFiles,
 };

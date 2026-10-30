@@ -348,7 +348,8 @@ shim is the one forge shim; Amendment 6's "v1.x reads as v1.0" does not reach th
 **Note to PRD-047 and NFR-10.** The REUSE layout is not adopted at 1.0. The
 licences are stated by `LICENSE`, `LICENSE-CONTENT`, `NOTICE`, the `license` field of
 `package.json` and the SPDX header of every browser script; "REUSE green" is not claimed. A
-REUSE layout is a 1.1 item.
+REUSE layout is a 1.1 item. *(Amended for 1.1.0: adopted — `REUSE.toml` and `LICENSES/` at the
+root, `reuse lint` compliant with REUSE 3.3; docs/ENGINEERING.md §7.)*
 
 **Note to PRD-026.** The acceptance "Bundle opens as an Obsidian vault" is
 read as: the content directory is plain Markdown files with relative links and YAML

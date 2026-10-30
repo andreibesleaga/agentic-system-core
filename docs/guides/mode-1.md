@@ -68,7 +68,7 @@ kind: explainer
 
 It keeps the plan and checks each result before the next handoff.
 ITEM
-agsc init > /dev/null
+agsc init > /dev/null 2>&1
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 git init -q -b main && git add -A && git commit -q -m 'start'
 agsc lint
@@ -147,8 +147,8 @@ fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
 JS
 node set-node.js node-a https://a.example/ https://b.example/
 node set-node.js node-b https://b.example/ https://a.example/
-(cd node-a && git commit -qam 'peer b' && agsc build > /dev/null)
-(cd node-b && git commit -qam 'peer a' && agsc build > /dev/null)
+(cd node-a && git commit -qam 'peer b' && agsc build > /dev/null 2>&1)
+(cd node-b && git commit -qam 'peer a' && agsc build > /dev/null 2>&1)
 node "$ENGINE/tools/validate-wellknown" node-a/www/.well-known/knowledge-linkset --level 2 --peer node-b/www/.well-known/knowledge-linkset
 ```
 

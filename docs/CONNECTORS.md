@@ -261,7 +261,9 @@ the folder.
 `--list` prints what each layout found would import — name, file, licence, version,
 how many files are dropped, and whether it would arrive as a draft — and writes
 nothing. With no `--layout` the import takes the first layout found, in the order
-marketplace, plugin, Agent Skills, Cursor, Windsurf, and names the others.
+marketplace, plugin, Agent Skills, Cursor, Windsurf, that would import something, and
+names the others; a marketplace file whose plugins all name a source outside the clone is
+skipped in favour of the next layout (from 1.1).
 
 **From a clone into a node.** A skill becomes a procedure: its `description` becomes
 `when`, its body is kept as written, and it is marked `prov.origin: imported` with
@@ -347,7 +349,7 @@ where a link is given):
 | Asana | project › **Export/Print › CSV** | `*.csv` | a CSV with Asana's export columns (`Section/Column` = state), for Asana's CSV importer |
 | Notion | database page › **••• › Export › Markdown & CSV** ([export](https://www.notion.com/help/export-your-content): "Full page databases will be exports as a CSV file") | `*.csv` (the 32-character id Notion appends to the file name is dropped) | a CSV (`Name`, `Status`, `Type`, `Assignee`, `Tags`, `Due`, …) for **Merge with CSV** or a new import |
 | Obsidian Kanban | the board **is** the Markdown file in the vault | `*.md` with `kanban-plugin` frontmatter | a board file: one lane per state, `@{date}` due dates, a `**Complete**` lane |
-| Markdown task lists | any `.md` with `- [ ]` / `- [x]` lines | `*.md` (`# Title` = board, `## Heading` = state) | one `.md` per board, one `##` section per state |
+| Markdown task lists | any `.md` with `- [ ]` / `- [x]` lines; from 1.1 also `- [/]` (in progress) and `- [-]` (cancelled) | `*.md` (`# Title` = board, `## Heading` = state) | one `.md` per board, one `##` section per state |
 | Todo.txt | the `todo.txt` file ([format](https://github.com/todotxt/todo.txt)) | `*.txt` (`+project` = board, `@context` = label, `due:`, `state:`) | one `.txt` per board, with `state:` for the states Todo.txt cannot say |
 | another node (a peer) | download its `/boards/<cluster>.json` | `*.json` (a board index is named and skipped) | the same board-export shape; its tasks come in as read-only drafts whose `x-board-id` is the peer's task IRI, so a task here can be `blocked-by` the copy |
 

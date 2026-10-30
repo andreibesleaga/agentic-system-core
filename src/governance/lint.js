@@ -43,6 +43,7 @@ const links = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
 const { isPublished } = require('../knowledge/chunks.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
+const { withArticle } = require('../shared/article.js');
 
 const injection = require('./injection.js');
 const secrets = require('./secrets.js');
@@ -411,7 +412,7 @@ function checkSections(item) {
   return wanted
     .filter((heading) => !present.has(heading))
     .map((heading) => finding('AGSC-E406',
-      `a ${key.replace(':', ' of kind ')} body has no "## ${heading}" section (AGSC-02-21)`,
+      `${withArticle(key.replace(':', ' of kind '))} body has no "## ${heading}" section (AGSC-02-21)`,
       { file: v.path, slug: v.slug, severity: 'warn' }));
 }
 

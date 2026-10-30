@@ -124,9 +124,29 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   its constant are removed.
 - Tests: the round trip of AGSC-06-32 puts `@graph` back for a graph of one node; `help` stays the flag
   `--help` (`cli-0036` handler; its flag names come with the packages that add the flags).
+- `import --from skills` with no `--layout` reads the first detected layout that would import
+  something, not simply the first (AGSC-01-26a, I-174): a marketplace file whose plugins all name a
+  source outside the clone no longer hides a `SKILL.md` that sits beside it. The bytes of an item
+  imported under a given layout are unchanged; `--layout` is obeyed as before.
+- `agsc skills import <file>` for a path outside the Bundle says so and names `import --from skills`
+  (AGSC-07-22, I-175); the mapping of the two import routes is unchanged, because the scenario of
+  Mode 3 and AGSC-07-22 pin `description` and `x-skill-license`.
+- The Markdown board reader keeps `- [/]` (state In Progress) and `- [-]` (Canceled) cards instead of
+  skipping them without a message (AGSC-01-26a, I-176); `[ ]`, `[x]` and `[X]` read as before.
+- Messages that name a type or a format at run time say "an episode", not "a episode" (lint
+  `AGSC-E406`, `AGSC-E408`, `AGSC-E205`, `AGSC-E506`; I-129). Message text only; no output byte.
+- The guides discard the `stderr` of `agsc init`, `build` and `skills` steps with `> /dev/null 2>&1`
+  (I-129).
 
 ### Added
 
+- `package.json` `exports` (I-087): `.`, `./bin/agsc.js` (the alias package requires it),
+  `./package.json`, and the data trees `schema/`, `ontology/`, `spec/` and `tests/vectors/`. `src/`
+  and the tools are no longer importable by a deep path; nothing in the repository or the alias
+  package does that. The commands (`bin`) are unchanged.
+- The REUSE layout (I-042): `REUSE.toml` and `LICENSES/` (`Apache-2.0`, `CC0-1.0`, `CC-BY-4.0`) at
+  the root, one annotation per licence area of the README table; both ship in the package.
+  `reuse lint` reports REUSE 3.3 compliance. No source file, vector or built output changes.
 - `bench/metrics.js`: the statistics of the agent-side study — citation precision and
   recall on unit ids, a percentile bootstrap interval, a paired permutation test (exact
   up to 16 pairs), Holm's correction and Cliff's delta. The resampling draws from a

@@ -97,7 +97,7 @@ kind: explainer
 
 Major for a breaking change, minor for a new feature, patch for a fix.
 ITEM
-agsc init > /dev/null
+agsc init > /dev/null 2>&1
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 git init -q -b main && git add -A && git commit -q -m 'release skills'
 agsc lint
@@ -169,7 +169,7 @@ one-skill example; use your own folder the same way:
 ```bash demo
 agsc import --from skills --list "$ENGINE/examples/demos/mode-3-skills/foreign"
 agsc import "$ENGINE/examples/demos/mode-3-skills/foreign" --from skills --cluster releasing
-agsc skills > /dev/null
+agsc skills > /dev/null 2>&1
 grep '^- item:' dist/skills/releasing/SKILL.md
 ```
 
@@ -184,7 +184,8 @@ imported file keeps its own licence (`x-skills-license`) and is marked
 `origin: imported`; read it before you commit it. Its title is the skill's name
 (`plain-notes`), and until you give it `## When`, `## Steps` and `## Checks` sections,
 `agsc lint` warns three times with `AGSC-E406`. A pack this format emitted goes back
-into its items with `agsc skills import <file>`
+into its items with `agsc skills import <file>` (the file must lie inside the Bundle; for a
+collection kept elsewhere use `agsc import --from skills <clone>`)
 ([DEMOS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/DEMOS.md#mode-3--the-evolving-skills-library) shows it).
 
 At 1.0.0 that works into another Bundle, or for a procedure the Bundle does not hold yet.

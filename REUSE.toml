@@ -1,0 +1,56 @@
+# REUSE 3.x licensing layout (https://reuse.software/spec-3.3/), read with `reuse lint`.
+#
+# One annotation per licence area of the table in README.md ("Licences"): no source file
+# carries an SPDX header, so no byte of the specification, the schemas, the vectors or the
+# built output changes for it. Later annotations win over earlier ones (precedence =
+# "closest"), so the general rule comes first and each exception after it. The licence
+# texts are in LICENSES/; the Content Use Terms keep their own text in LICENSE-CONTENT
+# (pinned by hash in AGSC-06-18) and a byte-identical copy in LICENSES/.
+version = 1
+
+# The engine, the command line, the checkers, the specification text, the conformance
+# vectors, the documentation, the scenarios and the examples. The Internet-Draft under
+# internet-draft/ is also offered under BCP 78 and the IETF Trust Legal Provisions once
+# posted; that is stated in README.md and is not an SPDX identifier.
+[[annotations]]
+path = "**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Andrei N. Besleaga"
+SPDX-License-Identifier = "Apache-2.0"
+
+# The JSON Schemas, the ontology, the identifiers, the agent skill and the plugin files.
+[[annotations]]
+path = ["schema/**", "ontology/**", "skills/**", "plugins/**", ".claude-plugin/**", "w3id/**"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Andrei N. Besleaga"
+SPDX-License-Identifier = "CC0-1.0"
+
+# The W3C-format personal draft (respecConfig sets CC-BY 4.0 explicitly).
+[[annotations]]
+path = "w3c/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Andrei N. Besleaga"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Seven files quote an SPDX line as DATA (a script template that emits the licence line of
+# a browser file, a pattern that reads a licence line, a test of the ontology alignments).
+# REUSE would read those quotations as the file's own licence and reject them as invalid
+# expressions, so these paths are annotated by "override", which ignores the file's text.
+[[annotations]]
+path = [
+  "src/composition/browser.js",
+  "src/distribution/compose-page.js",
+  "src/distribution/page-tools.js",
+  "src/distribution/search-page.js",
+  "src/distribution/webmcp.js",
+  "src/interchange/licences.js",
+  "tests/ontology/alignments.test.js",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Andrei N. Besleaga"
+SPDX-License-Identifier = "Apache-2.0"
+
+# LICENSE, LICENSE-CONTENT and the other licence-named files at the root are licence texts,
+# which REUSE does not annotate. LICENSE-CONTENT (the Content Use Terms 1.0) is the licence
+# of a PUBLISHED NODE's prose, not of any file in this repository, so it has no entry in
+# LICENSES/ (an unused licence text fails `reuse lint`).

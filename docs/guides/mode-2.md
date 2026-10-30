@@ -183,7 +183,7 @@ ITEM
 Then the configuration, the security contact and a first commit, as in [Mode 0](mode-0.md):
 
 ```bash demo
-agsc init > /dev/null
+agsc init > /dev/null 2>&1
 find content -name '*.md' | sort
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 git init -q -b main && git add -A && git commit -q -m 'the login project'

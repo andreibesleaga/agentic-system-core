@@ -56,6 +56,7 @@ const slugs = require('../knowledge/slug.js');
 const { fenceProse } = require('../knowledge/markdown.js');
 const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
 const { keyValueLine } = require('../shared/key-value-line.js');
+const { withArticle } = require('../shared/article.js');
 const { yamlScalar } = require('./harness.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
@@ -398,7 +399,7 @@ function splitPack(text, options) {
     const body = withOneTrailingFeed(lines.slice(i + 6, end).join('\n'));
     i = end;
     if (type[1] !== 'procedure') {
-      findings.push(finding('AGSC-E506', `${iri[1]} is a ${type[1]}, not a procedure; a skill import maps`
+      findings.push(finding('AGSC-E506', `${iri[1]} is ${withArticle(type[1])}, not a procedure; a skill import maps`
         + ' procedures only, so it was not imported (AGSC-07-22)', { file: PACK_FILE, severity: 'warn' }));
       continue;
     }

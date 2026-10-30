@@ -336,6 +336,9 @@ AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to
 | The Internet-Draft under `internet-draft/` | Apache-2.0; as a posted Internet-Draft also under BCP 78 and the IETF Trust Legal Provisions |
 | The prose of a published node — item bodies, descriptions and the pages and exports that carry them | the Content Use Terms in `LICENSE-CONTENT` |
 
+The text of each licence above is in `LICENSES/`, and `REUSE.toml` assigns each licence to its
+paths (the REUSE layout; `docs/ENGINEERING.md` §7).
+
 Outside contributions are signed off under the agreement in `CONTRIBUTOR-AGREEMENT`, which
 the token `CA-v1` names; `CONTRIBUTING.md` says what that means in plain words.
 `GOVERNANCE.md` says who decides and what happens if the maintainer stops,

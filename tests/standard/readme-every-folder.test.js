@@ -26,6 +26,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
  */
 const COVERED = Object.freeze({
   '.claude-plugin': ['README.md', '.claude-plugin/marketplace.json'],
+  LICENSES: ['README.md', 'text of each licence above is in `LICENSES/`'],
   'skills/agentic-system-core': ['skills/README.md', 'folder `agentic-system-core/` has no README of its own'],
   'src/ports': ['src/README.md', '`tests/ports/` holds the folder to exactly its four interface files'],
 });

@@ -99,7 +99,8 @@ linear in the length of the text where the patterns it replaced were quadratic.
 `shared/key-value-line.js` reads the rest of one line after a fixed head (a "key:
 value" line of a foreign frontmatter block, a heading's text): the head is matched
 once, the rest searched once for a line terminator and then sliced, where the patterns
-it replaced read the rest again for every blank they gave back.
+it replaced read the rest again for every blank they gave back. `shared/article.js` puts
+"a" or "an" before a word a message names at run time (an item type, a format).
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

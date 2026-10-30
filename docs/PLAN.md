@@ -633,7 +633,8 @@ which every pull request must pass. The golden-thread half is `node tools/requir
 **The licence row (§10, NFR-10).** There is no REUSE or SPDX lint at 1.0, and "REUSE green" is
 not claimed: the licences are stated by `LICENSE`, `LICENSE-CONTENT`, `NOTICE`, the `license`
 field of `package.json` and the SPDX header of every browser script, and a REUSE layout is a
-1.1 item (the PRD's note to PRD-047 and NFR-10).
+1.1 item (the PRD's note to PRD-047 and NFR-10). *(Amended for 1.1.0: the layout is adopted —
+`REUSE.toml` and `LICENSES/`; `reuse lint` is compliant with REUSE 3.3, docs/ENGINEERING.md §7.)*
 
 **R7 and T7 (§11, §12).** "Index-based state machines not regexes" and "a seeded fuzz lane on
 tags" do not describe the tree: the engine reads its formats through maintained libraries

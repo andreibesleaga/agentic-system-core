@@ -664,3 +664,60 @@ test('--cluster files every imported skill in one Cluster, and a malformed one i
     { cwd: emptyBundle(), encoding: 'utf8', env: { PATH: process.env.PATH, SOURCE_DATE_EPOCH: EPOCH } });
   assert.notStrictEqual(cli.status, 2, cli.stderr);
 });
+
+// ------------------------------------------------------------------ B03-WP4 (I-174, I-175)
+
+const SKILL_TEXT = '---\nname: tidy-notes\ndescription: Tidy a folder of notes into one page per topic.\nlicense: MIT\n---\n\n# Tidy notes\n\n1. Read every note.\n';
+const REMOTE_MARKET = `${JSON.stringify({
+  name: 'catalogue', owner: { name: 'someone' },
+  plugins: [{ name: 'remote', source: { repo: 'someone/elsewhere', source: 'github' } }],
+}, null, 2)}\n`;
+
+test('I-174: with no --layout the first layout that would import something is read, not an empty one', () => {
+  // A marketplace file whose only plugin names a remote source is detected first
+  // (priority order) and imports nothing; the clone also holds a SKILL.md.
+  const clone = writeTree(temp('agsc-skills-remote-'), {
+    '.claude-plugin/marketplace.json': REMOTE_MARKET,
+    'skills/tidy-notes/SKILL.md': SKILL_TEXT,
+  });
+  assert.deepStrictEqual(skills.detect(['.claude-plugin/marketplace.json', 'skills/tidy-notes/SKILL.md']),
+    ['marketplace', 'agentskills'], 'the priority order of detect() stays');
+  const into = emptyBundle();
+  const result = imported(into, clone);
+  assert.deepStrictEqual(errors(result.findings), []);
+  assert.ok(nodeFs.existsSync(path.join(into, 'content/procedures/tidy-notes.md')), result.notes);
+  assert.match(result.notes, /skills layout agentskills \(detected\); also found: marketplace/u);
+});
+
+test('I-174: with --layout the stated layout is used even when it imports nothing', () => {
+  const clone = writeTree(temp('agsc-skills-remote-'), {
+    '.claude-plugin/marketplace.json': REMOTE_MARKET,
+    'skills/tidy-notes/SKILL.md': SKILL_TEXT,
+  });
+  const into = emptyBundle();
+  imported(into, clone, { layout: 'marketplace' });
+  assert.ok(!nodeFs.existsSync(path.join(into, 'content/procedures/tidy-notes.md')));
+});
+
+test('I-174: when no detected layout imports anything the first detected one is still named', () => {
+  const clone = writeTree(temp('agsc-skills-remote-'), { '.claude-plugin/marketplace.json': REMOTE_MARKET });
+  const into = emptyBundle();
+  const result = imported(into, clone);
+  assert.match(result.notes, /skills layout marketplace \(detected\)/u);
+});
+
+test('I-175: skills import of a file outside the Bundle says so and names the other route', () => {
+  const dir = emptyBundle();
+  const outside = writeTree(temp('agsc-skills-outside-'), { 'SKILL.md': SKILL_TEXT });
+  const run = (file) => require('../../src/application/cli/verbs/skills.js')
+    .run(ctxFor(dir, { argv: ['import', file] }));
+  const refused = run(path.join(outside, 'SKILL.md'));
+  assert.strictEqual(refused.findings[0].code, 'AGSC-E901');
+  assert.match(refused.findings[0].message, /outside this Bundle/u);
+  assert.match(refused.findings[0].message, /import --from skills/u);
+  assert.match(run('../up.md').findings[0].message, /outside this Bundle/u);
+  // A path inside the Bundle that does not exist is still just unreadable.
+  const missing = run('nope/SKILL.md');
+  assert.match(missing.findings[0].message, /could not be read/u);
+  assert.doesNotMatch(missing.findings[0].message, /outside this Bundle/u);
+});

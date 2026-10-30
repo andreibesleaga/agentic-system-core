@@ -104,7 +104,7 @@ echo checkout answers
 checkout answers
 ```
 ITEM
-agsc init > /dev/null
+agsc init > /dev/null 2>&1
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 git init -q -b main && git add -A && git commit -q -m 'checkout'
 agsc lint
@@ -180,7 +180,7 @@ cat > run1.json <<JSON
 JSON
 agsc trace run1.json
 git add -A && git commit -qm 'a recorded run'
-agsc build > /dev/null
+agsc build > /dev/null 2>&1
 sed -n '/## Monthly spend/,/^- cap/p' www/now.md
 ```
 

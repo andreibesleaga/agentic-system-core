@@ -738,7 +738,7 @@ function importSkills(ctx, source, identityOptions) {
     return { findings };
   }
   const detected = skills.detect(paths);
-  const chosen = layout === undefined ? detected[0] : layout;
+  const chosen = layout === undefined ? skills.firstImportable(detected, { files, paths }, options) : layout;
   if (chosen === undefined) {
     return {
       findings: [...findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds no skill or rule in any`

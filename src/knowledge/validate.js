@@ -26,6 +26,7 @@
 const { compile } = require('./schema.js');
 const { nfc, codePointLength, compareCodePoint, isWellFormed } = require('./unicode.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
+const { withArticle } = require('../shared/article.js');
 
 /** AGSC-01-02: the folder each `type` lives in. */
 const TYPE_PLURAL = Object.freeze({
@@ -384,7 +385,7 @@ function item(frontmatter, options = {}) {
   // (AGSC-02-92, vector adopt-0003).
   if (DESCRIPTION_REQUIRED_TYPES.includes(frontmatter.type)
       && (frontmatter.description == null || frontmatter.description === '')) {
-    findings.push(finding('AGSC-E408', `a ${frontmatter.type} carries no description (AGSC-02-21)`,
+    findings.push(finding('AGSC-E408', `${withArticle(frontmatter.type)} carries no description (AGSC-02-21)`,
       { ...base, severity: 'warn' }));
   }
 

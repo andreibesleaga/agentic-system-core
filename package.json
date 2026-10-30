@@ -4,6 +4,15 @@
     "version": "1.0.1",
     "description": "The reference engine and command line of AgenticSystemCore: publish a Markdown knowledge Bundle as a static node of the Agentic Knowledge Web — a wiki, an RDF graph, agent memory, skills, MCP and WebMCP tools and a discovery document. Ships the specification, the JSON Schemas, the ontology, the conformance vectors and the nine independent checkers.",
     "main": "index.js",
+    "exports": {
+        ".": "./index.js",
+        "./bin/agsc.js": "./bin/agsc.js",
+        "./package.json": "./package.json",
+        "./schema/*": "./schema/*",
+        "./ontology/*": "./ontology/*",
+        "./spec/*": "./spec/*",
+        "./tests/vectors/*": "./tests/vectors/*"
+    },
     "bin": {
         "agsc": "bin/agsc.js",
         "agsc-host": "bin/agsc-host.js",
@@ -45,6 +54,8 @@
         "docs/guides/",
         "examples/",
         "LICENSE",
+        "LICENSES/",
+        "REUSE.toml",
         "LICENSE-CONTENT",
         "NOTICE",
         "CONTRIBUTOR-AGREEMENT",

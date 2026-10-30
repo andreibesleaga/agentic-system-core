@@ -56,6 +56,7 @@ const { isObject, itemText, plain } = require('../records.js');
 const pii = require('../../governance/pii.js');
 const { FORMATS } = require('../board-formats.js');
 const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withArticle } = require('../../shared/article.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'board';
@@ -399,7 +400,7 @@ function plan(files, options) {
       read = reader.parse(String(archive[path]), path);
     } catch (e) {
       totals.files_unreadable += 1;
-      findings.push(finding('AGSC-E506', `${path}: not imported: it is not a ${format} export this adapter reads`
+      findings.push(finding('AGSC-E506', `${path}: not imported: it is not ${withArticle(format)} export this adapter reads`
         + ` (${e && e.message})`, { file: path, line: 1, severity: 'warn' }));
       continue;
     }

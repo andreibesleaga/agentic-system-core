@@ -75,7 +75,9 @@ source text the compose page's bundle carries, uses the module's own portable
 (a "key: value" line, a heading's text), read with one match of the head, one search
 for a line terminator and one slice. The patterns they replaced (a run of blanks, then
 `(.*)$` or `(.+)$`) read the rest of the line again for every blank they gave back when
-the line held a carriage return, U+2028 or U+2029.
+the line held a carriage return, U+2028 or U+2029. `src/shared/article.js` holds
+`withArticle(word)`: the word with "a" or "an" before it by its first letter, for a message
+that names a type, a kind or a format at run time.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

@@ -186,8 +186,13 @@ function importPack(ctx, bundle, file) {
   try {
     text = String(ctx.ports.fs.readFile(String(file), 'utf8'));
   } catch (e) {
-    return [finding('AGSC-E901', `${file} could not be read (AGSC-07-22)`,
-      { file: String(file), severity: 'error' })];
+    // The port is rooted at the Bundle, so a path above or outside it is refused by
+    // the port, and "could not be read" would hide the reason.
+    const outside = /^(?:[/\\]|[A-Za-z]:|(?:.*[/\\])?\.\.(?:[/\\]|$))/u.test(String(file));
+    return [finding('AGSC-E901', outside
+      ? `${file} is outside this Bundle; skills import reads one SKILL.md inside the Bundle (AGSC-07-22) — copy it in,`
+        + ' or use `agsc import --from skills <clone>` for a collection kept elsewhere'
+      : `${file} could not be read (AGSC-07-22)`, { file: String(file), severity: 'error' })];
   }
   const operator = ((bundle.config || {}).bundle || {}).operator;
   const identity = { operator: operator === undefined ? 'human:unknown' : operator };
