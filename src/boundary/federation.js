@@ -32,6 +32,7 @@
 const net = require('node:net');
 const { domainToASCII } = require('node:url');
 const nquads = require('../knowledge/nquads.js');
+const { LINK_KEYS } = require('../knowledge/relations.js'); // AGSC-03-01: the fourteen Link keys
 const { REL, finding } = require('./surfaces.js');
 const { collapseTrailingSlashes } = require('../shared/trailing.js');
 
@@ -53,9 +54,6 @@ const CONTRIBUTE_MODES = Object.freeze(['pr', 'channel', 'form']);
 const RELATED_RELATIONS = Object.freeze(['describedby', 'alternate', 'related',
   'service-desc', 'service-doc', 'service-meta', 'collection', 'item', 'cite-as']); // cite-as: RFC 8574
 
-/** AGSC-03-01: the fourteen Link keys. */
-const LINK_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
-  'derived-from', 'contradicts', 'supersedes', 'implements', 'verifies', 'covers', 'blocked-by', 'decided-by']);
 /** AGSC-11-12: RESERVED for a future MINOR; at 1.x an unknown link key, preserved. */
 const RESERVED_LINK_KEYS = Object.freeze(['peer-ref']);
 

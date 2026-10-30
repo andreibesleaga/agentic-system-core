@@ -24,6 +24,7 @@
 const { createHash } = require('node:crypto');
 const { compareCodePoint } = require('./unicode.js');
 const markdown = require('./markdown.js');
+const { LINK_KEYS } = require('./relations.js'); // AGSC-03-01: the fourteen Link keys
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-18: the Content Use Terms identifier, a constant, never configurable. */
@@ -48,12 +49,6 @@ const DEFAULT_MAX_BYTES = 4096;
 /** AGSC-06-31 / AGSC-06-21: the sharding trigger, counted in ITEMS, not lines. */
 const ITEMS_PER_SHARD = 500;
 
-/** AGSC-03-01: the fourteen Link keys, in the order the schema declares them. */
-const LINK_KEYS = Object.freeze([
-  'related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
-  'derived-from', 'contradicts', 'supersedes',
-  'implements', 'verifies', 'covers', 'blocked-by', 'decided-by',
-]);
 
 /** AGSC-01-02 / AGSC-05-01: the folder and IRI segment of each item type. */
 const TYPE_PLURAL = Object.freeze({

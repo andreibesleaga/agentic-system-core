@@ -29,6 +29,7 @@
 
 const crypto = require('node:crypto');
 const federation = require('./federation.js');
+const { LINK_KEYS } = require('../knowledge/relations.js'); // AGSC-03-01: the fourteen Link keys
 
 const { plural } = federation;
 const { ACCESS_CLASSES, REL, SURFACE_NAMES, finding } = require('./surfaces.js');
@@ -279,8 +280,6 @@ function checkBoundaryConfig(config) {
  * a retired item) lives in `composition/compose.js`, which owns selections.
  */
 const PROV_EXEMPT_KEYS = Object.freeze(['supersedes']);
-const LINK_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
-  'derived-from', 'contradicts', 'supersedes', 'implements', 'verifies', 'covers', 'blocked-by', 'decided-by']);
 
 function retirement(items, options) {
   const opts = options || {};

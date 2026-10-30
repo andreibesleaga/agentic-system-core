@@ -1745,6 +1745,8 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
 module.exports = {
   PORTABLE,
   bundle,
+  pageLinkKeys,
+  pageInverseKeys,
   pageBaseIri,
   pageDedupe,
   pageFlatItem,

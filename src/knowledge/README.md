@@ -18,6 +18,7 @@
 | `unicode.js` | NFC, code-point length, the two orderings, the combining-mark bound |
 | `jcs.js` | canonical JSON (RFC 8785) with NFC first, and the I-JSON check |
 | `markdown.js` | the Markdown subset (CommonMark + GFM tables) and body references |
+| `relations.js` | the relation table of AGSC-03-01: the fourteen keys and their columns, read by every server-side copy |
 | `links.js` | the Link graph: resolution, inverses, cycles, orphans |
 | `nquads.js` | the RDF dataset of a Bundle and its canonical N-Quads |
 | `turtle.js` | the stable Turtle view, and the Turtle this engine reads (the vocabulary) |

@@ -30,42 +30,9 @@ const { finding, sortFindings, TYPE_PLURAL } = require('./validate.js');
 const markdown = require('./markdown.js');
 const { SLUG_PATTERN } = require('./slug.js');
 
-/** AGSC-03-01: the nine core keys, in the order the specification lists them. */
-const CORE_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requires',
-  'excludes', 'derived-from', 'contradicts', 'supersedes']);
-/** AGSC-03-01: the five Mode-2 keys (combiner semantics `none`, AGSC-03-18). */
-const MODE2_KEYS = Object.freeze(['implements', 'verifies', 'covers', 'blocked-by', 'decided-by']);
-/** AGSC-03-01: exactly fourteen. No fifteenth key exists at spec_version 1.x. */
-const LINK_KEYS = Object.freeze([...CORE_KEYS, ...MODE2_KEYS]);
-
-/** AGSC-03-02, §3.1 table: authored key -> computed inverse name. */
-const INVERSE = Object.freeze({
-  related: 'related',
-  broader: 'narrower',
-  narrower: 'broader',
-  uses: 'used-by',
-  requires: 'required-by',
-  excludes: 'excludes',
-  'derived-from': 'derivation-of',
-  contradicts: 'contradicts',
-  supersedes: 'superseded-by',
-  implements: 'implemented-by',
-  verifies: 'verified-by',
-  covers: 'covered-by',
-  'blocked-by': 'blocks',
-  'decided-by': 'decides',
-});
-
-/** AGSC-03-05: materialised in both directions even when one side authored it. */
-const SYMMETRIC = Object.freeze(new Set(['related', 'excludes', 'contradicts']));
-
-/**
- * AGSC-03-04: the nine names that are computed and MUST NOT be authored.
- * `narrower` is NOT one of them — it is an authorable key whose inverse is
- * `broader` (AGSC-03-06 makes the pair idempotent).
- */
-const COMPUTED_KEYS = Object.freeze(new Set(['used-by', 'required-by', 'derivation-of',
-  'superseded-by', 'implemented-by', 'verified-by', 'covered-by', 'blocks', 'decides']));
+// AGSC-03-01…04, 03-05: the keys, inverses, symmetric set and computed names are the
+// relation table's (`relations.js`), the one copy the server side reads.
+const { CORE_KEYS, MODE2_KEYS, LINK_KEYS, INVERSE, SYMMETRIC, COMPUTED_KEYS } = require('./relations.js');
 
 /**
  * AGSC-03-03 / AGSC-11-12: the link-shaped names that are NOT among the fourteen

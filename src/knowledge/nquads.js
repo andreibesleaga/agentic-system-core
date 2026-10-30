@@ -27,6 +27,7 @@
 
 const { compareCodePoint } = require('./unicode.js');
 const skos = require('./skos.js');
+const { RELATIONS } = require('./relations.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 // ---------------------------------------------------------------- namespaces
@@ -55,6 +56,12 @@ const PREFIXES = Object.freeze({
   skos: SKOS,
   xsd: XSD,
 });
+
+/** `skos:related` -> its IRI, over `PREFIXES`; the relation table (`relations.js`) writes properties as curies. */
+function expandCurie(curie) {
+  const colon = curie.indexOf(':');
+  return `${PREFIXES[curie.slice(0, colon)]}${curie.slice(colon + 1)}`;
+}
 
 // ---------------------------------------------------------------- terms
 
@@ -181,22 +188,11 @@ function serialize(quads) {
  * authored direction only (`prov:wasDerivedFrom`), and AGSC-05-27's object-property
  * list is closed, so no `prov:hadDerivation` is invented.
  */
-const LINK_PROPERTIES = Object.freeze({
-  related: { property: `${SKOS}related`, symmetric: true },
-  broader: { property: `${SKOS}broader`, inverse: `${SKOS}narrower` },
-  narrower: { property: `${SKOS}narrower`, inverse: `${SKOS}broader` },
-  uses: { property: `${NS}uses`, inverse: `${NS}usedBy` },
-  requires: { property: `${DCTERMS}requires`, inverse: `${DCTERMS}isRequiredBy` },
-  excludes: { property: `${NS}excludes`, symmetric: true },
-  'derived-from': { property: `${PROV}wasDerivedFrom` },
-  contradicts: { property: `${NS}contradicts`, symmetric: true },
-  supersedes: { property: `${DCTERMS}replaces`, inverse: `${DCTERMS}isReplacedBy` },
-  implements: { property: `${NS}implements`, inverse: `${NS}implementedBy` },
-  verifies: { property: `${NS}verifies`, inverse: `${NS}isVerifiedBy` },
-  covers: { property: `${NS}covers`, inverse: `${NS}coveredBy` },
-  'blocked-by': { property: `${NS}blockedBy`, inverse: `${NS}blocks` },
-  'decided-by': { property: `${NS}decidedBy`, inverse: `${NS}decides` },
-});
+const LINK_PROPERTIES = Object.freeze(Object.fromEntries(RELATIONS.map((r) => [r.key, Object.freeze({
+  property: expandCurie(r.property),
+  ...(r.symmetric ? { symmetric: true } : {}),
+  ...(r.inverseProperty ? { inverse: expandCurie(r.inverseProperty) } : {}),
+})])));
 
 /**
  * The AGSC-05-26 table, extended by AGSC-05-30: frontmatter key (dotted for a nested

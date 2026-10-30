@@ -160,6 +160,13 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `AGSC-E406`, `AGSC-E408`, `AGSC-E205`, `AGSC-E506`; I-129). Message text only; no output byte.
 - The guides discard the `stderr` of `agsc init`, `build` and `skills` steps with `> /dev/null 2>&1`
   (I-129).
+- The relation table of AGSC-03-01 lives in one file, `src/knowledge/relations.js` (key,
+  inverse, symmetric, RDF property, combiner, transitive reading, self-link, expected target
+  kinds, plain meaning; I-006, I-007, I-001). `links.js`, `chunks.js`, `nquads.js`,
+  `boundary/visibility.js` and `boundary/federation.js` read it instead of keeping their own
+  copies. Pure refactor under AGSC-03-01 and AGSC-05-16: no output byte changes (the fixture and
+  the four example Bundles rebuild byte-identical). The page-script copies follow in a later
+  package.
 
 ### Added
 
