@@ -43,7 +43,7 @@ function script(options) {
 (function () {
   var MANIFEST = ${JSON.stringify(list)};
   var LOCAL_ONLY = ${JSON.stringify(LOCAL_ONLY_TOOLS)};
-  var state = { localOnlyCalls: 0, manifest: MANIFEST, registered: 0, transport: 'webmcp' };
+  var state = { localOnlyCalls: 0, manifest: MANIFEST, registered: 0, rejected: [], transport: 'webmcp' };
   globalThis.AGSC_WEBMCP = state;
 
   function invoke(name, args) {
@@ -67,14 +67,27 @@ function script(options) {
 
   for (var i = 0; i < MANIFEST.tools.length; i += 1) {
     (function (tool) {
-      context.registerTool({
-        annotations: tool.annotations,
-        description: tool.description,
-        execute: function (args) { return invoke(tool.name, args); },
-        inputSchema: tool.inputSchema,
-        name: tool.name
-      });
-      state.registered += 1;
+      // The browser may refuse a registration, by throwing or by a rejected promise (a name
+      // already registered, say). The tool is then not registered, the others still are,
+      // and the page goes on working.
+      var result;
+      try {
+        result = context.registerTool({
+          annotations: tool.annotations,
+          description: tool.description,
+          execute: function (args) { return invoke(tool.name, args); },
+          inputSchema: tool.inputSchema,
+          name: tool.name
+        });
+      } catch (e) {
+        state.rejected.push(tool.name);
+        return;
+      }
+      if (result && typeof result.then === 'function') {
+        result.then(function () { state.registered += 1; }, function () { state.rejected.push(tool.name); });
+      } else {
+        state.registered += 1;
+      }
     }(MANIFEST.tools[i]));
   }
 }());

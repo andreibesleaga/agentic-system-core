@@ -45,7 +45,7 @@ Feature: Agent reader queries structured knowledge without scraping
     When the agent calls tool "ask" with "What pattern handles tool-use retries?"
     Then the answer cites at least one item IRI from the Bundle (AGSC-09-14a)
     And a question that shares no word with the Bundle returns exactly "no answer in this memory"
-    When the agent calls tool "remember" with kind "episode", a title, a body, its actor, the instant "at" and its operator
+    When the agent calls tool "remember" with kind "episode", a title, a body, its actor, the instant "at", its operator, its agent and its model
     Then a conforming Episode item comes back as a Proposal with no finding (AGSC-09-14b)
     And an episode without its declared actor is refused with "AGSC-E003"
     And nothing is written to the Bundle by the server

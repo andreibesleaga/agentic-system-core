@@ -531,7 +531,8 @@ async function checkSurface(t, h, doc) {
   if (name && SURFACE_NEEDS_VERSION.has(name) && !(Array.isArray(ver) && ver.length === 1)) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version is required for ${name} (AGSC-11-16)`);
   if (name && (name === 'llms-txt' || name === 'chunks') && ver !== undefined) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
   if (name === 'llms-txt' && h.pathname !== '/llms.txt' && !h.pathname.endsWith('/llms.txt')) F('AGSC-E210', `rel#surface llms-txt must target /llms.txt (AGSC-11-16)`);
-  if (name === 'llms-txt' || name === 'chunks') {
+  // AGSC-11-20: the `chunks` of a restricted node declare `credential` and are not served unauthenticated.
+  if (name === 'llms-txt' || (name === 'chunks' && !(Array.isArray(acc) && acc[0] === 'credential'))) {
     try { headerChecks(await src.resolve(t.href, ctx.anchor), false); } catch (e) { F('AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
   }
 }

@@ -210,25 +210,23 @@ how to set the real one. A wrong value is an error with its file and line, for e
 ```bash demo
 agsc ci
 cat dist/forge/status-checks.json
-node -e 'console.log(JSON.stringify(require("./dist/forge/ruleset.json").rules.required_status_checks))'
+node -e 'console.log(JSON.stringify(require("./dist/forge/ruleset.json").rules.map((r) => r.type)))'
 ```
 
 ```text expect
 ci: pass (0 error, 1 warn)
 ["determinism","links","provenance","review","schema"]
-["agsc ci"]
+["pull_request","required_status_checks"]
 ```
 
-`dist/forge/status-checks.json` lists the gate's checks; `dist/forge/ruleset.json`
-requires one status, `agsc ci`, because that is the one job a forge runs and its verdict
-(`dist/gate.json`) covers every check. On GitHub, the action in the root
-[README](../../README.md#connecting-agents-and-repositories) runs that job.
-`dist/forge/ruleset.json` is a description of the rule, not the shape GitHub's ruleset
-import takes: transcribe it by hand, as a branch ruleset in the repository's settings
-that requires the status check `agsc ci`. `agsc ci` does not enforce the check
-`review`; it means turning on the forge's own required review, on GitHub the rule
-"Require a pull request before merging" with at least one required approval, in the
-same ruleset.
+`dist/forge/status-checks.json` lists the gate's checks; `dist/forge/ruleset.json` is a
+GitHub repository ruleset in the shape its "Import a ruleset" takes (Settings, Rules,
+Rulesets, New ruleset, Import a ruleset). It requires one status, `agsc ci`, because that
+is the one job a forge runs and its verdict (`dist/gate.json`) covers every check. On
+GitHub, the action in the root [README](../../README.md#connecting-agents-and-repositories)
+runs that job. `agsc ci` does not enforce the check `review` itself; the ruleset does, as
+the forge's own rule "Require a pull request before merging" with one approval and the
+Code Owners' review.
 
 ## 3. One steering file for every assistant
 

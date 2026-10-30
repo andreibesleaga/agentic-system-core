@@ -218,16 +218,18 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   const remembered = page.call('remember', { body: 'x', kind: 'lesson', title: 'A Lesson Learned Here' });
   assert.strictEqual(remembered.type, 'proposal');
   assert.match(remembered.body.path, /^content\/lessons\//u);
-  // AGSC-09-14b (2026-09-25): the page has no identity to declare, so a call with no
+  // AGSC-09-14b: the page has no identity to declare, so a call with no
   // operator comes back with `prov.operator` absent and the warning that says so;
   // with one declared, no such warning.
   assert.strictEqual(remembered.body.frontmatter.prov.operator, undefined);
-  assert.deepStrictEqual(remembered.body.findings.map((f) => f.code), ['AGSC-E506']);
-  assert.deepStrictEqual(page.call('remember', { body: 'x', kind: 'lesson', operator: 'human:tester', title: 'A Lesson Learned Here' })
-    .body.findings, []);
+  // From 1.1 the item's missing `prov.agent` and `prov.model` are reported too (AGSC-09-14b).
+  assert.deepStrictEqual(remembered.body.findings.map((f) => f.code), ['AGSC-E506', 'AGSC-E202', 'AGSC-E202']);
+  assert.deepStrictEqual(page.call('remember', {
+    agent: 'writer', body: 'x', kind: 'lesson', model: 'm-1', operator: 'human:tester', title: 'A Lesson Learned Here',
+  }).body.findings, []);
   // the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
   assert.strictEqual(remembered.body.frontmatter.severity, 'info');
-  // and none on an episode, whose schema branch has no such key (AGSC-09-14b, 2026-09-24).
+  // and none on an episode, whose schema branch has no such key (AGSC-09-14b).
   const rememberedEpisode = page.call('remember', { actor: 'process:x', at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'An Episode Here' });
   assert.strictEqual(rememberedEpisode.body.frontmatter.severity, undefined);
   // AGSC-02-09: an actor outside the grammar would make the item non-conforming.

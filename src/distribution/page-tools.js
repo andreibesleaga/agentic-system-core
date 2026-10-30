@@ -128,6 +128,28 @@ function pageTypedScalars() {
 }
 
 /**
+ * Set `key` on `target` as an own data property. A plain `target[key] = value` with the
+ * key `__proto__` sets the prototype instead; front matter keeps that key as a key
+ * (`knowledge/validate.js#setOwn`), and so does every copy of it.
+ */
+function pageSetOwn(target, key, value) {
+  Object.defineProperty(target, key, { configurable: true, enumerable: true, value, writable: true });
+  return target;
+}
+
+/**
+ * The flat record the composition algebra reads: the item's `slug` and `type`, then every
+ * front-matter key (a key of the front matter wins), each an own property.
+ */
+function pageFlatItem(item) {
+  const copy = { slug: item.slug, type: item.type };
+  const fm = item.frontmatter || {};
+  const names = Object.keys(fm);
+  for (let k = 0; k < names.length; k += 1) pageSetOwn(copy, names[k], fm[names[k]]);
+  return copy;
+}
+
+/**
  * AGSC-02-04's written forms, and only those: anything else keeps the failsafe
  * string, so an unknown key's `1e3` stays `"1e3"` (vector `fm-0006`) and a reader
  * never invents a value. This is `knowledge/validate.js#coerceScalar` keyed by
@@ -140,7 +162,7 @@ function pageApplyTypes(value, key) {
   if (value !== null && typeof value === 'object') {
     const out = {};
     const names = Object.keys(value);
-    for (let i = 0; i < names.length; i += 1) out[names[i]] = pageApplyTypes(value[names[i]], names[i]);
+    for (let i = 0; i < names.length; i += 1) pageSetOwn(out, names[i], pageApplyTypes(value[names[i]], names[i]));
     return out;
   }
   const type = typed[key];
@@ -169,19 +191,16 @@ function pageKindToType() {
 /**
  * AGSC-09-14b: `remember` MUST synthesize a CONFORMING item (AGSC-02). The arguments
  * that are copied into the item are checked against the item schema's own bounds
- * first, and the first that would make it non-conforming is refused with the code
- * that bound carries (§9.4): a pattern or length bound `AGSC-E204`, a value outside
- * an enum `AGSC-E203`, a wrong type in `usage` `AGSC-E201`. One function for both
- * transports (AGSC-09-16). Until 2026-10-06 the local
- * server returned such items unchecked.
- *
- * Two more since 2026-10-06: a `kind` outside the five
- * the rule accepts is `AGSC-E203` (it was filed as a concept), and an `about` that
- * names no item the transport can see is `AGSC-E301` (the `related` Link it became
- * was refused by the next `lint`).
+ * first, in this order, and the first that would make it non-conforming is refused with
+ * the code that bound carries (§9.4): the `kind` (a value outside the five, or a Gate,
+ * `AGSC-E203`), what an episode needs (`actor` and `at`, `AGSC-E003`), the `actor`
+ * grammar, an `about` that names no item the transport can see (`AGSC-E301`, the code of
+ * the `related` Link it becomes), then a pattern or length bound `AGSC-E204`, a value
+ * outside an enum `AGSC-E203` and a wrong type in `usage` `AGSC-E201`. One function for
+ * both transports (AGSC-09-16).
  *
  * @param {object} args the call's arguments
- * @param {string} type the item type `kind` selects
+ * @param {string} type the item type `kind` selects (`undefined` for a kind outside the five)
  * @param {function(string):boolean} [has] whether a slug names an item this transport sees
  * @returns {{code:string, message:string}|null}
  */
@@ -190,6 +209,19 @@ function pageRememberFault(args, type, has) {
   const fault = (code, message) => ({ code, message: `${message} (AGSC-09-14b)` });
   if (typeof args.kind !== 'string' || pageKindToType()[args.kind] === undefined) {
     return fault('AGSC-E203', 'kind must be concept, episode, lesson, procedure or task');
+  }
+  if (args.kind === 'gate') {
+    return fault('AGSC-E203', 'remember does not accept kind "gate": a Gate\'s Level is a governance decision');
+  }
+  if (type === 'episode' && typeof args.actor !== 'string') {
+    return fault('AGSC-E003', 'an episode needs the declared actor');
+  }
+  if (type === 'episode' && typeof args.at !== 'string') {
+    return fault('AGSC-E003', 'an episode needs the instant it started, `at`');
+  }
+  if (args.actor !== undefined
+    && !/^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u.test(String(args.actor))) {
+    return fault('AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
   }
   if (args.about !== undefined && (typeof args.about !== 'string' || typeof has !== 'function' || !has(args.about))) {
     return fault('AGSC-E301', 'about names no item of this Bundle');
@@ -210,7 +242,7 @@ function pageRememberFault(args, type, has) {
     return fault('AGSC-E203', 'severity must be info, warn or block');
   }
   if (type === 'episode') {
-    if (typeof args.at !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/u.test(args.at)) {
+    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/u.test(args.at)) {
       return fault('AGSC-E204', 'at must be an instant, YYYY-MM-DDTHH:MM:SSZ (AGSC-02-06)');
     }
     if (args.outcome !== undefined && ['success', 'partial', 'failure'].indexOf(args.outcome) === -1) {
@@ -229,6 +261,60 @@ function pageRememberFault(args, type, has) {
   return null;
 }
 
+/**
+ * AGSC-09-14b, AGSC-08-01: the findings of a call whose item is not what `lint` accepts.
+ * A call that does not assert `origin: human` gets `prov.origin: ai-generated`, and that
+ * origin needs `prov.agent` and `prov.model`: each one the call left out is an
+ * `AGSC-E202` in `findings`, in that order, on both transports. The item is still
+ * returned; the call is not refused.
+ *
+ * @param {object} args the call's arguments
+ * @returns {Array<{code:string, message:string, severity:string}>}
+ */
+function pageRememberFindings(args) {
+  const findings = [];
+  if (args.origin === 'human') return findings;
+  for (const key of ['agent', 'model']) {
+    if (typeof args[key] !== 'string' || args[key] === '') {
+      findings.push({
+        code: 'AGSC-E202',
+        message: `prov.${key} is missing: an ai-generated item names its ${key} (AGSC-08-01); pass \`${key}\` or assert origin: human`,
+        severity: 'error',
+      });
+    }
+  }
+  return findings;
+}
+
+/**
+ * AGSC-09-14b: the `sources[]` entries a call keeps. An entry is dropped, with the one
+ * warning `AGSC-E506` pushed on `findings`, unless it is an object whose `resource`
+ * matches the AGSC-02-10 grammar and whose `id`, where it has one, is a line of 1 to 200
+ * code points (the bound of the item schema); a kept entry carries its `resource` and its
+ * `id` and no other member.
+ *
+ * @param {*} supplied the call's `sources` argument; anything but a list keeps nothing.
+ * @param {Array<object>} findings receives one warning per dropped entry.
+ * @returns {Array<{id:(string|undefined), resource:string}>}
+ */
+function pageKeptSources(supplied, findings) {
+  const list = Array.isArray(supplied) ? supplied : [];
+  const kept = [];
+  for (let i = 0; i < list.length; i += 1) {
+    const source = list[i];
+    const id = source ? source.id : undefined;
+    const idFits = id === undefined
+      || (typeof id === 'string' && /^[^\x00-\x1F\x7F\x85\u2028\u2029]+$/u.test(id) && [...id].length <= 200);
+    if (!source || typeof source.resource !== 'string' || !idFits
+      || !/^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u.test(source.resource)) {
+      findings.push({ code: 'AGSC-E506', message: 'source dropped', severity: 'warn' });
+      continue;
+    }
+    kept.push({ id, resource: source.resource });
+  }
+  return kept;
+}
+
 /* ------------------------------------------------------------------- envelope */
 
 /** AGSC-08-18: the one result shape, JCS member order, `trust` fixed. */
@@ -241,9 +327,12 @@ function pageErrorEnvelope(source, code, message) {
   return pageEnvelope(source, 'error', { code, message: message === undefined ? '' : message });
 }
 
-/** A Bundle IRI always ends in exactly one `/` (AGSC-05-03). */
+/** A Bundle IRI always ends in exactly one `/` (AGSC-05-03). One scan from the end. */
 function pageBaseIri(base) {
-  return `${String(base === undefined || base === null ? '/' : base).replace(/\/+$/, '')}/`;
+  const text = String(base === undefined || base === null ? '/' : base);
+  let end = text.length;
+  while (end > 0 && text.charAt(end - 1) === '/') end -= 1;
+  return `${text.slice(0, end)}/`;
 }
 
 /** AGSC-05-01: an item's canonical HTTPS IRI. */
@@ -290,21 +379,39 @@ function pageAnchorOf(text) {
 }
 
 /**
- * AGSC-01-10/11: the slug of a title. `knowledge/slug.js#slugify`'s algorithm, needed
- * here because `remember` derives an address from a title the caller supplies and a
- * page has no Bundle loader to ask.
+ * AGSC-02-91: the slug of a title — NFC, ASCII-lower-cased, every character outside
+ * `[a-z0-9]` a `-`, runs of `-` made one, the ends trimmed, the result clipped to 64
+ * characters and an empty one `note`. `knowledge/slug.js#slugify` is the same algorithm
+ * (a test holds the two together): `remember` derives an address from a title on both
+ * transports, and a page has no Bundle loader to ask.
  */
 function pageSlugify(title) {
-  const base = pageAnchorOf(title);
-  return base === '' ? 'note' : base;
+  const source = pageNfc(title).replace(/[A-Z]/g, (c) => c.toLowerCase());
+  let out = '';
+  let gap = false;
+  for (const ch of source) {
+    if (/^[a-z0-9]$/.test(ch)) {
+      if (gap && out !== '') out += '-';
+      out += ch;
+      gap = false;
+    } else {
+      gap = true;
+    }
+  }
+  if (out.length > 64) out = out.slice(0, 64).replace(/-$/, '');
+  return out === '' ? 'note' : out;
 }
 
-/** AGSC-01-23: `-2`, `-3`, … until the slug is free. */
+/** AGSC-01-23: `-2`, `-3`, … until the slug is free, the stem cut to keep 64 characters. */
 function pageDedupe(slug, taken) {
-  if (!taken || typeof taken.has !== 'function' || !taken.has(slug)) return slug;
-  let n = 2;
-  while (taken.has(`${slug}-${n}`)) n += 1;
-  return `${slug}-${n}`;
+  const has = (candidate) => Boolean(taken) && typeof taken.has === 'function' && taken.has(candidate);
+  if (!has(slug)) return slug;
+  for (let n = 2; ; n += 1) {
+    const suffix = `-${n}`;
+    let stem = slug.slice(0, 64 - suffix.length);
+    while (stem.charAt(stem.length - 1) === '-') stem = stem.slice(0, -1);
+    if (!has(`${stem}${suffix}`)) return `${stem}${suffix}`;
+  }
 }
 
 /* ------------------------------------------------- the published source file */
@@ -384,11 +491,11 @@ function pageParseMap(state, indent) {
     const rest = text.slice(colon + 1).trim();
     state.i += 1;
     if (rest === '') {
-      out[key] = pageParseValue(state, at);
+      pageSetOwn(out, key, pageParseValue(state, at));
     } else if (rest.charAt(0) === '|' || rest.charAt(0) === '>') {
-      out[key] = pageBlockScalar(state, at, rest);
+      pageSetOwn(out, key, pageBlockScalar(state, at, rest));
     } else {
-      out[key] = pageScalar(rest);
+      pageSetOwn(out, key, pageScalar(rest));
     }
   }
 }
@@ -430,12 +537,12 @@ function pageParseSeq(state, indent) {
     const map = {};
     const key = pageScalar(rest.slice(0, colon).trim());
     const value = rest.slice(colon + 1).trim();
-    if (value === '') map[key] = pageParseValue(state, inner);
-    else if (value.charAt(0) === '|' || value.charAt(0) === '>') map[key] = pageBlockScalar(state, inner, value);
-    else map[key] = pageScalar(value);
+    if (value === '') pageSetOwn(map, key, pageParseValue(state, inner));
+    else if (value.charAt(0) === '|' || value.charAt(0) === '>') pageSetOwn(map, key, pageBlockScalar(state, inner, value));
+    else pageSetOwn(map, key, pageScalar(value));
     const more = pageParseMap(state, inner);
     const names = Object.keys(more);
-    for (let i = 0; i < names.length; i += 1) map[names[i]] = more[names[i]];
+    for (let i = 0; i < names.length; i += 1) pageSetOwn(map, names[i], more[names[i]]);
     out.push(map);
   }
 }
@@ -787,6 +894,39 @@ function pageCompare(a, b) {
 }
 
 /**
+ * The text of an ATX heading line — up to three blanks, one to six `#`, then the end or
+ * a blank and the text, whose closing run of `#` is dropped — or `null` for any other
+ * line. A scan from the left, and from the right for the closing run: the patterns
+ * `/^ {0,3}#{1,6}(?: +(.*))?$/` and `/ +#+ *$/` read a long run of blanks again from
+ * each of its positions.
+ */
+function pageHeadingText(line) {
+  let at = 0;
+  while (at < 3 && line.charAt(at) === ' ') at += 1;
+  let marks = 0;
+  while (marks < 6 && line.charAt(at + marks) === '#') marks += 1;
+  if (marks === 0) return null;
+  const rest = line.slice(at + marks);
+  if (rest === '') return '';
+  if (rest.charAt(0) !== ' ') return null;
+  let from = 0;
+  while (rest.charAt(from) === ' ') from += 1;
+  const text = rest.slice(from);
+  // `.` stops at a carriage return and at U+2028 and U+2029: such a line is no heading.
+  if (/[\r\u2028\u2029]/.test(text)) return null;
+  let end = text.length;
+  while (end > 0 && text.charAt(end - 1) === ' ') end -= 1;
+  let marked = end;
+  while (marked > 0 && text.charAt(marked - 1) === '#') marked -= 1;
+  if (marked < end && marked > 0 && text.charAt(marked - 1) === ' ') {
+    let blanks = marked - 1;
+    while (blanks > 0 && text.charAt(blanks - 1) === ' ') blanks -= 1;
+    return text.slice(0, blanks).trim();
+  }
+  return text.trim();
+}
+
+/**
  * AGSC-03-13: the anchors a body defines, from its ATX headings, with the
  * `section-<n>` numbering and the collision walk of `knowledge/markdown.js`.
  * A fenced block's lines are not headings, so the scan tracks fences.
@@ -803,9 +943,8 @@ function pageAnchors(body) {
       continue;
     }
     if (opened !== null) { fence = opened[1]; continue; }
-    const heading = /^ {0,3}#{1,6}(?: +(.*))?$/.exec(line);
-    if (heading === null) continue;
-    texts.push(String(heading[1] === undefined ? '' : heading[1]).replace(/ +#+ *$/, '').trim());
+    const heading = pageHeadingText(line);
+    if (heading !== null) texts.push(heading);
   }
   let empties = 0;
   const first = texts.map((t) => {
@@ -846,14 +985,43 @@ function pageInlineTargets(body) {
     }
     if (opened !== null) { fence = opened[1]; continue; }
     const stripped = line.replace(/`[^`]*`/g, '');
-    const pattern = /!?\[[^\]]*\]\(([^()\s]*)(?:\s+"[^"]*")?\)/g;
-    let match = pattern.exec(stripped);
-    while (match !== null) {
-      if (match[1] !== '') out.push(match[1]);
-      match = pattern.exec(stripped);
+    // Each `]` is tried once: every `[` before it that has no `]` in between shares it,
+    // so when its tail is no link none of them starts one, and the scan goes on after it.
+    let from = 0;
+    for (;;) {
+      const open = stripped.indexOf('[', from);
+      if (open === -1) break;
+      const close = stripped.indexOf(']', open + 1);
+      if (close === -1) break;
+      const tail = pageLinkTail(stripped, close + 1);
+      if (tail === null) {
+        from = close + 1;
+        continue;
+      }
+      if (tail.target !== '') out.push(tail.target);
+      from = tail.end;
     }
   }
   return out;
+}
+
+/**
+ * The tail of an inline link at `at`, just after the `]`: `(`, a target without
+ * parentheses or blanks, an optional blank run and quoted title, and `)`. It answers
+ * `{target, end}` — `end` just after the `)` — or `null` when the text there is no tail.
+ */
+function pageLinkTail(text, at) {
+  if (text.charAt(at) !== '(') return null;
+  let end = at + 1;
+  while (end < text.length && '()'.indexOf(text.charAt(end)) === -1 && !/\s/.test(text.charAt(end))) end += 1;
+  const target = text.slice(at + 1, end);
+  if (text.charAt(end) === ')') return { end: end + 1, target };
+  if (end >= text.length || !/\s/.test(text.charAt(end))) return null;
+  while (end < text.length && /\s/.test(text.charAt(end))) end += 1;
+  if (text.charAt(end) !== '"') return null;
+  const closing = text.indexOf('"', end + 1);
+  if (closing === -1 || text.charAt(closing + 1) !== ')') return null;
+  return { end: closing + 2, target };
 }
 
 /**
@@ -981,19 +1149,12 @@ function pageToolset(corpus, core) {
     },
 
     compose: (args) => {
-      // AGSC-09-13a: a selection that is not an array is not the empty one (finding G4).
+      // AGSC-09-13a: a selection that is not an array is not the empty one.
       if (!Array.isArray(args.selection)) {
         return pageErrorEnvelope('compose', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
       }
       const selection = args.selection;
-      const flat = model.items.map((i) => {
-        const copy = { slug: i.slug, type: i.type };
-        const fm = i.frontmatter || {};
-        const names = Object.keys(fm);
-        for (let k = 0; k < names.length; k += 1) copy[names[k]] = fm[names[k]];
-        return copy;
-      });
-      const result = core.compose(flat, selection);
+      const result = core.compose(model.items.map(pageFlatItem), selection);
       return pageEnvelope('compose', 'verdict', {
         added: result.added,
         conflicts: result.conflicts,
@@ -1064,34 +1225,18 @@ function pageToolset(corpus, core) {
     // AGSC-09-14b: a total function — an invalid `sources[]` entry is DROPPED with
     // AGSC-E506, never rejected. `at` supplies the instant; a clock is never read.
     remember: (args) => {
-      const kinds = pageKindToType();
-      const kind = kinds[args.kind] === undefined ? 'concept' : args.kind;
-      const type = kinds[kind];
-      // AGSC-09-14b: a Gate's Level is a governance decision a
-      // tool call may not invent, and an episode's schema branch requires `actor`.
-      if (args.kind === 'gate') {
-        return pageErrorEnvelope('remember', 'AGSC-E203', 'remember does not accept kind "gate": a Gate\'s Level is a governance decision (AGSC-09-14b)');
-      }
-      if (type === 'episode' && typeof args.actor !== 'string') {
-        return pageErrorEnvelope('remember', 'AGSC-E003', 'an episode needs the declared actor (AGSC-09-14b)');
-      }
-      // AGSC-09-14b: no `at` on an episode is AGSC-E003; an actor outside AGSC-02-09 is refused.
-      if (type === 'episode' && typeof args.at !== 'string') {
-        return pageErrorEnvelope('remember', 'AGSC-E003', 'an episode needs the instant it started, `at` (AGSC-09-14b)');
-      }
-      if (args.actor !== undefined && !/^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u.test(String(args.actor))) {
-        return pageErrorEnvelope('remember', 'AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
-      }
+      const type = pageKindToType()[args.kind];
       const refused = pageRememberFault(args, type, (slug) => bySlug[slug] !== undefined);
       if (refused !== null) return pageErrorEnvelope('remember', refused.code, refused.message);
       const title = typeof args.title === 'string' ? args.title : '';
       const findings = [];
-      // AGSC-09-14b (2026-09-25): the page has no identity to declare, so a call
-      // without an operator returns the item with `prov.operator` absent and says
-      // so; the Proposal path refuses it until a person supplies one.
+      // AGSC-09-14b: the page has no identity to declare, so a call without an operator
+      // returns the item with `prov.operator` absent and says so; the Proposal path
+      // refuses it until a person supplies one.
       if (typeof args.operator !== 'string') {
         findings.push({ code: 'AGSC-E506', message: 'no operator declared: prov.operator is absent and the Proposal needs one (AGSC-09-14b)', severity: 'warn' });
       }
+      findings.push(...pageRememberFindings(args));
       const taken = new Set(Object.keys(bySlug));
       const slug = pageDedupe(pageSlugify(title), taken);
       const frontmatter = { title, type };
@@ -1106,7 +1251,7 @@ function pageToolset(corpus, core) {
       if (type === 'episode') {
         frontmatter.started = args.at;
         frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
-        // no `severity`: the episode branch has no such key (AGSC-09-14b, 2026-09-24)
+        // no `severity`: the episode branch has no such key
       }
       // the lesson branch requires `severity` (AGSC-09-14b default).
       if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
@@ -1121,17 +1266,7 @@ function pageToolset(corpus, core) {
         operator: args.operator,
         origin: args.origin === 'human' ? 'human' : 'ai-generated',
       };
-      const sources = [];
-      const supplied = Array.isArray(args.sources) ? args.sources : [];
-      for (let i = 0; i < supplied.length; i += 1) {
-        const source = supplied[i];
-        if (!source || typeof source.resource !== 'string'
-          || !/^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u.test(source.resource)) {
-          findings.push({ code: 'AGSC-E506', message: 'source dropped', severity: 'warn' });
-          continue;
-        }
-        sources.push({ id: source.id, resource: source.resource });
-      }
+      const sources = pageKeptSources(args.sources, findings);
       if (sources.length > 0) frontmatter.sources = sources;
       return pageEnvelope('remember', 'proposal', {
         body: typeof args.body === 'string' ? pageNfc(args.body) : '',
@@ -1415,12 +1550,12 @@ function pageSlugOfIri(iri, base, bundleId) {
  */
 const PORTABLE = Object.freeze(['pageTerms', 'pageNoAnswer', 'pageLinkKeys',
   'pageInverseKeys', 'pageTypePlural', 'pageTypedScalars', 'pageApplyTypes', 'pageKindToType', 'pageRememberFault',
-  'pageEnvelope', 'pageErrorEnvelope',
+  'pageRememberFindings', 'pageKeptSources', 'pageSetOwn', 'pageFlatItem', 'pageEnvelope', 'pageErrorEnvelope',
   'pageBaseIri', 'pageItemIri', 'pageNfc', 'pageTokenize', 'pageAnchorOf', 'pageSlugify',
   'pageDedupe', 'pageSplitFrontmatter', 'pageParseFrontmatter', 'pageIndentOf', 'pageNextMeaningful',
   'pageParseMap', 'pageParseValue', 'pageParseSeq', 'pageKeyEnd', 'pageScalar',
-  'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageClaimants', 'pageDeclaresBoards', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageAnchors',
-  'pageInlineTargets', 'pageResolveBodyReference', 'pageToolset', 'pageArguments',
+  'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageClaimants', 'pageDeclaresBoards', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageHeadingText', 'pageAnchors',
+  'pageInlineTargets', 'pageLinkTail', 'pageResolveBodyReference', 'pageToolset', 'pageArguments',
   'pageRequiredArguments', 'pageSlugOfIri', 'pageTaskStates', 'pageQuoteTemporal', 'pageSetLine', 'pageUnifiedDiff', 'pageBoardMove']);
 
 const SOURCE = Object.freeze({
@@ -1433,6 +1568,10 @@ const SOURCE = Object.freeze({
   pageApplyTypes,
   pageKindToType,
   pageRememberFault,
+  pageRememberFindings,
+  pageKeptSources,
+  pageSetOwn,
+  pageFlatItem,
   pageEnvelope,
   pageErrorEnvelope,
   pageBaseIri,
@@ -1460,8 +1599,10 @@ const SOURCE = Object.freeze({
   pageBaseOf,
   pageEdges,
   pageCompare,
+  pageHeadingText,
   pageAnchors,
   pageInlineTargets,
+  pageLinkTail,
   pageResolveBodyReference,
   pageToolset,
   pageArguments,
@@ -1604,6 +1745,14 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
 module.exports = {
   PORTABLE,
   bundle,
+  pageBaseIri,
+  pageDedupe,
+  pageFlatItem,
+  pageHeadingText,
+  pageKeptSources,
+  pageRememberFindings,
+  pageSetOwn,
+  pageSlugify,
   pageBoardMove,
   pageRememberFault,
   pageTaskStates,

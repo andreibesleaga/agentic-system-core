@@ -37,7 +37,9 @@ const slugs = require('../knowledge/slug.js');
 const adopt = require('../knowledge/adopt.js');
 const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
-const { pageBoardMove, pageClaimants, pageRememberFault } = require('./page-tools.js');
+const {
+  pageBoardMove, pageClaimants, pageFlatItem, pageKeptSources, pageRememberFault, pageRememberFindings,
+} = require('./page-tools.js');
 const boardLanes = require('../governance/board-lanes.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
@@ -45,13 +47,6 @@ const { withoutTrailingSlashes } = require('../shared/trailing.js');
 const CONTENT_USE_TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 /** AGSC-09-14a: the answer a responder MUST give when nothing matches. */
 const NO_ANSWER = 'no answer in this memory';
-/** AGSC-02-10: the two schemes a client-supplied `sources[].resource` may use. */
-const SOURCE_RESOURCE = /^(https?:\/\/\S+|urn:agsc:channel:[a-z0-9-]+:\S+)$/u;
-/**
- * AGSC-02-09: the three client forms of the actor grammar; the versioned process form
- * (`process:<name>/<version>`) is a writer's own, never a client's.
- */
-const ACTOR = /^(?:human:[a-z0-9][a-z0-9._-]*|process:[a-z0-9][a-z0-9._-]*|[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._+-]*)$/u;
 /** AGSC-09-14b: `kind` to item `type`. */
 // A closed list read with a name from the outside: prototype-free, so `constructor`,
 // `toString` or `__proto__` is not an entry.
@@ -229,8 +224,7 @@ function tools(bundle, options) {
       return errorEnvelope('compose', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
     }
     const selection = args.selection;
-    const items = (bundle.items || []).map((i) => Object.assign({ slug: i.slug, type: i.type }, i.frontmatter));
-    const result = compose(items, selection);
+    const result = compose((bundle.items || []).map(pageFlatItem), selection);
     return envelope('compose', 'verdict', Object.freeze({
       added: result.added,
       conflicts: result.conflicts,
@@ -311,27 +305,10 @@ function tools(bundle, options) {
   };
 
   implementations.remember = (args) => {
-    const kind = KIND_TO_TYPE[args.kind] === undefined ? 'concept' : args.kind;
-    const type = KIND_TO_TYPE[kind];
-    // AGSC-09-14b: a Gate's Level is a governance decision a
-    // tool call may not invent, and an episode's schema branch requires `actor`.
-    if (args.kind === 'gate') {
-      return errorEnvelope('remember', 'AGSC-E203', 'remember does not accept kind "gate": a Gate\'s Level is a governance decision (AGSC-09-14b)');
-    }
-    if (type === 'episode' && typeof args.actor !== 'string') {
-      return errorEnvelope('remember', 'AGSC-E003', 'an episode needs the declared actor (AGSC-09-14b)');
-    }
-    // AGSC-09-14b: `at` supplies an episode's schema-required `started`, and a call
-    // that declares none is AGSC-E003; an `actor` outside the grammar of AGSC-02-09
-    // would make the synthesized item non-conforming, so it is refused here.
-    if (type === 'episode' && typeof args.at !== 'string') {
-      return errorEnvelope('remember', 'AGSC-E003', 'an episode needs the instant it started, `at` (AGSC-09-14b)');
-    }
-    if (args.actor !== undefined && !ACTOR.test(String(args.actor))) {
-      return errorEnvelope('remember', 'AGSC-E204', 'actor must be human:<id>, process:<id> or <producer>/<version> (AGSC-02-09)');
-    }
+    const type = KIND_TO_TYPE[args.kind];
     // AGSC-09-14b: every argument copied into the item is held to the schema's bound
-    // first — the page tools run the same function.
+    // first — the page tools run the same function, so the same fault comes first on
+    // both transports.
     const fault = pageRememberFault(args, type, (slug) => byslug.has(slug));
     if (fault !== null) return errorEnvelope('remember', fault.code, fault.message);
     // AGSC-09-14b: an item without an operator is not the conforming
@@ -346,7 +323,7 @@ function tools(bundle, options) {
       return errorEnvelope('remember', 'AGSC-E003', 'remember needs the declared human operator, `operator`, or the `agent` of a declared lane (AGSC-09-14b)');
     }
     const title = typeof args.title === 'string' ? args.title : '';
-    const findings = [];
+    const findings = pageRememberFindings(args).map(Object.freeze);
     const taken = new Set(byslug.keys());
     const slug = slugs.dedupe(slugs.slugify(title), taken);
     const frontmatter = { title, type };
@@ -380,16 +357,9 @@ function tools(bundle, options) {
       operator,
       origin: args.origin === 'human' ? 'human' : 'ai-generated',
     };
-    const sources = [];
     // A `sources` that is not a list carries no entry; it never throws into the
     // transport (AGSC-09-13a).
-    for (const source of Array.isArray(args.sources) ? args.sources : []) {
-      if (!source || typeof source.resource !== 'string' || !SOURCE_RESOURCE.test(source.resource)) {
-        findings.push(Object.freeze({ code: 'AGSC-E506', message: 'source dropped', severity: 'warn' }));
-        continue;
-      }
-      sources.push(Object.freeze({ id: source.id, resource: source.resource }));
-    }
+    const sources = pageKeptSources(args.sources, findings).map(Object.freeze);
     if (sources.length > 0) frontmatter.sources = Object.freeze(sources);
     const refused = boardLanes.createRefusal(config, {
       agent: args.agent, path: `content/${plural(type)}/${slug}.md`, task: args.kind === 'task' ? 'plan' : undefined, type,

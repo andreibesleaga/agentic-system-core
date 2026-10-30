@@ -56,6 +56,7 @@ const slugs = require('../knowledge/slug.js');
 const { fenceProse } = require('../knowledge/markdown.js');
 const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trailing.js');
 const { keyValueLine } = require('../shared/key-value-line.js');
+const { yamlScalar } = require('./harness.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -107,8 +108,8 @@ function packDescription(cluster) {
 function packText(cluster, members, options) {
   const base = String(options.base);
   const lines = ['---',
-    `name: ${singleLine(cluster.slug)}`,
-    `description: ${packDescription(cluster)}`,
+    `name: ${yamlScalar(singleLine(cluster.slug))}`,
+    `description: ${yamlScalar(packDescription(cluster))}`,
     `license: ${commentSafe(singleLine(termsFor(options.license)))}`,
     '---', '',
     `# ${singleLine(cluster.title == null ? cluster.slug : cluster.title)}`, '',

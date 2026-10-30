@@ -646,7 +646,7 @@ tokenize(text) -> string[]; stripFencedCode(body); tokenizerInput(item)
 index(items) -> { docs, terms }; files(items, { itemsPerShard }) -> { files, manifest }
 
 // distribution/llms.js
-llmsTxt(bundle, { generatedAt, specVersion, terms }) -> string
+llmsTxt(bundle, { generatedAt, specVersion, terms, bundleVersion, visibility }) -> string
 llmsFullTxt(bundle, { … }) -> string; sectionBlocks(bundle); primaryCluster(item); iriOf(base, item)
 
 // distribution/discovery.js
@@ -658,8 +658,8 @@ countsOf(items); digestOf(bytes); wellknownUrl(base); href(base, route); attribu
 WELLKNOWN_SUFFIX WELLKNOWN_PATH WELLKNOWN_ALIAS MEDIA_TYPE PROFILE REL
 
 // distribution/headers.js
-headerSets(config) -> [{route, headers: [[name, value], …]}]
-headersFile(config) -> string; redirectsFile(renames) -> string; etag(hex)
+headerSets(config, routes) -> [{route, headers: [[name, value], …]}]   // a ['!', name] entry detaches a header
+headersFile(config, routes) -> string; redirectsFile(renames) -> string; etag(hex)
 
 // distribution/now.js
 state(items, config, { instant, allItems }) -> object

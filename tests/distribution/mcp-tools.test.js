@@ -223,8 +223,10 @@ test('AGSC-09-14b (2026-09-25): the local server refuses remember without an ope
 test('AGSC-09-14b: remember is total — a bad source is DROPPED with AGSC-E506', () => {
   const toolset = tools(fixture(), {});
   const result = toolset.call('remember', {
+    agent: 'writer',
     body: '',
     kind: 'concept',
+    model: 'm-1',
     operator: 'human:someone',
     sources: [{ id: 'a', resource: 'ftp://bad/' }, { id: 'b', resource: 'https://ok.example/x' },
       { id: 'c', resource: 'urn:agsc:channel:mail:abc' }, {}],

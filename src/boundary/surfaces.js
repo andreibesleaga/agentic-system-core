@@ -94,6 +94,12 @@ const BUILT_IN = Object.freeze({
   webmcp: Object.freeze({ access: 'consent', emitted: '/compose/', route: '/compose/', version: WEBMCP_SURFACE_VERSION }),
 });
 
+/**
+ * AGSC-11-20 (from 1.1): the built-in surfaces a `restricted` node does not serve
+ * unauthenticated, and the class they declare instead of their fixed one.
+ */
+const GATED_ACCESS = Object.freeze({ chunks: 'credential' });
+
 /** AGSC-11-16: the closed `agsc-surface` list; anything else must be `x-<vendor>-<name>`. */
 const SURFACE_NAMES = Object.freeze(['llms-txt', 'chunks', 'mcp', 'webmcp', 'a2a-card', 'solid', 'responder']);
 /** AGSC-11-16: the closed `agsc-access` list, most restrictive last (AGSC-11-02). */
@@ -127,7 +133,7 @@ function absolute(base, route) {
 }
 
 /**
- * declare({ base, emitted, mcpServed, mcpVersion, surfaces, webmcpVersion }) -> link objects
+ * declare({ base, emitted, mcpServed, mcpVersion, surfaces, visibility, webmcpVersion }) -> link objects
  * AGSC-11-16. One `rel#surface` link per surface actually served, ordered by
  * `href` within the relation (AGSC-06-10). `emitted[]` names the routes the
  * writer emitted; `mcpServed` says whether the local tool server is served;
@@ -153,10 +159,12 @@ function declare(options) {
   const mcpVersion = WEBMCP_VERSION_RE.test(String(opts.mcpVersion || ''))
     ? String(opts.mcpVersion) : MCP_PROTOCOL_VERSION;
   const links = [];
+  const restricted = opts.visibility === 'restricted';
   for (const [name, spec] of Object.entries(BUILT_IN)) {
     const served = name === 'mcp' ? Boolean(opts.mcpServed) : (spec.emitted !== null && emitted.has(spec.emitted));
     if (!served) continue;
-    const link = { 'agsc-access': [spec.access], 'agsc-surface': [name], href: absolute(base, spec.route), rel: REL.surface };
+    const access = restricted && GATED_ACCESS[name] !== undefined ? GATED_ACCESS[name] : spec.access;
+    const link = { 'agsc-access': [access], 'agsc-surface': [name], href: absolute(base, spec.route), rel: REL.surface };
     const version = name === 'webmcp' ? webmcpVersion : (name === 'mcp' ? mcpVersion : spec.version);
     if (version !== null) link['agsc-surface-version'] = [version];
     links.push(Object.freeze(sortMembers(link)));

@@ -477,13 +477,13 @@ test('AGSC-06-12: no VoID description is emitted', () => {
   assert.ok(!files.some((f) => /void/iu.test(f)));
 });
 
-test('AGSC-06-13: llms.txt is one H1, the provenance comment, one blockquote, then H2 sections of link lists', () => {
+test('AGSC-06-13: llms.txt is one H1, one blockquote, the provenance comment, then H2 sections of link lists', () => {
   const { out } = richBuild();
   const text = fs.readFileSync(path.join(out, 'llms.txt'), 'utf8');
   const blocks = text.trimEnd().split('\n\n');
   assert.match(blocks[0], /^# [^\n]+$/u);
-  assert.match(blocks[1], /^<!-- agsc:provenance\n[\s\S]*\n-->$/u);
-  assert.match(blocks[2], /^> [^\n]+$/u);
+  assert.match(blocks[1], /^> [^\n]+$/u);
+  assert.match(blocks[2], /^<!-- agsc:provenance\n[\s\S]*\n-->$/u);
   const rest = blocks.slice(3).join('\n\n');
   assert.strictEqual((text.match(/^# /gmu) || []).length, 1);
   const sections = rest.split(/^## /mu).filter((s) => s !== '');

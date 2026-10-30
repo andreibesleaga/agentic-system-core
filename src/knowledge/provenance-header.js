@@ -19,7 +19,8 @@ const ASSISTANCE = 'content may be AI-assisted; each item states its origin in '
   + 'prov.origin and each accepted contribution carries an Assisted-by: trailer';
 
 /**
- * AGSC-06-13a(2): the nine lines of the block, in order.
+ * AGSC-06-13a(3): the nine lines of the block, in order (eight, from 1.1, on a
+ * `restricted` node: `omitBundleVersion`).
  *
  * Every interpolated value is single-lined (AGSC-02-24) and comment-safe: a `-->`
  * inside an authored value would close the comment early and put the terms, the
@@ -35,12 +36,16 @@ const ASSISTANCE = 'content may be AI-assisted; each item states its origin in '
  * @returns {Array<string>}
  */
 function provenanceLines(fields) {
+  // AGSC-06-13a, AGSC-11-20: a `restricted` node leaves the `bundle_version:` line out,
+  // so its header runs from `spec_version:` straight to `generated_at:`.
+  const version = fields.omitBundleVersion === true ? []
+    : [`bundle_version: ${orFromInstant(fields.bundleVersion, fields.generatedAt)}`];
   return ['<!-- agsc:provenance',
     `bundle: ${commentSafe(singleLine(fields.bundle))}`,
     `license: ${commentSafe(singleLine(fields.license))}`,
     `terms: ${commentSafe(singleLine(fields.terms))}`,
     `spec_version: ${commentSafe(singleLine(fields.specVersion))}`,
-    `bundle_version: ${orFromInstant(fields.bundleVersion, fields.generatedAt)}`,
+    ...version,
     `generated_at: ${commentSafe(singleLine(fields.generatedAt))}`,
     `assistance: ${ASSISTANCE}`,
     '-->'];

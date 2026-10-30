@@ -98,3 +98,38 @@ test('with no implementation loaded the page answers an envelope, never a throw'
   assert.strictEqual(result.body.code, 'AGSC-E901');
   assert.strictEqual(result.trust, 'untrusted');
 });
+
+test('AGSC-09-16: a registration the browser rejects is recorded and does not stop the other tools', async () => {
+  // `registerTool` throws (a name already registered) or its promise rejects. Before 1.1
+  // the first throw ended the loop and the rest of the tools were never offered, and a
+  // rejected promise was an unhandled rejection; the tool was counted as registered.
+  const set = toolset();
+  const offered = [];
+  const sandbox = {
+    AGSC_TOOLS: set,
+    document: {
+      modelContext: {
+        registerTool(tool) {
+          offered.push(tool.name);
+          if (tool.name === 'read') throw new Error('InvalidStateError: a tool of that name is registered');
+          if (tool.name === 'search') return Promise.reject(new Error('rejected'));
+          return undefined;
+        },
+      },
+    },
+  };
+  const unhandled = [];
+  const watch = (reason) => unhandled.push(reason);
+  process.on('unhandledRejection', watch);
+  try {
+    vm.runInContext(webmcp.script(), vm.createContext(sandbox), { filename: 'webmcp.js' });
+    await new Promise((resolve) => setImmediate(resolve));
+  } finally {
+    process.off('unhandledRejection', watch);
+  }
+  const all = set.manifest().tools.map((t) => t.name);
+  assert.deepStrictEqual(offered, all, 'every tool was offered to the browser');
+  assert.deepStrictEqual(unhandled, []);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(sandbox.AGSC_WEBMCP.rejected)).sort(), ['read', 'search']);
+  assert.strictEqual(sandbox.AGSC_WEBMCP.registered, all.length - 2);
+});

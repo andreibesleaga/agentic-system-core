@@ -391,7 +391,9 @@ function controller(options) {
     var sets = (linkset && linkset.linkset) || [];
     var anchor = sets.length > 0 && sets[0] && typeof sets[0].anchor === 'string' ? sets[0].anchor : '';
     if (anchor === '') return location.origin + '/';
-    return anchor.replace(/\\/+$/, '') + '/';
+    var end = anchor.length;
+    while (end > 0 && anchor.charAt(end - 1) === '/') end -= 1;
+    return anchor.slice(0, end) + '/';
   }
   state.baseOf = baseOf;
 

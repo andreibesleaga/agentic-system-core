@@ -111,7 +111,7 @@ test('Mode 1, an agent: discovery, the peer, the digests — and every discovery
   const mcp = await kit.mcpClient(a);
   try {
     const lesson = await mcp.call('remember', {
-      body: '## Lesson\n\nPair retries with a breaker.', kind: 'lesson', operator: 'human:tester',
+      agent: 'agent:probe', body: '## Lesson\n\nPair retries with a breaker.', kind: 'lesson', model: 'm-1', operator: 'human:tester',
       sources: [{ id: 'b-handoff', resource: 'https://b.example/concepts/handoff/' }, { id: 'bad', resource: 'javascript:alert(1)' }],
       title: 'Pair retries with a breaker',
     });

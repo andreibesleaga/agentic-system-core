@@ -118,13 +118,21 @@ test('CODEOWNERS takes channels[].owner, else the bundle.operator identifier, el
 // AGSC-08-12 leaves the ruleset's content to the implementation; it MUST NOT require
 // a check no job reports, or a forge that imports it blocks every merge. The one check
 // a CI job reports is the job that runs `agsc ci` (action.yml names it), and that
-// verdict covers every gate check of status-checks.json (dist/gate.json).
-test('ruleset.json requires the one check a CI job reports, never the gate check names', () => {
+// verdict covers every gate check of status-checks.json (dist/gate.json). From 1.1 the
+// file is in the shape GitHub's "Import a ruleset" takes (`rules` is a list of
+// `{type, parameters}`) and carries the review rule the check `review` stands for.
+test('ruleset.json is a GitHub ruleset: the pull-request review rule and the one check a CI job reports', () => {
   const files = forge.compile([gate({ enforce: ['ruleset', 'status-check'], level: 'L2' })], {});
   const text = files.get('ruleset.json');
-  assert.strictEqual(text, '{"enforcement":"active","name":"agsc",'
-    + '"rules":{"required_status_checks":["agsc ci"]},"target":"branch"}\n');
-  assert.deepStrictEqual(JSON.parse(text).rules.required_status_checks, [forge.CI_CHECK]);
+  assert.strictEqual(text, '{"bypass_actors":[],"conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},'
+    + '"enforcement":"active","name":"agsc","rules":['
+    + '{"parameters":{"dismiss_stale_reviews_on_push":false,"require_code_owner_review":true,'
+    + '"require_last_push_approval":false,"required_approving_review_count":1,"required_review_thread_resolution":false},'
+    + '"type":"pull_request"},'
+    + '{"parameters":{"required_status_checks":[{"context":"agsc ci"}],"strict_required_status_checks_policy":false},'
+    + '"type":"required_status_checks"}],"target":"branch"}\n');
+  const checks = JSON.parse(text).rules.find((r) => r.type === 'required_status_checks').parameters.required_status_checks;
+  assert.deepStrictEqual(checks, [{ context: forge.CI_CHECK }]);
   // status-checks.json keeps its pinned bytes: the gate checks that one job covers.
   assert.strictEqual(files.get('status-checks.json'), '["determinism","links","provenance","review","schema"]\n');
   const action = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'action.yml'), 'utf8');

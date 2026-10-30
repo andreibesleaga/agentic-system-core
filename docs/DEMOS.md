@@ -377,7 +377,8 @@ to `b`; the surfaces say what access each needs. The agent then reads `b`'s
 
 ```bash demo
 node -e 'const l = JSON.parse(require("node:fs").readFileSync("a/www/.well-known/knowledge-linkset", "utf8")).linkset[0]; console.log("anchor", l.anchor); for (const [rel, list] of Object.entries(l)) if (Array.isArray(list)) for (const one of list) console.log(rel.replace("https://w3id.org/agentic-system-core/rel#", "rel#"), one.href, one.digest ? "(digest)" : "");'
-head -4 b/www/llms.txt
+head -1 b/www/llms.txt
+grep -m1 '^bundle:' b/www/llms.txt
 ```
 
 ```text expect
@@ -483,13 +484,13 @@ because no job reports them:
 cp -r "$ENGINE/examples/demos/mode-2-project" . && cd mode-2-project
 agsc ci
 cat dist/forge/status-checks.json
-node -e 'console.log("ruleset requires", JSON.stringify(require("./dist/forge/ruleset.json").rules.required_status_checks))'
+node -e 'console.log("ruleset rules", JSON.stringify(require("./dist/forge/ruleset.json").rules.map((r) => r.type)))'
 ```
 
 ```text expect
 ci: pass (0 error, 1 warn)
 ["determinism","links","provenance","review","schema"]
-ruleset requires ["agsc ci"]
+ruleset rules ["pull_request","required_status_checks"]
 ```
 
 The steering files for coding agents come from the current state and the items, and

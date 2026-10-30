@@ -2,7 +2,8 @@
 // Conformance area `discovery`.
 // disc-0016 the RFC 9264 link set at Level ≥ 2 with its six bundle-fact
 // attributes, disc-0004 the Level-0 form, disc-0005 the two-node mutual peer check,
-// disc-0013 / disc-0014 the byte layout of /llms.txt and /llms-full.txt with the
+// disc-0013 / disc-0014 (withdrawn at 1.1; disc-0024, disc-0025 and disc-0034 succeed
+// them) the byte layout of /llms.txt and /llms-full.txt with the
 // content-version line of the provenance header, disc-0015 the
 // `agsc-bundle-version` attribute at three levels of visibility, disc-0012 the
 // robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node
@@ -140,6 +141,8 @@ function llmsCase(vector) {
     bundleVersion: input.bundle_version,
     generatedAt: input.generated_at,
     specVersion: input.spec_version,
+    // AGSC-11-20: a restricted node leaves the content version out of the header.
+    visibility: input.visibility,
   };
   const index = llms.llmsTxt(bundle, options);
   const list = [];
@@ -589,6 +592,9 @@ function accessLinkCase(vector) {
 const HANDLERS = {
   'disc-0013': llmsCase,
   'disc-0014': llmsCase,
+  'disc-0024': llmsCase,
+  'disc-0025': llmsCase,
+  'disc-0034': llmsCase,
   'disc-0015': bundleVersionAttributeCase,
   'disc-0017': ledgerRequiredCase,
   'disc-0018': bundleHashCase,

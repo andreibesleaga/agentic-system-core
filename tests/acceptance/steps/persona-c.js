@@ -367,11 +367,12 @@ module.exports = [
     },
   },
   {
-    pattern: 'the agent calls tool "remember" with kind "episode", a title, a body, its actor, the instant "at" and its operator',
+    pattern: 'the agent calls tool "remember" with kind "episode", a title, a body, its actor, the instant "at", its operator, its agent and its model',
     async run(world) {
       world.state.result = await call(world.state.client, 'remember', {
-        actor: 'process:reader', at: '2026-01-01T00:00:00Z', body: 'Three tools failed at once and the retry budget held.',
-        kind: 'episode', operator: 'human:andreibesleaga', title: 'A retry storm',
+        actor: 'process:reader', agent: 'agent:reader', at: '2026-01-01T00:00:00Z',
+        body: 'Three tools failed at once and the retry budget held.',
+        kind: 'episode', model: 'm-1', operator: 'human:andreibesleaga', title: 'A retry storm',
       });
     },
   },

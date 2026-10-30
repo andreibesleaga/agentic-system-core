@@ -81,7 +81,7 @@ test('AGSC-09-14b: a sources[] entry that fails is dropped with the one warning 
   assert.doesNotMatch(rule, /truncated to its schema bound/u);
   assert.match(rule, /carries its resource and its id and no other member/u);
   const result = tools(fixture(), {}).call('remember', {
-    body: 'x', kind: 'concept', operator: 'human:someone', title: 'A Remembered Note',
+    agent: 'agent:probe', body: 'x', kind: 'concept', model: 'm-1', operator: 'human:someone', title: 'A Remembered Note',
     sources: [
       { id: 'one', resource: 'https://example.org/a', title: 'Kept title' },
       { id: 'two', resource: 'ftp://example.org/b' },

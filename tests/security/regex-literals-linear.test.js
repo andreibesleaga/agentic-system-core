@@ -19,8 +19,8 @@
 //      run followed by any other character is read again from each of its positions.
 //
 // A literal of one of these shapes that is linear where it is used is listed in ALLOW
-// with the reason. The three scripts the build copies into every node's pages keep
-// their patterns until a later version, so they are not scanned here.
+// with the reason. The scripts the build copies into every node's pages are scanned
+// like the rest from 1.1 (they were left out until then, so as to keep their bytes).
 //
 // Deterministic: the literals are read with the linter the repository already pins;
 // nothing is timed, nothing is random, no network.
@@ -32,10 +32,6 @@ const path = require('node:path');
 const { Linter } = require('eslint');
 
 const REPO = path.resolve(__dirname, '..', '..');
-
-/** The emitted page scripts, whose bytes every node carries (kept as they are). */
-const EMITTED = new Set(['src/distribution/page-tools.js', 'src/distribution/webmcp.js',
-  'src/distribution/compose-page.js']);
 
 /** `file<TAB>/pattern/flags` -> why that literal is linear where it is used. */
 const ALLOW = new Map([
@@ -70,7 +66,7 @@ function literals() {
     plugins: { guard: { rules: { collect } } }, rules: { 'guard/collect': 'error' },
   }];
   const linter = new Linter();
-  for (const rel of files('src').filter((f) => !EMITTED.has(f))) {
+  for (const rel of files('src')) {
     file = rel;
     const messages = linter.verify(fs.readFileSync(path.join(REPO, rel), 'utf8'), config, { filename: rel });
     assert.deepEqual(messages.filter((m) => m.fatal), [], `${rel} could not be parsed`);

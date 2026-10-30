@@ -5,12 +5,14 @@
 // AGSC-06-15 (the provenance header and the `text agsc-content` fence) and the
 // exclusions of AGSC-06-30 / AGSC-11-22.
 //
-// The layout follows llms.txt v2's H1, which comes FIRST and is that convention's one
-// required element; everything after it is pinned here because the convention fixes
-// no grammar and two conforming writers must emit identical bytes. The summary
-// blockquote follows the provenance comment, so a v2 parser reads no summary.
+// The layout follows llms.txt v2: the H1 comes FIRST, the summary blockquote straight
+// after it (so a v2 parser reads the summary), and the provenance comment after the
+// summary; everything after is pinned here because the convention fixes no grammar and
+// two conforming writers must emit identical bytes. From 1.1 a `restricted` node
+// (AGSC-11-20) leaves the `bundle_version:` line out of the header.
 //
-// Pure function of its input; `site.js` writes the bytes. Vectors disc-0013, disc-0014.
+// Pure function of its input; `site.js` writes the bytes. Vectors disc-0024, disc-0025,
+// disc-0034 (disc-0013 and disc-0014, withdrawn, were their 1.0 forms).
 
 const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { provenanceHeader } = require('../knowledge/provenance-header.js');
@@ -65,6 +67,11 @@ function collapseLineBreaks(text, meter) {
   return out + text.slice(from);
 }
 
+/** AGSC-06-13a: one backslash before each backslash, `[`, `]` and `(`, in a single pass. */
+function escapeLink(text) {
+  return text.replace(/[\\[\](]/gu, (c) => `\\${c}`);
+}
+
 /** AGSC-06-30: the published set — drafts and retired items appear in neither file. */
 function isPublished(item) {
   return !EXCLUDED_STATUS.includes(item.status) && item.type !== 'cluster';
@@ -82,13 +89,15 @@ function primaryCluster(item) {
  * every export carries (AGSC-06-18) — two members with two meanings even when
  * their strings coincide.
  */
-function provenance({ base, license, terms, specVersion, bundleVersion, generatedAt }) {
+function provenance({ base, license, terms, specVersion, bundleVersion, generatedAt, restricted }) {
   // AGSC-02-24: the header is a fixed number of lines — with AGSC-06-15's
   // `assistance:` line among them — and a value may not add
   // one. `license` is authored (`bundle.license_prose`) and `base` reaches here from
   // configuration, so both are neutralised — defence in depth behind the schema
   // `pattern`, for the Bundle that never passed validation.
-  return provenanceHeader({ bundle: base, bundleVersion, generatedAt, license, specVersion, terms });
+  return provenanceHeader({
+    bundle: base, bundleVersion, generatedAt, license, omitBundleVersion: restricted === true, specVersion, terms,
+  });
 }
 
 /**
@@ -108,8 +117,10 @@ function sectionBlocks(bundle) {
   // AGSC-06-13a(4): ONE line per item. Title and description are authored, so both
   // are neutralised here (AGSC-02-24): a line break in either would forge
   // a `## ` heading and a second link entry into this file.
-  const line = (it) => `- [${singleLine(it.title)}](${iriOf(base, it)}): `
-    + `${singleLine(it.description == null || it.description === '' ? it.title : it.description)}`;
+  // AGSC-06-13a: the backslash, `[`, `]` and `(` of either string are escaped, so no
+  // authored character ends the link text or opens a link of its own.
+  const line = (it) => `- [${escapeLink(singleLine(it.title))}](${iriOf(base, it)}): `
+    + `${escapeLink(singleLine(it.description == null || it.description === '' ? it.title : it.description))}`;
 
   const blocks = [];
   const order = [];
@@ -146,6 +157,7 @@ function settle(bundle, options) {
     license: bundle.license_prose == null ? DEFAULT_LICENSE : bundle.license_prose,
     terms: options.terms == null ? termsFor(bundle.license_prose) : options.terms,
     specVersion: options.specVersion,
+    restricted: options.visibility === 'restricted',
     bundleVersion: options.bundleVersion,
     generatedAt: options.generatedAt,
     clusters: bundle.clusters || [],
@@ -157,20 +169,20 @@ function settle(bundle, options) {
  * `/llms.txt` (AGSC-06-13a blocks 1–4), UTF-8, LF, one trailing LF.
  *
  * @param {object} bundle `{base, title, description, license_prose, clusters[], items[]}`.
- * @param {{generatedAt:string, specVersion:string, bundleVersion?:string, terms?:string}} options
+ * @param {{generatedAt:string, specVersion:string, bundleVersion?:string, terms?:string, visibility?:string}} options
  * @returns {string}
  */
 function llmsTxt(bundle, options = {}) {
   const b = settle(bundle, options);
   const head = [
     `# ${singleLine(b.title)}`,
-    provenance(b),
-    // Block (3): the description on a SINGLE line, newlines replaced by one space.
+    // Block (2): the description on a SINGLE line, newlines replaced by one space.
     // The Bundle root's `description` is the one authored string AGSC-02-24 exempts
     // from the single-line bound, exactly because this block collapses it; the
     // neutraliser then removes the remaining separators the collapse does not see
     // (U+0085, U+2028, U+2029 and the other C0 controls) —.
     `> ${singleLine(collapseLineBreaks(b.description))}`,
+    provenance(b),
   ];
   const { blocks } = sectionBlocks(b);
   return `${[...head, ...blocks].join('\n\n')}\n`;
@@ -183,7 +195,7 @@ function llmsTxt(bundle, options = {}) {
  * (AGSC-06-15, N9).
  *
  * @param {object} bundle
- * @param {{generatedAt:string, specVersion:string, bundleVersion?:string, terms?:string}} options
+ * @param {{generatedAt:string, specVersion:string, bundleVersion?:string, terms?:string, visibility?:string}} options
  * @returns {string}
  */
 function llmsFullTxt(bundle, options = {}) {

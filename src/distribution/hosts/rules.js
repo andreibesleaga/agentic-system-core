@@ -17,7 +17,9 @@
 //   * "An incoming request which matches multiple rules' URL patterns will inherit
 //     all rules' headers";
 //   * "If a header is applied twice in the `_headers` file, the values are joined
-//     with a comma separator".
+//     with a comma separator";
+//   * a line `! Name` detaches a header that a rule before it, or the host, attached
+//     ("Detach a header", last updated 2026-08-25, read 2026-10-29; AGSC-06-17).
 // Only the grammar `agsc build` writes is read: a URL pattern of literal characters
 // and `*`, indented `Name: value` lines, `#` comments and blank lines. Anything else
 // is reported, never guessed at.
@@ -61,6 +63,11 @@ function parseHeaders(text) {
       }
       current = { headers: [], route: line.trim() };
       sets.push(current);
+      return;
+    }
+    const detach = /^\s*! +([^\s:]+)\s*$/u.exec(line);
+    if (detach !== null && current !== null && TOKEN.test(detach[1])) {
+      current.headers.push(['!', detach[1]]);
       return;
     }
     const cut = line.indexOf(':');
@@ -128,7 +135,8 @@ function matches(pattern, path) {
 
 /**
  * What the reference host sends for one request path: every matching rule's
- * headers, in file order, a repeated name joined with ", " at its first position.
+ * headers, in file order, a repeated name joined with ", " at its first position;
+ * a detach line (`['!', name]`) removes what the rules before it attached.
  *
  * @param {Array<{route:string, headers:Array<[string,string]>}>} sets
  * @param {string} path
@@ -139,6 +147,11 @@ function headersFor(sets, path) {
   for (const set of sets || []) {
     if (!matches(set.route, path)) continue;
     for (const [name, value] of set.headers) {
+      if (name === '!') {
+        const gone = out.findIndex(([seen]) => seen.toLowerCase() === value.toLowerCase());
+        if (gone !== -1) out.splice(gone, 1);
+        continue;
+      }
       const at = out.findIndex(([seen]) => seen.toLowerCase() === name.toLowerCase());
       if (at === -1) out.push([name, value]);
       else out[at] = [out[at][0], `${out[at][1]}, ${value}`];

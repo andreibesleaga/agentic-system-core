@@ -13,6 +13,49 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `/llms.txt` and `/llms-full.txt` (AGSC-06-13a, AGSC-06-15; I-115 keeps the AI-assistance
+  line byte for byte): the summary blockquote follows the H1 and the provenance comment
+  follows the summary, so a llms.txt v2 parser reads the summary; the backslash, `[`, `]` and
+  `(` of a title and of a description are escaped in a link line; a `restricted` node leaves the
+  `bundle_version:` line out of the header (AGSC-11-20, I-151). Bytes change for every node
+  (`disc-0024`, `disc-0025`, `disc-0034` replace `disc-0013` and `disc-0014`); the digest of
+  `/llms.txt` in the discovery document follows.
+- `/now/` and `/now.md` of a `restricted` node state only `built at <instant>, specification
+  <spec_version>` (AGSC-06-22, AGSC-11-20, I-151; `build-0036`).
+- A `restricted` node declares the `chunks` surface with `agsc-access` `credential`
+  (AGSC-11-20, AGSC-11-16, I-114; `bnd-0044`; `validate-wellknown` no longer tries to fetch a
+  gated `chunks` target), and its `_headers` detaches the wildcard origin that the host adds by
+  default with `! Access-Control-Allow-Origin` (AGSC-06-17, AGSC-11-20; `bnd-0045`).
+- `_headers` sends `Cache-Control: public, max-age=31536000, immutable` for the version
+  directories under `/ns/<major>.<minor>.<patch>/` that the build emits, and for no other address
+  (AGSC-06-06, I-095; `build-0034`). `hosts/rules.js` reads a `! Name` detach line.
+- `security.txt` derives `Policy` from `site.security_policy` when the authored file states none,
+  else from `/legal/` as before (AGSC-06-36; `build-0035`).
+- `dist/forge/ruleset.json` is a GitHub repository ruleset in the shape its import takes, with a
+  pull-request review rule and the one status check `agsc ci` (AGSC-08-12, I-147; the bytes of
+  this file are the implementation's, AGSC-04-24).
+- `SKILL.md` frontmatter of the Harness and of the skill packs: `name` and `description` are
+  written as a double-quoted scalar when the plain text would not parse to the same string
+  (`true`, `123`, `a: b`, a leading `[`, an empty text); every other text keeps its bytes, so the
+  seven Harness files of `compose-0027` are unchanged (AGSC-07-15, AGSC-07-19, I-164).
+- Page scripts (AGSC-09-16, I-098; the hash of each file in `fixture-minimal`, old to new):
+  `compose/agsc-page-tools.js` 0d81c92d16d92e59 to 3e00fdfcc916c610, `compose/webmcp.js`
+  ef8ca64219f2bfe4 to 1f2e1c165ef67c3d, `compose/agsc-compose.js` 06ac8df63efc43a6 to
+  1dbf68b3fe7d51b2, `compose/agsc-core.js` (the Harness gains `yamlScalar`) 5436b8d267076a15 to
+  76100907250a597b. The page reads a long run of slashes, blanks or brackets in linear time
+  (`pageBaseIri`, `pageHeadingText`, `pageInlineTargets`, the base of the compose page); a
+  front-matter key `__proto__` stays a key in the page reader and in the `compose` copy of both
+  transports (FR-101); `registerTool` that throws or rejects is recorded in
+  `AGSC_WEBMCP.rejected` and no longer ends the registration; the review labels and dated notes
+  inside the emitted functions are gone.
+- `remember` (AGSC-09-14b, AGSC-09-16, I-084), on both transports at once: the slug of a title is
+  the AGSC-02-91 slug (punctuation and letters outside ASCII become `-`; the page used the anchor
+  algorithm); an unknown `kind` or a Gate is reported before an episode's missing `actor` or `at`
+  and before a malformed `actor`; a call without `origin: human` that leaves out `agent` or
+  `model` gets one `AGSC-E202` in `findings` for each (the item is still returned); a `sources[]`
+  entry whose `id` is not a line of 1 to 200 code points is dropped with `AGSC-E506`. The
+  `compose` tool copies front matter with own properties on both transports.
+
 - CI: `test.yml` runs pushes on `main` and `release/` branches only, and a newer push to a
   pull request cancels the run it supersedes. A push to a pull request's branch had run
   all nine legs twice, once for the push and once for the pull request. Every pull

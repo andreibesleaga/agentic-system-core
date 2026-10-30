@@ -35,7 +35,9 @@ test('Mode 2, a person and a CI job: the gate compiles to a ruleset whose requir
   assert.deepStrictEqual(statusChecks, ['determinism', 'links', 'provenance', 'review', 'schema'], 'status-checks.json keeps the pinned gate checks');
   // The ruleset requires only names a job reports: the job that runs `agsc ci`, whose
   // name the action's usage shows. Requiring "schema" or "links" would block every merge.
-  assert.deepStrictEqual(ruleset.rules.required_status_checks, [forge.CI_CHECK]);
+  const required = ruleset.rules.find((r) => r.type === 'required_status_checks').parameters.required_status_checks;
+  assert.deepStrictEqual(required.map((c) => c.context), [forge.CI_CHECK]);
+  assert.ok(ruleset.rules.some((r) => r.type === 'pull_request'), 'the ruleset carries the review rule');
   assert.match(kit.read(kit.ROOT, 'action.yml'), new RegExp(`name: ${forge.CI_CHECK}\\b`, 'u'));
   const gate = JSON.parse(kit.read(dir, 'dist/gate.json'));
   assert.strictEqual(gate.status, 'pass');

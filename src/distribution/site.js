@@ -193,6 +193,7 @@ function declaredSurfaces(options) {
     emitted: options.emitted || [],
     mcpServed: options.mcpServed === true,
     surfaces: Array.isArray(config.surfaces) ? config.surfaces : [],
+    visibility: config.visibility,
     webmcpVersion: options.webmcpVersion,
   });
   return declared.map((link) => {
@@ -528,12 +529,13 @@ function securityFields(text) {
  * published verbatim and in the authored order. What is derived, and only when the
  * authored file does not state it: `Expires` (364 days after the build instant, so
  * it is inside §2.5.5's year and can never go stale between two builds), `Canonical`
- * (§2.5.2) and `Policy` (§2.5.7, only when `/legal/` is emitted — a `Policy` naming
- * a 404 is worse than no `Policy` at all).
+ * (§2.5.2) and `Policy` (§2.5.7): the disclosure page that `site.security_policy` declares
+ * (AGSC-06-36, from 1.1) or, where none is declared, `/legal/` — the last only when it is
+ * emitted, because a `Policy` naming a 404 is worse than no `Policy` at all.
  *
  * @param {string} base the site base (AGSC-01-19).
  * @param {string} instant the build instant (AGSC-04-10).
- * @param {object} [options] `{authored, legal}`.
+ * @param {object} [options] `{authored, legal, policy}`; `policy` is `site.security_policy`.
  * @returns {{text:(string|null), findings:Array<object>}} `text` is `null` when
  *   nothing valid can be emitted; every reason is a finding.
  */
@@ -649,7 +651,9 @@ function securityTxt(base, instant, options = {}) {
   if (!stated.has('canonical')) {
     lines.push(`Canonical: ${singleLine(discovery.href(base, '/.well-known/security.txt'))}`);
   }
-  if (!stated.has('policy') && legal) {
+  if (!stated.has('policy') && typeof options.policy === 'string' && options.policy !== '') {
+    lines.push(`Policy: ${singleLine(options.policy)}`);
+  } else if (!stated.has('policy') && legal) {
     lines.push(`Policy: ${singleLine(discovery.href(base, '/legal/'))}`);
   }
   return { findings, text: `${lines.join('\n')}\n` };
@@ -774,6 +778,7 @@ function publicationFindings(bundle, ports, options = {}) {
   const security = securityTxt(base, instant, {
     authored: options.securityTxt === undefined ? readSecurityTxt(ports) : options.securityTxt,
     legal: hasLegal,
+    policy: (config.site || {}).security_policy,
     publishing: options.publishing === true,
   });
   const findings = [...security.findings];
@@ -1267,7 +1272,9 @@ function buildSite(bundle, ports, options, findings) {
     clusters: items.filter((i) => i.type === 'cluster').map((c) => ({ slug: c.slug, title: c.title })),
     items,
   };
-  const llmsOptions = { bundleVersion, generatedAt: instant, specVersion, terms: chunks.termsFor(licenseProse) };
+  const llmsOptions = {
+    bundleVersion, generatedAt: instant, specVersion, terms: chunks.termsFor(licenseProse), visibility: config.visibility,
+  };
   put('/llms.txt', llms.llmsTxt(llmsBundle, llmsOptions));
   put('/llms-full.txt', llms.llmsFullTxt(llmsBundle, llmsOptions));
 
@@ -1443,7 +1450,7 @@ function buildSite(bundle, ports, options, findings) {
   const fingerprint = files.has('/graph.nq')
     ? createHash('sha256').update(files.get('/graph.nq'), 'utf8').digest('hex')
     : '';
-  const nowMd = now.nowMarkdown(nowState, { bundleVersion, fingerprint, specVersion });
+  const nowMd = now.nowMarkdown(nowState, { bundleVersion, fingerprint, specVersion, visibility: config.visibility });
   if (full) put('/now.md', nowMd);
 
   if (!full && graph !== null && typeof graph.jsonld === 'function' && contextUrl === undefined) {
@@ -1581,7 +1588,7 @@ function buildSite(bundle, ports, options, findings) {
 
   // ------------------------------------------------------------ headers
   // (`/sitemap.xml` is put LAST, below, once every HTML route exists: AGSC-06-19.)
-  put('/_headers', headers.headersFile(config));
+  put('/_headers', headers.headersFile(config, [...files.keys()]));
   put('/_redirects', headers.redirectsFile(
     pageItems.flatMap((i) => (Array.isArray(i.aliases) ? i.aliases : [])
       .filter((a) => String(a).startsWith('/'))
