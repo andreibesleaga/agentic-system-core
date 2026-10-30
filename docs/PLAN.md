@@ -570,7 +570,12 @@ template files (no `templates/*.html`). There is no `src/interchange/channels.js
 `channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
 channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is
 `src/adapters/node-network-refusing.js`, which refuses every call with `AGSC-E905`; there is no
-`node-fetch.js`. `src/README.md` holds the module map of the tree as it is.
+`node-fetch.js`. Three more names in the sections above are design-time names:
+`docs/runbooks/secrets.md` is not part of this repository (the maintainer's records are kept
+outside it); the commit and reviewer of `prov` are derived from the git-log file of AGSC-08-20a,
+not from an environment variable `AGSC_GIT_LOG`; and the checkers are the extensionless programs
+`tools/validate-*`, `tools/gen-spec-html` and `tools/gen-ns`, not `.js` files. `src/README.md`
+holds the module map of the tree as it is.
 
 **The browser bundle (§5, §6, §13).** The composition core the browser runs is served as
 `/compose/agsc-core.js`, beside `agsc-page-tools.js`, `agsc-compose.js` and `webmcp.js`; there
