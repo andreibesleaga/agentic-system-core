@@ -64,7 +64,7 @@ function unsafeValues(sets) {
       out.push(finding('AGSC-E204', `the path pattern "${set.route}" cannot be carried by an nginx location or an Apache pattern`, { file: 'static-host' }));
     }
     for (const [name, value] of set.headers) {
-      if (/[$%]/u.test(value)) {
+      if (name !== '!' && /[$%]/u.test(value)) {
         out.push(finding('AGSC-E204', `${name} on ${set.route} carries "$" or "%", which nginx or Apache would re-interpret`, { file: 'static-host' }));
       }
     }
@@ -78,6 +78,11 @@ function apacheHeadersFor(sets, path) {
   for (const set of sets || []) {
     if (!rules.matches(set.route, path)) continue;
     for (const [name, value] of set.headers) {
+      if (name === '!') {
+        const gone = out.findIndex(([seen]) => seen.toLowerCase() === value.toLowerCase());
+        if (gone !== -1) out.splice(gone, 1);
+        continue;
+      }
       const at = out.findIndex(([seen]) => seen.toLowerCase() === name.toLowerCase());
       if (at === -1) out.push([name, value]);
       else out[at] = [out[at][0], value];
@@ -158,7 +163,8 @@ function apache(input) {
   for (const set of input.sets) {
     out.push('', `<If ${quoted(`%{REQUEST_URI} =~ m#${apacheRegExp(set.route)}#`)}>`);
     for (const [name, value] of set.headers) {
-      out.push(`    Header always set ${name} ${quoted(value)}`);
+      // A detach line (`['!', name]`, AGSC-06-17) has no value to set: it removes the header.
+      out.push(name === '!' ? `    Header always unset ${value}` : `    Header always set ${name} ${quoted(value)}`);
     }
     out.push('</If>');
   }

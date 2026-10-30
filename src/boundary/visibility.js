@@ -102,8 +102,8 @@ function etag(bytes) {
 /**
  * headersFor(route, options) -> the response headers this node sends.
  * options: { visibility = 'public', level = 2, bytes }. AGSC-11-03,
- * AGSC-11-05, AGSC-11-20. `Cache-Control: ... immutable` is emitted nowhere
- * at 1.0 because no route of AGSC-06-01 is digest-named.
+ * AGSC-11-05, AGSC-11-20. `Cache-Control: ... immutable` is emitted only on the
+ * versioned copies under `/ns/<x.y.z>/` (AGSC-06-06), by `headers.headerSets`.
  */
 function headersFor(route, options) {
   const opts = options || {};

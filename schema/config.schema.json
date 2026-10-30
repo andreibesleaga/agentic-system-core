@@ -480,9 +480,9 @@
             "pattern": "^https://[^\\x00-\\x20]+$"
           },
           "branch": {
-            "description": "AGSC-11-14: the branch the node is built from; default HEAD. A name holding .. or //, or ending in / or .lock, is malformed (AGSC-E209). Added at 1.1.",
+            "description": "AGSC-11-14: the branch the node is built from; default HEAD. A malformed name is AGSC-E209, judged by the engine as git check-ref-format does, not by this schema. Added at 1.1.",
             "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,254}$",
+            "minLength": 1,
             "default": "HEAD"
           }
         },
@@ -844,10 +844,10 @@
       "additionalProperties": false,
       "properties": {
         "actors": {
-          "description": "Map from a commit author's e-mail address, lower case, to the human:<id> actor the ledger names for a commit that carries no Signed-off-by trailer. The addresses stay in configuration and reach no published artefact.",
+          "description": "Map from a commit author's e-mail address, lower case, to the human:<id> actor the ledger names (a key with an upper-case ASCII letter is refused: a commit's address is lower-cased before the look-up) for a commit that carries no Signed-off-by trailer. The addresses stay in configuration and reach no published artefact.",
           "type": "object",
           "patternProperties": {
-            "^[^\\x00-\\x20@]+@[^\\x00-\\x20@]+$": {
+            "^[^\\x00-\\x20@A-Z]+@[^\\x00-\\x20@A-Z]+$": {
               "$ref": "#/$defs/human_actor"
             }
           },

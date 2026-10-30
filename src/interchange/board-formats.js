@@ -755,7 +755,8 @@ function markdownCards(text, { kanban }) {
     }
     if (/^\*\*\*\s*$/u.test(line) && kanban) { archived = true; return; }
     if (/^\*\*Complete\*\*\s*$/u.test(line)) { completeLane = true; return; }
-    const card = /^[-*+]\s+\[([ xX/-])\]\s?(.*)$/u.exec(line);
+    // The Obsidian Kanban board keeps its 1.0 reading: a box there is a space, x or X only.
+    const card = (kanban ? /^[-*+]\s+\[([ xX])\]\s?(.*)$/u : /^[-*+]\s+\[([ xX/-])\]\s?(.*)$/u).exec(line);
     if (card !== null) {
       const [first, ...more] = card[2].split(/<br\s*\/?>/u);
       current = {

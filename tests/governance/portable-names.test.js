@@ -35,6 +35,12 @@ test('AGSC-01-40(b): case-only collisions under attachments and assets are repor
   assert.equal(portable.checkPaths(['content/assets/é.png', 'content/assets/é.png']).length, 1);
 });
 
+test('AGSC-01-40(b): the fold is simple, so a full mapping that expands is not a collision', () => {
+  assert.deepEqual(portable.checkPaths(['content/assets/Straße.png', 'content/assets/STRASSE.png']), []);
+  assert.equal(portable.checkPaths(['content/assets/Straße.png', 'content/assets/STRAßE.png']).length, 1);
+  assert.equal(portable.checkPaths(['content/assets/Σ.png', 'content/assets/σ.png']).length, 1);
+});
+
 test('AGSC-01-40(c): the bound is 200 code points, counted in code points and not in UTF-16 units', () => {
   const at200 = `content/assets/${'x'.repeat(185)}`;
   assert.equal(at200.length, 200);

@@ -70,14 +70,14 @@ function singleLine(s) {
  * (JSON's string form is YAML 1.2's, §7.3.1). A plain `true`, `123`, `null` or `a: b` is a
  * boolean, a number, null or a map to such a reader, and a leading `[`, `{`, `&`, `*`, `!`,
  * `|`, `>`, `%`, `@`, quote or backtick, or `- `, `? ` or `: `, or a later `: ` or ` #`,
- * is YAML syntax. Every other text keeps its bytes. The decision needs no parser because
+ * is YAML syntax, and so is leading or trailing white space, which a plain scalar loses. Every other text keeps its bytes. The decision needs no parser because
  * the Harness is also emitted in a page (`tests/composition/skill-frontmatter-yaml.test.js`
  * holds it to the `yaml` package over a generated corpus).
  */
 function yamlScalar(text) {
   const value = String(text);
   const first = value.charAt(0);
-  const syntax = value === ''
+  const syntax = value === '' || /^[ \t]|[ \t]$/.test(value)
     || '[]{},#&*!|>\'"%@`'.indexOf(first) !== -1
     || ('-?:'.indexOf(first) !== -1 && (value.length === 1 || /^[ \t]/.test(value.slice(1))))
     || value.indexOf(': ') !== -1 || value.indexOf(':\t') !== -1 || value.charAt(value.length - 1) === ':'

@@ -86,8 +86,10 @@ function check(input = {}) {
   return findings;
 }
 
-/** Names that look like `.env.<name>` but are templates meant to be committed. */
+/** `.env.<name>` files that are templates meant to be committed: by name, or by a template suffix. */
 const ENV_TEMPLATES = new Set(['.env.example', '.env.sample', '.env.template']);
+const TEMPLATE_SUFFIX = /\.(?:example|sample|template|dist)$/u;
+const isTemplate = (name) => ENV_TEMPLATES.has(name) || TEMPLATE_SUFFIX.test(name);
 
 const basename = (p) => p.slice(p.lastIndexOf('/') + 1);
 
@@ -109,8 +111,7 @@ function checkTracked(trackedPaths) {
       'the environment file is tracked on the content branch; no Bundle file may hold a secret (AGSC-01-37, AGSC-08-15)',
       { file: plain, path: plain }));
   }
-  const named = paths.find((p) => basename(p).startsWith('.env.') && !ENV_TEMPLATES.has(basename(p)));
-  if (named !== undefined) {
+  for (const named of paths.filter((p) => basename(p).startsWith('.env.') && !isTemplate(basename(p)))) {
     out.push(finding(TRACKED_ENV_CODE,
       'an environment file is tracked on the content branch; it may hold a secret (AGSC-01-37, AGSC-08-15)',
       { file: named, path: named, severity: 'warn' }));

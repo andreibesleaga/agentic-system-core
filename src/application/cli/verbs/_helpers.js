@@ -42,6 +42,7 @@ const US = String.fromCharCode(31);
  * followed by the paths the commit changed, which `--name-only` prints after it.
  */
 const GIT_LOG_FORMAT = '--format=%x00%H%x1f%P%x1f%ct%x1f%D%x1f%B%x00';
+const GIT_AUTHOR_FORMAT = '--format=%H%x1f%ae';
 /**
  * The reference production of AGSC-08-20b, extended shape: first-parent, oldest
  * first, and `--name-only` for `files[]`. `core.quotepath=off` keeps a non-ASCII
@@ -50,7 +51,6 @@ const GIT_LOG_FORMAT = '--format=%x00%H%x1f%P%x1f%ct%x1f%D%x1f%B%x00';
  * `--diff-merges=first-parent` states what `--first-parent` implies for a merge,
  * so that no configuration can change the list.
  */
-const GIT_AUTHOR_FORMAT = '--format=%H%x1f%ae';
 const GIT_LOG_ARGS = Object.freeze(['-c', 'core.quotepath=off', 'log', '--first-parent', '--reverse',
   '--no-renames', '--name-only', '--diff-merges=first-parent', GIT_LOG_FORMAT, 'HEAD']);
 

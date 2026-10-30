@@ -36,13 +36,15 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   this file are the implementation's, AGSC-04-24).
 - `SKILL.md` frontmatter of the Harness and of the skill packs: `name` and `description` are
   written as a double-quoted scalar when the plain text would not parse to the same string
-  (`true`, `123`, `a: b`, a leading `[`, an empty text); every other text keeps its bytes, so the
-  seven Harness files of `compose-0027` are unchanged (AGSC-07-15, AGSC-07-19, I-164).
+  (`true`, `123`, `a: b`, a leading `[`, an empty text, a text with leading or trailing white space);
+  every other text keeps its bytes, so the seven Harness files of `compose-0027` are unchanged
+  (the file is an Agent Skills file, AGSC-07-19, AGSC-07-22; I-164). The lint and conform check that
+  a pack parses as YAML, the other half of I-164, is not in 1.1.
 - Page scripts (AGSC-09-16, I-098; the hash of each file in `fixture-minimal`, old to new):
   `compose/agsc-page-tools.js` 0d81c92d16d92e59 to 3e00fdfcc916c610, `compose/webmcp.js`
   ef8ca64219f2bfe4 to 1f2e1c165ef67c3d, `compose/agsc-compose.js` 06ac8df63efc43a6 to
   1dbf68b3fe7d51b2, `compose/agsc-core.js` (the Harness gains `yamlScalar`) 5436b8d267076a15 to
-  76100907250a597b. The page reads a long run of slashes, blanks or brackets in linear time
+  d62ccb51c8c560ee (it also quotes a text with leading or trailing white space). The page reads a long run of slashes, blanks or brackets in linear time
   (`pageBaseIri`, `pageHeadingText`, `pageInlineTargets`, the base of the compose page); a
   front-matter key `__proto__` stays a key in the page reader and in the `compose` copy of both
   transports (FR-101); `registerTool` that throws or rejects is recorded in
@@ -117,22 +119,43 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A frontmatter nested deeper than 64 levels is the warning `AGSC-E105` (AGSC-02-02) and is read as
   authored; a typed `peers[]` entry of `translation-layer` with no `crosswalk` is now reported as
   `AGSC-E202` (AGSC-11-24, AGSC-01-18) where the schema check had returned an invalid result with no
-  error, and an invalid `oneOf` instance never returns without an error.
-- `contribute[].repository` and `branch` are read for the edit link (AGSC-11-14): without them the link
-  is unchanged; a malformed `repository` or `branch` is `AGSC-E209`.
+  error, and an invalid `oneOf` instance never returns without an error. For every `if/then` of the
+  configuration schema the diagnostics change with this: a duplicate `if` error no longer appears,
+  and a failed `oneOf` always carries an error. `lint` prints a stderr line `lane: portable names`.
+- `contribute[].repository` and `branch` are read for the edit link (AGSC-11-14): an entry with
+  neither keeps the link unchanged, and a `branch` without a `repository` is ignored by the link; a
+  malformed `repository` or `branch` is `AGSC-E209`, and the schema asks only that `branch` is a
+  non-empty string, so the engine alone judges it as `git check-ref-format` does. A key of
+  `ledger.actors` with an upper-case ASCII letter is refused by the schema (AGSC-01-18), because
+  a commit's address is lower-cased before the look-up. The case-collision check of AGSC-01-40(b)
+  uses simple folding, so `Straße.png` and `STRASSE.png` are not a collision.
 - The 60 s build-time budget of AGSC-06-21 is advisory (AGSC-04-03): the unused `timeBudget` helper and
   its constant are removed.
 - Tests: the round trip of AGSC-06-32 puts `@graph` back for a graph of one node; `help` stays the flag
   `--help` (`cli-0036` handler; its flag names come with the packages that add the flags).
 - `import --from skills` with no `--layout` reads the first detected layout that would import
-  something, not simply the first (AGSC-01-26a, I-174): a marketplace file whose plugins all name a
+  something, not simply the first (I-174; implementation behaviour, no rule pins it): a marketplace file whose plugins all name a
   source outside the clone no longer hides a `SKILL.md` that sits beside it. The bytes of an item
   imported under a given layout are unchanged; `--layout` is obeyed as before.
 - `agsc skills import <file>` for a path outside the Bundle says so and names `import --from skills`
-  (AGSC-07-22, I-175); the mapping of the two import routes is unchanged, because the scenario of
+  (AGSC-07-22, I-175; it also fires for an absolute path, which the port cannot read); the mapping of the two import routes is unchanged, because the scenario of
   Mode 3 and AGSC-07-22 pin `description` and `x-skill-license`.
 - The Markdown board reader keeps `- [/]` (state In Progress) and `- [-]` (Canceled) cards instead of
-  skipping them without a message (AGSC-01-26a, I-176); `[ ]`, `[x]` and `[X]` read as before.
+  skipping them without a message (I-176; implementation behaviour, claimed in `docs/CONNECTORS.md`, no
+  rule pins it); `[ ]`, `[x]` and `[X]` read as before, and the Obsidian Kanban reader is unchanged.
+- `package.json` `exports` (I-087): `.`, `./bin/agsc.js` (the alias package requires it),
+  `./package.json`, and the data trees `schema/`, `ontology/`, `spec/` and `tests/vectors/`. `src/`
+  and the tools are no longer importable by a deep path (a 1.0 consumer that did
+  `require('agentic-system-core/src/...')` now gets `ERR_PACKAGE_PATH_NOT_EXPORTED`; nothing else is refused); nothing in the repository or the alias
+  package does that. The commands (`bin`) are unchanged.
+- `agsc-host static-host`: a restricted node's `! Access-Control-Allow-Origin` detach line is written
+  as `Header always unset Access-Control-Allow-Origin` in `.htaccess` and is absent from `nginx.conf`
+  (AGSC-06-17, AGSC-11-20); the profile had refused such a node. `tools/validate-wellknown` admits
+  `immutable` under `/ns/<x.y.z>/` (AGSC-06-06, AGSC-11-05) and reports a request budget spent on a
+  `rel#surface` target as `AGSC-E906`. A tracked `.env.<name>` is warned for every such file, a
+  template suffix (`.example`, `.sample`, `.template`, `.dist`) excepted (AGSC-01-37).
+- `trace` finds an existing Outcome or Next section at any heading level (AGSC-02-21) before it adds
+  one. The added sections of a traced Episode (I-155) are implementation behaviour; no rule names them.
 - Messages that name a type or a format at run time say "an episode", not "a episode" (lint
   `AGSC-E406`, `AGSC-E408`, `AGSC-E205`, `AGSC-E506`; I-129). Message text only; no output byte.
 - The guides discard the `stderr` of `agsc init`, `build` and `skills` steps with `> /dev/null 2>&1`
@@ -140,10 +163,6 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `package.json` `exports` (I-087): `.`, `./bin/agsc.js` (the alias package requires it),
-  `./package.json`, and the data trees `schema/`, `ontology/`, `spec/` and `tests/vectors/`. `src/`
-  and the tools are no longer importable by a deep path; nothing in the repository or the alias
-  package does that. The commands (`bin`) are unchanged.
 - The REUSE layout (I-042): `REUSE.toml` and `LICENSES/` (`Apache-2.0`, `CC0-1.0`, `CC-BY-4.0`) at
   the root, one annotation per licence area of the README table; both ship in the package.
   `reuse lint` reports REUSE 3.3 compliance. No source file, vector or built output changes.

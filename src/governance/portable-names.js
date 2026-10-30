@@ -38,7 +38,15 @@ function reasonsFor(path) {
 }
 
 /** The key two paths share when they are equal after NFC and simple case folding. */
-const foldKey = (path) => path.normalize('NFC').toUpperCase().toLowerCase();
+const single = (text) => Array.from(text).length === 1;
+/** One code point's simple fold: a full mapping that expands (ß to SS, İ to i̇) is not simple, so the code point stays. */
+function foldPoint(ch) {
+  const up = ch.toUpperCase();
+  const base = single(up) ? up : ch;
+  const low = base.toLowerCase();
+  return single(low) ? low : base;
+}
+const foldKey = (path) => Array.from(path.normalize('NFC')).map(foldPoint).join('');
 
 /**
  * AGSC-01-40(b): under `content/attachments/` and `content/assets/`, every path of a

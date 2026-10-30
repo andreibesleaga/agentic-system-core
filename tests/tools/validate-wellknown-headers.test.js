@@ -169,6 +169,16 @@ it('AGSC-11-05: no ETag, no no-cache on the document, and immutable anywhere are
   assert.equal(one(/graph\.ttl.*immutable/u)[0].code, 'AGSC-E201');
 });
 
+it('AGSC-06-06: immutable on a versioned /ns/<x.y.z>/ copy is not reported, anywhere else it is', () => {
+  const { headerShortfalls } = require('../../tools/validate-wellknown');
+  const headers = { etag: '"x"', 'cache-control': 'public, max-age=31536000, immutable' };
+  const immutable = (scope) => headerShortfalls(headers, { cors: false, noCache: false, ...scope })
+    .filter(([, message]) => /immutable/u.test(message));
+  assert.deepEqual(immutable({ versioned: true }), []);
+  assert.equal(immutable({ versioned: false }).length, 1);
+  assert.equal(immutable({ versioned: false })[0][0], 'AGSC-E201');
+});
+
 it('a file argument has no response headers: the header checks do not run on it', async () => {
   const run = await new Promise((resolve) => {
     execFile(process.execPath, [path.join(REPO, 'tools', 'validate-wellknown'),

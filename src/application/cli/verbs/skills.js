@@ -190,7 +190,7 @@ function importPack(ctx, bundle, file) {
     // the port, and "could not be read" would hide the reason.
     const outside = /^(?:[/\\]|[A-Za-z]:|(?:.*[/\\])?\.\.(?:[/\\]|$))/u.test(String(file));
     return [finding('AGSC-E901', outside
-      ? `${file} is outside this Bundle; skills import reads one SKILL.md inside the Bundle (AGSC-07-22) — copy it in,`
+      ? `${file} is outside this Bundle, or not given relative to its root; skills import reads one SKILL.md inside the Bundle (AGSC-07-22) — copy it in,`
         + ' or use `agsc import --from skills <clone>` for a collection kept elsewhere'
       : `${file} could not be read (AGSC-07-22)`, { file: String(file), severity: 'error' })];
   }

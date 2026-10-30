@@ -347,7 +347,7 @@ const PUBLIC_ARTEFACT = [/^\/\.well-known\/knowledge-linkset$/, /^\/graph\.(?:js
 const NO_CACHE = ['/.well-known/knowledge-linkset', '/now.md', '/ledger.jsonl'];
 const EXPOSED = ['Link', 'ETag', 'Content-Type'];
 /** One response's shortfalls against AGSC-11-03 (when `cors`) and AGSC-11-05, as [code, message]. */
-function headerShortfalls(headers, { cors, noCache }) {
+function headerShortfalls(headers, { cors, noCache, versioned }) {
   const out = [];
   const one = (name) => (headers[name] === undefined ? undefined : [].concat(headers[name]).join(', '));
   const tokens = (value) => String(value || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
@@ -364,7 +364,8 @@ function headerShortfalls(headers, { cors, noCache }) {
   if (one('etag') === undefined) out.push(['AGSC-E202', 'no ETag: every public artefact is sent with one (AGSC-11-05)']);
   const cache = tokens(one('cache-control'));
   if (noCache && !cache.includes('no-cache')) out.push(['AGSC-E202', `Cache-Control is ${JSON.stringify(one('cache-control') || '')}, not no-cache (AGSC-11-05)`]);
-  if (cache.includes('immutable')) out.push(['AGSC-E201', 'Cache-Control carries immutable, which no 1.0 route may (AGSC-11-05)']);
+  // AGSC-06-06, AGSC-11-05: only the versioned copies under /ns/<x.y.z>/ may carry immutable.
+  if (cache.includes('immutable') && !versioned) out.push(['AGSC-E201', 'Cache-Control carries immutable, which only /ns/<x.y.z>/ may (AGSC-11-05)']);
   return out;
 }
 
@@ -375,7 +376,7 @@ function checkHeaders(got, isDocument, run) {
   if (u.origin !== run.anchor.origin || !(isDocument || PUBLIC_ARTEFACT.some((re) => re.test(u.pathname)))) return;
   run.seen.add(got.url);
   const severity = run.level >= 2 ? 'error' : 'warn';
-  const scope = { cors: isDocument || !run.gated, noCache: isDocument || NO_CACHE.includes(u.pathname) };
+  const scope = { cors: isDocument || !run.gated, noCache: isDocument || NO_CACHE.includes(u.pathname), versioned: /^\/ns\/\d+\.\d+\.\d+\//u.test(u.pathname) };
   for (const [code, message] of headerShortfalls(got.headers, scope)) run.F(code, `${got.url}: ${message}`, severity);
 }
 
@@ -533,7 +534,7 @@ async function checkSurface(t, h, doc) {
   if (name === 'llms-txt' && h.pathname !== '/llms.txt' && !h.pathname.endsWith('/llms.txt')) F('AGSC-E210', `rel#surface llms-txt must target /llms.txt (AGSC-11-16)`);
   // AGSC-11-20: the `chunks` of a restricted node declare `credential` and are not served unauthenticated.
   if (name === 'llms-txt' || (name === 'chunks' && !(Array.isArray(acc) && acc[0] === 'credential'))) {
-    try { headerChecks(await src.resolve(t.href, ctx.anchor), false); } catch (e) { F('AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
+    try { headerChecks(await src.resolve(t.href, ctx.anchor), false); } catch (e) { F(e.code === 'AGSC-E906' ? 'AGSC-E906' : 'AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
   }
 }
 
@@ -675,4 +676,4 @@ async function run(argv, io = {}) {
 
 if (require.main === module) run(process.argv.slice(2)).then((code) => process.exit(code));
 
-module.exports = { mediaTypeOk, run };
+module.exports = { headerShortfalls, mediaTypeOk, run };

@@ -41,7 +41,7 @@ test('I-176: a `[x]` card is complete whatever the mark of its neighbours', () =
 });
 
 test('I-176: Obsidian Kanban cards keep their rules (only a space, x or X is a box there)', () => {
-  const text = '---\n\nkanban-plugin: board\n\n---\n\n## Todo\n\n- [ ] a\n- [x] b\n';
+  const text = '---\n\nkanban-plugin: board\n\n---\n\n## Todo\n\n- [ ] a\n- [x] b\n- [/] c\n- [-] d\n';
   const { rows } = boards.FORMATS['obsidian-kanban'].parse(text, 'k.md');
   assert.deepEqual(rows.map((r) => r.title), ['a', 'b']);
 });

@@ -632,7 +632,7 @@ chunkId(iri, section, ordinal); digestOf(text); citationAnchor(id)
 itemIri(base, item); linksOf(item); isPublished(item, releases); byteLength(s)
 
 // governance/ledger.js
-derive(gitLog, contentTree, version, { epoch }) -> { entries, ledger, head }
+derive(gitLog, contentTree, { actors, epoch }) -> { entries, ledger, head }   // the builder is always process:agsc (AGSC-08-20a)
 verify(ledger, wellknown) -> Finding[]            // AGSC-E701 / AGSC-E702
 produce(commits) -> gitLog                        // AGSC-08-20b
 parseTrailers(message); publishedHead(wellknown); hashEntry(prev, entry); actorOf(signedOffBy)

@@ -89,7 +89,11 @@ function keepKey(name) {
  */
 function episodeBody(title, body, outcome) {
   const nothing = 'Nothing was recorded.';
-  const has = (heading) => body.split('\n').some((line) => line.trimEnd() === `## ${heading}`);
+  // AGSC-02-21 compares the heading text only, at any heading level.
+  const has = (heading) => body.split('\n').some((line) => {
+    const hashes = /^#{1,6}[ \t]+/u.exec(line);
+    return hashes !== null && line.slice(hashes[0].length).trimEnd() === heading;
+  });
   const parts = [`# ${title}`];
   if (has('What happened')) parts.push(body.trimEnd());
   else parts.push(`## What happened\n\n${body === '' ? nothing : body.trimEnd()}`);

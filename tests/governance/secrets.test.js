@@ -74,6 +74,9 @@ test('AGSC-01-37 (1.1): a tracked .env.<name> is a warning, the template names a
   const [nested] = secrets.checkTracked(['site/.env.production']);
   assert.strictEqual(nested.severity, 'warn');
   assert.deepStrictEqual(secrets.checkTracked(['.env.example', 'a/.env.sample', '.env.template', '.envrc', 'env.local']), []);
+  // every tracked file is reported, and a template suffix is not a secret
+  const several = secrets.checkTracked(['.env.local', 'a/.env.production', '.env.local.example', '.env.dist']);
+  assert.deepStrictEqual(several.map((f) => f.path), ['.env.local', 'a/.env.production']);
   // the plain file stays an error, and it is reported first when both are tracked
   const both = secrets.checkTracked(['.env.local', '.env']);
   assert.strictEqual(both.length, 2);

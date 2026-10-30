@@ -52,6 +52,14 @@ test('yamlScalar quotes exactly the texts that do not parse to themselves as a s
   assert.equal(harness.yamlScalar(''), '""');
 });
 
+test('yamlScalar quotes a text with leading or trailing white space, so a padded keyword stays a string', () => {
+  for (const text of ['true ', 'null ', '123 ', ' x', 'x\t', 'a b ', '1.5\t']) {
+    const written = harness.yamlScalar(text);
+    assert.notEqual(written, text, JSON.stringify(text));
+    assert.equal(parsed(written), text, `${JSON.stringify(text)} written as ${written}`);
+  }
+});
+
 const SELECTION = [
   { slug: 'true', type: 'procedure', title: 'Truth', description: 'true', body: '## Steps\n\n1. Do.\n' },
   { slug: '123', type: 'procedure', title: 'Number', description: '123', body: '## Steps\n\n1. Do.\n' },

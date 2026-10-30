@@ -12,6 +12,7 @@ const path = require('node:path');
 
 const builtins = require('../../../src/distribution/hosts/index.js');
 const rules = require('../../../src/distribution/hosts/rules.js');
+const headers = require('../../../src/distribution/headers.js');
 const profileKit = require('../../../src/distribution/hosts/profile.js');
 const staticHost = require('../../../src/distribution/hosts/static-host.js');
 const githubPages = require('../../../src/distribution/hosts/github-pages.js');
@@ -168,9 +169,10 @@ function parseApache(text) {
     } else if (line === '</If>') {
       current = null;
     } else if (current) {
+      const gone = /^Header always unset (\S+)$/u.exec(line);
       const h = /^Header always set (\S+) (".*")$/u.exec(line);
-      assert.ok(h, `unexpected line in an <If>: ${line}`);
-      current.headers.push([h[1], unquote(h[2])]);
+      assert.ok(gone || h, `unexpected line in an <If>: ${line}`);
+      current.headers.push(gone ? ['!', gone[1]] : [h[1], unquote(h[2])]);
     } else if (redirect) {
       redirects.push({ re: new RegExp(unquote(redirect[2]), 'u'), status: Number(redirect[1]), to: redirect[3] ? unquote(redirect[3]) : null });
     }
@@ -185,6 +187,11 @@ function apacheHeaders(parsed, route) {
   for (const section of parsed.sections) {
     if (!section.re.test(uri)) continue;
     for (const [name, value] of section.headers) {
+      if (name === '!') {
+        const gone = out.findIndex(([n]) => n.toLowerCase() === value.toLowerCase());
+        if (gone !== -1) out.splice(gone, 1);
+        continue;
+      }
       const at = out.findIndex(([n]) => n.toLowerCase() === name.toLowerCase());
       if (at === -1) out.push([name, value]);
       else out[at] = [name, value];
@@ -212,6 +219,20 @@ test('static-host: Apache, parsed, sends every route exactly the reference heade
   const hide = parsed.redirects.find((r) => r.status === 404);
   for (const file of rules.CONFIG_FILES) assert.ok(hide.re.test(`/${file}`), file);
   assert.ok(!hide.re.test('/x_headers'));
+});
+
+test('static-host: a restricted node\'s detach line is emitted for both servers (AGSC-06-17, AGSC-11-20)', () => {
+  const sets = headers.headerSets({ visibility: 'restricted' }, ['/', '/a.txt', '/.well-known/knowledge-linkset']);
+  const input = { files: [{ path: 'a.txt' }, { path: 'index.html' }], redirects: [], sets };
+  const answer = staticHost.emit(input);
+  assert.deepStrictEqual(answer.findings, []);
+  assert.ok(answer.site[0].text.includes('Header always unset Access-Control-Allow-Origin'));
+  assert.ok(!/set ! /u.test(answer.site[0].text), 'no detach line is written as a header');
+  assert.ok(!answer.server[0].text.includes('!'), 'nginx carries no detach line');
+  const parsed = parseApache(answer.site[0].text);
+  for (const route of ['/', '/a.txt']) {
+    assert.deepStrictEqual(byName(apacheHeaders(parsed, route)), byName(rules.headersFor(sets, route)), route);
+  }
 });
 
 test('static-host refuses what either server would re-interpret, and emits nothing then', () => {

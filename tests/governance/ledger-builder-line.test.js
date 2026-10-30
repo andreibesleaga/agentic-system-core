@@ -39,7 +39,8 @@ test('AGSC-08-20a: the trailing entry is process:agsc and the version of the bui
   const lines = built().ledger.split('\n').filter((l) => l !== '').map((l) => JSON.parse(l));
   assert.equal(lines[lines.length - 1].actor, 'process:agsc');
   assert.equal(ledger.BUILD_ACTOR, 'process:agsc');
-  assert.equal(ledger.derive(HISTORY, TREE, { ...EPOCH, version: '9.9.9' }).ledger, built().ledger);
+  // derive takes no builder version at all, so no version can change a byte; its source is the proof
+  assert.ok(!/\bversion\b/u.test(ledger.derive.toString()), 'derive must not read a builder version');
 });
 
 test('AGSC-08-23: a 1.1 verifier accepts a ledger written under 1.0, which names its builder', () => {
