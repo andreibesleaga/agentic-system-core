@@ -193,6 +193,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ontology version, and a Level 2 build serves the versioned copy at `/ns/1.0.0/context.jsonld`;
   the ontology is `1.0.0` today, so no byte moves, and raising it to `1.1.0` will not move any
   `graph.jsonld` (AGSC-05-09; `graph-0043`). `persistentContextUrl()` takes no argument.
+- Docs: `TESTING.md` names the public export for the real-bundles lane.
 
 ### Added
 
