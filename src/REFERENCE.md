@@ -464,6 +464,16 @@ resolveInside(fromDir, relative); dirOf(path); view(item)
 // knowledge/derive.js
 readings(edges) -> [{ source, key, target, because: [{ rule, from: [[s, k, t], …] }] }]   // AGSC-05-33
 
+// knowledge/questions.js (AGSC-05-34; pure; items are the published projection)
+answer(number, items, { subject, selection?, at? }) -> the answer of question 1..10
+mustTake / neverWith / replacedBy / blockers (items, slug) -> slug[]
+missingPorts(items, slug, selection) -> portName[]            // a port the subject produces is provided
+verification(items, slug) -> { verified_by: slug[], verifies: slug[] }
+lineage(items, slug) -> { episodes: slug[], lineage: slug[] }
+underCluster(items, slug) -> { clusters: slug[], items: slug[] }
+unhealthy(items, selection, at) -> [{ slug, reasons }]        // deprecated, draft, retired, stale
+sourcesAndSharers(items, slug) -> { shared: [{ items, resource }], sources: resource[] }
+
 // governance/{injection,secrets,pii,cleanroom}.js
 check(input) -> Finding[]              // input carries { text, file, slug, line, … }
 secrets.checkTracked(trackedPaths) -> Finding[]

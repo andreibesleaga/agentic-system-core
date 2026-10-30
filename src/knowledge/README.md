@@ -21,6 +21,7 @@
 | `relations.js` | the relation table of AGSC-03-01: the fourteen keys and their columns, read by every server-side copy |
 | `links.js` | the Link graph: resolution, inverses, cycles, orphans, the warnings of AGSC-03-23 to 03-26 |
 | `derive.js` | the readings of the Link graph (inverse, symmetric, transitive, closure), each with its reasons |
+| `questions.js` | the ten questions of the graph (AGSC-05-34), one pure function each |
 | `nquads.js` | the RDF dataset of a Bundle and its canonical N-Quads |
 | `turtle.js` | the stable Turtle view, and the Turtle this engine reads (the vocabulary) |
 | `jsonld.js` | the JSON-LD view and the context file |

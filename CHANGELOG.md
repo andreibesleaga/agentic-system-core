@@ -197,6 +197,14 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   symmetric, transitive and closure readings of the Link graph, each with its `because` steps
   `{rule, from}`, in code-point order, computed and never written to a graph file. The CLI surface
   that prints them is a later package.
+- `src/knowledge/questions.js` (AGSC-05-34, I-011): the ten questions of the graph as pure functions
+  of the published projection (`mustTake`, `neverWith`, `replacedBy`, `missingPorts`, `verification`,
+  `blockers`, `lineage`, `underCluster`, `unhealthy`, `sourcesAndSharers`, and `answer(number, items,
+  {subject, selection, at})`), each list sorted by code point, without repeats and without the
+  subject; `graph-0030` to `graph-0039` pass. The SPARQL text of the same questions is the data file
+  `docs/ontology-questions.json`, and `docs/ONTOLOGY-QUESTIONS.md` is generated from it by
+  `node tools/gen-ontology-questions`. A development-lane test (`AGSC_SPARQL_PYTHON`) runs each text
+  over `graph.nq` in Oxigraph and compares the rows with the function. No output byte changes.
 - The REUSE layout (I-042): `REUSE.toml` and `LICENSES/` (`Apache-2.0`, `CC0-1.0`, `CC-BY-4.0`) at
   the root, one annotation per licence area of the README table; both ship in the package.
   `reuse lint` reports REUSE 3.3 compliance. No source file, vector or built output changes.

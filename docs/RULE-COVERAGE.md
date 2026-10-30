@@ -11,7 +11,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 319 |
+| Unit, integration or architecture test | 320 |
 | Executed acceptance scenario | 75 |
 | Checker header | 33 |
 
@@ -296,7 +296,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-31 | VERIFIED | yes | `graph-0018` | `knowledge/nquads.test.js`, `knowledge/rdfxml-iso.test.js`, `knowledge/turtle.test.js` | — | — |
 | AGSC-05-32 | VERIFIED | yes | `graph-0012` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-33 | VERIFIED | yes | `graph-0029` | — | — | — |
-| AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | — | — | — |
+| AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | `knowledge/questions-sparql.test.js`, `knowledge/questions.test.js` | — | — |
 | AGSC-05-35 | VERIFIED | yes | `lint-0046`, `lint-0047`, `lint-0048` +2 | — | — | — |
 | AGSC-05-36 | VERIFIED | yes | `graph-0040` | — | — | — |
 | AGSC-05-37 | VERIFIED | yes | `graph-0041`, `graph-0042` | — | — | — |

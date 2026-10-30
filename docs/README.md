@@ -49,11 +49,12 @@ kind of reader down one path.
 | [diagrams/](diagrams/README.md) | the diagram pack: Mermaid sources and rendered SVG |
 | [ROADMAP.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ROADMAP.md) | what composition and the graph do today, and what is planned for the next version |
 
-Generated pages (`GLOSSARY.md`, `RULE-COVERAGE.md`, `REQUIREMENTS-MATRIX.md`, `measurements.json`) are never
+Generated pages (`GLOSSARY.md`, `ONTOLOGY-QUESTIONS.md`, `RULE-COVERAGE.md`, `REQUIREMENTS-MATRIX.md`, `measurements.json`) are never
 edited by hand; the command that writes each is named at its top.
 
 ```bash
 node tools/gen-glossary --check     # the glossary is current
+node tools/gen-ontology-questions --check  # the ten questions page is current
 node tools/rule-coverage --check    # the coverage page is current
 node tools/requirements-matrix --check  # the requirements page is current
 ```

@@ -1,0 +1,83 @@
+{
+  "informative": true,
+  "source": "spec/05-graph.md AGSC-05-34 (frozen at 1.1.0). The SPARQL text is the example text of the query page (AGSC-06-39); the engine does not run it (AGSC-05-11).",
+  "prefixes": [
+    "asc: <https://w3id.org/agentic-system-core/ns#>",
+    "dcterms: <http://purl.org/dc/terms/>",
+    "prov: <http://www.w3.org/ns/prov#>",
+    "skos: <http://www.w3.org/2004/02/skos/core#>",
+    "xsd: <http://www.w3.org/2001/XMLSchema#>"
+  ],
+  "questions": [
+    {
+      "number": 1,
+      "question": "If I choose X, what else must I take?",
+      "subject": "slug X",
+      "answer": "slugs reached from X by one or more requires edges",
+      "sparql": "SELECT DISTINCT ?item WHERE { ?x dcterms:requires+ ?item } ORDER BY ?item"
+    },
+    {
+      "number": 2,
+      "question": "What can never go with X?",
+      "subject": "slug X",
+      "answer": "slugs with an excludes edge to or from X, after AGSC-03-05",
+      "sparql": "SELECT DISTINCT ?item WHERE { ?x asc:excludes ?item } ORDER BY ?item"
+    },
+    {
+      "number": 3,
+      "question": "What replaced X, directly or through a chain?",
+      "subject": "slug X",
+      "answer": "slugs reached from X by one or more superseded-by edges",
+      "sparql": "SELECT DISTINCT ?item WHERE { ?x dcterms:isReplacedBy+ ?item } ORDER BY ?item"
+    },
+    {
+      "number": 4,
+      "question": "What does X need that nobody in my selection provides?",
+      "subject": "slug X, selection S",
+      "answer": "the names in consumes of X that are in no produces of X or of a member of S",
+      "sparql": "SELECT DISTINCT ?name WHERE { ?x asc:consumes ?name\n  FILTER NOT EXISTS { VALUES ?p { ?x <S...> } ?p asc:produces ?name } } ORDER BY ?name"
+    },
+    {
+      "number": 5,
+      "question": "What verifies X, and what does X verify?",
+      "subject": "slug X",
+      "answer": "an object with verified_by, the slugs with a verifies edge to X, and verifies, the slugs X has a verifies edge to",
+      "sparql": "SELECT DISTINCT ?direction ?item WHERE {\n  { ?x asc:isVerifiedBy ?item BIND (\"verified_by\" AS ?direction) }\n  UNION { ?x asc:verifies ?item BIND (\"verifies\" AS ?direction) } } ORDER BY ?direction ?item"
+    },
+    {
+      "number": 6,
+      "question": "What blocks task T, directly or through a chain?",
+      "subject": "slug T",
+      "answer": "slugs reached from T by one or more blocked-by edges",
+      "sparql": "SELECT DISTINCT ?item WHERE { ?x asc:blockedBy+ ?item } ORDER BY ?item"
+    },
+    {
+      "number": 7,
+      "question": "Where did lesson L come from?",
+      "subject": "slug L",
+      "answer": "an object with lineage, the slugs reached from L by one or more derived-from edges, and episodes, those of them whose type is episode",
+      "sparql": "SELECT DISTINCT ?item ?class WHERE { ?x prov:wasDerivedFrom+ ?item . ?item a ?class } ORDER BY ?item"
+    },
+    {
+      "number": 8,
+      "question": "Which items sit under cluster C and its sub-clusters?",
+      "subject": "slug C",
+      "answer": "an object with clusters, the clusters reached from C by one or more nesting edges (AGSC-05-19), and items, the items other than clusters that list C or one of those clusters in clusters[]",
+      "sparql": "SELECT DISTINCT ?item WHERE { ?x skos:member+ ?item } ORDER BY ?item"
+    },
+    {
+      "number": 9,
+      "question": "Which of my selected items are stale, draft or deprecated?",
+      "subject": "selection S, instant t",
+      "answer": "the members of S that have a reason, each an object with slug and reasons, in slug order, reasons being those of deprecated, draft, retired and stale that hold, in that order (stale: stale_after earlier than t, AGSC-02-11; the others: status, AGSC-02-23)",
+      "sparql": "SELECT DISTINCT ?item ?reason WHERE { VALUES ?item { <S...> }\n  { ?item asc:status ?reason FILTER (?reason IN (\"draft\", \"deprecated\", \"retired\")) }\n  UNION { ?item asc:staleAfter ?at FILTER (?at < \"T\"^^xsd:dateTime) BIND (\"stale\" AS ?reason) } }\n  ORDER BY ?item ?reason"
+    },
+    {
+      "number": 10,
+      "question": "Which sources back X, and which other items share them?",
+      "subject": "slug X",
+      "answer": "an object with sources, the resource strings of X, and shared, an array of objects {items, resource}, in order of resource, one for each of them that another item also cites, items being the slugs of those other items",
+      "sparql": "SELECT DISTINCT ?resource ?other WHERE { ?x asc:source ?a . ?a dcterms:source ?resource\n  OPTIONAL { ?other asc:source ?b . ?b dcterms:source ?resource FILTER (?other != ?x) } }\n  ORDER BY ?resource ?other"
+    }
+  ]
+}

@@ -18,6 +18,7 @@
 // graph-0027 an export block is reserved: real lint and build  AGSC-02-22
 // graph-0028 graph.jsonld and the per-item files, whole        AGSC-05-09
 // graph-0029 the readings of the Link graph, each with reasons  AGSC-05-33
+// graph-0030 to graph-0039 the ten questions, one each          AGSC-05-34
 // graph-0043 the context address is not the ontology version   AGSC-05-09
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
@@ -34,6 +35,7 @@ const jsonldView = require('../../../src/knowledge/jsonld.js');
 const jcs = require('../../../src/knowledge/jcs.js');
 const linksModule = require('../../../src/knowledge/links.js');
 const derive = require('../../../src/knowledge/derive.js');
+const questions = require('../../../src/knowledge/questions.js');
 const { RELATIONS } = require('../../../src/knowledge/relations.js');
 const fixture = require('../../knowledge/_graph-fixture.js');
 const { checks } = require('./_assert.js');
@@ -355,6 +357,14 @@ function readingsCase(vector) {
   return checks(list);
 }
 
+/** graph-0030 to graph-0039 — one of the ten questions of AGSC-05-34 over the shared fixture. */
+function questionCase(vector) {
+  const { items, question, subject, selection, at } = vector.input;
+  const got = questions.answer(question, items, { subject, selection, at });
+  return checks([[`question ${question}`, jcs.canonicalize(got) === jcs.canonicalize(vector.expected.answer),
+    `got ${jcs.canonicalize(got)}`]]);
+}
+
 /** One item as a Markdown file: the front matter is JSON-valued YAML, which the parser reads. */
 function itemFile(item) {
   const { body, ...front } = item;
@@ -463,6 +473,7 @@ module.exports.run = guarded((vector, ctx) => {
   const expected = vector.expected || {};
   if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
+  if (typeof input.question === 'number') return questionCase(vector);
   if (Array.isArray(expected.readings)) return readingsCase(vector);
   if (Array.isArray(input.ontology_versions)) return contextAddressCase(vector, ctx);
   if (Array.isArray(input.items)) return itemsCase(vector);

@@ -40,6 +40,7 @@ requirement. Checking it, with one more fetch, is planned for 1.1.
 | `rule-coverage` | the rule-coverage matrix; `--write` regenerates `docs/RULE-COVERAGE.md`, `--check` fails when it is stale |
 | `requirements-matrix` | the requirements matrix: for every requirement of `docs/PRD.md`, the rules that trace to it and the checks that name it; `--write` regenerates `docs/REQUIREMENTS-MATRIX.md`, `--check` fails when it is stale |
 | `gen-glossary` | writes `docs/GLOSSARY.md` from the specification and the ontology; `--check` |
+| `gen-ontology-questions` | writes `docs/ONTOLOGY-QUESTIONS.md` (the ten questions and their SPARQL text) from `docs/ontology-questions.json`; `--check` |
 | `lint-claims` | the claims lint of the benchmark kit: ranking words in a results text, and results rows that name no model, calendar date, sample size, metric, value or confidence interval, or compare with another system without both configurations ([docs/BENCHMARKS.md](../docs/BENCHMARKS.md)) |
 | `public-hygiene` | "public means clean": a sweep of a working tree for text that must never be published |
 | `publish-set` | sets which items of a Bundle are published, from one list |
@@ -53,6 +54,7 @@ node tools/validate-spec --json        # and the same for the other six validate
 node tools/rule-coverage --check       # one summary line; exit 0 when the matrix is current
 node tools/requirements-matrix --check # the same for the requirements matrix
 node tools/gen-glossary --check        # "docs/GLOSSARY.md: current (…)"
+node tools/gen-ontology-questions --check  # "docs/ONTOLOGY-QUESTIONS.md: current (…)"
 ```
 
 Each takes `--help`. Requires Node 22.13 or later and `npm ci` at the root (the
