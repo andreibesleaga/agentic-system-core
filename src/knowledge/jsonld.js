@@ -147,20 +147,26 @@ function allExternalProperties() {
 }
 
 /**
+ * AGSC-05-09: the **context version** — `1.0.0` at every version 1.x of the
+ * specification. It is not the ontology version of AGSC-05-25: the ontology moves when
+ * the vocabulary file changes, the context version only when a later MINOR releases a
+ * new context file and says so, and 1.1.0 releases none.
+ */
+const CONTEXT_VERSION = '1.0.0';
+
+/**
  * AGSC-05-09: the specification's **persistent versioned context
- * URL**, `https://w3id.org/agentic-system-core/ns/<ontology-version>/context.jsonld`.
+ * URL**, `https://w3id.org/agentic-system-core/ns/<context-version>/context.jsonld`.
  * It is a constant of the specification, resolvable by every reader at every Level,
  * so a Level-0 `graph.jsonld` — which AGSC-06-32 forbids to serve a context of its
  * own — still names one and loses no triple when a processor expands it.
  *
- * Both halves are derived, never typed: the namespace is `nquads.js`'s `NS` without
- * its `#`, and the version is the `owl:versionIRI` version of AGSC-05-25, which
- * `turtle.js#ontologyVersion` reads out of `ontology/agsc.ttl`.
- *
- * @param {string} ontologyVersion e.g. `1.0.0-draft.1`
+ * Both halves are constants: the namespace is `nquads.js`'s `NS` without its `#`, and
+ * the version is `CONTEXT_VERSION`, never the `owl:versionIRI` version of the
+ * vocabulary, so raising the ontology version changes no byte of any `graph.jsonld`.
  */
-function persistentContextUrl(ontologyVersion) {
-  return `${NS.slice(0, -1)}/${ontologyVersion}/context.jsonld`;
+function persistentContextUrl() {
+  return `${NS.slice(0, -1)}/${CONTEXT_VERSION}/context.jsonld`;
 }
 
 // ---------------------------------------------------------------- memory:// (AGSC-05-04b)
@@ -307,6 +313,7 @@ module.exports = {
   context,
   contextFrom,
   allExternalProperties,
+  CONTEXT_VERSION,
   persistentContextUrl,
   resolveMemory,
   restrictTo,

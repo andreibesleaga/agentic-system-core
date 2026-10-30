@@ -437,28 +437,39 @@ function checkConstructs(item) {
     { file: v.path, line: links.fileLine(v.lineOffset, c.line), severity: 'warn', slug: v.slug }));
 }
 
+/** AGSC-05-21: a label after NFC and case folding, the form two labels are compared in. */
+const foldLabel = (label) => String(label).normalize('NFC').toUpperCase().toLowerCase();
+
+/** The distinct folded labels of an item: its `title` and its `aliases`. */
+function labelsOf(fm) {
+  const aliases = Array.isArray(fm.aliases) ? fm.aliases.filter((a) => typeof a === 'string') : [];
+  return [...new Set([fm.title, ...aliases].map(foldLabel))];
+}
+
 /**
- * AGSC-05-21: two published items of one `type` whose `title` values are equal after
- * NFC and case folding are the warning AGSC-E416, reported on the later one (by
- * path) and naming the earlier.
+ * AGSC-05-21: two published items of one `type` where a `title` or an alias of one equals
+ * a `title` or an alias of the other, after NFC and case folding, are the warning AGSC-E416.
+ * Taking the items in path order, each item that shares a label with an earlier one carries
+ * one finding, naming the earliest such item. An item's own title equal to its own alias is
+ * not an overlap.
  */
 function checkOverlappingLabels(items, config = {}) {
   const findings = [];
-  const seen = new Map();
+  const holders = new Map();
   const releases = config.releases;
   const views = items.map((item) => links.view(item))
     .filter((v) => v.fm && typeof v.fm.title === 'string' && isPublished(v.fm, releases))
     .sort((a, b) => compareCodePoint(String(a.path), String(b.path)));
-  for (const v of views) {
-    const key = `${v.fm.type}\u0000${String(v.fm.title).normalize('NFC').toUpperCase().toLowerCase()}`;
-    const earlier = seen.get(key);
-    if (earlier === undefined) {
-      seen.set(key, v);
-      continue;
+  for (const [order, v] of views.entries()) {
+    const keys = labelsOf(v.fm).map((label) => `${v.fm.type}\u0000${label}`);
+    const earlier = keys.filter((key) => holders.has(key)).map((key) => holders.get(key))
+      .sort((a, b) => a.order - b.order)[0];
+    if (earlier !== undefined) {
+      findings.push(finding('AGSC-E416',
+        `a title or alias of ${v.fm.type} "${v.slug}" overlaps one of "${earlier.slug}" after NFC and case folding (AGSC-05-21)`,
+        { file: v.path, severity: 'warn', slug: v.slug }));
     }
-    findings.push(finding('AGSC-E416',
-      `the title "${v.fm.title}" of ${v.fm.type} "${v.slug}" overlaps the title of "${earlier.slug}" after NFC and case folding (AGSC-05-21)`,
-      { file: v.path, severity: 'warn', slug: v.slug }));
+    for (const key of keys) if (!holders.has(key)) holders.set(key, { slug: v.slug, order });
   }
   return findings;
 }

@@ -137,8 +137,8 @@ function ontologyTerms(turtleText) {
 /**
  * The version of `ontology/agsc.ttl`, read from its `owl:versionIRI` (AGSC-05-25) —
  * the last path segment of that IRI, `1.0.0-draft.1` until `spec_version` reaches
- * `1.0.0`. It is what AGSC-05-09 calls `<ontology-version>` in the specification's
- * persistent context URL, so no module has to write the version down.
+ * `1.0.0`. It is the ontology version of AGSC-05-25, which is NOT the context version
+ * of the persistent context URL (AGSC-05-09, `jsonld.js#CONTEXT_VERSION`).
  * @returns {string|null} the version, or `null` when the document declares none.
  */
 function ontologyVersion(turtleText) {

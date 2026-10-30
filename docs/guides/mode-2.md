@@ -38,7 +38,7 @@ Six files, one per thing. Each is a header between `---` lines and a short Markd
 |---|---|---|
 | `content/clusters/<board>.md` | `type: cluster` | a group of items; the tasks in it form a board |
 | `content/concepts/<name>.md` | `kind: decision` | by convention, a `## Decision` section |
-| `content/concepts/<name>.md` | `kind: spec` | by convention, a `## Specification` section; `implements:` the decision |
+| `content/concepts/<name>.md` | `kind: spec` | by convention, a `## Specification` section; `decided-by:` the decision |
 | `content/concepts/<name>.md` | `kind: task` | `task_state:` — `TASK_STATE_` followed by `SUBMITTED` (new), `WORKING`, `INPUT_REQUIRED`, `AUTH_REQUIRED`, `COMPLETED`, `FAILED`, `CANCELED` or `REJECTED`; `clusters:` names its board; `blocked-by:` other tasks |
 | `content/gates/<name>.md` | `type: gate` | `level:` `L1` (schema and links) or `L2` (adds provenance, determinism, review); `checks:`, when given, exactly the set the level implies (AGSC-02-18); `enforce:` (`status-check`, `ruleset`, `hook`, `codeowner`) |
 
@@ -98,7 +98,7 @@ prov:
   origin: human
   operator: human:you
 kind: spec
-implements:
+decided-by:
   - decide-the-login
 ---
 

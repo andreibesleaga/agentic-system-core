@@ -23,6 +23,10 @@
 //   AGSC-E308 cluster with more than one `broader`       AGSC-03-08
 //   AGSC-E310 unresolved relative body reference         AGSC-03-11
 //   AGSC-E311 Link value is an absolute URL              AGSC-11-12
+//   AGSC-E313 item links to itself (warning)             AGSC-03-23
+//   AGSC-E314 two relations that cannot both hold (warning)   AGSC-03-24
+//   AGSC-E315 target of an unexpected kind (warning)     AGSC-03-25
+//   AGSC-E316 `supersedes` target still stable (warning) AGSC-03-26
 //   AGSC-E902 body reference violates the path grammar   AGSC-01-35
 
 const { compareCodePoint } = require('./unicode.js');
@@ -32,7 +36,7 @@ const { SLUG_PATTERN } = require('./slug.js');
 
 // AGSC-03-01…04, 03-05: the keys, inverses, symmetric set and computed names are the
 // relation table's (`relations.js`), the one copy the server side reads.
-const { CORE_KEYS, MODE2_KEYS, LINK_KEYS, INVERSE, SYMMETRIC, COMPUTED_KEYS } = require('./relations.js');
+const { RELATIONS, CORE_KEYS, MODE2_KEYS, LINK_KEYS, INVERSE, SYMMETRIC, COMPUTED_KEYS } = require('./relations.js');
 
 /**
  * AGSC-03-03 / AGSC-11-12: the link-shaped names that are NOT among the fourteen
@@ -48,6 +52,16 @@ const LINK_SHAPED_UNKNOWN = Object.freeze(new Set(['peer-ref', 'mentions', 'refi
 
 /** AGSC-03-08: family > deck > sub-deck — at most two `broader` ancestors. */
 const MAX_CLUSTER_ANCESTORS = 2;
+
+/**
+ * AGSC-03-24: the four combinations a pair `(A, B)` must not hold. `A` authors the first
+ * key; the second may be authored by either side, because AGSC-03-05 runs `excludes` and
+ * `contradicts` both ways.
+ */
+const INCOMPATIBLE = Object.freeze([['requires', 'excludes'], ['requires', 'supersedes'],
+  ['requires', 'contradicts'], ['uses', 'excludes']]);
+
+const ROW = Object.freeze(Object.fromEntries(RELATIONS.map((r) => [r.key, r])));
 
 const NUL = String.fromCharCode(0);
 const SCHEME = /^[A-Za-z][A-Za-z0-9+.-]*:/u;
@@ -245,6 +259,71 @@ function collectAuthored(v, findings, push) {
   }
 }
 
+/** AGSC-03-25: `concept` and `lesson` are one family; every other type is its own. */
+const familyOf = (type) => (type === 'lesson' ? 'concept' : type);
+
+/** One alternative of an Expected-target-kinds cell: the target's `type`, and its `kind` where the cell names kinds. */
+const isKind = (spec, target) => target.type === spec.type
+  && (spec.kinds === undefined || spec.kinds.includes(target.fm.kind));
+
+/**
+ * AGSC-03-25: does `target` match the Expected target kinds cell of a key, for an item
+ * `owner` that authors it? A cell reading `any` never fails; for `derived-from` its
+ * narrower cell binds only when the owner is a lesson.
+ */
+function matchesExpected(cell, owner, target) {
+  if (cell.any) return cell.lessonTarget === undefined || owner.type !== 'lesson' || isKind(cell.lessonTarget, target);
+  if (cell.sameFamily) return familyOf(owner.type) === familyOf(target.type);
+  if (cell.sameType) return owner.type === target.type;
+  if (cell.oneOf) return cell.oneOf.some((spec) => isKind(spec, target));
+  return isKind(cell, target);
+}
+
+/**
+ * AGSC-03-23, 03-25, 03-26: the warnings about one authored, resolved Link, each raised
+ * once per item, key and target (an item's self-link once per key, whatever its anchor).
+ *
+ * @param {{owner:object, key:string, target:object}} link both ends are item views.
+ * @param {Set<string>} seen the (item, key, target) triples already judged.
+ */
+function warnAboutLink({ owner, key, target }, seen, findings) {
+  const id = [owner.slug, key, target.slug].join(NUL);
+  if (seen.has(id)) return;
+  seen.add(id);
+  const where = { file: owner.path, slug: owner.slug, key, severity: 'warn' };
+  if (owner.slug === target.slug) {
+    if (ROW[key].selfLink === 'warning') {
+      findings.push(finding('AGSC-E313', `"${owner.slug}" lists itself under "${key}" (AGSC-03-23)`, where));
+    }
+    return;
+  }
+  if (!matchesExpected(ROW[key].targets, owner, target)) {
+    findings.push(finding('AGSC-E315',
+      `"${key}" of "${owner.slug}" names "${target.slug}", a ${target.type} not of the kind the key expects (AGSC-03-25)`, where));
+  }
+  const status = target.fm.status === undefined ? 'stable' : target.fm.status;
+  if (key === 'supersedes' && status === 'stable') {
+    findings.push(finding('AGSC-E316',
+      `"${owner.slug}" supersedes "${target.slug}", whose status is still stable (AGSC-03-26)`, where));
+  }
+}
+
+/**
+ * AGSC-03-24: each incompatible combination a pair holds, over the edges after AGSC-03-05
+ * has run the symmetric keys both ways; one warning per combination, carried by `A`.
+ */
+function warnAboutPairs(edges, hasEdge, bySlug, findings) {
+  for (const [first, second] of INCOMPATIBLE) {
+    for (const e of edges.filter((x) => x.key === first && x.source !== x.target)) {
+      if (!hasEdge(e.source, second, e.target)) continue;
+      const a = bySlug.get(e.source);
+      findings.push(finding('AGSC-E314',
+        `"${a.slug}" holds "${first}" and "${second}" toward "${e.target}", which cannot both hold (AGSC-03-24)`,
+        { file: a.path, slug: a.slug, key: first, severity: 'warn' }));
+    }
+  }
+}
+
 /**
  * Resolve the Link graph of a Bundle (AGSC-03).
  *
@@ -283,6 +362,7 @@ function resolve(items, options = {}) {
   };
 
   // Pass 1 — authored edges, computed inverses (AGSC-03-04, 03-05, 03-06).
+  const judged = [];
   const requiresAdjacency = new Map();
   const broaderAdjacency = new Map();
   for (const v of views) {
@@ -305,6 +385,7 @@ function resolve(items, options = {}) {
       }
       add(owner.slug, key, targetSlug, false);
       add(targetSlug, INVERSE[key], owner.slug, true);
+      judged.push({ owner, key, target });
       if (key === 'requires') {
         if (!requiresAdjacency.has(owner.slug)) requiresAdjacency.set(owner.slug, []);
         requiresAdjacency.get(owner.slug).push(targetSlug);
@@ -317,6 +398,11 @@ function resolve(items, options = {}) {
       }
     });
   }
+
+  // Pass 1b — the warnings about what the authored Links say (AGSC-03-23…03-26).
+  const seen = new Set();
+  for (const link of judged) warnAboutLink(link, seen, findings);
+  warnAboutPairs(edges, (source, key, target) => index.has(edgeKey({ source, key, target })), bySlug, findings);
 
   // Pass 2 — the two acyclicity checks (AGSC-03-07, AGSC-03-08).
   const slugs = new Set(views.map((v) => v.slug));

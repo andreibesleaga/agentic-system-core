@@ -268,7 +268,8 @@ bytes for the same Bundle, so each is named here with the rule that fixes it.
    local name is also an `asc:` term name or is shared by two external properties.
    The file is a constant of the specification and a node's copy must equal it byte
    for byte. A Level ≥ 2 writer serves the versioned copy at
-   `/ns/<ontology-version>/context.jsonld` as well, byte-identical. Vector
+   `/ns/<context-version>/context.jsonld` as well (the context version is `1.0.0` at every
+   1.x, not the ontology version), byte-identical. Vector
    `graph-0019`.
 6. **`/assets/<path>` is a route.** AGSC-06-01: every file under
    `content/assets/` that a PUBLISHED item's body references is emitted at that path

@@ -102,10 +102,6 @@ const NOT_RAISED = Object.freeze({
   'AGSC-E410': 'language variants are not implemented by the reference engine yet (AGSC-01-13a)',
   // Registered by the 1.1 specification; the engine does not raise them yet. Each leaves this list
   // when the code that raises it is written, and the test then fails until the entry is removed.
-  'AGSC-E313': 'the self-link warning is not implemented yet (AGSC-03-23)',
-  'AGSC-E314': 'the contradictory-pair warning is not implemented yet (AGSC-03-24)',
-  'AGSC-E315': 'the unexpected-target-kind warning is not implemented yet (AGSC-03-25)',
-  'AGSC-E316': 'the supersedes-target-still-stable warning is not implemented yet (AGSC-03-26)',
   'AGSC-E317': 'typed domain links are not read yet (AGSC-03-27)',
   'AGSC-E417': 'the minimum-sources lint is not implemented yet (AGSC-08-31)',
   'AGSC-E418': 'the check of a declared domain context is not implemented yet (AGSC-02-25)',

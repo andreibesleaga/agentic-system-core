@@ -459,6 +459,10 @@ resolve(items, { assets? }) -> { edges, errors, inverses, cycle, cycles, chain,
   chains, parents, resolved, unresolved, skipped_external }
 anchors(body); findCycle(adjacency, nodes); pathGrammarError(relative, fromDir)
 resolveInside(fromDir, relative); dirOf(path); view(item)
+// (resolve also raises the warnings AGSC-E313 to E316 through the columns of knowledge/relations.js)
+
+// knowledge/derive.js
+readings(edges) -> [{ source, key, target, because: [{ rule, from: [[s, k, t], …] }] }]   // AGSC-05-33
 
 // governance/{injection,secrets,pii,cleanroom}.js
 check(input) -> Finding[]              // input carries { text, file, slug, line, … }
@@ -540,7 +544,7 @@ labels(item, {lang}); membership(items, resolve)
 turtleIri(v); turtleTerm(term); turtlePredicate(v); prefixBlock(); serialize(quads)
 toTurtle(items, options); parse(text, options); ontologyTerms(turtleText); ontologyVersion(turtleText)
 // knowledge/jsonld.js
-context(ontologyTerms, externalProperties) -> object; allExternalProperties(); persistentContextUrl(ontologyVersion)
+context(ontologyTerms, externalProperties) -> object; allExternalProperties(); persistentContextUrl() [the constant context version]
 contextFrom(…); expandCompact(v); termName(compact, ascNames, locals); restrictTo(…)
 resolveMemory(value, {bundleId}) -> { slug } | { finding }
 toJsonLd(items, options) -> object

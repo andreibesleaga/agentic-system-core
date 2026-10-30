@@ -135,7 +135,7 @@ test('a Level 2 build serves the VERSIONED copy too, byte for byte (AGSC-05-09, 
   assert.strictEqual(String(files.get('/ns/1.0.0/context.jsonld')),
     String(files.get('/ns/context.jsonld')));
   // The versioned route is the path half of the persistent URL AGSC-05-09 names.
-  assert.ok(jsonldView.persistentContextUrl('1.0.0')
+  assert.ok(jsonldView.persistentContextUrl()
     .endsWith('/ns/1.0.0/context.jsonld'));
 });
 
@@ -145,7 +145,7 @@ test('the built graph.jsonld is compact: no vocabulary IRI is written out', () =
   const { files } = build();
   for (const [route, bytes] of files) {
     // The two context copies are the context itself (AGSC-06-01:
-    // `/ns/context.jsonld` and `/ns/<ontology-version>/context.jsonld`, which are
+    // `/ns/context.jsonld` and `/ns/<context-version>/context.jsonld`, which are
     // byte-identical), and a context is where the vocabulary IRIs belong.
     if (!route.endsWith('.jsonld') || /^\/ns\/(?:[^/]+\/)?context\.jsonld$/u.test(route)) continue;
     assert.ok(!String(bytes).includes(NS_HASH),
@@ -226,9 +226,10 @@ test('a Level-0 graph.jsonld expands to every triple graph.nq carries', async ()
   }
 });
 
-test('the persistent context URL is derived from the vocabulary, never typed (AGSC-05-09)', () => {
-  assert.strictEqual(jsonldView.persistentContextUrl(turtle.ontologyVersion(VOCABULARY)),
+test('the persistent context URL names the context version, not the ontology version (AGSC-05-09)', () => {
+  assert.strictEqual(jsonldView.persistentContextUrl(),
     'https://w3id.org/agentic-system-core/ns/1.0.0/context.jsonld');
+  assert.strictEqual(jsonldView.CONTEXT_VERSION, '1.0.0');
   assert.strictEqual(turtle.ontologyVersion('<urn:x> a <urn:y> .\n'), null);
 });
 

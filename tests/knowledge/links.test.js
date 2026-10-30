@@ -299,3 +299,39 @@ test('view() derives the conventional path from type and slug (AGSC-01-03)', () 
   assert.strictEqual(links.view({ slug: 'a', type: 'episode' }).path, 'content/episodes/a.md');
   assert.strictEqual(links.view({ slug: 'a', type: 'nonsense' }).path, 'content/concepts/a.md');
 });
+
+// ---------------------------------------------------------------- AGSC-03-23…03-26 (warnings)
+
+const warnings = (items, code) => links.resolve(items).findings.filter((f) => f.code === code);
+const thing = (slug, extra = {}) => ({ slug, type: 'concept', kind: 'principle', ...extra });
+
+test('AGSC-03-23: a self-link is one warning per key, whatever the anchor or the repeats', () => {
+  const found = warnings([thing('a', { body: '# Top\n', related: ['a', 'a#top'], uses: ['a'] }), thing('b', { related: ['a'] })],
+    'AGSC-E313');
+  assert.deepStrictEqual(found.map((f) => f.key).sort(), ['related', 'uses']);
+  assert.ok(found.every((f) => f.severity === 'warn' && f.slug === 'a'));
+});
+
+test('AGSC-03-23: a self-requires is the cycle error only; the edge is still built', () => {
+  const result = links.resolve([thing('r', { requires: ['r'] })]);
+  assert.deepStrictEqual(result.findings.filter((f) => f.code === 'AGSC-E313'), []);
+  assert.ok(result.edges.some((e) => e.source === 'r' && e.key === 'requires' && e.target === 'r'));
+});
+
+test('AGSC-03-24: the pair is read after the symmetric keys run both ways, and is carried by the author of the first key', () => {
+  const found = warnings([thing('a', { requires: ['b'] }), thing('b', { excludes: ['a'] })], 'AGSC-E314');
+  assert.deepStrictEqual(found.map((f) => [f.slug, f.key]), [['a', 'requires']]);
+  assert.match(found[0].message, /"b"/u);
+  assert.deepStrictEqual(warnings([thing('a', { requires: ['a'], excludes: ['a'] })], 'AGSC-E314'), []);
+});
+
+test('AGSC-03-25: an unresolved target is not also judged; a missing kind on a concept target is a mismatch', () => {
+  assert.deepStrictEqual(warnings([thing('a', { 'decided-by': ['gone'] })], 'AGSC-E315'), []);
+  const noKind = warnings([thing('a', { 'decided-by': ['d'] }), { slug: 'd', type: 'concept' }], 'AGSC-E315');
+  assert.strictEqual(noKind.length, 1);
+});
+
+test('AGSC-03-26: a supersedes target with no authored status is stable and warns', () => {
+  assert.strictEqual(warnings([thing('n', { supersedes: ['o'] }), thing('o')], 'AGSC-E316').length, 1);
+  assert.deepStrictEqual(warnings([thing('n', { supersedes: ['o'] }), thing('o', { status: 'deprecated' })], 'AGSC-E316'), []);
+});

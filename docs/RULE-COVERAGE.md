@@ -11,7 +11,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 315 |
+| Unit, integration or architecture test | 319 |
 | Executed acceptance scenario | 75 |
 | Checker header | 33 |
 
@@ -51,7 +51,7 @@ Of those, 21 state a requirement with MUST, MUST NOT, REQUIRED or SHALL and name
 | AGSC-02-05 | `AGSC-E204`, `AGSC-E207` | `knowledge/validate.test.js` |
 | AGSC-02-07 | `AGSC-E501` | `governance/prov.test.js` |
 | AGSC-02-23 | `AGSC-E409` | `governance/lint-order.test.js`, `interchange/status.test.js`, `standard/item-links-composition-wording.test.js` |
-| AGSC-03-02 | `AGSC-E301` | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/links.test.js` +2 |
+| AGSC-03-02 | `AGSC-E301` | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/links.test.js` +3 |
 | AGSC-03-03 | `AGSC-E207`, `AGSC-E302`, `AGSC-E303` +2 | `knowledge/links.test.js` |
 | AGSC-03-09 | `AGSC-E301` | `standard/rules.test.js` |
 | AGSC-05-08 | `AGSC-E605` | `knowledge/nquads.test.js`, `validate-ontology` |
@@ -212,11 +212,11 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-97 | VERIFIED | yes | `compose-0014` | `composition/compose.test.js`, `knowledge/markdown.test.js` | — | — |
 | AGSC-02-98 | VERIFIED | yes | `lint-0020`, `lint-0024` | `distribution/html.test.js`, `distribution/surfaces-eng2.test.js`, `governance/lint-order.test.js` +4 | — | — |
 | AGSC-02-99 | VERIFIED | yes | `frontmatter-0031` | `e2e/modes/mode-2-project.test.js`, `governance/prov.test.js` | — | — |
-| AGSC-03-01 | VERIFIED | yes | — | `e2e/modes/mode-2-project.test.js`, `knowledge/links.test.js`, `standard/item-links-composition-wording.test.js` +1 | — | — |
-| AGSC-03-02 | VERIFIED | — | — | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/links.test.js` +2 | — | — |
+| AGSC-03-01 | VERIFIED | yes | — | `e2e/modes/mode-2-project.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` +2 | — | — |
+| AGSC-03-02 | VERIFIED | — | — | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/links.test.js` +3 | — | — |
 | AGSC-03-03 | VERIFIED | — | — | `knowledge/links.test.js` | — | — |
-| AGSC-03-04 | VERIFIED | yes | `links-0001`, `links-0003` | `acceptance/steps/persona-a.js`, `knowledge/links.test.js`, `knowledge/nquads.test.js` | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
-| AGSC-03-05 | VERIFIED | — | — | `knowledge/links.test.js` | — | — |
+| AGSC-03-04 | VERIFIED | yes | `links-0001`, `links-0003` | `acceptance/steps/persona-a.js`, `knowledge/links.test.js`, `knowledge/nquads.test.js` +1 | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
+| AGSC-03-05 | VERIFIED | — | — | `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
 | AGSC-03-06 | VERIFIED | — | — | `distribution/page-tools.test.js`, `knowledge/links.test.js` | — | — |
 | AGSC-03-07 | VERIFIED | yes | `links-0002` | `governance/lint-boards-gates.test.js`, `knowledge/links.test.js` | — | — |
 | AGSC-03-08 | VERIFIED | yes | `links-0005`, `links-0006`, `links-0008` | `knowledge/links.test.js`, `knowledge/validate.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
@@ -227,13 +227,13 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-03-13 | VERIFIED | yes | `links-0004` | `distribution/page-tools.test.js`, `knowledge/links.test.js`, `knowledge/markdown.test.js` | — | — |
 | AGSC-03-14 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-03-18 | VERIFIED | — | — | `standard/item-links-composition-wording.test.js`, `standard/rules.test.js` | — | — |
-| AGSC-03-19 | VERIFIED | yes | `imp-0010` | `standard/rules.test.js` | — | — |
-| AGSC-03-20 | VERIFIED | yes | — | `acceptance/steps/persona-g.js`, `standard/rules.test.js` | `persona-g-team.feature#Team authors Mode-2 Concepts without a new item type` | — |
+| AGSC-03-19 | VERIFIED | yes | `imp-0010` | `knowledge/relations.test.js`, `standard/rules.test.js` | — | — |
+| AGSC-03-20 | VERIFIED | yes | — | `acceptance/steps/persona-g.js`, `knowledge/relations.test.js`, `standard/rules.test.js` | `persona-g-team.feature#Team authors Mode-2 Concepts without a new item type` | — |
 | AGSC-03-21 | PROSE-ONLY | — | — | — | — | — |
-| AGSC-03-23 | VERIFIED | yes | `links-0010`, `links-0011` | — | — | — |
-| AGSC-03-24 | VERIFIED | yes | `links-0012`, `links-0013` | — | — | — |
-| AGSC-03-25 | VERIFIED | yes | `links-0014`, `links-0015` | — | — | — |
-| AGSC-03-26 | VERIFIED | yes | `links-0016`, `links-0017` | — | — | — |
+| AGSC-03-23 | VERIFIED | yes | `links-0010`, `links-0011` | `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
+| AGSC-03-24 | VERIFIED | yes | `links-0012`, `links-0013` | `knowledge/links.test.js` | — | — |
+| AGSC-03-25 | VERIFIED | yes | `links-0014`, `links-0015` | `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
+| AGSC-03-26 | VERIFIED | yes | `links-0016`, `links-0017` | `knowledge/links.test.js` | — | — |
 | AGSC-03-27 | VERIFIED | yes | `links-0018`, `links-0019` | — | — | — |
 | AGSC-04-01 | VERIFIED | yes | — | `application/cli/eng2-verbs.test.js`, `composition/skills.test.js`, `connectors/examples.test.js` +12 | — | — |
 | AGSC-04-02 | VERIFIED | yes | `build-0017` | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-i.js`, `application/cli/verbs-wired.test.js` +11 | `persona-b-contributor.feature#CI runs a lint-only review, no LLM call`, `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
@@ -277,7 +277,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-13 | VERIFIED | — | — | `tools/validate-ontology.test.js` | — | `validate-ontology` |
 | AGSC-05-14 | VERIFIED | yes | `graph-0023` | `boundary/visibility.test.js`, `knowledge/nquads.test.js` | — | — |
 | AGSC-05-15 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
-| AGSC-05-16 | VERIFIED | — | — | `composition/browser.test.js` | — | — |
+| AGSC-05-16 | VERIFIED | — | — | `composition/browser.test.js`, `knowledge/relations.test.js` | — | — |
 | AGSC-05-17 | VERIFIED | — | — | `knowledge/skos.test.js` | — | — |
 | AGSC-05-18 | VERIFIED | — | — | `knowledge/skos.test.js` | — | `validate-ontology` |
 | AGSC-05-19 | VERIFIED | yes | `graph-0022` | — | — | `validate-ontology` |

@@ -1403,11 +1403,13 @@ function buildSite(bundle, ports, options, findings) {
   // "is a constant of this specification, resolvable by every reader at every
   // Level". No `@context` below Level 2 would make a conforming processor silently
   // discard every compacted member.
+  // The URL and the versioned route name the CONTEXT version, a constant (AGSC-05-09);
+  // `ontologyVersion` only says that the vocabulary the context is built from was supplied.
   const ontologyVersion = options.ontologyVersion;
   let contextUrl;
   if (contextObject !== null) {
     if (full) contextUrl = discovery.href(base, '/ns/context.jsonld');
-    else if (ontologyVersion) contextUrl = jsonldView.persistentContextUrl(ontologyVersion);
+    else if (ontologyVersion) contextUrl = jsonldView.persistentContextUrl();
   }
   const graphView = {
     ...graphBase,
@@ -1430,9 +1432,9 @@ function buildSite(bundle, ports, options, findings) {
       // only `/ns/` routes a content node emits: the vocabulary documents
       // (`/ns/agsc.ttl`, `/ns/agsc.rdf`, the `/ns/` index) belong to the namespace
       // document site (AGSC-06-06), which is what the w3id negotiation resolves to.
-      if (ontologyVersion) put(`/ns/${ontologyVersion}/context.jsonld`, jsonBytes(contextObject));
+      if (ontologyVersion) put(`/ns/${jsonldView.CONTEXT_VERSION}/context.jsonld`, jsonBytes(contextObject));
       else {
-        skipped.push('/ns/<ontology-version>/context.jsonld (no ontology version was supplied,'
+        skipped.push('/ns/<context-version>/context.jsonld (no ontology version was supplied,'
           + ' so the versioned copy AGSC-05-09 requires cannot be named; AGSC-06-01)');
       }
     }

@@ -17,6 +17,8 @@
 // graph-0026 the Turtle profile, the whole file               AGSC-05-10
 // graph-0027 an export block is reserved: real lint and build  AGSC-02-22
 // graph-0028 graph.jsonld and the per-item files, whole        AGSC-05-09
+// graph-0029 the readings of the Link graph, each with reasons  AGSC-05-33
+// graph-0043 the context address is not the ontology version   AGSC-05-09
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
@@ -31,6 +33,8 @@ const turtle = require('../../../src/knowledge/turtle.js');
 const jsonldView = require('../../../src/knowledge/jsonld.js');
 const jcs = require('../../../src/knowledge/jcs.js');
 const linksModule = require('../../../src/knowledge/links.js');
+const derive = require('../../../src/knowledge/derive.js');
+const { RELATIONS } = require('../../../src/knowledge/relations.js');
 const fixture = require('../../knowledge/_graph-fixture.js');
 const { checks } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
@@ -324,6 +328,81 @@ function forbiddenCheck(forbidden, vector, options, nquads, text) {
   return [`forbidden ${forbidden}`, false, 'this handler does not implement that clause'];
 }
 
+/** The RDF property a reading's key is written with, or null (`derivation-of` has none, AGSC-05-23). */
+function propertyOfKey(key) {
+  if (nq.LINK_PROPERTIES[key]) return nq.LINK_PROPERTIES[key].property;
+  const owner = RELATIONS.find((r) => r.inverse === key);
+  return owner && nq.LINK_PROPERTIES[owner.key].inverse ? nq.LINK_PROPERTIES[owner.key].inverse : null;
+}
+
+/**
+ * graph-0029 — the readings of AGSC-05-33, computed from the edges and in order; and no
+ * transitive or closure reading is a triple of the dataset (they are never stored).
+ */
+function readingsCase(vector) {
+  const { items } = vector.input;
+  const got = derive.readings(linksModule.resolve(items).edges);
+  const list = [['readings', jcs.canonicalize(got) === jcs.canonicalize(vector.expected.readings),
+    `got ${jcs.canonicalize(got)}`]];
+  const options = optionsFor({ ...vector.input, base: 'https://a.example/' });
+  const lines = nq.toNQuads(items, options).split('\n');
+  const iri = (slug) => nq.itemIri(items.find((i) => i.slug === slug), options);
+  const stored = got.filter((r) => r.because[0].rule === 'transitive' || r.because[0].rule === 'closure')
+    .filter((r) => propertyOfKey(r.key) !== null
+      && lines.some((line) => line.startsWith(`<${iri(r.source)}> <${propertyOfKey(r.key)}> <${iri(r.target)}> `)));
+  list.push(['graph_files_unchanged', (stored.length === 0) === vector.expected.graph_files_unchanged,
+    `stored readings: ${JSON.stringify(stored.map((r) => [r.source, r.key, r.target]))}`]);
+  return checks(list);
+}
+
+/** One item as a Markdown file: the front matter is JSON-valued YAML, which the parser reads. */
+function itemFile(item) {
+  const { body, ...front } = item;
+  const lines = Object.entries(front).map(([key, value]) => `${key}: ${JSON.stringify(value)}`);
+  return `---\n${lines.join('\n')}\n---\n\n${body || 'A short body.'}\n`;
+}
+
+/**
+ * graph-0043 — the context address of `graph.jsonld` (AGSC-05-09): the same Bundle built at
+ * Level 0 twice, the vocabulary reporting one ontology version and then another, names the
+ * context version `1.0.0` both times and gives byte-identical documents.
+ */
+function contextAddressCase(vector, ctx) {
+  const os = require('node:os');
+  const { createFileSystem, readOntology, readSchemas } = require('../../../src/adapters/node-fs.js');
+  const { createClock } = require('../../../src/adapters/node-clock.js');
+  const { loadBundle } = require('../../../src/application/bundle.js');
+  const validate = require('../../../src/knowledge/validate.js');
+  const site = require('../../../src/distribution/site.js');
+  const root = (ctx && ctx.root) || '.';
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-graph-0043-'));
+  try {
+    const config = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'fixtures', 'minimal', 'agsc.config.json'), 'utf8'));
+    config.site.base = vector.input.site.base;
+    fs.writeFileSync(path.join(scratch, 'agsc.config.json'), JSON.stringify(config));
+    fs.mkdirSync(path.join(scratch, 'content', 'concepts'), { recursive: true });
+    for (const item of vector.input.items) {
+      fs.writeFileSync(path.join(scratch, 'content', 'concepts', `${item.slug}.md`), itemFile(item));
+    }
+    const port = createFileSystem(scratch);
+    const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(root)) });
+    const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+    const terms = turtle.ontologyTerms(readOntology(root));
+    const documents = vector.input.ontology_versions.map((ontologyVersion) => site.build(bundle,
+      { clock, fs: port }, { level: 0, ontologyTerms: terms, ontologyVersion, specVersion: '1.0.0', version: '0.0.2' })
+      .files.get('/graph.jsonld'));
+    const urls = documents.map((d) => JSON.parse(d)['@context']);
+    return checks([
+      ['context_url', urls.every((u) => u === vector.expected.context_url), JSON.stringify(urls)],
+      ['graph_jsonld_identical_across_ontology_versions',
+        documents.every((d) => d === documents[0]) === vector.expected.graph_jsonld_identical_across_ontology_versions,
+        'the documents differ across ontology versions'],
+    ]);
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
 /** graph-0021/0022/0023/0024 — the dataset of a set of items. */
 function itemsCase(vector) {
   const options = optionsFor(vector.input);
@@ -384,6 +463,8 @@ module.exports.run = guarded((vector, ctx) => {
   const expected = vector.expected || {};
   if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
+  if (Array.isArray(expected.readings)) return readingsCase(vector);
+  if (Array.isArray(input.ontology_versions)) return contextAddressCase(vector, ctx);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };
 });

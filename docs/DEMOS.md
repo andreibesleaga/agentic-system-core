@@ -472,7 +472,7 @@ sees a task's state and dependency, a gate's level and checks, and a decision's
 typed links without opening the graph.
 
 The fixture is the two-concept Bundle plus a `login` board: a decision, a
-specification that implements it, two tasks (one working, blocked by the other), a
+specification it settled (`decided-by`), two tasks (one working, blocked by the other), a
 procedure, and a gate at Level 2 with the five checks that level implies.
 
 `ci` writes the gate record and the forge files. `status-checks.json` keeps the gate's

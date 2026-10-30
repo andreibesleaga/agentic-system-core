@@ -19,7 +19,8 @@
 | `jcs.js` | canonical JSON (RFC 8785) with NFC first, and the I-JSON check |
 | `markdown.js` | the Markdown subset (CommonMark + GFM tables) and body references |
 | `relations.js` | the relation table of AGSC-03-01: the fourteen keys and their columns, read by every server-side copy |
-| `links.js` | the Link graph: resolution, inverses, cycles, orphans |
+| `links.js` | the Link graph: resolution, inverses, cycles, orphans, the warnings of AGSC-03-23 to 03-26 |
+| `derive.js` | the readings of the Link graph (inverse, symmetric, transitive, closure), each with its reasons |
 | `nquads.js` | the RDF dataset of a Bundle and its canonical N-Quads |
 | `turtle.js` | the stable Turtle view, and the Turtle this engine reads (the vocabulary) |
 | `jsonld.js` | the JSON-LD view and the context file |

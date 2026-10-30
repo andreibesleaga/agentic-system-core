@@ -171,9 +171,32 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   table by `tests/knowledge/relations.test.js`, and `composition/compose.js` reads `CORE_KEYS`
   from the table (I-006, I-007). No hash pin of a page script moves: `compose/agsc-core.js`,
   `agsc-compose.js` and `agsc-page-tools.js` are byte-identical to the tree before this change.
+- `lint` and `ci` report four new warnings from the relation table (I-009, I-010, I-015; new
+  warnings only, so a node that passed with no error still exits 0): `AGSC-E313` an item lists
+  itself under a key other than `requires`, `broader`, `narrower`, once per key (AGSC-03-23);
+  `AGSC-E314` a pair holds `requires` with `excludes`, `supersedes` or `contradicts`, or `uses`
+  with `excludes` (AGSC-03-24); `AGSC-E315` a target is not of the kind the key expects
+  (AGSC-03-25); `AGSC-E316` a `supersedes` target is still `stable` (AGSC-03-26). No output byte
+  of a build changes.
+- The Mode 2 guide, `examples/demos/mode-2-project` and `docs/DEMOS.md` state that a
+  specification is `decided-by` its decision, not `implements` it: a decision is not the kind of
+  target `implements` expects, and the new `AGSC-E315` flagged the old text (AGSC-03-25). The
+  example's graph, chunks, linkset, `now` and the pages of `login-spec` and `decide-the-login`
+  change as a result; no other example moves.
+- Overlapping labels (`AGSC-E416`) compare the `title` and the `aliases` of two published items
+  of one type, not the titles alone; a node whose items overlap only by alias gains warnings
+  (AGSC-05-21; `lint-0045`).
+- `graph.jsonld` names the context version `1.0.0` (`jsonld.js#CONTEXT_VERSION`), never the
+  ontology version, and a Level 2 build serves the versioned copy at `/ns/1.0.0/context.jsonld`;
+  the ontology is `1.0.0` today, so no byte moves, and raising it to `1.1.0` will not move any
+  `graph.jsonld` (AGSC-05-09; `graph-0043`). `persistentContextUrl()` takes no argument.
 
 ### Added
 
+- `src/knowledge/derive.js` (AGSC-05-33, I-015 checker side): `readings(edges)` gives the inverse,
+  symmetric, transitive and closure readings of the Link graph, each with its `because` steps
+  `{rule, from}`, in code-point order, computed and never written to a graph file. The CLI surface
+  that prints them is a later package.
 - The REUSE layout (I-042): `REUSE.toml` and `LICENSES/` (`Apache-2.0`, `CC0-1.0`, `CC-BY-4.0`) at
   the root, one annotation per licence area of the README table; both ship in the package.
   `reuse lint` reports REUSE 3.3 compliance. No source file, vector or built output changes.

@@ -7,7 +7,7 @@ clusters:
 prov:
   origin: human
   operator: human:operator
-implements:
+decided-by:
   - decide-the-login
 kind: spec
 ---
