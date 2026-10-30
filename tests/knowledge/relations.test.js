@@ -17,6 +17,9 @@ const visibility = require('../../src/boundary/visibility.js');
 const federation = require('../../src/boundary/federation.js');
 const pageTools = require('../../src/distribution/page-tools.js');
 const okf = require('../../src/interchange/okf.js');
+const compose = require('../../src/composition/compose.js');
+const harness = require('../../src/composition/harness.js');
+const browser = require('../../src/composition/browser.js');
 
 // The 1.0.1 lists, typed out once so a change to the table cannot move them silently.
 const KEYS_1_0_1 = ['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
@@ -80,6 +83,24 @@ test('AGSC-05-16: the RDF property of each key and of its inverse is that of 1.0
 test('AGSC-03-01: the page-script copies of keys and inverses equal the table', () => {
   assert.deepStrictEqual(pageTools.pageLinkKeys(), KEYS_1_0_1);
   assert.deepStrictEqual(pageTools.pageInverseKeys(), INVERSES_1_0_1);
+});
+
+// B04-WP1b. The functions a page runs are emitted as their own source text and must stay
+// self-contained (tests/arch/*-portable.test.js), so their literals cannot read the table
+// at run time. They are kept byte for byte (the hash pins of the page scripts do not move)
+// and these tests make the table the judge: any drift between a literal and the table fails.
+const localName = (curie) => curie.split(':')[1];
+
+test('AGSC-03-01: the page-script copies of keys, inverses and RDF properties equal the table', () => {
+  assert.deepStrictEqual(harness.linkKeys(), [...relations.LINK_KEYS]);
+  assert.deepStrictEqual(pageTools.pageLinkKeys(), [...relations.LINK_KEYS]);
+  assert.deepStrictEqual(pageTools.pageInverseKeys(), { ...relations.INVERSE });
+  const predicates = Object.fromEntries(relations.RELATIONS.map((r) => [localName(r.property), r.key]));
+  assert.deepStrictEqual(browser.graphPredicates(), predicates);
+});
+
+test('AGSC-03-01: composition reads the core keys from the table, not from a copy', () => {
+  assert.strictEqual(compose.CORE_KEYS, relations.CORE_KEYS);
 });
 
 test('AGSC-03-01: the frozen table of the specification and relations.js agree cell by cell', () => {

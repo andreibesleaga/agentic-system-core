@@ -165,8 +165,12 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   kinds, plain meaning; I-006, I-007, I-001). `links.js`, `chunks.js`, `nquads.js`,
   `boundary/visibility.js` and `boundary/federation.js` read it instead of keeping their own
   copies. Pure refactor under AGSC-03-01 and AGSC-05-16: no output byte changes (the fixture and
-  the four example Bundles rebuild byte-identical). The page-script copies follow in a later
-  package.
+  the four example Bundles rebuild byte-identical). The page-script copies (`pageLinkKeys`,
+  `pageInverseKeys`, `linkKeys`, `graphPredicates`) must stay literal, because they are emitted
+  as their own source text and have to be self-contained; they are now checked against the
+  table by `tests/knowledge/relations.test.js`, and `composition/compose.js` reads `CORE_KEYS`
+  from the table (I-006, I-007). No hash pin of a page script moves: `compose/agsc-core.js`,
+  `agsc-compose.js` and `agsc-page-tools.js` are byte-identical to the tree before this change.
 
 ### Added
 
