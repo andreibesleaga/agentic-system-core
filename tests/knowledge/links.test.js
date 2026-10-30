@@ -318,6 +318,13 @@ test('AGSC-03-23: a self-requires is the cycle error only; the edge is still bui
   assert.ok(result.edges.some((e) => e.source === 'r' && e.key === 'requires' && e.target === 'r'));
 });
 
+test('AGSC-03-23, 03-25, 03-26: a self-link is also judged for the kind and the status of its target', () => {
+  const codes = (key) => links.resolve([thing('a', { [key]: ['a'] })]).findings.map((f) => f.code).sort();
+  assert.deepStrictEqual(codes('decided-by'), ['AGSC-E313', 'AGSC-E315']);
+  assert.deepStrictEqual(codes('supersedes'), ['AGSC-E313', 'AGSC-E316']);
+  assert.deepStrictEqual(codes('related'), ['AGSC-E313']);
+});
+
 test('AGSC-03-24: the pair is read after the symmetric keys run both ways, and is carried by the author of the first key', () => {
   const found = warnings([thing('a', { requires: ['b'] }), thing('b', { excludes: ['a'] })], 'AGSC-E314');
   assert.deepStrictEqual(found.map((f) => [f.slug, f.key]), [['a', 'requires']]);

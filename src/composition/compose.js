@@ -20,9 +20,9 @@
 
 const crypto = require('node:crypto');
 const jcs = require('../knowledge/jcs.js');
+// AGSC-03-01: the nine core Link keys that carry composition semantics come from the table.
 const { CORE_KEYS } = require('../knowledge/relations.js');
 
-/** AGSC-03-01: the nine core Link keys that carry composition semantics, from the table. */
 /** AGSC-07-10: these five never affect any step. */
 const INERT_KEYS = Object.freeze(['related', 'broader', 'narrower', 'derived-from', 'mentions']);
 

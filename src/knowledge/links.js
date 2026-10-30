@@ -295,7 +295,6 @@ function warnAboutLink({ owner, key, target }, seen, findings) {
     if (ROW[key].selfLink === 'warning') {
       findings.push(finding('AGSC-E313', `"${owner.slug}" lists itself under "${key}" (AGSC-03-23)`, where));
     }
-    return;
   }
   if (!matchesExpected(ROW[key].targets, owner, target)) {
     findings.push(finding('AGSC-E315',

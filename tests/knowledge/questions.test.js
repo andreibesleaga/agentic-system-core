@@ -56,6 +56,20 @@ describe('AGSC-05-34 — the ten questions', () => {
     assert.deepEqual(questions.missingPorts(items, 'x', ['p', 'ghost']), []);
   });
 
+  it('question 9: stale compares instants, not text (a date is its midnight in UTC, an offset counts)', () => {
+    const stale = (stale_after, at) => questions.unhealthy([item('a', { stale_after })], ['a'], at).length === 1;
+    assert.equal(stale('2026-06-01', '2026-06-01T00:00:00Z'), false);
+    assert.equal(stale('2026-06-01', '2026-06-01T00:00:01Z'), true);
+    assert.equal(stale('2026-06-01T10:00:00+05:00', '2026-06-01T06:00:00Z'), true);
+  });
+
+  it('a source entry without a resource, and a missing selection, are tolerated', () => {
+    assert.deepEqual(questions.sourcesAndSharers([item('a', { sources: [null, {}, { resource: 'r' }] })], 'a'),
+      { shared: [], sources: ['r'] });
+    assert.deepEqual(questions.unhealthy([item('a', { status: 'draft' })], undefined, '2026-01-01T00:00:00Z'), []);
+    assert.deepEqual(questions.missingPorts([item('x', { consumes: ['k'] })], 'x'), ['k']);
+  });
+
   it('question 9: reasons keep their fixed order and an item with none is left out; the instant is a comparison only', () => {
     const items = [item('a', { status: 'draft', stale_after: '2026-01-01T00:00:00Z' }), item('b'),
       item('c', { stale_after: '2026-12-01T00:00:00Z' })];

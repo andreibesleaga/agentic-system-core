@@ -162,7 +162,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (I-129).
 - The relation table of AGSC-03-01 lives in one file, `src/knowledge/relations.js` (key,
   inverse, symmetric, RDF property, combiner, transitive reading, self-link, expected target
-  kinds, plain meaning; I-006, I-007, I-001). `links.js`, `chunks.js`, `nquads.js`,
+  kinds, plain meaning; I-006, I-007; the `meaning` column is read by the engine from B04-WP2 and B6/B7 on). `interchange/okf.js` (foreign spellings to keys) and `governance/boards.js` (task fields) were examined and stay: neither is a copy of the table. `links.js`, `chunks.js`, `nquads.js`,
   `boundary/visibility.js` and `boundary/federation.js` read it instead of keeping their own
   copies. Pure refactor under AGSC-03-01 and AGSC-05-16: no output byte changes (the fixture and
   the four example Bundles rebuild byte-identical). The page-script copies (`pageLinkKeys`,
@@ -176,8 +176,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   itself under a key other than `requires`, `broader`, `narrower`, once per key (AGSC-03-23);
   `AGSC-E314` a pair holds `requires` with `excludes`, `supersedes` or `contradicts`, or `uses`
   with `excludes` (AGSC-03-24); `AGSC-E315` a target is not of the kind the key expects
-  (AGSC-03-25); `AGSC-E316` a `supersedes` target is still `stable` (AGSC-03-26). No output byte
-  of a build changes.
+  (AGSC-03-25); `AGSC-E316` a `supersedes` target is still `stable` (AGSC-03-26). A self-link is
+  also judged for E315 and E316. No output byte of a build changes.
+- `src/knowledge/questions.js` (AGSC-05-34, AGSC-02-11): question 9 compares `stale_after` and the
+  instant as instants (a date is its midnight in UTC; an offset counts), not as text; a `sources`
+  entry without a resource and a missing selection are tolerated. No output byte changes.
 - The Mode 2 guide, `examples/demos/mode-2-project` and `docs/DEMOS.md` state that a
   specification is `decided-by` its decision, not `implements` it: a decision is not the kind of
   target `implements` expects, and the new `AGSC-E315` flagged the old text (AGSC-03-25). The

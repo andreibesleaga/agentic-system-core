@@ -20,7 +20,7 @@ const importX = require('eslint-plugin-import-x');
 /** The extension-less command files, named one by one (a `dir/*` pattern would not match them). */
 const COMMANDS = [
   'bin/agentic-system-core',
-  'tools/bench', 'tools/count-artifacts', 'tools/gen-glossary', 'tools/gen-ns', 'tools/gen-spec-html',
+  'tools/bench', 'tools/count-artifacts', 'tools/gen-glossary', 'tools/gen-ns', 'tools/gen-ontology-questions', 'tools/gen-spec-html',
   'tools/lint-claims', 'tools/public-hygiene', 'tools/publish-set', 'tools/release', 'tools/requirements-matrix', 'tools/rule-coverage',
   'tools/validate-diagrams', 'tools/validate-features', 'tools/validate-ontology',
   'tools/validate-schemas', 'tools/validate-spec', 'tools/validate-vectors', 'tools/validate-wellknown',

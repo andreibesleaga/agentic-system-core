@@ -91,10 +91,8 @@ test('AGSC-03-01: the page-script copies of keys and inverses equal the table', 
 // and these tests make the table the judge: any drift between a literal and the table fails.
 const localName = (curie) => curie.split(':')[1];
 
-test('AGSC-03-01: the page-script copies of keys, inverses and RDF properties equal the table', () => {
+test('AGSC-03-01: the page-script copies of link keys and RDF properties of harness and browser equal the table', () => {
   assert.deepStrictEqual(harness.linkKeys(), [...relations.LINK_KEYS]);
-  assert.deepStrictEqual(pageTools.pageLinkKeys(), [...relations.LINK_KEYS]);
-  assert.deepStrictEqual(pageTools.pageInverseKeys(), { ...relations.INVERSE });
   const predicates = Object.fromEntries(relations.RELATIONS.map((r) => [localName(r.property), r.key]));
   assert.deepStrictEqual(browser.graphPredicates(), predicates);
 });
@@ -102,6 +100,17 @@ test('AGSC-03-01: the page-script copies of keys, inverses and RDF properties eq
 test('AGSC-03-01: composition reads the core keys from the table, not from a copy', () => {
   assert.strictEqual(compose.CORE_KEYS, relations.CORE_KEYS);
 });
+
+// The Expected target kinds cell (AGSC-03-25) written out the way the specification words it.
+const kindList = (kinds) => (kinds.length === 1 ? kinds[0] : `${kinds.slice(0, -1).join(', ')} or ${kinds[kinds.length - 1]}`);
+const oneTarget = (t) => (t.kinds ? `a concept of kind ${kindList(t.kinds)}` : `a ${t.type}`);
+function describeTargets(t) {
+  if (t.lessonTarget) return 'any; for a lesson, an episode';
+  if (t.any) return 'any';
+  if (t.sameFamily) return 'same family';
+  if (t.sameType) return 'same type';
+  return t.oneOf ? t.oneOf.map(oneTarget).join(', ').replace(/, ([^,]+)$/u, ' or $1') : oneTarget(t);
+}
 
 test('AGSC-03-01: the frozen table of the specification and relations.js agree cell by cell', () => {
   const text = fs.readFileSync(path.join(__dirname, '../../spec/03-links.md'), 'utf8');
@@ -116,6 +125,7 @@ test('AGSC-03-01: the frozen table of the specification and relations.js agree c
     assert.strictEqual(r.symmetric, c[2] === 'yes');
     assert.strictEqual(r.transitive, c[6] === 'yes', `${r.key} transitive`);
     assert.strictEqual(r.meaning, c[9], `${r.key} meaning`);
+    assert.strictEqual(describeTargets(r.targets), cell(c[8]), `${r.key} expected target kinds`);
     assert.strictEqual(r.selfLink, c[7].split(' ')[0], `${r.key} self-link`);
     assert.ok(cell(c[3]).startsWith(r.property), `${r.key} RDF property`);
     assert.ok(r.combiner in COMBINER_CELL && c[4].startsWith(COMBINER_CELL[r.combiner]), `${r.key} combiner`);
@@ -159,6 +169,9 @@ test('AGSC-03-01: no server-side file but relations.js retypes the fourteen keys
     assert.ok(/require\('(\.\/|\.\.\/knowledge\/)relations\.js'\)/u.test(source), `${file} does not read relations.js`);
     for (const word of ['decided-by', 'implemented-by', 'derivation-of', 'skos#related']) {
       assert.ok(!source.includes(`'${word}'`), `${file} retypes '${word}'`);
+    }
+    for (const built of ['${SKOS}broader', '${SKOS}related', '${NS}blockedBy', '${NS}decidedBy']) {
+      assert.ok(!source.includes(`\`${built}\``), `${file} retypes \`${built}\``);
     }
   }
 });

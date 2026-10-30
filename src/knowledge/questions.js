@@ -18,6 +18,27 @@ const listOf = (item, key) => {
   return Array.isArray(value) ? value : [];
 };
 const typeOf = (item) => (item.type != null ? item.type : frontmatter(item).type);
+
+const INSTANT = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:?\d{2})?)?$/u;
+
+/** Days since 1970-01-01 of a proleptic Gregorian date (no clock, no Date: this context is pure). */
+function daysFromCivil(year, month, day) {
+  const y = month <= 2 ? year - 1 : year;
+  const era = Math.floor(y / 400);
+  const yoe = y - era * 400;
+  const doy = Math.floor((153 * (month + (month > 2 ? -3 : 9)) + 2) / 5) + day - 1;
+  return era * 146097 + yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy - 719468;
+}
+
+/** Milliseconds since the epoch of an ISO date or date-time (a date is its midnight, UTC), or NaN. */
+function instantOf(value) {
+  const m = INSTANT.exec(String(value));
+  if (m === null) return NaN;
+  const [year, month, day, hour, minute, second] = m.slice(1, 7).map((v) => Number(v || 0));
+  const offset = m[8] && m[8] !== 'Z' ? (m[8][0] === '-' ? -1 : 1) * (Number(m[8].slice(1, 3)) * 60 + Number(m[8].slice(-2))) : 0;
+  const fraction = m[7] ? Number(`0.${m[7]}`) * 1000 : 0;
+  return ((daysFromCivil(year, month, day) * 24 + hour) * 60 + minute - offset) * 60000 + second * 1000 + fraction;
+}
 const slugOf = (item) => (item.slug != null ? item.slug : frontmatter(item).slug);
 
 /** The targets of the edges of one key, from `source`: authored and computed alike. */
@@ -58,7 +79,7 @@ const neverWith = (items, subject) =>
 const replacedBy = (items, subject) => reachedBy(items, subject, 'superseded-by');
 
 /** 4. What does X need that nobody in my selection provides? (AGSC-07-23: X provides its own.) */
-function missingPorts(items, subject, selection) {
+function missingPorts(items, subject, selection = []) {
   const provided = new Set();
   for (const item of items.filter((i) => [subject, ...selection].includes(slugOf(i)))) {
     for (const name of listOf(item, 'produces')) provided.add(name);
@@ -99,12 +120,20 @@ function underCluster(items, subject) {
   };
 }
 
+/** AGSC-02-11: stale means `stale_after` is earlier than the instant; both are read as instants (a date is its midnight, UTC). */
+function isStale(staleAfter, at) {
+  if (staleAfter == null) return false;
+  const a = instantOf(staleAfter);
+  const b = instantOf(at);
+  return Number.isNaN(a) || Number.isNaN(b) ? String(staleAfter) < String(at) : a < b;
+}
+
 /** 9. Which of my selected items are stale, draft or deprecated? Stale is a comparison (AGSC-02-11). */
-function unhealthy(items, selection, at) {
+function unhealthy(items, selection = [], at) {
   const bySlug = new Map(items.map((i) => [slugOf(i), frontmatter(i)]));
   const reasonsOf = (fm) => ['deprecated', 'draft', 'retired']
     .filter((status) => fm.status === status)
-    .concat(fm.stale_after != null && String(fm.stale_after) < String(at) ? ['stale'] : []);
+    .concat(isStale(fm.stale_after, at) ? ['stale'] : []);
   return sorted(selection).filter((slug) => bySlug.has(slug))
     .map((slug) => ({ reasons: reasonsOf(bySlug.get(slug)), slug }))
     .filter((entry) => entry.reasons.length > 0);
@@ -112,7 +141,7 @@ function unhealthy(items, selection, at) {
 
 /** 10. Which sources back X, and which other items share them? */
 function sourcesAndSharers(items, subject) {
-  const resourcesOf = (item) => listOf(item, 'sources').map((s) => s.resource);
+  const resourcesOf = (item) => listOf(item, 'sources').map((s) => (s && s.resource)).filter((r) => typeof r === 'string');
   const subjectItem = items.find((i) => slugOf(i) === subject);
   const sources = sorted(subjectItem ? resourcesOf(subjectItem) : []);
   const others = items.filter((i) => slugOf(i) !== subject);
