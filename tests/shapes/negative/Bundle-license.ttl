@@ -1,0 +1,6 @@
+# Bundle-license: two licences on the Bundle.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix schema: <https://schema.org/> .
+
+ex:a a asc:Bundle ; schema:license "one" , "two" .

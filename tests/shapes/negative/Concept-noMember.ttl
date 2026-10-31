@@ -1,0 +1,7 @@
+# Concept-noMember: a concept that has a member.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ex:a a asc:Concept ; skos:member ex:b .
+ex:b a asc:Concept .

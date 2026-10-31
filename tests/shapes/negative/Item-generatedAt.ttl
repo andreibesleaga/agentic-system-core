@@ -1,0 +1,5 @@
+# Item-generatedAt: a generation time that is a plain string.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept ; asc:generatedAt "now" .

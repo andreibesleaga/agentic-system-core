@@ -1,0 +1,5 @@
+# Bundle-specVersion: two specification versions.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Bundle ; asc:specVersion "1.0.0" , "1.1.0" .

@@ -1,0 +1,5 @@
+# Definition-required: a concept with no definition (warning).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept .

@@ -1,0 +1,5 @@
+# Gate-level: a gate whose level is outside the closed list.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:g a asc:Gate ; asc:level "L3" .

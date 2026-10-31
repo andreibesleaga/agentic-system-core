@@ -459,6 +459,7 @@ conformance claim names which it ran.
 | `gen-spec-html` | renders `spec/` to HTML; `--check <dir>` compares a published tree byte for byte | AGSC-09-90 |
 | `gen-ns` | derives `/ns/` from the ontology; `--check <dir>` audits a built one | AGSC-06-32 |
 | `gen-dc-profile` | writes `schema/dctap.csv`, the Dublin Core Tabular Application Profile of the property table; `--check` says whether it is current | AGSC-05-26 |
+| `gen-shapes` | writes `schema/item-shapes.ttl`, the SHACL shapes of the graph, from the item schema, the relation table and the SKOS rules; `--check` says whether it is current | AGSC-05-24 |
 
 Each answers `--json` with the AGSC-09-11 envelope, `verb` set to its own name, and
 exits 0 pass / 1 fail / 2 usage. So the check you actually run against your own

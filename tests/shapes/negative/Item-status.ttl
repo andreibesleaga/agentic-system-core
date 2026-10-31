@@ -1,0 +1,5 @@
+# Item-status: a status outside the closed list.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept ; asc:status "published" .

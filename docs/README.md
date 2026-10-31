@@ -41,6 +41,7 @@ kind of reader down one path.
 | [SECURITY-CONSIDERATIONS.md](SECURITY-CONSIDERATIONS.md) | threats and the rules that close them |
 | [COMPLIANCE-CROSSWALK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/COMPLIANCE-CROSSWALK.md) | outside frameworks mapped to the rules (not legal advice) |
 | [RELATED-WORK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RELATED-WORK.md) | how this relates to other systems, with dates |
+| [SHACL-SHAPES.md](SHACL-SHAPES.md) | the SHACL shapes of the graph: what they check, how to run them in the development lane, and what that lane has run |
 | [TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md) | the test levels and how to run them |
 | [RULE-COVERAGE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RULE-COVERAGE.md) | for every rule, the checks that verify it (generated) |
 | [REQUIREMENTS-MATRIX.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/REQUIREMENTS-MATRIX.md) | for every requirement of the PRD, the rules that trace to it and the checks behind them (generated) |
@@ -55,6 +56,7 @@ edited by hand; the command that writes each is named at its top.
 ```bash
 node tools/gen-glossary --check     # the glossary is current
 node tools/gen-ontology-questions --check  # the ten questions page is current
+node tools/gen-shapes --check       # the SHACL shapes are current
 node tools/rule-coverage --check    # the coverage page is current
 node tools/requirements-matrix --check  # the requirements page is current
 ```

@@ -187,7 +187,7 @@ graph TB
 | interchange | `import.js` `okf.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in | — | import |
 | interchange | `export.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
-| *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
+| *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile`, `tools/gen-shapes` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
 
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
@@ -205,6 +205,7 @@ graph TB
 | `tools/gen-spec-html` | renders `spec/` into `/specs/` deterministically with an anchor on every rule; `--check` compares a published tree | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/gen-ns` | derives `/ns/context.jsonld`, `/ns/agsc.rdf` and the `/ns/` index from the ontology, round-trips the RDF/XML; `--check` audits a built `/ns/` | AGSC-09-90, AGSC-06-32 | ships; pass |
 | `tools/gen-dc-profile` | writes `schema/dctap.csv`, the Dublin Core Tabular Application Profile of the AGSC-05-26 table, from `schema/item.schema.json`; `--check` fails when the file is stale (1.1) | AGSC-09-90, AGSC-05-26 | ships; pass |
+| `tools/gen-shapes` | writes `schema/item-shapes.ttl`, the SHACL shapes of the graph, from `schema/item.schema.json`, the relation table and the SKOS integrity rules; `--check` fails when the file is stale; the shapes run in a development lane ([SHACL-SHAPES.md](SHACL-SHAPES.md)) (1.1) | AGSC-09-90, AGSC-05-24 | ships; pass |
 
 Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/agsc.js` is the only place adapters are wired.
 

@@ -1,0 +1,7 @@
+# Link-supersedes-target: a concept that supersedes a lesson (AGSC-E315).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept ; dcterms:replaces ex:l .
+ex:l a asc:Lesson .

@@ -25,10 +25,6 @@
       "reason": "person",
       "why": "It forbids an implementer to claim to be a JSON-LD processor, an RDF parser or a SHACL engine; a claim is a statement by a person."
     },
-    "AGSC-05-24": {
-      "reason": "deferred",
-      "why": "The SHACL lane is a 1.1 item (AGSC-00-20) whose generator, tools/gen-shapes, is not written yet; until it is, no shapes are generated and the rule only binds whoever builds that lane. Remove this entry when a test of the lane names the rule."
-    },
     "AGSC-08-19": {
       "reason": "person",
       "why": "It forbids claiming more than the lints and hashes prove; a claim is a statement by a person."

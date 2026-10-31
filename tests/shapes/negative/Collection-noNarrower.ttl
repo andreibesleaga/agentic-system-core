@@ -1,0 +1,7 @@
+# Collection-noNarrower: a cluster with skos:narrower.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ex:c a asc:Cluster ; skos:narrower ex:d .
+ex:d a asc:Cluster .

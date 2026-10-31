@@ -207,6 +207,19 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (it reads N-Quads with the pinned `n3`) and `turtle.serialize` takes an optional prefix table; the
   four graph files and every other output keep their bytes. A build with no `graph.nq` (Level 0) gives
   `AGSC-E001` and no file.
+- `tools/gen-shapes` and `schema/item-shapes.ttl` (AGSC-05-24, AGSC-03-25, AGSC-03-23, AGSC-05-17 to
+  AGSC-05-21, AGSC-09-90, I-016): SHACL 1.0 shapes of the RDF graph (`graph.nq`, `graph.ttl`, `skos.ttl`),
+  generated from `schema/item.schema.json` and the table of AGSC-05-26 (datatype, one value, the closed
+  lists, the keys a type requires), from the relation table of AGSC-03-01 (the Expected target kinds
+  column as a warning, the Self-link column as a warning or a cycle error) and from the SKOS integrity
+  rules; informative, never run at build, so no dependency is added and `npm audit` is unchanged. The
+  shapes run in a development lane with pySHACL 0.40.2 in a scratch environment
+  (`tests/tools/gen-shapes-lane.test.js`, skipped without `AGSC_SHACL_PYTHON`): 0 violations over the
+  three views of six Bundles, and one negative graph for each of the 49 shapes that can report
+  (`tests/shapes/negative/`). The tool ships, imports nothing from `src/`, and shares the table readers
+  and the command line with `tools/gen-dc-profile`. `docs/SHACL-SHAPES.md` is the one page that says
+  what the lane has run. The file is `schema/item-shapes.ttl` as AGSC-05-24 says, not
+  `docs/shapes/agsc-shapes.ttl` as the work plan had it.
 - `tools/gen-dc-profile` and `schema/dctap.csv` (AGSC-05-26, AGSC-09-90, I-019): the Dublin Core
   Tabular Application Profile of the AGSC-05-26 table, generated from that table and
   `schema/item.schema.json` (a closed list of the schema is a picklist); `--check` fails when the file

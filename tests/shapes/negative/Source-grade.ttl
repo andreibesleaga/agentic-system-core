@@ -1,0 +1,5 @@
+# Source-grade: a source grade outside the closed list.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:s a asc:Source ; asc:grade "quaternary" .

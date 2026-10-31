@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14
+// verifies AGSC-05-24, AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14
 // Steps of features/persona-j-standards.feature that run offline. The build
 // output stands in for the published site: what an implementer would fetch from
 // the node is read from `www/`, and the shipped validator is run in its
@@ -22,7 +22,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
+const N3 = require('n3');
+
 const { ROOT, built, linkset } = require('./_world.js');
+
+const shapeTool = require(path.join(ROOT, 'tools', 'gen-shapes'));
 
 const REL = 'https://w3id.org/agentic-system-core/rel#';
 const BASE = 'https://agenticsystemcore.com/';
@@ -453,6 +457,46 @@ module.exports = [
       assert.strictEqual(envelope.schema, 'agsc.diagnostics.v1');
       assert.strictEqual(envelope.verb, 'validate-wellknown');
       assert.strictEqual(envelope.status, 'pass');
+    },
+  },
+  {
+    pattern: 'the implementer runs "the shipped gen-shapes tool with --check"',
+    run(world) {
+      if (!world.dir) world.bundle();
+      world.state.shapes = world.tool('gen-shapes', ['--check', '--json']);
+    },
+  },
+  {
+    pattern: 'it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "gen-shapes"',
+    run(world) {
+      const { exit, stdout, stderr } = world.state.shapes;
+      assert.strictEqual(exit, 0, stdout + stderr);
+      const envelope = JSON.parse(stdout);
+      assert.strictEqual(envelope.schema, 'agsc.diagnostics.v1');
+      assert.strictEqual(envelope.verb, 'gen-shapes');
+      assert.strictEqual(envelope.status, 'pass');
+    },
+  },
+  {
+    pattern: '"schema/item-shapes.ttl" is Turtle with one warning shape for each Link key that names a kind of target, and a self-link warning',
+    run() {
+      const SH = 'http://www.w3.org/ns/shacl#';
+      const shapes = 'https://w3id.org/agentic-system-core/shapes#';
+      const store = new N3.Store(new N3.Parser().parse(fs.readFileSync(path.join(ROOT, 'schema', 'item-shapes.ttl'), 'utf8')));
+      const warning = (name) => store.getObjects(`${shapes}${name}`, `${SH}severity`, null).some((o) => o.value === `${SH}Warning`);
+      const table = shapeTool.relationRows(fs.readFileSync(path.join(ROOT, 'spec', '03-links.md'), 'utf8'));
+      const restricted = table.filter((row) => !row.targets.any || row.targets.lessonTarget);
+      assert.ok(restricted.length > 0, 'the relation table names no kind of target');
+      for (const row of restricted) assert.ok(warning(`Link-${row.key}-target`), `${row.key} has no warning shape`);
+      assert.ok(warning('SelfLinkShape'), 'no self-link warning');
+    },
+  },
+  {
+    pattern: 'the package declares no SHACL library, because the shapes run in a development lane and never at build',
+    run() {
+      const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+      const declared = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies, ...manifest.optionalDependencies });
+      assert.deepStrictEqual(declared.filter((name) => /shacl/iu.test(name)), []);
     },
   },
   {

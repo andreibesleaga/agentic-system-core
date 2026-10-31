@@ -43,4 +43,4 @@ exactly one format, `AGSC-E<nnn>` (spec/09 §9.4).
 
 Trace: PRD-004, PRD-005, PRD-020, NFR-04 · PLAN.md §6(a), ADR-006.
 
-The build discovers items under `content/`; step 3 uses the JSON Schema library the engine pins; step 6 generates no shapes (no SHACL is generated at 1.x, AGSC-05-23).
+The build discovers items under `content/`; step 3 uses the JSON Schema library the engine pins; step 6 generates no shapes (the build runs no reasoner and no SHACL engine, AGSC-05-23; `tools/gen-shapes` writes the informative shapes, AGSC-05-24).

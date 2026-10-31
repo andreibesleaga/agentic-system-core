@@ -157,7 +157,7 @@ function generate(table, schema) {
 
 const finding = (code, file, message) => ({ code, col: 1, file, line: 1, message, severity: 'error' });
 
-function envelopeOf(findings, root) {
+function envelopeOf(verb, findings, root) {
   const read = (file, pick) => { try { return pick(fs.readFileSync(path.join(root, file), 'utf8')); } catch { return null; } };
   return {
     counts: { error: findings.length, warn: 0 },
@@ -165,22 +165,24 @@ function envelopeOf(findings, root) {
     schema: 'agsc.diagnostics.v1',
     spec_version: read('spec/00-overview.md', (t) => (t.match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0]) || 'unknown',
     status: findings.length === 0 ? 'pass' : 'fail',
-    verb: 'gen-dc-profile',
+    verb,
     version: read('package.json', (t) => JSON.parse(t).version) || '0.0.0',
   };
+}
+
+/** Read one input file, or add the AGSC-E901 finding that says it is missing. */
+function readInput(root, file, findings, what) {
+  try { return fs.readFileSync(path.join(root, file), 'utf8'); } catch {
+    findings.push(finding('AGSC-E901', file, `${file} is missing: there is nothing to generate ${what} from (AGSC-09-90)`));
+    return null;
+  }
 }
 
 /** Read both inputs, or say which one is missing or unreadable. */
 function readInputs(root) {
   const findings = [];
-  const read = (file) => {
-    try { return fs.readFileSync(path.join(root, file), 'utf8'); } catch {
-      findings.push(finding('AGSC-E901', file, `${file} is missing: there is nothing to generate the profile from (AGSC-09-90)`));
-      return null;
-    }
-  };
-  const schemaText = read(SCHEMA);
-  const specText = read(SPEC);
+  const schemaText = readInput(root, SCHEMA, findings, 'the profile');
+  const specText = readInput(root, SPEC, findings, 'the profile');
   let schema = null;
   if (schemaText !== null) {
     try { schema = JSON.parse(schemaText); } catch (e) { findings.push(finding('AGSC-E201', SCHEMA, `not JSON: ${e.message}`)); }
@@ -196,16 +198,47 @@ function readInputs(root) {
 function apply(root, check) {
   const inputs = readInputs(root);
   if (inputs.findings.length > 0) return { count: 0, findings: inputs.findings };
-  const made = generate(inputs.table, inputs.schema);
-  const target = path.join(root, OUTPUT);
+  return writeOrCheck(root, check, OUTPUT, generate(inputs.table, inputs.schema),
+    `${OUTPUT} is not what ${SCHEMA} and the table of AGSC-05-26 generate: run tools/gen-dc-profile`);
+}
+
+/** Write `made.text` to `output` under `root` (only when it differs), or with `check` compare it. */
+function writeOrCheck(root, check, output, made, staleMessage) {
+  const target = path.join(root, output);
   const current = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : null;
   if (check) {
-    const findings = current === made.text ? [] : [finding('AGSC-E602', OUTPUT,
-      `${OUTPUT} is not what ${SCHEMA} and the table of AGSC-05-26 generate: run tools/gen-dc-profile`)];
-    return { count: made.count, findings };
+    return { count: made.count, findings: current === made.text ? [] : [finding('AGSC-E602', output, staleMessage)] };
   }
   if (current !== made.text) fs.writeFileSync(target, made.text);
   return { count: made.count, findings: [] };
+}
+
+/**
+ * The command line shared by the generators: `[--check] [--json] [--quiet] [--help] [<root>]`.
+ * @param {{verb:string, output:string, unit:string, help:string, apply:(root:string, check:boolean)=>{count:number, findings:object[]}}} spec
+ * @param {string[]} argv
+ * @param {{out?:(s:string)=>void, err?:(s:string)=>void}} [io]
+ * @returns {number} 0 written or current, 1 fail, 2 usage
+ */
+function runGenerator(spec, argv, io = {}) {
+  const out = io.out || ((s) => process.stdout.write(s));
+  const err = io.err || ((s) => process.stderr.write(s));
+  const flags = new Set();
+  const roots = [];
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(spec.help); return 0; }
+    if (['--check', '--json', '--quiet'].includes(arg)) flags.add(arg);
+    else if (arg.startsWith('-') || roots.length > 0) { err(`${spec.verb}: unexpected argument ${arg} (AGSC-E002)\n${spec.help}`); return 2; } else roots.push(arg);
+  }
+  const root = roots.length > 0 ? path.resolve(roots[0]) : DEFAULT_ROOT;
+  const result = spec.apply(root, flags.has('--check'));
+  const envelope = envelopeOf(spec.verb, result.findings, root);
+  if (flags.has('--json')) out(`${JSON.stringify(envelope)}\n`);
+  else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    if (envelope.status === 'pass') out(`${spec.output}: ${flags.has('--check') ? 'current' : 'written'} (${result.count} ${spec.unit})\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
 }
 
 /**
@@ -214,27 +247,14 @@ function apply(root, check) {
  * @returns {number} 0 written or current, 1 fail, 2 usage
  */
 function run(argv, io = {}) {
-  const out = io.out || ((s) => process.stdout.write(s));
-  const err = io.err || ((s) => process.stderr.write(s));
-  const flags = new Set();
-  const roots = [];
-  for (const arg of argv) {
-    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
-    if (['--check', '--json', '--quiet'].includes(arg)) flags.add(arg);
-    else if (arg.startsWith('-') || roots.length > 0) { err(`gen-dc-profile: unexpected argument ${arg} (AGSC-E002)\n${HELP}`); return 2; } else roots.push(arg);
-  }
-  const root = roots.length > 0 ? path.resolve(roots[0]) : DEFAULT_ROOT;
-  const result = apply(root, flags.has('--check'));
-  const envelope = envelopeOf(result.findings, root);
-  if (flags.has('--json')) out(`${JSON.stringify(envelope)}\n`);
-  else if (!flags.has('--quiet')) {
-    for (const f of envelope.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
-    if (envelope.status === 'pass') out(`${OUTPUT}: ${flags.has('--check') ? 'current' : 'written'} (${result.count} rows)\n`);
-  }
-  return envelope.status === 'pass' ? 0 : 1;
+  return runGenerator({ apply, help: HELP, output: OUTPUT, unit: 'rows', verb: 'gen-dc-profile' }, argv, io);
 }
 
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { COLUMNS, HELP, csvLine, generate, picklistOf, readRow, run, tableCells };
+// Also read by tools/gen-shapes (a sibling tool: both ship, neither touches src/).
+module.exports = {
+  COLUMNS, DEFAULT_ROOT, HELP, SHAPES, csvLine, finding, generate, picklistOf, readInput, readRow, run, runGenerator,
+  spans, tableCells, walk, writeOrCheck,
+};

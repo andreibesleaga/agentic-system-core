@@ -1,0 +1,6 @@
+# Concept-altLabel: an alias with no language tag.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ex:a a asc:Concept ; skos:altLabel "plain" .

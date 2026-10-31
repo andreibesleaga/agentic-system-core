@@ -61,6 +61,13 @@ Feature: Standards implementer adopts the discovery format on their own site
     Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "validate-wellknown"
     And running it against a linkset carrying an unregistered short name exits 1
 
+  @PRD-054 @human @matrix-H15
+  Scenario: Implementer gets SHACL shapes generated from the schema and the specification, not written by hand
+    When the implementer runs "the shipped gen-shapes tool with --check"
+    Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "gen-shapes"
+    And "schema/item-shapes.ttl" is Turtle with one warning shape for each Link key that names a kind of target, and a self-link warning
+    And the package declares no SHACL library, because the shapes run in a development lane and never at build
+
   @PRD-024 @PRD-055 @human @matrix-H15
   Scenario: A node served on loopback passes the shipped checker at Level 1
     Given a fresh copy of the acceptance Bundle

@@ -23,4 +23,14 @@ node tools/gen-dc-profile           # writes schema/dctap.csv
 node tools/gen-dc-profile --check   # exit 1 when the file is stale
 ```
 
+It also holds `item-shapes.ttl`, the SHACL shapes of the RDF graph a build writes (AGSC-05-24), generated from
+`item.schema.json`, the relation table of AGSC-03-01 and the SKOS integrity rules. They are informative and run
+only in a development lane; the engine's own checks stay the normative ones. See
+[docs/SHACL-SHAPES.md](../docs/SHACL-SHAPES.md). Do not edit the file by hand.
+
+```bash
+node tools/gen-shapes           # writes schema/item-shapes.ttl
+node tools/gen-shapes --check   # exit 1 when the file is stale
+```
+
 Published as part of `1.0.0`, a released version of the specification; like `spec/`, it changes only in a specification pass. Licence: CC0-1.0.

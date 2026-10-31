@@ -1,0 +1,6 @@
+# Bundle-usageInfo: usage information on the Bundle that is a number.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix schema: <https://schema.org/> .
+
+ex:a a asc:Bundle ; schema:usageInfo 1 .
