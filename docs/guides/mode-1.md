@@ -208,7 +208,7 @@ addresses, which `import` recomputes and reports as a warning wherever the copy 
 `agsc export --skos` writes `dist/export/skos.ttl`, the node's concepts, lessons and
 clusters as SKOS, for a thesaurus or taxonomy tool that reads SKOS and runs no
 inference. It states the scheme (title, tagline, author and licence from the
-configuration), the top concepts, and the type of each entry; episodes, procedures and
+configuration, and the title again as the scheme's SKOS label), the top concepts, and the type of each entry; episodes, procedures and
 gates are not SKOS concepts and are left out.
 
 ```bash demo

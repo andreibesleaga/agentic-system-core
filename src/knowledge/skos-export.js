@@ -103,7 +103,11 @@ function topConcepts(kinds, copied) {
   return [...kinds].filter(([iri, kind]) => kind === 'Concept' && !hasBroader.has(iri)).map(([iri]) => iri);
 }
 
-/** The scheme's own triples: its type, its record and the link to each top concept, in both directions. */
+/**
+ * The scheme's own triples: its type, its record, its `skos:prefLabel` (the title again, because a
+ * SKOS tool labels a scheme by `skos:prefLabel`, not by `dcterms:title`) and the link to each top
+ * concept, in both directions.
+ */
 function schemeTriples(scheme, record, tops) {
   const out = [triple(scheme.iri, RDF_TYPE, nq.iri(`${SKOS}ConceptScheme`))];
   const values = { ...record, license: scheme.license };
@@ -111,6 +115,7 @@ function schemeTriples(scheme, record, tops) {
   for (const [name, property] of Object.entries(properties)) {
     if (values[name] != null) out.push(triple(scheme.iri, property, nq.literal(String(values[name]))));
   }
+  if (values.title != null) out.push(triple(scheme.iri, `${SKOS}prefLabel`, nq.literal(String(values.title))));
   for (const top of tops) {
     out.push(triple(scheme.iri, `${SKOS}hasTopConcept`, nq.iri(top)));
     out.push(triple(top, `${SKOS}topConceptOf`, nq.iri(scheme.iri)));

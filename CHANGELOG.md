@@ -237,7 +237,8 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `graph.nq` of the same build. It copies the label, definition, scheme, hierarchy, relation and
   membership triples whose ends are concepts, lessons or clusters, and adds the scheme record
   (`dcterms:title`, `description`, `creator`, `license` from `site.title`, `site.tagline`, `site.author`
-  and the licence), `a skos:ConceptScheme`, `a skos:Concept` and `a skos:Collection`, and
+  and the licence, and `skos:prefLabel` with the title again, because SKOS tools label a scheme by
+  it — skosify 2.3.0 warned of a scheme with no label; 31 Oct), `a skos:ConceptScheme`, `a skos:Concept` and `a skos:Collection`, and
   `hasTopConcept` / `topConceptOf`, in a Turtle file with its own two-line prefix block. Episodes,
   procedures and gates are left out. `graph-0040` passes. The code is `src/knowledge/skos-export.js`
   (it reads N-Quads with the pinned `n3`) and `turtle.serialize` takes an optional prefix table; the

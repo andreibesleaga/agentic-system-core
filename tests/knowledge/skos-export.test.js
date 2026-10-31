@@ -49,9 +49,11 @@ test('every triple is SKOS, a record of the scheme, or copied from graph.nq (AGS
   const graph = new Set(turtle.parse(nquads, { format: 'N-Quads' })
     .map((q) => `${q.subject.value} ${q.predicate.value} ${q.object.value}`));
   const added = new Set([`${nq.RDF_TYPE}`, `${SKOS}hasTopConcept`, `${SKOS}topConceptOf`]);
+  const schemes = new Set(quads.filter((q) => q.predicate.value === nq.RDF_TYPE && q.object.value === `${SKOS}ConceptScheme`).map((q) => q.subject.value));
   for (const q of quads) {
     const key = `${q.subject.value} ${q.predicate.value} ${q.object.value}`;
-    const known = graph.has(key) || added.has(q.predicate.value) || q.predicate.value.startsWith(DCTERMS);
+    const schemeLabel = q.predicate.value === `${SKOS}prefLabel` && schemes.has(q.subject.value);
+    const known = graph.has(key) || added.has(q.predicate.value) || q.predicate.value.startsWith(DCTERMS) || schemeLabel;
     assert.ok(known, `a triple that is neither copied nor implied: ${key}`);
   }
 });
@@ -102,6 +104,15 @@ test('the scheme record states only what the configuration gives, each a plain l
   }
   const bare = viewOf([concept('a')], {}).quads.filter((q) => q.subject.value === BASE && q.predicate.value.startsWith(DCTERMS));
   assert.deepStrictEqual(bare.map((q) => q.predicate.value.slice(DCTERMS.length)), ['license']);
+});
+
+test('the scheme carries skos:prefLabel with the title, so a SKOS tool that labels a scheme by it shows one (AGSC-05-36)', () => {
+  const { quads } = viewOf([concept('a')]);
+  assert.deepStrictEqual(objectsOf(quads, BASE, `${SKOS}prefLabel`), ['A node']);
+  const label = quads.find((q) => q.subject.value === BASE && q.predicate.value === `${SKOS}prefLabel`).object;
+  assert.strictEqual(label.language, '');
+  const untitled = viewOf([concept('a')], {}).quads.filter((q) => q.subject.value === BASE && q.predicate.value === `${SKOS}prefLabel`);
+  assert.deepStrictEqual(untitled, []);
 });
 
 test('schemeRecord reads site.title, site.tagline and site.author, and only those', () => {
