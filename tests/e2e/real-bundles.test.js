@@ -27,7 +27,7 @@ const BUNDLES = [
   ['patterns node', process.env.AGSC_E2E_PATTERNS || path.join(ROOT, '..', 'AgenticSystemCore-Patterns')],
   ['main site Bundle', process.env.AGSC_E2E_SITE || path.join(ROOT, '..', 'AgenticSystemCore.com', 'dist', 'engine-bundle')],
 ];
-const EXPORTS = [['--markdown'], ['--okf'], ['--jsonld'], ['--jsonl'], ['--steer'],
+const EXPORTS = [['--markdown'], ['--okf'], ['--jsonld'], ['--jsonl'], ['--skos'], ['--steer'],
   ['--to', 'board', '--format', 'agsc-board'], ['--to', 'cogx'], ['--to', 'gabbe'], ['--to', 'llm-context'], ['--to', 'mermaid'], ['--to', 'skills']];
 const COPIED = ['.git', '.well-known', 'agsc.config.json', 'content', 'LICENSE', 'LICENSE-CONTENT', 'NOTICE',
   'PRIVACY.md', 'DISCLAIMER.md', 'README.md', 'publish-set.json'];

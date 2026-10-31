@@ -24,6 +24,7 @@ output with them.
 | `validate-diagrams` | the Mermaid pack of `docs/diagrams/` against its index |
 | `gen-spec-html` | `spec/` → the `/specs/` pages; `--check` compares a publisher's pages |
 | `gen-ns` | the ontology → `context.jsonld`, `agsc.rdf` and the `/ns/` index |
+| `gen-dc-profile` | the table of AGSC-05-26 and `schema/item.schema.json` → `schema/dctap.csv`, the Dublin Core Tabular Application Profile; `--check` |
 | `count-artifacts` | every published count, derived from the files (rules, codes, vectors, terms) |
 | `bench` | the retrieval benchmark over a built node's published surfaces (`docs/BENCHMARKS.md`) |
 

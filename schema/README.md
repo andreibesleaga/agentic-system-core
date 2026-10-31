@@ -14,4 +14,13 @@ are listed in [src/README.md](../src/README.md) §4.
 node tools/validate-schemas --json   # meta-validates the three against 2020-12
 ```
 
+From 1.1 the folder also holds `dctap.csv`, the Dublin Core Tabular Application Profile (DCTAP, DCMI) of the
+mapping from frontmatter keys to RDF properties (AGSC-05-26). It is informative and generated: the table of
+AGSC-05-26 decides, and a closed list in `item.schema.json` becomes a picklist. Do not edit it by hand.
+
+```bash
+node tools/gen-dc-profile           # writes schema/dctap.csv
+node tools/gen-dc-profile --check   # exit 1 when the file is stale
+```
+
 Published as part of `1.0.0`, a released version of the specification; like `spec/`, it changes only in a specification pass. Licence: CC0-1.0.

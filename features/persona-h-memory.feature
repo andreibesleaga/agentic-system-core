@@ -66,6 +66,15 @@ Feature: Agent uses a node as external auditable memory
     And each line of "dist/export/items.jsonl" is the node of the item's "www/pages/<slug>.jsonld", one line per item in slug order
     And no network call was attempted
 
+  @PRD-022 @human
+  Scenario: A taxonomy tool reads the SKOS export with no inference step
+    Given the Bundle is built
+    When the author runs "agsc export --skos" under the network trap
+    Then the command exits 0
+    And "dist/export/skos.ttl" types the Bundle as a skos:ConceptScheme and each published concept, lesson and cluster as a skos:Concept or skos:Collection, and holds no episode, procedure or gate
+    And "dist/export/skos.ttl" is Turtle that a second run writes again byte for byte
+    And no network call was attempted
+
   @PRD-026 @human
   Scenario Outline: An export form writes its file: <form>
     Given the Bundle root carries the Content Use Terms as "LICENSE-CONTENT"

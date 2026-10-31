@@ -197,6 +197,20 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `export --skos` (AGSC-05-36, AGSC-01-26a, I-017): writes `dist/export/skos.ttl`, the SKOS view of the
+  `graph.nq` of the same build. It copies the label, definition, scheme, hierarchy, relation and
+  membership triples whose ends are concepts, lessons or clusters, and adds the scheme record
+  (`dcterms:title`, `description`, `creator`, `license` from `site.title`, `site.tagline`, `site.author`
+  and the licence), `a skos:ConceptScheme`, `a skos:Concept` and `a skos:Collection`, and
+  `hasTopConcept` / `topConceptOf`, in a Turtle file with its own two-line prefix block. Episodes,
+  procedures and gates are left out. `graph-0040` passes. The code is `src/knowledge/skos-export.js`
+  (it reads N-Quads with the pinned `n3`) and `turtle.serialize` takes an optional prefix table; the
+  four graph files and every other output keep their bytes. A build with no `graph.nq` (Level 0) gives
+  `AGSC-E001` and no file.
+- `tools/gen-dc-profile` and `schema/dctap.csv` (AGSC-05-26, AGSC-09-90, I-019): the Dublin Core
+  Tabular Application Profile of the AGSC-05-26 table, generated from that table and
+  `schema/item.schema.json` (a closed list of the schema is a picklist); `--check` fails when the file
+  is stale. The tool ships in the package and imports nothing from `src/`. No dependency is added.
 - `src/knowledge/derive.js` (AGSC-05-33, I-015 checker side): `readings(edges)` gives the inverse,
   symmetric, transitive and closure readings of the Link graph, each with its `because` steps
   `{rule, from}`, in code-point order, computed and never written to a graph file. The CLI surface

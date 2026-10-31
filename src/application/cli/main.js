@@ -62,7 +62,7 @@ const VERB_FLAGS = {
   lint: new Map([['--fix', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
-    ['--jsonl', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
+    ['--jsonl', 'bool'], ['--skos', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
     ['--zip', 'bool'],
   ]),
   // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
@@ -430,7 +430,7 @@ const VERB_USAGE = Object.freeze({
   ci: 'agsc ci [--level <n>]',
   compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug>',
   conform: 'agsc conform [--level <n>] [--to <path>]',
-  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--steer [--target <name>[,<name>…]]|--to <adapter>',
+  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--steer [--target <name>[,<name>…]]|--to <adapter>',
   import: 'agsc import <source-dir> --from <adapter> [--dry-run]',
   init: 'agsc init',
   lint: 'agsc lint [--fix]',

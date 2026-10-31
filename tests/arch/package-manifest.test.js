@@ -31,7 +31,7 @@ function ships(entry) {
 test('AGSC-09-90: the nine checkers ship, and so do the inputs they name', () => {
   for (const tool of ['validate-spec', 'validate-schemas', 'validate-ontology',
     'validate-vectors', 'validate-wellknown', 'validate-features', 'validate-diagrams',
-    'gen-spec-html', 'gen-ns']) {
+    'gen-spec-html', 'gen-ns', 'gen-dc-profile']) {
     assert.ok(fs.existsSync(path.join(ROOT, 'tools', tool)), `tools/${tool} is missing`);
     assert.ok(ships(`tools/${tool}`), `package.json files[] does not ship tools/${tool}`);
   }
@@ -43,14 +43,14 @@ test('AGSC-09-90: the nine checkers ship, and so do the inputs they name', () =>
   }
 });
 
-test('only the nine checkers, the counter and the benchmark tool ship from tools/', () => {
+test('only the nine checkers, the profile generator, the counter and the benchmark tool ship from tools/', () => {
   // The maintainer tools (rule coverage, hygiene, release, glossary, publish set)
   // read the test suite, the allow-list or the repository's own tree: run from an
   // installed package each one fails or misleads, so none of them is in `files[]`.
-  // The eleven that ship each run on inputs the tarball carries.
+  // The twelve that ship each run on inputs the tarball carries.
   const shipped = ['validate-spec', 'validate-schemas', 'validate-ontology',
     'validate-vectors', 'validate-wellknown', 'validate-features', 'validate-diagrams',
-    'gen-spec-html', 'gen-ns', 'count-artifacts', 'bench'].map((t) => `tools/${t}`);
+    'gen-spec-html', 'gen-ns', 'gen-dc-profile', 'count-artifacts', 'bench'].map((t) => `tools/${t}`);
   const listed = (manifest.files || []).filter((f) => f === 'tools/' || f.startsWith('tools/'));
   assert.deepStrictEqual(listed.sort(), shipped.sort());
   for (const tool of fs.readdirSync(path.join(ROOT, 'tools'))) {

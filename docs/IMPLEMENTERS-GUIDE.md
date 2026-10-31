@@ -352,6 +352,7 @@ still takes `kind: release` from that same tag (AGSC-08-20a).
 | `/chunks.jsonl` | the `bundle_version` member of the shard manifest, where sharding produced one (AGSC-06-31) |
 | `/skills/index.json` | the `bundle_version` member of the index object (AGSC-07-19) |
 | a Harness | the `bundle_version` member of `harness.jsonld` (AGSC-07-12); the seven file kinds stay seven |
+| `export --skos` | **nowhere**: the SKOS view is read from the graph of the same build and states no version (AGSC-05-36) |
 | `export --markdown` / `--okf` | the `bundle_version` key of `content/index.md`, beside `spec_version` (AGSC-01-26) — the one derived key of an otherwise byte-preserving export |
 | `export --jsonld` / `--jsonl` | **nowhere**: both are byte-identical to the graph of the same build and may not invent a member the graph does not carry (AGSC-01-27) |
 | `/changelog/` | a versions list, one row per git-log element carrying a `tag`, oldest first: the tag, that element's `committed_at` date and its `sha`. It comes from the git-log file and **not** from `ledger.jsonl`, because a 1.0 ledger entry carries `kind: release` and the commit reference but not the tag's name (AGSC-08-21) |
@@ -457,6 +458,7 @@ conformance claim names which it ran.
 | `validate-diagrams` | the diagram pack and its staleness | PRD-054 |
 | `gen-spec-html` | renders `spec/` to HTML; `--check <dir>` compares a published tree byte for byte | AGSC-09-90 |
 | `gen-ns` | derives `/ns/` from the ontology; `--check <dir>` audits a built one | AGSC-06-32 |
+| `gen-dc-profile` | writes `schema/dctap.csv`, the Dublin Core Tabular Application Profile of the property table; `--check` says whether it is current | AGSC-05-26 |
 
 Each answers `--json` with the AGSC-09-11 envelope, `verb` set to its own name, and
 exits 0 pass / 1 fail / 2 usage. So the check you actually run against your own

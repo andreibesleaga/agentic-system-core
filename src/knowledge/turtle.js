@@ -30,11 +30,12 @@ const { compareCodePoint } = require('./unicode.js');
 const PN_LOCAL = /^[A-Za-z_][A-Za-z0-9_-]*$/u;
 
 /**
- * An IRI as a prefixed name when the profile's fixed prefix table covers it, and as
- * an absolute `<IRI>` otherwise (AGSC-05-10).
+ * An IRI as a prefixed name when the prefix table covers it, and as an absolute `<IRI>`
+ * otherwise (AGSC-05-10). The table is the profile's fixed one unless a file states its
+ * own block, as the SKOS view does (AGSC-05-36).
  */
-function turtleIri(value) {
-  for (const [prefix, namespace] of Object.entries(nq.PREFIXES)) {
+function turtleIri(value, prefixes = nq.PREFIXES) {
+  for (const [prefix, namespace] of Object.entries(prefixes)) {
     if (value.startsWith(namespace)) {
       const local = value.slice(namespace.length);
       if (PN_LOCAL.test(local)) return `${prefix}:${local}`;
@@ -48,21 +49,21 @@ function turtleIri(value) {
  * `"retired"^^xsd:string` (AGSC-05-31 form c, vectors `graph-0017`/`graph-0018`);
  * every other datatype is explicit; the lexical form is the N-Quads one (AGSC-05-32).
  */
-function turtleTerm(term) {
-  if (term.termType === 'iri') return turtleIri(term.value);
+function turtleTerm(term, prefixes = nq.PREFIXES) {
+  if (term.termType === 'iri') return turtleIri(term.value, prefixes);
   if (term.lang) return `"${nq.escapeLiteral(term.value)}"@${term.lang}`;
   if (!term.datatype || term.datatype === nq.XSD_STRING) return `"${nq.escapeLiteral(term.value)}"`;
-  return `"${nq.escapeLiteral(term.value)}"^^${turtleIri(term.datatype)}`;
+  return `"${nq.escapeLiteral(term.value)}"^^${turtleIri(term.datatype, prefixes)}`;
 }
 
 /** The predicate as it is written: `a` for `rdf:type` (AGSC-05-10), a prefixed name otherwise. */
-function turtlePredicate(value) {
-  return value === nq.RDF_TYPE ? 'a' : turtleIri(value);
+function turtlePredicate(value, prefixes = nq.PREFIXES) {
+  return value === nq.RDF_TYPE ? 'a' : turtleIri(value, prefixes);
 }
 
-/** The fixed prefix block, in the fixed order of the profile (AGSC-05-10). */
-function prefixBlock() {
-  return Object.entries(nq.PREFIXES)
+/** The prefix block: the fixed one of the profile (AGSC-05-10), or the table given, in its order. */
+function prefixBlock(prefixes = nq.PREFIXES) {
+  return Object.entries(prefixes)
     .map(([prefix, namespace]) => `@prefix ${prefix}: <${namespace}> .`)
     .join('\n');
 }
@@ -75,26 +76,30 @@ function prefixBlock() {
  *
  * Turtle carries triples, so a quad's graph name is dropped: `graph.ttl` and
  * `graph.nq` express the same triples (AGSC-05-10, "both MUST be isomorphic").
+ *
+ * `prefixes` is the table of the block the file states, `{ name: namespace }` in the
+ * order to write it; it defaults to the seven of AGSC-05-10 (a). A file with its own
+ * block (the SKOS view, AGSC-05-36) passes it and keeps rules (c) to (e).
  */
-function serialize(quads) {
+function serialize(quads, prefixes = nq.PREFIXES) {
   const bySubject = new Map();
   for (const q of quads) {
     if (!bySubject.has(q.subject.value)) bySubject.set(q.subject.value, new Map());
     const predicates = bySubject.get(q.subject.value);
     if (!predicates.has(q.predicate.value)) predicates.set(q.predicate.value, new Set());
-    predicates.get(q.predicate.value).add(turtleTerm(q.object));
+    predicates.get(q.predicate.value).add(turtleTerm(q.object, prefixes));
   }
   const blocks = [...bySubject.keys()].sort(compareCodePoint).map((subject) => {
     const predicates = [...bySubject.get(subject).keys()].sort(compareCodePoint);
     const clauses = predicates.map((predicate) => {
       const objects = [...bySubject.get(subject).get(predicate)].sort(compareCodePoint);
-      return `${turtlePredicate(predicate)} ${objects.join(' , ')}`;
+      return `${turtlePredicate(predicate, prefixes)} ${objects.join(' , ')}`;
     });
-    const head = `${turtleIri(subject)} ${clauses[0]}`;
+    const head = `${turtleIri(subject, prefixes)} ${clauses[0]}`;
     const rest = clauses.slice(1).map((clause) => `    ${clause}`);
     return `${[head, ...rest].join(' ;\n')} .`;
   });
-  return `${[prefixBlock(), ...blocks].join('\n\n')}\n`;
+  return `${[prefixBlock(prefixes), ...blocks].join('\n\n')}\n`;
 }
 
 /** `graph.ttl` for a set of items (AGSC-05-06/05-10). */

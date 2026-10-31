@@ -16,7 +16,7 @@ const { TOOLS, capture } = require('./helpers');
 const NINE = Object.freeze([
   'validate-spec', 'validate-schemas', 'validate-ontology', 'validate-vectors',
   'validate-wellknown', 'validate-features', 'validate-diagrams',
-  'gen-spec-html', 'gen-ns',
+  'gen-spec-html', 'gen-ns', 'gen-dc-profile',
 ]);
 /** The libraries a tool MAY use: the engine's own pins (AGSC-09-90). */
 const PINNED = Object.freeze(['ajv', 'ajv-formats', 'fast-xml-parser', 'json-canonicalize',

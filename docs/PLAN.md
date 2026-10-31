@@ -166,6 +166,7 @@ graph TB
 | knowledge | `schema.js` `validate.js` | JSON Schema 2020-12 mini-validator over `schema/*.json` | 3 | lint build |
 | knowledge | `slug.js` `links.js` | slug grammar; fourteen Links (nine core + five Mode-2), inverses, orphans, cycles | 4 | lint build compose |
 | knowledge | `skos.js` `jsonld.js` `turtle.js` `nquads.js` `rdfxml.js` `jcs.js` | nested `skos:Collection`; four RDF views; JCS | 6, 7 | build export |
+| knowledge | `skos-export.js` | the SKOS view of `graph.nq` (1.1): scheme, top concepts, `skos:Concept` and `skos:Collection` types | — | export |
 | knowledge | `diagrams.js` | ported DSL→SVG compiler | 5 | build import |
 | governance | `lint.js` | L1/L2 findings with file+line | 3–4 | lint ci |
 | governance | `injection.js` `secrets.js` `pii.js` `cleanroom.js` | the four N9/clean-room lints (§8, §12) | — | lint ci review |
@@ -186,7 +187,7 @@ graph TB
 | interchange | `import.js` `okf.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in | — | import |
 | interchange | `export.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
-| *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
+| *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
 
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
@@ -203,6 +204,7 @@ graph TB
 | `tools/validate-diagrams` | the Mermaid lexical contract, a trace id per file, staleness against `spec/` and `docs/PRD.md`, the index table | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/gen-spec-html` | renders `spec/` into `/specs/` deterministically with an anchor on every rule; `--check` compares a published tree | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/gen-ns` | derives `/ns/context.jsonld`, `/ns/agsc.rdf` and the `/ns/` index from the ontology, round-trips the RDF/XML; `--check` audits a built `/ns/` | AGSC-09-90, AGSC-06-32 | ships; pass |
+| `tools/gen-dc-profile` | writes `schema/dctap.csv`, the Dublin Core Tabular Application Profile of the AGSC-05-26 table, from `schema/item.schema.json`; `--check` fails when the file is stale (1.1) | AGSC-09-90, AGSC-05-26 | ships; pass |
 
 Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/agsc.js` is the only place adapters are wired.
 

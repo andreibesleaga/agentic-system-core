@@ -30,6 +30,7 @@
         "tools/validate-diagrams",
         "tools/gen-spec-html",
         "tools/gen-ns",
+        "tools/gen-dc-profile",
         "tools/count-artifacts",
         "tools/bench",
         "bench/queries/",

@@ -356,6 +356,40 @@ test('AGSC-01-27: export --jsonld is byte-identical to the graph.jsonld of the s
   assert.match(ctx.notes.join(''), /wrote: dist\/export\/graph\.jsonld sha256:[0-9a-f]{64}/u);
 });
 
+test('AGSC-05-36: export --skos writes dist/export/skos.ttl, the SKOS view of the graph.nq of the same build', () => {
+  const dir = workspace();
+  const ctx = ctxFor(dir, { verbFlags: { skos: true } });
+  const result = exportVerb.run(ctx);
+  assert.deepStrictEqual(result.findings.filter((f) => f.severity === 'error'), []);
+  const skosExport = require('../../../src/knowledge/skos-export.js');
+  const buildVerb = require('../../../src/application/cli/verbs/build.js');
+  buildVerb.run(ctxFor(dir));
+  const expected = skosExport.skosView(read(dir, 'www/graph.nq'), skosExport.schemeRecord(ctx.config));
+  assert.strictEqual(read(dir, 'dist/export/skos.ttl'), expected);
+  assert.match(expected, /\ba skos:ConceptScheme\b/u);
+  assert.match(ctx.notes.join(''), /wrote: dist\/export\/skos\.ttl sha256:[0-9a-f]{64}/u);
+});
+
+test('AGSC-05-36: a second export --skos gives the same bytes, and --skos asks for no other flag', () => {
+  const dir = workspace();
+  exportVerb.run(ctxFor(dir, { verbFlags: { skos: true } }));
+  const first = read(dir, 'dist/export/skos.ttl');
+  exportVerb.run(ctxFor(dir, { verbFlags: { skos: true } }));
+  assert.strictEqual(read(dir, 'dist/export/skos.ttl'), first);
+  assert.ok(!exists(dir, 'dist/export/graph.jsonld'));
+});
+
+test('AGSC-05-36: a build with no graph.nq (Level 0) gives one honest finding and no skos.ttl', () => {
+  const empty = exportVerb.graphFiles(new Map(), { skos: true });
+  assert.deepStrictEqual(empty.writes, []);
+  assert.deepStrictEqual(empty.findings.map((f) => f.code), ['AGSC-E001']);
+  assert.match(empty.findings[0].message, /no \/graph\.nq/u);
+  const dir = workspace();
+  const result = exportVerb.run(ctxFor(dir, { verbFlags: { level: '0', skos: true } }));
+  assert.ok(!exists(dir, 'dist/export/skos.ttl'));
+  assert.ok(result.findings.some((f) => /no \/graph\.nq/u.test(f.message)));
+});
+
 test('AGSC-01-27: export --jsonl is one JCS line per item, in slug order', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { verbFlags: { jsonl: true } });

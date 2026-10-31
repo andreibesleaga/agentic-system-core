@@ -1,0 +1,26 @@
+shapeID,shapeLabel,propertyID,propertyLabel,mandatory,repeatable,valueNodeType,valueDataType,valueShape,valueConstraint,valueConstraintType,note
+item,Item,asc:status,status,false,false,literal,xsd:string,,draft stable deprecated retired,picklist,"default stable, AGSC-02-23"
+item,Item,asc:kind,kind,false,false,literal,xsd:string,,pattern taxonomy explainer principle decision spec task term architecture,picklist,concept only
+item,Item,asc:staleAfter,stale_after,false,false,literal,xsd:dateTime,,,,
+item,Item,dcterms:created,date,false,false,literal,xsd:dateTime,,,,"midnight of that date, AGSC-04-10"
+item,Item,dcterms:modified,modified,false,false,literal,xsd:dateTime,,,,"midnight of that date, AGSC-04-10"
+item,Item,asc:origin,prov.origin,false,false,literal,xsd:string,,human ai-assisted ai-generated imported,picklist,
+item,Item,asc:operator,prov.operator,false,false,literal,xsd:string,,,,"human:<id>, AGSC-02-07"
+item,Item,asc:model,prov.model,false,false,literal,xsd:string,,,,
+item,Item,asc:level,level,false,false,literal,xsd:string,,L1 L2,picklist,gate only
+item,Item,asc:severity,severity,false,false,literal,xsd:string,,info warn block,picklist,lesson only
+item,Item,asc:outcome,outcome,false,false,literal,xsd:string,,success partial failure,picklist,episode only
+item,Item,asc:generatedBy,generated.by,false,false,literal,xsd:string,,,,
+item,Item,asc:generatedAt,generated.at,false,false,literal,xsd:dateTime,,,,
+item,Item,schema:license,bundle.license_prose,false,false,literal,xsd:string,,,,of agsc.config.json
+item,Item,schema:usageInfo,the Content Use Terms identifier of AGSC-06-18,false,false,literal,xsd:string,,,,
+item,Item,schema:additionalType,domain_role,false,false,literal,xsd:string,,aggregate-root entity value-object domain-event policy,picklist,"AGSC-02-25, domain layer only"
+item,Item,dcterms:source,warrant.source,false,false,literal,xsd:string,,,,"AGSC-02-25, AGSC-05-40"
+item,Item,asc:warrant,warrant.type,false,false,literal,xsd:string,,literary user organisational,picklist,"AGSC-02-25, AGSC-05-40"
+bundle,Bundle,asc:specVersion,spec_version,false,false,literal,xsd:string,,,,of agsc.config.json
+bundle,Bundle,schema:license,bundle.license_prose,false,false,literal,xsd:string,,,,of agsc.config.json
+bundle,Bundle,schema:usageInfo,the Content Use Terms identifier of AGSC-06-18,false,false,literal,xsd:string,,,,
+source,Source,asc:grade,sources[].grade,false,false,literal,xsd:string,,primary secondary tertiary,picklist,
+source,Source,asc:verifiedOn,sources[].verified,false,false,literal,xsd:dateTime,,,,midnight of that date
+review,Review,asc:verifiedBy,verified[].by,false,false,literal,xsd:string,,,,
+review,Review,asc:verifiedAt,verified[].at,false,false,literal,xsd:dateTime,,,,

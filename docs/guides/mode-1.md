@@ -198,6 +198,22 @@ chunks-index.toon
 The first is the Bundle itself, ready to be read back with `agsc import --from okf`; the
 second is one text file and one compact index for a model's context window.
 
+`agsc export --skos` writes `dist/export/skos.ttl`, the node's concepts, lessons and
+clusters as SKOS, for a thesaurus or taxonomy tool that reads SKOS and runs no
+inference. It states the scheme (title, tagline, author and licence from the
+configuration), the top concepts, and the type of each entry; episodes, procedures and
+gates are not SKOS concepts and are left out.
+
+```bash demo
+agsc export --skos
+head -n 2 dist/export/skos.ttl
+```
+
+```text expect
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+```
+
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).
 

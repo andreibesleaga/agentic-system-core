@@ -1,0 +1,240 @@
+#!/usr/bin/env node
+'use strict';
+// tools/gen-dc-profile — generates schema/dctap.csv, the Dublin Core Tabular Application
+// Profile (DCTAP, DCMI) of the mapping from frontmatter keys to RDF properties, from
+// `schema/item.schema.json` and the table of AGSC-05-26 in `spec/05-graph.md`
+// (AGSC-05-26, AGSC-09-90). The profile is informative: the table decides, and
+// `--check` is the documentation check that keeps the file current.
+//
+// INDEPENDENT BY CONSTRUCTION: no import from `src/` (AGSC-09-90); Node stdlib only.
+//
+//   gen-dc-profile [--check] [--json] [--quiet] [--help] [<root>]
+//
+// WHAT A ROW IS. One row for each pair of a table row and a shape. A shape is the
+// subject the row names: `item`, `bundle`, `source` or `review`; a row for "the Bundle
+// and every item" is in two shapes. `propertyID` is the property of the table,
+// `propertyLabel` the key, `valueNodeType` is `literal` (every row of the table is a
+// datatype property), `valueDataType` the datatype of the table, and `mandatory` and
+// `repeatable` are `false`: a key that is absent emits no triple (AGSC-05-26). The one
+// constraint is a picklist, where the item schema closes the key's values with `enum`;
+// a pattern of the schema describes the authored text and not the RDF value (a `date`
+// is authored as 2026-01-01 and written as an `xsd:dateTime`), so none is copied.
+// The three rows of AGSC-05-30 (ports and task state) extend the table in another
+// rule and are not in this profile.
+//
+// With no flag the tool writes the file. `--check` writes nothing and exits 1 when the
+// committed file differs. Exit 0 written or current, 1 fail, 2 usage. Deterministic:
+// no clock, no network, LF, rows in the order of the table.
+//
+// Findings (AGSC-09-11 envelope with `--json`):
+//   AGSC-E201  `schema/item.schema.json` is not JSON
+//   AGSC-E602  `--check`: the committed file differs from the derivation
+//   AGSC-E901  an input is missing, or the specification holds no table
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+const OUTPUT = 'schema/dctap.csv';
+const SCHEMA = 'schema/item.schema.json';
+const SPEC = 'spec/05-graph.md';
+const HELP = `gen-dc-profile [--check] [--json] [--quiet] [--help] [<root>]
+
+  Generates schema/dctap.csv, the Dublin Core Tabular Application Profile of the
+  table in AGSC-05-26, from schema/item.schema.json and spec/05-graph.md.
+
+  --check  write nothing; exit 1 when the committed file is not what the inputs give
+  --json   emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet  emit nothing; the exit code is the result
+  --help   this text
+
+  Exit 0 written or current, 1 fail, 2 usage.
+`;
+
+/** The twelve elements of DCTAP, in the order of the DCMI elements document. */
+const COLUMNS = Object.freeze(['shapeID', 'shapeLabel', 'propertyID', 'propertyLabel', 'mandatory',
+  'repeatable', 'valueNodeType', 'valueDataType', 'valueShape', 'valueConstraint', 'valueConstraintType', 'note']);
+
+/** The shapes, in output order, each with the word of the table's Subject column that names it. */
+const SHAPES = Object.freeze([
+  { id: 'item', label: 'Item', word: /\bitem\b/u },
+  { id: 'bundle', label: 'Bundle', word: /\bBundle\b/u },
+  { id: 'source', label: 'Source', word: /\bSource\b/u },
+  { id: 'review', label: 'Review', word: /\bReview\b/u },
+]);
+
+// ---------------------------------------------------------------- the table
+
+const spans = (text) => [...text.matchAll(/`([^`]*)`/gu)].map((m) => m[1]);
+const plain = (text) => text.replace(/`/gu, '').replace(/\*\*/gu, '').trim();
+
+/** The lines of the AGSC-05-26 table, as cells; `null` when the specification holds no such table. */
+function tableCells(specText) {
+  const lines = specText.split('\n');
+  const start = lines.findIndex((line) => line.startsWith('| Frontmatter key |'));
+  if (start === -1) return null;
+  const body = [];
+  for (let i = start + 2; i < lines.length && lines[i].startsWith('|'); i += 1) {
+    body.push(lines[i].split('|').slice(1, -1).map((cell) => cell.trim()));
+  }
+  return body.length > 0 ? body : null;
+}
+
+/** The text after the first code span of a cell, without its parentheses: the cell's own qualifier. */
+function afterFirstSpan(cell) {
+  const rest = cell.replace(/^`[^`]*`/u, '');
+  return plain(rest).replace(/^\((.*)\)$/u, '$1').trim();
+}
+
+/** One table row as `{ key, keyNote, subject, property, datatype, datatypeNote, fromConfig }`. */
+function readRow([keyCell, subjectCell, propertyCell, datatypeCell]) {
+  const first = spans(keyCell)[0];
+  const startsWithSpan = keyCell.startsWith('`') && first !== undefined;
+  return {
+    datatype: spans(datatypeCell)[0] || '',
+    datatypeNote: afterFirstSpan(datatypeCell),
+    fromConfig: keyCell.includes('`agsc.config.json`') || !startsWithSpan || first.startsWith('bundle.'),
+    key: startsWithSpan ? first : plain(keyCell),
+    keyNote: startsWithSpan ? afterFirstSpan(keyCell) : '',
+    property: spans(propertyCell)[0] || plain(propertyCell),
+    subject: subjectCell,
+  };
+}
+
+// ---------------------------------------------------------------- the item schema
+
+const deref = (schema, node) => {
+  const match = node && typeof node.$ref === 'string' && node.$ref.match(/^#\/\$defs\/(.+)$/u);
+  return match ? { ...(schema.$defs[match[1]] || {}), ...node } : node;
+};
+
+/** Follow a dotted key (`prov.origin`, `sources[].grade`) from one root of the schema; `undefined` when it leads nowhere. */
+function walk(schema, root, key) {
+  let node = root;
+  for (const segment of key.replace(/\[\]/gu, '').split('.')) {
+    node = deref(schema, node);
+    if (node && node.type === 'array' && node.items) node = deref(schema, node.items);
+    node = node && node.properties ? node.properties[segment] : undefined;
+    if (node === undefined) return undefined;
+  }
+  return deref(schema, node);
+}
+
+/** The closed list of values the item schema gives a key, in schema order; `[]` when it gives none. */
+function picklistOf(schema, key) {
+  const roots = [schema, ...(schema.oneOf || [])];
+  for (const root of roots) {
+    const node = walk(schema, root, key);
+    if (node && Array.isArray(node.enum)) return node.enum;
+  }
+  return [];
+}
+
+// ---------------------------------------------------------------- the CSV
+
+/** One CSV line (RFC 4180 quoting; LF is written by the caller). */
+function csvLine(cells) {
+  return cells.map((cell) => (/[",\r\n]/u.test(cell) ? `"${cell.replace(/"/gu, '""')}"` : cell)).join(',');
+}
+
+function profileRows(table, schema) {
+  const rows = table.map(readRow);
+  return SHAPES.flatMap((shape) => rows.filter((row) => shape.word.test(row.subject)).map((row) => {
+    const picklist = row.fromConfig ? [] : picklistOf(schema, row.key);
+    return [shape.id, shape.label, row.property, row.key, 'false', 'false', 'literal', row.datatype, '',
+      picklist.join(' '), picklist.length > 0 ? 'picklist' : '',
+      [row.keyNote, row.datatypeNote].filter((note) => note !== '').join('; ')];
+  }));
+}
+
+/** The whole file: the header and one line for each row, ending in one LF. */
+function generate(table, schema) {
+  const rows = profileRows(table, schema);
+  return { count: rows.length, text: `${[COLUMNS, ...rows].map(csvLine).join('\n')}\n` };
+}
+
+// ---------------------------------------------------------------- the command
+
+const finding = (code, file, message) => ({ code, col: 1, file, line: 1, message, severity: 'error' });
+
+function envelopeOf(findings, root) {
+  const read = (file, pick) => { try { return pick(fs.readFileSync(path.join(root, file), 'utf8')); } catch { return null; } };
+  return {
+    counts: { error: findings.length, warn: 0 },
+    findings: [...findings].sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0)),
+    schema: 'agsc.diagnostics.v1',
+    spec_version: read('spec/00-overview.md', (t) => (t.match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0]) || 'unknown',
+    status: findings.length === 0 ? 'pass' : 'fail',
+    verb: 'gen-dc-profile',
+    version: read('package.json', (t) => JSON.parse(t).version) || '0.0.0',
+  };
+}
+
+/** Read both inputs, or say which one is missing or unreadable. */
+function readInputs(root) {
+  const findings = [];
+  const read = (file) => {
+    try { return fs.readFileSync(path.join(root, file), 'utf8'); } catch {
+      findings.push(finding('AGSC-E901', file, `${file} is missing: there is nothing to generate the profile from (AGSC-09-90)`));
+      return null;
+    }
+  };
+  const schemaText = read(SCHEMA);
+  const specText = read(SPEC);
+  let schema = null;
+  if (schemaText !== null) {
+    try { schema = JSON.parse(schemaText); } catch (e) { findings.push(finding('AGSC-E201', SCHEMA, `not JSON: ${e.message}`)); }
+  }
+  const table = specText === null ? null : tableCells(specText);
+  if (specText !== null && table === null) {
+    findings.push(finding('AGSC-E901', SPEC, 'the table of AGSC-05-26 ("| Frontmatter key |") was not found: a profile of nothing is not generated'));
+  }
+  return { findings, schema, table };
+}
+
+/** Write the file, or with `check` compare it. Returns the findings and the row count. */
+function apply(root, check) {
+  const inputs = readInputs(root);
+  if (inputs.findings.length > 0) return { count: 0, findings: inputs.findings };
+  const made = generate(inputs.table, inputs.schema);
+  const target = path.join(root, OUTPUT);
+  const current = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : null;
+  if (check) {
+    const findings = current === made.text ? [] : [finding('AGSC-E602', OUTPUT,
+      `${OUTPUT} is not what ${SCHEMA} and the table of AGSC-05-26 generate: run tools/gen-dc-profile`)];
+    return { count: made.count, findings };
+  }
+  if (current !== made.text) fs.writeFileSync(target, made.text);
+  return { count: made.count, findings: [] };
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out?:(s:string)=>void, err?:(s:string)=>void}} [io]
+ * @returns {number} 0 written or current, 1 fail, 2 usage
+ */
+function run(argv, io = {}) {
+  const out = io.out || ((s) => process.stdout.write(s));
+  const err = io.err || ((s) => process.stderr.write(s));
+  const flags = new Set();
+  const roots = [];
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (['--check', '--json', '--quiet'].includes(arg)) flags.add(arg);
+    else if (arg.startsWith('-') || roots.length > 0) { err(`gen-dc-profile: unexpected argument ${arg} (AGSC-E002)\n${HELP}`); return 2; } else roots.push(arg);
+  }
+  const root = roots.length > 0 ? path.resolve(roots[0]) : DEFAULT_ROOT;
+  const result = apply(root, flags.has('--check'));
+  const envelope = envelopeOf(result.findings, root);
+  if (flags.has('--json')) out(`${JSON.stringify(envelope)}\n`);
+  else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    if (envelope.status === 'pass') out(`${OUTPUT}: ${flags.has('--check') ? 'current' : 'written'} (${result.count} rows)\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { COLUMNS, HELP, csvLine, generate, picklistOf, readRow, run, tableCells };

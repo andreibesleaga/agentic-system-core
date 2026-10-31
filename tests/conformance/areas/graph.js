@@ -19,6 +19,7 @@
 // graph-0028 graph.jsonld and the per-item files, whole        AGSC-05-09
 // graph-0029 the readings of the Link graph, each with reasons  AGSC-05-33
 // graph-0030 to graph-0039 the ten questions, one each          AGSC-05-34
+// graph-0040 the SKOS view written by export --skos, whole       AGSC-05-36
 // graph-0043 the context address is not the ontology version   AGSC-05-09
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
@@ -357,6 +358,18 @@ function readingsCase(vector) {
   return checks(list);
 }
 
+/**
+ * graph-0040 — AGSC-05-36: the SKOS view of the graph, the WHOLE file. The view is read
+ * from the `graph.nq` the same items give, which is what `export --skos` does with the
+ * build's own `graph.nq`; the scheme record comes from the same configuration keys.
+ */
+function skosCase(vector) {
+  const skosExport = require('../../../src/knowledge/skos-export.js');
+  const nquads = nq.toNQuads(vector.input.items, optionsFor(vector.input));
+  const got = skosExport.skosView(nquads, skosExport.schemeRecord(vector.input));
+  return checks([['skos', got === vector.expected.skos, `got\n${got}`]]);
+}
+
 /** graph-0030 to graph-0039 — one of the ten questions of AGSC-05-34 over the shared fixture. */
 function questionCase(vector) {
   const { items, question, subject, selection, at } = vector.input;
@@ -473,6 +486,7 @@ module.exports.run = guarded((vector, ctx) => {
   const expected = vector.expected || {};
   if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
+  if (typeof expected.skos === 'string') return skosCase(vector);
   if (typeof input.question === 'number') return questionCase(vector);
   if (Array.isArray(expected.readings)) return readingsCase(vector);
   if (Array.isArray(input.ontology_versions)) return contextAddressCase(vector, ctx);

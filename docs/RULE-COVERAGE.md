@@ -11,11 +11,11 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 320 |
+| Unit, integration or architecture test | 321 |
 | Executed acceptance scenario | 75 |
 | Checker header | 33 |
 
-Acceptance scenarios: 123 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 75 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 124 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 75 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -54,7 +54,7 @@ Of those, 21 state a requirement with MUST, MUST NOT, REQUIRED or SHALL and name
 | AGSC-03-02 | `AGSC-E301` | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/links.test.js` +3 |
 | AGSC-03-03 | `AGSC-E207`, `AGSC-E302`, `AGSC-E303` +2 | `knowledge/links.test.js` |
 | AGSC-03-09 | `AGSC-E301` | `standard/rules.test.js` |
-| AGSC-05-08 | `AGSC-E605` | `knowledge/nquads.test.js`, `validate-ontology` |
+| AGSC-05-08 | `AGSC-E605` | `knowledge/nquads.test.js`, `knowledge/skos-export.test.js`, `validate-ontology` |
 | AGSC-05-22 | `AGSC-E203` | `standard/item-links-composition-wording.test.js`, `validate-ontology` |
 | AGSC-05-25 | `AGSC-E203` | `ontology/vocabulary-file.test.js`, `standard/vocabulary-version.test.js`, `validate-ontology` |
 | AGSC-07-08 | `AGSC-E804` | `composition/compose.test.js` |
@@ -269,7 +269,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-05 | VERIFIED | yes | `lint-0030` | `standard/rules.test.js` | — | — |
 | AGSC-05-06 | VERIFIED | yes | — | `acceptance/steps/persona-n.js`, `distribution/item-jsonld.test.js`, `distribution/ns-context.test.js` +2 | — | — |
 | AGSC-05-07 | VERIFIED | yes | `build-0023` | `distribution/page-tools.test.js`, `distribution/routes.test.js` | — | — |
-| AGSC-05-08 | VERIFIED | — | — | `knowledge/nquads.test.js` | — | `validate-ontology` |
+| AGSC-05-08 | VERIFIED | — | — | `knowledge/nquads.test.js`, `knowledge/skos-export.test.js` | — | `validate-ontology` |
 | AGSC-05-09 | VERIFIED | yes | `graph-0028`, `graph-0043` | `distribution/ns-context.test.js`, `knowledge/jsonld.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
 | AGSC-05-10 | VERIFIED | yes | `graph-0026` | `knowledge/turtle.test.js` | — | — |
 | AGSC-05-11 | PROSE-ONLY | — | — | — | — | — |
@@ -287,18 +287,18 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-23 | VERIFIED | — | — | `standard/item-links-composition-wording.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-05-24 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-05-25 | VERIFIED | — | — | `ontology/vocabulary-file.test.js`, `standard/vocabulary-version.test.js` | — | `validate-ontology` |
-| AGSC-05-26 | VERIFIED | — | — | `knowledge/nquads.test.js` | — | — |
+| AGSC-05-26 | VERIFIED | — | — | `knowledge/nquads.test.js`, `tools/gen-dc-profile.test.js` | — | — |
 | AGSC-05-26a | VERIFIED | — | — | `tools/validate-ontology.test.js` | — | `validate-ontology` |
 | AGSC-05-27 | VERIFIED | yes | `graph-0024`, `graph-0025` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-28 | VERIFIED | — | — | `knowledge/turtle.test.js`, `ontology/alignments.test.js`, `ontology/property-coverage.test.js` | — | — |
 | AGSC-05-29 | VERIFIED | yes | `graph-0016` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-30 | VERIFIED | yes | `graph-0017` | — | — | — |
-| AGSC-05-31 | VERIFIED | yes | `graph-0018` | `knowledge/nquads.test.js`, `knowledge/rdfxml-iso.test.js`, `knowledge/turtle.test.js` | — | — |
+| AGSC-05-31 | VERIFIED | yes | `graph-0018` | `knowledge/nquads.test.js`, `knowledge/rdfxml-iso.test.js`, `knowledge/skos-export.test.js` +1 | — | — |
 | AGSC-05-32 | VERIFIED | yes | `graph-0012` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-33 | VERIFIED | yes | `graph-0029` | — | — | — |
 | AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | `knowledge/questions-sparql.test.js`, `knowledge/questions.test.js` | — | — |
 | AGSC-05-35 | VERIFIED | yes | `lint-0046`, `lint-0047`, `lint-0048` +2 | — | — | — |
-| AGSC-05-36 | VERIFIED | yes | `graph-0040` | — | — | — |
+| AGSC-05-36 | VERIFIED | yes | `graph-0040` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `knowledge/skos-export.test.js` | — | — |
 | AGSC-05-37 | VERIFIED | yes | `graph-0041`, `graph-0042` | — | — | — |
 | AGSC-05-38 | VERIFIED | yes | `lint-0052`, `lint-0053`, `lint-0054` +1 | — | — | — |
 | AGSC-05-39 | VERIFIED | yes | `graph-0044` | — | — | — |
@@ -423,7 +423,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-08 | VERIFIED | yes | `cli-0014` | `acceptance/steps/persona-i.js`, `adapters/node-clock.test.js`, `application/cli/verbs-sixteen.test.js` +6 | `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
 | AGSC-09-09 | VERIFIED | yes | `cli-0010`, `cli-0012` | `acceptance/steps/persona-c.js`, `application/cli/eng2-verbs.test.js`, `application/cli/flags.test.js` +6 | `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network` | — |
 | AGSC-09-10 | VERIFIED | yes | `cli-0020` | `application/cli/init-notes.test.js`, `application/cli/json-stderr-findings-only.test.js`, `application/cli/main-shell.test.js` +4 | — | `validate-diagrams`, `validate-features`, `validate-ontology` +2 |
-| AGSC-09-11 | VERIFIED | yes | `cli-0002`, `lint-0044` | `application/cli/build-keeps-findings.test.js`, `application/cli/ci-keeps-findings.test.js`, `application/cli/envelope.test.js` +15 | — | `validate-wellknown` |
+| AGSC-09-11 | VERIFIED | yes | `cli-0002`, `lint-0044` | `application/cli/build-keeps-findings.test.js`, `application/cli/ci-keeps-findings.test.js`, `application/cli/envelope.test.js` +16 | — | `validate-wellknown` |
 | AGSC-09-12 | VERIFIED | yes | — | `application/cli/verbs-sixteen.test.js`, `e2e/real-bundles.test.js` | — | — |
 | AGSC-09-13 | VERIFIED | yes | `cli-0023`, `cli-0027`, `cli-0028` +2 | `acceptance/steps/persona-c.js`, `application/cli/main-shell.test.js`, `boundary/surfaces.test.js` +7 | — | — |
 | AGSC-09-13a | VERIFIED | yes | `cli-0004` | `distribution/mcp-client.test.js`, `distribution/mcp-tools.test.js` | — | — |

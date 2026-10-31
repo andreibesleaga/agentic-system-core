@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-05-04, AGSC-05-04b, AGSC-06-26
+// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-05-04, AGSC-05-36, AGSC-05-04b, AGSC-06-26
 // Steps of features/persona-h-memory.feature that run offline: the lossless export
 // forms, a foreign OKF bundle, the COGX archive another memory system reads, there
 // and back, the connectors example that reshapes `chunks.jsonl` for a framework's
@@ -10,6 +10,8 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+
+const N3 = require('n3');
 
 const { FIXTURE, ROOT, built, linkset, splitItem } = require('./_world.js');
 
@@ -302,6 +304,34 @@ module.exports = [
       assert.strictEqual(lines.length, pages.length);
       // Each per-item view is already one canonical JSON line; the export line is that node.
       pages.forEach((page, i) => assert.strictEqual(lines[i], world.read(`www/pages/${page}`).replace(/\n$/u, ''), page));
+    },
+  },
+  {
+    pattern: '"dist/export/skos.ttl" types the Bundle as a skos:ConceptScheme and each published concept, lesson and cluster as a skos:Concept or skos:Collection, and holds no episode, procedure or gate',
+    run(world) {
+      const SKOS = 'http://www.w3.org/2004/02/skos/core#';
+      const ASC = 'https://w3id.org/agentic-system-core/ns#';
+      const TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+      const typed = (quads) => quads.filter((q) => q.predicate.value === TYPE).map((q) => [q.subject.value, q.object.value]);
+      const graph = typed(new N3.Parser({ format: 'N-Quads' }).parse(world.read('www/graph.nq')));
+      const view = typed(new N3.Parser().parse(world.read('dist/export/skos.ttl')));
+      const skosTypeOf = { [`${ASC}Concept`]: 'Concept', [`${ASC}Lesson`]: 'Concept', [`${ASC}Cluster`]: 'Collection' };
+      const wanted = graph.filter(([, cls]) => skosTypeOf[cls]).map(([iri, cls]) => `${iri} ${SKOS}${skosTypeOf[cls]}`);
+      assert.ok(wanted.length > 0, 'the Bundle publishes no concept');
+      const bundle = graph.find(([, cls]) => cls === `${ASC}Bundle`)[0];
+      assert.deepStrictEqual(view.map(([iri, cls]) => `${iri} ${cls}`).sort(), [...wanted, `${bundle} ${SKOS}ConceptScheme`].sort());
+      const left = graph.filter(([, cls]) => [`${ASC}Episode`, `${ASC}Procedure`, `${ASC}Gate`].includes(cls)).map(([iri]) => iri);
+      for (const iri of left) assert.ok(!world.read('dist/export/skos.ttl').includes(`<${iri}>`), `${iri} is in the view`);
+    },
+  },
+  {
+    pattern: '"dist/export/skos.ttl" is Turtle that a second run writes again byte for byte',
+    run(world) {
+      const first = world.read('dist/export/skos.ttl');
+      assert.ok(new N3.Parser().parse(first).length > 0);
+      const again = world.agsc(world.last.argv, { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.strictEqual(world.read('dist/export/skos.ttl'), first);
     },
   },
   {

@@ -2,8 +2,8 @@
 /**
  * src/application/cli/verbs/export.js — `export` (AGSC-09-07, AGSC-09-09).
  *
- * All six flags of AGSC-01-26…28 are implemented here, plus `--to <adapter>`
- * (AGSC-01-26a).
+ * All six flags of AGSC-01-26…28 and `--skos` (AGSC-05-36) are implemented here, plus
+ * `--to <adapter>` (AGSC-01-26a).
  *
  *   `--markdown` AGSC-01-26: the lint-normalized Bundle itself, one `.md` file per
  *   `--okf`      published item, lossless over every authored frontmatter key;
@@ -23,6 +23,10 @@
  *   `--jsonl`   AGSC-01-27: one JCS-canonical object per LF-terminated line, one
  *               line per item, in slug order, each line "exactly the per-item
  *               JSON-LD node of `pages/<slug>.jsonld`" — again taken from the build.
+ *   `--skos`    AGSC-05-36: `skos.ttl`, the SKOS view of the `graph.nq` of the same
+ *               build (`knowledge/skos-export.js`), so it agrees with the published
+ *               graph by construction; the scheme record comes from `site.title`,
+ *               `site.tagline` and `site.author`.
  *   `--to <adapter>`
  *               AGSC-01-26a: a memory adapter, "a single module discovered by
  *               directory convention … and never by a configuration key". The
@@ -55,6 +59,7 @@ const { canonicalize } = require('../../../knowledge/jcs.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const chunks = require('../../../knowledge/chunks.js');
+const skosExport = require('../../../knowledge/skos-export.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 
@@ -104,11 +109,32 @@ function writeExport(ctx, path, text) {
 }
 
 /**
- * AGSC-01-27: the two graph exports, taken out of the build that produced them.
+ * AGSC-05-36: `skos.ttl`, the SKOS view of the `graph.nq` this build produced. A build
+ * that emitted no `/graph.nq` (Level 0, AGSC-10-04) has no graph to take the view from.
  *
- * @returns {{findings:Array<object>, written:Array<string>}}
+ * @returns {{findings:Array<object>, writes:Array<Array<string>>}}
  */
-function graphFiles(files, flags) {
+function skosFile(files, config) {
+  const graph = files.get('/graph.nq');
+  if (graph === undefined) {
+    return {
+      findings: [{
+        code: 'AGSC-E001', severity: 'error',
+        message: 'export --skos: this build emitted no /graph.nq, and the SKOS view is read from it'
+          + ' (AGSC-05-36, AGSC-10-04)',
+      }],
+      writes: [],
+    };
+  }
+  return { findings: [], writes: [['skos.ttl', skosExport.skosView(graph, skosExport.schemeRecord(config))]] };
+}
+
+/**
+ * AGSC-01-27 and AGSC-05-36: the graph exports, taken out of the build that produced them.
+ *
+ * @returns {{findings:Array<object>, writes:Array<Array<string>>}}
+ */
+function graphFiles(files, flags, config) {
   const findings = [];
   const writes = [];
   if (flags.jsonld === true) {
@@ -141,12 +167,17 @@ function graphFiles(files, flags) {
       writes.push(['items.jsonl', `${lines.join('\n')}\n`]);
     }
   }
+  if (flags.skos === true) {
+    const skos = skosFile(files, config);
+    findings.push(...skos.findings);
+    writes.push(...skos.writes);
+  }
   return { findings, writes };
 }
 
 function graphExports(ctx, bundle, flags) {
   const built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
-  const planned = graphFiles(built.files, flags);
+  const planned = graphFiles(built.files, flags, bundle.config);
   return {
     findings: [...built.findings, ...planned.findings],
     written: planned.writes.map(([at, text]) => writeExport(ctx, at, text)),
@@ -407,7 +438,7 @@ function zipRoots(ctx, roots) {
 
 function run(ctx) {
   const flags = ctx.verbFlags || {};
-  const chosen = ['markdown', 'okf', 'jsonld', 'jsonl', 'steer'].filter((f) => flags[f] === true);
+  const chosen = ['markdown', 'okf', 'jsonld', 'jsonl', 'skos', 'steer'].filter((f) => flags[f] === true);
   if (flags.target !== undefined && flags.steer !== true) {
     return {
       status: 'fail',
@@ -418,9 +449,9 @@ function run(ctx) {
       }],
     };
   }
-  // `--zip` packages an export ROOT, and `--jsonld`/`--jsonl` are each a
-  // single file at `dist/export/` rather than a root of their own (AGSC-01-27), so
-  // an invocation that asks for nothing but those two has no set to archive.
+  // `--zip` packages an export ROOT, and `--jsonld`/`--jsonl`/`--skos` are each a
+  // single file at `dist/export/` rather than a root of their own (AGSC-01-27,
+  // AGSC-05-36), so an invocation that asks for nothing but those has no set to archive.
   if (flags.zip === true && !['markdown', 'okf', 'steer'].some((f) => flags[f] === true)
     && flags.to === undefined) {
     return {
@@ -428,8 +459,8 @@ function run(ctx) {
       findings: [{
         code: 'AGSC-E003', severity: 'error',
         message: '--zip archives an export root and has no meaning without --markdown, --okf,'
-          + ' --steer or --to <adapter>; --jsonld and --jsonl each write one file'
-          + ' (AGSC-01-26…27)',
+          + ' --steer or --to <adapter>; --jsonld, --jsonl and --skos each write one file'
+          + ' (AGSC-01-26…27, AGSC-05-36)',
       }],
     };
   }
@@ -438,8 +469,8 @@ function run(ctx) {
       status: 'fail',
       findings: [{
         code: 'AGSC-E003', severity: 'error',
-        message: 'export needs one of --markdown, --okf, --jsonld, --jsonl, --steer or'
-          + ' --to <adapter> (AGSC-01-26…28, AGSC-01-26a, AGSC-09-09)',
+        message: 'export needs one of --markdown, --okf, --jsonld, --jsonl, --skos, --steer or'
+          + ' --to <adapter> (AGSC-01-26…28, AGSC-01-26a, AGSC-05-36, AGSC-09-09)',
       }],
     };
   }
@@ -454,7 +485,7 @@ function run(ctx) {
   if (flags.markdown === true) collect(bundleExport(ctx, bundle, 'markdown'));
   if (flags.okf === true) collect(bundleExport(ctx, bundle, 'okf'));
   if (flags.steer === true) collect(steerExport(ctx, bundle, targetsOf(flags)));
-  if (flags.jsonld === true || flags.jsonl === true) {
+  if (flags.jsonld === true || flags.jsonl === true || flags.skos === true) {
     findings.push(...graphExports(ctx, bundle, flags).findings);
   }
   if (flags.to !== undefined) collect(adapterExport(ctx, bundle, String(flags.to)));
