@@ -167,6 +167,8 @@ graph TB
 | knowledge | `slug.js` `links.js` | slug grammar; fourteen Links (nine core + five Mode-2), inverses, orphans, cycles | 4 | lint build compose |
 | knowledge | `skos.js` `jsonld.js` `turtle.js` `nquads.js` `rdfxml.js` `jcs.js` | nested `skos:Collection`; four RDF views; JCS | 6, 7 | build export |
 | knowledge | `skos-export.js` | the SKOS view of `graph.nq` (1.1): scheme, top concepts, `skos:Concept` and `skos:Collection` types | — | export |
+| knowledge | `suggest.js` | the Link suggestions of `lint --suggest` (1.1): five generators, evidence for each, written only to `dist/suggestions.json` | — | lint |
+| knowledge | `closure.js` | the OWL 2 RL consequences of the graph (1.1): the rules as data, run by the `n3` `Reasoner`; written only to `dist/export/closure.nt` | — | export |
 | knowledge | `diagrams.js` | ported DSL→SVG compiler | 5 | build import |
 | governance | `lint.js` | L1/L2 findings with file+line | 3–4 | lint ci |
 | governance | `injection.js` `secrets.js` `pii.js` `cleanroom.js` | the four N9/clean-room lints (§8, §12) | — | lint ci review |
@@ -185,7 +187,7 @@ graph TB
 | distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
 | distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 7 tools (+ask, +remember); staleness + link checks | — | init mcp refresh |
 | interchange | `import.js` `okf.js` `adapters/skos.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in; a SKOS thesaurus in (every foreign item a draft) | — | import |
-| interchange | `export.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
+| interchange | `export-bundle.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
 | *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile`, `tools/gen-shapes` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
 

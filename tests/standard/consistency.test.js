@@ -103,10 +103,8 @@ const NOT_RAISED = Object.freeze({
   // Registered by the 1.1 specification; the engine does not raise them yet. Each leaves this list
   // when the code that raises it is written, and the test then fails until the entry is removed.
   'AGSC-E317': 'typed domain links are not read yet (AGSC-03-27)',
-  'AGSC-E417': 'the minimum-sources lint is not implemented yet (AGSC-08-31)',
   'AGSC-E418': 'the check of a declared domain context is not implemented yet (AGSC-02-25)',
   'AGSC-E419': 'the per-context title uniqueness is not implemented yet (AGSC-08-32)',
-  'AGSC-E420': 'the check of the site vocabulary is not implemented yet (AGSC-05-38)',
   'AGSC-E421': 'the check of the site shapes is not implemented yet (AGSC-05-41)',
   'AGSC-E422': 'the check of the competency questions is not implemented yet (AGSC-05-41)',
   'AGSC-E512': 'the warrant check is not implemented yet (AGSC-05-40)',

@@ -36,11 +36,12 @@
 
 const { XMLParser, XMLValidator } = require('fast-xml-parser');
 
-const { checkCombining, COMBINING_BOUND } = require('../knowledge/unicode.js');
+const { checkCombining, COMBINING_BOUND, foldCase } = require('../knowledge/unicode.js');
 const { aiProvenance, sortFindings } = require('../knowledge/validate.js');
 const { finding } = require('./finding.js');
 const links = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
+const nquads = require('../knowledge/nquads.js');
 const { isPublished } = require('../knowledge/chunks.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
 const { withArticle } = require('../shared/article.js');
@@ -438,7 +439,7 @@ function checkConstructs(item) {
 }
 
 /** AGSC-05-21: a label after NFC and case folding, the form two labels are compared in. */
-const foldLabel = (label) => String(label).normalize('NFC').toUpperCase().toLowerCase();
+const foldLabel = foldCase;
 
 /** The distinct folded labels of an item: its `title` and its `aliases`. */
 function labelsOf(fm) {
@@ -472,6 +473,39 @@ function checkOverlappingLabels(items, config = {}) {
     for (const key of keys) if (!holders.has(key)) holders.set(key, { slug: v.slug, order });
   }
   return findings;
+}
+
+/** AGSC-08-31: the `kind`s of concept that must be grounded in sources. */
+const GROUNDED_KINDS = Object.freeze(new Set(['pattern', 'taxonomy', 'explainer', 'principle']));
+
+/** The distinct `sources[].resource` strings of an item. */
+function resourcesOf(fm) {
+  const list = Array.isArray(fm.sources) ? fm.sources : [];
+  return new Set(list.map((s) => s && s.resource).filter((r) => typeof r === 'string'));
+}
+
+/**
+ * AGSC-08-31: with `lint.min_sources` N greater than 0, each published concept of kind
+ * `pattern`, `taxonomy`, `explainer` or `principle` that has fewer than N counted sources is
+ * the warning AGSC-E417. A counted source is a distinct `sources[].resource` that is not the
+ * IRI of another `ai-generated` item of the Bundle: a text a model wrote cannot ground another.
+ * With N equal to 0, or no `lint.min_sources`, nothing is checked. Item files only: no clock,
+ * no network.
+ */
+function checkMinimumSources(items, config = {}) {
+  const minimum = Number((config.lint || {}).min_sources) || 0;
+  if (minimum <= 0) return [];
+  const base = (config.site || {}).base;
+  const views = items.map((item) => links.view(item));
+  const aiIris = new Set(views.filter((v) => v.fm.prov && v.fm.prov.origin === 'ai-generated')
+    .map((v) => nquads.itemIri({ slug: v.slug, type: v.type }, { base })));
+  return views
+    .filter((v) => v.type === 'concept' && GROUNDED_KINDS.has(v.fm.kind) && isPublished(v.fm, config.releases))
+    .filter((v) => [...resourcesOf(v.fm)].filter((resource) => !aiIris.has(resource)).length < minimum)
+    .map((v) => finding('AGSC-E417',
+      `${v.fm.kind} "${v.slug}" has fewer than ${minimum} counted sources; a source that is the IRI of an ai-generated item does not count (AGSC-08-31)`,
+      { file: v.path, severity: 'warn', slug: v.slug }))
+    .sort((a, b) => compareCodePoint(a.file, b.file));
 }
 
 /**
@@ -652,6 +686,7 @@ function lint(bundle = {}, options = {}) {
 
   findings.push(...checkAttachments(items, { ...options, config }).findings);
   findings.push(...checkOverlappingLabels(items, config));
+  findings.push(...checkMinimumSources(items, config));
   findings.push(...checkCompiledSvg([...(options.diagramPaths || []), ...(options.trackedPaths || bundle.trackedPaths || [])]));
   findings.push(...checkPorts(items).findings);
   findings.push(...checkEnforce(items));
@@ -687,6 +722,7 @@ module.exports = {
   checkCompiledSvg,
   checkConstructs,
   checkFences,
+  checkMinimumSources,
   checkOverlappingLabels,
   checkPaths,
   checkBoards,

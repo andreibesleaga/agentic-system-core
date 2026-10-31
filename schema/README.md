@@ -1,4 +1,4 @@
-# `schema/` — the three JSON Schemas
+# `schema/` — the three JSON Schemas and the generated profile files
 
 **Summary.** The machine-checkable shape of the three documents a Bundle is made of,
 in JSON Schema 2020-12: `item.schema.json` (the frontmatter of one item),
@@ -16,7 +16,8 @@ node tools/validate-schemas --json   # meta-validates the three against 2020-12
 
 From 1.1 the folder also holds `dctap.csv`, the Dublin Core Tabular Application Profile (DCTAP, DCMI) of the
 mapping from frontmatter keys to RDF properties (AGSC-05-26). It is informative and generated: the table of
-AGSC-05-26 decides, and a closed list in `item.schema.json` becomes a picklist. Do not edit it by hand.
+AGSC-05-26 decides, and a closed list in `item.schema.json` becomes a picklist. Do not edit it by hand. See
+[docs/DUBLIN-CORE-PROFILE.md](../docs/DUBLIN-CORE-PROFILE.md).
 
 ```bash
 node tools/gen-dc-profile           # writes schema/dctap.csv

@@ -370,6 +370,24 @@ function skosCase(vector) {
   return checks([['skos', got === vector.expected.skos, `got\n${got}`]]);
 }
 
+/**
+ * graph-0041, graph-0042 — AGSC-05-37: the closure file, the WHOLE of it. The closure is read
+ * from the `graph.nq` the same items give and from the vocabulary files in force: the
+ * engine's `ontology/agsc.ttl`, and the case's site vocabulary where it states one.
+ */
+function closureCase(vector, ctx) {
+  const closureModule = require('../../../src/knowledge/closure.js');
+  const nquads = nq.toNQuads(vector.input.items, optionsFor(vector.input));
+  const vocabularies = [fs.readFileSync(path.join((ctx && ctx.root) || '.', 'ontology', 'agsc.ttl'), 'utf8')];
+  if (typeof vector.input.vocabulary === 'string') vocabularies.push(vector.input.vocabulary);
+  const got = closureModule.closure(nquads, vocabularies);
+  return checks([
+    ['closure', got.text === vector.expected.closure, `got\n${got.text}`],
+    ['warnings', jcs.canonicalize(got.warnings.map((w) => w.code)) === jcs.canonicalize(vector.expected.warnings),
+      jcs.canonicalize(got.warnings.map((w) => w.code))],
+  ]);
+}
+
 /** graph-0030 to graph-0039 — one of the ten questions of AGSC-05-34 over the shared fixture. */
 function questionCase(vector) {
   const { items, question, subject, selection, at } = vector.input;
@@ -487,6 +505,7 @@ module.exports.run = guarded((vector, ctx) => {
   if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
   if (typeof expected.skos === 'string') return skosCase(vector);
+  if (typeof expected.closure === 'string') return closureCase(vector, ctx);
   if (typeof input.question === 'number') return questionCase(vector);
   if (Array.isArray(expected.readings)) return readingsCase(vector);
   if (Array.isArray(input.ontology_versions)) return contextAddressCase(vector, ctx);

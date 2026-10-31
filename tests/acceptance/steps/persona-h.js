@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-01-39, AGSC-05-04, AGSC-05-36, AGSC-05-04b, AGSC-06-26, AGSC-09-17
+// verifies AGSC-05-35, AGSC-05-37, AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-01-39, AGSC-05-04, AGSC-05-36, AGSC-05-04b, AGSC-06-26, AGSC-09-17
 // Steps of features/persona-h-memory.feature that run offline: the lossless export
 // forms, a foreign OKF bundle, the COGX archive another memory system reads, there
 // and back, the connectors example that reshapes `chunks.jsonl` for a framework's
@@ -12,6 +12,8 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const N3 = require('n3');
+
+const jcs = require('../../../src/knowledge/jcs.js');
 
 const { FIXTURE, ROOT, built, linkset, splitItem } = require('./_world.js');
 
@@ -460,6 +462,72 @@ module.exports = [
       const again = world.agsc(world.last.argv, { offline: true });
       assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
       assert.strictEqual(world.read('dist/export/skos.ttl'), first);
+    },
+  },
+  {
+    pattern: 'a note "alpha" that links to the note "beta" in its body, with no Link between them',
+    run(world) {
+      world.bundle();
+      const note = (title, body) => ['---', 'type: concept', 'kind: principle', `title: ${title}`,
+        'description: A note written for the scenario that asks which notes should be linked.',
+        'tags:', '  - agents', '  - protocols', 'clusters:', '  - agent-patterns',
+        'prov:', '  origin: human', '  operator: human:tester', '---', '', body, ''].join('\n');
+      world.write('content/concepts/alpha.md', note('Alpha note', 'This builds on [the next note](beta).'));
+      world.write('content/concepts/beta.md', note('Beta note', 'A short body.'));
+      world.state.contentBefore = world.snapshot('content');
+    },
+  },
+  {
+    pattern: '"dist/suggestions.json" proposes the Link "related" from "alpha" to "beta" with the evidence "mention"',
+    run(world) {
+      const { suggestions } = JSON.parse(world.read('dist/suggestions.json'));
+      assert.deepStrictEqual(suggestions.find((s) => s.source === 'alpha' && s.target === 'beta'),
+        { evidence: [{ kind: 'mention' }], generator: 'G1', key: 'related', source: 'alpha', target: 'beta' });
+    },
+  },
+  {
+    pattern: 'the content folder is byte for byte what it was before the suggestions were asked for',
+    run(world) {
+      assert.deepStrictEqual(world.snapshot('content'), world.state.contentBefore);
+    },
+  },
+  {
+    pattern: '"dist/suggestions.json" is canonical JSON that a second run writes again byte for byte',
+    run(world) {
+      const first = world.read('dist/suggestions.json');
+      assert.ok(first.endsWith('}\n') && !first.endsWith('\n\n'));
+      assert.strictEqual(`${jcs.canonicalize(JSON.parse(first))}\n`, first);
+      const again = world.agsc(world.last.argv, { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.strictEqual(world.read('dist/suggestions.json'), first);
+    },
+  },
+  {
+    pattern: '"dist/export/closure.nt" holds triples that the OWL 2 RL rules entail, none of them in "www/graph.nq"',
+    run(world) {
+      const closure = world.read('dist/export/closure.nt');
+      const asserted = new Set(world.read('www/graph.nq').split('\n'));
+      const lines = closure.split('\n').slice(0, -1);
+      assert.ok(lines.length > 0, 'the closure of the acceptance Bundle is empty');
+      for (const line of lines) assert.ok(!asserted.has(line), `${line} is already in graph.nq`);
+      assert.ok(lines.some((line) => line.includes('skos/core#Concept>')), 'no concept is typed skos:Concept');
+    },
+  },
+  {
+    pattern: '"dist/export/closure.nt" is N-Quads that a second run writes again byte for byte',
+    run(world) {
+      const first = world.read('dist/export/closure.nt');
+      assert.strictEqual(new N3.Parser({ format: 'N-Quads' }).parse(first).length, first.split('\n').length - 1);
+      const again = world.agsc(world.last.argv, { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.strictEqual(world.read('dist/export/closure.nt'), first);
+    },
+  },
+  {
+    pattern: /^no file under "([^"]+)" has "([^"]+)" in its name$/u,
+    run(world, folder, text) {
+      const found = [...world.snapshot(folder).keys()].filter((rel) => rel.includes(text));
+      assert.deepStrictEqual(found, []);
     },
   },
   {

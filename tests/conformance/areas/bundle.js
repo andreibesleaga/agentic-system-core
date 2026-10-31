@@ -73,6 +73,37 @@ function reservedConfigCase(vector, ctx) {
 }
 
 /**
+ * The environment the command line sees. `git_history: false` runs the case with no
+ * `SOURCE_DATE_EPOCH` unless `input.environment` states one (tests/vectors/README.md), so
+ * the build instant is the clock's own default; every other case fixes the epoch.
+ */
+function environmentOf(vector) {
+  if (vector.input.git_history === false) return { ...(vector.input.environment || {}) };
+  return { SOURCE_DATE_EPOCH: '1767225600' };
+}
+
+/** `{ repository-relative path: SHA-256 }` of every file under `root`, for before-and-after comparisons. */
+function snapshot(root) {
+  const path = require('node:path');
+  const nodeFs = require('node:fs');
+  const crypto = require('node:crypto');
+  const files = {};
+  const walk = (dir) => {
+    for (const entry of nodeFs.readdirSync(dir, { withFileTypes: true })) {
+      const at = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(at);
+      else {
+        // A symbolic link is compared by its target text, never followed (it may name a folder).
+        const bytes = entry.isSymbolicLink() ? Buffer.from(nodeFs.readlinkSync(at)) : nodeFs.readFileSync(at);
+        files[path.relative(root, at).split(path.sep).join('/')] = crypto.createHash('sha256').update(bytes).digest('hex');
+      }
+    }
+  };
+  walk(root);
+  return files;
+}
+
+/**
  * The minimal fixture with the vector's files added, in a scratch directory that is
  * removed afterwards, and the real `lint --json` run over it through the CLI's own
  * entry point: the shape of every case whose input is `bundle` plus `add_files`
@@ -106,15 +137,17 @@ function onFixture(vector, ctx, inspect) {
     nodeFs.symlinkSync(target, at, kind);
   }
   try {
+    const before = snapshot(root);
     const stdout = captureStream();
     const stderr = captureStream();
-    const exit = main(['lint', '--json', '--quiet'], {
-      env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: createFileSystem(root) }, root,
+    // `input.argv` names the verb and its flags (`lint --suggest`); a case without it runs `lint`.
+    const exit = main([...(vector.input.argv || ['lint']), '--json', '--quiet'], {
+      env: environmentOf(vector), ports: { fs: createFileSystem(root) }, root,
       specVersion: (vector.options || {}).spec_version, stderr, stdout, version: (vector.options || {}).spec_version,
     });
     let findings = [];
     try { findings = JSON.parse(stdout.text() || '{}').findings || []; } catch (e) { findings = []; }
-    return inspect({ exit, findings, root });
+    return inspect({ before, exit, findings, root });
   } finally { nodeFs.rmSync(root, { force: true, recursive: true }); }
 }
 
@@ -154,14 +187,30 @@ function variantFileAt10Case(vector, ctx) {
  * `expected.lint.exit` the exit code.
  */
 function fixtureLintCase(vector, ctx) {
-  return onFixture(vector, ctx, ({ exit, findings }) => {
+  return onFixture(vector, ctx, ({ before, exit, findings, root }) => {
     const want = vector.expected.lint;
     const m = findingsMatch(want.findings, findings);
-    return checks([
+    const list = [
       [`lint exit ${want.exit}`, exit === want.exit, `exit ${exit}`],
       ['lint findings', m.ok && findings.length === want.findings.length,
         `${m.detail} ${JSON.stringify(findings.map((f) => [f.code, f.file, f.severity, f.slug]))}`],
-    ]);
+    ];
+    const after = snapshot(root);
+    // `file_bytes`: the exact bytes of files the run wrote.
+    for (const [file, text] of Object.entries(vector.expected.file_bytes || {})) {
+      const got = after[file] === undefined ? null : require('node:fs').readFileSync(require('node:path').join(root, file), 'utf8');
+      list.push([`${file} bytes`, got === text, `got ${JSON.stringify(got)}`]);
+    }
+    // `written_only_under`: every file that is new or changed lies under that folder, so
+    // the content tree (and the rest of the Bundle) has the same hashes as before the run.
+    if (vector.expected.written_only_under !== undefined) {
+      const folder = `${vector.expected.written_only_under}/`;
+      const touched = Object.keys(after).filter((file) => after[file] !== before[file]);
+      const removed = Object.keys(before).filter((file) => after[file] === undefined);
+      list.push([`written only under ${folder}`, removed.length === 0 && touched.every((file) => file.startsWith(folder)),
+        `changed outside: ${JSON.stringify([...touched, ...removed].filter((file) => !file.startsWith(folder)))}`]);
+    }
+    return checks(list);
   });
 }
 

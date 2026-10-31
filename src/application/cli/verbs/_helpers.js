@@ -74,13 +74,14 @@ function schemas() {
  * only place that can hand the vocabulary to the build; without it, a built context
  * would carry none of the `asc:` term definitions.
  *
- * @returns {{terms: Array<object>, version: string|null}}
+ * @returns {{terms: Array<object>, text: string, version: string|null}}
  */
 function ontology() {
   if (vocabulary === null) {
     const text = readOntology(ENGINE_ROOT);
     vocabulary = Object.freeze({
       terms: Object.freeze(turtle.ontologyTerms(text)),
+      text,
       version: turtle.ontologyVersion(text),
     });
   }

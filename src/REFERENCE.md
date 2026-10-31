@@ -153,7 +153,7 @@ the verb → module table.
 
 ```js
 // knowledge/unicode.js
-nfc(s); codePointLength(s); compareCodePoint(a, b); compareUtf16(a, b);
+nfc(s); foldCase(s) /* NFC, upper then lower case: the label folding of AGSC-05-21 */; codePointLength(s); compareCodePoint(a, b); compareUtf16(a, b);
 checkCombining(s, max = 256); isWellFormed(s)
 
 // knowledge/yaml.js — throws YamlError { code: 'AGSC-E10x' | 'AGSC-E904', line, col, message }
@@ -442,7 +442,7 @@ lint to the same Findings in the same order.
 | `governance/pii.js` | Governance | AGSC-08-16 — `no-pii` (`AGSC-E404`) |
 | `governance/cleanroom.js` | Governance | AGSC-08-17 — `clean-room` (`AGSC-E405`) |
 | `governance/finding.js` | Governance | the one place a Governance Finding adds a member |
-| `governance/lint.js` | Governance | AGSC-08-13…17 composed, plus AGSC-01-34, 01-35, 02-21, 02-22, 02-23, 02-96, 02-98, 04-23; sorted per AGSC-09-10 |
+| `governance/lint.js` | Governance | AGSC-08-13…17 composed, plus AGSC-05-21 (`AGSC-E416`), AGSC-08-31 (`AGSC-E417`, `checkMinimumSources`), AGSC-01-34, 01-35, 02-21, 02-22, 02-23, 02-96, 02-98, 04-23; sorted per AGSC-09-10 |
 | `governance/prov.js` | Governance | AGSC-08-01…08-09, AGSC-10-02, AGSC-10-17 — provenance, trailers, Gates, the claim limit |
 
 ### Public API of these modules
@@ -452,6 +452,7 @@ lint to the same Findings in the same order.
 anchorOf(text); assignAnchors(texts); anchors(body) -> { anchors, headings, errors }
 render(body) -> { html, headings, anchors, fences, links }
 headings(body); fences(body); links(body); selectionFences(body); scan(body)
+proseText(body) -> string   // the body without fenced code, for the phrase search of AGSC-05-35 (G3)
 
 // knowledge/links.js
 LINK_KEYS (14); CORE_KEYS (9); MODE2_KEYS (5); INVERSE; SYMMETRIC
@@ -535,6 +536,8 @@ by discipline.
 | `knowledge/nquads.js` | AGSC-05-01…03 (IRIs), 05-12/13 (classes), 05-14/15 (Source and Review fragment IRIs), 05-16 (Links and inverses), 05-26/05-30 (the frontmatter → property table), 05-29 (attachments), 05-31/32 (literal forms and escaping), 04-13/15/16 (the sort that is the canonicalisation), 06-33 (static fragments) |
 | `knowledge/skos.js` | AGSC-05-12/13, 05-17…05-20 — the SKOS integrity rules, IRI-free and injected with a resolver so that `nquads.js` may require it without a cycle |
 | `knowledge/skos-export.js` | AGSC-05-36 — `skosView(nquadsText, record)` and `schemeRecord(config)`: the SKOS view `export --skos` writes, read from the text of `graph.nq` with `n3` and written by `turtle.serialize` with a block of its own |
+| `knowledge/closure.js` | AGSC-05-37 — `closure(nquadsText, vocabularies)` returns `{text, warnings}`: the triples the RL subset (`prp-dom`, `prp-rng`, `prp-spo1`, `prp-symp`, `prp-inv1`, `prp-inv2`, `prp-trp`, `cax-sco`; `prp-irp` as the warning `AGSC-E313`) entails and the inputs do not hold, in the Bundle's graph, sorted, one LF at the end; `RULES` is the rule list as data. Run by the `Reasoner` of `n3`; reads through `turtle.parse` |
+| `knowledge/suggest.js` | AGSC-05-35 — `suggestions(items)` (the sorted list of generators G1 to G5, each `{evidence, generator, key, source, target}`) and `file(items, bundleVersion)` (the JCS text of `dist/suggestions.json`) |
 | `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), and the vocabulary reader that feeds AGSC-06-32 |
 | `knowledge/jsonld.js` | AGSC-05-09 (`graph.jsonld`), AGSC-06-32 (`/ns/context.jsonld`), AGSC-05-04b (`memory://`, `AGSC-E309`) |
 | `knowledge/rdfxml.js` | AGSC-05-06 — RESERVED at 1.x, not emitted; kept correct by an isomorphism test |
@@ -915,11 +918,11 @@ built node.
 | Verb | Rule | Module | State |
 |---|---|---|---|
 | `init` | AGSC-02-90…95, AGSC-01-37 | `application/cli/verbs/init.js` → `distribution/init.js`, `knowledge/adopt.js` | wired |
-| `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired |
+| `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired; `--suggest` (AGSC-05-35) writes `dist/suggestions.json` by `knowledge/suggest.js` and nothing under `content/` |
 | `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired |
 | `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g) | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check` | wired |
 | `ci` | AGSC-09-08, AGSC-08-26(g) | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected; its verify lane adds `governance/auto-merge.js#check` | wired |
-| `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17 | `verbs/export.js` → `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) and, from 1.1, `--skos` (AGSC-05-36: `dist/export/skos.ttl` by `knowledge/skos-export.js` from the build's own `graph.nq`); `--zip` writes one archive beside each multi-file export root; `--manifest` (AGSC-09-17 (a)) adds `export-manifest.json` to each export root of the run, with the digests of its files, the item count and the items digest (`interchange/export-manifest.js`; the bundle hash and item IRIs come from the build, run in the verb) |
+| `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17 | `verbs/export.js` → `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) and, from 1.1, `--skos` (AGSC-05-36: `dist/export/skos.ttl` by `knowledge/skos-export.js` from the build's own `graph.nq`) and `--closure` (AGSC-05-37: `dist/export/closure.nt` by `knowledge/closure.js` from the same `graph.nq`, the engine's ontology and the node's `domain.vocabulary`; never a published surface); `--zip` writes one archive beside each multi-file export root; `--manifest` (AGSC-09-17 (a)) adds `export-manifest.json` to each export root of the run, with the digests of its files, the item count and the items digest (`interchange/export-manifest.js`; the bundle hash and item IRIs come from the build, run in the verb) |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf,export-manifest}.js`, `interchange/adapters/skos.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`), for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22 (from 1.1 every item of a source whose root document does not carry this Bundle's `base` is a draft; a folder holding `export-manifest.json` is checked against it, AGSC-09-17), and for `--from skos <file.ttl>`, the SKOS thesaurus import of AGSC-01-39 (`--replace`); `--dry-run` on both; `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
 | `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12 | `verbs/compose.js` → `composition/{compose,architecture,harness}.js` | wired, and it WRITES the seven Harness file kinds of AGSC-07-12 into `dist/harness/<name>/` or `--out`; `--zip` writes them as one archive BESIDE that directory; `--emit <path or package>` runs a composition-emitter plugin, and a registered `--emit` target this distribution does not ship is refused with `AGSC-E203`, exit 1 (AGSC-00-20, AGSC-07-18) |
 | `propose` | AGSC-08-04, AGSC-08-05 | `verbs/propose.js` → `knowledge/adopt.js`, `diff@9.0.0` | wired |

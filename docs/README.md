@@ -41,6 +41,7 @@ kind of reader down one path.
 | [SECURITY-CONSIDERATIONS.md](SECURITY-CONSIDERATIONS.md) | threats and the rules that close them |
 | [COMPLIANCE-CROSSWALK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/COMPLIANCE-CROSSWALK.md) | outside frameworks mapped to the rules (not legal advice) |
 | [RELATED-WORK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RELATED-WORK.md) | how this relates to other systems, with dates |
+| [DUBLIN-CORE-PROFILE.md](DUBLIN-CORE-PROFILE.md) | the Dublin Core Tabular Application Profile `schema/dctap.csv`: which key becomes which property, and how it is generated |
 | [SHACL-SHAPES.md](SHACL-SHAPES.md) | the SHACL shapes of the graph: what they check, how to run them in the development lane, and what that lane has run |
 | [TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md) | the test levels and how to run them |
 | [RULE-COVERAGE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RULE-COVERAGE.md) | for every rule, the checks that verify it (generated) |

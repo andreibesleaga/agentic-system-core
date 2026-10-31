@@ -260,14 +260,63 @@ function clusterLinks(item, byId, memberships) {
   return clusters.length === 0 ? {} : { clusters };
 }
 
+/** Whether `from` reaches `to` by the child-to-parent edges of `parents` (a map of slug to slugs). */
+function reaches(parents, from, to) {
+  const seen = new Set();
+  const stack = [from];
+  while (stack.length > 0) {
+    const slug = stack.pop();
+    if (slug === to) return true;
+    if (!seen.has(slug)) {
+      seen.add(slug);
+      stack.push(...(parents.get(slug) || []));
+    }
+  }
+  return false;
+}
+
+/**
+ * AGSC-01-39 (e) with AGSC-03-08: the `skos:broader` and `skos:narrower` statements between two
+ * concepts that may become Links. A concept is never its own parent, and a statement that would
+ * close a cycle of the file's own hierarchy is left out, so that it is reported as dropped
+ * (otherwise `lint` would refuse the Bundle the import just wrote: AGSC-E303). The statements
+ * are taken in order of child, parent and predicate, so the same file keeps the same ones.
+ *
+ * @returns {Set<object>} the statements to carry.
+ */
+function hierarchyOf(items, byId) {
+  const candidates = [];
+  for (const item of items.filter((one) => one.kind === 'concept')) {
+    for (const key of ['broader', 'narrower']) {
+      for (const statement of having(item.statements, `${SKOS}${key}`)) {
+        const target = statement.object.termType === 'Literal' ? undefined : byId.get(idOf(statement.object));
+        if (target === undefined || target.kind !== 'concept') continue;
+        const [child, parent] = key === 'broader' ? [item.slug, target.slug] : [target.slug, item.slug];
+        candidates.push({ statement, child, parent, predicate: statement.predicate });
+      }
+    }
+  }
+  candidates.sort((a, b) => compareCodePoint(a.child, b.child) || compareCodePoint(a.parent, b.parent)
+    || compareCodePoint(a.predicate, b.predicate));
+  const parents = new Map();
+  const accepted = new Set();
+  for (const { statement, child, parent } of candidates) {
+    if (child === parent || reaches(parents, parent, child)) continue;
+    parents.set(child, [...(parents.get(child) || []), parent]);
+    accepted.add(statement);
+  }
+  return accepted;
+}
+
 /** AGSC-01-39 (e): `broader`, `narrower` and `related` between two concepts of the file, as slugs. */
-function conceptLinks(item, byId) {
+function conceptLinks(item, byId, hierarchy) {
   if (item.kind !== 'concept') return {};
   const links = {};
   for (const key of LINK_KEYS) {
     const found = having(item.statements, `${SKOS}${key}`).filter((statement) => {
       const target = statement.object.termType === 'Literal' ? undefined : byId.get(idOf(statement.object));
-      return target !== undefined && target.kind === 'concept';
+      if (target === undefined || target.kind !== 'concept') return false;
+      return !['broader', 'narrower'].includes(key) || hierarchy.has(statement);
     });
     carry(...found);
     const targets = [...new Set(found.map((s) => byId.get(idOf(s.object)).slug))].sort(compareCodePoint);
@@ -285,12 +334,17 @@ function sourcesOf(item) {
   return resources.length === 0 ? {} : { sources: resources.map((resource) => ({ resource })) };
 }
 
-/** The licence a scheme states (`dcterms:license`), the least in code-point order; `null` when none. */
+/**
+ * The licence a scheme states (`dcterms:license`): the least in code-point order, which is the only
+ * statement carried (the others stay unused and are reported); `null` when none.
+ */
 function schemeLicence(scheme) {
-  const found = having(scheme.statements, `${DCTERMS}license`);
-  carry(...found);
-  const values = found.map((s) => nfc(s.object.value)).sort(compareCodePoint);
-  return values.length === 0 ? null : values[0];
+  const found = having(scheme.statements, `${DCTERMS}license`)
+    .map((statement) => ({ statement, value: nfc(statement.object.value) }))
+    .sort((a, b) => compareCodePoint(a.value, b.value));
+  if (found.length === 0) return null;
+  carry(found[0].statement);
+  return found[0].value;
 }
 
 /** AGSC-01-39 (h): the licence of the first scheme (by IRI) that states one, for an item in that scheme. */
@@ -346,7 +400,7 @@ function writeOf(item, context) {
   const path = `content/${TYPE_PLURAL[item.kind === 'concept' ? 'concept' : 'cluster']}/${item.slug}.md`;
   const named = titleOf(item, path);
   const defined = definitionOf(item);
-  const links = { ...clusterLinks(item, context.byId, context.memberships), ...conceptLinks(item, context.byId) };
+  const links = { ...clusterLinks(item, context.byId, context.memberships), ...conceptLinks(item, context.byId, context.hierarchy) };
   const raw = {
     ...(item.kind === 'concept' ? { type: 'concept', kind: 'term' } : { type: 'cluster' }),
     title: named.title,
@@ -370,6 +424,19 @@ function writeOf(item, context) {
   return { findings, write: { path, text: itemText(clean.frontmatter, defined.body, context.itemSchema) } };
 }
 
+/**
+ * The words of one dropped statement. The `memberList` of an ordered collection is the one
+ * statement whose members ARE carried (they join the cluster); what is dropped is the order,
+ * and the message says so, not that the membership was lost.
+ */
+function dropMessage(id, statement) {
+  if (statement.predicate === `${SKOS}memberList`) {
+    return `${id}: the order of the members (skos:memberList) is not carried by the SKOS import; the members joined the cluster`;
+  }
+  return `${id}: the statement ${statement.predicate} ${JSON.stringify(statement.object.value)} is not carried`
+    + ' by the SKOS import and was dropped';
+}
+
 /** One warning for each statement that nothing carried (AGSC-01-39: "every statement that none of (a) to (i) uses"). */
 function droppedFindings(subjects) {
   const out = [];
@@ -380,8 +447,7 @@ function droppedFindings(subjects) {
         || compareCodePoint(a.object.language || '', b.object.language || ''));
     for (const statement of unused) {
       out.push({
-        ...warning(`${id}: the statement ${statement.predicate} ${JSON.stringify(statement.object.value)} is not carried`
-          + ' by the SKOS import and was dropped'),
+        ...warning(dropMessage(id, statement)),
         predicate: statement.predicate,
         subject: id,
       });
@@ -404,7 +470,8 @@ function droppedFindings(subjects) {
 function plan(input, options) {
   let quads;
   try {
-    quads = turtle.parse(input.turtle);
+    // RDF 1.1 Turtle only: left to detect the format, n3 would also take TriG and merge its graphs.
+    quads = turtle.parse(input.turtle, { format: 'Turtle' });
   } catch (e) {
     return {
       findings: [finding('AGSC-E003', `the file is not RDF 1.1 Turtle: ${(e && e.message) || 'parse error'} (AGSC-01-39)`,
@@ -428,6 +495,7 @@ function plan(input, options) {
   const licences = new Map(items.filter((item) => item.kind === 'scheme').map((item) => [item.id, schemeLicence(item)]));
   const context = {
     byId, itemSchema: options.itemSchema, licences, memberships: membershipsOf(subjects, byId),
+    hierarchy: hierarchyOf(items, byId),
     operator: options.operator, subjects,
   };
   const findings = [];

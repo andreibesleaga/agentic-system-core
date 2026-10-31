@@ -59,10 +59,10 @@ const VERB_FLAGS = {
   // `lint --fix` alone. `agsc lint --self` is therefore the usage error the rule
   // requires — with the hint of `RETIRED_FLAGS` below, so that an operator following
   // `docs/PLAN.md`'s older definition-of-done line is told what replaced it.
-  lint: new Map([['--fix', 'bool']]),
+  lint: new Map([['--fix', 'bool'], ['--suggest', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
-    ['--jsonl', 'bool'], ['--skos', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
+    ['--jsonl', 'bool'], ['--skos', 'bool'], ['--closure', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
     ['--zip', 'bool'], ['--manifest', 'bool'],
   ]),
   // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
@@ -101,7 +101,7 @@ const VERB_FLAGS = {
  */
 const RETIRED_FLAGS = Object.freeze({
   lint: {
-    '--self': 'AGSC-09-09 defines `--fix` and no other flag on `lint`, and `--self` was read by'
+    '--self': 'AGSC-09-09 defines `--fix` and `--suggest` and no other flag on `lint`, and `--self` was read by'
       + ' no code. To check this DISTRIBUTION rather than a Bundle, run the nine independent'
       + ' validators of AGSC-09-90: `for t in tools/validate-*; do node $t --json || exit 1; done`,'
       + ' plus `node tools/count-artifacts --json`. To lint a BUNDLE, run `agsc lint` from its root.',
@@ -383,12 +383,12 @@ const GLOBAL_FLAG_NAMES = Object.freeze(['--json', '--quiet', '--plain', '--no-i
  */
 const VERB_PURPOSE = Object.freeze({
   init: 'adopts a folder of Markdown notes into a Bundle',
-  lint: 'runs every check of a Bundle and writes nothing; with --fix, applies the normalisations',
+  lint: 'runs every check of a Bundle and writes nothing; with --fix, applies the normalisations; with --suggest, writes dist/suggestions.json',
   build: 'writes the site and its machine-readable files into build.out',
   verify: 'builds twice and compares the bytes; with --ledger, recomputes the ledger chain',
   ci: 'runs the checks, two builds and the comparison, and writes the gate verdict',
   export: 'writes one export: Markdown, OKF, JSON-LD, JSONL, steering files or a memory adapter',
-  import: 'imports a folder of another format through the adapter named by --from',
+  import: 'imports a folder (a Turtle file for skos) of another format through the adapter named by --from',
   compose: 'composes the selected items and writes their Harness',
   propose: 'writes the Proposal of a change to one item, for a pull request',
   review: 'runs the review lane: checks, a label and a comment, never a model call',
@@ -433,10 +433,10 @@ const VERB_USAGE = Object.freeze({
   ci: 'agsc ci [--level <n>]',
   compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug>',
   conform: 'agsc conform [--level <n>] [--to <path>]',
-  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--steer [--target <name>[,<name>…]]|--to <adapter> [--manifest]',
-  import: 'agsc import <source-dir> --from <adapter> [--dry-run]',
+  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--closure|--steer [--target <name>[,<name>…]]|--to <adapter> [--manifest]',
+  import: 'agsc import <source-dir> --from <adapter> [--dry-run] (--from skos takes a Turtle file in place of the folder)',
   init: 'agsc init',
-  lint: 'agsc lint [--fix]',
+  lint: 'agsc lint [--fix] [--suggest]',
   mcp: 'agsc mcp [<path>]',
   propose: 'agsc propose <slug>',
   refresh: 'agsc refresh --agent <name> [--task <slug>] [--dry-run]',
@@ -829,10 +829,10 @@ function exitClass(findings) {
 
 /**
  * The verbs that write nothing whatever the configuration says: `lint` without
- * `--fix` and `verify` read the Bundle and report.
+ * `--fix` or `--suggest`, and `verify`, read the Bundle and report.
  */
 function writesNothing(verb, verbFlags) {
-  return verb === 'verify' || (verb === 'lint' && verbFlags.fix !== true);
+  return verb === 'verify' || (verb === 'lint' && verbFlags.fix !== true && verbFlags.suggest !== true);
 }
 
 /**

@@ -173,7 +173,42 @@ test('AGSC-01-39 (f): an ordered collection places its members in the cluster, a
   assert.strictEqual(items.quartet.frontmatter.type, 'cluster');
   assert.deepStrictEqual(items.violin.frontmatter.clusters, ['quartet']);
   assert.deepStrictEqual(items.cello.frontmatter.clusters, ['quartet']);
-  assert.strictEqual(warningsAbout(planned, 'memberList').length, 1);
+  const [order] = warningsAbout(planned, 'memberList');
+  assert.match(order.message, /order of the members .* members joined the cluster/u, 'the warning says the order is dropped, not the membership');
+});
+
+test('AGSC-01-39 (e): a concept is never its own parent, and a cycle of the file is cut so that lint accepts the import (AGSC-03-08)', () => {
+  const planned = planOf(`ex:a a skos:Concept ; skos:prefLabel "Alpha"@en ; skos:broader ex:a, ex:b .
+    ex:b a skos:Concept ; skos:prefLabel "Beta"@en ; skos:broader ex:c .
+    ex:c a skos:Concept ; skos:prefLabel "Gamma"@en ; skos:broader ex:a .`);
+  const items = itemsOf(planned);
+  // Child-first order keeps alpha-beta and beta-gamma; gamma-alpha would close the cycle.
+  assert.deepStrictEqual(items.alpha.frontmatter.broader, ['beta']);
+  assert.deepStrictEqual(items.beta.frontmatter.broader, ['gamma']);
+  assert.strictEqual(items.gamma.frontmatter.broader, undefined);
+  assert.strictEqual(warningsAbout(planned, 'broader').length, 2, 'the self statement and the cycle-closing one are reported');
+});
+
+test('AGSC-01-39 (e): the same pair stated as broader and as narrower is one Link and no cycle', () => {
+  const items = itemsOf(planOf(`ex:a a skos:Concept ; skos:prefLabel "Alpha"@en ; skos:narrower ex:b .
+    ex:b a skos:Concept ; skos:prefLabel "Beta"@en ; skos:broader ex:a .`));
+  assert.deepStrictEqual(items.beta.frontmatter.broader, ['alpha']);
+  assert.deepStrictEqual(items.alpha.frontmatter.narrower, ['beta']);
+});
+
+test('AGSC-01-39 (h): of several licences of a scheme the least is written and every other is reported', () => {
+  const planned = planOf(`ex:s a skos:ConceptScheme ; skos:prefLabel "Instruments"@en ;
+      dcterms:license <https://creativecommons.org/licenses/by/4.0/>, <https://creativecommons.org/licenses/by-sa/4.0/> .
+    ex:v a skos:Concept ; skos:prefLabel "Violin"@en ; skos:inScheme ex:s .`);
+  assert.strictEqual(itemsOf(planned).violin.frontmatter['x-skos-license'], 'https://creativecommons.org/licenses/by-sa/4.0/');
+  assert.strictEqual(warningsAbout(planned, 'license').length, 1);
+});
+
+test('AGSC-01-39: RDF 1.1 Turtle only; a TriG file is refused, not merged', () => {
+  const trig = skos.plan({ turtle: `${HEAD}GRAPH ex:g { ex:a a skos:Concept ; skos:prefLabel "Alpha"@en . }` },
+    { i18nDefault: 'en', itemSchema: ITEM_SCHEMA, operator: 'human:tester' });
+  assert.deepStrictEqual(trig.writes, []);
+  assert.deepStrictEqual(trig.findings.map((f) => f.code), ['AGSC-E003']);
 });
 
 test('AGSC-01-39 (g) and (h): http sources, the concept IRI, and the licence of its scheme', () => {

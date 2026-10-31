@@ -2,8 +2,8 @@
 /**
  * src/application/cli/verbs/export.js — `export` (AGSC-09-07, AGSC-09-09).
  *
- * All six flags of AGSC-01-26…28 and `--skos` (AGSC-05-36) are implemented here, plus
- * `--to <adapter>` (AGSC-01-26a).
+ * All six flags of AGSC-01-26…28, `--skos` (AGSC-05-36) and `--closure` (AGSC-05-37) are
+ * implemented here, plus `--to <adapter>` (AGSC-01-26a).
  *
  *   `--markdown` AGSC-01-26: the lint-normalized Bundle itself, one `.md` file per
  *   `--okf`      published item, lossless over every authored frontmatter key;
@@ -27,6 +27,11 @@
  *               build (`knowledge/skos-export.js`), so it agrees with the published
  *               graph by construction; the scheme record comes from `site.title`,
  *               `site.tagline` and `site.author`.
+ *   `--closure` AGSC-05-37: `closure.nt`, the triples the OWL 2 RL subset entails from the
+ *               `graph.nq` of the same build and the vocabulary files in force (the
+ *               engine's `ontology/agsc.ttl`, and `domain.vocabulary` where the node
+ *               declares one); `knowledge/closure.js` runs the rules. Derived data: it
+ *               is a file of `dist/export/` only, never a route of the build.
  *   `--manifest` AGSC-09-17 (a): not an export of its own but a modifier of the run's: it adds
  *               `export-manifest.json` to the root of each export the run wrote
  *               (`interchange/export-manifest.js`), so that `import` of the folder can
@@ -65,6 +70,7 @@ const { canonicalize } = require('../../../knowledge/jcs.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const chunks = require('../../../knowledge/chunks.js');
+const closureModule = require('../../../knowledge/closure.js');
 const skosExport = require('../../../knowledge/skos-export.js');
 const nquads = require('../../../knowledge/nquads.js');
 const loader = require('../../plugin-loader.js');
@@ -137,6 +143,69 @@ function skosFile(files, config) {
 }
 
 /**
+ * AGSC-05-37: `closure.nt`, the consequences of the `graph.nq` this build produced under the
+ * vocabularies in force. The warnings of the `prp-irp` check travel as findings; they do not
+ * stop the file from being written.
+ *
+ * @param {Map<string,string>} files the files of the build
+ * @param {string[]} vocabularies Turtle texts: the engine's ontology first, then the node's own
+ * @returns {{findings:Array<object>, writes:Array<Array<string>>}}
+ */
+function closureFile(files, vocabularies) {
+  const graph = files.get('/graph.nq');
+  if (graph === undefined) {
+    return {
+      findings: [{
+        code: 'AGSC-E001', severity: 'error',
+        message: 'export --closure: this build emitted no /graph.nq, and the closure is computed from it'
+          + ' (AGSC-05-37, AGSC-10-04)',
+      }],
+      writes: [],
+    };
+  }
+  try {
+    const closed = closureModule.closure(graph, vocabularies);
+    return { findings: closed.warnings, writes: [['closure.nt', closed.text]] };
+  } catch (e) {
+    // The only input that can fail to parse is the node's own vocabulary file (AGSC-05-38 (a)).
+    return {
+      findings: [{
+        code: 'AGSC-E420', severity: 'error',
+        message: `export --closure: a vocabulary file is not valid Turtle: ${(e && e.message) || String(e)}`
+          + ' (AGSC-05-37, AGSC-05-38)',
+      }],
+      writes: [],
+    };
+  }
+}
+
+/**
+ * The vocabulary files in force for the closure (AGSC-05-37): the engine's ontology, then the
+ * node's site vocabulary where `domain.vocabulary` names one (AGSC-05-38). A name that points
+ * at no file is a finding, not a silent skip: the closure would otherwise leave out rules the
+ * node declared.
+ *
+ * @returns {{findings:Array<object>, texts:string[]}}
+ */
+function vocabulariesInForce(ctx, config) {
+  const named = ((config || {}).domain || {}).vocabulary;
+  const texts = [helpers.ontology().text];
+  if (typeof named !== 'string') return { findings: [], texts };
+  const text = readOptional(ctx, named);
+  if (text === null) {
+    return {
+      findings: [{
+        code: 'AGSC-E001', severity: 'error',
+        message: `export --closure: domain.vocabulary names ${named}, which is not a readable file of this Bundle`
+          + ' (AGSC-05-37, AGSC-05-38)',
+      }],
+      texts,
+    };
+  }
+  return { findings: [], texts: [...texts, text] };
+}
+
+/**
  * AGSC-01-27 and AGSC-05-36: the graph exports, taken out of the build that produced them.
  *
  * @returns {{findings:Array<object>, writes:Array<Array<string>>}}
@@ -185,11 +254,20 @@ function graphFiles(files, flags, config) {
 function graphExports(ctx, bundle, flags) {
   const built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
   const planned = graphFiles(built.files, flags, bundle.config);
+  const closure = flags.closure === true ? closureExport(ctx, bundle, built.files) : { findings: [], writes: [] };
+  const writes = [...planned.writes, ...closure.writes];
   return {
-    files: planned.writes.map(([path, text]) => ({ path, text })),
-    findings: [...built.findings, ...planned.findings],
-    written: planned.writes.map(([at, text]) => writeExport(ctx, at, text)),
+    files: writes.map(([path, text]) => ({ path, text })),
+    findings: [...built.findings, ...planned.findings, ...closure.findings],
+    written: writes.map(([at, text]) => writeExport(ctx, at, text)),
   };
+}
+
+/** `--closure` of one run: its vocabularies, then its file; nothing is written when a vocabulary is missing. */
+function closureExport(ctx, bundle, files) {
+  const vocabularies = vocabulariesInForce(ctx, bundle.config);
+  if (vocabularies.findings.length > 0) return { findings: vocabularies.findings, writes: [] };
+  return closureFile(files, vocabularies.texts);
 }
 
 /**
@@ -496,7 +574,7 @@ function zipRoots(ctx, roots) {
 
 function run(ctx) {
   const flags = ctx.verbFlags || {};
-  const chosen = ['markdown', 'okf', 'jsonld', 'jsonl', 'skos', 'steer'].filter((f) => flags[f] === true);
+  const chosen = ['markdown', 'okf', 'jsonld', 'jsonl', 'skos', 'closure', 'steer'].filter((f) => flags[f] === true);
   if (flags.target !== undefined && flags.steer !== true) {
     return {
       status: 'fail',
@@ -507,9 +585,9 @@ function run(ctx) {
       }],
     };
   }
-  // `--zip` packages an export ROOT, and `--jsonld`/`--jsonl`/`--skos` are each a
+  // `--zip` packages an export ROOT, and `--jsonld`/`--jsonl`/`--skos`/`--closure` are each a
   // single file at `dist/export/` rather than a root of their own (AGSC-01-27,
-  // AGSC-05-36), so an invocation that asks for nothing but those has no set to archive.
+  // AGSC-05-36, AGSC-05-37), so an invocation that asks for nothing but those has no set to archive.
   if (flags.zip === true && !['markdown', 'okf', 'steer'].some((f) => flags[f] === true)
     && flags.to === undefined) {
     return {
@@ -517,8 +595,8 @@ function run(ctx) {
       findings: [{
         code: 'AGSC-E003', severity: 'error',
         message: '--zip archives an export root and has no meaning without --markdown, --okf,'
-          + ' --steer or --to <adapter>; --jsonld, --jsonl and --skos each write one file'
-          + ' (AGSC-01-26…27, AGSC-05-36)',
+          + ' --steer or --to <adapter>; --jsonld, --jsonl, --skos and --closure each write one file'
+          + ' (AGSC-01-26…27, AGSC-05-36, AGSC-05-37)',
       }],
     };
   }
@@ -527,8 +605,8 @@ function run(ctx) {
       status: 'fail',
       findings: [{
         code: 'AGSC-E003', severity: 'error',
-        message: 'export needs one of --markdown, --okf, --jsonld, --jsonl, --skos, --steer or'
-          + ' --to <adapter> (AGSC-01-26…28, AGSC-01-26a, AGSC-05-36, AGSC-09-09)',
+        message: 'export needs one of --markdown, --okf, --jsonld, --jsonl, --skos, --closure, --steer or'
+          + ' --to <adapter> (AGSC-01-26…28, AGSC-01-26a, AGSC-05-36, AGSC-05-37, AGSC-09-09)',
       }],
     };
   }
@@ -543,7 +621,7 @@ function run(ctx) {
   // AGSC-09-17 (a): the facts first, so a run that cannot state them writes nothing (AGSC-09-08).
   const manifest = flags.manifest === true ? manifestFacts(ctx, bundle) : null;
   if (manifest !== null && manifest.facts === null) return { findings: manifest.findings };
-  const graphWanted = flags.jsonld === true || flags.jsonl === true || flags.skos === true;
+  const graphWanted = ['jsonld', 'jsonl', 'skos', 'closure'].some((f) => flags[f] === true);
   if (manifest !== null && !graphWanted) findings.push(...manifest.findings);
   if (flags.markdown === true) collect(bundleExport(ctx, bundle, 'markdown'));
   if (flags.okf === true) collect(bundleExport(ctx, bundle, 'okf'));

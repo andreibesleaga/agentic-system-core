@@ -161,3 +161,18 @@ test('AGSC-03-13: the memo agrees with an unmemoised search on every generated l
     assert.deepStrictEqual(markdown.assignAnchors(texts), reference(texts), JSON.stringify(texts));
   }
 });
+
+test('proseText gives the reading text of a body: code spans, fenced blocks and images are cut out (AGSC-05-35)', () => {
+  const body = 'A *rate* limiter.\n\n`hidden` and ![alt](x.png) and [a link](y).\n\n```\nfenced\n```\n\nSoft\nwrap.\n';
+  const text = markdown.proseText(body);
+  assert.ok(text.includes('A rate limiter.'));
+  assert.ok(text.includes('a link'));
+  assert.ok(text.includes('Soft wrap.'));
+  assert.ok(!text.includes('hidden') && !text.includes('fenced') && !text.includes('alt'));
+  assert.ok(!/rate\W+hidden/u.test(text));
+});
+
+test('proseText leaves a separator that is neither a letter nor a digit where a code span was cut', () => {
+  assert.ok(!/rate limiter/u.test(markdown.proseText('rate `x` limiter')));
+  assert.strictEqual(markdown.proseText(''), '');
+});

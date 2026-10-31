@@ -12,6 +12,7 @@
 const validate = require('../../../knowledge/validate.js');
 const frontmatter = require('../../../knowledge/frontmatter.js');
 const links = require('../../../knowledge/links.js');
+const suggest = require('../../../knowledge/suggest.js');
 const slug = require('../../../knowledge/slug.js');
 const govLint = require('../../../governance/lint.js');
 const govFix = require('../../../governance/fix.js');
@@ -278,6 +279,28 @@ function fix(ctx, bundle) {
   return { findings, written };
 }
 
+/** Where `lint --suggest` writes (AGSC-05-35): local, never a route, never under `content/`. */
+const SUGGESTIONS_FILE = 'dist/suggestions.json';
+
+/**
+ * `lint --suggest` (AGSC-05-35): the Links the content suggests, written to
+ * `dist/suggestions.json` and nowhere else. The generators are `knowledge/suggest.js`'s;
+ * this function is only the wiring: the loaded items in, the content version of the
+ * invocation stamped on the file, one file out through the FileSystem port.
+ *
+ * @param {object} ctx the verb context.
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} the warnings about the content version, if any.
+ */
+function suggestLinks(ctx, bundle) {
+  const derived = helpers.bundleVersionOf(ctx, helpers.gitLog(ctx));
+  const text = suggest.file(bundle.items || [], derived.version);
+  ctx.ports.fs.mkdirp('dist');
+  ctx.ports.fs.writeFile(SUGGESTIONS_FILE, text);
+  helpers.note(ctx, `wrote: ${SUGGESTIONS_FILE} sha256:${helpers.sha256(text)}`);
+  return derived.findings;
+}
+
 function run(ctx) {
   let bundle = helpers.bundleOf(ctx);
   // AGSC-04-19: `--fix` runs FIRST, and the lanes then judge the repaired files, so a
@@ -287,9 +310,10 @@ function run(ctx) {
   if (repaired.written.length > 0) bundle = helpers.bundleOf(ctx);
   const result = lane(ctx, bundle);
   for (const name of result.lanes) helpers.note(ctx, `lane: ${name}`);
+  const suggested = ctx.verbFlags && ctx.verbFlags.suggest === true ? suggestLinks(ctx, bundle) : [];
   return {
-    findings: validate.sortFindings([...(bundle.findings || []), ...result.findings, ...repaired.findings]),
+    findings: validate.sortFindings([...(bundle.findings || []), ...result.findings, ...repaired.findings, ...suggested]),
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, fix, lane, portableNames, run, textFileFindings };
+module.exports = { name: 'lint', configAndRoot, fix, lane, portableNames, run, suggestLinks, textFileFindings };

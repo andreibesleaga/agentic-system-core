@@ -60,15 +60,15 @@ Then `agsc ci`. Until the security file exists, lint, build and ci report `AGSC-
 | Job | Command | What it does |
 |---|---|---|
 | start | `agsc init` | adopts notes as in section 3 |
-| check | `agsc lint [--fix]` | schema, links, tags, provenance, secrets; `--fix` normalises key order and bytes |
+| check | `agsc lint [--fix] [--suggest]` | schema, links, tags, provenance, secrets; `--fix` normalises key order and bytes; `--suggest` writes link proposals to `dist/suggestions.json` and touches nothing under `content/` |
 | build | `agsc build [--level <n>]` | writes `www/`: pages, `graph.jsonld`/`.nq`/`.ttl`, `search.json`, `llms.txt`, `llms-full.txt`, `now.md`, `chunks.jsonl`, `skills/`, `/.well-known/knowledge-linkset`; `boards/` when a cluster holds a task; `ledger.jsonl` inside a git repository |
 | prove | `agsc verify [--ledger]` | builds twice and compares the bytes; `--ledger` re-derives the chain from `git log` and compares it with the published one |
 | pipeline | `agsc ci [--level <n>]` | lint, two builds, verify; verdict in `dist/gate.json`; forge files under `dist/forge/` for gates with `enforce:`; leaves no `www/` |
 | change | `agsc propose <slug>` | diffs the item against its last commit; writes `dist/proposal/<n>.patch` and `<n>.md` (the pull-request body); prints the person's git commands |
 | review | `agsc review` | the lint-only review lane |
 | lane | `agsc refresh --agent <name> --dry-run [--task <t>]` | a dry run of a declared, enabled agent lane: writes its proposal with the run's Episode, calls no model; without `--dry-run` it refuses (`AGSC-E001`) because no model adapter ships |
-| export | `agsc export --markdown\|--okf\|--jsonld\|--jsonl\|--steer [--target <a,b>]\|--to <adapter> [--zip]` | adapters `llm-context`, `cogx`, `gabbe`, `skills`, `board`, `mermaid`; per-adapter flags in `agsc export --help` |
-| import | `agsc import <dir> --from <adapter> [--dry-run] [--replace]` | adapters `okf`, `cogx`, `gabbe`, `skills`, `board`, `old-site`; writes nothing over an existing item unless `--replace` |
+| export | `agsc export --markdown\|--okf\|--jsonld\|--jsonl\|--skos\|--closure\|--steer [--target <a,b>]\|--to <adapter> [--zip] [--manifest]` | `--skos` writes `dist/export/skos.ttl`, `--closure` writes `dist/export/closure.nt` (derived, never published); adapters `llm-context`, `cogx`, `gabbe`, `skills`, `board`, `mermaid`; per-adapter flags in `agsc export --help` |
+| import | `agsc import <dir> --from <adapter> [--dry-run] [--replace]` | adapters `okf`, `cogx`, `gabbe`, `skills`, `board`, `old-site`, and `skos` (`agsc import <file.ttl> --from skos`); a foreign source arrives as drafts; writes nothing over an existing item unless `--replace` |
 | assemble | `agsc compose <slug>… [--out <dir>] [--zip]`, `agsc compose --from <slug>` | a Harness under `dist/harness/<selection-hash>/`: `AGENTS.md`, `arc42.md`, `workspace.dsl`, `diagram.mmd`, `harness.jsonld`, `decisions/`, `skills/` |
 | skills | `agsc skills`, `agsc skills install [<dir>]`, `agsc skills import <SKILL.md>` | packs under `dist/skills/`, lock-checked; install targets `.agents/skills` (default), `.claude/skills`, `.github/skills` |
 | tools | `agsc mcp [<path>]` | stdio tool server: `search`, `read`, `links`, `compose`, `ask`, `propose`, `remember` |

@@ -156,11 +156,11 @@ which calls into the contexts.
 | Verb | Rule | Where the work is done |
 |---|---|---|
 | `init` | AGSC-02-90…95, AGSC-01-37 | `distribution/init.js`, `knowledge/adopt.js` |
-| `lint` | AGSC-09-12, AGSC-08-13…17 | `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js`; `--fix` in `governance/fix.js` |
+| `lint` | AGSC-09-12, AGSC-08-13…17, AGSC-05-35, AGSC-08-31 | `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js`; `--fix` in `governance/fix.js`; `--suggest` in `knowledge/suggest.js` |
 | `build` | AGSC-06-01, AGSC-04-01/02 | `distribution/site.js` |
 | `verify` | AGSC-04-02, AGSC-08-23 | `distribution/site.js#verify`, `governance/ledger.js#verify` |
 | `ci` | AGSC-09-08 | `distribution/ci.js`, with the lint lane injected |
-| `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17 | `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` |
+| `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17, AGSC-05-36, AGSC-05-37 | `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to`; `--skos` in `knowledge/skos-export.js`; `--closure` in `knowledge/closure.js` |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `interchange/okf.js`, `interchange/adapters/{cogx,gabbe,skills,board,skos}.js`, `interchange/import.js` for the old site |
 | `compose` | AGSC-07-04…09, 07-12, 07-18, 07-24 | `composition/{compose,architecture,harness}.js`; `--zip` through `composition/archive.js` |
 | `propose` | AGSC-08-04, AGSC-08-05 | `knowledge/adopt.js`, the `diff` library |
@@ -205,7 +205,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | `format` keyword | `ajv-formats` | 3.0.1 | MIT | the same two |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT | `knowledge/jcs.js` |
 | CommonMark + GFM tables | `markdown-it` | 15.0.3 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
-| Turtle and N-Quads | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js` and `knowledge/skos-export.js` go through it), `tools/validate-ontology`, `tools/gen-ns` |
+| Turtle and N-Quads, rule closure | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js` and `knowledge/skos-export.js` go through it), `knowledge/closure.js` (the library's `Reasoner`, for `export --closure`), `tools/validate-ontology`, `tools/gen-ns` |
 | XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.1 | MIT | `governance/lint.js`, `tools/gen-ns` |
 | JSON-LD round-trip proof | `jsonld` | 9.0.0 | BSD-3-Clause | the shipped conformance areas under `tests/conformance/areas/` |
 | argv parsing | `commander` | 15.0.0 | MIT | `application/cli/main.js` |

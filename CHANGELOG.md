@@ -243,6 +243,27 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (it reads N-Quads with the pinned `n3`) and `turtle.serialize` takes an optional prefix table; the
   four graph files and every other output keep their bytes. A build with no `graph.nq` (Level 0) gives
   `AGSC-E001` and no file.
+- `lint --suggest` (AGSC-05-35, AGSC-09-09, I-012): proposes Links from the content and writes only
+  `dist/suggestions.json` (JCS, one LF; `bundle_version` and a sorted `suggestions` list, each entry with
+  its evidence). Five generators: an inline link (G1), two or more shared sources (G2), a title or alias
+  found as a whole phrase (G3), a lesson with no `derived-from` (G4), a term named in a body (G5);
+  evidence from an `ai-generated` item is ignored. `content/` is never written (a test compares the
+  content tree hash before and after). `lint-0046` to `lint-0050` pass. The code is
+  `src/knowledge/suggest.js`; `knowledge/unicode.js` gains `foldCase` (the folding of AGSC-05-21, now
+  shared) and `knowledge/markdown.js` gains `proseText`. A run without the flag writes nothing, as in 1.0.
+- `AGSC-E417` and `lint.min_sources` (AGSC-08-31, I-013; `lint-0051`): where the key is greater than 0,
+  a published pattern, taxonomy, explainer or principle concept with fewer than N counted sources is a
+  warning; a source that is the address of an `ai-generated` item does not count. Default 0: a 1.0 Bundle
+  is unchanged. `AGSC-E416` already compares aliases since B04 (AGSC-05-21, `lint-0045`).
+- `export --closure` (AGSC-05-37, AGSC-05-23, I-005): writes `dist/export/closure.nt`, the triples the
+  OWL 2 RL subset (`prp-dom`, `prp-rng`, `prp-spo1`, `prp-symp`, `prp-inv1`, `prp-inv2`, `prp-trp`,
+  `cax-sco`; `prp-irp` as the warning `AGSC-E313`) entails from the `graph.nq` of the same build, the
+  engine's ontology and the node's `domain.vocabulary`, minus what `graph.nq` already holds, in the
+  Bundle's named graph, sorted by bytes. Derived data: never a route, never in `build.out`, the four
+  graph files unchanged; two runs give the same bytes. `graph-0041` passes (`graph-0042` needs the
+  domain triples of B05b-WP2). No new dependency: the rules are data, run by the `Reasoner` of the
+  already pinned `n3` 2.7.12 (`src/knowledge/closure.js`; the architecture test that allowed one
+  `n3` reader now allows this one second module, for the `Store` and `Reasoner` only).
 - `tools/gen-shapes` and `schema/item-shapes.ttl` (AGSC-05-24, AGSC-03-25, AGSC-03-23, AGSC-05-17 to
   AGSC-05-21, AGSC-09-90, I-016): SHACL 1.0 shapes of the RDF graph (`graph.nq`, `graph.ttl`, `skos.ttl`),
   generated from `schema/item.schema.json` and the table of AGSC-05-26 (datatype, one value, the closed
@@ -285,6 +306,16 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   results rows that do not name their model, calendar date, sample size, metric, value
   and confidence interval, or that compare with another system without both
   configurations (docs/BENCHMARKS.md, "What this project will never claim").
+- `docs/DUBLIN-CORE-PROFILE.md`: the user page of `schema/dctap.csv` and `tools/gen-dc-profile` (AGSC-05-26).
+- SKOS import, fixes before the release (AGSC-01-39): the file is read as RDF 1.1 Turtle only, so a TriG
+  file is `AGSC-E003` and not merged; a `skos:broader` or `skos:narrower` of a concept to itself, or one that
+  would close a cycle of the file's hierarchy (AGSC-03-08), is not written as a Link and is reported as
+  dropped, so the Bundle the import writes passes `agsc lint`; of several `dcterms:license` statements of a
+  scheme only the one written is carried and the others are reported; the warning for the `skos:memberList`
+  of an ordered collection says the order is dropped, not the membership.
+- `agsc import` usage line and the agent skill table name `--from skos` (a `<file.ttl>`), `export --skos`,
+  `--closure`, `--manifest` and `lint --suggest`; `docs/guides/troubleshooting.md` gains the row of `AGSC-E416`
+  and `docs/guides/mode-1.md` shows `lint.min_sources`.
 
 ## [1.0.1] - 2026-10-21
 

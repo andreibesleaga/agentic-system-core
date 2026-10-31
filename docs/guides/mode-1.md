@@ -221,6 +221,44 @@ head -n 2 dist/export/skos.ttl
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 ```
 
+`agsc lint --suggest` proposes Links without making any. It reads the notes and writes
+`dist/suggestions.json`: for each pair that no Link joins, a `related` suggestion where one
+note links to the other in its text, where the two cite two or more of the same sources, or
+where one names the other's title or alias; a `uses` suggestion where a note names a term; and,
+for a lesson with no `derived-from`, the episodes it could come from. Each entry carries its
+evidence, so a person can judge it. Nothing under `content/` changes; you accept a suggestion
+by editing the note. A note whose provenance says a model wrote it is not evidence for itself.
+
+To have `lint` warn about a pattern, taxonomy, explainer or principle that cites too few sources,
+set a minimum in `agsc.config.json`, for example `{"lint": {"min_sources": 2}}`. The default,
+`0`, checks nothing. A note below the minimum gets the warning `AGSC-E417`; a source that is the
+address of a note a model wrote does not count.
+
+```bash demo
+agsc lint --suggest
+head -c 17 dist/suggestions.json
+```
+
+```text expect
+{"bundle_version"
+```
+
+`agsc export --closure` writes `dist/export/closure.nt`: the statements that follow from the
+graph under a small, named part of OWL 2 RL (domains, ranges, sub-properties, symmetric,
+inverse and transitive properties, and sub-classes), minus the ones the graph already holds.
+It is for reading what the graph implies, for example that every concept is a `skos:Concept`;
+it is never published and never part of a build, and running it twice gives the same bytes.
+An item that uses an irreflexive property toward itself is reported as the warning `AGSC-E313`.
+
+```bash demo
+agsc export --closure
+grep -o 'skos/core#ConceptScheme' dist/export/closure.nt
+```
+
+```text expect
+skos/core#ConceptScheme
+```
+
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).
 

@@ -99,6 +99,26 @@ Feature: Agent uses a node as external auditable memory
     And "dist/export/skos.ttl" is Turtle that a second run writes again byte for byte
     And no network call was attempted
 
+  @PRD-022 @human
+  Scenario: The author asks which notes should be linked and no note is touched
+    Given a note "alpha" that links to the note "beta" in its body, with no Link between them
+    When the author runs "agsc lint --suggest" under the network trap
+    Then the command exits 0
+    And "dist/suggestions.json" proposes the Link "related" from "alpha" to "beta" with the evidence "mention"
+    And the content folder is byte for byte what it was before the suggestions were asked for
+    And "dist/suggestions.json" is canonical JSON that a second run writes again byte for byte
+    And no network call was attempted
+
+  @PRD-022 @human
+  Scenario: The author reads what the graph entails and the answer is never published
+    Given the Bundle is built
+    When the author runs "agsc export --closure" under the network trap
+    Then the command exits 0
+    And "dist/export/closure.nt" holds triples that the OWL 2 RL rules entail, none of them in "www/graph.nq"
+    And "dist/export/closure.nt" is N-Quads that a second run writes again byte for byte
+    And no file under "www" has "closure" in its name
+    And no network call was attempted
+
   @PRD-026 @human
   Scenario Outline: An export form writes its file: <form>
     Given the Bundle root carries the Content Use Terms as "LICENSE-CONTENT"
