@@ -63,7 +63,7 @@ const VERB_FLAGS = {
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
     ['--jsonl', 'bool'], ['--skos', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
-    ['--zip', 'bool'],
+    ['--zip', 'bool'], ['--manifest', 'bool'],
   ]),
   // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
   // and writes nothing (AGSC-09-09). The flags of the
@@ -194,6 +194,9 @@ const ADAPTER_FLAGS = {
       // the directory holds.
       board: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value'],
         ['--format', 'value']]),
+      // The SKOS adapter reads one Turtle file (AGSC-01-39): it offers `--replace` for
+      // AGSC-01-23 and nothing else, since a thesaurus states no content version.
+      skos: new Map([['--replace', 'bool']]),
     },
   },
   // `export --to skills --layout <name>`: the foreign layout to write.
@@ -430,7 +433,7 @@ const VERB_USAGE = Object.freeze({
   ci: 'agsc ci [--level <n>]',
   compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug>',
   conform: 'agsc conform [--level <n>] [--to <path>]',
-  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--steer [--target <name>[,<name>…]]|--to <adapter>',
+  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--steer [--target <name>[,<name>…]]|--to <adapter> [--manifest]',
   import: 'agsc import <source-dir> --from <adapter> [--dry-run]',
   init: 'agsc init',
   lint: 'agsc lint [--fix]',

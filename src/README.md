@@ -29,7 +29,7 @@ byte for byte and no library produces.
 | `composition/` | bounded context | selection and closure, the Harness, skill packs, the archive, the browser build of the algebra | [composition/README.md](composition/README.md) |
 | `distribution/` | bounded context | the build: every route, page, header, discovery document, text file, search index, tool surface and hosting profile | [distribution/README.md](distribution/README.md) |
 | `boundary/` | bounded context | where a node meets anything outside it: peers and federation, visibility, the agent surfaces | [boundary/README.md](boundary/README.md) |
-| `interchange/` | supporting context | foreign formats in and out: OKF, COGX, GABBE, skills repositories, project boards, steering files, the old site | [interchange/README.md](interchange/README.md) |
+| `interchange/` | supporting context | foreign formats in and out: OKF, SKOS, COGX, GABBE, skills repositories, project boards, steering files, the old site | [interchange/README.md](interchange/README.md) |
 | `application/` | application layer | configuration, the command line and its sixteen verbs, the Bundle loader, the conformance run, plugins, `agsc-host` | [application/README.md](application/README.md) |
 | `ports/` | hexagonal ports | four interfaces, no code: FileSystem, Clock, ProcessRunner, Network | none: `tests/ports/` holds the folder to exactly its four interface files, and each file's header is its documentation |
 | `adapters/` | hexagonal adapters | the Node implementations of the four ports | [adapters/README.md](adapters/README.md) |
@@ -160,8 +160,8 @@ which calls into the contexts.
 | `build` | AGSC-06-01, AGSC-04-01/02 | `distribution/site.js` |
 | `verify` | AGSC-04-02, AGSC-08-23 | `distribution/site.js#verify`, `governance/ledger.js#verify` |
 | `ci` | AGSC-09-08 | `distribution/ci.js`, with the lint lane injected |
-| `export` | AGSC-01-26…29, AGSC-01-26a | `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` |
-| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `interchange/okf.js`, `interchange/adapters/{cogx,gabbe,skills,board}.js`, `interchange/import.js` for the old site |
+| `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17 | `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` |
+| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `interchange/okf.js`, `interchange/adapters/{cogx,gabbe,skills,board,skos}.js`, `interchange/import.js` for the old site |
 | `compose` | AGSC-07-04…09, 07-12, 07-18, 07-24 | `composition/{compose,architecture,harness}.js`; `--zip` through `composition/archive.js` |
 | `propose` | AGSC-08-04, AGSC-08-05 | `knowledge/adopt.js`, the `diff` library |
 | `review` | AGSC-08-27 | the lint lane; no model call is reachable |
@@ -205,7 +205,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | `format` keyword | `ajv-formats` | 3.0.1 | MIT | the same two |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT | `knowledge/jcs.js` |
 | CommonMark + GFM tables | `markdown-it` | 15.0.3 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
-| Turtle and N-Quads | `n3` | 2.7.12 | MIT | `knowledge/turtle.js`, `tools/validate-ontology`, `tools/gen-ns` |
+| Turtle and N-Quads | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js` and `knowledge/skos-export.js` go through it), `tools/validate-ontology`, `tools/gen-ns` |
 | XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.1 | MIT | `governance/lint.js`, `tools/gen-ns` |
 | JSON-LD round-trip proof | `jsonld` | 9.0.0 | BSD-3-Clause | the shipped conformance areas under `tests/conformance/areas/` |
 | argv parsing | `commander` | 15.0.0 | MIT | `application/cli/main.js` |

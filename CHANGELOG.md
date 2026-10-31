@@ -13,6 +13,26 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Every item an import writes from a source this node does not own is written `status: draft`,
+  whatever its licence and whatever status the source gave it, and reported once as `AGSC-E506`
+  (AGSC-01-22, I-021; `imp-0005`, `imp-0009` and `imp-0010` replace `imp-0002` and `imp-0004`). A
+  source is this node's own when its root document carries this Bundle's `base`; for such a source
+  (an export imported back into the node that wrote it) the 1.0 rule stays, so the round trip of
+  AGSC-10-09 is unchanged. Before 1.1 an OKF record or a skill with an open licence was published at
+  once; now it waits for a person to change the status. This is a more cautious outcome of an
+  existing MUST (AGSC-00-14), not a new refusal, so no exit code changes. The OKF reader
+  (`interchange/okf.js`) and the skills adapter (`interchange/adapters/skills.js`) change; the COGX,
+  GABBE and board adapters already wrote every foreign item as a draft. The `old-site` lane is not
+  changed: it imports a site its operator wrote, and each record's status comes from the selection
+  file a person wrote. The skills `--list` line ends
+  `-> draft (open licence; published when a person changes the status)` or `-> draft (never published
+  until its licence is settled)`, and the import totals count `draft_licensed` beside
+  `draft_unlicensed`.
+- A pack of `agsc skills` and of `build` that lists a member carrying `x-skills-license` ends with a
+  "Notices" section: one fenced line for each such member with its title, address, the licence the
+  source stated, the source file and the version (AGSC-01-22, AGSC-07-20, I-173). A pack with no such
+  member is byte for byte what it was, so no 1.0 node changes; the foreign layouts of `export --to
+  skills` carry the section with the pack.
 - `/llms.txt` and `/llms-full.txt` (AGSC-06-13a, AGSC-06-15; I-115 keeps the AI-assistance
   line byte for byte): the summary blockquote follows the H1 and the provenance comment
   follows the summary, so a llms.txt v2 parser reads the summary; the backslash, `[`, `]` and
@@ -197,6 +217,22 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `import <file.ttl> --from skos` (AGSC-01-39, AGSC-01-26a, I-018): a SKOS thesaurus in Turtle becomes
+  draft items. The file is read with the pinned `n3` (`knowledge/turtle.js#parse`); the mapping is
+  `src/interchange/adapters/skos.js` (concept to `concept` of kind `term`, preferred label to `title`,
+  alternative and SKOS-XL labels to `aliases`, the first definition to `description` when it has 40 to 200
+  code points and otherwise to the first body paragraph, `broader` / `narrower` / `related` to Links,
+  schemes and collections to clusters, `dcterms:source` to `sources`, the IRI to `x-skos-iri`). Every
+  statement it cannot carry is one `AGSC-E506` warning naming its subject and predicate, and a second run
+  over the same file changes nothing. `imp-0006`, `imp-0007` and `imp-0008` pass. The adapter's own flag is
+  `--replace`. No dependency is added; `tests/arch/rdf-reader.test.js` keeps `knowledge/turtle.js` the one
+  module of `src/` that requires `n3`.
+- `export --manifest` (AGSC-09-17 (a), I-142): adds `export-manifest.json` to the root of each export of the
+  run: the `Content-Digest` value of RFC 9530 for every other file, the item count, the SHA-256 of the item
+  addresses, the bundle hash, the content version and the specification version. `import` of a folder that
+  holds a manifest recomputes the file digests, the count and the items digest and reports each difference as
+  an `AGSC-E506` warning, then imports as before. A run without the flag writes the files of 1.0.
+  `export-0003` and `export-0004` pass. The code is `src/interchange/export-manifest.js`.
 - `export --skos` (AGSC-05-36, AGSC-01-26a, I-017): writes `dist/export/skos.ttl`, the SKOS view of the
   `graph.nq` of the same build. It copies the label, definition, scheme, hierarchy, relation and
   membership triples whose ends are concepts, lessons or clusters, and adds the scheme record

@@ -412,7 +412,9 @@ The memory leaves and comes back without loss. The compact context file states t
 same content version as the published `llms.txt`; the exported graph is the published
 graph byte for byte; the Markdown and OKF exports carry the terms beside the prose;
 and importing the OKF export into a fresh Bundle twice writes three items once and
-then reports them unchanged:
+then reports them unchanged. The fresh Bundle is another node, so the three arrive as
+drafts (AGSC-01-22 from 1.1); an export read back by the node that wrote it keeps its
+statuses:
 
 ```bash demo
 (cd b && agsc export --to llm-context && agsc export --markdown && agsc export --okf && agsc export --jsonld)
@@ -601,7 +603,8 @@ served hash equals the lock: true
 
 Bring skills back as procedures. A pack this format emitted splits into its
 procedures, filed in the pack's cluster; a foreign skill in the Agent Skills layout
-comes in as a procedure in the cluster you name, and the next `skills` run packs it:
+comes in as a procedure in the cluster you name, as a draft like every foreign import; the `sed` line is you
+publishing it, and the next `skills` run packs it:
 
 ```bash demo
 cd .. && cp -r "$ENGINE/examples/demos/mode-1-memory/a" other && cd other
@@ -609,6 +612,7 @@ mkdir -p incoming && cp ../mode-3-skills/www/skills/login/SKILL.md incoming/SKIL
 agsc skills import incoming/SKILL.md
 sed -n '1,5p' content/procedures/run-the-tests.md
 agsc import "$ENGINE/examples/demos/mode-3-skills/foreign" --from skills --cluster agent-patterns
+sed -i 's/^status: draft$/status: stable/' content/procedures/plain-notes.md
 agsc skills > /dev/null 2>&1 && grep '^- item:' dist/skills/agent-patterns/SKILL.md
 ```
 

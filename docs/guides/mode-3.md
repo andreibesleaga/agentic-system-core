@@ -169,19 +169,23 @@ one-skill example; use your own folder the same way:
 ```bash demo
 agsc import --from skills --list "$ENGINE/examples/demos/mode-3-skills/foreign"
 agsc import "$ENGINE/examples/demos/mode-3-skills/foreign" --from skills --cluster releasing
+sed -i 's/^status: draft$/status: stable/' content/procedures/plain-notes.md
 agsc skills > /dev/null 2>&1
 grep '^- item:' dist/skills/releasing/SKILL.md
 ```
 
 ```text expect
-skills: [agentskills] skill plain-notes plain-notes/SKILL.md licence Apache-2.0 (license key) -> importable
+skills: [agentskills] skill plain-notes plain-notes/SKILL.md licence Apache-2.0 (license key) -> draft (open licence; published when a person changes the status)
 import: 1 written, 0 replaced, 0 unchanged
 - item: http://localhost/procedures/plain-notes/
 ```
 
-`--list` shows what would come in and under which licence, and writes nothing. The
+`--list` shows what would come in and under which licence, and writes nothing. Every
+skill that comes in is a **draft**, even one with an open licence, so no pack carries it
+and no page shows it: the `sed` line is you reading the skill and publishing it. The
 imported file keeps its own licence (`x-skills-license`) and is marked
-`origin: imported`; read it before you commit it. Its title is the skill's name
+`origin: imported`; once published, the pack that lists it states that licence and the
+skill's source file in a "Notices" section. Read the file before you commit it. Its title is the skill's name
 (`plain-notes`), and until you give it `## When`, `## Steps` and `## Checks` sections,
 `agsc lint` warns three times with `AGSC-E406`. A pack this format emitted goes back
 into its items with `agsc skills import <file>` (the file must lie inside the Bundle; for a

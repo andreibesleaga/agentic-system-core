@@ -77,11 +77,17 @@ Feature: Integrator installs this knowledge into my agent
     And the import plan wrote nothing into the Bundle
 
   @PRD-034 @PRD-032 @human @matrix-H8
-  Scenario: A team files an imported skill into one of its clusters, and that cluster's pack carries it
+  Scenario: A team files an imported skill into one of its clusters; it stays a draft until published, and then its pack carries its licence
     Given a local clone of a "marketplace" skills collection in the folder "clone"
     When the team runs "agsc import clone --from skills --cluster agent-patterns" under the network trap
     Then the command exits 0
     And the imported skill "csv-helper" joins the cluster "agent-patterns"
+    And the imported skill "csv-helper" is a draft, although its licence is open
     When the team runs "agsc skills" under the network trap
     Then the command exits 0
+    And the "agent-patterns" pack does not list the imported skill "csv-helper"
+    When the team publishes the imported skill "csv-helper" by setting its status to "stable"
+    And the team runs "agsc skills" under the network trap
+    Then the command exits 0
     And the "agent-patterns" pack lists the imported skill "csv-helper"
+    And the "agent-patterns" pack carries a notice with the licence and the source file of the imported skill "csv-helper"

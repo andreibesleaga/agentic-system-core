@@ -1,0 +1,34 @@
+# A small SKOS thesaurus of musical instruments, written for the tests of the SKOS import
+# (AGSC-01-39). It is invented data: it is not taken from any site or tool.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix ex: <https://example.org/instruments/> .
+
+ex:scheme a skos:ConceptScheme ;
+  skos:prefLabel "Instruments"@en ;
+  skos:definition "The instruments of a small orchestra, grouped by the way each one makes its sound."@en ;
+  dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+ex:strings a skos:Collection ;
+  skos:prefLabel "Strings"@en ;
+  skos:member ex:violin, ex:cello .
+
+ex:violin a skos:Concept ;
+  skos:inScheme ex:scheme ;
+  skos:topConceptOf ex:scheme ;
+  skos:prefLabel "Violin"@en, "Geige"@de ;
+  skos:altLabel "Fiddle"@en ;
+  skos:definition "A bowed string instrument with four strings tuned in fifths, the highest of its family."@en ;
+  skos:related ex:cello ;
+  dcterms:source <https://example.org/sources/orchestra> ;
+  skos:notation "V-1" .
+
+ex:cello a skos:Concept ;
+  skos:inScheme ex:scheme ;
+  skos:prefLabel "Cello"@en ;
+  skos:definition "A large bowed string instrument."@en ;
+  skos:related ex:violin ;
+  skos:exactMatch <https://other.example/voc/cello> .
+
+ex:Instrument a owl:Class .

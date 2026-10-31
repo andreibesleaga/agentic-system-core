@@ -13,6 +13,7 @@ test data, byte for byte: a `README.md` inside a fixture folder is part of the f
 | `diagrams/` | diagram sources and their expected SVG (the compiler's golden files) |
 | `old-site-10/` | ten cards of the retired pattern site, for `import --from old-site` |
 | `pm-*/` | exports of project-board tools (GitHub, GitLab, Jira, Trello, Linear, Asana, Notion, Obsidian Kanban, Todo.txt, Markdown, and this node's own board format), for the `board` adapter |
+| `skos-thesaurus/` | one SKOS thesaurus in Turtle (a scheme, a collection, two concepts, and statements the import drops), invented for the `skos` adapter |
 | `skills-*/` | skills repositories in each layout the `skills` adapter reads |
 
 Changing a fixture changes what the tests prove; a change here needs the tests that use

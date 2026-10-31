@@ -1,7 +1,8 @@
 'use strict';
 // Conformance area `export` — AGSC-01-26 (`export --okf`: the lint-normalized Bundle
-// itself, its root document and the OKF log) and AGSC-01-27 (`export --jsonl`: one
-// line per item, each the item's own JSON-LD node).
+// itself, its root document and the OKF log), AGSC-01-27 (`export --jsonl`: one
+// line per item, each the item's own JSON-LD node) and AGSC-09-17 (a): `--manifest`,
+// the export manifest beside the files of the run.
 //
 // Each case is the minimal fixture with files added, copied to a scratch directory that
 // is removed afterwards; `input.flags` runs as `export <flags> --json` through the CLI's
@@ -27,6 +28,8 @@ const { guarded } = require('./_expected-reads.js');
 const EXPORT_ROOT = Object.freeze({ '--jsonl': 'dist/export', '--okf': 'dist/export/okf' });
 /** The file `export --jsonl` writes inside its root. */
 const JSONL_FILE = 'items.jsonl';
+/** The manifest `--manifest` adds to the root of the export (AGSC-09-17 (a)). */
+const MANIFEST_FILE = 'export-manifest.json';
 
 /** Every file under `dir`, relative and with `/`, in code-point order. */
 function listFiles(dir) {
@@ -118,8 +121,61 @@ function jsonlCase(vector, ctx) {
   });
 }
 
+/** The manifest of an export root, parsed, with the text it was read from; `null` text when absent. */
+function manifestOf(root, form) {
+  const at = path.join(root, EXPORT_ROOT[form], MANIFEST_FILE);
+  const text = nodeFs.existsSync(at) ? nodeFs.readFileSync(at, 'utf8') : null;
+  return { manifest: text === null ? null : JSON.parse(text), text };
+}
+
+/** export-0003: AGSC-09-17 (a), the manifest of an OKF export. */
+function manifestOkfCase(vector, ctx) {
+  const expected = vector.expected;
+  return onFixture(vector, ctx, (root) => {
+    const exit = cli(['export', ...vector.input.flags, '--json'], root, vector);
+    const files = listFiles(path.join(root, EXPORT_ROOT['--okf']));
+    const { manifest, text } = manifestOf(root, '--okf');
+    // `spec_version` is the tool's own and is not pinned by the case.
+    const { spec_version: specVersion, ...pinned } = manifest || {};
+    return checks([
+      [`exit ${expected.exit}`, exit === expected.exit, `exit ${exit}`],
+      ['files', deepEqual(files, expected.files), JSON.stringify(files)],
+      ['the manifest is there', manifest !== null, 'no export-manifest.json'],
+      ['the manifest members', deepEqual(Object.keys(manifest || {}).sort(), expected.manifest_members), text],
+      ['the manifest values', deepEqual(pinned, (({ spec_version: dropped, ...rest }) => rest)(expected.manifest)), text],
+      ['spec_version is the tool\'s own', typeof specVersion === 'string' && specVersion !== '', String(specVersion)],
+      ['one JCS object and one LF', expected.jcs_with_one_lf === true && text === `${canonicalize(manifest)}\n`, text],
+    ]);
+  });
+}
+
+/** export-0004: AGSC-09-17 (a), the manifest only on request, and repeatable. */
+function manifestRequestCase(vector, ctx) {
+  const byName = new Map(vector.expected.cases.map((c) => [c.name, c]));
+  const list = [];
+  for (const input of vector.input.cases) {
+    const want = byName.get(input.name);
+    const run = () => onFixture({ ...vector, input: { ...vector.input, flags: input.flags } }, ctx, (root) => {
+      cli(['export', ...input.flags, '--json'], root, vector);
+      return { files: listFiles(path.join(root, EXPORT_ROOT['--jsonl'])), ...manifestOf(root, '--jsonl') };
+    });
+    const first = run();
+    list.push([`${input.name} files`, deepEqual(first.files, want.files), JSON.stringify(first.files)]);
+    if (want.manifest !== undefined) {
+      const { spec_version: dropped, ...pinned } = first.manifest || {};
+      list.push([`${input.name} manifest`, deepEqual(pinned, (({ spec_version: s, ...rest }) => rest)(want.manifest)), first.text]);
+      list.push([`${input.name} does not list itself`, want.manifest_lists_itself === false
+        && !(first.manifest.files || []).some((f) => f.path === MANIFEST_FILE), first.text]);
+      list.push([`${input.name} repeats`, want.repeat_identical === true && run().text === first.text, first.text]);
+    }
+  }
+  return checks(list);
+}
+
 function run(vector, ctx) {
   const flags = vector.input.flags || [];
+  if (vector.id === 'export-0003') return manifestOkfCase(vector, ctx);
+  if (vector.id === 'export-0004') return manifestRequestCase(vector, ctx);
   if (flags.includes('--okf')) return okfCase(vector, ctx);
   if (flags.includes('--jsonl')) return jsonlCase(vector, ctx);
   return { status: 'fail', detail: `${vector.id}: no handler for this input shape in area export` };

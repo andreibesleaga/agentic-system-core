@@ -1,4 +1,4 @@
-# Trace: PRD-022, PRD-026, PRD-027, PRD-061 · PLAN §5.2 ContentStore
+# Trace: PRD-021, PRD-022, PRD-026, PRD-027, PRD-061 · PLAN §5.2 ContentStore
 @persona-h @mode-1
 Feature: Agent uses a node as external auditable memory
   As P8 (agent-as-memory, Mode 1)
@@ -32,6 +32,30 @@ Feature: Agent uses a node as external auditable memory
     And colliding slugs are deduplicated with a "-2" suffix
     And a second run writes nothing and reports every item unchanged
     And "npx agentic-system-core lint" finds no error in the imported items except a concept "kind" the foreign bundle never declared
+
+  @PRD-021 @PRD-026 @human @matrix-A5
+  Scenario: A thesaurus kept as SKOS arrives as drafts and imports idempotently
+    Given a SKOS thesaurus "thesaurus.ttl" with a scheme, a collection and two concepts
+    When the author imports "thesaurus.ttl" with "--from skos" into a copy of the Bundle that holds no item
+    Then every item the SKOS import wrote is a draft with the provenance "imported", keeping its SKOS IRI in "x-skos-iri"
+    And a statement the SKOS import cannot carry is reported as "AGSC-E506" naming its subject and predicate
+    And the same import run again writes nothing and reports every item unchanged
+    And no network call was attempted
+
+  @PRD-021 @PRD-026 @human @matrix-A5
+  Scenario: A foreign OKF bundle arrives as drafts, whatever licence it declares
+    Given an OKF bundle "licensed-bundle" whose records declare the open licence "CC0-1.0" and the status "stable"
+    When the author imports "licensed-bundle" with "--from okf" into a copy of the Bundle that holds no item
+    Then every item the OKF import wrote is a draft, with one "AGSC-E506" warning each that names the status it replaced
+
+  @PRD-026 @human @matrix-A5
+  Scenario: A folder exported with a manifest is checked when it is imported
+    Given the Bundle root carries the Content Use Terms as "LICENSE-CONTENT"
+    When the author runs "agsc export --okf --manifest" under the network trap
+    Then the command exits 0
+    And "dist/export/okf/export-manifest.json" lists every other file of the export with its digest, the item count and the items digest
+    When one exported file is edited and the folder is imported into a copy of the Bundle that holds no item
+    Then the import warns once with "AGSC-E506" that the edited file differs from the manifest, and still writes the items
 
   @PRD-027 @agent @matrix-A5
   Scenario: memory:// URIs are documented as an alias only, never resolved

@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-05-04, AGSC-05-36, AGSC-05-04b, AGSC-06-26
+// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-01-39, AGSC-05-04, AGSC-05-36, AGSC-05-04b, AGSC-06-26, AGSC-09-17
 // Steps of features/persona-h-memory.feature that run offline: the lossless export
 // forms, a foreign OKF bundle, the COGX archive another memory system reads, there
 // and back, the connectors example that reshapes `chunks.jsonl` for a framework's
@@ -28,6 +28,39 @@ const OKF = Object.freeze({
     'description: A second note whose file name collides with the procedure kept in the other folder.', '---', '',
     'Why keys are rotated.', ''].join('\n'),
 });
+
+/** The thesaurus an author brings from a taxonomy tool: tests/fixtures/skos-thesaurus/thesaurus.ttl. */
+const THESAURUS = path.join(ROOT, 'tests', 'fixtures', 'skos-thesaurus', 'thesaurus.ttl');
+
+/** An OKF bundle whose records declare an open licence and the status stable. */
+const LICENSED = Object.freeze({
+  'index.md': '---\nokf_version: "0.2"\nlicense: CC0-1.0\n---\n',
+  'a.md': '---\ntype: concept\nkind: explainer\ntitle: First note\nlicense: CC0-1.0\nstatus: stable\n---\n\nThe first.\n',
+  'b.md': '---\ntype: concept\nkind: explainer\ntitle: Second note\nlicense: CC0-1.0\nstatus: stable\n---\n\nThe second.\n',
+});
+
+/** The items under `content/` of a directory, `content/<plural>/<slug>.md` -> frontmatter. */
+function itemsUnder(dir) {
+  const out = new Map();
+  const root = path.join(dir, 'content');
+  for (const folder of fs.existsSync(root) ? fs.readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory()) : []) {
+    for (const name of fs.readdirSync(path.join(root, folder.name)).sort()) {
+      out.set(`${folder.name}/${name}`, splitItem(fs.readFileSync(path.join(root, folder.name, name), 'utf8')).frontmatter);
+    }
+  }
+  return out;
+}
+
+/** A copy of the Bundle's identity and nothing else, to import into (persona-g's "copy that holds no item"). */
+function emptyCopy(world) {
+  const target = world.temp('agsc-acc-copy-');
+  for (const rel of ['agsc.config.json', 'content/index.md', '.well-known/security.txt', 'LICENSE-CONTENT']) {
+    if (!world.exists(rel)) continue;
+    fs.mkdirSync(path.dirname(path.join(target, rel)), { recursive: true });
+    fs.copyFileSync(path.join(world.dir, rel), path.join(target, rel));
+  }
+  return target;
+}
 
 const envelopeOf = (result) => result.structuredContent;
 
@@ -169,6 +202,101 @@ module.exports = [
       assert.ok(fs.readFileSync(path.join(world.dir, 'dist', 'export', 'graph.jsonld'))
         .equals(fs.readFileSync(path.join(world.dir, 'www', 'graph.jsonld'))));
       assert.deepStrictEqual(world.networkAttempts(), []);
+    },
+  },
+  {
+    pattern: 'a SKOS thesaurus "thesaurus.ttl" with a scheme, a collection and two concepts',
+    run(world) {
+      world.bundle();
+      world.write('thesaurus.ttl', fs.readFileSync(THESAURUS, 'utf8'));
+    },
+  },
+  {
+    pattern: 'every item the SKOS import wrote is a draft with the provenance "imported", keeping its SKOS IRI in "x-skos-iri"',
+    run(world) {
+      const items = itemsUnder(world.state.target);
+      assert.deepStrictEqual([...items.keys()], ['clusters/instruments.md', 'clusters/strings.md', 'concepts/cello.md', 'concepts/violin.md']);
+      for (const [rel, frontmatter] of items) {
+        assert.strictEqual(frontmatter.status, 'draft', rel);
+        assert.strictEqual(frontmatter.prov.origin, 'imported', rel);
+        assert.match(frontmatter['x-skos-iri'], /^https:\/\/example\.org\/instruments\//u, rel);
+      }
+      const violin = items.get('concepts/violin.md');
+      assert.deepStrictEqual(violin.aliases, ['Fiddle']);
+      assert.deepStrictEqual(violin.clusters, ['instruments', 'strings']);
+      assert.deepStrictEqual(violin.related, ['cello']);
+      assert.strictEqual(violin['x-skos-license'], 'https://creativecommons.org/publicdomain/zero/1.0/');
+    },
+  },
+  {
+    pattern: 'a statement the SKOS import cannot carry is reported as "AGSC-E506" naming its subject and predicate',
+    run(world) {
+      const said = world.last.stderr;
+      assert.match(said, /^warn: AGSC-E506 https:\/\/example\.org\/instruments\/violin: the statement http:\/\/www\.w3\.org\/2004\/02\/skos\/core#notation /mu, said);
+      assert.match(said, /^warn: AGSC-E506 https:\/\/example\.org\/instruments\/Instrument: the statement http:\/\/www\.w3\.org\/1999\/02\/22-rdf-syntax-ns#type /mu, said);
+    },
+  },
+  {
+    pattern: /^an OKF bundle "([a-z-]+)" whose records declare the open licence "([^"]+)" and the status "([a-z]+)"$/u,
+    run(world, folder, licence, status) {
+      world.bundle();
+      for (const [rel, text] of Object.entries(LICENSED)) {
+        world.write(`${folder}/${rel}`, text.replace(/CC0-1\.0/gu, licence).replace(/status: stable/u, `status: ${status}`));
+      }
+    },
+  },
+  {
+    pattern: 'every item the OKF import wrote is a draft, with one "AGSC-E506" warning each that names the status it replaced',
+    run(world) {
+      const items = itemsUnder(world.state.target);
+      assert.strictEqual(items.size, 2);
+      for (const [rel, frontmatter] of items) {
+        assert.strictEqual(frontmatter.status, 'draft', rel);
+        assert.strictEqual(frontmatter.license, 'CC0-1.0', `${rel} keeps the licence the source declared`);
+      }
+      const said = world.last.stderr.split('\n').filter((line) => /status: draft/u.test(line));
+      assert.strictEqual(said.length, 2, world.last.stderr);
+      for (const line of said) assert.match(line, /the status the source gave it, "stable", was not kept/u);
+    },
+  },
+  {
+    pattern: '"dist/export/okf/export-manifest.json" lists every other file of the export with its digest, the item count and the items digest',
+    run(world) {
+      const manifest = JSON.parse(world.read('dist/export/okf/export-manifest.json'));
+      const written = [];
+      const walk = (sub) => {
+        for (const entry of fs.readdirSync(path.join(world.dir, 'dist/export/okf', sub), { withFileTypes: true })) {
+          const rel = sub === '' ? entry.name : `${sub}/${entry.name}`;
+          if (entry.isDirectory()) walk(rel);
+          else if (rel !== 'export-manifest.json') written.push(rel);
+        }
+      };
+      walk('');
+      assert.deepStrictEqual(manifest.files.map((f) => f.path), written.sort());
+      for (const file of manifest.files) assert.match(file.content_digest, /^sha-256=:[A-Za-z0-9+/]{43}=:$/u, file.path);
+      assert.ok(manifest.item_count > 0);
+      assert.match(manifest.items_digest, /^[0-9a-f]{64}$/u);
+      assert.match(manifest.bundle_hash, /^[0-9a-f]{64}$/u);
+    },
+  },
+  {
+    pattern: 'one exported file is edited and the folder is imported into a copy of the Bundle that holds no item',
+    run(world) {
+      const file = `dist/export/okf/content/concepts/${fs.readdirSync(path.join(world.dir, 'dist/export/okf/content/concepts')).sort()[0]}`;
+      fs.appendFileSync(path.join(world.dir, file), '\nEdited after the export.\n');
+      world.state.edited = file.replace('dist/export/okf/', '');
+      world.state.target = emptyCopy(world);
+      world.agsc(['import', path.join(world.dir, 'dist/export/okf'), '--from', 'okf'], { cwd: world.state.target, offline: true });
+      assert.strictEqual(world.last.exit, 0, world.last.stdout + world.last.stderr);
+    },
+  },
+  {
+    pattern: 'the import warns once with "AGSC-E506" that the edited file differs from the manifest, and still writes the items',
+    run(world) {
+      const lines = world.last.stderr.split('\n').filter((line) => line.includes('export-manifest.json'));
+      assert.strictEqual(lines.length, 1, world.last.stderr);
+      assert.ok(lines[0].includes('AGSC-E506') && lines[0].includes(`${world.state.edited} differs`), lines[0]);
+      assert.ok(itemsUnder(world.state.target).size > 0, 'the items were written');
     },
   },
   {

@@ -196,7 +196,14 @@ chunks-index.toon
 ```
 
 The first is the Bundle itself, ready to be read back with `agsc import --from okf`; the
-second is one text file and one compact index for a model's context window.
+second is one text file and one compact index for a model's context window. Read back by the
+node that wrote it, the export keeps every status; read by another node, or any foreign OKF
+folder, it arrives as **drafts**, whatever licence it declares, until a person publishes each
+item. Add `--manifest` to an export (`agsc export --okf --manifest`) and the folder carries
+`export-manifest.json`: the digest of every file, the item count and a digest of the item
+addresses, which `import` recomputes and reports as a warning wherever the copy differs.
+`agsc import thesaurus.ttl --from skos` brings a SKOS thesaurus in as draft items the same way
+([CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md)).
 
 `agsc export --skos` writes `dist/export/skos.ttl`, the node's concepts, lessons and
 clusters as SKOS, for a thesaurus or taxonomy tool that reads SKOS and runs no

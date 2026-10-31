@@ -11,11 +11,11 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 322 |
+| Unit, integration or architecture test | 324 |
 | Executed acceptance scenario | 75 |
 | Checker header | 33 |
 
-Acceptance scenarios: 125 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 75 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 128 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 75 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -155,12 +155,12 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-19 | VERIFIED | yes | `build-0021` | `application/cli/verbs-wired.test.js`, `application/config/load.test.js`, `knowledge/config-placeholder-base.test.js` | — | — |
 | AGSC-01-20 | VERIFIED | yes | `build-0022`, `build-0028` | `interchange/mapping.test.js`, `interchange/status.test.js`, `knowledge/chunks.test.js` | — | — |
 | AGSC-01-21 | VERIFIED | yes | `lint-0031`, `lint-0038` | `interchange/status.test.js`, `knowledge/validate.test.js` | — | — |
-| AGSC-01-22 | VERIFIED | yes | `imp-0005`, `imp-0009` | `acceptance/steps/persona-h.js`, `acceptance/steps/persona-i.js`, `application/compatibility.test.js` +8 | `persona-h-memory.feature#Agent imports a foreign OKF bundle idempotently`, `persona-i-maintainer.feature#A maintainer imports the old site` | — |
-| AGSC-01-23 | VERIFIED | yes | `imp-0001` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +11 | `persona-i-maintainer.feature#A maintainer imports the old site` | — |
+| AGSC-01-22 | VERIFIED | yes | `imp-0005`, `imp-0009` | `acceptance/steps/persona-h.js`, `acceptance/steps/persona-i.js`, `application/compatibility.test.js` +9 | `persona-h-memory.feature#Agent imports a foreign OKF bundle idempotently`, `persona-i-maintainer.feature#A maintainer imports the old site` | — |
+| AGSC-01-23 | VERIFIED | yes | `imp-0001` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +13 | `persona-i-maintainer.feature#A maintainer imports the old site` | — |
 | AGSC-01-25 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
-| AGSC-01-26 | VERIFIED | yes | `export-0001` | `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js`, `application/cli/eng5-verbs.test.js` +1 | `persona-g-team.feature#Team publishes its own specs as an instance of itself (should)`, `persona-h-memory.feature#Agent exports the Bundle in three lossless forms` | — |
-| AGSC-01-26a | VERIFIED | yes | `cli-0011` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +8 | — | — |
-| AGSC-01-27 | VERIFIED | yes | `export-0002` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `distribution/content-version-stamps.test.js` | — | — |
+| AGSC-01-26 | VERIFIED | yes | `export-0001` | `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js`, `application/cli/eng5-verbs.test.js` +2 | `persona-g-team.feature#Team publishes its own specs as an instance of itself (should)`, `persona-h-memory.feature#Agent exports the Bundle in three lossless forms` | — |
+| AGSC-01-26a | VERIFIED | yes | `cli-0011` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +10 | — | — |
+| AGSC-01-27 | VERIFIED | yes | `export-0002` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `distribution/content-version-stamps.test.js` +1 | — | — |
 | AGSC-01-28 | VERIFIED | yes | — | `acceptance/steps/persona-g.js`, `application/cli/eng5-verbs.test.js`, `e2e/modes/mode-2-project.test.js` +1 | — | — |
 | AGSC-01-29 | VERIFIED | — | — | `composition/harness.test.js`, `composition/skills.test.js`, `distribution/single-line-injection.test.js` +3 | — | — |
 | AGSC-01-30 | PROSE-ONLY | — | — | — | — | — |
@@ -172,7 +172,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-36 | VERIFIED | yes | `bundle-0003`, `bundle-0004`, `bundle-0005` | `acceptance/steps/persona-k.js`, `governance/agents.test.js`, `governance/prov.test.js` | — | — |
 | AGSC-01-37 | VERIFIED | yes | `cli-0006` | `acceptance/steps/persona-m.js`, `application/cli/env-reaches-build.test.js`, `application/cli/json-stderr-findings-only.test.js` +6 | `persona-k-live-board.feature#ci --json names the budget override and never its value` | — |
 | AGSC-01-38 | VERIFIED | — | — | `application/cli/refresh-stops.test.js`, `distribution/now-spend.test.js` | — | — |
-| AGSC-01-39 | VERIFIED | yes | `imp-0006`, `imp-0007`, `imp-0008` | — | — | — |
+| AGSC-01-39 | VERIFIED | yes | `imp-0006`, `imp-0007`, `imp-0008` | `acceptance/steps/persona-h.js`, `interchange/skos-import-cli.test.js`, `interchange/skos.test.js` | — | — |
 | AGSC-01-40 | VERIFIED | yes | `bundle-0013`, `bundle-0014`, `bundle-0015` | `governance/portable-names.test.js` | — | — |
 | AGSC-01-41 | VERIFIED | yes | `bundle-0020` | — | — | — |
 | AGSC-01-42 | VERIFIED | yes | `bundle-0018`, `bundle-0019` | — | — | — |
@@ -199,9 +199,9 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-21 | VERIFIED | yes | `lint-0040` | `governance/lint-order.test.js`, `knowledge/validate.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
 | AGSC-02-22 | VERIFIED | yes | `graph-0027` | `governance/lint-order.test.js`, `knowledge/file-lines.test.js`, `knowledge/markdown.test.js` +1 | — | — |
 | AGSC-02-23 | VERIFIED | — | — | `governance/lint-order.test.js`, `interchange/status.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
-| AGSC-02-24 | VERIFIED | yes | `fm-0010`, `fm-0019`, `frontmatter-0030` | `composition/skills.test.js`, `distribution/public-statements.test.js`, `interchange/clusters.test.js` +8 | — | `validate-schemas` |
+| AGSC-02-24 | VERIFIED | yes | `fm-0010`, `fm-0019`, `frontmatter-0030` | `composition/skills.test.js`, `distribution/public-statements.test.js`, `interchange/clusters.test.js` +9 | — | `validate-schemas` |
 | AGSC-02-25 | VERIFIED | yes | `fm-0022`, `fm-0023`, `fm-0024` +3 | — | — | — |
-| AGSC-02-90 | VERIFIED | yes | `adopt-0001` | `acceptance/steps/persona-0.js`, `application/cli/verbs-wired.test.js`, `knowledge/adopt.test.js` +1 | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
+| AGSC-02-90 | VERIFIED | yes | `adopt-0001` | `acceptance/steps/persona-0.js`, `application/cli/verbs-wired.test.js`, `interchange/skos.test.js` +2 | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
 | AGSC-02-91 | VERIFIED | yes | `adopt-0002`, `fm-0008`, `slug-0007` | `acceptance/steps/persona-0.js`, `application/cli/init-notes.test.js`, `distribution/init.test.js` +6 | `persona-0-dropin.feature#Three commands from bare notes to a full local site`, `persona-0-dropin.feature#Re-running init over an adopted and built Bundle changes nothing`, `persona-0-dropin.feature#Adopting notes with non-ASCII file names gives ASCII slugs` | — |
 | AGSC-02-92 | VERIFIED | yes | `adopt-0003` | `acceptance/steps/persona-0.js`, `distribution/init.test.js`, `knowledge/adopt.test.js` | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
 | AGSC-02-93 | VERIFIED | yes | — | `acceptance/steps/persona-0.js`, `distribution/init.test.js`, `knowledge/adopt.test.js` | `persona-0-dropin.feature#Three commands from bare notes to a full local site`, `persona-0-dropin.feature#Adopting notes with non-ASCII file names gives ASCII slugs` | — |
@@ -419,8 +419,8 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-05 | VERIFIED | yes | — | `acceptance/steps/persona-l.js`, `application/conformance.test.js`, `standard/consistency.test.js` | `persona-l-port-implementer.feature#The reference engine's Level-3 report` | `validate-vectors` |
 | AGSC-09-06 | VERIFIED | — | — | — | — | `validate-vectors` |
 | AGSC-09-07 | VERIFIED | yes | `cli-0005`, `cli-0036` | `acceptance/steps/persona-b.js`, `application/cli/main-shell.test.js`, `application/cli/messages-and-help.test.js` +4 | `persona-0-dropin.feature#A newcomer asks for help`, `persona-b-contributor.feature#The review lane labels the change and comments on its findings, with no model call` | `validate-features` |
-| AGSC-09-08 | VERIFIED | yes | `cli-0014` | `acceptance/steps/persona-i.js`, `adapters/node-clock.test.js`, `application/cli/verbs-sixteen.test.js` +6 | `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
-| AGSC-09-09 | VERIFIED | yes | `cli-0010`, `cli-0012` | `acceptance/steps/persona-c.js`, `application/cli/eng2-verbs.test.js`, `application/cli/flags.test.js` +6 | `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network` | — |
+| AGSC-09-08 | VERIFIED | yes | `cli-0014` | `acceptance/steps/persona-i.js`, `adapters/node-clock.test.js`, `application/cli/verbs-sixteen.test.js` +7 | `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
+| AGSC-09-09 | VERIFIED | yes | `cli-0010`, `cli-0012` | `acceptance/steps/persona-c.js`, `application/cli/eng2-verbs.test.js`, `application/cli/flags.test.js` +7 | `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network` | — |
 | AGSC-09-10 | VERIFIED | yes | `cli-0020` | `application/cli/init-notes.test.js`, `application/cli/json-stderr-findings-only.test.js`, `application/cli/main-shell.test.js` +4 | — | `validate-diagrams`, `validate-features`, `validate-ontology` +2 |
 | AGSC-09-11 | VERIFIED | yes | `cli-0002`, `lint-0044` | `application/cli/build-keeps-findings.test.js`, `application/cli/ci-keeps-findings.test.js`, `application/cli/envelope.test.js` +17 | — | `validate-wellknown` |
 | AGSC-09-12 | VERIFIED | yes | — | `application/cli/verbs-sixteen.test.js`, `e2e/real-bundles.test.js` | — | — |
@@ -431,7 +431,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-14b | VERIFIED | yes | `cli-0018` | `acceptance/steps/persona-c.js`, `distribution/mcp-client.test.js`, `distribution/mcp-resources.test.js` +7 | `persona-c-agent-mcp.feature#Agent uses the node as memory and knowledge base over MCP`, `persona-c-agent-mcp.feature#An MCP client lists and gets the one prompt` | — |
 | AGSC-09-15 | VERIFIED | — | — | `standard/consistency.test.js` | — | — |
 | AGSC-09-16 | VERIFIED | yes | `cli-0008`, `cli-0026` | `acceptance/steps/persona-c.js`, `bench/kit.test.js`, `distribution/compose-page-run.test.js` +10 | `persona-c-agent-mcp.feature#A page agent calls the seven page tools without a browser`, `persona-c-agent-mcp.feature#A page agent calls the seven page tools in a browser through document.modelContext`, `persona-c-agent-mcp.feature#An MCP client composes a selection through the compose tool` | — |
-| AGSC-09-17 | VERIFIED | yes | `export-0003`, `export-0004` | — | — | — |
+| AGSC-09-17 | VERIFIED | yes | `export-0003`, `export-0004` | `acceptance/steps/persona-h.js`, `interchange/export-manifest-cli.test.js`, `interchange/export-manifest.test.js` | — | — |
 | AGSC-09-18 | VERIFIED | yes | `cli-0029`, `cli-0030`, `cli-0031` | — | — | — |
 | AGSC-09-19 | VERIFIED | yes | `cli-0032`, `cli-0033`, `cli-0034` +1 | — | — | — |
 | AGSC-09-20 | UNVERIFIED | — | — | — | — | — |

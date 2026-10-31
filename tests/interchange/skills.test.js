@@ -338,7 +338,7 @@ test('agentskills: skills become procedures; scripts and allowed-tools are dropp
   assert.strictEqual(pdf['x-skills-source'], 'skills/pdf-notes/SKILL.md');
   assert.deepStrictEqual(JSON.parse(pdf['x-skills-rest']),
     { compatibility: 'Designed for any agent that can read files', metadata: { author: 'fixture-org', version: '1.2' } });
-  assert.ok(!('status' in pdf));
+  assert.strictEqual(pdf.status, 'draft', 'every foreign skill is a draft, whatever its licence (AGSC-01-22)');
   // Nothing executable reached the Bundle, in any byte.
   for (const text of tree(path.join(into, 'content')).values()) {
     assert.doesNotMatch(text, /Bash\(pdftotext|print\("fixture/u);
@@ -350,12 +350,12 @@ test('agentskills: skills become procedures; scripts and allowed-tools are dropp
   assert.ok(result.findings.some((f) => /links to references\/REFERENCE\.md, which was not imported/u.test(f.message)));
 });
 
-test('the licence check: a bundled licence file, a collection licence, and a proprietary one kept as draft', () => {
+test('the licence check: a bundled licence file and a collection licence are recorded, a proprietary one is called out; all are drafts', () => {
   const into = emptyBundle();
   const result = imported(into, fixture('agentskills'));
   const brand = fm(read(into, 'content/procedures/brand-voice.md'));
   assert.strictEqual(brand['x-skills-license'], 'Apache-2.0 (skills/brand-voice/LICENSE.txt)');
-  assert.ok(!('status' in brand));
+  assert.strictEqual(brand.status, 'draft');
   const plainNotes = fm(read(into, 'content/procedures/plain-notes.md'));
   assert.strictEqual(plainNotes['x-skills-license'], 'MIT (LICENSE)');
   const doc = fm(read(into, 'content/procedures/doc-maker.md'));
@@ -363,6 +363,10 @@ test('the licence check: a bundled licence file, a collection licence, and a pro
   assert.strictEqual(doc['x-skills-license'], 'Proprietary. LICENSE.txt has complete terms');
   assert.ok(result.findings.some((f) => f.file === 'skills/doc-maker/SKILL.md' && /never published/u.test(f.message)));
   assert.ok(result.findings.some((f) => /Apache-2\.0 ×2, MIT ×1/u.test(f.message)));
+  assert.ok(result.findings.some((f) => f.file === 'skills/brand-voice/SKILL.md' && /draft.*its licence Apache-2\.0 is open/u.test(f.message)),
+    'an open licence is still a draft, and the warning says so');
+  assert.match(imported(emptyBundle(), fixture('agentskills')).notes, /import: draft_licensed: 3\n.*import: draft_unlicensed: 1\n/u,
+    'the open-licence drafts are counted apart from the unlicensed');
   // AGSC-06-30: the draft is in no published surface.
   nodeFs.copyFileSync(path.join(ROOT, 'LICENSE-CONTENT'), path.join(into, 'LICENSE-CONTENT'));
   const built = exportVerb.run(ctxFor(into, { verbFlags: { markdown: true } }));
@@ -455,11 +459,11 @@ test('--list prints the catalogue of a clone and writes nothing; a link list is 
   const listed = imported(into, fixture('marketplace'), { list: true });
   assert.deepStrictEqual(errors(listed.findings), []);
   assert.match(listed.notes, /skills: layouts found: marketplace, agentskills/u);
-  assert.match(listed.notes, /skills: \[marketplace\] skill csv-helper skills\/csv-helper\/SKILL\.md licence Apache-2\.0 \(LICENSE\) version 1\.0\.0 -> importable/u);
+  assert.match(listed.notes, /skills: \[marketplace\] skill csv-helper skills\/csv-helper\/SKILL\.md licence Apache-2\.0 \(LICENSE\) version 1\.0\.0 -> draft \(open licence/u);
   const plugin = imported(into, fixture('claude-plugin'), { list: true });
   assert.match(plugin.notes, /unlicensed-helper .* -> draft/u);
   const pdf = imported(into, fixture('agentskills'), { list: true });
-  assert.match(pdf.notes, /pdf-notes .* dropped 4 -> importable/u);
+  assert.match(pdf.notes, /pdf-notes .* dropped 4 -> draft \(open licence/u);
   const awesome = imported(into, fixture('awesome-list'), { list: true });
   assert.deepStrictEqual(errors(awesome.findings), []);
   assert.match(awesome.notes, /layouts found: none/u);

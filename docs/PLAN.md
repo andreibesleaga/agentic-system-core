@@ -184,8 +184,8 @@ graph TB
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
 | distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
 | distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 7 tools (+ask, +remember); staleness + link checks | — | init mcp refresh |
-| interchange | `import.js` `okf.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in | — | import |
-| interchange | `export.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md | — | export |
+| interchange | `import.js` `okf.js` `adapters/skos.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in; a SKOS thesaurus in (every foreign item a draft) | — | import |
+| interchange | `export.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
 | *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile`, `tools/gen-shapes` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
 

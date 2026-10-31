@@ -27,6 +27,11 @@
  *               build (`knowledge/skos-export.js`), so it agrees with the published
  *               graph by construction; the scheme record comes from `site.title`,
  *               `site.tagline` and `site.author`.
+ *   `--manifest` AGSC-09-17 (a): not an export of its own but a modifier of the run's: it adds
+ *               `export-manifest.json` to the root of each export the run wrote
+ *               (`interchange/export-manifest.js`), so that `import` of the folder can
+ *               check what it reads. The facts it states — the bundle hash, the item
+ *               IRIs — come from the build, which only this layer may run.
  *   `--to <adapter>`
  *               AGSC-01-26a: a memory adapter, "a single module discovered by
  *               directory convention … and never by a configuration key". The
@@ -54,12 +59,14 @@
 const site = require('../../../distribution/site.js');
 const now = require('../../../distribution/now.js');
 const exportBundle = require('../../../interchange/export-bundle.js');
+const exportManifest = require('../../../interchange/export-manifest.js');
 const steer = require('../../../interchange/steer.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const chunks = require('../../../knowledge/chunks.js');
 const skosExport = require('../../../knowledge/skos-export.js');
+const nquads = require('../../../knowledge/nquads.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 
@@ -179,9 +186,60 @@ function graphExports(ctx, bundle, flags) {
   const built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
   const planned = graphFiles(built.files, flags, bundle.config);
   return {
+    files: planned.writes.map(([path, text]) => ({ path, text })),
     findings: [...built.findings, ...planned.findings],
     written: planned.writes.map(([at, text]) => writeExport(ctx, at, text)),
   };
+}
+
+/**
+ * AGSC-09-17 (a): the facts the manifest states, which only a build can give: the bundle hash
+ * (the SHA-256 of the build's `graph.nq`, the value `agsc-bundle-hash` carries), the content
+ * version, and the IRIs of the published items. A build that emitted no `/graph.nq` (Level 0,
+ * AGSC-10-04) has no hash to state, so the run refuses, before it writes anything.
+ *
+ * @returns {{findings:Array<object>, facts:(object|null)}}
+ */
+function manifestFacts(ctx, bundle) {
+  const built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
+  const graph = built.files.get('/graph.nq');
+  if (graph === undefined) {
+    return {
+      facts: null,
+      findings: [...built.findings, {
+        code: 'AGSC-E001', severity: 'error',
+        message: 'export --manifest: this build emitted no /graph.nq, and the manifest states its hash'
+          + ' (AGSC-09-17, AGSC-10-04)',
+      }],
+    };
+  }
+  const config = bundle.config || {};
+  const base = (config.site || {}).base;
+  return {
+    facts: {
+      bundleHash: helpers.sha256(graph),
+      bundleVersion: helpers.bundleVersionOf(ctx, helpers.gitLog(ctx)).version,
+      itemIris: site.publishedItems(bundle.items, config.releases).map((item) => nquads.itemIri(item, { base })),
+      specVersion: ctx.specVersion,
+    },
+    findings: built.findings,
+  };
+}
+
+/**
+ * AGSC-09-17 (a): write the manifest into each export root of the run. The manifest is
+ * appended to the root's file list too, so `--zip` carries it with the files it describes.
+ *
+ * @param {object} ctx
+ * @param {object} facts from `manifestFacts`.
+ * @param {Array<{dir:string, files:Array<{path:string, text:string}>}>} groups one per export root.
+ */
+function writeManifests(ctx, facts, groups) {
+  for (const { dir, files } of groups) {
+    const text = exportManifest.build(files, facts);
+    writeExport(ctx, dir === '' ? exportManifest.FILE : `${dir}/${exportManifest.FILE}`, text);
+    files.push({ path: exportManifest.FILE, text });
+  }
 }
 
 /**
@@ -482,13 +540,26 @@ function run(ctx) {
     if (produced.root !== null && produced.root !== undefined) roots.push(produced);
     return produced;
   };
+  // AGSC-09-17 (a): the facts first, so a run that cannot state them writes nothing (AGSC-09-08).
+  const manifest = flags.manifest === true ? manifestFacts(ctx, bundle) : null;
+  if (manifest !== null && manifest.facts === null) return { findings: manifest.findings };
+  const graphWanted = flags.jsonld === true || flags.jsonl === true || flags.skos === true;
+  if (manifest !== null && !graphWanted) findings.push(...manifest.findings);
   if (flags.markdown === true) collect(bundleExport(ctx, bundle, 'markdown'));
   if (flags.okf === true) collect(bundleExport(ctx, bundle, 'okf'));
   if (flags.steer === true) collect(steerExport(ctx, bundle, targetsOf(flags)));
-  if (flags.jsonld === true || flags.jsonl === true || flags.skos === true) {
-    findings.push(...graphExports(ctx, bundle, flags).findings);
+  let graph = null;
+  if (graphWanted) {
+    graph = graphExports(ctx, bundle, flags);
+    findings.push(...graph.findings);
   }
   if (flags.to !== undefined) collect(adapterExport(ctx, bundle, String(flags.to)));
+  if (manifest !== null && !findings.some((f) => f.severity === 'error')) {
+    writeManifests(ctx, manifest.facts, [
+      ...roots.map((produced) => ({ dir: produced.root, files: produced.files })),
+      ...(graph === null || graph.files.length === 0 ? [] : [{ dir: '', files: graph.files }]),
+    ]);
+  }
   if (flags.zip === true) findings.push(...zipRoots(ctx, roots));
   return { findings };
 }

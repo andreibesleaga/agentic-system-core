@@ -1,6 +1,6 @@
 # `tests/interchange/`
 
-**Summary.** Unit tests of every import and export: OKF, COGX, GABBE, skills, boards, steering files, the old site, round trips. Subject: `src/interchange/`.
+**Summary.** Unit tests of every import and export: OKF, SKOS, COGX, GABBE, skills, boards, steering files, the export manifest, the old site, round trips. Subject: `src/interchange/`.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

@@ -38,16 +38,18 @@ const slugs = require('../../../knowledge/slug.js');
 const { ARCHIVE_EXTENSIONS, readSchemas } = require('../../../adapters/node-fs.js');
 const interchange = require('../../../interchange/import.js');
 const okf = require('../../../interchange/okf.js');
+const exportManifest = require('../../../interchange/export-manifest.js');
 const cogx = require('../../../interchange/adapters/cogx.js');
 const gabbe = require('../../../interchange/adapters/gabbe.js');
 const { LICENSE_NAME } = require('../../../interchange/licences.js');
 const skills = require('../../../interchange/adapters/skills.js');
 const board = require('../../../interchange/adapters/board.js');
+const skos = require('../../../interchange/adapters/skos.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 
 /** The foreign formats this node reads. AGSC-01-22 names the verb, not a list. */
-const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT, board.FORMAT]);
+const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT, board.FORMAT, skos.FORMAT]);
 
 /**
  * `--selection` belongs to the `old-site` adapter and not to the verb: AGSC-01-26a
@@ -504,6 +506,7 @@ function importOkf(ctx, source, identityOptions) {
   }
 
   const planned = okf.plan(files, {
+    base: identityOptions.base,
     licenceFiles,
     itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
     operator: identityOptions.operator,
@@ -511,8 +514,65 @@ function importOkf(ctx, source, identityOptions) {
     sourceVersion: facts.bundleVersion,
   });
   const newer = okf.versionWarning(facts.specVersion, { toolSpecVersion: ctx.specVersion });
-  const all = [...findings, ...(newer === null ? [] : [newer]), ...planned.findings];
+  const manifest = checkManifest(fs, facts.base, planned.writes);
+  const all = [...findings, ...(newer === null ? [] : [newer]), ...planned.findings, ...manifest];
   return finish(ctx, all, planned);
+}
+
+/**
+ * AGSC-09-17 (a): a source folder that holds the manifest of `export --manifest` is checked
+ * against it — each listed file's digest, the item count and the items digest — and a
+ * difference is a warning. The import goes on as it would without a manifest.
+ *
+ * @param {object} fs the read-only port rooted at the source.
+ * @param {string|null} base the base the source's root document states.
+ * @param {Array<{path:string}>} writes the plan's writes, which are the items the folder holds.
+ * @returns {Array<object>} findings.
+ */
+function checkManifest(fs, base, writes) {
+  if (!fs.exists(exportManifest.FILE)) return [];
+  const text = String(fs.readFile(exportManifest.FILE, 'utf8'));
+  const files = new Map();
+  for (const listed of exportManifest.listedPaths(text)) {
+    try {
+      files.set(listed, fs.exists(listed) ? String(fs.readFile(listed, 'utf8')) : null);
+    } catch (e) {
+      files.set(listed, null);
+    }
+  }
+  return exportManifest.check(text, { files, itemIris: exportManifest.irisOfWrites(writes, base) });
+}
+
+/**
+ * `import <file.ttl> --from skos` (AGSC-01-39). The rules are `interchange/adapters/skos.js`'s;
+ * this function reads the one Turtle file through its own read-only port (it lies outside
+ * the Bundle) and hands the plan to the shared tail, so `--dry-run`, the collision survey
+ * and `--replace` behave exactly as in every other lane (AGSC-01-23).
+ *
+ * @param {object} ctx
+ * @param {string} source the Turtle file.
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importSkos(ctx, source, identityOptions) {
+  let text;
+  try {
+    text = readOutside(ctx, source);
+  } catch (e) {
+    const code = e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : 'AGSC-E901';
+    return {
+      findings: [finding(code, `${JSON.stringify(String(source))} could not be read as a file: ${e && e.message}`
+        + ' (AGSC-01-39)', { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const planned = skos.plan({ turtle: text }, {
+    i18nDefault: ((ctx.config || {}).i18n || {}).default || 'en',
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+  });
+  if (planned.findings.some((f) => f.severity === 'error')) return { findings: planned.findings, status: 'fail' };
+  return finish(ctx, planned.findings, planned);
 }
 
 /**
@@ -1001,6 +1061,7 @@ function run(ctx) {
   if (from === gabbe.FORMAT) return importGabbe(ctx, source, identified.options);
   if (from === skills.FORMAT) return importSkills(ctx, source, identified.options);
   if (from === board.FORMAT) return importBoard(ctx, source, identified.options);
+  if (from === skos.FORMAT) return importSkos(ctx, source, identified.options);
 
   let selectionText;
   try {

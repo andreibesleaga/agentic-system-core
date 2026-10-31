@@ -3,7 +3,7 @@
 **Who this is for:** someone connecting an agent, a framework or a repository to a node. **Read after:** [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
 
 This page answers one question: **"I use tool X — how does it get at a node's
-knowledge?"** There are seven ways in, and every one of them already exists in the
+knowledge?"** There are nine ways in, and every one of them already exists in the
 engine. Pick by what your tool reads.
 
 | route | what the node gives you | the command | suits |
@@ -15,6 +15,8 @@ engine. Pick by what your tool reads.
 | **5. Agent kit (GABBE)** | a GABBE kit's own folders — skills, guides, memory files | `agsc export --to gabbe` (and `agsc import --from gabbe <kit>`) | a project run with the GABBE kit |
 | **6. Skills repositories** | skills and rule packs traded with the collections people already share (Agent Skills, Claude Code plugins and marketplaces, Cursor and Windsurf rules), from a local clone | `agsc import --from skills <dir>` and `agsc export --to skills` | a team that already keeps a skills collection |
 | **7. Project tools** | a live board's tasks as the import and export files of a tracker (Jira, Trello and others) | `agsc import --from board --format <tool> <dir>` and `agsc export --to board --format <tool>` | a team that plans in a tracker |
+| **8. Link diagrams** | one Mermaid flowchart per item and per cluster | `agsc export --to mermaid` | a page, wiki or vault that renders Mermaid |
+| **9. A SKOS thesaurus** | a thesaurus kept in a taxonomy tool becomes draft items (import only) | `agsc import thesaurus.ttl --from skos` | a vocabulary you already maintain as SKOS |
 
 Nothing here needs a network connection or a key on the node's side. The
 [examples](../examples/connectors/README.md) show each route working; the ones for
@@ -286,15 +288,23 @@ frontmatter is kept whole in `x-skills-rest`.
   resolve until the body is edited. A plugin's `commands/` and `agents/` are reported
   and not mapped. A plugin whose `source` is another repository is named and never
   fetched.
-- **The licence check.** The licence is read from the skill's `license` key (an SPDX
-  name such as `Apache-2.0`, or a sentence naming a bundled file such as
-  `LICENSE.txt`, which is then read), else from a licence file beside the skill, else
-  from the plugin, else from the collection's root licence. A skill whose licence is
-  not a recognised open licence — or that has none — is imported with
-  `status: draft` and a warning, so it is **never published** until a person has read
-  the terms and changed the status. Anthropic's four document skills arrive this way.
-  A recognised licence is carried and reported once: check it agrees with your
-  node's `bundle.license_prose` before you publish.
+- **The licence check, and the draft rule.** The licence is read from the skill's
+  `license` key (an SPDX name such as `Apache-2.0`, or a sentence naming a bundled file
+  such as `LICENSE.txt`, which is then read), else from a licence file beside the skill,
+  else from the plugin, else from the collection's root licence. **Every skill comes in
+  as `status: draft`**, whatever its licence, so it is **never published** until a person
+  has read the terms and changed the status (from 1.1; before that only a skill whose
+  licence was not a recognised open one was a draft). The warning says which case it is:
+  Anthropic's four document skills, whose licence is not open, and a skill with no
+  licence say so; a skill with an open licence says the licence is open and the draft is
+  the rule. A recognised licence is carried in `x-skills-license` and reported once:
+  check it agrees with your node's `bundle.license_prose` before you publish.
+- **Once a skill is published, its pack carries its licence.** A pack that lists a
+  member with an `x-skills-license` ends with a "Notices" section: a fenced list with
+  the member's title, its address, the licence the source stated, the source file and,
+  when known, the version. A pack with no such member has no section and is byte for
+  byte what it was before 1.1. The foreign layouts of `export --to skills` carry the
+  section too.
 - As with every import: nothing is written if an item already here would be
   overwritten (add `--replace` if you mean it), `--dry-run` shows the plan, a second
   import of the same clone changes nothing, and a record of another major version of
@@ -466,6 +476,60 @@ flowchart LR
   n_supervisor["Supervisor"]
   n_supervisor -->|uses| n_handoff
 ```
+
+## Route 9 — a SKOS thesaurus in (Turtle), import only
+
+```sh
+agsc import thesaurus.ttl --from skos --dry-run   # see the plan, and every statement it would drop
+agsc import thesaurus.ttl --from skos             # write the draft items
+```
+
+A vocabulary kept in a taxonomy tool is usually exported as SKOS, in Turtle
+([SKOS Reference](https://www.w3.org/TR/skos-reference/), W3C Recommendation of
+18 August 2009). The file is read with `n3`, the RDF library the engine already
+carries, and mapped as AGSC-01-39 says:
+
+| in the file | in the node |
+|---|---|
+| a `skos:Concept` | a `concept` of kind `term`; its slug is the slug of its title (`-2`, `-3` when two titles collide) |
+| the `skos:prefLabel` in your `i18n.default` language, else the untagged one, else the one with the least language tag | the `title` (a concept with no label is titled by the last part of its IRI) |
+| each `skos:altLabel` (and a SKOS-XL `literalForm`) | an entry of `aliases` |
+| the `skos:definition` that sorts first | the `description` when it has 40 to 200 characters; otherwise the first paragraph of the body, with a warning |
+| `skos:broader`, `skos:narrower`, `skos:related` between two concepts of the file | the links of the same names |
+| a `skos:ConceptScheme`, `skos:Collection` or `skos:OrderedCollection` | a `cluster`; its concepts list it in `clusters`, and a collection inside a collection is its `broader` |
+| a `dcterms:source` that is an http or https address | an entry of `sources` |
+| the concept's own IRI; the `dcterms:license` of its scheme | `x-skos-iri`; `x-skos-license` |
+
+**Every item arrives as a draft**, so nothing is published until you change its status.
+**Nothing is dropped silently:** notations, notes, the mapping properties (`exactMatch` and
+the others), a second label or definition, a link to something that is not in the file,
+and any statement about a class or an individual are each one `AGSC-E506` warning that
+names the subject and the predicate. A second import of the same file changes nothing
+(`--replace` lets a changed file replace items already here). A scheme or collection
+that states no `skos:definition` has no description, which `lint` warns about
+(`AGSC-E408`).
+
+The other direction is `agsc export --skos`, which writes the SKOS view of the node's own
+graph. A file written that way is read like any other thesaurus: it has no root document
+of this node, so it counts as foreign and every item is a draft.
+
+## Checking an export that travels — `--manifest`
+
+```sh
+agsc export --okf --manifest      # dist/export/okf/export-manifest.json, beside the files
+agsc import dist/export/okf --from okf   # recomputes what the manifest states
+```
+
+`--manifest` adds one file to the root of each export a run writes: the SHA-256 of every
+other file of the export (written as the value of an HTTP `Content-Digest` field,
+[RFC 9530](https://www.rfc-editor.org/rfc/rfc9530.html), `sha-256=:<base64>:`), the number of published
+items, a digest of the list of their addresses, the content version, the bundle hash (the
+SHA-256 of the build's `graph.nq`) and the specification version. When you import a folder
+that holds the manifest, the import recomputes the file digests, the item count and the
+items digest and reports each difference as an `AGSC-E506` warning naming the file; it
+then imports as it would without a manifest. It finds a copy that was damaged or edited
+on the way. It is not a signature: the manifest travels with the files it describes, so
+whoever can change one can change the other.
 
 ## Which route for which framework
 

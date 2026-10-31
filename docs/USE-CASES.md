@@ -119,9 +119,8 @@ Bundle's own folder.
   Windsurf rules.
 - **Data flow:** a local clone → items (a skill becomes a procedure, a rule a concept
   of kind `explainer`), each keeping its source file, layout and licence. Anything
-  that would execute is dropped and reported, and a skill whose licence is not a
-  recognised open one arrives as a draft, so it is never published until a person
-  has read its terms. Out again: the node's packs, laid out for one of the five
+  that would execute is dropped and reported, and every skill arrives as a draft,
+  so it is never published until a person has read its terms. Out again: the node's packs, laid out for one of the five
   tools. The engine downloads nothing.
 - **Surfaces:** the skill packs, through the skills adapter.
 - **Mode:** 3.

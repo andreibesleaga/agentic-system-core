@@ -26,6 +26,10 @@
  *     and embeds the Content Use Terms identifier.
  *   * AGSC-06-30 — draft, retired and release-gated items are not published, so
  *     they are in no pack.
+ *   * AGSC-01-22 — a member imported with a licence of its own (`x-skills-license`) is
+ *     published only once a person has changed its draft status; its pack then carries
+ *     a notices block that states the licence, the source and the version. A pack with
+ *     no such member is byte-for-byte what 1.0 wrote.
  *
  * WHAT NO RULE PINS, AND WHAT THIS ENGINE THEREFORE DOES
  *   * **Where the lockfile lives.** AGSC-06-01 closes the route set and gives a
@@ -99,6 +103,29 @@ function packDescription(cluster) {
 }
 
 /**
+ * AGSC-01-22, AGSC-07-20: the notice of each member imported with a licence of its own
+ * (`x-skills-license`, written by the `skills` import adapter), so that the licence
+ * travels with the prose the pack republishes. One line per such member, in member order:
+ * the title, the IRI, the licence the source stated, and where it was taken from. Every
+ * value is foreign text, so each is one line, and the whole is fenced as data like any
+ * quoted prose (AGSC-01-29).
+ *
+ * @param {Array<object>} members the published members of one cluster.
+ * @param {string} base the Bundle IRI base, with its trailing slash.
+ * @returns {Array<string>} the lines; empty when no member carries a licence of its own.
+ */
+function noticeLines(members, base) {
+  return members.filter((member) => member['x-skills-license'] != null).map((member) => {
+    const parts = [`${singleLine(member.title == null ? member.slug : member.title)} <${singleLine(`${base}${member.type}s/${member.slug}/`)}>`
+      + `: ${singleLine(member['x-skills-license'])}`];
+    if (member['x-skills-source'] != null) parts.push(`source ${singleLine(member['x-skills-source'])}`);
+    const version = member.prov == null ? undefined : member.prov.source_version;
+    if (version != null) parts.push(`version ${singleLine(version)}`);
+    return `- ${parts.join('; ')}`;
+  });
+}
+
+/**
  * The bytes of one pack's `SKILL.md`.
  *
  * @param {object} cluster the cluster item, flattened.
@@ -126,6 +153,13 @@ function packText(cluster, members, options) {
       `- item: ${singleLine(`${base}${member.type}s/${member.slug}/`)}`,
       `- type: ${singleLine(member.type)}`, '',
       fenceProse(member.body === '' || member.body == null ? member.description : member.body), '');
+  }
+  const notices = noticeLines(members, base);
+  if (notices.length > 0) {
+    lines.push('## Notices', '',
+      'These members were imported from other sources under their own licences, which the Bundle keeps as the',
+      'source stated them (AGSC-01-22); they are listed so that each licence travels with its prose.', '',
+      fenceProse(notices.join('\n')), '');
   }
   return withOneTrailingFeed(lines.join('\n'));
 }

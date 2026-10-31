@@ -208,7 +208,7 @@ test('L7 — a skills collection becomes procedures, and the packs of the node g
   const before = tree(path.join(dir, 'content'));
   const list = agsc(dir, 'import', '--from', 'skills', '--list', 'clone');
   assert.strictEqual(list.status, 0, list.stderr);
-  assert.match(list.stderr, /\[marketplace\] skill csv-helper skills\/csv-helper\/SKILL\.md licence Apache-2\.0[^\n]*-> importable/u);
+  assert.match(list.stderr, /\[marketplace\] skill csv-helper skills\/csv-helper\/SKILL\.md licence Apache-2\.0[^\n]*-> draft \(open licence/u);
   assert.strictEqual(agsc(dir, 'import', '--from', 'skills', 'clone', '--dry-run').status, 0);
   assert.deepStrictEqual(tree(path.join(dir, 'content')), before, 'the plan wrote something');
   const imported = agsc(dir, 'import', '--from', 'skills', 'clone');
