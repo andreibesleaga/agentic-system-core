@@ -19,6 +19,10 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   request, every merge and the weekly run still cover the three operating systems and
   three Node lines; the required check names are unchanged.
 - Docs: `TESTING.md` names the public export for the real-bundles lane.
+- Development dependencies: `package.json` pins `minimatch` to 11.0.4 through `overrides`, so `npm audit`
+  (the audit gate of `docs/ENGINEERING.md`) is clean again after GHSA-g3hv-75wg-m249 (moderate, `minimatch`
+  below 11.0.1, reached only through eslint and `eslint-plugin-import-x`). Lint and the whole suite pass
+  with it; nothing the package ships changes.
 
 ### Added
 
