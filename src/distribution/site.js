@@ -26,6 +26,7 @@ const { finding, unencodable } = require('../knowledge/validate.js');
 const chunks = require('../knowledge/chunks.js');
 const contentVersion = require('../knowledge/content-version.js');
 const adopt = require('../knowledge/adopt.js');
+const domainLayer = require('../knowledge/domain.js');
 const linksModule = require('../knowledge/links.js');
 const internalLinksModule = require('./internal-links.js');
 const { internalLinks, resolvesTo } = internalLinksModule;
@@ -1372,7 +1373,13 @@ function buildSite(bundle, ports, options, findings) {
   // omitted; a reference to any other host stays a plain `dcterms:source` literal.
   const citations = peerCitationsOf(pageItems, `${base}/`, config.peers, findings);
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
+  // AGSC-05-38/05-39: a node that uses the domain layer publishes its site vocabulary in
+  // the graph files and its items' domain triples; with no vocabulary nothing is added.
+  const siteVocabulary = bundle.domain && typeof bundle.domain.vocabulary === 'string'
+    ? domainLayer.load(bundle.domain.vocabulary, { contexts: (config.domain || {}).contexts })
+    : null;
   const graphBase = {
+    ...(siteVocabulary === null ? {} : { domain: siteVocabulary }),
     citations,
     mentions,
     base: `${base}/`,
@@ -1477,7 +1484,9 @@ function buildSite(bundle, ports, options, findings) {
     }
     if (graph !== null && typeof graph.jsonld === 'function') {
       const whole = graph.jsonld(pageItems, graphView);
-      for (const item of pageItems) put(`/pages/${item.slug}.jsonld`, jsonBytes(jsonldView.restrictTo(whole, graph.jsonld([item], graphView))));
+      // AGSC-05-38: the site vocabulary's own triples are in no per-item view.
+      const pageView = { ...graphView, siteVocabulary: false };
+      for (const item of pageItems) put(`/pages/${item.slug}.jsonld`, jsonBytes(jsonldView.restrictTo(whole, graph.jsonld([item], pageView))));
     } else {
       skipped.push('/pages/<slug>.jsonld (the RDF views were switched off; AGSC-06-02)');
     }

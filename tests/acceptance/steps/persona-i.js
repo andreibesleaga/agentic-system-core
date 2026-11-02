@@ -1,11 +1,13 @@
 'use strict';
-// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22
+// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates; the stale items
 // the NOW page lists; the permissions and steps of the shipped release workflow,
 // read from the file; the import of the old site; a retired item that keeps its
 // slug and page while its successor takes the old address, and the refusal of a
-// second item under the retired slug; and, where the real-Bundle lane
+// second item under the retired slug; a site vocabulary published with the graph and
+// one refused by lint, by the build and by the shipped ontology checker (AGSC-05-38);
+// and, where the real-Bundle lane
 // is switched on, a restore from a bare clone of the patterns node. The steps of
 // the scenario that waits on a gap (a channel whose publish choice is auto) are
 // written here too.
@@ -18,8 +20,11 @@ const path = require('node:path');
 const { canonicalize } = require('json-canonicalize');
 const YAML = require('yaml');
 
+const N3 = require('n3');
+
 const { INSTANT, ROOT, linkset, splitItem } = require('./_world.js');
 const { patternsNode } = require('./_real-bundles.js');
+const { VALID, withExtra } = require('../../knowledge/_domain-fixtures.js');
 
 const LEDGER_REL = 'https://w3id.org/agentic-system-core/rel#ledger';
 const GENESIS = '0'.repeat(64);
@@ -495,6 +500,54 @@ module.exports = [
       world.write(rel, world.read('content/lessons/record-why-a-handoff-happened.md')
         .replace('title: Record why a handoff happened', 'title: Tool-use retries need a budget'));
       assert.strictEqual(splitItem(world.read(rel)).frontmatter.title, 'Tool-use retries need a budget');
+    },
+  },
+  {
+    pattern: /^a site vocabulary "([^"]+)" whose class "(Engine|Widget)" is a subclass of (the item class "asc:Concept"|no item class), named by "domain\.vocabulary" \(AGSC-01-41\)$/u,
+    run(world, rel, name) {
+      world.bundle();
+      // The vocabulary of vector lint-0052; "Widget" adds a class under none of the six item classes.
+      world.write(rel, name === 'Engine' ? VALID : withExtra('dom:Widget a owl:Class ; rdfs:label "Widget" .'));
+      const config = JSON.parse(world.read('agsc.config.json'));
+      world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { vocabulary: rel } }, null, 2)}\n`);
+    },
+  },
+  {
+    pattern: /^"([^"]+)" holds every triple of "([^"]+)" in the Bundle's named graph, and "([^"]+)" holds the same triples as "\1" \(AGSC-05-38\)$/u,
+    run(world, nquadsRel, vocabularyRel, turtleRel) {
+      const lines = new Set(world.read(nquadsRel).split('\n'));
+      const graph = `<${JSON.parse(world.read('agsc.config.json')).site.base}>`;
+      const term = (t) => (t.termType === 'NamedNode' ? `<${t.value}>`
+        : `${JSON.stringify(t.value)}${t.language ? `@${t.language}` : `^^<${t.datatype.value}>`}`);
+      const vocabulary = new N3.Parser().parse(world.read(vocabularyRel));
+      for (const q of vocabulary) {
+        const line = `${term(q.subject)} ${term(q.predicate)} ${term(q.object)} ${graph} .`;
+        assert.ok(lines.has(line), `${line} is not in ${nquadsRel}`);
+      }
+      const asTriples = (quads) => quads.map((q) => `${term(q.subject)} ${term(q.predicate)} ${term(q.object)}`).sort();
+      assert.deepStrictEqual(asTriples(new N3.Parser().parse(world.read(turtleRel))),
+        asTriples(new N3.Parser({ format: 'N-Quads' }).parse(world.read(nquadsRel))));
+    },
+  },
+  {
+    pattern: /^no per-item view under "([^"]+)" names a term of "([^"]+)" \(AGSC-05-38\)$/u,
+    run(world, folder, vocabularyRel) {
+      const terms = new Set(new N3.Parser().parse(world.read(vocabularyRel)).map((q) => q.subject.value));
+      const pages = [...world.snapshot(folder).keys()].filter((rel) => rel.endsWith('.jsonld'));
+      assert.ok(pages.length > 0, `no per-item view under ${folder}`);
+      for (const rel of pages) {
+        const ids = JSON.parse(world.read(`${folder}/${rel}`))['@graph'].map((node) => node['@id']);
+        assert.deepStrictEqual(ids.filter((id) => terms.has(id)), [], rel);
+      }
+    },
+  },
+  {
+    pattern: /^the shipped validate-ontology reports "(AGSC-E\d{3})" on "([^"]+)" \(AGSC-05-38\)$/u,
+    run(world, code, rel) {
+      const r = world.tool('validate-ontology', ['--json', path.join(world.dir, rel)]);
+      assert.strictEqual(r.exit, 1, `${r.stdout}${r.stderr}`);
+      const { findings } = JSON.parse(r.stdout);
+      assert.ok(findings.length > 0 && findings.every((f) => f.code === code && f.file === rel), r.stdout);
     },
   },
 ];

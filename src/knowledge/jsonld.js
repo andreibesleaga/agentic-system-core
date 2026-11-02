@@ -226,6 +226,9 @@ function jsonValue(object, definition) {
     return definition && definition.type === '@id' ? object.value : { '@id': object.value };
   }
   if (object.lang) return { '@language': object.lang, '@value': object.value };
+  // A literal under a term that selects IRIs (a site vocabulary may give `rdfs:seeAlso` a
+  // literal, AGSC-05-38): a bare string there would be read as an IRI, so it is a value object.
+  if (definition && definition.type === '@id') return { '@type': object.datatype, '@value': object.value };
   if (definition && definition.type === object.datatype) return object.value;
   if (object.datatype === nq.XSD_STRING) return object.value;
   return { '@type': object.datatype, '@value': object.value };
@@ -256,14 +259,15 @@ function toJsonLd(items, options = {}) {
     const node = { '@id': subject };
     const properties = bySubject.get(subject);
     const types = (properties.get(nq.RDF_TYPE) || [])
-      .map((object) => {
-        const term = index.get(object.value);
-        return term ? term.name : object.value;
-      })
-      .sort(compareCodePoint);
+      .map((object) => object.value)
+      .sort(compareCodePoint)
+      .map((value) => {
+        const term = index.get(value);
+        return term ? term.name : value;
+      });
     // AGSC-05-12/05-13: every node this specification instantiates carries exactly
-    // one class and there is no union type, so `@type` is a name, not a list; the
-    // list form is kept only so that a second class could never be dropped silently.
+    // one class and there is no union type, so `@type` is a name, not a list. An item
+    // with a domain type has two (AGSC-05-39), listed in code-point order of their IRIs.
     if (types.length > 0) node['@type'] = types.length === 1 ? types[0] : types;
     for (const [predicate, objects] of properties) {
       if (predicate === nq.RDF_TYPE) continue;

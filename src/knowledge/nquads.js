@@ -6,8 +6,9 @@
 // fourteen Link keys and their computed inverses), AGSC-05-26/05-26a/05-27 (the
 // frontmatter → property table), AGSC-05-29/05-30 (attachments, ports, task state),
 // AGSC-05-31 (the three literal forms), AGSC-05-32 (N-Quads escaping),
-// AGSC-04-13/04-15/04-16 (the sort that IS the canonicalisation) and AGSC-06-33
-// (the optional static fragments).
+// AGSC-04-13/04-15/04-16 (the sort that IS the canonicalisation), AGSC-06-33
+// (the optional static fragments) and, for a node that uses the domain layer,
+// AGSC-05-38/05-39 (the site vocabulary's triples and the items' domain triples).
 //
 // PURE: no fs, no process, no clock, no network, no cross-context require. The build
 // instant, the file bytes of an attachment and the Bundle configuration are passed in.
@@ -441,6 +442,42 @@ function linkQuads(item, subject, index, graph) {
 }
 
 /**
+ * AGSC-05-39: the triples an item adds with the keys of the domain layer, read against the
+ * site vocabulary `domain` (`domain.js#load`): `domain_type` a second `rdf:type`, the class it
+ * names; `domain_role` one `schema:additionalType` string; `domain_context` one
+ * `dcterms:isPartOf` to that cluster; each member of `domain_links` the triple
+ * `<item> <property> <target>` and the inverse or symmetric edge the vocabulary declares
+ * (AGSC-03-27). A name the vocabulary does not define, or a target that does not resolve,
+ * emits nothing; the lint reports it. Like `linkQuads`, a property that specialises
+ * `skos:related`, `skos:broader` or `skos:narrower` is never written at a cluster (AGSC-05-20).
+ */
+function domainQuads(item, subject, index, graph, domain) {
+  const out = [];
+  const type = domain.classFor(item);
+  if (type !== null) out.push(quad(iri(subject), iri(RDF_TYPE), iri(type), graph));
+  if (typeof item.domain_role === 'string') {
+    out.push(quad(iri(subject), iri(`${SCHEMA}additionalType`), literal(item.domain_role), graph));
+  }
+  const context = item.domain_context === undefined ? null : resolveTarget(item.domain_context, index);
+  if (context !== null && context.type === 'cluster') {
+    out.push(quad(iri(subject), iri(`${DCTERMS}isPartOf`), iri(context.iri), graph));
+  }
+  const links = item.domain_links !== null && typeof item.domain_links === 'object' ? item.domain_links : {};
+  for (const [name, values] of Object.entries(links)) {
+    const property = domain.propertyFor(item, name);
+    if (property === null) continue;
+    for (const value of asArray(values)) {
+      const target = resolveTarget(value, index);
+      if (!target || (property.conceptOnly && (item.type === 'cluster' || target.type === 'cluster'))) continue;
+      out.push(quad(iri(subject), iri(property.iri), iri(target.iri), graph));
+      if (property.symmetric) out.push(quad(iri(target.iri), iri(property.iri), iri(subject), graph));
+      else if (property.inverse !== null) out.push(quad(iri(target.iri), iri(property.inverse), iri(subject), graph));
+    }
+  }
+  return out;
+}
+
+/**
  * The RDF dataset of a set of items (AGSC-05). Blank-node-free by construction.
  *
  * @param {object[]} items  parsed items: `{ type, slug, ...frontmatter }`
@@ -458,6 +495,12 @@ function linkQuads(item, subject, index, graph) {
  *                     already resolved to slugs by the Links module
  *   `citations`       `[{source, see_also, peer}]` — the AGSC-11-12 peer citations,
  *                     already normalised by `boundary/federation.js#peerCitations`
+ *   `domain`          the site vocabulary (`domain.js#load`), for a node that uses the
+ *                     domain layer: its triples join the Bundle graph (AGSC-05-38) and
+ *                     each item's domain keys add theirs (AGSC-05-39). Absent, no byte
+ *                     changes
+ *   `siteVocabulary`  `false` leaves the vocabulary's own triples out, as a per-item
+ *                     view does (AGSC-05-38: they are in no `pages/<slug>.jsonld`)
  * @returns {object[]} quads
  */
 function dataset(items, options = {}) {
@@ -477,6 +520,9 @@ function dataset(items, options = {}) {
     }
     out.push(...licenceQuads(options.bundle, base, graph));
   }
+  if (options.domain && options.siteVocabulary !== false) {
+    for (const [s, p, o] of options.domain.triples) out.push(quad(s, p, o, graph));
+  }
 
   for (const item of list) {
     const subject = itemIri(item, { base });
@@ -494,6 +540,7 @@ function dataset(items, options = {}) {
     out.push(...sourceQuads(item, subject, graph));
     out.push(...reviewQuads(item, subject, graph));
     out.push(...attachmentQuads(item, { ...options, base, graph, subject }));
+    if (options.domain) out.push(...domainQuads(item, subject, index, graph, options.domain));
   }
 
   for (const edge of skos.membership(list, (slug) => (index.has(slug) ? index.get(slug).iri : null))) {

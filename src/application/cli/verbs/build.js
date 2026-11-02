@@ -37,6 +37,8 @@ function run(ctx) {
   // it as AGSC-E301. From 1.1 `build` reports it too, as a warning, because a 1.0 Bundle
   // that carried one built (AGSC-00-14).
   gate.push(...danglingLinks(bundle));
+  // AGSC-01-41, AGSC-05-38: a site vocabulary that `lint` refuses is never published.
+  gate.push(...lintVerb.domainLayer(bundle));
   // AGSC-01-40, AGSC-04-05: names, paths and characters some systems refuse are warnings here too.
   gate.push(...lintVerb.portableNames(ctx, bundle), ...lintVerb.textFileFindings(ctx.ports && ctx.ports.fs));
   // AGSC-04-09: the Clock reports when the build instant defaulted to 0

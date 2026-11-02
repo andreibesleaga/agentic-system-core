@@ -41,6 +41,15 @@
 //   AGSC-E605  a blank node, which AGSC-05-08 forbids in this dataset
 //   AGSC-E901  the ontology file is missing
 //
+// A SITE VOCABULARY (AGSC-05-38). A `.ttl` file named on the command line whose name is not
+// `agsc.ttl` is a node's own vocabulary, the file `domain.vocabulary` names (AGSC-01-41), and
+// is judged by the rules (a) to (g) of AGSC-05-38 instead: each violation is `AGSC-E420`. The
+// namespaces of the contexts it may use (AGSC-08-32) are read from the `agsc.config.json` of
+// the nearest folder above the file that has one, when that configuration names this file.
+// The engine applies the same rules in `src/knowledge/domain.js`; this copy stays independent
+// of it (AGSC-09-90), and `tests/tools/validate-ontology-parity.test.js` checks that the two
+// give the same findings, code and message.
+//
 // The OWL 2 RL-safe set is stated positively: this vocabulary is blank-node-free
 // (AGSC-05-08), so it can carry no class expression at all, and every construct that
 // would take OWL 2 DL beyond RL — a restriction, a union, an intersection, a
@@ -64,6 +73,11 @@ const HELP = `validate-ontology [--json] [--quiet] [--help] [<root>|<file.ttl>]
   vocabularies) and AGSC-05-26a, together with the SKOS integrity conditions S19,
   S20, S32 and S37 those rules rely on.
 
+  A .ttl file of any other name is a site vocabulary (the file domain.vocabulary
+  names, AGSC-01-41) and is checked against the rules (a) to (g) of AGSC-05-38;
+  each fault is AGSC-E420. The context namespaces come from the agsc.config.json
+  of the nearest folder above the file, when it names the file.
+
   --json    emit the AGSC-09-11 diagnostics envelope on stdout
   --quiet   emit nothing; the exit code is the result
   --help    this text
@@ -81,6 +95,7 @@ const DCTERMS = 'http://purl.org/dc/terms/';
 const VANN = 'http://purl.org/vocab/vann/';
 const VOAF = 'http://purl.org/vocommons/voaf#';
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
+const PROV = 'http://www.w3.org/ns/prov#';
 
 /** AGSC-05-22: the flat axiom and annotation vocabulary an RL-safe, blank-node-free
  *  vocabulary may use. Anything else is reported rather than silently accepted. */
@@ -239,6 +254,177 @@ function profileFindings(quads, file, findings) {
     && bySubject.get(s)[0].predicate.value === `${RDF}type` && DECLARATIONS.has(bySubject.get(s)[0].object.value));
 }
 
+// --------------------------------------------------------------------------
+// AGSC-05-38: a site vocabulary. The same rules as `src/knowledge/domain.js#check`.
+// --------------------------------------------------------------------------
+
+/** (c): the predicates and types of AGSC-05-22, less `rdfs:domain`, `rdfs:range`,
+ *  `owl:DatatypeProperty` and the ontology-only `voaf:Vocabulary`. */
+const SITE_PREDICATES = new Set([...ALLOWED_PREDICATES].filter((p) => p !== `${RDFS}domain` && p !== `${RDFS}range`));
+const SITE_TYPES = new Set([...ALLOWED_TYPES].filter((t) => t !== `${OWL}DatatypeProperty` && t !== `${VOAF}Vocabulary`));
+const CHARACTERISTIC_TYPES = ['Symmetric', 'Asymmetric', 'Irreflexive', 'Transitive', 'Functional', 'InverseFunctional']
+  .map((name) => `${OWL}${name}Property`);
+const SITE_PROPERTY_TYPES = new Set([`${OWL}ObjectProperty`, `${OWL}AnnotationProperty`, `${OWL}DatatypeProperty`, ...CHARACTERISTIC_TYPES]);
+/** (b): the namespaces no term of a site vocabulary is defined in. */
+const SITE_FORBIDDEN = [NS, OWL, RDF, RDFS, SKOS, DCTERMS, PROV, XSD];
+/** (e) and (f): the six item classes and the fourteen link properties (AGSC-01-02, AGSC-03-01). */
+const SITE_ITEM_CLASSES = ['Concept', 'Lesson', 'Episode', 'Procedure', 'Cluster', 'Gate'].map((name) => `${NS}${name}`);
+const SITE_LINK_PROPERTIES = [`${SKOS}related`, `${SKOS}broader`, `${SKOS}narrower`, `${NS}uses`,
+  `${DCTERMS}requires`, `${NS}excludes`, `${PROV}wasDerivedFrom`, `${NS}contradicts`, `${DCTERMS}replaces`,
+  `${NS}implements`, `${NS}verifies`, `${NS}covers`, `${NS}blockedBy`, `${NS}decidedBy`];
+/** AGSC-05-25: the one type triple a site vocabulary states about another vocabulary's entity it names. */
+const SITE_DECLARATIONS = new Set([...DECLARATIONS, `${OWL}ObjectProperty`]);
+const SITE_CLASS_POSITIONS = new Set([`${RDFS}subClassOf`, `${OWL}disjointWith`, `${OWL}equivalentClass`]);
+
+/** The site vocabulary's statements by named subject, its types, its two hierarchies and its ontologies. */
+function siteIndex(quads) {
+  const bySubject = new Map();
+  const typeSets = new Map();
+  const supers = { [`${RDFS}subClassOf`]: new Map(), [`${RDFS}subPropertyOf`]: new Map() };
+  for (const quad of quads) {
+    if (quad.subject.termType !== 'NamedNode') continue;
+    const s = quad.subject.value;
+    if (!bySubject.has(s)) bySubject.set(s, []);
+    bySubject.get(s).push(quad);
+    if (quad.object.termType !== 'NamedNode') continue;
+    const target = quad.predicate.value === `${RDF}type` ? typeSets : supers[quad.predicate.value];
+    if (target === undefined) continue;
+    if (!target.has(s)) target.set(s, new Set());
+    target.get(s).add(quad.object.value);
+  }
+  const typesOf = (iri) => typeSets.get(iri) || new Set();
+  const ontologies = [...bySubject.keys()].filter((s) => typesOf(s).has(`${OWL}Ontology`)).sort(compareCodePoint);
+  const namespace = ontologies.length === 1 && !/[#/]$/u.test(ontologies[0]) ? `${ontologies[0]}#` : null;
+  return { bySubject, namespace, ontologies, subClassOf: supers[`${RDFS}subClassOf`], subPropertyOf: supers[`${RDFS}subPropertyOf`], typesOf };
+}
+
+/** (a) blank nodes and the one ontology; (c) and (g) per statement, with the declarations of AGSC-05-25. */
+function siteStatementFaults(quads, index, fault) {
+  const blanks = new Set(quads.flatMap((q) => [q.subject, q.object]).filter((t) => t.termType === 'BlankNode').map((t) => t.value));
+  if (blanks.size > 0) fault('(a)', `the site vocabulary holds ${blanks.size} blank node(s); it is blank-node-free (AGSC-05-08)`);
+  if (index.ontologies.length !== 1) fault('(a)', `the site vocabulary declares ${index.ontologies.length} owl:Ontology; it declares exactly one`);
+  else if (index.namespace === null) fault('(a)', `the ontology IRI <${index.ontologies[0]}> ends in "#" or "/"; the site namespace is that IRI followed by "#"`);
+  const undeclared = new Map();
+  for (const [s, statements] of index.bySubject) {
+    for (const { predicate, object } of statements) {
+      const p = predicate.value;
+      if (p === `${RDFS}domain` || p === `${RDFS}range`) fault('(g)', `<${s}> declares <${p}>; a property of the site vocabulary declares no domain and no range`);
+      else if (!SITE_PREDICATES.has(p)) fault('(c)', `the predicate <${p}> on <${s}> is not one the site vocabulary may use`);
+      if (p === `${RDF}type` && object.termType === 'NamedNode' && !SITE_TYPES.has(object.value)) fault('(c)', `<${s}> is declared a <${object.value}>, which the site vocabulary may not use`);
+      if (object.termType === 'Literal' && !index.ontologies.includes(s) && !RL_DATATYPES.has(object.datatype.value)) {
+        fault('(c)', `a literal on <${s}> has the datatype <${object.datatype.value}>, which is not an OWL 2 RL datatype`);
+      }
+      if (!p.startsWith(RDF) && !p.startsWith(RDFS) && !p.startsWith(OWL) && ![...index.typesOf(p)].some((t) => SITE_PROPERTY_TYPES.has(t))) {
+        undeclared.set(p, `the annotation property <${p}> is used and not declared (owl:AnnotationProperty) in the file (AGSC-05-25)`);
+      }
+      if (SITE_CLASS_POSITIONS.has(p) && object.termType === 'NamedNode' && !index.typesOf(object.value).has(`${OWL}Class`)) {
+        undeclared.set(object.value, `<${object.value}> is used as a class and not declared (owl:Class) in the file (AGSC-05-25)`);
+      }
+    }
+  }
+  for (const iri of [...undeclared.keys()].sort(compareCodePoint)) fault('(c)', undeclared.get(iri));
+}
+
+/** (b), (d), (e) and (f) over every term the file defines (all subjects but the ontology and the declarations). */
+function siteTermFaults(index, contextNamespaces, fault) {
+  const allowed = [...(index.namespace === null ? [] : [index.namespace]), ...contextNamespaces];
+  const forbidden = (iri) => SITE_FORBIDDEN.some((ns) => iri.startsWith(ns));
+  const own = (iri) => allowed.some((ns) => iri.startsWith(ns)) && !forbidden(iri);
+  const terms = [...index.bySubject.keys()].sort(compareCodePoint).filter((s) => {
+    const statements = index.bySubject.get(s);
+    const declaration = statements.length === 1 && statements[0].predicate.value === `${RDF}type`
+      && SITE_DECLARATIONS.has(statements[0].object.value);
+    return !index.ontologies.includes(s) && (own(s) || !declaration);
+  });
+  for (const term of terms) {
+    if (forbidden(term) || (index.namespace !== null && !own(term))) {
+      fault('(b)', `<${term}> is defined outside the site namespace and the namespaces of the declared contexts, or in a namespace it may not extend`);
+      continue;
+    }
+    const types = index.typesOf(term);
+    if (!index.bySubject.get(term).some((q) => q.predicate.value === `${RDFS}label`)) fault('(d)', `<${term}> has no rdfs:label`);
+    const isClass = types.has(`${OWL}Class`);
+    const isProperty = [...types].some((t) => SITE_PROPERTY_TYPES.has(t));
+    if (!isClass && !isProperty) fault('(e), (f)', `<${term}> is neither a class nor a property; a site vocabulary defines classes and object properties`);
+    if (isClass) {
+      const itemClasses = [...ancestors(term, index.subClassOf)].filter((c) => SITE_ITEM_CLASSES.includes(c)).length;
+      if (itemClasses !== 1) fault('(e)', `<${term}> is a subclass of ${itemClasses} of the six item classes; it is a subclass of exactly one`);
+    }
+    if (isProperty && !(types.has(`${OWL}ObjectProperty`)
+        && [...ancestors(term, index.subPropertyOf)].some((p) => SITE_LINK_PROPERTIES.includes(p)))) {
+      fault('(f)', `<${term}> is not an owl:ObjectProperty that is a sub-property of one of the fourteen link properties`);
+    }
+  }
+  return {
+    classes: terms.filter((t) => own(t) && index.typesOf(t).has(`${OWL}Class`)).length,
+    properties: terms.filter((t) => own(t) && index.typesOf(t).has(`${OWL}ObjectProperty`)).length,
+  };
+}
+
+/**
+ * AGSC-05-38: the findings of a site vocabulary, each `AGSC-E420`, and what it holds.
+ * @returns {{findings: object[], triples: number, classes: number, properties: number}}
+ */
+function siteVocabulary(raw, file, contextNamespaces) {
+  const findings = [];
+  const fault = (rule, message) => findings.push(finding('AGSC-E420', file, `${message} (AGSC-05-38 ${rule})`));
+  if (raw.includes('\r')) fault('(a)', 'the site vocabulary has CR line endings; it uses LF');
+  if (raw.normalize('NFC') !== raw) fault('(a)', 'the site vocabulary is not NFC');
+  const { Parser } = require('n3');
+  let quads;
+  try { quads = new Parser({ format: 'text/turtle' }).parse(raw); } catch (e) {
+    fault('(a)', `the site vocabulary is not well-formed Turtle: ${e.message}`);
+    return { classes: 0, findings, properties: 0, triples: 0 };
+  }
+  const index = siteIndex(quads);
+  siteStatementFaults(quads, index, fault);
+  return { ...siteTermFaults(index, contextNamespaces, fault), findings, triples: quads.length };
+}
+
+/** The `domain` object of a configuration file; `{}` when it has none or is not JSON. */
+function domainObjectOf(file) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return (parsed && parsed.domain) || {};
+  } catch { return {}; }
+}
+
+/**
+ * The Bundle a site vocabulary belongs to: the nearest folder above the file with an
+ * `agsc.config.json`. When that configuration names the file in `domain.vocabulary`, its
+ * `domain.contexts` give the context namespaces (AGSC-08-32); a configuration that is not
+ * JSON, or that names another file, gives none. The file is named relative to that folder.
+ */
+function siteContextOf(absolute) {
+  let dir = path.dirname(absolute);
+  for (;;) {
+    const candidate = path.join(dir, 'agsc.config.json');
+    if (fs.existsSync(candidate)) {
+      const domain = domainObjectOf(candidate);
+      const names = typeof domain.vocabulary === 'string' && path.resolve(dir, domain.vocabulary) === absolute;
+      const contexts = names && Array.isArray(domain.contexts) ? domain.contexts : [];
+      return { file: path.relative(dir, absolute).split(path.sep).join('/'), namespaces: contexts.map((c) => c && c.namespace).filter((n) => typeof n === 'string') };
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) return { file: path.basename(absolute), namespaces: [] };
+    dir = parent;
+  }
+}
+
+/** `validate-ontology <file.ttl>` for a site vocabulary: the envelope of the engine's own distribution. */
+function runSite(absolute, flags, out, err) {
+  const where = siteContextOf(absolute);
+  const result = siteVocabulary(fs.readFileSync(absolute, 'utf8'), where.file, where.namespaces);
+  const envelope = envelopeOf(result.findings, specVersion(DEFAULT_ROOT), packageVersion(DEFAULT_ROOT));
+  if (flags.has('--json')) out(`${canonicalize(envelope)}\n`);
+  else if (!flags.has('--quiet')) {
+    for (const f of envelope.findings) err(`${f.severity}: ${f.file}:${f.line}:${f.col} ${f.code} ${f.message}\n`);
+    out(`validate-ontology: 1 input file(s) read, site vocabulary, ${result.triples} triples, ${result.classes} classes, `
+      + `${result.properties} properties, ${envelope.counts.error} error, ${envelope.counts.warn} warn\n`);
+  }
+  return envelope.status === 'pass' ? 0 : 1;
+}
+
 function envelopeOf(findings, declared, version) {
   findings.sort((a, b) => compareCodePoint(a.file, b.file) || a.line - b.line || a.col - b.col
     || compareCodePoint(a.code, b.code) || compareCodePoint(a.message, b.message));
@@ -289,6 +475,7 @@ function run(argv, io) {
     else { target = path.resolve(arg); sawTarget = true; }
   }
   const isFile = fs.existsSync(target) && fs.statSync(target).isFile();
+  if (isFile && path.basename(target) !== 'agsc.ttl') return runSite(target, flags, out, err);
   const root = isFile ? path.resolve(path.dirname(target), '..') : target;
   const absolute = isFile ? target : path.join(target, 'ontology', 'agsc.ttl');
   // AGSC-09-90: "A validator MUST FAIL, with

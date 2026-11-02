@@ -30,6 +30,7 @@
 | `skos-export.js` | the SKOS view of `graph.nq` that `export --skos` writes: the scheme, the top concepts, the SKOS types, no episode, procedure or gate |
 | `suggest.js` | the Link suggestions of `lint --suggest`: five generators (mention, shared sources, phrase, lesson without episode, term), each with its evidence |
 | `closure.js` | the consequences of the graph that `export --closure` writes: eight OWL 2 RL rules kept as data and run by the `n3` `Reasoner`, plus the irreflexive check |
+| `domain.js` | the site vocabulary of the domain layer: the rules (a) to (g) its file meets (`AGSC-E420`), the model the graph writer reads (which class a `domain_type` names, which property a domain link names), and the faults of the `domain` object |
 | `chunks.js` | the chunk export for retrieval: the two cuts, the identifiers, the shards |
 | `adopt.js` | adoption of bare Markdown: what `init` prepends, total and byte-preserving |
 | `content-version.js` | the content version of a Bundle, derived once from its history |

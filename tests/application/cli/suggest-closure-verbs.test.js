@@ -157,7 +157,8 @@ test('AGSC-05-37: a domain.vocabulary that names no file is one honest finding, 
   ctx.config = { ...ctx.config, domain: { vocabulary: 'domain/missing.ttl' } };
   nodeFs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify(ctx.config, null, 2)}\n`);
   const result = exportVerb.run(ctx);
-  assert.deepStrictEqual(result.findings.map((f) => f.code), ['AGSC-E001']);
+  // AGSC-01-41: the loader reports the absent file, once, as AGSC-E901.
+  assert.deepStrictEqual(result.findings.map((f) => f.code), ['AGSC-E901']);
   assert.match(result.findings[0].message, /domain\/missing\.ttl/u);
   assert.ok(!exists(dir, 'dist/export/closure.nt'));
 });

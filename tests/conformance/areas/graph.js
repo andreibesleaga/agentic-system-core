@@ -31,6 +31,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const nq = require('../../../src/knowledge/nquads.js');
+const domain = require('../../../src/knowledge/domain.js');
 const turtle = require('../../../src/knowledge/turtle.js');
 const jsonldView = require('../../../src/knowledge/jsonld.js');
 const jcs = require('../../../src/knowledge/jcs.js');
@@ -47,13 +48,15 @@ const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex'
 /**
  * The emission options a vector's input asks for. Every line of `graph.nq` is a quad
  * named by the Bundle IRI (AGSC-04-15), so the graph term is never chosen by the
- * vector's shape.
+ * vector's shape. A case that states a site vocabulary (AGSC-05-38) is a node that uses
+ * the domain layer: the vocabulary is loaded as the build loads `domain.vocabulary`.
  */
 function optionsFor(input) {
   return {
     base: (input.site && input.site.base) || input.base,
     ...(input.bundle ? { bundle: input.bundle } : {}),
     ...(input.attachment_bytes ? { attachmentBytes: input.attachment_bytes } : {}),
+    ...(typeof input.vocabulary === 'string' ? { domain: domain.load(input.vocabulary, { contexts: [] }) } : {}),
     sha256,
   };
 }
@@ -444,6 +447,28 @@ function contextAddressCase(vector, ctx) {
   }
 }
 
+/**
+ * graph-0044 — AGSC-05-38 and AGSC-05-39: the WHOLE `graph.nq` of a node with a site
+ * vocabulary, and the `@type` that `graph.jsonld` gives each node the case names (an item
+ * with a domain type has two classes, listed in code-point order of their IRIs), with the
+ * term names of the context generated from `ontology/agsc.ttl` (AGSC-06-32).
+ */
+function siteVocabularyCase(vector, ctx) {
+  const options = optionsFor(vector.input);
+  const nquads = nq.toNQuads(vector.input.items, options);
+  const context = jsonldView.context(
+    turtle.ontologyTerms(fs.readFileSync(path.join((ctx && ctx.root) || '.', 'ontology', 'agsc.ttl'), 'utf8')),
+    jsonldView.allExternalProperties(),
+  );
+  const nodes = new Map(jsonldView.toJsonLd(vector.input.items, { ...options, context })['@graph'].map((node) => [node['@id'], node]));
+  const list = [['nquads', nquads === vector.expected.nquads, `got\n${nquads}`]];
+  for (const [id, type] of Object.entries(vector.expected.jsonld_type)) {
+    const got = (nodes.get(id) || {})['@type'];
+    list.push([`@type of ${id}`, jcs.canonicalize(got === undefined ? null : got) === jcs.canonicalize(type), JSON.stringify(got)]);
+  }
+  return checks(list);
+}
+
 /** graph-0021/0022/0023/0024 — the dataset of a set of items. */
 function itemsCase(vector) {
   const options = optionsFor(vector.input);
@@ -509,6 +534,7 @@ module.exports.run = guarded((vector, ctx) => {
   if (typeof input.question === 'number') return questionCase(vector);
   if (Array.isArray(expected.readings)) return readingsCase(vector);
   if (Array.isArray(input.ontology_versions)) return contextAddressCase(vector, ctx);
+  if (expected.jsonld_type !== undefined) return siteVocabularyCase(vector, ctx);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };
 });

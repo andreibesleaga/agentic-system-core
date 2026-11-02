@@ -259,6 +259,40 @@ grep -o 'skos/core#ConceptScheme' dist/export/closure.nt
 skos/core#ConceptScheme
 ```
 
+A node can also bring a vocabulary of its own: classes and relations for its field, such as
+an `Engine` that is a kind of concept, or `controls` as a kind of `uses`. Write them in one
+Turtle file and name it in `agsc.config.json`, for example
+`{"domain": {"vocabulary": "domain/vocabulary.ttl"}}`. The file declares one `owl:Ontology`,
+whose IRI followed by `#` is the namespace of its terms. Each class must be a subclass of
+exactly one of the six note types and each relation an `owl:ObjectProperty` under one of the
+fourteen link types, every term needs an `rdfs:label`, and no relation may state a domain or a
+range. That way a reader that knows only the six note types and the fourteen links still
+understands every note.
+
+```turtle
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+asc:Concept a owl:Class .
+asc:uses a owl:ObjectProperty .
+
+<https://example.org/ns/domain> a owl:Ontology ; rdfs:label "Our domain vocabulary" .
+
+<https://example.org/ns/domain#Engine> a owl:Class ; rdfs:label "Engine" ;
+    rdfs:subClassOf asc:Concept .
+
+<https://example.org/ns/domain#controls> a owl:ObjectProperty ; rdfs:label "controls" ;
+    rdfs:subPropertyOf asc:uses .
+```
+
+The two lines at the top declare the note type and the link the file builds on. `agsc lint`
+and `agsc build` check the file, and a fault is the error `AGSC-E420`;
+`node tools/validate-ontology domain/vocabulary.ttl` checks it alone. The build publishes every
+statement of the file in `graph.nq`, `graph.ttl` and `graph.jsonld`, and `agsc export --closure`
+reads it. The file is not copied into the site, and a node without it builds byte for byte as
+before.
+
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).
 

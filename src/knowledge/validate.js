@@ -306,6 +306,8 @@ function codeFor(error, ctx) {
     return 'AGSC-E202';
   }
   if (keyword === 'enum' || keyword === 'const') return 'AGSC-E203';
+  // AGSC-01-41: a context namespace outside the form is AGSC-E209, as a repeated one is.
+  if (keyword === 'pattern' && ctx === 'config' && /^\/domain\/contexts\/\d+\/namespace$/u.test(path)) return 'AGSC-E209';
   if (keyword === 'pattern' || keyword === 'minLength' || keyword === 'maxLength') return 'AGSC-E204';
   if (keyword === 'maxItems' && /(^|\/)broader$/u.test(path)) return 'AGSC-E308';
   if (keyword === 'format') return 'AGSC-E204';
@@ -499,6 +501,9 @@ function config(configObject, options = {}) {
     const segs = String(e.path || '').split('/').filter((seg) => seg !== '');
     if (elsewhere.includes(segs[0]) && RANGE_KEYWORDS.includes(e.keyword)
       && (segs.length >= 2 || segs[0] === 'visibility' || segs[0] === 'federation')) continue;
+    // AGSC-01-41: a repeated context is reported once, member by member, as AGSC-E209 by
+    // `knowledge/domain.js#configFindings`, which `lint` runs beside this check.
+    if (e.keyword === 'uniqueItems' && e.path === '/domain/contexts') continue;
     // AGSC-01-18 / AGSC-00-25: `agsc.config.json` is the one CLOSED surface of this
     // format, so an unknown key is a refusal and not a preserved unknown — and the
     // refusal names the key, because a reserved name (`routing`) and a typo are

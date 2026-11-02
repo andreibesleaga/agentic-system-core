@@ -10,6 +10,7 @@
 // AGSC-08-13…17).
 
 const validate = require('../../../knowledge/validate.js');
+const domain = require('../../../knowledge/domain.js');
 const frontmatter = require('../../../knowledge/frontmatter.js');
 const links = require('../../../knowledge/links.js');
 const suggest = require('../../../knowledge/suggest.js');
@@ -62,6 +63,25 @@ function configAndRoot(bundle, options = {}) {
     findings.push(validate.finding('AGSC-E901',
       'content/index.md, the Bundle root, is not there; a Bundle holds content/ with its root document (AGSC-01-01, AGSC-01-04)',
       { file: 'content/index.md' }));
+  }
+  return findings;
+}
+
+/**
+ * AGSC-01-41 and AGSC-05-38: the domain layer's own checks — the faults of the `domain`
+ * object the schema cannot see, and the rules (a) to (g) over the site vocabulary the loader
+ * read. `build` runs them too, so a vocabulary that `lint` refuses is never published. A
+ * Bundle with no `domain` object has none.
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} findings.
+ */
+function domainLayer(bundle) {
+  const config = bundle.config || {};
+  if (bundle.domain === undefined) return [];
+  const findings = domain.configFindings(config, { items: bundle.items || [] });
+  if (typeof bundle.domain.vocabulary === 'string') {
+    findings.push(...domain.check(bundle.domain.vocabulary, { contexts: config.domain.contexts, file: config.domain.vocabulary }));
   }
   return findings;
 }
@@ -156,6 +176,10 @@ function lane(ctx, bundle) {
   findings.push(...configAndRoot(bundle, { ownVersion: ctx.specVersion }));
   lanes.push('config');
   lanes.push('root');
+  if (bundle.domain !== undefined) {
+    findings.push(...domainLayer(bundle));
+    lanes.push('domain');
+  }
 
   // AGSC-01-03 placement and AGSC-01-11 uniqueness.
   const base = String(((bundle.config || {}).site || {}).base || '');
@@ -316,4 +340,4 @@ function run(ctx) {
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, fix, lane, portableNames, run, suggestLinks, textFileFindings };
+module.exports = { name: 'lint', configAndRoot, domainLayer, fix, lane, portableNames, run, suggestLinks, textFileFindings };

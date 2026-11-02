@@ -21,6 +21,7 @@
 
 const frontmatter = require('../knowledge/frontmatter.js');
 const validate = require('../knowledge/validate.js');
+const { pathGrammarError } = require('../knowledge/links.js');
 const yaml = require('../knowledge/yaml.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
@@ -138,15 +139,43 @@ function loadBundle(ports, options) {
     findings.push(...rootDisagreements(typed, config));
   }
 
+  const domain = domainInputs(fs, config, findings);
+
   return Object.freeze({
     assets: Object.freeze(assets),
     byslug: new Map(items.map((i) => [i.slug, i])),
     config,
+    ...(domain === null ? {} : { domain }),
     findings: Object.freeze(findings),
     index,
     items: Object.freeze(items),
     root: fs.root === undefined ? '' : fs.root,
   });
+}
+
+/**
+ * AGSC-01-41: the files the `domain` object names are inputs of the Bundle, read with it.
+ * Each named file that is absent is `AGSC-E901`; the text of `domain.vocabulary` is kept
+ * (`vocabulary`, or `null`) for the lint, the build and the export to judge and publish
+ * (AGSC-05-38). A path outside the grammar of AGSC-01-35 is not read: the schema reports
+ * it. A configuration with no `domain` object gives `null`, and the record keeps its 1.0 shape.
+ */
+function domainInputs(fs, config, findings) {
+  const object = config && config.domain;
+  if (object === null || typeof object !== 'object' || Array.isArray(object)) return null;
+  let vocabulary = null;
+  for (const key of ['vocabulary', 'shapes', 'questions']) {
+    const path = object[key];
+    if (typeof path !== 'string' || pathGrammarError(path) !== null) continue;
+    if (!fs.exists(path)) {
+      findings.push(Object.freeze({
+        code: 'AGSC-E901', file: path, message: `domain.${key} names ${path}, which is not there (AGSC-01-41)`, severity: 'error',
+      }));
+    } else if (key === 'vocabulary') {
+      vocabulary = readRefusable(fs, path, findings);
+    }
+  }
+  return Object.freeze({ vocabulary });
 }
 
 /**

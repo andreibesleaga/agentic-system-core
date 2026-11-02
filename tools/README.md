@@ -17,7 +17,7 @@ output with them.
 |---|---|
 | `validate-spec` | the rule text of `spec/`: rule ids, key words, trace brackets, the error-code registry |
 | `validate-schemas` | `schema/*.json` against JSON Schema 2020-12 |
-| `validate-ontology` | `ontology/agsc.ttl`: Turtle, the OWL 2 RL axiom list and datatypes, the declarations of the entities of other vocabularies, SKOS pitfalls |
+| `validate-ontology` | `ontology/agsc.ttl`: Turtle, the OWL 2 RL axiom list and datatypes, the declarations of the entities of other vocabularies, SKOS pitfalls; a `.ttl` file of another name is a site vocabulary, checked against the rules (a) to (g) of AGSC-05-38 (`AGSC-E420`), with the context namespaces of the `agsc.config.json` that names it |
 | `validate-vectors` | every conformance vector's members and the rule and code it cites |
 | `validate-wellknown` | one discovery document, at a Level; given a URL, also the cross-origin and caching headers it is served with; `--peer` for the mutual check |
 | `validate-features` | the Gherkin scenarios of `features/` and their requirement tags |

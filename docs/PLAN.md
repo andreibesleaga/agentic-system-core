@@ -169,6 +169,7 @@ graph TB
 | knowledge | `skos-export.js` | the SKOS view of `graph.nq` (1.1): scheme, top concepts, `skos:Concept` and `skos:Collection` types | — | export |
 | knowledge | `suggest.js` | the Link suggestions of `lint --suggest` (1.1): five generators, evidence for each, written only to `dist/suggestions.json` | — | lint |
 | knowledge | `closure.js` | the OWL 2 RL consequences of the graph (1.1): the rules as data, run by the `n3` `Reasoner`; written only to `dist/export/closure.nt` | — | export |
+| knowledge | `domain.js` | the site vocabulary of the domain layer (1.1): the rules (a) to (g) of AGSC-05-38, the model the graph writer reads, the faults of the `domain` object | — | lint build export |
 | knowledge | `diagrams.js` | ported DSL→SVG compiler | 5 | build import |
 | governance | `lint.js` | L1/L2 findings with file+line | 3–4 | lint ci |
 | governance | `injection.js` `secrets.js` `pii.js` `cleanroom.js` | the four N9/clean-room lints (§8, §12) | — | lint ci review |

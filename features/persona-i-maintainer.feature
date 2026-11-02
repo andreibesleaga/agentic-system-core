@@ -1,4 +1,4 @@
-# Trace: PRD-005, PRD-017, PRD-018, PRD-021, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056 · PLAN §7
+# Trace: PRD-005, PRD-017, PRD-018, PRD-021, PRD-022, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056 · PLAN §7
 @persona-i @mode-0
 Feature: Maintainer-as-operator keeps the site green with zero maintenance
   As P9 (maintainer-as-operator)
@@ -97,4 +97,27 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And each imported item keeps the old card's aliases
     And a second import over the same input writes nothing (AGSC-01-23)
     And the imported Bundle passes "agsc ci"
+    And no network call was attempted
+
+  @PRD-022 @human
+  Scenario: A site vocabulary is published with the graph, and every note keeps its item type
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And "www/graph.nq" holds every triple of "domain/vocabulary.ttl" in the Bundle's named graph, and "www/graph.ttl" holds the same triples as "www/graph.nq" (AGSC-05-38)
+    And no per-item view under "www/pages" names a term of "domain/vocabulary.ttl" (AGSC-05-38)
+    And no network call was attempted
+
+  @PRD-022 @human
+  Scenario: A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Widget" is a subclass of no item class, named by "domain.vocabulary" (AGSC-01-41)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E420"
+    When the maintainer runs "agsc build --json" under the network trap
+    Then the command exits 1
+    And the Bundle does not hold "www/graph.nq"
+    And the shipped validate-ontology reports "AGSC-E420" on "domain/vocabulary.ttl" (AGSC-05-38)
     And no network call was attempted

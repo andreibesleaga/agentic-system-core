@@ -261,10 +261,42 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `cax-sco`; `prp-irp` as the warning `AGSC-E313`) entails from the `graph.nq` of the same build, the
   engine's ontology and the node's `domain.vocabulary`, minus what `graph.nq` already holds, in the
   Bundle's named graph, sorted by bytes. Derived data: never a route, never in `build.out`, the four
-  graph files unchanged; two runs give the same bytes. `graph-0041` passes (`graph-0042` needs the
-  domain triples of B05b-WP2). No new dependency: the rules are data, run by the `Reasoner` of the
+  graph files unchanged; two runs give the same bytes. `graph-0041` passes, and `graph-0042` with
+  the site vocabulary in the graph (B05b-WP1). No new dependency: the rules are data, run by the `Reasoner` of the
   already pinned `n3` 2.7.12 (`src/knowledge/closure.js`; the architecture test that allowed one
   `n3` reader now allows this one second module, for the `Store` and `Reasoner` only).
+- The site vocabulary of the domain layer (AGSC-05-38, AGSC-01-41, N-13; `lint-0052` to `lint-0055`):
+  `domain.vocabulary` names a Turtle file of the node's own classes and relations. `lint` and `build`
+  check it against the rules (a) to (g) of AGSC-05-38 (one ontology, terms in the site namespace or a
+  context namespace, the predicates and types of OWL 2 RL that `tools/validate-ontology` admits, a
+  label for every term, each class under exactly one of the six item classes, each property an
+  `owl:ObjectProperty` under one of the fourteen link properties, no domain and no range); each fault
+  is the error `AGSC-E420`, and `build` writes nothing while one remains. New module
+  `src/knowledge/domain.js`. Only a node with a `domain` object is checked, so a 1.0 Bundle lints and
+  builds with the same findings and exit codes.
+- `tools/validate-ontology <file.ttl>` checks a site vocabulary when the file is not named `agsc.ttl`
+  (AGSC-05-38: the violations are reported "by `lint` and by `tools/validate-ontology` run on the
+  file"), with the context namespaces of the `agsc.config.json` that names the file. The tool stays
+  standalone (AGSC-09-90); `tests/tools/validate-ontology-parity.test.js` checks that it and the
+  engine give the same findings on every shared fixture.
+- The domain triples in the graph (AGSC-05-38, AGSC-05-39; `graph-0044`): for a node that uses the
+  domain layer, `graph.nq`, `graph.ttl` and `graph.jsonld` carry every triple of the site vocabulary in
+  the Bundle's named graph (in `graph.ttl` the OWL terms as full IRIs, the prefix block unchanged), and
+  an item adds a second `rdf:type` for `domain_type`, `schema:additionalType` for `domain_role`,
+  `dcterms:isPartOf` for `domain_context` and its `domain_links` with the inverse or symmetric edge the
+  vocabulary declares, in `graph.*` and in its own `pages/<slug>.jsonld`; the vocabulary's own triples
+  are in no per-item view. With the graph files, `/.well-known/knowledge-linkset`, `/now.md` and `/now/`
+  change, since they carry the digests and the fingerprint of the graph files; AGSC-05-39 names all
+  of them (amended 2026-11-02, it named the graph files and the per-item views only). A node without a
+  vocabulary file writes every byte as 1.0 does (G-REF: 0 differing files on the fixture, the four
+  example Bundles and the two content nodes). In `graph.jsonld`
+  a node with two classes lists them in code-point order of their IRIs, and a literal under a term that
+  selects IRIs is written as a value object; neither case occurs in a 1.0 graph.
+- The `domain` object of the configuration (AGSC-01-41, AGSC-08-32; `bundle-0020`): a named file that is
+  absent is `AGSC-E901`, a context for a slug that is no cluster item is `AGSC-E301`, a path under
+  `content/`, `dist/` or `build.out` is `AGSC-E204`, and a repeated cluster or namespace, a namespace
+  outside the form or the vocabulary namespace of AGSC-05-02 is `AGSC-E209`. `export --closure`
+  reports an absent `domain.vocabulary` once, as this `AGSC-E901`, where it said `AGSC-E001`.
 - `tools/gen-shapes` and `schema/item-shapes.ttl` (AGSC-05-24, AGSC-03-25, AGSC-03-23, AGSC-05-17 to
   AGSC-05-21, AGSC-09-90, I-016): SHACL 1.0 shapes of the RDF graph (`graph.nq`, `graph.ttl`, `skos.ttl`),
   generated from `schema/item.schema.json` and the table of AGSC-05-26 (datatype, one value, the closed

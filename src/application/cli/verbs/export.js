@@ -181,28 +181,17 @@ function closureFile(files, vocabularies) {
 
 /**
  * The vocabulary files in force for the closure (AGSC-05-37): the engine's ontology, then the
- * node's site vocabulary where `domain.vocabulary` names one (AGSC-05-38). A name that points
- * at no file is a finding, not a silent skip: the closure would otherwise leave out rules the
- * node declared.
+ * node's site vocabulary where `domain.vocabulary` names one (AGSC-05-38), as the Bundle loader
+ * read it. A name that points at no file is the loader's `AGSC-E901`, already among the build's
+ * findings; the closure is then not written, since it would leave out rules the node declared.
  *
- * @returns {{findings:Array<object>, texts:string[]}}
+ * @returns {{missing: boolean, texts: string[]}}
  */
-function vocabulariesInForce(ctx, config) {
-  const named = ((config || {}).domain || {}).vocabulary;
+function vocabulariesInForce(bundle) {
   const texts = [helpers.ontology().text];
-  if (typeof named !== 'string') return { findings: [], texts };
-  const text = readOptional(ctx, named);
-  if (text === null) {
-    return {
-      findings: [{
-        code: 'AGSC-E001', severity: 'error',
-        message: `export --closure: domain.vocabulary names ${named}, which is not a readable file of this Bundle`
-          + ' (AGSC-05-37, AGSC-05-38)',
-      }],
-      texts,
-    };
-  }
-  return { findings: [], texts: [...texts, text] };
+  if (bundle.domain === undefined || typeof (bundle.config.domain || {}).vocabulary !== 'string') return { missing: false, texts };
+  const text = bundle.domain.vocabulary;
+  return text === null ? { missing: true, texts } : { missing: false, texts: [...texts, text] };
 }
 
 /**
@@ -254,7 +243,7 @@ function graphFiles(files, flags, config) {
 function graphExports(ctx, bundle, flags) {
   const built = site.build(bundle, ctx.ports, helpers.buildOptions(ctx));
   const planned = graphFiles(built.files, flags, bundle.config);
-  const closure = flags.closure === true ? closureExport(ctx, bundle, built.files) : { findings: [], writes: [] };
+  const closure = flags.closure === true ? closureExport(bundle, built.files) : { findings: [], writes: [] };
   const writes = [...planned.writes, ...closure.writes];
   return {
     files: writes.map(([path, text]) => ({ path, text })),
@@ -264,9 +253,9 @@ function graphExports(ctx, bundle, flags) {
 }
 
 /** `--closure` of one run: its vocabularies, then its file; nothing is written when a vocabulary is missing. */
-function closureExport(ctx, bundle, files) {
-  const vocabularies = vocabulariesInForce(ctx, bundle.config);
-  if (vocabularies.findings.length > 0) return { findings: vocabularies.findings, writes: [] };
+function closureExport(bundle, files) {
+  const vocabularies = vocabulariesInForce(bundle);
+  if (vocabularies.missing) return { findings: [], writes: [] };
   return closureFile(files, vocabularies.texts);
 }
 

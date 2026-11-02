@@ -10,3 +10,8 @@ node --test "tests/tools/*.test.js"
 
 Every test here fixes its own clock, reaches no network and writes only under the
 system temporary directory, removing what it wrote.
+
+`validate-ontology-parity.test.js` runs `tools/validate-ontology` and the engine's
+`src/knowledge/domain.js` over the same site vocabularies (AGSC-05-38) and requires the same
+findings from both: the rules exist twice because the tool may not import `src/` (AGSC-09-90),
+so a change to one copy fails this test until the other copy follows.
