@@ -1,12 +1,13 @@
 'use strict';
-// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41
+// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates; the stale items
 // the NOW page lists; the permissions and steps of the shipped release workflow,
 // read from the file; the import of the old site; a retired item that keeps its
 // slug and page while its successor takes the old address, and the refusal of a
 // second item under the retired slug; a site vocabulary published with the graph and
-// one refused by lint, by the build and by the shipped ontology checker (AGSC-05-38);
+// one refused by lint, by the build and by the shipped ontology checker (AGSC-05-38); a
+// note's domain type, role and domain links, and their refusal (AGSC-02-25, AGSC-03-27);
 // and, where the real-Bundle lane
 // is switched on, a restore from a bare clone of the patterns node. The steps of
 // the scenario that waits on a gap (a channel whose publish choice is auto) are
@@ -24,7 +25,7 @@ const N3 = require('n3');
 
 const { INSTANT, ROOT, linkset, splitItem } = require('./_world.js');
 const { patternsNode } = require('./_real-bundles.js');
-const { VALID, withExtra } = require('../../knowledge/_domain-fixtures.js');
+const { NAMESPACE, VALID, withExtra } = require('../../knowledge/_domain-fixtures.js');
 
 const LEDGER_REL = 'https://w3id.org/agentic-system-core/rel#ledger';
 const GENESIS = '0'.repeat(64);
@@ -539,6 +540,23 @@ module.exports = [
         const ids = JSON.parse(world.read(`${folder}/${rel}`))['@graph'].map((node) => node['@id']);
         assert.deepStrictEqual(ids.filter((id) => terms.has(id)), [], rel);
       }
+    },
+  },
+  {
+    pattern: /^the item "([^"]+)" states the domain type "([^"]+)", the role "([^"]+)" and the domain link "([^"]+)" to "([^"]+)" \(AGSC-02-25, AGSC-03-27\)$/u,
+    run(world, rel, type, role, member, target) {
+      const keys = `domain_type: ${type}\ndomain_role: ${role}\ndomain_links:\n  ${member}:\n    - ${target}\n`;
+      world.write(rel, world.read(rel).replace(/\n---\n/u, `\n${keys}---\n`));
+    },
+  },
+  {
+    pattern: /^"([^"]+)" holds the domain link "([^"]+)" from "([^"]+)" to "([^"]+)" and the inverse "([^"]+)" the vocabulary declares back \(AGSC-03-27\)$/u,
+    run(world, nquadsRel, member, from, to, inverse) {
+      const base = JSON.parse(world.read('agsc.config.json')).site.base;
+      const lines = new Set(world.read(nquadsRel).split('\n'));
+      const edge = (s, p, o) => `<${base}concepts/${s}/> <${NAMESPACE}${p}> <${base}concepts/${o}/> <${base}> .`;
+      assert.ok(lines.has(edge(from, member, to)), `the domain link is not in ${nquadsRel}`);
+      assert.ok(lines.has(edge(to, inverse, from)), `the computed inverse is not in ${nquadsRel}`);
     },
   },
   {

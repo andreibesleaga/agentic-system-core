@@ -293,6 +293,27 @@ statement of the file in `graph.nq`, `graph.ttl` and `graph.jsonld`, and `agsc e
 reads it. The file is not copied into the site, and a node without it builds byte for byte as
 before.
 
+A note then says which of these terms it is, and what part it plays, in its front matter:
+
+```yaml
+domain_type: Engine
+domain_role: aggregate-root
+domain_links:
+  controlled-by:
+    - controller
+```
+
+`domain_type` names a class of the vocabulary file, `domain_role` is one of `aggregate-root`,
+`entity`, `value-object`, `domain-event` and `policy`, and each member of `domain_links` names
+a relation of the file, with the notes it points to, written as for any link. If the file says
+that two relations are each other's inverse (`owl:inverseOf`), write only one of them: the
+build adds the other. Which one you write is fixed by the file: the object of the
+`owl:inverseOf` statement, or, where the file states the pair both ways, the one whose address
+sorts last, is the one the build adds. `agsc lint` refuses a `domain_type` the file does not
+define (`AGSC-E418`) and a member that is no relation of the file, that is the added inverse,
+or that is a kind of `skos:related`, `skos:broader` or `skos:narrower` used on a cluster
+(`AGSC-E317`); a `domain_role` outside the five is `AGSC-E203`.
+
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).
 

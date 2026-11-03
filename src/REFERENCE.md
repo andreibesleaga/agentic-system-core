@@ -115,7 +115,7 @@ gathered before the fault.
 | `knowledge/yaml.js` | Knowledge | AGSC-02-01…04 — the YAML failsafe subset and its rejections |
 | `knowledge/frontmatter.js` | Knowledge | AGSC-02-01, 01-14, 01-16 — the block, the body, the Item record |
 | `knowledge/schema.js` | Knowledge | AGSC-00-09, 02-24, 01-10 — the JSON Schema 2020-12 validator and `oneOf` discrimination |
-| `knowledge/validate.js` | Knowledge | AGSC-00-15, 01-03, 01-11, 01-18, 02-05, 02-05a, 02-07, 02-21, 02-24 and the §9.4 code precedence |
+| `knowledge/validate.js` | Knowledge | AGSC-00-15, 01-03, 01-11, 01-18, 02-05, 02-05a, 02-07, 02-21, 02-24 and the §9.4 code precedence; from 1.1 the `warrant` faults of AGSC-02-25 take `AGSC-E512` |
 | `knowledge/slug.js` | Knowledge | AGSC-01-10, 01-11, 01-23, 02-91 — grammar, uniqueness, slugifier, collisions |
 | `knowledge/jcs.js` | Knowledge | AGSC-04-04…06, 04-21 — RFC 8785 with NFC first, plus the I-JSON check |
 | `knowledge/adopt.js` | Knowledge | AGSC-02-90…93 — total, idempotent, byte-preserving adoption |
@@ -436,7 +436,7 @@ lint to the same Findings in the same order.
 | Path | Context | Implements |
 |---|---|---|
 | `knowledge/markdown.js` | Knowledge | AGSC-02-20, 02-22, 03-13 — the subset renderer, the preserved info strings, the heading-anchor algorithm |
-| `knowledge/links.js` | Knowledge | AGSC-03-01…03-13, AGSC-01-35, AGSC-11-12 — the fourteen keys, inverses, cycles, cluster bounds, orphans, body references |
+| `knowledge/links.js` | Knowledge | AGSC-03-01…03-13, AGSC-01-35, AGSC-11-12 — the fourteen keys, inverses, cycles, cluster bounds, orphans, body references; from 1.1, with the option `domain`, the domain links of AGSC-03-27 (`AGSC-E317`) |
 | `governance/injection.js` | Governance | AGSC-08-13 — `injection-scan` (`AGSC-E401`, `AGSC-E402`) |
 | `governance/secrets.js` | Governance | AGSC-08-15, AGSC-01-37 — `no-secrets` and the tracked `.env` (`AGSC-E403`) |
 | `governance/pii.js` | Governance | AGSC-08-16 — `no-pii` (`AGSC-E404`) |
@@ -456,8 +456,9 @@ proseText(body) -> string   // the body without fenced code, for the phrase sear
 
 // knowledge/links.js
 LINK_KEYS (14); CORE_KEYS (9); MODE2_KEYS (5); INVERSE; SYMMETRIC
-resolve(items, { assets? }) -> { edges, errors, inverses, cycle, cycles, chain,
+resolve(items, { assets?, domain? }) -> { edges, errors, inverses, cycle, cycles, chain,
   chains, parents, resolved, unresolved, skipped_external }
+// (with `domain`, the model of knowledge/domain.js#load, `domain_links` become edges and AGSC-E317 is raised, AGSC-03-27)
 anchors(body); findCycle(adjacency, nodes); pathGrammarError(relative, fromDir)
 resolveInside(fromDir, relative); dirOf(path); view(item)
 // (resolve also raises the warnings AGSC-E313 to E316 through the columns of knowledge/relations.js)
@@ -537,7 +538,7 @@ by discipline.
 | `knowledge/skos.js` | AGSC-05-12/13, 05-17…05-20 — the SKOS integrity rules, IRI-free and injected with a resolver so that `nquads.js` may require it without a cycle |
 | `knowledge/skos-export.js` | AGSC-05-36 — `skosView(nquadsText, record)` and `schemeRecord(config)`: the SKOS view `export --skos` writes, read from the text of `graph.nq` with `n3` and written by `turtle.serialize` with a block of its own |
 | `knowledge/closure.js` | AGSC-05-37 — `closure(nquadsText, vocabularies)` returns `{text, warnings}`: the triples the RL subset (`prp-dom`, `prp-rng`, `prp-spo1`, `prp-symp`, `prp-inv1`, `prp-inv2`, `prp-trp`, `cax-sco`; `prp-irp` as the warning `AGSC-E313`) entails and the inputs do not hold, in the Bundle's graph, sorted, one LF at the end; `RULES` is the rule list as data. Run by the `Reasoner` of `n3`; reads through `turtle.parse` |
-| `knowledge/domain.js` | AGSC-05-38, AGSC-01-41, with the reading half of AGSC-05-39 — `check(text, {file, contexts})` returns the `AGSC-E420` findings of a site vocabulary, one per fault of the rules (a) to (g), sorted by message; `load(text, {contexts})` returns the frozen model the graph writer reads (`namespace`, `ontology`, `triples` as terms of `nquads.js`, `contextOf(item)`, `classFor(item)`, `propertyFor(item, name)` with the inverse or symmetric edge), or `null` for a text that is not Turtle; `configFindings(config, {items})` returns the faults of the `domain` object the schema cannot see (`AGSC-E204`, `AGSC-E209`, `AGSC-E301`). Reads through `turtle.parse`. `tools/validate-ontology` holds the same rules for a site vocabulary; `tests/tools/validate-ontology-parity.test.js` keeps the two equal |
+| `knowledge/domain.js` | AGSC-05-38, AGSC-01-41, with the reading half of AGSC-05-39 — `check(text, {file, contexts})` returns the `AGSC-E420` findings of a site vocabulary, one per fault of the rules (a) to (g), sorted by message; `load(text, {contexts})` returns the frozen model the graph writer reads (`namespace`, `ontology`, `triples` as terms of `nquads.js`, `contextOf(item)`, `classFor(item)`, `propertyFor(item, name)` with the inverse or symmetric edge, `computed` for the side of an `owl:inverseOf` pair that is not authored and `inverseName`, AGSC-03-27), or `null` for a text that is not Turtle; `configFindings(config, {items})` returns the faults of the `domain` object the schema cannot see (`AGSC-E204`, `AGSC-E209`, `AGSC-E301`); `itemFindings(items, {model, vocabulary, contexts})` returns the `AGSC-E418` findings of AGSC-02-25 (a `domain_type` that names no class, or on a node with no vocabulary file; a `domain_context` that names no declared context). Reads through `turtle.parse`. `tools/validate-ontology` holds the same rules for a site vocabulary; `tests/tools/validate-ontology-parity.test.js` keeps the two equal |
 | `knowledge/suggest.js` | AGSC-05-35 — `suggestions(items)` (the sorted list of generators G1 to G5, each `{evidence, generator, key, source, target}`) and `file(items, bundleVersion)` (the JCS text of `dist/suggestions.json`) |
 | `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), and the vocabulary reader that feeds AGSC-06-32 |
 | `knowledge/jsonld.js` | AGSC-05-09 (`graph.jsonld`), AGSC-06-32 (`/ns/context.jsonld`), AGSC-05-04b (`memory://`, `AGSC-E309`) |
@@ -919,8 +920,8 @@ built node.
 | Verb | Rule | Module | State |
 |---|---|---|---|
 | `init` | AGSC-02-90…95, AGSC-01-37 | `application/cli/verbs/init.js` → `distribution/init.js`, `knowledge/adopt.js` | wired |
-| `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired; `--suggest` (AGSC-05-35) writes `dist/suggestions.json` by `knowledge/suggest.js` and nothing under `content/`; from 1.1 the `domain` lane (`verbs/lint.js#domainLayer`, AGSC-01-41, AGSC-05-38) runs `knowledge/domain.js` over the `domain` object and the site vocabulary, for a Bundle that has a `domain` object only |
-| `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired; the gate runs `verbs/lint.js#domainLayer`, so a site vocabulary that `lint` refuses is never published (AGSC-05-38) |
+| `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired; `--suggest` (AGSC-05-35) writes `dist/suggestions.json` by `knowledge/suggest.js` and nothing under `content/`; from 1.1 the `domain` lane (`verbs/lint.js#domainLayer`, AGSC-01-41, AGSC-05-38) runs `knowledge/domain.js` over the `domain` object and the site vocabulary, for a Bundle that has a `domain` object, and over the items' domain keys (`AGSC-E418`, AGSC-02-25) for every Bundle; the links lane reads domain links with the site vocabulary (`verbs/lint.js#linkOptions`, `AGSC-E317`, AGSC-03-27) |
+| `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired; the gate runs `verbs/lint.js#domainLayer` and the `AGSC-E317` findings of the links lane, so a site vocabulary, a domain key or a domain link that `lint` refuses is never published (AGSC-05-38, AGSC-02-25, AGSC-03-27) |
 | `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g) | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check` | wired |
 | `ci` | AGSC-09-08, AGSC-08-26(g) | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected; its verify lane adds `governance/auto-merge.js#check` | wired |
 | `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17 | `verbs/export.js` → `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) and, from 1.1, `--skos` (AGSC-05-36: `dist/export/skos.ttl` by `knowledge/skos-export.js` from the build's own `graph.nq`) and `--closure` (AGSC-05-37: `dist/export/closure.nt` by `knowledge/closure.js` from the same `graph.nq`, the engine's ontology and the node's `domain.vocabulary`; never a published surface); `--zip` writes one archive beside each multi-file export root; `--manifest` (AGSC-09-17 (a)) adds `export-manifest.json` to each export root of the run, with the digests of its files, the item count and the items digest (`interchange/export-manifest.js`; the bundle hash and item IRIs come from the build, run in the verb) |

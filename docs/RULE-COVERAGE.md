@@ -12,10 +12,10 @@ A rule counts as verified when at least one of these names it: a live conformanc
 |---|---:|
 | Conformance vector | 211 |
 | Unit, integration or architecture test | 334 |
-| Executed acceptance scenario | 77 |
+| Executed acceptance scenario | 79 |
 | Checker header | 36 |
 
-Acceptance scenarios: 132 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 77 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 134 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 79 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -51,7 +51,7 @@ Of those, 21 state a requirement with MUST, MUST NOT, REQUIRED or SHALL and name
 | AGSC-02-05 | `AGSC-E204`, `AGSC-E207` | `knowledge/validate.test.js` |
 | AGSC-02-07 | `AGSC-E501` | `governance/prov.test.js` |
 | AGSC-02-23 | `AGSC-E409` | `governance/lint-order.test.js`, `interchange/status.test.js`, `standard/item-links-composition-wording.test.js` |
-| AGSC-03-02 | `AGSC-E301` | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/domain-graph.test.js` +4 |
+| AGSC-03-02 | `AGSC-E301` | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/domain-graph.test.js` +5 |
 | AGSC-03-03 | `AGSC-E207`, `AGSC-E302`, `AGSC-E303` +2 | `knowledge/links.test.js` |
 | AGSC-03-09 | `AGSC-E301` | `standard/rules.test.js` |
 | AGSC-05-08 | `AGSC-E605` | `knowledge/nquads.test.js`, `knowledge/skos-export.test.js`, `validate-ontology` |
@@ -174,7 +174,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-38 | VERIFIED | — | — | `application/cli/refresh-stops.test.js`, `distribution/now-spend.test.js` | — | — |
 | AGSC-01-39 | VERIFIED | yes | `imp-0006`, `imp-0007`, `imp-0008` | `acceptance/steps/persona-h.js`, `interchange/skos-import-cli.test.js`, `interchange/skos.test.js` | — | — |
 | AGSC-01-40 | VERIFIED | yes | `bundle-0013`, `bundle-0014`, `bundle-0015` | `governance/portable-names.test.js` | — | — |
-| AGSC-01-41 | VERIFIED | yes | `bundle-0020` | `acceptance/steps/persona-i.js`, `application/domain-layer.test.js`, `knowledge/domain.test.js` | `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker` | `validate-ontology` |
+| AGSC-01-41 | VERIFIED | yes | `bundle-0020` | `acceptance/steps/persona-i.js`, `application/domain-layer.test.js`, `knowledge/domain.test.js` | `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker`, `persona-i-maintainer.feature#A note states its domain type, its role and a domain link the site vocabulary defines` +1 | `validate-ontology` |
 | AGSC-01-42 | VERIFIED | yes | `bundle-0018`, `bundle-0019` | — | — | — |
 | AGSC-02-01 | VERIFIED | yes | `fm-0011`, `fm-0012`, `fm-0013` | `interchange/oldsite.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
 | AGSC-02-02 | VERIFIED | yes | `fm-0005`, `fm-0014`, `fm-0015` +6 | `distribution/page-tools.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
@@ -200,7 +200,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-22 | VERIFIED | yes | `graph-0027` | `governance/lint-order.test.js`, `knowledge/file-lines.test.js`, `knowledge/markdown.test.js` +1 | — | — |
 | AGSC-02-23 | VERIFIED | — | — | `governance/lint-order.test.js`, `interchange/status.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
 | AGSC-02-24 | VERIFIED | yes | `fm-0010`, `fm-0019`, `frontmatter-0030` | `composition/skills.test.js`, `distribution/public-statements.test.js`, `interchange/clusters.test.js` +9 | — | `validate-schemas` |
-| AGSC-02-25 | VERIFIED | yes | `fm-0022`, `fm-0023`, `fm-0024` +3 | `knowledge/domain.test.js` | — | — |
+| AGSC-02-25 | VERIFIED | yes | `fm-0022`, `fm-0023`, `fm-0024` +3 | `acceptance/steps/persona-i.js`, `knowledge/domain-keys.test.js`, `knowledge/domain-links.test.js` +1 | `persona-i-maintainer.feature#A note states its domain type, its role and a domain link the site vocabulary defines`, `persona-i-maintainer.feature#A domain type or a domain link the site vocabulary does not define is refused by lint and by the build` | — |
 | AGSC-02-90 | VERIFIED | yes | `adopt-0001` | `acceptance/steps/persona-0.js`, `application/cli/verbs-wired.test.js`, `interchange/skos.test.js` +2 | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
 | AGSC-02-91 | VERIFIED | yes | `adopt-0002`, `fm-0008`, `slug-0007` | `acceptance/steps/persona-0.js`, `application/cli/init-notes.test.js`, `distribution/init.test.js` +6 | `persona-0-dropin.feature#Three commands from bare notes to a full local site`, `persona-0-dropin.feature#Re-running init over an adopted and built Bundle changes nothing`, `persona-0-dropin.feature#Adopting notes with non-ASCII file names gives ASCII slugs` | — |
 | AGSC-02-92 | VERIFIED | yes | `adopt-0003` | `acceptance/steps/persona-0.js`, `distribution/init.test.js`, `knowledge/adopt.test.js` | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
@@ -212,7 +212,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-98 | VERIFIED | yes | `lint-0020`, `lint-0024` | `distribution/html.test.js`, `distribution/surfaces-eng2.test.js`, `governance/lint-order.test.js` +4 | — | — |
 | AGSC-02-99 | VERIFIED | yes | `frontmatter-0031` | `e2e/modes/mode-2-project.test.js`, `governance/prov.test.js` | — | — |
 | AGSC-03-01 | VERIFIED | yes | — | `e2e/modes/mode-2-project.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` +2 | — | — |
-| AGSC-03-02 | VERIFIED | — | — | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/domain-graph.test.js` +4 | — | — |
+| AGSC-03-02 | VERIFIED | — | — | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/domain-graph.test.js` +5 | — | — |
 | AGSC-03-03 | VERIFIED | — | — | `knowledge/links.test.js` | — | — |
 | AGSC-03-04 | VERIFIED | yes | `links-0001`, `links-0003` | `acceptance/steps/persona-a.js`, `knowledge/links.test.js`, `knowledge/nquads.test.js` +1 | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
 | AGSC-03-05 | VERIFIED | — | — | `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
@@ -233,7 +233,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-03-24 | VERIFIED | yes | `links-0012`, `links-0013` | `knowledge/links.test.js` | — | — |
 | AGSC-03-25 | VERIFIED | yes | `links-0014`, `links-0015` | `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
 | AGSC-03-26 | VERIFIED | yes | `links-0016`, `links-0017` | `knowledge/links.test.js` | — | — |
-| AGSC-03-27 | VERIFIED | yes | `links-0018`, `links-0019` | `knowledge/domain.test.js` | — | — |
+| AGSC-03-27 | VERIFIED | yes | `links-0018`, `links-0019` | `acceptance/steps/persona-i.js`, `knowledge/domain-keys.test.js`, `knowledge/domain-links.test.js` +1 | `persona-i-maintainer.feature#A note states its domain type, its role and a domain link the site vocabulary defines`, `persona-i-maintainer.feature#A domain type or a domain link the site vocabulary does not define is refused by lint and by the build` | — |
 | AGSC-04-01 | VERIFIED | yes | — | `application/cli/eng2-verbs.test.js`, `composition/skills.test.js`, `connectors/examples.test.js` +12 | — | — |
 | AGSC-04-02 | VERIFIED | yes | `build-0017` | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-i.js`, `application/cli/verbs-wired.test.js` +11 | `persona-b-contributor.feature#CI runs a lint-only review, no LLM call`, `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
 | AGSC-04-03 | VERIFIED | — | — | `knowledge/jsonld-roundtrip.test.js` | — | — |

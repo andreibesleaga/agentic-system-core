@@ -5,7 +5,9 @@
 // `AGSC-E420`), the reading half of AGSC-05-39 (which class a `domain_type` names, which
 // property a member of `domain_links` names, and which edge the vocabulary materialises for it),
 // the name resolution of AGSC-02-25 and AGSC-03-27 (the namespace of the item's context,
-// AGSC-08-32, else the site namespace), and the faults of the `domain` object of AGSC-01-41.
+// AGSC-08-32, else the site namespace), the computed side of an inverse pair (AGSC-03-27), the
+// item keys that name nothing (AGSC-E418, AGSC-02-25), and the faults of the `domain` object of
+// AGSC-01-41.
 //
 // WHY. A node may describe its own field with classes and relations of its own. A reader that
 // knows only this specification must still understand every note, so each site class is a
@@ -266,18 +268,30 @@ function ownTerm(term) {
   return term.language ? nq.literal(term.value, { lang: term.language }) : nq.literal(term.value, { datatype: term.datatype.value });
 }
 
-/** `owl:inverseOf` read in both directions: a property and the one its edge runs back as. */
+/**
+ * `owl:inverseOf` read in both directions: a property and the one its edge runs back as, and
+ * the computed side of each pair (AGSC-03-27): the object of the statement as the file writes
+ * it, or, where the file states the pair both ways, the property whose IRI is greater in
+ * code-point order. A property paired with itself is symmetric in effect and never computed.
+ */
 function inversesOf(quads) {
   const inverse = new Map();
+  const computed = new Set();
   const pairs = quads.filter((q) => q.predicate.value === `${OWL}inverseOf` && q.object.termType === 'NamedNode')
     .map((q) => [q.subject.value, q.object.value])
     .sort((a, b) => compareCodePoint(a[0], b[0]) || compareCodePoint(a[1], b[1]));
+  const written = new Set(pairs.map(([a, b]) => `${a} ${b}`));
   for (const [a, b] of pairs) {
     if (!inverse.has(a)) inverse.set(a, b);
     if (!inverse.has(b)) inverse.set(b, a);
+    if (a === b) continue;
+    computed.add(written.has(`${b} ${a}`) && compareCodePoint(a, b) > 0 ? a : b);
   }
-  return inverse;
+  return { computed, inverse };
 }
+
+/** The local name of a term: what follows the last `#` or `/` of its IRI (AGSC-03-27). */
+const localName = (iri) => iri.slice(Math.max(iri.lastIndexOf('#'), iri.lastIndexOf('/')) + 1);
 
 /**
  * The site vocabulary as the graph writer and the item checks read it (AGSC-05-38, AGSC-05-39).
@@ -299,7 +313,7 @@ function load(text, options = {}) {
   const named = quads.filter((q) => q.subject.termType !== 'BlankNode' && q.object.termType !== 'BlankNode');
   const index = indexOf(named);
   const namespace = namespaceOf(index);
-  const inverse = inversesOf(named);
+  const { computed, inverse } = inversesOf(named);
   const contexts = new Map((Array.isArray(options.contexts) ? options.contexts : [])
     .filter((entry) => entry && typeof entry.cluster === 'string' && typeof entry.namespace === 'string')
     .map((entry) => [entry.cluster, entry.namespace]));
@@ -320,12 +334,21 @@ function load(text, options = {}) {
     const iri = iriFor(item, item.domain_type);
     return iri !== null && index.typesOf(iri).has(`${OWL}Class`) ? iri : null;
   };
+  /**
+   * AGSC-03-27: the object property a member of `domain_links` names, or `null`: its IRI,
+   * the inverse the vocabulary declares (IRI and local name), whether it is the computed side
+   * of that pair (authoring it is `AGSC-E317`), whether it is symmetric, and whether it
+   * specialises a SKOS semantic relation and so never touches a cluster (AGSC-05-20).
+   */
   const propertyFor = (item, name) => {
     const iri = iriFor(item, name);
     if (iri === null || !index.typesOf(iri).has(`${OWL}ObjectProperty`)) return null;
+    const inverseIri = inverse.get(iri) || null;
     return {
+      computed: computed.has(iri),
       conceptOnly: [...ancestors(iri, index.superProperties)].some((p) => skos.isSemanticRelation(p)),
-      inverse: inverse.get(iri) || null,
+      inverse: inverseIri,
+      inverseName: inverseIri === null ? null : localName(inverseIri),
       iri,
       symmetric: index.typesOf(iri).has(`${OWL}SymmetricProperty`),
     };
@@ -338,6 +361,42 @@ function load(text, options = {}) {
     propertyFor,
     triples: Object.freeze(named.map((q) => Object.freeze([ownTerm(q.subject), ownTerm(q.predicate), ownTerm(q.object)]))),
   });
+}
+
+// ---------------------------------------------------------------- AGSC-02-25: the item keys
+
+/**
+ * AGSC-02-25: the domain keys of the items that name nothing, each `AGSC-E418` on the item's
+ * file and key — a `domain_type` that names no class of the site vocabulary, or that is stated
+ * on a node with no vocabulary file, and a `domain_context` that names no context
+ * `domain.contexts` declares. Raised only on an item that states the key. A vocabulary that is
+ * named and does not load is `AGSC-E420` (`check`), and no type is judged against it.
+ *
+ * @param {Array<{path: string, slug: string, frontmatter: object}>} items the loaded items
+ * @param {{model?: object|null, vocabulary?: boolean, contexts?: Array<{cluster: string}>}} [options]
+ *   `model` the site vocabulary (`load`), `vocabulary` whether the configuration names a
+ *   vocabulary file, `contexts` `domain.contexts`
+ * @returns {Array<object>} findings, in the order of the items
+ */
+function itemFindings(items, options = {}) {
+  const model = options.model || null;
+  const declared = new Set((Array.isArray(options.contexts) ? options.contexts : [])
+    .map((entry) => entry && entry.cluster).filter((cluster) => typeof cluster === 'string'));
+  const findings = [];
+  for (const item of items) {
+    const fm = item.frontmatter || {};
+    const fault = (key, message) => findings.push(finding('AGSC-E418', `${message} (AGSC-02-25)`, { file: item.path, key, slug: item.slug }));
+    if (typeof fm.domain_type === 'string') {
+      if (options.vocabulary !== true) fault('domain_type', `domain_type ${fm.domain_type} is stated on a node with no site vocabulary file`);
+      else if (model !== null && model.classFor({ slug: item.slug, ...fm }) === null) {
+        fault('domain_type', `domain_type ${fm.domain_type} names no class of the site vocabulary in the namespace of the item's context`);
+      }
+    }
+    if (typeof fm.domain_context === 'string' && !declared.has(fm.domain_context)) {
+      fault('domain_context', `domain_context ${fm.domain_context} names no context that domain.contexts declares`);
+    }
+  }
+  return findings;
 }
 
 // ---------------------------------------------------------------- AGSC-01-41
@@ -394,4 +453,4 @@ function configFindings(config, options = {}) {
   return findings;
 }
 
-module.exports = { ITEM_CLASSES, LINK_PROPERTIES, check, configFindings, load };
+module.exports = { ITEM_CLASSES, LINK_PROPERTIES, check, configFindings, itemFindings, load };

@@ -68,21 +68,46 @@ function configAndRoot(bundle, options = {}) {
 }
 
 /**
- * AGSC-01-41 and AGSC-05-38: the domain layer's own checks — the faults of the `domain`
- * object the schema cannot see, and the rules (a) to (g) over the site vocabulary the loader
- * read. `build` runs them too, so a vocabulary that `lint` refuses is never published. A
- * Bundle with no `domain` object has none.
+ * AGSC-05-38: the site vocabulary of the Bundle as the checks read it (`domain.js#load`), or
+ * `null` for a Bundle that names none, or whose vocabulary does not load (AGSC-E420 says why).
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {object|null}
+ */
+function siteModel(bundle) {
+  if (!bundle.domain || typeof bundle.domain.vocabulary !== 'string') return null;
+  return domain.load(bundle.domain.vocabulary, { contexts: ((bundle.config || {}).domain || {}).contexts });
+}
+
+/** The options of `links.resolve` for the Bundle: its assets, and its site vocabulary when it has one. */
+function linkOptions(bundle) {
+  const model = siteModel(bundle);
+  return { assets: bundle.assets, config: bundle.config, ...(model === null ? {} : { domain: model }) };
+}
+
+/**
+ * AGSC-01-41, AGSC-05-38 and AGSC-02-25: the domain layer's own checks — the faults of the
+ * `domain` object the schema cannot see, the rules (a) to (g) over the site vocabulary the
+ * loader read, and the domain keys of the items that name no class or context
+ * (`AGSC-E418`). `build` runs them too, so what `lint` refuses here is never published. A
+ * Bundle with no `domain` object and no item that states a domain key has none.
  *
  * @param {object} bundle the loaded Bundle.
  * @returns {Array<object>} findings.
  */
 function domainLayer(bundle) {
   const config = bundle.config || {};
-  if (bundle.domain === undefined) return [];
-  const findings = domain.configFindings(config, { items: bundle.items || [] });
-  if (typeof bundle.domain.vocabulary === 'string') {
-    findings.push(...domain.check(bundle.domain.vocabulary, { contexts: config.domain.contexts, file: config.domain.vocabulary }));
+  const object = config.domain || {};
+  const findings = [];
+  if (bundle.domain !== undefined) {
+    findings.push(...domain.configFindings(config, { items: bundle.items || [] }));
+    if (typeof bundle.domain.vocabulary === 'string') {
+      findings.push(...domain.check(bundle.domain.vocabulary, { contexts: object.contexts, file: object.vocabulary }));
+    }
   }
+  findings.push(...domain.itemFindings(bundle.items || [], {
+    contexts: object.contexts, model: siteModel(bundle), vocabulary: typeof object.vocabulary === 'string',
+  }));
   return findings;
 }
 
@@ -176,10 +201,8 @@ function lane(ctx, bundle) {
   findings.push(...configAndRoot(bundle, { ownVersion: ctx.specVersion }));
   lanes.push('config');
   lanes.push('root');
-  if (bundle.domain !== undefined) {
-    findings.push(...domainLayer(bundle));
-    lanes.push('domain');
-  }
+  findings.push(...domainLayer(bundle));
+  if (bundle.domain !== undefined) lanes.push('domain');
 
   // AGSC-01-03 placement and AGSC-01-11 uniqueness.
   const base = String(((bundle.config || {}).site || {}).base || '');
@@ -195,9 +218,8 @@ function lane(ctx, bundle) {
   // AGSC-03-11's asset branch needs the set `loadBundle` listed: without
   // it every body image reference to a real file under `content/assets/` is
   // `AGSC-E310`, which is the one case the branch exists to admit.
-  findings.push(...links.resolve(bundle.items || [], {
-    assets: bundle.assets, config: bundle.config,
-  }).errors);
+  // AGSC-03-27: with a site vocabulary the domain links are read too.
+  findings.push(...links.resolve(bundle.items || [], linkOptions(bundle)).errors);
   lanes.push('links');
 
   // AGSC-08-13…17 and the structural lints. Every file fact is injected.
@@ -340,4 +362,4 @@ function run(ctx) {
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, domainLayer, fix, lane, portableNames, run, suggestLinks, textFileFindings };
+module.exports = { name: 'lint', configAndRoot, domainLayer, fix, lane, linkOptions, portableNames, run, suggestLinks, textFileFindings };

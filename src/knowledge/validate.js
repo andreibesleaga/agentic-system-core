@@ -3,7 +3,8 @@
 // Implements AGSC-00-15 (unknown keys preserved), AGSC-01-03 (placement),
 // AGSC-01-11 (slug identity), AGSC-01-18 (closed configuration), AGSC-02-05 and
 // AGSC-02-05a (key names, the `x-` vendor namespace), AGSC-02-07/AGSC-08-01 (prov),
-// AGSC-02-21 (AGSC-E408), AGSC-02-24 (length bounds) and the §9.4 code precedence.
+// AGSC-02-21 (AGSC-E408), AGSC-02-24 (length bounds), the §9.4 code precedence, and the
+// code of the `warrant` faults of AGSC-02-25 (AGSC-E512).
 // `aiProvenance` is AGSC-08-01's conditional `agent`/`model` check, which the lint lane
 // runs (governance/lint.js) and loading an item does not.
 //
@@ -20,6 +21,7 @@
 //   required                             -> AGSC-E202, except `prov` -> AGSC-E501
 //                                          and `prov.operator` -> AGSC-E503
 //   `broader` maxItems on a cluster      -> AGSC-E308   (never AGSC-E201)
+//   `warrant` required, `warrant.type` enum -> AGSC-E512 (AGSC-02-25, AGSC-05-40)
 //   unknown configuration key            -> AGSC-E004
 //   anything else no code names          -> AGSC-E201
 
@@ -299,6 +301,10 @@ const RESERVED_CONFIG_NAMES = Object.freeze(['routing', 'rdfxml', 'feed']);
 /** §9.4 precedence. `ctx` is `item`, `index` or `config`. */
 function codeFor(error, ctx) {
   const { keyword, path, params } = error;
+  // AGSC-02-25, AGSC-05-40: a warrant with no source or type, or a type outside the three.
+  if (ctx === 'item' && ((keyword === 'required' && path === '/warrant') || (keyword === 'enum' && path === '/warrant/type'))) {
+    return 'AGSC-E512';
+  }
   if (keyword === 'required') {
     const missing = params.missingProperty;
     if (ctx !== 'config' && path === '' && missing === 'prov') return 'AGSC-E501';

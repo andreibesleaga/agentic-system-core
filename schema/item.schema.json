@@ -241,6 +241,16 @@
           ]
         }
       }
+    },
+    "domain_links": {
+      "description": "AGSC-03-27: typed links whose type the node's site vocabulary defines (AGSC-05-38). Each member name is the local name of an object property of that vocabulary, resolved as domain_type is; each value is a Link array (AGSC-03-02). A member the vocabulary does not allow is AGSC-E317, which lint reports because the schema cannot see the vocabulary file. Added at 1.1.",
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9_-]{0,63}$": {
+          "$ref": "#/$defs/link_array"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "oneOf": [

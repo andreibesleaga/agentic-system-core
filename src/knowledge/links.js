@@ -27,6 +27,7 @@
 //   AGSC-E314 two relations that cannot both hold (warning)   AGSC-03-24
 //   AGSC-E315 target of an unexpected kind (warning)     AGSC-03-25
 //   AGSC-E316 `supersedes` target still stable (warning) AGSC-03-26
+//   AGSC-E317 domain link the site vocabulary does not allow  AGSC-03-27
 //   AGSC-E902 body reference violates the path grammar   AGSC-01-35
 
 const { compareCodePoint } = require('./unicode.js');
@@ -259,6 +260,69 @@ function collectAuthored(v, findings, push) {
   }
 }
 
+/**
+ * AGSC-03-02: the item a Link value names (`<slug>` or `<slug>#<anchor>`), or the reason it
+ * names none, worded for the message of `AGSC-E301`.
+ *
+ * @returns {{target?: object, problem?: string}}
+ */
+function targetOf(raw, bySlug, anchorsOf) {
+  const m = LINK_VALUE.exec(raw);
+  const target = m ? bySlug.get(m[1]) : undefined;
+  if (target === undefined) return { problem: 'resolves to no item' };
+  if (m[2] !== undefined && !anchorsOf(target).includes(m[2])) return { problem: `names no anchor of "${m[1]}"` };
+  return { target };
+}
+
+/**
+ * AGSC-03-27: the domain links of one item, read against the site vocabulary `model`
+ * (`domain.js#load`). Each member names an object property of the vocabulary; its targets
+ * resolve as AGSC-03-02 resolves a Link (`AGSC-E301`), and each one is an edge whose key is
+ * the member name, with the inverse or symmetric edge the vocabulary declares computed back
+ * (AGSC-03-04, AGSC-03-05). Three faults are `AGSC-E317` and give no edge: a name that is no
+ * object property, a name that is the computed side of an inverse pair, and a property that
+ * specialises a SKOS semantic relation where the item or the target is a cluster (AGSC-05-20).
+ * A domain link is none of the fourteen keys: no check of AGSC-03-23 to AGSC-03-26 and no
+ * cycle check reads it.
+ *
+ * @param {object} v the item view.
+ * @param {{model: object, target: Function}} read the vocabulary and the target resolver.
+ */
+function collectDomainLinks(v, { model, target }, findings, add) {
+  const members = v.fm.domain_links;
+  if (members === null || typeof members !== 'object' || Array.isArray(members)) return;
+  const refuse = (name, message) => findings.push(finding('AGSC-E317', `domain link "${name}" ${message} (AGSC-03-27)`,
+    { file: v.path, slug: v.slug, key: name }));
+  for (const name of Object.keys(members).sort(compareCodePoint)) {
+    const property = model.propertyFor(v.fm, name);
+    if (property === null) {
+      refuse(name, 'names no object property of the site vocabulary');
+      continue;
+    }
+    if (property.computed) {
+      refuse(name, `is the computed inverse of "${property.inverseName}" and is not authored`);
+      continue;
+    }
+    if (property.conceptOnly && v.type === 'cluster') {
+      refuse(name, 'specialises a SKOS semantic relation and the item is a cluster, a skos:Collection');
+      continue;
+    }
+    for (const raw of asArray(members[name]).filter((value) => typeof value === 'string')) {
+      const found = target(raw);
+      if (found.problem !== undefined) {
+        findings.push(finding('AGSC-E301', `domain link "${name}" target "${raw}" ${found.problem} (AGSC-03-02)`,
+          { file: v.path, slug: v.slug, key: name }));
+      } else if (property.conceptOnly && found.target.type === 'cluster') {
+        refuse(name, `specialises a SKOS semantic relation and its target "${found.target.slug}" is a cluster, a skos:Collection`);
+      } else {
+        add(v.slug, name, found.target.slug, false);
+        if (property.symmetric) add(found.target.slug, name, v.slug, true);
+        else if (property.inverseName !== null) add(found.target.slug, property.inverseName, v.slug, true);
+      }
+    }
+  }
+}
+
 /** AGSC-03-25: `concept` and `lesson` are one family; every other type is its own. */
 const familyOf = (type) => (type === 'lesson' ? 'concept' : type);
 
@@ -328,8 +392,10 @@ function warnAboutPairs(edges, hasEdge, bySlug, findings) {
  *
  * @param {Array<object>} items parsed items (or the flat frontmatter objects the
  *   vectors carry); `body` is optional and drives the AGSC-03-11 body-link pass.
- * @param {{config?:object, assets?:Iterable<string>}} [options] `assets` lists the
- *   Bundle-relative paths under `content/assets/` a body reference may name.
+ * @param {{config?:object, assets?:Iterable<string>, domain?:object}} [options] `assets` lists the
+ *   Bundle-relative paths under `content/assets/` a body reference may name; `domain` is the
+ *   site vocabulary (`domain.js#load`) of a node that declares one, whose domain links
+ *   (AGSC-03-27) are then read. Without it `domain_links` is read by nobody.
  * @returns {object} edges, findings and the diagnostic shapes named above.
  */
 function resolve(items, options = {}) {
@@ -366,22 +432,13 @@ function resolve(items, options = {}) {
   const broaderAdjacency = new Map();
   for (const v of views) {
     collectAuthored(v, findings, (key, raw, owner) => {
-      const m = LINK_VALUE.exec(raw);
-      const targetSlug = m ? m[1] : raw;
-      const fragment = m ? m[2] : undefined;
-      const target = bySlug.get(targetSlug);
-      if (!m || target === undefined) {
-        findings.push(finding('AGSC-E301',
-          `Link "${key}" target "${raw}" resolves to no item (AGSC-03-02)`,
+      const { problem, target } = targetOf(raw, bySlug, anchorsOf);
+      if (problem !== undefined) {
+        findings.push(finding('AGSC-E301', `Link "${key}" target "${raw}" ${problem} (AGSC-03-02)`,
           { file: owner.path, slug: owner.slug, key }));
         return;
       }
-      if (fragment !== undefined && !anchorsOf(target).includes(fragment)) {
-        findings.push(finding('AGSC-E301',
-          `Link "${key}" target "${raw}" names no anchor of "${targetSlug}" (AGSC-03-02)`,
-          { file: owner.path, slug: owner.slug, key }));
-        return;
-      }
+      const targetSlug = target.slug;
       add(owner.slug, key, targetSlug, false);
       add(targetSlug, INVERSE[key], owner.slug, true);
       judged.push({ owner, key, target });
@@ -402,6 +459,13 @@ function resolve(items, options = {}) {
   const seen = new Set();
   for (const link of judged) warnAboutLink(link, seen, findings);
   warnAboutPairs(edges, (source, key, target) => index.has(edgeKey({ source, key, target })), bySlug, findings);
+
+  // Pass 1c — the domain links of a node with a site vocabulary (AGSC-03-27). They join
+  // the edges after the checks of the fourteen keys and before the orphans, which count them.
+  if (options.domain) {
+    const target = (raw) => targetOf(raw, bySlug, anchorsOf);
+    for (const v of views) collectDomainLinks(v, { model: options.domain, target }, findings, add);
+  }
 
   // Pass 2 — the two acyclicity checks (AGSC-03-07, AGSC-03-08).
   const slugs = new Set(views.map((v) => v.slug));

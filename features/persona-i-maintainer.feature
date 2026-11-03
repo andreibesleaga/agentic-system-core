@@ -121,3 +121,27 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the Bundle does not hold "www/graph.nq"
     And the shipped validate-ontology reports "AGSC-E420" on "domain/vocabulary.ttl" (AGSC-05-38)
     And no network call was attempted
+
+  @PRD-022 @human
+  Scenario: A note states its domain type, its role and a domain link the site vocabulary defines
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And "www/graph.nq" holds the domain link "controlled-by" from "handoff" to "supervisor" and the inverse "controls" the vocabulary declares back (AGSC-03-27)
+    And no network call was attempted
+
+  @PRD-022 @human
+  Scenario: A domain type or a domain link the site vocabulary does not define is refused by lint and by the build
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Turbine", the role "entity" and the domain link "owns" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E418"
+    And the JSON envelope carries the error "AGSC-E317"
+    When the maintainer runs "agsc build --json" under the network trap
+    Then the command exits 1
+    And the Bundle does not hold "www/graph.nq"
+    And no network call was attempted

@@ -93,9 +93,9 @@ test('a domain link names an object property, with the edge the vocabulary mater
     'dom:widens a owl:ObjectProperty ; rdfs:label "widens" ; rdfs:subPropertyOf skos:broader .',
   ].join('\n')), { contexts: [] });
   assert.deepStrictEqual(model.propertyFor({}, 'controlled-by'),
-    { conceptOnly: false, inverse: `${NAMESPACE}controls`, iri: `${NAMESPACE}controlled-by`, symmetric: false });
+    { computed: false, conceptOnly: false, inverse: `${NAMESPACE}controls`, inverseName: 'controls', iri: `${NAMESPACE}controlled-by`, symmetric: false });
   assert.deepStrictEqual(model.propertyFor({}, 'pairedWith'),
-    { conceptOnly: true, inverse: null, iri: `${NAMESPACE}pairedWith`, symmetric: true });
+    { computed: false, conceptOnly: true, inverse: null, inverseName: null, iri: `${NAMESPACE}pairedWith`, symmetric: true });
   assert.strictEqual(model.propertyFor({}, 'feeds').inverse, `${NAMESPACE}fedBy`);
   assert.strictEqual(model.propertyFor({}, 'fedBy').inverse, `${NAMESPACE}feeds`, 'owl:inverseOf runs both ways');
   assert.strictEqual(model.propertyFor({}, 'narrows').conceptOnly, true, 'through another property of the file');

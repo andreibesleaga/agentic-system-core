@@ -19,7 +19,7 @@
 | `jcs.js` | canonical JSON (RFC 8785) with NFC first, and the I-JSON check |
 | `markdown.js` | the Markdown subset (CommonMark + GFM tables) and body references |
 | `relations.js` | the relation table of AGSC-03-01: the fourteen keys and their columns, read by every server-side copy |
-| `links.js` | the Link graph: resolution, inverses, cycles, orphans, the warnings of AGSC-03-23 to 03-26 |
+| `links.js` | the Link graph: resolution, inverses, cycles, orphans, the warnings of AGSC-03-23 to 03-26, and the domain links of a node with a site vocabulary (AGSC-03-27) |
 | `derive.js` | the readings of the Link graph (inverse, symmetric, transitive, closure), each with its reasons |
 | `questions.js` | the ten questions of the graph (AGSC-05-34), one pure function each |
 | `nquads.js` | the RDF dataset of a Bundle and its canonical N-Quads |
@@ -30,7 +30,7 @@
 | `skos-export.js` | the SKOS view of `graph.nq` that `export --skos` writes: the scheme, the top concepts, the SKOS types, no episode, procedure or gate |
 | `suggest.js` | the Link suggestions of `lint --suggest`: five generators (mention, shared sources, phrase, lesson without episode, term), each with its evidence |
 | `closure.js` | the consequences of the graph that `export --closure` writes: eight OWL 2 RL rules kept as data and run by the `n3` `Reasoner`, plus the irreflexive check |
-| `domain.js` | the site vocabulary of the domain layer: the rules (a) to (g) its file meets (`AGSC-E420`), the model the graph writer reads (which class a `domain_type` names, which property a domain link names), and the faults of the `domain` object |
+| `domain.js` | the site vocabulary of the domain layer: the rules (a) to (g) its file meets (`AGSC-E420`), the model the graph writer and the link reader use (which class a `domain_type` names, which property a domain link names and which side of an inverse pair is computed), the faults of the `domain` object, and the items' domain keys that name nothing (`AGSC-E418`) |
 | `chunks.js` | the chunk export for retrieval: the two cuts, the identifiers, the shards |
 | `adopt.js` | adoption of bare Markdown: what `init` prepends, total and byte-preserving |
 | `content-version.js` | the content version of a Bundle, derived once from its history |

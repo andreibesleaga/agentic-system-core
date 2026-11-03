@@ -297,6 +297,30 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `content/`, `dist/` or `build.out` is `AGSC-E204`, and a repeated cluster or namespace, a namespace
   outside the form or the vocabulary namespace of AGSC-05-02 is `AGSC-E209`. `export --closure`
   reports an absent `domain.vocabulary` once, as this `AGSC-E901`, where it said `AGSC-E001`.
+- The domain keys of an item are known keys (AGSC-02-25, AGSC-00-21; `fm-0022` to `fm-0027`): `domain_type`,
+  `domain_role`, `domain_context`, `warrant` and `domain_links` no longer warn `AGSC-E207`. A
+  `domain_role` outside its five values is `AGSC-E203`; a `warrant` without a `source` or a `type`, or
+  with a type other than `literary`, `user` and `organisational`, is `AGSC-E512` (it was `AGSC-E202` or
+  `AGSC-E203`; `lint-0056` passes). `schema/item.schema.json` gains `domain_links`, an object of Link
+  arrays whose member names follow the grammar of `domain_type`: AGSC-03-27 names the key and the schema
+  of 29 Oct did not carry it (the keyword subset of AGSC-02-24 has no `propertyNames`, so a member name
+  outside the grammar is `AGSC-E201`).
+- Domain types and contexts are checked (AGSC-02-25; `lint-0061` reports its `AGSC-E418`): `lint`, `ci` and
+  `build` refuse, as `AGSC-E418`, a `domain_type` that names no class of the site vocabulary in the
+  namespace of the item's context, a `domain_type` on a node that names no vocabulary file, and a
+  `domain_context` that no entry of `domain.contexts` declares. Raised only on an item that states the
+  key, so a 1.0 Bundle lints and builds with the same findings and exit codes. `domain.js#itemFindings`.
+- Domain links (AGSC-03-27; `links-0018`, `links-0019`): on a node with a site vocabulary,
+  `links.resolve(items, {domain})` reads `domain_links`. Each member is an edge keyed by its name, with
+  the inverse or symmetric edge the vocabulary declares computed back; the edges count as inbound
+  references for the orphan warning (AGSC-03-10) and are never read by the checks of AGSC-03-23 to
+  AGSC-03-26 or the cycle checks. A member that names no object property of the vocabulary, that is the
+  computed side of an `owl:inverseOf` pair (the object as the file writes it, or the greater IRI where
+  the file states both directions), or that specialises `skos:related`, `skos:broader` or
+  `skos:narrower` where the item or the target is a cluster is the error `AGSC-E317`, in `lint`, `ci`
+  and `build`; an unresolved target is `AGSC-E301`. The model of `domain.js#load` says which side of a
+  pair is computed (`computed`, `inverseName`). No byte of a node without a vocabulary changes; the
+  edges are not yet shown on pages or in tool answers.
 - `tools/gen-shapes` and `schema/item-shapes.ttl` (AGSC-05-24, AGSC-03-25, AGSC-03-23, AGSC-05-17 to
   AGSC-05-21, AGSC-09-90, I-016): SHACL 1.0 shapes of the RDF graph (`graph.nq`, `graph.ttl`, `skos.ttl`),
   generated from `schema/item.schema.json` and the table of AGSC-05-26 (datatype, one value, the closed

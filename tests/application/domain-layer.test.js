@@ -117,3 +117,40 @@ test('a valid vocabulary lints and builds clean, and the vocabulary file is no r
   assert.ok(fs.readFileSync(path.join(dir, 'www', 'graph.nq'), 'utf8').includes('<https://minimal.example/ns/domain#Engine>'));
   assert.ok(!fs.existsSync(path.join(dir, 'www', 'domain')));
 });
+
+// ---------------------------------------------------------------- the item keys (AGSC-02-25, AGSC-03-27)
+
+const HANDOFF = fs.readFileSync(path.join(FIXTURE, 'content', 'concepts', 'handoff.md'), 'utf8');
+/** `handoff.md` with the front-matter lines `keys` added after its last key. */
+const handoffWith = (keys) => ({ 'content/concepts/handoff.md': HANDOFF.replace('kind: pattern\n', `kind: pattern\n${keys}\n`) });
+const VOCABULARY = { 'domain/vocabulary.ttl': VALID };
+
+test('an item that states the domain keys with names the vocabulary defines lints clean and builds its triples', () => {
+  const dir = scratch({ vocabulary: 'domain/vocabulary.ttl' }, { ...VOCABULARY,
+    ...handoffWith('domain_type: Engine\ndomain_role: aggregate-root\ndomain_links:\n  controlled-by:\n    - supervisor') });
+  assert.deepStrictEqual(run(dir, 'lint'), { exit: 0, findings: [] });
+  assert.strictEqual(run(dir, 'build').exit, 0);
+  const graph = fs.readFileSync(path.join(dir, 'www', 'graph.nq'), 'utf8');
+  assert.ok(graph.includes('<https://minimal.example/concepts/handoff/> <https://minimal.example/ns/domain#controlled-by> <https://minimal.example/concepts/supervisor/>'));
+  assert.ok(graph.includes('<https://minimal.example/concepts/supervisor/> <https://minimal.example/ns/domain#controls> <https://minimal.example/concepts/handoff/>'));
+});
+
+test('lint and build refuse a domain type or member the vocabulary does not define (AGSC-E418, AGSC-E317)', () => {
+  const dir = scratch({ vocabulary: 'domain/vocabulary.ttl' }, { ...VOCABULARY,
+    ...handoffWith('domain_type: Turbine\ndomain_links:\n  controls:\n    - supervisor') });
+  const linted = run(dir, 'lint');
+  assert.strictEqual(linted.exit, 1);
+  assert.deepStrictEqual(linted.findings.map((f) => [f.code, f.file, f.key]), [
+    ['AGSC-E317', 'content/concepts/handoff.md', 'controls'], ['AGSC-E418', 'content/concepts/handoff.md', 'domain_type']]);
+  const builtFaulty = run(dir, 'build');
+  assert.strictEqual(builtFaulty.exit, 1);
+  assert.deepStrictEqual(builtFaulty.findings.map((f) => f.code).sort(), ['AGSC-E317', 'AGSC-E418']);
+  assert.ok(!fs.existsSync(path.join(dir, 'www')), 'a build with an error writes nothing (AGSC-09-08)');
+});
+
+test('a domain type on a node with no vocabulary file is AGSC-E418; domain links there are read by nobody', () => {
+  const dir = scratch(undefined, handoffWith('domain_type: Engine\ndomain_links:\n  owns:\n    - supervisor'));
+  const linted = run(dir, 'lint');
+  assert.strictEqual(linted.exit, 1);
+  assert.deepStrictEqual(linted.findings.map((f) => [f.code, f.key]), [['AGSC-E418', 'domain_type']]);
+});

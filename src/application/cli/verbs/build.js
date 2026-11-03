@@ -35,8 +35,9 @@ function run(ctx) {
   const gate = lintVerb.configAndRoot(bundle, { ownVersion: ctx.specVersion }).filter((f) => !(f.code === 'AGSC-E901' && f.file === 'agsc.config.json'));
   // A Link whose target does not exist is dropped from the graph; `lint` and `ci` report
   // it as AGSC-E301. From 1.1 `build` reports it too, as a warning, because a 1.0 Bundle
-  // that carried one built (AGSC-00-14).
-  gate.push(...danglingLinks(bundle));
+  // that carried one built (AGSC-00-14). A domain link the site vocabulary does not allow
+  // (AGSC-E317, AGSC-03-27) is an error here as in `lint`: it exists only from 1.1.
+  gate.push(...linkGate(bundle));
   // AGSC-01-41, AGSC-05-38: a site vocabulary that `lint` refuses is never published.
   gate.push(...lintVerb.domainLayer(bundle));
   // AGSC-01-40, AGSC-04-05: names, paths and characters some systems refuse are warnings here too.
@@ -69,10 +70,11 @@ function run(ctx) {
   return { findings: dedupe([...clockFindings, ...gate, ...built.findings]) };
 }
 
-/** The unresolved Link targets of the Bundle, as warnings. */
-function danglingLinks(bundle) {
-  const resolved = links.resolve(bundle.items || [], { assets: bundle.assets, config: bundle.config });
-  return resolved.errors.filter((f) => f.code === 'AGSC-E301').map((f) => ({ ...f, severity: 'warn' }));
+/** The unresolved Link targets of the Bundle, as warnings, and the refused domain links (AGSC-E317). */
+function linkGate(bundle) {
+  const resolved = links.resolve(bundle.items || [], lintVerb.linkOptions(bundle));
+  return resolved.errors.filter((f) => f.code === 'AGSC-E301' || f.code === 'AGSC-E317')
+    .map((f) => (f.code === 'AGSC-E301' ? { ...f, severity: 'warn' } : f));
 }
 
 /** One fault is counted once (AGSC-09-11): the build may report what the gate did. */
