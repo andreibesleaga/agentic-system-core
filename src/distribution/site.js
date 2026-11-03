@@ -28,6 +28,7 @@ const contentVersion = require('../knowledge/content-version.js');
 const adopt = require('../knowledge/adopt.js');
 const domainLayer = require('../knowledge/domain.js');
 const linksModule = require('../knowledge/links.js');
+const linkGraph = require('../knowledge/link-graph.js');
 const internalLinksModule = require('./internal-links.js');
 const { internalLinks, resolvesTo } = internalLinksModule;
 const markdown = require('../knowledge/markdown.js');
@@ -43,6 +44,7 @@ const search = require('./search.js');
 const headers = require('./headers.js');
 const now = require('./now.js');
 const html = require('./html.js');
+const pageGraph = require('./graph-view.js');
 const { frontPage, peerSites } = require('./front-page.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
@@ -1151,26 +1153,6 @@ function skillPacks(bundle, options, config) {
  * @returns {{files:Map<string,string>, findings:Array<object>, skipped:Array<string>}}
  */
 /**
- * AGSC-03-01: an item's authored Links as `{key, targets:[{href, title}]}`, in the declared key
- * order, published targets only (AGSC-06-30). The items are indexed by slug once (first wins).
- * @returns {{publishedBySlug: Map<string, object>, typedLinksOf: function(object): Array<object>}}
- */
-function typedLinksResolver(items) {
-  const publishedBySlug = new Map();
-  for (const i of items) if (!publishedBySlug.has(i.slug)) publishedBySlug.set(i.slug, i);
-  const typedLinksOf = (item) => linksModule.LINK_KEYS
-    .filter((key) => Array.isArray(item[key]) && item[key].length > 0)
-    .map((key) => ({
-      key,
-      targets: item[key].map((value) => String(value).split('#')[0])
-        .map((slug) => publishedBySlug.get(slug))
-        .filter((target) => target !== undefined)
-        .map((target) => ({ href: routeOf(target), title: target.title == null ? target.slug : String(target.title) })),
-    }));
-  return { publishedBySlug, typedLinksOf };
-}
-
-/**
  * AGSC-01-14 (as amended): the strings of the configuration, the Bundle
  * root and the items that no JSON artefact can carry (a lone surrogate written as an
  * escape). Each is `AGSC-E108` with its file, the finding `lint` reports for it; an
@@ -1641,10 +1623,11 @@ function buildSite(bundle, ports, options, findings) {
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
-    const { publishedBySlug, typedLinksOf } = typedLinksResolver(pageItems);
-    const membersOf = (cluster) => items
-      .filter((i) => i.type !== 'cluster' && Array.isArray(i.clusters) && i.clusters.map(String).includes(cluster.slug))
-      .map(entryOf);
+    const publishedBySlug = new Map();
+    for (const i of pageItems) if (!publishedBySlug.has(i.slug)) publishedBySlug.set(i.slug, i);
+    // AGSC-06-38: the graph view reads the listed items only (AGSC-06-30).
+    const views = pageGraph.index(items, routeOf);
+    const membersOf = (cluster) => linkGraph.membersOf(cluster, items).map(entryOf);
     const clusterMembers = (all) => ({ members: all.slice(0, CLUSTER_MEMBERS_SHOWN), membersTotal: all.length });
     // only a PUBLISHED item has a route (AGSC-06-30), so only a published
     // item is a rewriting target; a body link to a draft keeps its authored spelling
@@ -1682,6 +1665,9 @@ function buildSite(bundle, ports, options, findings) {
       if (diagramSource !== null) {
         findings.push(...html.diagramFigure(item, diagramSource).findings);
       }
+      const relations = pageGraph.itemSection(item, views);
+      const clusterMap = item.type === 'cluster' ? pageGraph.clusterSection(item, views) : { findings: [], html: '' };
+      findings.push(...relations.findings, ...clusterMap.findings);
       // AGSC-06-01: every attachment the item names is a route of its own.
       putAttachments(ports, item, { findings, put, refused: refusedAttachments, report: options.publication !== false });
       // the body's references are rendered as the ROUTES this build emits,
@@ -1700,15 +1686,15 @@ function buildSite(bundle, ports, options, findings) {
         // AGSC-11-14: the plain "Propose an edit" anchor.
         editUrl: contributeEditUrl(config, pathOf(item)),
         // A cluster page lists the published items that name it, in the published order, up to the bound above.
-        ...(item.type === 'cluster' ? clusterMembers(membersOf(item)) : {}),
+        ...(item.type === 'cluster' ? { ...clusterMembers(membersOf(item)), clusterMap: clusterMap.html } : {}),
         // The metadata list's Cluster row: each named cluster, linked when published.
         clusters: (Array.isArray(item.clusters) ? item.clusters : []).map((slug) => {
           const cluster = publishedBySlug.get(String(slug));
           return cluster === undefined || cluster.type !== 'cluster' ? { title: String(slug) } : { href: routeOf(cluster), title: cluster.title == null ? cluster.slug : cluster.title };
         }),
         ...(diagramSource === null ? {} : { diagramSource }),
-        // AGSC-03-01: the typed Links the item authors, published targets only.
-        links: typedLinksOf(item),
+        // AGSC-06-38: the figure and the relations table, with the backlinks, under `#links`.
+        relations: relations.html,
       }));
     }
     // AGSC-06-01: `/` is the Bundle's own index route.

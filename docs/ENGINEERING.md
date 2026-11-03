@@ -113,7 +113,9 @@ To add a module:
    outside it. If your module needs something from a part the row does not allow,
    the thing you need belongs lower down (move it, or pass it in as a value from the
    application layer). Interchange and Distribution never require each other: the
-   first speaks foreign formats, the second this format's own surfaces.
+   first speaks foreign formats, the second this format's own surfaces. What both
+   need goes to `knowledge/`: `knowledge/link-graph.js` holds the typed Links between
+   published items that the Mermaid export and the graph view of the pages both draw.
 3. **Reach the host through a port.** `knowledge/`, `governance/`, `composition/`,
    `interchange/`, `distribution/` and `shared/` may use the Node built-in `crypto`
    and nothing else; the Boundary may also use `net` and `url` to classify addresses

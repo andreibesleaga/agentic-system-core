@@ -1,6 +1,6 @@
 'use strict';
 /* global document */
-// verifies AGSC-02-13, AGSC-03-04, AGSC-06-02, AGSC-06-16, AGSC-06-22, AGSC-06-25, AGSC-06-30
+// verifies AGSC-02-13, AGSC-03-04, AGSC-06-02, AGSC-06-16, AGSC-06-22, AGSC-06-25, AGSC-06-30, AGSC-06-38
 // Steps of features/persona-a-reader.feature. Offline: the pages a reader opens are
 // read from the build output of the acceptance Bundle, which stands in for the
 // deployed site (the same bytes a host serves from `www/`). In a browser
@@ -12,6 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { ROOT, built, splitItem } = require('./_world.js');
+const { RELATIONS } = require('../../../src/knowledge/relations.js');
 const browser = require('./_browser.js');
 
 const BASE = 'https://agenticsystemcore.com/';
@@ -28,6 +29,15 @@ function mainOf(html) {
 /** Every href of an anchor, in document order. */
 function hrefs(html) {
   return [...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/gu)].map((m) => m[1]);
+}
+
+/** The rows of a page's relations table under `anchor`, each as its cells without markup. */
+function relationRows(html, anchor) {
+  const at = html.indexOf(`id="${anchor}"`);
+  assert.ok(at >= 0, `the page has no #${anchor} section`);
+  const table = html.slice(html.indexOf('<table class="relations">', at), html.indexOf('</table>', at));
+  return [...table.matchAll(/<tr>(.*?)<\/tr>/gu)].slice(1)
+    .map((m) => [...m[1].matchAll(/<td>(.*?)<\/td>/gu)].map((c) => c[1].replace(/<[^>]+>/gu, '')));
 }
 
 /** The published items of the fixture, read from its files: slug → frontmatter. */
@@ -158,8 +168,9 @@ module.exports = [
     pattern: 'the page shows the SVG compiled from "content/diagrams/a2a.diagram" inline, named by "diagram.alt", and no diagram route exists (AGSC-02-13)',
     run(world) {
       const main = mainOf(world.state.page);
-      const svg = /<svg\b([^>]*)>([\s\S]*?)<\/svg>/u.exec(main);
-      assert.ok(svg, 'no inline <svg> on the page');
+      // The author's diagram: its ids carry the item's slug (the graph view's figure is `links_a2a`).
+      const svg = /<svg\b([^>]*aria-labelledby="a2a-title[^>]*)>([\s\S]*?)<\/svg>/u.exec(main);
+      assert.ok(svg, 'no inline <svg> of the author\'s diagram on the page');
       assert.match(svg[1], /role="img"/u);
       const labelled = /aria-labelledby="([^"\s]+)/u.exec(svg[1])[1];
       assert.ok(svg[2].includes(`<title id="${labelled}">${ALT}</title>`), 'the accessible name is not diagram.alt');
@@ -318,6 +329,63 @@ module.exports = [
     run(world) {
       assert.deepStrictEqual(world.state.search.offOrigin, [], 'the page requested another origin');
       assert.deepStrictEqual(world.state.search.errors, [], 'the page logged errors');
+    },
+  },
+  {
+    pattern: 'the draft "unreleased-idea" also requires "mcp" and the Bundle is built again',
+    run(world) {
+      world.write(DRAFT, world.read(DRAFT).replace('kind: pattern\n', 'kind: pattern\nrequires:\n  - mcp\n'));
+      built(world);
+    },
+  },
+  {
+    pattern: 'the reader navigates to "/concepts/mcp/"',
+    run(world) {
+      world.state.page = world.read('www/concepts/mcp/index.html');
+    },
+  },
+  {
+    pattern: 'the relations table lists the backlink "requires" from "Agent2Agent Protocol" with the meaning of "requires" (AGSC-06-38)',
+    run(world) {
+      const meaning = RELATIONS.find((r) => r.key === 'requires').meaning;
+      assert.deepStrictEqual(relationRows(world.state.page, 'links'), [['requires', 'incoming', 'Agent2Agent Protocol', meaning]]);
+      assert.match(world.state.page, /<td><a href="\/concepts\/a2a\/">Agent2Agent Protocol<\/a><\/td>/u);
+    },
+  },
+  {
+    pattern: 'the figure beside the table draws exactly the rows of the table and is named by its title and description',
+    run(world) {
+      const html = world.state.page;
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="links"')))[0];
+      assert.strictEqual((svg.match(/marker-end=/gu) || []).length, relationRows(html, 'links').length, 'one arrow per row');
+      assert.match(svg, /role="img" aria-labelledby="links_mcp-title links_mcp-desc"/u);
+      assert.match(svg, /<title id="links_mcp-title">Relations of Model Context Protocol<\/title>/u);
+      assert.match(svg, />Agent2Agent Protocol<\/text>/u);
+    },
+  },
+  {
+    pattern: 'the draft "unreleased-idea" is neither drawn nor named on the page',
+    run(world) {
+      assert.ok(!world.state.page.includes('unreleased-idea') && !world.state.page.includes('Unreleased idea'), 'the page names the draft');
+    },
+  },
+  {
+    pattern: 'the reader navigates to "/clusters/agent-patterns/"',
+    run(world) {
+      world.state.page = world.read('www/clusters/agent-patterns/index.html');
+    },
+  },
+  {
+    pattern: 'the cluster map draws the link "requires" from "Handoff" to "Supervisor" and its table lists the same link',
+    run(world) {
+      const html = world.state.page;
+      const meaning = RELATIONS.find((r) => r.key === 'requires').meaning;
+      assert.deepStrictEqual(relationRows(html, 'member-links'), [['Handoff', 'requires', 'Supervisor', meaning]]);
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="member-links"')))[0];
+      assert.match(svg, />Handoff<\/text>/u);
+      assert.match(svg, />Supervisor<\/text>/u);
+      assert.match(svg, />requires<\/text>/u);
+      assert.strictEqual((svg.match(/marker-end=/gu) || []).length, 1, 'one arc');
     },
   },
 ];

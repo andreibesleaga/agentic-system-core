@@ -12,6 +12,7 @@
 |---|---|
 | `site.js` | the build use case: every route, `build`, `write` and `verify` |
 | `html.js` | the page templates |
+| `graph-view.js` | the graph view of item and cluster pages (1.1, AGSC-06-38): the figure of an item's neighbourhood and its relations table with the backlinks and the meaning of each key, and the map of a cluster's members and the links among them, drawn from published items only |
 | `theme.js` | the default look of every engine-built page and the theme switcher |
 | `front-page.js` | the front page `/`: the Bundle's own introduction, a Browse block with each non-empty type index and its count, and the footer's peer links |
 | `internal-links.js` | the build's dangling-link check: every internal link a built page carries resolves to a route the same build emits (AGSC-06-01) |

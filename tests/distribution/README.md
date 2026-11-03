@@ -1,6 +1,6 @@
 # `tests/distribution/`
 
-**Summary.** Unit tests of the build and every surface: routes, pages, headers, discovery, text files, search, NOW, compose page, the seven tools on both transports, hosting profiles. Subject: `src/distribution/`.
+**Summary.** Unit tests of the build and every surface: routes, pages (with the graph view of AGSC-06-38), headers, discovery, text files, search, NOW, compose page, the seven tools on both transports, hosting profiles. Subject: `src/distribution/`.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

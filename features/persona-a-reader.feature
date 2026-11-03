@@ -44,3 +44,13 @@ Feature: Human reader finds a pattern with evidence
     Then "/now/" and "/now.md" carry the line "content version …, built at …, fingerprint …, specification …" (AGSC-06-22)
     And they show the item counts, the stale item "tool-use-retries" and the open Lesson
     And both were generated purely from stored state, with no hand edit surviving a rebuild
+
+  @PRD-002 @PRD-013 @human @matrix-H3
+  Scenario: Reader sees what a Concept is linked to and what links back to it
+    Given the draft "unreleased-idea" also requires "mcp" and the Bundle is built again
+    When the reader navigates to "/concepts/mcp/"
+    Then the relations table lists the backlink "requires" from "Agent2Agent Protocol" with the meaning of "requires" (AGSC-06-38)
+    And the figure beside the table draws exactly the rows of the table and is named by its title and description
+    And the draft "unreleased-idea" is neither drawn nor named on the page
+    When the reader navigates to "/clusters/agent-patterns/"
+    Then the cluster map draws the link "requires" from "Handoff" to "Supervisor" and its table lists the same link

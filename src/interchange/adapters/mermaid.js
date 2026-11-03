@@ -40,12 +40,17 @@
  * the caller's. Drafts, retired and release-gated items never leave (AGSC-06-30), and
  * neither does a Link to one.
  *
+ * SHARED WITH THE PAGES. The edges, the cluster membership and the title an item is
+ * drawn with come from `knowledge/link-graph.js`, which the graph view of the item and
+ * cluster pages (AGSC-06-38) reads too, so the export and the pages draw one graph.
+ *
  * PURE: no fs, no clock, no network. The caller supplies the items, the instant and
  * the hasher (AGSC-05-29).
  */
 
 const chunks = require('../../knowledge/chunks.js');
 const { LINK_KEYS } = require('../../knowledge/links.js');
+const { edgesOf, membersOf, titleOf, touching } = require('../../knowledge/link-graph.js');
 const { compareCodePoint, singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { withOneTrailingFeed, withoutTrailingSlashes } = require('../../shared/trailing.js');
@@ -84,40 +89,6 @@ function label(text) {
   return `["${singleLine(text).replace(/["#&<>`]/gu, (c) => ENTITY[c])}"]`;
 }
 
-/** The title an item is drawn with; the slug when it has none. */
-function titleOf(item) {
-  return item.title == null || String(item.title) === '' ? String(item.slug) : String(item.title);
-}
-
-/**
- * Every written Link between two published items, once each, in code-point order of
- * (source, key, target). A Link value's `#anchor` is dropped: the diagram draws items.
- *
- * @param {Array<object>} items flat published items.
- * @param {Map<string,object>} published by slug.
- * @returns {Array<{source:string, key:string, target:string}>}
- */
-function edgesOf(items, published) {
-  const seen = new Set();
-  const edges = [];
-  for (const item of items) {
-    for (const key of LINK_KEYS) {
-      const values = Array.isArray(item[key]) ? item[key] : [];
-      for (const value of values) {
-        const target = String(value).split('#')[0];
-        if (!published.has(target)) continue;
-        const id = `${item.slug}\u0000${key}\u0000${target}`;
-        if (seen.has(id)) continue;
-        seen.add(id);
-        edges.push({ key, source: String(item.slug), target });
-      }
-    }
-  }
-  return edges.sort((a, b) => compareCodePoint(a.source, b.source)
-    || compareCodePoint(a.key, b.key)
-    || compareCodePoint(a.target, b.target));
-}
-
 /** One edge line. */
 function edgeLine(edge, indent) {
   return `${indent}${nodeId(edge.source)} -->|${edge.key}| ${nodeId(edge.target)}`;
@@ -145,13 +116,13 @@ function text(lines) {
  */
 function itemDiagram(item, edges, published, header) {
   const slug = String(item.slug);
-  const touching = edges.filter((e) => e.source === slug || e.target === slug);
+  const near = touching(edges, slug);
   const slugs = new Set([slug]);
-  for (const e of touching) { slugs.add(e.source); slugs.add(e.target); }
+  for (const e of near) { slugs.add(e.source); slugs.add(e.target); }
   const nodes = [...slugs].sort(compareCodePoint).map((s) => published.get(s));
   return text([...headerOf(header), `%% item: ${slug}`, 'flowchart LR',
     ...nodes.map((n) => nodeLine(n, '  ')),
-    ...touching.map((e) => edgeLine(e, '  '))]);
+    ...near.map((e) => edgeLine(e, '  '))]);
 }
 
 /**
@@ -161,8 +132,7 @@ function itemDiagram(item, edges, published, header) {
  */
 function clusterDiagram(cluster, items, edges, header) {
   const slug = String(cluster.slug);
-  const members = items.filter((i) => i.type !== 'cluster'
-    && Array.isArray(i.clusters) && i.clusters.map(String).includes(slug));
+  const members = membersOf(cluster, items);
   const inside = new Set(members.map((m) => String(m.slug)));
   return text([...headerOf(header), `%% cluster: ${slug}`, 'flowchart LR',
     `  subgraph ${subgraphId(slug)} ${label(titleOf(cluster))}`,
@@ -212,5 +182,5 @@ function run(bundle, options) {
 
 module.exports = {
   CLAIMED_KEYS, ENTITY, FORMAT, READS,
-  clusterDiagram, edgesOf, itemDiagram, label, nodeId, run, subgraphId,
+  clusterDiagram, itemDiagram, label, nodeId, run, subgraphId,
 };

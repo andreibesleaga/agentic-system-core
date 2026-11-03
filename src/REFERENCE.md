@@ -672,6 +672,7 @@ drive them, `init` and `ci`.
 | `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects` |
 | `distribution/now.js` | Distribution | AGSC-06-22, AGSC-08-25 — the NOW state and the monthly spend meter |
 | `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates |
+| `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members |
 | `distribution/site.js` | Distribution | AGSC-06-01 and AGSC-04-01/02 — `build`, `write`, `verify` |
 | `distribution/init.js` | Distribution | AGSC-02-94, AGSC-02-95, AGSC-01-37 — the adoption use case |
 | `distribution/ci.js` | Distribution | AGSC-09-08 — lint → build → verify and the exit codes |
@@ -728,6 +729,15 @@ counts(items); staleItems(items, instant); nowMarkdown(state)
 shell(page); itemPage(item, options); indexPage({title, description, entries}, options)
 nowPage(markdown, options); notFoundPage(options); aboutPage({verbs, personas}, options)
 escapeHtml(value); termsLine(licenseProse); HONEST_LIMIT
+diagramFigure(item, source, options); inlineDiagram(source, {slug, item, file, accessibleName?, caption?}, options) -> { html, findings }
+
+// distribution/graph-view.js (pure; the caller passes the listed items, AGSC-06-30)
+index(items, hrefOf) -> { bySlug, incoming, hrefOf }
+relationRows(item, views) -> [{key, direction: 'outgoing'|'incoming', other}]   // outgoing first, keys in AGSC-03-01 order
+itemSection(item, views, { svgViolations?, columns? }) -> { html, findings }   // '' without a relation, or for a retired item
+clusterSection(cluster, views, { svgViolations?, columns? }) -> { html, findings }   // '' when no member links another
+relationsTable(rows, columns, views); itemFigureSource(item, rows); clusterFigureSource(…); membersOfCluster(cluster, views)
+ITEM_COLUMNS; CLUSTER_COLUMNS; NEIGHBOURS_DRAWN = 24; MEMBERS_DRAWN = 24; MEMBER_LINKS_DRAWN = 24
 
 // distribution/site.js
 build(bundle, ports, options) -> { files: Map<route, string>, findings, skipped, state, ledgerHead }

@@ -146,6 +146,14 @@ Each note has a page under `/concepts/<name>/` and a Markdown copy under
 `/pages/<name>.md`; `/.well-known/knowledge-linkset` is the discovery document an agent
 reads first.
 
+A note that has typed links gets a **Relations** section on its page: a small drawing
+of the notes it links to and the notes that link to it, and a table with one row per
+link that gives the relation, its direction, the other note and what the relation
+means. The incoming rows are the note's backlinks. A cluster page also draws its
+members and the links among them. Drafts, retired notes and notes held back from a
+release never appear in either. No new file is written for this; the drawing is part
+of the page.
+
 ## 4. Change a note — as a proposal
 
 Give `hydration` a description. A note's header is plain YAML between two `---` lines;

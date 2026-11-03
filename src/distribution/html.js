@@ -308,8 +308,28 @@ function diagramFigure(item, source, options = {}) {
     return { html: '', findings: [] };
   }
   const slug = String(item.slug);
-  const file = `content/diagrams/${slug}.diagram`;
-  const compiled = diagrams.compile(source, { accessibleName: diagram.alt, file, slug });
+  return inlineDiagram(source, {
+    accessibleName: diagram.alt, caption: diagram.caption, file: `content/diagrams/${slug}.diagram`, item: slug, slug,
+  }, options);
+}
+
+/**
+ * One diagram source compiled, checked against AGSC-02-98's allow-list and wrapped in
+ * the page's `<figure>`: the author's diagram (above) and the figures the graph view
+ * writes (`graph-view.js`, AGSC-06-38) take this one path, so every inline picture
+ * meets the same SVG rules. A source that does not compile, or whose SVG the
+ * allow-list refuses, gives no element and the findings (`AGSC-E412`).
+ *
+ * @param {string} source the diagram source.
+ * @param {{slug:string, item:string, file:string, accessibleName?:string, caption?:string}} figure
+ *   `slug` names the SVG's own ids (`<slug>-title`, `<slug>-desc`, `<slug>-arrow`), so two
+ *   figures on one page need two slugs; `item` and `file` are what a finding names.
+ * @param {{svgViolations?:Function}} [options]
+ * @returns {{html:string, findings:Array<object>}}
+ */
+function inlineDiagram(source, figure, options = {}) {
+  const { file, slug } = figure;
+  const compiled = diagrams.compile(source, { accessibleName: figure.accessibleName, file, slug });
   if (compiled.svg === null) return { html: '', findings: compiled.findings };
 
   const check = options.svgViolations === undefined ? lint.svgViolations : options.svgViolations;
@@ -324,12 +344,12 @@ function diagramFigure(item, source, options = {}) {
         line: 1,
         message: `the compiled diagram is outside the AGSC-02-98 allow-list: ${reasons.join(', ')} (AGSC-02-13)`,
         severity: 'error',
-        slug,
+        slug: figure.item,
       }],
     };
   }
-  const caption = diagram.caption == null || diagram.caption === ''
-    ? '' : `<figcaption>${escapeHtml(diagram.caption)}</figcaption>`;
+  const caption = figure.caption == null || figure.caption === ''
+    ? '' : `<figcaption>${escapeHtml(figure.caption)}</figcaption>`;
   // `class="diagram"`: the theme keeps a diagram at no less than its drawn width on a
   // narrow screen and scrolls it inside the figure, so its labels stay readable.
   // `tabindex="0"`: a region that scrolls must be reachable by keyboard (WCAG 2.1.1,
@@ -342,7 +362,9 @@ function diagramFigure(item, source, options = {}) {
  * AGSC-11-22: a retired item keeps its page, which carries a visible notice.
  *
  * @param {object} item
- * @param {object} options `{render, licenseProse, jsonld, canonical, diagramSource}`.
+ * @param {object} options `{render, licenseProse, jsonld, canonical, diagramSource,
+ *   relations, members, membersTotal, clusterMap}` — `relations` and `clusterMap` are the
+ *   graph view's sections (`graph-view.js`, AGSC-06-38), written whole by the caller.
  * @returns {string}
  */
 /** How each `prov.origin` reads to a person (the metadata list's Provenance row). */
@@ -394,15 +416,11 @@ function itemPage(item, options = {}) {
   }
   // AGSC-06-28: the anchor of each chunk that begins with a heading, on that heading.
   parts.push(withoutRepeatedTitle(withChunkAnchors(rendered.html, options.chunkAnchors), item.title == null ? item.slug : item.title));
-  // AGSC-03-01: the typed Links the item authors, each target linked — the caller
-  // passes published targets only, so a held-back item is never named here.
-  const typed = (Array.isArray(options.links) ? options.links : []).filter((l) => l.targets.length > 0);
-  if (typed.length > 0) {
-    parts.push('<h2 id="links">Links</h2>');
-    parts.push(`<ul class="links">${typed.map((l) => `<li><code>${escapeHtml(l.key)}</code>: ${l.targets
-      .map((t) => (t.href ? `<a href="${escapeHtml(t.href)}">${escapeHtml(t.title)}</a>` : escapeHtml(t.title)))
-      .join(', ')}</li>`).join('')}</ul>`);
-  }
+  // AGSC-06-38: the relations of the item — its figure, the relations table with the
+  // backlinks and the meaning of each key — under the `#links` anchor the 1.0 list of
+  // Links used. Written by `graph-view.js` from published items only; empty when the
+  // item has no relation, and then no section is shown.
+  if (typeof options.relations === 'string' && options.relations !== '') parts.push(options.relations);
   // A cluster page lists its published members (the caller passes only published
   // items, so a draft never appears), each linked, with its description.
   if (Array.isArray(options.members)) {
@@ -417,6 +435,8 @@ function itemPage(item, options = {}) {
     if (Number.isInteger(options.membersTotal) && options.membersTotal > options.members.length) {
       parts.push(`<p class="members-more">The first ${options.members.length} of ${options.membersTotal} members are listed, in the published order; every member names this cluster in <a href="/search.json">the search index</a> and in <a href="/graph.jsonld">the graph</a>.</p>`);
     }
+    // AGSC-06-38: the map of the members and the links among them (`graph-view.js`).
+    if (typeof options.clusterMap === 'string' && options.clusterMap !== '') parts.push(options.clusterMap);
   }
   // AGSC-02-13: the compiled diagram, inline, before the attachments.
   if (typeof options.diagramSource === 'string') {
@@ -740,7 +760,7 @@ function changelogPage(rows, options = {}) {
 module.exports = {
   homePage,
   chunkAnchors, withChunkAnchors,
-  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
+  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure, inlineDiagram,
   boardPage, composePage, legalPage, searchPage,
   adoptsTerms, escapeHtml, termsLine, NO_CLAIM_SENTENCE, HONEST_LIMIT,
 };

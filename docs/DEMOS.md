@@ -510,26 +510,26 @@ AGENTS.md and CLAUDE.md are the same bytes
 # project demo — steering for coding agents
 ```
 
-Build, and read the pages as a person would. The task page states its state and its
-dependency, the gate page its level and checks, the decision page its typed link; the
-board export lists the tasks and whether the board is done:
+Build, and read the pages as a person would. The task page states its state and, in its
+relations table, its dependency; the gate page its level and checks; the decision page its
+typed link; the board export lists the tasks and whether the board is done:
 
 ```bash demo
 agsc build > /dev/null 2>&1
 grep -o '<dt>Task state</dt><dd><code>[A-Z_]*</code></dd>' www/concepts/task-login-tests/index.html
-grep -o '<code>blocked-by</code>: <a href="[^"]*">' www/concepts/task-login-tests/index.html
+grep -o '<td>blocked-by</td><td>outgoing</td><td><a href="[^"]*">' www/concepts/task-login-tests/index.html
 grep -o '<dt>Level</dt><dd><code>L2</code></dd>' www/gates/merge-gate/index.html
 grep -o '<dt>Checks</dt><dd>.*</dd>' www/gates/merge-gate/index.html
-grep -o '<code>contradicts</code>: <a href="[^"]*">' www/concepts/decide-the-login/index.html
+grep -o '<td>contradicts</td><td>outgoing</td><td><a href="[^"]*">' www/concepts/decide-the-login/index.html
 node -e 'const b = JSON.parse(require("node:fs").readFileSync("www/boards/login.json", "utf8")); console.log("done:", b.done); for (const t of b.tasks) console.log(t.slug, t.state);'
 ```
 
 ```text expect
 <dt>Task state</dt><dd><code>TASK_STATE_WORKING</code></dd>
-<code>blocked-by</code>: <a href="/concepts/task-login-form/">
+<td>blocked-by</td><td>outgoing</td><td><a href="/concepts/task-login-form/">
 <dt>Level</dt><dd><code>L2</code></dd>
 <dt>Checks</dt><dd><code>schema</code>, <code>links</code>, <code>provenance</code>, <code>determinism</code>, <code>review</code></dd>
-<code>contradicts</code>: <a href="/concepts/supervisor/">
+<td>contradicts</td><td>outgoing</td><td><a href="/concepts/supervisor/">
 done: false
 task-login-form TASK_STATE_SUBMITTED
 task-login-tests TASK_STATE_WORKING

@@ -221,6 +221,27 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Graph view on item and cluster pages (AGSC-06-38, I-022, I-023): an item page that has a typed
+  Link to or from another published item shows, under the `#links` anchor that held the 1.0 list of
+  Links, a **Relations** section — an inline SVG figure of its neighbourhood and a relations table,
+  one row per relation with the key, its direction (outgoing, or incoming: the backlinks), the other
+  item linked to its page and the meaning of the key from the table of AGSC-03-01. The figure draws
+  the first 24 rows and the table lists the same rows; a sentence says how many more exist. A
+  cluster page also shows a map of its members and the links among them (at most 24 links and 24
+  members, the linked ones first) with a table of the same links. Drafts, retired items and items
+  held back by the `releases` switchboard are neither drawn nor named, nor are Links to them
+  (AGSC-06-30); a retired item's own page has no Relations section, so its Links are no longer
+  listed there, and a Link to a retired item is no longer listed on the page that writes it. The
+  figures are written in the diagram language and compiled by `knowledge/diagrams.js` through the
+  same allow-list check as an author's diagram (AGSC-02-13, AGSC-01-07); their ids are
+  `links_<slug>-…` and `members_<slug>-…`, so no page repeats an id. Bytes: the visible part of the
+  `index.html` pages of items with Links and of clusters whose members link each other changes, as
+  views added by AGSC-06-38 (HTML pages are not byte-pinned, AGSC-04-24); the Dataset JSON-LD block,
+  the stylesheet and every machine file keep their bytes. `build-0032` passes. The code is
+  `src/distribution/graph-view.js`; the Links between published items, a cluster's members and the
+  title an item is drawn with moved from the `mermaid` export adapter to `src/knowledge/link-graph.js`,
+  which both read (the export keeps its bytes).
+
 - `import <file.ttl> --from skos` (AGSC-01-39, AGSC-01-26a, I-018): a SKOS thesaurus in Turtle becomes
   draft items. The file is read with the pinned `n3` (`knowledge/turtle.js#parse`); the mapping is
   `src/interchange/adapters/skos.js` (concept to `concept` of kind `term`, preferred label to `title`,

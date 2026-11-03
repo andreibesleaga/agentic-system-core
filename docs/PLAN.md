@@ -176,6 +176,7 @@ graph TB
 | knowledge | `competency.js` | a site's competency questions (1.1): the questions file, the SPARQL subset (`AGSC-E420`), the run by the pinned `oxigraph` after the pinned Traqula parser; never at build | — | verify ci |
 | knowledge | `site-checks.js` | the check of AGSC-09-20 (1.1): one data graph, `graph.nq` with its closure; the site's shapes and questions over it; `AGSC-E421`, `AGSC-E422` | — | verify ci |
 | knowledge | `diagrams.js` | ported DSL→SVG compiler | 5 | build import |
+| knowledge | `link-graph.js` | the typed Links between published items, cluster members, display titles; read by the `mermaid` export and the graph view | — | build export |
 | governance | `lint.js` | L1/L2 findings with file+line | 3–4 | lint ci |
 | governance | `injection.js` `secrets.js` `pii.js` `cleanroom.js` | the four N9/clean-room lints (§8, §12) | — | lint ci review |
 | governance | `prov.js` | `prov` required; commit/reviewer **derived** from `AGSC_GIT_LOG` + `verified[]` | 11 | build lint |
@@ -186,6 +187,7 @@ graph TB
 | composition | `emit-jsonld.js` `emit-agents.js` `emit-structurizr.js` `emit-mermaid.js` `emit-arc42.js` `emit-madr.js` | six of the seven Harness files | — | compose |
 | composition | `context-map.js` | the context map of a composition (1.1): `context-map.json` in the companion directory beside the Harness, only for a node that declares contexts (AGSC-07-30); never a Harness byte | — | compose |
 | distribution | `html.js` `templates/*.html` | Markdown→HTML; layout/item/cluster/list/now/compose/404 | 9 | build |
+| distribution | `graph-view.js` | the graph view (1.1, AGSC-06-38): an item's figure and relations table with backlinks and meanings; a cluster's map of members and links; edges from `knowledge/link-graph.js`, figures compiled by `diagrams.js` | — | build |
 | distribution | `search.js` | inverted index `search.json` | 8 | build |
 | distribution | `discovery.js` | linkset with `digest`/`agsc-*` target attributes, `llms.txt`, sitemap, robots, tdmrep, `_headers`, `_redirects` | 10 | build |
 | distribution | `now.js` | `/now/` + `now.md` from stored state only | 11 | build refresh |

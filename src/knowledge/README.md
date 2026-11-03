@@ -19,6 +19,7 @@
 | `jcs.js` | canonical JSON (RFC 8785) with NFC first, and the I-JSON check |
 | `markdown.js` | the Markdown subset (CommonMark + GFM tables) and body references |
 | `relations.js` | the relation table of AGSC-03-01: the fourteen keys and their columns, read by every server-side copy |
+| `link-graph.js` | the typed Links between published items as both pictures of them read them: the edges, a cluster's members and the title an item is drawn with; shared by the `mermaid` export and the graph view of the pages |
 | `links.js` | the Link graph: resolution, inverses, cycles, orphans, the warnings of AGSC-03-23 to 03-26, and the domain links of a node with a site vocabulary (AGSC-03-27) |
 | `derive.js` | the readings of the Link graph (inverse, symmetric, transitive, closure), each with its reasons |
 | `questions.js` | the ten questions of the graph (AGSC-05-34), one pure function each |

@@ -3,7 +3,8 @@
 //
 // The static query fragments of AGSC-06-33 (cut from `graph.nq`), the search
 // tokenizer and the sharded index, the served header set, `security.txt`, the
-// content version, the trailing LF, the stale instant and the reproducible assets.
+// content version, the trailing LF, the stale instant and the reproducible assets;
+// the graph view of an item page (build-0032) is in _build-graph-view.js.
 // HANDLERS at the bottom maps each case id to its handler.
 
 const crypto = require('node:crypto');
@@ -20,6 +21,7 @@ const { createClock } = require('../../../src/adapters/node-clock.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
 const surfaces = require('./_build-surfaces.js');
+const graphView = require('./_build-graph-view.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -484,6 +486,8 @@ const HANDLERS = {
   'build-0019': shardedSearchCase,
   // The cases over the files a whole build writes (_build-surfaces.js).
   ...surfaces.HANDLERS,
+  // The graph view of an item page (_build-graph-view.js).
+  ...graphView.HANDLERS,
   // The search-tokenizer cases (AGSC-06-16/06-23).
   'build-0001': searchCase,
   'build-0002': searchCase,

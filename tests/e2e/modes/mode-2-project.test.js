@@ -52,11 +52,12 @@ test('Mode 2, a person and a CI job: the gate compiles to a ruleset whose requir
   assert.strictEqual(kit.agsc(dir, ['build']).code, 0);
   const task = kit.read(dir, 'www/concepts/task-login-tests/index.html');
   assert.match(task, /<dt>Task state<\/dt><dd><code>TASK_STATE_WORKING<\/code><\/dd>/u);
-  assert.match(task, /<code>blocked-by<\/code>: <a href="\/concepts\/task-login-form\/">Build the login form<\/a>/u);
+  // The dependency is a row of the relations table (AGSC-06-38).
+  assert.match(task, /<td>blocked-by<\/td><td>outgoing<\/td><td><a href="\/concepts\/task-login-form\/">Build the login form<\/a><\/td>/u);
   const gatePage = kit.read(dir, 'www/gates/merge-gate/index.html');
   assert.match(gatePage, /<dt>Level<\/dt><dd><code>L2<\/code><\/dd>/u);
   assert.match(gatePage, /<dt>Checks<\/dt><dd><code>schema<\/code>, <code>links<\/code>, <code>provenance<\/code>, <code>determinism<\/code>, <code>review<\/code><\/dd>/u);
   const decision = kit.read(dir, 'www/concepts/decide-the-login/index.html');
-  assert.match(decision, /<code>contradicts<\/code>: <a href="\/concepts\/supervisor\/">/u);
+  assert.match(decision, /<td>contradicts<\/td><td>outgoing<\/td><td><a href="\/concepts\/supervisor\/">/u);
   assert.ok(path.isAbsolute(dir));
 });

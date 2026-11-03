@@ -33,7 +33,7 @@ in silence; and from 1.1 every item a foreign source brings arrives as a draft.
 | `adapters/skills.js` | `export --to skills` / `import --from skills`: skills repositories in five layouts |
 | `adapters/board.js` | `export --to board` / `import --from board`: project boards |
 | `adapters/skos.js` | `import <file.ttl> --from skos`: a SKOS thesaurus in Turtle, read with `n3`, every item a draft (AGSC-01-39); import only |
-| `adapters/mermaid.js` | `export --to mermaid`: Mermaid diagrams of the typed Links, per item and per cluster (export only) |
+| `adapters/mermaid.js` | `export --to mermaid`: Mermaid diagrams of the typed Links, per item and per cluster (export only); the edges and members come from `knowledge/link-graph.js`, which the graph view of the pages reads too |
 
 ## The rules this folder implements
 

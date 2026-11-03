@@ -1,0 +1,325 @@
+'use strict';
+// verifies AGSC-06-38, AGSC-06-30, AGSC-02-13, AGSC-01-07, AGSC-06-21, AGSC-06-03
+// The graph view of item and cluster pages (AGSC-06-38, src/distribution/graph-view.js):
+// a figure of the neighbourhood drawn from published items only, with a relations table
+// beside it as its text equivalent — key, direction, the other item linked, and the
+// meaning of the key from the table of AGSC-03-01 — whose incoming rows are the
+// backlinks. Pure functions first, then whole builds of small Bundles written to a
+// scratch folder. Deterministic: fixed build instant, no network.
+
+const test = require('node:test');
+const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const fc = require('fast-check');
+
+const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
+const { createClock } = require('../../src/adapters/node-clock.js');
+const validate = require('../../src/knowledge/validate.js');
+const { loadBundle } = require('../../src/application/bundle.js');
+const { RELATIONS, LINK_KEYS } = require('../../src/knowledge/relations.js');
+const lint = require('../../src/governance/lint.js');
+const site = require('../../src/distribution/site.js');
+const html = require('../../src/distribution/html.js');
+const graphView = require('../../src/distribution/graph-view.js');
+
+const ROOT = path.resolve(__dirname, '..', '..');
+const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
+const MEANING = new Map(RELATIONS.map((r) => [r.key, r.meaning]));
+const hrefOf = (item) => `/${item.type === 'cluster' ? 'clusters' : 'concepts'}/${item.slug}/`;
+const concept = (slug, fields = {}) => ({ slug, title: `Title ${slug}`, type: 'concept', ...fields });
+
+// ------------------------------------------------------------------ reading a page
+
+/** The rows of the relations table under `#links`: `{key, direction, href}`. */
+function tableRows(page, anchor = 'links') {
+  const start = page.indexOf(`id="${anchor}"`);
+  if (start < 0) return [];
+  const table = page.slice(page.indexOf('<table class="relations">', start), page.indexOf('</table>', start));
+  return [...table.matchAll(/<tr>(.*?)<\/tr>/gu)].slice(1).map((m) => [...m[1].matchAll(/<td>(.*?)<\/td>/gu)].map((c) => c[1]));
+}
+
+/** The SVG figures of a page, in document order. */
+function svgs(page) {
+  return [...page.matchAll(/<svg[\s\S]*?<\/svg>/gu)].map((m) => m[0]);
+}
+
+/** Every `id` attribute of a page. */
+function ids(page) {
+  return [...page.matchAll(/\sid="([^"]*)"/gu)].map((m) => m[1]);
+}
+
+// ------------------------------------------------------------------ a scratch Bundle
+
+/** A frontmatter value in the YAML subset: a scalar, a block sequence or a mapping of scalars. */
+function yamlLines(key, value) {
+  if (Array.isArray(value)) return [`${key}:`, ...value.map((v) => `  - ${JSON.stringify(String(v))}`)];
+  if (typeof value === 'object') return [`${key}:`, ...Object.entries(value).map(([k, v]) => `  ${k}: ${JSON.stringify(String(v))}`)];
+  return [`${key}: ${JSON.stringify(String(value))}`];
+}
+
+/**
+ * Build a Bundle of the minimal fixture's configuration and front page and the given
+ * items (each `{slug, type, body?, ...frontmatter}`); `diagrams` maps a slug to its
+ * `.diagram` source. Returns the built files and the findings.
+ */
+function buildNode(items, { releases, diagrams = {} } = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-graph-view-'));
+  try {
+    const config = JSON.parse(fs.readFileSync(path.join(FIXTURE, 'agsc.config.json'), 'utf8'));
+    if (releases) config.releases = releases;
+    fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify(config, null, 2)}\n`);
+    fs.mkdirSync(path.join(dir, 'content', 'diagrams'), { recursive: true });
+    fs.copyFileSync(path.join(FIXTURE, 'content', 'index.md'), path.join(dir, 'content', 'index.md'));
+    fs.cpSync(path.join(FIXTURE, '.well-known'), path.join(dir, '.well-known'), { recursive: true });
+    for (const { slug, body, ...fields } of items) {
+      const folder = fields.type === 'cluster' ? 'clusters' : 'concepts';
+      const front = { date: '2026-01-01', ...fields };
+      const lines = ['---', ...Object.entries(front).flatMap(([k, v]) => yamlLines(k, v)),
+        'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', body || `${slug}.`, ''];
+      fs.mkdirSync(path.join(dir, 'content', folder), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'content', folder, `${slug}.md`), lines.join('\n'));
+    }
+    for (const [slug, source] of Object.entries(diagrams)) fs.writeFileSync(path.join(dir, 'content', 'diagrams', `${slug}.diagram`), source);
+    const port = createFileSystem(dir);
+    const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
+    const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+    return site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0', version: '0.0.0' });
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
+}
+
+const page = (built, route) => String(built.files.get(route));
+
+/** The five items of build-0032: a requires b and d (a draft); c uses a; e, held back, uses a. */
+const VECTOR_ITEMS = [
+  { slug: 'a', type: 'concept', kind: 'explainer', title: 'Alpha', requires: ['b', 'd'] },
+  { slug: 'b', type: 'concept', kind: 'explainer', title: 'Bravo' },
+  { slug: 'c', type: 'concept', kind: 'explainer', title: 'Charlie', uses: ['a'] },
+  { slug: 'd', type: 'concept', kind: 'explainer', title: 'Draft Delta', status: 'draft' },
+  { slug: 'e', type: 'concept', kind: 'explainer', title: 'Held Echo', release: 'later', uses: ['a'] },
+];
+
+// ------------------------------------------------------------------ the rows
+
+test('rows: outgoing first, then the backlinks, each with its key and meaning; no self-link, no unpublished item', () => {
+  const items = [concept('a', { requires: ['b', 'b#part', 'gone'], related: ['a'] }), concept('b', { uses: ['a'] }), concept('c', { related: ['a'] })];
+  const index = graphView.index(items, hrefOf);
+  const rows = graphView.relationRows(items[0], index).map((r) => [r.direction, r.key, r.other.slug]);
+  assert.deepStrictEqual(rows, [['outgoing', 'requires', 'b'], ['incoming', 'related', 'c'], ['incoming', 'uses', 'b']]);
+  assert.deepStrictEqual(graphView.relationRows(concept('lonely'), index), []);
+});
+
+test('the figure draws exactly the relations the table lists, in the table order (keys in the order of AGSC-03-01)', () => {
+  const items = [concept('a', { requires: ['b'], uses: ['c'] }), concept('b'), concept('c', { related: ['a'] }), concept('d', { covers: ['a'] })];
+  const index = graphView.index(items, hrefOf);
+  const view = graphView.itemSection(items[0], index);
+  assert.deepStrictEqual(view.findings, []);
+  const rows = tableRows(view.html);
+  assert.deepStrictEqual(rows.map((r) => [r[0], r[1], r[2].replace(/<[^>]+>/gu, '')]), [
+    ['uses', 'outgoing', 'Title c'], ['requires', 'outgoing', 'Title b'],
+    ['related', 'incoming', 'Title c'], ['covers', 'incoming', 'Title d']]);
+  for (const r of rows) assert.strictEqual(r[3], MEANING.get(r[0]), 'the meaning of the key, verbatim');
+  const [svg] = svgs(view.html);
+  // One box per row (plus the item itself, highlighted) and one arrow per row.
+  const boxTexts = [...svg.matchAll(/<text [^>]*>([^<]*)<\/text>/gu)].map((m) => m[1]);
+  assert.deepStrictEqual(boxTexts, ['Title a', 'uses', 'Title c', 'requires', 'Title b', 'related', 'Title c', 'covers', 'Title d']);
+  assert.strictEqual((svg.match(/marker-end=/gu) || []).length, rows.length);
+  assert.strictEqual((svg.match(/class="agsc-accent"/gu) || []).length, 1, 'the item itself carries the accent');
+});
+
+test('an arrow runs from the item that states the relation to its target', () => {
+  const items = [concept('a', { requires: ['b'] }), concept('b'), concept('c', { uses: ['a'] })];
+  const source = graphView.itemFigureSource(items[0], graphView.relationRows(items[0], graphView.index(items, hrefOf)));
+  assert.match(source, /^arrow item r1 via=/mu, 'outgoing: from the item to the row');
+  assert.match(source, /^arrow r2 item via=/mu, 'incoming: from the row to the item');
+});
+
+test('cap: the figure and the table hold the first 24 rows and say how many more exist', () => {
+  const linking = Array.from({ length: 30 }, (_, n) => concept(`n${String(n).padStart(2, '0')}`, { uses: ['a'] }));
+  const index = graphView.index([concept('a'), ...linking], hrefOf);
+  const view = graphView.itemSection(concept('a'), index);
+  assert.strictEqual(graphView.NEIGHBOURS_DRAWN, 24);
+  assert.strictEqual(tableRows(view.html).length, 24);
+  assert.strictEqual((svgs(view.html)[0].match(/marker-end=/gu) || []).length, 24);
+  assert.match(view.html, /<p class="relations-more">6 more relations of this item are not drawn or listed here;/u);
+  assert.doesNotMatch(view.html, /n24|n29/u, 'a row past the cap is not named');
+  const one = Array.from({ length: 25 }, (_, n) => concept(`m${String(n).padStart(2, '0')}`, { uses: ['a'] }));
+  assert.match(graphView.itemSection(concept('a'), graphView.index([concept('a'), ...one], hrefOf)).html, /1 more relation of this item is not drawn/u);
+});
+
+test('an item with no relation gets no section, so its page keeps the 1.0 shape', () => {
+  assert.deepStrictEqual(graphView.itemSection(concept('a'), graphView.index([concept('a')], hrefOf)), { findings: [], html: '' });
+});
+
+test('hostile titles: the table escapes them, the figure stays inside the SVG rules and names them as text', () => {
+  const evil = '<script>alert("1")</script> # | & "acc"';
+  const items = [concept('a', { title: 'acc', requires: ['b'] }), concept('b', { title: evil })];
+  const view = graphView.itemSection(items[0], graphView.index(items, hrefOf));
+  assert.doesNotMatch(view.html, /<script>/u);
+  assert.match(tableRows(view.html)[0][2], /&lt;script&gt;alert\(&quot;1&quot;\)&lt;\/script&gt; # \| &amp; &quot;acc&quot;/u);
+  const [svg] = svgs(view.html);
+  assert.deepStrictEqual(lint.svgViolations(svg), []);
+  assert.strictEqual((svg.match(/class="agsc-accent"/gu) || []).length, 1, 'a title equal to a flag word sets no flag');
+  assert.doesNotMatch(svg, /stroke-dasharray/u);
+  // A blank title leaves no empty argument for the next token (a flag) to fill.
+  assert.match(graphView.itemFigureSource(concept('a', { title: '  ' }), []), /^box item [\d. ]+ "\u00A0" acc$/mu);
+});
+
+test('property: every generated figure compiles inside the SVG rules, and the view is a pure function', () => {
+  const title = fc.string({ maxLength: 120 });
+  fc.assert(fc.property(fc.array(fc.tuple(title, fc.constantFrom(...LINK_KEYS), fc.boolean()), { maxLength: 30 }), title, (rows, own) => {
+    const items = [concept('a', { title: own })];
+    rows.forEach(([t, key, outgoing], n) => {
+      const other = concept(`o${n}`, { title: t, ...(outgoing ? {} : { [key]: ['a'] }) });
+      items.push(other);
+      if (outgoing) items[0][key] = [...(items[0][key] || []), other.slug];
+    });
+    const index = graphView.index(items, hrefOf);
+    const view = graphView.itemSection(items[0], index);
+    assert.deepStrictEqual(view.findings, []);
+    for (const svg of svgs(view.html)) assert.deepStrictEqual(lint.svgViolations(svg), []);
+    assert.strictEqual(graphView.itemSection(items[0], graphView.index([...items].reverse(), hrefOf)).html, view.html,
+      'the order the items arrive in changes nothing');
+  }), { numRuns: 150 });
+});
+
+test('a refused figure is AGSC-E412 and no figure, and the table still stands', () => {
+  const items = [concept('a', { requires: ['b'] }), concept('b')];
+  const view = graphView.itemSection(items[0], graphView.index(items, hrefOf), { svgViolations: () => ['a <script> element'] });
+  assert.deepStrictEqual(view.findings.map((f) => f.code), ['AGSC-E412']);
+  assert.doesNotMatch(view.html, /<svg/u);
+  assert.strictEqual(tableRows(view.html).length, 1);
+});
+
+test('the table takes further columns through its column list (the domain layer adds its own)', () => {
+  const items = [concept('a', { requires: ['b'] }), concept('b')];
+  const index = graphView.index(items, hrefOf);
+  const columns = [...graphView.ITEM_COLUMNS, { heading: 'Extra', cell: (row) => `x-${row.other.slug}` }];
+  const table = graphView.relationsTable(graphView.relationRows(items[0], index), columns, index);
+  assert.match(table, /<th scope="col">Extra<\/th>/u);
+  assert.match(table, /<td>x-b<\/td><\/tr>/u);
+  assert.deepStrictEqual(graphView.ITEM_COLUMNS.map((c) => c.heading), ['Relation', 'Direction', 'Item', 'Meaning']);
+});
+
+// ------------------------------------------------------------------ the cluster map
+
+test('a cluster map draws the members and the links among them, with the same links in its table', () => {
+  const k = { slug: 'k', title: 'Kilo', type: 'cluster' };
+  const members = [concept('a', { clusters: ['k'], requires: ['b', 'outside'], uses: ['b'] }),
+    concept('b', { clusters: ['k'], related: ['a'] }), concept('c', { clusters: ['k'] }), concept('outside')];
+  const index = graphView.index([k, ...members], hrefOf);
+  const view = graphView.clusterSection(k, index);
+  assert.deepStrictEqual(view.findings, []);
+  const rows = tableRows(view.html, 'member-links').map((r) => r.slice(0, 3).map((c) => c.replace(/<[^>]+>/gu, '')));
+  assert.deepStrictEqual(rows, [['Title a', 'uses', 'Title b'], ['Title a', 'requires', 'Title b'], ['Title b', 'related', 'Title a']]);
+  const [svg] = svgs(view.html);
+  assert.deepStrictEqual(lint.svgViolations(svg), []);
+  const texts = [...svg.matchAll(/<text [^>]*>([^<]*)<\/text>/gu)].map((m) => m[1]);
+  assert.deepStrictEqual(texts, ['Kilo', 'Title a', 'Title b', 'Title c', 'uses, requires', 'related'],
+    'the cluster, its members, then one label per arc naming its keys');
+  assert.strictEqual((svg.match(/marker-end=/gu) || []).length, 2, 'one arc per ordered pair');
+  assert.deepStrictEqual(graphView.clusterSection({ slug: 'z', type: 'cluster' }, index), { findings: [], html: '' }, 'no link among the members, no map');
+});
+
+test('a cluster map draws at most 24 links and 24 members, the linked ones first, and says what it left out', () => {
+  const k = { slug: 'k', title: 'Kilo', type: 'cluster' };
+  const slugs = Array.from({ length: 30 }, (_, n) => `m${String(n).padStart(2, '0')}`);
+  const members = slugs.map((slug, n) => concept(slug, { clusters: ['k'], related: [slugs[(n + 1) % 30], slugs[(n + 2) % 30]] }));
+  const view = graphView.clusterSection(k, graphView.index([k, ...members], hrefOf));
+  const [svg] = svgs(view.html);
+  assert.strictEqual((svg.match(/<rect /gu) || []).length, 25, 'the cluster and 24 members');
+  assert.strictEqual(tableRows(view.html, 'member-links').length, 24);
+  assert.match(view.html, /The map draws 24 of the 30 members\./u);
+  assert.match(view.html, /36 more links among the members are not drawn or listed here;/u);
+  // A large cluster whose first members link to nothing still shows the links further on.
+  const quiet = Array.from({ length: 40 }, (_, n) => concept(`q${String(n).padStart(2, '0')}`, { clusters: ['k'] }));
+  const late = [concept('y1', { clusters: ['k'], requires: ['y2'] }), concept('y2', { clusters: ['k'] })];
+  const map = graphView.clusterSection(k, graphView.index([k, ...quiet, ...late], hrefOf)).html;
+  assert.deepStrictEqual(tableRows(map, 'member-links').map((r) => r[0].replace(/<[^>]+>/gu, '')), ['Title y1']);
+  assert.match(svgs(map)[0], />Title y1</u);
+  assert.match(map, /The map draws 24 of the 42 members\./u);
+});
+
+// ------------------------------------------------------------------ whole builds
+
+test('build-0032 by hand: the page of a has two rows, and names neither the draft nor the held-back item', () => {
+  const built = buildNode(VECTOR_ITEMS, { releases: { later: false } });
+  const a = page(built, '/concepts/a/index.html');
+  assert.deepStrictEqual(tableRows(a).map((r) => [r[0], r[1], r[2]]), [
+    ['requires', 'outgoing', '<a href="/concepts/b/">Bravo</a>'],
+    ['uses', 'incoming', '<a href="/concepts/c/">Charlie</a>']]);
+  assert.doesNotMatch(a, /Draft Delta|Held Echo|\/concepts\/[de]\//u);
+  assert.match(page(built, '/concepts/b/index.html'), /<td>requires<\/td><td>incoming<\/td><td><a href="\/concepts\/a\/">Alpha<\/a><\/td>/u,
+    'the backlink on the target');
+  assert.deepStrictEqual(built.findings.filter((f) => f.severity === 'error'), []);
+});
+
+test('a page with the author\'s diagram, the neighbourhood figure and the cluster map repeats no id', () => {
+  const built = buildNode([
+    { slug: 'k', type: 'cluster', title: 'Kilo', requires: ['a'], diagram: { file: 'k.svg', alt: 'The cluster drawn by its author.' } },
+    { slug: 'a', type: 'concept', kind: 'explainer', title: 'Alpha', clusters: ['k'], uses: ['b'] },
+    { slug: 'b', type: 'concept', kind: 'explainer', title: 'Bravo', clusters: ['k'] },
+  ], { diagrams: { k: 'box a 20 20 120 40 "a" acc\nbox b 300 20 120 40 "b"\narrow a b\n' } });
+  assert.deepStrictEqual(built.findings.filter((f) => f.severity === 'error'), []);
+  const full = page(built, '/clusters/k/index.html');
+  assert.strictEqual(svgs(full).length, 3, 'the author\'s diagram, the neighbourhood and the cluster map');
+  const all = ids(full);
+  assert.deepStrictEqual(all.filter((id, n) => all.indexOf(id) !== n), [], 'a repeated id');
+  for (const svg of svgs(full)) assert.deepStrictEqual(lint.svgViolations(svg), []);
+  for (const svg of svgs(full)) {
+    const own = ids(svg);
+    for (const [, target] of svg.matchAll(/url\(#([^)]+)\)/gu)) assert.ok(own.includes(target), `an arrow points at another figure's marker: ${target}`);
+  }
+});
+
+test('a retired item is neither drawn nor named, not even on its own page, which keeps its notice', () => {
+  const built = buildNode([
+    { slug: 'a', type: 'concept', kind: 'explainer', title: 'Alpha', requires: ['r'] },
+    { slug: 'r', type: 'concept', kind: 'explainer', title: 'Retired Romeo', status: 'retired', uses: ['a'] },
+  ]);
+  assert.doesNotMatch(page(built, '/concepts/a/index.html'), /Retired Romeo|id="links"/u);
+  const own = page(built, '/concepts/r/index.html');
+  assert.doesNotMatch(own, /id="links"|<svg/u);
+  assert.match(own, /class="retired"/u);
+});
+
+test('two builds are byte-identical, and no page carries a phrase the reading-order rule refuses (AGSC-06-03)', () => {
+  const first = buildNode(VECTOR_ITEMS, { releases: { later: false } });
+  const second = buildNode(VECTOR_ITEMS, { releases: { later: false } });
+  assert.deepStrictEqual([...first.files.keys()], [...second.files.keys()]);
+  for (const [route, bytes] of first.files) assert.ok(String(bytes) === String(second.files.get(route)), route);
+  // The same refusal as tests/standard/rules.test.js (AGSC-06-03); the two refused words are assembled.
+  const framing = new RegExp(`start here|reading order|${['chap', 'ter'].join('')} \\d|\\b${['compan', 'ion'].join('')}\\b`, 'iu');
+  for (const [route, bytes] of first.files) {
+    if (route.endsWith('.html')) assert.ok(!framing.test(String(bytes).replace(/<[^>]+>/gu, ' ')), route);
+  }
+});
+
+test('page budget: at 10,000 items a hub page and a cluster page stay under 100 KB (AGSC-06-21)', () => {
+  const k = { slug: 'k', title: 'A cluster whose title is long enough to be cut in the figure', type: 'cluster', description: 'All of them.' };
+  const items = [k, concept('hub', { title: 'The hub every item links to', clusters: ['k'] })];
+  for (let n = 0; n < 10000; n += 1) {
+    const slug = `item-${String(n).padStart(5, '0')}`;
+    items.push(concept(slug, {
+      // The shape of bench/gen-bundle.js, whose 500-member cluster page is the measured worst case.
+      title: `Bench Item ${n + 1}`,
+      description: 'Agent memory bundle item link cluster gate harness provenance ledger proposal review.',
+      clusters: ['k'], related: [`item-${String((n + 1) % 10000).padStart(5, '0')}`], uses: ['hub'], requires: [`item-${String((n + 7) % 10000).padStart(5, '0')}`],
+    }));
+  }
+  const index = graphView.index(items, hrefOf);
+  const options = { render: () => ({ html: '<p>Body.</p>' }) };
+  const hub = html.itemPage({ ...items[1], body: '' }, { ...options, relations: graphView.itemSection(items[1], index).html });
+  const members = graphView.membersOfCluster(k, index).slice(0, site.CLUSTER_MEMBERS_SHOWN)
+    .map((m) => ({ href: hrefOf(m), title: m.title, description: m.description }));
+  const cluster = html.itemPage({ ...k, body: '' }, {
+    ...options, members, membersTotal: 10001, relations: '', clusterMap: graphView.clusterSection(k, index).html,
+  });
+  for (const [name, bytes] of [['hub', hub], ['cluster', cluster]]) {
+    assert.ok(Buffer.byteLength(bytes) <= site.BUDGET_HTML_BYTES, `${name}: ${Buffer.byteLength(bytes)} bytes`);
+  }
+  assert.ok(Buffer.byteLength(graphView.clusterSection(k, index).html) <= 20000, 'the cluster map and its table stay small');
+});
