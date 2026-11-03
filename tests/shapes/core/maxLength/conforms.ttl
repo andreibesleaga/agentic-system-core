@@ -1,0 +1,4 @@
+# The title has five characters, two of them outside ASCII.
+@prefix ex: <https://example.org/> .
+
+ex:term a ex:Term ; ex:title "äbcdé" .

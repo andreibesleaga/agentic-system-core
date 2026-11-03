@@ -12,7 +12,7 @@
 | the relation table of AGSC-03-01 in `spec/03-links.md` | the Expected target kinds column as one warning for each key that names a kind (AGSC-03-25, `AGSC-E315`); the Self-link column as one warning for an item that lists itself (AGSC-03-23, `AGSC-E313`) and one error shape for each cycle (`requires` AGSC-03-07, `broader` and `narrower` AGSC-03-08) |
 | the SKOS rules AGSC-05-17 to AGSC-05-21 | a concept is in the scheme and has one `skos:prefLabel` for each language tag; a concept has no `skos:member`; a collection has no `skos:broader`, `skos:narrower` or `skos:related` and is never the object of one; a concept or cluster has a definition (`AGSC-E408`); no Link points at a resource the graph does not define (`AGSC-E301`); an item has an inbound edge (`AGSC-E305`) |
 
-The shapes are **informative**. The engine's own checks (`agsc lint`, `ci`) are the normative ones and nothing here runs at build, so a build needs no SHACL library and `npm audit` is unchanged. A shape with severity `sh:Warning` stands for a warning of `agsc lint`; every other shape stands for an error. Overlapping labels (AGSC-05-21) need Unicode case folding, which SPARQL does not have, so that check stays with the lint.
+The shapes are **informative**. The engine's own checks (`agsc lint`, `ci`) are the normative ones and nothing here runs at build: a build runs no SHACL engine (AGSC-05-23). A shape with severity `sh:Warning` stands for a warning of `agsc lint`; every other shape stands for an error. Overlapping labels (AGSC-05-21) need Unicode case folding, which SPARQL does not have, so that check stays with the lint.
 
 ## Run the generator
 
@@ -26,7 +26,7 @@ The tool imports nothing from `src/` (AGSC-09-90). It shares the table and schem
 
 ## Run the shapes (the development lane)
 
-Running shapes needs a SHACL engine. This package ships none. The lane uses [pySHACL](https://github.com/RDFLib/pySHACL) in a scratch Python environment outside the repository, at an exact version:
+Running shapes needs a SHACL engine. The one this package ships, `rdf-validate-shacl`, evaluates only a node's own invariants (next section but one), so this lane uses [pySHACL](https://github.com/RDFLib/pySHACL) in a scratch Python environment outside the repository, at an exact version:
 
 ```bash
 python3 -m venv /tmp/shacl-env && /tmp/shacl-env/bin/pip install pyshacl==0.40.2
@@ -53,6 +53,20 @@ Nothing else is claimed. A node that wants the same statement for its own graph 
 The shapes use SHACL 1.0 Core and SHACL-SPARQL (W3C Recommendation, 20 July 2017) and SPARQL 1.1. No clause that SHACL-SPARQL forbids is used (`VALUES`, `MINUS`, `SERVICE`), and none of the terms of SHACL 1.2, RDF 1.2 or SPARQL 1.2, which were drafts or candidate recommendations on 29 October 2026. A test fails if one appears.
 
 These shapes are the engine's own. The shapes a node writes for itself, its invariants, are a different file, hand-written, and are governed by AGSC-05-41 and AGSC-09-20; they are not this lane.
+
+## A node's own invariants: the SHACL Core subset
+
+A node may name a Turtle file of SHACL shapes at `domain.shapes` in `agsc.config.json` (AGSC-01-41). The engine evaluates it with the pinned library [`rdf-validate-shacl`](https://github.com/zazuko/rdf-validate-shacl) 0.6.5 (MIT), through `src/knowledge/shacl-core.js`, over the published graph and the closure of AGSC-05-37, and only the SHACL Core subset AGSC-05-41 names:
+
+- the classes `sh:NodeShape` and `sh:PropertyShape`; node shapes named by an IRI; property shapes that are the object of `sh:property` may be blank nodes;
+- the targets `sh:targetClass`, `sh:targetNode`, `sh:targetSubjectsOf` and `sh:targetObjectsOf`;
+- a path that is a predicate IRI or `sh:inversePath` of one;
+- the constraint components `sh:class`, `sh:datatype`, `sh:nodeKind`, `sh:minCount`, `sh:maxCount`, `sh:hasValue`, `sh:in`, `sh:pattern` (without `sh:flags`), `sh:minLength`, `sh:maxLength`, `sh:node` and `sh:property`;
+- `sh:severity` (`sh:Violation`, `sh:Warning`, `sh:Info`) and `sh:message`.
+
+Any other term of the `sh:` namespace, a node shape named by a blank node, a property shape without exactly one such path, or a parameter whose value is of the wrong kind (an `sh:minCount` that is not an integer, an `sh:in` that is not a list, a `sh:pattern` that does not compile, a parameter stated twice where SHACL allows one) is the error `AGSC-E420`, and nothing is evaluated. `owl:imports` is never followed. The results come in the order of AGSC-05-41: by focus node, source shape and path, by code point; a blank property shape is named by its parent and its path (`<parent> > <path>`), an inverse path is written `^<IRI>`. A pattern runs as a JavaScript regular expression; SHACL's are XPath ones, so use the syntax both share. Wiring the results into `verify` and `ci` (the findings `AGSC-E421`, AGSC-09-20) is the next package of the domain layer.
+
+The fixtures shared with the Python checker are in `tests/shapes/core/`: one folder for each of the twelve components (the shapes, a graph that conforms, a graph that violates, and the results it gives), and `refused/`, one shapes file for each way of leaving the subset. `tests/knowledge/shacl-core.test.js` runs them through the engine. The lane `tests/knowledge/shacl-core-lane.test.js` runs them through pySHACL (same environment as above, `AGSC_SHACL_PYTHON`); run of 3 November 2026, pySHACL 0.40.2 with rdflib 7.6.0: the 12 graphs that conform give no result and the 12 that violate give exactly the results of their `results.json`, the same results the engine gives.
 
 ## Changing the shapes
 

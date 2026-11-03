@@ -1,0 +1,4 @@
+# The slug has a capital and a space.
+@prefix ex: <https://example.org/> .
+
+ex:term a ex:Term ; ex:slug "Agent loop" .

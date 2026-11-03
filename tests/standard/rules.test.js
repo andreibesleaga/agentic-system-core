@@ -427,7 +427,10 @@ test('AGSC-05-15: each verified[] entry is an asc:Review with its own IRI, never
 
 test('AGSC-05-23: no reasoner runs at build; inverses are materialized in the graph', () => {
   const pkg = JSON.parse(read('package.json'));
-  for (const name of Object.keys(pkg.dependencies)) {
+  // A SHACL processor validates and entails nothing: `rdf-validate-shacl` checks a node's own shapes
+  // in verify and ci (AGSC-05-41), and no module of the build reaches it (tests/arch/shacl-library.test.js).
+  const validators = new Set(['rdf-validate-shacl']);
+  for (const name of Object.keys(pkg.dependencies).filter((n) => !validators.has(n))) {
     assert.ok(!/reason|owl|shacl|eye|hylar/iu.test(name), `${name} looks like a reasoner`);
   }
   const { out } = richBuild();

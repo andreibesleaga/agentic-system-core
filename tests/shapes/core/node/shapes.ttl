@@ -1,0 +1,19 @@
+# sh:node: every chapter conforms to a node shape named by an IRI and given no target.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:BookShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:node exs:TitledThing ;
+        sh:path ex:chapter
+    ] ;
+    sh:targetClass ex:Book .
+
+exs:TitledThing
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path ex:title
+    ] .

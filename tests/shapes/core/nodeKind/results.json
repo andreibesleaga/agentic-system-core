@@ -1,0 +1,20 @@
+[
+  {
+    "component": "NodeKindConstraintComponent",
+    "focus": "\"b\"",
+    "message": null,
+    "path": null,
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#LinkTarget",
+    "value": "\"b\""
+  },
+  {
+    "component": "NodeKindConstraintComponent",
+    "focus": "https://example.org/a",
+    "message": null,
+    "path": "https://example.org/label",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#Labelled > https://example.org/label",
+    "value": "https://example.org/A"
+  }
+]

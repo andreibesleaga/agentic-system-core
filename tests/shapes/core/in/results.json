@@ -1,0 +1,11 @@
+[
+  {
+    "component": "InConstraintComponent",
+    "focus": "https://example.org/doc",
+    "message": null,
+    "path": "https://example.org/status",
+    "severity": "Info",
+    "shape": "https://example.org/shapes#DocStatus > https://example.org/status",
+    "value": "\"final\""
+  }
+]

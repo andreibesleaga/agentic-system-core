@@ -32,6 +32,7 @@
 | `closure.js` | the consequences of the graph that `export --closure` writes: eight OWL 2 RL rules kept as data and run by the `n3` `Reasoner`, plus the irreflexive check |
 | `domain.js` | the site vocabulary of the domain layer: the rules (a) to (g) its file meets (`AGSC-E420`), the model the graph writer and the link reader use (which class a `domain_type` names, which property a domain link names and which side of an inverse pair is computed), the faults of the `domain` object, and the items' domain keys that name nothing (`AGSC-E418`) |
 | `warrants.js` | the warrant of a term (`warrant`, AGSC-05-40): a source plus one of the three kinds of warrant of ANSI/NISO Z39.19, `literary`, `user` and `organisational`, read once for the graph writer and the display; its faults come from the item schema (`AGSC-E512`) |
+| `shacl-core.js` | the SHACL Core subset of AGSC-05-41 that evaluates a site's own invariants: the check that refuses a shapes file outside it (`AGSC-E420`), the run of the pinned `rdf-validate-shacl` over a data graph, and the results in the order of the rule; `verify` and `ci` will turn them into findings (AGSC-09-20) |
 | `chunks.js` | the chunk export for retrieval: the two cuts, the identifiers, the shards |
 | `adopt.js` | adoption of bare Markdown: what `init` prepends, total and byte-preserving |
 | `content-version.js` | the content version of a Bundle, derived once from its history |

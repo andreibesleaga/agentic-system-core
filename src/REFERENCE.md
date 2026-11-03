@@ -540,6 +540,7 @@ by discipline.
 | `knowledge/closure.js` | AGSC-05-37 — `closure(nquadsText, vocabularies)` returns `{text, warnings}`: the triples the RL subset (`prp-dom`, `prp-rng`, `prp-spo1`, `prp-symp`, `prp-inv1`, `prp-inv2`, `prp-trp`, `cax-sco`; `prp-irp` as the warning `AGSC-E313`) entails and the inputs do not hold, in the Bundle's graph, sorted, one LF at the end; `RULES` is the rule list as data. Run by the `Reasoner` of `n3`; reads through `turtle.parse` |
 | `knowledge/domain.js` | AGSC-05-38, AGSC-01-41, with the reading half of AGSC-05-39 — `check(text, {file, contexts})` returns the `AGSC-E420` findings of a site vocabulary, one per fault of the rules (a) to (g), sorted by message; `load(text, {contexts})` returns the frozen model the graph writer reads (`namespace`, `ontology`, `triples` as terms of `nquads.js`, `contextOf(item)`, `classFor(item)`, `propertyFor(item, name)` with the inverse or symmetric edge, `computed` for the side of an `owl:inverseOf` pair that is not authored and `inverseName`, AGSC-03-27), or `null` for a text that is not Turtle; `configFindings(config, {items})` returns the faults of the `domain` object the schema cannot see (`AGSC-E204`, `AGSC-E209`, `AGSC-E301`); `itemFindings(items, {model, vocabulary, contexts})` returns the `AGSC-E418` findings of AGSC-02-25 (a `domain_type` that names no class, or on a node with no vocabulary file; a `domain_context` that names no declared context). Reads through `turtle.parse`. `tools/validate-ontology` holds the same rules for a site vocabulary; `tests/tools/validate-ontology-parity.test.js` keeps the two equal |
 | `knowledge/warrants.js` | AGSC-05-40, AGSC-02-25 — `warrantOf(item)` returns the item's warrant as the rule shapes it, the frozen `{source, type}`, or `null` when there is no `warrant` or it breaks the rule (no object, no source, an empty or multi-line source, a kind outside `TYPES`); a member the rule does not name is never read. `TYPES` is the three kinds of ANSI/NISO Z39.19-2005 (R2010). `nquads.js` writes the two triples from it (`dcterms:source`, `asc:warrant`); the faults are the item schema's (`AGSC-E512`, `AGSC-E204`) |
+| `knowledge/shacl-core.js` | AGSC-05-41 — `check(text, {file})` returns the `AGSC-E420` findings of a shapes file, one per way it leaves the SHACL Core subset (a term of `sh:` the subset does not name, a node shape named by a blank node, a property shape without exactly one path of the subset, a parameter value of the wrong kind or stated twice), sorted by message; `evaluate(text, quads, {file})` returns `{findings, results}`: the findings of `check`, and then nothing is evaluated, or the results of the pinned `rdf-validate-shacl` over the quads (graph names ignored) as `{component, focus, message, path, severity, shape, value}`, ordered by focus node, source shape and path by code point; `COMPONENTS` lists the twelve constraint components. Reads through `turtle.parse`; runs the library synchronously and never follows `owl:imports` |
 | `knowledge/suggest.js` | AGSC-05-35 — `suggestions(items)` (the sorted list of generators G1 to G5, each `{evidence, generator, key, source, target}`) and `file(items, bundleVersion)` (the JCS text of `dist/suggestions.json`) |
 | `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), and the vocabulary reader that feeds AGSC-06-32 |
 | `knowledge/jsonld.js` | AGSC-05-09 (`graph.jsonld`), AGSC-06-32 (`/ns/context.jsonld`; an IRI with no term is written as the compact IRI of a prefix of the context, as the round trip needs, else as itself), AGSC-05-04b (`memory://`, `AGSC-E309`) |
@@ -575,6 +576,7 @@ escapeXml(s); qname(iri); propertyElement(p, o); serialize(quads); toRdfXml(item
 |---|---|---|---|
 | RDF parsing (Turtle, N-Quads) | `n3` | 2.7.12 | MIT |
 | JSON-LD processing (the round-trip proof only) | `jsonld` | 9.0.0 | BSD-3-Clause |
+| SHACL Core validation (a site's invariants only) | `rdf-validate-shacl` | 0.6.5 | MIT |
 
 `n3` is the reader everywhere this engine reads RDF: the vocabulary file behind the
 context generator, the blank-node check of AGSC-05-08, and the round-trip test that
@@ -594,6 +596,20 @@ emitter asynchronous for no gain. It proves the AGSC-06-32 round trip —
 convert it to N-Quads to prove it isomorphic to `graph.nq` — and it is a runtime
 dependency only because that conformance area ships in the package. `rdfxml.js` is
 hand-written, and its test re-parses its output with `fast-xml-parser`.
+
+`rdf-validate-shacl` (Zazuko) is the SHACL processor, and only `knowledge/shacl-core.js`
+requires it (`tests/arch/shacl-library.test.js`, which also proves the build never reaches
+it, AGSC-05-23). It evaluates the shapes of a site's own invariants (AGSC-05-41); the shapes
+of `schema/item-shapes.ttl` stay in the pySHACL development lane (AGSC-05-24). It is an ES
+module, loaded with `require()` (Node 22.12 and later load an ES module that has no
+top-level `await` this way, so the floor 22.13.0 does). Its `validate()` is asynchronous
+only to load `owl:imports`; the wrapper never loads them (no network, AGSC-08-30) and runs
+the two synchronous steps that follow through the members the library's type declarations
+make public, so the verbs stay synchronous; `tests/knowledge/shacl-core.test.js` checks the
+results against `validate()` on every shared fixture. What the library cannot know, the
+wrapper adds: the subset of AGSC-05-41 and its refusal (`AGSC-E420`), names for blank
+property shapes and inverse paths taken from the file rather than a parser's labels, and
+the order of the results.
 
 ### Three decisions recorded here
 

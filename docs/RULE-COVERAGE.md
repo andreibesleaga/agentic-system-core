@@ -11,11 +11,11 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 335 |
-| Executed acceptance scenario | 81 |
+| Unit, integration or architecture test | 336 |
+| Executed acceptance scenario | 82 |
 | Checker header | 36 |
 
-Acceptance scenarios: 135 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 81 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 136 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 82 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -283,7 +283,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-20 | VERIFIED | — | — | `interchange/clusters.test.js`, `knowledge/nquads.test.js`, `knowledge/skos.test.js` | — | `validate-ontology` |
 | AGSC-05-21 | VERIFIED | yes | `lint-0041`, `lint-0045` | `governance/lint-constructs.test.js`, `knowledge/unicode.test.js`, `tools/gen-shapes.test.js` | — | — |
 | AGSC-05-22 | VERIFIED | — | — | `standard/item-links-composition-wording.test.js` | — | `validate-ontology` |
-| AGSC-05-23 | VERIFIED | — | — | `knowledge/closure.test.js`, `standard/item-links-composition-wording.test.js`, `standard/rules.test.js` | — | — |
+| AGSC-05-23 | VERIFIED | — | — | `arch/shacl-library.test.js`, `knowledge/closure.test.js`, `standard/item-links-composition-wording.test.js` +1 | — | — |
 | AGSC-05-24 | VERIFIED | yes | — | `acceptance/steps/persona-j.js`, `tools/gen-shapes-lane.test.js` | — | — |
 | AGSC-05-25 | VERIFIED | — | — | `ontology/vocabulary-file.test.js`, `standard/vocabulary-version.test.js` | — | `validate-ontology` |
 | AGSC-05-26 | VERIFIED | — | — | `knowledge/nquads.test.js`, `knowledge/warrant-graph.test.js`, `tools/gen-dc-profile.test.js` +1 | — | — |
@@ -302,7 +302,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-38 | VERIFIED | yes | `lint-0052`, `lint-0053`, `lint-0054` +1 | `acceptance/steps/persona-i.js`, `application/domain-layer.test.js`, `knowledge/domain-graph.test.js` +2 | `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker` | `validate-ontology` |
 | AGSC-05-39 | VERIFIED | yes | `graph-0044` | `knowledge/domain-graph.test.js`, `knowledge/warrant-graph.test.js` | — | — |
 | AGSC-05-40 | VERIFIED | yes | `graph-0045`, `lint-0056` | `acceptance/steps/persona-i.js`, `knowledge/warrant-graph.test.js`, `knowledge/warrants.test.js` | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
-| AGSC-05-41 | VERIFIED | yes | `graph-0046`, `lint-0057`, `lint-0058` +1 | — | — | — |
+| AGSC-05-41 | VERIFIED | yes | `graph-0046`, `lint-0057`, `lint-0058` +1 | `acceptance/steps/persona-j.js`, `knowledge/shacl-core-lane.test.js`, `knowledge/shacl-core.test.js` | `persona-j-standards.feature#The engine evaluates a site's shapes with exactly the SHACL Core subset, and refuses a shapes file outside it` | — |
 | AGSC-06-01 | VERIFIED | yes | `build-0029` | `application/bundle-assets.test.js`, `application/cli/verbs-wired.test.js`, `boundary/visibility.test.js` +8 | `persona-g-team.feature#Team publishes its own specs as an instance of itself (should)` | — |
 | AGSC-06-02 | VERIFIED | yes | — | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c.js`, `distribution/build-golden.test.js` +4 | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
 | AGSC-06-03 | VERIFIED | — | — | `standard/rules.test.js` | — | — |

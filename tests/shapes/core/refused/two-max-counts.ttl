@@ -1,0 +1,12 @@
+# sh:maxCount: a shape states it once.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:maxCount 1 , 2 ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:C .

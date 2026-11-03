@@ -1,0 +1,11 @@
+[
+  {
+    "component": "MaxLengthConstraintComponent",
+    "focus": "https://example.org/term",
+    "message": null,
+    "path": "https://example.org/title",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#ShortEnough > https://example.org/title",
+    "value": "\"abcdef\""
+  }
+]

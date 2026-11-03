@@ -1,0 +1,11 @@
+[
+  {
+    "component": "NodeConstraintComponent",
+    "focus": "https://example.org/book",
+    "message": null,
+    "path": "https://example.org/chapter",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#BookShape > https://example.org/chapter",
+    "value": "https://example.org/two"
+  }
+]

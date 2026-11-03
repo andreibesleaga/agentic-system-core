@@ -1,0 +1,12 @@
+# sh:in: the value is not a SHACL list.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:in ex:allowed ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:C .

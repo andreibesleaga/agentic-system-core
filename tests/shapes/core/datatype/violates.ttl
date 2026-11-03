@@ -1,0 +1,5 @@
+# One size is a string, and one claims xsd:integer but is not a lexical form of it.
+@prefix ex: <https://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:box ex:size "12" , "twelve"^^xsd:integer .

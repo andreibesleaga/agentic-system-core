@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-05-24, AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14
+// verifies AGSC-05-24, AGSC-05-41, AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14
 // Steps of features/persona-j-standards.feature that run offline. The build
 // output stands in for the published site: what an implementer would fetch from
 // the node is read from `www/`, and the shipped validator is run in its
@@ -492,11 +492,55 @@ module.exports = [
     },
   },
   {
-    pattern: 'the package declares no SHACL library, because the shapes run in a development lane and never at build',
+    pattern: 'the package\'s one SHACL library runs only a site\'s own shapes in one module, never at build, so the shapes of "schema/item-shapes.ttl" stay in the development lane',
     run() {
       const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
       const declared = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies, ...manifest.optionalDependencies });
-      assert.deepStrictEqual(declared.filter((name) => /shacl/iu.test(name)), []);
+      assert.deepStrictEqual(declared.filter((name) => /shacl/iu.test(name)), ['rdf-validate-shacl']);
+      const src = path.join(ROOT, 'src');
+      const requiring = (text) => fs.readdirSync(src, { recursive: true }).map((rel) => rel.split(path.sep).join('/'))
+        .filter((rel) => rel.endsWith('.js') && fs.readFileSync(path.join(src, rel), 'utf8').includes(text)).sort();
+      assert.deepStrictEqual(requiring("require('rdf-validate-shacl')"), ['knowledge/shacl-core.js']);
+      // AGSC-05-23: no module of the build requires the evaluator (tests/arch/shacl-library.test.js walks the whole graph).
+      const build = requiring('shacl-core.js\')').filter((rel) => rel.startsWith('distribution/') || rel === 'application/cli/verbs/build.js');
+      assert.deepStrictEqual(build, []);
+    },
+  },
+  {
+    pattern: /^the implementer evaluates every shared fixture of "([^"]+)" with the engine's SHACL Core evaluator$/u,
+    run(world, folder) {
+      const shacl = require(path.join(ROOT, 'src', 'knowledge', 'shacl-core.js'));
+      const turtle = require(path.join(ROOT, 'src', 'knowledge', 'turtle.js'));
+      const at = path.join(ROOT, folder);
+      const read = (...parts) => fs.readFileSync(path.join(at, ...parts), 'utf8');
+      const graph = (component, name) => shacl.evaluate(read(component, 'shapes.ttl'), turtle.parse(read(component, `${name}.ttl`)));
+      const components = fs.readdirSync(at).filter((name) => fs.existsSync(path.join(at, name, 'shapes.ttl'))).sort();
+      world.state.core = components.map((component) => ({
+        component, conforms: graph(component, 'conforms'), expected: JSON.parse(read(component, 'results.json')), violates: graph(component, 'violates'),
+      }));
+      world.state.evaluate = (text) => shacl.evaluate(text, turtle.parse('<https://example.org/a> a <https://example.org/C> .'));
+    },
+  },
+  {
+    pattern: /^each graph that conforms gives no result, and each graph that violates gives exactly the results of its "results\.json", in the order of AGSC-05-41$/u,
+    run(world) {
+      assert.strictEqual(world.state.core.length, 12, 'one folder for each of the twelve constraint components');
+      for (const c of world.state.core) {
+        assert.deepStrictEqual(c.conforms, { findings: [], results: [] }, c.component);
+        assert.deepStrictEqual(c.violates, { findings: [], results: c.expected }, c.component);
+      }
+    },
+  },
+  {
+    pattern: /^each shapes file of "([^"]+)" is the error "(AGSC-E\d{3})" and is not evaluated \(AGSC-05-41\)$/u,
+    run(world, folder, code) {
+      const files = fs.readdirSync(path.join(ROOT, folder)).filter((name) => name.endsWith('.ttl'));
+      assert.ok(files.length > 0, `no shapes file under ${folder}`);
+      for (const name of files) {
+        const { findings, results } = world.state.evaluate(fs.readFileSync(path.join(ROOT, folder, name), 'utf8'));
+        assert.ok(findings.length > 0 && findings.every((f) => f.code === code && f.severity === 'error'), `${name}: ${JSON.stringify(findings)}`);
+        assert.deepStrictEqual(results, [], name);
+      }
     },
   },
   {

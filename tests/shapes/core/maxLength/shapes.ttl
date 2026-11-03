@@ -1,0 +1,12 @@
+# sh:maxLength, counted in characters, not in bytes.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:ShortEnough
+    a sh:NodeShape ;
+    sh:property [
+        sh:maxLength 5 ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:Term .

@@ -1,0 +1,11 @@
+# sh:path: a property shape that is the object of sh:property needs exactly one path.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1
+    ] ;
+    sh:targetClass ex:C .

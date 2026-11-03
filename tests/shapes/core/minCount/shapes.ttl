@@ -1,0 +1,13 @@
+# sh:minCount, with the target sh:targetSubjectsOf and a message.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:Titled
+    a sh:NodeShape ;
+    sh:property [
+        sh:message "Every term with a kind needs a title."@en ;
+        sh:minCount 1 ;
+        sh:path ex:title
+    ] ;
+    sh:targetSubjectsOf ex:kind .

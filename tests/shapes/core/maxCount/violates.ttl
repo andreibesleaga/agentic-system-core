@@ -1,0 +1,6 @@
+# The part belongs to two wholes.
+@prefix ex: <https://example.org/> .
+
+ex:part a ex:Part .
+ex:whole-1 ex:hasPart ex:part .
+ex:whole-2 ex:hasPart ex:part .

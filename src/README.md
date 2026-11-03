@@ -208,6 +208,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | Turtle and N-Quads, rule closure | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js`, `knowledge/skos-export.js` and `knowledge/domain.js` go through it), `knowledge/closure.js` (the library's `Reasoner`, for `export --closure`), `tools/validate-ontology`, `tools/gen-ns` |
 | XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.1 | MIT | `governance/lint.js`, `tools/gen-ns` |
 | JSON-LD round-trip proof | `jsonld` | 9.0.0 | BSD-3-Clause | the shipped conformance areas under `tests/conformance/areas/` |
+| SHACL Core validation | `rdf-validate-shacl` | 0.6.5 | MIT | `knowledge/shacl-core.js` only (`tests/arch/shacl-library.test.js`), for a site's own invariants (AGSC-05-41); never at build |
 | argv parsing | `commander` | 15.0.0 | MIT | `application/cli/main.js` |
 | `.env` tokenising (`parse` only) | `dotenv` | 18.0.3 | BSD-2-Clause | `application/config/env.js` |
 | unified diffs | `diff` | 9.0.0 | BSD-3-Clause | `application/cli/verbs/propose.js` |

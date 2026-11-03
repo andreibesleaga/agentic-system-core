@@ -1,0 +1,6 @@
+# Both chapters have a title.
+@prefix ex: <https://example.org/> .
+
+ex:book a ex:Book ; ex:chapter ex:one , ex:two .
+ex:one ex:title "One" .
+ex:two ex:title "Two" .

@@ -1,0 +1,12 @@
+# blank node: the node shape of sh:node is a blank node.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:node [ sh:property [ sh:minCount 1 ; sh:path ex:title ] ] ;
+        sh:path ex:chapter
+    ] ;
+    sh:targetClass ex:C .

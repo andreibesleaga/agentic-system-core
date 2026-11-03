@@ -1,0 +1,17 @@
+# sh:in: a list that runs back into itself is not a SHACL list.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:in _:list ;
+        sh:path ex:status
+    ] ;
+    sh:targetClass ex:C .
+
+_:list
+    rdf:first "draft" ;
+    rdf:rest _:list .

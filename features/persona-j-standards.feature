@@ -1,4 +1,4 @@
-# Trace: PRD-024, PRD-025, PRD-050, PRD-054, PRD-055, PRD-057, PRD-058 · PLAN §7 (w3id conneg) · spec/10 §10.4, spec/11 §11.3
+# Trace: PRD-022, PRD-024, PRD-025, PRD-050, PRD-054, PRD-055, PRD-057, PRD-058 · PLAN §7 (w3id conneg) · spec/10 §10.4, spec/11 §11.3
 @persona-j @mode-1
 Feature: Standards implementer adopts the discovery format on their own site
   As P11 (standards implementer)
@@ -66,7 +66,13 @@ Feature: Standards implementer adopts the discovery format on their own site
     When the implementer runs "the shipped gen-shapes tool with --check"
     Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "gen-shapes"
     And "schema/item-shapes.ttl" is Turtle with one warning shape for each Link key that names a kind of target, and a self-link warning
-    And the package declares no SHACL library, because the shapes run in a development lane and never at build
+    And the package's one SHACL library runs only a site's own shapes in one module, never at build, so the shapes of "schema/item-shapes.ttl" stay in the development lane
+
+  @PRD-022 @human @matrix-H15
+  Scenario: The engine evaluates a site's shapes with exactly the SHACL Core subset, and refuses a shapes file outside it
+    When the implementer evaluates every shared fixture of "tests/shapes/core" with the engine's SHACL Core evaluator
+    Then each graph that conforms gives no result, and each graph that violates gives exactly the results of its "results.json", in the order of AGSC-05-41
+    And each shapes file of "tests/shapes/core/refused" is the error "AGSC-E420" and is not evaluated (AGSC-05-41)
 
   @PRD-024 @PRD-055 @human @matrix-H15
   Scenario: A node served on loopback passes the shipped checker at Level 1

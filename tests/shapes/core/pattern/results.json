@@ -1,0 +1,11 @@
+[
+  {
+    "component": "PatternConstraintComponent",
+    "focus": "https://example.org/term",
+    "message": null,
+    "path": "https://example.org/slug",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#Slugged > https://example.org/slug",
+    "value": "\"Agent loop\""
+  }
+]

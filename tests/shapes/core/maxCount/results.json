@@ -1,0 +1,11 @@
+[
+  {
+    "component": "MaxCountConstraintComponent",
+    "focus": "https://example.org/part",
+    "message": null,
+    "path": "^https://example.org/hasPart",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#OneWhole > ^https://example.org/hasPart",
+    "value": null
+  }
+]

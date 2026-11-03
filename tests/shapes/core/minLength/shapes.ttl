@@ -1,0 +1,12 @@
+# sh:minLength.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:LongEnough
+    a sh:NodeShape ;
+    sh:property [
+        sh:minLength 3 ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:Term .

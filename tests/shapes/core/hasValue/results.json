@@ -1,0 +1,11 @@
+[
+  {
+    "component": "HasValueConstraintComponent",
+    "focus": "https://example.org/doc",
+    "message": null,
+    "path": "https://example.org/status",
+    "severity": "Warning",
+    "shape": "https://example.org/shapes#DocApproved",
+    "value": null
+  }
+]

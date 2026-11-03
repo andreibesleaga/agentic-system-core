@@ -1,0 +1,4 @@
+# Both values are in the list.
+@prefix ex: <https://example.org/> .
+
+ex:doc a ex:Doc ; ex:status "approved" , "draft" .

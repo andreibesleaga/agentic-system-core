@@ -1,0 +1,12 @@
+# property path: sh:inversePath of something other than a predicate IRI.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path [ sh:inversePath [ sh:inversePath ex:hasPart ] ]
+    ] ;
+    sh:targetClass ex:C .

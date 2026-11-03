@@ -1,0 +1,11 @@
+# blank node: a node shape named by a blank node.
+@prefix ex: <https://example.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+[]
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:C .

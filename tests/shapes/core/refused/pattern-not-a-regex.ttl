@@ -1,0 +1,12 @@
+# sh:pattern: the value is not a regular expression.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:pattern "(" ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:C .

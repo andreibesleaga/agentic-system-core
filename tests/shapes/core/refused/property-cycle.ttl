@@ -1,0 +1,9 @@
+# sh:path: two blank property shapes that are each other's sh:property have no path, and their names still end.
+@prefix ex: <https://example.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+_:a
+    sh:property _:b .
+
+_:b
+    sh:property _:a .

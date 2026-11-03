@@ -1,0 +1,4 @@
+# The term has no title.
+@prefix ex: <https://example.org/> .
+
+ex:term ex:kind "principle" .

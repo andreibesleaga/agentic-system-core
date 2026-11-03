@@ -1,0 +1,13 @@
+# sh:name: even a non-validating term of the sh: namespace is outside the subset.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:name "title" ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:C .

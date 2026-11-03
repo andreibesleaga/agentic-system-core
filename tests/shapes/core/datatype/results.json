@@ -1,0 +1,20 @@
+[
+  {
+    "component": "DatatypeConstraintComponent",
+    "focus": "https://example.org/box",
+    "message": null,
+    "path": "https://example.org/size",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#BoxShape > https://example.org/size",
+    "value": "\"12\""
+  },
+  {
+    "component": "DatatypeConstraintComponent",
+    "focus": "https://example.org/box",
+    "message": null,
+    "path": "https://example.org/size",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#BoxShape > https://example.org/size",
+    "value": "\"twelve\"^^<http://www.w3.org/2001/XMLSchema#integer>"
+  }
+]

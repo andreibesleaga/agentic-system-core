@@ -1,0 +1,5 @@
+# The second chapter has no title.
+@prefix ex: <https://example.org/> .
+
+ex:book a ex:Book ; ex:chapter ex:one , ex:two .
+ex:one ex:title "One" .

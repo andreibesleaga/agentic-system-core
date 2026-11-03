@@ -1,0 +1,5 @@
+# The second author has no name: the result is about the author.
+@prefix ex: <https://example.org/> .
+
+ex:paper a ex:Paper ; ex:author ex:x , ex:y .
+ex:x ex:name "X" .

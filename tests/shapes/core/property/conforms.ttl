@@ -1,0 +1,6 @@
+# Both authors have a name.
+@prefix ex: <https://example.org/> .
+
+ex:paper a ex:Paper ; ex:author ex:x , ex:y .
+ex:x ex:name "X" .
+ex:y ex:name "Y" .
