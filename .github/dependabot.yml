@@ -18,6 +18,11 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # n3 stays at its pinned version: the graph files are compared byte for byte,
+    # and tests/knowledge/turtle.test.js checks the pin. Move it by hand, with a
+    # byte comparison of every graph vector.
+    ignore:
+      - dependency-name: n3
     groups:
       npm:
         patterns:
