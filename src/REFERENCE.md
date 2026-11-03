@@ -672,7 +672,9 @@ drive them, `init` and `ci`.
 | `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects` |
 | `distribution/now.js` | Distribution | AGSC-06-22, AGSC-08-25 — the NOW state and the monthly spend meter |
 | `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates |
-| `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members |
+| `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members, the overview and legend of `/clusters/` |
+| `distribution/clusters-page.js` | Distribution | AGSC-06-38, AGSC-06-01 — what `/clusters/` adds below its list, and the two files it loads |
+| `distribution/explorer/*.js` | Distribution | AGSC-06-38, AGSC-06-05, AGSC-06-17, AGSC-06-20 — the explorer of `/clusters/`, shipped as the source text of its portable functions |
 | `distribution/site.js` | Distribution | AGSC-06-01 and AGSC-04-01/02 — `build`, `write`, `verify` |
 | `distribution/init.js` | Distribution | AGSC-02-94, AGSC-02-95, AGSC-01-37 — the adoption use case |
 | `distribution/ci.js` | Distribution | AGSC-09-08 — lint → build → verify and the exit codes |
@@ -726,7 +728,7 @@ spend(items, config, { month }) -> { month, episodes, spent_usd, cap_usd, ratio,
 counts(items); staleItems(items, instant); nowMarkdown(state)
 
 // distribution/html.js
-shell(page); itemPage(item, options); indexPage({title, description, entries}, options)
+shell(page); itemPage(item, options); indexPage({title, description, entries, after?}, options)   // page.stylesheets: the page's own, after the theme
 nowPage(markdown, options); notFoundPage(options); aboutPage({verbs, personas}, options)
 escapeHtml(value); termsLine(licenseProse); HONEST_LIMIT
 diagramFigure(item, source, options); inlineDiagram(source, {slug, item, file, accessibleName?, caption?}, options) -> { html, findings }
@@ -736,8 +738,28 @@ index(items, hrefOf) -> { bySlug, incoming, hrefOf }
 relationRows(item, views) -> [{key, direction: 'outgoing'|'incoming', other}]   // outgoing first, keys in AGSC-03-01 order
 itemSection(item, views, { svgViolations?, columns? }) -> { html, findings }   // '' without a relation, or for a retired item
 clusterSection(cluster, views, { svgViolations?, columns? }) -> { html, findings }   // '' when no member links another
-relationsTable(rows, columns, views); itemFigureSource(item, rows); clusterFigureSource(…); membersOfCluster(cluster, views)
+relationsTable(rows, columns, views, filtered?); itemFigureSource(item, rows); clusterFigureSource(…); membersOfCluster(cluster, views)
+overviewRows(clusters, views) -> [{source, key, target, count}]   // Links between members of two different clusters, counted
+overviewSection(clusters, views, { svgViolations? }) -> { html, findings }   // figure, relation filter (no script), table; '' without clusters
+legendSection() -> string                         // the fourteen keys, the key read backwards, the meaning
 ITEM_COLUMNS; CLUSTER_COLUMNS; NEIGHBOURS_DRAWN = 24; MEMBERS_DRAWN = 24; MEMBER_LINKS_DRAWN = 24
+
+// distribution/clusters-page.js (pure)
+view({ items, views, contextObject, graphEmitted, specVersion }) -> { render, assets: [[route, text]], findings }
+
+// distribution/explorer/ (PORTABLE: each module lists the functions emitted as their own source text)
+explorerGraph(doc, relations, max) -> { nodes: [{id, type, label, summary, route}], links: [{source, key, target}], total }
+explorerText(value); explorerRoute(iri, base); explorerNeighbours(graph, id)        // graph-data.js
+explorerLayout(graph, {width, height, margin}) -> [{id, x, y}]                      // layout.js, no random number
+explorerExcerpt(text, max); explorerPlaceTip(anchor, tip, frame, others, gap) -> {left, top, side}   // tooltip.js
+explorerStep(key, index, count); explorerMatches(node, words); explorerStart(frame); explorerReduce(state, event, frame)   // controller.js
+explorerScene(graph, positions, state); explorerList(graph, state); explorerDetail(graph, id, meanings); explorerTip(node);
+explorerVisible(graph, query); explorerRadius(node); explorerBuild(doc, tree, ns?)   // view.js
+explorerMain(win, api); explorerWire(win, api, graph, positions)                    // main.js, the browser lane only
+// explorer/page.js
+script({ relations, specVersion }) -> string; stylesheet() -> string; section() -> string
+relationTerms(contextObject) -> [{key, term, meaning, symmetric}]
+SCRIPT_ROUTE = '/clusters/agsc-explorer.js'; STYLESHEET_ROUTE = '/clusters/agsc-explorer.css'; MAX_NODES = 400
 
 // distribution/site.js
 build(bundle, ports, options) -> { files: Map<route, string>, findings, skipped, state, ledgerHead }

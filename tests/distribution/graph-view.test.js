@@ -323,3 +323,84 @@ test('page budget: at 10,000 items a hub page and a cluster page stay under 100 
   }
   assert.ok(Buffer.byteLength(graphView.clusterSection(k, index).html) <= 20000, 'the cluster map and its table stay small');
 });
+
+// ------------------------------------------------------------------ the overview of /clusters/
+
+/** Two clusters and a third; members of k link to members of l and m, and among themselves. */
+function overviewItems() {
+  const k = { slug: 'k', title: 'Kilo', type: 'cluster' };
+  const l = { slug: 'l', title: 'Lima', type: 'cluster' };
+  const m = { slug: 'm', title: 'Mike', type: 'cluster' };
+  return [k, l, m,
+    concept('a', { clusters: ['k'], requires: ['b', 'c'], uses: ['c', 'd'] }),
+    concept('b', { clusters: ['k'] }),
+    concept('c', { clusters: ['l', 'm'], related: ['a'] }),
+    concept('d', { clusters: ['l'] }),
+    concept('loose', { uses: ['a'] })];
+}
+
+test('the overview counts the links between the members of two different clusters, by relation', () => {
+  const items = overviewItems();
+  const index = graphView.index(items, hrefOf);
+  const rows = graphView.overviewRows(items.filter((i) => i.type === 'cluster'), index)
+    .map((r) => [r.source.slug, r.key, r.target.slug, r.count]);
+  // a (k) uses c and d (both l) and c (m); requires c (l, m); c (l, m) related a (k). The
+  // link a requires b stays inside k, and `loose` is in no cluster: neither is a row.
+  assert.deepStrictEqual(rows, [
+    ['k', 'uses', 'l', 2], ['k', 'uses', 'm', 1], ['k', 'requires', 'l', 1], ['k', 'requires', 'm', 1],
+    ['l', 'related', 'k', 1], ['m', 'related', 'k', 1]]);
+});
+
+test('the overview section: figure, filter, table and meanings; the filter needs no script', () => {
+  const items = overviewItems();
+  const index = graphView.index(items, hrefOf);
+  const view = graphView.overviewSection(items.filter((i) => i.type === 'cluster'), index);
+  assert.deepStrictEqual(view.findings, []);
+  assert.match(view.html, /^<h2 id="overview">How the clusters connect<\/h2>/u);
+  const [svg] = svgs(view.html);
+  assert.deepStrictEqual(lint.svgViolations(svg), []);
+  assert.match(svg, /aria-labelledby="overview_clusters-title overview_clusters-desc"/u);
+  const texts = [...svg.matchAll(/<text [^>]*>([^<]*)<\/text>/gu)].map((t) => t[1]);
+  assert.deepStrictEqual(texts.slice(0, 4), ['Clusters', 'Kilo', 'Lima', 'Mike']);
+  assert.ok(texts.includes('uses ×2, requires'), texts.join(' | '));
+  // The filter: one radio per relation the table holds, plus "every relation", checked.
+  const radios = [...view.html.matchAll(/<input type="radio" name="relation-filter" id="relation-filter-([a-z-]*)"[^>]*>/gu)];
+  assert.deepStrictEqual(radios.map((r) => r[1]), ['all', 'related', 'uses', 'requires'], 'in the order of AGSC-03-01');
+  assert.match(radios[0][0], / checked>$/u);
+  assert.ok(view.html.indexOf('class="relation-filter"') < view.html.indexOf('<div class="table-wrap">'), 'the filter comes before the table it filters');
+  const rows = [...view.html.matchAll(/<tr data-relation="([a-z-]+)"><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><\/tr>/gu)]
+    .map((r) => [r[1], r[2].replace(/<[^>]+>/gu, ''), r[3], r[4].replace(/<[^>]+>/gu, ''), r[5], r[6]]);
+  assert.deepStrictEqual(rows[0], ['uses', 'Kilo', 'uses', 'Lima', '2', MEANING.get('uses')]);
+  assert.strictEqual(rows.length, 6);
+  assert.doesNotMatch(view.html, /style=|<script|on[a-z]+=/u, 'no inline style, no script, no handler (AGSC-06-17)');
+});
+
+test('the overview says so when no relation crosses two clusters, and is empty without clusters', () => {
+  const k = { slug: 'k', title: 'Kilo', type: 'cluster' };
+  const items = [k, concept('a', { clusters: ['k'], requires: ['b'] }), concept('b', { clusters: ['k'] })];
+  const view = graphView.overviewSection([k], graphView.index(items, hrefOf));
+  assert.match(view.html, /No relation joins the members of two different clusters/u);
+  assert.deepStrictEqual(svgs(view.html), []);
+  assert.deepStrictEqual(graphView.overviewSection([], graphView.index([], hrefOf)), { findings: [], html: '' });
+});
+
+test('the overview draws at most 24 rows and says how many more there are', () => {
+  const clusters = Array.from({ length: 30 }, (_, n) => ({ slug: `c${String(n).padStart(2, '0')}`, title: `Cluster ${n}`, type: 'cluster' }));
+  const items = [...clusters, ...clusters.map((c, n) => concept(`i${String(n).padStart(2, '0')}`, {
+    clusters: [c.slug], related: [`i${String((n + 1) % 30).padStart(2, '0')}`], uses: [`i${String((n + 3) % 30).padStart(2, '0')}`],
+  }))];
+  const view = graphView.overviewSection(clusters, graphView.index(items, hrefOf));
+  assert.strictEqual((view.html.match(/<tr data-relation=/gu) || []).length, 24);
+  assert.match(view.html, /36 more relations between clusters are not drawn or listed here;/u);
+  assert.deepStrictEqual(lint.svgViolations(svgs(view.html)[0]), []);
+});
+
+test('the legend lists the fourteen keys in the order of AGSC-03-01, each with its inverse and meaning', () => {
+  const legend = graphView.legendSection();
+  assert.match(legend, /^<h2 id="legend">The fourteen relations<\/h2>/u);
+  const rows = [...legend.matchAll(/<tr><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><\/tr>/gu)].map((r) => r.slice(1));
+  assert.deepStrictEqual(rows.map((r) => r[0]), [...LINK_KEYS]);
+  assert.deepStrictEqual(rows.map((r) => r[2]), RELATIONS.map((r) => r.meaning));
+  assert.deepStrictEqual(rows.find((r) => r[0] === 'uses')[1], 'used-by');
+  assert.deepStrictEqual(rows.find((r) => r[0] === 'related')[1], 'related (both ways)');
+});

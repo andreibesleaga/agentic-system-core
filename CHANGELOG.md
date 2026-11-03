@@ -241,6 +241,33 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `src/distribution/graph-view.js`; the Links between published items, a cluster's members and the
   title an item is drawn with moved from the `mermaid` export adapter to `src/knowledge/link-graph.js`,
   which both read (the export keeps its bytes).
+- `/clusters/` carries, below its list, the overview of all clusters, the legend of the fourteen keys and
+  an explorer of the published graph (AGSC-06-38, I-022, I-165, I-166). The overview is a figure and a
+  table that count the Links from the members of one cluster to the members of another, by key (at most
+  24 rows, the figure drawing the same rows; a sentence when no Link crosses two clusters). Radio buttons
+  above the table filter it by relation with no script ("a relation filter needs no script"). The legend
+  lists the fourteen keys in the order of AGSC-03-01 with the key each reads by backwards and its meaning.
+  The explorer draws every published item and cluster and the Links among them from `/graph.jsonld` of the
+  same origin, with a list of the items, a find box, a detail panel naming each relation with its meaning,
+  zoom and pan, and a tooltip that opens on the side of a node where it covers the fewest other nodes; it
+  is operable from the keyboard alone (AGSC-06-20: the arrow keys, Home and End move through the list,
+  Enter selects, Escape closes the tooltip and then clears the selection). Its section starts hidden and
+  only its script shows it. No route is added (AGSC-06-01): the page loads two same-origin files of its
+  own, `/clusters/agsc-explorer.js` (the source text of the explorer's portable functions, so the page
+  runs what the tests test) and `/clusters/agsc-explorer.css` (the explorer's look in both colour
+  schemes and the filter's rules). Both keep AGSC-06-17 (no inline script or style, no other host) and
+  AGSC-06-05 (the script reads `/graph.jsonld` and nothing else, and stores nothing). The explorer depends
+  on no library; it draws at most 400 items and says so above that. The theme's stylesheet is unchanged,
+  so it stays the main site's own copy. Bytes: `/clusters/index.html` changes and the two files are added,
+  for every node (views added by AGSC-06-38; HTML pages are not byte-pinned, AGSC-04-24); no machine file
+  changes. A node built with no graph view gets the overview and the legend and no explorer. The code is
+  `src/distribution/clusters-page.js`, `src/distribution/explorer/` and the overview and legend of
+  `src/distribution/graph-view.js`. No `/graph/` route is emitted: the specification's route set has
+  none (the query page of AGSC-06-39 is where a graph is asked questions). Tests: `tests/distribution/explorer/`,
+  `tests/distribution/clusters-page.test.js`, `tests/arch/explorer-portable.test.js` (each explorer
+  function self-contained, no dependency) and `tests/distribution/explorer-browser.test.js` in the browser
+  lane, where `axe-core` 4.13.0 is now fetched by exact version and checked against its SHA-256 like
+  `playwright-core`.
 
 - `import <file.ttl> --from skos` (AGSC-01-39, AGSC-01-26a, I-018): a SKOS thesaurus in Turtle becomes
   draft items. The file is read with the pinned `n3` (`knowledge/turtle.js#parse`); the mapping is

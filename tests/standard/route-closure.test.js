@@ -76,12 +76,29 @@ test('the rule text yields the route list this test reads (a vacuous parse would
   assert.match(SECOND, /are emitted as part of the page that names them/u);
 });
 
+/**
+ * The `.js` and `.css` files some emitted page loads by a `<script src>` or a stylesheet
+ * `<link>`: the second paragraph's "same-origin script assets a page of this set loads
+ * … are emitted as part of the page that names them" (case build-0029,
+ * `other_files_are_page_assets`). `/clusters/` loads the explorer's two (AGSC-06-38).
+ */
+function loadedByAPage(out, files) {
+  const loaded = new Set();
+  for (const file of files.filter((f) => f.endsWith('.html'))) {
+    const text = fs.readFileSync(path.join(out, file), 'utf8');
+    for (const m of text.matchAll(/<script src="([^"]+)"|<link rel="stylesheet" href="([^"]+)"/gu)) loaded.add(m[1] || m[2]);
+  }
+  return loaded;
+}
+
 test('every file the build emits is a route of AGSC-06-01 or a page asset it names', () => {
-  const { files } = richBuild();
+  const { files, out } = richBuild();
   const all = [...TEMPLATES, ...CONDITIONAL].map(pattern);
+  const loaded = loadedByAPage(out, files);
   const stray = files.map(routeOf).filter((route) => !all.some((re) => re.test(route))
-    && !PAGE_ASSETS.some((re) => re.test(route)));
+    && !PAGE_ASSETS.some((re) => re.test(route)) && !(/\.(?:js|css)$/u.test(route) && loaded.has(route)));
   assert.deepStrictEqual(stray, [], `emitted outside the route set: ${stray.join(', ')}`);
+  assert.ok(loaded.has('/clusters/agsc-explorer.js') && loaded.has('/clusters/agsc-explorer.css'), 'the page-asset scan found nothing');
 });
 
 test('every route of AGSC-06-01 is emitted, or is conditional and the build says why not', () => {

@@ -188,6 +188,7 @@ graph TB
 | composition | `context-map.js` | the context map of a composition (1.1): `context-map.json` in the companion directory beside the Harness, only for a node that declares contexts (AGSC-07-30); never a Harness byte | — | compose |
 | distribution | `html.js` `templates/*.html` | Markdown→HTML; layout/item/cluster/list/now/compose/404 | 9 | build |
 | distribution | `graph-view.js` | the graph view (1.1, AGSC-06-38): an item's figure and relations table with backlinks and meanings; a cluster's map of members and links; edges from `knowledge/link-graph.js`, figures compiled by `diagrams.js` | — | build |
+| distribution | `clusters-page.js` `explorer/*.js` | `/clusters/` beyond its list (1.1, AGSC-06-38): the overview of how the clusters connect with a relation filter that needs no script, the legend of the fourteen keys, and the explorer of the published graph (picture, list, find box, detail panel, tooltip; keyboard alone), shipped as the source text of its portable functions with no dependency | — | build |
 | distribution | `search.js` | inverted index `search.json` | 8 | build |
 | distribution | `discovery.js` | linkset with `digest`/`agsc-*` target attributes, `llms.txt`, sitemap, robots, tdmrep, `_headers`, `_redirects` | 10 | build |
 | distribution | `now.js` | `/now/` + `now.md` from stored state only | 11 | build refresh |

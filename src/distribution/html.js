@@ -236,6 +236,9 @@ function shell(page) {
   // The default theme (theme.js) — one same-origin stylesheet and one small
   // same-origin script that applies the visitor's stored theme before first paint.
   head.push(`<link rel="stylesheet" href="${theme.STYLESHEET_ROUTE}">`);
+  // A page's own same-origin stylesheets come right after the theme, so they build on it
+  // (`/clusters/` loads the explorer's and the relation filter's, AGSC-06-38).
+  for (const href of (page.stylesheets || [])) head.push(`<link rel="stylesheet" href="${escapeHtml(href)}">`);
   head.push(`<script src="${theme.SCRIPT_ROUTE}"></script>`);
   head.push('</head>', '<body>');
   // The header of AgenticSystemCore.com: skip link, brand linking home, the navigation
@@ -489,9 +492,13 @@ function entryList(entries) {
     : `<ul>${entries.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${Number.isInteger(e.count) ? ` (${e.count} ${e.count === 1 ? 'item' : 'items'})` : ''}${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`;
 }
 
-/** An index page — a type folder, a cluster list or a tag list (AGSC-06-01). */
-function indexPage({ title, description, entries }, options = {}) {
-  return shell({ ...options, title, description, body: entryList(entries) });
+/**
+ * An index page — a type folder, a cluster list or a tag list (AGSC-06-01). `after` is
+ * markup the caller wrote whole, placed after the list (the overview, the legend and the
+ * explorer of `/clusters/`, `clusters-page.js`).
+ */
+function indexPage({ title, description, entries, after }, options = {}) {
+  return shell({ ...options, title, description, body: after ? `${entryList(entries)}\n${after}` : entryList(entries) });
 }
 
 /**

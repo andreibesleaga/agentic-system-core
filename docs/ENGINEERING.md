@@ -116,6 +116,12 @@ To add a module:
    first speaks foreign formats, the second this format's own surfaces. What both
    need goes to `knowledge/`: `knowledge/link-graph.js` holds the typed Links between
    published items that the Mermaid export and the graph view of the pages both draw.
+   Code a published page runs is written as **portable** functions and shipped as their
+   own source text, so the page runs what the Node tests test: each such module lists
+   them in `PORTABLE`, and a portable function names no module-scope binding and
+   requires nothing (`tests/arch/page-tools-portable.test.js` for the page tools,
+   `tests/arch/explorer-portable.test.js` for the explorer of `/clusters/`, which also
+   depends on nothing outside its own folder).
 3. **Reach the host through a port.** `knowledge/`, `governance/`, `composition/`,
    `interchange/`, `distribution/` and `shared/` may use the Node built-in `crypto`
    and nothing else; the Boundary may also use `net` and `url` to classify addresses

@@ -1,6 +1,6 @@
 # `tests/arch/`
 
-**Summary.** Architecture tests: context boundaries, purity of the core, what each context never touches, the built-ins of the application layer, pinned libraries, the one RDF reader, the one SHACL engine and the one SPARQL parser and engine (never at build), the one reading of the Link graph for the Mermaid export and the graph view (`link-graph.test.js`), the context map beside the Harness and no crosswalk at build (`context-map.test.js`), the package file list, the plugin contract, text-source hygiene, and the suite leaving no scratch behind. Subject: the whole tree.
+**Summary.** Architecture tests: context boundaries, purity of the core, what each context never touches, the built-ins of the application layer, pinned libraries, the one RDF reader, the one SHACL engine and the one SPARQL parser and engine (never at build), the one reading of the Link graph for the Mermaid export and the graph view (`link-graph.test.js`), the explorer of `/clusters/` shipped as self-contained source text with no dependency (`explorer-portable.test.js`), the context map beside the Harness and no crosswalk at build (`context-map.test.js`), the package file list, the plugin contract, text-source hygiene, and the suite leaving no scratch behind. Subject: the whole tree.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

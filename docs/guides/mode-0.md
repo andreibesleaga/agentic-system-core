@@ -118,7 +118,7 @@ ls www www/.well-known
 ```
 
 ```text expect
-wrote: 47 files under www/
+wrote: 49 files under www/
 build: pass (0 error, 4 warn)
 index.html
 llms.txt
@@ -153,6 +153,16 @@ means. The incoming rows are the note's backlinks. A cluster page also draws its
 members and the links among them. Drafts, retired notes and notes held back from a
 release never appear in either. No new file is written for this; the drawing is part
 of the page.
+
+The `/clusters/` page lists the clusters, then shows how they connect: a drawing and a
+table count the links from the notes of one cluster to the notes of another. Radio
+buttons above the table show one relation at a time, without JavaScript. A legend
+below names the fourteen relations and what each means. Last comes an explorer: a
+picture of every published note and link, with a list beside it. With the keyboard,
+Tab reaches the list, the arrow keys move through it, Enter selects a note and shows
+its relations, and Escape clears. The explorer needs JavaScript and reads only
+`/graph.jsonld` of the same site; without JavaScript it does not appear, and the rest
+of the page is unchanged.
 
 ## 4. Change a note — as a proposal
 
@@ -226,7 +236,7 @@ agsc verify --ledger
 
 ```text expect
 ci: pass (0 error, 6 warn)
-wrote: 48 files under www/
+wrote: 50 files under www/
 verify: pass (0 error, 0 warn)
 ```
 

@@ -18,6 +18,7 @@ const browser = require('./_browser.js');
 const BASE = 'https://agenticsystemcore.com/';
 const DRAFT = 'content/concepts/unreleased-idea.md';
 const ALT = 'Two agents of two organisations exchange a task through an agent card.';
+const RELATIONS_MEANING_REQUIRES = RELATIONS.find((r) => r.key === 'requires').meaning;
 
 /** The `<main>` element of a built page. */
 function mainOf(html) {
@@ -386,6 +387,124 @@ module.exports = [
       assert.match(svg, />Supervisor<\/text>/u);
       assert.match(svg, />requires<\/text>/u);
       assert.strictEqual((svg.match(/marker-end=/gu) || []).length, 1, 'one arc');
+    },
+  },
+  {
+    pattern: 'the concept "handoff" also uses "mcp" and the Bundle is built again',
+    run(world) {
+      const file = 'content/concepts/handoff.md';
+      world.write(file, world.read(file).replace('---\n', '---\nuses:\n  - mcp\n'));
+      built(world);
+    },
+  },
+  {
+    pattern: 'the reader navigates to "/clusters/"',
+    run(world) {
+      world.state.page = world.read('www/clusters/index.html');
+    },
+  },
+  {
+    pattern: 'the overview table counts the relation "uses" from "Agent patterns" to "Protocols", and its figure draws the same arc (AGSC-06-38)',
+    run(world) {
+      const html = world.state.page;
+      const at = html.indexOf('id="overview"');
+      assert.ok(at >= 0, 'the page has no overview');
+      const table = html.slice(html.indexOf('<table class="relations">', at), html.indexOf('</table>', at));
+      const rows = [...table.matchAll(/<tr data-relation="([a-z-]+)">(.*?)<\/tr>/gu)]
+        .map((m) => [m[1], ...[...m[2].matchAll(/<td>(.*?)<\/td>/gu)].map((c) => c[1].replace(/<[^>]+>/gu, ''))]);
+      const meaning = RELATIONS.find((r) => r.key === 'uses').meaning;
+      assert.ok(rows.some((r) => JSON.stringify(r) === JSON.stringify(['uses', 'Agent patterns', 'uses', 'Protocols', '1', meaning])), JSON.stringify(rows));
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(at))[0];
+      assert.match(svg, />Agent patterns<\/text>/u);
+      assert.match(svg, />Protocols<\/text>/u);
+      assert.match(svg, />uses<\/text>/u);
+      assert.strictEqual((svg.match(/marker-end=/gu) || []).length, new Set(rows.map((r) => `${r[1]}>${r[3]}`)).size, 'one arc per pair of clusters');
+    },
+  },
+  {
+    pattern: 'a radio button for each relation in the table filters it through the page\'s own stylesheet, with no script',
+    run(world) {
+      const html = world.state.page;
+      const keys = [...new Set([...html.matchAll(/<tr data-relation="([a-z-]+)">/gu)].map((m) => m[1]))];
+      const radios = [...html.matchAll(/<input type="radio" name="relation-filter" id="relation-filter-([a-z-]+)"/gu)].map((m) => m[1]);
+      assert.deepStrictEqual(radios, ['all', ...keys]);
+      const sheet = /<link rel="stylesheet" href="(\/clusters\/[a-z-]+\.css)">/u.exec(html);
+      assert.ok(sheet, 'the page loads no stylesheet of its own');
+      const css = world.read(`www${sheet[1]}`);
+      for (const key of keys) {
+        assert.ok(css.includes(`:has(#relation-filter-${key}:checked) ~ .table-wrap tr[data-relation]:not([data-relation="${key}"]) { display: none; }`), key);
+      }
+      // The filter is markup and rules only: the overview carries no script.
+      const overview = html.slice(html.indexOf('id="overview"'), html.indexOf('id="legend"'));
+      assert.doesNotMatch(overview, /<script|\son[a-z]+=/u);
+    },
+  },
+  {
+    pattern: 'the legend lists the fourteen relations in the order of AGSC-03-01, each with its meaning',
+    run(world) {
+      const html = world.state.page;
+      const legend = html.slice(html.indexOf('id="legend"'), html.indexOf('</table>', html.indexOf('id="legend"')));
+      const rows = [...legend.matchAll(/<tr><td>(.*?)<\/td><td>.*?<\/td><td>(.*?)<\/td><\/tr>/gu)].map((m) => [m[1], m[2]]);
+      assert.deepStrictEqual(rows, RELATIONS.map((r) => [r.key, r.meaning]));
+    },
+  },
+  {
+    pattern: 'the reader opens the explorer on "/clusters/"',
+    async run(world) {
+      const opened = await browser.open(world, '/clusters/');
+      await opened.page.waitForSelector('#explorer[data-state="ready"]', { timeout: 15000 });
+      world.state.explorer = opened;
+    },
+  },
+  {
+    pattern: 'the explorer draws every published item, and the page requests nothing from another origin',
+    async run(world) {
+      const { errors, offOrigin, page } = world.state.explorer;
+      const graph = JSON.parse(world.read('www/graph.jsonld'))['@graph'];
+      const items = graph.filter((n) => !['Bundle', 'Source', 'Attachment'].includes(String(n['@type']).split(/[#:/]/u).pop()));
+      const drawn = await page.evaluate(() => [...document.querySelectorAll('#explorer-picture circle')].map((c) => c.getAttribute('data-id')));
+      assert.deepStrictEqual(drawn, items.map((n) => n['@id']));
+      assert.ok(!drawn.some((id) => id.includes('unreleased-idea')), 'the explorer draws a draft');
+      assert.deepStrictEqual(offOrigin, []);
+      assert.deepStrictEqual(errors, []);
+    },
+  },
+  {
+    pattern: 'the arrow keys move through the explorer\'s list with the tooltip following, and Enter selects an item whose relations the detail panel names with their meanings',
+    async run(world) {
+      const { page } = world.state.explorer;
+      await page.focus('#explorer-items button[tabindex="0"]');
+      await page.keyboard.press('ArrowDown');
+      const state = () => page.evaluate(() => ({
+        described: (document.querySelector('[aria-describedby="explorer-tip"]') || { id: '' }).getAttribute('data-id'),
+        focused: document.activeElement.getAttribute('data-id'),
+      }));
+      const moved = await state();
+      assert.ok(moved.focused && moved.focused === moved.described, JSON.stringify(moved));
+      // Move to Handoff, which requires Supervisor, and select it.
+      const order = await page.evaluate(() => [...document.querySelectorAll('#explorer-items button[data-id]')].map((b) => b.firstChild.textContent));
+      for (let i = order.indexOf(order[1]); i < order.indexOf('Handoff'); i += 1) await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
+      const detail = await page.evaluate(() => document.getElementById('explorer-detail').textContent);
+      assert.match(detail, /^Handoff/u);
+      assert.ok(detail.includes('requires') && detail.includes('Supervisor'), detail);
+      assert.ok(detail.includes(RELATIONS_MEANING_REQUIRES), 'the meaning of "requires" is not shown');
+    },
+  },
+  {
+    pattern: 'Escape closes the tooltip first and then clears the selection',
+    async run(world) {
+      const { page } = world.state.explorer;
+      await page.keyboard.press('ArrowDown');
+      const look = () => page.evaluate(() => ({
+        selected: document.querySelectorAll('#explorer-picture circle.is-selected').length,
+        tip: !document.getElementById('explorer-tip').hidden,
+      }));
+      assert.deepStrictEqual(await look(), { selected: 1, tip: true });
+      await page.keyboard.press('Escape');
+      assert.deepStrictEqual(await look(), { selected: 1, tip: false });
+      await page.keyboard.press('Escape');
+      assert.deepStrictEqual(await look(), { selected: 0, tip: false });
     },
   },
 ];

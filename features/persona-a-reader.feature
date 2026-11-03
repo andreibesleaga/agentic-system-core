@@ -54,3 +54,18 @@ Feature: Human reader finds a pattern with evidence
     And the draft "unreleased-idea" is neither drawn nor named on the page
     When the reader navigates to "/clusters/agent-patterns/"
     Then the cluster map draws the link "requires" from "Handoff" to "Supervisor" and its table lists the same link
+
+  @PRD-002 @PRD-013 @human @matrix-H3
+  Scenario: Reader sees how the clusters connect and what each relation means
+    Given the concept "handoff" also uses "mcp" and the Bundle is built again
+    When the reader navigates to "/clusters/"
+    Then the overview table counts the relation "uses" from "Agent patterns" to "Protocols", and its figure draws the same arc (AGSC-06-38)
+    And a radio button for each relation in the table filters it through the page's own stylesheet, with no script
+    And the legend lists the fourteen relations in the order of AGSC-03-01, each with its meaning
+
+  @PRD-002 @human @matrix-H3
+  Scenario: Reader explores the graph with the keyboard alone
+    When the reader opens the explorer on "/clusters/"
+    Then the explorer draws every published item, and the page requests nothing from another origin
+    And the arrow keys move through the explorer's list with the tooltip following, and Enter selects an item whose relations the detail panel names with their meanings
+    And Escape closes the tooltip first and then clears the selection

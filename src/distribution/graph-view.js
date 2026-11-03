@@ -221,11 +221,14 @@ function itemLink(item, views) {
  * @param {Array<object>} rows
  * @param {ReadonlyArray<{heading:string, cell:Function}>} columns
  * @param {ReturnType<typeof index>} views
+ * @param {boolean} [filtered] write each row's key as `data-relation`, for the relation filter.
  * @returns {string}
  */
-function relationsTable(rows, columns, views) {
+function relationsTable(rows, columns, views, filtered = false) {
   const head = columns.map((c) => `<th scope="col">${escapeHtml(c.heading)}</th>`).join('');
-  const body = rows.map((row) => `<tr>${columns.map((c) => `<td>${c.cell(row, views)}</td>`).join('')}</tr>`).join('\n');
+  // A filtered table names each row's key, which the relation filter's rules select on.
+  const open = (row) => (filtered ? `<tr data-relation="${escapeHtml(row.key)}">` : '<tr>');
+  const body = rows.map((row) => `${open(row)}${columns.map((c) => `<td>${c.cell(row, views)}</td>`).join('')}</tr>`).join('\n');
   return `<div class="table-wrap"><table class="relations">\n<thead><tr>${head}</tr></thead>\n<tbody>\n${body}\n</tbody>\n</table></div>`;
 }
 
@@ -289,6 +292,20 @@ function memberLinks(everyMember, views) {
     .filter((l) => l.target !== l.source && order.has(l.target))
     .sort((a, b) => KEY_ORDER[a.key] - KEY_ORDER[b.key] || order.get(a.target) - order.get(b.target))
     .map((l) => ({ key: l.key, source: m, target: views.bySlug.get(l.target) })));
+  return { all, ...bounded(all, everyMember) };
+}
+
+/**
+ * The bounded part of a map: the first rows while they number at most MEMBER_LINKS_DRAWN
+ * and their ends at most MEMBERS_DRAWN boxes, then the other boxes in the published order
+ * up to MEMBERS_DRAWN, all of them drawn in the published order. The cluster map and the
+ * overview of `/clusters/` take the same bounds.
+ *
+ * @param {Array<{source:object, target:object}>} all every row, in the table's order.
+ * @param {Array<object>} everyMember the boxes that may be drawn, in the published order.
+ * @returns {{shown:Array<object>, members:Array<object>, place:Map<string,number>}}
+ */
+function bounded(all, everyMember) {
   const ends = new Set();
   const shown = [];
   for (const row of all) {
@@ -300,7 +317,7 @@ function memberLinks(everyMember, views) {
   }
   for (const m of everyMember) if (ends.size < MEMBERS_DRAWN) ends.add(String(m.slug));
   const members = everyMember.filter((m) => ends.has(String(m.slug)));
-  return { all, members, place: new Map(members.map((m, k) => [String(m.slug), k])), shown };
+  return { members, place: new Map(members.map((m, k) => [String(m.slug), k])), shown };
 }
 
 /**
@@ -378,8 +395,117 @@ function clusterSection(cluster, views, options = {}) {
   return { findings: figure.findings, html: parts.filter((p) => p !== '').join('\n') };
 }
 
+// ------------------------------------------------------------------ the overview of /clusters/
+
+/**
+ * The relations between clusters: for each Link from a published member of one cluster to
+ * a published member of another, a row `{source, key, target}` for the two clusters,
+ * counted. An item in two clusters counts for both; a Link that stays inside one cluster
+ * is shown on that cluster's page, not here. Rows are in the published order of the
+ * source cluster, then the order of the keys in AGSC-03-01, then the target cluster.
+ *
+ * @param {Array<object>} clusters the published clusters, in the published order.
+ * @param {ReturnType<typeof index>} views
+ * @returns {Array<{source:object, key:string, target:object, count:number}>}
+ */
+function overviewRows(clusters, views) {
+  const order = new Map(clusters.map((c, k) => [String(c.slug), k]));
+  const homes = (item) => (Array.isArray(item.clusters) ? item.clusters.map(String) : []).filter((slug) => order.has(slug));
+  const counts = new Map();
+  for (const item of views.bySlug.values()) {
+    for (const link of linksOf(item)) {
+      const target = views.bySlug.get(link.target);
+      if (target === undefined || link.target === link.source) continue;
+      for (const from of homes(item)) {
+        for (const to of homes(target)) {
+          const id = `${from}\u0000${link.key}\u0000${to}`;
+          if (from !== to) counts.set(id, (counts.get(id) || 0) + 1);
+        }
+      }
+    }
+  }
+  return [...counts].map(([id, count]) => {
+    const [from, key, to] = id.split('\u0000');
+    return { count, key, source: clusters[order.get(from)], target: clusters[order.get(to)] };
+  }).sort((a, b) => order.get(String(a.source.slug)) - order.get(String(b.source.slug))
+    || KEY_ORDER[a.key] - KEY_ORDER[b.key] || order.get(String(a.target.slug)) - order.get(String(b.target.slug)));
+}
+
+/** The columns of the overview table. */
+const OVERVIEW_COLUMNS = Object.freeze([
+  { heading: 'From cluster', cell: (row, views) => itemLink(row.source, views) },
+  { heading: 'Relation', cell: (row) => escapeHtml(row.key) },
+  { heading: 'To cluster', cell: (row, views) => itemLink(row.target, views) },
+  { heading: 'Links', cell: (row) => String(row.count) },
+  { heading: 'Meaning', cell: (row) => escapeHtml(MEANING[row.key]) },
+]);
+
+/**
+ * The relation filter of the overview table (AGSC-06-38: "a relation filter needs no
+ * script"): one radio button for every relation and one per key the table holds, in the
+ * order of AGSC-03-01. The rules that hide the other rows while a key is checked are in
+ * the page's stylesheet (`explorer/page.js#stylesheet`); without that stylesheet every row
+ * stays visible, so nothing is ever hidden that cannot be shown.
+ */
+function relationFilter(keys) {
+  const option = (value, text, checked) => `<label><input type="radio" name="relation-filter" id="relation-filter-${value}"`
+    + ` value="${value}"${checked ? ' checked' : ''}> ${escapeHtml(text)}</label>`;
+  return ['<fieldset class="relation-filter">', '<legend>Show in the table</legend>',
+    option('all', 'every relation', true), ...[...keys].sort((a, b) => KEY_ORDER[a] - KEY_ORDER[b]).map((key) => option(key, key, false)),
+    '</fieldset>'].join('\n');
+}
+
+/**
+ * The overview section of `/clusters/`: how the clusters connect, as a figure (the
+ * clusters as boxes, an arc for each pair, labelled with its keys and counts) and the
+ * table of the same rows, with the relation filter above it. Without clusters it is
+ * empty; without a relation between two clusters it says so in one sentence.
+ *
+ * @param {Array<object>} clusters the published clusters, in the published order.
+ * @param {ReturnType<typeof index>} views
+ * @param {{svgViolations?:Function}} [options]
+ * @returns {{html:string, findings:Array<object>}}
+ */
+function overviewSection(clusters, views, options = {}) {
+  if (clusters.length === 0) return { findings: [], html: '' };
+  const heading = '<h2 id="overview">How the clusters connect</h2>';
+  const all = overviewRows(clusters, views);
+  if (all.length === 0) {
+    return { findings: [], html: `${heading}\n<p>No relation joins the members of two different clusters; each cluster's page shows the links among its own members.</p>` };
+  }
+  const { members, place, shown } = bounded(all, clusters);
+  const arcs = shown.map((row) => ({ ...row, key: row.count === 1 ? row.key : `${row.key} \u00D7${row.count}` }));
+  const figure = inlineDiagram(clusterFigureSource({ slug: 'clusters', title: 'Clusters' }, members, arcs, place), {
+    accessibleName: 'How the clusters connect',
+    caption: 'Each arc runs from the cluster whose members state relations to the cluster of their targets, and names the relations with how many links each holds; the table lists the same rows.',
+    file: 'clusters', item: 'clusters', slug: 'overview_clusters',
+  }, options);
+  const parts = [heading,
+    '<p>A row counts the relations that the members of one cluster state to the members of another. The links inside one cluster are on that cluster\'s page.</p>',
+    figure.html, relationFilter(new Set(shown.map((row) => row.key))), relationsTable(shown, OVERVIEW_COLUMNS, views, true)];
+  if (all.length > shown.length) {
+    parts.push(`<p class="relations-more">${more(all.length - shown.length, 'relation between clusters', 'relations between clusters')} not drawn or listed here; every relation is in ${GRAPH_LINK}.</p>`);
+  }
+  return { findings: figure.findings, html: parts.filter((p) => p !== '').join('\n') };
+}
+
+/**
+ * The legend of `/clusters/` (AGSC-06-38): the fourteen keys in the order of AGSC-03-01,
+ * each with the key that reads it backwards and its plain meaning.
+ *
+ * @returns {string}
+ */
+function legendSection() {
+  const rows = RELATIONS.map((r) => `<tr><td>${escapeHtml(r.key)}</td><td>${escapeHtml(r.symmetric ? `${r.key} (both ways)` : r.inverse)}</td><td>${escapeHtml(r.meaning)}</td></tr>`);
+  return ['<h2 id="legend">The fourteen relations</h2>',
+    '<p>The relations an item can state, as the relations tables and figures of this site name them, with the name each reads by from the other end.</p>',
+    '<div class="table-wrap"><table class="legend">',
+    '<thead><tr><th scope="col">Relation</th><th scope="col">Read backwards</th><th scope="col">Meaning</th></tr></thead>',
+    '<tbody>', ...rows, '</tbody>', '</table></div>'].join('\n');
+}
+
 module.exports = {
   CLUSTER_COLUMNS, ITEM_COLUMNS, MEMBERS_DRAWN, MEMBER_LINKS_DRAWN, NEIGHBOURS_DRAWN,
-  clusterFigureSource, clusterSection, index, itemFigureSource, itemSection, membersOfCluster,
-  relationRows, relationsTable,
+  clusterFigureSource, clusterSection, index, itemFigureSource, itemSection, legendSection, membersOfCluster,
+  overviewRows, overviewSection, relationRows, relationsTable,
 };

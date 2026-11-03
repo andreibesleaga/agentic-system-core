@@ -49,6 +49,7 @@ const { frontPage, peerSites } = require('./front-page.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
 const searchPage = require('./search-page.js');
+const clustersPage = require('./clusters-page.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
 const surfaces = require('../boundary/surfaces.js');
@@ -1704,10 +1705,14 @@ function buildSite(bundle, ports, options, findings) {
     // AGSC-06-02: an EMPTY type folder is omitted from navigation (the header above
     // lists only the plurals that have items) but its index route still resolves, so
     // every one of the six type plurals gets its index page, empty or not.
+    // AGSC-06-38: `/clusters/` adds the overview, the legend and the explorer, and loads their two files (clusters-page.js).
+    const clusters = clustersPage.view({ contextObject, graphEmitted: files.has('/graph.jsonld'), items, specVersion, views });
+    findings.push(...clusters.findings);
+    for (const [route, text] of clusters.assets) put(route, textBytes(text));
     for (const plural of Object.values(TYPE_PLURAL).slice().sort(compareCodePoint)) {
       putIndex(`/${plural}/`, plural.charAt(0).toUpperCase() + plural.slice(1), `Every published ${plural.slice(0, -1)} of this node.`,
         items.filter((i) => (TYPE_PLURAL[i.type] || TYPE_PLURAL.concept) === plural)
-          .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))));
+          .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))), plural === 'clusters' ? clusters.render : undefined);
     }
     // AGSC-06-01: `/tags/<tag>/`, one index route per tag actually used.
     const tags = new Map();
