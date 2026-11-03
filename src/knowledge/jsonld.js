@@ -341,6 +341,8 @@ function restrictTo(whole, single) {
 module.exports = {
   NS,
   EXTERNAL_PROPERTIES,
+  compactName,
+  compactionTable,
   expandCompact,
   termName,
   context,

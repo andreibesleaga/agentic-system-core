@@ -9,23 +9,14 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
 const fc = require('fast-check');
 
-const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
-const { createClock } = require('../../src/adapters/node-clock.js');
-const validate = require('../../src/knowledge/validate.js');
-const { loadBundle } = require('../../src/application/bundle.js');
 const { RELATIONS, LINK_KEYS } = require('../../src/knowledge/relations.js');
 const lint = require('../../src/governance/lint.js');
 const site = require('../../src/distribution/site.js');
 const html = require('../../src/distribution/html.js');
 const graphView = require('../../src/distribution/graph-view.js');
 
-const ROOT = path.resolve(__dirname, '..', '..');
-const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const MEANING = new Map(RELATIONS.map((r) => [r.key, r.meaning]));
 const hrefOf = (item) => `/${item.type === 'cluster' ? 'clusters' : 'concepts'}/${item.slug}/`;
 const concept = (slug, fields = {}) => ({ slug, title: `Title ${slug}`, type: 'concept', ...fields });
@@ -52,44 +43,7 @@ function ids(page) {
 
 // ------------------------------------------------------------------ a scratch Bundle
 
-/** A frontmatter value in the YAML subset: a scalar, a block sequence or a mapping of scalars. */
-function yamlLines(key, value) {
-  if (Array.isArray(value)) return [`${key}:`, ...value.map((v) => `  - ${JSON.stringify(String(v))}`)];
-  if (typeof value === 'object') return [`${key}:`, ...Object.entries(value).map(([k, v]) => `  ${k}: ${JSON.stringify(String(v))}`)];
-  return [`${key}: ${JSON.stringify(String(value))}`];
-}
-
-/**
- * Build a Bundle of the minimal fixture's configuration and front page and the given
- * items (each `{slug, type, body?, ...frontmatter}`); `diagrams` maps a slug to its
- * `.diagram` source. Returns the built files and the findings.
- */
-function buildNode(items, { releases, diagrams = {} } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-graph-view-'));
-  try {
-    const config = JSON.parse(fs.readFileSync(path.join(FIXTURE, 'agsc.config.json'), 'utf8'));
-    if (releases) config.releases = releases;
-    fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify(config, null, 2)}\n`);
-    fs.mkdirSync(path.join(dir, 'content', 'diagrams'), { recursive: true });
-    fs.copyFileSync(path.join(FIXTURE, 'content', 'index.md'), path.join(dir, 'content', 'index.md'));
-    fs.cpSync(path.join(FIXTURE, '.well-known'), path.join(dir, '.well-known'), { recursive: true });
-    for (const { slug, body, ...fields } of items) {
-      const folder = fields.type === 'cluster' ? 'clusters' : 'concepts';
-      const front = { date: '2026-01-01', ...fields };
-      const lines = ['---', ...Object.entries(front).flatMap(([k, v]) => yamlLines(k, v)),
-        'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', body || `${slug}.`, ''];
-      fs.mkdirSync(path.join(dir, 'content', folder), { recursive: true });
-      fs.writeFileSync(path.join(dir, 'content', folder, `${slug}.md`), lines.join('\n'));
-    }
-    for (const [slug, source] of Object.entries(diagrams)) fs.writeFileSync(path.join(dir, 'content', 'diagrams', `${slug}.diagram`), source);
-    const port = createFileSystem(dir);
-    const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(ROOT)) });
-    const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
-    return site.build(bundle, { clock, fs: port }, { specVersion: '1.0.0', version: '0.0.0' });
-  } finally {
-    fs.rmSync(dir, { force: true, recursive: true });
-  }
-}
+const { buildNode } = require('./_scratch-node.js');
 
 const page = (built, route) => String(built.files.get(route));
 
@@ -110,6 +64,23 @@ test('rows: outgoing first, then the backlinks, each with its key and meaning; n
   const rows = graphView.relationRows(items[0], index).map((r) => [r.direction, r.key, r.other.slug]);
   assert.deepStrictEqual(rows, [['outgoing', 'requires', 'b'], ['incoming', 'related', 'c'], ['incoming', 'uses', 'b']]);
   assert.deepStrictEqual(graphView.relationRows(concept('lonely'), index), []);
+});
+
+test('a symmetric key stated by both items is one row, one arc and one overview count, read from the item first in code-point order', () => {
+  // `related` is symmetric (AGSC-03-01): a related b and b related a state one relation.
+  const k = { slug: 'k', title: 'Kilo', type: 'cluster' };
+  const l = { slug: 'l', title: 'Lima', type: 'cluster' };
+  const items = [k, l, concept('a', { clusters: ['k'], related: ['b', 'c'], uses: ['b'] }), concept('b', { clusters: ['k'], related: ['a'], uses: ['a'] }),
+    concept('c', { clusters: ['l'], related: ['a'] })];
+  const index = graphView.index(items, hrefOf);
+  const rowsOf = (slug) => graphView.relationRows(index.bySlug.get(slug), index).map((r) => [r.direction, r.key, r.other.slug]);
+  assert.deepStrictEqual(rowsOf('a'), [['outgoing', 'related', 'b'], ['outgoing', 'related', 'c'], ['outgoing', 'uses', 'b'], ['incoming', 'uses', 'b']]);
+  assert.deepStrictEqual(rowsOf('b'), [['outgoing', 'related', 'a'], ['outgoing', 'uses', 'a'], ['incoming', 'uses', 'a']],
+    'a non-symmetric key stated both ways stays two rows');
+  const map = graphView.clusterSection(k, index).html;
+  assert.deepStrictEqual(tableRows(map, 'member_links').map((r) => r.slice(0, 3).map((c) => c.replace(/<[^>]+>/gu, ''))),
+    [['Title a', 'related', 'Title b'], ['Title a', 'uses', 'Title b'], ['Title b', 'uses', 'Title a']]);
+  assert.deepStrictEqual(graphView.overviewRows([k, l], index).map((r) => [r.source.slug, r.key, r.target.slug, r.count]), [['k', 'related', 'l', 1]]);
 });
 
 test('the figure draws exactly the relations the table lists, in the table order (keys in the order of AGSC-03-01)', () => {
@@ -216,7 +187,7 @@ test('a cluster map draws the members and the links among them, with the same li
   const index = graphView.index([k, ...members], hrefOf);
   const view = graphView.clusterSection(k, index);
   assert.deepStrictEqual(view.findings, []);
-  const rows = tableRows(view.html, 'member-links').map((r) => r.slice(0, 3).map((c) => c.replace(/<[^>]+>/gu, '')));
+  const rows = tableRows(view.html, 'member_links').map((r) => r.slice(0, 3).map((c) => c.replace(/<[^>]+>/gu, '')));
   assert.deepStrictEqual(rows, [['Title a', 'uses', 'Title b'], ['Title a', 'requires', 'Title b'], ['Title b', 'related', 'Title a']]);
   const [svg] = svgs(view.html);
   assert.deepStrictEqual(lint.svgViolations(svg), []);
@@ -234,14 +205,14 @@ test('a cluster map draws at most 24 links and 24 members, the linked ones first
   const view = graphView.clusterSection(k, graphView.index([k, ...members], hrefOf));
   const [svg] = svgs(view.html);
   assert.strictEqual((svg.match(/<rect /gu) || []).length, 25, 'the cluster and 24 members');
-  assert.strictEqual(tableRows(view.html, 'member-links').length, 24);
+  assert.strictEqual(tableRows(view.html, 'member_links').length, 24);
   assert.match(view.html, /The map draws 24 of the 30 members\./u);
   assert.match(view.html, /36 more links among the members are not drawn or listed here;/u);
   // A large cluster whose first members link to nothing still shows the links further on.
   const quiet = Array.from({ length: 40 }, (_, n) => concept(`q${String(n).padStart(2, '0')}`, { clusters: ['k'] }));
   const late = [concept('y1', { clusters: ['k'], requires: ['y2'] }), concept('y2', { clusters: ['k'] })];
   const map = graphView.clusterSection(k, graphView.index([k, ...quiet, ...late], hrefOf)).html;
-  assert.deepStrictEqual(tableRows(map, 'member-links').map((r) => r[0].replace(/<[^>]+>/gu, '')), ['Title y1']);
+  assert.deepStrictEqual(tableRows(map, 'member_links').map((r) => r[0].replace(/<[^>]+>/gu, '')), ['Title y1']);
   assert.match(svgs(map)[0], />Title y1</u);
   assert.match(map, /The map draws 24 of the 42 members\./u);
 });
@@ -287,6 +258,33 @@ test('a retired item is neither drawn nor named, not even on its own page, which
   const own = page(built, '/concepts/r/index.html');
   assert.doesNotMatch(own, /id="links"|<svg/u);
   assert.match(own, /class="retired"/u);
+});
+
+test('a retired cluster keeps its page and its notice, and draws no map of its members', () => {
+  const built = buildNode([
+    { slug: 'k', type: 'cluster', title: 'Retired Kilo', description: 'A cluster retired from the node, kept for its address.', status: 'retired' },
+    { slug: 'a', type: 'concept', kind: 'explainer', title: 'Alpha', requires: ['b'], clusters: ['k'] },
+    { slug: 'b', type: 'concept', kind: 'explainer', title: 'Bravo', clusters: ['k'] },
+  ]);
+  const own = page(built, '/clusters/k/index.html');
+  assert.match(own, /class="retired"/u);
+  assert.doesNotMatch(own, /id="member_links"|<svg|Links among the members/u);
+});
+
+test('a body heading that takes the id of a section leaves no id repeated on the page', () => {
+  const built = buildNode([
+    { slug: 'k', type: 'cluster', title: 'Kilo', description: 'A cluster whose body has a heading named Member links.', body: 'Intro.\n\n## Member links\n\nText.' },
+    { slug: 'a', type: 'concept', kind: 'explainer', title: 'Alpha', requires: ['b'], clusters: ['k'], body: 'A.\n\n## Links\n\nMy own links.' },
+    { slug: 'b', type: 'concept', kind: 'explainer', title: 'Bravo', clusters: ['k'], body: 'B.\n\n## Links\n\nOnly backlinks reach this item.' },
+  ]);
+  assert.deepStrictEqual(built.findings.filter((f) => f.severity === 'error'), []);
+  for (const route of ['/clusters/k/index.html', '/concepts/a/index.html', '/concepts/b/index.html']) {
+    const all = ids(page(built, route));
+    assert.deepStrictEqual(all.filter((id, n) => all.indexOf(id) !== n), [], `a repeated id on ${route}`);
+  }
+  // The section is still there, under the author's own `#links`.
+  assert.match(page(built, '/concepts/b/index.html'), /<h2>Relations<\/h2>/u);
+  assert.match(page(built, '/clusters/k/index.html'), /<h3 id="member_links">Links among the members<\/h3>/u);
 });
 
 test('two builds are byte-identical, and no page carries a phrase the reading-order rule refuses (AGSC-06-03)', () => {

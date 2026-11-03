@@ -66,7 +66,8 @@ Feature: Human reader finds a pattern with evidence
 
   @PRD-002 @human @matrix-H3
   Scenario: Reader explores the graph with the keyboard alone
+    Given the concept "tool-use-retries" is retired and the Bundle is built again
     When the reader opens the explorer on "/clusters/"
-    Then the explorer draws every published item, and the page requests nothing from another origin
+    Then the explorer draws every listed item and not the retired "tool-use-retries", and the page requests nothing from another origin
     And the arrow keys move through the explorer's list with the tooltip following, and Enter selects an item whose relations the detail panel names with their meanings
     And Escape closes the tooltip first and then clears the selection

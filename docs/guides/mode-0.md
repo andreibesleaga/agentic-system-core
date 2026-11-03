@@ -152,10 +152,12 @@ link that gives the relation, its direction, the other note and what the relatio
 means. The incoming rows are the note's backlinks. A cluster page also draws its
 members and the links among them. Drafts, retired notes and notes held back from a
 release never appear in either. No new file is written for this; the drawing is part
-of the page. Each arrow in the drawing has the class of its relation, such as
+of the page. Each arrow in a note's drawing has the class of its relation, such as
 `agsc-rel-requires`, so your own stylesheet can pick out one relation; the class adds
-no colour. In a diagram you write under `content/diagrams/`, `rel=requires` on an
-`arrow`, `line` or `text` line adds the same class.
+no colour, and the cluster drawings do not carry it. In a diagram you write under
+`content/diagrams/`, `rel=requires` on an `arrow`, `line` or `text` line adds the same
+class. The three notes above have no typed link yet, so their pages have no Relations
+section; step 6 adds one.
 
 The `/clusters/` page lists the clusters, then shows how they connect: a drawing and a
 table count the links from the notes of one cluster to the notes of another. Radio
@@ -250,6 +252,57 @@ warning asks for a `PRIVACY.md` beside `LICENSE-CONTENT`, which `/legal/` then s
 Upload `www/` to any host that serves files over HTTPS; `agsc-host list` names the
 profiles the engine can write host settings for, and the [publishing guide](publish.md)
 takes the node from here to a live address and checks it there.
+
+## 6. Link two notes, and draw one
+
+A typed link is a line in a note's header. Say that the starter needs the hydration
+note, then build:
+
+```bash demo
+node -e 'const fs = require("node:fs"), f = "content/concepts/sourdough.md"; fs.writeFileSync(f, fs.readFileSync(f, "utf8").replace("kind: explainer\n", "kind: explainer\nrequires:\n  - hydration\n"));'
+agsc build
+grep -o '<td>requires</td><td>outgoing</td>' www/concepts/sourdough/index.html
+grep -o '<td>requires</td><td>incoming</td>' www/concepts/hydration/index.html
+```
+
+```text expect
+<td>requires</td><td>outgoing</td>
+<td>requires</td><td>incoming</td>
+```
+
+The sourdough page now has a Relations section with one outgoing `requires` row, and
+the hydration page shows the same link as a backlink. `requires` is one of the fourteen
+relations of the [data model](https://agenticsystemcore.com/docs/data-model/); the
+legend on `/clusters/` names them all.
+
+A note can also carry a drawing of your own. Write it as a short text file under
+`content/diagrams/`, named after the note, and name it in the note's header with a text
+alternative; the build turns it into an SVG on the note's page. Each line is one shape,
+and exactly one shape carries `acc`, the highlighted one:
+
+```bash demo
+mkdir -p content/diagrams
+cat > content/diagrams/sourdough.diagram <<'DIAGRAM'
+label "The starter needs the right hydration"
+box starter 40 100 140 50 "starter" acc
+box water 280 100 140 50 "hydration"
+arrow starter water rel=requires
+DIAGRAM
+node -e 'const fs = require("node:fs"), f = "content/concepts/sourdough.md"; fs.writeFileSync(f, fs.readFileSync(f, "utf8").replace("kind: explainer\n", "kind: explainer\ndiagram:\n  file: sourdough.svg\n  alt: The starter, which requires the right hydration.\n"));'
+agsc build
+grep -c 'class="agsc-rel-requires"' www/concepts/sourdough/index.html
+```
+
+```text expect
+2
+```
+
+Two arrows carry the class now: the one in the Relations drawing and the one in yours.
+The whole language (twelve kinds of line, their options and what each draws) is rule
+AGSC-01-42 of the
+[specification](../../spec/01-bundle.md). When the build
+refuses a line of a diagram, it says `AGSC-E412` with the file and the line; the
+[troubleshooting](troubleshooting.md) page lists the usual causes.
 
 ## When it says no
 

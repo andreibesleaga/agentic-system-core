@@ -28,7 +28,15 @@
 // Ids. The SVG ids of a figure are derived from its name (`diagrams.js#markerId`): the
 // neighbourhood figure is `links_<slug>` and the cluster map `members_<slug>`. An
 // underscore never occurs in a slug or in a heading anchor (AGSC-03-13), so neither
-// figure repeats an id of the author's diagram (`<slug>-…`) or of the page.
+// figure repeats an id of the author's diagram (`<slug>-…`) or of the page; the cluster
+// map's heading is `member_links` for the same reason. The relations heading keeps the
+// `links` anchor of the 1.0 list of Links, except on a page whose body already has a
+// heading with that anchor: the author's heading keeps it and the section has no id.
+//
+// A symmetric key (AGSC-03-01: `related`, `excludes`, `contradicts`) reads the same from both ends,
+// so when both items state it of each other it is one relation: one row on each page
+// (the outgoing one), and one link in a cluster map and in the overview, the one stated
+// by the item whose slug comes first in code-point order.
 //
 // Text in a figure. The diagram language has no escape: a `"` ends a quoted argument,
 // `#` starts a comment and `|` breaks a box label. Those three are drawn as `”`, `＃` and
@@ -48,6 +56,7 @@
 const diagrams = require('../knowledge/diagrams.js');
 const { RELATIONS, LINK_KEYS } = require('../knowledge/relations.js');
 const { linksOf, membersOf, titleOf } = require('../knowledge/link-graph.js');
+const markdown = require('../knowledge/markdown.js');
 const { compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { escapeHtml, inlineDiagram } = require('./html.js');
 
@@ -61,6 +70,8 @@ const MEMBER_LINKS_DRAWN = 24;
 const MEANING = Object.freeze(Object.fromEntries(RELATIONS.map((r) => [r.key, r.meaning])));
 /** The place of each key in that table: rows are ordered by it. */
 const KEY_ORDER = Object.freeze(Object.fromEntries(LINK_KEYS.map((key, n) => [key, n])));
+/** The keys that read the same from both ends (AGSC-03-01). */
+const SYMMETRIC = new Set(RELATIONS.filter((r) => r.symmetric).map((r) => r.key));
 
 /** The page that lists every relation, named when a view is cut. */
 const GRAPH_LINK = '<a href="/graph.jsonld">the graph</a>';
@@ -89,6 +100,21 @@ function index(items, hrefOf) {
   return { bySlug, hrefOf, incoming };
 }
 
+/** True when the target of a Link of a symmetric key states the same key back to its source. */
+function statedBack(link, views) {
+  const target = views.bySlug.get(link.target);
+  return SYMMETRIC.has(link.key) && target !== undefined
+    && linksOf(target).some((back) => back.key === link.key && back.target === link.source);
+}
+
+/**
+ * A Link a cluster map or the overview leaves out: one of a symmetric pair stated both
+ * ways, all but the one stated by the item first in code-point order (see the header).
+ */
+function restated(link, views) {
+  return statedBack(link, views) && compareCodePoint(link.source, link.target) > 0;
+}
+
 /** Rows in the order of the keys in AGSC-03-01, then of the other item's slug. */
 function byKeyThenOther(a, b) {
   return KEY_ORDER[a.key] - KEY_ORDER[b.key] || compareCodePoint(String(a.other.slug), String(b.other.slug));
@@ -108,7 +134,9 @@ function relationRows(item, views) {
   const outgoing = linksOf(item)
     .filter((l) => l.target !== slug && views.bySlug.has(l.target))
     .map((l) => ({ direction: 'outgoing', key: l.key, other: views.bySlug.get(l.target) }));
+  // A symmetric key both items state is the outgoing row alone (see the header).
   const incoming = (views.incoming.get(slug) || [])
+    .filter((l) => !statedBack(l, views))
     .map((l) => ({ direction: 'incoming', key: l.key, other: views.bySlug.get(l.source) }));
   return [...outgoing.sort(byKeyThenOther), ...incoming.sort(byKeyThenOther)];
 }
@@ -256,6 +284,8 @@ function itemSection(item, views, options = {}) {
   if (rows.length === 0) return { findings: [], html: '' };
   const shown = rows.slice(0, NEIGHBOURS_DRAWN);
   const slug = String(item.slug);
+  // The author's own `## Links` heading keeps its anchor (see the header).
+  const taken = markdown.anchors(item.body == null ? '' : String(item.body)).anchors.includes('links');
   const figure = inlineDiagram(itemFigureSource(item, shown), {
     accessibleName: `Relations of ${titleOf(item)}`,
     caption: 'The highlighted box is this item. Each arrow runs from the item that states a relation to its target; the table lists the same relations.',
@@ -263,7 +293,7 @@ function itemSection(item, views, options = {}) {
     item: slug,
     slug: `links_${slug}`,
   }, options);
-  const parts = ['<h2 id="links">Relations</h2>',
+  const parts = [taken ? '<h2>Relations</h2>' : '<h2 id="links">Relations</h2>',
     '<p>An outgoing relation is stated by this item; an incoming one is a backlink, stated by the other item. Each meaning reads from the item that states the relation towards its target.</p>',
     figure.html, relationsTable(shown, options.columns || ITEM_COLUMNS, views)];
   if (rows.length > shown.length) {
@@ -290,7 +320,7 @@ const MAP = Object.freeze({ pad: 10, width: 260, head: 30, box: 26, pitch: 34, f
 function memberLinks(everyMember, views) {
   const order = new Map(everyMember.map((m, k) => [String(m.slug), k]));
   const all = everyMember.flatMap((m) => linksOf(m)
-    .filter((l) => l.target !== l.source && order.has(l.target))
+    .filter((l) => l.target !== l.source && order.has(l.target) && !restated(l, views))
     .sort((a, b) => KEY_ORDER[a.key] - KEY_ORDER[b.key] || order.get(a.target) - order.get(b.target))
     .map((l) => ({ key: l.key, source: m, target: views.bySlug.get(l.target) })));
   return { all, ...bounded(all, everyMember) };
@@ -366,7 +396,8 @@ function clusterFigureSource(cluster, members, rows, place) {
 
 /**
  * The map section of a cluster page: the members drawn and the links among them, then
- * their table and what was left out. Empty when no drawn member links to another.
+ * their table and what was left out. Empty when no drawn member links to another, and on
+ * the page of a retired cluster, which AGSC-06-38 neither draws nor names (as for an item).
  *
  * @param {object} cluster the flat cluster item.
  * @param {ReturnType<typeof index>} views
@@ -374,6 +405,7 @@ function clusterFigureSource(cluster, members, rows, place) {
  * @returns {{html:string, findings:Array<object>}}
  */
 function clusterSection(cluster, views, options = {}) {
+  if (!views.bySlug.has(String(cluster.slug))) return { findings: [], html: '' };
   const everyMember = membersOfCluster(cluster, views);
   const { all, members, place, shown } = memberLinks(everyMember, views);
   if (all.length === 0) return { findings: [], html: '' };
@@ -385,7 +417,7 @@ function clusterSection(cluster, views, options = {}) {
     item: slug,
     slug: `members_${slug}`,
   }, options);
-  const parts = ['<h3 id="member-links">Links among the members</h3>', figure.html,
+  const parts = ['<h3 id="member_links">Links among the members</h3>', figure.html,
     relationsTable(shown, options.columns || CLUSTER_COLUMNS, views)];
   const notes = [];
   if (everyMember.length > members.length) notes.push(`The map draws ${members.length} of the ${everyMember.length} members.`);
@@ -401,7 +433,8 @@ function clusterSection(cluster, views, options = {}) {
 /**
  * The relations between clusters: for each Link from a published member of one cluster to
  * a published member of another, a row `{source, key, target}` for the two clusters,
- * counted. An item in two clusters counts for both; a Link that stays inside one cluster
+ * counted. An item in two clusters counts for both; a symmetric pair stated both ways
+ * counts once (see the header); a Link that stays inside one cluster
  * is shown on that cluster's page, not here. Rows are in the published order of the
  * source cluster, then the order of the keys in AGSC-03-01, then the target cluster.
  *
@@ -416,7 +449,7 @@ function overviewRows(clusters, views) {
   for (const item of views.bySlug.values()) {
     for (const link of linksOf(item)) {
       const target = views.bySlug.get(link.target);
-      if (target === undefined || link.target === link.source) continue;
+      if (target === undefined || link.target === link.source || restated(link, views)) continue;
       for (const from of homes(item)) {
         for (const to of homes(target)) {
           const id = `${from}\u0000${link.key}\u0000${to}`;

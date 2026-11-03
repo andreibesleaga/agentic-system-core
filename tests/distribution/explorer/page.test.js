@@ -39,6 +39,14 @@ test('each of the fourteen keys is read by the term the node\'s own context give
     ['http://www.w3.org/2004/02/skos/core#narrower', 'https://w3id.org/agentic-system-core/ns#uses']);
 });
 
+test('a key\'s term is the one the graph writer uses: a keyword such as @vocab is never read as a prefix', () => {
+  // The writer (`knowledge/jsonld.js`) compacts with the context's prefixes and skips its
+  // keywords, so with no `asc` prefix the property stays a full IRI in `graph.jsonld`.
+  const rows = page.relationTerms({ '@context': { '@vocab': 'https://w3id.org/agentic-system-core/ns#', schema: 'https://schema.org/' } });
+  assert.strictEqual(rows.find((r) => r.key === 'uses').term, 'https://w3id.org/agentic-system-core/ns#uses');
+  assert.ok(rows.every((r) => !r.term.startsWith('@')), JSON.stringify(rows.map((r) => r.term)));
+});
+
 test('the script evaluates with nothing but the language, exposes its functions and stands down without a page', () => {
   const context = vm.createContext({});
   vm.runInContext(page.script({ relations: page.relationTerms(CONTEXT), specVersion: '1.1.0' }), context, { filename: 'agsc-explorer.js' });

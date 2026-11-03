@@ -231,10 +231,17 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   members, the linked ones first) with a table of the same links. Drafts, retired items and items
   held back by the `releases` switchboard are neither drawn nor named, nor are Links to them
   (AGSC-06-30); a retired item's own page has no Relations section, so its Links are no longer
-  listed there, and a Link to a retired item is no longer listed on the page that writes it. The
+  listed there, and a Link to a retired item is no longer listed on the page that writes it; a
+  retired cluster's page draws no map of its members. A symmetric key (`related`, `excludes`,
+  `contradicts`) that both items state of each other is one relation (AGSC-03-01, AGSC-06-38: "one
+  row for each relation key"): one row on each page, one arc in a cluster map, one count in the
+  overview of `/clusters/`. The
   figures are written in the diagram language and compiled by `knowledge/diagrams.js` through the
   same allow-list check as an author's diagram (AGSC-02-13, AGSC-01-07); their ids are
-  `links_<slug>-…` and `members_<slug>-…`, so no page repeats an id. Bytes: the visible part of the
+  `links_<slug>-…` and `members_<slug>-…`, and the cluster map's heading is `member_links` (an
+  underscore is in no heading anchor, AGSC-03-13), so no page repeats an id; where the body has a
+  heading of its own whose anchor is `links`, that heading keeps it and the Relations heading has no
+  id (on a page with Links and such a heading, 1.0 wrote the id twice). Bytes: the visible part of the
   `index.html` pages of items with Links and of clusters whose members link each other changes, as
   views added by AGSC-06-38 (HTML pages are not byte-pinned, AGSC-04-24); the Dataset JSON-LD block,
   the stylesheet and every machine file keep their bytes. `build-0032` passes. The code is
@@ -242,13 +249,16 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   title an item is drawn with moved from the `mermaid` export adapter to `src/knowledge/link-graph.js`,
   which both read (the export keeps its bytes).
 - `/clusters/` carries, below its list, the overview of all clusters, the legend of the fourteen keys and
-  an explorer of the published graph (AGSC-06-38, I-022, I-165, I-166). The overview is a figure and a
+  an explorer of the published graph (AGSC-06-38, I-022, I-165, I-166 in part: no `/graph/` route, and
+  the one-width page of the theme comes with the site's theme). The overview is a figure and a
   table that count the Links from the members of one cluster to the members of another, by key (at most
   24 rows, the figure drawing the same rows; a sentence when no Link crosses two clusters). Radio buttons
   above the table filter it by relation with no script ("a relation filter needs no script"). The legend
   lists the fourteen keys in the order of AGSC-03-01 with the key each reads by backwards and its meaning.
-  The explorer draws every published item and cluster and the Links among them from `/graph.jsonld` of the
-  same origin, with a list of the items, a find box, a detail panel naming each relation with its meaning,
+  The explorer draws every listed item and cluster and the Links among them from `/graph.jsonld` of the
+  same origin — not a retired item, which that file keeps with `asc:retiredAt` (AGSC-11-22), and not a
+  class or property of the specification or of a site vocabulary (AGSC-05-38), which it also carries —
+  with a list of the items, a find box, a detail panel naming each relation with its meaning,
   zoom and pan, and a tooltip that opens on the side of a node where it covers the fewest other nodes; it
   is operable from the keyboard alone (AGSC-06-20: the arrow keys, Home and End move through the list,
   Enter selects, Escape closes the tooltip and then clears the selection). Its section starts hidden and
@@ -258,9 +268,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   schemes and the filter's rules). Both keep AGSC-06-17 (no inline script or style, no other host) and
   AGSC-06-05 (the script reads `/graph.jsonld` and nothing else, and stores nothing). The explorer depends
   on no library; it draws at most 400 items and says so above that. The theme's stylesheet is unchanged,
-  so it stays the main site's own copy. Bytes: `/clusters/index.html` changes and the two files are added,
-  for every node (views added by AGSC-06-38; HTML pages are not byte-pinned, AGSC-04-24); no machine file
-  changes. A node built with no graph view gets the overview and the legend and no explorer. The code is
+  so it stays the main site's own copy. Bytes: `/clusters/index.html` changes and both files are added
+  for every node that serves `/graph.jsonld` (views added by AGSC-06-38; HTML pages are not byte-pinned,
+  AGSC-04-24); a node that does not serve it gets the overview, the legend and the stylesheet only. No
+  machine file changes. The key terms the script reads are found by the graph writer's own functions
+  (`knowledge/jsonld.js#compactionTable`, `#compactName`). The code is
   `src/distribution/clusters-page.js`, `src/distribution/explorer/` and the overview and legend of
   `src/distribution/graph-view.js`. No `/graph/` route is emitted: the specification's route set has
   none (the query page of AGSC-06-39 is where a graph is asked questions). Tests: `tests/distribution/explorer/`,
@@ -271,12 +283,19 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The diagram language takes the token `rel=KEY` on `arrow`, `line` and `text` (AGSC-01-42, I-024):
   KEY is one of the fourteen Link keys of AGSC-03-01, and the element gets the class `agsc-rel-KEY`,
   which carries no colour; on an accented element the class attribute holds both classes, the accent
-  first. A `rel=` value that is no Link key is `AGSC-E412`, so nothing but a known key reaches the page.
+  first. A `rel=` value that is no Link key is `AGSC-E412`, so nothing but a known key reaches the page;
+  every `rel=` token of a statement is checked, and of two known keys the first is the class.
   The arrows of the graph-view figure on item pages now carry the class of their relation, the hook a
   stylesheet can use (AGSC-06-38). Bytes: a 1.0 diagram source compiles to the same bytes as before (the
-  token did not exist); the figure on item pages with Links gains one class per arrow (a view added by
+  token did not exist), except an `arrow`, `line` or `text` with a quoted argument that begins with
+  `rel=`: like a flag, the token is looked for among all the tokens of the statement (AGSC-01-42), so
+  such a text now names a relation or is refused (no source in the examples or fixtures has one); the figure on item pages with Links gains one class per arrow (a view added by
   AGSC-06-38; HTML pages are not byte-pinned, AGSC-04-24). The cases `bundle-0018` and `bundle-0019`
   pass. Code: `src/knowledge/diagrams.js`, `src/distribution/graph-view.js`.
+- Docs for the graph view and the diagram grammar (AGSC-06-38, AGSC-01-42): `docs/guides/mode-0.md` gains
+  step 6, which adds a typed link and a diagram of one's own and checks the Relations rows, the backlink
+  and the relation class on the built pages; `docs/guides/troubleshooting.md` gains the row of
+  `AGSC-E412`; `docs/IMPLEMENTERS-GUIDE.md` no longer says that no rule pins the compiled SVG.
 
 - `import <file.ttl> --from skos` (AGSC-01-39, AGSC-01-26a, I-018): a SKOS thesaurus in Turtle becomes
   draft items. The file is read with the pinned `n3` (`knowledge/turtle.js#parse`); the mapping is

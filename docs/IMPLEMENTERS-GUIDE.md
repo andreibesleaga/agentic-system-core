@@ -521,10 +521,14 @@ graph name (AGSC-11-11).
 The specification is deliberately silent about these, and your choices here cannot
 make you non-conforming.
 
-* **The diagram compiler.** AGSC-01-07 and AGSC-02-13 describe a diagram DSL and its
-  compiled SVG; no rule pins the SVG bytes. A compiled `.svg` must not be committed
-  (AGSC-01-07), and an image attached to a concept of `kind: pattern` must be SVG
-  (AGSC-02-98; any other image type there is `AGSC-E412`). How you draw it is yours.
+* **The diagram compiler, in part.** From 1.1, a writer that compiles
+  `content/diagrams/<slug>.diagram` must accept exactly the language of AGSC-01-42 and
+  produce exactly its bytes (cases `bundle-0018` and `bundle-0019`, both Level 3, so a
+  claim below Level 3 runs neither). What stays yours is the measure of text width with
+  which a writer MAY refuse a `text` or `note` too wide for the canvas; AGSC-01-42 does
+  not pin it. A compiled `.svg` must not be committed (AGSC-01-07), and an image attached
+  to a concept of `kind: pattern` must be SVG (AGSC-02-98; any other image type there is
+  `AGSC-E412`).
 * **Three of the four forge enforcement files.** AGSC-08-12 pins the bytes of
   `status-checks.json` and of nothing else. `pre-commit`, `CODEOWNERS` and
   `ruleset.json` are house style; two conforming engines will differ, and no vector

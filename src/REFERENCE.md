@@ -437,6 +437,7 @@ lint to the same Findings in the same order.
 |---|---|---|
 | `knowledge/markdown.js` | Knowledge | AGSC-02-20, 02-22, 03-13 — the subset renderer, the preserved info strings, the heading-anchor algorithm |
 | `knowledge/links.js` | Knowledge | AGSC-03-01…03-13, AGSC-01-35, AGSC-11-12 — the fourteen keys, inverses, cycles, cluster bounds, orphans, body references; from 1.1, with the option `domain`, the domain links of AGSC-03-27 (`AGSC-E317`) |
+| `knowledge/link-graph.js` | Knowledge | AGSC-03-01, AGSC-06-30 — the typed Links between published items, the members of a cluster, the title an item is drawn with; read by the Mermaid export and by `distribution/graph-view.js` |
 | `governance/injection.js` | Governance | AGSC-08-13 — `injection-scan` (`AGSC-E401`, `AGSC-E402`) |
 | `governance/secrets.js` | Governance | AGSC-08-15, AGSC-01-37 — `no-secrets` and the tracked `.env` (`AGSC-E403`) |
 | `governance/pii.js` | Governance | AGSC-08-16 — `no-pii` (`AGSC-E404`) |
@@ -462,6 +463,12 @@ resolve(items, { assets?, domain? }) -> { edges, errors, inverses, cycle, cycles
 anchors(body); findCycle(adjacency, nodes); pathGrammarError(relative, fromDir)
 resolveInside(fromDir, relative); dirOf(path); view(item)
 // (resolve also raises the warnings AGSC-E313 to E316 through the columns of knowledge/relations.js)
+
+// knowledge/link-graph.js (pure)
+titleOf(item) -> string                             // its title, else its slug
+linksOf(item) -> [{source, key, target}]            // the Links it authors, unfiltered, in key order
+edgesOf(items, published) -> [{source, key, target}]   // every Link between two published items, code-point order
+touching(edges, slug); membersOf(cluster, items); among(edges, slugs)
 
 // knowledge/derive.js
 readings(edges) -> [{ source, key, target, because: [{ rule, from: [[s, k, t], …] }] }]   // AGSC-05-33
@@ -567,6 +574,7 @@ toTurtle(items, options); parse(text, options); ontologyTerms(turtleText); ontol
 // knowledge/jsonld.js
 context(ontologyTerms, externalProperties) -> object; allExternalProperties(); persistentContextUrl() [the constant context version]
 contextFrom(…); expandCompact(v); termName(compact, ascNames, locals); restrictTo(…)
+compactionTable(contextObject) -> { terms, prefixes }; compactName(iri, table)   // how graph.jsonld names a member; shared with explorer/page.js
 resolveMemory(value, {bundleId}) -> { slug } | { finding }
 toJsonLd(items, options) -> object
 // knowledge/rdfxml.js
@@ -671,7 +679,7 @@ drive them, `init` and `ci`.
 | `distribution/discovery.js` | Distribution | AGSC-06-07…12, 06-35, 10-12, 11-16, 11-20, 11-23 — the link set, its validator, the peer check |
 | `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects` |
 | `distribution/now.js` | Distribution | AGSC-06-22, AGSC-08-25 — the NOW state and the monthly spend meter |
-| `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates |
+| `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates; AGSC-06-38 (places the graph view's sections on an item page); AGSC-02-13, 02-98 (`inlineDiagram`, the one path every inline figure is compiled and checked through) |
 | `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members, the overview and legend of `/clusters/` |
 | `distribution/clusters-page.js` | Distribution | AGSC-06-38, AGSC-06-01 — what `/clusters/` adds below its list, and the two files it loads |
 | `distribution/explorer/*.js` | Distribution | AGSC-06-38, AGSC-06-05, AGSC-06-17, AGSC-06-20 — the explorer of `/clusters/`, shipped as the source text of its portable functions |
@@ -736,8 +744,9 @@ diagramFigure(item, source, options); inlineDiagram(source, {slug, item, file, a
 // distribution/graph-view.js (pure; the caller passes the listed items, AGSC-06-30)
 index(items, hrefOf) -> { bySlug, incoming, hrefOf }
 relationRows(item, views) -> [{key, direction: 'outgoing'|'incoming', other}]   // outgoing first, keys in AGSC-03-01 order
-itemSection(item, views, { svgViolations?, columns? }) -> { html, findings }   // '' without a relation, or for a retired item
-clusterSection(cluster, views, { svgViolations?, columns? }) -> { html, findings }   // '' when no member links another
+itemSection(item, views, { svgViolations?, columns? }) -> { html, findings }   // '' without a relation, or for a retired item; heading `#links` unless the body's own heading has that anchor
+clusterSection(cluster, views, { svgViolations?, columns? }) -> { html, findings }   // '' when no member links another, or for a retired cluster; heading `#member_links`
+// (a symmetric key both items state is one row, one arc and one overview count)
 relationsTable(rows, columns, views, filtered?); itemFigureSource(item, rows); clusterFigureSource(…); membersOfCluster(cluster, views)
 overviewRows(clusters, views) -> [{source, key, target, count}]   // Links between members of two different clusters, counted
 overviewSection(clusters, views, { svgViolations? }) -> { html, findings }   // figure, relation filter (no script), table; '' without clusters
@@ -746,9 +755,11 @@ ITEM_COLUMNS; CLUSTER_COLUMNS; NEIGHBOURS_DRAWN = 24; MEMBERS_DRAWN = 24; MEMBER
 
 // distribution/clusters-page.js (pure)
 view({ items, views, contextObject, graphEmitted, specVersion }) -> { render, assets: [[route, text]], findings }
+ROUTE = '/clusters/'
 
 // distribution/explorer/ (PORTABLE: each module lists the functions emitted as their own source text)
 explorerGraph(doc, relations, max) -> { nodes: [{id, type, label, summary, route}], links: [{source, key, target}], total }
+// (draws the entries of the six item types with an item route, not retired: no vocabulary term, no Source)
 explorerText(value); explorerRoute(iri, base); explorerNeighbours(graph, id)        // graph-data.js
 explorerLayout(graph, {width, height, margin}) -> [{id, x, y}]                      // layout.js, no random number
 explorerExcerpt(text, max); explorerPlaceTip(anchor, tip, frame, others, gap) -> {left, top, side}   // tooltip.js
@@ -758,8 +769,9 @@ explorerVisible(graph, query); explorerRadius(node); explorerBuild(doc, tree, ns
 explorerMain(win, api); explorerWire(win, api, graph, positions)                    // main.js, the browser lane only
 // explorer/page.js
 script({ relations, specVersion }) -> string; stylesheet() -> string; section() -> string
-relationTerms(contextObject) -> [{key, term, meaning, symmetric}]
+relationTerms(contextObject) -> [{key, term, meaning, symmetric}]   // the term through knowledge/jsonld.js#compactionTable, #compactName
 SCRIPT_ROUTE = '/clusters/agsc-explorer.js'; STYLESHEET_ROUTE = '/clusters/agsc-explorer.css'; MAX_NODES = 400
+GRAPH_ROUTE = '/graph.jsonld'; FRAME = { width: 800, height: 560, margin: 24 }
 
 // distribution/site.js
 build(bundle, ports, options) -> { files: Map<route, string>, findings, skipped, state, ledgerHead }

@@ -71,7 +71,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-010 | MAPPED | `AGSC-00-12`, `AGSC-00-23`, `AGSC-00-25` +1 | 1 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | `persona-l-port-implementer.feature`, `persona-n-researcher.feature` | `docs/SPEC.md` |
 | PRD-011 | MAPPED | `AGSC-06-01`, `AGSC-06-36` | 3 vectors, 15 tests, 1 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature` | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/user-flows.md` |
 | PRD-012 | MAPPED | `AGSC-00-18`; served by `AGSC-07-01`, `AGSC-08-27` | 0 vectors, 6 tests, 1 scenarios, 0 checkers | — | — | — | — |
-| PRD-013 | MAPPED | `AGSC-01-42`, `AGSC-02-13` | 2 vectors, 9 tests, 2 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature` | — |
+| PRD-013 | MAPPED | `AGSC-01-42`, `AGSC-02-13` | 2 vectors, 10 tests, 3 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature`, `persona-b-contributor.feature` | — |
 | PRD-014 | MAPPED | `AGSC-06-16`, `AGSC-06-23` | 3 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-a-reader.feature` | — |
 | PRD-015 | MAPPED | `AGSC-04-11`, `AGSC-06-22` | 1 vectors, 5 tests, 1 scenarios, 0 checkers | — | — | `persona-a-reader.feature` | — |
 | PRD-016 | MAPPED | `AGSC-00-18`; served by `AGSC-00-05`, `AGSC-02-21` | 2 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | — | — |

@@ -198,6 +198,18 @@ test('AGSC-01-42: a `rel=` value that is no Link key is refused on arrow, line a
   assert.match(finding.message, /AGSC-01-42/u);
 });
 
+test('AGSC-01-42: every `rel=` token of a statement is checked, not only the first', () => {
+  const boxes = ['box a 20 20 60 30 "A" acc', 'box b 120 20 60 30 "B"'];
+  assert.deepEqual(refusedAt([...boxes, 'arrow a b rel=uses rel=bogus']), [3]);
+  assert.deepEqual(refusedAt([...boxes, 'arrow a b rel=bogus rel=uses']), [3]);
+  assert.deepEqual(refusedAt([ACCENT, 'line 10 100 50 100 rel=covers rel="><x>']), [2]);
+  // Two known keys: the first is the class, as with every other repeated token.
+  const result = compiled([...boxes, 'arrow a b rel=uses rel=requires']);
+  assert.deepEqual(result.findings, []);
+  assert.ok(result.svg.includes(' class="agsc-rel-uses"/>'));
+  assert.equal(result.svg.includes('agsc-rel-requires'), false);
+});
+
 test('AGSC-01-42: `rel=` is a token of arrow, line and text only; a box reads it as its label text', () => {
   const result = compiled(['box a 20 20 120 30 rel=uses acc']);
   assert.ok(result.svg.includes('<text x="80" y="39" font-size="12">rel=uses</text>'));

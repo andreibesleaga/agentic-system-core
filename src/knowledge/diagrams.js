@@ -279,15 +279,17 @@ function compile(dslText, options = {}) {
   };
   /**
    * AGSC-01-42: the key of the `rel=KEY` token of an `arrow`, `line` or `text`, or null
-   * when there is none; undefined, after a finding, when KEY is not one of the fourteen
-   * Link keys of AGSC-03-01, so that nothing but a known key reaches an attribute.
+   * when there is none; undefined, after a finding, when any `rel=` token of the statement
+   * names no one of the fourteen Link keys of AGSC-03-01, so that nothing but a known key
+   * reaches an attribute. Of two known keys the first is the class, as with every other
+   * repeated token.
    */
   const relOf = (t, line) => {
-    const token = t.find((each) => each.startsWith('rel='));
-    if (token === undefined) return null;
-    const key = token.slice(4);
-    if (LINK_KEYS.includes(key)) return key;
-    fail(`${JSON.stringify(token)} names no Link key; rel= takes one of ${LINK_KEYS.join(', ')}`, line);
+    const rels = t.filter((each) => each.startsWith('rel='));
+    if (rels.length === 0) return null;
+    const unknown = rels.find((token) => !LINK_KEYS.includes(token.slice(4)));
+    if (unknown === undefined) return rels[0].slice(4);
+    fail(`${JSON.stringify(unknown)} names no Link key; rel= takes one of ${LINK_KEYS.join(', ')}`, line);
     return undefined;
   };
   const dashAttr = (t, pattern) => (flag(t, 'dashed') ? ` stroke-dasharray="${pattern}"` : '');

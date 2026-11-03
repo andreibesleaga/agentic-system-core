@@ -3,12 +3,16 @@
 //
 // The explorer (AGSC-06-38: the overview of all clusters, as a picture a visitor can move
 // through) is one more reader of `/graph.jsonld`, the node's own published graph. It draws
-// what that file holds and nothing else, so an item that AGSC-06-30 keeps out of the
-// published set — a draft, a retired item, an item held back by the `releases`
-// switchboard — is absent from the file and can never be drawn or named.
+// from that file and nothing else. A draft and an item held back by the `releases`
+// switchboard are absent from the file. A retired item is in it (AGSC-11-22 keeps it in
+// the graph exports, with `asc:retiredAt`), so the explorer leaves out every entry that
+// carries `retiredAt` or the status `retired`: AGSC-06-38 neither draws nor names it.
 //
-// What is drawn. Every node of the graph that is an item or a cluster (not the Bundle, not
-// a Source of an item, not an attachment); every `member` link from a cluster to an item;
+// What is drawn. Every entry of the graph typed by one of the six item types of AGSC-00-05
+// (Concept, Procedure, Lesson, Episode, Gate, Cluster) whose IRI is an item route of this
+// site — so neither the Bundle, nor a Source or an attachment, nor a class or property of
+// the specification or of a site vocabulary (AGSC-05-38), which the file also carries on a
+// node that uses the domain layer; every `member` link from a cluster to an item;
 // and every Link of the fourteen keys of AGSC-03-01, read through the FORWARD property of
 // each key under the term the node's own context gives it (`relations`). The computed
 // inverses of AGSC-05-16 restate the same links backwards and are not drawn twice; a
@@ -69,15 +73,23 @@ function explorerRoute(iri, base) {
  */
 function explorerGraph(doc, relations, max) {
   const entries = doc !== null && typeof doc === 'object' && Array.isArray(doc['@graph']) ? doc['@graph'] : [];
-  // A type is read by its local name, so `Concept`, `asc:Concept` and the full IRI agree.
+  // A type or a key is read by its local name, so `Concept`, `asc:Concept` and the full
+  // IRI agree. An entry's type is the first of its types that is an item type.
+  const localName = (name) => String(name).split(/[#:/]/u).pop();
+  const ITEM_TYPES = ['Concept', 'Procedure', 'Lesson', 'Episode', 'Gate', 'Cluster'];
   const typeOf = (entry) => {
-    const type = Array.isArray(entry['@type']) ? entry['@type'][0] : entry['@type'];
-    return typeof type === 'string' ? type.split(/[#:/]/u).pop() : '';
+    const types = (Array.isArray(entry['@type']) ? entry['@type'] : [entry['@type']]).filter((t) => typeof t === 'string');
+    const item = types.map(localName).find((t) => ITEM_TYPES.includes(t));
+    return item === undefined ? localName(types[0] === undefined ? '' : types[0]) : item;
   };
-  const bundle = entries.find((entry) => entry !== null && typeof entry === 'object' && typeOf(entry) === 'Bundle');
+  // A retired item carries `retiredAt` (AGSC-11-22) or the status `retired`, under any name.
+  const retired = (entry) => Object.keys(entry).some((name) => localName(name) === 'retiredAt'
+    || (localName(name) === 'status' && explorerText(entry[name]) === 'retired'));
+  const objects = entries.filter((entry) => entry !== null && typeof entry === 'object');
+  const bundle = objects.find((entry) => typeOf(entry) === 'Bundle');
   const base = bundle === undefined ? '' : bundle['@id'];
-  const drawable = entries.filter((entry) => entry !== null && typeof entry === 'object' && typeof entry['@id'] === 'string'
-    && !['', 'Bundle', 'Source', 'Attachment'].includes(typeOf(entry)));
+  const drawable = objects.filter((entry) => typeof entry['@id'] === 'string' && ITEM_TYPES.includes(typeOf(entry))
+    && explorerRoute(entry['@id'], base) !== null && !retired(entry));
   const kept = drawable.slice(0, max);
   const ids = new Set(kept.map((entry) => entry['@id']));
   const nodes = kept.map((entry) => ({

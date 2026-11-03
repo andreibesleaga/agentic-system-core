@@ -393,8 +393,8 @@ module.exports = [
     run(world) {
       const html = world.state.page;
       const meaning = RELATIONS.find((r) => r.key === 'requires').meaning;
-      assert.deepStrictEqual(relationRows(html, 'member-links'), [['Handoff', 'requires', 'Supervisor', meaning]]);
-      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="member-links"')))[0];
+      assert.deepStrictEqual(relationRows(html, 'member_links'), [['Handoff', 'requires', 'Supervisor', meaning]]);
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="member_links"')))[0];
       assert.match(svg, />Handoff<\/text>/u);
       assert.match(svg, />Supervisor<\/text>/u);
       assert.match(svg, />requires<\/text>/u);
@@ -469,14 +469,33 @@ module.exports = [
     },
   },
   {
-    pattern: 'the explorer draws every published item, and the page requests nothing from another origin',
+    pattern: 'the concept "tool-use-retries" is retired and the Bundle is built again',
+    run(world) {
+      const file = 'content/concepts/tool-use-retries.md';
+      world.write(file, world.read(file).replace('kind: pattern\n', 'kind: pattern\nstatus: retired\n'));
+      built(world);
+    },
+  },
+  {
+    pattern: 'the explorer draws every listed item and not the retired "tool-use-retries", and the page requests nothing from another origin',
     async run(world) {
       const { errors, offOrigin, page } = world.state.explorer;
+      // The listed items (AGSC-00-05) are those of `search.json` (AGSC-06-30); each one's
+      // IRI is the graph entry whose address ends in its slug. The graph file itself also
+      // keeps the retired item (AGSC-11-22), which must not be drawn.
+      const listed = new Set(JSON.parse(world.read('www/search.json')).docs.map((d) => d.slug));
       const graph = JSON.parse(world.read('www/graph.jsonld'))['@graph'];
-      const items = graph.filter((n) => !['Bundle', 'Source', 'Attachment'].includes(String(n['@type']).split(/[#:/]/u).pop()));
+      assert.ok(graph.some((n) => n['@id'] === `${BASE}concepts/tool-use-retries/`), 'the graph file lost the retired item');
+      const items = graph.filter((n) => {
+        const id = String(n['@id']);
+        const m = /^[a-z]+\/([a-z0-9-]+)\/$/u.exec(id.startsWith(BASE) ? id.slice(BASE.length) : '');
+        return m !== null && listed.has(m[1]);
+      });
       const drawn = await page.evaluate(() => [...document.querySelectorAll('#explorer-picture circle')].map((c) => c.getAttribute('data-id')));
-      assert.deepStrictEqual(drawn, items.map((n) => n['@id']));
+      assert.deepStrictEqual([...drawn].sort(), items.map((n) => n['@id']).sort());
+      assert.strictEqual(items.length, listed.size, 'a listed item has no graph entry');
       assert.ok(!drawn.some((id) => id.includes('unreleased-idea')), 'the explorer draws a draft');
+      assert.ok(!drawn.some((id) => id.includes('tool-use-retries')), 'the explorer draws the retired item');
       assert.deepStrictEqual(offOrigin, []);
       assert.deepStrictEqual(errors, []);
     },

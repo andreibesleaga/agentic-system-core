@@ -6,8 +6,11 @@
 // cookie, no `localStorage`, no beacon), AGSC-06-19 (the Schema.org JSON-LD),
 // AGSC-06-20 (WCAG 2.2 AA semantics and the `alt` text of a diagram), AGSC-06-24
 // (the `/about/` Quickstart, generated from the verb set so it cannot drift),
-// AGSC-06-25 (the `describedby` link in every `<head>`) and AGSC-06-18 (the Content
-// Use Terms line every prose-carrying export embeds).
+// AGSC-06-25 (the `describedby` link in every `<head>`), AGSC-06-18 (the Content
+// Use Terms line every prose-carrying export embeds), AGSC-06-38 (it places the graph
+// view's sections, written by `graph-view.js`, on an item page) and AGSC-02-13 /
+// AGSC-02-98 (`inlineDiagram`: the author's diagram and every figure of the graph view
+// are compiled and checked against the SVG allow-list through this one function).
 //
 // The Markdown renderer is C's `knowledge/markdown.js` (AGSC-06's CommonMark
 // subset); it is INJECTED, never imported, so that this module stays a template and

@@ -35,7 +35,7 @@ const controller = require('./controller.js');
 const view = require('./view.js');
 const main = require('./main.js');
 const { RELATIONS } = require('../../knowledge/relations.js');
-const { expandCompact } = require('../../knowledge/jsonld.js');
+const { compactName, compactionTable, expandCompact } = require('../../knowledge/jsonld.js');
 
 /** The explorer's script, a page asset of `/clusters/`. */
 const SCRIPT_ROUTE = '/clusters/agsc-explorer.js';
@@ -55,35 +55,21 @@ const MODULES = Object.freeze([graphData, layout, tooltip, controller, view, mai
 
 /**
  * The fourteen keys of AGSC-03-01, in their order, each with the member name under which
- * this node's `graph.jsonld` writes the key's forward property, found as the writer finds
- * it (`knowledge/jsonld.js`): the term of the node's own context whose IRI is the
- * property's; else the compact IRI under the first prefix of the context that covers it;
- * else the full IRI.
+ * this node's `graph.jsonld` writes the key's forward property, found by the writer's own
+ * functions (`knowledge/jsonld.js#compactionTable`, `#compactName`): the term of the node's
+ * own context whose IRI is the property's; else the compact IRI under the first prefix of
+ * the context that covers it; else the full IRI.
  *
  * @param {object|null} contextObject the node's `/ns/context.jsonld`, or null.
  * @returns {Array<{key:string, term:string, meaning:string, symmetric:boolean}>}
  */
 function relationTerms(contextObject) {
-  const definitions = (contextObject && contextObject['@context']) || {};
-  const prefixes = Object.entries(definitions).filter(([, value]) => typeof value === 'string');
-  const expand = (compact) => {
-    const colon = compact.indexOf(':');
-    const prefix = prefixes.find(([name]) => name === compact.slice(0, colon));
-    return prefix === undefined ? compact : `${prefix[1]}${compact.slice(colon + 1)}`;
-  };
-  const termOf = new Map();
-  for (const [name, value] of Object.entries(definitions)) {
-    if (value !== null && typeof value === 'object' && typeof value['@id'] === 'string') termOf.set(expand(value['@id']), name);
-  }
-  const compact = (iri) => {
-    const prefix = prefixes.find(([, namespace]) => iri.length > namespace.length && iri.startsWith(namespace));
-    return prefix === undefined ? iri : `${prefix[0]}:${iri.slice(prefix[1].length)}`;
-  };
+  const table = compactionTable(contextObject);
   return RELATIONS.map((row) => ({
     key: row.key,
     meaning: row.meaning,
     symmetric: row.symmetric,
-    term: termOf.get(expandCompact(row.property)) || compact(expandCompact(row.property)),
+    term: compactName(expandCompact(row.property), table),
   }));
 }
 

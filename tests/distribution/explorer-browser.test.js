@@ -15,7 +15,9 @@
 //     never over its own node, and over no more nodes than the plain place to the right;
 //     the pointer can move onto it, and it closes after the pointer leaves;
 //   * accessibility: axe-core finds no violation on the ready page, in the light and the
-//     dark colour scheme.
+//     dark colour scheme;
+//   * the relation filter of the overview table with script turned off: a small node whose
+//     clusters are linked by two relations, each radio button showing its rows alone.
 //
 // Runs only with AGSC_BROWSER=1, CHROME_EXE naming a Chromium or chrome-headless-shell
 // binary, and `playwright-core` and `axe-core` resolvable (NODE_PATH may point at an
@@ -26,9 +28,11 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const http = require('node:http');
+const os = require('node:os');
 const path = require('node:path');
 
 const { richBuild } = require('../standard/_fixture.js');
+const { buildNode } = require('./_scratch-node.js');
 
 function skipReason() {
   if (process.env.AGSC_BROWSER !== '1') return 'the browser lane runs only with AGSC_BROWSER=1';
@@ -90,10 +94,29 @@ async function openExplorer({ base, browser }, options = {}) {
   return { context, errors, offOrigin, page };
 }
 
-/** The drawable nodes and the links of the built graph, counted as the explorer counts them. */
+/**
+ * The number of items the explorer must draw: the listed items (AGSC-00-05), read from
+ * `search.json`, which holds exactly those (AGSC-06-30), not from the graph file the
+ * explorer itself reads, which also keeps the retired items (AGSC-11-22).
+ */
 function expectedCounts(out) {
-  const graph = JSON.parse(fs.readFileSync(path.join(out, 'graph.jsonld'), 'utf8'))['@graph'];
-  return graph.filter((n) => !['Bundle', 'Source', 'Attachment'].includes(String(n['@type']).split(/[#:/]/u).pop())).length;
+  return JSON.parse(fs.readFileSync(path.join(out, 'search.json'), 'utf8')).docs.length;
+}
+
+/** A scratch node written to a folder: two clusters whose members are linked by `uses` and `requires`. */
+function filterNode() {
+  const built = buildNode([
+    { slug: 'k', type: 'cluster', title: 'Kilo', description: 'The first cluster, whose member links to the other cluster.' },
+    { slug: 'l', type: 'cluster', title: 'Lima', description: 'The second cluster, whose member is the target of the links.' },
+    { slug: 'a', type: 'concept', kind: 'explainer', title: 'Alpha', clusters: ['k'], uses: ['c'], requires: ['c'] },
+    { slug: 'c', type: 'concept', kind: 'explainer', title: 'Charlie', clusters: ['l'] },
+  ]);
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-filter-node-'));
+  for (const [route, bytes] of built.files) {
+    fs.mkdirSync(path.dirname(path.join(out, route)), { recursive: true });
+    fs.writeFileSync(path.join(out, route), bytes);
+  }
+  return out;
 }
 
 test('the explorer of /clusters/ in a browser', { skip: SKIP || false }, async (t) => {
@@ -243,6 +266,30 @@ test('the explorer of /clusters/ in a browser', { skip: SKIP || false }, async (
         const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
         assert.strictEqual(background, scheme === 'dark' ? 'rgb(15, 17, 21)' : 'rgb(251, 251, 250)', 'the scheme did not apply');
         await context.close();
+      }
+    });
+
+    await t.test('with script turned off, each radio button of the relation filter shows its rows alone', async () => {
+      const out = filterNode();
+      const server = serve(out);
+      try {
+        await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+        const context = await run.browser.newContext({ javaScriptEnabled: false });
+        const page = await context.newPage();
+        await page.goto(`http://127.0.0.1:${server.address().port}/clusters/`, { waitUntil: 'load' });
+        const shown = () => page.evaluate(() => [...document.querySelectorAll('tr[data-relation]')]
+          .filter((row) => getComputedStyle(row).display !== 'none').map((row) => row.getAttribute('data-relation')));
+        assert.deepStrictEqual(await shown(), ['uses', 'requires'], 'every row is shown at first');
+        for (const key of ['uses', 'requires']) {
+          await page.check(`#relation-filter-${key}`);
+          assert.deepStrictEqual(await shown(), [key], `the filter ${key}`);
+        }
+        await page.check('#relation-filter-all');
+        assert.deepStrictEqual(await shown(), ['uses', 'requires'], 'every relation again');
+        await context.close();
+      } finally {
+        server.close();
+        fs.rmSync(out, { force: true, recursive: true });
       }
     });
   } finally {
