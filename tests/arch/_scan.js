@@ -38,4 +38,25 @@ function contextOf(file, specifier) {
   return rel.split('/')[0];
 }
 
-module.exports = { ROOT, SRC, sources, contextOf, walk };
+/**
+ * Every `src/` module the given modules require, directly or through another, by its
+ * root-relative path. The fitness tests use it to show what a build, a lint or the Harness
+ * writer can reach.
+ */
+function reachable(roots) {
+  const byRel = new Map(sources().map((file) => [file.rel, file]));
+  const seen = new Set();
+  const stack = [...roots];
+  while (stack.length > 0) {
+    const rel = stack.pop();
+    if (seen.has(rel) || !byRel.has(rel)) continue;
+    seen.add(rel);
+    const file = byRel.get(rel);
+    for (const specifier of file.requires.filter((s) => s.startsWith('.'))) {
+      stack.push(path.relative(ROOT, path.resolve(path.dirname(file.absolute), specifier)).split(path.sep).join('/'));
+    }
+  }
+  return seen;
+}
+
+module.exports = { ROOT, SRC, sources, contextOf, reachable, walk };

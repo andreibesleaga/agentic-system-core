@@ -745,11 +745,18 @@ function contextSubjectFault(subject, namespace, terms) {
   return terms.has(subject) ? `the subject <${subject}> is a class or property of the site vocabulary, and a crosswalk would make it a skos:Concept (AGSC-05-26a)` : null;
 }
 
+/** Why an item of the node may not be a crosswalk subject, or `null` for a concept or a lesson. */
+function itemSubjectFault(subject, type) {
+  return CROSSWALK_SUBJECT_TYPES.includes(type) ? null
+    : `the subject <${subject}> is ${type === 'episode' ? 'an' : 'a'} ${type}, and a crosswalk would make it a skos:Concept (AGSC-05-26a)`;
+}
+
 /**
  * Why a crosswalk statement is refused, or `null`. `base` is the node's own address; `namespaces`
  * those of its declared contexts; `terms` the IRIs the site vocabulary types; `itemTypes` the item
  * IRIs of the node with their types, or `null` when the caller has no items to judge by (a client
- * that holds only the crosswalk).
+ * that holds only the crosswalk). An item's address is judged by its item type first, so a
+ * context namespace that covers item addresses never admits a cluster, a procedure or a gate.
  */
 function statementFault(quad, { base, namespaces, terms, itemTypes }) {
   const predicate = quad.predicate.value;
@@ -759,14 +766,12 @@ function statementFault(quad, { base, namespaces, terms, itemTypes }) {
   if (quad.subject.termType !== 'NamedNode' || quad.object.termType !== 'NamedNode') return 'its subject and its object are not both IRIs';
   const subject = quad.subject.value;
   if (base !== '' && quad.object.value.startsWith(base)) return `the object <${quad.object.value}> is an IRI of this node, not of the peer`;
+  const type = itemTypes === null ? undefined : itemTypes.get(subject);
+  if (type !== undefined) return itemSubjectFault(subject, type);
   const namespace = namespaces.find((candidate) => subject.startsWith(candidate));
   if (namespace !== undefined) return contextSubjectFault(subject, namespace, terms);
   if (base === '' || !subject.startsWith(base)) return `the subject <${subject}> is no IRI of this node`;
-  if (itemTypes === null) return null;
-  const type = itemTypes.get(subject);
-  if (type === undefined) return `the subject <${subject}> names no item of this node`;
-  return CROSSWALK_SUBJECT_TYPES.includes(type) ? null
-    : `the subject <${subject}> is ${type === 'episode' ? 'an' : 'a'} ${type}, and a crosswalk would make it a skos:Concept (AGSC-05-26a)`;
+  return itemTypes === null ? null : `the subject <${subject}> names no item of this node`;
 }
 
 /**

@@ -84,6 +84,17 @@ test('under a context namespace, the namespace itself or a class or property of 
   assert.deepStrictEqual(codes(read('https://ctx.example/billing#Receipt', { terms }).findings), [], 'a term the vocabulary does not type');
 });
 
+test('an item address is judged by its item type even where a context namespace covers it', () => {
+  const contexts = [{ cluster: 'billing', namespace: 'https://a.example/clusters/' }];
+  const read = (subject) => f.readCrosswalk(`${PREFIX}<${subject}> skos:exactMatch <https://b.example/concepts/x/> .\n`,
+    { base: BASE, contexts, file: 'domain/b.ttl', items: ITEMS });
+  const cluster = read('https://a.example/clusters/billing/');
+  assert.deepStrictEqual(codes(cluster.findings), ['AGSC-E209']);
+  assert.match(cluster.findings[0].message, /is a cluster/u);
+  assert.deepStrictEqual(cluster.statements, []);
+  assert.deepStrictEqual(codes(read('https://a.example/clusters/Invoice').findings), [], 'a term of the context that is no item is still accepted');
+});
+
 test('with no items to judge, a subject under the base is accepted (the client side of the rule)', () => {
   const read = f.readCrosswalk(`${PREFIX}<https://a.example/concepts/account/> skos:exactMatch <https://b.example/concepts/account/> .\n`, { base: BASE });
   assert.deepStrictEqual(read.findings, []);

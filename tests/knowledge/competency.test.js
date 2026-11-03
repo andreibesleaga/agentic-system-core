@@ -115,7 +115,21 @@ const OUTSIDE = {
   'a negated property set': ['ASK { ?x !ex:part ?o }', /!/u],
   'an ORDER BY expression': ['SELECT ?x { ?x ?p ?o } ORDER BY STR(?x)', /ORDER BY/u],
   'a NOT EXISTS with OPTIONAL inside': ['ASK { ?x ?p ?o FILTER NOT EXISTS { ?x ?p ?o OPTIONAL { ?o ?q ?r } } }', /OPTIONAL/u],
+  'LIMIT without ORDER BY (which rows is left to the engine)': ['SELECT ?x { ?x a ex:Engine } LIMIT 1', /LIMIT without an ORDER BY/u],
+  'an ORDER BY that leaves a projected variable out (ties)': ['SELECT ?x ?l { ?x ex:label ?l } ORDER BY ?x', /leaves out \?l/u],
+  'an ORDER BY with LIMIT that leaves a projected variable out': ['SELECT ?x ?l { ?x ex:label ?l } ORDER BY ?l LIMIT 1', /leaves out \?x/u],
+  'SELECT * with an ORDER BY that leaves a variable of the pattern out': ['SELECT * { ?x ex:part [ ex:part ?z ] } ORDER BY ?x', /leaves out \?z/u],
 };
+
+test('an ORDER BY that names every projected variable fixes the answer, so LIMIT may follow it', () => {
+  const text = fileOf(
+    question('first', 'SELECT ?x { ?x a ex:Engine . ?x ex:label ?l } ORDER BY ?l ?x LIMIT 1', { rows: [['<https://example.org/ns#a>']] }),
+    question('star', 'SELECT * { ?x ex:part ?y FILTER NOT EXISTS { ?y ex:other ?w } } ORDER BY DESC(?y) ?x LIMIT 1', { rows: [['<https://example.org/ns#b>', '<https://example.org/ns#c>']] }),
+    question('ask', 'ASK { ?x a ex:Engine } LIMIT 1', true),
+  );
+  assert.deepStrictEqual(competency.check(text, { file: FILE }), []);
+  assert.deepStrictEqual(competency.evaluate(text, DATA).results.map((r) => [r.id, r.result]), [['ask', 'agrees'], ['first', 'agrees'], ['star', 'agrees']]);
+});
 
 for (const [name, [query, message]] of Object.entries(OUTSIDE)) {
   test(`a query with ${name} is outside the subset: AGSC-E420`, () => {
@@ -153,7 +167,7 @@ test('ASK: the boolean agrees or differs', () => {
 });
 
 test('SELECT: cells are terms in N-Triples form; a plain string has no datatype; an unbound variable is null', () => {
-  const got = competency.evaluate(select('SELECT ?x ?l ?none { ?x ex:label ?l } ORDER BY ?x', [
+  const got = competency.evaluate(select('SELECT ?x ?l ?none { ?x ex:label ?l } ORDER BY ?x ?l ?none', [
     ['<https://example.org/ns#a>', '"alpha"', null],
     ['<https://example.org/ns#b>', '"beta"@en', null],
   ]), DATA, { file: FILE });
@@ -226,6 +240,7 @@ test('property: the order of the data quads changes no answer', () => {
   const text = fileOf(
     question('reach', 'SELECT ?y { ex:a ex:part+ ?y }', { rows: [] }),
     question('labels', 'SELECT ?x ?l { ?x ex:label ?l }', { rows: [] }),
+    question('first', 'SELECT ?x ?t { ?x a ?t } ORDER BY ?t ?x LIMIT 1', { rows: [] }),
   );
   const reference = JSON.stringify(competency.evaluate(text, DATA).results);
   fc.assert(fc.property(fc.shuffledSubarray(DATA, { maxLength: DATA.length, minLength: DATA.length }), (shuffled) => {

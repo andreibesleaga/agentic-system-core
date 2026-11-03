@@ -9,7 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fc = require('fast-check');
 const domain = require('../../src/knowledge/domain.js');
-const { ACCEPTED, FAULTS, NAMESPACE, VALID, withExtra } = require('./_domain-fixtures.js');
+const { ACCEPTED, FAULTS, INVERSE_OF_TYPE, NAMESPACE, VALID, withExtra } = require('./_domain-fixtures.js');
 
 const RUNS = { numRuns: 60, seed: 20261102, verbose: 0 };
 const FILE = 'domain/vocabulary.ttl';
@@ -109,6 +109,17 @@ test('a domain link names an object property, with the edge the vocabulary mater
   assert.strictEqual(model.propertyFor({}, 'narrows').conceptOnly, true, 'through another property of the file');
   assert.strictEqual(model.propertyFor({}, 'Engine'), null, 'a class is not a property');
   assert.strictEqual(model.propertyFor({}, 'unknown'), null);
+});
+
+test('an owl:inverseOf whose other side the file does not define pairs nothing: no edge is computed for it (AGSC-05-38 (f))', () => {
+  const model = domain.load(withExtra([
+    INVERSE_OF_TYPE,
+    'dom:usedBy a owl:ObjectProperty ; rdfs:label "used by" ; rdfs:subPropertyOf asc:uses ; owl:inverseOf asc:uses .',
+  ].join('\n')), { contexts: [] });
+  assert.deepStrictEqual(model.propertyFor({}, 'typeOf'),
+    { computed: false, conceptOnly: false, inverse: null, inverseName: null, iri: `${NAMESPACE}typeOf`, symmetric: false });
+  assert.strictEqual(model.propertyFor({}, 'usedBy').inverse, null);
+  assert.strictEqual(model.propertyFor({}, 'controls').inverse, `${NAMESPACE}controlled-by`, 'a pair the file defines is kept');
 });
 
 test('a vocabulary with no valid ontology has no site namespace, so nothing resolves in it', () => {

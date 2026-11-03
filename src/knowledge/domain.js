@@ -147,6 +147,17 @@ function contextNamespaces(contexts) {
     .map((entry) => entry && entry.namespace).filter((value) => typeof value === 'string');
 }
 
+/** (b): is an IRI in the site namespace or a declared context's, and in none it may not extend? */
+function ownTest(index, contexts) {
+  const namespace = namespaceOf(index);
+  const allowed = [...(namespace === null ? [] : [namespace]), ...contextNamespaces(contexts)];
+  return (iri) => allowed.some((ns) => iri.startsWith(ns)) && !FORBIDDEN.some((ns) => iri.startsWith(ns));
+}
+
+/** (f): is the term an object property the file defines, so that it may stand on either side of `owl:inverseOf`? */
+const ownProperty = (index, own) => (term) => term.termType === 'NamedNode' && own(term.value)
+  && index.typesOf(term.value).has(`${OWL}ObjectProperty`);
+
 // ---------------------------------------------------------------- the rules (a) to (g)
 
 /** (a): LF line endings and NFC text. UTF-8 is the port's to refuse (AGSC-01-14). */
@@ -208,8 +219,7 @@ function definedTerms(index, own) {
 /** (b), (d), (e) and (f), for each term the file defines. */
 function termFaults(index, contexts, fault) {
   const namespace = namespaceOf(index);
-  const allowed = [...(namespace === null ? [] : [namespace]), ...contextNamespaces(contexts)];
-  const own = (s) => allowed.some((ns) => s.startsWith(ns)) && !FORBIDDEN.some((ns) => s.startsWith(ns));
+  const own = ownTest(index, contexts);
   for (const term of definedTerms(index, own)) {
     if (FORBIDDEN.some((ns) => term.startsWith(ns)) || (namespace !== null && !own(term))) {
       fault('(b)', `<${term}> is defined outside the site namespace and the namespaces of the declared contexts, or in a namespace it may not extend`);
@@ -227,6 +237,26 @@ function termFaults(index, contexts, fault) {
     if (isProperty && !(types.has(`${OWL}ObjectProperty`)
         && [...ancestors(term, index.superProperties)].some((p) => LINK_PROPERTIES.includes(p)))) {
       fault('(f)', `<${term}> is not an owl:ObjectProperty that is a sub-property of one of the fourteen link properties`);
+    }
+  }
+}
+
+/**
+ * (f): the other side of each `owl:inverseOf` is an object property the file defines. The graph
+ * writer materialises the inverse edge of a domain link (AGSC-03-27), so any other object would
+ * let a vocabulary write `rdf:type`, a link property or any predicate into the graph. The subject
+ * side is a term the file defines, which (b) and (f) already judge; a subject (b) refuses is not
+ * judged twice.
+ */
+function inverseFaults(index, contexts, fault) {
+  // With no site namespace, (a) is the fault and (b) judges only the namespaces never extended.
+  const own = namespaceOf(index) === null ? (iri) => !FORBIDDEN.some((ns) => iri.startsWith(ns)) : ownTest(index, contexts);
+  const isOwnProperty = ownProperty(index, own);
+  for (const [s, quads] of index.bySubject) {
+    for (const { predicate, object } of quads) {
+      if (predicate.value !== `${OWL}inverseOf` || !own(s) || isOwnProperty(object)) continue;
+      const named = object.termType === 'NamedNode' ? `<${object.value}>` : `the literal "${object.value}"`;
+      fault('(f)', `<${s}> is declared the inverse of ${named}, which is not an object property the site vocabulary defines`);
     }
   }
 }
@@ -257,6 +287,7 @@ function check(text, options = {}) {
     shapeFaults(quads, index, fault);
     statementFaults(index, fault);
     termFaults(index, options.contexts, fault);
+    inverseFaults(index, options.contexts, fault);
   }
   return findings.sort((a, b) => compareCodePoint(a.message, b.message));
 }
@@ -274,11 +305,13 @@ function ownTerm(term) {
  * the computed side of each pair (AGSC-03-27): the object of the statement as the file writes
  * it, or, where the file states the pair both ways, the property whose IRI is greater in
  * code-point order. A property paired with itself is symmetric in effect and never computed.
+ * Only a pair of object properties the file defines is read (AGSC-05-38 (f), `isOwnProperty`);
+ * `check` reports any other as `AGSC-E420`, and no edge is ever computed for it.
  */
-function inversesOf(quads) {
+function inversesOf(quads, isOwnProperty) {
   const inverse = new Map();
   const computed = new Set();
-  const pairs = quads.filter((q) => q.predicate.value === `${OWL}inverseOf` && q.object.termType === 'NamedNode')
+  const pairs = quads.filter((q) => q.predicate.value === `${OWL}inverseOf` && isOwnProperty(q.subject) && isOwnProperty(q.object))
     .map((q) => [q.subject.value, q.object.value])
     .sort((a, b) => compareCodePoint(a[0], b[0]) || compareCodePoint(a[1], b[1]));
   const written = new Set(pairs.map(([a, b]) => `${a} ${b}`));
@@ -316,7 +349,7 @@ function load(text, options = {}) {
   const named = quads.filter((q) => q.subject.termType !== 'BlankNode' && q.object.termType !== 'BlankNode');
   const index = indexOf(named);
   const namespace = namespaceOf(index);
-  const { computed, inverse } = inversesOf(named);
+  const { computed, inverse } = inversesOf(named, ownProperty(index, ownTest(index, options.contexts)));
   const declared = bounded.declared({ domain: { contexts: options.contexts } });
   /** AGSC-08-32: the declared context named by `domain_context`, else that of the primary cluster, else none. */
   const contextOf = bounded.contextOf(declared);

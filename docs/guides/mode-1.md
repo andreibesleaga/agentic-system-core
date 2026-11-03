@@ -317,7 +317,9 @@ domain_links:
 `entity`, `value-object`, `domain-event` and `policy`, and each member of `domain_links` names
 a relation of the file, with the notes it points to, written as for any link. If the file says
 that two relations are each other's inverse (`owl:inverseOf`), write only one of them: the
-build adds the other. Which one you write is fixed by the file: the object of the
+build adds the other. Both relations of such a pair must be relations the file defines; an
+`owl:inverseOf` that names anything else, such as `rdf:type` or `asc:uses`, is `AGSC-E420`.
+Which one you write is fixed by the file: the object of the
 `owl:inverseOf` statement, or, where the file states the pair both ways, the one whose address
 sorts last, is the one the build adds. `agsc lint` refuses a `domain_type` the file does not
 define (`AGSC-E418`) and a member that is no relation of the file, that is the added inverse,
@@ -364,8 +366,10 @@ as "every engine has a controller", are SHACL shapes in a Turtle file named by `
 lists the part of SHACL the engine runs. Questions are a JSON file named by `domain.questions`:
 each entry has an `id`, the `question` in words, a SPARQL `query` and the `expected` answer. The
 query is an `ASK` or a `SELECT` made of basic patterns, the path operators `/`, `^`, `+` and
-`*`, `FILTER` with comparisons, `&&`, `||`, `!` and `NOT EXISTS`, `DISTINCT`, `ORDER BY` of a
-variable and `LIMIT`. The expected answer of an `ASK` is `true` or `false`; that of a `SELECT`
+`*`, `FILTER` with comparisons, `&&`, `||`, `!` and `NOT EXISTS`, `DISTINCT`, `ORDER BY` of
+variables and `LIMIT`. An `ORDER BY` of a `SELECT` names every variable the query returns, and
+`LIMIT` comes only after such an `ORDER BY`, so the rows kept and their order never depend on
+the engine. The expected answer of an `ASK` is `true` or `false`; that of a `SELECT`
 is `{"rows": [[...]]}`, each cell a term written as in N-Triples (`"<https://example.org/x>"`,
 `"\"text\""`) or `null` where a variable has no value. Both files run over `graph.nq` together
 with the statements `agsc export --closure` would add. A broken rule is `AGSC-E421`, a question

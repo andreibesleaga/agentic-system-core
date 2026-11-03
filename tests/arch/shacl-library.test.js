@@ -11,30 +11,12 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const path = require('node:path');
-const { ROOT, sources } = require('./_scan.js');
+const { reachable, sources } = require('./_scan.js');
 
 const LIBRARY = 'rdf-validate-shacl';
 const WRAPPER = 'src/knowledge/shacl-core.js';
 /** The modules a build starts from: the verb, and the library entry point of the site build. */
 const BUILD_ROOTS = Object.freeze(['src/application/cli/verbs/build.js', 'src/distribution/site.js']);
-
-/** Every `src/` module the given modules require, directly or through another. */
-function reachable(roots) {
-  const byRel = new Map(sources().map((file) => [file.rel, file]));
-  const seen = new Set();
-  const stack = [...roots];
-  while (stack.length > 0) {
-    const rel = stack.pop();
-    if (seen.has(rel) || !byRel.has(rel)) continue;
-    seen.add(rel);
-    const file = byRel.get(rel);
-    for (const specifier of file.requires.filter((s) => s.startsWith('.'))) {
-      stack.push(path.relative(ROOT, path.resolve(path.dirname(file.absolute), specifier)).split(path.sep).join('/'));
-    }
-  }
-  return seen;
-}
 
 test(`only ${WRAPPER} requires ${LIBRARY}`, () => {
   const users = sources().filter((file) => file.requires.includes(LIBRARY)).map((file) => file.rel);

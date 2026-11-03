@@ -325,6 +325,22 @@ function siteStatementFaults(quads, index, fault) {
   for (const iri of [...undeclared.keys()].sort(compareCodePoint)) fault('(c)', undeclared.get(iri));
 }
 
+/**
+ * (f): the other side of each `owl:inverseOf` is an object property the file defines, since the
+ * engine materialises the inverse edge of a domain link (AGSC-03-27); a subject (b) refuses is
+ * not judged twice. `own` is the test of (b), or with no site namespace only its forbidden part.
+ */
+function siteInverseFaults(index, own, fault) {
+  const isOwnProperty = (term) => term.termType === 'NamedNode' && own(term.value) && index.typesOf(term.value).has(`${OWL}ObjectProperty`);
+  for (const [s, statements] of index.bySubject) {
+    for (const { predicate, object } of statements) {
+      if (predicate.value !== `${OWL}inverseOf` || !own(s) || isOwnProperty(object)) continue;
+      const named = object.termType === 'NamedNode' ? `<${object.value}>` : `the literal "${object.value}"`;
+      fault('(f)', `<${s}> is declared the inverse of ${named}, which is not an object property the site vocabulary defines`);
+    }
+  }
+}
+
 /** (b), (d), (e) and (f) over every term the file defines (all subjects but the ontology and the declarations). */
 function siteTermFaults(index, contextNamespaces, fault) {
   const allowed = [...(index.namespace === null ? [] : [index.namespace]), ...contextNamespaces];
@@ -355,6 +371,7 @@ function siteTermFaults(index, contextNamespaces, fault) {
       fault('(f)', `<${term}> is not an owl:ObjectProperty that is a sub-property of one of the fourteen link properties`);
     }
   }
+  siteInverseFaults(index, index.namespace === null ? (iri) => !forbidden(iri) : own, fault);
   return {
     classes: terms.filter((t) => own(t) && index.typesOf(t).has(`${OWL}Class`)).length,
     properties: terms.filter((t) => own(t) && index.typesOf(t).has(`${OWL}ObjectProperty`)).length,

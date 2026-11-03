@@ -145,6 +145,18 @@ test('owl:imports in the shapes file is never followed: nothing is loaded and th
   assert.deepStrictEqual(shacl.evaluate(importing, violates).results, results);
 });
 
+test('a long sh:in list is read without exhausting the stack: 50,000 members, inside the 1 MiB input bound', () => {
+  const members = Array.from({ length: 50000 }, (_, n) => `"${n}"`).join(' ');
+  const shapes = `@prefix ex: <https://example.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+ex:S a sh:NodeShape ; sh:targetSubjectsOf ex:p ; sh:property [ sh:path ex:p ; sh:in ( ${members} ) ] .
+`;
+  assert.ok(Buffer.byteLength(shapes) < 1024 * 1024);
+  assert.deepStrictEqual(shacl.check(shapes), []);
+  const data = turtle.parse('<https://example.org/a> <https://example.org/p> "49999" , "x" .');
+  assert.deepStrictEqual(shacl.evaluate(shapes, data).results.map((r) => r.value), ['"x"']);
+});
+
 test('a shapes file with no shape, and an empty data graph, give nothing', () => {
   assert.deepStrictEqual(shacl.evaluate('', []), { findings: [], results: [] });
   assert.deepStrictEqual(shacl.evaluate(fixture('class').shapes, []), { findings: [], results: [] });

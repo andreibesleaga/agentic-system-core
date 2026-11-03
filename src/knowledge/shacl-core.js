@@ -62,13 +62,21 @@ function compiles(source) {
   }
 }
 
-/** A well-formed RDF list: `rdf:nil`, or a blank node with one `rdf:first` and one `rdf:rest` that is a list. */
-function isList(index, term, seen = new Set()) {
-  if (term.value === RDF_NIL && term.termType === 'NamedNode') return true;
-  if (term.termType !== 'BlankNode' || seen.has(term.value)) return false;
-  seen.add(term.value);
-  const rest = index.values(term, RDF_REST);
-  return index.values(term, RDF_FIRST).length === 1 && rest.length === 1 && isList(index, rest[0], seen);
+/**
+ * A well-formed RDF list: `rdf:nil`, or a blank node with one `rdf:first` and one `rdf:rest` that
+ * is a list. Walked in a loop, not by recursion, so a long list inside the input bound is read
+ * whatever its length; `seen` stops a list that loops back on itself.
+ */
+function isList(index, start) {
+  const seen = new Set();
+  for (let term = start; ;) {
+    if (term.value === RDF_NIL && term.termType === 'NamedNode') return true;
+    if (term.termType !== 'BlankNode' || seen.has(term.value)) return false;
+    seen.add(term.value);
+    const rest = index.values(term, RDF_REST);
+    if (index.values(term, RDF_FIRST).length !== 1 || rest.length !== 1) return false;
+    [term] = rest;
+  }
 }
 
 /** The values a parameter takes, as SHACL 1.0 states them, limited to the subset. */

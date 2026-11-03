@@ -29,7 +29,7 @@ const N3 = require('n3');
 
 const { INSTANT, ROOT, linkset, splitItem } = require('./_world.js');
 const { patternsNode } = require('./_real-bundles.js');
-const { NAMESPACE, VALID, withExtra } = require('../../knowledge/_domain-fixtures.js');
+const { INVERSE_OF_TYPE, NAMESPACE, VALID, withExtra } = require('../../knowledge/_domain-fixtures.js');
 
 const LEDGER_REL = 'https://w3id.org/agentic-system-core/rel#ledger';
 const GENESIS = '0'.repeat(64);
@@ -61,6 +61,14 @@ function publishingJobs(workflow) {
 
 function lines(text) {
   return text.split('\n').filter((l) => l !== '');
+}
+
+/** A fresh Bundle whose configuration names the site vocabulary `text`, written at `rel` (AGSC-01-41). */
+function withVocabulary(world, rel, text) {
+  world.bundle();
+  world.write(rel, text);
+  const config = JSON.parse(world.read('agsc.config.json'));
+  world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { vocabulary: rel } }, null, 2)}\n`);
 }
 
 /** Two commits of the fixture on `main`, built once by `build` and once by `ci`. */
@@ -512,11 +520,15 @@ module.exports = [
   {
     pattern: /^a site vocabulary "([^"]+)" whose class "(Engine|Widget)" is a subclass of (the item class "asc:Concept"|no item class), named by "domain\.vocabulary" \(AGSC-01-41\)$/u,
     run(world, rel, name) {
-      world.bundle();
       // The vocabulary of vector lint-0052; "Widget" adds a class under none of the six item classes.
-      world.write(rel, name === 'Engine' ? VALID : withExtra('dom:Widget a owl:Class ; rdfs:label "Widget" .'));
-      const config = JSON.parse(world.read('agsc.config.json'));
-      world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { vocabulary: rel } }, null, 2)}\n`);
+      withVocabulary(world, rel, name === 'Engine' ? VALID : withExtra('dom:Widget a owl:Class ; rdfs:label "Widget" .'));
+    },
+  },
+  {
+    pattern: /^a site vocabulary "([^"]+)" whose property "typeOf" is declared the inverse of rdf:type, named by "domain\.vocabulary" \(AGSC-01-41\)$/u,
+    run(world, rel) {
+      // The vocabulary of vector lint-0052 with a property whose owl:inverseOf is rdf:type (AGSC-05-38 (f)).
+      withVocabulary(world, rel, withExtra(INVERSE_OF_TYPE));
     },
   },
   {

@@ -507,6 +507,21 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   written (AGSC-11-24). The troubleshooting page gains the `AGSC-E207` row and a cause of `AGSC-E418`;
   `docs/SHACL-SHAPES.md`, `docs/PLAN.md`, `docs/IMPLEMENTERS-GUIDE.md`, `src/README.md` and the item
   model diagram name the 1.1 parts.
+- A site vocabulary whose `owl:inverseOf` names, on either side, anything but an object property the
+  file defines (such as `rdf:type`, `asc:uses` or a literal) is `AGSC-E420` in `lint` and in
+  `tools/validate-ontology`, and the build computes no inverse edge for such a pair; it used to write
+  the named predicate into `graph.nq`, `graph.ttl` and `graph.jsonld`, so a domain link could type one
+  item by another (AGSC-05-38 (f), amended 2026-11-03; AGSC-03-27).
+- A shapes file with a long `sh:in` list (tens of thousands of members, inside the 1 MiB input bound)
+  is read and evaluated; `verify` used to stop with an internal error, because the list was checked
+  by recursion (AGSC-05-41).
+- A crosswalk subject that is the address of an item is judged by the item's type even where a context
+  namespace covers that address, so a cluster, a procedure or a gate is `AGSC-E209` there too
+  (AGSC-11-24).
+- A competency question whose `SELECT` has an `ORDER BY` that leaves out a projected variable, or has
+  `LIMIT` without such an `ORDER BY`, is `AGSC-E420`: the rows SPARQL leaves tied or unordered depend on
+  the engine and on the order of the data, so the `expected` answer could not be fixed
+  (AGSC-05-41, amended 2026-11-03).
 
 ## [1.0.1] - 2026-10-21
 

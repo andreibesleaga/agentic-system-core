@@ -18,7 +18,7 @@ const domain = require('../../src/knowledge/domain.js');
 const nq = require('../../src/knowledge/nquads.js');
 const turtle = require('../../src/knowledge/turtle.js');
 const jsonld = require('../../src/knowledge/jsonld.js');
-const { NAMESPACE, VALID, withExtra } = require('./_domain-fixtures.js');
+const { INVERSE_OF_TYPE, NAMESPACE, VALID, withExtra } = require('./_domain-fixtures.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const CASE = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'vectors', 'graph', 'graph-0044-site-vocabulary-and-domain-triples.json'), 'utf8'));
@@ -117,6 +117,21 @@ test('nothing is written for a name the vocabulary does not define, a missing ta
   ];
   assert.deepStrictEqual(linesOf(items), []);
   assert.ok(!nq.toNQuads(items, optionsWith(extended)).includes('isPartOf'), 'domain_context names a concept, not a cluster');
+});
+
+test('a domain link adds only edges whose predicate the site vocabulary defines, whatever its owl:inverseOf names (AGSC-05-38 (f))', () => {
+  const unsafe = domain.load(withExtra([
+    INVERSE_OF_TYPE,
+    'dom:usedBy a owl:ObjectProperty ; rdfs:label "used by" ; rdfs:subPropertyOf asc:uses ; owl:inverseOf asc:uses .',
+  ].join('\n')), { contexts: [] });
+  const items = [concept('a', { domain_links: { typeOf: ['b'], usedBy: ['b'] } }), concept('b')];
+  const plain = items.map(({ domain_links, ...rest }) => rest);
+  const before = new Set(nq.toNQuads(plain, optionsWith(unsafe)).split('\n'));
+  const added = nq.toNQuads(items, optionsWith(unsafe)).split('\n').filter((line) => !before.has(line));
+  assert.deepStrictEqual(added, [
+    `<${BASE}concepts/a/> <${NAMESPACE}typeOf> <${BASE}concepts/b/> <${BASE}> .`,
+    `<${BASE}concepts/a/> <${NAMESPACE}usedBy> <${BASE}concepts/b/> <${BASE}> .`,
+  ]);
 });
 
 test('a link target with an anchor keeps its anchor, as every Link does (AGSC-03-02)', () => {

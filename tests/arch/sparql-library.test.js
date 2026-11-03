@@ -15,8 +15,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const path = require('node:path');
-const { ROOT, sources } = require('./_scan.js');
+const { reachable, sources } = require('./_scan.js');
 
 const PARSER = '@traqula/parser-sparql-1-1';
 const ENGINE = 'oxigraph';
@@ -25,23 +24,6 @@ const CHECK = 'src/knowledge/site-checks.js';
 /** The modules a build, a lint and the tool server start from. */
 const ROOTS = Object.freeze(['src/application/cli/verbs/build.js', 'src/application/cli/verbs/lint.js',
   'src/application/cli/verbs/mcp.js', 'src/distribution/site.js']);
-
-/** Every `src/` module the given modules require, directly or through another. */
-function reachable(roots) {
-  const byRel = new Map(sources().map((file) => [file.rel, file]));
-  const seen = new Set();
-  const stack = [...roots];
-  while (stack.length > 0) {
-    const rel = stack.pop();
-    if (seen.has(rel) || !byRel.has(rel)) continue;
-    seen.add(rel);
-    const file = byRel.get(rel);
-    for (const specifier of file.requires.filter((s) => s.startsWith('.'))) {
-      stack.push(path.relative(ROOT, path.resolve(path.dirname(file.absolute), specifier)).split(path.sep).join('/'));
-    }
-  }
-  return seen;
-}
 
 for (const library of [PARSER, ENGINE]) {
   test(`only ${WRAPPER} requires ${library}`, () => {

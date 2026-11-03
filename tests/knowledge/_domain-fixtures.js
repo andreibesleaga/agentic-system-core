@@ -24,6 +24,14 @@ const NAMESPACE = 'https://minimal.example/ns/domain#';
 const withExtra = (extra) => `${VALID}\n${extra}\n`;
 
 /**
+ * A property whose `owl:inverseOf` names `rdf:type`: the edge computed for it would type an item
+ * by another item. Both sides of the statement must be object properties the file defines
+ * (AGSC-05-38 (f)); the graph writer never materialises such a pair (AGSC-03-27).
+ */
+const INVERSE_OF_TYPE = 'dom:typeOf a owl:ObjectProperty ; rdfs:label "type of" ; rdfs:subPropertyOf asc:uses ; '
+  + 'owl:inverseOf <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> .';
+
+/**
  * One vocabulary per rule. `count` is the number of AGSC-E420 findings and `rule` the letter
  * every one of their messages names (`null` where the faults are of two rules).
  */
@@ -68,6 +76,12 @@ const FAULTS = Object.freeze([
   { name: 'a term that is neither a class nor a property', rule: '(e)', count: 1,
     text: withExtra('dom:thing rdfs:label "thing" .') },
   { name: 'a range', rule: '(g)', count: 1, text: withExtra('dom:controls rdfs:range dom:Engine .') },
+  { name: 'an inverse that is rdf:type, which the file does not define', rule: '(f)', count: 1,
+    text: withExtra(INVERSE_OF_TYPE) },
+  { name: 'an inverse that is a link property, which the file only declares', rule: '(f)', count: 1,
+    text: withExtra('dom:usedBy a owl:ObjectProperty ; rdfs:label "used by" ; rdfs:subPropertyOf asc:uses ; owl:inverseOf asc:uses .') },
+  { name: 'an inverse that is a literal', rule: '(f)', count: 1,
+    text: withExtra('dom:controls owl:inverseOf "controlled by" .') },
 ]);
 
 /**
@@ -86,4 +100,4 @@ const ACCEPTED = Object.freeze([
     text: withExtra('<https://minimal.example/ns/ops#Valve> a owl:Class ; rdfs:label "Valve" ; rdfs:subClassOf asc:Concept .') },
 ]);
 
-module.exports = { ACCEPTED, FAULTS, NAMESPACE, VALID, withExtra };
+module.exports = { ACCEPTED, FAULTS, INVERSE_OF_TYPE, NAMESPACE, VALID, withExtra };

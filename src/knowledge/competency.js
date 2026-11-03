@@ -44,7 +44,8 @@ const RESULTS_JSON = 'application/sparql-results+json';
 /**
  * AGSC-05-41: the SPARQL 1.1 Query subset — the two query forms, the property-path operators,
  * the comparisons and the connectives of `FILTER` (with `NOT EXISTS`), and the members a parsed
- * query may have; `DISTINCT`, `ORDER BY` of a variable and `LIMIT` are the solution modifiers.
+ * query may have; `DISTINCT`, `ORDER BY` of a variable and `LIMIT` are the solution modifiers
+ * (`orderFaults` adds what makes the order of a SELECT's rows independent of the engine).
  */
 const SUBSET = Object.freeze({
   comparisons: Object.freeze(['=', '!=', '<', '>', '<=', '>=']),
@@ -131,6 +132,40 @@ function groupFaults(patterns, fault) {
   }
 }
 
+/** The variables of a triple pattern, `[ … ]` included: the ones `SELECT *` projects from it. */
+function tripleVariables(triple, names) {
+  for (const node of [triple.subject, triple.predicate, triple.object]) {
+    if (node.type === 'tripleCollection') for (const inner of node.triples) tripleVariables(inner, names);
+    else if (isVariable(node)) names.add(node.value);
+  }
+}
+
+/** The variables a SELECT projects: those it lists, or for `SELECT *` those of its basic graph patterns. */
+function projected(query) {
+  if (!query.variables.some((v) => v.type === 'wildcard')) return query.variables.filter(isVariable).map((v) => v.value);
+  const names = new Set();
+  for (const pattern of query.where.patterns) {
+    if (pattern.subType === 'bgp') for (const triple of pattern.triples) tripleVariables(triple, names);
+  }
+  return [...names].sort(compareCodePoint);
+}
+
+/**
+ * The order of a SELECT's rows is part of its answer, so it must not depend on the engine: an
+ * `ORDER BY` names every projected variable (rows it leaves tied are equal), and `LIMIT` comes
+ * only with such an `ORDER BY` (the errata of AGSC-05-41 of 3 November 2026).
+ */
+function orderFaults(query, order, limited, fault) {
+  if (query.subType !== 'select' || !(order !== undefined || limited)) return;
+  if (order === undefined) {
+    fault('LIMIT without an ORDER BY of every projected variable');
+    return;
+  }
+  const keys = new Set(order.orderDefs.map((def) => def.expression.value));
+  const missing = projected(query).filter((name) => !keys.has(name));
+  if (missing.length > 0) fault(`an ORDER BY that leaves out ${missing.map((name) => `?${name}`).join(' ')}`);
+}
+
 /** The solution modifiers of the subset: `ORDER BY` of variables and `LIMIT`; no dataset clause. */
 function modifierFaults(query, fault) {
   const { group, having, limitOffset, order } = query.solutionModifiers || {};
@@ -138,6 +173,7 @@ function modifierFaults(query, fault) {
   if (having !== undefined) fault('HAVING');
   if (limitOffset !== undefined && limitOffset.offset !== undefined) fault('OFFSET');
   if (order !== undefined && !order.orderDefs.every((def) => isVariable(def.expression))) fault('an ORDER BY that is not a variable');
+  else orderFaults(query, order, limitOffset !== undefined && limitOffset.limit !== undefined, fault);
   if (query.datasets !== undefined && query.datasets.clauses.length > 0) fault('FROM');
 }
 
