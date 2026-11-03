@@ -284,8 +284,8 @@ test('dashed uses the pattern its element calls for, and acc keeps the arrow pat
   assert.ok(path.includes('d="M10 100 L40 100" stroke-dasharray="4 3"'));
 });
 
-test('thick widens a line and a bar, and acc may mark a line or a path', () => {
-  const thick = diagrams.compile('line 10 100 200 100 thick acc\nbar 10 150 100 thick\n', { slug: 'x' }).svg;
+test('thick widens a line and a bar, and acc may mark a path (a line with both is refused, AGSC-01-42)', () => {
+  const thick = diagrams.compile('line 10 100 200 100 thick\nbar 10 150 100 thick\nbox a 300 10 40 20 "A" acc\n', { slug: 'x' }).svg;
   assert.equal((thick.match(/stroke-width="5"/gu) || []).length, 2);
   const path = diagrams.compile('path "M10 100 L40 100" acc arrow\n', { slug: 'x' }).svg;
   assert.ok(path.includes(`class="${diagrams.ACCENT_CLASS}"`));

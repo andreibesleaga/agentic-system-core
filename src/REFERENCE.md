@@ -1080,7 +1080,7 @@ compiler beside them is Knowledge's:
 | `clusters.js` | decks → Clusters with SKOS integrity: a Collection carries NO semantic relation (AGSC-05-20) and membership is authored on the item (AGSC-02-19), so it is derived here. |
 | `cleanroom-rewrite.js` | the mechanical half of AGSC-08-17. Rule-driven from `governance/cleanroom.js#REFUSED_PHRASES`, never card-driven; it removes the smallest span that carries a refused phrase — the CLAUSE where the sentence has clauses — never crosses a line break, and reports every excision verbatim. |
 | `import.js` | the PLAN: `{path, text}` pairs in code-point order. Deterministic, idempotent and total (AGSC-01-23). |
-| `knowledge/diagrams.js` | the DSL → SVG compiler (AGSC-01-07, AGSC-02-13, AGSC-02-98, AGSC-06-20). Pure, total, byte-deterministic; inside the SVG allow-list by construction; nothing in its output carries a colour, so it reads in both schemes. |
+| `knowledge/diagrams.js` | the DSL → SVG compiler (AGSC-01-07, AGSC-01-42, AGSC-02-13, AGSC-02-98, AGSC-06-20). Pure, total, byte-deterministic; the twelve statements, the refusals (each `AGSC-E412` naming its line) and the bytes are those of AGSC-01-42; `rel=KEY` on `arrow`, `line` and `text` writes the class `REL_CLASS_PREFIX + KEY` for one of the fourteen Link keys; inside the SVG allow-list by construction; nothing in its output carries a colour, so it reads in both schemes. |
 
 Two rules pull in opposite directions over the compiled picture: AGSC-01-07 says a
 compiled `.svg` MUST NOT be committed, and AGSC-02-98 admits the same picture as

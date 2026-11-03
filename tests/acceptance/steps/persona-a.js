@@ -365,6 +365,18 @@ module.exports = [
     },
   },
   {
+    pattern: 'each arrow of the figure carries the class of its relation, "agsc-rel-requires" for the backlink, and no colour (AGSC-01-42)',
+    run(world) {
+      const html = world.state.page;
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="links"')))[0];
+      const arrows = [...svg.matchAll(/<path [^>]*marker-end=[^>]*>/gu)].map((m) => m[0]);
+      const classes = arrows.map((a) => (/class="agsc-rel-([a-z-]+)"/u.exec(a) || [])[1]);
+      assert.deepStrictEqual(classes, relationRows(html, 'links').map((row) => row[0]), 'one class per arrow, the key of its row');
+      assert.ok(classes.includes('requires'), 'the backlink from Agent2Agent Protocol');
+      assert.doesNotMatch(svg, /fill="#|stroke="#|style=/u, 'the class carries no colour');
+    },
+  },
+  {
     pattern: 'the draft "unreleased-idea" is neither drawn nor named on the page',
     run(world) {
       assert.ok(!world.state.page.includes('unreleased-idea') && !world.state.page.includes('Unreleased idea'), 'the page names the draft');

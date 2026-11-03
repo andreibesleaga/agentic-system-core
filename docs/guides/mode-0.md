@@ -152,7 +152,10 @@ link that gives the relation, its direction, the other note and what the relatio
 means. The incoming rows are the note's backlinks. A cluster page also draws its
 members and the links among them. Drafts, retired notes and notes held back from a
 release never appear in either. No new file is written for this; the drawing is part
-of the page.
+of the page. Each arrow in the drawing has the class of its relation, such as
+`agsc-rel-requires`, so your own stylesheet can pick out one relation; the class adds
+no colour. In a diagram you write under `content/diagrams/`, `rel=requires` on an
+`arrow`, `line` or `text` line adds the same class.
 
 The `/clusters/` page lists the clusters, then shows how they connect: a drawing and a
 table count the links from the notes of one cluster to the notes of another. Radio

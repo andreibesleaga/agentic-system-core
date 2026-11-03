@@ -51,6 +51,7 @@ Feature: Human reader finds a pattern with evidence
     When the reader navigates to "/concepts/mcp/"
     Then the relations table lists the backlink "requires" from "Agent2Agent Protocol" with the meaning of "requires" (AGSC-06-38)
     And the figure beside the table draws exactly the rows of the table and is named by its title and description
+    And each arrow of the figure carries the class of its relation, "agsc-rel-requires" for the backlink, and no colour (AGSC-01-42)
     And the draft "unreleased-idea" is neither drawn nor named on the page
     When the reader navigates to "/clusters/agent-patterns/"
     Then the cluster map draws the link "requires" from "Handoff" to "Supervisor" and its table lists the same link

@@ -128,6 +128,9 @@ test('the figure draws exactly the relations the table lists, in the table order
   assert.deepStrictEqual(boxTexts, ['Title a', 'uses', 'Title c', 'requires', 'Title b', 'related', 'Title c', 'covers', 'Title d']);
   assert.strictEqual((svg.match(/marker-end=/gu) || []).length, rows.length);
   assert.strictEqual((svg.match(/class="agsc-accent"/gu) || []).length, 1, 'the item itself carries the accent');
+  // Each arrow carries the class of its row's key (AGSC-01-42 `rel=KEY`), in the table order.
+  const arrowClasses = [...svg.matchAll(/marker-end="[^"]*" class="agsc-rel-([a-z-]+)"\/>/gu)].map((m) => m[1]);
+  assert.deepStrictEqual(arrowClasses, rows.map((r) => r[0]));
 });
 
 test('an arrow runs from the item that states the relation to its target', () => {

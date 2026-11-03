@@ -42,7 +42,7 @@
 | `content-version.js` | the content version of a Bundle, derived once from its history |
 | `provenance-header.js` | the provenance header every agent-facing text file starts with |
 | `runblocks.js` | the executable fenced blocks and their expected output |
-| `diagrams.js` | the diagram language compiled to SVG, inside the SVG allow-list |
+| `diagrams.js` | the diagram language of AGSC-01-42 compiled to SVG, inside the SVG allow-list; `rel=KEY` marks an arrow, line or text with the class of a Link key |
 
 Every module names, in its header comment, the rules it implements. The function
 signatures and the reasons behind the design are in [the per-module

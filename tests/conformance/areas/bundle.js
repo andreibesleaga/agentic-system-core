@@ -2,8 +2,9 @@
 // Conformance area `bundle`. bundle-0001 (MAJOR tolerance and unknown-key
 // preservation, AGSC-00-15). bundle-0003..0005 (the agent lane, AGSC-01-36/38),
 // bundle-0006 and bundle-0008 (configuration), bundle-0007, bundle-0009 and
-// bundle-0010 (the fixture with files added, through the real `lint`) — dispatched
-// here by vector.id since their input shapes differ from bundle-0001's.
+// bundle-0010 (the fixture with files added, through the real `lint`), bundle-0018 and
+// bundle-0019 (the diagram grammar and its bytes, AGSC-01-42) — dispatched here by
+// vector.id since their input shapes differ from bundle-0001's.
 
 const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
@@ -266,7 +267,33 @@ function specVersionCase(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * bundle-0018 and bundle-0019 (AGSC-01-42) — the diagram source grammar and the bytes
+ * it compiles to. Each case compiles one source for the slug it names: an accepted
+ * source must give exactly the expected SVG and no finding; a refused one no SVG and
+ * only `AGSC-E412` errors, each naming a line of the source.
+ */
+function diagramCase(vector) {
+  const diagrams = require('../../../src/knowledge/diagrams.js');
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    const got = diagrams.compile(input.source, { slug: input.slug });
+    list.push([`${input.name} svg`, got.svg === want.svg, JSON.stringify(got.svg)]);
+    const m = findingsMatch(want.findings || [], got.findings);
+    const onlyThese = got.findings.every((f) => (want.findings || []).some((w) => w.code === f.code));
+    list.push([`${input.name} findings`, m.ok && onlyThese, `${m.detail} ${JSON.stringify(got.findings.map((f) => f.code))}`]);
+    const lines = input.source.split('\n').length;
+    list.push([`${input.name} names a line`, got.findings.every((f) => Number.isInteger(f.line) && f.line >= 1 && f.line <= lines),
+      JSON.stringify(got.findings.map((f) => f.line))]);
+  }
+  return checks(list);
+}
+
 const B_HANDLERS = {
+  'bundle-0019': diagramCase,
+  'bundle-0018': diagramCase,
   'bundle-0012': reservedConfigCase,
   'bundle-0021': fixtureLintCase,
   'bundle-0020': fixtureLintCase,

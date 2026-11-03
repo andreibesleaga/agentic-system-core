@@ -11,11 +11,11 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 339 |
-| Executed acceptance scenario | 88 |
+| Unit, integration or architecture test | 340 |
+| Executed acceptance scenario | 89 |
 | Checker header | 36 |
 
-Acceptance scenarios: 143 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 88 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 143 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 89 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -175,7 +175,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-39 | VERIFIED | yes | `imp-0006`, `imp-0007`, `imp-0008` | `acceptance/steps/persona-h.js`, `interchange/skos-import-cli.test.js`, `interchange/skos.test.js` | — | — |
 | AGSC-01-40 | VERIFIED | yes | `bundle-0013`, `bundle-0014`, `bundle-0015` | `governance/portable-names.test.js` | — | — |
 | AGSC-01-41 | VERIFIED | yes | `bundle-0020` | `acceptance/steps/persona-i.js`, `application/cli/site-checks-verbs.test.js`, `application/domain-layer.test.js` +3 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#Titles are compared inside each bounded context, so one title may serve two contexts`, `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type` +5 | `validate-ontology` |
-| AGSC-01-42 | VERIFIED | yes | `bundle-0018`, `bundle-0019` | — | — | — |
+| AGSC-01-42 | VERIFIED | yes | `bundle-0018`, `bundle-0019` | `knowledge/diagram-dsl.test.js`, `knowledge/diagram-grammar.test.js` | `persona-a-reader.feature#Reader sees what a Concept is linked to and what links back to it` | — |
 | AGSC-02-01 | VERIFIED | yes | `fm-0011`, `fm-0012`, `fm-0013` | `interchange/oldsite.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
 | AGSC-02-02 | VERIFIED | yes | `fm-0005`, `fm-0014`, `fm-0015` +6 | `distribution/page-tools.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
 | AGSC-02-03 | VERIFIED | yes | `fm-0001`, `fm-0006` | `distribution/page-tools.test.js`, `interchange/clusters.test.js`, `knowledge/validate.test.js` +1 | — | — |

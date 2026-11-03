@@ -268,6 +268,15 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   function self-contained, no dependency) and `tests/distribution/explorer-browser.test.js` in the browser
   lane, where `axe-core` 4.13.0 is now fetched by exact version and checked against its SHA-256 like
   `playwright-core`.
+- The diagram language takes the token `rel=KEY` on `arrow`, `line` and `text` (AGSC-01-42, I-024):
+  KEY is one of the fourteen Link keys of AGSC-03-01, and the element gets the class `agsc-rel-KEY`,
+  which carries no colour; on an accented element the class attribute holds both classes, the accent
+  first. A `rel=` value that is no Link key is `AGSC-E412`, so nothing but a known key reaches the page.
+  The arrows of the graph-view figure on item pages now carry the class of their relation, the hook a
+  stylesheet can use (AGSC-06-38). Bytes: a 1.0 diagram source compiles to the same bytes as before (the
+  token did not exist); the figure on item pages with Links gains one class per arrow (a view added by
+  AGSC-06-38; HTML pages are not byte-pinned, AGSC-04-24). The cases `bundle-0018` and `bundle-0019`
+  pass. Code: `src/knowledge/diagrams.js`, `src/distribution/graph-view.js`.
 
 - `import <file.ttl> --from skos` (AGSC-01-39, AGSC-01-26a, I-018): a SKOS thesaurus in Turtle becomes
   draft items. The file is read with the pinned `n3` (`knowledge/turtle.js#parse`); the mapping is
@@ -529,6 +538,19 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- A diagram `line` that carries both `acc` and `thick` is refused with `AGSC-E412` (AGSC-01-42). It used
+  to compile to a `<path>` with `stroke-width` written twice, which is not well-formed XML. The finding
+  names the line.
+- A `text` statement's `size=N` is written with the number rule of AGSC-01-42 (rounded to a tenth, a
+  trailing `.0` dropped), like every other number in a compiled diagram; it used to be copied as given,
+  so `size=13.04` wrote `font-size="13.04"`. A whole or one-decimal size, which every 1.0 source in the
+  examples and fixtures uses, keeps its bytes.
+- A diagram `arrow` whose `via=` holds a waypoint of three or more numbers, such as `via=100,90,5`, is
+  refused with `AGSC-E412` (AGSC-01-42: "a `via` that is not a list of number pairs"). It used to take
+  the first two numbers and drop the rest.
+- The diagram refusals that are found after reading the whole source name the line that breaks the
+  rule (AGSC-01-42: "each `AGSC-E412` naming the line"): a second `acc`, the later of two overlapping
+  shapes and a shape inside the band of a `note`. They used to name line 1.
 - `agsc import` keeps a typed `peers[]` entry whole when it rewrites `agsc.config.json`; it used to keep
   the address only and drop the relationship and the crosswalk (AGSC-11-24). The entries are ordered by
   their address, so a node with plain peers gets the same bytes as before.

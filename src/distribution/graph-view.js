@@ -155,7 +155,7 @@ const ITEM = Object.freeze({ pad: 10, side: 190, centre: 170, gap: 70, box: 36, 
  * The diagram source of an item's neighbourhood: the item in the middle, highlighted;
  * each row a box holding its key and the other item's title, on the left for an
  * incoming row and on the right for an outgoing one; one arrow per row, from the item
- * that states the relation to its target.
+ * that states the relation to its target, with the class of the row's key.
  *
  * @param {object} item
  * @param {Array<object>} rows the rows drawn (at most NEIGHBOURS_DRAWN).
@@ -178,11 +178,12 @@ function itemFigureSource(item, rows) {
     placed[row.direction] += 1;
     lines.push(`box ${id} ${n(x[row.direction])} ${n(y)} ${ITEM.side} ${ITEM.box} "${row.key}|${fit(titleOf(row.other), ITEM.side - LABEL_PADDING)}"`);
     // The arrow leaves or enters the row's box level with its middle, through a waypoint
-    // in the gap, so that no arrow crosses another row's box.
+    // in the gap, so that no arrow crosses another row's box. It carries the class of its
+    // relation (`rel=KEY`, AGSC-01-42): a hook for a stylesheet, no colour.
     const middle = n(y + ITEM.box / 2);
     lines.push(row.direction === 'outgoing'
-      ? `arrow item ${id} via=${n(x.outgoing - ITEM.lead)},${middle}`
-      : `arrow ${id} item via=${n(ITEM.pad + ITEM.side + ITEM.lead)},${middle}`);
+      ? `arrow item ${id} via=${n(x.outgoing - ITEM.lead)},${middle} rel=${row.key}`
+      : `arrow ${id} item via=${n(ITEM.pad + ITEM.side + ITEM.lead)},${middle} rel=${row.key}`);
   });
   return `${lines.join('\n')}\n`;
 }
