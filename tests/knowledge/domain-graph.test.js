@@ -84,11 +84,13 @@ test('a per-item view holds the item\'s domain triples and no triple of the voca
   for (const item of ITEMS) {
     const page = jsonld.restrictTo(whole, jsonld.toJsonLd([item], { ...options, siteVocabulary: false }));
     const ids = page['@graph'].map((n) => n['@id']);
-    assert.ok(ids.every((id) => !id.startsWith(NAMESPACE) && !id.startsWith('https://w3id.org/')), ids.join(', '));
+    // A node of the vocabulary is written as its IRI or, under a prefix of the context, as its compact IRI.
+    assert.ok(ids.every((id) => !id.startsWith(NAMESPACE) && !id.startsWith('https://w3id.org/')
+      && !/^(asc|dcterms|prov|rdfs|schema|skos|xsd):/u.test(id)), ids.join(', '));
   }
   const page = jsonld.restrictTo(whole, jsonld.toJsonLd([ITEMS[0]], { ...options, siteVocabulary: false }));
   const engine = page['@graph'].find((n) => n['@id'] === `${BASE}concepts/engine-a/`);
-  assert.strictEqual(engine['https://schema.org/additionalType'], 'aggregate-root');
+  assert.strictEqual(engine['schema:additionalType'], 'aggregate-root');
   assert.deepStrictEqual(engine[`${NAMESPACE}controlled-by`], { '@id': `${BASE}concepts/ctl/` });
 });
 
@@ -145,7 +147,7 @@ test('a literal under a term that selects IRIs stays a literal in graph.jsonld (
   const model = domain.load(withExtra('dom:Engine rdfs:seeAlso "A note on engines" .'), { contexts: [] });
   const document = jsonld.toJsonLd([concept('a')], optionsWith(model, { context: CONTEXT, contextUrl: CONTEXT_URL }));
   const engine = document['@graph'].find((n) => n['@id'] === `${NAMESPACE}Engine`);
-  assert.deepStrictEqual(engine.seeAlso, { '@type': 'http://www.w3.org/2001/XMLSchema#string', '@value': 'A note on engines' });
+  assert.deepStrictEqual(engine.seeAlso, { '@type': 'xsd:string', '@value': 'A note on engines' });
   const loader = async (url) => ({ contextUrl: null, document: CONTEXT, documentUrl: url });
   const fromJsonLd = await jsonldProcessor.toRDF(document, { format: 'application/n-quads', documentLoader: loader });
   assert.match(fromJsonLd, /<https:\/\/minimal\.example\/ns\/domain#Engine> <http:\/\/www\.w3\.org\/2000\/01\/rdf-schema#seeAlso> "A note on engines" \./u);

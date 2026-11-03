@@ -203,15 +203,21 @@ function resolveMemory(value, options = {}) {
 
 // ---------------------------------------------------------------- graph.jsonld (AGSC-05-09)
 
-/** The `@id` → term-name index of a context object, for the emitter to compact with. */
-function termIndex(contextObject) {
+/**
+ * What the emitter compacts with, read from a context object: `terms`, the `@id` → term-name
+ * index, and `prefixes`, the `[name, namespace]` pairs of its simple string definitions
+ * (`asc`, `dcterms`, … in a context of AGSC-06-32).
+ */
+function compactionTable(contextObject) {
   const definitions = (contextObject && contextObject['@context']) || {};
-  const index = new Map();
+  const terms = new Map();
+  const prefixes = [];
   for (const [name, definition] of Object.entries(definitions)) {
+    if (typeof definition === 'string' && !name.startsWith('@')) prefixes.push([name, definition]);
     if (!definition || typeof definition !== 'object' || !definition['@id']) continue;
-    index.set(expandCompact(definition['@id']), { name, type: definition['@type'] });
+    terms.set(expandCompact(definition['@id']), { name, type: definition['@type'] });
   }
-  return index;
+  return { terms, prefixes };
 }
 
 /** A sort key that orders JSON-LD values deterministically (AGSC-04-12). */
@@ -220,18 +226,42 @@ function valueKey(value) {
   return String(value['@id'] || value['@value'] || '');
 }
 
+/**
+ * An IRI the context has no term for, written as the compact IRI a JSON-LD processor writes
+ * with the context's prefixes (`asc:warrant`, `schema:additionalType`, `rdfs:subClassOf`), or as
+ * itself when no prefix covers it (the terms of a site namespace, of OWL). AGSC-06-32's round
+ * trip needs exactly this form, because re-compaction turns a full IRI under a prefix into the
+ * compact IRI. Every predicate and class of a 1.0 graph has a term, so its bytes never depend
+ * on this; the property `asc:warrant` (AGSC-05-40), which the context of the context version
+ * does not define (AGSC-05-09), and the domain triples of AGSC-05-38/05-39 do.
+ */
+function prefixed(value, table) {
+  for (const [prefix, namespace] of table.prefixes) {
+    if (value.length > namespace.length && value.startsWith(namespace)) return `${prefix}:${value.slice(namespace.length)}`;
+  }
+  return value;
+}
+
+/** A member name, a class or a datatype: the term the context defines for the IRI, else `prefixed`. */
+function compactName(value, table) {
+  const term = table.terms.get(value);
+  return term ? term.name : prefixed(value, table);
+}
+
 /** One object term, in the most compact form the term definition allows (AGSC-05-31). */
-function jsonValue(object, definition) {
+function jsonValue(object, definition, table) {
   if (object.termType === 'iri') {
-    return definition && definition.type === '@id' ? object.value : { '@id': object.value };
+    // An `@id` value is compacted as a document IRI: prefixes apply, term names do not.
+    const value = prefixed(object.value, table);
+    return definition && definition.type === '@id' ? value : { '@id': value };
   }
   if (object.lang) return { '@language': object.lang, '@value': object.value };
   // A literal under a term that selects IRIs (a site vocabulary may give `rdfs:seeAlso` a
   // literal, AGSC-05-38): a bare string there would be read as an IRI, so it is a value object.
-  if (definition && definition.type === '@id') return { '@type': object.datatype, '@value': object.value };
+  if (definition && definition.type === '@id') return { '@type': compactName(object.datatype, table), '@value': object.value };
   if (definition && definition.type === object.datatype) return object.value;
   if (object.datatype === nq.XSD_STRING) return object.value;
-  return { '@type': object.datatype, '@value': object.value };
+  return { '@type': compactName(object.datatype, table), '@value': object.value };
 }
 
 /**
@@ -247,7 +277,7 @@ function jsonValue(object, definition) {
  */
 function toJsonLd(items, options = {}) {
   const quads = nq.dataset(items, options);
-  const index = termIndex(options.context || context([], allExternalProperties()));
+  const table = compactionTable(options.context || context([], allExternalProperties()));
   const bySubject = new Map();
   for (const q of quads) {
     if (!bySubject.has(q.subject.value)) bySubject.set(q.subject.value, new Map());
@@ -255,25 +285,24 @@ function toJsonLd(items, options = {}) {
     if (!properties.has(q.predicate.value)) properties.set(q.predicate.value, []);
     properties.get(q.predicate.value).push(q.object);
   }
+  // Nodes in code-point order of their IRIs; a node of a site vocabulary that declares a term
+  // of a prefixed namespace (`asc:Concept a owl:Class`, AGSC-05-25) is written as its compact IRI.
   const nodes = [...bySubject.keys()].sort(compareCodePoint).map((subject) => {
-    const node = { '@id': subject };
+    const node = { '@id': prefixed(subject, table) };
     const properties = bySubject.get(subject);
     const types = (properties.get(nq.RDF_TYPE) || [])
       .map((object) => object.value)
       .sort(compareCodePoint)
-      .map((value) => {
-        const term = index.get(value);
-        return term ? term.name : value;
-      });
+      .map((value) => compactName(value, table));
     // AGSC-05-12/05-13: every node this specification instantiates carries exactly
     // one class and there is no union type, so `@type` is a name, not a list. An item
     // with a domain type has two (AGSC-05-39), listed in code-point order of their IRIs.
     if (types.length > 0) node['@type'] = types.length === 1 ? types[0] : types;
     for (const [predicate, objects] of properties) {
       if (predicate === nq.RDF_TYPE) continue;
-      const definition = index.get(predicate);
-      const name = definition ? definition.name : predicate;
-      const values = objects.map((object) => jsonValue(object, definition))
+      const definition = table.terms.get(predicate);
+      const name = compactName(predicate, table);
+      const values = objects.map((object) => jsonValue(object, definition, table))
         .sort((a, b) => compareCodePoint(valueKey(a), valueKey(b)));
       const unique = values.filter((value, n) => values
         .findIndex((other) => valueKey(other) === valueKey(value)) === n);

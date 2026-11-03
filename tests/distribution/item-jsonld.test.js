@@ -40,9 +40,13 @@ function buildFixture(edit = () => {}) {
 
 const json = (built, route) => JSON.parse(String(built.files.get(route)));
 const nodeOf = (doc, id) => doc['@graph'].find((node) => node['@id'] === id);
-/** The IRIs a node states under a term, whether the context names the term or not. */
+/**
+ * The IRIs a node states under a term, whether the context names the term or not: a build
+ * given no vocabulary publishes a context of prefixes only, so the member is the compact IRI
+ * (`asc:uses`) that the AGSC-06-32 round trip writes with it.
+ */
 function iris(node, term) {
-  const key = Object.keys(node).find((k) => k === term || k.endsWith(`#${term}`));
+  const key = Object.keys(node).find((k) => k === term || k.endsWith(`:${term}`) || k.endsWith(`#${term}`));
   const values = key === undefined ? [] : [node[key]].flat();
   return values.map((value) => (typeof value === 'string' ? value : value['@id']));
 }

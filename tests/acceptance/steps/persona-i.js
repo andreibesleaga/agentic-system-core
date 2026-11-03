@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27
+// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27, AGSC-05-40, AGSC-06-32
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates; the stale items
 // the NOW page lists; the permissions and steps of the shipped release workflow,
@@ -8,12 +8,15 @@
 // second item under the retired slug; a site vocabulary published with the graph and
 // one refused by lint, by the build and by the shipped ontology checker (AGSC-05-38); a
 // note's domain type, role and domain links, and their refusal (AGSC-02-25, AGSC-03-27);
+// a term's warrant in the graph, and the JSON-LD round trip of a graph that carries it
+// (AGSC-05-40, AGSC-06-32);
 // and, where the real-Bundle lane
 // is switched on, a restore from a bare clone of the patterns node. The steps of
 // the scenario that waits on a gap (a channel whose publish choice is auto) are
 // written here too.
 
 const assert = require('node:assert');
+const { spawnSync } = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -33,6 +36,8 @@ const OLD_SITE = path.join(ROOT, 'tests', 'fixtures', 'old-site-10');
 const SELECTION = path.join(OLD_SITE, 'selection.tsv');
 /** The rows of the selection that must not become items: deferred, excluded, unknown. */
 const NOT_IMPORTED = Object.freeze(['excluded-one', 'ghost', 'not-chosen', 'unterminated']);
+/** The expand and re-compact child of the graph area (`jsonld@9`, offline loader). */
+const ROUND_TRIP = path.join(ROOT, 'tests', 'conformance', 'areas', '_jsonld-roundtrip.js');
 
 /** Every file of a directory, path -> bytes (base64), in code-point order. */
 function tree(dir) {
@@ -557,6 +562,34 @@ module.exports = [
       const edge = (s, p, o) => `<${base}concepts/${s}/> <${NAMESPACE}${p}> <${base}concepts/${o}/> <${base}> .`;
       assert.ok(lines.has(edge(from, member, to)), `the domain link is not in ${nquadsRel}`);
       assert.ok(lines.has(edge(to, inverse, from)), `the computed inverse is not in ${nquadsRel}`);
+    },
+  },
+  {
+    pattern: /^the item "([^"]+)" states a "([^"]+)" warrant grounded in "([^"]+)" \(AGSC-02-25, AGSC-05-40\)$/u,
+    run(world, rel, type, source) {
+      world.write(rel, world.read(rel).replace(/\n---\n/u, `\nwarrant:\n  source: ${source}\n  type: ${type}\n---\n`));
+      assert.deepStrictEqual(splitItem(world.read(rel)).frontmatter.warrant, { source, type });
+    },
+  },
+  {
+    pattern: /^"([^"]+)" holds the source "([^"]+)" and the warrant "([^"]+)" on "([^"]+)", both as xsd:string \(AGSC-05-40\)$/u,
+    run(world, nquadsRel, source, type, slug) {
+      const base = JSON.parse(world.read('agsc.config.json')).site.base;
+      const lines = new Set(world.read(nquadsRel).split('\n'));
+      const on = (property, value) => `<${base}concepts/${slug}/> <${property}> ${JSON.stringify(value)}`
+        + `^^<http://www.w3.org/2001/XMLSchema#string> <${base}> .`;
+      assert.ok(lines.has(on('http://purl.org/dc/terms/source', source)), `the warrant's source is not in ${nquadsRel}`);
+      assert.ok(lines.has(on('https://w3id.org/agentic-system-core/ns#warrant', type)), `the kind of warrant is not in ${nquadsRel}`);
+    },
+  },
+  {
+    pattern: /^"([^"]+)", expanded with "([^"]+)" and compacted again, is the same document \(AGSC-06-32\)$/u,
+    run(world, documentRel, contextRel) {
+      const doc = JSON.parse(world.read(documentRel));
+      const input = JSON.stringify({ doc, context: JSON.parse(world.read(contextRel)), contextUrl: doc['@context'] });
+      const r = spawnSync(process.execPath, [ROUND_TRIP], { input, encoding: 'utf8' });
+      assert.strictEqual(r.status, 0, r.stderr);
+      assert.strictEqual(canonicalize(JSON.parse(r.stdout)), canonicalize(doc));
     },
   },
   {

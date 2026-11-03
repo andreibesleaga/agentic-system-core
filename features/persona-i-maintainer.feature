@@ -145,3 +145,15 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     Then the command exits 1
     And the Bundle does not hold "www/graph.nq"
     And no network call was attempted
+
+  @PRD-022 @human
+  Scenario: A term states its warrant, and the graph carries its source and its kind of warrant
+    Given a fresh copy of the acceptance Bundle
+    And the item "content/concepts/handoff.md" states a "literary" warrant grounded in "https://example.org/glossary" (AGSC-02-25, AGSC-05-40)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And "www/graph.nq" holds the source "https://example.org/glossary" and the warrant "literary" on "handoff", both as xsd:string (AGSC-05-40)
+    And "www/graph.jsonld", expanded with "www/ns/context.jsonld" and compacted again, is the same document (AGSC-06-32)
+    And no network call was attempted

@@ -314,6 +314,24 @@ define (`AGSC-E418`) and a member that is no relation of the file, that is the a
 or that is a kind of `skos:related`, `skos:broader` or `skos:narrower` used on a cluster
 (`AGSC-E317`); a `domain_role` outside the five is `AGSC-E203`.
 
+A term can also say why it belongs to the vocabulary, with a `warrant`: what grounds it, and
+which of the three kinds of warrant of ANSI/NISO Z39.19 that ground is. `literary` means the
+term is used in the published writing of the field, `user` that the people who look for the
+subject use it, and `organisational` that your organisation requires it. A warrant needs no
+vocabulary file.
+
+```yaml
+warrant:
+  source: https://example.org/glossary
+  type: literary
+```
+
+`source` is one line: an address where there is one, otherwise a citation. The build adds two
+statements to the note in `graph.nq`, `graph.ttl` and `graph.jsonld`: `dcterms:source` with the
+source and `asc:warrant` with the kind. A warrant is not an entry of `sources`, and it changes
+none of them. `agsc lint` refuses a warrant without a `source` or a `type`, or of another kind
+(`AGSC-E512`), and an empty or multi-line source (`AGSC-E204`).
+
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).
 

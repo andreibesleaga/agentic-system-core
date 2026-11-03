@@ -100,14 +100,16 @@ test('the document carries no context member when no URL is given', () => {
   assert.deepStrictEqual(document, { '@graph': [] });
 });
 
-test('a predicate with no term definition keeps its IRI as the member name', () => {
-  const document = jsonld.toJsonLd([{ type: 'concept', slug: 'a', title: 'A' }], {
-    base: 'https://e.org',
-    context: jsonld.context([], []),
-  });
-  const node = document['@graph'][0];
-  assert.ok(Object.keys(node).includes('http://www.w3.org/2004/02/skos/core#prefLabel'));
-  assert.strictEqual(node['@type'], 'https://w3id.org/agentic-system-core/ns#Concept');
+test('a predicate or class with no term definition is the compact IRI of a prefix of the context, else its IRI (AGSC-06-32)', () => {
+  const item = { type: 'concept', slug: 'a', title: 'A' };
+  // The context of `context([], [])` still defines the prefixes: a processor writes the compact IRI.
+  const prefixedNode = jsonld.toJsonLd([item], { base: 'https://e.org', context: jsonld.context([], []) })['@graph'][0];
+  assert.ok(Object.keys(prefixedNode).includes('skos:prefLabel'));
+  assert.strictEqual(prefixedNode['@type'], 'asc:Concept');
+  // With no prefix at all, nothing can shorten the IRI.
+  const bare = jsonld.toJsonLd([item], { base: 'https://e.org', context: { '@context': {} } })['@graph'][0];
+  assert.ok(Object.keys(bare).includes('http://www.w3.org/2004/02/skos/core#prefLabel'));
+  assert.strictEqual(bare['@type'], 'https://w3id.org/agentic-system-core/ns#Concept');
 });
 
 test('the JSON-LD view is I-JSON and canonicalises (AGSC-04-04)', () => {
@@ -123,8 +125,8 @@ test('a typed literal the context does not coerce keeps the expanded value form'
     base: 'https://e.org',
     context: jsonld.context([], []),
   });
-  assert.deepStrictEqual(document['@graph'][0]['https://w3id.org/agentic-system-core/ns#staleAfter'], {
-    '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+  assert.deepStrictEqual(document['@graph'][0]['asc:staleAfter'], {
+    '@type': 'xsd:dateTime',
     '@value': '2027-01-01T00:00:00Z',
   });
 });

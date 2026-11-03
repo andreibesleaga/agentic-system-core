@@ -7,8 +7,9 @@
 // frontmatter → property table), AGSC-05-29/05-30 (attachments, ports, task state),
 // AGSC-05-31 (the three literal forms), AGSC-05-32 (N-Quads escaping),
 // AGSC-04-13/04-15/04-16 (the sort that IS the canonicalisation), AGSC-06-33
-// (the optional static fragments) and, for a node that uses the domain layer,
-// AGSC-05-38/05-39 (the site vocabulary's triples and the items' domain triples).
+// (the optional static fragments), AGSC-05-40 (the two triples of an item's warrant) and,
+// for a node that uses the domain layer, AGSC-05-38/05-39 (the site vocabulary's triples
+// and the items' domain triples).
 //
 // PURE: no fs, no process, no clock, no network, no cross-context require. The build
 // instant, the file bytes of an attachment and the Bundle configuration are passed in.
@@ -29,6 +30,7 @@
 const { compareCodePoint } = require('./unicode.js');
 const skos = require('./skos.js');
 const { RELATIONS } = require('./relations.js');
+const { warrantOf } = require('./warrants.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 // ---------------------------------------------------------------- namespaces
@@ -323,6 +325,21 @@ function sourceQuads(item, subject, graph) {
   return out;
 }
 
+/**
+ * AGSC-05-40: a valid `warrant` adds two triples on the item, `dcterms:source` with the source
+ * and `asc:warrant` with the kind, both `xsd:string` (the AGSC-05-26 table). It is not a
+ * Source node: the `#source-n` nodes of `sources[]` are written by `sourceQuads` alone. A
+ * warrant that breaks the rule adds nothing (`warrants.js#warrantOf`); the lint reports it.
+ */
+function warrantQuads(item, subject, graph) {
+  const warrant = warrantOf(item);
+  if (warrant === null) return [];
+  return [
+    quad(iri(subject), iri(`${DCTERMS}source`), literal(warrant.source), graph),
+    quad(iri(subject), iri(`${NS}warrant`), literal(warrant.type), graph),
+  ];
+}
+
 /** The Review nodes of `verified[]` and the `asc:review` reachability edges (AGSC-05-15). */
 function reviewQuads(item, subject, graph) {
   const out = [];
@@ -538,6 +555,7 @@ function dataset(items, options = {}) {
     out.push(...dateQuads(item, subject, graph));
     out.push(...linkQuads(item, subject, index, graph));
     out.push(...sourceQuads(item, subject, graph));
+    out.push(...warrantQuads(item, subject, graph));
     out.push(...reviewQuads(item, subject, graph));
     out.push(...attachmentQuads(item, { ...options, base, graph, subject }));
     if (options.domain) out.push(...domainQuads(item, subject, index, graph, options.domain));

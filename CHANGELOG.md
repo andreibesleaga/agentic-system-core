@@ -321,6 +321,28 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and `build`; an unresolved target is `AGSC-E301`. The model of `domain.js#load` says which side of a
   pair is computed (`computed`, `inverseName`). No byte of a node without a vocabulary changes; the
   edges are not yet shown on pages or in tool answers.
+- Warrants in the graph (AGSC-05-40, the AGSC-05-26 table; `graph-0045`): an item with a valid `warrant`
+  adds `dcterms:source` with the source and `asc:warrant` with the kind (`literary`, `user` or
+  `organisational`, the three warrants of ANSI/NISO Z39.19-2005 (R2010)), both `xsd:string`, to
+  `graph.nq`, `graph.ttl`, `graph.jsonld` and its own `pages/<slug>.jsonld`, on any node: a warrant
+  needs no vocabulary file. A warrant is not a Source node and changes no entry of `sources[]`; one
+  that breaks the rule adds nothing (the lint reports it, `AGSC-E512`). The files that change are
+  those of AGSC-05-39 and only for a node whose items state the key; no reference node or example does
+  (G-REF: 0 differing files). New `src/knowledge/warrants.js` (`warrantOf`, `TYPES`) is the one reader
+  of the key, for the graph now and for the pages, tool answers and brief later. `asc:warrant` is not
+  yet a term of `ontology/agsc.ttl`: the pass that sets the 1.1.0 vocabulary version adds it
+  (AGSC-05-25), and the context file of the context version never defines it (AGSC-05-09, AGSC-06-32),
+  so `graph.jsonld` writes the member as `asc:warrant`.
+- `graph.jsonld` survives the round trip of AGSC-06-32 when the graph holds an IRI the context has no
+  term for (`asc:warrant`, AGSC-05-40; `schema:additionalType`, `dcterms:isPartOf`, `rdfs:subClassOf`
+  and the declared terms of a site vocabulary, AGSC-05-38/05-39): such a member name, class, datatype
+  or node is written as the compact IRI that a JSON-LD processor writes with the context's prefixes,
+  and stays a full IRI where no prefix covers it (the site namespace, OWL). The domain-layer graphs of
+  this release wrote the full IRI, which re-compaction does not reproduce. Every IRI of a 1.0 graph
+  built by the command line has a term, so no byte of a 1.0 node changes (G-REF: 0 differing files).
+  A program that calls the build without the vocabulary gets a context of prefixes only, and its
+  `graph.jsonld` now names the `asc:` members as compact IRIs (`asc:uses`) and so round-trips with
+  that context.
 - `tools/gen-shapes` and `schema/item-shapes.ttl` (AGSC-05-24, AGSC-03-25, AGSC-03-23, AGSC-05-17 to
   AGSC-05-21, AGSC-09-90, I-016): SHACL 1.0 shapes of the RDF graph (`graph.nq`, `graph.ttl`, `skos.ttl`),
   generated from `schema/item.schema.json` and the table of AGSC-05-26 (datatype, one value, the closed

@@ -11,11 +11,11 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 334 |
-| Executed acceptance scenario | 79 |
+| Unit, integration or architecture test | 335 |
+| Executed acceptance scenario | 81 |
 | Checker header | 36 |
 
-Acceptance scenarios: 134 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 79 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 135 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 81 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -200,7 +200,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-22 | VERIFIED | yes | `graph-0027` | `governance/lint-order.test.js`, `knowledge/file-lines.test.js`, `knowledge/markdown.test.js` +1 | — | — |
 | AGSC-02-23 | VERIFIED | — | — | `governance/lint-order.test.js`, `interchange/status.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
 | AGSC-02-24 | VERIFIED | yes | `fm-0010`, `fm-0019`, `frontmatter-0030` | `composition/skills.test.js`, `distribution/public-statements.test.js`, `interchange/clusters.test.js` +9 | — | `validate-schemas` |
-| AGSC-02-25 | VERIFIED | yes | `fm-0022`, `fm-0023`, `fm-0024` +3 | `acceptance/steps/persona-i.js`, `knowledge/domain-keys.test.js`, `knowledge/domain-links.test.js` +1 | `persona-i-maintainer.feature#A note states its domain type, its role and a domain link the site vocabulary defines`, `persona-i-maintainer.feature#A domain type or a domain link the site vocabulary does not define is refused by lint and by the build` | — |
+| AGSC-02-25 | VERIFIED | yes | `fm-0022`, `fm-0023`, `fm-0024` +3 | `acceptance/steps/persona-i.js`, `knowledge/domain-keys.test.js`, `knowledge/domain-links.test.js` +3 | `persona-i-maintainer.feature#A note states its domain type, its role and a domain link the site vocabulary defines`, `persona-i-maintainer.feature#A domain type or a domain link the site vocabulary does not define is refused by lint and by the build`, `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
 | AGSC-02-90 | VERIFIED | yes | `adopt-0001` | `acceptance/steps/persona-0.js`, `application/cli/verbs-wired.test.js`, `interchange/skos.test.js` +2 | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
 | AGSC-02-91 | VERIFIED | yes | `adopt-0002`, `fm-0008`, `slug-0007` | `acceptance/steps/persona-0.js`, `application/cli/init-notes.test.js`, `distribution/init.test.js` +6 | `persona-0-dropin.feature#Three commands from bare notes to a full local site`, `persona-0-dropin.feature#Re-running init over an adopted and built Bundle changes nothing`, `persona-0-dropin.feature#Adopting notes with non-ASCII file names gives ASCII slugs` | — |
 | AGSC-02-92 | VERIFIED | yes | `adopt-0003` | `acceptance/steps/persona-0.js`, `distribution/init.test.js`, `knowledge/adopt.test.js` | `persona-0-dropin.feature#Three commands from bare notes to a full local site` | — |
@@ -270,7 +270,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-07 | VERIFIED | yes | `build-0023` | `distribution/page-tools.test.js`, `distribution/routes.test.js` | — | — |
 | AGSC-05-08 | VERIFIED | — | — | `knowledge/nquads.test.js`, `knowledge/skos-export.test.js` | — | `validate-ontology` |
 | AGSC-05-09 | VERIFIED | yes | `graph-0028`, `graph-0043` | `distribution/ns-context.test.js`, `knowledge/jsonld.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
-| AGSC-05-10 | VERIFIED | yes | `graph-0026` | `knowledge/domain-graph.test.js`, `knowledge/turtle.test.js` | — | — |
+| AGSC-05-10 | VERIFIED | yes | `graph-0026` | `knowledge/domain-graph.test.js`, `knowledge/turtle.test.js`, `knowledge/warrant-graph.test.js` | — | — |
 | AGSC-05-11 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-05-12 | VERIFIED | — | — | `knowledge/skos.test.js`, `ontology/property-coverage.test.js` | — | — |
 | AGSC-05-13 | VERIFIED | — | — | `tools/validate-ontology.test.js` | — | `validate-ontology` |
@@ -286,7 +286,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-23 | VERIFIED | — | — | `knowledge/closure.test.js`, `standard/item-links-composition-wording.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-05-24 | VERIFIED | yes | — | `acceptance/steps/persona-j.js`, `tools/gen-shapes-lane.test.js` | — | — |
 | AGSC-05-25 | VERIFIED | — | — | `ontology/vocabulary-file.test.js`, `standard/vocabulary-version.test.js` | — | `validate-ontology` |
-| AGSC-05-26 | VERIFIED | — | — | `knowledge/nquads.test.js`, `tools/gen-dc-profile.test.js`, `tools/gen-shapes.test.js` | — | — |
+| AGSC-05-26 | VERIFIED | — | — | `knowledge/nquads.test.js`, `knowledge/warrant-graph.test.js`, `tools/gen-dc-profile.test.js` +1 | — | — |
 | AGSC-05-26a | VERIFIED | — | — | `tools/validate-ontology.test.js` | — | `validate-ontology` |
 | AGSC-05-27 | VERIFIED | yes | `graph-0024`, `graph-0025` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-28 | VERIFIED | — | — | `knowledge/turtle.test.js`, `ontology/alignments.test.js`, `ontology/property-coverage.test.js` | — | — |
@@ -300,11 +300,11 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-36 | VERIFIED | yes | `graph-0040` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `knowledge/skos-export.test.js` | — | — |
 | AGSC-05-37 | VERIFIED | yes | `graph-0041`, `graph-0042` | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/closure.test.js` | — | — |
 | AGSC-05-38 | VERIFIED | yes | `lint-0052`, `lint-0053`, `lint-0054` +1 | `acceptance/steps/persona-i.js`, `application/domain-layer.test.js`, `knowledge/domain-graph.test.js` +2 | `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker` | `validate-ontology` |
-| AGSC-05-39 | VERIFIED | yes | `graph-0044` | `knowledge/domain-graph.test.js` | — | — |
-| AGSC-05-40 | VERIFIED | yes | `graph-0045`, `lint-0056` | — | — | — |
+| AGSC-05-39 | VERIFIED | yes | `graph-0044` | `knowledge/domain-graph.test.js`, `knowledge/warrant-graph.test.js` | — | — |
+| AGSC-05-40 | VERIFIED | yes | `graph-0045`, `lint-0056` | `acceptance/steps/persona-i.js`, `knowledge/warrant-graph.test.js`, `knowledge/warrants.test.js` | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
 | AGSC-05-41 | VERIFIED | yes | `graph-0046`, `lint-0057`, `lint-0058` +1 | — | — | — |
 | AGSC-06-01 | VERIFIED | yes | `build-0029` | `application/bundle-assets.test.js`, `application/cli/verbs-wired.test.js`, `boundary/visibility.test.js` +8 | `persona-g-team.feature#Team publishes its own specs as an instance of itself (should)` | — |
-| AGSC-06-02 | VERIFIED | yes | — | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c.js`, `distribution/build-golden.test.js` +3 | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
+| AGSC-06-02 | VERIFIED | yes | — | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c.js`, `distribution/build-golden.test.js` +4 | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
 | AGSC-06-03 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-06-04 | VERIFIED | yes | — | `acceptance/steps/persona-i.js`, `distribution/headers.test.js` | `persona-i-maintainer.feature#A superseded item keeps its slug and its page, its old address redirects, and the slug is never reused` | — |
 | AGSC-06-05 | VERIFIED | — | — | `distribution/build-golden.test.js`, `distribution/headers.test.js`, `distribution/html.test.js` | — | — |
@@ -336,7 +336,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-29 | VERIFIED | yes | `chk-0009`, `chk-0012` | `acceptance/steps/persona-c.js`, `distribution/routes.test.js`, `knowledge/chunks.test.js` | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework` | — |
 | AGSC-06-30 | VERIFIED | yes | `chk-0003` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js` +11 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-a-reader.feature#Reader searches via the prebuilt client-side index`, `persona-a-reader.feature#Reader opens a Concept page and sees evidence` +5 | — |
 | AGSC-06-31 | VERIFIED | yes | `chk-0013` | `composition/conform.test.js`, `distribution/content-version-stamps.test.js`, `distribution/pagination.test.js` | — | — |
-| AGSC-06-32 | VERIFIED | yes | `graph-0011`, `graph-0019` | `distribution/ns-context.test.js`, `knowledge/jsonld-roundtrip.test.js`, `knowledge/jsonld.test.js` +2 | — | — |
+| AGSC-06-32 | VERIFIED | yes | `graph-0011`, `graph-0019` | `acceptance/steps/persona-i.js`, `distribution/ns-context.test.js`, `knowledge/jsonld-roundtrip.test.js` +4 | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
 | AGSC-06-33 | VERIFIED | yes | `build-0011` | `knowledge/nquads.test.js` | — | — |
 | AGSC-06-34 | VERIFIED | yes | `disc-0030`, `disc-0031` | `boundary/surfaces.test.js` | `persona-c-agent-mcp.feature#Agent starts the local stdio MCP server`, `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled` +11 | — |
 | AGSC-06-35 | VERIFIED | yes | `bnd-0029` | `boundary/federation.test.js`, `distribution/discovery-facts.test.js`, `distribution/relations-rc6.test.js` +1 | — | `validate-wellknown` |
