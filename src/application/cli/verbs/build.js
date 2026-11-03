@@ -40,6 +40,8 @@ function run(ctx) {
   gate.push(...linkGate(bundle));
   // AGSC-01-41, AGSC-05-38: a site vocabulary that `lint` refuses is never published.
   gate.push(...lintVerb.domainLayer(bundle));
+  // AGSC-11-24: a crosswalk `lint` refuses is refused here too, though a build applies none.
+  gate.push(...lintVerb.contextMapFindings(bundle));
   // AGSC-01-40, AGSC-04-05: names, paths and characters some systems refuse are warnings here too.
   gate.push(...lintVerb.portableNames(ctx, bundle), ...lintVerb.textFileFindings(ctx.ports && ctx.ports.fs));
   // AGSC-04-09: the Clock reports when the build instant defaulted to 0

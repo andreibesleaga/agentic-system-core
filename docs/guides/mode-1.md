@@ -371,6 +371,72 @@ error: AGSC-E422 the competency question has-a-concept ("Does the node hold at l
 verify exited 1
 ```
 
+A cluster can also be a **bounded context**: a part of the field with words of its own, where
+a term has one meaning. Name it under `domain.contexts` with a namespace of its own, for example
+`{"cluster": "coordination", "namespace": "https://example.org/ns/coordination#"}`. A note is in
+the context its `domain_context` names, or else in the context of its first cluster, or in none.
+Inside one context two notes with the same title, of any type, are the warning `AGSC-E419`;
+notes in two different contexts may share a title without a warning, because the same word can
+mean two things in two contexts. With a vocabulary file, a context's namespace holds the classes
+and relations that belong to that context alone. When such a node composes, `agsc compose` also
+writes `context-map.json` beside the Harness, in the folder whose name is the Harness folder's
+with `.companion` added: which context each member is in, the links between members of two
+contexts, and the members in none. The seven Harness files do not change, and a node without
+contexts gets no extra file.
+
+```bash demo
+mkdir -p content/clusters
+cat > content/clusters/coordination.md <<'ITEM'
+---
+type: cluster
+title: Coordination
+description: How agents divide work between them, in the words this team uses.
+prov:
+  origin: human
+  operator: human:you
+---
+
+# Coordination
+ITEM
+cat > content/concepts/supervisor.md <<'ITEM'
+---
+type: concept
+title: Supervisor
+description: An agent that splits a task into parts and hands each part to another agent.
+prov:
+  origin: human
+  operator: human:you
+kind: explainer
+domain_context: coordination
+---
+
+# Supervisor
+
+It keeps the plan and checks each result before the next handoff.
+ITEM
+node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("agsc.config.json")); c.domain.contexts = [{ cluster: "coordination", namespace: "https://example.org/ns/coordination#" }]; fs.writeFileSync("agsc.config.json", JSON.stringify(c, null, 2) + "\n")'
+agsc compose handoff supervisor > /dev/null 2>&1
+map="$(ls -d dist/harness/*.companion)/context-map.json"
+node -e 'const m = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(JSON.stringify(m.contexts)); console.log(JSON.stringify(m.unassigned))' "$map"
+```
+
+```text expect
+[{"members":["supervisor"],"name":"coordination","namespace":"https://example.org/ns/coordination#"}]
+["handoff"]
+```
+
+A peer can say how its model relates to yours. Instead of the address alone, write the entry
+of `peers` as `{"url": "<address>", "relationship": "<kind>", "crosswalk": "<file>"}`: the kind
+is `shared-kernel` (the two nodes own part of the model together), `conformist` (this node
+takes the peer's model as it is) or `translation-layer` (this node keeps its own model and
+translates). The crosswalk, required for `translation-layer`, is a Turtle file of statements
+`<a note of yours> skos:exactMatch <the peer's note>`, with `skos:closeMatch`,
+`skos:broadMatch` or `skos:narrowMatch` where the match is not exact; the subject is one of
+your concepts or lessons. `agsc lint` refuses any other statement (`AGSC-E209`) and a crosswalk
+file that is missing (`AGSC-E901`). The built site names the peer by its address alone, as
+before; the relationship and the crosswalk are published only in `context-map.json`, and a
+client that reads results from the peer marks each with them. A build never applies them.
+
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).
 

@@ -29,6 +29,7 @@
 const nq = require('./nquads.js');
 const turtle = require('./turtle.js');
 const skos = require('./skos.js');
+const bounded = require('./contexts.js');
 const { RELATIONS } = require('./relations.js');
 const { finding } = require('./validate.js');
 const { compareCodePoint } = require('./unicode.js');
@@ -314,20 +315,14 @@ function load(text, options = {}) {
   const index = indexOf(named);
   const namespace = namespaceOf(index);
   const { computed, inverse } = inversesOf(named);
-  const contexts = new Map((Array.isArray(options.contexts) ? options.contexts : [])
-    .filter((entry) => entry && typeof entry.cluster === 'string' && typeof entry.namespace === 'string')
-    .map((entry) => [entry.cluster, entry.namespace]));
-
+  const declared = bounded.declared({ domain: { contexts: options.contexts } });
   /** AGSC-08-32: the declared context named by `domain_context`, else that of the primary cluster, else none. */
-  const contextOf = (item) => {
-    if (typeof item.domain_context === 'string' && contexts.has(item.domain_context)) return item.domain_context;
-    const primary = Array.isArray(item.clusters) ? item.clusters[0] : undefined;
-    return contexts.has(primary) ? primary : null;
-  };
+  const contextOf = bounded.contextOf(declared);
+  const contextNamespace = bounded.namespaceOf(declared);
   /** AGSC-02-25 / AGSC-03-27: a local name in the item's context namespace, else in the site namespace. */
   const iriFor = (item, local) => {
     const context = contextOf(item);
-    const base = context === null ? namespace : contexts.get(context);
+    const base = context === null ? namespace : contextNamespace(context);
     return base === null || typeof local !== 'string' ? null : `${base}${local}`;
   };
   const classFor = (item) => {

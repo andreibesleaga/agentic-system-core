@@ -2,11 +2,15 @@
 // src/application/cli/verbs/compose.js — `compose` (AGSC-09-07).
 // The five steps of AGSC-07-04…07-08 in their normative order and the
 // AGSC-07-09 verdict are `composition/compose.js`'s; `--from <slug>` reads the
-// saved composition of AGSC-02-97/07-24; `--emit <target>` is AGSC-07-18.
+// saved composition of AGSC-02-97/07-24; `--emit <target>` is AGSC-07-18; for a node that
+// declares contexts the context map of AGSC-07-30 is written in the companion directory.
 
 const compose = require('../../../composition/compose.js');
 const architecture = require('../../../composition/architecture.js');
 const harness = require('../../../composition/harness.js');
+const contextMap = require('../../../composition/context-map.js');
+const bounded = require('../../../knowledge/contexts.js');
+const federation = require('../../../boundary/federation.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
 const loader = require('../../plugin-loader.js');
@@ -135,6 +139,52 @@ function emitterRefusal(target) {
 }
 
 /**
+ * AGSC-07-30 with AGSC-11-24: the typed peers of a node that declares contexts, each with the
+ * statements of its crosswalk, for the context map; and the faults that stop the run before
+ * anything is written (`federation.js#peerFaults`: AGSC-E202, AGSC-E203, AGSC-E901, AGSC-E209).
+ * A node that declares no context has neither, whatever its peers: it writes no map.
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {{findings: Array<object>, peers: Array<{url: string, relationship: string, statements: Array<object>}>}}
+ */
+function contextPeers(bundle) {
+  const config = bundle.config || {};
+  if (!bounded.declaresContexts(config)) return { findings: [], peers: [] };
+  const crosswalks = bundle.crosswalks || new Map();
+  const options = {
+    base: String((config.site || {}).base || ''),
+    contexts: config.domain.contexts,
+    items: (bundle.items || []).map((item) => ({ slug: item.slug, type: item.type })),
+    read: (file) => (crosswalks.has(file) ? crosswalks.get(file) : null),
+  };
+  const findings = [];
+  const peers = (config.peers || []).flatMap((entry, n) => {
+    if (entry === null || typeof entry !== 'object') return [];
+    const checked = federation.peerFaults(entry, { ...options, where: `peers[${n}]` });
+    findings.push(...checked.findings);
+    return [{ relationship: entry.relationship, statements: checked.statements, url: bounded.peerUrl(entry) }];
+  });
+  return { findings, peers };
+}
+
+/**
+ * AGSC-07-30: write the companion files of the composition — the context map, for a node that
+ * declares contexts — in `<harness dir>.companion/`, beside the Harness directory and never in
+ * it (AGSC-07-25). With no file to write, no directory is created.
+ *
+ * @returns {Array<string>} the paths written.
+ */
+function writeCompanion(ctx, harnessDir, files) {
+  if (files.length === 0) return [];
+  const dir = `${withoutTrailingSlashes(harnessDir)}.companion/`;
+  ctx.ports.fs.mkdirp(dir.slice(0, -1));
+  return files.map(([name, text]) => {
+    ctx.ports.fs.writeFile(`${dir}${name}`, text);
+    return `${dir}${name}`;
+  });
+}
+
+/**
  * AGSC-07-12 / AGSC-07-13 / AGSC-07-17: write the seven Harness files.
  *
  * The bytes are `composition/harness.js#emit`'s and are computed from the verdict,
@@ -151,10 +201,12 @@ function emitterRefusal(target) {
  * @param {object} bundle the loaded Bundle.
  * @param {object} result the verdict.
  * @param {Array<object>} items the flattened items.
- * @returns {{emitted:boolean, dir:(string|null), files:Array<string>,
- *   findings:Array<object>, missing:Array<string>}}
+ * @param {Array<object>} [peers] the typed peers of a node that declares contexts (`contextPeers`),
+ *   for the context map written beside the Harness (AGSC-07-30).
+ * @returns {{emitted:boolean, dir:(string|null), files:Array<string>, companion:Array<string>,
+ *   findings:Array<object>, missing:Array<string>}} `companion` the files written beside the Harness
  */
-function emitHarness(ctx, bundle, result, items) {
+function emitHarness(ctx, bundle, result, items, peers = []) {
   const findings = [];
   // AGSC-07-17: "An invalid composition MUST NOT emit a Harness."
   if (!harness.isEmitted(result)) {
@@ -173,7 +225,7 @@ function emitHarness(ctx, bundle, result, items) {
     : instantFromEpoch(clock ? clock.now() : 0);
   const selectionDigest = helpers.sha256(harness.selectionDigestInput(result));
   const name = harness.harnessName(selectionDigest);
-  const emission = harness.emit(result, {
+  const options = {
     base: `${withoutTrailingSlashes(String(site.base || ''))}/`,
     // AGSC-04-25 / AGSC-07-12: `harness.jsonld` and the provenance header of every
     // `AGENTS.md` and `SKILL.md` carry the content version. It is DERIVED HERE and
@@ -186,7 +238,8 @@ function emitHarness(ctx, bundle, result, items) {
     name,
     selectionDigest,
     specVersion: ctx.specVersion,
-  });
+  };
+  const emission = harness.emit(result, options);
   for (const violation of emission.violations) findings.push({ ...violation, severity: 'error' });
   // A Harness whose own files break a rule is not written at all: files that were
   // refused are not a Harness, and a partial one on disk would read as a valid one.
@@ -203,6 +256,8 @@ function emitHarness(ctx, bundle, result, items) {
     ctx.ports.fs.writeFile(at, text);
     written.push(at);
   }
+  const companion = writeCompanion(ctx, dir,
+    contextMap.contextMapFiles(result, { ...options, contexts: (config.domain || {}).contexts, peers }));
   // `--zip` packages exactly the bytes that were just written, BESIDE the
   // directory — AGSC-07-12 closes the Harness at seven file kinds, so the archive is
   // never inside it. The entry bytes are the emission's, not a re-read of the disk,
@@ -220,6 +275,7 @@ function emitHarness(ctx, bundle, result, items) {
 
   return {
     archive: zipped.path,
+    companion,
     dir,
     emitted: emission.emitted,
     files: written,
@@ -352,6 +408,9 @@ function run(ctx) {
   const emit = ctx.verbFlags && ctx.verbFlags.emit;
   const target = emit === undefined ? { findings: [], plugin: null } : emitTarget(ctx, emit);
   findings.push(...target.findings);
+  // AGSC-07-30 / AGSC-11-24: a crosswalk the context map cannot carry stops the run too.
+  const peers = contextPeers(bundle);
+  findings.push(...peers.findings);
   const failed = findings.some((f) => f.severity === 'error');
   if (failed && ctx.verbFlags && ctx.verbFlags.zip === true) {
     helpers.note(ctx, 'harness missing: the archive of --zip, for the same reason (AGSC-07-17)');
@@ -360,10 +419,11 @@ function run(ctx) {
     ? { dir: null, emitted: false, files: [], findings: [], missing: [harness.isEmitted(result)
       ? 'every file: the run found an error, so nothing was written'
       : 'every file: the composition is invalid (AGSC-07-17)'] }
-    : emitHarness(ctx, bundle, result, items);
+    : emitHarness(ctx, bundle, result, items, peers.peers);
   findings.push(...emission.findings);
   helpers.note(ctx, `harness_emitted: ${emission.emitted}`);
   if (emission.dir !== null) helpers.note(ctx, `harness: ${emission.dir} (${emission.files.length} files)`);
+  for (const file of emission.companion || []) helpers.note(ctx, `companion: ${file} (AGSC-07-30)`);
   for (const missing of emission.missing) helpers.note(ctx, `harness missing: ${missing}`);
 
   // AGSC-07-18: a target rendering IS a rendering of those seven files, written
@@ -373,6 +433,6 @@ function run(ctx) {
 }
 
 module.exports = {
-  name: 'compose', conflictMessage, emitHarness, emitterRefusal,
+  name: 'compose', conflictMessage, contextPeers, emitHarness, emitterRefusal,
   flatten, run, warningMessage,
 };

@@ -22,6 +22,7 @@
 const frontmatter = require('../knowledge/frontmatter.js');
 const validate = require('../knowledge/validate.js');
 const { pathGrammarError } = require('../knowledge/links.js');
+const { typedPeers } = require('../knowledge/contexts.js');
 const yaml = require('../knowledge/yaml.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
@@ -140,11 +141,13 @@ function loadBundle(ports, options) {
   }
 
   const domain = domainInputs(fs, config, findings);
+  const crosswalks = crosswalkInputs(fs, config, findings);
 
   return Object.freeze({
     assets: Object.freeze(assets),
     byslug: new Map(items.map((i) => [i.slug, i])),
     config,
+    ...(crosswalks === null ? {} : { crosswalks }),
     ...(domain === null ? {} : { domain }),
     findings: Object.freeze(findings),
     index,
@@ -178,6 +181,31 @@ function domainInputs(fs, config, findings) {
     }
   }
   return Object.freeze(texts);
+}
+
+/**
+ * AGSC-11-24: the crosswalk files the typed entries of `peers[]` name are inputs of the Bundle,
+ * read with it, as the files of the `domain` object are. Each named file that is absent is
+ * `AGSC-E901`; the result maps each path read to its text. A configuration with no typed peer
+ * that names a crosswalk gives `null`, and the record keeps its 1.0 shape. The statements are
+ * checked by the lint (`boundary/federation.js#readCrosswalk`); no peer is read here.
+ */
+function crosswalkInputs(fs, config, findings) {
+  const named = typedPeers(config).map((peer) => peer.crosswalk)
+    .filter((path) => typeof path === 'string' && pathGrammarError(path) === null);
+  if (named.length === 0) return null;
+  const texts = new Map();
+  for (const path of new Set(named)) {
+    if (!fs.exists(path)) {
+      findings.push(Object.freeze({
+        code: 'AGSC-E901', file: path, message: `a peer's crosswalk names ${path}, which is not there (AGSC-11-24)`, severity: 'error',
+      }));
+      continue;
+    }
+    const text = readRefusable(fs, path, findings);
+    if (text !== null) texts.set(path, text);
+  }
+  return texts;
 }
 
 /**

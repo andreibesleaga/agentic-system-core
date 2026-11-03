@@ -1,6 +1,6 @@
 # `tests/boundary/`
 
-**Summary.** Unit tests of federation, visibility and the agent-surface contract. Subject: `src/boundary/`.
+**Summary.** Unit tests of federation (with the context maps between nodes, `context-map.test.js`), visibility and the agent-surface contract. Subject: `src/boundary/`.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

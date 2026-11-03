@@ -23,6 +23,7 @@
 //   AGSC-E415       `export`-tagged fence ignored (warn) AGSC-02-22
 //   AGSC-E109       unsupported Markdown construct (warn) AGSC-02-20 (markdown.js)
 //   AGSC-E416       overlapping labels (warn)           AGSC-05-21
+//   AGSC-E419       equal titles inside one context (warn) AGSC-08-32
 //   AGSC-E202       `agent`/`model` missing under an `ai-*` origin AGSC-08-01 (validate.js)
 //   AGSC-E205       a compiled .svg under content/diagrams/ AGSC-01-07
 //   AGSC-E607       combining sequence over the bound   AGSC-04-23
@@ -39,6 +40,7 @@ const { XMLParser, XMLValidator } = require('fast-xml-parser');
 const { checkCombining, COMBINING_BOUND, foldCase } = require('../knowledge/unicode.js');
 const { aiProvenance, sortFindings } = require('../knowledge/validate.js');
 const { finding } = require('./finding.js');
+const contexts = require('../knowledge/contexts.js');
 const links = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
 const nquads = require('../knowledge/nquads.js');
@@ -447,30 +449,64 @@ function labelsOf(fm) {
   return [...new Set([fm.title, ...aliases].map(foldLabel))];
 }
 
+/** An item's folded title, and its folded aliases other than that title. */
+function labelParts(fm) {
+  const title = foldLabel(fm.title);
+  return { aliases: labelsOf(fm).filter((label) => label !== title), title };
+}
+
+/** The earliest of the holders found, or `undefined`. */
+function earliest(holders) {
+  return holders.filter((holder) => holder !== undefined).sort((a, b) => a.order - b.order)[0];
+}
+
 /**
  * AGSC-05-21: two published items of one `type` where a `title` or an alias of one equals
  * a `title` or an alias of the other, after NFC and case folding, are the warning AGSC-E416.
  * Taking the items in path order, each item that shares a label with an earlier one carries
  * one finding, naming the earliest such item. An item's own title equal to its own alias is
  * not an overlap.
+ *
+ * AGSC-08-32: on a node that declares contexts the items of one context form one group, the
+ * items with no context another, and items of two groups are never compared, so that one term
+ * may mean two things in two contexts. Inside a context two equal titles are AGSC-E419 whatever
+ * the types, because a term has one meaning there, and that pair is not also AGSC-E416; every
+ * other comparison is made inside the group as before. A node with no contexts has one group.
  */
 function checkOverlappingLabels(items, config = {}) {
   const findings = [];
-  const holders = new Map();
+  const contextOf = contexts.contextOf(contexts.declared(config));
+  const holders = { alias: new Map(), contextTitle: new Map(), title: new Map() };
   const releases = config.releases;
   const views = items.map((item) => links.view(item))
     .filter((v) => v.fm && typeof v.fm.title === 'string' && isPublished(v.fm, releases))
     .sort((a, b) => compareCodePoint(String(a.path), String(b.path)));
   for (const [order, v] of views.entries()) {
-    const keys = labelsOf(v.fm).map((label) => `${v.fm.type}\u0000${label}`);
-    const earlier = keys.filter((key) => holders.has(key)).map((key) => holders.get(key))
-      .sort((a, b) => a.order - b.order)[0];
-    if (earlier !== undefined) {
-      findings.push(finding('AGSC-E416',
-        `a title or alias of ${v.fm.type} "${v.slug}" overlaps one of "${earlier.slug}" after NFC and case folding (AGSC-05-21)`,
+    const context = contextOf(v.fm);
+    const { aliases, title } = labelParts(v.fm);
+    const key = (label) => `${context === null ? '' : context}\u0000${v.fm.type}\u0000${label}`;
+    const contextTitle = `${context}\u0000${title}`;
+    const sameTitle = context === null ? undefined : holders.contextTitle.get(contextTitle);
+    if (sameTitle !== undefined) {
+      findings.push(finding('AGSC-E419',
+        `the title of ${v.fm.type} "${v.slug}" equals the title of "${sameTitle.slug}" inside the context ${context} `
+        + 'after NFC and case folding; a term has one meaning inside its context (AGSC-08-32)',
         { file: v.path, severity: 'warn', slug: v.slug }));
     }
-    for (const key of keys) if (!holders.has(key)) holders.set(key, { slug: v.slug, order });
+    const overlap = earliest([
+      ...aliases.flatMap((label) => [holders.title.get(key(label)), holders.alias.get(key(label))]),
+      holders.alias.get(key(title)),
+      context === null ? holders.title.get(key(title)) : undefined,
+    ]);
+    if (overlap !== undefined) {
+      findings.push(finding('AGSC-E416',
+        `a title or alias of ${v.fm.type} "${v.slug}" overlaps one of "${overlap.slug}" after NFC and case folding (AGSC-05-21)`,
+        { file: v.path, severity: 'warn', slug: v.slug }));
+    }
+    const holder = { order, slug: v.slug };
+    if (!holders.title.has(key(title))) holders.title.set(key(title), holder);
+    for (const label of aliases) if (!holders.alias.has(key(label))) holders.alias.set(key(label), holder);
+    if (context !== null && !holders.contextTitle.has(contextTitle)) holders.contextTitle.set(contextTitle, holder);
   }
   return findings;
 }

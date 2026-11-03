@@ -376,6 +376,41 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the findings) and `src/application/cli/verbs/_site-checks.js` (the wiring); the Bundle loader keeps
   the texts of the two files (AGSC-01-41). `docs/guides/mode-1.md` shows a question in a runnable step,
   `docs/guides/troubleshooting.md` gains the rows of `AGSC-E421` and `AGSC-E422`.
+- Bounded contexts in the label check (AGSC-08-32, AGSC-05-21; vectors `lint-0060`, `lint-0061`): on a
+  node whose `domain.contexts` declares contexts, the items of one context are compared with each other
+  only, the items in no context form one group, and items of two groups are never compared, so one term
+  may mean two things in two contexts. Inside a context two published items with equal titles after NFC
+  and case folding are the warning `AGSC-E419` whatever their types, on the later path, in place of
+  `AGSC-E416`; an alias still overlaps as `AGSC-E416` inside its group. The context of an item is its
+  `domain_context` when that names a declared context, else its primary cluster when that is declared,
+  else none. A node that declares no context is checked exactly as before (property test). New
+  `src/knowledge/contexts.js` is the one reader of the declared contexts, of the context of an item
+  (now also used by `domain.js`) and of the address of a `peers[]` entry.
+- Context maps between nodes (AGSC-11-24; vectors `bnd-0046`, `bnd-0047`, `bnd-0048`): a typed
+  `peers[]` entry `{url, relationship, crosswalk}` is read. `boundary/federation.js` reads the
+  crosswalk with the pinned `n3` (`readCrosswalk`: only `skos:exactMatch`, `closeMatch`, `broadMatch`
+  and `narrowMatch` from a `concept` or `lesson` item, or a term under a context's namespace, to an IRI
+  of the peer; anything else is `AGSC-E209`), refuses a peer that cannot be applied before any fetch
+  (`peerFaults`: `AGSC-E203`, `AGSC-E202`, `AGSC-E901`, `AGSC-E209`) and marks the results a client
+  derived from that peer with the `relationship` and, where the crosswalk names a result, `crosswalk`
+  (`contextMapResults`); every result stays `untrusted` with its `origin`. `lint`, `ci` and `build`
+  report an absent crosswalk file (`AGSC-E901`, from the Bundle loader) and a refused statement
+  (`AGSC-E209`); a build applies no crosswalk (fitness test `tests/arch/context-map.test.js`). The
+  discovery document, the page footer, the peer citations of the graph and the import identity name a
+  typed peer by its `url` alone, so its site is byte for byte that of the plain peer; before this a
+  typed peer, which the 1.1 schema already admitted, reached the discovery document as
+  `"[object Object]"`.
+- The context map of a composition (AGSC-07-30; vectors `compose-0032`, `compose-0033`): for a node
+  that declares contexts, `compose` also writes `context-map.json` (JCS and one LF: the contexts with
+  their members, the authored Links inside the selection that cross two contexts, the members in no
+  context, the peers' relationships and crosswalk statements, and the members `harness.jsonld` shares)
+  in the companion directory `<harness dir>.companion/`, beside the Harness and never in it; a typed
+  peer that cannot be applied stops the run before anything is written. A node that declares no
+  context writes no extra file and creates no companion directory, and the seven Harness file kinds
+  are the same bytes with and without contexts (`compose-0027`, `compose-0015`, `compose-0016`
+  unchanged). New `src/composition/context-map.js`; `docs/guides/mode-1.md` and
+  `docs/guides/troubleshooting.md` (`AGSC-E419`) document it. No new dependency; G-REF: no byte of the
+  eight reference nodes changes.
 - Dependencies `@traqula/parser-sparql-1-1` 1.4.0 (Comunica, MIT) and `oxigraph` 0.5.13 (MIT OR
   Apache-2.0), pinned exactly, used only by `src/knowledge/competency.js`
   (`tests/arch/sparql-library.test.js`). Reason: AGSC-05-41 asks the engine to run SPARQL 1.1 queries

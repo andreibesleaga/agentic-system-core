@@ -35,6 +35,7 @@ const path = require('node:path');
 const { finding } = require('../../../knowledge/validate.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const slugs = require('../../../knowledge/slug.js');
+const { peerUrls } = require('../../../knowledge/contexts.js');
 const { ARCHIVE_EXTENSIONS, readSchemas } = require('../../../adapters/node-fs.js');
 const interchange = require('../../../interchange/import.js');
 const okf = require('../../../interchange/okf.js');
@@ -268,7 +269,7 @@ function identity(config) {
   if (typeof bundle.license_prose === 'string') options.licenseProse = bundle.license_prose;
   if (typeof bundle.license_schema === 'string') options.licenseSchema = bundle.license_schema;
   if (typeof site.tagline === 'string' && site.tagline !== '') options.tagline = site.tagline;
-  if (Array.isArray(config && config.peers)) options.peers = config.peers.map((p) => String(p));
+  if (Array.isArray(config && config.peers)) options.peers = peerUrls(config.peers);
   return { findings, options };
 }
 

@@ -1,6 +1,6 @@
 # `tests/composition/`
 
-**Summary.** Unit tests of selection and closure, the Harness, skill packs, the ZIP archive, the browser build. Subject: `src/composition/`.
+**Summary.** Unit tests of selection and closure, the Harness, the context map beside it (`context-map.test.js`), skill packs, the ZIP archive, the browser build. Subject: `src/composition/`.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

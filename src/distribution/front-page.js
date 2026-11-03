@@ -10,6 +10,7 @@ const { compareCodePoint } = require('../knowledge/unicode.js');
 const discovery = require('./discovery.js');
 const html = require('./html.js');
 const { TYPE_PLURAL } = require('../knowledge/chunks.js');
+const { peerUrl } = require('../knowledge/contexts.js');
 
 /**
  * `/`: the Bundle's own introduction (the body of `content/index.md`) and a short
@@ -39,16 +40,17 @@ function frontPage({ base, bundle, indexFrontmatter, items, pageOptions, render,
 
 /**
  * The declared peers as `{href, label}`: the root of each peer's origin, named by its
- * host. A value that is not an https URL is skipped (the schema already requires it).
+ * host. A value that is not an https URL is skipped (the schema already requires it). A
+ * typed peer (AGSC-11-24) is named by its `url`, as the plain form is.
  *
- * @param {Array<string>} [peers] `config.peers`, discovery-document URLs.
+ * @param {Array<string|object>} [peers] `config.peers`, discovery-document URLs or typed peers.
  * @returns {Array<{href:string,label:string}>}
  */
 function peerSites(peers) {
   const out = [];
   for (const value of Array.isArray(peers) ? peers : []) {
     let url;
-    try { url = new URL(String(value)); } catch { continue; }
+    try { url = new URL(peerUrl(value)); } catch { continue; }
     if (url.protocol !== 'https:') continue;
     out.push({ href: `${url.origin}/`, label: url.host });
   }

@@ -13,6 +13,7 @@
 | `compose.js` | selection, closure and the verdict (conflicts, missing parts) |
 | `architecture.js` | a saved architecture: a selection kept as an item |
 | `harness.js` | the seven Harness file kinds |
+| `context-map.js` | the context map of a composition, `context-map.json` beside the Harness, written only for a node that declares bounded contexts (AGSC-07-30) |
 | `skills.js` | the published skill packs and their lockfile |
 | `archive.js` | the deterministic ZIP container (store only, fixed timestamps) |
 | `browser.js` | the browser build of the algebra, so the page runs the same code |

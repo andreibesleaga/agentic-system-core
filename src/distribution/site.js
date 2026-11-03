@@ -79,7 +79,7 @@ const DEFAULT_GRAPH = Object.freeze({
  *
  * @param {Array<object>} items the flattened, published items.
  * @param {string} bundleIri the Bundle IRI (with its trailing `/`).
- * @param {Array<string>|undefined} peers `peers[]` of the configuration.
+ * @param {Array<string|object>|undefined} peers `peers[]` of the configuration (a typed peer is read by its `url`, AGSC-11-24).
  * @param {Array<object>} findings the build's findings, appended to.
  * @returns {Array<{source:string, see_also:string, peer:string}>}
  */

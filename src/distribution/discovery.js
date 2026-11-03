@@ -16,6 +16,7 @@
 
 const { createHash } = require('node:crypto');
 const federation = require('../boundary/federation.js');
+const { peerUrls } = require('../knowledge/contexts.js');
 const surfaces = require('../boundary/surfaces.js');
 const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
@@ -297,9 +298,9 @@ function linkset(config, options = {}) {
     })]);
   }
 
-  // AGSC-10-12: each peer is named by its canonical well-known URL.
-  const peers = Array.isArray(config && config.peers) ? config.peers : [];
-  put(`${REL}peer`, peers.map((p) => link(String(p), MEDIA_TYPE)));
+  // AGSC-10-12: each peer is named by its canonical well-known URL; a typed peer of
+  // AGSC-11-24 by its `url` alone, so a 1.0 reader sees the same link.
+  put(`${REL}peer`, peerUrls(config && config.peers).map((p) => link(p, MEDIA_TYPE)));
 
   // AGSC-11-16: one `rel#surface` link per surface the node serves, and no other.
   const surfaces = Array.isArray(options.surfaces) ? options.surfaces : [];

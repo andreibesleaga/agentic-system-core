@@ -1,4 +1,4 @@
-# Trace: PRD-001, PRD-036, PRD-037, PRD-038 · PLAN §6(c)
+# Trace: PRD-001, PRD-022, PRD-036, PRD-037, PRD-038 · PLAN §6(c)
 @persona-e @mode-4
 Feature: Architect turns Concepts into a starting architecture
   As P5 (architect / combiner)
@@ -47,6 +47,16 @@ Feature: Architect turns Concepts into a starting architecture
     When the architect runs "npx agentic-system-core compose a2a mcp supervisor --out ./harness-x/" on the CLI
     And separately runs "www/compose/agsc-core.js" as "/compose/" does, over the published "/graph.jsonld", in a context that holds nothing but the language
     Then the Harness files from both paths are the same files, byte for byte (AGSC-07-13)
+
+  @PRD-037 @PRD-022 @human
+  Scenario: A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes
+    Given the clusters "agent-patterns" and "protocols" are declared contexts, and "supervisor" moves to "protocols" by its "domain_context" (AGSC-01-41, AGSC-08-32)
+    And the peer "https://b.example/.well-known/knowledge-linkset" is a "translation-layer" whose crosswalk "domain/b.ttl" maps "handoff" to "https://b.example/concepts/handover/" (AGSC-11-24)
+    When the operator runs "agsc compose handoff" under the network trap
+    Then the command exits 0
+    And the companion directory beside the Harness holds "context-map.json" alone, with "handoff" in "agent-patterns", "supervisor" in "protocols", the Link "handoff requires supervisor" across them and the peer's crosswalk (AGSC-07-30)
+    And the same composition on the node without contexts writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-30)
+    And no network call was attempted
 
   @PRD-001 @human @matrix-H9
   Scenario: run --dry-run prints the resolved command list and executes nothing

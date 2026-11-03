@@ -33,6 +33,7 @@ const headers = require('../../../src/distribution/headers.js');
 const hostRules = require('../../../src/distribution/hosts/rules.js');
 const { checks, deepEqual, findingsMatch, subsetOf } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
+const contextMaps = require('./_boundary-context-map.js');
 
 const DEFAULT_BASE = 'https://a.example/';
 
@@ -754,6 +755,9 @@ const HANDLERS = {
   'bnd-0043': runAddressCase,
   'bnd-0044': runBnd0044,
   'bnd-0045': runBnd0045,
+  'bnd-0046': contextMaps.runResults,
+  'bnd-0047': contextMaps.runResults,
+  'bnd-0048': contextMaps.runRefusals,
   'bnd-0049': runBnd0049,
 };
 

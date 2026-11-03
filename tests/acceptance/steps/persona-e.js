@@ -1,6 +1,6 @@
 'use strict';
 /* global document */
-// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-09-94
+// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-07-30, AGSC-09-94
 // Steps of features/persona-e-architect.feature. Offline: the page's own module,
 // `www/compose/agsc-core.js`, is evaluated in a fresh `node:vm` context that holds
 // the language and nothing else (no require, no process, no fetch, no document) and
@@ -9,7 +9,8 @@
 // byte with the real command line's. `run --dry-run` and `trace` run through the
 // real command line under the network trap. In a browser (`_browser.js`): the
 // architect ticks items on the served `/compose/` page, reads its panel and takes
-// its downloads.
+// its downloads. The context map (AGSC-07-30) is read from the companion directory the
+// command line writes beside the Harness.
 
 const assert = require('node:assert');
 const crypto = require('node:crypto');
@@ -350,6 +351,56 @@ module.exports = [
       assert.strictEqual(kept.length, 1, JSON.stringify(frontmatter));
       assert.strictEqual(frontmatter[kept[0]], world.state.record.tool);
       assert.ok(!('tool' in frontmatter), 'the unknown member was kept under its own name');
+    },
+  },
+  {
+    pattern: /^the clusters "([^"]+)" and "([^"]+)" are declared contexts, and "([^"]+)" moves to "\2" by its "domain_context" \(AGSC-01-41, AGSC-08-32\)$/u,
+    run(world, first, second, moved) {
+      const config = JSON.parse(world.read('agsc.config.json'));
+      const contexts = [first, second].map((cluster) => ({ cluster, namespace: `${config.site.base}ns/${cluster}#` }));
+      world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { contexts } }, null, 2)}\n`);
+      const rel = `content/concepts/${moved}.md`;
+      world.write(rel, world.read(rel).replace(/\n---\n/u, `\ndomain_context: ${second}\n---\n`));
+      assert.strictEqual(splitItem(world.read(rel)).frontmatter.domain_context, second);
+    },
+  },
+  {
+    pattern: /^the peer "([^"]+)" is a "([^"]+)" whose crosswalk "([^"]+)" maps "([^"]+)" to "([^"]+)" \(AGSC-11-24\)$/u,
+    run(world, url, relationship, crosswalk, slug, peerIri) {
+      const config = JSON.parse(world.read('agsc.config.json'));
+      world.write('agsc.config.json', `${JSON.stringify({ ...config, peers: [{ crosswalk, relationship, url }] }, null, 2)}\n`);
+      world.write(crosswalk, `@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n<${config.site.base}concepts/${slug}/> skos:exactMatch <${peerIri}> .\n`);
+    },
+  },
+  {
+    pattern: /^the companion directory beside the Harness holds "context-map\.json" alone, with "([^"]+)" in "([^"]+)", "([^"]+)" in "([^"]+)", the Link "([^"]+)" across them and the peer's crosswalk \(AGSC-07-30\)$/u,
+    run(world, a, contextA, b, contextB, link) {
+      const harness = path.join(world.dir, 'dist', 'harness');
+      const companions = fs.readdirSync(harness).filter((name) => name.endsWith('.companion'));
+      assert.strictEqual(companions.length, 1, `companion directories: ${companions}`);
+      const files = tree(path.join(harness, companions[0]));
+      assert.deepStrictEqual([...files.keys()], ['context-map.json']);
+      const map = JSON.parse(files.get('context-map.json'));
+      const membersOf = (name) => (map.contexts.find((c) => c.name === name) || { members: [] }).members;
+      assert.ok(membersOf(contextA).includes(a) && membersOf(contextB).includes(b), files.get('context-map.json'));
+      const [source, key, target] = link.split(' ');
+      assert.deepStrictEqual(map.cross_context_links, [{ key, source, source_context: contextA, target, target_context: contextB }]);
+      const config = JSON.parse(world.read('agsc.config.json'));
+      assert.deepStrictEqual(map.peers.map((p) => [p.url, p.relationship, p.crosswalk.length]),
+        config.peers.map((p) => [p.url, p.relationship, 1]));
+      world.state.harnessDir = path.join(harness, companions[0].slice(0, -'.companion'.length));
+    },
+  },
+  {
+    pattern: 'the same composition on the node without contexts writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-30)',
+    run(world) {
+      const config = JSON.parse(world.read('agsc.config.json'));
+      delete config.domain;
+      world.write('agsc.config.json', `${JSON.stringify(config, null, 2)}\n`);
+      const r = world.agsc(['compose', 'handoff', '--out', 'plain-harness'], { offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      assert.ok(!world.exists('plain-harness.companion'), 'a node with no contexts got a companion directory');
+      assert.deepStrictEqual(tree(path.join(world.dir, 'plain-harness')), tree(world.state.harnessDir));
     },
   },
 ];

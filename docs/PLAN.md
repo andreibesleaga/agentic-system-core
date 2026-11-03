@@ -170,6 +170,7 @@ graph TB
 | knowledge | `suggest.js` | the Link suggestions of `lint --suggest` (1.1): five generators, evidence for each, written only to `dist/suggestions.json` | — | lint |
 | knowledge | `closure.js` | the OWL 2 RL consequences of the graph (1.1): the rules as data, run by the `n3` `Reasoner`; written only to `dist/export/closure.nt` | — | export |
 | knowledge | `domain.js` | the site vocabulary of the domain layer (1.1): the rules (a) to (g) of AGSC-05-38, the model the graph writer reads, the faults of the `domain` object | — | lint build export |
+| knowledge | `contexts.js` | bounded contexts (1.1): the contexts `domain.contexts` declares, the context of an item (AGSC-08-32), the address of a plain or typed peer (AGSC-11-24) | — | lint build compose |
 | knowledge | `warrants.js` | the warrant of a term (1.1): a source plus one of the three kinds of warrant of ANSI/NISO Z39.19, read once for the graph and the display | — | build |
 | knowledge | `shacl-core.js` | the SHACL Core subset of a site's invariants (1.1): the subset check (`AGSC-E420`) and the run of the pinned `rdf-validate-shacl`, results in the order of AGSC-05-41; never at build | — | verify ci |
 | knowledge | `competency.js` | a site's competency questions (1.1): the questions file, the SPARQL subset (`AGSC-E420`), the run by the pinned `oxigraph` after the pinned Traqula parser; never at build | — | verify ci |
@@ -183,6 +184,7 @@ graph TB
 | governance | `ledger.js` | hash chain; offline re-verify | 12 | build ci verify |
 | composition | `closure.js` | closure, hiding, mutex, warnings, explained paths (spec/07 order) | — | compose |
 | composition | `emit-jsonld.js` `emit-agents.js` `emit-structurizr.js` `emit-mermaid.js` `emit-arc42.js` `emit-madr.js` | six of the seven Harness files | — | compose |
+| composition | `context-map.js` | the context map of a composition (1.1): `context-map.json` in the companion directory beside the Harness, only for a node that declares contexts (AGSC-07-30); never a Harness byte | — | compose |
 | distribution | `html.js` `templates/*.html` | Markdown→HTML; layout/item/cluster/list/now/compose/404 | 9 | build |
 | distribution | `search.js` | inverted index `search.json` | 8 | build |
 | distribution | `discovery.js` | linkset with `digest`/`agsc-*` target attributes, `llms.txt`, sitemap, robots, tdmrep, `_headers`, `_redirects` | 10 | build |

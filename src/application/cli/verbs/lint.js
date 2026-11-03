@@ -21,6 +21,7 @@ const portable = require('../../../governance/portable-names.js');
 const textFiles = require('../../../governance/text-files.js');
 const { checkAgents } = require('../../../governance/agents.js');
 const { RANGE_CHECKED_KEYS } = require('../../../boundary/visibility.js');
+const federation = require('../../../boundary/federation.js');
 const site = require('../../../distribution/site.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
@@ -109,6 +110,24 @@ function domainLayer(bundle) {
     contexts: object.contexts, model: siteModel(bundle), vocabulary: typeof object.vocabulary === 'string',
   }));
   return findings;
+}
+
+/**
+ * AGSC-11-24: the statements of the crosswalks the typed peers name, each refused one
+ * `AGSC-E209` on its file (`federation.js#readCrosswalk`), judged against the Bundle's own base,
+ * contexts and items. The schema reports a relationship outside the three (`AGSC-E203`) and a
+ * translation layer with no crosswalk (`AGSC-E202`); the loader an absent file (`AGSC-E901`).
+ * `build` runs it too. A Bundle with no typed peer that names a crosswalk has none.
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} findings.
+ */
+function contextMapFindings(bundle) {
+  if (bundle.crosswalks === undefined) return [];
+  const config = bundle.config || {};
+  const items = (bundle.items || []).map((item) => ({ slug: item.slug, type: item.type }));
+  const options = { base: String((config.site || {}).base || ''), contexts: (config.domain || {}).contexts, items };
+  return [...bundle.crosswalks].flatMap(([file, text]) => federation.readCrosswalk(text, { ...options, file }).findings);
 }
 
 /** Whether a ProcessRunner port is wired, so a missing git answer means "no repository". */
@@ -203,6 +222,8 @@ function lane(ctx, bundle) {
   lanes.push('root');
   findings.push(...domainLayer(bundle));
   if (bundle.domain !== undefined) lanes.push('domain');
+  findings.push(...contextMapFindings(bundle));
+  if (bundle.crosswalks !== undefined) lanes.push('context map');
 
   // AGSC-01-03 placement and AGSC-01-11 uniqueness.
   const base = String(((bundle.config || {}).site || {}).base || '');
@@ -362,4 +383,4 @@ function run(ctx) {
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, domainLayer, fix, lane, linkOptions, portableNames, run, suggestLinks, textFileFindings };
+module.exports = { name: 'lint', configAndRoot, contextMapFindings, domainLayer, fix, lane, linkOptions, portableNames, run, suggestLinks, textFileFindings };

@@ -12,8 +12,13 @@
  * never a cross-node Link; AGSC-E311, AGSC-E312, the reserved `peer-ref`),
  * AGSC-11-13 (federated query is client-side; a build fetches nothing),
  * AGSC-11-14 (contribution from anyone), AGSC-11-15 (federated boards keyed by
- * IRI), AGSC-11-23 (tombstones), plus AGSC-10-12 (the mutual check) and
- * AGSC-06-35 (related-system links).
+ * IRI), AGSC-11-23 (tombstones), plus AGSC-10-12 (the mutual check),
+ * AGSC-06-35 (related-system links) and AGSC-11-24 (context maps between
+ * nodes: a typed peer's relationship and its crosswalk of SKOS mapping
+ * statements, read as Turtle by the pinned `n3` through
+ * `knowledge/turtle.js#parse`, checked before any fetch and applied by the
+ * client to the results it derived from that peer; a build reads no peer and
+ * applies no crosswalk).
  * Requirements: PRD-057.
  *
  * NO NETWORK. Every fetch is an INJECTED function: the walk, the redirect
@@ -31,10 +36,13 @@
 
 const net = require('node:net');
 const { domainToASCII } = require('node:url');
+const bounded = require('../knowledge/contexts.js');
 const nquads = require('../knowledge/nquads.js');
+const turtle = require('../knowledge/turtle.js');
+const { compareCodePoint } = require('../knowledge/unicode.js');
 const { LINK_KEYS } = require('../knowledge/relations.js'); // AGSC-03-01: the fourteen Link keys
 const { REL, finding } = require('./surfaces.js');
-const { collapseTrailingSlashes } = require('../shared/trailing.js');
+const { collapseTrailingSlashes, withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-07: the one discovery suffix, held as a single constant. */
 const WELLKNOWN_SUFFIX = '.well-known/knowledge-linkset';
@@ -126,10 +134,9 @@ function peerBase(peerUrl) {
   return url.endsWith(WELLKNOWN_SUFFIX) ? url.slice(0, url.length - WELLKNOWN_SUFFIX.length) : url;
 }
 
-/** AGSC-11-06 + AGSC-06-10: one `rel#peer` link per declared peer, document order. */
+/** AGSC-11-06 + AGSC-06-10: one `rel#peer` link per declared peer, document order; a typed peer by its `url` (AGSC-11-24). */
 function peerLinks(config) {
-  const peers = (config && config.peers) || [];
-  return Object.freeze(peers.map((href) => Object.freeze({ href, rel: REL.peer })));
+  return Object.freeze(bounded.peerUrls(config && config.peers).map((href) => Object.freeze({ href, rel: REL.peer })));
 }
 
 /** Is this an IP literal inside the loopback prefixes AGSC-11-07 names? */
@@ -422,7 +429,7 @@ function serializeQuads(quads) {
 function peerCitations(items, options) {
   const opts = options || {};
   const base = opts.base || '/';
-  const rawBases = ((opts.peers || []).map(peerBase));
+  const rawBases = bounded.peerUrls(opts.peers || []).map(peerBase);
   const bases = rawBases.map((b) => ({ normalised: normaliseReference(b).url, raw: b }))
     .filter((b) => b.normalised !== null);
   const findings = [];
@@ -717,18 +724,152 @@ function peerResults(options) {
   });
 }
 
+// ------------------------------------------------- AGSC-11-24: context maps between nodes
+
+/** AGSC-11-24: the three relationships a typed peer may declare (Evans 2003, the context-map patterns). */
+const RELATIONSHIPS = Object.freeze(['shared-kernel', 'conformist', 'translation-layer']);
+/** AGSC-11-24: the four mapping predicates of a crosswalk (SKOS Reference, section 10), by local name. */
+const CROSSWALK_MATCHES = Object.freeze(['exactMatch', 'closeMatch', 'broadMatch', 'narrowMatch']);
+const SKOS_NS = 'http://www.w3.org/2004/02/skos/core#';
+/** AGSC-11-24: the item types a crosswalk statement may have as subject (AGSC-05-01: the SKOS concepts). */
+const CROSSWALK_SUBJECT_TYPES = Object.freeze(['concept', 'lesson']);
+
+/**
+ * Why a crosswalk statement is refused, or `null`. `base` is the node's own address; `namespaces`
+ * those of its declared contexts; `itemTypes` the item IRIs of the node with their types, or
+ * `null` when the caller has no items to judge by (a client that holds only the crosswalk).
+ */
+function statementFault(quad, { base, namespaces, itemTypes }) {
+  const predicate = quad.predicate.value;
+  if (!predicate.startsWith(SKOS_NS) || !CROSSWALK_MATCHES.includes(predicate.slice(SKOS_NS.length))) {
+    return `the predicate <${predicate}> is none of skos:exactMatch, skos:closeMatch, skos:broadMatch and skos:narrowMatch`;
+  }
+  if (quad.subject.termType !== 'NamedNode' || quad.object.termType !== 'NamedNode') return 'its subject and its object are not both IRIs';
+  const subject = quad.subject.value;
+  if (base !== '' && quad.object.value.startsWith(base)) return `the object <${quad.object.value}> is an IRI of this node, not of the peer`;
+  if (namespaces.some((namespace) => subject.startsWith(namespace))) return null;
+  if (base === '' || !subject.startsWith(base)) return `the subject <${subject}> is no IRI of this node`;
+  if (itemTypes === null) return null;
+  const type = itemTypes.get(subject);
+  if (type === undefined) return `the subject <${subject}> names no item of this node`;
+  return CROSSWALK_SUBJECT_TYPES.includes(type) ? null
+    : `the subject <${subject}> is ${type === 'episode' ? 'an' : 'a'} ${type}, and a crosswalk would make it a skos:Concept (AGSC-05-26a)`;
+}
+
+/**
+ * AGSC-11-24: the statements of a crosswalk file, read with the pinned `n3` (`turtle.js#parse`),
+ * each `{local, match, peer}` in code-point order of `local`, `match` and `peer`, each once. A text
+ * that is not Turtle, or a statement of another shape, is `AGSC-E209` on the file; a refused
+ * statement is left out of `statements`.
+ *
+ * @param {string} text the crosswalk file's text
+ * @param {{file?: string, base?: string, contexts?: Array<{cluster: string, namespace: string}>,
+ *   items?: Array<{slug: string, type: string}>}} [options] the file the findings name, the node's
+ *   `site.base`, its `domain.contexts`, and its items (absent: a subject under the base is accepted)
+ * @returns {{statements: ReadonlyArray<{local: string, match: string, peer: string}>, findings: ReadonlyArray<object>}}
+ */
+function readCrosswalk(text, options = {}) {
+  const at = { file: options.file === undefined ? '' : options.file };
+  const fault = (why) => finding('AGSC-E209', 'error', { ...at, message: `the crosswalk ${at.file} holds a statement of another shape: ${why} (AGSC-11-24)` });
+  let quads;
+  try {
+    quads = turtle.parse(text);
+  } catch (e) {
+    return Object.freeze({ findings: Object.freeze([fault(`it is not Turtle (${e.message})`)]), statements: Object.freeze([]) });
+  }
+  const base = typeof options.base === 'string' && options.base !== '' ? `${withoutTrailingSlashes(options.base)}/` : '';
+  const scope = {
+    base,
+    itemTypes: Array.isArray(options.items) ? new Map(options.items.map((item) => [`${base}${plural(item.type)}/${item.slug}/`, item.type])) : null,
+    namespaces: bounded.declared({ domain: { contexts: options.contexts } }).map((entry) => entry.namespace),
+  };
+  const findings = [];
+  const seen = new Map();
+  for (const quad of quads) {
+    const why = statementFault(quad, scope);
+    if (why !== null) { findings.push(fault(why)); continue; }
+    const statement = { local: quad.subject.value, match: quad.predicate.value.slice(SKOS_NS.length), peer: quad.object.value };
+    seen.set(`${statement.local}\u0000${statement.match}\u0000${statement.peer}`, Object.freeze(statement));
+  }
+  const statements = [...seen.values()].sort((a, b) => compareCodePoint(a.local, b.local)
+    || compareCodePoint(a.match, b.match) || compareCodePoint(a.peer, b.peer));
+  return Object.freeze({ findings: Object.freeze(findings), statements: Object.freeze(statements) });
+}
+
+/**
+ * AGSC-11-24: the faults of one `peers[]` entry that a client finds before it fetches the peer —
+ * a relationship outside the three (`AGSC-E203`), no crosswalk for a translation layer
+ * (`AGSC-E202`), a crosswalk file that is absent (`AGSC-E901`) and the faults of its statements
+ * (`readCrosswalk`) — and the statements it can apply. A plain entry has neither.
+ *
+ * @param {string|object} entry the `peers[]` entry
+ * @param {{read: (path: string) => (string|null), where?: string, base?: string, contexts?: Array<object>,
+ *   items?: Array<object>}} options `read` gives a file of the Bundle or `null` when it is absent;
+ *   `where` names the entry in a message; the rest as `readCrosswalk`
+ * @returns {{statements: ReadonlyArray<object>, findings: ReadonlyArray<object>}}
+ */
+function peerFaults(entry, options) {
+  const none = Object.freeze([]);
+  if (entry === null || typeof entry !== 'object') return Object.freeze({ findings: none, statements: none });
+  const where = options.where === undefined ? 'the peer' : options.where;
+  const refuse = (code, why) => Object.freeze({ findings: Object.freeze([finding(code, 'error', { file: 'agsc.config.json', message: why })]), statements: none });
+  if (!RELATIONSHIPS.includes(entry.relationship)) {
+    return refuse('AGSC-E203', `${where}.relationship ${JSON.stringify(entry.relationship)} is none of ${RELATIONSHIPS.join(', ')} (AGSC-11-24)`);
+  }
+  if (typeof entry.crosswalk !== 'string') {
+    return entry.relationship === 'translation-layer'
+      ? refuse('AGSC-E202', `${where} is a translation-layer peer with no crosswalk; the crosswalk is how this node translates the peer's model (AGSC-11-24)`)
+      : Object.freeze({ findings: none, statements: none });
+  }
+  const text = options.read(entry.crosswalk);
+  if (typeof text !== 'string') return refuse('AGSC-E901', `${where}.crosswalk names ${entry.crosswalk}, which is not there (AGSC-11-24)`);
+  return readCrosswalk(text, { base: options.base, contexts: options.contexts, file: entry.crosswalk, items: options.items });
+}
+
+/**
+ * AGSC-11-24 (with AGSC-11-11): the results a federating client derived from one typed peer, each
+ * with the peer's `relationship` and, when its `iri` is the object of crosswalk statements, the
+ * member `crosswalk`: one `{match, local}` per statement, in code-point order of `local`. Every
+ * result is `untrusted` and keeps its `origin` (the peer's base when it carried none); nothing is
+ * merged and no Link is made. Pure: the client fetched the results; this only marks them.
+ *
+ * @param {{peer: {url: string, relationship: string}, results: Array<object>, statements: Array<object>}} options
+ * @returns {ReadonlyArray<object>}
+ */
+function contextMapResults({ peer, results, statements }) {
+  const byPeerIri = new Map();
+  for (const statement of statements || []) {
+    if (!byPeerIri.has(statement.peer)) byPeerIri.set(statement.peer, []);
+    byPeerIri.get(statement.peer).push({ local: statement.local, match: statement.match });
+  }
+  const origin = peerBase(bounded.peerUrl(peer));
+  return Object.freeze((results || []).map((result) => {
+    const named = [...(byPeerIri.get(result.iri) || [])].sort((a, b) => compareCodePoint(a.local, b.local) || compareCodePoint(a.match, b.match));
+    return Object.freeze({
+      ...result,
+      ...(named.length === 0 ? {} : { crosswalk: Object.freeze(named.map(Object.freeze)) }),
+      origin: typeof result.origin === 'string' ? result.origin : origin,
+      relationship: peer.relationship,
+      trust: 'untrusted',
+    });
+  }));
+}
+
 module.exports = {
   plural,
   CONTRIBUTE_MODES,
+  CROSSWALK_MATCHES,
   FEDERATION_PARAMS,
   LINK_KEYS,
   RELATED_RELATIONS,
+  RELATIONSHIPS,
   WELLKNOWN_SUFFIX,
   checkAddresses,
   checkContribute,
   checkRelated,
   checkScheme,
   clientUnion,
+  contextMapResults,
   contributeLinks,
   effectiveFederation,
   followRedirects,
@@ -740,8 +881,10 @@ module.exports = {
   normaliseReference,
   peerBase,
   peerCitations,
+  peerFaults,
   peerLinks,
   peerResults,
+  readCrosswalk,
   relatedLinks,
   serializeQuads,
   walk,

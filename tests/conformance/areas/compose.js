@@ -1,7 +1,7 @@
 'use strict';
 // tests/conformance/areas/compose.js — area handler for `compose` vectors.
 // Rules: AGSC-07-03, AGSC-07-04..08, AGSC-07-05a, AGSC-07-09, AGSC-07-13a,
-// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-02-97.
+// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-07-30, AGSC-02-97.
 
 const crypto = require('node:crypto');
 
@@ -9,6 +9,7 @@ const { compose, verdictOf } = require('../../../src/composition/compose.js');
 const { composeFrom, selectionBlock, selectionFences } = require('../../../src/composition/architecture.js');
 const { dslRelationships, emit, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
 const archive = require('../../../src/composition/archive.js');
+const { contextMapFiles } = require('../../../src/composition/context-map.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
 
@@ -281,6 +282,40 @@ function runCompose0027(vector) {
   return checks(list);
 }
 
+/**
+ * compose-0032, compose-0033 — AGSC-07-30: the context map. The Harness is emitted as for
+ * compose-0027 and its seven file kinds hashed; the companion files are those
+ * `context-map.js#contextMapFiles` gives, which the CLI writes into `<harness dir>.companion/` and
+ * which, when there are none, make it create no companion directory
+ * (`tests/application/cli/compose-context-map.test.js` checks the disk).
+ */
+function runContextMap(vector) {
+  const { config, fixed, items, selection } = vector.input;
+  const expected = vector.expected;
+  const result = compose(items, selection);
+  const digest = sha256(selectionDigestInput(result));
+  const options = {
+    base: fixed.base, bundleVersion: fixed.bundle_version, instant: fixed.instant, items,
+    licenseProse: fixed.license_prose, name: harnessName(digest), selectionDigest: digest, specVersion: fixed.spec_version,
+  };
+  const hashes = {};
+  for (const [path, text] of emit(result, options).files) hashes[path] = sha256(text);
+  const companion = contextMapFiles(result, { ...options, contexts: (config.domain || {}).contexts, peers: [] });
+  const names = companion.map(([name]) => name);
+  const list = [
+    ['harness_sha256', deepEqual(expected.harness_sha256, hashes), JSON.stringify(hashes)],
+    ['companion_files', deepEqual(expected.companion_files, names), JSON.stringify(names)],
+  ];
+  if (expected.companion_directory !== undefined) {
+    list.push(['companion_directory', (companion.length > 0) === expected.companion_directory, String(companion.length > 0)]);
+  }
+  for (const [name, bytes] of Object.entries(expected.file_bytes || {})) {
+    const got = new Map(companion).get(name);
+    list.push([`file_bytes ${name}`, got === bytes, String(got)]);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'compose-0001': runVerdictVector,
   'compose-0002': runVerdictVector,
@@ -298,6 +333,8 @@ const HANDLERS = {
   'compose-0022': runVerdictVector,
   'compose-0023': runVerdictVector,
   'compose-0027': runCompose0027,
+  'compose-0032': runContextMap,
+  'compose-0033': runContextMap,
 };
 
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of
