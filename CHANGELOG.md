@@ -352,8 +352,8 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   focus node, source shape and path by code point. `owl:imports` is never followed. One positive and one
   negative fixture for each of the twelve constraint components and 22 refused shapes files; pySHACL
   0.40.2 gives the same results on every fixture (`tests/knowledge/shacl-core-lane.test.js`, skipped
-  without `AGSC_SHACL_PYTHON`). Nothing calls it yet: `verify` and `ci` run it in the next package
-  (AGSC-09-20), and the build never does (AGSC-05-23, `tests/arch/shacl-library.test.js`). No byte of
+  without `AGSC_SHACL_PYTHON`). `verify` and `ci` run it (AGSC-09-20, the entry on the site's
+  invariants below), and the build never does (AGSC-05-23, `tests/arch/shacl-library.test.js`). No byte of
   any node changes.
 - Dependency `rdf-validate-shacl` 0.6.5 (Zazuko, MIT), pinned exactly, used only by
   `src/knowledge/shacl-core.js`. Reason: AGSC-05-41 needs a SHACL processor, and this maintained one
@@ -361,6 +361,32 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pySHACL on the shared fixtures, so the engine writes no evaluator of its own. It adds 21 packages to
   the production install (20 MIT, one BSD-3-Clause; about 11 MB) and no advisory to `npm audit`. It is an ES module,
   loaded with `require()` on the supported Node versions (22.13.0 and later).
+- A node's own invariants and competency questions are checked by `agsc verify` and `agsc ci`
+  (AGSC-09-20, AGSC-05-41; vectors `lint-0057`, `lint-0058`, `lint-0059`, `graph-0046`). Where
+  `agsc.config.json` names `domain.shapes` or `domain.questions`, both files are evaluated over one
+  data graph, `graph.nq` with its closure (AGSC-05-37): each result of the shapes is `AGSC-E421`, an
+  error for `sh:Violation` (exit 1, and the `verify` check of `dist/gate.json` fails) and a warning for
+  `sh:Warning` and `sh:Info`, naming the focus item; each question whose answer differs from its
+  `expected` is the error `AGSC-E422` naming its `id`; a shapes file, a questions file or a query
+  outside the subset of AGSC-05-41 is `AGSC-E420`, and then that file is not evaluated. `lint` and
+  `build` never run the check, `ci --level` 0 to 2 does not (it belongs to Level 3, AGSC-10-19), and
+  a node with neither key loads no new library and exits as 1.0 does (G-REF: no byte of the eight
+  reference nodes changes). New `src/knowledge/competency.js` (the questions: their file, the SPARQL
+  subset as data, the answers in N-Triples cells), `src/knowledge/site-checks.js` (the data graph and
+  the findings) and `src/application/cli/verbs/_site-checks.js` (the wiring); the Bundle loader keeps
+  the texts of the two files (AGSC-01-41). `docs/guides/mode-1.md` shows a question in a runnable step,
+  `docs/guides/troubleshooting.md` gains the rows of `AGSC-E421` and `AGSC-E422`.
+- Dependencies `@traqula/parser-sparql-1-1` 1.4.0 (Comunica, MIT) and `oxigraph` 0.5.13 (MIT OR
+  Apache-2.0), pinned exactly, used only by `src/knowledge/competency.js`
+  (`tests/arch/sparql-library.test.js`). Reason: AGSC-05-41 asks the engine to run SPARQL 1.1 queries
+  and to refuse those outside a subset; Traqula parses SPARQL 1.1 into a tree the subset check walks
+  (it replaces SPARQL.js, which its author deprecated in its favour, and which npm marks unsupported),
+  and Oxigraph evaluates the query, offline and synchronously, as the engine of the SPARQL development
+  lane already does (pyoxigraph 0.5.13), so the engine writes no parser and no evaluator. The subset
+  is checked before the engine runs a query, so no query reads a clock, a random number or the
+  network. They add 5 packages to the production install (156 to 161; four MIT and `@traqula/chevrotain`
+  Apache-2.0; about 14 MB, 8.5 MB of it Oxigraph's WebAssembly for Node and the browser) and no advisory
+  to `npm audit`.
 - `tools/gen-shapes` and `schema/item-shapes.ttl` (AGSC-05-24, AGSC-03-25, AGSC-03-23, AGSC-05-17 to
   AGSC-05-21, AGSC-09-90, I-016): SHACL 1.0 shapes of the RDF graph (`graph.nq`, `graph.ttl`, `skos.ttl`),
   generated from `schema/item.schema.json` and the table of AGSC-05-26 (datatype, one value, the closed

@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27, AGSC-05-40, AGSC-06-32
+// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27, AGSC-05-40, AGSC-06-32, AGSC-05-41, AGSC-09-20
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates; the stale items
 // the NOW page lists; the permissions and steps of the shipped release workflow,
@@ -9,7 +9,8 @@
 // one refused by lint, by the build and by the shipped ontology checker (AGSC-05-38); a
 // note's domain type, role and domain links, and their refusal (AGSC-02-25, AGSC-03-27);
 // a term's warrant in the graph, and the JSON-LD round trip of a graph that carries it
-// (AGSC-05-40, AGSC-06-32);
+// (AGSC-05-40, AGSC-06-32); the site's own invariants and competency questions, checked by
+// `verify` and `ci` and never by `lint` (AGSC-05-41, AGSC-09-20);
 // and, where the real-Bundle lane
 // is switched on, a restore from a bare clone of the patterns node. The steps of
 // the scenario that waits on a gap (a channel whose publish choice is auto) are
@@ -562,6 +563,36 @@ module.exports = [
       const edge = (s, p, o) => `<${base}concepts/${s}/> <${NAMESPACE}${p}> <${base}concepts/${o}/> <${base}> .`;
       assert.ok(lines.has(edge(from, member, to)), `the domain link is not in ${nquadsRel}`);
       assert.ok(lines.has(edge(to, inverse, from)), `the computed inverse is not in ${nquadsRel}`);
+    },
+  },
+  {
+    pattern: /^the shapes file "([^"]+)" asks every engine for a "([^"]+)" link, and the questions file "([^"]+)" expects no engine, both named under "domain" \(AGSC-01-41, AGSC-05-41\)$/u,
+    run(world, shapesRel, property, questionsRel) {
+      world.write(shapesRel, ['@prefix dom: <https://minimal.example/ns/domain#> .', '@prefix sh: <http://www.w3.org/ns/shacl#> .',
+        '', '<https://minimal.example/ns/domain-shapes#EngineShape>', '    a sh:NodeShape ;', '    sh:targetClass dom:Engine ;',
+        `    sh:property [ sh:path dom:${property} ; sh:minCount 1 ; sh:message "Every engine controls something." ] .`, ''].join('\n'));
+      world.write(questionsRel, `${JSON.stringify([{ expected: { rows: [] }, id: 'engines',
+        query: 'SELECT ?x WHERE { ?x a <https://minimal.example/ns/domain#Engine> }', question: 'Which items are engines?' }], null, 2)}\n`);
+      const config = JSON.parse(world.read('agsc.config.json'));
+      world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { ...config.domain, questions: questionsRel, shapes: shapesRel } }, null, 2)}\n`);
+    },
+  },
+  {
+    pattern: /^the error "(AGSC-E421)" names the item "([^"]+)" and the error "(AGSC-E422)" names the question "([^"]+)" \(AGSC-09-20\)$/u,
+    run(world, invariantCode, item, questionCode, question) {
+      const errors = world.json().findings.filter((f) => f.severity === 'error').map((f) => [f.code, f.slug]);
+      assert.deepStrictEqual(errors.filter(([code]) => [invariantCode, questionCode].includes(code)),
+        [[invariantCode, item], [questionCode, question]], world.last.stdout);
+    },
+  },
+  {
+    pattern: /^"([^"]+)" fails its "([^"]+)" check with "(AGSC-E\d{3})" and "(AGSC-E\d{3})" \(AGSC-08-10, AGSC-09-20\)$/u,
+    run(world, rel, name, first, second) {
+      const gate = JSON.parse(world.read(rel));
+      assert.strictEqual(gate.status, 'fail');
+      const check = gate.checks.find((c) => c.name === name);
+      assert.strictEqual(check.status, 'fail');
+      assert.deepStrictEqual(check.findings.map((f) => f.code), [first, second]);
     },
   },
   {

@@ -103,8 +103,6 @@ const NOT_RAISED = Object.freeze({
   // Registered by the 1.1 specification; the engine does not raise them yet. Each leaves this list
   // when the code that raises it is written, and the test then fails until the entry is removed.
   'AGSC-E419': 'the per-context title uniqueness is not implemented yet (AGSC-08-32)',
-  'AGSC-E421': 'the check of the site shapes is not implemented yet (AGSC-05-41)',
-  'AGSC-E422': 'the check of the competency questions is not implemented yet (AGSC-05-41)',
   'AGSC-E604': 'every emitted text is normalised to NFC by construction, so the fault cannot arise (AGSC-04-07)',
   'AGSC-E605': 'no authored block is extracted into an export at 1.x (AGSC-02-22), so no blank node from authored input reaches one; the vocabulary checks of tools/ raise it on the vocabulary files (AGSC-05-08)',
 });

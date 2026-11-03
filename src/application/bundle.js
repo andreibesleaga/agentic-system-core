@@ -155,15 +155,17 @@ function loadBundle(ports, options) {
 
 /**
  * AGSC-01-41: the files the `domain` object names are inputs of the Bundle, read with it.
- * Each named file that is absent is `AGSC-E901`; the text of `domain.vocabulary` is kept
- * (`vocabulary`, or `null`) for the lint, the build and the export to judge and publish
- * (AGSC-05-38). A path outside the grammar of AGSC-01-35 is not read: the schema reports
- * it. A configuration with no `domain` object gives `null`, and the record keeps its 1.0 shape.
+ * Each named file that is absent is `AGSC-E901`; the text of each file is kept (`vocabulary`,
+ * `shapes`, `questions`, or `null` when it is not named or not read): the site vocabulary for
+ * the lint, the build and the export to judge and publish (AGSC-05-38), the shapes and the
+ * questions for `verify` and `ci` to check (AGSC-09-20). A path outside the grammar of
+ * AGSC-01-35 is not read: the schema reports it. A configuration with no `domain` object gives
+ * `null`, and the record keeps its 1.0 shape.
  */
 function domainInputs(fs, config, findings) {
   const object = config && config.domain;
   if (object === null || typeof object !== 'object' || Array.isArray(object)) return null;
-  let vocabulary = null;
+  const texts = { questions: null, shapes: null, vocabulary: null };
   for (const key of ['vocabulary', 'shapes', 'questions']) {
     const path = object[key];
     if (typeof path !== 'string' || pathGrammarError(path) !== null) continue;
@@ -171,11 +173,11 @@ function domainInputs(fs, config, findings) {
       findings.push(Object.freeze({
         code: 'AGSC-E901', file: path, message: `domain.${key} names ${path}, which is not there (AGSC-01-41)`, severity: 'error',
       }));
-    } else if (key === 'vocabulary') {
-      vocabulary = readRefusable(fs, path, findings);
+    } else {
+      texts[key] = readRefusable(fs, path, findings);
     }
   }
-  return Object.freeze({ vocabulary });
+  return Object.freeze(texts);
 }
 
 /**

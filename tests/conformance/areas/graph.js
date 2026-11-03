@@ -21,6 +21,7 @@
 // graph-0030 to graph-0039 the ten questions, one each          AGSC-05-34
 // graph-0040 the SKOS view written by export --skos, whole       AGSC-05-36
 // graph-0043 the context address is not the ontology version   AGSC-05-09
+// graph-0046 a site's invariants and competency questions      AGSC-05-41
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
@@ -399,6 +400,32 @@ function questionCase(vector) {
     `got ${jcs.canonicalize(got)}`]]);
 }
 
+/**
+ * graph-0046 — AGSC-05-41: the site's invariants and competency questions, evaluated over one
+ * data graph: the `graph.nq` the items give, with the closure of AGSC-05-37 under the engine's
+ * ontology and the case's site vocabulary. Below the verbs: the records of the evaluation itself.
+ */
+function invariantsCase(vector, ctx) {
+  const siteChecks = require('../../../src/knowledge/site-checks.js');
+  const { input, expected } = vector;
+  const got = siteChecks.check({
+    base: input.site.base,
+    graph: nq.toNQuads(input.items, optionsFor(input)),
+    items: input.items,
+    questions: { file: 'domain/questions.json', text: JSON.stringify(input.questions) },
+    shapes: { file: 'domain/shapes.ttl', text: input.shapes },
+    ontology: fs.readFileSync(path.join((ctx && ctx.root) || '.', 'ontology', 'agsc.ttl'), 'utf8'),
+    vocabulary: { file: 'domain/vocabulary.ttl', text: input.vocabulary },
+  });
+  const invariants = got.invariants.map(({ focus, message, severity, shape }) => ({ focus, message, severity, shape }));
+  const answers = got.questions.map(({ id, result }) => ({ id, result }));
+  return checks([
+    ['invariants', jcs.canonicalize(invariants) === jcs.canonicalize(expected.invariants), jcs.canonicalize(invariants)],
+    ['questions', jcs.canonicalize(answers) === jcs.canonicalize(expected.questions), jcs.canonicalize(answers)],
+    ['no subset fault', got.findings.every((f) => f.code !== 'AGSC-E420'), JSON.stringify(got.findings)],
+  ]);
+}
+
 /** One item as a Markdown file: the front matter is JSON-valued YAML, which the parser reads. */
 function itemFile(item) {
   const { body, ...front } = item;
@@ -531,6 +558,7 @@ module.exports.run = guarded((vector, ctx) => {
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
   if (typeof expected.skos === 'string') return skosCase(vector);
   if (typeof expected.closure === 'string') return closureCase(vector, ctx);
+  if (Array.isArray(expected.invariants) && Array.isArray(expected.questions)) return invariantsCase(vector, ctx);
   if (typeof input.question === 'number') return questionCase(vector);
   if (Array.isArray(expected.readings)) return readingsCase(vector);
   if (Array.isArray(input.ontology_versions)) return contextAddressCase(vector, ctx);

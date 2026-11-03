@@ -332,6 +332,45 @@ source and `asc:warrant` with the kind. A warrant is not an entry of `sources`, 
 none of them. `agsc lint` refuses a warrant without a `source` or a `type`, or of another kind
 (`AGSC-E512`), and an empty or multi-line source (`AGSC-E204`).
 
+A node can also write down what must always hold in its graph, and the questions its graph
+must answer, and have `agsc verify` and `agsc ci` check both. Rules that must always hold, such
+as "every engine has a controller", are SHACL shapes in a Turtle file named by `domain.shapes`;
+[SHACL-SHAPES.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/SHACL-SHAPES.md)
+lists the part of SHACL the engine runs. Questions are a JSON file named by `domain.questions`:
+each entry has an `id`, the `question` in words, a SPARQL `query` and the `expected` answer. The
+query is an `ASK` or a `SELECT` made of basic patterns, the path operators `/`, `^`, `+` and
+`*`, `FILTER` with comparisons, `&&`, `||`, `!` and `NOT EXISTS`, `DISTINCT`, `ORDER BY` of a
+variable and `LIMIT`. The expected answer of an `ASK` is `true` or `false`; that of a `SELECT`
+is `{"rows": [[...]]}`, each cell a term written as in N-Triples (`"<https://example.org/x>"`,
+`"\"text\""`) or `null` where a variable has no value. Both files run over `graph.nq` together
+with the statements `agsc export --closure` would add. A broken rule is `AGSC-E421`, a question
+whose answer differs is the error `AGSC-E422`, and a file outside these limits is `AGSC-E420`.
+Neither file needs a vocabulary file, and `agsc lint` and `agsc build` do not read them.
+
+```bash demo
+mkdir -p domain
+cat > domain/questions.json <<'JSON'
+[
+  {
+    "expected": true,
+    "id": "has-a-concept",
+    "query": "ASK { ?note a <https://w3id.org/agentic-system-core/ns#Concept> }",
+    "question": "Does the node hold at least one concept?"
+  }
+]
+JSON
+node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("agsc.config.json")); c.domain = { questions: "domain/questions.json" }; fs.writeFileSync("agsc.config.json", JSON.stringify(c, null, 2) + "\n")'
+agsc verify
+sed -i.bak 's/"expected": true/"expected": false/' domain/questions.json
+agsc verify || echo "verify exited $?"
+```
+
+```text expect
+verify: pass (0 error, 0 warn)
+error: AGSC-E422 the competency question has-a-concept ("Does the node hold at least one concept?") is answered true, not the expected false (AGSC-05-41) — domain/questions.json
+verify exited 1
+```
+
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).
 

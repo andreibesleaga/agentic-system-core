@@ -147,6 +147,21 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And no network call was attempted
 
   @PRD-022 @human
+  Scenario: The site's own invariants and competency questions are checked by verify and ci, never by lint
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    And the shapes file "domain/shapes.ttl" asks every engine for a "controls" link, and the questions file "domain/questions.json" expects no engine, both named under "domain" (AGSC-01-41, AGSC-05-41)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc verify --json" under the network trap
+    Then the command exits 1
+    And the error "AGSC-E421" names the item "handoff" and the error "AGSC-E422" names the question "engines" (AGSC-09-20)
+    When the maintainer runs "agsc ci --json" under the network trap
+    Then the command exits 1
+    And "dist/gate.json" fails its "verify" check with "AGSC-E421" and "AGSC-E422" (AGSC-08-10, AGSC-09-20)
+    And no network call was attempted
+
+  @PRD-022 @human
   Scenario: A term states its warrant, and the graph carries its source and its kind of warrant
     Given a fresh copy of the acceptance Bundle
     And the item "content/concepts/handoff.md" states a "literary" warrant grounded in "https://example.org/glossary" (AGSC-02-25, AGSC-05-40)

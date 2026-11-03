@@ -1,6 +1,6 @@
 # `tests/arch/`
 
-**Summary.** Architecture tests: context boundaries, purity of the core, what each context never touches, the built-ins of the application layer, pinned libraries, the one RDF reader, the one SHACL engine (never at build), the package file list, the plugin contract, text-source hygiene, and the suite leaving no scratch behind. Subject: the whole tree.
+**Summary.** Architecture tests: context boundaries, purity of the core, what each context never touches, the built-ins of the application layer, pinned libraries, the one RDF reader, the one SHACL engine and the one SPARQL parser and engine (never at build), the package file list, the plugin contract, text-source hygiene, and the suite leaving no scratch behind. Subject: the whole tree.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

@@ -186,25 +186,50 @@ function variantFileAt10Case(vector, ctx) {
  * each entry a subset of one finding's members, and no finding beyond them — and
  * `expected.lint.exit` the exit code.
  */
+/**
+ * The fixture cases: what the verb `input.argv` names (`lint` without it) reports, as
+ * `expected.lint` or, for `verify`, `expected.verify` — the WHOLE list of findings, each
+ * entry a subset of one finding's members, and the exit code. A case with `input.cases[]`
+ * runs each sub-case on its own copy of the fixture, with its own `add_files`, against the
+ * entry of `expected.cases[]` of the same `name` (lint-0058).
+ */
 function fixtureLintCase(vector, ctx) {
-  return onFixture(vector, ctx, ({ before, exit, findings, root }) => {
-    const want = vector.expected.lint;
+  if (!Array.isArray(vector.input.cases)) return fixtureRun(vector, ctx, vector.expected, '');
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const results = vector.input.cases.map((sub) => fixtureRun(
+    { ...vector, input: { ...vector.input, add_files: sub.add_files } }, ctx, byName.get(sub.name) || {}, `${sub.name}: `,
+  ));
+  return checks(results.map((r, n) => [vector.input.cases[n].name, r.status === 'pass', r.detail]));
+}
+
+/**
+ * One run of the fixture with the vector's files added, against `expected.lint` or
+ * `expected.verify`. A `verify` case with `git_history: false` builds with no history and no
+ * `SOURCE_DATE_EPOCH`, so every build warns `AGSC-E606` (AGSC-04-09): that warning belongs to
+ * the environment the case asks for, not to the rule it pins, and is left out of the list.
+ */
+function fixtureRun(vector, ctx, expected, label) {
+  return onFixture(vector, ctx, ({ before, exit, findings: reported, root }) => {
+    const verb = expected.verify === undefined ? 'lint' : 'verify';
+    const findings = verb === 'verify' && vector.input.git_history === false
+      ? reported.filter((f) => f.code !== 'AGSC-E606') : reported;
+    const want = expected[verb];
     const m = findingsMatch(want.findings, findings);
     const list = [
-      [`lint exit ${want.exit}`, exit === want.exit, `exit ${exit}`],
-      ['lint findings', m.ok && findings.length === want.findings.length,
+      [`${label}${verb} exit ${want.exit}`, exit === want.exit, `exit ${exit}`],
+      [`${label}${verb} findings`, m.ok && findings.length === want.findings.length,
         `${m.detail} ${JSON.stringify(findings.map((f) => [f.code, f.file, f.severity, f.slug]))}`],
     ];
     const after = snapshot(root);
     // `file_bytes`: the exact bytes of files the run wrote.
-    for (const [file, text] of Object.entries(vector.expected.file_bytes || {})) {
+    for (const [file, text] of Object.entries(expected.file_bytes || {})) {
       const got = after[file] === undefined ? null : require('node:fs').readFileSync(require('node:path').join(root, file), 'utf8');
       list.push([`${file} bytes`, got === text, `got ${JSON.stringify(got)}`]);
     }
     // `written_only_under`: every file that is new or changed lies under that folder, so
     // the content tree (and the rest of the Bundle) has the same hashes as before the run.
-    if (vector.expected.written_only_under !== undefined) {
-      const folder = `${vector.expected.written_only_under}/`;
+    if (expected.written_only_under !== undefined) {
+      const folder = `${expected.written_only_under}/`;
       const touched = Object.keys(after).filter((file) => after[file] !== before[file]);
       const removed = Object.keys(before).filter((file) => after[file] === undefined);
       list.push([`written only under ${folder}`, removed.length === 0 && touched.every((file) => file.startsWith(folder)),

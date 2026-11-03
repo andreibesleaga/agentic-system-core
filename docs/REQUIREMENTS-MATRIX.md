@@ -89,7 +89,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-028 | MAPPED | `AGSC-02-12` | 0 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
 | PRD-029 | MAPPED | `AGSC-01-28` | 0 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
 | PRD-030 | ALLOWED | — | — | — | — | `persona-g-team.feature` | — |
-| PRD-031 | MAPPED | `AGSC-08-09`, `AGSC-08-10` | 1 vectors, 8 tests, 4 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
+| PRD-031 | MAPPED | `AGSC-08-09`, `AGSC-08-10` | 1 vectors, 8 tests, 5 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
 | PRD-032 | MAPPED | `AGSC-02-15`, `AGSC-07-19` | 1 vectors, 6 tests, 7 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | `docs/SPEC.md`, `docs/diagrams/user-flows.md` |
 | PRD-033 | MAPPED | `AGSC-07-21` | 0 vectors, 4 tests, 1 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | — |
 | PRD-034 | MAPPED | `AGSC-07-22` | 0 vectors, 4 tests, 1 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | — |

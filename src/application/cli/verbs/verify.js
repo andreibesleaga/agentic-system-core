@@ -6,11 +6,15 @@
 // AGSC-08-26(g): on a Bundle with an `auto` channel, each content-branch commit
 // after the root that is not a merge commit or carries none of the three trailers
 // is `AGSC-E706`, read from the same git-log file the build is given.
+// AGSC-09-20: where the Bundle declares `domain.shapes` or `domain.questions`, the site's
+// invariants and competency questions are checked over the `graph.nq` of a build
+// (`_site-checks.js`); a Bundle with neither key runs no third build and exits as 1.0 does.
 
 const site = require('../../../distribution/site.js');
 const ledger = require('../../../governance/ledger.js');
 const autoMerge = require('../../../governance/auto-merge.js');
 const helpers = require('./_helpers.js');
+const siteChecks = require('./_site-checks.js');
 const { withoutTrailingSlashes } = require('../../../shared/trailing.js');
 
 /** A file of the local build output, or null when it is absent or refused. */
@@ -40,10 +44,18 @@ function run(ctx) {
   const clockFindings = ctx.ports.clock && typeof ctx.ports.clock.findings === 'function'
     ? ctx.ports.clock.findings() : [];
 
+  // One more build serves both the ledger and the site checks, and only when one of them runs.
+  let once = null;
+  const built = () => {
+    if (once === null) once = site.build(bundle, ctx.ports, options);
+    return once;
+  };
+  if (siteChecks.declares(bundle)) findings.push(...siteChecks.loaderFindings(bundle), ...siteChecks.check(bundle, built().files));
+
   if (ctx.verbFlags && ctx.verbFlags.ledger) {
-    const built = site.build(bundle, ctx.ports, options);
-    const emitted = built.files.get('/ledger.jsonl');
-    const wellknown = built.files.get('/.well-known/knowledge-linkset');
+    const { files } = built();
+    const emitted = files.get('/ledger.jsonl');
+    const wellknown = files.get('/.well-known/knowledge-linkset');
     // AGSC-08-23: the recomputation is compared with what this node PUBLISHED —
     // the ledger and the well-known file of the local build output — or a
     // tampered line or a truncated tail would go unseen: the fresh derivation

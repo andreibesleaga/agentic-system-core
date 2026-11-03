@@ -171,7 +171,9 @@ graph TB
 | knowledge | `closure.js` | the OWL 2 RL consequences of the graph (1.1): the rules as data, run by the `n3` `Reasoner`; written only to `dist/export/closure.nt` | — | export |
 | knowledge | `domain.js` | the site vocabulary of the domain layer (1.1): the rules (a) to (g) of AGSC-05-38, the model the graph writer reads, the faults of the `domain` object | — | lint build export |
 | knowledge | `warrants.js` | the warrant of a term (1.1): a source plus one of the three kinds of warrant of ANSI/NISO Z39.19, read once for the graph and the display | — | build |
-| knowledge | `shacl-core.js` | the SHACL Core subset of a site's invariants (1.1): the subset check (`AGSC-E420`) and the run of the pinned `rdf-validate-shacl`, results in the order of AGSC-05-41; never at build | — | verify ci (block 5b, next package) |
+| knowledge | `shacl-core.js` | the SHACL Core subset of a site's invariants (1.1): the subset check (`AGSC-E420`) and the run of the pinned `rdf-validate-shacl`, results in the order of AGSC-05-41; never at build | — | verify ci |
+| knowledge | `competency.js` | a site's competency questions (1.1): the questions file, the SPARQL subset (`AGSC-E420`), the run by the pinned `oxigraph` after the pinned Traqula parser; never at build | — | verify ci |
+| knowledge | `site-checks.js` | the check of AGSC-09-20 (1.1): one data graph, `graph.nq` with its closure; the site's shapes and questions over it; `AGSC-E421`, `AGSC-E422` | — | verify ci |
 | knowledge | `diagrams.js` | ported DSL→SVG compiler | 5 | build import |
 | governance | `lint.js` | L1/L2 findings with file+line | 3–4 | lint ci |
 | governance | `injection.js` `secrets.js` `pii.js` `cleanroom.js` | the four N9/clean-room lints (§8, §12) | — | lint ci review |

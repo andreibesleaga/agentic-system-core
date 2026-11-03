@@ -6,13 +6,17 @@
 // of bare notes is green offline) and AGSC-08-27/08-30 (the `ci` lane contains no
 // model call — nothing here can reach one) and AGSC-08-26(g) (on a Bundle with an
 // `auto` channel, the verify lane reports each content-branch commit after the root
-// that is not a merge commit or carries none of the three trailers, `AGSC-E706`).
+// that is not a merge commit or carries none of the three trailers, `AGSC-E706`), and
+// AGSC-09-20 (the site's invariants and competency questions, checked after `verify` and
+// before the gate verdict, so that the verdict sees their findings in its `verify` check).
 //
 // The four N9 lints are `governance/lint.js`, another module of this engine.
 // They are INJECTED as `options.lint`; when neither an injected lint nor
 // that module is present, `ci` still runs the schema-and-placement obligations that
 // `knowledge/validate.js` owns — the AGSC-02-92 pass that `adopt-0007` asserts —
 // and names the missing lane in its result rather than reporting a false green.
+// The check of AGSC-09-20 is injected the same way, as `options.siteChecks`: it needs the
+// engine's ontology and the SHACL and SPARQL libraries, which the application layer wires.
 
 const { sortFindings, uniqueFindings, withPosition } = require('../knowledge/validate.js');
 const { canonicalize } = require('../knowledge/jcs.js');
@@ -119,6 +123,8 @@ function buildKeeping(bundle, ports, options, gathered) {
  * @param {object} ports `{fs, clock, proc}`.
  * @param {object} [options] everything `site.build` takes, plus:
  * @param {(bundle:object, context:object)=>Array<object>} [options.lint] the N9 lints.
+ * @param {(files:Map<string,string>)=>(Array<object>|null)} [options.siteChecks] the check of
+ *   AGSC-09-20 over the first build's routes; `null` when the Bundle declares nothing to check.
  * @returns {{exit:number, counts:{error:number,warn:number}, findings:Array<object>,
  *   files:Map<string,string>, skipped:Array<string>, lanes:Array<string>}}
  */
@@ -166,8 +172,12 @@ function ci(bundle, ports, options = {}) {
   }
   // AGSC-08-26(g): the history the git-log file shows, on a Bundle with an auto channel.
   verifyFindings.push(...autoMerge.check(options.gitLog, bundle.config));
+  // AGSC-09-20: `null` when the Bundle declares no shapes and no questions; then no lane is named.
+  const siteFindings = typeof options.siteChecks === 'function' ? options.siteChecks(built.files) : null;
+  if (siteFindings !== null) verifyFindings.push(...siteFindings);
   findings.push(...verifyFindings);
   lanes.push('verify');
+  if (siteFindings !== null) lanes.push('site invariants and competency questions (AGSC-09-20)');
   checks.push(check('verify', verifyFindings));
 
   // ---- forge (AGSC-08-12): compile `enforce[]` ONCE per run, into `dist/forge/`.

@@ -118,6 +118,7 @@
     "dependencies": {
         "@modelcontextprotocol/sdk": "1.32.1",
         "@toon-format/toon": "4.1.1",
+        "@traqula/parser-sparql-1-1": "1.4.0",
         "ajv": "8.20.0",
         "ajv-formats": "3.0.1",
         "commander": "15.0.0",
@@ -128,6 +129,7 @@
         "jsonld": "9.0.0",
         "markdown-it": "15.0.3",
         "n3": "2.7.12",
+        "oxigraph": "0.5.13",
         "rdf-validate-shacl": "0.6.5",
         "yaml": "2.9.1"
     },
