@@ -148,3 +148,21 @@ test('a crosswalk that cannot be applied is refused by lint, build and compose, 
     assert.ok(!fs.existsSync(path.join(dir, 'dist', 'harness')) && !fs.existsSync(path.join(dir, 'www')));
   }
 });
+
+test('a crosswalk subject that is a class of the site vocabulary is refused by lint, build and compose (AGSC-11-24)', () => {
+  const vocabulary = '@prefix asc: <https://w3id.org/agentic-system-core/ns#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n'
+    + '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\nasc:Concept\n    a owl:Class .\n\n'
+    + '<https://minimal.example/ns/domain>\n    a owl:Ontology ;\n    rdfs:label "Minimal domain vocabulary" .\n\n'
+    + '<https://minimal.example/ns/billing#Invoice>\n    a owl:Class ;\n    rdfs:label "Invoice" ;\n    rdfs:subClassOf asc:Concept .\n';
+  const domain = { ...JSON.parse(CONTEXT_NODE['agsc.config.json']).domain, vocabulary: 'domain/vocabulary.ttl' };
+  const files = [withoutContexts(), config({ domain, peers: [{ crosswalk: 'domain/b.ttl', relationship: 'shared-kernel', url: PEER }] }, CONTEXT_NODE),
+    { 'domain/vocabulary.ttl': vocabulary }];
+  const clean = scratch(...files, { 'domain/b.ttl': CROSSWALK });
+  assert.deepStrictEqual(codes(run(clean, 'lint').findings), [], 'the same node with an item subject is clean');
+  const dir = scratch(...files, { 'domain/b.ttl': CROSSWALK.replace('<https://minimal.example/concepts/handoff/>', '<https://minimal.example/ns/billing#Invoice>') });
+  for (const verb of [['lint'], ['build'], ['compose', 'handoff']]) {
+    const result = run(dir, ...verb);
+    assert.deepStrictEqual(codes(result.findings), ['AGSC-E209'], verb[0]);
+    assert.strictEqual(result.exit, 1, verb[0]);
+  }
+});

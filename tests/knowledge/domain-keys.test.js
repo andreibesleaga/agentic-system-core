@@ -27,6 +27,9 @@ test('a warrant with no type, no source, or a type outside the three is AGSC-E51
   assert.deepStrictEqual(codesOf({ warrant: { type: 'user' } }), ['AGSC-E512']);
   assert.deepStrictEqual(codesOf({ warrant: {} }), ['AGSC-E512', 'AGSC-E512']);
   assert.deepStrictEqual(codesOf({ warrant: { source: 'Z39.19', type: 'organizational' } }), ['AGSC-E512']);
+  // A warrant that is no object has neither a source nor a type: the registry row of AGSC-E512.
+  assert.deepStrictEqual(codesOf({ warrant: 'https://example.org/a' }), ['AGSC-E512']);
+  assert.deepStrictEqual(codesOf({ warrant: ['literary'] }), ['AGSC-E512']);
 });
 
 test('a warrant that meets the rule is silent, and a member it does not know is preserved (AGSC-02-25)', () => {
@@ -38,7 +41,6 @@ test('a warrant that meets the rule is silent, and a member it does not know is 
 test('the other faults of a warrant keep the code the §9.4 precedence gives them', () => {
   assert.deepStrictEqual(codesOf({ warrant: { source: '', type: 'user' } }), ['AGSC-E204']);
   assert.deepStrictEqual(codesOf({ warrant: { source: 'a\nb', type: 'user' } }), ['AGSC-E204']);
-  assert.deepStrictEqual(codesOf({ warrant: 'https://example.org/a' }), ['AGSC-E201']);
 });
 
 test('domain_links is a known key: an object of Link arrays under local names (AGSC-03-27)', () => {

@@ -735,11 +735,23 @@ const SKOS_NS = 'http://www.w3.org/2004/02/skos/core#';
 const CROSSWALK_SUBJECT_TYPES = Object.freeze(['concept', 'lesson']);
 
 /**
- * Why a crosswalk statement is refused, or `null`. `base` is the node's own address; `namespaces`
- * those of its declared contexts; `itemTypes` the item IRIs of the node with their types, or
- * `null` when the caller has no items to judge by (a client that holds only the crosswalk).
+ * Why a subject under a context namespace is refused, or `null`. Such a subject is a term that is
+ * a `skos:Concept`; the namespace itself names no term, and a class or property the site
+ * vocabulary types (AGSC-05-38 (c) admits no other `rdf:type`) is no `skos:Concept`. Any other
+ * term is accepted: the node's own files cannot say more about it.
  */
-function statementFault(quad, { base, namespaces, itemTypes }) {
+function contextSubjectFault(subject, namespace, terms) {
+  if (subject === namespace) return `the subject <${subject}> is the namespace of a context, not a term in it`;
+  return terms.has(subject) ? `the subject <${subject}> is a class or property of the site vocabulary, and a crosswalk would make it a skos:Concept (AGSC-05-26a)` : null;
+}
+
+/**
+ * Why a crosswalk statement is refused, or `null`. `base` is the node's own address; `namespaces`
+ * those of its declared contexts; `terms` the IRIs the site vocabulary types; `itemTypes` the item
+ * IRIs of the node with their types, or `null` when the caller has no items to judge by (a client
+ * that holds only the crosswalk).
+ */
+function statementFault(quad, { base, namespaces, terms, itemTypes }) {
   const predicate = quad.predicate.value;
   if (!predicate.startsWith(SKOS_NS) || !CROSSWALK_MATCHES.includes(predicate.slice(SKOS_NS.length))) {
     return `the predicate <${predicate}> is none of skos:exactMatch, skos:closeMatch, skos:broadMatch and skos:narrowMatch`;
@@ -747,7 +759,8 @@ function statementFault(quad, { base, namespaces, itemTypes }) {
   if (quad.subject.termType !== 'NamedNode' || quad.object.termType !== 'NamedNode') return 'its subject and its object are not both IRIs';
   const subject = quad.subject.value;
   if (base !== '' && quad.object.value.startsWith(base)) return `the object <${quad.object.value}> is an IRI of this node, not of the peer`;
-  if (namespaces.some((namespace) => subject.startsWith(namespace))) return null;
+  const namespace = namespaces.find((candidate) => subject.startsWith(candidate));
+  if (namespace !== undefined) return contextSubjectFault(subject, namespace, terms);
   if (base === '' || !subject.startsWith(base)) return `the subject <${subject}> is no IRI of this node`;
   if (itemTypes === null) return null;
   const type = itemTypes.get(subject);
@@ -764,8 +777,9 @@ function statementFault(quad, { base, namespaces, itemTypes }) {
  *
  * @param {string} text the crosswalk file's text
  * @param {{file?: string, base?: string, contexts?: Array<{cluster: string, namespace: string}>,
- *   items?: Array<{slug: string, type: string}>}} [options] the file the findings name, the node's
- *   `site.base`, its `domain.contexts`, and its items (absent: a subject under the base is accepted)
+ *   items?: Array<{slug: string, type: string}>, terms?: Iterable<string>}} [options] the file the
+ *   findings name, the node's `site.base`, its `domain.contexts`, its items (absent: a subject under
+ *   the base is accepted) and the IRIs its site vocabulary types (absent: none)
  * @returns {{statements: ReadonlyArray<{local: string, match: string, peer: string}>, findings: ReadonlyArray<object>}}
  */
 function readCrosswalk(text, options = {}) {
@@ -780,8 +794,9 @@ function readCrosswalk(text, options = {}) {
   const base = typeof options.base === 'string' && options.base !== '' ? `${withoutTrailingSlashes(options.base)}/` : '';
   const scope = {
     base,
-    itemTypes: Array.isArray(options.items) ? new Map(options.items.map((item) => [`${base}${plural(item.type)}/${item.slug}/`, item.type])) : null,
+    itemTypes: Array.isArray(options.items) ? new Map(options.items.map((item) => [nquads.itemIri(item, { base }), item.type])) : null,
     namespaces: bounded.declared({ domain: { contexts: options.contexts } }).map((entry) => entry.namespace),
+    terms: new Set(options.terms || []),
   };
   const findings = [];
   const seen = new Map();
@@ -804,7 +819,7 @@ function readCrosswalk(text, options = {}) {
  *
  * @param {string|object} entry the `peers[]` entry
  * @param {{read: (path: string) => (string|null), where?: string, base?: string, contexts?: Array<object>,
- *   items?: Array<object>}} options `read` gives a file of the Bundle or `null` when it is absent;
+ *   items?: Array<object>, terms?: Iterable<string>}} options `read` gives a file of the Bundle or `null` when it is absent;
  *   `where` names the entry in a message; the rest as `readCrosswalk`
  * @returns {{statements: ReadonlyArray<object>, findings: ReadonlyArray<object>}}
  */
@@ -823,7 +838,7 @@ function peerFaults(entry, options) {
   }
   const text = options.read(entry.crosswalk);
   if (typeof text !== 'string') return refuse('AGSC-E901', `${where}.crosswalk names ${entry.crosswalk}, which is not there (AGSC-11-24)`);
-  return readCrosswalk(text, { base: options.base, contexts: options.contexts, file: entry.crosswalk, items: options.items });
+  return readCrosswalk(text, { base: options.base, contexts: options.contexts, file: entry.crosswalk, items: options.items, terms: options.terms });
 }
 
 /**

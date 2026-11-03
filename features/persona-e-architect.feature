@@ -58,6 +58,20 @@ Feature: Architect turns Concepts into a starting architecture
     And the same composition on the node without contexts writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-30)
     And no network call was attempted
 
+  @PRD-022 @human
+  Scenario: Titles are compared inside each bounded context, so one title may serve two contexts
+    Given the clusters "agent-patterns" and "protocols" are declared contexts, and "supervisor" moves to "protocols" by its "domain_context" (AGSC-01-41, AGSC-08-32)
+    And the item "supervisor" takes the title of "handoff"
+    When the operator runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    And the JSON envelope carries no "AGSC-E419"
+    And the JSON envelope carries no "AGSC-E416"
+    When the item "supervisor" moves to the context "agent-patterns" of "handoff" (AGSC-08-32)
+    And the operator runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    And the JSON envelope carries the warning "AGSC-E419"
+    And no network call was attempted
+
   @PRD-001 @human @matrix-H9
   Scenario: run --dry-run prints the resolved command list and executes nothing
     Given the Bundle holds the Procedure "run-the-tests", and the node is rebuilt

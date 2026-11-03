@@ -182,7 +182,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (I-129).
 - The relation table of AGSC-03-01 lives in one file, `src/knowledge/relations.js` (key,
   inverse, symmetric, RDF property, combiner, transitive reading, self-link, expected target
-  kinds, plain meaning; I-006, I-007; the `meaning` column is read by the engine from B04-WP2 and B6/B7 on). `interchange/okf.js` (foreign spellings to keys) and `governance/boards.js` (task fields) were examined and stay: neither is a copy of the table. `links.js`, `chunks.js`, `nquads.js`,
+  kinds, plain meaning; I-006, I-007). `interchange/okf.js` (foreign spellings to keys) and `governance/boards.js` (task fields) were examined and stay: neither is a copy of the table. `links.js`, `chunks.js`, `nquads.js`,
   `boundary/visibility.js` and `boundary/federation.js` read it instead of keeping their own
   copies. Pure refactor under AGSC-03-01 and AGSC-05-16: no output byte changes (the fixture and
   the four example Bundles rebuild byte-identical). The page-script copies (`pageLinkKeys`,
@@ -266,10 +266,10 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   engine's ontology and the node's `domain.vocabulary`, minus what `graph.nq` already holds, in the
   Bundle's named graph, sorted by bytes. Derived data: never a route, never in `build.out`, the four
   graph files unchanged; two runs give the same bytes. `graph-0041` passes, and `graph-0042` with
-  the site vocabulary in the graph (B05b-WP1). No new dependency: the rules are data, run by the `Reasoner` of the
+  the site vocabulary in the graph. No new dependency: the rules are data, run by the `Reasoner` of the
   already pinned `n3` 2.7.12 (`src/knowledge/closure.js`; the architecture test that allowed one
   `n3` reader now allows this one second module, for the `Store` and `Reasoner` only).
-- The site vocabulary of the domain layer (AGSC-05-38, AGSC-01-41, N-13; `lint-0052` to `lint-0055`):
+- The site vocabulary of the domain layer (AGSC-05-38, AGSC-01-41; `lint-0052` to `lint-0055`):
   `domain.vocabulary` names a Turtle file of the node's own classes and relations. `lint` and `build`
   check it against the rules (a) to (g) of AGSC-05-38 (one ontology, terms in the site namespace or a
   context namespace, the predicates and types of OWL 2 RL that `tools/validate-ontology` admits, a
@@ -478,6 +478,35 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `agsc import` usage line and the agent skill table name `--from skos` (a `<file.ttl>`), `export --skos`,
   `--closure`, `--manifest` and `lint --suggest`; `docs/guides/troubleshooting.md` gains the row of `AGSC-E416`
   and `docs/guides/mode-1.md` shows `lint.min_sources`.
+
+### Fixed
+
+- `agsc import` keeps a typed `peers[]` entry whole when it rewrites `agsc.config.json`; it used to keep
+  the address only and drop the relationship and the crosswalk (AGSC-11-24). The entries are ordered by
+  their address, so a node with plain peers gets the same bytes as before.
+- `agsc verify` reports a `domain.vocabulary`, `domain.shapes` or `domain.questions` path outside the
+  path grammar (such as `./shapes.ttl`) as the error `AGSC-E204`; it used to skip the file it could not
+  read and pass (AGSC-09-20, AGSC-01-35). `lint` and `ci` already reported it.
+- `domain_links` on a node that names no site vocabulary is the warning `AGSC-E207`, as a 1.0 reader
+  gives it; it used to be dropped without a word (AGSC-03-27, AGSC-02-05; the registry raises `AGSC-E317`
+  only on a node with a vocabulary).
+- A crosswalk statement whose subject is a context's namespace itself, or a class or property the site
+  vocabulary types, is `AGSC-E209` in `lint`, `build` and `compose`: neither is a `skos:Concept`
+  (AGSC-11-24). The site vocabulary is read once per command for this and the other domain checks.
+- A shapes file whose shape is also a class (`rdfs:Class` or `owl:Class`) is `AGSC-E420`: it would give
+  the shape the implicit class target of SHACL section 2.1.3.3, which the subset of AGSC-05-41 does not
+  name.
+- A `warrant` that is not an object (a string, a list) is `AGSC-E512`, the code of a warrant without a
+  `source` or a `type`, in place of the generic `AGSC-E201` (AGSC-02-25, AGSC-05-40).
+- The check of AGSC-09-20 blames the site vocabulary only when the vocabulary is the fault; a caller
+  that passes no `graph.nq` gets an error that says so, not an `AGSC-E420` on an empty file name.
+- `agsc --help` says that `verify` and `ci` also check the node's own shapes and questions
+  (AGSC-09-20). The Mode 1 guide's vocabulary, front matter and shapes examples now run as one
+  walk-through and agree with each other (AGSC-05-38, AGSC-03-27, AGSC-05-41); it names the rule for
+  terms inside a context (AGSC-02-25) and says where a typed peer's relationship and crosswalk are
+  written (AGSC-11-24). The troubleshooting page gains the `AGSC-E207` row and a cause of `AGSC-E418`;
+  `docs/SHACL-SHAPES.md`, `docs/PLAN.md`, `docs/IMPLEMENTERS-GUIDE.md`, `src/README.md` and the item
+  model diagram name the 1.1 parts.
 
 ## [1.0.1] - 2026-10-21
 

@@ -158,8 +158,8 @@ which calls into the contexts.
 | `init` | AGSC-02-90…95, AGSC-01-37 | `distribution/init.js`, `knowledge/adopt.js` |
 | `lint` | AGSC-09-12, AGSC-08-13…17, AGSC-05-35, AGSC-08-31, AGSC-01-41, AGSC-05-38, AGSC-08-32, AGSC-11-24 | `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js`; `--fix` in `governance/fix.js`; `--suggest` in `knowledge/suggest.js`; the site vocabulary in `knowledge/domain.js`; the contexts of the label check in `knowledge/contexts.js`; a peer's crosswalk in `boundary/federation.js` |
 | `build` | AGSC-06-01, AGSC-04-01/02, AGSC-05-38, AGSC-05-39, AGSC-05-40 | `distribution/site.js`; the site vocabulary and the domain triples through `knowledge/domain.js` and `knowledge/nquads.js`; the warrant triples through `knowledge/warrants.js` |
-| `verify` | AGSC-04-02, AGSC-08-23 | `distribution/site.js#verify`, `governance/ledger.js#verify` |
-| `ci` | AGSC-09-08 | `distribution/ci.js`, with the lint lane injected |
+| `verify` | AGSC-04-02, AGSC-08-23, AGSC-09-20 | `distribution/site.js#verify`, `governance/ledger.js#verify`; the site's own shapes and questions through `verbs/_site-checks.js` → `knowledge/site-checks.js` |
+| `ci` | AGSC-09-08, AGSC-09-20 | `distribution/ci.js`, with the lint lane injected and the site checks (`verbs/_site-checks.js` → `knowledge/site-checks.js`; not under `--level` 0 to 2) |
 | `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17, AGSC-05-36, AGSC-05-37 | `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to`; `--skos` in `knowledge/skos-export.js`; `--closure` in `knowledge/closure.js` |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `interchange/okf.js`, `interchange/adapters/{cogx,gabbe,skills,board,skos}.js`, `interchange/import.js` for the old site |
 | `compose` | AGSC-07-04…09, 07-12, 07-18, 07-24, 07-30 | `composition/{compose,architecture,harness}.js`; `--zip` through `composition/archive.js`; the context map of a node that declares contexts in `composition/context-map.js`, with the peers' crosswalks read by `boundary/federation.js` |

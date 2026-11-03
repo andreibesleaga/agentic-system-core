@@ -291,6 +291,15 @@ test('a declared peer reaches the emitted discovery document (AGSC-10-12/AGSC-11
   assert.ok(text.includes('rel#peer'), 'the peer link carries no peer relation');
 });
 
+test('a typed peer keeps its relationship and crosswalk through an import (AGSC-11-24)', () => {
+  const typed = { crosswalk: 'peers/b.ttl', relationship: 'translation-layer', url: 'https://b.example/.well-known/knowledge-linkset' };
+  const dir = workspace({ peers: [typed] });
+  run(IMPORT, dir);
+  const config = JSON.parse(fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8'));
+  assert.deepStrictEqual(config.peers, [typed]);
+  assert.deepStrictEqual(verb.identity(config).options.peers, [typed]);
+});
+
 test('readOldSite(): a corpus read through an injected port, tolerating what it must', () => {
   const files = {
     'content/patterns/a.md': '---\nid: a\n---\nbody\n',

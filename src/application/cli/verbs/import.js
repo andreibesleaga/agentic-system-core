@@ -35,7 +35,7 @@ const path = require('node:path');
 const { finding } = require('../../../knowledge/validate.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const slugs = require('../../../knowledge/slug.js');
-const { peerUrls } = require('../../../knowledge/contexts.js');
+const { isTypedPeer, peerUrls } = require('../../../knowledge/contexts.js');
 const { ARCHIVE_EXTENSIONS, readSchemas } = require('../../../adapters/node-fs.js');
 const interchange = require('../../../interchange/import.js');
 const okf = require('../../../interchange/okf.js');
@@ -269,7 +269,11 @@ function identity(config) {
   if (typeof bundle.license_prose === 'string') options.licenseProse = bundle.license_prose;
   if (typeof bundle.license_schema === 'string') options.licenseSchema = bundle.license_schema;
   if (typeof site.tagline === 'string' && site.tagline !== '') options.tagline = site.tagline;
-  if (Array.isArray(config && config.peers)) options.peers = peerUrls(config.peers);
+  // AGSC-11-24: a typed peer is kept whole, so the configuration the import rewrites
+  // keeps its relationship and crosswalk; only the trust check reads the addresses.
+  if (Array.isArray(config && config.peers)) {
+    options.peers = config.peers.map((entry) => (isTypedPeer(entry) ? { ...entry } : String(entry)));
+  }
   return { findings, options };
 }
 
@@ -689,10 +693,10 @@ function importGabbe(ctx, source, identityOptions) {
  * `site.base` and its declared `peers[]`.
  *
  * @param {object} identityOptions the target Bundle's identity.
- * @returns {{origin:string, peers:string[]}}
+ * @returns {{origin:string, peers:string[]}} the peers as their addresses.
  */
 function trustOptions(identityOptions) {
-  return { origin: identityOptions.base, peers: identityOptions.peers || [] };
+  return { origin: identityOptions.base, peers: peerUrls(identityOptions.peers) };
 }
 
 /** Directories of a local clone that hold no skill and are never walked. */

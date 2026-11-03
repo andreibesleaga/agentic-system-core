@@ -31,6 +31,11 @@ classDiagram
     +string id
     +string iri
     +string visibility
+    +string domain_type
+    +string domain_role
+    +string domain_context
+    +Warrant warrant
+    +map domain_links
   }
 
   class Concept {
@@ -143,5 +148,8 @@ build, never authored. `Harness` is generated-only and is never a Bundle member.
 
 The item also carries ports (`produces`/`consumes`, AGSC-02-96), `attachments[]` (AGSC-02-98), `task_state`
 (AGSC-02-99), `visibility` and the fourth `status` value `retired` (AGSC-11-22).
+From 1.1 every item may also carry the optional keys of the domain layer: `domain_type`, `domain_role`,
+`domain_context` and `warrant` (`{source, type}`) of AGSC-02-25, and `domain_links` of AGSC-03-27, an object
+of slug arrays under the names of the site vocabulary's relations.
 
 Trace: PRD-002, PRD-037, PRD-042 · PLAN.md §5.1 (`src/knowledge/`).

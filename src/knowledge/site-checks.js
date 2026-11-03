@@ -94,11 +94,14 @@ function questionFinding(result, file) {
 function check(inputs) {
   const { base, graph, items, ontology, questions, shapes, vocabulary } = inputs;
   if (shapes === undefined && questions === undefined) return none();
+  if (typeof graph !== 'string') throw new TypeError('site-checks: the graph.nq of the build is required (AGSC-09-20)');
   let data;
   try {
     data = dataGraph(graph, ontology, vocabulary);
   } catch (e) {
-    // The engine's own files always parse; only the site vocabulary can fail here (AGSC-05-38 (a)).
+    // The engine's graph and ontology always parse; only the site vocabulary can fail here
+    // (AGSC-05-38 (a)). With no vocabulary the fault is the caller's, and it is not hidden.
+    if (vocabulary === undefined) throw e;
     const message = `the site vocabulary is not Turtle, so the invariants and competency questions were not checked: ${e.message} (AGSC-05-38, AGSC-05-41)`;
     return { ...none(), findings: [finding('AGSC-E420', message, { file: (vocabulary || {}).file })] };
   }

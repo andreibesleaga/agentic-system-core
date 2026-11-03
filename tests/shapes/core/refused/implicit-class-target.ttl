@@ -1,0 +1,11 @@
+# implicit class target: a shape that is also a class targets its own instances (SHACL 2.1.3.3), a target the subset does not name.
+@prefix ex: <https://example.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+ex:C
+    a sh:NodeShape, rdfs:Class ;
+    sh:property [
+        sh:path ex:p ;
+        sh:minCount 1
+    ] .

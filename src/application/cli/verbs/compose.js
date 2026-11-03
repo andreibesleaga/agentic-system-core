@@ -15,6 +15,7 @@ const { canonicalize } = require('../../../knowledge/jcs.js');
 const { instantFromEpoch } = require('../../../governance/ledger.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
+const { siteModel } = require('./lint.js');
 const archiveWriter = require('./_archive.js');
 const { withoutTrailingSlashes } = require('../../../shared/trailing.js');
 
@@ -156,6 +157,7 @@ function contextPeers(bundle) {
     contexts: config.domain.contexts,
     items: (bundle.items || []).map((item) => ({ slug: item.slug, type: item.type })),
     read: (file) => (crosswalks.has(file) ? crosswalks.get(file) : null),
+    terms: (siteModel(bundle) || { terms: [] }).terms,
   };
   const findings = [];
   const peers = (config.peers || []).flatMap((entry, n) => {

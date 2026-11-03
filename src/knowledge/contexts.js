@@ -86,10 +86,15 @@ function peerUrls(peers) {
   return Array.isArray(peers) ? peers.map(peerUrl) : [];
 }
 
+/** AGSC-11-24: whether a `peers[]` entry is in the typed form (an object, not the plain string). */
+function isTypedPeer(entry) {
+  return entry !== null && typeof entry === 'object' && !Array.isArray(entry);
+}
+
 /** AGSC-11-24: the entries of `peers[]` in the typed form, in their order. */
 function typedPeers(config) {
   const peers = config && Array.isArray(config.peers) ? config.peers : [];
-  return Object.freeze(peers.filter((entry) => entry !== null && typeof entry === 'object' && !Array.isArray(entry)));
+  return Object.freeze(peers.filter(isTypedPeer));
 }
 
-module.exports = { contextOf, declared, declaresContexts, namespaceOf, peerUrl, peerUrls, typedPeers };
+module.exports = { contextOf, declared, declaresContexts, isTypedPeer, namespaceOf, peerUrl, peerUrls, typedPeers };

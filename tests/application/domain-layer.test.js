@@ -148,9 +148,16 @@ test('lint and build refuse a domain type or member the vocabulary does not defi
   assert.ok(!fs.existsSync(path.join(dir, 'www')), 'a build with an error writes nothing (AGSC-09-08)');
 });
 
-test('a domain type on a node with no vocabulary file is AGSC-E418; domain links there are read by nobody', () => {
+test('a domain type on a node with no vocabulary file is AGSC-E418; domain links there are the warning AGSC-E207, as in 1.0', () => {
   const dir = scratch(undefined, handoffWith('domain_type: Engine\ndomain_links:\n  owns:\n    - supervisor'));
   const linted = run(dir, 'lint');
   assert.strictEqual(linted.exit, 1);
-  assert.deepStrictEqual(linted.findings.map((f) => [f.code, f.key]), [['AGSC-E418', 'domain_type']]);
+  assert.deepStrictEqual(linted.findings.map((f) => [f.code, f.key, f.severity]), [
+    ['AGSC-E207', 'domain_links', 'warn'], ['AGSC-E418', 'domain_type', 'error']]);
+  const linksOnly = scratch(undefined, handoffWith('domain_links:\n  owns:\n    - supervisor'));
+  for (const verb of ['lint', 'build']) {
+    const got = run(linksOnly, verb);
+    assert.deepStrictEqual(got.findings.map((f) => [f.code, f.key, f.severity]), [['AGSC-E207', 'domain_links', 'warn']], verb);
+    assert.strictEqual(got.exit, 0, `${verb}: a warning changes no exit code`);
+  }
 });

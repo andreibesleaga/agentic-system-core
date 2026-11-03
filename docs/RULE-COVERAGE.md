@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 86 |
 | Checker header | 36 |
 
-Acceptance scenarios: 138 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 86 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 139 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 86 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -174,7 +174,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-38 | VERIFIED | — | — | `application/cli/refresh-stops.test.js`, `distribution/now-spend.test.js` | — | — |
 | AGSC-01-39 | VERIFIED | yes | `imp-0006`, `imp-0007`, `imp-0008` | `acceptance/steps/persona-h.js`, `interchange/skos-import-cli.test.js`, `interchange/skos.test.js` | — | — |
 | AGSC-01-40 | VERIFIED | yes | `bundle-0013`, `bundle-0014`, `bundle-0015` | `governance/portable-names.test.js` | — | — |
-| AGSC-01-41 | VERIFIED | yes | `bundle-0020` | `acceptance/steps/persona-i.js`, `application/cli/site-checks-verbs.test.js`, `application/domain-layer.test.js` +3 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes`, `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker` +3 | `validate-ontology` |
+| AGSC-01-41 | VERIFIED | yes | `bundle-0020` | `acceptance/steps/persona-i.js`, `application/cli/site-checks-verbs.test.js`, `application/domain-layer.test.js` +3 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#Titles are compared inside each bounded context, so one title may serve two contexts`, `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type` +4 | `validate-ontology` |
 | AGSC-01-42 | VERIFIED | yes | `bundle-0018`, `bundle-0019` | — | — | — |
 | AGSC-02-01 | VERIFIED | yes | `fm-0011`, `fm-0012`, `fm-0013` | `interchange/oldsite.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
 | AGSC-02-02 | VERIFIED | yes | `fm-0005`, `fm-0014`, `fm-0015` +6 | `distribution/page-tools.test.js`, `knowledge/frontmatter.test.js`, `knowledge/yaml.test.js` | — | — |
@@ -411,7 +411,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-08-29 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-08-30 | VERIFIED | yes | — | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-k.js`, `standard/rules.test.js` | `persona-b-contributor.feature#CI runs a lint-only review, no LLM call`, `persona-b-contributor.feature#The review lane labels the change and comments on its findings, with no model call`, `persona-k-live-board.feature#The build stays deterministic while the lane is non-deterministic` | — |
 | AGSC-08-31 | VERIFIED | yes | `lint-0051` | `governance/lint-min-sources.test.js` | — | — |
-| AGSC-08-32 | VERIFIED | yes | `lint-0060` | `application/cli/compose-context-map.test.js`, `composition/context-map.test.js`, `governance/lint-contexts.test.js` +2 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes` | `validate-ontology` |
+| AGSC-08-32 | VERIFIED | yes | `lint-0060` | `application/cli/compose-context-map.test.js`, `composition/context-map.test.js`, `governance/lint-contexts.test.js` +2 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#Titles are compared inside each bounded context, so one title may serve two contexts` | `validate-ontology` |
 | AGSC-09-01 | VERIFIED | — | — | `composition/conform.test.js`, `distribution/hosts/profiles.test.js`, `docs/release-wording.test.js` | — | — |
 | AGSC-09-02 | VERIFIED | yes | `conform-0006` | `acceptance/steps/persona-l.js`, `application/cli/verbs-wired.test.js`, `e2e/real-bundles.test.js` | `persona-l-port-implementer.feature#The reference engine's Level-3 report` | — |
 | AGSC-09-03 | VERIFIED | yes | — | `acceptance/steps/persona-l.js`, `application/cli/verbs-wired.test.js`, `application/conformance.test.js` +1 | `persona-l-port-implementer.feature#The reference engine's Level-3 report` | — |
@@ -482,4 +482,4 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-11-21 | VERIFIED | yes | `bnd-0028` | `boundary/surfaces.test.js` | `persona-c-agent-mcp.feature#Agent starts the local stdio MCP server`, `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled` +11 | — |
 | AGSC-11-22 | VERIFIED | yes | `bnd-0032`, `compose-0023` | `acceptance/steps/persona-i.js`, `boundary/visibility.test.js`, `composition/compose.test.js` +3 | `persona-i-maintainer.feature#A superseded item keeps its slug and its page, its old address redirects, and the slug is never reused` | — |
 | AGSC-11-23 | VERIFIED | yes | `bnd-0015` | `boundary/federation.test.js`, `distribution/routes.test.js` | — | — |
-| AGSC-11-24 | VERIFIED | yes | `bnd-0046`, `bnd-0047`, `bnd-0048` | `application/cli/compose-context-map.test.js`, `arch/context-map.test.js`, `boundary/context-map.test.js` +3 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes` | — |
+| AGSC-11-24 | VERIFIED | yes | `bnd-0046`, `bnd-0047`, `bnd-0048` | `application/cli/compose-context-map.test.js`, `arch/context-map.test.js`, `boundary/context-map.test.js` +6 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes` | — |

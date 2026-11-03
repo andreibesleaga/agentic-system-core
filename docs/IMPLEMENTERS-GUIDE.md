@@ -453,7 +453,7 @@ conformance claim names which it ran.
 |---|---|---|
 | `validate-spec` | the specification's own consistency — duplicate and unresolved rule ids, code closure, trace brackets, version literals, the key words in their BCP 14 forms and all listed, every normative sentence inside a rule, the one dated-note form | AGSC-09-91 |
 | `validate-schemas` | `schema/*.json` against JSON Schema 2020-12 and the closed keyword subset | AGSC-02-24 |
-| `validate-ontology` | `ontology/agsc.ttl` — OWL 2 RL-safe, blank-node-free, the SKOS integrity conditions | AGSC-05-22 |
+| `validate-ontology` | `ontology/agsc.ttl` — OWL 2 RL-safe, blank-node-free, the SKOS integrity conditions; from 1.1, any other `.ttl` as a site vocabulary, against the rules (a) to (g) of AGSC-05-38 (`AGSC-E420`) | AGSC-05-22, AGSC-05-38 |
 | `validate-vectors` | the vector files' own format | AGSC-09-90 |
 | `validate-wellknown` | **your node's discovery document**, at a Level; `--peer` runs the mutual check of AGSC-10-12 over two local files, with no network | AGSC-09-93 |
 | `validate-features` | the scenario pack and its requirement tags | PRD-054 |

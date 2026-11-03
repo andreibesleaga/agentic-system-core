@@ -269,7 +269,9 @@ fourteen link types, every term needs an `rdfs:label`, and no relation may state
 range. That way a reader that knows only the six note types and the fourteen links still
 understands every note.
 
-```turtle
+```bash demo
+mkdir -p domain
+cat > domain/vocabulary.ttl <<'TTL'
 @prefix asc: <https://w3id.org/agentic-system-core/ns#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -284,11 +286,19 @@ asc:uses a owl:ObjectProperty .
 
 <https://example.org/ns/domain#controls> a owl:ObjectProperty ; rdfs:label "controls" ;
     rdfs:subPropertyOf asc:uses .
+TTL
+node "$ENGINE/tools/validate-ontology" domain/vocabulary.ttl
+node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("agsc.config.json")); c.domain = { vocabulary: "domain/vocabulary.ttl" }; fs.writeFileSync("agsc.config.json", JSON.stringify(c, null, 2) + "\n")'
+```
+
+```text expect
+validate-ontology: 1 input file(s) read, site vocabulary, 10 triples, 1 classes, 1 properties, 0 error, 0 warn
 ```
 
 The two lines at the top declare the note type and the link the file builds on. `agsc lint`
 and `agsc build` check the file, and a fault is the error `AGSC-E420`;
-`node tools/validate-ontology domain/vocabulary.ttl` checks it alone. The build publishes every
+`node "$ENGINE/tools/validate-ontology" domain/vocabulary.ttl` checks it alone (`$ENGINE` is the
+engine's folder, as in section 3). The build publishes every
 statement of the file in `graph.nq`, `graph.ttl` and `graph.jsonld`, and `agsc export --closure`
 reads it. The file is not copied into the site, and a node without it builds byte for byte as
 before.
@@ -299,8 +309,8 @@ A note then says which of these terms it is, and what part it plays, in its fron
 domain_type: Engine
 domain_role: aggregate-root
 domain_links:
-  controlled-by:
-    - controller
+  controls:
+    - supervisor
 ```
 
 `domain_type` names a class of the vocabulary file, `domain_role` is one of `aggregate-root`,
@@ -312,7 +322,22 @@ build adds the other. Which one you write is fixed by the file: the object of th
 sorts last, is the one the build adds. `agsc lint` refuses a `domain_type` the file does not
 define (`AGSC-E418`) and a member that is no relation of the file, that is the added inverse,
 or that is a kind of `skos:related`, `skos:broader` or `skos:narrower` used on a cluster
-(`AGSC-E317`); a `domain_role` outside the five is `AGSC-E203`.
+(`AGSC-E317`); a `domain_role` outside the five is `AGSC-E203`. On a node with no vocabulary
+file, `domain_type` is the error `AGSC-E418` and `domain_links` the warning `AGSC-E207`: nothing
+reads them there.
+
+```bash demo
+node -e 'const fs = require("fs"); const f = "content/concepts/handoff.md"; fs.writeFileSync(f, fs.readFileSync(f, "utf8").replace("kind: explainer\n", "kind: explainer\ndomain_type: Engine\ndomain_role: aggregate-root\ndomain_links:\n  controls:\n    - supervisor\n"))'
+git add -A && git commit -qm 'domain vocabulary'
+agsc lint
+agsc build > /dev/null 2>&1
+grep -o '<https://a.example/concepts/handoff/> <https://example.org/ns/domain#controls> <https://a.example/concepts/supervisor/>' www/graph.nq
+```
+
+```text expect
+lint: pass (0 error, 2 warn)
+<https://a.example/concepts/handoff/> <https://example.org/ns/domain#controls> <https://a.example/concepts/supervisor/>
+```
 
 A term can also say why it belongs to the vocabulary, with a `warrant`: what grounds it, and
 which of the three kinds of warrant of ANSI/NISO Z39.19 that ground is. `literary` means the
@@ -345,10 +370,21 @@ is `{"rows": [[...]]}`, each cell a term written as in N-Triples (`"<https://exa
 `"\"text\""`) or `null` where a variable has no value. Both files run over `graph.nq` together
 with the statements `agsc export --closure` would add. A broken rule is `AGSC-E421`, a question
 whose answer differs is the error `AGSC-E422`, and a file outside these limits is `AGSC-E420`.
-Neither file needs a vocabulary file, and `agsc lint` and `agsc build` do not read them.
+The rows of a `SELECT` without `ORDER BY` are compared as a set, in any order, and a title or
+description is written with its language tag (`"\"Handoff\"@en"`). Neither file needs a
+vocabulary file, and `agsc lint` and `agsc build` do not read them. Below, the shapes file asks
+every engine to control something, which `handoff` does, and one question asks whether the node
+holds a concept.
 
 ```bash demo
-mkdir -p domain
+cat > domain/shapes.ttl <<'TTL'
+@prefix dom: <https://example.org/ns/domain#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+<https://example.org/ns/domain-shapes#EngineControls> a sh:NodeShape ;
+    sh:targetClass dom:Engine ;
+    sh:property [ sh:path dom:controls ; sh:minCount 1 ; sh:message "Every engine controls something."@en ] .
+TTL
 cat > domain/questions.json <<'JSON'
 [
   {
@@ -359,7 +395,7 @@ cat > domain/questions.json <<'JSON'
   }
 ]
 JSON
-node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("agsc.config.json")); c.domain = { questions: "domain/questions.json" }; fs.writeFileSync("agsc.config.json", JSON.stringify(c, null, 2) + "\n")'
+node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("agsc.config.json")); c.domain.shapes = "domain/shapes.ttl"; c.domain.questions = "domain/questions.json"; fs.writeFileSync("agsc.config.json", JSON.stringify(c, null, 2) + "\n")'
 agsc verify
 sed -i.bak 's/"expected": true/"expected": false/' domain/questions.json
 agsc verify || echo "verify exited $?"
@@ -378,7 +414,9 @@ the context its `domain_context` names, or else in the context of its first clus
 Inside one context two notes with the same title, of any type, are the warning `AGSC-E419`;
 notes in two different contexts may share a title without a warning, because the same word can
 mean two things in two contexts. With a vocabulary file, a context's namespace holds the classes
-and relations that belong to that context alone. When such a node composes, `agsc compose` also
+and relations that belong to that context alone: a note inside a context names its `domain_type`
+and its `domain_links` from that context's namespace, and a note in no context names them from
+the vocabulary's own namespace. When such a node composes, `agsc compose` also
 writes `context-map.json` beside the Harness, in the folder whose name is the Harness folder's
 with `.companion` added: which context each member is in, the links between members of two
 contexts, and the members in none. The seven Harness files do not change, and a node without
@@ -434,8 +472,10 @@ translates). The crosswalk, required for `translation-layer`, is a Turtle file o
 `skos:broadMatch` or `skos:narrowMatch` where the match is not exact; the subject is one of
 your concepts or lessons. `agsc lint` refuses any other statement (`AGSC-E209`) and a crosswalk
 file that is missing (`AGSC-E901`). The built site names the peer by its address alone, as
-before; the relationship and the crosswalk are published only in `context-map.json`, and a
-client that reads results from the peer marks each with them. A build never applies them.
+before. A node that declares contexts also writes the relationship and the crosswalk into
+`context-map.json` when it composes; a node without contexts keeps them in its configuration
+only. The engine fetches no peer and a build never applies a crosswalk: a client that federates
+over peers must mark each result from that peer with them.
 
 `agsc export --to cogx` writes the memory archive that Cognee reads; the routes for
 other agent frameworks are in [CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md).

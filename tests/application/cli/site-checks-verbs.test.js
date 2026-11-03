@@ -151,6 +151,16 @@ test('a named file that is absent is the loader\'s AGSC-E901 and the check of th
   assert.strictEqual(got.exit, 1);
 });
 
+test('a named path outside the path grammar is AGSC-E204 in verify, which exits 1 and checks nothing it could not read', () => {
+  for (const shapes of ['./domain/shapes.ttl', '../shapes.ttl']) {
+    const dir = scratch(INVARIANT, withDomain(INVARIANT, { shapes, vocabulary: 'domain/vocabulary.ttl' }));
+    const got = run(dir, 'verify');
+    assert.deepStrictEqual(got.findings.map((f) => [f.code, f.file, f.severity]), [['AGSC-E204', 'agsc.config.json', 'error']], shapes);
+    assert.match(got.findings[0].message, /domain\.shapes/);
+    assert.strictEqual(got.exit, 1, shapes);
+  }
+});
+
 test('shapes and questions without a site vocabulary run on the graph with no site classes (AGSC-01-41)', () => {
   const question = [{ expected: true, id: 'any-concept', query: 'ASK { ?x a <https://w3id.org/agentic-system-core/ns#Concept> }', question: 'Is there a concept?' }];
   const dir = scratch({ 'domain/questions.json': JSON.stringify(question) }, withDomain(INVARIANT, { questions: 'domain/questions.json' }));

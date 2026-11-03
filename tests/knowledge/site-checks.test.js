@@ -139,6 +139,11 @@ test('a site vocabulary that is not Turtle leaves both checks unevaluated, as AG
   assert.deepStrictEqual([got.invariants, got.questions], [[], []]);
 });
 
+test('only the site vocabulary is blamed: a build with no graph.nq, or a fault with no vocabulary, is no AGSC-E420', () => {
+  assert.throws(() => siteChecks.check(inputs({ graph: undefined, shapes: SHAPES })), /graph\.nq/u);
+  assert.throws(() => siteChecks.check(inputs({ ontology: 'not turtle', shapes: SHAPES, vocabulary: undefined })));
+});
+
 test('a node with no site vocabulary runs its checks on the graph with no site classes (AGSC-01-41)', () => {
   const plain = ITEMS.map(({ domain_type: _type, domain_links: _links, ...item }) => item);
   const question = { expected: true, id: 'concepts', query: 'ASK { ?x a <https://w3id.org/agentic-system-core/ns#Concept> }', question: 'Any concept?' };

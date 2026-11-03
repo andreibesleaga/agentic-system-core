@@ -68,6 +68,9 @@ function configAndRoot(bundle, options = {}) {
   return findings;
 }
 
+/** The site vocabulary of each loaded Bundle, read once: the Bundle record is frozen, so the model never goes stale. */
+const MODELS = new WeakMap();
+
 /**
  * AGSC-05-38: the site vocabulary of the Bundle as the checks read it (`domain.js#load`), or
  * `null` for a Bundle that names none, or whose vocabulary does not load (AGSC-E420 says why).
@@ -77,7 +80,8 @@ function configAndRoot(bundle, options = {}) {
  */
 function siteModel(bundle) {
   if (!bundle.domain || typeof bundle.domain.vocabulary !== 'string') return null;
-  return domain.load(bundle.domain.vocabulary, { contexts: ((bundle.config || {}).domain || {}).contexts });
+  if (!MODELS.has(bundle)) MODELS.set(bundle, domain.load(bundle.domain.vocabulary, { contexts: ((bundle.config || {}).domain || {}).contexts }));
+  return MODELS.get(bundle);
 }
 
 /** The options of `links.resolve` for the Bundle: its assets, and its site vocabulary when it has one. */
@@ -115,7 +119,7 @@ function domainLayer(bundle) {
 /**
  * AGSC-11-24: the statements of the crosswalks the typed peers name, each refused one
  * `AGSC-E209` on its file (`federation.js#readCrosswalk`), judged against the Bundle's own base,
- * contexts and items. The schema reports a relationship outside the three (`AGSC-E203`) and a
+ * contexts, items and the terms of its site vocabulary. The schema reports a relationship outside the three (`AGSC-E203`) and a
  * translation layer with no crosswalk (`AGSC-E202`); the loader an absent file (`AGSC-E901`).
  * `build` runs it too. A Bundle with no typed peer that names a crosswalk has none.
  *
@@ -126,7 +130,8 @@ function contextMapFindings(bundle) {
   if (bundle.crosswalks === undefined) return [];
   const config = bundle.config || {};
   const items = (bundle.items || []).map((item) => ({ slug: item.slug, type: item.type }));
-  const options = { base: String((config.site || {}).base || ''), contexts: (config.domain || {}).contexts, items };
+  const model = siteModel(bundle);
+  const options = { base: String((config.site || {}).base || ''), contexts: (config.domain || {}).contexts, items, terms: model === null ? [] : model.terms };
   return [...bundle.crosswalks].flatMap(([file, text]) => federation.readCrosswalk(text, { ...options, file }).findings);
 }
 
@@ -383,4 +388,4 @@ function run(ctx) {
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, contextMapFindings, domainLayer, fix, lane, linkOptions, portableNames, run, suggestLinks, textFileFindings };
+module.exports = { name: 'lint', configAndRoot, contextMapFindings, domainLayer, fix, lane, linkOptions, portableNames, run, siteModel, suggestLinks, textFileFindings };

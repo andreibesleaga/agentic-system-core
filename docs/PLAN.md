@@ -164,7 +164,7 @@ graph TB
 |---|---|---|---|---|
 | knowledge | `yaml.js` `frontmatter.js` `markdown.js` | YAML failsafe subset; `{fm, body}`; CommonMark subset AST | 2, 9 | lint build |
 | knowledge | `schema.js` `validate.js` | JSON Schema 2020-12 mini-validator over `schema/*.json` | 3 | lint build |
-| knowledge | `slug.js` `links.js` | slug grammar; fourteen Links (nine core + five Mode-2), inverses, orphans, cycles | 4 | lint build compose |
+| knowledge | `slug.js` `links.js` | slug grammar; fourteen Links (nine core + five Mode-2), inverses, orphans, cycles; and, from 1.1, the domain links of a site vocabulary (AGSC-03-27) | 4 | lint build compose |
 | knowledge | `skos.js` `jsonld.js` `turtle.js` `nquads.js` `rdfxml.js` `jcs.js` | nested `skos:Collection`; four RDF views; JCS | 6, 7 | build export |
 | knowledge | `skos-export.js` | the SKOS view of `graph.nq` (1.1): scheme, top concepts, `skos:Concept` and `skos:Collection` types | — | export |
 | knowledge | `suggest.js` | the Link suggestions of `lint --suggest` (1.1): five generators, evidence for each, written only to `dist/suggestions.json` | — | lint |
@@ -196,6 +196,7 @@ graph TB
 | interchange | `import.js` `okf.js` `adapters/skos.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in; a SKOS thesaurus in (every foreign item a draft) | — | import |
 | interchange | `export-bundle.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
+| boundary | `federation.js` | peers and federation: the `rel#peer` links, peer provenance, results kept untrusted (AGSC-11-10 to AGSC-11-13); from 1.1 typed peers and the crosswalk reader of a context map (AGSC-11-24) | — | build lint compose |
 | *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile`, `tools/gen-shapes` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
 
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
@@ -206,7 +207,7 @@ graph TB
 |---|---|---|---|
 | `tools/validate-spec` | rule-id uniqueness and resolution, the MUST/SHOULD grammar, trace brackets and their PRD/NFR ids, error-code closure against §9.4, version literals in `spec/`, `docs/` and `tests/vectors/**` | AGSC-09-90, AGSC-09-91 | ships; pass |
 | `tools/validate-schemas` | 2020-12 meta-validation and strict compilation, the AGSC-02-24 keyword subset and bounds, the AGSC-01-10 slug grammar, the six item types | AGSC-09-90, AGSC-02-24 | ships; pass |
-| `tools/validate-ontology` | Turtle well-formedness, the OWL 2 RL-safe set, blank-node freedom, the persistent namespace, `owl:versionIRI`, SKOS S19/S20/S32/S37 | AGSC-09-90, AGSC-05-22 | ships; pass |
+| `tools/validate-ontology` | Turtle well-formedness, the OWL 2 RL-safe set, blank-node freedom, the persistent namespace, `owl:versionIRI`, SKOS S19/S20/S32/S37; from 1.1, any other `.ttl` is read as a site vocabulary and checked against the rules (a) to (g) of AGSC-05-38 (`AGSC-E420`) | AGSC-09-90, AGSC-05-22, AGSC-05-38 | ships; pass |
 | `tools/validate-vectors` | vector format, rule resolution, JCS order, encoding, empty declared areas as an informational count | AGSC-09-90, AGSC-09-04…06 | ships; pass |
 | `tools/validate-wellknown` | RFC 9264 shape, profile transport, relation names, digests, the `agsc-*` attributes per Level, `--peer` | AGSC-09-93, AGSC-10-12 | ships; pass at `--level 2` |
 | `tools/validate-features` | Gherkin parse, `@PRD` closure against `docs/PRD.md`, agreement with the coverage table of `features/README.md` | AGSC-09-90, PRD-054 | ships; pass |

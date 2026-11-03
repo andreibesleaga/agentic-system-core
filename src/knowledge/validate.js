@@ -301,8 +301,9 @@ const RESERVED_CONFIG_NAMES = Object.freeze(['routing', 'rdfxml', 'feed']);
 /** §9.4 precedence. `ctx` is `item`, `index` or `config`. */
 function codeFor(error, ctx) {
   const { keyword, path, params } = error;
-  // AGSC-02-25, AGSC-05-40: a warrant with no source or type, or a type outside the three.
-  if (ctx === 'item' && ((keyword === 'required' && path === '/warrant') || (keyword === 'enum' && path === '/warrant/type'))) {
+  // AGSC-02-25, AGSC-05-40: a warrant with no source or type (one that is no object has
+  // neither), or a type outside the three.
+  if (ctx === 'item' && (((keyword === 'required' || keyword === 'type') && path === '/warrant') || (keyword === 'enum' && path === '/warrant/type'))) {
     return 'AGSC-E512';
   }
   if (keyword === 'required') {

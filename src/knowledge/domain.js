@@ -302,7 +302,9 @@ const localName = (iri) => iri.slice(Math.max(iri.lastIndexOf('#'), iri.lastInde
  * @param {string} text the file's text
  * @param {{contexts?: Array<{cluster: string, namespace: string}>}} [options] `domain.contexts`
  * @returns {null|{ontology: string|null, namespace: string|null, triples: Array<Array<object>>,
- *   contextOf: Function, classFor: Function, propertyFor: Function}}
+ *   terms: ReadonlyArray<string>, contextOf: Function, classFor: Function, propertyFor: Function}}
+ *   `terms` are the IRIs the file gives an `rdf:type`, in code-point order: its classes and
+ *   properties, which a crosswalk may not name as a `skos:Concept` (AGSC-11-24)
  */
 function load(text, options = {}) {
   let quads;
@@ -354,6 +356,7 @@ function load(text, options = {}) {
     namespace,
     ontology: index.ontologies.length === 1 ? index.ontologies[0] : null,
     propertyFor,
+    terms: Object.freeze([...index.bySubject.keys()].filter((iri) => index.typesOf(iri).size > 0).sort(compareCodePoint)),
     triples: Object.freeze(named.map((q) => Object.freeze([ownTerm(q.subject), ownTerm(q.predicate), ownTerm(q.object)]))),
   });
 }
@@ -366,6 +369,9 @@ function load(text, options = {}) {
  * on a node with no vocabulary file, and a `domain_context` that names no context
  * `domain.contexts` declares. Raised only on an item that states the key. A vocabulary that is
  * named and does not load is `AGSC-E420` (`check`), and no type is judged against it.
+ * `domain_links` on a node with no vocabulary file is the warning `AGSC-E207` that 1.0 gives
+ * it: AGSC-03-27 lets only a node with a site vocabulary state domain links, and the registry
+ * raises `AGSC-E317` only there, so the key is reported, preserved and not read.
  *
  * @param {Array<{path: string, slug: string, frontmatter: object}>} items the loaded items
  * @param {{model?: object|null, vocabulary?: boolean, contexts?: Array<{cluster: string}>}} [options]
@@ -389,6 +395,10 @@ function itemFindings(items, options = {}) {
     }
     if (typeof fm.domain_context === 'string' && !declared.has(fm.domain_context)) {
       fault('domain_context', `domain_context ${fm.domain_context} names no context that domain.contexts declares`);
+    }
+    if (fm.domain_links !== undefined && options.vocabulary !== true) {
+      findings.push(finding('AGSC-E207', 'domain_links is stated on a node with no site vocabulary file, so no member names a'
+        + ' property and nothing reads it; the key is preserved (AGSC-03-27, AGSC-02-05)', { file: item.path, key: 'domain_links', severity: 'warn', slug: item.slug }));
     }
   }
   return findings;

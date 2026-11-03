@@ -114,6 +114,12 @@ const PARAMETERS = Object.freeze({
 const TERMS = Object.freeze(new Set([...Object.keys(PARAMETERS), 'path', 'inversePath', 'NodeShape', 'PropertyShape',
   ...SEVERITIES, ...NODE_KINDS].map((local) => `${SH}${local}`)));
 
+/**
+ * SHACL 1.0 section 2.1.3.3: a shape that is also a class targets its instances implicitly. The
+ * subset names four targets only, so a shape typed `rdfs:Class` or `owl:Class` is refused.
+ */
+const CLASS_TYPES = Object.freeze(['http://www.w3.org/2000/01/rdf-schema#Class', 'http://www.w3.org/2002/07/owl#Class']);
+
 // ---------------------------------------------------------------- reading the shapes
 
 /** The statements of the shapes file, by subject and by object, keyed by term (a blank node by its label in this parse). */
@@ -200,10 +206,13 @@ function termFaults(quads, fault) {
   for (const iri of outside) fault(`sh:${iri.slice(SH.length)} is not in the SHACL Core subset this engine evaluates`);
 }
 
-/** A shape named by a blank node where the subset names it by an IRI, and the one path of a property shape. */
+/** A shape named by a blank node where the subset names it by an IRI, a shape that is a class, and the one path of a property shape. */
 function shapeFaults(index, { isProperty, term }, fault) {
   const blank = term.termType === 'BlankNode';
   const name = nameOf(index, term);
+  if (index.values(term, nq.RDF_TYPE).some((type) => CLASS_TYPES.includes(type.value))) {
+    fault(`${name} is also a class, which gives it an implicit class target (SHACL 2.1.3.3) that the subset does not name`);
+  }
   if (blank && !isProperty) fault('a node shape is a blank node; the subset names a node shape by an IRI');
   if (blank && isProperty && index.subjects(`${SH}property`, term).length === 0) {
     fault('a property shape that is a blank node is not the object of sh:property; the subset names it by an IRI');

@@ -69,6 +69,21 @@ test('a statement of another shape, or a subject the rule refuses, is AGSC-E209 
   assert.deepStrictEqual(codes(notTurtle.findings), ['AGSC-E209']);
 });
 
+test('under a context namespace, the namespace itself or a class or property of the site vocabulary is AGSC-E209', () => {
+  const contexts = [{ cluster: 'billing', namespace: 'https://ctx.example/billing#' }];
+  const terms = ['https://ctx.example/billing#Invoice', 'https://ctx.example/billing#bills'];
+  const read = (subject, options = {}) => f.readCrosswalk(`${PREFIX}<${subject}> skos:exactMatch <https://b.example/concepts/x/> .\n`,
+    { base: BASE, contexts, file: 'domain/b.ttl', items: ITEMS, ...options });
+  for (const subject of ['https://ctx.example/billing#', ...terms]) {
+    const refused = read(subject, { terms });
+    assert.deepStrictEqual(codes(refused.findings), ['AGSC-E209'], subject);
+    assert.deepStrictEqual(refused.statements, [], subject);
+  }
+  assert.deepStrictEqual(codes(read('https://ctx.example/billing#').findings), ['AGSC-E209'], 'no vocabulary needed to see the bare namespace');
+  assert.deepStrictEqual(codes(read('https://ctx.example/billing#Invoice').findings), [], 'with no vocabulary terms, a term is not judged');
+  assert.deepStrictEqual(codes(read('https://ctx.example/billing#Receipt', { terms }).findings), [], 'a term the vocabulary does not type');
+});
+
 test('with no items to judge, a subject under the base is accepted (the client side of the rule)', () => {
   const read = f.readCrosswalk(`${PREFIX}<https://a.example/concepts/account/> skos:exactMatch <https://b.example/concepts/account/> .\n`, { base: BASE });
   assert.deepStrictEqual(read.findings, []);

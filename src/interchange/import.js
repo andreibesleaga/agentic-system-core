@@ -21,6 +21,7 @@
 
 const { finding, sortFindings } = require('../knowledge/validate.js');
 const slugs = require('../knowledge/slug.js');
+const { peerUrl } = require('../knowledge/contexts.js');
 const { serialize } = require('../knowledge/adopt.js');
 const diagrams = require('../knowledge/diagrams.js');
 const cleanroom = require('../governance/cleanroom.js');
@@ -142,7 +143,8 @@ function altFor(kind, title, alt) {
  * @param {string} [options.tagline]
  * @param {string} [options.licenseProse]
  * @param {string} [options.licenseSchema]
- * @param {string[]} [options.peers]
+ * @param {Array<string|{url:string}>} [options.peers] the plain and typed (AGSC-11-24)
+ *   entries of `peers[]`, written whole in the order of their addresses.
  * @param {string[]} [options.draftClasses] default DRAFT_CLASSES.
  * @returns {{writes:Array<{path:string, text:string}>, totals:object,
  *            findings:Array<object>, dropped:object, excisions:Array<object>,
@@ -423,7 +425,7 @@ function plan(input, options) {
   if (Object.keys(releases).length > 0) config.releases = releases;
   else delete config.releases;
   if (Array.isArray(options.peers) && options.peers.length > 0) {
-    config.peers = [...options.peers].sort(byCodePoint);
+    config.peers = [...options.peers].sort((a, b) => byCodePoint(peerUrl(a), peerUrl(b)));
   } else delete config.peers;
   writes.push({ path: 'agsc.config.json', text: jsonBytes(config) });
 

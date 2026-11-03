@@ -134,6 +134,14 @@ test('a domain type that names no class, or on a node with no vocabulary file, i
   assert.deepStrictEqual(e418(items, { model: null, vocabulary: true }), [], 'a vocabulary that does not load is AGSC-E420 alone');
 });
 
+test('domain links on a node with no vocabulary file are the warning AGSC-E207: nothing reads them (AGSC-03-27)', () => {
+  const items = [item('a', { domain_links: { owns: ['b'] } }), item('b', { domain_links: {} })];
+  assert.deepStrictEqual(e418(items, { model: null, vocabulary: false }), [
+    ['AGSC-E207', 'content/concepts/a.md', 'domain_links', 'warn'], ['AGSC-E207', 'content/concepts/b.md', 'domain_links', 'warn']]);
+  assert.deepStrictEqual(e418(items, { model: MODEL, vocabulary: true }), [], 'with a vocabulary the links are judged as edges (AGSC-E317)');
+  assert.deepStrictEqual(e418(items, { model: null, vocabulary: true }), [], 'a vocabulary that does not load is AGSC-E420 alone');
+});
+
 test('a domain context that no entry of domain.contexts declares is AGSC-E418', () => {
   const items = [item('a', { domain_context: 'ops' }), item('b', { domain_context: 'payments' })];
   assert.deepStrictEqual(e418(items, { contexts: CONTEXTS, model: MODEL, vocabulary: true }), [

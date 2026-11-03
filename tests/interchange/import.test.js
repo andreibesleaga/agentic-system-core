@@ -202,6 +202,13 @@ test('the configuration the import writes carries only what the rules let it', (
   assert.strictEqual(JSON.parse(plan().writes.find((w) => w.path === 'agsc.config.json').text).peers, undefined);
 });
 
+test('a typed peer is kept whole, the entries ordered by their address (AGSC-11-24)', () => {
+  const typed = { crosswalk: 'peers/b.ttl', relationship: 'translation-layer', url: 'https://b.example/.well-known/knowledge-linkset' };
+  const planned = plan({}, { peers: [typed, 'https://a.example/.well-known/knowledge-linkset'] });
+  const config = JSON.parse(planned.writes.find((w) => w.path === 'agsc.config.json').text);
+  assert.deepStrictEqual(config.peers, ['https://a.example/.well-known/knowledge-linkset', typed]);
+});
+
 test('the import keeps every configuration member it does not itself compute', () => {
   // The `old-site` adapter SEEDS the two scaffolding files, which is what turns a
   // directory into a Bundle — but a Bundle that already exists carries members this

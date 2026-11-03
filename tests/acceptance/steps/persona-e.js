@@ -365,6 +365,25 @@ module.exports = [
     },
   },
   {
+    pattern: /^the item "([^"]+)" takes the title of "([^"]+)"$/u,
+    run(world, slug, other) {
+      const rel = `content/concepts/${slug}.md`;
+      const title = splitItem(world.read(`content/concepts/${other}.md`)).frontmatter.title;
+      world.write(rel, world.read(rel).replace(/^title: .*$/mu, `title: ${title}`));
+      assert.strictEqual(splitItem(world.read(rel)).frontmatter.title, title);
+    },
+  },
+  {
+    pattern: /^the item "([^"]+)" moves to the context "([^"]+)" of "([^"]+)" \(AGSC-08-32\)$/u,
+    run(world, slug, context, other) {
+      const rel = `content/concepts/${slug}.md`;
+      world.write(rel, world.read(rel).replace(/^domain_context: .*$/mu, `domain_context: ${context}`));
+      const fm = (name) => splitItem(world.read(`content/concepts/${name}.md`)).frontmatter;
+      assert.strictEqual(fm(slug).domain_context, context);
+      assert.ok((fm(other).clusters || [])[0] === context || fm(other).domain_context === context, `${other} is not in ${context}`);
+    },
+  },
+  {
     pattern: /^the peer "([^"]+)" is a "([^"]+)" whose crosswalk "([^"]+)" maps "([^"]+)" to "([^"]+)" \(AGSC-11-24\)$/u,
     run(world, url, relationship, crosswalk, slug, peerIri) {
       const config = JSON.parse(world.read('agsc.config.json'));

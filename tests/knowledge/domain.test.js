@@ -63,6 +63,14 @@ test('the model: every triple of the file, as terms of the graph writer', () => 
   assert.strictEqual(definition[2].lang, 'en');
 });
 
+test('the model names the terms the file types, in code-point order (AGSC-11-24 refuses them as crosswalk subjects)', () => {
+  const model = domain.load(VALID, { contexts: [] });
+  assert.deepStrictEqual(model.terms, ['http://www.w3.org/2004/02/skos/core#definition', 'https://minimal.example/ns/domain',
+    `${NAMESPACE}Engine`, `${NAMESPACE}controlled-by`, `${NAMESPACE}controls`,
+    `${ASC}Cluster`, `${ASC}Concept`, `${ASC}Episode`, `${ASC}uses`]);
+  assert.ok(Object.isFrozen(model.terms));
+});
+
 test('the model leaves out a statement with a blank node, and a text that is not Turtle has none', () => {
   const model = domain.load(withExtra('dom:Engine rdfs:seeAlso [ rdfs:label "x" ] .'), { contexts: [] });
   assert.strictEqual(model.triples.length, 21);
