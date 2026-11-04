@@ -296,6 +296,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   step 6, which adds a typed link and a diagram of one's own and checks the Relations rows, the backlink
   and the relation class on the built pages; `docs/guides/troubleshooting.md` gains the row of
   `AGSC-E412`; `docs/IMPLEMENTERS-GUIDE.md` no longer says that no rule pins the compiled SVG.
+- The overview figure of `/clusters/` says how many clusters it left out, as the cluster map says of its
+  members (AGSC-06-38: "the overview of all clusters", and "the table says how many more there are"): on a node with more than 24 clusters the note under the
+  table reads "The figure draws 24 of the N clusters; the list of clusters names every one." Bytes:
+  `/clusters/index.html` of such a node only (a view added by AGSC-06-38; HTML pages are not byte-pinned,
+  AGSC-04-24). `graph-view.js` no longer exports `clusterFigureSource`, which nothing outside it used.
 
 - `import <file.ttl> --from skos` (AGSC-01-39, AGSC-01-26a, I-018): a SKOS thesaurus in Turtle becomes
   draft items. The file is read with the pinned `n3` (`knowledge/turtle.js#parse`); the mapping is

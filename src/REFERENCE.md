@@ -747,9 +747,9 @@ relationRows(item, views) -> [{key, direction: 'outgoing'|'incoming', other}]   
 itemSection(item, views, { svgViolations?, columns? }) -> { html, findings }   // '' without a relation, or for a retired item; heading `#links` unless the body's own heading has that anchor
 clusterSection(cluster, views, { svgViolations?, columns? }) -> { html, findings }   // '' when no member links another, or for a retired cluster; heading `#member_links`
 // (a symmetric key both items state is one row, one arc and one overview count)
-relationsTable(rows, columns, views, filtered?); itemFigureSource(item, rows); clusterFigureSource(…); membersOfCluster(cluster, views)
+relationsTable(rows, columns, views, filtered?); itemFigureSource(item, rows); membersOfCluster(cluster, views)
 overviewRows(clusters, views) -> [{source, key, target, count}]   // Links between members of two different clusters, counted
-overviewSection(clusters, views, { svgViolations? }) -> { html, findings }   // figure, relation filter (no script), table; '' without clusters
+overviewSection(clusters, views, { svgViolations? }) -> { html, findings }   // figure, relation filter (no script), table; '' without clusters; says how many clusters the figure left out
 legendSection() -> string                         // the fourteen keys, the key read backwards, the meaning
 ITEM_COLUMNS; CLUSTER_COLUMNS; NEIGHBOURS_DRAWN = 24; MEMBERS_DRAWN = 24; MEMBER_LINKS_DRAWN = 24
 

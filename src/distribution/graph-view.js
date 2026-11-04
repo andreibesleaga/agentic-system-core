@@ -266,6 +266,18 @@ function more(count, singular, plural) {
   return count === 1 ? `1 more ${singular} is` : `${count} more ${plural} are`;
 }
 
+/**
+ * The paragraph under a map's table that says what the map left out: the boxes it did
+ * not draw, then the rows it cut. Empty sentences are dropped; '' when none is left.
+ *
+ * @param {Array<string>} sentences
+ * @returns {string}
+ */
+function leftOut(sentences) {
+  const said = sentences.filter((s) => s !== '');
+  return said.length === 0 ? '' : `<p class="relations-more">${said.join(' ')}</p>`;
+}
+
 // ------------------------------------------------------------------ the item section
 
 /**
@@ -418,13 +430,10 @@ function clusterSection(cluster, views, options = {}) {
     slug: `members_${slug}`,
   }, options);
   const parts = ['<h3 id="member_links">Links among the members</h3>', figure.html,
-    relationsTable(shown, options.columns || CLUSTER_COLUMNS, views)];
-  const notes = [];
-  if (everyMember.length > members.length) notes.push(`The map draws ${members.length} of the ${everyMember.length} members.`);
-  if (all.length > shown.length) {
-    notes.push(`${more(all.length - shown.length, 'link among the members', 'links among the members')} not drawn or listed here; every link is in ${GRAPH_LINK}.`);
-  }
-  if (notes.length > 0) parts.push(`<p class="relations-more">${notes.join(' ')}</p>`);
+    relationsTable(shown, options.columns || CLUSTER_COLUMNS, views), leftOut([
+      everyMember.length > members.length ? `The map draws ${members.length} of the ${everyMember.length} members.` : '',
+      all.length > shown.length ? `${more(all.length - shown.length, 'link among the members', 'links among the members')} not drawn or listed here; every link is in ${GRAPH_LINK}.` : '',
+    ])];
   return { findings: figure.findings, html: parts.filter((p) => p !== '').join('\n') };
 }
 
@@ -493,7 +502,8 @@ function relationFilter(keys) {
  * The overview section of `/clusters/`: how the clusters connect, as a figure (the
  * clusters as boxes, an arc for each pair, labelled with its keys and counts) and the
  * table of the same rows, with the relation filter above it. Without clusters it is
- * empty; without a relation between two clusters it says so in one sentence.
+ * empty; without a relation between two clusters it says so in one sentence. Like the
+ * cluster map, it says how many clusters the figure left out and how many rows were cut.
  *
  * @param {Array<object>} clusters the published clusters, in the published order.
  * @param {ReturnType<typeof index>} views
@@ -516,10 +526,10 @@ function overviewSection(clusters, views, options = {}) {
   }, options);
   const parts = [heading,
     '<p>A row counts the relations that the members of one cluster state to the members of another. The links inside one cluster are on that cluster\'s page.</p>',
-    figure.html, relationFilter(new Set(shown.map((row) => row.key))), relationsTable(shown, OVERVIEW_COLUMNS, views, true)];
-  if (all.length > shown.length) {
-    parts.push(`<p class="relations-more">${more(all.length - shown.length, 'relation between clusters', 'relations between clusters')} not drawn or listed here; every relation is in ${GRAPH_LINK}.</p>`);
-  }
+    figure.html, relationFilter(new Set(shown.map((row) => row.key))), relationsTable(shown, OVERVIEW_COLUMNS, views, true), leftOut([
+      clusters.length > members.length ? `The figure draws ${members.length} of the ${clusters.length} clusters; the list of clusters names every one.` : '',
+      all.length > shown.length ? `${more(all.length - shown.length, 'relation between clusters', 'relations between clusters')} not drawn or listed here; every relation is in ${GRAPH_LINK}.` : '',
+    ])];
   return { findings: figure.findings, html: parts.filter((p) => p !== '').join('\n') };
 }
 
@@ -540,6 +550,6 @@ function legendSection() {
 
 module.exports = {
   CLUSTER_COLUMNS, ITEM_COLUMNS, MEMBERS_DRAWN, MEMBER_LINKS_DRAWN, NEIGHBOURS_DRAWN,
-  clusterFigureSource, clusterSection, index, itemFigureSource, itemSection, legendSection, membersOfCluster,
+  clusterSection, index, itemFigureSource, itemSection, legendSection, membersOfCluster,
   overviewRows, overviewSection, relationRows, relationsTable,
 };

@@ -204,8 +204,9 @@ test('a cluster map draws at most 24 links and 24 members, the linked ones first
   const members = slugs.map((slug, n) => concept(slug, { clusters: ['k'], related: [slugs[(n + 1) % 30], slugs[(n + 2) % 30]] }));
   const view = graphView.clusterSection(k, graphView.index([k, ...members], hrefOf));
   const [svg] = svgs(view.html);
-  assert.strictEqual((svg.match(/<rect /gu) || []).length, 25, 'the cluster and 24 members');
-  assert.strictEqual(tableRows(view.html, 'member_links').length, 24);
+  assert.deepStrictEqual([graphView.MEMBERS_DRAWN, graphView.MEMBER_LINKS_DRAWN], [24, 24]);
+  assert.strictEqual((svg.match(/<rect /gu) || []).length, 1 + graphView.MEMBERS_DRAWN, 'the cluster and 24 members');
+  assert.strictEqual(tableRows(view.html, 'member_links').length, graphView.MEMBER_LINKS_DRAWN);
   assert.match(view.html, /The map draws 24 of the 30 members\./u);
   assert.match(view.html, /36 more links among the members are not drawn or listed here;/u);
   // A large cluster whose first members link to nothing still shows the links further on.
@@ -215,6 +216,16 @@ test('a cluster map draws at most 24 links and 24 members, the linked ones first
   assert.deepStrictEqual(tableRows(map, 'member_links').map((r) => r[0].replace(/<[^>]+>/gu, '')), ['Title y1']);
   assert.match(svgs(map)[0], />Title y1</u);
   assert.match(map, /The map draws 24 of the 42 members\./u);
+});
+
+test('the cluster table takes further columns through its column list (the domain layer adds its own)', () => {
+  const k = { slug: 'k', title: 'Kilo', type: 'cluster' };
+  const items = [k, concept('a', { clusters: ['k'], requires: ['b'] }), concept('b', { clusters: ['k'] })];
+  const columns = [...graphView.CLUSTER_COLUMNS, { heading: 'Extra', cell: (row) => `x-${row.target.slug}` }];
+  const view = graphView.clusterSection(k, graphView.index(items, hrefOf), { columns });
+  assert.match(view.html, /<th scope="col">Extra<\/th>/u);
+  assert.match(view.html, /<td>x-b<\/td><\/tr>/u);
+  assert.deepStrictEqual(graphView.CLUSTER_COLUMNS.map((c) => c.heading), ['From', 'Relation', 'To', 'Meaning']);
 });
 
 // ------------------------------------------------------------------ whole builds
@@ -394,6 +405,20 @@ test('the overview draws at most 24 rows and says how many more there are', () =
   assert.strictEqual((view.html.match(/<tr data-relation=/gu) || []).length, 24);
   assert.match(view.html, /36 more relations between clusters are not drawn or listed here;/u);
   assert.deepStrictEqual(lint.svgViolations(svgs(view.html)[0]), []);
+});
+
+test('the overview figure draws at most 24 clusters and says how many it left out', () => {
+  const clusters = Array.from({ length: 30 }, (_, n) => ({ slug: `c${String(n).padStart(2, '0')}`, title: `Cluster ${n}`, type: 'cluster' }));
+  const items = [...clusters, concept('i29', { clusters: ['c29'], uses: ['i28'] }), concept('i28', { clusters: ['c28'] })];
+  const view = graphView.overviewSection(clusters, graphView.index(items, hrefOf));
+  const [svg] = svgs(view.html);
+  assert.strictEqual((svg.match(/<rect /gu) || []).length, 1 + graphView.MEMBERS_DRAWN, 'the header and 24 clusters');
+  assert.match(svg, />Cluster 29</u, 'the linked clusters are drawn first');
+  assert.match(view.html, /<p class="relations-more">The figure draws 24 of the 30 clusters; the list of clusters names every one\.<\/p>/u);
+  assert.strictEqual((view.html.match(/<tr data-relation=/gu) || []).length, 1, 'the table is not cut');
+  // Every cluster drawn: no sentence.
+  const few = graphView.overviewSection(clusters.slice(28), graphView.index(items, hrefOf)).html;
+  assert.doesNotMatch(few, /The figure draws/u);
 });
 
 test('the legend lists the fourteen keys in the order of AGSC-03-01, each with its inverse and meaning', () => {
