@@ -48,6 +48,7 @@ const pageGraph = require('./graph-view.js');
 const { frontPage, peerSites } = require('./front-page.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
+const queryPage = require('./query-page.js');
 const searchPage = require('./search-page.js');
 const clustersPage = require('./clusters-page.js');
 const webmcp = require('./webmcp.js');
@@ -1581,8 +1582,7 @@ function buildSite(bundle, ports, options, findings) {
   }
 
   // ------------------------------------------------------------ headers
-  // (`/sitemap.xml` is put LAST, below, once every HTML route exists: AGSC-06-19.)
-  put('/_headers', headers.headersFile(config, [...files.keys()]));
+  // (`_headers` and `/sitemap.xml` are put last, below, once every page exists: AGSC-06-19, AGSC-06-39.)
   put('/_redirects', headers.redirectsFile(
     pageItems.flatMap((i) => (Array.isArray(i.aliases) ? i.aliases : [])
       .filter((a) => String(a).startsWith('/'))
@@ -1591,6 +1591,9 @@ function buildSite(bundle, ports, options, findings) {
 
   // ------------------------------------------------------------ HTML pages (C)
   const render = renderer;
+  // AGSC-06-39: `/query/` on a node that serves `/graph.nq`, unless `site.query_page` is false.
+  const query = queryPage.decision({ graphServed: files.has('/graph.nq'), input: options.queryPage, pages: full && typeof render === 'function', site });
+  if (query.skipped !== null) skipped.push(query.skipped);
   if (full && typeof render === 'function') {
     const disclaimer = readDisclaimer(ports);
     const pageOptions = {
@@ -1617,7 +1620,7 @@ function buildSite(bundle, ports, options, findings) {
         ...[...new Set(items.map((i) => TYPE_PLURAL[i.type] || TYPE_PLURAL.concept))].sort(compareCodePoint)
           .map((plural) => [`/${plural}/`, plural.charAt(0).toUpperCase() + plural.slice(1)]),
         ...(packs.index.packs.length > 0 ? [['/skills/', 'Skills']] : []),
-        ['/now/', 'Now'], ['/compose/', 'Compose'], ['/search/', 'Search']],
+        ['/now/', 'Now'], ['/compose/', 'Compose'], ['/search/', 'Search'], ...(query.on ? [[queryPage.ROUTE, 'Query']] : [])],
       siteTitle: site.title == null ? indexFrontmatter.title : site.title,
       siteBase: base, // `<link rel="canonical">` on every page with a route of its own
       render,
@@ -1797,6 +1800,9 @@ function buildSite(bundle, ports, options, findings) {
     })));
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
+    // AGSC-06-39: the query page, its scripts and stylesheet, and the engine's files byte for byte (query-page.js).
+    const queryFiles = query.on ? queryPage.files({ ...options.queryPage, ontologyTerms: options.ontologyTerms, specVersion }, pageOptions) : [];
+    for (const [route, bytes] of queryFiles) put(route, typeof bytes === 'string' ? textBytes(bytes) : bytes);
 
     // AGSC-10-13 + Q18: the HUMAN board page beside the JSON export.
     // Columns are the nine task states of AGSC-02-99, in their declared order, so
@@ -1834,6 +1840,9 @@ function buildSite(bundle, ports, options, findings) {
 
   // ------------------------------------------------------------ AGSC-06-01 routes with no producer
   if (full) for (const [route, why] of UNPRODUCED_ROUTES) skipped.push(`${route} (${why})`);
+
+  // ------------------------------------------------------------ `_headers` (AGSC-06-17), from what was PUT (`/query/*`: AGSC-06-39)
+  put('/_headers', headers.headersFile(config, [...files.keys()]));
 
   // ------------------------------------------------------------ sitemap (AGSC-06-19)
   // "every published route" — defined as every route this build emits as

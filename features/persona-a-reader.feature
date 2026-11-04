@@ -71,3 +71,10 @@ Feature: Human reader finds a pattern with evidence
     Then the explorer draws every listed item and not the retired "tool-use-retries", and the page requests nothing from another origin
     And the arrow keys move through the explorer's list with the tooltip following, and Enter selects an item whose relations the detail panel names with their meanings
     And Escape closes the tooltip first and then clears the selection
+
+  @PRD-011 @PRD-022 @human @matrix-H3
+  Scenario: Reader asks the published graph a question on the query page
+    When the reader opens the query page "/query/"
+    Then the page loads the node's own graph into the engine it ships and requests nothing from another origin
+    And a CONSTRUCT query for the "requires" links shows "Handoff" requiring "Supervisor" as a table and as a picture, with the result offered as CSV and as JSON
+    And the share link of that query opens it in the editor of a new page without running it, and no request carries the query

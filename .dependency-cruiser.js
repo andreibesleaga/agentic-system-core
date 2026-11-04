@@ -113,7 +113,9 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '^(node_modules|GABBE|tests/vectors|tests/fixtures)/' },
+    // src/distribution/vendor/ holds the files of one release of the query engine the `/query/`
+    // page runs in the browser (AGSC-06-39): served byte for byte, required by no module.
+    exclude: { path: '^(node_modules|GABBE|tests/vectors|tests/fixtures|src/distribution/vendor)/' },
     moduleSystems: ['cjs'],
     combinedDependencies: false,
     // Two pinned libraries publish ES modules only; Node >= 22.13 requires them

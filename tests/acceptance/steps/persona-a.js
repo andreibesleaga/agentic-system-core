@@ -538,4 +538,56 @@ module.exports = [
       assert.deepStrictEqual(await look(), { selected: 0, tip: false });
     },
   },
+  {
+    pattern: 'the reader opens the query page "/query/"',
+    async run(world) {
+      const opened = await browser.open(world, '/query/', { acceptDownloads: true });
+      await opened.page.waitForSelector('#query[data-state="ready"]', { timeout: 20000 });
+      world.state.query = opened;
+    },
+  },
+  {
+    pattern: 'the page loads the node\'s own graph into the engine it ships and requests nothing from another origin',
+    async run(world) {
+      const { errors, offOrigin, page } = world.state.query;
+      const quads = world.read('www/graph.nq').split('\n').filter((line) => line.trim() !== '').length;
+      assert.match(await page.textContent('#query-status'), new RegExp(`^The graph is loaded: ${quads} statements\\.`, 'u'));
+      assert.deepStrictEqual(offOrigin, []);
+      assert.deepStrictEqual(errors, []);
+    },
+  },
+  {
+    pattern: 'a CONSTRUCT query for the "requires" links shows "Handoff" requiring "Supervisor" as a table and as a picture, with the result offered as CSV and as JSON',
+    async run(world) {
+      const { page } = world.state.query;
+      await page.fill('#query-text', 'PREFIX dcterms: <http://purl.org/dc/terms/>\nCONSTRUCT { ?a dcterms:requires ?b } WHERE { ?a dcterms:requires ?b }');
+      await page.click('#query-run');
+      await page.waitForSelector('#query[data-result="answered"]', { timeout: 20000 });
+      const rows = await page.evaluate(() => [...document.querySelectorAll('#query-table tbody tr')].map((tr) => tr.textContent));
+      assert.ok(rows.includes(`<${BASE}concepts/handoff/>dcterms:requires<${BASE}concepts/supervisor/>`), JSON.stringify(rows));
+      assert.ok(await page.locator('#query-picture line.rel-requires').count() >= 1, 'the picture draws no requires link');
+      const fileOf = async (selector) => {
+        const [file] = await Promise.all([page.waitForEvent('download'), page.click(selector)]);
+        return fs.readFileSync(await file.path(), 'utf8');
+      };
+      const csv = await fileOf('#query-csv');
+      assert.ok(csv.startsWith('subject,predicate,object\r\n'), csv);
+      assert.ok(csv.includes(`${BASE}concepts/handoff/,http://purl.org/dc/terms/requires,${BASE}concepts/supervisor/\r\n`), csv);
+      assert.deepStrictEqual(JSON.parse(await fileOf('#query-json')).head.vars, ['subject', 'predicate', 'object']);
+      world.state.queryText = await page.inputValue('#query-text');
+    },
+  },
+  {
+    pattern: 'the share link of that query opens it in the editor of a new page without running it, and no request carries the query',
+    async run(world) {
+      const href = await world.state.query.page.getAttribute('#query-share', 'href');
+      assert.ok(href.startsWith('#query='), href);
+      const opened = await browser.open(world, `/query/${href}`);
+      await opened.page.waitForSelector('#query[data-state="ready"]', { timeout: 20000 });
+      assert.strictEqual(await opened.page.inputValue('#query-text'), world.state.queryText);
+      assert.strictEqual(await opened.page.getAttribute('#query', 'data-result'), null, 'the query of a link ran by itself');
+      assert.ok(opened.requests.every((url) => !url.includes('CONSTRUCT') && !url.includes('requires')), JSON.stringify(opened.requests));
+      assert.deepStrictEqual(opened.errors, []);
+    },
+  },
 ];

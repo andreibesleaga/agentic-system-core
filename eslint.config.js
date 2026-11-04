@@ -52,6 +52,8 @@ module.exports = [
       'tests/vectors/', 'tests/fixtures/', 'tests/acceptance/bundle/',
       'internet-draft/', 'w3c/', 'w3id/', 'docs/', 'spec/', 'schema/', 'ontology/', 'features/',
       'bench/corpus/', 'bench/queries/',
+      // The query engine of `/query/`: one release of Oxigraph, vendored byte for byte (AGSC-06-39).
+      'src/distribution/vendor/',
     ],
   },
   js.configs.recommended,

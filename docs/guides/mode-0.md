@@ -118,7 +118,7 @@ ls www www/.well-known
 ```
 
 ```text expect
-wrote: 49 files under www/
+wrote: 58 files under www/
 build: pass (0 error, 4 warn)
 index.html
 llms.txt
@@ -168,6 +168,21 @@ Tab reaches the list, the arrow keys move through it, Enter selects a note and s
 its relations, and Escape clears. The explorer needs JavaScript and reads only
 `/graph.jsonld` of the same site; without JavaScript it does not appear, and the rest
 of the page is unchanged.
+
+The `/query/` page lets you ask the graph a question in SPARQL, the query language of
+RDF. Write a query and select Run (or press Ctrl+Enter): it runs in your browser,
+against `/graph.nq` of the same site, and no server takes part. The answer comes as a
+table; a `CONSTRUCT` or `DESCRIBE` query, or any query with three columns, is drawn as
+a picture too. Two links give the result as CSV and as JSON. The page answers
+`SELECT`, `ASK`, `CONSTRUCT` and `DESCRIBE`, and refuses a query that would change the
+graph or call another server. "Link to this query" gives an address that holds the
+query after its `#`: whoever opens it finds the query in the editor, and it runs only
+when they select Run. Below the editor, the ten questions every graph must answer come
+with their queries, ready to put in the editor, and a table lists the classes and the
+fourteen relations with what each means. The page stores nothing, not even your last
+query. It needs JavaScript; the engine it runs, Oxigraph, is about 4.4 MB and loads
+only on this page. To leave the page out, set `"query_page": false` under `site` in
+`agsc.config.json`; the build then writes no `/query/` and no link to it.
 
 ## 4. Change a note — as a proposal
 
@@ -241,7 +256,7 @@ agsc verify --ledger
 
 ```text expect
 ci: pass (0 error, 6 warn)
-wrote: 50 files under www/
+wrote: 59 files under www/
 verify: pass (0 error, 0 warn)
 ```
 

@@ -63,8 +63,13 @@ function routeOf(file) {
 const TEMPLATES = templates();
 /** `/boards/**` and the other conditional names of the third paragraph. */
 const CONDITIONAL = [...CONDITIONS.matchAll(/`(\/[^`]*)`/gu)].map((m) => m[1]);
-/** The page assets the second paragraph names as parts of a page, not routes — and the `/search/` page's own script, its one same-origin asset. */
-const PAGE_ASSETS = [/^\/compose\/[a-z-]+\.js$/u, /^\/search\/[a-z-]+\.js$/u, /^\/assets\/site\.css$/u, /^\/assets\/theme\.js$/u];
+/**
+ * The page assets the second paragraph names as parts of a page, not routes — the `/search/`
+ * page's own script, its one same-origin asset, and the files under `/query/` other than its
+ * page (the page script, the query engine and its licence text, AGSC-06-39).
+ */
+const PAGE_ASSETS = [/^\/compose\/[a-z-]+\.js$/u, /^\/search\/[a-z-]+\.js$/u, /^\/assets\/site\.css$/u, /^\/assets\/theme\.js$/u,
+  /^\/query\/(?!$)[^]+$/u];
 
 test('the rule text yields the route list this test reads (a vacuous parse would prove nothing)', () => {
   assert.ok(NAMESPACE_SITE.includes('/ns/agsc.ttl'), 'the namespace-site sentence was not found');
@@ -74,6 +79,7 @@ test('the rule text yields the route list this test reads (a vacuous parse would
   }
   assert.ok(CONDITIONAL.includes('/boards/**') && CONDITIONAL.includes('/legal/'));
   assert.match(SECOND, /are emitted as part of the page that names them/u);
+  assert.match(SECOND, /The files under `\/query\/` other than its index page \(AGSC-06-39\)[^.]* are page assets of that page/u);
 });
 
 /**

@@ -45,11 +45,15 @@ const ALLOW = new Map([
 
 // ------------------------------------------------------------------ the literals
 
-/** Every `.js` file under `dir`, repository-relative. */
+/** The vendored query engine of `/query/` (AGSC-06-39): one release of another project, byte for byte, not this engine's code. */
+const VENDOR = 'src/distribution/vendor';
+
+/** Every `.js` file under `dir`, repository-relative, but the vendored engine. */
 function files(dir) {
   const out = [];
   for (const entry of fs.readdirSync(path.join(REPO, dir), { withFileTypes: true })) {
     const rel = `${dir}/${entry.name}`;
+    if (rel === VENDOR) continue;
     if (entry.isDirectory()) out.push(...files(rel));
     else if (entry.name.endsWith('.js')) out.push(rel);
   }

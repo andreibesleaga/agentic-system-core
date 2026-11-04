@@ -55,6 +55,7 @@
         "docs/SHACL-SHAPES.md",
         "docs/MEASUREMENTS.md",
         "docs/CONFORMANCE-STATEMENTS.md",
+        "docs/ontology-questions.json",
         "docs/guides/",
         "examples/",
         "LICENSE",
@@ -86,7 +87,7 @@
         "lint": "eslint --max-warnings 0 .",
         "format": "eslint --fix .",
         "arch": "depcruise --config .dependency-cruiser.js src bin index.js",
-        "duplicates": "jscpd src bin index.js --format javascript --reporters console --threshold 2",
+        "duplicates": "jscpd src bin index.js --format javascript --reporters console --threshold 2 --ignore \"src/distribution/vendor/**\"",
         "requirements": "node tools/requirements-matrix --check"
     },
     "repository": {

@@ -32,7 +32,7 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Andrei N. Besleaga"
 SPDX-License-Identifier = "CC-BY-4.0"
 
-# Seven files quote an SPDX line as DATA (a script template that emits the licence line of
+# Eight files quote an SPDX line as DATA (a script template that emits the licence line of
 # a browser file, a pattern that reads a licence line, a test of the ontology alignments).
 # REUSE would read those quotations as the file's own licence and reject them as invalid
 # expressions, so these paths are annotated by "override", which ignores the file's text.
@@ -41,6 +41,7 @@ path = [
   "src/composition/browser.js",
   "src/distribution/compose-page.js",
   "src/distribution/page-tools.js",
+  "src/distribution/query-page.js",
   "src/distribution/search-page.js",
   "src/distribution/webmcp.js",
   "src/interchange/licences.js",
@@ -54,3 +55,15 @@ SPDX-License-Identifier = "Apache-2.0"
 # which REUSE does not annotate. LICENSE-CONTENT (the Content Use Terms 1.0) is the licence
 # of a PUBLISHED NODE's prose, not of any file in this repository, so it has no entry in
 # LICENSES/ (an unused licence text fails `reuse lint`).
+
+# The query engine of the /query/ page (AGSC-06-39): the files of one release of Oxigraph,
+# vendored byte for byte under its own licence, whose texts sit beside them
+# (src/distribution/vendor/oxigraph-0.5.13/README.md says where each file comes from).
+[[annotations]]
+path = [
+  "src/distribution/vendor/oxigraph-0.5.13/web.js",
+  "src/distribution/vendor/oxigraph-0.5.13/web_bg.wasm",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2018 Oxigraph developers"
+SPDX-License-Identifier = "MIT OR Apache-2.0"

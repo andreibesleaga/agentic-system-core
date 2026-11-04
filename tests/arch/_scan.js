@@ -15,9 +15,16 @@ function walk(dir) {
     : [path.join(dir, e.name)]));
 }
 
-/** Every `.js` under src/, as `{ rel, dir, text, requires: string[] }`. */
+/**
+ * The vendored files of the query engine `/query/` runs in the browser (AGSC-06-39): one
+ * release of a third-party engine, byte for byte, required by no module and pinned by
+ * tests/arch/query-engine-pin.test.js. They are not the engine's code, so no scan reads them.
+ */
+const VENDOR = path.join(SRC, 'distribution', 'vendor');
+
+/** Every `.js` under src/ but the vendored engine, as `{ rel, dir, text, requires: string[] }`. */
 function sources() {
-  return walk(SRC).filter((f) => f.endsWith('.js')).sort().map((absolute) => {
+  return walk(SRC).filter((f) => f.endsWith('.js') && !f.startsWith(VENDOR + path.sep)).sort().map((absolute) => {
     const rel = path.relative(ROOT, absolute).split(path.sep).join('/');
     const text = fs.readFileSync(absolute, 'utf8');
     const requires = [...text.matchAll(/\brequire\(\s*'([^']+)'\s*\)/gu)].map((m) => m[1]);

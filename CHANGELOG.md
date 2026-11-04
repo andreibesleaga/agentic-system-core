@@ -280,6 +280,57 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   function self-contained, no dependency) and `tests/distribution/explorer-browser.test.js` in the browser
   lane, where `axe-core` 4.13.0 is now fetched by exact version and checked against its SHA-256 like
   `playwright-core`.
+- The query page `/query/` (AGSC-06-39, N-01): a visitor writes a query in SPARQL 1.1 and runs it
+  against the node's own `/graph.nq`, in the browser, with no server. The page answers `SELECT`, `ASK`,
+  `CONSTRUCT` and `DESCRIBE` over the union of the node's graphs (or over the dataset a query names with
+  `FROM`); it refuses an update and a `SERVICE` clause before anything runs, with its own small
+  tokenizer, because the engine lets `SERVICE SILENT` through and names no update in its own refusal,
+  which stays the second line. The result is a table (the first 200 rows; the downloads hold all), and a
+  `CONSTRUCT`, `DESCRIBE` or three-column result is also drawn as a picture with the explorer's own
+  layout and scene writer (no second layout engine). Two links of the page offer the result as CSV and
+  as JSON in the W3C formats ("SPARQL 1.1 Query Results CSV and TSV Formats", "… JSON Format", 21 March
+  2013), written by the engine's own result writers; an `ASK` answer is JSON only, since no CSV form
+  exists for it; a graph result is given as subject, predicate and object rows, its blank nodes named
+  `b0`, `b1`, … so the same query gives the same bytes. "Link to this query" puts the query in the
+  fragment (`#query=…`), which no request carries; opening such a link fills the editor and runs nothing.
+  The ten questions of the graph (AGSC-05-34) are offered as examples with the queries that define them
+  (from `docs/ontology-questions.json`, now shipped in the package), and a vocabulary explorer lists the
+  classes and the fourteen relation keys with their property and meaning (AGSC-03-01). The editor is a
+  text area with a coloured copy behind it; Ctrl+Enter runs; Stop ends a long query, which runs in a
+  module worker. The page stores nothing and sends nothing (AGSC-06-05) and has no axe-core finding in
+  either colour scheme (AGSC-06-20). Its HTML keeps the 100 KB budget; the engine is outside it
+  (AGSC-06-21). The code is `src/distribution/query-page.js` and `src/distribution/query/`, with no
+  dependency of its own. Tests: `tests/distribution/query/` (with fast-check properties over the result
+  formats and the tokenizer), `tests/distribution/query-page.test.js`, `tests/arch/query-portable.test.js`,
+  `tests/distribution/query-browser.test.js` in the browser lane, the persona scenario "Reader asks the
+  published graph a question on the query page", and the cases `build-0029` and `build-0030`, which pass.
+- The query engine of `/query/` is vendored (AGSC-06-39: "the files of one release of an engine whose
+  licence allows their redistribution"): Oxigraph 0.5.13, licence `MIT OR Apache-2.0`, the WebAssembly
+  build of the npm package `oxigraph@0.5.13`, which is already the engine's exact-pinned dependency, so no
+  dependency is added. `src/distribution/vendor/oxigraph-0.5.13/web.js` (50,946 bytes, SHA-256
+  `210c42fbba2915f668386f3285d28218db5865267e95b5403b82150431931f7c`) and `web_bg.wasm` (4,324,920 bytes,
+  SHA-256 `75e3f0f4de67921e88e3f6d587b2a8e7aa822abbe3a3b79873f2b97f20d52c24`), with `LICENSE-MIT` and
+  `LICENSE-APACHE` from the Oxigraph repository at tag `v0.5.13` and `THIRD-PARTY.txt`, the crates that
+  may be compiled into the WebAssembly file with their licences. Each file is served under
+  `/query/vendor/oxigraph-0.5.13/`; `tests/arch/query-engine-pin.test.js` pins their SHA-256 and keeps
+  them equal to the pinned dependency. `REUSE.toml`, `LICENSES/MIT.txt`, `NOTICE` and the licence table of
+  `README.md` name the engine's licence.
+- `_headers` gains one block, `/query/*`, on a node that emits the page (AGSC-06-17, AGSC-06-39): it
+  detaches the site-wide `Content-Security-Policy` and sets the same policy with `'wasm-unsafe-eval'`
+  added to `script-src`, which the engine, compiled to WebAssembly, needs and AGSC-06-39 allows; no other
+  source is added and no other address changes. `/query/` and every file under it are served exactly one
+  policy (the reference host joins two rules that set the same header, and two policies are both
+  enforced). Whether the host matches `/query/` itself with that block is to be checked on a live
+  deployment before the release; the engine runs in a worker whose own response carries the block, so it
+  starts either way.
+- Bytes (AGSC-06-39): a Bundle of 1.0 built with the default gains `/query/` and its files, a
+  `<loc>…/query/</loc>` line in `/sitemap.xml` (AGSC-06-19), a "Query" link at the end of the navigation
+  of every generated page, and the `/query/*` block of `_headers`; no other file changes. With
+  `site.query_page` set to `false` (AGSC-01-18) the build writes no `/query/`, no file under it and no
+  link to it, and every file keeps its 1.0 bytes; the build's skipped list says why.
+- `agsc-host serve` (the `local` deployment profile) serves a `.wasm` file as `application/wasm`, so the
+  engine of `/query/` compiles as a stream (AGSC-06-39).
+- The browser job of `.github/workflows/test.yml` also runs `tests/distribution/query-browser.test.js`.
 - The diagram language takes the token `rel=KEY` on `arrow`, `line` and `text` (AGSC-01-42, I-024):
   KEY is one of the fourteen Link keys of AGSC-03-01, and the element gets the class `agsc-rel-KEY`,
   which carries no colour; on an accented element the class attribute holds both classes, the accent

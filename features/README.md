@@ -29,7 +29,7 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | File | Persona | Mode | Scenarios | PRD ids covered |
 |---|---|---|---|---|
 | `persona-0-dropin.feature` | P0 drop-in user | 0 | 9 | PRD-053 |
-| `persona-a-reader.feature` | P1 human reader | 0 | 7 | PRD-002, 011, 013, 014, 015, 025 |
+| `persona-a-reader.feature` | P1 human reader | 0 | 8 | PRD-002, 011, 013, 014, 015, 022, 025 |
 | `persona-b-contributor.feature` | P2 human contributor | 0 | 7 | PRD-013, 039, 040, 041, 042, 050 |
 | `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 14 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
 | `persona-d-agent-proposer.feature` | P4 agent proposer | 1 (write) | 5 | PRD-039, 040, 042, 043 |

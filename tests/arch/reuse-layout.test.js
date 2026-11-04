@@ -46,8 +46,11 @@ test('REUSE.toml declares version 1 and at least the four licence areas of the R
   assert.match(areaOf('Apache-2.0'), /"\*\*"/u);
 });
 
+/** The licence identifiers of an SPDX expression (`MIT OR Apache-2.0` names two). */
+const identifiers = (expression) => expression.split(/\s+(?:OR|AND)\s+/u);
+
 test('LICENSES/ holds exactly the texts the annotations name', () => {
-  const named = [...new Set(annotations().map((a) => a.license))].sort();
+  const named = [...new Set(annotations().flatMap((a) => identifiers(a.license)))].sort();
   const held = fs.readdirSync(path.join(ROOT, 'LICENSES')).map((f) => f.replace(/\.txt$/u, '')).sort();
   assert.deepStrictEqual(held, named);
   for (const id of named) {
@@ -59,6 +62,9 @@ test('LICENSES/ holds exactly the texts the annotations name', () => {
 test('the licence table of README.md and the annotations agree on the identifiers', () => {
   const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
   for (const id of new Set(annotations().map((a) => a.license))) {
+    assert.ok(readme.includes(id), `README.md does not state ${id}`);
+  }
+  for (const id of new Set(annotations().flatMap((a) => identifiers(a.license)))) {
     assert.ok(readme.includes(id), `README.md does not state ${id}`);
   }
 });

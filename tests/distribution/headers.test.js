@@ -113,3 +113,20 @@ for (const visibility of ['public', 'restricted']) {
     }
   });
 }
+
+test('AGSC-06-39, AGSC-06-17: /query/* gets one block, only where the page is emitted, and only it admits WebAssembly', () => {
+  const without = headers.headerSets({}, ['/index.html', '/graph.nq']);
+  assert.ok(!without.some((set) => set.route.startsWith('/query/')));
+  assert.ok(!headers.headersFile({}, ['/index.html']).includes('wasm-unsafe-eval'));
+  const sets = headers.headerSets({}, ['/index.html', '/query/index.html', '/query/agsc-query.js']);
+  const query = sets.filter((set) => set.route === '/query/*');
+  assert.strictEqual(query.length, 1);
+  assert.deepStrictEqual(query[0].headers, [['!', 'Content-Security-Policy'], ['Content-Security-Policy', headers.QUERY_SECURITY_POLICY]]);
+  // The one source added, and nothing else changed.
+  assert.strictEqual(headers.QUERY_SECURITY_POLICY.replace(" 'wasm-unsafe-eval'", ''), headers.SECURITY_POLICY);
+  assert.match(headers.QUERY_SECURITY_POLICY, /script-src 'self' 'wasm-unsafe-eval';/u);
+  for (const set of sets.filter((s) => s.route !== '/query/*')) {
+    assert.ok(!JSON.stringify(set.headers).includes('wasm-unsafe-eval'), set.route);
+  }
+  assert.match(headers.headersFile({}, ['/query/index.html']), /\n\/query\/\*\n {2}! Content-Security-Policy\n {2}Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval';/u);
+});

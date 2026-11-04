@@ -23,6 +23,7 @@ const pageTools = require('../../src/distribution/page-tools.js');
 const webmcp = require('../../src/distribution/webmcp.js');
 const composePage = require('../../src/distribution/compose-page.js');
 const searchPage = require('../../src/distribution/search-page.js');
+const queryPage = require('../../src/distribution/query-page.js');
 const theme = require('../../src/distribution/theme.js');
 
 const OPTIONS = { timeout: 120000 };
@@ -52,6 +53,7 @@ test('no emitted page script carries a review label or a dated note in a comment
     'webmcp.js': webmcp.script(),
     'agsc-compose.js': composePage.controller(),
     'agsc-search.js': searchPage.script(),
+    'agsc-query.js': queryPage.script({ specVersion: '1.1.0' }),
     'theme.js': theme.script(),
   };
   for (const [name, source] of Object.entries(scripts)) {

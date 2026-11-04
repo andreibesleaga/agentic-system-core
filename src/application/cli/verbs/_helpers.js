@@ -7,12 +7,13 @@
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 
-const { readOntology, readSchemas, safeJoin } = require('../../../adapters/node-fs.js');
+const { readEngineFiles, readOntology, readSchemas, safeJoin } = require('../../../adapters/node-fs.js');
 const validate = require('../../../knowledge/validate.js');
 const links = require('../../../knowledge/links.js');
 const ledger = require('../../../governance/ledger.js');
 const contentVersion = require('../../../knowledge/content-version.js');
 const turtle = require('../../../knowledge/turtle.js');
+const queryPage = require('../../../distribution/query-page.js');
 const { loadBundle } = require('../../bundle.js');
 const { withOverrides } = require('../../config/load.js');
 
@@ -86,6 +87,28 @@ function ontology() {
     });
   }
   return vocabulary;
+}
+
+/** The query page's input, read once per process (`queryPageInput`). */
+let queryInput = null;
+
+/**
+ * AGSC-06-39: what the build needs for `/query/` that is the engine's and no Bundle's: the
+ * files of the vendored query engine (`distribution/query-page.js#ENGINE`), by their
+ * source names, and the data file of the ten questions the page offers as examples
+ * (`docs/ontology-questions.json`, AGSC-05-34). Read once per process.
+ * @returns {{engine: Map<string,Buffer>, questions: Buffer}} `questions` as the bytes of the file.
+ */
+function queryPageInput() {
+  if (queryInput === null) {
+    const questions = 'docs/ontology-questions.json';
+    const read = readEngineFiles([...queryPage.ENGINE_SOURCES, questions], ENGINE_ROOT);
+    queryInput = Object.freeze({
+      engine: new Map(queryPage.ENGINE.files.map((f, k) => [f.source, read.get(queryPage.ENGINE_SOURCES[k])])),
+      questions: read.get(questions),
+    });
+  }
+  return queryInput;
 }
 
 /** The loaded Bundle of AGSC-01-01…01-04, from the verb's port bag. */
@@ -179,6 +202,7 @@ function buildOptions(ctx, extra) {
     level: Number.isInteger(level) ? level : undefined,
     ontologyTerms: ontology().terms,
     ontologyVersion: ontology().version,
+    queryPage: queryPageInput(),
     specVersion: ctx.specVersion,
     version: ctx.version,
     ...(extra || {}),
@@ -503,6 +527,7 @@ module.exports = {
   bundleVersionOf,
   resolvedConfig,
   buildOptions,
+  queryPageInput,
   levelRefusal,
   contentTree,
   gitLog,

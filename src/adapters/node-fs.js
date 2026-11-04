@@ -244,6 +244,18 @@ function readOntology(engineRoot = path.resolve(__dirname, '..', '..')) {
   return fs.readFileSync(path.join(engineRoot, 'ontology', 'agsc.ttl'), 'utf8');
 }
 
+/**
+ * Read files that belong to the ENGINE, not to a Bundle, as bytes: the query engine the
+ * `/query/` page ships (AGSC-06-39) and the data file of its examples. Like `schema/` and
+ * the vocabulary, they live outside any Bundle, so the Bundle-rooted port cannot reach them.
+ * @param {Array<string>} relatives paths under the engine root, with `/` separators.
+ * @param {string} [engineRoot]
+ * @returns {Map<string,Buffer>} each path → its bytes, in the order given.
+ */
+function readEngineFiles(relatives, engineRoot = path.resolve(__dirname, '..', '..')) {
+  return new Map(relatives.map((rel) => [rel, fs.readFileSync(path.join(engineRoot, ...rel.split('/')))]));
+}
+
 module.exports = {
-  createFileSystem, readOntology, readSchemas, safeJoin, checkReal, FsError, MAX_INPUT_BYTES, ARCHIVE_EXTENSIONS,
+  createFileSystem, readEngineFiles, readOntology, readSchemas, safeJoin, checkReal, FsError, MAX_INPUT_BYTES, ARCHIVE_EXTENSIONS,
 };

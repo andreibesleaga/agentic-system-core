@@ -683,6 +683,9 @@ drive them, `init` and `ci`.
 | `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members, the overview and legend of `/clusters/` |
 | `distribution/clusters-page.js` | Distribution | AGSC-06-38, AGSC-06-01 — what `/clusters/` adds below its list, and the two files it loads |
 | `distribution/explorer/*.js` | Distribution | AGSC-06-38, AGSC-06-05, AGSC-06-17, AGSC-06-20 — the explorer of `/clusters/`, shipped as the source text of its portable functions |
+| `distribution/query-page.js` | Distribution | AGSC-06-39, AGSC-06-01, AGSC-06-05, AGSC-06-17, AGSC-06-20, AGSC-06-21 — the `/query/` page, its script, worker and stylesheet, and the files of the vendored engine |
+| `distribution/query/*.js` | Distribution | AGSC-06-39 — the query page's portable functions: the tokenizer and the refusal (`tokens.js`), what a result shows (`view.js`), the worker over the engine (`engine.js`), the page's wiring (`main.js`) |
+| `distribution/vendor/oxigraph-0.5.13/` | Distribution | AGSC-06-39 — one release of the query engine (Oxigraph 0.5.13, WebAssembly), its licence texts and the crates compiled into it; not the engine's code, pinned by SHA-256 |
 | `distribution/site.js` | Distribution | AGSC-06-01 and AGSC-04-01/02 — `build`, `write`, `verify` |
 | `distribution/init.js` | Distribution | AGSC-02-94, AGSC-02-95, AGSC-01-37 — the adoption use case |
 | `distribution/ci.js` | Distribution | AGSC-09-08 — lint → build → verify and the exit codes |
@@ -772,6 +775,22 @@ script({ relations, specVersion }) -> string; stylesheet() -> string; section() 
 relationTerms(contextObject) -> [{key, term, meaning, symmetric}]   // the term through knowledge/jsonld.js#compactionTable, #compactName
 SCRIPT_ROUTE = '/clusters/agsc-explorer.js'; STYLESHEET_ROUTE = '/clusters/agsc-explorer.css'; MAX_NODES = 400
 GRAPH_ROUTE = '/graph.jsonld'; FRAME = { width: 800, height: 560, margin: 24 }
+
+// distribution/query-page.js (pure; AGSC-06-39)
+decision({ site, graphServed, input, pages }) -> { on, skipped }   // on unless site.query_page is false, no graph.nq, or no engine given
+files({ engine, questions, ontologyTerms, specVersion }, pageOptions) -> [[route, text | Buffer]]   // the page, its assets, the engine
+script({ specVersion }) -> string; workerScript({ specVersion }) -> string; stylesheet() -> string
+examplesSection(questions) -> string; vocabularySection(ontologyTerms) -> string
+ENGINE = { name, package, version, licence, folder, route, module, webAssembly, files: [{ source, served, bytes, sha256 }] }; ENGINE_SOURCES
+ROUTE = '/query/'; SCRIPT_ROUTE; WORKER_ROUTE; STYLESHEET_ROUTE; GRAPH_ROUTE = '/graph.nq'; ROWS_SHOWN = 200; MAX_NODES = 150; FIRST_QUERY
+// distribution/query/ (PORTABLE: each module lists the functions emitted as their own source text)
+queryTokens(text) -> [{kind, text}]; queryCheck(text) -> { form, refusal, dataset }; queryRefusal(check) -> string | null; queryHighlight(text)   // tokens.js
+queryTermText(term, prefixes); queryTable(result, limit, prefixes); queryGraph(result, prefixes, keys, max) -> { nodes, links, total } | null
+querySummary(answer); queryShareHref(text) -> '#query=…'; queryFromHash(hash) -> text | null   // view.js
+queryAnswer(ox, store, text) -> { form, json, csv } | { form, error }; queryGraphStore(ox, quads)   // engine.js: the engine's own result writers
+queryWorkerMain(scope, ox, graphRoute); queryMain(win, api)          // engine.js, main.js: the browser lane only
+// adapters/node-fs.js: readEngineFiles(relatives, engineRoot?) -> Map<path, Buffer>
+// application/cli/verbs/_helpers.js: queryPageInput() -> { engine: Map<source, Buffer>, questions: Buffer }   // read once per process
 
 // distribution/site.js
 build(bundle, ports, options) -> { files: Map<route, string>, findings, skipped, state, ledgerHead }

@@ -335,6 +335,7 @@ AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to
 | The W3C-format personal draft under `w3c/` | CC-BY-4.0 |
 | The Internet-Draft under `internet-draft/` | Apache-2.0; as a posted Internet-Draft also under BCP 78 and the IETF Trust Legal Provisions |
 | The prose of a published node — item bodies, descriptions and the pages and exports that carry them | the Content Use Terms in `LICENSE-CONTENT` |
+| The query engine every node's `/query/` page runs, vendored under `src/distribution/vendor/` (Oxigraph, by the Oxigraph developers) | MIT OR Apache-2.0, its own; the texts are beside it |
 
 The text of each licence above is in `LICENSES/`, and `REUSE.toml` assigns each licence to its
 paths (the REUSE layout; `docs/ENGINEERING.md` §7).

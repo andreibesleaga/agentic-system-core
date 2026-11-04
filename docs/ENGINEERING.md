@@ -121,7 +121,13 @@ To add a module:
    them in `PORTABLE`, and a portable function names no module-scope binding and
    requires nothing (`tests/arch/page-tools-portable.test.js` for the page tools,
    `tests/arch/explorer-portable.test.js` for the explorer of `/clusters/`, which also
-   depends on nothing outside its own folder).
+   depends on nothing outside its own folder, and `tests/arch/query-portable.test.js` for
+   the `/query/` page and its worker, which reuse the explorer's layout and scene writer).
+   Code from another project that a page runs is vendored, never hand-copied: the query
+   engine of `/query/` is one release of Oxigraph under `src/distribution/vendor/`, byte
+   for byte, with its licence texts, its SHA-256 pinned by
+   `tests/arch/query-engine-pin.test.js` and kept equal to the pinned `oxigraph`
+   dependency; no scan, linter or duplicate check reads that folder.
 3. **Reach the host through a port.** `knowledge/`, `governance/`, `composition/`,
    `interchange/`, `distribution/` and `shared/` may use the Node built-in `crypto`
    and nothing else; the Boundary may also use `net` and `url` to classify addresses

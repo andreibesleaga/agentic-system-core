@@ -5,7 +5,8 @@
 // CORS set every public artefact carries, and the credentials header none carries),
 // AGSC-11-04/05 (the profile link, the `describedby` header on `/`, the quoted
 // SHA-256 `ETag` and the three `no-cache` routes), AGSC-06-06 (the versioned copies
-// under `/ns/<major>.<minor>.<patch>/` are immutable) and AGSC-11-20 (a `restricted`
+// under `/ns/<major>.<minor>.<patch>/` are immutable), AGSC-06-39 (the one policy of
+// `/query/` and the files under it, which admits the page's WebAssembly engine) and AGSC-11-20 (a `restricted`
 // node applies the wildcard to the discovery document alone, and the profile detaches
 // the wildcard that the host adds by default).
 //
@@ -84,6 +85,15 @@ const CONTENT_TYPES = Object.freeze([
 const SECURITY_POLICY = "default-src 'none'; script-src 'self'; style-src 'self'; "
   + "img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
+/**
+ * AGSC-06-39: the policy of `/query/` and the files under it. The page's engine is compiled
+ * to WebAssembly, which a browser compiles only where `script-src` admits
+ * `'wasm-unsafe-eval'`; that one source is added and nothing else is loosened.
+ */
+const QUERY_SECURITY_POLICY = SECURITY_POLICY.replace("script-src 'self';", "script-src 'self' 'wasm-unsafe-eval';");
+/** The page whose presence gives `/query/*` its block. */
+const QUERY_PAGE = '/query/index.html';
+
 const SITE_WIDE = Object.freeze([
   ['X-Content-Type-Options', 'nosniff'],
   ['X-Frame-Options', 'DENY'],
@@ -121,7 +131,8 @@ function etag(hex) {
  *
  * @param {{visibility?:string}} [config] `agsc.config.json`.
  * @param {Array<string>} [routes] the routes the build emits; each version directory
- *   among them gets the immutable `Cache-Control` of AGSC-06-06.
+ *   among them gets the immutable `Cache-Control` of AGSC-06-06, and `/query/index.html`
+ *   among them gives `/query/*` the policy of AGSC-06-39.
  * @returns {Array<{route:string, headers:Array<[string,string]>}>}
  */
 function headerSets(config = {}, routes = []) {
@@ -156,6 +167,10 @@ function headerSets(config = {}, routes = []) {
   }
   // AGSC-06-06: the versioned copies never change; no other address of `/ns/` gets the value.
   for (const version of versionDirectories(routes)) add(`/ns/${version}/*`, [['Cache-Control', IMMUTABLE]]);
+  // AGSC-06-39, AGSC-06-17: one policy on `/query/` and the files under it. The host joins
+  // the values of two rules that set the same header, and two policies are both enforced,
+  // so the block detaches the site-wide policy before it sets its own.
+  if (routes.includes(QUERY_PAGE)) add('/query/*', [['!', 'Content-Security-Policy'], ['Content-Security-Policy', QUERY_SECURITY_POLICY]]);
   return [...byRoute].map(([route, headers]) => ({ route, headers: headers.map(([k, v]) => [k, v]) }));
 }
 
@@ -199,5 +214,6 @@ module.exports = {
   NO_CACHE,
   PUBLIC_ARTEFACTS,
   SECURITY_POLICY,
+  QUERY_SECURITY_POLICY,
   IMMUTABLE,
 };

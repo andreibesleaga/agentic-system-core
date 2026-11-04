@@ -202,7 +202,7 @@ test('every emitted text is UTF-8 NFC, LF-terminated, one trailing LF, no BOM; e
   let jsons = 0;
   for (const rel of files) {
     const bytes = fs.readFileSync(path.join(out, rel));
-    if (/\.(svg|png|jpg|webp)$/u.test(rel)) continue;
+    if (/\.(svg|png|jpg|webp|wasm)$/u.test(rel)) continue;
     const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
     texts += 1;
     assert.ok(!text.startsWith('﻿'), `${rel} starts with a BOM`);

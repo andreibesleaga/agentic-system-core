@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "the query runs in the page's own engine, a WebAssembly build started by the page's script, so asking the graph a question needs a browser; the page's markup and its policy are checked by tests/distribution/query-page.test.js and case build-0030, its pure parts by tests/distribution/query/.",
+  "scenario": "Reader asks the published graph a question on the query page"
+}
