@@ -178,8 +178,12 @@ a picture too. Two links give the result as CSV and as JSON. The page answers
 graph or call another server. "Link to this query" gives an address that holds the
 query after its `#`: whoever opens it finds the query in the editor, and it runs only
 when they select Run. Below the editor, the ten questions every graph must answer come
-with their queries, ready to put in the editor, and a table lists the classes and the
-fourteen relations with what each means. The page stores nothing, not even your last
+with their queries, ready to put in the editor. Each query is filled in with an item of
+your site that the question has something to say about, and the sentence under it names
+the item, so every example runs as it stands; change the item to ask about another. A
+table lists the classes and the fourteen relations with what each means. A site that
+declares its own questions and vocabulary (the `domain` object of `agsc.config.json`)
+has them listed after these. The page stores nothing, not even your last
 query. It needs JavaScript; the engine it runs, Oxigraph, is about 4.4 MB and loads
 only on this page. To leave the page out, set `"query_page": false` under `site` in
 `agsc.config.json`; the build then writes no `/query/` and no link to it.

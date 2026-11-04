@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "the example runs in the page's own engine, a WebAssembly build started by the page's script, so running it needs a browser; the filled examples and the vocabulary in the page's markup are checked by tests/distribution/query-page.test.js, and each filled example against the question's function by tests/distribution/query-examples.test.js.",
+  "scenario": "Reader runs one of the ten questions of the graph on the query page with the keyboard alone"
+}

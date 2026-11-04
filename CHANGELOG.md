@@ -331,6 +331,38 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `agsc-host serve` (the `local` deployment profile) serves a `.wasm` file as `application/wasm`, so the
   engine of `/query/` compiles as a stream (AGSC-06-39).
 - The browser job of `.github/workflows/test.yml` also runs `tests/distribution/query-browser.test.js`.
+- The ten examples of `/query/` are filled in from the node (AGSC-06-39 (b), AGSC-05-34, N-01, I-011):
+  the defining text of each question names its subject `?x`, a selection `<S...>` and an instant `"T"`,
+  and as published question 4 does not parse and question 9 answers nothing. The page now puts in, for
+  each question, the first item in code-point order of its slug that the question has something to say
+  about (an item with a link of the question's key, a cluster with something under it, an item with
+  consumed names or with sources), else the node's first item; for question 4 up to three other items
+  that produce what it consumes; for question 9 the first four items that are deprecated, draft, retired
+  or stale at the build's instant, the first item that is none of these, and that instant. A sentence
+  under each query says what was put in, and says so when no item fits and the answer is empty. Each
+  filled query, run by the engine the page ships, answers what the question's own function answers
+  (`src/knowledge/questions.js`), checked in Node over the shared fixture of `graph-0030` to `graph-0039`
+  and over fast-check graphs, in the browser over the rich fixture, and on the demonstration node, the
+  main site's Bundle and the patterns node in the new optional lane `tests/e2e/query-sites.test.js`
+  (`AGSC_E2E=1` with the browser lane), which also runs axe-core in both colour schemes. The code is
+  `src/distribution/query-examples.js`, pure. Bytes: `/query/index.html` only (the examples and their
+  sentences); the page script, the worker and the stylesheet keep their pinned bytes.
+- `/query/` shows a node's own domain layer (AGSC-06-39 (b), (f)): on a node that declares competency
+  questions (AGSC-05-41) they follow the ten examples, as its file states them, with a sentence that the
+  page runs them over `/graph.nq` alone while `verify` checks them with the closure; on a node with a site
+  vocabulary (AGSC-05-38) its classes and relations follow the fourteen, each with its label, what it is
+  a kind of, its inverse and its meaning (`skos:definition`, else `rdfs:comment`). The questions file is
+  read for its shape only, so the build still never reaches the SPARQL parser or engine
+  (`tests/arch/sparql-library.test.js`). Bytes: only for a node with a domain layer, only in
+  `/query/index.html`.
+- The query page's browser test also runs the ten examples from the keyboard alone (focus a button,
+  Enter, Ctrl+Enter), checks the Tab order of the controls and their visible focus, and checks that
+  nothing on the page moves, with and without a request for reduced motion (AGSC-06-20); its axe-core
+  pass uses the tags of `bench/a11y.js`. The persona scenario "Reader runs one of the ten questions of the
+  graph on the query page with the keyboard alone" is new. Measured on the 5,000-item Bundle of
+  `bench/gen-bundle.js` (13.4 MB `graph.nq`, 75,012 statements; Brotli 191,711 bytes): `/query/` is
+  20,291 bytes and the engine is ready with the graph loaded in 2.0 s (median of five) at 20 Mbit/s and
+  40 ms in chrome-headless-shell 156, 1.5 s on loopback.
 - The diagram language takes the token `rel=KEY` on `arrow`, `line` and `text` (AGSC-01-42, I-024):
   KEY is one of the fourteen Link keys of AGSC-03-01, and the element gets the class `agsc-rel-KEY`,
   which carries no colour; on an accented element the class attribute holds both classes, the accent

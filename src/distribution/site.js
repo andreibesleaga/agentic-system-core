@@ -170,6 +170,19 @@ function pageItemsOf(items, releases) {
 }
 
 /**
+ * AGSC-06-39: what `/query/` is built from — the engine's files and the ten questions the
+ * application layer hands in, the vocabulary terms, and, to fill the examples in from the
+ * node, the items `/graph.nq` holds (AGSC-06-30), the build's instant and `site.base`; on a
+ * node with a domain layer, the text of its competency questions and its site vocabulary.
+ */
+function queryPageFacts(options, { base, bundle, instant, pageItems, siteVocabulary, specVersion }) {
+  return {
+    ...options.queryPage, base, instant, items: pageItems, ontologyTerms: options.ontologyTerms, specVersion,
+    domain: bundle.domain ? { questions: bundle.domain.questions, vocabulary: siteVocabulary } : null,
+  };
+}
+
+/**
  * AGSC-11-16 / AGSC-11-19: the surfaces this build DECLARES, derived from what the
  * writer actually emits, through the Boundary context's `declare()` and through no
  * second list.
@@ -1801,7 +1814,7 @@ function buildSite(bundle, ports, options, findings) {
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
     // AGSC-06-39: the query page, its scripts and stylesheet, and the engine's files byte for byte (query-page.js).
-    const queryFiles = query.on ? queryPage.files({ ...options.queryPage, ontologyTerms: options.ontologyTerms, specVersion }, pageOptions) : [];
+    const queryFiles = query.on ? queryPage.files(queryPageFacts(options, { base, bundle, instant, pageItems, siteVocabulary, specVersion }), pageOptions) : [];
     for (const [route, bytes] of queryFiles) put(route, typeof bytes === 'string' ? textBytes(bytes) : bytes);
 
     // AGSC-10-13 + Q18: the HUMAN board page beside the JSON export.

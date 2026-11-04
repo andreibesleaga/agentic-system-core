@@ -13,8 +13,9 @@
 //      engine, not two), and the page script runs in a context with no document without a
 //      fault;
 //   4. the page's modules depend on nothing outside themselves but the explorer's portable
-//      modules; the emitter adds only the relation table, the graph writer's prefixes, the
-//      context reader and the page shell.
+//      modules; the emitter adds only the relation table, the graph writer's prefixes and
+//      item IRIs, the context reader, the page shell and the build-time reader of the node's
+//      examples and vocabulary (`query-examples.js`, never shipped as source text).
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -111,5 +112,5 @@ test('the page depends on nothing outside itself but the explorer\'s portable mo
     }
   }
   const outside = requires(path.join(SRC, 'query-page.js')).filter((t) => !/^\.\/(?:query|explorer)\/[a-z-]+\.js$/u.test(t));
-  assert.deepStrictEqual(outside.sort(), ['../knowledge/jsonld.js', '../knowledge/nquads.js', '../knowledge/relations.js', './html.js']);
+  assert.deepStrictEqual(outside.sort(), ['../knowledge/jsonld.js', '../knowledge/nquads.js', '../knowledge/relations.js', './html.js', './query-examples.js']);
 });

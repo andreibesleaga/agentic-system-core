@@ -21,6 +21,7 @@ const { describe, it } = require('node:test');
 const crypto = require('node:crypto');
 const nquads = require('../../src/knowledge/nquads.js');
 const questions = require('../../src/knowledge/questions.js');
+const { toAnswer } = require('./_question-answers.js');
 
 const REPO = path.resolve(__dirname, '..', '..');
 const DOC = JSON.parse(fs.readFileSync(path.join(REPO, 'docs', 'ontology-questions.json'), 'utf8'));
@@ -55,45 +56,6 @@ describe('AGSC-05-34 — the SPARQL text', () => {
     for (const prefix of used) assert.ok(declared.includes(prefix), `prefix ${prefix} is declared`);
   });
 });
-
-const slugOf = (iri) => iri.replace(/\/$/u, '').slice(iri.replace(/\/$/u, '').lastIndexOf('/') + 1);
-
-/** Rows of one query -> the answer shape of the question (the rows are in query order). */
-function toAnswer(number, rows, items) {
-  const slugs = (column) => [...new Set(rows.map((r) => slugOf(r[column])))].sort();
-  const typeOf = (slug) => { const found = items.find((i) => i.slug === slug); assert.ok(found, 'unknown ' + slug + ' in ' + JSON.stringify(rows)); return found.type; };
-  switch (number) {
-    case 1: case 2: case 3: case 6: return slugs(0);
-    case 4: return [...new Set(rows.map((r) => r[0]))].sort();
-    case 5: return {
-      verified_by: rows.filter((r) => r[0] === 'verified_by').map((r) => slugOf(r[1])).sort(),
-      verifies: rows.filter((r) => r[0] === 'verifies').map((r) => slugOf(r[1])).sort(),
-    };
-    case 7: {
-      const lineage = slugs(0);
-      return { episodes: lineage.filter((s) => typeOf(s) === 'episode'), lineage };
-    }
-    case 8: {
-      const below = slugs(0);
-      return { clusters: below.filter((s) => typeOf(s) === 'cluster'), items: below.filter((s) => typeOf(s) !== 'cluster') };
-    }
-    case 9: {
-      const bySlug = new Map();
-      for (const [iri, reason] of rows) bySlug.set(slugOf(iri), [...(bySlug.get(slugOf(iri)) || []), reason]);
-      const order = ['deprecated', 'draft', 'retired', 'stale'];
-      return [...bySlug.keys()].sort().map((slug) => ({
-        reasons: order.filter((r) => bySlug.get(slug).includes(r)), slug }));
-    }
-    default: {
-      const resources = [...new Set(rows.map((r) => r[0]))].sort();
-      return {
-        shared: resources.filter((resource) => rows.some((r) => r[0] === resource && r[1] !== null))
-          .map((resource) => ({ items: rows.filter((r) => r[0] === resource && r[1] !== null).map((r) => slugOf(r[1])).sort(), resource })),
-        sources: resources,
-      };
-    }
-  }
-}
 
 /** The text of one question with the subject, selection and instant put in. */
 function instantiate(sparql, iriOf, { subject, selection, at }) {

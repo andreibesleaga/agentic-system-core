@@ -4,7 +4,12 @@
 // site.js), over the minimal fixture at its fixed instant:
 //   * the page, its script, its worker, its stylesheet and the engine's files under
 //     `/query/`, the engine byte for byte as vendored;
-//   * the markup of the rules (a) to (f) of AGSC-06-39, the way build-0030 reads them;
+//   * the markup of the rules (a) to (f) of AGSC-06-39, the way build-0030 reads them; each
+//     of the ten examples filled in from the node (src/distribution/query-examples.js) with a
+//     sentence that says what was put in;
+//   * on a node with competency questions (AGSC-05-41) and a site vocabulary (AGSC-05-38),
+//     those questions after the ten and those classes and relations after the fourteen; on a
+//     node without, neither;
 //   * the sitemap entry, the navigation link on every generated page, and the one
 //     `_headers` block of `/query/*`, the only place `'wasm-unsafe-eval'` is admitted;
 //   * the two scripts, pinned by SHA-256 like the other page scripts, so a change to what
@@ -29,18 +34,25 @@ const helpers = require('../../src/application/cli/verbs/_helpers.js');
 const site = require('../../src/distribution/site.js');
 const queryPage = require('../../src/distribution/query-page.js');
 const hostRules = require('../../src/distribution/hosts/rules.js');
+const queryExamples = require('../../src/distribution/query-examples.js');
 const { RELATIONS } = require('../../src/knowledge/relations.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const QUESTIONS = JSON.parse(fs.readFileSync(path.join(ROOT, 'docs', 'ontology-questions.json'), 'utf8'));
+const LINT_0059 = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'vectors', 'lint', 'lint-0059-competency-question-answers-are-checked.json'), 'utf8')).input.add_files;
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const unescape = (html) => html.replace(/&lt;/gu, '<').replace(/&gt;/gu, '>').replace(/&quot;/gu, '"').replace(/&#39;/gu, '\'').replace(/&amp;/gu, '&');
 
-/** The minimal fixture built at its instant, with `config` merged over its configuration. */
-function build({ config = {}, input = helpers.queryPageInput() } = {}) {
+/** The minimal fixture built at its instant, with `files` added and `config` merged over its configuration. */
+function build({ config = {}, files: added = {}, input = helpers.queryPageInput() } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-query-page-'));
   try {
     fs.cpSync(FIXTURE, dir, { recursive: true });
+    for (const [rel, text] of Object.entries(added)) {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(dir, rel), text);
+    }
     const base = JSON.parse(fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8'));
     fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify({ ...base, site: { ...base.site, ...config } }, null, 2)}\n`);
     const files = createFileSystem(dir);
@@ -51,6 +63,11 @@ function build({ config = {}, input = helpers.queryPageInput() } = {}) {
   } finally {
     fs.rmSync(dir, { force: true, recursive: true });
   }
+}
+
+/** The minimal fixture's items as the loader reads them. */
+function loadFixture() {
+  return loadBundle(createFileSystem(FIXTURE), { schemas: validate.schemas(readSchemas(ROOT)) });
 }
 
 const BUILT = build();
@@ -83,16 +100,41 @@ test('(a) the page names the four forms it answers and the two it refuses, and l
   assert.match(worker, /queryWorkerMain\(self, oxigraph, "\/graph\.nq"\);\n$/u);
 });
 
-test('(b) the ten questions are offered as named examples, each with the query that defines it', () => {
+test('(b) the ten questions are offered as named examples, each with its query filled in from the node and a note that says so', () => {
   const html = page();
+  const items = site.pageItemsOf(loadFixture().items, undefined);
+  const values = queryExamples.exampleValues(items, '2026-01-01T00:00:00Z');
+  const iriOf = (slug) => `https://minimal.example/${{ cluster: 'clusters', concept: 'concepts' }[items.find((i) => i.slug === slug).type]}/${slug}/`;
+  const titleOf = (slug) => items.find((i) => i.slug === slug).title;
   for (const q of QUESTIONS.questions) {
     const block = html.slice(html.indexOf(`<li id="example-${q.number}">`), html.indexOf('</li>', html.indexOf(`<li id="example-${q.number}">`)));
     assert.ok(block.includes(`${q.number}. ${q.question}`.replace(/&/gu, '&amp;').replace(/</gu, '&lt;').replace(/>/gu, '&gt;').replace(/"/gu, '&quot;')), q.question);
     assert.ok(block.includes(`data-example="example-${q.number}-query"`), `example ${q.number} has no button`);
     const query = /<code id="example-\d+-query">([^]*?)<\/code>/u.exec(block)[1];
-    assert.ok(query.replace(/&lt;/gu, '<').replace(/&gt;/gu, '>').replace(/&quot;/gu, '"').replace(/&#39;/gu, '\'').replace(/&amp;/gu, '&').endsWith(q.sparql), `example ${q.number}`);
+    assert.strictEqual(unescape(query), queryExamples.exampleText(q, QUESTIONS.prefixes, values[q.number - 1], iriOf), `example ${q.number}`);
+    const note = /<p class="example-note" id="example-\d+-note">([^<]*)<\/p>/u.exec(block);
+    assert.ok(note !== null, `example ${q.number} has no note`);
+    assert.strictEqual(unescape(note[1]), queryExamples.exampleNote(values[q.number - 1], titleOf));
+    assert.match(block, new RegExp(`aria-describedby="example-${q.number}-question example-${q.number}-note"`, 'u'));
   }
   assert.strictEqual([...html.matchAll(/<li id="example-\d+">/gu)].length, 10);
+  assert.doesNotMatch(html, /id="examples-site"|id="vocabulary-site"/u, 'a node without the domain layer shows no part of it');
+});
+
+test('(b)(f) a node with competency questions and a site vocabulary: its questions after the ten, its terms after the fourteen', () => {
+  const html = String(build({ files: LINT_0059 }).files.get('/query/index.html'));
+  const examples = html.slice(html.indexOf('<h3 id="examples-site">'), html.indexOf('</section>', html.indexOf('<h3 id="examples-site">')));
+  assert.ok(html.indexOf('<li id="example-10">') < html.indexOf('<h3 id="examples-site">'), 'the node\'s questions follow the ten');
+  for (const q of queryExamples.siteQuestions(LINT_0059['domain/questions.json'])) {
+    assert.ok(examples.includes(`<p class="question" id="example-site-${q.id}-question">${q.question}</p>`), q.id);
+    assert.strictEqual(unescape(new RegExp(`<code id="example-site-${q.id}-query">([^<]*)</code>`, 'u').exec(examples)[1]), q.query);
+    assert.ok(examples.includes(`data-example="example-site-${q.id}-query"`), `${q.id} has no button`);
+  }
+  const vocabulary = html.slice(html.indexOf('<h3 id="vocabulary-site">'), html.indexOf('<h3 id="vocabulary-prefixes">'));
+  assert.ok(html.indexOf('id="vocabulary-relation-table"') < html.indexOf('<h3 id="vocabulary-site">'), 'the node\'s terms follow the fourteen');
+  assert.ok(vocabulary.includes('Minimal domain vocabulary'), 'the vocabulary is named');
+  assert.match(vocabulary, /<tr><td><code>https:\/\/minimal\.example\/ns\/domain#Engine<\/code><\/td><td>Engine<\/td><td><code>asc:Concept<\/code><\/td><td>A machine that turns fuel into thrust\.<\/td><\/tr>/u);
+  assert.match(vocabulary, /<tr><td><code>https:\/\/minimal\.example\/ns\/domain#controls<\/code><\/td><td>controls<\/td><td><code>asc:uses<\/code><\/td><td><code>https:\/\/minimal\.example\/ns\/domain#controlled-by<\/code><\/td><td>This controller runs the target engine\.<\/td><\/tr>/u);
 });
 
 test('(c)(d)(e) the result has a table, a picture, two downloads; the share link holds the query in its fragment', () => {

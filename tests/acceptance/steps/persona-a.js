@@ -13,6 +13,8 @@ const path = require('node:path');
 
 const { ROOT, built, splitItem } = require('./_world.js');
 const { RELATIONS } = require('../../../src/knowledge/relations.js');
+const questions = require('../../../src/knowledge/questions.js');
+const { publishedItems } = require('../../distribution/_query-lane.js');
 const browser = require('./_browser.js');
 
 const BASE = 'https://agenticsystemcore.com/';
@@ -588,6 +590,37 @@ module.exports = [
       assert.strictEqual(await opened.page.getAttribute('#query', 'data-result'), null, 'the query of a link ran by itself');
       assert.ok(opened.requests.every((url) => !url.includes('CONSTRUCT') && !url.includes('requires')), JSON.stringify(opened.requests));
       assert.deepStrictEqual(opened.errors, []);
+    },
+  },
+  {
+    pattern: 'the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it',
+    async run(world) {
+      const { page } = world.state.query;
+      assert.strictEqual(await page.textContent('#example-1-question'), '1. If I choose X, what else must I take?');
+      assert.match(await page.textContent('#example-1-query'), new RegExp(`\\{ <${BASE}concepts/a2a/> dcterms:requires\\+ \\?item \\}`, 'u'));
+      assert.strictEqual(await page.textContent('#example-1-note'), 'Filled in from this node: ?x is “Agent2Agent Protocol” (a2a).');
+    },
+  },
+  {
+    pattern: 'Enter on the example\'s button puts its query into the editor, and Ctrl+Enter runs it: the one row is the item "mcp", which is what the engine\'s own function answers for "a2a"',
+    async run(world) {
+      const { page } = world.state.query;
+      await page.focus('button[data-example="example-1-query"]');
+      await page.keyboard.press('Enter');
+      assert.strictEqual(await page.inputValue('#query-text'), await page.textContent('#example-1-query'));
+      await page.keyboard.press('Control+Enter');
+      await page.waitForSelector('#query[data-result="answered"]', { timeout: 20000 });
+      const rows = await page.evaluate(() => [...document.querySelectorAll('#query-table tbody tr')].map((tr) => tr.textContent));
+      assert.deepStrictEqual(rows, [`<${BASE}concepts/mcp/>`]);
+      assert.deepStrictEqual(questions.answer(1, publishedItems(world.dir), { subject: 'a2a' }), ['mcp']);
+    },
+  },
+  {
+    pattern: 'the vocabulary lists the fourteen relations, each with the meaning the specification gives it',
+    async run(world) {
+      const rows = await world.state.query.page.evaluate(() => [...document.querySelectorAll('#vocabulary-relation-table tbody tr')]
+        .map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent)));
+      assert.deepStrictEqual(rows, RELATIONS.map((r) => [r.key, r.property, r.meaning]));
     },
   },
 ];

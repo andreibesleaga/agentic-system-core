@@ -15,14 +15,14 @@
 //      result, and the page's own two download links, CSV and JSON;
 //   3. the examples (b): the ten questions of the graph (AGSC-05-34), each with the query
 //      that defines it, read from `docs/ontology-questions.json` and handed in by the
-//      application layer, with a button that puts the query into the editor without running
-//      it. The competency questions of a node's own domain layer (AGSC-05-41) are not shown
-//      yet: when the pages show the domain layer, they join this list after the ten
-//      (`examplesSection`);
+//      application layer, its placeholders filled in from the node with a sentence that says
+//      what was put in (`query-examples.js`), and a button that puts the query into the
+//      editor without running it; then, on a node that declares competency questions of its
+//      own (AGSC-05-41), those, as its file states them (`examplesSection`);
 //   4. the vocabulary explorer (f): the classes of the vocabulary and the fourteen relation
 //      keys with their property and their plain meaning (the `Meaning` column of AGSC-03-01,
-//      `knowledge/relations.js`). A node's site vocabulary (AGSC-05-38) is not shown yet:
-//      when the pages show the domain layer, it joins after the relations table
+//      `knowledge/relations.js`); then, on a node with a site vocabulary (AGSC-05-38), its
+//      classes and relations, each with its label, what it is a kind of and its meaning
 //      (`vocabularySection`).
 //
 // The files under `/query/` other than its page are page assets of it (AGSC-06-01): the
@@ -37,19 +37,20 @@
 // emitted the way the explorer of `/clusters/` is, so the page runs what the Node suite
 // tests. AGSC-06-05 holds: the scripts read this origin only and store nothing.
 //
-// Pure: the build (`site.js`) hands in the engine's bytes, the questions and the vocabulary
-// terms, and puts the files this returns.
+// Pure: the build (`site.js`) hands in the engine's bytes, the questions, the vocabulary
+// terms, the node's items and instant and its domain layer, and puts the files this returns.
 
 const { escapeHtml, shell } = require('./html.js');
 const tokens = require('./query/tokens.js');
 const view = require('./query/view.js');
+const queryExamples = require('./query-examples.js');
 const engine = require('./query/engine.js');
 const main = require('./query/main.js');
 const explorerLayout = require('./explorer/layout.js');
 const explorerView = require('./explorer/view.js');
 const explorerController = require('./explorer/controller.js');
 const { RELATIONS } = require('../knowledge/relations.js');
-const { PREFIXES, RDF } = require('../knowledge/nquads.js');
+const { PREFIXES, RDF, itemIri } = require('../knowledge/nquads.js');
 const { expandCompact } = require('../knowledge/jsonld.js');
 
 /** The page. */
@@ -232,17 +233,46 @@ function table(id, caption, headings, rows) {
     '</table></div>'].join('\n');
 }
 
+const code = (text) => `<code>${escapeHtml(text)}</code>`;
+
+/** An IRI as the page writes it: a prefixed name where one of the page's prefixes covers it, else in full. */
+function shortName(iri) {
+  const found = Object.entries(PAGE_PREFIXES).find(([, ns]) => iri.startsWith(ns) && !/[/#]/u.test(iri.slice(ns.length)));
+  return found === undefined ? iri : `${found[0]}:${iri.slice(found[1].length)}`;
+}
+
+/**
+ * The site vocabulary's part of the explorer (AGSC-06-39 (f), AGSC-05-38): its classes and
+ * its relations, each with its label, what it is a kind of and its meaning.
+ *
+ * @param {{ontology:object|null, classes:object[], relations:object[]}} terms `query-examples.js#siteTerms`
+ * @returns {string[]} lines
+ */
+function siteVocabularyPart(terms) {
+  const named = terms.ontology === null ? 'its site vocabulary'
+    : `its site vocabulary, ${terms.ontology.label === null ? '' : `“${escapeHtml(terms.ontology.label)}”, `}${code(terms.ontology.iri)}`;
+  const kinds = (parents) => parents.map((p) => code(shortName(p))).join(' ');
+  const text = (value) => (value === null ? '' : escapeHtml(value));
+  const counted = (n, one, many) => `The ${n} ${n === 1 ? one : many} of this node.`;
+  return ['<h3 id="vocabulary-site">Vocabulary of this node</h3>',
+    `<p>This node adds classes and relations of its own, in ${named}. Each class is a kind of one of the classes above and each relation a kind of one of the fourteen relations; the tables name which.</p>`,
+    table('vocabulary-site-class-table', counted(terms.classes.length, 'class', 'classes'), ['Class', 'Label', 'Kind of', 'Meaning'],
+      terms.classes.map((t) => [code(t.iri), text(t.label), kinds(t.parents), text(t.meaning)])),
+    table('vocabulary-site-relation-table', counted(terms.relations.length, 'relation', 'relations'), ['Property', 'Label', 'Kind of', 'Inverse', 'Meaning'],
+      terms.relations.map((t) => [code(t.iri), text(t.label), kinds(t.parents), t.inverse === null ? '' : code(t.inverse), text(t.meaning)]))];
+}
+
 /**
  * The vocabulary explorer (AGSC-06-39 (f)): the classes, then the fourteen keys in the
- * order of AGSC-03-01, each with its property and its plain meaning, then the prefixes the
- * examples use.
+ * order of AGSC-03-01, each with its property and its plain meaning, then the node's own
+ * classes and relations where it has a site vocabulary, then the prefixes the examples use.
  *
  * @param {Array<{term:string, kind:string}>} ontologyTerms the vocabulary's terms.
+ * @param {object|null} [siteTerms] the site vocabulary's terms (`query-examples.js#siteTerms`), or null.
  * @returns {string}
  */
-function vocabularySection(ontologyTerms) {
+function vocabularySection(ontologyTerms, siteTerms = null) {
   const classes = (ontologyTerms || []).filter((t) => t.kind === 'class').map((t) => t.term);
-  const code = (text) => `<code>${escapeHtml(text)}</code>`;
   return ['<section id="vocabulary" aria-labelledby="vocabulary-heading">',
     '<h2 id="vocabulary-heading">Vocabulary</h2>',
     '<p>The classes and the relations of the graph, by the names a query uses. Every item of this node is in <code>/graph.nq</code> under one of these classes, and each link between two items is one of these relations.</p>',
@@ -252,29 +282,43 @@ function vocabularySection(ontologyTerms) {
     '<h3 id="vocabulary-relations">Relations</h3>',
     table('vocabulary-relation-table', `The ${RELATIONS.length} relations an item may name, in the order of the specification.`, ['Key', 'Property', 'Meaning'],
       RELATIONS.map((row) => [code(row.key), code(row.property), escapeHtml(row.meaning)])),
+    ...(siteTerms === null ? [] : siteVocabularyPart(siteTerms)),
     '<h3 id="vocabulary-prefixes">Prefixes</h3>',
     `<pre><code>${Object.entries(PAGE_PREFIXES).sort().map(([p, ns]) => escapeHtml(`PREFIX ${p}: <${ns}>`)).join('\n')}</code></pre>`,
     '</section>'].join('\n');
 }
 
+/** One example: its question, its query, the sentence under it, and the button that puts the query into the editor. */
+function example(id, question, query, note) {
+  const described = note === null ? `${id}-question` : `${id}-question ${id}-note`;
+  return [`<li id="${id}">`,
+    `<p class="question" id="${id}-question">${escapeHtml(question)}</p>`,
+    `<pre><code id="${id}-query">${escapeHtml(query)}</code></pre>`,
+    ...(note === null ? [] : [`<p class="example-note" id="${id}-note">${escapeHtml(note)}</p>`]),
+    `<button type="button" data-example="${id}-query" aria-describedby="${described}" hidden>Put this query in the editor</button>`,
+    '</li>'].join('\n');
+}
+
 /**
- * The examples (AGSC-06-39 (b)): each question with the query that defines it.
+ * The examples (AGSC-06-39 (b)): each of the ten questions with the query that defines it,
+ * filled in from the node, then the node's own competency questions (AGSC-05-41).
  *
  * @param {{prefixes:Array<string>, questions:Array<{number:number, question:string, sparql:string}>}} questions
  *   the data file of the ten questions.
+ * @param {{values:object[], iriOf:Function, titleOf:Function, siteQuestions:object[]}} node what the
+ *   examples read of the node (`files`).
  * @returns {string}
  */
-function examplesSection(questions) {
-  const prologue = questions.prefixes.map((p) => `PREFIX ${p}`).join('\n');
-  const items = questions.questions.map((q) => [`<li id="example-${q.number}">`,
-    `<p class="question" id="example-${q.number}-question">${escapeHtml(`${q.number}. ${q.question}`)}</p>`,
-    `<pre><code id="example-${q.number}-query">${escapeHtml(`${prologue}\n${q.sparql}`)}</code></pre>`,
-    `<button type="button" data-example="example-${q.number}-query" aria-describedby="example-${q.number}-question" hidden>Put this query in the editor</button>`,
-    '</li>'].join('\n'));
+function examplesSection(questions, node) {
+  const ten = questions.questions.map((q, k) => example(`example-${q.number}`, `${q.number}. ${q.question}`,
+    queryExamples.exampleText(q, questions.prefixes, node.values[k], node.iriOf), queryExamples.exampleNote(node.values[k], node.titleOf)));
+  const own = node.siteQuestions.length === 0 ? [] : ['<h3 id="examples-site">Questions of this node</h3>',
+    '<p>This node states questions of its own about its field, each with the query that answers it. The node checks their answers over the graph together with what its vocabulary implies; this page runs them over <code>/graph.nq</code> alone, so an answer that rests on an implied statement can be shorter here.</p>',
+    '<ol class="query-examples">', ...node.siteQuestions.map((q) => example(`example-site-${q.id}`, q.question, q.query, null)), '</ol>'];
   return ['<section id="examples" aria-labelledby="examples-heading">',
     '<h2 id="examples-heading">Examples: the ten questions of the graph</h2>',
-    '<p>The specification names ten questions that the graph of every node must answer. Each comes with the query that defines it. <code>?x</code> stands for the item you ask about, <code>&lt;S…&gt;</code> for a selection of items and <code>"T"</code> for an instant: put your own in their place before you run the query.</p>',
-    '<ol class="query-examples">', ...items, '</ol>', '</section>'].join('\n');
+    '<p>The specification names ten questions that the graph of every node must answer. Each comes with the query that defines it, in which <code>?x</code> stands for the item you ask about, <code>&lt;S...&gt;</code> for a selection of items and <code>"T"</code> for an instant. Here they are filled in from this node, and the sentence under each query says with what: put your own in their place to ask about something else.</p>',
+    '<ol class="query-examples">', ...ten, '</ol>', ...own, '</section>'].join('\n');
 }
 
 /**
@@ -284,9 +328,11 @@ function examplesSection(questions) {
  * @param {object} input
  * @param {object} input.questions the data file of the ten questions.
  * @param {Array<object>} input.ontologyTerms the vocabulary's terms.
+ * @param {object} input.node what the examples read of the node (`examplesSection`).
+ * @param {object|null} input.siteTerms the site vocabulary's terms, or null.
  * @returns {string}
  */
-function body({ questions, ontologyTerms }) {
+function body({ questions, ontologyTerms, node, siteTerms }) {
   return ['<p>Write a query in SPARQL 1.1 and run it against the published graph of this node, <code>/graph.nq</code>. The query runs in this page, in your browser: no server takes part, nothing you write is sent anywhere and nothing is stored, not even the last query.</p>',
     '<p id="query-noscript">This page needs JavaScript to run a query. Without it, the examples and the vocabulary below still read, and every query runs the same in any SPARQL 1.1 store loaded with <code>/graph.nq</code>.</p>',
     '<section id="query" class="query" aria-labelledby="query-heading" data-answers="SELECT ASK CONSTRUCT DESCRIBE" data-refuses="update SERVICE" hidden>',
@@ -313,8 +359,8 @@ function body({ questions, ontologyTerms }) {
     '<div id="query-table" class="table-wrap"></div>',
     '<figure id="query-picture" class="query-picture" hidden></figure>',
     '</section>',
-    examplesSection(questions),
-    vocabularySection(ontologyTerms),
+    examplesSection(questions, node),
+    vocabularySection(ontologyTerms, siteTerms),
     `<script src="${SCRIPT_ROUTE}" defer></script>`].join('\n');
 }
 
@@ -337,6 +383,23 @@ function decision({ site, graphServed, input, pages }) {
 }
 
 /**
+ * What the examples read of the node: the values each of the ten questions is asked with,
+ * the IRI and the title of an item by its slug, and the node's own competency questions.
+ *
+ * @param {object} input see `files`.
+ * @returns {{values:object[], iriOf:Function, titleOf:Function, siteQuestions:object[]}}
+ */
+function nodeFacts({ items = [], base = '', instant = null, domain = null }) {
+  const bySlug = new Map(items.map((item) => [item.slug, item]));
+  return {
+    iriOf: (slug) => itemIri(bySlug.get(slug), { base }),
+    siteQuestions: queryExamples.siteQuestions(domain === null ? null : domain.questions),
+    titleOf: (slug) => (bySlug.get(slug).title == null ? slug : String(bySlug.get(slug).title)),
+    values: queryExamples.exampleValues(items, instant),
+  };
+}
+
+/**
  * What `/query/` is, as files: the page, its scripts and stylesheet, and the engine's files.
  *
  * @param {object} input
@@ -344,13 +407,24 @@ function decision({ site, graphServed, input, pages }) {
  * @param {Buffer|string} input.questions the bytes of the data file of the ten questions.
  * @param {Array<object>} input.ontologyTerms the vocabulary's terms.
  * @param {string} [input.specVersion] for the scripts' banner.
+ * @param {Array<object>} [input.items] the items of the published projection (AGSC-06-30), as `/graph.nq` holds them.
+ * @param {string} [input.base] the node's `site.base`, for the item IRIs (AGSC-05-01).
+ * @param {string} [input.instant] the build's instant (AGSC-04-09), for question 9.
+ * @param {{questions:(string|null), vocabulary:(object|null)}|null} [input.domain] the node's domain layer:
+ *   the text of its competency questions and its site vocabulary as `knowledge/domain.js#load` reads it.
  * @param {object} pageOptions the node's page options, for its shell (`html.js#shell`).
  * @returns {Array<[string,(string|Buffer)]>} route → text or bytes.
  */
-function files({ engine, questions, ontologyTerms, specVersion }, pageOptions) {
+function files(input, pageOptions) {
+  const { engine, questions, ontologyTerms, specVersion, domain = null } = input;
   const page = shell({
     ...pageOptions,
-    body: body({ ontologyTerms, questions: JSON.parse(String(questions)) }),
+    body: body({
+      node: nodeFacts(input),
+      ontologyTerms,
+      questions: JSON.parse(String(questions)),
+      siteTerms: queryExamples.siteTerms(domain === null ? null : domain.vocabulary),
+    }),
     description: 'Ask the published graph of this node a question in SPARQL, in this page: no server takes part, and nothing is sent or stored.',
     route: ROUTE,
     stylesheets: [STYLESHEET_ROUTE],

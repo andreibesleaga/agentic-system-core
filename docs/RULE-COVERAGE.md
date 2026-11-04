@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 89 |
 | Checker header | 36 |
 
-Acceptance scenarios: 145 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 89 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 146 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 89 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -27,7 +27,7 @@ Acceptance scenarios: 145 in `features/` (a Scenario Outline counts once), of wh
 | 03 Links | 23 | 22 | 15 | 1 | 0 | 0 |
 | 04 Canonicalization | 25 | 25 | 12 | 0 | 0 | 0 |
 | 05 Graph | 44 | 43 | 25 | 1 | 0 | 0 |
-| 06 Surfaces | 47 | 47 | 40 | 0 | 0 | 0 |
+| 06 Surfaces | 47 | 47 | 41 | 0 | 0 | 0 |
 | 07 Composition | 29 | 28 | 23 | 0 | 0 | 1 |
 | 08 Governance | 33 | 31 | 26 | 2 | 0 | 0 |
 | 09 Conformance | 28 | 28 | 20 | 0 | 0 | 0 |
@@ -36,7 +36,7 @@ Acceptance scenarios: 145 in `features/` (a Scenario Outline counts once), of wh
 
 ## End to end
 
-This tier is informational: it gates nothing. A verified rule is verified end to end when a live conformance vector, an acceptance scenario the runner executes, a step file of that runner (in a `// verifies` marker) or a test under `tests/e2e/` (a walk through the command line or a built node) names it. 251 of the 360 verified rules are verified end to end; the other 109 rest on unit, integration, architecture or checker-header evidence only, which shows that a check exists, not that the rule holds when the whole engine runs.
+This tier is informational: it gates nothing. A verified rule is verified end to end when a live conformance vector, an acceptance scenario the runner executes, a step file of that runner (in a `// verifies` marker) or a test under `tests/e2e/` (a walk through the command line or a built node) names it. 252 of the 360 verified rules are verified end to end; the other 108 rest on unit, integration, architecture or checker-header evidence only, which shows that a check exists, not that the rule holds when the whole engine runs.
 
 Of those, 21 state a requirement with MUST, MUST NOT, REQUIRED or SHALL and name a code, so a conformance case or a walk could pin them:
 
@@ -295,14 +295,14 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-31 | VERIFIED | yes | `graph-0018` | `knowledge/nquads.test.js`, `knowledge/rdfxml-iso.test.js`, `knowledge/skos-export.test.js` +1 | — | — |
 | AGSC-05-32 | VERIFIED | yes | `graph-0012` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-33 | VERIFIED | yes | `graph-0029` | — | — | — |
-| AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | `knowledge/questions-sparql.test.js`, `knowledge/questions.test.js` | — | — |
+| AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | `distribution/query-examples.test.js`, `e2e/query-sites.test.js`, `knowledge/questions-sparql.test.js` +1 | — | — |
 | AGSC-05-35 | VERIFIED | yes | `lint-0046`, `lint-0047`, `lint-0048` +2 | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/markdown.test.js` +2 | — | — |
 | AGSC-05-36 | VERIFIED | yes | `graph-0040` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `knowledge/skos-export.test.js` | — | — |
 | AGSC-05-37 | VERIFIED | yes | `graph-0041`, `graph-0042` | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/closure.test.js` | — | — |
-| AGSC-05-38 | VERIFIED | yes | `lint-0052`, `lint-0053`, `lint-0054` +1 | `acceptance/steps/persona-i.js`, `application/domain-layer.test.js`, `knowledge/domain-graph.test.js` +2 | `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker`, `persona-i-maintainer.feature#A site vocabulary whose inverse is a term the file does not define cannot write that term into the graph` | `validate-ontology` |
+| AGSC-05-38 | VERIFIED | yes | `lint-0052`, `lint-0053`, `lint-0054` +1 | `acceptance/steps/persona-i.js`, `application/domain-layer.test.js`, `distribution/query-examples.test.js` +3 | `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker`, `persona-i-maintainer.feature#A site vocabulary whose inverse is a term the file does not define cannot write that term into the graph` | `validate-ontology` |
 | AGSC-05-39 | VERIFIED | yes | `graph-0044` | `knowledge/domain-graph.test.js`, `knowledge/warrant-graph.test.js` | — | — |
 | AGSC-05-40 | VERIFIED | yes | `graph-0045`, `lint-0056` | `acceptance/steps/persona-i.js`, `knowledge/warrant-graph.test.js`, `knowledge/warrants.test.js` | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
-| AGSC-05-41 | VERIFIED | yes | `graph-0046`, `lint-0057`, `lint-0058` +1 | `acceptance/steps/persona-i.js`, `acceptance/steps/persona-j.js`, `application/cli/site-checks-verbs.test.js` +4 | `persona-i-maintainer.feature#The site's own invariants and competency questions are checked by verify and ci, never by lint`, `persona-j-standards.feature#The engine evaluates a site's shapes with exactly the SHACL Core subset, and refuses a shapes file outside it` | — |
+| AGSC-05-41 | VERIFIED | yes | `graph-0046`, `lint-0057`, `lint-0058` +1 | `acceptance/steps/persona-i.js`, `acceptance/steps/persona-j.js`, `application/cli/site-checks-verbs.test.js` +5 | `persona-i-maintainer.feature#The site's own invariants and competency questions are checked by verify and ci, never by lint`, `persona-j-standards.feature#The engine evaluates a site's shapes with exactly the SHACL Core subset, and refuses a shapes file outside it` | — |
 | AGSC-06-01 | VERIFIED | yes | `build-0029` | `application/bundle-assets.test.js`, `application/cli/verbs-wired.test.js`, `boundary/visibility.test.js` +11 | `persona-g-team.feature#Team publishes its own specs as an instance of itself (should)` | — |
 | AGSC-06-02 | VERIFIED | yes | — | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c.js`, `distribution/build-golden.test.js` +4 | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
 | AGSC-06-03 | VERIFIED | — | — | `distribution/graph-view.test.js`, `standard/rules.test.js` | — | — |
@@ -324,7 +324,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-17 | VERIFIED | yes | `build-0018` | `acceptance/steps/persona-j.js`, `distribution/clusters-page.test.js`, `distribution/explorer-browser.test.js` +7 | `persona-j-standards.feature#Implementer discovers the linkset via the well-known URI` | — |
 | AGSC-06-18 | VERIFIED | yes | `build-0027`, `disc-0012` | `acceptance/steps/persona-c.js`, `arch/license-content-pin.test.js`, `distribution/canonical-and-boards.test.js` +6 | `persona-c-agent-mcp.feature#A crawler honours the robots.txt groups and the TDM reservation` | — |
 | AGSC-06-19 | VERIFIED | yes | `disc-0009` | `distribution/build-golden.test.js`, `distribution/html.test.js`, `distribution/query-page.test.js` +1 | — | — |
-| AGSC-06-20 | VERIFIED | — | — | `distribution/explorer-browser.test.js`, `distribution/explorer/controller.test.js`, `distribution/explorer/tooltip.test.js` +5 | — | — |
+| AGSC-06-20 | VERIFIED | yes | — | `distribution/explorer-browser.test.js`, `distribution/explorer/controller.test.js`, `distribution/explorer/tooltip.test.js` +6 | — | — |
 | AGSC-06-21 | VERIFIED | yes | `build-0019` | `composition/conform.test.js`, `distribution/build-golden.test.js`, `distribution/clusters-page.test.js` +7 | — | — |
 | AGSC-06-22 | VERIFIED | yes | `build-0036` | `acceptance/steps/persona-a.js`, `distribution/now-spend.test.js`, `distribution/surfaces-eng2.test.js` +1 | `persona-a-reader.feature#Reader inspects cluster membership and the NOW page` | — |
 | AGSC-06-23 | VERIFIED | yes | `build-0001`, `build-0002` | `distribution/mcp-tools.test.js`, `distribution/search-index.test.js`, `distribution/search-page.test.js` | — | — |
@@ -334,7 +334,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-27 | VERIFIED | yes | `chk-0002`, `chk-0004` | `knowledge/chunks.test.js` | — | — |
 | AGSC-06-28 | VERIFIED | yes | `chk-0011` | `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js`, `distribution/chunk-anchors.test.js` | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework`, `persona-c-agent-mcp.feature#An agent cites a chunk back and the item page shows it at its heading` | — |
 | AGSC-06-29 | VERIFIED | yes | `chk-0009`, `chk-0012` | `acceptance/steps/persona-c.js`, `distribution/routes.test.js`, `knowledge/chunks.test.js` | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework` | — |
-| AGSC-06-30 | VERIFIED | yes | `chk-0003` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js` +14 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-a-reader.feature#Reader searches via the prebuilt client-side index`, `persona-a-reader.feature#Reader opens a Concept page and sees evidence` +9 | — |
+| AGSC-06-30 | VERIFIED | yes | `chk-0003` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js` +14 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-a-reader.feature#Reader searches via the prebuilt client-side index`, `persona-a-reader.feature#Reader opens a Concept page and sees evidence` +10 | — |
 | AGSC-06-31 | VERIFIED | yes | `chk-0013` | `composition/conform.test.js`, `distribution/content-version-stamps.test.js`, `distribution/pagination.test.js` | — | — |
 | AGSC-06-32 | VERIFIED | yes | `graph-0011`, `graph-0019` | `acceptance/steps/persona-i.js`, `distribution/ns-context.test.js`, `knowledge/jsonld-roundtrip.test.js` +4 | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
 | AGSC-06-33 | VERIFIED | yes | `build-0011` | `knowledge/nquads.test.js` | — | — |
@@ -343,7 +343,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-36 | VERIFIED | yes | `build-0013`, `build-0035` | `acceptance/steps/persona-m.js`, `docs/agent-skill.test.js` | — | — |
 | AGSC-06-37 | VERIFIED | yes | `build-0037`, `chk-0010` | — | — | — |
 | AGSC-06-38 | VERIFIED | yes | `build-0031`, `build-0032` | `acceptance/steps/persona-a.js`, `distribution/clusters-page.test.js`, `distribution/explorer-browser.test.js` +7 | `persona-a-reader.feature#Reader sees what a Concept is linked to and what links back to it`, `persona-a-reader.feature#Reader sees how the clusters connect and what each relation means` | — |
-| AGSC-06-39 | VERIFIED | yes | `build-0030` | `distribution/headers.test.js`, `distribution/query-browser.test.js`, `distribution/query-page.test.js` +3 | — | — |
+| AGSC-06-39 | VERIFIED | yes | `build-0030` | `distribution/headers.test.js`, `distribution/query-browser.test.js`, `distribution/query-examples.test.js` +5 | — | — |
 | AGSC-06-40 | VERIFIED | yes | `disc-0026` | — | — | — |
 | AGSC-06-41 | VERIFIED | yes | `disc-0027`, `disc-0032` | — | — | — |
 | AGSC-06-42 | VERIFIED | yes | `disc-0028`, `disc-0029` | — | — | — |

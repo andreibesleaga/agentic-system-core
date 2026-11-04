@@ -1,5 +1,5 @@
 'use strict';
-/* global document, window, getComputedStyle */
+/* global document, getComputedStyle */
 // verifies AGSC-06-39, AGSC-06-17, AGSC-06-05, AGSC-06-20
 // tests/distribution/query-browser.test.js — the `/query/` page in a REAL browser, the part
 // the Node suite cannot run (src/distribution/query/main.js, the worker, the engine's
@@ -16,85 +16,38 @@
 //   * the share link holds the query in its fragment; opening it fills the editor and runs
 //     nothing; no request carries the query text; nothing is stored;
 //   * Stop ends a long query and the page is ready again;
-//   * axe-core finds no violation in the light and the dark colour scheme.
+//   * each of the ten examples, filled in from the node and run from the keyboard alone,
+//     answers what the question's own function answers (AGSC-05-34, the answers of
+//     graph-0030 to graph-0039 over this node's items);
+//   * the controls are reached in reading order with Tab and show their focus; nothing on the
+//     page moves, with or without a request for reduced motion;
+//   * axe-core finds no violation in the light and the dark colour scheme (the tags of
+//     bench/a11y.js).
 //
 // Runs only with AGSC_BROWSER=1, CHROME_EXE naming a Chromium or chrome-headless-shell
 // binary, and `playwright-core` and `axe-core` resolvable (NODE_PATH may point at an
 // install outside the repository); otherwise it is skipped and says which is missing.
-// Nothing leaves loopback.
+// The serving, the example runs and the axe pass are shared with tests/e2e/query-sites.test.js
+// (`_query-lane.js`). Nothing leaves loopback.
 
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
-const http = require('node:http');
 const path = require('node:path');
-const { createHash } = require('node:crypto');
 
 const { richBuild } = require('../standard/_fixture.js');
-const rules = require('../../src/distribution/hosts/rules.js');
-const local = require('../../src/distribution/hosts/local.js');
+const lane = require('./_query-lane.js');
 
-function skipReason() {
-  if (process.env.AGSC_BROWSER !== '1') return 'the browser lane runs only with AGSC_BROWSER=1';
-  if (!process.env.CHROME_EXE || !fs.existsSync(process.env.CHROME_EXE)) return 'CHROME_EXE names no browser binary';
-  for (const name of ['playwright-core', 'axe-core']) {
-    try {
-      require.resolve(name);
-    } catch (e) {
-      return `${name} is not installed (npm i --no-save ${name} outside the repository, then NODE_PATH)`;
-    }
-  }
-  return null;
-}
+const SKIP = lane.browserSkipReason();
 
-const SKIP = skipReason();
-const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
-
-/** The built node served on loopback as `agsc-host serve` serves it: every header set of `_headers`, applied the host's way. */
-function serve(out) {
-  const sets = rules.parseHeaders(fs.readFileSync(path.join(out, '_headers'), 'utf8')).sets;
-  const redirects = rules.parseRedirects(fs.readFileSync(path.join(out, '_redirects'), 'utf8')).rules;
-  const at = (rel) => path.join(out, ...rel.split('/'));
-  const site = {
-    hosts: ['127.0.0.1'],
-    isDirectory: (rel) => fs.existsSync(at(rel)) && fs.statSync(at(rel)).isDirectory(),
-    isFile: (rel) => fs.existsSync(at(rel)) && fs.statSync(at(rel)).isFile(),
-    redirects,
-    sets,
-    sha256: (rel) => createHash('sha256').update(fs.readFileSync(at(rel))).digest('hex'),
-  };
-  return http.createServer((req, res) => {
-    const answer = local.respond({ host: req.headers.host, method: req.method, path: req.url.split('?')[0] }, site);
-    res.writeHead(answer.status, Object.fromEntries(answer.headers));
-    res.end(answer.file === null ? '' : fs.readFileSync(at(answer.file)));
-  });
-}
-
-/** One served build and one browser for every test of this file. */
+/** One served build of the rich fixture and one browser for every test of this file. */
 async function session() {
-  const { chromium } = require('playwright-core');
-  const { out } = richBuild();
-  const server = serve(out);
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const base = `http://127.0.0.1:${server.address().port}`;
-  const browser = await chromium.launch({ executablePath: process.env.CHROME_EXE, headless: true });
-  const close = async () => { await browser.close(); server.close(); };
-  return { base, browser, close, out };
+  const { dir, out } = richBuild();
+  return { ...(await lane.session(out)), dir };
 }
 
-/** `/query/` (or a share link) with the engine ready; every console error and request recorded. */
-async function openQuery({ base, browser }, options = {}) {
-  const context = await browser.newContext({ acceptDownloads: true, colorScheme: options.scheme || 'light', viewport: { height: 900, width: 1280 } });
-  const page = await context.newPage();
-  const errors = [];
-  const requests = [];
-  page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`${m.type()}: ${m.text()}`); });
-  page.on('pageerror', (e) => errors.push(String(e)));
-  context.on('request', (r) => requests.push(r.url()));
-  await page.goto(`${base}/query/${options.hash || ''}`, { waitUntil: 'load' });
-  await page.waitForSelector('#query[data-state="ready"]', { timeout: 20000 });
-  return { context, errors, page, requests };
-}
+const openQuery = (run, options) => lane.openQuery(run, options);
+const download = (page, selector) => lane.download(page, selector);
 
 /** Put a query into the editor, run it and wait for the answer. */
 async function runQuery(page, text) {
@@ -114,12 +67,6 @@ async function runQuery(page, text) {
     status: document.getElementById('query-status').textContent,
     text: document.getElementById('query-table').textContent,
   }));
-}
-
-/** The file a download link gives, as text. */
-async function download(page, selector) {
-  const [file] = await Promise.all([page.waitForEvent('download'), page.click(selector)]);
-  return { name: file.suggestedFilename(), text: fs.readFileSync(await file.path(), 'utf8') };
 }
 
 const PREFIX = 'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>\nPREFIX dcterms: <http://purl.org/dc/terms/>\n';
@@ -234,14 +181,51 @@ test('the /query/ page in a browser', { skip: SKIP || false }, async (t) => {
       await context.close();
     });
 
+    await t.test('each of the ten examples, run from the keyboard alone, answers what the question\'s function answers', async () => {
+      const { context, errors, page } = await openQuery(run);
+      const runs = await lane.runTenExamples(page, lane.publishedItems(run.dir));
+      for (const r of runs) {
+        assert.strictEqual(r.editor, r.shown, `example ${r.number}: the editor holds the example's query`);
+        assert.doesNotMatch(r.shown, /\?x\b|<S\.\.\.>|"T"/u, `example ${r.number} keeps a placeholder`);
+        assert.deepStrictEqual(r.got, r.expected, `example ${r.number}`);
+      }
+      assert.ok(runs.some((r) => JSON.stringify(r.expected) !== '[]'), 'the fixture answers at least one question with something');
+      assert.deepStrictEqual(errors, []);
+      await context.close();
+    });
+
+    await t.test('Tab reaches the controls in reading order, each showing its focus; nothing moves', async () => {
+      for (const reducedMotion of ['no-preference', 'reduce']) {
+        const { context, page } = await openQuery(run, { reducedMotion });
+        await page.focus('#query-text');
+        const order = [];
+        for (let k = 0; k < 4; k += 1) {
+          await page.keyboard.press('Tab');
+          order.push(await page.evaluate(() => {
+            const el = document.activeElement;
+            const style = getComputedStyle(el);
+            return { id: el.id || el.getAttribute('data-example'), outline: style.outlineStyle !== 'none' && style.outlineWidth !== '0px' };
+          }));
+        }
+        assert.deepStrictEqual(order.map((o) => o.id), ['query-run', 'query-share', 'example-1-query', 'example-2-query'], 'Stop is skipped while it is disabled');
+        assert.ok(order.every((o) => o.outline), `a control shows no focus: ${JSON.stringify(order)}`);
+        await page.keyboard.press('Shift+Tab');
+        assert.strictEqual(await page.evaluate(() => document.activeElement.getAttribute('data-example')), 'example-1-query');
+        await runQuery(page, `${PREFIX}CONSTRUCT { ?a dcterms:requires ?b } WHERE { ?a dcterms:requires ?b }`);
+        const moving = await page.evaluate(() => ({
+          animations: document.getAnimations().length,
+          transitions: [...document.querySelectorAll('*')].filter((el) => getComputedStyle(el).transitionDuration.split(',').some((d) => parseFloat(d) > 0)).length,
+        }));
+        assert.deepStrictEqual(moving, { animations: 0, transitions: 0 }, `${reducedMotion}: something moves`);
+        await context.close();
+      }
+    });
+
     await t.test('axe-core finds no violation on the page with a result, in both colour schemes', async () => {
-      const axe = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
       for (const scheme of ['light', 'dark']) {
         const { context, page } = await openQuery(run, { scheme });
         await runQuery(page, `${PREFIX}CONSTRUCT { ?a dcterms:requires ?b } WHERE { ?a dcterms:requires ?b }`);
-        await page.evaluate(axe);
-        const result = await page.evaluate((tags) => window.axe.run(document, { runOnly: { type: 'tag', values: tags } }), AXE_TAGS);
-        const violations = result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+        const violations = await lane.axeViolations(page);
         assert.deepStrictEqual(violations, [], `${scheme}: ${violations.join('; ')}`);
         const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
         assert.strictEqual(background, scheme === 'dark' ? 'rgb(15, 17, 21)' : 'rgb(251, 251, 250)', 'the scheme did not apply');
