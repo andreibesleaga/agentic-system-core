@@ -233,7 +233,7 @@ actionlint .github/workflows/*.yml   # 0 lines of output and exit 0 when clean
 From 1.1 the repository follows the REUSE layout (specification 3.3, <https://reuse.software/>):
 `REUSE.toml` assigns one licence and one copyright line to each licence area of the table in
 `README.md` ("Licences"), and `LICENSES/` holds the text of each licence it names (`Apache-2.0`,
-`CC0-1.0`, `CC-BY-4.0`). No source file carries an SPDX header, so adding the layout changed no
+`CC0-1.0`, `CC-BY-4.0`, and `MIT` for the vendored query engine). No source file carries an SPDX header, so adding the layout changed no
 byte of the specification, the schemas, the vectors or any built output. `tests/arch/reuse-layout.test.js`
 holds what can be read without the tool (every named licence has its text, no text is unused).
 `LICENSE-CONTENT`, the Content Use Terms of a published node's prose, is a licence text and not a
@@ -246,6 +246,10 @@ python3 -m venv /tmp/reuse-venv && /tmp/reuse-venv/bin/pip install reuse
 /tmp/reuse-venv/bin/reuse lint     # ends with "compliant with version 3.3 of the REUSE Specification"
 ```
 
-Seven files quote an SPDX line as data (browser-script templates, the licence-line reader, one
+Nine files quote an SPDX line as data (browser-script templates, the licence-line reader, one
 ontology test); `REUSE.toml` annotates them with `precedence = "override"` so the quotation is not
-read as the file's own licence. A new file of that kind needs the same entry.
+read as the file's own licence. A new file of that kind needs the same entry, and
+`tests/arch/reuse-layout.test.js` fails until it has one. The query engine vendored under
+`src/distribution/vendor/oxigraph-0.5.13/` (AGSC-06-39) has an annotation of its own: its two files
+keep their upstream bytes with no SPDX header, and `REUSE.toml` gives them the engine's copyright line
+and its licence, `MIT OR Apache-2.0`, whose texts sit beside them.

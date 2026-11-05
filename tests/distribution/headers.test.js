@@ -114,11 +114,18 @@ for (const visibility of ['public', 'restricted']) {
   });
 }
 
-test('AGSC-06-39, AGSC-06-17: /query/* gets one block, only where the page is emitted, and only it admits WebAssembly', () => {
+const ENGINE_WASM = '/query/vendor/oxigraph-0.5.13/web_bg.wasm';
+
+test('AGSC-06-39, AGSC-06-17: /query/* gets one block, only where the page and a WebAssembly engine are emitted, and only it admits WebAssembly', () => {
   const without = headers.headerSets({}, ['/index.html', '/graph.nq']);
   assert.ok(!without.some((set) => set.route.startsWith('/query/')));
   assert.ok(!headers.headersFile({}, ['/index.html']).includes('wasm-unsafe-eval'));
-  const sets = headers.headerSets({}, ['/index.html', '/query/index.html', '/query/agsc-query.js']);
+  // A page whose engine is not compiled to WebAssembly keeps the site-wide policy: the rule
+  // admits 'wasm-unsafe-eval' only for such an engine.
+  const plain = headers.headerSets({}, ['/index.html', '/query/index.html', '/query/agsc-query.js']);
+  assert.ok(!plain.some((set) => set.route.startsWith('/query/')));
+  assert.ok(!headers.headerSets({}, ['/index.html', ENGINE_WASM]).some((set) => set.route.startsWith('/query/')), 'no page, no block');
+  const sets = headers.headerSets({}, ['/index.html', '/query/index.html', '/query/agsc-query.js', ENGINE_WASM]);
   const query = sets.filter((set) => set.route === '/query/*');
   assert.strictEqual(query.length, 1);
   assert.deepStrictEqual(query[0].headers, [['!', 'Content-Security-Policy'], ['Content-Security-Policy', headers.QUERY_SECURITY_POLICY]]);
@@ -128,5 +135,5 @@ test('AGSC-06-39, AGSC-06-17: /query/* gets one block, only where the page is em
   for (const set of sets.filter((s) => s.route !== '/query/*')) {
     assert.ok(!JSON.stringify(set.headers).includes('wasm-unsafe-eval'), set.route);
   }
-  assert.match(headers.headersFile({}, ['/query/index.html']), /\n\/query\/\*\n {2}! Content-Security-Policy\n {2}Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval';/u);
+  assert.match(headers.headersFile({}, ['/query/index.html', ENGINE_WASM]), /\n\/query\/\*\n {2}! Content-Security-Policy\n {2}Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval';/u);
 });

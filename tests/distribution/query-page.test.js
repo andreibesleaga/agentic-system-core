@@ -86,6 +86,21 @@ test('the page and its assets are built under /query/, the engine byte for byte 
   assert.deepStrictEqual(BUILT.findings.filter((f) => f.severity === 'error'), []);
 });
 
+test('the page names its engine, links the licence texts it serves, and says a query reads the union of the graphs', () => {
+  const html = page();
+  const route = queryPage.ENGINE.route;
+  assert.match(html, /<p class="query-engine">The query engine is Oxigraph 0\.5\.13, /u);
+  for (const served of ['LICENSE-MIT.txt', 'LICENSE-APACHE.txt', 'THIRD-PARTY.txt']) {
+    assert.ok(html.includes(`<a href="${route}${served}">`), served);
+    assert.ok(BUILT.files.has(`${route}${served}`), `${served} is served`);
+  }
+  // Every statement of /graph.nq is in the node's named graph: a store answers the same only
+  // where it reads the union of its graphs as the default graph, as the page does.
+  assert.match(html, /<p id="query-noscript">[^<]*(?:<code>[^<]*<\/code>[^<]*)*reads the union of its graphs as the default graph/u);
+  assert.match(html, /the union of the graphs of <code>\/graph\.nq<\/code>, unless it names its own dataset with <code>FROM<\/code>/u);
+  assert.ok(!/any SPARQL 1\.1 store/u.test(`${html}${BUILT.files.get(queryPage.SCRIPT_ROUTE)}`), 'no store reads graph.nq the same without the union');
+});
+
 test('(a) the page names the four forms it answers and the two it refuses, and loads only its own files', () => {
   const html = page();
   assert.match(html, /<section id="query" class="query"[^>]* data-answers="SELECT ASK CONSTRUCT DESCRIBE" data-refuses="update SERVICE" hidden>/u);
@@ -206,8 +221,8 @@ test('the two scripts and the stylesheet are pinned: a change to what every node
   // the stylesheet changes these: update the pin in the same commit, and say in CHANGELOG.md
   // which bytes of every node change.
   const pins = {
-    [queryPage.SCRIPT_ROUTE]: '6931d4117ce7d210dcfee8500e375fd9a1c1328561c93cd40f365c004c31a1c4',
-    [queryPage.WORKER_ROUTE]: '7f8ec0307d01981d8680794950f32bdca96f23f5d5b803c9e72b409716c146ab',
+    [queryPage.SCRIPT_ROUTE]: '15f0243b314772890f08f706264d74b89f9742f82d55108d04e83b217ec09399',
+    [queryPage.WORKER_ROUTE]: 'e7347a2d8dc7ef26ffbcf0dc784db2d0e7384bc8b94f3dac555bcd914190eaa7',
     [queryPage.STYLESHEET_ROUTE]: '2b5f1945f77110a853946311597013e67176a1a4044d83d1fd5b453483032bde',
   };
   for (const [route, pin] of Object.entries(pins)) assert.strictEqual(sha256(String(BUILT.files.get(route))), pin, route);

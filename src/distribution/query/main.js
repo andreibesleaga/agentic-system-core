@@ -28,7 +28,7 @@
 // PORTABLE (see `tokens.js`): emitted into the page as its own source text.
 
 const { queryCheck, queryHighlight, queryRefusal } = require('./tokens.js');
-const { queryFromHash, queryGraph, queryShareHref, querySummary, queryTable } = require('./view.js');
+const { queryFromHash, queryGraph, queryPictureText, queryShareHref, querySummary, queryTable } = require('./view.js');
 const { explorerLayout } = require('../explorer/layout.js');
 const { explorerBuild, explorerScene } = require('../explorer/view.js');
 
@@ -76,11 +76,10 @@ function queryMain(win, api) {
     link.hidden = false;
   };
   const draw = (parsed) => {
-    const graph = queryGraph(parsed, api.PREFIXES, api.KEYS, api.MAX_NODES);
+    const graph = queryGraph(parsed, api.PREFIXES, api.MAX_NODES);
     if (graph === null) { picture.hidden = true; return; }
     const frame = api.FRAME;
-    const cut = graph.total > graph.nodes.length ? ` The first ${graph.nodes.length} of ${graph.total} are drawn.` : '';
-    const words = `A picture of the result: ${graph.nodes.length} nodes and ${graph.links.length} links; the table holds every row.${cut}`;
+    const words = queryPictureText(graph);
     picture.replaceChildren(
       build(['svg', { 'aria-labelledby': 'query-picture-caption', class: 'query-svg', role: 'img', viewBox: `0 0 ${frame.width} ${frame.height}` },
         explorerScene(graph, explorerLayout(graph, frame), { query: '', selected: null })]),
@@ -108,7 +107,7 @@ function queryMain(win, api) {
       say(`The graph is loaded: ${message.size} statements. ${state.note}`);
     } else if (message.type === 'error') {
       mark('error');
-      say(`The graph could not be loaded (${message.message}). The examples below run in any SPARQL 1.1 store over /graph.nq.`);
+      say(`The graph could not be loaded (${message.message}). The examples below give the same answers in a SPARQL 1.1 store loaded with /graph.nq that reads the union of its graphs as the default graph.`);
     } else if (message.type === 'answer' && message.id === state.pending) {
       state.pending = null;
       stop.disabled = true;
@@ -125,7 +124,7 @@ function queryMain(win, api) {
     state.worker.onmessage = (event) => receive(event.data || {});
     state.worker.onerror = () => {
       mark('error');
-      say('The query engine could not start in this browser. The examples below run in any SPARQL 1.1 store over /graph.nq.');
+      say('The query engine could not start in this browser. The examples below give the same answers in a SPARQL 1.1 store loaded with /graph.nq that reads the union of its graphs as the default graph.');
     };
   };
   const submit = () => {

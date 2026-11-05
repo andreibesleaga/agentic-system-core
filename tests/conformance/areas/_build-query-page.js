@@ -60,10 +60,25 @@ function directives(policy) {
     .map(([name, ...sources]) => [name.toLowerCase(), sources]));
 }
 
+/**
+ * Whether a policy loosens nothing of the site-wide one: the same directives with the same
+ * sources, except that `script-src` may add `'wasm-unsafe-eval'` (AGSC-06-39). Any other
+ * added source, removed directive or new directive is a difference.
+ */
+function onlyWasmAdded(policy, siteWide) {
+  const have = directives(policy);
+  const base = directives(siteWide);
+  const sorted = (list) => [...list].sort().join(' ');
+  const same = (name) => sorted(have.get(name) || []) === sorted(base.get(name) || [])
+    || (name === 'script-src' && sorted(have.get(name) || []) === sorted([...(base.get(name) || []), '\'wasm-unsafe-eval\'']));
+  return have.size === base.size && [...base.keys()].every((name) => have.has(name) && same(name));
+}
+
 /** The checks of the policy every address under `/query/` is served with, and of every other block. */
 function policyChecks(want, run) {
   const list = [];
   const sets = rules.parseHeaders(text(run.files, '/_headers')).sets;
+  const siteWide = rules.headersFor(sets, '/').filter(([name]) => name.toLowerCase() === 'content-security-policy').map(([, v]) => v).join(', ');
   const under = [...run.files.keys()].filter((f) => f.startsWith('/query/')).map((f) => (f.endsWith('/index.html') ? f.slice(0, -'index.html'.length) : f));
   for (const route of under) {
     const served = rules.headersFor(sets, route).filter(([name]) => name.toLowerCase() === 'content-security-policy');
@@ -78,6 +93,9 @@ function policyChecks(want, run) {
     // No host source: every source of every directive is a quoted keyword.
     const hosts = [...have.values()].flat().filter((source) => !/^'[a-z-]+'$/u.test(source));
     list.push([`${route} policy names no host`, hosts.length === 0, JSON.stringify(hosts)]);
+    // AGSC-06-39: nothing is loosened but 'wasm-unsafe-eval' in script-src.
+    list.push([`${route} policy is the site-wide one, at most with 'wasm-unsafe-eval' added to script-src`, onlyWasmAdded(policy, siteWide),
+      `${policy} | site-wide: ${siteWide}`]);
   }
   for (const set of sets) {
     const values = set.headers.filter(([name]) => name.toLowerCase() === 'content-security-policy').map(([, v]) => v).join(' ');

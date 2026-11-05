@@ -32,14 +32,17 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Andrei N. Besleaga"
 SPDX-License-Identifier = "CC-BY-4.0"
 
-# Eight files quote an SPDX line as DATA (a script template that emits the licence line of
-# a browser file, a pattern that reads a licence line, a test of the ontology alignments).
+# Nine files quote an SPDX line as DATA (a script template that emits the licence line of
+# a browser file, a pattern that reads a licence line, a test of the ontology alignments);
+# tests/arch/reuse-layout.test.js fails on a file of src/, tests/, tools/ or bin/ that quotes
+# one and is not listed here.
 # REUSE would read those quotations as the file's own licence and reject them as invalid
 # expressions, so these paths are annotated by "override", which ignores the file's text.
 [[annotations]]
 path = [
   "src/composition/browser.js",
   "src/distribution/compose-page.js",
+  "src/distribution/explorer/page.js",
   "src/distribution/page-tools.js",
   "src/distribution/query-page.js",
   "src/distribution/search-page.js",

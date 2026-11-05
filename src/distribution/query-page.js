@@ -51,7 +51,6 @@ const explorerView = require('./explorer/view.js');
 const explorerController = require('./explorer/controller.js');
 const { RELATIONS } = require('../knowledge/relations.js');
 const { PREFIXES, RDF, itemIri } = require('../knowledge/nquads.js');
-const { expandCompact } = require('../knowledge/jsonld.js');
 
 /** The page. */
 const ROUTE = '/query/';
@@ -75,7 +74,6 @@ const ENGINE = Object.freeze({
   package: 'oxigraph',
   route: '/query/vendor/oxigraph-0.5.13/',
   version: '0.5.13',
-  webAssembly: true,
   files: Object.freeze([
     Object.freeze({ bytes: 50946, served: 'web.js', sha256: '210c42fbba2915f668386f3285d28218db5865267e95b5403b82150431931f7c', source: 'web.js' }),
     Object.freeze({ bytes: 4324920, served: 'web_bg.wasm', sha256: '75e3f0f4de67921e88e3f6d587b2a8e7aa822abbe3a3b79873f2b97f20d52c24', source: 'web_bg.wasm' }),
@@ -107,11 +105,6 @@ const EXPLORER_PARTS = Object.freeze([
   [explorerView, ['explorerRadius', 'explorerScene', 'explorerBuild']],
 ]);
 
-/** The IRI of each relation key's forward property → the key, for the picture's link classes. */
-function relationKeys() {
-  return Object.fromEntries(RELATIONS.map((row) => [expandCompact(row.property), row.key]));
-}
-
 /** The banner every emitted script starts with. */
 function banner(what, specVersion) {
   return ['// SPDX-License-Identifier: Apache-2.0 (the engine\'s code; the text it carries keeps its own terms)',
@@ -135,7 +128,6 @@ function script(options = {}) {
   return `${['\'use strict\';', ...banner('page script', options.specVersion), '(function () {', ...functions,
     `  var API = {
     FRAME: ${JSON.stringify(FRAME)},
-    KEYS: ${JSON.stringify(relationKeys())},
     MAX_NODES: ${MAX_NODES},
     PREFIXES: ${JSON.stringify(PAGE_PREFIXES)},
     ROWS_SHOWN: ${ROWS_SHOWN},
@@ -235,11 +227,8 @@ function table(id, caption, headings, rows) {
 
 const code = (text) => `<code>${escapeHtml(text)}</code>`;
 
-/** An IRI as the page writes it: a prefixed name where one of the page's prefixes covers it, else in full. */
-function shortName(iri) {
-  const found = Object.entries(PAGE_PREFIXES).find(([, ns]) => iri.startsWith(ns) && !/[/#]/u.test(iri.slice(ns.length)));
-  return found === undefined ? iri : `${found[0]}:${iri.slice(found[1].length)}`;
-}
+/** An IRI as the page writes it: by the result table's own rule (`view.js#queryShortName`), else in full. */
+const shortName = (iri) => view.queryShortName(iri, PAGE_PREFIXES) || iri;
 
 /**
  * The site vocabulary's part of the explorer (AGSC-06-39 (f), AGSC-05-38): its classes and
@@ -334,10 +323,10 @@ function examplesSection(questions, node) {
  */
 function body({ questions, ontologyTerms, node, siteTerms }) {
   return ['<p>Write a query in SPARQL 1.1 and run it against the published graph of this node, <code>/graph.nq</code>. The query runs in this page, in your browser: no server takes part, nothing you write is sent anywhere and nothing is stored, not even the last query.</p>',
-    '<p id="query-noscript">This page needs JavaScript to run a query. Without it, the examples and the vocabulary below still read, and every query runs the same in any SPARQL 1.1 store loaded with <code>/graph.nq</code>.</p>',
+    '<p id="query-noscript">This page needs JavaScript to run a query. Without it, the examples and the vocabulary below still read, and every query gives the same answer in a SPARQL 1.1 store loaded with <code>/graph.nq</code> that reads the union of its graphs as the default graph (every statement of <code>/graph.nq</code> is in this node\'s named graph).</p>',
     '<section id="query" class="query" aria-labelledby="query-heading" data-answers="SELECT ASK CONSTRUCT DESCRIBE" data-refuses="update SERVICE" hidden>',
     '<h2 id="query-heading">Ask the graph</h2>',
-    '<p>The page answers <code>SELECT</code>, <code>ASK</code>, <code>CONSTRUCT</code> and <code>DESCRIBE</code>. It refuses an update (<code>INSERT</code>, <code>DELETE</code>, <code>LOAD</code> and the others) and a <code>SERVICE</code> clause before anything runs, because it changes nothing and asks no other server.</p>',
+    '<p>The page answers <code>SELECT</code>, <code>ASK</code>, <code>CONSTRUCT</code> and <code>DESCRIBE</code>. It refuses an update (<code>INSERT</code>, <code>DELETE</code>, <code>LOAD</code> and the others) and a <code>SERVICE</code> clause before anything runs, because it changes nothing and asks no other server. A query runs over every statement of the node, the union of the graphs of <code>/graph.nq</code>, unless it names its own dataset with <code>FROM</code>.</p>',
     '<p id="query-status" role="status" aria-live="polite"></p>',
     '<label for="query-text">Query (SPARQL 1.1)</label>',
     '<div class="query-editor"><pre class="query-mirror" aria-hidden="true"><code id="query-mirror"></code></pre>',
@@ -361,7 +350,14 @@ function body({ questions, ontologyTerms, node, siteTerms }) {
     '</section>',
     examplesSection(questions, node),
     vocabularySection(ontologyTerms, siteTerms),
+    engineLine(),
     `<script src="${SCRIPT_ROUTE}" defer></script>`].join('\n');
+}
+
+/** The line that names the engine the page runs and links the licence texts it serves beside it. */
+function engineLine() {
+  const link = (served, words) => `<a href="${ENGINE.route}${served}">${words}</a>`;
+  return `<p class="query-engine">The query engine is ${ENGINE.name} ${ENGINE.version}, under ${link('LICENSE-MIT.txt', 'the MIT licence')} or ${link('LICENSE-APACHE.txt', 'the Apache License 2.0')}, at your option; ${link('THIRD-PARTY.txt', 'a list of the crates that may be compiled into it')} gives the licence expression of each.</p>`;
 }
 
 /**

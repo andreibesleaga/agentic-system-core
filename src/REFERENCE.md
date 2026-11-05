@@ -589,7 +589,7 @@ escapeXml(s); qname(iri); propertyElement(p, o); serialize(quads); toRdfXml(item
 | JSON-LD processing (the round-trip proof only) | `jsonld` | 9.0.0 | BSD-3-Clause |
 | SHACL Core validation (a site's invariants only) | `rdf-validate-shacl` | 0.6.5 | MIT |
 | SPARQL 1.1 parsing (a site's competency questions only) | `@traqula/parser-sparql-1-1` | 1.4.0 | MIT |
-| SPARQL 1.1 evaluation (a site's competency questions only) | `oxigraph` | 0.5.13 | MIT OR Apache-2.0 |
+| SPARQL 1.1 evaluation (a site's competency questions; its WebAssembly build is the vendored engine of `/query/`) | `oxigraph` | 0.5.13 | MIT OR Apache-2.0 |
 
 `n3` is the reader everywhere this engine reads RDF: the vocabulary file behind the
 context generator, the blank-node check of AGSC-05-08, and the round-trip test that
@@ -686,7 +686,7 @@ drive them, `init` and `ci`.
 | `distribution/query-page.js` | Distribution | AGSC-06-39, AGSC-06-01, AGSC-06-05, AGSC-06-17, AGSC-06-20, AGSC-06-21 — the `/query/` page, its script, worker and stylesheet, and the files of the vendored engine |
 | `distribution/query-examples.js` | Distribution | AGSC-06-39 (b), (f), AGSC-05-34, AGSC-05-41, AGSC-05-38 — the examples of `/query/` filled in from the node, the node's competency questions and its site vocabulary's terms |
 | `distribution/query/*.js` | Distribution | AGSC-06-39 — the query page's portable functions: the tokenizer and the refusal (`tokens.js`), what a result shows (`view.js`), the worker over the engine (`engine.js`), the page's wiring (`main.js`) |
-| `distribution/vendor/oxigraph-0.5.13/` | Distribution | AGSC-06-39 — one release of the query engine (Oxigraph 0.5.13, WebAssembly), its licence texts and the crates compiled into it; not the engine's code, pinned by SHA-256 |
+| `distribution/vendor/oxigraph-0.5.13/` | Distribution | AGSC-06-39 — one release of the query engine (Oxigraph 0.5.13, WebAssembly), its licence texts and a list of the crates that may be compiled into it, each with its licence expression; not the engine's code, pinned by SHA-256 |
 | `distribution/site.js` | Distribution | AGSC-06-01 and AGSC-04-01/02 — `build`, `write`, `verify` |
 | `distribution/init.js` | Distribution | AGSC-02-94, AGSC-02-95, AGSC-01-37 — the adoption use case |
 | `distribution/ci.js` | Distribution | AGSC-09-08 — lint → build → verify and the exit codes |
@@ -782,7 +782,7 @@ decision({ site, graphServed, input, pages }) -> { on, skipped }   // on unless 
 files({ engine, questions, ontologyTerms, specVersion, items, base, instant, domain }, pageOptions) -> [[route, text | Buffer]]   // the page, its assets, the engine; domain = { questions: text, vocabulary: model } | null
 script({ specVersion }) -> string; workerScript({ specVersion }) -> string; stylesheet() -> string
 examplesSection(questions, { values, iriOf, titleOf, siteQuestions }) -> string; vocabularySection(ontologyTerms, siteTerms?) -> string
-ENGINE = { name, package, version, licence, folder, route, module, webAssembly, files: [{ source, served, bytes, sha256 }] }; ENGINE_SOURCES
+ENGINE = { name, package, version, licence, folder, route, module, files: [{ source, served, bytes, sha256 }] }; ENGINE_SOURCES   // a .wasm among the files gives /query/* its block (headers.js)
 ROUTE = '/query/'; SCRIPT_ROUTE; WORKER_ROUTE; STYLESHEET_ROUTE; GRAPH_ROUTE = '/graph.nq'; ROWS_SHOWN = 200; MAX_NODES = 150; FIRST_QUERY
 // distribution/query-examples.js (pure; AGSC-06-39 (b), (f); build time only, never shipped)
 exampleValues(items, at) -> [{ number, subject, selection, at, fits }]   // the ten questions, in order
@@ -790,8 +790,8 @@ exampleText(question, prefixes, values, iriOf) -> string; exampleNote(values, ti
 siteQuestions(text) -> [{ id, query, question }]   // AGSC-05-41, shape only; [] when the file is not of that shape
 siteTerms(model) -> { ontology, classes: [{ iri, label, parents, meaning }], relations: [{ iri, label, parents, inverse, meaning }] } | null   // AGSC-05-38
 // distribution/query/ (PORTABLE: each module lists the functions emitted as their own source text)
-queryTokens(text) -> [{kind, text}]; queryCheck(text) -> { form, refusal, dataset }; queryRefusal(check) -> string | null; queryHighlight(text)   // tokens.js
-queryTermText(term, prefixes); queryTable(result, limit, prefixes); queryGraph(result, prefixes, keys, max) -> { nodes, links, total } | null
+queryTokens(text) -> [{kind, text}]; queryCheck(text) -> { form, refusal, dataset }; queryRefusal(check) -> string | null; queryHighlight(text)   // tokens.js; a `<` after a value inside an expression is "less than", never an IRI; a comment ends at CR or LF; a bare word holding a refused word refuses
+queryShortName(iri, prefixes) -> string | null; queryTermText(term, prefixes); queryTable(result, limit, prefixes); queryGraph(result, prefixes, max) -> { nodes, links, total } | null; queryPictureText(graph)
 querySummary(answer); queryShareHref(text) -> '#query=…'; queryFromHash(hash) -> text | null   // view.js
 queryAnswer(ox, store, text) -> { form, json, csv } | { form, error }; queryGraphStore(ox, quads)   // engine.js: the engine's own result writers
 queryWorkerMain(scope, ox, graphRoute); queryMain(win, api)          // engine.js, main.js: the browser lane only

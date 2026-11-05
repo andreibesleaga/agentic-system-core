@@ -19,8 +19,8 @@ Which licence covers which part (the licence table in README.md is the full list
 - the query engine under src/distribution/vendor/oxigraph-0.5.13/, which every
   node's /query/ page runs: Oxigraph 0.5.13, Copyright (c) 2018 Oxigraph
   developers, under the MIT licence or the Apache License 2.0, at the user's
-  option; its texts and the licences of the crates compiled into it are in
-  that folder.
+  option; its two licence texts are in that folder, with a list of the crates
+  that may be compiled into it, each with its licence expression.
 Every right these licences do not grant is reserved by the author.
 
 AgenticSystemCore™ is a trademark of Andrei N. Besleaga. Other names belong to their owners.

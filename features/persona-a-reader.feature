@@ -75,13 +75,13 @@ Feature: Human reader finds a pattern with evidence
   @PRD-011 @PRD-022 @human @matrix-H3
   Scenario: Reader asks the published graph a question on the query page
     When the reader opens the query page "/query/"
-    Then the page loads the node's own graph into the engine it ships and requests nothing from another origin
+    Then the page loads the node's own graph into the engine it ships and requests nothing from another origin (AGSC-06-39)
     And a CONSTRUCT query for the "requires" links shows "Handoff" requiring "Supervisor" as a table and as a picture, with the result offered as CSV and as JSON
     And the share link of that query opens it in the editor of a new page without running it, and no request carries the query
 
   @PRD-011 @PRD-022 @human @matrix-H3
   Scenario: Reader runs one of the ten questions of the graph on the query page with the keyboard alone
     When the reader opens the query page "/query/"
-    Then the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it
-    And Enter on the example's button puts its query into the editor, and Ctrl+Enter runs it: the one row is the item "mcp", which is what the engine's own function answers for "a2a"
+    Then the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it (AGSC-06-39, AGSC-05-34)
+    And Enter on the example's button puts its query into the editor, and Ctrl+Enter runs it: the one row is the item "mcp", which is what the engine's own function answers for "a2a" (AGSC-06-20)
     And the vocabulary lists the fourteen relations, each with the meaning the specification gives it

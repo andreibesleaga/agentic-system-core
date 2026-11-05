@@ -112,5 +112,5 @@ test('the page depends on nothing outside itself but the explorer\'s portable mo
     }
   }
   const outside = requires(path.join(SRC, 'query-page.js')).filter((t) => !/^\.\/(?:query|explorer)\/[a-z-]+\.js$/u.test(t));
-  assert.deepStrictEqual(outside.sort(), ['../knowledge/jsonld.js', '../knowledge/nquads.js', '../knowledge/relations.js', './html.js', './query-examples.js']);
+  assert.deepStrictEqual(outside.sort(), ['../knowledge/nquads.js', '../knowledge/relations.js', './html.js', './query-examples.js']);
 });

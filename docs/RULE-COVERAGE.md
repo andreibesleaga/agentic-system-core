@@ -12,10 +12,10 @@ A rule counts as verified when at least one of these names it: a live conformanc
 |---|---:|
 | Conformance vector | 211 |
 | Unit, integration or architecture test | 341 |
-| Executed acceptance scenario | 89 |
+| Executed acceptance scenario | 92 |
 | Checker header | 36 |
 
-Acceptance scenarios: 146 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 89 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 146 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 92 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -295,7 +295,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-31 | VERIFIED | yes | `graph-0018` | `knowledge/nquads.test.js`, `knowledge/rdfxml-iso.test.js`, `knowledge/skos-export.test.js` +1 | — | — |
 | AGSC-05-32 | VERIFIED | yes | `graph-0012` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-33 | VERIFIED | yes | `graph-0029` | — | — | — |
-| AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | `distribution/query-examples.test.js`, `e2e/query-sites.test.js`, `knowledge/questions-sparql.test.js` +1 | — | — |
+| AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | `acceptance/steps/persona-a.js`, `distribution/query-examples.test.js`, `e2e/query-sites.test.js` +2 | `persona-a-reader.feature#Reader runs one of the ten questions of the graph on the query page with the keyboard alone` | — |
 | AGSC-05-35 | VERIFIED | yes | `lint-0046`, `lint-0047`, `lint-0048` +2 | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/markdown.test.js` +2 | — | — |
 | AGSC-05-36 | VERIFIED | yes | `graph-0040` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `knowledge/skos-export.test.js` | — | — |
 | AGSC-05-37 | VERIFIED | yes | `graph-0041`, `graph-0042` | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/closure.test.js` | — | — |
@@ -324,7 +324,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-17 | VERIFIED | yes | `build-0018` | `acceptance/steps/persona-j.js`, `distribution/clusters-page.test.js`, `distribution/explorer-browser.test.js` +7 | `persona-j-standards.feature#Implementer discovers the linkset via the well-known URI` | — |
 | AGSC-06-18 | VERIFIED | yes | `build-0027`, `disc-0012` | `acceptance/steps/persona-c.js`, `arch/license-content-pin.test.js`, `distribution/canonical-and-boards.test.js` +6 | `persona-c-agent-mcp.feature#A crawler honours the robots.txt groups and the TDM reservation` | — |
 | AGSC-06-19 | VERIFIED | yes | `disc-0009` | `distribution/build-golden.test.js`, `distribution/html.test.js`, `distribution/query-page.test.js` +1 | — | — |
-| AGSC-06-20 | VERIFIED | yes | — | `distribution/explorer-browser.test.js`, `distribution/explorer/controller.test.js`, `distribution/explorer/tooltip.test.js` +6 | — | — |
+| AGSC-06-20 | VERIFIED | yes | — | `acceptance/steps/persona-a.js`, `distribution/explorer-browser.test.js`, `distribution/explorer/controller.test.js` +7 | `persona-a-reader.feature#Reader runs one of the ten questions of the graph on the query page with the keyboard alone` | — |
 | AGSC-06-21 | VERIFIED | yes | `build-0019` | `composition/conform.test.js`, `distribution/build-golden.test.js`, `distribution/clusters-page.test.js` +7 | — | — |
 | AGSC-06-22 | VERIFIED | yes | `build-0036` | `acceptance/steps/persona-a.js`, `distribution/now-spend.test.js`, `distribution/surfaces-eng2.test.js` +1 | `persona-a-reader.feature#Reader inspects cluster membership and the NOW page` | — |
 | AGSC-06-23 | VERIFIED | yes | `build-0001`, `build-0002` | `distribution/mcp-tools.test.js`, `distribution/search-index.test.js`, `distribution/search-page.test.js` | — | — |
@@ -343,7 +343,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-36 | VERIFIED | yes | `build-0013`, `build-0035` | `acceptance/steps/persona-m.js`, `docs/agent-skill.test.js` | — | — |
 | AGSC-06-37 | VERIFIED | yes | `build-0037`, `chk-0010` | — | — | — |
 | AGSC-06-38 | VERIFIED | yes | `build-0031`, `build-0032` | `acceptance/steps/persona-a.js`, `distribution/clusters-page.test.js`, `distribution/explorer-browser.test.js` +7 | `persona-a-reader.feature#Reader sees what a Concept is linked to and what links back to it`, `persona-a-reader.feature#Reader sees how the clusters connect and what each relation means` | — |
-| AGSC-06-39 | VERIFIED | yes | `build-0030` | `distribution/headers.test.js`, `distribution/query-browser.test.js`, `distribution/query-examples.test.js` +5 | — | — |
+| AGSC-06-39 | VERIFIED | yes | `build-0030` | `acceptance/steps/persona-a.js`, `distribution/headers.test.js`, `distribution/query-browser.test.js` +6 | `persona-a-reader.feature#Reader asks the published graph a question on the query page`, `persona-a-reader.feature#Reader runs one of the ten questions of the graph on the query page with the keyboard alone` | — |
 | AGSC-06-40 | VERIFIED | yes | `disc-0026` | — | — | — |
 | AGSC-06-41 | VERIFIED | yes | `disc-0027`, `disc-0032` | — | — | — |
 | AGSC-06-42 | VERIFIED | yes | `disc-0028`, `disc-0029` | — | — | — |

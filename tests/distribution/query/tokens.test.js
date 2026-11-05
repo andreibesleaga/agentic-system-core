@@ -65,6 +65,51 @@ test('a refused word inside a string, an IRI, a comment, a variable or a prefixe
   assert.strictEqual(check.form, 'SELECT');
 });
 
+test('a < that compares two values is not the start of an IRI, so it cannot hide a refused word', () => {
+  // Inside an expression, after a value, `<` is "less than": the engine reads `1<2)SERVICE#>`
+  // as a comparison, a SERVICE clause and a comment, never as the IRI `<2)SERVICE#>`.
+  const hidden = 'SELECT * WHERE { ?s ?p ?o FILTER(1<2)SERVICE#>\nSILENT <https://example.org/sparql> { ?x ?y ?z } }';
+  assert.deepStrictEqual(tokens.queryCheck(hidden).refusal, { reason: 'service', word: 'SERVICE' });
+  for (const text of ['SELECT * { ?s ?p ?o BIND(?o<?s)SERVICE#> AS ?b) }', 'SELECT * { FILTER regex(?a<"x")DELETE#>\n }',
+    'SELECT * { FILTER(?a = "x"@en<?b)SERVICE#>\n }', 'SELECT * { FILTER (STR(?a)<"b")LOAD#>\n }',
+    'SELECT * { FILTER ex:f(?a<?b)SERVICE#>\n }', 'SELECT (1<2)SERVICE#> AS ?b) {}']) {
+    assert.notStrictEqual(tokens.queryCheck(text).refusal, null, text);
+  }
+  assert.deepStrictEqual(kinds('FILTER(?n<10)'), [['keyword', 'FILTER'], ['punct', '('], ['variable', '?n'], ['punct', '<'],
+    ['number', '10'], ['punct', ')']]);
+});
+
+test('a comment ends at a carriage return as at a line feed, as SPARQL says, so it cannot hide a refused word', () => {
+  // SPARQL 1.1 §19.4: a comment runs to the end of its line, a CR or an LF; the engine reads
+  // the SERVICE after `#x\r`.
+  assert.deepStrictEqual(tokens.queryCheck('SELECT * { #x\rSERVICE SILENT <https://example.org/s> { ?a ?b ?c } }').refusal,
+    { reason: 'service', word: 'SERVICE' });
+  assert.deepStrictEqual(kinds('#a\rSELECT'), [['comment', '#a'], ['keyword', 'SELECT']]);
+  assert.deepStrictEqual(kinds('"a\rDELETE'), [['string', '"a'], ['keyword', 'DELETE']]);
+});
+
+test('a refused word glued to the token before it is still refused (the engine reads it apart)', () => {
+  // Found by a differential fuzz against the engine (Oxigraph 0.5.13): a local name cannot
+  // start with a full stop, so `ex:.SERVICE` is `ex:`, `.`, `SERVICE`; and the engine reads
+  // `a1SERVICE` as `a`, `1`, `SERVICE`. A bare word that holds a refused word is refused:
+  // no function name, boolean or language tag of SPARQL holds one.
+  for (const text of ['SELECT * WHERE { ?s ?p ?o , #\nex:.SERVICE SILENT <https://e.org/s> { ?x ?y ?z } }',
+    'SELECT * WHERE { ?s ?p ?o ;a1SERVICE SILENT <https://e.org/s> { ?x ?y ?z } }', 'SELECT * { ?s ?p true1DELETE }']) {
+    assert.notStrictEqual(tokens.queryCheck(text).refusal, null, text);
+  }
+  assert.deepStrictEqual(kinds('ex:.b _:.c'), [['prefixed', 'ex:'], ['punct', '.'], ['word', 'b'], ['blank', '_:'], ['punct', '.'], ['word', 'c']]);
+  assert.strictEqual(tokens.queryCheck('SELECT (STRUUID() AS ?u) (ENCODE_FOR_URI(?s) AS ?e) { ?s ?p ?o FILTER(isLITERAL(?o) && LANGMATCHES(LANG(?o), "en")) }').refusal, null);
+});
+
+test('an IRI after a value outside an expression, or where an expression expects a value, is still an IRI', () => {
+  // Triple patterns, collections, VALUES rows and the arguments of IN and of a function.
+  const text = 'SELECT * { ?s <x:p> <x:o> ; <x:q> (<x:a> <x:b>) . VALUES (?v) { (<x:c>) } FILTER(?v IN (<x:c>, <x:d>) && <x:f>(?v) = <x:e>) }';
+  const iris = tokens.queryTokens(text).filter((t) => t.kind === 'iri').map((t) => t.text);
+  assert.deepStrictEqual(iris, ['<x:p>', '<x:o>', '<x:q>', '<x:a>', '<x:b>', '<x:c>', '<x:c>', '<x:d>', '<x:f>', '<x:e>']);
+  assert.strictEqual(tokens.queryCheck('SELECT * { ?s ?p (1 <x:SERVICE>) FILTER(?o = <x:LOAD>) }').refusal, null);
+  assert.strictEqual(tokens.queryCheck('SELECT ?a (COUNT(?b) AS ?n) { ?a ?p ?b } GROUP BY ?a HAVING (COUNT(?b) > 1)').refusal, null);
+});
+
 test('a query that names its own dataset says so (FROM, FROM NAMED)', () => {
   assert.strictEqual(tokens.queryCheck('SELECT * FROM <x:g> WHERE { ?s ?p ?o }').dataset, true);
   assert.strictEqual(tokens.queryCheck('SELECT * FROM NAMED <x:g> WHERE { GRAPH ?g { ?s ?p ?o } }').dataset, true);

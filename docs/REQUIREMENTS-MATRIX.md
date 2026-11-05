@@ -122,7 +122,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | NFR-05 | MAPPED | `AGSC-08-30` | 0 vectors, 3 tests, 3 scenarios, 0 checkers | — | — | `persona-n-researcher.feature` | `docs/PLAN.md`, `docs/SPEC.md` |
 | NFR-06 | MAPPED | `AGSC-06-21` | 1 vectors, 10 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
 | NFR-07 | MAPPED | `AGSC-01-29`, `AGSC-06-15`, `AGSC-08-13` +2 | 6 vectors, 18 tests, 1 scenarios, 0 checkers | — | — | `persona-m-security-reviewer.feature` | `docs/PLAN.md`, `docs/SPEC-ORIENTATION.md`, `docs/SPEC.md` |
-| NFR-08 | MAPPED | `AGSC-06-20` | 0 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
+| NFR-08 | MAPPED | `AGSC-06-20` | 0 vectors, 10 tests, 1 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
 | NFR-09 | MAPPED | `AGSC-00-18`; served by `AGSC-04-03`, `AGSC-08-20` | 0 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md`, `docs/diagrams/README.md`, `docs/diagrams/flow-release.md` +1 |
 | NFR-10 | MAPPED | `AGSC-07-16` | 0 vectors, 3 tests, 1 scenarios, 0 checkers | `tools/public-hygiene.test.js` | — | — | `docs/PLAN.md` |
 | NFR-11 | MAPPED | `AGSC-01-37`, `AGSC-01-38`, `AGSC-02-14` +3 | 5 vectors, 20 tests, 4 scenarios, 0 checkers | `acceptance/steps/persona-b.js`, `application/cli/verbs-wired.test.js` | — | — | `docs/DEMOS.md`, `docs/PLAN.md`, `docs/diagrams/README.md` +1 |

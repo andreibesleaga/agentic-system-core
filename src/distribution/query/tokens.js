@@ -16,6 +16,14 @@
 // (`queryHighlight`). One pass over the text: each step consumes at least one character,
 // and no step looks back.
 //
+// The one place where SPARQL needs to know where it stands is `<`: inside an expression,
+// after a value, it means "less than" (`FILTER(1<2)`), everywhere else it opens an IRI. Read
+// as an IRI there, `1<2)SERVICE#>` would hide the SERVICE that the engine reads. So the
+// tokenizer keeps the brackets it is inside: a `(` opens an expression outside every group,
+// in a SELECT clause, inside another expression, or after FILTER, BIND, HAVING, BY, ASC,
+// DESC, IN, a function's name, or an IRI or prefixed name that FILTER calls; any other `(`
+// inside a group opens a collection or a VALUES row, where a value may follow a value.
+//
 // PORTABLE: each function below is emitted into the page and into its worker as its own
 // source text (`query-page.js`), so both run exactly what `tests/distribution/query/`
 // tests. A portable function names no module-scope binding and requires nothing; the only
@@ -39,19 +47,49 @@ function queryTokens(text) {
   const localChar = (ch) => nameChar(ch) || ch === '.' || ch === ':' || ch === '%';
   const out = [];
   let at = 0;
+  /** The brackets the text is inside, innermost last: `expr`, `group` (`{` and `[`) or `list`. */
+  const frames = [];
+  let selectClause = false;
+  /** The last two tokens that are not space or comment, the last one last. */
+  let seen = [];
+  const lastIs = (kinds) => seen.length > 0 && kinds.includes(seen[seen.length - 1].kind);
+  const wordOf = (token) => (token === undefined || token.kind !== 'keyword' ? '' : token.text.toUpperCase());
+  /** Whether a `(` at this point opens an expression (see the header). */
+  const opensExpression = () => {
+    const top = frames[frames.length - 1];
+    if (top === undefined || top === 'expr') return true;
+    if (top === 'list') return false;
+    const [before, last] = seen.length > 1 ? seen : [undefined, seen[0]];
+    return selectClause || lastIs(['word']) || ['FILTER', 'BIND', 'HAVING', 'BY', 'ASC', 'DESC', 'IN'].includes(wordOf(last))
+      || (lastIs(['iri', 'prefixed']) && wordOf(before) === 'FILTER');
+  };
+  /** Whether a `<` at this point compares: inside an expression, after a value. */
+  const compares = () => frames[frames.length - 1] === 'expr'
+    && (lastIs(['variable', 'number', 'string', 'iri', 'prefixed', 'blank', 'word']) || (lastIs(['punct']) && seen[seen.length - 1].text === ')'));
+  /** What a token changes in the brackets and the SELECT clause. */
+  const follow = (token) => {
+    if (token.kind === 'space' || token.kind === 'comment') return;
+    if (token.text === '(') frames.push(opensExpression() ? 'expr' : 'list');
+    else if (token.text === '{' || token.text === '[') frames.push('group');
+    else if (token.text === ')' || token.text === '}' || token.text === ']') frames.pop();
+    if (wordOf(token) === 'SELECT') selectClause = true;
+    else if (token.text === '{' || wordOf(token) === 'WHERE') selectClause = false;
+    seen = [...seen.slice(-1), token];
+  };
   /** The end of a run of characters that `ok` accepts, from `from`. */
   const runEnd = (from, ok) => {
     let end = from;
     while (end < source.length && ok(source[end])) end += 1;
     return end;
   };
-  /** The end of a local name from `from`, a final full stop left out (it ends a triple). */
+  /** The end of a local name from `from`: none where it would start with a full stop, and a final full stop left out (it ends a triple). */
   const localEnd = (from) => {
+    if (source[from] === '.') return from;
     let end = runEnd(from, localChar);
     while (end > from && source[end - 1] === '.') end -= 1;
     return end;
   };
-  /** The end of a string that opens at `from`: a long one ends at its three quotes, a short one at its quote or its line. */
+  /** The end of a string that opens at `from`: a long one ends at its three quotes, a short one at its quote or its line (CR or LF). */
   const stringEnd = (from) => {
     const quote = source[from];
     const long = source.startsWith(quote.repeat(3), from);
@@ -59,7 +97,7 @@ function queryTokens(text) {
     while (end < source.length) {
       if (source[end] === '\\') { end += 2; continue; }
       if (long ? source.startsWith(quote.repeat(3), end) : source[end] === quote) return end + (long ? 3 : 1);
-      if (!long && source[end] === '\n') return end;
+      if (!long && (source[end] === '\n' || source[end] === '\r')) return end;
       end += 1;
     }
     return source.length;
@@ -73,9 +111,9 @@ function queryTokens(text) {
   const next = (from) => {
     const ch = source[from];
     if (/\s/u.test(ch)) return ['space', runEnd(from, (c) => /\s/u.test(c))];
-    if (ch === '#') return ['comment', runEnd(from, (c) => c !== '\n')];
+    if (ch === '#') return ['comment', runEnd(from, (c) => c !== '\n' && c !== '\r')];
     if (ch === '"' || ch === '\'') return ['string', stringEnd(from)];
-    if (ch === '<' && iriEnd(from) > 0) return ['iri', iriEnd(from)];
+    if (ch === '<' && !compares() && iriEnd(from) > 0) return ['iri', iriEnd(from)];
     if ((ch === '?' || ch === '$') && nameChar(source[from + 1] || '')) return ['variable', runEnd(from + 1, nameChar)];
     if (ch === '_' && source[from + 1] === ':') return ['blank', localEnd(from + 2)];
     if (ch === ':') return ['prefixed', localEnd(from + 1)];
@@ -90,7 +128,9 @@ function queryTokens(text) {
   };
   while (at < source.length) {
     const [kind, end] = next(at);
-    out.push({ kind, text: source.slice(at, end) });
+    const token = { kind, text: source.slice(at, end) };
+    out.push(token);
+    follow(token);
     at = end;
   }
   return out;
@@ -101,14 +141,20 @@ function queryTokens(text) {
  * SELECT, ASK, CONSTRUCT, DESCRIBE that stands as a keyword), the first word that makes the
  * page refuse it (an update keyword, or SERVICE), and whether it names its own dataset with
  * FROM, in which case it runs over that dataset and not over the union of the node's graphs.
+ * A bare word that holds a refused word refuses too: the engine reads `a1SERVICE` as `a`,
+ * `1` and `SERVICE`, and no function name, boolean or language tag of SPARQL holds one.
  *
  * @param {string} text
  * @returns {{form:(string|null), refusal:({reason:string, word:string}|null), dataset:boolean}}
  */
 function queryCheck(text) {
-  const words = queryTokens(text).filter((t) => t.kind === 'keyword').map((t) => t.text.toUpperCase());
+  const list = queryTokens(text);
+  const words = list.filter((t) => t.kind === 'keyword').map((t) => t.text.toUpperCase());
   const updates = ['INSERT', 'DELETE', 'LOAD', 'CLEAR', 'CREATE', 'DROP', 'COPY', 'MOVE', 'ADD'];
-  const refused = words.find((w) => updates.includes(w) || w === 'SERVICE');
+  const refusing = [...updates, 'SERVICE'];
+  const held = (t) => (t.kind === 'keyword' ? refusing.filter((w) => w === t.text.toUpperCase())
+    : t.kind === 'word' ? refusing.filter((w) => t.text.toUpperCase().includes(w)) : []);
+  const refused = list.flatMap(held)[0];
   return {
     dataset: words.includes('FROM'),
     form: words.find((w) => ['SELECT', 'ASK', 'CONSTRUCT', 'DESCRIBE'].includes(w)) || null,

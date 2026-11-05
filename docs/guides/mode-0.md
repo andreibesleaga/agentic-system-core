@@ -179,8 +179,10 @@ graph or call another server. "Link to this query" gives an address that holds t
 query after its `#`: whoever opens it finds the query in the editor, and it runs only
 when they select Run. Below the editor, the ten questions every graph must answer come
 with their queries, ready to put in the editor. Each query is filled in with an item of
-your site that the question has something to say about, and the sentence under it names
-the item, so every example runs as it stands; change the item to ask about another. A
+your site, one the question has something to say about where there is one, and the
+sentence under it names the item and says when the answer is empty; change the item to
+ask about another. On this guide's three notes, which have no typed links yet, every
+example answers empty; the query already in the editor lists your notes. A
 table lists the classes and the fourteen relations with what each means. A site that
 declares its own questions and vocabulary (the `domain` object of `agsc.config.json`)
 has them listed after these. The page stores nothing, not even your last

@@ -14,7 +14,6 @@ const fc = require('fast-check');
 const view = require('../../../src/distribution/query/view.js');
 
 const PREFIXES = { dcterms: 'http://purl.org/dc/terms/', skos: 'http://www.w3.org/2004/02/skos/core#', xsd: 'http://www.w3.org/2001/XMLSchema#' };
-const KEYS = { 'http://purl.org/dc/terms/requires': 'requires', 'http://www.w3.org/2004/02/skos/core#related': 'related' };
 const iri = (value) => ({ type: 'uri', value });
 const literal = (value, extra = {}) => ({ type: 'literal', value, ...extra });
 
@@ -27,6 +26,16 @@ test('a term as text: a prefixed name where a prefix covers it, else the IRI; a 
   assert.strictEqual(view.queryTermText(literal('3', { datatype: 'http://www.w3.org/2001/XMLSchema#integer' }), PREFIXES), '"3"^^xsd:integer');
   assert.strictEqual(view.queryTermText(literal('x', { datatype: 'http://www.w3.org/2001/XMLSchema#string' }), PREFIXES), '"x"');
   assert.strictEqual(view.queryTermText(undefined, PREFIXES), '');
+});
+
+test('a short name: the prefixed name where one prefix covers the IRI and the rest is a plain local name, else null', () => {
+  // One rule for the result table and the vocabulary tables of the page (query-page.js).
+  assert.strictEqual(view.queryShortName('http://purl.org/dc/terms/requires', PREFIXES), 'dcterms:requires');
+  assert.strictEqual(view.queryShortName('http://www.w3.org/2004/02/skos/core#related-match_2', PREFIXES), 'skos:related-match_2');
+  for (const iri of ['https://node.example/concepts/a/', 'http://purl.org/dc/terms/a/b', 'http://purl.org/dc/terms/a.b',
+    'http://purl.org/dc/terms/', 'http://purl.org/dc/terms/a?b']) {
+    assert.strictEqual(view.queryShortName(iri, PREFIXES), null, iri);
+  }
 });
 
 const SELECT = {
@@ -64,26 +73,36 @@ const TRIPLES = {
 };
 
 test('the picture of a three-column result: its subjects and objects as nodes, each row whose middle is an IRI as a link', () => {
-  const graph = view.queryGraph(TRIPLES, PREFIXES, KEYS, 50);
+  const graph = view.queryGraph(TRIPLES, PREFIXES, 50);
   assert.deepStrictEqual(graph.nodes, [
     { id: 'uri https://node.example/concepts/a/', label: '<https://node.example/concepts/a/>', route: null, summary: '', type: 'IRI' },
     { id: 'uri https://node.example/concepts/b/', label: '<https://node.example/concepts/b/>', route: null, summary: '', type: 'IRI' },
     { id: 'literal Item A en ', label: '"Item A"@en', route: null, summary: '', type: 'Literal' },
   ]);
   assert.deepStrictEqual(graph.links, [
-    { key: 'requires', source: 'uri https://node.example/concepts/a/', target: 'uri https://node.example/concepts/b/' },
+    { key: 'other', source: 'uri https://node.example/concepts/a/', target: 'uri https://node.example/concepts/b/' },
     { key: 'other', source: 'uri https://node.example/concepts/a/', target: 'literal Item A en ' },
   ]);
   assert.strictEqual(graph.total, 3);
   // A bound on the nodes drawn: links only among the drawn ones; the total says how many there are.
-  const small = view.queryGraph(TRIPLES, PREFIXES, KEYS, 1);
+  const small = view.queryGraph(TRIPLES, PREFIXES, 1);
   assert.deepStrictEqual(small.nodes.map((n) => n.type), ['IRI']);
   assert.deepStrictEqual(small.links, []);
   assert.strictEqual(small.total, 3);
   // Not three columns, or no row with an IRI in the middle: no picture.
-  assert.strictEqual(view.queryGraph(SELECT, PREFIXES, KEYS, 50), null);
-  assert.strictEqual(view.queryGraph({ boolean: true, head: {} }, PREFIXES, KEYS, 50), null);
-  assert.strictEqual(view.queryGraph({ head: { vars: ['a', 'b', 'c'] }, results: { bindings: [{ a: iri('x:a') }] } }, PREFIXES, KEYS, 50), null);
+  assert.strictEqual(view.queryGraph(SELECT, PREFIXES, 50), null);
+  assert.strictEqual(view.queryGraph({ boolean: true, head: {} }, PREFIXES, 50), null);
+  assert.strictEqual(view.queryGraph({ head: { vars: ['a', 'b', 'c'] }, results: { bindings: [{ a: iri('x:a') }] } }, PREFIXES, 50), null);
+});
+
+test('the caption of the picture counts its nodes and links in words, one or many', () => {
+  const graph = view.queryGraph(TRIPLES, PREFIXES, 50);
+  assert.strictEqual(view.queryPictureText(graph),
+    'A picture of the result: 3 nodes and 2 links; the table holds every row.');
+  assert.strictEqual(view.queryPictureText({ links: [{}], nodes: [{}, {}], total: 2 }),
+    'A picture of the result: 2 nodes and 1 link; the table holds every row.');
+  assert.strictEqual(view.queryPictureText(view.queryGraph(TRIPLES, PREFIXES, 1)),
+    'A picture of the result: 1 node and 0 links; the table holds every row. The first 1 of 3 are drawn.');
 });
 
 test('the status line after a run', () => {

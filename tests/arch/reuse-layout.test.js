@@ -77,3 +77,27 @@ test('the REUSE files ship with the package, and LICENSE-CONTENT is untouched', 
   // among the annotated paths (a licence text is not annotated).
   assert.ok(!annotations().some((a) => /LICENSE-CONTENT/u.test(a.paths)));
 });
+
+/** The files under `dir` (relative to the root), recursively, the vendored engine left out. */
+function filesUnder(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      if (rel !== 'src/distribution/vendor' && entry.name !== 'node_modules') out.push(...filesUnder(rel));
+    } else if (/\.(?:js|mjs|cjs)$/u.test(entry.name)) out.push(rel);
+  }
+  return out;
+}
+
+test('every engine or test file that quotes an SPDX licence line as data is annotated by override', () => {
+  // REUSE reads such a quotation as the file's own licence and rejects it as an invalid
+  // expression (`reuse lint`: "Invalid SPDX License Expressions"), unless REUSE.toml
+  // annotates the file with `precedence = "override"`, which ignores the file's text.
+  const overridden = toml.split('[[annotations]]').filter((block) => /^precedence = "override"$/mu.test(block))
+    .flatMap((block) => [.../^path = \[([^\]]*)\]/mu.exec(block)[1].matchAll(/"([^"]+)"/gu)].map((m) => m[1]));
+  const quoting = ['src', 'tests', 'tools', 'bin'].filter((dir) => fs.existsSync(path.join(ROOT, dir))).flatMap(filesUnder)
+    .filter((rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8').includes(`SPDX-License-${'Identifier'}:`));
+  assert.ok(quoting.length > 0);
+  assert.deepStrictEqual(quoting.filter((rel) => !overridden.includes(rel)).sort(), []);
+});

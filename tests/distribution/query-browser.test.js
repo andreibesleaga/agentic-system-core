@@ -102,7 +102,8 @@ test('the /query/ page in a browser', { skip: SKIP || false }, async (t) => {
       assert.match(construct.status, /^CONSTRUCT answered with \d+ triples?\.$/u);
       assert.strictEqual(construct.pictureHidden, false);
       assert.ok(construct.circles >= 2, `${construct.circles} nodes drawn`);
-      assert.strictEqual(await page.locator('#query-picture line.rel-requires').count() > 0, true, 'a requires link is classed by its key');
+      assert.strictEqual(await page.locator('#query-picture line.link').count() > 0, true, 'the picture draws the links');
+      assert.match(await page.textContent('#query-picture figcaption'), /^A picture of the result: \d+ nodes? and \d+ links?; the table holds every row\./u);
       const item = await page.evaluate(() => document.querySelector('#query-table td').textContent);
       const describe = await runQuery(page, `DESCRIBE ${item}`);
       assert.match(describe.status, /^DESCRIBE answered with \d+ triples?\.$/u);
@@ -119,6 +120,9 @@ test('the /query/ page in a browser', { skip: SKIP || false }, async (t) => {
       assert.strictEqual(update.resultHidden, true);
       const service = await runQuery(page, 'SELECT * WHERE { SERVICE SILENT <https://example.org/sparql> { ?s ?p ?o } }');
       assert.strictEqual(service.status, 'This page sends no query to another server: a SERVICE clause is refused.');
+      // A `<` that compares two values cannot hide a SERVICE clause as an IRI up to a comment.
+      const hidden = await runQuery(page, 'SELECT * WHERE { ?s ?p ?o FILTER(1<2)SERVICE#>\nSILENT <https://example.org/sparql> { ?x ?y ?z } }');
+      assert.strictEqual(hidden.status, 'This page sends no query to another server: a SERVICE clause is refused.');
       assert.strictEqual(await page.getAttribute('#query', 'data-state'), 'ready', 'the worker was never asked');
       await context.close();
     });

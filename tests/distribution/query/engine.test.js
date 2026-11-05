@@ -7,14 +7,16 @@
 //   * the four query forms are answered over the node's graph (every quad of `graph.nq` is
 //     in the node's named graph, so a query runs over the union of the graphs unless it
 //     names its own dataset with FROM);
-//   * an update and a SERVICE clause are refused before the engine sees them, and an
+//   * an update and a SERVICE clause are refused before the engine sees them (a property
+//     checks the page's refusal against the engine's own reading of the text), and an
 //     engine error comes back as a message, not a crash;
 //   * the result files are the W3C formats (SPARQL 1.1 Query Results JSON Format, and CSV
 //     and TSV Formats, both of 21 March 2013), written by the engine's own writers and
 //     checked here as properties over hostile values: commas, quotes, line feeds, language
 //     tags, datatypes, IRIs, blank nodes, unbound values;
 //   * a CONSTRUCT or DESCRIBE result is given as subject, predicate and object bindings
-//     with its blank nodes named b0, b1, … in the order first seen, so the same query
+//     with its blank nodes named b0, b1, … in the order of what each one is in (the sorted
+//     triples it is part of), never by the labels the engine gave them, so the same query
 //     gives the same bytes every time.
 // Deterministic (fixed seeds), no network.
 
@@ -87,9 +89,29 @@ test('an update, a SERVICE clause and a text that is no query are refused before
     { error: 'This page does not change the graph: INSERT is an update, and an update is refused.', form: null });
   assert.deepStrictEqual(engine.queryAnswer(ox, spy, 'SELECT * { SERVICE SILENT <https://example.org/sparql> { ?s ?p ?o } }'),
     { error: 'This page sends no query to another server: a SERVICE clause is refused.', form: 'SELECT' });
+  // A `<` that compares two values hides nothing (the engine reads it as "less than").
+  assert.deepStrictEqual(engine.queryAnswer(ox, spy, 'SELECT * WHERE { ?s ?p ?o FILTER(1<2)SERVICE#>\nSILENT <https://example.org/sparql> { ?x ?y ?z } }'),
+    { error: 'This page sends no query to another server: a SERVICE clause is refused.', form: 'SELECT' });
   assert.deepStrictEqual(engine.queryAnswer(ox, spy, '# nothing'),
     { error: 'Write a SELECT, ASK, CONSTRUCT or DESCRIBE query.', form: null });
   assert.deepStrictEqual(calls, []);
+});
+
+test('property: no text lets through a SERVICE clause that the engine reads', () => {
+  // A differential check against the engine: a text that the engine runs, and that it no
+  // longer parses once the word SERVICE is replaced, holds a SERVICE clause the engine reads;
+  // the page must refuse every such text. The pieces are the ones that could hide the word
+  // from a tokenizer: comparisons, comments, strings, IRIs, line ends, brackets, glued names.
+  const pieces = fc.constantFrom('FILTER(1<2)', 'FILTER(?a<?b)', '#x', '#>', '"', '\'', '<', '>', '<2)', '\r', '\n', '(', ')',
+    '{', '}', '[', ']', ' ', '.', ';', ',', '?a', '<x:a>', 'ex:', 'ex:a', '1', '1.', 'a', 'true', 'e', '_:b', '"a"@en', '^^',
+    'BIND(1 AS ?q)', 'STR(', 'ex:f(', 'OPTIONAL {', 'UNION {', 'FILTER EXISTS {', '|', '/', '*', '+', '!', '=', '&&');
+  const store = new ox.Store();
+  const parses = (q) => { try { store.query(q); return true; } catch (e) { return false; } };
+  fc.assert(fc.property(fc.array(pieces, { maxLength: 10 }), (parts) => {
+    const q = `PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o ${parts.join('')}SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }`;
+    const read = parses(q) && !parses(q.replace('SERVICE SILENT', 'NOSUCHWORD SILENT'));
+    assert.ok(!read || engine.queryAnswer(ox, store, q).error !== undefined, JSON.stringify(q));
+  }), { numRuns: 4000, seed: 639 });
 });
 
 test('the engine\'s own error comes back as a message', () => {

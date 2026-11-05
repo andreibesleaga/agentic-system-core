@@ -91,8 +91,10 @@ const SECURITY_POLICY = "default-src 'none'; script-src 'self'; style-src 'self'
  * `'wasm-unsafe-eval'`; that one source is added and nothing else is loosened.
  */
 const QUERY_SECURITY_POLICY = SECURITY_POLICY.replace("script-src 'self';", "script-src 'self' 'wasm-unsafe-eval';");
-/** The page whose presence gives `/query/*` its block. */
+/** The page that, with an engine compiled to WebAssembly under it, gives `/query/*` its block. */
 const QUERY_PAGE = '/query/index.html';
+/** Whether a route is a WebAssembly file of the query page's engine. */
+const queryWasm = (route) => String(route).startsWith('/query/') && String(route).endsWith('.wasm');
 
 const SITE_WIDE = Object.freeze([
   ['X-Content-Type-Options', 'nosniff'],
@@ -132,7 +134,7 @@ function etag(hex) {
  * @param {{visibility?:string}} [config] `agsc.config.json`.
  * @param {Array<string>} [routes] the routes the build emits; each version directory
  *   among them gets the immutable `Cache-Control` of AGSC-06-06, and `/query/index.html`
- *   among them gives `/query/*` the policy of AGSC-06-39.
+ *   with a `.wasm` file under `/query/` among them gives `/query/*` the policy of AGSC-06-39.
  * @returns {Array<{route:string, headers:Array<[string,string]>}>}
  */
 function headerSets(config = {}, routes = []) {
@@ -169,8 +171,10 @@ function headerSets(config = {}, routes = []) {
   for (const version of versionDirectories(routes)) add(`/ns/${version}/*`, [['Cache-Control', IMMUTABLE]]);
   // AGSC-06-39, AGSC-06-17: one policy on `/query/` and the files under it. The host joins
   // the values of two rules that set the same header, and two policies are both enforced,
-  // so the block detaches the site-wide policy before it sets its own.
-  if (routes.includes(QUERY_PAGE)) add('/query/*', [['!', 'Content-Security-Policy'], ['Content-Security-Policy', QUERY_SECURITY_POLICY]]);
+  // so the block detaches the site-wide policy before it sets its own. The rule admits
+  // 'wasm-unsafe-eval' for an engine compiled to WebAssembly only, so a page without one
+  // keeps the site-wide policy and gets no block.
+  if (routes.includes(QUERY_PAGE) && routes.some(queryWasm)) add('/query/*', [['!', 'Content-Security-Policy'], ['Content-Security-Policy', QUERY_SECURITY_POLICY]]);
   return [...byRoute].map(([route, headers]) => ({ route, headers: headers.map(([k, v]) => [k, v]) }));
 }
 

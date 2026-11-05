@@ -1,6 +1,6 @@
 'use strict';
 /* global document */
-// verifies AGSC-02-13, AGSC-03-04, AGSC-06-02, AGSC-06-16, AGSC-06-22, AGSC-06-25, AGSC-06-30, AGSC-06-38
+// verifies AGSC-02-13, AGSC-03-04, AGSC-05-34, AGSC-06-02, AGSC-06-16, AGSC-06-20, AGSC-06-22, AGSC-06-25, AGSC-06-30, AGSC-06-38, AGSC-06-39
 // Steps of features/persona-a-reader.feature. Offline: the pages a reader opens are
 // read from the build output of the acceptance Bundle, which stands in for the
 // deployed site (the same bytes a host serves from `www/`). In a browser
@@ -549,7 +549,7 @@ module.exports = [
     },
   },
   {
-    pattern: 'the page loads the node\'s own graph into the engine it ships and requests nothing from another origin',
+    pattern: 'the page loads the node\'s own graph into the engine it ships and requests nothing from another origin (AGSC-06-39)',
     async run(world) {
       const { errors, offOrigin, page } = world.state.query;
       const quads = world.read('www/graph.nq').split('\n').filter((line) => line.trim() !== '').length;
@@ -567,7 +567,9 @@ module.exports = [
       await page.waitForSelector('#query[data-result="answered"]', { timeout: 20000 });
       const rows = await page.evaluate(() => [...document.querySelectorAll('#query-table tbody tr')].map((tr) => tr.textContent));
       assert.ok(rows.includes(`<${BASE}concepts/handoff/>dcterms:requires<${BASE}concepts/supervisor/>`), JSON.stringify(rows));
-      assert.ok(await page.locator('#query-picture line.rel-requires').count() >= 1, 'the picture draws no requires link');
+      const drawn = await page.evaluate(() => [...document.querySelectorAll('#query-picture circle')].map((c) => c.getAttribute('data-id')));
+      assert.ok(drawn.includes(`uri ${BASE}concepts/handoff/`) && drawn.includes(`uri ${BASE}concepts/supervisor/`), JSON.stringify(drawn));
+      assert.ok(await page.locator('#query-picture line.link').count() >= 1, 'the picture draws no link');
       const fileOf = async (selector) => {
         const [file] = await Promise.all([page.waitForEvent('download'), page.click(selector)]);
         return fs.readFileSync(await file.path(), 'utf8');
@@ -593,7 +595,7 @@ module.exports = [
     },
   },
   {
-    pattern: 'the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it',
+    pattern: 'the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it (AGSC-06-39, AGSC-05-34)',
     async run(world) {
       const { page } = world.state.query;
       assert.strictEqual(await page.textContent('#example-1-question'), '1. If I choose X, what else must I take?');
@@ -602,7 +604,7 @@ module.exports = [
     },
   },
   {
-    pattern: 'Enter on the example\'s button puts its query into the editor, and Ctrl+Enter runs it: the one row is the item "mcp", which is what the engine\'s own function answers for "a2a"',
+    pattern: 'Enter on the example\'s button puts its query into the editor, and Ctrl+Enter runs it: the one row is the item "mcp", which is what the engine\'s own function answers for "a2a" (AGSC-06-20)',
     async run(world) {
       const { page } = world.state.query;
       await page.focus('button[data-example="example-1-query"]');
