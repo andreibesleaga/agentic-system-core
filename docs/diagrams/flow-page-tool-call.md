@@ -1,7 +1,7 @@
 # Flow — one page tool call
 
 **What this shows.** What happens when a browser's own agent calls a tool on a built
-page. The page registers the seven tools only when the browser offers
+page. The page registers the ten tools only when the browser offers
 `document.modelContext`; the tool reads the node's own published files from the same
 origin — no server, no key, no other host — and answers exactly what the local MCP
 server would answer for the same input on a Bundle whose items are all listed
@@ -26,5 +26,5 @@ sequenceDiagram
   Note over PG,NODE: propose and remember return text and write nothing
 ```
 
-Trace: AGSC-09-13 (the seven tools), AGSC-09-16 (page tools equal the local server),
+Trace: AGSC-09-13 (the ten tools), AGSC-09-16 (page tools equal the local server),
 AGSC-06-16 (the search index), AGSC-06-05 (no other origin), AGSC-11-18 (the hints).

@@ -41,6 +41,8 @@ const CALLS = [
   ['search', { query: 'handoff' }], ['read', { slug: 'handoff' }], ['links', { slug: 'handoff' }],
   ['compose', { selection: ['handoff'] }], ['propose', { slug: 'handoff' }], ['ask', { question: 'handoff' }],
   ['remember', { body: 'Noted from a page.', kind: 'lesson', severity: 'info', title: 'A lesson from the page' }],
+  // AGSC-09-13: the tools of 1.1; `brief` hashes the selection with the page's Web Crypto.
+  ['brief', { selection: ['handoff'] }], ['check', {}], ['explain', { key: 'related', source: 'handoff', target: 'handoff' }],
 ];
 
 const SKIP = skipReason();
@@ -86,14 +88,15 @@ test('the page tools answer through document.modelContext, and a page without it
         assert.strictEqual(await page.evaluate(() => window.__tools.length), 0, `${route} registered tools`);
         await withStub.close();
       } else {
-        await page.waitForFunction(() => window.__tools && window.__tools.length >= 7, null, { timeout: 10000 });
+        await page.waitForFunction(() => window.__tools && window.__tools.length >= 10, null, { timeout: 10000 });
         const answers = await page.evaluate(async (calls) => {
           const byName = Object.fromEntries(window.__tools.map((t) => [t.name, t]));
           const out = {};
           for (const [name, args] of calls) out[name] = await byName[name].execute(args);
           return { answers: out, names: window.__tools.map((t) => t.name).sort() };
         }, CALLS);
-        assert.deepStrictEqual(answers.names, ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search'], route);
+        assert.deepStrictEqual(answers.names, ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read',
+          'remember', 'search'], route);
         for (const [name] of CALLS) {
           const envelope = answers.answers[name];
           assert.strictEqual(envelope.trust, 'untrusted', `${route} ${name}`);

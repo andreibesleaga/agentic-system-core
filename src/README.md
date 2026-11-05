@@ -189,10 +189,12 @@ known verb this distribution does not offer — `refresh --agent` without `--dry
 holds the set to sixteen; `tests/application/cli/verbs-wired.test.js` runs every verb
 end to end over a copy of the fixture.
 
-**The seven tools** are a surface, not verbs (AGSC-09-13, AGSC-09-16). They are served
+**The ten tools** are a surface, not verbs (AGSC-09-13, AGSC-09-16). They are served
 over the local MCP server (`distribution/mcp-tools.js`) and as page tools in a built
 site (`distribution/page-tools.js`), and the two answer identically for the same
-input; vector `cli-0003` compares them call by call.
+input; vector `cli-0026` compares them call by call. What 1.1 adds — the bound on `search`
+and `ask`, the citation records of `read`, and `brief`, `explain` and `check` over the listed
+set — is in `distribution/tool-answers.js`, whose portable functions both call.
 
 | Tool | Local server | Page tool |
 |---|---|---|

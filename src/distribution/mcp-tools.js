@@ -1,8 +1,10 @@
 'use strict';
 /**
- * CONTEXT Distribution (Emission) — Surface: the seven tools.
- * Implements AGSC-09-13 (exactly seven tools: `search`, `read`, `links`,
- * `compose`, `propose`, `ask`, `remember`), AGSC-09-13a (the tool error
+ * CONTEXT Distribution (Emission) — Surface: the ten tools.
+ * Implements AGSC-09-13 (exactly ten tools: `search`, `read`, `links`,
+ * `compose`, `propose`, `ask`, `remember` and, from 1.1, `brief`, `explain` and
+ * `check`, listed in code-point order of `name`; the bound on `search` and `ask`;
+ * the citation records of `read`), AGSC-09-13a (the tool error
  * envelope: the AGSC-08-18 envelope with `type: "error"` and a `body` of
  * `{code, message}`, NEVER a JSON-RPC transport error), AGSC-09-14a (the
  * Channel responder `ask`: an answer over this Bundle (drafts included, AGSC-09-13), at least one
@@ -16,6 +18,17 @@
  * (one tool contract, two transports: this module IS that contract, so the
  * stdio server and the browser page can only agree).
  * Requirements: PRD-023, PRD-051, PRD-056, N9, NFR-07.
+ *
+ * THE TOOLS OF 1.1 answer over the LISTED set (AGSC-09-16), as the page tools must, and
+ * through the portable functions of `distribution/tool-answers.js`, which the page runs
+ * as its own source text: `brief` composes over the listed items and returns the content of
+ * `brief.json` (AGSC-07-25), `explain` answers whether one edge holds and why (AGSC-05-33),
+ * `check` returns the Link warnings of AGSC-03-23…03-26. The build instant, the content
+ * version and the chunk lines are read from the route map of the build the `mcp` verb made
+ * (`options.artifacts`), the routes a page reads; without one, `read` carries no chunk and
+ * the brief no instant, and no byte is invented. The domain parts of AGSC-09-13 (vector
+ * `cli-0037`, not written yet) join a `search` hit, the `read` body and the `brief` items, as
+ * the header of `tool-answers.js` says.
  *
  * PURE over a loaded Bundle: no clock, no network, no process. The Proposal
  * SIDE EFFECT (AGSC-08-04's `dist/proposal/<n>.patch` and `.md`) is NOT taken
@@ -31,7 +44,11 @@
  * exact equality against the Bundle index and never joined to a path.
  */
 
+const { createHash } = require('node:crypto');
 const { compose } = require('../composition/compose.js');
+const { briefOf } = require('../composition/brief.js');
+const { selectionDigestInput, terms } = require('../composition/harness.js');
+const chunks = require('../knowledge/chunks.js');
 const links = require('../knowledge/links.js');
 const slugs = require('../knowledge/slug.js');
 const adopt = require('../knowledge/adopt.js');
@@ -40,6 +57,7 @@ const search = require('./search.js');
 const {
   pageBoardMove, pageClaimants, pageFlatItem, pageKeptSources, pageRememberFault, pageRememberFindings,
 } = require('./page-tools.js');
+const answers = require('./tool-answers.js');
 const boardLanes = require('../governance/board-lanes.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
@@ -151,11 +169,14 @@ function tools(bundle, options) {
 
   // AGSC-10-13 / AGSC-10-17: the derived `claimed_by` of every task, read from the
   // board exports of the build this server made — the same routes the page reads,
-  // so a claim is checked against the same holder on both transports.
+  // so a claim is checked against the same holder on both transports. The discovery
+  // document and the chunk export are read from the same build, for the same reason.
   const artifacts = opts.artifacts instanceof Map ? opts.artifacts : new Map();
   const published = Object.create(null);
-  for (const [route, text] of artifacts) if (route.startsWith('/boards/')) published[route] = String(text);
+  for (const [route, text] of artifacts) if (READ_ROUTES.test(route)) published[route] = String(text);
   const claimed = new Map(Object.entries(pageClaimants(published)));
+  const host = answers.toolHost(published);
+  const chunkIndex = answers.toolChunkIndex(published);
 
   const implementations = Object.create(null);
   const flatItems = () => (bundle.items || [])
@@ -176,6 +197,28 @@ function tools(bundle, options) {
     if (resolvedEdges === null) resolvedEdges = edgesIn(bundle);
     return resolvedEdges.filter((e) => e.source === item.slug);
   };
+  // AGSC-09-16: the three tools of 1.1 answer over the LISTED set (AGSC-00-05), the set
+  // a page sees, so the local server reads the same items, edges and facts the page does.
+  let listedSet = null;
+  const listed = () => {
+    if (listedSet !== null) return listedSet;
+    const items = (bundle.items || []).filter((i) => chunks.isPublished(Object.assign({}, i.frontmatter, { slug: i.slug }),
+      config.releases));
+    const bySlug = new Map(items.map((i) => [i.slug, i]));
+    const edges = links.resolve(items, { assets: bundle.assets, config: bundle.config }).edges || [];
+    listedSet = { bySlug, edges, items };
+    return listedSet;
+  };
+  const listedFacts = (items) => ({
+    base: baseIri(base),
+    host,
+    items: items.map((i) => ({ ...pageFlatItem(i), body: i.body })),
+    licenseProse: (config.bundle && config.bundle.license_prose) || terms(),
+  });
+  const kindOf = (item) => {
+    const fm = item.frontmatter || {};
+    return { kind: fm.kind, status: fm.status, type: item.type };
+  };
 
   implementations.search = (args) => {
     const query = typeof args.query === 'string' ? args.query : '';
@@ -189,15 +232,61 @@ function tools(bundle, options) {
       if (score > 0) hits.push({ iri: itemIri(base, item), score, slug: item.slug, title: (item.frontmatter || {}).title });
     });
     hits.sort((a, b) => b.score - a.score || (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
-    return envelope('search', 'items', Object.freeze({ hits: Object.freeze(hits.map(Object.freeze)) }));
+    // AGSC-09-13: at most 100 hits, and `total` beside them only above the bound.
+    const bounded = answers.toolBounded(hits.map(Object.freeze));
+    return envelope('search', 'items', Object.freeze({ ...bounded, hits: Object.freeze(bounded.hits) }));
   };
 
   implementations.read = (args) => {
     const item = byslug.get(args.slug);
     if (!item) return errorEnvelope('read', 'AGSC-E301', 'no item with that slug in this Bundle');
+    // AGSC-09-13: the citation records of the item's chunks, from the chunk lines the
+    // build published; a draft or a retired item has none.
+    const lines = chunkIndex.bySlug[item.slug] || [];
     return envelope('read', 'item', Object.freeze({
-      body: item.body, frontmatter: item.frontmatter, iri: itemIri(base, item), slug: item.slug,
+      body: item.body,
+      chunks: Object.freeze(lines.map((line) => Object.freeze(chunks.citationRecord(line, host.bundleVersion)))),
+      frontmatter: item.frontmatter,
+      iri: itemIri(base, item),
+      slug: item.slug,
     }));
+  };
+
+  implementations.brief = (args) => {
+    if (!Array.isArray(args.selection)) {
+      return errorEnvelope('brief', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
+    }
+    const facts = listedFacts(listed().items);
+    const core = { briefOf, compose, selectionDigestInput };
+    const body = answers.toolBrief(core, facts, args.selection, (text) => createHash('sha256').update(text, 'utf8').digest('hex'));
+    return envelope('brief', 'brief', body);
+  };
+
+  implementations.explain = (args) => {
+    if (!Object.prototype.hasOwnProperty.call(answers.toolPartners(), args.key)) {
+      return errorEnvelope('explain', 'AGSC-E203', 'key must be one of the fourteen Link keys or a computed inverse name (AGSC-03-01)');
+    }
+    const set = listed();
+    if (!set.bySlug.has(args.source) || !set.bySlug.has(args.target)) {
+      return errorEnvelope('explain', 'AGSC-E301', 'no item with that slug in this Bundle');
+    }
+    return envelope('explain', 'explanation', answers.toolExplanation(set.edges, args.key, args.source, args.target));
+  };
+
+  implementations.check = (args) => {
+    const set = listed();
+    if (args.selection !== undefined && !Array.isArray(args.selection)) {
+      return errorEnvelope('check', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
+    }
+    const selection = args.selection === undefined ? [...set.bySlug.keys()] : args.selection;
+    if (selection.some((slug) => !set.bySlug.has(slug))) {
+      return errorEnvelope('check', 'AGSC-E301', 'no item with that slug in this Bundle');
+    }
+    const checked = [...new Set(selection)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    const inside = new Set(checked);
+    const findings = answers.toolLinkWarnings(set.edges, (slug) => kindOf(set.bySlug.get(slug)))
+      .filter((f) => inside.has(f.slug));
+    return envelope('check', 'findings', { findings, selection: checked });
   };
 
   implementations.links = (args) => {
@@ -429,7 +518,14 @@ function tools(bundle, options) {
 }
 
 /** AGSC-05-04b: the tool arguments that name one item by slug, plus `selection[]`. */
-const SLUG_ARGUMENTS = Object.freeze(['about', 'cluster', 'slug']);
+const SLUG_ARGUMENTS = Object.freeze(['about', 'cluster', 'slug', 'source', 'target']);
+
+/**
+ * The routes of a build this server reads, as a page reads them: the board exports
+ * (AGSC-10-13), the discovery document (AGSC-06-08) and the chunk export with its shards
+ * (AGSC-06-26, AGSC-06-31).
+ */
+const READ_ROUTES = /^(?:\/boards\/|\/\.well-known\/knowledge-linkset$|\/chunks(?:-[0-9]{2,})?\.jsonl$)/u;
 
 /**
  * AGSC-05-04b: replace every `memory://` alias among the slug arguments by the slug
@@ -478,7 +574,10 @@ const utf8Length = (t) => new TextEncoder().encode(t).length;
  */
 const ARGUMENTS = Object.freeze({
   ask: Object.freeze(['question']),
+  brief: Object.freeze(['selection']),
+  check: Object.freeze(['selection']),
   compose: Object.freeze(['selection']),
+  explain: Object.freeze(['key', 'source', 'target']),
   links: Object.freeze(['iri', 'slug']),
   // `agent`, `model`, `operator` and `origin` are the caller's declared identity
   // (AGSC-09-14b, AGSC-08-28): the server honours them, so the manifest names them.
@@ -494,7 +593,10 @@ const ARGUMENT_TYPES = Object.freeze({ selection: 'array', sources: 'array', usa
 
 const REQUIRED_ARGUMENTS = Object.freeze({
   ask: Object.freeze(['question']),
+  brief: Object.freeze(['selection']),
+  check: Object.freeze([]),
   compose: Object.freeze(['selection']),
+  explain: Object.freeze(['key', 'source', 'target']),
   links: Object.freeze([]),
   propose: Object.freeze(['slug']),
   read: Object.freeze(['slug']),
@@ -505,7 +607,10 @@ const REQUIRED_ARGUMENTS = Object.freeze({
 const DESCRIPTIONS = Object.freeze({
   // `ask` assembles, it does not generate (AGSC-09-14a).
   ask: 'Return the descriptions of the best-matching items for a question, citing their item IRIs; no model is called.',
+  brief: 'Return the composition brief of a selection of item slugs (why each member is there, the order, the gaps, the checklist); writes nothing.',
+  check: 'Return the Link warnings about a selection of item slugs (every listed item when omitted).',
   compose: 'Run the AGSC-07 closure algebra over a selection of item slugs.',
+  explain: 'Say whether a typed Link holds between two items and why: authored, or the steps of the reading.',
   links: 'Return the typed Links authored on one item.',
   propose: 'Return the Proposal payload for one item — with task_state, a prepared board move (claim, progress, finish) as a patch; performs no write.',
   read: 'Return one item by slug.',

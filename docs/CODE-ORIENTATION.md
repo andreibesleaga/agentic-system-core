@@ -59,8 +59,8 @@ implements.
 | 16 | `src/composition/harness.js` | writes the seven Harness files for a valid selection |
 | 17 | `src/distribution/site.js` | the build: every route of the route set, `build`, `write`, `verify` |
 | 18 | `src/distribution/discovery.js` | writes and checks the discovery document with its digests |
-| 19 | `src/distribution/mcp-tools.js` | the seven tools, one implementation for both transports |
-| 20 | `src/distribution/page-tools.js` | the same seven tools as a script the built page runs |
+| 19 | `src/distribution/mcp-tools.js` | the ten tools, one implementation for both transports |
+| 20 | `src/distribution/page-tools.js` | the same ten tools as a script the built page runs; what 1.1 adds is in `tool-answers.js`, which both call |
 | 21 | `src/application/conformance.js` | runs the vectors; shared by `agsc conform` and the test suite |
 | 22 | `src/application/plugins.js` | the plugin contract: one registry per kind, the capability check |
 
@@ -92,7 +92,7 @@ verifies (`distribution/ci.js`).
 | Change a machine file's bytes | the rule, and the vector that pins the bytes | the emitter in `src/knowledge/` or `src/distribution/`; a released vector is never edited, except the specification-version string it carries, which AGSC-00-16 lets a release update in place — otherwise a specification pass withdraws and replaces it |
 | Add an import or export format | AGSC-01-22, AGSC-01-26a, [PLUGINS.md](PLUGINS.md) | write a memory-adapter plugin (`examples/plugins/memory-adapter.js`); built-in adapters live in `src/interchange/adapters/` |
 | Put a node on a new kind of host | [CONNECTORS.md](CONNECTORS.md#where-a-node-can-live) | a deployment-profile plugin (`examples/hosts/header-rules.js`); built-ins in `src/distribution/hosts/` |
-| Change a tool of the tool surface | AGSC-09-13, AGSC-09-16 | `src/distribution/mcp-tools.js`; the page gets the same code through `page-tools.js`, and vector `cli-0003` compares the two |
+| Change a tool of the tool surface | AGSC-09-13, AGSC-09-16 | `src/distribution/mcp-tools.js`; the page gets the same code through `page-tools.js` (and `tool-answers.js`), and vector `cli-0026` compares the two |
 | Add a verb flag | AGSC-09-09 (the flags are a closed list) | `src/application/cli/main.js` and the verb's module |
 | Change a rule | [CONTRIBUTING.md](../CONTRIBUTING.md) | a specification pass: dated amendment note, the vector withdrawn and replaced, `node tools/validate-spec` and `node tools/count-artifacts` |
 | Port the engine to another language | [IMPLEMENTERS-GUIDE.md](IMPLEMENTERS-GUIDE.md) | you need `spec/`, `schema/`, `ontology/` and `tests/vectors/`, not `src/` |

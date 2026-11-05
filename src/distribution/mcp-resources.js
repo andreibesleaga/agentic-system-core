@@ -1,13 +1,13 @@
 'use strict';
 /**
  * CONTEXT Distribution (Emission) — Surface: the MCP primitives BESIDE the
- * seven tools.
+ * ten tools.
  *
  * AGSC-09-14b, last-but-one sentence: "The server MUST also expose every item
  * as an MCP resource (`text/markdown`), `graph.jsonld` and `llms.txt`, and one
  * prompt 'answer from this memory with citations'." AGSC-09-13's "exactly
- * seven" governs TOOLS; resources and prompts are different MCP primitives, so
- * the two rules do not collide — the tool list stays at seven and nothing here
+ * ten" governs TOOLS; resources and prompts are different MCP primitives, so
+ * the two rules do not collide — the tool list stays at ten and nothing here
  * is callable as a tool.
  *
  * WHERE THE BYTES COME FROM. A resource here is never re-rendered: it is a

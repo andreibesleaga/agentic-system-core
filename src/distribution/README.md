@@ -1,6 +1,6 @@
 # `src/distribution/` — Distribution (Emission) — everything a node serves
 
-**Summary.** This folder is the build. It writes every route of the route set: the HTML pages and their theme, the discovery document, the response headers, the agent-facing text files, the search index and the `/search/` page that searches it, the NOW page, the `/compose/` page, the `/query/` page with the query engine it ships, the seven tools over MCP and as page tools, and the files each hosting profile needs. It also holds the two use cases that drive a build, `init` and `ci`. It reads results from the other contexts and adds nothing to their meaning.
+**Summary.** This folder is the build. It writes every route of the route set: the HTML pages and their theme, the discovery document, the response headers, the agent-facing text files, the search index and the `/search/` page that searches it, the NOW page, the `/compose/` page, the `/query/` page with the query engine it ships, the ten tools over MCP and as page tools, and the files each hosting profile needs. It also holds the two use cases that drive a build, `init` and `ci`. It reads results from the other contexts and adds nothing to their meaning.
 
 **Read after:** [the module guide](../README.md). **Specification:** `spec/06` (surfaces), `spec/09` §9.3 (the command line), `spec/10` §10.5 (hosting).
 **May depend on:** `knowledge/`, `governance/`, `composition/`, `boundary/`, `ports/` (types only), `shared/` — enforced by `tests/arch/context-boundaries.test.js`.
@@ -31,9 +31,10 @@
 | `compose-page.js` | the `/compose/` page |
 | `forge.js` | `dist/forge/`: files a forge needs |
 | `mcp-stdio.js` | the local MCP server over stdio (official SDK) |
-| `mcp-tools.js` | the seven tools |
+| `mcp-tools.js` | the ten tools |
 | `mcp-resources.js` | the MCP resources and prompts beside the tools |
-| `page-tools.js` | the seven tools as page tools in a built site |
+| `page-tools.js` | the ten tools as page tools in a built site |
+| `tool-answers.js` | what 1.1 adds to the tools (the bound, the citation records, `brief`, `explain`, `check`), portable: the local server calls it and the page-tool script carries its source |
 | `webmcp.js` | the browser transport for page tools |
 | `init.js` | the `init` use case |
 | `ci.js` | the `ci` use case: lint, build twice, compare, verify |

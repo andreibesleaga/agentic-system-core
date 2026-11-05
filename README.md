@@ -55,7 +55,7 @@ claim. Other systems have some of these properties; the dated comparison is in
 | No server | a file format and static files; no protocol, server, database or reasoner is defined | [AGSC-00-02](spec/00-overview.md) |
 
 Beside that combination, and each available elsewhere on its own: **six modes** of use
-([docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md)); **seven tools on every item page and on `/compose/`** for a
+([docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md)); **ten tools on every item page and on `/compose/`** for a
 browser's own agent, identical to the local tool server ([AGSC-09-16](spec/09-conformance.md));
 **eight plugin kinds** with a forward-compatibility promise ([docs/PLUGINS.md](docs/PLUGINS.md),
 [AGSC-00-24](spec/00-overview.md)); a **content version** stamped on every surface
@@ -66,7 +66,7 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
 
 **For agents**
 
-- **Memory for one agent.** `agsc mcp` in a Bundle gives an assistant seven tools to
+- **Memory for one agent.** `agsc mcp` in a Bundle gives an assistant ten tools to
   search, read, follow links and cite items by address; nothing leaves the machine
   ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l1--the-assistant-that-answers-from-one-folder)).
 - **Shared memory for many agents.** Every agent reads the same published files and
@@ -143,7 +143,7 @@ or in Claude Code `claude plugin marketplace add andreibesleaga/agentic-system-c
 | Reader | What you get today | Try it |
 |---|---|---|
 | A person with a folder of notes | a static site of your notes with search, each page also as Markdown, a graph file and text files for assistants; no model, no server | the quick start above; the [Mode 0 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-0.md) |
-| A developer | a local tool server: seven tools over your folder for an assistant; nothing leaves the machine | `agsc mcp`, set up as in [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md); the [Mode 1 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-1.md) |
+| A developer | a local tool server: ten tools over your folder for an assistant; nothing leaves the machine | `agsc mcp`, set up as in [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md); the [Mode 1 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-1.md) |
 | A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | the [Mode 2 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-2.md); `agsc ci`, `agsc export --steer` |
 | A team that keeps its procedures as skills | each procedure as an installable skill pack, checked against a lockfile and holding no scripts; skills collections and rule folders imported as procedures, and the packs exported back for five tools | the [Mode 3 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-3.md); `agsc skills install .claude/skills`; `agsc import --from skills --list <clone>` |
 | An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | the [Mode 4 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-4.md); `agsc compose <slug>… --zip`, or the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |

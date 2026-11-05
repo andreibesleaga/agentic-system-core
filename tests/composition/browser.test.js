@@ -148,7 +148,7 @@ test('AGSC-07-13: the brief is byte-identical in both hosts over generated selec
   }), { numRuns: 100, seed: 20261105 });
 });
 
-test('the published bundle carries the brief only when asked: the /compose/ script keeps its bytes', () => {
+test('the bundle carries the brief only when asked, which the published /compose/ script does', () => {
   const plain = browser.bundle({ specVersion: '1.0.0' });
   assert.ok(!plain.includes('function briefFiles('), 'the default bundle carries the brief');
   assert.ok(browser.bundle({ brief: true, specVersion: '1.0.0' }).includes('function briefFiles('));

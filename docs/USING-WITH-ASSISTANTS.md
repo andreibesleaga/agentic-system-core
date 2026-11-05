@@ -29,18 +29,25 @@ explains the whole of that, in order, and ends with the setup for five assistant
 
 ## 2. What the assistant can do
 
-Seven tools, and no more (specification rule AGSC-09-13 — the rule ids are here only so
-you can look them up; you never need them to use this):
+Ten tools, and no more (specification rule AGSC-09-13 — the rule ids are here only so
+you can look them up; you never need them to use this). They are listed to the assistant
+in alphabetical order:
 
 | Tool | What it does |
 |---|---|
-| `search` | finds items in this memory that match some words |
-| `read` | returns one item: its frontmatter and its text |
+| `search` | finds items in this memory that match some words: at most 100, best first; when more match, the answer also says how many (`total`) |
+| `read` | returns one item: its frontmatter, its text, and one citation record per chunk of the published node (the chunk's `id`, its SHA-256 `digest`, the content version), so the assistant can cite a passage and check it before using it |
 | `links` | returns the typed links authored on one item |
 | `compose` | takes a selection of items and reports whether they fit together |
 | `ask` | returns the descriptions of the items that best match a question, with their addresses as citations — **from this memory only**; no model is called |
 | `propose` | returns the prepared text of a change to one existing item |
 | `remember` | turns something you told it into a new, well-formed item — as text |
+| `brief` | explains a selection: why each item is in it, the order to adopt them, what is missing, what to do next — the content of `brief.json` of `agsc compose --brief`, without writing a file |
+| `explain` | says whether one typed link holds between two items and why: written by the author, or the steps that make it hold (an inverse, a chain) |
+| `check` | lists the link warnings about a selection of items, or about every item when no selection is given: an item that links to itself, two links that cannot both hold, a target of the wrong kind, a superseded item still `stable` |
+
+`brief`, `explain` and `check` read the items the node publishes (no draft, no retired
+item), as the page tools do; the other tools read the whole folder, drafts included.
 
 Beside the tools it offers:
 
@@ -272,7 +279,7 @@ macOS and `%APPDATA%\Claude\logs` on Windows.
 
 ## 7. The same tools without any installation
 
-A published node registers the **same seven tools in the browser**, on its `/compose/`
+A published node registers the **same ten tools in the browser**, on its `/compose/`
 page and on every item page, wherever the browser exposes them. Nothing is installed and
 no server runs: the page reads the node's own published files. There too, `propose` and
 `remember` only ever hand back text — a web page holds no repository identity and cannot
@@ -280,8 +287,8 @@ write on your behalf.
 
 ---
 
-*Specification rules behind this page: AGSC-09-13 and AGSC-09-13a (the seven tools, the
-error shape, no stray output), AGSC-09-14a and AGSC-09-14b (`ask`, `remember`, the
+*Specification rules behind this page: AGSC-09-13 and AGSC-09-13a (the ten tools, the
+bound on `search` and `ask`, the citation records of `read`, the error shape, no stray output), AGSC-09-14a and AGSC-09-14b (`ask`, `remember`, the
 resources and the prompt), AGSC-09-16 (the same tools in a browser), AGSC-08-04 and
 AGSC-08-18 (human-gated writes, untrusted results), AGSC-11-18 (the security floor a
 surface inherits). The normative text is in `spec/`; where this page and a rule disagree,

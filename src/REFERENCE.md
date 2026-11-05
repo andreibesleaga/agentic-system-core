@@ -707,6 +707,7 @@ serialize(records, canonicalize) -> string        // one JCS line per chunk, one
 files(records, canonicalize, { itemsPerShard }) -> { files: [{path, text}], manifest }
 sections(body); splitBySize(text, maxBytes); cutPoints(body)
 chunkId(iri, section, ordinal); digestOf(text); citationAnchor(id)
+citationRecord(line, bundleVersion) -> the citation record of AGSC-09-13 that the tool `read` carries
 itemIri(base, item); linksOf(item); isPublished(item, releases); byteLength(s)
 
 // governance/ledger.js
@@ -878,11 +879,12 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-stdio.js`,
 | `boundary/surfaces.js` | Boundary | AGSC-11-16…11-19, AGSC-11-21, AGSC-10-14 — declaration, pinning, the floor in each surface's vocabulary, and the ONE place a foreign protocol version is named |
 | `boundary/visibility.js` | Boundary | AGSC-11-01…11-05, AGSC-11-20, AGSC-11-22 — parameters, reserved values, CORS, ETag/`no-cache`, the profile carriers, retirement |
 | `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-11-24, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones, and the context maps between nodes (a typed peer's relationship and crosswalk, checked before any fetch, applied by the client only) |
-| `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the seven tools and the one envelope |
+| `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief`, `explain`, `check` over the listed set |
 | `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 over stdio JSON-RPC, AGSC-11-18's MCP half; the wiring of AGSC-09-14b's resources and prompt |
 | `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering |
 | `distribution/webmcp.js` | Distribution | AGSC-09-16 — the browser registration script, feature-detected, write tools local-only |
-| `distribution/page-tools.js` | Distribution | AGSC-09-16's browser half — the SAME seven tools over the published routes, emitted as source text per AGSC-07-13 |
+| `distribution/page-tools.js` | Distribution | AGSC-09-16's browser half — the SAME ten tools over the published routes, emitted as source text per AGSC-07-13 |
+| `distribution/tool-answers.js` | Distribution | AGSC-09-13 and AGSC-09-16 for what 1.1 adds to the tools — the bound, the citation records from the published chunk lines, `explain` over the readings of AGSC-05-33, `check` over the Link warnings of AGSC-03-23…03-26, `brief` over AGSC-07-25 — PORTABLE: the local server calls it and the page-tool script carries its source text |
 
 ### Public API of these modules
 
@@ -936,19 +938,23 @@ peerFaults(entry, {read, where, base, contexts, items, terms}) -> { findings, st
 contextMapResults({peer, results, statements}) -> results with relationship, crosswalk[{match, local}], trust "untrusted"
 RELATIONSHIPS; CROSSWALK_MATCHES
 // distribution/mcp-tools.js
-tools(bundle, {config}) -> { call(name, args) -> envelope, manifest() }
+tools(bundle, {config, artifacts}) -> { call(name, args) -> envelope, manifest() }   // artifacts: the build's route map
 manifest(); tokenize(text); envelope(source, type, body); errorEnvelope(source, code, message)
 // distribution/mcp-stdio.js
 createServer(bundle, options) -> { resources, server, toolset };  serve(ctx) -> Promise<void>
-// distribution/mcp-resources.js — AGSC-09-14b beside the seven tools
+// distribution/mcp-resources.js — AGSC-09-14b beside the ten tools
 catalogue(bundle, {artifacts, config}) -> { list(), read(uri), prompts(), prompt(name, args) }
 memoryUri(bundleId, name); promptText(question); PROMPT_NAME; PROMPT_TITLE; ARTEFACTS
 // distribution/webmcp.js
 script({manifest}) -> the page script;  LOCAL_ONLY_TOOLS
 // distribution/page-tools.js — the page half of AGSC-09-16
-bundle({bundleId, specVersion}) -> the page-tool script;  PORTABLE
-pageCorpus(sources, {bundleId}) -> { base, bundleId, bySlug, index, items }
-pageToolset(corpus, core) -> { call(name, args) -> envelope }   // core = AGSC_CORE
+bundle({bundleId, licenseProse, specVersion}) -> the page-tool script;  PORTABLE
+pageCorpus(sources, {bundleId, licenseProse}) -> { base, bundleId, bySlug, chunks, claimed, host, index, items, licenseProse }
+pageToolset(corpus, core, hash?) -> { call(name, args) -> envelope }   // core = AGSC_CORE; `brief` -> a promise with the page's Web Crypto
+// distribution/tool-answers.js — the portable answers of the tools of 1.1
+toolBounded(hits) -> {hits, total?}; toolHost(map) -> {bundleVersion, instant, specVersion}
+toolChunkIndex(map) -> {bySlug, incomplete, missing}; toolCitationRecord(line, bundleVersion)
+toolExplanation(edges, key, source, target); toolLinkWarnings(edges, itemOf); toolBrief(core, facts, selection, hash)
 pageSplitFrontmatter(text); pageParseFrontmatter(yamlText); pageApplyTypes(value, key)
 pageEdges(items); pageAnchors(body); pageInlineTargets(body); pageTokenize(text)
 // application/bundle.js — `ports` is the port bag {fs, clock, proc, network}
@@ -1010,7 +1016,7 @@ application layer, the only layer that orchestrates across contexts:
 
 ---
 
-## 11. The sixteen verbs, the seven tools, and what this engine claims
+## 11. The sixteen verbs, the ten tools, and what this engine claims
 
 **Summary.** Which module answers each verb and each tool, what the engine does NOT
 do and says so, and what it claims. Where this section and an earlier one differ,
@@ -1066,10 +1072,11 @@ built node.
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `verbs/conform.js` → `application/conformance.js`, `composition/conform.js` | wired |
 
 **Tool → module, and the two transports it is served over** (AGSC-09-13, AGSC-09-16).
-The seven tools are not verbs: they are a surface, served over the stdio MCP server
+The ten tools are not verbs: they are a surface, served over the stdio MCP server
 that `agsc mcp` runs and over the page tools a built site registers with the browser.
 The two answer identically for the same input and the same published Bundle, and
-`cli-0003` compares them call by call against the EMITTED page.
+`cli-0026` (the successor of `cli-0003`) compares them call by call against the EMITTED
+page; `tests/distribution/tool-parity.test.js` does the same over the real `agsc mcp` process.
 
 | Tool | Rule | Local server (`agsc mcp`) | Page tool (a built site) | Hints (AGSC-11-18) |
 |---|---|---|---|---|
@@ -1080,6 +1087,9 @@ The two answer identically for the same input and the same published Bundle, and
 | `ask` | AGSC-09-14a | `mcp-tools.js` | `page-tools.js` — search plus the cited items' own descriptions, **no model** | read-only, untrusted output |
 | `propose` | AGSC-08-04, AGSC-11-14 | `mcp-tools.js`; the caller MAY write `dist/proposal/<n>.{patch,md}` | `page-tools.js` — the payload is returned and **nothing is written** | consequential, untrusted output |
 | `remember` | AGSC-09-14b | `mcp-tools.js` | `page-tools.js` — the payload is returned and **nothing is written** | consequential, untrusted output |
+| `brief` | AGSC-09-13, AGSC-07-25 | `mcp-tools.js` → `tool-answers.js#toolBrief` → `composition/brief.js`, over the listed set | `page-tools.js` → the same functions, from `agsc-core.js`; the selection digest through Web Crypto, so the answer is a promise | read-only, untrusted output |
+| `explain` | AGSC-09-13, AGSC-05-33 | `mcp-tools.js` → `tool-answers.js#toolExplanation`, over the edges of `knowledge/links.js` of the listed set | `page-tools.js` → the same function, over `pageEdges` | read-only |
+| `check` | AGSC-09-13, AGSC-03-23…03-26 | `mcp-tools.js` → `tool-answers.js#toolLinkWarnings`, over the same edges | `page-tools.js` → the same function | read-only |
 
 
 A form of a known verb that this distribution does not offer — `refresh --agent`

@@ -1,5 +1,5 @@
 'use strict';
-// src/application/cli/verbs/mcp.js — `mcp` (AGSC-09-07, AGSC-09-13): the seven
+// src/application/cli/verbs/mcp.js — `mcp` (AGSC-09-07, AGSC-09-13): the ten
 // tools over stdio JSON-RPC. A STREAMING verb: stdout carries protocol frames
 // and nothing else, which `application/cli/main.js` guarantees by printing no
 // diagnostic line and no envelope for it.
@@ -15,9 +15,13 @@
 // only way the two can be the same bytes by construction rather than by two
 // renderings agreeing; and it keeps Distribution free of file reads.
 //
-// A build that fails must never stop the tool server: the seven tools read the
-// loaded Bundle and need no artefact. In that case the resource list is empty
-// and no byte is invented.
+// The same route map gives the tools what a page reads (AGSC-09-16): the discovery
+// document (the build instant and content version of `brief` and of the citation records
+// of `read`) and the chunk lines `read` cites (AGSC-09-13).
+//
+// A build that fails must never stop the tool server: the tools read the loaded
+// Bundle. In that case the resource list is empty, `read` carries no chunk and no
+// byte is invented.
 
 const site = require('../../../distribution/site.js');
 const stdio = require('../../../distribution/mcp-stdio.js');

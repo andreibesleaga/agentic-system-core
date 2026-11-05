@@ -62,9 +62,10 @@ test('the loader reports a malformed content/index.md with its registered code',
   assert.strictEqual(bundle.root, '');
 });
 
-test('AGSC-09-13: exactly seven tools, with their argument names', () => {
+test('AGSC-09-13: exactly ten tools, in code-point order, with their argument names', () => {
   const list = manifest().tools;
-  assert.deepStrictEqual(list.map((t) => t.name), ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+  assert.deepStrictEqual(list.map((t) => t.name),
+    ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
   for (const tool of list) {
     assert.deepStrictEqual(Object.keys(tool.inputSchema.properties), [...ARGUMENTS[tool.name]]);
     assert.deepStrictEqual(tool.inputSchema.required, REQUIRED_ARGUMENTS[tool.name]);
@@ -75,7 +76,9 @@ test('AGSC-09-13: exactly seven tools, with their argument names', () => {
 test('AGSC-08-18: every result carries source, trust, license, type and body', () => {
   const toolset = tools(fixture(), {});
   for (const name of manifest().tools.map((t) => t.name)) {
-    const result = toolset.call(name, { question: 'x', query: 'x', selection: [], slug: 'handoff', title: 'T' });
+    const result = toolset.call(name, {
+      key: 'uses', question: 'x', query: 'x', selection: [], slug: 'handoff', source: 'handoff', target: 'handoff', title: 'T',
+    });
     // AGSC-09-14a (cli-0007): `ask` — and only `ask`
     // adds EXACTLY ONE top-level member, `citations[]`, to the AGSC-08-18 envelope.
     assert.deepStrictEqual(Object.keys(result),

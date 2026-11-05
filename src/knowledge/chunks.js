@@ -4,7 +4,8 @@
 // AGSC-06-28 (the identifier), AGSC-06-29 (the record shape and the line order),
 // AGSC-06-30 (exclusions, clusters and attachments) and AGSC-06-31 (the shards and
 // the manifest). The anchors of AGSC-03-13 are computed here for the `section`
-// member that AGSC-06-28 names.
+// member that AGSC-06-28 names, and the citation record of a chunk that the tool `read`
+// carries (AGSC-09-13) is stated here.
 //
 // The chunk export is Knowledge, not Distribution (spec/06 §6.5): what a chunk IS
 // — where it is cut, what it carries, what its identifier is — is a property of the
@@ -285,6 +286,37 @@ function record(fields) {
 }
 
 /**
+ * AGSC-09-13, the citation record of one chunk: what a client needs to cite the chunk and
+ * to check its text before it hands it to a model (AGSC-06-44). Exactly `algorithm`
+ * (`sha-256`), `bundle_version` (the content version of AGSC-04-25), `coverage` (`text`:
+ * `digest` covers the UTF-8 bytes of `text`, AGSC-06-29), `digest`, `id`, `iri`, `item`,
+ * `license`, `license_url` (only where the line has one), `ordinal`, `section` and `terms`,
+ * each with the value of the chunk line; the time a client retrieved it is the client's to add.
+ * The page tools carry the same function as `distribution/tool-answers.js#toolCitationRecord`.
+ *
+ * @param {object} line a record of `records()`, or a parsed line of `/chunks.jsonl`.
+ * @param {string} bundleVersion
+ * @returns {object}
+ */
+function citationRecord(line, bundleVersion) {
+  const out = {
+    algorithm: 'sha-256',
+    bundle_version: bundleVersion,
+    coverage: 'text',
+    digest: line.digest,
+    id: line.id,
+    iri: line.iri,
+    item: line.item,
+    license: line.license,
+  };
+  if (line.license_url !== undefined) out.license_url = line.license_url;
+  out.ordinal = line.ordinal;
+  out.section = line.section;
+  out.terms = line.terms;
+  return out;
+}
+
+/**
  * Every chunk of a Bundle, ordered by item slug (code point), then `section`
  * (code point), then `ordinal` ascending NUMERICALLY (AGSC-06-29).
  *
@@ -434,6 +466,7 @@ module.exports = {
   chunkId,
   digestOf,
   citationAnchor,
+  citationRecord,
   itemIri,
   linksOf,
   isPublished,

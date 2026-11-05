@@ -13,7 +13,7 @@
 // `os.tmpdir()` and removed afterwards. The child's environment carries only
 // `PATH`, `NO_COLOR` and the fixed epoch.
 //
-// Rules: AGSC-09-13 (seven tools, stdout protocol-only, exit on EOF),
+// Rules: AGSC-09-13 (ten tools, stdout protocol-only, exit on EOF),
 // AGSC-09-13a (the domain-fault envelope, never a transport error),
 // AGSC-09-14a/14b (`ask`, `remember`, the resources and the prompt),
 // AGSC-09-16 (one tool contract, two transports), AGSC-08-18 (`trust:
@@ -39,7 +39,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const MINIMAL = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 /** 2026-01-01T00:00:00Z — the fixed instant every test in this repository uses. */
 const EPOCH = '1767225600';
-const TOOL_NAMES = ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search'];
+const TOOL_NAMES = ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search'];
 
 const temporaries = [];
 test.after(() => {
@@ -124,7 +124,7 @@ function transportVersion(client) {
 
 /* --------------------------------------- 2. tools/list, and the page tools */
 
-test('AGSC-09-13/09-16: the client is offered exactly seven tools, and the page registers the same manifest', async () => {
+test('AGSC-09-13/09-16: the client is offered exactly ten tools, and the page registers the same manifest', async () => {
   const { client } = await connect(MINIMAL);
   let listed;
   try {
@@ -133,7 +133,9 @@ test('AGSC-09-13/09-16: the client is offered exactly seven tools, and the page 
     await client.close();
   }
   assert.deepStrictEqual(listed.tools.map((t) => t.name).sort(), [...TOOL_NAMES].sort());
-  assert.strictEqual(listed.tools.length, 7);
+  assert.strictEqual(listed.tools.length, 10);
+  // AGSC-09-13: the list is ordered by name in code-point order.
+  assert.deepStrictEqual(listed.tools.map((t) => t.name), TOOL_NAMES);
 
   // The same manifest object the browser transport registers (AGSC-09-16). The
   // page is the one the BUILD emits, run in an isolated `node:vm` with every
@@ -193,14 +195,14 @@ function pageTools() {
     vm.runInContext(sources[`/compose/${name}`], context, { filename: name });
   }
   const api = sandbox.AGSC_PAGE_TOOLS;
-  sandbox.AGSC_TOOLS = api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), sandbox.AGSC_CORE);
+  sandbox.AGSC_TOOLS = api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse: api.LICENSE_PROSE }), sandbox.AGSC_CORE);
   vm.runInContext(sources['/compose/webmcp.js'], context, { filename: 'webmcp.js' });
   return registered;
 }
 
-/* ------------------------------------------- 3. tools/call, all seven tools */
+/* --------------------------------------------- 3. tools/call, all ten tools */
 
-test('AGSC-09-13: a real client can call every one of the seven tools and gets the AGSC-08-18 envelope', async () => {
+test('AGSC-09-13: a real client can call every one of the ten tools and gets the AGSC-08-18 envelope', async () => {
   const { client, stderrText } = await connect(MINIMAL);
   try {
     const call = (name, args) => client.callTool({ arguments: args, name });
@@ -246,8 +248,21 @@ test('AGSC-09-13: a real client can call every one of the seven tools and gets t
     assert.strictEqual(remember.type, 'proposal');
     assert.strictEqual(remember.body.path, 'content/concepts/second-pair-of-eyes.md');
 
+    // AGSC-09-13, the three tools of 1.1: they write nothing and answer over the listed set.
+    const brief = envelopeOf(await call('brief', { selection: ['supervisor'] }));
+    assert.strictEqual(brief.type, 'brief');
+    assert.deepStrictEqual(brief.body.selection, ['supervisor']);
+    assert.match(brief.body.selection_digest, /^[0-9a-f]{64}$/u);
+    const explain = envelopeOf(await call('explain', { key: 'uses', source: 'supervisor', target: 'handoff' }));
+    assert.deepStrictEqual(explain.body, {
+      because: [{ from: [['supervisor', 'uses', 'handoff']], rule: 'authored' }], holds: true, key: 'uses', source: 'supervisor', target: 'handoff',
+    });
+    const check = envelopeOf(await call('check', {}));
+    assert.strictEqual(check.type, 'findings');
+    assert.deepStrictEqual(check.body.selection, ['agent-patterns', 'handoff', 'supervisor']);
+
     // AGSC-08-18: every one of them is untrusted and carries the terms.
-    for (const envelope of [search, read, links, compose, ask, propose, remember]) {
+    for (const envelope of [search, read, links, compose, ask, propose, remember, brief, explain, check]) {
       assert.strictEqual(envelope.trust, 'untrusted');
       assert.strictEqual(envelope.license, 'LicenseRef-AgenticSystemCore-Content-Use-1.0');
     }
@@ -294,7 +309,7 @@ test('a PROTOCOL fault is a JSON-RPC error: an unknown method is -32601', async 
     );
     // The connection survives it: the client keeps working afterwards.
     const still = await client.listTools();
-    assert.strictEqual(still.tools.length, 7);
+    assert.strictEqual(still.tools.length, 10);
   } finally {
     await client.close();
   }
@@ -447,7 +462,7 @@ test('two calls in flight at once both come back, to the right request', async (
     assert.strictEqual(envelopeOf(many[1]).body.code, 'AGSC-E301');
     assert.strictEqual(envelopeOf(many[2]).type, 'verdict');
     assert.strictEqual(many[3].resources.length, 5);
-    assert.strictEqual(many[4].tools.length, 7);
+    assert.strictEqual(many[4].tools.length, 10);
   } finally {
     await client.close();
   }
@@ -479,12 +494,12 @@ test('AGSC-08-18/N9: a hostile item title comes back as untrusted DATA, not as i
 
     // measured here rather than assumed: of AGSC-11-18's floor
     // vocabulary, an MCP client receives `readOnlyHint` and nothing else. The
-    // five reading tools are read-only; the two human-gated writing tools are
+    // eight reading tools are read-only; the two human-gated writing tools are
     // not. `untrustedContentHint` and `consequentialHint` are WebMCP's words and
     // the official SDK's `ToolAnnotations` parser drops them, so on this
     // transport the untrusted mark travels in the ENVELOPE, as asserted above.
     const listed = await client.listTools();
-    for (const name of ['ask', 'compose', 'links', 'read', 'search']) {
+    for (const name of ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'read', 'search']) {
       assert.strictEqual(listed.tools.find((t) => t.name === name).annotations.readOnlyHint, true, name);
     }
     for (const name of ['propose', 'remember']) {

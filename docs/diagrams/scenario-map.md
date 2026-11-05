@@ -44,7 +44,7 @@ flowchart LR
 
   subgraph SURFACES["Surfaces touched"]
     SITE["Static site (HTTPS www/)"]
-    MCP["Local stdio MCP (7 tools)"]
+    MCP["Local stdio MCP (10 tools)"]
     CLI["agsc CLI (npx)"]
     PR["GitHub PR / fork-edit"]
     FILES["spec/ + tests/vectors/ (files only)"]

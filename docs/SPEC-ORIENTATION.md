@@ -80,7 +80,7 @@ member is a change to the specification, never a local extension.
 | the three machine-readable licence dialects | AGSC-06-18 |
 | the seven kinds of file of a Harness | AGSC-07-12 |
 | the sixteen verbs of the command line | AGSC-09-07 |
-| the seven tools of the tool surface | AGSC-09-13 |
+| the ten tools of the tool surface | AGSC-09-13 |
 | the error-code registry, `AGSC-E<nnn>`; codes are permanent | `spec/09-conformance.md` §9.4, AGSC-09-15 |
 | the vector areas | AGSC-09-04 |
 | the eight plugin kinds | AGSC-00-24 |

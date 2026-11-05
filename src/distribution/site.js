@@ -1807,10 +1807,9 @@ function buildSite(bundle, ports, options, findings) {
     // three scripts are same-origin assets of this one route, because AGSC-06-17's
     // `script-src 'self'` admits no inline script.
     put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, { ...pageOptions, route: '/compose/' }));
-    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ specVersion })));
-    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({
-      bundleId: (config.bundle || {}).id, specVersion,
-    })));
+    // AGSC-09-13: the page tool `brief` runs the brief (AGSC-07-25) and states the prose licence.
+    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ brief: true, specVersion })));
+    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({ bundleId: (config.bundle || {}).id, licenseProse, specVersion })));
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
     // AGSC-06-39: the query page, its scripts and stylesheet, and the engine's files byte for byte (query-page.js).

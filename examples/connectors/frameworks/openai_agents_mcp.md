@@ -7,8 +7,9 @@ any built-in export/interchange formats or data provenance tracking mechanisms"
 is **not** a session adapter. Use one of two routes:
 
 - **Live tools.** Run the node's MCP server over stdio — `agsc mcp` in the Bundle
-  directory — and attach it to the agent as an MCP server. It serves seven tools
-  (`search`, `read`, `links`, `compose`, `propose`, `ask`, `remember`); `propose` and
+  directory — and attach it to the agent as an MCP server. It serves ten tools
+  (`search`, `read`, `links`, `compose`, `propose`, `ask`, `remember`, `brief`, `explain`,
+  `check`); `propose` and
   `remember` return text and never save it. The SDK's own MCP class names are not
   quoted here because this package did not re-read that page; take them from the
   SDK's MCP documentation.

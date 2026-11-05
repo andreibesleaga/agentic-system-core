@@ -1,7 +1,7 @@
 'use strict';
 /**
  * CONTEXT Distribution (Emission) — Surface: MCP over stdio.
- * Implements AGSC-09-13: the seven tools of `distribution/mcp-tools.js` over
+ * Implements AGSC-09-13: the ten tools of `distribution/mcp-tools.js` over
  * stdio JSON-RPC, no non-protocol byte on stdout, logging to stderr only,
  * exiting on stdin EOF; AGSC-09-13a: a tool that cannot fulfil a call returns
  * the AGSC-08-18 envelope with `type: "error"`, never a JSON-RPC transport
@@ -57,7 +57,7 @@ function resourceNotFound(uri) {
  * carried as the single `structuredContent` member plus its JSON text, so a
  * client that reads either sees the same bytes.
  *
- * Beside the seven tools it wires AGSC-09-14b's other two MCP primitives — the
+ * Beside the ten tools it wires AGSC-09-14b's other two MCP primitives — the
  * items, `graph.jsonld` and `llms.txt` as read-only resources, and the one
  * prompt — from `distribution/mcp-resources.js`. `options.artifacts` is the
  * route map of a build, supplied by the application layer; without one the
@@ -91,7 +91,9 @@ function createServer(bundle, options) {
   server.setRequestHandler(ListToolsRequestSchema, async () => toolset.manifest());
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const envelope = toolset.call(request.params.name, request.params.arguments || {});
+    // `await`: one tool contract with the page, whose `brief` answers a promise (its
+    // hasher is Web Crypto); this server's answers are values, and `await` leaves them so.
+    const envelope = await toolset.call(request.params.name, request.params.arguments || {});
     // AGSC-09-13a: a domain fault is an envelope with type "error", NOT a
     // JSON-RPC error and NOT `isError` — `isError` is MCP's own execution
     // flag and would hide the registered AGSC code from a conforming client.

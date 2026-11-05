@@ -33,7 +33,7 @@ function evaluate(set, options) {
   return { networkCalls, registered, state: sandbox.AGSC_WEBMCP };
 }
 
-test('AGSC-09-16: the seven tools register with identical names and argument names', () => {
+test('AGSC-09-16: the ten tools register with identical names and argument names', () => {
   const set = toolset();
   const page = evaluate(set);
   assert.deepStrictEqual(page.registered.map((t) => t.name), set.manifest().tools.map((t) => t.name));
@@ -44,7 +44,7 @@ test('AGSC-09-16: the seven tools register with identical names and argument nam
     assert.strictEqual(JSON.stringify(tool.annotations), JSON.stringify(stdio.annotations));
     assert.strictEqual(tool.description, stdio.description);
   }
-  assert.strictEqual(page.state.registered, 7);
+  assert.strictEqual(page.state.registered, 10);
   assert.strictEqual(page.state.transport, 'webmcp');
 });
 

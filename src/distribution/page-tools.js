@@ -1,11 +1,11 @@
 'use strict';
 /**
- * CONTEXT Distribution (Emission) — Surface: the SEVEN TOOLS AS PAGE TOOLS.
+ * CONTEXT Distribution (Emission) — Surface: the TEN TOOLS AS PAGE TOOLS.
  *
  * Implements the browser half of AGSC-09-16 ("where a browser exposes
  * `document.modelContext`, the `/compose/` page AND THE ITEM PAGES register the same
- * seven tools of AGSC-09-13, with identical names, identical argument names and
- * results identical to the local MCP server's for the same input and Bundle"),
+ * ten tools of AGSC-09-13, with identical names, identical argument names and
+ * results equal as values to the local MCP server's for the same input and Bundle"),
  * AGSC-09-13a (the tool error envelope), AGSC-08-18 (the one result shape, `trust`
  * fixed at `untrusted`), AGSC-09-14a (`ask`: published text only, at least one cited
  * item IRI, the fixed no-answer string, the Content Use Terms inside the answer),
@@ -14,10 +14,12 @@
  * WRITE of any kind — they return the payload and stop).
  * Requirements: PRD-051, PRD-056.
  *
- * WHY THIS MODULE EXISTS. The emitted page registers seven tools and answers every
- * one of them: `src/distribution/compose-page.js` implements `compose`, and this
- * module the other six. A page that registered seven tools and answered one would
- * satisfy the rule in the emitter and not in the artefact the site ships.
+ * WHY THIS MODULE EXISTS. The emitted page registers ten tools and answers every
+ * one of them. A page that registered ten tools and answered one would satisfy the rule
+ * in the emitter and not in the artefact the site ships. What 1.1 adds — the bound on
+ * `search` and `ask`, the citation records of `read`, and the tools `brief`, `explain`
+ * and `check` — is computed by the portable functions of `distribution/tool-answers.js`,
+ * which the local server calls too and `bundle()` emits after this module's own.
  *
  * ONE IMPLEMENTATION, TWO HOSTS (AGSC-07-13's portability contract, the pattern of
  * `composition/browser.js`). Every function below is a SELF-CONTAINED top-level
@@ -33,8 +35,9 @@
  * source file", so it carries the frontmatter block and the body),
  * `/pages/<slug>.jsonld` and `/graph.jsonld` (AGSC-05: the item's type and IRI),
  * `/search.json` (AGSC-06-16: the prebuilt inverted index — the page never
- * re-tokenizes a body, it reads the postings the writer emitted) and
- * `/.well-known/knowledge-linkset` (AGSC-06-08: the node's own base).
+ * re-tokenizes a body, it reads the postings the writer emitted),
+ * `/.well-known/knowledge-linkset` (AGSC-06-08: the node's own base, its build instant
+ * and content version) and `/chunks.jsonl` (AGSC-06-26: the chunk lines `read` cites).
  * No network beyond this origin, no key, no server, no cookie, no storage
  * (AGSC-06-05, AGSC-09-16).
  *
@@ -56,6 +59,14 @@
  *
  * PURE: no fs, no clock, no network, no process.
  */
+
+// The portable answers of the tools of 1.1, emitted after this module's own functions;
+// the names are the functions' own, so the source text Node runs is the text the page runs.
+const {
+  toolBounded, toolBrief, toolChunkIndex, toolCitationRecord, toolExplanation, toolHost, toolLinkWarnings,
+  toolPartners, toolSha256Hex,
+} = require('./tool-answers.js');
+const toolAnswers = require('./tool-answers.js');
 
 /* ------------------------------------------------------------------ constants */
 /*
@@ -704,7 +715,7 @@ function pageIndexOf(map) {
  *   (the published source file carries it too, and the graph is the cross-check);
  *   `/search.json` is the prebuilt index; `/.well-known/knowledge-linkset` is the
  *   node's own base.
- * @returns {object} `{base, bySlug, index, items}`
+ * @returns {object} `{base, bySlug, chunks, host, index, items, licenseProse}`
  */
 function pageCorpus(sources, options) {
   const map = sources || {};
@@ -739,7 +750,17 @@ function pageCorpus(sources, options) {
   // MANIFEST above it. `pageIndexOf` reads both shapes, so the corpus carries one
   // index whatever the node's size.
   const index = pageIndexOf(map);
-  return { base, bundleId: opts.bundleId, bySlug, claimed: pageClaimants(map), index, items };
+  return {
+    base,
+    bundleId: opts.bundleId,
+    bySlug,
+    chunks: toolChunkIndex(map),
+    claimed: pageClaimants(map),
+    host: toolHost(map),
+    index,
+    items,
+    licenseProse: opts.licenseProse,
+  };
 }
 
 /**
@@ -1066,12 +1087,16 @@ function pageResolveBodyReference(item, raw, byPath) {
  * @param {object} core the composition algebra — `globalThis.AGSC_CORE` in a page,
  *   the same functions required directly in Node. Injected rather than imported so
  *   that this module holds ONE implementation and no host-specific branch.
+ * @param {function(string): (string|Promise<string>)} [hash] SHA-256 to lowercase hex for
+ *   the selection digest of `brief`; the page's Web Crypto (`toolSha256Hex`) when omitted.
  * @returns {{call:Function}} `call(name, args)` returns an AGSC-08-18 envelope and
- *   never throws for a domain fault.
+ *   never throws for a domain fault; `brief` returns a promise of it when `hash` does.
  */
-function pageToolset(corpus, core) {
+function pageToolset(corpus, core, hash) {
   const model = corpus || { base: '/', bundleId: undefined, bySlug: {}, index: null, items: [] };
   const base = model.base;
+  const host = model.host || { bundleVersion: '', instant: '', specVersion: '' };
+  const chunkIndex = model.chunks || { bySlug: {}, incomplete: false, missing: [] };
   // re-key into a prototype-free map whatever the caller supplied, so that a
   // corpus built by hand is as safe as one `pageCorpus` built.
   const bySlug = Object.create(null);
@@ -1125,6 +1150,18 @@ function pageToolset(corpus, core) {
     return typeof fm.description === 'string' && fm.description !== '' ? fm.description : String(fm.title === undefined ? '' : fm.title);
   };
 
+  // AGSC-09-16: the three tools of 1.1 read the corpus, which IS the listed set.
+  let edgeList = null;
+  const edgesOfCorpus = () => {
+    if (edgeList === null) edgeList = pageEdges(model.items);
+    return edgeList;
+  };
+  const kindOf = (slug) => {
+    const fm = bySlug[slug].frontmatter || {};
+    return { kind: fm.kind, status: fm.status, type: bySlug[slug].type };
+  };
+  const ordered = (list) => list.slice().sort(pageCompare);
+
   const implementations = {
     ask: (args) => {
       const fault = indexFault();
@@ -1148,6 +1185,41 @@ function pageToolset(corpus, core) {
       };
     },
 
+    // AGSC-09-13 `brief`: the content of brief.json over the listed set, writing nothing.
+    brief: (args) => {
+      if (!Array.isArray(args.selection)) {
+        return pageErrorEnvelope('brief', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
+      }
+      if (hash === undefined && (typeof crypto === 'undefined' || !crypto.subtle)) {
+        return pageErrorEnvelope('brief', 'AGSC-E901', 'this page has no Web Crypto (a secure context) to compute the selection digest');
+      }
+      const facts = {
+        base: pageBaseIri(base),
+        host,
+        items: model.items.map((item) => Object.assign(pageFlatItem(item), { body: item.body })),
+        licenseProse: model.licenseProse === undefined ? pageTerms() : model.licenseProse,
+      };
+      const body = toolBrief(core, facts, args.selection, hash === undefined ? toolSha256Hex : hash);
+      const wrap = (value) => pageEnvelope('brief', 'brief', value);
+      return body !== null && typeof body.then === 'function' ? body.then(wrap) : wrap(body);
+    },
+
+    // AGSC-09-13 `check`: the Link warnings of AGSC-03-23…03-26 about the selection.
+    check: (args) => {
+      if (args.selection !== undefined && !Array.isArray(args.selection)) {
+        return pageErrorEnvelope('check', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
+      }
+      const selection = args.selection === undefined ? Object.keys(bySlug) : args.selection;
+      for (let i = 0; i < selection.length; i += 1) {
+        if (typeof selection[i] !== 'string' || bySlug[selection[i]] === undefined) {
+          return pageErrorEnvelope('check', 'AGSC-E301', 'no item with that slug in this Bundle');
+        }
+      }
+      const checked = ordered(selection.filter((slug, i) => selection.indexOf(slug) === i));
+      const findings = toolLinkWarnings(edgesOfCorpus(), kindOf).filter((f) => checked.indexOf(f.slug) !== -1);
+      return pageEnvelope('check', 'findings', { findings, selection: checked });
+    },
+
     compose: (args) => {
       // AGSC-09-13a: a selection that is not an array is not the empty one.
       if (!Array.isArray(args.selection)) {
@@ -1163,6 +1235,18 @@ function pageToolset(corpus, core) {
         valid: result.valid,
         warnings: result.warnings,
       });
+    },
+
+    // AGSC-09-13 `explain`: whether one edge holds over the listed set, and why (AGSC-05-33).
+    explain: (args) => {
+      if (!Object.prototype.hasOwnProperty.call(toolPartners(), args.key)) {
+        return pageErrorEnvelope('explain', 'AGSC-E203', 'key must be one of the fourteen Link keys or a computed inverse name (AGSC-03-01)');
+      }
+      if (typeof args.source !== 'string' || bySlug[args.source] === undefined
+        || typeof args.target !== 'string' || bySlug[args.target] === undefined) {
+        return pageErrorEnvelope('explain', 'AGSC-E301', 'no item with that slug in this Bundle');
+      }
+      return pageEnvelope('explain', 'explanation', toolExplanation(edgesOfCorpus(), args.key, args.source, args.target));
     },
 
     links: (args) => {
@@ -1214,8 +1298,15 @@ function pageToolset(corpus, core) {
     read: (args) => {
       const item = bySlug[args.slug];
       if (item === undefined) return pageErrorEnvelope('read', 'AGSC-E301', 'no item with that slug in this Bundle');
+      // AGSC-06-31: a chunk export the page could not read whole is said, never an empty list.
+      if (chunkIndex.incomplete === true) {
+        return pageErrorEnvelope('read', 'AGSC-E901', `the chunk export is incomplete: ${chunkIndex.missing.join(', ')} could not be read from this origin`);
+      }
+      // AGSC-09-13: the citation records of the item's chunks, from the published chunk lines.
+      const lines = chunkIndex.bySlug[item.slug] || [];
       return pageEnvelope('read', 'item', {
         body: item.body,
+        chunks: lines.map((line) => toolCitationRecord(line, host.bundleVersion)),
         frontmatter: item.frontmatter,
         iri: pageItemIri(base, item.type, item.slug),
         slug: item.slug,
@@ -1280,9 +1371,8 @@ function pageToolset(corpus, core) {
     search: (args) => {
       const fault = indexFault();
       if (fault !== null) return pageErrorEnvelope('search', 'AGSC-E901', fault);
-      return pageEnvelope('search', 'items', {
-        hits: hitsFor(typeof args.query === 'string' ? args.query : ''),
-      });
+      // AGSC-09-13: at most 100 hits, and `total` beside them only above the bound.
+      return pageEnvelope('search', 'items', toolBounded(hitsFor(typeof args.query === 'string' ? args.query : '')));
     },
   };
 
@@ -1290,7 +1380,7 @@ function pageToolset(corpus, core) {
     call: (name, args) => {
       // AGSC-09-13: the tool set is the set of implementations above and is stated
       // nowhere else in this module — `boundary/surfaces.js#TOOL_NAMES` is the one
-      // declaration of the seven names, and `tests/distribution/page-tools.test.js`
+      // declaration of the ten names, and `tests/distribution/page-tools.test.js`
       // asserts that these implementations are exactly those names.
       if (!Object.prototype.hasOwnProperty.call(implementations, name)) {
         return pageErrorEnvelope(String(name), 'AGSC-E001', 'no such tool');
@@ -1322,7 +1412,7 @@ function pageToolset(corpus, core) {
         if (resolved.code !== null) refused = resolved.code;
         return resolved.slug;
       };
-      ['about', 'cluster', 'slug'].forEach((key) => {
+      ['about', 'cluster', 'slug', 'source', 'target'].forEach((key) => {
         if (Object.prototype.hasOwnProperty.call(normalized, key)) normalized[key] = one(normalized[key]);
       });
       if (Array.isArray(normalized.selection)) normalized.selection = normalized.selection.map(one);
@@ -1495,7 +1585,10 @@ function pageBoardMove(block, body, frontmatter, type, slug, args, claimedBy) {
 function pageArguments() {
   return {
     ask: ['question'],
+    brief: ['selection'],
+    check: ['selection'],
     compose: ['selection'],
+    explain: ['key', 'source', 'target'],
     links: ['iri', 'slug'],
     propose: ['agent', 'at', 'slug', 'task_state'],
     read: ['slug'],
@@ -1509,7 +1602,10 @@ function pageArguments() {
 function pageRequiredArguments() {
   return {
     ask: ['question'],
+    brief: ['selection'],
+    check: [],
     compose: ['selection'],
+    explain: ['key', 'source', 'target'],
     links: [],
     propose: ['slug'],
     read: ['slug'],
@@ -1625,12 +1721,17 @@ const SOURCE = Object.freeze({
  * what the browser expects.
  *
  * @param {object} [options]
+ * @param {string} [options.bundleId] the Bundle's id, for `memory://` (AGSC-05-04b).
+ * @param {string} [options.licenseProse] `bundle.license_prose`, which the brief states
+ *   (AGSC-07-25) and no published route carries; the Content Use Terms when absent.
  * @param {string} [options.specVersion] recorded in the banner comment only.
  * @returns {string} LF-terminated, ending in exactly one LF.
  */
 function bundle(options) {
   const opts = options || {};
   const bundleId = opts.bundleId === undefined || opts.bundleId === null ? '' : String(opts.bundleId);
+  const licenseProse = opts.licenseProse === undefined || opts.licenseProse === null ? pageTerms() : String(opts.licenseProse);
+  const names = [...PORTABLE, ...toolAnswers.PORTABLE];
   const parts = ['\'use strict\';',
     '// SPDX-License-Identifier: Apache-2.0 (the engine\'s code; the prose it carries keeps its own terms)',
     '// AgenticSystemCore page tools (AGSC-09-13, AGSC-09-16). GENERATED — every',
@@ -1640,17 +1741,20 @@ function bundle(options) {
     `// spec_version: ${opts.specVersion === undefined ? 'unset' : opts.specVersion}`,
     '(function () {'];
   for (let i = 0; i < PORTABLE.length; i += 1) parts.push(String(SOURCE[PORTABLE[i]]));
+  for (let i = 0; i < toolAnswers.PORTABLE.length; i += 1) parts.push(String(toolAnswers[toolAnswers.PORTABLE[i]]));
   parts.push(`  var API = {
-${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
+${names.map((name) => `    ${name}: ${name}`).join(',\n')}
   };
   globalThis.AGSC_PAGE_TOOLS = API;
 
   // AGSC-05-04b: a page resolves \`memory://<bundle-id>/<slug>\` only for THIS
-  // Bundle's id, which no published route carries, so the writer emits it here.
+  // Bundle's id, which no published route carries, so the writer emits it here; and the
+  // brief states the prose licence (AGSC-07-25), which no published route carries either.
   API.BUNDLE_ID = ${JSON.stringify(bundleId)};
+  API.LICENSE_PROSE = ${JSON.stringify(licenseProse)};
 
   // AGSC-06-01: the routes a page reads, and no others. Every one is same-origin.
-  API.ROUTES = ['/.well-known/knowledge-linkset', '/search.json'];
+  API.ROUTES = ['/.well-known/knowledge-linkset', '/search.json', '/chunks.jsonl'];
 
   API.load = function (fetchLike) {
     var get = function (route) {
@@ -1664,10 +1768,12 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
       // AGSC-06-21: above 500 items /search.json is the MANIFEST {docs_total,
       // shards[]} and the index is the shards. The page follows it exactly as the
       // local tools do, and only to the /search-<nn>.json routes of this origin
-      // (pageShardRoutes) — never to a URL a document named.
+      // (pageShardRoutes) — never to a URL a document named. AGSC-06-31: the chunk
+      // export is followed the same way, to its /chunks-<nn>.jsonl shards only.
       var manifest = null;
       try { manifest = JSON.parse(sources['/search.json']); } catch (e) { manifest = null; }
-      return Promise.all(pageShardRoutes(manifest).map(function (route) {
+      var shards = pageShardRoutes(manifest).concat(toolChunkShardRoutes(sources['/chunks.jsonl']));
+      return Promise.all(shards.map(function (route) {
         return get(route).then(function (text) { if (text !== null) sources[route] = text; });
       }));
     }).then(function () {
@@ -1694,11 +1800,11 @@ ${PORTABLE.map((name) => `    ${name}: ${name}`).join(',\n')}
           });
         }));
       });
-    }).then(function () { return pageCorpus(sources, { bundleId: API.BUNDLE_ID }); });
+    }).then(function () { return pageCorpus(sources, { bundleId: API.BUNDLE_ID, licenseProse: API.LICENSE_PROSE }); });
   };
 
-  API.install = function (corpus, core) {
-    var toolset = pageToolset(corpus, core);
+  API.install = function (corpus, core, hash) {
+    var toolset = pageToolset(corpus, core, hash);
     globalThis.AGSC_TOOLS = toolset;
     return toolset;
   };

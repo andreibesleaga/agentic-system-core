@@ -2,8 +2,8 @@
 /**
  * CONTEXT Distribution (Emission) — Surface: WebMCP, the browser transport.
  * Implements AGSC-09-16: where a browser exposes `document.modelContext`, the
- * `/compose/` and item pages register the SAME seven tools as AGSC-09-13,
- * with identical names, identical argument names and results byte-identical to
+ * `/compose/` and item pages register the SAME ten tools as AGSC-09-13,
+ * with identical names, identical argument names and results equal as values to
  * the local MCP server's for the same input and Bundle. Registration is
  * FEATURE-DETECTED: with no `document.modelContext` the page works unchanged
  * and registers nothing. On this transport `propose` and `remember` are
@@ -17,7 +17,7 @@
  * `distribution/mcp-tools.js` and dispatches to the very same `call`
  * implementation, reached through `globalThis.AGSC_TOOLS`. That is why the two
  * manifests and the two results cannot drift — there is one implementation,
- * not two (`cli-0003`). It contains no network call, no key and no server
+ * not two (`cli-0026`). It contains no network call, no key and no server
  * (AGSC-09-16), and no third-party origin (AGSC-06-05); it is a separate file
  * so that the `script-src 'self'` policy of AGSC-06-17 admits it.
  */

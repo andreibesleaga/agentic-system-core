@@ -3,7 +3,7 @@
 //
 // AGSC-09-16 asks for ONE tool contract over two transports. This file proves the
 // browser half against the reference Bundle: the page corpus assembled from the
-// PUBLISHED routes answers every one of the seven tools exactly as the local server
+// PUBLISHED routes answers every one of the ten tools exactly as the local server
 // answers it, the readers the page needs (the failsafe frontmatter reader, the
 // typed-scalar table, the Link-edge algebra) agree with the Knowledge context's own
 // implementations, and the writer declares and links what the rules require.
@@ -14,6 +14,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const vm = require('node:vm');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 
 const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
 const { createClock } = require('../../src/adapters/node-clock.js');
@@ -34,6 +35,8 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 /** 2026-01-01T00:00:00Z — the fixed instant of `tests/fixtures/minimal/README.md`. */
 const EPOCH = '1767225600';
+/** The host's hasher handed to the page tools, so `brief` answers a value (the page's Web Crypto: tool-parity.test.js). */
+const sha256Hex = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
 
 function built() {
   const fs = createFileSystem(FIXTURE);
@@ -53,7 +56,7 @@ function pageToolset(files, config) {
   const core = vm.runInContext('globalThis.AGSC_CORE', context);
   assert.strictEqual(api.BUNDLE_ID, (config.bundle || {}).id,
     'the emitted script carries a different bundle id from the Bundle it was built from');
-  return api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), core);
+  return api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse: api.LICENSE_PROSE }), core, sha256Hex);
 }
 
 /**
@@ -65,8 +68,10 @@ function moduleToolset(files, config) {
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
   const compose = require('../../src/composition/compose.js');
-  const corpus = pageTools.pageCorpus(sources, { bundleId: (config.bundle || {}).id });
-  return pageTools.pageToolset(corpus, { compose: compose.compose });
+  const { briefOf } = require('../../src/composition/brief.js');
+  const { selectionDigestInput } = require('../../src/composition/harness.js');
+  const corpus = pageTools.pageCorpus(sources, { bundleId: (config.bundle || {}).id, licenseProse: (config.bundle || {}).license_prose });
+  return pageTools.pageToolset(corpus, { briefOf, compose: compose.compose, selectionDigestInput }, sha256Hex);
 }
 
 // --------------------------------------------------------------- the readers
@@ -153,13 +158,13 @@ test('AGSC-03-13: the page anchors are the heading anchors of the Knowledge rend
   assert.deepStrictEqual(pageTools.pageAnchors(body), markdown.anchors(body).anchors);
 });
 
-// ------------------------------------------------------- the seven page tools
+// ------------------------------------------------------- the ten page tools
 
 test('AGSC-09-16: the page tools answer exactly what the local server answers', () => {
   const { bundle, files } = built();
   const page = pageToolset(files, bundle.config);
   const here = moduleToolset(files, bundle.config);
-  const local = mcpTools.tools(bundle, {});
+  const local = mcpTools.tools(bundle, { artifacts: files });
   const calls = [
     ['search', { query: 'supervisor' }],
     ['search', { query: 'nothing at all here' }],
@@ -175,9 +180,25 @@ test('AGSC-09-16: the page tools answer exactly what the local server answers', 
     ['links', { iri: 'https://minimal.example/concepts/handoff/' }],
     ['nosuchtool', {}],
     ['read', {}],
+    // AGSC-09-13, the three tools of 1.1 and their faults.
+    ['brief', { selection: ['supervisor', 'handoff'] }],
+    ['brief', { selection: [] }],
+    ['brief', { selection: 'supervisor' }],
+    ['check', {}],
+    ['check', { selection: ['handoff', 'handoff'] }],
+    ['check', { selection: ['no-such-item'] }],
+    ['check', { selection: 'handoff' }],
+    ['explain', { key: 'mentions', source: 'handoff', target: 'supervisor' }],
+    ['explain', { key: 'uses', source: 'handoff', target: 'no-such-item' }],
+    ['explain', { key: 'uses', source: 'handoff' }],
   ];
   for (const item of bundle.items) {
     calls.push(['read', { slug: item.slug }], ['links', { slug: item.slug }], ['propose', { slug: item.slug }]);
+    for (const other of bundle.items) {
+      for (const key of ['uses', 'used-by', 'related', 'broader', 'narrower']) {
+        calls.push(['explain', { key, source: item.slug, target: other.slug }]);
+      }
+    }
   }
   for (const [name, args] of calls) {
     const expected = JSON.parse(JSON.stringify(local.call(name, args)));
@@ -189,7 +210,7 @@ test('AGSC-09-16: the page tools answer exactly what the local server answers', 
   assert.ok(calls.length >= 20, `only ${calls.length} calls were compared`);
 });
 
-test('AGSC-09-13: the page implements exactly the seven tools Boundary names', () => {
+test('AGSC-09-13: the page implements exactly the ten tools Boundary names', () => {
   const { bundle, files } = built();
   for (const page of [pageToolset(files, bundle.config), moduleToolset(files, bundle.config)]) {
     for (const name of surfaces.TOOL_NAMES) {
@@ -207,9 +228,11 @@ test('AGSC-09-13: the page implements exactly the seven tools Boundary names', (
 test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool writes', () => {
   const { bundle, files } = built();
   const page = moduleToolset(files, bundle.config);
+  const args = {
+    body: 'b', key: 'uses', kind: 'concept', question: 'x', query: 'x', selection: [], slug: 'handoff', source: 'handoff', target: 'handoff', title: 'T',
+  };
   for (const name of surfaces.TOOL_NAMES) {
-    assert.strictEqual(page.call(name, { question: 'x', query: 'x', selection: [], slug: 'handoff', body: 'b', kind: 'concept', title: 'T' }).trust,
-      'untrusted', `${name} did not mark its answer untrusted`);
+    assert.strictEqual(page.call(name, args).trust, 'untrusted', `${name} did not mark its answer untrusted`);
   }
   // AGSC-08-04 / AGSC-11-14: `propose` and `remember` hand back a payload and stop.
   const proposal = page.call('propose', { slug: 'handoff' });

@@ -19,12 +19,14 @@ test('the foreign protocol versions live in the anti-corruption layer and nowher
   assert.strictEqual(require('@modelcontextprotocol/sdk/types.js').LATEST_PROTOCOL_VERSION, s.MCP_PROTOCOL_VERSION);
 });
 
-test('AGSC-09-13: exactly seven tools, in code-point order', () => {
-  assert.deepStrictEqual(s.TOOL_NAMES, ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+test('AGSC-09-13: exactly ten tools, in code-point order', () => {
+  assert.deepStrictEqual(s.TOOL_NAMES, ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read',
+    'remember', 'search']);
+  assert.deepStrictEqual([...s.TOOL_NAMES].sort(), s.TOOL_NAMES);
 });
 
-test('AGSC-11-18: readOnlyHint on the five reads, consequentialHint on the two writes', () => {
-  for (const name of ['search', 'read', 'links', 'compose', 'ask']) {
+test('AGSC-11-18: readOnlyHint on the eight reads, consequentialHint on the two writes', () => {
+  for (const name of ['search', 'read', 'links', 'compose', 'ask', 'brief', 'explain', 'check']) {
     assert.strictEqual(s.WEBMCP_ANNOTATIONS[name].readOnlyHint, true, name);
     assert.strictEqual(s.WEBMCP_ANNOTATIONS[name].consequentialHint, undefined, name);
   }
@@ -32,8 +34,10 @@ test('AGSC-11-18: readOnlyHint on the five reads, consequentialHint on the two w
     assert.strictEqual(s.WEBMCP_ANNOTATIONS[name].consequentialHint, true, name);
     assert.strictEqual(s.WEBMCP_ANNOTATIONS[name].readOnlyHint, false, name);
   }
-  // `links` returns edges, not prose, so it carries no untrustedContentHint.
-  assert.strictEqual(s.WEBMCP_ANNOTATIONS.links.untrustedContentHint, false);
+  // `links`, `explain` and `check` return slugs, keys, rule names and codes, not prose, so
+  // they carry no untrustedContentHint; `brief` carries prose (bnd-0050).
+  for (const name of ['links', 'explain', 'check']) assert.strictEqual(s.WEBMCP_ANNOTATIONS[name].untrustedContentHint, false, name);
+  assert.strictEqual(s.WEBMCP_ANNOTATIONS.brief.untrustedContentHint, true);
   assert.strictEqual(s.WEBMCP_ANNOTATIONS.read.untrustedContentHint, true);
   // AGSC-11-18 (bnd-0042, bnd-0036): `extensions` is MCP's map of
   // extension identifier to settings object, and this node's settings object carries

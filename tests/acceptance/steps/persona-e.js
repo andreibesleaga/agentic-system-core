@@ -130,7 +130,8 @@ module.exports = [
       const core = world.read('www/compose/agsc-core.js');
       const browser = require(path.join(ROOT, 'src', 'composition', 'browser.js'));
       const spec = JSON.parse(world.read('agsc.config.json')).spec_version;
-      assert.strictEqual(core, browser.bundle({ specVersion: spec }), 'the emitted module is not the bundled module set');
+      // The site emits the algebra with the brief (AGSC-07-25), which the page tool `brief` runs (AGSC-09-13).
+      assert.strictEqual(core, browser.bundle({ brief: true, specVersion: spec }), 'the emitted module is not the bundled module set');
       assert.doesNotMatch(core, /require\(|\bnode:[a-z]/u);
     },
   },

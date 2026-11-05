@@ -10,7 +10,7 @@ engine. Pick by what your tool reads.
 |---|---|---|---|
 | **1. Steering file** | a Markdown file at the path your coding agent reads on every session | `agsc export --steer --target <name>` | always-on context for a coding agent |
 | **2. Skill packs** | one Agent Skills folder per cluster, checked against a lockfile | `agsc skills`, then `agsc skills install <dir>` | step-by-step procedures |
-| **3. Live tools** | an MCP server with seven tools and every item as a resource | `agsc mcp` | an assistant that searches and reads while it works |
+| **3. Live tools** | an MCP server with ten tools and every item as a resource | `agsc mcp` | an assistant that searches and reads while it works |
 | **4. Memory archive** | a COGX archive another memory system imports | `agsc export --to cogx` (and `agsc import --from cogx`) | a framework that keeps its own memory store |
 | **5. Agent kit (GABBE)** | a GABBE kit's own folders — skills, guides, memory files | `agsc export --to gabbe` (and `agsc import --from gabbe <kit>`) | a project run with the GABBE kit |
 | **6. Skills repositories** | skills and rule packs traded with the collections people already share (Agent Skills, Claude Code plugins and marketplaces, Cursor and Windsurf rules), from a local clone | `agsc import --from skills <dir>` and `agsc export --to skills` | a team that already keeps a skills collection |
@@ -99,7 +99,8 @@ links, no `allowed-tools`.
 ## Route 3 — live tools (MCP)
 
 `agsc mcp`, run in the node's folder, starts a local MCP server over stdio with
-seven tools — `search`, `read`, `links`, `compose`, `propose`, `ask`, `remember` —
+ten tools — `search`, `read`, `links`, `compose`, `propose`, `ask`, `remember`, `brief`,
+`explain`, `check` —
 and every item as a resource. It never writes: `propose` and `remember` hand back
 text for a person to save. The set-up for Claude Desktop, Claude Code, Cursor,
 VS Code and Codex CLI is in [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
@@ -415,7 +416,7 @@ itself, and the import never publishes: every foreign row is a draft.
 
 ### Working a live board with agents
 
-Agents and assistants work a board through the same seven tools, locally (`agsc mcp`)
+Agents and assistants work a board through the same ten tools, locally (`agsc mcp`)
 or in the page — no new transport and no hosted server. Every write is a **prepared
 Proposal**: the tool returns it, and a person (or a standing decision) merges it.
 

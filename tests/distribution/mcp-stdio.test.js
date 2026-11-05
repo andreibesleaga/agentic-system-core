@@ -71,9 +71,9 @@ test('AGSC-09-13: initialize, tools/list and tools/call over real stdio frames',
     { 'com.agenticsystemcore/knowledge': { linkset: 'https://minimal.example/.well-known/knowledge-linkset' } });
   assert.strictEqual(frames[0].result.protocolVersion, '2025-11-25');
 
-  // AGSC-09-13: exactly seven tools, the same seven the browser registers.
+  // AGSC-09-13: exactly ten tools, in code-point order, the same ten the browser registers.
   assert.deepStrictEqual(frames[1].result.tools.map((t) => t.name),
-    ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+    ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
 
   // AGSC-09-13a: a domain fault is a RESULT carrying the AGSC-08-18 envelope,
   // never a JSON-RPC error member.
@@ -165,7 +165,7 @@ test('createServer wires the shared toolset without touching any stream', () => 
   const bundle = { config: {}, items: [{ body: '', frontmatter: {}, slug: 'a', type: 'concept' }] };
   const { server, toolset } = createServer(bundle, { version: '9.9.9' });
   assert.strictEqual(typeof server.connect, 'function');
-  assert.strictEqual(toolset.manifest().tools.length, 7);
+  assert.strictEqual(toolset.manifest().tools.length, 10);
   assert.strictEqual(SERVER_NAME, 'agentic-system-core');
   assert.strictEqual(MCP_PROTOCOL_VERSION, '2025-11-25');
 });

@@ -222,8 +222,9 @@ const SUPPORT = Object.freeze({
  * has already declared above it.
  *
  * The brief of AGSC-07-25 (`composition/brief.js`) joins them only when `options.brief` is
- * `true`, for a page that shows the brief: the `/compose/` script a build publishes today is
- * the bundle without it, so that script keeps its bytes until the page shows a brief.
+ * `true`. A build publishes `/compose/agsc-core.js` with it from 1.1, because the page tool
+ * `brief` answers with it (AGSC-09-13, AGSC-09-16; `distribution/site.js`); the bundle without
+ * it is the 1.0 set, for a caller that needs the algebra alone.
  *
  * @param {object} [options]
  * @param {boolean} [options.brief] carry the brief's functions too.

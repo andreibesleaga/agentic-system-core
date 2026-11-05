@@ -94,12 +94,12 @@ test('AGSC-07-01: the emitted controller reaches only routes AGSC-06-01 already 
   }
 });
 
-test('AGSC-09-16: the page tool surface answers for all seven tools and for no eighth', () => {
+test('AGSC-09-16: the page tool surface answers for all ten tools and for no eleventh', () => {
   assert.deepStrictEqual(composePage.toolNames().sort(),
-    ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+    ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
   const controller = composePage.controller({});
   // The controller installs NO tool object: `agsc-page-tools.js` does, and it
-  // implements all seven. No stub that answers `compose` and returns "has no page
+  // implements all ten. No stub that answers `compose` and returns "has no page
   // implementation yet" for the other six may come back.
   assert.ok(!controller.includes('has no page implementation yet'),
     'the controller still ships the six-tool stub');

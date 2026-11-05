@@ -136,7 +136,7 @@ graph TB
     WM["WebMCP page tools (should S8)"]
   end
   subgraph MCP["Container: agsc mcp (local stdio server)"]
-    T["7 tools: search read links compose propose ask remember"]
+    T["10 tools: search read links compose propose ask remember brief explain check"]
   end
   subgraph CI["Container: GitHub Actions"]
     CIY["engine ci.yml · release.yml"]
@@ -197,7 +197,7 @@ graph TB
 | distribution | `site.js` | route set → `www/` | 1, 9 | build |
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
 | distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
-| distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 7 tools (+ask, +remember); staleness + link checks | — | init mcp refresh |
+| distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 7 tools (+ask, +remember), 10 from 1.1 (+brief, +explain, +check: `mcp-tools.js`, `tool-answers.js`); staleness + link checks | — | init mcp refresh |
 | interchange | `import.js` `okf.js` `adapters/skos.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in; a SKOS thesaurus in (every foreign item a draft) | — | import |
 | interchange | `export-bundle.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
@@ -235,8 +235,8 @@ Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/
 | `ContentStore` | the Bundle | local git working tree | GitHub API, Obsidian, Solid (v2) |
 | `Renderer` | items → HTML | built-in templates | *(internal module boundary rather than a port; "theme packs" serve no v1.0 requirement)* |
 | `GraphExport` | items → RDF | JSON-LD/Turtle/N-Quads (RDF/XML = should S1) | SPARQL dump, Wikibase |
-| `ToolTransport` | tools to agents | local stdio MCP, 7 tools | remote MCP Worker (v2) |
-| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools, degrading to plain JS | — |
+| `ToolTransport` | tools to agents | local stdio MCP, 7 tools (10 from 1.1) | remote MCP Worker (v2) |
+| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools (10 from 1.1), degrading to plain JS | — |
 | `Reviewer` | Proposal verdict | **lint-only** (no LLM on a gating lane, C6) | the OPTIONAL non-gating LLM review lane of AGSC-08-27 — v1.0, off by default, provider-capped |
 | `Host` | where `www/` lands | Cloudflare Pages | GitHub/GitLab Pages, Netlify (v1.x) |
 | `Forge` | PR/CI shim | GitHub (`templates/github/*.yml`, ≤20 lines) | GitLab/Forgejo (v1.x) |
@@ -440,7 +440,7 @@ workspace "AgenticSystemCore" "Distributed Ontological Agentic Memory engine —
 
     reader -> site "Reads pages and machine surfaces" "HTTPS"
     reader -> github "Opens a Proposal (fork-and-edit)" "HTTPS"
-    agent -> mcpserver "Calls seven tools" "stdio JSON-RPC"
+    agent -> mcpserver "Calls ten tools" "stdio JSON-RPC"
     agent -> site "Fetches linkset, graph, llms.txt, skills" "HTTPS"
     agent -> browser "Uses page tools" "WebMCP"
     owner -> github "All git writes, merges, tags" "git/HTTPS"
@@ -583,7 +583,8 @@ under other names: closure, hiding, mutual exclusion, warnings and port wiring a
 `review.js`, and `verify`, `refresh` and `export` are verbs in the same folder (no
 `proposal.js`, `review.js`, `verify.js`, `refresh.js` or `export.js` in a bounded context);
 the tool server is `src/distribution/mcp-stdio.js` with `mcp-tools.js` and
-`mcp-resources.js` (no `mcp.js`); pages are rendered by `src/distribution/html.js` with no
+`mcp-resources.js` (no `mcp.js`), and from 1.1 `tool-answers.js`, the portable answers both
+transports share; pages are rendered by `src/distribution/html.js` with no
 template files (no `templates/*.html`). There is no `src/interchange/channels.js` and no
 `channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
 channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is

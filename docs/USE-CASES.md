@@ -29,7 +29,7 @@ Bundle's own folder.
 - **Who:** one person, their assistant, one local server.
 - **Data flow:** files on disk → the local MCP server → the assistant's context.
   Nothing leaves the machine and no key exists.
-- **Surfaces:** the seven MCP tools and the item resources.
+- **Surfaces:** the ten MCP tools and the item resources.
 - **Mode:** 1, used locally.
 - **Commands:** `agsc mcp` (configured in the assistant as in
   [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md)). The assistant calls
@@ -320,7 +320,7 @@ Bundle's own folder.
 ### M6 — The same page, answered by the browser's own agent
 
 - **Who:** a visitor and their browser's agent.
-- **Data flow:** the seven tools are registered on the page itself, with no install
+- **Data flow:** the ten tools are registered on the page itself, with no install
   and no server of ours; the page reads the node's published files, and each tool's
   result equals the local server's for the same input. `propose` and `remember`
   hand back text. The node's discovery document is what tells an agent the tools
@@ -374,7 +374,7 @@ Bundle's own folder.
   and, prepared again against the merged state, it is refused. The build then
   publishes the new state on the board page and under `/boards/`, and the content
   version moves.
-- **Surfaces:** `/boards/`, the seven tools (local and in-page), the proposal patch.
+- **Surfaces:** `/boards/`, the ten tools (local and in-page), the proposal patch.
 - **Mode:** 5.
 - **Commands:** `agsc mcp` (the agents' tool server); `git apply <patch>` and a
   commit, or a pull request, by the person; `agsc lint`; `agsc build`.

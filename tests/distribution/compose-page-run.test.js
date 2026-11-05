@@ -233,24 +233,25 @@ test('AGSC-07-24: /compose/?from=<slug> takes the selection from the saved archi
   assert.deepStrictEqual([...other.selection], []);
 });
 
-test('AGSC-09-16: with document.modelContext the seven tools are registered, with the stdio manifest', async () => {
+test('AGSC-09-16: with document.modelContext the ten tools are registered, with the stdio manifest', async () => {
   const { bundle, files } = builtFixture();
   const page = openPage({ files, modelContext: true });
   const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
   await state.start();
   await pageToolsReady(page.context);
   const webmcp = vm.runInContext('globalThis.AGSC_WEBMCP', page.context);
-  assert.strictEqual(webmcp.registered, 7);
+  assert.strictEqual(webmcp.registered, 10);
   assert.deepStrictEqual(page.registered.map((t) => t.name).sort(),
     mcpTools.manifest().tools.map((t) => t.name).sort());
   for (const tool of page.registered) {
     assert.strictEqual(typeof tool.execute, 'function', tool.name);
     assert.ok(tool.inputSchema !== undefined, `${tool.name} registered no inputSchema`);
   }
-  // AGSC-09-16: ALL SEVEN answer, and every answer is the local server's answer for
+  // AGSC-09-16: ALL TEN answer, and every answer is the local server's answer for
   // the same input and Bundle — the whole point of the rule, asserted against the
-  // artefact the site ships rather than against the emitter.
-  const local = mcpTools.tools(bundle, {});
+  // artefact the site ships rather than against the emitter. The local server is handed
+  // the route map of its build, as the `mcp` verb hands it.
+  const local = mcpTools.tools(bundle, { artifacts: files });
   const selection = state.items.filter((i) => i.type !== 'cluster').map((i) => i.slug).slice(0, 2);
   const calls = [
     ['search', { query: 'supervisor' }],
@@ -261,10 +262,14 @@ test('AGSC-09-16: with document.modelContext the seven tools are registered, wit
     ['propose', { slug: 'handoff' }],
     ['remember', { at: INSTANT, body: 'A note.', actor: 'process:ci', kind: 'episode', operator: 'human:tester', title: 'A Recorded Run' }],
     ['read', { slug: 'no-such-item' }],
+    // `brief` answers a promise here: the page hashes the selection with Web Crypto.
+    ['brief', { selection }],
+    ['explain', { key: 'used-by', source: 'handoff', target: 'supervisor' }],
+    ['check', {}],
   ];
   assert.ok(selection.length > 0, 'the page recovered no selectable item');
   for (const [name, args] of calls) {
-    const answer = page.registered.find((t) => t.name === name).execute(args);
+    const answer = await page.registered.find((t) => t.name === name).execute(args);
     assert.strictEqual(answer.trust, 'untrusted', name);
     assert.deepStrictEqual(plain(answer), plain(local.call(name, args)),
       `${name} differs between the page tools and the local server`);

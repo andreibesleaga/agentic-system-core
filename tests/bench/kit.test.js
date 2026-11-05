@@ -248,10 +248,12 @@ describe('bench/parity.js — one contract, two transports', () => {
     assert.equal(parity.requiredDifference('remember', {}, server, { ...page, body: { ...page.body, findings: [] } }), false);
   });
 
-  it('the committed call list covers all seven tools', () => {
+  it('the committed call list covers all ten tools', () => {
     const spec = JSON.parse(fs.readFileSync(path.join(REPO, 'bench', 'corpus', 'parity-calls.json'), 'utf8'));
     const names = new Set([...spec.calls, ...spec.per_item].map(([name]) => name));
-    for (const tool of ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']) assert.ok(names.has(tool), tool);
+    const tools = require('../../src/boundary/surfaces.js').TOOL_NAMES;
+    assert.equal(tools.length, 10);
+    for (const tool of tools) assert.ok(names.has(tool), tool);
   });
 });
 

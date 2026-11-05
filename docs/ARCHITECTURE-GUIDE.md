@@ -44,7 +44,7 @@ Source: [diagrams/arch-system-overview.md](diagrams/arch-system-overview.md).
   the `search` tool gives; nothing leaves the page's origin. Without script the page
   is the list of every published item.
 - **Readers.** A person reads pages; an agent or crawler starts at the discovery
-  document; a browser's own agent calls the seven tools the page registers
+  document; a browser's own agent calls the ten tools the page registers
   (AGSC-09-16); a local assistant runs `agsc mcp` over the Bundle (AGSC-09-13).
 - **Other nodes.** A node names its peers; a *client* walks from one node to the next.
   A node never fetches another node (AGSC-11-13).
@@ -112,7 +112,7 @@ instant comes from `SOURCE_DATE_EPOCH` or the last commit, never the wall clock
 ![A browser agent calls a page tool](diagrams-rendered/flow-page-tool-call-1.svg)
 
 Source: [diagrams/flow-page-tool-call.md](diagrams/flow-page-tool-call.md). The page
-registers the seven tools only when the browser offers `document.modelContext`; without
+registers the ten tools only when the browser offers `document.modelContext`; without
 it, the page works unchanged. A tool reads the node's own published files from the same
 origin — no other host, no key, no cookie (AGSC-06-05) — and answers what the local
 tool server answers for the same input on a Bundle whose items are all listed

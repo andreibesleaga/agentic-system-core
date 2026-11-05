@@ -197,7 +197,7 @@ provenance block.
 ## An agent on the same wiki — the tool server and the page tools
 
 **Personas:** the agent reader (C), the agent proposer (D), the agent using a node as
-memory (H). **What it proves:** an assistant gets seven tools over a Bundle, with
+memory (H). **What it proves:** an assistant gets ten tools over a Bundle, with
 nothing leaving the machine; every answer is marked untrusted and carries its
 licence; `propose` and `remember` hand back text and write nothing; the same seven
 tools on a published page give the same answers.
@@ -211,7 +211,7 @@ installed beyond Node.
 
 Build the node and list the tools over the wire. The three request lines are the
 whole handshake; the server answers with its name, the protocol revision and the
-seven tools:
+ten tools:
 
 ```bash demo
 cp -r "$ENGINE/examples/demos/mode-1-memory/a" wiki && cd wiki && agsc build > /dev/null 2>&1
@@ -224,7 +224,7 @@ printf '%s\n' \
 
 ```text expect
 server: agentic-system-core protocol 2025-11-25
-tools: ask compose links propose read remember search
+tools: ask brief check compose explain links propose read remember search
 ```
 
 `search`, then `read`, then `links` — the reading path of an agent, each answer an
@@ -297,7 +297,7 @@ mcp-call exit 1
 content unchanged
 ```
 
-The published node carries the same seven tools on every item page and on
+The published node carries the same ten tools on every item page and on
 `/compose/`, for a browser assistant that supports in-page tools. Calling `ask` the
 way the page does gives the same bytes the tool server gave:
 
@@ -904,7 +904,7 @@ Mode 2 wrote.
 | 0 — drop-in user | `agsc init` on a folder of notes | Mode 0 | `init`, a security contact, one commit, `ci` and `build` take bare notes to a full local site |
 | A — human reader | opens the built pages, `llms.txt`, the search index | Mode 0 | the site is static, readable without JavaScript, with every item's Markdown view |
 | B — human contributor | edits a page, `lint --fix`, `propose` | Mode 0 | the patch carries the edit and a person runs the git commands |
-| C — agent reader | `search`, `read`, `links` over `agsc mcp` | An agent on the same wiki | seven tools, every answer untrusted and licensed, nothing leaves the machine |
+| C — agent reader | `search`, `read`, `links` over `agsc mcp` | An agent on the same wiki | ten tools, every answer untrusted and licensed, nothing leaves the machine |
 | D — agent proposer | `propose`, `remember` | An agent on the same wiki; Mode 5 | the tools hand back text and write nothing |
 | E — architect | `compose … --zip` | Mode 4 | a selection becomes seven file kinds, the same verdict from the tool server |
 | F — integrator | `skills install` | Mode 3 | packs are content only, lock-verified, idempotent, and come back as procedures |
@@ -957,7 +957,7 @@ line quotes in full.
 
 *Specification rules behind these demos, for looking up: AGSC-02-90…95 (adoption),
 AGSC-03-11 (link resolution), AGSC-08-04 and AGSC-08-27 (proposals and the lint-only
-review), AGSC-09-13 and AGSC-09-16 (the seven tools, on the tool server and on the
+review), AGSC-09-13 and AGSC-09-16 (the ten tools, on the tool server and on the
 page), AGSC-10-02 and AGSC-10-12 (the checker at Level 0, the mutual peer check),
 AGSC-08-09 and AGSC-08-12 (gates into forge files), AGSC-07-19…22 (skill packs),
 AGSC-07-12 and AGSC-07-13 (the Harness, byte-identical from page and command line),

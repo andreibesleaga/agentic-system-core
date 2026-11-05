@@ -36,7 +36,7 @@ const ASSETS = Object.freeze(['agsc-core.js', 'agsc-page-tools.js', 'agsc-compos
 
 /**
  * AGSC-09-16: the scripts an ITEM page loads, in load order — the algebra (which
- * `compose` runs), the seven page tools, and the registration. They are the very
+ * `compose` and `brief` run), the ten page tools, and the registration. They are the very
  * files the `/compose/` route serves, referenced absolutely, so one copy is fetched
  * once and cached for the whole node and no page inlines a byte of them
  * (AGSC-06-17's `script-src 'self'`, AGSC-06-21's page budget).
@@ -48,7 +48,7 @@ const PAGE_TOOL_SCRIPTS = Object.freeze([
   '/compose/agsc-core.js', '/compose/agsc-page-tools.js', '/compose/webmcp.js',
 ]);
 
-/** The seven tool names of AGSC-09-13, from the one manifest that defines them. */
+/** The ten tool names of AGSC-09-13, from the one manifest that defines them. */
 function toolNames() {
   return manifest().tools.map((t) => t.name);
 }

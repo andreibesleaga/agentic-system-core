@@ -17,7 +17,7 @@ different about it.
 | Reader | What you get today | Try it |
 |---|---|---|
 | A person with a folder of notes | a static site of your notes with search, each page also as Markdown, a graph file and text files for assistants; no model, no server | [guides/mode-0.md](guides/mode-0.md) |
-| A developer | a local tool server: seven tools over your folder for an assistant; nothing leaves the machine | [guides/mode-1.md](guides/mode-1.md); [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) |
+| A developer | a local tool server: ten tools over your folder for an assistant; nothing leaves the machine | [guides/mode-1.md](guides/mode-1.md); [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) |
 | A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | [guides/mode-2.md](guides/mode-2.md) |
 | A team that keeps its procedures as skills | each procedure as an installable skill pack, checked against a lockfile and holding no scripts; skills collections and rule folders imported as procedures, and the packs exported back for five tools | [guides/mode-3.md](guides/mode-3.md); `agsc import --from skills --list <clone>`; [USE-CASES.md](USE-CASES.md), L4 and L7 |
 | An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | [guides/mode-4.md](guides/mode-4.md); the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |
@@ -113,7 +113,7 @@ The paths below say what to read, in order, for each of these readers and a few 
 
 1. [AGENTS.md](../AGENTS.md) — what this repository is, how to check your work, what you
    may and may not change, where everything is.
-2. [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) — `agsc mcp`: seven tools over a
+2. [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) — `agsc mcp`: ten tools over a
    Bundle.
 3. [CONNECTORS.md](CONNECTORS.md) — every route into a node: steering files, skill
    packs, the tool server, memory archives, the page tools.

@@ -250,7 +250,7 @@ No servers, databases, queues or Workers — static Pages + CI only. No LLM in a
 
 **Note to PRD-023/PRD-056:** the MCP tool set is **seven** — `search read links compose propose ask remember` — plus resources (items, graph, llms.txt) and one prompt; `remember` writes agent memories as Episode/Lesson/Concept Proposals (auto|hitl per client channel config), `ask` returns the descriptions of the best-matching items with their item-IRI citations, or exactly `no answer in this memory`; no model is called. WebMCP mirrors the same seven. Acceptance adds: an MCP client stores an Episode via `remember` (hitl → Proposal file; auto → merged after lint-only) and gets cited item descriptions via `ask` over the fixture Bundle, offline.
 
-**Note to PRD-051:** "the same five tools" reads as "the same seven tools" (`search read links compose propose ask remember`).
+**Note to PRD-051:** "the same five tools" reads as "the same seven tools" (`search read links compose propose ask remember`). From 1.1 they are ten: `brief`, `explain` and `check` are added (AGSC-09-13, AGSC-09-16).
 
 ### 2.9d Amendment 6 — v1.0 scope = everything except servers
 All requirements previously marked `should`, `v1.x`, `v1.1` or "schema-affecting v2" in this PRD are **v1.0** (WebMCP PRD-051 included). Only server/backend components remain v2 (hosted responder/remote MCP Worker, GitHub App, hosted instances, SPARQL endpoint, CRDT sync, Solid/IPFS/ActivityPub adapters, binaries/WASM) — their ports/hooks exist in v1.0. The schema, ontology, protocol and specs are **complete and frozen in v1.0** (forward-compatible; `spec_version 1.0.0`); the Internet-Draft is written against them. Scope cells reading `v1.x`/`should` above READ AS `v1.0` (this note supersedes them).

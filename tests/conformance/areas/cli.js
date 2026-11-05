@@ -1,11 +1,13 @@
 // tests/conformance/areas/cli.js — area handler for `cli` vectors.
-// cli-0002, cli-0005 and cli-0006 first; cli-0003, cli-0004 and the rest after the
-// extension point below; cli-0020…cli-0022 in _cli-instant-and-order.js, and
-// cli-0023…cli-0025 in _cli-tool-sets-and-gate.js.
+// cli-0002, cli-0005 and cli-0006 first; cli-0026, cli-0004 and the rest after the
+// extension point below; cli-0020…cli-0022 in _cli-instant-and-order.js,
+// cli-0023…cli-0025 in _cli-tool-sets-and-gate.js, and cli-0027, cli-0028 in
+// _cli-ten-tools.js.
 'use strict';
 
 const path = require('node:path');
 const vm = require('node:vm');
+const { createHash } = require('node:crypto');
 const { main } = require('../../../src/application/cli/main.js');
 const { load } = require('../../../src/application/config/load.js');
 const { createFileSystem } = require('../../../src/adapters/node-fs.js');
@@ -13,6 +15,7 @@ const { memoryPorts, captureStream } = require('./_shared.js');
 const { runCli0036 } = require('./_cli-help.js');
 const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
 const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
+const { runCli0027, runCli0028 } = require('./_cli-ten-tools.js');
 const { runCli0020, runCli0021, runCli0022 } = require('./_cli-instant-and-order.js');
 const { loaderSources, runCli0023, runCli0024, runCli0025 } = require('./_cli-tool-sets-and-gate.js');
 const { guarded } = require('./_expected-reads.js');
@@ -116,7 +119,7 @@ const HANDLERS = {
 };
 
 // ---------------------------------------------------------------------------
-// EXTENSION POINT — cli-0003 and cli-0004.
+// EXTENSION POINT — cli-0026 (the successor of cli-0003) and cli-0004.
 // Rules: AGSC-09-16 (one tool contract, two transports) and AGSC-09-13a (the
 // tool error envelope, never a JSON-RPC transport error).
 // ---------------------------------------------------------------------------
@@ -135,31 +138,40 @@ const FIXTURE_EPOCH = '1767225600';
 /** The same instant, as AGSC-04-10 spells it. */
 const FIXTURE_INSTANT = '2026-01-01T00:00:00Z';
 
-/** The Bundle both transports serve (`cli-0003` names `fixtures/minimal`). */
-function fixtureToolset(ctx, vector) {
+/**
+ * The Bundle both transports serve (`cli-0026` names `fixtures/minimal`) and the SITE it
+ * publishes — the artefact a visitor's browser actually loads. Built with a fixed clock, so
+ * the handler is deterministic and touches no network.
+ */
+function fixtureBuild(ctx, vector) {
   // The path is resolved against the ENGINE root the runner supplies, never
   // against `process.cwd()`: a handler that depended on the working directory
   // would pass under `node --test` and fail under `agsc conform` (AGSC-04-03).
-  const root = path.join((ctx && ctx.root) || '.', 'tests',
-    String((vector.input && vector.input.bundle) || 'fixtures/minimal'));
-  const ports = createFileSystem(root);
-  const schemas = validate.schemas(readSchemas((ctx && ctx.root) || '.'));
-  return tools(loadBundle(ports, { schemas }), {});
-}
-
-/**
- * The SITE this Bundle publishes — the artefact a visitor's browser actually loads.
- * Built with a fixed clock, so the handler is deterministic and touches no network.
- */
-function fixtureSite(ctx, vector) {
   const root = path.join((ctx && ctx.root) || '.', 'tests',
     String((vector.input && vector.input.bundle) || 'fixtures/minimal'));
   const fs = createFileSystem(root);
   const schemas = validate.schemas(readSchemas((ctx && ctx.root) || '.'));
   const bundle = loadBundle(fs, { schemas });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: FIXTURE_EPOCH } });
-  return site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' });
+  return { built: site.build(bundle, { clock, fs }, { specVersion: '1.0.0', version: '0.0.2' }), bundle };
 }
+
+/** The local server as the `mcp` verb starts it: the Bundle and the route map of its build. */
+function fixtureToolset(ctx, vector) {
+  const { built, bundle } = fixtureBuild(ctx, vector);
+  return tools(bundle, { artifacts: built.files });
+}
+
+function fixtureSite(ctx, vector) {
+  return fixtureBuild(ctx, vector).built;
+}
+
+/**
+ * SHA-256 in hex, synchronously: the page tool `brief` takes the host's hasher, and a
+ * handler runs synchronously; the page's own Web Crypto path, which answers a promise, is
+ * proved against the same values by `tests/distribution/tool-parity.test.js`.
+ */
+const sha256Hex = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
 
 /**
  * Evaluate the EMITTED PAGE in an isolated `node:vm` context.
@@ -204,7 +216,8 @@ function evaluateWebmcp(built, options) {
   // listed pages only, loaderSources); otherwise every route of the build.
   const api = sandbox.AGSC_PAGE_TOOLS;
   const corpusSources = opts.loader === true ? loaderSources(api, sources) : sources;
-  const pageToolset = api.install(api.pageCorpus(corpusSources, { bundleId: api.BUNDLE_ID }), sandbox.AGSC_CORE);
+  const corpus = api.pageCorpus(corpusSources, { bundleId: api.BUNDLE_ID, licenseProse: api.LICENSE_PROSE });
+  const pageToolset = api.install(corpus, sandbox.AGSC_CORE, sha256Hex);
   vm.runInContext(sources['/compose/webmcp.js'], context, { filename: 'webmcp.js' });
   return { networkCalls, pageToolset, registered, sources, state: sandbox.AGSC_WEBMCP };
 }
@@ -214,7 +227,7 @@ function evaluateWebmcp(built, options) {
  * vector whose Bundle is stated INLINE can use (`cli-0007`): there is no published
  * site to read, so the page corpus cannot be assembled. It proves the transport's
  * envelope and its identity with the local server's, and it deliberately proves
- * nothing about the page corpus — `cli-0003` is what proves that.
+ * nothing about the page corpus — `cli-0026` is what proves that.
  */
 function evaluateRegistration(toolset, options) {
   const opts = options || {};
@@ -235,8 +248,11 @@ function evaluateRegistration(toolset, options) {
   return { networkCalls, registered, state: sandbox.AGSC_WEBMCP };
 }
 
-/** cli-0003 — WebMCP mirrors MCP: same names, same argument names, same bytes. */
-function runCli0003(vector, ctx) {
+/**
+ * cli-0026 — WebMCP mirrors MCP over the ten tools: same names, same argument names, the
+ * same values for every tool (the successor of cli-0003, which listed seven).
+ */
+function runCli0026(vector, ctx) {
   const toolset = fixtureToolset(ctx, vector);
   const stdioManifest = toolset.manifest();
   const built = fixtureSite(ctx, vector);
@@ -254,6 +270,10 @@ function runCli0003(vector, ctx) {
     ['read', { slug: 'handoff' }],
     ['links', { slug: 'supervisor' }],
     ['compose', { selection: ['supervisor', 'handoff'] }],
+    ['brief', { selection: ['supervisor'] }],
+    ['explain', { key: 'used-by', source: 'handoff', target: 'supervisor' }],
+    ['explain', { key: 'requires', source: 'supervisor', target: 'handoff' }],
+    ['check', {}],
     ['ask', { question: 'handoff' }],
     ['propose', { slug: 'handoff' }],
     // The operator is declared: without one the local server refuses and the page
@@ -450,7 +470,7 @@ function runCli0008(vector) {
   const clock = { iso: () => FIXTURE_INSTANT, now: () => Number(FIXTURE_EPOCH) };
   const built = site.build(bundle, { clock }, { specVersion: '1.0.0', version: '0.0.2' });
   const page = evaluateWebmcp(built, {});
-  const local = tools(bundle, {});
+  const local = tools(bundle, { artifacts: built.files });
   const problems = [];
 
   const outcome = (result) => (result && result.type === 'error' ? 'error' : 'ok');
@@ -485,7 +505,7 @@ function runCli0008(vector) {
 
 Object.assign(HANDLERS, {
   'cli-0016': runCli0016,
-  'cli-0003': runCli0003,
+  'cli-0026': runCli0026,
   'cli-0004': runCli0004,
   'cli-0007': runCli0007,
   'cli-0008': runCli0008,
@@ -685,6 +705,10 @@ Object.assign(HANDLERS, {
   'cli-0024': runCli0024,
   'cli-0025': runCli0025,
   'cli-0036': runCli0036,
+  // The tools of 1.1 (AGSC-09-13): the bound, the citation records, and the tool list of ten.
+  'cli-0027': (vector, ctx) => runCli0027(vector, ctx, evaluateWebmcp),
+  'cli-0028': (vector, ctx) => runCli0028(vector, ctx, evaluateWebmcp),
+  'cli-0038': runCli0019,
 });
 
 // A required case with no handler is a FAIL, never a skip: the suite counted a skip

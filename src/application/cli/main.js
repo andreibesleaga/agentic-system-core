@@ -398,7 +398,7 @@ const VERB_PURPOSE = Object.freeze({
   review: 'runs the review lane: checks, a label and a comment, never a model call',
   refresh: 'runs the agent lane named by --agent; this engine runs it with --dry-run',
   skills: 'emits every skill pack, installs them under a target, or imports one pack',
-  mcp: 'serves the seven tools over standard input and output',
+  mcp: 'serves the ten tools over standard input and output',
   run: 'runs the steps of a procedure; opt-in through run.enabled',
   trace: 'records a captured agent run as an Episode; opt-in through run.enabled',
   conform: 'runs the conformance cases of a Level and writes the report',

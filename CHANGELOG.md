@@ -60,6 +60,19 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   every other text keeps its bytes, so the seven Harness files of `compose-0027` are unchanged
   (the file is an Agent Skills file, AGSC-07-19, AGSC-07-22; I-164). The lint and conform check that
   a pack parses as YAML, the other half of I-164, is not in 1.1.
+- Page scripts and the tool list for the ten tools (AGSC-09-13, AGSC-09-16; the hash of each file in
+  `fixture-minimal`, old to new; these three files are the only bytes that change on the eight
+  reference nodes): `compose/agsc-core.js` carries the brief of AGSC-07-25 (`bundle({ brief: true })`),
+  d62ccb51c8c560ee to d59bd12ec7050763; `compose/agsc-page-tools.js` gains the three tools, the bound,
+  the citation records, the functions of `tool-answers.js`, `API.LICENSE_PROSE` and the route
+  `/chunks.jsonl` with its shards, 3e00fdfcc916c610 to b41e50f5e2a3eeda; `compose/webmcp.js`, whose
+  manifest is the tool list, registers ten tools, 1f2e1c165ef67c3d to dd78843b71f2837a. The
+  descriptions of the seven tools of 1.0 are unchanged. `agsc mcp`'s line in `agsc --help` reads
+  "serves the ten tools"; the tool server reads the build instant, the content version and the chunk
+  lines from the route map of the build the verb already makes in memory (AGSC-09-14b).
+- The parity call list of the benchmark kit (`bench/corpus/parity-calls.json`) is version 2: nine
+  calls and three per-item templates for `brief`, `explain` and `check` are added, so it still covers
+  every tool of AGSC-09-13 (`docs/MEASUREMENTS.md` gives the figures of version 1).
 - Page scripts (AGSC-09-16, I-098; the hash of each file in `fixture-minimal`, old to new):
   `compose/agsc-page-tools.js` 0d81c92d16d92e59 to 3e00fdfcc916c610, `compose/webmcp.js`
   ef8ca64219f2bfe4 to 1f2e1c165ef67c3d, `compose/agsc-compose.js` 06ac8df63efc43a6 to
@@ -237,6 +250,37 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the brief requires only the two portable algebras. The seven Harness file kinds keep their bytes
   (`compose-0027`, `compose-0015`, `compose-0016` unchanged). No new dependency; G-REF: no byte of the
   eight reference nodes changes.
+- The tools `brief`, `explain` and `check` (AGSC-09-13, AGSC-09-16, AGSC-11-18; vectors `cli-0026`,
+  which replaces the withdrawn `cli-0003`, `cli-0038`, which replaces `cli-0019`, and `bnd-0050`), so
+  the local tool server and the page tools serve ten tools, listed by name in code-point order.
+  `brief` returns the content of `brief.json` (AGSC-07-25) for a selection, composed over the listed
+  set with the build instant and content version of the node's discovery document, and writes
+  nothing; `explain` says whether one edge holds and why — `authored`, or the steps of a reading of
+  AGSC-05-33 (`inverse`, `symmetric`, `transitive`, `closure`) — and answers `holds: false` with no
+  step for a relation that does not hold, a key outside the fourteen and their inverse names being
+  `AGSC-E203`; `check` returns the Link warnings `AGSC-E313` to `AGSC-E316` (AGSC-03-23…03-26) of a
+  selection, or of every listed item, as findings without a position or a message, ordered by item,
+  code, key and target. The three answer over the listed set on both transports (AGSC-09-16), are
+  `readOnlyHint: true`, and only `brief` carries `untrustedContentHint: true`. `source` and `target`
+  accept the `memory://` and item-IRI forms of AGSC-05-04b. New portable module
+  `src/distribution/tool-answers.js`: the local server calls it and `/compose/agsc-page-tools.js`
+  carries its source text after the page tools' own, so the two transports run one implementation;
+  `tests/arch/page-tools-portable.test.js` holds both modules to the portability rule. The page tool
+  `brief` hashes the selection with the page's Web Crypto, so it answers a promise; the local server
+  hashes with Node's `crypto`, and the values are equal (`tests/distribution/tool-parity.test.js`).
+- The bound on `search` and `ask` (AGSC-09-13, I-030; vector `cli-0027`): a `search` answer carries
+  at most 100 hits, in the order of the ranking, and the member `total` only when more than 100
+  items match; an answer under the bound has the bytes of 1.0 (`cli-0007`, `cli-0008` unchanged).
+  `ask` already cites at most three items. The same on both transports.
+- The citation record of a chunk (AGSC-09-13, AGSC-06-44, I-094; vector `cli-0028`): the body of
+  `read` gains `chunks`, one record per chunk of the item in the order of AGSC-06-29, with exactly
+  `algorithm` (`sha-256`), `bundle_version`, `coverage` (`text`), `digest`, `id`, `iri`, `item`,
+  `license`, `license_url` (only where the chunk line has one), `ordinal`, `section` and `terms`, and
+  `[]` for an item with no chunk (a draft, a retired item). The values are those of the chunk lines
+  the build published (`knowledge/chunks.js#citationRecord`): the local server reads them from the
+  route map of the build the `mcp` verb makes, the page from `/chunks.jsonl` and the shards its
+  manifest names, which the page-tool loader now fetches; a shard the page could not read makes
+  `read` answer `AGSC-E901`, never an empty list.
 - `compose --narrate <agent>` (AGSC-07-28, AGSC-09-09): without `--brief` it is `AGSC-E003`, exit 2;
   with it, this distribution, which ships no model adapter for an agent lane, answers `AGSC-E001` at
   exit 1, writes no `narration.md` and still writes the brief and the Harness. No file of a brief and

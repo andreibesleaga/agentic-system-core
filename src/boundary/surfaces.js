@@ -64,17 +64,26 @@ const REL = Object.freeze({
   surface: 'https://w3id.org/agentic-system-core/rel#surface',
 });
 
-/** AGSC-09-13: the seven tools, in code-point order. */
-const TOOL_NAMES = Object.freeze(['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+/**
+ * AGSC-09-13: the ten tools, in code-point order — the seven of 1.0 and, from 1.1,
+ * `brief`, `explain` and `check` (a client of 1.0 meets an unknown tool in a list as
+ * AGSC-00-21 says).
+ */
+const TOOL_NAMES = Object.freeze(['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read',
+  'remember', 'search']);
 
 /**
- * AGSC-11-18, the WebMCP half: `readOnlyHint` on the five read tools,
+ * AGSC-11-18, the WebMCP half: `readOnlyHint` on the eight read tools,
  * `consequentialHint` on the two write tools, `untrustedContentHint` on every
- * tool whose result carries prose (`links` returns edges, so it carries none).
+ * tool whose result carries prose — every tool except `links`, `explain` and
+ * `check`, whose results are slugs, keys, rule names and codes only (`bnd-0050`).
  */
 const WEBMCP_ANNOTATIONS = Object.freeze({
   ask: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
+  brief: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
+  check: Object.freeze({ readOnlyHint: true, untrustedContentHint: false }),
   compose: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
+  explain: Object.freeze({ readOnlyHint: true, untrustedContentHint: false }),
   links: Object.freeze({ readOnlyHint: true, untrustedContentHint: false }),
   propose: Object.freeze({ consequentialHint: true, readOnlyHint: false, untrustedContentHint: true }),
   read: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),

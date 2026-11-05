@@ -82,6 +82,8 @@ function inProcess(bundleDir, options = {}) {
   const mcpTools = require(path.join(REPO, 'src', 'distribution', 'mcp-tools.js'));
   const pageTools = require(path.join(REPO, 'src', 'distribution', 'page-tools.js'));
   const compose = require(path.join(REPO, 'src', 'composition', 'compose.js'));
+  const { briefOf } = require(path.join(REPO, 'src', 'composition', 'brief.js'));
+  const { selectionDigestInput } = require(path.join(REPO, 'src', 'composition', 'harness.js'));
 
   const fs = createFileSystem(bundleDir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(REPO)) });
@@ -91,7 +93,8 @@ function inProcess(bundleDir, options = {}) {
   for (const [route, text] of files) sources[route] = String(text);
   const bundleId = (bundle.config.bundle || {}).id;
 
-  const context = vm.createContext({ TextEncoder });
+  // Web Crypto, which the page tool `brief` hashes the selection with (AGSC-07-25).
+  const context = vm.createContext({ TextEncoder, crypto: globalThis.crypto });
   vm.runInContext(sources['/compose/agsc-core.js'], context, { filename: 'agsc-core.js' });
   vm.runInContext(sources['/compose/agsc-page-tools.js'], context, { filename: 'agsc-page-tools.js' });
   const api = vm.runInContext('globalThis.AGSC_PAGE_TOOLS', context);
@@ -101,13 +104,18 @@ function inProcess(bundleDir, options = {}) {
   // takes the loaded shape, so the projection is the loaded items it names.
   const publishedSlugs = new Set(site.publishedItems(bundle.items, bundle.config.releases).map((i) => i.slug));
   const published = bundle.items.filter((i) => publishedSlugs.has(i.slug));
+  // The local server is handed the route map of its build, as the `mcp` verb hands it (the
+  // discovery document and the chunk lines of AGSC-09-13 come from there).
+  const artifacts = files;
+  const licenseProse = api.LICENSE_PROSE;
   return {
     bundle,
-    local: mcpTools.tools(bundle, {}),
-    projected: mcpTools.tools({ ...bundle, byslug: undefined, items: published }, {}),
+    local: mcpTools.tools(bundle, { artifacts }),
+    projected: mcpTools.tools({ ...bundle, byslug: undefined, items: published }, { artifacts }),
     published: published.map((i) => i.slug).sort(),
-    module: pageTools.pageToolset(pageTools.pageCorpus(sources, { bundleId }), { compose: compose.compose }),
-    page: api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), core),
+    module: pageTools.pageToolset(pageTools.pageCorpus(sources, { bundleId, licenseProse }),
+      { briefOf, compose: compose.compose, selectionDigestInput }),
+    page: api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse }), core),
     slugs: bundle.items.map((i) => i.slug).sort(),
   };
 }
@@ -193,13 +201,14 @@ async function run(bundleDir, spec, options = {}) {
   let transportEqual = 0;
   for (let i = 0; i < calls.length; i += 1) {
     const [name, args] = calls[i];
-    const reference = wire(hosts.projected.call(name, args));
+    const reference = wire(await hosts.projected.call(name, args));
     const row = perTool[name] || { calls: 0, equal: 0, required_difference: 0 };
     perTool[name] = row;
     row.calls += 1;
-    const answers = { module: wire(hosts.module.call(name, args)), page: wire(hosts.page.call(name, args)) };
+    // `brief` answers a promise on the page (its hasher is Web Crypto), a value elsewhere.
+    const answers = { module: wire(await hosts.module.call(name, args)), page: wire(await hosts.page.call(name, args)) };
     const unequal = ['page', 'module'].filter((host) => !util.isDeepStrictEqual(answers[host], reference));
-    const transportSame = util.isDeepStrictEqual(wire(stdio.answers[i]), wire(hosts.local.call(name, args)));
+    const transportSame = util.isDeepStrictEqual(wire(stdio.answers[i]), wire(await hosts.local.call(name, args)));
     if (transportSame) transportEqual += 1;
     else unequal.push('stdio');
     if (unequal.length === 0) row.equal += 1;

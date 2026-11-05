@@ -89,8 +89,8 @@ module.exports = [
       const client = await world.mcp();
       const names = (await client.listTools()).tools.map((t) => t.name).sort();
       // AGSC-09-13: the read tools of persona-c and the write tools of persona-d are
-      // one server's seven tools.
-      assert.deepStrictEqual(names, ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+      // one server's ten tools.
+      assert.deepStrictEqual(names, ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
       world.state.client = client;
     },
   },
