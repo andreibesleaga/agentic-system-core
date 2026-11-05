@@ -404,6 +404,35 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   site-wide one with nothing changed but `'wasm-unsafe-eval'` added to `script-src` (AGSC-06-39 forbids
   any other loosening); the two persona scenarios of the query page name AGSC-06-39, AGSC-05-34 and
   AGSC-06-20 in their steps.
+- `/query/` refuses a `SERVICE` clause that an escape or the engine's own reading of a name hid from
+  its tokenizer (AGSC-06-39 (a); found by the audit of the page, each let `SERVICE SILENT` through to
+  the engine, which has no service handler, so nothing left the origin): (1) a local name may hold the
+  escapes of SPARQL 1.1 `PN_LOCAL_ESC`, at its first position too (`ex:a\#`, `ex:a\'`, `ex:\#`), and
+  the tokenizer ended the name at the backslash and read the `#` as a comment or the `'` as a string;
+  (2) an IRI may hold a code point escape (`<x:a\u0041#>`, `UCHAR`), and the tokenizer did not read
+  it as an IRI; (3) Oxigraph 0.5.13 ends a local name at its second run of bare full stops
+  (`ex:a.b.SERVICE` is `ex:a.b`, `.`, `SERVICE`), and the tokenizer read the longer name SPARQL 1.1
+  allows; (4) a variable's name holds no hyphen (`?a-1SERVICE` is `?a`, `-1`, `SERVICE`). The header of
+  `query/tokens.js` names the terminals it models; a second differential property aimed at escapes is
+  added, and `AGSC_QUERY_FUZZ=1` runs both long (30,000 runs on six seeds), the close gate of a change to
+  the tokenizer or of a move to another engine release (step 6 of the engine folder's README). Bytes:
+  `/query/agsc-query.js` and `/query/agsc-query-worker.js`.
+- A `SELECT` that calls `RAND`, `NOW`, `UUID`, `STRUUID` or `BNODE` runs once on `/query/` (AGSC-06-39
+  (c), (d)): its CSV file is read back from its JSON file through the engine's own CSV writer
+  (`query/engine.js#querySelectCsv`), so the table, the CSV file and the JSON file hold the same values;
+  before, the query ran once per format and the CSV file held other values. Any other `SELECT` still
+  runs once per format, since two runs give the same rows in the same order and the read-back costs
+  more than a second run. The caption of the picture says "the downloads hold every row" (the table
+  shows the first 200), and the page says that the CSV file holds each value as the query gave it, so
+  a spreadsheet may run a value that starts with `=`, `+`, `-` or `@` as a formula (the W3C format
+  writes it so; the bytes of the file do not change). Bytes: `/query/index.html`,
+  `/query/agsc-query.js` and `/query/agsc-query-worker.js`. The persona scenario "Reader asks the
+  published graph a question on the query page" gains the step for both.
+- Size (AGSC-06-39, measured by the audit of the page against the engine before the page): a node built
+  with the default grows by about 4.46 MB, almost all of it the vendored engine under
+  `/query/vendor/oxigraph-0.5.13/` (the demonstration node 1.33 MB to 5.79 MB, the minimal fixture
+  0.27 MB to 4.73 MB); the package grows from 1.62 MB to 3.21 MB packed (5.72 MB to 10.24 MB unpacked,
+  837 to 852 files). `site.query_page: false` keeps the size of 1.0.
 - The diagram language takes the token `rel=KEY` on `arrow`, `line` and `text` (AGSC-01-42, I-024):
   KEY is one of the fourteen Link keys of AGSC-03-01, and the element gets the class `agsc-rel-KEY`,
   which carries no colour; on an accented element the class attribute holds both classes, the accent

@@ -78,6 +78,7 @@ Feature: Human reader finds a pattern with evidence
     Then the page loads the node's own graph into the engine it ships and requests nothing from another origin (AGSC-06-39)
     And a CONSTRUCT query for the "requires" links shows "Handoff" requiring "Supervisor" as a table and as a picture, with the result offered as CSV and as JSON
     And the share link of that query opens it in the editor of a new page without running it, and no request carries the query
+    And a SERVICE clause after an escaped name or an IRI with a code point escape is refused before anything runs, and a SELECT of RAND() shows the same value in the table, the CSV file and the JSON file
 
   @PRD-011 @PRD-022 @human @matrix-H3
   Scenario: Reader runs one of the ten questions of the graph on the query page with the keyboard alone

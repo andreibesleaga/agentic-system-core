@@ -12,7 +12,8 @@
 //     no CSP violation, and nothing is requested from another origin;
 //   * SELECT, ASK, CONSTRUCT and DESCRIBE answer; a table is shown, and a picture for a
 //     graph result; an update and a SERVICE clause are refused before anything runs;
-//   * the CSV and JSON downloads are the page's own links and hold the W3C formats;
+//   * the CSV and JSON downloads are the page's own links and hold the W3C formats, and the
+//     same values as the table where a query draws new ones on each run;
 //   * the share link holds the query in its fragment; opening it fills the editor and runs
 //     nothing; no request carries the query text; nothing is stored;
 //   * Stop ends a long query and the page is ready again;
@@ -103,7 +104,7 @@ test('the /query/ page in a browser', { skip: SKIP || false }, async (t) => {
       assert.strictEqual(construct.pictureHidden, false);
       assert.ok(construct.circles >= 2, `${construct.circles} nodes drawn`);
       assert.strictEqual(await page.locator('#query-picture line.link').count() > 0, true, 'the picture draws the links');
-      assert.match(await page.textContent('#query-picture figcaption'), /^A picture of the result: \d+ nodes? and \d+ links?; the table holds every row\./u);
+      assert.match(await page.textContent('#query-picture figcaption'), /^A picture of the result: \d+ nodes? and \d+ links?; the downloads hold every row\./u);
       const item = await page.evaluate(() => document.querySelector('#query-table td').textContent);
       const describe = await runQuery(page, `DESCRIBE ${item}`);
       assert.match(describe.status, /^DESCRIBE answered with \d+ triples?\.$/u);
@@ -123,6 +124,11 @@ test('the /query/ page in a browser', { skip: SKIP || false }, async (t) => {
       // A `<` that compares two values cannot hide a SERVICE clause as an IRI up to a comment.
       const hidden = await runQuery(page, 'SELECT * WHERE { ?s ?p ?o FILTER(1<2)SERVICE#>\nSILENT <https://example.org/sparql> { ?x ?y ?z } }');
       assert.strictEqual(hidden.status, 'This page sends no query to another server: a SERVICE clause is refused.');
+      // Nor can an escaped `#` in a local name or a code point escape in an IRI (SPARQL 1.1 PN_LOCAL_ESC, UCHAR).
+      for (const escaped of ['PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o OPTIONAL { ?s ?p ex:a\\# } SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }',
+        'SELECT * WHERE { ?s ?p <x:a\\u0041#> . SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }']) {
+        assert.strictEqual((await runQuery(page, escaped)).status, 'This page sends no query to another server: a SERVICE clause is refused.', escaped);
+      }
       assert.strictEqual(await page.getAttribute('#query', 'data-state'), 'ready', 'the worker was never asked');
       await context.close();
     });
@@ -145,6 +151,11 @@ test('the /query/ page in a browser', { skip: SKIP || false }, async (t) => {
       assert.strictEqual(lines[1].split(',')[0], parsed.results.bindings[0].item.value);
       await runQuery(page, 'ASK { ?s ?p ?o }');
       assert.deepStrictEqual(JSON.parse((await download(page, '#query-json')).text), { boolean: true, head: {} });
+      // A value drawn anew on each run is the same in the table and both files: the query runs once.
+      const fresh = await runQuery(page, 'SELECT (STR(RAND()) AS ?r) (STRUUID() AS ?u) WHERE {}');
+      const drawn = JSON.parse((await download(page, '#query-json')).text).results.bindings[0];
+      assert.strictEqual((await download(page, '#query-csv')).text, `r,u\r\n${drawn.r.value},${drawn.u.value}\r\n`);
+      assert.ok(fresh.text.includes(drawn.r.value) && fresh.text.includes(drawn.u.value), fresh.text);
       await context.close();
     });
 

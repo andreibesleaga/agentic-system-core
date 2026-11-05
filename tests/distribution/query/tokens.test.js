@@ -101,6 +101,41 @@ test('a refused word glued to the token before it is still refused (the engine r
   assert.strictEqual(tokens.queryCheck('SELECT (STRUUID() AS ?u) (ENCODE_FOR_URI(?s) AS ?e) { ?s ?p ?o FILTER(isLITERAL(?o) && LANGMATCHES(LANG(?o), "en")) }').refusal, null);
 });
 
+test('an escaped character in a local name and a code point escape in an IRI cannot hide a refused word', () => {
+  // Found by the audit of the query page: SPARQL 1.1 lets a local name hold `\#`, `\'` and the
+  // other escapes of PN_LOCAL_ESC, at its first position too, and an IRI hold `\uXXXX` and
+  // `\UXXXXXXXX` (UCHAR); the engine reads each as part of the name or the IRI, and reads the
+  // SERVICE after it.
+  for (const name of ['ex:a\\#', 'ex:a\\\'', 'ex:\\#']) {
+    const text = `PREFIX ex: <http://e/> SELECT * WHERE { ?s ?p ?o OPTIONAL { ?s ?p ${name} } SERVICE SILENT <https://e.org/s> { ?x ?y ?z } }`;
+    assert.deepStrictEqual(tokens.queryCheck(text).refusal, { reason: 'service', word: 'SERVICE' }, text);
+  }
+  for (const iri of ['<x:a\\u0041#>', '<x:a\\U00000041#>']) {
+    const text = `SELECT * WHERE { ?s ?p ${iri} . SERVICE SILENT <https://e.org/s> { ?x ?y ?z } }`;
+    assert.deepStrictEqual(tokens.queryCheck(text).refusal, { reason: 'service', word: 'SERVICE' }, text);
+  }
+  assert.deepStrictEqual(kinds('ex:a\\# ex:\\#b ex:a\\. ex:a\\.. ex:a.'), [['prefixed', 'ex:a\\#'], ['prefixed', 'ex:\\#b'],
+    ['prefixed', 'ex:a\\.'], ['prefixed', 'ex:a\\.'], ['punct', '.'], ['prefixed', 'ex:a'], ['punct', '.']]);
+  // A backslash before any other character ends the name; the engine refuses the text.
+  assert.deepStrictEqual(kinds('ex:a\\u0041 ex:a\\'), [['prefixed', 'ex:a'], ['punct', '\\'], ['word', 'u0041'], ['prefixed', 'ex:a'],
+    ['punct', '\\']]);
+  assert.deepStrictEqual(kinds('<x:a\\u0041> <x:\\U00000041> <x:a\\u004>'), [['iri', '<x:a\\u0041>'], ['iri', '<x:\\U00000041>'],
+    ['punct', '<'], ['prefixed', 'x:a'], ['punct', '\\'], ['word', 'u004'], ['punct', '>']]);
+});
+
+test('a local name ends where the engine ends it, and a variable at a hyphen, so neither can hide a refused word', () => {
+  // Found by the differential fuzz of the audit fix: Oxigraph 0.5.13 ends a local name at its
+  // second run of bare full stops (`ex:a.b.SERVICE` is `ex:a.b`, `.`, `SERVICE`), though
+  // SPARQL 1.1 allows the longer name; and a variable's name (VARNAME) holds no hyphen
+  // (`?a-1SERVICE` is `?a`, `-1`, `SERVICE`). Reading less than the engine only refuses more.
+  for (const text of ['PREFIX ex: <x:> SELECT * WHERE { ?s ?p ex:a.b.SERVICE SILENT <https://e.org/s> { ?x ?y ?z } }',
+    'PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o .ex:a\\#?a-1SERVICE SILENT <https://e.org/s> { ?x ?y ?z } }']) {
+    assert.deepStrictEqual(tokens.queryCheck(text).refusal, { reason: 'service', word: 'SERVICE' }, text);
+  }
+  assert.deepStrictEqual(kinds('ex:a.b.c ex:a..b ex:a\\.b.c ?a-1 _:a.b.c'), [['prefixed', 'ex:a.b'], ['punct', '.'], ['word', 'c'],
+    ['prefixed', 'ex:a..b'], ['prefixed', 'ex:a\\.b.c'], ['variable', '?a'], ['word', '-1'], ['blank', '_:a.b.c']]);
+});
+
 test('an IRI after a value outside an expression, or where an expression expects a value, is still an IRI', () => {
   // Triple patterns, collections, VALUES rows and the arguments of IN and of a function.
   const text = 'SELECT * { ?s <x:p> <x:o> ; <x:q> (<x:a> <x:b>) . VALUES (?v) { (<x:c>) } FILTER(?v IN (<x:c>, <x:d>) && <x:f>(?v) = <x:e>) }';
@@ -114,6 +149,14 @@ test('a query that names its own dataset says so (FROM, FROM NAMED)', () => {
   assert.strictEqual(tokens.queryCheck('SELECT * FROM <x:g> WHERE { ?s ?p ?o }').dataset, true);
   assert.strictEqual(tokens.queryCheck('SELECT * FROM NAMED <x:g> WHERE { GRAPH ?g { ?s ?p ?o } }').dataset, true);
   assert.strictEqual(tokens.queryCheck('SELECT * WHERE { ?s <x:from> ?o }').dataset, false);
+});
+
+test('a query that draws new values on each run says so: RAND, NOW, UUID, STRUUID or BNODE called, in any case', () => {
+  for (const text of ['SELECT (rand() AS ?r) {}', 'SELECT (NOW() AS ?n) {}', 'SELECT (UUID() AS ?u) (STRUUID() AS ?s) {}',
+    'SELECT ?b { BIND(BNODE() AS ?b) }']) assert.strictEqual(tokens.queryCheck(text).fresh, true, text);
+  for (const text of ['SELECT ?now { ?now ex:uuid "RAND()" } # BNODE()', 'SELECT (STR(?s) AS ?r) { ?s ?p ?o }']) {
+    assert.strictEqual(tokens.queryCheck(text).fresh, false, text);
+  }
 });
 
 test('the coloured copy of the editor: one span per token that is not white space, text as text', () => {

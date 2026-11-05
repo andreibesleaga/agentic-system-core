@@ -595,6 +595,32 @@ module.exports = [
     },
   },
   {
+    pattern: 'a SERVICE clause after an escaped name or an IRI with a code point escape is refused before anything runs, and a SELECT of RAND() shows the same value in the table, the CSV file and the JSON file',
+    async run(world) {
+      const { page } = world.state.query;
+      const run = async (text) => {
+        await page.fill('#query-text', text);
+        await page.evaluate(() => document.getElementById('query').removeAttribute('data-result'));
+        await page.click('#query-run');
+        await page.waitForSelector('#query[data-result]', { timeout: 20000 });
+        return page.getAttribute('#query', 'data-result');
+      };
+      for (const text of ['PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o OPTIONAL { ?s ?p ex:a\\# } SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }',
+        'SELECT * WHERE { ?s ?p <x:a\\u0041#> . SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }']) {
+        assert.strictEqual(await run(text), 'refused', text);
+        assert.strictEqual(await page.textContent('#query-status'), 'This page sends no query to another server: a SERVICE clause is refused.');
+      }
+      assert.strictEqual(await run('SELECT (STR(RAND()) AS ?r) WHERE {}'), 'answered');
+      const fileOf = async (selector) => {
+        const [file] = await Promise.all([page.waitForEvent('download'), page.click(selector)]);
+        return fs.readFileSync(await file.path(), 'utf8');
+      };
+      const value = JSON.parse(await fileOf('#query-json')).results.bindings[0].r.value;
+      assert.strictEqual(await fileOf('#query-csv'), `r\r\n${value}\r\n`);
+      assert.ok((await page.textContent('#query-table')).includes(value));
+    },
+  },
+  {
     pattern: 'the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it (AGSC-06-39, AGSC-05-34)',
     async run(world) {
       const { page } = world.state.query;

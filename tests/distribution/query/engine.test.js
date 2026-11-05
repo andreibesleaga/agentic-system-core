@@ -18,7 +18,9 @@
 //     with its blank nodes named b0, b1, … in the order of what each one is in (the sorted
 //     triples it is part of), never by the labels the engine gave them, so the same query
 //     gives the same bytes every time.
-// Deterministic (fixed seeds), no network.
+// Deterministic (fixed seeds), no network. AGSC_QUERY_FUZZ=1 runs the two differential
+// properties long, 30 000 runs on each of the seeds 1 to 6: the close gate of any change to
+// src/distribution/query/tokens.js (about one minute).
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -28,6 +30,10 @@ const ox = require('oxigraph');
 const engine = require('../../../src/distribution/query/engine.js');
 
 const NODE = 'https://node.example/';
+
+/** The fast-check runs of a differential property: its own seed by default, six long runs with AGSC_QUERY_FUZZ=1. */
+const fuzzRuns = (numRuns, seed) => (process.env.AGSC_QUERY_FUZZ === '1'
+  ? [1, 2, 3, 4, 5, 6].map((s) => ({ numRuns: 30000, seed: s })) : [{ numRuns, seed }]);
 const NQ = [
   `<${NODE}concepts/a/> <http://www.w3.org/2004/02/skos/core#prefLabel> "Item, \\"A\\"\\nnext"@en <${NODE}> .`,
   `<${NODE}concepts/a/> <http://purl.org/dc/terms/requires> <${NODE}concepts/b/> <${NODE}> .`,
@@ -53,6 +59,33 @@ test('SELECT: the JSON and the CSV of the result, over the union of the node\'s 
   ] } });
   assert.strictEqual(answer.csv, `item,label\r\n${NODE}concepts/a/,"Item, ""A""\nnext"\r\n${NODE}concepts/b/,Item B\r\n`);
   assert.strictEqual(answer.error, undefined);
+});
+
+test('a SELECT runs once: its CSV file holds the values of its JSON file, RAND(), STRUUID(), BNODE() and NOW() included', () => {
+  // Found by the audit of the query page: run once per format, a value the engine draws anew
+  // on each run differed between the CSV file and the JSON file and table.
+  const calls = [];
+  const real = store();
+  const counted = { query: (...args) => { calls.push(args[0]); return real.query(...args); } };
+  const answer = engine.queryAnswer(ox, counted, 'SELECT (RAND() AS ?r) (STRUUID() AS ?u) (BNODE() AS ?b) (NOW() AS ?n) ?unbound WHERE {}');
+  assert.strictEqual(calls.length, 1, 'the query ran once');
+  const row = JSON.parse(answer.json).results.bindings[0];
+  assert.deepStrictEqual(csvRecords(answer.csv), [['r', 'u', 'b', 'n', 'unbound'], [row.r.value, row.u.value, `_:${row.b.value}`, row.n.value, '']]);
+});
+
+test('the CSV file of a SELECT, read back from its JSON file or not, is the bytes the engine\'s own CSV writer gives', () => {
+  // No variable, no row, unbound values, repeated rows, blank nodes of the file, a triple
+  // term, a literal with a base direction, a language tag and a datatype.
+  for (const text of ['SELECT * {}', 'SELECT * WHERE { FILTER(false) }', 'SELECT * WHERE { VALUES () { () () () } }',
+    'SELECT ?a ?b WHERE { BIND(1 AS ?a) }', 'SELECT ?x WHERE { VALUES ?x { 1 1 2 } }', 'SELECT ?s ?o WHERE { ?s <http://purl.org/dc/terms/title> ?o }',
+    'SELECT ?s ?p ?o WHERE { ?s ?p ?o } ORDER BY ?s ?p ?o', 'SELECT (<<( <x:a> <x:b> "c" )>> AS ?t) {}',
+    'SELECT (STRLANGDIR("a,b", "en", "rtl") AS ?d) ("x"@ro AS ?l) ("2"^^<https://example.org/t> AS ?t) {}']) {
+    const s = store();
+    const options = { use_default_graph_as_union: true };
+    const csv = s.query(text, { ...options, results_format: 'text/csv' });
+    assert.strictEqual(engine.querySelectCsv(ox, s.query(text, { ...options, results_format: 'application/sparql-results+json' })), csv, text);
+    assert.strictEqual(engine.queryAnswer(ox, s, text).csv, csv, text);
+  }
 });
 
 test('ASK: JSON only, because no W3C format writes a yes or no as CSV', () => {
@@ -92,6 +125,9 @@ test('an update, a SERVICE clause and a text that is no query are refused before
   // A `<` that compares two values hides nothing (the engine reads it as "less than").
   assert.deepStrictEqual(engine.queryAnswer(ox, spy, 'SELECT * WHERE { ?s ?p ?o FILTER(1<2)SERVICE#>\nSILENT <https://example.org/sparql> { ?x ?y ?z } }'),
     { error: 'This page sends no query to another server: a SERVICE clause is refused.', form: 'SELECT' });
+  // An escaped `#` in a local name is part of the name, not a comment (SPARQL 1.1 PN_LOCAL_ESC).
+  assert.deepStrictEqual(engine.queryAnswer(ox, spy, 'PREFIX ex: <x:> SELECT * WHERE { ?s ?p ex:a\\# . SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }'),
+    { error: 'This page sends no query to another server: a SERVICE clause is refused.', form: 'SELECT' });
   assert.deepStrictEqual(engine.queryAnswer(ox, spy, '# nothing'),
     { error: 'Write a SELECT, ASK, CONSTRUCT or DESCRIBE query.', form: null });
   assert.deepStrictEqual(calls, []);
@@ -101,17 +137,43 @@ test('property: no text lets through a SERVICE clause that the engine reads', ()
   // A differential check against the engine: a text that the engine runs, and that it no
   // longer parses once the word SERVICE is replaced, holds a SERVICE clause the engine reads;
   // the page must refuse every such text. The pieces are the ones that could hide the word
-  // from a tokenizer: comparisons, comments, strings, IRIs, line ends, brackets, glued names.
+  // from a tokenizer: comparisons, comments, strings, IRIs, line ends, brackets, glued names,
+  // escapes in a local name and code point escapes in an IRI.
   const pieces = fc.constantFrom('FILTER(1<2)', 'FILTER(?a<?b)', '#x', '#>', '"', '\'', '<', '>', '<2)', '\r', '\n', '(', ')',
     '{', '}', '[', ']', ' ', '.', ';', ',', '?a', '<x:a>', 'ex:', 'ex:a', '1', '1.', 'a', 'true', 'e', '_:b', '"a"@en', '^^',
-    'BIND(1 AS ?q)', 'STR(', 'ex:f(', 'OPTIONAL {', 'UNION {', 'FILTER EXISTS {', '|', '/', '*', '+', '!', '=', '&&');
+    'BIND(1 AS ?q)', 'STR(', 'ex:f(', 'OPTIONAL {', 'UNION {', 'FILTER EXISTS {', '|', '/', '*', '+', '!', '=', '&&',
+    'ex:a\\#', 'ex:a\\\'', 'ex:\\#', 'ex:a\\.', '\\', '<x:a\\u0041', '<x:\\U00000041', '\\u0041');
   const store = new ox.Store();
   const parses = (q) => { try { store.query(q); return true; } catch (e) { return false; } };
-  fc.assert(fc.property(fc.array(pieces, { maxLength: 10 }), (parts) => {
-    const q = `PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o ${parts.join('')}SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }`;
-    const read = parses(q) && !parses(q.replace('SERVICE SILENT', 'NOSUCHWORD SILENT'));
-    assert.ok(!read || engine.queryAnswer(ox, store, q).error !== undefined, JSON.stringify(q));
-  }), { numRuns: 4000, seed: 639 });
+  for (const runs of fuzzRuns(4000, 639)) {
+    fc.assert(fc.property(fc.array(pieces, { maxLength: 10 }), (parts) => {
+      const q = `PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o ${parts.join('')}SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }`;
+      const read = parses(q) && !parses(q.replace('SERVICE SILENT', 'NOSUCHWORD SILENT'));
+      assert.ok(!read || engine.queryAnswer(ox, store, q).error !== undefined, JSON.stringify(q));
+    }), runs);
+  }
+});
+
+test('property: no escape in a name or an IRI lets through a SERVICE clause that the engine reads', () => {
+  // The same differential check, aimed at the escapes the audit of the query page found:
+  // a local name may hold `\#`, `\'` and the other escapes of PN_LOCAL_ESC, and an IRI
+  // `\uXXXX` and `\UXXXXXXXX` (UCHAR), and the engine reads each as part of the name or the
+  // IRI. Red on the tokenizer of the block 6b close (`<x:a\u0041#>`, then `ex:a\#`); its
+  // fix was red on `ex:a.b.` and `?a-1` before a name ended at a second run of full stops and
+  // a variable at a hyphen.
+  const names = fc.constantFrom('ex:a', 'ex:a\\#', 'ex:a\\\'', 'ex:\\#', 'ex:\\#b', 'ex:a\\.', 'ex:a\\~', 'ex:a\\(', 'ex:a\\)',
+    'ex:a\\;', 'ex:a\\,', 'ex:%41', '<x:a\\u0041#>', '<x:\\U00000041#>', '<x:a\\u0041>', '<x:a>', 'ex:a.b', 'ex:a\\.b');
+  const pieces = fc.constantFrom('\\', '#', '>', '\'', '"', '\n', ' ', '.', ';', ',', '{', '}', '(', ')', '?a', 'ex:a', 'ex:a\\#',
+    '<x:a\\u0041', 'ex:a.b', '?a-', '1');
+  const store = new ox.Store();
+  const parses = (q) => { try { store.query(q); return true; } catch (e) { return false; } };
+  for (const runs of fuzzRuns(2000, 6394)) {
+    fc.assert(fc.property(names, fc.array(pieces, { maxLength: 6 }), (name, parts) => {
+      const q = `PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o ; ?p ${name}${parts.join('')}SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }`;
+      const read = parses(q) && !parses(q.replace('SERVICE SILENT', 'NOSUCHWORD SILENT'));
+      assert.ok(!read || engine.queryAnswer(ox, store, q).error !== undefined, JSON.stringify(q));
+    }), runs);
+  }
 });
 
 test('the engine\'s own error comes back as a message', () => {

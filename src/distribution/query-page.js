@@ -344,7 +344,7 @@ function body({ questions, ontologyTerms, node, siteTerms }) {
     '<p class="query-downloads"><a id="query-csv" data-format="csv" download="query-result.csv" hidden>Download the result as CSV</a>',
     '<a id="query-json" data-format="json" download="query-result.json" hidden>Download the result as JSON</a>',
     '<span id="query-csv-none" hidden>A yes-or-no answer has no CSV form; the JSON file holds it.</span></p>',
-    '<p>The files follow the W3C Recommendations “SPARQL 1.1 Query Results CSV and TSV Formats” and “SPARQL 1.1 Query Results JSON Format”. A <code>CONSTRUCT</code> or <code>DESCRIBE</code> result is given as its triples, one row each, in the columns subject, predicate and object.</p>',
+    '<p>The files follow the W3C Recommendations “SPARQL 1.1 Query Results CSV and TSV Formats” and “SPARQL 1.1 Query Results JSON Format”. A <code>CONSTRUCT</code> or <code>DESCRIBE</code> result is given as its triples, one row each, in the columns subject, predicate and object. The CSV file holds each value as the query gave it: a spreadsheet may run a value that starts with <code>=</code>, <code>+</code>, <code>-</code> or <code>@</code> as a formula, so import the file with its columns as text.</p>',
     '<div id="query-table" class="table-wrap"></div>',
     '<figure id="query-picture" class="query-picture" hidden></figure>',
     '</section>',

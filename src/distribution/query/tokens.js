@@ -16,6 +16,18 @@
 // (`queryHighlight`). One pass over the text: each step consumes at least one character,
 // and no step looks back.
 //
+// The SPARQL 1.1 terminals it models (§19.8), each read as the engine reads it: IRIREF with
+// its code point escapes (UCHAR); PNAME_NS and PNAME_LN, whose local name (PN_LOCAL) holds
+// `%` and the escapes of PN_LOCAL_ESC (`ex:a\#` is one name) and ends at a second run of
+// bare full stops, as Oxigraph 0.5.13 ends it; BLANK_NODE_LABEL; VAR1 and VAR2, without a
+// hyphen; the four string forms with their escapes, a short one ending at its line;
+// comments, to a CR or an LF; INTEGER, DECIMAL and DOUBLE as a run of digits, full stops
+// and `e`. Where it reads a token shorter than the engine, it can only refuse more; where it
+// read one longer, the rest of the token could hide a SERVICE the engine reads, and each
+// bypass found so far was of that kind. So a change to this file is closed with the
+// differential properties of `tests/distribution/query/engine.test.js` run long as well
+// (AGSC_QUERY_FUZZ=1).
+//
 // The one place where SPARQL needs to know where it stands is `<`: inside an expression,
 // after a value, it means "less than" (`FILTER(1<2)`), everywhere else it opens an IRI. Read
 // as an IRI there, `1<2)SERVICE#>` would hide the SERVICE that the engine reads. So the
@@ -45,6 +57,8 @@ function queryTokens(text) {
     'SELECT', 'SERVICE', 'SILENT', 'TO', 'UNDEF', 'UNION', 'USING', 'VALUES', 'WHERE', 'WITH'];
   const nameChar = (ch) => /[\p{L}\p{N}_\-\u00B7]/u.test(ch);
   const localChar = (ch) => nameChar(ch) || ch === '.' || ch === ':' || ch === '%';
+  /** A character of a variable's name (VARNAME): a name character but the hyphen, so `?a-1` is `?a`, `-1`. */
+  const varChar = (ch) => ch !== '-' && nameChar(ch);
   const out = [];
   let at = 0;
   /** The brackets the text is inside, innermost last: `expr`, `group` (`{` and `[`) or `list`. */
@@ -82,12 +96,39 @@ function queryTokens(text) {
     while (end < source.length && ok(source[end])) end += 1;
     return end;
   };
-  /** The end of a local name from `from`: none where it would start with a full stop, and a final full stop left out (it ends a triple). */
-  const localEnd = (from) => {
+  /** The end of a blank node's label from `from`: none where it would start with a full stop, and a final full stop left out (it ends a triple). */
+  const labelEnd = (from) => {
     if (source[from] === '.') return from;
     let end = runEnd(from, localChar);
     while (end > from && source[end - 1] === '.') end -= 1;
     return end;
+  };
+  /** The length of the piece of a local name at `at`: 2 for an escape (PN_LOCAL_ESC, a backslash and one of the characters below), 1 for a character of the name, 0 at its end. */
+  const localStep = (at) => {
+    if (source[at] === '\\') return at + 1 < source.length && "_~.-!$&'()*+,;=/?#@%".includes(source[at + 1]) ? 2 : 0;
+    return at < source.length && localChar(source[at]) ? 1 : 0;
+  };
+  /**
+   * The end of a local name from `from`, as the engine reads it: none where it would start
+   * with a full stop; an escape is two characters of the name, at the first position too, so
+   * `ex:a\#` is one name and not a name and a comment; a final bare full stop is left out (it
+   * ends a triple); and the name ends at a second run of bare full stops, as Oxigraph 0.5.13
+   * reads `ex:a.b.c` as `ex:a.b`, `.`, `c` (SPARQL 1.1 allows the longer name; reading less
+   * than the engine only refuses more).
+   */
+  const localEnd = (from) => {
+    if (source[from] === '.') return from;
+    let end = from;
+    let kept = from;
+    let dotRuns = 0;
+    for (let step = localStep(end); step > 0; step = localStep(end)) {
+      const bareDot = step === 1 && source[end] === '.';
+      if (bareDot && kept === end) dotRuns += 1;
+      if (dotRuns > 1) break;
+      if (!bareDot) kept = end + step;
+      end += step;
+    }
+    return kept;
   };
   /** The end of a string that opens at `from`: a long one ends at its three quotes, a short one at its quote or its line (CR or LF). */
   const stringEnd = (from) => {
@@ -102,9 +143,18 @@ function queryTokens(text) {
     }
     return source.length;
   };
+  /** The length of a code point escape (UCHAR: `\u` and four hex digits, `\U` and eight) at `at`, or 0. */
+  const codeEscape = (at) => {
+    const width = source[at] === '\\' ? { U: 8, u: 4 }[source[at + 1]] : undefined;
+    const digits = width === undefined ? '' : source.slice(at + 2, at + 2 + width);
+    return digits.length === width && /^[0-9A-Fa-f]+$/u.test(digits) ? width + 2 : 0;
+  };
+  /** The length of the piece of an IRI at `at`: a code point escape, 1 for a character an IRI may hold, 0 at its end. */
+  const iriStep = (at) => codeEscape(at) || (at < source.length && source[at] > ' ' && !'<>"{}|^`\\'.includes(source[at]) ? 1 : 0);
   /** The end of an IRI that opens at `from`, or -1 where `<` is a character of its own. */
   const iriEnd = (from) => {
-    const end = runEnd(from + 1, (ch) => ch > ' ' && !'<>"{}|^`\\'.includes(ch));
+    let end = from + 1;
+    for (let step = iriStep(end); step > 0; step = iriStep(end)) end += step;
     return source[end] === '>' ? end + 1 : -1;
   };
   /** The token that starts at `from`: its kind and its end. */
@@ -114,8 +164,8 @@ function queryTokens(text) {
     if (ch === '#') return ['comment', runEnd(from, (c) => c !== '\n' && c !== '\r')];
     if (ch === '"' || ch === '\'') return ['string', stringEnd(from)];
     if (ch === '<' && !compares() && iriEnd(from) > 0) return ['iri', iriEnd(from)];
-    if ((ch === '?' || ch === '$') && nameChar(source[from + 1] || '')) return ['variable', runEnd(from + 1, nameChar)];
-    if (ch === '_' && source[from + 1] === ':') return ['blank', localEnd(from + 2)];
+    if ((ch === '?' || ch === '$') && varChar(source[from + 1] || '')) return ['variable', runEnd(from + 1, varChar)];
+    if (ch === '_' && source[from + 1] === ':') return ['blank', labelEnd(from + 2)];
     if (ch === ':') return ['prefixed', localEnd(from + 1)];
     if (/[0-9]/u.test(ch)) return ['number', runEnd(from, (c) => /[0-9.eE]/u.test(c))];
     if (nameChar(ch)) {
@@ -139,13 +189,15 @@ function queryTokens(text) {
 /**
  * What the page needs to know of a query before it runs it: its form (the first of
  * SELECT, ASK, CONSTRUCT, DESCRIBE that stands as a keyword), the first word that makes the
- * page refuse it (an update keyword, or SERVICE), and whether it names its own dataset with
- * FROM, in which case it runs over that dataset and not over the union of the node's graphs.
+ * page refuse it (an update keyword, or SERVICE), whether it names its own dataset with
+ * FROM, in which case it runs over that dataset and not over the union of the node's graphs,
+ * and whether it calls a function whose value is new on each run (RAND, NOW, UUID, STRUUID,
+ * BNODE), in which case a second run would not give the same values.
  * A bare word that holds a refused word refuses too: the engine reads `a1SERVICE` as `a`,
  * `1` and `SERVICE`, and no function name, boolean or language tag of SPARQL holds one.
  *
  * @param {string} text
- * @returns {{form:(string|null), refusal:({reason:string, word:string}|null), dataset:boolean}}
+ * @returns {{form:(string|null), refusal:({reason:string, word:string}|null), dataset:boolean, fresh:boolean}}
  */
 function queryCheck(text) {
   const list = queryTokens(text);
@@ -155,9 +207,11 @@ function queryCheck(text) {
   const held = (t) => (t.kind === 'keyword' ? refusing.filter((w) => w === t.text.toUpperCase())
     : t.kind === 'word' ? refusing.filter((w) => t.text.toUpperCase().includes(w)) : []);
   const refused = list.flatMap(held)[0];
+  const fresh = list.some((t) => t.kind === 'word' && ['RAND', 'NOW', 'UUID', 'STRUUID', 'BNODE'].includes(t.text.toUpperCase()));
   return {
     dataset: words.includes('FROM'),
     form: words.find((w) => ['SELECT', 'ASK', 'CONSTRUCT', 'DESCRIBE'].includes(w)) || null,
+    fresh,
     refusal: refused === undefined ? null : { reason: refused === 'SERVICE' ? 'service' : 'update', word: refused },
   };
 }

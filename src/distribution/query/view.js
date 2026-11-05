@@ -121,7 +121,7 @@ function queryGraph(result, prefixes, max) {
 function queryPictureText(graph) {
   const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   const cut = graph.total > graph.nodes.length ? ` The first ${graph.nodes.length} of ${graph.total} are drawn.` : '';
-  return `A picture of the result: ${count(graph.nodes.length, 'node', 'nodes')} and ${count(graph.links.length, 'link', 'links')}; the table holds every row.${cut}`;
+  return `A picture of the result: ${count(graph.nodes.length, 'node', 'nodes')} and ${count(graph.links.length, 'link', 'links')}; the downloads hold every row.${cut}`;
 }
 
 /**

@@ -790,10 +790,10 @@ exampleText(question, prefixes, values, iriOf) -> string; exampleNote(values, ti
 siteQuestions(text) -> [{ id, query, question }]   // AGSC-05-41, shape only; [] when the file is not of that shape
 siteTerms(model) -> { ontology, classes: [{ iri, label, parents, meaning }], relations: [{ iri, label, parents, inverse, meaning }] } | null   // AGSC-05-38
 // distribution/query/ (PORTABLE: each module lists the functions emitted as their own source text)
-queryTokens(text) -> [{kind, text}]; queryCheck(text) -> { form, refusal, dataset }; queryRefusal(check) -> string | null; queryHighlight(text)   // tokens.js; a `<` after a value inside an expression is "less than", never an IRI; a comment ends at CR or LF; a bare word holding a refused word refuses
+queryTokens(text) -> [{kind, text}]; queryCheck(text) -> { form, refusal, dataset, fresh }; queryRefusal(check) -> string | null; queryHighlight(text)   // tokens.js; a `<` after a value inside an expression is "less than", never an IRI; a comment ends at CR or LF; a bare word holding a refused word refuses; a local-name escape (`ex:a\#`) and an IRI code point escape (`\u0041`) are part of the token; a local name ends at a second run of bare full stops and a variable at a hyphen, as the engine reads them; `fresh`: the query calls RAND, NOW, UUID, STRUUID or BNODE
 queryShortName(iri, prefixes) -> string | null; queryTermText(term, prefixes); queryTable(result, limit, prefixes); queryGraph(result, prefixes, max) -> { nodes, links, total } | null; queryPictureText(graph)
 querySummary(answer); queryShareHref(text) -> '#query=…'; queryFromHash(hash) -> text | null   // view.js
-queryAnswer(ox, store, text) -> { form, json, csv } | { form, error }; queryGraphStore(ox, quads)   // engine.js: the engine's own result writers
+queryAnswer(ox, store, text) -> { form, json, csv } | { form, error }; queryGraphStore(ox, quads); querySelectCsv(ox, json) -> string   // engine.js: the engine's own result writers; a `fresh` SELECT runs once and its CSV is read back from its JSON
 queryWorkerMain(scope, ox, graphRoute); queryMain(win, api)          // engine.js, main.js: the browser lane only
 // adapters/node-fs.js: readEngineFiles(relatives, engineRoot?) -> Map<path, Buffer>
 // application/cli/verbs/_helpers.js: queryPageInput() -> { engine: Map<source, Buffer>, questions: Buffer }   // read once per process

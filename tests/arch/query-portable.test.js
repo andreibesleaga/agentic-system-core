@@ -94,7 +94,8 @@ test('each emitted script carries every portable function its functions call', (
   const page = defined(queryPage.script({}));
   for (const name of ['explorerLayout', 'explorerScene', 'explorerBuild', 'queryMain', 'queryTable', 'queryHighlight']) assert.ok(page.has(name), name);
   const worker = defined(queryPage.workerScript({}));
-  assert.deepStrictEqual([...worker].sort(), ['queryAnswer', 'queryCheck', 'queryGraphStore', 'queryRefusal', 'queryTokens', 'queryWorkerMain']);
+  assert.deepStrictEqual([...worker].sort(), ['queryAnswer', 'queryCheck', 'queryGraphStore', 'queryRefusal', 'querySelectCsv', 'queryTokens',
+    'queryWorkerMain']);
 });
 
 test('the page script runs where there is no document, and defines nothing global but its own start', () => {

@@ -43,3 +43,18 @@ dependency in `node_modules/`, and checks that this table states the same values
 5. Run `node --test tests/arch/query-engine-pin.test.js tests/distribution/query*.test.js
    "tests/distribution/query/*.test.js"`, then the browser lane
    (`tests/distribution/query-browser.test.js`).
+6. Run the differential properties long: `AGSC_QUERY_FUZZ=1 node --test --test-name-pattern
+   "property: no" tests/distribution/query/engine.test.js`. The page refuses an update and a
+   `SERVICE` clause with its own tokenizer before the engine runs (`../../query/tokens.js`),
+   and that tokenizer follows how this release reads a query: the terminals it models are
+   named in its header, among them one reading of this release that SPARQL 1.1 does not
+   have (a local name ends at its second run of bare full stops). A release that reads a
+   query differently can let a `SERVICE` clause through; the properties compare the page's
+   refusal with the engine's own reading.
+
+**What the page relies on in this release** (measured on 0.5.13, each checked by a test of
+`tests/distribution/query/`): it lets `SERVICE SILENT` through with an empty answer and
+refuses an update only as a parse error, so the page refuses both first; two runs of a
+`SELECT` give the same rows in the same order unless the query calls `RAND`, `NOW`, `UUID`,
+`STRUUID` or `BNODE`, so the page runs those once and reads the CSV file back from the JSON
+file.

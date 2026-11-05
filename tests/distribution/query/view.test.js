@@ -95,14 +95,15 @@ test('the picture of a three-column result: its subjects and objects as nodes, e
   assert.strictEqual(view.queryGraph({ head: { vars: ['a', 'b', 'c'] }, results: { bindings: [{ a: iri('x:a') }] } }, PREFIXES, 50), null);
 });
 
-test('the caption of the picture counts its nodes and links in words, one or many', () => {
+test('the caption of the picture counts its nodes and links in words, one or many, and sends to the downloads for every row', () => {
+  // Not to the table: above 200 rows the table shows the first 200 (found by the audit of the query page).
   const graph = view.queryGraph(TRIPLES, PREFIXES, 50);
   assert.strictEqual(view.queryPictureText(graph),
-    'A picture of the result: 3 nodes and 2 links; the table holds every row.');
+    'A picture of the result: 3 nodes and 2 links; the downloads hold every row.');
   assert.strictEqual(view.queryPictureText({ links: [{}], nodes: [{}, {}], total: 2 }),
-    'A picture of the result: 2 nodes and 1 link; the table holds every row.');
+    'A picture of the result: 2 nodes and 1 link; the downloads hold every row.');
   assert.strictEqual(view.queryPictureText(view.queryGraph(TRIPLES, PREFIXES, 1)),
-    'A picture of the result: 1 node and 0 links; the table holds every row. The first 1 of 3 are drawn.');
+    'A picture of the result: 1 node and 0 links; the downloads hold every row. The first 1 of 3 are drawn.');
 });
 
 test('the status line after a run', () => {
