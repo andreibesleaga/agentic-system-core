@@ -221,6 +221,26 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The composition brief (AGSC-07-25, AGSC-07-26, AGSC-07-27; vectors `compose-0024` to
+  `compose-0026`): `compose --brief`, or `compose.brief: true` in `agsc.config.json` (AGSC-01-18,
+  default `false`), also writes `brief.json` (JCS and one LF), `BRIEF.md`, `context.md` (item prose
+  fenced as data, at most 65,536 bytes, a truncation line when members are left out) and `brief.mmd`
+  in the companion directory `<harness dir>.companion/`, beside the Harness and never in it or in the
+  `--zip` archive: why each member is there, the relations with the items one step outside, the
+  dependency order (`requires`, `broader` and `derived-from` first, then code-point order), the
+  readings of AGSC-05-33 inside the selection, the gaps and the checklist. It names listed items only
+  (AGSC-00-05), and an invalid composition gets its brief and no Harness (exit 1). New
+  `src/composition/brief.js`, portable: `composition/browser.js` carries it in the page bundle when
+  asked (`bundle({ brief: true })`), and the brief computed in that bundle is the bytes the command
+  line writes (`tests/composition/browser.test.js`); the `/compose/` script a build publishes is
+  unchanged. Fitness test `tests/arch/brief.test.js`: the Harness writer never reaches the brief, and
+  the brief requires only the two portable algebras. The seven Harness file kinds keep their bytes
+  (`compose-0027`, `compose-0015`, `compose-0016` unchanged). No new dependency; G-REF: no byte of the
+  eight reference nodes changes.
+- `compose --narrate <agent>` (AGSC-07-28, AGSC-09-09): without `--brief` it is `AGSC-E003`, exit 2;
+  with it, this distribution, which ships no model adapter for an agent lane, answers `AGSC-E001` at
+  exit 1, writes no `narration.md` and still writes the brief and the Harness. No file of a brief and
+  no vector holds model-written text.
 - TypeScript toolchain for the agent-facing protocol modules (docs/ENGINEERING.md §8): sources under
   `src-ts/<context>/`, compiled by the new maintainer tool `tools/build-ts` to CommonJS at the same
   path under `src/` and committed there, each file headed `generated from src-ts/<path> by tsc

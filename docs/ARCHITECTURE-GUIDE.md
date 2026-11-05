@@ -81,7 +81,7 @@ Source: [diagrams/arch-c4-component.md](diagrams/arch-c4-component.md).
 |---|---|---|
 | Knowledge | items, links, the graph and its four RDF views, chunks, adoption, the content version | `src/knowledge/` |
 | Governance & Provenance | provenance, lints, gates, the derived ledger, boards, agent lanes | `src/governance/` |
-| Composition | selection and closure, the Harness, skill packs | `src/composition/` |
+| Composition | selection and closure, the Harness, skill packs, the brief beside the Harness | `src/composition/` |
 | Distribution | every route, page, header and surface of a built node | `src/distribution/` |
 | Boundary | peers and federation, visibility, the agent-surface contract | `src/boundary/` |
 | Interchange (supporting) | foreign formats in and out | `src/interchange/` |

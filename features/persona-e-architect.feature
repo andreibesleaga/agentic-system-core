@@ -58,6 +58,23 @@ Feature: Architect turns Concepts into a starting architecture
     And the same composition on the node without contexts writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-30)
     And no network call was attempted
 
+  @PRD-037 @human
+  Scenario: The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes
+    When the operator runs "agsc compose handoff --brief" under the network trap
+    Then the command exits 0
+    And the companion directory beside the Harness holds the four files of the brief, whose dependency order puts "supervisor" before "handoff" (AGSC-07-25, AGSC-07-26)
+    And the brief's checklist adopts "supervisor" and then "handoff" (AGSC-07-27)
+    And the same composition without "--brief" writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-25)
+    And no network call was attempted
+
+  @PRD-037 @human
+  Scenario: A narration is not written by this distribution, and the brief still is
+    When the operator runs "agsc compose handoff --brief --narrate writer --json" under the network trap
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E001"
+    And the companion directory beside the Harness holds the four files of the brief and no "narration.md" (AGSC-07-28)
+    And no network call was attempted
+
   @PRD-022 @human
   Scenario: Titles are compared inside each bounded context, so one title may serve two contexts
     Given the clusters "agent-patterns" and "protocols" are declared contexts, and "supervisor" moves to "protocols" by its "domain_context" (AGSC-01-41, AGSC-08-32)

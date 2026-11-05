@@ -171,7 +171,7 @@ which calls into the contexts.
 | `ci` | AGSC-09-08, AGSC-09-20 | `distribution/ci.js`, with the lint lane injected and the site checks (`verbs/_site-checks.js` → `knowledge/site-checks.js`; not under `--level` 0 to 2) |
 | `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17, AGSC-05-36, AGSC-05-37 | `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to`; `--skos` in `knowledge/skos-export.js`; `--closure` in `knowledge/closure.js` |
 | `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `interchange/okf.js`, `interchange/adapters/{cogx,gabbe,skills,board,skos}.js`, `interchange/import.js` for the old site |
-| `compose` | AGSC-07-04…09, 07-12, 07-18, 07-24, 07-30 | `composition/{compose,architecture,harness}.js`; `--zip` through `composition/archive.js`; the context map of a node that declares contexts in `composition/context-map.js`, with the peers' crosswalks read by `boundary/federation.js` |
+| `compose` | AGSC-07-04…09, 07-12, 07-18, 07-24, 07-25…07-28, 07-30 | `composition/{compose,architecture,harness}.js`; `--zip` through `composition/archive.js`; the context map of a node that declares contexts in `composition/context-map.js`, with the peers' crosswalks read by `boundary/federation.js`; the brief of `--brief` in `composition/brief.js` |
 | `propose` | AGSC-08-04, AGSC-08-05 | `knowledge/adopt.js`, the `diff` library |
 | `review` | AGSC-08-27 | the lint lane; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `governance/agents.js#checkProposal`; the live path needs a model and a channel adapter |

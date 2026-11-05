@@ -1,7 +1,7 @@
 'use strict';
 // AGSC-03-01 (the relation table, 1.1.0 columns included): `knowledge/relations.js`
 // is the ONE server-side copy; every former copy now reads it and must yield exactly
-// the list it held at 1.0.1. The page-script copies (compose, browser, harness,
+// the list it held at 1.0.1. The page-script copies (compose, browser, harness, brief,
 // page-tools) ship their own source text and are checked here against the table.
 // Deterministic: reads the frozen specification and the source files only.
 
@@ -20,6 +20,7 @@ const okf = require('../../src/interchange/okf.js');
 const compose = require('../../src/composition/compose.js');
 const harness = require('../../src/composition/harness.js');
 const browser = require('../../src/composition/browser.js');
+const brief = require('../../src/composition/brief.js');
 
 // The 1.0.1 lists, typed out once so a change to the table cannot move them silently.
 const KEYS_1_0_1 = ['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
@@ -95,6 +96,13 @@ test('AGSC-03-01: the page-script copies of link keys and RDF properties of harn
   assert.deepStrictEqual(harness.linkKeys(), [...relations.LINK_KEYS]);
   const predicates = Object.fromEntries(relations.RELATIONS.map((r) => [localName(r.property), r.key]));
   assert.deepStrictEqual(browser.graphPredicates(), predicates);
+});
+
+test('AGSC-03-01, AGSC-05-33: the brief\'s copies of the inverses and of the chain keys equal the table', () => {
+  assert.deepStrictEqual(brief.inverseKeys(), { ...relations.INVERSE });
+  const chain = [...new Set(relations.RELATIONS.filter((r) => r.transitive).flatMap((r) => [r.key, r.inverse]))]
+    .sort((a, b) => (a < b ? -1 : 1));
+  assert.deepStrictEqual(brief.chainKeys(), chain);
 });
 
 test('AGSC-03-01: composition reads the core keys from the table, not from a copy', () => {

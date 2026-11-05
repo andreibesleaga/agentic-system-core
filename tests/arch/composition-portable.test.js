@@ -27,6 +27,7 @@ const compose = require('../../src/composition/compose.js');
 const harness = require('../../src/composition/harness.js');
 const browser = require('../../src/composition/browser.js');
 const archive = require('../../src/composition/archive.js');
+const brief = require('../../src/composition/brief.js');
 
 
 const SRC = path.resolve(__dirname, '..', '..', 'src', 'composition');
@@ -55,7 +56,7 @@ function moduleScopeNames(file) {
 
 test('every portable name is a function whose own source text is emitted', () => {
   for (const [label, module] of [['compose.js', compose], ['harness.js', harness],
-    ['archive.js', archive]]) {
+    ['archive.js', archive], ['brief.js', brief]]) {
     assert.ok(Array.isArray(module.PORTABLE), `${label} declares no PORTABLE list`);
     for (const name of module.PORTABLE) {
       assert.strictEqual(typeof module[name], 'function', `${label}#${name} is not an exported function`);
@@ -72,11 +73,11 @@ test('no portable function closes over a module-scope binding', () => {
   // module-scope `const` is emitted with a free variable that is `undefined` in the
   // page — a Harness with `undefined` in it, silently, not a crash.
   for (const [file, module] of [['compose.js', compose], ['harness.js', harness],
-    ['archive.js', archive], ['browser.js', browser]]) {
+    ['archive.js', archive], ['brief.js', brief], ['browser.js', browser]]) {
     // A module-scope binding is harmless when it is itself one of the names the
     // bundle emits — `harness.js` destructures `compareCodePoint` from
     // `compose.js`, and the bundle carries that function's own declaration.
-    const emitted = new Set(browser.exportedNames());
+    const emitted = new Set(browser.exportedNames({ brief: true }));
     const bound = moduleScopeNames(file).filter((n) => !emitted.has(n));
     assert.ok(bound.length > 0, `no module-scope binding was found in ${file}; the scan is broken`);
     const portable = module.PORTABLE || module.PAGE_SUPPORT;
@@ -107,7 +108,7 @@ test('no portable function reads a MEMBER of a required module (the hole that le
   // module is called.
   let scanned = 0;
   for (const [file, module] of [['compose.js', compose], ['harness.js', harness],
-    ['archive.js', archive], ['browser.js', browser]]) {
+    ['archive.js', archive], ['brief.js', brief], ['browser.js', browser]]) {
     const text = fs.readFileSync(path.join(SRC, file), 'utf8');
     // Only a require bound to a plain identifier can be read as an OBJECT; a
     // destructured require binds the functions themselves, which the bundle emits.
@@ -170,6 +171,33 @@ test('the emitted bundle evaluates and answers in a context that holds only the 
   for (const [file, text] of out.files) {
     assert.ok(!text.includes('undefined'), `${file} carries the string "undefined"`);
     assert.ok(!text.includes('[object Object]'), `${file} carries "[object Object]"`);
+  }
+});
+
+test('the bundle with the brief evaluates and answers in a context that holds only the language', () => {
+  const context = vm.createContext({});
+  vm.runInContext(browser.bundle({ brief: true }), context, { filename: 'agsc-core.js' });
+  const core = vm.runInContext('globalThis.AGSC_CORE', context);
+  // Force every body to execute, a valid and an invalid composition, with a closure path,
+  // derived readings, every gap kind that needs an edge, and a conflict.
+  const items = [
+    { slug: 'x', type: 'concept', title: 'X', description: 'X.', requires: ['y'], broader: ['y'], uses: ['w'], consumes: ['p'], 'blocked-by': ['w'] },
+    { slug: 'y', type: 'concept', title: 'Y', description: 'Y.', broader: ['z'], related: ['w'], contradicts: ['x'], body: 'Body.\n' },
+    { slug: 'z', type: 'concept', title: 'Z', description: 'Z.', sources: [{ resource: 'https://x.example/z' }], stale_after: '2025-01-01T00:00:00Z' },
+    { slug: 'w', type: 'procedure', title: 'W', description: 'W.', verifies: ['x'], supersedes: ['z'], excludes: ['v'] },
+    { slug: 'v', type: 'concept', title: 'V', description: 'V.', status: 'deprecated' },
+  ];
+  for (const selection of [['x', 'z'], ['w', 'v']]) {
+    const verdict = core.compose(items, selection);
+    const files = core.briefFiles(verdict, {
+      base: 'https://x.example/', instant: '2026-01-01T00:00:00Z', items,
+      licenseProse: 'CC0-1.0', selectionDigest: 'deadbeef', specVersion: '1.0.0',
+    });
+    assert.strictEqual(files.length, 4);
+    for (const [file, text] of files) {
+      assert.ok(!text.includes('undefined'), `${file} carries the string "undefined"`);
+      assert.ok(!text.includes('[object Object]'), `${file} carries "[object Object]"`);
+    }
   }
 });
 

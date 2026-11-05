@@ -141,6 +141,39 @@ runtime (`--emit crewai` and the others the specification lists) is refused with
 `AGSC-E203`; `--emit ./my-emitter.js` runs a rendering you write as a plugin
 ([PLUGINS.md](../PLUGINS.md)).
 
+Add `--brief` and `compose` also explains the composition, in four files beside the Harness
+(in the folder whose name is the Harness folder's with `.companion` added): `BRIEF.md` for you,
+`context.md` for an agent, `brief.json` for a program and `brief.mmd` as a diagram. They say why
+each item is there, the order to adopt them in (an item comes after what it requires), what is
+missing, and a checklist. The Harness files do not change, and `"compose": {"brief": true}` in
+`agsc.config.json` asks for the brief on every run.
+
+```bash demo
+agsc compose retry-with-backoff smoke-test --brief > /dev/null 2>&1
+brief="$(ls -d dist/harness/*.companion)"
+ls "$brief"
+sed -n '/^## Dependency order/,/^## Gaps/p' "$brief/BRIEF.md"
+```
+
+```text expect
+BRIEF.md
+brief.json
+brief.mmd
+context.md
+## Dependency order
+
+1. `idempotency-key`
+2. `retry-with-backoff`
+3. `smoke-test`
+
+## Gaps
+```
+
+A brief is written for a composition that is not valid too, where no Harness is: its checklist
+then says which conflict to resolve. `--narrate <agent>` would add a summary written by a model;
+this distribution ships no way to reach a model, so it answers `AGSC-E001` and writes the brief
+alone.
+
 ## 3. The `run` verb (off by default)
 
 `run` reads a procedure's `run` blocks. It is off until the configuration turns it on

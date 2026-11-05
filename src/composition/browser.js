@@ -10,8 +10,9 @@
  * returns a function's source text, so nothing is transcribed, nothing is
  * transpiled, and there is no bundler and no build step.
  *
- * That is why `composition/compose.js` and `composition/harness.js` declare their
- * algebra as self-contained top-level functions whose constants are functions:
+ * That is why `composition/compose.js`, `composition/harness.js` and
+ * `composition/brief.js` declare their algebra as self-contained top-level functions
+ * whose constants are functions:
  * a function that closed over a module-scope `const` would be emitted with a free
  * variable that is undefined in the page. `tests/arch/composition-portable.test.js`
  * enforces the contract; `tests/composition/browser.test.js` runs the emitted
@@ -30,6 +31,7 @@
 const compose = require('./compose.js');
 const harness = require('./harness.js');
 const archive = require('./archive.js');
+const brief = require('./brief.js');
 
 /**
  * Destructured deliberately. A page-support function may reference only names the
@@ -218,9 +220,18 @@ const SUPPORT = Object.freeze({
  * (AGSC-07-13). The archive is emitted AFTER the Harness algebra because it packages
  * that algebra's result, and it reads `compareCodePoint`, which `compose.PORTABLE`
  * has already declared above it.
+ *
+ * The brief of AGSC-07-25 (`composition/brief.js`) joins them only when `options.brief` is
+ * `true`, for a page that shows the brief: the `/compose/` script a build publishes today is
+ * the bundle without it, so that script keeps its bytes until the page shows a brief.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.brief] carry the brief's functions too.
  */
-function exportedNames() {
-  return [...compose.PORTABLE, ...harness.PORTABLE, ...archive.PORTABLE, ...PAGE_SUPPORT];
+function exportedNames(options) {
+  const withBrief = Boolean(options && options.brief === true);
+  return [...compose.PORTABLE, ...harness.PORTABLE, ...archive.PORTABLE,
+    ...(withBrief ? brief.PORTABLE : []), ...PAGE_SUPPORT];
 }
 
 /**
@@ -228,6 +239,7 @@ function exportedNames() {
  *
  * @param {object} [options]
  * @param {string} [options.specVersion] recorded in the banner comment only.
+ * @param {boolean} [options.brief] carry the functions of the brief (AGSC-07-25) too.
  * @returns {string} a classic script, LF-terminated, ending in exactly one LF.
  */
 function bundle(options) {
@@ -242,8 +254,9 @@ function bundle(options) {
   for (const name of compose.PORTABLE) parts.push(String(compose[name]));
   for (const name of harness.PORTABLE) parts.push(String(harness[name]));
   for (const name of archive.PORTABLE) parts.push(String(archive[name]));
+  if (opts.brief === true) for (const name of brief.PORTABLE) parts.push(String(brief[name]));
   for (const name of PAGE_SUPPORT) parts.push(String(SUPPORT[name]));
-  const map = exportedNames().map((name) => `    ${name}: ${name}`).join(',\n');
+  const map = exportedNames(opts).map((name) => `    ${name}: ${name}`).join(',\n');
   parts.push('  globalThis.AGSC_CORE = {', `${map}`, '  };', '}());');
   return `${parts.join('\n')}\n`;
 }

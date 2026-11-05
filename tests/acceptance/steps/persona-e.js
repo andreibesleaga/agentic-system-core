@@ -1,6 +1,6 @@
 'use strict';
 /* global document */
-// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-07-30, AGSC-09-94
+// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-28, AGSC-07-30, AGSC-09-94
 // Steps of features/persona-e-architect.feature. Offline: the page's own module,
 // `www/compose/agsc-core.js`, is evaluated in a fresh `node:vm` context that holds
 // the language and nothing else (no require, no process, no fetch, no document) and
@@ -9,8 +9,8 @@
 // byte with the real command line's. `run --dry-run` and `trace` run through the
 // real command line under the network trap. In a browser (`_browser.js`): the
 // architect ticks items on the served `/compose/` page, reads its panel and takes
-// its downloads. The context map (AGSC-07-30) is read from the companion directory the
-// command line writes beside the Harness.
+// its downloads. The context map (AGSC-07-30) and the brief (AGSC-07-25) are read from the
+// companion directory the command line writes beside the Harness.
 
 const assert = require('node:assert');
 const crypto = require('node:crypto');
@@ -31,6 +31,18 @@ function tree(dir) {
     if (fs.statSync(at).isFile()) out.set(rel.split(path.sep).join('/'), fs.readFileSync(at, 'utf8'));
   }
   return out;
+}
+
+/** The four files of the brief (AGSC-07-25). */
+const BRIEF_FILES = Object.freeze(['BRIEF.md', 'brief.json', 'brief.mmd', 'context.md']);
+
+/** The one companion directory under `dist/harness/` and its files; records the Harness directory beside it. */
+function companionFiles(world) {
+  const harness = path.join(world.dir, 'dist', 'harness');
+  const companions = fs.readdirSync(harness).filter((name) => name.endsWith('.companion'));
+  assert.strictEqual(companions.length, 1, `companion directories: ${companions}`);
+  world.state.harnessDir = path.join(harness, companions[0].slice(0, -'.companion'.length));
+  return tree(path.join(harness, companions[0]));
 }
 
 /** The two constants `agsc-compose.js` hands the core, read from the emitted page script. */
@@ -420,6 +432,41 @@ module.exports = [
       assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
       assert.ok(!world.exists('plain-harness.companion'), 'a node with no contexts got a companion directory');
       assert.deepStrictEqual(tree(path.join(world.dir, 'plain-harness')), tree(world.state.harnessDir));
+    },
+  },
+  {
+    pattern: /^the companion directory beside the Harness holds the four files of the brief, whose dependency order puts "([^"]+)" before "([^"]+)" \(AGSC-07-25, AGSC-07-26\)$/u,
+    run(world, first, second) {
+      const files = companionFiles(world);
+      assert.deepStrictEqual([...files.keys()], BRIEF_FILES);
+      const record = JSON.parse(files.get('brief.json'));
+      assert.deepStrictEqual(record.order, [first, second]);
+      assert.ok(files.get('BRIEF.md').includes(`1. \`${first}\`\n2. \`${second}\``), files.get('BRIEF.md'));
+      assert.ok(!tree(world.state.harnessDir).has('brief.json'), 'the brief is inside the Harness directory');
+      world.state.brief = record;
+    },
+  },
+  {
+    pattern: /^the brief's checklist adopts "([^"]+)" and then "([^"]+)" \(AGSC-07-27\)$/u,
+    run(world, first, second) {
+      const adopt = world.state.brief.checklist.filter((entry) => entry.kind === 'adopt').map((entry) => entry.slug);
+      assert.deepStrictEqual(adopt, [first, second]);
+    },
+  },
+  {
+    pattern: 'the same composition without "--brief" writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-25)',
+    run(world) {
+      const r = world.agsc(['compose', ...world.state.brief.selection.filter((slug) => world.state.brief.items
+        .find((item) => item.slug === slug).reason.kind === 'selected'), '--out', 'plain-harness'], { offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      assert.ok(!world.exists('plain-harness.companion'), 'a composition without --brief got a companion directory');
+      assert.deepStrictEqual(tree(path.join(world.dir, 'plain-harness')), tree(world.state.harnessDir));
+    },
+  },
+  {
+    pattern: 'the companion directory beside the Harness holds the four files of the brief and no "narration.md" (AGSC-07-28)',
+    run(world) {
+      assert.deepStrictEqual([...companionFiles(world).keys()], BRIEF_FILES);
     },
   },
 ];

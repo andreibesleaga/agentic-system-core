@@ -3,12 +3,16 @@
 // The five steps of AGSC-07-04…07-08 in their normative order and the
 // AGSC-07-09 verdict are `composition/compose.js`'s; `--from <slug>` reads the
 // saved composition of AGSC-02-97/07-24; `--emit <target>` is AGSC-07-18; for a node that
-// declares contexts the context map of AGSC-07-30 is written in the companion directory.
+// declares contexts the context map of AGSC-07-30 is written in the companion directory, and
+// so is the brief of AGSC-07-25 when `--brief` or `compose.brief` asks for it; `--narrate` is
+// the narration step of AGSC-07-28, which this distribution answers with AGSC-E001.
 
 const compose = require('../../../composition/compose.js');
 const architecture = require('../../../composition/architecture.js');
 const harness = require('../../../composition/harness.js');
 const contextMap = require('../../../composition/context-map.js');
+const brief = require('../../../composition/brief.js');
+const { isPublished } = require('../../../knowledge/chunks.js');
 const bounded = require('../../../knowledge/contexts.js');
 const federation = require('../../../boundary/federation.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
@@ -187,6 +191,41 @@ function writeCompanion(ctx, harnessDir, files) {
 }
 
 /**
+ * The options `harness.js#emit` takes for this composition, which the companion files take too:
+ * the build instant, the content version and the selection digest, hashed here because the
+ * Composition context is pure and `node:crypto` is the host's (AGSC-05-29).
+ */
+function harnessOptions(ctx, bundle, result, items) {
+  const config = bundle.config || {};
+  const site = config.site || {};
+  const clock = ctx.ports && ctx.ports.clock;
+  const instant = clock && typeof clock.iso === 'function'
+    ? clock.iso()
+    : instantFromEpoch(clock ? clock.now() : 0);
+  const selectionDigest = helpers.sha256(harness.selectionDigestInput(result));
+  return {
+    base: `${withoutTrailingSlashes(String(site.base || ''))}/`,
+    // AGSC-04-25 / AGSC-07-12: `harness.jsonld` and the provenance header of every
+    // `AGENTS.md` and `SKILL.md` carry the content version. It is DERIVED HERE and
+    // handed in, because AGSC-07-13 obliges the CLI and the `/compose/` page to emit
+    // the same bytes and a page has no git history to derive it from.
+    bundleVersion: archiveWriter.bundleVersionOf(ctx),
+    instant,
+    items,
+    licenseProse: (config.bundle && config.bundle.license_prose) || harness.terms(),
+    name: harness.harnessName(selectionDigest),
+    selectionDigest,
+    specVersion: ctx.specVersion,
+  };
+}
+
+/** AGSC-07-12: the Harness directory, `dist/harness/<name>/` or `compose --out`'s, with a trailing slash. */
+function harnessDir(ctx, name) {
+  const raw = ctx.verbFlags && ctx.verbFlags.out;
+  return `${withoutTrailingSlashes(String(raw === undefined || raw === '' ? `dist/harness/${name}` : raw))}/`;
+}
+
+/**
  * AGSC-07-12 / AGSC-07-13 / AGSC-07-17: write the seven Harness files.
  *
  * The bytes are `composition/harness.js#emit`'s and are computed from the verdict,
@@ -220,27 +259,7 @@ function emitHarness(ctx, bundle, result, items, peers = []) {
     return { archive: null, dir: null, emitted: false, files: [], findings, missing: ['every file: the composition is invalid (AGSC-07-17)'] };
   }
   const config = bundle.config || {};
-  const site = config.site || {};
-  const clock = ctx.ports && ctx.ports.clock;
-  const instant = clock && typeof clock.iso === 'function'
-    ? clock.iso()
-    : instantFromEpoch(clock ? clock.now() : 0);
-  const selectionDigest = helpers.sha256(harness.selectionDigestInput(result));
-  const name = harness.harnessName(selectionDigest);
-  const options = {
-    base: `${withoutTrailingSlashes(String(site.base || ''))}/`,
-    // AGSC-04-25 / AGSC-07-12: `harness.jsonld` and the provenance header of every
-    // `AGENTS.md` and `SKILL.md` carry the content version. It is DERIVED HERE and
-    // handed in, because AGSC-07-13 obliges the CLI and the `/compose/` page to emit
-    // the same bytes and a page has no git history to derive it from.
-    bundleVersion: archiveWriter.bundleVersionOf(ctx),
-    instant,
-    items,
-    licenseProse: (config.bundle && config.bundle.license_prose) || harness.terms(),
-    name,
-    selectionDigest,
-    specVersion: ctx.specVersion,
-  };
+  const options = harnessOptions(ctx, bundle, result, items);
   const emission = harness.emit(result, options);
   for (const violation of emission.violations) findings.push({ ...violation, severity: 'error' });
   // A Harness whose own files break a rule is not written at all: files that were
@@ -248,8 +267,7 @@ function emitHarness(ctx, bundle, result, items, peers = []) {
   if (emission.violations.length > 0) {
     return { archive: null, dir: null, emitted: false, files: [], findings, missing: ['every file: the emission broke a rule (AGSC-07-17)'] };
   }
-  const raw = ctx.verbFlags && ctx.verbFlags.out;
-  const dir = `${withoutTrailingSlashes(String(raw === undefined || raw === '' ? `dist/harness/${name}` : raw))}/`;
+  const dir = harnessDir(ctx, options.name);
   const written = [];
   for (const [path, text] of emission.files) {
     const at = `${dir}${path}`;
@@ -267,9 +285,9 @@ function emitHarness(ctx, bundle, result, items, peers = []) {
   // archive (AGSC-07-13).
   const zipped = ctx.verbFlags && ctx.verbFlags.zip === true
     ? archiveWriter.writeArchive(ctx, {
-      bundleVersion: archiveWriter.bundleVersionOf(ctx),
+      bundleVersion: options.bundleVersion,
       files: emission.files,
-      instant,
+      instant: options.instant,
       stem: dir,
     })
     : { findings: [], path: null };
@@ -284,6 +302,45 @@ function emitHarness(ctx, bundle, result, items, peers = []) {
     findings,
     missing: [...emission.missing],
     texts: new Map(emission.files),
+  };
+}
+
+/**
+ * AGSC-07-25 / AGSC-01-18: whether this run writes the brief — `--brief`, or `compose.brief`
+ * set to `true` in the configuration (default `false`).
+ */
+function briefRequested(ctx, bundle) {
+  const config = bundle.config || {};
+  return (ctx.verbFlags && ctx.verbFlags.brief === true) || (config.compose || {}).brief === true;
+}
+
+/**
+ * AGSC-07-25: write the four files of the brief in the companion directory, for a valid or an
+ * invalid composition. The brief names the listed items only (AGSC-00-05): no draft, no retired
+ * item, no item the `releases` switchboard holds back.
+ *
+ * @returns {Array<string>} the paths written.
+ */
+function writeBrief(ctx, bundle, result, items) {
+  const options = harnessOptions(ctx, bundle, result, items);
+  const releases = (bundle.config || {}).releases;
+  const listed = items.filter((item) => isPublished(item, releases)).map((item) => item.slug);
+  return writeCompanion(ctx, harnessDir(ctx, options.name), brief.briefFiles(result, { ...options, listed }));
+}
+
+/**
+ * AGSC-07-28 with AGSC-00-20: the narration step is an agent lane's run, and this distribution
+ * ships no adapter through which a lane could call a model, so `--narrate` is answered with
+ * AGSC-E001 at exit 1 (AGSC-09-08's closed list of forms a distribution does not provide); no
+ * `narration.md` is written, and the brief is.
+ */
+function narrationRefusal(agent) {
+  return {
+    code: 'AGSC-E001',
+    message: `compose --narrate ${JSON.stringify(String(agent))}: this distribution ships no model adapter`
+      + ' through which an agent lane could write a narration, so no narration.md is written; the brief'
+      + ' is written as asked (AGSC-07-28, AGSC-00-20)',
+    severity: 'error',
   };
 }
 
@@ -379,6 +436,14 @@ function run(ctx) {
       status: 'fail',
     };
   }
+  // AGSC-09-09: `--narrate <agent>` without `--brief` is AGSC-E003, exit 2, before anything is read.
+  const narrate = ctx.verbFlags && ctx.verbFlags.narrate;
+  if (narrate !== undefined && ctx.verbFlags.brief !== true) {
+    return {
+      findings: [{ code: 'AGSC-E003', message: 'compose --narrate <agent> needs --brief: the narration is an account of brief.json (AGSC-09-09, AGSC-07-28)', severity: 'error' }],
+      status: 'fail',
+    };
+  }
 
   let findings = [];
   let result;
@@ -394,9 +459,8 @@ function run(ctx) {
   // AGSC-09-11: a Composition warning is a domain record; the application layer
   // is what turns it into a Finding, and every Finding carries a severity.
   findings.push(...(result.warnings || []).map((w) => ({ severity: 'warn', message: warningMessage(w), ...w })));
-  for (const conflict of result.conflicts || []) {
-    findings.push({ code: conflict.code, message: conflictMessage(conflict), severity: 'error' });
-  }
+  const conflicts = (result.conflicts || []).map((conflict) => ({ code: conflict.code, message: conflictMessage(conflict), severity: 'error' }));
+  findings.push(...conflicts);
   helpers.note(ctx, `verdict: ${canonicalize(compose.verdictOf(result))}`);
 
   // AGSC-07-12/07-17: the seven Harness files, written for a valid composition and
@@ -414,6 +478,9 @@ function run(ctx) {
   const peers = contextPeers(bundle);
   findings.push(...peers.findings);
   const failed = findings.some((f) => f.severity === 'error');
+  // AGSC-07-25: the brief is written for an invalid composition too, and for no run that another
+  // error stopped (an `--emit` target, a crosswalk, a `--from` item without its selection).
+  const stopped = findings.some((f) => f.severity === 'error' && !conflicts.includes(f));
   if (failed && ctx.verbFlags && ctx.verbFlags.zip === true) {
     helpers.note(ctx, 'harness missing: the archive of --zip, for the same reason (AGSC-07-17)');
   }
@@ -427,6 +494,10 @@ function run(ctx) {
   if (emission.dir !== null) helpers.note(ctx, `harness: ${emission.dir} (${emission.files.length} files)`);
   for (const file of emission.companion || []) helpers.note(ctx, `companion: ${file} (AGSC-07-30)`);
   for (const missing of emission.missing) helpers.note(ctx, `harness missing: ${missing}`);
+  if (!stopped && briefRequested(ctx, bundle)) {
+    for (const file of writeBrief(ctx, bundle, result, items)) helpers.note(ctx, `brief: ${file} (AGSC-07-25)`);
+  }
+  if (narrate !== undefined) findings.push(narrationRefusal(narrate));
 
   // AGSC-07-18: a target rendering IS a rendering of those seven files, written
   // outside the Harness directory, and only of a Harness that was emitted.
@@ -435,6 +506,6 @@ function run(ctx) {
 }
 
 module.exports = {
-  name: 'compose', conflictMessage, contextPeers, emitHarness, emitterRefusal,
-  flatten, run, warningMessage,
+  name: 'compose', briefRequested, conflictMessage, contextPeers, emitHarness, emitterRefusal,
+  flatten, narrationRefusal, run, warningMessage,
 };

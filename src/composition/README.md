@@ -1,6 +1,6 @@
 # `src/composition/` — Composition — from a selection of items to something that runs
 
-**Summary.** This folder answers "given these Concepts, what do I get?". It closes a selection over its links, checks it for conflicts, writes the seven file kinds of a Harness (two of them one file per selected item), builds the published skill packs, writes the deterministic ZIP archive, and ships the same algebra to the browser so that the `/compose/` page and `agsc compose` give the same bytes. It is pure.
+**Summary.** This folder answers "given these Concepts, what do I get?". It closes a selection over its links, checks it for conflicts, writes the seven file kinds of a Harness (two of them one file per selected item), builds the published skill packs, writes the deterministic ZIP archive, and ships the same algebra to the browser so that the `/compose/` page and `agsc compose` give the same bytes. From 1.1 it also explains a composition in a brief written beside the Harness, never inside it. It is pure.
 
 **Read after:** [the module guide](../README.md). **Specification:** `spec/07` (composition), `spec/02` §2.10 (saved architectures).
 **May depend on:** `knowledge/`, `ports/` (types only), `shared/` — enforced by `tests/arch/context-boundaries.test.js`.
@@ -14,6 +14,7 @@
 | `architecture.js` | a saved architecture: a selection kept as an item |
 | `harness.js` | the seven Harness file kinds |
 | `context-map.js` | the context map of a composition, `context-map.json` beside the Harness, written only for a node that declares bounded contexts (AGSC-07-30) |
+| `brief.js` | the brief of a composition, valid or not: `brief.json`, `BRIEF.md`, `context.md` and `brief.mmd` beside the Harness, in the dependency order, with the gaps and the checklist (AGSC-07-25…07-27); its functions run in the page too |
 | `skills.js` | the published skill packs and their lockfile |
 | `archive.js` | the deterministic ZIP container (store only, fixed timestamps) |
 | `browser.js` | the browser build of the algebra, so the page runs the same code |

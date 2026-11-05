@@ -12,11 +12,20 @@ const test = require('node:test');
 const assert = require('node:assert');
 const vm = require('node:vm');
 const { createHash } = require('node:crypto');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const fc = require('fast-check');
 
 const browser = require('../../src/composition/browser.js');
 const { compose } = require('../../src/composition/compose.js');
 const harness = require('../../src/composition/harness.js');
+const brief = require('../../src/composition/brief.js');
+const { loadBundle } = require('../../src/application/bundle.js');
+const { flatten } = require('../../src/application/cli/verbs/compose.js');
+const { main } = require('../../src/application/cli/main.js');
+const { createFileSystem } = require('../../src/adapters/node-fs.js');
+const { captureStream } = require('../conformance/areas/_shared.js');
 
 const INSTANT = '2026-01-01T00:00:00Z';
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -33,9 +42,9 @@ const ITEMS = Object.freeze([
 ]);
 
 /** A bundle in a context that holds nothing but the language (no require, no fs). */
-function loadBundle() {
+function loadCore(options = {}) {
   const context = vm.createContext(Object.create(null));
-  vm.runInContext(browser.bundle({ specVersion: '1.0.0' }), context, { filename: 'agsc-core.js' });
+  vm.runInContext(browser.bundle({ specVersion: '1.0.0', ...options }), context, { filename: 'agsc-core.js' });
   const core = vm.runInContext('globalThis.AGSC_CORE', context);
   assert.ok(core, 'the bundle installed no AGSC_CORE');
   return { context, core };
@@ -54,7 +63,7 @@ function optionsFor(result, items) {
 }
 
 test('the bundle evaluates in a context with no host at all and exports every name', () => {
-  const { core, context } = loadBundle();
+  const { core, context } = loadCore();
   assert.deepStrictEqual(Object.keys(core).sort(), [...browser.exportedNames()].sort());
   // Nothing the page could reach for: the guarantee of AGSC-09-16 ("no tool may
   // require a network call, a key or a server") starts with the bundle itself.
@@ -64,7 +73,7 @@ test('the bundle evaluates in a context with no host at all and exports every na
 });
 
 test('AGSC-07-13: the verdict is byte-identical in both hosts', () => {
-  const { core } = loadBundle();
+  const { core } = loadCore();
   const selection = ['a', 'b', 'p-run'];
   const here = compose(ITEMS, selection);
   const there = core.compose(structuredClone(ITEMS), selection);
@@ -73,7 +82,7 @@ test('AGSC-07-13: the verdict is byte-identical in both hosts', () => {
 });
 
 test('AGSC-07-13: all seven Harness files are byte-identical in both hosts', () => {
-  const { core } = loadBundle();
+  const { core } = loadCore();
   const selection = ['a', 'b', 'p-run'];
   const here = harness.emit(compose(ITEMS, selection), optionsFor(compose(ITEMS, selection)));
   const thereResult = core.compose(structuredClone(ITEMS), selection);
@@ -89,7 +98,7 @@ test('AGSC-07-13: all seven Harness files are byte-identical in both hosts', () 
 });
 
 test('AGSC-07-13: byte-identity holds over generated selections, not just one', () => {
-  const { core } = loadBundle();
+  const { core } = loadCore();
   const slugs = ITEMS.map((i) => i.slug);
   fc.assert(fc.property(fc.subarray(slugs, { minLength: 1 }), fc.boolean(), (selection, reversed) => {
     const order = reversed ? [...selection].reverse() : selection;
@@ -103,8 +112,53 @@ test('AGSC-07-13: byte-identity holds over generated selections, not just one', 
   }), { numRuns: 200, seed: 20260919 });
 });
 
+test('AGSC-07-25, AGSC-07-13: the brief the command line writes is the brief the page computes, byte for byte', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-brief-hosts-'));
+  test.after(() => fs.rmSync(dir, { force: true, recursive: true }));
+  fs.cpSync(path.resolve(__dirname, '..', 'fixtures', 'minimal'), dir, { recursive: true });
+  const exit = main(['compose', 'supervisor', 'handoff', '--brief', '--quiet'], {
+    env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: createFileSystem(dir) }, root: dir,
+    specVersion: '1.0.0', stderr: captureStream(), stdout: captureStream(), version: '1.0.0',
+  });
+  assert.strictEqual(exit, 0);
+  const companion = fs.readdirSync(path.join(dir, 'dist', 'harness')).find((name) => name.endsWith('.companion'));
+  const items = flatten(loadBundle({ fs: createFileSystem(dir) }, {}).items);
+  const { core } = loadCore({ brief: true });
+  const result = core.compose(structuredClone(items), ['supervisor', 'handoff']);
+  const there = core.briefFiles(result, {
+    ...optionsFor(result, structuredClone(items)), base: 'https://minimal.example/', bundleVersion: undefined,
+    instant: INSTANT, licenseProse: TERMS,
+  });
+  assert.deepStrictEqual(Array.from(there, ([name]) => name), ['BRIEF.md', 'brief.json', 'brief.mmd', 'context.md']);
+  for (const [name, text] of there) {
+    assert.strictEqual(text, fs.readFileSync(path.join(dir, 'dist', 'harness', companion, name), 'utf8'), `${name} differs between the two hosts`);
+  }
+});
+
+test('AGSC-07-13: the brief is byte-identical in both hosts over generated selections', () => {
+  const { core } = loadCore({ brief: true });
+  const slugs = ITEMS.map((i) => i.slug);
+  fc.assert(fc.property(fc.subarray(slugs, { minLength: 1 }), fc.boolean(), (selection, reversed) => {
+    const order = reversed ? [...selection].reverse() : selection;
+    const mine = compose(ITEMS, order);
+    const theirs = core.compose(structuredClone(ITEMS), order);
+    const a = brief.briefFiles(mine, optionsFor(mine));
+    const b = core.briefFiles(theirs, { ...optionsFor(theirs), items: structuredClone(ITEMS) });
+    return JSON.stringify(a) === JSON.stringify(b);
+  }), { numRuns: 100, seed: 20261105 });
+});
+
+test('the published bundle carries the brief only when asked: the /compose/ script keeps its bytes', () => {
+  const plain = browser.bundle({ specVersion: '1.0.0' });
+  assert.ok(!plain.includes('function briefFiles('), 'the default bundle carries the brief');
+  assert.ok(browser.bundle({ brief: true, specVersion: '1.0.0' }).includes('function briefFiles('));
+  assert.deepStrictEqual(browser.exportedNames({ brief: true }).filter((n) => !browser.exportedNames().includes(n)), [...brief.PORTABLE]);
+  const { core } = loadCore({ brief: true });
+  assert.deepStrictEqual(Object.keys(core).sort(), [...browser.exportedNames({ brief: true })].sort());
+});
+
 test('the portable canonicaliser behaves identically in the vm', () => {
-  const { core } = loadBundle();
+  const { core } = loadCore();
   fc.assert(fc.property(fc.object({ maxDepth: 3 }), (value) => {
     let mine;
     try {

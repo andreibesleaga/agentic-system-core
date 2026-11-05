@@ -87,7 +87,11 @@ const VERB_FLAGS = {
   // not yet name it: the proposed wording is on the specification items list
   // and the archive is never a file OF the Harness, which AGSC-07-12
   // closes at seven kinds — it is written beside the directory and never inside it.
-  compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool']]),
+  // `--brief` writes the brief of AGSC-07-25 beside the Harness, in `<dir>.companion/`;
+  // `--narrate <agent>` is the narration step of AGSC-07-28, which needs `--brief`
+  // (AGSC-09-09).
+  compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool'],
+    ['--brief', 'bool'], ['--narrate', 'value']]),
   skills: new Map([['--zip', 'bool']]),
   build: new Map([['--level', 'value']]),
   ci: new Map([['--level', 'value']]),
@@ -431,7 +435,7 @@ function usageText(version) {
 const VERB_USAGE = Object.freeze({
   build: 'agsc build [--level <n>]',
   ci: 'agsc ci [--level <n>]',
-  compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug>',
+  compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug> [--brief [--narrate <agent>]]',
   conform: 'agsc conform [--level <n>] [--to <path>]',
   export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--closure|--steer [--target <name>[,<name>…]]|--to <adapter> [--manifest]',
   import: 'agsc import <source-dir> --from <adapter> [--dry-run] (--from skos takes a Turtle file in place of the folder)',

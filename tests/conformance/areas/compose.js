@@ -1,7 +1,8 @@
 'use strict';
 // tests/conformance/areas/compose.js — area handler for `compose` vectors.
 // Rules: AGSC-07-03, AGSC-07-04..08, AGSC-07-05a, AGSC-07-09, AGSC-07-13a,
-// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-07-30, AGSC-02-97.
+// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-30,
+// AGSC-02-97.
 
 const crypto = require('node:crypto');
 
@@ -10,6 +11,8 @@ const { composeFrom, selectionBlock, selectionFences } = require('../../../src/c
 const { dslRelationships, emit, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
 const archive = require('../../../src/composition/archive.js');
 const { contextMapFiles } = require('../../../src/composition/context-map.js');
+const brief = require('../../../src/composition/brief.js');
+const { isPublished } = require('../../../src/knowledge/chunks.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
 
@@ -316,6 +319,60 @@ function runContextMap(vector) {
   return checks(list);
 }
 
+/**
+ * The brief of one case of compose-0024 to compose-0026 (AGSC-07-25): the composition, its
+ * selection digest hashed here as the command line hashes it, and the listed items of AGSC-00-05
+ * (no draft, no retired item; the vectors hold back nothing by the switchboard).
+ */
+function briefCase(entry, fixed = {}) {
+  const result = compose(entry.items, entry.selection);
+  const options = {
+    base: fixed.base,
+    bundleVersion: fixed.bundle_version,
+    instant: fixed.instant,
+    items: entry.items,
+    licenseProse: fixed.license_prose,
+    listed: entry.items.filter((item) => isPublished(item, undefined)).map((item) => item.slug),
+    selectionDigest: sha256(selectionDigestInput(result)),
+    specVersion: fixed.spec_version,
+  };
+  return { files: new Map(brief.briefFiles(result, options)), record: brief.briefOf(result, options), result };
+}
+
+/** compose-0024 — AGSC-07-25: the bytes of the four files of the brief, and no Harness for an invalid case. */
+function runCompose0024(vector) {
+  const list = [];
+  vector.input.cases.forEach((entry, i) => {
+    const expected = vector.expected.cases[i] || {};
+    const { files, result } = briefCase(entry, vector.input.fixed);
+    list.push([`${entry.name} name`, expected.name === entry.name, String(expected.name)]);
+    list.push([`${entry.name} harness_emitted`, isEmitted(result) === expected.harness_emitted, String(isEmitted(result))]);
+    list.push([`${entry.name} file names`, deepEqual(Object.keys(expected.file_bytes), [...files.keys()]), JSON.stringify([...files.keys()])]);
+    for (const [name, bytes] of Object.entries(expected.file_bytes)) {
+      list.push([`${entry.name} ${name}`, files.get(name) === bytes, String(files.get(name))]);
+    }
+  });
+  list.push(['case count', vector.expected.cases.length === vector.input.cases.length, String(vector.expected.cases.length)]);
+  return checks(list);
+}
+
+/** compose-0025 — AGSC-07-26: the dependency order; compose-0026 — AGSC-07-27: the gaps and the checklist. */
+function runBriefMembers(members) {
+  return (vector) => {
+    const list = [];
+    vector.input.cases.forEach((entry, i) => {
+      const expected = vector.expected.cases[i] || {};
+      const { record } = briefCase(entry, vector.input.fixed);
+      list.push([`${entry.name} name`, expected.name === entry.name, String(expected.name)]);
+      for (const member of members) {
+        list.push([`${entry.name} ${member}`, deepEqual(expected[member], plain(record[member])), JSON.stringify(record[member])]);
+      }
+    });
+    list.push(['case count', vector.expected.cases.length === vector.input.cases.length, String(vector.expected.cases.length)]);
+    return checks(list);
+  };
+}
+
 const HANDLERS = {
   'compose-0001': runVerdictVector,
   'compose-0002': runVerdictVector,
@@ -332,6 +389,9 @@ const HANDLERS = {
   'compose-0021': runVerdictVector,
   'compose-0022': runVerdictVector,
   'compose-0023': runVerdictVector,
+  'compose-0024': runCompose0024,
+  'compose-0025': runBriefMembers(['order']),
+  'compose-0026': runBriefMembers(['checklist', 'gaps']),
   'compose-0027': runCompose0027,
   'compose-0032': runContextMap,
   'compose-0033': runContextMap,

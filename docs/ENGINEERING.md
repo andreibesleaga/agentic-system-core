@@ -121,7 +121,9 @@ To add a module:
    Code a published page runs is written as **portable** functions and shipped as their
    own source text, so the page runs what the Node tests test: each such module lists
    them in `PORTABLE`, and a portable function names no module-scope binding and
-   requires nothing (`tests/arch/page-tools-portable.test.js` for the page tools,
+   requires nothing (`tests/arch/composition-portable.test.js` for the composition
+   algebra, the Harness, the archive and the brief that `/compose/` runs,
+   `tests/arch/page-tools-portable.test.js` for the page tools,
    `tests/arch/explorer-portable.test.js` for the explorer of `/clusters/`, which also
    depends on nothing outside its own folder, and `tests/arch/query-portable.test.js` for
    the `/query/` page and its worker, which reuse the explorer's layout and scene writer).

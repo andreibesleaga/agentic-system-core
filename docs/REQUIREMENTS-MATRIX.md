@@ -64,8 +64,8 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-003 | MAPPED | `AGSC-00-09`, `AGSC-04-19`, `AGSC-09-11` +1 | 4 vectors, 29 tests, 2 scenarios, 2 checkers | — | — | — | — |
 | PRD-004 | MAPPED | `AGSC-00-10`, `AGSC-04-01`, `AGSC-04-02` +2 | 1 vectors, 30 tests, 2 scenarios, 0 checkers | `tools/validate-diagrams.test.js` | — | — | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/algo-build-pipeline.md` |
 | PRD-005 | MAPPED | `AGSC-06-11`, `AGSC-08-20`, `AGSC-08-20a` +3 | 8 vectors, 10 tests, 2 scenarios, 0 checkers | `tools/gen-glossary.test.js`, `tools/linear-patterns.test.js`, `tools/public-hygiene.test.js` | — | `persona-i-maintainer.feature`, `persona-m-security-reviewer.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/README.md` +2 |
-| PRD-006 | MAPPED | `AGSC-01-17`, `AGSC-01-18` | 1 vectors, 8 tests, 0 scenarios, 0 checkers | — | — | — | `docs/SPEC.md` |
-| PRD-007 | MAPPED | `AGSC-09-08`, `AGSC-09-09`, `AGSC-09-11` +1 | 5 vectors, 38 tests, 3 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
+| PRD-006 | MAPPED | `AGSC-01-17`, `AGSC-01-18` | 1 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | — | `docs/SPEC.md` |
+| PRD-007 | MAPPED | `AGSC-09-08`, `AGSC-09-09`, `AGSC-09-11` +1 | 5 vectors, 39 tests, 3 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
 | PRD-008 | MAPPED | `AGSC-00-18`, `AGSC-04-25`; served by `AGSC-00-17` | 2 vectors, 10 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-009 | PARTLY | `AGSC-00-18`; served by `AGSC-02-94` | 2 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-010 | MAPPED | `AGSC-00-12`, `AGSC-00-23`, `AGSC-00-25` +1 | 1 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | `persona-l-port-implementer.feature`, `persona-n-researcher.feature` | `docs/SPEC.md` |
@@ -74,7 +74,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-013 | MAPPED | `AGSC-01-42`, `AGSC-02-13` | 2 vectors, 10 tests, 3 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature`, `persona-b-contributor.feature` | — |
 | PRD-014 | MAPPED | `AGSC-06-16`, `AGSC-06-23` | 3 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-a-reader.feature` | — |
 | PRD-015 | MAPPED | `AGSC-04-11`, `AGSC-06-22` | 1 vectors, 5 tests, 1 scenarios, 0 checkers | — | — | `persona-a-reader.feature` | — |
-| PRD-016 | MAPPED | `AGSC-00-18`; served by `AGSC-00-05`, `AGSC-02-21` | 2 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | — | — |
+| PRD-016 | MAPPED | `AGSC-00-18`; served by `AGSC-00-05`, `AGSC-02-21` | 2 vectors, 6 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-017 | MAPPED | `AGSC-02-11`, `AGSC-04-11` | 1 vectors, 3 tests, 1 scenarios, 0 checkers | — | — | `persona-i-maintainer.feature` | — |
 | PRD-018 | MAPPED | `AGSC-01-12`, `AGSC-02-23`, `AGSC-06-04` | 0 vectors, 6 tests, 1 scenarios, 0 checkers | — | — | `persona-i-maintainer.feature` | `docs/diagrams/README.md`, `docs/diagrams/state-item-lifecycle.md` |
 | PRD-019 | MAPPED | `AGSC-01-29`, `AGSC-06-18`, `AGSC-11-01` | 3 vectors, 19 tests, 1 scenarios, 0 checkers | `distribution/public-statements.test.js`, `distribution/surfaces-eng2.test.js` | — | `persona-c-agent-mcp.feature` | `docs/PLAN.md`, `docs/SPEC.md` |
@@ -95,8 +95,8 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-034 | MAPPED | `AGSC-07-22` | 0 vectors, 4 tests, 1 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | — |
 | PRD-035 | MAPPED | `AGSC-07-15`, `AGSC-07-20` | 1 vectors, 6 tests, 7 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | `docs/PLAN.md` |
 | PRD-036 | MAPPED | `AGSC-00-11`, `AGSC-03-07`, `AGSC-03-14` +9 | 10 vectors, 12 tests, 0 scenarios, 0 checkers | — | — | `persona-c-agent-mcp.feature`, `persona-e-architect.feature` | `docs/diagrams/README.md`, `docs/diagrams/algo-combiner.md`, `docs/diagrams/user-flows.md` |
-| PRD-037 | MAPPED | `AGSC-07-13` | 0 vectors, 7 tests, 2 scenarios, 0 checkers | `application/cli/unshipped-target-code.test.js` | — | `persona-e-architect.feature` | `docs/diagrams/algo-combiner.md`, `docs/diagrams/schema-domain.md` |
-| PRD-038 | MAPPED | `AGSC-07-01`, `AGSC-07-13` | 0 vectors, 8 tests, 2 scenarios, 0 checkers | — | — | `persona-e-architect.feature` | `docs/PLAN.md`, `docs/diagrams/algo-combiner.md` |
+| PRD-037 | MAPPED | `AGSC-07-13` | 0 vectors, 8 tests, 2 scenarios, 0 checkers | `application/cli/unshipped-target-code.test.js` | — | `persona-e-architect.feature` | `docs/diagrams/algo-combiner.md`, `docs/diagrams/schema-domain.md` |
+| PRD-038 | MAPPED | `AGSC-07-01`, `AGSC-07-13` | 0 vectors, 9 tests, 2 scenarios, 0 checkers | — | — | `persona-e-architect.feature` | `docs/PLAN.md`, `docs/diagrams/algo-combiner.md` |
 | PRD-039 | MAPPED | `AGSC-08-04` | 0 vectors, 6 tests, 1 scenarios, 0 checkers | — | — | `persona-b-contributor.feature`, `persona-d-agent-proposer.feature` | `docs/PLAN.md`, `docs/diagrams/README.md`, `docs/diagrams/state-proposal.md` +1 |
 | PRD-040 | MAPPED | `AGSC-08-06`, `AGSC-08-07` | 2 vectors, 5 tests, 2 scenarios, 0 checkers | — | — | `persona-b-contributor.feature`, `persona-d-agent-proposer.feature` | `docs/PLAN.md` |
 | PRD-041 | MAPPED | `AGSC-08-03`, `AGSC-08-08`, `AGSC-08-27` | 0 vectors, 4 tests, 1 scenarios, 0 checkers | — | — | `persona-b-contributor.feature` | — |
