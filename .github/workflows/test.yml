@@ -2,7 +2,9 @@
 # on every pull request, every push to main or a release branch, and once a week.
 #
 #   What runs  `npm ci`, the linter (`npm run lint`), the dependency rule
-#              (`npm run arch`), `npm test` (unit, integration, architecture, the
+#              (`npm run arch`), the TypeScript parts (`npm run check:ts`: the
+#              committed files compiled from src-ts/ are what tsc writes; `npm run
+#              typecheck`: tsc --noEmit), `npm test` (unit, integration, architecture, the
 #              conformance vectors, the acceptance scenarios, the tests of the
 #              standard and the end-to-end tests that need nothing outside the
 #              repository), the rule-coverage matrix in its checking mode, and
@@ -111,6 +113,10 @@ jobs:
         run: npm run duplicates
       - name: architecture (the dependency rule, by dependency-cruiser)
         run: npm run arch
+      - name: TypeScript output (the committed files under src/ are what tsc writes from src-ts/)
+        run: npm run check:ts
+      - name: TypeScript types (tsc --noEmit over src-ts/)
+        run: npm run typecheck
       - name: suite
         if: ${{ !(matrix.os == 'ubuntu-latest' && matrix.node == '24') }}
         run: npm test

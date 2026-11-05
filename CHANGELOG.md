@@ -221,6 +221,32 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- TypeScript toolchain for the agent-facing protocol modules (docs/ENGINEERING.md §8): sources under
+  `src-ts/<context>/`, compiled by the new maintainer tool `tools/build-ts` to CommonJS at the same
+  path under `src/` and committed there, each file headed `generated from src-ts/<path> by tsc
+  <version>; do not edit`, so no install and no run needs TypeScript. `npm run build:ts` writes,
+  `npm run check:ts` verifies, `npm run typecheck` is `tsc --noEmit`, and `prepack` runs the last
+  two. `tsconfig.json` is strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `noImplicitOverride`, `isolatedModules`), `module` `node20` (CommonJS for this package), `target`
+  ES2024 for the Node floor 22.13, no maps or declarations; a bare `tsc` writes nothing. The first
+  module, `src/shared/version-line.js` from `src-ts/shared/version-line.ts`, gives the line `agsc
+  --version` prints (AGSC-09-09) and is required by its test only, so no emitted byte changes. The
+  dependency rule (`npm run arch`) reads `src-ts/` with the same map; the linter applies
+  typescript-eslint's strict rules, the house style and the size budgets to it; the test lane
+  runs `check:ts` and `typecheck` on every leg. New fitness test `tests/arch/typescript-parts.test.js`:
+  the committed output equals the sources, the options stay strict, TypeScript is a development
+  dependency only, and a new agent-facing protocol module (`src/distribution/mcp-*.js` other than
+  the three of 1.0, `src/distribution/a2a*.js`, `src/application/hosting-http*.js`,
+  `bench/runners/`) must be compiled from TypeScript. The architecture scans of `tests/arch/` read
+  `require` with either quote, as the compiled files write it.
+- Development dependencies, exact pins, for the TypeScript toolchain: `typescript` 6.0.3 (the last
+  line with the JavaScript compiler interface that `typescript-eslint` and `dependency-cruiser` read;
+  7.0 is the native compiler without it, and `typescript-eslint` 8.72.1 accepts TypeScript below
+  6.1), `@types/node` 22.20.5 (the latest release of the Node floor's major line) and
+  `typescript-eslint` 8.72.1 (so the linter covers `src-ts/`). The lockfile now resolves the
+  `@types/node` that `@rdfjs/types` (under `rdf-validate-shacl`) asks for with any version to the
+  same 22.20.5, and `@typescript-eslint/types` under the linter's plugins from 8.70.1 to 8.72.1.
+  `npm audit` reports 0 vulnerabilities.
 - Graph view on item and cluster pages (AGSC-06-38, I-022, I-023): an item page that has a typed
   Link to or from another published item shows, under the `#links` anchor that held the 1.0 list of
   Links, a **Relations** section — an inline SVG figure of its neighbourhood and a relations table,

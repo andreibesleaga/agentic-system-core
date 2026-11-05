@@ -47,6 +47,7 @@ npm run audit                    # npm audit must report 0 vulnerabilities
 node tools/count-artifacts --json   # the rule, code, vector and term counts
 node tools/validate-vectors --json  # every conformance vector is well formed
 node --test tests/arch/*.test.js    # the context boundaries and the purity rules
+npm run check:ts && npm run typecheck   # the TypeScript parts: compiled output current, types sound
 ```
 
 All of these must pass, and the test comes first: write the failing test, then the
@@ -65,6 +66,11 @@ Keep to the architecture: `src/knowledge/`, `src/governance/` and `src/compositi
 pure — no file system, no clock, no network, no process — and reach the outside world only
 through the ports in `src/ports/`. `tests/arch/` enforces this and will fail the build if a
 module reaches across a boundary.
+
+A module that speaks a protocol to agents (MCP, A2A, the benchmark runners) is written in
+strict TypeScript under `src-ts/` and compiled into `src/` with `npm run build:ts`; commit
+the source and the compiled file together, and never edit a compiled file by hand. The
+rest of the engine is JavaScript. [docs/ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) §8 has the steps.
 
 ## Signing off
 

@@ -1,6 +1,6 @@
 # `tests/tools/`
 
-**Summary.** Tests of each shipped checker and generator on good and bad input, with no import from `src/`, and of the maintainer tools. Subject: `tools/`.
+**Summary.** Tests of each shipped checker and generator on good and bad input, with no import from `src/`, and of the maintainer tools (among them `build-ts`, the compiler of the TypeScript parts, on scratch trees that reach the repository's `node_modules/` through a directory junction). Subject: `tools/`.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

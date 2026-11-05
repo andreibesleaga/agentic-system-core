@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 92 |
 | Checker header | 36 |
 
-Acceptance scenarios: 146 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 92 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 147 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 92 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -420,7 +420,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-06 | VERIFIED | — | — | — | — | `validate-vectors` |
 | AGSC-09-07 | VERIFIED | yes | `cli-0005`, `cli-0036` | `acceptance/steps/persona-b.js`, `application/cli/main-shell.test.js`, `application/cli/messages-and-help.test.js` +4 | `persona-0-dropin.feature#A newcomer asks for help`, `persona-b-contributor.feature#The review lane labels the change and comments on its findings, with no model call` | `validate-features` |
 | AGSC-09-08 | VERIFIED | yes | `cli-0014` | `acceptance/steps/persona-i.js`, `adapters/node-clock.test.js`, `application/cli/verbs-sixteen.test.js` +7 | `persona-i-maintainer.feature#Local ci and CI ci run the identical pipeline` | — |
-| AGSC-09-09 | VERIFIED | yes | `cli-0010`, `cli-0012` | `acceptance/steps/persona-c.js`, `application/cli/eng2-verbs.test.js`, `application/cli/flags.test.js` +8 | `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network` | — |
+| AGSC-09-09 | VERIFIED | yes | `cli-0010`, `cli-0012` | `acceptance/steps/persona-c.js`, `application/cli/eng2-verbs.test.js`, `application/cli/flags.test.js` +9 | `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-i-maintainer.feature#A TypeScript part ships as its compiled CommonJS, and neither an install nor a run needs TypeScript` | — |
 | AGSC-09-10 | VERIFIED | yes | `cli-0020` | `application/cli/init-notes.test.js`, `application/cli/json-stderr-findings-only.test.js`, `application/cli/main-shell.test.js` +4 | — | `validate-diagrams`, `validate-features`, `validate-ontology` +2 |
 | AGSC-09-11 | VERIFIED | yes | `cli-0002`, `lint-0044` | `application/cli/build-keeps-findings.test.js`, `application/cli/ci-keeps-findings.test.js`, `application/cli/envelope.test.js` +17 | — | `validate-wellknown` |
 | AGSC-09-12 | VERIFIED | yes | — | `application/cli/verbs-sixteen.test.js`, `e2e/real-bundles.test.js` | — | — |

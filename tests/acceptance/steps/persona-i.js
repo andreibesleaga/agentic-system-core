@@ -10,7 +10,9 @@
 // note's domain type, role and domain links, and their refusal (AGSC-02-25, AGSC-03-27);
 // a term's warrant in the graph, and the JSON-LD round trip of a graph that carries it
 // (AGSC-05-40, AGSC-06-32); the site's own invariants and competency questions, checked by
-// `verify` and `ci` and never by `lint` (AGSC-05-41, AGSC-09-20);
+// `verify` and `ci` and never by `lint` (AGSC-05-41, AGSC-09-20); the TypeScript parts,
+// compiled into the shipped tree and needed by no install and no run (AGSC-09-09 for the
+// line the compiled proof module gives);
 // and, where the real-Bundle lane
 // is switched on, a restore from a bare clone of the patterns node. The steps of
 // the scenario that waits on a gap (a channel whose publish choice is auto) are
@@ -30,6 +32,9 @@ const N3 = require('n3');
 const { INSTANT, ROOT, linkset, splitItem } = require('./_world.js');
 const { patternsNode } = require('./_real-bundles.js');
 const { INVERSE_OF_TYPE, NAMESPACE, VALID, withExtra } = require('../../knowledge/_domain-fixtures.js');
+
+/** tools/build-ts, loaded in process: its compile and its header line (docs/ENGINEERING.md §8). */
+const BUILD_TS = path.join(ROOT, 'tools', 'build-ts');
 
 const LEDGER_REL = 'https://w3id.org/agentic-system-core/rel#ledger';
 const GENESIS = '0'.repeat(64);
@@ -642,6 +647,54 @@ module.exports = [
       assert.strictEqual(r.exit, 1, `${r.stdout}${r.stderr}`);
       const { findings } = JSON.parse(r.stdout);
       assert.ok(findings.length > 0 && findings.every((f) => f.code === code && f.file === rel), r.stdout);
+    },
+  },
+  {
+    pattern: /^the maintainer checks the TypeScript parts with "node tools\/build-ts --check"$/u,
+    run(world) {
+      world.tool('build-ts', ['--check']);
+    },
+  },
+  {
+    pattern: /^every module under "src-ts\/" has its compiled file under "src\/", headed with its source and the compiler version, byte for byte what tsc writes now$/u,
+    run() {
+      const { compile, HEADER_LINE } = require(BUILD_TS);
+      const { errors, files } = compile(ROOT);
+      assert.deepStrictEqual(errors, []);
+      assert.ok(files.length > 0, 'src-ts/ holds at least the proof module');
+      const version = require('typescript').version;
+      for (const { source, target, text } of files) {
+        const committed = fs.readFileSync(path.join(ROOT, target), 'utf8');
+        assert.strictEqual(committed, text, `${target} is not what tsc writes from ${source}`);
+        assert.deepStrictEqual(HEADER_LINE.exec(committed).slice(1, 3), [source, version]);
+      }
+    },
+  },
+  {
+    pattern: 'TypeScript and its type packages are development dependencies only, and no module the package ships requires them',
+    run() {
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+      for (const name of ['typescript', '@types/node', 'typescript-eslint']) {
+        assert.ok(pkg.devDependencies[name] && !pkg.dependencies[name], name);
+      }
+      assert.ok(!pkg.files.includes('src-ts/'), 'the sources do not ship; their compiled files do, under src/');
+      const shipped = ['src', 'bin'].flatMap((dir) => fs.readdirSync(path.join(ROOT, dir), { recursive: true })
+        .filter((rel) => /\.js$/u.test(rel) && !rel.split(path.sep).includes('vendor')).map((rel) => path.join(ROOT, dir, rel)));
+      for (const file of shipped) {
+        assert.ok(!/\brequire\(\s*['"](typescript|@types\/|typescript-eslint)/u.test(fs.readFileSync(file, 'utf8')), file);
+      }
+    },
+  },
+  {
+    pattern: /^the compiled "src\/shared\/version-line\.js" gives the line "agsc --version" prints \(AGSC-09-09\)$/u,
+    run(world) {
+      const { versionLine } = require(path.join(ROOT, 'src', 'shared', 'version-line.js'));
+      const version = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+      for (const [flags, form] of [[['--version'], 'text'], [['--version', '--json'], 'json']]) {
+        const r = world.agsc(flags);
+        assert.strictEqual(r.exit, 0, r.stderr);
+        assert.strictEqual(r.stdout, versionLine(version, form));
+      }
     },
   },
 ];

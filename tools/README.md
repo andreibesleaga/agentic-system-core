@@ -47,6 +47,7 @@ requirement. Checking it, with one more fetch, is planned for 1.1.
 | `public-hygiene` | "public means clean": a sweep of a working tree for text that must never be published |
 | `publish-set` | sets which items of a Bundle are published, from one list |
 | `release` | the release lane as a dry run: version, changelog, package contents, provenance step |
+| `build-ts` | compiles the TypeScript sources of `src-ts/` to the committed CommonJS files under `src/` (`npm run build:ts`); `--check` fails when a committed file is not what the compiler writes now (`npm run check:ts`). The one tool that requires a development dependency, the pinned compiler ([docs/ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) §8) |
 
 ## Run them
 

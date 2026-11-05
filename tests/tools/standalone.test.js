@@ -21,6 +21,12 @@ const NINE = Object.freeze([
 /** The libraries a tool MAY use: the engine's own pins (AGSC-09-90). */
 const PINNED = Object.freeze(['ajv', 'ajv-formats', 'fast-xml-parser', 'json-canonicalize',
   'markdown-it', 'n3', 'yaml']);
+/**
+ * The one maintainer tool that requires a development dependency: tools/build-ts compiles
+ * the TypeScript parts with the pinned compiler. It checks no artefact of the format and
+ * never ships (tests/arch/package-manifest.test.js holds the shipped list).
+ */
+const MAINTAINER_DEV = Object.freeze({ 'build-ts': ['typescript'] });
 
 function sources() {
   return fs.readdirSync(TOOLS).sort().map((name) => ({
@@ -54,7 +60,8 @@ describe('tools/ are independent of the engine (AGSC-09-90)', () => {
           ? specifier.split('/').slice(0, 2).join('/')
           : specifier.split('/')[0];
         assert.ok(['fs', 'path', 'crypto', 'https', 'http', 'dns', 'net', 'child_process'].includes(pkg)
-          || PINNED.includes(pkg), `tools/${name} requires ${specifier}, which is not an engine pin`);
+          || PINNED.includes(pkg) || (MAINTAINER_DEV[name] || []).includes(pkg),
+        `tools/${name} requires ${specifier}, which is not an engine pin`);
       }
     }
   });

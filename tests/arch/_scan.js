@@ -22,12 +22,16 @@ function walk(dir) {
  */
 const VENDOR = path.join(SRC, 'distribution', 'vendor');
 
-/** Every `.js` under src/ but the vendored engine, as `{ rel, dir, text, requires: string[] }`. */
+/**
+ * Every `.js` under src/ but the vendored engine, as `{ rel, dir, text, requires: string[] }`;
+ * the files compiled from src-ts/ are among them, so every scan reads what actually runs.
+ */
 function sources() {
   return walk(SRC).filter((f) => f.endsWith('.js') && !f.startsWith(VENDOR + path.sep)).sort().map((absolute) => {
     const rel = path.relative(ROOT, absolute).split(path.sep).join('/');
     const text = fs.readFileSync(absolute, 'utf8');
-    const requires = [...text.matchAll(/\brequire\(\s*'([^']+)'\s*\)/gu)].map((m) => m[1]);
+    // Either quote: the files tsc compiles from src-ts/ write `require("...")`.
+    const requires = [...text.matchAll(/\brequire\(\s*(['"])([^'"]+)\1\s*\)/gu)].map((m) => m[2]);
     return { absolute, rel, dir: path.relative(SRC, path.dirname(absolute)).split(path.sep).join('/'), text, requires };
   });
 }

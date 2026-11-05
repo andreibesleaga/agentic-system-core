@@ -77,7 +77,13 @@ for a line terminator and one slice. The patterns they replaced (a run of blanks
 `(.*)$` or `(.+)$`) read the rest of the line again for every blank they gave back when
 the line held a carriage return, U+2028 or U+2029. `src/shared/article.js` holds
 `withArticle(word)`: the word with "a" or "an" before it by its first letter, for a message
-that names a type, a kind or a format at run time.
+that names a type, a kind or a format at run time. `src/shared/version-line.js` holds
+`versionLine(version, form = 'text')`: `agsc <version>` and a line feed, or for `form`
+`'json'` the object `{"version":"<version>"}` and a line feed, which is what `agsc --version`
+prints (AGSC-09-09). It is the one module compiled from TypeScript so far
+(`src-ts/shared/version-line.ts`, by `tools/build-ts`; `docs/ENGINEERING.md` §8) and only its
+test requires it: the command line keeps its own line, so the proof of the toolchain moves
+no byte the engine writes.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,
@@ -213,6 +219,7 @@ runtime, and is loadable from CommonJS.
 | `format` keyword | `ajv-formats` | 3.0.1 | MIT |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT |
 | property tests (dev) | `fast-check` | 4.10.1 | MIT |
+| TypeScript compiler, Node types, lint rules (dev) | `typescript`, `@types/node`, `typescript-eslint` | 6.0.3, 22.20.5, 8.72.1 | Apache-2.0, MIT, MIT |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT |
 
 What the engine writes by hand, and why: the AGSC-02-02 **allow-list** on top

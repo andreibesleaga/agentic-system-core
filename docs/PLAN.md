@@ -591,7 +591,9 @@ channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 a
 `docs/runbooks/secrets.md` is not part of this repository; the commit and reviewer of `prov` are derived from the git-log file of AGSC-08-20a,
 not from an environment variable `AGSC_GIT_LOG`; and the checkers are the extensionless programs
 `tools/validate-*`, `tools/gen-spec-html` and `tools/gen-ns`, not `.js` files. `src/README.md`
-holds the module map of the tree as it is.
+holds the module map of the tree as it is. From 1.1 a module may have a TypeScript source under
+`src-ts/<context>/`, compiled into the same path of `src/` and committed there
+(`docs/ENGINEERING.md` §8); the module map lists the compiled file.
 
 **The browser bundle (§5, §6, §13).** The composition core the browser runs is served as
 `/compose/agsc-core.js`, beside `agsc-page-tools.js`, `agsc-compose.js` and `webmcp.js`; there

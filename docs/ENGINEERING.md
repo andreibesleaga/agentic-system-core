@@ -24,8 +24,10 @@ runs the same commands (§5); nothing runs there that cannot run here.
 | Suite | `npm test` | Every level of [TESTING.md](TESTING.md): unit, integration, architecture, the conformance vectors, the executed acceptance scenarios, the tests of the standard, the end-to-end lanes that need nothing outside the repository. 0 failures. Fixed clocks, no network. |
 | Lint | `npm run lint` | ESLint's recommended rules, the house style (two-space indent, single quotes, semicolons, trailing commas on multi-line lists, LF), the order of `require` lines (Node built-ins, then packages, then this repository's files) and the size budgets of §2. **Zero warnings**: a warning is a failure. |
 | Format | `npm run format` | The same linter with `--fix`: it rewrites what it can (style, order) and reports what it cannot. There is no second formatter, so the formatter and the linter cannot disagree. |
-| Dependency rule | `npm run arch` | dependency-cruiser over `src/`, `bin/` and `index.js` with the map of §3: each part of `src/` may require only the parts its row allows; the pure contexts use no Node built-in but `crypto`; an adapter is constructed only by the application layer or `bin/`; Interchange and Distribution never require each other; no module requires a sample plugin, a checker or `examples/`; no devDependency at run time; no undeclared or unresolvable require; no cycle; no orphan. |
+| Dependency rule | `npm run arch` | dependency-cruiser over `src/`, the TypeScript sources of `src-ts/` (§8), `bin/` and `index.js` with the map of §3: each part of `src/` may require only the parts its row allows; the pure contexts use no Node built-in but `crypto`; an adapter is constructed only by the application layer or `bin/`; Interchange and Distribution never require each other; no module requires a sample plugin, a checker or `examples/`; no devDependency at run time; no undeclared or unresolvable require; no cycle; no orphan. |
 | Purity | part of `npm test` (`tests/arch/core-purity.test.js`, `never-touches.test.js`, `application-builtins.test.js`) | No bounded context touches `process`, `Date.now`, `new Date`, `Math.random`; the outside world is reached through a port. No context loads what the "Never touches" column of [ARCHITECTURE-DDD.md](ARCHITECTURE-DDD.md) §2 excludes, and the application layer loads only the Node built-ins listed in §3. |
+| TypeScript output | `npm run check:ts` | `tools/build-ts --check`: every file compiled from `src-ts/` into `src/` is byte for byte what the pinned compiler writes now, names its source in its first line, and has a source that still exists (§8). |
+| TypeScript types | `npm run typecheck` | `tsc --noEmit` over `src-ts/` with the strict options of `tsconfig.json` (§8). |
 | Duplication | `npm run duplicates` | jscpd over the same files: at most 2 % duplicated lines. The clones kept on purpose are listed in §2. |
 | Rule coverage | `npm run rule-coverage` | Every active rule of `spec/` is verified by a vector, a test, an executed scenario or a checker, or is prose-only for a stated reason; [RULE-COVERAGE.md](RULE-COVERAGE.md) is current. `node tools/rule-coverage --write` regenerates the page. |
 | Requirements | `npm run requirements` | Every requirement of [PRD.md](PRD.md) is traced by a rule or named by a test or a live vector, or stays unmapped for a stated reason; a requirement met only in part, or traced only by rules that carry no check, names the part that waits; [REQUIREMENTS-MATRIX.md](REQUIREMENTS-MATRIX.md) is current. `node tools/requirements-matrix --write` regenerates the page. |
@@ -39,7 +41,7 @@ runs the same commands (§5); nothing runs there that cannot run here.
 Before opening a pull request, the short form is:
 
 ```bash
-npm run lint && npm run arch && npm run duplicates && npm test \
+npm run lint && npm run arch && npm run check:ts && npm run typecheck && npm run duplicates && npm test \
   && npm run rule-coverage && npm run requirements && node tools/public-hygiene .
 ```
 
@@ -51,7 +53,7 @@ code at its size, not to describe an ideal. A change may lower a budget; a chang
 not raise one without saying so in the pull request, because a silent raise is how a
 limit stops meaning anything.
 
-| Budget | Engine code (`src/`, `bin/`, `tools/`, `index.js`) | Tests |
+| Budget | Engine code (`src/`, `src-ts/`, `bin/`, `tools/`, `index.js`) | Tests |
 |---|---:|---:|
 | Cyclomatic complexity of a function | 150 | 30 |
 | Lines per function | 660 | 210 |
@@ -170,7 +172,7 @@ tag cannot change what runs; every job has read-only permissions unless it publi
 
 | Repository | Workflow | Runs on | What it runs |
 |---|---|---|---|
-| `agentic-system-core` (this engine) | `test.yml` on every pull request, every push to `main` or a `release/` branch, and weekly | Ubuntu, macOS, Windows × Node 22.13.0, 24 and 26 (nine legs; the six of 22.13.0 and 24 are the required checks, the three of 26 are not), plus one `actionlint` job on Ubuntu and one browser job on Ubuntu that is not a required check | every step of the release gates, with the same wording and under the same condition: `npm ci`, lint, the duplicate check, the dependency rule, the suite (on Ubuntu × Node 24 measured by `npm run test:coverage`, which fails below 99.9 % of lines, 99 % of functions or 93 % of branches of `src/`), `npm audit`, rule coverage, the requirements matrix, the counting tool, every validator, the Level-1 check of a fixture built without git, `validate-wellknown` at Level 2 on a fixture build, the packed install (both tarballs installed together in an empty folder, each command printing the packed version), the release dry run, hygiene, the architecture lane (a test fails if the two workflows drift apart or a required check context is no longer produced); `actionlint` over the workflow files themselves |
+| `agentic-system-core` (this engine) | `test.yml` on every pull request, every push to `main` or a `release/` branch, and weekly | Ubuntu, macOS, Windows × Node 22.13.0, 24 and 26 (nine legs; the six of 22.13.0 and 24 are the required checks, the three of 26 are not), plus one `actionlint` job on Ubuntu and one browser job on Ubuntu that is not a required check | every step of the release gates, with the same wording and under the same condition: `npm ci`, lint, the duplicate check, the dependency rule, the two TypeScript checks of §8 (`npm run check:ts`, `npm run typecheck`; these two run in `test.yml` only, and `npm pack` runs them again through `prepack`), the suite (on Ubuntu × Node 24 measured by `npm run test:coverage`, which fails below 99.9 % of lines, 99 % of functions or 93 % of branches of `src/`), `npm audit`, rule coverage, the requirements matrix, the counting tool, every validator, the Level-1 check of a fixture built without git, `validate-wellknown` at Level 2 on a fixture build, the packed install (both tarballs installed together in an empty folder, each command printing the packed version), the release dry run, hygiene, the architecture lane (a test fails if the two workflows drift apart or a required check context is no longer produced); `actionlint` over the workflow files themselves |
 | | `release.yml` on a `v*` tag | the same nine legs, then one publish job | the same gates again; then, only for a tag whose commit is on `main`, npm trusted publishing with build provenance, under the dist-tag `next` for a pre-release and `latest` for a final release |
 | `AgenticSystemCore.com` (the reference site) | `test.yml` on every push and pull request | Ubuntu, Node 22.13.0, the engine checked out beside it | `node scripts/build.js && node scripts/check.js` (two identical builds equal to the committed output; the discovery document at Levels 0 and 2; links, headers, contrast, hygiene), `node scripts/page-tools-check.js`, the hygiene sweep; the browser lane (`scripts/a11y.js`, axe-core) on request |
 | | `live.yml` on Mondays and on request | Ubuntu, Node 22.13.0 | a read-only check of both live nodes, `node scripts/live-check.mjs --require-checkers`: the served pages against the committed output, the promised response headers, the `security.txt` expiry, the age of the sustainability report, the w3id redirects, the npm and PyPI versions, and both released checkers at Level 2 with the mutual check; not a required check, because what it reads can change without a commit |
@@ -253,3 +255,86 @@ read as the file's own licence. A new file of that kind needs the same entry, an
 `src/distribution/vendor/oxigraph-0.5.13/` (AGSC-06-39) has an annotation of its own: its two files
 keep their upstream bytes with no SPDX header, and `REUSE.toml` gives them the engine's copyright line
 and its licence, `MIT OR Apache-2.0`, whose texts sit beside them.
+
+## 8. TypeScript parts
+
+**Why.** The parts of the engine that speak a protocol to agents are written in strict
+TypeScript: the Model Context Protocol core of revision 2026-07-28 and its HTTP
+transport, the A2A responder, the narration step of the brief, the runners of the
+benchmark kit, and any later module that an agent talks to. A message shape the
+compiler checks cannot drift from the protocol's schema unnoticed. The rest of the
+engine stays JavaScript and is not rewritten.
+
+**Where.** A source lives at `src-ts/<context>/<name>.ts`, in the folder of the context
+it belongs to, and the dependency rule of §3 applies to it as written: `npm run arch`
+reads every rule as `src(?:-ts)?/`. `tools/build-ts` compiles it to CommonJS at
+`src/<context>/<name>.js`, and that compiled file is committed. Its first line names
+its source and the compiler:
+
+```js
+// generated from src-ts/shared/version-line.ts by tsc 6.0.3; do not edit
+```
+
+So `npm test`, an install with `npm ci --omit=dev` and the published package need no
+TypeScript: what runs and what ships is the JavaScript under `src/`, and the sources
+under `src-ts/` do not ship. The first module, `src-ts/shared/version-line.ts`, is the
+proof of the chain: it gives the line `agsc --version` prints, and only its test
+(`tests/knowledge/version-line.test.js`) requires it, so no byte the engine writes
+depends on it.
+
+**Commands.**
+
+| Command | What it does |
+|---|---|
+| `npm run build:ts` | compiles `src-ts/` and writes each compiled file whose bytes changed |
+| `npm run check:ts` | writes nothing; exits 1 when a committed file is not what the compiler writes now, when a compiled file's source is gone, or on a type error |
+| `npm run typecheck` | `tsc --noEmit`: the compiler's own check of the sources |
+| `npm pack` | runs `prepack`, which is `npm run check:ts && npm run typecheck`, so a package is never packed from stale output |
+
+A bare `tsc` writes nothing (`tsconfig.json` sets `noEmit`); `tools/build-ts` is the one
+writer, and it compiles in memory.
+
+**The compiler and the options.** `typescript` 6.0.3, `@types/node` 22.20.5 (the major
+line of the Node floor, 22.13) and `typescript-eslint` 8.72.1 are development
+dependencies at exact pins. TypeScript 7.0 is not used: it is the native compiler and
+ships without the JavaScript compiler interface that `typescript-eslint` and
+`dependency-cruiser` read, and `typescript-eslint` 8.72.1 accepts TypeScript below 6.1.
+`tsconfig.json` sets `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+`noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, the two unused
+checks and `isolatedModules`; `module` `node20` with `moduleResolution` `node16`, which
+compile a `.ts` file of this package (no `"type"` field) to CommonJS; `target` and `lib`
+ES2024, which Node 22.13 runs; no source maps and no declarations. `allowJs` with
+`checkJs` off lets a source import a JavaScript module of `src/`: the compiler reads
+that module's JSDoc types and never emits it. `skipLibCheck` leaves the type packages of
+the dependencies unchecked; every source of `src-ts/` is checked in full.
+
+**Adding a module.**
+
+1. Place it as §3 says, under `src-ts/<context>/`, and give it the header every module
+   has: what it does, the rules it implements, and why it exists.
+2. Import another TypeScript module by its relative path with `.js`
+   (`import { x } from './other.js'`). Import a JavaScript module of `src/` by the path
+   that holds from both trees, `../../src/<context>/<file>.js`: from `src-ts/<context>/`
+   and from `src/<context>/` it names the same file.
+3. Write its test first, under `tests/`, in JavaScript, requiring the compiled file
+   (`require('../../src/<context>/<name>.js')`), and see it fail.
+4. Write the module, then `npm run build:ts`, and commit the source and the compiled
+   file together. A JavaScript module requires the compiled file like any other.
+5. Run `npm run check:ts`, `npm run typecheck`, `npm run lint` (the strict rules of
+   `typescript-eslint`, the house style and the size budgets of §2 apply to `src-ts/`;
+   the compiled files are linted at their source) and `npm test`.
+
+`tools/build-ts` refuses to write over a hand-written module of `src/`, and names a
+compiled file whose source is gone, which is then deleted by hand.
+
+**How it is checked.** `test.yml` runs `npm run check:ts` and `npm run typecheck` on every
+leg. `tests/arch/typescript-parts.test.js` compiles `src-ts/` in memory and fails when a
+committed file differs, when the compiler options lose a strict flag, when TypeScript
+becomes a run-time dependency, and when a new agent-facing protocol module is plain
+JavaScript: a file `src/distribution/mcp-*.js`, `src/distribution/a2a*.js`,
+`src/application/hosting-http*.js` or under `bench/runners/` must be compiled from a
+source under `src-ts/`, except the three MCP modules that predate this rule
+(`mcp-stdio.js`, `mcp-tools.js`, `mcp-resources.js`). `tools/build-ts` compiles
+`src-ts/` into `src/` only, so the first runner of `bench/runners/` also extends it.
+The architecture scans of `tests/arch/` read the compiled files, which write
+`require("…")` with double quotes, like every other module of `src/`.

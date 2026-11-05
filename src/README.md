@@ -18,6 +18,12 @@ AGSC-04-03). Standard formats are read and written by maintained libraries at ex
 pinned versions; what this engine writes by hand is only what the specification pins
 byte for byte and no library produces.
 
+A few modules are written in TypeScript: their sources are under `../src-ts/`, and each
+compiles to the CommonJS file of the same path here, committed with a first line that
+names its source (`// generated from src-ts/… by tsc …; do not edit`). Never edit such a
+file by hand; `docs/ENGINEERING.md` §8 says why the compiled files are committed and how
+to add one. Today there is one, `shared/version-line.js`, the proof of the chain.
+
 ---
 
 ## 1. The folders
@@ -33,7 +39,7 @@ byte for byte and no library produces.
 | `application/` | application layer | configuration, the command line and its sixteen verbs, the Bundle loader, the conformance run, plugins, `agsc-host` | [application/README.md](application/README.md) |
 | `ports/` | hexagonal ports | four interfaces, no code: FileSystem, Clock, ProcessRunner, Network | none: `tests/ports/` holds the folder to exactly its four interface files, and each file's header is its documentation |
 | `adapters/` | hexagonal adapters | the Node implementations of the four ports | [adapters/README.md](adapters/README.md) |
-| `shared/` | shared kernel | the two string orderings, the trailing-slash and trailing line-feed trims, and the reader of the rest of a line after a fixed head, and nothing else | [shared/README.md](shared/README.md) |
+| `shared/` | shared kernel | the two string orderings, the trailing-slash and trailing line-feed trims, the reader of the rest of a line after a fixed head, the indefinite article, and the `--version` line compiled from TypeScript, and nothing else | [shared/README.md](shared/README.md) |
 
 Entry points: `bin/agsc.js` builds the four ports from `adapters/` and calls
 `application/cli/main.js#main`, which dispatches to one module per verb in
@@ -101,6 +107,9 @@ value" line of a foreign frontmatter block, a heading's text): the head is match
 once, the rest searched once for a line terminator and then sliced, where the patterns
 it replaced read the rest again for every blank they gave back. `shared/article.js` puts
 "a" or "an" before a word a message names at run time (an item type, a format).
+`shared/version-line.js`, compiled from `src-ts/shared/version-line.ts`, gives the line
+`agsc --version` prints (AGSC-09-09); only its test requires it, as the proof that the
+TypeScript toolchain works end to end, so no byte the engine writes depends on it.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,
@@ -219,6 +228,9 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | property tests (dev) | `fast-check` | 4.10.1 | MIT | tests only |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT | tests only |
 | Gherkin parser (dev) | `@cucumber/gherkin`, `@cucumber/messages` | 42.0.1, 34.2.1 | MIT | the acceptance runner |
+| TypeScript compiler (dev) | `typescript` | 6.0.3 | Apache-2.0 | `tools/build-ts` and `npm run typecheck`, for the sources under `src-ts/`; never at run time |
+| Node type declarations (dev) | `@types/node` | 22.20.5 | MIT | the same; the major line of the Node floor |
+| TypeScript lint rules (dev) | `typescript-eslint` | 8.72.1 | MIT | `npm run lint` over `src-ts/` |
 
 What this engine still writes by hand, and why: the AGSC-02-02 **allow-list** on top
 of the YAML parser (no library knows which constructs this specification forbids or

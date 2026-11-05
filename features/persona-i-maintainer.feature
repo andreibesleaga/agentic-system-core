@@ -1,4 +1,4 @@
-# Trace: PRD-005, PRD-017, PRD-018, PRD-021, PRD-022, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056 · PLAN §7
+# Trace: PRD-005, PRD-017, PRD-018, PRD-021, PRD-022, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056, NFR-01 · PLAN §7
 @persona-i @mode-0
 Feature: Maintainer-as-operator keeps the site green with zero maintenance
   As P9 (maintainer-as-operator)
@@ -184,3 +184,11 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And "www/graph.nq" holds the source "https://example.org/glossary" and the warrant "literary" on "handoff", both as xsd:string (AGSC-05-40)
     And "www/graph.jsonld", expanded with "www/ns/context.jsonld" and compacted again, is the same document (AGSC-06-32)
     And no network call was attempted
+
+  @NFR-01 @PRD-049 @human
+  Scenario: A TypeScript part ships as its compiled CommonJS, and neither an install nor a run needs TypeScript
+    When the maintainer checks the TypeScript parts with "node tools/build-ts --check"
+    Then the command exits 0
+    And every module under "src-ts/" has its compiled file under "src/", headed with its source and the compiler version, byte for byte what tsc writes now
+    And TypeScript and its type packages are development dependencies only, and no module the package ships requires them
+    And the compiled "src/shared/version-line.js" gives the line "agsc --version" prints (AGSC-09-09)

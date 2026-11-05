@@ -1,0 +1,37 @@
+{
+    "//": [
+        "The TypeScript parts of the engine (docs/ENGINEERING.md, 'TypeScript parts'). Sources live under",
+        "src-ts/<context>/, mirroring src/; tools/build-ts compiles each one to src/<context>/<name>.js as",
+        "CommonJS and the compiled file is committed, so neither an install nor a run needs TypeScript.",
+        "'tsc --noEmit' (npm run typecheck) checks the sources; 'npm run check:ts' proves the committed",
+        "output is what this compiler writes. Target and lib follow the Node floor of package.json (22.13)."
+    ],
+    "compilerOptions": {
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "isolatedModules": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "node20",
+        "moduleResolution": "node16",
+        "target": "es2024",
+        "lib": ["es2024"],
+        "types": ["node"],
+        "allowJs": true,
+        "checkJs": false,
+        "noEmit": true,
+        "newLine": "lf",
+        "removeComments": false,
+        "declaration": false,
+        "declarationMap": false,
+        "sourceMap": false,
+        "noEmitOnError": true,
+        "skipLibCheck": true
+    },
+    "include": ["src-ts/**/*.ts"]
+}
