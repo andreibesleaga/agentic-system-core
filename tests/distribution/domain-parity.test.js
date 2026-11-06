@@ -2,12 +2,14 @@
 // verifies AGSC-07-25, AGSC-09-13, AGSC-09-16, AGSC-03-27, AGSC-08-32
 // The domain parts on the three hosts of one node: `agsc compose --brief` on the command line,
 // the local tool server (`mcp-tools.js#tools` with the site vocabulary, as the `mcp` verb starts
-// it) and the page tools run from the two scripts the build published. On a node whose note
-// states a domain link and whose other note's context is a draft cluster: the brief lists the
-// domain link and its computed inverse in `relations` on all three, and the three briefs are
-// the same value; the draft cluster is named in no published script, no page answer and no
-// brief file, and the local server gives the listed item the same parts as the page. A
-// `domain.contexts` entry with no namespace declares no context on either transport.
+// it, and the real `agsc mcp` child over standard input and output, so the verb's handover of the
+// vocabulary to the stdio server is tested too) and the page tools run from the two scripts the
+// build published. On a node whose note states a domain link and whose other note's context is a
+// draft cluster: the brief lists the domain link and its computed inverse in `relations` on all
+// three, and the three briefs are the same value; the draft cluster is named in no published
+// script, no `domain` member of a page answer and no brief file, and the local server gives the
+// listed item the same parts as the page. A `domain.contexts` entry with no namespace declares no
+// context on either transport.
 //
 // Deterministic: the minimal fixture copied into a scratch folder, fixed SOURCE_DATE_EPOCH, no
 // network (the page runs in a `vm` context with no `fetch`); the folder is removed afterwards.
@@ -18,7 +20,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
 
 const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
@@ -77,6 +79,38 @@ function pageToolset(files) {
   return { sources, toolset: api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse: api.LICENSE_PROSE }), context.AGSC_CORE, sha256Hex) };
 }
 
+/** The JSON-RPC lines a child wrote so far. */
+const replies = (out) => out.split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line));
+
+/**
+ * One `tools/call` against the real `agsc mcp` child in `cwd`, driven by its answers, never by a
+ * timer: `initialize`; on its answer the `initialized` notice and the call; on that answer, end of input.
+ */
+function stdioCall(cwd, name, args) {
+  const initialize = { id: 1, jsonrpc: '2.0', method: 'initialize', params: { capabilities: {}, clientInfo: { name: 'test', version: '0' }, protocolVersion: '2025-11-25' } };
+  const call = [{ jsonrpc: '2.0', method: 'notifications/initialized' }, { id: 2, jsonrpc: '2.0', method: 'tools/call', params: { arguments: args, name } }];
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [AGSC, 'mcp'], { cwd, env: { NO_COLOR: '1', PATH: process.env.PATH, SOURCE_DATE_EPOCH: EPOCH }, stdio: ['pipe', 'pipe', 'pipe'] });
+    let out = '';
+    let err = '';
+    let called = false;
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stderr.on('data', (d) => { err += d; });
+    child.stdout.on('data', (d) => {
+      out += d;
+      const ids = replies(out).map((r) => r.id);
+      if (ids.includes(2)) child.stdin.end();
+      else if (ids.includes(1) && !called) {
+        called = true;
+        child.stdin.write(call.map((frame) => `${JSON.stringify(frame)}\n`).join(''));
+      }
+    });
+    child.on('exit', () => resolve({ err, reply: replies(out).find((r) => r.id === 2) }));
+    child.stdin.write(`${JSON.stringify(initialize)}\n`);
+  });
+}
+
 let dir = null;
 let hosts = null;
 test.before(() => {
@@ -114,7 +148,20 @@ test('the brief lists the domain link and its computed inverse in relations, the
   assert.deepEqual(plain(hosts.page.toolset.call('brief', SELECTION)).body, brief);
 });
 
-test('a draft context cluster is named in no published script, no page answer and no brief file (AGSC-09-16, AGSC-07-25)', () => {
+test('the real stdio server started by `agsc mcp` lists the domain link and its inverse in the brief (AGSC-07-25, AGSC-09-13)', async () => {
+  const { err, reply } = await stdioCall(dir, 'brief', SELECTION);
+  assert.ok(reply !== undefined && reply.result !== undefined, `no tools/call answer: ${err}`);
+  const envelope = reply.result.structuredContent;
+  assert.equal(envelope.type, 'brief', JSON.stringify(envelope));
+  const domainRows = envelope.body.relations.filter((r) => r.key === 'controlled-by' || r.key === 'controls');
+  assert.deepEqual(domainRows, [
+    { key: 'controlled-by', origin: 'authored', scope: 'outside', source: 'handoff', target: 'supervisor' },
+    { key: 'controls', origin: 'inverse', scope: 'outside', source: 'supervisor', target: 'handoff' },
+  ]);
+  assert.deepEqual(envelope.body, JSON.parse(hosts.cli['brief.json']));
+});
+
+test('a draft context cluster is named in no published script, no domain member of a page answer and no brief file (AGSC-09-16, AGSC-07-25)', () => {
   for (const name of ['agsc-core.js', 'agsc-page-tools.js']) {
     assert.doesNotMatch(hosts.page.sources[`/compose/${name}`], /secret-billing/u, `${name} names the draft cluster`);
   }

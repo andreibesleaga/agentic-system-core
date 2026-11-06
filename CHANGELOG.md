@@ -267,7 +267,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   such an item by a relation in either direction; every other node keeps its bytes (G-REF of 093be5b:
   eight reference inputs, empty diff).
 - The domain paragraph of the brief (AGSC-07-25; `compose-0034`): when a member states a key of
-  AGSC-02-25, each `items` entry of `brief.json` gains `domain` (`context`, `role`, `type`, `warrant`,
+  AGSC-02-25, each `items` entry of a member that has a domain part gains `domain` (`context`, `role`, `type`, `warrant`,
   the parts it has; the context as AGSC-08-32 defines it, never a cluster that is not listed),
   `BRIEF.md` gains `## Domain` after
   `## Members`, and each section of `context.md` gains its `domain_type`, `domain_role`,
@@ -296,11 +296,13 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   declared contexts that are listed and its domain links between listed items (one `DOMAIN` object in
   the script), and the page tools add the parts to `search` and `read` over the same contexts
   (`API.DOMAIN_CONTEXTS`). The context of a listed item whose context is a cluster not listed is left
-  out on both transports and in the brief (`composition/brief.js#domainWithheld`; the page is handed
-  that list of listed items as `DOMAIN.withheld` and `API.DOMAIN_WITHHELD`, AGSC-09-16), so no page
-  script names an item that is not listed.
+  out of the `domain` member on both transports and out of the brief's four files
+  (`composition/brief.js#domainWithheld`; the page is handed that list of listed items as
+  `DOMAIN.withheld` and `API.DOMAIN_WITHHELD`, AGSC-09-16), so no page script names an item that is
+  not listed. The item's own front matter, in its source copy `/pages/<slug>.md` (AGSC-06-02) and in
+  the `frontmatter` member of `read`, still says what it states, as in 1.0.
   Bytes: only on such a node, in these two files; on every other node both keep their pinned hashes
-  (fixture: `agsc-core.js` 26f6df7a27da280f, `agsc-page-tools.js` 2a3bcc23c35eb55f), so a Bundle with
+  (fixture: `agsc-core.js` 26f6df7a27da280f, `agsc-page-tools.js` 2a3bcc23c35eb55f), so a Bundle
   none of whose listed items states a key of AGSC-02-25 or a domain link emits what it emitted before
   (AGSC-01-41).
 - A browser test of the domain parts (`tests/distribution/domain-browser.test.js`, AGSC-06-38,
@@ -312,7 +314,9 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   a role, a warrant and a domain link, the link and its inverse under `## Relations`. A parity test
   (`tests/distribution/domain-parity.test.js`) runs `compose --brief`, the local server and the page
   tools over one node and finds the same brief on the three, and a draft context cluster named in no
-  page script, page answer or brief file.
+  page script, no `domain` member of a page answer and no brief file; it also starts the real
+  `agsc mcp` child over standard input and output and finds the domain link and its inverse in the
+  brief, so the `mcp` verb's handover of the site vocabulary to the stdio server is tested.
 - The blueprint outputs of a saved architecture (AGSC-07-29; vectors `compose-0028` to
   `compose-0030`): `compose --from <slug> --brief` (or `compose.brief: true`), for an item of
   `kind: architecture`, also writes `c4-context.mmd`, `c4-containers.mmd` and `c4-components.mmd`

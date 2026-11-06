@@ -928,7 +928,7 @@ briefDomainParts(result, options) -> { edges, members, record, domains: Map }; b
 // composition/blueprint.js — AGSC-07-29
 blueprintFiles(result, {architecture, ...the options of briefOf}) -> [['blueprint/build-plan.md', text], ['blueprint/c4-components.mmd', text], ['blueprint/c4-containers.mmd', text], ['blueprint/c4-context.mmd', text], ['blueprint/decisions/NNNN-<slug>.md', text]…] | []   // [] when the architecture is not listed
 // composition/browser.js
-bundle({ specVersion, brief?, domain? }) -> the page script; exportedNames({ brief?, domain? })   // brief: carry brief.js and blueprint.js too (default false); domain = { contexts }: with brief, the domain paragraph too, and AGSC_CORE.briefOf / briefFiles are the domain paragraph's over those contexts
+bundle({ specVersion, brief?, domain? }) -> the page script; exportedNames({ brief?, domain? })   // brief: carry brief.js and blueprint.js too (default false); domain = { contexts, edges, withheld } (DOMAIN: listed declared contexts, domain links between listed items, withheld listed items): with brief, the domain paragraph too, and AGSC_CORE.briefOf / briefFiles are the domain paragraph's over those contexts
 // distribution/architecture-brief.js — AGSC-07-25 on an architecture's page
 section(item, {instant, items, route}) -> html | ''   // '' unless item is a saved architecture whose selection block reads; a brief above derivedBound gives a section that says so
 // composition/conform.js
@@ -969,7 +969,7 @@ memoryUri(bundleId, name); promptText(question); PROMPT_NAME; PROMPT_TITLE; ARTE
 // distribution/webmcp.js
 script({manifest}) -> the page script;  LOCAL_ONLY_TOOLS
 // distribution/page-tools.js — the page half of AGSC-09-16
-bundle({bundleId, licenseProse, specVersion, domain?}) -> the page-tool script;  PORTABLE   // domain = { contexts }: search and read carry the domain parts (API.DOMAIN_CONTEXTS)
+bundle({bundleId, licenseProse, specVersion, domain?}) -> the page-tool script;  PORTABLE   // domain = { contexts, withheld }: search and read carry the domain parts (API.DOMAIN_CONTEXTS, API.DOMAIN_WITHHELD)
 pageCorpus(sources, {bundleId, licenseProse}) -> { base, bundleId, bySlug, chunks, claimed, host, index, items, licenseProse }
 pageToolset(corpus, core, hash?) -> { call(name, args) -> envelope }   // core = AGSC_CORE; `brief` -> a promise with the page's Web Crypto
 // distribution/tool-answers.js — the portable answers of the tools of 1.1

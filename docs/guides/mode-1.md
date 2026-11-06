@@ -478,7 +478,9 @@ relations table shows them in two more columns. For a note that states any of `d
 `domain` with its parts, on the local server and in the page tools alike, and a brief
 (`agsc compose --brief`) lists them under `## Domain` in `BRIEF.md`, on the note's entry in
 `brief.json` and in its section of `context.md`. A context that is a draft or held-back cluster
-is never named. A domain link appears in the brief's relations like any other link, with the inverse
+is never named in a page's domain parts, a tool answer's `domain` member or the brief's four
+files; the note's own front matter, published at `/pages/<slug>.md` and returned by `read`, still
+says what it states. A domain link appears in the brief's relations like any other link, with the inverse
 the vocabulary declares. A note that states none of them gets no `domain` member and no brief
 line; its page changes only where a related note has a domain type or a context (the two
 columns).
