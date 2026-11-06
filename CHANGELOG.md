@@ -13,6 +13,45 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The local tool server speaks MCP revision 2026-07-28 beside 2025-11-25 (AGSC-09-19; vectors
+  `cli-0032` to `cli-0035`): a request that carries its revision in `_meta` is served statelessly, with
+  no `initialize` and no `Mcp-Session-Id`; `server/discover` answers `supportedVersions`
+  `["2026-07-28", "2025-11-25"]`, the capabilities of AGSC-11-18 and the server's name; every result
+  carries `resultType: "complete"`, and the results of `server/discover`, `tools/list`, `prompts/list`,
+  `resources/list`, `resources/templates/list` (new: an empty list, the server holds no templates) and
+  `resources/read` carry `ttlMs` 0 and `cacheScope` `"private"`; a request of any other revision is
+  -32022 naming both; `subscriptions/listen` is an unknown method; a missing resource is -32602 under
+  2026-07-28 and stays -32002 under 2025-11-25. A client that opens with `initialize` is served as 1.0
+  served it. No Tasks, no elicitation.
+- Behaviour change, by AGSC-09-13a as amended for 1.1.0 (a named exception of AGSC-00-14), under both
+  revisions: the result of a tool call carries MCP's `isError` (`true` beside an error envelope,
+  `false` otherwise), and a tool name the server does not serve is the JSON-RPC error -32602 instead
+  of the envelope with `AGSC-E001`. The envelope of every other call, its text and its
+  `structuredContent` keep their bytes (property test in `tests/distribution/mcp-core.test.js`). The
+  page tools are unchanged.
+- `tools/list` (AGSC-09-19 (6), both revisions): every tool's `annotations` gain `openWorldHint: false`,
+  and `propose` and `remember` gain `destructiveHint: false`; the WebMCP hints stay, and the list stays
+  in code-point order of `name` (unchanged order; the core now sorts it itself). The page tools keep
+  their annotations, so no page byte moves.
+- `MCP_PROTOCOL_VERSION` of `src/boundary/surfaces.js` is `2026-07-28`, the newest revision the server
+  speaks, and the `mcp` surface of a node that serves the tool server declares that one value
+  (AGSC-09-19, AGSC-11-16; `cli-0035`); `MCP_LEGACY_VERSION` (`2025-11-25`) and `MCP_STDIO_REVISIONS`
+  are new. No reference node declares the `mcp` surface, so no emitted byte changes (G-REF empty).
+- Dependency: `@modelcontextprotocol/sdk` 1.32.2 (MIT) is replaced by the official MCP TypeScript
+  SDK v2, `@modelcontextprotocol/server` 2.4.0 (Apache-2.0; it brings `@modelcontextprotocol/core`
+  2.4.0 and `zod` 4), because the 1.x line stops at revision 2025-11-25 and v2 speaks 2026-07-28 and
+  2025-11-25 from one server; the engine writes no protocol layer where the official library has one. The run-time packages of the lockfile drop from 161 to 78 (the SDK's `express`, `hono`,
+  `cors` and the rest go). The tests' MCP client moves to `@modelcontextprotocol/client` 2.4.0, a
+  development dependency (Apache-2.0). `npm audit`: 0.
+- The TypeScript fitness test (`tests/arch/typescript-parts.test.js`) counts every official MCP
+  package (`@modelcontextprotocol/sdk`, `server`, `core`, `node`, `client`) as a protocol mark, and a
+  compiled TypeScript module that bears a mark must require one of them, so a protocol module builds
+  on the official SDK and never on a JSON-RPC layer of its own; `src/distribution/mcp-stdio.js`
+  leaves the list of marked plain modules (it requires the core now).
+- The parity runner of the benchmark kit (`bench/parity.js`) takes the JSON-RPC error -32602 as the
+  tool server's answer to a tool name it does not serve (AGSC-09-13a, AGSC-09-19), where the module
+  and the page answer the envelope with `AGSC-E001`; every other call is still compared as values.
+
 - The `/compose/` page and its scripts (AGSC-07-25, AGSC-07-29, AGSC-06-01 page assets; the hash of
   each file in `fixture-minimal`, old to new; on the eight reference nodes these four files and
   `compose/webmcp.js` of the ten tools are the only bytes that change against 2327f33):
@@ -253,6 +292,23 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with it; nothing the package ships changes.
 
 ### Added
+
+- `src-ts/distribution/mcp-core.ts`, compiled to `src/distribution/mcp-core.js`: the MCP core of the
+  tool server, a thin strict-TypeScript adapter on `@modelcontextprotocol/server` (AGSC-09-19,
+  AGSC-09-13, AGSC-09-13a, AGSC-09-14b, AGSC-11-18). `createServer` builds one official server over a
+  loaded Bundle with the ten tools of `mcp-tools.js`, the resources and the prompt of
+  `mcp-resources.js` (both stay JavaScript); `serveStdio` serves it through the SDK's `serveStdio`,
+  which picks the revision from how a client opens. Own code only where SDK 2.4.0 answers otherwise
+  than the rule, in `StdioRevisionGate`: `server/discover` and -32022 name both revisions (the SDK
+  names 2026-07-28 only, and serves a later request of an unknown revision), `subscriptions/listen` is
+  an unknown method (the SDK serves it), and a missing resource is -32002 under 2025-11-25 (the SDK
+  always sends -32602). `src/distribution/mcp-stdio.js` is the verb's entry on it.
+- A licence policy for the run-time dependencies (`tests/arch/dependency-licences.test.js`): every
+  package an install without development dependencies brings carries a permissive licence of a fixed
+  list (Apache-2.0, MIT, ISC, BSD-2-Clause, BSD-3-Clause, 0BSD, PSF-2.0, `MIT OR Apache-2.0`).
+- An acceptance scenario (persona-c): an agent of revision 2026-07-28 discovers the server and is
+  answered with no handshake, and its missing resource is -32602.
+- `docs/USING-WITH-ASSISTANTS.md` §6: the one-line check of revision 2026-07-28 (`server/discover`).
 
 - The domain layer on item pages (AGSC-06-38, last sentences; `build-0031`): on a node that uses the
   layer (a site vocabulary file is present, AGSC-01-41), the page of an item that has a domain part

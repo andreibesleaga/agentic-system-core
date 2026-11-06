@@ -587,7 +587,8 @@ under other names: closure, hiding, mutual exclusion, warnings and port wiring a
 `proposal.js`, `review.js`, `verify.js`, `refresh.js` or `export.js` in a bounded context);
 the tool server is `src/distribution/mcp-stdio.js` with `mcp-tools.js` and
 `mcp-resources.js` (no `mcp.js`), and from 1.1 `tool-answers.js`, the portable answers both
-transports share; pages are rendered by `src/distribution/html.js` with no
+transports share, and `mcp-core.js` (compiled from `src-ts/distribution/mcp-core.ts`), the
+server on the official MCP SDK that both MCP transports build; pages are rendered by `src/distribution/html.js` with no
 template files (no `templates/*.html`). There is no `src/interchange/channels.js` and no
 `channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
 channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is
@@ -686,7 +687,10 @@ says.
 **ADR-013.** "MCP 2026-07-28 … via `server/discover`" reads as the record's own closing
 parenthesis says: the local tool server speaks MCP revision 2025-11-25 and its `initialize`
 handshake, and it does not serve `server/discover`. The tool server on revision 2026-07-28,
-with `server/discover`, is planned for 1.1 (AGSC-00-20).
+with `server/discover`, is planned for 1.1 (AGSC-00-20). *(1.1: done — the server speaks
+2026-07-28 with `server/discover` and, over standard input and output, still 2025-11-25 to a
+client that opens with `initialize` (AGSC-09-19); it is built on the official MCP SDK in
+`src-ts/distribution/mcp-core.ts`.)*
 
 **ADR-004.** "The nine core keys carry composition semantics" reads: five of the nine core keys —
 uses, requires, excludes, contradicts and supersedes — change a composition, and related,

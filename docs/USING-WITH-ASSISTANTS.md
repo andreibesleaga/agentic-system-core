@@ -267,6 +267,17 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
   | agsc mcp
 ```
 
+That is the handshake of revision 2025-11-25, which most assistants still send. A client of
+revision 2026-07-28 sends no handshake; it puts its revision in each request, and can ask
+the server which revisions it speaks:
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+  | agsc mcp
+```
+
+The answer lists `"supportedVersions":["2026-07-28","2025-11-25"]`.
+
 If you see a JSON line naming `agentic-system-core`, the server works and any remaining
 problem is in your assistant's configuration. Two things to check first: the working
 directory must be the Bundle (the folder with `agsc.config.json`), and the assistant has

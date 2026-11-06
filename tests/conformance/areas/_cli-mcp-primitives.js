@@ -5,6 +5,8 @@
 //   cli-0018 (AGSC-09-14b) the resources and the one prompt beside the seven tools.
 //   cli-0019 (AGSC-09-13)  the tool list with each tool's argument names.
 //
+// `exchange` and `responseProblems` are shared with _cli-mcp-revisions.js (cli-0032…0035).
+//
 // The frames go to the server in one write and the server exits on end of input
 // (AGSC-09-13 "SHOULD exit on stdin EOF"), so the exchange is one synchronous child
 // process: no timer, no network. The fixture is copied to a scratch folder first, so
@@ -61,11 +63,10 @@ const verdict = (problems) => (problems.length === 0
   ? { status: 'pass', detail: '' }
   : { status: 'fail', detail: problems.join('; ') });
 
-/** cli-0018: each expected response is a subset of the response of the same id. */
-function runCli0018(vector, ctx) {
-  const got = exchange(vector, ctx);
+/** The problems of one exchange: each expected response must be a subset of the response of the same id. */
+function responseProblems(wants, got) {
   const problems = [];
-  for (const want of vector.expected.responses || []) {
+  for (const want of wants || []) {
     const frame = got.byId.get(want.id);
     if (frame === undefined) {
       problems.push(`no response with id ${want.id} (${got.stderr.trim()})`);
@@ -76,7 +77,12 @@ function runCli0018(vector, ctx) {
     }
     if (!subset(want, frame)) problems.push(`id ${want.id}: ${JSON.stringify(frame).slice(0, 400)} does not carry ${JSON.stringify(want)}`);
   }
-  return verdict(problems);
+  return problems;
+}
+
+/** cli-0018: each expected response is a subset of the response of the same id. */
+function runCli0018(vector, ctx) {
+  return verdict(responseProblems(vector.expected.responses, exchange(vector, ctx)));
 }
 
 /** cli-0019: the tool list reduced to name, sorted argument names and sorted `required`. */
@@ -96,4 +102,4 @@ function runCli0019(vector, ctx) {
   return verdict(same ? [] : [`tools ${JSON.stringify(reduced)} != ${JSON.stringify(vector.expected.tools)}`]);
 }
 
-module.exports = { runCli0018, runCli0019, subset };
+module.exports = { exchange, responseProblems, runCli0018, runCli0019, subset, verdict };

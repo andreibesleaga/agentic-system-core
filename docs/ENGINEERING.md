@@ -270,8 +270,10 @@ and its licence, `MIT OR Apache-2.0`, whose texts sit beside them.
 **Why.** The new parts of the engine that carry a protocol's messages to agents are to
 be written in strict TypeScript: the Model Context Protocol core of revision 2026-07-28
 and its HTTP transport, the A2A responder, the runners of the benchmark kit, and any
-later module in the places `tests/arch/typescript-parts.test.js` checks. None of them
-exists yet. A narration step of the brief would be one too, once a distribution adds a
+later module in the places `tests/arch/typescript-parts.test.js` checks. The first is
+the MCP core, `src-ts/distribution/mcp-core.ts`, a thin adapter on the official MCP
+TypeScript SDK (`@modelcontextprotocol/server`): such a module builds on the official
+library of its protocol and writes no JSON-RPC layer of its own. A narration step of the brief would be one too, once a distribution adds a
 model adapter; the reference engine has none (`compose --narrate` is `AGSC-E001`). A
 message shape the compiler checks cannot drift from the protocol's schema unnoticed.
 The rest of the engine stays JavaScript and is not rewritten. The tool answers of
@@ -352,10 +354,15 @@ JavaScript: a file `src/distribution/mcp-*.js`, `src/distribution/a2a*.js`,
 `src/application/hosting-http*.js` or under `bench/runners/` must be compiled from a
 source under `src-ts/`, except the three MCP modules that predate this rule
 (`mcp-stdio.js`, `mcp-tools.js`, `mcp-resources.js`). A plain JavaScript module anywhere
-else in `src/` or `bench/` fails too when it requires `@modelcontextprotocol/sdk` or names
-`jsonrpc`, `registerTool` or `MCP-Protocol-Version`, except the five that did when that
-check began (`bench/parity.js`, `src/application/plugins.js`, `mcp-stdio.js`,
-`page-tools.js`, `webmcp.js`), so a protocol module cannot pass by its name. `tools/build-ts` compiles
+else in `src/` or `bench/` fails too when it requires an official MCP package
+(`@modelcontextprotocol/sdk`, `server`, `core`, `node` or `client`) or names
+`jsonrpc`, `registerTool` or `MCP-Protocol-Version`, except the four that still do of the
+five that did when that check began (`bench/parity.js`, `src/application/plugins.js`,
+`page-tools.js`, `webmcp.js`; `mcp-stdio.js` left the list when the server moved to the
+core), so a protocol module cannot pass by its name. And a compiled module that bears
+such a mark must require an official `@modelcontextprotocol/*` package: a TypeScript
+protocol module speaks through the official SDK, never through a JSON-RPC layer of its
+own. `tools/build-ts` compiles
 `src-ts/` into `src/` only, so the first runner of `bench/runners/` also extends it.
 The architecture scans of `tests/arch/` read the compiled files, which write
 `require("…")` with double quotes, like every other module of `src/`.

@@ -3,10 +3,12 @@
 // not only with hand-written frames.
 //
 // Everything here drives `bin/agsc.js mcp` through the official SDK's own
-// `Client` over `StdioClientTransport` — the same two classes an assistant
-// product uses — so what is proved is the contract a client sees, not the
-// contract this repository believes it publishes. The client spawns the CLI as a
-// child process in a fixture Bundle.
+// `Client` over `StdioClientTransport` (`@modelcontextprotocol/client` 2.4.0) — the
+// same two classes an assistant product uses — so what is proved is the contract a
+// client sees, not the contract this repository believes it publishes. The client
+// spawns the CLI as a child process in a fixture Bundle. It speaks either revision of
+// AGSC-09-19: by default the `initialize` handshake of 2025-11-25, and pinned to
+// 2026-07-28 the stateless form with per-request `_meta`.
 //
 // Deterministic: a fixed clock (`SOURCE_DATE_EPOCH`), no network anywhere in the
 // path, no timer drives an assertion, and every scratch Bundle is written under
@@ -14,7 +16,9 @@
 // `PATH`, `NO_COLOR` and the fixed epoch.
 //
 // Rules: AGSC-09-13 (ten tools, stdout protocol-only, exit on EOF),
-// AGSC-09-13a (the domain-fault envelope, never a transport error),
+// AGSC-09-13a (the domain-fault envelope, never a transport error; MCP's `isError`
+// beside it; a tool the server does not serve is a JSON-RPC error), AGSC-09-19 (both
+// revisions, the annotations),
 // AGSC-09-14a/14b (`ask`, `remember`, the resources and the prompt),
 // AGSC-09-16 (one tool contract, two transports), AGSC-08-18 (`trust:
 // "untrusted"` on every result), AGSC-11-18 (the extension map).
@@ -27,19 +31,21 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { spawn } = require('node:child_process');
 
-const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
-const { EmptyResultSchema, ErrorCode } = require('@modelcontextprotocol/sdk/types.js');
+const { Client, ProtocolErrorCode, ResourceNotFoundError, fromJsonSchema } = require('@modelcontextprotocol/client');
+const { StdioClientTransport } = require('@modelcontextprotocol/client/stdio');
 
 const { manifest } = require('../../src/distribution/mcp-tools.js');
 const { PROMPT_NAME, PROMPT_TITLE } = require('../../src/distribution/mcp-resources.js');
-const { MCP_PROTOCOL_VERSION, MCP_EXTENSION_ID } = require('../../src/boundary/surfaces.js');
+const { MCP_EXTENSION_ID, MCP_LEGACY_VERSION, MCP_PROTOCOL_VERSION } = require('../../src/boundary/surfaces.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const MINIMAL = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 /** 2026-01-01T00:00:00Z — the fixed instant every test in this repository uses. */
 const EPOCH = '1767225600';
 const TOOL_NAMES = ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search'];
+/** The two ways a client opens (AGSC-09-19): the 2025-11-25 handshake, and 2026-07-28 pinned. */
+const LEGACY = 'legacy';
+const MODERN = { pin: MCP_PROTOCOL_VERSION };
 
 const temporaries = [];
 test.after(() => {
@@ -65,11 +71,11 @@ function writeConcept(dir, slug, frontmatter, body) {
 }
 
 /**
- * A connected official-SDK client over the real CLI. `stderr: 'pipe'` so the test
- * can prove the server logged nothing; AGSC-09-13 allows stderr and this server
- * uses none of it.
+ * A connected official-SDK client over the real CLI, opening as `mode` says (the
+ * handshake by default). `stderr: 'pipe'` so the test can prove the server logged
+ * nothing; AGSC-09-13 allows stderr and this server uses none of it.
  */
-async function connect(cwd) {
+async function connect(cwd, mode = LEGACY) {
   const transport = new StdioClientTransport({
     args: [path.join(ROOT, 'bin', 'agsc.js'), 'mcp'],
     command: process.execPath,
@@ -77,7 +83,7 @@ async function connect(cwd) {
     env: { NO_COLOR: '1', PATH: process.env.PATH, SOURCE_DATE_EPOCH: EPOCH },
     stderr: 'pipe',
   });
-  const client = new Client({ name: 'agsc-conformance-client', version: '1.0.0' }, { capabilities: {} });
+  const client = new Client({ name: 'agsc-conformance-client', version: '1.0.0' }, { capabilities: {}, versionNegotiation: { mode } });
   let stderr = '';
   await client.connect(transport);
   transport.stderr.setEncoding('utf8');
@@ -87,7 +93,8 @@ async function connect(cwd) {
 
 /** The envelope a tool call returns, read the way a conforming client reads it. */
 function envelopeOf(result) {
-  assert.strictEqual(result.isError, undefined, 'a domain fault must not set isError (AGSC-09-13a)');
+  // AGSC-09-13a: MCP's own flag says whether the envelope is an error envelope.
+  assert.strictEqual(result.isError, result.structuredContent.type === 'error', 'isError follows the envelope (AGSC-09-13a)');
   const fromText = JSON.parse(result.content[0].text);
   assert.deepStrictEqual(fromText, result.structuredContent,
     'the JSON text and the structured member must be the same envelope');
@@ -96,8 +103,8 @@ function envelopeOf(result) {
 
 /* ------------------------------------------------------- 1. the handshake */
 
-test('a real SDK client initializes and is told the protocol version, the tools and the extension (AGSC-11-18)', async () => {
-  const { client, stderrText } = await connect(MINIMAL);
+for (const [mode, revision] of [[LEGACY, MCP_LEGACY_VERSION], [MODERN, MCP_PROTOCOL_VERSION]]) test(`a real SDK client opening under ${revision} is told the revision, the tools and the extension (AGSC-09-19, AGSC-11-18)`, async () => {
+  const { client, stderrText } = await connect(MINIMAL, mode);
   try {
     const capabilities = client.getServerCapabilities();
     assert.deepStrictEqual(capabilities.extensions, {
@@ -109,18 +116,12 @@ test('a real SDK client initializes and is told the protocol version, the tools 
     assert.deepStrictEqual(capabilities.prompts, {});
     assert.deepStrictEqual(capabilities.tools, {});
     assert.deepStrictEqual(client.getServerVersion().name, 'agentic-system-core');
-    assert.strictEqual(transportVersion(client), MCP_PROTOCOL_VERSION);
+    assert.strictEqual(client.getNegotiatedProtocolVersion(), revision);
     assert.strictEqual(stderrText(), '');
   } finally {
     await client.close();
   }
 });
-
-/** The negotiated revision, as the client recorded it at initialize. */
-function transportVersion(client) {
-  return client.transport.protocolVersion === undefined
-    ? MCP_PROTOCOL_VERSION : client.transport.protocolVersion;
-}
 
 /* --------------------------------------- 2. tools/list, and the page tools */
 
@@ -202,8 +203,8 @@ function pageTools() {
 
 /* --------------------------------------------- 3. tools/call, all ten tools */
 
-test('AGSC-09-13: a real client can call every one of the ten tools and gets the AGSC-08-18 envelope', async () => {
-  const { client, stderrText } = await connect(MINIMAL);
+for (const mode of [LEGACY, MODERN]) test(`AGSC-09-13: a real client (${JSON.stringify(mode)}) can call every one of the ten tools and gets the AGSC-08-18 envelope`, async () => {
+  const { client, stderrText } = await connect(MINIMAL, mode);
   try {
     const call = (name, args) => client.callTool({ arguments: args, name });
 
@@ -272,8 +273,8 @@ test('AGSC-09-13: a real client can call every one of the ten tools and gets the
   }
 });
 
-test('AGSC-09-13a: a bad input is an ENVELOPE, and the client sees a normal result, never a transport error', async () => {
-  const { client } = await connect(MINIMAL);
+for (const mode of [LEGACY, MODERN]) test(`AGSC-09-13a (${JSON.stringify(mode)}): a bad input is an ENVELOPE in a result whose isError is true; a tool the server does not serve is -32602`, async () => {
+  const { client } = await connect(MINIMAL, mode);
   try {
     // A slug that does not exist.
     const missing = envelopeOf(await client.callTool({ arguments: { slug: 'no-such-item' }, name: 'read' }));
@@ -284,9 +285,9 @@ test('AGSC-09-13a: a bad input is an ENVELOPE, and the client sees a normal resu
     const absent = envelopeOf(await client.callTool({ arguments: {}, name: 'read' }));
     assert.strictEqual(absent.body.code, 'AGSC-E003');
 
-    // A tool that does not exist: still a domain fault, not a transport error.
-    const unknown = envelopeOf(await client.callTool({ arguments: {}, name: 'delete-everything' }));
-    assert.strictEqual(unknown.body.code, 'AGSC-E001');
+    // A tool the server does not serve: a JSON-RPC error -32602 under both revisions (AGSC-09-19 (5)).
+    await assert.rejects(() => client.callTool({ arguments: {}, name: 'delete-everything' }),
+      (e) => e.code === ProtocolErrorCode.InvalidParams);
 
     // AGSC-01-16: an argument above the 1 MiB cap.
     const huge = envelopeOf(await client.callTool({ arguments: { query: 'x'.repeat(1024 * 1024 + 1) }, name: 'search' }));
@@ -300,9 +301,9 @@ test('a PROTOCOL fault is a JSON-RPC error: an unknown method is -32601', async 
   const { client } = await connect(MINIMAL);
   try {
     await assert.rejects(
-      () => client.request({ method: 'no/such/method', params: {} }, EmptyResultSchema),
+      () => client.request({ method: 'no/such/method', params: {} }, fromJsonSchema({ type: 'object' })),
       (e) => {
-        assert.strictEqual(e.code, ErrorCode.MethodNotFound);
+        assert.strictEqual(e.code, ProtocolErrorCode.MethodNotFound);
         assert.strictEqual(e.code, -32601);
         return true;
       },
@@ -330,9 +331,10 @@ test('AGSC-09-14b: the client lists every published item, graph.jsonld and llms.
     await assert.rejects(
       () => client.readResource({ uri: 'memory://minimal/not-a-resource' }),
       (e) => {
-        // MCP, Resources, revision 2025-11-25 (the revision this server speaks):
-        // a resource that does not exist is -32002, not this project's tool envelope.
-        assert.strictEqual(e.code, -32002);
+        // MCP, Resources: a resource that does not exist is a protocol error, not this
+        // project's tool envelope. The SDK client reads -32002 (2025-11-25, the code on the
+        // wire here, tests/distribution/mcp-stdio.test.js) and -32602 (2026-07-28) alike.
+        assert.ok(e instanceof ResourceNotFoundError, String(e));
         assert.deepStrictEqual(e.data, { uri: 'memory://minimal/not-a-resource' });
         return true;
       },
@@ -392,9 +394,9 @@ test('AGSC-09-14b: the one prompt is offered, takes a question and says what the
     assert.match(text, /```text agsc-content\nwhat is a handoff\?\n```/u);
 
     await assert.rejects(() => client.getPrompt({ arguments: {}, name: PROMPT_NAME }),
-      (e) => e.code === ErrorCode.InvalidParams);
+      (e) => e.code === ProtocolErrorCode.InvalidParams);
     await assert.rejects(() => client.getPrompt({ arguments: { question: 'x' }, name: 'other' }),
-      (e) => e.code === ErrorCode.InvalidParams);
+      (e) => e.code === ProtocolErrorCode.InvalidParams);
   } finally {
     await client.close();
   }
@@ -492,19 +494,22 @@ test('AGSC-08-18/N9: a hostile item title comes back as untrusted DATA, not as i
     assert.strictEqual(ask.trust, 'untrusted');
     assert.strictEqual(ask.type, 'answer');
 
-    // measured here rather than assumed: of AGSC-11-18's floor
-    // vocabulary, an MCP client receives `readOnlyHint` and nothing else. The
-    // eight reading tools are read-only; the two human-gated writing tools are
-    // not. `untrustedContentHint` and `consequentialHint` are WebMCP's words and
+    // measured here rather than assumed: of AGSC-11-18's floor vocabulary and
+    // AGSC-09-19 (6), an MCP client receives MCP's own hints and nothing else. The
+    // eight reading tools are read-only; the two human-gated writing tools are not,
+    // and are not destructive; no tool reaches beyond the Bundle (`openWorldHint`
+    // false). `untrustedContentHint` and `consequentialHint` are WebMCP's words and
     // the official SDK's `ToolAnnotations` parser drops them, so on this
     // transport the untrusted mark travels in the ENVELOPE, as asserted above.
     const listed = await client.listTools();
+    for (const tool of listed.tools) assert.strictEqual(tool.annotations.openWorldHint, false, tool.name);
     for (const name of ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'read', 'search']) {
       assert.strictEqual(listed.tools.find((t) => t.name === name).annotations.readOnlyHint, true, name);
     }
     for (const name of ['propose', 'remember']) {
       const tool = listed.tools.find((t) => t.name === name);
       assert.strictEqual(tool.annotations.readOnlyHint, false);
+      assert.strictEqual(tool.annotations.destructiveHint, false);
       assert.strictEqual(tool.annotations.consequentialHint, undefined,
         'MCP has no consequentialHint: if this ever arrives, MCP added it and the report item is closed');
       assert.strictEqual(tool.annotations.untrustedContentHint, undefined,
@@ -537,7 +542,7 @@ test('AGSC-09-13: the server writes protocol bytes and nothing else, and exits 0
     id: 1,
     jsonrpc: '2.0',
     method: 'initialize',
-    params: { capabilities: {}, clientInfo: { name: 'eof', version: '0' }, protocolVersion: MCP_PROTOCOL_VERSION },
+    params: { capabilities: {}, clientInfo: { name: 'eof', version: '0' }, protocolVersion: MCP_LEGACY_VERSION },
   })}\n`);
   // The frame comes back before EOF is sent: no timer, no race.
   await new Promise((resolve) => { child.stdout.once('data', resolve); });

@@ -6,8 +6,11 @@
 //     the protocol places below fails, unless it is one of the files that were there when
 //     this rule began (commit 2327f33) or the compiled twin of a source under src-ts/; and so
 //     does a plain JavaScript file anywhere in src/ or bench/ that bears a protocol mark (it
-//     requires the MCP SDK, or names `jsonrpc`, `registerTool` or `MCP-Protocol-Version`),
-//     unless it bore one at 12c243a.
+//     requires an official MCP package, or names `jsonrpc`, `registerTool` or
+//     `MCP-Protocol-Version`), unless it bore one at 12c243a.
+//   * A TypeScript protocol module speaks through the official MCP SDK, never through a
+//     JSON-RPC layer of its own: every compiled module of src/ that bears a protocol mark
+//     requires one of the official `@modelcontextprotocol/*` packages.
 //   * The committed output under src/ is byte for byte what the pinned compiler writes
 //     from src-ts/ now (compiled in memory by tools/build-ts), and every compiled file
 //     names its source, which exists.
@@ -48,17 +51,23 @@ const PLAIN_AT_START = Object.freeze([
  * it writes a JSON-RPC message, registers a WebMCP tool or reads the MCP revision header.
  */
 const PROTOCOL_MARKS = /\bjsonrpc\b|\bregisterTool\b|MCP-Protocol-Version/u;
-const PROTOCOL_PACKAGE = /^@modelcontextprotocol\/sdk(?:\/|$)/u;
-/** The plain JavaScript modules outside those places that bore a mark at 12c243a; the list never grows. */
+/** The official MCP TypeScript packages: the 1.x SDK and the v2 packages that replace it. */
+const PROTOCOL_PACKAGE = /^@modelcontextprotocol\/(?:sdk|server|core|node|client)(?:\/|$)/u;
+/**
+ * The plain JavaScript modules outside those places that bore a mark at 12c243a; the list never
+ * grows. (`src/distribution/mcp-stdio.js` left it when the server moved to the MCP core.)
+ */
 const MARKED_AT_START = Object.freeze([
   'bench/parity.js',
   'src/application/plugins.js',
-  'src/distribution/mcp-stdio.js',
   'src/distribution/page-tools.js',
   'src/distribution/webmcp.js',
 ]);
 
 const rel = (absolute) => path.relative(ROOT, absolute).split(path.sep).join('/');
+
+/** The packages a module requires, by the specifiers of its `require(...)` calls. */
+const requiresOf = (text) => [...text.matchAll(/\brequire\(\s*(['"])([^'"]+)\1\s*\)/gu)].map((m) => m[2]);
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
 /** The source a compiled file names in its header, or null for a hand-written file. */
@@ -86,14 +95,23 @@ test('no new module anywhere in src/ or bench/ speaks an agent protocol in plain
     .filter((file) => file.endsWith('.js') && !vendor.test(file))
     .filter((file) => {
       const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
-      const requires = [...text.matchAll(/\brequire\(\s*(['"])([^'"]+)\1\s*\)/gu)].map((m) => m[2]);
-      return PROTOCOL_MARKS.test(text) || requires.some((specifier) => PROTOCOL_PACKAGE.test(specifier));
+      return PROTOCOL_MARKS.test(text) || requiresOf(text).some((specifier) => PROTOCOL_PACKAGE.test(specifier));
     });
   for (const file of MARKED_AT_START) assert.ok(marked.includes(file), `${file} bears no mark now: take it off the list`);
   for (const file of marked) {
     if (MARKED_AT_START.includes(file) || PLAIN_AT_START.includes(file) || generatedFrom(file) !== null) continue;
     assert.fail(`${file} speaks an agent protocol (the MCP SDK, JSON-RPC, WebMCP registerTool or MCP-Protocol-Version) `
       + 'in plain JavaScript; write it in TypeScript under src-ts/');
+  }
+});
+
+test('a TypeScript protocol module speaks through the official MCP SDK, not through a JSON-RPC layer of its own', () => {
+  const compiled = walk(path.join(ROOT, 'src')).map(rel).filter((file) => file.endsWith('.js') && generatedFrom(file) !== null);
+  const protocol = compiled.filter((file) => PROTOCOL_MARKS.test(fs.readFileSync(path.join(ROOT, file), 'utf8')));
+  assert.ok(protocol.includes('src/distribution/mcp-core.js'), 'the MCP core is a compiled TypeScript module that bears a protocol mark');
+  for (const file of protocol) {
+    const official = requiresOf(fs.readFileSync(path.join(ROOT, file), 'utf8')).filter((specifier) => PROTOCOL_PACKAGE.test(specifier));
+    assert.ok(official.length > 0, `${file} speaks an agent protocol without the official MCP SDK; build on @modelcontextprotocol/server`);
   }
 });
 

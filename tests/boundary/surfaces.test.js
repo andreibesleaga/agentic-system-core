@@ -10,13 +10,35 @@ const s = require('../../src/boundary/surfaces.js');
 const plain = (v) => JSON.parse(JSON.stringify(v));
 
 test('the foreign protocol versions live in the anti-corruption layer and nowhere else', () => {
-  assert.strictEqual(s.MCP_PROTOCOL_VERSION, '2025-11-25');
+  // AGSC-09-19: the newest revision the tool server speaks is the one constant a distribution
+  // names as its protocol version, and the one value the `mcp` surface declares (cli-0035).
+  assert.strictEqual(s.MCP_PROTOCOL_VERSION, '2026-07-28');
+  assert.strictEqual(s.MCP_LEGACY_VERSION, '2025-11-25');
+  assert.deepStrictEqual(s.MCP_STDIO_REVISIONS, ['2026-07-28', '2025-11-25']);
   assert.strictEqual(s.MCP_PROTOCOL_MIN_VERSION, '2025-03-26');
   assert.strictEqual(s.MCP_SURFACE_VERSION, '2026-07-28');
   assert.strictEqual(s.WEBMCP_SURFACE_VERSION, '2026-09-15');
   assert.strictEqual(s.MCP_EXTENSION_ID, 'com.agenticsystemcore/knowledge');
-  // The wire version the SDK speaks is the version the SDK itself declares.
-  assert.strictEqual(require('@modelcontextprotocol/sdk/types.js').LATEST_PROTOCOL_VERSION, s.MCP_PROTOCOL_VERSION);
+  // The revisions are the official SDK's: the newest handshake revision it negotiates, and the
+  // oldest it still accepts, are the two named here.
+  const sdk = require('@modelcontextprotocol/server');
+  assert.strictEqual(sdk.LATEST_PROTOCOL_VERSION, s.MCP_LEGACY_VERSION);
+  assert.ok(sdk.SUPPORTED_PROTOCOL_VERSIONS.includes(s.MCP_PROTOCOL_MIN_VERSION));
+});
+
+test('AGSC-09-19 (6): the MCP annotations add openWorldHint false to every tool and destructiveHint false to the two writes', () => {
+  for (const name of s.TOOL_NAMES) {
+    const writes = name === 'propose' || name === 'remember';
+    assert.deepStrictEqual(plain(s.MCP_ANNOTATIONS[name]), {
+      ...plain(s.WEBMCP_ANNOTATIONS[name]),
+      ...(writes ? { destructiveHint: false } : {}),
+      openWorldHint: false,
+    }, name);
+    assert.deepStrictEqual(Object.keys(s.MCP_ANNOTATIONS[name]), Object.keys(s.MCP_ANNOTATIONS[name]).sort(), `${name}: members in code-point order`);
+    assert.ok(Object.isFrozen(s.MCP_ANNOTATIONS[name]));
+  }
+  // The page tools keep their WebMCP vocabulary unchanged: no MCP member reaches the page.
+  for (const name of s.TOOL_NAMES) assert.strictEqual(s.WEBMCP_ANNOTATIONS[name].openWorldHint, undefined);
 });
 
 test('AGSC-09-13: exactly ten tools, in code-point order', () => {

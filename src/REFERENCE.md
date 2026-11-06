@@ -869,7 +869,7 @@ asks for, on the artefacts the implementations share.
 ## 10. Composition, the node boundary and the two tool transports
 
 The Composition context (`composition/`), the Boundary context (`boundary/`) and the
-tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-stdio.js`,
+tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`, `mcp-stdio.js`,
 `mcp-resources.js`, `webmcp.js`, `page-tools.js`). The Bundle loader they share is
 `application/bundle.js` (§11.3).
 
@@ -888,7 +888,8 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-stdio.js`,
 | `boundary/visibility.js` | Boundary | AGSC-11-01…11-05, AGSC-11-20, AGSC-11-22 — parameters, reserved values, CORS, ETag/`no-cache`, the profile carriers, retirement |
 | `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-11-24, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones, and the context maps between nodes (a typed peer's relationship and crosswalk, checked before any fetch, applied by the client only) |
 | `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief` over the listed set, `explain` and `check` over the Bundle on disk (with no selection, `check` checks every listed item) |
-| `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 over stdio JSON-RPC, AGSC-11-18's MCP half; the wiring of AGSC-09-14b's resources and prompt |
+| `distribution/mcp-core.js` | Distribution | compiled from `src-ts/distribution/mcp-core.ts` — AGSC-09-19 with AGSC-09-13, 09-13a, 09-14b and AGSC-11-18's MCP half: one official SDK server (`@modelcontextprotocol/server`) for the ten tools, the resources and the prompt (`createServer`, which both transports use); `isError` beside the envelope, a tool the server does not serve is -32602; over stdio (`serveStdio`) revision 2026-07-28 and, to a client that opens with `initialize`, 2025-11-25, through `StdioRevisionGate`, which adds the four points of AGSC-09-19 the SDK answers otherwise |
+| `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 — the `mcp` verb's entry: the Bundle and the two streams checked, then `mcp-core.serveStdio` |
 | `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering |
 | `distribution/webmcp.js` | Distribution | AGSC-09-16 — the browser registration script, feature-detected, write tools local-only |
 | `distribution/page-tools.js` | Distribution | AGSC-09-16's browser half — the SAME ten tools over the published routes, emitted as source text per AGSC-07-13 |
@@ -989,7 +990,7 @@ loadBundle(ports, { schemas }) -> Bundle
 
 | Need | Library | Version | Licence |
 |---|---|---|---|
-| MCP stdio server | `@modelcontextprotocol/sdk` | 1.32.1 | MIT |
+| MCP server (both revisions) | `@modelcontextprotocol/server` | 2.4.0 | Apache-2.0 |
 | TOON tabular encoding (`export --to llm-context`) | `@toon-format/toon` | 4.1.1 | MIT |
 
 `@toon-format/toon` is pinned exactly and meets the five requirements of ADR-019:
@@ -1000,13 +1001,20 @@ clock, network or environment read at runtime — which
 `npm audit` reports 0 vulnerabilities with it in the tree.
 
 The official SDK supplies the JSON-RPC framing, the initialize handshake and
-the version negotiation; nothing of the protocol is hand-rolled. The server speaks
-MCP revision `2025-11-25`, negotiating down to `2025-03-26`, and advertises the
-extension identifier in its `initialize` result; it does not answer `server/discover`,
-the method of revision `2026-07-28` (AGSC-11-18), and moving it to that revision is
-planned for 1.1. The external revisions — `MCP_PROTOCOL_VERSION` (the one an `mcp`
-declaration carries by default, because it declares what the transport speaks),
-`MCP_SURFACE_VERSION` (`2026-07-28`, the target AGSC-11-16 names) and
+the version negotiation; nothing of the protocol is hand-rolled. *(1.0: the server spoke
+MCP revision `2025-11-25` only, through `@modelcontextprotocol/sdk` 1.32.)* From 1.1 the
+server is built on the SDK's v2 packages (`@modelcontextprotocol/server` 2.4.0, which
+replaces `@modelcontextprotocol/sdk`) in `distribution/mcp-core.js`: it speaks revision
+`2026-07-28` statelessly, with `server/discover`, `resultType`, `ttlMs` and `cacheScope`,
+and, over standard input and output, revision `2025-11-25` to a client that opens with
+`initialize`, negotiating down to `2025-03-26` as 1.0 did (AGSC-09-19). The SDK's
+`serveStdio` picks the era from the first message. Four answers of AGSC-09-19 differ from
+the SDK's, and the core's stdio gate gives them: `server/discover` and an unsupported
+revision name both revisions, `subscriptions/listen` is an unknown method, and a missing
+resource is `-32002` under `2025-11-25`. The external revisions — `MCP_PROTOCOL_VERSION`
+(`2026-07-28`, the newest revision the server speaks and the one an `mcp` declaration
+carries by default), `MCP_LEGACY_VERSION` (`2025-11-25`), `MCP_STDIO_REVISIONS`,
+`MCP_SURFACE_VERSION` (the same `2026-07-28`) and
 `WEBMCP_SURFACE_VERSION` (`2026-09-15`, the WebMCP report date the page tools'
 declaration carries by default) — all live in `boundary/surfaces.js`, the
 anti-corruption layer, never in a tool function.

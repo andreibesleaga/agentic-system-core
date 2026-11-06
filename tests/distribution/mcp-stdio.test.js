@@ -1,6 +1,6 @@
 'use strict';
 // Integration test for the MCP stdio transport. AGSC-09-13,
-// AGSC-09-13a, AGSC-11-18.
+// AGSC-09-13a, AGSC-09-19 (the handshake revision 2025-11-25), AGSC-11-18.
 //
 // It spawns the real CLI (`bin/agsc.js mcp`) on the fixture Bundle with a
 // FIXED clock (`SOURCE_DATE_EPOCH`) and no network, exchanges real JSON-RPC
@@ -76,8 +76,9 @@ test('AGSC-09-13: initialize, tools/list and tools/call over real stdio frames',
     ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
 
   // AGSC-09-13a: a domain fault is a RESULT carrying the AGSC-08-18 envelope,
-  // never a JSON-RPC error member.
+  // never a JSON-RPC error member, and MCP's `isError` is true beside it (from 1.1).
   assert.strictEqual(frames[2].error, undefined);
+  assert.strictEqual(frames[2].result.isError, true);
   assert.deepStrictEqual(frames[2].result.structuredContent, {
     body: { code: 'AGSC-E301', message: 'no item with that slug in this Bundle' },
     license: 'LicenseRef-AgenticSystemCore-Content-Use-1.0',
@@ -115,7 +116,7 @@ test('a protocol fault stays a JSON-RPC error — that is what error results are
   assert.strictEqual(frames[1].result, undefined);
 });
 
-test('a missing resource is -32002, the code of the revision the server speaks; a missing prompt stays -32602', async () => {
+test('under 2025-11-25 a missing resource is -32002, the code of that revision (AGSC-09-19 (4)); a missing prompt stays -32602', async () => {
   const { code, err, out } = await exchange([
     INITIALIZE,
     { id: 2, jsonrpc: '2.0', method: 'resources/read', params: { uri: 'memory://minimal/no-such-item' } },
@@ -123,8 +124,8 @@ test('a missing resource is -32002, the code of the revision the server speaks; 
   ]);
   const frames = out.split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l));
   assert.strictEqual(frames.length, 3, out);
-  // AGSC-11-16: the transport speaks revision 2025-11-25, and that revision's
-  // Resources page says "Resource not found: -32002", with the URI as data.
+  // A client that opens with `initialize` is served under 2025-11-25, and that
+  // revision's Resources page says "Resource not found: -32002", with the URI as data.
   assert.strictEqual(frames[0].result.protocolVersion, '2025-11-25');
   assert.strictEqual(frames[1].result, undefined);
   assert.deepStrictEqual(frames[1].error,
@@ -162,10 +163,13 @@ test('serve refuses to run without a Bundle: the application layer loads it', ()
 
 test('createServer wires the shared toolset without touching any stream', () => {
   const { createServer, SERVER_NAME, MCP_PROTOCOL_VERSION } = require('../../src/distribution/mcp-stdio.js');
+  // The server is built by the core, on the official SDK (`distribution/mcp-core.js`).
+  assert.strictEqual(createServer, require('../../src/distribution/mcp-core.js').createServer);
   const bundle = { config: {}, items: [{ body: '', frontmatter: {}, slug: 'a', type: 'concept' }] };
   const { server, toolset } = createServer(bundle, { version: '9.9.9' });
   assert.strictEqual(typeof server.connect, 'function');
   assert.strictEqual(toolset.manifest().tools.length, 10);
   assert.strictEqual(SERVER_NAME, 'agentic-system-core');
-  assert.strictEqual(MCP_PROTOCOL_VERSION, '2025-11-25');
+  // AGSC-09-19: the constant a distribution names is the newest revision it speaks.
+  assert.strictEqual(MCP_PROTOCOL_VERSION, '2026-07-28');
 });

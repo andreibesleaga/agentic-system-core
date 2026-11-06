@@ -218,8 +218,8 @@ function projectBundle(prefix, { base = 'https://proj.example/', agents } = {}) 
  * classes an assistant product uses. `call` answers the parsed AGSC-08-18 envelope.
  */
 async function mcpClient(dir) {
-  const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-  const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
+  const { Client } = require('@modelcontextprotocol/client');
+  const { StdioClientTransport } = require('@modelcontextprotocol/client/stdio');
   const transport = new StdioClientTransport({
     args: [AGSC, 'mcp'], command: process.execPath, cwd: dir,
     env: env(homeOf(dir), { SOURCE_DATE_EPOCH: EPOCH }), stderr: 'pipe',

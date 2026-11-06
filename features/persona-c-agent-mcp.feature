@@ -141,3 +141,10 @@ Feature: Agent reader queries structured knowledge without scraping
     When an MCP client that speaks the revision 2025-11-25 reads the resource "memory://agenticsystemcore/no-such-item"
     Then the server negotiated the revision "2025-11-25"
     And the answer is the JSON-RPC error -32002, "Resource not found", that revision defines, and not a tool envelope
+
+  @PRD-023 @agent @mode-1 @matrix-A2
+  Scenario: An agent of the revision 2026-07-28 discovers the server and is answered with no handshake
+    Given the node is built
+    When an MCP client that speaks the revision 2026-07-28 asks "server/discover" and reads the resource "memory://agenticsystemcore/no-such-item", with no "initialize"
+    Then the server names the revisions "2026-07-28" and "2025-11-25", and its answer is complete and may not be cached (AGSC-09-19)
+    And the missing resource is the JSON-RPC error -32602 that revision defines

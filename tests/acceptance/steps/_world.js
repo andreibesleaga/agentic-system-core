@@ -225,8 +225,8 @@ class World {
    * over `options.path` given as the verb's argument from `options.cwd`.
    */
   async mcp(options = {}) {
-    const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-    const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
+    const { Client } = require('@modelcontextprotocol/client');
+    const { StdioClientTransport } = require('@modelcontextprotocol/client/stdio');
     const transport = new StdioClientTransport({
       args: [AGSC, 'mcp', ...(options.path ? [options.path] : [])],
       command: process.execPath,

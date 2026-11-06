@@ -32,7 +32,8 @@
 | `compose-page.js` | the `/compose/` page: filters by text, cluster and tag, the verdict in words, the brief inline with its downloads and the blueprint of a saved architecture, the Harness and skills archives; no element inside `<main>` moves while it loads (the footer moves as the page grows, cumulative layout shift under 0.1) |
 | `architecture-brief.js` | the brief on a saved architecture's item page, written by the build (AGSC-07-25) |
 | `forge.js` | `dist/forge/`: files a forge needs |
-| `mcp-stdio.js` | the local MCP server over stdio (official SDK) |
+| `mcp-stdio.js` | the `mcp` verb's entry: checks the Bundle and the two streams, starts the core |
+| `mcp-core.js` | compiled from `src-ts/distribution/mcp-core.ts` (do not edit): the MCP core on the official SDK (`@modelcontextprotocol/server`) — one server for the ten tools, the resources and the prompt, revision 2026-07-28 and, over stdio, 2025-11-25 (AGSC-09-19) |
 | `mcp-tools.js` | the ten tools |
 | `mcp-resources.js` | the MCP resources and prompts beside the tools |
 | `page-tools.js` | the ten tools as page tools in a built site |

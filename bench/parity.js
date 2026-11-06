@@ -18,7 +18,8 @@
  *
  * Two comparisons, each after a JSON round trip (the wire form of both
  * transports), with `util.isDeepStrictEqual`:
- *   transport  stdio == local: the MCP process answers what the module answers
+ *   transport  stdio == local: the MCP process answers what the module answers (a tool
+ *              name the server does not serve: the JSON-RPC error -32602 on stdio, from 1.1)
  *   parity     page == projected and module == projected: the rule's own
  *              comparison, because AGSC-09-16 makes "the Bundle a page
  *              serves the published projection" — on a Bundle holding a draft
@@ -167,6 +168,19 @@ function overStdio(bundleDir, calls) {
 const wire = (value) => JSON.parse(JSON.stringify(value));
 
 /**
+ * The transport comparison of one call: the stdio answer equals the module's, except for a tool
+ * name the server does not serve, which the MCP server answers with the JSON-RPC error -32602
+ * (AGSC-09-13a as amended for 1.1.0, AGSC-09-19 (5)) where the module, like the page, which has
+ * no JSON-RPC, answers the envelope with `AGSC-E001`.
+ * @returns {boolean}
+ */
+function transportAgrees(name, stdioAnswer, localAnswer) {
+  const { TOOL_NAMES } = require(path.join(REPO, 'src', 'boundary', 'surfaces.js'));
+  if (!TOOL_NAMES.includes(name)) return Boolean(stdioAnswer && stdioAnswer.rpc_error && stdioAnswer.rpc_error.code === -32602);
+  return util.isDeepStrictEqual(wire(stdioAnswer), wire(localAnswer));
+}
+
+/**
  * AGSC-09-16: "The one input on which the two transports MUST differ is a `remember` call
  * that declares no operator: the local server refuses it with `AGSC-E003` and a page tool,
  * which has no identity to declare, returns the item with `prov.operator` absent and
@@ -208,7 +222,7 @@ async function run(bundleDir, spec, options = {}) {
     // `brief` answers a promise on the page (its hasher is Web Crypto), a value elsewhere.
     const answers = { module: wire(await hosts.module.call(name, args)), page: wire(await hosts.page.call(name, args)) };
     const unequal = ['page', 'module'].filter((host) => !util.isDeepStrictEqual(answers[host], reference));
-    const transportSame = util.isDeepStrictEqual(wire(stdio.answers[i]), wire(await hosts.local.call(name, args)));
+    const transportSame = transportAgrees(name, stdio.answers[i], await hosts.local.call(name, args));
     if (transportSame) transportEqual += 1;
     else unequal.push('stdio');
     if (unequal.length === 0) row.equal += 1;

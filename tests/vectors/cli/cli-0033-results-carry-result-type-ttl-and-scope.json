@@ -1,6 +1,6 @@
 {
   "area": "cli",
-  "description": "AGSC-09-19 (2), (3) and (6): under 2026-07-28 every result carries `resultType: \"complete\"`, and the results of `tools/list`, `prompts/list`, `resources/list` and `resources/read` carry `ttlMs` 0 and `cacheScope` `private`, because the server answers from the Bundle on disk, which can change between two requests and holds items that are not listed. `tools/list` returns the ten tools in code-point order of `name`, each with the annotations of AGSC-09-19 (6): `readOnlyHint` true on the eight reading tools and false on `propose` and `remember`; `openWorldHint` false on all ten (the default of the revision is true); `destructiveHint` false on `propose` and `remember` (its default is true and it matters only for a tool that is not read-only). Only the stated members are compared; the tool list is compared whole, in order.",
+  "description": "AGSC-09-19 (2), (3) and (6): under 2026-07-28 every result carries `resultType: \"complete\"`, and the results of `tools/list`, `prompts/list`, `resources/list`, `resources/templates/list` and `resources/read` carry `ttlMs` 0 and `cacheScope` `private`, because the server answers from the Bundle on disk, which can change between two requests and holds items that are not listed; the server holds no templates, so `resources/templates/list` is an empty list that still carries both members. `tools/list` returns the ten tools in code-point order of `name`, each with the annotations of AGSC-09-19 (6): `readOnlyHint` true on the eight reading tools and false on `propose` and `remember`; `openWorldHint` false on all ten (the default of the revision is true); `destructiveHint` false on `propose` and `remember` (its default is true and it matters only for a tool that is not read-only). Only the stated members are compared; the tool list is compared whole, in order.",
   "expected": {
     "responses": [
       {
@@ -108,6 +108,15 @@
           "resultType": "complete",
           "ttlMs": 0
         }
+      },
+      {
+        "id": 5,
+        "result": {
+          "cacheScope": "private",
+          "resourceTemplates": [],
+          "resultType": "complete",
+          "ttlMs": 0
+        }
       }
     ]
   },
@@ -174,6 +183,21 @@
             "io.modelcontextprotocol/protocolVersion": "2026-07-28"
           },
           "uri": "memory://minimal/handoff"
+        }
+      },
+      {
+        "id": 5,
+        "jsonrpc": "2.0",
+        "method": "resources/templates/list",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "conformance",
+              "version": "0"
+            },
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+          }
         }
       }
     ]

@@ -10,12 +10,13 @@
  * extension identifier), AGSC-11-19 (PROVE: AGSC-E210 for a declaration with
  * no implementation, the warning AGSC-E211 for an emitted surface with no
  * declaration), AGSC-11-21 (responder and solid are declaration-only at 1.0;
- * a responder names its protocol by the prefix of its version) and
- * AGSC-10-14 (a live board is a responder, never served at 1.0).
+ * a responder names its protocol by the prefix of its version),
+ * AGSC-10-14 (a live board is a responder, never served at 1.0) and, from 1.1,
+ * AGSC-09-19 (the two MCP revisions, the one declared value, the MCP annotations).
  * Requirements: PRD-057.
  *
  * THIS MODULE IS THE ONE PLACE THAT NAMES AN EXTERNAL PROTOCOL VERSION.
- * The wire version the stdio transport negotiates, the revision the `mcp`
+ * The MCP revisions the tool server speaks (AGSC-09-19), the revision the `mcp`
  * surface declares and the WebMCP report date live here and nowhere else:
  * a tool function must never carry a foreign version string (the
  * anti-corruption rule of docs/ARCHITECTURE-DDD.md 2).
@@ -28,16 +29,28 @@
 
 const { collapseTrailingSlashes } = require('../shared/trailing.js');
 
-/** The MCP wire revision `@modelcontextprotocol/sdk@1.32.1` speaks. */
-const MCP_PROTOCOL_VERSION = '2025-11-25';
-/** The oldest revision that transport negotiates down to. */
+/**
+ * AGSC-09-19: the newest MCP revision the tool server speaks, statelessly, on both
+ * transports. It is the one constant this distribution names as its protocol version and
+ * the one value its `mcp` surface declares (AGSC-11-16, vector `cli-0035`).
+ */
+const MCP_PROTOCOL_VERSION = '2026-07-28';
+/**
+ * AGSC-09-19: the handshake revision the stdio server still speaks to a client that opens
+ * with `initialize`, as 1.0 spoke it; the newest handshake revision of the official SDK
+ * (`@modelcontextprotocol/server`, `LATEST_PROTOCOL_VERSION`).
+ */
+const MCP_LEGACY_VERSION = '2025-11-25';
+/** AGSC-09-19 (1): the revisions the stdio server lists in `supportedVersions`, newest first. */
+const MCP_STDIO_REVISIONS = Object.freeze([MCP_PROTOCOL_VERSION, MCP_LEGACY_VERSION]);
+/** The oldest revision the handshake negotiates down to. */
 const MCP_PROTOCOL_MIN_VERSION = '2025-03-26';
 /**
- * AGSC-11-16: the MCP revision the specification targets.
- * The `mcp` surface declares the revision its transport actually speaks
- * — `MCP_PROTOCOL_VERSION` by default — and this target is no longer a pin.
+ * AGSC-11-16: the MCP revision the specification targets, which is now the revision the
+ * server speaks: `declare` echoes `mcpVersion` when a node names one and declares
+ * `MCP_PROTOCOL_VERSION` otherwise.
  */
-const MCP_SURFACE_VERSION = '2026-07-28';
+const MCP_SURFACE_VERSION = MCP_PROTOCOL_VERSION;
 /**
  * AGSC-11-16: the WebMCP Draft Community Group Report date this node targets by
  * default. The rule pins NO particular date — "any such
@@ -90,6 +103,19 @@ const WEBMCP_ANNOTATIONS = Object.freeze({
   remember: Object.freeze({ consequentialHint: true, readOnlyHint: false, untrustedContentHint: true }),
   search: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
 });
+
+/**
+ * AGSC-09-19 (6) with AGSC-11-18, the MCP half: every tool of `tools/list` keeps its WebMCP
+ * hints and gains `openWorldHint` false — the world of this server is its Bundle, and the
+ * protocol's default is true — and the two writing tools gain `destructiveHint` false, since
+ * they only return text. The same annotations under both revisions. Members in code-point
+ * order. The page tools keep `WEBMCP_ANNOTATIONS`, so no page byte moves.
+ */
+const MCP_ANNOTATIONS = Object.freeze(Object.fromEntries(TOOL_NAMES.map((name) => {
+  const hints = { ...WEBMCP_ANNOTATIONS[name], openWorldHint: false };
+  if (hints.readOnlyHint === false) hints.destructiveHint = false;
+  return [name, Object.freeze(Object.fromEntries(Object.keys(hints).sort().map((key) => [key, hints[key]])))];
+})));
 
 /**
  * AGSC-11-16: the built-in surfaces, their entry route, their fixed access
@@ -163,8 +189,8 @@ function declare(options) {
   const webmcpVersion = WEBMCP_VERSION_RE.test(String(opts.webmcpVersion || ''))
     ? String(opts.webmcpVersion) : WEBMCP_SURFACE_VERSION;
   // AGSC-11-16: `mcp` declares the revision its transport
-  // speaks, an input echoed like the WebMCP date, defaulting to the one the
-  // pinned SDK speaks.
+  // speaks, an input echoed like the WebMCP date, defaulting to the newest one the
+  // tool server speaks (AGSC-09-19: one value for a server that speaks two).
   const mcpVersion = WEBMCP_VERSION_RE.test(String(opts.mcpVersion || ''))
     ? String(opts.mcpVersion) : MCP_PROTOCOL_VERSION;
   const links = [];
@@ -345,9 +371,12 @@ module.exports = {
   ACCESS_CLASSES,
   BUILT_IN,
   DECLARATION_ONLY,
+  MCP_ANNOTATIONS,
   MCP_EXTENSION_ID,
+  MCP_LEGACY_VERSION,
   MCP_PROTOCOL_MIN_VERSION,
   MCP_PROTOCOL_VERSION,
+  MCP_STDIO_REVISIONS,
   MCP_SURFACE_VERSION,
   PINNED_BY_SPEC,
   REL,
