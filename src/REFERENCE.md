@@ -129,6 +129,7 @@ gathered before the fault.
 | `adapters/node-clock.js` | — | Clock over `SOURCE_DATE_EPOCH`; AGSC-04-09/10 |
 | `adapters/node-proc.js` | — | ProcessRunner: `execFileSync`, no shell, scrubbed environment, timeout |
 | `adapters/node-network-refusing.js` | — | Network that refuses every call (AGSC-04-03) |
+| `adapters/node-http-server.js` | — | the socket of the two local servers: `listen`, the read-only server of `agsc-host serve` over a build directory (what it answers is the `local` profile's decision), and `listenWith(handler, {port, bind})`, the socket of `agsc mcp --http` (AGSC-09-18), which hands each request to the MCP transport and destroys the response of a handler that rejects |
 
 The other modules of `knowledge/`, `governance/`, `composition/`, `distribution/`,
 `boundary/`, `interchange/` and `application/` are listed in §6 to §10 and documented
@@ -890,6 +891,7 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`, `mcp-
 | `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief` over the listed set, `explain` and `check` over the Bundle on disk (with no selection, `check` checks every listed item) |
 | `distribution/mcp-core.js` | Distribution | compiled from `src-ts/distribution/mcp-core.ts` — AGSC-09-19 with AGSC-09-13, 09-13a, 09-14b and AGSC-11-18's MCP half: one official SDK server (`@modelcontextprotocol/server`) for the ten tools, the resources and the prompt (`createServer`, which both transports use); `isError` beside the envelope, a tool the server does not serve is -32602; over stdio (`serveStdio`) revision 2026-07-28 and, to a client that opens with `initialize`, 2025-11-25, through `StdioRevisionGate`, which adds the four points of AGSC-09-19 the SDK answers otherwise |
 | `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 — the `mcp` verb's entry: the Bundle and the two streams checked, then `mcp-core.serveStdio` |
+| `distribution/mcp-http.js` | Distribution | compiled from `src-ts/distribution/mcp-http.ts` — AGSC-09-18 with AGSC-09-19 for its results: the Streamable HTTP transport of `mcp --http`, wiring only — the SDK's `createMcpHandler` (`legacy: 'reject'`: revision 2026-07-28 only, stateless, one server per request from `mcp-core.serverFactory`, the header checks, 405, 202, 404) and `@modelcontextprotocol/node` (`toNodeHandler`, the `Host` and `Origin` guards over `allowedHosts(bind)`); own code only for the path `/mcp` and for `subscriptions/listen` as an unknown method. Opens no socket |
 | `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering |
 | `distribution/webmcp.js` | Distribution | AGSC-09-16 — the browser registration script, feature-detected, write tools local-only |
 | `distribution/page-tools.js` | Distribution | AGSC-09-16's browser half — the SAME ten tools over the published routes, emitted as source text per AGSC-07-13 |
@@ -964,6 +966,11 @@ tools(bundle, {config, artifacts, domain}) -> { call(name, args) -> envelope, ma
 manifest(); tokenize(text); envelope(source, type, body); errorEnvelope(source, code, message)
 // distribution/mcp-stdio.js
 createServer(bundle, options) -> { resources, server, toolset };  serve(ctx) -> Promise<void>
+// distribution/mcp-core.js — serverFactory shares one toolset and catalogue among the servers it makes
+serverFactory(bundle, options) -> () => { resources, server, toolset };  createServer(bundle, options)
+// distribution/mcp-http.js — AGSC-09-18; the application layer listens and hands each request to `handle`
+createHttpHandler(bundle, {artifacts, config, domain, version, bind}) -> { handle(req, res) -> Promise<void>, close() }
+allowedHosts(bind?) -> ['127.0.0.1', 'localhost', '[::1]', <bind as a URL host>];  MCP_HTTP_PATH = '/mcp'
 // distribution/mcp-resources.js — AGSC-09-14b beside the ten tools
 catalogue(bundle, {artifacts, config}) -> { list(), read(uri), prompts(), prompt(name, args) }
 memoryUri(bundleId, name); promptText(question); PROMPT_NAME; PROMPT_TITLE; ARTEFACTS
@@ -991,6 +998,7 @@ loadBundle(ports, { schemas }) -> Bundle
 | Need | Library | Version | Licence |
 |---|---|---|---|
 | MCP server (both revisions) | `@modelcontextprotocol/server` | 2.4.0 | Apache-2.0 |
+| MCP Streamable HTTP for Node (`mcp --http`) | `@modelcontextprotocol/node` | 2.1.2 | Apache-2.0 |
 | TOON tabular encoding (`export --to llm-context`) | `@toon-format/toon` | 4.1.1 | MIT |
 
 `@toon-format/toon` is pinned exactly and meets the five requirements of ADR-019:
@@ -1011,7 +1019,12 @@ and, over standard input and output, revision `2025-11-25` to a client that open
 `serveStdio` picks the era from the first message. Four answers of AGSC-09-19 differ from
 the SDK's, and the core's stdio gate gives them: `server/discover` and an unsupported
 revision name both revisions, `subscriptions/listen` is an unknown method, and a missing
-resource is `-32002` under `2025-11-25`. The external revisions — `MCP_PROTOCOL_VERSION`
+resource is `-32002` under `2025-11-25`. With `--http <port>` the same servers answer over
+Streamable HTTP (`distribution/mcp-http.js`, AGSC-09-18): the SDK's `createMcpHandler` with
+`legacy: 'reject'` serves revision `2026-07-28` alone, statelessly, one server per request,
+and `@modelcontextprotocol/node` adapts the Node request and checks `Host` and `Origin`
+against the loopback names and the `--bind` address; the transport adds only the path
+`/mcp` and `subscriptions/listen` as an unknown method. The external revisions — `MCP_PROTOCOL_VERSION`
 (`2026-07-28`, the newest revision the server speaks and the one an `mcp` declaration
 carries by default), `MCP_LEGACY_VERSION` (`2025-11-25`), `MCP_STDIO_REVISIONS`,
 `MCP_SURFACE_VERSION` (the same `2026-07-28`) and
@@ -1098,7 +1111,7 @@ built node.
 | `review` | AGSC-08-27 | `verbs/review.js` → the lint lane | wired, **lint-only**; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `verbs/refresh.js` → `governance/agents.js#checkProposal` | `--agent <name> --dry-run` wired; without `--dry-run` the lane needs a model adapter and a channel adapter, which this distribution does not offer (`AGSC-E001`, exit 1) |
 | `skills` | AGSC-07-19…22, AGSC-07-15 | `verbs/skills.js` → `composition/skills.js`; `distribution/site.js#skillPacks` emits the same bytes at `/skills/**` | wired — the packs into `dist/skills/`, `skills install [<target>]`, `skills import <file>`; `--zip` writes the packs and their lockfile as one archive beside `dist/skills/` |
-| `mcp` | AGSC-09-13 | `verbs/mcp.js` → `distribution/mcp-stdio.js` → `mcp-tools.js` | wired; **streaming** — see 11.4 |
+| `mcp` | AGSC-09-13, AGSC-09-18 | `verbs/mcp.js` → `distribution/mcp-stdio.js` → `mcp-tools.js`; with `--http <port> [--bind <address>]`, `distribution/mcp-http.js` behind `adapters/node-http-server.js#listenWith` | wired; **streaming** — see 11.4; over HTTP stdout stays empty and the address goes to stderr; a bad `--http` or `--bind` is `AGSC-E003`, exit 2 |
 | `run` | AGSC-09-94, AGSC-02-22 | `verbs/run.js` → `knowledge/runblocks.js`, the ProcessRunner port | wired — gate, parse, allow-list, `--dry-run`, comparison; it EXECUTES only against a runner that declares network isolation, which the shipped adapter does not; otherwise it refuses with `AGSC-E001`, exit 1 |
 | `trace` | AGSC-09-94, AGSC-02-14 | `verbs/trace.js` → `interchange/trace.js` | wired — a captured agent-run record to an Episode, checked against the item schema before it is written; opt-in |
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `verbs/conform.js` → `application/conformance.js`, `composition/conform.js` | wired |
@@ -1208,3 +1221,5 @@ Bundle rather than reading one itself.
   chain;
 * the network: no verb reaches it at 1.0; `agsc-host serve` listens on `localhost`
   by default, and `tools/validate-wellknown` fetches a URL it is given (`SECURITY.md`).
+  From 1.1 `agsc mcp --http <port>` listens on a loopback address only (AGSC-09-18) and
+  sends nothing.

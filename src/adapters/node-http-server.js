@@ -1,5 +1,6 @@
 'use strict';
-// ADAPTER — a read-only HTTP server over a build directory (`agsc-host serve`).
+// ADAPTER — a read-only HTTP server over a build directory (`agsc-host serve`), and the
+// socket of the tool server's HTTP transport (`agsc mcp --http`, `listenWith`).
 //
 // The server owns the socket and the file reads; WHAT to answer is not decided
 // here. Every request is handed, with a fresh view of the directory, to the
@@ -76,7 +77,23 @@ function handle(dir, answer, req, res) {
  */
 function listen(options) {
   const dir = path.resolve(options.site);
-  const server = http.createServer((req, res) => handle(dir, options.answer, req, res));
+  return listenWith((req, res) => handle(dir, options.answer, req, res), options);
+}
+
+/**
+ * Listen with a request handler the application layer wires in (`agsc mcp --http`, whose
+ * handler is the MCP transport of `distribution/mcp-http.js`). The socket and the address are
+ * this adapter's; what each request is answered with is the handler's. A handler that rejects
+ * destroys the response instead of leaving the socket open or throwing on it.
+ * Resolves once listening, with the URL of the root.
+ * @param {(req:http.IncomingMessage, res:http.ServerResponse) => (void|Promise<void>)} handler
+ * @param {{port?:number, bind?:string}} options
+ * @returns {Promise<{server:http.Server, url:string}>}
+ */
+function listenWith(handler, options) {
+  const server = http.createServer((req, res) => {
+    Promise.resolve().then(() => handler(req, res)).catch((e) => res.destroy(e));
+  });
   return new Promise((resolve, reject) => {
     const bind = options.bind || 'localhost';
     server.once('error', reject);
@@ -90,4 +107,4 @@ function listen(options) {
   });
 }
 
-module.exports = { inside, listen };
+module.exports = { inside, listen, listenWith };

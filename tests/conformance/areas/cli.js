@@ -2,7 +2,8 @@
 // cli-0002, cli-0005 and cli-0006 first; cli-0026, cli-0004 and the rest after the
 // extension point below; cli-0020…cli-0022 in _cli-instant-and-order.js,
 // cli-0023…cli-0025 in _cli-tool-sets-and-gate.js, cli-0027, cli-0028 in
-// _cli-ten-tools.js, and cli-0032…cli-0035 in _cli-mcp-revisions.js.
+// _cli-ten-tools.js, cli-0029…cli-0031 in _cli-mcp-http.js and cli-0032…cli-0035 in
+// _cli-mcp-revisions.js.
 'use strict';
 
 const path = require('node:path');
@@ -15,6 +16,7 @@ const { memoryPorts, captureStream } = require('./_shared.js');
 const { runCli0036 } = require('./_cli-help.js');
 const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
 const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
+const { runCli0031, runHttp } = require('./_cli-mcp-http.js');
 const { runCli0034, runCli0035, runResponses } = require('./_cli-mcp-revisions.js');
 const { runCli0027, runCli0028, runCli0037 } = require('./_cli-ten-tools.js');
 const { runCli0020, runCli0021, runCli0022 } = require('./_cli-instant-and-order.js');
@@ -712,6 +714,9 @@ Object.assign(HANDLERS, {
   'cli-0037': (vector, ctx) => runCli0037(vector, ctx, evaluateWebmcp),
   'cli-0038': runCli0019,
   // AGSC-09-19: the two MCP revisions of the stdio tool server.
+  'cli-0029': runHttp,
+  'cli-0030': runHttp,
+  'cli-0031': runCli0031,
   'cli-0032': runResponses,
   'cli-0033': runResponses,
   'cli-0034': runCli0034,

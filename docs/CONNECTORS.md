@@ -98,7 +98,8 @@ links, no `allowed-tools`.
 
 ## Route 3 — live tools (MCP)
 
-`agsc mcp`, run in the node's folder, starts a local MCP server over stdio with
+`agsc mcp`, run in the node's folder, starts a local MCP server over stdio (or, with
+`--http <port>`, over Streamable HTTP on the loopback address, from 1.1) with
 ten tools — `search`, `read`, `links`, `compose`, `propose`, `ask`, `remember`, `brief`,
 `explain`, `check` —
 and every item as a resource. It never writes: `propose` and `remember` hand back

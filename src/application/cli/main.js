@@ -94,6 +94,9 @@ const VERB_FLAGS = {
   compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool'],
     ['--brief', 'bool'], ['--narrate', 'value']]),
   skills: new Map([['--zip', 'bool']]),
+  // AGSC-09-18: `--http <port>` serves the ten tools over Streamable HTTP instead of standard
+  // input and output; `--bind <address>`, a loopback address, needs it (AGSC-09-09).
+  mcp: new Map([['--http', 'value'], ['--bind', 'value']]),
   build: new Map([['--level', 'value']]),
   ci: new Map([['--level', 'value']]),
 };
@@ -399,7 +402,7 @@ const VERB_PURPOSE = Object.freeze({
   review: 'runs the review lane: checks, a label and a comment, never a model call',
   refresh: 'runs the agent lane named by --agent; this engine runs it with --dry-run',
   skills: 'emits every skill pack, installs them under a target, or imports one pack',
-  mcp: 'serves the ten tools over standard input and output',
+  mcp: 'serves the ten tools over standard input and output; with --http, over Streamable HTTP on a loopback address',
   run: 'runs the steps of a procedure; opt-in through run.enabled',
   trace: 'records a captured agent run as an Episode; opt-in through run.enabled',
   conform: 'runs the conformance cases of a Level and writes the report',
@@ -442,7 +445,7 @@ const VERB_USAGE = Object.freeze({
   import: 'agsc import <source-dir> --from <adapter> [--dry-run] (--from skos takes a Turtle file in place of the folder)',
   init: 'agsc init',
   lint: 'agsc lint [--fix] [--suggest]',
-  mcp: 'agsc mcp [<path>]',
+  mcp: 'agsc mcp [<path>] [--http <port> [--bind <address>]]',
   propose: 'agsc propose <slug>',
   refresh: 'agsc refresh --agent <name> [--task <slug>] [--dry-run]',
   review: 'agsc review',
@@ -742,8 +745,10 @@ function main(argv, ctx) {
       .then(() => verbModule.run(verbCtx))
       .then(() => 0, (e) => {
         const code = e && typeof e.code === 'string' && REGISTERED_CODE.test(e.code) ? e.code : 'AGSC-E901';
-        writeFindingLine(stderr, { code, severity: 'error', message: `${verb}: ${e && e.message}` });
-        return 1;
+        const finding = { code, severity: 'error', message: `${verb}: ${e && e.message}` };
+        writeFindingLine(stderr, finding);
+        // AGSC-09-08: a usage fault (`mcp --bind` without `--http`, AGSC-E003) is exit 2.
+        return exitClass([finding]);
       });
   }
 

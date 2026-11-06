@@ -148,3 +148,11 @@ Feature: Agent reader queries structured knowledge without scraping
     When an MCP client that speaks the revision 2026-07-28 asks "server/discover" and reads the resource "memory://agenticsystemcore/no-such-item", with no "initialize"
     Then the server names the revisions "2026-07-28" and "2025-11-25", and its answer is complete and may not be cached (AGSC-09-19)
     And the missing resource is the JSON-RPC error -32602 that revision defines
+
+  @PRD-023 @agent @mode-1 @matrix-A2
+  Scenario: An agent on the same machine reaches the tool server over Streamable HTTP, and a page of another site is refused
+    Given the node is built
+    When "agsc mcp --http 0" serves the acceptance Bundle and an MCP client of the revision 2026-07-28 calls tool "search" with the query "protocol" over HTTP
+    Then the answer is the envelope the server gives over standard input and output for the same call (AGSC-09-18)
+    And a request from the origin "https://evil.example" is refused with HTTP 403 and runs no tool
+    And nothing is written to the Bundle by the server

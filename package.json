@@ -121,6 +121,7 @@
     },
     "homepage": "https://agenticsystemcore.com",
     "dependencies": {
+        "@modelcontextprotocol/node": "2.1.2",
         "@modelcontextprotocol/server": "2.4.0",
         "@toon-format/toon": "4.4.0",
         "@traqula/parser-sparql-1-1": "1.4.0",

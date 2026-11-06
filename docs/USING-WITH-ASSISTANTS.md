@@ -257,6 +257,24 @@ args = ["-y", "agsc-cli", "mcp"]
 Here too a working directory is part of the documented configuration, so
 `cwd = "/path/to/your-bundle"` in that table serves a Bundle you did not start in.
 
+### Over HTTP on your own machine (from 1.1)
+
+An assistant or agent that reaches tool servers by URL rather than by starting a command
+can use the same server over Streamable HTTP, the HTTP transport of MCP revision 2026-07-28:
+
+```bash
+agsc mcp --http 8765            # or --http 0 to let the system choose a free port
+```
+
+The server prints the address it listens on to standard error, for example
+`http://127.0.0.1:8765/mcp`; give that URL to the client. It is the same server: the same ten
+tools, the same answers, and it writes nothing. It listens on the loopback address only —
+`127.0.0.1`, or with `--bind` another address in `127.0.0.0/8` or `::1` — so no other machine
+can reach it, and it refuses (HTTP 403) a request sent by a web page of another site, and one
+that names a host other than the loopback names and the bound address. It speaks revision
+2026-07-28 only; a client that opens with the `initialize` handshake of 2025-11-25 is refused
+and should use the command form above. Stop it with Ctrl-C.
+
 ## 6. Checking that it works
 
 From inside the Bundle, run the server by hand and send it one line. It answers with one
@@ -277,6 +295,16 @@ echo '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.
 ```
 
 The answer lists `"supportedVersions":["2026-07-28","2025-11-25"]`.
+
+The HTTP form, started with `agsc mcp --http 8765` in another terminal, answers the same
+request sent with the headers that revision asks for, and lists `"supportedVersions":["2026-07-28"]`:
+
+```bash
+curl -s http://127.0.0.1:8765/mcp \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2026-07-28' -H 'Mcp-Method: server/discover' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+```
 
 If you see a JSON line naming `agentic-system-core`, the server works and any remaining
 problem is in your assistant's configuration. Two things to check first: the working

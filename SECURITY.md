@@ -53,7 +53,8 @@ The engine is a command-line program that reads files and writes files. It has n
 database, its verbs open no network listener, and the published sites are static
 files. Its network port refuses every call at 1.0 and the release runs offline, so
 the main attack surface is the files a Bundle is built from. Two programs in the
-package touch a network, each only when a person runs it:
+package touch a network, each only when a person runs it (and, from 1.1, one form of a
+verb listens on the machine's own loopback address, below):
 
 - `agsc-host serve` serves a build directory read-only over plain HTTP. It binds
   `localhost:8080` unless told otherwise (`--bind`, `--port`), answers `GET` and
@@ -67,6 +68,14 @@ package touch a network, each only when a person runs it:
   its targets: `https` only, a closed list of refused addresses checked again on
   the open socket, at most three redirects, a deadline and a byte cap per
   response (AGSC-11-07 to AGSC-11-10).
+- From 1.1, `agsc mcp --http <port>` serves the ten tools over Streamable HTTP (AGSC-09-18).
+  It binds a loopback address only (`127.0.0.1`, or with `--bind` another address in
+  `127.0.0.0/8` or `::1`; any other is refused before anything starts), writes no file and
+  sends nothing. It refuses with `403` a request whose `Origin` or `Host` names any host but
+  `127.0.0.1`, `localhost`, `[::1]` and the bound address, so a web page of another site, or
+  a name of its own pointed at the machine, cannot call a tool; it serves `/mcp` alone and
+  POST alone. The checks and the protocol are those of the official MCP SDK
+  (`@modelcontextprotocol/server`, `@modelcontextprotocol/node`).
 
 The interesting reports are therefore usually about **input handling**: a crafted item, attachment, diagram
 source, imported corpus or peer document that makes the engine write something it

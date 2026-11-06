@@ -22,8 +22,9 @@ A few modules are written in TypeScript: their sources are under `../src-ts/`, a
 compiles to the CommonJS file of the same path here, committed with a first line that
 names its source (`// generated from src-ts/… by tsc …; do not edit`). Never edit such a
 file by hand; `docs/ENGINEERING.md` §8 says why the compiled files are committed and how
-to add one. Today there are two: `shared/version-line.js`, the proof of the chain, and
-`distribution/mcp-core.js`, the MCP core of the tool server on the official SDK.
+to add one. Today there are three: `shared/version-line.js`, the proof of the chain,
+`distribution/mcp-core.js`, the MCP core of the tool server on the official SDK, and
+`distribution/mcp-http.js`, its Streamable HTTP transport.
 
 ---
 
@@ -177,7 +178,7 @@ which calls into the contexts.
 | `review` | AGSC-08-27 | the lint lane; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `governance/agents.js#checkProposal`; the live path needs a model and a channel adapter |
 | `skills` | AGSC-07-19…22, AGSC-07-15 | `composition/skills.js`; the build writes the same bytes at `/skills/**` |
-| `mcp` | AGSC-09-13, AGSC-09-19 | `distribution/mcp-stdio.js` → `distribution/mcp-core.js` (compiled from `src-ts/`; the official MCP SDK, both revisions) → `distribution/mcp-tools.js`; a streaming verb, nothing but protocol bytes on stdout |
+| `mcp` | AGSC-09-13, AGSC-09-18, AGSC-09-19 | `distribution/mcp-stdio.js` → `distribution/mcp-core.js` (compiled from `src-ts/`; the official MCP SDK, both revisions) → `distribution/mcp-tools.js`; with `--http <port>`, `distribution/mcp-http.js` (compiled from `src-ts/`) behind `adapters/node-http-server.js#listenWith` on a loopback address; a streaming verb, nothing but protocol bytes on stdout |
 | `run` | AGSC-09-94, AGSC-02-22 | `knowledge/runblocks.js` and the ProcessRunner port; off by default, and it executes only on a runner that declares network isolation, which the shipped adapter does not |
 | `trace` | AGSC-09-94, AGSC-02-14 | `interchange/trace.js`; off by default |
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `application/conformance.js`, `composition/conform.js` |
@@ -227,6 +228,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | `.env` tokenising (`parse` only) | `dotenv` | 18.0.3 | BSD-2-Clause | `application/config/env.js` |
 | unified diffs | `diff` | 9.0.0 | BSD-3-Clause | `application/cli/verbs/propose.js` |
 | MCP server, revisions 2026-07-28 and 2025-11-25 | `@modelcontextprotocol/server` (with `@modelcontextprotocol/core`) | 2.4.0 | Apache-2.0 | `distribution/mcp-core.js` (from `src-ts/distribution/mcp-core.ts`) |
+| MCP Streamable HTTP transport for Node (`toNodeHandler`, the `Host` and `Origin` guards) | `@modelcontextprotocol/node` (with `hono`, `@hono/node-server`, MIT) | 2.1.2 | Apache-2.0 | `distribution/mcp-http.js` (from `src-ts/distribution/mcp-http.ts`) |
 | MCP client, to test the server as an assistant reaches it (dev) | `@modelcontextprotocol/client` | 2.4.0 | Apache-2.0 | tests only |
 | TOON encoding | `@toon-format/toon` | 4.1.1 | MIT | `interchange/adapters/llm-context.js` |
 | property tests (dev) | `fast-check` | 4.10.1 | MIT | tests only |

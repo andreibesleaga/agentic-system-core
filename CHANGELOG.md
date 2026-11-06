@@ -51,6 +51,29 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The parity runner of the benchmark kit (`bench/parity.js`) takes the JSON-RPC error -32602 as the
   tool server's answer to a tool name it does not serve (AGSC-09-13a, AGSC-09-19), where the module
   and the page answer the envelope with `AGSC-E001`; every other call is still compared as values.
+- `agsc mcp` takes `--http <port>` and `--bind <address>` (AGSC-09-09, AGSC-09-18; `cli-0036`:
+  `mcp --help` names both): a port that is not one decimal number from 0 to 65535, a `--bind` that is
+  not in `127.0.0.0/8` or `::1`, and `--bind` without `--http` are `AGSC-E003` with exit 2 and start
+  nothing. A usage fault of the streaming verb now exits 2 as AGSC-09-08 says (it exited 1); no 1.0
+  invocation reaches it, since a 1.0 engine rejected both flags with `AGSC-E002`. `bin/agsc.js` no
+  longer reads the value of `--http` or `--bind` as the Bundle path of `mcp [<path>]`.
+- `src/distribution/mcp-core.js` (from `src-ts/distribution/mcp-core.ts`): `serverFactory` makes
+  servers that share one toolset and one catalogue, so the HTTP transport, which serves each request
+  with a server of its own, builds the Bundle's tools once; `createServer` is that factory called once.
+  No answer changes.
+- `src/adapters/node-http-server.js`: `listenWith(handler, {port, bind})`, the socket of a handler the
+  application layer wires (`agsc mcp --http`); `listen` of `agsc-host serve` is built on it and keeps
+  its answers.
+- Dependency: `@modelcontextprotocol/node` 2.1.2 (Apache-2.0), the official Node adapter of the MCP
+  TypeScript SDK, is new at an exact pin, for the Streamable HTTP transport of AGSC-09-18: it turns a
+  Node request into the web request of the SDK's `createMcpHandler` and gives the `Host` and `Origin`
+  guards against DNS rebinding, so the engine writes no HTTP protocol handling of its own. It brings
+  `hono` 4.13.16 and `@hono/node-server` 2.1.6 (both MIT). `npm audit`: 0.
+- The vectors `cli-0030` and `cli-0031` gain the cases the B2 review asked for (they were unreleased):
+  `cli-0030` a request with no `Mcp-Method` (400, -32020) and two whose `_meta` lacks the revision or
+  the client capabilities (400, -32602), as AGSC-09-18 (4) words it; `cli-0031` a server started with
+  `--bind 127.0.0.2` that admits the `Host` `127.0.0.2` and refuses `127.0.0.3`, and a `Host` compared
+  without ASCII case (AGSC-09-18 (3)). `tests/vectors/README.md` names the members `http[]` and `bind`.
 
 - The `/compose/` page and its scripts (AGSC-07-25, AGSC-07-29, AGSC-06-01 page assets; the hash of
   each file in `fixture-minimal`, old to new; on the eight reference nodes these four files and
@@ -309,6 +332,36 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An acceptance scenario (persona-c): an agent of revision 2026-07-28 discovers the server and is
   answered with no handshake, and its missing resource is -32602.
 - `docs/USING-WITH-ASSISTANTS.md` §6: the one-line check of revision 2026-07-28 (`server/discover`).
+- `agsc mcp --http <port>` serves the ten tools over the Streamable HTTP transport of MCP revision
+  2026-07-28 on a loopback address (AGSC-09-18; vectors `cli-0029` to `cli-0031`): the same Bundle,
+  tools and envelopes as standard input and output, read-only (`propose` and `remember` return their
+  payload, `dist/proposal/` is never written), one endpoint `/mcp` for POST only (GET and DELETE 405,
+  another path 404), a `Host` or `Origin` naming any host but `127.0.0.1`, `localhost`, `[::1]` and
+  the `--bind` address refused with 403 before a tool runs, the headers `MCP-Protocol-Version`,
+  `Mcp-Method` and `Mcp-Name` checked against the body (-32020), revision 2025-11-25 refused (-32022,
+  `supported` `["2026-07-28"]`), an unknown method 404 with -32601, a notification 202, one JSON object
+  per answer and no session. The address it listens on is reported on standard error; standard output
+  stays empty. New strict-TypeScript module `src-ts/distribution/mcp-http.ts`, compiled to
+  `src/distribution/mcp-http.js`: wiring of the SDK's `createMcpHandler` (`legacy: 'reject'`) and of
+  `@modelcontextprotocol/node`; own code only for the path `/mcp` and for `subscriptions/listen`,
+  which the SDK's handler serves from a router of its own and AGSC-09-19 (3) answers as an unknown
+  method (404, -32601). The HTTP socket is the application layer's, through the HTTP server adapter.
+- Tests: `tests/distribution/mcp-http.test.js` (the allowed hosts, the two own-code points, a property
+  that a foreign `Host` or `Origin` is 403 and runs no tool, transport parity — the same result bytes
+  over standard input and output and over HTTP for seventeen fixed requests of revision 2026-07-28, and
+  the same tool results under 2025-11-25 on stdio, which HTTP refuses —, and the official client
+  `@modelcontextprotocol/client` over `StreamableHTTPClientTransport` pinned, in `auto` mode and, refused,
+  in `legacy` mode), `tests/application/cli/mcp-http-verb.test.js` (the flags, the address on standard
+  error, a port in use), and the handlers of `cli-0029` to `cli-0031`
+  (`tests/conformance/areas/_cli-mcp-http.js`, one child process per exchange; on a host without the
+  loopback address 127.0.0.2, a default macOS, the `--bind 127.0.0.2` cases run with that one socket
+  moved to 127.0.0.1 and the server still told `--bind 127.0.0.2`).
+- An acceptance scenario (persona-c): an agent on the same machine reaches the tool server over
+  Streamable HTTP with the official client and gets the envelope the stdio form gives, and a request
+  from a page of another site is refused with 403.
+- `docs/USING-WITH-ASSISTANTS.md` §5 "Over HTTP on your own machine" and the `curl` check of §6;
+  `SECURITY.md`, `docs/PROTOCOLS.md`, `docs/CONNECTORS.md` and `docs/guides/mode-1.md` name the HTTP
+  form.
 
 - The domain layer on item pages (AGSC-06-38, last sentences; `build-0031`): on a node that uses the
   layer (a site vocabulary file is present, AGSC-01-41), the page of an item that has a domain part

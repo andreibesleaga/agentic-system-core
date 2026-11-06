@@ -1,6 +1,6 @@
 {
   "area": "cli",
-  "description": "AGSC-09-18 and MCP revision 2026-07-28: the request headers are checked against the body and the revision. Header or body mismatches are HTTP 400 with JSON-RPC error -32020 (`Mcp-Name` differs from `params.name`; `MCP-Protocol-Version` missing; `MCP-Protocol-Version` differs from `io.modelcontextprotocol/protocolVersion` of `_meta`). A request of the revision 2025-11-25 — the one a client opens with `initialize` and a session — is HTTP 400 with -32022 and `data.supported` `[\"2026-07-28\"]`, `data.requested` the value sent. A method the server does not implement is HTTP 404 with -32601. A notification is accepted with HTTP 202 and no body. A session header a client sends is ignored: the answer is 200 and carries none (`headers_absent`). Codes and statuses are those of the transport page read on 2026-10-29.",
+  "description": "AGSC-09-18 and MCP revision 2026-07-28: the request headers are checked against the body and the revision. Header or body mismatches are HTTP 400 with JSON-RPC error -32020 (`Mcp-Name` differs from `params.name`; `MCP-Protocol-Version` missing; `MCP-Protocol-Version` differs from `io.modelcontextprotocol/protocolVersion` of `_meta`; `Mcp-Method` missing). A request whose `_meta` lacks `io.modelcontextprotocol/protocolVersion` or `io.modelcontextprotocol/clientCapabilities` is HTTP 400 with -32602. A request of the revision 2025-11-25 — the one a client opens with `initialize` and a session — is HTTP 400 with -32022 and `data.supported` `[\"2026-07-28\"]`, `data.requested` the value sent. A method the server does not implement is HTTP 404 with -32601. A notification is accepted with HTTP 202 and no body. A session header a client sends is ignored: the answer is 200 and carries none (`headers_absent`). Codes and statuses are those of the transport page read on 2026-10-29.",
   "expected": {
     "http": [
       {
@@ -28,6 +28,33 @@
           }
         },
         "name": "version-header-differs-from-meta",
+        "status": 400
+      },
+      {
+        "body": {
+          "error": {
+            "code": -32020
+          }
+        },
+        "name": "method-header-missing",
+        "status": 400
+      },
+      {
+        "body": {
+          "error": {
+            "code": -32602
+          }
+        },
+        "name": "meta-lacks-the-protocol-version",
+        "status": 400
+      },
+      {
+        "body": {
+          "error": {
+            "code": -32602
+          }
+        },
+        "name": "meta-lacks-the-client-capabilities",
         "status": 400
       },
       {
@@ -152,6 +179,81 @@
         },
         "method": "POST",
         "name": "version-header-differs-from-meta",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28"
+        },
+        "method": "POST",
+        "name": "method-header-missing",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              }
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/list"
+        },
+        "method": "POST",
+        "name": "meta-lacks-the-protocol-version",
+        "path": "/mcp"
+      },
+      {
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "tools/list",
+          "params": {
+            "_meta": {
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "conformance",
+                "version": "0"
+              },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }
+          }
+        },
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": "tools/list"
+        },
+        "method": "POST",
+        "name": "meta-lacks-the-client-capabilities",
         "path": "/mcp"
       },
       {

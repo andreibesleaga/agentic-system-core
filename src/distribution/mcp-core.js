@@ -30,6 +30,7 @@
 // streams the application layer hands in.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StdioRevisionGate = exports.SERVER_NAME = void 0;
+exports.serverFactory = serverFactory;
 exports.createServer = createServer;
 exports.serveStdio = serveStdio;
 const server_1 = require("@modelcontextprotocol/server");
@@ -67,17 +68,26 @@ function toolResult(envelope) {
     };
 }
 /**
- * One official SDK server over a loaded Bundle: the ten tools, the resources and the prompt, for
- * both revisions. The stdio entry below and the HTTP transport both build their server here.
- * The capabilities are those AGSC-11-18 pins: `prompts`, `resources` and `tools`, none with
- * `listChanged` or `subscribe` (a Bundle is loaded once and never changes under the server), and
- * the extension map of `surfaces.mcpCapabilities`.
+ * A factory of official SDK servers over one loaded Bundle: the ten tools, the resources and the
+ * prompt, for both revisions. The toolset and the catalogue are built once and shared by every
+ * server the factory makes, so a transport that wants one server per request (the HTTP transport,
+ * `mcp-http.ts`) pays for the Bundle once. The capabilities are those AGSC-11-18 pins: `prompts`,
+ * `resources` and `tools`, none with `listChanged` or `subscribe` (a Bundle is loaded once and never
+ * changes under the server), and the extension map of `surfaces.mcpCapabilities`.
  */
-function createServer(bundle, options = {}) {
+function serverFactory(bundle, options = {}) {
     const toolset = (0, mcp_tools_js_1.tools)(bundle, options);
     const resources = (0, mcp_resources_js_1.catalogue)(bundle, options);
     const base = bundle.config?.site?.base;
-    const server = new server_1.Server({ name: exports.SERVER_NAME, version: options.version ?? '0.0.0' }, {
+    return () => ({ resources, server: serve(toolset, resources, base, options.version), toolset });
+}
+/** One official SDK server over a loaded Bundle; the stdio entry builds its one server here. */
+function createServer(bundle, options = {}) {
+    return serverFactory(bundle, options)();
+}
+/** The SDK server of the toolset and the catalogue, with the handlers of AGSC-09-13, 09-14b and 09-19. */
+function serve(toolset, resources, base, version) {
+    const server = new server_1.Server({ name: exports.SERVER_NAME, version: version ?? '0.0.0' }, {
         cacheHints: Object.fromEntries(CACHED_METHODS.map((method) => [method, NOT_CACHED])),
         capabilities: { ...(0, surfaces_js_1.mcpCapabilities)(base === undefined ? {} : { base }), prompts: {}, resources: {}, tools: {} },
         // 2026-07-28 and every handshake revision the SDK negotiates, as 1.0 negotiated them.
@@ -111,7 +121,7 @@ function createServer(bundle, options = {}) {
         }
         return found;
     });
-    return { resources, server, toolset };
+    return server;
 }
 /** The revision a request's `_meta` names (2026-07-28 and later), or undefined for a handshake-era request. */
 function claimedRevision(request) {

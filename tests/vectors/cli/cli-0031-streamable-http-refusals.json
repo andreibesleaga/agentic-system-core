@@ -1,6 +1,6 @@
 {
   "area": "cli",
-  "description": "AGSC-09-18: what the transport refuses. (1) A request with an `Origin` whose host is not `127.0.0.1`, `localhost` or `[::1]` is HTTP 403 and runs no tool (DNS rebinding, MCP transport page, Security & Endpoint); (2) so is a request whose `Host` names another host, since a name re-pointed at the loopback address arrives with its own name; (3) GET and (4) DELETE on the endpoint are HTTP 405 and (5) another path HTTP 404; (6) `mcp --http 0 --bind 0.0.0.0` starts nothing and exits 2 with AGSC-E003, as does (7) `mcp --bind 127.0.0.1` without `--http`; (8) a `propose` call over HTTP returns the Proposal payload (HTTP 200, `isError` false) and writes nothing: `dist/proposal/` does not exist afterwards and no file of the Bundle changed (`nothing_written`). The server is read-only.",
+  "description": "AGSC-09-18: what the transport refuses. (1) A request with an `Origin` whose host is not `127.0.0.1`, `localhost` or `[::1]` is HTTP 403 and runs no tool (DNS rebinding, MCP transport page, Security & Endpoint); (2) so is a request whose `Host` names another host, since a name re-pointed at the loopback address arrives with its own name — a server started with `--bind 127.0.0.2` admits the `Host` `127.0.0.2` and refuses `127.0.0.3`, another loopback address it was not given, and hosts are compared ASCII case-insensitively, so `LocalHost` is `localhost` (a case with `bind` starts its server with that `--bind`); (3) GET and (4) DELETE on the endpoint are HTTP 405 and (5) another path HTTP 404; (6) `mcp --http 0 --bind 0.0.0.0` starts nothing and exits 2 with AGSC-E003, as does (7) `mcp --bind 127.0.0.1` without `--http`; (8) a `propose` call over HTTP returns the Proposal payload (HTTP 200, `isError` false) and writes nothing: `dist/proposal/` does not exist afterwards and no file of the Bundle changed (`nothing_written`). The server is read-only.",
   "expected": {
     "cases": [
       {
@@ -10,6 +10,18 @@
       {
         "name": "rebound-host-name",
         "status": 403
+      },
+      {
+        "name": "host-names-the-bound-address",
+        "status": 200
+      },
+      {
+        "name": "host-names-another-loopback-address",
+        "status": 403
+      },
+      {
+        "name": "host-compared-without-case",
+        "status": 200
       },
       {
         "name": "get-on-the-endpoint",
@@ -103,6 +115,98 @@
           "path": "/mcp"
         },
         "name": "rebound-host-name"
+      },
+      {
+        "bind": "127.0.0.2",
+        "http": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              }
+            }
+          },
+          "headers": {
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+            "Host": "127.0.0.2",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list"
+          },
+          "method": "POST",
+          "name": "host-names-the-bound-address",
+          "path": "/mcp"
+        },
+        "name": "host-names-the-bound-address"
+      },
+      {
+        "bind": "127.0.0.2",
+        "http": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              }
+            }
+          },
+          "headers": {
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+            "Host": "127.0.0.3",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list"
+          },
+          "method": "POST",
+          "name": "host-names-another-loopback-address",
+          "path": "/mcp"
+        },
+        "name": "host-names-another-loopback-address"
+      },
+      {
+        "http": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {
+              "_meta": {
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {
+                  "name": "conformance",
+                  "version": "0"
+                },
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+              }
+            }
+          },
+          "headers": {
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+            "Host": "LocalHost:8080",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list"
+          },
+          "method": "POST",
+          "name": "host-compared-without-case",
+          "path": "/mcp"
+        },
+        "name": "host-compared-without-case"
       },
       {
         "http": {

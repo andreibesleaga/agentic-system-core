@@ -6,7 +6,9 @@ agent, or its operator, reading someone else's node.
 
 **What you get:** a local tool server, `agsc mcp`, with ten tools over your Bundle —
 `search`, `read`, `links`, `compose`, `ask`, `propose`, `remember`, `brief`, `explain`, `check` — that runs on your
-computer, needs no key and writes nothing; two nodes that list each other as peers and a
+computer, needs no key and writes nothing (over standard input and output, or from 1.1 with
+`agsc mcp --http <port>` over HTTP on the loopback address, see
+[USING-WITH-ASSISTANTS.md](../USING-WITH-ASSISTANTS.md)); two nodes that list each other as peers and a
 shipped checker that confirms it; the commands to verify any published node by hand.
 
 **Read after:** [Mode 0](mode-0.md). **Next:** [Mode 2](mode-2.md).

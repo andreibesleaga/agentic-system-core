@@ -588,7 +588,8 @@ under other names: closure, hiding, mutual exclusion, warnings and port wiring a
 the tool server is `src/distribution/mcp-stdio.js` with `mcp-tools.js` and
 `mcp-resources.js` (no `mcp.js`), and from 1.1 `tool-answers.js`, the portable answers both
 transports share, and `mcp-core.js` (compiled from `src-ts/distribution/mcp-core.ts`), the
-server on the official MCP SDK that both MCP transports build; pages are rendered by `src/distribution/html.js` with no
+server on the official MCP SDK that both MCP transports build, and `mcp-http.js` (compiled from
+`src-ts/distribution/mcp-http.ts`), the Streamable HTTP transport of `mcp --http`; pages are rendered by `src/distribution/html.js` with no
 template files (no `templates/*.html`). There is no `src/interchange/channels.js` and no
 `channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
 channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is
@@ -610,7 +611,8 @@ included (the addendum "`refresh` at 1.0" above). Two shipped programs touch a n
 on the user's explicit command: `agsc-host serve` listens on `localhost:8080` by default and
 serves a build directory read-only, and `tools/validate-wellknown <https URL>` fetches the
 document it is given and its targets under the fetch rules of AGSC-11-07 to AGSC-11-10.
-`SECURITY.md` names both.
+`SECURITY.md` names both. *(1.1: `agsc mcp --http <port>` listens too, on a loopback address
+only, and reaches no network (AGSC-09-18); `SECURITY.md` names it.)*
 
 **Workflows and the secrets document (§7).** The engine repository has two workflows, `test.yml` (every
 push and pull request) and `release.yml` (a version tag); there is no engine `ci.yml`, and the
