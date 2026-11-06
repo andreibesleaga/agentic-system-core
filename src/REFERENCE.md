@@ -685,7 +685,10 @@ drive them, `init` and `ci`.
 | `distribution/search.js` | Distribution | AGSC-06-16, AGSC-06-21, AGSC-06-23 — the normative tokenizer and the index |
 | `distribution/llms.js` | Distribution | AGSC-06-13, 06-13a, 06-14, 06-15 — the byte layout of the two text files |
 | `distribution/discovery.js` | Distribution | AGSC-06-07…12, 06-35, 10-12, 11-16, 11-20, 11-23 — the link set, its validator, the peer check |
-| `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects` |
+| `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects`; AGSC-06-40 — the FAIR Signposting links of `/` in the one `Link` field of its block, after the AGSC-11-05 value; the blocks of the card and the two catalogue files where the build wrote them |
+| `distribution/well-known.js` | Distribution | AGSC-06-07, 06-08, 06-34, 06-42, 11-16 — the well-known files in order: the agent card, the discovery document with its declared surfaces (`declaredSurfaces`, moved here from `site.js`), the catalogue files over the bytes of the other two |
+| `distribution/a2a-card.js` | Distribution | compiled from `src-ts/distribution/a2a-card.ts` — AGSC-06-34 with AGSC-06-07: the A2A 1.0 agent card, typed as the official SDK's `AgentCard` and written by its codec (`AgentCard.toJSON`), JCS and one LF; own code only for `skills` `[]` and the bytes; AGSC-E210 for a card without a responder |
+| `distribution/ai-catalog.js` | Distribution | AGSC-06-42 — `/.well-known/ard.json` and `/.well-known/ai-catalog.json` on `discovery.ai_catalog`: one entry per file pointed at, its SHA-256 over the served bytes; AGSC-E209 for a host that is not a domain name, AGSC-E202 for no `bundle.id` |
 | `distribution/now.js` | Distribution | AGSC-06-22, AGSC-08-25 — the NOW state and the monthly spend meter |
 | `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates; AGSC-06-38 (places the graph view's sections on an item page); AGSC-02-13, 02-98 (`inlineDiagram`, the one path every inline figure is compiled and checked through); from 1.1 the `/compose/` form inside one workspace block shown when the list is painted (no layout shift), with the cluster and tag filters and the places of the verdict in words, the brief and its downloads (AGSC-07-25), and the brief section on an architecture's page |
 | `distribution/architecture-brief.js` | Distribution | AGSC-07-25, AGSC-07-24 — the brief on the item page of a saved architecture, written by the build over the listed items: the summary, the dependency order, the gaps, the checklist (each list at most 50 entries) and the link to `/compose/?from=<slug>` |
@@ -744,6 +747,30 @@ WELLKNOWN_SUFFIX WELLKNOWN_PATH WELLKNOWN_ALIAS MEDIA_TYPE PROFILE REL
 // distribution/headers.js
 headerSets(config, routes) -> [{route, headers: [[name, value], …]}]   // a ['!', name] entry detaches a header
 headersFile(config, routes) -> string; redirectsFile(renames) -> string; etag(hex)
+homeLinks(config, routes) -> [{href, rel, type?}]; homeLinkField(config, routes) -> string   // AGSC-06-40
+
+// distribution/well-known.js
+files({ config, emitted, level, ledgerHead, bundleVersion, generatedAt, specVersion, items, description,
+        packs, legal, pages }) -> { files: Map<route, text>, findings, skipped }
+agentCard({ config, bundleVersion, specVersion, description, packs }) -> { text, findings }
+declaredSurfaces({ base, config, emitted, mcpServed, webmcpVersion }) -> [{surface, target, version, access}]
+
+// distribution/a2a-card.js (compiled from src-ts/distribution/a2a-card.ts)
+cardBytes({ title, description, tagline, bundleVersion, specVersion, visibility, surfaces, packs }) -> string | null
+card(input) -> AgentCard; eligible(surfaces); cardFindings(surfaces) -> Finding[]   // AGSC-E210
+CARD_PATH DEFAULT_BINDING SKILL_TAGS
+
+// distribution/ai-catalog.js
+catalogueFiles({ config, description, discoveryBytes, cardBytes }) -> { files: Map<route, text>, findings }
+domainName(base) -> string | null; ARD_PATH AI_CATALOG_PATH ARD_MEDIA_TYPE AI_CATALOG_MEDIA_TYPE
+
+// distribution/front-page.js
+frontPage({ bundle, hasLegal, indexFrontmatter, instant, items, pageOptions, render, schemaOrg, served, site, textBytes })
+  -> { html, findings }
+datasetBlock({ config, description, hasLegal, instant, name, served }) -> object; creatorOf(config); datasetFindings(description)
+
+// knowledge/chunks.js (AGSC-06-44)
+licenseUrl(config, { legal }) -> string | null
 
 // distribution/now.js
 state(items, config, { instant, allItems }) -> object
@@ -999,6 +1026,7 @@ loadBundle(ports, { schemas }) -> Bundle
 |---|---|---|---|
 | MCP server (both revisions) | `@modelcontextprotocol/server` | 2.4.0 | Apache-2.0 |
 | MCP Streamable HTTP for Node (`mcp --http`) | `@modelcontextprotocol/node` | 2.1.2 | Apache-2.0 |
+| A2A agent card (`/.well-known/agent-card.json`) | `@a2a-js/sdk` | 1.3.0 | Apache-2.0 |
 | TOON tabular encoding (`export --to llm-context`) | `@toon-format/toon` | 4.1.1 | MIT |
 
 `@toon-format/toon` is pinned exactly and meets the five requirements of ADR-019:

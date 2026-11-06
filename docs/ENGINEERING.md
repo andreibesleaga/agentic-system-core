@@ -275,7 +275,10 @@ the MCP core, `src-ts/distribution/mcp-core.ts`, a thin adapter on the official 
 TypeScript SDK (`@modelcontextprotocol/server`), and its HTTP transport,
 `src-ts/distribution/mcp-http.ts`, wiring of the SDK's `createMcpHandler` and the official
 Node adapter `@modelcontextprotocol/node`: such a module builds on the official
-library of its protocol and writes no JSON-RPC layer of its own. A narration step of the brief would be one too, once a distribution adds a
+library of its protocol and writes no JSON-RPC layer of its own. The A2A agent card,
+`src-ts/distribution/a2a-card.ts`, is typed as the official A2A SDK's `AgentCard` and written
+by its codec (`@a2a-js/sdk`); the build requires it only for a node that declares a card,
+because the SDK takes about 80 ms to load. A narration step of the brief would be one too, once a distribution adds a
 model adapter; the reference engine has none (`compose --narrate` is `AGSC-E001`). A
 message shape the compiler checks cannot drift from the protocol's schema unnoticed.
 The rest of the engine stays JavaScript and is not rewritten. The tool answers of

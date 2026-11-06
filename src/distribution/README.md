@@ -21,10 +21,13 @@
 | `query/` | the query page's portable functions, shipped as their own source text: `tokens.js` reads a query and refuses an update or a `SERVICE` clause before it runs, `view.js` writes the table, the picture's data, the status line and the share link, `engine.js` is the worker over the engine (the engine's own CSV and JSON writers), `main.js` wires the live page. Tested in Node (`tests/distribution/query/`) and in a browser (`tests/distribution/query-browser.test.js`) |
 | `vendor/oxigraph-0.5.13/` | the query engine of `/query/`: one release of Oxigraph (WebAssembly), byte for byte, with its licence texts and a list of the crates that may be compiled into it, each with its licence expression; pinned by SHA-256 (`tests/arch/query-engine-pin.test.js`); its README says how to move to another release |
 | `theme.js` | the default look of every engine-built page and the theme switcher |
-| `front-page.js` | the front page `/`: the Bundle's own introduction, a Browse block with each non-empty type index and its count, and the footer's peer links |
+| `front-page.js` | the front page `/`: the Bundle's own introduction, a Browse block with each non-empty type index and its count, and the footer's peer links; its Dataset block (1.1, AGSC-06-41): the licence URL, the creator with an ORCID iD, free access, one download per machine file, and the PROV-O generation time and attribution, which appear in this block and nowhere else |
 | `internal-links.js` | the build's dangling-link check: every internal link a built page carries resolves to a route the same build emits (AGSC-06-01) |
 | `discovery.js` | the discovery document (`/.well-known/knowledge-linkset`) and its checker |
-| `headers.js` | `_headers` and `_redirects` |
+| `well-known.js` | the well-known files of a build, in the order each needs the one before: the agent card, the discovery document (with the surfaces it declares, derived from what the build emits) and the two catalogue files, whose entries carry the digests of the other two |
+| `a2a-card.js` | compiled from `src-ts/distribution/a2a-card.ts` (do not edit): the A2A agent card `/.well-known/agent-card.json` (1.1, AGSC-06-34), written by the official A2A SDK's codec (`@a2a-js/sdk`) only for a node that declares both an `a2a-card` and a `responder` surface; loaded only by such a node |
+| `ai-catalog.js` | `/.well-known/ard.json` and `/.well-known/ai-catalog.json` (1.1, AGSC-06-42), only when `discovery.ai_catalog` is `true`: one entry for the discovery document and one for the card, each with the SHA-256 of the bytes it points at. Both formats are proposals |
+| `headers.js` | `_headers` and `_redirects`; the FAIR Signposting links of `/` in its one `Link` field (1.1, AGSC-06-40) |
 | `llms.js` | `/llms.txt` and `/llms-full.txt`, byte for byte |
 | `search.js` | the prebuilt search index, its tokenizer and the ranking a query gets over it |
 | `search-page.js` | the `/search/` page's one script: the tokenizer and the ranking above as their own source text, so the box searches exactly as the index was built |

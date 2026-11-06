@@ -47,6 +47,7 @@ const html = require('./html.js');
 const pageGraph = require('./graph-view.js');
 const domainView = require('./domain-view.js');
 const { frontPage, peerSites } = require('./front-page.js');
+const wellKnown = require('./well-known.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
 const queryPage = require('./query-page.js');
@@ -55,7 +56,6 @@ const clustersPage = require('./clusters-page.js');
 const architectureBrief = require('./architecture-brief.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
-const surfaces = require('../boundary/surfaces.js');
 const federation = require('../boundary/federation.js');
 const browserBundle = require('../composition/browser.js');
 const skills = require('../composition/skills.js');
@@ -182,46 +182,6 @@ function queryPageFacts(options, { base, bundle, instant, pageItems, siteVocabul
     ...options.queryPage, base, instant, items: pageItems, ontologyTerms: options.ontologyTerms, specVersion,
     domain: bundle.domain ? { questions: bundle.domain.questions, vocabulary: siteVocabulary } : null,
   };
-}
-
-/**
- * AGSC-11-16 / AGSC-11-19: the surfaces this build DECLARES, derived from what the
- * writer actually emits, through the Boundary context's `declare()` and through no
- * second list.
- *
- * `boundary/surfaces.js` is the module that knows every built-in surface, its route,
- * its access class and its version. A declaration assembled by hand from a few
- * emitted files plus `config.surfaces[]` could EMIT a surface (the page-tool surface
- * at `/compose/`, for instance) and never DECLARE it, which is exactly the condition
- * AGSC-11-19 tells the validator to warn about (AGSC-E211). One path, so a surface
- * cannot be served and forgotten.
- *
- * `webmcpVersion` is an OPTION, not a configuration key: `config.schema.json` closes
- * `surfaces[]` against the built-in surfaces, so a node states the WebMCP Draft
- * Community Group Report date it targets in code. The default is
- * `surfaces.WEBMCP_SURFACE_VERSION`; AGSC-11-16 conforms any
- * `YYYY-MM-DD` date and pins none.
- *
- * @param {{base:string, config:object, emitted:Array<string>, mcpServed?:boolean,
- *   webmcpVersion?:string}} options
- * @returns {Array<object>} `{surface, target, version, access}`, discovery's shape.
- */
-function declaredSurfaces(options) {
-  const config = options.config || {};
-  const declared = surfaces.declare({
-    base: `${withoutTrailingSlashes(String(options.base))}/`,
-    emitted: options.emitted || [],
-    mcpServed: options.mcpServed === true,
-    surfaces: Array.isArray(config.surfaces) ? config.surfaces : [],
-    visibility: config.visibility,
-    webmcpVersion: options.webmcpVersion,
-  });
-  return declared.map((link) => {
-    const entry = { surface: link['agsc-surface'][0], target: link.href };
-    if (link['agsc-surface-version'] !== undefined) [entry.version] = link['agsc-surface-version'];
-    if (link['agsc-access'] !== undefined) [entry.access] = link['agsc-access'];
-    return entry;
-  });
 }
 
 /**
@@ -1541,33 +1501,17 @@ function buildSite(bundle, ports, options, findings) {
     put('/.well-known/security.txt', security.text);
   }
 
-  // ------------------------------------------------------------ discovery document
-  const digests = {};
-  for (const [route, text] of files) digests[route] = discovery.digestOf(text);
-  const wellknown = discovery.linkset(config, {
-    level,
-    ledgerHead,
-    bundleVersion,
-    digests,
-    counts: discovery.countsOf(items),
-    generatedAt: instant,
-    specVersion,
-    // AGSC-06-08 / AGSC-04-15: the bundle hash is the SHA-256 of `graph.nq`.
-    bundleHash: files.has('/graph.nq') ? digests['/graph.nq'] : undefined,
-    // AGSC-11-16: the declaration is DERIVED from what the writer actually emits;
-    // only the declaration-only surfaces come from configuration.
-    // `/legal/` is written further down, from the same `hasLegal` decision.
-    routes: [...files.keys(), ...(hasLegal ? ['/legal/index.html'] : [])],
-    surfaces: declaredSurfaces({
-      base,
-      config,
-      emitted: [...files.keys(), ...(full && typeof renderer === 'function' ? ['/compose/'] : [])],
-    }),
+  // ------------------------------------------- the well-known files (AGSC-06-07, AGSC-06-34, AGSC-06-42)
+  // The A2A card, the discovery document and the opt-in catalogue files, in that order: each later
+  // one points at the bytes of the one before (well-known.js). `/legal/` is written further down,
+  // from the same `hasLegal` decision.
+  const known = wellKnown.files({
+    bundleVersion, config, description: indexFrontmatter.description, emitted: files, generatedAt: instant,
+    items, ledgerHead, legal: hasLegal, level, packs: packs.index.packs, pages: full && typeof renderer === 'function', specVersion,
   });
-  // A build given no git-log file publishes no ledger (AGSC-06-01) and says so in
-  // `skipped`; its own check does not fault what it could not derive.
-  findings.push(...discovery.check(wellknown, { level, requireLedger: ledgerHead !== null }));
-  put(discovery.WELLKNOWN_PATH, jsonBytes(wellknown));
+  findings.push(...known.findings);
+  skipped.push(...known.skipped);
+  for (const [route, text] of known.files) put(route, text);
 
   // ------------------------------------------------------- assets (AGSC-06-01)
   // "`/assets/<path>` for every file under `content/assets/` that a PUBLISHED item's
@@ -1720,7 +1664,10 @@ function buildSite(bundle, ports, options, findings) {
     // AGSC-06-01: `/` is the Bundle's own index route.
     // The front page introduces the node and points at its index pages; the full
     // lists live on those pages, so the front page stays short.
-    put('/index.html', frontPage({ base, bundle, indexFrontmatter, items, pageOptions, render, schemaOrg, site, textBytes }));
+    // AGSC-06-41: the Dataset block names the machine files written so far (all of them by now).
+    const home = frontPage({ bundle, hasLegal, indexFrontmatter, instant, items, pageOptions, render, schemaOrg, served: files, site, textBytes });
+    findings.push(...home.findings);
+    put('/index.html', home.html);
     // AGSC-06-02: an EMPTY type folder is omitted from navigation (the header above
     // lists only the plurals that have items) but its index route still resolves, so
     // every one of the six type plurals gets its index page, empty or not.
@@ -1948,7 +1895,7 @@ function verify(bundle, ports, options = {}) {
 module.exports = {
   build, write, verify, routeOf, sitemap, publishedRoutes, withoutExcludedLinks, robots, tdmrep, securityTxt,
   publishedItems, pageItemsOf, jsonBytes, paginate, readAttachment, readDiagramSource,
-  declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
+  declaredSurfaces: wellKnown.declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
   budgets, internalLinks, resolvesTo, readLicenseContent,
   readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,
   bodyHrefResolver,

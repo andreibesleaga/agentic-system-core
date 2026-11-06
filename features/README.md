@@ -31,7 +31,7 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | `persona-0-dropin.feature` | P0 drop-in user | 0 | 9 | PRD-053 |
 | `persona-a-reader.feature` | P1 human reader | 0 | 9 | PRD-002, 011, 013, 014, 015, 022, 025 |
 | `persona-b-contributor.feature` | P2 human contributor | 0 | 7 | PRD-013, 039, 040, 041, 042, 050 |
-| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 18 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
+| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 19 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
 | `persona-d-agent-proposer.feature` | P4 agent proposer | 1 (write) | 5 | PRD-039, 040, 042, 043 |
 | `persona-e-architect.feature` | P5 architect/combiner | 4 | 13 | PRD-001, 022, 036, 037, 038 |
 | `persona-f-integrator.feature` | P6 integrator | 3 | 7 | PRD-032, 033, 034, 035 |
@@ -42,7 +42,7 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | `persona-k-live-board.feature` | P12 self-driving team | 5 | 12 | PRD-063, 064, 065 |
 | `persona-l-port-implementer.feature` | P10 port implementer | 1 | 3 | PRD-010, 054, 055, NFR-02 |
 | `persona-m-security-reviewer.feature` | P13 security reviewer | 0, 1 | 12 | PRD-005, 023, 047, 050, 053, 062, 065, NFR-07 |
-| `persona-n-researcher.feature` | P14 researcher | 0, 1 | 3 | PRD-010, 022, 047, 060, NFR-04, 05 |
+| `persona-n-researcher.feature` | P14 researcher | 0, 1 | 4 | PRD-010, 020, 022, 024, 047, 060, NFR-04, 05 |
 | `persona-o-restricted.feature` | P15 restricted publisher | 1 | 5 | PRD-024, 057 |
 
 **P10 port implementer**: one scenario writes a Level-0 node without the engine and

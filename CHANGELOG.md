@@ -74,6 +74,34 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the client capabilities (400, -32602), as AGSC-09-18 (4) words it; `cli-0031` a server started with
   `--bind 127.0.0.2` that admits the `Host` `127.0.0.2` and refuses `127.0.0.3`, and a `Host` compared
   without ASCII case (AGSC-09-18 (3)). `tests/vectors/README.md` names the members `http[]` and `bind`.
+- The Dataset block of the home page `/` (AGSC-06-41, AGSC-06-19; `disc-0027`, `disc-0032`) carries,
+  besides `name`, `description` and `url`: `license` (the licence URL of AGSC-06-44), `creator` (a
+  `Person` from `bundle.creator`, else `site.author` with `site.author_orcid`, its ORCID iD as `sameAs`),
+  `isAccessibleForFree` and one `DataDownload` per machine file the node serves (`graph.jsonld`,
+  `graph.ttl`, `graph.nq`, `chunks.jsonl`, the discovery document); its `@context` names the PROV-O
+  prefix, and `prov:generatedAtTime` (the build instant) and `prov:wasAttributedTo` (the creator)
+  appear in this block and in no other file (decision D-4). A `restricted` node's block names no
+  download and claims no free access. No other index page changes. Bytes: `index.html` of every
+  node (fixture-minimal `a12ae8be…3420` → `5d6d1801…e2ac`; the other reference nodes in the G-REF
+  record of B08-WP3). A description shorter than 50 characters is the new warning `AGSC-E202`
+  (exit codes unchanged); the sentence `init` writes without a build date (AGSC-02-94 (b), 43
+  characters) gets it, so the expected warning counts of the guides `mode-0`, `mode-2`, `mode-3`
+  and `publish` grow by one, and `mode-0` says how to write your own description.
+- The `Link` header of `/` (AGSC-06-40; `disc-0026`) carries the FAIR Signposting links of a landing
+  page after the 1.0 `describedby` value, in the one `Link` field of the one `_headers` block of `/`
+  (AGSC-06-17): `cite-as` (the first `related[]` cite-as, else the Bundle IRI), two `type` links,
+  `describedby` for `/graph.jsonld`, `item` for `graph.nq`, `graph.ttl` and `chunks.jsonl` (none on a
+  `restricted` node), `license` (when the node has a licence URL) and `linkset`. A node that writes
+  no home page (Level 0) keeps the one value of 1.0. Bytes: `_headers` of every node
+  (fixture-minimal `cf2a4bf9…3097` → `03c0b66c…ca16`).
+- `tools/validate-wellknown`, given a URL, reads the `Link` header of the node's home page and warns
+  `AGSC-E202` when it carries no `describedby` link to the discovery document (AGSC-06-40 with
+  AGSC-06-25, a SHOULD; I-104). A run over a URL makes one more request; a file run is unchanged.
+- `src/distribution/well-known.js` writes the well-known files in order (the card, the discovery
+  document, the catalogue files); `declaredSurfaces` moved there from `site.js` (`site.declaredSurfaces`
+  still answers). No byte changes from the move.
+- The vector `disc-0026` (unreleased) writes the severity of its validator finding `warn`, the literal
+  of AGSC-09-11, instead of `warning`.
 
 - The `/compose/` page and its scripts (AGSC-07-25, AGSC-07-29, AGSC-06-01 page assets; the hash of
   each file in `fixture-minimal`, old to new; on the eight reference nodes these four files and
@@ -315,6 +343,39 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with it; nothing the package ships changes.
 
 ### Added
+
+- `/.well-known/agent-card.json` (AGSC-06-34 with AGSC-06-07; `disc-0030`, `disc-0031`), the A2A 1.0
+  agent card, for a node that declares both the `a2a-card` and a `responder` surface in `surfaces[]`:
+  every member A2A 1.0 requires and no other (`skills` one per skill pack, with the tags
+  `knowledge` and `skill-pack`; one interface per responder, `protocolBinding` from the entry's
+  `binding`, default `JSONRPC`), JCS with one LF, served with the cross-origin pair. `a2a-card`
+  without a `responder` is `AGSC-E210` and no card is written; a local MCP tool server makes no node
+  eligible. New strict-TypeScript module `src-ts/distribution/a2a-card.ts` (compiled to
+  `src/distribution/a2a-card.js`), loaded only by a node that declares a card.
+- `/.well-known/ard.json` and `/.well-known/ai-catalog.json` (AGSC-06-42; `disc-0028`, `disc-0029`),
+  only when `discovery.ai_catalog` is `true` (both formats are proposals): one entry for the
+  discovery document and, when there is a card, one for it, each with the SHA-256 of the bytes it
+  points at (`digest` in `ai-catalog.json`, `metadata.digest` in `ard.json`), served with
+  `application/ai-catalog+json` and `application/json`. A `site.base` host that is not a domain name
+  is `AGSC-E209` and no `bundle.id` is `AGSC-E202`; then neither file is written. Without the switch
+  the build says why it wrote neither. New module `src/distribution/ai-catalog.js` (no library writes
+  either format; the npm package `ai-catalog` 0.1.2, a 0.x validator of one maintainer, reads the
+  vector's file as valid).
+- `knowledge/chunks.js#licenseUrl` (AGSC-06-44): the licence URL of a node, shared by the Dataset
+  block and the `license` link of `/`.
+- Dependency: `@a2a-js/sdk` 1.3.0 (Apache-2.0, the official A2A JavaScript SDK; brings `jose` 6, MIT),
+  at an exact pin, for the agent card: the card is typed as the SDK's `AgentCard` and written by its
+  codec, so the engine writes no A2A message shape of its own. No NOTICE file in either package.
+  `npm audit`: 0.
+- Development dependency: `http-link-header` 1.1.4 (MIT), the RFC 8288 parser the tests read the
+  emitted `Link` header with. The writer stays `distribution/headers.js`: vector `bnd-0033` pins the
+  quoted form `rel="describedby"` of the 1.0 value, which the library's writer does not produce.
+- Tests: `tests/distribution/{a2a-card,ai-catalog,dataset-block,signposting,well-known}.test.js`,
+  `tests/knowledge/license-url.test.js` (fast-check properties for order independence and
+  determinism; the Dataset block expanded by `jsonld` against the official schema.org context, no
+  member lost; the card read back by the A2A SDK), the conformance handlers of `disc-0026` to
+  `disc-0032` (`tests/conformance/areas/_discovery-web.js`), and two acceptance scenarios (persona-n:
+  a dataset harvester reads `/`; persona-c: an A2A client and a catalogue crawler).
 
 - `src-ts/distribution/mcp-core.ts`, compiled to `src/distribution/mcp-core.js`: the MCP core of the
   tool server, a thin strict-TypeScript adapter on `@modelcontextprotocol/server` (AGSC-09-19,

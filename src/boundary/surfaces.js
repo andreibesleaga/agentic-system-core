@@ -153,6 +153,12 @@ const PINNED_BY_SPEC = Object.freeze(['llms-txt', 'chunks', 'mcp', 'webmcp']);
 const RESPONDER_PROTOCOLS = Object.freeze(['mcp', 'a2a']);
 /** AGSC-10-13: the only board a 1.0 reader consumes. */
 const STATIC_BOARD_ROUTE = '/boards/index.json';
+/**
+ * AGSC-06-34: the well-known URI of the `a2a-card` surface, permanent in the IANA registry, and
+ * AGSC-06-42: the media type a catalogue entry names for it.
+ */
+const A2A_CARD_ROUTE = '/.well-known/agent-card.json';
+const A2A_CARD_MEDIA_TYPE = 'application/a2a-agent-card+json';
 
 function finding(code, severity, extra) {
   return Object.freeze(Object.assign({ code, message: '', severity }, extra || {}));
@@ -368,6 +374,8 @@ function checkMcpExtensions(extensions, options) {
 
 module.exports = {
   finding,
+  A2A_CARD_MEDIA_TYPE,
+  A2A_CARD_ROUTE,
   ACCESS_CLASSES,
   BUILT_IN,
   DECLARATION_ONLY,

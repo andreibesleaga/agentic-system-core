@@ -8,7 +8,10 @@
 // under `/ns/<major>.<minor>.<patch>/` are immutable), AGSC-06-39 (the one policy of
 // `/query/` and the files under it, which admits the page's WebAssembly engine) and AGSC-11-20 (a `restricted`
 // node applies the wildcard to the discovery document alone, and the profile detaches
-// the wildcard that the host adds by default).
+// the wildcard that the host adds by default) and AGSC-06-40 (the FAIR Signposting links of the
+// home page, in the one `Link` field of the block of `/`, after the `describedby` value of
+// AGSC-11-05; the blocks of the agent card and the two catalogue files when the build writes them,
+// AGSC-06-34, AGSC-06-42).
 //
 // AGSC-11-03 and AGSC-11-05 are the BOUNDARY chapter's rules and are implemented
 // once, in `boundary/visibility.js` — the anti-corruption layer that owns them. This
@@ -23,7 +26,12 @@ const {
   WELLKNOWN_PATH, WELLKNOWN_ALIAS, MEDIA_TYPE, PROFILE,
 } = require('./discovery.js');
 const visibility = require('../boundary/visibility.js');
+const federation = require('../boundary/federation.js');
+const { A2A_CARD_ROUTE } = require('../boundary/surfaces.js');
+const { licenseUrl } = require('../knowledge/chunks.js');
 const { singleLine } = require('../knowledge/unicode.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
+const aiCatalog = require('./ai-catalog.js');
 
 /** AGSC-11-03: the CORS pair, on every public artefact. Credentials: never. */
 const CORS = Object.freeze(Object.entries(visibility.CORS_HEADERS).map((pair) => Object.freeze(pair)));
@@ -47,6 +55,73 @@ const PUBLIC_ARTEFACTS = Object.freeze([
   '/attachments/*',
   '/graph/fragments/*',
 ]);
+
+/**
+ * AGSC-06-34, AGSC-06-42: the well-known files a build writes only on a switch, and the content
+ * type each is served with (`null`: the host's default for `.json`). Each is a public artefact
+ * (AGSC-11-03), so its block exists only where the build wrote the file and no other node's
+ * `_headers` changes.
+ */
+const OPT_IN_FILES = Object.freeze([
+  [A2A_CARD_ROUTE, null],
+  [aiCatalog.ARD_PATH, aiCatalog.ARD_MEDIA_TYPE],
+  [aiCatalog.AI_CATALOG_PATH, aiCatalog.AI_CATALOG_MEDIA_TYPE],
+]);
+
+/** AGSC-06-40: the files an `item` link names, in order, with the type each is served with. */
+const SIGNPOSTED_ITEMS = Object.freeze([
+  ['/graph.nq', 'application/n-quads'],
+  ['/graph.ttl', 'text/turtle'],
+  ['/chunks.jsonl', 'application/jsonl'],
+]);
+
+/**
+ * RFC 8288 §3: one link value, every parameter quoted, as the `describedby` value of AGSC-11-05 is
+ * written (vector bnd-0033 pins that quoting, which `http-link-header`'s writer does not produce,
+ * so the tests read these values with that library and this writer stays). A configured URL that
+ * holds `<`, `>` or `"`, which no URI may hold, has them percent-encoded so it cannot end the value.
+ */
+function linkValue({ href, rel, type }) {
+  const target = String(href).replace(/[<>"]/gu, (c) => encodeURIComponent(c));
+  return `<${target}>; rel="${rel}"${type === undefined ? '' : `; type="${type}"`}`;
+}
+
+/**
+ * AGSC-06-40: the typed links FAIR Signposting Level 1 asks of a landing page, as data, after the
+ * `describedby` link of AGSC-11-05 — `cite-as` (the first `related[]` `cite-as` in `href` order, else
+ * the Bundle IRI), the two `type` links, `describedby` for `/graph.jsonld`, an `item` for each graph
+ * file and the chunks the node serves (none on a `restricted` node), `license` (the licence URL of
+ * AGSC-06-44, when the node has one) and `linkset`. Targets on the node are root-relative; `cite-as`
+ * and `license` are absolute. Only a node that writes a home page sends them: a Level-0 publisher
+ * writes none (AGSC-10-02) and keeps the one link of 1.0.
+ *
+ * @param {object} config `agsc.config.json`.
+ * @param {Array<string>} routes the routes the build emits.
+ * @returns {Array<{href:string, rel:string, type?:string}>}
+ */
+function homeLinks(config = {}, routes = []) {
+  const emitted = new Set(routes);
+  const out = [{ href: WELLKNOWN_PATH, rel: 'describedby', type: MEDIA_TYPE }];
+  if (!emitted.has('/index.html')) return out;
+  const base = withoutTrailingSlashes(String((config.site || {}).base || ''));
+  const citeAs = (federation.relatedLinks(config).links['cite-as'] || [])[0];
+  out.push({ href: citeAs === undefined ? `${base}/` : citeAs.href, rel: 'cite-as' },
+    { href: 'https://schema.org/Dataset', rel: 'type' }, { href: 'https://schema.org/AboutPage', rel: 'type' });
+  if (emitted.has('/graph.jsonld')) out.push({ href: '/graph.jsonld', rel: 'describedby', type: 'application/ld+json' });
+  if (config.visibility !== 'restricted') {
+    for (const [route, type] of SIGNPOSTED_ITEMS) if (emitted.has(route)) out.push({ href: route, rel: 'item', type });
+  }
+  const license = licenseUrl(config, { legal: emitted.has('/legal/index.html') });
+  if (license !== null) out.push({ href: license, rel: 'license' });
+  out.push({ href: WELLKNOWN_PATH, rel: 'linkset', type: MEDIA_TYPE });
+  return out;
+}
+
+/** AGSC-06-40, AGSC-11-05: the one `Link` field of `/`, its first value the 1.0 `describedby` value. */
+function homeLinkField(config, routes) {
+  const [, ...signposts] = homeLinks(config, routes);
+  return [visibility.DESCRIBEDBY_LINK_HEADER, ...signposts.map(linkValue)].join(', ');
+}
 
 /** AGSC-11-05: the routes whose representation changes on every build. */
 const NO_CACHE = visibility.NO_CACHE_ROUTES;
@@ -152,8 +227,9 @@ function headerSets(config = {}, routes = []) {
   // AGSC-06-17, AGSC-11-20: a host that adds the wildcard by default is told to drop it;
   // the discovery document's own block, which follows, attaches it again.
   if (restricted) add('/*', [['!', 'Access-Control-Allow-Origin']]);
-  // AGSC-11-05: the discovery link as a response header, on the Bundle IRI.
-  add('/', [['Link', visibility.DESCRIBEDBY_LINK_HEADER]]);
+  // AGSC-11-05: the discovery link as a response header, on the Bundle IRI; AGSC-06-40 adds the
+  // Signposting links to the same field, so the block of `/` stays one block (AGSC-06-17).
+  add('/', [['Link', homeLinkField(config, routes)]]);
   // AGSC-11-20: a restricted node serves the discovery document publicly and
   // applies the wildcard to NOTHING else.
   for (const route of (restricted ? [WELLKNOWN_PATH] : PUBLIC_ARTEFACTS)) add(route, CORS);
@@ -166,6 +242,10 @@ function headerSets(config = {}, routes = []) {
     }
     if (NO_CACHE.includes(route)) headers.push(['Cache-Control', 'no-cache']);
     add(route, headers);
+  }
+  // AGSC-06-34, AGSC-06-42: the opt-in well-known files, public artefacts, where the build wrote them.
+  for (const [route, type] of OPT_IN_FILES.filter(([one]) => routes.includes(one))) {
+    add(route, [...(restricted ? [] : CORS), ...(type === null ? [] : [['Content-Type', type]])]);
   }
   // AGSC-06-06: the versioned copies never change; no other address of `/ns/` gets the value.
   for (const version of versionDirectories(routes)) add(`/ns/${version}/*`, [['Cache-Control', IMMUTABLE]]);
@@ -211,6 +291,8 @@ function redirectsFile(renames = []) {
 
 module.exports = {
   headerSets,
+  homeLinks,
+  homeLinkField,
   headersFile,
   redirectsFile,
   etag,

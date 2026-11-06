@@ -196,6 +196,8 @@ graph TB
 | distribution | `query-page.js` `query-examples.js` `query/*.js` `vendor/oxigraph-0.5.13/` | `/query/` (1.1, AGSC-06-39): a SPARQL 1.1 editor over the node's own `graph.nq`, run in the visitor's browser by a vendored engine (Oxigraph 0.5.13, WebAssembly, hash-pinned) in a worker; table, picture (the explorer's layout), CSV and JSON downloads, a share link in the fragment, the ten questions as examples filled in from the node and the node's competency questions, the vocabulary explorer with the node's site vocabulary; switched off by `site.query_page: false` | — | build |
 | distribution | `search.js` | inverted index `search.json` | 8 | build |
 | distribution | `discovery.js` | linkset with `digest`/`agsc-*` target attributes, `llms.txt`, sitemap, robots, tdmrep, `_headers`, `_redirects` | 10 | build |
+| distribution | `well-known.js` `a2a-card.js` `ai-catalog.js` | the well-known files in order (1.1): the A2A agent card for a node with a responder (AGSC-06-34; `a2a-card.js` compiled from `src-ts/`, on the official A2A SDK), the discovery document with its derived surfaces, and the opt-in catalogue files `ard.json` and `ai-catalog.json` with the digests of the other two (AGSC-06-42) | — | build |
+| distribution | `front-page.js` `headers.js` | the home page's Dataset block with licence, creator, downloads and the PROV-O terms (1.1, AGSC-06-41), and the FAIR Signposting links in the `Link` header of `/` (1.1, AGSC-06-40) | — | build |
 | distribution | `now.js` | `/now/` + `now.md` from stored state only | 11 | build refresh |
 | distribution | `site.js` | route set → `www/` | 1, 9 | build |
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
@@ -589,7 +591,8 @@ the tool server is `src/distribution/mcp-stdio.js` with `mcp-tools.js` and
 `mcp-resources.js` (no `mcp.js`), and from 1.1 `tool-answers.js`, the portable answers both
 transports share, and `mcp-core.js` (compiled from `src-ts/distribution/mcp-core.ts`), the
 server on the official MCP SDK that both MCP transports build, and `mcp-http.js` (compiled from
-`src-ts/distribution/mcp-http.ts`), the Streamable HTTP transport of `mcp --http`; pages are rendered by `src/distribution/html.js` with no
+`src-ts/distribution/mcp-http.ts`), the Streamable HTTP transport of `mcp --http`, and
+`a2a-card.js` (compiled from `src-ts/distribution/a2a-card.ts`), the A2A agent card; pages are rendered by `src/distribution/html.js` with no
 template files (no `templates/*.html`). There is no `src/interchange/channels.js` and no
 `channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
 channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is

@@ -94,7 +94,7 @@ agsc ci
 ```
 
 ```text expect
-ci: pass (0 error, 7 warn)
+ci: pass (0 error, 8 warn)
 warn: AGSC-E506 site.base is the development placeholder http://localhost/; set an https: base before publishing (AGSC-01-19) — agsc.config.json
 warn: AGSC-E408 a concept carries no description (AGSC-02-21) — content/concepts/hydration.md
 warn: AGSC-E305 "hydration" has no inbound Link and no clusters[] entry (AGSC-03-10) — content/concepts/hydration.md
@@ -102,8 +102,9 @@ warn: AGSC-E305 "hydration" has no inbound Link and no clusters[] entry (AGSC-03
 
 Use your own address in `Contact:` (`mailto:` or `https:`). `agsc ci` checks every
 note, builds the site twice and compares the bytes, and verifies the result. A
-**warning** does not stop anything: here, notes without a one-line description, and
-notes no other note points at with a *typed* link (a link in the text is fine for
+**warning** does not stop anything: here, notes without a one-line description, a site
+description shorter than the 50 characters dataset search reads (`init` wrote it; §3 says
+how to set your own), and notes no other note points at with a *typed* link (a link in the text is fine for
 readers but does not count; typed links are explained in the
 [data model](https://agenticsystemcore.com/docs/data-model/)). An **error** stops the
 build and names the file and line.
@@ -119,7 +120,7 @@ ls www www/.well-known
 
 ```text expect
 wrote: 58 files under www/
-build: pass (0 error, 4 warn)
+build: pass (0 error, 5 warn)
 index.html
 llms.txt
 graph.jsonld
@@ -189,6 +190,17 @@ has them listed after these. The page stores nothing, not even your last
 query. It needs JavaScript; the engine it runs, Oxigraph, is about 4.4 MB and loads
 only on this page. To leave the page out, set `"query_page": false` under `site` in
 `agsc.config.json`; the build then writes no `/query/` and no link to it.
+
+Search engines and data catalogues find the same files from the home page alone. The
+JSON-LD block of `index.html` describes the site as a dataset: its licence, who made it
+and one download for each graph file, the chunks and the discovery document. The
+`Link` header the host sends with `/` (written into `_headers`) names the same files
+and the address to cite. To give the dataset a creator and a licence that names a
+version, add them to `agsc.config.json`, for example
+`"bundle": { "creator": { "name": "Josiah Carberry", "orcid": "0000-0002-1825-0097" }, "license_url": "https://creativecommons.org/licenses/by/4.0/" }`
+beside the keys `bundle` already has. A description of `content/index.md` shorter than
+50 characters gets a warning (`AGSC-E202`): dataset search ignores one that short. The
+one `init` wrote is shorter; write your own on the `description:` line of that file.
 
 ## 4. Change a note — as a proposal
 
@@ -261,7 +273,7 @@ agsc verify --ledger
 ```
 
 ```text expect
-ci: pass (0 error, 6 warn)
+ci: pass (0 error, 7 warn)
 wrote: 59 files under www/
 verify: pass (0 error, 0 warn)
 ```

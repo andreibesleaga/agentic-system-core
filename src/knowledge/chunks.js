@@ -43,6 +43,24 @@ const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 function termsFor(licenseProse) {
   return licenseProse == null || String(licenseProse) === TERMS ? TERMS : String(licenseProse);
 }
+
+/**
+ * AGSC-06-44: the LICENCE URL of a node, in this order: `bundle.license_url` (a URL that names a
+ * specific version of the licence, AGSC-01-18); else, when `bundle.license_prose` is the Content
+ * Use Terms identifier or absent and the node emits `/legal/`, the absolute URL of `/legal/`;
+ * else none. The same URL is the `license` link of AGSC-06-40, the `license` of the Dataset block
+ * (AGSC-06-41) and the `license_url` of every chunk.
+ *
+ * @param {object} config `agsc.config.json`.
+ * @param {{legal?: boolean}} [options] `legal`: the build emits `/legal/` (AGSC-06-18).
+ * @returns {string|null}
+ */
+function licenseUrl(config, options = {}) {
+  const bundle = (config && config.bundle) || {};
+  if (typeof bundle.license_url === 'string' && bundle.license_url !== '') return bundle.license_url;
+  if (options.legal !== true || termsFor(bundle.license_prose) !== TERMS) return null;
+  return `${withoutTrailingSlashes(String(((config && config.site) || {}).base || ''))}/legal/`;
+}
 /** AGSC-08-18: the value an agent MUST attach when chunk text re-enters a model. */
 const TRUST = 'untrusted';
 /** AGSC-06-27: the default of `chunks.max_bytes`; the schema bounds it (AGSC-11-01). */
@@ -475,6 +493,7 @@ module.exports = {
   TYPE_PLURAL,
   TERMS,
   termsFor,
+  licenseUrl,
   TRUST,
   ITEMS_PER_SHARD,
   EXCLUDED_STATUS,

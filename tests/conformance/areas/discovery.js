@@ -9,7 +9,9 @@
 // robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node
 // carries, disc-0018 the bundle hash, disc-0019 a newer MINOR's relation,
 // disc-0008 every item reachable from /llms.txt, disc-0009 the sitemap, disc-0022
-// the one access link of a restricted node, judged by the shipped discovery checker.
+// the one access link of a restricted node, judged by the shipped discovery checker;
+// disc-0026 to disc-0032 (Signposting, the Dataset block, the catalogue files, the A2A card)
+// in _discovery-web.js.
 //
 // Every handler is guarded (_expected-reads.js): a pass that left a member of
 // `expected` unread is a fail.
@@ -20,6 +22,7 @@ const llms = require('../../../src/distribution/llms.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
+const web = require('./_discovery-web.js');
 
 /** RFC 8288 §3.4 / RFC 9264 §4.2.4: the members that are NOT target attributes. */
 const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title*', 'type']);
@@ -609,6 +612,8 @@ const HANDLERS = {
   'disc-0012': robotsCase,
   'disc-0008': reachabilityCase,
   'disc-0009': sitemapCase,
+  // The web connection of 1.1 (_discovery-web.js).
+  ...web.HANDLERS,
 };
 
 // Guarded: a pass that left a member of `expected` unread is a fail (_expected-reads.js).

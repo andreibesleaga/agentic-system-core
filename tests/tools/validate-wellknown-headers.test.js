@@ -169,6 +169,23 @@ it('AGSC-11-05: no ETag, no no-cache on the document, and immutable anywhere are
   assert.equal(one(/graph\.ttl.*immutable/u)[0].code, 'AGSC-E201');
 });
 
+// AGSC-06-40 with AGSC-06-25: the checker reads the Link header of the home page `/`, and a
+// header without the describedby link to the discovery document is a warning, never an error.
+it('AGSC-06-40: the home page\'s Link header without the describedby link is a warning under AGSC-E202', async () => {
+  mutate = (headers, route) => {
+    if (route === '/') headers.link = '</graph.jsonld>; rel="describedby"; type="application/ld+json"';
+    return headers;
+  };
+  const { code, envelope } = await check(2);
+  assert.equal(code, 0, JSON.stringify(envelope.findings));
+  const hits = about(envelope, 'AGSC-06-40');
+  assert.equal(hits.length, 1, JSON.stringify(envelope.findings));
+  assert.deepEqual([hits[0].code, hits[0].severity], ['AGSC-E202', 'warn']);
+  assert.match(hits[0].message, /Link header of \/ carries no describedby link/u);
+  mutate = (headers) => headers;
+  assert.deepEqual(about((await check(2)).envelope, 'AGSC-06-40'), [], 'the built _headers block of / names it');
+});
+
 it('AGSC-06-06: immutable on a versioned /ns/<x.y.z>/ copy is not reported, anywhere else it is', () => {
   const { headerShortfalls } = require('../../tools/validate-wellknown');
   const headers = { etag: '"x"', 'cache-control': 'public, max-age=31536000, immutable' };
@@ -212,6 +229,12 @@ it('AGSC-11-20: a restricted node is asked the cross-origin pair on its document
         'content-type': 'application/linkset+json; profile="https://w3id.org/agentic-system-core/profile/agentic-knowledge"',
         ...(documentCors ? { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'Link, ETag, Content-Type' } : {}) });
       res.end(`${JSON.stringify({ linkset: [ctx] })}\n`);
+      return;
+    }
+    if (req.url === '/') {
+      // AGSC-06-40: the home page names the discovery document in its Link header.
+      res.writeHead(200, { link: '</.well-known/knowledge-linkset>; rel="describedby"; type="application/linkset+json"' });
+      res.end('');
       return;
     }
     res.writeHead(files[req.url] ? 200 : 404, { etag: '"t"' });

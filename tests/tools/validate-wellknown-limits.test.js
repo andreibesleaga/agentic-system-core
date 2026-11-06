@@ -103,6 +103,12 @@ before(async () => {
       res.end('# x\n');
       return;
     }
+    if (req.url === '/quick/') {
+      // AGSC-06-40: the node's home page, whose Link header names the discovery document.
+      res.writeHead(200, { 'content-type': 'text/html', link: '<.well-known/knowledge-linkset>; rel="describedby"; type="application/linkset+json"' });
+      res.end('<!doctype html>');
+      return;
+    }
     if (req.url === '/quick/.well-known/knowledge-linkset') {
       res.writeHead(200, SERVED);
       res.end(documentAt(`${origin}/quick/`));
@@ -190,9 +196,10 @@ it('a complete response clears its own deadline, and only that one', async () =>
   assert.equal(await done, 0, io.out);
   assert.equal(io.err, '');
   assert.equal(JSON.parse(io.out).status, 'pass');
-  assert.equal(timer.setCalls.length, 1);
-  assert.ok(timer.cleared.length >= 1);
-  assert.ok(timer.cleared.every((handle) => handle === timer.setCalls[0]), 'a deadline other than the response\'s own was cleared');
+  // Two responses, each with its own deadline: the document and the home page (AGSC-06-40).
+  assert.equal(timer.setCalls.length, 2);
+  assert.ok(timer.setCalls.every((handle) => timer.cleared.includes(handle)), 'a complete response left its deadline set');
+  assert.ok(timer.cleared.every((handle) => timer.setCalls.includes(handle)), 'a deadline other than the responses\' own was cleared');
 });
 
 it('a fetched discovery document over 1 MiB is AGSC-E907, not AGSC-E904', async () => {

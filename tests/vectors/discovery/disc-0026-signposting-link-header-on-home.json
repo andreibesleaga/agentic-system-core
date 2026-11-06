@@ -147,7 +147,7 @@
         "findings": [
           {
             "code": "AGSC-E202",
-            "severity": "warning"
+            "severity": "warn"
           }
         ],
         "name": "home-without-the-describedby-link"

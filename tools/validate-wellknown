@@ -14,7 +14,9 @@
 // are checked with no network (NFR-13). A <url> argument is also checked for the
 // response headers of the rules on cross-origin reading and caching (AGSC-11-03,
 // AGSC-11-05) on the document and on every same-origin public artefact the run reads:
-// errors at Level 2 and above, warnings below (AGSC-09-93, as amended).
+// errors at Level 2 and above, warnings below (AGSC-09-93, as amended); and the `Link` header
+// of the node's home page `/` is read for the `describedby` link to the discovery document,
+// whose absence is a warning, because AGSC-06-25 makes that header a SHOULD (AGSC-06-40).
 //
 // Error codes. The §9.4 registry names no dedicated code for the shape checks of
 // AGSC-09-93; until a MINOR assigns them this tool uses
@@ -369,6 +371,42 @@ function headerShortfalls(headers, { cors, noCache, versioned }) {
   return out;
 }
 
+/**
+ * AGSC-06-40 with AGSC-06-25: the values of the `Link` header of `/` carry a `describedby` link
+ * whose target is the discovery document under the anchor (a relative or an absolute reference).
+ * Its absence is a warning under AGSC-E202: the header is a SHOULD. The values are split and read
+ * as RFC 8288 §3 writes them (`<target>` then `;` parameters, `rel` a token or a quoted string of
+ * space-separated relation types); this tool stays standalone (AGSC-09-90), so no parser library.
+ */
+function homeLinkFindings(values, options = {}) {
+  const anchor = options.anchor || 'https://invalid.example/';
+  const wellknown = new URL(`.well-known/${WELLKNOWN_SUFFIX}`, anchor).href; // as the peer check names it
+  const field = [].concat(values == null ? [] : values).join(',');
+  const found = field.split(/,(?=\s*<)/).some((one) => {
+    const m = /^\s*<([^>]*)>(.*)$/s.exec(one);
+    if (!m) return false;
+    const rel = /;\s*rel\s*=\s*(?:"([^"]*)"|([^;,\s]+))/i.exec(m[2]);
+    let target;
+    try { target = new URL(m[1], anchor).href; } catch { return false; }
+    return target === wellknown && rel !== null && (rel[1] || rel[2]).toLowerCase().split(/\s+/).includes('describedby');
+  });
+  if (found) return [];
+  return [{ code: 'AGSC-E202', col: 1, file: options.file || '/', line: 1, severity: 'warn',
+    message: `the Link header of / carries no describedby link to ${wellknown} (AGSC-06-25, AGSC-06-40: a SHOULD)` }];
+}
+
+/** AGSC-06-40: given a URL, the `Link` header of the node's home page, the anchor. */
+async function checkHomeLink(src, anchor, findings, session) {
+  if (src.kind !== 'url') return; // a file has no response headers
+  let headers;
+  try { headers = (await fetchUrl(anchor.href, TARGET_MAX_BYTES, session)).headers; } catch (e) {
+    findings.push({ code: 'AGSC-E202', col: 1, file: anchor.href, line: 1, severity: 'warn',
+      message: `the Link header of / could not be read: ${e.message} (AGSC-06-25, AGSC-06-40)` });
+    return;
+  }
+  findings.push(...homeLinkFindings(headers.link, { anchor: anchor.href, file: anchor.href }));
+}
+
 /** AGSC-09-93: one fetched response, if it is the document or a same-origin public artefact. */
 function checkHeaders(got, isDocument, run) {
   if (!got || !got.headers || run.seen.has(got.url)) return; // a file has no response headers
@@ -625,6 +663,7 @@ async function check(src, level, findings, session) {
   checkGate(ctx, anchorLink, gated, level, F);
   const version = checkVersion(anchorLink, F);
   await checkRelations({ anchor, anchorLink, ctx, F, gated, headerChecks, level, result, src, version });
+  await checkHomeLink(src, anchor, findings, session);
   return result;
 }
 
@@ -676,4 +715,4 @@ async function run(argv, io = {}) {
 
 if (require.main === module) run(process.argv.slice(2)).then((code) => process.exit(code));
 
-module.exports = { headerShortfalls, mediaTypeOk, run };
+module.exports = { headerShortfalls, homeLinkFindings, mediaTypeOk, run };

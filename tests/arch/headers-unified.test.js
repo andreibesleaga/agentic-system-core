@@ -58,6 +58,19 @@ test('the CORS pair and the no-cache list are ONE definition, not two', () => {
     [['Link', visibility.DESCRIBEDBY_LINK_HEADER]]);
 });
 
+// AGSC-06-40 (spec/06, a Distribution rule) adds the FAIR Signposting links to the same `Link` field
+// of `/`; the boundary's AGSC-11-05 value stays that field's first value, byte for byte.
+test('AGSC-06-40 with AGSC-11-05: the Link field of a node with a home page starts with the boundary\'s value', () => {
+  const routes = ['/index.html', '/graph.jsonld', '/graph.nq', '/graph.ttl', '/chunks.jsonl'];
+  for (const visibilityValue of ['public', 'restricted']) {
+    const config = { site: { base: 'https://a.example/' }, visibility: visibilityValue };
+    const home = headers.headerSets(config, routes).find((s) => s.route === '/').headers.filter(([name]) => name === 'Link');
+    assert.strictEqual(home.length, 1, 'one Link field in the one block of / (AGSC-06-17)');
+    assert.ok(home[0][1].startsWith(`${visibility.DESCRIBEDBY_LINK_HEADER}, `), home[0][1]);
+    assert.strictEqual(visibility.headersFor('/', { level: 2, visibility: visibilityValue }).Link, visibility.DESCRIBEDBY_LINK_HEADER);
+  }
+});
+
 test('AGSC-11-03: the credentials header is emitted nowhere', () => {
   const text = headers.headersFile({});
   for (const forbidden of visibility.FORBIDDEN_HEADERS) {

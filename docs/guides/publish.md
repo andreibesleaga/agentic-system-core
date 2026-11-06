@@ -42,8 +42,8 @@ agsc build
 ```
 
 ```text expect
-ci: pass (0 error, 3 warn)
-build: pass (0 error, 2 warn)
+ci: pass (0 error, 4 warn)
+build: pass (0 error, 3 warn)
 ```
 
 `site.base` must be the address you will publish at, ending in `/`: every page and every

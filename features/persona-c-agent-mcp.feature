@@ -156,3 +156,17 @@ Feature: Agent reader queries structured knowledge without scraping
     Then the answer is the envelope the server gives over standard input and output for the same call (AGSC-09-18)
     And a request from the origin "https://evil.example" is refused with HTTP 403 and runs no tool
     And nothing is written to the Bundle by the server
+
+  @PRD-024 @agent @mode-1
+  Scenario: An A2A client finds an agent card only on a node that declares a responder, and a catalogue crawler finds both files by digest
+    Given a fresh copy of the acceptance Bundle
+    And the configuration declares the a2a-card surface and no responder
+    When the publisher runs "agsc build --json"
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E210"
+    And the Bundle does not hold "www/.well-known/agent-card.json"
+    Given the configuration declares a responder "https://agenticsystemcore.com/a2a" beside the a2a-card surface and switches discovery.ai_catalog on
+    When the publisher runs "agsc build --json"
+    Then the command exits 0
+    And the official A2A SDK reads "www/.well-known/agent-card.json" back unchanged, with one skill for each skill pack
+    And the entries of "www/.well-known/ai-catalog.json" and "www/.well-known/ard.json" carry the SHA-256 of the card and of the discovery document as built
