@@ -19,16 +19,17 @@
  * stdio server and the browser page can only agree).
  * Requirements: PRD-023, PRD-051, PRD-056, N9, NFR-07.
  *
- * THE TOOLS OF 1.1 answer over the LISTED set (AGSC-09-16), as the page tools must, and
- * through the portable functions of `distribution/tool-answers.js`, which the page runs
- * as its own source text: `brief` composes over the listed items and returns the content of
- * `brief.json` (AGSC-07-25), `explain` answers whether one edge holds and why (AGSC-05-33),
- * `check` returns the Link warnings of AGSC-03-23…03-26. The build instant, the content
- * version and the chunk lines are read from the route map of the build the `mcp` verb made
- * (`options.artifacts`), the routes a page reads; without one, `read` carries no chunk and
- * the brief no instant, and no byte is invented. The domain parts of AGSC-09-13 (vector
- * `cli-0037`, not written yet) join a `search` hit, the `read` body and the `brief` items, as
- * the header of `tool-answers.js` says.
+ * THE TOOLS OF 1.1 answer through the portable functions of `distribution/tool-answers.js`,
+ * which the page runs as its own source text: `brief` composes over the LISTED set
+ * (AGSC-09-16), the set a page sees, and returns the content of `brief.json` (AGSC-07-25);
+ * `explain` answers whether one edge holds and why (AGSC-05-33) and `check` returns the Link
+ * warnings of AGSC-03-23…03-26, both from the Bundle as it is on disk, drafts included, as
+ * `read` and `links` do (AGSC-09-13), `check` with no selection checking the listed items.
+ * The build instant, the content version and the chunk lines are read from the route map of
+ * the build the `mcp` verb made (`options.artifacts`), the routes a page reads; without one,
+ * `read` carries no chunk and `brief` answers `AGSC-E901`, so no byte is invented. The
+ * domain parts of AGSC-09-13 (vector `cli-0037`, not written yet) join a `search` hit, the
+ * `read` body and the `brief` items, as the header of `tool-answers.js` says.
  *
  * PURE over a loaded Bundle: no clock, no network, no process. The Proposal
  * SIDE EFFECT (AGSC-08-04's `dist/proposal/<n>.patch` and `.md`) is NOT taken
@@ -260,8 +261,9 @@ function tools(bundle, options) {
     }
     const facts = listedFacts(listed());
     const core = { briefOf, compose, selectionDigestInput };
-    const body = answers.toolBrief(core, facts, args.selection, (text) => createHash('sha256').update(text, 'utf8').digest('hex'));
-    return envelope('brief', 'brief', body);
+    const answer = answers.toolBrief(core, facts, args.selection, (text) => createHash('sha256').update(text, 'utf8').digest('hex'));
+    return answer.fault === undefined ? envelope('brief', 'brief', answer.body)
+      : errorEnvelope('brief', answer.fault.code, answer.fault.message);
   };
 
   implementations.explain = (args) => {

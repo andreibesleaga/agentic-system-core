@@ -321,23 +321,32 @@ function briefRequested(ctx, bundle) {
 }
 
 /**
- * AGSC-07-25: write the four files of the brief in the companion directory, for a valid or an
- * invalid composition; and, when `from` names a saved architecture (AGSC-02-97), the blueprint
- * outputs of AGSC-07-29 in its subdirectory `blueprint/`. Both name the listed items only
- * (AGSC-00-05): no draft, no retired item, no item the `releases` switchboard holds back.
+ * AGSC-07-25: the four files of the brief, for a valid or an invalid composition; and, when
+ * `from` names a saved architecture (AGSC-02-97), the blueprint outputs of AGSC-07-29 in the
+ * subdirectory `blueprint/`. Both name the listed items only (AGSC-00-05): no draft, no retired
+ * item, no item the `releases` switchboard holds back. They are computed before anything is
+ * written, so a brief above the engine's bound (`brief.js#derivedBound`) stops the run with its
+ * `AGSC-E904` finding and leaves no Harness behind it.
  *
  * @param {string} [from] the slug of `--from`, when the selection came from a saved item.
- * @returns {Array<string>} the paths written.
+ * @returns {{dir: string, files: Array<[string, string]>, findings: Array<object>}} the Harness
+ *   directory the companion directory sits beside, the files and the refusal.
  */
-function writeBrief(ctx, bundle, result, items, from) {
+function briefOutputs(ctx, bundle, result, items, from) {
   const options = harnessOptions(ctx, bundle, result, items);
   const releases = (bundle.config || {}).releases;
   const listed = items.filter((item) => isPublished(item, releases)).map((item) => item.slug);
   const saved = from === undefined ? undefined : items.find((item) => item.slug === from);
-  const outputs = saved !== undefined && architecture.isArchitecture(saved)
-    ? blueprint.blueprintFiles(result, { ...options, architecture: from, listed })
-    : [];
-  return writeCompanion(ctx, harnessDir(ctx, options.name), [...brief.briefFiles(result, { ...options, listed }), ...outputs]);
+  const dir = harnessDir(ctx, options.name);
+  try {
+    const outputs = saved !== undefined && architecture.isArchitecture(saved)
+      ? blueprint.blueprintFiles(result, { ...options, architecture: from, listed })
+      : [];
+    return { dir, files: [...brief.briefFiles(result, { ...options, listed }), ...outputs], findings: [] };
+  } catch (e) {
+    if (e.code !== 'AGSC-E904') throw e;
+    return { dir, files: [], findings: [{ code: e.code, message: e.message, severity: 'error' }] };
+  }
 }
 
 /**
@@ -489,10 +498,15 @@ function run(ctx) {
   // AGSC-07-30 / AGSC-11-24: a crosswalk the context map cannot carry stops the run too.
   const peers = contextPeers(bundle);
   findings.push(...peers.findings);
-  const failed = findings.some((f) => f.severity === 'error');
   // AGSC-07-25: the brief is written for an invalid composition too, and for no run that another
-  // error stopped (an `--emit` target, a crosswalk, a `--from` item without its selection).
+  // error stopped (an `--emit` target, a crosswalk, a `--from` item without its selection, a
+  // brief above the engine's bound).
   const stopped = findings.some((f) => f.severity === 'error' && !conflicts.includes(f));
+  const briefed = !stopped && briefRequested(ctx, bundle)
+    ? briefOutputs(ctx, bundle, result, items, from === undefined ? undefined : String(from))
+    : { dir: '', files: [], findings: [] };
+  findings.push(...briefed.findings);
+  const failed = findings.some((f) => f.severity === 'error');
   if (failed && ctx.verbFlags && ctx.verbFlags.zip === true) {
     helpers.note(ctx, 'harness missing: the archive of --zip, for the same reason (AGSC-07-17)');
   }
@@ -506,10 +520,8 @@ function run(ctx) {
   if (emission.dir !== null) helpers.note(ctx, `harness: ${emission.dir} (${emission.files.length} files)`);
   for (const file of emission.companion || []) helpers.note(ctx, `companion: ${file} (AGSC-07-30)`);
   for (const missing of emission.missing) helpers.note(ctx, `harness missing: ${missing}`);
-  if (!stopped && briefRequested(ctx, bundle)) {
-    for (const file of writeBrief(ctx, bundle, result, items, from === undefined ? undefined : String(from))) {
-      helpers.note(ctx, file.includes('.companion/blueprint/') ? `blueprint: ${file} (AGSC-07-29)` : `brief: ${file} (AGSC-07-25)`);
-    }
+  for (const file of writeCompanion(ctx, briefed.dir, briefed.files)) {
+    helpers.note(ctx, file.includes('.companion/blueprint/') ? `blueprint: ${file} (AGSC-07-29)` : `brief: ${file} (AGSC-07-25)`);
   }
   if (narrate !== undefined) findings.push(narrationRefusal(narrate));
 

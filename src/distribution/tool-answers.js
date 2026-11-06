@@ -372,25 +372,42 @@ function toolLinkWarnings(edges, itemOf) {
  * composed over `facts.items` (the listed set, AGSC-09-16) with the host's build instant and
  * content version, writing nothing. `core` is the composition algebra (`compose`, `briefOf`,
  * `selectionDigestInput`); `hash` is SHA-256 to lowercase hex, synchronous in Node and a
- * promise in a page, so the answer is the body or a promise of it.
+ * promise in a page, so the answer is `{body}` or a promise of it.
+ *
+ * A call the tool cannot fulfil answers `{fault: {code, message}}`, which each transport turns
+ * into the error envelope of AGSC-09-13a: `AGSC-E901` when the host has no build instant, because
+ * its discovery document (AGSC-06-08) is absent or unreadable and no instant or content version
+ * may be invented; `AGSC-E904` when the brief is above the engine's bound
+ * (`composition/brief.js#derivedBound`).
  *
  * @param {object} core the algebra, as `composition/browser.js` emits it with the brief.
  * @param {{base:string, host:object, items:Array<object>, licenseProse:string}} facts
  * @param {Array<string>} selection
  * @param {function(string): (string|Promise<string>)} hash
- * @returns {object|Promise<object>}
+ * @returns {{body: object}|{fault: {code: string, message: string}}|Promise<object>}
  */
 function toolBrief(core, facts, selection, hash) {
+  if (facts.host.instant === '') {
+    return { fault: { code: 'AGSC-E901', message: 'no build instant: the discovery document of a build '
+      + '(/.well-known/knowledge-linkset) is absent or unreadable, and the brief carries its instant and content version (AGSC-07-25)' } };
+  }
   const result = core.compose(facts.items, selection);
-  const finish = (digest) => core.briefOf(result, {
-    base: facts.base,
-    bundleVersion: facts.host.bundleVersion === '' ? undefined : facts.host.bundleVersion,
-    instant: facts.host.instant,
-    items: facts.items,
-    licenseProse: facts.licenseProse,
-    selectionDigest: digest,
-    specVersion: facts.host.specVersion,
-  });
+  const finish = (digest) => {
+    try {
+      return { body: core.briefOf(result, {
+        base: facts.base,
+        bundleVersion: facts.host.bundleVersion === '' ? undefined : facts.host.bundleVersion,
+        instant: facts.host.instant,
+        items: facts.items,
+        licenseProse: facts.licenseProse,
+        selectionDigest: digest,
+        specVersion: facts.host.specVersion,
+      }) };
+    } catch (e) {
+      if (e.code !== 'AGSC-E904') throw e;
+      return { fault: { code: e.code, message: e.message } };
+    }
+  };
   const digest = hash(core.selectionDigestInput(result));
   return digest !== null && typeof digest === 'object' && typeof digest.then === 'function' ? digest.then(finish) : finish(digest);
 }

@@ -1200,9 +1200,10 @@ function pageToolset(corpus, core, hash) {
         items: model.items.map((item) => Object.assign(pageFlatItem(item), { body: item.body })),
         licenseProse: model.licenseProse === undefined ? pageTerms() : model.licenseProse,
       };
-      const body = toolBrief(core, facts, args.selection, hash === undefined ? toolSha256Hex : hash);
-      const wrap = (value) => pageEnvelope('brief', 'brief', value);
-      return body !== null && typeof body.then === 'function' ? body.then(wrap) : wrap(body);
+      const answer = toolBrief(core, facts, args.selection, hash === undefined ? toolSha256Hex : hash);
+      const wrap = (value) => (value.fault === undefined ? pageEnvelope('brief', 'brief', value.body)
+        : pageErrorEnvelope('brief', value.fault.code, value.fault.message));
+      return typeof answer.then === 'function' ? answer.then(wrap) : wrap(answer);
     },
 
     // AGSC-09-13 `check`: the Link warnings of AGSC-03-23…03-26 about the selection.

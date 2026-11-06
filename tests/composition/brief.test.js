@@ -150,6 +150,39 @@ test('AGSC-07-25, AGSC-05-33: `derived` holds the readings of derive.js with the
   }), RUNS);
 });
 
+/** A chain of `n` Concepts, `c-<i>` requiring `c-<i-1>`: its `derived` grows with the cube of `n`. */
+const chainOf = (n) => Array.from({ length: n }, (_, i) => ({
+  body: '', ...(i > 0 ? { requires: [`c-${i - 1}`] } : {}), slug: `c-${i}`, title: `C ${i}`, type: 'concept',
+}));
+const steps = (readings) => readings.reduce((n, r) => n + r.because.reduce((m, b) => m + b.from.length, 0), 0);
+
+test('AGSC-07-25 (engine bound): a brief whose `derived` would hold more than 1,000,000 steps is AGSC-E904, raised before it is built', () => {
+  assert.strictEqual(brief.derivedBound(), 1000000);
+  const under = chainOf(144);
+  const kept = compose(under, ['c-143']);
+  assert.strictEqual(steps(brief.briefOf(kept, optionsFor(kept, under, undefined)).derived), 994994, 'at the bound the brief is whole');
+  const over = chainOf(145);
+  const result = compose(over, ['c-144']);
+  const refused = (e) => e.code === 'AGSC-E904' && /1,000,000 steps/u.test(e.message);
+  assert.throws(() => brief.briefOf(result, optionsFor(result, over, undefined)), refused);
+  assert.throws(() => brief.briefFiles(result, optionsFor(result, over, undefined)), refused);
+});
+
+test('AGSC-07-25 (engine bound): the readings are refused exactly when they hold more steps than the bound, whatever the order of the edges', () => {
+  fc.assert(fc.property(itemsArbitrary, fc.nat(40), fc.boolean(), (items, bound, reversed) => {
+    const all = items.map((i) => ({ ...i, status: 'stable' }));
+    const edges = brief.briefEdges(brief.listedIndex({ items: all }));
+    const whole = brief.chainReadings(edges, SLUGS);
+    const given = reversed ? [...edges].reverse() : edges;
+    try {
+      const kept = brief.chainReadings(given, SLUGS, bound);
+      return steps(whole) <= bound && JSON.stringify(kept) === JSON.stringify(whole);
+    } catch (e) {
+      return e.code === 'AGSC-E904' && steps(whole) > bound;
+    }
+  }), RUNS);
+});
+
 /** Whether the precedence edges `before` gives hold a cycle (a walk that meets a node on its own path). */
 function cyclic(bySlug, before) {
   const state = new Map();

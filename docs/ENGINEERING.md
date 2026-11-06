@@ -345,7 +345,11 @@ becomes a run-time dependency, and when a new agent-facing protocol module is pl
 JavaScript: a file `src/distribution/mcp-*.js`, `src/distribution/a2a*.js`,
 `src/application/hosting-http*.js` or under `bench/runners/` must be compiled from a
 source under `src-ts/`, except the three MCP modules that predate this rule
-(`mcp-stdio.js`, `mcp-tools.js`, `mcp-resources.js`). `tools/build-ts` compiles
+(`mcp-stdio.js`, `mcp-tools.js`, `mcp-resources.js`). A plain JavaScript module anywhere
+else in `src/` or `bench/` fails too when it requires `@modelcontextprotocol/sdk` or names
+`jsonrpc`, `registerTool` or `MCP-Protocol-Version`, except the five that did when that
+check began (`bench/parity.js`, `src/application/plugins.js`, `mcp-stdio.js`,
+`page-tools.js`, `webmcp.js`), so a protocol module cannot pass by its name. `tools/build-ts` compiles
 `src-ts/` into `src/` only, so the first runner of `bench/runners/` also extends it.
 The architecture scans of `tests/arch/` read the compiled files, which write
 `require("…")` with double quotes, like every other module of `src/`.

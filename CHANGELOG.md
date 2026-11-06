@@ -18,12 +18,15 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `compose/webmcp.js` of the ten tools are the only bytes that change against 2327f33):
   `compose/index.html` carries the workspace block, the cluster and tag filters and the places of the
   verdict in words, the brief and its downloads, fc897c8832959ee7 to ad46a800b69dc85e;
-  `compose/agsc-compose.js` fills them, 1dbf68b3fe7d51b2 to 7e5ceff8ff4557c2; `compose/agsc-core.js`
+  `compose/agsc-compose.js` fills them, and says why there is no brief above the engine's bound on
+  `derived`, 1dbf68b3fe7d51b2 to daa1f7668dfcb4b8; `compose/agsc-core.js`
   carries the blueprint of AGSC-07-29 beside the brief, and the one function that writes the four
   comment lines `diagram.mmd`, `brief.mmd` and each C4 file open with (AGSC-07-12, AGSC-07-25,
-  AGSC-07-29; the lines keep their bytes), d59bd12ec7050763 to 9192785b8eae7e64;
+  AGSC-07-29; the lines keep their bytes), the bound on `derived` and the Mermaid label of the
+  architecture's title, d59bd12ec7050763 to 26f6df7a27da280f;
   `compose/agsc-page-tools.js` keeps the published pages it read as `API.corpus`, so the page writes
-  the brief over the items the page tool `brief` reads, b41e50f5e2a3eeda to 3b64032af34ef4e2. The
+  the brief over the items the page tool `brief` reads, and carries the two faults of `brief`,
+  b41e50f5e2a3eeda to 2a3bcc23c35eb55f. The
   seven Harness files and the Harness archive keep their bytes.
 - Every item an import writes from a source this node does not own is written `status: draft`,
   whatever its licence and whatever status the source gave it, and reported once as `AGSC-E506`
@@ -82,6 +85,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   descriptions of the seven tools of 1.0 are unchanged. `agsc mcp`'s line in `agsc --help` reads
   "serves the ten tools"; the tool server reads the build instant, the content version and the chunk
   lines from the route map of the build the verb already makes in memory (AGSC-09-14b).
+- The TypeScript fitness test (`tests/arch/typescript-parts.test.js`, docs/ENGINEERING.md §8) also
+  fails a new plain JavaScript module anywhere in `src/` or `bench/` that requires
+  `@modelcontextprotocol/sdk` or names `jsonrpc`, `registerTool` or `MCP-Protocol-Version`; the
+  five modules that did at 12c243a are listed and the list never grows. It used to match file
+  names only, so a plain `src/distribution/streamable-http.js` passed.
 - The parity call list of the benchmark kit (`bench/corpus/parity-calls.json`) is version 2: nine
   calls and three per-item templates for `brief`, `explain` and `check` are added, so it still covers
   every tool of AGSC-09-13 (`docs/MEASUREMENTS.md` gives the figures of version 1).
@@ -859,6 +867,26 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and `docs/guides/mode-1.md` shows `lint.min_sources`.
 
 ### Fixed
+
+- A brief whose `derived` member (AGSC-07-25) would hold more than 1,000,000 steps in the paths of
+  its readings is refused with `AGSC-E904`, the code of a size cap: `compose --brief` and
+  `compose.brief: true` report it at exit 1 and write nothing, the Harness included; the `brief`
+  tool of both transports answers it in the error envelope of AGSC-09-13a; `/compose/` says why
+  there is no brief; an architecture's page says so in its brief section and the build goes on. The
+  rule sets no bound and the member grows with the cube of a chain's length: a chain of 400
+  `requires` Links made `compose --brief` crash after 29 s ("Invalid string length"), and the tool
+  server answered JSON-RPC `-32603`. The bound is the engine's (`composition/brief.js#derivedBound`);
+  a chain of 144 items (994,994 steps, about 31 MB of `brief.json`) is still written whole, one of
+  145 is refused. No 1.0 input changes: the brief is new in 1.1.
+- The `brief` tool answers `AGSC-E901` when the server or the page has no build instant, because the
+  discovery document of a build (AGSC-06-08) is absent or unreadable (AGSC-07-25, AGSC-09-13a). It
+  used to answer `bundle_version: "0.0.0+19700101T000000Z"` beside `generated_at: ""`, a content
+  version the build never had.
+- The architecture's title in `blueprint/c4-context.mmd` and `blueprint/c4-containers.mmd`
+  (AGSC-07-29) is written as a Mermaid label: a double quote is `#quot;` and a backslash is itself.
+  It went through the escape of `workspace.dsl`, so a title such as `The "Agent Team" architecture`,
+  which lint accepts, made both files fail to parse in Mermaid 11. A title with neither character
+  keeps its bytes, and so does every vector.
 
 - A diagram `line` that carries both `acc` and `thick` is refused with `AGSC-E412` (AGSC-01-42). It used
   to compile to a `<path>` with `stroke-width` written twice, which is not well-formed XML. The finding

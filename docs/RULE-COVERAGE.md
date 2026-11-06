@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 100 |
 | Checker header | 36 |
 
-Acceptance scenarios: 153 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 100 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 154 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 100 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -369,7 +369,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-07-22 | VERIFIED | yes | — | `acceptance/steps/persona-f.js`, `application/cli/eng5-verbs.test.js`, `composition/skills.test.js` +1 | `persona-f-integrator.feature#Integrator's improved skill round-trips back as a Procedure` | — |
 | AGSC-07-23 | VERIFIED | yes | `compose-0011` | `composition/compose.test.js`, `composition/harness.test.js` | — | — |
 | AGSC-07-24 | VERIFIED | yes | `compose-0012` | `application/cli/eng2-verbs.test.js`, `application/cli/verbs-wired.test.js`, `composition/compose.test.js` +2 | `persona-e-architect.feature#A saved architecture gets its blueprint beside the Harness, and its page shows the brief` | — |
-| AGSC-07-25 | VERIFIED | yes | `compose-0024`, `compose-0034` | `acceptance/steps/persona-c-tools.js`, `acceptance/steps/persona-e.js`, `application/cli/compose-brief.test.js` +7 | `persona-c-agent-mcp.feature#An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk`, `persona-e-architect.feature#The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#A saved architecture gets its blueprint beside the Harness, and its page shows the brief` +1 | — |
+| AGSC-07-25 | VERIFIED | yes | `compose-0024`, `compose-0034` | `acceptance/steps/persona-c-tools.js`, `acceptance/steps/persona-e.js`, `application/cli/compose-brief.test.js` +7 | `persona-c-agent-mcp.feature#An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk`, `persona-e-architect.feature#The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#A brief too large for this engine is refused, and nothing is written` +2 | — |
 | AGSC-07-26 | VERIFIED | yes | `compose-0025` | `acceptance/steps/persona-e.js`, `composition/brief.test.js` | `persona-e-architect.feature#The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#The architect reads the brief of a selection on "/compose/" and downloads it` | — |
 | AGSC-07-27 | VERIFIED | yes | `compose-0026` | `acceptance/steps/persona-e.js`, `composition/brief.test.js` | `persona-e-architect.feature#The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes` | — |
 | AGSC-07-28 | VERIFIED | yes | — | `acceptance/steps/persona-e.js`, `application/cli/compose-brief.test.js`, `composition/brief.test.js` | `persona-e-architect.feature#A narration is not written by this distribution, and the brief still is` | — |

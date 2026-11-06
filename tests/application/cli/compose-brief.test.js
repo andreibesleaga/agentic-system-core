@@ -186,3 +186,23 @@ test('AGSC-07-25 with AGSC-07-30: a node that declares contexts gets the context
   assert.deepStrictEqual(Object.keys(tree(path.join(dir, 'dist', 'harness', companions[0]))).sort(),
     [...BRIEF_FILES.slice(0, 3), 'context-map.json', 'context.md']);
 });
+
+/** A chain of 145 Concepts, `c-<i>` requiring `c-<i-1>`: its `derived` would hold 1,015,872 steps. */
+function chain() {
+  const files = {};
+  for (let i = 0; i < 145; i += 1) {
+    files[`content/concepts/c-${i}.md`] = item('concept', `c-${i}`, `Chain item ${i}`, i === 0 ? [] : ['requires:', `  - c-${i - 1}`]);
+  }
+  return files;
+}
+
+test('AGSC-07-25 (engine bound): a brief above the bound of derived is AGSC-E904 at exit 1, and nothing is written', () => {
+  const plain = scratch(chain());
+  assert.strictEqual(run(plain, 'compose', 'c-144').exit, 0, 'without the brief the Harness is written');
+  for (const [dir, argv] of [[scratch(chain()), ['--brief']], [scratch(chain(), config({ compose: { brief: true } })), []]]) {
+    const r = run(dir, 'compose', 'c-144', ...argv);
+    assert.strictEqual(r.exit, 1);
+    assert.deepStrictEqual(errors(r.findings), ['AGSC-E904']);
+    assert.ok(!fs.existsSync(path.join(dir, 'dist')), 'a run the brief stopped writes no Harness and no brief');
+  }
+});

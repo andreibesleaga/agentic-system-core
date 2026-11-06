@@ -88,6 +88,26 @@ function contextBounds() {
   return { sections: 65408, file: 65536 };
 }
 
+/**
+ * The most steps, counted over the `because` paths of every reading, that this engine writes
+ * into `derived` (AGSC-07-25). The rule sets no bound, and the member grows with the cube of a
+ * chain's length: a chain of 145 `requires` Links would hold 1,015,872 steps, about 32 MB of
+ * `brief.json`, and one of 400 more than the longest string a JavaScript engine can hold. At
+ * the bound the file is about 31 MB; above it the brief is refused with `AGSC-E904`, the code of
+ * a size cap (`briefTooLarge`), rather than written in part or left to crash the process.
+ */
+function derivedBound() {
+  return 1000000;
+}
+
+/** The refusal of a brief above `derivedBound`: an Error whose `code` is `AGSC-E904`. */
+function briefTooLarge(bound) {
+  const error = new Error(`the brief is not written: its derived readings (AGSC-07-25) would hold more than `
+    + `${String(bound).replace(/\B(?=(\d{3})+(?!\d))/gu, ',')} steps, the bound of this engine; select fewer items of the longest chain`);
+  error.code = 'AGSC-E904';
+  return error;
+}
+
 // ------------------------------------------------------------------ the inputs
 
 /**
@@ -241,11 +261,14 @@ function dependencyOrder(selection, edges) {
  * joined by a chain of two or more edges of one transitive key, the chain being the one a
  * breadth-first walk meets first, each frontier in code-point order. The readings are those of
  * `knowledge/derive.js#readings` with the rule `transitive` or `closure`, in its order
- * (source, key, target); `tests/composition/brief.test.js` compares the two.
+ * (source, key, target); `tests/composition/brief.test.js` compares the two. The steps are
+ * counted before each path is built, so readings above `bound` (`derivedBound` unless a test
+ * asks for less) are refused with `briefTooLarge` before they take the memory.
  */
-function chainReadings(edges, members) {
+function chainReadings(edges, members, bound = derivedBound()) {
   const inside = new Set(members);
   const out = [];
+  let steps = 0;
   for (const key of chainKeys()) {
     const adjacency = new Map();
     for (const edge of edges) {
@@ -270,6 +293,8 @@ function chainReadings(edges, members) {
       }
       for (const [target, step] of reached) {
         if (step.depth < 2 || !inside.has(target)) continue;
+        steps += step.depth;
+        if (steps > bound) throw briefTooLarge(bound);
         const from = [];
         for (let node = target; reached.get(node).from !== null; node = reached.get(node).from) {
           from.unshift([reached.get(node).from, key, node]);
@@ -549,7 +574,7 @@ function briefFiles(result, options) {
  * The portable surface, in dependency order: what `composition/browser.js` emits for a page
  * that shows the brief (AGSC-07-13).
  */
-const PORTABLE = Object.freeze(['inverseKeys', 'chainKeys', 'contextBounds',
+const PORTABLE = Object.freeze(['inverseKeys', 'chainKeys', 'contextBounds', 'derivedBound', 'briefTooLarge',
   'listedIndex', 'briefEdges', 'compareTriples', 'compareEdges', 'listedVerdict', 'briefMember', 'reasonOf', 'reasonText',
   'dependencyOrder', 'chainReadings', 'entryOf', 'bySlugThenTarget', 'contradictionGaps', 'gapsOf',
   'checklistOf', 'summaryOf', 'briefParts', 'briefOf', 'listBlock', 'openingBlocks', 'briefMd',
@@ -564,6 +589,7 @@ module.exports = {
   briefMmd,
   briefOf,
   briefParts,
+  briefTooLarge,
   bySlugThenTarget,
   chainKeys,
   chainReadings,
@@ -575,6 +601,7 @@ module.exports = {
   contextSection,
   contradictionGaps,
   dependencyOrder,
+  derivedBound,
   entryOf,
   gapsOf,
   inverseKeys,

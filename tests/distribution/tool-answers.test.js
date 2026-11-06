@@ -251,18 +251,49 @@ test('AGSC-07-25: the brief is the same through the host\'s hasher and through W
     licenseProse: 'CC-BY-4.0',
   };
   const before = JSON.stringify(items);
-  const value = answers.toolBrief(core, facts, ['a'], sha256Hex);
+  const { body: value } = answers.toolBrief(core, facts, ['a'], sha256Hex);
   const promised = answers.toolBrief(core, facts, ['a'], answers.toolSha256Hex);
   assert.equal(typeof promised.then, 'function');
-  assert.deepStrictEqual(await promised, value);
+  assert.deepStrictEqual(await promised, { body: value });
   assert.equal(JSON.stringify(items), before, 'the brief changed its input');
   assert.deepEqual(value.selection, ['a', 'b']);
   assert.equal(value.bundle_version, 'v1.2.0');
   assert.equal(value.generated_at, '2026-01-01T00:00:00Z');
   assert.equal(value.selection_digest, sha256Hex(selectionDigestInput(compose(items, ['a']))));
   // With no content version from the host, the brief derives the one of AGSC-04-25 from the instant.
-  const derived = answers.toolBrief(core, { ...facts, host: { ...facts.host, bundleVersion: '' } }, ['a'], sha256Hex);
+  const derived = answers.toolBrief(core, { ...facts, host: { ...facts.host, bundleVersion: '' } }, ['a'], sha256Hex).body;
   assert.equal(derived.bundle_version, '0.0.0+20260101T000000Z');
+});
+
+/** A chain of 145 Concepts, `c-<i>` requiring `c-<i-1>`: the `derived` of its brief would hold 1,015,872 steps. */
+const chainItems = () => Array.from({ length: 145 }, (_, i) => ({
+  body: '', kind: 'pattern', ...(i > 0 ? { requires: [`c-${i - 1}`] } : {}), slug: `c-${i}`, title: `C ${i}`, type: 'concept',
+}));
+/** The discovery document of a build, as far as the brief reads it (AGSC-06-08). */
+const LINKSET = JSON.stringify({ linkset: [{ describedby: [{ 'agsc-bundle-version': ['v1'], 'agsc-generated-at': ['2026-01-01T00:00:00Z'], 'agsc-spec-version': ['1.0.0'] }] }] });
+
+test('AGSC-07-25, AGSC-09-13a: with no build instant the brief is AGSC-E901, and above the engine\'s bound AGSC-E904, never a guess or a crash', async () => {
+  const core = { briefOf, compose, selectionDigestInput };
+  const host = { bundleVersion: 'v1', instant: '2026-01-01T00:00:00Z', specVersion: '1.0.0' };
+  const facts = { base: 'https://brief.example/', host, items: chainItems(), licenseProse: 'CC-BY-4.0' };
+  const none = answers.toolBrief(core, { ...facts, host: { bundleVersion: '', instant: '', specVersion: '' } }, ['c-1'], sha256Hex);
+  assert.equal(none.fault.code, 'AGSC-E901');
+  assert.equal(none.body, undefined, 'no content version is invented without a build');
+  assert.equal(answers.toolBrief(core, facts, ['c-144'], sha256Hex).fault.code, 'AGSC-E904');
+  assert.equal((await answers.toolBrief(core, facts, ['c-144'], answers.toolSha256Hex)).fault.code, 'AGSC-E904');
+  // Both transports answer the error envelope (AGSC-09-13a), not a JSON-RPC error.
+  const bundle = { config: {}, items: chainItems().map(({ body, slug, type, ...fm }) => ({ body, frontmatter: { ...fm, type }, slug, type })) };
+  const local = mcpTools.tools(bundle, { artifacts: new Map([['/.well-known/knowledge-linkset', LINKSET]]) });
+  assert.equal(local.call('brief', { selection: ['c-144'] }).body.code, 'AGSC-E904');
+  assert.equal(local.call('brief', { selection: ['c-3'] }).type, 'brief');
+  const sources = { '/.well-known/knowledge-linkset': LINKSET };
+  for (const i of chainItems()) sources[`/pages/${i.slug}.md`] = `---\ntitle: ${i.title}\ntype: concept\nkind: pattern\n${i.requires ? `requires:\n  - ${i.requires[0]}\n` : ''}---\n\nBody.\n`;
+  const page = pageTools.pageToolset(pageTools.pageCorpus(sources, { bundleId: 'x' }), core, sha256Hex);
+  assert.equal(page.call('brief', { selection: ['c-144'] }).body.code, 'AGSC-E904');
+  assert.equal(page.call('brief', { selection: ['c-3'] }).type, 'brief');
+  delete sources['/.well-known/knowledge-linkset'];
+  const bare = pageTools.pageToolset(pageTools.pageCorpus(sources, { bundleId: 'x' }), core, sha256Hex);
+  assert.equal(bare.call('brief', { selection: ['c-3'] }).body.code, 'AGSC-E901', 'a page without its discovery document');
 });
 
 // ------------------------------------------------------- the two toolsets, their faults
@@ -294,10 +325,12 @@ test('AGSC-09-13, AGSC-09-13a: the local server\'s brief answers over the listed
     { because: [{ from: [['c', 'requires', 'b']], rule: 'authored' }], holds: true, key: 'requires', source: 'c', target: 'b' });
   assert.deepEqual(local.call('check', { selection: ['c'] }).body, { findings: [], selection: ['c'] });
   assert.deepEqual(local.call('check', {}).body.selection, ['a', 'b'], 'no selection: every listed item (AGSC-09-13 table)');
-  assert.deepEqual(local.call('brief', { selection: ['c'] }).body.selection, [], 'the brief names listed items only');
-  const brief = local.call('brief', { selection: ['a'] }).body;
+  assert.equal(local.call('brief', { selection: ['a'] }).body.code, 'AGSC-E901', 'no build, no instant: nothing is guessed');
+  const built = mcpTools.tools(handMade(), { artifacts: new Map([['/.well-known/knowledge-linkset', LINKSET]]) });
+  assert.deepEqual(built.call('brief', { selection: ['c'] }).body.selection, [], 'the brief names listed items only');
+  const brief = built.call('brief', { selection: ['a'] }).body;
   assert.equal(brief.license.prose, 'LicenseRef-AgenticSystemCore-Content-Use-1.0', 'no prose licence: the Content Use Terms');
-  assert.equal(brief.generated_at, '', 'no build, no instant: nothing is guessed');
+  assert.equal(brief.generated_at, '2026-01-01T00:00:00Z');
   const check = local.call('check', { selection: ['b', 'a', 'a'] }).body;
   assert.deepEqual(check.selection, ['a', 'b']);
   assert.deepEqual(check.findings.map((f) => f.code), ['AGSC-E314', 'AGSC-E316']);
@@ -307,6 +340,7 @@ test('AGSC-09-13, AGSC-09-13a: the local server\'s brief answers over the listed
 test('AGSC-09-13: the page tools say when the chunk export or Web Crypto is missing, never an empty answer', async () => {
   const page = '---\ntitle: a\ntype: concept\nkind: pattern\n---\n\nBody.\n';
   const sources = {
+    '/.well-known/knowledge-linkset': LINKSET,
     '/chunks.jsonl': `${JSON.stringify({ lines_total: 1, shards: ['/chunks-01.jsonl'] })}\n`,
     '/pages/a.md': page,
   };

@@ -4,7 +4,10 @@
 //
 //   * New agent-facing protocol modules are TypeScript: a plain JavaScript file in one of
 //     the protocol places below fails, unless it is one of the files that were there when
-//     this rule began (commit 2327f33) or the compiled twin of a source under src-ts/.
+//     this rule began (commit 2327f33) or the compiled twin of a source under src-ts/; and so
+//     does a plain JavaScript file anywhere in src/ or bench/ that bears a protocol mark (it
+//     requires the MCP SDK, or names `jsonrpc`, `registerTool` or `MCP-Protocol-Version`),
+//     unless it bore one at 12c243a.
 //   * The committed output under src/ is byte for byte what the pinned compiler writes
 //     from src-ts/ now (compiled in memory by tools/build-ts), and every compiled file
 //     names its source, which exists.
@@ -40,6 +43,21 @@ const PLAIN_AT_START = Object.freeze([
   'src/distribution/mcp-tools.js',
 ]);
 
+/**
+ * What makes a module agent-facing protocol code wherever it sits: it requires the MCP SDK, or
+ * it writes a JSON-RPC message, registers a WebMCP tool or reads the MCP revision header.
+ */
+const PROTOCOL_MARKS = /\bjsonrpc\b|\bregisterTool\b|MCP-Protocol-Version/u;
+const PROTOCOL_PACKAGE = /^@modelcontextprotocol\/sdk(?:\/|$)/u;
+/** The plain JavaScript modules outside those places that bore a mark at 12c243a; the list never grows. */
+const MARKED_AT_START = Object.freeze([
+  'bench/parity.js',
+  'src/application/plugins.js',
+  'src/distribution/mcp-stdio.js',
+  'src/distribution/page-tools.js',
+  'src/distribution/webmcp.js',
+]);
+
 const rel = (absolute) => path.relative(ROOT, absolute).split(path.sep).join('/');
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
@@ -59,6 +77,23 @@ test('no new agent-facing protocol module is plain JavaScript', () => {
     const source = generatedFrom(file);
     assert.ok(source !== null && fs.existsSync(path.join(ROOT, source)),
       `${file} is a new agent-facing protocol module in plain JavaScript; write it in TypeScript under src-ts/`);
+  }
+});
+
+test('no new module anywhere in src/ or bench/ speaks an agent protocol in plain JavaScript', () => {
+  const vendor = /^src\/distribution\/vendor\//u;
+  const marked = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'bench'))].map(rel)
+    .filter((file) => file.endsWith('.js') && !vendor.test(file))
+    .filter((file) => {
+      const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
+      const requires = [...text.matchAll(/\brequire\(\s*(['"])([^'"]+)\1\s*\)/gu)].map((m) => m[2]);
+      return PROTOCOL_MARKS.test(text) || requires.some((specifier) => PROTOCOL_PACKAGE.test(specifier));
+    });
+  for (const file of MARKED_AT_START) assert.ok(marked.includes(file), `${file} bears no mark now: take it off the list`);
+  for (const file of marked) {
+    if (MARKED_AT_START.includes(file) || PLAIN_AT_START.includes(file) || generatedFrom(file) !== null) continue;
+    assert.fail(`${file} speaks an agent protocol (the MCP SDK, JSON-RPC, WebMCP registerTool or MCP-Protocol-Version) `
+      + 'in plain JavaScript; write it in TypeScript under src-ts/');
   }
 });
 

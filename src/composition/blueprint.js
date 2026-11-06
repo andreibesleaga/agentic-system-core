@@ -106,6 +106,16 @@ function c4Edges(parts, keep) {
   return lines;
 }
 
+/**
+ * A Mermaid label in double quotes. Mermaid reads no backslash escape inside one, so a quote is
+ * written as its entity code `#quot;` and a backslash as itself; `harness.js#quoted`, which
+ * escapes both with a backslash, is the form of `workspace.dsl`, and only a title can hold
+ * either character (a slug holds neither, AGSC-01-10).
+ */
+function mermaidLabel(value) {
+  return `"${singleLine(value).split('"').join('#quot;')}"`;
+}
+
 /** The members of type `concept`, in dependency order. */
 function conceptsOf(parts) {
   return parts.record.order.filter((slug) => parts.bySlug.get(slug).type === 'concept');
@@ -124,7 +134,7 @@ function c4Context(parts, options) {
   const outward = parts.record.relations.filter((r) => r.scope === 'outside' && inside.has(r.source));
   const targets = distinctSorted(outward.map((r) => r.target));
   const lines = c4Head('C4 level 1, system context', options);
-  lines.push(`  system[${quoted(singleLine(parts.architecture.title))}]`);
+  lines.push(`  system[${mermaidLabel(parts.architecture.title)}]`);
   for (const target of targets) lines.push(nodeLine(target, '  '));
   for (const target of targets) {
     for (const key of distinctSorted(outward.filter((r) => r.target === target).map((r) => r.key))) {
@@ -142,7 +152,7 @@ function c4Containers(parts, options) {
   const concepts = conceptsOf(parts);
   const drawn = new Set(concepts);
   const lines = c4Head('C4 level 2, containers', options);
-  lines.push(`  subgraph system[${quoted(singleLine(parts.architecture.title))}]`);
+  lines.push(`  subgraph system[${mermaidLabel(parts.architecture.title)}]`);
   for (const slug of concepts) lines.push(nodeLine(slug, '    '));
   lines.push('  end', ...c4Edges(parts, (a, b) => drawn.has(a) && drawn.has(b)));
   return `${lines.join('\n')}\n`;
@@ -267,7 +277,7 @@ function blueprintFiles(result, options) {
 
 /** The portable surface, in dependency order (`composition/browser.js`, AGSC-07-13). */
 const PORTABLE = Object.freeze(['blueprintParts', 'distinctSorted', 'slugList', 'c4Head', 'nodeLine',
-  'c4Edges', 'conceptsOf', 'c4Context', 'c4Containers', 'homeConcept', 'c4Components', 'markdownOpening',
+  'c4Edges', 'mermaidLabel', 'conceptsOf', 'c4Context', 'c4Containers', 'homeConcept', 'c4Components', 'markdownOpening',
   'decisionFiles', 'reachedBy', 'buildPlan', 'blueprintFiles']);
 
 module.exports = {
@@ -285,6 +295,7 @@ module.exports = {
   distinctSorted,
   homeConcept,
   markdownOpening,
+  mermaidLabel,
   nodeLine,
   reachedBy,
   slugList,

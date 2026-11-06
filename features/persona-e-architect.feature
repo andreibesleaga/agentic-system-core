@@ -76,6 +76,15 @@ Feature: Architect turns Concepts into a starting architecture
     And no network call was attempted
 
   @PRD-037 @human
+  Scenario: A brief too large for this engine is refused, and nothing is written
+    Given the Bundle holds a chain of 145 Concepts, "chain-144" requiring "chain-143" and so on down to "chain-0"
+    When the operator runs "agsc compose chain-144 --brief --json" under the network trap
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E904"
+    And no Harness and no brief was written (AGSC-07-25)
+    And no network call was attempted
+
+  @PRD-037 @human
   Scenario: A saved architecture gets its blueprint beside the Harness, and its page shows the brief
     Given the Bundle holds the saved architecture "agent-team" selecting "supervisor" and "handoff", and the node is rebuilt
     When the operator runs "agsc compose --from agent-team --brief" under the network trap

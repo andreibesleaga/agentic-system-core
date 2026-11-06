@@ -125,6 +125,14 @@ test('AGSC-07-29: a member of another type that no Concept joins is drawn outsid
   assert.ok(level1.endsWith('  system["The plan"]\n  elsewhere["elsewhere"]\n  system -->|related| elsewhere\n'), level1);
 });
 
+test('AGSC-07-29: a quote or a backslash in the architecture\'s title is written as Mermaid reads a label', () => {
+  const items = [plan(['web'], { title: 'The "Agent Team" \\ architecture' }), item('web', 'concept', { related: ['out'] }), item('out', 'concept')];
+  const files = filesOf(items, ['web']);
+  assert.match(files.get('blueprint/c4-context.mmd'), /\n {2}system\["The #quot;Agent Team#quot; \\ architecture"\]\n/u);
+  assert.match(files.get('blueprint/c4-containers.mmd'), /\n {2}subgraph system\["The #quot;Agent Team#quot; \\ architecture"\]\n/u);
+  assert.strictEqual(blueprint.mermaidLabel('The plan'), '"The plan"', 'a title without either keeps its bytes');
+});
+
 test('AGSC-07-29, AGSC-00-05: an architecture that is not listed has no blueprint; a draft decision has no record', () => {
   const items = [plan(['web'], { status: 'draft' }), item('web', 'concept', { 'decided-by': ['adr'] }), item('adr', 'concept', { status: 'draft' })];
   assert.deepStrictEqual([...filesOf(items, ['web']).keys()], []);

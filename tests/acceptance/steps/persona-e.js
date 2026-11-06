@@ -473,6 +473,23 @@ module.exports = [
     },
   },
   {
+    pattern: /^the Bundle holds a chain of (\d+) Concepts, "chain-\d+" requiring "chain-\d+" and so on down to "chain-0"$/u,
+    run(world, count) {
+      for (let i = 0; i < Number(count); i += 1) {
+        world.write(`content/concepts/chain-${i}.md`, ['---', 'type: concept', `title: Chain item ${i}`,
+          `description: Item ${i} of a chain of requires Links, each needing the one before it.`, 'clusters:', '  - agent-patterns',
+          'prov:', '  origin: human', '  operator: human:andreibesleaga', ...(i === 0 ? [] : ['requires:', `  - chain-${i - 1}`]),
+          '---', '', `# Chain item ${i}`, '', 'Body.', ''].join('\n'));
+      }
+    },
+  },
+  {
+    pattern: 'no Harness and no brief was written (AGSC-07-25)',
+    run(world) {
+      assert.ok(!world.exists('dist/harness'), 'a run the brief stopped wrote a Harness or a brief');
+    },
+  },
+  {
     pattern: /^the Bundle holds the saved architecture "([^"]+)" selecting "([^"]+)" and "([^"]+)", and the node is rebuilt$/u,
     run(world, slug, a, b) {
       world.write(`content/concepts/${slug}.md`, ['---', 'type: concept', 'kind: architecture', `title: The ${slug}`,

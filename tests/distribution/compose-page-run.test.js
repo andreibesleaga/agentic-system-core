@@ -592,6 +592,25 @@ test('AGSC-07-25, AGSC-07-13: the page shows the brief inline and offers the fil
   assert.match(page.document.nodes.get('brief-status').textContent, /appears here once items are selected/u);
 });
 
+test('AGSC-07-25 (engine bound): above the bound of derived the page says why there is no brief and offers no file', async () => {
+  const added = {};
+  for (let i = 0; i < 145; i += 1) {
+    added[`content/concepts/c-${i}.md`] = ['---', 'type: concept', `title: Chain item ${i}`, `description: Item ${i} of a chain of 145, added by this test.`,
+      'clusters:', '  - agent-patterns', 'prov:', '  origin: human', '  operator: human:andreibesleaga',
+      ...(i === 0 ? [] : ['requires:', `  - c-${i - 1}`]), '---', '', `# Chain item ${i}`, '', 'Body.', ''].join('\n');
+  }
+  const { files } = builtFixture(added);
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  await state.whenPagesRead();
+  state.selection = ['c-144'];
+  assert.strictEqual(await state.refreshBrief(), null);
+  assert.match(page.document.nodes.get('brief-status').textContent, /^No brief: .*1,000,000 steps.*\(AGSC-E904\)\.$/u);
+  assert.strictEqual(page.document.nodes.get('brief-files').children.length, 0);
+  assert.strictEqual(page.document.nodes.get('brief-order').hidden, true);
+});
+
 test('AGSC-07-29, AGSC-07-13: /compose/?from=<architecture> offers the blueprint agsc compose --from writes; another selection has none', async () => {
   const team = ['---', 'type: concept', 'kind: architecture', 'title: The team', 'description: A saved architecture of the two patterns, added by this test.',
     'clusters:', '  - agent-patterns', 'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', '# The team', '',
