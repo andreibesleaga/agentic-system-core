@@ -237,7 +237,8 @@ const SUPPORT = Object.freeze({
  *
  * @param {object} [options]
  * @param {boolean} [options.brief] carry the functions of the brief and the blueprint too.
- * @param {{contexts: Array<string>}} [options.domain] carry the domain paragraph as well.
+ * @param {{contexts: Array<string>, edges?: Array<object>, withheld?: Array<string>}} [options.domain]
+ *   carry the domain paragraph as well.
  */
 function exportedNames(options) {
   const withBrief = Boolean(options && options.brief === true);
@@ -249,19 +250,33 @@ function exportedNames(options) {
 
 /**
  * The entries of `globalThis.AGSC_CORE`. With the domain paragraph, `briefOf` and `briefFiles`
- * are `briefDomainOf` and `briefDomainFiles` given the node's declared contexts (AGSC-08-32),
- * so the `/compose/` controller and the page tool `brief`, which call those two names, write
- * the brief `agsc compose --brief` writes (AGSC-07-13) without a change of their own.
+ * are `briefDomainOf` and `briefDomainFiles` given `DOMAIN` (`domainFacts`), so the `/compose/`
+ * controller and the page tool `brief`, which call those two names, write the brief
+ * `agsc compose --brief` writes (AGSC-07-13) without a change of their own.
  */
 function exportMap(options) {
-  const domain = options.brief === true && options.domain ? options.domain : null;
-  const contexts = domain === null ? '' : JSON.stringify(Array.isArray(domain.contexts) ? domain.contexts : []);
-  const bound = (name) => `function (result, options) { return ${name}(result, Object.assign({}, options, { contexts: ${contexts} })); }`;
+  const withDomain = options.brief === true && Boolean(options.domain);
+  const bound = (name) => `function (result, options) { return ${name}(result, Object.assign({}, options, DOMAIN)); }`;
   return exportedNames(options).map((name) => {
-    if (domain !== null && name === 'briefOf') return `    briefOf: ${bound('briefDomainOf')}`;
-    if (domain !== null && name === 'briefFiles') return `    briefFiles: ${bound('briefDomainFiles')}`;
+    if (withDomain && name === 'briefOf') return `    briefOf: ${bound('briefDomainOf')}`;
+    if (withDomain && name === 'briefFiles') return `    briefFiles: ${bound('briefDomainFiles')}`;
     return `    ${name}: ${name}`;
   }).join(',\n');
+}
+
+/**
+ * The facts of the domain paragraph that no published route carries, written once into the
+ * script as `DOMAIN`: the listed clusters `domain.contexts` declares (AGSC-08-32), the domain
+ * links between listed items (AGSC-03-27), which the build read against the site vocabulary
+ * (`distribution/domain-view.js#scripts`) because a page cannot read it, and the listed items
+ * whose context is an item that is not listed (`brief.js#domainWithheld`), which the page, holding
+ * the listed items alone, cannot tell.
+ */
+function domainFacts(domain) {
+  const contexts = Array.isArray(domain.contexts) ? domain.contexts : [];
+  const domainEdges = Array.isArray(domain.edges) ? domain.edges : [];
+  const withheld = Array.isArray(domain.withheld) ? domain.withheld : [];
+  return `  var DOMAIN = ${JSON.stringify({ contexts, domainEdges, withheld })};`;
 }
 
 /**
@@ -271,8 +286,9 @@ function exportMap(options) {
  * @param {string} [options.specVersion] recorded in the banner comment only.
  * @param {boolean} [options.brief] carry the functions of the brief (AGSC-07-25) and of the
  *   blueprint outputs (AGSC-07-29) too.
- * @param {{contexts: Array<string>}} [options.domain] with `brief`, the domain paragraph of the
- *   brief and the slugs of the clusters `domain.contexts` declares (AGSC-07-25, AGSC-08-32).
+ * @param {{contexts: Array<string>, edges?: Array<object>, withheld?: Array<string>}} [options.domain]
+ *   with `brief`, the domain paragraph of the brief and its facts (`domainFacts`; AGSC-07-25,
+ *   AGSC-08-32, AGSC-03-27).
  * @returns {string} a classic script, LF-terminated, ending in exactly one LF.
  */
 function bundle(options) {
@@ -290,7 +306,10 @@ function bundle(options) {
   if (opts.brief === true) {
     for (const name of brief.PORTABLE) parts.push(String(brief[name]));
     for (const name of blueprint.PORTABLE) parts.push(String(blueprint[name]));
-    if (opts.domain) for (const name of brief.DOMAIN_PORTABLE) parts.push(String(brief[name]));
+    if (opts.domain) {
+      for (const name of brief.DOMAIN_PORTABLE) parts.push(String(brief[name]));
+      parts.push(domainFacts(opts.domain));
+    }
   }
   for (const name of PAGE_SUPPORT) parts.push(String(SUPPORT[name]));
   parts.push('  globalThis.AGSC_CORE = {', exportMap(opts), '  };', '}());');

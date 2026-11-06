@@ -38,14 +38,17 @@ const domainArbitrary = fc.record({
   warrant: warrantArbitrary,
 }, { requiredKeys: [] });
 
-/** A generated Bundle over SLUGS: `requires` chains, and the domain keys or none. */
+/** The one listed cluster: `x` is an item of every generated Bundle, `y` and `z` never are. */
+const CLUSTER_X = Object.freeze({ description: 'The x context.', slug: 'x', title: 'X', type: 'cluster' });
+
+/** A generated Bundle over SLUGS and the cluster `x`: `requires` chains, and the domain keys or none. */
 const itemsArbitrary = (withDomain) => fc.tuple(...SLUGS.map((slug, i) => fc.record({
   domain: withDomain ? domainArbitrary : fc.constant({}),
   requires: fc.subarray(SLUGS.slice(i + 1), { maxLength: Math.min(2, SLUGS.length - i - 1) }),
 }).map((r) => ({
   body: `Body of ${slug}.\n`, description: `About ${slug}.`, slug, title: slug.toUpperCase(), type: 'concept',
   ...(r.requires.length > 0 ? { requires: r.requires } : {}), ...r.domain,
-}))));
+})))).map((items) => [...items, CLUSTER_X]);
 
 /** The options of the command line, for a selection's verdict. */
 function optionsFor(items, declared) {
@@ -129,4 +132,105 @@ test('context.md keeps its bound when the domain lines lengthen the sections, an
   const plain = new Map(brief.briefFiles(compose(items, selection), optionsFor(items, []))).get('context.md');
   const omitted = (text) => Number(/<!-- truncated: (\d+) of 40 items omitted -->\n$/u.exec(text)[1]);
   assert.ok(omitted(context) > omitted(plain), 'the longer sections leave out more of them');
+});
+
+test('a context that is an item not listed (a draft or held-back cluster) is named in no file of the brief (AGSC-07-25)', () => {
+  const items = [
+    { body: 'Invoice.\n', clusters: ['secret-billing'], domain_role: 'entity', slug: 'inv', title: 'Invoice', type: 'concept' },
+    { body: 'Bill.\n', domain_context: 'held', domain_type: 'Bill', slug: 'bill', title: 'Bill', type: 'concept' },
+    { description: 'Draft.', slug: 'secret-billing', status: 'draft', title: 'Secret', type: 'cluster' },
+    { description: 'Held.', slug: 'held', title: 'Held', type: 'cluster' },
+  ];
+  const options = { ...optionsFor(items, ['secret-billing', 'held']), listed: ['inv', 'bill'] };
+  const files = brief.briefDomainFiles(compose(items, ['inv', 'bill']), options);
+  for (const [name, text] of files) {
+    assert.doesNotMatch(text, /secret-billing|held/u, `${name} names a context that is not listed`);
+  }
+  const record = JSON.parse(new Map(files).get('brief.json'));
+  assert.deepStrictEqual(record.items.map((entry) => [entry.slug, entry.domain]),
+    [['bill', { type: 'Bill' }], ['inv', { role: 'entity' }]]);
+  assert.deepStrictEqual(brief.domainWithheld(items, options.listed, options.contexts), ['bill', 'inv']);
+  // Listed, the same cluster is named; a context that names no item is kept as stated (compose-0034).
+  const listed = brief.briefDomainOf(compose(items, ['inv']), { ...options, listed: ['inv', 'secret-billing'] });
+  assert.deepStrictEqual(listed.items[0].domain, { context: 'secret-billing', role: 'entity' });
+  const none = brief.briefDomainOf(compose(items.slice(0, 1), ['inv']), { ...options, items: items.slice(0, 1), listed: ['inv'] });
+  assert.deepStrictEqual(none.items[0].domain, { context: 'secret-billing', role: 'entity' });
+  // A page holds the listed items alone and is handed the list (composition/browser.js).
+  const page = brief.briefDomainFiles(compose(items.slice(0, 2), ['inv', 'bill']),
+    { ...options, contexts: [], items: items.slice(0, 2), listed: undefined, withheld: ['bill', 'inv'] });
+  assert.deepStrictEqual(page, files);
+});
+
+// ----------------------------------------------------- domain links in relations
+
+/** The domain links the host hands in (`knowledge/links.js#domainEdges`): `a controls b`, its inverse, and one to `z`. */
+const DOMAIN_EDGES = Object.freeze([
+  { key: 'controls', origin: 'authored', source: 'a', target: 'b' },
+  { key: 'controlled-by', origin: 'inverse', source: 'b', target: 'a' },
+  { key: 'pairedWith', origin: 'authored', source: 'c', target: 'z' },
+  { key: 'pairedWith', origin: 'symmetric', source: 'z', target: 'c' },
+]);
+
+test('a domain link appears in relations like any other key, in BRIEF.md and, authored inside, in brief.mmd (AGSC-07-25)', () => {
+  const items = SLUGS.map((slug) => ({ body: `${slug}.\n`, slug, title: slug, type: 'concept' }));
+  const options = { ...optionsFor(items, []), domainEdges: DOMAIN_EDGES };
+  const files = new Map(brief.briefDomainFiles(compose(items, ['a']), options));
+  const record = JSON.parse(files.get('brief.json'));
+  assert.deepStrictEqual(record.relations, [
+    { key: 'controls', origin: 'authored', scope: 'outside', source: 'a', target: 'b' },
+    { key: 'controlled-by', origin: 'inverse', scope: 'outside', source: 'b', target: 'a' },
+  ], 'the edge to an item that is not listed is left out');
+  assert.ok(files.get('BRIEF.md').includes('- `a` controls `b` (authored, outside)\n'));
+  const inside = new Map(brief.briefDomainFiles(compose(items, ['a', 'b']), options));
+  assert.match(inside.get('brief.mmd'), /\n {2}a -->\|controls\| b\n/u);
+  assert.doesNotMatch(inside.get('brief.mmd'), /controlled-by/u, 'a computed edge is not drawn');
+  // Domain links name no member of the domain paragraph, and change nothing a key of the fourteen decides.
+  assert.strictEqual(record.items[0].domain, undefined);
+  const plain = brief.briefOf(compose(items, ['a', 'b']), options);
+  const linked = JSON.parse(inside.get('brief.json'));
+  for (const name of ['checklist', 'derived', 'gaps', 'order', 'selection', 'verdict']) assert.deepStrictEqual(linked[name], plain[name], name);
+});
+
+test('a domain link that repeats an edge of the fourteen keys is one relation, authored when either is', () => {
+  const items = [{ related: ['b'], slug: 'a', title: 'a', type: 'concept' }, { slug: 'b', title: 'b', type: 'concept' }];
+  const edges = [{ key: 'related', origin: 'symmetric', source: 'a', target: 'b' }, { key: 'related', origin: 'authored', source: 'b', target: 'a' }];
+  const record = brief.briefDomainOf(compose(items, ['a', 'b']), { ...optionsFor(items, []), domainEdges: edges });
+  assert.deepStrictEqual(record.relations.map((r) => [r.source, r.key, r.target, r.origin]),
+    [['a', 'related', 'b', 'authored'], ['b', 'related', 'a', 'authored']]);
+});
+
+test('the relations with domain links depend on neither the order of the items nor that of the edges', () => {
+  fc.assert(fc.property(itemsArbitrary(true), fc.subarray(SLUGS, { minLength: 1 }), fc.shuffledSubarray(DOMAIN_EDGES, { minLength: 4 }),
+    (items, selection, edges) => {
+      const once = brief.briefDomainFiles(compose(items, selection), { ...optionsFor(items, ['x']), domainEdges: DOMAIN_EDGES });
+      const reversed = [...items].reverse();
+      assert.deepStrictEqual(brief.briefDomainFiles(compose(reversed, selection), { ...optionsFor(reversed, ['x']), domainEdges: edges }), once);
+    }), RUNS);
+});
+
+// ------------------------------------------- the layout the domain paragraph writes into
+
+/** `text` with every line of `lines` removed once, and a `## Domain` section dropped. */
+function withoutDomain(text, lines) {
+  let out = text.replace(/\n\n## Domain\n\n[^]*?(?=\n\n## Relations\n)/u, '');
+  for (const line of lines) out = out.replace(`\n${line}`, '');
+  return out;
+}
+
+test('BRIEF.md and context.md with the domain parts are those of briefMd and contextMd with the parts added, and nothing else', () => {
+  fc.assert(fc.property(itemsArbitrary(true), fc.subarray(SLUGS, { minLength: 1 }), (items, selection) => {
+    const result = compose(items, selection);
+    const options = optionsFor(items, ['x']);
+    const parts = brief.briefDomainParts(result, options);
+    const lines = [...parts.domains.values()].flatMap((domain) => brief.contextDomainLines(domain));
+    assert.strictEqual(withoutDomain(brief.briefDomainMd(parts, options), []), brief.briefMd(parts, options));
+    const context = brief.contextDomainMd(parts, options);
+    assert.strictEqual(withoutDomain(context, lines), brief.contextMd(parts, options));
+    // In its place: a member's domain lines end its list of lines, right before the fenced prose.
+    for (const [slug, domain] of parts.domains) {
+      const section = context.slice(context.indexOf(`(\`${slug}\`)`));
+      assert.ok(section.includes(`\n${brief.contextDomainLines(domain).join('\n')}\n\n\`\`\`text agsc-content\n`), slug);
+      assert.strictEqual(section.slice(0, section.indexOf('```')).split('\n\n').length, 3, `${slug}: heading, lines, prose`);
+    }
+  }), RUNS);
 });

@@ -258,21 +258,32 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   layer (a site vocabulary file is present, AGSC-01-41), the page of an item that has a domain part
   shows its domain type, role, context and warrant in a definition list right under the relations
   table, each with its label: the class's `rdfs:label` in the site vocabulary, the role in words, the
-  title of the context's cluster (linked to its page) and the warrant's kind and source. Where a row's
-  item has a domain type or a context, the relations table gains the columns "Domain type" and "Domain
-  context". The new pure module `src/distribution/domain-view.js` writes both, through the column list
+  title of the context's cluster (linked to its page; a context that is a cluster not listed, such as
+  a draft, is neither drawn nor named) and the warrant's kind and source; the page of a retired item gets no domain part,
+  as it gets no relations section. Where a row's item has a domain type or a context, the relations
+  table gains the columns "Domain type" and "Domain context". The new pure module `src/distribution/domain-view.js` writes both, through the column list
   and a new `after` option of `graph-view.js#itemSection`. Bytes: only on a node with a site
-  vocabulary, only the `index.html` pages of the items that state a domain key or that link to such an
-  item; every other node keeps its bytes (G-REF of 093be5b: eight reference inputs, empty diff).
+  vocabulary, only the `index.html` pages of the items that state a domain key or that are joined to
+  such an item by a relation in either direction; every other node keeps its bytes (G-REF of 093be5b:
+  eight reference inputs, empty diff).
 - The domain paragraph of the brief (AGSC-07-25; `compose-0034`): when a member states a key of
   AGSC-02-25, each `items` entry of `brief.json` gains `domain` (`context`, `role`, `type`, `warrant`,
-  the parts it has; the context as AGSC-08-32 defines it), `BRIEF.md` gains `## Domain` after
+  the parts it has; the context as AGSC-08-32 defines it, never a cluster that is not listed),
+  `BRIEF.md` gains `## Domain` after
   `## Members`, and each section of `context.md` gains its `domain_type`, `domain_role`,
   `domain_context` and `warrant` lines, cut at the same 65,408-byte bound. `compose --brief` and
   `compose.brief` write it; with no domain key the four files keep their bytes. The functions are the
   new portable list `DOMAIN_PORTABLE` of `src/composition/brief.js` (`briefDomainFiles`,
   `briefDomainOf`, `domainOf` and their parts), each built on the function of `PORTABLE` it extends.
-  The blueprint of AGSC-07-29 names no domain part and is unchanged.
+  A domain link (AGSC-03-27) appears in `relations` like any other key, with the inverse or symmetric
+  edge the site vocabulary declares (origin `inverse` or `symmetric`), and so in `## Relations` of
+  `BRIEF.md` and, authored inside the selection, in `brief.mmd`; it changes no dependency order,
+  reading, gap or checklist entry (AGSC-03-18, AGSC-07-10). The host reads the links against the
+  site vocabulary with the new `src/knowledge/links.js#domainEdges` (the reader `resolve` uses) and
+  hands them in as `options.domainEdges`; `compose --brief` and the local server's `brief` (new option
+  `domain` of `mcp-tools.js#tools`, the vocabulary the `mcp` verb loads as `lint` does) do so. Bytes:
+  on a node whose listed items state a domain link, `brief.json`, `BRIEF.md` and `brief.mmd` of a
+  selection that touches one. The blueprint of AGSC-07-29 names no domain part and is unchanged.
 - The domain parts of the tool answers (AGSC-09-13, AGSC-09-16; `cli-0037`): for an item that states a
   key of AGSC-02-25, a `search` hit and the `read` body carry `domain`, among their members in
   code-point order, and the `items` of `brief` carry it as the brief does; an item that states none
@@ -280,19 +291,28 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `src/distribution/tool-answers.js#toolDomainAnswer` (new list `DOMAIN_PORTABLE`), so the local
   server and the page tools give equal answers.
 - `/compose/agsc-core.js` and `/compose/agsc-page-tools.js` carry the domain parts (AGSC-07-25,
-  AGSC-09-13, AGSC-07-13) only on a node whose listed items state a key of AGSC-02-25: the core's
-  `briefOf` and `briefFiles` are then the domain paragraph's, given the node's declared contexts, and
-  the page tools add the parts to `search` and `read` over the same contexts (`API.DOMAIN_CONTEXTS`).
+  AGSC-09-13, AGSC-07-13) only on a node whose listed items state a key of AGSC-02-25 or a domain
+  link: the core's `briefOf` and `briefFiles` are then the domain paragraph's, given the node's
+  declared contexts that are listed and its domain links between listed items (one `DOMAIN` object in
+  the script), and the page tools add the parts to `search` and `read` over the same contexts
+  (`API.DOMAIN_CONTEXTS`). The context of a listed item whose context is a cluster not listed is left
+  out on both transports and in the brief (`composition/brief.js#domainWithheld`; the page is handed
+  that list of listed items as `DOMAIN.withheld` and `API.DOMAIN_WITHHELD`, AGSC-09-16), so no page
+  script names an item that is not listed.
   Bytes: only on such a node, in these two files; on every other node both keep their pinned hashes
   (fixture: `agsc-core.js` 26f6df7a27da280f, `agsc-page-tools.js` 2a3bcc23c35eb55f), so a Bundle with
-  no domain layer emits what it emitted before (AGSC-01-41).
+  none of whose listed items states a key of AGSC-02-25 or a domain link emits what it emitted before
+  (AGSC-01-41).
 - A browser test of the domain parts (`tests/distribution/domain-browser.test.js`, AGSC-06-38,
   AGSC-06-20): a node with a site vocabulary and a declared context is served with its own policy, its
   item page shows the two columns and the list under the table, nothing loads from another origin, and
   axe-core finds no violation in the light and the dark colour scheme. The `browser` job of `test.yml`
   runs it (none of its files may skip). A persona scenario of `persona-i-maintainer.feature` shows the
   page, the page tool `read` run from the published scripts and the brief of a note with a domain type,
-  a role and a warrant.
+  a role, a warrant and a domain link, the link and its inverse under `## Relations`. A parity test
+  (`tests/distribution/domain-parity.test.js`) runs `compose --brief`, the local server and the page
+  tools over one node and finds the same brief on the three, and a draft context cluster named in no
+  page script, page answer or brief file.
 - The blueprint outputs of a saved architecture (AGSC-07-29; vectors `compose-0028` to
   `compose-0030`): `compose --from <slug> --brief` (or `compose.brief: true`), for an item of
   `kind: architecture`, also writes `c4-context.mmd`, `c4-containers.mmd` and `c4-components.mmd`

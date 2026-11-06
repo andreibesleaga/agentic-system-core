@@ -1810,7 +1810,7 @@ function buildSite(bundle, ports, options, findings) {
     // three scripts are same-origin assets of this one route, because AGSC-06-17's
     // `script-src 'self'` admits no inline script.
     put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, { ...pageOptions, route: '/compose/' }));
-    // AGSC-09-13: the page tool `brief` runs the brief (AGSC-07-25) and states the prose licence; both scripts carry the domain parts only on a node whose listed items state a domain key.
+    // AGSC-09-13: the page tool `brief` runs the brief (AGSC-07-25) and states the prose licence; both scripts carry the domain parts only on a node whose listed items state a domain key or a domain link.
     put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ brief: true, domain: domainPages.scripts, specVersion })));
     put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({ bundleId: (config.bundle || {}).id, domain: domainPages.scripts, licenseProse, specVersion })));
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));

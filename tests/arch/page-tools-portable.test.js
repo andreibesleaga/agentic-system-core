@@ -18,6 +18,7 @@ const path = require('node:path');
 
 const pageTools = require('../../src/distribution/page-tools.js');
 const answers = require('../../src/distribution/tool-answers.js');
+const brief = require('../../src/composition/brief.js');
 
 const DIR = path.resolve(__dirname, '..', '..', 'src', 'distribution');
 /** Each emitted module and its own portable list, in emission order. */
@@ -111,9 +112,10 @@ test('the emitted script with the domain parts evaluates in a context that holds
     { filename: 'agsc-page-tools.js' });
   const api = vm.runInContext('globalThis.AGSC_PAGE_TOOLS', context);
   assert.deepStrictEqual([...api.DOMAIN_CONTEXTS], ['c']);
-  const corpus = { base: 'https://x.example/', bySlug: { a: { body: 'A.\n', frontmatter: { clusters: ['c'], domain_role: 'entity', title: 'A' }, slug: 'a', type: 'concept' } },
-    index: null, items: [] };
-  const core = { domainOf: (item, contexts) => ({ context: contexts[0], role: item.frontmatter.domain_role }) };
+  const corpus = { base: 'https://x.example/', bySlug: { a: { body: 'A.\n', frontmatter: { clusters: ['c'], domain_role: 'entity', title: 'A' }, slug: 'a', type: 'concept' },
+    c: { body: '', frontmatter: { title: 'C', type: 'cluster' }, slug: 'c', type: 'cluster' } }, index: null, items: [] };
+  // The algebra's two readers; `a` is not withheld, so its context is named (AGSC-09-16).
+  const core = { domainOf: (item, contexts) => ({ context: contexts[0], role: item.frontmatter.domain_role }), domainWithin: brief.domainWithin };
   const answer = api.install(corpus, core).call('read', { slug: 'a' });
   assert.deepStrictEqual(JSON.parse(JSON.stringify(answer.body.domain)), { context: 'c', role: 'entity' });
   assert.deepStrictEqual(Object.keys(answer.body), ['body', 'chunks', 'domain', 'frontmatter', 'iri', 'slug']);

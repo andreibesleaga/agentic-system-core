@@ -259,6 +259,8 @@ grep -o 'skos/core#ConceptScheme' dist/export/closure.nt
 skos/core#ConceptScheme
 ```
 
+### The domain layer
+
 A node can also bring a vocabulary of its own: classes and relations for its field, such as
 an `Engine` that is a kind of concept, or `controls` as a kind of `uses`. Write them in one
 Turtle file and name it in `agsc.config.json`, for example
@@ -475,8 +477,11 @@ relations table shows them in two more columns. For a note that states any of `d
 `domain_role`, `domain_context` and `warrant`, the tools `search` and `read` add a member
 `domain` with its parts, on the local server and in the page tools alike, and a brief
 (`agsc compose --brief`) lists them under `## Domain` in `BRIEF.md`, on the note's entry in
-`brief.json` and in its section of `context.md`. A note that states none of them looks as it did
-before.
+`brief.json` and in its section of `context.md`. A context that is a draft or held-back cluster
+is never named. A domain link appears in the brief's relations like any other link, with the inverse
+the vocabulary declares. A note that states none of them gets no `domain` member and no brief
+line; its page changes only where a related note has a domain type or a context (the two
+columns).
 
 ```bash demo
 agsc build > /dev/null 2>&1

@@ -287,6 +287,9 @@ function targetOf(raw, bySlug, anchorsOf) {
  *
  * @param {object} v the item view.
  * @param {{model: object, target: Function}} read the vocabulary and the target resolver.
+ * @param {Array<object>} findings where the faults go.
+ * @param {function(string, string, string, boolean, string): void} add takes each edge: source,
+ *   key, target, whether it is computed, and its origin (`authored`, `inverse` or `symmetric`).
  */
 function collectDomainLinks(v, { model, target }, findings, add) {
   const members = v.fm.domain_links;
@@ -315,9 +318,9 @@ function collectDomainLinks(v, { model, target }, findings, add) {
       } else if (property.conceptOnly && found.target.type === 'cluster') {
         refuse(name, `specialises a SKOS semantic relation and its target "${found.target.slug}" is a cluster, a skos:Collection`);
       } else {
-        add(v.slug, name, found.target.slug, false);
-        if (property.symmetric) add(found.target.slug, name, v.slug, true);
-        else if (property.inverseName !== null) add(found.target.slug, property.inverseName, v.slug, true);
+        add(v.slug, name, found.target.slug, false, 'authored');
+        if (property.symmetric) add(found.target.slug, name, v.slug, true, 'symmetric');
+        else if (property.inverseName !== null) add(found.target.slug, property.inverseName, v.slug, true, 'inverse');
       }
     }
   }
@@ -388,6 +391,20 @@ function warnAboutPairs(edges, hasEdge, bySlug, findings) {
 }
 
 /**
+ * The item views of one pass, by slug, and the anchors of a view's body, parsed once per pass:
+ * an item linked to n times is not parsed n times.
+ */
+function readerOf(items) {
+  const views = (Array.isArray(items) ? items : []).map(view);
+  const anchorCache = new Map();
+  const anchorsOf = (v) => {
+    if (!anchorCache.has(v)) anchorCache.set(v, anchors(v.body).anchors);
+    return anchorCache.get(v);
+  };
+  return { anchorsOf, bySlug: new Map(views.map((v) => [v.slug, v])), views };
+}
+
+/**
  * Resolve the Link graph of a Bundle (AGSC-03).
  *
  * @param {Array<object>} items parsed items (or the flat frontmatter objects the
@@ -399,14 +416,7 @@ function warnAboutPairs(edges, hasEdge, bySlug, findings) {
  * @returns {object} edges, findings and the diagnostic shapes named above.
  */
 function resolve(items, options = {}) {
-  const views = (Array.isArray(items) ? items : []).map(view);
-  const bySlug = new Map(views.map((v) => [v.slug, v]));
-  // One parse per body per pass: an item linked to n times is not parsed n times.
-  const anchorCache = new Map();
-  const anchorsOf = (v) => {
-    if (!anchorCache.has(v)) anchorCache.set(v, anchors(v.body).anchors);
-    return anchorCache.get(v);
-  };
+  const { anchorsOf, bySlug, views } = readerOf(items);
   const assets = new Set(options.assets || []);
   const findings = [];
   const edges = [];
@@ -626,6 +636,36 @@ function resolve(items, options = {}) {
 }
 
 /**
+ * AGSC-03-27 with AGSC-07-25: the domain links of `items` alone, as `resolve` reads them against
+ * the site vocabulary `model` (the same reader, `collectDomainLinks`), each with its origin: the
+ * authored edge, and the inverse or symmetric edge the vocabulary declares, an edge that is both
+ * authored and computed being `authored`. A target outside `items`, a refused member and every
+ * fault give no edge (the lint reports them). The brief lists these in `relations` like any
+ * other key; the host hands them in, because a page cannot read the vocabulary
+ * (`composition/brief.js#briefDomainParts`). Without a model, `[]`.
+ *
+ * @param {Array<object>} items flat or loaded items (`view`).
+ * @param {object|null} model the site vocabulary (`domain.js#load`), or `null`.
+ * @returns {Array<{key: string, origin: string, source: string, target: string}>} by source, key
+ *   and target in code-point order.
+ */
+function domainEdges(items, model) {
+  if (!model) return [];
+  const { anchorsOf, bySlug, views } = readerOf(items);
+  const index = new Map();
+  const add = (source, key, target, computed, origin) => {
+    const id = edgeKey({ key, source, target });
+    const seen = index.get(id);
+    if (seen === undefined) index.set(id, { key, origin, source, target });
+    else if (!computed) seen.origin = origin;
+  };
+  const target = (raw) => targetOf(raw, bySlug, anchorsOf);
+  for (const v of views) collectDomainLinks(v, { model, target }, [], add);
+  return [...index.values()].sort((a, b) => compareCodePoint(a.source, b.source)
+    || compareCodePoint(a.key, b.key) || compareCodePoint(a.target, b.target));
+}
+
+/**
  * AGSC-03-11: "a link to an external origin is never resolved at build time". The
  * test is the scheme (or a protocol-relative `//`), and it is exported
  * so that the writer's route mapping applies exactly the same test the
@@ -647,6 +687,7 @@ module.exports = {
   bodyLineOf,
   bodyPathError,
   dirOf,
+  domainEdges,
   fileLine,
   findCycle,
   isExternalTarget,

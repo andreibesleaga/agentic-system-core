@@ -16,6 +16,7 @@ const contextMap = require('../../../composition/context-map.js');
 const brief = require('../../../composition/brief.js');
 const blueprint = require('../../../composition/blueprint.js');
 const { isPublished } = require('../../../knowledge/chunks.js');
+const links = require('../../../knowledge/links.js');
 const bounded = require('../../../knowledge/contexts.js');
 const federation = require('../../../boundary/federation.js');
 const { canonicalize } = require('../../../knowledge/jcs.js');
@@ -342,9 +343,12 @@ function briefOutputs(ctx, bundle, result, items, from) {
     const outputs = saved !== undefined && architecture.isArchitecture(saved)
       ? blueprint.blueprintFiles(result, { ...options, architecture: from, listed })
       : [];
-    // AGSC-07-25: the domain paragraph over the contexts the node declares (AGSC-08-32).
+    // AGSC-07-25: the domain paragraph over the contexts the node declares (AGSC-08-32), and the
+    // domain links between listed items in `relations` (AGSC-03-27), read against the site vocabulary.
     const contexts = bounded.declared(bundle.config).map((entry) => entry.cluster);
-    return { dir, files: [...brief.briefDomainFiles(result, { ...options, contexts, listed }), ...outputs], findings: [] };
+    const listedSet = new Set(listed);
+    const domainEdges = links.domainEdges(items.filter((item) => listedSet.has(item.slug)), siteModel(bundle));
+    return { dir, files: [...brief.briefDomainFiles(result, { ...options, contexts, domainEdges, listed }), ...outputs], findings: [] };
   } catch (e) {
     if (e.code !== 'AGSC-E904') throw e;
     return { dir, files: [], findings: [{ code: e.code, message: e.message, severity: 'error' }] };

@@ -18,7 +18,8 @@ const NS = 'https://n.example/ns/domain#';
 const VOCABULARY = ['@prefix asc: <https://w3id.org/agentic-system-core/ns#> .', '@prefix owl: <http://www.w3.org/2002/07/owl#> .',
   '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .', '',
   '<https://n.example/ns/domain> a owl:Ontology ; rdfs:label "Domain" .', 'asc:Concept a owl:Class .',
-  `<${NS}Engine> a owl:Class ; rdfs:subClassOf asc:Concept ; rdfs:label "Aircraft <engine>" .`, ''].join('\n');
+  `<${NS}Engine> a owl:Class ; rdfs:subClassOf asc:Concept ; rdfs:label "Aircraft <engine>" .`,
+  `<${NS}powers> a owl:ObjectProperty ; rdfs:subPropertyOf asc:uses ; rdfs:label "powers" .`, ''].join('\n');
 const CONFIG = { domain: { contexts: [{ cluster: 'propulsion', namespace: 'https://n.example/ns/propulsion#' }], vocabulary: 'v.ttl' } };
 const routeOf = (item) => `/${item.type === 'cluster' ? 'clusters' : 'concepts'}/${item.slug}/`;
 
@@ -40,9 +41,24 @@ test('the definition list labels each part, links what has a page, and escapes e
   assert.match(html, /<dt>Warrant<\/dt><dd>literary: <a href="https:\/\/example\.org\/handbook\?a=1&amp;b=2">https:\/\/example\.org\/handbook\?a=1&amp;b=2<\/a><\/dd>/u);
   // The engine has no relation, so the list stands where the relations section would be.
   assert.ok(html.startsWith('<dl class="meta domain">'));
-  // A type the vocabulary does not define is shown as written; an unpublished context by its slug.
+  // A type the vocabulary does not define is shown as written; a context that names no item by its slug.
   const pump = sectionOf(items, 'pump');
   assert.match(pump, /<dt>Domain type<\/dt><dd>Pump<\/dd>\n<dt>Domain context<\/dt><dd>unpublished<\/dd>/u);
+});
+
+test('a context that is an item not listed (a draft cluster) is neither drawn nor named, in the list or the columns (AGSC-06-38)', () => {
+  const draft = { frontmatter: { status: 'draft', title: 'Secret', type: 'cluster' }, slug: 'secret', type: 'cluster' };
+  const only = { domain_context: 'secret', domain_role: 'entity', slug: 'only', title: 'Only', type: 'concept' };
+  const alone = { domain_context: 'secret', slug: 'alone', title: 'Alone', type: 'concept' };
+  const next = { related: ['only'], slug: 'next', title: 'Next', type: 'concept' };
+  const listed = [alone, only, next];
+  const bundle = { domain: { vocabulary: VOCABULARY }, items: [draft, ...listed.map((i) => ({ frontmatter: i, slug: i.slug, type: i.type }))] };
+  const config = { domain: { contexts: [{ cluster: 'secret', namespace: 'https://n.example/ns/secret#' }], vocabulary: 'v.ttl' } };
+  const view = domainView.pages({ bundle, config, items: listed, model: domain.load(VOCABULARY, { contexts: config.domain.contexts }), routeOf });
+  for (const item of listed) assert.doesNotMatch(view.itemSection(item).html, /secret|Domain context/u, item.slug);
+  assert.match(view.itemSection(only).html, /<dt>Domain role<\/dt><dd>entity<\/dd>/u);
+  assert.equal(view.itemSection(alone).html, '', 'with no relation and no part left, no section at all');
+  assert.deepEqual(view.scripts, { contexts: [], edges: [], withheld: ['alone', 'only'] });
 });
 
 test('the two columns appear only where a row\'s item has a domain type or a context, with that item\'s labels', () => {
@@ -71,8 +87,29 @@ test('the role words are the five roles of AGSC-02-25', () => {
   assert.match(html, /<dt>Domain role<\/dt><dd>saga<\/dd>/u);
 });
 
-test('the page scripts carry the domain parts only when a listed item states a domain key', () => {
-  assert.equal(domainView.scripts([{ slug: 'a' }], CONFIG), undefined);
-  assert.deepEqual(domainView.scripts([{ slug: 'a' }, { slug: 'b', warrant: { source: 's', type: 'user' } }], CONFIG), { contexts: ['propulsion'] });
-  assert.deepEqual(domainView.scripts([{ domain_role: 'policy', slug: 'a' }], {}), { contexts: [] });
+test('a retired item\'s page gets no domain part, as it gets no relations section (AGSC-06-38)', () => {
+  const items = [{ ...ENGINE, requires: ['pump'] }, { slug: 'pump', title: 'Pump', type: 'concept' }];
+  const bundle = { domain: { vocabulary: VOCABULARY } };
+  const model = domain.load(VOCABULARY, { contexts: CONFIG.domain.contexts });
+  const view = domainView.pages({ bundle, config: CONFIG, items, model, routeOf });
+  const retired = { ...ENGINE, slug: 'old-engine', status: 'retired' };
+  assert.deepEqual(view.itemSection(retired), graphView.itemSection(retired, graphView.index(items, routeOf)));
+  assert.equal(view.itemSection(retired).html, '');
+});
+
+test('the page scripts carry the domain parts only when a listed item states a domain key or a domain link', () => {
+  const model = domain.load(VOCABULARY, { contexts: CONFIG.domain.contexts });
+  assert.equal(domainView.scripts([{ slug: 'a' }], CONFIG, model), undefined);
+  const propulsion = { slug: 'propulsion', type: 'cluster' };
+  assert.deepEqual(domainView.scripts([{ slug: 'a' }, { slug: 'b', warrant: { source: 's', type: 'user' } }, propulsion], CONFIG, model),
+    { contexts: ['propulsion'], edges: [], withheld: [] });
+  // AGSC-09-16: a declared context that is not listed is not written into a page script.
+  assert.deepEqual(domainView.scripts([{ slug: 'b', warrant: { source: 's', type: 'user' } }], CONFIG, model),
+    { contexts: [], edges: [], withheld: [] });
+  assert.deepEqual(domainView.scripts([{ domain_role: 'policy', slug: 'a' }], {}, null), { contexts: [], edges: [], withheld: [] });
+  // AGSC-07-25: a domain link joins the brief's relations, so the page carries the edges the vocabulary gives it.
+  const linked = [{ domain_links: { powers: ['b'] }, slug: 'a', type: 'concept' }, { slug: 'b', type: 'concept' }];
+  assert.deepEqual(domainView.scripts(linked, CONFIG, model),
+    { contexts: [], edges: [{ key: 'powers', origin: 'authored', source: 'a', target: 'b' }], withheld: [] });
+  assert.equal(domainView.scripts(linked, {}, null), undefined, 'without a vocabulary nothing reads domain_links');
 });

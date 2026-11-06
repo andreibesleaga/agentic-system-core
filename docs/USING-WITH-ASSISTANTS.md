@@ -35,14 +35,14 @@ in alphabetical order:
 
 | Tool | What it does |
 |---|---|
-| `search` | finds items in this memory that match some words: at most 100, best first; when more match, the answer also says how many (`total`) |
-| `read` | returns one item: its frontmatter, its text, and one citation record per chunk of the published node (the chunk's `id`, its SHA-256 `digest`, the content version `bundle_version`, the item it cites, the section, the licence and the terms; AGSC-09-13 lists every member), so the assistant can cite a passage and check it before using it |
+| `search` | finds items in this memory that match some words: at most 100, best first; when more match, the answer also says how many (`total`); for an item with a domain type, role, context or warrant, a hit also has a member `domain` with those parts |
+| `read` | returns one item: its frontmatter, its text, and one citation record per chunk of the published node (the chunk's `id`, its SHA-256 `digest`, the content version `bundle_version`, the item it cites, the section, the licence and the terms; AGSC-09-13 lists every member), so the assistant can cite a passage and check it before using it; for an item with a domain type, role, context or warrant, also a member `domain` with those parts |
 | `links` | returns the typed links authored on one item |
 | `compose` | takes a selection of items and reports whether they fit together |
 | `ask` | returns the descriptions of the items that best match a question, with their addresses as citations — **from this memory only**; no model is called |
 | `propose` | returns the prepared text of a change to one existing item |
 | `remember` | turns something you told it into a new, well-formed item — as text |
-| `brief` | explains a selection: why each item is in it, the order to adopt them, what is missing, what to do next — the content of `brief.json` of `agsc compose --brief`, without writing a file |
+| `brief` | explains a selection: why each item is in it, the order to adopt them, what is missing, what to do next — the content of `brief.json` of `agsc compose --brief`, without writing a file, with `domain` on the entries of such items and their domain links among the relations |
 | `explain` | says whether one typed link holds between two items and why: written by the author, or the steps that make it hold (an inverse, a chain) |
 | `check` | lists the link warnings about a selection of items, or about every item when no selection is given: an item that links to itself, two links that cannot both hold, a target of the wrong kind, a superseded item still `stable` |
 

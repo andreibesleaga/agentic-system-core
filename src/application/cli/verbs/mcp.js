@@ -17,7 +17,8 @@
 //
 // The same route map gives the tools what a page reads (AGSC-09-16): the discovery
 // document (the build instant and content version of `brief` and of the citation records
-// of `read`) and the chunk lines `read` cites (AGSC-09-13).
+// of `read`) and the chunk lines `read` cites (AGSC-09-13). The site vocabulary, loaded as
+// `lint` loads it, gives the brief its domain links (AGSC-07-25, AGSC-03-27).
 //
 // A build that fails must never stop the tool server: the tools read the loaded
 // Bundle. In that case the resource list is empty, `read` carries no chunk and no
@@ -26,6 +27,7 @@
 const site = require('../../../distribution/site.js');
 const stdio = require('../../../distribution/mcp-stdio.js');
 const helpers = require('./_helpers.js');
+const { siteModel } = require('./lint.js');
 
 /** The published route map, or an empty one. Never throws, never writes, never prints. */
 function artifactsOf(ctx, bundle) {
@@ -51,6 +53,8 @@ function run(ctx) {
     artifacts: artifactsOf(ctx, bundle),
     bundle,
     config: ctx.config,
+    // AGSC-03-27: the site vocabulary, against which the brief reads the domain links (AGSC-07-25).
+    domain: siteModel(bundle),
     // The process streams are the host's; the application layer hands them in.
     stdin: ctx.stdin || process.stdin,
     stdout: ctx.stdout || process.stdout,

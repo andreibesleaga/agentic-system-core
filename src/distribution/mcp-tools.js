@@ -31,7 +31,11 @@
  * domain parts of AGSC-09-13 (vector `cli-0037`) join a `search` hit and the `read` body
  * through `tool-answers.js#toolDomainAnswer`, the function the page applies too, and the
  * `brief` items through `composition/brief.js#briefDomainOf`; both read `domainOf` over the
- * contexts that `domain.contexts` declares (AGSC-08-32).
+ * contexts that `domain.contexts` declares (AGSC-08-32), each entry a cluster and a namespace as
+ * `knowledge/contexts.js#declared` reads it. The brief also lists the domain links between
+ * listed items in `relations` (AGSC-03-27), read against the site vocabulary the application
+ * layer loaded (`options.domain`, `knowledge/domain.js#load`) by `knowledge/links.js#domainEdges`,
+ * the edges the build writes into the page's script; with none, no domain link is read.
  *
  * PURE over a loaded Bundle: no clock, no network, no process. The Proposal
  * SIDE EFFECT (AGSC-08-04's `dist/proposal/<n>.patch` and `.md`) is NOT taken
@@ -49,7 +53,7 @@
 
 const { createHash } = require('node:crypto');
 const { compose } = require('../composition/compose.js');
-const { briefDomainOf, domainOf } = require('../composition/brief.js');
+const { briefDomainOf, domainOf, domainWithheld, domainWithin } = require('../composition/brief.js');
 const { selectionDigestInput, terms } = require('../composition/harness.js');
 const chunks = require('../knowledge/chunks.js');
 const links = require('../knowledge/links.js');
@@ -161,6 +165,10 @@ function slugFromIri(bundle, iri) {
  * `manifest()` is the AGSC-09-13 tool list — the SAME object the browser
  * transport registers (AGSC-09-16). `call(name, args)` returns an AGSC-08-18
  * envelope and never throws for a domain fault.
+ *
+ * `options`: `config` (else the Bundle's), `artifacts` (the route map of its build) and
+ * `domain`, the site vocabulary of a node that declares one (`knowledge/domain.js#load`), whose
+ * domain links the brief lists in `relations` (AGSC-07-25, AGSC-03-27).
  */
 function tools(bundle, options) {
   const opts = options || {};
@@ -224,12 +232,28 @@ function tools(bundle, options) {
     const fm = item.frontmatter || {};
     return { kind: fm.kind, status: fm.status, type: item.type };
   };
-  // AGSC-09-13, the domain parts, over the clusters `domain.contexts` declares (AGSC-08-32). Read
-  // here rather than through `knowledge/contexts.js`, which the compose page, reaching this module
-  // for the manifest, must not reach (`tests/arch/context-map.test.js`).
+  // AGSC-09-13, the domain parts, over the clusters `domain.contexts` declares (AGSC-08-32): the
+  // entries that `knowledge/contexts.js#declared` keeps, a cluster and a namespace. Read here
+  // rather than through that module, which the compose page, reaching this module for the
+  // manifest, must not reach (`tests/arch/context-map.test.js`).
   const contexts = (Array.isArray((config.domain || {}).contexts) ? config.domain.contexts : [])
-    .map((entry) => entry && entry.cluster).filter((cluster) => typeof cluster === 'string');
-  const domainOfSlug = (slug) => (byslug.has(slug) ? domainOf(byslug.get(slug), contexts) : null);
+    .filter((entry) => entry !== null && typeof entry === 'object' && typeof entry.cluster === 'string'
+      && typeof entry.namespace === 'string')
+    .map((entry) => entry.cluster);
+  // AGSC-07-25 with AGSC-03-27: the domain links between listed items, for the brief's `relations`.
+  let listedDomainEdges = null;
+  const domainEdges = () => {
+    if (listedDomainEdges === null) listedDomainEdges = links.domainEdges(listed(), opts.domain || null);
+    return listedDomainEdges;
+  };
+  // AGSC-09-16 with AGSC-07-25: a listed item whose context is an item that is not listed has no
+  // context part, as in the page tools; a draft keeps the context it states (drafts are answered).
+  let withheldSet = null;
+  const withheld = () => {
+    if (withheldSet === null) withheldSet = new Set(domainWithheld(bundle.items || [], listed().map((i) => i.slug), contexts));
+    return withheldSet;
+  };
+  const domainOfSlug = (slug) => (byslug.has(slug) ? domainWithin(domainOf(byslug.get(slug), contexts), !withheld().has(slug)) : null);
 
   implementations.search = (args) => {
     const query = typeof args.query === 'string' ? args.query : '';
@@ -268,7 +292,12 @@ function tools(bundle, options) {
       return errorEnvelope('brief', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
     }
     const facts = listedFacts(listed());
-    const core = { briefOf: (result, options) => briefDomainOf(result, { ...options, contexts }), compose, selectionDigestInput };
+    const core = {
+      // The brief reads the listed items alone, as a page does, so it is handed the withheld list too.
+      briefOf: (result, options) => briefDomainOf(result, { ...options, contexts, domainEdges: domainEdges(), withheld: [...withheld()] }),
+      compose,
+      selectionDigestInput,
+    };
     const answer = answers.toolBrief(core, facts, args.selection, (text) => createHash('sha256').update(text, 'utf8').digest('hex'));
     return answer.fault === undefined ? envelope('brief', 'brief', answer.body)
       : errorEnvelope('brief', answer.fault.code, answer.fault.message);

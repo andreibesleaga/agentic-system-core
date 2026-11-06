@@ -160,6 +160,7 @@ function serve(ctx) {
   const { server } = createServer(bundle, {
     artifacts: context.artifacts,
     config: context.config,
+    domain: context.domain,
     version: context.version,
   });
   const { stdin, stdout } = context;

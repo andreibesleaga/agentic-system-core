@@ -131,7 +131,7 @@ To add a module:
    A part a page carries only for some nodes has a second list, `DOMAIN_PORTABLE`: the
    domain paragraph of the brief (`composition/brief.js`) and the domain parts of the tool
    answers (`distribution/tool-answers.js`) are emitted only for a node whose listed items
-   state a domain key, so every other node's page scripts keep their bytes; each function
+   state a domain key or a domain link, so every other node's page scripts keep their bytes; each function
    on it is built on the function of `PORTABLE` it extends and gives that function's
    result when there is no domain part, and the two tests above check both lists.
    Code from another project that a page runs is vendored, never hand-copied: the query

@@ -36,13 +36,17 @@
  *
  * THE DOMAIN LAYER. The domain paragraph of AGSC-07-25 (a `domain` member on an `items` entry,
  * a `## Domain` section after `## Members`, the domain lines of `context.md`) applies only when
- * a member states a key of AGSC-02-25. It is written by the functions of `DOMAIN_PORTABLE`
- * (`briefDomainFiles`, `briefDomainOf`), each built on the function of `PORTABLE` it extends and
- * giving that function's bytes when no member has a domain part. The command line, the local
- * tool server and the vectors call them; a page carries them only on a node whose listed items
- * state a domain key, so the page script of every other node keeps its bytes (AGSC-01-41: a
- * Bundle with no domain layer emits what it emitted before). The blueprint of AGSC-07-29 names
- * no domain part and reads `briefParts`.
+ * a member states a key of AGSC-02-25, and never names a context that is an item not listed. A
+ * domain link (AGSC-03-27) appears in `relations` like any other key: the host reads the links
+ * against the site vocabulary (`knowledge/links.js#domainEdges`) and hands them in as
+ * `options.domainEdges`, because a page cannot read the vocabulary. It is written by the
+ * functions of `DOMAIN_PORTABLE` (`briefDomainFiles`, `briefDomainOf`), each built on the
+ * function of `PORTABLE` it extends and giving that function's bytes when no member has a domain
+ * part and no domain link joins. The command line, the local tool server and the vectors call
+ * them; a page carries them only on a node whose listed items state a domain key or a domain
+ * link, so the page script of every other node keeps its bytes (AGSC-01-41: a Bundle none of
+ * whose listed items states one emits what it emitted before). The blueprint of AGSC-07-29
+ * names no domain part and reads `briefParts`.
  *
  * THE NARRATION of AGSC-07-28 is never written here: a brief carries no model-written text, and
  * the reference engine ships no adapter through which an agent lane could call a model
@@ -578,7 +582,7 @@ function briefFiles(result, options) {
 /**
  * AGSC-02-25: the four domain keys of an item. An item that states none of them has no domain
  * part in any answer (AGSC-07-25, AGSC-09-13); `domain_links` (AGSC-03-27) is a Link of its
- * own and appears in `relations` like any other key.
+ * own and appears in `relations` like any other key (`domainRelations`).
  */
 function domainKeys() {
   return ['domain_context', 'domain_role', 'domain_type', 'warrant'];
@@ -616,24 +620,100 @@ function domainOf(item, contexts) {
 }
 
 /**
+ * The parts of `domain` with the context left out when `named` is false (`domainWithheld`):
+ * `null` when no part is left.
+ *
+ * @param {object|null} domain what `domainOf` gave.
+ * @param {boolean} named whether the context may be named.
+ */
+function domainWithin(domain, named) {
+  if (domain === null || domain.context === undefined || named) return domain;
+  const out = {};
+  for (const name of Object.keys(domain)) if (name !== 'context') out[name] = domain[name];
+  return Object.keys(out).length === 0 ? null : out;
+}
+
+/**
+ * The listed items whose context is an item that is not listed — a draft cluster, a retired
+ * one, one the `releases` switchboard holds back — in code-point order. AGSC-07-25 ("no file of
+ * it names … a draft … or an item held back"), AGSC-06-38 ("neither drawn nor named") and
+ * AGSC-09-16 (the listed set only): their context is no part (`domainWithin`). A context that
+ * names no item at all is kept as stated (`AGSC-E418` reports it; vectors `compose-0034` and
+ * `cli-0037`). Only a host that holds every item can say which these are; a page, which holds
+ * the listed items alone, is handed the list (`composition/browser.js`, `page-tools.js`). The
+ * list names listed items only.
+ *
+ * @param {Array<object>} items every item of the Bundle, flat or `{frontmatter}`.
+ * @param {Array<string>} [listed] the slugs of the listed items; absent, every item is listed.
+ * @param {Array<string>} [contexts] the slugs of the clusters `domain.contexts` declares.
+ * @returns {Array<string>}
+ */
+function domainWithheld(items, listed, contexts) {
+  const all = indexBySlug(items);
+  const named = new Set(Array.isArray(listed) ? listed : [...all.keys()]);
+  const out = [];
+  for (const [slug, item] of all) {
+    if (!named.has(slug)) continue;
+    const domain = domainOf(item, contexts);
+    if (domain !== null && domain.context !== undefined && all.has(domain.context) && !named.has(domain.context)) out.push(slug);
+  }
+  return byCodePoint(out);
+}
+
+/**
+ * AGSC-07-25: `relations` with the domain links (AGSC-03-27) "like any other key": each edge of
+ * `domainEdges` between two listed items, at least one of them in the selection, joins the
+ * relations of the fourteen keys, an edge both carry being one relation, `authored` when either
+ * is; in the order of `compareEdges`. The edges are those of `knowledge/links.js#domainEdges`,
+ * which the host reads against the site vocabulary, because a page cannot read it. They join
+ * `relations` only: the dependency order, the readings, the gaps and the checklist are those of
+ * the fourteen keys (AGSC-03-18, AGSC-07-10). With no domain edge, `relations` itself.
+ */
+function domainRelations(relations, domainEdges, listed, selection) {
+  const edges = (Array.isArray(domainEdges) ? domainEdges : []).filter((e) => listed.has(e.source) && listed.has(e.target));
+  const inside = new Set(selection);
+  const joined = edges.filter((e) => inside.has(e.source) || inside.has(e.target));
+  if (joined.length === 0) return relations;
+  const nul = String.fromCharCode(0);
+  const byId = new Map(relations.map((r) => [r.source + nul + r.key + nul + r.target, { ...r }]));
+  for (const e of joined) {
+    const id = e.source + nul + e.key + nul + e.target;
+    const known = byId.get(id);
+    if (known !== undefined) {
+      if (e.origin === 'authored') known.origin = 'authored';
+      continue;
+    }
+    byId.set(id, { key: e.key, origin: e.origin, scope: inside.has(e.source) && inside.has(e.target) ? 'inside' : 'outside',
+      source: e.source, target: e.target });
+  }
+  return [...byId.values()].sort(compareEdges);
+}
+
+/**
  * `briefParts` with the domain paragraph of AGSC-07-25: each `items` entry of a member that
- * has a domain part gains the member `domain`, and `domains` maps each such member to it. When
- * no member has one the parts are those of `briefParts` and `domains` is empty, so every file
- * keeps the bytes of a node without the layer. `options.contexts` names the declared contexts.
+ * has a domain part gains the member `domain`, `domains` maps each such member to it, and the
+ * domain links of `options.domainEdges` join `relations` (`domainRelations`). When no member
+ * has a part and no domain link joins, the parts are those of `briefParts` and `domains` is
+ * empty, so every file keeps the bytes of a node without the layer. `options.contexts` names
+ * the declared contexts; the context of a member of `options.withheld` (else of
+ * `domainWithheld`, over `options.items`) is no part.
  */
 function briefDomainParts(result, options) {
   const parts = briefParts(result, options);
   const listed = listedIndex(options);
+  const withheld = new Set(Array.isArray(options.withheld) ? options.withheld
+    : domainWithheld(options.items, options.listed, options.contexts));
   const domains = new Map();
   for (const m of parts.members) {
-    const domain = domainOf(listed.get(m.slug), options.contexts);
+    const domain = domainWithin(domainOf(listed.get(m.slug), options.contexts), !withheld.has(m.slug));
     if (domain !== null) domains.set(m.slug, domain);
   }
-  if (domains.size === 0) return { ...parts, domains };
+  const relations = domainRelations(parts.record.relations, options.domainEdges, listed, parts.record.selection);
+  if (domains.size === 0 && relations === parts.record.relations) return { ...parts, domains };
   const items = parts.record.items.map((entry) => (domains.has(entry.slug)
     ? { domain: domains.get(entry.slug), reason: entry.reason, slug: entry.slug, title: entry.title, type: entry.type }
     : entry));
-  return { ...parts, domains, record: { ...parts.record, items } };
+  return { ...parts, domains, record: { ...parts.record, items, relations } };
 }
 
 /** AGSC-07-25: the `brief.json` object with the domain paragraph (`briefOf` when no member has a part). */
@@ -718,11 +798,14 @@ function contextDomainMd(parts, options) {
 
 /**
  * AGSC-07-25: the four files of the brief with the domain paragraph — the bytes of
- * `briefFiles` when no member has a domain part. The command line writes these; a page carries
- * them only on a node whose listed items state a domain key (`composition/browser.js`).
+ * `briefFiles` when no member has a domain part and no domain link joins. The command line
+ * writes these; a page carries them only on a node whose listed items state a domain key or a
+ * domain link (`composition/browser.js`).
  *
  * @param {object} result a verdict from `compose.js#compose`.
- * @param {object} options as for `briefOf`, and `contexts`, the declared contexts (AGSC-08-32).
+ * @param {object} options as for `briefOf`, `contexts`, the declared contexts (AGSC-08-32),
+ *   `domainEdges`, the domain links of `knowledge/links.js#domainEdges` (AGSC-03-27), and, on a
+ *   page, `withheld` (`domainWithheld`).
  * @returns {Array<[string, string]>} file name and text.
  */
 function briefDomainFiles(result, options) {
@@ -750,7 +833,7 @@ const PORTABLE = Object.freeze(['inverseKeys', 'chainKeys', 'contextBounds', 'de
  * for a node whose listed items state a domain key, so that every other node's page script
  * keeps its bytes (AGSC-01-41, AGSC-07-25).
  */
-const DOMAIN_PORTABLE = Object.freeze(['domainKeys', 'domainOf', 'briefDomainParts', 'briefDomainOf',
+const DOMAIN_PORTABLE = Object.freeze(['domainKeys', 'domainOf', 'domainWithin', 'domainWithheld', 'domainRelations', 'briefDomainParts', 'briefDomainOf',
   'briefDomainLine', 'briefDomainMd', 'contextDomainLines', 'contextDomainSection', 'contextDomainMd',
   'briefDomainFiles']);
 
@@ -787,6 +870,9 @@ module.exports = {
   derivedBound,
   domainKeys,
   domainOf,
+  domainRelations,
+  domainWithheld,
+  domainWithin,
   entryOf,
   gapsOf,
   inverseKeys,

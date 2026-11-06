@@ -10,7 +10,8 @@
 // note's domain type, role and domain links, and their refusal (AGSC-02-25, AGSC-03-27);
 // a term's warrant in the graph, and the JSON-LD round trip of a graph that carries it
 // (AGSC-05-40, AGSC-06-32); the note's domain parts on its page, in the page tool's answer run
-// from the published scripts and in its brief (AGSC-06-38, AGSC-09-13, AGSC-07-25); the site's
+// from the published scripts and in its brief, its domain link in the brief's relations
+// (AGSC-06-38, AGSC-09-13, AGSC-07-25); the site's
 // own invariants and competency questions, checked by
 // `verify` and `ci` and never by `lint` (AGSC-05-41, AGSC-09-20); the TypeScript parts,
 // compiled into the shipped tree and needed by no install and no run (AGSC-09-09 for the
@@ -619,6 +620,16 @@ module.exports = [
       const at = md.indexOf('\n## Domain\n\n');
       assert.ok(md.indexOf('\n## Members\n') < at && at > 0, 'BRIEF.md has no "## Domain" section after "## Members"');
       assert.ok(md.slice(at).split('\n\n')[1].split('\n').includes(line), md);
+    },
+  },
+  {
+    pattern: /^the brief's "BRIEF\.md" lists under "## Relations" the domain link "([^"]+)" and its inverse "([^"]+)" \(AGSC-07-25, AGSC-03-27\)$/u,
+    run(world, authored, inverse) {
+      const harness = path.join(world.dir, 'dist', 'harness');
+      const companion = fs.readdirSync(harness).find((name) => name.endsWith('.companion'));
+      const md = fs.readFileSync(path.join(harness, companion, 'BRIEF.md'), 'utf8');
+      const relations = md.slice(md.indexOf('\n## Relations\n\n')).split('\n\n')[1].split('\n');
+      assert.ok(relations.includes(authored) && relations.includes(inverse), md);
     },
   },
   {

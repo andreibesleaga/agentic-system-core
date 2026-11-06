@@ -120,6 +120,27 @@ test('the model says which side of an inverse pair is computed, and its local na
   assert.strictEqual(domain.load(VALID).propertyFor(item, 'controls').inverseName, 'controlled-by');
 });
 
+test('domainEdges: the domain links alone, each with its origin, as the brief lists them in relations (AGSC-07-25)', () => {
+  const items = [concept('a', { domain_links: { 'controlled-by': ['b'], pairedWith: ['c'], feeds: ['b', 'nowhere'] }, related: ['b'] }),
+    concept('b'), concept('c', { domain_links: { pairedWith: ['a'] } }), cluster('k', { description: 'x' }),
+    concept('d', { domain_links: { pairedWith: ['k'], owns: ['a'] } })];
+  assert.deepStrictEqual(links.domainEdges(items, MODEL), [
+    { key: 'controlled-by', origin: 'authored', source: 'a', target: 'b' },
+    { key: 'feeds', origin: 'authored', source: 'a', target: 'b' },
+    { key: 'pairedWith', origin: 'authored', source: 'a', target: 'c' },
+    { key: 'controls', origin: 'inverse', source: 'b', target: 'a' },
+    { key: 'pairedWith', origin: 'authored', source: 'c', target: 'a' },
+  ], 'an edge both authored and computed is authored');
+  // The edges are those `resolve` adds for the domain links, and none of the fourteen keys.
+  const resolved = resolve(items).edges.filter((e) => e.key !== 'related');
+  assert.deepStrictEqual(links.domainEdges(items, MODEL).map((e) => [e.source, e.key, e.target, e.origin !== 'authored']),
+    resolved.map((e) => [e.source, e.key, e.target, e.computed]));
+  assert.deepStrictEqual(links.domainEdges(items, null), [], 'without a site vocabulary nothing reads the key');
+  fc.assert(fc.property(fc.shuffledSubarray(items, { minLength: items.length }), (shuffled) => {
+    assert.deepStrictEqual(links.domainEdges(shuffled, MODEL), links.domainEdges(items, MODEL));
+  }), RUNS);
+});
+
 // ---------------------------------------------------------------- AGSC-E418
 
 const item = (slug, extra) => ({ frontmatter: { slug, type: 'concept', ...extra }, path: `content/concepts/${slug}.md`, slug, type: 'concept' });

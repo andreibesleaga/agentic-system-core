@@ -469,19 +469,24 @@ function toolDomainAnswer(name, answer, domainOf) {
  * The page toolset with the domain parts: each answer of `toolset` through `toolDomainAnswer`,
  * a promise of one through it when it settles. The parts are the algebra's (`core.domainOf`,
  * emitted with the domain paragraph of the brief), over the corpus the toolset reads and the
- * declared contexts of the node; a page without that algebra has no brief either, and keeps
- * the toolset as it is.
+ * declared contexts of the node; the context of an item of `withheld`, which is an item that is
+ * not listed (`composition/brief.js#domainWithheld`, computed by the build), is no part
+ * (`core.domainWithin`, AGSC-09-16), as on the local server. A page without that algebra has no
+ * brief either, and keeps the toolset as it is.
  *
  * @param {{call: Function}} toolset what `page-tools.js#pageToolset` returned.
  * @param {object} corpus the corpus it reads (`bySlug`).
  * @param {object} core the algebra (`globalThis.AGSC_CORE`).
- * @param {Array<string>} contexts the slugs of the clusters `domain.contexts` declares.
+ * @param {Array<string>} contexts the slugs of the clusters `domain.contexts` declares that are listed.
+ * @param {Array<string>} [withheld] the listed items whose context is not named.
  * @returns {{call: Function}}
  */
-function toolDomainToolset(toolset, corpus, core, contexts) {
+function toolDomainToolset(toolset, corpus, core, contexts, withheld) {
   if (core === null || typeof core !== 'object' || typeof core.domainOf !== 'function') return toolset;
   const bySlug = (corpus && corpus.bySlug) || {};
-  const domainOf = (slug) => (Object.prototype.hasOwnProperty.call(bySlug, slug) ? core.domainOf(bySlug[slug], contexts) : null);
+  const hidden = Array.isArray(withheld) ? withheld : [];
+  const domainOf = (slug) => (Object.prototype.hasOwnProperty.call(bySlug, slug)
+    ? core.domainWithin(core.domainOf(bySlug[slug], contexts), hidden.indexOf(slug) === -1) : null);
   return {
     call: function (name, args) {
       const answer = toolset.call(name, args);
@@ -502,7 +507,7 @@ const PORTABLE = Object.freeze(['toolHitBound', 'toolBounded', 'toolParse', 'too
   'toolChain', 'toolExplanation', 'toolIsKind', 'toolTargetMatches', 'toolLinkWarnings', 'toolBrief',
   'toolSha256Hex']);
 
-/** The domain parts' functions, emitted after `PORTABLE` only on a node whose listed items state a domain key. */
+/** The domain parts' functions, emitted after `PORTABLE` only on a node whose listed items state a domain key or a domain link. */
 const DOMAIN_PORTABLE = Object.freeze(['toolWithDomain', 'toolDomainAnswer', 'toolDomainToolset']);
 
 module.exports = {

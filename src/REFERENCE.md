@@ -466,6 +466,7 @@ LINK_KEYS (14); CORE_KEYS (9); MODE2_KEYS (5); INVERSE; SYMMETRIC
 resolve(items, { assets?, domain? }) -> { edges, errors, inverses, cycle, cycles, chain,
   chains, parents, resolved, unresolved, skipped_external }
 // (with `domain`, the model of knowledge/domain.js#load, `domain_links` become edges and AGSC-E317 is raised, AGSC-03-27)
+domainEdges(items, model) -> [{ key, origin: 'authored'|'inverse'|'symmetric', source, target }]   // the domain links alone, for the brief's relations (AGSC-07-25); [] without a model
 anchors(body); findCycle(adjacency, nodes); pathGrammarError(relative, fromDir)
 resolveInside(fromDir, relative); dirOf(path); view(item)
 // (resolve also raises the warnings AGSC-E313 to E316 through the columns of knowledge/relations.js)
@@ -768,7 +769,7 @@ ITEM_COLUMNS; CLUSTER_COLUMNS; NEIGHBOURS_DRAWN = 24; MEMBERS_DRAWN = 24; MEMBER
 
 // distribution/domain-view.js (pure; AGSC-06-38, the domain layer)
 pages({ bundle, config, items, model, routeOf }) -> { views, itemSection(item) -> { html, findings }, scripts }   // views = graph-view index(items, routeOf); the domain parts only when bundle.domain.vocabulary is present
-scripts(items, config) -> { contexts: [cluster slug] } | undefined   // the `domain` option of the two page-script bundles
+scripts(items, config, model, all?) -> { contexts: [cluster slug], edges, withheld } | undefined   // the `domain` option of the two page-script bundles: the declared contexts that are listed, links.js#domainEdges over the listed items and brief.js#domainWithheld over every item; undefined when no listed item states a domain key or a domain link
 ROLE_WORDS   // the five roles of AGSC-02-25, as words
 
 // distribution/clusters-page.js (pure)
@@ -917,9 +918,12 @@ briefOf(result, {items, listed?, bundleVersion, instant, licenseProse, selection
 briefFiles(result, options) -> [['BRIEF.md', text], ['brief.json', text], ['brief.mmd', text], ['context.md', text]]
 dependencyOrder(selection, edges); chainReadings(edges, members, bound?); briefEdges(listedIndex(options))   // listed: slugs; absent = every item
 derivedBound() -> 1000000   // briefOf, briefFiles and chainReadings throw an Error with code 'AGSC-E904' (briefTooLarge) when `derived` would hold more steps
-// the domain paragraph of AGSC-07-25 (DOMAIN_PORTABLE; options.contexts = the clusters domain.contexts declares)
-briefDomainOf(result, options); briefDomainFiles(result, options)   // = briefOf / briefFiles when no member has a domain part
+// the domain paragraph of AGSC-07-25 (DOMAIN_PORTABLE; options.contexts = the clusters domain.contexts declares, options.domainEdges = knowledge/links.js#domainEdges)
+briefDomainOf(result, options); briefDomainFiles(result, options)   // = briefOf / briefFiles when no member has a domain part and no domain link joins
 domainOf(item, contexts?) -> { context?, role?, type?, warrant? } | null   // null when the item states none of the four keys of AGSC-02-25
+domainWithheld(items, listed?, contexts?) -> [slug]   // the listed items whose context is an item that is not listed (AGSC-07-25, AGSC-06-38, AGSC-09-16)
+domainWithin(domain, named) -> domain | null   // the context left out when `named` is false; null when no part is left
+domainRelations(relations, domainEdges, listed, selection) -> relations   // the domain links of options.domainEdges join `relations` (AGSC-07-25, AGSC-03-27)
 briefDomainParts(result, options) -> { edges, members, record, domains: Map }; briefDomainMd(parts, options); contextDomainMd(parts, options)
 // composition/blueprint.js — AGSC-07-29
 blueprintFiles(result, {architecture, ...the options of briefOf}) -> [['blueprint/build-plan.md', text], ['blueprint/c4-components.mmd', text], ['blueprint/c4-containers.mmd', text], ['blueprint/c4-context.mmd', text], ['blueprint/decisions/NNNN-<slug>.md', text]…] | []   // [] when the architecture is not listed
@@ -955,7 +959,7 @@ peerFaults(entry, {read, where, base, contexts, items, terms}) -> { findings, st
 contextMapResults({peer, results, statements}) -> results with relationship, crosswalk[{match, local}], trust "untrusted"
 RELATIONSHIPS; CROSSWALK_MATCHES
 // distribution/mcp-tools.js
-tools(bundle, {config, artifacts}) -> { call(name, args) -> envelope, manifest() }   // artifacts: the build's route map
+tools(bundle, {config, artifacts, domain}) -> { call(name, args) -> envelope, manifest() }   // artifacts: the build's route map; domain: the site vocabulary (knowledge/domain.js#load), for the brief's domain links
 manifest(); tokenize(text); envelope(source, type, body); errorEnvelope(source, code, message)
 // distribution/mcp-stdio.js
 createServer(bundle, options) -> { resources, server, toolset };  serve(ctx) -> Promise<void>
@@ -974,7 +978,7 @@ toolChunkIndex(map) -> {bySlug, incomplete, missing}; toolCitationRecord(line, b
 toolExplanation(edges, key, source, target); toolLinkWarnings(edges, itemOf)
 toolBrief(core, facts, selection, hash) -> {body} | {fault: {code, message}} (or a promise of it)   // AGSC-E901 without a build instant, AGSC-E904 above derivedBound
 toolDomainAnswer(name, answer, domainOf) -> answer   // AGSC-09-13: `domain` on search hits and the read body of an item with a part; DOMAIN_PORTABLE
-toolWithDomain(record, domain); toolDomainToolset(toolset, corpus, core, contexts) -> { call }   // the page's toolset through toolDomainAnswer, parts from core.domainOf
+toolWithDomain(record, domain); toolDomainToolset(toolset, corpus, core, contexts, withheld?) -> { call }   // the page's toolset through toolDomainAnswer, parts from core.domainOf, the context of a withheld item left out by core.domainWithin
 pageSplitFrontmatter(text); pageParseFrontmatter(yamlText); pageApplyTypes(value, key)
 pageEdges(items); pageAnchors(body); pageInlineTargets(body); pageTokenize(text)
 // application/bundle.js — `ports` is the port bag {fs, clock, proc, network}

@@ -9,10 +9,12 @@
 // `organisational` (the organisation that keeps the vocabulary requires it; the standard's
 // "organizational", in the specification's spelling, so there is no fourth kind).
 //
-// WHY ONE READER. The graph writer (`nquads.js`: `dcterms:source` and `asc:warrant` on the
+// WHY ONE READING. The graph writer (`nquads.js`: `dcterms:source` and `asc:warrant` on the
 // item) and the display of the domain layer (pages, tool answers, the brief: "the item's
-// `warrant` as AGSC-05-40 shapes it") must agree on which warrant an item has. Both call
-// `warrantOf`, which returns the two members the rule names, or `null`.
+// `warrant` as AGSC-05-40 shapes it") must agree on which warrant an item has. The graph writer
+// calls `warrantOf`, which returns the two members the rule names, or `null`; the display reads
+// the portable copy in `composition/brief.js#domainOf`, which runs in the page too and which
+// `tests/composition/brief-domain.test.js` keeps equal to `warrantOf`.
 //
 // WHAT IS NOT HERE. The faults (`AGSC-E512`, and `AGSC-E204` for an empty or multi-line
 // source) come from the item schema, `schema/item.schema.json`, through `validate.js`; this

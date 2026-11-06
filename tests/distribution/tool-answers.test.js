@@ -22,7 +22,7 @@ const derive = require('../../src/knowledge/derive.js');
 const links = require('../../src/knowledge/links.js');
 const chunks = require('../../src/knowledge/chunks.js');
 const { compose } = require('../../src/composition/compose.js');
-const { briefOf } = require('../../src/composition/brief.js');
+const { briefOf, domainOf, domainWithin } = require('../../src/composition/brief.js');
 const { selectionDigestInput } = require('../../src/composition/harness.js');
 const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
 const { createClock } = require('../../src/adapters/node-clock.js');
@@ -396,7 +396,7 @@ test('toolDomainAnswer adds the parts to search hits and to a read body, and ret
 
 test('toolDomainToolset applies the parts to synchronous and to promised answers, and needs the algebra', async () => {
   const corpus = { bySlug: { invoice: { frontmatter: { domain_role: 'entity' }, slug: 'invoice' } } };
-  const core = { domainOf: (item) => ({ role: item.frontmatter.domain_role }) };
+  const core = { domainOf: (item) => ({ role: item.frontmatter.domain_role }), domainWithin: (domain) => domain };
   const toolset = { call: (name, args) => (name === 'brief' ? Promise.resolve({ body: {}, type: 'brief' })
     : { body: { slug: args.slug }, type: 'item' }) };
   const wrapped = answers.toolDomainToolset(toolset, corpus, core, []);
@@ -405,4 +405,18 @@ test('toolDomainToolset applies the parts to synchronous and to promised answers
   assert.deepEqual(await wrapped.call('brief', {}), { body: {}, type: 'brief' });
   assert.equal(answers.toolDomainToolset(toolset, corpus, undefined, []), toolset);
   assert.equal(answers.toolDomainToolset(toolset, null, core, []).call('read', { slug: 'invoice' }).body.domain, undefined);
+});
+
+test('toolDomainToolset leaves out the context of a withheld item, whose context is an item not listed (AGSC-09-16)', () => {
+  const corpus = { bySlug: {
+    inv: { frontmatter: { clusters: ['secret-billing'], domain_role: 'entity' }, slug: 'inv' },
+    pay: { frontmatter: { clusters: ['billing'], domain_role: 'policy' }, slug: 'pay' },
+    billing: { frontmatter: { type: 'cluster' }, slug: 'billing' },
+    only: { frontmatter: { domain_context: 'secret-billing' }, slug: 'only' },
+  } };
+  const toolset = { call: (name, args) => ({ body: { slug: args.slug }, type: 'item' }) };
+  const wrapped = answers.toolDomainToolset(toolset, corpus, { domainOf, domainWithin }, ['billing', 'secret-billing'], ['inv', 'only']);
+  assert.deepEqual(wrapped.call('read', { slug: 'inv' }).body, { domain: { role: 'entity' }, slug: 'inv' });
+  assert.deepEqual(wrapped.call('read', { slug: 'pay' }).body, { domain: { context: 'billing', role: 'policy' }, slug: 'pay' });
+  assert.deepEqual(wrapped.call('read', { slug: 'only' }).body, { slug: 'only' }, 'no part is left, so no domain member');
 });
