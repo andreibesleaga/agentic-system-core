@@ -19,7 +19,9 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `compose/index.html` carries the workspace block, the cluster and tag filters and the places of the
   verdict in words, the brief and its downloads, fc897c8832959ee7 to ad46a800b69dc85e;
   `compose/agsc-compose.js` fills them, 1dbf68b3fe7d51b2 to 7e5ceff8ff4557c2; `compose/agsc-core.js`
-  carries the blueprint of AGSC-07-29 beside the brief, d59bd12ec7050763 to a6e45b917f7c15c7;
+  carries the blueprint of AGSC-07-29 beside the brief, and the one function that writes the four
+  comment lines `diagram.mmd`, `brief.mmd` and each C4 file open with (AGSC-07-12, AGSC-07-25,
+  AGSC-07-29; the lines keep their bytes), d59bd12ec7050763 to 9192785b8eae7e64;
   `compose/agsc-page-tools.js` keeps the published pages it read as `API.corpus`, so the page writes
   the brief over the items the page tool `brief` reads, b41e50f5e2a3eeda to 3b64032af34ef4e2. The
   seven Harness files and the Harness archive keep their bytes.
@@ -272,9 +274,9 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   have read the published pages, offered as its four files, with the blueprint outputs while the
   selection is the one `?from=<architecture>` saves, one link per file and "Download the brief
   (.zip)"; "Download the skills (.zip)" beside "Download all (.zip)" for the skill files of the
-  Harness. Each archive is its own and none enters the Harness archive (AGSC-07-13a). No element of
-  the page moves while it loads: the form, the list and the panels sit in one block shown in the
-  step that hides the loading paragraph (measured in `tests/distribution/compose-browser.test.js`, which
+  Harness. Each archive is its own and none enters the Harness archive (AGSC-07-13a). No element
+  inside `<main>` moves while the page loads, and the footer moves as the page grows: the form, the
+  list and the panels sit in one block shown in the step that hides the loading paragraph (measured in `tests/distribution/compose-browser.test.js`, which
   the browser job of `.github/workflows/test.yml` now runs with axe-core in both colour schemes;
   on the mode-4 demonstration the cumulative layout shift was 0.041 at 1280 px and 0.064 at 390 px,
   and is 0.039 and 0.090, the footer moving as the page grows, under the 0.1 bound of the Core Web
@@ -287,14 +289,15 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `--zip` archive: why each member is there, the relations with the items one step outside, the
   dependency order (`requires`, `broader` and `derived-from` first, then code-point order), the
   readings of AGSC-05-33 inside the selection, the gaps and the checklist. It names listed items only
-  (AGSC-00-05), and an invalid composition gets its brief and no Harness (exit 1). New
+  (AGSC-00-05), and an invalid composition gets its brief and no Harness (exit 1); `agsc compose
+  --help` names `--brief` for a selection and for `--from <slug>` (AGSC-09-09). New
   `src/composition/brief.js`, portable: `composition/browser.js` carries it in the page bundle when
   asked (`bundle({ brief: true })`), and the brief computed in that bundle is the bytes the command
-  line writes (`tests/composition/browser.test.js`); the `/compose/` script a build publishes is
-  unchanged. Fitness test `tests/arch/brief.test.js`: the Harness writer never reaches the brief, and
+  line writes (`tests/composition/browser.test.js`); this entry alone changes no published byte (the
+  `/compose/` scripts change in the entries for the tools and for the rest of `/compose/`). Fitness test `tests/arch/brief.test.js`: the Harness writer never reaches the brief, and
   the brief requires only the two portable algebras. The seven Harness file kinds keep their bytes
-  (`compose-0027`, `compose-0015`, `compose-0016` unchanged). No new dependency; G-REF: no byte of the
-  eight reference nodes changes.
+  (`compose-0027`, `compose-0015`, `compose-0016` unchanged). No new dependency; G-REF at this entry's
+  commit: no byte of the eight reference nodes changed.
 - The tools `brief`, `explain` and `check` (AGSC-09-13, AGSC-09-16, AGSC-11-18; vectors `cli-0026`,
   which replaces the withdrawn `cli-0003`, `cli-0038`, which replaces `cli-0019`, and `bnd-0050`), so
   the local tool server and the page tools serve ten tools, listed by name in code-point order.
@@ -305,7 +308,10 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   step for a relation that does not hold, a key outside the fourteen and their inverse names being
   `AGSC-E203`; `check` returns the Link warnings `AGSC-E313` to `AGSC-E316` (AGSC-03-23…03-26) of a
   selection, or of every listed item, as findings without a position or a message, ordered by item,
-  code, key and target. The three answer over the listed set on both transports (AGSC-09-16), are
+  code, key and target. A page tool answers the three over the listed set (AGSC-09-16); the local
+  server composes `brief` over the listed set too and answers `explain` and `check` from the Bundle on
+  disk, drafts included, as AGSC-09-13 says of the local server (with no selection, `check` checks
+  every listed item, the tool table of AGSC-09-13). The three are
   `readOnlyHint: true`, and only `brief` carries `untrustedContentHint: true`. `source` and `target`
   accept the `memory://` and item-IRI forms of AGSC-05-04b. New portable module
   `src/distribution/tool-answers.js`: the local server calls it and `/compose/agsc-page-tools.js`
@@ -313,6 +319,9 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `tests/arch/page-tools-portable.test.js` holds both modules to the portability rule. The page tool
   `brief` hashes the selection with the page's Web Crypto, so it answers a promise; the local server
   hashes with Node's `crypto`, and the values are equal (`tests/distribution/tool-parity.test.js`).
+  The agents demonstration's `examples/demos/agents/page-tools.js` gives its context the Web Crypto
+  a browser has, so the page tool `brief` answers there as well (`docs/DEMOS.md` runs it and compares
+  it with the tool server's).
 - The bound on `search` and `ask` (AGSC-09-13, I-030; vector `cli-0027`): a `search` answer carries
   at most 100 hits, in the order of the ranking, and the member `total` only when more than 100
   items match; an answer under the bound has the bytes of 1.0 (`cli-0007`, `cli-0008` unchanged).
@@ -339,7 +348,8 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `noImplicitOverride`, `isolatedModules`), `module` `node20` (CommonJS for this package), `target`
   ES2024 for the Node floor 22.13, no maps or declarations; a bare `tsc` writes nothing. The first
   module, `src/shared/version-line.js` from `src-ts/shared/version-line.ts`, gives the line `agsc
-  --version` prints (AGSC-09-09) and is required by its test only, so no emitted byte changes. The
+  --version` prints (AGSC-09-09), and the command line prints that line through it with the bytes
+  of 1.0, so no emitted byte changes. The
   dependency rule (`npm run arch`) reads `src-ts/` with the same map; the linter applies
   typescript-eslint's strict rules, the house style and the size budgets to it; the test lane
   runs `check:ts` and `typecheck` on every leg. New fitness test `tests/arch/typescript-parts.test.js`:

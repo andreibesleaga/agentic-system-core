@@ -3,9 +3,9 @@
 // `{"version":"<version>"}` and a line feed.
 //
 // Why it exists: it is the proof of the TypeScript toolchain (docs/ENGINEERING.md,
-// "TypeScript parts"). It is compiled by tools/build-ts to src/shared/version-line.js
-// and required by its test only, which compares it with what the command line prints;
-// the command line keeps its own line, so no byte the engine writes depends on it.
+// "TypeScript parts"). It is compiled by tools/build-ts to src/shared/version-line.js,
+// which the command line requires for its `--version` line (application/cli/main.js);
+// the line is the bytes the command line printed before the module existed.
 //
 // PURE: no fs, no process, no clock, no network, no require of any context.
 

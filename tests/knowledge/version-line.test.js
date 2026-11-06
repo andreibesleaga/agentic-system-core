@@ -2,8 +2,8 @@
 // The proof of the TypeScript toolchain (docs/ENGINEERING.md, "TypeScript parts"):
 // `src-ts/shared/version-line.ts`, compiled by tools/build-ts to the committed
 // `src/shared/version-line.js`, gives the line `agsc --version` prints (AGSC-09-09), in
-// both forms. The command line keeps its own line, so this test is the only reader of
-// the compiled module and no emitted byte depends on it.
+// both forms. The command line prints its `--version` line through it, so the property
+// below holds the two together, and the first test pins the bytes 1.0 printed.
 //
 // Deterministic: strings in, strings out; the property runs on a fixed seed.
 

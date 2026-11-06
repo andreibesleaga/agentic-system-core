@@ -70,7 +70,8 @@ module reaches across a boundary.
 A module that speaks a protocol to agents (MCP, A2A, the benchmark runners) is written in
 strict TypeScript under `src-ts/` and compiled into `src/` with `npm run build:ts`; commit
 the source and the compiled file together, and never edit a compiled file by hand. The
-rest of the engine is JavaScript. [docs/ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) §8 has the steps.
+rest of the engine is JavaScript, the tool answers among it: the page tools publish their
+source text as the page's script. [docs/ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) §8 has the steps.
 
 ## Signing off
 

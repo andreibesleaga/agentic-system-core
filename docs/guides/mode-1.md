@@ -5,7 +5,7 @@ folder of notes; two publishers who want their nodes to name and check each othe
 agent, or its operator, reading someone else's node.
 
 **What you get:** a local tool server, `agsc mcp`, with ten tools over your Bundle —
-`search`, `read`, `links`, `compose`, `ask`, `propose`, `remember` — that runs on your
+`search`, `read`, `links`, `compose`, `ask`, `propose`, `remember`, `brief`, `explain`, `check` — that runs on your
 computer, needs no key and writes nothing; two nodes that list each other as peers and a
 shipped checker that confirms it; the commands to verify any published node by hand.
 

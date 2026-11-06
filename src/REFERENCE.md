@@ -81,9 +81,8 @@ that names a type, a kind or a format at run time. `src/shared/version-line.js` 
 `versionLine(version, form = 'text')`: `agsc <version>` and a line feed, or for `form`
 `'json'` the object `{"version":"<version>"}` and a line feed, which is what `agsc --version`
 prints (AGSC-09-09). It is the one module compiled from TypeScript so far
-(`src-ts/shared/version-line.ts`, by `tools/build-ts`; `docs/ENGINEERING.md` §8) and only its
-test requires it: the command line keeps its own line, so the proof of the toolchain moves
-no byte the engine writes.
+(`src-ts/shared/version-line.ts`, by `tools/build-ts`; `docs/ENGINEERING.md` §8), and
+`application/cli/main.js` prints its `--version` line through it; the bytes are those of 1.0.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,
@@ -881,7 +880,7 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-stdio.js`,
 | `boundary/surfaces.js` | Boundary | AGSC-11-16…11-19, AGSC-11-21, AGSC-10-14 — declaration, pinning, the floor in each surface's vocabulary, and the ONE place a foreign protocol version is named |
 | `boundary/visibility.js` | Boundary | AGSC-11-01…11-05, AGSC-11-20, AGSC-11-22 — parameters, reserved values, CORS, ETag/`no-cache`, the profile carriers, retirement |
 | `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-11-24, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones, and the context maps between nodes (a typed peer's relationship and crosswalk, checked before any fetch, applied by the client only) |
-| `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief`, `explain`, `check` over the listed set |
+| `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief` over the listed set, `explain` and `check` over the Bundle on disk (with no selection, `check` checks every listed item) |
 | `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 over stdio JSON-RPC, AGSC-11-18's MCP half; the wiring of AGSC-09-14b's resources and prompt |
 | `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering |
 | `distribution/webmcp.js` | Distribution | AGSC-09-16 — the browser registration script, feature-detected, write tools local-only |
@@ -1095,7 +1094,7 @@ page; `tests/distribution/tool-parity.test.js` does the same over the real `agsc
 | `propose` | AGSC-08-04, AGSC-11-14 | `mcp-tools.js`; the caller MAY write `dist/proposal/<n>.{patch,md}` | `page-tools.js` — the payload is returned and **nothing is written** | consequential, untrusted output |
 | `remember` | AGSC-09-14b | `mcp-tools.js` | `page-tools.js` — the payload is returned and **nothing is written** | consequential, untrusted output |
 | `brief` | AGSC-09-13, AGSC-07-25 | `mcp-tools.js` → `tool-answers.js#toolBrief` → `composition/brief.js`, over the listed set | `page-tools.js` → the same functions, from `agsc-core.js`; the selection digest through Web Crypto, so the answer is a promise | read-only, untrusted output |
-| `explain` | AGSC-09-13, AGSC-05-33 | `mcp-tools.js` → `tool-answers.js#toolExplanation`, over the edges of `knowledge/links.js` of the listed set | `page-tools.js` → the same function, over `pageEdges` | read-only |
+| `explain` | AGSC-09-13, AGSC-05-33 | `mcp-tools.js` → `tool-answers.js#toolExplanation`, over the edges of `knowledge/links.js` of the Bundle on disk, drafts included (AGSC-09-13) | `page-tools.js` → the same function, over `pageEdges` | read-only |
 | `check` | AGSC-09-13, AGSC-03-23…03-26 | `mcp-tools.js` → `tool-answers.js#toolLinkWarnings`, over the same edges | `page-tools.js` → the same function | read-only |
 
 

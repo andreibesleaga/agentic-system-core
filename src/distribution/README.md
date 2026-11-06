@@ -28,7 +28,7 @@
 | `search.js` | the prebuilt search index, its tokenizer and the ranking a query gets over it |
 | `search-page.js` | the `/search/` page's one script: the tokenizer and the ranking above as their own source text, so the box searches exactly as the index was built |
 | `now.js` | the NOW page from stored state only |
-| `compose-page.js` | the `/compose/` page: filters by text, cluster and tag, the verdict in words, the brief inline with its downloads and the blueprint of a saved architecture, the Harness and skills archives, and no layout shift while it loads |
+| `compose-page.js` | the `/compose/` page: filters by text, cluster and tag, the verdict in words, the brief inline with its downloads and the blueprint of a saved architecture, the Harness and skills archives; no element inside `<main>` moves while it loads (the footer moves as the page grows, cumulative layout shift under 0.1) |
 | `architecture-brief.js` | the brief on a saved architecture's item page, written by the build (AGSC-07-25) |
 | `forge.js` | `dist/forge/`: files a forge needs |
 | `mcp-stdio.js` | the local MCP server over stdio (official SDK) |

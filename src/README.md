@@ -108,8 +108,8 @@ once, the rest searched once for a line terminator and then sliced, where the pa
 it replaced read the rest again for every blank they gave back. `shared/article.js` puts
 "a" or "an" before a word a message names at run time (an item type, a format).
 `shared/version-line.js`, compiled from `src-ts/shared/version-line.ts`, gives the line
-`agsc --version` prints (AGSC-09-09); only its test requires it, as the proof that the
-TypeScript toolchain works end to end, so no byte the engine writes depends on it.
+`agsc --version` prints (AGSC-09-09), and the command line prints it through that module:
+the proof that the TypeScript toolchain works end to end, with the bytes of 1.0.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

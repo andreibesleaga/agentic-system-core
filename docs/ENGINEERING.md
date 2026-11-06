@@ -261,12 +261,18 @@ and its licence, `MIT OR Apache-2.0`, whose texts sit beside them.
 
 ## 8. TypeScript parts
 
-**Why.** The parts of the engine that speak a protocol to agents are written in strict
-TypeScript: the Model Context Protocol core of revision 2026-07-28 and its HTTP
-transport, the A2A responder, the narration step of the brief, the runners of the
-benchmark kit, and any later module that an agent talks to. A message shape the
-compiler checks cannot drift from the protocol's schema unnoticed. The rest of the
-engine stays JavaScript and is not rewritten.
+**Why.** The new parts of the engine that carry a protocol's messages to agents are to
+be written in strict TypeScript: the Model Context Protocol core of revision 2026-07-28
+and its HTTP transport, the A2A responder, the runners of the benchmark kit, and any
+later module in the places `tests/arch/typescript-parts.test.js` checks. None of them
+exists yet. A narration step of the brief would be one too, once a distribution adds a
+model adapter; the reference engine has none (`compose --narrate` is `AGSC-E001`). A
+message shape the compiler checks cannot drift from the protocol's schema unnoticed.
+The rest of the engine stays JavaScript and is not rewritten. The tool answers of
+`src/distribution/tool-answers.js` and `page-tools.js` stay JavaScript as well: the
+page tools emit the source text of those functions into the page's script, so each one
+is written as a self-contained function in the form a browser runs, and the bytes a
+node publishes come from that text.
 
 **Where.** A source lives at `src-ts/<context>/<name>.ts`, in the folder of the context
 it belongs to, and the dependency rule of §3 applies to it as written: `npm run arch`
@@ -278,12 +284,14 @@ its source and the compiler:
 // generated from src-ts/shared/version-line.ts by tsc 6.0.3; do not edit
 ```
 
-So `npm test`, an install with `npm ci --omit=dev` and the published package need no
-TypeScript: what runs and what ships is the JavaScript under `src/`, and the sources
-under `src-ts/` do not ship. The first module, `src-ts/shared/version-line.ts`, is the
-proof of the chain: it gives the line `agsc --version` prints, and only its test
-(`tests/knowledge/version-line.test.js`) requires it, so no byte the engine writes
-depends on it.
+So running the engine, an install with `npm ci --omit=dev` and the published package
+need no TypeScript: what runs and what ships is the JavaScript under `src/`, and the
+sources under `src-ts/` do not ship. Two tests load the pinned compiler, a development
+dependency: `tests/tools/build-ts.test.js` and `tests/arch/typescript-parts.test.js`. The
+first module, `src-ts/shared/version-line.ts`, is the proof of the chain: it gives the
+line `agsc --version` prints, the command line prints that line through it
+(`src/application/cli/main.js`), and the bytes are those 1.0 printed
+(`tests/knowledge/version-line.test.js`).
 
 **Commands.**
 

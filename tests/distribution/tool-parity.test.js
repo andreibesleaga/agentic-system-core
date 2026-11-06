@@ -79,7 +79,10 @@ test('AGSC-09-13: the bound on search and ask is the same on both transports', a
   assert.equal(local.body.total, 120);
   assert.equal(local.body.hits[99].slug, 'w-100');
   assert.deepEqual(JSON.parse(JSON.stringify(hosts.page.call('search', { query: 'widget' }))), JSON.parse(JSON.stringify(local)));
-  assert.ok(hosts.local.call('ask', { question: 'widget' }).citations.length <= 100);
+  // `ask` cites the first three of the ranked hits, under the bound of 100 on both transports.
+  const asked = hosts.local.call('ask', { question: 'widget' });
+  assert.deepEqual(asked.citations, local.body.hits.slice(0, 3).map((hit) => hit.iri));
+  assert.deepEqual(JSON.parse(JSON.stringify(hosts.page.call('ask', { question: 'widget' }))), JSON.parse(JSON.stringify(asked)));
   // At or under the bound the body has the members of 1.0 only.
   assert.deepEqual(Object.keys(hosts.local.call('search', { query: 'handoff' }).body), ['hits']);
 });

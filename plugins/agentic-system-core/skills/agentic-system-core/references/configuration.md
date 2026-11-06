@@ -23,6 +23,7 @@ Required: `spec_version`, `site{base, title}`, `bundle{id, operator, license_pro
 | `peers[]` | 1 | other nodes' discovery URLs, at the root of their origins; check both sides with `validate-wellknown <a> --level 2 --peer <b>` |
 | `contribute[]` | 1, 5 | where proposals go: `mode` `pr` (an https target), `channel` (`mailto:` or `urn:agsc:channel:<name>`) or `form` |
 | `run{}` | 4 | `enabled` (default false) and the programs a `run` block may start |
+| `compose.brief` | 4 | `true` makes every `compose` write the brief beside the Harness, as `--brief` does (default false) |
 | `budget.usd_month` | 0, 5 | the node's monthly cap on model spend; the enabled lanes' budgets may not add up to more (`AGSC-E212`) |
 | `channels[]` | 5 | where an agent lane's proposals are opened; `author` is the forge login, `owner` the accountable person; `publish: auto` merges only under the standing-ratification rules |
 | `agents[]` | 0, 5 | agent lanes, off unless `enabled`; `types` may be `concept`, `episode`, `lesson`, never a procedure, gate or cluster; `budget_usd_month` and `model` required when `kind` is `llm` |

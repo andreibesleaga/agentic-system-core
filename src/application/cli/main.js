@@ -15,6 +15,7 @@ const { checkBoundaryConfig } = require('../../boundary/visibility.js');
 const { createClock, isMalformedEpoch } = require('../../adapters/node-clock.js');
 const pluginLoader = require('../plugin-loader.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
+const { versionLine } = require('../../shared/version-line.js');
 
 const VERBS = [
   'init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
@@ -435,7 +436,7 @@ function usageText(version) {
 const VERB_USAGE = Object.freeze({
   build: 'agsc build [--level <n>]',
   ci: 'agsc ci [--level <n>]',
-  compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug> [--brief [--narrate <agent>]]',
+  compose: 'agsc compose <slug> [<slug>…] [--brief [--narrate <agent>]] | agsc compose --from <slug> [--brief [--narrate <agent>]]',
   conform: 'agsc conform [--level <n>] [--to <path>]',
   export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--closure|--steer [--target <name>[,<name>…]]|--to <adapter> [--manifest]',
   import: 'agsc import <source-dir> --from <adapter> [--dry-run] (--from skos takes a Turtle file in place of the folder)',
@@ -551,8 +552,7 @@ function main(argv, ctx) {
 
   // --version (AGSC-09-09) short-circuits everything else.
   if (args.includes('--version')) {
-    if (jsonMode) writeLine(stdout, JSON.stringify({ version }) + '\n');
-    else writeLine(stdout, `agsc ${version}\n`);
+    writeLine(stdout, versionLine(version, jsonMode ? 'json' : 'text'));
     return 0;
   }
 

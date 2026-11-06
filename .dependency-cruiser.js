@@ -110,10 +110,9 @@ module.exports = {
     {
       name: 'no-orphans',
       comment: 'every module under src/ is reachable (the port typedefs are documentation and required by nothing; '
-        + 'a source under src-ts/ is reached through the file tsc compiles from it, which this rule judges; '
-        + 'src/shared/version-line.js, the proof of the TypeScript toolchain, is required by its test only)',
+        + 'a source under src-ts/ is reached through the file tsc compiles from it, which this rule judges)',
       severity: 'error',
-      from: { orphan: true, path: '^src/', pathNot: '^src/ports/|^src/shared/version-line\\.js$' },
+      from: { orphan: true, path: '^src/', pathNot: '^src/ports/' },
       to: {},
     },
   ],

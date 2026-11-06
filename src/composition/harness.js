@@ -501,14 +501,22 @@ function workspaceDsl(result, options) {
   return `${lines.join('\n')}\n`;
 }
 
+/**
+ * The four comment lines `diagram.mmd` opens with (AGSC-07-12): the licence sentence, the
+ * selection digest, the build instant and the terms. `brief.mmd` opens with exactly these
+ * lines (AGSC-07-25), and so does each C4 file of a blueprint after its level (AGSC-07-29).
+ */
+function mermaidHead(options) {
+  return [`%% ${licenceSentence(options.licenseProse)}`,
+    `%% selection digest: ${options.selectionDigest}`,
+    `%% generated at: ${options.instant}`,
+    `%% terms: ${terms(options.licenseProse)}`];
+}
+
 /** `diagram.mmd` — a Mermaid flowchart of the same relationships (AGSC-07-12). */
 function diagramMmd(result, options) {
   const list = members(result, options.items);
-  const lines = [`%% ${licenceSentence(options.licenseProse)}`,
-    `%% selection digest: ${options.selectionDigest}`,
-    `%% generated at: ${options.instant}`,
-    `%% terms: ${terms(options.licenseProse)}`,
-    'flowchart LR'];
+  const lines = [...mermaidHead(options), 'flowchart LR'];
   for (const member of list) {
     lines.push(`  ${dslIdentifier(member.slug)}[${quoted(member.slug)}]`);
   }
@@ -795,7 +803,7 @@ const PORTABLE = Object.freeze(['singleLine', 'yamlScalar', 'commentSafe', 'assi
   'harnessName', 'arc42Sections', 'canonicalJson', 'pairs', 'dslRelationships',
   'mermaidEdges', 'isEmitted', 'linksOf', 'members', 'memberOrder', 'provenanceHeader',
   'licenceSentence', 'withoutTrailingFeeds', 'fenceProse', 'constraintLines', 'harnessJsonld', 'agentsMd',
-  'dslIdentifier', 'quoted', 'relationships', 'workspaceDsl', 'diagramMmd', 'arc42Md',
+  'dslIdentifier', 'quoted', 'relationships', 'workspaceDsl', 'mermaidHead', 'diagramMmd', 'arc42Md',
   'decisionRecords', 'skillFiles', 'selectionDigestInput', 'allowedToolsKey', 'executableViolations', 'emit']);
 
 module.exports = {
@@ -827,6 +835,7 @@ module.exports = {
   memberOrder,
   members,
   mermaidEdges,
+  mermaidHead,
   pairs,
   provenanceHeader,
   quoted,

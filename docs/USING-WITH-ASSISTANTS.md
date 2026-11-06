@@ -36,7 +36,7 @@ in alphabetical order:
 | Tool | What it does |
 |---|---|
 | `search` | finds items in this memory that match some words: at most 100, best first; when more match, the answer also says how many (`total`) |
-| `read` | returns one item: its frontmatter, its text, and one citation record per chunk of the published node (the chunk's `id`, its SHA-256 `digest`, the content version), so the assistant can cite a passage and check it before using it |
+| `read` | returns one item: its frontmatter, its text, and one citation record per chunk of the published node (the chunk's `id`, its SHA-256 `digest`, the content version `bundle_version`, the item it cites, the section, the licence and the terms; AGSC-09-13 lists every member), so the assistant can cite a passage and check it before using it |
 | `links` | returns the typed links authored on one item |
 | `compose` | takes a selection of items and reports whether they fit together |
 | `ask` | returns the descriptions of the items that best match a question, with their addresses as citations — **from this memory only**; no model is called |

@@ -6,9 +6,10 @@
 //   node page-tools.js <built node> <tool> '<json arguments>'
 //
 // Every item page and the `/compose/` page of a built node load three scripts that
-// register the same seven tools the tool server offers (AGSC-09-16). This script
+// register the same ten tools the tool server offers (AGSC-09-16). This script
 // loads those three files from the build directory into a bare JavaScript context
-// whose `fetch` reads the node's own files — a page can reach no other origin —
+// whose `fetch` reads the node's own files — a page can reach no other origin — and
+// whose `crypto` is the Web Crypto a browser has (the page's `brief` hashes with it),
 // then calls one tool through `AGSC_TOOLS.call`, the entry the page's WebMCP
 // registration dispatches to, and prints the answer as indented JSON. Nothing is
 // installed and nothing is written; the answer is the one a browser assistant gets
@@ -50,6 +51,7 @@ async function main() {
     location: { origin: 'http://127.0.0.1:8000', search: '' },
     Promise,
     TextEncoder,
+    crypto: globalThis.crypto,
   };
   const context = vm.createContext(sandbox);
   for (const script of PAGE_TOOL_SCRIPTS) {

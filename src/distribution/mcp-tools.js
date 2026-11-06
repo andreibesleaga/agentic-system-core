@@ -193,21 +193,23 @@ function tools(bundle, options) {
     return tokenSets;
   };
   let resolvedEdges = null;
-  const edgesOf = (item) => {
+  const allEdges = () => {
     if (resolvedEdges === null) resolvedEdges = edgesIn(bundle);
-    return resolvedEdges.filter((e) => e.source === item.slug);
+    return resolvedEdges;
   };
-  // AGSC-09-16: the three tools of 1.1 answer over the LISTED set (AGSC-00-05), the set
-  // a page sees, so the local server reads the same items, edges and facts the page does.
-  let listedSet = null;
+  const edgesOf = (item) => allEdges().filter((e) => e.source === item.slug);
+  // AGSC-09-13: `brief` is composed over the LISTED set (AGSC-00-05), the set a page sees,
+  // so the local server reads the same items and facts the page does, and `check` with no
+  // selection checks every listed item. Otherwise `explain` and `check` answer from the
+  // Bundle as it is on disk, drafts included, like `read` and `links`: only a page tool
+  // answers AGSC-E301 for an item that is not listed (AGSC-09-16).
+  let listedItems = null;
   const listed = () => {
-    if (listedSet !== null) return listedSet;
-    const items = (bundle.items || []).filter((i) => chunks.isPublished(Object.assign({}, i.frontmatter, { slug: i.slug }),
-      config.releases));
-    const bySlug = new Map(items.map((i) => [i.slug, i]));
-    const edges = links.resolve(items, { assets: bundle.assets, config: bundle.config }).edges || [];
-    listedSet = { bySlug, edges, items };
-    return listedSet;
+    if (listedItems === null) {
+      listedItems = (bundle.items || []).filter((i) => chunks.isPublished(Object.assign({}, i.frontmatter, { slug: i.slug }),
+        config.releases));
+    }
+    return listedItems;
   };
   const listedFacts = (items) => ({
     base: baseIri(base),
@@ -256,7 +258,7 @@ function tools(bundle, options) {
     if (!Array.isArray(args.selection)) {
       return errorEnvelope('brief', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
     }
-    const facts = listedFacts(listed().items);
+    const facts = listedFacts(listed());
     const core = { briefOf, compose, selectionDigestInput };
     const body = answers.toolBrief(core, facts, args.selection, (text) => createHash('sha256').update(text, 'utf8').digest('hex'));
     return envelope('brief', 'brief', body);
@@ -266,25 +268,24 @@ function tools(bundle, options) {
     if (!Object.prototype.hasOwnProperty.call(answers.toolPartners(), args.key)) {
       return errorEnvelope('explain', 'AGSC-E203', 'key must be one of the fourteen Link keys or a computed inverse name (AGSC-03-01)');
     }
-    const set = listed();
-    if (!set.bySlug.has(args.source) || !set.bySlug.has(args.target)) {
+    if (!byslug.has(args.source) || !byslug.has(args.target)) {
       return errorEnvelope('explain', 'AGSC-E301', 'no item with that slug in this Bundle');
     }
-    return envelope('explain', 'explanation', answers.toolExplanation(set.edges, args.key, args.source, args.target));
+    return envelope('explain', 'explanation', answers.toolExplanation(allEdges(), args.key, args.source, args.target));
   };
 
   implementations.check = (args) => {
-    const set = listed();
     if (args.selection !== undefined && !Array.isArray(args.selection)) {
       return errorEnvelope('check', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
     }
-    const selection = args.selection === undefined ? [...set.bySlug.keys()] : args.selection;
-    if (selection.some((slug) => !set.bySlug.has(slug))) {
+    // AGSC-09-13, the tool table: with no selection, every listed item is checked.
+    const selection = args.selection === undefined ? listed().map((i) => i.slug) : args.selection;
+    if (selection.some((slug) => !byslug.has(slug))) {
       return errorEnvelope('check', 'AGSC-E301', 'no item with that slug in this Bundle');
     }
     const checked = [...new Set(selection)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
     const inside = new Set(checked);
-    const findings = answers.toolLinkWarnings(set.edges, (slug) => kindOf(set.bySlug.get(slug)))
+    const findings = answers.toolLinkWarnings(allEdges(), (slug) => kindOf(byslug.get(slug)))
       .filter((f) => inside.has(f.slug));
     return envelope('check', 'findings', { findings, selection: checked });
   };

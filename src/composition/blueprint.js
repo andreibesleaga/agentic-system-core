@@ -40,7 +40,7 @@
 
 const { byCodePoint, compareCodePoint } = require('./compose.js');
 const {
-  dslIdentifier, fenceProse, licenceSentence, pairs, provenanceHeader, quoted, singleLine, terms,
+  dslIdentifier, fenceProse, licenceSentence, mermaidHead, pairs, provenanceHeader, quoted, singleLine,
   withoutTrailingFeeds,
 } = require('./harness.js');
 const { briefMember, briefParts, listedIndex } = require('./brief.js');
@@ -80,12 +80,7 @@ function slugList(slugs) {
 
 /** The opening lines of a C4 file: the level, the four comment lines `diagram.mmd` opens with. */
 function c4Head(level, options) {
-  return [`%% ${level} (https://c4model.com/)`,
-    `%% ${licenceSentence(options.licenseProse)}`,
-    `%% selection digest: ${options.selectionDigest}`,
-    `%% generated at: ${options.instant}`,
-    `%% terms: ${terms(options.licenseProse)}`,
-    'flowchart LR'];
+  return [`%% ${level} (https://c4model.com/)`, ...mermaidHead(options), 'flowchart LR'];
 }
 
 /** One Mermaid node line, the identifier being the one `workspace.dsl` derives from the slug. */

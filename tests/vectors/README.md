@@ -10,7 +10,7 @@ One vector = one JSON file = one case. Object members, in JCS order:
 
 | Member | Required | Meaning |
 |---|---|---|
-| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, `boundary` (AGSC-11), `chunks`, `boards`, `prov`, `conform`, `import`, `export`, and the areas AGSC-09-04 declares for later use, such as `skills` and `run` (`webmcp` is NOT an area, AGSC-09-16 is proved by `cli/cli-0003`) |
+| `area` | yes | directory name: `frontmatter`, `slug`, `links`, `jcs`, `graph`, `lint`, `cli`, `bundle`, `compose`, `discovery`, `build`, `ledger`, `adopt`, `boundary` (AGSC-11), `chunks`, `boards`, `prov`, `conform`, `import`, `export`, and the areas AGSC-09-04 declares for later use, such as `skills` and `run` (`webmcp` is NOT an area, AGSC-09-16 is proved by `cli/cli-0026`, the successor of the withdrawn `cli-0003`) |
 | `description` | yes | what the case proves, and why it is not obvious |
 | `expected` | yes | the outcome (below) |
 | `id` | yes | stable, unique, never reused: `<area-prefix>-<nnnn>` |

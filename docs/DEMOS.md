@@ -199,7 +199,7 @@ provenance block.
 **Personas:** the agent reader (C), the agent proposer (D), the agent using a node as
 memory (H). **What it proves:** an assistant gets ten tools over a Bundle, with
 nothing leaving the machine; every answer is marked untrusted and carries its
-licence; `propose` and `remember` hand back text and write nothing; the same seven
+licence; `propose` and `remember` hand back text and write nothing; the same ten
 tools on a published page give the same answers.
 
 The demo uses node `a` of the memory fixture. Two small scripts stand in for an
@@ -312,6 +312,23 @@ the page tools and the tool server gave the same answer
 compose/agsc-core.js
 compose/agsc-page-tools.js
 compose/webmcp.js
+```
+
+`brief` gives the content of `brief.json` for a selection without writing anything, and
+the page computes it itself, with the page's own Web Crypto for the selection digest
+(AGSC-09-13, AGSC-09-16):
+
+```bash demo
+node "$ENGINE/examples/demos/agents/mcp-call.js" brief '{"selection":["supervisor"]}' > brief.json
+node "$ENGINE/examples/demos/agents/page-tools.js" www brief '{"selection":["supervisor"]}' > page-brief.json
+cmp brief.json page-brief.json && echo "the page tools and the tool server gave the same brief"
+grep -E '"(source|type)"' page-brief.json
+```
+
+```text expect
+the page tools and the tool server gave the same brief
+  "source": "brief",
+  "type": "brief"
 ```
 
 In a real browser the page registers the tools through `document.modelContext`

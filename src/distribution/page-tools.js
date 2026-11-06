@@ -44,8 +44,9 @@
  * THE ONE HONEST BOUNDARY. The published surfaces carry the PUBLISHED set
  * (AGSC-06-30 excludes `draft`, `retired` and items held back by `releases`), while
  * the local server is handed the whole Bundle. For the published set the two
- * transports answer identically — that is what `cli-0003` now proves against the
- * emitted script — and for an unpublished item the page answers `AGSC-E301` because
+ * transports answer identically — that is what `cli-0026` (the successor of the withdrawn
+ * `cli-0003`) proves against the emitted script — and for an unpublished item the page
+ * answers `AGSC-E301` because
  * the page cannot see what the node did not publish. That difference is a property
  * of publication, not of this implementation; it is recorded as a specification
  * item for 1.0.0 in this distribution's private records.

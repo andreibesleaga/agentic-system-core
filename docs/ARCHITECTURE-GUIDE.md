@@ -116,7 +116,7 @@ registers the ten tools only when the browser offers `document.modelContext`; wi
 it, the page works unchanged. A tool reads the node's own published files from the same
 origin — no other host, no key, no cookie (AGSC-06-05) — and answers what the local
 tool server answers for the same input on a Bundle whose items are all listed
-(AGSC-00-05); vector `cli-0003` proves it call by call. The local tool server also
+(AGSC-00-05); vector `cli-0026` (the successor of the withdrawn `cli-0003`) proves it call by call. The local tool server also
 reads draft, retired and release-gated items, which a page never sees (AGSC-09-16,
 vector `cli-0008`). `propose` and `remember` return text and write nothing
 (AGSC-09-16).

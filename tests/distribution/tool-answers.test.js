@@ -275,19 +275,26 @@ function handMade() {
   const item = (slug, frontmatter, body = '') => ({ body, frontmatter: { title: slug, type: 'concept', kind: 'pattern', ...frontmatter }, slug, type: 'concept' });
   return {
     config: { site: { base: 'https://hand.example/' } },
-    items: [item('a', { requires: ['b'], supersedes: ['b'] }), item('b', {}), item('c', { status: 'draft' })],
+    items: [item('a', { requires: ['b'], supersedes: ['b'] }), item('b', {}), item('c', { requires: ['b'], status: 'draft' })],
   };
 }
 
-test('AGSC-09-13, AGSC-09-13a: the local server\'s three tools answer over the listed set, and their faults are envelopes', () => {
+test('AGSC-09-13, AGSC-09-13a: the local server\'s brief answers over the listed set, explain and check over the Bundle on disk, and their faults are envelopes', () => {
   const local = mcpTools.tools(handMade(), {});
   const code = (name, args) => local.call(name, args).body.code;
   assert.equal(code('brief', { selection: 'a' }), 'AGSC-E201');
   assert.equal(code('check', { selection: 'a' }), 'AGSC-E201');
-  assert.equal(code('check', { selection: ['c'] }), 'AGSC-E301', 'a draft is not in the listed set');
+  assert.equal(code('check', { selection: ['z'] }), 'AGSC-E301', 'a slug that names no item');
   assert.equal(code('explain', { key: 'mentions', source: 'a', target: 'b' }), 'AGSC-E203');
-  assert.equal(code('explain', { key: 'requires', source: 'a', target: 'c' }), 'AGSC-E301');
+  assert.equal(code('explain', { key: 'requires', source: 'a', target: 'z' }), 'AGSC-E301');
   assert.equal(code('explain', { key: 'requires', source: 'a' }), 'AGSC-E003');
+  // AGSC-09-13: the local server answers from the Bundle as it is on disk, a draft included;
+  // AGSC-09-16: only a page tool answers AGSC-E301 for an item that is not listed.
+  assert.deepEqual(local.call('explain', { key: 'requires', source: 'c', target: 'b' }).body,
+    { because: [{ from: [['c', 'requires', 'b']], rule: 'authored' }], holds: true, key: 'requires', source: 'c', target: 'b' });
+  assert.deepEqual(local.call('check', { selection: ['c'] }).body, { findings: [], selection: ['c'] });
+  assert.deepEqual(local.call('check', {}).body.selection, ['a', 'b'], 'no selection: every listed item (AGSC-09-13 table)');
+  assert.deepEqual(local.call('brief', { selection: ['c'] }).body.selection, [], 'the brief names listed items only');
   const brief = local.call('brief', { selection: ['a'] }).body;
   assert.equal(brief.license.prose, 'LicenseRef-AgenticSystemCore-Content-Use-1.0', 'no prose licence: the Content Use Terms');
   assert.equal(brief.generated_at, '', 'no build, no instant: nothing is guessed');

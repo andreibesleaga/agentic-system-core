@@ -9,7 +9,9 @@
  * `read` carries (AGSC-09-13, from the chunk lines of AGSC-06-29 the node published), the
  * answer of `explain` (AGSC-09-13 over the readings of AGSC-05-33), the findings of `check`
  * (AGSC-09-13 over the Link warnings of AGSC-03-23…03-26) and the composition of the `brief`
- * answer (AGSC-09-13 over AGSC-07-25), all over the listed set of AGSC-09-16.
+ * answer (AGSC-09-13 over AGSC-07-25). A page answers over the listed set of AGSC-09-16; the
+ * local server composes `brief` over the listed set too, and answers `explain` and `check` from
+ * the Bundle on disk, drafts included (AGSC-09-13), so it hands in the edges it answers over.
  * Requirements: PRD-023, PRD-051.
  *
  * WHY ONE SOURCE. AGSC-09-16 asks the two transports for results equal as values. The local
@@ -276,7 +278,7 @@ function toolChain(edges, key, source, target) {
 
 /**
  * AGSC-09-13 `explain`: whether the edge `source key target` holds over `edges` (the Link
- * edges of the listed set, authored and computed), and why. `holds` is `true` for an
+ * edges the transport answers over, authored and computed), and why. `holds` is `true` for an
  * authored edge (one step, rule `authored`) and for a reading of AGSC-05-33 (its steps);
  * otherwise `holds` is `false` and `because` is `[]` — a relation that does not hold is an
  * answer, not an error. The caller has checked the key and the two slugs.

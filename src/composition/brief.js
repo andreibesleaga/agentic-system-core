@@ -53,7 +53,7 @@
 const { byCodePoint, compareCodePoint, frontmatterOf, indexBySlug } = require('./compose.js');
 const {
   canonicalJson, contentVersion, dslIdentifier, fenceProse, licenceSentence, linkKeys, linksOf,
-  provenanceHeader, quoted, singleLine, structureLicence, terms,
+  mermaidHead, provenanceHeader, quoted, singleLine, structureLicence, terms,
 } = require('./harness.js');
 
 // ------------------------------------------------------- facts of the specification
@@ -466,7 +466,11 @@ function contextSection(member, authored) {
     fenceProse(member.prose).slice(0, -1)].join('\n\n');
 }
 
-/** The number of bytes of `text` in UTF-8, a lone surrogate counting as the three of U+FFFD. */
+/**
+ * The number of bytes of `text` in UTF-8, a lone surrogate counting as the three of U+FFFD.
+ * Counted here because `TextEncoder` is a Web API and not the language: a portable function
+ * may use the language's own globals only (`tests/arch/composition-portable.test.js`).
+ */
 function utf8Length(text) {
   let bytes = 0;
   for (const ch of String(text)) {
@@ -512,11 +516,7 @@ function contextMd(parts, options) {
 /** `brief.mmd`: the members in dependency order and the authored Links inside the selection. */
 function briefMmd(parts, options) {
   const { record } = parts;
-  const lines = [`%% ${licenceSentence(options.licenseProse)}`,
-    `%% selection digest: ${options.selectionDigest}`,
-    `%% generated at: ${options.instant}`,
-    `%% terms: ${terms(options.licenseProse)}`,
-    'flowchart TD'];
+  const lines = [...mermaidHead(options), 'flowchart TD'];
   for (const slug of record.order) lines.push(`  ${dslIdentifier(slug)}[${quoted(slug)}]`);
   for (const r of record.relations) {
     if (r.origin === 'authored' && r.scope === 'inside') {

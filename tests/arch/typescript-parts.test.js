@@ -8,6 +8,9 @@
 //   * The committed output under src/ is byte for byte what the pinned compiler writes
 //     from src-ts/ now (compiled in memory by tools/build-ts), and every compiled file
 //     names its source, which exists.
+//   * The dependency rule and the linter keep reading src-ts/: `npm run arch` names it, and
+//     every source gets typescript-eslint's rules and the size budgets, while the files
+//     compiled from it are left to their source.
 //   * The compiler options stay strict, and TypeScript is needed by no install and no run:
 //     the compiler and the type packages are development dependencies, the type package of
 //     Node is the major line of the Node floor, and no shipped module requires them.
@@ -106,4 +109,21 @@ test('TypeScript is needed by no install and no run', () => {
   assert.equal(pkg.scripts.typecheck, 'tsc --noEmit');
   assert.equal(pkg.scripts.prepack, 'npm run check:ts && npm run typecheck');
   assert.ok(!pkg.files.includes('src-ts/'), 'the package ships the compiled files, not the sources');
+});
+
+test('the dependency rule and the linter keep reading src-ts/, and leave its compiled files to their source', async () => {
+  assert.match(pkg.scripts.arch, /^depcruise [^|]*\ssrc-ts\s/u, 'npm run arch cruises src-ts/');
+  const { ESLint } = require('eslint');
+  const eslint = new ESLint({ cwd: ROOT });
+  const compiled = buildTs.compile(ROOT).files;
+  assert.ok(compiled.length >= 1);
+  for (const { source, target } of compiled) {
+    const config = await eslint.calculateConfigForFile(path.join(ROOT, source));
+    const rules = Object.keys(config.rules);
+    assert.ok(rules.filter((rule) => rule.startsWith('@typescript-eslint/')).length >= 20, `${source} gets typescript-eslint's rules`);
+    for (const budget of ['complexity', 'max-depth', 'max-lines', 'max-lines-per-function', 'max-params']) {
+      assert.ok(config.rules[budget] && config.rules[budget][0] !== 0, `${source} has the size budget ${budget}`);
+    }
+    assert.equal(await eslint.isPathIgnored(path.join(ROOT, target)), true, `${target} is linted at its source`);
+  }
 });
