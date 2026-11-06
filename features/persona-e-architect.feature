@@ -75,6 +75,21 @@ Feature: Architect turns Concepts into a starting architecture
     And the companion directory beside the Harness holds the four files of the brief and no "narration.md" (AGSC-07-28)
     And no network call was attempted
 
+  @PRD-037 @human
+  Scenario: A saved architecture gets its blueprint beside the Harness, and its page shows the brief
+    Given the Bundle holds the saved architecture "agent-team" selecting "supervisor" and "handoff", and the node is rebuilt
+    When the operator runs "agsc compose --from agent-team --brief" under the network trap
+    Then the command exits 0
+    And the companion directory beside the Harness holds the brief and the blueprint: the three C4 levels and a build plan whose first step adopts "supervisor" (AGSC-07-29)
+    And the page "/concepts/agent-team/" shows the brief of the composition and links "/compose/?from=agent-team" (AGSC-07-25, AGSC-07-24)
+    And no network call was attempted
+
+  @PRD-037 @PRD-038 @human
+  Scenario: The architect reads the brief of a selection on "/compose/" and downloads it
+    When the architect opens "/compose/" to take downloads and ticks the Concept "handoff"
+    Then the page shows the verdict in words and the brief, whose dependency order puts "supervisor" before "handoff" (AGSC-07-25, AGSC-07-26)
+    And "Download the brief (.zip)" gives, byte for byte, the archive of the four files "agsc compose handoff --brief" writes (AGSC-07-13)
+
   @PRD-022 @human
   Scenario: Titles are compared inside each bounded context, so one title may serve two contexts
     Given the clusters "agent-patterns" and "protocols" are declared contexts, and "supervisor" moves to "protocols" by its "domain_context" (AGSC-01-41, AGSC-08-32)

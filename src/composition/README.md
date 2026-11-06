@@ -15,6 +15,7 @@
 | `harness.js` | the seven Harness file kinds |
 | `context-map.js` | the context map of a composition, `context-map.json` beside the Harness, written only for a node that declares bounded contexts (AGSC-07-30) |
 | `brief.js` | the brief of a composition, valid or not: `brief.json`, `BRIEF.md`, `context.md` and `brief.mmd` beside the Harness, in the dependency order, with the gaps and the checklist (AGSC-07-25…07-27); its functions run in the page too |
+| `blueprint.js` | the blueprint outputs of a saved architecture: the three C4 levels, one decision record per decision the members cite and a build plan, in `blueprint/` beside the Harness (AGSC-07-29); its functions run in the page too |
 | `skills.js` | the published skill packs and their lockfile |
 | `archive.js` | the deterministic ZIP container (store only, fixed timestamps) |
 | `browser.js` | the browser build of the algebra, so the page runs the same code |

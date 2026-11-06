@@ -51,6 +51,7 @@ const composePage = require('./compose-page.js');
 const queryPage = require('./query-page.js');
 const searchPage = require('./search-page.js');
 const clustersPage = require('./clusters-page.js');
+const architectureBrief = require('./architecture-brief.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
 const surfaces = require('../boundary/surfaces.js');
@@ -1712,6 +1713,7 @@ function buildSite(bundle, ports, options, findings) {
         ...(diagramSource === null ? {} : { diagramSource }),
         // AGSC-06-38: the figure and the relations table, with the backlinks, under `#links`.
         relations: relations.html,
+        brief: architectureBrief.section(item, { instant, items, route: routeOf }), // AGSC-07-25 on an architecture's page
       }));
     }
     // AGSC-06-01: `/` is the Bundle's own index route.

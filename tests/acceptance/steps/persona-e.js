@@ -1,6 +1,6 @@
 'use strict';
 /* global document */
-// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-28, AGSC-07-30, AGSC-09-94
+// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-28, AGSC-07-29, AGSC-07-30, AGSC-09-94
 // Steps of features/persona-e-architect.feature. Offline: the page's own module,
 // `www/compose/agsc-core.js`, is evaluated in a fresh `node:vm` context that holds
 // the language and nothing else (no require, no process, no fetch, no document) and
@@ -9,8 +9,9 @@
 // byte with the real command line's. `run --dry-run` and `trace` run through the
 // real command line under the network trap. In a browser (`_browser.js`): the
 // architect ticks items on the served `/compose/` page, reads its panel and takes
-// its downloads. The context map (AGSC-07-30) and the brief (AGSC-07-25) are read from the
-// companion directory the command line writes beside the Harness.
+// its downloads. The context map (AGSC-07-30), the brief (AGSC-07-25) and the blueprint of a
+// saved architecture (AGSC-07-29) are read from the companion directory the command line writes
+// beside the Harness; the brief on the architecture's page from the build.
 
 const assert = require('node:assert');
 const crypto = require('node:crypto');
@@ -20,6 +21,7 @@ const vm = require('node:vm');
 
 const { ROOT, built, linkset, splitItem } = require('./_world.js');
 const browser = require('./_browser.js');
+const archive = require('../../../src/composition/archive.js');
 
 const SELECTION = ['a2a', 'mcp', 'supervisor'];
 
@@ -468,6 +470,67 @@ module.exports = [
     pattern: 'the companion directory beside the Harness holds the four files of the brief and no "narration.md" (AGSC-07-28)',
     run(world) {
       assert.deepStrictEqual([...companionFiles(world).keys()], BRIEF_FILES);
+    },
+  },
+  {
+    pattern: /^the Bundle holds the saved architecture "([^"]+)" selecting "([^"]+)" and "([^"]+)", and the node is rebuilt$/u,
+    run(world, slug, a, b) {
+      world.write(`content/concepts/${slug}.md`, ['---', 'type: concept', 'kind: architecture', `title: The ${slug}`,
+        'description: A saved architecture, the selection of a starting design kept as an item.', 'clusters:', '  - agent-patterns',
+        'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', `# The ${slug}`, '',
+        '```yaml agsc-selection', `- ${a}`, `- ${b}`, '```', ''].join('\n'));
+      const r = built(world);
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+    },
+  },
+  {
+    pattern: /^the companion directory beside the Harness holds the brief and the blueprint: the three C4 levels and a build plan whose first step adopts "([^"]+)" \(AGSC-07-29\)$/u,
+    run(world, first) {
+      const files = companionFiles(world);
+      assert.deepStrictEqual([...files.keys()], [...BRIEF_FILES, 'blueprint/build-plan.md', 'blueprint/c4-components.mmd',
+        'blueprint/c4-containers.mmd', 'blueprint/c4-context.mmd'].sort());
+      assert.ok(files.get('blueprint/build-plan.md').includes(`### Step 1 — adopt \`${first}\``), files.get('blueprint/build-plan.md'));
+      assert.ok(![...tree(world.state.harnessDir).keys()].some((name) => name.startsWith('blueprint/')), 'the blueprint is inside the Harness directory');
+    },
+  },
+  {
+    pattern: /^the page "([^"]+)" shows the brief of the composition and links "([^"]+)" \(AGSC-07-25, AGSC-07-24\)$/u,
+    run(world, route, compose) {
+      const page = world.read(`www${route}index.html`);
+      assert.ok(page.includes('<h2 id="composition-brief">Brief of this architecture</h2>'), 'the page shows no brief');
+      assert.ok(page.includes(`<a href="${compose}">`), `the page does not link ${compose}`);
+    },
+  },
+  {
+    pattern: 'the architect opens "/compose/" to take downloads and ticks the Concept "handoff"',
+    async run(world) {
+      await composePage(world, { acceptDownloads: true });
+      await select(world, ['handoff']);
+    },
+  },
+  {
+    pattern: /^the page shows the verdict in words and the brief, whose dependency order puts "([^"]+)" before "([^"]+)" \(AGSC-07-25, AGSC-07-26\)$/u,
+    async run(world, first, second) {
+      const { page } = world.state.compose;
+      await page.waitForSelector('#brief-order:not([hidden])', { timeout: 10000 });
+      const words = await page.evaluate(() => document.getElementById('verdict-words').textContent);
+      assert.match(words, /^Items in the selection: 2\. Added by closure: 1\..* The composition is valid\.$/u);
+      assert.deepStrictEqual(await panelList(world, 'brief-order'), [`Supervisor (${first})`, `Handoff (${second})`]);
+    },
+  },
+  {
+    pattern: '"Download the brief (.zip)" gives, byte for byte, the archive of the four files "agsc compose handoff --brief" writes (AGSC-07-13)',
+    async run(world) {
+      const { page } = world.state.compose;
+      await page.waitForSelector('#brief-archive a', { timeout: 10000 });
+      assert.strictEqual(await page.evaluate(() => document.querySelector('#brief-archive a').textContent), 'Download the brief (.zip)');
+      const [download] = await Promise.all([page.waitForEvent('download'), page.click('#brief-archive a')]);
+      const bytes = fs.readFileSync(await download.path());
+      const r = world.agsc(['compose', 'handoff', '--brief'], { offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      const files = companionFiles(world);
+      const instant = linkset(world).linkset[0].describedby.find((l) => l['agsc-generated-at'])['agsc-generated-at'][0];
+      assert.ok(bytes.equals(Buffer.from(archive.archiveBytes(files, { instant }).bytes)), 'the page archive differs from the archive of the CLI brief');
     },
   },
 ];

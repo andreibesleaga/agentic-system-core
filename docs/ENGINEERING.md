@@ -122,7 +122,7 @@ To add a module:
    own source text, so the page runs what the Node tests test: each such module lists
    them in `PORTABLE`, and a portable function names no module-scope binding and
    requires nothing (`tests/arch/composition-portable.test.js` for the composition
-   algebra, the Harness, the archive and the brief that `/compose/` runs,
+   algebra, the Harness, the archive, the brief and the blueprint that `/compose/` runs,
    `tests/arch/page-tools-portable.test.js` for the page tools and the answers of the tools of
    1.1 they carry (`distribution/tool-answers.js`, which the local server calls too),
    `tests/arch/explorer-portable.test.js` for the explorer of `/clusters/`, which also

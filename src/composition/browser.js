@@ -10,8 +10,9 @@
  * returns a function's source text, so nothing is transcribed, nothing is
  * transpiled, and there is no bundler and no build step.
  *
- * That is why `composition/compose.js`, `composition/harness.js` and
- * `composition/brief.js` declare their algebra as self-contained top-level functions
+ * That is why `composition/compose.js`, `composition/harness.js`,
+ * `composition/brief.js` and `composition/blueprint.js` declare their algebra as
+ * self-contained top-level functions
  * whose constants are functions:
  * a function that closed over a module-scope `const` would be emitted with a free
  * variable that is undefined in the page. `tests/arch/composition-portable.test.js`
@@ -32,6 +33,7 @@ const compose = require('./compose.js');
 const harness = require('./harness.js');
 const archive = require('./archive.js');
 const brief = require('./brief.js');
+const blueprint = require('./blueprint.js');
 
 /**
  * Destructured deliberately. A page-support function may reference only names the
@@ -221,18 +223,20 @@ const SUPPORT = Object.freeze({
  * that algebra's result, and it reads `compareCodePoint`, which `compose.PORTABLE`
  * has already declared above it.
  *
- * The brief of AGSC-07-25 (`composition/brief.js`) joins them only when `options.brief` is
- * `true`. A build publishes `/compose/agsc-core.js` with it from 1.1, because the page tool
- * `brief` answers with it (AGSC-09-13, AGSC-09-16; `distribution/site.js`); the bundle without
- * it is the 1.0 set, for a caller that needs the algebra alone.
+ * The brief of AGSC-07-25 (`composition/brief.js`) and the blueprint outputs of AGSC-07-29
+ * (`composition/blueprint.js`, which reads the brief's parts) join them only when
+ * `options.brief` is `true`. A build publishes `/compose/agsc-core.js` with them from 1.1,
+ * because the page tool `brief` answers with the brief (AGSC-09-13, AGSC-09-16) and the
+ * `/compose/` page shows it and offers both for download (`distribution/site.js`); the bundle
+ * without them is the 1.0 set, for a caller that needs the algebra alone.
  *
  * @param {object} [options]
- * @param {boolean} [options.brief] carry the brief's functions too.
+ * @param {boolean} [options.brief] carry the functions of the brief and the blueprint too.
  */
 function exportedNames(options) {
   const withBrief = Boolean(options && options.brief === true);
   return [...compose.PORTABLE, ...harness.PORTABLE, ...archive.PORTABLE,
-    ...(withBrief ? brief.PORTABLE : []), ...PAGE_SUPPORT];
+    ...(withBrief ? [...brief.PORTABLE, ...blueprint.PORTABLE] : []), ...PAGE_SUPPORT];
 }
 
 /**
@@ -240,7 +244,8 @@ function exportedNames(options) {
  *
  * @param {object} [options]
  * @param {string} [options.specVersion] recorded in the banner comment only.
- * @param {boolean} [options.brief] carry the functions of the brief (AGSC-07-25) too.
+ * @param {boolean} [options.brief] carry the functions of the brief (AGSC-07-25) and of the
+ *   blueprint outputs (AGSC-07-29) too.
  * @returns {string} a classic script, LF-terminated, ending in exactly one LF.
  */
 function bundle(options) {
@@ -255,7 +260,10 @@ function bundle(options) {
   for (const name of compose.PORTABLE) parts.push(String(compose[name]));
   for (const name of harness.PORTABLE) parts.push(String(harness[name]));
   for (const name of archive.PORTABLE) parts.push(String(archive[name]));
-  if (opts.brief === true) for (const name of brief.PORTABLE) parts.push(String(brief[name]));
+  if (opts.brief === true) {
+    for (const name of brief.PORTABLE) parts.push(String(brief[name]));
+    for (const name of blueprint.PORTABLE) parts.push(String(blueprint[name]));
+  }
   for (const name of PAGE_SUPPORT) parts.push(String(SUPPORT[name]));
   const map = exportedNames(opts).map((name) => `    ${name}: ${name}`).join(',\n');
   parts.push('  globalThis.AGSC_CORE = {', `${map}`, '  };', '}());');

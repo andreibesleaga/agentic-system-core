@@ -4,14 +4,17 @@
 // AGSC-07-09 verdict are `composition/compose.js`'s; `--from <slug>` reads the
 // saved composition of AGSC-02-97/07-24; `--emit <target>` is AGSC-07-18; for a node that
 // declares contexts the context map of AGSC-07-30 is written in the companion directory, and
-// so is the brief of AGSC-07-25 when `--brief` or `compose.brief` asks for it; `--narrate` is
-// the narration step of AGSC-07-28, which this distribution answers with AGSC-E001.
+// so is the brief of AGSC-07-25 when `--brief` or `compose.brief` asks for it, with the
+// blueprint outputs of AGSC-07-29 in its `blueprint/` subdirectory when `--from` names a saved
+// architecture; `--narrate` is the narration step of AGSC-07-28, which this distribution
+// answers with AGSC-E001.
 
 const compose = require('../../../composition/compose.js');
 const architecture = require('../../../composition/architecture.js');
 const harness = require('../../../composition/harness.js');
 const contextMap = require('../../../composition/context-map.js');
 const brief = require('../../../composition/brief.js');
+const blueprint = require('../../../composition/blueprint.js');
 const { isPublished } = require('../../../knowledge/chunks.js');
 const bounded = require('../../../knowledge/contexts.js');
 const federation = require('../../../boundary/federation.js');
@@ -175,18 +178,21 @@ function contextPeers(bundle) {
 
 /**
  * AGSC-07-30: write the companion files of the composition — the context map, for a node that
- * declares contexts — in `<harness dir>.companion/`, beside the Harness directory and never in
- * it (AGSC-07-25). With no file to write, no directory is created.
+ * declares contexts, the brief and the blueprint outputs — in `<harness dir>.companion/`, beside
+ * the Harness directory and never in it (AGSC-07-25). A name may hold a subdirectory
+ * (`blueprint/decisions/0001-<slug>.md`, AGSC-07-29). With no file to write, no directory is
+ * created.
  *
  * @returns {Array<string>} the paths written.
  */
 function writeCompanion(ctx, harnessDir, files) {
   if (files.length === 0) return [];
   const dir = `${withoutTrailingSlashes(harnessDir)}.companion/`;
-  ctx.ports.fs.mkdirp(dir.slice(0, -1));
   return files.map(([name, text]) => {
-    ctx.ports.fs.writeFile(`${dir}${name}`, text);
-    return `${dir}${name}`;
+    const at = `${dir}${name}`;
+    ctx.ports.fs.mkdirp(at.slice(0, at.lastIndexOf('/')));
+    ctx.ports.fs.writeFile(at, text);
+    return at;
   });
 }
 
@@ -316,16 +322,22 @@ function briefRequested(ctx, bundle) {
 
 /**
  * AGSC-07-25: write the four files of the brief in the companion directory, for a valid or an
- * invalid composition. The brief names the listed items only (AGSC-00-05): no draft, no retired
- * item, no item the `releases` switchboard holds back.
+ * invalid composition; and, when `from` names a saved architecture (AGSC-02-97), the blueprint
+ * outputs of AGSC-07-29 in its subdirectory `blueprint/`. Both name the listed items only
+ * (AGSC-00-05): no draft, no retired item, no item the `releases` switchboard holds back.
  *
+ * @param {string} [from] the slug of `--from`, when the selection came from a saved item.
  * @returns {Array<string>} the paths written.
  */
-function writeBrief(ctx, bundle, result, items) {
+function writeBrief(ctx, bundle, result, items, from) {
   const options = harnessOptions(ctx, bundle, result, items);
   const releases = (bundle.config || {}).releases;
   const listed = items.filter((item) => isPublished(item, releases)).map((item) => item.slug);
-  return writeCompanion(ctx, harnessDir(ctx, options.name), brief.briefFiles(result, { ...options, listed }));
+  const saved = from === undefined ? undefined : items.find((item) => item.slug === from);
+  const outputs = saved !== undefined && architecture.isArchitecture(saved)
+    ? blueprint.blueprintFiles(result, { ...options, architecture: from, listed })
+    : [];
+  return writeCompanion(ctx, harnessDir(ctx, options.name), [...brief.briefFiles(result, { ...options, listed }), ...outputs]);
 }
 
 /**
@@ -495,7 +507,9 @@ function run(ctx) {
   for (const file of emission.companion || []) helpers.note(ctx, `companion: ${file} (AGSC-07-30)`);
   for (const missing of emission.missing) helpers.note(ctx, `harness missing: ${missing}`);
   if (!stopped && briefRequested(ctx, bundle)) {
-    for (const file of writeBrief(ctx, bundle, result, items)) helpers.note(ctx, `brief: ${file} (AGSC-07-25)`);
+    for (const file of writeBrief(ctx, bundle, result, items, from === undefined ? undefined : String(from))) {
+      helpers.note(ctx, file.includes('.companion/blueprint/') ? `blueprint: ${file} (AGSC-07-29)` : `brief: ${file} (AGSC-07-25)`);
+    }
   }
   if (narrate !== undefined) findings.push(narrationRefusal(narrate));
 

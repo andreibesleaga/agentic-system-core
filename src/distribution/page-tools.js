@@ -1823,10 +1823,13 @@ ${names.map((name) => `    ${name}: ${name}`).join(',\n')}
   // returns a promise of the envelope, exactly as before. No answer changes: the
   // same routes, the same bytes, the same toolset — read later or not at all.
   API.ready = null;
+  API.corpus = null;
   API.start = function () {
     if (API.ready !== null) return API.ready;
+    // The corpus stays readable as \`API.corpus\` once it is in: the /compose/ page writes the
+    // brief and the blueprint over the same items the page tool \`brief\` reads (AGSC-07-25).
     var pending = API.load(function (route) { return fetch(route); })
-      .then(function (corpus) { return pageToolset(corpus, globalThis.AGSC_CORE); });
+      .then(function (corpus) { API.corpus = corpus; return pageToolset(corpus, globalThis.AGSC_CORE); });
     // Once the corpus is in, the SYNCHRONOUS toolset replaces the promise wrapper, so
     // a tool call costs no round trip and executeTool resolves immediately.
     API.ready = pending.then(function (toolset) {

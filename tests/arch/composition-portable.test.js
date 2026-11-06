@@ -28,6 +28,7 @@ const harness = require('../../src/composition/harness.js');
 const browser = require('../../src/composition/browser.js');
 const archive = require('../../src/composition/archive.js');
 const brief = require('../../src/composition/brief.js');
+const blueprint = require('../../src/composition/blueprint.js');
 
 
 const SRC = path.resolve(__dirname, '..', '..', 'src', 'composition');
@@ -56,7 +57,7 @@ function moduleScopeNames(file) {
 
 test('every portable name is a function whose own source text is emitted', () => {
   for (const [label, module] of [['compose.js', compose], ['harness.js', harness],
-    ['archive.js', archive], ['brief.js', brief]]) {
+    ['archive.js', archive], ['brief.js', brief], ['blueprint.js', blueprint]]) {
     assert.ok(Array.isArray(module.PORTABLE), `${label} declares no PORTABLE list`);
     for (const name of module.PORTABLE) {
       assert.strictEqual(typeof module[name], 'function', `${label}#${name} is not an exported function`);
@@ -73,7 +74,7 @@ test('no portable function closes over a module-scope binding', () => {
   // module-scope `const` is emitted with a free variable that is `undefined` in the
   // page — a Harness with `undefined` in it, silently, not a crash.
   for (const [file, module] of [['compose.js', compose], ['harness.js', harness],
-    ['archive.js', archive], ['brief.js', brief], ['browser.js', browser]]) {
+    ['archive.js', archive], ['brief.js', brief], ['blueprint.js', blueprint], ['browser.js', browser]]) {
     // A module-scope binding is harmless when it is itself one of the names the
     // bundle emits — `harness.js` destructures `compareCodePoint` from
     // `compose.js`, and the bundle carries that function's own declaration.
@@ -108,7 +109,7 @@ test('no portable function reads a MEMBER of a required module (the hole that le
   // module is called.
   let scanned = 0;
   for (const [file, module] of [['compose.js', compose], ['harness.js', harness],
-    ['archive.js', archive], ['brief.js', brief], ['browser.js', browser]]) {
+    ['archive.js', archive], ['brief.js', brief], ['blueprint.js', blueprint], ['browser.js', browser]]) {
     const text = fs.readFileSync(path.join(SRC, file), 'utf8');
     // Only a require bound to a plain identifier can be read as an OBJECT; a
     // destructured require binds the functions themselves, which the bundle emits.
@@ -174,7 +175,7 @@ test('the emitted bundle evaluates and answers in a context that holds only the 
   }
 });
 
-test('the bundle with the brief evaluates and answers in a context that holds only the language', () => {
+test('the bundle with the brief and the blueprint evaluates and answers in a context that holds only the language', () => {
   const context = vm.createContext({});
   vm.runInContext(browser.bundle({ brief: true }), context, { filename: 'agsc-core.js' });
   const core = vm.runInContext('globalThis.AGSC_CORE', context);
@@ -194,7 +195,14 @@ test('the bundle with the brief evaluates and answers in a context that holds on
       licenseProse: 'CC0-1.0', selectionDigest: 'deadbeef', specVersion: '1.0.0',
     });
     assert.strictEqual(files.length, 4);
-    for (const [file, text] of files) {
+    // AGSC-07-29: the blueprint of the same composition, saved by the architecture `x` names.
+    const outputs = core.blueprintFiles(verdict, {
+      architecture: 'x', base: 'https://x.example/', instant: '2026-01-01T00:00:00Z',
+      items: items.map((i) => (i.slug === 'w' ? { ...i, 'decided-by': ['v'] } : i)),
+      licenseProse: 'CC0-1.0', selectionDigest: 'deadbeef', specVersion: '1.0.0',
+    });
+    assert.ok(outputs.length >= 4, `${outputs.length} blueprint files`);
+    for (const [file, text] of [...files, ...outputs]) {
       assert.ok(!text.includes('undefined'), `${file} carries the string "undefined"`);
       assert.ok(!text.includes('[object Object]'), `${file} carries "[object Object]"`);
     }

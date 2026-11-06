@@ -13,6 +13,16 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The `/compose/` page and its scripts (AGSC-07-25, AGSC-07-29, AGSC-06-01 page assets; the hash of
+  each file in `fixture-minimal`, old to new; on the eight reference nodes these four files and
+  `compose/webmcp.js` of the ten tools are the only bytes that change against 2327f33):
+  `compose/index.html` carries the workspace block, the cluster and tag filters and the places of the
+  verdict in words, the brief and its downloads, fc897c8832959ee7 to ad46a800b69dc85e;
+  `compose/agsc-compose.js` fills them, 1dbf68b3fe7d51b2 to 7e5ceff8ff4557c2; `compose/agsc-core.js`
+  carries the blueprint of AGSC-07-29 beside the brief, d59bd12ec7050763 to a6e45b917f7c15c7;
+  `compose/agsc-page-tools.js` keeps the published pages it read as `API.corpus`, so the page writes
+  the brief over the items the page tool `brief` reads, b41e50f5e2a3eeda to 3b64032af34ef4e2. The
+  seven Harness files and the Harness archive keep their bytes.
 - Every item an import writes from a source this node does not own is written `status: draft`,
   whatever its licence and whatever status the source gave it, and reported once as `AGSC-E506`
   (AGSC-01-22, I-021; `imp-0005`, `imp-0009` and `imp-0010` replace `imp-0002` and `imp-0004`). A
@@ -234,6 +244,41 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The blueprint outputs of a saved architecture (AGSC-07-29; vectors `compose-0028` to
+  `compose-0030`): `compose --from <slug> --brief` (or `compose.brief: true`), for an item of
+  `kind: architecture`, also writes `c4-context.mmd`, `c4-containers.mmd` and `c4-components.mmd`
+  (the first three levels of the C4 model as Mermaid flowcharts), `decisions/NNNN-<slug>.md` (one
+  MADR record for each distinct `decided-by` target of a member, numbered by the target's slug) and
+  `build-plan.md` (one step per member in dependency order, with what it needs, what verifies it and
+  what blocks it) into `blueprint/` of the directory beside the Harness, never into the Harness
+  directory or its `--zip` archive, whose bytes are those of the same composition without them
+  (`compose-0015`, `compose-0016`, `compose-0027` unchanged). No other invocation writes them. JSON
+  Schema, OpenAPI and test scaffolds are not blueprint outputs at 1.1. New
+  `src/composition/blueprint.js`, portable: it reads the brief's own parts, so it names listed items
+  only (AGSC-00-05); the page bundle carries it with the brief, and the blueprint the page computes
+  is the bytes the command line writes (`tests/composition/browser.test.js`,
+  `tests/distribution/compose-page-run.test.js`). The fitness test `tests/arch/brief.test.js` also
+  holds that the Harness writer never reaches the blueprint and that only the `compose` verb and the
+  page bundle require it.
+- The brief on the page of a saved architecture (AGSC-07-25, AGSC-07-24): the item page of a
+  `kind: architecture` item shows the summary, the dependency order, the gaps and the checklist of
+  its composition, written by the build over the listed items (each list at most 50 entries, then a
+  sentence that says where the whole brief is), and links `/compose/?from=<slug>`. New
+  `src/distribution/architecture-brief.js`. No other page changes, and none of the eight reference
+  nodes has such an item.
+- The rest of the `/compose/` page (I-031, I-033; AGSC-07-25, AGSC-07-29, AGSC-06-20): filters by
+  cluster and by tag beside the text box; the verdict in words (the summary sentence of the brief);
+  the brief of the selection shown inline (dependency order, gaps, checklist) once the page tools
+  have read the published pages, offered as its four files, with the blueprint outputs while the
+  selection is the one `?from=<architecture>` saves, one link per file and "Download the brief
+  (.zip)"; "Download the skills (.zip)" beside "Download all (.zip)" for the skill files of the
+  Harness. Each archive is its own and none enters the Harness archive (AGSC-07-13a). No element of
+  the page moves while it loads: the form, the list and the panels sit in one block shown in the
+  step that hides the loading paragraph (measured in `tests/distribution/compose-browser.test.js`, which
+  the browser job of `.github/workflows/test.yml` now runs with axe-core in both colour schemes;
+  on the mode-4 demonstration the cumulative layout shift was 0.041 at 1280 px and 0.064 at 390 px,
+  and is 0.039 and 0.090, the footer moving as the page grows, under the 0.1 bound of the Core Web
+  Vitals). No new dependency.
 - The composition brief (AGSC-07-25, AGSC-07-26, AGSC-07-27; vectors `compose-0024` to
   `compose-0026`): `compose --brief`, or `compose.brief: true` in `agsc.config.json` (AGSC-01-18,
   default `false`), also writes `brief.json` (JCS and one LF), `BRIEF.md`, `context.md` (item prose

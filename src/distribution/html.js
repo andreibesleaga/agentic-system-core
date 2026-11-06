@@ -427,6 +427,9 @@ function itemPage(item, options = {}) {
   // Links used. Written by `graph-view.js` from published items only; empty when the
   // item has no relation, and then no section is shown.
   if (typeof options.relations === 'string' && options.relations !== '') parts.push(options.relations);
+  // AGSC-07-25 / AGSC-07-24: on a saved architecture's page, the brief of its composition and the
+  // link to it on `/compose/` (`architecture-brief.js`); empty on every other page.
+  if (typeof options.brief === 'string' && options.brief !== '') parts.push(options.brief);
   // A cluster page lists its published members (the caller passes only published
   // items, so a draft never appears), each linked, with its description.
   if (Array.isArray(options.members)) {
@@ -582,6 +585,13 @@ const HONEST_LIMIT = 'These lints prove neither safety nor the absence of novel 
  * registration are three same-origin scripts, because AGSC-06-17's own
  * `script-src 'self'` policy admits no inline script.
  *
+ * NO LAYOUT SHIFT. Everything the controller fills — the filters, the item list, the
+ * verdict, the brief and the downloads — sits in one `#workspace` block that starts
+ * `hidden`, below a single paragraph that says what the page needs. The controller
+ * hides that paragraph and shows the block in the same step, once the list is painted,
+ * so no element a reader already sees moves while the page loads; without script the
+ * paragraph is the page, and no control that cannot work is offered.
+ *
  * @param {object} page `{assets}` — the script file names, in load order.
  * @param {object} options the shared page options.
  */
@@ -594,36 +604,51 @@ function composePage({ assets }, options = {}) {
     body: [
       '<p>Tick the items you want. The composition rules of the specification (AGSC-07) run <em>in this page</em>:',
       'no request leaves this origin, no key is needed and nothing is uploaded. The seven',
-      'Harness files are offered one download per file, or all together as one .zip.</p>',
+      'Harness files are offered one download per file, or all together as one .zip, and the brief of the',
+      'composition is shown and offered the same way (AGSC-07-25).</p>',
+      '<p id="loading" aria-live="polite">This page composes in the browser and needs JavaScript; the same result comes from <code>agsc compose</code>.</p>',
+      '<div id="workspace" hidden>',
       '<h2>Items</h2>',
-      // The filter box starts hidden and the controller shows it once the list is
-      // painted: a control that cannot work without script is not offered.
-      '<div role="search"><form class="search" id="filter-form" hidden>',
-      '<label for="filter">Filter the items</label>',
-      '<input id="filter" name="filter" type="search" autocomplete="off" spellcheck="false" aria-controls="items">',
+      '<div role="search"><form class="search" id="filter-form">',
+      '<p><label for="filter">Filter the items</label>',
+      '<input id="filter" name="filter" type="search" autocomplete="off" spellcheck="false" aria-controls="items"></p>',
+      '<p><label for="filter-cluster">Cluster</label>',
+      '<select id="filter-cluster" name="cluster" aria-controls="items"><option value="">Every cluster</option></select></p>',
+      '<p><label for="filter-tag">Tag</label>',
+      '<select id="filter-tag" name="tag" aria-controls="items"><option value="">Every tag</option></select></p>',
       '</form></div>',
       '<p id="filter-status" role="status" aria-live="polite"></p>',
-      // Replaced by one checkbox per item once the controller runs; without script it
-      // says what the page needs and where the same result comes from.
-      '<ul id="items"><li>This page needs JavaScript; the same result comes from <code>agsc compose</code>.</li></ul>',
+      '<ul id="items"></ul>',
       '<h2>Verdict</h2>',
       '<p id="validity" aria-live="polite">Select one or more items to compose.</p>',
+      '<p id="verdict-words"></p>',
       // Focusable: the stylesheet lets a long verdict scroll sideways, and a scrollable
       // region must be reachable by keyboard (WCAG 2.1.1, AGSC-06-20).
       '<pre id="verdict" tabindex="0"></pre>',
-      // Both lists start hidden: without a selection (or without script) a reader
-      // would otherwise meet two empty headings. The controller reveals each one
-      // when it has something to say.
+      // Each list starts hidden: without a selection a reader would otherwise meet empty
+      // headings. The controller reveals each one when it has something to say.
       '<h3 id="explanations-heading" hidden>Why an item was added</h3>',
       '<ul id="explanations" hidden></ul>',
       '<h3 id="conflicts-heading" hidden>Conflicts</h3>',
       '<ul id="conflicts" hidden></ul>',
       '<h3 id="warnings-heading" hidden>Warnings</h3>',
       '<ul id="warnings" hidden></ul>',
+      '<h2>Brief</h2>',
+      '<p id="brief-status" aria-live="polite">The brief of the composition appears here once items are selected.</p>',
+      '<h3 id="brief-order-heading" hidden>Dependency order</h3>',
+      '<ol id="brief-order" hidden></ol>',
+      '<h3 id="brief-gaps-heading" hidden>Gaps</h3>',
+      '<ul id="brief-gaps" hidden></ul>',
+      '<h3 id="brief-checklist-heading" hidden>Checklist</h3>',
+      '<ul id="brief-checklist" hidden></ul>',
+      '<ul id="brief-files"></ul>',
+      '<p id="brief-archive" aria-live="polite"></p>',
       '<h2>Harness</h2>',
       '<p><button id="download" type="button" disabled>Build the Harness</button></p>',
       '<ul id="files"></ul>',
       '<p id="archive" aria-live="polite"></p>',
+      '<p id="skills-archive" aria-live="polite"></p>',
+      '</div>',
       scripts,
     ].join('\n'),
   });

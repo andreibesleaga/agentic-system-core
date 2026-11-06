@@ -10,23 +10,42 @@
 //   * AGSC-07-25 with AGSC-07-13: the `/compose/` page computes the brief from the same source
 //     text as the command line, so `composition/brief.js` requires nothing but the two portable
 //     algebras (`compose.js`, `harness.js`), whose functions the page bundle carries.
+//   * AGSC-07-29: the blueprint outputs are written beside the Harness like the brief, from the
+//     brief's own parts: `composition/blueprint.js` requires the two algebras and the brief and
+//     nothing else, the Harness writer never reaches it, and only the `compose` verb and the page
+//     bundle require it.
+// The build reads the brief too, for the brief shown on an architecture's item page
+// (`distribution/architecture-brief.js`), and writes no brief file.
 
 const test = require('node:test');
 const assert = require('node:assert');
 const { reachable, sources } = require('./_scan.js');
 
 const BRIEF = 'src/composition/brief.js';
+const BLUEPRINT = 'src/composition/blueprint.js';
 
-test('the Harness writer never reaches the brief writer (AGSC-07-12, AGSC-07-25)', () => {
+test('the Harness writer never reaches the brief writer or the blueprint writer (AGSC-07-12, AGSC-07-25, AGSC-07-29)', () => {
   const reached = reachable(['src/composition/harness.js']);
   assert.ok(reached.has('src/composition/compose.js'), 'the walk reaches the algebra, so it follows the requires');
   assert.ok(!reached.has(BRIEF), `${BRIEF} is reached from the Harness writer`);
+  assert.ok(!reached.has(BLUEPRINT), `${BLUEPRINT} is reached from the Harness writer`);
 });
 
-test('only the compose verb, the tool server and the page bundle require the brief', () => {
+test('only the compose verb, the blueprint, the tool server, the architecture page brief and the page bundle require the brief', () => {
   const users = sources().filter((file) => file.requires.some((s) => s.endsWith('/brief.js'))).map((file) => file.rel).sort();
-  assert.deepStrictEqual(users, ['src/application/cli/verbs/compose.js', 'src/composition/browser.js',
-    'src/distribution/mcp-tools.js']);
+  assert.deepStrictEqual(users, ['src/application/cli/verbs/compose.js', 'src/composition/blueprint.js',
+    'src/composition/browser.js', 'src/distribution/architecture-brief.js', 'src/distribution/mcp-tools.js']);
+});
+
+test('only the compose verb and the page bundle require the blueprint writer (AGSC-07-29)', () => {
+  const users = sources().filter((file) => file.requires.some((s) => s.endsWith('/blueprint.js'))).map((file) => file.rel).sort();
+  assert.deepStrictEqual(users, ['src/application/cli/verbs/compose.js', 'src/composition/browser.js']);
+});
+
+test('the blueprint requires only the two portable algebras and the brief, so the page can run its source (AGSC-07-13)', () => {
+  const file = sources().find((f) => f.rel === BLUEPRINT);
+  assert.ok(file, `${BLUEPRINT} was not scanned`);
+  assert.deepStrictEqual([...file.requires].sort(), ['./brief.js', './compose.js', './harness.js']);
 });
 
 test('the brief requires only the two portable algebras, so the page can run its source (AGSC-07-13)', () => {

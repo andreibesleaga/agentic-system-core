@@ -21,6 +21,7 @@ const browser = require('../../src/composition/browser.js');
 const { compose } = require('../../src/composition/compose.js');
 const harness = require('../../src/composition/harness.js');
 const brief = require('../../src/composition/brief.js');
+const blueprint = require('../../src/composition/blueprint.js');
 const { loadBundle } = require('../../src/application/bundle.js');
 const { flatten } = require('../../src/application/cli/verbs/compose.js');
 const { main } = require('../../src/application/cli/main.js');
@@ -135,6 +136,32 @@ test('AGSC-07-25, AGSC-07-13: the brief the command line writes is the brief the
   }
 });
 
+test('AGSC-07-29, AGSC-07-13: the blueprint the command line writes is the blueprint the page computes, byte for byte', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-blueprint-hosts-'));
+  test.after(() => fs.rmSync(dir, { force: true, recursive: true }));
+  fs.cpSync(path.resolve(__dirname, '..', 'fixtures', 'minimal'), dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'content', 'concepts', 'team.md'), ['---', 'type: concept', 'kind: architecture',
+    'title: The team', 'description: A saved architecture of the two patterns of the minimal fixture.',
+    'clusters:', '  - agent-patterns', 'decided-by:', '  - handoff', 'prov:', '  origin: human', '  operator: human:andreibesleaga',
+    '---', '', '# The team', '', '```yaml agsc-selection', '- supervisor', '- handoff', '```', ''].join('\n'));
+  const exit = main(['compose', '--from', 'team', '--brief', '--quiet'], {
+    env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: createFileSystem(dir) }, root: dir,
+    specVersion: '1.0.0', stderr: captureStream(), stdout: captureStream(), version: '1.0.0',
+  });
+  assert.strictEqual(exit, 0);
+  const companion = fs.readdirSync(path.join(dir, 'dist', 'harness')).find((name) => name.endsWith('.companion'));
+  const items = flatten(loadBundle({ fs: createFileSystem(dir) }, {}).items);
+  const { core } = loadCore({ brief: true });
+  const result = core.compose(structuredClone(items), ['supervisor', 'handoff']);
+  const there = core.blueprintFiles(result, {
+    ...optionsFor(result, structuredClone(items)), architecture: 'team', bundleVersion: undefined, licenseProse: TERMS,
+  });
+  assert.strictEqual(there.length, 4, 'the four files of a blueprint with no decision cited by a member');
+  for (const [name, text] of there) {
+    assert.strictEqual(text, fs.readFileSync(path.join(dir, 'dist', 'harness', companion, name), 'utf8'), `${name} differs between the two hosts`);
+  }
+});
+
 test('AGSC-07-13: the brief is byte-identical in both hosts over generated selections', () => {
   const { core } = loadCore({ brief: true });
   const slugs = ITEMS.map((i) => i.slug);
@@ -152,7 +179,9 @@ test('the bundle carries the brief only when asked, which the published /compose
   const plain = browser.bundle({ specVersion: '1.0.0' });
   assert.ok(!plain.includes('function briefFiles('), 'the default bundle carries the brief');
   assert.ok(browser.bundle({ brief: true, specVersion: '1.0.0' }).includes('function briefFiles('));
-  assert.deepStrictEqual(browser.exportedNames({ brief: true }).filter((n) => !browser.exportedNames().includes(n)), [...brief.PORTABLE]);
+  assert.ok(!plain.includes('function blueprintFiles('), 'the default bundle carries the blueprint');
+  assert.deepStrictEqual(browser.exportedNames({ brief: true }).filter((n) => !browser.exportedNames().includes(n)),
+    [...brief.PORTABLE, ...blueprint.PORTABLE]);
   const { core } = loadCore({ brief: true });
   assert.deepStrictEqual(Object.keys(core).sort(), [...browser.exportedNames({ brief: true })].sort());
 });

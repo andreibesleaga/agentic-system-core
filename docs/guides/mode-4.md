@@ -174,6 +174,53 @@ then says which conflict to resolve. `--narrate <agent>` would add a summary wri
 this distribution ships no way to reach a model, so it answers `AGSC-E001` and writes the brief
 alone.
 
+Keep a selection as an item and you have a **saved architecture**: a concept of
+`kind: architecture` whose body holds the selection in a `yaml agsc-selection` block.
+`compose --from <slug> --brief` then also writes the architecture's **blueprint** into
+`blueprint/` of the same folder: the first three levels of the C4 model as Mermaid diagrams
+(`c4-context.mmd`, `c4-containers.mmd`, `c4-components.mmd`), one decision record for each
+decision a selected item names with `decided-by`, and `build-plan.md`, one step per item in the
+order to adopt them, with what each step needs and what checks it. JSON Schema, OpenAPI and test
+scaffolds are not part of a blueprint in 1.1. On a built site the item's page shows the brief and
+links `/compose/?from=<slug>`, where the browser shows the same brief and offers it, with the
+blueprint, for download — each as its own archive, never inside the Harness archive.
+
+````bash demo
+rm -rf dist/harness
+cat > content/concepts/checkout-plan.md <<'ITEM'
+---
+type: concept
+kind: architecture
+title: Checkout plan
+description: The saved selection of a checkout service that retries safely and is tested after each deploy.
+prov:
+  origin: human
+  operator: human:you
+---
+
+# Checkout plan
+
+```yaml agsc-selection
+- retry-with-backoff
+- smoke-test
+```
+ITEM
+agsc compose --from checkout-plan --brief > /dev/null 2>&1
+blueprint="$(ls -d dist/harness/*.companion)/blueprint"
+ls "$blueprint"
+sed -n '/^### Step/p' "$blueprint/build-plan.md"
+````
+
+```text expect
+build-plan.md
+c4-components.mmd
+c4-containers.mmd
+c4-context.mmd
+### Step 1 — adopt `idempotency-key`
+### Step 2 — adopt `retry-with-backoff`
+### Step 3 — adopt `smoke-test`
+```
+
 ## 3. The `run` verb (off by default)
 
 `run` reads a procedure's `run` blocks. It is off until the configuration turns it on

@@ -1,7 +1,7 @@
 'use strict';
 // tests/conformance/areas/compose.js — area handler for `compose` vectors.
 // Rules: AGSC-07-03, AGSC-07-04..08, AGSC-07-05a, AGSC-07-09, AGSC-07-13a,
-// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-30,
+// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-29, AGSC-07-30,
 // AGSC-02-97.
 
 const crypto = require('node:crypto');
@@ -12,6 +12,7 @@ const { dslRelationships, emit, harnessName, isEmitted, selectionDigestInput } =
 const archive = require('../../../src/composition/archive.js');
 const { contextMapFiles } = require('../../../src/composition/context-map.js');
 const brief = require('../../../src/composition/brief.js');
+const blueprint = require('../../../src/composition/blueprint.js');
 const { isPublished } = require('../../../src/knowledge/chunks.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
@@ -373,6 +374,45 @@ function runBriefMembers(members) {
   };
 }
 
+/**
+ * The blueprint outputs of one saved architecture (AGSC-07-29): the composition `compose --from`
+ * runs (AGSC-07-24), with the options of the brief (`briefCase`) and the architecture's slug.
+ */
+function blueprintOf(input) {
+  const { result } = composeFrom(input.items, input.from);
+  const options = {
+    architecture: input.from,
+    base: input.fixed.base,
+    bundleVersion: input.fixed.bundle_version,
+    instant: input.fixed.instant,
+    items: input.items,
+    licenseProse: input.fixed.license_prose,
+    listed: input.items.filter((item) => isPublished(item, undefined)).map((item) => item.slug),
+    selectionDigest: sha256(selectionDigestInput(result)),
+    specVersion: input.fixed.spec_version,
+  };
+  return new Map(blueprint.blueprintFiles(result, options));
+}
+
+/**
+ * compose-0028 — the three C4 levels; compose-0029 — the decision records; compose-0030 — the
+ * build plan (AGSC-07-29). The paths are relative to the companion directory; two runs give the
+ * same bytes ("two builds write the same bytes").
+ */
+function runBlueprint(vector) {
+  const files = blueprintOf(vector.input);
+  const again = blueprintOf(vector.input);
+  const list = [['two runs, same bytes', deepEqual([...files], [...again]), 'the second run differs']];
+  for (const [name, bytes] of Object.entries(vector.expected.file_bytes)) {
+    list.push([`file_bytes ${name}`, files.get(name) === bytes, String(files.get(name))]);
+  }
+  for (const [prefix, names] of Object.entries(vector.expected.files_under || {})) {
+    const got = [...files.keys()].filter((path) => path.startsWith(prefix)).map((path) => path.slice(prefix.length));
+    list.push([`files_under ${prefix}`, deepEqual(names, got), JSON.stringify(got)]);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'compose-0001': runVerdictVector,
   'compose-0002': runVerdictVector,
@@ -393,6 +433,9 @@ const HANDLERS = {
   'compose-0025': runBriefMembers(['order']),
   'compose-0026': runBriefMembers(['checklist', 'gaps']),
   'compose-0027': runCompose0027,
+  'compose-0028': runBlueprint,
+  'compose-0029': runBlueprint,
+  'compose-0030': runBlueprint,
   'compose-0032': runContextMap,
   'compose-0033': runContextMap,
 };

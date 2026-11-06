@@ -31,6 +31,8 @@ const { compose, verdictOf } = require('../../src/composition/compose.js');
 const mcpTools = require('../../src/distribution/mcp-tools.js');
 const composePage = require('../../src/distribution/compose-page.js');
 const pageTools = require('../../src/distribution/page-tools.js');
+const { main: cliMain } = require('../../src/application/cli/main.js');
+const { captureStream } = require('../conformance/areas/_shared.js');
 
 /** Wait for the page-tool corpus to load; afterwards `AGSC_TOOLS` is synchronous. */
 async function pageToolsReady(context) {
@@ -57,14 +59,18 @@ test.after(() => {
   for (const dir of temporaries) nodeFs.rmSync(dir, { force: true, recursive: true });
 });
 
-function builtFixture() {
+function builtFixture(added = {}) {
   const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'agsc-page-'));
   temporaries.push(dir);
   nodeFs.cpSync(FIXTURE, dir, { recursive: true });
+  for (const [file, text] of Object.entries(added)) {
+    nodeFs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    nodeFs.writeFileSync(path.join(dir, file), text);
+  }
   const fs = createFileSystem(dir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const ports = { clock: createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } }), fs };
-  return { bundle, ...site.build(bundle, ports, { specVersion: '1.0.0', version: '0.0.2' }) };
+  return { bundle, dir, ...site.build(bundle, ports, { specVersion: '1.0.0', version: '0.0.2' }) };
 }
 
 /** The smallest DOM the controller touches: ids, text, children and one listener. */
@@ -79,19 +85,23 @@ function fakeDocument(withModelContext) {
       addEventListener(type, handler) { node.listeners.push([type, handler]); },
       appendChild(child) { node.children.push(child); return child; },
       set textContent(value) { node.text = String(value); node.children.length = 0; },
-      get textContent() { return node.text === undefined ? '' : node.text; },
+      get textContent() { return (node.text === undefined ? '' : node.text) + node.children.map((c) => c.textContent).join(''); },
     };
     return node;
   };
   for (const id of ['items', 'validity', 'verdict', 'explanations', 'conflicts', 'download', 'files', 'archive',
-    'warnings', 'warnings-heading', 'filter', 'filter-form', 'filter-status']) {
+    'warnings', 'warnings-heading', 'filter', 'filter-form', 'filter-status', 'filter-cluster', 'filter-tag',
+    'loading', 'workspace', 'verdict-words', 'brief-status', 'brief-order', 'brief-gaps', 'brief-checklist',
+    'brief-files', 'brief-archive', 'skills-archive']) {
     nodes.set(id, make(id));
   }
-  nodes.get('filter').value = '';
+  for (const id of ['filter', 'filter-cluster', 'filter-tag']) nodes.get(id).value = '';
   nodes.get('filter-form').hidden = true;
+  nodes.get('workspace').hidden = true;
   const registered = [];
   const document = {
     createElement: (tag) => Object.assign(make(''), { tag }),
+    createTextNode: (value) => Object.assign(make(''), { text: String(value) }),
     getElementById: (id) => (nodes.has(id) ? nodes.get(id) : null),
     nodes,
   };
@@ -469,18 +479,159 @@ test('with nothing selected the page asks for a selection instead of saying "val
   assert.match(String(files.get('/compose/index.html')), /<p id="validity"[^>]*>Select one or more items to compose\.<\/p>/u);
 });
 
-test('without script the item list says the page needs JavaScript and names the command that gives the same result', async () => {
+test('without script the page says it needs JavaScript and names the command that gives the same result', async () => {
   const { files } = builtFixture();
   const markup = String(files.get('/compose/index.html'));
   // A reader without script (or an agent reading the markup) is never told the page is
   // still loading: it says what the page needs and where the same Harness comes from.
-  assert.match(markup, /<ul id="items"><li>This page needs JavaScript; the same result comes from <code>agsc compose<\/code>\.<\/li><\/ul>/u);
+  assert.match(markup, /<p id="loading" aria-live="polite">This page composes in the browser and needs JavaScript; the same result comes from <code>agsc compose<\/code>\.<\/p>\n<div id="workspace" hidden>/u);
   assert.doesNotMatch(markup, /Loading the published graph/u);
-  // With script, the controller replaces that sentence with one checkbox per item.
+  // With script, the controller paints one checkbox per item and shows the workspace.
   const page = openPage({ files });
   const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
   await state.start();
   assert.ok(page.document.nodes.get('items').children.length >= 2);
+});
+
+test('no layout shift: every control is inside the workspace, shown in the step that hides the loading paragraph', async () => {
+  const { files } = builtFixture();
+  const markup = String(files.get('/compose/index.html'));
+  const main = markup.slice(markup.indexOf('<main'), markup.indexOf('</main>'));
+  const before = main.slice(0, main.indexOf('<div id="workspace" hidden>'));
+  const inside = main.slice(main.indexOf('<div id="workspace" hidden>'), main.lastIndexOf('</div>'));
+  // Before the workspace, nothing the controller fills: the heading, the introduction, the paragraph.
+  assert.doesNotMatch(before, /<(?:input|select|button|ul|ol|pre)\b/u);
+  for (const id of ['filter', 'filter-cluster', 'filter-tag', 'items', 'verdict', 'verdict-words', 'brief-order',
+    'brief-files', 'brief-archive', 'download', 'files', 'archive', 'skills-archive']) {
+    assert.ok(inside.includes(`id="${id}"`), `${id} is outside the workspace`);
+  }
+  assert.ok(Buffer.byteLength(markup, 'utf8') <= 100000, 'the page is over the 100 KB budget of AGSC-06-21');
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  assert.strictEqual(page.document.nodes.get('workspace').hidden, true);
+  await state.start();
+  assert.strictEqual(page.document.nodes.get('workspace').hidden, false);
+  assert.strictEqual(page.document.nodes.get('loading').hidden, true);
+});
+
+test('the filters narrow the item list by cluster and by tag, and never change the selection', async () => {
+  const extra = ['---', 'type: concept', 'title: Loner', 'description: A concept in no cluster, with a tag of its own, added by this test.',
+    'tags:', '  - agents', 'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', '# Loner', '', 'Body.', ''].join('\n');
+  const { files } = builtFixture({ 'content/concepts/loner.md': extra });
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  await state.whenPagesRead();
+  const rows = page.document.nodes.get('items').children;
+  const visible = () => rows.filter((li) => !li.hidden).map((li) => li.children[0].value).sort();
+  const options = (id) => page.document.nodes.get(id).children.map((o) => o.value);
+  assert.deepStrictEqual(options('filter-cluster'), ['agent-patterns']);
+  assert.deepStrictEqual(options('filter-tag'), ['agents', 'patterns']);
+  state.selection = ['loner'];
+  page.document.nodes.get('filter-cluster').value = 'agent-patterns';
+  assert.strictEqual(state.applyFilter(), 2);
+  assert.deepStrictEqual(visible(), ['handoff', 'supervisor']);
+  assert.strictEqual(page.document.nodes.get('filter-status').textContent, '2 of 3 items match in the cluster agent-patterns.');
+  page.document.nodes.get('filter-cluster').value = '';
+  page.document.nodes.get('filter-tag').value = 'patterns';
+  state.applyFilter();
+  assert.deepStrictEqual(visible(), ['handoff', 'supervisor']);
+  page.document.nodes.get('filter-tag').value = 'agents';
+  page.document.nodes.get('filter').value = 'loner';
+  state.applyFilter();
+  assert.deepStrictEqual(visible(), ['loner']);
+  assert.strictEqual(page.document.nodes.get('filter-status').textContent, '1 of 3 items match "loner" tagged agents.');
+  assert.deepStrictEqual(plain(state.selection), ['loner'], 'filtering changed the selection');
+});
+
+/** `agsc compose <argv> --brief` over the built Bundle at `dir`: the files written beside the Harness. */
+function cliCompanion(dir, argv) {
+  const exit = cliMain(['compose', ...argv, '--brief', '--quiet'], {
+    env: { SOURCE_DATE_EPOCH: EPOCH }, ports: { fs: createFileSystem(dir) }, root: dir,
+    specVersion: '1.0.0', stderr: captureStream(), stdout: captureStream(), version: '0.0.2',
+  });
+  assert.ok(exit === 0 || exit === 1, `compose exited ${exit}`);
+  const at = path.join(dir, 'dist', 'harness');
+  const companion = nodeFs.readdirSync(at).find((name) => name.endsWith('.companion'));
+  const out = new Map();
+  for (const entry of nodeFs.readdirSync(path.join(at, companion), { recursive: true })) {
+    const file = path.join(at, companion, entry);
+    if (nodeFs.statSync(file).isFile()) out.set(entry.split(path.sep).join('/'), nodeFs.readFileSync(file, 'utf8'));
+  }
+  nodeFs.rmSync(path.join(dir, 'dist'), { force: true, recursive: true });
+  return out;
+}
+
+test('AGSC-07-25, AGSC-07-13: the page shows the brief inline and offers the files agsc compose --brief writes', async () => {
+  const { dir, files } = builtFixture();
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  await state.whenPagesRead();
+  state.selection = ['supervisor'];
+  state.render();
+  const brief = await state.refreshBrief();
+  const cli = cliCompanion(dir, ['supervisor']);
+  assert.deepStrictEqual([...brief.files.keys()], [...cli.keys()]);
+  for (const [name, text] of cli) assert.strictEqual(brief.files.get(name), text, `${name} differs between the page and the CLI`);
+  // Inline: the verdict in words, the dependency order, the gaps and the checklist.
+  assert.strictEqual(page.document.nodes.get('verdict-words').textContent, JSON.parse(cli.get('brief.json')).summary);
+  assert.strictEqual(page.document.nodes.get('brief-order').children.map((li) => li.textContent).join('|'), 'Supervisor (supervisor)');
+  assert.ok(page.document.nodes.get('brief-gaps').children.map((li) => li.textContent).includes('supervisor uses handoff, which is not in the selection'));
+  assert.strictEqual(page.document.nodes.get('brief-checklist').children[0].textContent, 'adopt supervisor');
+  // One link per file and one archive of them, beside the Harness archive and never in it.
+  assert.strictEqual(page.document.nodes.get('brief-files').children.length, 4);
+  assert.strictEqual(page.document.nodes.get('brief-archive').children[0].textContent, 'Download the brief (.zip)');
+  const emitted = await state.emitHarness();
+  for (const name of cli.keys()) assert.ok(!emitted.files.has(name), `${name} entered the Harness`);
+  assert.ok(!Buffer.from(state.archive.bytes).includes(Buffer.from('brief.json')), 'the Harness archive carries the brief');
+  // Nothing selected: no brief, and the page says so.
+  state.selection = [];
+  state.render();
+  assert.strictEqual(page.document.nodes.get('brief-order').hidden, true);
+  assert.match(page.document.nodes.get('brief-status').textContent, /appears here once items are selected/u);
+});
+
+test('AGSC-07-29, AGSC-07-13: /compose/?from=<architecture> offers the blueprint agsc compose --from writes; another selection has none', async () => {
+  const team = ['---', 'type: concept', 'kind: architecture', 'title: The team', 'description: A saved architecture of the two patterns, added by this test.',
+    'clusters:', '  - agent-patterns', 'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', '# The team', '',
+    '```yaml agsc-selection', '- supervisor', '- handoff', '```', ''].join('\n');
+  const { dir, files } = builtFixture({ 'content/concepts/team.md': team });
+  const page = openPage({ files });
+  page.sandbox.location.search = '?from=team';
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  await state.whenPagesRead();
+  const brief = await state.refreshBrief();
+  const cli = cliCompanion(dir, ['--from', 'team']);
+  assert.ok([...cli.keys()].includes('blueprint/build-plan.md'), [...cli.keys()].join(' '));
+  assert.deepStrictEqual([...brief.files.keys()], [...cli.keys()]);
+  for (const [name, text] of cli) assert.strictEqual(brief.files.get(name), text, `${name} differs between the page and the CLI`);
+  state.selection = ['supervisor'];
+  const other = await state.refreshBrief();
+  assert.ok(![...other.files.keys()].some((name) => name.startsWith('blueprint/')), 'a changed selection kept the blueprint');
+});
+
+test('the skills of a Harness are offered as an archive of their own, beside the Harness archive', async () => {
+  const run = ['---', 'type: procedure', 'title: Run the handoff', 'description: A procedure, so the Harness has a skill file; added by this test.',
+    'clusters:', '  - agent-patterns', 'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', '# Run the handoff', '', '1. Run.', ''].join('\n');
+  const { files } = builtFixture({ 'content/procedures/run-handoff.md': run });
+  const page = openPage({ files });
+  const state = vm.runInContext('globalThis.AGSC_COMPOSE', page.context);
+  await state.start();
+  state.selection = ['handoff'];
+  state.render();
+  await state.emitHarness();
+  assert.strictEqual(page.document.nodes.get('skills-archive').textContent, '', 'a Harness with no skill offers no skills archive');
+  state.selection = ['run-handoff'];
+  state.render();
+  const out = await state.emitHarness();
+  const holder = page.document.nodes.get('skills-archive');
+  assert.strictEqual(holder.children[0].textContent, 'Download the skills (.zip)');
+  const skills = new Map([...out.files].filter(([name]) => name.startsWith('skills/')));
+  assert.strictEqual(skills.size, 1);
+  const expected = archive.archiveBytes(skills, { instant: INSTANT });
+  assert.match(holder.children[1].textContent, new RegExp(`SHA-256 ${createHash('sha256').update(Buffer.from(expected.bytes)).digest('hex')}`, 'u'));
 });
 
 test('AGSC-07-07: the warnings are shown to the reader, each with its code and a sentence', async () => {
